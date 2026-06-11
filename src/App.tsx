@@ -6,8 +6,8 @@ import './App.css'
 
 const { Title, Text, Paragraph } = Typography
 
-type ViewKey = 'home' | 'projects' | 'projectDetail' | 'cases' | 'caseDetail' | 'blog'
-type NavViewKey = Exclude<ViewKey, 'projectDetail' | 'caseDetail'>
+type ViewKey = 'home' | 'projects' | 'projectDetail' | 'gameDetail' | 'cases' | 'caseDetail' | 'blog'
+type NavViewKey = Exclude<ViewKey, 'projectDetail' | 'gameDetail' | 'caseDetail'>
 type ProjectGroupKey = 'ai' | 'fullstack' | 'games'
 type SiteTheme = 'light' | 'dark'
 
@@ -33,8 +33,28 @@ const viewByRoute = new Map<string, ViewKey>([
 function getViewFromPath(pathname: string): ViewKey {
   const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
   if (/^\/projects\/[^/]+$/.test(normalizedPath)) return 'projectDetail'
+  if (/^\/games\/[^/]+$/.test(normalizedPath)) return 'gameDetail'
   if (/^\/cases\/[^/]+$/.test(normalizedPath)) return 'caseDetail'
   return viewByRoute.get(normalizedPath) ?? 'home'
+}
+
+const gameRouteByProjectId: Record<string, string> = {
+  'game-first-tetris': 'first-tetris',
+  'game-next-spacewar': 'next-spacewar',
+  intespace: 'intespace',
+  'raiden-prototype': 'raiden',
+  'space-war': 'space-war',
+}
+
+function getGameSlugByProjectId(projectId: string): string | null {
+  return gameRouteByProjectId[projectId] ?? null
+}
+
+function getGameProjectIdFromPath(pathname: string): string | null {
+  const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  const match = normalizedPath.match(/^\/games\/([^/]+)$/)
+  if (!match) return null
+  return Object.entries(gameRouteByProjectId).find(([, slug]) => slug === match[1])?.[0] ?? null
 }
 
 function getProjectIdFromPath(pathname: string): string | null {
@@ -190,7 +210,7 @@ function getCaseStudyForProject(projectId: string) {
 
 function App() {
   const [activeView, setActiveView] = useState<ViewKey>(() => getViewFromPath(window.location.pathname))
-  const [selectedId, setSelectedId] = useState(() => getProjectIdFromPath(window.location.pathname) ?? projects[0].id)
+  const [selectedId, setSelectedId] = useState(() => getProjectIdFromPath(window.location.pathname) ?? getGameProjectIdFromPath(window.location.pathname) ?? projects[0].id)
   const [selectedCaseId, setSelectedCaseId] = useState(() => getCaseIdFromPath(window.location.pathname) ?? caseStudies[0].id)
   const [siteTheme, setSiteTheme] = useState<SiteTheme>('light')
 
@@ -200,8 +220,10 @@ function App() {
   useEffect(() => {
     const handlePopState = () => {
       const nextProjectId = getProjectIdFromPath(window.location.pathname)
+      const nextGameProjectId = getGameProjectIdFromPath(window.location.pathname)
       const nextCaseId = getCaseIdFromPath(window.location.pathname)
       if (nextProjectId) setSelectedId(nextProjectId)
+      if (nextGameProjectId) setSelectedId(nextGameProjectId)
       if (nextCaseId) setSelectedCaseId(nextCaseId)
       setActiveView(getViewFromPath(window.location.pathname))
     }
@@ -233,6 +255,18 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const openGameDetail = (project: Project) => {
+    const gameSlug = getGameSlugByProjectId(project.id)
+    if (!gameSlug) return
+    const nextPath = `/games/${gameSlug}`
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState(null, '', nextPath)
+    }
+    setSelectedId(project.id)
+    setActiveView('gameDetail')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const openCaseDetail = (caseStudy: CaseStudy) => {
     const nextPath = `/cases/${caseStudy.id}`
     if (window.location.pathname !== nextPath) {
@@ -253,7 +287,7 @@ function App() {
 
         <nav className="site-nav" aria-label="主导航">
           {navItems.map((item) => (
-            <button key={item.key} className={(activeView === item.key || (activeView === 'caseDetail' && item.key === 'cases') || (activeView === 'projectDetail' && item.key === 'projects')) ? 'is-active' : ''} type="button" onClick={() => navigate(item.key)}>
+            <button key={item.key} className={(activeView === item.key || (activeView === 'caseDetail' && item.key === 'cases') || ((activeView === 'projectDetail' || activeView === 'gameDetail') && item.key === 'projects')) ? 'is-active' : ''} type="button" onClick={() => navigate(item.key)}>
               {item.icon}
               {item.label}
             </button>
@@ -265,8 +299,9 @@ function App() {
 
       <main className="site-main">
         {activeView === 'home' ? <HomeView onOpenCase={openCaseDetail} onOpenProject={openProject} /> : null}
-        {activeView === 'projects' ? <ProjectsView onOpenCase={openCaseDetail} onOpenProjectDetail={openProjectDetail} selectedProject={selectedProject} onSelectProject={setSelectedId} /> : null}
-        {activeView === 'projectDetail' ? <ProjectFullDetailView onBack={() => navigate('projects')} onOpenCase={openCaseDetail} project={selectedProject} /> : null}
+        {activeView === 'projects' ? <ProjectsView onOpenCase={openCaseDetail} onOpenGameDetail={openGameDetail} onOpenProjectDetail={openProjectDetail} selectedProject={selectedProject} onSelectProject={setSelectedId} /> : null}
+        {activeView === 'projectDetail' ? <ProjectFullDetailView onBack={() => navigate('projects')} onOpenCase={openCaseDetail} onOpenGameDetail={openGameDetail} project={selectedProject} /> : null}
+        {activeView === 'gameDetail' ? <GameShowcaseView onBack={() => navigate('projects')} onOpenProjectDetail={openProjectDetail} project={selectedProject} /> : null}
         {activeView === 'cases' ? <CasesView onOpenCase={openCaseDetail} onOpenProjectDetail={openProjectDetail} /> : null}
         {activeView === 'caseDetail' ? <CaseDetailView caseStudy={selectedCase} onBack={() => navigate('cases')} onOpenProject={(project) => openProjectDetail(project)} /> : null}
         {activeView === 'blog' ? <BlogView theme={siteTheme} /> : null}
@@ -436,7 +471,7 @@ function HomeView({ onOpenCase, onOpenProject }: { onOpenCase: (caseStudy: CaseS
   )
 }
 
-function ProjectsView({ onOpenCase, onOpenProjectDetail, onSelectProject, selectedProject }: { onOpenCase: (caseStudy: CaseStudy) => void; onOpenProjectDetail: (project: Project) => void; onSelectProject: (id: string) => void; selectedProject: Project }) {
+function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSelectProject, selectedProject }: { onOpenCase: (caseStudy: CaseStudy) => void; onOpenGameDetail: (project: Project) => void; onOpenProjectDetail: (project: Project) => void; onSelectProject: (id: string) => void; selectedProject: Project }) {
   const [activeGroup, setActiveGroup] = useState<ProjectGroupKey>(() => getGroupKeyByProjectId(selectedProject.id))
   const currentGroup = projectGroups.find((group) => group.key === activeGroup) ?? projectGroups[0]
   const groupedProjects = useMemo(
@@ -493,7 +528,7 @@ function ProjectsView({ onOpenCase, onOpenProjectDetail, onSelectProject, select
             </div>
           </div>
 
-          <ProjectDetail project={detailProject} onOpenCase={onOpenCase} onOpenProjectDetail={() => onOpenProjectDetail(detailProject)} />
+          <ProjectDetail project={detailProject} onOpenCase={onOpenCase} onOpenGameDetail={() => onOpenGameDetail(detailProject)} onOpenProjectDetail={() => onOpenProjectDetail(detailProject)} />
         </div>
 
         <div className="project-thumb-strip" aria-label={`${currentGroup.title}项目列表`}>
@@ -518,7 +553,7 @@ function ProjectsView({ onOpenCase, onOpenProjectDetail, onSelectProject, select
         <ProjectNarrative project={detailProject} onOpenCase={() => {
           const projectCase = getCaseStudyForProject(detailProject.id)
           if (projectCase) onOpenCase(projectCase)
-        }} onOpenProjectDetail={() => onOpenProjectDetail(detailProject)} />
+        }} onOpenGameDetail={() => onOpenGameDetail(detailProject)} onOpenProjectDetail={() => onOpenProjectDetail(detailProject)} />
       </section>
     </div>
   )
@@ -641,9 +676,10 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
   )
 }
 
-function ProjectNarrative({ onOpenCase, onOpenProjectDetail, project }: { onOpenCase: () => void; onOpenProjectDetail: () => void; project: Project }) {
+function ProjectNarrative({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, project }: { onOpenCase: () => void; onOpenGameDetail: () => void; onOpenProjectDetail: () => void; project: Project }) {
   const isLegalRag = project.id === 'legal-rag'
   const projectCase = getCaseStudyForProject(project.id)
+  const gameSlug = getGameSlugByProjectId(project.id)
   const narrative = isLegalRag
     ? {
         title: '项目完整介绍',
@@ -679,6 +715,7 @@ function ProjectNarrative({ onOpenCase, onOpenProjectDetail, project }: { onOpen
         <Space wrap>
           <Button theme="solid" type="primary" onClick={onOpenProjectDetail}>打开项目详情页</Button>
           {projectCase ? <Button onClick={onOpenCase}>查看对应案例</Button> : null}
+          {gameSlug ? <Button onClick={onOpenGameDetail}>进入游戏展示页</Button> : null}
         </Space>
       </div>
     </section>
@@ -928,8 +965,9 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
   }
 }
 
-function ProjectFullDetailView({ onBack, onOpenCase, project }: { onBack: () => void; onOpenCase: (caseStudy: CaseStudy) => void; project: Project }) {
+function ProjectFullDetailView({ onBack, onOpenCase, onOpenGameDetail, project }: { onBack: () => void; onOpenCase: (caseStudy: CaseStudy) => void; onOpenGameDetail: (project: Project) => void; project: Project }) {
   const projectCase = getCaseStudyForProject(project.id)
+  const gameSlug = getGameSlugByProjectId(project.id)
   const detail = getProjectDetailContent(project)
 
   return (
@@ -942,6 +980,7 @@ function ProjectFullDetailView({ onBack, onOpenCase, project }: { onBack: () => 
           <Space wrap>
             <Button theme="solid" type="primary" onClick={onBack}>返回项目系统</Button>
             {projectCase ? <Button onClick={() => onOpenCase(projectCase)}>查看对应案例</Button> : null}
+            {gameSlug ? <Button onClick={() => onOpenGameDetail(project)}>进入游戏展示页</Button> : null}
           </Space>
         </div>
         <div className="project-detail-media">
@@ -1001,6 +1040,159 @@ function ProjectFullDetailView({ onBack, onOpenCase, project }: { onBack: () => 
         </div>
         <div className="project-roadmap-grid">
           {detail.nextSteps.map((item, index) => (
+            <div key={item}>
+              <strong>{String(index + 1).padStart(2, '0')}</strong>
+              <span>{item}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
+type GameShowcaseContent = {
+  tagline: string
+  stage: string
+  gameplay: string[]
+  systems: Array<{ title: string; detail: string }>
+  integration: string[]
+}
+
+function getGameShowcaseContent(project: Project): GameShowcaseContent {
+  const gameContent: Record<string, GameShowcaseContent> = {
+    'game-first-tetris': {
+      tagline: '经典方块规则 + Rogue 原型验证，适合作为游戏项目的入门展示。',
+      stage: '已具备 Web 展示入口，后续补齐试玩包和移动端触控说明。',
+      gameplay: ['方块生成、移动、旋转、下落与消行', '分数、等级、速度递增和失败重开', 'Rogue 原型用于验证局外成长与随机增益', '触屏桥接和多尺寸回归用于移动端适配'],
+      systems: [
+        { title: '核心规则', detail: '围绕网格状态、碰撞检测、行消除和结算流程实现稳定闭环。' },
+        { title: '输入适配', detail: '保留键盘与触控两种输入方向，便于后续移动端展示。' },
+        { title: '回归验证', detail: '通过固定尺寸检查和运行记录沉淀可复现的展示质量。' },
+      ],
+      integration: ['补充 Web 构建包', '增加试玩按钮', '整理操作说明', '记录版本变化'],
+    },
+    'game-next-spacewar': {
+      tagline: '太空射击方向展示版，重点呈现敌人节奏、战斗反馈和关卡推进。',
+      stage: '适合作为 Spacewar 系列的主展示页，后续接入 Web 导出文件。',
+      gameplay: ['飞船移动、射击与规避', '敌人波次、关卡推进和结果反馈', '主菜单、设置、帮助、暂停与结算页面', '单局总结用于展示可复盘体验'],
+      systems: [
+        { title: '战斗循环', detail: '输入、发射、命中、受击、得分和结算构成完整单局。' },
+        { title: '页面状态', detail: '菜单、帮助、暂停、失败和结果页让项目更接近可发布版本。' },
+        { title: '展示包装', detail: '通过封面、说明和项目页跳转降低试玩前的理解成本。' },
+      ],
+      integration: ['接入导出目录', '补充主菜单截图', '加入试玩前加载状态', '整理关卡节奏说明'],
+    },
+    intespace: {
+      tagline: '空间探索与战斗方向的互动项目，用于展示实时操控和视觉包装能力。',
+      stage: '当前作为空间互动项目沉淀，后续补齐玩法截图和在线体验。',
+      gameplay: ['空间移动与方向控制', '探索、战斗反馈和场景切换', '视觉包装用于形成项目识别度', 'Web 页面承载项目说明和入口'],
+      systems: [
+        { title: '空间操控', detail: '重点验证角色或飞行器在空间场景中的移动反馈。' },
+        { title: '战斗反馈', detail: '通过命中、受击、特效和状态变化增强可感知性。' },
+        { title: '项目包装', detail: '展示页将玩法目标、截图证据和后续计划整理到同一入口。' },
+      ],
+      integration: ['补充运行截图', '整理核心场景', '接入 Web 试玩包', '完善项目复盘'],
+    },
+    'raiden-prototype': {
+      tagline: '短局街机纵版射击垂直切片，适合展示关卡、Boss 和火力成长。',
+      stage: '已经具备公开 Demo 准备口径，后续把试玩包接入本站。',
+      gameplay: ['双关章节与章节过场', '火力成长、资源决策和敌机压迫', 'Boss 收束形成阶段目标', '短局体验便于面试和线上展示'],
+      systems: [
+        { title: '章节结构', detail: 'Chapter Run 将推进、过场、Boss 和结算组织成可讲述流程。' },
+        { title: '火力成长', detail: '通过局内资源和火力变化提升单局反馈密度。' },
+        { title: 'Demo 准备', detail: '页面侧预留试玩、截图和版本说明入口，便于逐步公开。' },
+      ],
+      integration: ['接入公开 Demo', '补 Boss 截图', '整理操作说明', '增加版本状态'],
+    },
+    'space-war': {
+      tagline: '复古太空战斗项目，保留 Sector/Boss、程序化音效和独立发布文档。',
+      stage: '适合作为复古横向射击项目展示，后续补试玩和发布记录。',
+      gameplay: ['横向移动、射击和敌人压迫', 'Sector 推进与 Boss 收束', '程序化音效增强即时反馈', '发布文档记录项目阶段和导出方式'],
+      systems: [
+        { title: '战斗系统', detail: '移动、攻击、敌人、碰撞和结算形成基础战斗闭环。' },
+        { title: '阶段推进', detail: 'Sector 与 Boss 把单局拆成更容易理解的展示节奏。' },
+        { title: '发布材料', detail: '保留导出、说明和版本记录，方便后续部署成可试玩入口。' },
+      ],
+      integration: ['补充 Web 包', '整理发布日志', '增加试玩入口', '统一游戏封面'],
+    },
+  }
+
+  return gameContent[project.id] ?? {
+    tagline: `${project.title} 是一个互动体验项目，后续会补齐试玩入口、截图和版本记录。`,
+    stage: '展示页已准备好，等待接入 Web 构建产物。',
+    gameplay: project.highlights,
+    systems: project.highlights.map((item) => ({ title: item, detail: `围绕“${item}”整理玩法说明、交互反馈和实现记录。` })),
+    integration: ['补充截图', '接入试玩包', '完善操作说明', '沉淀复盘文章'],
+  }
+}
+
+function GameShowcaseView({ onBack, onOpenProjectDetail, project }: { onBack: () => void; onOpenProjectDetail: (project: Project) => void; project: Project }) {
+  const content = getGameShowcaseContent(project)
+
+  return (
+    <div className="game-showcase-page">
+      <section className="game-showcase-hero">
+        <div className="game-showcase-copy">
+          <Text type="tertiary">Playable Showcase</Text>
+          <Title heading={1}>{project.title}</Title>
+          <Paragraph>{content.tagline}</Paragraph>
+          <Space wrap>
+            <Button theme="solid" type="primary" onClick={() => onOpenProjectDetail(project)}>查看技术详情</Button>
+            <Button onClick={onBack}>返回项目系统</Button>
+          </Space>
+        </div>
+        <div className="game-showcase-stage">
+          <div className="panel-window-bar" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          {project.image ? <img src={project.image} alt={project.title} /> : <span>{project.title}</span>}
+          <div>
+            <strong>展示状态</strong>
+            <p>{content.stage}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="game-showcase-section">
+        <div className="project-detail-section-head">
+          <span className="section-pill">Gameplay</span>
+          <Title heading={2}>玩法体验</Title>
+        </div>
+        <div className="gameplay-list">
+          {content.gameplay.map((item, index) => (
+            <article key={item}>
+              <strong>{String(index + 1).padStart(2, '0')}</strong>
+              <p>{item}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="game-showcase-section">
+        <div className="project-detail-section-head">
+          <span className="section-pill">Systems</span>
+          <Title heading={2}>实现重点</Title>
+        </div>
+        <div className="game-system-grid">
+          {content.systems.map((item) => (
+            <article key={item.title}>
+              <Title heading={3}>{item.title}</Title>
+              <Paragraph>{item.detail}</Paragraph>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="game-showcase-section game-integration-section">
+        <div className="project-detail-section-head">
+          <span className="section-pill">Next</span>
+          <Title heading={2}>试玩接入计划</Title>
+        </div>
+        <div className="project-roadmap-grid">
+          {content.integration.map((item, index) => (
             <div key={item}>
               <strong>{String(index + 1).padStart(2, '0')}</strong>
               <span>{item}</span>
@@ -1235,8 +1427,9 @@ function HomeProjectCard({ onOpen, project }: { onOpen: () => void; project: Pro
   )
 }
 
-function ProjectDetail({ onOpenCase, onOpenProjectDetail, project }: { onOpenCase: (caseStudy: CaseStudy) => void; onOpenProjectDetail: () => void; project: Project }) {
+function ProjectDetail({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, project }: { onOpenCase: (caseStudy: CaseStudy) => void; onOpenGameDetail: () => void; onOpenProjectDetail: () => void; project: Project }) {
   const projectCase = getCaseStudyForProject(project.id)
+  const gameSlug = getGameSlugByProjectId(project.id)
 
   return (
     <aside className="project-stage-detail">
@@ -1258,8 +1451,15 @@ function ProjectDetail({ onOpenCase, onOpenProjectDetail, project }: { onOpenCas
       <Space wrap>
         <Button theme="solid" type="primary" onClick={onOpenProjectDetail}>查看项目详情页</Button>
         {projectCase ? <Button theme="light" type="primary" onClick={() => onOpenCase(projectCase)}>查看案例详情</Button> : null}
+        {gameSlug ? <Button theme="light" type="primary" onClick={onOpenGameDetail}>进入游戏展示页</Button> : null}
         {project.links.map((link) => (
-          <Button key={`${project.id}-${link.label}`} icon={link.type === 'external' ? <IconExternalOpen /> : <IconBriefcase />} onClick={() => { if (link.type === 'external') window.open(link.href, '_blank', 'noopener,noreferrer') }}>
+          <Button key={`${project.id}-${link.label}`} icon={link.type === 'external' ? <IconExternalOpen /> : <IconBriefcase />} onClick={() => {
+            if (link.href.startsWith('/games/')) {
+              onOpenGameDetail()
+              return
+            }
+            if (link.type === 'external') window.open(link.href, '_blank', 'noopener,noreferrer')
+          }}>
             {link.label}
           </Button>
         ))}
