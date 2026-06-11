@@ -810,57 +810,57 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
   if (project.id === 'legal-rag') {
     return {
       subtitle: 'RAG 合同审查全栈 MVP',
-      overview: '项目围绕法律合同审查建立完整业务闭环：导入合同文本，按条款切分，检索相关上下文，生成问答或审查结论，并用 citations 绑定来源片段，让 AI 输出可解释、可复核。',
+      overview: '项目围绕法律合同审查建立完整业务闭环：前端承载知识库、问答和审查工作台，后端负责文档导入、去重、清洗、条款级切分、向量召回、重排和引用溯源，让 AI 输出能被业务人员解释、复核和沉淀。',
       modules: [
-        { title: '知识库导入', detail: '导入合同文本并组织为可检索材料，为后续问答和审查提供上下文。' },
-        { title: '条款切分', detail: '将长合同拆成适合检索和引用的 chunk，保留条款语义和来源信息。' },
-        { title: 'RAG 问答', detail: '根据用户问题召回相关条款，生成回答并展示引用来源。' },
-        { title: '合同风险审查', detail: '围绕付款、交付、责任、解除等风险点输出等级、建议和引用。' },
+        { title: '知识库导入', detail: '导入合同文本后计算 SHA-256 指纹去重，清洗正文并保留来源、标题、章节和 chunk 元数据。' },
+        { title: '条款级切分', detail: '按章节和语义边界切分长合同，避免简单固定长度截断破坏付款、交付、违约和争议解决条款。' },
+        { title: 'RAG 问答', detail: '对问题做轻量改写，召回候选片段，经过阈值过滤和重排后生成答案，并把 citations 绑定到来源片段。' },
+        { title: '合同风险审查', detail: '用确定性规则覆盖付款、交付、违约责任、知识产权和争议管辖等风险项，输出风险等级、建议和引用。' },
       ],
       implementation: [
-        '前端用 Vue 3 实现合同审查工作台、知识库页面和问答页面。',
-        '后端用 Express + TypeScript 暴露文档、检索、问答和审查接口。',
-        'MVP 阶段使用 Mock Embedding 保证演示稳定，后续可替换真实向量数据库。',
-        '输出层将 answer、risk item、source chunk 和 citations 组织为前端可直接渲染的数据结构。',
+        '采用 apps/web、apps/api、packages/shared 的 monorepo 结构，前端 Vue 3 + Vite，后端 Express + TypeScript，共享请求和响应类型。',
+        'MVP 阶段使用可复现的 MockEmbeddingProvider 与内存向量库，保证本地演示稳定，也保留替换真实 Embedding 和 pgvector 的接口。',
+        '检索链路拆成 import、chunk、embed、retrieve、rerank、answer 多个阶段，方便定位召回不足、引用缺失或答案漂移问题。',
+        '合同审查输出保持结构化 JSON 和 Markdown 两种形态，页面可以直接渲染风险清单，后续也能扩展为报告导出。',
       ],
-      nextSteps: ['接入真实 Embedding 与向量数据库', '增加合同版本对比', '导出审查报告', '补充用户权限和审计日志'],
+      nextSteps: ['接入真实 Embedding 与 pgvector', '增加 PDF/DOCX 解析', '导出合同审查报告', '补充权限、审计和队列化导入'],
     }
   }
 
   if (project.id === 'ozon-erp') {
     return {
       subtitle: '电商 ERP 全栈业务系统',
-      overview: '项目面向小团队电商运营场景，组合 Vue 管理后台、Express API、Prisma/PostgreSQL、Redis/BullMQ Worker、WXT/MV3 浏览器插件和 shared types，覆盖店铺授权、商品同步、采集铺货、审批动作和审计日志。',
+      overview: '项目面向小团队电商运营场景，组合 Vue 管理后台、Express API、Prisma/PostgreSQL、Redis/BullMQ Worker、WXT/MV3 浏览器插件和 shared types，覆盖店铺、商品、订单、采集铺货、导入草稿、审批动作、任务队列和审计日志。',
       modules: [
-        { title: '管理后台', detail: 'apps/web 承载商品、订单、店铺、工具、设置、审批中心和任务中心等高频操作页面。' },
-        { title: 'API 与数据模型', detail: 'apps/api 使用 Express + Prisma 组织业务接口、数据库模型、Ozon API 适配和鉴权逻辑。' },
-        { title: 'Worker 与队列', detail: 'Redis/BullMQ 用于承接同步、采集、导入导出等长流程，避免所有动作阻塞在前端请求中。' },
-        { title: '浏览器插件', detail: 'apps/extension 使用 WXT/MV3 承接平台侧采集、铺货入口和版本检查能力。' },
+        { title: '管理后台', detail: 'apps/web 承载商品、订单、店铺、导入草稿、选品规则、工具、设置、审批中心和任务中心。' },
+        { title: 'API 与数据模型', detail: 'apps/api 使用 Express + Prisma 组织业务接口、数据库模型、平台 API 适配、利润计算和鉴权逻辑。' },
+        { title: 'Worker 与队列', detail: 'Redis/BullMQ 承接商品同步、订单同步、导入导出、采集处理和失败重试，避免长流程阻塞请求。' },
+        { title: '浏览器插件', detail: 'apps/extension 使用 WXT/MV3 承接平台侧采集、铺货入口、版本检查和与后台的动作协同。' },
       ],
       implementation: [
         '使用 monorepo 组织 web、api、extension、shared，前后端共享类型和利润/平台字段计算逻辑。',
-        '真实写入通过显式开关控制，并通过 PendingAction、JobQueue、审计日志沉淀可追踪链路。',
-        '部署文档覆盖本地 Docker、数据库迁移、容器云运行、插件版本发布和接手检查清单。',
-        '线上展示已排除真实店铺凭证、SFTP 信息、数据库连接、默认账号和生产端口等敏感内容。',
+        '真实写入通过环境开关控制，高风险动作进入 PendingAction，异步任务进入 JobQueue，并通过审计日志沉淀可追踪链路。',
+        '文档覆盖数据库备份迁移、容器环境部署、插件版本发布、Ozon 字段对齐、佣金覆盖和接手检查清单。',
+        '公开展示只保留业务模块、工程结构和脱敏流程，不展示真实店铺凭证、数据库连接、账号口令、服务器地址或生产端口。',
       ],
-      nextSteps: ['补充脱敏后台截图', '整理 Prisma ER 图', '沉淀插件采集链路案例', '补充队列失败重试与审计说明'],
+      nextSteps: ['补充脱敏后台截图', '整理 Prisma ER 图', '沉淀插件采集链路案例', '补充队列失败重试和审计说明'],
     }
   }
 
   if (project.id === 'pet-workspace') {
     return {
       subtitle: 'AI 宠物生成与审核管线',
-      overview: 'Pet Workspace 不是单个仓库，而是 AI 宠物相关项目工作区：gamer 负责 App-facing 能力，fantasy-pet-rule 负责生成管线、Worker 编排、QA Gate 和公开 API 契约，Android 与本地 HidenCloud 替代环境负责联调验证。',
+      overview: 'Pet Workspace 不是单个仓库，而是 AI 宠物相关项目工作区：gamer 负责 App-facing 能力、社区 API 和审核后台，fantasy-pet-rule 负责生成管线、Worker 编排、QA Gate、任务包和公开 API 契约，Android 与本地云环境负责联调验证。',
       modules: [
-        { title: 'App-facing 工作区', detail: 'gamer 承载社区 API、管理审核 UI、共享包和 App 集成测试。' },
-        { title: '生成服务管线', detail: 'fantasy-pet-rule 组织生成任务、服务端 QA gates、任务包、审核决策和产物索引。' },
+        { title: 'App-facing 工作区', detail: 'gamer 承载社区 API、管理审核 UI、宠物生成服务、共享包和 App 集成测试。' },
+        { title: '生成服务管线', detail: 'fantasy-pet-rule 组织生成任务、Worker 编排、服务端 QA gates、任务包、审核决策和产物索引。' },
         { title: 'Android 验证', detail: 'floating-pet-android 验证悬浮窗权限、前台服务、位置恢复、本地证明和事件哈希链。' },
-        { title: '联调环境', detail: 'gamer-hidencloud-local 使用本地 Docker 替代不稳定云端服务，并代理生成 API。' },
+        { title: '联调环境', detail: '本地 Docker 环境用于替代不稳定云端依赖，代理生成 API，并验证 App、服务端和审核流联动。' },
       ],
       implementation: [
         '用任务状态和产物 manifest 管理生成过程，避免一次性出图流程无法追踪。',
         '通过 QA Gate、人审决策和发布记录，把生成资产进入 App 的路径拆成可审计阶段。',
-        'Android 端验证悬浮窗、通知、前台服务和真实设备/模拟器验收流程。',
+        'Android 端验证悬浮窗、通知、前台服务、权限恢复和真实设备/模拟器验收流程。',
         '线上展示只保留工程结构和流程，不暴露云端 API、任务 JSON、模型缓存或候选素材中的敏感信息。',
       ],
       nextSteps: ['补充审核后台截图', '整理生成任务状态图', '补充 App API 契约说明', '增加典型生成案例复盘'],
@@ -870,11 +870,11 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
   if (project.id === 'xunqiu') {
     return {
       subtitle: '移动端业务系统整理与 64 位重构',
-      overview: 'Xunqiu 是一个多端历史项目集合，包含 Android、iOS、Java Spring 服务端、康复服务端、发布包和迁移文档。当前展示重点放在 64 位 Android 新客户端、服务端接口复用、移动端模块梳理和发布验收流程。',
+      overview: 'Xunqiu 是一个多端历史项目集合，包含旧 Android、新 64 位 Android、iOS、Java Spring 服务端、后台/H5、发布包和迁移文档。当前展示重点放在 64 位 Android 新客户端、服务端接口复用、移动端业务模块梳理和发布验收流程。',
       modules: [
         { title: 'Android 64 位客户端', detail: '新客户端复用既有服务端接口，逐步替换旧 32 位工程，并拆分为 MainActivity 与多个原生页面模块。' },
-        { title: '移动端功能模块', detail: '覆盖登录、首页、动态、社区、赛程、赛事、商品、个人页和短视频播放/发布。' },
-        { title: 'Java 服务端', detail: '历史服务端为 Maven WAR + Spring MVC/Security + MySQL/Redis，包含 App API、后台管理和 H5 页面。' },
+        { title: '移动端功能模块', detail: '覆盖登录注册、球队、比赛、场地、视频、支付、商城、转会市场、约战、话题、投票和聊天等业务。' },
+        { title: 'Java 服务端', detail: '历史服务端为 Maven WAR + Spring MVC/Security + MySQL/Redis，包含 App API、后台管理、H5 页面和第三方服务接入。' },
         { title: '发布验收', detail: 'docs 中沉淀 Android 打包、阶段 APK、真机/模拟器验证、视频流和上传链路检查。' },
       ],
       implementation: [
@@ -890,7 +890,7 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
   if (project.id === 'game-first-tetris') {
     return {
       subtitle: 'Godot 4 Tetris 可试玩原型',
-      overview: '项目基于 Godot 4，保留经典俄罗斯方块主线和 Rogue 原型实验线，已经形成主菜单、经典模式、Rogue 三选一、局间承接、暂停、Help、响应式布局和触屏输入桥接。',
+      overview: '项目基于 Godot 4，保留经典俄罗斯方块主线和 Rogue 原型实验线，已经形成主菜单、经典模式、Rogue 三选一、局间承接、暂停、Help、响应式布局、触屏输入桥接和截图回归检查。',
       modules: [
         { title: '经典模式', detail: '标准俄罗斯方块主循环，包含移动、旋转、软降、硬降、Hold、消行、得分和重开。' },
         { title: 'Rogue 原型', detail: '开局和局内固定触发三选一强化，并保留最小局间带入。' },
@@ -910,7 +910,7 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
   if (project.id === 'raiden-prototype') {
     return {
       subtitle: 'Godot 4 纵版射击展示候选版',
-      overview: 'Raiden Prototype 是短局街机射击垂直切片，用来验证双关章节、火力成长、资源决策、Boss 收束、章节过场和公开 Demo 准备流程。',
+      overview: 'Raiden Prototype 是短局街机纵版射击垂直切片，用来验证双关章节、火力成长、资源决策、Boss 收束、章节过场、双语界面、headless/autoplay 验证和公开 Demo 准备流程。',
       modules: [
         { title: '双关章节', detail: 'Chapter Run 串联 Stage 01、结果页、ChapterBriefing、Stage 02、ChapterEnding 和 ChapterOutro。' },
         { title: '战斗系统', detail: '包含玩家移动、自动射击、受伤、死亡、敌群编排、掉落升级和炸弹清屏。' },
@@ -927,23 +927,103 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
     }
   }
 
-  if (project.id === 'game-next-spacewar' || project.id === 'intespace' || project.id === 'space-war') {
+  if (project.id === 'game-next-spacewar') {
     return {
-      subtitle: project.role,
-      overview: `${project.title} 是 Godot 互动体验项目，重点展示主菜单、战斗流程、暂停/帮助、结果页、Web 或桌面展示构建，以及围绕玩法闭环的阶段文档。`,
+      subtitle: 'Godot 4.6 太空射击展示构建',
+      overview: 'game-next-spacewar 是 Spacewar 系列的下一版展示工程，重点不是单个战斗场景，而是把主菜单、设置、About/Help、首次按键提示、暂停返回、结果页、session summary 和 showcase build 标记组织成一条更完整的试玩路径。',
       modules: [
-        { title: '玩法闭环', detail: '围绕首页、战斗、升级或关卡推进、结算、重开和帮助入口组织玩家体验。' },
-        { title: 'Godot 工程', detail: '保留 project.godot、scenes、scripts、assets、docs 和 export_presets 等标准工程结构。' },
-        { title: '展示构建', detail: '通过 README、导出预设、验证日志或发布包说明展示项目阶段。' },
-        { title: '验证记录', detail: '使用 headless、自检脚本、人工回归或阶段日志记录版本稳定性。' },
+        { title: '首屏与菜单', detail: 'Main Menu、Settings、About、Help 和首次按键提示共同构成试玩前的信息入口。' },
+        { title: '战斗体验', detail: '围绕玩家移动、射击、敌人目标、障碍物、命中反馈和单局压力构成核心循环。' },
+        { title: '结果复盘', detail: '独立结果页展示 session summary，让每次试玩都有明确的完成、失败和返回路径。' },
+        { title: '展示版本', detail: 'README、阶段说明和 showcase build id 用于说明当前版本状态，便于后续接入 Web 包。' },
       ],
       implementation: [
-        `项目技术栈以 ${project.stack.join('、')} 为主，重点关注玩法体验和可展示构建。`,
-        '场景层承载菜单、战斗和结果页；脚本层拆分实体、关卡、UI 和全局状态。',
-        '文档层记录项目方向、阶段进度、验证方式和下一步试玩计划。',
+        'Godot 4.6.1 工程按 player、bullet、enemy_target、obstacle、main_menu、run_result 等脚本拆分核心职责。',
+        '页面状态从菜单、帮助、暂停、战斗到结果页形成闭环，减少玩家进入试玩后的迷失感。',
+        '当前阶段偏向 M14 review / PR prep，重点把展示说明、版本标记和可复盘路径补齐。',
         '线上展示不复制本地日志全文，只沉淀可公开的玩法、结构和验证结论。',
       ],
-      nextSteps: ['补充代表性截图', '整理 Web 试玩入口', '统一操作说明', '沉淀一页游戏项目复盘'],
+      nextSteps: ['补充主菜单和结果页截图', '接入 Web 试玩包', '整理首次试玩操作说明', '沉淀 Spacewar 系列演进复盘'],
+    }
+  }
+
+  if (project.id === 'intespace') {
+    return {
+      subtitle: '竖屏自动射击 Roguelite 系统收口',
+      overview: 'intespace 是 Godot 竖屏自动射击 Roguelite，定位上用武器树承担路线构筑，用移动端优先的战斗节奏承接局内升级和局外成长。项目当前的重点是把 Home、Combat、Upgrade、Results、Growth、Next run 串成稳定闭环。',
+      modules: [
+        { title: '武器树系统', detail: 'weapon_tree 与升级面板负责局内路线选择，当前 v1 结构已冻结，适合展示系统设计和迭代收口。' },
+        { title: '战斗模式', detail: 'survival_mode、boss_trial、chapter_one 等脚本承载自动射击、生存压力、Boss 和章节推进。' },
+        { title: '局外成长', detail: '主菜单、meta progression、HUD 和 codex 负责把单局结果带回成长层，形成下一局动机。' },
+        { title: '多端路线', detail: '项目方向是移动端优先，再接 Web demo 和 Windows 版本，文档中保留大量阶段日志和集成试玩准备。' },
+      ],
+      implementation: [
+        'Godot 工程将 game_session、audio_director 等全局状态与战斗脚本、UI 脚本分层，便于持续扩展玩法模式。',
+        '系统文档从方向路线图、武器冻结审计到集成试玩准备都有记录，适合讲清楚从原型到可测版本的过程。',
+        '玩法上强调“局内构筑 + 局外成长”，比单纯射击 Demo 更适合作为游戏系统设计案例。',
+        '公开展示只抽取玩法结构、模块职责和验证结论，不暴露本地构建产物、工具路径或中间素材。',
+      ],
+      nextSteps: ['补充武器树可视化', '接入 Web demo', '整理移动端操作说明', '沉淀集成试玩反馈'],
+    }
+  }
+
+  if (project.id === 'space-war') {
+    return {
+      subtitle: '复古横向太空射击完整发布版',
+      overview: 'space-war 是 Godot 4.6 复古横向射击项目，参考 Space Impact 式短局压力，已经形成主菜单、横向自动推进、敌人波次、Sector/Boss、道具、受伤死亡、暂停、结果页、高分和基础音效的完整可发布闭环。',
+      modules: [
+        { title: '战斗闭环', detail: '玩家移动、射击、敌人、碰撞、受伤、死亡、重开和结果页构成完整单局。' },
+        { title: '关卡推进', detail: '两个 Sector、四类敌人、三类 powerup 和两个差异化 Boss 组织短局节奏。' },
+        { title: '复古表现', detail: '低色 LCD 质感、程序化 SFX 和基础音乐强化复古掌机式即时反馈。' },
+        { title: '发布材料', detail: 'docs 保留发布清单、分发指南、最终总结、试玩报告和媒体截图，说明项目已从原型走到可展示版本。' },
+      ],
+      implementation: [
+        'Godot 工程按 scenes/game、scenes/ui、scenes/entities 和 scripts/game 拆分菜单、战斗、实体、调度与结算。',
+        'stage_schedule、stage_catalog、run_balance 和 game_session 共同管理关卡节奏、敌人配置、运行数据和高分。',
+        'Windows 导出和发布文档已经验证，后续接入本站时更像“完整小游戏展示”，不是纯概念原型。',
+        '公开展示只保留玩法结构、导出状态和可分享截图，不暴露本地发布目录或构建脚本细节。',
+      ],
+      nextSteps: ['接入 Web 试玩入口', '补充发布截图矩阵', '整理 Sector/Boss 设计说明', '沉淀复古射击复盘文章'],
+    }
+  }
+
+  if (project.id === 'biau-playlab') {
+    return {
+      subtitle: 'Astro 内容站与游戏展示旧系统',
+      overview: 'Biau Playlab 是旧版 Astro 静态内容站，承担文章、开发日志、游戏页面、项目页、RSS、sitemap、SEO 元信息和 Godot Web 展示入口的组织工作。它现在更适合作为内容资产来源和迁移参考，而不是继续承载主站演进。',
+      modules: [
+        { title: '内容集合', detail: '使用 Astro Content Collections 管理文章、游戏介绍、开发日志和项目内容，便于生成详情页、标签页和 RSS。' },
+        { title: '游戏展示', detail: 'games 内容目录沉淀 first-tetris、next-spacewar、intespace、raiden、space-war 的试玩说明、截图和嵌入入口。' },
+        { title: '站点基础设施', detail: 'BaseLayout、Nav、ArticleCard、GameCard、ContentToc 等组件负责 SEO、导航、文章阅读和内容目录。' },
+        { title: '部署与资产', detail: 'Cloudflare Pages 文档、R2 试玩包上传说明和内容审计脚本，用于降低静态站发布和大文件管理风险。' },
+      ],
+      implementation: [
+        'Astro 适合文章与静态内容生成，旧站保留了内容分类、文章路由、游戏路由、sitemap、robots 和 RSS 等基础能力。',
+        'Godot Web 包从站点仓库中拆出，改为独立准备上传目录，避免大体积构建产物影响 Pages 构建。',
+        '工具脚本覆盖站点内容审计、项目展示图生成、试玩视频渲染和共享字体同步，形成迁移当前 React 站的素材来源。',
+        '公开说明中只保留内容架构和部署策略，不展示本地路径字段、真实仓库敏感设置或临时 output 产物。',
+      ],
+      nextSteps: ['迁移可复用文章内容', '提炼游戏页面素材', '归档旧站部署说明', '把内容审计脚本改造成当前站检查工具'],
+    }
+  }
+
+  if (project.id === 'blog-semi') {
+    return {
+      subtitle: 'React + Semi 动态展示系统',
+      overview: 'Biau Blog 是当前主站，基于 React、Vite、TypeScript 和 Semi Design 重写，用首页、项目、案例、博客和详情路由把 AI 应用、全栈系统、游戏项目和学习内容拆成更正式的产品展示结构，并通过 GitHub 到 Cloudflare Pages 自动更新。',
+      modules: [
+        { title: '信息架构', detail: '导航拆分首页、项目、案例和博客，避免旧版所有内容挤在单页，项目与案例拥有独立详情 URL。' },
+        { title: '项目系统', detail: 'projects 数据驱动分类、卡片、项目详情、游戏展示页和案例跳转，便于持续补充内容。' },
+        { title: '视觉系统', detail: 'Semi 组件提供基础交互，定制 CSS 负责官网化首屏、宽版心、浅暗主题、矩阵卡片和详情页节奏。' },
+        { title: '发布链路', detail: 'Vite 构建产物发布到 Cloudflare Pages，main 分支推送后自动构建并更新绑定域名。' },
+      ],
+      implementation: [
+        '当前实现以 src/App.tsx 组织路由状态、项目/案例/游戏/博客详情视图，src/data/portfolio.ts 管理公开项目数据。',
+        '详情页统一 Project Detail、Case Detail、Playable Showcase、Blog Article 四类页面模型，按钮按项目、案例和游戏关系互相跳转。',
+        '样式层用全局 token 控制背景、版心、字号、卡片和暗色主题，后续可以继续拆组件而不改变页面结构。',
+        '公开站点只保存脱敏后的项目描述、截图和部署说明，不把本地路径、账号、密钥、真实服务配置写入前端数据。',
+      ],
+      nextSteps: ['拆分 App.tsx 为页面组件', '补充内容搜索和标签过滤', '接入更多博客文章', '增加部署状态和版本记录'],
     }
   }
 
@@ -1149,26 +1229,26 @@ function getGameShowcaseContent(project: Project): GameShowcaseContent {
       integration: ['补充 Web 构建包', '增加试玩按钮', '整理操作说明', '记录版本变化'],
     },
     'game-next-spacewar': {
-      tagline: '太空射击方向展示版，重点呈现敌人节奏、战斗反馈和关卡推进。',
-      stage: '适合作为 Spacewar 系列的主展示页，后续接入 Web 导出文件。',
-      gameplay: ['飞船移动、射击与规避', '敌人波次、关卡推进和结果反馈', '主菜单、设置、帮助、暂停与结算页面', '单局总结用于展示可复盘体验'],
+      tagline: 'Spacewar 系列的展示构建，重点把主菜单、帮助、暂停、结果页和单局复盘接成一条完整试玩路径。',
+      stage: '当前处于 M14 review / PR prep 口径，适合作为下一版 Spacewar 展示页，后续接入 Web 导出文件。',
+      gameplay: ['飞船移动、射击、规避和命中反馈', '敌人目标、障碍物和短局压力组织战斗节奏', '主菜单、设置、About、Help、首次按键提示和暂停返回', '结果页与 session summary 让试玩过程可复盘'],
       systems: [
-        { title: '战斗循环', detail: '输入、发射、命中、受击、得分和结算构成完整单局。' },
-        { title: '页面状态', detail: '菜单、帮助、暂停、失败和结果页让项目更接近可发布版本。' },
-        { title: '展示包装', detail: '通过封面、说明和项目页跳转降低试玩前的理解成本。' },
+        { title: '战斗循环', detail: 'player、bullet、enemy_target 和 obstacle 共同承担输入、发射、命中、规避和结算。' },
+        { title: '页面状态', detail: '菜单、帮助、暂停、失败和结果页让项目从“能玩”推进到“能展示”。' },
+        { title: '展示包装', detail: 'showcase build 标记、README 和阶段说明用于讲清楚当前版本的可演示范围。' },
       ],
-      integration: ['接入导出目录', '补充主菜单截图', '加入试玩前加载状态', '整理关卡节奏说明'],
+      integration: ['接入 Web 导出目录', '补充主菜单和结果页截图', '加入试玩前加载状态', '整理关卡节奏说明'],
     },
     intespace: {
-      tagline: '空间探索与战斗方向的互动项目，用于展示实时操控和视觉包装能力。',
-      stage: '当前作为空间互动项目沉淀，后续补齐玩法截图和在线体验。',
-      gameplay: ['空间移动与方向控制', '探索、战斗反馈和场景切换', '视觉包装用于形成项目识别度', 'Web 页面承载项目说明和入口'],
+      tagline: '竖屏自动射击 Roguelite，围绕武器树、局内升级和局外成长收口完整运行链路。',
+      stage: '武器系统 v1 已进入结构冻结阶段，当前重点是 Home -> Combat -> Upgrade -> Results -> Growth -> Next run 的集成试玩。',
+      gameplay: ['竖屏移动、自动射击、生存压力和 Boss 试炼', '武器树路线构筑与局内升级选择', '结果页、局外成长和下一局动机构成 Roguelite 闭环', '移动端优先，再扩展 Web demo 与 Windows 展示版本'],
       systems: [
-        { title: '空间操控', detail: '重点验证角色或飞行器在空间场景中的移动反馈。' },
-        { title: '战斗反馈', detail: '通过命中、受击、特效和状态变化增强可感知性。' },
-        { title: '项目包装', detail: '展示页将玩法目标、截图证据和后续计划整理到同一入口。' },
+        { title: '武器树', detail: 'weapon_tree 和升级面板承载路线构筑，是项目区别于普通射击 Demo 的核心。' },
+        { title: '运行模式', detail: 'survival_mode、boss_trial 和 chapter_one 负责生存、Boss 与章节节奏。' },
+        { title: '成长闭环', detail: 'game_session、HUD、主菜单和 meta progression 把单局结果带回局外成长。' },
       ],
-      integration: ['补充运行截图', '整理核心场景', '接入 Web 试玩包', '完善项目复盘'],
+      integration: ['补充武器树截图', '整理核心运行链路', '接入 Web 试玩包', '沉淀集成试玩复盘'],
     },
     'raiden-prototype': {
       tagline: '短局街机纵版射击垂直切片，适合展示关卡、Boss 和火力成长。',
@@ -1182,15 +1262,15 @@ function getGameShowcaseContent(project: Project): GameShowcaseContent {
       integration: ['接入公开 Demo', '补 Boss 截图', '整理操作说明', '增加版本状态'],
     },
     'space-war': {
-      tagline: '复古太空战斗项目，保留 Sector/Boss、程序化音效和独立发布文档。',
-      stage: '适合作为复古横向射击项目展示，后续补试玩和发布记录。',
-      gameplay: ['横向移动、射击和敌人压迫', 'Sector 推进与 Boss 收束', '程序化音效增强即时反馈', '发布文档记录项目阶段和导出方式'],
+      tagline: '复古横向太空射击完整版本，保留 Sector/Boss、道具、结果页、高分和独立发布文档。',
+      stage: '已形成可玩、可导出、可说明的发布质量小项目，后续重点是把 Web 试玩入口接入本站。',
+      gameplay: ['横向自动推进、移动、射击和敌人压迫', '两个 Sector、四类敌人、三类道具和两个差异化 Boss', '受伤、死亡、暂停、结果页和高分构成完整闭环', '低色 LCD 氛围与程序化音效形成复古识别度'],
       systems: [
-        { title: '战斗系统', detail: '移动、攻击、敌人、碰撞和结算形成基础战斗闭环。' },
-        { title: '阶段推进', detail: 'Sector 与 Boss 把单局拆成更容易理解的展示节奏。' },
-        { title: '发布材料', detail: '保留导出、说明和版本记录，方便后续部署成可试玩入口。' },
+        { title: '战斗系统', detail: 'scenes/entities 与 scripts/game 拆分玩家、敌人、碰撞、调度和结算职责。' },
+        { title: '阶段推进', detail: 'stage_schedule、stage_catalog 和 run_balance 管理敌人波次、Sector 和 Boss 节奏。' },
+        { title: '发布材料', detail: '最终总结、发布清单、分发指南和试玩报告说明项目已经完成可展示闭环。' },
       ],
-      integration: ['补充 Web 包', '整理发布日志', '增加试玩入口', '统一游戏封面'],
+      integration: ['接入 Web 包', '整理发布日志', '增加试玩入口', '统一游戏封面'],
     },
   }
 

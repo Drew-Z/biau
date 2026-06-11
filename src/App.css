@@ -9,6 +9,11 @@
   --site-gradient: linear-gradient(135deg, #0052ff, #4d7cff);
   --site-shadow: 0 20px 25px rgba(15, 23, 42, 0.08);
   --site-shadow-accent: 0 18px 44px rgba(0, 82, 255, 0.18);
+  --detail-hero-title-size: 4.4rem;
+  --detail-section-title-size: 2.35rem;
+  --detail-card-title-size: 1.22rem;
+  --detail-body-size: 1.08rem;
+  --detail-body-line: 1.86;
   color: #101828;
   background: #fff;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -2600,8 +2605,8 @@ textarea {
   max-width: 980px;
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(3rem, 5vw, 6.2rem);
-  line-height: 1;
+  font-size: var(--detail-hero-title-size);
+  line-height: 1.03;
   letter-spacing: 0;
 }
 
@@ -2609,8 +2614,8 @@ textarea {
   max-width: 780px;
   margin: 0;
   color: var(--site-muted);
-  font-size: clamp(1.05rem, 1.2vw, 1.22rem);
-  line-height: 1.9;
+  font-size: var(--detail-body-size);
+  line-height: var(--detail-body-line);
 }
 
 .blog-article-layout {
@@ -2659,16 +2664,16 @@ textarea {
 .blog-article-content h2 {
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(1.8rem, 2.8vw, 3.2rem);
-  line-height: 1.1;
+  font-size: var(--detail-section-title-size);
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
 .blog-article-content p {
   margin: 0;
   color: var(--site-muted);
-  font-size: 1.08rem;
-  line-height: 2;
+  font-size: var(--detail-body-size);
+  line-height: var(--detail-body-line);
 }
 
 .blog-article-takeaways {
@@ -3076,8 +3081,8 @@ textarea {
 .project-detail-copy h1 {
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(3rem, 5.4vw, 6.7rem);
-  line-height: 0.98;
+  font-size: var(--detail-hero-title-size);
+  line-height: 1.03;
   letter-spacing: 0;
 }
 
@@ -3085,8 +3090,8 @@ textarea {
   max-width: 780px;
   margin: 0;
   color: var(--site-muted);
-  font-size: clamp(1.06rem, 1.22vw, 1.24rem);
-  line-height: 1.9;
+  font-size: var(--detail-body-size);
+  line-height: var(--detail-body-line);
 }
 
 .project-detail-media {
@@ -3156,8 +3161,8 @@ textarea {
 .project-detail-section h2 {
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(2rem, 3vw, 4rem);
-  line-height: 1.08;
+  font-size: var(--detail-section-title-size);
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
@@ -3186,14 +3191,16 @@ textarea {
 .project-module-grid h3 {
   margin: 0;
   color: var(--site-text);
-  font-size: 1.28rem;
+  font-size: var(--detail-card-title-size);
+  line-height: 1.22;
 }
 
 .project-module-grid p,
 .project-implementation-list p {
   margin: 0;
   color: var(--site-muted);
-  line-height: 1.8;
+  font-size: 1rem;
+  line-height: 1.82;
 }
 
 .project-implementation-list {
@@ -3221,13 +3228,13 @@ textarea {
 
 .project-roadmap-grid strong {
   color: var(--site-accent);
-  font-size: 1.6rem;
+  font-size: 1.42rem;
   line-height: 1;
 }
 
 .project-roadmap-grid span {
   color: var(--site-text);
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 900;
 }
 
@@ -3301,8 +3308,8 @@ textarea {
 .game-showcase-copy h1 {
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(3rem, 5.2vw, 6.4rem);
-  line-height: 0.98;
+  font-size: var(--detail-hero-title-size);
+  line-height: 1.03;
   letter-spacing: 0;
 }
 
@@ -3310,8 +3317,8 @@ textarea {
   max-width: 760px;
   margin: 0;
   color: var(--site-muted);
-  font-size: clamp(1.06rem, 1.22vw, 1.24rem);
-  line-height: 1.9;
+  font-size: var(--detail-body-size);
+  line-height: var(--detail-body-line);
 }
 
 .game-showcase-stage {
@@ -3375,8 +3382,8 @@ textarea {
 .game-showcase-section h2 {
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(2rem, 3vw, 4rem);
-  line-height: 1.08;
+  font-size: var(--detail-section-title-size);
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
@@ -3403,14 +3410,14 @@ textarea {
 
 .gameplay-list strong {
   color: var(--site-accent);
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   line-height: 1;
 }
 
 .gameplay-list p {
   margin: 0;
   color: var(--site-text);
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 800;
   line-height: 1.65;
 }
@@ -3432,13 +3439,15 @@ textarea {
 .game-system-grid h3 {
   margin: 0;
   color: var(--site-text);
-  font-size: 1.28rem;
+  font-size: var(--detail-card-title-size);
+  line-height: 1.22;
 }
 
 .game-system-grid p {
   margin: 0;
   color: var(--site-muted);
-  line-height: 1.8;
+  font-size: 1rem;
+  line-height: 1.82;
 }
 
 .site-theme-dark .game-showcase-page {
@@ -3623,8 +3632,8 @@ textarea {
 .case-detail-copy h1 {
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(3.4rem, 5.8vw, 7.2rem);
-  line-height: 0.98;
+  font-size: var(--detail-hero-title-size);
+  line-height: 1.03;
   letter-spacing: 0;
 }
 
@@ -3632,8 +3641,8 @@ textarea {
   max-width: 780px;
   margin: 0;
   color: var(--site-muted);
-  font-size: clamp(1.08rem, 1.25vw, 1.28rem);
-  line-height: 1.9;
+  font-size: var(--detail-body-size);
+  line-height: var(--detail-body-line);
 }
 
 .case-detail-hero-panel {
@@ -3676,7 +3685,7 @@ textarea {
 
 .case-detail-stats strong {
   color: var(--site-text);
-  font-size: clamp(2.1rem, 3vw, 4rem);
+  font-size: 2.35rem;
   line-height: 1;
 }
 
@@ -3701,8 +3710,8 @@ textarea {
 .case-detail-section h2 {
   margin: 0;
   color: var(--site-text);
-  font-size: clamp(2rem, 3vw, 4rem);
-  line-height: 1.08;
+  font-size: var(--detail-section-title-size);
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
@@ -3739,7 +3748,8 @@ textarea {
 
 .case-problem-grid strong {
   color: var(--site-text);
-  font-size: 1.2rem;
+  font-size: var(--detail-card-title-size);
+  line-height: 1.22;
 }
 
 .case-problem-grid p,
@@ -3748,13 +3758,16 @@ textarea {
 .case-talking-list p {
   margin: 0;
   color: var(--site-muted);
-  line-height: 1.8;
+  font-size: 1rem;
+  line-height: 1.82;
 }
 
 .case-architecture-grid h3,
 .case-image-grid h3 {
   margin: 0;
   color: var(--site-text);
+  font-size: var(--detail-card-title-size);
+  line-height: 1.22;
 }
 
 .case-workflow {
@@ -3778,13 +3791,13 @@ textarea {
 
 .case-workflow strong {
   color: var(--site-accent);
-  font-size: 1.6rem;
+  font-size: 1.42rem;
   line-height: 1;
 }
 
 .case-workflow span {
   color: var(--site-text);
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 900;
 }
 
@@ -3929,13 +3942,17 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  :root {
+    --detail-hero-title-size: 2.75rem;
+    --detail-section-title-size: 2rem;
+    --detail-card-title-size: 1.14rem;
+    --detail-body-size: 1rem;
+    --detail-body-line: 1.78;
+  }
+
   .case-detail-page {
     gap: 24px;
     padding: 56px 16px 78px;
-  }
-
-  .case-detail-copy h1 {
-    font-size: clamp(2.75rem, 15vw, 4.5rem);
   }
 
   .case-detail-hero-panel img,
@@ -3960,10 +3977,6 @@ textarea {
     padding: 56px 16px 78px;
   }
 
-  .project-detail-copy h1 {
-    font-size: clamp(2.55rem, 14vw, 4.2rem);
-  }
-
   .project-detail-media img,
   .project-detail-media > span {
     height: 300px;
@@ -3984,10 +3997,6 @@ textarea {
     padding: 56px 16px 78px;
   }
 
-  .game-showcase-copy h1 {
-    font-size: clamp(2.55rem, 14vw, 4.2rem);
-  }
-
   .game-showcase-stage img,
   .game-showcase-stage > span {
     height: 300px;
@@ -4005,10 +4014,6 @@ textarea {
   .blog-article-page {
     gap: 24px;
     padding: 56px 16px 78px;
-  }
-
-  .blog-article-hero h1 {
-    font-size: clamp(2.55rem, 14vw, 4.2rem);
   }
 
   .blog-article-content {
