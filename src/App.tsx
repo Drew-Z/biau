@@ -6,8 +6,8 @@ import './App.css'
 
 const { Title, Text, Paragraph } = Typography
 
-type ViewKey = 'home' | 'projects' | 'projectDetail' | 'gameDetail' | 'cases' | 'caseDetail' | 'blog'
-type NavViewKey = Exclude<ViewKey, 'projectDetail' | 'gameDetail' | 'caseDetail'>
+type ViewKey = 'home' | 'projects' | 'projectDetail' | 'gameDetail' | 'cases' | 'caseDetail' | 'blog' | 'blogDetail'
+type NavViewKey = Exclude<ViewKey, 'projectDetail' | 'gameDetail' | 'caseDetail' | 'blogDetail'>
 type ProjectGroupKey = 'ai' | 'fullstack' | 'games'
 type SiteTheme = 'light' | 'dark'
 
@@ -35,6 +35,7 @@ function getViewFromPath(pathname: string): ViewKey {
   if (/^\/projects\/[^/]+$/.test(normalizedPath)) return 'projectDetail'
   if (/^\/games\/[^/]+$/.test(normalizedPath)) return 'gameDetail'
   if (/^\/cases\/[^/]+$/.test(normalizedPath)) return 'caseDetail'
+  if (/^\/blogs\/[^/]+$/.test(normalizedPath)) return 'blogDetail'
   return viewByRoute.get(normalizedPath) ?? 'home'
 }
 
@@ -66,6 +67,12 @@ function getProjectIdFromPath(pathname: string): string | null {
 function getCaseIdFromPath(pathname: string): string | null {
   const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
   const match = normalizedPath.match(/^\/cases\/([^/]+)$/)
+  return match?.[1] ?? null
+}
+
+function getBlogSlugFromPath(pathname: string): string | null {
+  const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  const match = normalizedPath.match(/^\/blogs\/([^/]+)$/)
   return match?.[1] ?? null
 }
 
@@ -104,6 +111,60 @@ function getGroupKeyByProjectId(projectId: string): ProjectGroupKey {
 }
 
 const homeCaseProjectIds = ['legal-rag', 'pet-workspace', 'ozon-erp', 'blog-semi', 'game-first-tetris', 'xunqiu']
+
+type BlogPost = {
+  slug: string
+  title: string
+  tag: string
+  detail: string
+  date: string
+  readTime: string
+  sections: Array<{ title: string; body: string }>
+  takeaways: string[]
+}
+
+const blogPosts: BlogPost[] = [
+  {
+    slug: 'legal-rag-review',
+    title: 'Legal RAG 项目复盘',
+    tag: 'AI 应用',
+    detail: '记录合同审查、引用溯源和 RAG 问答的实现路径。',
+    date: '2026-06-11',
+    readTime: '8 min',
+    sections: [
+      { title: '为什么先做 RAG 项目', body: '法律合同审查天然适合展示检索增强生成的价值：文本长、条款多、风险点分散，并且回答必须能追溯到来源。这个项目把 AI 能力从聊天框推进到文档导入、条款切分、语义检索、引用溯源和风险审查的完整流程。' },
+      { title: 'MVP 阶段的取舍', body: '为了保证本地演示稳定，项目先用 Mock Embedding 和内存向量库跑通主链路。这样可以把精力放在接口边界、数据结构、引用返回和前端工作台上，后续再替换真实 embedding、pgvector、PDF/DOCX parser 和任务队列。' },
+      { title: '面试讲述重点', body: '讲项目时不要只说“接了 AI 接口”，而是强调如何降低幻觉风险：回答必须带 citations，审查结果要能回到原文条款，风险输出要结构化，关键节点要保留人工复核入口。' },
+    ],
+    takeaways: ['先跑通可解释闭环，再替换生产级模型和存储。', 'RAG 项目的核心展示点是引用、阈值、召回质量和人工复核。', '博客文章负责沉淀复盘，项目页负责讲工程实现，案例页负责讲业务价值。'],
+  },
+  {
+    slug: 'ozon-erp-architecture',
+    title: 'Ozon ERP 架构整理',
+    tag: '全栈开发',
+    detail: '整理后台、API、Worker、插件和数据库的边界。',
+    date: '2026-06-12',
+    readTime: '6 min',
+    sections: [
+      { title: '系统边界', body: 'ERP 项目的价值在于把后台操作、API 服务、数据库模型、异步任务和浏览器插件组织成一条可追踪链路。' },
+      { title: '交付口径', body: '对外展示时需要突出审批、审计、队列和安全开关，而不是暴露真实店铺、账号或连接信息。' },
+    ],
+    takeaways: ['业务系统要讲清楚模块边界。', '真实写入必须有开关和审计。', '插件、Worker、API 的协作是工程亮点。'],
+  },
+  {
+    slug: 'game-showcase-standard',
+    title: '游戏项目展示规范',
+    tag: '游戏项目',
+    detail: '统一试玩入口、封面图、操作说明和导出流程。',
+    date: '2026-06-13',
+    readTime: '5 min',
+    sections: [
+      { title: '为什么需要展示规范', body: '游戏项目如果只放源码，访问者很难理解玩法循环。展示页需要明确玩法、操作方式、版本状态、截图证据和试玩入口。' },
+      { title: '下一步接入', body: '先把每个游戏整理成独立展示页，再逐步接入 Godot Web 导出包、加载状态和版本记录。' },
+    ],
+    takeaways: ['每个游戏要有独立入口。', '试玩包和项目说明保持解耦。', '版本记录能让原型更像产品。'],
+  },
+]
 
 type CaseStudy = {
   id: string
@@ -212,19 +273,23 @@ function App() {
   const [activeView, setActiveView] = useState<ViewKey>(() => getViewFromPath(window.location.pathname))
   const [selectedId, setSelectedId] = useState(() => getProjectIdFromPath(window.location.pathname) ?? getGameProjectIdFromPath(window.location.pathname) ?? projects[0].id)
   const [selectedCaseId, setSelectedCaseId] = useState(() => getCaseIdFromPath(window.location.pathname) ?? caseStudies[0].id)
+  const [selectedBlogSlug, setSelectedBlogSlug] = useState(() => getBlogSlugFromPath(window.location.pathname) ?? blogPosts[0].slug)
   const [siteTheme, setSiteTheme] = useState<SiteTheme>('light')
 
   const selectedProject = projects.find((project) => project.id === selectedId) ?? projects[0]
   const selectedCase = caseStudies.find((caseStudy) => caseStudy.id === selectedCaseId) ?? caseStudies[0]
+  const selectedBlogPost = blogPosts.find((post) => post.slug === selectedBlogSlug) ?? blogPosts[0]
 
   useEffect(() => {
     const handlePopState = () => {
       const nextProjectId = getProjectIdFromPath(window.location.pathname)
       const nextGameProjectId = getGameProjectIdFromPath(window.location.pathname)
       const nextCaseId = getCaseIdFromPath(window.location.pathname)
+      const nextBlogSlug = getBlogSlugFromPath(window.location.pathname)
       if (nextProjectId) setSelectedId(nextProjectId)
       if (nextGameProjectId) setSelectedId(nextGameProjectId)
       if (nextCaseId) setSelectedCaseId(nextCaseId)
+      if (nextBlogSlug) setSelectedBlogSlug(nextBlogSlug)
       setActiveView(getViewFromPath(window.location.pathname))
     }
     window.addEventListener('popstate', handlePopState)
@@ -277,8 +342,18 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const openBlogPost = (post: BlogPost) => {
+    const nextPath = `/blogs/${post.slug}`
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState(null, '', nextPath)
+    }
+    setSelectedBlogSlug(post.slug)
+    setActiveView('blogDetail')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
-    <div className={`site-shell site-theme-${siteTheme} ${activeView === 'blog' ? 'is-blog-page' : ''}`}>
+    <div className={`site-shell site-theme-${siteTheme} ${(activeView === 'blog' || activeView === 'blogDetail') ? 'is-blog-page' : ''}`}>
       <header className="site-header">
         <button className="brand" type="button" onClick={() => navigate('home')} aria-label="返回首页">
           <span>BL</span>
@@ -287,7 +362,7 @@ function App() {
 
         <nav className="site-nav" aria-label="主导航">
           {navItems.map((item) => (
-            <button key={item.key} className={(activeView === item.key || (activeView === 'caseDetail' && item.key === 'cases') || ((activeView === 'projectDetail' || activeView === 'gameDetail') && item.key === 'projects')) ? 'is-active' : ''} type="button" onClick={() => navigate(item.key)}>
+            <button key={item.key} className={(activeView === item.key || (activeView === 'caseDetail' && item.key === 'cases') || ((activeView === 'projectDetail' || activeView === 'gameDetail') && item.key === 'projects') || (activeView === 'blogDetail' && item.key === 'blog')) ? 'is-active' : ''} type="button" onClick={() => navigate(item.key)}>
               {item.icon}
               {item.label}
             </button>
@@ -304,7 +379,8 @@ function App() {
         {activeView === 'gameDetail' ? <GameShowcaseView onBack={() => navigate('projects')} onOpenProjectDetail={openProjectDetail} project={selectedProject} /> : null}
         {activeView === 'cases' ? <CasesView onOpenCase={openCaseDetail} onOpenProjectDetail={openProjectDetail} /> : null}
         {activeView === 'caseDetail' ? <CaseDetailView caseStudy={selectedCase} onBack={() => navigate('cases')} onOpenProject={(project) => openProjectDetail(project)} /> : null}
-        {activeView === 'blog' ? <BlogView theme={siteTheme} /> : null}
+        {activeView === 'blog' ? <BlogView onOpenPost={openBlogPost} theme={siteTheme} /> : null}
+        {activeView === 'blogDetail' ? <BlogArticleView onBack={() => navigate('blog')} post={selectedBlogPost} theme={siteTheme} /> : null}
       </main>
 
       <footer className="site-footer">
@@ -1343,13 +1419,8 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
   )
 }
 
-function BlogView({ theme }: { theme: SiteTheme }) {
-  const blogPosts = [
-    { title: 'Legal RAG 项目复盘', tag: 'AI 应用', detail: '记录合同审查、引用溯源和 RAG 问答的实现路径。', date: '2026-06-11' },
-    { title: 'Ozon ERP 架构整理', tag: '全栈开发', detail: '整理后台、API、Worker、插件和数据库的边界。', date: '2026-06-12' },
-    { title: '游戏项目展示规范', tag: '游戏项目', detail: '统一试玩入口、封面图、操作说明和导出流程。', date: '2026-06-13' },
-  ]
-
+function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void; theme: SiteTheme }) {
+  const featuredPost = blogPosts[0]
   return (
     <div className={`blog-view blog-view-${theme}`}>
       <section className="blog-hero">
@@ -1377,7 +1448,7 @@ function BlogView({ theme }: { theme: SiteTheme }) {
             <Text type="tertiary">示例博客 / 2026-06-11</Text>
             <Title heading={2}>从项目目录到博客系统：一次展示层重构记录</Title>
             <Paragraph>这次重构的核心不是把页面做得更满，而是把真实项目按照访问者能理解的方式重新组织。首页负责建立第一印象，项目页负责说明能力边界，案例页沉淀展示材料，博客页则记录持续学习和项目复盘。</Paragraph>
-            <Button theme="solid" type="primary">阅读示例文章</Button>
+            <Button theme="solid" type="primary" onClick={() => onOpenPost(featuredPost)}>阅读示例文章</Button>
           </div>
           <aside className="blog-featured-aside">
             <Text type="tertiary">Article Index</Text>
@@ -1400,11 +1471,51 @@ function BlogView({ theme }: { theme: SiteTheme }) {
               <Tag color={post.tag === 'AI 应用' ? 'cyan' : post.tag === '全栈开发' ? 'blue' : 'grey'}>{post.tag}</Tag>
               <Title heading={4}>{post.title}</Title>
               <Paragraph>{post.detail}</Paragraph>
+              <Button theme="borderless" type="primary" onClick={() => onOpenPost(post)}>阅读全文</Button>
             </article>
           ))}
         </div>
       </section>
     </div>
+  )
+}
+
+function BlogArticleView({ onBack, post, theme }: { onBack: () => void; post: BlogPost; theme: SiteTheme }) {
+  return (
+    <article className={`blog-article-page blog-view-${theme}`}>
+      <header className="blog-article-hero">
+        <Text type="tertiary">{post.tag} / {post.date} / {post.readTime}</Text>
+        <Title heading={1}>{post.title}</Title>
+        <Paragraph>{post.detail}</Paragraph>
+        <Button theme="solid" type="primary" onClick={onBack}>返回博客</Button>
+      </header>
+
+      <div className="blog-article-layout">
+        <aside className="blog-article-index">
+          <Text type="tertiary">Article Index</Text>
+          {post.sections.map((section) => <span key={section.title}>{section.title}</span>)}
+        </aside>
+
+        <main className="blog-article-content">
+          {post.sections.map((section) => (
+            <section key={section.title}>
+              <Title heading={2}>{section.title}</Title>
+              <Paragraph>{section.body}</Paragraph>
+            </section>
+          ))}
+
+          <section className="blog-article-takeaways">
+            <Title heading={2}>复盘结论</Title>
+            {post.takeaways.map((item, index) => (
+              <div key={item}>
+                <strong>{String(index + 1).padStart(2, '0')}</strong>
+                <span>{item}</span>
+              </div>
+            ))}
+          </section>
+        </main>
+      </div>
+    </article>
   )
 }
 
