@@ -10,12 +10,13 @@ type ViewKey = 'home' | 'projects' | 'projectDetail' | 'gameDetail' | 'cases' | 
 type NavViewKey = Exclude<ViewKey, 'projectDetail' | 'gameDetail' | 'caseDetail' | 'blogDetail'>
 type ProjectGroupKey = 'ai' | 'fullstack' | 'games'
 type SiteTheme = 'light' | 'dark'
+type SiteLanguage = 'zh' | 'en'
 
-const navItems: Array<{ key: NavViewKey; label: string; icon: React.ReactNode }> = [
-  { key: 'home', label: '首页', icon: <IconHome /> },
-  { key: 'projects', label: '项目', icon: <IconApps /> },
-  { key: 'cases', label: '案例', icon: <IconBriefcase /> },
-  { key: 'blog', label: '博客', icon: <IconArticle /> },
+const navItems: Array<{ key: NavViewKey; label: Record<SiteLanguage, string>; icon: React.ReactNode }> = [
+  { key: 'home', label: { zh: '首页', en: 'Home' }, icon: <IconHome /> },
+  { key: 'projects', label: { zh: '项目', en: 'Projects' }, icon: <IconApps /> },
+  { key: 'cases', label: { zh: '案例', en: 'Cases' }, icon: <IconBriefcase /> },
+  { key: 'blog', label: { zh: '博客', en: 'Blog' }, icon: <IconArticle /> },
 ]
 
 const routeByView: Record<NavViewKey, string> = {
@@ -275,6 +276,7 @@ function App() {
   const [selectedCaseId, setSelectedCaseId] = useState(() => getCaseIdFromPath(window.location.pathname) ?? caseStudies[0].id)
   const [selectedBlogSlug, setSelectedBlogSlug] = useState(() => getBlogSlugFromPath(window.location.pathname) ?? blogPosts[0].slug)
   const [siteTheme, setSiteTheme] = useState<SiteTheme>('light')
+  const [siteLanguage, setSiteLanguage] = useState<SiteLanguage>('zh')
 
   const selectedProject = projects.find((project) => project.id === selectedId) ?? projects[0]
   const selectedCase = caseStudies.find((caseStudy) => caseStudy.id === selectedCaseId) ?? caseStudies[0]
@@ -364,12 +366,15 @@ function App() {
           {navItems.map((item) => (
             <button key={item.key} className={(activeView === item.key || (activeView === 'caseDetail' && item.key === 'cases') || ((activeView === 'projectDetail' || activeView === 'gameDetail') && item.key === 'projects') || (activeView === 'blogDetail' && item.key === 'blog')) ? 'is-active' : ''} type="button" onClick={() => navigate(item.key)}>
               {item.icon}
-              {item.label}
+              {item.label[siteLanguage]}
             </button>
           ))}
         </nav>
 
-        <ThemeToggle theme={siteTheme} onChange={setSiteTheme} />
+        <div className="site-header-actions">
+          <LanguageToggle language={siteLanguage} onChange={setSiteLanguage} />
+          <ThemeToggle theme={siteTheme} onChange={setSiteTheme} />
+        </div>
       </header>
 
       <main className="site-main">
@@ -399,6 +404,15 @@ function ThemeToggle({ onChange, theme }: { onChange: (theme: SiteTheme) => void
     <div className="site-theme-toggle" role="group" aria-label="全站主题切换">
       <button className={!isDark ? 'is-active' : ''} type="button" onClick={() => onChange('light')}>浅色</button>
       <button className={isDark ? 'is-active' : ''} type="button" onClick={() => onChange('dark')}>暗色</button>
+    </div>
+  )
+}
+
+function LanguageToggle({ language, onChange }: { language: SiteLanguage; onChange: (language: SiteLanguage) => void }) {
+  return (
+    <div className="site-theme-toggle site-language-toggle" role="group" aria-label="全站语言切换">
+      <button className={language === 'zh' ? 'is-active' : ''} type="button" onClick={() => onChange('zh')}>中文</button>
+      <button className={language === 'en' ? 'is-active' : ''} type="button" disabled title="英文版内容整理中">EN</button>
     </div>
   )
 }
@@ -461,7 +475,7 @@ function HomeView({ onOpenCase, onOpenProject }: { onOpenCase: (caseStudy: CaseS
 
       <section className="home-project-showcase">
         <div className="home-section-title is-centered">
-          <Text type="tertiary">Project Categories</Text>
+          <Text type="tertiary">项目分类</Text>
           <Title heading={2}>三类项目方向</Title>
           <Paragraph>用标签切换把项目能力组织成 AI 应用、全栈开发和游戏项目三条主线，先给方向，再进入具体案例。</Paragraph>
         </div>
@@ -502,7 +516,7 @@ function HomeView({ onOpenCase, onOpenProject }: { onOpenCase: (caseStudy: CaseS
             <div className="home-panel-main">
               <div className="panel-section-head">
                 <div>
-                  <Text type="tertiary">Selected Projects</Text>
+                  <Text type="tertiary">精选项目</Text>
                   <Title heading={3}>{activeGroup.title}项目清单</Title>
                 </div>
                 <Button theme="solid" type="primary" onClick={() => onOpenProject(activeProjects[0] ?? projects[0])}>进入项目页</Button>
@@ -520,7 +534,7 @@ function HomeView({ onOpenCase, onOpenProject }: { onOpenCase: (caseStudy: CaseS
 
       <section className="home-case-matrix-section">
         <div className="home-section-title is-centered">
-          <Text type="tertiary">Case Matrix</Text>
+          <Text type="tertiary">案例总览</Text>
           <Title heading={2}>案例矩阵</Title>
           <Paragraph>把重点项目压缩成可浏览的案例入口，每个案例保留真实项目名、方向标签、技术栈和跳转动作。</Paragraph>
         </div>
@@ -560,7 +574,7 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
   return (
     <div className="project-page">
       <section className="project-hero">
-        <Text type="tertiary">Projects</Text>
+        <Text type="tertiary">项目总览</Text>
         <Title heading={1}>项目系统</Title>
         <Paragraph>按 AI 应用、全栈开发和游戏项目三条能力线组织项目，让访问者第一屏就能看到主体展示、项目截图、技术栈和可跳转入口。</Paragraph>
       </section>
@@ -568,7 +582,7 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
       <section className="project-stage">
         <div className="project-stage-head">
           <div>
-            <span className="section-pill">Project Categories</span>
+            <span className="section-pill">项目分类</span>
             <Title heading={2}>{currentGroup.title}展示台</Title>
             <Paragraph>{currentGroup.description}</Paragraph>
           </div>
@@ -596,7 +610,7 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
               </div>
               <div className="project-preview-caption">
                 <div>
-                  <Text type="tertiary">Selected Project</Text>
+                  <Text type="tertiary">当前选择</Text>
                   <strong>{detailProject.title}</strong>
                 </div>
                 <Tag color={detailProject.status === 'main' ? 'red' : detailProject.status === 'live' ? 'green' : detailProject.status === 'pending' ? 'grey' : 'orange'}>{statusLabels[detailProject.status]}</Tag>
@@ -612,14 +626,24 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
             const projectCase = getCaseStudyForProject(project.id)
 
             return (
-              <article key={project.id} className={detailProject.id === project.id ? 'project-thumb-card is-active' : 'project-thumb-card'}>
+              <article
+                key={project.id}
+                className={detailProject.id === project.id ? 'project-thumb-card is-active' : 'project-thumb-card'}
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectProject(project.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') onSelectProject(project.id)
+                }}
+              >
+                {detailProject.id === project.id ? <b className="project-selected-badge">当前选择</b> : null}
                 <span>{categoryLabels[project.category]}</span>
                 <strong>{project.title}</strong>
                 <em>{project.summary}</em>
                 <Space wrap>
-                  <Button size="small" theme="light" type="primary" onClick={() => onSelectProject(project.id)}>预览</Button>
-                  <Button size="small" theme="solid" type="primary" onClick={() => onOpenProjectDetail(project)}>项目详情</Button>
-                  {projectCase ? <Button size="small" onClick={() => onOpenCase(projectCase)}>案例</Button> : null}
+                  <Button size="small" theme="light" type="primary" onClick={(event) => { event.stopPropagation(); onSelectProject(project.id) }}>预览</Button>
+                  <Button size="small" theme="solid" type="primary" onClick={(event) => { event.stopPropagation(); onOpenProjectDetail(project) }}>项目详情</Button>
+                  {projectCase ? <Button size="small" onClick={(event) => { event.stopPropagation(); onOpenCase(projectCase) }}>案例</Button> : null}
                 </Space>
               </article>
             )
@@ -650,17 +674,17 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
   return (
     <div className="resource-page">
       <section className="resource-hero">
-        <Text type="tertiary">Cases</Text>
+        <Text type="tertiary">案例总览</Text>
         <Title heading={1}>案例中心</Title>
-        <Paragraph>参考成熟官网的 Customer Stories 结构，案例页只讲业务场景、解决方案、交付结果和证据材料；工程细节统一跳转到独立项目详情页。</Paragraph>
+        <Paragraph>参考成熟官网的客户案例结构，案例页只讲业务场景、解决方案、交付结果和证据材料；工程细节统一跳转到独立项目详情页。</Paragraph>
       </section>
 
       <section className="case-matrix-board">
         <div className="case-board-head">
           <div>
-            <span className="section-pill">Case Library</span>
+            <span className="section-pill">案例库</span>
             <Title heading={2}>按落地故事组织案例</Title>
-            <Paragraph>每个案例都遵循 Challenge / Solution / Results：先讲为什么做，再讲怎么交付，最后给截图、架构和面试讲述入口。</Paragraph>
+            <Paragraph>每个案例都遵循“问题、方案、结果”的结构：先讲为什么做，再讲怎么交付，最后给截图、架构和面试讲述入口。</Paragraph>
           </div>
           <div className="case-board-stats" aria-label="案例统计">
             <span>场景</span>
@@ -694,7 +718,7 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
           </article>
 
           <aside className="case-guide-card">
-            <span className="section-pill">What Goes Here</span>
+            <span className="section-pill">案例内容</span>
             <Title heading={3}>案例页推荐放什么</Title>
             <div>
               <strong>场景</strong>
@@ -777,7 +801,7 @@ function ProjectNarrative({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, p
   return (
     <section className="project-narrative-panel">
       <div>
-        <span className="section-pill">Project Brief</span>
+        <span className="section-pill">项目简述</span>
         <Title heading={3}>{narrative.title}</Title>
       </div>
       <div className="project-narrative-content">
@@ -804,6 +828,82 @@ type ProjectDetailContent = {
   modules: Array<{ title: string; detail: string }>
   implementation: string[]
   nextSteps: string[]
+}
+
+function getProjectStructure(project: Project): Array<{ title: string; detail: string }> {
+  const structures: Record<string, Array<{ title: string; detail: string }>> = {
+    'legal-rag': [
+      { title: 'apps/web', detail: 'Vue 3 + Vite 前端工作台，承载合同导入、知识库、RAG 问答和合同审查结果展示。' },
+      { title: 'apps/api', detail: 'Express + TypeScript API，负责导入、去重、切分、检索、重排、问答和审查接口。' },
+      { title: 'packages/shared', detail: '沉淀前后端共享类型，减少 answer、citation、risk item 等结构漂移。' },
+      { title: '可替换层', detail: 'Mock Embedding、内存向量库、规则审查器都保留替换真实模型、pgvector 和队列的边界。' },
+    ],
+    'ozon-erp': [
+      { title: 'apps/web', detail: 'Vue 管理后台，覆盖商品、订单、店铺、工具、设置、审批中心、任务中心和导入草稿。' },
+      { title: 'apps/api', detail: 'Express 服务端与 Prisma 数据模型，组织平台适配、利润计算、鉴权、审计和审批动作。' },
+      { title: 'apps/extension', detail: 'WXT/MV3 浏览器插件，承接平台页面采集、铺货入口和版本检查。' },
+      { title: 'worker / prisma', detail: 'BullMQ/Redis 处理长任务，Prisma schema 管理核心业务表和迁移边界。' },
+    ],
+    'pet-workspace': [
+      { title: 'gamer', detail: 'App-facing 工作区，包含社区 API、审核后台、宠物生成服务、共享包和 App 集成测试。' },
+      { title: 'fantasy-pet-rule', detail: '生成规则与 Worker 管线，管理任务包、QA Gate、审核决策、产物索引和公开 API 契约。' },
+      { title: 'Android 验证工程', detail: '验证悬浮窗、前台服务、权限恢复、本地证明、事件链和移动端消费体验。' },
+      { title: '本地联调环境', detail: '用 Docker 环境代理不稳定云端依赖，把 App、服务端、审核和生成流程串起来。' },
+    ],
+    xunqiu: [
+      { title: '旧 Android / 新 64 位 Android', detail: '保留旧工程作为功能参照，新工程聚焦 64 位兼容、页面迁移和现代构建链路。' },
+      { title: 'Java 服务端', detail: 'Maven WAR + Spring MVC/Security + MySQL/Redis，提供 App API、后台管理和 H5 入口。' },
+      { title: '多端资料', detail: '包含 iOS、发布包、阶段验收和迁移文档，适合展示历史项目接手与整理能力。' },
+      { title: '发布验收', detail: '按 APK、视频流、上传链路、真机/模拟器检查整理交付证据，线上只展示脱敏结论。' },
+    ],
+    'game-first-tetris': [
+      { title: 'scenes/game', detail: 'Godot 游戏主场景，承载网格、方块、消行、得分、暂停和游戏结束流程。' },
+      { title: 'scripts/game', detail: '拆分方块规则、输入动作、Rogue 强化、局间承接和核心状态。' },
+      { title: 'scripts/ui', detail: '负责主菜单、Help、Rogue 选择、触屏按钮和响应式界面。' },
+      { title: 'docs / 回归脚本', detail: '记录阶段说明、触屏适配、多尺寸截图回归和人工验证结论。' },
+    ],
+    'game-next-spacewar': [
+      { title: 'player / bullet', detail: '玩家移动、射击、命中反馈和基础战斗输入。' },
+      { title: 'enemy_target / obstacle', detail: '敌人目标、障碍物和短局压力来源。' },
+      { title: 'main_menu / run_result', detail: '主菜单、设置、帮助、暂停返回、结果页和 session summary。' },
+      { title: 'showcase 文档', detail: '记录展示版本、首次按键提示、PR 准备和后续 Web 导出计划。' },
+    ],
+    intespace: [
+      { title: 'weapon_tree / upgrade panel', detail: '武器树路线构筑和局内升级选择，是 Roguelite 系统的核心。' },
+      { title: 'survival_mode / boss_trial', detail: '承载自动射击、生存压力、Boss 试炼和章节推进。' },
+      { title: 'game_session / audio_director', detail: '管理运行状态、结算数据、音频节奏和跨场景信息。' },
+      { title: 'docs devlog', detail: '从系统方向、武器冻结审计到集成试玩准备都有阶段记录。' },
+    ],
+    'raiden-prototype': [
+      { title: 'scenes/ui', detail: 'MainMenu、ResultsScreen、ChapterBriefing、ChapterEnding、ChapterOutro 等展示页面。' },
+      { title: 'scripts/game', detail: '关卡数据、Boss 相位、风暴环境、星空、特效和 SFX/BGM。' },
+      { title: 'scripts/entities', detail: '玩家、敌机、掉落物、子弹和战斗实体职责拆分。' },
+      { title: 'tools / docs', detail: '保留 headless/autoplay 验证、Demo 检查清单和公开展示准备资料。' },
+    ],
+    'space-war': [
+      { title: 'scenes/game / ui / entities', detail: '拆分主菜单、战斗场景、结果页、玩家、敌人、Boss 和道具。' },
+      { title: 'stage_schedule / stage_catalog', detail: '管理 Sector、敌人波次、Boss 节奏和关卡推进。' },
+      { title: 'run_balance / game_session', detail: '处理运行参数、结算、高分和重开流程。' },
+      { title: 'release docs', detail: '包含最终总结、发布清单、分发指南、试玩报告和媒体截图。' },
+    ],
+    'biau-playlab': [
+      { title: 'src/content', detail: 'Astro Content Collections 管理文章、开发日志、游戏介绍和项目内容。' },
+      { title: 'src/pages', detail: '生成文章、项目、游戏、标签、RSS、sitemap 和基础 SEO 页面。' },
+      { title: 'tools', detail: '保留内容审计、展示图生成、试玩视频渲染和共享字体同步脚本。' },
+      { title: 'deploy / docs', detail: '整理 Cloudflare Pages、R2 试玩包上传和大文件管理说明。' },
+    ],
+    'blog-semi': [
+      { title: 'src/App.tsx', detail: '当前主站的路由状态、首页、项目、案例、博客和四类详情页入口。' },
+      { title: 'src/data/portfolio.ts', detail: '公开项目数据源，统一驱动分类、卡片、详情、案例和跳转关系。' },
+      { title: 'src/App.css', detail: 'Semi 组件之外的官网视觉系统、浅暗主题、详情页字体和响应式布局。' },
+      { title: 'Cloudflare Pages', detail: 'Vite 静态构建，GitHub main 分支推送后自动部署到绑定域名。' },
+    ],
+  }
+
+  return structures[project.id] ?? project.highlights.map((item) => ({
+    title: item,
+    detail: `围绕“${item}”继续补充目录、模块边界和可公开证据。`,
+  }))
 }
 
 function getProjectDetailContent(project: Project): ProjectDetailContent {
@@ -950,7 +1050,7 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
   if (project.id === 'intespace') {
     return {
       subtitle: '竖屏自动射击 Roguelite 系统收口',
-      overview: 'intespace 是 Godot 竖屏自动射击 Roguelite，定位上用武器树承担路线构筑，用移动端优先的战斗节奏承接局内升级和局外成长。项目当前的重点是把 Home、Combat、Upgrade、Results、Growth、Next run 串成稳定闭环。',
+      overview: 'intespace 是 Godot 竖屏自动射击 Roguelite，定位上用武器树承担路线构筑，用移动端优先的战斗节奏承接局内升级和局外成长。项目当前的重点是把首页、战斗、升级、结算、成长、下一局串成稳定闭环。',
       modules: [
         { title: '武器树系统', detail: 'weapon_tree 与升级面板负责局内路线选择，当前 v1 结构已冻结，适合展示系统设计和迭代收口。' },
         { title: '战斗模式', detail: 'survival_mode、boss_trial、chapter_one 等脚本承载自动射击、生存压力、Boss 和章节推进。' },
@@ -1019,7 +1119,7 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
       ],
       implementation: [
         '当前实现以 src/App.tsx 组织路由状态、项目/案例/游戏/博客详情视图，src/data/portfolio.ts 管理公开项目数据。',
-        '详情页统一 Project Detail、Case Detail、Playable Showcase、Blog Article 四类页面模型，按钮按项目、案例和游戏关系互相跳转。',
+        '详情页统一项目详情、案例详情、试玩展示、博客文章四类页面模型，按钮按项目、案例和游戏关系互相跳转。',
         '样式层用全局 token 控制背景、版心、字号、卡片和暗色主题，后续可以继续拆组件而不改变页面结构。',
         '公开站点只保存脱敏后的项目描述、截图和部署说明，不把本地路径、账号、密钥、真实服务配置写入前端数据。',
       ],
@@ -1125,13 +1225,18 @@ function ProjectFullDetailView({ onBack, onOpenCase, onOpenGameDetail, project }
   const projectCase = getCaseStudyForProject(project.id)
   const gameSlug = getGameSlugByProjectId(project.id)
   const detail = getProjectDetailContent(project)
+  const structure = getProjectStructure(project)
 
   return (
     <div className="project-detail-page">
       <section className="project-detail-hero">
         <div className="project-detail-copy">
-          <Text type="tertiary">Project Detail</Text>
+          <Text type="tertiary">独立项目详情页</Text>
           <Title heading={1}>{project.title}</Title>
+          <div className="detail-route-badge">
+            <span>当前不是项目列表预览</span>
+            <strong>/projects/{project.id}</strong>
+          </div>
           <Paragraph>{detail.overview}</Paragraph>
           <Space wrap>
             <Button theme="solid" type="primary" onClick={onBack}>返回项目系统</Button>
@@ -1164,9 +1269,28 @@ function ProjectFullDetailView({ onBack, onOpenCase, onOpenGameDetail, project }
         </div>
       </section>
 
+      <section className="project-detail-section project-structure-section">
+        <div className="project-detail-section-head">
+          <span className="section-pill">目录边界</span>
+          <Title heading={2}>工程目录与职责</Title>
+          <Paragraph>这一部分按照项目目录和实际模块拆解，帮助区分“项目列表摘要”和“详情页技术说明”。</Paragraph>
+        </div>
+        <div className="project-structure-grid">
+          {structure.map((item, index) => (
+            <article key={item.title}>
+              <strong>{String(index + 1).padStart(2, '0')}</strong>
+              <div>
+                <Title heading={3}>{item.title}</Title>
+                <Paragraph>{item.detail}</Paragraph>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="project-detail-section">
         <div className="project-detail-section-head">
-          <span className="section-pill">Modules</span>
+          <span className="section-pill">功能拆解</span>
           <Title heading={2}>功能模块</Title>
         </div>
         <div className="project-module-grid">
@@ -1181,7 +1305,7 @@ function ProjectFullDetailView({ onBack, onOpenCase, onOpenGameDetail, project }
 
       <section className="project-detail-section project-implementation-section">
         <div className="project-detail-section-head">
-          <span className="section-pill">Implementation</span>
+          <span className="section-pill">工程实现</span>
           <Title heading={2}>实现方式</Title>
         </div>
         <div className="project-implementation-list">
@@ -1191,7 +1315,7 @@ function ProjectFullDetailView({ onBack, onOpenCase, onOpenGameDetail, project }
 
       <section className="project-detail-section">
         <div className="project-detail-section-head">
-          <span className="section-pill">Roadmap</span>
+          <span className="section-pill">扩展计划</span>
           <Title heading={2}>后续扩展</Title>
         </div>
         <div className="project-roadmap-grid">
@@ -1241,7 +1365,7 @@ function getGameShowcaseContent(project: Project): GameShowcaseContent {
     },
     intespace: {
       tagline: '竖屏自动射击 Roguelite，围绕武器树、局内升级和局外成长收口完整运行链路。',
-      stage: '武器系统 v1 已进入结构冻结阶段，当前重点是 Home -> Combat -> Upgrade -> Results -> Growth -> Next run 的集成试玩。',
+      stage: '武器系统 v1 已进入结构冻结阶段，当前重点是“首页 -> 战斗 -> 升级 -> 结算 -> 成长 -> 下一局”的集成试玩。',
       gameplay: ['竖屏移动、自动射击、生存压力和 Boss 试炼', '武器树路线构筑与局内升级选择', '结果页、局外成长和下一局动机构成 Roguelite 闭环', '移动端优先，再扩展 Web demo 与 Windows 展示版本'],
       systems: [
         { title: '武器树', detail: 'weapon_tree 和升级面板承载路线构筑，是项目区别于普通射击 Demo 的核心。' },
@@ -1290,8 +1414,12 @@ function GameShowcaseView({ onBack, onOpenProjectDetail, project }: { onBack: ()
     <div className="game-showcase-page">
       <section className="game-showcase-hero">
         <div className="game-showcase-copy">
-          <Text type="tertiary">Playable Showcase</Text>
+          <Text type="tertiary">独立试玩展示页</Text>
           <Title heading={1}>{project.title}</Title>
+          <div className="detail-route-badge">
+            <span>当前不是项目列表预览</span>
+            <strong>/games/{getGameSlugByProjectId(project.id) ?? project.id}</strong>
+          </div>
           <Paragraph>{content.tagline}</Paragraph>
           <Space wrap>
             <Button theme="solid" type="primary" onClick={() => onOpenProjectDetail(project)}>查看技术详情</Button>
@@ -1314,7 +1442,7 @@ function GameShowcaseView({ onBack, onOpenProjectDetail, project }: { onBack: ()
 
       <section className="game-showcase-section">
         <div className="project-detail-section-head">
-          <span className="section-pill">Gameplay</span>
+          <span className="section-pill">玩法拆解</span>
           <Title heading={2}>玩法体验</Title>
         </div>
         <div className="gameplay-list">
@@ -1329,7 +1457,7 @@ function GameShowcaseView({ onBack, onOpenProjectDetail, project }: { onBack: ()
 
       <section className="game-showcase-section">
         <div className="project-detail-section-head">
-          <span className="section-pill">Systems</span>
+          <span className="section-pill">系统实现</span>
           <Title heading={2}>实现重点</Title>
         </div>
         <div className="game-system-grid">
@@ -1344,7 +1472,7 @@ function GameShowcaseView({ onBack, onOpenProjectDetail, project }: { onBack: ()
 
       <section className="game-showcase-section game-integration-section">
         <div className="project-detail-section-head">
-          <span className="section-pill">Next</span>
+          <span className="section-pill">接入计划</span>
           <Title heading={2}>试玩接入计划</Title>
         </div>
         <div className="project-roadmap-grid">
@@ -1382,6 +1510,10 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
         <div className="case-detail-copy">
           <Text type="tertiary">{caseStudy.eyebrow}</Text>
           <Title heading={1}>{caseStudy.title}</Title>
+          <div className="detail-route-badge">
+            <span>独立案例详情页</span>
+            <strong>/cases/{caseStudy.id}</strong>
+          </div>
           <Paragraph>{caseStudy.summary}</Paragraph>
           <Space wrap>
             <Button theme="solid" type="primary" onClick={() => onOpenProject(project)}>查看项目详情</Button>
@@ -1411,7 +1543,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 
       <section className="case-detail-section case-problem-section">
         <div>
-          <span className="section-pill">Challenge / Solution</span>
+          <span className="section-pill">问题与方案</span>
           <Title heading={2}>为什么这个案例值得展示</Title>
         </div>
         <div className="case-problem-grid">
@@ -1432,7 +1564,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 
       <section className="case-detail-section">
         <div className="case-section-head">
-          <span className="section-pill">Workflow</span>
+          <span className="section-pill">案例路径</span>
           <Title heading={2}>案例路径</Title>
         </div>
         <div className="case-workflow">
@@ -1447,7 +1579,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 
       <section className="case-detail-section case-architecture-section">
         <div className="case-section-head">
-          <span className="section-pill">Architecture</span>
+          <span className="section-pill">实现结构</span>
           <Title heading={2}>实现结构</Title>
         </div>
         <div className="case-architecture-grid">
@@ -1462,7 +1594,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 
       <section className="case-detail-section">
         <div className="case-section-head">
-          <span className="section-pill">Evidence</span>
+          <span className="section-pill">证据材料</span>
           <Title heading={2}>证据材料</Title>
         </div>
         <div className="case-image-grid">
@@ -1488,7 +1620,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 
       <section className="case-detail-section case-talking-section">
         <div>
-          <span className="section-pill">Interview</span>
+          <span className="section-pill">讲解口径</span>
           <Title heading={2}>面试讲解口径</Title>
         </div>
         <div className="case-talking-list">
@@ -1504,15 +1636,15 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
   return (
     <div className={`blog-view blog-view-${theme}`}>
       <section className="blog-hero">
-        <Text type="tertiary">Blog</Text>
+        <Text type="tertiary">博客总览</Text>
         <Title heading={1}>博客系统</Title>
-        <Paragraph>参考 Vercel Blog 的精选文章和最新文章结构，用统一的浅色/暗色风格记录项目复盘、学习路线和面试准备。</Paragraph>
+        <Paragraph>参考成熟技术博客的精选文章和最新文章结构，用统一的浅色/暗色风格记录项目复盘、学习路线和面试准备。</Paragraph>
       </section>
 
       <section className="blog-magazine">
         <div className="blog-magazine-head">
           <div>
-            <span className="section-pill">Featured / Latest</span>
+            <span className="section-pill">精选与最新</span>
             <Title heading={2}>项目复盘与学习记录</Title>
           </div>
           <div className="blog-topic-pills" aria-label="博客栏目">
@@ -1531,7 +1663,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
             <Button theme="solid" type="primary" onClick={() => onOpenPost(featuredPost)}>阅读示例文章</Button>
           </div>
           <aside className="blog-featured-aside">
-            <Text type="tertiary">Article Index</Text>
+            <Text type="tertiary">文章目录</Text>
             <strong>展示系统</strong>
             <span>项目目录</span>
             <span>案例矩阵</span>
@@ -1540,7 +1672,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
         </article>
 
         <div className="blog-latest-head">
-          <Title heading={3}>Latest Notes</Title>
+          <Title heading={3}>最新记录</Title>
           <Text type="tertiary">后续每天可以继续把知识点追加到这里。</Text>
         </div>
 
@@ -1572,7 +1704,7 @@ function BlogArticleView({ onBack, post, theme }: { onBack: () => void; post: Bl
 
       <div className="blog-article-layout">
         <aside className="blog-article-index">
-          <Text type="tertiary">Article Index</Text>
+          <Text type="tertiary">文章目录</Text>
           {post.sections.map((section) => <span key={section.title}>{section.title}</span>)}
         </aside>
 
