@@ -2,53 +2,43 @@
 
 Date: 2026-06-14
 Repo: /home/zhang/workspace/blog-semi
-Task: Pet Workspace public wording desensitization
+Task: Add xunqiu business case
 
 ## Diff Summary
 
-- `src/App.tsx`: replaced one public Pet Workspace case result phrase from a named deployment/integration environment to a generic local container integration environment.
-- `.agent-work/current-task.md`: opened the second content-calibration slice.
-- `.agent-work/cc-plan.md`: captured Claude Code's read-only second-slice plan.
-- `.agent-work/codex-review.md`: narrowed the implementation to one desensitization wording change.
-- `.agent-work/archive/20260614-225146-navigation-wording-slice/`: archived the first slice artifacts.
-
-## Baseline Compared
-
-- Previous shipped commit: `1cdf9b4 Refine project navigation workflow`
-- Current controller review: `.agent-work/codex-review.md`
-- Pre-existing warning: Vite build still emits a direct `eval` warning from `node_modules/lottie-web`; unchanged by this slice.
-- New failures introduced: none observed.
+- `src/App.tsx`: added one `caseStudies[]` entry for existing project `xunqiu`.
+- `.agent-work/current-task.md`: documented the explicit scope relaxation allowing one new xunqiu case.
+- `.agent-work/cc-plan.md` and `.agent-work/codex-review.md`: recorded the approved small plan and guardrails.
+- `.agent-work/archive/20260614-234123-pet-wording-desensitization/`: archived the previous Pet wording slice artifacts.
 
 ## Commands Run
 
 | Command | Result | Notes |
 | --- | --- | --- |
 | `npm run lint` | pass | ESLint completed without errors. |
-| `npm run build` | pass | TypeScript and Vite build completed. Existing `lottie-web` eval warning remains. |
-| Sensitive named-environment scan | pass | Public source no longer contains the named integration/deployment environment term after the wording change. |
-
-## UI / Browser QA
-
-| Page or flow | Viewports | Result | Evidence |
-| --- | --- | --- | --- |
-| `/cases/pet-workspace` | not rerun visually | skipped | This slice is a one-phrase content desensitization; build/lint/source scan covered the change. |
+| `npm run build` | pass | TypeScript and Vite build completed. Existing `lottie-web` direct eval warning remains. |
+| Added-line sensitive scan | pass | Added diff lines did not match high-risk credential, endpoint, hash, env, or test-account patterns after replacing a low-level credential term with `登录凭据`. |
+| Built asset text check | pass | Built JS asset contains `寻球移动端业务系统重构案例`. |
+| Vite preview route check | pass | `/cases/xunqiu`, `/projects/xunqiu`, and `/cases` returned the SPA shell. |
 
 ## Review Findings
 
-- CC's second-slice plan was useful but proposed adding a xunqiu case first, which conflicts with the current non-goal against adding cases.
-- Codex approved only the smaller Pet wording desensitization slice.
-- The public site source no longer contains the named environment term.
+- The new case is tied to the existing `xunqiu` project and does not add a new project.
+- Content is business-facing and concept-level: historical system takeover, Android 64-bit rebuild, service API reuse, module recovery, staged verification.
+- No reference-project files were modified.
+- The case deliberately avoids real test accounts, credentials, server addresses, database configuration, SQL details, signing files, package hashes, release paths, real media URLs, and test data.
 
 ## Fixed In This Round
 
-- Generalized Pet Workspace's public case wording from a named environment to `本地容器替代环境`.
+- `/cases/xunqiu` can now resolve to an actual case detail entry.
+- `/projects/xunqiu` can now surface the business-case action through `getCaseStudyForProject`.
+- Cases list now includes a mobile/historical-system case in addition to AI, full-stack, and game showcase stories.
 
 ## Remaining Work
 
-- Open a separate task if the user wants to add a xunqiu business case for the existing xunqiu project.
-- If that task is approved, explicitly allow one new `caseStudies[]` entry tied to `projectId: 'xunqiu'`.
-- Continue avoiding reference-project tmp/deploy/payload details in public content.
+- Add脱敏运行截图 later if the user prepares safe screenshots.
+- Consider a small visual QA pass after Cloudflare deploy completes.
 
 ## Ship Decision
 
-Ready for commit/push if the user wants this small desensitization slice shipped.
+Ready for commit/push.
