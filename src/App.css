@@ -25,7 +25,7 @@
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
   background: #fff;
 }
 
@@ -4118,16 +4118,67 @@ textarea {
   }
 
   .site-header {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    justify-items: stretch;
     height: auto;
-    padding-block: 12px;
+    padding: 10px 16px 12px;
+  }
+
+  .brand {
+    justify-self: start;
+  }
+
+  .brand span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand strong {
+    font-size: 0.96rem;
   }
 
   .site-nav {
-    justify-content: flex-end;
+    width: 100%;
+    gap: 4px;
+    justify-content: stretch;
+    overflow: visible;
+    padding: 4px;
+    border: 1px solid #d8e4f5;
+    border-radius: 12px;
+    background: #f7fbff;
+    box-shadow: 0 10px 30px rgba(24, 68, 115, 0.08);
+  }
+
+  .site-nav button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 6px;
+    justify-content: center;
+    gap: 4px;
+    font-size: 0.9rem;
+  }
+
+  .site-theme-dark .site-nav,
+  .is-blog-page .site-nav {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: none;
   }
 
   .site-header-actions {
+    width: 100%;
     flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .site-theme-toggle {
+    flex: 1 1 132px;
+  }
+
+  .site-theme-toggle button {
+    flex: 1 1 0;
+    min-width: 0;
   }
 
   .home-case-matrix-section .home-section-title {
@@ -4230,5 +4281,3 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
-
-
