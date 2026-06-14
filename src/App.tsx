@@ -641,9 +641,9 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
                 <strong>{project.title}</strong>
                 <em>{project.summary}</em>
                 <Space wrap>
-                  <Button size="small" theme="light" type="primary" onClick={(event) => { event.stopPropagation(); onSelectProject(project.id) }}>预览</Button>
-                  <Button size="small" theme="solid" type="primary" onClick={(event) => { event.stopPropagation(); onOpenProjectDetail(project) }}>项目详情</Button>
-                  {projectCase ? <Button size="small" onClick={(event) => { event.stopPropagation(); onOpenCase(projectCase) }}>案例</Button> : null}
+                  <Button size="small" theme="light" type="primary" onClick={(event) => { event.stopPropagation(); onSelectProject(project.id) }}>列表预览</Button>
+                  <Button size="small" theme="solid" type="primary" onClick={(event) => { event.stopPropagation(); onOpenProjectDetail(project) }}>技术详情页</Button>
+                  {projectCase ? <Button size="small" onClick={(event) => { event.stopPropagation(); onOpenCase(projectCase) }}>业务案例</Button> : null}
                 </Space>
               </article>
             )
@@ -711,8 +711,8 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
                 <strong>{featuredCase.outcome}</strong>
               </div>
               <Space wrap>
-                <Button theme="solid" type="primary" onClick={() => onOpenCase(featuredCase)}>查看案例详情</Button>
-                <Button onClick={() => onOpenProjectDetail(featuredProject)}>项目完整介绍</Button>
+                <Button theme="solid" type="primary" onClick={() => onOpenCase(featuredCase)}>打开业务案例详情</Button>
+                <Button onClick={() => onOpenProjectDetail(featuredProject)}>打开项目技术详情</Button>
               </Space>
             </div>
           </article>
@@ -749,8 +749,8 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
                 <Paragraph>{caseStudy.summary}</Paragraph>
                 <span>{caseStudy.outcome}</span>
                 <Space wrap>
-                  <Button theme="solid" type="primary" onClick={() => onOpenCase(caseStudy)}>查看案例详情</Button>
-                  <Button theme="light" type="primary" onClick={() => onOpenProjectDetail(project)}>项目详情</Button>
+                  <Button theme="solid" type="primary" onClick={() => onOpenCase(caseStudy)}>打开业务案例详情</Button>
+                  <Button theme="light" type="primary" onClick={() => onOpenProjectDetail(project)}>打开技术详情页</Button>
                 </Space>
               </article>
             )
@@ -813,9 +813,9 @@ function ProjectNarrative({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, p
           <strong>{narrative.outcome}</strong>
         </div>
         <Space wrap>
-          <Button theme="solid" type="primary" onClick={onOpenProjectDetail}>打开项目详情页</Button>
-          {projectCase ? <Button onClick={onOpenCase}>查看对应案例</Button> : null}
-          {gameSlug ? <Button onClick={onOpenGameDetail}>进入游戏展示页</Button> : null}
+          <Button theme="solid" type="primary" onClick={onOpenProjectDetail}>打开技术详情页</Button>
+          {projectCase ? <Button onClick={onOpenCase}>打开业务案例</Button> : null}
+          {gameSlug ? <Button onClick={onOpenGameDetail}>打开试玩展示</Button> : null}
         </Space>
       </div>
     </section>
@@ -1234,14 +1234,14 @@ function ProjectFullDetailView({ onBack, onOpenCase, onOpenGameDetail, project }
           <Text type="tertiary">独立项目详情页</Text>
           <Title heading={1}>{project.title}</Title>
           <div className="detail-route-badge">
-            <span>当前不是项目列表预览</span>
+            <span>独立技术详情页</span>
             <strong>/projects/{project.id}</strong>
           </div>
           <Paragraph>{detail.overview}</Paragraph>
           <Space wrap>
-            <Button theme="solid" type="primary" onClick={onBack}>返回项目系统</Button>
-            {projectCase ? <Button onClick={() => onOpenCase(projectCase)}>查看对应案例</Button> : null}
-            {gameSlug ? <Button onClick={() => onOpenGameDetail(project)}>进入游戏展示页</Button> : null}
+            <Button theme="solid" type="primary" onClick={onBack}>返回项目列表</Button>
+            {projectCase ? <Button onClick={() => onOpenCase(projectCase)}>打开业务案例</Button> : null}
+            {gameSlug ? <Button onClick={() => onOpenGameDetail(project)}>打开试玩展示</Button> : null}
           </Space>
         </div>
         <div className="project-detail-media">
@@ -1417,13 +1417,13 @@ function GameShowcaseView({ onBack, onOpenProjectDetail, project }: { onBack: ()
           <Text type="tertiary">独立试玩展示页</Text>
           <Title heading={1}>{project.title}</Title>
           <div className="detail-route-badge">
-            <span>当前不是项目列表预览</span>
+            <span>独立游戏展示页</span>
             <strong>/games/{getGameSlugByProjectId(project.id) ?? project.id}</strong>
           </div>
           <Paragraph>{content.tagline}</Paragraph>
           <Space wrap>
-            <Button theme="solid" type="primary" onClick={() => onOpenProjectDetail(project)}>查看技术详情</Button>
-            <Button onClick={onBack}>返回项目系统</Button>
+            <Button theme="solid" type="primary" onClick={() => onOpenProjectDetail(project)}>打开项目技术详情</Button>
+            <Button onClick={onBack}>返回项目列表</Button>
           </Space>
         </div>
         <div className="game-showcase-stage">
@@ -1516,8 +1516,8 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
           </div>
           <Paragraph>{caseStudy.summary}</Paragraph>
           <Space wrap>
-            <Button theme="solid" type="primary" onClick={() => onOpenProject(project)}>查看项目详情</Button>
-            <Button onClick={onBack}>返回案例中心</Button>
+            <Button theme="solid" type="primary" onClick={() => onOpenProject(project)}>打开项目技术详情</Button>
+            <Button onClick={onBack}>返回案例列表</Button>
           </Space>
         </div>
 
@@ -1772,9 +1772,9 @@ function ProjectDetail({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, proj
       <ul className="highlight-list">{project.highlights.map((item) => <li key={item}>{item}</li>)}</ul>
 
       <Space wrap>
-        <Button theme="solid" type="primary" onClick={onOpenProjectDetail}>查看项目详情页</Button>
-        {projectCase ? <Button theme="light" type="primary" onClick={() => onOpenCase(projectCase)}>查看案例详情</Button> : null}
-        {gameSlug ? <Button theme="light" type="primary" onClick={onOpenGameDetail}>进入游戏展示页</Button> : null}
+        <Button theme="solid" type="primary" onClick={onOpenProjectDetail}>打开技术详情页</Button>
+        {projectCase ? <Button theme="light" type="primary" onClick={() => onOpenCase(projectCase)}>打开业务案例</Button> : null}
+        {gameSlug ? <Button theme="light" type="primary" onClick={onOpenGameDetail}>打开试玩展示</Button> : null}
         {project.links.map((link) => (
           <Button key={`${project.id}-${link.label}`} icon={link.type === 'external' ? <IconExternalOpen /> : <IconBriefcase />} onClick={() => {
             if (link.href.startsWith('/games/')) {
