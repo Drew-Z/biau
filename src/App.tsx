@@ -129,15 +129,17 @@ const blogPosts: BlogPost[] = [
     slug: 'legal-rag-review',
     title: 'Legal RAG 项目复盘',
     tag: 'AI 应用',
-    detail: '记录合同审查、引用溯源和 RAG 问答的实现路径。',
+    detail: '复盘合同审查 RAG 从文档导入、条款切分、检索问答到风险审查的展示链路。',
     date: '2026-06-11',
-    readTime: '8 min',
+    readTime: '10 min',
     sections: [
-      { title: '为什么先做 RAG 项目', body: '法律合同审查天然适合展示检索增强生成的价值：文本长、条款多、风险点分散，并且回答必须能追溯到来源。这个项目把 AI 能力从聊天框推进到文档导入、条款切分、语义检索、引用溯源和风险审查的完整流程。' },
-      { title: 'MVP 阶段的取舍', body: '为了保证本地演示稳定，项目先用 Mock Embedding 和内存向量库跑通主链路。这样可以把精力放在接口边界、数据结构、引用返回和前端工作台上，后续再替换真实 embedding、pgvector、PDF/DOCX parser 和任务队列。' },
-      { title: '面试讲述重点', body: '讲项目时不要只说“接了 AI 接口”，而是强调如何降低幻觉风险：回答必须带 citations，审查结果要能回到原文条款，风险输出要结构化，关键节点要保留人工复核入口。' },
+      { title: '为什么选择合同审查场景', body: '法律合同审查天然适合展示检索增强生成的价值：文本长、条款多、风险点分散，并且回答必须能追溯到来源。这个项目没有把 AI 能力停留在聊天框里，而是把文档导入、条款切分、语义检索、引用溯源和风险审查串成一条可演示的业务流程。' },
+      { title: '端到端链路设计', body: 'MVP 阶段先用 Vue 工作台承载知识库、问答和审查三条路径，Express API 负责导入、chunk 查询、RAG 问答和审查接口，共享类型用于稳定前后端契约。这样项目页可以讲清楚功能边界，案例页可以讲清楚业务价值，博客则沉淀完整复盘。' },
+      { title: '检索与引用溯源', body: '项目先使用 Mock Embedding 和内存向量库跑通主链路，重点验证 chunk 数据结构、召回阈值、轻量重排和 citations 返回格式。回答结果必须带引用，引用要能回到原文条款，访问者才能理解这个系统如何降低“只给结论却无法核验”的风险。' },
+      { title: '风险审查与人审边界', body: '合同审查输出不只是自然语言总结，而是结构化的风险等级、问题说明、修改建议和人工复核标记。这个设计让 AI 更像业务工作台的一环：模型负责初步识别和整理，人负责最终判断，关键节点保留可审计的复核入口。' },
+      { title: '展示讲述重点', body: '对外展示时重点讲“可解释闭环”：文档如何进入知识库、条款如何被切分、问题如何召回上下文、回答如何带引用、风险审查如何回到原文。后续真正产品化时，再替换真实 embedding、pgvector、PDF/DOCX parser 和队列系统。' },
     ],
-    takeaways: ['先跑通可解释闭环，再替换生产级模型和存储。', 'RAG 项目的核心展示点是引用、阈值、召回质量和人工复核。', '博客文章负责沉淀复盘，项目页负责讲工程实现，案例页负责讲业务价值。'],
+    takeaways: ['先跑通可解释闭环，再替换生产级模型和存储。', 'RAG 项目的核心展示点是引用、阈值、召回质量和人工复核。', '博客文章负责沉淀项目复盘，项目页负责讲工程实现，案例页负责讲业务价值。'],
   },
   {
     slug: 'ozon-erp-architecture',
@@ -145,12 +147,15 @@ const blogPosts: BlogPost[] = [
     tag: '全栈开发',
     detail: '整理后台、API、Worker、插件和数据库的边界。',
     date: '2026-06-12',
-    readTime: '6 min',
+    readTime: '9 min',
     sections: [
-      { title: '系统边界', body: 'ERP 项目的价值在于把后台操作、API 服务、数据库模型、异步任务和浏览器插件组织成一条可追踪链路。' },
-      { title: '交付口径', body: '对外展示时需要突出审批、审计、队列和安全开关，而不是暴露真实店铺、账号或连接信息。' },
+      { title: '系统边界', body: 'ERP 项目的价值在于把后台操作、API 服务、数据库模型、异步任务和浏览器插件组织成一条可追踪链路。它不是单纯的管理页面，而是把商品、订单、采集、审批、导入草稿和任务执行放进统一的运营工作台。' },
+      { title: '多端协作结构', body: '前端负责高频操作和状态展示，API 负责权限、校验和数据契约，Worker 承接同步与采集类长任务，浏览器插件补齐平台侧采集能力。展示时可以把这四层拆开讲，让访问者看到每一层的职责和协作方式。' },
+      { title: '数据与任务链路', body: '数据库模型用于沉淀店铺、商品、订单、导入草稿、审批动作和审计记录；队列把耗时任务从主请求链路中拆出去。这样既能解释后台为什么能保持响应，也能说明后续接入更多平台或更大数据量时的扩展路径。' },
+      { title: '安全写入与审计', body: '项目中最适合公开展示的工程亮点，是写操作开关、Pending Action、审批动作和审计日志。对外介绍时不需要暴露真实店铺、账号或连接信息，只需要展示“如何避免误写生产数据”和“如何追踪每一次关键操作”。' },
+      { title: '展示资料沉淀', body: '项目页负责列出技术栈、模块和架构；案例页负责讲运营痛点、方案和结果；博客复盘则适合解释为什么要引入队列、插件和审计，以及这些设计如何支撑小团队的日常运营。' },
     ],
-    takeaways: ['业务系统要讲清楚模块边界。', '真实写入必须有开关和审计。', '插件、Worker、API 的协作是工程亮点。'],
+    takeaways: ['业务系统要讲清楚模块边界和数据流。', '真实写入必须有开关、审批和审计。', '插件、Worker、API 和数据库的协作是工程亮点。'],
   },
   {
     slug: 'game-showcase-standard',
@@ -158,12 +163,15 @@ const blogPosts: BlogPost[] = [
     tag: '游戏项目',
     detail: '统一试玩入口、封面图、操作说明和导出流程。',
     date: '2026-06-13',
-    readTime: '5 min',
+    readTime: '8 min',
     sections: [
-      { title: '为什么需要展示规范', body: '游戏项目如果只放源码，访问者很难理解玩法循环。展示页需要明确玩法、操作方式、版本状态、截图证据和试玩入口。' },
-      { title: '下一步接入', body: '先把每个游戏整理成独立展示页，再逐步接入 Godot Web 导出包、加载状态和版本记录。' },
+      { title: '为什么需要展示规范', body: '游戏项目如果只放源码，访问者很难理解玩法循环。展示页需要明确项目定位、玩法目标、操作方式、版本状态、截图证据和试玩入口，让一个原型也能被当作完整体验来理解。' },
+      { title: '项目详情与试玩入口分层', body: '站点里的项目详情负责讲技术实现、工程结构和导出方式；游戏展示页负责讲玩法、系统、操作和可玩状态。两者保持分层，可以避免详情页堆太多素材，也方便后续替换 Web 试玩包。' },
+      { title: '截图与证据组织', body: '每个游戏至少需要封面图、核心玩法截图、结果页或关卡截图，以及版本说明。对外展示时，截图不只是装饰，而是证明项目已经具备可运行路径、可交互反馈和明确完成状态的证据。' },
+      { title: 'Godot Web 导出节奏', body: '展示系统先保留独立游戏路由和静态说明，再逐步接入 Godot Web 导出包、加载状态、操作提示和版本记录。这样即使某个试玩包暂时未上线，页面也能完整说明当前阶段和后续接入计划。' },
+      { title: '下一步迭代方向', body: '后续可以把五个游戏统一成“封面、玩法、系统、操作、试玩、版本记录”的内容模型，再按项目成熟度展示不同状态：原型验证、展示构建、可试玩版本和发布版本。' },
     ],
-    takeaways: ['每个游戏要有独立入口。', '试玩包和项目说明保持解耦。', '版本记录能让原型更像产品。'],
+    takeaways: ['每个游戏要有独立入口和清晰状态。', '试玩包和项目说明保持解耦。', '截图、版本记录和操作说明能让原型更像产品。'],
   },
 ]
 
@@ -704,7 +712,7 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
           <div>
             <span className="section-pill">案例库</span>
             <Title heading={2}>按落地故事组织案例</Title>
-            <Paragraph>每个案例都遵循“问题、方案、结果”的结构：先讲为什么做，再讲怎么交付，最后给截图、架构和面试讲述入口。</Paragraph>
+            <Paragraph>每个案例都遵循“问题、方案、结果”的结构：先讲为什么做，再讲怎么交付，最后给截图、架构和展示讲解入口。</Paragraph>
           </div>
           <div className="case-board-stats" aria-label="案例统计">
             <span>场景</span>
@@ -750,7 +758,7 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
             </div>
             <div>
               <strong>讲法</strong>
-              <p>面试或对外展示时如何讲业务价值、技术取舍和后续扩展。</p>
+              <p>对外展示时如何讲业务价值、技术取舍和后续扩展。</p>
             </div>
           </aside>
         </div>
@@ -805,7 +813,7 @@ function ProjectNarrative({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, p
         title: '项目完整介绍',
         paragraphs: [
           '这个项目是一个面向合同审查的 RAG 全栈 MVP。项目页保留摘要和展示入口，完整技术栈、实现方式、功能模块和工程拆解放到独立项目详情页。',
-          '案例页则进一步讲清楚业务场景、截图证据和面试讲解口径，避免和项目详情页重复。',
+          '案例页则进一步讲清楚业务场景、截图证据和展示讲解口径，避免和项目详情页重复。',
         ],
         outcome: '完整闭环：文档导入 + RAG 问答 + 合同审查 + citations',
       }
@@ -916,7 +924,7 @@ function getProjectStructure(project: Project): Array<{ title: string; detail: s
       { title: 'src/App.tsx', detail: '当前主站的路由状态、首页、项目、案例、博客和四类详情页入口。' },
       { title: 'src/data/portfolio.ts', detail: '公开项目数据源，统一驱动分类、卡片、详情、案例和跳转关系。' },
       { title: 'src/App.css', detail: 'Semi 组件之外的官网视觉系统、浅暗主题、详情页字体和响应式布局。' },
-      { title: 'Cloudflare Pages', detail: 'Vite 静态构建，GitHub main 分支推送后自动部署到绑定域名。' },
+      { title: 'Cloudflare Pages', detail: 'Vite 静态构建，主分支推送后自动部署到绑定域名。' },
     ],
   }
 
@@ -1159,7 +1167,7 @@ function getProjectDetailContent(project: Project): ProjectDetailContent {
       ],
       implementation: [
         `核心技术栈围绕 ${project.stack.join('、')} 组织，优先保证任务流和展示链路稳定。`,
-        '将生成、审核、发布拆成独立阶段，便于定位失败节点，也方便面试时讲清楚工程取舍。',
+        '将生成、审核、发布拆成独立阶段，便于定位失败节点，也方便对外展示时讲清楚工程取舍。',
         '使用结构化数据描述任务状态、审核结果和前端展示字段，避免页面与模型输出强耦合。',
         '后续可替换真实模型、增加队列持久化、补充权限和审计能力。',
       ],
@@ -1397,7 +1405,7 @@ function getGameShowcaseContent(project: Project): GameShowcaseContent {
     'raiden-prototype': {
       tagline: '短局街机纵版射击垂直切片，适合展示关卡、Boss 和火力成长。',
       stage: '已经具备公开 Demo 准备口径，后续把试玩包接入本站。',
-      gameplay: ['双关章节与章节过场', '火力成长、资源决策和敌机压迫', 'Boss 收束形成阶段目标', '短局体验便于面试和线上展示'],
+      gameplay: ['双关章节与章节过场', '火力成长、资源决策和敌机压迫', 'Boss 收束形成阶段目标', '短局体验便于线上演示和展示讲解'],
       systems: [
         { title: '章节结构', detail: 'Chapter Run 将推进、过场、Boss 和结算组织成可讲述流程。' },
         { title: '火力成长', detail: '通过局内资源和火力变化提升单局反馈密度。' },
@@ -1641,7 +1649,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
       <section className="case-detail-section case-talking-section">
         <div>
           <span className="section-pill">讲解口径</span>
-          <Title heading={2}>面试讲解口径</Title>
+          <Title heading={2}>展示讲解口径</Title>
         </div>
         <div className="case-talking-list">
           {caseStudy.talkingPoints.map((item) => <p key={item}>{item}</p>)}
@@ -1658,7 +1666,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
       <section className="blog-hero">
         <Text type="tertiary">博客总览</Text>
         <Title heading={1}>博客系统</Title>
-        <Paragraph>参考成熟技术博客的精选文章和最新文章结构，用统一的浅色/暗色风格记录项目复盘、学习路线和面试准备。</Paragraph>
+        <Paragraph>参考成熟技术博客的精选文章和最新文章结构，用统一的浅色/暗色风格记录项目复盘、工程学习和展示资料。</Paragraph>
       </section>
 
       <section className="blog-magazine">
@@ -1671,7 +1679,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
             <span>项目复盘</span>
             <span>AI 应用学习</span>
             <span>全栈工程记录</span>
-            <span>面试知识点</span>
+            <span>展示资料</span>
           </div>
         </div>
 
@@ -1693,7 +1701,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
 
         <div className="blog-latest-head">
           <Title heading={3}>最新记录</Title>
-          <Text type="tertiary">后续每天可以继续把知识点追加到这里。</Text>
+          <Text type="tertiary">后续可以继续把项目更新、设计取舍和展示材料追加到这里。</Text>
         </div>
 
         <div className="blog-latest-grid">
