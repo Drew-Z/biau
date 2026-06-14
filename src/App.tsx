@@ -1669,13 +1669,19 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
     { label: '证据材料', value: caseStudy.evidence.length.toString(), detail: '截图 / 文档 / 目录结构' },
   ]
   const workflow = caseStudy.results.map((item) => item.split('，')[0]).slice(0, 5)
-  const caseImages = caseStudy.id === 'legal-rag'
-    ? [
-        { title: '合同审查工作台', image: '/images/projects/showcase/legal-rag-reviewed.png', detail: '按风险类型展示付款条款、交付标准、解除条款等审查结果。' },
-        { title: '知识库导入', image: '/images/projects/showcase/legal-rag-knowledge.png', detail: '沉淀合同文本、条款切片和可追踪的知识库材料。' },
-        { title: '引用溯源问答', image: '/images/projects/showcase/legal-rag-qa.png', detail: '回答法律问题时给出来源片段，便于解释和复核。' },
-      ]
-    : []
+  const caseImagesById: Record<string, Array<{ title: string; image: string; detail: string }>> = {
+    'legal-rag': [
+      { title: '合同审查工作台', image: '/images/projects/showcase/legal-rag-reviewed.png', detail: '按风险类型展示付款条款、交付标准、解除条款等审查结果。' },
+      { title: '知识库导入', image: '/images/projects/showcase/legal-rag-knowledge.png', detail: '沉淀合同文本、条款切片和可追踪的知识库材料。' },
+      { title: '引用溯源问答', image: '/images/projects/showcase/legal-rag-qa.png', detail: '回答法律问题时给出来源片段，便于解释和复核。' },
+    ],
+    'godot-showcase': [
+      { title: '复古射击主菜单', image: '/images/projects/showcase/space-war-menu.png', detail: '展示 Space War 的项目入口、操作提示和复古低色视觉基调。' },
+      { title: '单局玩法画面', image: '/images/projects/showcase/space-war-gameplay.png', detail: '展示横向推进、HUD、Sector 目标和即时操作反馈。' },
+      { title: '结算与重开路径', image: '/images/projects/showcase/space-war-result.png', detail: '展示任务完成、得分、高分记录、重开和返回主菜单的完整闭环。' },
+    ],
+  }
+  const caseImages = caseImagesById[caseStudy.id] ?? []
 
   return (
     <div className="case-detail-page">

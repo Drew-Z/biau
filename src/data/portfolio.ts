@@ -150,6 +150,7 @@ export const projects: Project[] = [
     category: 'interactive',
     status: 'live',
     role: 'Godot 引擎 / 复古射击 / 发布版 / Web 展示',
+    image: '/images/projects/showcase/space-war-gameplay.png',
     stack: ['Godot 4.6', '复古射击', 'Web 导出'],
     highlights: ['区域首领', '道具系统', '高分结算', '发布文档'],
     links: [{ label: '查看页面', href: '/games/space-war', type: 'external' }],
