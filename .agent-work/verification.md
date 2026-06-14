@@ -2,63 +2,53 @@
 
 Date: 2026-06-14
 Repo: /home/zhang/workspace/blog-semi
-Task: Project/case navigation wording and detail-page distinction slice
+Task: Pet Workspace public wording desensitization
 
 ## Diff Summary
 
-- `src/App.tsx` only: renamed navigation buttons so list preview, project technical detail, business case detail, and game showcase actions are distinct.
-- Updated project, case, and game detail route badges from generic "not list preview" wording to explicit independent page labels.
-- No source refactor, no new project/case/blog data, no reference-project changes.
+- `src/App.tsx`: replaced one public Pet Workspace case result phrase from a named deployment/integration environment to a generic local container integration environment.
+- `.agent-work/current-task.md`: opened the second content-calibration slice.
+- `.agent-work/cc-plan.md`: captured Claude Code's read-only second-slice plan.
+- `.agent-work/codex-review.md`: narrowed the implementation to one desensitization wording change.
+- `.agent-work/archive/20260614-225146-navigation-wording-slice/`: archived the first slice artifacts.
 
 ## Baseline Compared
 
-- Adoption audit: `.agent-work/adoption-audit.md`
-- Controller scope: `.agent-work/codex-review.md`
-- Pre-existing failures: none observed in this verification round
-- New failures introduced: none observed
+- Previous shipped commit: `1cdf9b4 Refine project navigation workflow`
+- Current controller review: `.agent-work/codex-review.md`
+- Pre-existing warning: Vite build still emits a direct `eval` warning from `node_modules/lottie-web`; unchanged by this slice.
+- New failures introduced: none observed.
 
 ## Commands Run
 
 | Command | Result | Notes |
 | --- | --- | --- |
 | `npm run lint` | pass | ESLint completed without errors. |
-| `npm run build` | pass | Vite build completed. It still reports a dependency warning from `lottie-web` direct `eval`, not introduced by this slice. |
-| Vite preview route check | pass | `/projects`, `/projects/ozon-erp`, `/cases/ozon-erp`, `/projects/pet-workspace`, `/cases/pet-workspace`, `/projects/xunqiu`, `/cases/godot-showcase` returned the SPA shell. |
-| Built asset label check | pass | Built assets contain `独立技术详情页`, `打开业务案例详情`, and `独立游戏展示页`. |
-| Headless Chrome DOM check | skipped | WSL Google Chrome can launch, but dumped local Vite pages timed out. Kept this as a tool/environment limitation and used preview route/build checks instead. |
-| Windows browser screenshot check | skipped | Attempted isolated headless Chrome/Edge screenshots against WSL preview, but the command timed out in this desktop environment before producing images. |
+| `npm run build` | pass | TypeScript and Vite build completed. Existing `lottie-web` eval warning remains. |
+| Sensitive named-environment scan | pass | Public source no longer contains the named integration/deployment environment term after the wording change. |
 
 ## UI / Browser QA
 
 | Page or flow | Viewports | Result | Evidence |
 | --- | --- | --- | --- |
-| `/projects` | route shell | pass | Vite preview returned 200 and SPA root. |
-| `/projects/ozon-erp` | route shell | pass | Vite preview returned 200 and SPA root. |
-| `/cases/ozon-erp` | route shell | pass | Vite preview returned 200 and SPA root. |
-| `/projects/pet-workspace` | route shell | pass | Vite preview returned 200 and SPA root. |
-| `/cases/pet-workspace` | route shell | pass | Vite preview returned 200 and SPA root. |
-| `/projects/xunqiu` | route shell | pass | Vite preview returned 200 and SPA root. |
-| `/cases/godot-showcase` | route shell | pass | Vite preview returned 200 and SPA root. |
+| `/cases/pet-workspace` | not rerun visually | skipped | This slice is a one-phrase content desensitization; build/lint/source scan covered the change. |
 
 ## Review Findings
 
-- Claude Code stayed inside the approved source scope and only changed `src/App.tsx`.
-- Claude Code reported that it updated this verification file, but the file was still the template; Codex filled in the actual evidence after rerunning checks.
-- The implementation is intentionally narrow and does not solve broader visual layout/content depth work.
+- CC's second-slice plan was useful but proposed adding a xunqiu case first, which conflicts with the current non-goal against adding cases.
+- Codex approved only the smaller Pet wording desensitization slice.
+- The public site source no longer contains the named environment term.
 
 ## Fixed In This Round
 
-- Project list buttons now distinguish list preview, technical detail pages, and business case pages.
-- Case list buttons now distinguish business case detail from project technical detail.
-- Detail route badges now communicate independent project/game/detail page context more clearly.
-- Return buttons now say list-oriented destinations instead of broader system labels.
+- Generalized Pet Workspace's public case wording from a named environment to `本地容器替代环境`.
 
 ## Remaining Work
 
-- Do a manual desktop browser pass after the user reviews the deployed/local page visually.
-- Later slices can improve visual separation with small CSS adjustments if the route badges still feel too subtle.
-- Continue content-depth checks for Ozon ERP, Pet Workspace, xunqiu, and game pages without exposing sensitive data.
+- Open a separate task if the user wants to add a xunqiu business case for the existing xunqiu project.
+- If that task is approved, explicitly allow one new `caseStudies[]` entry tied to `projectId: 'xunqiu'`.
+- Continue avoiding reference-project tmp/deploy/payload details in public content.
 
 ## Ship Decision
 
-Needs human decision before commit/push.
+Ready for commit/push if the user wants this small desensitization slice shipped.

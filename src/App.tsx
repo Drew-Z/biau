@@ -234,7 +234,7 @@ const caseStudies: CaseStudy[] = [
     outcome: 'AI 生成资产进入 App 的工程闭环',
     challenge: '生成类项目容易停留在单次出图，真正落到应用里需要任务状态、素材验证、人工审核、发布记录和移动端消费协议。',
     solution: '工作区按 app-facing 的 gamer 与服务端 fantasy-pet-rule 分边界，生成管线负责 worker orchestration、server-side QA gates 和 public app API contract，Android 侧验证桌宠/社区集成。',
-    results: ['生成任务、审核、发布拆成可追踪阶段', '服务端工具覆盖任务包、审核决策、运行摘要和资产校验', 'Android 桌宠实验验证悬浮窗、前台服务和本地证明链', '本地 HidenCloud 替代环境用于稳定联调社区 API'],
+    results: ['生成任务、审核、发布拆成可追踪阶段', '服务端工具覆盖任务包、审核决策、运行摘要和资产校验', 'Android 桌宠实验验证悬浮窗、前台服务和本地证明链', '本地容器替代环境用于稳定联调社区 API'],
     evidence: ['fantasy-pet-rule 工具链', 'gamer app-facing 集成目录', 'Android 浮窗宠物 MVP', '生成产物与审核截图'],
     architecture: [
       { title: 'App 边界', detail: 'gamer 承载社区 API、管理审核 UI、App shared packages 和集成测试。' },
@@ -1792,6 +1792,5 @@ function ProjectDetail({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, proj
 }
 
 export default App
-
 
 
