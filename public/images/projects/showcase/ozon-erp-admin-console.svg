@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Ozon ERP 脱敏后台模块视图</title>
+  <desc id="desc">脱敏后的电商 ERP 后台控制台，展示商品、订单、采集草稿、审批中心、任务队列和审计日志模块。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f6f8fb; }
+      .shell { fill: #ffffff; stroke: #dbe4f0; stroke-width: 2; }
+      .sidebar { fill: #102033; }
+      .topbar { fill: #ffffff; stroke: #e1e7f0; stroke-width: 2; }
+      .panel { fill: #ffffff; stroke: #d8e2ee; stroke-width: 2; }
+      .panel-blue { fill: #eef7ff; stroke: #b9d9ff; stroke-width: 2; }
+      .panel-green { fill: #effbf5; stroke: #ace7ce; stroke-width: 2; }
+      .panel-warm { fill: #fff7ed; stroke: #ffd0a0; stroke-width: 2; }
+      .panel-red { fill: #fff1f2; stroke: #fecdd3; stroke-width: 2; }
+      .title { fill: #142033; font: 700 34px "Inter", "Microsoft YaHei", sans-serif; }
+      .subtitle { fill: #65758d; font: 400 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .nav { fill: #cbd8e8; font: 600 17px "Inter", "Microsoft YaHei", sans-serif; }
+      .nav-active { fill: #ffffff; font: 700 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .label { fill: #1e293b; font: 700 21px "Inter", "Microsoft YaHei", sans-serif; }
+      .body { fill: #53657d; font: 400 16px "Inter", "Microsoft YaHei", sans-serif; }
+      .small { fill: #6d7c91; font: 400 14px "Inter", "Microsoft YaHei", sans-serif; }
+      .metric { fill: #142033; font: 700 34px "Inter", "Microsoft YaHei", sans-serif; }
+      .chip { fill: #ffffff; stroke: #ccd8e6; stroke-width: 1.5; }
+      .chip-text { fill: #203047; font: 600 14px "Inter", "Microsoft YaHei", sans-serif; }
+      .blue { fill: #2377d8; }
+      .green { fill: #18a574; }
+      .orange { fill: #ef8b2d; }
+      .red { fill: #e05260; }
+      .line { stroke: #d8e2ee; stroke-width: 2; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1440" height="810"/>
+  <rect x="70" y="54" width="1300" height="700" rx="30" class="shell"/>
+
+  <rect x="70" y="54" width="236" height="700" rx="30" class="sidebar"/>
+  <rect x="70" y="114" width="236" height="640" fill="#102033"/>
+  <text x="112" y="122" fill="#ffffff" font-family="Inter, Microsoft YaHei, sans-serif" font-size="25" font-weight="700">Ozon ERP</text>
+  <text x="112" y="154" fill="#8fa3bd" font-family="Inter, Microsoft YaHei, sans-serif" font-size="14">脱敏运营后台</text>
+
+  <rect x="104" y="206" width="168" height="44" rx="16" fill="#2377d8"/>
+  <text x="136" y="234" class="nav-active">运营总览</text>
+  <text x="136" y="292" class="nav">商品中心</text>
+  <text x="136" y="342" class="nav">订单同步</text>
+  <text x="136" y="392" class="nav">采集草稿</text>
+  <text x="136" y="442" class="nav">审批中心</text>
+  <text x="136" y="492" class="nav">任务队列</text>
+  <text x="136" y="542" class="nav">审计日志</text>
+
+  <rect x="306" y="54" width="1064" height="86" rx="0" class="topbar"/>
+  <text x="346" y="105" class="title">电商运营控制台</text>
+  <text x="1028" y="103" class="subtitle">写入保护：已开启</text>
+  <circle cx="1000" cy="96" r="10" class="green"/>
+
+  <text x="346" y="184" class="subtitle">模块状态总览</text>
+  <rect x="346" y="206" width="220" height="126" rx="22" class="panel-blue"/>
+  <text x="380" y="252" class="label">商品中心</text>
+  <text x="380" y="292" class="metric">128</text>
+  <text x="456" y="292" class="body">条脱敏商品</text>
+  <text x="380" y="316" class="small">字段映射 / 利润检查</text>
+
+  <rect x="594" y="206" width="220" height="126" rx="22" class="panel-green"/>
+  <text x="628" y="252" class="label">订单同步</text>
+  <text x="628" y="292" class="metric">24</text>
+  <text x="688" y="292" class="body">个同步任务</text>
+  <text x="628" y="316" class="small">队列执行 / 失败重试</text>
+
+  <rect x="842" y="206" width="220" height="126" rx="22" class="panel-warm"/>
+  <text x="876" y="252" class="label">采集草稿</text>
+  <text x="876" y="292" class="metric">36</text>
+  <text x="936" y="292" class="body">条待处理</text>
+  <text x="876" y="316" class="small">插件采集 / 草稿校验</text>
+
+  <rect x="1090" y="206" width="220" height="126" rx="22" class="panel-red"/>
+  <text x="1124" y="252" class="label">审批中心</text>
+  <text x="1124" y="292" class="metric">8</text>
+  <text x="1168" y="292" class="body">个待确认动作</text>
+  <text x="1124" y="316" class="small">PendingAction / 审批记录</text>
+
+  <rect x="346" y="374" width="600" height="258" rx="24" class="panel"/>
+  <text x="382" y="424" class="label">近期业务流</text>
+  <line x1="382" y1="452" x2="910" y2="452" class="line"/>
+  <circle cx="402" cy="492" r="8" class="blue"/>
+  <text x="426" y="498" class="body">插件采集商品进入草稿池</text>
+  <rect x="750" y="472" width="132" height="34" rx="17" class="chip"/>
+  <text x="774" y="494" class="chip-text">需字段校验</text>
+  <circle cx="402" cy="542" r="8" class="orange"/>
+  <text x="426" y="548" class="body">高风险写入进入审批队列</text>
+  <rect x="750" y="522" width="132" height="34" rx="17" class="chip"/>
+  <text x="774" y="544" class="chip-text">等待确认</text>
+  <circle cx="402" cy="592" r="8" class="green"/>
+  <text x="426" y="598" class="body">订单同步任务完成并写入审计</text>
+  <rect x="750" y="572" width="132" height="34" rx="17" class="chip"/>
+  <text x="784" y="594" class="chip-text">已记录</text>
+
+  <rect x="978" y="374" width="332" height="258" rx="24" class="panel"/>
+  <text x="1014" y="424" class="label">任务队列与审计</text>
+  <line x1="1014" y1="452" x2="1270" y2="452" class="line"/>
+  <text x="1014" y="500" class="body">同步任务</text>
+  <rect x="1138" y="480" width="118" height="30" rx="15" fill="#eef7ff" stroke="#b9d9ff"/>
+  <text x="1170" y="500" class="chip-text">运行中</text>
+  <text x="1014" y="548" class="body">导入导出</text>
+  <rect x="1138" y="528" width="118" height="30" rx="15" fill="#effbf5" stroke="#ace7ce"/>
+  <text x="1170" y="548" class="chip-text">已完成</text>
+  <text x="1014" y="596" class="body">审计记录</text>
+  <rect x="1138" y="576" width="118" height="30" rx="15" fill="#fff7ed" stroke="#ffd0a0"/>
+  <text x="1170" y="596" class="chip-text">可追踪</text>
+
+  <rect x="346" y="666" width="964" height="44" rx="16" fill="#f3f7fb" stroke="#dbe4f0" stroke-width="1.5"/>
+  <text x="382" y="694" class="small">公开安全口径：所有数值和状态均为脱敏占位，不包含真实店铺、订单、商品、凭据、连接信息或生产环境记录。</text>
+</svg>

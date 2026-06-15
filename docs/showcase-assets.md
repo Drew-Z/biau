@@ -17,7 +17,7 @@
 | --- | --- | --- | --- |
 | Legal RAG | 合同审查工作台、知识库导入、引用溯源问答、RAG 流程闭环图 | 报告导出或模型替换边界图 | 后续补一张“审查报告导出/真实模型替换”脱敏图 |
 | Pet Workspace | 生成管线图、生成产物图、App API 契约图、人审决策流图 | 脱敏审核后台真实截图 | 后续补一张不含任务来源和云端配置的审核后台截图 |
-| Ozon ERP | ERP 封面图、运营链路图、数据审批模型图 | 脱敏后台截图 | 后续补一张去除店铺与订单信息的后台模块截图 |
+| Ozon ERP | ERP 封面图、运营链路图、数据审批模型图、后台模块视图 | 脱敏真实后台截图 | 后续补一张去除店铺、订单、商品和连接信息的真实后台截图 |
 | xunqiu | 64 位客户端模块地图、迁移流程图、验收链路图 | 64 位客户端脱敏运行截图 | 只采集新客户端脱敏截图，不复用含真实数据旧素材 |
 | Space War | 主菜单、玩法画面、结算页 | Web 试玩入口截图 | 已接入项目卡与 Godot 案例页 |
 | 其他 Godot 项目 | 文字证据已补齐 | 各项目封面、玩法截图、结果页截图 | 后续按项目逐个补真实运行图 |
@@ -37,6 +37,7 @@ public/images/projects/showcase/fantasy-pet-review-flow.svg
 public/images/projects/showcase/erp-cover.svg
 public/images/projects/showcase/ozon-erp-workflow.svg
 public/images/projects/showcase/ozon-erp-data-model.svg
+public/images/projects/showcase/ozon-erp-admin-console.svg
 public/images/projects/showcase/xunqiu-module-map.svg
 public/images/projects/showcase/xunqiu-migration-flow.svg
 public/images/projects/showcase/xunqiu-verification-chain.svg
