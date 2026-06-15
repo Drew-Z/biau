@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">寻球迁移验收链路</title>
+  <desc id="desc">脱敏后的移动端重构验收链路图，展示从构建到公开证据的验证路径。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f8fafc; }
+      .shell { fill: #ffffff; stroke: #dbe4f0; stroke-width: 2; }
+      .node { fill: #ffffff; stroke: #ccd8e6; stroke-width: 2; }
+      .node-blue { fill: #eef7ff; stroke: #b9d9ff; stroke-width: 2; }
+      .node-green { fill: #eefbf5; stroke: #ace7ce; stroke-width: 2; }
+      .node-orange { fill: #fff7ed; stroke: #ffd2a6; stroke-width: 2; }
+      .title { fill: #142033; font: 700 44px "Inter", "Microsoft YaHei", sans-serif; }
+      .subtitle { fill: #61718a; font: 400 22px "Inter", "Microsoft YaHei", sans-serif; }
+      .label { fill: #1e293b; font: 700 24px "Inter", "Microsoft YaHei", sans-serif; }
+      .text { fill: #53657d; font: 400 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .small { fill: #6c7a90; font: 400 16px "Inter", "Microsoft YaHei", sans-serif; }
+      .badge { fill: #1f7ad9; }
+      .badge2 { fill: #18a574; }
+      .badge3 { fill: #ef8b2d; }
+      .num { fill: #ffffff; font: 700 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .line { stroke: #9fb3cc; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke: #b5c5d8; stroke-width: 3; fill: none; stroke-linecap: round; stroke-dasharray: 8 10; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1440" height="810"/>
+  <rect x="76" y="62" width="1288" height="686" rx="28" class="shell"/>
+  <text x="122" y="128" class="title">移动端重构验收链路</text>
+  <text x="122" y="170" class="subtitle">把“能运行”拆成可追踪证据：构建、设备、模块、发布准备和公开脱敏。</text>
+
+  <rect x="136" y="252" width="236" height="154" rx="22" class="node-blue"/>
+  <circle cx="170" cy="290" r="18" class="badge"/>
+  <text x="165" y="297" class="num">1</text>
+  <text x="204" y="298" class="label">构建检查</text>
+  <text x="166" y="348" class="text">依赖版本</text>
+  <text x="166" y="382" class="text">编译与打包流程</text>
+
+  <rect x="444" y="252" width="236" height="154" rx="22" class="node"/>
+  <circle cx="478" cy="290" r="18" class="badge"/>
+  <text x="473" y="297" class="num">2</text>
+  <text x="512" y="298" class="label">设备烟测</text>
+  <text x="474" y="348" class="text">模拟器首屏</text>
+  <text x="474" y="382" class="text">真机基础交互</text>
+
+  <rect x="752" y="252" width="236" height="154" rx="22" class="node-green"/>
+  <circle cx="786" cy="290" r="18" class="badge2"/>
+  <text x="781" y="297" class="num">3</text>
+  <text x="820" y="298" class="label">模块行为</text>
+  <text x="782" y="348" class="text">登录与会话</text>
+  <text x="782" y="382" class="text">页面恢复记录</text>
+
+  <rect x="1060" y="252" width="236" height="154" rx="22" class="node-orange"/>
+  <circle cx="1094" cy="290" r="18" class="badge3"/>
+  <text x="1089" y="297" class="num">4</text>
+  <text x="1128" y="298" class="label">专项路径</text>
+  <text x="1090" y="348" class="text">上传链路</text>
+  <text x="1090" y="382" class="text">视频体验检查</text>
+
+  <path d="M372 329 H444" class="line"/>
+  <path d="M680 329 H752" class="line"/>
+  <path d="M988 329 H1060" class="line"/>
+
+  <path d="M254 406 V504 H562" class="dash"/>
+  <path d="M870 406 V504 H562" class="dash"/>
+  <path d="M1178 406 V504 H562" class="dash"/>
+
+  <rect x="418" y="504" width="288" height="142" rx="22" class="node-green"/>
+  <circle cx="452" cy="542" r="18" class="badge2"/>
+  <text x="447" y="549" class="num">5</text>
+  <text x="486" y="550" class="label">发布清单</text>
+  <text x="452" y="600" class="text">阶段结论</text>
+  <text x="452" y="634" class="text">已知限制与回归项</text>
+
+  <path d="M706 575 H768" class="line"/>
+
+  <rect x="768" y="504" width="316" height="142" rx="22" class="node-blue"/>
+  <circle cx="802" cy="542" r="18" class="badge"/>
+  <text x="797" y="549" class="num">6</text>
+  <text x="836" y="550" class="label">公开证据</text>
+  <text x="802" y="600" class="text">模块图、迁移图、验收链路图</text>
+  <text x="802" y="634" class="text">截图需复核后再发布</text>
+
+  <rect x="136" y="666" width="1160" height="46" rx="16" fill="#f3f7fb" stroke="#dbe4f0" stroke-width="1.5"/>
+  <text x="168" y="696" class="small">公开安全边界：只展示抽象验证步骤，不展示设备日志、私有配置、发布包细节或服务端环境信息。</text>
+</svg>

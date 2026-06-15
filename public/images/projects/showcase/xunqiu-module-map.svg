@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">寻球 64 位客户端模块地图</title>
+  <desc id="desc">脱敏后的移动端业务系统模块地图，展示新客户端、公共能力与历史系统边界。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7fafc; }
+      .panel { fill: #ffffff; stroke: #dbe3ef; stroke-width: 2; }
+      .panel-soft { fill: #eef7ff; stroke: #b9d9ff; stroke-width: 2; }
+      .panel-warm { fill: #fff7ed; stroke: #ffd3a8; stroke-width: 2; }
+      .panel-mint { fill: #eefbf5; stroke: #a8e8cc; stroke-width: 2; }
+      .title { fill: #142033; font: 700 44px "Inter", "Microsoft YaHei", sans-serif; }
+      .subtitle { fill: #5f6f89; font: 400 22px "Inter", "Microsoft YaHei", sans-serif; }
+      .label { fill: #1e293b; font: 700 24px "Inter", "Microsoft YaHei", sans-serif; }
+      .text { fill: #53657d; font: 400 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .small { fill: #66758c; font: 400 16px "Inter", "Microsoft YaHei", sans-serif; }
+      .chip { fill: #ffffff; stroke: #cfd9e6; stroke-width: 1.5; }
+      .chip-text { fill: #203047; font: 600 17px "Inter", "Microsoft YaHei", sans-serif; }
+      .accent-blue { fill: #2377d8; }
+      .accent-green { fill: #17a673; }
+      .accent-orange { fill: #f08a24; }
+      .line { stroke: #9fb3cc; stroke-width: 3; fill: none; stroke-linecap: round; }
+      .dash { stroke: #9fb3cc; stroke-width: 3; fill: none; stroke-linecap: round; stroke-dasharray: 8 10; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1440" height="810"/>
+  <rect x="70" y="56" width="1300" height="698" rx="28" class="panel"/>
+
+  <text x="116" y="126" class="title">寻球移动端业务系统</text>
+  <text x="116" y="166" class="subtitle">64 位客户端模块地图：新客户端承接核心页面，历史系统只作为接口与功能参照边界。</text>
+
+  <rect x="108" y="226" width="300" height="390" rx="24" class="panel-soft"/>
+  <circle cx="146" cy="268" r="14" class="accent-blue"/>
+  <text x="174" y="276" class="label">入口与公共能力</text>
+  <text x="136" y="328" class="text">MainActivity 统一入口</text>
+  <text x="136" y="372" class="text">登录态与会话模型</text>
+  <text x="136" y="416" class="text">接口封装与返回模型</text>
+  <text x="136" y="460" class="text">异步任务与公共 UI</text>
+  <text x="136" y="504" class="text">上传 / 视频适配层</text>
+  <text x="136" y="560" class="small">公开说明只保留职责边界，不展示</text>
+  <text x="136" y="586" class="small">真实服务地址、凭据或构建产物信息。</text>
+
+  <rect x="512" y="218" width="416" height="406" rx="28" class="panel"/>
+  <text x="626" y="274" class="label">新 64 位客户端</text>
+  <circle cx="720" cy="421" r="82" fill="#f0f6ff" stroke="#b9d9ff" stroke-width="3"/>
+  <text x="665" y="414" class="chip-text">页面模块</text>
+  <text x="654" y="445" class="small">分阶段恢复</text>
+
+  <rect x="566" y="318" width="126" height="42" rx="21" class="chip"/>
+  <text x="608" y="345" class="chip-text">首页</text>
+  <rect x="748" y="318" width="126" height="42" rx="21" class="chip"/>
+  <text x="790" y="345" class="chip-text">动态</text>
+  <rect x="548" y="414" width="126" height="42" rx="21" class="chip"/>
+  <text x="590" y="441" class="chip-text">社区</text>
+  <rect x="766" y="414" width="126" height="42" rx="21" class="chip"/>
+  <text x="808" y="441" class="chip-text">日程</text>
+  <rect x="566" y="512" width="126" height="42" rx="21" class="chip"/>
+  <text x="608" y="539" class="chip-text">赛事</text>
+  <rect x="748" y="512" width="126" height="42" rx="21" class="chip"/>
+  <text x="790" y="539" class="chip-text">商品</text>
+  <rect x="650" y="580" width="126" height="42" rx="21" class="chip"/>
+  <text x="684" y="607" class="chip-text">个人中心</text>
+  <rect x="650" y="250" width="126" height="42" rx="21" class="chip"/>
+  <text x="692" y="277" class="chip-text">视频</text>
+
+  <path d="M408 418 C452 418 466 418 512 418" class="line"/>
+  <path d="M928 418 C974 418 988 418 1032 418" class="line"/>
+
+  <rect x="1032" y="226" width="300" height="390" rx="24" class="panel-warm"/>
+  <circle cx="1070" cy="268" r="14" class="accent-orange"/>
+  <text x="1098" y="276" class="label">历史系统边界</text>
+  <text x="1060" y="328" class="text">旧移动端作为功能参照</text>
+  <text x="1060" y="372" class="text">Java 服务端提供既有接口</text>
+  <text x="1060" y="416" class="text">后台 / H5 保留业务范围</text>
+  <text x="1060" y="460" class="text">发布资料用于验收比对</text>
+  <text x="1060" y="524" class="small">展示侧只描述抽象结构和迁移策略，</text>
+  <text x="1060" y="550" class="small">不公开私有配置或历史业务数据。</text>
+
+  <rect x="232" y="660" width="976" height="56" rx="18" class="panel-mint"/>
+  <circle cx="272" cy="688" r="10" class="accent-green"/>
+  <text x="300" y="695" class="text">展示重点：模块拆分、接口复用边界、64 位兼容路线、阶段验收资料。</text>
+  <path d="M346 632 C480 688 564 690 696 632" class="dash"/>
+  <path d="M1094 632 C950 688 874 690 744 632" class="dash"/>
+</svg>

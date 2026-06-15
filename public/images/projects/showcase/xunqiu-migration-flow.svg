@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">寻球 64 位迁移流程</title>
+  <desc id="desc">脱敏后的历史移动系统迁移流程，展示从项目盘点到新客户端验收的阶段路径。</desc>
+  <defs>
+    <style>
+      .bg { fill: #fbfcff; }
+      .card { fill: #ffffff; stroke: #dbe4f0; stroke-width: 2; }
+      .card-a { fill: #eef7ff; stroke: #b9d9ff; stroke-width: 2; }
+      .card-b { fill: #fff6ec; stroke: #ffd0a0; stroke-width: 2; }
+      .card-c { fill: #effbf5; stroke: #ace7ce; stroke-width: 2; }
+      .title { fill: #142033; font: 700 44px "Inter", "Microsoft YaHei", sans-serif; }
+      .subtitle { fill: #627089; font: 400 22px "Inter", "Microsoft YaHei", sans-serif; }
+      .step { fill: #1e293b; font: 700 24px "Inter", "Microsoft YaHei", sans-serif; }
+      .text { fill: #53657d; font: 400 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .small { fill: #6c7a90; font: 400 16px "Inter", "Microsoft YaHei", sans-serif; }
+      .num { fill: #ffffff; font: 700 22px "Inter", "Microsoft YaHei", sans-serif; }
+      .dot-blue { fill: #2377d8; }
+      .dot-orange { fill: #ef8b2d; }
+      .dot-green { fill: #18a574; }
+      .arrow { stroke: #9fb3cc; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .rail { stroke: #cfdae8; stroke-width: 8; fill: none; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1440" height="810"/>
+  <text x="86" y="112" class="title">历史移动系统到 64 位客户端</text>
+  <text x="86" y="154" class="subtitle">用阶段化迁移替代一次性硬改：先建地图，再隔离风险，最后沉淀可复现验收资料。</text>
+
+  <path d="M168 414 H1268" class="rail"/>
+  <path d="M388 414 H472" class="arrow"/>
+  <path d="M670 414 H754" class="arrow"/>
+  <path d="M952 414 H1036" class="arrow"/>
+
+  <rect x="86" y="248" width="280" height="332" rx="24" class="card-a"/>
+  <circle cx="130" cy="296" r="24" class="dot-blue"/>
+  <text x="123" y="304" class="num">1</text>
+  <text x="170" y="304" class="step">项目盘点</text>
+  <text x="122" y="360" class="text">旧客户端与新客户端目录</text>
+  <text x="122" y="402" class="text">服务端、后台、H5 边界</text>
+  <text x="122" y="444" class="text">功能模块与可复用接口</text>
+  <text x="122" y="486" class="text">发布资料与验收记录</text>
+  <text x="122" y="536" class="small">目标：先确认范围，而不是直接</text>
+  <text x="122" y="562" class="small">把旧工程全部搬进新客户端。</text>
+
+  <rect x="438" y="248" width="280" height="332" rx="24" class="card-b"/>
+  <circle cx="482" cy="296" r="24" class="dot-orange"/>
+  <text x="475" y="304" class="num">2</text>
+  <text x="522" y="304" class="step">风险隔离</text>
+  <text x="474" y="360" class="text">旧原生依赖不直接引入</text>
+  <text x="474" y="402" class="text">历史 SDK 与构建链分离</text>
+  <text x="474" y="444" class="text">私有配置不进入公开站点</text>
+  <text x="474" y="486" class="text">真实业务数据不作为素材</text>
+  <text x="474" y="536" class="small">目标：把兼容性阻塞和展示</text>
+  <text x="474" y="562" class="small">安全问题先挡在边界之外。</text>
+
+  <rect x="790" y="248" width="280" height="332" rx="24" class="card-c"/>
+  <circle cx="834" cy="296" r="24" class="dot-green"/>
+  <text x="827" y="304" class="num">3</text>
+  <text x="874" y="304" class="step">新客户端骨架</text>
+  <text x="826" y="360" class="text">64 位兼容入口</text>
+  <text x="826" y="402" class="text">会话与请求封装</text>
+  <text x="826" y="444" class="text">公共 UI 与异步任务</text>
+  <text x="826" y="486" class="text">页面模块分批恢复</text>
+  <text x="826" y="536" class="small">目标：先跑通骨架，再按业务</text>
+  <text x="826" y="562" class="small">优先级接回页面能力。</text>
+
+  <rect x="1142" y="248" width="212" height="332" rx="24" class="card"/>
+  <circle cx="1186" cy="296" r="24" class="dot-blue"/>
+  <text x="1179" y="304" class="num">4</text>
+  <text x="1226" y="304" class="step">验收沉淀</text>
+  <text x="1178" y="360" class="text">构建检查</text>
+  <text x="1178" y="402" class="text">模拟器检查</text>
+  <text x="1178" y="444" class="text">真机烟测</text>
+  <text x="1178" y="486" class="text">模块记录</text>
+  <text x="1178" y="528" class="text">脱敏说明</text>
+
+  <rect x="220" y="646" width="1000" height="68" rx="20" fill="#ffffff" stroke="#dbe4f0" stroke-width="2"/>
+  <text x="258" y="688" class="text">迁移表达口径：公开页面讲“接手方法、模块恢复、兼容策略、验收链路”，不展示私有运行环境或历史数据。</text>
+</svg>
