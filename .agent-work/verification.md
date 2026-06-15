@@ -31,6 +31,15 @@ Task: Add Pet Workspace human-review decision flow evidence
 | `npm run build` | pass | TypeScript and Vite build completed in WSL. Existing `lottie-web` direct eval warning remains. |
 | `rg -n -e "面试" -e "作品集" -e "123\." -e "120\." -e "password" -e "密码" -e "账号" -e "IP" -e "token" src docs public .agent-work/current-task.md .agent-work/verification.md` | reviewed | Hits are public-safety guardrails, CSS numeric false positives, SVG coordinates, or existing desensitization notes; no real account, endpoint, credential, database URL, host, or interview/portfolio wording was introduced. |
 
+## Deployment QA
+
+- Commit pushed: `ee07eed Add Pet Workspace review evidence`.
+- Cloudflare deployment refreshed after push. Initial asset checks returned the app shell, then changed to the new SVG after the build completed.
+- Direct asset check:
+  - `/images/projects/showcase/fantasy-pet-review-flow.svg`: `200`, `image/svg+xml`, `6436` bytes.
+- Online browser QA with Chrome:
+  - `/cases/pet-workspace`: desktop and mobile load the existing three evidence images plus `fantasy-pet-review-flow.svg`; the review-flow SVG loads at `1440x810`, with no console errors and no horizontal overflow.
+
 ## Public-Safety Review
 
 - The new Pet Workspace SVG uses concept-level labels only.
@@ -40,10 +49,8 @@ Task: Add Pet Workspace human-review decision flow evidence
 
 ## Remaining Work
 
-- Commit and push the WSL changes after controller review.
-- Verify the Cloudflare deployment after push.
 - Later add a real desensitized review-console screenshot only after cropping and removing task source, operator, and environment details.
 
 ## Ship Decision
 
-Verified locally and ready for commit/push.
+Committed, pushed, deployed, and verified online.
