@@ -8,42 +8,46 @@ Builder: Codex
 
 ## Goal
 
-Run a full online showcase audit after the latest Legal RAG, Pet Workspace, Ozon ERP, and xunqiu evidence updates.
+Improve Godot project coverage by adding public-safe showcase diagrams for the game projects that still lack visual evidence, then connect them to project cards and the Godot case detail page.
 
 ## Scope
 
-- Verify Cloudflare production routes for home, project list, case list, blog list, key project details, key case details, blog details, and game detail pages.
-- Check desktop and mobile rendering for console errors, horizontal overflow, broken images, blank pages, and route title mismatches.
-- Run public wording checks for `面试` / `作品集` and sensitive terms over source/docs/public artifacts.
-- Record durable QA evidence in `.agent-work/verification.md`.
+- Add public-safe SVG diagrams for Tetris, Next Spacewar, InteSpace, and Raiden Prototype.
+- Use those diagrams as project card/detail visuals for the matching interactive projects.
+- Expand the Godot showcase case evidence list so it represents the full five-game set, not only Space War.
+- Update docs/showcase-assets.md so the asset inventory reflects the new game coverage.
+- Run lint, build, public wording scan, and targeted route/image checks.
 
 ## Non-goals
 
-- Do not redesign pages unless the audit finds a concrete issue.
-- Do not modify `~/workspace/reference-projects`.
-- Do not add new projects or new showcase assets in this audit slice.
-- Do not push before verification evidence is recorded.
+- Do not modify ~/workspace/reference-projects.
+- Do not claim the new SVGs are real runtime screenshots.
+- Do not add Web playable build packages or large Godot exports.
+- Do not copy logs, build paths, local validation paths, package hashes, or release files into public content.
+- Do not redesign the full site layout in this slice.
 
 ## Allowed Paths
 
-- `.agent-work/current-task.md`
-- `.agent-work/verification.md`
+- public/images/projects/showcase/*.svg
+- src/data/portfolio.ts
+- src/App.tsx
+- docs/showcase-assets.md
+- .agent-work/current-task.md
+- .agent-work/verification.md
 
 ## Acceptance Criteria
 
-- [x] Production routes load with expected titles on desktop and mobile.
-- [x] Production pages show no browser console errors or warnings in the audited routes.
-- [x] Production pages have no horizontal overflow at 1440x900 and 390x844.
-- [x] All production images present on audited routes load with non-zero natural dimensions.
-- [x] Source/docs/public scan does not show public `面试` / `作品集` wording or real sensitive values.
-- [x] WSL local and `origin/main` are aligned after recording the audit.
+- [x] Four new public-safe game diagrams exist and load as images.
+- [x] Tetris, Next Spacewar, InteSpace, and Raiden project cards/details use their own visual asset.
+- [x] /cases/godot-showcase shows evidence for all five Godot projects.
+- [x] Asset inventory no longer says other Godot projects only have text evidence.
+- [x] No public interview/portfolio wording or sensitive values are introduced.
+- [x] npm run lint and npm run build pass in WSL.
 
 ## Verification Plan
 
-- Use Chrome browser automation against `https://biau.playlab.eu.cc`.
-- Visit base routes: `/`, `/projects`, `/cases`, `/blogs`.
-- Visit key project routes: `/projects/legal-rag`, `/projects/ozon-erp`, `/projects/pet-workspace`, `/projects/xunqiu`, `/projects/blog-semi`, `/projects/space-war`.
-- Visit key case routes: `/cases/legal-rag`, `/cases/ozon-erp`, `/cases/pet-workspace`, `/cases/xunqiu`, `/cases/godot-showcase`.
-- Visit blog routes: `/blogs/legal-rag-review`, `/blogs/ozon-erp-architecture`, `/blogs/pet-workspace-pipeline`, `/blogs/xunqiu-android64-rebuild`, `/blogs/game-showcase-standard`.
-- Visit game routes: `/games/first-tetris`, `/games/next-spacewar`, `/games/intespace`, `/games/raiden`, `/games/space-war`.
-- Run `git status`, sensitive wording scan, and commit the audit record if clean.
+- Run npm run lint.
+- Run npm run build.
+- Run sensitive/public wording scan over src, docs, public, and active .agent-work files.
+- Browser-check /projects, /cases/godot-showcase, and the four game detail routes at desktop and mobile widths.
+- Commit and push after verification passes.

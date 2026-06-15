@@ -1695,9 +1695,12 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
       { title: '验收链路', image: '/images/projects/showcase/xunqiu-verification-chain.svg', detail: '展示构建、模拟器/真机、模块行为和发布清单组成的可复现验收闭环。' },
     ],
     'godot-showcase': [
-      { title: '复古射击主菜单', image: '/images/projects/showcase/space-war-menu.png', detail: '展示 Space War 的项目入口、操作提示和复古低色视觉基调。' },
-      { title: '单局玩法画面', image: '/images/projects/showcase/space-war-gameplay.png', detail: '展示横向推进、HUD、Sector 目标和即时操作反馈。' },
-      { title: '结算与重开路径', image: '/images/projects/showcase/space-war-result.png', detail: '展示任务完成、得分、高分记录、重开和返回主菜单的完整闭环。' },
+      { title: 'Tetris 结构图', image: '/images/projects/showcase/godot-tetris-structure.svg', detail: '展示经典规则、Rogue 原型、触屏桥接和多尺寸回归组成的公开安全项目结构。' },
+      { title: 'Next Spacewar 展示路径', image: '/images/projects/showcase/godot-next-spacewar-showcase.svg', detail: '展示主菜单、帮助、战斗、暂停、结果页和 session summary 串成的试玩路径。' },
+      { title: 'InteSpace 系统闭环', image: '/images/projects/showcase/godot-intespace-loop.svg', detail: '展示武器树、自动射击、Boss 试炼、结算和局外成长组成的 Roguelite 闭环。' },
+      { title: 'Raiden 垂直切片', image: '/images/projects/showcase/godot-raiden-vertical-slice.svg', detail: '展示双关章节、火力成长、Boss 相位和公开演示准备组成的纵版射击切片。' },
+      { title: 'Space War 运行画面', image: '/images/projects/showcase/space-war-gameplay.png', detail: '展示横向推进、HUD、Sector 目标和即时操作反馈，是当前已有真实运行截图。' },
+      { title: 'Space War 结算路径', image: '/images/projects/showcase/space-war-result.png', detail: '展示任务完成、得分、高分记录、重开和返回主菜单的完整闭环。' },
     ],
   }
   const caseImages = caseImagesById[caseStudy.id] ?? []

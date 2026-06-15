@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Next Spacewar 展示构建路径图</title>
+  <desc id="desc">公开安全的 Next Spacewar 展示路径图，展示菜单、帮助、战斗、暂停、结果页和 session summary。</desc>
+  <defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 Z" fill="#3b82f6"/></marker></defs>
+  <rect width="1440" height="810" fill="#f7fbff"/>
+  <text x="96" y="112" fill="#102033" font-size="40" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">太空战机｜Next Spacewar 展示构建</text>
+  <text x="96" y="152" fill="#64748b" font-size="20" font-family="Inter, Microsoft YaHei, sans-serif">把主菜单、帮助、战斗、暂停、结果页和单局复盘接成完整试玩路径</text>
+  <rect x="90" y="204" width="1260" height="466" rx="34" fill="#fff" stroke="#d5e4f6" stroke-width="2"/>
+  <rect x="136" y="250" width="336" height="374" rx="28" fill="#111827"/>
+  <circle cx="210" cy="314" r="3" fill="#fff"/><circle cx="388" cy="376" r="3" fill="#fff"/><circle cx="302" cy="526" r="2" fill="#fff"/>
+  <path d="M260 452 L330 422 L316 470 Z" fill="#38bdf8" stroke="#e0f2fe" stroke-width="3"/><circle cx="392" cy="434" r="18" fill="#f97316"/>
+  <rect x="184" y="566" width="240" height="34" rx="17" fill="#243b63"/><text x="222" y="588" fill="#dbeafe" font-size="17" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">showcase build</text>
+  <path d="M520 438 H652" stroke="#3b82f6" stroke-width="4" fill="none" marker-end="url(#arrow)"/><path d="M790 438 H922" stroke="#3b82f6" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+  <g font-family="Inter, Microsoft YaHei, sans-serif" font-size="18" font-weight="700" fill="#fff" transform="translate(648 260)">
+    <rect width="190" height="88" rx="22" fill="#2563eb"/><text x="72" y="54">菜单</text>
+    <rect y="126" width="190" height="88" rx="22" fill="#06b6d4"/><text x="72" y="180">帮助</text>
+    <rect y="252" width="190" height="88" rx="22" fill="#22c55e"/><text x="72" y="306">暂停</text>
+  </g>
+  <g font-family="Inter, Microsoft YaHei, sans-serif" font-size="18" font-weight="700" fill="#fff" transform="translate(918 260)">
+    <rect width="190" height="88" rx="22" fill="#2563eb"/><text x="72" y="54">战斗</text>
+    <rect y="126" width="190" height="88" rx="22" fill="#f97316"/><text x="72" y="180">结果</text>
+    <rect y="252" width="190" height="88" rx="22" fill="#ef4444"/><text x="50" y="306">复盘摘要</text>
+  </g>
+  <rect x="1150" y="280" width="154" height="300" rx="26" fill="#eef6ff" stroke="#bdd7ff" stroke-width="2"/>
+  <g font-family="Inter, Microsoft YaHei, sans-serif"><text x="1184" y="332" fill="#102033" font-size="23" font-weight="700">工程证据</text><text x="1184" y="380" fill="#53657d" font-size="17">player / bullet</text><text x="1184" y="418" fill="#53657d" font-size="17">enemy / obstacle</text><text x="1184" y="456" fill="#53657d" font-size="17">main menu</text><text x="1184" y="494" fill="#53657d" font-size="17">run result</text><text x="1184" y="532" fill="#53657d" font-size="17">发布资料</text></g>
+</svg>

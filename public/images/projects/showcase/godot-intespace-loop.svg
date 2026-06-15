@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">InteSpace Roguelite 系统闭环图</title>
+  <desc id="desc">公开安全的 InteSpace 系统闭环图，展示武器树、自动射击、Boss 试炼、结算和局外成长。</desc>
+  <rect width="1440" height="810" fill="#f6faf7"/>
+  <rect x="74" y="60" width="1292" height="690" rx="34" fill="#fff" stroke="#dbe9df" stroke-width="2"/>
+  <text x="118" y="126" fill="#102033" font-size="40" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">InteSpace｜竖屏肉鸽射击系统闭环</text>
+  <text x="118" y="166" fill="#64748b" font-size="20" font-family="Inter, Microsoft YaHei, sans-serif">移动端优先的自动射击，用武器树和局外成长组织 Roguelite 体验</text>
+  <rect x="118" y="220" width="326" height="430" rx="32" fill="#122018"/>
+  <rect x="178" y="266" width="206" height="338" rx="26" fill="#0b1510" stroke="#3f6b4d" stroke-width="2"/>
+  <circle cx="282" cy="522" r="26" fill="#22c55e"/><path d="M282 314 C248 370 248 438 282 492 C316 438 316 370 282 314 Z" fill="#84cc16" opacity="0.88"/><circle cx="282" cy="346" r="14" fill="#bef264"/><circle cx="246" cy="444" r="12" fill="#38bdf8"/><circle cx="320" cy="414" r="12" fill="#f97316"/>
+  <text x="172" y="690" fill="#102033" font-size="22" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">首页 -> 战斗 -> 升级 -> 结算 -> 成长 -> 下一局</text>
+  <g font-family="Inter, Microsoft YaHei, sans-serif">
+    <rect x="532" y="238" width="238" height="132" rx="24" fill="#effcf4" stroke="#bde8c8" stroke-width="2"/><text x="566" y="286" fill="#102033" font-size="24" font-weight="700">武器树</text><text x="566" y="326" fill="#526575" font-size="17">路线构筑与升级选择</text>
+    <rect x="842" y="238" width="238" height="132" rx="24" fill="#eef6ff" stroke="#bfdbfe" stroke-width="2"/><text x="876" y="286" fill="#102033" font-size="24" font-weight="700">自动射击</text><text x="876" y="326" fill="#526575" font-size="17">生存压力与战斗反馈</text>
+    <rect x="1112" y="338" width="180" height="132" rx="24" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/><text x="1146" y="386" fill="#102033" font-size="24" font-weight="700">Boss</text><text x="1146" y="426" fill="#526575" font-size="17">章节目标</text>
+    <rect x="842" y="526" width="238" height="132" rx="24" fill="#f5f3ff" stroke="#ddd6fe" stroke-width="2"/><text x="876" y="574" fill="#102033" font-size="24" font-weight="700">结算</text><text x="876" y="614" fill="#526575" font-size="17">资源、评价和下一局</text>
+    <rect x="532" y="526" width="238" height="132" rx="24" fill="#f0fdfa" stroke="#99f6e4" stroke-width="2"/><text x="566" y="574" fill="#102033" font-size="24" font-weight="700">局外成长</text><text x="566" y="614" fill="#526575" font-size="17">meta progression</text>
+  </g>
+  <path d="M770 304 H842" stroke="#22c55e" stroke-width="4"/><path d="M1080 304 C1134 304 1164 322 1202 338" stroke="#22c55e" stroke-width="4" fill="none"/><path d="M1202 470 C1158 540 1122 582 1080 592" stroke="#22c55e" stroke-width="4" fill="none"/><path d="M842 592 H770" stroke="#22c55e" stroke-width="4"/><path d="M532 592 C486 540 478 390 532 304" stroke="#22c55e" stroke-width="4" fill="none"/>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Raiden Prototype 垂直切片结构图</title>
+  <desc id="desc">公开安全的 Raiden Prototype 垂直切片结构图，展示双关章节、火力成长、Boss 相位和公开演示准备。</desc>
+  <rect width="1440" height="810" fill="#fbf7f7"/>
+  <rect x="70" y="56" width="1300" height="700" rx="34" fill="#fff" stroke="#ead7d7" stroke-width="2"/>
+  <text x="116" y="122" fill="#102033" font-size="40" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">Raiden Prototype｜纵版射击垂直切片</text>
+  <text x="116" y="162" fill="#64748b" font-size="20" font-family="Inter, Microsoft YaHei, sans-serif">双关章节、火力成长、Boss 收束和公开演示准备形成短局展示路径</text>
+  <rect x="120" y="218" width="330" height="456" rx="30" fill="#16161f"/>
+  <path d="M285 590 L252 642 H318 Z" fill="#60a5fa" stroke="#e0f2fe" stroke-width="3"/>
+  <path d="M285 550 V320" stroke="#38bdf8" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="230" cy="354" r="18" fill="#ef4444"/><circle cx="340" cy="404" r="16" fill="#f97316"/><circle cx="292" cy="280" r="42" fill="#7f1d1d" stroke="#fecaca" stroke-width="4"/>
+  <text x="180" y="252" fill="#fecaca" font-size="18" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">vertical slice</text>
+  <g font-family="Inter, Microsoft YaHei, sans-serif">
+    <rect x="532" y="238" width="720" height="94" rx="24" fill="#fff1f2" stroke="#fecdd3" stroke-width="2"/><text x="566" y="296" fill="#102033" font-size="24" font-weight="700">Stage 01</text><text x="718" y="296" fill="#526575" font-size="18">基础敌机、火力成长、资源决策</text>
+    <rect x="532" y="374" width="720" height="94" rx="24" fill="#fff7ed" stroke="#fed7aa" stroke-width="2"/><text x="566" y="432" fill="#102033" font-size="24" font-weight="700">Chapter Bridge</text><text x="780" y="432" fill="#526575" font-size="18">结果页、章节过场、下一段目标</text>
+    <rect x="532" y="510" width="720" height="94" rx="24" fill="#eef6ff" stroke="#bfdbfe" stroke-width="2"/><text x="566" y="568" fill="#102033" font-size="24" font-weight="700">Stage 02 + Boss</text><text x="796" y="568" fill="#526575" font-size="18">相位收束、风暴环境、公开试玩验证</text>
+  </g>
+  <path d="M892 332 V374" stroke="#ef4444" stroke-width="4"/><path d="M892 468 V510" stroke="#ef4444" stroke-width="4"/>
+  <rect x="532" y="642" width="720" height="52" rx="18" fill="#f8fafc" stroke="#dbe3ee" stroke-width="2"/>
+  <text x="566" y="676" fill="#53657d" font-size="17" font-family="Inter, Microsoft YaHei, sans-serif">公开展示只保留玩法结构、验证结论和演示准备，不公开本地构建路径或原始日志。</text>
+</svg>

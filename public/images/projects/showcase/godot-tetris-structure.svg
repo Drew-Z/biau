@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Tetris Godot 原型展示结构图</title>
+  <desc id="desc">公开安全的俄罗斯方块原型结构图，展示经典规则、Rogue 原型、触屏桥接和多尺寸回归。</desc>
+  <rect width="1440" height="810" fill="#f4f7fb"/>
+  <rect x="72" y="58" width="1296" height="694" rx="34" fill="#fff" stroke="#d9e2ef" stroke-width="2"/>
+  <text x="118" y="124" fill="#102033" font-size="40" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">俄罗斯方块原型｜Godot 展示结构</text>
+  <text x="118" y="162" fill="#64748b" font-size="20" font-family="Inter, Microsoft YaHei, sans-serif">经典规则闭环 + Rogue 强化实验 + 触屏输入桥接 + 多尺寸截图回归</text>
+  <rect x="118" y="214" width="440" height="476" rx="28" fill="#132238"/>
+  <rect x="238" y="258" width="200" height="320" rx="12" fill="#0b1220" stroke="#38506f" stroke-width="2"/>
+  <g transform="translate(278 302)">
+    <rect width="36" height="36" fill="#22b8cf"/><rect x="38" width="36" height="36" fill="#22b8cf"/><rect x="76" width="36" height="36" fill="#22b8cf"/><rect x="114" width="36" height="36" fill="#22b8cf"/>
+    <rect y="190" width="36" height="36" fill="#22c55e"/><rect x="38" y="190" width="36" height="36" fill="#22c55e"/><rect x="38" y="152" width="36" height="36" fill="#22c55e"/>
+    <rect x="76" y="152" width="36" height="36" fill="#f59e0b"/><rect x="76" y="190" width="36" height="36" fill="#f59e0b"/><rect x="114" y="190" width="36" height="36" fill="#f59e0b"/>
+  </g>
+  <text x="170" y="640" fill="#fff" font-size="24" font-family="Inter, Microsoft YaHei, sans-serif" font-weight="700">可玩主循环</text>
+  <text x="322" y="640" fill="#a9b9cf" font-size="17" font-family="Inter, Microsoft YaHei, sans-serif">移动 / 旋转 / Hold / 消行 / 重开</text>
+  <g font-family="Inter, Microsoft YaHei, sans-serif">
+    <rect x="626" y="224" width="310" height="162" rx="24" fill="#fff" stroke="#d9e2ef" stroke-width="2"/><text x="660" y="274" fill="#102033" font-size="24" font-weight="700">经典模式</text><text x="660" y="316" fill="#51627a" font-size="18">网格、碰撞、消行、得分</text><text x="660" y="350" fill="#6b7a90" font-size="15" font-weight="500">稳定基础规则闭环</text>
+    <rect x="992" y="224" width="310" height="162" rx="24" fill="#fff" stroke="#d9e2ef" stroke-width="2"/><text x="1026" y="274" fill="#102033" font-size="24" font-weight="700">Rogue 原型</text><text x="1026" y="316" fill="#51627a" font-size="18">三选一强化与局间承接</text><text x="1026" y="350" fill="#6b7a90" font-size="15" font-weight="500">系统实验线</text>
+    <rect x="626" y="444" width="310" height="162" rx="24" fill="#fff" stroke="#d9e2ef" stroke-width="2"/><text x="660" y="494" fill="#102033" font-size="24" font-weight="700">触屏桥接</text><text x="660" y="536" fill="#51627a" font-size="18">按钮映射到动作层</text><text x="660" y="570" fill="#6b7a90" font-size="15" font-weight="500">键盘与移动端统一输入</text>
+    <rect x="992" y="444" width="310" height="162" rx="24" fill="#fff" stroke="#d9e2ef" stroke-width="2"/><text x="1026" y="494" fill="#102033" font-size="24" font-weight="700">截图回归</text><text x="1026" y="536" fill="#51627a" font-size="18">多尺寸布局验证</text><text x="1026" y="570" fill="#6b7a90" font-size="15" font-weight="500">移动端适配证据</text>
+  </g>
+  <path d="M558 452 C590 360 592 322 626 306" stroke="#9fb4d0" stroke-width="3" fill="none"/><path d="M558 452 C728 406 830 338 992 306" stroke="#9fb4d0" stroke-width="3" fill="none"/><path d="M558 452 C592 508 596 522 626 526" stroke="#9fb4d0" stroke-width="3" fill="none"/><path d="M558 452 C726 516 830 520 992 526" stroke="#9fb4d0" stroke-width="3" fill="none"/>
+</svg>
