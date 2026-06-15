@@ -1675,6 +1675,11 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
       { title: '知识库导入', image: '/images/projects/showcase/legal-rag-knowledge.png', detail: '沉淀合同文本、条款切片和可追踪的知识库材料。' },
       { title: '引用溯源问答', image: '/images/projects/showcase/legal-rag-qa.png', detail: '回答法律问题时给出来源片段，便于解释和复核。' },
     ],
+    'pet-workspace': [
+      { title: '生成管线边界', image: '/images/projects/showcase/fantasy-pet-flow.png', detail: '展示 App 侧、生成规则服务、Worker、质量门禁和人工审核之间的职责边界。' },
+      { title: '生成产物样例', image: '/images/projects/showcase/fantasy-pet-artifact.png', detail: '展示候选产物进入审核前的公开形态，保留结果观感，不暴露真实任务包或模型配置。' },
+      { title: 'App API 契约', image: '/images/projects/showcase/fantasy-pet-api-contract.svg', detail: '展示创建任务、状态查询、候选索引、人审发布和打包下载的 app-safe 数据流。' },
+    ],
     'godot-showcase': [
       { title: '复古射击主菜单', image: '/images/projects/showcase/space-war-menu.png', detail: '展示 Space War 的项目入口、操作提示和复古低色视觉基调。' },
       { title: '单局玩法画面', image: '/images/projects/showcase/space-war-gameplay.png', detail: '展示横向推进、HUD、Sector 目标和即时操作反馈。' },
@@ -1971,4 +1976,3 @@ function ProjectDetail({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, proj
 }
 
 export default App
-

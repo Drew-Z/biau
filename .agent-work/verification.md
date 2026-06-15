@@ -1,49 +1,56 @@
 # Verification
 
 Date: 2026-06-15
-Repo: D:\workspace4Codex\blog-semi
-Task: Add Space War showcase screenshots and asset inventory
+Repo: /home/zhang/workspace/blog-semi
+Task: Add Pet Workspace App API contract evidence
+
+## Environment Decision
+
+- Windows worktree `D:\workspace4Codex\blog-semi` was at `d11ae0b` and clean.
+- WSL worktree `/home/zhang/workspace/blog-semi` was initially behind at `ee436f0`.
+- Remote `origin/main` was `d11ae0b`.
+- The Windows-side work was useful and already pushed, so WSL was fast-forwarded with `git pull --ff-only origin main`.
+- All new implementation work in this task was done inside the WSL worktree.
 
 ## Diff Summary
 
-- `src/data/portfolio.ts`: added the Space War gameplay screenshot as the project visual.
-- `src/App.tsx`: changed case-detail image mapping from a Legal RAG special case to a reusable `caseImagesById` map, preserving Legal RAG and adding Godot showcase images.
-- `src/App.css`: adjusted case evidence images to preserve full 16:9 screenshots with `object-fit: contain`, and removed the first-card crop/span treatment.
-- `public/images/projects/showcase/`: added Space War menu, gameplay, and result screenshots.
-- `docs/showcase-assets.md`: added a public showcase asset inventory, coverage table, gaps, and desensitization rules.
-- `.agent-work/current-task.md`: updated the active task charter and marked acceptance criteria complete.
+- `public/images/projects/showcase/fantasy-pet-api-contract.svg`: added a public-safe App API contract diagram.
+- `src/App.tsx`: added `pet-workspace` to the reusable case image mapping with three evidence images.
+- `docs/showcase-assets.md`: updated Pet Workspace coverage and remaining asset gaps.
+- `.agent-work/current-task.md`: updated this task charter and marked acceptance criteria complete.
 
 ## Browser QA
 
 | Route | Viewport | Result | Evidence |
 | --- | --- | --- | --- |
-| `/projects/space-war` | 1440x900 | pass | `space-war-gameplay.png` loaded with natural size `960x540`; no horizontal overflow. |
-| `/cases/godot-showcase` | 1440x900 | pass | three Space War evidence images loaded with natural size `960x540`; grid rendered as three equal columns; no console errors; no horizontal overflow. |
-| `/cases/godot-showcase` | 390x844 | pass | three Space War evidence images loaded after scrolling; single-column layout; no console errors; no horizontal overflow. |
-| `/cases/legal-rag` | 1440x900 | pass | existing three Legal RAG images still loaded through the new map; no horizontal overflow. |
+| `/cases/pet-workspace` | 1440x900 | pass | three Pet evidence images loaded; new SVG loaded with natural size `1440x810`; no console errors; no horizontal overflow. |
+| `/cases/pet-workspace` | 390x844 | pass | three Pet evidence images loaded in single-column layout; no console errors; no horizontal overflow. |
+| `/cases/legal-rag` | 1440x900 | pass | existing three Legal RAG images still load through the same component. |
+| `/cases/godot-showcase` | 1440x900 | pass | existing three Space War images still load through the same component. |
 
 ## Commands Run
 
 | Command | Result | Notes |
 | --- | --- | --- |
-| `npm.cmd run lint` | pass | ESLint completed without errors. |
-| `npm.cmd run build` | pass | TypeScript and Vite build completed. Existing `lottie-web` direct eval warning remains. |
-| `rg -n -e "面试" -e "作品集" -e "123\." -e "120\." -e "password" -e "密码" -e "账号" -e "IP" -e "token" src docs public` | pass | Hits are desensitization/safety statements only; no `面试` or `作品集` hits in public content. |
+| `git pull --ff-only origin main` | pass | WSL fast-forwarded from `ee436f0` to `d11ae0b`. |
+| `npm run lint` | pass | ESLint completed without errors in WSL. |
+| `npm run build` | pass | TypeScript and Vite build completed in WSL. Existing `lottie-web` direct eval warning remains. |
+| `rg -n -e "面试" -e "作品集" -e "123\." -e "120\." -e "password" -e "密码" -e "账号" -e "IP" -e "token" src docs public .agent-work` | reviewed | Hits are CSS/SVG numeric coordinates, desensitization guardrails, and historical `.agent-work/archive` notes; no new public credential, endpoint, account, or interview/portfolio wording was introduced. |
 
-## Review Findings
+## Public-Safety Review
 
-- The copied Space War screenshots are public gameplay/menu/result captures and do not contain accounts, endpoints, logs, real service data, signing files, or build paths.
-- The previous lazy-load `naturalWidth: 0` observation was caused by images being below the viewport before scrolling.
-- After the CSS adjustment, case evidence screenshots are no longer cropped; the full 16:9 images are visible on desktop and mobile.
-- Existing Legal RAG image evidence still works after replacing the hard-coded condition with a reusable map.
+- The new SVG uses concept-level module labels only.
+- It does not include real domains, IPs, ports, tokens, task ids, local paths, generated run JSON, provider config, or admin-only endpoint names.
+- It explains that App responses are public-safe and that worker/generation internals stay behind the service boundary.
+- `~/workspace/reference-projects` was read for context only and was not modified.
 
 ## Remaining Work
 
-- Pet Workspace: add one desensitized admin/audit screenshot or App API contract diagram.
-- Ozon ERP: add desensitized dashboard/module screenshots and a Prisma or task-flow diagram.
-- xunqiu: collect only new 64-bit client screenshots after manual review; avoid old assets that may contain real data.
-- Other Godot projects: add project-specific menu/gameplay/result screenshots gradually.
+- Commit the WSL changes after human approval.
+- Push to GitHub/Cloudflare after human approval.
+- Continue with Ozon ERP: add a desensitized admin/module screenshot or an ER/task-flow diagram.
+- Continue with xunqiu only after preparing safe 64-bit client screenshots.
 
 ## Ship Decision
 
-Ready for commit and push.
+Verified and ready for commit/push, but not shipped yet.

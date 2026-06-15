@@ -16,7 +16,7 @@
 | 项目 | 已上线素材 | 缺口 | 下一步 |
 | --- | --- | --- | --- |
 | Legal RAG | 合同审查工作台、知识库导入、引用溯源问答 | 可补 RAG 流程图 | 追加“导入-切分-召回-回答-审查”流程图 |
-| Pet Workspace | 生成管线图、生成产物图 | 审核后台截图、App API 契约图 | 从脱敏后台或流程图补 2 张图 |
+| Pet Workspace | 生成管线图、生成产物图、App API 契约图 | 审核后台截图 | 后续补一张脱敏审核后台或人审决策流截图 |
 | Ozon ERP | ERP 封面图 | 脱敏后台截图、Prisma ER 图、插件链路图 | 先补后台模块截图，再补 ER 图 |
 | xunqiu | 暂无公开站点图片 | 64 位客户端截图、模块地图、迁移流程图 | 只采集新客户端脱敏截图，不复用含真实数据旧素材 |
 | Space War | 主菜单、玩法画面、结算页 | Web 试玩入口截图 | 已接入项目卡与 Godot 案例页 |
@@ -31,6 +31,7 @@ public/images/projects/showcase/legal-rag-knowledge.png
 public/images/projects/showcase/legal-rag-qa.png
 public/images/projects/showcase/fantasy-pet-flow.png
 public/images/projects/showcase/fantasy-pet-artifact.png
+public/images/projects/showcase/fantasy-pet-api-contract.svg
 public/images/projects/showcase/erp-cover.svg
 public/images/projects/showcase/space-war-menu.png
 public/images/projects/showcase/space-war-gameplay.png
@@ -42,4 +43,3 @@ public/images/projects/showcase/space-war-result.png
 - `xunqiu` 旧服务端、旧 App、发布包和配置目录中的图片需要逐张复核，避免暴露真实账号、真实用户、服务器信息或历史业务数据。
 - `pet` 生成过程中的真实任务包、运行目录、候选素材、模型配置和云端地址不进入公开站点。
 - 游戏项目的日志、构建产物、分发包和本地验证路径不进入公开站点；只发布截图、封面和脱敏后的版本说明。
-

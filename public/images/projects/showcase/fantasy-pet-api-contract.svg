@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Pet Workspace App API contract diagram</title>
+  <desc id="desc">A desensitized architecture diagram showing the app UI, public API contract, trusted worker pipeline, QA gate, human review, and package output.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8fbff"/>
+      <stop offset="0.55" stop-color="#eef6ff"/>
+      <stop offset="1" stop-color="#f4fff8"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0052d9"/>
+      <stop offset="1" stop-color="#2f80ff"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b8f6a"/>
+      <stop offset="1" stop-color="#24c08b"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#16345c" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#0052d9"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="14" markerHeight="14" refX="10" refY="7" orient="auto">
+      <path d="M1,1 L13,7 L1,13 Z" fill="#0b8f6a"/>
+    </marker>
+    <style>
+      .title { fill: #0f172a; font: 800 48px Inter, "Segoe UI", Arial, sans-serif; }
+      .subtitle { fill: #526173; font: 600 22px Inter, "Segoe UI", Arial, sans-serif; }
+      .label { fill: #0f172a; font: 800 27px Inter, "Segoe UI", Arial, sans-serif; }
+      .body { fill: #5c6b7d; font: 600 19px Inter, "Segoe UI", Arial, sans-serif; }
+      .small { fill: #6c7a89; font: 700 16px Inter, "Segoe UI", Arial, sans-serif; }
+      .white { fill: #ffffff; }
+      .box { fill: #ffffff; stroke: #d9e8f8; stroke-width: 2; rx: 24; filter: url(#shadow); }
+      .soft { fill: #f7fbff; stroke: #d9e8f8; stroke-width: 2; rx: 20; }
+      .lineBlue { stroke: #0052d9; stroke-width: 4; fill: none; marker-end: url(#arrowBlue); }
+      .lineGreen { stroke: #0b8f6a; stroke-width: 4; fill: none; marker-end: url(#arrowGreen); }
+      .dash { stroke-dasharray: 10 12; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="810" fill="url(#bg)"/>
+  <circle cx="1180" cy="120" r="180" fill="#cce2ff" opacity="0.32"/>
+  <circle cx="260" cy="680" r="220" fill="#c9f4df" opacity="0.34"/>
+
+  <text x="80" y="96" class="title">Pet Workspace App API 契约</text>
+  <text x="82" y="138" class="subtitle">公开展示只保留模块边界、状态流和审核规则，不包含真实服务地址、任务 JSON、密钥或运行路径。</text>
+
+  <rect x="80" y="205" width="260" height="170" class="box"/>
+  <rect x="112" y="237" width="64" height="64" rx="18" fill="url(#blue)"/>
+  <text x="132" y="278" class="white" style="font: 900 28px Inter, Arial;">UI</text>
+  <text x="112" y="330" class="label">App UI</text>
+  <text x="112" y="360" class="body">提交描述</text>
+  <text x="112" y="389" class="body">查看进度与候选</text>
+
+  <rect x="430" y="180" width="300" height="220" class="box"/>
+  <text x="466" y="236" class="label">公开 API 契约</text>
+  <rect x="466" y="268" width="228" height="42" rx="12" fill="#eef6ff" stroke="#c8dcf3"/>
+  <text x="486" y="296" class="body">创建任务</text>
+  <rect x="466" y="322" width="228" height="42" rx="12" fill="#eefbf6" stroke="#c9eadb"/>
+  <text x="486" y="350" class="body">查询状态</text>
+  <text x="466" y="382" class="small">只返回 app-safe 字段</text>
+
+  <rect x="820" y="180" width="270" height="220" class="box"/>
+  <text x="856" y="236" class="label">服务端运行</text>
+  <text x="856" y="272" class="body">任务状态机</text>
+  <text x="856" y="304" class="body">候选产物索引</text>
+  <text x="856" y="336" class="body">下载标识映射</text>
+  <text x="856" y="374" class="small">隐藏内部路径与配置</text>
+
+  <rect x="1170" y="205" width="220" height="170" class="box"/>
+  <rect x="1204" y="237" width="64" height="64" rx="18" fill="url(#green)"/>
+  <text x="1220" y="278" class="white" style="font: 900 27px Inter, Arial;">QA</text>
+  <text x="1204" y="330" class="label">质量门禁</text>
+  <text x="1204" y="360" class="body">规则检查</text>
+  <text x="1204" y="389" class="body">阻断低质候选</text>
+
+  <path d="M340 290 C378 290 392 290 430 290" class="lineBlue"/>
+  <path d="M730 290 C772 290 778 290 820 290" class="lineBlue"/>
+  <path d="M1090 290 C1126 290 1134 290 1170 290" class="lineGreen"/>
+
+  <rect x="190" y="505" width="250" height="170" class="box"/>
+  <text x="226" y="560" class="label">可信 Worker</text>
+  <text x="226" y="596" class="body">编排生成</text>
+  <text x="226" y="628" class="body">刷新进度</text>
+  <text x="226" y="660" class="small">不向前端暴露内部能力</text>
+
+  <rect x="535" y="500" width="370" height="180" class="box"/>
+  <text x="574" y="556" class="label">多阶段生成链路</text>
+  <rect x="574" y="588" width="86" height="46" rx="14" fill="#eef6ff" stroke="#c8dcf3"/>
+  <text x="595" y="618" class="body">规划</text>
+  <rect x="692" y="588" width="86" height="46" rx="14" fill="#eefbf6" stroke="#c9eadb"/>
+  <text x="713" y="618" class="body">生成</text>
+  <rect x="810" y="588" width="56" height="46" rx="14" fill="#fff7ed" stroke="#fed7aa"/>
+  <text x="824" y="618" class="body">审</text>
+  <text x="574" y="660" class="small">每阶段产出可审计记录</text>
+
+  <rect x="1000" y="505" width="300" height="170" class="box"/>
+  <text x="1036" y="560" class="label">人审发布</text>
+  <text x="1036" y="596" class="body">接受 / 退回 / 拒绝</text>
+  <text x="1036" y="628" class="body">通过后才打包</text>
+  <text x="1036" y="660" class="small">自动化不能代替发布决策</text>
+
+  <path d="M955 400 C955 462 720 438 720 500" class="lineBlue dash"/>
+  <path d="M440 590 C474 590 500 590 535 590" class="lineBlue"/>
+  <path d="M905 590 C942 590 964 590 1000 590" class="lineGreen"/>
+  <path d="M1150 505 C1150 468 1050 434 980 400" class="lineGreen dash"/>
+
+  <rect x="80" y="722" width="1280" height="44" rx="16" fill="#ffffff" opacity="0.82" stroke="#dbe8f8"/>
+  <text x="112" y="751" class="small">展示口径：App 只消费公开响应、候选索引和审核结果；Worker 与生成细节留在服务端边界内；真实配置、路径、任务包和模型信息不进入公开站点。</text>
+</svg>
