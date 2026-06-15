@@ -31,6 +31,15 @@ Task: Add Legal RAG workflow evidence
 | `npm run build` | pass | TypeScript and Vite build completed in WSL. Existing `lottie-web` direct eval warning remains. |
 | `rg -n -e "面试" -e "作品集" -e "123\." -e "120\." -e "password" -e "密码" -e "账号" -e "IP" -e "token" src docs public .agent-work/current-task.md .agent-work/verification.md` | reviewed | Hits are public-safety guardrails, CSS numeric false positives, SVG coordinates, or existing desensitization notes; no real account, endpoint, credential, database URL, host, or interview/portfolio wording was introduced. |
 
+## Deployment QA
+
+- Commit pushed: `8087014 Add Legal RAG workflow evidence`.
+- Cloudflare deployment refreshed after push. Initial asset checks returned the app shell, then changed to the new SVG after the build completed.
+- Direct asset check:
+  - `/images/projects/showcase/legal-rag-flow.svg`: `200`, `image/svg+xml`, `6262` bytes.
+- Online browser QA with Chrome:
+  - `/cases/legal-rag`: desktop and mobile load the existing three screenshots plus `legal-rag-flow.svg`; the flow SVG loads at `1440x810`, with no console errors and no horizontal overflow.
+
 ## Public-Safety Review
 
 - The new Legal RAG SVG uses concept-level labels only.
@@ -40,10 +49,8 @@ Task: Add Legal RAG workflow evidence
 
 ## Remaining Work
 
-- Commit and push the WSL changes after controller review.
-- Verify the Cloudflare deployment after push.
 - Later add a report-export or real-model replacement boundary diagram if the Legal RAG project gains that feature.
 
 ## Ship Decision
 
-Verified locally and ready for commit/push.
+Committed, pushed, deployed, and verified online.
