@@ -275,7 +275,7 @@ const caseStudies: CaseStudy[] = [
     challenge: '生成类项目容易停留在单次出图，真正落到应用里需要任务状态、素材验证、人工审核、发布记录和移动端消费协议。',
     solution: '工作区按 app-facing 的 gamer 与服务端 fantasy-pet-rule 分边界，生成管线负责 worker orchestration、server-side QA gates 和 public app API contract，Android 侧验证桌宠/社区集成。',
     results: ['生成任务、审核、发布拆成可追踪阶段', '服务端工具覆盖任务包、审核决策、运行摘要和资产校验', 'Android 桌宠实验验证悬浮窗、前台服务和本地证明链', '本地容器替代环境用于稳定联调社区 API'],
-    evidence: ['fantasy-pet-rule 工具链', 'gamer app-facing 集成目录', 'Android 浮窗宠物 MVP', '生成产物与审核截图'],
+    evidence: ['fantasy-pet-rule 工具链', 'gamer app-facing 集成目录', 'Android 浮窗宠物 MVP', '人审决策流图'],
     architecture: [
       { title: 'App 边界', detail: 'gamer 承载社区 API、管理审核 UI、App shared packages 和集成测试。' },
       { title: '生成服务', detail: 'fantasy-pet-rule 承载 worker 编排、生成管线和服务端 QA gates。' },
@@ -1643,7 +1643,7 @@ function getCaseEvidenceDetail(caseId: string, evidence: string): string {
       'fantasy-pet-rule 工具链': '展示生成任务、Worker 编排、QA Gate、审核决策和产物索引的服务端管线。',
       'gamer app-facing 集成目录': '说明社区 API、审核后台、共享包和 App 集成测试在应用侧的职责边界。',
       'Android 浮窗宠物 MVP': '用于证明生成资产最终进入移动端消费场景，而不是只停留在服务端流程。',
-      '生成产物与审核截图': '只保留脱敏后的流程证据，避免暴露真实任务 JSON、云端地址或候选素材来源。',
+      '人审决策流图': '展示候选产物经过质量门禁、人审通过/返工/驳回、发布记录和 App API 消费的闭环。',
     },
     xunqiu: {
       '64 位客户端模块地图': '展示新客户端按首页、动态、社区、赛程、商品、个人中心和视频等模块恢复。',
@@ -1686,6 +1686,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
       { title: '生成管线边界', image: '/images/projects/showcase/fantasy-pet-flow.png', detail: '展示 App 侧、生成规则服务、Worker、质量门禁和人工审核之间的职责边界。' },
       { title: '生成产物样例', image: '/images/projects/showcase/fantasy-pet-artifact.png', detail: '展示候选产物进入审核前的公开形态，保留结果观感，不暴露真实任务包或模型配置。' },
       { title: 'App API 契约', image: '/images/projects/showcase/fantasy-pet-api-contract.svg', detail: '展示创建任务、状态查询、候选索引、人审发布和打包下载的 app-safe 数据流。' },
+      { title: '人审决策流', image: '/images/projects/showcase/fantasy-pet-review-flow.svg', detail: '展示候选产物经过质量门禁、人审决策、发布记录和 App API 消费的闭环。' },
     ],
     xunqiu: [
       { title: '64 位客户端模块地图', image: '/images/projects/showcase/xunqiu-module-map.svg', detail: '展示新客户端页面模块、公共能力和接口复用层的关系，不暴露真实服务地址。' },

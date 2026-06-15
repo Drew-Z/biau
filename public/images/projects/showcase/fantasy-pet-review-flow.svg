@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Pet Workspace 人审决策流</title>
+  <desc id="desc">脱敏后的 AI 生成审核流程图，展示候选产物、质量门禁、人审决策、发布记录与 App API 消费。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7fafc; }
+      .shell { fill: #ffffff; stroke: #dbe4f0; stroke-width: 2; }
+      .panel { fill: #ffffff; stroke: #d4deeb; stroke-width: 2; }
+      .panel-blue { fill: #eef7ff; stroke: #b8d8ff; stroke-width: 2; }
+      .panel-green { fill: #eefbf5; stroke: #ace8cf; stroke-width: 2; }
+      .panel-warm { fill: #fff7ed; stroke: #ffd0a0; stroke-width: 2; }
+      .panel-red { fill: #fff1f2; stroke: #fecdd3; stroke-width: 2; }
+      .title { fill: #142033; font: 700 44px "Inter", "Microsoft YaHei", sans-serif; }
+      .subtitle { fill: #5f6f89; font: 400 22px "Inter", "Microsoft YaHei", sans-serif; }
+      .label { fill: #1e293b; font: 700 23px "Inter", "Microsoft YaHei", sans-serif; }
+      .body { fill: #53657d; font: 400 17px "Inter", "Microsoft YaHei", sans-serif; }
+      .small { fill: #6c7a90; font: 400 15px "Inter", "Microsoft YaHei", sans-serif; }
+      .num { fill: #ffffff; font: 700 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .badge-blue { fill: #2377d8; }
+      .badge-green { fill: #18a574; }
+      .badge-orange { fill: #ef8b2d; }
+      .badge-red { fill: #e05260; }
+      .arrow { stroke: #9fb3cc; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke: #aebfd4; stroke-width: 3; fill: none; stroke-linecap: round; stroke-dasharray: 8 10; }
+      .chip { fill: #ffffff; stroke: #ccd8e6; stroke-width: 1.5; }
+      .chip-text { fill: #203047; font: 600 16px "Inter", "Microsoft YaHei", sans-serif; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1440" height="810"/>
+  <rect x="70" y="58" width="1300" height="692" rx="28" class="shell"/>
+
+  <text x="116" y="126" class="title">Pet Workspace 人审发布闭环</text>
+  <text x="116" y="166" class="subtitle">把 AI 生成结果从候选产物推进到可发布资产：自动门禁、人审决策和 App API 分层记录。</text>
+
+  <rect x="112" y="238" width="238" height="162" rx="22" class="panel-blue"/>
+  <circle cx="150" cy="280" r="18" class="badge-blue"/>
+  <text x="145" y="287" class="num">1</text>
+  <text x="184" y="288" class="label">生成候选</text>
+  <text x="146" y="340" class="body">任务状态机</text>
+  <text x="146" y="372" class="body">候选索引</text>
+
+  <path d="M350 319 H426" class="arrow"/>
+
+  <rect x="426" y="238" width="238" height="162" rx="22" class="panel-green"/>
+  <circle cx="464" cy="280" r="18" class="badge-green"/>
+  <text x="459" y="287" class="num">2</text>
+  <text x="498" y="288" class="label">质量门禁</text>
+  <text x="460" y="340" class="body">规则检查</text>
+  <text x="460" y="372" class="body">阻断低质候选</text>
+
+  <path d="M664 319 H740" class="arrow"/>
+
+  <rect x="740" y="238" width="286" height="162" rx="22" class="panel-warm"/>
+  <circle cx="778" cy="280" r="18" class="badge-orange"/>
+  <text x="773" y="287" class="num">3</text>
+  <text x="812" y="288" class="label">人审工作台</text>
+  <text x="774" y="340" class="body">候选对比 / 元数据摘要</text>
+  <text x="774" y="372" class="body">审核意见与发布备注</text>
+
+  <path d="M883 400 V468" class="arrow"/>
+
+  <rect x="548" y="468" width="188" height="138" rx="22" class="panel-green"/>
+  <circle cx="584" cy="506" r="16" class="badge-green"/>
+  <text x="579" y="512" class="num">A</text>
+  <text x="620" y="514" class="label">通过</text>
+  <text x="584" y="564" class="body">进入发布记录</text>
+
+  <rect x="798" y="468" width="188" height="138" rx="22" class="panel-warm"/>
+  <circle cx="834" cy="506" r="16" class="badge-orange"/>
+  <text x="829" y="512" class="num">B</text>
+  <text x="870" y="514" class="label">返工</text>
+  <text x="834" y="564" class="body">回到生成队列</text>
+
+  <rect x="1048" y="468" width="188" height="138" rx="22" class="panel-red"/>
+  <circle cx="1084" cy="506" r="16" class="badge-red"/>
+  <text x="1079" y="512" class="num">C</text>
+  <text x="1120" y="514" class="label">驳回</text>
+  <text x="1084" y="564" class="body">保留原因记录</text>
+
+  <path d="M740 536 H736" class="arrow"/>
+  <path d="M986 536 H1048" class="arrow"/>
+  <path d="M892 468 V432 C892 420 892 414 892 400" class="dash"/>
+  <path d="M892 606 C892 668 244 668 244 400" class="dash"/>
+
+  <path d="M642 606 V654 H408" class="arrow"/>
+
+  <rect x="112" y="604" width="296" height="96" rx="22" class="panel"/>
+  <circle cx="150" cy="642" r="18" class="badge-green"/>
+  <text x="145" y="649" class="num">4</text>
+  <text x="184" y="650" class="label">发布记录</text>
+  <text x="146" y="682" class="body">manifest / 审核决策 / 版本摘要</text>
+
+  <path d="M408 652 H486" class="arrow"/>
+
+  <rect x="486" y="604" width="270" height="96" rx="22" class="panel-blue"/>
+  <circle cx="524" cy="642" r="18" class="badge-blue"/>
+  <text x="519" y="649" class="num">5</text>
+  <text x="558" y="650" class="label">App API 契约</text>
+  <text x="522" y="682" class="body">状态查询 / 候选索引 / 打包下载</text>
+
+  <path d="M756 652 H834" class="arrow"/>
+
+  <rect x="834" y="604" width="270" height="96" rx="22" class="panel"/>
+  <circle cx="872" cy="642" r="18" class="badge-blue"/>
+  <text x="867" y="649" class="num">6</text>
+  <text x="906" y="650" class="label">移动端消费</text>
+  <text x="870" y="682" class="body">App 读取发布资产与元数据</text>
+
+  <rect x="1118" y="238" width="198" height="162" rx="22" fill="#f3f7fb" stroke="#dbe4f0" stroke-width="2"/>
+  <text x="1152" y="288" class="label">审计轨迹</text>
+  <rect x="1142" y="324" width="150" height="34" rx="17" class="chip"/>
+  <text x="1164" y="346" class="chip-text">审核人动作</text>
+  <rect x="1142" y="370" width="150" height="34" rx="17" class="chip"/>
+  <text x="1164" y="392" class="chip-text">决策原因</text>
+
+  <rect x="220" y="714" width="1000" height="36" rx="14" fill="#f3f7fb" stroke="#dbe4f0" stroke-width="1.5"/>
+  <text x="258" y="738" class="small">公开安全口径：只展示审核状态、决策类型和发布边界，不包含真实任务包、候选来源、模型配置、云端地址或原始日志。</text>
+</svg>
