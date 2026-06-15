@@ -55,4 +55,12 @@ Base URL: http://127.0.0.1:5175
 
 ## Ship Decision
 
-Ready to commit and push after final git status review.
+Committed and pushed: e3f3776 Add-Tetris-runtime-screenshots.
+
+## Deployment QA
+
+- Direct asset check: /images/projects/showcase/tetris-classic-desktop.png returns 200 with content-type image/png and content-length 45411 from Cloudflare production.
+- Production browser QA at https://biau.playlab.eu.cc:
+  - /projects/game-first-tetris loads with h1 俄罗斯方块原型｜Tetris and tetris-classic-desktop.png at 1280x720, no console errors.
+  - /games/first-tetris loads with h1 俄罗斯方块原型｜Tetris and tetris-classic-desktop.png at 1280x720, no console errors.
+  - /cases/godot-showcase loads with h1 Godot Web 游戏展示体系 and 9 images, including tetris-classic-desktop.png, tetris-mobile-menu.png, and godot-tetris-structure.svg, no console errors.
