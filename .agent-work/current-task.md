@@ -8,38 +8,35 @@ Builder: Codex
 
 ## Goal
 
-Continue showcase asset coverage inside WSL by adding desensitized xunqiu migration diagrams and using them on the xunqiu project and case detail pages.
+Continue showcase asset coverage inside WSL by adding a desensitized Legal RAG workflow diagram and using it on the Legal RAG case detail page.
 
 ## Scope
 
-- Create public-safe xunqiu module-map, migration-flow, and verification-chain diagrams.
-- Add a xunqiu project visual to `src/data/portfolio.ts`.
-- Add xunqiu image evidence to `/cases/xunqiu`.
-- Preserve existing Legal RAG, Ozon ERP, Pet Workspace, and Godot showcase image mappings.
-- Update `docs/showcase-assets.md` to reflect the new xunqiu asset coverage.
+- Create a public-safe Legal RAG flow diagram covering import, chunking, embedding, retrieval, rerank, answer, citations, and contract review.
+- Add the Legal RAG flow diagram to `/cases/legal-rag` as an additional evidence image.
+- Preserve existing Legal RAG screenshots and other case image mappings.
+- Update `docs/showcase-assets.md` to reflect the Legal RAG flow coverage.
 - Verify route rendering, image loading, lint, build, and sensitive wording scan in WSL.
 
 ## Non-goals
 
-- Do not copy real IPs, domains, accounts, tokens, APK names, package hashes, signing files, database config, SQL files, media URLs, or server paths.
+- Do not copy real contracts, client names, legal documents, model keys, database URLs, vector-store data, prompts, or private API endpoints.
 - Do not modify `~/workspace/reference-projects`.
 - Do not add new projects.
-- Do not use old app screenshots until they are manually reviewed and desensitized.
+- Do not redesign the whole case-detail layout.
 - Do not push before verification.
 
 ## Allowed Paths
 
 - `src/App.tsx`
-- `src/data/portfolio.ts`
 - `docs/showcase-assets.md`
-- `public/images/projects/showcase/xunqiu-*.svg`
+- `public/images/projects/showcase/legal-rag-flow.svg`
 - `.agent-work/*`
 
 ## Acceptance Criteria
 
-- [x] `/projects/xunqiu` uses a public-safe xunqiu visual.
-- [x] `/cases/xunqiu` shows three xunqiu evidence images.
-- [x] The new xunqiu diagrams are public-safe and path-free.
+- [x] `/cases/legal-rag` shows the existing three screenshots plus the new Legal RAG flow diagram.
+- [x] The new Legal RAG diagram is public-safe and path-free.
 - [x] Existing case image routes still work.
 - [x] No horizontal overflow appears on desktop/mobile checks.
 - [x] Public text does not introduce `面试` / `作品集` wording or sensitive credentials/endpoints.
@@ -47,7 +44,7 @@ Continue showcase asset coverage inside WSL by adding desensitized xunqiu migrat
 
 ## Verification Plan
 
-- Browser-check `/projects/xunqiu` and `/cases/xunqiu`.
+- Browser-check `/cases/legal-rag` at desktop and mobile widths.
 - Run a quick image regression for existing case image routes.
 - Run `npm run lint`.
 - Run `npm run build`.

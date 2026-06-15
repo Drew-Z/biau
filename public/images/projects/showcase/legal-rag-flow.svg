@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Legal RAG 合同审查流程图</title>
+  <desc id="desc">脱敏后的 Legal RAG 工作流，展示合同导入、条款切分、向量召回、引用溯源和风险审查闭环。</desc>
+  <defs>
+    <style>
+      .bg { fill: #f7fafc; }
+      .shell { fill: #ffffff; stroke: #dbe4f0; stroke-width: 2; }
+      .panel { fill: #ffffff; stroke: #d4deeb; stroke-width: 2; }
+      .panel-blue { fill: #eef7ff; stroke: #b8d8ff; stroke-width: 2; }
+      .panel-green { fill: #eefbf5; stroke: #ace8cf; stroke-width: 2; }
+      .panel-warm { fill: #fff7ed; stroke: #ffd0a0; stroke-width: 2; }
+      .title { fill: #142033; font: 700 44px "Inter", "Microsoft YaHei", sans-serif; }
+      .subtitle { fill: #5f6f89; font: 400 22px "Inter", "Microsoft YaHei", sans-serif; }
+      .label { fill: #1e293b; font: 700 23px "Inter", "Microsoft YaHei", sans-serif; }
+      .body { fill: #53657d; font: 400 17px "Inter", "Microsoft YaHei", sans-serif; }
+      .small { fill: #6c7a90; font: 400 15px "Inter", "Microsoft YaHei", sans-serif; }
+      .num { fill: #ffffff; font: 700 18px "Inter", "Microsoft YaHei", sans-serif; }
+      .badge-blue { fill: #2377d8; }
+      .badge-green { fill: #18a574; }
+      .badge-orange { fill: #ef8b2d; }
+      .arrow { stroke: #9fb3cc; stroke-width: 4; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+      .dash { stroke: #aebfd4; stroke-width: 3; fill: none; stroke-linecap: round; stroke-dasharray: 8 10; }
+      .chip { fill: #ffffff; stroke: #ccd8e6; stroke-width: 1.5; }
+      .chip-text { fill: #203047; font: 600 16px "Inter", "Microsoft YaHei", sans-serif; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1440" height="810"/>
+  <rect x="70" y="58" width="1300" height="692" rx="28" class="shell"/>
+
+  <text x="116" y="126" class="title">Legal RAG 合同审查闭环</text>
+  <text x="116" y="166" class="subtitle">从合同导入到引用溯源，再到结构化风险审查：每一步都保留可解释证据。</text>
+
+  <rect x="112" y="242" width="220" height="152" rx="22" class="panel-blue"/>
+  <circle cx="150" cy="282" r="18" class="badge-blue"/>
+  <text x="145" y="289" class="num">1</text>
+  <text x="184" y="290" class="label">合同导入</text>
+  <text x="146" y="342" class="body">文本清洗</text>
+  <text x="146" y="374" class="body">指纹去重</text>
+
+  <path d="M332 318 H396" class="arrow"/>
+
+  <rect x="396" y="242" width="220" height="152" rx="22" class="panel"/>
+  <circle cx="434" cy="282" r="18" class="badge-blue"/>
+  <text x="429" y="289" class="num">2</text>
+  <text x="468" y="290" class="label">条款切分</text>
+  <text x="430" y="342" class="body">章节识别</text>
+  <text x="430" y="374" class="body">Chunk 元数据</text>
+
+  <path d="M616 318 H680" class="arrow"/>
+
+  <rect x="680" y="242" width="220" height="152" rx="22" class="panel-green"/>
+  <circle cx="718" cy="282" r="18" class="badge-green"/>
+  <text x="713" y="289" class="num">3</text>
+  <text x="752" y="290" class="label">向量索引</text>
+  <text x="714" y="342" class="body">Embedding Provider</text>
+  <text x="714" y="374" class="body">可替换向量库</text>
+
+  <path d="M900 318 H964" class="arrow"/>
+
+  <rect x="964" y="242" width="220" height="152" rx="22" class="panel"/>
+  <circle cx="1002" cy="282" r="18" class="badge-green"/>
+  <text x="997" y="289" class="num">4</text>
+  <text x="1036" y="290" class="label">召回重排</text>
+  <text x="998" y="342" class="body">候选片段</text>
+  <text x="998" y="374" class="body">阈值过滤 / Rerank</text>
+
+  <path d="M1074 394 V466" class="arrow"/>
+
+  <rect x="850" y="466" width="334" height="166" rx="24" class="panel-warm"/>
+  <circle cx="890" cy="508" r="18" class="badge-orange"/>
+  <text x="885" y="515" class="num">5</text>
+  <text x="930" y="516" class="label">回答与引用溯源</text>
+  <text x="890" y="566" class="body">answer + citations 同屏返回</text>
+  <text x="890" y="600" class="body">来源片段用于人工复核</text>
+
+  <path d="M850 548 H758" class="arrow"/>
+
+  <rect x="424" y="466" width="334" height="166" rx="24" class="panel-green"/>
+  <circle cx="464" cy="508" r="18" class="badge-green"/>
+  <text x="459" y="515" class="num">6</text>
+  <text x="504" y="516" class="label">合同风险审查</text>
+  <text x="464" y="566" class="body">风险等级 / 问题说明</text>
+  <text x="464" y="600" class="body">修改建议 / 人工复核标记</text>
+
+  <path d="M424 548 H332" class="arrow"/>
+
+  <rect x="112" y="466" width="220" height="166" rx="24" class="panel"/>
+  <circle cx="150" cy="508" r="18" class="badge-blue"/>
+  <text x="145" y="515" class="num">7</text>
+  <text x="184" y="516" class="label">前端工作台</text>
+  <text x="146" y="566" class="body">知识库</text>
+  <text x="146" y="598" class="body">智能问答</text>
+  <text x="146" y="630" class="body">审查结果</text>
+
+  <path d="M222 466 C222 424 222 426 222 394" class="dash"/>
+  <path d="M1228 318 C1298 318 1298 668 222 668 C166 668 146 652 146 632" class="dash"/>
+
+  <rect x="1212" y="242" width="104" height="390" rx="24" fill="#f3f7fb" stroke="#dbe4f0" stroke-width="2"/>
+  <text x="1238" y="292" class="chip-text">边界</text>
+  <rect x="1228" y="326" width="72" height="40" rx="20" class="chip"/>
+  <text x="1248" y="352" class="chip-text">Mock</text>
+  <rect x="1228" y="388" width="72" height="40" rx="20" class="chip"/>
+  <text x="1243" y="414" class="chip-text">pgvector</text>
+  <rect x="1228" y="450" width="72" height="40" rx="20" class="chip"/>
+  <text x="1242" y="476" class="chip-text">Parser</text>
+  <rect x="1228" y="512" width="72" height="40" rx="20" class="chip"/>
+  <text x="1248" y="538" class="chip-text">Queue</text>
+  <text x="1224" y="592" class="small">生产化时逐层</text>
+  <text x="1224" y="616" class="small">替换实现。</text>
+
+  <rect x="270" y="688" width="900" height="42" rx="16" fill="#f3f7fb" stroke="#dbe4f0" stroke-width="1.5"/>
+  <text x="310" y="715" class="small">公开安全口径：只展示流程、模块职责与替换边界，不包含真实合同、客户信息、模型凭据或私有服务地址。</text>
+</svg>

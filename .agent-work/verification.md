@@ -2,68 +2,48 @@
 
 Date: 2026-06-15
 Repo: /home/zhang/workspace/blog-semi
-Task: Add xunqiu migration and verification evidence
+Task: Add Legal RAG workflow evidence
 
 ## Diff Summary
 
-- `public/images/projects/showcase/xunqiu-module-map.svg`: added a public-safe 64-bit client module map.
-- `public/images/projects/showcase/xunqiu-migration-flow.svg`: added a public-safe migration flow diagram.
-- `public/images/projects/showcase/xunqiu-verification-chain.svg`: added a public-safe validation chain diagram.
-- `src/data/portfolio.ts`: promoted xunqiu to a key project and added the module-map visual.
-- `src/App.tsx`: added xunqiu case image mapping and aligned evidence labels/details with the new diagrams.
-- `docs/showcase-assets.md`: updated xunqiu asset coverage and remaining screenshot gap.
-- `.agent-work/current-task.md`: marked the xunqiu acceptance criteria complete after verification.
-
-## Windows / WSL Check
-
-- Windows worktree `D:\workspace4Codex\blog-semi` has no useful uncommitted content to migrate.
-- WSL Git sees the Windows-mounted copy as modified only because of CRLF/LF differences; `git diff --ignore-cr-at-eol --ignore-space-at-eol` is empty for the checked files.
-- WSL `~/workspace/blog-semi` is the active repo and is newer than the Windows copy. Continue all implementation from WSL.
+- `public/images/projects/showcase/legal-rag-flow.svg`: added a public-safe Legal RAG flow diagram.
+- `src/App.tsx`: added `RAG 流程闭环图` to Legal RAG case evidence and added the flow SVG to the case image mapping.
+- `docs/showcase-assets.md`: updated Legal RAG asset coverage and remaining material gap.
+- `.agent-work/current-task.md`: updated this task charter and marked acceptance criteria complete after verification.
 
 ## Browser QA
 
 | Route | Viewport | Result | Evidence |
 | --- | --- | --- | --- |
-| `/projects/xunqiu` | 1440x900 | pass | module-map SVG loaded at `1440x810`; no console errors; no horizontal overflow. |
-| `/projects/xunqiu` | 390x844 | pass | module-map SVG loaded at `1440x810`; no console errors; no horizontal overflow. |
-| `/cases/xunqiu` | 1440x900 | pass | module-map, migration-flow, and verification-chain SVGs loaded at `1440x810`; no console errors; no horizontal overflow. |
-| `/cases/xunqiu` | 390x844 | pass | targeted lazy-image check confirmed all three xunqiu SVGs load at `1440x810`; no console errors; no horizontal overflow. |
-| `/cases/legal-rag` | 1440x900 | pass | existing three Legal RAG evidence images still load after scrolling lazy images into view. |
-| `/cases/ozon-erp` | 1440x900 | pass | existing ERP cover and two Ozon diagrams still load after scrolling lazy images into view. |
-| `/cases/pet-workspace` | 1440x900 | pass | existing Pet Workspace evidence images still load after scrolling lazy images into view. |
-| `/cases/godot-showcase` | 1440x900 | pass | existing Space War evidence images still load after scrolling lazy images into view. |
+| `/cases/legal-rag` | 1440x900 | pass | existing three screenshots plus `legal-rag-flow.svg` loaded; flow SVG natural size `1440x810`; no console errors; no horizontal overflow. |
+| `/cases/legal-rag` | 390x844 | pass | all four Legal RAG evidence images loaded after scrolling lazy images into view; no console errors; no horizontal overflow. |
+| `/cases/ozon-erp` | 1440x900 and 390x844 | pass | existing ERP cover and two Ozon diagrams still load. |
+| `/cases/pet-workspace` | 1440x900 and 390x844 | pass | existing Pet Workspace evidence images still load. |
+| `/cases/xunqiu` | 1440x900 and 390x844 | pass | existing three xunqiu SVG evidence images still load. |
+| `/cases/godot-showcase` | 1440x900 and 390x844 | pass | existing Space War evidence images still load. |
 
 ## Commands Run
 
 | Command | Result | Notes |
 | --- | --- | --- |
+| `git diff --check` | pass | No whitespace errors in the current diff. |
 | `npm run lint` | pass | ESLint completed without errors in WSL. |
 | `npm run build` | pass | TypeScript and Vite build completed in WSL. Existing `lottie-web` direct eval warning remains. |
 | `rg -n -e "面试" -e "作品集" -e "123\." -e "120\." -e "password" -e "密码" -e "账号" -e "IP" -e "token" src docs public .agent-work/current-task.md .agent-work/verification.md` | reviewed | Hits are public-safety guardrails, CSS numeric false positives, SVG coordinates, or existing desensitization notes; no real account, endpoint, credential, database URL, host, or interview/portfolio wording was introduced. |
 
-## Deployment QA
-
-- Commit pushed: `38559c0 Add xunqiu showcase evidence`.
-- Cloudflare deployment refreshed after push. Initial asset checks returned the app shell, then changed to the new SVG assets after the build completed.
-- Direct asset checks:
-  - `/images/projects/showcase/xunqiu-module-map.svg`: `200`, `image/svg+xml`, `5276` bytes.
-  - `/images/projects/showcase/xunqiu-migration-flow.svg`: `200`, `image/svg+xml`, `4843` bytes.
-  - `/images/projects/showcase/xunqiu-verification-chain.svg`: `200`, `image/svg+xml`, `4672` bytes.
-- Online browser QA with Chrome:
-  - `/projects/xunqiu`: desktop and mobile load the module-map SVG at `1440x810`, with no console errors and no horizontal overflow.
-  - `/cases/xunqiu`: desktop and mobile load all three xunqiu SVGs at `1440x810`, with no console errors and no horizontal overflow.
-
 ## Public-Safety Review
 
-- The new xunqiu SVGs use concept-level labels only.
-- They do not include real IPs, domains, accounts, tokens, package hashes, signing files, database config, SQL files, media URLs, server paths, device logs, or release package details.
-- The diagrams explain module boundaries, migration stages, and validation evidence without copying sensitive content from `~/workspace/reference-projects`.
+- The new Legal RAG SVG uses concept-level labels only.
+- It does not include real contracts, client names, legal documents, model keys, database URLs, vector-store records, prompts, or private API endpoints.
+- The diagram explains import, chunking, embedding, retrieval, rerank, answer, citations, review output, and replaceable boundaries without copying sensitive project data.
 - `~/workspace/reference-projects` remained read-only.
 
 ## Remaining Work
 
-- Later add real 64-bit client screenshots only after manual review, cropping, and desensitization.
+- Commit and push the WSL changes after controller review.
+- Verify the Cloudflare deployment after push.
+- Later add a report-export or real-model replacement boundary diagram if the Legal RAG project gains that feature.
 
 ## Ship Decision
 
-Committed, pushed, deployed, and verified online.
+Verified locally and ready for commit/push.

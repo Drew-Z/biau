@@ -15,7 +15,7 @@
 
 | 项目 | 已上线素材 | 缺口 | 下一步 |
 | --- | --- | --- | --- |
-| Legal RAG | 合同审查工作台、知识库导入、引用溯源问答 | 可补 RAG 流程图 | 追加“导入-切分-召回-回答-审查”流程图 |
+| Legal RAG | 合同审查工作台、知识库导入、引用溯源问答、RAG 流程闭环图 | 报告导出或模型替换边界图 | 后续补一张“审查报告导出/真实模型替换”脱敏图 |
 | Pet Workspace | 生成管线图、生成产物图、App API 契约图 | 审核后台截图 | 后续补一张脱敏审核后台或人审决策流截图 |
 | Ozon ERP | ERP 封面图、运营链路图、数据审批模型图 | 脱敏后台截图 | 后续补一张去除店铺与订单信息的后台模块截图 |
 | xunqiu | 64 位客户端模块地图、迁移流程图、验收链路图 | 64 位客户端脱敏运行截图 | 只采集新客户端脱敏截图，不复用含真实数据旧素材 |
@@ -29,6 +29,7 @@
 public/images/projects/showcase/legal-rag-reviewed.png
 public/images/projects/showcase/legal-rag-knowledge.png
 public/images/projects/showcase/legal-rag-qa.png
+public/images/projects/showcase/legal-rag-flow.svg
 public/images/projects/showcase/fantasy-pet-flow.png
 public/images/projects/showcase/fantasy-pet-artifact.png
 public/images/projects/showcase/fantasy-pet-api-contract.svg

@@ -235,7 +235,7 @@ const caseStudies: CaseStudy[] = [
     challenge: '法律场景不能只给模型结论，需要让回答和审查结果能追溯到原文条款，同时保证没有真实模型 key 和数据库时也能稳定演示。',
     solution: '项目采用 Vue 3 工作台 + Express API + shared types 的 monorepo 结构，抽象 embedding provider 和 vector store，用 Mock Embedding 与内存向量库跑通导入、检索、问答、审查和 citations。',
     results: ['文档 SHA-256 去重，避免重复入库影响检索质量', 'section-aware chunk 保留条款来源和 chunk index', 'RAG 问答返回 answer + citations，支持人工复核', '合同审查输出风险等级、问题说明、修改建议和是否需要人工复核'],
-    evidence: ['知识库导入页面', '引用溯源问答页面', '合同风险审查工作台'],
+    evidence: ['知识库导入页面', '引用溯源问答页面', '合同风险审查工作台', 'RAG 流程闭环图'],
     architecture: [
       { title: 'Vue 工作台', detail: '知识库、智能问答、合同审查三条演示流程。' },
       { title: 'Express API', detail: '暴露文档导入、chunk 查询、RAG 问答和合同审查接口。' },
@@ -1631,6 +1631,7 @@ function getCaseEvidenceDetail(caseId: string, evidence: string): string {
       '知识库导入页面': '展示合同文本如何进入知识库、如何保留来源与条款切片，证明问答上下文可追踪。',
       '引用溯源问答页面': '展示回答和 citations 同屏返回，方便业务人员从结论回到原文片段复核。',
       '合同风险审查工作台': '展示风险等级、问题说明、修改建议和人工复核标记，支撑可解释合同审查闭环。',
+      'RAG 流程闭环图': '展示导入、切分、索引、召回、重排、回答、引用和合同审查之间的可解释链路。',
     },
     'ozon-erp': {
       '管理后台视图目录': '用于说明商品、订单、店铺、审批中心和任务中心等运营模块已经按职责拆分。',
@@ -1674,6 +1675,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
       { title: '合同审查工作台', image: '/images/projects/showcase/legal-rag-reviewed.png', detail: '按风险类型展示付款条款、交付标准、解除条款等审查结果。' },
       { title: '知识库导入', image: '/images/projects/showcase/legal-rag-knowledge.png', detail: '沉淀合同文本、条款切片和可追踪的知识库材料。' },
       { title: '引用溯源问答', image: '/images/projects/showcase/legal-rag-qa.png', detail: '回答法律问题时给出来源片段，便于解释和复核。' },
+      { title: 'RAG 流程闭环', image: '/images/projects/showcase/legal-rag-flow.svg', detail: '展示导入、条款切分、向量索引、召回重排、引用溯源和风险审查的链路。' },
     ],
     'ozon-erp': [
       { title: 'ERP 运营总览', image: '/images/projects/showcase/erp-cover.svg', detail: '概括管理后台、API、数据库、Worker 和浏览器插件组成的全栈业务系统。' },
