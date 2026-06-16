@@ -44,7 +44,15 @@ Task: Add Pet Workspace public-safe admin-review runtime screenshot
 
 ## Remaining Steps
 
-- Commit and push this slice.
-- After Cloudflare Pages deploys, verify:
-  - Direct PNG asset returns 200.
-  - Production `/cases/pet-workspace` loads the new evidence card on desktop and mobile.
+## Ship Decision
+
+Committed and pushed: 380232c Add Pet admin review runtime screenshot.
+
+## Deployment QA
+
+- Direct asset check:
+  - /images/projects/showcase/fantasy-pet-admin-review-runtime.png returns 200 with content length 98608.
+- Production browser QA at https://biau.playlab.eu.cc:
+  - /cases/pet-workspace loads with h1 Pet Workspace AI 生成与审核管线 and the 审核后台运行截图 evidence card.
+  - fantasy-pet-admin-review-runtime.png decodes successfully at 1440x900.
+  - Desktop and mobile both pass with no console errors, no failed requests, no horizontal overflow, and no sensitive/non-product wording.
