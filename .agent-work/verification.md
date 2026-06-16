@@ -33,3 +33,16 @@ WSL system Google Chrome was driven through Chrome DevTools Protocol.
 ## Remaining Follow-ups
 
 - CC noted broader UX opportunities around home card button labels, duplicate narrative buttons, and selected-project URL persistence. These were intentionally deferred to separate slices.
+
+## Deployment QA
+
+Source commit:
+
+- `16ac109 Clean up project action links`
+
+Cloudflare deployment was confirmed by driving WSL system Google Chrome against `https://biau.playlab.eu.cc`.
+
+| Route | Viewport | Result |
+| --- | --- | --- |
+| `/projects` | 1440x900 | pass: no `本页查看`, `当前站点`, or duplicate `查看页面` text after deployment. |
+| `/projects/game-first-tetris` | 1440x900 | pass: no duplicate `查看页面`; clicking `打开试玩展示` opens `https://biau.playlab.eu.cc/games/first-tetris`; no runtime errors. |
