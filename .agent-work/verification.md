@@ -27,4 +27,13 @@ System Chrome was used through Playwright.
 
 ## Deployment QA
 
-Pending commit, push, and Cloudflare deployment.
+Source commit:
+
+- `9f97eb8 Fix-blog-featured-article-consistency`
+
+Cloudflare deployment was confirmed by rendering `https://biau.playlab.eu.cc/blogs` and checking that the featured card now shows `Legal RAG 项目复盘`, `AI 应用 / 2026-06-11`, and no longer shows the old mismatched title `从项目目录到博客系统：一次展示层重构记录`.
+
+| Route | Viewport | Result |
+| --- | --- | --- |
+| `/blogs` | 1440x900 | pass: featured card matches Legal RAG post; clicking `阅读全文` opens `/blogs/legal-rag-review`; no console errors, failed requests, or horizontal overflow. |
+| `/blogs` | 390x844 | pass: same checks as desktop; no console errors, failed requests, or horizontal overflow. |

@@ -38,4 +38,4 @@ Fix the blog featured card so the visible title, metadata, summary, index, and b
 - [x] Featured card index uses the selected post sections.
 - [x] `/blogs` button opens the same article shown in the featured card.
 - [x] `npm run lint` and `npm run build` pass.
-- [x] Local `/blogs` QA passes; production QA pending.
+- [x] Local and production `/blogs` QA pass.
