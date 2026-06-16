@@ -54,4 +54,14 @@ Base URL: http://127.0.0.1:5175
 
 ## Ship Decision
 
-Ready to commit and push.
+Committed and pushed: e9f80a5 Add-InteSpace-runtime-screenshots.
+
+## Deployment QA
+
+- Direct asset check:
+  - /images/projects/showcase/intespace-player-hub.png returns 200 with content-type image/png, size 127546, and PNG dimensions 540x960.
+  - /images/projects/showcase/intespace-gameplay-hud.png returns 200 with content-type image/png, size 34389, and PNG dimensions 540x960.
+- Production browser QA at https://biau.playlab.eu.cc:
+  - /projects/intespace loads with h1 竖屏肉鸽射击｜intespace and intespace-player-hub.png at 540x960, no console errors, no failed requests, no horizontal overflow, no 面试/作品集 wording.
+  - /games/intespace loads with h1 竖屏肉鸽射击｜intespace and intespace-player-hub.png at 540x960, no console errors, no failed requests, no horizontal overflow, no 面试/作品集 wording.
+  - /cases/godot-showcase loads with h1 Godot Web 游戏展示体系 and InteSpace player-hub/gameplay-HUD PNGs plus the system-loop SVG. Desktop and mobile both pass with no console errors, no failed requests, no horizontal overflow, no 面试/作品集 wording.
