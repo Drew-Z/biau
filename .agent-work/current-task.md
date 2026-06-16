@@ -8,25 +8,26 @@ Builder: Claude Code via `cc`
 
 ## Goal
 
-Add an InteSpace result/summary screenshot to complete the current Godot showcase evidence matrix.
+Add one public-safe Legal RAG evidence asset for the report-export or model-replacement boundary, closing the current Legal RAG showcase gap.
 
 ## Scope
 
-- Use a temporary capture copy of intespace only.
-- Identify the safest actual InteSpace result/summary UI path, then capture it from Godot runtime.
-- Add the selected screenshot to /cases/godot-showcase.
+- Use existing blog-semi Legal RAG content and screenshots as source context.
+- Create or add one public-safe visual asset:
+  - `public/images/projects/showcase/legal-rag-report-boundary.svg`
+- Add the asset to the Legal RAG case evidence matrix.
 - Update docs/showcase-assets.md and verification notes.
 
 ## Non-goals
 
-- Do not modify ~/workspace/reference-projects.
-- Do not modify D:/workspace4Codex/intespace.
-- Do not publish raw logs, .import metadata, local paths, build artifacts, package hashes, accounts, IPs, tokens, release package details, real telemetry, or private configs.
-- Do not claim the result screenshot is real player telemetry; describe it as a public-safe state UI capture if seeded state is required.
+- Do not add a new project, route, dependency, backend feature, or real export implementation.
+- Do not claim the project already has production PDF/DOCX export or real model provider integration.
+- Do not publish raw contracts, legal advice, customer data, API keys, model credentials, local paths, IPs, endpoints, tokens, or private configs.
+- Do not modify reference projects or generated runtime screenshots.
 
 ## Allowed Paths
 
-- public/images/projects/showcase/intespace-result-summary.png
+- public/images/projects/showcase/legal-rag-report-boundary.svg
 - src/App.tsx
 - docs/showcase-assets.md
 - .agent-work/current-task.md
@@ -36,20 +37,19 @@ Add an InteSpace result/summary screenshot to complete the current Godot showcas
 
 ## Acceptance Criteria
 
-- [x] `cc` produces a read-only implementation plan before code/content changes beyond this task charter.
-- [x] Result/summary screenshot is generated from the actual Godot UI in a temporary copy.
-- [x] Selected screenshot is public-safe and added to public/images/projects/showcase.
-- [x] /cases/godot-showcase includes InteSpace result/summary evidence alongside player hub and gameplay HUD screenshots.
-- [x] docs/showcase-assets.md marks the current Godot result-page gap as closed or records why any residual gap remains.
+- [x] `cc` produces a read-only plan before implementation.
+- [x] The visual asset clearly explains report export and/or model replacement boundaries without implying completed production integrations.
+- [x] /cases/legal-rag includes the new Legal RAG evidence card.
+- [x] docs/showcase-assets.md marks the Legal RAG gap as covered.
 - [x] npm run lint and npm run build pass in WSL.
 - [x] Sensitive/public wording scan is reviewed.
-- [x] Browser QA confirms local /cases/godot-showcase loads the new image without console errors or horizontal overflow.
+- [x] Browser QA confirms local /cases/legal-rag loads the new SVG without console errors or horizontal overflow.
 
 ## Verification Plan
 
-- Confirm copied PNG dimensions and file size.
+- Confirm SVG exists and contains no secrets or local paths.
 - Run npm run lint.
 - Run npm run build.
 - Run sensitive/public wording scan.
-- Browser-check /cases/godot-showcase at desktop and mobile widths.
+- Browser-check /cases/legal-rag at desktop and mobile widths.
 - Commit and push after verification passes.

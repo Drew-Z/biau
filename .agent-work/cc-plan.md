@@ -1,65 +1,57 @@
-# Builder Plan: InteSpace Result/Summary Screenshot
+# Builder Plan: Legal RAG Report Boundary Asset
 
 Date: 2026-06-16
-Task: Add InteSpace result/summary screenshot to the Godot showcase.
+Task: Add Legal RAG report-export/model-replacement boundary evidence.
 Builder: Claude Code via `cc`
-
-## Builder Status
-
-Claude Code was invoked through the configured `cc` entrypoint and current `d` provider in read-only planning mode.
-
-Claude Code could inspect the blog-semi task context, but reported that it could not directly enumerate `/mnt/d/workspace4Codex/intespace` from its current tool view. Codex must therefore confirm the InteSpace scene/script structure before implementation.
 
 ## Builder Findings
 
-- blog-semi already has:
-  - `public/images/projects/showcase/intespace-player-hub.png`
-  - `public/images/projects/showcase/intespace-gameplay-hud.png`
-  - `public/images/projects/showcase/godot-intespace-loop.svg`
-- The remaining gap is an InteSpace result/summary screenshot.
-- Before capture, confirm whether InteSpace has an independent result, summary, game-over, settlement, upgrade result, or run-complete UI scene.
-- If no direct result scene exists, use the closest actual in-game summary UI and describe the remaining limitation honestly.
+- `/cases/legal-rag` already has four evidence assets:
+  - contract review workbench screenshot
+  - knowledge import screenshot
+  - citation QA screenshot
+  - RAG flow diagram
+- `docs/showcase-assets.md` lists the remaining Legal RAG gap as a report-export or model-replacement boundary diagram.
+- The new asset should explain capability boundaries, not imply that production PDF/DOCX export, real model API integration, pgvector, or queue-based export already exists.
 
 ## Proposed Scope
 
-1. Confirm InteSpace result/summary UI structure from the source project.
-2. Use a temporary copy only; never modify `/mnt/d/workspace4Codex/intespace`.
-3. Seed a public-safe state only if needed to reach the actual result/summary UI.
-4. Capture a PNG and publish only the selected reviewed image:
-   - `public/images/projects/showcase/intespace-result-summary.png`
-5. Update the Godot case evidence matrix and showcase asset tracking document.
+1. Create `public/images/projects/showcase/legal-rag-report-boundary.svg`.
+2. Add one Legal RAG evidence card in `caseImagesById['legal-rag']`.
+3. Update `docs/showcase-assets.md` to mark the Legal RAG gap as covered and add the new SVG to the asset list.
+4. Update `.agent-work/current-task.md` and `.agent-work/verification.md`.
+
+## Visual Direction
+
+- Split the SVG into two clearly labeled areas:
+  - Current MVP boundary: document import, manual/section-aware chunking, mock embedding, memory vector index, retrieval/rerank, citations, contract review display, browser print preview.
+  - Production extension path: real embedding service, pgvector, server-side PDF/DOCX export module, queue-based large imports/exports, real model credentials and rate-limit strategy.
+- Use visual distinction:
+  - completed/current boundary: green solid border
+  - future extension boundary: orange dashed border
+- Add a short note that report output is currently front-end display/print-preview oriented and production export remains an integration boundary.
 
 ## Public Safety Notes
 
-- Do not publish local paths, raw logs, `.import` metadata, release packages, package hashes, accounts, IPs, tokens, session IDs, device IDs, or real telemetry.
-- If seeded state is used, describe it as a public-safe state UI capture.
-- Do not frame seeded values as real player telemetry.
-
-## Blog-Semi Update Targets
-
-- `src/App.tsx`
-  - Add an `InteSpace 结果总结` evidence card to `caseImagesById['godot-showcase']`.
-- `docs/showcase-assets.md`
-  - Add the new screenshot to the file list.
-  - Mark the InteSpace result-page gap as covered, or record the residual gap if the project only exposes a different summary UI.
-- `.agent-work/current-task.md`
-- `.agent-work/verification.md`
+- Do not publish API keys, tokens, local paths, IPs, endpoints, database URLs, model credentials, real contract content, customer data, or legal advice.
+- Do not mention specific provider endpoints or concrete credential names.
+- Use abstract labels such as "真实 Embedding 服务" and "真实模型 API" without configuration details.
 
 ## Verification Plan
 
-- Confirm PNG dimensions and file size.
+- Confirm the SVG exists and has no secret-like strings or local paths.
 - Run `npm run lint`.
 - Run `npm run build`.
 - Run sensitive/public wording scan.
-- Browser-check `/cases/godot-showcase` at desktop and mobile widths:
+- Browser-check `/cases/legal-rag` at desktop and mobile widths:
   - image loads and decodes
   - no console errors
   - no failed requests
   - no horizontal overflow
   - no non-product positioning wording
 
-## Risks
+## Non-goals
 
-- InteSpace may not have a dedicated result page.
-- Result UI may require gameplay state or save-state setup.
-- Temporary capture scripts may be needed in the temporary copy to reach the UI safely.
+- Do not add backend export features.
+- Do not add dependencies.
+- Do not change routes, layouts, package files, or reference projects.

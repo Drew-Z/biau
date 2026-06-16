@@ -240,7 +240,7 @@ const caseStudies: CaseStudy[] = [
       { title: 'Vue 工作台', detail: '知识库、智能问答、合同审查三条演示流程。' },
       { title: 'Express API', detail: '暴露文档导入、chunk 查询、RAG 问答和合同审查接口。' },
       { title: 'RAG 管线', detail: '清洗、切分、embedding、召回、阈值过滤、轻量 rerank、引用返回。' },
-      { title: '可替换边界', detail: 'Mock provider 与 MemoryVectorStore 后续可替换 OpenAI embeddings、pgvector、PDF/DOCX parser 和 BullMQ。' },
+      { title: '可替换边界', detail: 'Mock provider 与 MemoryVectorStore 后续可替换真实 Embedding 服务、持久化向量库、PDF/DOCX 解析器和队列任务。' },
     ],
     talkingPoints: ['项目重点是把 AI 能力落到可解释业务流程，而不是简单聊天。', 'MVP 用 mock embedding 保证本地可演示，同时保留生产替换边界。', '引用溯源和结构化 schema 是降低法律场景幻觉风险的关键。'],
   },
@@ -1676,6 +1676,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
       { title: '知识库导入', image: '/images/projects/showcase/legal-rag-knowledge.png', detail: '沉淀合同文本、条款切片和可追踪的知识库材料。' },
       { title: '引用溯源问答', image: '/images/projects/showcase/legal-rag-qa.png', detail: '回答法律问题时给出来源片段，便于解释和复核。' },
       { title: 'RAG 流程闭环', image: '/images/projects/showcase/legal-rag-flow.svg', detail: '展示导入、条款切分、向量索引、召回重排、引用溯源和风险审查的链路。' },
+      { title: '报告输出与模型集成边界', image: '/images/projects/showcase/legal-rag-report-boundary.svg', detail: '展示当前 MVP 边界（浏览器打印预览）与生产扩展路径（服务端 PDF/DOCX 导出、真实模型 API、向量数据库、队列处理）的职责划分。' },
     ],
     'ozon-erp': [
       { title: 'ERP 运营总览', image: '/images/projects/showcase/erp-cover.svg', detail: '概括管理后台、API、数据库、Worker 和浏览器插件组成的全栈业务系统。' },

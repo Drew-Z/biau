@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="system-ui, -apple-system, sans-serif">
+  <defs>
+    <style>
+      .boundary-title { font-size: 18px; font-weight: 600; fill: #333; }
+      .boundary-subtitle { font-size: 14px; fill: #666; }
+      .section-label { font-size: 16px; font-weight: 600; fill: #1a1a1a; }
+      .module-text { font-size: 13px; fill: #2c3e50; }
+      .module-detail { font-size: 11px; fill: #7f8c8d; }
+      .note-text { font-size: 12px; fill: #555; }
+      .current-boundary { fill: #e8f5e9; stroke: #4caf50; stroke-width: 3; }
+      .future-boundary { fill: #fff3e0; stroke: #ff9800; stroke-width: 3; stroke-dasharray: 8,4; }
+      .module-box { fill: #fff; stroke: #90a4ae; stroke-width: 1.5; rx: 6; }
+      .arrow { stroke: #607d8b; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .extension-arrow { stroke: #ff9800; stroke-width: 2; fill: none; stroke-dasharray: 4,3; marker-end: url(#arrowhead-orange); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#607d8b" />
+    </marker>
+    <marker id="arrowhead-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#ff9800" />
+    </marker>
+  </defs>
+
+  <!-- Header -->
+  <text x="600" y="35" text-anchor="middle" class="boundary-title">Legal RAG 报告输出与模型集成边界</text>
+  <text x="600" y="55" text-anchor="middle" class="boundary-subtitle">当前 MVP 能力边界 vs 生产扩展路径</text>
+
+  <!-- Current MVP Boundary -->
+  <rect x="50" y="90" width="540" height="640" class="current-boundary" />
+  <text x="70" y="120" class="section-label">✓ 当前 MVP 边界（已实现）</text>
+
+  <!-- Document Import Module -->
+  <rect x="80" y="145" width="220" height="80" class="module-box" />
+  <text x="190" y="170" text-anchor="middle" class="module-text" font-weight="600">文档导入模块</text>
+  <text x="190" y="190" text-anchor="middle" class="module-detail">支持 DOCX、PDF 解析</text>
+  <text x="190" y="205" text-anchor="middle" class="module-detail">手动/按章节切分</text>
+  <text x="190" y="220" text-anchor="middle" class="module-detail">小批量同步导入</text>
+
+  <!-- Mock Embedding Module -->
+  <rect x="330" y="145" width="220" height="80" class="module-box" />
+  <text x="440" y="170" text-anchor="middle" class="module-text" font-weight="600">Mock Embedding</text>
+  <text x="440" y="190" text-anchor="middle" class="module-detail">TF-IDF + 余弦相似度</text>
+  <text x="440" y="205" text-anchor="middle" class="module-detail">内存向量索引</text>
+  <text x="440" y="220" text-anchor="middle" class="module-detail">召回 + 重排</text>
+
+  <!-- RAG Retrieval Module -->
+  <rect x="80" y="255" width="220" height="80" class="module-box" />
+  <text x="190" y="280" text-anchor="middle" class="module-text" font-weight="600">RAG 问答引擎</text>
+  <text x="190" y="300" text-anchor="middle" class="module-detail">知识库检索</text>
+  <text x="190" y="315" text-anchor="middle" class="module-detail">引用溯源展示</text>
+  <text x="190" y="330" text-anchor="middle" class="module-detail">前端交互式问答</text>
+
+  <!-- Contract Review Module -->
+  <rect x="330" y="255" width="220" height="80" class="module-box" />
+  <text x="440" y="280" text-anchor="middle" class="module-text" font-weight="600">合同风险审查</text>
+  <text x="440" y="300" text-anchor="middle" class="module-detail">条款分类与标注</text>
+  <text x="440" y="315" text-anchor="middle" class="module-detail">风险类型分组</text>
+  <text x="440" y="330" text-anchor="middle" class="module-detail">工作台可视化展示</text>
+
+  <!-- Frontend Display Module -->
+  <rect x="80" y="365" width="470" height="95" class="module-box" />
+  <text x="315" y="395" text-anchor="middle" class="module-text" font-weight="600">前端展示与报告预览</text>
+  <text x="315" y="415" text-anchor="middle" class="module-detail">审查结果结构化展示（付款条款、交付标准、解除条款等）</text>
+  <text x="315" y="435" text-anchor="middle" class="module-detail">引用片段溯源链接</text>
+  <text x="315" y="450" text-anchor="middle" class="module-detail" font-weight="600" fill="#2e7d32">✓ 浏览器打印预览输出报告</text>
+
+  <!-- Report Output Current State -->
+  <rect x="80" y="485" width="470" height="85" class="module-box" fill="#f1f8e9" />
+  <text x="315" y="510" text-anchor="middle" class="module-text" font-weight="600" fill="#558b2f">当前报告输出路径</text>
+  <text x="315" y="535" text-anchor="middle" class="note-text">审查结果通过前端页面展示，用户可使用</text>
+  <text x="315" y="550" text-anchor="middle" class="note-text" font-weight="600">浏览器打印功能（Ctrl+P）生成 PDF</text>
+  <text x="315" y="565" text-anchor="middle" class="note-text">适用于 MVP 阶段轻量输出需求</text>
+
+  <!-- Current Architecture Summary -->
+  <rect x="80" y="595" width="470" height="120" class="module-box" fill="#e3f2fd" />
+  <text x="315" y="620" text-anchor="middle" class="module-text" font-weight="600" fill="#1565c0">架构特点</text>
+  <text x="90" y="645" class="note-text">• 全栈 TypeScript（React + Node.js）</text>
+  <text x="90" y="665" class="note-text">• 内存向量索引，无需外部向量数据库</text>
+  <text x="90" y="685" class="note-text">• Mock embedding 策略，无需真实模型 API 凭证</text>
+  <text x="90" y="705" class="note-text">• 小批量同步处理，适合单用户演示与验证</text>
+
+  <!-- Future Extension Boundary -->
+  <rect x="610" y="90" width="540" height="640" class="future-boundary" />
+  <text x="630" y="120" class="section-label" fill="#e65100">⚠ 生产扩展路径（未实现）</text>
+
+  <!-- Real Embedding Service -->
+  <rect x="640" y="145" width="220" height="80" class="module-box" fill="#fff8e1" />
+  <text x="750" y="170" text-anchor="middle" class="module-text" fill="#e65100" font-weight="600">真实 Embedding 服务</text>
+  <text x="750" y="190" text-anchor="middle" class="module-detail">托管模型服务 / 私有模型</text>
+  <text x="750" y="205" text-anchor="middle" class="module-detail">凭据托管与访问控制</text>
+  <text x="750" y="220" text-anchor="middle" class="module-detail">速率限制与重试策略</text>
+
+  <!-- Vector Database -->
+  <rect x="890" y="145" width="220" height="80" class="module-box" fill="#fff8e1" />
+  <text x="1000" y="170" text-anchor="middle" class="module-text" fill="#e65100" font-weight="600">向量数据库集成</text>
+  <text x="1000" y="190" text-anchor="middle" class="module-detail">pgvector / 托管向量库</text>
+  <text x="1000" y="205" text-anchor="middle" class="module-detail">持久化索引存储</text>
+  <text x="1000" y="220" text-anchor="middle" class="module-detail">分布式检索能力</text>
+
+  <!-- Real Model API -->
+  <rect x="640" y="255" width="220" height="80" class="module-box" fill="#fff8e1" />
+  <text x="750" y="280" text-anchor="middle" class="module-text" fill="#e65100" font-weight="600">真实模型 API 集成</text>
+  <text x="750" y="300" text-anchor="middle" class="module-detail">通用大模型 / 私有模型</text>
+  <text x="750" y="315" text-anchor="middle" class="module-detail">凭据安全存储</text>
+  <text x="750" y="330" text-anchor="middle" class="module-detail">上下文窗口管理</text>
+
+  <!-- Queue System -->
+  <rect x="890" y="255" width="220" height="80" class="module-box" fill="#fff8e1" />
+  <text x="1000" y="280" text-anchor="middle" class="module-text" fill="#e65100" font-weight="600">队列与异步处理</text>
+  <text x="1000" y="300" text-anchor="middle" class="module-detail">Bull / BullMQ / SQS</text>
+  <text x="1000" y="315" text-anchor="middle" class="module-detail">大批量文档导入</text>
+  <text x="1000" y="330" text-anchor="middle" class="module-detail">后台任务调度</text>
+
+  <!-- Server-side Export Module -->
+  <rect x="640" y="365" width="470" height="95" class="module-box" fill="#fff8e1" />
+  <text x="875" y="395" text-anchor="middle" class="module-text" fill="#e65100" font-weight="600">服务端报告导出模块</text>
+  <text x="875" y="415" text-anchor="middle" class="module-detail">PDF 生成引擎（Puppeteer / PDFKit / LaTeX）</text>
+  <text x="875" y="435" text-anchor="middle" class="module-detail">DOCX 模板渲染（docx / docxtemplater）</text>
+  <text x="875" y="450" text-anchor="middle" class="module-detail">自定义样式、封面、页眉页脚、目录结构</text>
+
+  <!-- Production Export Flow -->
+  <rect x="640" y="485" width="470" height="85" class="module-box" fill="#fff3e0" />
+  <text x="875" y="510" text-anchor="middle" class="module-text" fill="#e65100" font-weight="600">生产级报告输出流程</text>
+  <text x="875" y="535" text-anchor="middle" class="note-text">用户请求导出 → 后端渲染引擎生成 PDF/DOCX</text>
+  <text x="875" y="550" text-anchor="middle" class="note-text">→ 对象存储 → 下载链接推送</text>
+  <text x="875" y="565" text-anchor="middle" class="note-text">支持批量导出、版本管理、水印控制</text>
+
+  <!-- Extension Considerations -->
+  <rect x="640" y="595" width="470" height="120" class="module-box" fill="#ffebee" />
+  <text x="875" y="620" text-anchor="middle" class="module-text" fill="#c62828" font-weight="600">扩展关键要素</text>
+  <text x="650" y="645" class="note-text">• 真实模型服务需要凭据托管、成本控制、合规审查</text>
+  <text x="650" y="665" class="note-text">• 向量数据库需要索引策略、备份方案、查询优化</text>
+  <text x="650" y="685" class="note-text">• 队列系统需要容错、重试、死信队列、监控告警</text>
+  <text x="650" y="705" class="note-text">• 服务端导出需要资源隔离、并发控制、格式校验</text>
+
+  <!-- Extension Arrow -->
+  <path d="M 590 410 L 610 410" class="extension-arrow" />
+  <text x="600" y="400" text-anchor="middle" class="note-text" fill="#e65100" font-size="11px" font-weight="600">集成边界</text>
+</svg>

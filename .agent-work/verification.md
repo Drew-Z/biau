@@ -2,27 +2,48 @@
 
 Date: 2026-06-16
 Repo: /home/zhang/workspace/blog-semi
-Task: Add InteSpace result/summary screenshot
+Task: Add Legal RAG report-export/model-replacement boundary evidence
 
 ## Diff Summary
 
-- Added one InteSpace result/summary screenshot generated from a temporary copy of the actual Godot project:
-  - public/images/projects/showcase/intespace-result-summary.png
-- Updated src/App.tsx so /cases/godot-showcase includes InteSpace result/summary evidence.
-- Updated docs/showcase-assets.md to mark InteSpace result-page coverage as complete.
-- Updated .agent-work/verification.md for this implementation slice.
+- Created one SVG boundary diagram:
+  - public/images/projects/showcase/legal-rag-report-boundary.svg
+- Updated src/App.tsx so /cases/legal-rag includes the new boundary evidence card.
+- Updated docs/showcase-assets.md to mark Legal RAG gap as covered and add the new SVG to the asset list.
+- Updated .agent-work/current-task.md and .agent-work/verification.md.
 
-## Screenshot Generation Evidence
+## Visual Asset Details
 
-- Source project: D:/workspace4Codex/intespace, captured through the temporary project at D:/workspace4Codex/.tmp-godot-capture/intespace-20260616.
-- Runtime: Godot 4.6.1 stable Windows console binary.
-- Runner: temporary script under the capture copy.
-- The runner called the real `_finish_run(true)` method in `scripts/game/game_root.gd` to trigger the actual end-of-run overlay built by `_build_end_overlay()`.
-- A minimal compatibility method `get_mode_protocol_post_run_text()` was added to the capture copy to allow the existing result overlay to render route text without aborting.
-- Selected public image:
-  - intespace-result-summary.png: 540 x 960, result overlay UI showing the run-complete state, combat summary area, replay controls, run-log action, growth action, and return-to-hub loop.
-- All runtime values are public-safe seeded state, not real player telemetry.
-- No source project files under ~/workspace/reference-projects or D:/workspace4Codex/intespace were modified.
+- File: legal-rag-report-boundary.svg
+- Size: ~7.5 KB
+- Viewport: 1200 x 800
+- Structure:
+  - Left side (green solid border): Current MVP boundary
+    - Document import, manual/section-aware chunking, mock embedding, memory vector index, retrieval/rerank, citations, contract review display, browser print preview
+  - Right side (orange dashed border): Production extension path
+    - Real embedding service, pgvector, server-side PDF/DOCX export module, queue-based imports/exports, real model credentials and rate-limit strategy
+- Wording:
+  - Uses "当前 MVP 边界" and "生产扩展路径"
+  - Clearly states browser print preview (浏览器打印预览) as current report output method
+  - Marks server-side export, real model API, pgvector, and queue processing as future integration boundaries
+  - Does not claim production PDF/DOCX export or real model provider integration already exists
+
+## Commands Run
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| npm run lint | pass | ESLint completed without errors in WSL. |
+| npm run build | pass | TypeScript and Vite build completed in 495ms. Existing lottie-web direct eval warning remains from dependency code. |
+| sensitive/public wording scan | reviewed | No API keys, tokens, endpoints, IPs, local paths, database URLs, real contract content, legal advice, or customer data found. Public copy now uses abstract integration labels instead of concrete provider names. |
+| Browser QA with system Chrome | pass | /cases/legal-rag checked at 1440x900 and 390x844 against the local dev server. The new SVG decodes, the card title is present, no console errors, no failed requests, no horizontal overflow, and no non-product positioning wording. |
+
+## Public-Safety Review
+
+- The SVG uses abstract labels for future integration points without exposing concrete credentials, endpoints, or configuration details.
+- Color coding (green for current, orange for future) provides clear visual distinction.
+- Browser print preview is explicitly identified as the current MVP report output mechanism.
+- No claims about production deployment of server-side export, real embedding models, or vector databases.
+- The diagram is framed as a boundary and extension-path explanation, not a completed production architecture.
 
 ## Local Browser QA
 
@@ -30,37 +51,11 @@ Base URL: http://127.0.0.1:5175
 
 | Route | Viewport | Result | Evidence |
 | --- | --- | --- | --- |
-| /cases/godot-showcase | 1440x900 and 390x844 | pass | Case route loads 20 images. intespace-result-summary.png decodes at natural size 540x960 after lazy-load scroll; no console errors, no failed requests, no horizontal overflow, no non-product positioning wording. |
+| /cases/legal-rag | 1440x900 | pass | Page h1 is Legal RAG case detail. The boundary card title is present, legal-rag-report-boundary.svg decodes, no console errors, no failed requests, no horizontal overflow, and no 面试/作品集 wording. |
+| /cases/legal-rag | 390x844 | pass | The same boundary card and SVG load on mobile with no console errors, failed requests, or horizontal overflow. |
 
-## Commands Run
+## Notes
 
-| Command | Result | Notes |
-| --- | --- | --- |
-| Godot 4.6.1 capture runner | pass | Captured actual end overlay UI from `game_root.gd` at 540x960 by calling `_finish_run(true)` with seeded state. |
-| file public/images/projects/showcase/intespace-result-summary.png | pass | Confirmed PNG file is 540 x 960, 75K. |
-| npm run lint | pass | ESLint completed without errors in WSL. |
-| npm run build | pass | TypeScript and Vite build completed in WSL. Existing lottie-web direct eval warning remains from dependency code. |
-| sensitive/public wording scan | reviewed | No accounts, endpoints, credentials, IPs, or private configs found. Detail text describes public-safe seeded state. |
-| Playwright QA with Windows Chrome | pass | Verified /cases/godot-showcase at desktop and mobile widths against the WSL dev server. |
-
-## Public-Safety Review
-
-- The selected screenshot shows only InteSpace result overlay UI with public-safe seeded runtime state.
-- The capture was generated from seeded time, score, level, kills, damage, healing, revives, experience, upgrades, and meta/protocol progress.
-- The values are seeded demonstration state for public-safe UI capture; they are not presented as raw player telemetry, real user data, or production logs.
-- No local paths, accounts, tokens, IPs, domains, logs, release package names, Godot .import metadata, export packages, hashes, or generated validation output were published.
-- The temporary compatibility method and capture scripts remain in the temporary capture directory and were not copied into the site or source project.
-- InteSpace now has player hub, gameplay HUD, result summary, and system loop diagram evidence; the result-page gap is closed.
-
-## Ship Decision
-
-Committed and pushed: 3197b0f Add InteSpace result screenshot.
-
-## Deployment QA
-
-- Direct asset check:
-  - /images/projects/showcase/intespace-result-summary.png returns 200 with content-type image/png and content-length 76084.
-- Production browser QA at https://biau.playlab.eu.cc:
-  - /cases/godot-showcase loads with h1 Godot Web 游戏展示体系 and the InteSpace result card title.
-  - intespace-result-summary.png decodes at natural size 540x960.
-  - Desktop and mobile both pass with no console errors, no failed requests, no horizontal overflow, and no non-product positioning wording.
+- Legal RAG now has five evidence assets: contract review workbench, knowledge import, citation QA, RAG flow diagram, and report/model boundary diagram.
+- The showcase-assets.md gap for Legal RAG is marked as closed.
+- The new SVG asset is added to the file list in showcase-assets.md.
