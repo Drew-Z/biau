@@ -44,9 +44,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/legal-rag-reviewed.png',
     stack: ['Vue 3', 'Express', 'TypeScript', 'RAG', '可替换向量库'],
     highlights: ['知识库导入', 'RAG 问答', '合同风险审查', '引用溯源'],
-    links: [
-      { label: '本页查看', href: '#legal-rag', type: 'internal' },
-    ],
+    links: [],
   },
   {
     id: 'pet-workspace',
@@ -58,9 +56,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/fantasy-pet-flow.png',
     stack: ['Agent', 'Worker', '质量门禁', 'Android', 'Docker'],
     highlights: ['任务状态机', '生成审核', '人审发布', 'App 接口契约'],
-    links: [
-      { label: '本页查看', href: '#pet-workspace', type: 'internal' },
-    ],
+    links: [],
   },
   {
     id: 'ozon-erp',
@@ -72,9 +68,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/erp-cover.svg',
     stack: ['Vue 3', 'Express', 'Prisma', 'PostgreSQL', 'BullMQ', 'WXT'],
     highlights: ['商品与订单同步', '采集铺货', '审批中心', '审计日志'],
-    links: [
-      { label: '本页查看', href: '#ozon-erp', type: 'internal' },
-    ],
+    links: [],
   },
   {
     id: 'biau-playlab',
@@ -96,7 +90,7 @@ export const projects: Project[] = [
     role: 'React 主站 / Semi 组件体系 / 项目案例路由 / 自动部署',
     stack: ['React', 'Vite', 'TypeScript', 'Semi Design'],
     highlights: ['多视图主站', '项目详情', '案例详情', '自动部署'],
-    links: [{ label: '当前站点', href: '#blog-semi', type: 'internal' }],
+    links: [],
   },
   {
     id: 'game-first-tetris',
@@ -108,7 +102,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/tetris-classic-desktop.png',
     stack: ['Godot 4', 'Web 导出', '游戏原型'],
     highlights: ['经典模式', '肉鸽原型', '触屏输入', '截图回归'],
-    links: [{ label: '查看页面', href: '/games/first-tetris', type: 'external' }],
+    links: [],
   },
   {
     id: 'game-next-spacewar',
@@ -120,7 +114,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/next-spacewar-menu.png',
     stack: ['Godot 4.6', '太空射击', 'Web 导出'],
     highlights: ['主菜单', '帮助暂停', '战斗循环', '结果复盘'],
-    links: [{ label: '查看页面', href: '/games/next-spacewar', type: 'external' }],
+    links: [],
   },
   {
     id: 'intespace',
@@ -132,7 +126,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/intespace-player-hub.png',
     stack: ['Godot', '肉鸽玩法', '武器树系统', '移动端优先'],
     highlights: ['武器树', '自动射击', '首领试炼', '局外成长'],
-    links: [{ label: '查看页面', href: '/games/intespace', type: 'external' }],
+    links: [],
   },
   {
     id: 'raiden-prototype',
@@ -144,7 +138,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/raiden-main-menu.png',
     stack: ['Godot', '纵版射击', '原型验证'],
     highlights: ['双关卡章节', '火力成长', '首领收束', '试玩验证'],
-    links: [{ label: '查看页面', href: '/games/raiden', type: 'external' }],
+    links: [],
   },
   {
     id: 'space-war',
@@ -156,7 +150,7 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/space-war-gameplay.png',
     stack: ['Godot 4.6', '复古射击', 'Web 包计划'],
     highlights: ['区域首领', '道具系统', '高分结算', '发布文档'],
-    links: [{ label: '查看页面', href: '/games/space-war', type: 'external' }],
+    links: [],
   },
   {
     id: 'xunqiu',

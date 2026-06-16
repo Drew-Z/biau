@@ -2,12 +2,15 @@
 
 ## Decision
 
-Proceed with a direct fix instead of a CC planning pass. The issue is visible and deterministic: `/blogs` shows a featured title that does not match the article opened by its button.
+Accepted CC's core finding, but rejected the broad multi-area cleanup for this slice.
 
-## Approved Change
+## Approved Scope
 
-Render featured metadata, title, summary, and section index from `featuredPost`.
+- Remove only the currently dead or duplicate `project.links` entries in `src/data/portfolio.ts`.
+- Leave `ProjectDetail` rendering logic intact so future real links can still render.
+- Defer home-card labels, duplicate narrative buttons, and selected-project URL persistence to separate tasks.
 
-## Boundaries
+## Risk Check
 
-Do not alter blog post content, routing, layout, or styling.
+- Low risk: no route contracts, components, styles, or public technical content are changed.
+- Main behavior change: project detail panels stop showing auxiliary buttons that were either inert or duplicated by existing primary actions.

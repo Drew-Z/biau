@@ -1,13 +1,13 @@
 # Verification
 
 Date: 2026-06-16
-Task: Blog featured card consistency fix
+Task: Project detail action button cleanup
 
-## Code Review Summary
+## Change Summary
 
-- Updated the `/blogs` featured card to render metadata, title, summary, and index from `featuredPost`.
-- The featured button already opened `featuredPost`; now the visible card and click target match.
-- Blog post content, route logic, layout, and styles were not changed.
+- Removed current `project.links` entries that rendered dead hash buttons (`本页查看`, `当前站点`) or duplicated game detail actions (`查看页面`).
+- Kept the existing primary project actions: `打开技术详情页`, `打开业务案例`, and `打开试玩展示`.
+- Left `ProjectDetail` link rendering logic intact for future real external links.
 
 ## Commands
 
@@ -15,25 +15,21 @@ Task: Blog featured card consistency fix
 | --- | --- | --- |
 | `npm run lint` | pass | ESLint completed successfully. |
 | `npm run build` | pass | Build completed successfully. Existing `lottie-web` direct eval warning remains from dependency code. |
+| `rg -n -e "本页查看" -e "当前站点" -e "查看页面" src/data/portfolio.ts src/App.tsx` | pass | No matches after cleanup. |
 
 ## Local Browser QA
 
-System Chrome was used through Playwright.
+WSL system Google Chrome was driven through Chrome DevTools Protocol.
 
 | Route | Viewport | Result |
 | --- | --- | --- |
-| `/blogs` | 1440x900 | pass: featured card shows `Legal RAG 项目复盘`, `AI 应用 / 2026-06-11`, the Legal RAG summary, and Legal RAG section index; old mismatched title is absent; clicking `阅读全文` opens `/blogs/legal-rag-review`; no console errors, failed requests, or horizontal overflow. |
-| `/blogs` | 390x844 | pass: same checks as desktop; no console errors, failed requests, or horizontal overflow. |
+| `/projects` | 1440x900 | pass: no `本页查看`, `当前站点`, or duplicate `查看页面`; `打开技术详情页` and `打开业务案例` remain visible; no runtime errors. |
+| `/projects` | 390x844 | pass: same checks as desktop; no runtime errors. |
+| `/projects/legal-rag` | 1440x900 | pass: no dead internal link text; business case action remains visible; no runtime errors. |
+| `/projects/legal-rag` | 390x844 | pass: same checks as desktop; no runtime errors. |
+| `/projects/game-first-tetris` | 1440x900 | pass: no duplicate `查看页面`; `打开试玩展示` is visible and clicking it opens `/games/first-tetris`; no runtime errors. |
+| `/projects/game-first-tetris` | 390x844 | pass: same checks as desktop; no runtime errors. |
 
-## Deployment QA
+## Remaining Follow-ups
 
-Source commit:
-
-- `9f97eb8 Fix-blog-featured-article-consistency`
-
-Cloudflare deployment was confirmed by rendering `https://biau.playlab.eu.cc/blogs` and checking that the featured card now shows `Legal RAG 项目复盘`, `AI 应用 / 2026-06-11`, and no longer shows the old mismatched title `从项目目录到博客系统：一次展示层重构记录`.
-
-| Route | Viewport | Result |
-| --- | --- | --- |
-| `/blogs` | 1440x900 | pass: featured card matches Legal RAG post; clicking `阅读全文` opens `/blogs/legal-rag-review`; no console errors, failed requests, or horizontal overflow. |
-| `/blogs` | 390x844 | pass: same checks as desktop; no console errors, failed requests, or horizontal overflow. |
+- CC noted broader UX opportunities around home card button labels, duplicate narrative buttons, and selected-project URL persistence. These were intentionally deferred to separate slices.
