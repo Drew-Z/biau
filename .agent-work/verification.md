@@ -30,3 +30,16 @@ WSL system Google Chrome was driven through Chrome DevTools Protocol with local 
 ## Remaining Follow-ups
 
 - The selected project state still lives only in page state on `/projects`; URL persistence can be handled in a later slice if needed.
+
+## Deployment QA
+
+Source commit:
+
+- `5823d6f Simplify project page actions`
+
+Cloudflare deployment was confirmed by driving WSL system Google Chrome against `https://biau.playlab.eu.cc`. The first polling attempt still showed the old deployment; the second attempt showed the new build.
+
+| Route | Viewport | Result |
+| --- | --- | --- |
+| `/projects` | 1440x900 | pass: `列表预览` is absent, `ProjectNarrative` footer has 0 buttons, and clicking the Pet Workspace card selects it in the preview panel. |
+| `/projects` card action | 1440x900 | pass: clicking the Pet Workspace `技术详情页` button opens `https://biau.playlab.eu.cc/projects/pet-workspace`; no runtime errors. |
