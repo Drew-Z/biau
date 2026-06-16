@@ -45,4 +45,16 @@ Task: Add xunqiu 64-bit client public-safe runtime screenshot
 
 ## Remaining Steps
 
-- Commit and push after verification passes.
+## Ship Decision
+
+Committed and pushed: b771852 Add xunqiu Android runtime evidence.
+
+## Deployment QA
+
+- Direct asset check:
+  - `/images/projects/showcase/xunqiu-android64-runtime.png` returns 200 with content length 56934.
+- Production browser QA at `https://biau.playlab.eu.cc`:
+  - `/cases/xunqiu` loads with h1 `寻球移动端业务系统重构案例`.
+  - The `64 位客户端欢迎页运行截图` evidence card is present.
+  - `xunqiu-android64-runtime.png` decodes successfully at 1080x2400.
+  - Desktop 1440x900 and mobile 390x844 both render the image as `case-image-portrait`, with no console errors, no failed requests, no horizontal overflow, and no sensitive wording hits.
