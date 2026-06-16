@@ -2,15 +2,15 @@
 
 ## Decision
 
-Accepted CC's core finding, but rejected the broad multi-area cleanup for this slice.
+Accepted CC's narrow interaction hierarchy recommendation.
 
 ## Approved Scope
 
-- Remove only the currently dead or duplicate `project.links` entries in `src/data/portfolio.ts`.
-- Leave `ProjectDetail` rendering logic intact so future real links can still render.
-- Defer home-card labels, duplicate narrative buttons, and selected-project URL persistence to separate tasks.
+- Remove only the redundant `列表预览` thumbnail button and the duplicate `ProjectNarrative` action cluster.
+- Preserve card click preview selection and all primary route buttons.
+- Do not redesign the projects page, change route contracts, or rewrite project content.
 
 ## Risk Check
 
-- Low risk: no route contracts, components, styles, or public technical content are changed.
-- Main behavior change: project detail panels stop showing auxiliary buttons that were either inert or duplicated by existing primary actions.
+- Low risk: the removed controls duplicated existing behavior.
+- Main regression risk: card click preview selection or direct route buttons might break, so browser QA must explicitly click those paths.

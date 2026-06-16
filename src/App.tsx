@@ -701,7 +701,6 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
                 <strong>{project.title}</strong>
                 <em>{project.summary}</em>
                 <Space wrap>
-                  <Button size="small" theme="light" type="primary" onClick={(event) => { event.stopPropagation(); onSelectProject(project.id) }}>列表预览</Button>
                   <Button size="small" theme="solid" type="primary" onClick={(event) => { event.stopPropagation(); onOpenProjectDetail(project) }}>技术详情页</Button>
                   {projectCase ? <Button size="small" onClick={(event) => { event.stopPropagation(); onOpenCase(projectCase) }}>业务案例</Button> : null}
                 </Space>
@@ -710,10 +709,7 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
           })}
         </div>
 
-        <ProjectNarrative project={detailProject} onOpenCase={() => {
-          const projectCase = getCaseStudyForProject(detailProject.id)
-          if (projectCase) onOpenCase(projectCase)
-        }} onOpenGameDetail={() => onOpenGameDetail(detailProject)} onOpenProjectDetail={() => onOpenProjectDetail(detailProject)} />
+        <ProjectNarrative project={detailProject} />
       </section>
     </div>
   )
@@ -836,10 +832,8 @@ function CasesView({ onOpenCase, onOpenProjectDetail }: { onOpenCase: (caseStudy
   )
 }
 
-function ProjectNarrative({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, project }: { onOpenCase: () => void; onOpenGameDetail: () => void; onOpenProjectDetail: () => void; project: Project }) {
+function ProjectNarrative({ project }: { project: Project }) {
   const isLegalRag = project.id === 'legal-rag'
-  const projectCase = getCaseStudyForProject(project.id)
-  const gameSlug = getGameSlugByProjectId(project.id)
   const narrative = isLegalRag
     ? {
         title: '项目完整介绍',
@@ -872,11 +866,6 @@ function ProjectNarrative({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, p
           <Text type="tertiary">核心成果</Text>
           <strong>{narrative.outcome}</strong>
         </div>
-        <Space wrap>
-          <Button theme="solid" type="primary" onClick={onOpenProjectDetail}>打开技术详情页</Button>
-          {projectCase ? <Button onClick={onOpenCase}>打开业务案例</Button> : null}
-          {gameSlug ? <Button onClick={onOpenGameDetail}>打开试玩展示</Button> : null}
-        </Space>
       </div>
     </section>
   )

@@ -1,13 +1,13 @@
 # Verification
 
 Date: 2026-06-16
-Task: Project detail action button cleanup
+Task: Projects page interaction hierarchy cleanup
 
 ## Change Summary
 
-- Removed current `project.links` entries that rendered dead hash buttons (`本页查看`, `当前站点`) or duplicated game detail actions (`查看页面`).
-- Kept the existing primary project actions: `打开技术详情页`, `打开业务案例`, and `打开试玩展示`.
-- Left `ProjectDetail` link rendering logic intact for future real external links.
+- Removed the `列表预览` button from project thumbnail cards because clicking the whole card already updates the selected preview panel.
+- Removed the duplicate action cluster from `ProjectNarrative`, leaving that section focused on project explanation and core outcomes.
+- Kept direct route actions available through the selected project panel and thumbnail cards.
 
 ## Commands
 
@@ -15,34 +15,18 @@ Task: Project detail action button cleanup
 | --- | --- | --- |
 | `npm run lint` | pass | ESLint completed successfully. |
 | `npm run build` | pass | Build completed successfully. Existing `lottie-web` direct eval warning remains from dependency code. |
-| `rg -n -e "本页查看" -e "当前站点" -e "查看页面" src/data/portfolio.ts src/App.tsx` | pass | No matches after cleanup. |
 
 ## Local Browser QA
 
-WSL system Google Chrome was driven through Chrome DevTools Protocol.
+WSL system Google Chrome was driven through Chrome DevTools Protocol with local proxy disabled for `127.0.0.1`.
 
 | Route | Viewport | Result |
 | --- | --- | --- |
-| `/projects` | 1440x900 | pass: no `本页查看`, `当前站点`, or duplicate `查看页面`; `打开技术详情页` and `打开业务案例` remain visible; no runtime errors. |
+| `/projects` | 1440x900 | pass: `列表预览` is absent; `ProjectNarrative` footer has 0 buttons; card click selects `AI 宠物生成与审核管线`; no runtime errors. |
 | `/projects` | 390x844 | pass: same checks as desktop; no runtime errors. |
-| `/projects/legal-rag` | 1440x900 | pass: no dead internal link text; business case action remains visible; no runtime errors. |
-| `/projects/legal-rag` | 390x844 | pass: same checks as desktop; no runtime errors. |
-| `/projects/game-first-tetris` | 1440x900 | pass: no duplicate `查看页面`; `打开试玩展示` is visible and clicking it opens `/games/first-tetris`; no runtime errors. |
-| `/projects/game-first-tetris` | 390x844 | pass: same checks as desktop; no runtime errors. |
+| `/projects` card actions | 1440x900 | pass: `技术详情页` opens `/projects/pet-workspace`, `业务案例` opens `/cases/legal-rag`, and game tab `打开试玩展示` opens `/games/first-tetris`. |
+| `/projects` card actions | 390x844 | pass: same route checks as desktop; no runtime errors. |
 
 ## Remaining Follow-ups
 
-- CC noted broader UX opportunities around home card button labels, duplicate narrative buttons, and selected-project URL persistence. These were intentionally deferred to separate slices.
-
-## Deployment QA
-
-Source commit:
-
-- `16ac109 Clean up project action links`
-
-Cloudflare deployment was confirmed by driving WSL system Google Chrome against `https://biau.playlab.eu.cc`.
-
-| Route | Viewport | Result |
-| --- | --- | --- |
-| `/projects` | 1440x900 | pass: no `本页查看`, `当前站点`, or duplicate `查看页面` text after deployment. |
-| `/projects/game-first-tetris` | 1440x900 | pass: no duplicate `查看页面`; clicking `打开试玩展示` opens `https://biau.playlab.eu.cc/games/first-tetris`; no runtime errors. |
+- The selected project state still lives only in page state on `/projects`; URL persistence can be handled in a later slice if needed.
