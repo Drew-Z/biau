@@ -2,15 +2,16 @@
 
 ## Decision
 
-Accepted CC's narrow interaction hierarchy recommendation.
+Accepted CC's query-parameter approach with one additional controller constraint: the query state applies only to the `/projects` list view.
 
 ## Approved Scope
 
-- Remove only the redundant `列表预览` thumbnail button and the duplicate `ProjectNarrative` action cluster.
-- Preserve card click preview selection and all primary route buttons.
-- Do not redesign the projects page, change route contracts, or rewrite project content.
+- Add safe helpers for valid project ids and `/projects?project=<id>` selection.
+- Use query state for project list previews, including navigation and thumbnail/group selection.
+- Keep `/projects/:id`, `/cases/:id`, `/games/:slug`, and blog routes unchanged.
+- Sync the project group tab when a selected project is restored from history.
 
 ## Risk Check
 
-- Low risk: the removed controls duplicated existing behavior.
-- Main regression risk: card click preview selection or direct route buttons might break, so browser QA must explicitly click those paths.
+- Medium-low risk: route logic is touched, so QA must cover direct query opening, invalid query fallback, thumbnail selection, group switching, browser back/forward, and independent detail routes.
+- No content, styles, dependencies, or reference projects are changed.

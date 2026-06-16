@@ -2,16 +2,18 @@
 
 ## Findings
 
-- Project thumbnail cards currently show `列表预览`, `技术详情页`, and `业务案例`. The `列表预览` label is vague because clicking the card itself already selects the project for the right-side preview panel.
-- The selected project side panel already provides clear primary actions: `打开技术详情页`, `打开业务案例`, and `打开试玩展示`.
-- `ProjectNarrative` repeats the same primary action group below the selected project panel, making the page feel busier without adding a new route or workflow.
-- Existing routes remain consistent: `/projects/:id`, `/cases/:id`, and `/games/:slug`.
+- `/projects` list state currently does not read query parameters, so a selected preview cannot survive refresh or be shared.
+- `/projects/:id` already means independent technical detail page and should not be reused for list selection state.
+- `ProjectsView` owns a local `activeGroup`; if browser history restores a project from another group, that group also needs to sync with the selected project.
+- Browser back/forward currently cannot restore card selections because thumbnail clicks only update React state.
 
 ## Recommended Slice
 
-- Remove the repeated `ProjectNarrative` footer button group and keep that section focused on project explanation plus core outcome.
-- Remove the thumbnail-card `列表预览` button because the whole card already performs the preview selection.
-- Keep `技术详情页` and `业务案例` card buttons for direct route entry.
+- Use a query parameter for list selection: `/projects?project=<id>`.
+- Keep `/projects/:id` as the independent technical detail route.
+- Validate project ids from the query before using them, falling back to the first project when invalid.
+- Push URL history entries when thumbnail cards or group tabs change the selected project.
+- Update popstate handling so browser back/forward restores the selected preview.
 
 ## Files To Touch
 
@@ -20,9 +22,9 @@
 
 ## Verification
 
+- Opening `/projects?project=pet-workspace` selects Pet Workspace.
+- Clicking thumbnail cards updates both preview and URL query.
+- Switching groups updates query to the first project in that group.
+- Browser back/forward restores list selection.
+- `/projects/pet-workspace` still opens the independent project detail page.
 - Run `npm run lint` and `npm run build`.
-- Browser QA `/projects` on desktop and mobile:
-  - Card click still updates the selected preview.
-  - `列表预览` is absent.
-  - `ProjectNarrative` no longer repeats the primary button cluster.
-  - Technical detail, business case, and game showcase routes still work.

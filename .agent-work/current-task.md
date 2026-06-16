@@ -8,27 +8,26 @@ Builder: Claude Code read-only plan, Codex scoped implementation
 
 ## Goal
 
-Clean up the `/projects` page interaction hierarchy so project cards and the selected project narrative do not repeat the same actions or use vague button labels. Keep the page focused on clear routes: preview within the project page, independent technical detail pages, business case pages, and game showcase pages.
+Make the `/projects` list-page selected project state restorable from the URL without changing the meaning of independent project detail routes. A selected preview such as Pet Workspace should be shareable and survive refresh as `/projects?project=pet-workspace`.
 
 ## Scope
 
-- Audit and adjust `ProjectsView` card actions.
-- Audit and adjust `ProjectNarrative` footer actions if they duplicate the selected project side panel.
-- Preserve existing route behavior for `/projects/:id`, `/cases/:id`, and `/games/:slug`.
-- Keep the current visual design and Chinese company/product showcase tone.
+- Add a small helper for reading a valid project selection from `window.location.search` on `/projects`.
+- Update list-page selection actions to push/replace `/projects?project=<id>`.
+- Keep `/projects/:id` as the independent technical detail route.
+- Preserve `/cases/:id`, `/games/:slug`, and blog routes.
 
 ## Non-goals
 
-- Do not redesign the full projects page.
-- Do not rewrite project detail content.
-- Do not add or remove projects/cases.
+- Do not redesign the projects page.
+- Do not change project/case/blog content.
+- Do not add dependencies.
 - Do not edit reference project directories.
 - Do not expose secrets, real accounts, IPs, API bases, or local validation paths.
 
 ## Allowed Paths
 
 - src/App.tsx
-- src/App.css
 - .agent-work/current-task.md
 - .agent-work/cc-plan.md
 - .agent-work/codex-review.md
@@ -37,9 +36,10 @@ Clean up the `/projects` page interaction hierarchy so project cards and the sel
 ## Acceptance Criteria
 
 - [x] CC produces a read-only plan before implementation.
-- [x] Project card buttons use clear labels and avoid redundant same-destination actions.
-- [x] The selected project narrative no longer repeats the side panel's primary action cluster unnecessarily.
-- [x] Selecting a card still updates the preview panel.
-- [x] Technical detail, business case, and game showcase routes still work.
+- [x] Opening `/projects?project=pet-workspace` selects Pet Workspace in the preview panel.
+- [x] Clicking project thumbnail cards updates the URL query and preview selection.
+- [x] Switching project groups updates the URL query to the first project in the group.
+- [x] `/projects/pet-workspace` still opens the independent technical detail page.
+- [x] Browser back/forward restores project list selection.
 - [x] `npm run lint` and `npm run build` pass.
-- [x] Browser QA checks `/projects` on desktop and mobile.
+- [x] Browser QA checks desktop and mobile.

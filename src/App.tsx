@@ -65,6 +65,22 @@ function getProjectIdFromPath(pathname: string): string | null {
   return match?.[1] ?? null
 }
 
+function getValidProjectId(projectId: string | null): string | null {
+  if (!projectId) return null
+  return projects.some((project) => project.id === projectId) ? projectId : null
+}
+
+function getProjectIdFromQuery(search: string): string | null {
+  const projectId = new URLSearchParams(search).get('project')
+  return getValidProjectId(projectId)
+}
+
+function getProjectSelectionFromLocation(pathname: string, search: string): string {
+  const view = getViewFromPath(pathname)
+  if (view === 'projects') return getProjectIdFromQuery(search) ?? projects[0].id
+  return getValidProjectId(getProjectIdFromPath(pathname)) ?? getValidProjectId(getGameProjectIdFromPath(pathname)) ?? projects[0].id
+}
+
 function getCaseIdFromPath(pathname: string): string | null {
   const normalizedPath = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
   const match = normalizedPath.match(/^\/cases\/([^/]+)$/)
@@ -332,7 +348,7 @@ function getCaseStudyForProject(projectId: string) {
 
 function App() {
   const [activeView, setActiveView] = useState<ViewKey>(() => getViewFromPath(window.location.pathname))
-  const [selectedId, setSelectedId] = useState(() => getProjectIdFromPath(window.location.pathname) ?? getGameProjectIdFromPath(window.location.pathname) ?? projects[0].id)
+  const [selectedId, setSelectedId] = useState(() => getProjectSelectionFromLocation(window.location.pathname, window.location.search))
   const [selectedCaseId, setSelectedCaseId] = useState(() => getCaseIdFromPath(window.location.pathname) ?? caseStudies[0].id)
   const [selectedBlogSlug, setSelectedBlogSlug] = useState(() => getBlogSlugFromPath(window.location.pathname) ?? blogPosts[0].slug)
   const [siteTheme, setSiteTheme] = useState<SiteTheme>('light')
@@ -344,23 +360,25 @@ function App() {
 
   useEffect(() => {
     const handlePopState = () => {
+      const nextView = getViewFromPath(window.location.pathname)
       const nextProjectId = getProjectIdFromPath(window.location.pathname)
       const nextGameProjectId = getGameProjectIdFromPath(window.location.pathname)
       const nextCaseId = getCaseIdFromPath(window.location.pathname)
       const nextBlogSlug = getBlogSlugFromPath(window.location.pathname)
-      if (nextProjectId) setSelectedId(nextProjectId)
-      if (nextGameProjectId) setSelectedId(nextGameProjectId)
+      if (nextView === 'projects') setSelectedId(getProjectSelectionFromLocation(window.location.pathname, window.location.search))
+      if (nextProjectId) setSelectedId(getValidProjectId(nextProjectId) ?? projects[0].id)
+      if (nextGameProjectId) setSelectedId(getValidProjectId(nextGameProjectId) ?? projects[0].id)
       if (nextCaseId) setSelectedCaseId(nextCaseId)
       if (nextBlogSlug) setSelectedBlogSlug(nextBlogSlug)
-      setActiveView(getViewFromPath(window.location.pathname))
+      setActiveView(nextView)
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
   const navigate = (view: NavViewKey) => {
-    const nextPath = routeByView[view]
-    if (window.location.pathname !== nextPath) {
+    const nextPath = view === 'projects' ? `/projects?project=${encodeURIComponent(getValidProjectId(selectedId) ?? projects[0].id)}` : routeByView[view]
+    if (`${window.location.pathname}${window.location.search}` !== nextPath) {
       window.history.pushState(null, '', nextPath)
     }
     setActiveView(view)
@@ -368,8 +386,18 @@ function App() {
   }
 
   const openProject = (project: Project) => {
-    setSelectedId(project.id)
-    navigate('projects')
+    selectProjectInList(project.id, { scrollToTop: true })
+  }
+
+  const selectProjectInList = (projectId: string, options: { scrollToTop?: boolean } = {}) => {
+    const validProjectId = getValidProjectId(projectId) ?? projects[0].id
+    const nextPath = `/projects?project=${encodeURIComponent(validProjectId)}`
+    if (`${window.location.pathname}${window.location.search}` !== nextPath) {
+      window.history.pushState(null, '', nextPath)
+    }
+    setSelectedId(validProjectId)
+    setActiveView('projects')
+    if (options.scrollToTop) window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const openProjectDetail = (project: Project) => {
@@ -439,7 +467,7 @@ function App() {
 
       <main className="site-main">
         {activeView === 'home' ? <HomeView onOpenCase={openCaseDetail} onOpenProject={openProject} /> : null}
-        {activeView === 'projects' ? <ProjectsView onOpenCase={openCaseDetail} onOpenGameDetail={openGameDetail} onOpenProjectDetail={openProjectDetail} selectedProject={selectedProject} onSelectProject={setSelectedId} /> : null}
+        {activeView === 'projects' ? <ProjectsView onOpenCase={openCaseDetail} onOpenGameDetail={openGameDetail} onOpenProjectDetail={openProjectDetail} selectedProject={selectedProject} onSelectProject={selectProjectInList} /> : null}
         {activeView === 'projectDetail' ? <ProjectFullDetailView onBack={() => navigate('projects')} onOpenCase={openCaseDetail} onOpenGameDetail={openGameDetail} project={selectedProject} /> : null}
         {activeView === 'gameDetail' ? <GameShowcaseView onBack={() => navigate('projects')} onOpenProjectDetail={openProjectDetail} project={selectedProject} /> : null}
         {activeView === 'cases' ? <CasesView onOpenCase={openCaseDetail} onOpenProjectDetail={openProjectDetail} /> : null}
@@ -622,7 +650,7 @@ function HomeView({ onOpenCase, onOpenProject }: { onOpenCase: (caseStudy: CaseS
 }
 
 function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSelectProject, selectedProject }: { onOpenCase: (caseStudy: CaseStudy) => void; onOpenGameDetail: (project: Project) => void; onOpenProjectDetail: (project: Project) => void; onSelectProject: (id: string) => void; selectedProject: Project }) {
-  const [activeGroup, setActiveGroup] = useState<ProjectGroupKey>(() => getGroupKeyByProjectId(selectedProject.id))
+  const activeGroup = getGroupKeyByProjectId(selectedProject.id)
   const currentGroup = projectGroups.find((group) => group.key === activeGroup) ?? projectGroups[0]
   const groupedProjects = useMemo(
     () => currentGroup.projectIds.map((id) => projects.find((project) => project.id === id)).filter((project): project is Project => Boolean(project)),
@@ -649,7 +677,7 @@ function ProjectsView({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, onSel
 
           <div className="project-tab-strip" role="tablist" aria-label="项目分类">
             {projectGroups.map((group) => (
-              <button key={group.key} className={activeGroup === group.key ? 'is-active' : ''} type="button" onClick={() => { setActiveGroup(group.key); onSelectProject(group.projectIds[0]) }}>
+              <button key={group.key} className={activeGroup === group.key ? 'is-active' : ''} type="button" onClick={() => onSelectProject(group.projectIds[0])}>
                 <strong>{group.title}</strong>
                 <span>{group.description}</span>
               </button>
