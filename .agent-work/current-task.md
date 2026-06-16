@@ -46,7 +46,7 @@ Polish remaining public-facing copy that still reads like a draft, example page,
 - [x] `npm run lint` passes.
 - [x] `npm run build` passes.
 - [x] Browser QA checks affected routes at desktop and mobile widths.
-- [ ] Changes are committed, pushed, and production QA is recorded.
+- [x] Changes are committed, pushed, and production QA is recorded.
 
 ## Verification Plan
 

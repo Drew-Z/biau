@@ -55,4 +55,17 @@ System Chrome was used through Playwright.
 
 ## Deployment QA
 
-Pending commit, push, and Cloudflare deployment.
+Source commit:
+
+- `a0b32f9 Polish public copy tone`
+
+Cloudflare deployment was confirmed by rendering `https://biau.playlab.eu.cc/blogs` and checking that `项目复盘 / 2026-06-11` and `阅读全文` were present while `示例博客` and `阅读示例文章` were absent.
+
+| Route | Viewport | Result |
+| --- | --- | --- |
+| `/` | 1440x900 | pass: 200, h1 present, no console errors, no failed requests, no horizontal overflow, no bad visible wording or private path hits. |
+| `/cases` | 1440x900 | pass: 200, new case strip copy present, no console errors, no failed requests, no horizontal overflow, no bad visible wording or private path hits. |
+| `/blogs` | 1440x900 | pass: 200, new blog featured copy present, no console errors, no failed requests, no horizontal overflow, no bad visible wording or private path hits. |
+| `/` | 390x844 | pass: 200, h1 present, no console errors, no failed requests, no horizontal overflow, no bad visible wording or private path hits. |
+| `/cases` | 390x844 | pass: 200, new case strip copy present, no console errors, no failed requests, no horizontal overflow, no bad visible wording or private path hits. |
+| `/blogs` | 390x844 | pass: 200, new blog featured copy present, no console errors, no failed requests, no horizontal overflow, no bad visible wording or private path hits. |
