@@ -54,4 +54,12 @@ Base URL: http://127.0.0.1:5175
 
 ## Ship Decision
 
-Ready to commit and push after final git diff review.
+Committed and pushed: 902292d Add-Next-Spacewar-runtime-screenshots.
+
+## Deployment QA
+
+- Direct asset check: /images/projects/showcase/next-spacewar-menu.png initially returned the previous SPA fallback while Cloudflare was updating, then returned 200 with content-type image/png and content-length 93891.
+- Production browser QA at https://biau.playlab.eu.cc:
+  - /projects/game-next-spacewar loads with h1 太空战机｜展示构建 and next-spacewar-menu.png at 1280x720, no console errors, no horizontal overflow.
+  - /games/next-spacewar loads with h1 太空战机｜展示构建 and next-spacewar-menu.png at 1280x720, no console errors, no horizontal overflow.
+  - /cases/godot-showcase loads with h1 Godot Web 游戏展示体系 and 11 images. Desktop and mobile both load next-spacewar-menu.png and next-spacewar-gameplay.png at 1280x720 after scrolling lazy content, no console errors, no horizontal overflow.
