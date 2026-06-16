@@ -142,7 +142,7 @@ export const projects: Project[] = [
     category: 'interactive',
     status: 'live',
     role: 'Godot 引擎 / 纵版射击 / 原型验证',
-    image: '/images/projects/showcase/godot-raiden-vertical-slice.svg',
+    image: '/images/projects/showcase/raiden-main-menu.png',
     stack: ['Godot', '纵版射击', '原型验证'],
     highlights: ['双关卡章节', '火力成长', '首领收束', '试玩验证'],
     links: [{ label: '查看页面', href: '/games/raiden', type: 'external' }],

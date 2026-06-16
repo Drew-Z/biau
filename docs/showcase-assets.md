@@ -20,7 +20,7 @@
 | Ozon ERP | ERP 封面图、运营链路图、数据审批模型图、后台模块视图 | 脱敏真实后台截图 | 后续补一张去除店铺、订单、商品和连接信息的真实后台截图 |
 | xunqiu | 64 位客户端模块地图、迁移流程图、验收链路图 | 64 位客户端脱敏运行截图 | 只采集新客户端脱敏截图，不复用含真实数据旧素材 |
 | Space War | 主菜单、玩法画面、结算页 | Web 试玩入口截图 | 已接入项目卡与 Godot 案例页 |
-| 其他 Godot 项目 | Tetris 桌面运行截图、Tetris 移动端主菜单截图、Tetris 结构图、Next Spacewar 主菜单、Next Spacewar 战斗 HUD、Next Spacewar 展示路径图、InteSpace 玩家中枢、InteSpace 战斗 HUD、InteSpace 系统闭环图、Raiden 垂直切片图 | Raiden 的真实运行截图，以及 Next Spacewar/InteSpace 的结果页截图 | Tetris 截图来自 Godot 4.6.1 临时副本截图回归；Next Spacewar 和 InteSpace 截图来自 Godot 4.6.1 Windows 运行时临时副本；其他项目后续逐个补真实运行图 |
+| 其他 Godot 项目 | Tetris 桌面运行截图、Tetris 移动端主菜单截图、Tetris 结构图、Next Spacewar 主菜单、Next Spacewar 战斗 HUD、Next Spacewar 展示路径图、InteSpace 玩家中枢、InteSpace 战斗 HUD、InteSpace 系统闭环图、Raiden 主菜单、Raiden Stage 01 战斗、Raiden Stage 02 风暴机关、Raiden 垂直切片图 | Next Spacewar/InteSpace 的结果页截图，以及 Raiden 结果页或章节总结截图 | Tetris 截图来自 Godot 4.6.1 临时副本截图回归；Next Spacewar、InteSpace 和 Raiden 截图来自 Godot 4.6.1 Windows 运行时临时副本；后续可继续补结果页/章节总结类闭环截图 |
 | blog-semi | 站点本身可在线截图 | 首页、项目页、博客页的版本化截图 | 每次大改后保留桌面和移动端截图 |
 
 ## 已上线文件
@@ -54,6 +54,9 @@ public/images/projects/showcase/next-spacewar-menu.png
 public/images/projects/showcase/next-spacewar-gameplay.png
 public/images/projects/showcase/intespace-player-hub.png
 public/images/projects/showcase/intespace-gameplay-hud.png
+public/images/projects/showcase/raiden-main-menu.png
+public/images/projects/showcase/raiden-stage-01-gameplay.png
+public/images/projects/showcase/raiden-stage-02-storm.png
 ```
 
 ## 不直接公开的素材
