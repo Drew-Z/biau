@@ -51,4 +51,13 @@ Base URL: http://127.0.0.1:5175
 
 ## Ship Decision
 
-Ready to commit and push after final git diff review.
+Committed and pushed: dc71e3b Add Next Spacewar result screenshot.
+
+## Deployment QA
+
+- Direct asset check:
+  - /images/projects/showcase/next-spacewar-result-summary.png returns 200 with content-type image/png and content-length 162055.
+- Production browser QA at https://biau.playlab.eu.cc:
+  - /cases/godot-showcase loads with h1 Godot Web 游戏展示体系 and the Next Spacewar result card title.
+  - next-spacewar-result-summary.png decodes at natural size 1280x720.
+  - Desktop and mobile both pass with no console errors, no failed requests, no horizontal overflow, and no non-product positioning wording.
