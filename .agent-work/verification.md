@@ -56,4 +56,15 @@ Base URL: http://127.0.0.1:5175
 
 ## Ship Decision
 
-Ready to commit and push.
+Committed and pushed: 9265797 Add-Raiden-runtime-screenshots.
+
+## Deployment QA
+
+- Direct asset check:
+  - /images/projects/showcase/raiden-main-menu.png returns 200 with content-type image/png, size 98691, and PNG dimensions 540x960.
+  - /images/projects/showcase/raiden-stage-01-gameplay.png returns 200 with content-type image/png, size 20900, and PNG dimensions 540x960.
+  - /images/projects/showcase/raiden-stage-02-storm.png returns 200 with content-type image/png, size 27304, and PNG dimensions 540x960.
+- Production browser QA at https://biau.playlab.eu.cc:
+  - /projects/raiden-prototype loads with h1 纵版弹幕射击｜垂直切片 and raiden-main-menu.png at 540x960, no console errors, no failed requests, no horizontal overflow, no 面试/作品集 wording.
+  - /games/raiden loads with h1 纵版弹幕射击｜垂直切片 and raiden-main-menu.png at 540x960, no console errors, no failed requests, no horizontal overflow, no 面试/作品集 wording.
+  - /cases/godot-showcase loads with h1 Godot Web 游戏展示体系 and Raiden main-menu/Stage 01/Stage 02 PNGs plus the vertical-slice SVG. Desktop and mobile both pass with no console errors, no failed requests, no horizontal overflow, no 面试/作品集 wording.
