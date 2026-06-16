@@ -1881,17 +1881,15 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
 
         <article className="blog-featured-layout">
           <div className="blog-featured-main">
-            <Text type="tertiary">项目复盘 / 2026-06-11</Text>
-            <Title heading={2}>从项目目录到博客系统：一次展示层重构记录</Title>
-            <Paragraph>这次重构的核心不是把页面做得更满，而是把真实项目按照访问者能理解的方式重新组织。首页负责建立第一印象，项目页负责说明能力边界，案例页沉淀展示材料，博客页则记录持续学习和项目复盘。</Paragraph>
+            <Text type="tertiary">{featuredPost.tag} / {featuredPost.date}</Text>
+            <Title heading={2}>{featuredPost.title}</Title>
+            <Paragraph>{featuredPost.detail}</Paragraph>
             <Button theme="solid" type="primary" onClick={() => onOpenPost(featuredPost)}>阅读全文</Button>
           </div>
           <aside className="blog-featured-aside">
             <Text type="tertiary">文章目录</Text>
-            <strong>展示系统</strong>
-            <span>项目目录</span>
-            <span>案例矩阵</span>
-            <span>学习记录</span>
+            <strong>{featuredPost.title}</strong>
+            {featuredPost.sections.slice(0, 3).map((section) => <span key={section.title}>{section.title}</span>)}
           </aside>
         </article>
 
@@ -2016,3 +2014,4 @@ function ProjectDetail({ onOpenCase, onOpenGameDetail, onOpenProjectDetail, proj
 }
 
 export default App
+
