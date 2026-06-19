@@ -1830,7 +1830,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
       <section className="blog-hero">
         <Text type="tertiary">Knowledge Hub</Text>
         <Title heading={1}>技术知识库</Title>
-        <Paragraph>把 AI 应用、RAG、Agent、全栈工程和项目复盘拆成专题入口。博客首页不再铺满所有文章，详情页保留独立阅读路径。</Paragraph>
+        <Paragraph>沉淀 AI 应用、RAG、Agent 与全栈工程实践，整理可复用的技术文章、项目复盘和交付经验。</Paragraph>
       </section>
 
       <section className="blog-magazine">
@@ -1884,7 +1884,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
                 <Title heading={3}>{activeGroup.title}</Title>
                 <Text type="tertiary">{activeGroup.description}</Text>
               </div>
-              <Tag color="blue">展示 {activeGroupPosts.length} / {activeGroup.posts.length}</Tag>
+              <Tag color="blue">{activeGroupPosts.length} 篇精选</Tag>
             </div>
 
             <div className="blog-curated-list">
@@ -1906,7 +1906,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
         <div className="blog-latest-head">
           <div>
             <Title heading={3}>最新更新</Title>
-            <Text type="tertiary">只展示最近 6 篇，避免博客首页变成长列表。</Text>
+            <Text type="tertiary">近期整理的工程实践、技术拆解与项目复盘。</Text>
           </div>
         </div>
 
