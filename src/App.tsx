@@ -2,6 +2,7 @@
 import { Button, Space, Tag, Typography } from '@douyinfe/semi-ui-19'
 import { IconApps, IconArticle, IconBriefcase, IconExternalOpen, IconHome } from '@douyinfe/semi-icons'
 import { categoryLabels, projects, statusLabels, type Project } from './data/portfolio'
+import { blogPosts, type BlogPost } from './data/blog'
 import './App.css'
 
 const { Title, Text, Paragraph } = Typography
@@ -128,100 +129,6 @@ function getGroupKeyByProjectId(projectId: string): ProjectGroupKey {
 }
 
 const homeCaseProjectIds = ['legal-rag', 'pet-workspace', 'ozon-erp', 'blog-semi', 'game-first-tetris', 'xunqiu']
-
-type BlogPost = {
-  slug: string
-  title: string
-  tag: string
-  detail: string
-  date: string
-  readTime: string
-  sections: Array<{ title: string; body: string }>
-  takeaways: string[]
-}
-
-const blogPosts: BlogPost[] = [
-  {
-    slug: 'legal-rag-review',
-    title: 'Legal RAG 项目复盘',
-    tag: 'AI 应用',
-    detail: '复盘合同审查 RAG 从文档导入、条款切分、检索问答到风险审查的展示链路。',
-    date: '2026-06-11',
-    readTime: '10 min',
-    sections: [
-      { title: '为什么选择合同审查场景', body: '法律合同审查天然适合展示检索增强生成的价值：文本长、条款多、风险点分散，并且回答必须能追溯到来源。这个项目没有把 AI 能力停留在聊天框里，而是把文档导入、条款切分、语义检索、引用溯源和风险审查串成一条可演示的业务流程。' },
-      { title: '端到端链路设计', body: 'MVP 阶段先用 Vue 工作台承载知识库、问答和审查三条路径，Express API 负责导入、chunk 查询、RAG 问答和审查接口，共享类型用于稳定前后端契约。这样项目页可以讲清楚功能边界，案例页可以讲清楚业务价值，博客则沉淀完整复盘。' },
-      { title: '检索与引用溯源', body: '项目先使用 Mock Embedding 和内存向量库跑通主链路，重点验证 chunk 数据结构、召回阈值、轻量重排和 citations 返回格式。回答结果必须带引用，引用要能回到原文条款，访问者才能理解这个系统如何降低“只给结论却无法核验”的风险。' },
-      { title: '风险审查与人审边界', body: '合同审查输出不只是自然语言总结，而是结构化的风险等级、问题说明、修改建议和人工复核标记。这个设计让 AI 更像业务工作台的一环：模型负责初步识别和整理，人负责最终判断，关键节点保留可审计的复核入口。' },
-      { title: '展示讲述重点', body: '对外展示时重点讲“可解释闭环”：文档如何进入知识库、条款如何被切分、问题如何召回上下文、回答如何带引用、风险审查如何回到原文。后续真正产品化时，再替换真实 embedding、pgvector、PDF/DOCX parser 和队列系统。' },
-    ],
-    takeaways: ['先跑通可解释闭环，再替换生产级模型和存储。', 'RAG 项目的核心展示点是引用、阈值、召回质量和人工复核。', '博客文章负责沉淀项目复盘，项目页负责讲工程实现，案例页负责讲业务价值。'],
-  },
-  {
-    slug: 'ozon-erp-architecture',
-    title: 'Ozon ERP 架构整理',
-    tag: '全栈开发',
-    detail: '整理后台、API、Worker、插件和数据库的边界。',
-    date: '2026-06-12',
-    readTime: '9 min',
-    sections: [
-      { title: '系统边界', body: 'ERP 项目的价值在于把后台操作、API 服务、数据库模型、异步任务和浏览器插件组织成一条可追踪链路。它不是单纯的管理页面，而是把商品、订单、采集、审批、导入草稿和任务执行放进统一的运营工作台。' },
-      { title: '多端协作结构', body: '前端负责高频操作和状态展示，API 负责权限、校验和数据契约，Worker 承接同步与采集类长任务，浏览器插件补齐平台侧采集能力。展示时可以把这四层拆开讲，让访问者看到每一层的职责和协作方式。' },
-      { title: '数据与任务链路', body: '数据库模型用于沉淀店铺、商品、订单、导入草稿、审批动作和审计记录；队列把耗时任务从主请求链路中拆出去。这样既能解释后台为什么能保持响应，也能说明后续接入更多平台或更大数据量时的扩展路径。' },
-      { title: '安全写入与审计', body: '项目中最适合公开展示的工程亮点，是写操作开关、Pending Action、审批动作和审计日志。对外介绍时不需要暴露真实店铺身份或连接细节，只需要展示“如何避免误写生产数据”和“如何追踪每一次关键操作”。' },
-      { title: '展示资料沉淀', body: '项目页负责列出技术栈、模块和架构；案例页负责讲运营痛点、方案和结果；博客复盘则适合解释为什么要引入队列、插件和审计，以及这些设计如何支撑小团队的日常运营。' },
-    ],
-    takeaways: ['业务系统要讲清楚模块边界和数据流。', '真实写入必须有开关、审批和审计。', '插件、Worker、API 和数据库的协作是工程亮点。'],
-  },
-  {
-    slug: 'pet-workspace-pipeline',
-    title: 'Pet Workspace 生成管线复盘',
-    tag: 'AI 应用',
-    detail: '复盘 AI 宠物从生成任务、QA Gate、人审发布到 App API 契约的工程化链路。',
-    date: '2026-06-14',
-    readTime: '11 min',
-    sections: [
-      { title: '从单次生成到可控管线', body: '生成类项目最容易停留在“输入提示词、拿到一张图”的阶段，但真正进入应用后，重点会变成任务状态、产物结构、质量检查、人审决策和发布记录。Pet Workspace 的价值就在于把生成结果纳入可追踪流程，让每一次生成都能解释现在走到哪一步、为什么被退回、什么时候可以进入 App。' },
-      { title: '工作区边界拆分', body: '项目不是单仓库展示，而是把 App-facing 工作区、服务端生成管线和 Android 验证工程分开组织。gamer 承接社区 API、审核后台、共享包和集成测试；fantasy-pet-rule 承接 Worker 编排、QA Gate、任务包和 App API 契约；移动端工程负责验证浮窗、权限、前台服务和本地消费体验。' },
-      { title: 'QA Gate 与人审发布', body: 'AI 生成输出不能直接发布到应用，需要先经过自动检查，再进入人工视觉复核。这里的 QA Gate 不是为了替代人工判断，而是把明显不合格、结构缺失或流程异常的结果提前挡住，让人审只处理真正值得看的候选。最终发布记录则负责证明资产从生成到上架经过了可审计路径。' },
-      { title: 'App API 契约的意义', body: 'App 侧不应该理解生成管线内部细节，只需要拿到稳定的响应结构、资源索引和状态字段。通过契约把生成服务和移动端解耦，后续更换模型、调整 Worker、增加审核阶段或迁移存储，都不会直接破坏 App 展示层。' },
-      { title: '公开展示取舍', body: '对外展示时不需要暴露真实云端地址、任务 JSON、模型配置或候选素材来源，只需要讲清楚“任务如何创建、质量如何判断、人工如何接管、结果如何进入 App”。这样既能展示 AI 工程化能力，也能把敏感实现边界留在私有环境中。' },
-    ],
-    takeaways: ['AI 生成项目要证明的是流程可控，而不只是生成效果。', 'QA Gate、人审和发布记录共同构成资产进入 App 的安全边界。', 'App API 契约可以把生成管线和移动端体验解耦。'],
-  },
-  {
-    slug: 'xunqiu-android64-rebuild',
-    title: '寻球 64 位客户端重构复盘',
-    tag: '移动端',
-    detail: '复盘历史移动业务系统接手、接口复用、64 位兼容和阶段验收的整理路径。',
-    date: '2026-06-15',
-    readTime: '10 min',
-    sections: [
-      { title: '历史项目接手的第一步', body: '这类项目的难点通常不是“缺一个页面”，而是旧客户端、服务端、后台资料、发布包和第三方 SDK 交织在一起。接手时先要建立项目地图：哪些模块还能复用，哪些能力只能作为参照，哪些配置不能公开，哪些功能需要用新客户端重新承接。' },
-      { title: '为什么选择新建 64 位客户端', body: '旧 Android 工程被多个 32 位 native 依赖和历史 SDK 绑定，继续硬改容易陷入二进制缺失、运行时加载失败和兼容性连锁问题。更稳的路线是新建 64 位兼容客户端，第一版不引入旧 native 包，只复用服务端接口和必要 Web 页面，把核心登录、动态、社区、赛事、商品和个人中心逐步接回来。' },
-      { title: '接口复用与页面恢复', body: '新客户端的核心不是一次性复刻全部旧功能，而是先封装登录态、请求客户端、返回模型和公共 UI 工具，再按业务优先级恢复页面。这样旧接口仍然可以作为业务能力来源，但公开展示时只讲协议复用和模块边界，不暴露真实服务地址、访问凭据或部署细节。' },
-      { title: '验收证据怎么沉淀', body: '历史系统重构需要证明每一步都能复现：项目清单说明接手范围，重构计划说明技术路线，阶段构建说明可运行状态，模拟器和真机检查说明移动端行为。比起只放最终截图，这些过程证据更能说明迁移不是临时拼接，而是可控推进。' },
-      { title: '公开展示取舍', body: '这个案例适合展示历史系统整理能力、移动端兼容策略和阶段验收方法，不适合公开私有服务信息、访问凭据、签名材料、发布校验信息或完整接口清单。站点内容只保留抽象后的模块地图、重构思路和脱敏运行证据。' },
-    ],
-    takeaways: ['历史项目接手先建地图，再谈重构。', '64 位迁移可以通过新客户端绕开旧 native 依赖阻塞。', '阶段验收文档比单张截图更能证明重构路径可靠。'],
-  },
-  {
-    slug: 'game-showcase-standard',
-    title: '游戏项目展示规范',
-    tag: '游戏项目',
-    detail: '统一试玩入口、封面图、操作说明和导出流程。',
-    date: '2026-06-13',
-    readTime: '8 min',
-    sections: [
-      { title: '为什么需要展示规范', body: '游戏项目如果只放源码，访问者很难理解玩法循环。展示页需要明确项目定位、玩法目标、操作方式、版本状态、截图证据和试玩入口，让一个原型也能被当作完整体验来理解。' },
-      { title: '项目详情与试玩入口分层', body: '站点里的项目详情负责讲技术实现、工程结构和导出方式；游戏展示页负责讲玩法、系统、操作和可玩状态。两者保持分层，可以避免详情页堆太多素材，也方便后续替换 Web 试玩包。' },
-      { title: '截图与证据组织', body: '每个游戏至少需要封面图、核心玩法截图、结果页或关卡截图，以及版本说明。对外展示时，截图不只是装饰，而是证明项目已经具备可运行路径、可交互反馈和明确完成状态的证据。' },
-      { title: 'Godot Web 导出节奏', body: '展示系统先保留独立游戏路由和静态说明，再逐步接入 Godot Web 导出包、加载状态、操作提示和版本记录。这样即使某个试玩包暂时未上线，页面也能完整说明当前阶段和后续接入计划。' },
-      { title: '下一步迭代方向', body: '后续可以把五个游戏统一成“封面、玩法、系统、操作、试玩、版本记录”的内容模型，再按项目成熟度展示不同状态：原型验证、展示构建、可试玩版本和发布版本。' },
-    ],
-    takeaways: ['每个游戏要有独立入口和清晰状态。', '试玩包和项目说明保持解耦。', '截图、版本记录和操作说明能让原型更像产品。'],
-  },
-]
 
 type CaseStudy = {
   id: string
@@ -1874,52 +1781,141 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 
 function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void; theme: SiteTheme }) {
   const featuredPost = blogPosts[0]
+  const latestPosts = blogPosts.slice(0, 6)
+  const blogGroups = useMemo(() => {
+    const includesAny = (post: BlogPost, keywords: string[]) => {
+      const content = `${post.title} ${post.detail} ${post.tag} ${post.series ?? ''} ${(post.knowledgePoints ?? []).join(' ')} ${(post.scenarios ?? []).join(' ')}`
+      return keywords.some((keyword) => content.includes(keyword))
+    }
+
+    return [
+      {
+        key: 'rag',
+        title: 'RAG 与知识库',
+        description: '文档入库、切分、检索、引用、评测和知识库运营。',
+        posts: blogPosts.filter((post) => includesAny(post, ['RAG', '知识库', '向量', 'Embedding', 'Chunk', '检索', '引用', 'citation', '文档', '索引'])),
+      },
+      {
+        key: 'agent',
+        title: 'Agent 与生成管线',
+        description: '工具调用、状态机、失败恢复、人审和可控生成流程。',
+        posts: blogPosts.filter((post) => includesAny(post, ['Agent', 'Tool', '工具调用', '状态机', '人审', '生成管线', 'Worker', 'QA'])),
+      },
+      {
+        key: 'delivery',
+        title: '生产化与交付',
+        description: '部署、监控、配置、成本、安全、审计和交付文档。',
+        posts: blogPosts.filter((post) => includesAny(post, ['生产', '部署', '监控', '配置', '成本', '安全', '审计', '交付', '看板', '故障', '权限'])),
+      },
+      {
+        key: 'fullstack',
+        title: '全栈工程',
+        description: '前端工作台、API 契约、队列、数据库和工程复盘。',
+        posts: blogPosts.filter((post) => post.tag === '全栈开发' || includesAny(post, ['API', '前端', '数据库', '队列', 'Worker', '错误码', '任务状态'])),
+      },
+      {
+        key: 'projects',
+        title: '项目复盘',
+        description: '围绕 legal-rag、pet、ERP、游戏和移动端项目的复盘文章。',
+        posts: blogPosts.filter((post) => !post.series || includesAny(post, ['复盘', 'legal-rag', 'Pet', 'ERP', 'Godot', 'Android', '项目'])),
+      },
+    ]
+  }, [])
+  const [activeGroupKey, setActiveGroupKey] = useState(blogGroups[0].key)
+  const activeGroup = blogGroups.find((group) => group.key === activeGroupKey) ?? blogGroups[0]
+  const activeGroupPosts = activeGroup.posts.slice(0, 8)
+
   return (
     <div className={`blog-view blog-view-${theme}`}>
       <section className="blog-hero">
-        <Text type="tertiary">博客总览</Text>
-        <Title heading={1}>博客系统</Title>
-        <Paragraph>参考成熟技术博客的精选文章和最新文章结构，用统一的浅色/暗色风格记录项目复盘、工程学习和展示资料。</Paragraph>
+        <Text type="tertiary">Knowledge Hub</Text>
+        <Title heading={1}>技术知识库</Title>
+        <Paragraph>把 AI 应用、RAG、Agent、全栈工程和项目复盘拆成专题入口。博客首页不再铺满所有文章，详情页保留独立阅读路径。</Paragraph>
       </section>
 
       <section className="blog-magazine">
         <div className="blog-magazine-head">
           <div>
-            <span className="section-pill">精选与最新</span>
-            <Title heading={2}>项目复盘与学习记录</Title>
+            <span className="section-pill">专题索引</span>
+            <Title heading={2}>按知识方向进入文章</Title>
           </div>
           <div className="blog-topic-pills" aria-label="博客栏目">
-            <span>项目复盘</span>
-            <span>AI 应用学习</span>
-            <span>全栈工程记录</span>
-            <span>展示资料</span>
+            <span>{blogPosts.length} 篇文章</span>
+            <span>{blogGroups.length} 个专题</span>
+            <span>详情页阅读</span>
           </div>
         </div>
 
         <article className="blog-featured-layout">
           <div className="blog-featured-main">
-            <Text type="tertiary">{featuredPost.tag} / {featuredPost.date}</Text>
+            <Text type="tertiary">{featuredPost.series ?? '精选博客'} / {featuredPost.date}</Text>
             <Title heading={2}>{featuredPost.title}</Title>
             <Paragraph>{featuredPost.detail}</Paragraph>
-            <Button theme="solid" type="primary" onClick={() => onOpenPost(featuredPost)}>阅读全文</Button>
+            <Button theme="solid" type="primary" onClick={() => onOpenPost(featuredPost)}>阅读知识文章</Button>
           </div>
           <aside className="blog-featured-aside">
-            <Text type="tertiary">文章目录</Text>
-            <strong>{featuredPost.title}</strong>
-            {featuredPost.sections.slice(0, 3).map((section) => <span key={section.title}>{section.title}</span>)}
+            <Text type="tertiary">核心要点</Text>
+            <strong>{featuredPost.series ?? '知识库'}</strong>
+            {(featuredPost.knowledgePoints ?? featuredPost.sections.map((section) => section.title).slice(0, 3)).map((item) => (
+              <span key={item}>{item}</span>
+            ))}
           </aside>
         </article>
 
+        <div className="blog-knowledge-board">
+          <aside className="blog-group-rail" aria-label="博客专题">
+            <Text type="tertiary">专题</Text>
+            {blogGroups.map((group) => (
+              <button
+                key={group.key}
+                className={activeGroup.key === group.key ? 'is-active' : ''}
+                type="button"
+                onClick={() => setActiveGroupKey(group.key)}
+              >
+                <strong>{group.title}</strong>
+                <span>{group.posts.length} 篇</span>
+              </button>
+            ))}
+          </aside>
+
+          <div className="blog-group-panel">
+            <div className="blog-latest-head">
+              <div>
+                <Title heading={3}>{activeGroup.title}</Title>
+                <Text type="tertiary">{activeGroup.description}</Text>
+              </div>
+              <Tag color="blue">展示 {activeGroupPosts.length} / {activeGroup.posts.length}</Tag>
+            </div>
+
+            <div className="blog-curated-list">
+              {activeGroupPosts.map((post, index) => (
+                <article key={`${activeGroup.key}-${post.slug}`} className="blog-curated-row">
+                  <strong>{String(index + 1).padStart(2, '0')}</strong>
+                  <div>
+                    <Text type="tertiary">{post.series ?? post.tag} / {post.readTime}</Text>
+                    <Title heading={4}>{post.title}</Title>
+                    <Paragraph>{post.detail}</Paragraph>
+                  </div>
+                  <Button theme="borderless" type="primary" onClick={() => onOpenPost(post)}>阅读</Button>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="blog-latest-head">
-          <Title heading={3}>最新记录</Title>
-          <Text type="tertiary">后续可以继续把项目更新、设计取舍和展示材料追加到这里。</Text>
+          <div>
+            <Title heading={3}>最新更新</Title>
+            <Text type="tertiary">只展示最近 6 篇，避免博客首页变成长列表。</Text>
+          </div>
         </div>
 
         <div className="blog-latest-grid">
-          {blogPosts.map((post) => (
+          {latestPosts.map((post) => (
             <article key={post.title} className="blog-latest-card">
               <Text type="tertiary">{post.date}</Text>
               <Tag color={post.tag === 'AI 应用' ? 'cyan' : post.tag === '全栈开发' ? 'blue' : 'grey'}>{post.tag}</Tag>
+              {post.series ? <span className="blog-series-label">{post.series}</span> : null}
               <Title heading={4}>{post.title}</Title>
               <Paragraph>{post.detail}</Paragraph>
               <Button theme="borderless" type="primary" onClick={() => onOpenPost(post)}>阅读全文</Button>
@@ -1944,10 +1940,34 @@ function BlogArticleView({ onBack, post, theme }: { onBack: () => void; post: Bl
       <div className="blog-article-layout">
         <aside className="blog-article-index">
           <Text type="tertiary">文章目录</Text>
+          {post.series ? <strong>{post.series}</strong> : null}
           {post.sections.map((section) => <span key={section.title}>{section.title}</span>)}
         </aside>
 
         <main className="blog-article-content">
+          {(post.knowledgePoints || post.scenarios || post.practiceChecklist) ? (
+            <section className="blog-learning-panel">
+              {post.knowledgePoints ? (
+                <div>
+                  <Title heading={3}>本文要点</Title>
+                  {post.knowledgePoints.map((item) => <span key={item}>{item}</span>)}
+                </div>
+              ) : null}
+              {post.scenarios ? (
+                <div>
+                  <Title heading={3}>适用场景</Title>
+                  {post.scenarios.map((item) => <span key={item}>{item}</span>)}
+                </div>
+              ) : null}
+              {post.practiceChecklist ? (
+                <div>
+                  <Title heading={3}>实践建议</Title>
+                  {post.practiceChecklist.map((item) => <span key={item}>{item}</span>)}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+
           {post.sections.map((section) => (
             <section key={section.title}>
               <Title heading={2}>{section.title}</Title>
