@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "blog:plan": "node scripts/generate-blog-draft.mjs --list",
+    "blog:draft": "node scripts/generate-blog-draft.mjs",
+    "blog:check": "node scripts/check-public-blog.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

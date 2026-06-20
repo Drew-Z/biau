@@ -94,6 +94,27 @@ function getBlogSlugFromPath(pathname: string): string | null {
   return match?.[1] ?? null
 }
 
+function getBlogPostTextLength(post: BlogPost): number {
+  return [
+    post.title,
+    post.detail,
+    post.tag,
+    post.series ?? '',
+    ...(post.knowledgePoints ?? []),
+    ...(post.scenarios ?? []),
+    ...(post.practiceChecklist ?? []),
+    ...post.sections.flatMap((section) => [section.title, section.body]),
+    ...post.takeaways,
+  ].join('').length
+}
+
+function isLongFormBlogPost(post: BlogPost): boolean {
+  return post.sections.length >= 5 && getBlogPostTextLength(post) >= 1000
+}
+
+const longFormBlogPosts = blogPosts.filter(isLongFormBlogPost)
+const defaultBlogPost = longFormBlogPosts[0] ?? blogPosts[0]
+
 const heroSlides = [
   {
     id: 'legal-rag',
@@ -257,13 +278,13 @@ function App() {
   const [activeView, setActiveView] = useState<ViewKey>(() => getViewFromPath(window.location.pathname))
   const [selectedId, setSelectedId] = useState(() => getProjectSelectionFromLocation(window.location.pathname, window.location.search))
   const [selectedCaseId, setSelectedCaseId] = useState(() => getCaseIdFromPath(window.location.pathname) ?? caseStudies[0].id)
-  const [selectedBlogSlug, setSelectedBlogSlug] = useState(() => getBlogSlugFromPath(window.location.pathname) ?? blogPosts[0].slug)
+  const [selectedBlogSlug, setSelectedBlogSlug] = useState(() => getBlogSlugFromPath(window.location.pathname) ?? defaultBlogPost.slug)
   const [siteTheme, setSiteTheme] = useState<SiteTheme>('light')
   const [siteLanguage, setSiteLanguage] = useState<SiteLanguage>('zh')
 
   const selectedProject = projects.find((project) => project.id === selectedId) ?? projects[0]
   const selectedCase = caseStudies.find((caseStudy) => caseStudy.id === selectedCaseId) ?? caseStudies[0]
-  const selectedBlogPost = blogPosts.find((post) => post.slug === selectedBlogSlug) ?? blogPosts[0]
+  const selectedBlogPost = blogPosts.find((post) => post.slug === selectedBlogSlug) ?? defaultBlogPost
 
   useEffect(() => {
     const handlePopState = () => {
@@ -1780,8 +1801,8 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 }
 
 function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void; theme: SiteTheme }) {
-  const featuredPost = blogPosts[0]
-  const latestPosts = blogPosts.slice(0, 12)
+  const featuredPost = defaultBlogPost
+  const latestPosts = longFormBlogPosts.slice(0, 12)
   const blogGroups = useMemo(() => {
     const includesAny = (post: BlogPost, keywords: string[]) => {
       const content = `${post.title} ${post.detail} ${post.tag} ${post.series ?? ''} ${(post.knowledgePoints ?? []).join(' ')} ${(post.scenarios ?? []).join(' ')}`
@@ -1791,39 +1812,39 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
     return [
       {
         key: 'all',
-        title: '全部文章',
-        description: '按发布时间汇总所有公开技术文章、项目案例和内容系统专题。',
-        posts: blogPosts,
+        title: '长文章精选',
+        description: '按发布时间汇总公开技术长文、项目案例和内容系统专题。',
+        posts: longFormBlogPosts,
       },
       {
         key: 'rag',
         title: 'RAG 与知识库',
         description: '文档入库、切分、检索、引用、评测和知识库运营。',
-        posts: blogPosts.filter((post) => includesAny(post, ['RAG', '知识库', '向量', 'Embedding', 'Chunk', '检索', '引用', 'citation', '文档', '索引'])),
+        posts: longFormBlogPosts.filter((post) => includesAny(post, ['RAG', '知识库', '向量', 'Embedding', 'Chunk', '检索', '引用', 'citation', '文档', '索引'])),
       },
       {
         key: 'agent',
         title: 'Agent 与生成管线',
         description: '工具调用、状态机、失败恢复、人审和可控生成流程。',
-        posts: blogPosts.filter((post) => includesAny(post, ['Agent', 'Tool', '工具调用', '状态机', '人审', '生成管线', 'Worker', 'QA'])),
+        posts: longFormBlogPosts.filter((post) => includesAny(post, ['Agent', 'Tool', '工具调用', '状态机', '人审', '生成管线', 'Worker', 'QA'])),
       },
       {
         key: 'delivery',
         title: '生产化与交付',
         description: '部署、监控、配置、成本、安全、审计和交付文档。',
-        posts: blogPosts.filter((post) => includesAny(post, ['生产', '部署', '监控', '配置', '成本', '安全', '审计', '交付', '看板', '故障', '权限'])),
+        posts: longFormBlogPosts.filter((post) => includesAny(post, ['生产', '部署', '监控', '配置', '成本', '安全', '审计', '交付', '看板', '故障', '权限'])),
       },
       {
         key: 'fullstack',
         title: '全栈工程',
         description: '前端工作台、API 契约、队列、数据库和工程复盘。',
-        posts: blogPosts.filter((post) => post.tag === '全栈开发' || includesAny(post, ['API', '前端', '数据库', '队列', 'Worker', '错误码', '任务状态'])),
+        posts: longFormBlogPosts.filter((post) => post.tag === '全栈开发' || includesAny(post, ['API', '前端', '数据库', '队列', 'Worker', '错误码', '任务状态'])),
       },
       {
         key: 'projects',
         title: '项目复盘',
         description: '围绕 legal-rag、pet、ERP、游戏和移动端项目的复盘文章。',
-        posts: blogPosts.filter((post) => !post.series || includesAny(post, ['复盘', 'legal-rag', 'Pet', 'ERP', 'Godot', 'Android', '项目'])),
+        posts: longFormBlogPosts.filter((post) => !post.series || includesAny(post, ['复盘', 'legal-rag', 'Pet', 'ERP', 'Godot', 'Android', '项目'])),
       },
     ]
   }, [])
@@ -1846,7 +1867,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
             <Title heading={2}>按知识方向进入文章</Title>
           </div>
           <div className="blog-topic-pills" aria-label="博客栏目">
-            <span>{blogPosts.length} 篇文章</span>
+            <span>{longFormBlogPosts.length} 篇长文章</span>
             <span>{blogGroups.length} 个专题</span>
             <span>详情页阅读</span>
           </div>

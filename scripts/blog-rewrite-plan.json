@@ -1,0 +1,80 @@
+[
+  {
+    "order": 1,
+    "slug": "rag-overview-public",
+    "currentSlug": "ai-fullstack-day-01-rag-overview",
+    "title": "RAG 是什么：为什么企业知识库不能只靠大模型记忆",
+    "tag": "AI 应用",
+    "series": "AI 应用知识库",
+    "summary": "用科普方式解释 RAG 的核心思想、系统链路和它为什么适合合同审查与企业知识库。",
+    "targetReader": "想理解 AI 应用工程化的产品经理、前端/后端开发者和技术学习者",
+    "knowledgePoints": ["检索增强生成", "文档入库", "证据引用", "人工复核"],
+    "projectExamples": ["Legal RAG 合同审查", "企业知识库问答"],
+    "publicAngle": "把 RAG 讲成一种把资料、检索、生成和引用串起来的可信回答流程，而不是聊天框功能。"
+  },
+  {
+    "order": 2,
+    "slug": "chunk-strategy-public",
+    "currentSlug": "rag-chunk-strategy",
+    "title": "RAG 文档切分：Chunk 为什么决定答案能不能被验证",
+    "tag": "AI 应用",
+    "series": "AI 应用知识库",
+    "summary": "解释 chunk size、overlap、元数据和合同条款切分之间的关系。",
+    "targetReader": "正在做知识库、合同审查或长文档问答的开发者",
+    "knowledgePoints": ["Chunk size", "Overlap", "元数据", "引用溯源"],
+    "projectExamples": ["Legal RAG 条款级切分", "企业制度文档入库"],
+    "publicAngle": "把 chunk 讲成 RAG 的最小证据单元，强调切分质量如何影响召回、引用和审查报告。"
+  },
+  {
+    "order": 3,
+    "slug": "embedding-vector-search-public",
+    "currentSlug": "embedding-vector-search",
+    "title": "Embedding 与向量检索：业务文本如何进入语义搜索",
+    "tag": "AI 应用",
+    "series": "AI 应用知识库",
+    "summary": "用通俗语言解释 embedding、向量相似度、TopK、阈值和 metadata filter。",
+    "targetReader": "想把业务文档接入 AI 问答系统的全栈开发者",
+    "knowledgePoints": ["Embedding", "向量检索", "TopK", "metadata filter"],
+    "projectExamples": ["Legal RAG 向量召回", "PostgreSQL/pgvector 生产化方向"],
+    "publicAngle": "让读者理解向量检索不是魔法，而是把文本转成可比较的语义坐标。"
+  },
+  {
+    "order": 4,
+    "slug": "agent-tool-calling-public",
+    "currentSlug": "agent-tool-calling",
+    "title": "Agent Tool Calling：让 AI 从回答问题走向执行任务",
+    "tag": "AI 应用",
+    "series": "AI 应用工程化",
+    "summary": "解释工具调用、schema、权限、状态机和人工确认如何让 Agent 变得可控。",
+    "targetReader": "想把 AI 接入业务流程和自动化任务的开发者",
+    "knowledgePoints": ["Tool Calling", "工具 schema", "权限边界", "人工确认"],
+    "projectExamples": ["Pet 生成管线", "ERP PendingAction", "Legal RAG 审查工具"],
+    "publicAngle": "把 Agent 讲成受控任务执行系统，而不是让模型自由操作业务数据。"
+  },
+  {
+    "order": 5,
+    "slug": "hybrid-retrieval-public",
+    "currentSlug": "hybrid-retrieval",
+    "title": "混合检索：为什么 RAG 不能只靠向量搜索",
+    "tag": "AI 应用",
+    "series": "AI 应用知识库",
+    "summary": "解释关键词检索、向量检索、metadata filter 和结果合并的分工。",
+    "targetReader": "需要处理金额、日期、条款号和专业术语的 RAG 开发者",
+    "knowledgePoints": ["BM25", "向量召回", "关键词召回", "结果合并"],
+    "projectExamples": ["合同审查中的条款号、金额、日期检索"],
+    "publicAngle": "说明语义相似不等于事实精确，合同和制度场景需要多种检索方式协同。"
+  },
+  {
+    "order": 6,
+    "slug": "rerank-public",
+    "currentSlug": "rerank-quality-context",
+    "title": "Rerank 精排：从找到相关片段到选出可靠证据",
+    "tag": "AI 应用",
+    "series": "AI 应用知识库",
+    "summary": "解释初召回和精排的区别，以及 rerank 如何提升上下文质量和 citation 质量。",
+    "targetReader": "希望提升 RAG 答案质量和引用准确性的开发者",
+    "knowledgePoints": ["初召回", "精排", "上下文压缩", "引用质量"],
+    "projectExamples": ["Legal RAG 风险条款排序", "企业知识库高频问题优化"],
+    "publicAngle": "把 rerank 讲成证据筛选步骤，强调它能提质但不能替代召回。"
+  }
+]
