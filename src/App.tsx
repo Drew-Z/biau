@@ -1781,7 +1781,7 @@ function CaseDetailView({ caseStudy, onBack, onOpenProject }: { caseStudy: CaseS
 
 function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void; theme: SiteTheme }) {
   const featuredPost = blogPosts[0]
-  const latestPosts = blogPosts.slice(0, 6)
+  const latestPosts = blogPosts.slice(0, 12)
   const blogGroups = useMemo(() => {
     const includesAny = (post: BlogPost, keywords: string[]) => {
       const content = `${post.title} ${post.detail} ${post.tag} ${post.series ?? ''} ${(post.knowledgePoints ?? []).join(' ')} ${(post.scenarios ?? []).join(' ')}`
@@ -1789,6 +1789,12 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
     }
 
     return [
+      {
+        key: 'all',
+        title: '全部文章',
+        description: '按发布时间汇总所有公开技术文章、项目案例和内容系统专题。',
+        posts: blogPosts,
+      },
       {
         key: 'rag',
         title: 'RAG 与知识库',
@@ -1823,7 +1829,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
   }, [])
   const [activeGroupKey, setActiveGroupKey] = useState(blogGroups[0].key)
   const activeGroup = blogGroups.find((group) => group.key === activeGroupKey) ?? blogGroups[0]
-  const activeGroupPosts = activeGroup.posts.slice(0, 8)
+  const activeGroupPosts = activeGroup.posts
 
   return (
     <div className={`blog-view blog-view-${theme}`}>
@@ -1884,7 +1890,7 @@ function BlogView({ onOpenPost, theme }: { onOpenPost: (post: BlogPost) => void;
                 <Title heading={3}>{activeGroup.title}</Title>
                 <Text type="tertiary">{activeGroup.description}</Text>
               </div>
-              <Tag color="blue">{activeGroupPosts.length} 篇精选</Tag>
+              <Tag color="blue">{activeGroupPosts.length} 篇可见</Tag>
             </div>
 
             <div className="blog-curated-list">
