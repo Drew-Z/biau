@@ -12,6 +12,7 @@ dist
 dist-ssr
 output
 *.local
+*.local.*
 
 # Editor directories and files
 .vscode/*
