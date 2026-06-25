@@ -1,0 +1,44 @@
+<svg width="1280" height="720" viewBox="0 0 1280 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1280" height="720" rx="36" fill="#F7FAFF"/>
+  <rect x="72" y="72" width="1136" height="576" rx="28" fill="white" stroke="#D9E6F7" stroke-width="2"/>
+  <text x="104" y="130" fill="#0F172A" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800">RAG 应用的两条链路</text>
+  <text x="104" y="170" fill="#64748B" font-family="Inter, Arial, sans-serif" font-size="20">先把可信资料变成可检索证据，再让模型基于证据生成可追溯答案。</text>
+  <g font-family="Inter, Arial, sans-serif">
+    <rect x="104" y="230" width="190" height="92" rx="16" fill="#EAF2FF" stroke="#9CC2FF"/>
+    <text x="134" y="265" fill="#0052FF" font-size="20" font-weight="800">文档入库</text>
+    <text x="134" y="295" fill="#475569" font-size="16">PDF / DOCX / 网页</text>
+    <path d="M312 276H386" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M374 264L386 276L374 288" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="404" y="230" width="190" height="92" rx="16" fill="#EAF2FF" stroke="#9CC2FF"/>
+    <text x="434" y="265" fill="#0052FF" font-size="20" font-weight="800">清洗切分</text>
+    <text x="434" y="295" fill="#475569" font-size="16">chunk + metadata</text>
+    <path d="M612 276H686" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M674 264L686 276L674 288" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="704" y="230" width="190" height="92" rx="16" fill="#EAF2FF" stroke="#9CC2FF"/>
+    <text x="734" y="265" fill="#0052FF" font-size="20" font-weight="800">向量索引</text>
+    <text x="734" y="295" fill="#475569" font-size="16">embedding / keyword</text>
+    <path d="M912 276H986" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M974 264L986 276L974 288" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="1004" y="230" width="142" height="92" rx="16" fill="#DBF7EE" stroke="#6EE7B7"/>
+    <text x="1034" y="265" fill="#047857" font-size="20" font-weight="800">证据库</text>
+    <text x="1034" y="295" fill="#475569" font-size="16">可召回</text>
+    <rect x="104" y="432" width="190" height="92" rx="16" fill="#FFF7ED" stroke="#FDBA74"/>
+    <text x="134" y="467" fill="#C2410C" font-size="20" font-weight="800">用户问题</text>
+    <text x="134" y="497" fill="#475569" font-size="16">查询 / 审查任务</text>
+    <path d="M312 478H386" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M374 466L386 478L374 490" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="404" y="432" width="190" height="92" rx="16" fill="#FFF7ED" stroke="#FDBA74"/>
+    <text x="434" y="467" fill="#C2410C" font-size="20" font-weight="800">召回排序</text>
+    <text x="434" y="497" fill="#475569" font-size="16">retrieval / rerank</text>
+    <path d="M612 478H686" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M674 466L686 478L674 490" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="704" y="432" width="190" height="92" rx="16" fill="#FFF7ED" stroke="#FDBA74"/>
+    <text x="734" y="467" fill="#C2410C" font-size="20" font-weight="800">上下文生成</text>
+    <text x="734" y="497" fill="#475569" font-size="16">prompt + citations</text>
+    <path d="M912 478H986" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    <path d="M974 466L986 478L974 490" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="1004" y="432" width="142" height="92" rx="16" fill="#F0FDF4" stroke="#86EFAC"/>
+    <text x="1034" y="467" fill="#15803D" font-size="20" font-weight="800">可信答案</text>
+    <text x="1034" y="497" fill="#475569" font-size="16">可复核</text>
+  </g>
+</svg>
