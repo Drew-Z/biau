@@ -1,0 +1,97 @@
+/* Additional Gradient Utilities */
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-secondary {
+  background: var(--gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient Borders */
+.gradient-border {
+  position: relative;
+  border: none;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--gradient-primary);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Background Gradients */
+.bg-gradient-radial {
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(102, 126, 234, 0.15),
+    transparent 50%
+  );
+}
+
+.bg-gradient-mesh {
+  background-image: 
+    radial-gradient(at 40% 20%, rgba(102, 126, 234, 0.3) 0, transparent 50%),
+    radial-gradient(at 80% 0%, rgba(118, 75, 162, 0.2) 0, transparent 50%),
+    radial-gradient(at 0% 50%, rgba(6, 182, 212, 0.2) 0, transparent 50%);
+}
+
+/* Hover Gradient Effect */
+.hover-gradient {
+  position: relative;
+  overflow: hidden;
+}
+
+.hover-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(102, 126, 234, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.hover-gradient:hover::before {
+  left: 100%;
+}
+
+/* 沉稳纯色背景：深色默认纯色，仅叠加极淡单色径向光，无动画、无彩色粒子 */
+.gradient-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 55%
+  );
+  z-index: 0;
+}
+
+.gradient-bg::after {
+  content: none;
+}

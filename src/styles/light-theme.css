@@ -1,0 +1,92 @@
+/* Light Theme Variables - 浅色主题覆盖 */
+:root.light-theme {
+  /* Backgrounds - 精确颜色值 */
+  --bg-primary: #ece4d5; /* 温暖米色 - 原版精确值 */
+  --bg-secondary: #F5F0E8;
+  --bg-tertiary: #DED8CB;
+  --bg-card: #ebf0ea; /* 淡绿灰 - 原版卡片背景 */
+  --bg-card-hover: #e5ebe6;
+  
+  /* Text Colors - 原版颜色 */
+  --text-primary: #18243a; /* 深蓝灰 */
+  --text-secondary: #2a3328; /* 深绿灰 */
+  --text-tertiary: #7a8087; /* 中灰 */
+  --text-muted: #9ca3af;
+  
+  /* Accent Colors */
+  --accent-blue: #667eea;
+  --accent-purple: #764ba2;
+  --accent-cyan: #06b6d4;
+  --accent-orange: #d97706; /* 橙黄色高亮 */
+  
+  /* 彩色编号 - 原版精确值 */
+  --color-01: #4ECDC4; /* 青绿色 */
+  --color-02: #FF6B6B; /* 橙红色 */
+  --color-03: #FFB6C1; /* 粉红色 */
+  --color-04: #C8B6FF; /* 浅紫色 */
+  --color-05: #FF9A76; /* 珊瑚色 */
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+  
+  /* Border & Shadow */
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-accent: rgba(102, 126, 234, 0.3);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.06);
+  
+  /* Spacing - 原版间距系统 */
+  --space-2: 2px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  
+  /* Radius - 原版圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
+}
+
+/* Light Theme Navigation Override */
+.light-theme .navigation-minimal {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+.light-theme .nav-link-minimal {
+  color: var(--text-secondary);
+}
+
+.light-theme .nav-link-minimal:hover {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.light-theme .nav-link-minimal.active {
+  color: var(--accent-orange);
+  background: rgba(217, 119, 6, 0.08);
+  border: none;
+}
+
+/* Light Theme Gradient Background Override */
+.light-theme .gradient-bg {
+  background: var(--bg-primary);
+}
+
+.light-theme .gradient-bg::before,
+.light-theme .gradient-bg::after {
+  display: none;
+}

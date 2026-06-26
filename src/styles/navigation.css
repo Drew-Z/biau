@@ -1,0 +1,231 @@
+/* Navigation - 顶部导航栏（原版浮动玻璃条样式） */
+.navigation-top {
+  position: relative;
+  z-index: 100;
+}
+
+/* 内层限宽容器：居中浮动玻璃条，圆角 + 阴影，随文档流 */
+.nav-inner {
+  max-width: 1360px;
+  margin: 24px auto 0;
+  padding: 16px 24px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  background: rgba(26, 31, 43, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 32px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  opacity: 0;
+  animation: slideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0s forwards;
+}
+
+/* 左侧 Logo 区域 */
+.nav-brand-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.nav-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.brand-subtitle {
+  font-size: 0.625rem;
+  color: var(--text-tertiary);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.brand-title {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* 中间导航 */
+.nav-items-center {
+  display: flex;
+  gap: 3.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  justify-self: center;
+}
+
+.nav-link-center {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  gap: 0.25rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem 0.75rem;
+  transition: all 0.2s ease;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ink);
+  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+}
+
+.nav-link-en {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--ink);
+  line-height: 1;
+  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+}
+
+/* 活动项底部细下划线（与原版一致） */
+.nav-link-center.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent-orange);
+}
+
+.nav-link-center:hover .nav-link-en {
+  color: var(--accent-orange);
+}
+
+.nav-link-center.active .nav-link-en {
+  color: var(--ink);
+}
+
+/* 右侧操作区：语言切换 + 所有项目 */
+.nav-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* 语言切换按钮 */
+.nav-lang-toggle {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid color-mix(in oklch, var(--ink) 28%, transparent);
+  border-radius: 16px;
+  color: var(--ink);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+}
+
+.nav-lang-toggle:hover {
+  border-color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+}
+
+/* 主题切换按钮（浅/深/自动） */
+.nav-theme-toggle {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(232, 236, 242, 0.28);
+  border-radius: 16px;
+  color: var(--ink);
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-theme-toggle:hover {
+  border-color: var(--ink);
+  background: rgba(232, 236, 242, 0.06);
+}
+
+/* 浅色主题下的主题按钮配色 */
+.light-theme .nav-theme-toggle {
+  border-color: rgba(24, 36, 58, 0.28);
+  color: rgb(24, 36, 58);
+}
+
+.light-theme .nav-theme-toggle:hover {
+  border-color: rgb(24, 36, 58);
+  background: rgba(24, 36, 58, 0.04);
+}
+
+/* 右侧按钮 */
+.nav-all-tools {
+  height: 44px;
+  padding: 0 22px;
+  background: transparent;
+  border: 1px solid color-mix(in oklch, var(--ink) 28%, transparent);
+  border-radius: 16px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+}
+
+.nav-all-tools:hover {
+  border-color: var(--ink);
+  background: color-mix(in oklch, var(--ink) 4%, transparent);
+}
+
+/* 浅色主题下的导航栏 */
+.light-theme .navigation-top {
+  background: rgba(236, 228, 213, 0.95);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .navigation-top {
+    padding: 0.75rem 1rem;
+  }
+  
+  .nav-items-center {
+    gap: 1rem;
+  }
+  
+  .nav-link-zh {
+    display: none;
+  }
+  
+  .nav-all-tools {
+    font-size: 0.6875rem;
+    padding: 0.375rem 0.875rem;
+  }
+}
