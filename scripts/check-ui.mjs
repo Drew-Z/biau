@@ -148,6 +148,62 @@ for (const target of expectedNavFocusTargets) {
 }
 await navFocusPage.close()
 
+const navIndicatorPage = await browser.newPage({ viewport: viewports[0] })
+await navIndicatorPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
+const navIndicator = await navIndicatorPage.locator('.nav-link-center.active').evaluate((item) => {
+  const style = getComputedStyle(item, '::after')
+  return {
+    width: Number.parseFloat(style.width),
+    height: Number.parseFloat(style.height),
+    shadow: style.boxShadow,
+    background: style.backgroundImage,
+  }
+})
+if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow === 'none') {
+  failures.push('/blog nav indicator: active underline should be wide, thick, and visible')
+}
+await navIndicatorPage.close()
+
+const homeCarouselPage = await browser.newPage({ viewport: viewports[0] })
+await homeCarouselPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+const carouselViewport = homeCarouselPage.locator('.carousel-viewport')
+const carouselTrack = homeCarouselPage.locator('.carousel-track')
+await carouselViewport.hover({ force: true })
+const initialScrollY = await carouselTrack.evaluate((track) =>
+  getComputedStyle(track).getPropertyValue('--carousel-scroll-y').trim()
+)
+await homeCarouselPage.mouse.wheel(0, 260)
+await homeCarouselPage.waitForFunction(
+  (initial) => {
+    const track = document.querySelector('.carousel-track')
+    if (!track) return false
+    const style = getComputedStyle(track)
+    const scrollY = style.getPropertyValue('--carousel-scroll-y').trim()
+    return scrollY && scrollY !== initial && style.transform !== 'none'
+  },
+  initialScrollY,
+  { timeout: 2000 },
+).catch(() => {
+  failures.push('/ home carousel: expected mouse wheel to update carousel transform')
+})
+const wheelScrollY = await carouselTrack.evaluate((track) =>
+  getComputedStyle(track).getPropertyValue('--carousel-scroll-y').trim()
+)
+if (!wheelScrollY || wheelScrollY === initialScrollY) {
+  failures.push('/ home carousel: expected carousel scroll position to change after wheel')
+}
+await homeCarouselPage.close()
+
+const homeCarouselClickPage = await browser.newPage({ viewport: viewports[0] })
+await homeCarouselClickPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+await homeCarouselClickPage.locator('.carousel-viewport').hover({ force: true })
+await homeCarouselClickPage.waitForTimeout(120)
+await homeCarouselClickPage.locator('.carousel-card[href="/projects/legal-rag"]').nth(1).click({ force: true })
+await homeCarouselClickPage.waitForURL(`${base}/projects/legal-rag`, { timeout: 5000 }).catch(() => {
+  failures.push('/ home carousel: expected Legal RAG card click to navigate to project detail')
+})
+await homeCarouselClickPage.close()
+
 const keyboardPage = await browser.newPage({ viewport: viewports[0] })
 await keyboardPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
 for (let index = 0; index < 20; index += 1) {

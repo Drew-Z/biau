@@ -4,6 +4,7 @@ import './App.css'
 import { useTheme } from './hooks/useTheme'
 import { Navigation } from './components/Navigation'
 import { SeoManager } from './components/SeoManager'
+import { HarborIntro } from './components/HarborIntro'
 
 type SiteLanguage = 'zh' | 'en'
 
@@ -38,6 +39,7 @@ function App() {
     <div className={`app ${pageClass}`}>
       <div className="gradient-bg" />
       <div className="muxing-flow-grain" aria-hidden="true" />
+      {pathname === '/' && <HarborIntro />}
       <SeoManager />
 
       <Navigation

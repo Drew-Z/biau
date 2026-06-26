@@ -5,11 +5,7 @@ export function HomePage() {
   const navigate = useNavigate()
 
   const handleProjectClick = (link: string) => {
-    if (link.startsWith('/projects')) {
-      navigate('/projects')
-    } else if (link.startsWith('/blog')) {
-      navigate('/blog')
-    } else if (link.startsWith('/')) {
+    if (link.startsWith('/')) {
       navigate(link)
     }
   }

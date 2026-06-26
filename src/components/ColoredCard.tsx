@@ -26,7 +26,9 @@ export function ColoredCard({ project, index, onClick }: ColoredCardProps) {
           <span className="literary-title"> ——{project.poetry}</span>
         </p>
       </div>
-      <em>{project.action}</em>
+      <em className="carousel-action">
+        <span>{project.action}</span>
+      </em>
     </a>
   )
 }
