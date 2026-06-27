@@ -168,19 +168,22 @@ const homeIntroPage = await browser.newPage({ viewport: viewports[0] })
 await homeIntroPage.addInitScript(() => {
   window.sessionStorage.removeItem('biau-port-harbor-intro:v1')
   window.__harborIntroEvents = []
-  document.addEventListener(
-    'animationend',
-    (event) => {
-      if (!(event.target instanceof Element)) return
-      if (!String(event.animationName).startsWith('harbor')) return
-      window.__harborIntroEvents.push({
-        name: event.animationName,
-        className: event.target.className,
-        time: Math.round(performance.now()),
-      })
-    },
-    true,
-  )
+  for (const type of ['animationstart', 'animationend']) {
+    document.addEventListener(
+      type,
+      (event) => {
+        if (!(event.target instanceof Element)) return
+        if (!String(event.animationName).startsWith('harbor')) return
+        window.__harborIntroEvents.push({
+          type,
+          name: event.animationName,
+          className: event.target.className,
+          time: Math.round(performance.now()),
+        })
+      },
+      true,
+    )
+  }
 })
 await homeIntroPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' })
 await homeIntroPage.waitForSelector('.harbor-intro__vessel', { timeout: 3000 }).catch(() => {
@@ -199,13 +202,20 @@ await homeIntroPage
     failures.push('/ home intro: expected harbor intro to finish and unmount')
   })
 const harborIntroEvents = await homeIntroPage.evaluate(() => window.__harborIntroEvents ?? [])
-const vesselEndIndex = harborIntroEvents.findIndex((event) => event.name === 'harborVesselDock')
-const markEndIndex = harborIntroEvents.findIndex((event) => event.name === 'harborMarkLand')
-const veilEndIndex = harborIntroEvents.findIndex((event) => event.name === 'harborIntroVeil')
+const vesselStartEvent = harborIntroEvents.find(
+  (event) => event.type === 'animationstart' && event.name === 'harborVesselDock',
+)
+const vesselEndIndex = harborIntroEvents.findIndex(
+  (event) => event.type === 'animationend' && event.name === 'harborVesselDock',
+)
+const markEndIndex = harborIntroEvents.findIndex((event) => event.type === 'animationend' && event.name === 'harborMarkLand')
+const veilEndIndex = harborIntroEvents.findIndex((event) => event.type === 'animationend' && event.name === 'harborIntroVeil')
 if (vesselEndIndex < 0 || markEndIndex < 0 || veilEndIndex < 0) {
   failures.push('/ home intro: expected vessel, mark, and veil animation completion events')
 } else if (veilEndIndex < vesselEndIndex || veilEndIndex < markEndIndex) {
   failures.push('/ home intro: veil should fade only after vessel and mark finish docking')
+} else if (!vesselStartEvent || harborIntroEvents[veilEndIndex].time - vesselStartEvent.time > 3000) {
+  failures.push('/ home intro: expected harbor intro animation span to complete within 3s')
 }
 await homeIntroPage.close()
 

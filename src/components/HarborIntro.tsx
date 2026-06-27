@@ -29,7 +29,7 @@ function markIntroSeen() {
 export function HarborIntro() {
   const [visible, setVisible] = useState(() => !introTriggeredThisRuntime && canShowIntro())
   const [leaving, setLeaving] = useState(false)
-  const completionRef = useRef({ vessel: false, mark: false })
+  const completionRef = useRef({ vessel: false, mark: false, leaving: false })
 
   useLayoutEffect(() => {
     if (!visible) return
@@ -44,7 +44,7 @@ export function HarborIntro() {
 
   useEffect(() => {
     if (!visible) return
-    completionRef.current = { vessel: false, mark: false }
+    completionRef.current = { vessel: false, mark: false, leaving: false }
   }, [visible])
 
   if (!visible) return null
@@ -64,7 +64,9 @@ export function HarborIntro() {
         if (event.animationName === 'harborVesselDock') {
           completionRef.current.vessel = true
         }
-        if (completionRef.current.mark && completionRef.current.vessel) {
+        if (completionRef.current.mark && completionRef.current.vessel && !completionRef.current.leaving) {
+          completionRef.current.leaving = true
+          event.currentTarget.classList.add('is-harbor-intro-leaving')
           setLeaving(true)
           return
         }
