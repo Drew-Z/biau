@@ -1,6 +1,12 @@
 ﻿export type ProjectCategory = 'ai' | 'business' | 'interactive' | 'mobile' | 'platform'
 export type ProjectStatus = 'main' | 'live' | 'mvp' | 'ongoing'
 
+export interface ProjectLink {
+  label: string
+  href: string
+  type: 'internal' | 'external'
+}
+
 export interface Project {
   id: string
   title: string
@@ -11,11 +17,23 @@ export interface Project {
   image?: string
   stack: string[]
   highlights: string[]
-  links: {
-    label: string
-    href: string
-    type: 'internal' | 'external'
-  }[]
+  detailLink?: ProjectLink
+  links: ProjectLink[]
+}
+
+const GAME_SITE_URL = 'https://games.playlab.eu.cc'
+const PLAY_SITE_URL = 'https://play.playlab.eu.cc'
+
+function externalLink(label: string, href: string): ProjectLink {
+  return { label, href, type: 'external' }
+}
+
+function gameSiteLink(slug: string): ProjectLink {
+  return externalLink('游戏站详情', `${GAME_SITE_URL}/games/${slug}/`)
+}
+
+function gamePlayLink(slug: string): ProjectLink {
+  return externalLink('Web 试玩', `${PLAY_SITE_URL}/${slug}/index.html`)
 }
 
 export const categoryLabels: Record<ProjectCategory, string> = {
@@ -73,15 +91,16 @@ export const projects: Project[] = [
   {
     id: 'biau-playlab',
     title: 'Biau Playlab｜游戏作品集与系统设计内容站',
-    summary: '基于 Astro 的个人作品集，整合 Godot 游戏原型、Web 试玩、系统设计文章、开发日志和旧博客迁移内容。',
+    summary: '基于 Astro 的独立游戏内容站，整合六个 Godot 游戏原型、Web 试玩、系统设计文章和开发日志。',
     category: 'platform',
     status: 'live',
     role: 'Astro 作品集 / Godot 游戏展示 / 系统设计文章 / Cloudflare Pages',
     stack: ['Astro 5', 'Content Collections', 'Godot Web', 'Cloudflare Pages'],
-    highlights: ['游戏项目案例', 'Web 试玩入口', '系统设计文章', '内容与产物审计'],
+    highlights: ['六个游戏案例', 'Web 试玩入口', '系统设计文章', '开发日志'],
+    detailLink: externalLink('进入游戏站', `${GAME_SITE_URL}/`),
     links: [
-      { label: '线上站点', href: 'https://blog.playlab.eu.cc/', type: 'external' },
-      { label: '源码仓库', href: 'https://github.com/ciallo-bill/blog', type: 'external' },
+      externalLink('游戏站', `${GAME_SITE_URL}/`),
+      externalLink('源码仓库', 'https://github.com/ciallo-bill/blog'),
     ],
   },
   {
@@ -105,7 +124,8 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/tetris-classic-desktop.png',
     stack: ['Godot 4', 'Web 导出', '游戏原型'],
     highlights: ['经典模式', '肉鸽原型', '触屏输入', '截图回归'],
-    links: [],
+    detailLink: gameSiteLink('first-tetris'),
+    links: [gameSiteLink('first-tetris'), gamePlayLink('first-tetris')],
   },
   {
     id: 'game-next-spacewar',
@@ -117,7 +137,8 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/next-spacewar-menu.png',
     stack: ['Godot 4.6', '太空射击', 'Web 导出'],
     highlights: ['主菜单', '帮助暂停', '战斗循环', '结果复盘'],
-    links: [],
+    detailLink: gameSiteLink('next-spacewar'),
+    links: [gameSiteLink('next-spacewar'), gamePlayLink('next-spacewar')],
   },
   {
     id: 'intespace',
@@ -129,7 +150,8 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/intespace-player-hub.png',
     stack: ['Godot', '肉鸽玩法', '武器树系统', '移动端优先'],
     highlights: ['武器树', '自动射击', '首领试炼', '局外成长'],
-    links: [],
+    detailLink: gameSiteLink('intespace'),
+    links: [gameSiteLink('intespace'), gamePlayLink('intespace')],
   },
   {
     id: 'raiden-prototype',
@@ -141,7 +163,8 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/raiden-main-menu.png',
     stack: ['Godot', '纵版射击', '原型验证'],
     highlights: ['双关卡章节', '火力成长', '首领收束', '试玩验证'],
-    links: [],
+    detailLink: gameSiteLink('raiden'),
+    links: [gameSiteLink('raiden'), gamePlayLink('raiden')],
   },
   {
     id: 'space-war',
@@ -153,7 +176,21 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/space-war-gameplay.png',
     stack: ['Godot 4.6', '复古射击', 'Web 包计划'],
     highlights: ['区域首领', '道具系统', '高分结算', '发布文档'],
-    links: [],
+    detailLink: gameSiteLink('space-war'),
+    links: [gameSiteLink('space-war'), gamePlayLink('space-war')],
+  },
+  {
+    id: 'spacewar-ii',
+    title: '移动纵向射击｜Spacewar II',
+    summary: 'Godot 4.6 纵向移动射击续作原型，围绕菜单、战斗、拾取升级、炸弹、紧凑 HUD 和结果页接入第六个 Web 试玩位。',
+    category: 'interactive',
+    status: 'live',
+    role: 'Godot 引擎 / 纵向射击 / Web 试玩 / 第六项目接入',
+    image: '/images/projects/showcase/spacewar-ii-cover.svg',
+    stack: ['Godot 4.6', '移动射击', 'Web 导出'],
+    highlights: ['纵向推进', '拾取升级', '炸弹系统', '结果结算'],
+    detailLink: gameSiteLink('spacewar-ii'),
+    links: [gameSiteLink('spacewar-ii'), gamePlayLink('spacewar-ii')],
   },
   {
     id: 'xunqiu',
@@ -172,6 +209,6 @@ export const projects: Project[] = [
 export const capabilityTracks = [
   { title: 'AI 应用', detail: 'RAG、Agent、引用溯源、审核闭环', value: 'Legal RAG / Pet Workspace' },
   { title: '业务系统', detail: '后台、API、数据库、队列、审计日志', value: 'Ozon 电商 ERP' },
-  { title: '互动体验', detail: 'Godot 展示入口、试玩计划、游戏展示页', value: '5 个游戏项目' },
-  { title: '博客系统', detail: 'React + Semi、Astro、内容审计、部署准备', value: 'Biau Blog / Playlab' },
+  { title: '互动体验', detail: 'Godot 展示入口、试玩计划、游戏展示页', value: '6 个游戏项目' },
+  { title: '博客系统', detail: 'React + Semi、Astro、内容审计、部署准备', value: 'Biau Port / Playlab' },
 ]

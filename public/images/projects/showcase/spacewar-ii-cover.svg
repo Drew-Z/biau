@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+  <title id="title">Spacewar II showcase cover</title>
+  <desc id="desc">Stylized vertical mobile shooter prototype cover with player ship, enemies, pickups, and compact HUD.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1024"/>
+      <stop offset="0.48" stop-color="#1b2554"/>
+      <stop offset="1" stop-color="#070910"/>
+    </linearGradient>
+    <linearGradient id="ship" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.54" stop-color="#7fdcff"/>
+      <stop offset="1" stop-color="#6f7cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#bg)"/>
+  <g opacity="0.28" stroke="#7fdcff" stroke-width="1">
+    <path d="M0 120H1280M0 240H1280M0 360H1280M0 480H1280M0 600H1280"/>
+    <path d="M160 0V720M320 0V720M480 0V720M640 0V720M800 0V720M960 0V720M1120 0V720"/>
+  </g>
+  <rect x="430" y="54" width="420" height="612" rx="32" fill="#101832" stroke="#a8b4ff" stroke-width="3"/>
+  <rect x="456" y="94" width="368" height="520" rx="16" fill="#050817"/>
+  <g fill="#ff6363" stroke="#ffd6d6" stroke-width="3">
+    <path d="M548 168L518 198L548 228L578 198Z"/>
+    <path d="M724 218L694 248L724 278L754 248Z"/>
+    <path d="M638 124L608 154L638 184L668 154Z"/>
+  </g>
+  <g fill="#7fdcff">
+    <rect x="634" y="312" width="12" height="82" rx="6"/>
+    <rect x="586" y="350" width="10" height="54" rx="5"/>
+    <rect x="694" y="350" width="10" height="54" rx="5"/>
+  </g>
+  <g>
+    <path d="M640 504L598 592L640 568L682 592Z" fill="url(#ship)"/>
+    <path d="M622 580H658L640 640Z" fill="#ffce5c"/>
+  </g>
+  <g font-family="Bahnschrift, Segoe UI, sans-serif" fill="#f7fbff">
+    <text x="92" y="184" font-size="72" font-weight="800">Spacewar II</text>
+    <text x="94" y="240" font-size="30" fill="#a8b4ff">Vertical mobile shooter prototype</text>
+    <text x="94" y="548" font-size="24" fill="#ffce5c">Sixth playable Godot case</text>
+    <text x="94" y="584" font-size="24" fill="#d9e3ff">Menu / Battle / HUD / Results</text>
+  </g>
+  <g font-family="Bahnschrift, Segoe UI, sans-serif" fill="#eef4ff">
+    <text x="480" y="132" font-size="20" fill="#a8b4ff">SCORE 024600</text>
+    <text x="700" y="132" font-size="20" fill="#ffce5c">BOMB x2</text>
+  </g>
+</svg>

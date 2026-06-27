@@ -61,13 +61,13 @@ export const heroContent = {
       link: '/projects/ozon-erp',
     },
     {
-      id: 'game-first-tetris',
-      title: '俄罗斯方块原型',
-      description: '经典模式、肉鸽强化与触屏输入，收束成可试玩循环',
-      poetry: '《像素之间的梦想与规则》',
+      id: 'biau-playlab-games',
+      title: 'Biau Playlab 游戏站',
+      description: '六个 Godot 原型、Web 试玩、开发日志与系统拆解内容站',
+      poetry: '《把可玩的想法停靠成港》',
       action: 'PLAY',
       accent: 'preview',
-      link: '/projects/game-first-tetris',
+      link: 'https://games.playlab.eu.cc/',
     },
     {
       id: 'blog-semi',

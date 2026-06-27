@@ -7,7 +7,9 @@ export function HomePage() {
   const handleProjectClick = (link: string) => {
     if (link.startsWith('/')) {
       navigate(link)
+      return
     }
+    window.open(link, '_blank', 'noopener,noreferrer')
   }
 
   return <HeroSplit onProjectClick={handleProjectClick} />
