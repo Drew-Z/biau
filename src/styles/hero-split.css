@@ -89,6 +89,7 @@
 }
 
 .hero-intro h2.hero-title-rotator {
+  position: relative;
   margin: 0;
   max-width: min(12em, 100%);
   overflow-wrap: anywhere;
@@ -100,6 +101,47 @@
   letter-spacing: 0;
   opacity: 0;
   animation: fadeUp 0.5s var(--ease-out-expo) 0.12s forwards;
+  cursor: grab;
+  transform-origin: 18% 52%;
+  touch-action: none;
+  user-select: none;
+  will-change: transform;
+}
+
+.hero-intro h2.hero-title-rotator::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  pointer-events: none;
+}
+
+.hero-intro h2.hero-title-rotator.has-hero-title-ghost::before {
+  content: attr(data-ghost-main) '\A' attr(data-ghost-sub);
+  max-width: min(12em, 100%);
+  white-space: pre-line;
+  color: color-mix(in oklch, var(--ink) 88%, var(--amber) 10%);
+  text-shadow:
+    0 0 18px color-mix(in oklch, var(--amber) 16%, transparent),
+    0 12px 30px rgb(var(--flow-ui-shadow-rgb, 0 0 0) / 0.18);
+  opacity: 0;
+  transform: translate3d(0, 0.16em, 0) scale(0.992);
+  animation: heroTitleGhostFade 0.72s var(--ease-out-expo) both;
+}
+
+.hero-intro h2.hero-title-rotator.is-hero-title-switching.has-hero-title-ghost::before {
+  animation: heroTitleImpulseGhost 0.48s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+.hero-intro h2.hero-title-rotator.is-hero-title-dragging {
+  cursor: grabbing;
+  color: color-mix(in oklch, var(--ink) 92%, var(--amber));
+  text-shadow:
+    0 0 18px color-mix(in oklch, var(--amber) 18%, transparent),
+    0 14px 32px rgb(var(--flow-ui-shadow-rgb, 0 0 0) / 0.18);
+}
+
+.hero-intro h2.hero-title-rotator.is-hero-title-switching .char {
+  animation: heroTitleImpulseIn 0.82s cubic-bezier(0.18, 1.18, 0.24, 1) both;
 }
 
 .hero-intro h2.hero-title-rotator .hero-subline {
@@ -119,13 +161,60 @@
 @keyframes charReveal {
   0% {
     opacity: 0;
-    transform: translateY(0.4em);
+    transform: translate3d(var(--hero-title-enter-x, 0), var(--hero-title-enter-y, 0.4em), 0) scale(0.985);
     filter: blur(4px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
     filter: blur(0);
+  }
+}
+
+@keyframes heroTitleImpulseIn {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--hero-title-enter-x, 0), var(--hero-title-enter-y, 0.2em), 0) scale(0.985);
+    filter: blur(5px);
+  }
+  58% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroTitleGhostFade {
+  0% {
+    opacity: 0.72;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  52% {
+    opacity: 0.46;
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translate3d(0, -0.18em, 0) scale(1.012);
+  }
+}
+
+@keyframes heroTitleImpulseGhost {
+  0% {
+    opacity: 0.72;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translate3d(var(--hero-title-exit-x, 0), var(--hero-title-exit-y, -0.2em), 0) scale(0.985);
   }
 }
 
@@ -182,6 +271,24 @@
   cursor: grab;
   user-select: none;
   perspective: 1200px;
+  transform: perspective(1200px) rotateX(var(--carousel-tilt-x, 0deg)) rotateY(var(--carousel-tilt-y, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.28s var(--ease-smooth);
+  will-change: transform;
+}
+
+.carousel-wrapper:active,
+.carousel-wrapper.is-dragging {
+  cursor: grabbing;
+  transition-duration: 0.08s;
+}
+
+.carousel-wrapper.is-dragging .carousel-card {
+  transition-duration: 0.16s;
+}
+
+.carousel-wrapper.is-dragging .carousel-card:hover {
+  transform: none;
 }
 
 .panel-head {
@@ -219,6 +326,8 @@
   margin: 0 calc(var(--space-16) * -1);
   position: relative;
   overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
   mask-image: linear-gradient(
     rgba(0, 0, 0, 0) 0%,
     rgb(0, 0, 0) 5%,
@@ -238,25 +347,15 @@
   flex-direction: column;
   gap: var(--card-gap);
   will-change: transform;
-  animation: scroll-up 40s linear infinite;
-}
-
-.carousel-track:hover {
-  animation-play-state: paused;
-}
-
-@keyframes scroll-up {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(calc(-50% - var(--card-gap) / 2));
-  }
+  transform-style: preserve-3d;
 }
 
 /* ===== Card ===== */
 .carousel-card {
   --card-accent: var(--green);
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr) auto;
   grid-template-rows: minmax(0, 1fr);
@@ -275,6 +374,9 @@
     0 1px 2px rgba(19, 30, 47, 0.06), 0 4px 12px rgba(19, 30, 47, 0.06);
   color: inherit;
   text-decoration: none;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
@@ -375,11 +477,13 @@
   color: color-mix(in oklch, var(--muted), transparent 10%);
 }
 
-.carousel-card em {
+.carousel-card .carousel-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-8);
+  min-width: 92px;
+  min-height: 42px;
   padding: var(--space-8) var(--space-16);
   background: linear-gradient(
     180deg,
@@ -401,8 +505,22 @@
   transition: transform 0.28s var(--ease-out-expo), opacity 0.2s var(--ease-smooth);
 }
 
-.carousel-card:hover em {
+.carousel-card .carousel-action span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.carousel-card:hover .carousel-action,
+.carousel-card:focus-visible .carousel-action {
   transform: translateY(-1px);
+  border-color: color-mix(in oklch, var(--card-accent) 28%, var(--ink));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--card-accent) 12%, transparent),
+    color-mix(in oklch, var(--ink) 10%, transparent)
+  );
 }
 
 /* ===== Responsive ===== */
@@ -452,5 +570,6 @@
 
   .carousel-track {
     animation: none;
+    transform: none !important;
   }
 }

@@ -18,10 +18,10 @@ export interface HeroPoem {
 }
 
 export const heroContent = {
-  title: { zh: '笔岸实验室', en: 'BIAU LABS' },
+  title: { zh: '泊岸', en: 'BIAU PORT' },
   // Rotating hero couplets — mirrors the original site's cycling hero title.
   poems: [
-    { main: '思绪如河奔涌', sub: '终在笔岸成形' },
+    { main: '思绪如河奔涌', sub: '终在泊岸成形' },
     { main: '我看见未来', sub: '它向我微笑' },
     { main: '不知去向者', sub: '须重返来处' },
     { main: '让混沌的念头', sub: '在笔尖落定' },
@@ -30,7 +30,7 @@ export const heroContent = {
   // Backwards-compatible alias for the lead couplet.
   poetry: {
     main: '思绪如河奔涌',
-    sub: '终在笔岸成形',
+    sub: '终在泊岸成形',
   },
   projects: [
     {
@@ -61,22 +61,22 @@ export const heroContent = {
       link: '/projects/ozon-erp',
     },
     {
-      id: 'godot-games',
-      title: '互动体验原型',
-      description: '从俄罗斯方块到太空射击，让玩法循环可试玩',
+      id: 'game-first-tetris',
+      title: '俄罗斯方块原型',
+      description: '经典模式、肉鸽强化与触屏输入，收束成可试玩循环',
       poetry: '《像素之间的梦想与规则》',
       action: 'PLAY',
       accent: 'preview',
-      link: '/projects?group=games',
+      link: '/projects/game-first-tetris',
     },
     {
-      id: 'blog-system',
-      title: '知识沉淀平台',
-      description: '从 RAG 到 Agent，从业务系统到游戏开发',
+      id: 'blog-semi',
+      title: '当前主站与知识库',
+      description: '把首页、项目、知识文章和自动部署组织成持续更新的站点',
       poetry: '《在文字中凝固思考的痕迹》',
       action: 'READ',
       accent: 'signal',
-      link: '/blog',
+      link: '/projects/blog-semi',
     },
   ] as HeroProject[],
 }

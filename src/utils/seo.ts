@@ -2,10 +2,10 @@ import type { BlogPostSummary } from '../data/blogShared'
 import type { Project } from '../data/portfolio'
 
 export const SITE_URL = 'https://biau.playlab.eu.cc'
-export const SITE_NAME = 'Biau Labs'
-export const DEFAULT_TITLE = 'Biau Labs | AI 应用、项目展示与知识库'
+export const SITE_NAME = 'BIAU Port'
+export const DEFAULT_TITLE = 'BIAU Port 泊岸 | AI 应用、项目展示与知识库'
 export const DEFAULT_DESCRIPTION =
-  'Biau Labs 用 React、Vite 与 Semi Design 组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。'
+  'BIAU Port 泊岸用 React、Vite 与 Semi Design 组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。'
 export const DEFAULT_IMAGE = `${SITE_URL}/images/projects/showcase/blog-semi-home-desktop.png`
 
 export interface SeoMeta {
@@ -40,8 +40,8 @@ export function getStaticSeo(pathname: string): SeoMeta {
 
   if (path === '/projects') {
     return {
-      title: '项目集 | Biau Labs',
-      description: '浏览 Biau Labs 的 AI 应用、业务系统、互动体验、移动端和内容平台项目。',
+      title: '项目集 | BIAU Port',
+      description: '浏览 BIAU Port 泊岸的 AI 应用、业务系统、互动体验、移动端和内容平台项目。',
       canonicalPath: '/projects',
       type: 'website',
     }
@@ -49,16 +49,16 @@ export function getStaticSeo(pathname: string): SeoMeta {
 
   if (path === '/blog') {
     return {
-      title: '知识库 | Biau Labs',
-      description: '阅读 Biau Labs 从真实项目中沉淀的 RAG、Agent、全栈开发、内容系统和发布验证文章。',
+      title: '知识库 | BIAU Port',
+      description: '阅读 BIAU Port 泊岸从真实项目中沉淀的 RAG、Agent、全栈开发、内容系统和发布验证文章。',
       canonicalPath: '/blog',
       type: 'website',
     }
   }
 
   return {
-    title: '页面没有靠岸 | Biau Labs',
-    description: '这个地址暂时没有对应内容，可以回到 Biau Labs 首页、项目集或知识库继续浏览。',
+    title: '页面没有靠岸 | BIAU Port',
+    description: '这个地址暂时没有对应内容，可以回到 BIAU Port 泊岸首页、项目集或知识库继续浏览。',
     canonicalPath: path,
     type: 'website',
   }
@@ -66,7 +66,7 @@ export function getStaticSeo(pathname: string): SeoMeta {
 
 export function getProjectSeo(project: Project): SeoMeta {
   return {
-    title: `${project.title} | Biau Labs 项目`,
+    title: `${project.title} | BIAU Port 项目`,
     description: project.summary,
     canonicalPath: `/projects/${project.id}`,
     type: 'article',
@@ -76,7 +76,7 @@ export function getProjectSeo(project: Project): SeoMeta {
 
 export function getBlogPostSeo(post: BlogPostSummary): SeoMeta {
   return {
-    title: `${post.title} | Biau Labs 知识库`,
+    title: `${post.title} | BIAU Port 知识库`,
     description: post.detail,
     canonicalPath: `/blog/${post.slug}`,
     type: 'article',

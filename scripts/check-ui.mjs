@@ -148,6 +148,193 @@ for (const target of expectedNavFocusTargets) {
 }
 await navFocusPage.close()
 
+const navIndicatorPage = await browser.newPage({ viewport: viewports[0] })
+await navIndicatorPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
+const navIndicator = await navIndicatorPage.locator('.nav-link-center.active').evaluate((item) => {
+  const style = getComputedStyle(item, '::after')
+  return {
+    width: Number.parseFloat(style.width),
+    height: Number.parseFloat(style.height),
+    shadow: style.boxShadow,
+    background: style.backgroundImage,
+  }
+})
+if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow === 'none') {
+  failures.push('/blog nav indicator: active underline should be wide, thick, and visible')
+}
+await navIndicatorPage.close()
+
+for (const path of ['/projects', '/blog']) {
+  const routeFlashPage = await browser.newPage({ viewport: viewports[0] })
+  await routeFlashPage.addInitScript(() => {
+    window.__routeFlashEvents = []
+    const record = (kind, value) => {
+      window.__routeFlashEvents.push({ kind, value, time: Math.round(performance.now()) })
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      record('domcontentloaded-route-loading', String(!!document.querySelector('.route-loading')))
+      const observer = new MutationObserver(() => {
+        if (document.querySelector('.route-loading')) record('route-loading', 'present')
+      })
+      observer.observe(document.body, { childList: true, subtree: true })
+      window.setTimeout(() => observer.disconnect(), 1200)
+    })
+  })
+  await routeFlashPage.goto(`${base}${path}`, { waitUntil: 'load' })
+  await routeFlashPage.waitForTimeout(1300)
+  const routeFlashEvents = await routeFlashPage.evaluate(() => window.__routeFlashEvents ?? [])
+  if (routeFlashEvents.some((event) => event.value === 'present' || event.value === 'true')) {
+    failures.push(`${path} route flash: should not show route-loading during initial render`)
+  }
+  await routeFlashPage.close()
+}
+
+const homeIntroPage = await browser.newPage({ viewport: viewports[0] })
+await homeIntroPage.addInitScript(() => {
+  window.sessionStorage.removeItem('biau-port-harbor-intro:v1')
+  window.__harborIntroEvents = []
+  for (const type of ['animationstart', 'animationend']) {
+    document.addEventListener(
+      type,
+      (event) => {
+        if (!(event.target instanceof Element)) return
+        if (!String(event.animationName).startsWith('harbor')) return
+        window.__harborIntroEvents.push({
+          type,
+          name: event.animationName,
+          className: event.target.className,
+          time: Math.round(performance.now()),
+        })
+      },
+      true,
+    )
+  }
+})
+await homeIntroPage.goto(`${base}/`, { waitUntil: 'domcontentloaded' })
+await homeIntroPage.waitForSelector('.harbor-intro__vessel', { timeout: 3000 }).catch(() => {
+  failures.push('/ home intro: expected harbor intro vessel to mount on first visit')
+})
+await homeIntroPage
+  .waitForFunction(
+    () => {
+      const events = window.__harborIntroEvents ?? []
+      return events.some((event) => event.name === 'harborIntroVeil') && !document.querySelector('.harbor-intro')
+    },
+    null,
+    { timeout: 10000 },
+  )
+  .catch(() => {
+    failures.push('/ home intro: expected harbor intro to finish and unmount')
+  })
+const harborIntroEvents = await homeIntroPage.evaluate(() => window.__harborIntroEvents ?? [])
+const vesselStartEvent = harborIntroEvents.find(
+  (event) => event.type === 'animationstart' && event.name === 'harborVesselDock',
+)
+const vesselEndIndex = harborIntroEvents.findIndex(
+  (event) => event.type === 'animationend' && event.name === 'harborVesselDock',
+)
+const markEndIndex = harborIntroEvents.findIndex((event) => event.type === 'animationend' && event.name === 'harborMarkLand')
+const veilEndIndex = harborIntroEvents.findIndex((event) => event.type === 'animationend' && event.name === 'harborIntroVeil')
+if (vesselEndIndex < 0 || markEndIndex < 0 || veilEndIndex < 0) {
+  failures.push('/ home intro: expected vessel, mark, and veil animation completion events')
+} else if (veilEndIndex < vesselEndIndex || veilEndIndex < markEndIndex) {
+  failures.push('/ home intro: veil should fade only after vessel and mark finish docking')
+} else if (!vesselStartEvent || harborIntroEvents[veilEndIndex].time - vesselStartEvent.time > 3000) {
+  failures.push('/ home intro: expected harbor intro animation span to complete within 3s')
+}
+await homeIntroPage.close()
+
+const homeCarouselPage = await browser.newPage({ viewport: viewports[0] })
+await homeCarouselPage.addInitScript(() => {
+  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+})
+await homeCarouselPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+const carouselViewport = homeCarouselPage.locator('.carousel-viewport')
+const carouselTrack = homeCarouselPage.locator('.carousel-track')
+await carouselViewport.hover({ force: true })
+const initialScrollY = await carouselTrack.evaluate((track) =>
+  getComputedStyle(track).getPropertyValue('--carousel-scroll-y').trim()
+)
+const carouselNativeHintCount = await homeCarouselPage
+  .locator('.carousel-card[title], .carousel-card [title], a.carousel-card[href]')
+  .count()
+if (carouselNativeHintCount > 0) {
+  failures.push('/ home carousel: cards should not expose native browser title/url hints')
+}
+await homeCarouselPage.mouse.wheel(0, 260)
+await homeCarouselPage.waitForTimeout(180)
+const quickWheelScrollY = await carouselTrack.evaluate((track) =>
+  getComputedStyle(track).getPropertyValue('--carousel-scroll-y').trim()
+)
+if (!quickWheelScrollY || quickWheelScrollY === initialScrollY) {
+  failures.push('/ home carousel: expected mouse wheel to update carousel position promptly')
+}
+await homeCarouselPage.waitForFunction(
+  (initial) => {
+    const track = document.querySelector('.carousel-track')
+    if (!track) return false
+    const style = getComputedStyle(track)
+    const scrollY = style.getPropertyValue('--carousel-scroll-y').trim()
+    return scrollY && scrollY !== initial && style.transform !== 'none'
+  },
+  initialScrollY,
+  { timeout: 2000 },
+).catch(() => {
+  failures.push('/ home carousel: expected mouse wheel to update carousel transform')
+})
+const wheelScrollY = await carouselTrack.evaluate((track) =>
+  getComputedStyle(track).getPropertyValue('--carousel-scroll-y').trim()
+)
+if (!wheelScrollY || wheelScrollY === initialScrollY) {
+  failures.push('/ home carousel: expected carousel scroll position to change after wheel')
+}
+await homeCarouselPage.close()
+
+const homeTitleDragPage = await browser.newPage({ viewport: viewports[0] })
+await homeTitleDragPage.addInitScript(() => {
+  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+})
+await homeTitleDragPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+const titleRotator = homeTitleDragPage.locator('.hero-title-rotator')
+const titleBeforeDrag = await titleRotator.getAttribute('aria-label')
+const titleBox = await titleRotator.boundingBox()
+if (!titleBox) {
+  failures.push('/ home title drag: expected title rotator to be visible')
+} else {
+  await homeTitleDragPage.mouse.move(titleBox.x + titleBox.width * 0.38, titleBox.y + titleBox.height * 0.48)
+  await homeTitleDragPage.mouse.down()
+  await homeTitleDragPage.mouse.move(titleBox.x + titleBox.width * 0.38 + 170, titleBox.y + titleBox.height * 0.48 - 18, {
+    steps: 10,
+  })
+  await homeTitleDragPage.mouse.up()
+  await homeTitleDragPage
+    .waitForFunction(
+      (previous) => {
+        const title = document.querySelector('.hero-title-rotator')
+        return title?.getAttribute('aria-label') !== previous
+      },
+      titleBeforeDrag,
+      { timeout: 2200 },
+    )
+    .catch(() => {
+      failures.push('/ home title drag: expected drag release to switch hero title')
+    })
+}
+await homeTitleDragPage.close()
+
+const homeCarouselClickPage = await browser.newPage({ viewport: viewports[0] })
+await homeCarouselClickPage.addInitScript(() => {
+  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+})
+await homeCarouselClickPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+await homeCarouselClickPage.locator('.carousel-viewport').hover({ force: true })
+await homeCarouselClickPage.waitForTimeout(120)
+await homeCarouselClickPage.locator('.carousel-card').filter({ hasText: '法律智能机器人' }).nth(1).click({ force: true })
+await homeCarouselClickPage.waitForURL(`${base}/projects/legal-rag`, { timeout: 5000 }).catch(() => {
+  failures.push('/ home carousel: expected Legal RAG card click to navigate to project detail')
+})
+await homeCarouselClickPage.close()
+
 const keyboardPage = await browser.newPage({ viewport: viewports[0] })
 await keyboardPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
 for (let index = 0; index < 20; index += 1) {

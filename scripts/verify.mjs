@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
+import { createServer } from 'node:net'
 
-const previewPort = 4174
-const previewBase = `http://127.0.0.1:${previewPort}`
+const preferredPreviewPort = 4174
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 
 function spawnNpm(args, options = {}) {
@@ -30,13 +30,34 @@ function run(args, options = {}) {
   })
 }
 
-function startPreview() {
-  return spawnNpm(['run', 'preview', '--', '--host', '127.0.0.1', '--port', String(previewPort)], {
+function findAvailablePort(startPort) {
+  return new Promise((resolve, reject) => {
+    const tryPort = (port) => {
+      const server = createServer()
+      server.once('error', (error) => {
+        if (error.code === 'EADDRINUSE') {
+          tryPort(port + 1)
+          return
+        }
+        reject(error)
+      })
+      server.once('listening', () => {
+        server.close(() => resolve(port))
+      })
+      server.listen(port, '127.0.0.1')
+    }
+
+    tryPort(startPort)
+  })
+}
+
+function startPreview(previewPort) {
+  return spawnNpm(['run', 'preview', '--', '--host', '127.0.0.1', '--port', String(previewPort), '--strictPort'], {
     stdio: 'inherit',
   })
 }
 
-async function waitForPreview() {
+async function waitForPreview(previewBase) {
   const startedAt = Date.now()
   while (Date.now() - startedAt < 30_000) {
     try {
@@ -64,9 +85,11 @@ await run(['run', 'lint'])
 await run(['run', 'build'])
 await run(['run', 'blog:check'])
 
-const preview = startPreview()
+const previewPort = await findAvailablePort(preferredPreviewPort)
+const previewBase = `http://127.0.0.1:${previewPort}`
+const preview = startPreview(previewPort)
 try {
-  await waitForPreview()
+  await waitForPreview(previewBase)
   await run(['run', 'check:ui'], {
     env: { ...process.env, UI_CHECK_BASE: previewBase },
   })

@@ -13,7 +13,7 @@ export function AnimatedText({ text, delay = 0 }: AnimatedTextProps) {
           key={i}
           className="char"
           style={{ 
-            animationDelay: `${delay + i * 0.05}s`,
+            animationDelay: `${delay + i * 0.032}s`,
             opacity: 0 
           }}
         >

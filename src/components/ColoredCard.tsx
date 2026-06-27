@@ -10,14 +10,14 @@ export function ColoredCard({ project, index, onClick }: ColoredCardProps) {
   const number = String((index % 5) + 1).padStart(2, '0')
 
   return (
-    <a
+    <button
+      type="button"
       className={`carousel-card ${project.accent}`}
       data-port-index={number}
-      onClick={(e) => {
-        e.preventDefault()
+      aria-label={`${project.title}：${project.description}`}
+      onClick={() => {
         onClick()
       }}
-      href={project.link}
     >
       <div>
         <strong>{project.title}</strong>
@@ -26,7 +26,9 @@ export function ColoredCard({ project, index, onClick }: ColoredCardProps) {
           <span className="literary-title"> ——{project.poetry}</span>
         </p>
       </div>
-      <em>{project.action}</em>
-    </a>
+      <em className="carousel-action">
+        <span>{project.action}</span>
+      </em>
+    </button>
   )
 }
