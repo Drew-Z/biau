@@ -1,10 +1,13 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useLayoutEffect, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { useTheme } from './hooks/useTheme'
 import { Navigation } from './components/Navigation'
 import { SeoManager } from './components/SeoManager'
 import { HarborIntro } from './components/HarborIntro'
+import { BlogPage } from './pages/BlogPage'
+import { HomePage } from './pages/HomePage'
+import { ProjectsPage } from './pages/ProjectsPage'
 
 type SiteLanguage = 'zh' | 'en'
 type HarborScene = 'dusk' | 'garden' | 'stellar'
@@ -18,12 +21,9 @@ function readHarborScene(): HarborScene {
   return 'dusk'
 }
 
-const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })))
-const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then((module) => ({ default: module.ProjectsPage })))
 const ProjectDetailPage = lazy(() =>
   import('./pages/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })),
 )
-const BlogPage = lazy(() => import('./pages/BlogPage').then((module) => ({ default: module.BlogPage })))
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((module) => ({ default: module.BlogPostPage })))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
@@ -33,7 +33,7 @@ function App() {
   const { mode: themeMode, cycleMode: cycleThemeMode } = useTheme()
   const { pathname } = useLocation()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement
     root.dataset.harborScene = harborScene
     window.localStorage.setItem(HARBOR_SCENE_STORAGE_KEY, harborScene)

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
 export type ThemeMode = 'light' | 'dark' | 'auto'
 export type ResolvedTheme = 'light' | 'dark'
@@ -50,7 +50,7 @@ export function useTheme() {
   }, [mode])
 
   // 应用到根元素：深色为默认 :root，浅色加 light-theme 类
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement
     if (resolved === 'light') {
       root.classList.add('light-theme')

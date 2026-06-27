@@ -164,6 +164,31 @@ if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow ==
 }
 await navIndicatorPage.close()
 
+for (const path of ['/projects', '/blog']) {
+  const routeFlashPage = await browser.newPage({ viewport: viewports[0] })
+  await routeFlashPage.addInitScript(() => {
+    window.__routeFlashEvents = []
+    const record = (kind, value) => {
+      window.__routeFlashEvents.push({ kind, value, time: Math.round(performance.now()) })
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      record('domcontentloaded-route-loading', String(!!document.querySelector('.route-loading')))
+      const observer = new MutationObserver(() => {
+        if (document.querySelector('.route-loading')) record('route-loading', 'present')
+      })
+      observer.observe(document.body, { childList: true, subtree: true })
+      window.setTimeout(() => observer.disconnect(), 1200)
+    })
+  })
+  await routeFlashPage.goto(`${base}${path}`, { waitUntil: 'load' })
+  await routeFlashPage.waitForTimeout(1300)
+  const routeFlashEvents = await routeFlashPage.evaluate(() => window.__routeFlashEvents ?? [])
+  if (routeFlashEvents.some((event) => event.value === 'present' || event.value === 'true')) {
+    failures.push(`${path} route flash: should not show route-loading during initial render`)
+  }
+  await routeFlashPage.close()
+}
+
 const homeIntroPage = await browser.newPage({ viewport: viewports[0] })
 await homeIntroPage.addInitScript(() => {
   window.sessionStorage.removeItem('biau-port-harbor-intro:v1')
