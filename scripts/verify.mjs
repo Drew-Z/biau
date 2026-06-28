@@ -72,13 +72,33 @@ async function waitForPreview(previewBase) {
   throw new Error(`Preview did not start at ${previewBase}`)
 }
 
-function stopPreview(child) {
-  if (!child.pid || child.killed) return
+function waitForExit(child, timeoutMs = 5_000) {
+  return new Promise((resolve) => {
+    if (!child || child.exitCode !== null || child.signalCode !== null) {
+      resolve()
+      return
+    }
+
+    const done = () => {
+      clearTimeout(timer)
+      resolve()
+    }
+    const timer = setTimeout(done, timeoutMs)
+    child.once('exit', done)
+    child.once('error', done)
+  })
+}
+
+async function stopPreview(child) {
+  if (!child.pid || child.exitCode !== null || child.signalCode !== null) return
   if (process.platform === 'win32') {
-    spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], { stdio: 'ignore' })
+    const killer = spawn('taskkill', ['/pid', String(child.pid), '/t', '/f'], { stdio: 'ignore' })
+    await waitForExit(killer)
+    await waitForExit(child)
     return
   }
   child.kill('SIGTERM')
+  await waitForExit(child)
 }
 
 await run(['run', 'lint'])
@@ -94,5 +114,5 @@ try {
     env: { ...process.env, UI_CHECK_BASE: previewBase },
   })
 } finally {
-  stopPreview(preview)
+  await stopPreview(preview)
 }
