@@ -1644,6 +1644,23 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   line-height: 1.92;
 }
 
+.xunqiu-current-body {
+  gap: var(--space-16);
+}
+
+.xunqiu-current-body .detail-block-wide {
+  grid-column: span 6;
+}
+
+.xunqiu-inline-link {
+  margin-inline: 0.25em;
+  color: color-mix(in oklch, var(--green) 86%, var(--ink));
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
 .detail-related {
   padding: var(--space-24);
 }
@@ -1989,7 +2006,8 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .app.page-blog .blog-card,
   .detail-block,
   .blog-post-body .detail-block,
-  .blog-post-section {
+  .blog-post-section,
+  .xunqiu-current-body .detail-block-wide {
     grid-column: auto;
   }
 

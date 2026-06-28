@@ -70,6 +70,15 @@ export const heroContent = {
       link: 'https://games.playlab.eu.cc/',
     },
     {
+      id: 'xunqiu',
+      title: '寻球移动端系统',
+      description: 'Android 64 位客户端、现代后端、R2 上传与 Render 部署链路',
+      poetry: '《让球场邀约重新连成网络》',
+      action: 'VIEW',
+      accent: 'commerce',
+      link: 'https://xunqiu.playlab.eu.cc/',
+    },
+    {
       id: 'blog-semi',
       title: '当前主站与知识库',
       description: '把首页、项目、知识文章和自动部署组织成持续更新的站点',

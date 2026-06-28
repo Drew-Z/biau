@@ -23,6 +23,7 @@ export interface Project {
 
 const GAME_SITE_URL = 'https://games.playlab.eu.cc'
 const PLAY_SITE_URL = 'https://play.playlab.eu.cc'
+const XUNQIU_SITE_URL = 'https://xunqiu.playlab.eu.cc'
 
 function externalLink(label: string, href: string): ProjectLink {
   return { label, href, type: 'external' }
@@ -194,15 +195,18 @@ export const projects: Project[] = [
   },
   {
     id: 'xunqiu',
-    title: '寻球｜移动端业务系统',
-    summary: '多端历史业务系统，包含旧版 Android、新 64 位 Android、iOS、Java 服务端、后台与 H5、发布包和迁移文档。',
+    title: '寻球｜移动端与现代后端重建',
+    summary: '面向足球社群和约赛场景的移动端业务系统：旧版客户端保留旧链路，新版 64 位客户端接入 Spring Boot 后端、托管数据库与 R2 上传链路。',
     category: 'mobile',
     status: 'main',
-    role: 'Android 64 位重构 / Java 服务端 / 发布验收',
-    image: '/images/projects/showcase/xunqiu-module-map.svg',
-    stack: ['Android', 'Java Spring', 'MySQL', '发布验收'],
-    highlights: ['64 位重构', '业务模块', '服务端接口', '发布验收'],
-    links: [],
+    role: 'Android 64 位 / Spring Boot 3 / Render / R2',
+    image: '/images/projects/showcase/xunqiu-android64-runtime.png',
+    stack: ['Android 64', 'Spring Boot 3', 'PostgreSQL', 'Cloudflare R2', 'Render'],
+    highlights: ['新旧客户端分流', '兼容旧接口 envelope', 'Flyway 数据初始化', 'R2 上传验收'],
+    links: [
+      externalLink('产品展示页', `${XUNQIU_SITE_URL}/`),
+      externalLink('新后端仓库', 'https://github.com/Drew-Z/xunqiu-backend-modern'),
+    ],
   },
 ]
 
