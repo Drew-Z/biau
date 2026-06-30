@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { blogPosts } from '../src/data/blog'
-import { projects } from '../src/data/portfolio'
+import { getProjectAssistantSummary, getProjectAssistantTags, projects } from '../src/data/portfolio'
 
 interface KnowledgeItem {
   id: string
@@ -27,9 +27,9 @@ const items: KnowledgeItem[] = [
   ...projects.map((project) => ({
     id: `project:${project.id}`,
     title: project.title,
-    summary: project.summary,
+    summary: getProjectAssistantSummary(project),
     href: `/projects/${project.id}`,
-    tags: [project.category, project.status, project.role, ...project.stack, ...project.highlights],
+    tags: getProjectAssistantTags(project),
     visibility: 'public' as const,
   })),
   ...blogPosts.map((post) => ({

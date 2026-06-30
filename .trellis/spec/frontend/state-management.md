@@ -24,6 +24,66 @@ Use `useMemo` for derived collections when the grouping logic is non-trivial and
 
 Public catalog and article data are static TypeScript exports in `src/data/`. Keep display data typed and sanitized. Runtime assistant conversations and admin state belong to the assistant API/frontend flow, not to global stores.
 
+## Scenario: Project Detail Content And Assistant Projection
+
+### 1. Scope / Trigger
+
+- Trigger: a project page needs richer case-study content and the public assistant should answer from the same project facts.
+- Owner: `src/data/portfolio.ts` is the single source for project display data, optional detail sections, and assistant-facing project context.
+
+### 2. Signatures
+
+- `Project.detailContent?: ProjectDetailContent` groups visitor-readable case-study sections by keys such as `overview`, `workflow`, `architecture`, `quality`, `limitations`, and `roadmap`.
+- `Project.assistantContext?: string[]` stores concise public facts for generated/local assistant knowledge.
+- `getProjectAssistantSummary(project: Project): string` returns the public assistant summary.
+- `getProjectAssistantTags(project: Project): string[]` returns deduplicated searchable tags.
+
+### 3. Contracts
+
+- `detailContent` is for page rendering and must remain sanitized public copy.
+- `assistantContext` is for retrieval quality, not hidden/private knowledge; it must not include credentials, raw local paths, account data, private dashboards, or secrets.
+- `scripts/generate-assistant-knowledge.ts` and `src/data/assistant.ts` must both use the projection helpers instead of duplicating summary/tag construction.
+- `server/data/public-knowledge.json` keeps the existing knowledge item shape: `{ id, title, summary, href, tags, visibility }`.
+
+### 4. Validation & Error Matrix
+
+- Missing `detailContent` -> project detail page falls back to the generic header, highlights, stack, and links.
+- Empty `assistantContext` -> assistant summary falls back to `project.summary`.
+- Generated and local assistant summaries diverge -> update the shared helper in `portfolio.ts`, not individual consumers.
+- Unsafe public content -> remove or rewrite the content before running `assistant:index`.
+
+### 5. Good/Base/Bad Cases
+
+- Good: Legal RAG stores architecture, workflow, quality, limitations, and roadmap in typed `detailContent`, then exposes concise RAG/contract-review facts through `assistantContext`.
+- Base: a simple project only defines `summary`, `stack`, `highlights`, and `links`.
+- Bad: a page component hard-codes a long project article while the assistant generator separately hand-builds a different summary.
+
+### 6. Tests Required
+
+- Run `npm.cmd run assistant:index` after changing project assistant fields.
+- Run `npm.cmd run lint` and `npm.cmd run build` after changing `src/data/portfolio.ts`, `src/data/assistant.ts`, or project detail rendering.
+- Attempt `npm.cmd run verify` for broad project-page or assistant-knowledge changes.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+const projectKnowledge = projects.map((project) => ({
+  summary: project.summary,
+  tags: [project.category, project.status, ...project.stack],
+}))
+```
+
+#### Correct
+
+```typescript
+const projectKnowledge = projects.map((project) => ({
+  summary: getProjectAssistantSummary(project),
+  tags: getProjectAssistantTags(project),
+}))
+```
+
 ## Scenario: Assistant MVP Browser State
 
 ### 1. Scope / Trigger

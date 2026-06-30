@@ -1,5 +1,5 @@
 import { blogPosts } from './blog'
-import { projects } from './portfolio'
+import { getProjectAssistantSummary, getProjectAssistantTags, projects } from './portfolio'
 
 export type AssistantVisibility = 'public' | 'internal'
 export type AssistantMemberRole = 'MEMBER' | 'ADMIN'
@@ -87,9 +87,9 @@ export const internalAssistantSuggestions: AssistantSuggestion[] = [
 const projectKnowledge: AssistantKnowledgeItem[] = projects.map((project) => ({
   id: `project:${project.id}`,
   title: project.title,
-  summary: project.summary,
+  summary: getProjectAssistantSummary(project),
   href: `/projects/${project.id}`,
-  tags: [project.category, project.status, ...project.stack, ...project.highlights],
+  tags: getProjectAssistantTags(project),
   visibility: 'public',
 }))
 

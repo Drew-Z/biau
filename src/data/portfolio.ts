@@ -9,6 +9,23 @@ export interface ProjectLink {
   type: 'internal' | 'external'
 }
 
+export type ProjectDetailContentKey =
+  | 'overview'
+  | 'workflow'
+  | 'architecture'
+  | 'quality'
+  | 'limitations'
+  | 'roadmap'
+
+export interface ProjectDetailSection {
+  title: string
+  body?: string
+  items?: string[]
+  links?: ProjectLink[]
+}
+
+export type ProjectDetailContent = Partial<Record<ProjectDetailContentKey, ProjectDetailSection[]>>
+
 export interface Project {
   id: string
   title: string
@@ -21,6 +38,8 @@ export interface Project {
   highlights: string[]
   detailLink?: ProjectLink
   links: ProjectLink[]
+  detailContent?: ProjectDetailContent
+  assistantContext?: string[]
 }
 
 const GAME_SITE_URL = 'https://games.playlab.eu.cc'
@@ -58,18 +77,120 @@ export const statusLabels: Record<ProjectStatus, string> = {
   ongoing: '建设中',
 }
 
+export const projectDetailGroupLabels: Record<ProjectDetailContentKey, string> = {
+  overview: '案例概览',
+  workflow: '工作台能力',
+  architecture: '实现与架构',
+  quality: '质量与验证',
+  limitations: '当前边界',
+  roadmap: '后续优化',
+}
+
 export const projects: Project[] = [
   {
     id: 'legal-rag',
     title: 'Legal RAG｜法律智能机器人与合同审查',
-    summary: '法律合同 RAG 全栈 MVP，包含文档导入、条款切分、引用溯源、智能问答和合同风险审查。',
+    summary: '已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。',
     category: 'ai',
     status: 'main',
     role: '全栈 MVP / RAG 流程 / 合同审查工作台',
     image: '/images/projects/showcase/legal-rag-reviewed.png',
-    stack: ['Vue 3', 'Express', 'TypeScript', 'RAG', '可替换向量库'],
-    highlights: ['知识库导入', 'RAG 问答', '合同风险审查', '引用溯源'],
-    links: [],
+    stack: ['Vue 3', 'Express', 'TypeScript', 'PostgreSQL', 'pgvector', 'RAG'],
+    highlights: ['公开安全数据集', 'Hybrid Retrieval', '引用与诊断', '规则优先合同审查'],
+    links: [
+      externalLink('在线工作台', 'https://legal-rag-web.onrender.com'),
+      externalLink('API Health', 'https://legal-rag-api-9bki.onrender.com/api/health'),
+    ],
+    detailContent: {
+      overview: [
+        {
+          title: '从“问答机器人”推进到可演示工作台',
+          body:
+            'Legal RAG 的重点不是把合同丢给模型后返回一段结论，而是把文档入库、检索、引用、诊断、合同风险项和质量评测组织成一个可操作的工作台。访客可以看到知识库、问答、审查结果和质量面板，理解 AI 结论来自哪些片段以及系统为什么选择回答或拒答。',
+        },
+        {
+          title: '公开演示只使用安全材料',
+          body:
+            '公开演示围绕已脱敏或公开安全的数据集展开，展示登录后的知识库初始化、RAG 问答、合同审查和质量报告，不暴露演示密码、模型密钥、数据库连接串或部署后台信息。',
+        },
+      ],
+      workflow: [
+        {
+          title: '知识库与问答链路',
+          items: [
+            '支持文本、TXT、PDF、DOCX 和公共数据集进入 ingestion job，再生成可追踪的 document 与 chunk。',
+            '问答结果附带 citations 和 diagnostics，帮助用户检查命中文档、片段、召回路径和回答边界。',
+            '项目空间、文档、导入任务、问答、质量报告、评测运行和审计日志在后端路由中分别建模。',
+          ],
+        },
+        {
+          title: '合同审查链路',
+          items: [
+            '合同审查优先由确定性规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险。',
+            '模型只在已召回风险上辅助改写解释和建议，输出必须通过 schema 校验；不可用或不合法时回退到规则结果。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: 'RAG pipeline',
+          body:
+            '导入内容会先清洗文本，再按项目作用域做 SHA-256 去重和章节感知切分；随后通过 embedding provider 写入 memory 或 PostgreSQL + pgvector。查询时先做 query rewrite，再结合向量召回和关键词召回，经过候选合并、过滤、rerank 与可回答性判断，最后生成 grounded answer 或拒答，并返回 citations 与 diagnostics。',
+        },
+        {
+          title: '全栈与部署形态',
+          body:
+            '项目采用 workspace monorepo：Web 端是 Vue 3、Vite、TypeScript，API 端是 Node.js、Express、TypeScript，并通过 shared package 复用请求/响应类型。API Dockerfile 会构建 shared 与 API 输出、复制数据集并暴露服务端口，线上演示使用可替换的模型与向量存储适配器。',
+        },
+        {
+          title: '适配器取舍',
+          body:
+            '本地或轻量演示可以使用 mock provider 与 memory vector store；需要持久化与线上演示时切换到 OpenAI-compatible provider、PostgreSQL 与 pgvector。这个边界让演示、开发和部署不被单一模型或向量库绑定。',
+        },
+      ],
+      quality: [
+        {
+          title: '评测与质量面板',
+          body:
+            '仓库中保留 RAG 问答和合同审查的 eval fixtures，API 也提供 quality 与 evaluation 报告路由。页面中的质量面板用于展示检索命中、引用、结构化审查等维度，让调整 chunk、召回、rerank 或提示词时有可对比的基线。',
+        },
+        {
+          title: '可解释性优先',
+          items: [
+            '问答要求基于召回片段生成，引用不足时可以拒答或返回边界说明。',
+            '合同审查的高风险项来自规则命中，模型增强只改变表达，不绕过风险识别和 schema 校验。',
+            '审计与诊断信息帮助复盘一次回答从导入、检索到生成的关键步骤。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '公开页面只展示脱敏演示能力，不提供真实法律意见，也不公开内部凭据或运营后台细节。',
+            '演示数据集覆盖的是可公开展示场景，真实业务还需要更完整的权限、数据治理、人工复核和合规流程。',
+            '复杂扫描件、低质量 PDF、跨文档长链推理和专业法域覆盖仍适合作为后续增强方向。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '下一轮版本迭代方向',
+          items: [
+            '补充数据库用户、邀请和更细的项目空间权限，让公开演示和团队试用边界更清楚。',
+            '扩展更多脱敏法律数据集，并把评测趋势沉淀成可长期比较的质量报告。',
+            '加强 OCR、rerank 模型、CI 与镜像发布，让导入质量、召回排序和部署可复现性继续提升。',
+          ],
+        },
+      ],
+    },
+    assistantContext: [
+      'Legal RAG 是已部署的全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。',
+      '系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。',
+      '合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。',
+      '项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。',
+      '后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。',
+    ],
   },
   {
     id: 'pet-workspace',
@@ -218,6 +339,18 @@ export const projects: Project[] = [
     ],
   },
 ]
+
+function uniqueStrings(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)))
+}
+
+export function getProjectAssistantSummary(project: Project) {
+  return [project.summary, ...(project.assistantContext ?? [])].join(' ')
+}
+
+export function getProjectAssistantTags(project: Project) {
+  return uniqueStrings([project.category, project.status, project.role, ...project.stack, ...project.highlights])
+}
 
 export const capabilityTracks = [
   { title: 'AI 应用', detail: 'RAG、Agent、引用溯源、审核闭环', value: 'Legal RAG / Pet Workspace' },

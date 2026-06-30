@@ -1,7 +1,15 @@
 import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { IconArrowLeft, IconLink } from '@douyinfe/semi-icons'
-import { projects, categoryLabels, statusLabels } from '../data/portfolio'
+import {
+  projects,
+  categoryLabels,
+  projectDetailGroupLabels,
+  statusLabels,
+  type ProjectDetailContent,
+  type ProjectDetailContentKey,
+  type ProjectDetailSection,
+} from '../data/portfolio'
 import { OZON_ERP_ENTRY_URL } from '../data/siteLinks'
 import { ResponsiveImage } from '../components/ResponsiveImage'
 
@@ -72,6 +80,15 @@ const xunqiuVerification = [
   'PostgreSQL 由 Flyway 初始化 schema 与 seed 数据',
   'R2 环境变量完成连接，图片动态上传已通过 curl 验证',
   '旧版客户端不切换 Host，64 位新客户端指向新服务',
+]
+
+const projectDetailContentOrder: ProjectDetailContentKey[] = [
+  'overview',
+  'workflow',
+  'architecture',
+  'quality',
+  'limitations',
+  'roadmap',
 ]
 
 export function ProjectDetailPage() {
@@ -167,6 +184,8 @@ export function ProjectDetailPage() {
         )}
       </div>
 
+      {project.detailContent && <ProjectDetailContentSections content={project.detailContent} />}
+
       {project.id === 'ozon-erp' && <OzonErpProjectArticle />}
       {project.id === 'xunqiu' && <XunqiuProjectArticle />}
 
@@ -183,6 +202,69 @@ export function ProjectDetailPage() {
             ))}
           </div>
         </section>
+      )}
+    </article>
+  )
+}
+
+interface ProjectDetailContentSectionsProps {
+  content: ProjectDetailContent
+}
+
+function ProjectDetailContentSections({ content }: ProjectDetailContentSectionsProps) {
+  const groups = projectDetailContentOrder
+    .map((key) => ({ key, sections: content[key] ?? [] }))
+    .filter((group) => group.sections.length > 0)
+
+  if (groups.length === 0) return null
+
+  return (
+    <section className="detail-body project-case-study" aria-label="项目案例分析">
+      {groups.map((group) => (
+        <section key={group.key} className="detail-block detail-block-wide project-case-study__group">
+          <p className="project-case-study__eyebrow">{projectDetailGroupLabels[group.key]}</p>
+          <div className="project-case-study__sections">
+            {group.sections.map((section) => (
+              <ProjectDetailContentSection key={section.title} section={section} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </section>
+  )
+}
+
+interface ProjectDetailContentSectionProps {
+  section: ProjectDetailSection
+}
+
+function ProjectDetailContentSection({ section }: ProjectDetailContentSectionProps) {
+  return (
+    <article className="project-case-study__section">
+      <h3>{section.title}</h3>
+      {section.body && <p className="blog-post-body-text">{section.body}</p>}
+      {section.items && section.items.length > 0 && (
+        <ul className="detail-highlights">
+          {section.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      )}
+      {section.links && section.links.length > 0 && (
+        <div className="detail-links project-case-study__links">
+          {section.links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              target={link.type === 'external' ? '_blank' : undefined}
+              rel={link.type === 'external' ? 'noopener noreferrer' : undefined}
+              className="link-badge"
+            >
+              <IconLink />
+              <span>{link.label}</span>
+            </a>
+          ))}
+        </div>
       )}
     </article>
   )

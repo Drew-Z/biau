@@ -1649,9 +1649,54 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   gap: var(--space-16);
 }
 
+.project-case-study {
+  gap: var(--space-16);
+}
+
+.project-case-study .detail-block-wide,
 .xunqiu-current-body .detail-block-wide,
 .ozon-erp-current-body .detail-block-wide {
   grid-column: span 6;
+}
+
+.project-case-study__group {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.project-case-study__eyebrow {
+  margin: 0;
+  color: color-mix(in oklch, var(--green) 82%, var(--ink));
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-case-study__sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.project-case-study__section {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-12, 12px);
+  align-content: start;
+}
+
+.project-case-study__section h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.03rem, 1.7vw, 1.22rem);
+  font-weight: 850;
+  line-height: 1.28;
+}
+
+.project-case-study__links {
+  margin-top: 2px;
 }
 
 .ozon-erp-entry-block {
@@ -2573,9 +2618,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .detail-block,
   .blog-post-body .detail-block,
   .blog-post-section,
+  .project-case-study .detail-block-wide,
   .xunqiu-current-body .detail-block-wide,
   .ozon-erp-current-body .detail-block-wide {
     grid-column: auto;
+  }
+
+  .project-case-study__sections {
+    grid-template-columns: 1fr;
   }
 
   .app.page-tools .projects-grid {

@@ -15,7 +15,7 @@
   {
     "id": "project:legal-rag",
     "title": "Legal RAG｜法律智能机器人与合同审查",
-    "summary": "法律合同 RAG 全栈 MVP，包含文档导入、条款切分、引用溯源、智能问答和合同风险审查。",
+    "summary": "已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。 Legal RAG 是已部署的全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。 系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。 合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。 项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。 后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。",
     "href": "/projects/legal-rag",
     "tags": [
       "ai",
@@ -24,12 +24,13 @@
       "Vue 3",
       "Express",
       "TypeScript",
+      "PostgreSQL",
+      "pgvector",
       "RAG",
-      "可替换向量库",
-      "知识库导入",
-      "RAG 问答",
-      "合同风险审查",
-      "引用溯源"
+      "公开安全数据集",
+      "Hybrid Retrieval",
+      "引用与诊断",
+      "规则优先合同审查"
     ],
     "visibility": "public"
   },
