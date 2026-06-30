@@ -111,13 +111,21 @@ Execution order:
 
 ## Acceptance Criteria
 
-- [ ] Parent task owns the source requirement set, child-task map, shared public-data boundary, and final integration review.
-- [ ] Each child task has its own planning artifact with source evidence, scope, acceptance criteria, and validation plan before implementation starts.
-- [ ] Child implementations collectively improve project-page content for the selected source projects across implementation, architecture, stack, limitations, and future direction where applicable.
-- [ ] Final integration confirms generated public knowledge reflects improved project-page data while staying public and sanitized.
-- [ ] Final integration confirms public/internal assistant fallback behavior remains consistent with the improved project knowledge.
-- [ ] Final integration confirms existing assistant API and frontend citation flows remain compatible.
-- [ ] Final validation includes `npm.cmd run assistant:index`, `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run verify`, or any blocker is recorded with concrete evidence.
+- [x] Parent task owns the source requirement set, child-task map, shared public-data boundary, and final integration review.
+- [x] Each child task has its own planning artifact with source evidence, scope, acceptance criteria, and validation plan before implementation starts.
+- [x] Child implementations collectively improve project-page content for the selected source projects across implementation, architecture, stack, limitations, and future direction where applicable.
+- [x] Final integration confirms generated public knowledge reflects improved project-page data while staying public and sanitized.
+- [x] Final integration confirms public/internal assistant fallback behavior remains consistent with the improved project knowledge.
+- [x] Final integration confirms existing assistant API and frontend citation flows remain compatible.
+- [x] Final validation includes `npm.cmd run assistant:index`, `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run verify`, or any blocker is recorded with concrete evidence.
+
+## Final Integration Review
+
+- Completed child tasks: Legal RAG, Xunqiu, Ozon ERP, Game + Pet.
+- Project-page content now uses the shared `detailContent` / `assistantContext` model for the major showcased projects instead of bespoke UI-only writing.
+- Generated public knowledge was refreshed from `src/data/portfolio.ts` and includes the new Legal RAG, Xunqiu, ERP, Biau Playlab, game, and pet summaries.
+- The public-data boundary remains intact: content is visitor-readable and avoids private credentials, exact private deployment details, provider secrets, database connection strings, and local source paths.
+- Final validation on 2026-06-30 passed: `npm.cmd run assistant:index`, `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run verify`. The build still reports only the known non-fatal Vite `INEFFECTIVE_DYNAMIC_IMPORT` warnings.
 
 ## Open Questions
 
