@@ -72,3 +72,37 @@ Finished the assistant MVP with public/internal fallback UI, invite redemption, 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Enhance Legal RAG project page
+
+**Date**: 2026-06-30
+**Task**: Enhance Legal RAG project page
+**Branch**: `main`
+
+### Summary
+
+Planned the project-page content enhancement task tree, implemented the Legal RAG visitor-readable case study page, updated assistant public knowledge projection, and captured the reusable project detail content convention in frontend specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4ca0ee2` | (see git log) |
+| `f90b96b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
