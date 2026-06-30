@@ -25,7 +25,7 @@ npm.cmd run verify
 `server/scripts/smoke.ts` is the minimum backend behavior gate. It starts the Express app on an available localhost port and verifies:
 
 - `/health` returns OK.
-- `/chat/public` accepts a simple message and returns an answer plus citations array.
+- `/chat/public` accepts `RAG 项目`, returns an answer plus citations array, and cites `project:legal-rag` so the test catches public-knowledge path or indexing regressions.
 - `/chat/internal` rejects unauthenticated requests with `401`.
 
 Do not break these behaviors when changing app middleware, auth, model fallback, or database guards.

@@ -32,6 +32,16 @@ Keep route registration, middleware, and response shaping in `server/src/app.ts`
 
 `server/src/index.ts` should stay thin: create the app, listen on `env.port`, and handle graceful shutdown by closing the server and disconnecting Prisma.
 
+## Generated Public Knowledge Contract
+
+`scripts/generate-assistant-knowledge.ts` writes the public assistant index to `server/data/public-knowledge.json`. `server/src/knowledge.ts` must read that same file at runtime:
+
+```typescript
+const knowledgePath = path.resolve(__dirname, '../data/public-knowledge.json')
+```
+
+This relative path is intentional. It works when running source with `tsx` from `server/src` and after `server:build` emits files under `server/dist`. Do not resolve `../../data/public-knowledge.json`; that points at repository-root `data/` and silently falls back to the minimal `site:intro` knowledge item.
+
 ## Feature Availability
 
 Backend features must tolerate missing optional services. `env.ts` exposes `hasDatabase()` and `hasModelProvider()`. Routes that require persistence call `requireDatabase()` from `auth.ts`; public chat can run with the local knowledge fallback and model fallback.
