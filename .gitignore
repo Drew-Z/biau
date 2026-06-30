@@ -25,8 +25,7 @@ output
 *.sln
 *.sw?
 
-# Local visual comparison and Codex iteration artifacts
-compare-out/
+# Local scratch artifacts
 ref/
 original-src/
 *.backup
@@ -38,25 +37,7 @@ original-src/
 FINAL-*.md
 PLAYWRIGHT-RESULTS.md
 INTERACTION-ANALYSIS.md
-compare*.js
-compare.mjs
-extract-*.mjs
-verify-p0.js
-truth-comparison.json
-comparison-data.json
-nav-comparison.json
 files.txt
 loc.txt
 *-site.png
 *-viewport.png
-iteration-*.png
-iteration-*-report.json
-scripts/compare-*.js
-scripts/compare-*.mjs
-scripts/capture-reference.mjs
-scripts/extract-*.mjs
-scripts/final-verification.js
-scripts/inspect-structure.js
-scripts/iteration-*.mjs
-scripts/record-interaction.mjs
-scripts/verify-p0.js
