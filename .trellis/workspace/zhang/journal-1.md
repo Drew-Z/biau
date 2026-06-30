@@ -205,3 +205,37 @@ Enhanced Biau Playlab, six game entries, and AI pet workspace project-page data 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Project assistant QA
+
+**Date**: 2026-06-30
+**Task**: Project assistant QA
+**Branch**: `main`
+
+### Summary
+
+Verified project-page assistant knowledge, fixed backend public-knowledge loading, improved public assistant search relevance, regenerated generated knowledge, added smoke regression, and recorded the runtime knowledge contract in specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `960e7a8` | (see git log) |
+| `546c795` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
