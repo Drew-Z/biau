@@ -106,3 +106,36 @@ Planned the project-page content enhancement task tree, implemented the Legal RA
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Enhance Xunqiu project page
+
+**Date**: 2026-06-30
+**Task**: Enhance Xunqiu project page
+**Branch**: `main`
+
+### Summary
+
+Enhanced the Xunqiu project page as a visitor-readable mobile migration case study, moved Xunqiu onto reusable detailContent/assistantContext data, regenerated public assistant knowledge, validated with npm.cmd run verify, and archived the child task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8197c44` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
