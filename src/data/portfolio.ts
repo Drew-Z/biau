@@ -771,7 +771,15 @@ export function getProjectAssistantSummary(project: Project) {
 }
 
 export function getProjectAssistantTags(project: Project) {
-  return uniqueStrings([project.category, project.status, project.role, ...project.stack, ...project.highlights])
+  return uniqueStrings([
+    project.category,
+    categoryLabels[project.category],
+    project.status,
+    statusLabels[project.status],
+    project.role,
+    ...project.stack,
+    ...project.highlights,
+  ])
 }
 
 export const capabilityTracks = [

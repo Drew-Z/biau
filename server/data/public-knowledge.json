@@ -19,7 +19,9 @@
     "href": "/projects/legal-rag",
     "tags": [
       "ai",
+      "AI 应用",
       "main",
+      "重点展示",
       "全栈 MVP / RAG 流程 / 合同审查工作台",
       "Vue 3",
       "Express",
@@ -41,7 +43,9 @@
     "href": "/projects/pet-workspace",
     "tags": [
       "ai",
+      "AI 应用",
       "main",
+      "重点展示",
       "Android App / Community API / 生成管线 / 质量门禁 / 人审发布",
       "Android",
       "Node.js",
@@ -63,7 +67,9 @@
     "href": "/projects/ozon-erp",
     "tags": [
       "business",
+      "业务系统",
       "main",
+      "重点展示",
       "业务系统 / 管理后台 / API / 数据模型 / 浏览器插件",
       "Vue 3",
       "Vite",
@@ -88,7 +94,9 @@
     "href": "/projects/biau-playlab",
     "tags": [
       "platform",
+      "博客系统",
       "live",
+      "已有页面",
       "Astro 作品集 / Godot Web 试玩 / 内容审计 / Cloudflare Pages",
       "Astro 5",
       "Content Collections",
@@ -109,7 +117,9 @@
     "href": "/projects/blog-semi",
     "tags": [
       "platform",
+      "博客系统",
       "ongoing",
+      "建设中",
       "React 主站 / Semi 组件体系 / 项目案例路由 / 自动部署",
       "React",
       "Vite",
@@ -129,7 +139,9 @@
     "href": "/projects/game-first-tetris",
     "tags": [
       "interactive",
+      "互动体验",
       "live",
+      "已有页面",
       "Godot 引擎 / Web 试玩 / 触屏适配",
       "Godot 4",
       "Web 导出",
@@ -148,7 +160,9 @@
     "href": "/projects/game-next-spacewar",
     "tags": [
       "interactive",
+      "互动体验",
       "live",
+      "已有页面",
       "Godot 展示构建 / 战斗循环 / 单局复盘",
       "Godot 4.6",
       "太空射击",
@@ -167,7 +181,9 @@
     "href": "/projects/intespace",
     "tags": [
       "interactive",
+      "互动体验",
       "live",
+      "已有页面",
       "Godot 引擎 / 肉鸽玩法 / 武器树 / 局外成长",
       "Godot",
       "肉鸽玩法",
@@ -187,7 +203,9 @@
     "href": "/projects/raiden-prototype",
     "tags": [
       "interactive",
+      "互动体验",
       "live",
+      "已有页面",
       "Godot 引擎 / 纵版射击 / 原型验证",
       "Godot",
       "纵版射击",
@@ -206,7 +224,9 @@
     "href": "/projects/space-war",
     "tags": [
       "interactive",
+      "互动体验",
       "live",
+      "已有页面",
       "Godot 引擎 / 复古射击 / 发布版 / 展示入口",
       "Godot 4.6",
       "复古射击",
@@ -225,7 +245,9 @@
     "href": "/projects/spacewar-ii",
     "tags": [
       "interactive",
+      "互动体验",
       "live",
+      "已有页面",
       "Godot 引擎 / 纵向射击 / Web 试玩 / 第六项目接入",
       "Godot 4.6",
       "移动射击",
@@ -244,7 +266,9 @@
     "href": "/projects/xunqiu",
     "tags": [
       "mobile",
+      "移动端",
       "main",
+      "重点展示",
       "Android 64 位 / Spring Boot 3 / Render / R2",
       "Android 64",
       "Java 17",

@@ -21,6 +21,12 @@ function findAvailablePort(startPort: number) {
   })
 }
 
+function hasCitation(citations: unknown[], id: string) {
+  return citations.some((citation) => {
+    return typeof citation === 'object' && citation !== null && 'id' in citation && citation.id === id
+  })
+}
+
 const port = await findAvailablePort(8977)
 const app = createApp()
 const server = app.listen(port, '127.0.0.1')
@@ -39,6 +45,9 @@ try {
   const publicPayload = (await publicChat.json()) as { answer?: string; citations?: unknown[] }
   if (!publicPayload.answer || !Array.isArray(publicPayload.citations)) {
     throw new Error('public chat returned invalid payload')
+  }
+  if (!hasCitation(publicPayload.citations, 'project:legal-rag')) {
+    throw new Error('public chat did not cite Legal RAG for RAG project query')
   }
 
   const internalChat = await fetch(`${base}/chat/internal`, {
