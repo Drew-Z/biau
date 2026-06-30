@@ -139,3 +139,36 @@ Enhanced the Xunqiu project page as a visitor-readable mobile migration case stu
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Enhance ERP project page
+
+**Date**: 2026-06-30
+**Task**: Enhance ERP project page
+**Branch**: `main`
+
+### Summary
+
+Enhanced the Ozon ERP project page as a visitor-readable commerce operations case study, moved ERP content to reusable detailContent/assistantContext data, removed the hard-coded ERP detail article, regenerated public assistant knowledge, and validated with npm.cmd run verify.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9d9aa74` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
