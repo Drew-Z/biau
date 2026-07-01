@@ -382,3 +382,36 @@ Upgraded the blog draft pipeline into a column-aware, evidence-first scaffold wo
 ### Next Steps
 
 - None - task complete
+
+
+## Session 12: Project notes draft evidence packs
+
+**Date**: 2026-07-01
+**Task**: Project notes draft evidence packs
+**Branch**: `main`
+
+### Summary
+
+Prepared the first Project Notes evidence-pack batch: added six project-notes plan entries, generated draft scaffolds for Legal RAG, Ozon ERP, Xunqiu, Playlab, Pet Workspace, and BIAU Port, recorded evidence snapshots and external content-pipeline references, then validated blog plan/check, lint, build, and public-surface isolation.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6a59985` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
