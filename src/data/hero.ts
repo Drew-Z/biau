@@ -11,7 +11,7 @@ export interface HeroProject {
   poetry: string
   action: string
   accent: CardAccent
-  link: string
+  detailLink: string
   externalLink?: string
 }
 
@@ -43,7 +43,7 @@ export const heroContent = {
       poetry: '《在语义的迷宫中寻找条款》',
       action: 'OPEN',
       accent: 'signal',
-      link: '/projects/legal-rag',
+      detailLink: '/projects/legal-rag',
       externalLink: 'https://legal-rag-web.onrender.com',
     },
     {
@@ -53,7 +53,7 @@ export const heroContent = {
       poetry: '《当算法编织出虚拟生命》',
       action: 'GENERATE',
       accent: 'commerce',
-      link: '/projects/pet-workspace',
+      detailLink: '/projects/pet-workspace',
     },
     {
       id: 'ozon-erp',
@@ -62,7 +62,7 @@ export const heroContent = {
       poetry: '《在商品流转中织网》',
       action: 'OPEN',
       accent: 'image',
-      link: '/projects/ozon-erp',
+      detailLink: '/projects/ozon-erp',
       externalLink: OZON_ERP_ENTRY_URL,
     },
     {
@@ -72,7 +72,7 @@ export const heroContent = {
       poetry: '《把可玩的想法停靠成港》',
       action: 'PLAY',
       accent: 'preview',
-      link: '/projects/biau-playlab',
+      detailLink: '/projects/biau-playlab',
       externalLink: 'https://games.playlab.eu.cc/',
     },
     {
@@ -82,7 +82,7 @@ export const heroContent = {
       poetry: '《让球场邀约重新连成网络》',
       action: 'VIEW',
       accent: 'commerce',
-      link: '/projects/xunqiu',
+      detailLink: '/projects/xunqiu',
       externalLink: 'https://xunqiu.playlab.eu.cc/',
     },
     {
@@ -92,7 +92,7 @@ export const heroContent = {
       poetry: '《在文字中凝固思考的痕迹》',
       action: 'READ',
       accent: 'signal',
-      link: '/projects/blog-semi',
+      detailLink: '/projects/blog-semi',
     },
   ] as HeroProject[],
 }

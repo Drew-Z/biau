@@ -72,6 +72,7 @@ All five child tasks were completed and archived.
 | `07-02-pet-app-showcase-download-page` | Completed | `gamer` `56a1812 feat(app): add pet showcase download page` pushed to `origin/cursor-windows-migration` |
 | `07-02-blog-semi-project-pages-sync` | Completed | `blog-semi` `7bbc243 feat(projects): sync erp and pet showcase updates` pushed to `origin/main` |
 | `07-02-content-pipeline-safe-backlog` | Completed | `blog-semi` `e0342e0 docs(blog): record safe content backlog` pushed to `origin/main` |
+| Completion audit follow-up | Completed | `blog-semi` follow-up commit records `detailLink` contract cleanup and review notes for drafts `08`-`13` |
 
 ## Human Review Items
 
@@ -94,3 +95,6 @@ All five child tasks were completed and archived.
 - Pet showcase: local Playwright file checks passed on desktop and mobile; `git diff --check -- pet-app-showcase-site` passed.
 - blog-semi project sync: `assistant:index`, `sitemap:generate`, `blog:check`, `lint`, and `build` passed. Build still reports existing Vite `INEFFECTIVE_DYNAMIC_IMPORT` warnings.
 - Content backlog: `blog:plan`, `blog:check`, and `git diff --check` passed.
+- Completion audit follow-up: `blog:check`, `lint`, `build`, and `check:ui`
+  passed after aligning hero data to `detailLink` / `externalLink` and adding
+  review-only notes to `content-drafts/08-*` through `13-*`.

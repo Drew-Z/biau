@@ -32,6 +32,9 @@ gates instead of ad-hoc article generation.
 ## Result
 
 - Added `content-drafts/blog-content-backlog-2026-07-02.md`.
+- Added review-only notes to `content-drafts/08-*` through
+  `content-drafts/13-*` project summary drafts, including evidence refresh
+  needs and human approval checklists.
 - The backlog documents review-only mode, current inventory, recommended next
   queue, project-note overlap guidance, model strategy, image policy, and human
   approval gates.
@@ -43,6 +46,8 @@ gates instead of ad-hoc article generation.
 - Passed: `npm.cmd run blog:plan`
 - Passed: `npm.cmd run blog:check`
 - Passed: `git diff --check` (only CRLF checkout warning)
+- Follow-up audit passed: `npm.cmd run lint`, `npm.cmd run build`, and
+  `npm.cmd run check:ui` after the `detailLink` data-contract cleanup.
 
 ## Notes
 

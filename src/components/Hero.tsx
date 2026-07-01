@@ -33,7 +33,7 @@ export function Hero({ language, onProjectClick }: HeroProps) {
             <HorizontalProjectCard
               key={project.id}
               project={project}
-              onClick={() => onProjectClick(project.link)}
+              onClick={() => onProjectClick(project.detailLink)}
             />
           ))}
         </div>

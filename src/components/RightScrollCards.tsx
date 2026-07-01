@@ -268,7 +268,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
                 key={`${project.id}-${index}`}
                 project={project}
                 index={index}
-                onClick={() => onProjectClick(project.link)}
+                onClick={() => onProjectClick(project.detailLink)}
                 onActionClick={externalLink ? () => onProjectAction(externalLink) : undefined}
               />
             )

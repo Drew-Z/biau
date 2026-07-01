@@ -708,6 +708,9 @@ knowledge, and recorded a safe non-public blog backlog.
   assistant public knowledge was regenerated.
 - Added `content-drafts/blog-content-backlog-2026-07-02.md` for safe future
   blog work without publishing, deleting, or model generation.
+- Completion audit follow-up aligned homepage hero data to
+  `detailLink` / `externalLink` and added review-only evidence/human-approval
+  notes to project summary drafts `08` through `13`.
 
 ### Git Commits
 
@@ -726,6 +729,7 @@ knowledge, and recorded a safe non-public blog backlog.
 - Pet showcase: local Playwright file checks for desktop/mobile, disabled APK button, image loading, and no horizontal overflow.
 - blog-semi project sync: `assistant:index`; `sitemap:generate`; `blog:check`; `lint`; `build`.
 - Content backlog: `blog:plan`; `blog:check`; `git diff --check`.
+- Completion audit follow-up: `blog:check`; `lint`; `build`; `check:ui`.
 
 ### Human Review / Blockers
 

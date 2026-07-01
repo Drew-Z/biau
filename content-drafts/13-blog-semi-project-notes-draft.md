@@ -74,6 +74,23 @@ modelStrategy: "Codex 已能直接生成证据包草稿；若后续写正式长�
 
 - [ ] Read code, data modules, tests, deployment scripts, screenshots, and Trellis tasks. Do not rely only on README files.
 
+## Review Notes - 2026-07-02
+
+- Review mode: review-only / Codex-only.
+- Model channel: none.
+- Current decision: reframe before promotion; do not publish as-is.
+- Column fit: weaker as `project-notes`, stronger as `build-log` or `knowledge`. The useful angle is public content governance and evidence-first workflow, not a self-referential project summary.
+- Evidence to refresh before writing body:
+  - Current blog column model and curation selectors.
+  - `blog-content-pipeline` skill usage, model setup wizard, and safe backlog.
+  - Assistant public knowledge generation and sitemap/blog checks.
+  - Trellis task archive for the content cleanup and overnight optimization work.
+- Human approval checklist:
+  - Decide whether this should become a build-log article instead of project-notes.
+  - Confirm whether to mention model channels by public labels only.
+  - Confirm no private relay URL, API key, local path, or deployment secret is included.
+  - Confirm whether model-assisted drafting is allowed for this specific post.
+
 ## Promotion Checklist
 - [ ] Convert reviewed content into `src/data/blog-posts/<slug>.ts` only after review.
 - [ ] Add summary metadata to `src/data/blog.ts`.
