@@ -18,11 +18,40 @@
 
 ## Acceptance Criteria
 
-- [ ] 展示页能本地打开，截图路径有效。
-- [ ] APK gate、WIP 边界和人审发布链路表达清楚。
-- [ ] `pet/gamer` 的既有 unrelated dirty files 不被回滚或混入本任务提交。
-- [ ] 如同步主站，`blog-semi` 需要更新项目页、助手知识和 sitemap，并通过相关检查。
+- [x] 展示页能本地打开，截图路径有效。
+- [x] APK gate、WIP 边界和人审发布链路表达清楚。
+- [x] `pet/gamer` 的既有 unrelated dirty files 不被回滚或混入本任务提交。
+- [x] 如同步主站，`blog-semi` 需要更新项目页、助手知识和 sitemap，并通过相关检查。
 
 ## Notes
 
 - 启动前先检查 `pet/gamer` 当前 git 状态，继续把分页相关脏文件视为其他窗口改动。
+- Evidence read:
+  - `D:\workspace4Cursor\pet\gamer\AGENTS.md`
+  - `D:\workspace4Cursor\pet\gamer\docs\agents\domain.md`
+  - `D:\workspace4Cursor\pet\gamer\docs\skills\gamer-mobile-community-ui\SKILL.md`
+  - `D:\workspace4Cursor\pet\gamer\docs\ui\generation-human-review-flow.md`
+  - `D:\workspace4Cursor\pet\gamer\docs\TRACEABILITY-MATRIX.md`
+  - `D:\workspace4Cursor\pet\gamer\pet-app-showcase-site\index.html`
+  - `D:\workspace4Cursor\pet\gamer\pet-app-showcase-site\styles.css`
+  - `D:\workspace4Cursor\pet\gamer\pet-app-showcase-site\README.md`
+- Change made in `pet/gamer`:
+  - Added a public APK release checklist to the static showcase page.
+  - Added BIAU Port project detail and source directory links with safe external-link attributes.
+  - Clarified download gate status as human-confirmed and kept the APK button disabled.
+  - Expanded README preview, download-policy, and public-link instructions.
+- Validation in `pet/gamer`:
+  - Local HTML reference check: passed, 6 relative asset references exist.
+  - `git diff --check -- pet-app-showcase-site/index.html pet-app-showcase-site/styles.css pet-app-showcase-site/README.md`: passed.
+  - Sensitive scan over `pet-app-showcase-site/`: no matches.
+  - `git diff --cached --check`: passed before commit.
+  - Commit: `7d4525d feat(app): clarify pet showcase release gate`.
+  - Push: `origin/cursor-windows-migration` now matches local `7d4525d1c127374cb31ba5e01a6a2f5c9690f1ad`.
+- Unrelated dirty files intentionally left untouched in `pet/gamer`:
+  - `services/community-api/src/postgres-store.js`
+  - `services/community-api/src/routes.js`
+  - `services/community-api/src/store.js`
+  - `services/community-api/src/pagination.js`
+  - `services/community-api/src/pagination.test.js`
+  - `test-out.txt`
+- No `blog-semi` project-page sync was required in this child because the main site already records the Pet showcase source and WIP APK gate; the follow-up changed only the Pet static page.
