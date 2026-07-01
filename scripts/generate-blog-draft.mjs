@@ -82,7 +82,7 @@ const forbiddenTerms = ['面试', '答辩', '简历', '学习打卡', '内部解
 const defaultModelStrategy = 'Codex evidence pack + one strong content model draft/rewrite + Codex review'
 
 function parseArgs(argv) {
-  const args = { list: false, force: false, generate: false, limit: 1, slug: '' }
+  const args = { list: false, force: false, generate: false, limit: 1, slug: '', profile: '' }
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index]
     if (item === '--list') args.list = true
@@ -92,6 +92,13 @@ function parseArgs(argv) {
     if (item === '--slug') {
       args.slug = argv[index + 1] ?? ''
       index += 1
+    }
+    if (item === '--profile') {
+      args.profile = argv[index + 1] ?? ''
+      index += 1
+    }
+    if (item.startsWith('--profile=')) {
+      args.profile = item.slice('--profile='.length)
     }
     if (item === '--limit') {
       args.limit = Number(argv[index + 1] ?? '1')
@@ -110,8 +117,49 @@ async function loadLocalEnv() {
     const match = trimmed.match(/^([A-Z0-9_]+)=(.*)$/)
     if (!match) continue
     const [, key, value] = match
-    if (process.env[key]) continue
+    if (Object.prototype.hasOwnProperty.call(process.env, key)) continue
     process.env[key] = value.replace(/^['"]|['"]$/g, '')
+  }
+}
+
+function normalizeProfile(value) {
+  const profile = String(value ?? '').trim().toLowerCase()
+  return profile || 'default'
+}
+
+function profileEnvPrefix(profile) {
+  if (profile === 'default') return ''
+  const suffix = profile.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
+  return `BLOG_DRAFT_${suffix}_`
+}
+
+function readProfileEnv(profile, key, legacyKey, fallback) {
+  const prefix = profileEnvPrefix(profile)
+  if (prefix) {
+    const profileKey = `${prefix}${key}`
+    if (Object.prototype.hasOwnProperty.call(process.env, profileKey)) return process.env[profileKey]
+  }
+  const defaultKey = `BLOG_DRAFT_${key}`
+  if (Object.prototype.hasOwnProperty.call(process.env, defaultKey)) return process.env[defaultKey]
+  if (legacyKey && Object.prototype.hasOwnProperty.call(process.env, legacyKey)) return process.env[legacyKey]
+  return fallback
+}
+
+function readTemperature(profile) {
+  const rawValue = readProfileEnv(profile, 'TEMPERATURE', 'GEMINI_TEMPERATURE', '0.65')
+  const value = Number(rawValue)
+  return Number.isFinite(value) ? value : 0.65
+}
+
+function readDraftModelConfig(profileInput = '') {
+  const profile = normalizeProfile(profileInput || process.env.BLOG_DRAFT_PROFILE)
+  return {
+    profile,
+    baseUrl: readProfileEnv(profile, 'BASE_URL', 'GEMINI_BASE_URL', 'http://localhost:8317').replace(/\/$/, ''),
+    apiKey: readProfileEnv(profile, 'API_KEY', 'GEMINI_API_KEY', ''),
+    model: readProfileEnv(profile, 'MODEL', 'GEMINI_MODEL', 'gemini'),
+    provider: readProfileEnv(profile, 'PROVIDER', '', profile === 'default' ? 'openai-compatible' : `${profile}-profile`),
+    temperature: readTemperature(profile),
   }
 }
 
@@ -214,16 +262,16 @@ function buildPrompt(topic) {
   ].join('\n')
 }
 
-async function requestDraft(topic) {
+async function requestDraft(topic, profile) {
   await loadLocalEnv()
-  const baseUrl = (process.env.GEMINI_BASE_URL || 'http://localhost:8317').replace(/\/$/, '')
-  const apiKey = process.env.GEMINI_API_KEY
-  const model = process.env.GEMINI_MODEL || 'gemini'
-  const temperature = Number(process.env.GEMINI_TEMPERATURE || '0.65')
+  const config = readDraftModelConfig(profile)
+  const { baseUrl, apiKey, model, provider, temperature } = config
 
   if (!apiKey) {
-    throw new Error('缺少 GEMINI_API_KEY。默认请不加 --generate 先生成 evidence-first scaffold。')
+    throw new Error('缺少 BLOG_DRAFT_<PROFILE>_API_KEY、BLOG_DRAFT_API_KEY 或 GEMINI_API_KEY。默认请不加 --generate 先生成 evidence-first scaffold。')
   }
+
+  console.log(`使用模型渠道：${config.profile} -> ${provider} / ${model}`)
 
   const response = await fetch(`${baseUrl}/v1/chat/completions`, {
     method: 'POST',
@@ -254,7 +302,7 @@ async function requestDraft(topic) {
   if (!content) {
     throw new Error('模型 API 没有返回 choices[0].message.content。')
   }
-  return content.trim()
+  return { content: content.trim(), config }
 }
 
 function buildScaffold(topic) {
@@ -390,8 +438,12 @@ async function main() {
 
   for (const topic of selected) {
     console.log(`开始生成：${topic.slug}`)
-    const content = args.generate ? await requestDraft(topic) : buildScaffold(topic)
-    await writeDraft(topic, content, args.force, args.generate ? 'model-assisted-draft' : 'codex-draft-scaffold')
+    if (args.generate) {
+      const { content, config } = await requestDraft(topic, args.profile)
+      await writeDraft(topic, content, args.force, `model-assisted-draft:${config.profile}:${config.provider}:${config.model}`)
+    } else {
+      await writeDraft(topic, buildScaffold(topic), args.force, 'codex-draft-scaffold')
+    }
   }
 }
 

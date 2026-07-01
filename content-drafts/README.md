@@ -16,8 +16,8 @@ Useful commands:
 ```bash
 npm run blog:plan
 npm run blog:draft -- --slug blog-content-system-build-log-draft --force
-npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate
+npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate --profile strong
 npm run blog:check
 ```
 
-Default `blog:draft` creates an evidence-first scaffold and does not call a model. Use `--generate` only after the evidence pack and private-detail boundary are ready.
+Default `blog:draft` creates an evidence-first scaffold and does not call a model. Use `--generate` only after the evidence pack and private-detail boundary are ready. Use `--profile strong` for long-form drafting, `--profile fast` for outlines and summaries, and `--profile review` only for optional secondary review.

@@ -1,4 +1,4 @@
 interface:
   display_name: "Blog Content Pipeline"
-  short_description: "Evidence-first blog content workflow"
-  default_prompt: "Use the blog content pipeline to plan, draft, review, and publish a site blog post."
+  short_description: "Evidence-first blog drafting and review"
+  default_prompt: "Use $blog-content-pipeline to plan, rewrite, review, or publish a BIAU Port blog post with evidence packs, safe model channel choices, and public-content gates."

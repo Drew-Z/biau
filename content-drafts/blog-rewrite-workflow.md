@@ -15,7 +15,7 @@
 
 ## 草稿生成方式
 
-主流程使用仓库脚本，不把 Gemini CLI 作为主生产链路。默认命令只生成 evidence-first scaffold，不调用模型，也不需要 API key。
+主流程使用仓库脚本，不把某一个模型 CLI 作为主生产链路。默认命令只生成 evidence-first scaffold，不调用模型，也不需要 API key。
 
 ```bash
 npm run blog:plan
@@ -31,7 +31,7 @@ npm run blog:draft -- --slug blog-content-system-build-log-draft --force
 需要模型起草时，先补完整 Evidence Pack、Safe Public Facts、Uncertain Facts 和 Forbidden Details，再显式加 `--generate`：
 
 ```bash
-npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate
+npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate --profile strong
 ```
 
 Gemini CLI 或其他模型只适合辅助场景，例如临时扩写某一段、改标题、列大纲、生成配图提示词。正式草稿仍应进入脚本流程。
@@ -41,13 +41,33 @@ Gemini CLI 或其他模型只适合辅助场景，例如临时扩写某一段、
 `.env.local` 只保存在本地，不提交仓库。
 
 ```bash
-GEMINI_BASE_URL=http://localhost:8317
-GEMINI_API_KEY=
-GEMINI_MODEL=gemini-3.1-pro
-GEMINI_TEMPERATURE=0.65
+BLOG_DRAFT_PROFILE=strong
+BLOG_DRAFT_BASE_URL=
+BLOG_DRAFT_API_KEY=
+BLOG_DRAFT_MODEL=
+BLOG_DRAFT_PROVIDER=
+BLOG_DRAFT_TEMPERATURE=0.65
+
+BLOG_DRAFT_STRONG_BASE_URL=
+BLOG_DRAFT_STRONG_API_KEY=
+BLOG_DRAFT_STRONG_MODEL=glm-5.2-or-deepseek-v4-pro-or-gemini-3.1-pro
+BLOG_DRAFT_STRONG_PROVIDER=primary-content-relay
+BLOG_DRAFT_STRONG_TEMPERATURE=0.65
+
+BLOG_DRAFT_FAST_BASE_URL=
+BLOG_DRAFT_FAST_API_KEY=
+BLOG_DRAFT_FAST_MODEL=gemini-3.5-flash-or-equivalent
+BLOG_DRAFT_FAST_PROVIDER=fast-outline-relay
+BLOG_DRAFT_FAST_TEMPERATURE=0.35
+
+BLOG_DRAFT_REVIEW_BASE_URL=
+BLOG_DRAFT_REVIEW_API_KEY=
+BLOG_DRAFT_REVIEW_MODEL=review-model-or-equivalent
+BLOG_DRAFT_REVIEW_PROVIDER=review-relay
+BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
 ```
 
-如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable`，说明本地代理能识别模型，但还没有配置 Gemini provider 的上游认证；需要先修好代理侧认证，再运行模型草稿。
+`strong` 用于长文起草和 legacy 重写，`fast` 用于大纲、摘要和低风险批量检查，`review` 只作为可选二次审稿。命名 profile 缺少值时会回落到默认 `BLOG_DRAFT_*`，再回落到旧的 `GEMINI_*`。如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable` 或上游认证错误，说明本地代理能识别模型但还没有配置对应 provider 的上游认证；需要先修好代理侧认证，再运行模型草稿。
 
 ## 图片与图示
 
