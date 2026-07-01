@@ -34,6 +34,22 @@ blog-content-pipeline/
 Do not commit real relay URLs, API keys, accounts, private URLs, local secret
 paths, production infrastructure details, or private metrics.
 
+## Normal Start: Choose The Writing Mode
+
+Every content run starts by choosing one mode before drafting:
+
+1. `Codex-only scaffold/review` — no model generation. Record `model channel:
+   none` in the evidence pack and use repository evidence plus local checks.
+2. `model-assisted draft/rewrite` — configure or confirm a model profile before
+   generation. Use `strong` for long-form writing unless the task has a clear
+   reason to use another profile.
+3. `review-only` — review an existing draft without generating new content.
+4. `publish reviewed content` — promote only after review passes.
+
+If the run is `model-assisted`, do not skip setup by treating fallback or legacy
+values as good enough. Run masked offline checks, surface any fallback/legacy
+warning, and ask the user whether to run setup before generation.
+
 ## Model Setup Before Use
 
 Configure private model values in the consuming project, normally in
@@ -101,16 +117,25 @@ For projects that include `scripts/generate-blog-draft.mjs`:
 
 ```powershell
 npm.cmd run blog:plan
+
+# Codex-only mode
+npm.cmd run blog:draft -- --slug <slug> --force
+
+# Model-assisted mode
+npm.cmd run blog:model -- setup --profile strong
 npm.cmd run blog:model -- status --profile strong --format markdown
 npm.cmd run blog:model -- doctor --profile strong --format markdown
-npm.cmd run blog:draft -- --slug <slug> --force
 npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong
 npm.cmd run blog:check
 ```
 
-The scaffold command does not call a model. Use `--generate` only after the
-evidence pack, safe public facts, uncertain facts, and forbidden details are
-complete.
+The scaffold command does not call a model. Use `--generate` only after the run
+is explicitly model-assisted, the evidence pack, safe public facts, uncertain
+facts, and forbidden details are complete, and the user has approved generation.
+
+`status` and default `doctor` may report that a selected profile resolves from
+fallback or legacy values. Treat that as a setup gap for model-assisted runs:
+pause and recommend `setup --profile <profile>` before generation.
 
 For public promotion, run the consuming project's public-content checks, for
 example:

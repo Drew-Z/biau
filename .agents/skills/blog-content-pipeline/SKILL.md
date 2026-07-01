@@ -11,9 +11,31 @@ Use this skill to produce polished public blog content without turning the site 
 
 Never let a model invent project facts, deployment status, metrics, screenshots, customer names, secrets, private URLs, API keys, local paths, or production infrastructure details.
 
+## Start With A Mode Gate
+
+Before planning, drafting, rewriting, or reviewing a post, explicitly choose and
+record the writing mode:
+
+1. **Codex-only scaffold/review** — use repository evidence and scripts without
+   model generation. Record `model channel: none` in the evidence pack. Do not
+   force model setup for this mode.
+2. **Model-assisted draft/rewrite** — ask the user to set or confirm the target
+   profile before generation, normally `strong` for long-form writing. Prefer
+   `npm.cmd run blog:model -- setup --profile strong`, then run masked offline
+   `status` and `doctor`. If the profile resolves through fallback or legacy
+   values, surface that and recommend setup before generation.
+3. **Review-only** — review an existing draft against evidence, safety, column
+   fit, overlap, voice, image, and promotion gates. Record any missing model
+   setup only if generation is requested.
+4. **Publish reviewed content** — only after review passes, update runtime blog
+   data and public indexes.
+
+Do not run `doctor --live`, `blog:draft -- --generate`, or any other live model
+request unless the user explicitly approves that small model task.
+
 ## Route The Task
 
-- **Plan or draft a new post**: read `src/data/blogShared.ts`, then read `references/templates.md` for the target column. Use `npm.cmd run blog:plan` and `npm.cmd run blog:draft -- --slug <slug> --force` when the topic exists in `scripts/blog-rewrite-plan.json`.
+- **Plan or draft a new post**: start with the mode gate, read `src/data/blogShared.ts`, then read `references/templates.md` for the target column. Use `npm.cmd run blog:plan` and `npm.cmd run blog:draft -- --slug <slug> --force` when the topic exists in `scripts/blog-rewrite-plan.json`.
 - **Rewrite a legacy post**: read `content-archive/legacy-blog/rewrite-queue.json`, then inspect the archived source under `content-archive/legacy-blog/posts/`. Treat it as raw material only; rebuild evidence before drafting.
 - **Review an existing draft**: read the draft in `content-drafts/`, then use `references/review-and-prompts.md` for fact, safety, structure, and promotion gates.
 - **Publish reviewed content**: update typed runtime data only after review: `src/data/blog.ts`, `src/data/blog-posts/<slug>.ts`, `src/data/blogContent.ts`, and `src/data/blogCuration.ts` as needed.
@@ -29,7 +51,9 @@ Before drafting, capture:
 - uncertain or stale facts
 - forbidden/private details
 - project-page overlap risk
+- writing mode
 - intended model strategy
+- selected model channel, or `none` for Codex-only mode
 
 For project-related posts, do not rely only on README files. Read code, public project data, tests, deployment scripts, screenshots, Trellis task notes, and existing project pages.
 
@@ -81,7 +105,9 @@ BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
 
 Use `npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong` for long-form drafts. If a named profile is missing a value, the script falls back to the default `BLOG_DRAFT_*` channel, then legacy `GEMINI_*`.
 
-Do not run `blog:draft -- --generate` unless the evidence pack is complete and a private model channel is intentionally configured.
+Do not run `blog:draft -- --generate` unless the run is explicitly
+`model-assisted`, the evidence pack is complete, a private model channel is
+intentionally configured, and the user has approved the generation step.
 
 For setup details and profile examples, read `references/usage.md`.
 

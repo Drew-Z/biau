@@ -6,6 +6,8 @@ Use this reference when handing evidence to a content model, reviewing a draft, 
 
 Collect this before drafting:
 
+- Writing mode: `Codex-only scaffold/review`, `model-assisted draft/rewrite`,
+  `review-only`, or `publish reviewed content`.
 - Column: `knowledge`, `project-notes`, `resources`, `ai-daily`, or `build-log`.
 - Target reader and reader value.
 - Evidence sources read.
@@ -14,7 +16,11 @@ Collect this before drafting:
 - Forbidden/private details.
 - Related project page or prior post.
 - Desired output: scaffold, model draft, rewrite, review, or publish.
-- Model channel: configured provider/model name, or `none` for Codex-only scaffold.
+- Model channel: configured non-secret provider/model label, or `none` for
+  Codex-only scaffold/review.
+- Model setup status: whether `setup`, masked `status`, and offline `doctor`
+  were run for model-assisted drafting; record fallback/legacy warnings without
+  exposing secrets.
 
 ## Model Handoff Prompt
 
@@ -23,10 +29,12 @@ Use one strong content model by default.
 ```text
 Write a public Chinese technical blog draft for BIAU Port.
 
+Writing mode: model-assisted draft/rewrite
 Column: <column zh/en>
 Title: <title>
 Target reader: <reader>
 Reader value: <why this is worth publishing>
+Model channel: <non-secret provider/model label only>
 
 Evidence sources:
 <paths or URLs>
@@ -60,6 +68,8 @@ Hard rules:
 - Voice: no generic AI filler, inflated claims, resume tone, interview tone, or learning-day framing.
 - Structure: title, detail, sections, takeaways, tags, scenarios, and checklist are concrete.
 - Public assistant impact: summary and tags will improve retrieval rather than drown project facts.
+- Mode gate: model-assisted drafts have an explicit configured channel; Codex-only
+  drafts record `none`; live checks or generation were explicitly approved.
 
 ## Legacy Rewrite Checklist
 

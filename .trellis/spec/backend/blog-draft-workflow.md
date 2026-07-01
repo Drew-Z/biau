@@ -26,6 +26,20 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 
 ### 3. Contracts
 
+- Every normal blog content run starts with a mode gate:
+  `Codex-only scaffold/review`, `model-assisted draft/rewrite`, `review-only`,
+  or `publish reviewed content`.
+- `Codex-only scaffold/review` must record the selected mode and `model channel:
+  none` in the evidence pack. It must not force model setup.
+- `model-assisted draft/rewrite` must ask the user to set or confirm the target
+  profile before generation. The normal setup command is
+  `npm.cmd run blog:model -- setup --profile <profile>`.
+- Model-assisted runs must use masked offline `status` / `doctor` before
+  generation. If the selected profile resolves from fallback or legacy values,
+  the workflow should pause and recommend setup before `--generate`.
+- `review-only` may skip model setup unless new model output is requested.
+- `publish reviewed content` must only promote content that already passed the
+  evidence, safety, column-fit, and public visibility gates.
 - The script must not call a model unless `--generate` is present.
 - Model calls use `POST <BASE_URL>/v1/chat/completions`.
 - Per field, resolution order is:
@@ -43,6 +57,13 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 
 ### 4. Validation & Error Matrix
 
+- No mode selected at the start of a content run -> stop and ask for the writing
+  mode before drafting or generation.
+- Codex-only mode with no configured model -> proceed with scaffold/review and
+  record `model channel: none`.
+- Model-assisted mode with fallback/legacy profile resolution -> warn, recommend
+  `blog:model setup --profile <profile>`, and do not treat the profile as fully
+  confirmed unless the user explicitly accepts that risk.
 - Missing API key with `--generate` -> fail before network access with a clear missing-key message.
 - Invalid temperature -> fall back to a safe numeric default, currently `0.65`.
 - No `--generate` -> write scaffold and require no model config.
