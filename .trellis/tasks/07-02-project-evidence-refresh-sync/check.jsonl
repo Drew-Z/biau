@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Project data updates require assistant index, sitemap, blog check, lint, and build gates."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Check assistant projection stays consistent with project detail content."}

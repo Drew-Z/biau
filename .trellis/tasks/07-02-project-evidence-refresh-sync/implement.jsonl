@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Project detail content and assistant projection are owned by src/data/portfolio.ts."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Project catalog changes must preserve typed public data contracts."}

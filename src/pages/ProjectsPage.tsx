@@ -1,24 +1,13 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProjectCard } from '../components/ProjectCard'
-import { projects, type Project } from '../data/portfolio'
+import { projects } from '../data/portfolio'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
 
-  const openProjectDetail = (project: Project) => {
-    const detailLink = project.detailLink
-    if (!detailLink) {
-      navigate(`/projects/${project.id}`)
-      return
-    }
-
-    if (detailLink.type === 'external') {
-      window.open(detailLink.href, '_blank', 'noopener,noreferrer')
-      return
-    }
-
-    navigate(detailLink.href)
+  const openProjectDetail = (projectId: string) => {
+    navigate(`/projects/${projectId}`)
   }
 
   const projectGroups = useMemo(() => {
@@ -59,7 +48,7 @@ export function ProjectsPage() {
                   key={project.id}
                   project={project}
                   index={projectIndex}
-                  onViewDetails={() => openProjectDetail(project)}
+                  onViewDetails={() => openProjectDetail(project.id)}
                 />
               )
             })}

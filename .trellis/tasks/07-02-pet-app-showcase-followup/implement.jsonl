@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Any main-site sync from the Pet showcase must preserve sanitized public content."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "If the follow-up changes public UI, use existing component and accessibility patterns."}

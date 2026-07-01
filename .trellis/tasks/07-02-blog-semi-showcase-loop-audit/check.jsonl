@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Defines lint/build/UI verification gates for route and component changes."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check card interaction, external-link rel attributes, and keyboard access."}

@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check no private screenshots, fake APK links, credentials, or unsafe deployment claims are published."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "If project data is synced, assistant/project detail projection must remain consistent."}
