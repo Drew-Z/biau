@@ -40,6 +40,17 @@ Gemini CLI 或其他模型只适合辅助场景，例如临时扩写某一段、
 
 `.env.local` 只保存在本地，不提交仓库。
 
+推荐先使用 smart-search 风格的模型配置命令，而不是直接手写所有值：
+
+```bash
+npm run blog:model -- setup --profile strong
+npm run blog:model -- status --profile strong --format markdown
+npm run blog:model -- doctor --profile strong --format markdown
+npm run blog:model -- doctor --profile strong --live --format markdown
+```
+
+`status` 和默认 `doctor` 都是离线检查，只显示 set/missing、非敏感 provider label、model id、temperature 和来源；只有显式加 `--live` 才会发起一次最小模型请求来验证路由，且不会覆盖草稿。真实中转地址和 API key 只进入 `.env.local`，不要写进文档或提交记录。
+
 ```bash
 BLOG_DRAFT_PROFILE=strong
 BLOG_DRAFT_BASE_URL=
@@ -67,7 +78,7 @@ BLOG_DRAFT_REVIEW_PROVIDER=review-relay
 BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
 ```
 
-`strong` 用于长文起草和 legacy 重写，`fast` 用于大纲、摘要和低风险批量检查，`review` 只作为可选二次审稿。命名 profile 缺少值时会回落到默认 `BLOG_DRAFT_*`，再回落到旧的 `GEMINI_*`。如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable` 或上游认证错误，说明本地代理能识别模型但还没有配置对应 provider 的上游认证；需要先修好代理侧认证，再运行模型草稿。
+`strong` 用于长文起草和 legacy 重写，`fast` 用于大纲、摘要和低风险批量检查，`review` 只作为可选二次审稿。命名 profile 缺少值时会回落到默认 `BLOG_DRAFT_*`，再回落到旧的 `GEMINI_*`。如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable`、`unknown provider for model` 或上游认证错误，先运行 `blog:model status/doctor` 定位配置、路由或认证问题，再运行模型草稿。
 
 ## 图片与图示
 

@@ -40,6 +40,20 @@ Configure private model values in the consuming project, normally in
 `.env.local` or an external secret store. Public repositories should only keep
 placeholder variable names.
 
+If the consuming project provides a smart-search-like model CLI, prefer it over
+manual editing:
+
+```powershell
+npm.cmd run blog:model -- setup --profile strong
+npm.cmd run blog:model -- status --profile strong --format markdown
+npm.cmd run blog:model -- doctor --profile strong --format markdown
+npm.cmd run blog:model -- doctor --profile strong --live --format markdown
+```
+
+`status` and default `doctor` should be offline and masked. Add `--live` only
+when you explicitly want a minimal live request; it must not write or overwrite
+drafts.
+
 ```text
 BLOG_DRAFT_PROFILE=strong
 BLOG_DRAFT_BASE_URL=
@@ -87,6 +101,8 @@ For projects that include `scripts/generate-blog-draft.mjs`:
 
 ```powershell
 npm.cmd run blog:plan
+npm.cmd run blog:model -- status --profile strong --format markdown
+npm.cmd run blog:model -- doctor --profile strong --format markdown
 npm.cmd run blog:draft -- --slug <slug> --force
 npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong
 npm.cmd run blog:check

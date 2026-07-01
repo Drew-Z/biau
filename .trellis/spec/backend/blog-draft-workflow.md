@@ -16,6 +16,11 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `npm.cmd run blog:plan` runs `node scripts/generate-blog-draft.mjs --list`.
 - `npm.cmd run blog:draft -- --slug <slug> --force` writes an evidence-first scaffold only.
 - `npm.cmd run blog:draft -- --slug <slug> --force --generate --profile <profile>` requests an OpenAI-compatible chat completion.
+- `npm.cmd run blog:model -- setup --profile <profile>` runs the interactive private model setup wizard.
+- `npm.cmd run blog:model -- status --profile <profile> --format json|markdown` prints masked offline profile status.
+- `npm.cmd run blog:model -- doctor --profile <profile> --format json|markdown` performs an offline channel configuration check without writing drafts.
+- `npm.cmd run blog:model -- doctor --profile <profile> --live --format json|markdown` performs an explicit minimal live channel check without writing drafts.
+- `npm.cmd run blog:model -- config path --format json|markdown` reports the private env target without printing secret values.
 - Supported profile names are open-ended, but current documented profiles are `default`, `strong`, `fast`, and `review`.
 - `BLOG_DRAFT_PROFILE=<profile>` selects a default profile when `--profile` is omitted.
 
@@ -32,6 +37,9 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `API_KEY` is required only for `--generate`.
 - `.env.local` may be loaded by the script, but it must not overwrite an already-present `process.env` key, including keys intentionally set to an empty string.
 - Committed files may include placeholder variable names only. Never commit real relay URLs, API keys, accounts, private URLs, or local secret paths.
+- `status` and `doctor` must not print real relay URLs or API keys. They may print
+  profile, non-secret provider label, model id, temperature, source key names,
+  status code, and a short redacted upstream error excerpt.
 
 ### 4. Validation & Error Matrix
 
@@ -43,6 +51,10 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
   channel configuration problem, not a content-quality problem. Do not silently
   fall back during a dry run; record the profile, non-secret provider label,
   model id, status code, and suggested configuration fix.
+- `doctor` without `--live` -> perform config validation only and report that no
+  model request was sent.
+- `doctor --live` -> may spend model quota and must be treated as an explicit
+  small diagnostic task, never a casual/default health check.
 - Existing draft without `--force` -> skip rather than overwrite.
 - Generated draft noise from validation, especially `generatedAt`, must not be committed unless the task is intentionally updating that draft.
 
@@ -58,11 +70,34 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - Run `npm.cmd run blog:draft -- --slug <known-slug> --force` for scaffold behavior.
 - For profile/env changes, run a missing-key check with an intentionally empty `BLOG_DRAFT_<PROFILE>_API_KEY` and confirm it fails before network access.
 - For model channel setup tooling, verify it masks existing secret values, writes
-  only to `.env.local` or another explicitly private target, and can check the
-  selected profile without overwriting drafts.
+  only to `.env.local` or another explicitly private target, supports
+  `json|markdown` output for status/doctor, and can check the selected profile
+  without overwriting drafts.
+- Verify default `doctor` completes offline. Do not run `doctor --live` unless
+  the user explicitly approves a small model task or asks to test the relay.
 - Run `npm.cmd run blog:check`, `npm.cmd run lint`, and `npm.cmd run build` before finishing.
 
 ### 7. Wrong vs Correct
+
+#### Wrong
+
+```powershell
+npm.cmd run blog:model -- doctor --profile strong
+```
+
+This should not send a relay/model request. A default diagnostic command is too
+easy to run during validation and can spend quota or touch an unintended
+provider.
+
+#### Correct
+
+```powershell
+npm.cmd run blog:model -- doctor --profile strong --format markdown
+npm.cmd run blog:model -- doctor --profile strong --live --format markdown
+```
+
+The first command is offline. The second command is an explicit small model task
+and should only be run when the user has approved live validation.
 
 #### Wrong
 
@@ -83,19 +118,22 @@ if (Object.prototype.hasOwnProperty.call(process.env, key)) continue
 Check key presence, not truthiness, whenever the caller needs to deliberately
 disable or override a local model channel.
 
-### 8. Model Setup Wizard Direction
+### 8. Model Setup Wizard Contract
 
-The dry-run workflow should have a secrets-safe setup path before fallback logic
-is added.
+The dry-run workflow has a secrets-safe setup path before fallback logic is
+added.
 
-Planned behavior for a future wizard:
+Behavior:
 
-- Select profile: `strong`, `fast`, `review`, or `default`.
+- Select profile: `strong`, `fast`, `review`, `default`, or a custom profile.
 - Prompt for `BASE_URL`, `API_KEY`, `MODEL`, `PROVIDER`, and `TEMPERATURE`.
-- Show existing values only as empty/masked/non-secret labels.
+- Provide smart-search-like subcommands: `setup`, `status`, `doctor`, and
+  `config path`.
+- Show existing values only as set/missing or non-secret labels.
 - Write private values to `.env.local` or an explicitly provided private env
   file; never to tracked docs or examples.
-- Offer a channel check that validates profile/model routing without writing or
+- Offer `status` and default `doctor` for offline masked inspection, and
+  `doctor --live` for a minimal profile/model routing check without writing or
   overwriting a draft.
 - Print actionable failures, but never print API keys, real relay URLs, account
   names, private paths, or request headers.

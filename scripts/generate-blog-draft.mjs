@@ -2,11 +2,11 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { loadLocalEnv, readDraftModelConfig, redactSensitiveText } from './blog-model-config.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const planPath = resolve(repoRoot, 'scripts/blog-rewrite-plan.json')
 const draftsDir = resolve(repoRoot, 'content-drafts')
-const envPath = resolve(repoRoot, '.env.local')
 
 const blogColumnOrder = ['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log']
 
@@ -106,61 +106,6 @@ function parseArgs(argv) {
     }
   }
   return args
-}
-
-async function loadLocalEnv() {
-  if (!existsSync(envPath)) return
-  const text = await readFile(envPath, 'utf8')
-  for (const line of text.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const match = trimmed.match(/^([A-Z0-9_]+)=(.*)$/)
-    if (!match) continue
-    const [, key, value] = match
-    if (Object.prototype.hasOwnProperty.call(process.env, key)) continue
-    process.env[key] = value.replace(/^['"]|['"]$/g, '')
-  }
-}
-
-function normalizeProfile(value) {
-  const profile = String(value ?? '').trim().toLowerCase()
-  return profile || 'default'
-}
-
-function profileEnvPrefix(profile) {
-  if (profile === 'default') return ''
-  const suffix = profile.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
-  return `BLOG_DRAFT_${suffix}_`
-}
-
-function readProfileEnv(profile, key, legacyKey, fallback) {
-  const prefix = profileEnvPrefix(profile)
-  if (prefix) {
-    const profileKey = `${prefix}${key}`
-    if (Object.prototype.hasOwnProperty.call(process.env, profileKey)) return process.env[profileKey]
-  }
-  const defaultKey = `BLOG_DRAFT_${key}`
-  if (Object.prototype.hasOwnProperty.call(process.env, defaultKey)) return process.env[defaultKey]
-  if (legacyKey && Object.prototype.hasOwnProperty.call(process.env, legacyKey)) return process.env[legacyKey]
-  return fallback
-}
-
-function readTemperature(profile) {
-  const rawValue = readProfileEnv(profile, 'TEMPERATURE', 'GEMINI_TEMPERATURE', '0.65')
-  const value = Number(rawValue)
-  return Number.isFinite(value) ? value : 0.65
-}
-
-function readDraftModelConfig(profileInput = '') {
-  const profile = normalizeProfile(profileInput || process.env.BLOG_DRAFT_PROFILE)
-  return {
-    profile,
-    baseUrl: readProfileEnv(profile, 'BASE_URL', 'GEMINI_BASE_URL', 'http://localhost:8317').replace(/\/$/, ''),
-    apiKey: readProfileEnv(profile, 'API_KEY', 'GEMINI_API_KEY', ''),
-    model: readProfileEnv(profile, 'MODEL', 'GEMINI_MODEL', 'gemini'),
-    provider: readProfileEnv(profile, 'PROVIDER', '', profile === 'default' ? 'openai-compatible' : `${profile}-profile`),
-    temperature: readTemperature(profile),
-  }
 }
 
 async function readPlan() {
@@ -293,8 +238,8 @@ async function requestDraft(topic, profile) {
   })
 
   if (!response.ok) {
-    const body = await response.text()
-    throw new Error(`模型 API 请求失败：${response.status} ${body.slice(0, 500)}`)
+    const body = redactSensitiveText((await response.text()).slice(0, 500))
+    throw new Error(`模型 API 请求失败：${response.status} ${body}`)
   }
 
   const json = await response.json()
@@ -448,6 +393,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error.message)
+  console.error(redactSensitiveText(error.message))
   process.exitCode = 1
 })
