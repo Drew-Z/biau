@@ -1,0 +1,175 @@
+# Blog Content Pipeline Usage
+
+Use this reference when setting up the skill, choosing model channels, running
+blog draft commands, or deciding whether a post needs generated images.
+
+## Installation And Sync
+
+Recommended standalone source:
+
+```text
+git@github.com:Drew-Z/blog-content-pipeline.git
+```
+
+Use the repository folder itself as the skill folder. Copy or sync it into a
+project-local skill path when needed:
+
+```text
+<project>/.agents/skills/blog-content-pipeline/
+```
+
+Keep the copied folder shape unchanged:
+
+```text
+blog-content-pipeline/
+├── SKILL.md
+├── agents/
+│   └── openai.yaml
+└── references/
+    ├── templates.md
+    ├── review-and-prompts.md
+    └── usage.md
+```
+
+Do not commit real relay URLs, API keys, accounts, private URLs, local secret
+paths, production infrastructure details, or private metrics.
+
+## Model Setup Before Use
+
+Configure private model values in the consuming project, normally in
+`.env.local` or an external secret store. Public repositories should only keep
+placeholder variable names.
+
+```text
+BLOG_DRAFT_PROFILE=strong
+BLOG_DRAFT_BASE_URL=
+BLOG_DRAFT_API_KEY=
+BLOG_DRAFT_MODEL=
+BLOG_DRAFT_PROVIDER=
+BLOG_DRAFT_TEMPERATURE=0.65
+
+BLOG_DRAFT_STRONG_BASE_URL=
+BLOG_DRAFT_STRONG_API_KEY=
+BLOG_DRAFT_STRONG_MODEL=
+BLOG_DRAFT_STRONG_PROVIDER=
+BLOG_DRAFT_STRONG_TEMPERATURE=0.65
+
+BLOG_DRAFT_FAST_BASE_URL=
+BLOG_DRAFT_FAST_API_KEY=
+BLOG_DRAFT_FAST_MODEL=
+BLOG_DRAFT_FAST_PROVIDER=
+BLOG_DRAFT_FAST_TEMPERATURE=0.35
+
+BLOG_DRAFT_REVIEW_BASE_URL=
+BLOG_DRAFT_REVIEW_API_KEY=
+BLOG_DRAFT_REVIEW_MODEL=
+BLOG_DRAFT_REVIEW_PROVIDER=
+BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
+```
+
+Recommended profile roles:
+
+- `strong`: long-form drafting, legacy rewrites, and style-sensitive posts. Use
+  GLM-5.2, DeepSeek V4 Pro, Gemini 3.1 Pro, or an equivalent strong content
+  channel.
+- `fast`: outlines, summaries, topic clustering, and low-risk batch checks. Use
+  Gemini 3.5 Flash or an equivalent low-cost channel.
+- `review`: optional secondary review after Codex evidence and safety review.
+  Do not treat model review as authority.
+
+Default to serial model calls. Use multi-model comparison only for important
+posts, style uncertainty, or disputed framing. If parallel comparison is needed,
+split calls across separate relays or provider profiles.
+
+## Typical Commands
+
+For projects that include `scripts/generate-blog-draft.mjs`:
+
+```powershell
+npm.cmd run blog:plan
+npm.cmd run blog:draft -- --slug <slug> --force
+npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong
+npm.cmd run blog:check
+```
+
+The scaffold command does not call a model. Use `--generate` only after the
+evidence pack, safe public facts, uncertain facts, and forbidden details are
+complete.
+
+For public promotion, run the consuming project's public-content checks, for
+example:
+
+```powershell
+npm.cmd run blog:audit
+npm.cmd run blog:check
+npm.cmd run assistant:index
+npm.cmd run sitemap:generate
+npm.cmd run lint
+npm.cmd run build
+```
+
+## Task Routes
+
+- New post: choose a column, build an evidence pack, generate or write a draft,
+  then review before promotion.
+- Legacy rewrite: use archived text only as raw material, rebuild evidence from
+  current code/docs/data, and publish only a fresh rewrite.
+- Draft review: check facts, safety, column fit, project-page overlap, voice,
+  image assets, and promotion readiness.
+- Public promotion: convert reviewed content into the consuming project's typed
+  blog data and regenerate public indexes.
+
+## Image Generation Policy
+
+Images are useful when they help readers understand or remember the post. They
+are not required for every post, and they must not replace evidence.
+
+Use this priority order:
+
+1. Real project screenshots when the UI or state is safe to show publicly.
+2. Self-made diagrams for architecture, data flow, workflow, and decision trees.
+3. Licensed or source-attributed images for resource sharing or news context.
+4. Generated images for covers, mood-setting, or abstract concepts only.
+
+Generate images when:
+
+- the post needs a cover or visual hook but has no real screenshot;
+- the topic is conceptual and a metaphorical image helps orientation;
+- the generated image is clearly decorative or illustrative.
+
+Prefer screenshots or diagrams when:
+
+- the post is a project case page or project-summary post;
+- readers need to inspect real UI, architecture, workflow, or output;
+- the image supports a factual claim.
+
+Do not generate:
+
+- fake product screenshots or dashboards;
+- fake metrics, logs, charts, customer logos, or deployment states;
+- images that imply a feature exists when it is only planned;
+- copyrighted or brand-confusing lookalikes.
+
+Every image should record:
+
+- source type: screenshot, diagram, licensed image, or generated image;
+- purpose in the post;
+- alt text;
+- public-safety review result;
+- whether it is evidence or decoration.
+
+Generated image prompts should be stored as draft notes when they influence a
+published asset. Keep them free of private product names, customer data, private
+URLs, account names, IPs, metrics, and local paths.
+
+## Review Before Publishing
+
+Before promoting any post:
+
+- every factual claim traces to evidence;
+- generated text has been edited by Codex or the author;
+- no private details are present;
+- images are labeled by source type and safe to publish;
+- generated images are not presented as screenshots or evidence;
+- project-page overlap has been checked;
+- the final article fits its column.

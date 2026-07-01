@@ -17,6 +17,7 @@ Never let a model invent project facts, deployment status, metrics, screenshots,
 - **Rewrite a legacy post**: read `content-archive/legacy-blog/rewrite-queue.json`, then inspect the archived source under `content-archive/legacy-blog/posts/`. Treat it as raw material only; rebuild evidence before drafting.
 - **Review an existing draft**: read the draft in `content-drafts/`, then use `references/review-and-prompts.md` for fact, safety, structure, and promotion gates.
 - **Publish reviewed content**: update typed runtime data only after review: `src/data/blog.ts`, `src/data/blog-posts/<slug>.ts`, `src/data/blogContent.ts`, and `src/data/blogCuration.ts` as needed.
+- **Set up or reuse the skill**: read `references/usage.md` for installation/sync notes, model profile configuration, commands, and image generation policy.
 
 ## Evidence Pack First
 
@@ -31,6 +32,8 @@ Before drafting, capture:
 - intended model strategy
 
 For project-related posts, do not rely only on README files. Read code, public project data, tests, deployment scripts, screenshots, Trellis task notes, and existing project pages.
+
+For image decisions, read `references/usage.md`. Prefer real screenshots and diagrams for evidence; use generated images only for covers or abstract illustrations that are clearly not product evidence.
 
 ## Model Channels
 
@@ -80,6 +83,8 @@ Use `npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong
 
 Do not run `blog:draft -- --generate` unless the evidence pack is complete and a private model channel is intentionally configured.
 
+For setup details and profile examples, read `references/usage.md`.
+
 ## Draft Shape
 
 Prefer Markdown or structured notes during drafting, then convert reviewed content into the typed `BlogPost` shape. Keep title, detail, sections, takeaways, knowledge points, and tags concrete.
@@ -98,6 +103,7 @@ Minimum gates:
 - the column matches the article purpose
 - legacy source material has been rewritten, not copied directly
 - hidden drafts remain hidden unless explicitly curated
+- images are safe, source-labeled, and not misleading
 
 ## Publish Or Stage
 
