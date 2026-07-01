@@ -5,9 +5,10 @@ import type { HeroProject } from '../data/hero'
 interface RightScrollCardsProps {
   projects: HeroProject[]
   onProjectClick: (link: string) => void
+  onProjectAction: (link: string) => void
 }
 
-export function RightScrollCards({ projects, onProjectClick }: RightScrollCardsProps) {
+export function RightScrollCards({ projects, onProjectClick, onProjectAction }: RightScrollCardsProps) {
   const wrapperRef = useRef<HTMLElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -260,14 +261,18 @@ export function RightScrollCards({ projects, onProjectClick }: RightScrollCardsP
             event.stopPropagation()
           }}
         >
-          {loopedProjects.map((project, index) => (
-            <ColoredCard
-              key={`${project.id}-${index}`}
-              project={project}
-              index={index}
-              onClick={() => onProjectClick(project.link)}
-            />
-          ))}
+          {loopedProjects.map((project, index) => {
+            const externalLink = project.externalLink
+            return (
+              <ColoredCard
+                key={`${project.id}-${index}`}
+                project={project}
+                index={index}
+                onClick={() => onProjectClick(project.link)}
+                onActionClick={externalLink ? () => onProjectAction(externalLink) : undefined}
+              />
+            )
+          })}
         </div>
       </div>
     </section>

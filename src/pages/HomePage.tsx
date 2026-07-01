@@ -12,5 +12,9 @@ export function HomePage() {
     window.open(link, '_blank', 'noopener,noreferrer')
   }
 
-  return <HeroSplit onProjectClick={handleProjectClick} />
+  const handleProjectAction = (link: string) => {
+    window.open(link, '_blank', 'noopener,noreferrer')
+  }
+
+  return <HeroSplit onProjectClick={handleProjectClick} onProjectAction={handleProjectAction} />
 }

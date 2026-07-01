@@ -12,7 +12,7 @@ export interface HeroProject {
   action: string
   accent: CardAccent
   link: string
-  external?: boolean
+  externalLink?: string
 }
 
 export interface HeroPoem {
@@ -41,9 +41,10 @@ export const heroContent = {
       title: '法律智能机器人',
       description: '让合同审查回到原文，让结论可被验证',
       poetry: '《在语义的迷宫中寻找条款》',
-      action: 'READ',
+      action: 'OPEN',
       accent: 'signal',
       link: '/projects/legal-rag',
+      externalLink: 'https://legal-rag-web.onrender.com',
     },
     {
       id: 'pet-workspace',
@@ -61,17 +62,18 @@ export const heroContent = {
       poetry: '《在商品流转中织网》',
       action: 'OPEN',
       accent: 'image',
-      link: OZON_ERP_ENTRY_URL,
-      external: true,
+      link: '/projects/ozon-erp',
+      externalLink: OZON_ERP_ENTRY_URL,
     },
     {
-      id: 'biau-playlab-games',
+      id: 'biau-playlab',
       title: 'Biau Playlab 游戏站',
       description: '六个 Godot 原型、Web 试玩、开发日志与系统拆解内容站',
       poetry: '《把可玩的想法停靠成港》',
       action: 'PLAY',
       accent: 'preview',
-      link: 'https://games.playlab.eu.cc/',
+      link: '/projects/biau-playlab',
+      externalLink: 'https://games.playlab.eu.cc/',
     },
     {
       id: 'xunqiu',
@@ -80,7 +82,8 @@ export const heroContent = {
       poetry: '《让球场邀约重新连成网络》',
       action: 'VIEW',
       accent: 'commerce',
-      link: 'https://xunqiu.playlab.eu.cc/',
+      link: '/projects/xunqiu',
+      externalLink: 'https://xunqiu.playlab.eu.cc/',
     },
     {
       id: 'blog-semi',

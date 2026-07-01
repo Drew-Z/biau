@@ -1,24 +1,33 @@
 import type { HeroProject } from '../data/hero'
 import { IconExternalOpen } from '@douyinfe/semi-icons'
+import type { KeyboardEvent } from 'react'
 
 interface ColoredCardProps {
   project: HeroProject
   index: number
   onClick: () => void
+  onActionClick?: () => void
 }
 
-export function ColoredCard({ project, index, onClick }: ColoredCardProps) {
+export function ColoredCard({ project, index, onClick, onActionClick }: ColoredCardProps) {
   const number = String((index % 5) + 1).padStart(2, '0')
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onClick()
+  }
 
   return (
-    <button
-      type="button"
+    <article
       className={`carousel-card ${project.accent}`}
       data-port-index={number}
-      aria-label={`${project.title}：${project.description}${project.external ? '，外部打开' : ''}`}
+      aria-label={`查看项目详情：${project.title}`}
+      role="link"
+      tabIndex={0}
       onClick={() => {
         onClick()
       }}
+      onKeyDown={handleKeyDown}
     >
       <div>
         <strong>{project.title}</strong>
@@ -27,10 +36,20 @@ export function ColoredCard({ project, index, onClick }: ColoredCardProps) {
           <span className="literary-title"> ——{project.poetry}</span>
         </p>
       </div>
-      <em className="carousel-action">
-        <span>{project.action}</span>
-        {project.external && <IconExternalOpen aria-hidden />}
-      </em>
-    </button>
+      {project.externalLink && onActionClick && (
+        <button
+          className="carousel-action"
+          type="button"
+          aria-label={`打开外部项目页面：${project.title}`}
+          onClick={(event) => {
+            event.stopPropagation()
+            onActionClick()
+          }}
+        >
+          <span>{project.action}</span>
+          <IconExternalOpen aria-hidden />
+        </button>
+      )}
+    </article>
   )
 }
