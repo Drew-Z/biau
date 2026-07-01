@@ -29,6 +29,7 @@
 - `07-02-project-evidence-refresh-sync`: 项目案例证据刷新与主站同步，按项目仓库证据更新项目详情和助手知识。
 - `07-02-pet-app-showcase-followup`: Pet App 展示页继续优化，补截图、发布清单、APK gate 和主站链接。
 - `07-02-knowledge-blog-evidence-pack`: 知识积累博客草稿证据包，先产出 review-only 草稿和证据，不发布。
+- `07-02-07-02-playlab-game-detail-enrichment`: Playlab 六个 Godot 游戏项目详情补强，让主站详情页解释玩法、实现、验证、边界和后续方向。
 
 ## Human Review Gates
 
@@ -42,11 +43,25 @@
 
 ## Acceptance Criteria
 
-- [ ] 至少一个 child task 完成实现、验证、提交、推送并归档。
-- [ ] 每个已完成 child task 都记录验证命令和人工审核 gate。
-- [ ] `blog-semi` 的公开展示、助手知识、站点地图和博客检查在相关子任务中保持同步。
-- [ ] 长期 backlog 中的后续候选清晰记录，未做事项不能被描述为已完成。
-- [ ] 不提交敏感信息、未确认公开下载链接或未经审核发布的博客内容。
+- [x] 至少一个 child task 完成实现、验证、提交、推送并归档。
+- [x] 每个已完成 child task 都记录验证命令和人工审核 gate。
+- [x] `blog-semi` 的公开展示、助手知识、站点地图和博客检查在相关子任务中保持同步。
+- [x] 长期 backlog 中的后续候选清晰记录，未做事项不能被描述为已完成。
+- [x] 不提交敏感信息、未确认公开下载链接或未经审核发布的博客内容。
+
+## Current Round Summary
+
+- 已完成 5 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强。
+- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理和跨项目链接安全边界。
+- 父任务不归档，继续作为长期自动优化队列；后续仍按“低风险、高收益、可验证、遇 gate 切下一个”的规则推进。
+
+## Next Candidate Queue
+
+- `erp` 注册/登录体验：优化注册关闭说明、登录/注册视觉背景、首次进入提示；生产自助注册仍是人工 gate。
+- `blog-semi` 首页与项目详情：检查首页项目卡、详情页同类推荐、外链按钮和移动端信息密度是否还有访客体验问题。
+- `xunqiu` 展示链路：复核主站项目详情、展示页、APK/文档入口和后端健康检查叙事是否仍一致。
+- `legal-rag` 公开演示叙事：检查质量面板、demo 路径、拒答与引用说明是否能被非开发访客快速理解。
+- 博客草稿后续：优先 review `rag-overview-public` 与 `chunk-strategy-public`，不发布、不删除旧文，必要时再进入模型辅助改写。
 
 ## Notes
 
