@@ -30,6 +30,7 @@
 - `07-02-pet-app-showcase-followup`: Pet App 展示页继续优化，补截图、发布清单、APK gate 和主站链接。
 - `07-02-knowledge-blog-evidence-pack`: 知识积累博客草稿证据包，先产出 review-only 草稿和证据，不发布。
 - `07-02-07-02-playlab-game-detail-enrichment`: Playlab 六个 Godot 游戏项目详情补强，让主站详情页解释玩法、实现、验证、边界和后续方向。
+- `07-02-erp-auth-entry-experience`: ERP 登录/注册入口审计与自助注册 gate 加固，保守解析 `ERP_REGISTRATION_ENABLED` 并补充测试/文档。
 
 ## Human Review Gates
 
@@ -51,13 +52,13 @@
 
 ## Current Round Summary
 
-- 已完成 5 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强。
-- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理和跨项目链接安全边界。
+- 已完成 6 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固。
+- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界和生产注册误配置防护。
 - 父任务不归档，继续作为长期自动优化队列；后续仍按“低风险、高收益、可验证、遇 gate 切下一个”的规则推进。
 
 ## Next Candidate Queue
 
-- `erp` 注册/登录体验：优化注册关闭说明、登录/注册视觉背景、首次进入提示；生产自助注册仍是人工 gate。
+- `erp` 登录后首次引导：注册 gate 已加固；后续可优化登录后的首次进入提示、角色说明和关键路径引导，生产自助注册仍是人工 gate。
 - `blog-semi` 首页与项目详情：检查首页项目卡、详情页同类推荐、外链按钮和移动端信息密度是否还有访客体验问题。
 - `xunqiu` 展示链路：复核主站项目详情、展示页、APK/文档入口和后端健康检查叙事是否仍一致。
 - `legal-rag` 公开演示叙事：检查质量面板、demo 路径、拒答与引用说明是否能被非开发访客快速理解。
