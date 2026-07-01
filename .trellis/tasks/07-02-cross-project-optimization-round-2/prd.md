@@ -31,6 +31,7 @@
 - `07-02-knowledge-blog-evidence-pack`: 知识积累博客草稿证据包，先产出 review-only 草稿和证据，不发布。
 - `07-02-07-02-playlab-game-detail-enrichment`: Playlab 六个 Godot 游戏项目详情补强，让主站详情页解释玩法、实现、验证、边界和后续方向。
 - `07-02-erp-auth-entry-experience`: ERP 登录/注册入口审计与自助注册 gate 加固，保守解析 `ERP_REGISTRATION_ENABLED` 并补充测试/文档。
+- `07-02-chunk-strategy-draft-evidence-review`: RAG chunk strategy 草稿证据刷新，移除模型占位，补当前 Legal RAG splitter/citation 证据。
 
 ## Human Review Gates
 
@@ -52,8 +53,8 @@
 
 ## Current Round Summary
 
-- 已完成 6 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固。
-- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界和生产注册误配置防护。
+- 已完成 7 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固、Chunk strategy 草稿证据刷新。
+- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界、生产注册误配置防护和 RAG 知识草稿去占位。
 - 父任务不归档，继续作为长期自动优化队列；后续仍按“低风险、高收益、可验证、遇 gate 切下一个”的规则推进。
 
 ## Next Candidate Queue
@@ -62,7 +63,7 @@
 - `blog-semi` 首页与项目详情：检查首页项目卡、详情页同类推荐、外链按钮和移动端信息密度是否还有访客体验问题。
 - `xunqiu` 展示链路：复核主站项目详情、展示页、APK/文档入口和后端健康检查叙事是否仍一致。
 - `legal-rag` 公开演示叙事：检查质量面板、demo 路径、拒答与引用说明是否能被非开发访客快速理解。
-- 博客草稿后续：优先 review `rag-overview-public` 与 `chunk-strategy-public`，不发布、不删除旧文，必要时再进入模型辅助改写。
+- 博客草稿后续：`chunk-strategy-public` 已完成证据刷新；接下来可 review `rag-overview-public`，或在人工确认后进入模型辅助润色，不发布、不删除旧文。
 
 ## Notes
 
