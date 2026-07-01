@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises'
+import { getPublicBlogPosts } from '../src/data/blogCuration.ts'
 
 const siteUrl = 'https://biau.playlab.eu.cc'
 const today = new Date().toISOString().slice(0, 10)
@@ -11,16 +12,10 @@ function escapeXml(value) {
     .replaceAll('"', '&quot;')
 }
 
-const [portfolio, blog] = await Promise.all([
-  readFile('src/data/portfolio.ts', 'utf8'),
-  readFile('src/data/blog.ts', 'utf8'),
-])
+const portfolio = await readFile('src/data/portfolio.ts', 'utf8')
 
 const projectIds = [...portfolio.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1])
-const posts = [...blog.matchAll(/"slug":\s*"([^"]+)"[\s\S]*?"date":\s*"([^"]+)"/g)].map((match) => ({
-  slug: match[1],
-  date: match[2],
-}))
+const posts = getPublicBlogPosts()
 
 const routes = [
   { loc: '/', priority: '1.0', changefreq: 'weekly' },

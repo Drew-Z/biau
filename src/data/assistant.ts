@@ -1,4 +1,7 @@
-import { blogPosts } from './blog'
+import {
+  getAssistantBlogPosts,
+  getBlogAssistantTags,
+} from './blogCuration'
 import { getProjectAssistantSummary, getProjectAssistantTags, projects } from './portfolio'
 
 export type AssistantVisibility = 'public' | 'internal'
@@ -163,12 +166,12 @@ const projectKnowledge: AssistantKnowledgeItem[] = projects.map((project) => ({
   visibility: 'public',
 }))
 
-const blogKnowledge: AssistantKnowledgeItem[] = blogPosts.map((post) => ({
+const blogKnowledge: AssistantKnowledgeItem[] = getAssistantBlogPosts().map((post) => ({
   id: `blog:${post.slug}`,
   title: post.title,
   summary: post.detail,
   href: `/blog/${post.slug}`,
-  tags: [post.tag, post.category, post.series ?? '', ...(post.knowledgePoints ?? [])].filter(Boolean),
+  tags: getBlogAssistantTags(post),
   visibility: 'public',
 }))
 
@@ -274,6 +277,7 @@ function scoreKnowledgeItem(item: AssistantKnowledgeItem, normalized: string, te
 
   if (score > 0 && asksForProject && id.startsWith('project:')) score += 8
   if (score > 0 && asksForArticle && id.startsWith('blog:')) score += 4
+  if (score > 0 && id.startsWith('blog:') && tags.includes('精选知识')) score += 2
   if (score > 0 && asksForSiteOverview && id === 'site:intro') score += 12
 
   return score

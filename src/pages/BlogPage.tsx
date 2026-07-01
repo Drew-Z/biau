@@ -2,7 +2,11 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BlogCard } from '../components/BlogCard'
 import { CategoryFilter } from '../components/CategoryFilter'
-import { blogPosts, type BlogCategory } from '../data/blog'
+import { type BlogCategory } from '../data/blog'
+import {
+  filterBlogPosts,
+  getPublicBlogPosts,
+} from '../data/blogCuration'
 
 const PAGE_SIZE = 12
 
@@ -12,31 +16,21 @@ export function BlogPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
 
-  const filteredBlogs = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase()
-    return blogPosts.filter((post) => {
-      const matchesCategory = selectedBlogCategory === 'all' || post.category === selectedBlogCategory
-      if (!matchesCategory) return false
-      if (!normalizedQuery) return true
+  const publicBlogs = useMemo(() => getPublicBlogPosts(), [])
 
-      return [
-        post.title,
-        post.detail,
-        post.tag,
-        post.series,
-        ...(post.knowledgePoints ?? []),
-      ]
-        .filter((value): value is string => Boolean(value))
-        .some((value) => value.toLowerCase().includes(normalizedQuery))
+  const filteredBlogs = useMemo(() => {
+    return filterBlogPosts(publicBlogs, {
+      category: selectedBlogCategory,
+      query: searchQuery,
     })
-  }, [selectedBlogCategory, searchQuery])
+  }, [publicBlogs, searchQuery, selectedBlogCategory])
 
   const totalPages = Math.max(1, Math.ceil(filteredBlogs.length / PAGE_SIZE))
   const visibleBlogs = filteredBlogs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const availableCategories = useMemo(() => {
-    return Array.from(new Set(blogPosts.map((post) => post.category)))
-  }, [])
+    return Array.from(new Set(publicBlogs.map((post) => post.category)))
+  }, [publicBlogs])
 
   const handleSelectCategory = (category: BlogCategory | 'all') => {
     setSelectedBlogCategory(category)
@@ -75,7 +69,7 @@ export function BlogPage() {
           placeholder="搜索文章、项目方法、技术关键词"
         />
         <p className="blog-result-meta" aria-live="polite">
-          {filteredBlogs.length} 篇文章 · 第 {page} / {totalPages} 页
+          公开精选 · {filteredBlogs.length} 篇文章 · 第 {page} / {totalPages} 页
         </p>
       </section>
 

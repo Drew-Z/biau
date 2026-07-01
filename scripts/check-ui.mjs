@@ -11,10 +11,10 @@ const routes = [
   { path: '/assistant/admin', title: '内部助手管理页', nav: '回主页', canonical: '/assistant/admin' },
   { path: '/projects/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/projects/legal-rag' },
   {
-    path: '/blog/ai-fullstack-day-01-rag-overview',
-    title: 'RAG 系统入门',
+    path: '/blog/legal-rag-review',
+    title: '合同审查 RAG 项目复盘',
     nav: '回主页',
-    canonical: '/blog/ai-fullstack-day-01-rag-overview',
+    canonical: '/blog/legal-rag-review',
   },
   { path: '/missing-route-for-ui-check', title: '页面没有靠岸', nav: '回主页', canonical: '/missing-route-for-ui-check' },
 ]
@@ -84,8 +84,8 @@ for (const viewport of viewports) {
 const interactionPage = await browser.newPage({ viewport: viewports[0] })
 await interactionPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
 const initialCards = await interactionPage.locator('.blog-card').count()
-if (initialCards !== 12) {
-  failures.push(`/blog pagination: expected 12 cards on first page, got ${initialCards}`)
+if (initialCards !== 9) {
+  failures.push(`/blog pagination: expected 9 curated cards on first page, got ${initialCards}`)
 }
 const previousButton = interactionPage.getByRole('button', { name: '上一页' })
 const previousDisabled = await previousButton.isDisabled()
@@ -99,6 +99,11 @@ const searchedCards = await interactionPage.locator('.blog-card').count()
 const resultMeta = await interactionPage.locator('.blog-result-meta').innerText()
 if (searchedCards === 0 || !resultMeta.includes('篇文章')) {
   failures.push('/blog search: expected visible search results and result meta')
+}
+await interactionPage.locator('.blog-search').fill('Embedding')
+await interactionPage.waitForTimeout(100)
+if (!(await interactionPage.locator('.blog-empty').isVisible())) {
+  failures.push('/blog hidden posts: expected bulk template articles to stay hidden from public search')
 }
 await interactionPage.locator('.blog-search').fill('no-result-for-ui-check')
 await interactionPage.waitForTimeout(100)

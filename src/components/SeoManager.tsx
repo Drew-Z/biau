@@ -66,8 +66,8 @@ export function SeoManager() {
       }
 
       if (path.startsWith('/blog/')) {
-        const { blogPosts } = await import('../data/blog')
-        const post = blogPosts.find((item) => `/blog/${item.slug}` === path)
+        const { getPublicBlogPostSummary } = await import('../data/blogCuration')
+        const post = getPublicBlogPostSummary(path.replace('/blog/', ''))
         if (!cancelled && post) applySeo(getBlogPostSeo(post))
       }
     }

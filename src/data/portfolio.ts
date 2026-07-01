@@ -100,6 +100,8 @@ export const projects: Project[] = [
     links: [
       externalLink('在线工作台', 'https://legal-rag-web.onrender.com'),
       externalLink('API Health', 'https://legal-rag-api-9bki.onrender.com/api/health'),
+      internalLink('项目复盘', '/blog/legal-rag-review'),
+      internalLink('生产化路线', '/blog/legal-rag-production-upgrade-plan'),
     ],
     detailContent: {
       overview: [
@@ -202,7 +204,9 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/fantasy-pet-flow.png',
     stack: ['Android', 'Node.js', 'FastAPI', 'PostgreSQL', 'Agent Worker', '质量门禁'],
     highlights: ['桌宠孵化', '社区审核', '不透明下载 ID', '人审发布'],
-    links: [],
+    links: [
+      internalLink('生成管线文章', '/blog/pet-workspace-pipeline'),
+    ],
     detailContent: {
       overview: [
         {
@@ -439,6 +443,7 @@ export const projects: Project[] = [
     links: [
       externalLink('游戏站', `${GAME_SITE_URL}/`),
       externalLink('源码仓库', 'https://github.com/ciallo-bill/blog'),
+      internalLink('展示标准文章', '/blog/game-showcase-standard'),
     ],
     detailContent: {
       overview: [
@@ -542,7 +547,10 @@ export const projects: Project[] = [
     role: 'React 主站 / Semi 组件体系 / 项目案例路由 / 自动部署',
     stack: ['React', 'Vite', 'TypeScript', 'Semi Design'],
     highlights: ['多视图主站', '项目详情', '案例详情', '自动部署'],
-    links: [],
+    links: [
+      internalLink('内容模型文章', '/blog/content-modeling-project-site'),
+      internalLink('公开内容治理', '/blog/public-content-governance'),
+    ],
   },
   {
     id: 'game-first-tetris',
@@ -659,6 +667,7 @@ export const projects: Project[] = [
     links: [
       externalLink('产品展示页', `${XUNQIU_SITE_URL}/`),
       externalLink('新后端仓库', 'https://github.com/Drew-Z/xunqiu-backend-modern'),
+      internalLink('迁移复盘文章', '/blog/xunqiu-android64-rebuild'),
     ],
     detailContent: {
       overview: [

@@ -1,33 +1,46 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { IconArrowLeft } from '@douyinfe/semi-icons'
-import { blogPosts, categoryLabels } from '../data/blog'
+import { categoryLabels } from '../data/blog'
+import { getBlogProjectIds, getPublicBlogPostSummary, getRelatedBlogPosts } from '../data/blogCuration'
 import { getBlogPost } from '../data/blogContent'
 import type { BlogPost } from '../data/blogShared'
+import { projects } from '../data/portfolio'
 
 export function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
   const [loadedPost, setLoadedPost] = useState<{ slug: string; post: BlogPost | null } | null>(null)
 
-  const post = loadedPost && loadedPost.slug === slug ? loadedPost.post : undefined
+  const publicPostSummary = useMemo(() => (slug ? getPublicBlogPostSummary(slug) : undefined), [slug])
+  const post = publicPostSummary ? (loadedPost && loadedPost.slug === slug ? loadedPost.post : undefined) : null
 
   useEffect(() => {
     let cancelled = false
-    void getBlogPost(slug ?? '').then((nextPost) => {
-      if (!cancelled) setLoadedPost({ slug: slug ?? '', post: nextPost ?? null })
+    if (!slug || !publicPostSummary) {
+      return () => {
+        cancelled = true
+      }
+    }
+
+    void getBlogPost(slug).then((nextPost) => {
+      if (!cancelled) setLoadedPost({ slug, post: nextPost ?? null })
     })
 
     return () => {
       cancelled = true
     }
-  }, [slug])
+  }, [publicPostSummary, slug])
 
   const related = useMemo(() => {
     if (!post) return []
-    return blogPosts
-      .filter((p) => p.slug !== post.slug && p.category === post.category)
-      .slice(0, 3)
+    return getRelatedBlogPosts(post)
+  }, [post])
+
+  const relatedProjects = useMemo(() => {
+    if (!post) return []
+    const projectIds = new Set(getBlogProjectIds(post.slug))
+    return projects.filter((project) => projectIds.has(project.id))
   }, [post])
 
   if (post === undefined) {
@@ -132,9 +145,24 @@ export function BlogPostPage() {
         )}
       </div>
 
+      {relatedProjects.length > 0 && (
+        <section className="detail-related">
+          <h2 className="detail-block-title">关联项目</h2>
+          <div className="detail-related-grid">
+            {relatedProjects.map((project) => (
+              <Link key={project.id} to={`/projects/${project.id}`} className="detail-related-card">
+                <span className="detail-related-cat">{project.role}</span>
+                <h3>{project.title}</h3>
+                <p>{project.summary}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {related.length > 0 && (
         <section className="detail-related">
-          <h2 className="detail-block-title">同类文章</h2>
+          <h2 className="detail-block-title">延展阅读</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
               <Link key={item.slug} to={`/blog/${item.slug}`} className="detail-related-card">

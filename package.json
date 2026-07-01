@@ -17,11 +17,12 @@
     "lint": "eslint .",
     "blog:plan": "node scripts/generate-blog-draft.mjs --list",
     "blog:draft": "node scripts/generate-blog-draft.mjs",
+    "blog:audit": "tsx scripts/audit-blog-catalog.ts",
     "blog:check": "node scripts/check-public-blog.mjs",
     "preview": "vite preview",
     "check:ui": "node scripts/check-ui.mjs",
     "images:optimize": "node scripts/optimize-images.mjs",
-    "sitemap:generate": "node scripts/generate-sitemap.mjs",
+    "sitemap:generate": "tsx scripts/generate-sitemap.mjs",
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {

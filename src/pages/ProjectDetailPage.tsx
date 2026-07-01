@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { IconArrowLeft, IconLink } from '@douyinfe/semi-icons'
+import { categoryLabels as blogCategoryLabels } from '../data/blog'
+import { getProjectBlogPosts } from '../data/blogCuration'
 import {
   projects,
-  categoryLabels,
+  categoryLabels as projectCategoryLabels,
   projectDetailGroupLabels,
   statusLabels,
   type ProjectDetailContent,
@@ -33,6 +35,11 @@ export function ProjectDetailPage() {
       .slice(0, 3)
   }, [project])
 
+  const projectReadings = useMemo(() => {
+    if (!project) return []
+    return getProjectBlogPosts(project.id).slice(0, 4)
+  }, [project])
+
   if (!project) {
     return (
       <main className="page-stack detail-page">
@@ -57,7 +64,7 @@ export function ProjectDetailPage() {
 
       <header className="detail-header">
         <div className="detail-badges">
-          <span className="tag">{categoryLabels[project.category]}</span>
+          <span className="tag">{projectCategoryLabels[project.category]}</span>
           <span className="detail-status">{statusLabels[project.status]}</span>
         </div>
         <h1 className="detail-title">{project.title}</h1>
@@ -115,13 +122,28 @@ export function ProjectDetailPage() {
 
       {project.detailContent && <ProjectDetailContentSections content={project.detailContent} />}
 
+      {projectReadings.length > 0 && (
+        <section className="detail-related">
+          <h2 className="detail-block-title">延展阅读</h2>
+          <div className="detail-related-grid">
+            {projectReadings.map((post) => (
+              <Link key={post.slug} to={`/blog/${post.slug}`} className="detail-related-card">
+                <span className="detail-related-cat">{blogCategoryLabels[post.category]}</span>
+                <h3>{post.title}</h3>
+                <p>{post.detail}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       {related.length > 0 && (
         <section className="detail-related">
           <h2 className="detail-block-title">同类项目</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
               <Link key={item.id} to={`/projects/${item.id}`} className="detail-related-card">
-                <span className="detail-related-cat">{categoryLabels[item.category]}</span>
+                <span className="detail-related-cat">{projectCategoryLabels[item.category]}</span>
                 <h3>{item.title}</h3>
                 <p>{item.summary}</p>
               </Link>

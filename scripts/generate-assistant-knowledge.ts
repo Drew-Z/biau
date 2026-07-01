@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { blogPosts } from '../src/data/blog'
+import { getAssistantBlogPosts, getBlogAssistantTags } from '../src/data/blogCuration'
 import { getProjectAssistantSummary, getProjectAssistantTags, projects } from '../src/data/portfolio'
 
 interface KnowledgeItem {
@@ -32,12 +32,12 @@ const items: KnowledgeItem[] = [
     tags: getProjectAssistantTags(project),
     visibility: 'public' as const,
   })),
-  ...blogPosts.map((post) => ({
+  ...getAssistantBlogPosts().map((post) => ({
     id: `blog:${post.slug}`,
     title: post.title,
     summary: post.detail,
     href: `/blog/${post.slug}`,
-    tags: [post.tag, post.category, post.series ?? '', ...(post.knowledgePoints ?? [])].filter(Boolean),
+    tags: getBlogAssistantTags(post),
     visibility: 'public' as const,
   })),
 ]
