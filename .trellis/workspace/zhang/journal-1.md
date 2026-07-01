@@ -448,3 +448,36 @@ Moved 87 hidden generated blog posts out of the runtime catalog into content-arc
 ### Next Steps
 
 - None - task complete
+
+
+## Session 14: Improve blog content generation skill
+
+**Date**: 2026-07-01
+**Task**: Improve blog content generation skill
+**Branch**: `main`
+
+### Summary
+
+Strengthened blog-content-pipeline with evidence-first routes, legacy rewrite/review prompts, BLOG_DRAFT profile model channels, safer .env.local override behavior, and a backend spec for the blog draft workflow. Validated scaffold generation, profile missing-key behavior, blog:check, lint, and build.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4d245fc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
