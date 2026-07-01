@@ -111,7 +111,7 @@ if (searchedCards === 0 || !resultMeta.includes('篇文章')) {
 await interactionPage.locator('.blog-search').fill('Embedding')
 await interactionPage.waitForTimeout(100)
 if (!(await interactionPage.locator('.blog-empty').isVisible())) {
-  failures.push('/blog hidden posts: expected bulk template articles to stay hidden from public search')
+  failures.push('/blog legacy posts: expected archived template articles to stay out of public search')
 }
 await interactionPage.locator('.blog-search').fill('no-result-for-ui-check')
 await interactionPage.waitForTimeout(100)

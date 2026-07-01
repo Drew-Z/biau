@@ -162,8 +162,9 @@ Normalize once through the assistant data module and let UI components consume t
 
 ### 3. Contracts
 
-- Default curation for unspecified posts is `hidden`.
-- Hidden posts may remain as source files under `src/data/blog-posts/`, but must not be registered in `src/data/blogContent.ts`.
+- Default curation for unspecified runtime posts is `hidden`.
+- Legacy generated posts belong under `content-archive/legacy-blog/` with a rewrite queue, not in the runtime `src/data/blog-posts/` directory.
+- Hidden runtime drafts are allowed only for actively staged articles and must not be registered in `src/data/blogContent.ts`.
 - `src/pages/BlogPage.tsx`, `src/pages/BlogPostPage.tsx`, `src/pages/ProjectDetailPage.tsx`, `src/components/SeoManager.tsx`, `scripts/generate-sitemap.mjs`, `src/data/assistant.ts`, and `scripts/generate-assistant-knowledge.ts` must use public selectors, not raw `blogPosts`, for public surfaces.
 - Blog public filters and related-reading scoring use `post.column`, not legacy `category` values. The blog domain should not reintroduce `BlogCategory` / `categoryLabels`; those names are only valid for project categories in `src/data/portfolio.ts`.
 - `BlogContentRole` remains a curation role and must not be treated as the first-level blog column.
@@ -172,14 +173,15 @@ Normalize once through the assistant data module and let UI components consume t
 ### 4. Validation & Error Matrix
 
 - Hidden post appears in public selector -> `npm.cmd run blog:audit` fails.
-- Hidden post has a runtime loader -> `npm.cmd run blog:audit` fails.
+- Hidden runtime post has a public loader -> `npm.cmd run blog:audit` fails.
+- Legacy archive entry lacks its archived source file or rewrite queue entry -> `npm.cmd run blog:audit` fails.
 - Featured post lacks valid priority/role -> `npm.cmd run blog:audit` fails.
 - Public assistant index includes hidden post -> regenerate with `npm.cmd run assistant:index` and rerun `blog:audit`.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: a rewritten project case is added to `blogCuration` as `featured`, gets a loader in `blogContent.ts`, and appears in sitemap/assistant after generation.
-- Base: a draft/source article remains in `blogPosts` and `src/data/blog-posts/` but defaults to `hidden`.
+- Base: an active draft can remain in `blogPosts` and `src/data/blog-posts/` as `hidden`; bulk legacy material stays in `content-archive/legacy-blog/` until rewritten.
 - Bad: a component imports `blogPosts` and filters it directly for a public page, bypassing curation.
 
 ### 6. Tests Required

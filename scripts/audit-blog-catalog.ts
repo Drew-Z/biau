@@ -13,7 +13,22 @@ import { getLoadableBlogPostSlugs } from '../src/data/blogContent'
 import { projects } from '../src/data/portfolio'
 
 const blogPostsDir = path.resolve('src/data/blog-posts')
+const legacyBlogArchiveDir = path.resolve('content-archive/legacy-blog')
+const legacyBlogPostsDir = path.join(legacyBlogArchiveDir, 'posts')
+const legacyRewriteQueuePath = path.join(legacyBlogArchiveDir, 'rewrite-queue.json')
 const requiredProjectIds = ['legal-rag', 'pet-workspace', 'ozon-erp', 'biau-playlab', 'blog-semi', 'xunqiu']
+
+interface LegacyRewriteQueue {
+  counts?: {
+    legacyPosts?: number
+    runtimeFeaturedPosts?: number
+  }
+  entries?: Array<{
+    slug?: string
+    archivePath?: string
+    status?: string
+  }>
+}
 
 function countBy<T>(items: T[], getKey: (item: T) => string) {
   return items.reduce<Record<string, number>>((acc, item) => {
@@ -27,6 +42,21 @@ function sortCountMap(counts: Record<string, number>) {
   return Object.fromEntries(Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])))
 }
 
+function readTsFileSlugs(directory: string) {
+  if (!fs.existsSync(directory)) return new Set<string>()
+  return new Set(
+    fs
+      .readdirSync(directory)
+      .filter((file) => file.endsWith('.ts'))
+      .map((file) => file.replace(/\.ts$/, '')),
+  )
+}
+
+function readLegacyRewriteQueue(): LegacyRewriteQueue | null {
+  if (!fs.existsSync(legacyRewriteQueuePath)) return null
+  return JSON.parse(fs.readFileSync(legacyRewriteQueuePath, 'utf8')) as LegacyRewriteQueue
+}
+
 function main() {
   const issues: string[] = []
   const catalog = getBlogCatalog()
@@ -35,12 +65,11 @@ function main() {
   const featuredPosts = getFeaturedBlogPosts()
   const summarySlugs = new Set(blogPosts.map((post) => post.slug))
   const loadableSlugs = new Set(getLoadableBlogPostSlugs())
-  const fileSlugs = new Set(
-    fs
-      .readdirSync(blogPostsDir)
-      .filter((file) => file.endsWith('.ts'))
-      .map((file) => file.replace(/\.ts$/, '')),
-  )
+  const fileSlugs = readTsFileSlugs(blogPostsDir)
+  const legacyFileSlugs = readTsFileSlugs(legacyBlogPostsDir)
+  const legacyRewriteQueue = readLegacyRewriteQueue()
+  const legacyEntries = legacyRewriteQueue?.entries ?? []
+  const legacyEntrySlugs = new Set(legacyEntries.map((entry) => entry.slug).filter((slug): slug is string => Boolean(slug)))
   const projectIds = new Set(projects.map((project) => project.id))
 
   const missingPublicLoaders = publicPosts.filter((post) => !loadableSlugs.has(post.slug)).map((post) => post.slug)
@@ -58,6 +87,32 @@ function main() {
   if (hiddenLoaders.length > 0) issues.push(`hidden posts still have public loaders: ${hiddenLoaders.join(', ')}`)
   if (orphanFiles.length > 0) issues.push(`orphan blog post files: ${orphanFiles.join(', ')}`)
   if (invalidCurationSlugs.length > 0) issues.push(`curation references unknown slugs: ${invalidCurationSlugs.join(', ')}`)
+
+  if (!legacyRewriteQueue) {
+    issues.push('missing legacy rewrite queue: content-archive/legacy-blog/rewrite-queue.json')
+  }
+
+  if (legacyRewriteQueue?.counts?.legacyPosts !== legacyEntries.length) {
+    issues.push('legacy rewrite queue count does not match entries length')
+  }
+
+  if (legacyRewriteQueue?.counts?.runtimeFeaturedPosts !== featuredPosts.length) {
+    issues.push('legacy rewrite queue runtimeFeaturedPosts count does not match featured posts')
+  }
+
+  const legacyEntriesWithoutFiles = [...legacyEntrySlugs].filter((slug) => !legacyFileSlugs.has(slug))
+  const legacyFilesWithoutEntries = [...legacyFileSlugs].filter((slug) => !legacyEntrySlugs.has(slug))
+  const legacyRuntimeOverlap = [...legacyFileSlugs].filter((slug) => summarySlugs.has(slug))
+
+  if (legacyEntriesWithoutFiles.length > 0) {
+    issues.push(`legacy rewrite queue entries missing archive files: ${legacyEntriesWithoutFiles.join(', ')}`)
+  }
+  if (legacyFilesWithoutEntries.length > 0) {
+    issues.push(`legacy archive files missing rewrite queue entries: ${legacyFilesWithoutEntries.join(', ')}`)
+  }
+  if (legacyRuntimeOverlap.length > 0) {
+    issues.push(`legacy archive overlaps runtime blog catalog: ${legacyRuntimeOverlap.join(', ')}`)
+  }
 
   for (const post of featuredPosts) {
     if (!Number.isFinite(post.priority) || post.priority <= 0) {
@@ -87,7 +142,6 @@ function main() {
   }
 
   const hiddenCount = catalog.filter((post) => post.visibility === 'hidden').length
-  if (hiddenCount === 0) issues.push('no hidden posts found; bulk generated blog content should remain private until rewritten')
   if (publicPosts.length > featuredPosts.length) {
     issues.push('archive posts are public; current cleanup policy only allows curated featured posts to be public')
   }
@@ -95,7 +149,9 @@ function main() {
   const report = {
     totalPosts: blogPosts.length,
     publicContentLoaders: loadableSlugs.size,
-    contentFiles: fileSlugs.size,
+    runtimeContentFiles: fileSlugs.size,
+    legacyArchiveFiles: legacyFileSlugs.size,
+    legacyRewriteQueueEntries: legacyEntries.length,
     visibility: sortCountMap(countBy(catalog, (post) => post.visibility)),
     columns: sortCountMap(countBy(catalog, (post) => post.column)),
     tags: sortCountMap(countBy(catalog, (post) => post.tag)),
@@ -120,6 +176,9 @@ function main() {
     hiddenLoaders,
     orphanFiles,
     invalidCurationSlugs,
+    legacyEntriesWithoutFiles,
+    legacyFilesWithoutEntries,
+    legacyRuntimeOverlap,
   }
 
   console.log(JSON.stringify(report, null, 2))

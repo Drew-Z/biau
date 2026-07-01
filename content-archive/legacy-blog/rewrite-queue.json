@@ -1,0 +1,1663 @@
+{
+  "archivedAt": "2026-07-01",
+  "reason": "Hidden generated blog material removed from the runtime blog catalog. Preserve as source material for future evidence-first rewrites.",
+  "counts": {
+    "legacyPosts": 87,
+    "runtimeFeaturedPosts": 10
+  },
+  "entries": [
+    {
+      "order": 1,
+      "slug": "ai-fullstack-day-01-rag-overview",
+      "title": "RAG 系统入门：从检索增强生成到合同审查应用",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "12 min",
+      "knowledgePoints": [
+        "检索增强生成",
+        "文档入库与 chunk 切分",
+        "向量检索与引用溯源"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-fullstack-day-01-rag-overview.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-fullstack-day-01-rag-overview.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 2,
+      "slug": "rag-chunk-strategy",
+      "title": "RAG 文档切分策略：Chunk Size、Overlap 与元数据设计",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "Chunk 切分策略",
+        "Chunk overlap",
+        "来源元数据设计"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-chunk-strategy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-chunk-strategy.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 3,
+      "slug": "embedding-vector-search",
+      "title": "Embedding 与向量检索：让业务文本进入语义搜索系统",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "Embedding",
+        "向量相似度检索",
+        "向量库选型"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/embedding-vector-search.ts",
+      "archivePath": "content-archive/legacy-blog/posts/embedding-vector-search.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 4,
+      "slug": "agent-tool-calling-engineering",
+      "title": "Agent Tool Calling 工程化：从聊天回答到可控任务执行",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "12 min",
+      "knowledgePoints": [
+        "Agent",
+        "Tool Calling",
+        "状态与失败处理"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/agent-tool-calling-engineering.ts",
+      "archivePath": "content-archive/legacy-blog/posts/agent-tool-calling-engineering.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 5,
+      "slug": "rag-hybrid-search",
+      "title": "混合检索：让 RAG 同时抓住语义与精确事实",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "Hybrid Search",
+        "BM25 / 关键词检索",
+        "结果合并去重"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-hybrid-search.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-hybrid-search.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 6,
+      "slug": "rag-rerank",
+      "title": "Rerank 精排：从初召回到高质量上下文",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "初召回",
+        "精排",
+        "上下文质量控制"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-rerank.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-rerank.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 7,
+      "slug": "rag-citations-grounding",
+      "title": "引用溯源设计：让 AI 回答回到原文证据",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Citations",
+        "Grounding",
+        "低幻觉回答"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-citations-grounding.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-citations-grounding.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 8,
+      "slug": "rag-evaluation",
+      "title": "RAG 评估体系：召回、引用和答案如何一起验收",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "Golden Set",
+        "召回评估",
+        "Citation 命中率"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-evaluation.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-evaluation.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 9,
+      "slug": "ai-cost-optimization",
+      "title": "AI 成本优化：Token 预算、缓存和模型分级",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Token 成本",
+        "缓存复用",
+        "模型分级"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-cost-optimization.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-cost-optimization.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 10,
+      "slug": "sse-streaming-ai-progress",
+      "title": "SSE 流式交互：AI 应用如何把生成过程交给用户",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "SSE",
+        "流式响应",
+        "任务进度推送"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/sse-streaming-ai-progress.ts",
+      "archivePath": "content-archive/legacy-blog/posts/sse-streaming-ai-progress.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 11,
+      "slug": "bullmq-ai-long-tasks",
+      "title": "BullMQ 长任务队列：让 AI 文档处理和生成管线跑稳",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "BullMQ",
+        "Worker",
+        "幂等与重试"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/bullmq-ai-long-tasks.ts",
+      "archivePath": "content-archive/legacy-blog/posts/bullmq-ai-long-tasks.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 12,
+      "slug": "pgvector-rag-production",
+      "title": "pgvector 落地方案：中小型 RAG 项目如何持久化向量",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "pgvector",
+        "PostgreSQL",
+        "向量持久化"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/pgvector-rag-production.ts",
+      "archivePath": "content-archive/legacy-blog/posts/pgvector-rag-production.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 13,
+      "slug": "structured-output-validation",
+      "title": "结构化输出校验：让 AI 结果从文本变成可用数据",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "Structured Output",
+        "Schema 校验",
+        "失败重试"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/structured-output-validation.ts",
+      "archivePath": "content-archive/legacy-blog/posts/structured-output-validation.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 14,
+      "slug": "langgraph-agent-state-machine",
+      "title": "Agent 状态机设计：用 LangGraph 思路拆解复杂工作流",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "StateGraph",
+        "条件路由",
+        "Checkpoint"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/langgraph-agent-state-machine.ts",
+      "archivePath": "content-archive/legacy-blog/posts/langgraph-agent-state-machine.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 15,
+      "slug": "human-in-the-loop-review",
+      "title": "Human-in-the-loop 设计：高风险 AI 应用如何接入人工复核",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Human-in-the-loop",
+        "人工复核",
+        "审核审计"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/human-in-the-loop-review.ts",
+      "archivePath": "content-archive/legacy-blog/posts/human-in-the-loop-review.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 16,
+      "slug": "docker-compose-ai-dev",
+      "title": "Docker Compose 本地编排：AI 全栈应用如何一键跑起来",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Docker Compose",
+        "本地编排",
+        "环境变量"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/docker-compose-ai-dev.ts",
+      "archivePath": "content-archive/legacy-blog/posts/docker-compose-ai-dev.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 17,
+      "slug": "ai-app-production-roadmap",
+      "title": "AI 应用生产化路线：从可演示 MVP 到可交付系统",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "MVP 生产化",
+        "工程闭环",
+        "交付清单"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-app-production-roadmap.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-app-production-roadmap.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 18,
+      "slug": "ai-tool-permission-audit",
+      "title": "AI 工具调用权限与审计：让 Agent 行动保持可控",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "权限控制",
+        "审计日志",
+        "高风险动作确认"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-tool-permission-audit.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-tool-permission-audit.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 19,
+      "slug": "prompt-version-management",
+      "title": "Prompt 版本管理：让提示词迭代可评估、可回滚",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "Prompt 版本",
+        "评测回归",
+        "灰度与回滚"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/prompt-version-management.ts",
+      "archivePath": "content-archive/legacy-blog/posts/prompt-version-management.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 20,
+      "slug": "multi-tenant-rag-isolation",
+      "title": "多租户 RAG 数据隔离：避免向量检索跨边界召回",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "多租户隔离",
+        "Metadata Filter",
+        "数据权限"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/multi-tenant-rag-isolation.ts",
+      "archivePath": "content-archive/legacy-blog/posts/multi-tenant-rag-isolation.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 21,
+      "slug": "frontend-ai-workbench",
+      "title": "前端 AI 工作台设计：把证据、状态和人工决策放到同一界面",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "AI 工作台",
+        "可解释交互",
+        "人机协作"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/frontend-ai-workbench.ts",
+      "archivePath": "content-archive/legacy-blog/posts/frontend-ai-workbench.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 22,
+      "slug": "ai-observability-trace-cost-quality",
+      "title": "AI 应用可观测性：用 Trace 串起日志、成本和质量指标",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Observability",
+        "Trace",
+        "质量指标"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-observability-trace-cost-quality.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-observability-trace-cost-quality.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 23,
+      "slug": "model-fallback-timeout-provider-switch",
+      "title": "模型降级与供应商切换：让 AI 调用失败时可恢复",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "Fallback",
+        "超时重试",
+        "Provider 抽象"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/model-fallback-timeout-provider-switch.ts",
+      "archivePath": "content-archive/legacy-blog/posts/model-fallback-timeout-provider-switch.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 24,
+      "slug": "ai-data-desensitization-privacy",
+      "title": "AI 数据脱敏与隐私边界：控制模型输入、日志和引用片段",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "数据脱敏",
+        "隐私边界",
+        "日志最小化"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-data-desensitization-privacy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-data-desensitization-privacy.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 25,
+      "slug": "ai-app-deployment-layers",
+      "title": "AI 应用部署分层：静态站、API、Worker 和数据服务如何协作",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "部署分层",
+        "Cloudflare Pages",
+        "API / 数据库边界"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-app-deployment-layers.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-app-deployment-layers.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 26,
+      "slug": "rag-data-cleaning-pdf-docx-ocr",
+      "title": "RAG 数据清洗：PDF、DOCX 与 OCR 文本如何变成可靠证据",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "数据清洗",
+        "PDF/DOCX/OCR",
+        "文档结构保留"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-data-cleaning-pdf-docx-ocr.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-data-cleaning-pdf-docx-ocr.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 27,
+      "slug": "legal-rag-golden-set-evaluation",
+      "title": "合同审查 Golden Set：让 RAG 质量从演示走向可评估",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "Golden Set",
+        "合同审查评测",
+        "回归测试"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/legal-rag-golden-set-evaluation.ts",
+      "archivePath": "content-archive/legacy-blog/posts/legal-rag-golden-set-evaluation.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 28,
+      "slug": "llm-context-window-management",
+      "title": "模型上下文管理：System Prompt、历史消息与检索证据如何分配",
+      "column": "project-notes",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "上下文窗口",
+        "历史消息裁剪",
+        "检索上下文预算"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/llm-context-window-management.ts",
+      "archivePath": "content-archive/legacy-blog/posts/llm-context-window-management.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 29,
+      "slug": "rag-query-rewrite-routing",
+      "title": "RAG Query Rewrite：把口语问题变成可检索查询",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "Query Rewrite",
+        "意图识别",
+        "检索路由"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-query-rewrite-routing.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-query-rewrite-routing.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 30,
+      "slug": "prompt-template-variable-design",
+      "title": "Prompt 模板设计：把变量、约束和输出格式拆清楚",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "Prompt 模板",
+        "变量注入",
+        "输出约束"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/prompt-template-variable-design.ts",
+      "archivePath": "content-archive/legacy-blog/posts/prompt-template-variable-design.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 31,
+      "slug": "rag-cache-strategy",
+      "title": "RAG 缓存策略：Embedding、检索结果和答案如何安全复用",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "缓存策略",
+        "Embedding 复用",
+        "缓存失效"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-cache-strategy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-cache-strategy.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 32,
+      "slug": "document-parser-selection-rag",
+      "title": "RAG 文档解析器选型：PDF、DOCX、OCR 与 Markdown 如何接入",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "文档解析",
+        "格式结构保留",
+        "解析失败处理"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/document-parser-selection-rag.ts",
+      "archivePath": "content-archive/legacy-blog/posts/document-parser-selection-rag.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 33,
+      "slug": "rag-acl-metadata-filtering",
+      "title": "RAG 权限过滤：让检索、上下文和引用都遵守访问边界",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "ACL",
+        "Metadata Filter",
+        "引用权限"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-acl-metadata-filtering.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-acl-metadata-filtering.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 34,
+      "slug": "multimodal-rag-images-tables",
+      "title": "多模态 RAG：图片、扫描件与表格如何变成可引用证据",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "多模态 RAG",
+        "OCR",
+        "表格结构化"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/multimodal-rag-images-tables.ts",
+      "archivePath": "content-archive/legacy-blog/posts/multimodal-rag-images-tables.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 35,
+      "slug": "agent-memory-state-design",
+      "title": "Agent 记忆系统：短期记忆、长期记忆与任务状态的边界",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "Agent Memory",
+        "任务状态",
+        "长期记忆"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/agent-memory-state-design.ts",
+      "archivePath": "content-archive/legacy-blog/posts/agent-memory-state-design.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 36,
+      "slug": "tool-calling-idempotency",
+      "title": "Tool Calling 幂等性：Agent 重试时如何避免重复写入",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "幂等性",
+        "Tool Calling",
+        "重复写入控制"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/tool-calling-idempotency.ts",
+      "archivePath": "content-archive/legacy-blog/posts/tool-calling-idempotency.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 37,
+      "slug": "ai-error-handling-retry-human",
+      "title": "AI 应用错误处理：可重试错误、不可重试错误和人工接管",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "错误分类",
+        "重试策略",
+        "人工接管"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-error-handling-retry-human.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-error-handling-retry-human.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 38,
+      "slug": "frontend-citation-interaction",
+      "title": "前端引用交互：citation 卡片、原文定位与风险说明设计",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "Citation UI",
+        "原文定位",
+        "风险说明"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/frontend-citation-interaction.ts",
+      "archivePath": "content-archive/legacy-blog/posts/frontend-citation-interaction.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 39,
+      "slug": "ai-application-testing-strategy",
+      "title": "AI 应用测试策略：单元测试、Golden Set 与人工验收",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "AI 测试策略",
+        "Golden Set",
+        "人工验收"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-application-testing-strategy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-application-testing-strategy.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 40,
+      "slug": "rag-data-versioning",
+      "title": "RAG 数据版本：文档、Chunk 与 Embedding 如何支持回溯",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "数据版本",
+        "重新索引",
+        "版本兼容"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-data-versioning.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-data-versioning.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 41,
+      "slug": "vector-index-tuning-hnsw-ivfflat",
+      "title": "向量索引调优：从精确查询到 HNSW 与 IVFFlat",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "向量索引",
+        "HNSW",
+        "IVFFlat"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/vector-index-tuning-hnsw-ivfflat.ts",
+      "archivePath": "content-archive/legacy-blog/posts/vector-index-tuning-hnsw-ivfflat.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 42,
+      "slug": "file-upload-security-ai",
+      "title": "文件上传安全：大小限制、类型校验、病毒扫描和异步处理",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "文件上传安全",
+        "内容校验",
+        "异步处理"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/file-upload-security-ai.ts",
+      "archivePath": "content-archive/legacy-blog/posts/file-upload-security-ai.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 43,
+      "slug": "ai-result-export-reports",
+      "title": "AI 结果导出：从结构化报告到 Markdown、PDF 与 DOCX",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "报告导出",
+        "合同审查报告",
+        "引用附件"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-result-export-reports.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-result-export-reports.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 44,
+      "slug": "model-provider-abstraction",
+      "title": "模型供应商抽象：让生成、Embedding 与 Rerank 可切换",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "Provider 抽象",
+        "模型切换",
+        "OpenAI-compatible"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/model-provider-abstraction.ts",
+      "archivePath": "content-archive/legacy-blog/posts/model-provider-abstraction.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 45,
+      "slug": "rag-batch-jobs-priority",
+      "title": "RAG 批量任务设计：Batch、Job、Step 与优先级",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "批量任务",
+        "任务优先级",
+        "队列调度"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-batch-jobs-priority.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-batch-jobs-priority.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 46,
+      "slug": "human-review-feedback-loop",
+      "title": "人审反馈闭环：把审核结果变成系统改进数据",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "人审反馈",
+        "质量闭环",
+        "评测样例沉淀"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/human-review-feedback-loop.ts",
+      "archivePath": "content-archive/legacy-blog/posts/human-review-feedback-loop.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 47,
+      "slug": "enterprise-knowledge-base-operations",
+      "title": "企业知识库运营：文档生命周期、权限变更与内容质量",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "知识库运营",
+        "文档生命周期",
+        "内容质量"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/enterprise-knowledge-base-operations.ts",
+      "archivePath": "content-archive/legacy-blog/posts/enterprise-knowledge-base-operations.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 48,
+      "slug": "runtime-config-center",
+      "title": "运行时配置中心：模型、Prompt 与检索参数的灰度调整",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "运行时配置",
+        "动态参数",
+        "灰度发布"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/runtime-config-center.ts",
+      "archivePath": "content-archive/legacy-blog/posts/runtime-config-center.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 49,
+      "slug": "ai-safety-guardrails",
+      "title": "AI 安全护栏：从输入拦截到工具调用边界",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "安全护栏",
+        "权限边界",
+        "输出审核"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-safety-guardrails.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-safety-guardrails.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 50,
+      "slug": "ai-database-modeling",
+      "title": "AI 应用数据库建模：Document、Chunk、Embedding 与审计表",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "数据库建模",
+        "RAG 数据结构",
+        "审计日志"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-database-modeling.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-database-modeling.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 51,
+      "slug": "ai-fullstack-knowledge-map",
+      "title": "AI 应用全栈知识图谱：从业务入口到交付运营",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "11 min",
+      "knowledgePoints": [
+        "知识图谱",
+        "AI 全栈",
+        "工程闭环"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-fullstack-knowledge-map.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-fullstack-knowledge-map.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 52,
+      "slug": "rag-retrieval-debugging",
+      "title": "RAG 召回失败排查：从入库到 Citation 的逐层定位",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "RAG 排障",
+        "召回质量",
+        "检索评估"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-retrieval-debugging.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-retrieval-debugging.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 53,
+      "slug": "agent-planning-debugging",
+      "title": "Agent 规划失败排查：循环调用、错误工具与目标漂移",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Agent 排障",
+        "任务规划",
+        "工具调用"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/agent-planning-debugging.ts",
+      "archivePath": "content-archive/legacy-blog/posts/agent-planning-debugging.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 54,
+      "slug": "ai-cost-budget-sheet",
+      "title": "AI 成本预算表：模型、Token、OCR、存储与人审",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "成本预算",
+        "Token 成本",
+        "资源配额"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-cost-budget-sheet.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-cost-budget-sheet.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 55,
+      "slug": "ai-release-checklist",
+      "title": "AI 应用发布检查清单：质量、安全、成本与回滚",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "发布检查",
+        "质量门禁",
+        "上线准备"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-release-checklist.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-release-checklist.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 56,
+      "slug": "ai-access-control-model",
+      "title": "AI 应用权限模型：租户、工作区、角色与资源 ACL",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "权限模型",
+        "多租户隔离",
+        "资源 ACL"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-access-control-model.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-access-control-model.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 57,
+      "slug": "ai-data-retention-policy",
+      "title": "AI 应用数据留存策略：原文、Chunk、Prompt 与日志",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "数据留存",
+        "隐私合规",
+        "生命周期管理"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-data-retention-policy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-data-retention-policy.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 58,
+      "slug": "ai-incident-drill",
+      "title": "AI 应用故障演练：模型、队列、向量库与解析链路",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "故障演练",
+        "降级恢复",
+        "可观测性"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-incident-drill.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-incident-drill.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 59,
+      "slug": "ai-environment-config-management",
+      "title": "AI 多环境配置管理：dev、staging、prod 的隔离策略",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "多环境配置",
+        "密钥隔离",
+        "发布安全"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-environment-config-management.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-environment-config-management.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 60,
+      "slug": "ai-api-contracts",
+      "title": "AI 应用 API 契约：流式响应、任务状态与错误语义",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "API 契约",
+        "任务状态",
+        "重试语义"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-api-contracts.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-api-contracts.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 61,
+      "slug": "worker-observability",
+      "title": "Worker 可观测性：队列积压、失败率与死信任务",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Worker 监控",
+        "队列指标",
+        "死信任务"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/worker-observability.ts",
+      "archivePath": "content-archive/legacy-blog/posts/worker-observability.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 62,
+      "slug": "frontend-ai-task-state-management",
+      "title": "前端任务状态管理：AI 长任务的进度、取消与恢复",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "前端状态管理",
+        "AI 长任务",
+        "交互反馈"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/frontend-ai-task-state-management.ts",
+      "archivePath": "content-archive/legacy-blog/posts/frontend-ai-task-state-management.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 63,
+      "slug": "ai-error-code-system",
+      "title": "AI 应用错误码体系：用户提示、诊断信息与重试语义",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "错误码体系",
+        "用户提示",
+        "诊断信息"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-error-code-system.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-error-code-system.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 64,
+      "slug": "rag-incremental-indexing",
+      "title": "RAG 增量索引：文档更新、删除与重新 Embedding",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "增量索引",
+        "文档版本",
+        "缓存失效"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-incremental-indexing.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-incremental-indexing.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 65,
+      "slug": "ai-evaluation-dashboard",
+      "title": "AI 评测看板：召回、引用、延迟、成本与反馈",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "评测看板",
+        "质量指标",
+        "反馈闭环"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-evaluation-dashboard.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-evaluation-dashboard.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 66,
+      "slug": "enterprise-audit-reporting",
+      "title": "企业审计报表：文档访问、报告导出与工具调用追踪",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "审计报表",
+        "访问追踪",
+        "合规记录"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/enterprise-audit-reporting.ts",
+      "archivePath": "content-archive/legacy-blog/posts/enterprise-audit-reporting.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 67,
+      "slug": "knowledge-base-import-template",
+      "title": "知识库导入模板：目录、标签、Owner 与权限字段",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "知识库导入",
+        "元数据标准",
+        "内容治理"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/knowledge-base-import-template.ts",
+      "archivePath": "content-archive/legacy-blog/posts/knowledge-base-import-template.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 68,
+      "slug": "rag-data-quality-scoring",
+      "title": "RAG 数据质量评分：解析、Chunk、Metadata 与 Citation",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "数据质量",
+        "RAG 评估",
+        "质量评分"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-data-quality-scoring.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-data-quality-scoring.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 69,
+      "slug": "prompt-security-test-set",
+      "title": "Prompt 安全测试集：越权、注入、泄露与工具滥用",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "Prompt 安全",
+        "安全测试集",
+        "护栏评测"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/prompt-security-test-set.ts",
+      "archivePath": "content-archive/legacy-blog/posts/prompt-security-test-set.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 70,
+      "slug": "model-evaluation-benchmark",
+      "title": "模型评测基准：同一业务场景下的质量、成本与安全对比",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "模型评测",
+        "基准测试",
+        "模型选型"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/model-evaluation-benchmark.ts",
+      "archivePath": "content-archive/legacy-blog/posts/model-evaluation-benchmark.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 71,
+      "slug": "ai-delivery-documentation",
+      "title": "AI 应用交付文档：README、架构图、接口说明与 Runbook",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "交付文档",
+        "运维手册",
+        "项目说明"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-delivery-documentation.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-delivery-documentation.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 72,
+      "slug": "contract-risk-taxonomy",
+      "title": "合同审查风险分类：付款、违约、期限、保密与管辖如何建模",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "Legal RAG",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "合同风险分类",
+        "结构化审查",
+        "人工复核"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/contract-risk-taxonomy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/contract-risk-taxonomy.ts",
+      "recommendedAction": "rewrite-as-evidence-backed-legal-rag-knowledge-note",
+      "status": "legacy-source"
+    },
+    {
+      "order": 73,
+      "slug": "rag-query-log-analysis",
+      "title": "RAG 查询日志分析：用户问题、无答案与内容缺口",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "查询日志",
+        "无答案分析",
+        "知识库运营"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-query-log-analysis.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-query-log-analysis.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 74,
+      "slug": "ai-product-metrics",
+      "title": "AI 应用产品指标：采纳率、人工节省与质量反馈",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "产品指标",
+        "采纳率",
+        "AI 价值评估"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-product-metrics.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-product-metrics.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 75,
+      "slug": "legal-rag-disclaimer-human-review",
+      "title": "法律 RAG 责任边界：AI 辅助、人工复核与免责声明",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "Legal RAG",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "责任边界",
+        "人工复核",
+        "法律科技产品"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/legal-rag-disclaimer-human-review.ts",
+      "archivePath": "content-archive/legacy-blog/posts/legal-rag-disclaimer-human-review.ts",
+      "recommendedAction": "rewrite-as-evidence-backed-legal-rag-knowledge-note",
+      "status": "legacy-source"
+    },
+    {
+      "order": 76,
+      "slug": "knowledge-base-governance-workflow",
+      "title": "知识库治理流程：新增、复核、下线、归档与责任人机制",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "知识库治理",
+        "内容 Owner",
+        "文档生命周期"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/knowledge-base-governance-workflow.ts",
+      "archivePath": "content-archive/legacy-blog/posts/knowledge-base-governance-workflow.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 77,
+      "slug": "contract-review-report-schema",
+      "title": "合同审查报告结构：Summary、RiskItems、Citations 与 Recommendations",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "Legal RAG",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "审查报告",
+        "结构化输出",
+        "合同风险项"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/contract-review-report-schema.ts",
+      "archivePath": "content-archive/legacy-blog/posts/contract-review-report-schema.ts",
+      "recommendedAction": "rewrite-as-evidence-backed-legal-rag-knowledge-note",
+      "status": "legacy-source"
+    },
+    {
+      "order": 78,
+      "slug": "ai-permission-testing-strategy",
+      "title": "AI 应用权限测试：跨租户、过期链接、导出与工具调用",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "权限测试",
+        "多租户隔离",
+        "越权防护"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-permission-testing-strategy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-permission-testing-strategy.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 79,
+      "slug": "rag-search-page-integration",
+      "title": "RAG 与传统搜索融合：什么时候用搜索页，什么时候用问答页",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "搜索体验",
+        "RAG 产品设计",
+        "检索交互"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-search-page-integration.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-search-page-integration.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 80,
+      "slug": "contract-review-batch-processing",
+      "title": "合同审查批量处理：多份合同、批量风险项与报告合并",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "Legal RAG",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "批量任务",
+        "合同审查",
+        "报告合并"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/contract-review-batch-processing.ts",
+      "archivePath": "content-archive/legacy-blog/posts/contract-review-batch-processing.ts",
+      "recommendedAction": "rewrite-as-evidence-backed-legal-rag-knowledge-note",
+      "status": "legacy-source"
+    },
+    {
+      "order": 81,
+      "slug": "rag-operations-console",
+      "title": "RAG 运营后台：文档质量、查询质量、反馈与 Owner 任务",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "RAG 运营",
+        "质量看板",
+        "Owner 任务"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-operations-console.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-operations-console.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 82,
+      "slug": "ai-gradual-release-strategy",
+      "title": "AI 应用灰度发布：模型、Prompt 与检索参数如何逐步放量",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用工程化",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "灰度发布",
+        "运行时配置",
+        "回滚策略"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-gradual-release-strategy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-gradual-release-strategy.ts",
+      "recommendedAction": "merge-into-knowledge-accumulation-after-fresh-evidence",
+      "status": "legacy-source"
+    },
+    {
+      "order": 83,
+      "slug": "private-deployment-boundary",
+      "title": "私有化部署边界：模型、存储、日志脱敏与企业网络限制",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用工程化",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "私有化部署",
+        "数据安全",
+        "运维边界"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/private-deployment-boundary.ts",
+      "archivePath": "content-archive/legacy-blog/posts/private-deployment-boundary.ts",
+      "recommendedAction": "merge-into-knowledge-accumulation-after-fresh-evidence",
+      "status": "legacy-source"
+    },
+    {
+      "order": 84,
+      "slug": "contract-review-collaborative-review",
+      "title": "合同审查协同复核：法务、业务与管理员如何分工",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "Legal RAG",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "协同复核",
+        "风险项流转",
+        "角色权限"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/contract-review-collaborative-review.ts",
+      "archivePath": "content-archive/legacy-blog/posts/contract-review-collaborative-review.ts",
+      "recommendedAction": "rewrite-as-evidence-backed-legal-rag-knowledge-note",
+      "status": "legacy-source"
+    },
+    {
+      "order": 85,
+      "slug": "rag-evidence-chain-validation",
+      "title": "RAG 证据链校验：Citation、Quote、ChunkId 与版本一致性",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用知识库",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "证据链",
+        "Citation 校验",
+        "版本一致性"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/rag-evidence-chain-validation.ts",
+      "archivePath": "content-archive/legacy-blog/posts/rag-evidence-chain-validation.ts",
+      "recommendedAction": "review-topic-and-rewrite-only-if-still-useful",
+      "status": "legacy-source"
+    },
+    {
+      "order": 86,
+      "slug": "ai-cost-governance-strategy",
+      "title": "AI 应用成本治理：预算、限流、缓存、降级与高成本审批",
+      "column": "knowledge",
+      "tag": "全栈开发",
+      "series": "AI 应用工程化",
+      "date": "2026-06-20",
+      "readTime": "10 min",
+      "knowledgePoints": [
+        "成本治理",
+        "限流降级",
+        "预算控制"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-cost-governance-strategy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-cost-governance-strategy.ts",
+      "recommendedAction": "merge-into-knowledge-accumulation-after-fresh-evidence",
+      "status": "legacy-source"
+    },
+    {
+      "order": 87,
+      "slug": "ai-model-routing-strategy",
+      "title": "多模型路由策略：快模型、强模型与本地模型如何分工",
+      "column": "knowledge",
+      "tag": "AI 应用",
+      "series": "AI 应用工程化",
+      "date": "2026-06-20",
+      "readTime": "9 min",
+      "knowledgePoints": [
+        "模型路由",
+        "任务分级",
+        "模型抽象"
+      ],
+      "priorRuntimePath": "src/data/blog-posts/ai-model-routing-strategy.ts",
+      "archivePath": "content-archive/legacy-blog/posts/ai-model-routing-strategy.ts",
+      "recommendedAction": "merge-into-knowledge-accumulation-after-fresh-evidence",
+      "status": "legacy-source"
+    }
+  ]
+}
