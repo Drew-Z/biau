@@ -560,15 +560,111 @@ export const projects: Project[] = [
   {
     id: 'blog-semi',
     title: 'React + Semi 博客系统｜当前主站',
-    summary: '当前主站，用 React 与 Semi Design 组织首页、项目、案例、博客、详情路由、主题切换和自动部署。',
+    summary: '当前主站，用 React、Semi Design 和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。',
     category: 'platform',
     status: 'ongoing',
-    role: 'React 主站 / Semi 组件体系 / 项目案例路由 / 自动部署',
-    stack: ['React', 'Vite', 'TypeScript', 'Semi Design'],
-    highlights: ['多视图主站', '项目详情', '案例详情', '自动部署'],
+    role: 'React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识',
+    image: '/images/projects/showcase/blog-semi-home-desktop.png',
+    stack: ['React 19', 'Vite', 'TypeScript', 'Semi Design', 'Express', 'Prisma', 'PostgreSQL', 'Playwright'],
+    highlights: ['多视图主站', '项目案例', '公开助手', '内容治理', 'UI 验证'],
     links: [
       internalLink('内容模型文章', '/blog/content-modeling-project-site'),
       internalLink('公开内容治理', '/blog/public-content-governance'),
+      internalLink('静态站验证', '/blog/static-site-release-verification'),
+      internalLink('构建手记', '/blog/blog-content-system-build-log'),
+    ],
+    detailContent: {
+      overview: [
+        {
+          title: '从单页展示推进到项目案例中枢',
+          body:
+            'BIAU Port 当前承担的是公开主站和内容中枢：首页负责第一眼呈现项目方向，项目集把 AI 应用、业务系统、互动体验、移动端和平台建设分组，项目详情页用统一结构展示实现、架构、验证、边界和后续优化。它不是单纯博客列表，而是把多个已部署或进行中的项目收拢成可筛选、可讲解、可继续迭代的产品展示面。',
+        },
+        {
+          title: '公开内容以安全事实为边界',
+          body:
+            '项目页、博客精选、公开助手知识和 sitemap 都从仓库内的公开数据生成或读取。站点可以解释项目能力、技术栈和验证链路，但不写入真实密钥、数据库连接串、私有后台地址、未公开下载包或内部部署凭据。',
+        },
+      ],
+      workflow: [
+        {
+          title: '访客浏览闭环',
+          items: [
+            '首页 hero 项目卡片先进入主站项目详情，卡片按钮再打开外部 demo 或项目网站。',
+            '项目集按 AI、全栈/平台/移动端和游戏项目分组，整卡与键盘 Enter/Space 都进入主站详情页。',
+            '项目详情页统一展示核心亮点、技术栈、相关链接、案例分析、延展阅读和同类项目。',
+            '博客页通过公开精选与栏目过滤展示知识积累、项目总结、资源分享、AI 日报和构建手记等内容边界。',
+          ],
+        },
+        {
+          title: '助手与内容联动',
+          items: [
+            '公开助手从 `src/data/portfolio.ts` 和公开博客 curation 生成本地知识，未配置后端时仍可回答站点公开内容。',
+            '内部助手页面提供邀请码兑换、当前会话聊天和本地 fallback；隐藏管理页用于验证轻量 invite/admin API。',
+            '项目详情和助手知识共用 `getProjectAssistantSummary` 与 `getProjectAssistantTags`，减少页面文案和助手答案互相漂移。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: '前端路由与数据组织',
+          body:
+            '前端使用 React 19、Vite、TypeScript 和 Semi Design。`App.tsx` 管理首页、项目集、项目详情、博客、博客详情、助手和管理页路由；项目、博客、助手建议和公开知识都放在 `src/data/`，页面组件只消费已整理好的 typed data。',
+        },
+        {
+          title: '助手后端与公开知识生成',
+          body:
+            '仓库同时保留一个 Express/TypeScript 助手后端，配合 Prisma 与 PostgreSQL 支持 invite、member、chat session、message 和 usage log 等 MVP 数据结构。`scripts/generate-assistant-knowledge.ts` 会把公开项目和精选博客生成到 `server/data/public-knowledge.json`，让前端 fallback 和后端知识源保持同一份公开事实。',
+        },
+        {
+          title: '内容与 SEO 管线',
+          body:
+            '公开博客由 `blogCuration` 控制 visibility、role、priority 和 project relation；隐藏草稿不会进入公开列表、详情加载、助手知识或 sitemap。`scripts/generate-sitemap.mjs` 会从项目 id 和公开博客生成 sitemap，`SeoManager` 根据路由应用 canonical、description 和 Open Graph 信息。',
+        },
+      ],
+      quality: [
+        {
+          title: '自动化验证',
+          items: [
+            '`npm.cmd run assistant:index` 生成公开助手知识。',
+            '`npm.cmd run sitemap:generate` 更新公开 sitemap。',
+            '`npm.cmd run blog:check` 检查公开博客内容边界。',
+            '`npm.cmd run lint` 和 `npm.cmd run build` 覆盖 ESLint、TypeScript 和 Vite 构建。',
+            '`npm.cmd run check:ui` 通过 Playwright 检查主要路由、移动/桌面视口、SEO meta、键盘焦点、首页轮播和助手交互。',
+            '`npm.cmd run verify` 串起助手知识、Prisma、server build/smoke、前端构建、博客检查、preview 和 UI 检查，适合作为大范围发布前门禁。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '主站内容仍以静态 TypeScript 数据为主，不是多人 CMS；内容发布需要代码审查和构建验证。',
+            '博客仍在持续筛选和重写，旧内容不会因为存在归档就自动公开。',
+            '内部助手还是 MVP：适合轻量 invite、当前会话和公开知识整理，不等同于完整成员管理、私有知识库或长期历史系统。',
+            '项目页只展示公开安全事实；部署凭据、账号、生产数据、私有后台和未确认下载包不会放进公开站点。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '继续补齐各项目的案例页细节，让实现、架构、验证、边界和后续版本方向都能从仓库证据追溯。',
+            '把博客内容生成流水线继续沉淀为 review-only 证据包、模型辅助草稿、人工审核和公开发布的稳定流程。',
+            '增强公开助手对项目页、精选博客和资源内容的引用质量，并把内部助手逐步扩展到更真实的团队协作场景。',
+            '完善图片、移动端布局、链接审计、UI 回归和部署记录，让主站更接近长期维护的产品展示系统。',
+          ],
+        },
+      ],
+    },
+    assistantContext: [
+      'BIAU Port 当前主站使用 React 19、Vite、TypeScript 和 Semi Design 构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。',
+      '项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。',
+      '仓库包含一个 Express/TypeScript 助手后端，配合 Prisma/PostgreSQL 支持 invite、member、chat session、message 和 usage log 等 MVP 数据结构；前端未配置 API 时会使用公开知识 fallback。',
+      '内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。',
+      '验证链路包括 assistant:index、sitemap:generate、blog:check、lint、build、check:ui 和 verify，其中 verify 会串起助手知识、Prisma、server build/smoke、前端构建、博客检查、preview 和 UI 检查。',
+      '当前边界是静态数据驱动、人工审核发布、内部助手 MVP 和公开安全事实展示；后续会继续完善项目案例、博客流水线、助手引用质量、移动端布局和部署验证。',
     ],
   },
   {

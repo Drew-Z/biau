@@ -24,11 +24,37 @@
 
 ## Acceptance Criteria
 
-- [ ] 至少刷新一个项目案例页，且每个新增事实都能追溯到仓库证据。
-- [ ] 更新公开助手知识和 sitemap。
-- [ ] 运行 `npm.cmd run assistant:index`、`npm.cmd run sitemap:generate`、`npm.cmd run blog:check`、`npm.cmd run lint`、`npm.cmd run build`。
-- [ ] 明确记录未处理项目、后续优化方向和人工审核 gate。
+- [x] 至少刷新一个项目案例页，且每个新增事实都能追溯到仓库证据。
+- [x] 更新公开助手知识和 sitemap。
+- [x] 运行 `npm.cmd run assistant:index`、`npm.cmd run sitemap:generate`、`npm.cmd run blog:check`、`npm.cmd run lint`、`npm.cmd run build`。
+- [x] 明确记录未处理项目、后续优化方向和人工审核 gate。
 
 ## Notes
 
-- 这是长期任务下的候选 child task，启动前需要根据最新仓库状态补充 `design.md` / `implement.md`。
+- Evidence read:
+  - `src/App.tsx`
+  - `src/data/portfolio.ts`
+  - `src/data/blogCuration.ts`
+  - `src/data/assistant.ts`
+  - `scripts/generate-assistant-knowledge.ts`
+  - `scripts/generate-sitemap.mjs`
+  - `scripts/verify.mjs`
+  - `package.json`
+  - `README.md`
+  - `public/images/projects/showcase/blog-semi-*.png|webp`
+- Change made:
+  - Refreshed `blog-semi` project with real showcase image, expanded public stack/highlights, additional related reading links, full `detailContent`, and `assistantContext`.
+  - Regenerated `server/data/public-knowledge.json`.
+  - Ran sitemap generation; `public/sitemap.xml` had no content diff because project/blog URLs did not change.
+- Validation:
+  - `npm.cmd run assistant:index`: passed, generated 23 public knowledge items.
+  - `npm.cmd run sitemap:generate`: passed, generated 25 URLs.
+  - `npm.cmd run blog:check`: passed.
+  - `npm.cmd run lint`: passed.
+  - `npm.cmd run build`: passed with existing Vite ineffective dynamic import warnings.
+  - `npm.cmd run check:ui` with temporary preview server at `http://127.0.0.1:5174`: passed.
+  - `git diff --check`: passed.
+  - Sensitive scan over changed public data and task files: only existing frontend token variable names were matched; no secret values were found.
+- Not handled in this child:
+  - Deeper evidence refresh for `erp`, `legal-rag`, `xunqiu`, `pet/gamer`, `game/blog`, and individual game repositories remains in the parent backlog.
+  - Publishing or deleting blog content remains a human review gate.
