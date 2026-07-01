@@ -41,7 +41,8 @@
 - Windows 环境下优先使用简单命令。
 - 给用户展示命令时优先使用 Git Bash 风格；需要执行项目脚本时可以直接使用 `npm.cmd`。
 - 不要使用破坏性 Git 命令，例如 `git reset --hard`、`git clean -fd`、`git checkout -- <file>`，除非用户明确要求。
-- 不要自动执行 `git push`，除非用户明确要求。
+- 用户已确认本项目可以在每次成功提交后默认执行 `git push origin main`，除非用户明确说明“不要推送”“先别推”或当前分支不是 `main`。
+- 不要安装无条件 `post-commit` 自动推送 hook；自动推送应由代理在提交后显式执行并确认结果。
 
 ## Agent skills
 
