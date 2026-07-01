@@ -679,8 +679,70 @@ export const projects: Project[] = [
     highlights: ['经典计分', '软硬降得分', 'combo/B2B', '触屏输入'],
     detailLink: gameSiteLink('first-tetris'),
     links: [gameSiteLink('first-tetris'), gamePlayLink('first-tetris')],
+    detailContent: {
+      overview: [
+        {
+          title: '从经典规则走向长期原型',
+          body:
+            'Game First Tetris 不是只验证“方块能下落和消行”，而是把经典模式、现代计分反馈、Rogue 实验线、多端布局和移动端触控放在同一个 Godot 项目里持续收口。当前阶段适合展示一个小型玩法原型如何逐步具备可讲解、可试玩、可继续迭代的产品雏形。',
+        },
+      ],
+      workflow: [
+        {
+          title: '核心体验链路',
+          items: [
+            '经典模式承接消行、等级推进、软降/硬降得分、combo 和 back-to-back 提示，是项目最稳定的主线。',
+            'Rogue 实验线通过三轮固定选择、最小强化和局间带入验证中程目标感，避免破坏经典玩法基础。',
+            'Help、主菜单、HUD 和触屏控件都被纳入展示体验，让第一次打开的访客能理解规则与入口。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: 'Godot 4.6.1 与输入结构',
+          body:
+            '游戏站证据显示该项目使用 Godot 4.6.1，目录按 scenes、scripts、docs 和 artifacts 组织。输入层已经从键盘逻辑里拆出动作映射、瞬时动作、持续状态和触屏桥接入口，为后续移动端按钮或手势方案保留了可维护边界。',
+        },
+        {
+          title: 'Web 试玩与多端展示',
+          body:
+            'Playlab 游戏站为它提供独立 Web 试玩入口，并保留主菜单、Rogue 游戏画面和 Help 面板截图。主站只引用公开试玩和游戏站详情，不承诺未验证的移动端正式包。',
+        },
+      ],
+      quality: [
+        {
+          title: '多端回归证据',
+          items: [
+            '开发日志记录主菜单、经典模式、Rogue 模式和 Help 在 360 x 640、393 x 852、412 x 915、960 x 640、1024 x 768、1280 x 720 等尺寸下进入最低可用线。',
+            '393 x 852 已可用，360 x 640 仍被描述为最低可运行线，因此主站不把触控体验写成完全完成。',
+            '游戏站内容审计会检查 games 与 devlogs 的关系、公开资源引用和内容 id，避免展示页资源断链。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            'Rogue 强化仍是低侵入实验层，平衡和长期成长还需要继续验证。',
+            '超窄移动尺寸和真实触屏手感仍是后续重点，不应写成彻底解决。',
+            'Web 首次加载受 Godot 运行时和资源体积影响，试玩体验需要持续观察。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '继续打磨 360 x 640 等高风险尺寸下的触屏可玩性和 HUD 阅读性。',
+            '整理分支、里程碑和试玩记录，让经典主线与 Rogue 实验线的关系更清楚。',
+            '补充更完整的录屏或试玩反馈，作为未来版本迭代依据。',
+          ],
+        },
+      ],
+    },
     assistantContext: [
       'Tetris 是 Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化实验、触屏桥接、响应式 UI 和 Web 试玩。',
+      'Playlab 游戏站证据显示 Tetris 使用 Godot 4.6.1，保留主菜单、Rogue 游戏画面和 Help 面板截图，并有 tetris-responsive-baseline 与 tetris-touch-controls 两篇开发日志说明多端适配和输入结构。',
       '项目重点是把经典规则、现代计分反馈、移动触控和可展示的 Web 构建组织在一起；后续方向包括移动端触控细节、Rogue 强化平衡、截图/试玩回归和长期迭代。',
     ],
   },
@@ -696,8 +758,65 @@ export const projects: Project[] = [
     highlights: ['三波短任务', '击破连击', '波次奖励', '结果复盘'],
     detailLink: gameSiteLink('next-spacewar'),
     links: [gameSiteLink('next-spacewar'), gamePlayLink('next-spacewar')],
+    detailContent: {
+      overview: [
+        {
+          title: '从单关 MVP 收成展示构建',
+          body:
+            'Game Next Spacewar 的价值在于把一个基础 2D 太空射击闭环推进到可对外演示的 showcase build。它不只是战斗能跑，还补齐主菜单、设置、About/Help、暂停、三波短任务、结果页和会话总结，让访客第一次打开时能知道自己在玩什么、当前版本到了哪里。',
+        },
+      ],
+      workflow: [
+        {
+          title: '短任务试玩流程',
+          items: [
+            '玩家从主菜单进入短任务，在三波战斗中面对漂移目标、装甲目标和障碍压力。',
+            '击破计分、短窗口连击和波次清除奖励提供街机式反馈。',
+            '单局结束后进入独立结果页，展示最终分数、击毁统计、最高连击和下一步操作。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: '展示版外壳',
+          body:
+            '项目以 Godot 4.6.1 组织 scenes、scripts、assets 和 docs，主菜单、战斗、设置、Help 与结果页各自承担入口、局内体验和收束反馈。Playlab 通过独立试玩域名承载 Web 导出，主站保留详情页和试玩跳转。',
+        },
+      ],
+      quality: [
+        {
+          title: '展示状态证据',
+          items: [
+            '游戏站有真实运行主菜单、战斗和结果页截图，证明它已经从裸关卡进入完整外层体验。',
+            '开发日志将主菜单、设置、About/Help、暂停、结果页和 build 标识记录为展示版完成条件。',
+            '当前阶段更偏 review、PR 和素材包装，不默认继续横向扩充关卡内容。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '它是短任务 showcase build，不是长期内容型商业版本。',
+            '关卡密度、敌人差异和反馈节奏仍有继续打磨空间。',
+            'Web 试玩仍可能受首次加载、键鼠输入和浏览器性能影响。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '补充轻量录屏，让短任务战斗节奏比静态截图更容易被理解。',
+            '整理 PR/review 资料，把当前版本作为明确里程碑归档。',
+            '如果后续继续推进，再评估是否扩展更丰富的关卡和内容层。',
+          ],
+        },
+      ],
+    },
     assistantContext: [
       'Next Spacewar 是 Godot 4.6 太空射击展示构建，核心是三波短任务、漂移目标、装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。',
+      'Playlab 游戏站为 Next Spacewar 提供主菜单、战斗和结果页真实截图以及 Web 试玩入口；开发日志把它定义为已经收成可展示的本地 build。',
       '项目定位偏 showcase，适合说明如何把一个短时长战斗循环收束成可试玩作品；后续方向包括关卡密度、敌人差异、反馈节奏和更细的移动/键鼠输入体验。',
     ],
   },
@@ -713,8 +832,65 @@ export const projects: Project[] = [
     highlights: ['章节推进', '生存挑战', 'Boss 试炼', '局外成长'],
     detailLink: gameSiteLink('intespace'),
     links: [gameSiteLink('intespace'), gamePlayLink('intespace')],
+    detailContent: {
+      overview: [
+        {
+          title: '统一试玩前的 Roguelite 收口',
+          body:
+            'intespace 是竖屏自动射击 Roguelite 项目，当前重点不是继续横向加系统，而是把章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长和玩家主菜单收成一次完整 session。它适合展示系统原型如何走向可被访客理解的试玩入口。',
+        },
+      ],
+      workflow: [
+        {
+          title: '完整 session 链路',
+          items: [
+            '玩家从主菜单进入章节、生存或 Boss 试炼等战斗入口。',
+            '局内通过自动射击、经验拾取、武器路线和升级面板形成战斗推进。',
+            '结果页承接结算、成长动作、重开路径和返回主界面，让下一局循环成立。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: '手机优先的 Godot 原型',
+          body:
+            '游戏站记录该项目基于 Godot 4.6.1，按 docs、scenes 和 scripts 组织产品定义、阶段计划、战斗、HUD、升级面板、武器树和 UI 逻辑。Web 试玩作为当前展示入口，Windows 路径保留为后续发布方向。',
+        },
+      ],
+      quality: [
+        {
+          title: '阶段证据',
+          items: [
+            '武器系统 v1 已冻结结构，后续重点转向路线可读性和平衡验证。',
+            '玩家中枢、战斗 HUD 和结果总结截图已经补入游戏站，能说明它从系统工作台走向完整流程。',
+            'Playlab 内容审计和构建链路负责确认游戏内容关系、静态资源和站点输出。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '它仍处在统一试玩前的收口阶段，平衡、路线可读性和移动端触屏体验需要持续验证。',
+            '首屏信息密度、HUD 可读性和局外成长节奏仍是后续打磨重点。',
+            '不应把当前 Web 试玩写成最终完整版或商业发布版。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '压缩主菜单和 HUD 的首屏信息密度，让第一次打开更像正式试玩入口。',
+            '补齐统一试玩发布说明和轻量录屏。',
+            '继续验证武器路线、局外成长节奏和手机触屏体验。',
+          ],
+        },
+      ],
+    },
     assistantContext: [
       'intespace 是竖屏自动射击肉鸽项目，包含章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长、玩家 hub、结果总结和集成试玩入口。',
+      'Playlab 游戏站记录 intespace 基于 Godot 4.6.1，武器系统 v1 已冻结结构，截图覆盖玩家中枢、战斗 HUD 和结果总结，当前处于统一试玩前完整流程收口。',
       '项目重点是把移动端竖屏射击、Roguelite 成长、武器路线和 Boss 压力组合成较完整的长期迭代样本；后续方向包括平衡、试玩反馈、UI 文案、移动端体验和内容节奏优化。',
     ],
   },
@@ -730,8 +906,65 @@ export const projects: Project[] = [
     highlights: ['双关卡章节', '连锁击破', '首领收束', '试玩验证'],
     detailLink: gameSiteLink('raiden'),
     links: [gameSiteLink('raiden'), gamePlayLink('raiden')],
+    detailContent: {
+      overview: [
+        {
+          title: '纵版街机射击的 Demo 候选',
+          body:
+            'Raiden Prototype 以纵版街机射击为核心，当前已推进到 RC-0.4 稳定展示候选。它的重点是把双关章节、火力成长、炸弹资源、连锁击破、Boss 段落、章节过场和结果反馈压缩成可试玩的垂直切片。',
+        },
+      ],
+      workflow: [
+        {
+          title: 'Chapter Run 路线',
+          items: [
+            '推荐入口是 Chapter Run，先进入 Stage 01，再通过结果页和 ChapterBriefing 承接到 Stage 02。',
+            '玩家通过自动持续射击、掉落升级、炸弹清屏和短窗口连锁击破维持街机节奏。',
+            'Stage 02 的风暴机关、Boss overdrive 和终盘安全窗口形成当前版本的高潮段落。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: '开发目录与发布仓库分层',
+          body:
+            '游戏站记录根目录主要承担开发工作目录角色，实际同步到 GitHub 的发布仓库为 `.publish-final`。项目使用 Godot 4.6.1，scenes 与 scripts 覆盖主菜单、战斗、章节过场、HUD、结果页、敌人和 Boss 逻辑。',
+        },
+      ],
+      quality: [
+        {
+          title: '公开 Demo 准备证据',
+          items: [
+            '游戏站提供主菜单、Stage 02 战斗和结果页真实截图，说明它已进入外部试玩和 Demo 包装阶段。',
+            'Windows RC-0.4 预发布下载和 Web 试玩入口都已在游戏站记录。',
+            '当前验证重点是外部人工试玩、首屏理解成本、资源授权和 Web 包加载体积。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '它是稳定展示候选，不是商业成品。',
+            '弹幕可读性、音效/手感、关卡内容、难度曲线和移动端适配仍需继续验证。',
+            '素材授权和正式资源替换仍属于公开 Demo 发布前的检查项。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '组织外部人工试玩，确认双关节奏和首屏理解成本。',
+            '精简 Web 包资源，降低公开试玩首次加载压力。',
+            '继续维护素材授权清单并替换更正式的视觉/音频资源。',
+          ],
+        },
+      ],
+    },
     assistantContext: [
       'Raiden prototype 是 Godot 纵版弹幕射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场、结果页、公开 Demo 和 Web 试玩。',
+      'Playlab 游戏站记录 Raiden Prototype 当前为 RC-0.4 稳定展示候选，推荐入口是 Chapter Run，并有 Windows 预发布下载、Web 试玩和真实运行截图。',
       '项目适合展示纵版射击的章节节奏、Boss 阶段和奖励反馈如何被压缩成可玩的垂直切片；后续方向包括弹幕可读性、音效/手感、关卡内容、难度曲线和移动端适配。',
     ],
   },
@@ -747,8 +980,65 @@ export const projects: Project[] = [
     highlights: ['五个 Sector', '连续击破', '高分结算', '发布文档'],
     detailLink: gameSiteLink('space-war'),
     links: [gameSiteLink('space-war'), gamePlayLink('space-war')],
+    detailContent: {
+      overview: [
+        {
+          title: '复古横版射击的完整展示版本',
+          body:
+            'Space War 围绕 Nokia 3310《Space Impact》初代体验做复刻取舍，重点不是把项目现代化扩张，而是守住横向自动卷轴、短局高压射击、连续击破奖励、关底 Boss 和低彩 LCD 气质，并把它收成完整可玩、可展示、可维护的版本。',
+        },
+      ],
+      workflow: [
+        {
+          title: '正式试玩流程',
+          items: [
+            '玩家从主菜单进入关卡，沿五个常规 Sector 横向推进。',
+            '局内包含敌群、拾取强化、13 级武器成长、连续击破奖励和最终 Boss。',
+            '暂停、结算、最高分记录和中英文设置让它具备完整发布版外壳。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: '发布与展示整理',
+          body:
+            '项目基于 Godot 4.6.1，docs、scenes、scripts 和 release 分别承接设计/测试/发布说明、战斗与 UI 场景、数据和自动加载逻辑、正式分发包。游戏站保留 GitHub Release、Web 试玩和源码入口。',
+        },
+      ],
+      quality: [
+        {
+          title: '完成度证据',
+          items: [
+            '游戏站记录它已经形成 Windows 发布页、GitHub Release 和独立 Web 试玩入口。',
+            '菜单、战斗和结算截图证明项目不只是战斗原型，而是可以按正常流程打开、试玩、结束和再次开始。',
+            '发布后维护重点转向试玩反馈、兼容修复、Web 包体积和展示资料补齐。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '复刻目标要求克制扩题，不默认继续加入大量现代射击系统。',
+            '后期 Sector 难度曲线、移动端输入和 Web 首次加载体积仍值得长期观察。',
+            '程序化音效和低彩视觉服务于复古表达，不应被包装成高规格商业美术完成度。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '继续收集人工试玩反馈，确认后期 Sector 节奏和难度曲线。',
+            '评估更轻量的 Web 包，减少首次加载体积。',
+            '以修复、兼容和展示材料补齐为主维护，不默认继续横向扩系统。',
+          ],
+        },
+      ],
+    },
     assistantContext: [
       'space-war 是复古横版太空射击完整展示版本，受 Nokia 3310 Space Impact 风格启发，包含五个 Sector、敌机与道具、Boss、高分、连续击破奖励、结果页、程序化音效、Web/Windows 发布材料。',
+      'Playlab 游戏站记录 Space War 已经进入完整可玩、可展示、可维护阶段，保留 Windows Release、Web 试玩、真实菜单/战斗/结算截图和 v1.1.1 发布说明。',
       '项目展示了从原型到发布版的收束：菜单、战斗、结算、截图素材、发布文档和公开试玩入口都已组织起来；后续方向包括平衡、移动端输入、音频层次、可观测试玩反馈和更多关卡变化。',
     ],
   },
@@ -764,8 +1054,65 @@ export const projects: Project[] = [
     highlights: ['差异化敌群', '短窗口连击', 'Boss 阶段', '结果结算'],
     detailLink: gameSiteLink('spacewar-ii'),
     links: [gameSiteLink('spacewar-ii'), gamePlayLink('spacewar-ii')],
+    detailContent: {
+      overview: [
+        {
+          title: '第六个 Web 试玩项目接入',
+          body:
+            'Spacewar II 是更偏移动端纵向射击的续作原型。本轮主站展示重点不是夸大成完整续作，而是说明它如何从本地 Godot 目录补进 Playlab 统一内容模型、试玩域名规则、导出脚本和主站外链，成为第六个可展示游戏项目。',
+        },
+      ],
+      workflow: [
+        {
+          title: '纵向短局体验',
+          items: [
+            '玩家从菜单进入战斗，通过自动射击、拾取升级和炸弹清场推进短局。',
+            'scout、diver、sweeper、tank 等敌群提供基础差异，Boss 阶段升级和多向弹幕形成终盘压力。',
+            '结果页收束分数、路线、击破数、升级数、最高连击、清关资源和重开路径。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: '统一内容模型与 Web 导出',
+          body:
+            '游戏站记录 Spacewar II 使用 `spacewar-ii` 作为统一 slug，纳入 Astro games 内容集合、Web 试玩 URL、导出脚本目标和主站外链。项目目录包含菜单、战斗、HUD、结果、升级和 smoke test 结构。',
+        },
+      ],
+      quality: [
+        {
+          title: '接入与浏览器检查',
+          items: [
+            '开发日志记录第六个游戏进入统一 Web 试玩接入位，后续重点是 Web 导出、浏览器 canvas 和 HUD 可读性。',
+            '游戏站条目记录它已经通过本地 Web 导出和浏览器检查，并补入菜单、战斗、结果页真实运行截图。',
+            '统一导出检查脚本覆盖六个 slug 的桌面和移动视口 canvas 渲染、布局、滚动和状态提示。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '它是第六个接入的可试玩原型，仍需要继续观察移动端横竖屏缩放和 HUD 可读性。',
+            '真实试玩短视频仍待补充，当前证据以截图、导出检查和浏览器检查为主。',
+            '后续只应优先修复影响公开展示和试玩可信度的问题，不默认扩成大型内容项目。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '补一段真实试玩短视频，增强展示证据链。',
+            '继续检查移动端横竖屏缩放、HUD 遮挡和 Boss 可读性。',
+            '把结果页、菜单和公开试玩路径作为后续小版本回归重点。',
+          ],
+        },
+      ],
+    },
     assistantContext: [
       'Spacewar II 是 Godot 4.6 纵向移动射击续作，作为第六个游戏接入 Playlab，包含差异化敌群、Boss 阶段、多向弹幕、拾取升级、炸弹、短窗口连击、资源结算、紧凑 HUD、结果页和 Web 试玩。',
+      'Playlab 游戏站记录 Spacewar II 使用 spacewar-ii 统一 slug，已纳入游戏站内容模型、试玩域名和导出脚本，真实截图覆盖菜单、Boss 战斗和结果页。',
       '项目重点是把移动纵向射击的敌群、弹幕、拾取和结算节奏整理成可展示版本；后续方向包括移动端触控、Boss 可读性、关卡节奏、资源成长和发布素材继续打磨。',
     ],
   },
