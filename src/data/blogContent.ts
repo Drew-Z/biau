@@ -12,6 +12,7 @@ const postLoaders: Record<string, () => Promise<{ default: BlogPost }>> = {
   'content-modeling-project-site': () => import('./blog-posts/content-modeling-project-site'),
   'public-content-governance': () => import('./blog-posts/public-content-governance'),
   'static-site-release-verification': () => import('./blog-posts/static-site-release-verification'),
+  'blog-content-system-build-log': () => import('./blog-posts/blog-content-system-build-log'),
 }
 
 export function getBlogPost(slug: string): Promise<BlogPost | undefined> {

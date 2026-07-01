@@ -1385,6 +1385,21 @@ export const blogPosts: BlogPostSummary[] = [
     ]
   },
   {
+    "slug": "blog-content-system-build-log",
+    "title": "博客内容系统构建手记：从清理旧文章到栏目化流水线",
+    "tag": "构建手记",
+    "column": "build-log",
+    "detail": "复盘本站博客从批量生成内容清理、公开策展、栏目迁移，到建立内容生产 skill 的过程：先收口公开面，再把写作变成可验证的流水线。",
+    "date": "2026-07-01",
+    "readTime": "10 min",
+    "series": "站点构建手记",
+    "knowledgePoints": [
+      "内容系统治理",
+      "BlogColumn 栏目模型",
+      "AI 写作流水线"
+    ]
+  },
+  {
     "slug": "ozon-erp-architecture",
     "title": "电商 ERP 架构：后台、队列、插件与审计如何协同",
     "tag": "全栈开发",

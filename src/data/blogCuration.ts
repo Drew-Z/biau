@@ -95,6 +95,12 @@ export const blogCuration: Partial<Record<string, BlogCuration>> = {
     priority: 90,
     projectIds: ['blog-semi'],
   },
+  'blog-content-system-build-log': {
+    visibility: 'featured',
+    role: 'technical-method',
+    priority: 100,
+    projectIds: ['blog-semi'],
+  },
 }
 
 const sourceOrder = new Map(blogPosts.map((post, index) => [post.slug, index]))

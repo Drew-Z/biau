@@ -84,8 +84,16 @@ for (const viewport of viewports) {
 const interactionPage = await browser.newPage({ viewport: viewports[0] })
 await interactionPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
 const initialCards = await interactionPage.locator('.blog-card').count()
-if (initialCards !== 9) {
-  failures.push(`/blog pagination: expected 9 curated cards on first page, got ${initialCards}`)
+const initialResultMeta = await interactionPage.locator('.blog-result-meta').innerText()
+const initialTotalMatch = initialResultMeta.match(/(\d+)\s*篇文章/)
+if (!initialTotalMatch) {
+  failures.push(`/blog pagination: expected result meta to include total article count, got "${initialResultMeta}"`)
+} else {
+  const initialTotal = Number.parseInt(initialTotalMatch[1], 10)
+  const expectedFirstPageCards = Math.min(12, initialTotal)
+  if (initialCards !== expectedFirstPageCards) {
+    failures.push(`/blog pagination: expected ${expectedFirstPageCards} curated cards on first page, got ${initialCards}`)
+  }
 }
 const previousButton = interactionPage.getByRole('button', { name: '上一页' })
 const previousDisabled = await previousButton.isDisabled()
