@@ -646,3 +646,37 @@ Added a mode gate to the blog content pipeline so normal runs distinguish Codex-
 ### Next Steps
 
 - None - task complete
+
+
+## Session 20: Blog pipeline model-assisted flow
+
+**Date**: 2026-07-02
+**Task**: Blog pipeline model-assisted flow
+**Branch**: `main`
+
+### Summary
+
+Improved the blog model setup wizard, verified three profile-specific model channels, ran one approved strong draft generation and one approved review polish pass, added --polish-from support, and staged the resulting draft for review.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `63fba10` | (see git log) |
+| `b2be2d3` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
