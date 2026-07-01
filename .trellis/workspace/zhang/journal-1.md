@@ -343,3 +343,42 @@ Published the first Build Log article, validated the blog/public assistant/sitem
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: Upgrade blog draft generator
+
+**Date**: 2026-07-01
+**Task**: Upgrade blog draft generator
+**Branch**: `main`
+
+### Summary
+
+Upgraded the blog draft pipeline into a column-aware, evidence-first scaffold workflow with optional model generation and updated checks.
+
+### Main Changes
+
+- Upgraded the existing blog draft generator into a BlogColumn-aware evidence-first scaffold workflow.
+- Preserved npm run blog:plan/blog:draft while making default draft generation model-free and moving optional model calls behind --generate.
+- Added a Build Log sample draft topic plus generated content-drafts/07-blog-content-system-build-log-draft.md.
+- Updated blog:check to support both legacy knowledge drafts and new evidence-pack drafts.
+- Verified no public blog data, assistant index, or sitemap paths were changed by the draft-only workflow.
+- Validation passed: blog:plan, blog:draft sample, blog:check, lint, build, verify.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5e6de8a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
