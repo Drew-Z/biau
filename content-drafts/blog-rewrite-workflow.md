@@ -28,13 +28,16 @@ npm run blog:draft -- --slug blog-content-system-build-log-draft --force
 - 输出进入 `content-drafts/`，便于人工审稿和 Git 管理。
 - 同一个主题可以反复生成、对比和覆盖，但不会自动进入公开博客。
 
-需要模型起草时，先补完整 Evidence Pack、Safe Public Facts、Uncertain Facts 和 Forbidden Details，再显式加 `--generate`：
+需要模型起草时，先补完整 Evidence Pack、Safe Public Facts、Uncertain Facts 和 Forbidden Details，再完成三模型配置检查；生成步骤仍需显式加 `--generate`：
 
 ```bash
+npm run blog:model -- setup
+npm run blog:model -- status --all --format markdown
+npm run blog:model -- doctor --all --format markdown
 npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate --profile strong
 ```
 
-Gemini CLI 或其他模型只适合辅助场景，例如临时扩写某一段、改标题、列大纲、生成配图提示词。正式草稿仍应进入脚本流程。
+Gemini CLI 或其他模型只适合辅助场景，例如临时扩写某一段、改标题、列大纲、生成配图提示词。正式草稿仍应进入脚本流程，并由 Codex 做证据、融合和安全复核。
 
 ## 本地 API 配置
 
@@ -43,9 +46,9 @@ Gemini CLI 或其他模型只适合辅助场景，例如临时扩写某一段、
 推荐先使用 smart-search 风格的模型配置命令，而不是直接手写所有值：
 
 ```bash
-npm run blog:model -- setup --profile strong
-npm run blog:model -- status --profile strong --format markdown
-npm run blog:model -- doctor --profile strong --format markdown
+npm run blog:model -- setup
+npm run blog:model -- status --all --format markdown
+npm run blog:model -- doctor --all --format markdown
 npm run blog:model -- doctor --profile strong --live --format markdown
 ```
 
@@ -61,8 +64,8 @@ BLOG_DRAFT_TEMPERATURE=0.65
 
 BLOG_DRAFT_STRONG_BASE_URL=
 BLOG_DRAFT_STRONG_API_KEY=
-BLOG_DRAFT_STRONG_MODEL=glm-5.2-or-deepseek-v4-pro-or-gemini-3.1-pro
-BLOG_DRAFT_STRONG_PROVIDER=primary-content-relay
+BLOG_DRAFT_STRONG_MODEL=glm-5.2-or-gemini-3.1-pro
+BLOG_DRAFT_STRONG_PROVIDER=generation-relay
 BLOG_DRAFT_STRONG_TEMPERATURE=0.65
 
 BLOG_DRAFT_FAST_BASE_URL=
@@ -73,12 +76,12 @@ BLOG_DRAFT_FAST_TEMPERATURE=0.35
 
 BLOG_DRAFT_REVIEW_BASE_URL=
 BLOG_DRAFT_REVIEW_API_KEY=
-BLOG_DRAFT_REVIEW_MODEL=review-model-or-equivalent
-BLOG_DRAFT_REVIEW_PROVIDER=review-relay
+BLOG_DRAFT_REVIEW_MODEL=deepseek-v4-pro
+BLOG_DRAFT_REVIEW_PROVIDER=polish-relay
 BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
 ```
 
-`strong` 用于长文起草和 legacy 重写，`fast` 用于大纲、摘要和低风险批量检查，`review` 只作为可选二次审稿。命名 profile 缺少值时会回落到默认 `BLOG_DRAFT_*`，再回落到旧的 `GEMINI_*`。如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable`、`unknown provider for model` 或上游认证错误，先运行 `blog:model status/doctor` 定位配置、路由或认证问题，再运行模型草稿。
+`strong` 用于长文起草和 legacy 重写，推荐 GLM-5.2 或 Gemini 3.1 Pro；`review` 用于润色和降 AI 味，推荐 DeepSeek V4 Pro；`fast` 用于大纲、摘要和低风险批量检查，推荐 Gemini 3.5 Flash。命名 profile 缺少值时会回落到默认 `BLOG_DRAFT_*`，再回落到旧的 `GEMINI_*`，这必须被视为 setup gap。如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable`、`unknown provider for model` 或上游认证错误，先运行 `blog:model status/doctor` 定位配置、路由或认证问题，再运行模型草稿。
 
 ## 图片与图示
 
@@ -106,7 +109,7 @@ BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
 2. 用 `blog:draft` 生成 evidence-first scaffold。
 3. 人工补证据、项目案例和图片。
 4. 运行 `npm run blog:check`。
-5. 如需模型改写，显式使用 `--generate` 或把草稿交给单个强内容模型。
+5. 如需模型改写，优先采用 Codex evidence/scaffold -> `strong` 初稿 -> Codex 融合 -> `review` 润色 -> Codex 终审；小稿可显式使用单个 `--generate --profile strong`。
 6. 审稿通过后，把文章转换到 `src/data/blog-posts/<slug>.ts` 和 `src/data/blog.ts`。
 7. 只有公开发布时才添加 loader 和 `blogCuration`。
 8. 运行 `npm run blog:audit`、`assistant:index`、`sitemap:generate`、`lint` 和 `build`。

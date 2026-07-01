@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { loadLocalEnv, readDraftModelConfig, redactSensitiveText } from './blog-model-config.mjs'
+import { buildChatCompletionsUrl, loadLocalEnv, readDraftModelConfig, redactSensitiveText } from './blog-model-config.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const planPath = resolve(repoRoot, 'scripts/blog-rewrite-plan.json')
@@ -79,7 +79,7 @@ const columnMeta = {
 }
 
 const forbiddenTerms = ['面试', '答辩', '简历', '学习打卡', '内部解释', '不再铺满', '求职', '私下', '本地知识库']
-const defaultModelStrategy = 'Codex evidence pack + one strong content model draft/rewrite + Codex review'
+const defaultModelStrategy = 'Codex evidence pack + Codex scaffold + strong profile draft + review profile polish + Codex final fact/safety review'
 
 function parseArgs(argv) {
   const args = { list: false, force: false, generate: false, limit: 1, slug: '', profile: '' }
@@ -210,7 +210,7 @@ function buildPrompt(topic) {
 async function requestDraft(topic, profile) {
   await loadLocalEnv()
   const config = readDraftModelConfig(profile)
-  const { baseUrl, apiKey, model, provider, temperature } = config
+  const { apiKey, model, provider, temperature } = config
 
   if (!apiKey) {
     throw new Error('缺少 BLOG_DRAFT_<PROFILE>_API_KEY、BLOG_DRAFT_API_KEY 或 GEMINI_API_KEY。默认请不加 --generate 先生成 evidence-first scaffold。')
@@ -218,7 +218,7 @@ async function requestDraft(topic, profile) {
 
   console.log(`使用模型渠道：${config.profile} -> ${provider} / ${model}`)
 
-  const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+  const response = await fetch(buildChatCompletionsUrl(config.baseUrl), {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${apiKey}`,
@@ -285,7 +285,8 @@ function buildScaffold(topic) {
     '',
     '## Model Strategy',
     `- ${topic.modelStrategy}`,
-    '- Default to serial model calls. Use multi-model comparison only for important posts, style uncertainty, or disputed wording.',
+    '- Default important-post flow: Codex evidence/scaffold, strong profile draft, review profile polish, then Codex final fact/safety review.',
+    '- Single-profile generation is allowed for small or low-risk drafts when the evidence pack is complete.',
     '',
     '## Review Gates',
     '- [ ] Every project claim is backed by the evidence pack.',

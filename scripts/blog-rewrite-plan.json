@@ -110,7 +110,7 @@
       "不要暗示草稿会自动公开发布。",
       "不要编造访问量、SEO 增长或用户反馈指标。"
     ],
-    "modelStrategy": "Codex 先整理证据包与边界；如需长文改写，串行调用一个强内容模型；最后由 Codex 做事实核查、脱敏、结构调整和入库。",
+    "modelStrategy": "Codex 先整理证据包与边界并生成 scaffold；如需长文改写，先用 strong profile 起草，再用 review profile 润色；最后由 Codex 做事实核查、脱敏、结构调整和入库。",
     "priority": 10
   },
   {
@@ -154,7 +154,7 @@
       "不要把项目包装成正式法律意见服务。",
       "不要编造使用量、准确率、客户反馈或未验证的生产指标。"
     ],
-    "modelStrategy": "Codex 先整理项目证据包和禁写边界；如需长文，串行调用一个强内容模型生成初稿；Codex 再做事实核查、脱敏和结构调整。",
+    "modelStrategy": "Codex 先整理项目证据包和禁写边界；如需长文，先用 strong profile 生成初稿，再用 review profile 润色；Codex 再做事实核查、脱敏和结构调整。",
     "priority": 11
   },
   {
@@ -198,7 +198,7 @@
       "根部署脚本中出现的主机和账号信息只能抽象为部署脚本证据，不能写入公开草稿。",
       "不要把内部运营数据写成公开案例素材。"
     ],
-    "modelStrategy": "Codex 整理证据包后，优先由一个内容模型串行起草访客可读复盘；Codex 负责删除部署与业务敏感细节并核对每个系统能力。",
+    "modelStrategy": "Codex 整理证据包后，优先用 strong profile 起草访客可读复盘，再用 review profile 润色；Codex 负责删除部署与业务敏感细节并核对每个系统能力。",
     "priority": 12
   },
   {
@@ -286,7 +286,7 @@
       "不要公开存储凭据、部署 token、私有 bucket、未发布试玩包路径或运营后台信息。",
       "不要把所有游戏都描述成同等成熟的完整产品。"
     ],
-    "modelStrategy": "Codex 先按站点、游戏条目、发布脚本和内容质量整理证据；一个内容模型可用于写访客可读复盘；Codex 最后按每个游戏成熟度做事实校正。",
+    "modelStrategy": "Codex 先按站点、游戏条目、发布脚本和内容质量整理证据；strong profile 可用于写访客可读复盘，review profile 用于润色；Codex 最后按每个游戏成熟度做事实校正。",
     "priority": 14
   },
   {
@@ -384,7 +384,7 @@
       "不要把 draft-only evidence pack 当作已发布文章引用。",
       "不要编造访问量、SEO 效果或用户反馈指标。"
     ],
-    "modelStrategy": "Codex 已能直接生成证据包草稿；若后续写正式长文，串行调用一个强内容模型改写表达，再由 Codex 复核事实、脱敏和入库。",
+    "modelStrategy": "Codex 已能直接生成证据包草稿；若后续写正式长文，先用 strong profile 改写表达，再用 review profile 润色，最后由 Codex 复核事实、脱敏和入库。",
     "priority": 16
   }
 ]

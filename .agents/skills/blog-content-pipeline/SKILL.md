@@ -19,11 +19,13 @@ record the writing mode:
 1. **Codex-only scaffold/review** — use repository evidence and scripts without
    model generation. Record `model channel: none` in the evidence pack. Do not
    force model setup for this mode.
-2. **Model-assisted draft/rewrite** — ask the user to set or confirm the target
-   profile before generation, normally `strong` for long-form writing. Prefer
-   `npm.cmd run blog:model -- setup --profile strong`, then run masked offline
-   `status` and `doctor`. If the profile resolves through fallback or legacy
-   values, surface that and recommend setup before generation.
+2. **Model-assisted draft/rewrite** — ask the user to set or confirm the model
+   profiles before generation. Prefer the smart-search-style guided setup:
+   `npm.cmd run blog:model -- setup`, then masked offline
+   `npm.cmd run blog:model -- status --all --format markdown` and
+   `npm.cmd run blog:model -- doctor --all --format markdown`. If a profile
+   resolves through fallback or legacy values, surface that and recommend setup
+   before generation.
 3. **Review-only** — review an existing draft against evidence, safety, column
    fit, overlap, voice, image, and promotion gates. Record any missing model
    setup only if generation is requested.
@@ -61,16 +63,24 @@ For image decisions, read `references/usage.md`. Prefer real screenshots and dia
 
 ## Model Channels
 
-Default strategy:
+Default important-post strategy:
 
 ```text
-Codex evidence pack -> one strong content model draft/rewrite -> Codex review/edit/ingest
+Codex evidence pack -> Codex scaffold -> strong profile draft -> review profile polish -> Codex final fact/safety review
 ```
 
-- Long-form drafting or rewriting: use the `strong` profile with one strong content model such as GLM-5.2, DeepSeek V4 Pro, Gemini 3.1 Pro, or an equivalent configured channel.
-- Outlines, summaries, or low-risk batch checks: use the `fast` profile with Gemini 3.5 Flash or an equivalent low-cost model.
-- Review experiments: use the `review` profile only after Codex has completed evidence and safety review; do not treat model review as authority.
-- Multi-model comparison is exceptional: use it only for important posts, style uncertainty, or disputed framing.
+- Evidence, comparison, final safety, and ingestion: Codex owns the evidence
+  pack, compares generated text against facts, fuses usable parts, and rejects
+  unsupported claims.
+- Long-form drafting or rewriting: use the `strong` profile, recommended
+  GLM-5.2 or Gemini 3.1 Pro, or an equivalent configured channel.
+- Polishing: use the `review` profile, recommended DeepSeek V4 Pro, for
+  structure, tone, density, and lower AI-smell rewrites; do not treat model
+  review as authority.
+- Outlines, summaries, titles, or low-risk batch checks: use the `fast` profile,
+  recommended Gemini 3.5 Flash or equivalent low-cost model.
+- Single-profile generation is acceptable for small or low-risk drafts; use the
+  staged flow for important posts, style uncertainty, or disputed framing.
 - Default to serial calls. If parallel model use is necessary, split across different relays or provider profiles.
 - Store real relay URLs and API keys only in `.env.local` or external configuration. Public repo files may contain placeholders only.
 
@@ -103,7 +113,12 @@ BLOG_DRAFT_REVIEW_PROVIDER=
 BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
 ```
 
-Use `npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong` for long-form drafts. If a named profile is missing a value, the script falls back to the default `BLOG_DRAFT_*` channel, then legacy `GEMINI_*`.
+Use `npm.cmd run blog:model -- setup` for guided three-profile setup, or
+`npm.cmd run blog:model -- setup --profile <profile>` for one profile. Use
+`npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong`
+for a single generated draft only after setup and approval. If a named profile
+is missing a value, the script falls back to the default `BLOG_DRAFT_*` channel,
+then legacy `GEMINI_*`, and the workflow must surface that as a setup gap.
 
 Do not run `blog:draft -- --generate` unless the run is explicitly
 `model-assisted`, the evidence pack is complete, a private model channel is

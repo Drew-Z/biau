@@ -16,9 +16,14 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `npm.cmd run blog:plan` runs `node scripts/generate-blog-draft.mjs --list`.
 - `npm.cmd run blog:draft -- --slug <slug> --force` writes an evidence-first scaffold only.
 - `npm.cmd run blog:draft -- --slug <slug> --force --generate --profile <profile>` requests an OpenAI-compatible chat completion.
-- `npm.cmd run blog:model -- setup --profile <profile>` runs the interactive private model setup wizard.
+- `npm.cmd run blog:model -- setup` runs the smart-search-style interactive
+  private model setup wizard for `strong`, `review`, and `fast`.
+- `npm.cmd run blog:model -- setup --profile <profile>` configures one profile.
+- `npm.cmd run blog:model -- setup --non-interactive --profile <profile> --base-url <url> --api-key <key> --model <id> --provider <label>` saves one profile without prompts.
 - `npm.cmd run blog:model -- status --profile <profile> --format json|markdown` prints masked offline profile status.
+- `npm.cmd run blog:model -- status --all --format json|markdown` prints masked offline status for the recommended three-profile flow.
 - `npm.cmd run blog:model -- doctor --profile <profile> --format json|markdown` performs an offline channel configuration check without writing drafts.
+- `npm.cmd run blog:model -- doctor --all --format json|markdown` performs offline checks for the recommended three-profile flow without sending model requests.
 - `npm.cmd run blog:model -- doctor --profile <profile> --live --format json|markdown` performs an explicit minimal live channel check without writing drafts.
 - `npm.cmd run blog:model -- config path --format json|markdown` reports the private env target without printing secret values.
 - Supported profile names are open-ended, but current documented profiles are `default`, `strong`, `fast`, and `review`.
@@ -31,9 +36,11 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
   or `publish reviewed content`.
 - `Codex-only scaffold/review` must record the selected mode and `model channel:
   none` in the evidence pack. It must not force model setup.
-- `model-assisted draft/rewrite` must ask the user to set or confirm the target
-  profile before generation. The normal setup command is
-  `npm.cmd run blog:model -- setup --profile <profile>`.
+- `model-assisted draft/rewrite` must ask the user to set or confirm model
+  profiles before generation. The normal guided setup command is
+  `npm.cmd run blog:model -- setup`, followed by masked offline
+  `status --all` and `doctor --all`. Single-profile setup remains valid for
+  small or low-risk drafts.
 - Model-assisted runs must use masked offline `status` / `doctor` before
   generation. If the selected profile resolves from fallback or legacy values,
   the workflow should pause and recommend setup before `--generate`.
@@ -41,13 +48,17 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `publish reviewed content` must only promote content that already passed the
   evidence, safety, column-fit, and public visibility gates.
 - The script must not call a model unless `--generate` is present.
-- Model calls use `POST <BASE_URL>/v1/chat/completions`.
+- Model calls use OpenAI-compatible chat completions. The script accepts either
+  a relay root URL or a URL ending in `/v1` and calls the corresponding
+  `/chat/completions` endpoint without duplicating `/v1`.
 - Per field, resolution order is:
   1. profile-specific `BLOG_DRAFT_<PROFILE>_<FIELD>` when that environment key exists,
   2. default `BLOG_DRAFT_<FIELD>` when that environment key exists,
   3. legacy `GEMINI_<FIELD>` when that environment key exists,
   4. a non-secret fallback where one is safe.
 - Fields are `BASE_URL`, `API_KEY`, `MODEL`, `PROVIDER`, and `TEMPERATURE`.
+  `TEMPERATURE` is an advanced optional setup field; internal defaults remain
+  active when it is not configured.
 - `API_KEY` is required only for `--generate`.
 - `.env.local` may be loaded by the script, but it must not overwrite an already-present `process.env` key, including keys intentionally set to an empty string.
 - Committed files may include placeholder variable names only. Never commit real relay URLs, API keys, accounts, private URLs, or local secret paths.
@@ -64,6 +75,8 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - Model-assisted mode with fallback/legacy profile resolution -> warn, recommend
   `blog:model setup --profile <profile>`, and do not treat the profile as fully
   confirmed unless the user explicitly accepts that risk.
+- Model-assisted important-post flow -> record Codex evidence/scaffold,
+  `strong` generation, `review` polishing, and Codex final fact/safety review.
 - Missing API key with `--generate` -> fail before network access with a clear missing-key message.
 - Invalid temperature -> fall back to a safe numeric default, currently `0.65`.
 - No `--generate` -> write scaffold and require no model config.
@@ -141,6 +154,8 @@ evidence-first contract remains testable.
   only to `.env.local` or another explicitly private target, supports
   `json|markdown` output for status/doctor, and can check the selected profile
   without overwriting drafts.
+- For guided setup changes, verify `setup`, `setup --profile <profile>`,
+  `setup --non-interactive`, `status --all`, and `doctor --all`.
 - Verify default `doctor` completes offline. Do not run `doctor --live` unless
   the user explicitly approves a small model task or asks to test the relay.
 - Run `npm.cmd run blog:check`, `npm.cmd run lint`, and `npm.cmd run build` before finishing.
@@ -193,11 +208,16 @@ added.
 
 Behavior:
 
-- Select profile: `strong`, `fast`, `review`, `default`, or a custom profile.
-- Prompt for `BASE_URL`, `API_KEY`, `MODEL`, `PROVIDER`, and `TEMPERATURE`.
+- Beginner setup configures the recommended three-profile flow:
+  `strong` for generation, `review` for polish, and `fast` for low-risk helper
+  work. Single-profile and custom profile setup remain available.
+- Prompt for `BASE_URL`, `API_KEY`, `MODEL`, and `PROVIDER` in beginner setup.
+  Prompt for `TEMPERATURE` only in advanced setup or non-interactive flags.
 - Provide smart-search-like subcommands: `setup`, `status`, `doctor`, and
   `config path`.
-- Show existing values only as set/missing or non-secret labels.
+- Show model recommendations and field examples before asking for values.
+- Show existing private values only as set/missing/configured; model ids and
+  provider labels may be shown because they are non-secret labels.
 - Write private values to `.env.local` or an explicitly provided private env
   file; never to tracked docs or examples.
 - Offer `status` and default `doctor` for offline masked inspection, and

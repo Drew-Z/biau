@@ -22,18 +22,20 @@ npm run blog:plan
 npm run blog:draft -- --slug blog-content-system-build-log-draft --force
 
 # Model-assisted draft/rewrite
-npm run blog:model -- setup --profile strong
-npm run blog:model -- status --profile strong --format markdown
-npm run blog:model -- doctor --profile strong --format markdown
+npm run blog:model -- setup
+npm run blog:model -- status --all --format markdown
+npm run blog:model -- doctor --all --format markdown
 npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate --profile strong
 npm run blog:check
 ```
 
 Default `blog:draft` creates an evidence-first scaffold and does not call a model.
 Use `blog:model` to set up and check private model channels before `--generate`.
-For model-assisted runs, run `setup` or explicitly confirm the selected profile
-before generation, then run masked offline `status` / `doctor`. Use `--generate`
-only after the evidence pack and private-detail boundary are ready and the
-generation step is explicitly approved. Use `--profile strong` for long-form
-drafting, `--profile fast` for outlines and summaries, and `--profile review`
-only for optional secondary review.
+For model-assisted runs, run the guided three-profile `setup` or explicitly
+confirm the selected profile before generation, then run masked offline
+`status` / `doctor`. Use `--generate` only after the evidence pack and
+private-detail boundary are ready and the generation step is explicitly
+approved. Use `--profile strong` for the main draft, `--profile review` for
+polishing, and `--profile fast` for outlines, titles, summaries, and low-risk
+batch checks. Beginner setup skips temperature; use `--advanced` only when a
+relay/model needs explicit sampling settings.

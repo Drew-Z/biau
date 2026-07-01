@@ -8,6 +8,42 @@ export const defaultEnvPath = resolve(repoRoot, '.env.local')
 
 export const supportedProfiles = ['default', 'strong', 'fast', 'review']
 export const modelConfigFields = ['BASE_URL', 'API_KEY', 'MODEL', 'PROVIDER', 'TEMPERATURE']
+export const setupProfileOrder = ['strong', 'review', 'fast']
+
+export const profileRecommendations = {
+  default: {
+    role: 'shared fallback',
+    label: 'Shared fallback channel',
+    recommendation: 'Use only as a compatibility fallback.',
+    modelExamples: ['openai-compatible-model'],
+    providerExamples: ['openai-compatible'],
+    defaultTemperature: '0.65',
+  },
+  strong: {
+    role: 'generation',
+    label: 'Generation model',
+    recommendation: 'GLM-5.2 or Gemini 3.1 Pro for long-form Chinese technical drafts.',
+    modelExamples: ['glm-5.2', 'gemini-3.1-pro'],
+    providerExamples: ['glm', 'gemini', 'relay-main'],
+    defaultTemperature: '0.65',
+  },
+  review: {
+    role: 'polish',
+    label: 'Polishing model',
+    recommendation: 'DeepSeek V4 Pro for structure, tone, density, and lower AI-smell rewrites.',
+    modelExamples: ['deepseek-v4-pro'],
+    providerExamples: ['deepseek', 'relay-review'],
+    defaultTemperature: '0.2',
+  },
+  fast: {
+    role: 'fast helper',
+    label: 'Fast helper model',
+    recommendation: 'Gemini 3.5 Flash for titles, outlines, summaries, and low-risk checks.',
+    modelExamples: ['gemini-3.5-flash'],
+    providerExamples: ['gemini', 'relay-fast'],
+    defaultTemperature: '0.35',
+  },
+}
 
 const legacyFieldKeys = {
   BASE_URL: 'GEMINI_BASE_URL',
@@ -52,6 +88,29 @@ export function profileFieldKey(profileInput, field) {
 
 export function profileFieldKeys(profileInput) {
   return Object.fromEntries(modelConfigFields.map((field) => [field, profileFieldKey(profileInput, field)]))
+}
+
+export function getProfileRecommendation(profileInput) {
+  const profile = normalizeProfile(profileInput)
+  return profileRecommendations[profile] ?? {
+    role: 'custom',
+    label: `${profile} custom model`,
+    recommendation: 'Custom OpenAI-compatible model profile.',
+    modelExamples: [`${profile}-model-id`],
+    providerExamples: [`${profile}-relay`],
+    defaultTemperature: '0.65',
+  }
+}
+
+export function normalizeBaseUrl(value) {
+  return String(value ?? '').trim().replace(/\/+$/, '')
+}
+
+export function buildChatCompletionsUrl(baseUrl) {
+  const normalized = normalizeBaseUrl(baseUrl)
+  return normalized.endsWith('/v1')
+    ? `${normalized}/chat/completions`
+    : `${normalized}/v1/chat/completions`
 }
 
 export function unquoteEnvValue(value) {
@@ -126,7 +185,7 @@ export function readDraftModelConfig(profileInput = '', source = process.env) {
 
   return {
     profile: selectedProfile,
-    baseUrl: String(resolutions.BASE_URL.value ?? '').replace(/\/$/, ''),
+    baseUrl: normalizeBaseUrl(resolutions.BASE_URL.value),
     apiKey: String(resolutions.API_KEY.value ?? ''),
     model: String(resolutions.MODEL.value ?? ''),
     provider: String(resolutions.PROVIDER.value ?? ''),
