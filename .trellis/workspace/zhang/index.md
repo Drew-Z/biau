@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 16
+- **Total Sessions**: 17
 - **Last Active**: 2026-07-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~549 | Active |
+| `journal-1.md` | ~582 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 17 | 2026-07-01 | Blog model setup wizard | `0db6ab7` | `main` |
 | 16 | 2026-07-01 | Blog pipeline dry run | `0d7474c` | `main` |
 | 15 | 2026-07-01 | Extract blog content pipeline skill | `a094ff3` | `main` |
 | 14 | 2026-07-01 | Improve blog content generation skill | `4d245fc` | `main` |

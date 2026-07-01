@@ -547,3 +547,36 @@ Ran the blog-content-pipeline strong-profile dry run, captured the model routing
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: Blog model setup wizard
+
+**Date**: 2026-07-01
+**Task**: Blog model setup wizard
+**Branch**: `main`
+
+### Summary
+
+Added a secrets-safe blog model setup/status/doctor CLI, shared draft model config resolution, offline-by-default doctor with explicit --live checks, docs/spec updates, and validation for blog checks, lint, and build.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0db6ab7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
