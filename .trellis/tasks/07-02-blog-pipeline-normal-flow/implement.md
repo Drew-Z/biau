@@ -40,7 +40,7 @@
 npm.cmd run blog:model -- --help
 npm.cmd run blog:model -- status --all --format markdown
 npm.cmd run blog:model -- doctor --all --format markdown
-npm.cmd run blog:model -- setup --non-interactive --profile strong --local-env .trellis/workspace/zhang/tmp-blog-model.env --base-url "https://relay.example.com" --api-key "test-key-placeholder" --model "glm-5.2" --provider "glm" --format markdown
+npm.cmd run blog:model -- setup --non-interactive --profile strong --local-env .trellis/workspace/zhang/tmp-blog-model.env --base-url "https://relay.example.com" --api-key "placeholder-key" --model "glm-5.2" --provider "glm" --format markdown
 npm.cmd run blog:model -- status --profile strong --local-env .trellis/workspace/zhang/tmp-blog-model.env --format markdown
 npm.cmd run blog:model -- doctor --profile strong --local-env .trellis/workspace/zhang/tmp-blog-model.env --format markdown
 npm.cmd run blog:check
@@ -60,15 +60,27 @@ sure no placeholder value leaked into tracked files.
   placeholder values and did not print the placeholder API key.
 - `npm.cmd run blog:model -- status --profile strong --local-env ...` reported
   `profile-specific: true` for the temporary profile.
-- `npm.cmd run blog:model -- status --all --format markdown` and
-  `npm.cmd run blog:model -- doctor --all --format markdown` passed offline and
-  reported the real local profiles as `profile-specific: false` because they
-  resolve through fallback/legacy values.
+- After the user completed real setup, `npm.cmd run blog:model -- status --all
+  --format markdown` and `npm.cmd run blog:model -- doctor --all --format
+  markdown` passed offline with `strong`, `review`, and `fast` all reporting
+  `profile-specific: true`. The default doctor remained offline and sent no
+  model request.
 - Missing API key validation failed before network access as expected.
-- `npm.cmd run blog:plan`, `npm.cmd run blog:check`, `npm.cmd run lint`, and
-  `npm.cmd run build` passed. Build retained existing Vite
-  `INEFFECTIVE_DYNAMIC_IMPORT` warnings.
-- No live model request or draft generation was run.
+- One approved `strong` live generation ran for `chunk-strategy-public`. The
+  model body was readable, but it omitted required evidence/review headings.
+  `scripts/generate-blog-draft.mjs` now wraps generated bodies in the
+  evidence-first scaffold under `## Draft Body` instead of relying on the model
+  to reproduce safety headings.
+- One approved `review` live polish pass ran with
+  `npm.cmd run blog:draft -- --slug chunk-strategy-public --polish-from
+  content-drafts/02-chunk-strategy-public.md --profile review`. It preserved
+  the evidence scaffold and replaced only `## Draft Body`.
+- The polish path initially surfaced a false-positive old-slug warning because
+  it validated frontmatter as public body text. The script now validates the
+  polished content after stripping frontmatter, matching the normal draft path.
+- `npm.cmd run blog:check` passed after the generated and polished draft.
+- `node --check scripts/generate-blog-draft.mjs` passed.
+- `git diff --check` passed with CRLF warnings only.
 - Temporary placeholder env file was deleted after validation.
 
 ## Risks And Rollback

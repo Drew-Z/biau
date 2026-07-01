@@ -111,10 +111,10 @@ Codex evidence pack
 -> Codex final fact/safety review
 ```
 
-Implementation can be incremental. The first acceptable implementation may
-make the CLI and docs support all roles and produce separate model outputs;
-Codex performs comparison/fusion manually. A later version may automate compare
-and polish commands.
+Implementation is incremental. The current implementation keeps Codex in charge
+of comparison/fusion and adds `--polish-from` for the review profile to rewrite
+the existing `## Draft Body` while preserving the evidence scaffold. A later
+version may automate richer compare/fusion reports.
 
 ## Compatibility
 

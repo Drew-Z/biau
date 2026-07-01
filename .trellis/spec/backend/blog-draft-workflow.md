@@ -16,6 +16,7 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `npm.cmd run blog:plan` runs `node scripts/generate-blog-draft.mjs --list`.
 - `npm.cmd run blog:draft -- --slug <slug> --force` writes an evidence-first scaffold only.
 - `npm.cmd run blog:draft -- --slug <slug> --force --generate --profile <profile>` requests an OpenAI-compatible chat completion.
+- `npm.cmd run blog:draft -- --slug <slug> --polish-from content-drafts/<file>.md --profile review` requests an OpenAI-compatible review/polish pass using the existing draft body.
 - `npm.cmd run blog:model -- setup` runs the smart-search-style interactive
   private model setup wizard for `strong`, `review`, and `fast`.
 - `npm.cmd run blog:model -- setup --profile <profile>` configures one profile.
@@ -48,6 +49,9 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `publish reviewed content` must only promote content that already passed the
   evidence, safety, column-fit, and public visibility gates.
 - The script must not call a model unless `--generate` is present.
+- `--polish-from` is also a live model request. It must only run after explicit
+  approval, must preserve the existing evidence scaffold, and must replace only
+  the visitor-readable body under `## Draft Body`.
 - Model calls use OpenAI-compatible chat completions. The script accepts either
   a relay root URL or a URL ending in `/v1` and calls the corresponding
   `/chat/completions` endpoint without duplicating `/v1`.
@@ -80,6 +84,8 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - Missing API key with `--generate` -> fail before network access with a clear missing-key message.
 - Invalid temperature -> fall back to a safe numeric default, currently `0.65`.
 - No `--generate` -> write scaffold and require no model config.
+- `--polish-from` with no `## Draft Body` -> fail before network access because
+  the script cannot safely separate evidence from visitor-readable prose.
 - Model API failure -> report status and a short response body excerpt, never credentials.
 - Model route failure such as `unknown provider for model <id>` -> treat as a
   channel configuration problem, not a content-quality problem. Do not silently
@@ -103,12 +109,18 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - Custom article templates are allowed for draft content, but they must not remove
   the evidence scaffold headings that `blog:check` treats as the public-safety
   contract.
+- Model-generated content from `--generate` must be wrapped by the script in the
+  same evidence scaffold; do not rely on the model to reproduce required
+  headings correctly.
 - Keep these headings intact for evidence drafts: `## Evidence Pack`,
   `## Safe Public Facts`, `## Uncertain Or Stale Facts`,
   `## Forbidden / Private Details`, `## Draft Brief`, `## Article Outline`,
   `## Review Gates`, and `## Promotion Checklist`.
 - Put visitor-readable long-form content under an additional heading such as
   `## Draft Body` when a user asks for a custom writing structure.
+- Put model-generated long-form content under `## Draft Body`. Strip a duplicate
+  leading H1 from the model body when needed so the draft keeps one canonical
+  title at the top.
 - Use `## Article Outline` to record the selected template, including bilingual
   labels when useful. This keeps custom templates visible without confusing them
   with the machine-checked safety sections.
@@ -145,10 +157,35 @@ unsafe facts, review gates, and promotion boundaries are present.
 The custom structure is still visible to the author and reader, while the
 evidence-first contract remains testable.
 
+#### Correct Generated Draft Shape
+
+```markdown
+## Evidence Pack
+...
+
+## Promotion Checklist
+...
+
+## Draft Body
+
+### Model-generated article title or first section
+...
+```
+
+The model body may be stylistically good, but the script owns the safety
+headings. This prevents a successful model call from creating a draft that
+cannot enter the review pipeline.
+
 ### 6. Tests Required
 
 - Run `npm.cmd run blog:plan` or the equivalent list path when changing plan parsing.
 - Run `npm.cmd run blog:draft -- --slug <known-slug> --force` for scaffold behavior.
+- For generated draft changes, run one approved `--generate` flow or a targeted
+  fixture proving model body text is wrapped under the evidence scaffold and
+  passes `blog:check`.
+- For polish changes, run one approved `--polish-from` flow or a targeted fixture
+  proving only `## Draft Body` is replaced and the evidence scaffold remains
+  intact.
 - For profile/env changes, run a missing-key check with an intentionally empty `BLOG_DRAFT_<PROFILE>_API_KEY` and confirm it fails before network access.
 - For model channel setup tooling, verify it masks existing secret values, writes
   only to `.env.local` or another explicitly private target, supports

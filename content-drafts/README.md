@@ -26,6 +26,7 @@ npm run blog:model -- setup
 npm run blog:model -- status --all --format markdown
 npm run blog:model -- doctor --all --format markdown
 npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate --profile strong
+npm run blog:draft -- --slug blog-content-system-build-log-draft --polish-from content-drafts/07-blog-content-system-build-log-draft.md --profile review
 npm run blog:check
 ```
 
@@ -37,5 +38,7 @@ confirm the selected profile before generation, then run masked offline
 private-detail boundary are ready and the generation step is explicitly
 approved. Use `--profile strong` for the main draft, `--profile review` for
 polishing, and `--profile fast` for outlines, titles, summaries, and low-risk
-batch checks. Beginner setup skips temperature; use `--advanced` only when a
+batch checks. Use `--polish-from content-drafts/<file>.md` when the review
+profile should rewrite the existing `## Draft Body` while preserving the
+evidence scaffold. Beginner setup skips temperature; use `--advanced` only when a
 relay/model needs explicit sampling settings.

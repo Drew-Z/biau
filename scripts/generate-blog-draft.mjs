@@ -1,12 +1,13 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
+import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { buildChatCompletionsUrl, loadLocalEnv, readDraftModelConfig, redactSensitiveText } from './blog-model-config.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const planPath = resolve(repoRoot, 'scripts/blog-rewrite-plan.json')
 const draftsDir = resolve(repoRoot, 'content-drafts')
+const draftBodyHeading = '## Draft Body'
 
 const blogColumnOrder = ['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log']
 
@@ -82,16 +83,39 @@ const forbiddenTerms = ['面试', '答辩', '简历', '学习打卡', '内部解
 const defaultModelStrategy = 'Codex evidence pack + Codex scaffold + strong profile draft + review profile polish + Codex final fact/safety review'
 
 function parseArgs(argv) {
-  const args = { list: false, force: false, generate: false, limit: 1, slug: '', profile: '' }
+  const args = {
+    list: false,
+    force: false,
+    generate: false,
+    polish: false,
+    polishFrom: '',
+    limit: 1,
+    slug: '',
+    profile: '',
+  }
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index]
     if (item === '--list') args.list = true
     if (item === '--force') args.force = true
     if (item === '--generate') args.generate = true
     if (item === '--scaffold') args.generate = false
+    if (item === '--polish') args.polish = true
     if (item === '--slug') {
       args.slug = argv[index + 1] ?? ''
       index += 1
+    }
+    if (item === '--polish-from' || item === '--from-draft') {
+      args.polish = true
+      args.polishFrom = argv[index + 1] ?? ''
+      index += 1
+    }
+    if (item.startsWith('--polish-from=')) {
+      args.polish = true
+      args.polishFrom = item.slice('--polish-from='.length)
+    }
+    if (item.startsWith('--from-draft=')) {
+      args.polish = true
+      args.polishFrom = item.slice('--from-draft='.length)
     }
     if (item === '--profile') {
       args.profile = argv[index + 1] ?? ''
@@ -207,7 +231,44 @@ function buildPrompt(topic) {
   ].join('\n')
 }
 
-async function requestDraft(topic, profile) {
+function stripFrontmatter(content) {
+  return String(content ?? '').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim()
+}
+
+function extractDraftBody(draftText) {
+  const match = String(draftText ?? '').match(/(?:^|\r?\n)## Draft Body\s*\r?\n([\s\S]*)$/)
+  if (!match) throw new Error('待润色草稿缺少 ## Draft Body，不能安全区分证据区和正文区。')
+  return match[1].trim()
+}
+
+function buildPolishPrompt(topic, draftText) {
+  const column = columnMeta[topic.column]
+  const scaffoldText = stripFrontmatter(draftText).split(draftBodyHeading)[0]?.trim() ?? ''
+  const currentBody = extractDraftBody(draftText)
+
+  return [
+    '请润色下面这篇公开中文技术博客草稿的正文。',
+    '',
+    `标题：${topic.title}`,
+    `栏目：${column.titleZh} / ${column.titleEn}`,
+    `目标读者：${topic.targetReader}`,
+    '',
+    '证据、边界和审稿要求：',
+    scaffoldText,
+    '',
+    '当前正文：',
+    currentBody,
+    '',
+    '润色要求：',
+    '1. 只输出润色后的 Markdown 正文，不要输出 frontmatter、Evidence Pack、Review Gates 或解释说明。',
+    '2. 不要新增证据区没有支持的项目事实、部署状态、客户、指标、截图或私有基础设施细节。',
+    '3. 保留“待作者补充/待核验”这类需要人工确认的提示，不要把它们改写成确定事实。',
+    '4. 降低模板感和 AI 味，改进段落衔接、标题密度、技术表达和读者可读性。',
+    '5. 如果发现正文里有无法证实的具体实现细节，请改成谨慎表达或作者待补充提示。',
+  ].join('\n')
+}
+
+async function requestModelContent({ profile, prompt, systemContent }) {
   await loadLocalEnv()
   const config = readDraftModelConfig(profile)
   const { apiKey, model, provider, temperature } = config
@@ -230,9 +291,9 @@ async function requestDraft(topic, profile) {
       messages: [
         {
           role: 'system',
-          content: '你是公开技术博客作者，擅长把 AI 应用、项目复盘、资源推荐和构建手记写成清晰、可信、可审稿的中文文章。',
+          content: systemContent,
         },
-        { role: 'user', content: buildPrompt(topic) },
+        { role: 'user', content: prompt },
       ],
     }),
   })
@@ -248,6 +309,22 @@ async function requestDraft(topic, profile) {
     throw new Error('模型 API 没有返回 choices[0].message.content。')
   }
   return { content: content.trim(), config }
+}
+
+async function requestDraft(topic, profile) {
+  return requestModelContent({
+    profile,
+    prompt: buildPrompt(topic),
+    systemContent: '你是公开技术博客作者，擅长把 AI 应用、项目复盘、资源推荐和构建手记写成清晰、可信、可审稿的中文文章。',
+  })
+}
+
+async function requestPolish(topic, draftText, profile) {
+  return requestModelContent({
+    profile: profile || 'review',
+    prompt: buildPolishPrompt(topic, draftText),
+    systemContent: '你是中文技术博客审稿与润色编辑，必须保持证据边界，不编造事实，只优化结构、表达、密度和可读性。',
+  })
 }
 
 function buildScaffold(topic) {
@@ -307,6 +384,62 @@ function buildScaffold(topic) {
     .join('\n')
 }
 
+function stripGeneratedTitle(content) {
+  const lines = String(content ?? '').trim().split(/\r?\n/)
+  if (lines[0]?.trim().startsWith('# ')) return lines.slice(1).join('\n').trim()
+  return lines.join('\n').trim()
+}
+
+function buildGeneratedDraft(topic, generatedContent) {
+  return [
+    buildScaffold(topic),
+    '',
+    draftBodyHeading,
+    '',
+    stripGeneratedTitle(generatedContent),
+  ].join('\n')
+}
+
+function draftFileName(topic) {
+  return `${String(topic.order).padStart(2, '0')}-${topic.slug}.md`
+}
+
+function draftPathForTopic(topic) {
+  return resolve(draftsDir, draftFileName(topic))
+}
+
+function setFrontmatterField(frontmatter, key, value) {
+  const line = `${key}: ${yamlString(value)}`
+  const fieldPattern = new RegExp(`^${key}:.*$`, 'm')
+  if (fieldPattern.test(frontmatter)) return frontmatter.replace(fieldPattern, () => line)
+  return `${frontmatter.replace(/\s*$/, '')}\n${line}`
+}
+
+function updateDraftFrontmatter(content, updates) {
+  const match = String(content ?? '').match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
+  if (!match) throw new Error('待润色草稿缺少 frontmatter，不能安全更新生成元数据。')
+  let frontmatter = match[1]
+  for (const [key, value] of Object.entries(updates)) {
+    frontmatter = setFrontmatterField(frontmatter, key, value)
+  }
+  const body = content.slice(match[0].length).trimStart()
+  return `---\n${frontmatter.replace(/\s*$/, '')}\n---\n\n${body}`
+}
+
+function appendModelStrategyNote(content, note) {
+  const line = `- ${note}`
+  if (content.includes(line)) return content
+  const reviewHeadingIndex = content.indexOf('\n## Review Gates')
+  if (reviewHeadingIndex < 0) return content
+  return `${content.slice(0, reviewHeadingIndex).replace(/\s*$/, '')}\n${line}\n\n${content.slice(reviewHeadingIndex + 1)}`
+}
+
+function replaceDraftBodyContent(content, nextBody) {
+  const pattern = /(^|\r?\n)## Draft Body\s*\r?\n[\s\S]*$/m
+  if (!pattern.test(content)) throw new Error('待润色草稿缺少 ## Draft Body，不能安全写入润色正文。')
+  return content.replace(pattern, (_match, prefix) => `${prefix}${draftBodyHeading}\n\n${stripGeneratedTitle(nextBody)}\n`)
+}
+
 function validateDraft(topic, content) {
   const problems = []
   for (const term of forbiddenTerms) {
@@ -331,8 +464,8 @@ function validateDraft(topic, content) {
 
 async function writeDraft(topic, content, force, generatedBy) {
   await mkdir(draftsDir, { recursive: true })
-  const fileName = `${String(topic.order).padStart(2, '0')}-${topic.slug}.md`
-  const outputPath = resolve(draftsDir, fileName)
+  const fileName = draftFileName(topic)
+  const outputPath = draftPathForTopic(topic)
   if (existsSync(outputPath) && !force) {
     console.log(`跳过已存在草稿：${fileName}。使用 --force 可覆盖。`)
     return
@@ -364,8 +497,35 @@ async function writeDraft(topic, content, force, generatedBy) {
   }
 }
 
+async function writePolishedDraft(topic, outputPath, existingDraft, polishedContent, config) {
+  const generatedBy = `model-assisted-polish:${config.profile}:${config.provider}:${config.model}`
+  let content = updateDraftFrontmatter(existingDraft, {
+    generatedBy,
+    generatedAt: new Date().toISOString(),
+  })
+  content = appendModelStrategyNote(content, `Review/polish stage used the \`${config.profile}\` profile (${config.provider} / ${config.model}).`)
+  content = appendModelStrategyNote(content, 'Codex final fact/safety review is still required before promotion.')
+  content = replaceDraftBodyContent(content, polishedContent)
+
+  const problems = validateDraft(topic, stripFrontmatter(content))
+  await writeFile(outputPath, `${content.replace(/\s*$/, '')}\n`, 'utf8')
+  console.log(`已润色草稿：${relative(repoRoot, outputPath).replace(/\\/g, '/')}`)
+  if (problems.length > 0) {
+    console.log(`需要复核：${problems.join('；')}`)
+  }
+}
+
+function resolvePolishPath(topic, inputPath) {
+  if (!inputPath) return draftPathForTopic(topic)
+  return resolve(repoRoot, inputPath)
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
+  if (args.generate && args.polish) {
+    throw new Error('请在同一次命令中只选择 --generate 或 --polish-from，不要同时生成初稿和润色稿。')
+  }
+
   const plan = await readPlan()
 
   if (args.list) {
@@ -384,9 +544,15 @@ async function main() {
 
   for (const topic of selected) {
     console.log(`开始生成：${topic.slug}`)
-    if (args.generate) {
+    if (args.polish) {
+      const polishPath = resolvePolishPath(topic, args.polishFrom)
+      if (!existsSync(polishPath)) throw new Error(`待润色草稿不存在：${relative(repoRoot, polishPath).replace(/\\/g, '/')}`)
+      const existingDraft = await readFile(polishPath, 'utf8')
+      const { content, config } = await requestPolish(topic, existingDraft, args.profile || 'review')
+      await writePolishedDraft(topic, polishPath, existingDraft, content, config)
+    } else if (args.generate) {
       const { content, config } = await requestDraft(topic, args.profile)
-      await writeDraft(topic, content, args.force, `model-assisted-draft:${config.profile}:${config.provider}:${config.model}`)
+      await writeDraft(topic, buildGeneratedDraft(topic, content), args.force, `model-assisted-draft:${config.profile}:${config.provider}:${config.model}`)
     } else {
       await writeDraft(topic, buildScaffold(topic), args.force, 'codex-draft-scaffold')
     }

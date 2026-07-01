@@ -116,9 +116,12 @@ BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
 Use `npm.cmd run blog:model -- setup` for guided three-profile setup, or
 `npm.cmd run blog:model -- setup --profile <profile>` for one profile. Use
 `npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong`
-for a single generated draft only after setup and approval. If a named profile
-is missing a value, the script falls back to the default `BLOG_DRAFT_*` channel,
-then legacy `GEMINI_*`, and the workflow must surface that as a setup gap.
+for the first model draft only after setup and approval. Use
+`npm.cmd run blog:draft -- --slug <slug> --polish-from content-drafts/<file>.md --profile review`
+when a review/polish pass should rewrite the existing `## Draft Body` while
+preserving the evidence scaffold. If a named profile is missing a value, the
+script falls back to the default `BLOG_DRAFT_*` channel, then legacy
+`GEMINI_*`, and the workflow must surface that as a setup gap.
 
 Do not run `blog:draft -- --generate` unless the run is explicitly
 `model-assisted`, the evidence pack is complete, a private model channel is

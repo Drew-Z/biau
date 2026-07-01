@@ -125,5 +125,5 @@ Example commands:
 
 ```powershell
 npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong
-npm.cmd run blog:draft -- --slug <slug> --force --generate --profile review
+npm.cmd run blog:draft -- --slug <slug> --polish-from content-drafts/<file>.md --profile review
 ```

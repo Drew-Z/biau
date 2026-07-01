@@ -46,9 +46,19 @@ the user expects a model-assisted drafting pipeline.
 - Implementation added a smart-search-style guided setup for `strong`, `review`,
   and `fast`, plus `status --all`, `doctor --all`, and `profile-specific`
   reporting.
-- Offline checks currently show the local `.env.local` values are usable but
-  still resolve through fallback/legacy values, so real profile-specific setup
-  is still pending before generation.
+- Earlier offline checks showed the local `.env.local` values were usable but
+  still resolved through fallback/legacy values, which correctly blocked
+  generation until real profile-specific setup was completed.
+- After user setup, masked offline `status --all` and `doctor --all` showed
+  `strong`, `review`, and `fast` are all `profile-specific: true`.
+- One approved live generation was run for `chunk-strategy-public` using the
+  `strong` profile. The first model body was readable but missed review-gate
+  headings, so the generator now wraps model output in the evidence-first
+  scaffold and stores the generated body under `## Draft Body`.
+- One approved `review` profile polish pass was run against
+  `content-drafts/02-chunk-strategy-public.md`. The script now supports
+  `--polish-from` so the polishing model rewrites the existing `## Draft Body`
+  while preserving evidence, safety, and promotion sections.
 
 ## Requirements
 
@@ -88,7 +98,7 @@ the user expects a model-assisted drafting pipeline.
       `strong` for model-assisted draft/rewrite.
 - [x] If `model-assisted` is chosen, setup/confirmation is selected before any
       generation command.
-- [ ] If `model-assisted` is chosen, real setup/confirmation happens before any
+- [x] If `model-assisted` is chosen, real setup/confirmation happens before any
       generation command.
 - [x] The setup wizard presents recommended model roles and field examples
       before prompting for secrets.
@@ -100,7 +110,7 @@ the user expects a model-assisted drafting pipeline.
 - [x] Any fallback or legacy model profile warning is surfaced instead of
       treated as fully configured.
 - [x] No live model request is sent unless the user explicitly approves it.
-- [ ] The final result states what was run, what was not run, and what remains
+- [x] The final result states what was run, what was not run, and what remains
       for the next blog step.
 
 ## Decisions

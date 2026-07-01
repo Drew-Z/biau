@@ -150,12 +150,16 @@ npm.cmd run blog:model -- setup
 npm.cmd run blog:model -- status --all --format markdown
 npm.cmd run blog:model -- doctor --all --format markdown
 npm.cmd run blog:draft -- --slug <slug> --force --generate --profile strong
+npm.cmd run blog:draft -- --slug <slug> --polish-from content-drafts/<file>.md --profile review
 npm.cmd run blog:check
 ```
 
 The scaffold command does not call a model. Use `--generate` only after the run
 is explicitly model-assisted, the evidence pack, safe public facts, uncertain
 facts, and forbidden details are complete, and the user has approved generation.
+Use `--polish-from` after a first draft exists; it sends the existing draft body
+to the selected profile, keeps the evidence scaffold in place, and writes the
+polished body back under `## Draft Body`.
 
 `status` and default `doctor` may report that a selected profile resolves from
 fallback or legacy values. Treat that as a setup gap for model-assisted runs:
