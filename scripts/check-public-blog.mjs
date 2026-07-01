@@ -9,6 +9,17 @@ const blogDataPath = resolve(repoRoot, 'src/data/blog.ts')
 const blogPostsDir = resolve(repoRoot, 'src/data/blog-posts')
 const forbiddenTerms = ['面试', '答辩', '简历', '学习打卡', '内部解释', '不再铺满', '求职', '私下', '本地知识库']
 const requiredDraftHeadings = ['## 摘要', '## 为什么这个问题重要', '## 核心概念', '## 工作流程', '## 工程取舍', '## 项目例子', '## 常见误区', '## 复盘结论']
+const evidenceDraftHeadings = [
+  '## Evidence Pack',
+  '## Safe Public Facts',
+  '## Uncertain Or Stale Facts',
+  '## Forbidden / Private Details',
+  '## Draft Brief',
+  '## Article Outline',
+  '## Review Gates',
+  '## Promotion Checklist',
+]
+const blogColumns = ['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log']
 
 function checkText(label, text, checks) {
   const issues = []
@@ -31,8 +42,19 @@ async function checkDrafts() {
   for (const file of files) {
     const text = await readFile(resolve(draftsDir, file), 'utf8')
     if (!/^---[\s\S]*status:\s*["']?draft["']?/m.test(text)) continue
-    issues.push(...checkText(`content-drafts/${file}`, text, requiredDraftHeadings))
-    if (text.length < 1200) issues.push(`content-drafts/${file} 正文偏短，可能仍然像问答或提纲`)
+    const isEvidenceDraft = evidenceDraftHeadings.some((heading) => text.includes(heading))
+    const label = `content-drafts/${file}`
+    issues.push(...checkText(label, text, isEvidenceDraft ? evidenceDraftHeadings : requiredDraftHeadings))
+    if (isEvidenceDraft) {
+      if (!blogColumns.some((column) => new RegExp(`column:\\s*["']?${column}["']?`).test(text))) {
+        issues.push(`${label} 缺少有效 BlogColumn frontmatter`)
+      }
+      if (!/^---[\s\S]*modelStrategy:\s*/m.test(text)) {
+        issues.push(`${label} 缺少 modelStrategy frontmatter`)
+      }
+    } else if (text.length < 1200) {
+      issues.push(`${label} 正文偏短，可能仍然像问答或提纲`)
+    }
   }
   return issues
 }

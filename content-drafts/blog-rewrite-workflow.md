@@ -13,22 +13,28 @@
 - 项目例子只使用可公开表达的项目语境。
 - 发布前必须通过 `npm run blog:check`。
 
-## Gemini 使用方式
+## 草稿生成方式
 
-主流程使用仓库脚本，不把 Gemini CLI 作为主生产链路。
+主流程使用仓库脚本，不把 Gemini CLI 作为主生产链路。默认命令只生成 evidence-first scaffold，不调用模型，也不需要 API key。
 
 ```bash
 npm run blog:plan
-npm run blog:draft -- --slug rag-overview-public --force
+npm run blog:draft -- --slug blog-content-system-build-log-draft --force
 ```
 
 原因：
 
-- 脚本可以固定提示词、结构要求和禁用词检查。
+- 脚本可以固定栏目、证据包、模型策略、审稿门禁和禁用词检查。
 - 输出进入 `content-drafts/`，便于人工审稿和 Git 管理。
-- 同一个主题可以反复生成、对比和覆盖。
+- 同一个主题可以反复生成、对比和覆盖，但不会自动进入公开博客。
 
-Gemini CLI 只适合辅助场景，例如临时扩写某一段、改标题、列大纲、生成配图提示词。正式草稿仍应进入脚本流程。
+需要模型起草时，先补完整 Evidence Pack、Safe Public Facts、Uncertain Facts 和 Forbidden Details，再显式加 `--generate`：
+
+```bash
+npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate
+```
+
+Gemini CLI 或其他模型只适合辅助场景，例如临时扩写某一段、改标题、列大纲、生成配图提示词。正式草稿仍应进入脚本流程。
 
 ## 本地 API 配置
 
@@ -41,7 +47,7 @@ GEMINI_MODEL=gemini-3.1-pro
 GEMINI_TEMPERATURE=0.65
 ```
 
-如果出现 `auth_unavailable`，说明本地代理能识别模型，但还没有配置 Gemini provider 的上游认证；需要先修好代理侧认证，再运行草稿脚本。
+如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable`，说明本地代理能识别模型，但还没有配置 Gemini provider 的上游认证；需要先修好代理侧认证，再运行模型草稿。
 
 ## 图片与图示
 
@@ -66,9 +72,11 @@ GEMINI_TEMPERATURE=0.65
 ## 发布流程
 
 1. 在 `scripts/blog-rewrite-plan.json` 选题。
-2. 用 Gemini 脚本生成草稿。
-3. 人工补项目案例和图片。
+2. 用 `blog:draft` 生成 evidence-first scaffold。
+3. 人工补证据、项目案例和图片。
 4. 运行 `npm run blog:check`。
-5. 审稿通过后，把文章转换到 `src/data/blog.ts`。
-6. 运行 `npm run build` 和 `npm run lint`。
-7. 提交并推送。
+5. 如需模型改写，显式使用 `--generate` 或把草稿交给单个强内容模型。
+6. 审稿通过后，把文章转换到 `src/data/blog-posts/<slug>.ts` 和 `src/data/blog.ts`。
+7. 只有公开发布时才添加 loader 和 `blogCuration`。
+8. 运行 `npm run blog:audit`、`assistant:index`、`sitemap:generate`、`lint` 和 `build`。
+9. 提交并推送。

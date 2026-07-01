@@ -1,0 +1,4 @@
+{"file":".agents/skills/blog-content-pipeline/SKILL.md","reason":"Evidence-first draft workflow, model strategy, and publish/stage boundary."}
+{"file":".agents/skills/blog-content-pipeline/references/templates.md","reason":"Column-specific blog draft structures."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"BlogColumn and public blog curation contracts."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Data union and runtime validation guidance for script/data changes."}

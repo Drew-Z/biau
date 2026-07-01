@@ -8,74 +8,221 @@ const planPath = resolve(repoRoot, 'scripts/blog-rewrite-plan.json')
 const draftsDir = resolve(repoRoot, 'content-drafts')
 const envPath = resolve(repoRoot, '.env.local')
 
-const forbiddenTerms = ['面试', '答辩', '简历', '学习打卡', '内部解释', '不再铺满', '求职', '私下', '本地知识库']
+const blogColumnOrder = ['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log']
 
-function loadLocalEnv() {
-  if (!existsSync(envPath)) return
-  const raw = existsSync(envPath) ? readFile(envPath, 'utf8') : null
-  return raw.then((text) => {
-    for (const line of text.split(/\r?\n/)) {
-      const trimmed = line.trim()
-      if (!trimmed || trimmed.startsWith('#')) continue
-      const match = trimmed.match(/^([A-Z0-9_]+)=(.*)$/)
-      if (!match) continue
-      const [, key, value] = match
-      if (process.env[key]) continue
-      process.env[key] = value.replace(/^['"]|['"]$/g, '')
-    }
-  })
+const columnMeta = {
+  knowledge: {
+    titleZh: '知识积累',
+    titleEn: 'Knowledge Notes',
+    outline: [
+      'Problem boundary',
+      'Core mechanism',
+      'Engineering tradeoffs',
+      'Example from this site or a sanitized project',
+      'Common failure modes',
+      'Practical checklist',
+    ],
+    note: '适合长期有效的技术总结、架构理解、工程治理、AI 应用方法。',
+  },
+  'project-notes': {
+    titleZh: '项目总结',
+    titleEn: 'Project Notes',
+    outline: [
+      'Project stage and goal',
+      'What changed or what was built',
+      'Architecture or workflow choice',
+      'Bugs, constraints, or tradeoffs',
+      'What the project still lacks',
+      'Next iteration direction',
+    ],
+    note: '不要复制项目详情页；重点写阶段复盘、取舍、缺口和下一轮迭代。',
+  },
+  resources: {
+    titleZh: '资源分享',
+    titleEn: 'Resource Picks',
+    outline: [
+      'What it is',
+      'Why I recommend it',
+      'Best-fit scenarios',
+      'How I would use it',
+      'Limitations or caveats',
+      'Related alternatives',
+    ],
+    note: '必须有个人判断和使用语境，不发布无筛选链接堆。',
+  },
+  'ai-daily': {
+    titleZh: 'AI 日报',
+    titleEn: 'AI Daily',
+    outline: [
+      "Today's highlights",
+      'What changed',
+      'Why it matters',
+      'What to try',
+      'Sources to revisit',
+      'Open questions',
+    ],
+    note: '每条新闻式判断都需要来源；来源弱时保持草稿。',
+  },
+  'build-log': {
+    titleZh: '构建手记',
+    titleEn: 'Build Log',
+    outline: [
+      'Starting point',
+      'Decision made',
+      'Implementation path',
+      'Verification',
+      'What became easier',
+      'Follow-up work',
+    ],
+    note: '适合记录站点、助手、内容系统和 Trellis 工作流演进。',
+  },
 }
 
+const forbiddenTerms = ['面试', '答辩', '简历', '学习打卡', '内部解释', '不再铺满', '求职', '私下', '本地知识库']
+const defaultModelStrategy = 'Codex evidence pack + one strong content model draft/rewrite + Codex review'
+
 function parseArgs(argv) {
-  const args = { list: false, force: false, limit: 1, slug: '' }
+  const args = { list: false, force: false, generate: false, limit: 1, slug: '' }
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index]
     if (item === '--list') args.list = true
     if (item === '--force') args.force = true
-    if (item === '--slug') args.slug = argv[index + 1] ?? ''
-    if (item === '--limit') args.limit = Number(argv[index + 1] ?? '1')
+    if (item === '--generate') args.generate = true
+    if (item === '--scaffold') args.generate = false
+    if (item === '--slug') {
+      args.slug = argv[index + 1] ?? ''
+      index += 1
+    }
+    if (item === '--limit') {
+      args.limit = Number(argv[index + 1] ?? '1')
+      index += 1
+    }
   }
   return args
+}
+
+async function loadLocalEnv() {
+  if (!existsSync(envPath)) return
+  const text = await readFile(envPath, 'utf8')
+  for (const line of text.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed.startsWith('#')) continue
+    const match = trimmed.match(/^([A-Z0-9_]+)=(.*)$/)
+    if (!match) continue
+    const [, key, value] = match
+    if (process.env[key]) continue
+    process.env[key] = value.replace(/^['"]|['"]$/g, '')
+  }
 }
 
 async function readPlan() {
   return JSON.parse(await readFile(planPath, 'utf8'))
 }
 
+function normalizeColumn(value) {
+  return blogColumnOrder.includes(value) ? value : 'knowledge'
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) return value.filter(Boolean).map(String)
+  if (typeof value === 'string' && value.trim()) return [value.trim()]
+  return []
+}
+
+function normalizeTopic(topic, index) {
+  const column = normalizeColumn(topic.column)
+  return {
+    order: Number.isFinite(topic.order) ? topic.order : index + 1,
+    slug: String(topic.slug ?? '').trim(),
+    currentSlug: String(topic.currentSlug ?? '').trim(),
+    title: String(topic.title ?? '').trim(),
+    column,
+    tag: String(topic.tag ?? columnMeta[column].titleZh).trim(),
+    series: String(topic.series ?? columnMeta[column].titleZh).trim(),
+    summary: String(topic.summary ?? '').trim(),
+    targetReader: String(topic.targetReader ?? '公开站点访客、项目协作者和技术读者').trim(),
+    knowledgePoints: normalizeList(topic.knowledgePoints),
+    projectExamples: normalizeList(topic.projectExamples),
+    publicAngle: String(topic.publicAngle ?? '').trim(),
+    evidenceSources: normalizeList(topic.evidenceSources),
+    safeFacts: normalizeList(topic.safeFacts),
+    uncertainFacts: normalizeList(topic.uncertainFacts),
+    forbiddenDetails: normalizeList(topic.forbiddenDetails),
+    modelStrategy: String(topic.modelStrategy ?? defaultModelStrategy).trim(),
+    priority: topic.priority ?? topic.order ?? index + 1,
+  }
+}
+
 function formatTopicList(plan) {
-  return plan.map((topic) => `${String(topic.order).padStart(2, '0')}. ${topic.slug} - ${topic.title}`).join('\n')
+  return plan
+    .map((topic, index) => normalizeTopic(topic, index))
+    .map((topic) => {
+      const column = columnMeta[topic.column]
+      return [
+        `${String(topic.order).padStart(2, '0')}. ${topic.slug}`,
+        `column=${topic.column} (${column.titleZh} / ${column.titleEn})`,
+        `priority=${topic.priority}`,
+        `title=${topic.title}`,
+      ].join(' | ')
+    })
+    .join('\n')
+}
+
+function yamlString(value) {
+  return JSON.stringify(value)
+}
+
+function markdownList(items, fallback) {
+  const values = items.length > 0 ? items : [fallback]
+  return values.map((item) => `- ${item}`).join('\n')
 }
 
 function buildPrompt(topic) {
+  const column = columnMeta[topic.column]
   return [
-    '请把下面的知识点写成一篇公开发布的中文技术科普博客。',
+    `请把下面的材料写成一篇公开发布的中文技术博客草稿，栏目为 ${column.titleZh} / ${column.titleEn}。`,
     '',
     `标题：${topic.title}`,
     `摘要：${topic.summary}`,
     `系列：${topic.series}`,
     `目标读者：${topic.targetReader}`,
-    `核心知识点：${topic.knowledgePoints.join('、')}`,
-    `项目例子：${topic.projectExamples.join('、')}`,
-    `公开角度：${topic.publicAngle}`,
+    `核心知识点：${topic.knowledgePoints.join('、') || '待补充'}`,
+    `项目例子：${topic.projectExamples.join('、') || '待补充'}`,
+    `公开角度：${topic.publicAngle || '待补充'}`,
+    '',
+    '证据来源：',
+    markdownList(topic.evidenceSources, '待 Codex 或作者补充真实代码、文档、任务、截图或外部来源。'),
+    '',
+    '可公开事实：',
+    markdownList(topic.safeFacts, '待补充。'),
+    '',
+    '不确定或可能过时的事实：',
+    markdownList(topic.uncertainFacts, '待核验。'),
+    '',
+    '禁止写入的细节：',
+    markdownList(topic.forbiddenDetails, '真实 IP、账号、密钥、私有 URL、客户名称、敏感指标、本地路径。'),
+    '',
+    '推荐文章结构：',
+    ...column.outline.map((item, index) => `${index + 1}. ${item}`),
     '',
     '硬性要求：',
-    '1. 不要写成问答列表，不要写成学习记录，不要出现私密准备语境。',
-    '2. 不要出现这些词：面试、答辩、简历、学习打卡、内部解释、不再铺满、求职、私下、本地知识库。',
-    '3. 文章要像正式技术博客，语气清晰、克制、科普、有工程落地感。',
-    '4. 需要包含这些二级标题：摘要、为什么这个问题重要、核心概念、工作流程、工程取舍、项目例子、常见误区、复盘结论。',
-    '5. 项目例子只能使用可公开表达的项目语境，避免个人求职或内部准备叙述。',
-    '6. 输出 Markdown 正文，不要输出 frontmatter，不要解释你如何写作。',
+    '1. 不要写成问答列表、学习记录、简历材料或内部说明。',
+    `2. 不要出现这些词：${forbiddenTerms.join('、')}。`,
+    '3. 不要编造部署状态、客户、指标、截图、私有系统地址或任何证据包里没有的事实。',
+    '4. 项目相关内容不能只依赖 README，必须提醒作者回到代码、数据、测试、部署脚本、截图或 Trellis 任务核验。',
+    '5. 输出 Markdown 正文，不要输出 frontmatter，不要解释你如何写作。',
   ].join('\n')
 }
 
 async function requestDraft(topic) {
+  await loadLocalEnv()
   const baseUrl = (process.env.GEMINI_BASE_URL || 'http://localhost:8317').replace(/\/$/, '')
   const apiKey = process.env.GEMINI_API_KEY
   const model = process.env.GEMINI_MODEL || 'gemini'
   const temperature = Number(process.env.GEMINI_TEMPERATURE || '0.65')
 
   if (!apiKey) {
-    throw new Error('缺少 GEMINI_API_KEY。请复制 .env.example 为 .env.local，并填写本地 API key。')
+    throw new Error('缺少 GEMINI_API_KEY。默认请不加 --generate 先生成 evidence-first scaffold。')
   }
 
   const response = await fetch(`${baseUrl}/v1/chat/completions`, {
@@ -90,7 +237,7 @@ async function requestDraft(topic) {
       messages: [
         {
           role: 'system',
-          content: '你是公开技术博客作者，擅长把 AI 应用、RAG、Agent 和全栈工程知识写成清晰、可信、可发布的中文科普文章。',
+          content: '你是公开技术博客作者，擅长把 AI 应用、项目复盘、资源推荐和构建手记写成清晰、可信、可审稿的中文文章。',
         },
         { role: 'user', content: buildPrompt(topic) },
       ],
@@ -99,15 +246,71 @@ async function requestDraft(topic) {
 
   if (!response.ok) {
     const body = await response.text()
-    throw new Error(`Gemini API 请求失败：${response.status} ${body.slice(0, 500)}`)
+    throw new Error(`模型 API 请求失败：${response.status} ${body.slice(0, 500)}`)
   }
 
   const json = await response.json()
   const content = json?.choices?.[0]?.message?.content
   if (!content) {
-    throw new Error('Gemini API 没有返回 choices[0].message.content。')
+    throw new Error('模型 API 没有返回 choices[0].message.content。')
   }
   return content.trim()
+}
+
+function buildScaffold(topic) {
+  const column = columnMeta[topic.column]
+  const projectEvidenceReminder = topic.column === 'project-notes'
+    ? '\n- [ ] Read code, data modules, tests, deployment scripts, screenshots, and Trellis tasks. Do not rely only on README files.'
+    : ''
+
+  return [
+    `# ${topic.title}`,
+    '',
+    '## Evidence Pack',
+    markdownList(topic.evidenceSources, 'TODO: add source paths, URLs, screenshots, task notes, test output, or external references.'),
+    '',
+    '## Safe Public Facts',
+    markdownList(topic.safeFacts, 'TODO: add exact facts that can be stated publicly.'),
+    '',
+    '## Uncertain Or Stale Facts',
+    markdownList(topic.uncertainFacts, 'TODO: add claims that need verification before drafting.'),
+    '',
+    '## Forbidden / Private Details',
+    markdownList(topic.forbiddenDetails, 'Do not include real IPs, accounts, keys, database URLs, private dashboards, local secret paths, customer names, or sensitive metrics.'),
+    '',
+    '## Draft Brief',
+    `- Column: ${column.titleZh} / ${column.titleEn}`,
+    `- Column note: ${column.note}`,
+    `- Target reader: ${topic.targetReader}`,
+    `- Summary: ${topic.summary || 'TODO: write the one-paragraph value of this post.'}`,
+    `- Public angle: ${topic.publicAngle || 'TODO: define why this should be public and what reader value it provides.'}`,
+    `- Knowledge points: ${topic.knowledgePoints.join('、') || 'TODO'}`,
+    `- Project examples: ${topic.projectExamples.join('、') || 'TODO'}`,
+    '',
+    '## Article Outline',
+    ...column.outline.map((item) => `- ${item}`),
+    '',
+    '## Model Strategy',
+    `- ${topic.modelStrategy}`,
+    '- Default to serial model calls. Use multi-model comparison only for important posts, style uncertainty, or disputed wording.',
+    '',
+    '## Review Gates',
+    '- [ ] Every project claim is backed by the evidence pack.',
+    '- [ ] No private or sensitive information is included.',
+    '- [ ] The draft does not duplicate stable project-detail-page facts.',
+    '- [ ] The selected column matches the actual purpose of the article.',
+    '- [ ] Hidden drafts remain hidden until explicitly curated.',
+    projectEvidenceReminder,
+    '',
+    '## Promotion Checklist',
+    '- [ ] Convert reviewed content into `src/data/blog-posts/<slug>.ts` only after review.',
+    '- [ ] Add summary metadata to `src/data/blog.ts`.',
+    '- [ ] Register a loader in `src/data/blogContent.ts` only if the post should be public/loadable.',
+    '- [ ] Add `blogCuration` only when ready for public visibility.',
+    '- [ ] Run `npm.cmd run blog:audit`, `assistant:index`, `sitemap:generate`, `lint`, and `build` after public promotion.',
+  ]
+    .filter((line) => line !== undefined)
+    .join('\n')
 }
 
 function validateDraft(topic, content) {
@@ -115,16 +318,24 @@ function validateDraft(topic, content) {
   for (const term of forbiddenTerms) {
     if (content.includes(term)) problems.push(`包含公开禁用词：${term}`)
   }
-  for (const heading of ['## 摘要', '## 为什么这个问题重要', '## 核心概念', '## 工作流程', '## 工程取舍', '## 项目例子', '## 常见误区', '## 复盘结论']) {
+  for (const heading of [
+    '## Evidence Pack',
+    '## Safe Public Facts',
+    '## Uncertain Or Stale Facts',
+    '## Forbidden / Private Details',
+    '## Draft Brief',
+    '## Article Outline',
+    '## Review Gates',
+    '## Promotion Checklist',
+  ]) {
     if (!content.includes(heading)) problems.push(`缺少结构标题：${heading}`)
   }
-  if (content.length < 1200) problems.push('正文偏短，可能还是浅层问答。')
   if (/Day\s*\d+|Day[一二三四五六七八九十]+/i.test(content)) problems.push('包含 Day 编号语境。')
-  if (content.includes(topic.currentSlug)) problems.push('不应暴露旧 slug。')
+  if (topic.currentSlug && content.includes(topic.currentSlug)) problems.push('不应暴露旧 slug。')
   return problems
 }
 
-async function writeDraft(topic, content, force) {
+async function writeDraft(topic, content, force, generatedBy) {
   await mkdir(draftsDir, { recursive: true })
   const fileName = `${String(topic.order).padStart(2, '0')}-${topic.slug}.md`
   const outputPath = resolve(draftsDir, fileName)
@@ -135,20 +346,24 @@ async function writeDraft(topic, content, force) {
 
   const frontmatter = [
     '---',
-    `slug: ${JSON.stringify(topic.slug)}`,
-    `title: ${JSON.stringify(topic.title)}`,
-    `series: ${JSON.stringify(topic.series)}`,
-    `tag: ${JSON.stringify(topic.tag)}`,
-    `sourceCurrentSlug: ${JSON.stringify(topic.currentSlug)}`,
+    `slug: ${yamlString(topic.slug)}`,
+    `title: ${yamlString(topic.title)}`,
+    `column: ${yamlString(topic.column)}`,
+    `series: ${yamlString(topic.series)}`,
+    `tag: ${yamlString(topic.tag)}`,
+    topic.currentSlug ? `sourceCurrentSlug: ${yamlString(topic.currentSlug)}` : '',
     'status: "draft"',
-    'generatedBy: "gemini"',
-    `generatedAt: ${JSON.stringify(new Date().toISOString())}`,
+    `generatedBy: ${yamlString(generatedBy)}`,
+    `generatedAt: ${yamlString(new Date().toISOString())}`,
+    `modelStrategy: ${yamlString(topic.modelStrategy)}`,
     '---',
     '',
-  ].join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   const problems = validateDraft(topic, content)
-  await writeFile(outputPath, `${frontmatter}${content}\n`, 'utf8')
+  await writeFile(outputPath, `${frontmatter}\n\n${content}\n`, 'utf8')
   console.log(`已生成草稿：${fileName}`)
   if (problems.length > 0) {
     console.log(`需要复核：${problems.join('；')}`)
@@ -156,7 +371,6 @@ async function writeDraft(topic, content, force) {
 }
 
 async function main() {
-  await loadLocalEnv()
   const args = parseArgs(process.argv.slice(2))
   const plan = await readPlan()
 
@@ -165,15 +379,19 @@ async function main() {
     return
   }
 
-  let selected = args.slug ? plan.filter((topic) => topic.slug === args.slug) : plan.slice(0, args.limit)
+  const normalizedPlan = plan.map(normalizeTopic)
+  const selected = args.slug
+    ? normalizedPlan.filter((topic) => topic.slug === args.slug)
+    : normalizedPlan.slice(0, args.limit)
+
   if (selected.length === 0) {
     throw new Error(`没有找到匹配主题：${args.slug}`)
   }
 
   for (const topic of selected) {
     console.log(`开始生成：${topic.slug}`)
-    const content = await requestDraft(topic)
-    await writeDraft(topic, content, args.force)
+    const content = args.generate ? await requestDraft(topic) : buildScaffold(topic)
+    await writeDraft(topic, content, args.force, args.generate ? 'model-assisted-draft' : 'codex-draft-scaffold')
   }
 }
 
