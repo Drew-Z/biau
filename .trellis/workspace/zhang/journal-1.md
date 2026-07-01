@@ -580,3 +580,36 @@ Added a secrets-safe blog model setup/status/doctor CLI, shared draft model conf
 ### Next Steps
 
 - None - task complete
+
+
+## Session 18: Run blog content pipeline flow
+
+**Date**: 2026-07-02
+**Task**: Run blog content pipeline flow
+**Branch**: `main`
+
+### Summary
+
+Refreshed the blog-content-system build-log draft with an evidence-first skill workflow, recorded validation results, and added the custom-template Draft Body convention to the blog draft workflow spec.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ca1d8d7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
