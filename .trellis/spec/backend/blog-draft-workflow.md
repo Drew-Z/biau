@@ -39,6 +39,10 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - Invalid temperature -> fall back to a safe numeric default, currently `0.65`.
 - No `--generate` -> write scaffold and require no model config.
 - Model API failure -> report status and a short response body excerpt, never credentials.
+- Model route failure such as `unknown provider for model <id>` -> treat as a
+  channel configuration problem, not a content-quality problem. Do not silently
+  fall back during a dry run; record the profile, non-secret provider label,
+  model id, status code, and suggested configuration fix.
 - Existing draft without `--force` -> skip rather than overwrite.
 - Generated draft noise from validation, especially `generatedAt`, must not be committed unless the task is intentionally updating that draft.
 
@@ -53,6 +57,9 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - Run `npm.cmd run blog:plan` or the equivalent list path when changing plan parsing.
 - Run `npm.cmd run blog:draft -- --slug <known-slug> --force` for scaffold behavior.
 - For profile/env changes, run a missing-key check with an intentionally empty `BLOG_DRAFT_<PROFILE>_API_KEY` and confirm it fails before network access.
+- For model channel setup tooling, verify it masks existing secret values, writes
+  only to `.env.local` or another explicitly private target, and can check the
+  selected profile without overwriting drafts.
 - Run `npm.cmd run blog:check`, `npm.cmd run lint`, and `npm.cmd run build` before finishing.
 
 ### 7. Wrong vs Correct
@@ -75,3 +82,20 @@ if (Object.prototype.hasOwnProperty.call(process.env, key)) continue
 
 Check key presence, not truthiness, whenever the caller needs to deliberately
 disable or override a local model channel.
+
+### 8. Model Setup Wizard Direction
+
+The dry-run workflow should have a secrets-safe setup path before fallback logic
+is added.
+
+Planned behavior for a future wizard:
+
+- Select profile: `strong`, `fast`, `review`, or `default`.
+- Prompt for `BASE_URL`, `API_KEY`, `MODEL`, `PROVIDER`, and `TEMPERATURE`.
+- Show existing values only as empty/masked/non-secret labels.
+- Write private values to `.env.local` or an explicitly provided private env
+  file; never to tracked docs or examples.
+- Offer a channel check that validates profile/model routing without writing or
+  overwriting a draft.
+- Print actionable failures, but never print API keys, real relay URLs, account
+  names, private paths, or request headers.
