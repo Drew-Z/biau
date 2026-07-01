@@ -26,10 +26,13 @@
 
 ## Acceptance Criteria
 
-- [ ] 至少完成一篇 draft-only evidence pack。
-- [ ] 运行 `npm.cmd run blog:check`；如触碰 curation 或 runtime 数据，还需运行 `blog:audit`、`assistant:index` 和 `sitemap:generate`。
-- [ ] 人工审核 gate 清晰列出，且无草稿被自动发布。
+- [x] 至少完成一篇 draft-only evidence pack。
+- [x] 运行 `npm.cmd run blog:check`；如触碰 curation 或 runtime 数据，还需运行 `blog:audit`、`assistant:index` 和 `sitemap:generate`。
+- [x] 人工审核 gate 清晰列出，且无草稿被自动发布。
 
 ## Notes
 
 - 启动时必须使用 `blog-content-pipeline` skill。
+- 本轮完成 `content-drafts/03-embedding-vector-search-public.md`，模式为 `Codex-only scaffold/review`，模型渠道为 `none`。
+- 本轮只改草稿和任务记录，没有修改 `src/data/blog*`、`blogCuration`、assistant index 或 sitemap。
+- 验证已运行：`npm.cmd run blog:check`、`git diff --check`、草稿与任务目录敏感信息扫描。敏感扫描仅命中禁写说明和非敏感 metadata 字段名。
