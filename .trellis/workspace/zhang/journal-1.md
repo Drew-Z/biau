@@ -273,3 +273,36 @@ Curated public blog content down to 9 selected posts, hid bulk generated posts f
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: Blog column content system
+
+**Date**: 2026-07-01
+**Task**: Blog column content system
+**Branch**: `main`
+
+### Summary
+
+Migrated public blog content from legacy categories to first-level BlogColumn metadata, added bilingual column filtering, updated curation/search/assistant tags, created the blog-content-pipeline skill and templates, refreshed specs, and verified the full project.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3bffcd3` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
