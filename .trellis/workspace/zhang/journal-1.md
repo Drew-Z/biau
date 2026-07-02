@@ -1488,3 +1488,37 @@ Enabled the approved production registration path for Ozon ERP by adding auth ro
 ### Next Steps
 
 - None - task complete
+
+
+## Session 38: Legal RAG demo access and QA monitoring
+
+**Date**: 2026-07-02
+**Task**: Legal RAG demo access and QA monitoring
+**Branch**: `main`
+
+### Summary
+
+增强 Legal RAG 演示监控：Web e2e smoke 增加 API health、认证登录、公开安全数据集 seed、RAG 问答断言；主站同步 demo 访问边界、演示路径和公开助手知识，明确真实后台密码不公开，低权限 demo 凭据需要人审确认。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f29d3f5` | (see git log) |
+| `75b319b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

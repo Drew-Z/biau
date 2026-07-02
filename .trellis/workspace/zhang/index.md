@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 37
+- **Total Sessions**: 38
 - **Last Active**: 2026-07-02
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1490 | Active |
+| `journal-1.md` | ~1524 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 38 | 2026-07-02 | Legal RAG demo access and QA monitoring | `f29d3f5`, `75b319b` | `main` |
 | 37 | 2026-07-02 | 公开助手模型接入产品化 | `210a62b` | `main` |
 | 36 | 2026-07-02 | ERP login experience main-site sync | `8bd03c6` | `main` |
 | 35 | 2026-07-02 | ERP login landing refinement | `c7c5bec`, `d07ecff` | `main` |
