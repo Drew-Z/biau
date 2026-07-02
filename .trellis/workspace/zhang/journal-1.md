@@ -980,3 +980,45 @@ knowledge, and recorded a safe non-public blog backlog.
 ### Next Steps
 
 - None - task complete
+
+
+## Session 27: Observability tooling decision matrix
+
+**Date**: 2026-07-02
+**Task**: Observability tooling decision matrix
+**Branch**: `main`
+
+### Summary
+
+Clarified observability tooling choices and added offline docs check.
+
+### Main Changes
+
+- 完成 child task `07-02-07-02-observability-tooling-decision-matrix`。
+- 更新 `docs/observability-strategy.md`：补分层模型、工具决策矩阵、可一起做/不建议一起做组合、ARMS/Prometheus/Grafana/OpenTelemetry/Sentry/Faro/Langfuse 推荐时机和人工 gate。
+- 更新 `docs/site-monitoring.md`：补四类站点数据工具快速对照，明确 Cloudflare + Search Console + Plausible 或 Umami 二选一 + site:monitor 的第一阶段组合。
+- 新增 `scripts/check-observability-docs.mjs` 与 `npm.cmd run docs:observability-check`，离线验证关键工具边界、推荐路线和人工 gate。
+- 验证：`npm.cmd run docs:observability-check`、`npm.cmd run lint`、`npm.cmd run build`、`git diff --check`、changed files 敏感信息扫描均通过；build 仅保留既有 Vite/Rolldown 警告。
+- child 已归档，父任务更新为 22/22 done；真实 Cloudflare/Search Console/Umami/Plausible/Sentry/Faro/ARMS/Prometheus/Grafana/Langfuse 配置仍是人工 gate。
+- 下一轮可选：继续做 blog-semi 项目详情首屏/移动端密度，或把低敏 `/metrics` 模式推广到 ERP、Legal RAG、Xunqiu 后端、Pet Community API 中的一个。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `835bc22` | (see git log) |
+| `afac85c` | (see git log) |
+| `d144daf` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
