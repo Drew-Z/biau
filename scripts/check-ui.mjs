@@ -461,6 +461,55 @@ if (!webpSource?.endsWith('.webp')) {
 }
 await imagePage.close()
 
+for (const projectId of ['ozon-erp', 'xunqiu']) {
+  const projectPath = `/projects/${projectId}`
+  const relatedPage = await browser.newPage({ viewport: viewports[0] })
+  await relatedPage.goto(`${base}${projectPath}`, { waitUntil: 'networkidle' })
+
+  const relatedSection = relatedPage
+    .locator('.detail-related', {
+      has: relatedPage.locator('.detail-block-title', { hasText: '相关项目' }),
+    })
+    .first()
+  const relatedSectionCount = await relatedSection.count()
+
+  if (relatedSectionCount === 0) {
+    failures.push(`${projectPath} related projects: expected a section titled 相关项目`)
+    await relatedPage.close()
+    continue
+  }
+
+  const relatedTitle = (await relatedSection.locator('.detail-block-title').innerText()).trim()
+  const relatedCards = relatedSection.locator('.detail-related-card')
+  const relatedCardCount = await relatedCards.count()
+
+  if (relatedTitle !== '相关项目') {
+    failures.push(`${projectPath} related projects: expected title 相关项目, got "${relatedTitle}"`)
+  }
+
+  if (relatedCardCount < 1 || relatedCardCount > 3) {
+    failures.push(`${projectPath} related projects: expected 1-3 cards, got ${relatedCardCount}`)
+  }
+
+  const relatedHrefs = await relatedCards.evaluateAll((cards) =>
+    cards.map((card) => card.getAttribute('href') ?? ''),
+  )
+  if (relatedHrefs.some((href) => href === projectPath)) {
+    failures.push(`${projectPath} related projects: should not link to itself`)
+  }
+
+  if (relatedCardCount > 0) {
+    await relatedCards.first().click()
+    await relatedPage
+      .waitForURL((url) => url.pathname.startsWith('/projects/') && url.pathname !== projectPath, { timeout: 5000 })
+      .catch(() => {
+        failures.push(`${projectPath} related projects: first card did not navigate to another project detail page`)
+      })
+  }
+
+  await relatedPage.close()
+}
+
 const projectDetailInternalLinkPage = await browser.newPage({ viewport: viewports[0] })
 await projectDetailInternalLinkPage.goto(`${base}/projects/legal-rag`, { waitUntil: 'networkidle' })
 const projectDetailSpaMarker = await projectDetailInternalLinkPage.evaluate(() => {
