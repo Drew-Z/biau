@@ -434,6 +434,16 @@ if (!focusedProject) {
 }
 await keyboardPage.close()
 
+const projectDetailButtonKeyboardPage = await browser.newPage({ viewport: viewports[0] })
+await projectDetailButtonKeyboardPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
+await projectDetailButtonKeyboardPage
+  .getByRole('button', { name: '查看项目详情：Legal RAG｜法律智能机器人与合同审查' })
+  .press('Enter')
+await projectDetailButtonKeyboardPage.waitForURL(`${base}/projects/legal-rag`, { timeout: 5000 }).catch(() => {
+  failures.push('/projects keyboard: Enter on project detail button did not navigate to detail page')
+})
+await projectDetailButtonKeyboardPage.close()
+
 const imagePage = await browser.newPage({ viewport: viewports[1] })
 await imagePage.goto(`${base}/projects/legal-rag`, { waitUntil: 'networkidle' })
 const imageOk = await imagePage.locator('.detail-hero-image img').evaluate((image) => {

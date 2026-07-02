@@ -20,6 +20,7 @@ const categoryAccent: Record<Project['category'], string> = {
 export function ProjectCard({ project, index, onViewDetails }: ProjectCardProps) {
   const number = index ? String(index).padStart(2, '0') : undefined
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.target !== event.currentTarget) return
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
     onViewDetails()
@@ -63,9 +64,13 @@ export function ProjectCard({ project, index, onViewDetails }: ProjectCardProps)
         <div className="project-footer">
           <button
             className="btn"
+            aria-label={`查看项目详情：${project.title}`}
             onClick={(e) => {
               e.stopPropagation()
               onViewDetails()
+            }}
+            onKeyDown={(e) => {
+              e.stopPropagation()
             }}
           >
             <span>查看详情</span>
@@ -82,6 +87,9 @@ export function ProjectCard({ project, index, onViewDetails }: ProjectCardProps)
                   rel="noopener noreferrer"
                   className="link-badge"
                   onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    e.stopPropagation()
+                  }}
                 >
                   {link.label}
                 </a>
