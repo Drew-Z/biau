@@ -1143,3 +1143,44 @@ Added header quick links to project detail pages and regression coverage.
 ### Next Steps
 
 - None - task complete
+
+
+## Session 31: Project detail link type affordance
+
+**Date**: 2026-07-02
+**Task**: Project detail link type affordance
+**Branch**: `main`
+
+### Summary
+
+Distinguished external and internal project detail links with visual affordances and UI checks.
+
+### Main Changes
+
+- 完成 child task `07-02-07-02-project-detail-link-type-affordance`。
+- 项目详情页链接徽标现在基于现有 `ProjectLink.type` 区分外部链接与站内链接：外部入口使用 `IconExternalOpen` 与暖色样式，站内入口保留链路图标与绿色样式。
+- 增加 `link-badge--external` / `link-badge--internal` 和 `data-link-type`，用于视觉区分与 UI 回归检查；未新增、删除、重排或改写任何链接 label / href / 项目事实。
+- 保持外部链接 `target="_blank"` + `rel="noopener noreferrer"`，内部链接仍走 React Router `Link`，可访问名称仍基于原始 link label。
+- 在 `scripts/check-ui.mjs` 增加 Legal RAG quick/lower links 的类型 class、data-link-type、外链安全属性和站内链接语义检查。
+- 验证：`npm.cmd run lint`、`npm.cmd run build`、`npm.cmd run check:ui`、`git diff --check`、严格敏感信息扫描和移动端截图检查均通过。
+- child 已归档；父任务更新为 26/26 done，并继续作为长期优化队列保留。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7f0bffb` | (see git log) |
+| `91c4037` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
