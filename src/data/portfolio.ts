@@ -120,6 +120,16 @@ export const projects: Project[] = [
       ],
       workflow: [
         {
+          title: '公开演示路径',
+          items: [
+            '先打开带登录门禁的线上工作台，说明登录保护用于隔离模型 key、上传接口和数据库资源，公开材料不展示账号密码。',
+            '进入知识库页初始化公开安全数据集，观察导入任务、文档判重、chunk 和 pgvector 持久化链路。',
+            '切到智能问答，提问技术服务合同验收风险，重点看 answer、citations、diagnostics 和 answer source，而不是只看生成文本是否流畅。',
+            '切到合同审查，使用示例合同查看风险条款、风险等级、修改建议、引用和导出边界。',
+            '最后打开质量面板，核对模型/向量库运行态、知识库规模、RAG citation/refusal 评测、合同审查召回、readiness checks、趋势和审计日志。',
+          ],
+        },
+        {
           title: '知识库与问答链路',
           items: [
             '支持文本、TXT、PDF、DOCX 和公共数据集进入 ingestion job，再生成可追踪的 document 与 chunk。',
@@ -159,6 +169,15 @@ export const projects: Project[] = [
             '仓库中保留 RAG 问答和合同审查的 eval fixtures，API 也提供 quality 与 evaluation 报告路由。页面中的质量面板用于展示检索命中、引用、结构化审查等维度，让调整 chunk、召回、rerank 或提示词时有可对比的基线。',
         },
         {
+          title: '质量面板看什么',
+          items: [
+            '运行时状态展示模型提供商、向量库、embedding 模型、文档数和 chunk 数，帮助判断当前是本地 mock/memory 还是线上 pgvector 模式。',
+            'RAG 评测区区分 citation 命中、可回答准确率和拒答准确率，能解释系统为什么在资料不足时不强答。',
+            '合同审查评测展示标注风险命中和召回率，避免只凭一段模型解释判断审查质量。',
+            'readiness checks、质量趋势和审计日志把一次演示从“能回答”推进到“能复盘、能比较、能审计”。',
+          ],
+        },
+        {
           title: '可解释性优先',
           items: [
             '问答要求基于召回片段生成，引用不足时可以拒答或返回边界说明。',
@@ -193,6 +212,7 @@ export const projects: Project[] = [
       '系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。',
       '合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。',
       '项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。',
+      '推荐公开演示顺序是：登录受保护工作台、初始化公开安全数据集、执行带 citation/diagnostics 的 RAG 问答、运行示例合同审查、查看质量面板的 runtime、citation/refusal 评测、审查召回、readiness checks、趋势和审计日志。',
       '后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。',
     ],
   },
