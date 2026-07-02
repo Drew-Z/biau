@@ -38,7 +38,8 @@
     "07-02-observability-strategy-phase-2",
     "07-02-project-detail-related-recommendations",
     "07-02-07-02-project-detail-related-ui-check",
-    "07-02-07-02-project-detail-image-original-link"
+    "07-02-07-02-project-detail-image-original-link",
+    "07-02-07-02-blog-model-env-file-alias-cleanup"
   ],
   "parent": null,
   "relatedFiles": [],

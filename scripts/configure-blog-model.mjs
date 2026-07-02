@@ -41,6 +41,7 @@ function parseArgs(argv) {
     model: undefined,
     provider: undefined,
     temperature: undefined,
+    errors: [],
   }
   const positionals = []
 
@@ -92,13 +93,24 @@ function parseArgs(argv) {
       args.format = item.slice('--format='.length)
       continue
     }
-    if (item === '--env-file' || item === '--local-env') {
+    if (item === '--env-file') {
+      args.errors.push({
+        code: 'unsupported_env_file_flag',
+        message: '`--env-file` is no longer supported because Node or wrapper commands may intercept it. Use `--local-env PATH` instead.',
+      })
+      if (readValue(index) && !readValue(index).startsWith('--')) index += 1
+      continue
+    }
+    if (item === '--local-env') {
       args.envFile = resolve(repoRoot, readValue(index) || '.env.local')
       index += 1
       continue
     }
     if (item.startsWith('--env-file=')) {
-      args.envFile = resolve(repoRoot, item.slice('--env-file='.length))
+      args.errors.push({
+        code: 'unsupported_env_file_flag',
+        message: '`--env-file=PATH` is no longer supported because Node or wrapper commands may intercept it. Use `--local-env=PATH` instead.',
+      })
       continue
     }
     if (item.startsWith('--local-env=')) {
@@ -184,6 +196,7 @@ function usage() {
     '',
     'Notes:',
     '  setup writes private values to .env.local by default; use --local-env PATH for a different private env file.',
+    '  --env-file is intentionally unsupported; use --local-env to avoid Node/wrapper argument ambiguity.',
     '  setup without --profile guides strong, review, and fast.',
     '  beginner setup does not ask for temperature; use --advanced or --temperature.',
     '  status is offline and never prints API keys or real relay URLs.',
@@ -673,6 +686,21 @@ async function main() {
 
   if (args.help || args.command === 'help') {
     console.log(usage())
+    return
+  }
+
+  if (args.errors.length > 0) {
+    writeResult({
+      ok: false,
+      command: args.command || 'argument-error',
+      message: args.errors.map((error) => error.message).join(' '),
+      issues: args.errors,
+      recovery: [
+        'Use npm.cmd run blog:model -- <command> --local-env PATH instead.',
+        'For the default private env file, omit the flag and the tool will use .env.local.',
+      ],
+    }, args.format)
+    process.exitCode = 1
     return
   }
 
