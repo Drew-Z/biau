@@ -37,6 +37,7 @@
 - `07-02-projects-card-keyboard-action-fix`: 项目集卡片键盘控制修复，让卡片主体只响应自身焦点，内部详情按钮具备可访问名称，并为隐藏外链保留事件边界。
 - `07-02-project-detail-internal-link-routing`: 项目详情页内部链接 SPA 导航优化，让站内项目/博客链接使用 React Router `Link`，外部链接继续保持新窗口安全属性，并补 UI 回归检查。
 - `07-02-xunqiu-showcase-entry-sync`: 寻球主站展示入口补齐，让项目详情页直接暴露产品展示页、技术文档、阶段 APK、后端仓库和迁移复盘，并同步助手知识与 sitemap。
+- `07-02-legal-rag-public-demo-path`: Legal RAG 公开演示路径补强，把登录保护、公开数据集、RAG citation/diagnostics、合同审查和质量面板的推荐观看顺序同步到主站和助手知识。
 
 ## Human Review Gates
 
@@ -58,8 +59,8 @@
 
 ## Current Round Summary
 
-- 已完成 12 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固、Chunk strategy 草稿证据刷新、RAG overview 草稿证据刷新、首页项目卡键盘外链行为修复、项目集卡片键盘控制修复、项目详情内部链接 SPA 导航优化、寻球展示入口补齐。
-- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界、生产注册误配置防护、RAG 知识草稿去占位、首页导航可访问性回归、项目集卡片键盘可达性、项目详情站内导航体验和寻球静态展示入口一致性。
+- 已完成 13 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固、Chunk strategy 草稿证据刷新、RAG overview 草稿证据刷新、首页项目卡键盘外链行为修复、项目集卡片键盘控制修复、项目详情内部链接 SPA 导航优化、寻球展示入口补齐、Legal RAG 公开演示路径补强。
+- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界、生产注册误配置防护、RAG 知识草稿去占位、首页导航可访问性回归、项目集卡片键盘可达性、项目详情站内导航体验、寻球静态展示入口一致性和 Legal RAG 公开演示叙事。
 - 父任务不归档，继续作为长期自动优化队列；后续仍按“低风险、高收益、可验证、遇 gate 切下一个”的规则推进。
 
 ## Next Candidate Queue
@@ -67,7 +68,7 @@
 - `erp` 登录后首次引导：注册 gate 已加固；后续可优化登录后的首次进入提示、角色说明和关键路径引导，生产自助注册仍是人工 gate。
 - `blog-semi` 项目详情体验：首页与项目集卡片的鼠标/键盘行为、项目详情站内链接 SPA 导航已补回归检查；后续可继续检查详情页同类推荐、外链按钮文案和移动端信息密度。项目集外链标签当前被样式隐藏，如要显示需单独做信息密度设计。
 - `xunqiu` 展示链路：主站已补齐产品展示页、技术文档和阶段 APK 入口；后续若继续 xunqiu，应先确认实时后端健康检查 URL 是否可公开，或转向展示站自身 UI/文档优化。
-- `legal-rag` 公开演示叙事：检查质量面板、demo 路径、拒答与引用说明是否能被非开发访客快速理解。
+- `legal-rag` 公开演示叙事：主站已补推荐演示路径、拒答/引用/质量面板解释；后续可继续检查真实截图是否需要更新、登录后引导是否足够清楚，或做工作台 UI 小优化。
 - 博客草稿后续：`chunk-strategy-public`、`embedding-vector-search-public`、`rag-overview-public` 已完成证据刷新；接下来只在人工确认后进入模型辅助润色、发布候选或旧文删除。
 
 ## Notes
