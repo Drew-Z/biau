@@ -1326,3 +1326,36 @@ Refined the ERP login/register landing with controlled-entry status, operational
 ### Next Steps
 
 - None - task complete
+
+
+## Session 36: ERP login experience main-site sync
+
+**Date**: 2026-07-02
+**Task**: ERP login experience main-site sync
+**Branch**: `main`
+
+### Summary
+
+Synced the latest ERP login and overview guidance facts into the Ozon ERP project detail, regenerated public assistant knowledge, refreshed sitemap, validated blog/lint/build/UI checks, and archived the Trellis child task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8bd03c6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
