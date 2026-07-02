@@ -1455,3 +1455,36 @@ Enabled the approved production registration path for Ozon ERP by adding auth ro
 
 - Legal RAG demo access and legal QA monitoring child task.
 - Public assistant model productization child task.
+
+
+## Session 37: 公开助手模型接入产品化
+
+**Date**: 2026-07-02
+**Task**: 公开助手模型接入产品化
+**Branch**: `main`
+
+### Summary
+
+完成公开助手 OpenAI-compatible 服务端接入点产品化：ChatResponse 返回非敏感 meta，provider 缺失或失败时稳定回退公开知识，前端展示回答模式、模型名和引用数，并补充 env 文档与 smoke/UI 验证。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `210a62b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
