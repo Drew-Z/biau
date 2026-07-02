@@ -2,9 +2,20 @@
 
 这个文档记录 BIAU Port 第一版访问数据和站点健康监察方式。目标是先知道“有没有人来、从哪里来、看了什么、站点有没有坏”，再决定后续项目页、博客和助手怎么优化。
 
-更完整的工具选型、Prometheus / Grafana / OpenTelemetry 路线和人工配置边界见 `docs/observability-strategy.md`。
+更完整的工具选型、Prometheus / Grafana / OpenTelemetry / ARMS / Sentry / Langfuse 路线和人工配置边界见 `docs/observability-strategy.md`。
 
 ## 访问人数怎么看
+
+先按这四类数据分开看：
+
+| 工具 | 最适合回答 | 不适合回答 | 当前结论 |
+|---|---|---|---|
+| Cloudflare Web Analytics / Pages Analytics | 总访问量、热门路径、来源、地区、设备、基础性能 | 搜索关键词、站内按钮转化、后端错误 | 先启用，用作主站基础流量入口 |
+| Search Console / Webmaster | 搜索曝光、点击、查询词、收录和 sitemap 状态 | 全站真实访问人数、站内点击、接口健康 | 必须配置，用来看 SEO 入口 |
+| Umami 或 Plausible | 项目卡片、外链、助手入口、提问次数等产品事件 | 后端延迟、数据库、模型调用失败 | 二选一，不建议同时启用 |
+| Prometheus / Grafana / ARMS | 后端请求量、错误率、延迟、依赖健康和告警 | 访客统计、搜索表现、产品点击事件 | 后端服务再接，静态主站不优先 |
+
+推荐第一阶段组合是：Cloudflare + Search Console + Plausible 或 Umami 二选一 + `site:monitor`。这个组合能覆盖“有没有人来、搜索引擎有没有发现、访客点了什么、站点有没有坏”，同时不会引入完整工程监控栈的维护负担。
 
 ### Cloudflare Web Analytics / Pages Analytics
 
@@ -43,11 +54,19 @@
 
 本仓库已经提供默认关闭的 `src/utils/analytics.ts` 适配层。只有设置 `VITE_ANALYTICS_PROVIDER=umami` 或 `plausible`，并由站点管理员自行注入对应 provider 脚本后，事件才会发送。未配置时不会采集数据。
 
-Plausible 和 Umami 建议二选一：Plausible 更适合省心的轻量托管统计，Umami 更适合自托管和后续扩展。Cloudflare Web Analytics 和 Search Console 不替代它们；Cloudflare 看基础访问和路径，Search Console 看搜索入口，Plausible/Umami 看站内产品事件。
+Plausible 和 Umami 建议二选一：Plausible 更适合省心的轻量托管统计，Umami 更适合自托管和后续扩展。Cloudflare Web Analytics 和 Search Console 不替代它们；Cloudflare 看基础访问和路径，Search Console 看搜索入口，Plausible/Umami 看站内产品事件。同一个站点同时接 Plausible 和 Umami 会重复采集并带来数据口径对齐成本。
 
 ### Prometheus / Grafana / ARMS
 
 这些属于工程可观测性，不是访问人数统计工具。它们更适合 assistant API、ERP、Legal RAG、Xunqiu 后端、Pet Community API 等常驻服务，用来观察请求量、错误率、延迟、依赖健康和告警。当前主站是静态站，优先保持 Cloudflare + Search Console + Plausible/Umami 的轻量组合。
+
+如果未来要做完整工程可观测性，优先顺序是：
+
+- assistant API 和其他后端先暴露低敏、默认关闭的 `/metrics`。
+- 再选择 Prometheus + Grafana，或托管 Prometheus/Grafana/ARMS。
+- 多服务链路复杂后再接 OpenTelemetry。
+- 真实用户前端错误影响体验后再接 Sentry 或 Grafana Faro。
+- AI 助手调用量稳定后再评估 Langfuse、Helicone、Phoenix 或 OpenTelemetry GenAI。
 
 ## 站点健康怎么查
 

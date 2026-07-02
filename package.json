@@ -22,6 +22,7 @@
     "blog:model:check": "node scripts/configure-blog-model.mjs doctor",
     "blog:audit": "tsx scripts/audit-blog-catalog.ts",
     "blog:check": "node scripts/check-public-blog.mjs",
+    "docs:observability-check": "node scripts/check-observability-docs.mjs",
     "site:monitor": "node scripts/check-site-monitor.mjs",
     "preview": "vite preview",
     "check:ui": "node scripts/check-ui.mjs",
