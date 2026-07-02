@@ -1736,3 +1736,34 @@ Enabled the approved production registration path for Ozon ERP by adding auth ro
 ### Next Steps
 
 - Continue with the next visitor-visible optimization from the long-running parent queue.
+
+---
+
+**Date**: 2026-07-03
+**Task**: 助手部署文档模型接入描述一致性修复
+**Branch**: `main`
+
+### Summary
+
+修复 `docs/deployment.md` 中公开助手 / 内部助手模型接入描述的旧句子，避免部署者误以为当前助手仍只能使用静态公开站点知识。
+
+### Main Changes
+
+- 将旧描述改为“先检索公开知识，配置 `ASSISTANT_MODEL_*` 后由服务端在公开知识约束内调用 OpenAI-compatible 模型生成回答”。
+- 保留未配置模型、模型不可用或置信度不足时回退公开知识摘要并说明限制的行为说明。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2ff4e58` | docs: align assistant deployment model wording |
+
+### Testing
+
+- [OK] `git diff --check`
+- [OK] `npm.cmd run blog:check`
+- [OK] changed-file sensitive scan reviewed; hits were placeholder `DATABASE_URL=postgresql://...`, token field names, and safety-boundary wording only.
+
+### Status
+
+[OK] **Completed**
