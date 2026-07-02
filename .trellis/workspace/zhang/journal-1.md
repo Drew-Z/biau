@@ -820,3 +820,44 @@ knowledge, and recorded a safe non-public blog backlog.
 ### Next Steps
 
 - None - task complete
+
+
+## Session 23: 项目详情相关推荐质量优化
+
+**Date**: 2026-07-02
+**Task**: 项目详情相关推荐质量优化
+**Branch**: `main`
+
+### Summary
+
+完成项目详情页相关推荐评分逻辑、验证并归档 Trellis 子任务。
+
+### Main Changes
+
+- Added `src/data/projectRecommendations.ts` as a pure recommendation helper for project detail pages.
+- Replaced category-only detail recommendations with stable scoring based on same category, shared public blog readings, normalized stack signals, and light display-status weight.
+- Updated `ProjectDetailPage` title behavior so cross-category suggestions show `相关项目` and same-category-only suggestions keep `同类项目`.
+- Verified `ozon-erp` and `xunqiu` now have related projects, with max 3 recommendations and no self-recommendation.
+- Ran `npm.cmd run lint`, `npm.cmd run build`, assertion sampling via `npx tsx`, `git diff --check`, and changed-file sensitive scan. Sensitive scan only found inspected false positives in safety guidance and task slug text.
+- Archived the child task and updated the long-running parent task to 18 completed children.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cce0c7f` | (see git log) |
+| `6a37091` | (see git log) |
+| `70b8f1d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
