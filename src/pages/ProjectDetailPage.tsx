@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { IconArrowLeft, IconLink } from '@douyinfe/semi-icons'
+import { IconArrowLeft, IconExternalOpen, IconLink } from '@douyinfe/semi-icons'
 import { blogColumnMeta } from '../data/blog'
 import { getProjectBlogPosts } from '../data/blogCuration'
 import { getRelatedProjects, getRelatedProjectsTitle } from '../data/projectRecommendations'
@@ -219,23 +219,24 @@ function ProjectDetailContentSection({ section }: ProjectDetailContentSectionPro
 }
 
 function ProjectLinkBadge({ link }: { link: ProjectLink }) {
+  const linkClassName = `link-badge link-badge--${link.type}`
   const content = (
     <>
-      <IconLink />
+      {link.type === 'external' ? <IconExternalOpen aria-hidden /> : <IconLink aria-hidden />}
       <span>{link.label}</span>
     </>
   )
 
   if (link.type === 'internal') {
     return (
-      <Link to={link.href} className="link-badge">
+      <Link to={link.href} className={linkClassName} data-link-type={link.type}>
         {content}
       </Link>
     )
   }
 
   return (
-    <a href={link.href} target="_blank" rel="noopener noreferrer" className="link-badge">
+    <a href={link.href} target="_blank" rel="noopener noreferrer" className={linkClassName} data-link-type={link.type}>
       {content}
     </a>
   )

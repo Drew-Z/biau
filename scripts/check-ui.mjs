@@ -533,8 +533,12 @@ const legalQuickExternalVisible = await legalQuickExternal.isVisible().catch(() 
 const legalQuickInternalVisible = await legalQuickInternal.isVisible().catch(() => false)
 const legalQuickExternalTarget = await legalQuickExternal.getAttribute('target').catch(() => null)
 const legalQuickExternalRel = await legalQuickExternal.getAttribute('rel').catch(() => null)
+const legalQuickExternalClass = await legalQuickExternal.getAttribute('class').catch(() => '')
+const legalQuickExternalType = await legalQuickExternal.getAttribute('data-link-type').catch(() => null)
 const legalQuickInternalHref = await legalQuickInternal.getAttribute('href').catch(() => null)
 const legalQuickInternalTarget = await legalQuickInternal.getAttribute('target').catch(() => null)
+const legalQuickInternalClass = await legalQuickInternal.getAttribute('class').catch(() => '')
+const legalQuickInternalType = await legalQuickInternal.getAttribute('data-link-type').catch(() => null)
 const legalQuickLinksBeforeImage = await detailQuickLinksPage.evaluate(() => {
   const quickLinks = document.querySelector('.detail-header .detail-quick-links')
   const image = document.querySelector('.detail-hero-image')
@@ -542,6 +546,18 @@ const legalQuickLinksBeforeImage = await detailQuickLinksPage.evaluate(() => {
   return quickLinks.getBoundingClientRect().bottom < image.getBoundingClientRect().top
 })
 const legalLowerLinkCount = await detailQuickLinksPage.locator('.detail-body .detail-links a.link-badge').count()
+const legalLowerExternalClass = await detailQuickLinksPage
+  .locator('.detail-body .detail-links a.link-badge')
+  .filter({ hasText: '在线工作台' })
+  .first()
+  .getAttribute('class')
+  .catch(() => '')
+const legalLowerInternalClass = await detailQuickLinksPage
+  .locator('.detail-body .detail-links a.link-badge')
+  .filter({ hasText: '项目复盘' })
+  .first()
+  .getAttribute('class')
+  .catch(() => '')
 if (legalQuickLinkCount < 4) {
   failures.push(`/projects/legal-rag quick links: expected header to expose existing links, got ${legalQuickLinkCount}`)
 }
@@ -554,14 +570,23 @@ if (legalQuickExternalTarget !== '_blank') {
 if (legalQuickExternalRel !== 'noopener noreferrer') {
   failures.push(`/projects/legal-rag quick links: expected external rel noopener noreferrer, got "${legalQuickExternalRel}"`)
 }
+if (!legalQuickExternalClass?.includes('link-badge--external') || legalQuickExternalType !== 'external') {
+  failures.push('/projects/legal-rag quick links: expected external quick link affordance')
+}
 if (legalQuickInternalHref !== '/blog/legal-rag-review' || legalQuickInternalTarget) {
   failures.push('/projects/legal-rag quick links: expected internal quick link to stay an SPA route without target')
+}
+if (!legalQuickInternalClass?.includes('link-badge--internal') || legalQuickInternalType !== 'internal') {
+  failures.push('/projects/legal-rag quick links: expected internal quick link affordance')
 }
 if (!legalQuickLinksBeforeImage) {
   failures.push('/projects/legal-rag quick links: expected header quick links before project screenshot')
 }
 if (legalLowerLinkCount < 4) {
   failures.push(`/projects/legal-rag quick links: expected lower related links block to remain, got ${legalLowerLinkCount}`)
+}
+if (!legalLowerExternalClass?.includes('link-badge--external') || !legalLowerInternalClass?.includes('link-badge--internal')) {
+  failures.push('/projects/legal-rag quick links: expected lower links to keep external/internal affordance')
 }
 await detailQuickLinksPage.close()
 
