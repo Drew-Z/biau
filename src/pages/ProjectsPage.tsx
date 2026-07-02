@@ -2,11 +2,16 @@ import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProjectCard } from '../components/ProjectCard'
 import { projects } from '../data/portfolio'
+import { trackAnalyticsEvent } from '../utils/analytics'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
 
   const openProjectDetail = (projectId: string) => {
+    trackAnalyticsEvent('project_detail_open', {
+      source: 'projects-page-card',
+      projectId,
+    })
     navigate(`/projects/${projectId}`)
   }
 

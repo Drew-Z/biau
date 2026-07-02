@@ -7,6 +7,7 @@ import {
   searchPublicKnowledge,
   type AssistantKnowledgeItem,
 } from '../data/assistant'
+import { trackAnalyticsEvent } from '../utils/analytics'
 
 interface WidgetMessage {
   id: string
@@ -90,9 +91,23 @@ export function PublicAssistantWidget() {
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, isOpen])
 
+  const toggleWidget = () => {
+    if (!isOpen) {
+      trackAnalyticsEvent('public_assistant_open', {
+        source: 'floating-widget',
+      })
+    }
+    setIsOpen((value) => !value)
+  }
+
   const submitQuestion = async (question: string) => {
     const trimmed = question.trim()
     if (!trimmed || isLoading) return
+
+    trackAnalyticsEvent('public_assistant_question', {
+      source: 'floating-widget',
+      questionLength: Math.min(trimmed.length, MAX_MESSAGE_LENGTH),
+    })
 
     const userMessage: WidgetMessage = {
       id: createMessageId('user'),
@@ -136,7 +151,7 @@ export function PublicAssistantWidget() {
         className="public-assistant__trigger"
         aria-expanded={isOpen}
         aria-controls="public-assistant-panel"
-        onClick={() => setIsOpen((value) => !value)}
+        onClick={toggleWidget}
       >
         <span className="public-assistant__trigger-mark" aria-hidden="true">
           B
