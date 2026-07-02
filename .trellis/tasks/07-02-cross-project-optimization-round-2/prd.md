@@ -42,6 +42,7 @@
 - `07-02-blog-model-live-doctor-task-check`: 博客模型 live doctor 语义修复，把空洞 OK 测活改为需批准的小型博客诊断任务，并同步 skill usage、草稿工作流和 backend spec。
 - `07-02-site-traffic-monitoring-mvp`: 站点访问与运行监察 MVP，补充访问人数查看说明、线上健康检查脚本、默认关闭的事件统计适配层和隐私/人工配置 gate。
 - `07-02-observability-strategy-phase-2`: 可观测性二期选型与路线图，拆清访问分析与工程可观测性，补默认关闭的 assistant API Prometheus `/metrics` 预留端点和 backend observability spec。
+- `07-02-project-detail-related-recommendations`: 项目详情相关推荐质量优化，把同类/相关项目从单一 category 截取改为基于 category、公开博客关联、技术栈和展示状态的稳定评分。
 
 ## Human Review Gates
 
@@ -66,14 +67,14 @@
 
 ## Current Round Summary
 
-- 已完成 17 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固、Chunk strategy 草稿证据刷新、RAG overview 草稿证据刷新、首页项目卡键盘外链行为修复、项目集卡片键盘控制修复、项目详情内部链接 SPA 导航优化、寻球展示入口补齐、Legal RAG 公开演示路径补强、ERP 注册开关文档一致性修复、博客模型 live doctor 语义修复、站点访问与运行监察 MVP、可观测性二期选型与 metrics 预留。
-- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界、生产注册误配置防护、RAG 知识草稿去占位、首页导航可访问性回归、项目集卡片键盘可达性、项目详情站内导航体验、寻球静态展示入口一致性、Legal RAG 公开演示叙事、ERP 交接/部署文档事实一致性、博客模型配置工具安全语义、站点运行/访问数据观测入口和后端工程可观测性默认关闭指标边界。
+- 已完成 18 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固、Chunk strategy 草稿证据刷新、RAG overview 草稿证据刷新、首页项目卡键盘外链行为修复、项目集卡片键盘控制修复、项目详情内部链接 SPA 导航优化、寻球展示入口补齐、Legal RAG 公开演示路径补强、ERP 注册开关文档一致性修复、博客模型 live doctor 语义修复、站点访问与运行监察 MVP、可观测性二期选型与 metrics 预留、项目详情相关推荐质量优化。
+- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界、生产注册误配置防护、RAG 知识草稿去占位、首页导航可访问性回归、项目集卡片键盘可达性、项目详情站内导航体验、寻球静态展示入口一致性、Legal RAG 公开演示叙事、ERP 交接/部署文档事实一致性、博客模型配置工具安全语义、站点运行/访问数据观测入口、后端工程可观测性默认关闭指标边界和详情页后续跳转推荐质量。
 - 父任务不归档，继续作为长期自动优化队列；后续仍按“低风险、高收益、可验证、遇 gate 切下一个”的规则推进。
 
 ## Next Candidate Queue
 
 - `erp` 登录后首次引导：注册 gate 已加固，HidenCloud/交接文档也已同步当前注册开关行为；后续可优化登录后的首次进入提示、角色说明和关键路径引导，生产自助注册仍是人工 gate。
-- `blog-semi` 项目详情体验：首页与项目集卡片的鼠标/键盘行为、项目详情站内链接 SPA 导航已补回归检查；后续可继续检查详情页同类推荐、外链按钮文案和移动端信息密度。项目集外链标签当前被样式隐藏，如要显示需单独做信息密度设计。
+- `blog-semi` 项目详情体验：首页与项目集卡片的鼠标/键盘行为、项目详情站内链接 SPA 导航和详情页相关推荐已补回归检查；后续可继续检查外链按钮文案、移动端信息密度和项目详情截图加载体验。项目集外链标签当前被样式隐藏，如要显示需单独做信息密度设计。
 - `xunqiu` 展示链路：主站已补齐产品展示页、技术文档和阶段 APK 入口；后续若继续 xunqiu，应先确认实时后端健康检查 URL 是否可公开，或转向展示站自身 UI/文档优化。
 - `legal-rag` 公开演示叙事：主站已补推荐演示路径、拒答/引用/质量面板解释；后续可继续检查真实截图是否需要更新、登录后引导是否足够清楚，或做工作台 UI 小优化。
 - 博客草稿后续：`chunk-strategy-public`、`embedding-vector-search-public`、`rag-overview-public` 已完成证据刷新；接下来只在人工确认后进入模型辅助润色、发布候选或旧文删除。
