@@ -1292,3 +1292,37 @@ Added ERP post-login overview guidance with current account and role context, pr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 35: ERP login landing refinement
+
+**Date**: 2026-07-02
+**Task**: ERP login landing refinement
+**Branch**: `main`
+
+### Summary
+
+Refined the ERP login/register landing with controlled-entry status, operational flow cards, registration-locked guidance, safer bootstrap-failure registration fallback, validation, and Trellis tracking.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c7c5bec` | (see git log) |
+| `d07ecff` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

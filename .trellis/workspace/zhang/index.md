@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 34
+- **Total Sessions**: 35
 - **Last Active**: 2026-07-02
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1294 | Active |
+| `journal-1.md` | ~1328 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 35 | 2026-07-02 | ERP login landing refinement | `c7c5bec`, `d07ecff` | `main` |
 | 34 | 2026-07-02 | ERP overview first-run guidance | `6b91b1a`, `87dd6dc` | `main` |
 | 33 | 2026-07-02 | Harbor intro nav-logo docking | `5d81684` | `main` |
 | 32 | 2026-07-02 | Project detail mobile image framing | `75af013`, `7604f41` | `main` |
