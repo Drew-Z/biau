@@ -56,10 +56,14 @@
 - `07-02-erp-overview-first-run-guidance`: ERP 登录后概览页首次引导，展示当前账号/角色、生产注册 gate 提醒和店铺配置、插件下载、商品同步、上架记录推荐路径。
 - `07-02-erp-login-visual-registration-locked-ui`: ERP 登录页视觉与注册关闭态优化，强化受控工作台入口、店铺/插件/后台链路和注册关闭时的下一步说明。
 - `07-02-erp-login-experience-main-site-sync`: ERP 登录体验主站同步，把最新登录页受控入口、注册关闭态、bootstrap 兜底和概览首次引导更新到 Ozon ERP 项目详情与助手知识。
+- `07-02-pet-app-showcase-main-site-entry`: Pet App 静态展示页接入主站，整理 Pet 原仓库分页脏文件、展示页部署说明和本地 debug APK 产物记录；公开 APK 下载仍保持 gate。
+- `07-02-legal-rag-demo-access-monitoring`: Legal RAG 公开 demo 访问说明与问答功能监察，准备可公开 demo 凭据/入口说明，监控法律问答、citation 和质量面板路径；不得把真实后台管理员密码写入文章。
+- `07-02-erp-production-registration-enable`: ERP 生产真实注册开启，用户已明确批准开启生产注册；实现前仍需检查鉴权、默认角色、滥用防护、部署环境变量和最小回归。
+- `07-02-public-assistant-model-productization`: 公开 AI 助手接入真实模型并产品化，提供服务端模型配置点、公开知识 RAG 边界、失败兜底、限流/成本/脱敏日志和更正式的助手交互体验。
 
 ## Human Review Gates
 
-- 是否开启 ERP 生产自助注册。
+- 是否开启 ERP 生产自助注册。状态：2026-07-02 用户已明确批准开启真实生产注册，后续 child task 可以进入实现。
 - 是否发布真实 Pet APK。
 - 是否部署任何项目到线上。
 - 是否删除旧博客。
@@ -93,6 +97,9 @@
 - `blog-semi` 品牌与动效后续：泊岸 `b` 标识、favicon、首页首次入场动画和真实导航 Logo 归位落点已完成并纳入 UI 回归；后续可在真实设备上微调 logo 细节、暗/亮主题对比、动画节奏或增加正式品牌使用规范。
 - `xunqiu` 展示链路：主站已补齐产品展示页、技术文档和阶段 APK 入口；后续若继续 xunqiu，应先确认实时后端健康检查 URL 是否可公开，或转向展示站自身 UI/文档优化。
 - `legal-rag` 公开演示叙事：主站已补推荐演示路径、拒答/引用/质量面板解释；后续可继续检查真实截图是否需要更新、登录后引导是否足够清楚，或做工作台 UI 小优化。
+- `legal-rag` demo 访问与监控：用户希望访客能进入后台展示。后续应创建/确认可公开 demo 凭据或安全访问说明，并补法律问答功能监控；禁止把真实管理员密码、生产后台密码或不可回收凭据写入文章。
+- `erp` 真实生产注册：用户已批准开启真实生产注册。下一步应创建独立 child task，在 ERP 仓库检查当前注册开关、用户模型、默认角色、验证码/限流/审计/邀请策略、部署环境变量和登录注册 UI，然后实现并同步主站说明。
+- `blog-semi` 公开 AI 助手产品化：用户希望公开助手接入真实 AI 模型，并向正式产品方向优化。后续应先找当前 `/chat/public` 接入点，使用服务端 env 配置模型渠道，不在前端暴露 key；补公开知识 RAG、限流、错误兜底、日志脱敏、成本边界和 UI 产品化体验。
 - 博客草稿后续：`chunk-strategy-public`、`embedding-vector-search-public`、`rag-overview-public` 已完成证据刷新；接下来只在人工确认后进入模型辅助润色、发布候选或旧文删除。
 - 博客模型工具后续：live doctor 已改为需批准的小型博客诊断任务，`--env-file` 别名也已拒绝并提示 `--local-env`；后续可继续补更细的非交互式回归脚本或把模型设置向导文档同步到独立 skill 仓库。
 - 站点与工程可观测性后续：首版 `site:monitor`、访问数据查看文档、no-op analytics adapter、可观测性策略文档、assistant API 默认关闭 `/metrics` 和可观测性工具决策矩阵已落地；后续人工 gate 是启用 Cloudflare Web Analytics / Search Console / Plausible 或 Umami / Sentry / Grafana Faro / ARMS / Prometheus/Grafana / Langfuse 等真实平台，自动候选是把同样的低敏 `/metrics` 模式推广到 ERP、Legal RAG、Xunqiu 后端或 Pet Community API。

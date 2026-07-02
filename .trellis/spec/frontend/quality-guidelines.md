@@ -41,6 +41,18 @@ Use Semi Design v19 components and `@douyinfe/semi-icons` first. Do not add othe
 
 Prefer real project screenshots and runtime screenshots. Missing assets should use stable fallback assets or be omitted; do not fabricate business data or visual evidence.
 
+## Static Public Pages
+
+When adding a pure static page under `public/` instead of a React route, add a
+small assertion or manual check that proves:
+
+- every referenced `/images/...` asset exists in `public/`;
+- gated downloads such as APKs do not expose a real `href` until approved;
+- generated sitemap output contains the static route when it should be indexed.
+
+This prevents the page from passing build/lint while still shipping broken
+screenshots or an accidentally public gated download.
+
 ## Data Safety
 
 Everything committed to this public site should be treated as public. Never write real IPs, internal domains, database URLs, API keys, tokens, signing paths, certificates, private account details, exact sensitive metrics, or unsanitized customer/company names.

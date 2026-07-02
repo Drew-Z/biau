@@ -227,7 +227,8 @@ export const projects: Project[] = [
     stack: ['Android', 'Node.js', 'FastAPI', 'PostgreSQL', 'Agent Worker', '质量门禁'],
     highlights: ['桌宠孵化', '社区审核', '不透明下载 ID', '人审发布'],
     links: [
-      externalLink('App 展示页源码', 'https://github.com/Drew-Z/gamer/tree/cursor-windows-migration/pet-app-showcase-site'),
+      externalLink('App 展示页', '/pet-app-showcase/'),
+      externalLink('展示页源码', 'https://github.com/Drew-Z/gamer/tree/cursor-windows-migration/pet-app-showcase-site'),
       internalLink('生成管线文章', '/blog/pet-workspace-pipeline'),
     ],
     detailContent: {
@@ -245,7 +246,7 @@ export const projects: Project[] = [
         {
           title: '新增 App 展示与下载状态页',
           body:
-            '当前已经补充一个独立静态展示页，用真实 Android 模拟器截图呈现桌宠模式、孵化桌宠、社区和个人页。页面明确标注 APK 待公开构建，不提供占位下载链接，也不把 debug 包包装成公开发布包。',
+            '当前已经在主站补充 /pet-app-showcase/ 独立静态展示页，用真实 Android 模拟器截图呈现桌宠模式、孵化桌宠、社区和个人页。页面明确标注 APK 待公开构建，不提供占位下载链接，也不把 debug 包包装成公开发布包。',
         },
       ],
       workflow: [
@@ -324,7 +325,7 @@ export const projects: Project[] = [
             '把 Worker 池化、队列位置、动态 SLA、失败恢复和运行面板做成可运营能力。',
             '继续提升 Android 端桌宠交互、候选画廊、反馈备注、真实设备 E2E 和桌宠资源包体验。',
             '沉淀生成质量回归报告，让动作、透明背景、包结构和人审反馈可以跨版本对比。',
-            '把 App 展示页接入正式公开访问地址，并在签名、版本说明、回归和人工审核完成后再开放 APK 下载。',
+            '继续完善 App 展示页的版本说明、APK 校验摘要和更新日志；只有在签名、版本说明、回归和人工审核完成后再开放 APK 下载。',
           ],
         },
       ],
@@ -335,7 +336,7 @@ export const projects: Project[] = [
       'Community API 是 App 唯一后端入口，包含 health、SLA、metrics、feed、community-home、approved pets、package download descriptor、wallet、check-in、submissions、import drafts、bundle validation、admin review 和 fantasy-pet proxy 等能力。',
       '生成规则服务负责 app-safe job 创建、轮询、artifact 索引、不透明 downloadId、人工 review decision、package plan、pet.zip 构建、worker readiness 和内部 GA/Codex/QA 证据；机器证据不能替代人工视觉 accept。',
       '质量证据包括 Node workspace tests、Android 单元测试、Community API routes/server/store/rate-limit/metrics/SLA/logging/postgres 测试、pet package contract 测试、追踪矩阵、结构化日志、Prometheus metrics 和 SLA 文档。',
-      '项目新增了静态 App 展示与下载状态页，使用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待公开构建，不提供占位下载。',
+      '项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待公开构建，不提供占位下载。',
       '当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。',
     ],
   },

@@ -17,10 +17,15 @@ const portfolio = await readFile('src/data/portfolio.ts', 'utf8')
 const projectIds = [...portfolio.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1])
 const posts = getPublicBlogPosts()
 
+const staticRoutes = [
+  { loc: '/pet-app-showcase/', priority: '0.7', changefreq: 'monthly' },
+]
+
 const routes = [
   { loc: '/', priority: '1.0', changefreq: 'weekly' },
   { loc: '/projects', priority: '0.9', changefreq: 'weekly' },
   { loc: '/blog', priority: '0.9', changefreq: 'weekly' },
+  ...staticRoutes,
   ...projectIds.map((id) => ({ loc: `/projects/${id}`, priority: '0.8', changefreq: 'monthly' })),
   ...posts.map((post) => ({ loc: `/blog/${post.slug}`, priority: '0.7', changefreq: 'monthly', lastmod: post.date })),
 ]
