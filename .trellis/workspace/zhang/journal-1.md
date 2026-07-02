@@ -1258,3 +1258,37 @@ Made the BIAU Port home intro measure and dock into the real navigation logo, ad
 ### Next Steps
 
 - None - task complete
+
+
+## Session 34: ERP overview first-run guidance
+
+**Date**: 2026-07-02
+**Task**: ERP overview first-run guidance
+**Branch**: `main`
+
+### Summary
+
+Added ERP post-login overview guidance with current account and role context, production registration gate copy, and recommended paths for shops, plugin download, product sync, and import history. Recorded and archived the Trellis child task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6b91b1a` | (see git log) |
+| `87dd6dc` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
