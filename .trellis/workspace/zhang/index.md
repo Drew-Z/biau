@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 23
+- **Total Sessions**: 24
 - **Last Active**: 2026-07-02
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~863 | Active |
+| `journal-1.md` | ~902 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 24 | 2026-07-02 | 项目详情相关推荐 UI 回归检查 | `e04ba2a`, `76f666f`, `f8bf64b` | `main` |
 | 23 | 2026-07-02 | 项目详情相关推荐质量优化 | `cce0c7f`, `6a37091`, `70b8f1d` | `main` |
 | 22 | 2026-07-02 | 可观测性二期与 metrics 预留 | `a2e73f0`, `6d4b29c` | `main` |
 | 21 | 2026-07-02 | 站点访问与运行监察 MVP | `5762a9e`, `8561b06` | `main` |

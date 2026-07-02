@@ -861,3 +861,42 @@ knowledge, and recorded a safe non-public blog backlog.
 ### Next Steps
 
 - None - task complete
+
+
+## Session 24: 项目详情相关推荐 UI 回归检查
+
+**Date**: 2026-07-02
+**Task**: 项目详情相关推荐 UI 回归检查
+**Branch**: `main`
+
+### Summary
+
+为项目详情相关推荐区域补充 Playwright UI 防回归检查并归档子任务。
+
+### Main Changes
+
+- Added Playwright coverage in `scripts/check-ui.mjs` for `/projects/ozon-erp` and `/projects/xunqiu` related project sections.
+- The UI check now verifies the `相关项目` section exists, has 1-3 cards, does not self-link, and the first card navigates to another project detail page.
+- Ran `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run check:ui`, `git diff --check`, and changed-file sensitive scan. Sensitive scan only found inspected false positives for the local UI check URL and existing task slug text.
+- Archived the child task and updated the long-running parent task to 19 completed children.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e04ba2a` | (see git log) |
+| `76f666f` | (see git log) |
+| `f8bf64b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
