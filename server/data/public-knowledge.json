@@ -267,7 +267,7 @@
   {
     "id": "project:xunqiu",
     "title": "寻球｜移动端与现代后端重建",
-    "summary": "足球社群移动端迁移案例：旧版 App 和旧后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3、PostgreSQL、Render 与 R2 上传链路。 寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。 64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。 现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。 短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。 项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。 后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。",
+    "summary": "足球社群移动端迁移案例：旧版 App 和旧后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3、PostgreSQL、Render 与 R2 上传链路。 寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。 64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。 现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。 短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。 项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。 公开展示站提供产品页、技术文档和 latest-xunqiu64.apk 阶段包副本；这些入口用于展示与轻量验证，不代表完整生产发布或长期生产运营方案。 后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。",
     "href": "/projects/xunqiu",
     "tags": [
       "mobile",

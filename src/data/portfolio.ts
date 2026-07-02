@@ -45,6 +45,8 @@ export interface Project {
 const GAME_SITE_URL = 'https://games.playlab.eu.cc'
 const PLAY_SITE_URL = 'https://play.playlab.eu.cc'
 const XUNQIU_SITE_URL = 'https://xunqiu.playlab.eu.cc'
+const XUNQIU_DOCS_URL = `${XUNQIU_SITE_URL}/docs.html`
+const XUNQIU_STAGE_APK_URL = `${XUNQIU_SITE_URL}/downloads/latest-xunqiu64.apk`
 
 function externalLink(label: string, href: string): ProjectLink {
   return { label, href, type: 'external' }
@@ -1128,6 +1130,8 @@ export const projects: Project[] = [
     highlights: ['新旧链路分流', '旧接口兼容', '短视频上传播放', '测试矩阵与烟测'],
     links: [
       externalLink('产品展示页', `${XUNQIU_SITE_URL}/`),
+      externalLink('技术文档', XUNQIU_DOCS_URL),
+      externalLink('阶段 APK', XUNQIU_STAGE_APK_URL),
       externalLink('新后端仓库', 'https://github.com/Drew-Z/xunqiu-backend-modern'),
       internalLink('迁移复盘文章', '/blog/xunqiu-android64-rebuild'),
     ],
@@ -1197,7 +1201,7 @@ export const projects: Project[] = [
         {
           title: '部署和展示边界',
           body:
-            '公开产品展示站由 Cloudflare Pages 承载静态页面、技术文档、素材和阶段 APK 下载；动态 API 由独立 Render 服务承载，数据库由 PostgreSQL/Flyway 初始化，文件上传走 R2。静态站和 BIAU Port 都只展示项目材料，不保存私有配置或密钥。',
+            '公开产品展示站由 Cloudflare Pages 承载静态页面、技术文档、素材和阶段 APK 下载；展示站中的 latest-xunqiu64.apk 是当前用于展示的最新阶段包副本。动态 API 由独立 Render 服务承载，数据库由 PostgreSQL/Flyway 初始化，文件上传走 R2。静态站和 BIAU Port 都只展示项目材料，不保存私有配置或密钥。',
         },
       ],
       limitations: [
@@ -1206,7 +1210,7 @@ export const projects: Project[] = [
           items: [
             '64 位客户端仍有一部分页面处于需回归或安全等价状态，不能把所有旧版深层能力都表述为完整生产可用。',
             '支付、IM、推送、地图、分享、真实兑换、赛事创建和比分提交等高副作用能力保留边界，不在展示环境触发真实外部服务。',
-            'Render 免费服务、演示数据、静态 APK 下载和 R2 配置都更适合展示和轻量验证，不应被描述为长期生产运营方案。',
+            'Render 免费服务、演示数据、静态阶段 APK 下载和 R2 配置都更适合展示和轻量验证，不应被描述为长期生产运营方案。',
           ],
         },
       ],
@@ -1228,6 +1232,7 @@ export const projects: Project[] = [
       '现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。',
       '短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。',
       '项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。',
+      '公开展示站提供产品页、技术文档和 latest-xunqiu64.apk 阶段包副本；这些入口用于展示与轻量验证，不代表完整生产发布或长期生产运营方案。',
       '后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。',
     ],
   },
