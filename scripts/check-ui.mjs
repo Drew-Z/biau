@@ -434,6 +434,47 @@ if (!focusedProject) {
 }
 await keyboardPage.close()
 
+const projectsMobileActionPage = await browser.newPage({ viewport: viewports[1] })
+await projectsMobileActionPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
+const legalRagMobileCard = projectsMobileActionPage.locator('.project-card').filter({ hasText: 'Legal RAG' }).first()
+const mobileFooterVisible = await legalRagMobileCard.locator('.project-footer').isVisible().catch(() => false)
+const mobileDetailButtonVisible = await legalRagMobileCard
+  .getByRole('button', { name: '查看项目详情：Legal RAG｜法律智能机器人与合同审查' })
+  .isVisible()
+  .catch(() => false)
+const mobileExternalLink = legalRagMobileCard.getByRole('link', { name: '在线工作台' }).first()
+const mobileExternalLinkVisible = await mobileExternalLink.isVisible().catch(() => false)
+const mobileExternalHref = await mobileExternalLink.getAttribute('href').catch(() => null)
+const mobileExternalTarget = await mobileExternalLink.getAttribute('target').catch(() => null)
+const mobileExternalRel = await mobileExternalLink.getAttribute('rel').catch(() => null)
+if (!mobileFooterVisible) {
+  failures.push('/projects mobile actions: expected project card footer to stay visible')
+}
+if (!mobileDetailButtonVisible) {
+  failures.push('/projects mobile actions: expected visible detail button in project card footer')
+}
+if (!mobileExternalLinkVisible) {
+  failures.push('/projects mobile actions: expected visible external project link in project card footer')
+}
+if (mobileExternalHref !== 'https://legal-rag-web.onrender.com') {
+  failures.push(`/projects mobile actions: expected Legal RAG external href, got "${mobileExternalHref}"`)
+}
+if (mobileExternalTarget !== '_blank') {
+  failures.push(`/projects mobile actions: expected external link target _blank, got "${mobileExternalTarget}"`)
+}
+if (mobileExternalRel !== 'noopener noreferrer') {
+  failures.push(`/projects mobile actions: expected external link rel noopener noreferrer, got "${mobileExternalRel}"`)
+}
+const popupPromise = projectsMobileActionPage.waitForEvent('popup', { timeout: 3000 }).catch(() => null)
+await mobileExternalLink.click()
+const mobileExternalPopup = await popupPromise
+if (mobileExternalPopup) await mobileExternalPopup.close()
+const mobileActionPathname = await projectsMobileActionPage.evaluate(() => window.location.pathname)
+if (mobileActionPathname !== '/projects') {
+  failures.push('/projects mobile actions: external link click should not navigate the card to a detail page')
+}
+await projectsMobileActionPage.close()
+
 const projectDetailButtonKeyboardPage = await browser.newPage({ viewport: viewports[0] })
 await projectDetailButtonKeyboardPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
 await projectDetailButtonKeyboardPage

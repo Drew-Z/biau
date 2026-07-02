@@ -2967,7 +2967,61 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   }
 
   .app.page-tools .project-footer {
+    position: static;
+    margin-top: var(--space-12, 12px);
+    padding-top: var(--space-12, 12px);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid color-mix(in oklch, var(--card-accent) 18%, var(--flow-ui-card-border));
+    transform: none;
+  }
+
+  .app.page-tools .project-footer .btn {
+    width: auto;
+    height: 36px;
+    min-width: 0;
+    min-height: 36px;
+    padding: 0 var(--space-12, 12px);
+    gap: 6px;
+    color: var(--ink);
+    background: color-mix(in oklch, var(--card-accent) 12%, transparent);
+    border: 1px solid color-mix(in oklch, var(--card-accent) 24%, transparent);
+    border-radius: var(--radius-pill);
+  }
+
+  .app.page-tools .project-footer .btn span,
+  .app.page-tools .project-footer .btn svg {
+    display: inline-flex;
+  }
+
+  .app.page-tools .project-footer .btn::before,
+  .app.page-tools .project-footer .btn::after {
     display: none;
+  }
+
+  .app.page-tools .project-links {
+    min-width: 0;
+    display: flex;
+    flex: 1 1 150px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .app.page-tools .project-links .link-badge {
+    min-height: 34px;
+    max-width: min(100%, 150px);
+    padding: 0 var(--space-10, 10px);
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    color: color-mix(in oklch, var(--card-accent) 76%, var(--ink));
+    border-color: color-mix(in oklch, var(--card-accent) 22%, transparent);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .app.page-tools .project-card::before,
