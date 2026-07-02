@@ -41,6 +41,7 @@
 - `07-02-erp-registration-docs-consistency`: ERP 注册开关文档一致性修复，把 HidenCloud 手动部署记录和交接说明同步到当前 runtime/test/README 行为，避免误导接手人以为生产普通注册默认开放。
 - `07-02-blog-model-live-doctor-task-check`: 博客模型 live doctor 语义修复，把空洞 OK 测活改为需批准的小型博客诊断任务，并同步 skill usage、草稿工作流和 backend spec。
 - `07-02-site-traffic-monitoring-mvp`: 站点访问与运行监察 MVP，补充访问人数查看说明、线上健康检查脚本、默认关闭的事件统计适配层和隐私/人工配置 gate。
+- `07-02-observability-strategy-phase-2`: 可观测性二期选型与路线图，拆清访问分析与工程可观测性，补默认关闭的 assistant API Prometheus `/metrics` 预留端点和 backend observability spec。
 
 ## Human Review Gates
 
@@ -53,6 +54,7 @@
 - 是否使用图片生成作为正式公开资产。
 - 是否启用 Cloudflare Web Analytics、Search Console / Webmaster 或 Umami / Plausible 的真实站点配置。
 - 是否把 `site:monitor` 接入 CI、定时器、告警平台或发布流水线。
+- 是否开启生产 `METRICS_ENABLED`、Sentry DSN、ARMS、托管 Prometheus/Grafana 或任何真实 scrape/告警配置。
 
 ## Acceptance Criteria
 
@@ -64,8 +66,8 @@
 
 ## Current Round Summary
 
-- 已完成 16 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固、Chunk strategy 草稿证据刷新、RAG overview 草稿证据刷新、首页项目卡键盘外链行为修复、项目集卡片键盘控制修复、项目详情内部链接 SPA 导航优化、寻球展示入口补齐、Legal RAG 公开演示路径补强、ERP 注册开关文档一致性修复、博客模型 live doctor 语义修复、站点访问与运行监察 MVP。
-- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界、生产注册误配置防护、RAG 知识草稿去占位、首页导航可访问性回归、项目集卡片键盘可达性、项目详情站内导航体验、寻球静态展示入口一致性、Legal RAG 公开演示叙事、ERP 交接/部署文档事实一致性、博客模型配置工具安全语义和站点运行/访问数据观测入口。
+- 已完成 17 个 child task：主站展示闭环、blog-semi 案例刷新、Pet 展示页 gate、Embedding 知识草稿证据包、Playlab 游戏详情补强、ERP 自助注册 gate 加固、Chunk strategy 草稿证据刷新、RAG overview 草稿证据刷新、首页项目卡键盘外链行为修复、项目集卡片键盘控制修复、项目详情内部链接 SPA 导航优化、寻球展示入口补齐、Legal RAG 公开演示路径补强、ERP 注册开关文档一致性修复、博客模型 live doctor 语义修复、站点访问与运行监察 MVP、可观测性二期选型与 metrics 预留。
+- 本轮已覆盖产品/展示体验、项目证据同步、草稿内容治理、跨项目链接安全边界、生产注册误配置防护、RAG 知识草稿去占位、首页导航可访问性回归、项目集卡片键盘可达性、项目详情站内导航体验、寻球静态展示入口一致性、Legal RAG 公开演示叙事、ERP 交接/部署文档事实一致性、博客模型配置工具安全语义、站点运行/访问数据观测入口和后端工程可观测性默认关闭指标边界。
 - 父任务不归档，继续作为长期自动优化队列；后续仍按“低风险、高收益、可验证、遇 gate 切下一个”的规则推进。
 
 ## Next Candidate Queue
@@ -76,7 +78,7 @@
 - `legal-rag` 公开演示叙事：主站已补推荐演示路径、拒答/引用/质量面板解释；后续可继续检查真实截图是否需要更新、登录后引导是否足够清楚，或做工作台 UI 小优化。
 - 博客草稿后续：`chunk-strategy-public`、`embedding-vector-search-public`、`rag-overview-public` 已完成证据刷新；接下来只在人工确认后进入模型辅助润色、发布候选或旧文删除。
 - 博客模型工具后续：live doctor 已改为需批准的小型博客诊断任务；后续可单独清理 `--env-file` CLI 别名，因为新版 Node 可能把它当作 Node 自身参数抢占，推荐继续使用已文档化的 `--local-env`。
-- 站点监察后续：首版 `site:monitor`、访问数据查看文档和 no-op analytics adapter 已落地；后续可在人工确认后启用 Cloudflare Web Analytics / Search Console / Umami 或 Plausible，或把 `npm run site:monitor` 接入 CI/定时器/告警。
+- 站点与工程可观测性后续：首版 `site:monitor`、访问数据查看文档、no-op analytics adapter、可观测性策略文档和 assistant API 默认关闭 `/metrics` 已落地；后续人工 gate 是启用 Cloudflare Web Analytics / Search Console / Plausible 或 Umami / Sentry / ARMS / Prometheus/Grafana，自动候选是把同样的低敏 `/metrics` 模式推广到 ERP、Legal RAG、Xunqiu 后端或 Pet Community API。
 
 ## Notes
 
