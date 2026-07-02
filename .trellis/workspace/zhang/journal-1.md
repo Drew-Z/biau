@@ -1410,3 +1410,48 @@ Published a BIAU Port static Pet App showcase page, synced Pet project links and
 - Start ERP production registration child task; user approved real production registration.
 - Start Legal RAG demo access and legal QA monitoring child task using public demo credentials, not real admin passwords.
 - Start public assistant model productization child task with server-side model configuration, RAG boundary, fallback, rate limiting, and product UI polish.
+
+## Session 38: ERP production registration enablement
+
+**Date**: 2026-07-02
+**Task**: ERP 生产真实注册开启
+**Branch**: `main` / `erp:codex/ozon-plugin-parity`
+
+### Summary
+
+Enabled the approved production registration path for Ozon ERP by adding auth route coverage, updating deployment/runbook docs, adjusting the overview guidance copy, and syncing BIAU Port project/assistant knowledge.
+
+### Main Changes
+
+- Added API route tests for production registration closed-by-default, explicit enable, operator default role, and duplicate username conflict.
+- Updated ERP README and HidenCloud handoff/deploy docs to use explicit `ERP_REGISTRATION_ENABLED=1` for approved production registration.
+- Updated ERP overview first-run guidance to say public registration is deployment-controlled and new users are `operator` by default.
+- Synced BIAU Port Ozon ERP project detail and generated public assistant knowledge.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `db7def7` | `feat: enable production registration path` (`erp`) |
+| `3f27de2` | `docs: sync ERP production registration` (`blog-semi`) |
+
+### Testing
+
+- [OK] `erp`: `npm.cmd run test --workspace @erp/api`
+- [OK] `erp`: `npm.cmd run build --workspace @erp/api`
+- [OK] `erp`: `npm.cmd run build --workspace @erp/web`
+- [OK] `blog-semi`: `npm.cmd run assistant:index`
+- [OK] `blog-semi`: `npm.cmd run blog:check`
+- [OK] `blog-semi`: `npm.cmd run lint`
+- [OK] `blog-semi`: `npm.cmd run build`
+- [OK] Both repos: `git diff --check`
+- [OK] Both repos: changed-file sensitive scan
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Legal RAG demo access and legal QA monitoring child task.
+- Public assistant model productization child task.
