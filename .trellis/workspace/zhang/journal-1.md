@@ -1589,3 +1589,36 @@ Enabled the approved production registration path for Ozon ERP by adding auth ro
 ### Next Steps
 
 - None - task complete
+
+
+## Session 41: Main site project entry consistency audit
+
+**Date**: 2026-07-02
+**Task**: Main site project entry consistency audit
+**Branch**: `main`
+
+### Summary
+
+审计主站项目入口一致性检查，确认 scripts/check-ui.mjs 已覆盖首页轮播卡片进详情、外部动作按钮不误导航、项目卡片键盘访问、移动端外链不冒泡、项目详情快捷链接和 Xunqiu 文档/APK入口，无需新增重复检查。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7cebb7a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
