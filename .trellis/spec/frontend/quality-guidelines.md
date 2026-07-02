@@ -13,6 +13,20 @@ npm.cmd run build
 
 For broad release checks, `npm.cmd run verify` also runs assistant index generation, Prisma validation, backend build/smoke, frontend build, blog checks, preview startup, and UI checks through `scripts/verify.mjs`.
 
+## Node-Side Validation Helpers
+
+When a task needs a `tsx` sampling script or assertion script for frontend-derived logic, keep the pure logic in `src/data/` or `src/utils/` instead of exporting it from a page component that imports UI packages, CSS, icons, or browser-only modules.
+
+```typescript
+// Good: Node-side scripts can import this without loading page UI dependencies.
+import { getRelatedProjects } from './src/data/projectRecommendations.ts'
+
+// Bad: importing a page can transitively load Semi icon CSS and fail in Node.
+import { getRelatedProjects } from './src/pages/ProjectDetailPage.tsx'
+```
+
+This keeps validation scripts executable with `npx tsx` and prevents page rendering dependencies from becoming hidden test dependencies.
+
 ## Review Priorities
 
 - Preserve the product website / solution showcase voice.

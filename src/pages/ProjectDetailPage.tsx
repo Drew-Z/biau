@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { IconArrowLeft, IconLink } from '@douyinfe/semi-icons'
 import { blogColumnMeta } from '../data/blog'
 import { getProjectBlogPosts } from '../data/blogCuration'
+import { getRelatedProjects, getRelatedProjectsTitle } from '../data/projectRecommendations'
 import {
   projects,
   categoryLabels as projectCategoryLabels,
@@ -14,6 +15,7 @@ import {
   type ProjectLink,
 } from '../data/portfolio'
 import { ResponsiveImage } from '../components/ResponsiveImage'
+
 const projectDetailContentOrder: ProjectDetailContentKey[] = [
   'overview',
   'workflow',
@@ -31,9 +33,7 @@ export function ProjectDetailPage() {
 
   const related = useMemo(() => {
     if (!project) return []
-    return projects
-      .filter((p) => p.id !== project.id && p.category === project.category)
-      .slice(0, 3)
+    return getRelatedProjects(project)
   }, [project])
 
   const projectReadings = useMemo(() => {
@@ -131,7 +131,7 @@ export function ProjectDetailPage() {
 
       {related.length > 0 && (
         <section className="detail-related">
-          <h2 className="detail-block-title">同类项目</h2>
+          <h2 className="detail-block-title">{getRelatedProjectsTitle(project, related)}</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
               <Link key={item.id} to={`/projects/${item.id}`} className="detail-related-card">
