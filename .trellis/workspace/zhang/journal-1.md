@@ -1522,3 +1522,37 @@ Enabled the approved production registration path for Ozon ERP by adding auth ro
 ### Next Steps
 
 - None - task complete
+
+
+## Session 39: Xunqiu showcase health and doc entry sync
+
+**Date**: 2026-07-02
+**Task**: Xunqiu showcase health and doc entry sync
+**Branch**: `main`
+
+### Summary
+
+同步寻球展示与主站项目内容：静态展示站补充 Render health/smoke/cold-start 边界；主站项目页和公开助手知识同步阶段 APK、技术文档、健康检查、烟测覆盖和新旧迁移边界，并避免公开旧后端 IP、测试密码、签名路径或私有配置。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e06d412` | (see git log) |
+| `1c0bc09` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
