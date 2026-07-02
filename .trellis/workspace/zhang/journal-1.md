@@ -747,6 +747,48 @@ knowledge, and recorded a safe non-public blog backlog.
 
 [OK] **Completed**
 
+---
+
+**Date**: 2026-07-03
+**Task**: 主页外链可用性检测与状态展示页
+**Branch**: `main`
+
+### Summary
+
+新增 `/status` 站点入口状态页和 `site:status` 生成脚本，把主页 IN PORT 的四个外部项目入口整理成访客可读的最近一次可达性结果。该任务收束为第一层“公开入口状态”，不宣称模型、RAG、合同审查等深度功能健康。
+
+### Main Changes
+
+- 新增 `src/data/statusTargets.ts`，从首页项目外链生成状态目标并补充公开说明。
+- 新增 `scripts/generate-site-status.ts` 和 `public/status/site-status.json`，串行检查 Legal RAG、ERP、Playlab、寻球四个入口。
+- 新增 `src/pages/SiteStatusPage.tsx`、`/status` 路由、导航、SEO、sitemap 和 UI 检查断言。
+- 记录用户澄清：后续需要独立实现项目可控程度 / 功能健康观测，例如模型 API、RAG 问答和合同审查合成检查。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8d01787` | feat: add project entry status page |
+
+### Testing
+
+- [OK] `npm.cmd run site:status`
+- [OK] `npm.cmd run sitemap:generate`
+- [OK] `npm.cmd run lint`
+- [OK] `npm.cmd run build`
+- [OK] `npm.cmd run check:ui` with local preview on `127.0.0.1:5174`
+- [OK] `git diff --check`
+- [OK] changed-file sensitive scan found no GLM key, relay domain, API key, password, token, private key, or private database URL.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- Open a follow-up child task for project controllability / functional health observability.
+- Then open the AI daily report standalone repository task.
+
 ### Next Steps
 
 - Review/merge the ERP and Gamer branches.
