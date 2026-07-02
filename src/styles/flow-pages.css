@@ -2929,6 +2929,16 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     line-height: 1.62;
   }
 
+  .detail-hero-image img {
+    max-height: min(360px, 42vh);
+  }
+
+  .detail-hero-image-action {
+    top: var(--space-12, 12px);
+    right: var(--space-12, 12px);
+    bottom: auto;
+  }
+
   .detail-body,
   .detail-related {
     padding: var(--space-16);

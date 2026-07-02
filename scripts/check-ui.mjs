@@ -509,6 +509,19 @@ const originalImageHref = await originalImageLink.getAttribute('href')
 const originalImageTarget = await originalImageLink.getAttribute('target')
 const originalImageRel = await originalImageLink.getAttribute('rel')
 const originalImageActionVisible = await originalImageLink.locator('.detail-hero-image-action').isVisible().catch(() => false)
+const originalImageMobileMetrics = await originalImageLinkPage.evaluate(() => {
+  const imageLink = document.querySelector('.detail-hero-image')
+  const action = document.querySelector('.detail-hero-image-action')
+  if (!(imageLink instanceof HTMLElement) || !(action instanceof HTMLElement)) return null
+  const imageRect = imageLink.getBoundingClientRect()
+  const actionRect = action.getBoundingClientRect()
+  return {
+    imageHeight: Math.round(imageRect.height),
+    actionTop: Math.round(actionRect.top),
+    actionBottom: Math.round(actionRect.bottom),
+    viewportHeight: window.innerHeight,
+  }
+})
 if (!originalImageHref?.endsWith('/images/projects/showcase/xunqiu-android64-runtime.png')) {
   failures.push(`/projects/xunqiu original image: expected hero link to point to project image, got "${originalImageHref}"`)
 }
@@ -520,6 +533,21 @@ if (originalImageRel !== 'noopener noreferrer') {
 }
 if (!originalImageActionVisible) {
   failures.push('/projects/xunqiu original image: expected visible open-original affordance')
+}
+if (!originalImageMobileMetrics) {
+  failures.push('/projects/xunqiu original image: expected measurable mobile image metrics')
+} else {
+  if (originalImageMobileMetrics.imageHeight > 390) {
+    failures.push(
+      `/projects/xunqiu original image: expected compact mobile preview height, got ${originalImageMobileMetrics.imageHeight}`,
+    )
+  }
+  if (
+    originalImageMobileMetrics.actionTop < 0 ||
+    originalImageMobileMetrics.actionBottom > originalImageMobileMetrics.viewportHeight
+  ) {
+    failures.push('/projects/xunqiu original image: expected open-original affordance inside first mobile viewport')
+  }
 }
 await originalImageLinkPage.close()
 
