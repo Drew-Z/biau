@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 20
+- **Total Sessions**: 21
 - **Last Active**: 2026-07-02
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~682 | Active |
+| `journal-1.md` | ~788 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 21 | 2026-07-02 | 站点访问与运行监察 MVP | `5762a9e`, `8561b06` | `main` |
 | 20 | 2026-07-02 | Blog pipeline model-assisted flow | `63fba10`, `b2be2d3` | `main` |
 | 19 | 2026-07-02 | Add model setup gate to blog pipeline | `8004148` | `main` |
 | 18 | 2026-07-02 | Run blog content pipeline flow | `ca1d8d7` | `main` |

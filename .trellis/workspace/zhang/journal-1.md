@@ -752,3 +752,37 @@ knowledge, and recorded a safe non-public blog backlog.
 - Review/merge the ERP and Gamer branches.
 - Decide whether to deploy the Pet showcase page and when to publish a signed APK.
 - Use the new blog backlog to choose the next article only after human review.
+
+
+## Session 21: 站点访问与运行监察 MVP
+
+**Date**: 2026-07-02
+**Task**: 站点访问与运行监察 MVP
+**Branch**: `main`
+
+### Summary
+
+新增 site:monitor 线上健康检查脚本、默认关闭的前端 analytics adapter、访问人数/搜索/事件数据查看文档，并把长期父任务更新到 16 个 child task。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5762a9e` | (see git log) |
+| `8561b06` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
