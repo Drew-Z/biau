@@ -1244,9 +1244,17 @@ export const projects: Project[] = [
           ],
         },
         {
+          title: 'Health 与 smoke 边界',
+          items: [
+            '现代后端的健康检查路径保持在 `/free_kicker/actuator/health`，用于确认服务进程和基础依赖在某个时刻可响应。',
+            '后端仓库的 smoke 脚本会在指定 base URL 上串起 health、兼容旧 envelope 的登录、动态、短视频、球队和球场列表。',
+            '公开 health 若遇到 Render 冷启动或超时，只能说明需要重试和查看日志，不能把静态展示站当成后端长期在线或生产 SLA 的证明。',
+          ],
+        },
+        {
           title: '部署和展示边界',
           body:
-            '公开产品展示站由 Cloudflare Pages 承载静态页面、技术文档、素材和阶段 APK 下载；展示站中的 latest-xunqiu64.apk 是当前用于展示的最新阶段包副本。动态 API 由独立 Render 服务承载，数据库由 PostgreSQL/Flyway 初始化，文件上传走 R2。静态站和 BIAU Port 都只展示项目材料，不保存私有配置或密钥。',
+            '公开产品展示站由 Cloudflare Pages 承载静态页面、技术文档、素材和阶段 APK 下载；展示站中的 latest-xunqiu64.apk 是当前用于展示的最新阶段包副本。动态 API 由独立 Render 服务承载，数据库由 PostgreSQL/Flyway 初始化，文件上传走 R2。静态站和 BIAU Port 都只展示项目材料，不保存旧后端 IP、测试密码、签名路径、数据库连接、R2 密钥或 Render 私有配置。',
         },
       ],
       limitations: [
@@ -1277,7 +1285,8 @@ export const projects: Project[] = [
       '现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。',
       '短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。',
       '项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。',
-      '公开展示站提供产品页、技术文档和 latest-xunqiu64.apk 阶段包副本；这些入口用于展示与轻量验证，不代表完整生产发布或长期生产运营方案。',
+      '现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。',
+      '公开展示站提供产品页、技术文档和 latest-xunqiu64.apk 阶段包副本；这些入口用于展示与轻量验证，不代表完整生产发布或长期生产运营方案，也不包含旧后端 IP、测试密码、签名路径或私有云配置。',
       '后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。',
     ],
   },
