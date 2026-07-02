@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 25
+- **Total Sessions**: 26
 - **Last Active**: 2026-07-02
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~942 | Active |
+| `journal-1.md` | ~982 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 26 | 2026-07-02 | 博客模型工具 env-file 别名清理 | `5dde6c5`, `c70024b`, `03fb8ac` | `main` |
 | 25 | 2026-07-02 | 项目详情主图原图查看入口 | `fce05df`, `98fc461`, `06b9186` | `main` |
 | 24 | 2026-07-02 | 项目详情相关推荐 UI 回归检查 | `e04ba2a`, `76f666f`, `f8bf64b` | `main` |
 | 23 | 2026-07-02 | 项目详情相关推荐质量优化 | `cce0c7f`, `6a37091`, `70b8f1d` | `main` |

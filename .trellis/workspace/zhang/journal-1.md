@@ -940,3 +940,43 @@ knowledge, and recorded a safe non-public blog backlog.
 ### Next Steps
 
 - None - task complete
+
+
+## Session 26: 博客模型工具 env-file 别名清理
+
+**Date**: 2026-07-02
+**Task**: 博客模型工具 env-file 别名清理
+**Branch**: `main`
+
+### Summary
+
+拒绝 blog:model 的 --env-file 参数并保留 --local-env 离线配置路径。
+
+### Main Changes
+
+- Updated `scripts/configure-blog-model.mjs` so `--env-file` and `--env-file=PATH` are rejected with a structured error and recovery guidance to use `--local-env`.
+- Kept `--local-env` and `--local-env=PATH` behavior intact and added a help note that `--env-file` is intentionally unsupported to avoid Node/wrapper ambiguity.
+- Verified offline only: placeholder `setup --local-env`, `status --local-env`, `doctor --local-env`, and failing `status --env-file` / `status --env-file=...`; no live model request was sent and the temporary env file was removed.
+- Ran `npm.cmd run blog:model -- --help`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and changed-file sensitive scan. Sensitive scan only found inspected false positives from existing key-field names/placeholders and task slug text.
+- Archived the child task and updated the long-running parent task to 21 completed children.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5dde6c5` | (see git log) |
+| `c70024b` | (see git log) |
+| `03fb8ac` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
