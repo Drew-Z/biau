@@ -11,6 +11,7 @@ These guidelines describe the assistant API and database layer that sit beside t
 | [Error Handling](./error-handling.md) | JSON error-code responses, route try/catch, database-not-configured handling | Filled |
 | [Quality Guidelines](./quality-guidelines.md) | Backend validation commands, smoke test contract, API review checklist | Filled |
 | [Logging Guidelines](./logging-guidelines.md) | Current console logging conventions and redaction rules | Filled |
+| [Observability Guidelines](./observability-guidelines.md) | Metrics endpoint, Prometheus label safety, and rollout gates | Filled |
 | [Blog Draft Workflow](./blog-draft-workflow.md) | Blog draft script commands, model channel env contract, and validation rules | Filled |
 
 ## Pre-Development Checklist
@@ -21,6 +22,7 @@ Before backend edits:
 - Read [Database Guidelines](./database-guidelines.md) before touching Prisma, persistence, invites, members, sessions, messages, or usage logs.
 - Read [Error Handling](./error-handling.md) before adding or changing routes.
 - Read [Logging Guidelines](./logging-guidelines.md) before adding logs.
+- Read [Observability Guidelines](./observability-guidelines.md) before adding metrics, monitoring endpoints, RUM, tracing, or alert hooks.
 - Read [Quality Guidelines](./quality-guidelines.md) before declaring backend work complete.
 - Read [Blog Draft Workflow](./blog-draft-workflow.md) before changing `scripts/generate-blog-draft.mjs`, blog draft model channels, or blog draft env variables.
 

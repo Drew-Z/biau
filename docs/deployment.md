@@ -70,6 +70,7 @@ ADMIN_TOKEN=<生成一个长随机字符串>
 OPENAI_BASE_URL=https://api.openai.com/v1
 OPENAI_API_KEY=<OpenAI 或兼容服务 Key，可留空使用本地回退>
 OPENAI_MODEL=gpt-4.1-mini
+METRICS_ENABLED=false
 PORT=10000
 ```
 
@@ -128,7 +129,10 @@ POST /chat/public
 POST /chat/internal
 GET /admin/summary
 POST /admin/invites
+GET /metrics
 ```
+
+`/metrics` 默认关闭。只有设置 `METRICS_ENABLED=true` 后才输出 Prometheus text 格式指标；未开启时返回 `404 { "error": "metrics-disabled" }`。不要在没有访问控制或 scrape 计划的情况下把生产指标公开给第三方，后续 Prometheus / Grafana / ARMS 路线见 `docs/observability-strategy.md`。
 
 ## 自定义域名
 

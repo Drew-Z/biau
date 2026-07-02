@@ -36,6 +36,17 @@ try {
   const health = await fetch(`${base}/health`)
   if (!health.ok) throw new Error(`health failed: ${health.status}`)
 
+  const metrics = await fetch(`${base}/metrics`)
+  if (isMetricsEnabled()) {
+    if (!metrics.ok) throw new Error(`metrics failed: ${metrics.status}`)
+    const metricsBody = await metrics.text()
+    if (!metricsBody.includes('biau_assistant_api_http_requests_total{method="GET",route="/health",status_class="2xx"}')) {
+      throw new Error('metrics output is missing HTTP request counter')
+    }
+  } else if (metrics.status !== 404) {
+    throw new Error(`metrics should be disabled by default, got ${metrics.status}`)
+  }
+
   const publicChat = await fetch(`${base}/chat/public`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -76,4 +87,9 @@ try {
   console.log('Assistant API smoke passed')
 } finally {
   server.close()
+}
+
+function isMetricsEnabled() {
+  const value = process.env.METRICS_ENABLED?.trim().toLowerCase()
+  return value === 'true' || value === '1' || value === 'yes' || value === 'on'
 }

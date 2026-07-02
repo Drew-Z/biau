@@ -2,6 +2,8 @@
 
 这个文档记录 BIAU Port 第一版访问数据和站点健康监察方式。目标是先知道“有没有人来、从哪里来、看了什么、站点有没有坏”，再决定后续项目页、博客和助手怎么优化。
 
+更完整的工具选型、Prometheus / Grafana / OpenTelemetry 路线和人工配置边界见 `docs/observability-strategy.md`。
+
 ## 访问人数怎么看
 
 ### Cloudflare Web Analytics / Pages Analytics
@@ -40,6 +42,12 @@
 - 公开助手提问次数。
 
 本仓库已经提供默认关闭的 `src/utils/analytics.ts` 适配层。只有设置 `VITE_ANALYTICS_PROVIDER=umami` 或 `plausible`，并由站点管理员自行注入对应 provider 脚本后，事件才会发送。未配置时不会采集数据。
+
+Plausible 和 Umami 建议二选一：Plausible 更适合省心的轻量托管统计，Umami 更适合自托管和后续扩展。Cloudflare Web Analytics 和 Search Console 不替代它们；Cloudflare 看基础访问和路径，Search Console 看搜索入口，Plausible/Umami 看站内产品事件。
+
+### Prometheus / Grafana / ARMS
+
+这些属于工程可观测性，不是访问人数统计工具。它们更适合 assistant API、ERP、Legal RAG、Xunqiu 后端、Pet Community API 等常驻服务，用来观察请求量、错误率、延迟、依赖健康和告警。当前主站是静态站，优先保持 Cloudflare + Search Console + Plausible/Umami 的轻量组合。
 
 ## 站点健康怎么查
 
@@ -119,4 +127,6 @@ npm.cmd run site:monitor -- --timeout 15000
 - 添加 Umami / Plausible 站点和脚本。
 - 配置 Google Search Console / Bing Webmaster 所有权验证。
 - 把 `site:monitor` 放进 GitHub Actions、外部定时器或告警平台。
+- 开启 assistant API 的 `METRICS_ENABLED` 并配置 Prometheus / Grafana / ARMS 抓取。
+- 添加 Sentry、Grafana Faro 或其他真实 RUM / 错误监控脚本。
 - 把访问统计数据公开展示到站点上。
