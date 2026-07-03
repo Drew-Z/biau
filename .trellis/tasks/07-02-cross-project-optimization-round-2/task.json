@@ -67,7 +67,8 @@
     "07-03-erp-synthetic-reliability-check",
     "07-03-xunqiu-synthetic-reliability-check",
     "07-03-legal-rag-public-demo-access-closure",
-    "07-03-legal-rag-public-status-health-refresh"
+    "07-03-legal-rag-public-status-health-refresh",
+    "07-03-main-site-public-routes-synthetic-status"
   ],
   "parent": null,
   "relatedFiles": [],

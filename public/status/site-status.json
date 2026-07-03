@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-03T02:17:15.949Z",
+  "checkedAt": "2026-07-03T02:26:09.210Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台可能有登录门禁或 Render 冷启动；入口可达不代表公开凭据已开放。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 958,
-      "checkedAt": "2026-07-03T02:17:15.955Z",
+      "durationMs": 576,
+      "checkedAt": "2026-07-03T02:26:09.215Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "生产注册与演示账号属于人工 gate；状态页只检查公开入口是否响应。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1645,
-      "checkedAt": "2026-07-03T02:17:16.914Z",
+      "durationMs": 887,
+      "checkedAt": "2026-07-03T02:26:09.793Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 903,
-      "checkedAt": "2026-07-03T02:17:18.559Z",
+      "durationMs": 835,
+      "checkedAt": "2026-07-03T02:26:10.680Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "阶段 APK 是否公开发布仍需人工确认；这里只检查展示页入口。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1020,
-      "checkedAt": "2026-07-03T02:17:19.462Z",
+      "durationMs": 762,
+      "checkedAt": "2026-07-03T02:26:11.515Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -90,9 +90,9 @@
           "id": "blog-semi-public-routes",
           "layer": "entry",
           "label": "核心公开路由",
-          "status": "unchecked",
+          "status": "online",
           "description": "首页、项目集、博客、公开助手、站点地图和 robots 的 HTML/SEO 检查。",
-          "evidence": "`npm.cmd run site:monitor` 可本地或线上执行；当前公开 JSON 尚未持久化该结果。",
+          "evidence": "最近一次 synthetic 检查：7/7 public routes returned expected responses。`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。",
           "cadence": "发布前或每日定时",
           "ownerHint": "主站脚本"
         },
@@ -121,7 +121,7 @@
         "开启生产模型、生产 metrics scrape 或第三方告警前需要人工确认。"
       ],
       "nextActions": [
-        "把 `site:monitor --json` 的结果写入公开状态 JSON 或内部监控。",
+        "把 `main-site:synthetic` 接入定时任务或内部监控。",
         "公开助手模型产品化后补 L1 synthetic check。"
       ]
     },
@@ -137,7 +137,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 958 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 576 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -203,7 +203,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1645 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 887 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -270,7 +270,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1020 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 762 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -371,7 +371,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 903 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 835 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

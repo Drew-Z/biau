@@ -106,7 +106,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
         label: '核心公开路由',
         status: 'unchecked',
         description: '首页、项目集、博客、公开助手、站点地图和 robots 的 HTML/SEO 检查。',
-        evidence: '`npm.cmd run site:monitor` 可本地或线上执行；当前公开 JSON 尚未持久化该结果。',
+        evidence: '`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。',
         cadence: '发布前或每日定时',
         ownerHint: '主站脚本',
       },
@@ -132,7 +132,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: ['开启生产模型、生产 metrics scrape 或第三方告警前需要人工确认。'],
-    nextActions: ['把 `site:monitor --json` 的结果写入公开状态 JSON 或内部监控。', '公开助手模型产品化后补 L1 synthetic check。'],
+    nextActions: ['把 `main-site:synthetic` 接入定时任务或内部监控。', '公开助手模型产品化后补 L1 synthetic check。'],
   },
   {
     id: 'legal-rag',

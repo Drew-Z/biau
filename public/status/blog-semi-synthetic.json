@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-07-03T02:24:51.189Z",
+  "baseConfigured": true,
+  "ok": true,
+  "checks": [
+    {
+      "id": "blog-semi-public-routes",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 2558,
+      "checkedAt": "2026-07-03T02:24:51.189Z",
+      "summary": "7/7 public routes returned expected responses",
+      "issues": []
+    }
+  ]
+}
