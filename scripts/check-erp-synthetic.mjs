@@ -115,7 +115,7 @@ function dataFromWrappedResponse(response) {
 }
 
 function checkFromResponse(id, response, ok, summary, fallbackIssue = '') {
-  const issue = response.error || issueFromResponse(response, fallbackIssue)
+  const issue = ok ? '' : response.error || issueFromResponse(response, fallbackIssue)
   return {
     id,
     status: statusFromResponse(response, ok),

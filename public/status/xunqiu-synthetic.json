@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-07-03T00:58:53.941Z",
+  "apiBaseConfigured": false,
+  "hasCredentials": false,
+  "ok": true,
+  "checks": [
+    {
+      "id": "xunqiu-backend-health",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:58:53.942Z",
+      "summary": "XUNQIU_SYNTHETIC_API_BASE_URL is not configured",
+      "issues": []
+    },
+    {
+      "id": "xunqiu-compat-api",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:58:53.942Z",
+      "summary": "XUNQIU_SYNTHETIC_API_BASE_URL is not configured",
+      "issues": []
+    },
+    {
+      "id": "xunqiu-apk-gate",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:58:53.942Z",
+      "summary": "XUNQIU_SYNTHETIC_API_BASE_URL is not configured",
+      "issues": []
+    }
+  ]
+}

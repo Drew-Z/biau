@@ -312,7 +312,10 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: ['后端真实 URL、阶段 APK 下载和生产部署变更都需要人工确认。'],
-    nextActions: ['把寻球 smoke-test 改造成可选 base URL 的低敏 synthetic 报告。', '展示页继续补 APK 发布清单。'],
+    nextActions: [
+      '配置 `XUNQIU_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run xunqiu:synthetic` 生成后端 health 与兼容 API 检查。',
+      'APK 下载公开前补签名、版本、扫描和回滚清单，不在 synthetic 脚本里暴露下载地址。',
+    ],
   },
   {
     id: 'pet-gamer',

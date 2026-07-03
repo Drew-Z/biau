@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-03T00:40:47.285Z",
+  "checkedAt": "2026-07-03T00:59:21.300Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台可能有登录门禁或 Render 冷启动；入口可达不代表公开凭据已开放。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 951,
-      "checkedAt": "2026-07-03T00:40:47.291Z",
+      "durationMs": 880,
+      "checkedAt": "2026-07-03T00:59:21.305Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "生产注册与演示账号属于人工 gate；状态页只检查公开入口是否响应。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1167,
-      "checkedAt": "2026-07-03T00:40:48.242Z",
+      "durationMs": 1201,
+      "checkedAt": "2026-07-03T00:59:22.185Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 840,
-      "checkedAt": "2026-07-03T00:40:49.409Z",
+      "durationMs": 823,
+      "checkedAt": "2026-07-03T00:59:23.386Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "阶段 APK 是否公开发布仍需人工确认；这里只检查展示页入口。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 803,
-      "checkedAt": "2026-07-03T00:40:50.249Z",
+      "durationMs": 824,
+      "checkedAt": "2026-07-03T00:59:24.209Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -137,7 +137,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 951 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 880 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -203,7 +203,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1167 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1201 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -270,7 +270,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 803 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 824 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -279,9 +279,9 @@
           "id": "xunqiu-backend-health",
           "layer": "synthetic",
           "label": "后端 health",
-          "status": "planned",
+          "status": "unchecked",
           "description": "请求 Spring Actuator health，确认后端返回 `UP`。",
-          "evidence": "后端仓库包含 `/free_kicker/actuator/health`、Render healthCheckPath 和 smoke-test 脚本。",
+          "evidence": "最近一次 synthetic 检查：XUNQIU_SYNTHETIC_API_BASE_URL is not configured。后端仓库包含 `/free_kicker/actuator/health`、Render healthCheckPath 和 smoke-test 脚本。",
           "cadence": "部署后 + 每日",
           "ownerHint": "xunqiu-backend-modern"
         },
@@ -289,9 +289,9 @@
           "id": "xunqiu-compat-api",
           "layer": "synthetic",
           "label": "兼容 API smoke",
-          "status": "planned",
+          "status": "unchecked",
           "description": "检查动态、视频、球队和球场等兼容 API 返回安全成功结构。",
-          "evidence": "后端 smoke-test 和 MockMvc compatibility tests 已覆盖这些接口类型。",
+          "evidence": "最近一次 synthetic 检查：XUNQIU_SYNTHETIC_API_BASE_URL is not configured。后端 smoke-test 和 MockMvc compatibility tests 已覆盖这些接口类型。",
           "cadence": "API 变更后",
           "ownerHint": "Compatibility API"
         },
@@ -299,9 +299,9 @@
           "id": "xunqiu-apk-gate",
           "layer": "observability",
           "label": "APK 发布 gate",
-          "status": "planned",
+          "status": "unchecked",
           "description": "公开下载前检查签名包、版本说明、病毒扫描和回滚说明。",
-          "evidence": "当前状态页只展示 gate，不公开未经批准的下载链接。",
+          "evidence": "最近一次 synthetic 检查：XUNQIU_SYNTHETIC_API_BASE_URL is not configured。当前状态页只展示 gate，不公开未经批准的下载链接。",
           "cadence": "发布候选生成后",
           "ownerHint": "Release checklist"
         }
@@ -310,8 +310,8 @@
         "后端真实 URL、阶段 APK 下载和生产部署变更都需要人工确认。"
       ],
       "nextActions": [
-        "把寻球 smoke-test 改造成可选 base URL 的低敏 synthetic 报告。",
-        "展示页继续补 APK 发布清单。"
+        "配置 `XUNQIU_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run xunqiu:synthetic` 生成后端 health 与兼容 API 检查。",
+        "APK 下载公开前补签名、版本、扫描和回滚清单，不在 synthetic 脚本里暴露下载地址。"
       ]
     },
     {
@@ -371,7 +371,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 840 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 823 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"
