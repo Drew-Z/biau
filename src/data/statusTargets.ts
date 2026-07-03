@@ -257,7 +257,11 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: ['真实生产自助注册已获方向性批准，但上线配置、滥用防护和公开演示账号仍需独立 gate。'],
-    nextActions: ['在 ERP 仓库新增低敏 health/registration synthetic check。', '主站项目详情同步实际注册策略和可演示路径。'],
+    nextActions: [
+      '配置 `ERP_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run erp:synthetic` 生成 health 与注册策略检查。',
+      '准备可回收 demo 凭据后配置 `ERP_SYNTHETIC_USERNAME` / `ERP_SYNTHETIC_PASSWORD`，再启用登录 smoke。',
+      '主站项目详情同步实际注册策略和可演示路径。',
+    ],
   },
   {
     id: 'xunqiu',

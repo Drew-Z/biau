@@ -1,0 +1,35 @@
+{
+  "checkedAt": "2026-07-03T00:40:29.558Z",
+  "apiBaseConfigured": false,
+  "hasCredentials": false,
+  "ok": true,
+  "checks": [
+    {
+      "id": "ozon-erp-health",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:40:29.559Z",
+      "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
+      "issues": []
+    },
+    {
+      "id": "ozon-erp-auth",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:40:29.559Z",
+      "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
+      "issues": []
+    },
+    {
+      "id": "ozon-erp-plugin-sync",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:40:29.559Z",
+      "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
+      "issues": []
+    }
+  ]
+}

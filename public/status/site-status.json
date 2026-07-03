@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-03T00:12:28.241Z",
+  "checkedAt": "2026-07-03T00:40:47.285Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台可能有登录门禁或 Render 冷启动；入口可达不代表公开凭据已开放。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 546,
-      "checkedAt": "2026-07-03T00:12:28.245Z",
+      "durationMs": 951,
+      "checkedAt": "2026-07-03T00:40:47.291Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "生产注册与演示账号属于人工 gate；状态页只检查公开入口是否响应。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 878,
-      "checkedAt": "2026-07-03T00:12:28.792Z",
+      "durationMs": 1167,
+      "checkedAt": "2026-07-03T00:40:48.242Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 849,
-      "checkedAt": "2026-07-03T00:12:29.670Z",
+      "durationMs": 840,
+      "checkedAt": "2026-07-03T00:40:49.409Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "阶段 APK 是否公开发布仍需人工确认；这里只检查展示页入口。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 741,
-      "checkedAt": "2026-07-03T00:12:30.519Z",
+      "durationMs": 803,
+      "checkedAt": "2026-07-03T00:40:50.249Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -137,7 +137,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 546 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 951 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -203,7 +203,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 878 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1167 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -212,9 +212,9 @@
           "id": "ozon-erp-health",
           "layer": "synthetic",
           "label": "API health",
-          "status": "planned",
+          "status": "unchecked",
           "description": "请求 `/api/health` 并确认运行版本、数据库 readiness 和部署状态。",
-          "evidence": "ERP 文档包含 `/api/health` 部署检查路径。",
+          "evidence": "最近一次 synthetic 检查：ERP_SYNTHETIC_API_BASE_URL is not configured。ERP 文档包含 `/api/health` 部署检查路径。",
           "cadence": "部署后 + 每日",
           "ownerHint": "ERP API"
         },
@@ -222,9 +222,9 @@
           "id": "ozon-erp-auth",
           "layer": "synthetic",
           "label": "登录 / 注册策略",
-          "status": "planned",
+          "status": "unchecked",
           "description": "验证登录可用、生产注册开关符合当前策略、新用户默认角色安全。",
-          "evidence": "ERP 仓库已有注册路由、注册测试和生产注册配置说明。",
+          "evidence": "最近一次 synthetic 检查：ERP_SYNTHETIC_API_BASE_URL is not configured。ERP 仓库已有注册路由、注册测试和生产注册配置说明。",
           "cadence": "鉴权改动后",
           "ownerHint": "Auth synthetic check"
         },
@@ -232,9 +232,9 @@
           "id": "ozon-erp-plugin-sync",
           "layer": "synthetic",
           "label": "插件与商品同步",
-          "status": "planned",
+          "status": "unchecked",
           "description": "后续用脱敏 fixture 验证插件登录状态、商品导入和同步任务路径。",
-          "evidence": "仓库包含 extension、shops、products、market metrics 和 smoke 脚本痕迹。",
+          "evidence": "最近一次 synthetic 检查：ERP_SYNTHETIC_API_BASE_URL is not configured。仓库包含 extension、shops、products、market metrics 和 smoke 脚本痕迹。",
           "cadence": "插件发布前",
           "ownerHint": "ERP extension/API"
         },
@@ -253,7 +253,8 @@
         "真实生产自助注册已获方向性批准，但上线配置、滥用防护和公开演示账号仍需独立 gate。"
       ],
       "nextActions": [
-        "在 ERP 仓库新增低敏 health/registration synthetic check。",
+        "配置 `ERP_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run erp:synthetic` 生成 health 与注册策略检查。",
+        "准备可回收 demo 凭据后配置 `ERP_SYNTHETIC_USERNAME` / `ERP_SYNTHETIC_PASSWORD`，再启用登录 smoke。",
         "主站项目详情同步实际注册策略和可演示路径。"
       ]
     },
@@ -269,7 +270,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 741 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 803 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -370,7 +371,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 849 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 840 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

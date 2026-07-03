@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -31,7 +31,7 @@ interface Summary {
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputPath = resolve(repoRoot, 'public/status/site-status.json')
-const legalRagSyntheticPath = resolve(repoRoot, 'public/status/legal-rag-synthetic.json')
+const statusDir = resolve(repoRoot, 'public/status')
 const DEFAULT_TIMEOUT_MS = 12_000
 
 interface SyntheticCheckResult {
@@ -153,20 +153,35 @@ function normalizeSyntheticCheck(value: unknown): SyntheticCheckResult | null {
   }
 }
 
-async function loadLegalRagSyntheticChecks(): Promise<Map<string, SyntheticCheckResult>> {
+async function loadSyntheticChecks(): Promise<Map<string, SyntheticCheckResult>> {
+  const merged = new Map<string, SyntheticCheckResult>()
+  let entries: string[]
+
   try {
-    const payload = JSON.parse(await readFile(legalRagSyntheticPath, 'utf8')) as unknown
-    if (!payload || typeof payload !== 'object') return new Map()
-    const checks = (payload as { checks?: unknown }).checks
-    if (!Array.isArray(checks)) return new Map()
-    return new Map(
-      checks
-        .map(normalizeSyntheticCheck)
-        .filter((check): check is SyntheticCheckResult => Boolean(check))
-        .map((check) => [check.id, check]),
-    )
+    entries = await readdir(statusDir)
   } catch {
-    return new Map()
+    return merged
+  }
+
+  const syntheticFiles = entries.filter((entry) => entry.endsWith('-synthetic.json'))
+  for (const fileName of syntheticFiles) {
+    for (const check of await loadSyntheticChecksFromFile(resolve(statusDir, fileName))) {
+      merged.set(check.id, check)
+    }
+  }
+
+  return merged
+}
+
+async function loadSyntheticChecksFromFile(filePath: string): Promise<SyntheticCheckResult[]> {
+  try {
+    const payload = JSON.parse(await readFile(filePath, 'utf8')) as unknown
+    if (!payload || typeof payload !== 'object') return []
+    const checks = (payload as { checks?: unknown }).checks
+    if (!Array.isArray(checks)) return []
+    return checks.map(normalizeSyntheticCheck).filter((check): check is SyntheticCheckResult => Boolean(check))
+  } catch {
+    return []
   }
 }
 
@@ -225,7 +240,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2))
   const checkedAt = new Date().toISOString()
   const targets = []
-  const syntheticChecks = await loadLegalRagSyntheticChecks()
+  const syntheticChecks = await loadSyntheticChecks()
 
   for (const target of siteStatusTargets) {
     targets.push(await checkTarget(target, args.timeoutMs))

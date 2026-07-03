@@ -63,7 +63,8 @@
     "07-03-assistant-deployment-doc-consistency",
     "07-03-homepage-external-link-status",
     "07-03-project-reliability-observability-baseline",
-    "07-03-legal-rag-synthetic-reliability-check"
+    "07-03-legal-rag-synthetic-reliability-check",
+    "07-03-erp-synthetic-reliability-check"
   ],
   "parent": null,
   "relatedFiles": [],

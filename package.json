@@ -23,6 +23,7 @@
     "blog:audit": "tsx scripts/audit-blog-catalog.ts",
     "blog:check": "node scripts/check-public-blog.mjs",
     "docs:observability-check": "node scripts/check-observability-docs.mjs",
+    "erp:synthetic": "node scripts/check-erp-synthetic.mjs",
     "legal-rag:synthetic": "node scripts/check-legal-rag-synthetic.mjs",
     "site:monitor": "node scripts/check-site-monitor.mjs",
     "site:status": "tsx scripts/generate-site-status.ts",
