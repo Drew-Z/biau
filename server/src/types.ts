@@ -25,6 +25,14 @@ export interface ChatPayload {
 
 export type ChatAnswerMode = 'model' | 'fallback'
 export type ChatFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
+export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
+
+export interface ProviderDiagnostic {
+  kind: ProviderDiagnosticKind
+  httpStatus?: number
+  attemptedEndpoints: number
+  timeoutMs: number
+}
 
 export interface ChatResponse {
   answer: string
@@ -35,6 +43,7 @@ export interface ChatResponse {
     citationCount: number
     provider?: string
     reason?: ChatFallbackReason
+    diagnostic?: ProviderDiagnostic
   }
   sessionId?: string
   messageId?: string

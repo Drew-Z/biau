@@ -224,7 +224,14 @@ try {
     const providerFailurePayload = (await providerFailureChat.json()) as {
       answer?: string
       citations?: unknown[]
-      meta?: { mode?: string; model?: string; provider?: string; reason?: string; citationCount?: number }
+      meta?: {
+        mode?: string
+        model?: string
+        provider?: string
+        reason?: string
+        citationCount?: number
+        diagnostic?: { kind?: string; httpStatus?: number; attemptedEndpoints?: number; timeoutMs?: number }
+      }
     }
     if (
       !providerFailurePayload.answer ||
@@ -232,7 +239,11 @@ try {
       providerFailurePayload.meta?.mode !== 'fallback' ||
       providerFailurePayload.meta.model !== 'smoke-test-model' ||
       providerFailurePayload.meta.provider !== 'smoke-test-provider' ||
-      providerFailurePayload.meta.reason !== 'provider_error'
+      providerFailurePayload.meta.reason !== 'provider_error' ||
+      providerFailurePayload.meta.diagnostic?.kind !== 'http_status' ||
+      providerFailurePayload.meta.diagnostic.httpStatus !== 404 ||
+      providerFailurePayload.meta.diagnostic.attemptedEndpoints !== 2 ||
+      providerFailurePayload.meta.diagnostic.timeoutMs !== 20000
     ) {
       throw new Error('provider failure did not fall back to public knowledge')
     }

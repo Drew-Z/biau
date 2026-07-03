@@ -126,7 +126,10 @@ if (
   !failurePayload.answer ||
   failurePayload.meta?.mode !== 'fallback' ||
   failurePayload.meta?.reason !== 'provider_error' ||
-  failurePayload.meta?.model !== 'glm-cf-failure-model'
+  failurePayload.meta?.model !== 'glm-cf-failure-model' ||
+  failurePayload.meta?.diagnostic?.kind !== 'network_error' ||
+  failurePayload.meta?.diagnostic?.attemptedEndpoints !== 1 ||
+  failurePayload.meta?.diagnostic?.timeoutMs !== 20000
 ) {
   throw new Error('Cloudflare public chat provider failure did not fall back safely')
 }

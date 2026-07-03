@@ -1,6 +1,7 @@
 import publicKnowledgeData from '../../server/data/public-knowledge.json'
 
 export type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
+export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
 export type AssistantVisibility = 'public' | 'internal'
 
 export interface AssistantEnv {
@@ -23,13 +24,23 @@ interface OpenAIResponse {
   choices?: Array<{ message?: { content?: string } }>
 }
 
+interface ProviderDiagnostic {
+  kind: ProviderDiagnosticKind
+  httpStatus?: number
+  attemptedEndpoints: number
+  timeoutMs: number
+}
+
 interface GeneratedAnswer {
   answer: string
   mode: 'model' | 'fallback'
   model: string
   provider: string
   reason?: AssistantFallbackReason
+  diagnostic?: ProviderDiagnostic
 }
+
+const MODEL_REQUEST_TIMEOUT_MS = 20000
 
 const SEARCH_KEYWORDS = [
   '站点',
@@ -166,6 +177,7 @@ export async function handlePublicChat(request: Request, env: AssistantEnv) {
       model: generated.model,
       provider: generated.provider,
       reason: generated.reason,
+      diagnostic: generated.diagnostic,
       citationCount: citations.length,
     },
   })
@@ -220,16 +232,30 @@ async function generateAnswer(question: string, citations: KnowledgeItem[], env:
   }
 
   let response: Response | null = null
+  let diagnostic: ProviderDiagnostic | undefined
+  let attemptedEndpoints = 0
   for (const endpoint of endpoints) {
-    response = await requestChatCompletion(endpoint, apiKey, body)
+    attemptedEndpoints += 1
+    const attempt = await requestChatCompletion(endpoint, apiKey, body)
+    response = attempt.response
     if (response?.ok) break
+    diagnostic = {
+      ...attempt.diagnostic,
+      attemptedEndpoints,
+    }
     if (!response || ![404, 405].includes(response.status)) break
   }
 
-  if (!response?.ok) return fallbackResult(question, citations, 'provider_error', model, provider)
+  if (!response?.ok) return fallbackResult(question, citations, 'provider_error', model, provider, diagnostic)
   const providerPayload = (await response.json().catch(() => null)) as OpenAIResponse | null
   const answer = providerPayload?.choices?.[0]?.message?.content?.trim()
-  if (!answer) return fallbackResult(question, citations, 'empty_response', model, provider)
+  if (!answer) {
+    return fallbackResult(question, citations, 'empty_response', model, provider, {
+      kind: 'empty_response',
+      attemptedEndpoints,
+      timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
+    })
+  }
 
   return { answer, mode: 'model', model, provider }
 }
@@ -240,6 +266,7 @@ function fallbackResult(
   reason: AssistantFallbackReason,
   model = 'fallback',
   provider = 'local-public-knowledge',
+  diagnostic?: ProviderDiagnostic,
 ): GeneratedAnswer {
   return {
     answer: buildFallbackAnswer(question, citations),
@@ -247,6 +274,7 @@ function fallbackResult(
     model,
     provider,
     reason,
+    diagnostic,
   }
 }
 
@@ -275,9 +303,13 @@ function getChatCompletionEndpoints(baseUrl: string) {
 
 async function requestChatCompletion(endpoint: string, apiKey: string, body: unknown) {
   const abort = new AbortController()
-  const timeout = setTimeout(() => abort.abort(), 12000)
+  let didTimeout = false
+  const timeout = setTimeout(() => {
+    didTimeout = true
+    abort.abort()
+  }, MODEL_REQUEST_TIMEOUT_MS)
   try {
-    return await fetch(endpoint, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -286,8 +318,24 @@ async function requestChatCompletion(endpoint: string, apiKey: string, body: unk
       signal: abort.signal,
       body: JSON.stringify(body),
     })
+    return {
+      response,
+      diagnostic: {
+        kind: 'http_status' as const,
+        httpStatus: response.status,
+        attemptedEndpoints: 0,
+        timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
+      },
+    }
   } catch {
-    return null
+    return {
+      response: null,
+      diagnostic: {
+        kind: didTimeout ? ('timeout' as const) : ('network_error' as const),
+        attemptedEndpoints: 0,
+        timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
+      },
+    }
   } finally {
     clearTimeout(timeout)
   }

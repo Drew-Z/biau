@@ -111,6 +111,7 @@ export function createApp() {
           model: generated.model,
           provider: generated.provider,
           reason: generated.reason,
+          diagnostic: generated.diagnostic,
           citationCount: citations.length,
         },
       }
@@ -191,6 +192,7 @@ export function createApp() {
           model: generated.model,
           provider: generated.provider,
           reason: generated.reason,
+          diagnostic: generated.diagnostic,
           citationCount: citations.length,
         },
         sessionId: activeSession.id,

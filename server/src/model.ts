@@ -1,5 +1,5 @@
 import { env, hasModelProvider } from './env.js'
-import type { KnowledgeItem } from './types.js'
+import type { KnowledgeItem, ProviderDiagnostic, ProviderDiagnosticKind } from './types.js'
 
 interface OpenAIResponse {
   choices?: Array<{ message?: { content?: string } }>
@@ -13,7 +13,10 @@ export interface GeneratedAnswer {
   model: string
   provider: string
   reason?: AssistantFallbackReason
+  diagnostic?: ProviderDiagnostic
 }
+
+const MODEL_REQUEST_TIMEOUT_MS = 20000
 
 function buildFallbackAnswer(question: string, citations: KnowledgeItem[], scope: 'public' | 'internal') {
   if (citations.length === 0) {
@@ -43,6 +46,7 @@ function fallbackResult(
   reason: AssistantFallbackReason,
   model = 'fallback',
   provider = 'local-public-knowledge',
+  diagnostic?: ProviderDiagnostic,
 ): GeneratedAnswer {
   return {
     answer: buildFallbackAnswer(question, citations, scope),
@@ -50,6 +54,7 @@ function fallbackResult(
     model,
     provider,
     reason,
+    diagnostic,
   }
 }
 
@@ -69,9 +74,13 @@ function getChatCompletionEndpoints(baseUrl: string) {
 
 async function requestChatCompletion(endpoint: string, apiKey: string, body: unknown) {
   const abort = new AbortController()
-  const timeout = setTimeout(() => abort.abort(), 12000)
+  let diagnosticKind: ProviderDiagnosticKind = 'network_error'
+  const timeout = setTimeout(() => {
+    diagnosticKind = 'timeout'
+    abort.abort()
+  }, MODEL_REQUEST_TIMEOUT_MS)
   try {
-    return await fetch(endpoint, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -80,8 +89,24 @@ async function requestChatCompletion(endpoint: string, apiKey: string, body: unk
       signal: abort.signal,
       body: JSON.stringify(body),
     })
+    return {
+      response,
+      diagnostic: {
+        kind: 'http_status' as const,
+        httpStatus: response.status,
+        attemptedEndpoints: 0,
+        timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
+      },
+    }
   } catch {
-    return null
+    return {
+      response: null,
+      diagnostic: {
+        kind: diagnosticKind,
+        attemptedEndpoints: 0,
+        timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
+      },
+    }
   } finally {
     clearTimeout(timeout)
   }
@@ -132,19 +157,33 @@ export async function generateAnswer(question: string, citations: KnowledgeItem[
   }
 
   let response: Response | null = null
+  let diagnostic: ProviderDiagnostic | undefined
+  let attemptedEndpoints = 0
   for (const endpoint of endpoints) {
-    response = await requestChatCompletion(endpoint, modelConfig.apiKey, body)
+    attemptedEndpoints += 1
+    const attempt = await requestChatCompletion(endpoint, modelConfig.apiKey, body)
+    response = attempt.response
     if (response?.ok) break
+    diagnostic = {
+      ...attempt.diagnostic,
+      attemptedEndpoints,
+    }
     if (!response || ![404, 405].includes(response.status)) break
   }
 
   if (!response?.ok) {
-    return fallbackResult(question, citations, scope, 'provider_error', modelConfig.model, modelConfig.provider)
+    return fallbackResult(question, citations, scope, 'provider_error', modelConfig.model, modelConfig.provider, diagnostic)
   }
 
   const payload = (await response.json().catch(() => null)) as OpenAIResponse | null
   const answer = payload?.choices?.[0]?.message?.content?.trim()
-  if (!answer) return fallbackResult(question, citations, scope, 'empty_response', modelConfig.model, modelConfig.provider)
+  if (!answer) {
+    return fallbackResult(question, citations, scope, 'empty_response', modelConfig.model, modelConfig.provider, {
+      kind: 'empty_response',
+      attemptedEndpoints,
+      timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
+    })
+  }
 
   return {
     answer,

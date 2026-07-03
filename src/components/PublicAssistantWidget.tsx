@@ -22,11 +22,20 @@ interface AssistantAnswerMeta {
   model: string
   provider?: string
   reason?: AssistantFallbackReason
+  diagnostic?: ProviderDiagnostic
   citationCount: number
 }
 
 type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context' | 'request_error'
+type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
 type AssistantServiceState = 'api-ready' | 'local' | 'model' | 'fallback' | 'error'
+
+interface ProviderDiagnostic {
+  kind: ProviderDiagnosticKind
+  httpStatus?: number
+  attemptedEndpoints: number
+  timeoutMs: number
+}
 
 const CONFIGURED_API_BASE = import.meta.env.VITE_CHAT_API_BASE_URL?.trim().replace(/\/+$/, '')
 const SAME_ORIGIN_API_BASE = '/api'
@@ -46,6 +55,37 @@ interface PublicAnswerResult {
 
 function isAssistantFallbackReason(value: unknown): value is AssistantFallbackReason {
   return value === 'not_configured' || value === 'provider_error' || value === 'empty_response' || value === 'no_public_context'
+}
+
+function isProviderDiagnosticKind(value: unknown): value is ProviderDiagnosticKind {
+  return value === 'timeout' || value === 'network_error' || value === 'http_status' || value === 'empty_response'
+}
+
+function readProviderDiagnostic(value: unknown): ProviderDiagnostic | undefined {
+  if (!isRecord(value) || !isProviderDiagnosticKind(value.kind)) return undefined
+  const attemptedEndpoints =
+    typeof value.attemptedEndpoints === 'number' && Number.isFinite(value.attemptedEndpoints)
+      ? Math.max(0, Math.floor(value.attemptedEndpoints))
+      : 0
+  const timeoutMs =
+    typeof value.timeoutMs === 'number' && Number.isFinite(value.timeoutMs) ? Math.max(0, Math.floor(value.timeoutMs)) : 0
+  const httpStatus =
+    typeof value.httpStatus === 'number' && Number.isFinite(value.httpStatus) ? Math.floor(value.httpStatus) : undefined
+  return {
+    kind: value.kind,
+    httpStatus,
+    attemptedEndpoints,
+    timeoutMs,
+  }
+}
+
+function formatProviderDiagnostic(diagnostic?: ProviderDiagnostic) {
+  if (!diagnostic) return ''
+  if (diagnostic.kind === 'timeout') return `模型超时 ${Math.round(diagnostic.timeoutMs / 1000)}s`
+  if (diagnostic.kind === 'network_error') return '模型端点不可达'
+  if (diagnostic.kind === 'empty_response') return '模型空响应'
+  if (diagnostic.kind === 'http_status') return diagnostic.httpStatus ? `模型 HTTP ${diagnostic.httpStatus}` : '模型 HTTP 异常'
+  return ''
 }
 
 function compactSummary(summary: string, maxLength = 104) {
@@ -114,6 +154,7 @@ async function requestPublicAnswer(question: string, apiBase: string | null): Pr
   const model = typeof rawMeta?.model === 'string' && rawMeta.model.trim() ? rawMeta.model.trim() : mode
   const provider = typeof rawMeta?.provider === 'string' && rawMeta.provider.trim() ? rawMeta.provider.trim() : undefined
   const reason = isAssistantFallbackReason(rawMeta?.reason) ? rawMeta.reason : undefined
+  const diagnostic = readProviderDiagnostic(rawMeta?.diagnostic)
   const citationCount = typeof rawMeta?.citationCount === 'number' ? rawMeta.citationCount : citations.length
 
   const fallbackContent = buildLocalKnowledgeAnswer(citations, reason)
@@ -133,6 +174,7 @@ async function requestPublicAnswer(question: string, apiBase: string | null): Pr
       model,
       provider,
       reason,
+      diagnostic,
       citationCount,
     },
   }
@@ -149,8 +191,9 @@ function getFallbackLabel(reason?: AssistantFallbackReason) {
 function formatAnswerMeta(meta?: AssistantAnswerMeta) {
   if (!meta) return ''
   const modeLabel = meta.mode === 'model' ? '模型增强' : getFallbackLabel(meta.reason)
+  const diagnosticLabel = formatProviderDiagnostic(meta.diagnostic)
   const citationLabel = meta.citationCount > 0 ? `${meta.citationCount} 条来源` : '暂无来源'
-  return [modeLabel, citationLabel].filter(Boolean).join(' · ')
+  return [modeLabel, diagnosticLabel, citationLabel].filter(Boolean).join(' · ')
 }
 
 function getServiceStatus(state: AssistantServiceState) {
