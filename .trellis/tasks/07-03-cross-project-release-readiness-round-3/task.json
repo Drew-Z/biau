@@ -1,0 +1,33 @@
+{
+  "id": "cross-project-release-readiness-round-3",
+  "name": "cross-project-release-readiness-round-3",
+  "title": "跨项目部署与可靠性收尾第三轮",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-03",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-03-public-assistant-glm-live-closure",
+    "07-03-erp-production-registration-live-verify",
+    "07-03-legal-rag-demo-access-qa-closure",
+    "07-03-pet-apk-public-release-closure",
+    "07-03-cross-project-scheduled-reliability-observability",
+    "07-03-ai-daily-content-pipeline-phase-1"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
