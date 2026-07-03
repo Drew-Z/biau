@@ -5,6 +5,10 @@
 Planning. Do not start implementation until the user reviews the PRD/design and
 approves `task.py start`.
 
+Current user priority: finish the public assistant first. Implementation should
+target the local/public-assistant MVP before any external RAG runtime, real
+model validation, or production deployment verification.
+
 ## Human Decision Gates
 
 1. Confirm main architecture: done.
@@ -21,20 +25,45 @@ approves `task.py start`.
      committed.
    - Any live provider validation requires explicit user approval and a real
      task prompt, not a liveness ping.
+4. Production setup remains manual:
+   - Cloudflare Pages environment variables.
+   - External RAG runtime and storage provider.
+   - Embedding/reranker/model credentials.
+   - Production live validation after deployment.
 
 ## Execution Plan
 
-### 1. Immediate Answer Quality Baseline
+### 0. Manual Gate And Scope Lock
+
+- Keep `manual-actions.md` as the source of user-required public-assistant
+  actions.
+- Treat this implementation as local/public-assistant MVP completion:
+  - no external vector DB;
+  - no graph DB provisioning;
+  - no real model liveness check;
+  - no production endpoint validation unless the user explicitly approves it.
+- Keep the external RAG adapter disabled by default.
+
+Validation:
+
+```powershell
+git diff --check
+```
+
+### 1. Immediate Answer Quality And UX Baseline
 
 - Update public assistant prompt/fallback style so model answers read like a
   product guide, not a search report.
 - Remove prompt instructions that encourage raw path/source-title prose in the
   answer body.
+- Simplify fallback copy so it does not just list retrieved documents.
+- Keep the widget empty state compact and avoid default long assistant text.
 - Keep citation cards as the primary visible source UI.
 - Apply consistently to:
   - `functions/_shared/assistant.ts`
   - `server/src/model.ts`
-  - `src/components/PublicAssistantWidget.tsx` if formatting changes are needed
+  - `src/data/assistant.ts`
+  - `src/components/PublicAssistantWidget.tsx`
 
 Validation:
 
@@ -61,11 +90,14 @@ npm.cmd run build
   - `src/data/assistant.ts`
 - Keep the current `server/data/public-knowledge.json` contract intact while
   adding a new generated graph/knowledge artifact.
+- Ensure the generated V2 artifact contains no secrets, private URLs, raw env
+  values, or system prompt text.
 
 Validation:
 
 ```powershell
 npm.cmd run assistant:index
+npx.cmd tsx <targeted export assertion script>
 npm.cmd run lint
 npm.cmd run build
 ```
@@ -82,6 +114,12 @@ npm.cmd run build
 - Use this locally in browser fallback and/or API fallback so behavior improves
   before external infrastructure is ready.
 - Return the existing `citations` shape.
+- Add targeted assertions for:
+  - site overview;
+  - demo-ready projects;
+  - Legal RAG experience;
+  - React/Vite/Semi technology query;
+  - no-evidence refusal.
 
 Validation:
 
@@ -104,6 +142,12 @@ npm.cmd run build
 - Do not expose RAG API details to browser bundle.
 - Mock this adapter in tests; do not call live model/provider channels during
   ordinary verification.
+- Return only low-sensitive diagnostics:
+  - retrieval mode;
+  - fallback reason;
+  - timeout class;
+  - HTTP status if available;
+  - citation count.
 
 Validation:
 
@@ -117,11 +161,10 @@ npm.cmd run build
 
 ### 5. Orchestrator Scaffold
 
-- Decide whether the orchestrator lives:
-  - in this repo under a separate directory, or
-  - in a separate repository.
-- Recommended: separate directory first if tightly coupled to exported site
-  data; separate repository only after deployment boundaries stabilize.
+- Do not scaffold a production external service until the local export,
+  retrieval and HTTP contract are stable.
+- Recommended later path: separate directory first if tightly coupled to exported
+  site data; separate repository only after deployment boundaries stabilize.
 - Implement provider-agnostic interfaces:
   - document store
   - vector store
@@ -191,6 +234,7 @@ Run before commit:
 
 ```powershell
 npm.cmd run assistant:index
+npx.cmd tsx <targeted export/retrieval assertion script>
 npm.cmd run cf-assistant:smoke
 npm.cmd run server:smoke
 npm.cmd run server:build

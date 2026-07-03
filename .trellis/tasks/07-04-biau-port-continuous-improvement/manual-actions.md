@@ -27,6 +27,7 @@ queue when the user is available.
 - Needed from user: add secrets to the chosen deployment platform, not to the repo.
 - Why manual: Codex must not write or expose keys, database URLs, or private endpoints.
 - Codex can continue meanwhile: yes, using mocks and disabled-by-default adapters.
+- Detail queue: see `07-04-public-assistant-kg-lite/manual-actions.md`.
 
 ### M4. Confirm ERP live production registration behavior
 

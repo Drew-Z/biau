@@ -71,6 +71,11 @@ When the selected slice touches a related repository:
 
 ## Recommended First Autonomous Work Items
 
+Current override: the user asked to finish the public assistant first. While
+this override is active, select `07-04-public-assistant-kg-lite` before the
+release-readiness P1 sequence, but still keep production model/RAG/deployment
+steps behind manual gates.
+
 1. ERP registration display and main-site sync review
    - Why: user repeatedly called out registration availability and demo usability.
    - Allowed related-repo work: login/register UI polish, role-safety copy, local registration smoke, README/demo wording.
