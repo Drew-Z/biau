@@ -53,7 +53,7 @@ function fallbackResult(
   }
 }
 
-function compactSummary(summary: string, maxLength = 120) {
+function compactSummary(summary: string, maxLength = 90) {
   const normalized = summary.replace(/\s+/g, ' ').trim()
   if (normalized.length <= maxLength) return normalized
   return `${normalized.slice(0, maxLength - 1)}…`

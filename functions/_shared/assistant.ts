@@ -129,16 +129,19 @@ export function jsonResponse(payload: unknown, init?: ResponseInit) {
 }
 
 export function hasModelProvider(env: AssistantEnv) {
-  return Boolean(env.ASSISTANT_MODEL_API_KEY?.trim())
+  return Boolean(env.ASSISTANT_MODEL_API_KEY?.trim() && env.ASSISTANT_MODEL_BASE_URL?.trim())
 }
 
 export function getModelStatus(env: AssistantEnv) {
+  const modelConfigured = hasModelProvider(env)
   return {
     ok: true,
     service: 'biau-cloudflare-public-assistant',
     database: false,
-    model: hasModelProvider(env) ? (env.ASSISTANT_MODEL_NAME?.trim() || 'openai-compatible-model') : 'fallback',
-    provider: hasModelProvider(env) ? (env.ASSISTANT_MODEL_PROVIDER?.trim() || 'openai-compatible') : 'local-public-knowledge',
+    mode: modelConfigured ? 'model' : 'fallback',
+    modelConfigured,
+    model: modelConfigured ? (env.ASSISTANT_MODEL_NAME?.trim() || 'openai-compatible-model') : 'fallback',
+    provider: modelConfigured ? (env.ASSISTANT_MODEL_PROVIDER?.trim() || 'openai-compatible') : 'local-public-knowledge',
   }
 }
 
@@ -256,7 +259,7 @@ function buildFallbackAnswer(question: string, citations: KnowledgeItem[]) {
   return `我先按公开资料给你一个短结论：\n${lines.join('\n')}\n可以点来源继续看详情。`
 }
 
-function compactSummary(summary: string, maxLength = 120) {
+function compactSummary(summary: string, maxLength = 90) {
   const normalized = summary.replace(/\s+/g, ' ').trim()
   if (normalized.length <= maxLength) return normalized
   return `${normalized.slice(0, maxLength - 1)}...`

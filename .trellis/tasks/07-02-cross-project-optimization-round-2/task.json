@@ -77,7 +77,8 @@
     "07-03-07-03-status-detail-links-reliability",
     "07-03-07-03-public-assistant-glm-polish",
     "07-03-public-assistant-glm-product-polish",
-    "07-03-cloudflare-public-assistant-api"
+    "07-03-cloudflare-public-assistant-api",
+    "07-03-public-assistant-synthetic-status"
   ],
   "parent": null,
   "relatedFiles": [],

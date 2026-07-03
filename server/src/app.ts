@@ -29,6 +29,8 @@ export function createApp() {
       ok: true,
       service: 'biau-assistant-api',
       database: hasDatabase(),
+      mode: hasModelProvider() ? 'model' : 'fallback',
+      modelConfigured: hasModelProvider(),
       model: hasModelProvider() ? env.assistantModelName : 'fallback',
       provider: hasModelProvider() ? env.assistantModelProvider : 'local-public-knowledge',
     })

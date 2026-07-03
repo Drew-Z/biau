@@ -60,6 +60,8 @@ ASSISTANT_MODEL_PROVIDER=glm-compatible
 
 这些变量只在 Pages Functions 服务端读取，不会进入浏览器 bundle。未配置 `ASSISTANT_MODEL_API_KEY` 时，`/api/chat/public` 会回退到公开知识摘要。
 
+部署后先检查 `https://<站点域名>/api/health`。它应该返回 JSON，并包含 `ok: true` 与 `mode` / `modelConfigured` 这类低敏状态；如果返回的是首页 HTML，或 `POST /api/chat/public` 返回 404/405，说明当前 Pages 部署没有把 `functions/` 目录发布为 Functions。此时单独增加模型 Key 不会生效，需要先确认 Cloudflare Pages 项目使用最新 `main` 提交重新构建，或用 Wrangler 部署时确认 Functions 一起上传。
+
 ## 内部助手 API 部署
 
 助手后端位于当前仓库的 `server/`，和静态前端独立部署。它仍是内部助手、邀请码、数据库、管理页和完整 Express API 的推荐路线；如果只需要公开助手接入 GLM，同域 Cloudflare Pages Functions 可以先覆盖 `/api/health` 与 `/api/chat/public`。

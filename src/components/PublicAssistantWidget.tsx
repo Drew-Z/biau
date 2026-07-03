@@ -31,6 +31,8 @@ type AssistantServiceState = 'api-ready' | 'local' | 'model' | 'fallback' | 'err
 const CONFIGURED_API_BASE = import.meta.env.VITE_CHAT_API_BASE_URL?.trim().replace(/\/+$/, '')
 const SAME_ORIGIN_API_BASE = '/api'
 const MAX_MESSAGE_LENGTH = 500
+const MAX_MODEL_ANSWER_LENGTH = 620
+const MAX_FALLBACK_ANSWER_LENGTH = 360
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
@@ -52,13 +54,30 @@ function compactSummary(summary: string, maxLength = 104) {
   return `${normalized.slice(0, maxLength - 1)}…`
 }
 
-function buildLocalKnowledgeAnswer(citations: AssistantKnowledgeItem[]) {
+function compactAnswerContent(content: string, maxLength: number) {
+  const normalized = content
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+  if (normalized.length <= maxLength) return normalized
+  return `${normalized.slice(0, maxLength - 1).trim()}…`
+}
+
+function getFallbackIntro(reason?: AssistantFallbackReason) {
+  if (reason === 'provider_error') return '模型通道暂时失败，我先用站内公开资料给你一个方向：'
+  if (reason === 'empty_response') return '模型没有返回有效内容，我先用站内公开资料给你一个方向：'
+  if (reason === 'request_error') return '公开助手 API 暂时不可用，我先用本地公开知识给你一个方向：'
+  if (reason === 'no_public_context') return '这个问题暂时没有命中公开资料。'
+  return '模型还没有接入当前公开助手，我先用站内公开资料给你一个方向：'
+}
+
+function buildLocalKnowledgeAnswer(citations: AssistantKnowledgeItem[], reason?: AssistantFallbackReason) {
   if (citations.length === 0) {
-    return '公开资料里暂时没有足够证据。我不会补造结论；可以换成项目名、技术词，或先看项目页与状态页。'
+    return `${getFallbackIntro(reason)}我不会补造结论；可以换成项目名、技术词，或先看项目页与状态页。`
   }
 
   const lines = citations.slice(0, 3).map((item) => `- ${item.title}：${compactSummary(item.summary)}`)
-  return `我先按站内公开知识给你一个短结论：\n${lines.join('\n')}\n可以点下面来源继续看。`
+  return compactAnswerContent(`${getFallbackIntro(reason)}\n${lines.join('\n')}\n可以点下面来源继续看。`, MAX_FALLBACK_ANSWER_LENGTH)
 }
 
 async function requestPublicAnswer(question: string, apiBase: string | null): Promise<PublicAnswerResult> {
@@ -97,10 +116,17 @@ async function requestPublicAnswer(question: string, apiBase: string | null): Pr
   const reason = isAssistantFallbackReason(rawMeta?.reason) ? rawMeta.reason : undefined
   const citationCount = typeof rawMeta?.citationCount === 'number' ? rawMeta.citationCount : citations.length
 
+  const fallbackContent = buildLocalKnowledgeAnswer(citations, reason)
+  const displayContent =
+    mode === 'model'
+      ? compactAnswerContent(
+          answer || '公开助手暂时没有返回内容。你可以稍后重试，或者先去项目页和知识库查看详细资料。',
+          MAX_MODEL_ANSWER_LENGTH,
+        )
+      : fallbackContent
+
   return {
-    content:
-      answer ||
-      '公开助手暂时没有返回内容。你可以稍后重试，或者先去项目页和知识库查看详细资料。',
+    content: displayContent,
     citations,
     meta: {
       mode,
@@ -129,10 +155,10 @@ function formatAnswerMeta(meta?: AssistantAnswerMeta) {
 
 function getServiceStatus(state: AssistantServiceState) {
   if (state === 'model') return { className: 'is-model', label: '模型增强在线' }
-  if (state === 'error') return { className: 'is-error', label: 'API 异常，已本地兜底' }
-  if (state === 'fallback') return { className: 'is-fallback', label: '服务端未配置模型' }
-  if (state === 'api-ready') return { className: 'is-ready', label: '服务端连接中' }
-  return { className: 'is-local', label: '未连接模型' }
+  if (state === 'error') return { className: 'is-error', label: 'API 未接入，未连接模型' }
+  if (state === 'fallback') return { className: 'is-fallback', label: 'API 在线，未接模型' }
+  if (state === 'api-ready') return { className: 'is-ready', label: '检查模型状态' }
+  return { className: 'is-local', label: '未连接模型，本地知识' }
 }
 
 export function PublicAssistantWidget() {
@@ -167,9 +193,11 @@ export function PublicAssistantWidget() {
         if (!response.ok) throw new Error('assistant-health-failed')
         const payload = (await response.json()) as unknown
         const model = isRecord(payload) && typeof payload.model === 'string' ? payload.model.trim() : ''
+        const mode = isRecord(payload) && typeof payload.mode === 'string' ? payload.mode.trim() : ''
+        const modelConfigured = isRecord(payload) && payload.modelConfigured === true
         if (!cancelled) {
           setApiBase(candidateApiBase)
-          setServiceState(model && model !== 'fallback' ? 'model' : 'fallback')
+          setServiceState(mode === 'model' || modelConfigured || (model && model !== 'fallback') ? 'model' : 'fallback')
         }
       } catch {
         if (!cancelled) {
@@ -234,7 +262,7 @@ export function PublicAssistantWidget() {
         {
           id: createMessageId('assistant'),
           role: 'assistant',
-          content: `站内助手 API 暂时不可用，已切回本地公开知识。\n${buildLocalKnowledgeAnswer(citations)}`,
+          content: buildLocalKnowledgeAnswer(citations, 'request_error'),
           citations,
           meta: {
             mode: 'fallback',

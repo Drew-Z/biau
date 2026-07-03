@@ -6,7 +6,8 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputPath = resolve(repoRoot, 'public/status/blog-semi-synthetic.json')
 const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 12_000
-const CHECK_ID = 'blog-semi-public-routes'
+const ROUTE_CHECK_ID = 'blog-semi-public-routes'
+const ASSISTANT_CHECK_ID = 'blog-semi-public-assistant'
 const sitemapRequiredPaths = ['/', '/projects', '/blog', '/status', '/pet-app-showcase/']
 
 const targets = [
@@ -66,6 +67,26 @@ function absoluteUrl(baseUrl, path) {
   return new URL(path, `${baseUrl}/`).toString()
 }
 
+function normalizeSitemapPath(path) {
+  if (path === '/') return '/'
+  return path.replace(/\/+$/, '')
+}
+
+function sitemapContainsPath(body, path, baseUrl) {
+  if (body.includes(absoluteUrl(baseUrl, path))) return true
+  const expectedPath = normalizeSitemapPath(path)
+  const locs = Array.from(body.matchAll(/<loc>([^<]+)<\/loc>/gi), (match) => match[1])
+
+  return locs.some((loc) => {
+    try {
+      const url = new URL(loc)
+      return normalizeSitemapPath(url.pathname) === expectedPath
+    } catch {
+      return false
+    }
+  })
+}
+
 async function fetchWithTimeout(url, timeoutMs) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
@@ -103,6 +124,63 @@ async function fetchWithTimeout(url, timeoutMs) {
   }
 }
 
+async function requestJsonWithTimeout(url, timeoutMs, options = {}) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  const startedAt = Date.now()
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'biau-main-site-synthetic/1.0',
+        Accept: 'application/json',
+        ...(options.headers ?? {}),
+      },
+    })
+    const body = await response.text().catch(() => '')
+    let json = null
+    let parseError = ''
+    if (body.trim()) {
+      try {
+        json = JSON.parse(body)
+      } catch {
+        parseError = 'invalid-json'
+      }
+    } else {
+      parseError = 'empty-response'
+    }
+
+    return {
+      ok: response.ok,
+      status: response.status,
+      durationMs: Date.now() - startedAt,
+      contentType: response.headers.get('content-type') || '',
+      json,
+      parseError,
+      error: '',
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      durationMs: Date.now() - startedAt,
+      contentType: '',
+      json: null,
+      parseError: '',
+      error: error instanceof Error ? error.message : String(error),
+    }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function isRecord(value) {
+  return typeof value === 'object' && value !== null
+}
+
 function validateTarget(target, response, baseUrl) {
   const issues = []
 
@@ -121,7 +199,7 @@ function validateTarget(target, response, baseUrl) {
   if (target.kind === 'sitemap') {
     if (!response.body.includes('<urlset')) issues.push('sitemap: missing urlset')
     for (const path of sitemapRequiredPaths) {
-      if (!response.body.includes(absoluteUrl(baseUrl, path))) issues.push(`sitemap: missing ${path}`)
+      if (!sitemapContainsPath(response.body, path, baseUrl)) issues.push(`sitemap: missing ${path}`)
     }
     return issues
   }
@@ -147,6 +225,115 @@ function httpStatusFromResults(results) {
   return results[0]?.response.status ?? 0
 }
 
+function validateHealthResponse(response) {
+  const issues = []
+  if (!response.ok) {
+    issues.push(`assistant health returned HTTP ${response.status || 'request failed'}`)
+    if (response.error) issues.push('assistant health request failed')
+    return issues
+  }
+
+  if (response.parseError) {
+    issues.push('assistant health returned non-JSON response')
+    return issues
+  }
+
+  if (!isRecord(response.json) || response.json.ok !== true) {
+    issues.push('assistant health payload missing ok=true')
+  }
+
+  return issues
+}
+
+function validateChatResponse(response) {
+  const issues = []
+  let mode = ''
+  let reason = ''
+
+  if (!response.ok) {
+    issues.push(`assistant chat returned HTTP ${response.status || 'request failed'}`)
+    if (response.error) issues.push('assistant chat request failed')
+    return { issues, mode, reason }
+  }
+
+  if (response.parseError) {
+    issues.push('assistant chat returned non-JSON response')
+    return { issues, mode, reason }
+  }
+
+  const payload = response.json
+  if (!isRecord(payload)) {
+    issues.push('assistant chat payload is not an object')
+    return { issues, mode, reason }
+  }
+
+  if (typeof payload.answer !== 'string' || payload.answer.trim().length === 0) {
+    issues.push('assistant chat payload missing answer')
+  }
+
+  if (!Array.isArray(payload.citations)) {
+    issues.push('assistant chat payload missing citations array')
+  } else if (payload.citations.length === 0) {
+    issues.push('assistant chat payload returned no public citations')
+  }
+
+  const meta = isRecord(payload.meta) ? payload.meta : null
+  if (!meta) {
+    issues.push('assistant chat payload missing meta')
+    return { issues, mode, reason }
+  }
+
+  if (meta.mode === 'model' || meta.mode === 'fallback') {
+    mode = meta.mode
+  } else {
+    issues.push('assistant chat meta has invalid mode')
+  }
+
+  if (typeof meta.reason === 'string') reason = meta.reason
+
+  return { issues, mode, reason }
+}
+
+function firstProblemStatus(...responses) {
+  const problem = responses.find((response) => !response.ok || response.parseError)
+  return problem?.status ?? responses[0]?.status ?? 0
+}
+
+async function validateAssistantApi(baseUrl, timeoutMs, checkedAt) {
+  const health = await requestJsonWithTimeout(absoluteUrl(baseUrl, '/api/health'), timeoutMs)
+  const chat = await requestJsonWithTimeout(absoluteUrl(baseUrl, '/api/chat/public'), timeoutMs, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: 'RAG 项目' }),
+  })
+
+  const healthIssues = validateHealthResponse(health)
+  const chatValidation = validateChatResponse(chat)
+  const issues = [...healthIssues, ...chatValidation.issues]
+  let status = 'offline'
+  let summary = 'Public assistant API did not return valid health/chat JSON'
+
+  if (issues.length === 0 && chatValidation.mode === 'model') {
+    status = 'online'
+    summary = 'Public assistant API returned a model answer with public citations'
+  } else if (issues.length === 0 && chatValidation.mode === 'fallback') {
+    status = 'degraded'
+    summary = chatValidation.reason
+      ? `Public assistant API returned fallback answer (${chatValidation.reason})`
+      : 'Public assistant API returned fallback answer'
+  }
+
+  return {
+    id: ASSISTANT_CHECK_ID,
+    status,
+    httpStatus: firstProblemStatus(health, chat),
+    durationMs: health.durationMs + chat.durationMs,
+    checkedAt,
+    summary,
+    issues,
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const checkedAt = new Date().toISOString()
@@ -164,28 +351,30 @@ async function main() {
   const status = statusFromResults(results)
   const passed = results.filter((result) => result.issues.length === 0).length
   const issues = results.flatMap((result) => result.issues)
+  const routeCheck = {
+    id: ROUTE_CHECK_ID,
+    status,
+    httpStatus: httpStatusFromResults(results),
+    durationMs: results.reduce((total, result) => total + result.response.durationMs, 0),
+    checkedAt,
+    summary: `${passed}/${results.length} public routes returned expected responses`,
+    issues,
+  }
+  const assistantCheck = await validateAssistantApi(args.baseUrl, args.timeoutMs, checkedAt)
   const payload = {
     checkedAt,
     baseConfigured: true,
-    ok: status !== 'offline',
-    checks: [
-      {
-        id: CHECK_ID,
-        status,
-        httpStatus: httpStatusFromResults(results),
-        durationMs: results.reduce((total, result) => total + result.response.durationMs, 0),
-        checkedAt,
-        summary: `${passed}/${results.length} public routes returned expected responses`,
-        issues,
-      },
-    ],
+    ok: routeCheck.status !== 'offline' && assistantCheck.status !== 'offline',
+    checks: [routeCheck, assistantCheck],
   }
 
   await mkdir(dirname(outputPath), { recursive: true })
   await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
-  console.log(`Main-site synthetic report generated: ${status} (${passed}/${results.length} routes passed).`)
+  console.log(
+    `Main-site synthetic report generated: routes=${routeCheck.status} (${passed}/${results.length}), assistant=${assistantCheck.status}.`,
+  )
 
-  if (args.strict && status === 'offline') process.exitCode = 1
+  if (args.strict && payload.checks.some((check) => check.status === 'offline')) process.exitCode = 1
 }
 
 main().catch((error) => {

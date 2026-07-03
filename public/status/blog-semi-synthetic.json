@@ -1,16 +1,28 @@
 {
-  "checkedAt": "2026-07-03T03:21:20.406Z",
+  "checkedAt": "2026-07-03T07:14:33.222Z",
   "baseConfigured": true,
-  "ok": true,
+  "ok": false,
   "checks": [
     {
       "id": "blog-semi-public-routes",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 2659,
-      "checkedAt": "2026-07-03T03:21:20.406Z",
+      "durationMs": 2956,
+      "checkedAt": "2026-07-03T07:14:33.222Z",
       "summary": "7/7 public routes returned expected responses",
       "issues": []
+    },
+    {
+      "id": "blog-semi-public-assistant",
+      "status": "offline",
+      "httpStatus": 200,
+      "durationMs": 952,
+      "checkedAt": "2026-07-03T07:14:33.222Z",
+      "summary": "Public assistant API did not return valid health/chat JSON",
+      "issues": [
+        "assistant health returned non-JSON response",
+        "assistant chat returned HTTP 405"
+      ]
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-03T04:28:37.245Z",
+  "checkedAt": "2026-07-03T07:14:43.835Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台有登录门禁；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 836,
-      "checkedAt": "2026-07-03T04:28:37.251Z",
+      "durationMs": 1183,
+      "checkedAt": "2026-07-03T07:14:43.846Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "入口可达代表展示页和截图可访问；正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 814,
-      "checkedAt": "2026-07-03T04:28:38.087Z",
+      "durationMs": 1441,
+      "checkedAt": "2026-07-03T07:14:45.029Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "生产注册与演示账号属于人工 gate；状态页只检查公开入口是否响应。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1876,
-      "checkedAt": "2026-07-03T04:28:38.901Z",
+      "durationMs": 896,
+      "checkedAt": "2026-07-03T07:14:46.470Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 757,
-      "checkedAt": "2026-07-03T04:28:40.777Z",
+      "durationMs": 1316,
+      "checkedAt": "2026-07-03T07:14:47.366Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -90,8 +90,8 @@
       "note": "阶段 APK 是否公开发布仍需人工确认；这里只检查展示页入口。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1568,
-      "checkedAt": "2026-07-03T04:28:41.534Z",
+      "durationMs": 679,
+      "checkedAt": "2026-07-03T07:14:48.682Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -117,9 +117,9 @@
           "id": "blog-semi-public-assistant",
           "layer": "synthetic",
           "label": "公开助手问答",
-          "status": "planned",
-          "description": "用一个公开项目问题验证 `/chat/public` 是否返回答案和 citation，不暴露模型密钥。",
-          "evidence": "现有 `server:smoke` 已覆盖本地公共助手 fallback；生产模型接入需要单独任务。",
+          "status": "offline",
+          "description": "用一个公开项目问题验证同域 `/api/health` 与 `/api/chat/public` 是否返回模型或 fallback 状态。",
+          "evidence": "最近一次 synthetic 检查：Public assistant API did not return valid health/chat JSON；assistant health returned non-JSON response。`main-site:synthetic` 会检查公开助手 API 是否真实接入、是否返回 citation，以及当前是模型增强还是公开知识 fallback。",
           "cadence": "发布前 + 模型配置变更后",
           "ownerHint": "assistant API"
         },
@@ -139,7 +139,7 @@
       ],
       "nextActions": [
         "把 `main-site:synthetic` 接入定时任务或内部监控。",
-        "公开助手模型产品化后补 L1 synthetic check。"
+        "Cloudflare Pages Functions 部署后配置 `ASSISTANT_MODEL_*` 并复查公开助手状态。"
       ]
     },
     {
@@ -154,7 +154,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 836 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1183 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -221,7 +221,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1876 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 896 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -288,7 +288,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1568 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 679 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -390,7 +390,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 757 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1316 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"
