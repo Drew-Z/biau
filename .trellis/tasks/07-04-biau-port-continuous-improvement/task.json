@@ -1,0 +1,29 @@
+{
+  "id": "biau-port-continuous-improvement",
+  "name": "biau-port-continuous-improvement",
+  "title": "BIAU Port continuous improvement master plan",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-04",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-04-public-assistant-kg-lite",
+    "07-03-cross-project-release-readiness-round-3"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

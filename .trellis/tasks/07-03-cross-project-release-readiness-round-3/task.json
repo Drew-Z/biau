@@ -26,7 +26,7 @@
     "07-03-cross-project-scheduled-reliability-observability",
     "07-03-ai-daily-content-pipeline-phase-1"
   ],
-  "parent": null,
+  "parent": "07-04-biau-port-continuous-improvement",
   "relatedFiles": [],
   "notes": "",
   "meta": {}
