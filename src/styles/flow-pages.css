@@ -1219,12 +1219,56 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .status-layer-card p,
 .status-project__summary,
+.status-project-card p,
 .status-check p,
 .status-project__footer p {
   margin: 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.65;
+}
+
+.status-project-index {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.status-project-card {
+  min-width: 0;
+  padding: var(--space-20);
+  display: grid;
+  gap: var(--space-14, 14px);
+  align-content: start;
+  background: color-mix(in oklch, var(--panel) 54%, transparent);
+  border-color: var(--flow-ui-card-border);
+}
+
+.status-project-card h2 {
+  margin: var(--space-4) 0 var(--space-8);
+  color: var(--ink);
+  font-family: var(--font-serif-display);
+  font-size: clamp(1.28rem, 2.5vw, 1.7rem);
+  font-weight: var(--weight-title);
+  line-height: 1.12;
+}
+
+.status-project-card__link,
+.status-detail-actions .btn,
+.detail-missing .btn {
+  width: max-content;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0 var(--space-16);
+  gap: var(--space-8);
+  text-decoration: none;
+}
+
+.status-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  align-items: center;
 }
 
 .status-reliability {
@@ -3405,6 +3449,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .assistant-admin-grid,
   .status-overview,
   .status-targets,
+  .status-project-index,
   .status-check-list,
   .status-project__footer {
     grid-template-columns: 1fr;
@@ -3537,6 +3582,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
   .status-overview,
   .status-target,
+  .status-project-card,
   .status-project {
     padding: var(--space-16);
     border-radius: var(--radius-lg);

@@ -1,7 +1,6 @@
 import { chromium } from 'playwright'
 import {
   findReliabilityProjectForTarget,
-  getReliabilityAnchorId,
   reliabilityProjects as staticReliabilityProjects,
   siteStatusTargets,
 } from '../src/data/statusTargets.ts'
@@ -14,6 +13,7 @@ const routes = [
   { path: '/projects', title: '项目集', nav: '回主页', canonical: '/projects' },
   { path: '/blog', title: '知识库', nav: '回主页', canonical: '/blog' },
   { path: '/status', title: '项目可靠性观察', nav: '回主页', canonical: '/status' },
+  { path: '/status/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/status/legal-rag' },
   { path: '/assistant', title: '内部助手', nav: '回主页', canonical: '/assistant' },
   { path: '/assistant/admin', title: '内部助手管理页', nav: '回主页', canonical: '/assistant/admin' },
   { path: '/projects/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/projects/legal-rag' },
@@ -92,8 +92,7 @@ const statusPage = await browser.newPage({ viewport: viewports[0] })
 await statusPage.goto(`${base}/status`, { waitUntil: 'networkidle' })
 const statusCards = await statusPage.locator('.status-target').count()
 const expectedStatusCards = siteStatusTargets.length
-const reliabilityProjects = await statusPage.locator('.status-project').count()
-const reliabilityChecks = await statusPage.locator('.status-check').count()
+const reliabilityProjectCards = await statusPage.locator('.status-project-card').count()
 const statusOnlineText = await statusPage.locator('.status-summary-card.is-online strong').innerText().catch(() => '')
 const legalStatusLink = statusPage.getByRole('link', { name: '打开入口' }).first()
 const legalStatusHref = await legalStatusLink.getAttribute('href').catch(() => null)
@@ -112,18 +111,18 @@ for (const target of siteStatusTargets) {
     failures.push(`/status detail link: expected a reliability project for ${target.id}`)
     continue
   }
-  const expectedHref = `#${getReliabilityAnchorId(detailProject.id)}`
+  const expectedHref = `/status/${detailProject.id}`
   const detailLink = statusPage.getByRole('link', { name: `详细状态：${detailProject.title}` }).first()
   const detailHref = await detailLink.getAttribute('href').catch(() => null)
   if (detailHref !== expectedHref) {
     failures.push(`/status detail link: expected ${target.id} to link to ${expectedHref}, got "${detailHref}"`)
   }
+  if (detailHref?.startsWith('#')) {
+    failures.push(`/status detail link: expected ${target.id} to use a route instead of hash "${detailHref}"`)
+  }
 }
-if (reliabilityProjects < 6) {
-  failures.push(`/status reliability: expected at least 6 project reliability groups, got ${reliabilityProjects}`)
-}
-if (reliabilityChecks < 20) {
-  failures.push(`/status reliability: expected at least 20 reliability checks, got ${reliabilityChecks}`)
+if (reliabilityProjectCards < staticReliabilityProjects.length) {
+  failures.push(`/status reliability: expected at least ${staticReliabilityProjects.length} project detail cards, got ${reliabilityProjectCards}`)
 }
 if (!/^\d+$/.test(statusOnlineText.trim())) {
   failures.push(`/status summary: expected online count to be numeric, got "${statusOnlineText}"`)
@@ -141,23 +140,22 @@ const legalDetailProject = findReliabilityProjectForTarget(
   siteStatusTargets.find((target) => target.id === 'legal-rag-entry') ?? siteStatusTargets[0],
   staticReliabilityProjects,
 )
-const legalDetailHash = legalDetailProject ? `#${getReliabilityAnchorId(legalDetailProject.id)}` : '#reliability-legal-rag'
 await statusPage.getByRole('link', { name: `详细状态：${legalDetailProject?.title ?? 'Legal RAG 法律机器人'}` }).first().click()
-await statusPage
-  .waitForFunction((expectedHash) => window.location.hash === expectedHash, legalDetailHash, { timeout: 5000 })
-  .catch(() => failures.push(`/status detail link: expected hash ${legalDetailHash} after clicking Legal RAG detail link`))
-await statusPage
-  .waitForFunction(
-    (selector) => {
-      const section = document.querySelector(selector)
-      if (!section) return false
-      const rect = section.getBoundingClientRect()
-      return rect.bottom > 0 && rect.top < window.innerHeight * 0.75
-    },
-    legalDetailHash,
-    { timeout: 5000 },
-  )
-  .catch(() => failures.push('/status detail link: expected Legal RAG reliability section to be visible after detail jump'))
+await statusPage.waitForURL(`${base}/status/${legalDetailProject?.id ?? 'legal-rag'}`, { timeout: 5000 }).catch(() => {
+  failures.push('/status detail route: expected Legal RAG detail link to navigate to a dedicated status route')
+})
+const legalDetailTitle = await statusPage.locator('.status-project h2').first().innerText().catch(() => '')
+const legalDetailChecks = await statusPage.locator('.status-check').count()
+const legalBackHref = await statusPage.getByRole('link', { name: '返回状态总览' }).first().getAttribute('href').catch(() => null)
+if (!legalDetailTitle.includes(legalDetailProject?.title ?? 'Legal RAG')) {
+  failures.push(`/status detail route: expected Legal RAG title on detail page, got "${legalDetailTitle}"`)
+}
+if (legalDetailChecks < 1) {
+  failures.push('/status detail route: expected reliability checks on Legal RAG detail page')
+}
+if (legalBackHref !== '/status') {
+  failures.push(`/status detail route: expected back link to /status, got "${legalBackHref}"`)
+}
 await statusPage.close()
 
 const interactionPage = await browser.newPage({ viewport: viewports[0] })

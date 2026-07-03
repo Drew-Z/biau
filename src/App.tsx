@@ -12,6 +12,7 @@ import { ProjectsPage } from './pages/ProjectsPage'
 import { AssistantPage } from './pages/AssistantPage'
 import { AssistantAdminPage } from './pages/AssistantAdminPage'
 import { SiteStatusPage } from './pages/SiteStatusPage'
+import { SiteStatusDetailPage } from './pages/SiteStatusDetailPage'
 
 type SiteLanguage = 'zh' | 'en'
 type HarborScene = 'dusk' | 'garden' | 'stellar'
@@ -36,7 +37,7 @@ function getPageClass(pathname: string) {
   if (pathname === '/projects') return 'page-tools page-subpage'
   if (pathname.startsWith('/projects/')) return 'page-detail page-project-detail page-subpage'
   if (pathname === '/assistant' || pathname.startsWith('/assistant/')) return 'page-assistant page-subpage'
-  if (pathname === '/status') return 'page-status page-subpage'
+  if (pathname === '/status' || pathname.startsWith('/status/')) return 'page-status page-subpage'
   if (pathname === '/blog') return 'page-letters page-blog page-subpage'
   if (pathname.startsWith('/blog/')) return 'page-detail page-blog-post page-subpage'
   return 'page-not-found page-subpage'
@@ -95,6 +96,7 @@ function App() {
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/assistant/admin" element={<AssistantAdminPage />} />
           <Route path="/status" element={<SiteStatusPage />} />
+          <Route path="/status/:projectId" element={<SiteStatusDetailPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="*" element={<NotFoundPage />} />

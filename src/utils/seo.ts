@@ -74,6 +74,15 @@ export function getStaticSeo(pathname: string): SeoMeta {
     }
   }
 
+  if (path.startsWith('/status/')) {
+    return {
+      title: '项目可靠性详情 | BIAU Port',
+      description: '查看 BIAU Port 泊岸项目可靠性观察中的单个项目检查项、人工 gate 和后续接入方向。',
+      canonicalPath: path,
+      type: 'website',
+    }
+  }
+
   if (path === '/assistant/admin') {
     return {
       title: '内部助手管理页 | BIAU Port',

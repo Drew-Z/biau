@@ -20,14 +20,26 @@
 
 ## Acceptance Criteria
 
-- [ ] `/status` 上每个“详细状态”按钮跳转到独立路由，不再是 `#` hash。
-- [ ] 每个可靠性项目详情页可以通过 URL 直接打开。
-- [ ] UI 回归检查覆盖详情链接数量、href 路径、至少一个详情页渲染和返回 `/status`。
-- [ ] `npm.cmd run check:ui`、`npm.cmd run lint`、`npm.cmd run build` 通过。
-- [ ] `git diff --check` 与敏感扫描通过。
+- [x] `/status` 上每个“详细状态”按钮跳转到独立路由，不再是 `#` hash。
+- [x] 每个可靠性项目详情页可以通过 URL 直接打开。
+- [x] UI 回归检查覆盖详情链接数量、href 路径、至少一个详情页渲染和返回 `/status`。
+- [x] `npm.cmd run check:ui`、`npm.cmd run lint`、`npm.cmd run build` 通过。
+- [x] `git diff --check` 与敏感扫描通过。
 
 ## Out of Scope
 
 - 不接入新的真实监控平台。
 - 不改变各项目 synthetic 状态含义。
 - 不公开任何私有 dashboard、账号、API base URL 或凭据。
+
+## Validation
+
+- `npm.cmd run lint`: passed.
+- `npm.cmd run build`: passed; Vite kept existing ineffective dynamic import warnings.
+- `npm.cmd run check:ui`: passed against local preview.
+- `git diff --check`: passed with Windows line-ending warnings only.
+- Sensitive scan: no real secrets; only the frontend quality spec safety text matched.
+
+## Spec Update
+
+- Updated `.trellis/spec/frontend/quality-guidelines.md` so `/status` UI checks expect dedicated `/status/:projectId` routes rather than hash anchors.
