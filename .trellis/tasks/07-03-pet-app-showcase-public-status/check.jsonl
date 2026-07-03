@@ -1,0 +1,2 @@
+{"file":".trellis/spec/backend/observability-guidelines.md","reason":"Quality gate for synthetic JSON shape, human gates, status aggregation, and sensitive scans."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Quality gate for static public page asset checks and APK link safety."}

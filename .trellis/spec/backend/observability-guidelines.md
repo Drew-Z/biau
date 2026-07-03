@@ -67,24 +67,27 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 ### 1. Scope / Trigger
 
 - Trigger: adding a project reliability smoke check that writes into `public/status/` and is rendered by `/status`.
-- Use this for cross-project checks such as Legal RAG, ERP, xunqiu backend, game static resources, and future assistant production smoke checks.
+- Use this for cross-project checks such as Legal RAG, ERP, xunqiu backend, Pet static showcase pages, game static resources, and future assistant production smoke checks.
 
 ### 2. Signatures
 
 - `npm.cmd run <project>:synthetic` runs a project-specific script.
 - Script output path: `public/status/<project>-synthetic.json`.
 - Status aggregation: `npm.cmd run site:status` loads every `public/status/*-synthetic.json` file and merges checks by `id`.
+- Static showcase example: `npm.cmd run pet:synthetic` writes `public/status/pet-gamer-synthetic.json` and updates the `pet-showcase` check only; release gates such as `pet-apk-gate` remain static `planned` until human approval.
 
 ### 3. Contracts
 
 - Environment keys must be optional by default. Missing API base URL writes `unchecked` results and exits successfully.
 - Public report shape:
   - `checkedAt: string`
-  - `apiBaseConfigured: boolean`
-  - `hasCredentials: boolean`
+  - API synthetic checks: `apiBaseConfigured: boolean`
+  - Static page synthetic checks: `baseConfigured: boolean`
+  - Protected API synthetic checks: `hasCredentials: boolean`
   - `ok: boolean`
   - `checks: Array<{ id, status, httpStatus, durationMs, checkedAt, summary, issues }>`
 - Allowed statuses are `online`, `degraded`, `offline`, and `unchecked`. Static data may still use `planned`.
+- A synthetic script must update only the check ids it can actually verify. Do not promote adjacent human gates such as APK release, production registration, or credential publication from `planned` to `online`.
 - Do not persist API base URLs, usernames, passwords, bearer tokens, private dashboard links, shop/SKU/order data, exact business metrics, or model-provider secrets.
 
 ### 4. Validation & Error Matrix
@@ -103,6 +106,7 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 ### 6. Tests Required
 
 - Run the synthetic script with no env and assert it writes `unchecked` output.
+- For static showcase pages with a public default base URL, run the synthetic script and assert required page text plus public asset URLs are reachable.
 - Use an ephemeral local API to verify configured-base paths when adding protected smoke logic.
 - Run `npm.cmd run site:status` and confirm `/status` receives merged check statuses.
 - Run `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run check:ui`, `git diff --check`, and a sensitive scan over changed files.

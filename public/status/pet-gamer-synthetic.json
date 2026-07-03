@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-07-03T02:54:12.712Z",
+  "baseConfigured": true,
+  "ok": true,
+  "checks": [
+    {
+      "id": "pet-showcase",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 5985,
+      "checkedAt": "2026-07-03T02:54:12.712Z",
+      "summary": "Pet App showcase page and 4/4 screenshots returned expected responses",
+      "issues": []
+    }
+  ]
+}
