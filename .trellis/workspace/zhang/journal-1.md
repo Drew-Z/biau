@@ -1842,3 +1842,36 @@ Expanded /status from entry reachability into a layered project reliability base
 ### Next Steps
 
 - None - task complete
+
+
+## Session 44: Legal RAG synthetic status check
+
+**Date**: 2026-07-03
+**Task**: Legal RAG synthetic status check
+**Branch**: `main`
+
+### Summary
+
+Added a low-sensitive Legal RAG synthetic checker that writes public/status/legal-rag-synthetic.json, supports env-configured API base and optional demo credentials, keeps secrets/cookies/answers out of output, and merges results into /status via site-status generation. Verified synthetic no-base mode, site status generation, lint, build, UI check, diff check, and sensitive scan.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a674968` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
