@@ -39,3 +39,36 @@ Synced BIAU Port main-site project/status/assistant data with external ERP, Lega
 ### Next Steps
 
 - None - task complete
+
+
+## Session 49: Remove legacy home hero reference
+
+**Date**: 2026-07-03
+**Task**: Remove legacy home hero reference
+**Branch**: `main`
+
+### Summary
+
+Deleted unused legacy Hero component and hero-reference stylesheet, removed stale import, verified lint/build/UI checks before archiving the child task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `01dc200` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
