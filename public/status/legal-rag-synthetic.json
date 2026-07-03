@@ -1,16 +1,16 @@
 {
-  "checkedAt": "2026-07-03T00:11:28.215Z",
-  "apiBaseConfigured": false,
+  "checkedAt": "2026-07-03T02:17:03.989Z",
+  "apiBaseConfigured": true,
   "hasCredentials": false,
   "ok": true,
   "checks": [
     {
       "id": "legal-rag-health",
-      "status": "unchecked",
-      "httpStatus": 0,
-      "durationMs": 0,
-      "checkedAt": "2026-07-03T00:11:28.216Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 859,
+      "checkedAt": "2026-07-03T02:17:04.849Z",
+      "summary": "API health returned ok=true",
       "issues": []
     },
     {
@@ -18,8 +18,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-03T00:11:28.216Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "checkedAt": "2026-07-03T02:17:05.212Z",
+      "summary": "Auth is enabled; credentials are required for RAG query checks",
       "issues": []
     },
     {
@@ -27,8 +27,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-03T00:11:28.216Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "checkedAt": "2026-07-03T02:17:05.212Z",
+      "summary": "Auth is enabled; credentials are required for contract review checks",
       "issues": []
     },
     {
@@ -36,8 +36,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-03T00:11:28.216Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "checkedAt": "2026-07-03T02:17:05.212Z",
+      "summary": "Auth is enabled; credentials are required for quality report checks",
       "issues": []
     }
   ]

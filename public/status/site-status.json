@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-03T00:59:21.300Z",
+  "checkedAt": "2026-07-03T02:17:15.949Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台可能有登录门禁或 Render 冷启动；入口可达不代表公开凭据已开放。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 880,
-      "checkedAt": "2026-07-03T00:59:21.305Z",
+      "durationMs": 958,
+      "checkedAt": "2026-07-03T02:17:15.955Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "生产注册与演示账号属于人工 gate；状态页只检查公开入口是否响应。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1201,
-      "checkedAt": "2026-07-03T00:59:22.185Z",
+      "durationMs": 1645,
+      "checkedAt": "2026-07-03T02:17:16.914Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 823,
-      "checkedAt": "2026-07-03T00:59:23.386Z",
+      "durationMs": 903,
+      "checkedAt": "2026-07-03T02:17:18.559Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "阶段 APK 是否公开发布仍需人工确认；这里只检查展示页入口。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 824,
-      "checkedAt": "2026-07-03T00:59:24.209Z",
+      "durationMs": 1020,
+      "checkedAt": "2026-07-03T02:17:19.462Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -137,7 +137,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 880 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 958 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -146,9 +146,9 @@
           "id": "legal-rag-health",
           "layer": "synthetic",
           "label": "API health",
-          "status": "unchecked",
+          "status": "online",
           "description": "请求 `/api/health`，确认 API、向量库 readiness 和冷启动状态。",
-          "evidence": "最近一次 synthetic 检查：LEGAL_RAG_API_BASE_URL is not configured。仓库文档和 demo 脚本记录了 health 作为演示前置检查。",
+          "evidence": "最近一次 synthetic 检查：API health returned ok=true。仓库文档和 demo 脚本记录了 health 作为演示前置检查。",
           "cadence": "演示前 + 定时检查",
           "ownerHint": "Legal RAG API"
         },
@@ -158,7 +158,7 @@
           "label": "法律问答 + citation",
           "status": "unchecked",
           "description": "用公开安全数据集提问一次，断言 answer、citations、retrieved chunks 和 diagnostics 可用。",
-          "evidence": "最近一次 synthetic 检查：LEGAL_RAG_API_BASE_URL is not configured。Legal RAG 仓库包含公开安全数据集、RAG eval 和演示 smoke 路径。",
+          "evidence": "最近一次 synthetic 检查：Auth is enabled; credentials are required for RAG query checks。Legal RAG 仓库包含公开安全数据集、RAG eval 和演示 smoke 路径。",
           "cadence": "模型或数据集变更后",
           "ownerHint": "RAG synthetic check"
         },
@@ -168,7 +168,7 @@
           "label": "合同审查",
           "status": "unchecked",
           "description": "提交脱敏样本合同，断言风险条目、引用和 human review 标记存在。",
-          "evidence": "最近一次 synthetic 检查：LEGAL_RAG_API_BASE_URL is not configured。仓库包含 contract-review eval set 和 sample contract。",
+          "evidence": "最近一次 synthetic 检查：Auth is enabled; credentials are required for contract review checks。仓库包含 contract-review eval set 和 sample contract。",
           "cadence": "发布前 + 合同审查规则变更后",
           "ownerHint": "Review synthetic check"
         },
@@ -178,7 +178,7 @@
           "label": "模型与质量看板",
           "status": "unchecked",
           "description": "后续可把模型错误、RAG eval、合同审查 eval 和 API 指标送入内部看板。",
-          "evidence": "最近一次 synthetic 检查：LEGAL_RAG_API_BASE_URL is not configured。当前仅记录接入方向，不公开私有模型渠道或后台地址。",
+          "evidence": "最近一次 synthetic 检查：Auth is enabled; credentials are required for quality report checks。当前仅记录接入方向，不公开私有模型渠道或后台地址。",
           "cadence": "人工 gate 后",
           "ownerHint": "Grafana/LLM tracing"
         }
@@ -203,7 +203,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1201 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1645 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -270,7 +270,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 824 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1020 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -371,7 +371,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 823 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 903 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"
