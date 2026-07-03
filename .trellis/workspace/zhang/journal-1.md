@@ -1944,3 +1944,38 @@ Added low-sensitive Xunqiu health and compatibility API synthetic report, regene
 ### Next Steps
 
 - None - task complete
+
+
+## Session 47: Legal RAG demo access and quality report closure
+
+**Date**: 2026-07-03
+**Task**: Legal RAG demo access and quality report closure
+**Branch**: `main`
+
+### Summary
+
+Fixed Legal RAG hosted demo login guidance and quality/evaluation 500 fallback; synced BIAU Port project copy, assistant knowledge, observability spec, and archived the Trellis child task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9c7f427` | (see git log) |
+| `5e36469` | (see git log) |
+| `03dbf0e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
