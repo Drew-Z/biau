@@ -1,5 +1,10 @@
 import { chromium } from 'playwright'
-import { siteStatusTargets } from '../src/data/statusTargets.ts'
+import {
+  findReliabilityProjectForTarget,
+  getReliabilityAnchorId,
+  reliabilityProjects as staticReliabilityProjects,
+  siteStatusTargets,
+} from '../src/data/statusTargets.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -94,8 +99,25 @@ const legalStatusLink = statusPage.getByRole('link', { name: '打开入口' }).f
 const legalStatusHref = await legalStatusLink.getAttribute('href').catch(() => null)
 const legalStatusTarget = await legalStatusLink.getAttribute('target').catch(() => null)
 const legalStatusRel = await legalStatusLink.getAttribute('rel').catch(() => null)
+const detailStatusLinks = await statusPage.getByRole('link', { name: /^详细状态：/ }).count()
 if (statusCards !== expectedStatusCards) {
   failures.push(`/status targets: expected ${expectedStatusCards} homepage external targets, got ${statusCards}`)
+}
+if (detailStatusLinks !== expectedStatusCards) {
+  failures.push(`/status targets: expected ${expectedStatusCards} detail status links, got ${detailStatusLinks}`)
+}
+for (const target of siteStatusTargets) {
+  const detailProject = findReliabilityProjectForTarget(target, staticReliabilityProjects)
+  if (!detailProject) {
+    failures.push(`/status detail link: expected a reliability project for ${target.id}`)
+    continue
+  }
+  const expectedHref = `#${getReliabilityAnchorId(detailProject.id)}`
+  const detailLink = statusPage.getByRole('link', { name: `详细状态：${detailProject.title}` }).first()
+  const detailHref = await detailLink.getAttribute('href').catch(() => null)
+  if (detailHref !== expectedHref) {
+    failures.push(`/status detail link: expected ${target.id} to link to ${expectedHref}, got "${detailHref}"`)
+  }
 }
 if (reliabilityProjects < 6) {
   failures.push(`/status reliability: expected at least 6 project reliability groups, got ${reliabilityProjects}`)
@@ -115,6 +137,27 @@ if (legalStatusTarget !== '_blank') {
 if (legalStatusRel !== 'noopener noreferrer') {
   failures.push(`/status external link: expected rel noopener noreferrer, got "${legalStatusRel}"`)
 }
+const legalDetailProject = findReliabilityProjectForTarget(
+  siteStatusTargets.find((target) => target.id === 'legal-rag-entry') ?? siteStatusTargets[0],
+  staticReliabilityProjects,
+)
+const legalDetailHash = legalDetailProject ? `#${getReliabilityAnchorId(legalDetailProject.id)}` : '#reliability-legal-rag'
+await statusPage.getByRole('link', { name: `详细状态：${legalDetailProject?.title ?? 'Legal RAG 法律机器人'}` }).first().click()
+await statusPage
+  .waitForFunction((expectedHash) => window.location.hash === expectedHash, legalDetailHash, { timeout: 5000 })
+  .catch(() => failures.push(`/status detail link: expected hash ${legalDetailHash} after clicking Legal RAG detail link`))
+await statusPage
+  .waitForFunction(
+    (selector) => {
+      const section = document.querySelector(selector)
+      if (!section) return false
+      const rect = section.getBoundingClientRect()
+      return rect.bottom > 0 && rect.top < window.innerHeight * 0.75
+    },
+    legalDetailHash,
+    { timeout: 5000 },
+  )
+  .catch(() => failures.push('/status detail link: expected Legal RAG reliability section to be visible after detail jump'))
 await statusPage.close()
 
 const interactionPage = await browser.newPage({ viewport: viewports[0] })

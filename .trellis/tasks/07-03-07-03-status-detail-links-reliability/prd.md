@@ -17,11 +17,11 @@
 
 ## Acceptance Criteria
 
-- [ ] `/status` 入口卡片展示可定位详细状态的按钮或链接。
-- [ ] 点击/键盘激活详细状态后，页面定位到对应可靠性项目区域。
-- [ ] 可靠性观察区域的 planned / unchecked / online 语义清晰。
-- [ ] `npm.cmd run check:ui`、`npm.cmd run lint`、`npm.cmd run build` 通过。
-- [ ] `git diff --check` 和敏感扫描通过。
+- [x] `/status` 入口卡片展示可定位详细状态的按钮或链接。
+- [x] 点击/键盘激活详细状态后，页面定位到对应可靠性项目区域。
+- [x] 可靠性观察区域的 planned / unchecked / online 语义清晰。
+- [x] `npm.cmd run check:ui`、`npm.cmd run lint`、`npm.cmd run build` 通过。
+- [x] `git diff --check` 和敏感扫描通过。
 
 ## Notes
 

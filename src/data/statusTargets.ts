@@ -6,6 +6,8 @@ export type SiteStatusExpectation = 'public-entry' | 'login-gated' | 'static-sit
 export type ReliabilityLayer = 'entry' | 'synthetic' | 'metrics' | 'observability'
 export type ReliabilityStatus = 'online' | 'degraded' | 'offline' | 'unchecked' | 'planned'
 
+export const reliabilityStatusOrder = ['online', 'degraded', 'offline', 'unchecked', 'planned'] as const satisfies ReliabilityStatus[]
+
 export interface SiteStatusTarget {
   id: string
   projectId: string
@@ -39,6 +41,8 @@ export interface ReliabilityProject {
   gates: string[]
   nextActions: string[]
 }
+
+export type ReliabilityStatusCounts = Record<ReliabilityStatus, number> & { total: number }
 
 const targetMeta: Record<
   string,
@@ -342,6 +346,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
         evidence: '主站已有后续接入任务；未确认公开签名包前不放真实下载。',
         cadence: '展示页更新后',
         ownerHint: 'Pet showcase',
+        relatedTargetId: 'pet-workspace-entry',
       },
       {
         id: 'pet-apk-gate',
@@ -409,3 +414,35 @@ export const reliabilityProjects: ReliabilityProject[] = [
     nextActions: ['为 Playlab 增加静态资源 manifest 检查。', '把关键游戏详情纳入 UI 回归截图。'],
   },
 ]
+
+export function getReliabilityAnchorId(projectId: string) {
+  return `reliability-${projectId}`
+}
+
+export function getReliabilityProjectStatusCounts(project: Pick<ReliabilityProject, 'checks'>): ReliabilityStatusCounts {
+  const counts = reliabilityStatusOrder.reduce(
+    (summary, status) => {
+      summary[status] = 0
+      return summary
+    },
+    { total: 0 } as ReliabilityStatusCounts,
+  )
+
+  for (const check of project.checks) {
+    counts.total += 1
+    counts[check.status] += 1
+  }
+
+  return counts
+}
+
+export function findReliabilityProjectForTarget(
+  target: Pick<SiteStatusTarget, 'id' | 'projectId'>,
+  projects: ReliabilityProject[] = reliabilityProjects,
+) {
+  return (
+    projects.find((project) =>
+      project.checks.some((check) => check.relatedTargetId === target.id || check.id === target.id),
+    ) ?? projects.find((project) => project.id === target.projectId)
+  )
+}

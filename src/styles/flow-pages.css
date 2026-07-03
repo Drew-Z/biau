@@ -1021,6 +1021,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .status-targets {
+  scroll-margin-top: 112px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-16);
@@ -1227,17 +1228,27 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .status-reliability {
+  scroll-margin-top: 112px;
   display: grid;
   gap: var(--space-16);
 }
 
 .status-project {
+  scroll-margin-top: 112px;
   min-width: 0;
   padding: var(--space-24);
   display: grid;
   gap: var(--space-18, 18px);
   background: color-mix(in oklch, var(--panel) 58%, transparent);
   border-color: var(--flow-ui-card-border);
+}
+
+.status-project:target {
+  border-color: color-mix(in oklch, var(--amber) 42%, var(--flow-ui-card-border));
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 0 0 3px color-mix(in oklch, var(--amber) 16%, transparent),
+    0 24px 60px color-mix(in oklch, var(--amber) 12%, transparent);
 }
 
 .status-project__header {
@@ -1252,7 +1263,16 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   font-size: clamp(1.5rem, 3vw, 2rem);
 }
 
-.status-project__header > span {
+.status-project__header-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.status-project__header-tools > span,
+.status-project__header-tools > a {
   min-height: 30px;
   padding: 0 var(--space-10);
   display: inline-flex;
@@ -1264,6 +1284,75 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   white-space: nowrap;
   border: 1px solid var(--flow-ui-card-border);
   border-radius: var(--radius-pill);
+}
+
+.status-project__header-tools > a {
+  color: color-mix(in oklch, var(--blue) 72%, var(--ink));
+  text-decoration: none;
+  background: color-mix(in oklch, var(--blue) 8%, transparent);
+}
+
+.status-project__header-tools > a:hover {
+  border-color: color-mix(in oklch, var(--blue) 28%, var(--flow-ui-card-border));
+  transform: translateY(-1px);
+}
+
+.status-project__status-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin: 0;
+}
+
+.status-project__status-strip div {
+  min-height: 42px;
+  min-width: 94px;
+  padding: var(--space-8) var(--space-10);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-8);
+  align-items: center;
+  background: color-mix(in oklch, var(--panel-strong) 32%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+}
+
+.status-project__status-strip div.is-online {
+  border-color: color-mix(in oklch, var(--green) 24%, var(--flow-ui-card-border));
+}
+
+.status-project__status-strip div.is-degraded {
+  border-color: color-mix(in oklch, var(--amber) 28%, var(--flow-ui-card-border));
+}
+
+.status-project__status-strip div.is-offline {
+  border-color: color-mix(in oklch, var(--rose) 30%, var(--flow-ui-card-border));
+}
+
+.status-project__status-strip div.is-unchecked {
+  border-color: color-mix(in oklch, var(--blue) 24%, var(--flow-ui-card-border));
+}
+
+.status-project__status-strip div.is-planned {
+  border-color: color-mix(in oklch, var(--muted) 24%, var(--flow-ui-card-border));
+}
+
+.status-project__status-strip dt,
+.status-project__status-strip dd {
+  margin: 0;
+}
+
+.status-project__status-strip dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.status-project__status-strip dd {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 900;
 }
 
 .status-check-list {
@@ -1293,6 +1382,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .status-check.is-offline {
   border-color: color-mix(in oklch, var(--rose) 30%, var(--flow-ui-card-border));
+}
+
+.status-check.is-unchecked {
+  border-color: color-mix(in oklch, var(--blue) 24%, var(--flow-ui-card-border));
+}
+
+.status-check.is-planned {
+  border-color: color-mix(in oklch, var(--muted) 24%, var(--flow-ui-card-border));
 }
 
 .status-check__head {
@@ -1327,7 +1424,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .status-check__facts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-8);
   margin: 0;
 }
@@ -3443,6 +3540,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
   .status-project__header {
     display: grid;
+  }
+
+  .status-project__header-tools {
+    justify-content: flex-start;
+  }
+
+  .status-project__status-strip div {
+    flex: 1 1 130px;
   }
 
   .status-target__actions {

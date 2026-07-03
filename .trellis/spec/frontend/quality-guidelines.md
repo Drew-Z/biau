@@ -32,6 +32,11 @@ external targets, related projects, blog cards, or reliability groups, derive th
 expected value from the same public data source or generated manifest instead of
 hardcoding yesterday's number. This keeps tests useful when content grows.
 
+For `/status`, entry-card detail links and reliability project anchors should be
+derived through shared helpers in `src/data/statusTargets.ts`. UI checks should
+assert the link count and hash target from the same helper instead of duplicating
+project ids or fixed counts in Playwright code.
+
 ## Review Priorities
 
 - Preserve the product website / solution showcase voice.

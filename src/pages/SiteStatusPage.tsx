@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { IconExternalOpen, IconLink } from '@douyinfe/semi-icons'
+import { IconExternalOpen, IconLink, IconListView } from '@douyinfe/semi-icons'
 import {
   SITE_STATUS_BASE_URL,
+  findReliabilityProjectForTarget,
+  getReliabilityAnchorId,
+  getReliabilityProjectStatusCounts,
   reliabilityProjects,
+  reliabilityStatusOrder,
   siteStatusTargets,
   type ReliabilityLayer,
   type ReliabilityProject,
+  type ReliabilityStatus,
   type SiteStatusTarget,
 } from '../data/statusTargets'
 
-type SiteStatusValue = 'online' | 'degraded' | 'offline' | 'unchecked' | 'planned'
-type EntryStatusValue = Exclude<SiteStatusValue, 'planned'>
+type EntryStatusValue = Exclude<ReliabilityStatus, 'planned'>
 
 interface SiteStatusCheck extends SiteStatusTarget {
   status: EntryStatusValue
@@ -39,7 +43,7 @@ interface SiteStatusPayload {
   reliabilityProjects?: ReliabilityProject[]
 }
 
-const statusMeta: Record<SiteStatusValue, { label: string; tone: string; hint: string }> = {
+const statusMeta: Record<ReliabilityStatus, { label: string; tone: string; hint: string }> = {
   online: { label: '可用', tone: 'online', hint: '公开入口已响应' },
   degraded: { label: '受限', tone: 'degraded', hint: '入口响应但可能需要登录、重试或人工说明' },
   offline: { label: '异常', tone: 'offline', hint: '最近一次检测未能确认入口可达' },
@@ -180,7 +184,7 @@ export function SiteStatusPage() {
         summary[check.status] += 1
         return summary
       },
-      { total: 0, online: 0, degraded: 0, offline: 0, unchecked: 0, planned: 0 } as Record<SiteStatusValue | 'total', number>,
+      { total: 0, online: 0, degraded: 0, offline: 0, unchecked: 0, planned: 0 } as Record<ReliabilityStatus | 'total', number>,
     )
   }, [status.reliabilityProjects])
 
@@ -246,9 +250,11 @@ export function SiteStatusPage() {
         })}
       </section>
 
-      <section className="status-targets" aria-label="主页外链检测结果">
+      <section id="status-targets" className="status-targets" aria-label="主页外链检测结果">
         {status.targets.map((target) => {
           const meta = statusMeta[target.status]
+          const detailProject = findReliabilityProjectForTarget(target, status.reliabilityProjects ?? [])
+          const detailHref = detailProject ? `#${getReliabilityAnchorId(detailProject.id)}` : '#status-reliability'
           return (
             <article key={target.id} className={`status-target glass-card is-${meta.tone}`}>
               <div className="status-target__main">
@@ -279,6 +285,14 @@ export function SiteStatusPage() {
               <p className="status-target__note is-soft">{target.note}</p>
 
               <div className="status-target__actions">
+                <a
+                  className="btn status-target__detail-link"
+                  href={detailHref}
+                  aria-label={`详细状态：${detailProject?.title ?? target.label}`}
+                >
+                  <IconListView aria-hidden />
+                  <span>详细状态</span>
+                </a>
                 <Link to={`/projects/${target.projectId}`} className="btn">
                   <IconLink aria-hidden />
                   <span>项目详情</span>
@@ -293,66 +307,93 @@ export function SiteStatusPage() {
         })}
       </section>
 
-      <section className="status-reliability" aria-label="项目可靠性检查基线">
-        {status.reliabilityProjects?.map((project) => (
-          <article key={project.id} className="status-project glass-card">
-            <div className="status-project__header">
-              <div>
-                <p className="section-subtitle">{projectCategoryLabels[project.category]}</p>
-                <h2>{project.title}</h2>
+      <section id="status-reliability" className="status-reliability" aria-label="项目可靠性检查基线">
+        {status.reliabilityProjects?.map((project) => {
+          const projectCounts = getReliabilityProjectStatusCounts(project)
+          const visibleStatuses = reliabilityStatusOrder.filter((statusKey) => projectCounts[statusKey] > 0)
+          return (
+            <article
+              key={project.id}
+              id={getReliabilityAnchorId(project.id)}
+              className="status-project glass-card"
+              aria-labelledby={`${getReliabilityAnchorId(project.id)}-title`}
+            >
+              <div className="status-project__header">
+                <div>
+                  <p className="section-subtitle">{projectCategoryLabels[project.category]}</p>
+                  <h2 id={`${getReliabilityAnchorId(project.id)}-title`}>{project.title}</h2>
+                </div>
+                <div className="status-project__header-tools">
+                  <span>{project.checks.length} checks</span>
+                  <a href="#status-targets">入口卡片</a>
+                </div>
               </div>
-              <span>{project.checks.length} checks</span>
-            </div>
-            <p className="status-project__summary">{project.summary}</p>
-
-            <div className="status-check-list">
-              {project.checks.map((check) => {
-                const meta = statusMeta[check.status]
-                const layer = layerLabels[check.layer]
-                return (
-                  <section key={check.id} className={`status-check is-${meta.tone}`}>
-                    <div className="status-check__head">
-                      <span className={`status-badge is-${meta.tone}`}>{meta.label}</span>
-                      <span className="status-layer-chip">{layer.code}</span>
-                      <h3>{check.label}</h3>
+              <p className="status-project__summary">{project.summary}</p>
+              <dl className="status-project__status-strip" aria-label={`${project.title} 状态分布`}>
+                {visibleStatuses.map((statusKey) => {
+                  const meta = statusMeta[statusKey]
+                  return (
+                    <div key={statusKey} className={`is-${meta.tone}`}>
+                      <dt>{meta.label}</dt>
+                      <dd>{projectCounts[statusKey]}</dd>
                     </div>
-                    <p>{check.description}</p>
-                    <dl className="status-check__facts">
-                      <div>
-                        <dt>层级</dt>
-                        <dd>{layer.title}</dd>
-                      </div>
-                      <div>
-                        <dt>频率</dt>
-                        <dd>{check.cadence}</dd>
-                      </div>
-                      <div>
-                        <dt>接入点</dt>
-                        <dd>{check.ownerHint}</dd>
-                      </div>
-                    </dl>
-                    <p className="status-target__note is-soft">{check.evidence}</p>
-                  </section>
-                )
-              })}
-            </div>
+                  )
+                })}
+              </dl>
 
-            <div className="status-project__footer">
-              <div>
-                <h3>人工 gate</h3>
-                {project.gates.map((gate) => (
-                  <p key={gate}>{gate}</p>
-                ))}
+              <div className="status-check-list">
+                {project.checks.map((check) => {
+                  const meta = statusMeta[check.status]
+                  const layer = layerLabels[check.layer]
+                  return (
+                    <section key={check.id} className={`status-check is-${meta.tone}`}>
+                      <div className="status-check__head">
+                        <span className={`status-badge is-${meta.tone}`}>{meta.label}</span>
+                        <span className="status-layer-chip">{layer.code}</span>
+                        <h3>{check.label}</h3>
+                      </div>
+                      <p>{check.description}</p>
+                      <dl className="status-check__facts">
+                        <div>
+                          <dt>层级</dt>
+                          <dd>{layer.title}</dd>
+                        </div>
+                        <div>
+                          <dt>频率</dt>
+                          <dd>{check.cadence}</dd>
+                        </div>
+                        <div>
+                          <dt>接入点</dt>
+                          <dd>{check.ownerHint}</dd>
+                        </div>
+                        <div>
+                          <dt>状态语义</dt>
+                          <dd>{meta.hint}</dd>
+                        </div>
+                      </dl>
+                      <p className="status-target__note is-soft">{check.evidence}</p>
+                    </section>
+                  )
+                })}
               </div>
-              <div>
-                <h3>后续接入</h3>
-                {project.nextActions.map((action) => (
-                  <p key={action}>{action}</p>
-                ))}
+
+              <div className="status-project__footer">
+                <div>
+                  <h3>人工 gate</h3>
+                  {project.gates.map((gate) => (
+                    <p key={gate}>{gate}</p>
+                  ))}
+                </div>
+                <div>
+                  <h3>后续接入</h3>
+                  {project.nextActions.map((action) => (
+                    <p key={action}>{action}</p>
+                  ))}
+                </div>
               </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          )
+        })}
       </section>
     </main>
   )

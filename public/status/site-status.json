@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-03T03:37:46.220Z",
+  "checkedAt": "2026-07-03T04:28:37.245Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台有登录门禁；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 978,
-      "checkedAt": "2026-07-03T03:37:46.245Z",
+      "durationMs": 836,
+      "checkedAt": "2026-07-03T04:28:37.251Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "入口可达代表展示页和截图可访问；正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1027,
-      "checkedAt": "2026-07-03T03:37:47.223Z",
+      "durationMs": 814,
+      "checkedAt": "2026-07-03T04:28:38.087Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "生产注册与演示账号属于人工 gate；状态页只检查公开入口是否响应。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1208,
-      "checkedAt": "2026-07-03T03:37:48.250Z",
+      "durationMs": 1876,
+      "checkedAt": "2026-07-03T04:28:38.901Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 946,
-      "checkedAt": "2026-07-03T03:37:49.458Z",
+      "durationMs": 757,
+      "checkedAt": "2026-07-03T04:28:40.777Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -90,8 +90,8 @@
       "note": "阶段 APK 是否公开发布仍需人工确认；这里只检查展示页入口。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1028,
-      "checkedAt": "2026-07-03T03:37:50.404Z",
+      "durationMs": 1568,
+      "checkedAt": "2026-07-03T04:28:41.534Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -154,7 +154,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 978 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 836 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -221,7 +221,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1208 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1876 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -288,7 +288,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1028 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1568 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -346,7 +346,8 @@
           "description": "检查 Pet App 静态展示页、截图和当前工作说明是否可访问。",
           "evidence": "最近一次 synthetic 检查：Pet App showcase page and 4/4 screenshots returned expected responses。主站已有后续接入任务；未确认公开签名包前不放真实下载。",
           "cadence": "展示页更新后",
-          "ownerHint": "Pet showcase"
+          "ownerHint": "Pet showcase",
+          "relatedTargetId": "pet-workspace-entry"
         },
         {
           "id": "pet-apk-gate",
@@ -389,7 +390,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 946 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 757 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"
