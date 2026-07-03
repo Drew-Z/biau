@@ -193,7 +193,10 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: ['公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章或状态页。'],
-    nextActions: ['新增只使用公开安全样本的 Legal RAG synthetic 脚本。', '把合同审查 smoke 结果持久化为低敏 JSON。'],
+    nextActions: [
+      '配置 `LEGAL_RAG_API_BASE_URL` 后启用 health live check。',
+      '准备可回收 demo 凭据后启用问答、合同审查和质量面板 synthetic check。',
+    ],
   },
   {
     id: 'ozon-erp',

@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -31,7 +31,18 @@ interface Summary {
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputPath = resolve(repoRoot, 'public/status/site-status.json')
+const legalRagSyntheticPath = resolve(repoRoot, 'public/status/legal-rag-synthetic.json')
 const DEFAULT_TIMEOUT_MS = 12_000
+
+interface SyntheticCheckResult {
+  id: string
+  status: GeneratedStatus
+  httpStatus: number
+  durationMs: number
+  checkedAt: string
+  summary: string
+  issues: string[]
+}
 
 function parseArgs(argv: string[]) {
   const args = {
@@ -123,11 +134,61 @@ function summarize(results: CheckResult[]): Summary {
   )
 }
 
-function mergeReliabilityProjects(targets: CheckResult[]): ReliabilityProject[] {
+function isGeneratedStatus(value: unknown): value is GeneratedStatus {
+  return value === 'online' || value === 'degraded' || value === 'offline' || value === 'unchecked'
+}
+
+function normalizeSyntheticCheck(value: unknown): SyntheticCheckResult | null {
+  if (!value || typeof value !== 'object') return null
+  const record = value as Record<string, unknown>
+  if (typeof record.id !== 'string' || !isGeneratedStatus(record.status)) return null
+  return {
+    id: record.id,
+    status: record.status,
+    httpStatus: typeof record.httpStatus === 'number' ? record.httpStatus : 0,
+    durationMs: typeof record.durationMs === 'number' ? record.durationMs : 0,
+    checkedAt: typeof record.checkedAt === 'string' ? record.checkedAt : '',
+    summary: typeof record.summary === 'string' ? record.summary : 'synthetic check result available',
+    issues: Array.isArray(record.issues) ? record.issues.filter((item): item is string => typeof item === 'string') : [],
+  }
+}
+
+async function loadLegalRagSyntheticChecks(): Promise<Map<string, SyntheticCheckResult>> {
+  try {
+    const payload = JSON.parse(await readFile(legalRagSyntheticPath, 'utf8')) as unknown
+    if (!payload || typeof payload !== 'object') return new Map()
+    const checks = (payload as { checks?: unknown }).checks
+    if (!Array.isArray(checks)) return new Map()
+    return new Map(
+      checks
+        .map(normalizeSyntheticCheck)
+        .filter((check): check is SyntheticCheckResult => Boolean(check))
+        .map((check) => [check.id, check]),
+    )
+  } catch {
+    return new Map()
+  }
+}
+
+function mergeReliabilityProjects(
+  targets: CheckResult[],
+  syntheticChecks: Map<string, SyntheticCheckResult>,
+): ReliabilityProject[] {
   const targetStatus = new Map(targets.map((target) => [target.id, target]))
   return reliabilityProjects.map((project) => ({
     ...project,
     checks: project.checks.map((check) => {
+      const synthetic = syntheticChecks.get(check.id)
+      if (synthetic) {
+        const issue = synthetic.issues[0]
+        return {
+          ...check,
+          status: synthetic.status,
+          evidence: issue
+            ? `最近一次 synthetic 检查：${synthetic.summary}；${issue}。${check.evidence}`
+            : `最近一次 synthetic 检查：${synthetic.summary}。${check.evidence}`,
+        }
+      }
       if (!check.relatedTargetId) return check
       const target = targetStatus.get(check.relatedTargetId)
       if (!target) return check
@@ -164,6 +225,7 @@ async function main() {
   const args = parseArgs(process.argv.slice(2))
   const checkedAt = new Date().toISOString()
   const targets = []
+  const syntheticChecks = await loadLegalRagSyntheticChecks()
 
   for (const target of siteStatusTargets) {
     targets.push(await checkTarget(target, args.timeoutMs))
@@ -176,7 +238,7 @@ async function main() {
     ok: summary.offline === 0,
     summary,
     targets,
-    reliabilityProjects: mergeReliabilityProjects(targets),
+    reliabilityProjects: mergeReliabilityProjects(targets, syntheticChecks),
   }
 
   await mkdir(dirname(outputPath), { recursive: true })

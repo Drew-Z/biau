@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-07-03T00:11:28.215Z",
+  "apiBaseConfigured": false,
+  "hasCredentials": false,
+  "ok": true,
+  "checks": [
+    {
+      "id": "legal-rag-health",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:11:28.216Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "issues": []
+    },
+    {
+      "id": "legal-rag-qa",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:11:28.216Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "issues": []
+    },
+    {
+      "id": "legal-rag-contract-review",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:11:28.216Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "issues": []
+    },
+    {
+      "id": "legal-rag-observability",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-03T00:11:28.216Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "issues": []
+    }
+  ]
+}
