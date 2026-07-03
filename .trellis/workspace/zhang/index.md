@@ -7,8 +7,8 @@
 ## Current Status
 
 <!-- @@@auto:current-status -->
-- **Active File**: `journal-1.md`
-- **Total Sessions**: 47
+- **Active File**: `journal-2.md`
+- **Total Sessions**: 48
 - **Last Active**: 2026-07-03
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,8 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1981 | Active |
+| `journal-2.md` | ~41 | Active |
+| `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 48 | 2026-07-03 | Cross-site brand/status sync | `8193ae9`, `da022e2` | `main` |
 | 47 | 2026-07-03 | Legal RAG demo access and quality report closure | `9c7f427`, `5e36469`, `03dbf0e` | `main` |
 | 46 | 2026-07-03 | Xunqiu synthetic status check | `5e6bc10`, `a7421dd` | `main` |
 | 45 | 2026-07-03 | ERP synthetic status check | `fb50c59`, `17a02eb`, `4b08a33` | `main` |
