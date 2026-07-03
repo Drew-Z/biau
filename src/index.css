@@ -1,7 +1,6 @@
 @import './styles/theme.css';
 @import './styles/animations.css';
 @import './styles/gradients.css';
-@import './styles/hero-reference.css';
 @import './styles/light-theme.css';
 @import './styles/hero-split.css';
 @import './styles/navigation.css';
@@ -53,7 +52,6 @@ input:focus-visible,
 }
 
 /* Ensure content is above background */
-.hero-fullscreen,
 .page-section,
 .navigation-minimal {
   position: relative;
@@ -134,81 +132,6 @@ input:focus-visible,
   color: var(--accent-blue);
   border-color: var(--border-accent);
   background: rgba(102, 126, 234, 0.1);
-}
-
-/* Hero Styles */
-.hero {
-  min-height: 90vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-}
-
-.hero-container {
-  max-width: 1400px;
-  width: 100%;
-}
-
-.hero-title {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.hero-main-title {
-  font-size: 4rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  letter-spacing: -0.02em;
-}
-
-.hero-subtitle {
-  font-size: 1.25rem;
-  font-family: var(--font-mono);
-  color: var(--text-tertiary);
-  letter-spacing: 0.3em;
-  margin: 0;
-}
-
-.hero-projects {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin-top: 4rem;
-}
-
-.hero-card .card-content {
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  height: 100%;
-}
-
-.card-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-  color: var(--text-primary);
-}
-
-.card-description {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0;
-  flex-grow: 1;
-}
-
-.card-poetry {
-  font-size: 0.875rem;
-  color: var(--text-tertiary);
-  font-style: italic;
-  margin: 0;
-  padding: 0.75rem;
-  background: rgba(102, 126, 234, 0.05);
-  border-left: 2px solid var(--accent-blue);
-  border-radius: 4px;
 }
 
 /* Project Card Styles */
@@ -479,14 +402,6 @@ input:focus-visible,
 
 /* Responsive */
 @media (max-width: 768px) {
-  .hero-main-title {
-    font-size: 2.5rem;
-  }
-  
-  .hero-projects {
-    grid-template-columns: 1fr;
-  }
-  
   .projects-grid,
   .blogs-grid {
     grid-template-columns: 1fr;
