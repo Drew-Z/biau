@@ -16,8 +16,10 @@
 
 - [ ] Review public assistant frontier RAG artifacts.
 - [ ] Review cross-project release readiness tree.
+- [ ] Run a discovery sweep across main site data/routes and related project references.
 - [ ] Identify which child tasks can proceed without manual actions.
 - [ ] Identify which child tasks are blocked by manual actions.
+- [ ] Create or update child tasks for discovered gaps with independent deliverables.
 - [ ] Update `manual-actions.md`.
 
 ## Phase 3: Continuous Autonomous Work Loop
@@ -26,13 +28,25 @@ Repeat while the user is away and context/time allows:
 
 1. Check `git status --short`.
 2. Check Trellis active tasks.
-3. Pick the highest-value unblocked child task.
-4. Load relevant specs before editing.
-5. Implement in a small, verifiable slice.
-6. Run local validation.
-7. Update task artifacts and specs if a reusable rule was learned.
-8. Commit and push on `main` when checks pass and the project rules allow it.
-9. Record any manual action encountered.
+3. Run a discovery sweep when no obvious in-progress child is available.
+4. Pick the highest-value unblocked child task or create/update one for a newly found gap.
+5. Load relevant specs before editing.
+6. Implement in a small, verifiable slice.
+7. Run local validation.
+8. Update task artifacts and specs if a reusable rule was learned.
+9. Commit and push on `main` when checks pass and the project rules allow it.
+10. Record any manual action encountered.
+
+## Discovery Sweep Checklist
+
+- [ ] Compare homepage/project cards with `src/data/portfolio.ts`.
+- [ ] Compare project detail content with assistant knowledge projections.
+- [ ] Compare status targets/checks with project external links and detail pages.
+- [ ] Inspect blog curation for project-related gaps or stale references.
+- [ ] Inspect public assistant suggestions and retrieval coverage.
+- [ ] Review related repo paths only as needed for evidence, not for broad unrelated refactors.
+- [ ] Record manual blockers in `manual-actions.md`.
+- [ ] Create child tasks for gaps that need separate planning/validation.
 
 ## Recommended First Autonomous Work Items
 

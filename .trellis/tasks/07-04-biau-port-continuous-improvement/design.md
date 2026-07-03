@@ -2,7 +2,7 @@
 
 ## Role Of This Parent Task
 
-This task is a coordination layer. It exists to keep long-running improvement work coherent across multiple child tasks and project areas. It should not absorb implementation detail that belongs in a specific child task.
+This task is a coordination and discovery layer. It exists to keep long-running improvement work coherent across multiple child tasks and project areas, and to actively find gaps in the current project plus related projects. It should not absorb implementation detail that belongs in a specific child task.
 
 ## Task Tree Model
 
@@ -19,24 +19,51 @@ BIAU Port continuous improvement master plan
 
 Future child tasks should be added when a discovery has its own deliverable and validation boundary.
 
+## Discovery Surface
+
+The parent task should actively inspect the following surfaces:
+
+- Main site routes, homepage cards, project pages, assistant, blog, status pages, sitemap, and generated public knowledge.
+- Existing Trellis tasks and manual action queue.
+- Related repositories when their behavior affects public presentation:
+  - `D:\workspace4Codex\xunqiu`
+  - `D:\workspace4Codex\xunqiu-backend-modern`
+  - `D:\workspace4Cursor\erp`
+  - `D:\workspace4Cursor\game`
+  - `D:\workspace4Cursor\legal-rag`
+  - `D:\workspace4Cursor\pet`
+
+Discovery questions:
+
+- Does the public site accurately represent each project?
+- Are project cards, project details, assistant knowledge, status pages and blog references consistent?
+- Are demo routes usable or clearly gated?
+- Are status checks meaningful and linked to details?
+- Are public claims backed by visible code/data evidence?
+- Is there a local validation path?
+- Does the gap require user/cloud/manual action?
+
 ## Work Selection Algorithm
 
 When continuing autonomously:
 
 1. Prefer already-started `in_progress` child tasks.
-2. If no child is in progress, inspect planning child tasks and choose the one with:
+2. If no child is in progress, run a discovery sweep across the main site and related projects.
+3. Inspect planning child tasks and choose the one with:
    - highest user-visible impact;
    - least dependency on manual secrets/deployment actions;
    - clear local validation path;
    - low risk of broad unrelated churn.
-3. If all active children are blocked on manual action, create or update a planning child task for the next unblocked improvement.
-4. Record the blocker in `manual-actions.md` and keep moving on unrelated unblocked work.
+4. If a new gap has an independent deliverable, create or update a child task for it.
+5. If all active children are blocked on manual action, create or update a planning child task for the next unblocked improvement.
+6. Record the blocker in `manual-actions.md` and keep moving on unrelated unblocked work.
 
 ## Child Task Creation Rules
 
 Create a child task when the work:
 
 - spans multiple files or systems;
+- touches a related project repository and the main site needs to reflect it;
 - needs design decisions;
 - involves deployment or external service contracts;
 - has manual gates;
