@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-03T02:54:39.393Z",
+  "checkedAt": "2026-07-03T03:14:10.354Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -19,11 +19,11 @@
       "kind": "workbench",
       "expectation": "login-gated",
       "description": "法律 RAG 与合同审查演示工作台入口。",
-      "note": "工作台可能有登录门禁或 Render 冷启动；入口可达不代表公开凭据已开放。",
+      "note": "工作台有登录门禁；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 837,
-      "checkedAt": "2026-07-03T02:54:39.400Z",
+      "durationMs": 817,
+      "checkedAt": "2026-07-03T03:14:10.362Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "生产注册与演示账号属于人工 gate；状态页只检查公开入口是否响应。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1357,
-      "checkedAt": "2026-07-03T02:54:40.237Z",
+      "durationMs": 1121,
+      "checkedAt": "2026-07-03T03:14:11.180Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1065,
-      "checkedAt": "2026-07-03T02:54:41.594Z",
+      "durationMs": 2379,
+      "checkedAt": "2026-07-03T03:14:12.301Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "阶段 APK 是否公开发布仍需人工确认；这里只检查展示页入口。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 836,
-      "checkedAt": "2026-07-03T02:54:42.659Z",
+      "durationMs": 835,
+      "checkedAt": "2026-07-03T03:14:14.681Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -137,7 +137,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 837 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 817 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -184,11 +184,12 @@
         }
       ],
       "gates": [
-        "公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章或状态页。"
+        "公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章、项目页或状态页。",
+        "Web 登录页只有在部署环境配置 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 后才会展示公开演示凭据。"
       ],
       "nextActions": [
         "配置 `LEGAL_RAG_API_BASE_URL` 后启用 health live check。",
-        "准备可回收 demo 凭据后启用问答、合同审查和质量面板 synthetic check。"
+        "准备可回收 demo 凭据后，同步 API 侧登录校验密码和 Web 侧公开演示提示，再启用问答、合同审查和质量面板 synthetic check。"
       ]
     },
     {
@@ -203,7 +204,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1357 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1121 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -270,7 +271,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 836 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 835 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -371,7 +372,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1065 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2379 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

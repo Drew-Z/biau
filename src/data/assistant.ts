@@ -104,6 +104,11 @@ const SEARCH_KEYWORDS = [
   'godot',
   '试玩',
   '部署',
+  '入口',
+  '演示',
+  '登录',
+  '密码',
+  '凭据',
   'playlab',
   'biau',
   'pet',
@@ -134,6 +139,10 @@ const SEARCH_ALIASES = [
   {
     triggers: ['rag', '知识库', '合同审查', '合同', '法律'],
     terms: ['legal rag', '引用溯源', '合同审查', '风险审查'],
+  },
+  {
+    triggers: ['登录', '密码', '凭据', '演示', '入口', 'demo', 'login'],
+    terms: ['legal rag', '登录门禁', '公开演示凭据', '受控演示', 'demo 凭据'],
   },
   {
     triggers: ['游戏', '互动体验', '试玩', 'godot', 'playlab'],

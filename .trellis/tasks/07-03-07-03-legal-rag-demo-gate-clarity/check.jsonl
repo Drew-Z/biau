@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Required lint/build gates and public data safety scan."}
+{"file":".trellis/spec/backend/observability-guidelines.md","reason":"Legal RAG demo credentials and public status data must remain low-sensitive."}

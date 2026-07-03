@@ -49,7 +49,7 @@ const targetMeta: Record<
     kind: 'workbench',
     expectation: 'login-gated',
     description: '法律 RAG 与合同审查演示工作台入口。',
-    note: '工作台可能有登录门禁或 Render 冷启动；入口可达不代表公开凭据已开放。',
+    note: '工作台有登录门禁；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。',
   },
   'ozon-erp': {
     label: 'Ozon ERP 演示入口',
@@ -192,10 +192,13 @@ export const reliabilityProjects: ReliabilityProject[] = [
         ownerHint: 'Grafana/LLM tracing',
       },
     ],
-    gates: ['公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章或状态页。'],
+    gates: [
+      '公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章、项目页或状态页。',
+      'Web 登录页只有在部署环境配置 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 后才会展示公开演示凭据。',
+    ],
     nextActions: [
       '配置 `LEGAL_RAG_API_BASE_URL` 后启用 health live check。',
-      '准备可回收 demo 凭据后启用问答、合同审查和质量面板 synthetic check。',
+      '准备可回收 demo 凭据后，同步 API 侧登录校验密码和 Web 侧公开演示提示，再启用问答、合同审查和质量面板 synthetic check。',
     ],
   },
   {
