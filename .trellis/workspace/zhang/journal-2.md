@@ -140,3 +140,37 @@ Audited public BIAU Port brand surfaces across main site, ERP, Legal RAG, Playla
 ### Next Steps
 
 - None - task complete
+
+
+## Session 52: Public assistant GLM deploy gate closure
+
+**Date**: 2026-07-04
+**Task**: Public assistant GLM deploy gate closure
+**Branch**: `main`
+
+### Summary
+
+Recorded public assistant live deployment blocker, verified local Cloudflare Function smoke/lint/build, captured Pages Functions diagnostics in backend specs, and archived the GLM live-closure task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9544142` | (see git log) |
+| `1f8f4f1` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
