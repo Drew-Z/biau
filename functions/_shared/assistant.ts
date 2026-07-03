@@ -1,4 +1,4 @@
-import publicKnowledgeData from '../../server/data/public-knowledge.json' with { type: 'json' }
+import publicKnowledgeData from '../../server/data/public-knowledge.json'
 
 export type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
 export type AssistantVisibility = 'public' | 'internal'
