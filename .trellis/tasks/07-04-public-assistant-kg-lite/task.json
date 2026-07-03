@@ -7,7 +7,7 @@
   "dev_type": null,
   "scope": null,
   "package": null,
-  "priority": "P2",
+  "priority": "P1",
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-07-04",
@@ -21,6 +21,6 @@
   "children": [],
   "parent": "07-04-biau-port-continuous-improvement",
   "relatedFiles": [],
-  "notes": "",
+  "notes": "Current user priority: finish the public assistant local MVP first; keep production model/RAG/deployment validation behind manual gates.",
   "meta": {}
 }

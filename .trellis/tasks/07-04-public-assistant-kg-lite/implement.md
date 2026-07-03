@@ -92,12 +92,14 @@ npm.cmd run build
   adding a new generated graph/knowledge artifact.
 - Ensure the generated V2 artifact contains no secrets, private URLs, raw env
   values, or system prompt text.
+- Add a package script `assistant:kg-check` that runs a deterministic assertion
+  script, recommended path `scripts/check-assistant-knowledge-v2.ts`.
 
 Validation:
 
 ```powershell
 npm.cmd run assistant:index
-npx.cmd tsx <targeted export assertion script>
+npm.cmd run assistant:kg-check
 npm.cmd run lint
 npm.cmd run build
 ```
@@ -124,7 +126,7 @@ npm.cmd run build
 Validation:
 
 ```powershell
-npx.cmd tsx <targeted retrieval assertion script>
+npm.cmd run assistant:kg-check
 npm.cmd run cf-assistant:smoke
 npm.cmd run server:smoke
 npm.cmd run lint
@@ -234,7 +236,7 @@ Run before commit:
 
 ```powershell
 npm.cmd run assistant:index
-npx.cmd tsx <targeted export/retrieval assertion script>
+npm.cmd run assistant:kg-check
 npm.cmd run cf-assistant:smoke
 npm.cmd run server:smoke
 npm.cmd run server:build
