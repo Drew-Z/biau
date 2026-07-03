@@ -2,7 +2,7 @@ import type { BlogPostSummary } from '../data/blogShared'
 import type { Project } from '../data/portfolio'
 
 export const SITE_URL = 'https://biau.playlab.eu.cc'
-export const SITE_NAME = 'BIAU Port'
+export const SITE_NAME = 'BIAU Port / 泊岸'
 export const DEFAULT_TITLE = 'BIAU Port 泊岸 | AI 应用、项目展示与知识库'
 export const DEFAULT_DESCRIPTION =
   'BIAU Port 泊岸用 React、Vite 与 Semi Design 组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。'

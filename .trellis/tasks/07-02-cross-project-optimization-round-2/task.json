@@ -83,7 +83,8 @@
     "07-03-07-03-pet-showcase-apk-public-release-gate",
     "07-03-07-03-status-detail-dedicated-routes",
     "07-03-07-03-main-site-cross-project-status-sync",
-    "07-03-07-03-home-hero-legacy-cleanup"
+    "07-03-07-03-home-hero-legacy-cleanup",
+    "07-03-07-03-cross-site-icon-name-unification"
   ],
   "parent": null,
   "relatedFiles": [],
