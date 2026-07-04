@@ -17,11 +17,33 @@ export type ProjectDetailContentKey =
   | 'limitations'
   | 'roadmap'
 
+export type ProjectVisualBlockType =
+  | 'screenshot'
+  | 'architecture'
+  | 'workflow'
+  | 'data-flow'
+  | 'status'
+  | 'release'
+  | 'diagram'
+
+export interface ProjectVisualBlock {
+  id: string
+  type: ProjectVisualBlockType
+  title: string
+  description: string
+  image?: string
+  alt?: string
+  caption?: string
+  sourceLabel?: string
+  sourceUrl?: string
+}
+
 export interface ProjectDetailSection {
   title: string
   body?: string
   items?: string[]
   links?: ProjectLink[]
+  visual?: ProjectVisualBlock
 }
 
 export type ProjectDetailContent = Partial<Record<ProjectDetailContentKey, ProjectDetailSection[]>>
@@ -111,6 +133,15 @@ export const projects: Project[] = [
           title: '从“问答机器人”推进到可演示工作台',
           body:
             'Legal RAG 的重点不是把合同丢给模型后返回一段结论，而是把文档入库、检索、引用、诊断、合同风险项和质量评测组织成一个可操作的工作台。访客可以看到知识库、问答、审查结果和质量面板，理解 AI 结论来自哪些片段以及系统为什么选择回答或拒答。',
+          visual: {
+            id: 'legal-rag-knowledge-ui',
+            type: 'screenshot',
+            title: '知识库工作台截图',
+            description: '用真实工作台截图说明项目不是单轮聊天框，而是包含知识库、问答和诊断面的法律 RAG 工作区。',
+            image: '/images/projects/showcase/legal-rag-knowledge.png',
+            alt: 'Legal RAG 知识库工作台界面截图',
+            caption: '公开展示截图，不包含真实账号、密钥或私有后台地址。',
+          },
         },
         {
           title: '公开演示只使用安全材料',
@@ -139,6 +170,14 @@ export const projects: Project[] = [
             '切到合同审查，使用示例合同查看风险条款、风险等级、修改建议、引用和导出边界。',
             '最后打开质量面板，核对模型/向量库运行态、知识库规模、RAG citation/refusal 评测、合同审查召回、readiness checks、趋势和审计日志。',
           ],
+          visual: {
+            id: 'legal-rag-demo-flow',
+            type: 'workflow',
+            title: '公开演示流程',
+            description: '从登录门禁、数据集初始化、引用问答到合同审查和质量面板的访客演示路径。',
+            image: '/images/projects/showcase/legal-rag-flow.svg',
+            alt: 'Legal RAG 公开演示流程图',
+          },
         },
         {
           title: '知识库与问答链路',
@@ -178,6 +217,14 @@ export const projects: Project[] = [
           title: '评测与质量面板',
           body:
             '仓库中保留 RAG 问答和合同审查的 eval fixtures，API 也提供 quality 与 evaluation 报告路由。页面中的质量面板用于展示检索命中、引用、结构化审查等维度，让调整 chunk、召回、rerank 或提示词时有可对比的基线。',
+          visual: {
+            id: 'legal-rag-quality-boundary',
+            type: 'status',
+            title: '质量报告边界',
+            description: '用质量报告示意图区分公开可展示的评测信息和不能进入公开页面的私有配置。',
+            image: '/images/projects/showcase/legal-rag-report-boundary.svg',
+            alt: 'Legal RAG 质量报告与公开边界示意图',
+          },
         },
         {
           title: '演示健康检查',
@@ -269,6 +316,16 @@ export const projects: Project[] = [
           title: '新增 App 展示与下载状态页',
           body:
             '当前已经在主站补充 /pet-app-showcase/ 独立静态展示页，用真实 Android 模拟器截图呈现桌宠模式、孵化桌宠、社区和个人页。页面标题、favicon 和入口文案已接入 BIAU Port / 泊岸统一品牌；APK 区域明确标注待正式签名包，记录 debug 构建只用于内部验证，不提供占位下载链接，也不把 debug 包包装成公开发布包。',
+          visual: {
+            id: 'pet-android-app-showcase',
+            type: 'screenshot',
+            title: 'Android App 展示截图',
+            description: '展示桌宠模式首页，让访客先看到当前 App 工作状态，再理解 APK 发布门禁。',
+            image: '/images/projects/showcase/android-main.png',
+            alt: 'Gamer Pet App 桌宠模式首页截图',
+            sourceLabel: '打开 App 展示页',
+            sourceUrl: '/pet-app-showcase/',
+          },
         },
         {
           title: 'APK 发布门禁最新结论',
@@ -294,6 +351,14 @@ export const projects: Project[] = [
             '候选必须经过人工视觉审核；机器 QA、Agent 复核和回归记忆只作为修复压力与审计证据，不能替代人审 accept。',
             '包下载通过不透明 downloadId 暴露给 App，内部路径、Worker 命令、提示词包和运行配置不会出现在公开响应里。',
           ],
+          visual: {
+            id: 'pet-review-flow',
+            type: 'workflow',
+            title: '生成到人审发布流程',
+            description: '从用户提交、生成候选、QA 证据、人审通过到不透明下载 ID 的发布链路。',
+            image: '/images/projects/showcase/fantasy-pet-review-flow.svg',
+            alt: 'AI 桌宠生成与人审发布流程图',
+          },
         },
       ],
       architecture: [
@@ -301,6 +366,14 @@ export const projects: Project[] = [
           title: '分层边界',
           body:
             '工作区按职责拆分：Android App 负责桌宠呈现和用户交互；Community API 是 App 唯一后端入口；Admin Review 面向审核人员；Pet Generator 适配生成结果进入社区；生成规则服务负责服务端生成任务、Worker 编排、QA、学习记忆和包构建。这个边界让 App 保持轻量，也避免把高权限生成能力下放到客户端。',
+          visual: {
+            id: 'pet-api-contract',
+            type: 'architecture',
+            title: 'App 安全 API 边界',
+            description: '说明 App、Community API、生成服务、审核台之间的职责边界，避免公开页面暗示客户端能直连生成内核。',
+            image: '/images/projects/showcase/fantasy-pet-api-contract.svg',
+            alt: 'AI 桌宠 App 安全 API 边界架构图',
+          },
         },
         {
           title: 'Community API',
@@ -388,6 +461,15 @@ export const projects: Project[] = [
           title: '从商品运营到可追踪的业务系统',
           body:
             'Ozon ERP 面向小团队的跨境店铺运营：店铺授权、商品同步、采集铺货、草稿编辑、定价利润、选品规则、导入历史和操作追踪被组织在一个可登录、可部署、可交接的工作区里。它不是单页展示或一次性脚本，而是把后台、API、数据库、插件和任务状态串成长期维护的业务链路。',
+          visual: {
+            id: 'ozon-erp-admin-runtime',
+            type: 'screenshot',
+            title: 'ERP 管理后台截图',
+            description: '用真实后台运行截图展示这个项目的主要工作面，区别于只放一张抽象封面。',
+            image: '/images/projects/showcase/ozon-erp-admin-runtime.png',
+            alt: 'Ozon ERP 管理后台运行界面截图',
+            caption: '截图只展示公开安全的演示界面，不包含真实店铺凭据或订单数据。',
+          },
         },
         {
           title: '公开主站只承担项目说明',
@@ -403,6 +485,14 @@ export const projects: Project[] = [
             '店铺侧维护授权状态、区域、币种、商品上限和 Seller 会话；商品侧承接同步、价格、库存、类目、图片、评分和导入回读。',
             '采集商品进入采集箱或草稿后，可以继续编辑标题、描述、图片、规格、重量、品牌、价格、库存和 Ozon 上架字段，再提交受控写入。',
           ],
+          visual: {
+            id: 'ozon-erp-workflow',
+            type: 'workflow',
+            title: '运营工作流',
+            description: '把店铺授权、插件采集、草稿编辑、受保护写入和审计追踪放在同一条可解释流程里。',
+            image: '/images/projects/showcase/ozon-erp-workflow.svg',
+            alt: 'Ozon ERP 店铺运营工作流图',
+          },
         },
         {
           title: '认证入口体验',
@@ -442,6 +532,14 @@ export const projects: Project[] = [
           title: 'API 与数据模型',
           body:
             'Express 服务注册了 auth、shops、products、selection、settings、ozon、collect、market metrics、commission rates、api.chrome、exchange rates、watermark 和 uploads 等路由。Prisma 模型覆盖用户、店铺、Ozon 凭证、Seller 会话、仓库、同步状态、商品、采集商品、草稿、导入日志、待处理动作、市场指标、佣金映射、任务队列和审计日志。',
+          visual: {
+            id: 'ozon-erp-data-model',
+            type: 'data-flow',
+            title: '数据模型与写入边界',
+            description: '展示用户、店铺、商品、草稿、任务和审计之间的关系，帮助访客理解业务系统不只是前端页面。',
+            image: '/images/projects/showcase/ozon-erp-data-model.svg',
+            alt: 'Ozon ERP 数据模型与业务写入边界图',
+          },
         },
         {
           title: '受保护写入边界',
@@ -520,6 +618,7 @@ export const projects: Project[] = [
     category: 'platform',
     status: 'live',
     role: 'Astro 作品集 / Godot Web 试玩 / 内容审计 / Cloudflare Pages',
+    image: '/images/projects/showcase/space-war-web-showcase.png',
     stack: ['Astro 5', 'Content Collections', 'Godot Web', 'Cloudflare Pages', 'R2'],
     highlights: ['六个可试玩游戏', '项目详情页', '内容审计', '公开端点检查'],
     detailLink: externalLink('进入游戏站', `${GAME_SITE_URL}/`),
@@ -534,6 +633,16 @@ export const projects: Project[] = [
           title: '把游戏原型变成可访问的作品集平台',
           body:
             'BIAU Playlab 不是只放几张截图的列表页，而是把六个 Godot 项目整理成可访问、可试玩、可复盘的内容站。访客可以从游戏总览进入单个项目详情，再跳到独立 Web 试玩入口，看到玩法目标、机制贡献、截图/视频、里程碑、开发日志和后续计划；Spacewar II 已作为第六个公开 Web 试玩项目接入统一内容模型。',
+          visual: {
+            id: 'playlab-web-showcase',
+            type: 'screenshot',
+            title: '游戏站与 Web 试玩展示',
+            description: '用 Playlab 实际试玩展示图替代主站截图，让访客第一眼看到这是游戏作品集平台。',
+            image: '/images/projects/showcase/space-war-web-showcase.png',
+            alt: 'BIAU Playlab 游戏站与 Space War Web 试玩展示截图',
+            sourceLabel: '进入游戏站',
+            sourceUrl: 'https://games.playlab.eu.cc',
+          },
         },
         {
           title: '游戏展示先于博客优化',
@@ -555,6 +664,14 @@ export const projects: Project[] = [
             '独立试玩域名承载 Godot Web 导出，让案例页和可玩版本解耦，项目说明与实际体验可以互相跳转。',
             '试玩页需要提醒首次加载 Godot Web 运行时和项目资源可能偏慢，移动端输入、横竖屏缩放、HUD 可读性和浏览器性能仍要持续回归。',
           ],
+          visual: {
+            id: 'playlab-gameplay-evidence',
+            type: 'screenshot',
+            title: '真实游戏运行画面',
+            description: '正文穿插游戏运行截图，说明项目页和试玩入口背后确实有可打开的游戏构建。',
+            image: '/images/projects/showcase/raiden-stage-01-gameplay.png',
+            alt: 'BIAU Playlab 中 Raiden 原型的真实运行截图',
+          },
         },
         {
           title: '内容维护工作流',
@@ -575,6 +692,14 @@ export const projects: Project[] = [
           title: '试玩与展示分离',
           body:
             'Godot Web 包被放在独立试玩入口，内容站只负责说明、导航和嵌入/跳转。这种分离让游戏导出、R2/静态资产上传、页面内容更新和主站项目页引用可以分别迭代，也降低了单个游戏构建影响整个作品站的风险。',
+          visual: {
+            id: 'playlab-showcase-architecture',
+            type: 'architecture',
+            title: '展示站与试玩站分离',
+            description: '用架构示意图表达 Astro 内容站、Godot Web 导出和独立试玩入口之间的分工。',
+            image: '/images/projects/showcase/godot-next-spacewar-showcase.svg',
+            alt: 'BIAU Playlab 展示站与 Godot Web 试玩架构示意图',
+          },
         },
         {
           title: '自动化检查',
@@ -652,6 +777,16 @@ export const projects: Project[] = [
           title: '从单页展示推进到项目案例中枢',
           body:
             'BIAU Port 当前承担的是公开主站和内容中枢：首页负责第一眼呈现项目方向，项目集把 AI 应用、业务系统、互动体验、移动端和平台建设分组，项目详情页用统一结构展示实现、架构、验证、边界和后续优化。它不是单纯博客列表，而是把多个已部署或进行中的项目收拢成可筛选、可讲解、可继续迭代的产品展示面。',
+          visual: {
+            id: 'blog-semi-home-ui',
+            type: 'screenshot',
+            title: '主站首页截图',
+            description: '首页承担项目入口和品牌第一印象，正文截图能让案例页直接呈现当前主站状态。',
+            image: '/images/projects/showcase/blog-semi-home-desktop.png',
+            alt: 'BIAU Port 主站首页桌面端截图',
+            sourceLabel: '回到首页',
+            sourceUrl: '/',
+          },
         },
         {
           title: '公开内容以安全事实为边界',
@@ -668,6 +803,14 @@ export const projects: Project[] = [
             '项目详情页统一展示核心亮点、技术栈、相关链接、案例分析、延展阅读和同类项目。',
             '博客页通过公开精选与栏目过滤展示知识积累、项目总结、资源分享、AI 日报和构建手记等内容边界。',
           ],
+          visual: {
+            id: 'blog-semi-projects-ui',
+            type: 'workflow',
+            title: '项目集浏览路径',
+            description: '项目集截图说明访客可以按项目类型浏览，再进入具体案例页或外部演示入口。',
+            image: '/images/projects/showcase/blog-semi-projects-desktop.png',
+            alt: 'BIAU Port 项目集桌面端截图',
+          },
         },
         {
           title: '助手与内容联动',
@@ -693,6 +836,14 @@ export const projects: Project[] = [
           title: '内容与 SEO 管线',
           body:
             '公开博客由 `blogCuration` 控制 visibility、role、priority 和 project relation；隐藏草稿不会进入公开列表、详情加载、助手知识或 sitemap。`scripts/generate-sitemap.mjs` 会从项目 id 和公开博客生成 sitemap，`SeoManager` 根据路由应用 canonical、description 和 Open Graph 信息。',
+          visual: {
+            id: 'blog-semi-blog-ui',
+            type: 'status',
+            title: '博客公开内容界面',
+            description: '博客截图对应内容治理结果，提醒访客当前公开内容是筛选后的集合，不等于所有草稿都已发布。',
+            image: '/images/projects/showcase/blog-semi-blogs-desktop.png',
+            alt: 'BIAU Port 博客页桌面端截图',
+          },
         },
       ],
       quality: [
@@ -758,6 +909,14 @@ export const projects: Project[] = [
           title: '从经典规则走向长期原型',
           body:
             'Game First Tetris 不是只验证“方块能下落和消行”，而是把经典模式、现代计分反馈、Rogue 实验线、多端布局和移动端触控放在同一个 Godot 项目里持续收口。当前阶段适合展示一个小型玩法原型如何逐步具备可讲解、可试玩、可继续迭代的产品雏形。',
+          visual: {
+            id: 'tetris-desktop-gameplay',
+            type: 'screenshot',
+            title: '桌面端经典模式截图',
+            description: '用实际运行画面展示当前原型的主玩法，而不是只靠项目封面说明。',
+            image: '/images/projects/showcase/tetris-classic-desktop.png',
+            alt: '俄罗斯方块原型桌面端经典模式截图',
+          },
         },
       ],
       workflow: [
@@ -768,6 +927,14 @@ export const projects: Project[] = [
             'Rogue 实验线通过三轮固定选择、最小强化和局间带入验证中程目标感，避免破坏经典玩法基础。',
             'Help、主菜单、HUD 和触屏控件都被纳入展示体验，让第一次打开的访客能理解规则与入口。',
           ],
+          visual: {
+            id: 'tetris-structure',
+            type: 'workflow',
+            title: '玩法与输入结构',
+            description: '说明经典模式、Rogue 实验线、Help、HUD 和触屏桥接如何构成当前体验。',
+            image: '/images/projects/showcase/godot-tetris-structure.svg',
+            alt: '俄罗斯方块原型玩法与输入结构图',
+          },
         },
       ],
       architecture: [
@@ -837,6 +1004,14 @@ export const projects: Project[] = [
           title: '从单关 MVP 收成展示构建',
           body:
             'Game Next Spacewar 的价值在于把一个基础 2D 太空射击闭环推进到可对外演示的 showcase build。它不只是战斗能跑，还补齐主菜单、设置、About/Help、暂停、三波短任务、结果页和会话总结，让访客第一次打开时能知道自己在玩什么、当前版本到了哪里。',
+          visual: {
+            id: 'next-spacewar-gameplay',
+            type: 'screenshot',
+            title: '短任务战斗截图',
+            description: '真实战斗截图展示三波短任务、敌群与街机反馈，而不是只展示菜单。',
+            image: '/images/projects/showcase/next-spacewar-gameplay.png',
+            alt: 'Next Spacewar 太空射击战斗截图',
+          },
         },
       ],
       workflow: [
@@ -854,6 +1029,14 @@ export const projects: Project[] = [
           title: '展示版外壳',
           body:
             '项目以 Godot 4.6.1 组织 scenes、scripts、assets 和 docs，主菜单、战斗、设置、Help 与结果页各自承担入口、局内体验和收束反馈。Playlab 通过独立试玩域名承载 Web 导出，主站保留详情页和试玩跳转。',
+          visual: {
+            id: 'next-spacewar-showcase-structure',
+            type: 'architecture',
+            title: '展示构建结构',
+            description: '说明 Godot 项目、展示页面和 Web 试玩入口如何共同组成公开展示版本。',
+            image: '/images/projects/showcase/godot-next-spacewar-showcase.svg',
+            alt: 'Next Spacewar 展示构建结构图',
+          },
         },
       ],
       quality: [
@@ -911,6 +1094,14 @@ export const projects: Project[] = [
           title: '统一试玩前的 Roguelite 收口',
           body:
             'intespace 是竖屏自动射击 Roguelite 项目，当前重点不是继续横向加系统，而是把章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长和玩家主菜单收成一次完整 session。它适合展示系统原型如何走向可被访客理解的试玩入口。',
+          visual: {
+            id: 'intespace-player-hub',
+            type: 'screenshot',
+            title: '玩家中枢截图',
+            description: '真实主界面截图展示章节、生存挑战和成长入口，说明它不是只有战斗场景的原型。',
+            image: '/images/projects/showcase/intespace-player-hub.png',
+            alt: 'intespace 玩家中枢界面截图',
+          },
         },
       ],
       workflow: [
@@ -921,6 +1112,14 @@ export const projects: Project[] = [
             '局内通过自动射击、经验拾取、武器路线和升级面板形成战斗推进。',
             '结果页承接结算、成长动作、重开路径和返回主界面，让下一局循环成立。',
           ],
+          visual: {
+            id: 'intespace-session-loop',
+            type: 'workflow',
+            title: '完整 Session 循环',
+            description: '从玩家中枢、章节战斗、局内升级到结果页和局外成长的试玩循环。',
+            image: '/images/projects/showcase/godot-intespace-loop.svg',
+            alt: 'intespace 竖屏肉鸽射击 session 循环图',
+          },
         },
       ],
       architecture: [
@@ -985,6 +1184,14 @@ export const projects: Project[] = [
           title: '纵版街机射击的 Demo 候选',
           body:
             'Raiden Prototype 以纵版街机射击为核心，当前已推进到 RC-0.4 稳定展示候选。它的重点是把双关章节、火力成长、炸弹资源、连锁击破、Boss 段落、章节过场和结果反馈压缩成可试玩的垂直切片。',
+          visual: {
+            id: 'raiden-stage-gameplay',
+            type: 'screenshot',
+            title: 'Stage 01 战斗截图',
+            description: '正文直接展示关卡运行画面，帮助访客理解“垂直切片”具体包含哪些战斗反馈。',
+            image: '/images/projects/showcase/raiden-stage-01-gameplay.png',
+            alt: 'Raiden Prototype Stage 01 战斗截图',
+          },
         },
       ],
       workflow: [
@@ -995,6 +1202,14 @@ export const projects: Project[] = [
             '玩家通过自动持续射击、掉落升级、炸弹清屏和短窗口连锁击破维持街机节奏。',
             'Stage 02 的风暴机关、Boss overdrive 和终盘安全窗口形成当前版本的高潮段落。',
           ],
+          visual: {
+            id: 'raiden-vertical-slice',
+            type: 'workflow',
+            title: '章节垂直切片',
+            description: '说明双关卡、火力成长、连锁击破、Boss 段落和结果反馈如何收成一个试玩路线。',
+            image: '/images/projects/showcase/godot-raiden-vertical-slice.svg',
+            alt: 'Raiden Prototype 章节垂直切片流程图',
+          },
         },
       ],
       architecture: [
@@ -1059,6 +1274,14 @@ export const projects: Project[] = [
           title: '复古横版射击的完整展示版本',
           body:
             'Space War 围绕 Nokia 3310《Space Impact》初代体验做复刻取舍，重点不是把项目现代化扩张，而是守住横向自动卷轴、短局高压射击、连续击破奖励、关底 Boss 和低彩 LCD 气质，并把它收成完整可玩、可展示、可维护的版本。',
+          visual: {
+            id: 'space-war-gameplay',
+            type: 'screenshot',
+            title: '横版战斗截图',
+            description: '真实战斗画面展示自动卷轴、敌群与低彩 LCD 风格，说明项目已经形成可玩版本。',
+            image: '/images/projects/showcase/space-war-gameplay.png',
+            alt: 'Space War 复古横版射击战斗截图',
+          },
         },
       ],
       workflow: [
@@ -1069,6 +1292,14 @@ export const projects: Project[] = [
             '局内包含敌群、拾取强化、13 级武器成长、连续击破奖励和最终 Boss。',
             '暂停、结算、最高分记录和中英文设置让它具备完整发布版外壳。',
           ],
+          visual: {
+            id: 'space-war-result',
+            type: 'status',
+            title: '结算与发布证据',
+            description: '结果页截图说明项目不只是关卡原型，而是包含菜单、战斗、结算和重开路径的完整流程。',
+            image: '/images/projects/showcase/space-war-result.png',
+            alt: 'Space War 结果结算页截图',
+          },
         },
       ],
       architecture: [
@@ -1133,6 +1364,14 @@ export const projects: Project[] = [
           title: '第六个 Web 试玩项目接入',
           body:
             'Spacewar II 是更偏移动端纵向射击的续作原型。本轮主站展示重点不是夸大成完整续作，而是说明它如何从本地 Godot 目录补进 Playlab 统一内容模型、试玩域名规则、导出脚本和主站外链，成为第六个可展示游戏项目。',
+          visual: {
+            id: 'spacewar-ii-menu',
+            type: 'screenshot',
+            title: '第六个试玩项目菜单',
+            description: '菜单截图说明 Spacewar II 已进入统一展示入口，而不是仍停留在本地目录说明。',
+            image: '/images/projects/showcase/spacewar-ii-menu.png',
+            alt: 'Spacewar II 菜单截图',
+          },
         },
       ],
       workflow: [
@@ -1150,6 +1389,14 @@ export const projects: Project[] = [
           title: '统一内容模型与 Web 导出',
           body:
             '游戏站记录 Spacewar II 使用 `spacewar-ii` 作为统一 slug，纳入 Astro games 内容集合、Web 试玩 URL、导出脚本目标和主站外链。项目目录包含菜单、战斗、HUD、结果、升级和 smoke test 结构。',
+          visual: {
+            id: 'spacewar-ii-cover',
+            type: 'architecture',
+            title: '统一接入示意',
+            description: '用展示封面说明它作为 Playlab 第六个游戏项目接入统一内容模型和试玩路径。',
+            image: '/images/projects/showcase/spacewar-ii-cover.svg',
+            alt: 'Spacewar II Playlab 展示封面图',
+          },
         },
       ],
       quality: [
@@ -1212,11 +1459,29 @@ export const projects: Project[] = [
           title: '从旧足球社区 App 到可演示的新链路',
           body:
             '寻球围绕足球社群、球队管理、约赛日程、动态内容、短视频和球场信息展开。这个项目的核心不是简单升级一个 Android 包，而是把旧客户端、旧 Java WAR 后端、现代后端和 64 位新客户端拆开治理，让公开展示能说明产品路径、迁移边界和工程验证。',
+          visual: {
+            id: 'xunqiu-android-runtime',
+            type: 'screenshot',
+            title: '64 位 Android 客户端截图',
+            description: '真实运行截图用于说明当前展示的重点是移动端迁移后的新客户端链路。',
+            image: '/images/projects/showcase/xunqiu-android64-runtime.png',
+            alt: '寻球 64 位 Android 客户端运行截图',
+            sourceLabel: '打开产品展示页',
+            sourceUrl: 'https://xunqiu.playlab.eu.cc/',
+          },
         },
         {
           title: '新旧并行降低迁移风险',
           body:
             '旧版客户端继续对应旧后端和历史接口，64 位新客户端通过配置化 Host 接入现代后端。这样可以保留旧包可回滚的安全边界，同时让新客户端独立验证登录、动态、球队、约赛、球场和短视频等核心体验。',
+          visual: {
+            id: 'xunqiu-migration-flow',
+            type: 'workflow',
+            title: '新旧链路分流',
+            description: '说明旧客户端、旧后端、新 64 位客户端和现代后端如何并行，降低一次性迁移风险。',
+            image: '/images/projects/showcase/xunqiu-migration-flow.svg',
+            alt: '寻球新旧客户端与后端迁移流程图',
+          },
         },
         {
           title: '展示站品牌入口对齐',
@@ -1252,6 +1517,14 @@ export const projects: Project[] = [
           title: '64 位客户端重建',
           body:
             '新版 Android 工程是轻量单模块客户端，包内不引入旧 32 位 native so，接口集中在 ApiClient，登录态、异步任务、UI 工具和内容排序工具分别封装。客户端继续兼容旧接口路径和返回 envelope，把字段 fallback 与媒体 URL 归一化集中处理。',
+          visual: {
+            id: 'xunqiu-module-map',
+            type: 'architecture',
+            title: '移动端模块图',
+            description: '展示新客户端的主要页面、ApiClient 和内容模块关系，避免只用文字解释迁移范围。',
+            image: '/images/projects/showcase/xunqiu-module-map.svg',
+            alt: '寻球 64 位 Android 客户端模块图',
+          },
         },
         {
           title: '现代后端与接口兼容',
@@ -1273,6 +1546,14 @@ export const projects: Project[] = [
             '后端 MockMvc 测试覆盖健康检查、旧登录 envelope、动态发布、视频上传校验、球队、球场、fallback 和幂等社交流。',
             'PostgreSQL/Testcontainers 测试验证 Flyway seed 与核心控制器，部署烟测脚本覆盖 health、login、tweets、videos、team 和 pitches。',
           ],
+          visual: {
+            id: 'xunqiu-verification-chain',
+            type: 'status',
+            title: '验证证据链',
+            description: '把 Android 测试矩阵、旧入口对照、后端测试和部署烟测组织成可复盘的迁移验证链。',
+            image: '/images/projects/showcase/xunqiu-verification-chain.svg',
+            alt: '寻球迁移验证证据链示意图',
+          },
         },
         {
           title: 'Health 与 smoke 边界',

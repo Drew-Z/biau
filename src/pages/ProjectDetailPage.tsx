@@ -13,6 +13,7 @@ import {
   type ProjectDetailContentKey,
   type ProjectDetailSection,
   type ProjectLink,
+  type ProjectVisualBlock,
 } from '../data/portfolio'
 import { ResponsiveImage } from '../components/ResponsiveImage'
 
@@ -24,6 +25,16 @@ const projectDetailContentOrder: ProjectDetailContentKey[] = [
   'limitations',
   'roadmap',
 ]
+
+const projectVisualTypeLabels: Record<ProjectVisualBlock['type'], string> = {
+  screenshot: '界面截图',
+  architecture: '架构图',
+  workflow: '流程图',
+  'data-flow': '数据流',
+  status: '状态证据',
+  release: '发布证据',
+  diagram: '说明图',
+}
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -214,7 +225,46 @@ function ProjectDetailContentSection({ section }: ProjectDetailContentSectionPro
           ))}
         </div>
       )}
+      {section.visual && <ProjectVisualFigure visual={section.visual} />}
     </article>
+  )
+}
+
+function ProjectVisualFigure({ visual }: { visual: ProjectVisualBlock }) {
+  const label = projectVisualTypeLabels[visual.type]
+  const figureClassName = `project-visual project-visual--${visual.type}`
+
+  return (
+    <figure className={figureClassName}>
+      <figcaption className="project-visual__meta">
+        <span className="project-visual__type">{label}</span>
+        <span className="project-visual__text">
+          <strong>{visual.title}</strong>
+          <span>{visual.description}</span>
+        </span>
+      </figcaption>
+      {visual.image && (
+        <a
+          href={visual.image}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="project-visual__image"
+          aria-label={`打开 ${visual.title} 原图`}
+        >
+          <ResponsiveImage src={visual.image} alt={visual.alt ?? visual.title} />
+        </a>
+      )}
+      {(visual.caption || visual.sourceUrl) && (
+        <p className="project-visual__caption">
+          {visual.caption}
+          {visual.sourceUrl && (
+            <a href={visual.sourceUrl} target="_blank" rel="noopener noreferrer">
+              {visual.sourceLabel ?? '查看来源'}
+            </a>
+          )}
+        </p>
+      )}
+    </figure>
   )
 }
 

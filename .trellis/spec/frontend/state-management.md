@@ -34,6 +34,8 @@ Public catalog and article data are static TypeScript exports in `src/data/`. Ke
 ### 2. Signatures
 
 - `Project.detailContent?: ProjectDetailContent` groups visitor-readable case-study sections by keys such as `overview`, `workflow`, `architecture`, `quality`, `limitations`, and `roadmap`.
+- `ProjectDetailSection.visual?: ProjectVisualBlock` attaches an optional body-level visual to a case-study section.
+- `ProjectVisualBlock.type` is one of `screenshot`, `architecture`, `workflow`, `data-flow`, `status`, `release`, or `diagram`.
 - `Project.assistantContext?: string[]` stores concise public facts for generated/local assistant knowledge.
 - `getProjectAssistantSummary(project: Project): string` returns the public assistant summary.
 - `getProjectAssistantTags(project: Project): string[]` returns deduplicated searchable tags.
@@ -41,6 +43,9 @@ Public catalog and article data are static TypeScript exports in `src/data/`. Ke
 ### 3. Contracts
 
 - `detailContent` is for page rendering and must remain sanitized public copy.
+- `visual.image`, when present, should reference a public-safe asset under `/images/projects/` or another explicitly public route. It must not point at private dashboards, local absolute paths, unapproved APK downloads, or screenshots containing credentials.
+- Visual blocks must be rendered as content inside the relevant section; do not hard-code project-specific illustrations in `ProjectDetailPage.tsx`.
+- Missing `visual` keeps the old text/list rendering path. The optional visual field must not make simple project pages fail.
 - `assistantContext` is for retrieval quality, not hidden/private knowledge; it must not include credentials, raw local paths, account data, private dashboards, or secrets.
 - `scripts/generate-assistant-knowledge.ts` and `src/data/assistant.ts` must both use the projection helpers instead of duplicating summary/tag construction.
 - Site-level public assistant entries such as `site:intro` or `site:status` belong in `publicKnowledgeBase`; the generation script should emit that same public knowledge source instead of rebuilding a separate list.
@@ -49,6 +54,8 @@ Public catalog and article data are static TypeScript exports in `src/data/`. Ke
 ### 4. Validation & Error Matrix
 
 - Missing `detailContent` -> project detail page falls back to the generic header, highlights, stack, and links.
+- Missing `visual` -> the case-study section renders text/items/links only.
+- Missing or wrong public image path -> fix the data or asset before release; do not leave a broken body image on a public project page.
 - Empty `assistantContext` -> assistant summary falls back to `project.summary`.
 - Generated and local assistant summaries diverge -> update the shared helper in `portfolio.ts`, not individual consumers.
 - Unsafe public content -> remove or rewrite the content before running `assistant:index`.
@@ -56,13 +63,16 @@ Public catalog and article data are static TypeScript exports in `src/data/`. Ke
 ### 5. Good/Base/Bad Cases
 
 - Good: Legal RAG stores architecture, workflow, quality, limitations, and roadmap in typed `detailContent`, then exposes concise RAG/contract-review facts through `assistantContext`.
+- Good: a project section stores `visual: { type: 'workflow', image: '/images/projects/showcase/legal-rag-flow.svg', ... }`, and `ProjectDetailPage` renders it through the shared visual figure component.
 - Base: a simple project only defines `summary`, `stack`, `highlights`, and `links`.
-- Bad: a page component hard-codes a long project article while the assistant generator separately hand-builds a different summary.
+- Bad: a page component hard-codes a long project article or project-specific image while the data model and assistant generator separately hand-build different facts.
 
 ### 6. Tests Required
 
 - Run `npm.cmd run assistant:index` after changing project assistant fields.
+- Run a small asset-existence check or equivalent when adding many `visual.image` references.
 - Run `npm.cmd run lint` and `npm.cmd run build` after changing `src/data/portfolio.ts`, `src/data/assistant.ts`, or project detail rendering.
+- Run `npm.cmd run check:ui` or an equivalent Playwright route check when changing project detail rendering.
 - Attempt `npm.cmd run verify` for broad project-page or assistant-knowledge changes.
 
 ### 7. Wrong vs Correct

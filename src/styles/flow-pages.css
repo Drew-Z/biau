@@ -2424,6 +2424,102 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   margin-top: 2px;
 }
 
+.project-visual {
+  min-width: 0;
+  margin: var(--space-4, 4px) 0 0;
+  display: grid;
+  gap: var(--space-10, 10px);
+}
+
+.project-visual__meta {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-6, 6px);
+}
+
+.project-visual__type {
+  width: fit-content;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-10, 10px);
+  color: color-mix(in oklch, var(--blue) 84%, var(--ink));
+  background: color-mix(in oklch, var(--blue) 10%, transparent);
+  border: 1px solid color-mix(in oklch, var(--blue) 24%, transparent);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.project-visual__text {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-4, 4px);
+}
+
+.project-visual__text strong {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.38;
+}
+
+.project-visual__text span,
+.project-visual__caption {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.project-visual__image {
+  display: block;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklch, var(--flow-ui-card-border) 82%, transparent);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--panel) 54%, transparent);
+  text-decoration: none;
+}
+
+.project-visual__image:focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--amber) 48%, transparent);
+  outline-offset: 3px;
+}
+
+.project-visual__image picture,
+.project-visual__image img {
+  display: block;
+  width: 100%;
+}
+
+.project-visual__image img {
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: color-mix(in oklch, var(--panel-strong) 72%, transparent);
+}
+
+.project-visual--architecture .project-visual__image img,
+.project-visual--workflow .project-visual__image img,
+.project-visual--data-flow .project-visual__image img,
+.project-visual--diagram .project-visual__image img {
+  padding: var(--space-12, 12px);
+}
+
+.project-visual__caption {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6, 6px);
+  align-items: center;
+}
+
+.project-visual__caption a {
+  color: color-mix(in oklch, var(--green) 86%, var(--ink));
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
 .ozon-erp-entry-block {
   display: grid;
   gap: var(--space-16);

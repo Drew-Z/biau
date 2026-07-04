@@ -31,15 +31,17 @@
 
 ## Acceptance Criteria
 
-- [ ] 审计当前项目详情页内容模型、页面渲染和图片资产，列出错误/薄弱图片与缺失图文位置。
-- [ ] 设计并实现项目详情页正文视觉块数据模型。
-- [ ] 至少为核心项目补充多段案例内容和正文视觉块。
-- [ ] 替换或移除明显错误、无关、误导性的配图。
-- [ ] 项目详情页在移动端和桌面端布局稳定，正文视觉块不会遮挡文字或按钮。
-- [ ] 项目详情页内容与状态页、外链、下载门禁、公开助手知识不互相矛盾。
-- [ ] 运行 `npm.cmd run lint`、`npm.cmd run build`、相关 UI/状态检查和 `git diff --check`。
+- [x] 审计当前项目详情页内容模型、页面渲染和图片资产，列出错误/薄弱图片与缺失图文位置。
+- [x] 设计并实现项目详情页正文视觉块数据模型。
+- [x] 至少为核心项目补充多段案例内容和正文视觉块。
+- [x] 替换或移除明显错误、无关、误导性的配图。
+- [x] 项目详情页在移动端和桌面端布局稳定，正文视觉块不会遮挡文字或按钮。
+- [x] 项目详情页内容与状态页、外链、下载门禁、公开助手知识不互相矛盾。
+- [x] 运行 `npm.cmd run lint`、`npm.cmd run build`、相关 UI/状态检查和 `git diff --check`。
 
 ## Notes
 
 - 用户明确指出：当前项目详情页内容太少，配图不对，而且只有最上面一张图；目标是正文中穿插示例图、流程图、架构图等，让项目页更像精致的技术案例页。
 - 推荐优先项目：公开助手 / BIAU Port、Legal RAG、ERP、Pet、Xunqiu、Game/Playlab。Pet 可以如实展示当前工作状态，不包装成完全体。
+- 2026-07-05：已新增 `ProjectVisualBlock` / `ProjectDetailSection.visual`，详情页正文会渲染 screenshot、workflow、architecture、data-flow、status 等视觉块。核心项目和主要游戏项目已挂现有公开安全截图/SVG，`biau-playlab` 首图已从主站截图改为 Playlab 试玩展示图。
+- Validation：`npx.cmd tsx -e <project visual asset check>`、`npm.cmd run lint`、`npm.cmd run build`、`npm.cmd run check:ui` 均通过；`git diff --check` 待提交前执行。
