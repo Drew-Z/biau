@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-04T01:26:46.881Z",
+  "checkedAt": "2026-07-04T03:33:29.013Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 710,
-      "checkedAt": "2026-07-04T01:26:46.887Z",
+      "durationMs": 1120,
+      "checkedAt": "2026-07-04T03:33:29.018Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "展示页已接入 BIAU Port / 泊岸标题与 favicon；入口可达代表展示页和截图可访问，正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 729,
-      "checkedAt": "2026-07-04T01:26:47.598Z",
+      "durationMs": 974,
+      "checkedAt": "2026-07-04T03:33:30.140Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "代码侧支持生产普通注册默认开放，但当前线上状态以 bootstrap synthetic 为准；登录页主品牌和后台侧栏已接入 BIAU Port / 泊岸外壳。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 910,
-      "checkedAt": "2026-07-04T01:26:48.327Z",
+      "durationMs": 2595,
+      "checkedAt": "2026-07-04T03:33:31.114Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 661,
-      "checkedAt": "2026-07-04T01:26:49.237Z",
+      "durationMs": 882,
+      "checkedAt": "2026-07-04T03:33:33.709Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -90,8 +90,8 @@
       "note": "展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；阶段 APK 是否公开发布仍需人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 815,
-      "checkedAt": "2026-07-04T01:26:49.898Z",
+      "durationMs": 845,
+      "checkedAt": "2026-07-04T03:33:34.591Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -132,6 +132,16 @@
           "evidence": "后台观测规范要求 `METRICS_ENABLED` 明确开启后才暴露指标。",
           "cadence": "生产 gate 后持续采集",
           "ownerHint": "Prometheus/Grafana"
+        },
+        {
+          "id": "blog-semi-rag-orchestrator",
+          "layer": "observability",
+          "label": "RAG Orchestrator health",
+          "status": "planned",
+          "description": "后续检查外部 RAG Orchestrator `/health`、sync 状态、vector/keyword/reranker readiness 和低敏 retrieval diagnostics。",
+          "evidence": "本地 `/rag/health`、`/rag/v1/retrieve`、`assistant:rag-smoke`、`assistant:rag-sync-local` 已可验证；生产 health check 等待 Orchestrator 部署和用户批准。",
+          "cadence": "生产 Orchestrator 部署后 + 每日",
+          "ownerHint": "RAG Orchestrator"
         }
       ],
       "gates": [
@@ -139,7 +149,8 @@
       ],
       "nextActions": [
         "把 `main-site:synthetic` 接入定时任务或内部监控。",
-        "Cloudflare Pages Functions 部署后配置 `ASSISTANT_MODEL_*` 并复查公开助手状态。"
+        "Cloudflare Pages Functions 部署后配置 `ASSISTANT_MODEL_*` 并复查公开助手状态。",
+        "生产 RAG Orchestrator 部署并确认可检查后，再把 `/health` 纳入 synthetic 或内部监控。"
       ]
     },
     {
@@ -154,7 +165,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 710 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1120 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -222,7 +233,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应，并确认入口以 BIAU Port / 泊岸品牌外壳承载 Ozon ERP 产品名。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 910 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2595 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -289,7 +300,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应，并确认标题/favicon 归属泊岸展示体系。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 815 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 845 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -392,7 +403,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应，并确认 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属已同步。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 661 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 882 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

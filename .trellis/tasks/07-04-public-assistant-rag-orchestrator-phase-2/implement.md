@@ -188,9 +188,11 @@ npm.cmd run server:smoke
 
 ### 8. Observability And Status Integration
 
-- Add low-sensitive Orchestrator `/health`.
-- Add status-page target only after Orchestrator is deployed or mockable.
-- Do not display provider URLs, keys, database IDs or internal hostnames.
+Status: local low-sensitive health is available, and the status page now has a planned production Orchestrator health check that does not expose provider details.
+
+- [x] Add low-sensitive Orchestrator `/health`.
+- [x] Add status-page target only after Orchestrator is deployed or mockable.
+- [x] Do not display provider URLs, keys, database IDs or internal hostnames.
 
 Validation:
 
