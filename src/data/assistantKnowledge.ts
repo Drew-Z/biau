@@ -28,6 +28,7 @@ export type AssistantRetrievalIntent =
   | 'reliability-status'
   | 'technology-architecture'
   | 'blog-knowledge'
+  | 'private-credential'
   | 'broad-unknown'
 
 export interface AssistantKnowledgeItemLike {
@@ -213,6 +214,7 @@ const INTENT_TERMS: Record<AssistantRetrievalIntent, string[]> = {
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
   'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', '手记'],
+  'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
 
@@ -256,6 +258,15 @@ export function searchAssistantKnowledge<T extends AssistantKnowledgeItemLike>(
   const limit = options.limit ?? options.knowledge?.fallback_bundle.defaultLimit ?? 4
   const normalized = normalizeText(query)
   const intent = classifyAssistantIntent(query)
+  if (intent === 'private-credential') {
+    return {
+      citations: [],
+      intent,
+      terms: [],
+      expandedEntityIds: [],
+      sufficiency: 'none',
+    }
+  }
   if (!normalized) {
     return {
       citations: items.slice(0, limit),
@@ -297,6 +308,12 @@ export function buildPublicKnowledgeFallbackAnswer(
 ) {
   const intent = options.intent ?? classifyAssistantIntent(question)
   const maxLength = options.maxLength ?? 420
+  if (intent === 'private-credential') {
+    return compactAnswer(
+      '我不能提供后台密码、API key、token、数据库连接或模型中转配置。公开助手只能说明公开演示入口、可公开的 demo 边界和状态页信息；如果需要配置密钥，请在部署平台的私有环境变量里处理。',
+      maxLength,
+    )
+  }
   if (citations.length === 0) {
     return compactAnswer(
       `这个问题暂时没有命中足够的公开资料。我不会补造结论；可以换成项目名、技术栈、演示入口，或先查看项目页与状态页。`,
@@ -315,6 +332,8 @@ export function buildPublicKnowledgeFallbackAnswer(
 
 export function classifyAssistantIntent(query: string): AssistantRetrievalIntent {
   const normalized = normalizeText(query)
+  if (isPrivateCredentialRequest(normalized)) return 'private-credential'
+
   const order: AssistantRetrievalIntent[] = [
     'reliability-status',
     'demo-access',
@@ -669,6 +688,9 @@ function buildIntentAnswerBody(intent: AssistantRetrievalIntent, titleList: stri
   if (intent === 'blog-knowledge') {
     return '知识文章更适合看方法、复盘和构建过程；项目稳定事实仍以项目详情页和状态页为准。'
   }
+  if (intent === 'private-credential') {
+    return '我不能提供后台密码、API key、token、数据库连接或模型中转配置；只能说明公开演示入口和安全配置边界。'
+  }
   if (intent === 'project-experience') {
     return `可以把 ${titleList} 当作入口，先看它们分别解决什么问题、当前边界是什么，再决定是否打开演示或状态详情。`
   }
@@ -691,6 +713,27 @@ function slugifyId(value: string) {
 
 function normalizeText(value: string) {
   return value.trim().toLowerCase()
+}
+
+function isPrivateCredentialRequest(normalized: string) {
+  const credentialTerms = [
+    'api key',
+    'apikey',
+    'secret key',
+    'access token',
+    'bearer token',
+    'model key',
+    '模型 key',
+    '密钥',
+    'token',
+    '数据库 url',
+    'database url',
+    '连接串',
+    '后台密码',
+    '管理员密码',
+    'admin password',
+  ]
+  return credentialTerms.some((term) => normalized.includes(term))
 }
 
 function uniqueTerms(values: string[]) {

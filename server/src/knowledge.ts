@@ -11,6 +11,7 @@ type RetrievalIntent =
   | 'reliability-status'
   | 'technology-architecture'
   | 'blog-knowledge'
+  | 'private-credential'
   | 'broad-unknown'
 
 interface SearchAliasGroup {
@@ -53,6 +54,7 @@ const INTENT_TERMS: Record<RetrievalIntent, string[]> = {
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
   'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', '手记'],
+  'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
 
@@ -91,6 +93,7 @@ export function searchKnowledge(query: string, limit = publicKnowledgeV2?.fallba
   if (!normalized) return publicKnowledge.slice(0, limit)
 
   const intent = classifyIntent(query)
+  if (intent === 'private-credential') return []
   const terms = extractQueryTerms(query, publicKnowledgeV2)
   const expanded = publicKnowledgeV2 ? expandEntities(publicKnowledgeV2, normalized, terms) : createEmptyExpansion()
 
@@ -107,6 +110,8 @@ export function searchKnowledge(query: string, limit = publicKnowledgeV2?.fallba
 
 function classifyIntent(query: string): RetrievalIntent {
   const normalized = normalizeText(query)
+  if (isPrivateCredentialRequest(normalized)) return 'private-credential'
+
   const order: RetrievalIntent[] = [
     'reliability-status',
     'demo-access',
@@ -209,6 +214,27 @@ function inferSourceType(item: Pick<KnowledgeItem, 'id' | 'href'>): SourceType {
 
 function normalizeText(value: string) {
   return value.trim().toLowerCase()
+}
+
+function isPrivateCredentialRequest(normalized: string) {
+  const credentialTerms = [
+    'api key',
+    'apikey',
+    'secret key',
+    'access token',
+    'bearer token',
+    'model key',
+    '模型 key',
+    '密钥',
+    'token',
+    '数据库 url',
+    'database url',
+    '连接串',
+    '后台密码',
+    '管理员密码',
+    'admin password',
+  ]
+  return credentialTerms.some((term) => normalized.includes(term))
 }
 
 function uniqueTerms(values: string[]) {

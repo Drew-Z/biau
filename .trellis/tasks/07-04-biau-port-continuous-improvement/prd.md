@@ -19,7 +19,10 @@
 
 - `07-04-public-assistant-kg-lite`
   - 当前标题：Public assistant frontier RAG / agentic knowledge upgrade
-  - 角色：公开助手前沿 RAG / Agentic Hybrid RAG 主线子任务
+  - 角色：公开助手本地 Agentic Hybrid RAG MVP 子任务，已完成本地知识 V2、实体关系扩展和确定性 rerank 基线
+- `07-04-public-assistant-rag-orchestrator-phase-2`
+  - 当前标题：Public Assistant RAG Orchestrator Phase 2
+  - 角色：公开助手二期子任务，目标是外部 RAG Orchestrator、向量检索、reranker、self-check 和质量评测集
 - `07-03-cross-project-release-readiness-round-3`
   - 角色：跨项目部署、可靠性、演示入口和发布收尾的既有父任务
   - 已包含子任务：

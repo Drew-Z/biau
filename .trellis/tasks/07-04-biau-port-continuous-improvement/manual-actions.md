@@ -86,6 +86,14 @@ queue when the user is available.
 - Why manual: `blog-semi` has an explicit default push rule, but related repositories may have different branch/deployment safety expectations.
 - Codex can continue meanwhile: yes, by keeping commits per repository and reporting exactly which repo/branch changed.
 
+### M12. Approve public assistant RAG Orchestrator production resources
+
+- Related task: `07-04-public-assistant-rag-orchestrator-phase-2`
+- Needed from user: choose Orchestrator hosting, first vector store, embedding/reranker providers, production secrets, and whether production Orchestrator health/retrieval endpoints may be checked.
+- Recommendation: Render or existing Node assistant API host for the Orchestrator, Supabase Postgres + pgvector for first external vector store, Neo4j only after real deep graph traversal need appears.
+- Why manual: this requires cloud resources, billing choices, private credentials, and live production validation policy.
+- Codex can continue meanwhile: yes, by building local/mock Orchestrator contract, eval harness, provider-neutral adapters, and documentation.
+
 ## Done
 
 - None yet.

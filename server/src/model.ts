@@ -19,6 +19,10 @@ export interface GeneratedAnswer {
 const MODEL_REQUEST_TIMEOUT_MS = 20000
 
 function buildFallbackAnswer(question: string, citations: KnowledgeItem[], scope: 'public' | 'internal') {
+  if (scope === 'public' && isPrivateCredentialRequest(question)) {
+    return '我不能提供后台密码、API key、token、数据库连接或模型中转配置。公开助手只能说明公开演示入口、可公开的 demo 边界和状态页信息；如果需要配置密钥，请在部署平台的私有环境变量里处理。'
+  }
+
   if (citations.length === 0) {
     return scope === 'public'
       ? `关于“${question}”，公开资料里暂时没有足够证据。我不会补造结论；可以换成项目名、技术词，或先看项目页与状态页。`
@@ -65,6 +69,28 @@ function compactSummary(summary: string, maxLength = 90) {
   const normalized = summary.replace(/\s+/g, ' ').trim()
   if (normalized.length <= maxLength) return normalized
   return `${normalized.slice(0, maxLength - 1)}…`
+}
+
+function isPrivateCredentialRequest(question: string) {
+  const normalized = question.trim().toLowerCase()
+  const credentialTerms = [
+    'api key',
+    'apikey',
+    'secret key',
+    'access token',
+    'bearer token',
+    'model key',
+    '模型 key',
+    '密钥',
+    'token',
+    '数据库 url',
+    'database url',
+    '连接串',
+    '后台密码',
+    '管理员密码',
+    'admin password',
+  ]
+  return credentialTerms.some((term) => normalized.includes(term))
 }
 
 function buildIntentAnswerBody(question: string, titleList: string) {

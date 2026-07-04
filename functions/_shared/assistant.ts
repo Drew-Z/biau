@@ -32,6 +32,7 @@ type RetrievalIntent =
   | 'reliability-status'
   | 'technology-architecture'
   | 'blog-knowledge'
+  | 'private-credential'
   | 'broad-unknown'
 
 interface SearchAliasGroup {
@@ -190,6 +191,7 @@ const INTENT_TERMS: Record<RetrievalIntent, string[]> = {
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
   'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', '手记'],
+  'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
 
@@ -252,8 +254,9 @@ export async function handlePublicChat(request: Request, env: AssistantEnv) {
 function searchKnowledge(query: string, limit = 4) {
   const normalized = query.trim().toLowerCase()
   if (!normalized) return publicKnowledge.slice(0, limit)
-  const terms = extractQueryTerms(query)
   const intent = classifyAssistantIntent(query)
+  if (intent === 'private-credential') return []
+  const terms = extractQueryTerms(query)
   const expanded = expandEntities(publicKnowledgeV2, normalized, terms)
 
   return publicKnowledge
@@ -348,6 +351,10 @@ function fallbackResult(
 }
 
 function buildFallbackAnswer(question: string, citations: KnowledgeItem[]) {
+  if (isPrivateCredentialRequest(question)) {
+    return '我不能提供后台密码、API key、token、数据库连接或模型中转配置。公开助手只能说明公开演示入口、可公开的 demo 边界和状态页信息；如果需要配置密钥，请在部署平台的私有环境变量里处理。'
+  }
+
   if (citations.length === 0) {
     return `关于“${question}”，公开资料里暂时没有足够证据。我不会补造结论；可以换成项目名、技术词，或先看项目页与状态页。`
   }
@@ -450,6 +457,8 @@ function extractQueryTerms(query: string) {
 
 function classifyAssistantIntent(query: string): RetrievalIntent {
   const normalized = query.trim().toLowerCase()
+  if (isPrivateCredentialRequest(query)) return 'private-credential'
+
   const order: RetrievalIntent[] = [
     'reliability-status',
     'demo-access',
@@ -534,6 +543,28 @@ function inferSourceType(item: Pick<KnowledgeItem, 'id' | 'href'>): SourceType {
 
 function uniqueTerms(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim().toLowerCase()).filter(Boolean)))
+}
+
+function isPrivateCredentialRequest(question: string) {
+  const normalized = question.trim().toLowerCase()
+  const credentialTerms = [
+    'api key',
+    'apikey',
+    'secret key',
+    'access token',
+    'bearer token',
+    'model key',
+    '模型 key',
+    '密钥',
+    'token',
+    '数据库 url',
+    'database url',
+    '连接串',
+    '后台密码',
+    '管理员密码',
+    'admin password',
+  ]
+  return credentialTerms.some((term) => normalized.includes(term))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
