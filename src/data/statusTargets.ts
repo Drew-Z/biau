@@ -288,7 +288,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     ],
     gates: ['代码侧已支持生产普通注册默认开放；当前线上 bootstrap 可能因部署提交滞后、环境变量或平台配置保持关闭，滥用防护、公开演示账号和实际线上重启仍需独立观察。'],
     nextActions: [
-      '配置 `ERP_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run erp:synthetic` 生成 health、registrationEnabled 与注册策略检查。',
+      '配置 `ERP_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run erp:synthetic` 生成 health、registrationEnabled 与注册策略检查；若要判断部署是否滞后，可同时设置 `ERP_SYNTHETIC_EXPECTED_COMMIT` 为最新注册开放提交。',
       '准备可回收 demo 凭据后配置 `ERP_SYNTHETIC_USERNAME` / `ERP_SYNTHETIC_PASSWORD`，再启用登录 smoke。',
       '如果希望访客自助试用，先重新部署包含注册开放提交的 ERP 分支，再确认 `ERP_REGISTRATION_ENABLED` 没有被设置为关闭值，重启后复查登录页是否显示注册切换，并观察新账号默认 operator 权限。',
     ],

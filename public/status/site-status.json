@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-04T16:39:37.592Z",
+  "checkedAt": "2026-07-04T16:46:40.807Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 885,
-      "checkedAt": "2026-07-04T16:39:37.598Z",
+      "durationMs": 845,
+      "checkedAt": "2026-07-04T16:46:40.812Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "展示页已接入 BIAU Port / 泊岸标题与 favicon；入口可达代表展示页和截图可访问，正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1056,
-      "checkedAt": "2026-07-04T16:39:38.483Z",
+      "durationMs": 752,
+      "checkedAt": "2026-07-04T16:46:41.657Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "代码侧支持生产普通注册默认开放，但当前线上状态以 bootstrap synthetic 为准；登录页主品牌和后台侧栏已接入 BIAU Port / 泊岸外壳。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1230,
-      "checkedAt": "2026-07-04T16:39:39.539Z",
+      "durationMs": 940,
+      "checkedAt": "2026-07-04T16:46:42.409Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1416,
-      "checkedAt": "2026-07-04T16:39:40.769Z",
+      "durationMs": 896,
+      "checkedAt": "2026-07-04T16:46:43.349Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -90,8 +90,8 @@
       "note": "展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；阶段 APK 是否公开发布仍需人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1772,
-      "checkedAt": "2026-07-04T16:39:42.185Z",
+      "durationMs": 766,
+      "checkedAt": "2026-07-04T16:46:44.245Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -165,7 +165,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 885 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 845 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -234,7 +234,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应，并确认入口以 BIAU Port / 泊岸品牌外壳承载 Ozon ERP 产品名。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1230 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 940 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -255,7 +255,7 @@
           "label": "登录 / 注册策略",
           "status": "degraded",
           "description": "验证登录可用、当前线上注册策略、显式关闭开关效果和新用户默认角色安全。",
-          "evidence": "最近一次 synthetic 检查：Auth bootstrap returned registrationEnabled=false；production registration is currently closed or the deployment is stale。ERP 仓库注册逻辑支持未设置开关时默认开放普通注册，显式关闭值仍会关闭；当前线上是否开放由 `/api/auth/bootstrap` 的 registrationEnabled 决定，新注册账号默认是 operator。",
+          "evidence": "最近一次 synthetic 检查：Auth bootstrap returned registrationEnabled=false; registrationStatus=deploy-stale；deployment is stale; live commit 6b3dabc593c7 does not match expected 8f38437。ERP 仓库注册逻辑支持未设置开关时默认开放普通注册，显式关闭值仍会关闭；当前线上是否开放由 `/api/auth/bootstrap` 的 registrationEnabled 决定，新注册账号默认是 operator。",
           "cadence": "鉴权改动后",
           "ownerHint": "Auth synthetic check"
         },
@@ -284,7 +284,7 @@
         "代码侧已支持生产普通注册默认开放；当前线上 bootstrap 可能因部署提交滞后、环境变量或平台配置保持关闭，滥用防护、公开演示账号和实际线上重启仍需独立观察。"
       ],
       "nextActions": [
-        "配置 `ERP_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run erp:synthetic` 生成 health、registrationEnabled 与注册策略检查。",
+        "配置 `ERP_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run erp:synthetic` 生成 health、registrationEnabled 与注册策略检查；若要判断部署是否滞后，可同时设置 `ERP_SYNTHETIC_EXPECTED_COMMIT` 为最新注册开放提交。",
         "准备可回收 demo 凭据后配置 `ERP_SYNTHETIC_USERNAME` / `ERP_SYNTHETIC_PASSWORD`，再启用登录 smoke。",
         "如果希望访客自助试用，先重新部署包含注册开放提交的 ERP 分支，再确认 `ERP_REGISTRATION_ENABLED` 没有被设置为关闭值，重启后复查登录页是否显示注册切换，并观察新账号默认 operator 权限。"
       ]
@@ -301,7 +301,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应，并确认标题/favicon 归属泊岸展示体系。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1772 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 766 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -404,7 +404,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应，并确认 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属已同步。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1416 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 896 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

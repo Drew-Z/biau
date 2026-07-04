@@ -1,16 +1,20 @@
 {
-  "checkedAt": "2026-07-04T01:26:44.931Z",
+  "checkedAt": "2026-07-04T16:46:26.907Z",
   "apiBaseConfigured": true,
   "hasCredentials": false,
   "registrationEnabled": false,
+  "registrationStatus": "deploy-stale",
+  "registrationSummary": "Auth bootstrap still reports registrationEnabled=false, and the live commit does not match the expected registration-open commit.",
+  "expectedCommitConfigured": true,
+  "liveCommit": "6b3dabc593c7",
   "ok": true,
   "checks": [
     {
       "id": "ozon-erp-health",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 956,
-      "checkedAt": "2026-07-04T01:26:45.888Z",
+      "durationMs": 1298,
+      "checkedAt": "2026-07-04T16:46:28.206Z",
       "summary": "API health returned status=ok",
       "issues": []
     },
@@ -18,11 +22,11 @@
       "id": "ozon-erp-auth",
       "status": "degraded",
       "httpStatus": 200,
-      "durationMs": 525,
-      "checkedAt": "2026-07-04T01:26:46.413Z",
-      "summary": "Auth bootstrap returned registrationEnabled=false",
+      "durationMs": 1047,
+      "checkedAt": "2026-07-04T16:46:29.253Z",
+      "summary": "Auth bootstrap returned registrationEnabled=false; registrationStatus=deploy-stale",
       "issues": [
-        "production registration is currently closed or the deployment is stale"
+        "deployment is stale; live commit 6b3dabc593c7 does not match expected 8f38437"
       ]
     },
     {
@@ -30,7 +34,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-04T01:26:46.414Z",
+      "checkedAt": "2026-07-04T16:46:29.253Z",
       "summary": "Credentials are required before plugin or sync smoke checks",
       "issues": []
     }

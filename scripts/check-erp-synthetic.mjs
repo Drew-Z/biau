@@ -6,6 +6,13 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputPath = resolve(repoRoot, 'public/status/erp-synthetic.json')
 const DEFAULT_TIMEOUT_MS = 12_000
 const CHECK_IDS = ['ozon-erp-health', 'ozon-erp-auth', 'ozon-erp-plugin-sync']
+const REGISTRATION_STATUS = {
+  OPEN: 'open',
+  CLOSED_BY_ENV: 'closed-by-env',
+  DEPLOY_STALE: 'deploy-stale',
+  BLOCKED: 'blocked',
+  UNCHECKED: 'unchecked',
+}
 
 function parseArgs(argv) {
   const args = {
@@ -136,9 +143,59 @@ function hasLoginShape(data) {
   return token && refreshToken && role
 }
 
+function normalizeCommit(value) {
+  return String(value || '').trim().toLowerCase()
+}
+
+function commitMatches(liveCommit, expectedCommit) {
+  const live = normalizeCommit(liveCommit)
+  const expected = normalizeCommit(expectedCommit)
+  if (!live || !expected) return false
+  return live.startsWith(expected) || expected.startsWith(live)
+}
+
+function registrationStatusSummary(status) {
+  switch (status) {
+    case REGISTRATION_STATUS.OPEN:
+      return 'Auth bootstrap reports registrationEnabled=true.'
+    case REGISTRATION_STATUS.DEPLOY_STALE:
+      return 'Auth bootstrap still reports registrationEnabled=false, and the live commit does not match the expected registration-open commit.'
+    case REGISTRATION_STATUS.CLOSED_BY_ENV:
+      return 'Auth bootstrap reports registrationEnabled=false without a stale-deployment signal.'
+    case REGISTRATION_STATUS.BLOCKED:
+      return 'ERP health or auth bootstrap could not confirm the production registration state.'
+    default:
+      return 'ERP registration state was not checked.'
+  }
+}
+
+function resolveRegistrationStatus({ apiBaseConfigured, healthOk, bootstrapOk, registrationEnabled, liveCommit, expectedCommit }) {
+  if (!apiBaseConfigured) return REGISTRATION_STATUS.UNCHECKED
+  if (!healthOk || !bootstrapOk) return REGISTRATION_STATUS.BLOCKED
+  if (registrationEnabled === true) return REGISTRATION_STATUS.OPEN
+  if (expectedCommit && !commitMatches(liveCommit, expectedCommit)) return REGISTRATION_STATUS.DEPLOY_STALE
+  return REGISTRATION_STATUS.CLOSED_BY_ENV
+}
+
+function registrationIssue(status, liveCommit, expectedCommit) {
+  if (status === REGISTRATION_STATUS.DEPLOY_STALE) {
+    const live = liveCommit || 'unknown'
+    const expected = expectedCommit || 'latest registration-open commit'
+    return `deployment is stale; live commit ${live} does not match expected ${expected}`
+  }
+  if (status === REGISTRATION_STATUS.CLOSED_BY_ENV) {
+    return 'production registration is currently closed by environment or policy'
+  }
+  if (status === REGISTRATION_STATUS.BLOCKED) {
+    return 'registration state could not be confirmed'
+  }
+  return ''
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const baseUrl = normalizeBaseUrl(process.env.ERP_SYNTHETIC_API_BASE_URL)
+  const expectedCommit = normalizeCommit(process.env.ERP_SYNTHETIC_EXPECTED_COMMIT)
   const username = String(process.env.ERP_SYNTHETIC_USERNAME || '').trim()
   const password = String(process.env.ERP_SYNTHETIC_PASSWORD || '')
   const hasCredentials = Boolean(username && password)
@@ -147,7 +204,16 @@ async function main() {
 
   if (!baseUrl) {
     checks.push(...CHECK_IDS.map((id) => emptyCheck(id, 'ERP_SYNTHETIC_API_BASE_URL is not configured')))
-    await writeReport({ checkedAt, apiBaseConfigured: false, hasCredentials, checks })
+    await writeReport({
+      checkedAt,
+      apiBaseConfigured: false,
+      hasCredentials,
+      registrationEnabled: null,
+      registrationStatus: REGISTRATION_STATUS.UNCHECKED,
+      expectedCommitConfigured: Boolean(expectedCommit),
+      liveCommit: '',
+      checks,
+    })
     console.log('ERP synthetic report generated without API base URL; all live checks are unchecked.')
     return
   }
@@ -155,6 +221,7 @@ async function main() {
   const health = await requestJson(baseUrl, '/api/health', {}, args.timeoutMs)
   const healthData = dataFromWrappedResponse(health)
   const healthOk = health.ok && healthData?.status === 'ok'
+  const liveCommit = typeof healthData?.gitCommit === 'string' ? healthData.gitCommit : ''
   checks.push(
     checkFromResponse(
       'ozon-erp-health',
@@ -171,10 +238,18 @@ async function main() {
     typeof bootstrapData?.needsSetup === 'boolean' &&
     typeof bootstrapData?.registrationEnabled === 'boolean'
   const registrationEnabled = bootstrapOk ? bootstrapData.registrationEnabled === true : null
+  const registrationStatus = resolveRegistrationStatus({
+    apiBaseConfigured: true,
+    healthOk,
+    bootstrapOk,
+    registrationEnabled,
+    liveCommit,
+    expectedCommit,
+  })
   const registrationClosedIssue =
-    bootstrapOk && registrationEnabled === false ? 'production registration is currently closed or the deployment is stale' : ''
+    bootstrapOk && registrationEnabled === false ? registrationIssue(registrationStatus, liveCommit, expectedCommit) : ''
   const registrationSummary = bootstrapOk
-    ? `Auth bootstrap returned registrationEnabled=${registrationEnabled ? 'true' : 'false'}`
+    ? `Auth bootstrap returned registrationEnabled=${registrationEnabled ? 'true' : 'false'}; registrationStatus=${registrationStatus}`
     : 'Auth bootstrap payload is incomplete'
 
   if (!hasCredentials) {
@@ -189,7 +264,16 @@ async function main() {
       ),
     )
     checks.push(emptyCheck('ozon-erp-plugin-sync', 'Credentials are required before plugin or sync smoke checks'))
-    await writeReport({ checkedAt, apiBaseConfigured: true, hasCredentials, registrationEnabled, checks })
+    await writeReport({
+      checkedAt,
+      apiBaseConfigured: true,
+      hasCredentials,
+      registrationEnabled,
+      registrationStatus,
+      expectedCommitConfigured: Boolean(expectedCommit),
+      liveCommit,
+      checks,
+    })
     console.log('ERP health and auth bootstrap checked; login-dependent checks skipped because credentials are not configured.')
     if (args.strict && checks.some((check) => check.status === 'offline')) process.exitCode = 1
     return
@@ -230,7 +314,16 @@ async function main() {
     ),
   )
 
-  await writeReport({ checkedAt, apiBaseConfigured: true, hasCredentials, registrationEnabled, checks })
+  await writeReport({
+    checkedAt,
+    apiBaseConfigured: true,
+    hasCredentials,
+    registrationEnabled,
+    registrationStatus,
+    expectedCommitConfigured: Boolean(expectedCommit),
+    liveCommit,
+    checks,
+  })
   console.log(
     `ERP synthetic report generated: online=${checks.filter((check) => check.status === 'online').length} unchecked=${checks.filter((check) => check.status === 'unchecked').length} offline=${checks.filter((check) => check.status === 'offline').length}`,
   )
@@ -244,6 +337,10 @@ async function writeReport(report) {
     apiBaseConfigured: report.apiBaseConfigured,
     hasCredentials: report.hasCredentials,
     registrationEnabled: typeof report.registrationEnabled === 'boolean' ? report.registrationEnabled : null,
+    registrationStatus: report.registrationStatus,
+    registrationSummary: registrationStatusSummary(report.registrationStatus),
+    expectedCommitConfigured: report.expectedCommitConfigured === true,
+    liveCommit: report.liveCommit || null,
     ok: report.checks.every((check) => check.status !== 'offline'),
     checks: report.checks,
   }

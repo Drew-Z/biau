@@ -32,7 +32,7 @@ queue when the user is available.
 ### M4. Confirm ERP live production registration behavior
 
 - Related task: `07-03-erp-production-registration-live-verify`
-- Current evidence: live ERP entry and API health are online, but `/api/auth/bootstrap` returns `registrationEnabled=false`; live health reports a commit that predates the latest local registration-open commits.
+- Current evidence: live ERP entry and API health are online, but `/api/auth/bootstrap` returns `registrationEnabled=false`; live health reports git commit `6b3dabc593c7`, which is an ancestor of the current local/remote `8f38437` that includes the registration-open and BIAU Port brand commits.
 - Needed from user: redeploy ERP from the latest branch, then confirm whether registration appears; if it still does not, inspect `ERP_REGISTRATION_ENABLED` in the deployment platform.
 - Why manual: production deployment controls and account policy are external to this repo.
 - Codex can continue meanwhile: yes, with main-site status/data updates and repeatable synthetic checks.
