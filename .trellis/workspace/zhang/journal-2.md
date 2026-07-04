@@ -213,3 +213,36 @@ Recorded public assistant live deployment blocker, verified local Cloudflare Fun
 ### Next Steps
 
 - None - task complete
+
+
+## Session 54: Implement scoped assistant RAG services
+
+**Date**: 2026-07-04
+**Task**: Implement scoped assistant RAG services
+**Branch**: `main`
+
+### Summary
+
+Implemented final-shape assistant service modes, scoped RAG Orchestrator auth, Supabase pgvector adapter, Render blueprint, deployment docs, smoke tests, and backend spec updates.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7014abe` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
