@@ -279,3 +279,36 @@ Implemented Qdrant-backed RAG adapter configuration, sync/retrieve wiring, servi
 ### Next Steps
 
 - None - task complete
+
+
+## Session 56: Blog model fallback channels
+
+**Date**: 2026-07-04
+**Task**: Blog model fallback channels
+**Branch**: `main`
+
+### Summary
+
+Added same-profile fallback model channels for blog draft setup, status, doctor, and generation/polish flows.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7323292` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
