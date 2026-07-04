@@ -386,5 +386,72 @@
     ],
     "modelStrategy": "Codex 已能直接生成证据包草稿；若后续写正式长文，先用 strong profile 改写表达，再用 review profile 润色，最后由 Codex 复核事实、脱敏和入库。",
     "priority": 16
+  },
+  {
+    "order": 14,
+    "slug": "agentic-rag-frontier-2026",
+    "title": "2026 年的 RAG 不再只是检索：从 Agentic RAG 到泊岸助手的架构选择",
+    "column": "knowledge",
+    "tag": "AI 应用",
+    "series": "AI 应用知识库",
+    "summary": "基于 smart-search 调研整理 2026 年前沿 RAG 架构：任务路由、上下文 chunk、混合召回、融合排序、证据评估、agentic loop、GraphRAG 边界、eval 和可观测性如何组合成泊岸助手路线。",
+    "targetReader": "关注 AI 助手、知识库问答、RAG 工程化和项目架构选择的技术访客",
+    "knowledgePoints": [
+      "Naive RAG",
+      "Agentic RAG",
+      "Adaptive-RAG",
+      "Self-RAG",
+      "CRAG",
+      "Contextual Retrieval",
+      "Hybrid Retrieval",
+      "Dense/Sparse Fusion",
+      "RRF/DBSF",
+      "Rerank",
+      "Evidence Judge",
+      "GraphRAG",
+      "Qdrant",
+      "Scoped RAG Orchestrator",
+      "Grounding Routing",
+      "Retrieval Meta",
+      "Refusal Policy",
+      "RAG Eval Set"
+    ],
+    "projectExamples": ["BIAU Port 公开助手", "内部助手", "RAG Orchestrator"],
+    "publicAngle": "解释为什么泊岸助手先选择 Agentic Hybrid RAG + scoped RAG Orchestrator + Qdrant，而不是一开始就引入重图数据库。",
+    "evidenceSources": [
+      "https://arxiv.org/html/2501.09136v4",
+      "https://arxiv.org/html/2604.09666v1",
+      "https://www.anthropic.com/engineering/contextual-retrieval",
+      "https://qdrant.tech/documentation/search/hybrid-queries/",
+      "https://docs.langchain.com/oss/python/langgraph/agentic-rag",
+      "https://microsoft.github.io/graphrag/",
+      "https://arxiv.org/html/2310.11511",
+      "https://aclanthology.org/2024.naacl-long.389.pdf",
+      "https://arxiv.org/html/2401.15884",
+      "server/src/app.ts",
+      "server/src/model.ts",
+      "server/src/ragClient.ts",
+      "server/src/ragOrchestrator.ts",
+      "server/src/ragQdrantStore.ts",
+      "server/src/knowledge.ts"
+    ],
+    "safeFacts": [
+      "截至本轮 2026-07-04 smart-search 调研，前沿 RAG 更像多层控制系统，不是单次 top-k 检索。",
+      "Agentic RAG、Adaptive-RAG、Self-RAG、CRAG、Contextual Retrieval、Qdrant hybrid queries 和 GraphRAG 都支持本文的分层判断。",
+      "当前泊岸助手代码已经包含公开/内部助手服务边界、RAG Orchestrator、Qdrant adapter、本地 fallback、grounding 路由、敏感信息拒答和确定性自检。",
+      "当前实现应描述为第一条生产切片，不应描述为完整最终形态。"
+    ],
+    "uncertainFacts": [
+      "没有在本轮验证线上回答质量指标、用户反馈、延迟 SLO 或生产 eval 结果。",
+      "GraphRAG/Neo4j 是否必要取决于未来真实多跳关系问题和语料规模。",
+      "模型回答质量仍依赖私有 provider 配置，不能从文章架构直接推导。"
+    ],
+    "forbiddenDetails": [
+      "不要写入 API key、token、数据库连接串、模型中转站真实地址、Qdrant endpoint、Render/Supabase 私有配置或 admin/invite 凭据。",
+      "不要把当前实现包装成已经完成完整 Agentic RAG、完整 GraphRAG 或正式 SLA。",
+      "不要编造指标、访问量、生产日志或线上质量结论。"
+    ],
+    "modelStrategy": "本 topic 的 baseline 已由 Codex 基于 smart-search 和代码证据完成；review profile 只能润色 Draft Body 表达，不得新增证据包之外的能力、指标或私有部署细节；Codex 最后做事实、安全和偏差复核。",
+    "priority": 17
   }
 ]

@@ -456,6 +456,42 @@
       "sourceType": "blog"
     },
     {
+      "id": "blog:agentic-rag-frontier-2026",
+      "title": "2026 年的 RAG 不再只是检索：从 Agentic RAG 到泊岸助手的架构选择",
+      "summary": "把 2026 年前沿 RAG 拆成可落地的知识卡：任务路由、上下文 chunk、混合召回、融合排序、证据评估、agentic loop、GraphRAG 边界、eval 与观测如何组合成泊岸助手的技术路线。",
+      "href": "/blog/agentic-rag-frontier-2026",
+      "tags": [
+        "AI 应用",
+        "knowledge",
+        "知识积累",
+        "Knowledge Notes",
+        "AI 应用知识库",
+        "精选",
+        "技术方法",
+        "精选知识",
+        "Naive RAG",
+        "Agentic RAG",
+        "Adaptive-RAG",
+        "Self-RAG",
+        "CRAG",
+        "Contextual Retrieval",
+        "Hybrid Retrieval",
+        "Dense/Sparse Fusion",
+        "RRF/DBSF",
+        "Rerank",
+        "Evidence Judge",
+        "GraphRAG",
+        "Qdrant",
+        "Scoped RAG Orchestrator",
+        "Grounding Routing",
+        "Retrieval Meta",
+        "Refusal Policy",
+        "RAG Eval Set"
+      ],
+      "visibility": "public",
+      "sourceType": "blog"
+    },
+    {
       "id": "blog:content-modeling-project-site",
       "title": "内容模型设计：项目、资源与博客如何分层",
       "summary": "产品化展示站点不能把所有内容塞进一个页面。本文讨论如何把项目、资源、博客、案例和试玩入口拆成稳定内容模型。",
@@ -1645,6 +1681,43 @@
       }
     },
     {
+      "id": "chunk:blog:agentic-rag-frontier-2026:1",
+      "documentId": "blog:agentic-rag-frontier-2026",
+      "text": "把 2026 年前沿 RAG 拆成可落地的知识卡：任务路由、上下文 chunk、混合召回、融合排序、证据评估、agentic loop、GraphRAG 边界、eval 与观测如何组合成泊岸助手的技术路线。",
+      "section": "summary",
+      "metadata": {
+        "sourceType": "blog",
+        "tags": [
+          "AI 应用",
+          "knowledge",
+          "知识积累",
+          "Knowledge Notes",
+          "AI 应用知识库",
+          "精选",
+          "技术方法",
+          "精选知识",
+          "Naive RAG",
+          "Agentic RAG",
+          "Adaptive-RAG",
+          "Self-RAG",
+          "CRAG",
+          "Contextual Retrieval",
+          "Hybrid Retrieval",
+          "Dense/Sparse Fusion",
+          "RRF/DBSF",
+          "Rerank",
+          "Evidence Judge",
+          "GraphRAG",
+          "Qdrant",
+          "Scoped RAG Orchestrator",
+          "Grounding Routing",
+          "Retrieval Meta",
+          "Refusal Policy",
+          "RAG Eval Set"
+        ]
+      }
+    },
+    {
       "id": "chunk:blog:content-modeling-project-site:1",
       "documentId": "blog:content-modeling-project-site",
       "text": "产品化展示站点不能把所有内容塞进一个页面。 本文讨论如何把项目、资源、博客、案例和试玩入口拆成稳定内容模型。",
@@ -1733,6 +1806,44 @@
     }
   ],
   "entities": [
+    {
+      "id": "blog:agentic-rag-frontier-2026",
+      "type": "blog-post",
+      "name": "2026 年的 RAG 不再只是检索：从 Agentic RAG 到泊岸助手的架构选择",
+      "aliases": [
+        "2026 年的 rag 不再只是检索：从 agentic rag 到泊岸助手的架构选择",
+        "ai 应用",
+        "knowledge",
+        "知识积累",
+        "knowledge notes",
+        "ai 应用知识库",
+        "精选",
+        "技术方法",
+        "精选知识",
+        "naive rag",
+        "agentic rag",
+        "adaptive-rag",
+        "self-rag",
+        "crag",
+        "contextual retrieval",
+        "hybrid retrieval",
+        "dense/sparse fusion",
+        "rrf/dbsf",
+        "rerank",
+        "evidence judge",
+        "graphrag",
+        "qdrant",
+        "scoped rag orchestrator",
+        "grounding routing",
+        "retrieval meta",
+        "refusal policy",
+        "rag eval set"
+      ],
+      "metadata": {
+        "documentId": "blog:agentic-rag-frontier-2026",
+        "href": "/blog/agentic-rag-frontier-2026"
+      }
+    },
     {
       "id": "blog:blog-content-system-build-log",
       "type": "blog-post",
@@ -3773,6 +3884,16 @@
       "weight": 0.9,
       "evidenceDocumentIds": [
         "site:status"
+      ]
+    },
+    {
+      "id": "documentedBy:site:biau-port->blog:agentic-rag-frontier-2026",
+      "fromEntityId": "site:biau-port",
+      "toEntityId": "blog:agentic-rag-frontier-2026",
+      "type": "documentedBy",
+      "weight": 0.6,
+      "evidenceDocumentIds": [
+        "blog:agentic-rag-frontier-2026"
       ]
     },
     {

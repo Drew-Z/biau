@@ -153,5 +153,35 @@ export const blogPosts: BlogPostSummary[] = [
       "BlogColumn 栏目模型",
       "AI 写作流水线"
     ]
+  },
+  {
+    "slug": "agentic-rag-frontier-2026",
+    "title": "2026 年的 RAG 不再只是检索：从 Agentic RAG 到泊岸助手的架构选择",
+    "tag": "AI 应用",
+    "column": "knowledge",
+    "detail": "把 2026 年前沿 RAG 拆成可落地的知识卡：任务路由、上下文 chunk、混合召回、融合排序、证据评估、agentic loop、GraphRAG 边界、eval 与观测如何组合成泊岸助手的技术路线。",
+    "date": "2026-07-04",
+    "readTime": "18 min",
+    "series": "AI 应用知识库",
+    "knowledgePoints": [
+      "Naive RAG",
+      "Agentic RAG",
+      "Adaptive-RAG",
+      "Self-RAG",
+      "CRAG",
+      "Contextual Retrieval",
+      "Hybrid Retrieval",
+      "Dense/Sparse Fusion",
+      "RRF/DBSF",
+      "Rerank",
+      "Evidence Judge",
+      "GraphRAG",
+      "Qdrant",
+      "Scoped RAG Orchestrator",
+      "Grounding Routing",
+      "Retrieval Meta",
+      "Refusal Policy",
+      "RAG Eval Set"
+    ]
   }
 ]
