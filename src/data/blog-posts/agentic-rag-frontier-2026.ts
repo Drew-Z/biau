@@ -2,13 +2,13 @@ import type { BlogPost } from '../blogShared'
 
 const post: BlogPost = {
   slug: 'agentic-rag-frontier-2026',
-  title: '2026 年的 RAG 不再只是检索：从 Agentic RAG 到泊岸助手的架构选择',
+  title: '2026 年的 RAG 不再只是检索：Agentic RAG、混合检索与 GraphRAG 的知识地图',
   tag: 'AI 应用',
   column: 'knowledge',
   detail:
-    '把 2026 年前沿 RAG 拆成可落地的知识卡：任务路由、上下文 chunk、混合召回、融合排序、证据评估、agentic loop、GraphRAG 边界、eval 与观测如何组合成泊岸助手的技术路线。',
+    '从问题路由、上下文 chunk、混合召回、融合排序、证据评估、纠错检索、GraphRAG 边界到 eval 与观测，梳理前沿 RAG 架构为什么从“向量 top-k”走向可控的证据系统。',
   date: '2026-07-04',
-  readTime: '18 min',
+  readTime: '16 min',
   series: 'AI 应用知识库',
   knowledgePoints: [
     'Naive RAG',
@@ -23,108 +23,101 @@ const post: BlogPost = {
     'Rerank',
     'Evidence Judge',
     'GraphRAG',
-    'Qdrant',
-    'Scoped RAG Orchestrator',
-    'Grounding Routing',
-    'Retrieval Meta',
-    'Refusal Policy',
+    'RAG Evaluation',
+    'Retrieval Observability',
     'RAG Eval Set',
   ],
   scenarios: [
-    '公开站点 AI 助手',
-    '内部项目知识库问答',
-    '跨项目技术案例检索',
-    '合同审查与引用溯源',
-    'RAG 质量诊断与状态页观测',
+    '站内知识库问答',
+    '企业文档助手',
+    '客服与技术支持机器人',
+    '合同审查与引用溯源类应用',
+    '跨文档研究与知识发现',
   ],
   practiceChecklist: [
-    '先给问题分类：站点事实、创作、规划、敏感凭据、越界咨询分别走不同 grounding',
-    '对项目名、错误码、状态标签和 URL 类问题保留关键词/稀疏信号，不只依赖 embedding',
-    '给 chunk 写入项目、栏目、状态、版本、可见性和来源类型，避免孤立段落失去语境',
-    '初召回后保留 candidateCount、citationCount、sufficiency、fallbackReason 和 expandedEntityCount',
-    '用 rerank 或 evidence judge 判断证据是否足够，弱证据只给边界说明或引导用户补充问题',
-    '把创作类请求从 strict retrieval 中放出来，避免站内资料污染写作任务',
-    '只有出现稳定的跨实体、多跳、全局总结需求时，再引入 GraphRAG-lite 或图数据库',
-    '为公开助手建立小型 eval 集，覆盖入口、状态、技术栈、博客知识、敏感拒答和无资料拒答',
-    '把每次回答的 retrieval meta 接进状态页或内部诊断页，避免只凭感觉判断质量',
+    '先判断问题是否真的需要检索：事实问答、开放创作、私密凭据、越界咨询不能走同一条链路',
+    '为 chunk 保留来源、标题、章节、实体、时间、可见性和适用范围，避免切片脱离语境',
+    '把 dense embedding 与关键词、BM25 或 sparse vector 结合，保护项目名、错误码、模型名和专有名词',
+    '多路召回后使用 RRF、DBSF 或 rerank 统一排序，不把候选简单拼接给模型',
+    '回答前判断证据是否足够：证据弱时降级、澄清或拒答，而不是让模型自由补全',
+    '检索失败要有纠错路径：改写问题、扩大检索、使用可信外部搜索或明确说明无资料',
+    '只有关系密集、全局总结和多跳分析成为高频需求时，再引入 GraphRAG 或图数据库',
+    '建立小型 eval 集，覆盖可回答、不可回答、证据冲突、精确字符串、复杂多跳和敏感拒答',
+    '记录 retrieval meta、引用覆盖、回答延迟和失败原因，让质量优化可观测',
   ],
   sections: [
     {
-      title: '问题边界：RAG 不是把 top-k 塞给模型',
+      title: 'RAG 的问题边界：不是把 top-k 塞给模型',
       body:
-        '早期 RAG 常被简化成“向量库召回 top-k 片段，再让模型回答”。这个流程能快速工作，但它假设所有问题都需要检索、所有检索都只做一次、所有候选片段都可信、所有回答都应该生成。到 2026 年，更实用的理解是：RAG 是围绕证据选择、证据评估和回答边界建立的控制系统。检索只是其中一个动作，不是唯一动作。',
+        'Naive RAG 通常是三步：切文档、向量召回 top-k、把片段塞进提示词。它能快速上线，但默认了几个危险假设：所有问题都需要检索，检索只需要一次，召回片段天然可信，模型拿到片段就会按证据回答。前沿 RAG 的重点已经转向“控制系统”：先决定是否检索，再决定怎么检索，最后判断证据是否足够生成答案。',
     },
     {
-      title: '核心知识点 1：任务路由决定是否检索',
+      title: 'Agentic RAG：把检索变成可决策流程',
       body:
-        'Agentic RAG 的第一步不是查库，而是判断用户意图。站点事实类问题适合 strict grounding；创作、改写、头脑风暴类问题可以 background grounding 或 none grounding；索要后台密码、API key、数据库 URL 这类请求应该直接拒答。泊岸助手代码里已经有 public/internal 边界，以及 internal 的 strict、background、none grounding 思路，这比“任何问题都检索”更接近可控产品。',
+        'Agentic RAG 的“agentic”不等于让模型随意行动，而是把检索拆成显式决策节点：是否需要查资料、该查哪个库、是否需要改写问题、候选是否相关、是否可以回答。LangGraph 的 Agentic RAG 示例就把流程拆成生成检索意图、调用 retriever、判断文档相关性、改写问题、生成回答等节点。工程上真正重要的是这些节点可观察、可测试、可替换。',
     },
     {
-      title: '核心知识点 2：Adaptive-RAG 关心问题复杂度',
+      title: 'Adaptive-RAG：按问题复杂度选择策略',
       body:
-        'Adaptive-RAG 的价值在于把问题按复杂度分流：简单问题可能不需要检索，普通事实问题适合一次检索，复杂多跳问题才值得多步检索或问题改写。工程上可以把它落成一个路由表：无资料请求走澄清，单事实请求走一次 hybrid retrieval，多实体关系请求走二次检索或关系扩展，创作请求不强行引用站内资料。',
+        'Adaptive-RAG 的核心问题是：真实用户不会只问一种复杂度的问题。NAACL 2024 的 Adaptive-RAG 论文把策略分成无检索、单步检索、多步检索，并用问题复杂度分类器选择路径。这个思想比“所有问题都跑最强链路”更实用：简单问题少花钱、普通事实问题一次检索、复杂多跳问题才进入更慢的推理和检索循环。',
     },
     {
-      title: '核心知识点 3：Self-RAG 强调按需检索和自检',
+      title: 'Self-RAG：按需检索与自我批评',
       body:
-        'Self-RAG 反对无条件把固定段落塞进上下文，它更强调“需要时检索”和“生成后检查支持度”。在产品里，这对应两个能力：一是模型或规则判断当前问题是否真的需要站内证据；二是回答生成后做确定性自检，例如是否出现私有路径、密钥、未公开来源格式，或者是否在证据不足时说得太确定。',
+        'Self-RAG 论文指出，固定检索若干段落可能降低模型灵活性，也可能把无关资料带进回答。它训练模型用 reflection tokens 判断何时检索、片段是否相关、回答是否被证据支持、回答是否有用。产品里未必照搬训练方案，但可以借鉴同一个控制思想：检索前判断需求，生成前评估片段，生成后检查支持度和引用边界。',
     },
     {
-      title: '核心知识点 4：CRAG 处理检索失败而不是粉饰失败',
+      title: 'CRAG：检索失败后的纠错路径',
       body:
-        'CRAG 的核心提醒是：检索会错，错了以后不能让生成模型硬答。它把检索结果评估为 Correct、Incorrect 或 Ambiguous，并触发不同动作。落到泊岸助手，可以对应 sufficient、weak、none 三种状态：enough 才回答；weak 要降低语气并给出边界；none 要拒答或请求补充，而不是编造项目状态。',
+        'CRAG 研究的是一个常被忽略的问题：如果检索错了怎么办。它用轻量检索评估器判断结果质量，并触发 Correct、Incorrect、Ambiguous 等动作；检索不可靠时，系统可以丢弃错误文档、补充外部搜索、或把文档拆解过滤后再组合。工程启发很直接：RAG 需要失败分支，不能只要“成功路径”。',
     },
     {
-      title: '核心知识点 5：Contextual Retrieval 解决 chunk 失忆',
+      title: 'Contextual Retrieval：解决 chunk 失忆',
       body:
-        '很多 RAG 失败不是因为模型弱，而是 chunk 被切碎后失去背景。Contextual Retrieval 的启发是：chunk 应该带上文档级背景。对泊岸来说，一个 chunk 不应只保存“支持 Qdrant”，还应该知道它属于公开助手、RAG Orchestrator、某篇博客或某个项目页，知道可见性、栏目、状态和适用范围。这样召回和引用都更稳。',
+        '很多检索失败不是向量库太弱，而是 chunk 被切碎后失去上下文。Anthropic 的 Contextual Retrieval 建议在 chunk 前补入简短的文档级解释，再分别用于 embedding 和 BM25。它还给出实验结果：Contextual Embeddings 加 Contextual BM25 可降低 top-20 检索失败率，配合 rerank 进一步降低失败率。这里的关键不是某个模型，而是让切片保留“我来自哪里、在讲什么、适用什么问题”。',
     },
     {
-      title: '核心知识点 6：Hybrid Retrieval 不是口号，而是两类信号互补',
+      title: 'Hybrid Retrieval：dense 与 sparse 为什么互补',
       body:
-        '向量检索擅长语义相似，但对项目名、错误码、模型 ID、路由名、状态标签和 URL 这类精确文本不一定稳定。关键词、BM25 或稀疏检索能补上精确匹配。Hybrid Retrieval 的工程目标不是“多一种检索显得高级”，而是让语义召回和精确召回互补，并在 retrieval meta 中记录它们各自贡献了多少候选。',
+        'Dense embedding 擅长语义相近，例如“合同风险”与“条款审查”；sparse、BM25 或关键词检索擅长精确字符串，例如错误码、模型 ID、项目名、法规条号。Anthropic 的文章也用 BM25 补足 embedding 对唯一标识符不稳定的问题。Hybrid Retrieval 的意义是把语义召回和精确召回并列为证据入口，而不是迷信单一 embedding。',
     },
     {
-      title: '核心知识点 7：融合排序决定候选是否真正可用',
+      title: 'RRF、DBSF 与 rerank：候选如何排序',
       body:
-        '多路召回后不能简单拼接结果。RRF 这类 rank fusion 会利用不同召回列表中的排名信号，DBSF 这类分数融合会处理不同分数分布之间的可比性。Qdrant 的 hybrid 与 multi-stage query 能支持这类路线。更重要的是，融合排序后要看引用多样性：只有一个来源支持的回答，应当比多个独立公开资料支持的回答更谨慎。',
+        '多路召回后不能简单拼接候选，因为不同检索器的分数尺度不一致。Qdrant 的 Hybrid and Multi-Stage Queries 文档明确提供 dense/sparse 的 prefetch 查询，并支持 RRF 与 DBSF 这类融合方式。RRF 更看重多个列表里的排名位置，DBSF 尝试处理分数分布差异。随后再用 rerank 模型或规则筛掉弱相关片段，才能减少“看似相关但不能回答”的上下文噪音。',
     },
     {
-      title: '核心知识点 8：rerank 和 evidence judge 是生成前的质检',
+      title: 'Evidence Judge：回答前先判断证据够不够',
       body:
-        '召回候选不等于可回答。rerank 负责重新排序候选片段，evidence judge 负责判断这些片段是否足以回答问题。一个低成本版本可以先用规则：引用数不足、候选分数过低、来源都来自同一项目、命中私有凭据意图，都降级为 weak 或 none。后续再用模型或专门 reranker 做更细判断。',
+        '召回到相关片段不等于可以回答。Evidence Judge 可以是规则、分类器、reranker、LLM judge 或它们的组合，用来判断证据是否覆盖问题中的关键断言。低成本版本也有价值：引用数不足、来源过单一、分数过低、片段之间冲突、问题要求私密信息时，系统应降级为澄清、边界说明或拒答，而不是把弱证据包装成确定答案。',
     },
     {
-      title: '核心知识点 9：GraphRAG 适合关系密集问题，但不该提前崇拜',
+      title: 'GraphRAG：适合关系密集问题，但不是默认起点',
       body:
-        'GraphRAG 的强项是跨文档、多实体、全局总结和关系推理。它需要抽取实体和关系，构建 community summary，并维护图索引。公开展示站当前主要是项目页、状态页、博客和演示入口，先做好 contextual chunk、hybrid retrieval、rerank、refusal 和 eval 更划算。只有当真实问题反复追问“项目之间如何依赖”“版本状态为什么变化”“多篇资料之间有什么关系”时，GraphRAG-lite 或 Neo4j 才会变成刚需。',
+        'GraphRAG 的强项是跨文档、多实体、全局总结和关系推理。Microsoft GraphRAG 文档把流程描述为从文本抽取实体、关系和 claims，构建 community hierarchy，再在查询时使用 global search、local search、DRIFT search 等模式。它很适合“连接散落信息”“理解大语料整体主题”这类问题，但也带来抽取、索引、维护和更新成本。语料小、问题简单或实体关系不稳定时，先做好 contextual chunk、hybrid retrieval、rerank 和 eval 往往更划算。',
     },
     {
-      title: '泊岸当前实现映射',
+      title: 'Eval 与观测：如何知道 RAG 真的变好',
       body:
-        '当前代码已经有 RAG Orchestrator、Qdrant adapter、本地只读 fallback、公开/内部助手边界、凭据请求拒答、retrieval meta 和确定性自检。Qdrant 路径会返回 agentic-hybrid-qdrant，本地路径会返回 local-agentic-hybrid；meta 中包含 candidateCount、citationCount、sufficiency、fallbackReason、expandedEntityCount 和 modelCalls。这些字段不是装饰，它们是后续质量观测和状态页诊断的入口。',
+        'RAG 质量不能只靠“感觉回答更好”。至少要有一组固定 eval 问题，覆盖可回答、不可回答、证据不足、精确字符串、多跳关系、敏感拒答和过期信息。每次回答还应该记录 retrieval meta：检索策略、候选数、引用数、证据 sufficiency、fallback reason、延迟和失败类型。这样才能判断改动到底提升了召回、排序、证据覆盖，还是只是让模型语气更像那么回事。',
     },
     {
-      title: '一个更具体的回答流程',
+      title: '资料来源：这篇文章依据什么',
       body:
-        '用户问“Legal RAG 的合同审查现在能不能演示？”时，公开助手应该先判定为站点事实问题，进入 strict grounding；检索公开项目页、状态页和博客；如果 sufficiency 是 enough，就回答可见入口、演示边界和当前状态；如果 weak，就说明资料不足并给出可查看页面；如果 private-credential，就拒绝提供后台密码。这个流程比“召回几段文字让模型自由发挥”更接近产品级助手。',
+        '本文主要依据这些公开资料：Self-RAG 论文 https://arxiv.org/abs/2310.11511；CRAG 论文 https://arxiv.org/abs/2401.15884；Adaptive-RAG 论文 https://aclanthology.org/2024.naacl-long.389/；Anthropic Contextual Retrieval 工程文章 https://www.anthropic.com/engineering/contextual-retrieval；Qdrant Hybrid Queries 文档 https://qdrant.tech/documentation/search/hybrid-queries/；Microsoft GraphRAG 文档 https://microsoft.github.io/graphrag/；LangGraph Agentic RAG 教程 https://docs.langchain.com/oss/python/langgraph/agentic-rag。它们分别支撑本文关于按需检索、纠错检索、问题复杂度路由、上下文切片、混合召回、图式检索和 agentic 流程拆分的判断。',
     },
     {
-      title: '为什么上一版显得空',
+      title: '一个应用注脚：泊岸助手应该怎么取舍',
       body:
-        '上一版的问题不是方向错，而是知识颗粒太粗：只说“要路由、要混合检索、要可观测”，却没有解释每个机制解决什么失败模式，也没有给出工程判据。知识积累类文章应该让读者带走可迁移的判断方式：什么时候不检索，什么时候补关键词，什么时候拒答，什么时候才需要图数据库，什么时候该看 retrieval meta。',
-    },
-    {
-      title: '下一阶段路线：先质量闭环，再图谱扩展',
-      body:
-        '更合理的路线是三步。第一步，把公开知识库 chunk 做上下文化，并让检索 meta 稳定进入日志和状态页。第二步，在 Qdrant 上推进 dense/sparse 或关键词信号融合，同时加入 rerank/evidence judge。第三步，基于真实问题日志抽取轻量实体关系，形成 GraphRAG-lite；只有当图遍历和全局总结频繁出现，才进入 Neo4j 或完整 GraphRAG。',
+        '放到泊岸这类公开站点助手里，合理路线不是先上最重的图数据库，而是先把问题路由、上下文 chunk、hybrid retrieval、证据 sufficiency、敏感拒答和 eval 做扎实。当前已经讨论并推进的 Agentic Hybrid RAG 方向符合这个判断：先让回答质量可解释、可降级、可观测；等真实问题证明“项目之间关系”和“跨文档全局总结”成为高频需求，再进入 GraphRAG-lite 或 Neo4j。',
     },
   ],
   takeaways: [
-    '前沿 RAG 的核心不是“多接一个向量库”，而是任务路由、证据评估、拒答和观测组成的控制面。',
-    'Hybrid Retrieval 要解决具体失败模式：语义召回漏掉精确字符串，关键词召回理解不了同义表达，融合排序负责把两者合并成可用候选。',
-    'GraphRAG 是关系密集场景的强工具，但在公开站点语料较小、问题尚未证明多跳需求前，先做 Agentic Hybrid RAG 更稳。',
-    '泊岸助手已经有第一条生产切片，但下一步必须用 eval、retrieval meta 和状态页把“回答变好”变成可观测事实。',
+    '前沿 RAG 的核心不是“多接一个向量库”，而是路由、召回、排序、证据判断、失败降级和观测组成的控制面。',
+    'Adaptive-RAG、Self-RAG、CRAG 解决的是同一类问题：不要无条件检索，不要无条件相信检索，不要在检索失败时硬答。',
+    'Contextual Retrieval、Hybrid Retrieval、RRF/DBSF 和 rerank 主要提升“找得到、排得准、噪音少”的检索质量。',
+    'GraphRAG 适合关系密集和全局理解场景，但只有在真实问题证明多跳和整体摘要需求足够高时才值得承担复杂度。',
+    'RAG 是否进步，最终要看 eval 集、引用覆盖、retrieval meta、失败原因和用户问题日志，而不是只看一次回答是否顺耳。',
   ],
 }
 

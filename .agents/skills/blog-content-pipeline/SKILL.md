@@ -150,6 +150,8 @@ For setup details and profile examples, read `references/usage.md`.
 
 Prefer Markdown or structured notes during drafting, then convert reviewed content into the typed `BlogPost` shape. Keep title, detail, sections, takeaways, knowledge points, and tags concrete.
 
+For `知识积累 / Knowledge Notes`, write knowledge-point-first: define the concept, explain mechanisms, compare tradeoffs, name failure modes, and give reusable checklists before mentioning any local project. Project references should be brief application notes unless the user explicitly asks for a project-focused post.
+
 Avoid generic AI prose, resume/interview tone, learning-day framing, empty listicles, and public claims that are not supported by the evidence pack.
 
 ## Review Gates

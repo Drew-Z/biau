@@ -75,6 +75,7 @@ Hard rules:
 - Project-page overlap: stable capability lists belong on project pages; blogs should explain process, tradeoffs, lessons, or iteration.
 - Voice: no generic AI filler, inflated claims, resume tone, interview tone, or learning-day framing.
 - Structure: title, detail, sections, takeaways, tags, scenarios, and checklist are concrete.
+- Knowledge column fit: `知识积累 / Knowledge Notes` posts explain the reusable knowledge point first. Project mentions are supporting application notes, not the organizing spine.
 - Public assistant impact: summary and tags will improve retrieval rather than drown project facts.
 - Mode gate: model-assisted drafts have an explicit configured channel; Codex-only
   drafts record `none`; live checks or generation were explicitly approved.

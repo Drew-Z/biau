@@ -6,6 +6,8 @@
 
 这个长期任务不只修主站展示层。只要改动能反哺 BIAU Port 的公开展示、演示可用性、可靠性观察、构建质量或项目可信度，也可以进入关联项目主体做低风险、可验证的小步改进。
 
+当前用户明确授权长期持续执行：当多个路线都合理时，Codex 按本任务内的默认推荐路线决策并继续推进，不再为了普通优先级、局部实现方式或低风险验证反复等待用户选择。只有涉及密钥、生产账号、云平台、付费资源、真实模型调用、APK/二进制公开、真实用户数据或不可逆部署设置时，才记录人工门禁并切换到其他未阻塞工作。
+
 ## User Value
 
 - 用户休息或离开时，Codex 仍能围绕项目目标持续寻找可推进的任务，而不是只停在当前一个子问题上。
@@ -19,7 +21,7 @@
 
 - `07-04-public-assistant-kg-lite`
   - 当前标题：Public assistant frontier RAG / agentic knowledge upgrade
-  - 角色：公开助手本地 Agentic Hybrid RAG MVP 子任务，已完成本地知识 V2、实体关系扩展和确定性 rerank 基线
+  - 角色：公开助手本地 Agentic Hybrid RAG MVP 子任务，已完成本地知识 V2、实体关系扩展和确定性 rerank 基线；后续外部 Orchestrator / Qdrant / Supabase / 生产模型属于后续子任务或人工门禁
 - `07-04-public-assistant-rag-orchestrator-phase-2`
   - 当前标题：Public Assistant RAG Orchestrator Phase 2
   - 角色：公开助手二期子任务，目标是外部 RAG Orchestrator、向量检索、reranker、self-check 和质量评测集
@@ -31,6 +33,8 @@
     - `07-03-pet-apk-public-release-closure`
     - `07-03-cross-project-scheduled-reliability-observability`
     - `07-03-ai-daily-content-pipeline-phase-1`
+- 当前会话临时收口项：
+  - RAG 知识文章与 blog-content-pipeline 知识栏目规则已经完成改写和验证，下一步优先只提交相关文件并推送，避免和长期跨项目改动混在一起。
 
 ## Workstream Scope
 
@@ -108,11 +112,12 @@
 
 Use this priority order while the user is away:
 
-1. ERP registration, login-page experience, production registration visibility, and main-site sync.
-2. Legal RAG demo access, QA / contract-review usability, and login-gate explanation.
+0. Current dirty-work closure: commit and push the already-verified RAG knowledge article / blog skill rule changes, staging only directly related files.
+1. Legal RAG demo access, QA / contract-review usability, and login-gate explanation.
+2. ERP registration, login-page experience, production registration visibility, and main-site sync.
 3. Pet showcase, APK release gate, and app/backend evidence needed for public display.
 4. Cross-project status pages, external links, synthetic checks, and reliability observation.
-5. Public assistant answer quality, local RAG groundwork, and project knowledge coverage.
+5. Public assistant answer quality, Agentic Hybrid RAG productionization groundwork, and project knowledge coverage.
 6. AI Daily and blog content pipeline.
 7. Xunqiu, Game/Playlab, and other related project showcase/build/entrypoint gaps.
 
@@ -150,7 +155,7 @@ For each long-running cycle:
 1. Inspect active tasks and repo status.
 2. Run a discovery sweep across current project surfaces and linked project surfaces.
 3. Select the highest-value unblocked child task or create/update a child task for a newly found gap.
-4. If the child is planning-only, finish PRD/design/implement and ask for start approval unless the user has already authorized implementation.
+4. If the child is planning-only, finish PRD/design/implement. Because the user has authorized this long-running default route, Codex may start the next recommended child after planning artifacts are complete unless the child contains a manual gate or high-risk production change.
 5. If in progress, implement, validate, record spec learnings, commit, and push when appropriate.
 6. Add newly discovered work to the task tree or candidate backlog.
 7. Update `manual-actions.md`.
@@ -180,6 +185,7 @@ Discovery sweeps should inspect:
 - [ ] Existing cross-project release readiness parent task is linked as a child.
 - [ ] Manual actions are recorded in one clear queue.
 - [ ] The parent task describes how Codex should keep working while the user is away.
+- [ ] The parent task records the default-decision policy: Codex follows recommended routes without waiting for routine choices, and only parks hard manual gates.
 - [ ] The parent task describes how Codex should actively discover gaps in the current project and related projects.
 - [ ] The parent task explicitly allows low-risk, locally verifiable improvements inside related project repositories when they support public presentation, demo readiness, reliability, or build confidence.
 - [ ] The parent task identifies what must wait for human action.

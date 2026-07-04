@@ -423,8 +423,8 @@
   },
   {
     "id": "blog:agentic-rag-frontier-2026",
-    "title": "2026 年的 RAG 不再只是检索：从 Agentic RAG 到泊岸助手的架构选择",
-    "summary": "把 2026 年前沿 RAG 拆成可落地的知识卡：任务路由、上下文 chunk、混合召回、融合排序、证据评估、agentic loop、GraphRAG 边界、eval 与观测如何组合成泊岸助手的技术路线。",
+    "title": "2026 年的 RAG 不再只是检索：Agentic RAG、混合检索与 GraphRAG 的知识地图",
+    "summary": "从问题路由、上下文 chunk、混合召回、融合排序、证据评估、纠错检索、GraphRAG 边界到 eval 与观测，梳理前沿 RAG 架构为什么从“向量 top-k”走向可控的证据系统。",
     "href": "/blog/agentic-rag-frontier-2026",
     "tags": [
       "AI 应用",
@@ -447,11 +447,8 @@
       "Rerank",
       "Evidence Judge",
       "GraphRAG",
-      "Qdrant",
-      "Scoped RAG Orchestrator",
-      "Grounding Routing",
-      "Retrieval Meta",
-      "Refusal Policy",
+      "RAG Evaluation",
+      "Retrieval Observability",
       "RAG Eval Set"
     ],
     "visibility": "public"

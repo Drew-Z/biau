@@ -14,6 +14,10 @@
 
 ## Phase 2: Review Child Task Readiness
 
+- [ ] Close current verified dirty work before cross-project edits:
+  - [ ] Stage only RAG knowledge article / blog skill rule files and regenerated assistant knowledge files.
+  - [ ] Commit with a focused message.
+  - [ ] Push `origin main` if on `main` and checks are still green.
 - [ ] Apply child-first stabilization rule: do not create new implementation work until existing `P1` children are reviewed, started, blocked, or intentionally deferred.
 - [ ] Review public assistant frontier RAG artifacts.
 - [ ] Review cross-project release readiness tree.
@@ -71,20 +75,24 @@ When the selected slice touches a related repository:
 
 ## Recommended First Autonomous Work Items
 
-Current override: the user asked to finish the public assistant first. While
-this override is active, select `07-04-public-assistant-kg-lite` before the
-release-readiness P1 sequence, but still keep production model/RAG/deployment
-steps behind manual gates.
+Current override: the user wants sustained autonomous improvement. Default
+choice policy is now active: use the recommended route below unless a hard
+manual gate is encountered.
 
-1. ERP registration display and main-site sync review
-   - Why: user repeatedly called out registration availability and demo usability.
-   - Allowed related-repo work: login/register UI polish, role-safety copy, local registration smoke, README/demo wording.
-   - Manual dependency: live production verification if credentials/deployment needed.
-   - Risk: medium.
-2. Legal RAG demo access and status wording closure
+0. RAG knowledge article / blog skill cleanup commit
+   - Why: the current working tree contains already-verified content/rule changes that should be isolated before cross-project work.
+   - Allowed work: stage only directly related files, commit, push `origin main`.
+   - Manual dependency: none.
+   - Risk: low.
+1. Legal RAG demo access and status wording closure
    - Why: user reported the demo route was still blocked by login and wants legal Q&A monitored.
    - Allowed related-repo work: login-gate copy, safe demo credential surface, smoke-script clarity, quality-panel display readiness.
    - Manual dependency: public credential/access policy if live checks are needed.
+   - Risk: medium.
+2. ERP registration display and main-site sync review
+   - Why: user repeatedly called out registration availability and demo usability.
+   - Allowed related-repo work: login/register UI polish, role-safety copy, local registration smoke, README/demo wording.
+   - Manual dependency: live production verification if credentials/deployment needed.
    - Risk: medium.
 3. Pet showcase APK gate page/data cleanup
    - Why: user requested homepage connection to Pet showcase and APK public release readiness.

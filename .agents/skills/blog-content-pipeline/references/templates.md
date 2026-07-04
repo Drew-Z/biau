@@ -6,10 +6,10 @@ Use these as writing structures, not mandatory headings. Keep public copy concre
 
 - Goal: preserve reusable technical understanding, engineering methods, or AI application practice.
 - Good topics: RAG quality, citation design, agent permissions, deployment verification, content governance.
-- Required evidence: code or docs proving the method exists, public examples, constraints, and failure cases.
-- Structure: problem boundary; core mechanism; engineering tradeoffs; sanitized example; common failure modes; practical checklist.
-- Common failures: generic tutorial prose, no project evidence, broad claims without examples, copying tool docs.
-- Review gate: the article remains useful even if a single project changes.
+- Required evidence: external papers, official docs, public technical references, public examples, constraints, and failure cases. Use project code or docs only when the article makes project-specific claims.
+- Structure: knowledge boundary; definitions; core mechanisms; why the mechanism exists; tradeoffs; failure modes; scenario fit; practical checklist; optional short application note.
+- Common failures: generic tutorial prose, project-first framing, broad claims without evidence, copying tool docs, treating a project roadmap as the main article.
+- Review gate: the article remains useful even if a single project changes. Project application notes should usually stay near the end and take no more than about 10%-15% of the article.
 
 ## 项目总结 / Project Notes
 
