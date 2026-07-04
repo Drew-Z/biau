@@ -346,3 +346,37 @@ Audited the Pet showcase APK release gate, recorded public-safe apkGate metadata
 ### Next Steps
 
 - None - task complete
+
+
+## Session 58: Enhance project detail case visuals
+
+**Date**: 2026-07-05
+**Task**: Enhance project detail case visuals
+**Branch**: `main`
+
+### Summary
+
+Planned and implemented rich project detail visual blocks. Added a typed ProjectVisualBlock model, rendered body-level screenshots/architecture/workflow/status figures, attached existing public-safe assets across core projects and games, fixed the Playlab hero image, validated asset references, lint, build, UI checks, and updated frontend spec before archiving the task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `94667fb` | (see git log) |
+| `d5e24ed` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
