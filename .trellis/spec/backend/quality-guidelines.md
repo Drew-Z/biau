@@ -190,6 +190,7 @@ The server reads private env, applies public-citation grounding, and returns onl
 - Public chat keeps the response shape `{ answer, citations, meta }`. Retrieval diagnostics live under `meta.retrieval` and may include `source`, `retrievalMode`, `store`, `candidateCount`, `citationCount`, `sufficiency`, `fallbackReason`, `modelCalls`, and sanitized `diagnostic`.
 - Adapter diagnostics must not include endpoint URLs, API keys, database URLs, raw prompts, request bodies, vector table names, stack traces, or provider payloads. Use `httpStatusClass`, `attemptedEndpoints`, and `timeoutMs` instead of leaking exact URLs or response bodies.
 - Storage templates may define `rag_documents`, `rag_chunks`, `rag_entities`, `rag_relations`, `rag_sync_runs`, and `rag_eval_runs`, but must not contain deployment-specific connection strings, hosts, credentials, model relay URLs, or private table names.
+- Model answers for public chat must pass deterministic self-check before returning as `meta.mode: "model"`. If the answer prints raw routes, source logs, provider env names, database URLs, bearer tokens, or secret-looking values, return fallback with `meta.reason: "self_check_failed"`.
 
 ### 4. Validation & Error Matrix
 
@@ -199,6 +200,7 @@ The server reads private env, applies public-citation grounding, and returns onl
 - Unsupported scope -> `400 { error: "unsupported-scope" }`.
 - External Orchestrator unavailable -> assistant must fall back to local Agentic Hybrid retrieval, not fail public chat. `meta.retrieval.source` should be `"local"` and `meta.retrieval.fallbackReason` should identify the sanitized adapter failure class such as `"network_error"`, `"timeout"`, `"http_status"`, or `"invalid_response"`.
 - Vector/reranker unavailable in later phases -> Orchestrator must fall back to keyword/entity retrieval and deterministic rerank.
+- Model answer fails deterministic self-check -> `200` fallback answer with `meta.reason: "self_check_failed"`; the unsafe text must not appear in `answer`.
 
 ### 5. Good/Base/Bad Cases
 

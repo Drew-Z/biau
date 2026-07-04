@@ -24,7 +24,7 @@ export interface ChatPayload {
 }
 
 export type ChatAnswerMode = 'model' | 'fallback'
-export type ChatFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
+export type ChatFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context' | 'self_check_failed'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
 export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
 

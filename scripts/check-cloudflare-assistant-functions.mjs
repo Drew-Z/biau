@@ -31,7 +31,7 @@ function countProjectCitations(citations) {
   return citations.filter((citation) => citation && typeof citation === 'object' && typeof citation.id === 'string' && citation.id.startsWith('project:')).length
 }
 
-function startMockModelServer(port, acceptedPath = '/v1/chat/completions') {
+function startMockModelServer(port, acceptedPath = '/v1/chat/completions', content = '模型增强回答：Cloudflare Pages Function 已经接入公开助手模型通道。') {
   const server = createHttpServer((req, res) => {
     if (req.method !== 'POST' || req.url !== acceptedPath || req.headers.authorization !== 'Bearer cf-smoke-model-key') {
       res.writeHead(404, { 'Content-Type': 'application/json' })
@@ -45,7 +45,7 @@ function startMockModelServer(port, acceptedPath = '/v1/chat/completions') {
         choices: [
           {
             message: {
-              content: '模型增强回答：Cloudflare Pages Function 已经接入公开助手模型通道。',
+              content,
             },
           },
         ],
@@ -259,6 +259,40 @@ try {
   }
 } finally {
   await new Promise((resolve) => mockModelServer.close(() => resolve()))
+}
+
+const mockUnsafeModelPort = await findAvailablePort(9477)
+const mockUnsafeModelServer = await startMockModelServer(
+  mockUnsafeModelPort,
+  '/v1/chat/completions',
+  '来源：/projects/legal-rag 这里是一个不应该直接展示给访客的路径式回答。',
+)
+try {
+  const unsafeModelResponse = await publicChat({
+    request: makeChatRequest('RAG 项目'),
+    env: {
+      ASSISTANT_MODEL_BASE_URL: `http://127.0.0.1:${mockUnsafeModelPort}`,
+      ASSISTANT_MODEL_API_KEY: 'cf-smoke-model-key',
+      ASSISTANT_MODEL_NAME: 'glm-cf-self-check-model',
+      ASSISTANT_MODEL_PROVIDER: 'glm-compatible',
+    },
+  })
+  if (!unsafeModelResponse.ok) throw new Error(`unsafe model public chat failed: ${unsafeModelResponse.status}`)
+  const unsafeModelPayload = await readJsonResponse(unsafeModelResponse)
+  if (
+    !unsafeModelPayload.answer ||
+    unsafeModelPayload.answer.includes('/projects/legal-rag') ||
+    unsafeModelPayload.answer.includes('来源：') ||
+    !Array.isArray(unsafeModelPayload.citations) ||
+    unsafeModelPayload.meta?.mode !== 'fallback' ||
+    unsafeModelPayload.meta?.reason !== 'self_check_failed' ||
+    unsafeModelPayload.meta?.model !== 'glm-cf-self-check-model' ||
+    unsafeModelPayload.meta?.provider !== 'glm-compatible'
+  ) {
+    throw new Error('Cloudflare public chat should fall back when model answer fails deterministic self-check')
+  }
+} finally {
+  await new Promise((resolve) => mockUnsafeModelServer.close(() => resolve()))
 }
 
 const failureResponse = await publicChat({

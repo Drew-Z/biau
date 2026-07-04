@@ -421,6 +421,49 @@ try {
       restoreModelEnv(originalModelEnv)
     }
 
+    const mockUnsafeModelPort = await findAvailablePort(9277)
+    const mockUnsafeModelServer = await startMockModelServer(
+      mockUnsafeModelPort,
+      '/chat/completions',
+      '来源：/projects/legal-rag 这里是一个不应该直接展示给访客的路径式回答。',
+    )
+    try {
+      env.assistantModelApiKey = 'smoke-model-key'
+      env.assistantModelBaseUrl = `http://127.0.0.1:${mockUnsafeModelPort}`
+      env.assistantModelName = 'glm-self-check-smoke-model'
+      env.assistantModelProvider = 'glm-compatible'
+      env.openaiApiKey = ''
+      env.openaiBaseUrl = ''
+      env.openaiModel = ''
+      forceNoRagOrchestrator()
+      const unsafeModelChat = await fetch(`${base}/chat/public`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'RAG 项目' }),
+      })
+      if (!unsafeModelChat.ok) throw new Error(`unsafe model chat failed: ${unsafeModelChat.status}`)
+      const unsafeModelPayload = (await unsafeModelChat.json()) as {
+        answer?: string
+        citations?: unknown[]
+        meta?: { mode?: string; reason?: string; model?: string; provider?: string }
+      }
+      if (
+        !unsafeModelPayload.answer ||
+        unsafeModelPayload.answer.includes('/projects/legal-rag') ||
+        unsafeModelPayload.answer.includes('来源：') ||
+        !Array.isArray(unsafeModelPayload.citations) ||
+        unsafeModelPayload.meta?.mode !== 'fallback' ||
+        unsafeModelPayload.meta.reason !== 'self_check_failed' ||
+        unsafeModelPayload.meta.model !== 'glm-self-check-smoke-model' ||
+        unsafeModelPayload.meta.provider !== 'glm-compatible'
+      ) {
+        throw new Error('public chat should fall back when model answer fails deterministic self-check')
+      }
+    } finally {
+      await new Promise<void>((resolve) => mockUnsafeModelServer.close(() => resolve()))
+      restoreModelEnv(originalModelEnv)
+    }
+
     env.assistantModelApiKey = 'smoke-test-key'
     env.assistantModelBaseUrl = base
     env.assistantModelName = 'smoke-test-model'

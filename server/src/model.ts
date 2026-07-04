@@ -5,7 +5,7 @@ interface OpenAIResponse {
   choices?: Array<{ message?: { content?: string } }>
 }
 
-export type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
+export type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context' | 'self_check_failed'
 
 export interface GeneratedAnswer {
   answer: string
@@ -250,6 +250,9 @@ export async function generateAnswer(
       timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
     })
   }
+  if (!passesDeterministicSelfCheck(answer, citations, scope)) {
+    return fallbackResult(question, citations, scope, 'self_check_failed', modelConfig.model, modelConfig.provider)
+  }
 
   return {
     answer,
@@ -264,4 +267,26 @@ function buildChunkContext(chunks: RagChunkCitation[]) {
     .slice(0, 5)
     .map((chunk, index) => `${index + 1}. ${chunk.section}｜${chunk.text}`)
     .join('\n\n')
+}
+
+function passesDeterministicSelfCheck(answer: string, citations: Citation[], scope: 'public' | 'internal') {
+  if (hasSensitiveOutput(answer)) return false
+  if (/ASSISTANT_MODEL_API_KEY|ASSISTANT_RAG_API_KEY|SUPABASE_SERVICE_ROLE_KEY|RERANKER_API_KEY/.test(answer)) return false
+  if (scope === 'public' && citations.length === 0) return false
+  if (scope === 'public' && (/(^|\s)\/(projects|blog|status|assistant)(\/|\s|$)/.test(answer) || /来源[:：]/.test(answer) || /资料编号/.test(answer))) {
+    return false
+  }
+  return true
+}
+
+function hasSensitiveOutput(answer: string) {
+  const patterns = [
+    /sk-[A-Za-z0-9_-]{16,}/,
+    /Bearer\s+[A-Za-z0-9._-]{12,}/i,
+    /postgres(?:ql)?:\/\/[^"'\s]+/i,
+    /mysql:\/\/[^"'\s]+/i,
+    /mongodb(?:\+srv)?:\/\/[^"'\s]+/i,
+    /-----BEGIN [A-Z ]+PRIVATE KEY-----/,
+  ]
+  return patterns.some((pattern) => pattern.test(answer))
 }

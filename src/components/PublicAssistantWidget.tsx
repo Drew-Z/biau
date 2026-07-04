@@ -27,7 +27,13 @@ interface AssistantAnswerMeta {
   citationCount: number
 }
 
-type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context' | 'request_error'
+type AssistantFallbackReason =
+  | 'not_configured'
+  | 'provider_error'
+  | 'empty_response'
+  | 'no_public_context'
+  | 'self_check_failed'
+  | 'request_error'
 type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
 type AssistantServiceState = 'api-ready' | 'local' | 'model' | 'fallback' | 'error'
 
@@ -55,7 +61,13 @@ interface PublicAnswerResult {
 }
 
 function isAssistantFallbackReason(value: unknown): value is AssistantFallbackReason {
-  return value === 'not_configured' || value === 'provider_error' || value === 'empty_response' || value === 'no_public_context'
+  return (
+    value === 'not_configured' ||
+    value === 'provider_error' ||
+    value === 'empty_response' ||
+    value === 'no_public_context' ||
+    value === 'self_check_failed'
+  )
 }
 
 function isProviderDiagnosticKind(value: unknown): value is ProviderDiagnosticKind {
@@ -165,6 +177,7 @@ async function requestPublicAnswer(question: string, apiBase: string | null): Pr
 function getFallbackLabel(reason?: AssistantFallbackReason) {
   if (reason === 'provider_error') return '模型通道失败，已回退'
   if (reason === 'empty_response') return '模型无内容，已回退'
+  if (reason === 'self_check_failed') return '回答自检未过，已回退'
   if (reason === 'no_public_context') return '未命中公开资料'
   if (reason === 'request_error') return '站内 API 暂不可用'
   return '站点知识兜底'

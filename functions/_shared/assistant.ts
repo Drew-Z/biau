@@ -1,7 +1,7 @@
 import publicKnowledgeData from '../../server/data/public-knowledge.json'
 import publicKnowledgeV2Data from '../../server/data/public-knowledge-v2.json'
 
-export type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
+export type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context' | 'self_check_failed'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
 export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
 export type AssistantVisibility = 'public' | 'internal'
@@ -710,6 +710,9 @@ async function generateAnswer(question: string, citations: KnowledgeItem[], env:
       timeoutMs: MODEL_REQUEST_TIMEOUT_MS,
     })
   }
+  if (!passesDeterministicSelfCheck(answer, citations)) {
+    return fallbackResult(question, citations, 'self_check_failed', model, provider)
+  }
 
   return { answer, mode: 'model', model, provider }
 }
@@ -719,6 +722,26 @@ function buildChunkContext(chunks: RagChunkCitation[]) {
     .slice(0, 5)
     .map((chunk, index) => `${index + 1}. ${chunk.section}｜${chunk.text}`)
     .join('\n\n')
+}
+
+function passesDeterministicSelfCheck(answer: string, citations: KnowledgeItem[]) {
+  if (hasSensitiveOutput(answer)) return false
+  if (/ASSISTANT_MODEL_API_KEY|ASSISTANT_RAG_API_KEY|SUPABASE_SERVICE_ROLE_KEY|RERANKER_API_KEY/.test(answer)) return false
+  if (citations.length === 0) return false
+  if (/(^|\s)\/(projects|blog|status|assistant)(\/|\s|$)/.test(answer) || /来源[:：]/.test(answer) || /资料编号/.test(answer)) return false
+  return true
+}
+
+function hasSensitiveOutput(answer: string) {
+  const patterns = [
+    /sk-[A-Za-z0-9_-]{16,}/,
+    /Bearer\s+[A-Za-z0-9._-]{12,}/i,
+    /postgres(?:ql)?:\/\/[^"'\s]+/i,
+    /mysql:\/\/[^"'\s]+/i,
+    /mongodb(?:\+srv)?:\/\/[^"'\s]+/i,
+    /-----BEGIN [A-Z ]+PRIVATE KEY-----/,
+  ]
+  return patterns.some((pattern) => pattern.test(answer))
 }
 
 function fallbackResult(

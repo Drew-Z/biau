@@ -667,6 +667,7 @@ function addRelation(
 function getFallbackIntro(reason?: string) {
   if (reason === 'provider_error') return '模型通道暂时失败，我先用站内公开资料回答：'
   if (reason === 'empty_response') return '模型没有返回有效内容，我先用站内公开资料回答：'
+  if (reason === 'self_check_failed') return '模型回答没有通过公开范围自检，我先用站内公开资料回答：'
   if (reason === 'request_error') return '公开助手 API 暂时不可用，我先用本地公开知识回答：'
   if (reason === 'no_public_context') return '这个问题暂时没有命中公开资料。'
   return '我先按站内公开资料回答：'

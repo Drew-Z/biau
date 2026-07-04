@@ -170,10 +170,13 @@ npm.cmd run server:smoke
 
 ### 7. Self-Check And Corrective Path
 
-- Add deterministic checks for citation sufficiency and unsafe output.
-- Add optional model-backed self-check contract but keep disabled by default.
-- If evidence is weak, answer with uncertainty instead of inventing facts.
-- If evidence is missing, refuse and suggest relevant public pages.
+Status: deterministic self-check is active for model answers in both Express and Cloudflare public chat paths.
+
+- [x] Add deterministic checks for citation sufficiency and unsafe output.
+- [ ] Add optional model-backed self-check contract but keep disabled by default.
+- [x] If evidence is weak, answer with uncertainty instead of inventing facts.
+- [x] If evidence is missing, refuse and suggest relevant public pages.
+- [x] If model output prints raw routes, source logs, provider env names, database URLs, bearer tokens, or secret-looking values, return fallback with `self_check_failed`.
 
 Validation:
 
