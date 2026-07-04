@@ -21,7 +21,8 @@
   "children": [
     "07-04-public-assistant-kg-lite",
     "07-03-cross-project-release-readiness-round-3",
-    "07-04-public-assistant-rag-orchestrator-phase-2"
+    "07-04-public-assistant-rag-orchestrator-phase-2",
+    "07-04-public-assistant-rag-production-config"
   ],
   "parent": null,
   "relatedFiles": [],
