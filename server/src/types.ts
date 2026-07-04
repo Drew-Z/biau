@@ -26,12 +26,34 @@ export interface ChatPayload {
 export type ChatAnswerMode = 'model' | 'fallback'
 export type ChatFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
+export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
 
 export interface ProviderDiagnostic {
   kind: ProviderDiagnosticKind
   httpStatus?: number
   attemptedEndpoints: number
   timeoutMs: number
+}
+
+export interface RagAdapterDiagnostic {
+  kind: RagAdapterDiagnosticKind
+  httpStatusClass?: `${number}xx`
+  attemptedEndpoints: number
+  timeoutMs: number
+}
+
+export interface AssistantRetrievalMeta {
+  source: 'local' | 'orchestrator'
+  retrievalMode: string
+  store: RagStoreProvider | string
+  candidateCount: number
+  citationCount: number
+  sufficient: boolean
+  sufficiency: 'enough' | 'weak' | 'none'
+  fallbackReason?: RagAdapterDiagnosticKind | 'private-credential' | 'no_public_context' | null
+  expandedEntityCount?: number
+  modelCalls?: number
+  diagnostic?: RagAdapterDiagnostic
 }
 
 export interface ChatResponse {
@@ -44,13 +66,14 @@ export interface ChatResponse {
     provider?: string
     reason?: ChatFallbackReason
     diagnostic?: ProviderDiagnostic
+    retrieval?: AssistantRetrievalMeta
   }
   sessionId?: string
   messageId?: string
 }
 
-export type RagStoreProvider = 'local' | 'supabase' | 'render-postgres' | 'cloudflare-vectorize' | 'neo4j'
-export type RagRetrievalMode = 'local-agentic-hybrid'
+export type RagStoreProvider = string
+export type RagRetrievalMode = string
 
 export interface RagHealthResponse {
   ok: true

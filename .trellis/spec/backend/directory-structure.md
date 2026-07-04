@@ -15,6 +15,7 @@ server/
 │   ├── crypto.ts      # token/hash helpers
 │   ├── knowledge.ts   # public knowledge loading and in-memory search
 │   ├── model.ts       # model-provider integration and fallback answer behavior
+│   ├── ragClient.ts   # server-side optional RAG Orchestrator adapter with local fallback
 │   ├── ragOrchestrator.ts # local/mock RAG retrieval contract and diagnostics
 │   ├── ragRoutes.ts   # RAG Orchestrator HTTP router mounted under /rag
 │   └── types.ts       # API/data payload types
@@ -32,7 +33,7 @@ prisma/
 
 Keep route registration, middleware, and response shaping in `server/src/app.ts`. Move reusable concerns into narrow modules: environment in `env.ts`, database access setup in `db.ts`, auth/token lookup in `auth.ts`, model calls in `model.ts`, and knowledge search in `knowledge.ts`.
 
-RAG Orchestrator code should stay split between `ragOrchestrator.ts` for retrieval contract shaping and `ragRoutes.ts` for HTTP validation. The current in-repo mock router is mounted under `/rag` so it does not replace the assistant API's root `/health`; a future standalone Orchestrator can mount the same router at its root.
+RAG Orchestrator code should stay split between `ragClient.ts` for the main-site adapter / external HTTP fallback logic, `ragOrchestrator.ts` for local/mock retrieval contract shaping, and `ragRoutes.ts` for HTTP validation. The current in-repo mock router is mounted under `/rag` so it does not replace the assistant API's root `/health`; a future standalone Orchestrator can mount the same router at its root.
 
 `server/src/index.ts` should stay thin: create the app, listen on `env.port`, and handle graceful shutdown by closing the server and disconnecting Prisma.
 

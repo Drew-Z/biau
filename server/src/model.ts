@@ -1,5 +1,5 @@
 import { env, hasModelProvider } from './env.js'
-import type { KnowledgeItem, ProviderDiagnostic, ProviderDiagnosticKind } from './types.js'
+import type { Citation, ProviderDiagnostic, ProviderDiagnosticKind, RagChunkCitation } from './types.js'
 
 interface OpenAIResponse {
   choices?: Array<{ message?: { content?: string } }>
@@ -18,7 +18,11 @@ export interface GeneratedAnswer {
 
 const MODEL_REQUEST_TIMEOUT_MS = 20000
 
-function buildFallbackAnswer(question: string, citations: KnowledgeItem[], scope: 'public' | 'internal') {
+interface GenerateAnswerOptions {
+  chunks?: RagChunkCitation[]
+}
+
+function buildFallbackAnswer(question: string, citations: Citation[], scope: 'public' | 'internal') {
   if (scope === 'public' && isPrivateCredentialRequest(question)) {
     return '我不能提供后台密码、API key、token、数据库连接或模型中转配置。公开助手只能说明公开演示入口、可公开的 demo 边界和状态页信息；如果需要配置密钥，请在部署平台的私有环境变量里处理。'
   }
@@ -48,7 +52,7 @@ function readModelConfig() {
 
 function fallbackResult(
   question: string,
-  citations: KnowledgeItem[],
+  citations: Citation[],
   scope: 'public' | 'internal',
   reason: AssistantFallbackReason,
   model = 'fallback',
@@ -164,7 +168,12 @@ async function requestChatCompletion(endpoint: string, apiKey: string, body: unk
   }
 }
 
-export async function generateAnswer(question: string, citations: KnowledgeItem[], scope: 'public' | 'internal'): Promise<GeneratedAnswer> {
+export async function generateAnswer(
+  question: string,
+  citations: Citation[],
+  scope: 'public' | 'internal',
+  options: GenerateAnswerOptions = {},
+): Promise<GeneratedAnswer> {
   if (scope === 'public' && citations.length === 0) return fallbackResult(question, citations, scope, 'no_public_context')
   if (!hasModelProvider()) return fallbackResult(question, citations, scope, 'not_configured')
 
@@ -177,6 +186,7 @@ export async function generateAnswer(question: string, citations: KnowledgeItem[
   const context = citations
     .map((item, index) => `${index + 1}. ${item.title}\n摘要：${item.summary}\n站内路径：${item.href}`)
     .join('\n\n')
+  const chunkContext = buildChunkContext(options.chunks ?? [])
   const system =
     scope === 'public'
       ? [
@@ -203,8 +213,11 @@ export async function generateAnswer(question: string, citations: KnowledgeItem[
           `问题：${question}`,
           '只可使用以下公开资料。每条资料包含标题、摘要和站内路径；路径只用于生成 citation，不要写进正文：',
           context,
+          chunkContext ? `可用证据片段（只用于理解，不要逐字照抄编号）：\n${chunkContext}` : '',
           '请按系统规则回答；不要编造未出现在资料里的链接或能力。',
-        ].join('\n\n'),
+        ]
+          .filter(Boolean)
+          .join('\n\n'),
       },
     ],
   }
@@ -244,4 +257,11 @@ export async function generateAnswer(question: string, citations: KnowledgeItem[
     model: modelConfig.model,
     provider: modelConfig.provider,
   }
+}
+
+function buildChunkContext(chunks: RagChunkCitation[]) {
+  return chunks
+    .slice(0, 5)
+    .map((chunk, index) => `${index + 1}. ${chunk.section}｜${chunk.text}`)
+    .join('\n\n')
 }

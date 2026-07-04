@@ -41,6 +41,9 @@ function snapshotModelEnv() {
     assistantModelBaseUrl: env.assistantModelBaseUrl,
     assistantModelName: env.assistantModelName,
     assistantModelProvider: env.assistantModelProvider,
+    assistantRagApiBaseUrl: env.assistantRagApiBaseUrl,
+    assistantRagApiKey: env.assistantRagApiKey,
+    assistantRagTimeoutMs: env.assistantRagTimeoutMs,
     openaiApiKey: env.openaiApiKey,
     openaiBaseUrl: env.openaiBaseUrl,
     openaiModel: env.openaiModel,
@@ -52,6 +55,9 @@ function restoreModelEnv(snapshot: ReturnType<typeof snapshotModelEnv>) {
   env.assistantModelBaseUrl = snapshot.assistantModelBaseUrl
   env.assistantModelName = snapshot.assistantModelName
   env.assistantModelProvider = snapshot.assistantModelProvider
+  env.assistantRagApiBaseUrl = snapshot.assistantRagApiBaseUrl
+  env.assistantRagApiKey = snapshot.assistantRagApiKey
+  env.assistantRagTimeoutMs = snapshot.assistantRagTimeoutMs
   env.openaiApiKey = snapshot.openaiApiKey
   env.openaiBaseUrl = snapshot.openaiBaseUrl
   env.openaiModel = snapshot.openaiModel
@@ -60,6 +66,12 @@ function restoreModelEnv(snapshot: ReturnType<typeof snapshotModelEnv>) {
 function forceNoModelProvider() {
   env.assistantModelApiKey = ''
   env.openaiApiKey = ''
+}
+
+function forceNoRagOrchestrator() {
+  env.assistantRagApiBaseUrl = ''
+  env.assistantRagApiKey = ''
+  env.assistantRagTimeoutMs = 3000
 }
 
 function startMockModelServer(port: number, acceptedPath = '/chat/completions', content = '模型增强回答：Legal RAG 是本站公开展示的法律文档 RAG 与合同审查工作台。') {
@@ -80,6 +92,59 @@ function startMockModelServer(port: number, acceptedPath = '/chat/completions', 
             },
           },
         ],
+      }),
+    )
+  })
+
+  return new Promise<ReturnType<typeof createHttpServer>>((resolve) => {
+    server.listen(port, '127.0.0.1', () => resolve(server))
+  })
+}
+
+function startMockRagServer(port: number) {
+  const server = createHttpServer((req, res) => {
+    if (req.method !== 'POST' || req.url !== '/v1/retrieve' || req.headers.authorization !== 'Bearer smoke-rag-key') {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'not-found' }))
+      return
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.end(
+      JSON.stringify({
+        intent: 'demo-access',
+        citations: [
+          {
+            id: 'project:pet-workspace',
+            title: 'Pet AI Workspace',
+            summary: '公开安全的 mock RAG 结果，用于验证主站 RAG adapter 会采用 Orchestrator citation。',
+            href: '/projects/pet-workspace',
+            tags: ['pet', 'rag-smoke'],
+            visibility: 'public',
+          },
+        ],
+        chunks: [
+          {
+            id: 'chunk:mock-rag:pet',
+            documentId: 'project:pet-workspace',
+            text: 'Pet 展示页和 APK gate 是公开助手需要解释的项目状态之一。',
+            section: 'mock-rag',
+            score: 0.92,
+            reason: 'mock-vector+keyword',
+          },
+        ],
+        meta: {
+          retrievalMode: 'hybrid',
+          store: 'mock',
+          candidateCount: 1,
+          reranked: true,
+          sufficient: true,
+          sufficiency: 'enough',
+          fallbackReason: null,
+          citationCount: 1,
+          expandedEntityCount: 0,
+          modelCalls: 0,
+        },
       }),
     )
   })
@@ -111,6 +176,7 @@ try {
   }
 
   forceNoModelProvider()
+  forceNoRagOrchestrator()
   const publicChat = await fetch(`${base}/chat/public`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -209,6 +275,75 @@ try {
   if (!demoPayload.answer || !Array.isArray(demoPayload.citations) || countProjectCitations(demoPayload.citations) < 2) {
     throw new Error('public chat should return multiple project citations for demo-ready query')
   }
+
+  const mockRagPort = await findAvailablePort(9477)
+  const mockRagServer = await startMockRagServer(mockRagPort)
+  try {
+    env.assistantRagApiBaseUrl = `http://127.0.0.1:${mockRagPort}`
+    env.assistantRagApiKey = 'smoke-rag-key'
+    env.assistantRagTimeoutMs = 1000
+    const ragChat = await fetch(`${base}/chat/public`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'Pet 展示页现在是什么情况？' }),
+    })
+    if (!ragChat.ok) throw new Error(`orchestrated rag chat failed: ${ragChat.status}`)
+    const ragPayload = (await ragChat.json()) as {
+      answer?: string
+      citations?: unknown[]
+      meta?: {
+        mode?: string
+        reason?: string
+        retrieval?: { source?: string; retrievalMode?: string; store?: string; citationCount?: number; modelCalls?: number }
+      }
+    }
+    if (
+      !ragPayload.answer ||
+      !Array.isArray(ragPayload.citations) ||
+      !hasCitation(ragPayload.citations, 'project:pet-workspace') ||
+      ragPayload.meta?.mode !== 'fallback' ||
+      ragPayload.meta.reason !== 'not_configured' ||
+      ragPayload.meta.retrieval?.source !== 'orchestrator' ||
+      ragPayload.meta.retrieval.retrievalMode !== 'hybrid' ||
+      ragPayload.meta.retrieval.store !== 'mock' ||
+      ragPayload.meta.retrieval.modelCalls !== 0
+    ) {
+      throw new Error('public chat should use configured RAG orchestrator context before model generation')
+    }
+  } finally {
+    await new Promise<void>((resolve) => mockRagServer.close(() => resolve()))
+    forceNoRagOrchestrator()
+  }
+
+  env.assistantRagApiBaseUrl = 'http://127.0.0.1:9'
+  env.assistantRagApiKey = 'smoke-rag-key'
+  env.assistantRagTimeoutMs = 1000
+  const ragFailureChat = await fetch(`${base}/chat/public`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: 'RAG 项目' }),
+  })
+  if (!ragFailureChat.ok) throw new Error(`rag failure fallback chat failed: ${ragFailureChat.status}`)
+  const ragFailurePayload = (await ragFailureChat.json()) as {
+    answer?: string
+    citations?: unknown[]
+    meta?: {
+      retrieval?: { source?: string; fallbackReason?: string; diagnostic?: { kind?: string; attemptedEndpoints?: number; timeoutMs?: number } }
+    }
+  }
+  if (
+    !ragFailurePayload.answer ||
+    !Array.isArray(ragFailurePayload.citations) ||
+    !hasCitation(ragFailurePayload.citations, 'project:legal-rag') ||
+    ragFailurePayload.meta?.retrieval?.source !== 'local' ||
+    ragFailurePayload.meta.retrieval.fallbackReason !== 'network_error' ||
+    ragFailurePayload.meta.retrieval.diagnostic?.kind !== 'network_error' ||
+    ragFailurePayload.meta.retrieval.diagnostic.attemptedEndpoints !== 1 ||
+    ragFailurePayload.meta.retrieval.diagnostic.timeoutMs !== 1000
+  ) {
+    throw new Error('public chat should fall back to local RAG when external orchestrator is unavailable')
+  }
+  forceNoRagOrchestrator()
 
   try {
     const mockModelPort = await findAvailablePort(9077)

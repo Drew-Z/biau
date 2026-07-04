@@ -155,6 +155,9 @@ The server reads private env, applies public-citation grounding, and returns onl
   - `GET /rag/health`
   - `POST /rag/v1/retrieve`
   - `POST /rag/v1/sync`
+- Main-site adapter:
+  - `POST /chat/public` calls `ASSISTANT_RAG_API_BASE_URL` only when configured.
+  - `functions/api/chat/public.ts` follows the same contract through `functions/_shared/assistant.ts`.
 - Standalone future mount:
   - `GET /health`
   - `POST /v1/retrieve`
@@ -182,6 +185,8 @@ The server reads private env, applies public-citation grounding, and returns onl
   - `meta.modelCalls`
 - Health response must stay low-sensitive: no provider endpoint, database URL, token fingerprint, table name, raw prompt, request body, or model relay detail.
 - Local/mock sync is readonly and returns current knowledge counts; production sync tokens and external stores are manual-gated.
+- Public chat keeps the response shape `{ answer, citations, meta }`. Retrieval diagnostics live under `meta.retrieval` and may include `source`, `retrievalMode`, `store`, `candidateCount`, `citationCount`, `sufficiency`, `fallbackReason`, `modelCalls`, and sanitized `diagnostic`.
+- Adapter diagnostics must not include endpoint URLs, API keys, database URLs, raw prompts, request bodies, vector table names, stack traces, or provider payloads. Use `httpStatusClass`, `attemptedEndpoints`, and `timeoutMs` instead of leaking exact URLs or response bodies.
 
 ### 4. Validation & Error Matrix
 
@@ -189,13 +194,14 @@ The server reads private env, applies public-citation grounding, and returns onl
 - Private credential request such as "后台密码" or "模型 key" -> `200` with no citations/chunks and `fallbackReason: "private-credential"`.
 - Missing query -> `400 { error: "missing-query" }`.
 - Unsupported scope -> `400 { error: "unsupported-scope" }`.
-- External Orchestrator unavailable in later phases -> assistant must fall back to local Agentic Hybrid retrieval, not fail public chat.
+- External Orchestrator unavailable -> assistant must fall back to local Agentic Hybrid retrieval, not fail public chat. `meta.retrieval.source` should be `"local"` and `meta.retrieval.fallbackReason` should identify the sanitized adapter failure class such as `"network_error"`, `"timeout"`, `"http_status"`, or `"invalid_response"`.
 - Vector/reranker unavailable in later phases -> Orchestrator must fall back to keyword/entity retrieval and deterministic rerank.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: `/rag/v1/retrieve` for Legal RAG cites `project:legal-rag`, returns at least one chunk, marks `retrievalMode: "local-agentic-hybrid"`, and reports `modelCalls: 0`.
 - Base: no external RAG env exists; local/mock Orchestrator still passes `assistant:rag-smoke`.
+- Good: with a configured mock `ASSISTANT_RAG_API_BASE_URL`, `/chat/public` uses Orchestrator citations/chunks for grounding while still returning only public citation cards to the browser.
 - Bad: a route logs raw chat questions, request bodies, API keys, model provider URLs, database URLs, vector table names, or stack traces.
 - Bad: a browser bundle reads `ASSISTANT_RAG_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, embedding keys, reranker keys, or direct vector database URLs.
 
@@ -203,8 +209,8 @@ The server reads private env, applies public-citation grounding, and returns onl
 
 - Run `npm.cmd run assistant:rag-smoke` after Orchestrator contract changes.
 - Run `npm.cmd run assistant:eval` to keep the fixed public-question baseline green.
-- Run `npm.cmd run server:smoke` to prove existing `/chat/public`, model fallback, and protected internal routes still work.
-- Run `npm.cmd run cf-assistant:smoke` when Cloudflare Function behavior or shared public assistant retrieval changes.
+- Run `npm.cmd run server:smoke` to prove existing `/chat/public`, model fallback, mock Orchestrator success/fallback, and protected internal routes still work.
+- Run `npm.cmd run cf-assistant:smoke` when Cloudflare Function behavior or shared public assistant retrieval changes; it should cover mock Orchestrator success/fallback without calling live providers.
 - Run `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and a sensitive scan over changed files.
 
 ### 7. Wrong vs Correct

@@ -7,6 +7,7 @@ import { issueMemberToken, readBearerMember, requireDatabase } from './auth.js'
 import { generateAnswer } from './model.js'
 import { searchKnowledge } from './knowledge.js'
 import { createMetricsMiddleware, renderPrometheusMetrics } from './metrics.js'
+import { retrievePublicAssistantContext } from './ragClient.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import type { ChatPayload, ChatResponse } from './types.js'
 
@@ -103,8 +104,9 @@ export function createApp() {
         return
       }
 
-      const citations = searchKnowledge(question)
-      const generated = await generateAnswer(question, citations, 'public')
+      const context = await retrievePublicAssistantContext(question)
+      const citations = context.citations
+      const generated = await generateAnswer(question, citations, 'public', { chunks: context.chunks })
       const response: ChatResponse = {
         answer: generated.answer,
         citations,
@@ -115,6 +117,7 @@ export function createApp() {
           reason: generated.reason,
           diagnostic: generated.diagnostic,
           citationCount: citations.length,
+          retrieval: context.retrieval,
         },
       }
       res.json(response)

@@ -3,6 +3,7 @@ import publicKnowledgeV2Data from '../../server/data/public-knowledge-v2.json'
 
 export type AssistantFallbackReason = 'not_configured' | 'provider_error' | 'empty_response' | 'no_public_context'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
+export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
 export type AssistantVisibility = 'public' | 'internal'
 
 export interface AssistantEnv {
@@ -53,7 +54,21 @@ interface KnowledgeRelation {
   evidenceDocumentIds: string[]
 }
 
+interface KnowledgeChunk {
+  id: string
+  documentId: string
+  text: string
+  section: string
+  metadata: {
+    sourceType: SourceType
+    projectId?: string
+    tags: string[]
+  }
+}
+
 interface PublicKnowledgeV2 {
+  public_documents: Array<KnowledgeItem & { sourceType: SourceType; projectId?: string }>
+  knowledge_chunks: KnowledgeChunk[]
   entities: KnowledgeEntity[]
   relations: KnowledgeRelation[]
   fallback_bundle: {
@@ -72,6 +87,75 @@ interface ProviderDiagnostic {
   httpStatus?: number
   attemptedEndpoints: number
   timeoutMs: number
+}
+
+interface RagAdapterDiagnostic {
+  kind: RagAdapterDiagnosticKind
+  httpStatusClass?: `${number}xx`
+  attemptedEndpoints: number
+  timeoutMs: number
+}
+
+interface RagChunkCitation {
+  id: string
+  documentId: string
+  text: string
+  section: string
+  score: number
+  reason: string
+}
+
+interface RagRetrieveResponse {
+  intent: string
+  citations: KnowledgeItem[]
+  chunks: RagChunkCitation[]
+  meta: {
+    retrievalMode: string
+    store: string
+    candidateCount: number
+    reranked: boolean
+    sufficient: boolean
+    sufficiency: 'enough' | 'weak' | 'none'
+    fallbackReason: 'private-credential' | 'no_public_context' | null
+    citationCount: number
+    expandedEntityCount: number
+    modelCalls: 0
+  }
+}
+
+interface AssistantRetrievalMeta {
+  source: 'local' | 'orchestrator'
+  retrievalMode: string
+  store: string
+  candidateCount: number
+  citationCount: number
+  sufficient: boolean
+  sufficiency: 'enough' | 'weak' | 'none'
+  fallbackReason?: RagAdapterDiagnosticKind | 'private-credential' | 'no_public_context' | null
+  expandedEntityCount?: number
+  modelCalls?: number
+  diagnostic?: RagAdapterDiagnostic
+}
+
+interface PublicAssistantContext {
+  citations: KnowledgeItem[]
+  chunks: RagChunkCitation[]
+  retrieval: AssistantRetrievalMeta
+}
+
+interface LocalRetrievalResult {
+  citations: KnowledgeItem[]
+  chunks: RagChunkCitation[]
+  intent: RetrievalIntent
+  terms: string[]
+  expandedEntityIds: string[]
+  sufficiency: 'enough' | 'weak' | 'none'
+  candidateCount: number
+}
+
+interface RagAttempt {
+  response: Response | null
+  diagnostic: RagAdapterDiagnostic
 }
 
 interface GeneratedAnswer {
@@ -235,8 +319,9 @@ export async function handlePublicChat(request: Request, env: AssistantEnv) {
   const message = isRecord(payload) && typeof payload.message === 'string' ? payload.message.trim() : ''
   if (!message) return jsonResponse({ error: 'missing-message' }, { status: 400 })
 
-  const citations = searchKnowledge(message)
-  const generated = await generateAnswer(message, citations, env)
+  const context = await retrievePublicAssistantContext(message, env)
+  const citations = context.citations
+  const generated = await generateAnswer(message, citations, env, context.chunks)
   return jsonResponse({
     answer: generated.answer,
     citations,
@@ -247,27 +332,320 @@ export async function handlePublicChat(request: Request, env: AssistantEnv) {
       reason: generated.reason,
       diagnostic: generated.diagnostic,
       citationCount: citations.length,
+      retrieval: context.retrieval,
     },
   })
 }
 
-function searchKnowledge(query: string, limit = 4) {
+async function retrievePublicAssistantContext(query: string, env: AssistantEnv, limit = 4): Promise<PublicAssistantContext> {
+  const endpoints = getRagRetrieveEndpoints(env.ASSISTANT_RAG_API_BASE_URL?.trim() ?? '')
+  if (endpoints.length === 0) return retrieveLocalContext(query, limit, 'not_configured')
+
+  const timeoutMs = readPositiveInteger(env.ASSISTANT_RAG_TIMEOUT_MS, 3000)
+  let diagnostic: RagAdapterDiagnostic | undefined
+  let attemptedEndpoints = 0
+
+  for (const endpoint of endpoints) {
+    attemptedEndpoints += 1
+    const attempt = await requestRagRetrieve(endpoint, env, timeoutMs, {
+      query,
+      scope: 'public',
+      limit,
+      locale: 'zh-CN',
+    })
+    diagnostic = { ...attempt.diagnostic, attemptedEndpoints }
+
+    if (!attempt.response?.ok) {
+      if (attempt.response && [404, 405].includes(attempt.response.status)) continue
+      return retrieveLocalContext(query, limit, diagnostic.kind, diagnostic)
+    }
+
+    const payload = (await attempt.response.json().catch(() => null)) as unknown
+    const parsed = readRagRetrieveResponse(payload)
+    if (!parsed) {
+      return retrieveLocalContext(query, limit, 'invalid_response', {
+        kind: 'invalid_response',
+        attemptedEndpoints,
+        timeoutMs,
+      })
+    }
+
+    return {
+      citations: parsed.citations,
+      chunks: parsed.chunks,
+      retrieval: {
+        source: 'orchestrator',
+        retrievalMode: parsed.meta.retrievalMode,
+        store: parsed.meta.store,
+        candidateCount: parsed.meta.candidateCount,
+        citationCount: parsed.citations.length,
+        sufficient: parsed.meta.sufficient,
+        sufficiency: parsed.meta.sufficiency,
+        fallbackReason: parsed.meta.fallbackReason,
+        expandedEntityCount: parsed.meta.expandedEntityCount,
+        modelCalls: parsed.meta.modelCalls,
+      },
+    }
+  }
+
+  return retrieveLocalContext(query, limit, diagnostic?.kind ?? 'http_status', diagnostic)
+}
+
+function retrieveLocalContext(
+  query: string,
+  limit: number,
+  fallbackReason?: AssistantRetrievalMeta['fallbackReason'],
+  diagnostic?: RagAdapterDiagnostic,
+): PublicAssistantContext {
+  const retrieval = retrieveLocalKnowledge(query, limit)
+  return {
+    citations: retrieval.citations,
+    chunks: retrieval.chunks,
+    retrieval: {
+      source: 'local',
+      retrievalMode: 'local-agentic-hybrid',
+      store: 'local',
+      candidateCount: retrieval.candidateCount,
+      citationCount: retrieval.citations.length,
+      sufficient: retrieval.sufficiency === 'enough',
+      sufficiency: retrieval.sufficiency,
+      fallbackReason: fallbackReason ?? inferLocalFallbackReason(retrieval.sufficiency, retrieval.intent),
+      expandedEntityCount: retrieval.expandedEntityIds.length,
+      modelCalls: 0,
+      diagnostic,
+    },
+  }
+}
+
+function retrieveLocalKnowledge(query: string, limit = 4): LocalRetrievalResult {
   const normalized = query.trim().toLowerCase()
-  if (!normalized) return publicKnowledge.slice(0, limit)
   const intent = classifyAssistantIntent(query)
-  if (intent === 'private-credential') return []
+  const normalizedLimit = normalizeLimit(limit)
+  if (intent === 'private-credential') return emptyRetrieval(intent)
+  if (!normalized) {
+    const citations = publicKnowledge.slice(0, normalizedLimit)
+    return {
+      citations,
+      chunks: buildChunkResults(citations, new Map(), new Set(), 1),
+      intent,
+      terms: [],
+      expandedEntityIds: [],
+      sufficiency: citations.length > 0 ? ('weak' as const) : ('none' as const),
+      candidateCount: publicKnowledge.length,
+    }
+  }
+
   const terms = extractQueryTerms(query)
   const expanded = expandEntities(publicKnowledgeV2, normalized, terms)
 
-  return publicKnowledge
+  const scored = publicKnowledge
     .map((item) => ({ item, score: scoreKnowledgeItem(item, normalized, terms, intent, expanded.documentIds.has(item.id)) }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title, 'zh-CN'))
-    .slice(0, limit)
-    .map((entry) => entry.item)
+
+  const citations = scored.slice(0, normalizedLimit).map((entry) => entry.item)
+  const diversity = new Set(citations.map((item) => inferSourceType(item))).size
+  const sufficiency = citations.length === 0 ? 'none' : citations.length >= 2 || diversity >= 2 ? 'enough' : 'weak'
+  const scoreByDocument = new Map(scored.map((entry) => [entry.item.id, entry.score]))
+  const topScore = scored[0]?.score ?? 1
+
+  return {
+    citations,
+    chunks: buildChunkResults(citations, scoreByDocument, expanded.documentIds, topScore),
+    intent,
+    terms,
+    expandedEntityIds: Array.from(expanded.entityIds),
+    sufficiency,
+    candidateCount: scored.length,
+  }
 }
 
-async function generateAnswer(question: string, citations: KnowledgeItem[], env: AssistantEnv): Promise<GeneratedAnswer> {
+function emptyRetrieval(intent: RetrievalIntent): LocalRetrievalResult {
+  return {
+    citations: [],
+    chunks: [],
+    intent,
+    terms: [],
+    expandedEntityIds: [],
+    sufficiency: 'none' as const,
+    candidateCount: 0,
+  }
+}
+
+function buildChunkResults(
+  citations: KnowledgeItem[],
+  scoreByDocument: Map<string, number>,
+  expandedDocumentIds: Set<string>,
+  topScore: number,
+): RagChunkCitation[] {
+  const citationIds = new Set(citations.map((citation) => citation.id))
+  return publicKnowledgeV2.knowledge_chunks
+    .filter((chunk) => citationIds.has(chunk.documentId))
+    .map((chunk): RagChunkCitation => {
+      const documentScore = scoreByDocument.get(chunk.documentId) ?? 1
+      const normalizedScore = Math.max(0.001, Math.min(1, documentScore / Math.max(1, topScore)))
+      const reason = expandedDocumentIds.has(chunk.documentId) ? 'keyword+metadata+entity' : 'keyword+metadata'
+      return {
+        id: chunk.id,
+        documentId: chunk.documentId,
+        text: chunk.text,
+        section: chunk.section,
+        score: Number(normalizedScore.toFixed(3)),
+        reason,
+      }
+    })
+    .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, 'zh-CN'))
+    .slice(0, Math.max(1, citations.length))
+}
+
+function inferLocalFallbackReason(sufficiency: 'enough' | 'weak' | 'none', intent: string) {
+  if (sufficiency !== 'none') return null
+  return intent === 'private-credential' ? 'private-credential' : 'no_public_context'
+}
+
+function getRagRetrieveEndpoints(baseUrl: string) {
+  const normalized = baseUrl.trim().replace(/\/+$/, '')
+  if (!normalized) return []
+  if (normalized.endsWith('/v1/retrieve')) return [normalized]
+  if (normalized.endsWith('/v1')) return [`${normalized}/retrieve`]
+  if (normalized.endsWith('/rag')) return [`${normalized}/v1/retrieve`]
+  if (normalized.endsWith('/rag/v1')) return [`${normalized}/retrieve`]
+  return Array.from(new Set([`${normalized}/v1/retrieve`, `${normalized}/rag/v1/retrieve`]))
+}
+
+async function requestRagRetrieve(endpoint: string, env: AssistantEnv, timeoutMs: number, body: unknown): Promise<RagAttempt> {
+  const abort = new AbortController()
+  let diagnosticKind: RagAdapterDiagnosticKind = 'network_error'
+  const timeout = setTimeout(() => {
+    diagnosticKind = 'timeout'
+    abort.abort()
+  }, timeoutMs)
+
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    const apiKey = env.ASSISTANT_RAG_API_KEY?.trim()
+    if (apiKey) headers.Authorization = `Bearer ${apiKey}`
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      signal: abort.signal,
+      body: JSON.stringify(body),
+    })
+    return {
+      response,
+      diagnostic: {
+        kind: 'http_status',
+        httpStatusClass: toStatusClass(response.status),
+        attemptedEndpoints: 0,
+        timeoutMs,
+      },
+    }
+  } catch {
+    return {
+      response: null,
+      diagnostic: {
+        kind: diagnosticKind,
+        attemptedEndpoints: 0,
+        timeoutMs,
+      },
+    }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function readRagRetrieveResponse(value: unknown): RagRetrieveResponse | null {
+  if (!isRecord(value) || !Array.isArray(value.citations) || !Array.isArray(value.chunks) || !isRecord(value.meta)) return null
+  const citations = value.citations.map(readCitation).filter((item): item is KnowledgeItem => Boolean(item))
+  if (citations.length !== value.citations.length) return null
+  const chunks = value.chunks.map(readChunk).filter((item): item is RagChunkCitation => Boolean(item))
+  if (chunks.length !== value.chunks.length) return null
+  const sufficiency = readSufficiency(value.meta.sufficiency)
+  if (!sufficiency) return null
+
+  return {
+    intent: typeof value.intent === 'string' ? value.intent : 'broad-unknown',
+    citations,
+    chunks,
+    meta: {
+      retrievalMode: typeof value.meta.retrievalMode === 'string' ? value.meta.retrievalMode : 'hybrid',
+      store: typeof value.meta.store === 'string' ? value.meta.store : 'local',
+      candidateCount: readNumber(value.meta.candidateCount, citations.length),
+      reranked: value.meta.reranked === true,
+      sufficient: value.meta.sufficient === true,
+      sufficiency,
+      fallbackReason: readRagFallbackReason(value.meta.fallbackReason),
+      citationCount: readNumber(value.meta.citationCount, citations.length),
+      expandedEntityCount: readNumber(value.meta.expandedEntityCount, 0),
+      modelCalls: 0,
+    },
+  }
+}
+
+function readCitation(value: unknown): KnowledgeItem | null {
+  if (!isRecord(value)) return null
+  if (typeof value.id !== 'string' || typeof value.title !== 'string' || typeof value.summary !== 'string' || typeof value.href !== 'string') {
+    return null
+  }
+  return {
+    id: value.id,
+    title: value.title,
+    summary: value.summary,
+    href: value.href,
+    tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    visibility: value.visibility === 'internal' ? 'internal' : 'public',
+  }
+}
+
+function readChunk(value: unknown): RagChunkCitation | null {
+  if (!isRecord(value)) return null
+  if (
+    typeof value.id !== 'string' ||
+    typeof value.documentId !== 'string' ||
+    typeof value.text !== 'string' ||
+    typeof value.section !== 'string' ||
+    typeof value.reason !== 'string'
+  ) {
+    return null
+  }
+  return {
+    id: value.id,
+    documentId: value.documentId,
+    text: value.text,
+    section: value.section,
+    score: readNumber(value.score, 0),
+    reason: value.reason,
+  }
+}
+
+function readSufficiency(value: unknown) {
+  return value === 'enough' || value === 'weak' || value === 'none' ? value : null
+}
+
+function readRagFallbackReason(value: unknown) {
+  return value === 'private-credential' || value === 'no_public_context' ? value : null
+}
+
+function readNumber(value: unknown, fallback: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function normalizeLimit(value: number) {
+  if (!Number.isFinite(value)) return publicKnowledgeV2.fallback_bundle.defaultLimit
+  return Math.min(8, Math.max(1, Math.trunc(value)))
+}
+
+function readPositiveInteger(value: string | undefined, fallback: number) {
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 1) return fallback
+  return parsed
+}
+
+function toStatusClass(status: number): `${number}xx` {
+  return `${Math.trunc(status / 100)}xx`
+}
+
+async function generateAnswer(question: string, citations: KnowledgeItem[], env: AssistantEnv, chunks: RagChunkCitation[] = []): Promise<GeneratedAnswer> {
   if (citations.length === 0) return fallbackResult(question, citations, 'no_public_context')
   if (!hasModelProvider(env)) return fallbackResult(question, citations, 'not_configured')
 
@@ -276,6 +654,7 @@ async function generateAnswer(question: string, citations: KnowledgeItem[], env:
   const provider = env.ASSISTANT_MODEL_PROVIDER?.trim() || 'openai-compatible'
   const endpoints = getChatCompletionEndpoints(env.ASSISTANT_MODEL_BASE_URL?.trim() || '')
   if (!apiKey || endpoints.length === 0) return fallbackResult(question, citations, 'not_configured', model, provider)
+  const chunkContext = buildChunkContext(chunks)
 
   const body = {
     model,
@@ -297,8 +676,11 @@ async function generateAnswer(question: string, citations: KnowledgeItem[], env:
           `问题：${question}`,
           '只可使用以下公开资料。每条资料包含标题、摘要和站内路径；路径只用于生成 citation，不要写进正文：',
           citations.map((item, index) => `${index + 1}. ${item.title}\n摘要：${item.summary}\n站内路径：${item.href}`).join('\n\n'),
+          chunkContext ? `可用证据片段（只用于理解，不要逐字照抄编号）：\n${chunkContext}` : '',
           '请按系统规则回答；不要编造未出现在资料里的链接或能力。',
-        ].join('\n\n'),
+        ]
+          .filter(Boolean)
+          .join('\n\n'),
       },
     ],
   }
@@ -330,6 +712,13 @@ async function generateAnswer(question: string, citations: KnowledgeItem[], env:
   }
 
   return { answer, mode: 'model', model, provider }
+}
+
+function buildChunkContext(chunks: RagChunkCitation[]) {
+  return chunks
+    .slice(0, 5)
+    .map((chunk, index) => `${index + 1}. ${chunk.section}｜${chunk.text}`)
+    .join('\n\n')
 }
 
 function fallbackResult(

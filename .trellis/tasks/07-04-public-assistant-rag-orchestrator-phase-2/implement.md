@@ -83,16 +83,20 @@ npm.cmd run assistant:eval
 
 ### 3. Main-Site RAG Adapter
 
-- Implement server-side adapter for `ASSISTANT_RAG_API_BASE_URL`.
-- Apply timeout and fallback to local Agentic Hybrid retrieval.
-- Use low-sensitive diagnostics:
-  - retrieval mode;
-  - HTTP status class;
-  - timeout;
-  - fallback reason;
-  - citation count.
-- Update both Express API and Cloudflare Function paths if feasible.
-- Do not expose Orchestrator config to front-end code.
+Status: server-side adapter complete for both Express and Cloudflare Pages Function paths.
+`ASSISTANT_RAG_API_BASE_URL` is still optional; when absent or failing, public chat falls back to local Agentic Hybrid retrieval.
+
+- [x] Implement server-side adapter for `ASSISTANT_RAG_API_BASE_URL`.
+- [x] Apply timeout and fallback to local Agentic Hybrid retrieval.
+- [x] Use low-sensitive diagnostics:
+  - [x] retrieval mode;
+  - [x] HTTP status class;
+  - [x] timeout;
+  - [x] fallback reason;
+  - [x] citation count.
+- [x] Update both Express API and Cloudflare Function paths.
+- [x] Keep Orchestrator config server-side only; front-end response remains `{ answer, citations, meta }`.
+- [x] Feed Orchestrator chunks into the model prompt as hidden grounding context while exposing only public citation cards.
 
 Validation:
 
