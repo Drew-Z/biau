@@ -1,14 +1,30 @@
 {
-  "checkedAt": "2026-07-03T11:01:07.036Z",
+  "checkedAt": "2026-07-04T16:53:04.315Z",
   "baseConfigured": true,
+  "apkGate": {
+    "status": "debug-only",
+    "releaseCandidateCount": 0,
+    "debugArtifactCount": 1,
+    "unknownArtifactCount": 0,
+    "publicDownloadApproved": false,
+    "summary": "Only debug APK artifacts were found locally; public download remains gated.",
+    "artifacts": [
+      {
+        "fileName": "app-debug.apk",
+        "buildType": "debug",
+        "sizeBytes": 19118482,
+        "updatedAt": "2026-07-02T08:27:12.582Z"
+      }
+    ]
+  },
   "ok": true,
   "checks": [
     {
       "id": "pet-showcase",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 10272,
-      "checkedAt": "2026-07-03T11:01:07.036Z",
+      "durationMs": 16668,
+      "checkedAt": "2026-07-04T16:53:04.315Z",
       "summary": "Pet App showcase page and 4/4 screenshots returned expected responses",
       "issues": []
     }

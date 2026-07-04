@@ -23,12 +23,13 @@
 
 ## Acceptance Criteria
 
-- [ ] 确认当前 Pet 工作区是否存在 release APK/AAB 候选。
-- [ ] 若没有 release 候选，主站和展示页继续不暴露下载 href。
+- [x] 确认当前 Pet 工作区是否存在 release APK/AAB 候选。
+- [x] 若没有 release 候选，主站和展示页继续不暴露下载 href。
 - [ ] 若有 release 候选，记录签名、校验、版本和回归证据后再开放下载。
-- [ ] `pet-showcase:synthetic` 或等效检查保证未批准前不会出现真实 APK 下载链接。
-- [ ] 主站 Pet 项目详情、状态页和展示页下载状态一致。
+- [x] `pet:synthetic` 或等效检查保证未批准前不会出现真实 APK 下载链接。
+- [x] 主站 Pet 项目详情、状态页和展示页下载状态一致。
 
 ## Notes
 
 - 推荐第一步：在 Pet 仓库查找 release 产物与 Gradle 构建配置，确认当前能否生成可公开签名包。
+- 2026-07-04 UTC evidence: the Pet `gamer` app/community repo is the active Android source. The Android artifact scan found `app-debug.apk` only and no release APK/AAB candidate, so public download remains gated. `pet:synthetic` validates the public showcase page, screenshots, and absence of APK download hrefs; the report also records a non-secret `apkGate` summary.

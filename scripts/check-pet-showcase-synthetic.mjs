@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, stat, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -7,6 +7,17 @@ const outputPath = resolve(repoRoot, 'public/status/pet-gamer-synthetic.json')
 const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 12_000
 const CHECK_ID = 'pet-showcase'
+const DEFAULT_ANDROID_ARTIFACT_ROOT = resolve(
+  repoRoot,
+  '..',
+  'pet',
+  'gamer',
+  'apps',
+  'android-community',
+  'app',
+  'build',
+  'outputs',
+)
 
 const showcasePath = '/pet-app-showcase/'
 const screenshotPaths = [
@@ -22,6 +33,7 @@ function parseArgs(argv) {
       process.env.PET_SHOWCASE_SYNTHETIC_BASE_URL || process.env.SITE_STATUS_BASE_URL || DEFAULT_BASE_URL,
     ),
     timeoutMs: Number(process.env.PET_SHOWCASE_SYNTHETIC_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
+    artifactRoot: String(process.env.PET_ANDROID_ARTIFACT_ROOT || DEFAULT_ANDROID_ARTIFACT_ROOT).trim(),
     strict: process.env.PET_SHOWCASE_SYNTHETIC_STRICT === '1',
   }
 
@@ -48,6 +60,15 @@ function parseArgs(argv) {
     }
     if (item.startsWith('--timeout=')) {
       args.timeoutMs = Number(item.slice('--timeout='.length))
+      continue
+    }
+    if (item === '--artifact-root') {
+      args.artifactRoot = String(readValue(index) || '').trim()
+      index += 1
+      continue
+    }
+    if (item.startsWith('--artifact-root=')) {
+      args.artifactRoot = String(item.slice('--artifact-root='.length) || '').trim()
     }
   }
 
@@ -147,6 +168,67 @@ function statusFromIssues(issues) {
   return issues.length === 0 ? 'online' : 'offline'
 }
 
+async function listApkArtifacts(root) {
+  const artifacts = []
+  if (!root) return artifacts
+
+  async function walk(dir) {
+    let entries = []
+    try {
+      entries = await readdir(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+
+    for (const entry of entries) {
+      const fullPath = resolve(dir, entry.name)
+      if (entry.isDirectory()) {
+        await walk(fullPath)
+        continue
+      }
+      if (!entry.isFile() || !/\.(apk|aab)$/i.test(entry.name)) continue
+      const fileStat = await stat(fullPath).catch(() => null)
+      const normalized = fullPath.replace(/\\/g, '/').toLowerCase()
+      const buildType = normalized.includes('/release/') ? 'release' : normalized.includes('/debug/') ? 'debug' : 'unknown'
+      artifacts.push({
+        fileName: entry.name,
+        buildType,
+        sizeBytes: fileStat?.size ?? 0,
+        updatedAt: fileStat?.mtime ? fileStat.mtime.toISOString() : '',
+      })
+    }
+  }
+
+  await walk(root)
+  return artifacts.sort((left, right) => left.fileName.localeCompare(right.fileName))
+}
+
+function summarizeApkGate(artifacts) {
+  const releaseArtifacts = artifacts.filter((artifact) => artifact.buildType === 'release')
+  const debugArtifacts = artifacts.filter((artifact) => artifact.buildType === 'debug')
+  const unknownArtifacts = artifacts.filter((artifact) => artifact.buildType === 'unknown')
+
+  return {
+    status: releaseArtifacts.length > 0 ? 'release-candidate-found' : debugArtifacts.length > 0 ? 'debug-only' : 'no-artifact',
+    releaseCandidateCount: releaseArtifacts.length,
+    debugArtifactCount: debugArtifacts.length,
+    unknownArtifactCount: unknownArtifacts.length,
+    publicDownloadApproved: false,
+    summary:
+      releaseArtifacts.length > 0
+        ? 'Release-like APK/AAB artifacts exist locally, but public download still needs signing, checksum, regression evidence, and human approval.'
+        : debugArtifacts.length > 0
+          ? 'Only debug APK artifacts were found locally; public download remains gated.'
+          : 'No APK/AAB artifacts were found in the configured Android artifact output root.',
+    artifacts: artifacts.map((artifact) => ({
+      fileName: artifact.fileName,
+      buildType: artifact.buildType,
+      sizeBytes: artifact.sizeBytes,
+      updatedAt: artifact.updatedAt,
+    })),
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const checkedAt = new Date().toISOString()
@@ -165,9 +247,11 @@ async function main() {
   const issues = [...validateShowcasePage(page), ...screenshotResults.flatMap((result) => result.issues)]
   const status = statusFromIssues(issues)
   const passedScreenshots = screenshotResults.filter((result) => result.issues.length === 0).length
+  const apkGate = summarizeApkGate(await listApkArtifacts(args.artifactRoot))
   const payload = {
     checkedAt,
     baseConfigured: true,
+    apkGate,
     ok: status === 'online',
     checks: [
       {

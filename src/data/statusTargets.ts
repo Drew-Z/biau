@@ -371,7 +371,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
         label: 'APK 发布 gate',
         status: 'planned',
         description: '检查正式 release 构建、签名、校验摘要、下载链接、回滚说明和隐私说明后再公开。',
-        evidence: '最近一次门禁审计只找到 debug APK，没有 release APK/AAB 候选；不声明 APK 已公开。',
+        evidence: '最近一次门禁审计由 pet synthetic 的 `apkGate` 记录；当前只发现 debug APK 时仍不公开下载，也不声明 APK 已发布。',
         cadence: '发布候选生成后',
         ownerHint: 'Release checklist',
       },
