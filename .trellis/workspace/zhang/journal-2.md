@@ -246,3 +246,36 @@ Implemented final-shape assistant service modes, scoped RAG Orchestrator auth, S
 ### Next Steps
 
 - None - task complete
+
+
+## Session 55: Qdrant RAG adapter
+
+**Date**: 2026-07-04
+**Task**: Qdrant RAG adapter
+**Branch**: `main`
+
+### Summary
+
+Implemented Qdrant-backed RAG adapter configuration, sync/retrieve wiring, service-mode fallback coverage, and deployment docs for the final public/internal assistant vector path.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `218bab4` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
