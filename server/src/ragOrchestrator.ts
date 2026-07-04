@@ -1,14 +1,16 @@
 import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
+import { createLocalVectorStore, rerankChunksWithVector } from './ragAdapters.js'
 import type { RagHealthResponse, RagRetrievePayload, RagRetrieveResponse, RagSyncResponse } from './types.js'
 
 const SERVICE_NAME = 'biau-rag-orchestrator'
+const localVectorStore = createLocalVectorStore()
 
 export function getRagOrchestratorHealth(): RagHealthResponse {
   return {
     ok: true,
     service: SERVICE_NAME,
     store: 'local',
-    vectorReady: false,
+    vectorReady: (publicKnowledgeV2?.knowledge_chunks.length ?? 0) > 0,
     keywordReady: true,
     rerankerReady: true,
     lastSyncAt: null,
@@ -22,6 +24,8 @@ export function getRagOrchestratorHealth(): RagHealthResponse {
 export function retrieveRagContext(payload: Required<Pick<RagRetrievePayload, 'query'>> & Omit<RagRetrievePayload, 'query'>): RagRetrieveResponse {
   const limit = normalizeRetrieveLimit(payload.limit)
   const retrieval = retrieveKnowledge(payload.query, limit)
+  const vectorCandidates = localVectorStore.search(payload.query, limit * 4)
+  const chunks = rerankChunksWithVector(retrieval.chunks, vectorCandidates)
   const fallbackReason =
     retrieval.sufficiency === 'none'
       ? retrieval.intent === 'private-credential'
@@ -32,7 +36,7 @@ export function retrieveRagContext(payload: Required<Pick<RagRetrievePayload, 'q
   return {
     intent: retrieval.intent,
     citations: retrieval.citations,
-    chunks: retrieval.chunks,
+    chunks,
     meta: {
       retrievalMode: 'local-agentic-hybrid',
       store: 'local',

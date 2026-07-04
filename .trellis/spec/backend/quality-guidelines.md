@@ -186,6 +186,7 @@ The server reads private env, applies public-citation grounding, and returns onl
   - `meta.modelCalls`
 - Health response must stay low-sensitive: no provider endpoint, database URL, token fingerprint, table name, raw prompt, request body, or model relay detail.
 - Local/mock sync is readonly and returns current knowledge counts; production sync tokens and external stores are manual-gated.
+- Local deterministic embedding/vector/reranker adapters are allowed for stable tests, but they must be named as deterministic/local behavior and must not imply that an external vector store, embedding provider, or model reranker is configured.
 - Public chat keeps the response shape `{ answer, citations, meta }`. Retrieval diagnostics live under `meta.retrieval` and may include `source`, `retrievalMode`, `store`, `candidateCount`, `citationCount`, `sufficiency`, `fallbackReason`, `modelCalls`, and sanitized `diagnostic`.
 - Adapter diagnostics must not include endpoint URLs, API keys, database URLs, raw prompts, request bodies, vector table names, stack traces, or provider payloads. Use `httpStatusClass`, `attemptedEndpoints`, and `timeoutMs` instead of leaking exact URLs or response bodies.
 - Storage templates may define `rag_documents`, `rag_chunks`, `rag_entities`, `rag_relations`, `rag_sync_runs`, and `rag_eval_runs`, but must not contain deployment-specific connection strings, hosts, credentials, model relay URLs, or private table names.
@@ -202,6 +203,7 @@ The server reads private env, applies public-citation grounding, and returns onl
 ### 5. Good/Base/Bad Cases
 
 - Good: `/rag/v1/retrieve` for Legal RAG cites `project:legal-rag`, returns at least one chunk, marks `retrievalMode: "local-agentic-hybrid"`, and reports `modelCalls: 0`.
+- Good: local/mock vector rerank can mark chunk reasons with `deterministic-vector`, while health still reports `store: "local"` and no provider details.
 - Base: no external RAG env exists; local/mock Orchestrator still passes `assistant:rag-smoke`.
 - Good: with a configured mock `ASSISTANT_RAG_API_BASE_URL`, `/chat/public` uses Orchestrator citations/chunks for grounding while still returning only public citation cards to the browser.
 - Bad: a route logs raw chat questions, request bodies, API keys, model provider URLs, database URLs, vector table names, or stack traces.

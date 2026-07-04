@@ -133,11 +133,13 @@ npm.cmd run assistant:eval
 
 ### 5. Embedding And Vector Retrieval Adapter
 
-- Add embedding provider interface.
-- Add vector store interface.
-- Support local deterministic embedding/mock adapter for tests.
-- Add Supabase pgvector adapter only after schema is ready.
-- Keep provider errors non-fatal and fallback to keyword/entity retrieval.
+Status: local deterministic adapter interfaces are complete. External embedding/vector providers remain manual-gated.
+
+- [x] Add embedding provider interface.
+- [x] Add vector store interface.
+- [x] Support local deterministic embedding/mock adapter for tests.
+- [ ] Add Supabase pgvector adapter only after schema is ready and user approves credentials/resources.
+- [x] Keep provider errors non-fatal and fallback to keyword/entity retrieval.
 
 Validation:
 
@@ -149,13 +151,15 @@ npm.cmd run lint
 
 ### 6. Reranker Adapter
 
-- Keep deterministic reranker as baseline.
-- Add optional provider-backed reranker interface.
-- Do not call live reranker during ordinary validation.
-- Add eval comparison fields:
-  - before rerank top citation;
-  - after rerank top citation;
-  - citation diversity.
+Status: deterministic chunk reranker is active in the local/mock Orchestrator. Provider-backed reranker remains manual-gated.
+
+- [x] Keep deterministic reranker as baseline.
+- [ ] Add optional provider-backed reranker interface after production provider choice.
+- [x] Do not call live reranker during ordinary validation.
+- [ ] Add eval comparison fields:
+  - [ ] before rerank top citation;
+  - [ ] after rerank top citation;
+  - [ ] citation diversity.
 
 Validation:
 

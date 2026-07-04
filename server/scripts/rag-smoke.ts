@@ -48,7 +48,7 @@ try {
     !health.ok ||
     health.service !== 'biau-rag-orchestrator' ||
     health.store !== 'local' ||
-    health.vectorReady !== false ||
+    health.vectorReady !== true ||
     health.keywordReady !== true ||
     health.rerankerReady !== true ||
     health.documentCount < 1 ||
@@ -69,6 +69,7 @@ try {
     legalPayload.intent !== 'demo-access' ||
     !hasCitation(legalPayload, 'project:legal-rag') ||
     legalPayload.chunks.length < 1 ||
+    !legalPayload.chunks.some((chunk) => chunk.reason.includes('deterministic-vector')) ||
     legalPayload.meta.retrievalMode !== 'local-agentic-hybrid' ||
     legalPayload.meta.store !== 'local' ||
     legalPayload.meta.reranked !== true ||
