@@ -312,3 +312,37 @@ Added same-profile fallback model channels for blog draft setup, status, doctor,
 ### Next Steps
 
 - None - task complete
+
+
+## Session 57: Close Pet APK public release gate
+
+**Date**: 2026-07-05
+**Task**: Close Pet APK public release gate
+**Branch**: `main`
+
+### Summary
+
+Audited the Pet showcase APK release gate, recorded public-safe apkGate metadata rules, confirmed no release APK/AAB is available, kept public download gated, and archived the Pet APK release closure task with the follow-up manual gate for signed release evidence.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `841a20f` | (see git log) |
+| `fff49a9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
