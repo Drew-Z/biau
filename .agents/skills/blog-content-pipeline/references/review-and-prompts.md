@@ -118,6 +118,11 @@ npm.cmd run build
   DeepSeek V4 Pro. Codex still owns final fact, safety, and ingestion decisions.
 - Keep default `BLOG_DRAFT_*` as the shared fallback channel.
 - Keep `GEMINI_*` only as backward-compatible fallback.
+- Same-profile fallback channels may use
+  `BLOG_DRAFT_<PROFILE>_FALLBACK_<N>_*`. During real model-assisted generation
+  or polishing, these are tried serially after the selected profile's primary
+  channel fails. They are backup channels for the same role, not permission to
+  silently switch from `review` to `strong` or `fast`.
 - Record the provider/model label in draft metadata, but never record API keys or real private relay URLs in committed files.
 - Use separate relay profiles before any parallel model comparison.
 

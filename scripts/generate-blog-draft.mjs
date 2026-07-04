@@ -2,7 +2,13 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { buildChatCompletionsUrl, loadLocalEnv, readDraftModelConfig, redactSensitiveText } from './blog-model-config.mjs'
+import {
+  buildChatCompletionsUrl,
+  loadLocalEnv,
+  readDraftModelChannels,
+  redactSensitiveText,
+  validateDraftModelChannel,
+} from './blog-model-config.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const planPath = resolve(repoRoot, 'scripts/blog-rewrite-plan.json')
@@ -270,45 +276,107 @@ function buildPolishPrompt(topic, draftText) {
 
 async function requestModelContent({ profile, prompt, systemContent }) {
   await loadLocalEnv()
-  const config = readDraftModelConfig(profile)
+  const channelSet = readDraftModelChannels(profile)
+  const attempts = []
+  const candidateChannels = []
+
+  for (const channel of channelSet.channels) {
+    const issues = validateDraftModelChannel(channel)
+    if (issues.length > 0) {
+      attempts.push({
+        channel,
+        kind: 'missing_required_field',
+        detail: issues.map((issue) => issue.code).join(', '),
+      })
+      continue
+    }
+    candidateChannels.push(channel)
+  }
+
+  if (candidateChannels.length === 0) {
+    throw new Error(`没有可用模型渠道。${formatModelAttempts(attempts)} 默认请不加 --generate 先生成 evidence-first scaffold，或运行 blog:model setup 配置当前 profile。`)
+  }
+
+  for (const channel of candidateChannels) {
+    const attempt = await requestModelChannel(channel, { prompt, systemContent })
+    if (attempt.content) return { content: attempt.content, config: channel, attempts }
+    attempts.push(attempt)
+  }
+
+  throw new Error(`所有模型渠道都未返回可用内容。${formatModelAttempts(attempts)}`)
+}
+
+async function requestModelChannel(config, { prompt, systemContent }) {
   const { apiKey, model, provider, temperature } = config
+  console.log(`使用模型渠道：${config.profile} ${config.label} -> ${provider} / ${model}`)
 
-  if (!apiKey) {
-    throw new Error('缺少 BLOG_DRAFT_<PROFILE>_API_KEY、BLOG_DRAFT_API_KEY 或 GEMINI_API_KEY。默认请不加 --generate 先生成 evidence-first scaffold。')
+  try {
+    const response = await fetch(buildChatCompletionsUrl(config.baseUrl), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        temperature,
+        messages: [
+          {
+            role: 'system',
+            content: systemContent,
+          },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    })
+
+    if (!response.ok) {
+      const body = redactSensitiveText((await response.text()).slice(0, 300))
+      return {
+        channel: config,
+        kind: `http_status:${response.status}`,
+        detail: body,
+      }
+    }
+
+    const json = await response.json().catch(() => null)
+    if (!json) {
+      return {
+        channel: config,
+        kind: 'invalid_json',
+        detail: 'response body is not valid JSON',
+      }
+    }
+    const content = json?.choices?.[0]?.message?.content
+    if (!content) {
+      return {
+        channel: config,
+        kind: 'empty_response',
+        detail: 'missing choices[0].message.content',
+      }
+    }
+    return { channel: config, content: content.trim() }
+  } catch (error) {
+    return {
+      channel: config,
+      kind: 'network_error',
+      detail: redactSensitiveText(error instanceof Error ? error.message : String(error)),
+    }
   }
+}
 
-  console.log(`使用模型渠道：${config.profile} -> ${provider} / ${model}`)
-
-  const response = await fetch(buildChatCompletionsUrl(config.baseUrl), {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model,
-      temperature,
-      messages: [
-        {
-          role: 'system',
-          content: systemContent,
-        },
-        { role: 'user', content: prompt },
-      ],
-    }),
-  })
-
-  if (!response.ok) {
-    const body = redactSensitiveText((await response.text()).slice(0, 500))
-    throw new Error(`模型 API 请求失败：${response.status} ${body}`)
-  }
-
-  const json = await response.json()
-  const content = json?.choices?.[0]?.message?.content
-  if (!content) {
-    throw new Error('模型 API 没有返回 choices[0].message.content。')
-  }
-  return { content: content.trim(), config }
+function formatModelAttempts(attempts) {
+  const visible = attempts
+    .map((attempt) => {
+      const channel = attempt.channel
+      const provider = channel?.provider || 'missing-provider'
+      const model = channel?.model || 'missing-model'
+      const label = channel ? `${channel.profile}/${channel.label}` : 'unknown-channel'
+      const detail = attempt.detail ? ` (${redactSensitiveText(attempt.detail)})` : ''
+      return `${label} ${provider}/${model}: ${attempt.kind}${detail}`
+    })
+    .join('；')
+  return visible ? `尝试记录：${visible}` : ''
 }
 
 async function requestDraft(topic, profile) {
@@ -498,12 +566,12 @@ async function writeDraft(topic, content, force, generatedBy) {
 }
 
 async function writePolishedDraft(topic, outputPath, existingDraft, polishedContent, config) {
-  const generatedBy = `model-assisted-polish:${config.profile}:${config.provider}:${config.model}`
+  const generatedBy = `model-assisted-polish:${config.profile}:${config.label}:${config.provider}:${config.model}`
   let content = updateDraftFrontmatter(existingDraft, {
     generatedBy,
     generatedAt: new Date().toISOString(),
   })
-  content = appendModelStrategyNote(content, `Review/polish stage used the \`${config.profile}\` profile (${config.provider} / ${config.model}).`)
+  content = appendModelStrategyNote(content, `Review/polish stage used the \`${config.profile}\` profile \`${config.label}\` channel (${config.provider} / ${config.model}).`)
   content = appendModelStrategyNote(content, 'Codex final fact/safety review is still required before promotion.')
   content = replaceDraftBodyContent(content, polishedContent)
 
@@ -552,7 +620,7 @@ async function main() {
       await writePolishedDraft(topic, polishPath, existingDraft, content, config)
     } else if (args.generate) {
       const { content, config } = await requestDraft(topic, args.profile)
-      await writeDraft(topic, buildGeneratedDraft(topic, content), args.force, `model-assisted-draft:${config.profile}:${config.provider}:${config.model}`)
+      await writeDraft(topic, buildGeneratedDraft(topic, content), args.force, `model-assisted-draft:${config.profile}:${config.label}:${config.provider}:${config.model}`)
     } else {
       await writeDraft(topic, buildScaffold(topic), args.force, 'codex-draft-scaffold')
     }

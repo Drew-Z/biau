@@ -90,6 +90,52 @@ export function profileFieldKeys(profileInput) {
   return Object.fromEntries(modelConfigFields.map((field) => [field, profileFieldKey(profileInput, field)]))
 }
 
+export function fallbackEnvPrefix(profileInput, index) {
+  const profile = normalizeProfile(profileInput)
+  const normalizedIndex = normalizeFallbackIndex(index)
+  return profile === 'default'
+    ? `BLOG_DRAFT_FALLBACK_${normalizedIndex}_`
+    : `${profileEnvPrefix(profile)}FALLBACK_${normalizedIndex}_`
+}
+
+export function fallbackFieldKey(profileInput, index, field) {
+  return `${fallbackEnvPrefix(profileInput, index)}${field}`
+}
+
+export function fallbackFieldKeys(profileInput, index) {
+  return Object.fromEntries(modelConfigFields.map((field) => [field, fallbackFieldKey(profileInput, index, field)]))
+}
+
+export function normalizeFallbackIndex(value) {
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed) || parsed < 1) return 1
+  return parsed
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+export function discoverFallbackIndexes(profileInput, source = process.env) {
+  const profile = normalizeProfile(profileInput)
+  const prefix = profile === 'default' ? 'BLOG_DRAFT_FALLBACK_' : `${profileEnvPrefix(profile)}FALLBACK_`
+  const fieldPattern = modelConfigFields.join('|')
+  const pattern = new RegExp(`^${escapeRegExp(prefix)}(\\d+)_(${fieldPattern})$`)
+  const indexes = new Set()
+  for (const key of Object.keys(source)) {
+    const match = key.match(pattern)
+    if (!match) continue
+    const index = normalizeFallbackIndex(match[1])
+    if (index > 0) indexes.add(index)
+  }
+  return Array.from(indexes).sort((a, b) => a - b)
+}
+
+export function nextFallbackIndex(profileInput, source = process.env) {
+  const indexes = discoverFallbackIndexes(profileInput, source)
+  return indexes.length === 0 ? 1 : Math.max(...indexes) + 1
+}
+
 export function getProfileRecommendation(profileInput) {
   const profile = normalizeProfile(profileInput)
   return profileRecommendations[profile] ?? {
@@ -171,10 +217,53 @@ export function resolveProfileEnv(profileInput, field, source = process.env) {
   return { source: 'fallback', key: '', value: fallback }
 }
 
+export function resolveFallbackEnv(profileInput, indexInput, field, source = process.env) {
+  const profile = normalizeProfile(profileInput)
+  const index = normalizeFallbackIndex(indexInput)
+  const key = fallbackFieldKey(profile, index, field)
+  if (hasOwn(source, key)) {
+    return { source: `fallback-${index}`, key, value: source[key] ?? '' }
+  }
+
+  if (field === 'PROVIDER') {
+    return { source: 'derived', key: '', value: `${profile}-fallback-${index}` }
+  }
+
+  if (field === 'TEMPERATURE') {
+    return { source: 'profile-default', key: '', value: getProfileRecommendation(profile).defaultTemperature }
+  }
+
+  return { source: 'missing', key, value: '' }
+}
+
 export function readTemperature(profile, source = process.env) {
   const resolution = resolveProfileEnv(profile, 'TEMPERATURE', source)
   const value = Number(resolution.value)
   return Number.isFinite(value) ? value : 0.65
+}
+
+function readTemperatureFromResolution(profile, resolution) {
+  const value = Number(resolution.value)
+  if (Number.isFinite(value)) return value
+  const fallback = Number(getProfileRecommendation(profile).defaultTemperature)
+  return Number.isFinite(fallback) ? fallback : 0.65
+}
+
+function buildChannelFromResolutions(profileInput, role, index, resolutions) {
+  const profile = normalizeProfile(profileInput)
+  const normalizedIndex = role === 'fallback' ? normalizeFallbackIndex(index) : 0
+  return {
+    profile,
+    role,
+    index: normalizedIndex,
+    label: role === 'fallback' ? `fallback-${normalizedIndex}` : 'primary',
+    baseUrl: normalizeBaseUrl(resolutions.BASE_URL.value),
+    apiKey: String(resolutions.API_KEY.value ?? ''),
+    model: String(resolutions.MODEL.value ?? ''),
+    provider: String(resolutions.PROVIDER.value ?? ''),
+    temperature: readTemperatureFromResolution(profile, resolutions.TEMPERATURE),
+    resolutions,
+  }
 }
 
 export function readDraftModelConfig(profileInput = '', source = process.env) {
@@ -183,14 +272,29 @@ export function readDraftModelConfig(profileInput = '', source = process.env) {
     modelConfigFields.map((field) => [field, resolveProfileEnv(selectedProfile, field, source)]),
   )
 
+  return buildChannelFromResolutions(selectedProfile, 'primary', 0, resolutions)
+}
+
+export function readDraftModelFallbackConfig(profileInput, index, source = process.env) {
+  const selectedProfile = normalizeProfile(profileInput)
+  const normalizedIndex = normalizeFallbackIndex(index)
+  const resolutions = Object.fromEntries(
+    modelConfigFields.map((field) => [field, resolveFallbackEnv(selectedProfile, normalizedIndex, field, source)]),
+  )
+
+  return buildChannelFromResolutions(selectedProfile, 'fallback', normalizedIndex, resolutions)
+}
+
+export function readDraftModelChannels(profileInput = '', source = process.env) {
+  const selectedProfile = normalizeProfile(profileInput || source.BLOG_DRAFT_PROFILE)
+  const primary = readDraftModelConfig(selectedProfile, source)
+  const fallbackIndexes = discoverFallbackIndexes(selectedProfile, source)
+  const fallbacks = fallbackIndexes.map((index) => readDraftModelFallbackConfig(selectedProfile, index, source))
   return {
     profile: selectedProfile,
-    baseUrl: normalizeBaseUrl(resolutions.BASE_URL.value),
-    apiKey: String(resolutions.API_KEY.value ?? ''),
-    model: String(resolutions.MODEL.value ?? ''),
-    provider: String(resolutions.PROVIDER.value ?? ''),
-    temperature: readTemperature(selectedProfile, source),
-    resolutions,
+    primary,
+    fallbacks,
+    channels: [primary, ...fallbacks],
   }
 }
 
@@ -198,36 +302,50 @@ export function hasUsableValue(value) {
   return String(value ?? '').trim().length > 0
 }
 
-export function validateDraftModelConfig(config) {
+export function validateDraftModelChannel(config) {
   const issues = []
   if (!hasUsableValue(config.baseUrl)) {
     issues.push({
       code: 'missing_base_url',
-      message: 'Missing model base URL for the selected blog draft profile.',
+      message: `Missing model base URL for ${config.profile} ${config.label ?? 'channel'}.`,
     })
   }
   if (!hasUsableValue(config.apiKey)) {
     issues.push({
       code: 'missing_api_key',
-      message: 'Missing BLOG_DRAFT_<PROFILE>_API_KEY, BLOG_DRAFT_API_KEY, or GEMINI_API_KEY.',
+      message: `Missing API key for ${config.profile} ${config.label ?? 'channel'}.`,
     })
   }
   if (!hasUsableValue(config.model)) {
     issues.push({
       code: 'missing_model',
-      message: 'Missing model id for the selected blog draft profile.',
+      message: `Missing model id for ${config.profile} ${config.label ?? 'channel'}.`,
     })
   }
   return issues
 }
 
-export function buildModelConfigStatus(config) {
+export function validateDraftModelConfig(config) {
+  return validateDraftModelChannel(config)
+}
+
+export function buildModelChannelStatus(config, primaryModel = '') {
+  const issues = validateDraftModelChannel(config)
+  const warnings = []
+  if (config.role === 'fallback' && primaryModel && config.model && config.model !== primaryModel) {
+    warnings.push(`fallback model differs from primary model (${primaryModel}). Confirm this is an equivalent same-role channel.`)
+  }
   return {
     profile: config.profile,
+    role: config.role,
+    index: config.index,
+    label: config.label,
+    ok: issues.length === 0,
     provider: {
       value: config.provider,
       source: config.resolutions.PROVIDER.source,
       key: config.resolutions.PROVIDER.key,
+      set: hasUsableValue(config.provider),
     },
     model: {
       value: config.model,
@@ -250,7 +368,13 @@ export function buildModelConfigStatus(config) {
       source: config.resolutions.API_KEY.source,
       key: config.resolutions.API_KEY.key,
     },
+    issues,
+    warnings,
   }
+}
+
+export function buildModelConfigStatus(config) {
+  return buildModelChannelStatus(config)
 }
 
 export function redactSensitiveText(value) {

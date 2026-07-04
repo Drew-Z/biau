@@ -23,6 +23,7 @@ npm run blog:draft -- --slug blog-content-system-build-log-draft --force
 
 # Model-assisted draft/rewrite
 npm run blog:model -- setup
+npm run blog:model -- setup --profile review --fallback
 npm run blog:model -- status --all --format markdown
 npm run blog:model -- doctor --all --format markdown
 npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate --profile strong
@@ -42,3 +43,6 @@ batch checks. Use `--polish-from content-drafts/<file>.md` when the review
 profile should rewrite the existing `## Draft Body` while preserving the
 evidence scaffold. Beginner setup skips temperature; use `--advanced` only when a
 relay/model needs explicit sampling settings.
+Each profile can also have same-profile fallback channels, configured with
+`blog:model -- setup --profile <profile> --fallback`; real generation tries them
+serially after the primary channel fails, without switching to another role.

@@ -20,7 +20,13 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `npm.cmd run blog:model -- setup` runs the smart-search-style interactive
   private model setup wizard for `strong`, `review`, and `fast`.
 - `npm.cmd run blog:model -- setup --profile <profile>` configures one profile.
+- `npm.cmd run blog:model -- setup --profile <profile> --fallback` configures
+  one same-profile fallback channel.
+- `npm.cmd run blog:model -- setup --profile <profile> --fallback --fallback-index <n>`
+  updates a specific same-profile fallback channel.
 - `npm.cmd run blog:model -- setup --non-interactive --profile <profile> --base-url <url> --api-key <key> --model <id> --provider <label>` saves one profile without prompts.
+- `npm.cmd run blog:model -- setup --non-interactive --profile <profile> --fallback --fallback-index <n> --base-url <url> --api-key <key> --model <id> --provider <label>`
+  saves one same-profile fallback channel without prompts.
 - `npm.cmd run blog:model -- status --profile <profile> --format json|markdown` prints masked offline profile status.
 - `npm.cmd run blog:model -- status --all --format json|markdown` prints masked offline status for the recommended three-profile flow.
 - `npm.cmd run blog:model -- doctor --profile <profile> --format json|markdown` performs an offline channel configuration check without writing drafts.
@@ -60,6 +66,11 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
   2. default `BLOG_DRAFT_<FIELD>` when that environment key exists,
   3. legacy `GEMINI_<FIELD>` when that environment key exists,
   4. a non-secret fallback where one is safe.
+- Same-profile fallback channels use indexed keys:
+  `BLOG_DRAFT_<PROFILE>_FALLBACK_<N>_<FIELD>`. Real `--generate` and
+  `--polish-from` runs try the primary channel first, then fallback channels in
+  numeric order after a channel failure. Fallback is serial and same-role only;
+  a failed `review` run must not silently switch to `strong` or `fast`.
 - Fields are `BASE_URL`, `API_KEY`, `MODEL`, `PROVIDER`, and `TEMPERATURE`.
   `TEMPERATURE` is an advanced optional setup field; internal defaults remain
   active when it is not configured.
@@ -87,6 +98,9 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `--polish-from` with no `## Draft Body` -> fail before network access because
   the script cannot safely separate evidence from visitor-readable prose.
 - Model API failure -> report status and a short response body excerpt, never credentials.
+- Primary-channel failure with configured same-profile fallback channels -> try
+  fallback channels serially, print only non-secret provider/model labels and
+  failure kinds, and record the winning channel label in `generatedBy`.
 - Model route failure such as `unknown provider for model <id>` -> treat as a
   channel configuration problem, not a content-quality problem. Do not silently
   fall back during a dry run; record the profile, non-secret provider label,
@@ -250,6 +264,8 @@ Behavior:
 - Beginner setup configures the recommended three-profile flow:
   `strong` for generation, `review` for polish, and `fast` for low-risk helper
   work. Single-profile and custom profile setup remain available.
+- Beginner setup asks whether to configure optional same-profile fallback
+  channels after each primary profile. Default answer is no.
 - Prompt for `BASE_URL`, `API_KEY`, `MODEL`, and `PROVIDER` in beginner setup.
   Prompt for `TEMPERATURE` only in advanced setup or non-interactive flags.
 - Provide smart-search-like subcommands: `setup`, `status`, `doctor`, and

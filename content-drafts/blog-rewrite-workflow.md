@@ -32,6 +32,7 @@ npm run blog:draft -- --slug blog-content-system-build-log-draft --force
 
 ```bash
 npm run blog:model -- setup
+npm run blog:model -- setup --profile review --fallback
 npm run blog:model -- status --all --format markdown
 npm run blog:model -- doctor --all --format markdown
 npm run blog:draft -- --slug blog-content-system-build-log-draft --force --generate --profile strong
@@ -84,9 +85,17 @@ BLOG_DRAFT_REVIEW_API_KEY=
 BLOG_DRAFT_REVIEW_MODEL=deepseek-v4-pro
 BLOG_DRAFT_REVIEW_PROVIDER=polish-relay
 BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
+
+BLOG_DRAFT_REVIEW_FALLBACK_1_BASE_URL=
+BLOG_DRAFT_REVIEW_FALLBACK_1_API_KEY=
+BLOG_DRAFT_REVIEW_FALLBACK_1_MODEL=deepseek-v4-pro
+BLOG_DRAFT_REVIEW_FALLBACK_1_PROVIDER=polish-relay-backup
+BLOG_DRAFT_REVIEW_FALLBACK_1_TEMPERATURE=0.2
 ```
 
 `strong` 用于长文起草和 legacy 重写，推荐 GLM-5.2 或 Gemini 3.1 Pro；`review` 用于润色和降 AI 味，推荐 DeepSeek V4 Pro；`fast` 用于大纲、摘要和低风险批量检查，推荐 Gemini 3.5 Flash。命名 profile 缺少值时会回落到默认 `BLOG_DRAFT_*`，再回落到旧的 `GEMINI_*`，这必须被视为 setup gap。如果不加 `--generate`，不需要模型配置。如果出现 `auth_unavailable`、`unknown provider for model` 或上游认证错误，先运行 `blog:model status/doctor` 定位配置、路由或认证问题，再运行模型草稿。
+
+每个 profile 可以配置同 profile fallback 渠道，例如 `BLOG_DRAFT_REVIEW_FALLBACK_1_*`。真实生成或润色会先走 primary，再按编号串行尝试 fallback；`review` 失败不会自动切到 `strong` 或 `fast`。
 
 ## 图片与图示
 

@@ -4,14 +4,20 @@ import { createInterface } from 'node:readline/promises'
 import { resolve } from 'node:path'
 import {
   buildChatCompletionsUrl,
+  buildModelChannelStatus,
   buildModelConfigStatus,
   defaultEnvPath,
+  fallbackFieldKeys,
   getProfileRecommendation,
   loadLocalEnv,
+  nextFallbackIndex,
   normalizeBaseUrl,
+  normalizeFallbackIndex,
   normalizeProfile,
   profileFieldKeys,
   readDraftModelConfig,
+  readDraftModelFallbackConfig,
+  readDraftModelChannels,
   readEnvFileValues,
   redactSensitiveText,
   repoRelativePath,
@@ -19,7 +25,6 @@ import {
   setupProfileOrder,
   supportedProfiles,
   updateEnvFileValues,
-  validateDraftModelConfig,
 } from './blog-model-config.mjs'
 
 function parseArgs(argv) {
@@ -34,6 +39,8 @@ function parseArgs(argv) {
     live: false,
     all: false,
     advanced: false,
+    fallback: false,
+    fallbackIndex: undefined,
     nonInteractive: false,
     help: false,
     baseUrl: undefined,
@@ -67,6 +74,21 @@ function parseArgs(argv) {
     }
     if (item === '--advanced') {
       args.advanced = true
+      continue
+    }
+    if (item === '--fallback') {
+      args.fallback = true
+      continue
+    }
+    if (item === '--fallback-index') {
+      args.fallback = true
+      args.fallbackIndex = readValue(index)
+      index += 1
+      continue
+    }
+    if (item.startsWith('--fallback-index=')) {
+      args.fallback = true
+      args.fallbackIndex = item.slice('--fallback-index='.length)
       continue
     }
     if (item === '--non-interactive') {
@@ -177,8 +199,11 @@ function usage() {
     'Usage:',
     '  npm.cmd run blog:model -- setup',
     '  npm.cmd run blog:model -- setup --profile strong',
+    '  npm.cmd run blog:model -- setup --profile review --fallback',
+    '  npm.cmd run blog:model -- setup --profile review --fallback --fallback-index 1',
     '  npm.cmd run blog:model -- setup --profile strong --advanced',
     '  npm.cmd run blog:model -- setup --non-interactive --profile strong --base-url "https://relay.example.com" --api-key "key" --model "glm-5.2" --provider "glm"',
+    '  npm.cmd run blog:model -- setup --non-interactive --profile review --fallback --fallback-index 1 --base-url "https://relay.example.com" --api-key "key" --model "deepseek-v4-pro" --provider "deepseek-backup"',
     '  npm.cmd run blog:model -- status --all --format markdown',
     '  npm.cmd run blog:model -- status --profile strong --format json',
     '  npm.cmd run blog:model -- doctor --all --format markdown',
@@ -198,6 +223,7 @@ function usage() {
     '  setup writes private values to .env.local by default; use --local-env PATH for a different private env file.',
     '  --env-file is intentionally unsupported; use --local-env to avoid Node/wrapper argument ambiguity.',
     '  setup without --profile guides strong, review, and fast.',
+    '  setup asks whether to add same-profile fallback channels; use --fallback to add one later.',
     '  beginner setup does not ask for temperature; use --advanced or --temperature.',
     '  status is offline and never prints API keys or real relay URLs.',
     '  doctor is offline by default; add --live only after approval for a small blog diagnostic model task.',
@@ -228,6 +254,20 @@ function appendSingleResult(lines, result, level = '##') {
   if (result.httpStatus) lines.push(`- HTTP status: ${result.httpStatus}`)
   if (result.message) lines.push(`- message: ${result.message}`)
   if (result.error) lines.push(`- error: ${result.error}`)
+  if (result.channels?.length) {
+    lines.push('')
+    lines.push(`${level === '##' ? '###' : '####'} Primary channel`)
+    appendChannelStatus(lines, result.channels.find((channel) => channel.role === 'primary') ?? result.channels[0], level === '##' ? '####' : '#####')
+    const fallbackChannels = result.channels.filter((channel) => channel.role === 'fallback')
+    if (fallbackChannels.length > 0) {
+      lines.push('')
+      lines.push(`${level === '##' ? '###' : '####'} Fallback channels`)
+      for (const channel of fallbackChannels) {
+        lines.push('')
+        appendChannelStatus(lines, channel, level === '##' ? '####' : '#####')
+      }
+    }
+  }
   if (result.issues?.length) {
     lines.push('')
     lines.push(`${level === '##' ? '###' : '####'} Issues`)
@@ -242,6 +282,25 @@ function appendSingleResult(lines, result, level = '##') {
     lines.push('')
     lines.push(`${level === '##' ? '###' : '####'} Recovery`)
     for (const item of result.recovery) lines.push(`- ${item}`)
+  }
+}
+
+function appendChannelStatus(lines, channel, level = '####') {
+  if (!channel) return
+  lines.push(`${level} ${channel.label}`)
+  lines.push(`- ok: ${channel.ok ? 'true' : 'false'}`)
+  if (channel.provider) lines.push(`- provider: ${channel.provider.value || 'missing'} (${channel.provider.source})`)
+  if (channel.model) lines.push(`- model: ${channel.model.value || 'missing'} (${channel.model.source})`)
+  if (channel.temperature) lines.push(`- temperature: ${channel.temperature.value} (${channel.temperature.source})`)
+  if (channel.baseUrl) lines.push(`- base URL: ${channel.baseUrl.set ? 'set' : 'missing'} (${channel.baseUrl.source})`)
+  if (channel.apiKey) lines.push(`- API key: ${channel.apiKey.set ? 'set' : 'missing'} (${channel.apiKey.source})`)
+  if (channel.issues?.length) {
+    lines.push('- issues:')
+    for (const issue of channel.issues) lines.push(`  - ${issue.code}: ${issue.message}`)
+  }
+  if (channel.warnings?.length) {
+    lines.push('- warnings:')
+    for (const warning of channel.warnings) lines.push(`  - ${warning}`)
   }
 }
 
@@ -283,37 +342,58 @@ function writeResult(result, format) {
 
 function setupProfilesFor(args) {
   if (args.all) return setupProfileOrder
+  if (args.fallback) return [normalizeProfile(args.profile || 'strong')]
   if (args.command === 'setup' && !args.profileExplicit && !args.advanced && !args.nonInteractive) return setupProfileOrder
   return [normalizeProfile(args.profile || 'strong')]
 }
 
 function buildStatusResult(args) {
-  const config = readDraftModelConfig(args.profile)
+  const channelSet = readDraftModelChannels(args.profile)
+  const config = channelSet.primary
   const status = buildModelConfigStatus(config)
-  const issues = validateDraftModelConfig(config)
+  const primaryStatus = buildModelChannelStatus(config)
+  const fallbackStatuses = channelSet.fallbacks.map((channel) => buildModelChannelStatus(channel, config.model))
+  const channels = [primaryStatus, ...fallbackStatuses]
+  const issues = channels.flatMap((channel) =>
+    (channel.issues ?? []).map((issue) => ({
+      ...issue,
+      message: `${channel.label}: ${issue.message}`,
+    })),
+  )
   const warnings = []
   if (config.profile !== 'default') {
-    for (const [field, detail] of Object.entries(status)) {
-      if (field === 'profile' || field === 'temperature') continue
+    for (const field of ['baseUrl', 'apiKey', 'model', 'provider']) {
+      const detail = status[field]
       if (detail.source !== 'profile') warnings.push(`${field} resolved from ${detail.source || 'fallback'} instead of ${config.profile} profile.`)
     }
   }
+  for (const channel of fallbackStatuses) {
+    for (const warning of channel.warnings ?? []) warnings.push(`${channel.label}: ${warning}`)
+  }
+  const recovery = []
+  if (primaryStatus.issues.length > 0 || warnings.some((warning) => !warning.startsWith('fallback-'))) {
+    recovery.push(`Run npm.cmd run blog:model -- setup --profile ${config.profile}`)
+  }
+  for (const channel of fallbackStatuses) {
+    if ((channel.issues ?? []).length > 0) {
+      recovery.push(`Run npm.cmd run blog:model -- setup --profile ${config.profile} --fallback --fallback-index ${channel.index}`)
+    }
+  }
+  if (recovery.length > 0) recovery.push(`Then run npm.cmd run blog:model -- doctor --profile ${config.profile}`)
   return {
     ok: issues.length === 0,
     command: 'status',
     profile: config.profile,
-    profileSpecific: issues.length === 0 && warnings.length === 0,
+    profileSpecific: primaryStatus.issues.length === 0 && warnings.length === 0,
     meta: getProfileRecommendation(config.profile),
     provider: status.provider.value,
     model: status.model.value,
     temperature: status.temperature.value,
     status,
+    channels,
     issues,
     warnings,
-    recovery: issues.length > 0 || warnings.length > 0 ? [
-      `Run npm.cmd run blog:model -- setup --profile ${config.profile}`,
-      `Then run npm.cmd run blog:model -- doctor --profile ${config.profile}`,
-    ] : [],
+    recovery,
   }
 }
 
@@ -345,7 +425,20 @@ async function runDoctor(args) {
     }
   }
 
-  const config = readDraftModelConfig(args.profile)
+  const config = args.fallbackIndex === undefined
+    ? readDraftModelConfig(args.profile)
+    : readDraftModelFallbackConfig(args.profile, args.fallbackIndex)
+  const channelStatus = buildModelChannelStatus(config, readDraftModelConfig(args.profile).model)
+  if (!channelStatus.ok) {
+    return {
+      ...statusResult,
+      ok: false,
+      command: 'doctor',
+      message: `selected live diagnostic channel is incomplete: ${config.label}`,
+      issues: channelStatus.issues,
+      recovery: [`Run npm.cmd run blog:model -- setup --profile ${config.profile}${config.role === 'fallback' ? ` --fallback --fallback-index ${config.index}` : ''}`],
+    }
+  }
   try {
     const response = await fetch(buildChatCompletionsUrl(config.baseUrl), {
       method: 'POST',
@@ -519,6 +612,7 @@ function writeSetupBanner(profiles, advanced) {
   stderr.write('- API key: hidden input; never printed by status or doctor\n')
   if (advanced) stderr.write('- Temperature: optional advanced value; common defaults are 0.65 draft, 0.2 polish, 0.35 fast\n')
   else stderr.write('- Temperature: skipped in beginner setup; internal defaults remain active\n')
+  stderr.write('- Fallback channels: optional same-profile backup relays, configured only when you choose them\n')
   stderr.write('\nBlank keeps the existing value. Enter - to clear a value.\n')
 }
 
@@ -560,18 +654,80 @@ async function promptProfileUpdates(profile, args, currentSource) {
   return updates
 }
 
-function buildNonInteractiveUpdates(profile, args) {
-  const keys = profileFieldKeys(profile)
+function fallbackIndexFor(profile, args, currentSource) {
+  if (args.fallbackIndex !== undefined) return normalizeFallbackIndex(args.fallbackIndex)
+  return nextFallbackIndex(profile, currentSource)
+}
+
+async function promptFallbackUpdates(profile, args, currentSource, index) {
+  const fallbackIndex = normalizeFallbackIndex(index)
+  const keys = fallbackFieldKeys(profile, fallbackIndex)
+  const meta = getProfileRecommendation(profile)
+  stderr.write(`\n${profile} fallback-${fallbackIndex}: ${meta.label} backup channel\n`)
+  stderr.write('Use the same model id as the primary channel when possible, or an equivalent same-role model when intentional.\n')
+  stderr.write(`Model examples: ${meta.modelExamples.join(', ')}\n`)
+  stderr.write(`Provider examples: ${meta.providerExamples.join(', ')}\n`)
+
+  const updates = {}
+  const baseUrl = wizardValue(await promptLine(`${keys.BASE_URL} private relay base URL (${currentDisplay(currentSource, keys.BASE_URL, 'BASE_URL')}): `))
+  if (baseUrl !== undefined) updates[keys.BASE_URL] = normalizeBaseUrl(baseUrl)
+
+  const model = wizardValue(await promptLine(`${keys.MODEL} exact model id (${currentDisplay(currentSource, keys.MODEL, 'MODEL')}): `))
+  if (model !== undefined) updates[keys.MODEL] = model
+
+  const provider = wizardValue(await promptLine(`${keys.PROVIDER} non-secret provider label (${currentDisplay(currentSource, keys.PROVIDER, 'PROVIDER')}): `))
+  if (provider !== undefined) updates[keys.PROVIDER] = provider
+
+  const apiKey = wizardValue(await promptHidden(`${keys.API_KEY} hidden API key (${currentDisplay(currentSource, keys.API_KEY, 'API_KEY')}): `))
+  if (apiKey !== undefined) updates[keys.API_KEY] = apiKey
+
+  if (args.advanced) {
+    const temperature = wizardValue(await promptLine(`${keys.TEMPERATURE} optional temperature, suggested ${meta.defaultTemperature} (${currentDisplay(currentSource, keys.TEMPERATURE, 'TEMPERATURE')}): `))
+    if (temperature !== undefined) updates[keys.TEMPERATURE] = parseTemperature(temperature)
+  }
+
+  return updates
+}
+
+async function promptFallbackUpdateLoop(profile, args, currentSource, firstIndex) {
+  const updates = {}
+  const touched = []
+  let index = normalizeFallbackIndex(firstIndex)
+  do {
+    const channelUpdates = await promptFallbackUpdates(profile, args, currentSource, index)
+    if (Object.keys(channelUpdates).length > 0) {
+      Object.assign(updates, channelUpdates)
+      touched.push({
+        profile,
+        meta: getProfileRecommendation(profile),
+        ok: true,
+        message: `fallback-${index}: ${Object.keys(channelUpdates).length} value(s) selected for update.`,
+      })
+      Object.assign(currentSource, channelUpdates)
+    }
+    if (args.fallbackIndex !== undefined) break
+    index = nextFallbackIndex(profile, currentSource)
+  } while (await promptYesNo(`Add another ${profile} fallback channel?`, false))
+
+  return { updates, touched }
+}
+
+function buildNonInteractiveUpdates(profile, args, currentSource = {}) {
+  const fallbackIndex = args.fallback ? fallbackIndexFor(profile, args, currentSource) : 0
+  const keys = args.fallback ? fallbackFieldKeys(profile, fallbackIndex) : profileFieldKeys(profile)
   const updates = {}
   if (args.baseUrl !== undefined) updates[keys.BASE_URL] = normalizeBaseUrl(args.baseUrl)
   if (args.model !== undefined) updates[keys.MODEL] = args.model
   if (args.provider !== undefined) updates[keys.PROVIDER] = args.provider
   if (args.apiKey !== undefined) updates[keys.API_KEY] = args.apiKey
   if (args.temperature !== undefined) updates[keys.TEMPERATURE] = parseTemperature(args.temperature)
-  return updates
+  return { updates, fallbackIndex }
 }
 
 async function runSetup(args) {
+  if (args.fallback && !args.profileExplicit) {
+    throw new Error('setup --fallback requires one explicit --profile so fallback channels stay under the intended role.')
+  }
   const profiles = setupProfilesFor(args)
   for (const profile of profiles) {
     if (!supportedProfiles.includes(profile)) {
@@ -582,7 +738,8 @@ async function runSetup(args) {
   if (args.nonInteractive) {
     if (args.all) throw new Error('setup --all --non-interactive is ambiguous. Pass one explicit --profile.')
     const profile = profiles[0]
-    const updates = buildNonInteractiveUpdates(profile, args)
+    const currentSource = Object.fromEntries((await readEnvFileValues(args.envFile)).entries())
+    const { updates, fallbackIndex } = buildNonInteractiveUpdates(profile, args, currentSource)
     if (Object.keys(updates).length === 0) {
       return {
         ok: true,
@@ -601,7 +758,7 @@ async function runSetup(args) {
       meta: getProfileRecommendation(profile),
       envFile: { path: result.path },
       keys: result.keys,
-      message: 'Profile configuration updated. Run masked status and offline doctor before generating drafts.',
+      message: `${args.fallback ? `Fallback channel fallback-${fallbackIndex}` : 'Profile configuration'} updated. Run masked status and offline doctor before generating drafts.`,
     }
   }
 
@@ -615,15 +772,29 @@ async function runSetup(args) {
   const updates = {}
   const touchedProfiles = []
   for (const profile of profiles) {
+    if (args.fallback) {
+      const fallbackResult = await promptFallbackUpdateLoop(profile, args, currentSource, fallbackIndexFor(profile, args, currentSource))
+      Object.assign(updates, fallbackResult.updates)
+      touchedProfiles.push(...fallbackResult.touched)
+      continue
+    }
+
     const profileUpdates = await promptProfileUpdates(profile, args, currentSource)
     if (Object.keys(profileUpdates).length > 0) {
       Object.assign(updates, profileUpdates)
+      Object.assign(currentSource, profileUpdates)
       touchedProfiles.push({
         profile,
         meta: getProfileRecommendation(profile),
         ok: true,
         message: `${Object.keys(profileUpdates).length} value(s) selected for update.`,
       })
+    }
+
+    if (await promptYesNo(`Configure fallback channels for ${profile} now?`, false)) {
+      const fallbackResult = await promptFallbackUpdateLoop(profile, args, currentSource, fallbackIndexFor(profile, args, currentSource))
+      Object.assign(updates, fallbackResult.updates)
+      touchedProfiles.push(...fallbackResult.touched)
     }
   }
 

@@ -82,6 +82,14 @@ Codex evidence pack -> Codex scaffold -> strong profile draft -> review profile 
 - Single-profile generation is acceptable for small or low-risk drafts; use the
   staged flow for important posts, style uncertainty, or disputed framing.
 - Default to serial calls. If parallel model use is necessary, split across different relays or provider profiles.
+- Each profile may have optional same-profile fallback channels, for example
+  `BLOG_DRAFT_REVIEW_FALLBACK_1_*`. During real draft or polish generation, the
+  script may try `primary -> fallback-1 -> fallback-2` serially after a channel
+  failure. Fallback never crosses roles: `review` fallback channels stay under
+  `review`, and do not silently switch to `strong` or `fast`.
+- Use `npm.cmd run blog:model -- setup --profile <profile> --fallback` to add
+  a fallback channel later. `status` and default `doctor` must show fallback
+  readiness with masked base URL/API-key status only.
 - Store real relay URLs and API keys only in `.env.local` or external configuration. Public repo files may contain placeholders only.
 
 Draft generation uses OpenAI-compatible chat completions. Prefer named `BLOG_DRAFT_*` profiles; old `GEMINI_*` variables remain fallback:
@@ -111,6 +119,12 @@ BLOG_DRAFT_REVIEW_API_KEY=
 BLOG_DRAFT_REVIEW_MODEL=
 BLOG_DRAFT_REVIEW_PROVIDER=
 BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
+
+BLOG_DRAFT_REVIEW_FALLBACK_1_BASE_URL=
+BLOG_DRAFT_REVIEW_FALLBACK_1_API_KEY=
+BLOG_DRAFT_REVIEW_FALLBACK_1_MODEL=
+BLOG_DRAFT_REVIEW_FALLBACK_1_PROVIDER=
+BLOG_DRAFT_REVIEW_FALLBACK_1_TEMPERATURE=0.2
 ```
 
 Use `npm.cmd run blog:model -- setup` for guided three-profile setup, or

@@ -67,6 +67,8 @@ npm.cmd run blog:model -- doctor --all --format markdown
 
 # Single-profile setup remains available
 npm.cmd run blog:model -- setup --profile strong
+npm.cmd run blog:model -- setup --profile review --fallback
+npm.cmd run blog:model -- setup --profile review --fallback --fallback-index 1
 npm.cmd run blog:model -- status --profile strong --format markdown
 npm.cmd run blog:model -- doctor --profile strong --format markdown
 ```
@@ -88,6 +90,7 @@ For scripted setup, pass placeholders only in public examples:
 npm.cmd run blog:model -- setup --non-interactive --profile strong --base-url "https://relay.example.com" --api-key "key" --model "glm-5.2" --provider "glm"
 npm.cmd run blog:model -- setup --non-interactive --profile review --base-url "https://relay.example.com" --api-key "key" --model "deepseek-v4-pro" --provider "deepseek"
 npm.cmd run blog:model -- setup --non-interactive --profile fast --base-url "https://relay.example.com" --api-key "key" --model "gemini-3.5-flash" --provider "gemini"
+npm.cmd run blog:model -- setup --non-interactive --profile review --fallback --fallback-index 1 --base-url "https://relay.example.com" --api-key "key" --model "deepseek-v4-pro" --provider "deepseek-backup"
 ```
 
 Environment shape:
@@ -118,6 +121,15 @@ BLOG_DRAFT_REVIEW_API_KEY=
 BLOG_DRAFT_REVIEW_MODEL=deepseek-v4-pro
 BLOG_DRAFT_REVIEW_PROVIDER=polish-relay
 BLOG_DRAFT_REVIEW_TEMPERATURE=0.2
+
+# Optional same-profile fallback channels. Use FALLBACK_2, FALLBACK_3, etc. for
+# more backups. These are serial fallbacks for the same role, not cross-role
+# fallbacks.
+BLOG_DRAFT_REVIEW_FALLBACK_1_BASE_URL=
+BLOG_DRAFT_REVIEW_FALLBACK_1_API_KEY=
+BLOG_DRAFT_REVIEW_FALLBACK_1_MODEL=deepseek-v4-pro
+BLOG_DRAFT_REVIEW_FALLBACK_1_PROVIDER=polish-relay-backup
+BLOG_DRAFT_REVIEW_FALLBACK_1_TEMPERATURE=0.2
 ```
 
 Recommended profile roles:
@@ -140,6 +152,13 @@ Codex evidence pack -> Codex scaffold -> strong profile draft -> Codex compare/f
 Default to serial model calls. Single-profile generation is still acceptable for
 small or low-risk drafts after evidence and setup gates pass. If parallel
 comparison is needed, split calls across separate relays or provider profiles.
+
+Each profile may also define one or more same-profile fallback channels. During
+real `--generate` or `--polish-from` runs, the draft script tries the selected
+profile's primary channel first, then fallback channels in numeric order when a
+channel fails to produce valid content. Fallback is serial and same-role only:
+`review` can use `BLOG_DRAFT_REVIEW_FALLBACK_1_*`, but it must not silently use
+`strong` or `fast`.
 
 ## Typical Commands
 
@@ -170,6 +189,12 @@ polished body back under `## Draft Body`.
 `status` and default `doctor` may report that a selected profile resolves from
 fallback or legacy values. Treat that as a setup gap for model-assisted runs:
 pause and recommend `setup --profile <profile>` before generation.
+
+If status or doctor reports an incomplete same-profile fallback channel, either
+finish configuring it with `setup --profile <profile> --fallback --fallback-index
+<n>` or remove the partial `BLOG_DRAFT_<PROFILE>_FALLBACK_<N>_*` keys from the
+private env file. Partial fallback channels should not silently fall through to
+another role.
 
 For public promotion, run the consuming project's public-content checks, for
 example:
