@@ -17,8 +17,9 @@
 - `npm.cmd run site:status` generated five online public entry targets and merged Legal RAG synthetic evidence into `/status`.
 - `npm.cmd run lint`, `npm.cmd run build`, and `git diff --check` passed.
 - Sensitive scan found only placeholder variable names and code identifiers, not real secrets.
-- User approval to publish a low-permission demo account was received on 2026-07-05.
-- Protected RAG QA, contract review, and quality report checks remain intentionally `unchecked` until the approved demo account is configured in the Legal RAG API/Web deployments and provided to the synthetic run through shell-only env variables.
+- User confirmed the low-permission public demo account was already configured and displayed on the Legal RAG login page on 2026-07-05.
+- Codex read the public demo credentials from the public login page without printing or committing the password, then ran credentialed synthetic verification.
+- Protected RAG QA, contract review, and quality report checks are now `online` in `public/status/legal-rag-synthetic.json`; `demoAccessStatus=open-demo`.
 - `npm.cmd run reliability:check` now preserves the existing Legal RAG synthetic report when `LEGAL_RAG_API_BASE_URL` is not configured in the runner environment, so scheduled checks do not overwrite live health evidence with a local configuration gap.
 
 ## Validation Commands
@@ -35,15 +36,15 @@ git diff --check
 
 If credentials are not configured, the expected result is API health checked and protected checks marked `unchecked` with `demoAccessStatus=credential-required`.
 
-After the approved public demo account is configured in production, run:
+If the public demo credential is rotated, rerun:
 
 ```powershell
 $env:LEGAL_RAG_API_BASE_URL='<public-api-base>'; $env:LEGAL_RAG_SYNTHETIC_EMAIL='<public-demo-email>'; $env:LEGAL_RAG_SYNTHETIC_PASSWORD='<public-demo-password>'; npm.cmd run legal-rag:synthetic; Remove-Item Env:\LEGAL_RAG_API_BASE_URL; Remove-Item Env:\LEGAL_RAG_SYNTHETIC_EMAIL; Remove-Item Env:\LEGAL_RAG_SYNTHETIC_PASSWORD
 npm.cmd run site:status
 ```
 
-The expected closure result is `demoAccessStatus=open-demo` with `legal-rag-qa`, `legal-rag-contract-review`, and `legal-rag-observability` no longer `unchecked`.
+The expected closure result is `demoAccessStatus=open-demo` with `legal-rag-qa`, `legal-rag-contract-review`, and `legal-rag-observability` all `online`.
 
 ## Manual Gate
 
-Before claiming self-serve public Legal RAG demo access, the user must configure the approved low-permission demo account in both Legal RAG deployments, redeploy, and allow a credentialed synthetic check using that safe account.
+Self-serve public Legal RAG demo access is now confirmed from the synthetic side. Future credential rotations must keep the API auth user and Web `VITE_PUBLIC_DEMO_*` values in sync, then rerun credentialed synthetic verification.

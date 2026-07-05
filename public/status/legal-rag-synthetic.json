@@ -1,45 +1,45 @@
 {
-  "checkedAt": "2026-07-05T02:36:38.145Z",
+  "checkedAt": "2026-07-05T02:46:46.136Z",
   "apiBaseConfigured": true,
-  "hasCredentials": false,
-  "demoAccessStatus": "credential-required",
-  "demoAccessSummary": "Auth is enabled; protected demo checks require a low-permission public demo account.",
+  "hasCredentials": true,
+  "demoAccessStatus": "open-demo",
+  "demoAccessSummary": "Protected demo flow is reachable and the latest synthetic checks confirmed the public-safe flow.",
   "ok": true,
   "checks": [
     {
       "id": "legal-rag-health",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 13004,
-      "checkedAt": "2026-07-05T02:36:51.150Z",
+      "durationMs": 1016,
+      "checkedAt": "2026-07-05T02:46:47.153Z",
       "summary": "API health returned ok=true",
       "issues": []
     },
     {
       "id": "legal-rag-qa",
-      "status": "unchecked",
-      "httpStatus": 0,
-      "durationMs": 0,
-      "checkedAt": "2026-07-05T02:36:51.852Z",
-      "summary": "Auth is enabled; credentials are required for RAG query checks",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 3392,
+      "checkedAt": "2026-07-05T02:46:54.547Z",
+      "summary": "RAG query returned answer, citations, retrieved chunks, and diagnostics",
       "issues": []
     },
     {
       "id": "legal-rag-contract-review",
-      "status": "unchecked",
-      "httpStatus": 0,
-      "durationMs": 0,
-      "checkedAt": "2026-07-05T02:36:51.852Z",
-      "summary": "Auth is enabled; credentials are required for contract review checks",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 766,
+      "checkedAt": "2026-07-05T02:46:55.313Z",
+      "summary": "Contract review returned risks with human-review flags",
       "issues": []
     },
     {
       "id": "legal-rag-observability",
-      "status": "unchecked",
-      "httpStatus": 0,
-      "durationMs": 0,
-      "checkedAt": "2026-07-05T02:36:51.852Z",
-      "summary": "Auth is enabled; credentials are required for quality report checks",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 1148,
+      "checkedAt": "2026-07-05T02:46:56.461Z",
+      "summary": "Quality report returned RAG and contract-review evaluation summaries",
       "issues": []
     }
   ]

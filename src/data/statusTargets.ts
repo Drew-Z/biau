@@ -218,14 +218,14 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: [
-      '当前公开 demo 状态由 `public/status/legal-rag-synthetic.json` 的 `demoAccessStatus` 记录；没有低权限 demo 凭据时应保持 `credential-required`，不能写入真实后台密码。',
+      '当前公开 demo 状态由 `public/status/legal-rag-synthetic.json` 的 `demoAccessStatus` 记录；最近一次 credentialed synthetic 已验证 `open-demo`。',
       '公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章、项目页或状态页。',
-      'Web 登录页只有在部署环境配置 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 后才会展示公开演示凭据。',
+      'Web 登录页展示的 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 只用于公开安全数据集演示；凭据轮换时必须同步 API auth 配置和 Web 展示配置。',
     ],
     nextActions: [
       '线上工作台标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸；后续状态检查继续只验证公开安全能力。',
-      '配置 `LEGAL_RAG_API_BASE_URL` 后启用 health live check。',
-      '准备可回收 demo 凭据后，同步 API 侧登录校验密码和 Web 侧公开演示提示，再启用问答、合同审查和质量面板 synthetic check。',
+      '公开 demo 凭据轮换后，重新运行 credentialed `legal-rag:synthetic`，确认问答、合同审查和质量面板仍为 online。',
+      '如后续接入 Prometheus、Grafana 或 LLM tracing，只公开低敏聚合状态，不公开模型渠道、后台链接或真实用户数据。',
     ],
   },
   {

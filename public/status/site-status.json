@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-05T02:42:11.656Z",
+  "checkedAt": "2026-07-05T02:50:18.980Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 549,
-      "checkedAt": "2026-07-05T02:42:11.663Z",
+      "durationMs": 598,
+      "checkedAt": "2026-07-05T02:50:18.987Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issues": []
     },
@@ -39,8 +39,8 @@
       "note": "展示页已接入 BIAU Port / 泊岸标题与 favicon；入口可达代表展示页和截图可访问，正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 725,
-      "checkedAt": "2026-07-05T02:42:12.212Z",
+      "durationMs": 677,
+      "checkedAt": "2026-07-05T02:50:19.585Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issues": []
     },
@@ -56,8 +56,8 @@
       "note": "代码侧支持生产普通注册默认开放，但当前线上状态以 bootstrap synthetic 为准；登录页主品牌和后台侧栏已接入 BIAU Port / 泊岸外壳。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 856,
-      "checkedAt": "2026-07-05T02:42:12.937Z",
+      "durationMs": 1094,
+      "checkedAt": "2026-07-05T02:50:20.262Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issues": []
     },
@@ -73,8 +73,8 @@
       "note": "游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 662,
-      "checkedAt": "2026-07-05T02:42:13.793Z",
+      "durationMs": 784,
+      "checkedAt": "2026-07-05T02:50:21.356Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issues": []
     },
@@ -90,8 +90,8 @@
       "note": "展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；阶段 APK 是否公开发布仍需人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 691,
-      "checkedAt": "2026-07-05T02:42:14.455Z",
+      "durationMs": 737,
+      "checkedAt": "2026-07-05T02:50:22.140Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issues": []
     }
@@ -165,7 +165,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 549 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 598 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -184,9 +184,9 @@
           "id": "legal-rag-qa",
           "layer": "synthetic",
           "label": "法律问答 + citation",
-          "status": "unchecked",
+          "status": "online",
           "description": "用公开安全数据集提问一次，断言 answer、citations、retrieved chunks 和 diagnostics 可用。",
-          "evidence": "最近一次 synthetic 检查：Auth is enabled; credentials are required for RAG query checks。Legal RAG 仓库包含公开安全数据集、RAG eval 和演示 smoke 路径。",
+          "evidence": "最近一次 synthetic 检查：RAG query returned answer, citations, retrieved chunks, and diagnostics。Legal RAG 仓库包含公开安全数据集、RAG eval 和演示 smoke 路径。",
           "cadence": "模型或数据集变更后",
           "ownerHint": "RAG synthetic check"
         },
@@ -194,9 +194,9 @@
           "id": "legal-rag-contract-review",
           "layer": "synthetic",
           "label": "合同审查",
-          "status": "unchecked",
+          "status": "online",
           "description": "提交脱敏样本合同，断言风险条目、引用和 human review 标记存在。",
-          "evidence": "最近一次 synthetic 检查：Auth is enabled; credentials are required for contract review checks。仓库包含 contract-review eval set 和 sample contract。",
+          "evidence": "最近一次 synthetic 检查：Contract review returned risks with human-review flags。仓库包含 contract-review eval set 和 sample contract。",
           "cadence": "发布前 + 合同审查规则变更后",
           "ownerHint": "Review synthetic check"
         },
@@ -204,22 +204,22 @@
           "id": "legal-rag-observability",
           "layer": "observability",
           "label": "模型与质量看板",
-          "status": "unchecked",
+          "status": "online",
           "description": "后续可把模型错误、RAG eval、合同审查 eval 和 API 指标送入内部看板。",
-          "evidence": "最近一次 synthetic 检查：Auth is enabled; credentials are required for quality report checks。当前仅记录接入方向，不公开私有模型渠道或后台地址。",
+          "evidence": "最近一次 synthetic 检查：Quality report returned RAG and contract-review evaluation summaries。当前仅记录接入方向，不公开私有模型渠道或后台地址。",
           "cadence": "人工 gate 后",
           "ownerHint": "Grafana/LLM tracing"
         }
       ],
       "gates": [
-        "当前公开 demo 状态由 `public/status/legal-rag-synthetic.json` 的 `demoAccessStatus` 记录；没有低权限 demo 凭据时应保持 `credential-required`，不能写入真实后台密码。",
+        "当前公开 demo 状态由 `public/status/legal-rag-synthetic.json` 的 `demoAccessStatus` 记录；最近一次 credentialed synthetic 已验证 `open-demo`。",
         "公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章、项目页或状态页。",
-        "Web 登录页只有在部署环境配置 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 后才会展示公开演示凭据。"
+        "Web 登录页展示的 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 只用于公开安全数据集演示；凭据轮换时必须同步 API auth 配置和 Web 展示配置。"
       ],
       "nextActions": [
         "线上工作台标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸；后续状态检查继续只验证公开安全能力。",
-        "配置 `LEGAL_RAG_API_BASE_URL` 后启用 health live check。",
-        "准备可回收 demo 凭据后，同步 API 侧登录校验密码和 Web 侧公开演示提示，再启用问答、合同审查和质量面板 synthetic check。"
+        "公开 demo 凭据轮换后，重新运行 credentialed `legal-rag:synthetic`，确认问答、合同审查和质量面板仍为 online。",
+        "如后续接入 Prometheus、Grafana 或 LLM tracing，只公开低敏聚合状态，不公开模型渠道、后台链接或真实用户数据。"
       ]
     },
     {
@@ -234,7 +234,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应，并确认入口以 BIAU Port / 泊岸品牌外壳承载 Ozon ERP 产品名。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 856 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1094 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -301,7 +301,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应，并确认标题/favicon 归属泊岸展示体系。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 691 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 737 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -404,7 +404,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应，并确认 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属已同步。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 662 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 784 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"
