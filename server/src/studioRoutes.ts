@@ -598,10 +598,16 @@ function readReviewStatus(value: unknown): StudioReviewStatus | null {
 
 function readChecklistJson(value: unknown): Prisma.InputJsonValue {
   if (!isRecord(value)) return { sourceChecked: false, safetyChecked: false, publicReady: false }
+  const pageKind = readString(value.pageKind, 60)
+  const pageExportTarget = readString(value.pageExportTarget, 120)
+  const pageChecks = jsonStringArray(value.pageChecks).slice(0, 12)
   return {
     sourceChecked: value.sourceChecked === true,
     safetyChecked: value.safetyChecked === true,
     publicReady: value.publicReady === true,
+    ...(pageKind ? { pageKind } : {}),
+    ...(pageExportTarget ? { pageExportTarget } : {}),
+    ...(pageChecks.length > 0 ? { pageChecks } : {}),
   }
 }
 

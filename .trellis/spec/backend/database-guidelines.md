@@ -143,6 +143,80 @@ await prisma.contentDraft.create({ data })
 
 The Studio route uses the Studio database boundary and returns the same standardized `database-not-configured` error when no Studio database is available.
 
+## Scenario: Content Studio Page Review Checklist
+
+### 1. Scope / Trigger
+
+- Trigger: changing `POST /studio/api/content-drafts/:id/reviews`, Studio review payloads, or page-level publish gate UI.
+- Goal: preserve the basic review booleans while allowing page-type-specific publish checks for blog posts, project detail plans, resource shares, AI Daily issues, and status-page updates.
+
+### 2. Signatures
+
+- API: `POST /studio/api/content-drafts/:id/reviews`.
+- Request fields:
+  - `status`: `approved | needs-changes | rejected | pending`.
+  - `reviewedBy?: string`.
+  - `notes?: string`.
+  - `checklist?: { sourceChecked?: boolean; safetyChecked?: boolean; publicReady?: boolean; pageKind?: string; pageExportTarget?: string; pageChecks?: string[] }`.
+- Response includes `review.checklist` and `draft.latestReview.checklist`.
+
+### 3. Contracts
+
+- `sourceChecked`, `safetyChecked`, and `publicReady` remain the stable base checklist booleans.
+- `pageKind`, `pageExportTarget`, and `pageChecks` are optional metadata for page-level publishing gates.
+- `readChecklistJson()` is the server boundary owner; UI components must not assume arbitrary checklist keys are persisted unless that function keeps them.
+- `pageChecks` is capped and string-normalized before persistence.
+- Checklist metadata must not include credentials, model/provider URLs, database URLs, private dashboard links, stack traces, or local absolute paths.
+
+### 4. Validation & Error Matrix
+
+- Invalid review status -> `400 { error: "invalid-review-status" }`.
+- Missing draft -> `404 { error: "draft-not-found" }`.
+- Missing or non-object checklist -> base booleans default to false.
+- Unknown optional checklist keys -> dropped by `readChecklistJson()`.
+- Overlong `pageKind` / `pageExportTarget` -> truncated by `readString()`.
+- Too many `pageChecks` -> capped before persistence.
+
+### 5. Good/Base/Bad Cases
+
+- Good: approving a status-page draft stores `pageKind: "status-page"`, an export target, and checks reminding the editor to run `studio:status-plan`.
+- Good: older review records with only three booleans still normalize in the frontend.
+- Base: a normal blog post stores the base booleans plus a generic static export checklist.
+- Bad: frontend sends page-level checklist fields but backend strips them silently because `readChecklistJson()` was not updated.
+- Bad: a checklist stores a real admin password, private metrics URL, or provider diagnostic payload.
+
+### 6. Tests Required
+
+- Run `npm.cmd run server:build` after changing review payload persistence.
+- Run `npm.cmd run assistant:service-modes-smoke` after changing Studio routes or service boundaries.
+- Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after changing Studio review UI.
+- Sensitive scan changed diffs for API keys, passwords, database URLs, provider URLs, private dashboards, and local absolute paths.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+function readChecklistJson(value: unknown) {
+  return { sourceChecked: true, safetyChecked: true, publicReady: true }
+}
+```
+
+This destroys page-level review metadata and makes every review look equally publish-ready.
+
+#### Correct
+
+```ts
+return {
+  sourceChecked: value.sourceChecked === true,
+  safetyChecked: value.safetyChecked === true,
+  publicReady: value.publicReady === true,
+  ...(pageChecks.length > 0 ? { pageChecks } : {}),
+}
+```
+
+The API preserves the stable booleans and only stores bounded, normalized optional metadata.
+
 ## Scenario: Content Studio Publish Export Reporting
 
 ### 1. Scope / Trigger

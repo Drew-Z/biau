@@ -54,6 +54,9 @@ export interface StudioReview {
     sourceChecked: boolean
     safetyChecked: boolean
     publicReady: boolean
+    pageKind?: string
+    pageExportTarget?: string
+    pageChecks?: string[]
   }
   notes: string
   reviewedBy: string | null
@@ -269,6 +272,9 @@ export function normalizeStudioReview(value: unknown): StudioReview | null {
       sourceChecked: checklist.sourceChecked === true,
       safetyChecked: checklist.safetyChecked === true,
       publicReady: checklist.publicReady === true,
+      pageKind: readString(checklist.pageKind) || undefined,
+      pageExportTarget: readString(checklist.pageExportTarget) || undefined,
+      pageChecks: readStringArray(checklist.pageChecks),
     },
     notes: readString(value.notes),
     reviewedBy: readNullableString(value.reviewedBy),

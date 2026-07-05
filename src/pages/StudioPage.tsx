@@ -176,6 +176,90 @@ function readPublishExportStatus(checks: unknown) {
 
 const reviewQueueStatuses = new Set<StudioDraft['status']>(['review-needed', 'approved', 'rejected'])
 
+interface PageReviewPlan {
+  kind: string
+  title: string
+  exportTarget: string
+  description: string
+  checks: string[]
+}
+
+function getPageReviewPlan(form: DraftFormState): PageReviewPlan {
+  const projectIds = splitList(form.projectIdsText)
+  if (form.slug.includes('-status-notes-update')) {
+    return {
+      kind: 'status-page',
+      title: '状态页说明审核',
+      exportTarget: 'src/data/statusTargets.ts update plan',
+      description: '确认状态页只表达已观察、待接入或人工 gate 的事实，不伪造实时监控结论。',
+      checks: [
+        '已运行或准备运行 studio:status-plan，并人工比对 ReliabilityProject 更新候选。',
+        '没有公开真实凭据、后台地址、模型渠道、数据库 URL、私有监控地址或敏感指标。',
+        '入口可达、功能 synthetic、metrics 和 observability 分层表达清楚。',
+        'planned、unchecked、degraded、online 等状态语义没有被混用。',
+      ],
+    }
+  }
+
+  if (form.slug.includes('-project-detail-update') || (form.column === 'project-notes' && projectIds.length === 1)) {
+    return {
+      kind: 'project-detail',
+      title: '项目详情页审核',
+      exportTarget: 'Project.detailContent / assistantContext plan',
+      description: '确认项目详情页素材能进入公开案例页，但不会绕过 portfolio.ts 的 Git diff 审查。',
+      checks: [
+        '已运行或准备运行 studio:project-detail-plan，并人工确认 detailContent 更新范围。',
+        '正文图片只使用公开安全路径，优先 /images/projects/，截图不含凭据或后台敏感信息。',
+        'assistantContext 只包含可公开事实，不包含账号、密钥、私有路径或内部链接。',
+        '项目不足、人工 gate 和后续路线没有被包装成已完成能力。',
+      ],
+    }
+  }
+
+  if (form.column === 'resources') {
+    return {
+      kind: 'resource-share',
+      title: '资源分享审核',
+      exportTarget: 'static-blog-data via studio:export',
+      description: '确认资源分享有筛选理由、使用边界和公开证据，而不是无判断的链接清单。',
+      checks: [
+        '资源链接是公开 URL，已移除追踪参数、私有 token 和内部地址。',
+        '正文包含个人判断、适用场景、使用方式、授权/成本/隐私注意事项。',
+        '没有声称未亲自验证的 benchmark、使用结果或生产经验。',
+        '导出时使用 resource 角色，并通过 blog:audit、blog:check、lint、build。',
+      ],
+    }
+  }
+
+  if (form.column === 'ai-daily') {
+    return {
+      kind: 'ai-daily',
+      title: 'AI 日报审核',
+      exportTarget: 'static-blog-data via studio:export',
+      description: '确认每条动态都有公开来源和人工审核，不把 AI 输出当成事实本身。',
+      checks: [
+        '关键事实能回到公开来源链接，摘要没有复制长段原文。',
+        '日报 issue、来源池和草稿状态已对齐，证据不足的内容不发布。',
+        'aiAssistance 反映真实辅助方式，没有未经批准的模型调用。',
+        '导出后运行 blog:audit、blog:check、lint、build。',
+      ],
+    }
+  }
+
+  return {
+    kind: 'blog-post',
+    title: '博客文章审核',
+    exportTarget: 'static-blog-data via studio:export',
+    description: '确认普通博客草稿能作为公开文章发布，并符合栏目边界和证据要求。',
+    checks: [
+      '标题、摘要、栏目、标签和正文结构与目标读者匹配。',
+      '关键事实有来源或项目证据支撑，没有把猜测写成确定事实。',
+      '没有泄露账号、密钥、生产 URL、私有路径、内部链接或敏感指标。',
+      '导出后运行 blog:audit、blog:check、lint、build。',
+    ],
+  }
+}
+
 function draftToForm(draft: StudioDraft): DraftFormState {
   return {
     title: draft.title,
@@ -239,6 +323,7 @@ export function StudioPage() {
   const previewBody = useMemo(() => bodyJsonFromText(draftForm.bodyText), [draftForm.bodyText])
   const previewKnowledgePoints = useMemo(() => splitList(draftForm.knowledgePointsText), [draftForm.knowledgePointsText])
   const previewProjectIds = useMemo(() => splitList(draftForm.projectIdsText), [draftForm.projectIdsText])
+  const pageReviewPlan = useMemo(() => getPageReviewPlan(draftForm), [draftForm])
   const previewDate = selectedDraft?.publishedAt?.slice(0, 10) || selectedDraft?.updatedAt?.slice(0, 10) || today()
 
   const saveToken = (event: FormEvent<HTMLFormElement>) => {
@@ -453,11 +538,17 @@ export function StudioPage() {
       body: JSON.stringify({
         status,
         reviewedBy: draftForm.editorName.trim(),
-        notes: status === 'approved' ? '通过 Studio 第一版审核。' : '需要继续编辑后再发布。',
+        notes:
+          status === 'approved'
+            ? `通过 Studio 第一版审核。页面级审核：${pageReviewPlan.title}。`
+            : `需要继续编辑后再发布。页面级审核：${pageReviewPlan.title}。`,
         checklist: {
           sourceChecked: true,
           safetyChecked: true,
           publicReady: status === 'approved',
+          pageKind: pageReviewPlan.kind,
+          pageExportTarget: pageReviewPlan.exportTarget,
+          pageChecks: pageReviewPlan.checks,
         },
       }),
     })
@@ -1048,6 +1139,17 @@ export function StudioPage() {
               <li>模型辅助默认关闭，真实调用必须按具体内容任务批准。</li>
               <li>来源和正文会拦截明显 token、key 和数据库连接串。</li>
             </ul>
+            <div className="studio-page-review">
+              <span className="assistant-panel__eyebrow">PAGE REVIEW</span>
+              <h3>{pageReviewPlan.title}</h3>
+              <p>{pageReviewPlan.description}</p>
+              <p className="assistant-status-text">导出目标：{pageReviewPlan.exportTarget}</p>
+              <ul className="assistant-admin-list">
+                {pageReviewPlan.checks.map((check) => (
+                  <li key={check}>{check}</li>
+                ))}
+              </ul>
+            </div>
             {selectedDraft && (
               <p className="assistant-status-text">
                 当前草稿更新于 {formatDateTime(selectedDraft.updatedAt)}，状态为 {studioDraftStatuses[selectedDraft.status]}。
