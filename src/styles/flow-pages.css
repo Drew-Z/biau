@@ -3212,7 +3212,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   margin-bottom: var(--space-16);
   padding: var(--space-12, 12px);
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--space-12, 12px);
   align-items: stretch;
   background: color-mix(in oklch, var(--blue) 7%, var(--panel-strong));

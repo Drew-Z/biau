@@ -290,6 +290,72 @@ setDraftForm((current) => ({ ...current, ...template }))
 
 The helper owns the resource scaffold contract, defaults to hidden, and leaves publication to the normal review/export flow.
 
+## Scenario: Studio Status Page Draft Planning
+
+### 1. Scope / Trigger
+
+- Trigger: adding or changing Studio flows that prepare `/status` or `/status/:projectId` explanation copy, reliability gates, or status-page update plans.
+- Goal: let Studio draft status-page copy without letting an unreviewed database draft mutate `src/data/statusTargets.ts`.
+
+### 2. Signatures
+
+- Template helper: `createStatusDraftTemplate(project: ReliabilityProject): StudioStatusDraftTemplate`.
+- Planning command: `npm.cmd run studio:status-plan -- --sample <status-project-id>`.
+- Local draft planning command: `npm.cmd run studio:status-plan -- --source <draft.json> [--project <status-project-id>]`.
+- Status source of truth remains `src/data/statusTargets.ts`; render helpers remain in `src/data/siteStatusView.ts`.
+
+### 3. Contracts
+
+- Generated status templates must set `visibility: "hidden"` and `aiAssistance: "none"`.
+- Status drafts should use `column: "build-log"` and tag `可靠性观察` because they describe site operations and release gates, not public project case studies.
+- Template body must separate current summary, layered checks, manual gates, next actions, and update plan.
+- The planning command outputs JSON only. It must not write `src/data/statusTargets.ts`, generated public status JSON, public routes, or monitoring config.
+- Status explanations must not publish real credentials, admin passwords, model provider URLs, database URLs, private dashboards, or sensitive metrics.
+
+### 4. Validation & Error Matrix
+
+- Unknown `--sample <status-project-id>` or `--project <status-project-id>` -> command exits with `未知状态项目 ID`.
+- Missing `--sample` and `--source` -> command exits with a usage error.
+- Invalid source JSON -> command exits with `source JSON 不是有效 Studio draft payload`.
+- Source draft without an inferable status project id and no `--project` -> command exits with a project-id requirement.
+- Non-`build-log` draft -> plan succeeds with a warning.
+- Non-hidden draft -> plan succeeds with a warning; do not treat it as publish-ready.
+- Missing manual gates or next actions -> plan succeeds with warnings.
+
+### 5. Good/Base/Bad Cases
+
+- Good: select Legal RAG in `/studio`, generate a hidden status draft, adjust gates, then run `studio:status-plan -- --source draft.json --project legal-rag` before manually editing `statusTargets.ts`.
+- Good: `pet-gamer` status drafts may relate back to the public project id `pet-workspace`, while the status plan still uses `pet-gamer`.
+- Base: a sample status plan produces `summary`, `gates`, `nextActions`, `checksNote`, and `manualNext`.
+- Bad: a Studio API route writes `reliabilityProjects` directly from request body into `statusTargets.ts`.
+- Bad: a status template claims a live model/API/credentialed flow is online without a real synthetic result or manual gate.
+
+### 6. Tests Required
+
+- Run `npm.cmd run studio:status-plan -- --sample <known-status-project-id>` after changing the template helper or planning command.
+- Run `npm.cmd run lint` and `npm.cmd run build` after changing Studio UI, `src/utils/studioStatusDraft.ts`, or the planning script.
+- Run `npm.cmd run check:ui` after changing `/studio` template controls or status route rendering.
+- If `src/data/statusTargets.ts` is manually updated from a plan, also run `npm.cmd run site:status`, `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui`.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+await writeFile('src/data/statusTargets.ts', generatedStatusData)
+```
+
+This bypasses Git diff review and can turn an unreviewed draft into public reliability claims.
+
+#### Correct
+
+```typescript
+const plan = buildPlan(draft, project)
+console.log(JSON.stringify(plan, null, 2))
+```
+
+The planner produces a reviewable update candidate while a human or later checked exporter owns the explicit status data change.
+
 ## Scenario: Assistant MVP Browser State
 
 ### 1. Scope / Trigger

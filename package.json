@@ -30,6 +30,7 @@
     "blog:model:check": "node scripts/configure-blog-model.mjs doctor",
     "studio:export": "tsx scripts/export-studio-draft.ts",
     "studio:project-detail-plan": "tsx scripts/plan-project-detail-export.ts",
+    "studio:status-plan": "tsx scripts/plan-status-detail-export.ts",
     "blog:audit": "tsx scripts/audit-blog-catalog.ts",
     "blog:check": "node scripts/check-public-blog.mjs",
     "docs:observability-check": "node scripts/check-observability-docs.mjs",

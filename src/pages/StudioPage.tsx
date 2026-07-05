@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { StudioDraftPreview } from '../components/StudioDraftPreview'
 import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
 import { projects } from '../data/portfolio'
+import { reliabilityProjects } from '../data/statusTargets'
 import {
   STUDIO_STORAGE_KEYS,
   normalizeStudioDraft,
@@ -35,6 +36,7 @@ import {
   studioResourceDraftTypeLabels,
   type StudioResourceDraftType,
 } from '../utils/studioResourceDraft'
+import { createStatusDraftTemplate } from '../utils/studioStatusDraft'
 import { STUDIO_API_BASE, STUDIO_API_ENV_NAMES, explainStudioApiError, requestStudioApi } from '../utils/studioApi'
 
 interface DraftFormState {
@@ -206,6 +208,7 @@ export function StudioPage() {
   const [projectTemplateId, setProjectTemplateId] = useState(projects[0]?.id ?? '')
   const [resourceTemplateForm, setResourceTemplateForm] =
     useState<ResourceTemplateFormState>(defaultResourceTemplateForm)
+  const [statusTemplateId, setStatusTemplateId] = useState(reliabilityProjects[0]?.id ?? '')
   const [statusText, setStatusText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
@@ -371,6 +374,22 @@ export function StudioPage() {
       editorName: current.editorName || defaultDraftForm.editorName,
     }))
     setStatusText(`已生成 ${template.title}；保存后仍需审核再导出。`)
+  }
+
+  const applyStatusTemplate = () => {
+    const project = reliabilityProjects.find((item) => item.id === statusTemplateId)
+    if (!project) {
+      setStatusText('请选择有效的状态项目。')
+      return
+    }
+    const template = createStatusDraftTemplate(project)
+    setSelectedDraftId('')
+    setDraftForm((current) => ({
+      ...current,
+      ...template,
+      editorName: current.editorName || defaultDraftForm.editorName,
+    }))
+    setStatusText(`已生成 ${project.title} 的状态页说明草稿；保存后仍需审核再导出。`)
   }
 
   const saveDraft = async (event: FormEvent<HTMLFormElement>) => {
@@ -652,6 +671,22 @@ export function StudioPage() {
                 </label>
                 <button type="button" onClick={applyProjectDetailTemplate}>
                   生成详情页草稿
+                </button>
+              </div>
+
+              <div className="studio-template-panel">
+                <label className="assistant-field">
+                  <span>状态说明模板</span>
+                  <select value={statusTemplateId} onChange={(event) => setStatusTemplateId(event.target.value)}>
+                    {reliabilityProjects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button type="button" onClick={applyStatusTemplate}>
+                  生成状态说明草稿
                 </button>
               </div>
 
