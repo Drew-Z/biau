@@ -9,7 +9,7 @@
 - [x] Regenerate `public/status/site-status.json`.
 - [x] Update task acceptance evidence and manual-action notes.
 - [x] Run focused quality checks for the changed scripts/data.
-- [ ] Commit and push the Legal RAG closure slice on `blog-semi/main`.
+- [x] Commit and push the Legal RAG closure slice on `blog-semi/main`.
 
 ## Current Evidence
 
