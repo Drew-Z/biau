@@ -28,6 +28,7 @@ output
 # Local scratch artifacts
 ref/
 original-src/
+content-drafts/.checkpoints/
 *.backup
 *.backup2
 *-comparison.md

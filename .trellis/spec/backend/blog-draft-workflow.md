@@ -61,6 +61,17 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `--polish-from` must also update frontmatter/model-strategy evidence and
   review-gate wording so a polished draft never still claims `model channel:
   none` or "No live blog model generation or polish happened".
+- `--polish-from` defaults to section-level polishing (`BLOG_DRAFT_POLISH_MODE=sections`)
+  so long articles do not depend on one monolithic relay response. Set
+  `BLOG_DRAFT_POLISH_MODE=full` only for intentional full-body review calls.
+- Section-level polishing must keep structured handoffs small: pass only the
+  safe facts, uncertain facts, forbidden details, compare/fuse notes, the
+  section title/order, and the section body. Do not resend the entire evidence
+  scaffold to every model call.
+- Section-level polishing writes local checkpoints under
+  `content-drafts/.checkpoints/`, which is ignored by git. If one section fails
+  after all same-profile channels, keep that section's original prose, report
+  the issue, and continue polishing later sections.
 - Model calls use OpenAI-compatible chat completions. The script accepts either
   a relay root URL or a URL ending in `/v1` and calls the corresponding
   `/chat/completions` endpoint without duplicating `/v1`.
@@ -105,6 +116,9 @@ model channel contract. Read this before changing `scripts/generate-blog-draft.m
 - `--polish-from` with no `## Draft Body` -> fail before network access because
   the script cannot safely separate evidence from visitor-readable prose.
 - Model API failure -> report status and a short response body excerpt, never credentials.
+- Model timeout -> report the non-secret provider/model label and timeout
+  duration. Long-form drafting/review defaults to `BLOG_DRAFT_REQUEST_TIMEOUT_MS=300000`;
+  users may increase it in private env for slow relays.
 - Primary-channel failure with configured same-profile fallback channels -> try
   fallback channels serially, print only non-secret provider/model labels and
   failure kinds, and record the winning channel label in `generatedBy`.

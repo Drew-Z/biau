@@ -13,7 +13,9 @@ import {
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const planPath = resolve(repoRoot, 'scripts/blog-rewrite-plan.json')
 const draftsDir = resolve(repoRoot, 'content-drafts')
+const polishCheckpointsDir = resolve(draftsDir, '.checkpoints')
 const draftBodyHeading = '## Draft Body'
+const defaultModelRequestTimeoutMs = 300000
 
 const blogColumnOrder = ['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log']
 
@@ -247,9 +249,93 @@ function extractDraftBody(draftText) {
   return match[1].trim()
 }
 
+function extractMarkdownSection(markdown, heading) {
+  const escapedHeading = heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const match = String(markdown ?? '').match(new RegExp(`(?:^|\\r?\\n)## ${escapedHeading}\\s*\\r?\\n([\\s\\S]*?)(?=\\r?\\n## |$)`))
+  return match?.[1]?.trim() ?? ''
+}
+
+function truncateSectionText(text, maxLength = 2600) {
+  const normalized = String(text ?? '').trim()
+  if (normalized.length <= maxLength) return normalized
+  return `${normalized.slice(0, maxLength - 1)}…`
+}
+
+function buildPolishEvidenceSummary(draftText) {
+  const sections = [
+    ['Safe Public Facts', extractMarkdownSection(draftText, 'Safe Public Facts')],
+    ['Uncertain Or Stale Facts', extractMarkdownSection(draftText, 'Uncertain Or Stale Facts')],
+    ['Forbidden / Private Details', extractMarkdownSection(draftText, 'Forbidden / Private Details')],
+    ['Codex Compare / Fuse Notes', extractMarkdownSection(draftText, 'Codex Compare / Fuse Notes')],
+  ].filter(([, body]) => body)
+
+  return sections
+    .map(([heading, body]) => `### ${heading}\n${truncateSectionText(body)}`)
+    .join('\n\n')
+}
+
+function readPolishMode() {
+  const mode = String(process.env.BLOG_DRAFT_POLISH_MODE ?? '').trim().toLowerCase()
+  return mode === 'full' ? 'full' : 'sections'
+}
+
+function splitPolishSections(body) {
+  const lines = String(body ?? '').trim().split(/\r?\n/)
+  const sections = []
+  let current = []
+
+  for (const line of lines) {
+    if (/^#{2,4}\s+\S/.test(line) && current.some((item) => item.trim())) {
+      sections.push(createPolishSection(current))
+      current = []
+    }
+    current.push(line)
+  }
+
+  if (current.some((item) => item.trim())) sections.push(createPolishSection(current))
+  return sections.filter((section) => section.text.trim())
+}
+
+function createPolishSection(lines) {
+  const text = lines.join('\n').trim()
+  const heading = lines.find((line) => /^#{2,4}\s+\S/.test(line))?.replace(/^#{2,4}\s+/, '').trim()
+  return {
+    title: heading || '正文开头',
+    text,
+  }
+}
+
+function buildPolishSectionPrompt(topic, draftText, section, index, total, sectionTitles) {
+  const column = columnMeta[topic.column]
+  const evidenceSummary = buildPolishEvidenceSummary(stripFrontmatter(draftText))
+  return [
+    '请润色公开中文技术博客的一段正文。',
+    '',
+    `标题：${topic.title}`,
+    `栏目：${column.titleZh} / ${column.titleEn}`,
+    `目标读者：${topic.targetReader}`,
+    `当前段落：${index + 1} / ${total} - ${section.title}`,
+    '',
+    '全文段落顺序：',
+    ...sectionTitles.map((title, titleIndex) => `${titleIndex + 1}. ${title}`),
+    '',
+    '证据、边界和审稿要求摘要：',
+    evidenceSummary || '证据摘要缺失：不得新增正文之外的项目事实、部署状态、指标、私有基础设施或敏感信息。',
+    '',
+    '待润色段落：',
+    section.text,
+    '',
+    '润色要求：',
+    '1. 只输出这一段润色后的 Markdown，不要输出全文、frontmatter、Evidence Pack、Review Gates 或解释说明。',
+    '2. 保留本段标题层级和标题含义；不要新增证据区没有支持的项目事实、部署状态、指标、截图或私有基础设施细节。',
+    '3. 可以优化过渡、句式、信息密度和可读性，但不要改变“已实现 / 路线图 / 待验证”的事实边界。',
+    '4. 不要输出 API key、token、数据库 URL、私有 relay URL、账号、密码、本地路径或云平台私有配置。',
+  ].join('\n')
+}
+
 function buildPolishPrompt(topic, draftText) {
   const column = columnMeta[topic.column]
-  const scaffoldText = stripFrontmatter(draftText).split(draftBodyHeading)[0]?.trim() ?? ''
+  const evidenceSummary = buildPolishEvidenceSummary(stripFrontmatter(draftText))
   const currentBody = extractDraftBody(draftText)
 
   return [
@@ -260,7 +346,7 @@ function buildPolishPrompt(topic, draftText) {
     `目标读者：${topic.targetReader}`,
     '',
     '证据、边界和审稿要求：',
-    scaffoldText,
+    evidenceSummary || '证据摘要缺失：不得新增正文之外的项目事实、部署状态、指标、私有基础设施或敏感信息。',
     '',
     '当前正文：',
     currentBody,
@@ -309,6 +395,9 @@ async function requestModelContent({ profile, prompt, systemContent }) {
 async function requestModelChannel(config, { prompt, systemContent }) {
   const { apiKey, model, provider, temperature } = config
   console.log(`使用模型渠道：${config.profile} ${config.label} -> ${provider} / ${model}`)
+  const timeoutMs = readModelRequestTimeoutMs()
+  const abort = new AbortController()
+  const timeout = setTimeout(() => abort.abort(), timeoutMs)
 
   try {
     const response = await fetch(buildChatCompletionsUrl(config.baseUrl), {
@@ -328,6 +417,7 @@ async function requestModelChannel(config, { prompt, systemContent }) {
           { role: 'user', content: prompt },
         ],
       }),
+      signal: abort.signal,
     })
 
     if (!response.ok) {
@@ -357,12 +447,26 @@ async function requestModelChannel(config, { prompt, systemContent }) {
     }
     return { channel: config, content: content.trim() }
   } catch (error) {
+    const kind = error instanceof Error && error.name === 'AbortError' ? 'timeout' : 'network_error'
+    const detail =
+      kind === 'timeout'
+        ? `request exceeded ${timeoutMs}ms`
+        : redactSensitiveText(error instanceof Error ? error.message : String(error))
     return {
       channel: config,
-      kind: 'network_error',
-      detail: redactSensitiveText(error instanceof Error ? error.message : String(error)),
+      kind,
+      detail,
     }
+  } finally {
+    clearTimeout(timeout)
   }
+}
+
+function readModelRequestTimeoutMs() {
+  const raw = process.env.BLOG_DRAFT_REQUEST_TIMEOUT_MS
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed <= 0) return defaultModelRequestTimeoutMs
+  return Math.max(5000, Math.min(600000, Math.trunc(parsed)))
 }
 
 function formatModelAttempts(attempts) {
@@ -388,11 +492,65 @@ async function requestDraft(topic, profile) {
 }
 
 async function requestPolish(topic, draftText, profile) {
+  if (readPolishMode() === 'sections') {
+    return requestSectionedPolish(topic, draftText, profile)
+  }
   return requestModelContent({
     profile: profile || 'review',
     prompt: buildPolishPrompt(topic, draftText),
     systemContent: '你是中文技术博客审稿与润色编辑，必须保持证据边界，不编造事实，只优化结构、表达、密度和可读性。',
   })
+}
+
+async function requestSectionedPolish(topic, draftText, profile) {
+  const currentBody = extractDraftBody(draftText)
+  const sections = splitPolishSections(currentBody)
+  if (sections.length < 2) {
+    return requestModelContent({
+      profile: profile || 'review',
+      prompt: buildPolishPrompt(topic, draftText),
+      systemContent: '你是中文技术博客审稿与润色编辑，必须保持证据边界，不编造事实，只优化结构、表达、密度和可读性。',
+    })
+  }
+
+  const sectionTitles = sections.map((section) => section.title)
+  const polishedSections = []
+  const issues = []
+  let firstConfig = null
+
+  for (let index = 0; index < sections.length; index += 1) {
+    const section = sections[index]
+    console.log(`润色段落 ${index + 1}/${sections.length}：${section.title}`)
+    try {
+      const result = await requestModelContent({
+        profile: profile || 'review',
+        prompt: buildPolishSectionPrompt(topic, draftText, section, index, sections.length, sectionTitles),
+        systemContent: '你是中文技术博客分段审稿编辑。只润色当前段落，保持证据边界，不新增事实，不输出解释。',
+      })
+      firstConfig = firstConfig ?? result.config
+      polishedSections.push(stripGeneratedTitle(result.content))
+    } catch (error) {
+      const message = redactSensitiveText(error instanceof Error ? error.message : String(error))
+      issues.push(`段落 ${index + 1}「${section.title}」润色失败，已保留原文：${message}`)
+      polishedSections.push(section.text)
+    }
+
+    await writePolishCheckpoint(topic, polishedSections.concat(sections.slice(index + 1).map((section) => section.text)).join('\n\n'), issues)
+  }
+
+  if (!firstConfig) {
+    throw new Error(`分段润色没有任何段落成功。${issues.join('；')}`)
+  }
+
+  if (issues.length > 0) {
+    console.log(`分段润色存在 ${issues.length} 个问题：${issues.join('；')}`)
+  }
+
+  return {
+    content: polishedSections.join('\n\n'),
+    config: firstConfig,
+    issues,
+  }
 }
 
 function buildScaffold(topic) {
@@ -601,7 +759,26 @@ async function writeDraft(topic, content, force, generatedBy) {
   }
 }
 
-async function writePolishedDraft(topic, outputPath, existingDraft, polishedContent, config) {
+async function writePolishCheckpoint(topic, draftBody, issues) {
+  await mkdir(polishCheckpointsDir, { recursive: true })
+  const outputPath = resolve(polishCheckpointsDir, `${topic.slug}.polish-checkpoint.md`)
+  const content = [
+    `# ${topic.title} - polish checkpoint`,
+    '',
+    `- updatedAt: ${new Date().toISOString()}`,
+    `- issueCount: ${issues.length}`,
+    '',
+    '## Issues',
+    issues.length > 0 ? issues.map((issue) => `- ${issue}`).join('\n') : '- none',
+    '',
+    draftBodyHeading,
+    '',
+    draftBody,
+  ].join('\n')
+  await writeFile(outputPath, `${content.replace(/\s*$/, '')}\n`, 'utf8')
+}
+
+async function writePolishedDraft(topic, outputPath, existingDraft, polishedContent, config, issues = []) {
   const generatedBy = `model-assisted-polish:${config.profile}:${config.label}:${config.provider}:${config.model}`
   let content = updateDraftFrontmatter(existingDraft, {
     generatedBy,
@@ -611,6 +788,9 @@ async function writePolishedDraft(topic, outputPath, existingDraft, polishedCont
   content = markPolishedDraftMetadata(content, config)
   content = appendModelStrategyNote(content, `Review/polish stage used the \`${config.profile}\` profile \`${config.label}\` channel (${config.provider} / ${config.model}).`)
   content = appendModelStrategyNote(content, 'Codex final fact/safety review is still required before promotion.')
+  if (issues.length > 0) {
+    content = appendModelStrategyNote(content, `Sectioned polish completed with ${issues.length} issue(s); failed sections kept the original prose and require Codex/human review.`)
+  }
   content = replaceDraftBodyContent(content, polishedContent)
 
   const problems = validateDraft(topic, stripFrontmatter(content))
@@ -654,8 +834,8 @@ async function main() {
       const polishPath = resolvePolishPath(topic, args.polishFrom)
       if (!existsSync(polishPath)) throw new Error(`待润色草稿不存在：${relative(repoRoot, polishPath).replace(/\\/g, '/')}`)
       const existingDraft = await readFile(polishPath, 'utf8')
-      const { content, config } = await requestPolish(topic, existingDraft, args.profile || 'review')
-      await writePolishedDraft(topic, polishPath, existingDraft, content, config)
+      const { content, config, issues = [] } = await requestPolish(topic, existingDraft, args.profile || 'review')
+      await writePolishedDraft(topic, polishPath, existingDraft, content, config, issues)
     } else if (args.generate) {
       const { content, config } = await requestDraft(topic, args.profile)
       await writeDraft(topic, buildGeneratedDraft(topic, content), args.force, `model-assisted-draft:${config.profile}:${config.label}:${config.provider}:${config.model}`)

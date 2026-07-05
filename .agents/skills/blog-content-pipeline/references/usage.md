@@ -188,9 +188,14 @@ npm.cmd run blog:check
 The scaffold command does not call a model. Use `--generate` only after the run
 is explicitly model-assisted, the evidence pack, safe public facts, uncertain
 facts, and forbidden details are complete, and the user has approved generation.
-Use `--polish-from` after a first draft exists; it sends the existing draft body
-to the selected profile, keeps the evidence scaffold in place, and writes the
-polished body back under `## Draft Body`.
+Use `--polish-from` after a first draft exists. By default, long drafts are
+polished section-by-section (`BLOG_DRAFT_POLISH_MODE=sections`) instead of as one
+monolithic model call. The script sends each section plus a compact evidence
+summary to the selected profile, keeps the evidence scaffold in place, writes
+local checkpoints under `content-drafts/.checkpoints/`, and writes the polished
+body back under `## Draft Body`. Set `BLOG_DRAFT_POLISH_MODE=full` only when one
+full-body review call is intentional. `BLOG_DRAFT_REQUEST_TIMEOUT_MS` defaults to
+`300000` for slow relay/model channels.
 
 `status` and default `doctor` may report that a selected profile resolves from
 fallback or legacy values. Treat that as a setup gap for model-assisted runs:
