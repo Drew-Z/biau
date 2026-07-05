@@ -33,4 +33,4 @@
 
 - [x] 更新 PRD 验收状态和证据。
 - [x] 如有新命令契约，更新 `.trellis/spec/backend/ai-daily-workflow.md`。
-- [ ] 提交并推送 `blog-semi/main`。
+- [x] 提交并推送 `blog-semi/main`。
