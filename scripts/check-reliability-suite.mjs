@@ -24,6 +24,7 @@ const steps = [
     label: 'Legal RAG synthetic',
     script: 'legal-rag:synthetic',
     supportsStrict: true,
+    requiredEnv: ['LEGAL_RAG_API_BASE_URL'],
     outputPath: 'public/status/legal-rag-synthetic.json',
     reportKind: 'synthetic',
   },
@@ -343,6 +344,21 @@ async function runStep(step, args) {
       exitCode: 0,
       outputPath: step.outputPath,
       summary: 'Skipped by --skip',
+      issues: [],
+    }
+  }
+
+  const missingEnv = (step.requiredEnv ?? []).filter((key) => !String(process.env[key] ?? '').trim())
+  if (missingEnv.length > 0) {
+    return {
+      id: step.id,
+      label: step.label,
+      command: '',
+      status: 'skipped',
+      durationMs: 0,
+      exitCode: 0,
+      outputPath: step.outputPath,
+      summary: `Skipped because required environment is not configured: ${missingEnv.join(', ')}. Existing report is preserved.`,
       issues: [],
     }
   }

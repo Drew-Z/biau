@@ -34,4 +34,9 @@
 
 - 推荐第一步：先检查线上入口是否仍被登录挡住；如果是，优先决定公开 demo 凭据策略，而不是绕过登录。
 - 2026-07-04 UTC synthetic evidence: API health returned `ok=true`; auth is enabled; no synthetic credentials were configured, so protected QA, contract review, and quality report checks stayed `unchecked`; `public/status/legal-rag-synthetic.json` records `demoAccessStatus=credential-required`.
-- Remaining gate: a low-permission, revokable public demo account must be created/approved before Codex can run credentialed QA and contract-review synthetic checks.
+- 2026-07-05: user approved publishing a low-permission, revokable public demo account. Production platform configuration is still required before Codex can run credentialed QA and contract-review synthetic checks.
+- Required platform configuration:
+  - Legal RAG API service: add the demo user through `AUTH_USERS_JSON` or matching `AUTH_EMAIL` / `AUTH_PASSWORD`; keep `AUTH_SESSION_SECRET`, model keys, database URL, and provider endpoints private.
+  - Legal RAG Web service: set `VITE_PUBLIC_DEMO_EMAIL`, `VITE_PUBLIC_DEMO_PASSWORD`, and optional `VITE_PUBLIC_DEMO_NOTE`; this password is intentionally public in the browser and must match the API demo user.
+  - After redeploy, run a credentialed synthetic check with shell-only `LEGAL_RAG_SYNTHETIC_EMAIL` and `LEGAL_RAG_SYNTHETIC_PASSWORD`. Do not commit those values.
+- 2026-07-05: refreshed public-safe synthetic evidence with the public API base and no credentials: `legal-rag-health=online`, protected QA/contract/quality checks remain `unchecked`, `demoAccessStatus=credential-required`.

@@ -1,18 +1,18 @@
 {
-  "checkedAt": "2026-07-05T01:53:04.860Z",
-  "apiBaseConfigured": false,
+  "checkedAt": "2026-07-05T02:36:38.145Z",
+  "apiBaseConfigured": true,
   "hasCredentials": false,
-  "demoAccessStatus": "offline",
-  "demoAccessSummary": "The API health check or API base configuration did not confirm a reachable Legal RAG demo backend.",
+  "demoAccessStatus": "credential-required",
+  "demoAccessSummary": "Auth is enabled; protected demo checks require a low-permission public demo account.",
   "ok": true,
   "checks": [
     {
       "id": "legal-rag-health",
-      "status": "unchecked",
-      "httpStatus": 0,
-      "durationMs": 0,
-      "checkedAt": "2026-07-05T01:53:04.861Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 13004,
+      "checkedAt": "2026-07-05T02:36:51.150Z",
+      "summary": "API health returned ok=true",
       "issues": []
     },
     {
@@ -20,8 +20,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-05T01:53:04.861Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "checkedAt": "2026-07-05T02:36:51.852Z",
+      "summary": "Auth is enabled; credentials are required for RAG query checks",
       "issues": []
     },
     {
@@ -29,8 +29,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-05T01:53:04.861Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "checkedAt": "2026-07-05T02:36:51.852Z",
+      "summary": "Auth is enabled; credentials are required for contract review checks",
       "issues": []
     },
     {
@@ -38,8 +38,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-05T01:53:04.861Z",
-      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
+      "checkedAt": "2026-07-05T02:36:51.852Z",
+      "summary": "Auth is enabled; credentials are required for quality report checks",
       "issues": []
     }
   ]

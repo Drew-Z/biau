@@ -1,15 +1,15 @@
 {
-  "checkedAt": "2026-07-05T01:52:54.288Z",
+  "checkedAt": "2026-07-05T02:41:51.207Z",
   "ok": true,
   "strict": true,
   "timeoutMs": 12000,
   "stepTimeoutMs": 96000,
   "summary": {
     "total": 7,
-    "passed": 7,
+    "passed": 6,
     "failed": 0,
-    "skipped": 0,
-    "durationMs": 23708
+    "skipped": 1,
+    "durationMs": 27631
   },
   "steps": [
     {
@@ -17,7 +17,7 @@
       "label": "BIAU Port main site synthetic",
       "command": "npm run main-site:synthetic -- --timeout 12000 --strict",
       "status": "passed",
-      "durationMs": 10315,
+      "durationMs": 10279,
       "exitCode": 0,
       "outputPath": "public/status/blog-semi-synthetic.json",
       "summary": "synthetic checks: online=2 degraded=0 offline=0 unchecked=0",
@@ -26,12 +26,12 @@
     {
       "id": "legal-rag",
       "label": "Legal RAG synthetic",
-      "command": "npm run legal-rag:synthetic -- --timeout 12000 --strict",
-      "status": "passed",
-      "durationMs": 281,
+      "command": "",
+      "status": "skipped",
+      "durationMs": 0,
       "exitCode": 0,
       "outputPath": "public/status/legal-rag-synthetic.json",
-      "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=4",
+      "summary": "Skipped because required environment is not configured: LEGAL_RAG_API_BASE_URL. Existing report is preserved.",
       "issues": []
     },
     {
@@ -39,7 +39,7 @@
       "label": "ERP synthetic",
       "command": "npm run erp:synthetic -- --timeout 12000 --strict",
       "status": "passed",
-      "durationMs": 274,
+      "durationMs": 299,
       "exitCode": 0,
       "outputPath": "public/status/erp-synthetic.json",
       "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
@@ -50,7 +50,7 @@
       "label": "Xunqiu synthetic",
       "command": "npm run xunqiu:synthetic -- --timeout 12000 --strict",
       "status": "passed",
-      "durationMs": 283,
+      "durationMs": 286,
       "exitCode": 0,
       "outputPath": "public/status/xunqiu-synthetic.json",
       "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
@@ -61,7 +61,7 @@
       "label": "Pet showcase synthetic",
       "command": "npm run pet:synthetic -- --timeout 12000 --strict",
       "status": "passed",
-      "durationMs": 4610,
+      "durationMs": 9116,
       "exitCode": 0,
       "outputPath": "public/status/pet-gamer-synthetic.json",
       "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=0",
@@ -72,7 +72,7 @@
       "label": "Public status aggregation",
       "command": "npm run site:status -- --timeout 12000 --strict",
       "status": "passed",
-      "durationMs": 4073,
+      "durationMs": 3985,
       "exitCode": 0,
       "outputPath": "public/status/site-status.json",
       "summary": "site status targets: online=5 degraded=0 offline=0 unchecked=0",
@@ -83,7 +83,7 @@
       "label": "Core route monitor",
       "command": "npm run site:monitor -- --json --timeout 12000",
       "status": "passed",
-      "durationMs": 3862,
+      "durationMs": 3658,
       "exitCode": 0,
       "summary": "site monitor checks: passed=11 failed=0",
       "issues": []

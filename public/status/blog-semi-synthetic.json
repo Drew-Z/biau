@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-05T01:52:54.544Z",
+  "checkedAt": "2026-07-05T02:41:51.483Z",
   "baseConfigured": true,
   "ok": true,
   "checks": [
@@ -7,8 +7,8 @@
       "id": "blog-semi-public-routes",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 2036,
-      "checkedAt": "2026-07-05T01:52:54.544Z",
+      "durationMs": 2328,
+      "checkedAt": "2026-07-05T02:41:51.483Z",
       "summary": "7/7 public routes returned expected responses",
       "issues": []
     },
@@ -16,8 +16,8 @@
       "id": "blog-semi-public-assistant",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 7993,
-      "checkedAt": "2026-07-05T01:52:54.544Z",
+      "durationMs": 7647,
+      "checkedAt": "2026-07-05T02:41:51.483Z",
       "summary": "Public assistant API returned a model answer with public citations",
       "issues": []
     }
