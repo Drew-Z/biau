@@ -28,12 +28,15 @@
 
 ## Acceptance Criteria
 
-- [ ] AI 日报模板和栏目语义与 `ai-daily` 保持一致。
-- [ ] 有明确的模型配置向导或使用文档，不在终端明文回显 API key。
-- [ ] 有一期样例日报草稿，包含来源链接、摘要、影响判断和待核查事项。
-- [ ] 有发布前检查清单，覆盖事实、敏感信息、版权摘要和站点构建。
-- [ ] 自动化如果未完成，必须明确标记为 draft/manual-review，不得伪装成每日自动运行。
+- [x] AI 日报模板和栏目语义与 `ai-daily` 保持一致。
+- [x] 有明确的模型配置向导或使用文档，不在终端明文回显 API key。
+- [x] 有一期样例日报草稿，包含来源链接、摘要、影响判断和待核查事项。
+- [x] 有发布前检查清单，覆盖事实、敏感信息、版权摘要和站点构建。
+- [x] 自动化如果未完成，必须明确标记为 draft/manual-review，不得伪装成每日自动运行。
 
 ## Notes
 
 - 推荐第一步：先做“手动来源输入 + 模型辅助摘要 + 审核草稿”的半自动 MVP，再考虑每天自动运行。
+- 2026-07-05：第一版改为更保守的 Codex-only scaffold/review：`npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --force` 会生成 `content-drafts/ai-daily-2026-07-05.md`，草稿明确标记 `draft/manual-review` 和 `model channel: none`。
+- 2026-07-05：新增 `docs/ai-daily-pipeline.md` 和 `.trellis/spec/backend/ai-daily-workflow.md`，说明来源格式、模型配置边界和发布前检查。
+- 2026-07-05：验证通过 `npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --force`、`npm.cmd run blog:check`、`npm.cmd run lint`、`npm.cmd run build`、`git diff --check`。

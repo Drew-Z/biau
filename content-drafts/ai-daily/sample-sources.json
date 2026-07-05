@@ -1,0 +1,47 @@
+{
+  "date": "2026-07-05",
+  "title": "AI 日报样例：RAG 工程化信号观察",
+  "subtitle": "AI Daily",
+  "editorNote": "这是一份用于验证 AI 日报流水线的样例来源包，不代表已完成发布审核。",
+  "items": [
+    {
+      "title": "Contextual Retrieval",
+      "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+      "source": "Anthropic Engineering",
+      "publishedAt": "source-provided",
+      "summary": "来源讨论在检索前为 chunk 补充上下文，让后续检索和 rerank 更容易保留原文语境。",
+      "impact": "对 RAG 开发者的启发是：提升回答质量不只靠更大的模型，也可以从 chunk 入库和上下文保真开始。",
+      "toVerify": [
+        "发布前核对文章发布时间和当前建议是否有更新。",
+        "确认是否需要补充与具体评测数据相关的来源。"
+      ],
+      "tags": ["RAG", "retrieval", "context"]
+    },
+    {
+      "title": "Hybrid Queries",
+      "url": "https://qdrant.tech/documentation/search/hybrid-queries/",
+      "source": "Qdrant Documentation",
+      "publishedAt": "source-provided",
+      "summary": "来源说明如何把稀疏检索、稠密向量检索和融合/重排流程组织成多阶段查询。",
+      "impact": "对工程实现的意义是：混合检索已经逐渐成为常规能力，适合处理术语、编号、金额和语义相似同时存在的业务文本。",
+      "toVerify": [
+        "发布前核对文档中的接口名称和示例是否仍然有效。",
+        "避免把文档能力写成本站已经完整上线的生产指标。"
+      ],
+      "tags": ["hybrid retrieval", "vector database", "rerank"]
+    },
+    {
+      "title": "Agentic RAG",
+      "url": "https://docs.langchain.com/oss/python/langgraph/agentic-rag",
+      "source": "LangGraph Docs",
+      "publishedAt": "source-provided",
+      "summary": "来源展示了把检索、相关性判断、重写查询和生成答案放进可控流程的 Agentic RAG 示例。",
+      "impact": "它提醒我们：前沿 RAG 更像带判断节点的工作流，而不是一次性 top-k 检索后直接生成。",
+      "toVerify": [
+        "发布前核对 LangGraph 文档路径和示例是否迁移。",
+        "说明这是架构参考，不代表本站公开助手已完成所有 agentic 节点。"
+      ],
+      "tags": ["agentic rag", "workflow", "evaluation"]
+    }
+  ]
+}
