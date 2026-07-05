@@ -12,6 +12,12 @@ function normalizeBaseUrl(value: string) {
   return (value || 'https://api.openai.com/v1').replace(/\/$/, '')
 }
 
+function normalizeCorsOrigin(value: string | undefined) {
+  const origin = value?.trim() ?? '*'
+  if (origin === '*') return origin
+  return origin.replace(/\/+$/, '')
+}
+
 const assistantModelApiKey = readFirstEnv('ASSISTANT_MODEL_API_KEY', 'OPENAI_API_KEY')
 const assistantModelBaseUrl = normalizeBaseUrl(readFirstEnv('ASSISTANT_MODEL_BASE_URL', 'OPENAI_BASE_URL'))
 const assistantModelName = readFirstEnv('ASSISTANT_MODEL_NAME', 'OPENAI_MODEL') || 'gpt-4.1-mini'
@@ -28,7 +34,7 @@ export const env = {
   assistantServiceMode,
   databaseUrl: process.env.DATABASE_URL?.trim() ?? '',
   studioDatabaseUrl: process.env.STUDIO_DATABASE_URL?.trim() || process.env.DATABASE_URL?.trim() || '',
-  corsOrigin: process.env.CORS_ORIGIN?.trim() ?? '*',
+  corsOrigin: normalizeCorsOrigin(process.env.CORS_ORIGIN),
   assistantModelApiKey,
   assistantModelBaseUrl,
   assistantModelName,

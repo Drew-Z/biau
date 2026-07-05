@@ -184,6 +184,7 @@ npm.cmd run build
 - Content Studio 独立数据库：用户决定内部助手库与内容工作台库分开维护；Studio 服务应设置 `STUDIO_DATABASE_URL`，迁移用 `npm run prisma:migrate:studio`。
 - Studio 管理密钥：用户需要设置 `ADMIN_TOKEN` 或后续专用 `STUDIO_ADMIN_TOKEN`；仓库不能保存真实 token。
 - CORS 域名：用户需要确认公开站域名和后端 API 域名，并在部署平台设置 `CORS_ORIGIN`。
+- 2026-07-05：用户已在生产配置中去除 `CORS_ORIGIN` 尾斜杠并确认 `/studio` 可以连接 Studio API；代码侧已增加尾斜杠规范化作为防呆。
 - 生产迁移：第一次上线新增 Prisma 模型时，需要确认部署流程会执行 migration，或由用户手动在平台 shell 中执行。
 - Studio 用户范围：第一版推荐仅站长管理员使用；如果要给小伙伴开放编辑，需要追加成员角色与权限 UI。
 - 导出执行位置：第一版推荐本地/CI 导出公开内容文件；暂不让生产服务器直接写 Git 仓库。

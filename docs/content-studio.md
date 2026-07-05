@@ -86,6 +86,12 @@ CORS_ORIGIN=<main site origin>
 NODE_VERSION=22
 ```
 
+`CORS_ORIGIN` 填主站 origin，不要带路径或尾斜杠，例如：
+
+```text
+https://biau.playlab.eu.cc
+```
+
 Build Command：
 
 ```bash

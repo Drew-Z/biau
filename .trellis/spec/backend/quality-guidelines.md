@@ -36,6 +36,62 @@ Use `server/src/env.ts` as the single place for reading environment variables. K
 
 Do not read `.env`, `.env.local`, `.env.*.local`, private key files, or SSH files into task context. Use `.env.example` when documenting expected shape.
 
+## Scenario: Deployment CORS Origin Normalization
+
+### 1. Scope / Trigger
+
+- Trigger: changing backend environment parsing, CORS middleware, Render service variables, or browser-facing API base URLs.
+
+### 2. Signatures
+
+- Env: `CORS_ORIGIN`
+- Runtime field: `env.corsOrigin`
+- Middleware: Express `cors({ origin: env.corsOrigin })`
+
+### 3. Contracts
+
+- `CORS_ORIGIN` is an origin only: protocol + host + optional port.
+- It must not include a path, query string, or fragment.
+- The backend trims whitespace and removes trailing slashes before passing it to CORS.
+- `*` remains supported for local/simple deployments.
+
+### 4. Validation & Error Matrix
+
+- `CORS_ORIGIN=https://biau.playlab.eu.cc/` -> normalized to `https://biau.playlab.eu.cc`.
+- Browser `Origin: https://biau.playlab.eu.cc` -> `Access-Control-Allow-Origin: https://biau.playlab.eu.cc`.
+- `CORS_ORIGIN=*` -> wildcard behavior remains unchanged.
+- Path-shaped values such as `https://biau.playlab.eu.cc/studio` are invalid deployment config and should be corrected in platform variables.
+
+### 5. Good/Base/Bad Cases
+
+- Good: Render sets `CORS_ORIGIN=https://biau.playlab.eu.cc` and Cloudflare Pages sets `VITE_STUDIO_API_BASE_URL` to the Studio API service origin.
+- Base: a trailing slash is accidentally included; backend normalization still matches the browser origin.
+- Bad: frontend code attempts to solve CORS by exposing server tokens, database URLs, or private API keys.
+
+### 6. Tests Required
+
+- Run `npm.cmd run server:build` after changing env parsing.
+- Run `npm.cmd run server:smoke` and `npm.cmd run assistant:service-modes-smoke` after changing CORS or service modes.
+- Verify browser failures with sanitized status/CORS diagnostics before asking the user to rotate secrets.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```text
+CORS_ORIGIN=https://biau.playlab.eu.cc/studio/
+```
+
+This is a route URL, not the browser origin, so it can fail CORS matching.
+
+#### Correct
+
+```text
+CORS_ORIGIN=https://biau.playlab.eu.cc
+```
+
+The browser sends only the origin in the `Origin` header, so the backend should compare against the same value.
+
 ## Scenario: Public Assistant Model Provider
 
 ### 1. Scope / Trigger
