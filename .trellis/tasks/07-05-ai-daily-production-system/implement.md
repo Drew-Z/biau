@@ -173,11 +173,13 @@ npm.cmd run build
 
 - [x] 项目详情页编辑。
 - [x] 项目配图、流程图、架构图块。
-- [ ] 资源分享页编辑。
+- [x] 资源分享页编辑。
 - [ ] 状态页说明编辑。
 - [ ] 页面级发布审核。
 
 2026-07-05：Studio 编辑器已新增“项目详情模板”，可以从现有 `projects` 中选择目标项目，一键生成覆盖案例概览、工作台能力、实现与架构、质量与验证、当前边界和后续优化的 hidden 草稿；模板正文支持图片和 Mermaid 流程图草稿。新增 `npm.cmd run studio:project-detail-plan -- --sample <projectId>`，可把这类 Studio 草稿 dry-run 映射为 `Project.detailContent` 和 `assistantContext` 导出计划，但不会直接写入 `src/data/portfolio.ts`。
+
+2026-07-05：Studio 编辑器已新增“资源分享模板”，支持填写资源名称、公开 URL 和资源类型，一键生成 `resources` 栏目的 hidden 草稿；模板覆盖资源定位、应用场景、使用方式、判断依据、注意事项、后续维护和关键收获，并默认 `aiAssistance: none`。模板会移除 URL 查询参数/锚点再写入正文，发布仍必须经过审核与 `studio:export` 导出 gate。
 
 ## Risk And Rollback
 

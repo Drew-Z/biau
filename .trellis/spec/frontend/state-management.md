@@ -226,6 +226,70 @@ console.log(JSON.stringify(plan, null, 2))
 
 The planner produces reviewable structured output; a human or later checked exporter owns the explicit `portfolio.ts` change.
 
+## Scenario: Studio Resource Draft Template
+
+### 1. Scope / Trigger
+
+- Trigger: adding or changing Studio flows that prepare `resources` column content, resource recommendation notes, or resource-sharing drafts.
+- Goal: let Studio create structured resource notes without treating a pasted link as public-ready content.
+
+### 2. Signatures
+
+- Template helper: `createResourceDraftTemplate(input?: StudioResourceDraftTemplateInput): StudioResourceDraftTemplate`.
+- `StudioResourceDraftTemplateInput.resourceType` is one of `tool`, `article`, `repository`, `model`, `course`, or `asset`.
+- Template fields mirror the Studio draft form: `title`, `slug`, `column`, `tag`, `detail`, `readTime`, `bodyText`, `knowledgePointsText`, `projectIdsText`, `visibility`, and `aiAssistance`.
+- UI labels live in `studioResourceDraftTypeLabels`.
+
+### 3. Contracts
+
+- Generated resource templates must set `column: "resources"`, `visibility: "hidden"`, and `aiAssistance: "none"`.
+- Resource templates are first-draft editing scaffolds only; they must not create publish export records or write public blog data.
+- Resource body sections should include resource positioning, application scenarios, usage path, judgment evidence, cautions, maintenance, and key takeaways.
+- Query strings and URL fragments should not be copied into generated body text because they may contain tracking tokens or private parameters.
+- Resource posts should preserve personal judgment and usage boundaries. They must not become unscreened generated link lists.
+
+### 4. Validation & Error Matrix
+
+- Missing title -> template uses a neutral draft title and slug that the editor can revise.
+- Invalid URL -> template keeps a placeholder requiring a valid public URL.
+- Non-HTTP URL -> template keeps a placeholder requiring an HTTP/HTTPS public URL.
+- URL with query or hash -> template writes only origin + pathname and asks for manual review.
+- Resource template saved as draft -> stays hidden until the normal review/export gate approves it.
+
+### 5. Good/Base/Bad Cases
+
+- Good: editor enters a public repository URL, generates a hidden resource draft, adds real usage notes, then routes it through review and `studio:export`.
+- Good: a URL with tracking parameters is sanitized in template text before the editor saves the draft.
+- Base: editor generates a blank resource scaffold and fills title/link later.
+- Bad: a resource template defaults to `featured` or creates a publish export intent automatically.
+- Bad: a generated resource post claims personal usage or benchmark results that were never verified.
+
+### 6. Tests Required
+
+- Run a small `tsx` assertion after changing `src/utils/studioResourceDraft.ts` to verify `column`, `visibility`, `aiAssistance`, and URL sanitization.
+- Run `npm.cmd run lint` and `npm.cmd run build` after changing Studio UI or resource template helpers.
+- Run `npm.cmd run check:ui` after changing `/studio` template layout.
+- Run `npm.cmd run studio:export -- --sample --dry-run` to confirm existing static export mapping still works.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```tsx
+const draft = { column: 'resources', visibility: 'featured', bodyText: pastedUrl }
+```
+
+This treats an unreviewed resource link as public content and may preserve unsafe query parameters.
+
+#### Correct
+
+```tsx
+const template = createResourceDraftTemplate({ title, url, resourceType })
+setDraftForm((current) => ({ ...current, ...template }))
+```
+
+The helper owns the resource scaffold contract, defaults to hidden, and leaves publication to the normal review/export flow.
+
 ## Scenario: Assistant MVP Browser State
 
 ### 1. Scope / Trigger

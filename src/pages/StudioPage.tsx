@@ -30,6 +30,11 @@ import {
 } from '../data/studio'
 import { bodyJsonFromText, textFromBodyJson } from '../utils/studioDraftBody'
 import { createProjectDetailDraftTemplate } from '../utils/studioProjectDraft'
+import {
+  createResourceDraftTemplate,
+  studioResourceDraftTypeLabels,
+  type StudioResourceDraftType,
+} from '../utils/studioResourceDraft'
 import { STUDIO_API_BASE, STUDIO_API_ENV_NAMES, explainStudioApiError, requestStudioApi } from '../utils/studioApi'
 
 interface DraftFormState {
@@ -64,6 +69,12 @@ interface IssueFormState {
   sourceIdsText: string
 }
 
+interface ResourceTemplateFormState {
+  title: string
+  url: string
+  resourceType: StudioResourceDraftType
+}
+
 const defaultDraftForm: DraftFormState = {
   title: '',
   slug: '',
@@ -88,6 +99,12 @@ const defaultSourceForm: SourceFormState = {
   publishedAt: '',
   summary: '',
   tagsText: '',
+}
+
+const defaultResourceTemplateForm: ResourceTemplateFormState = {
+  title: '',
+  url: '',
+  resourceType: 'tool',
 }
 
 function today() {
@@ -187,6 +204,8 @@ export function StudioPage() {
   const [sourceForm, setSourceForm] = useState<SourceFormState>(defaultSourceForm)
   const [issueForm, setIssueForm] = useState<IssueFormState>(() => defaultIssueForm())
   const [projectTemplateId, setProjectTemplateId] = useState(projects[0]?.id ?? '')
+  const [resourceTemplateForm, setResourceTemplateForm] =
+    useState<ResourceTemplateFormState>(defaultResourceTemplateForm)
   const [statusText, setStatusText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
@@ -308,6 +327,13 @@ export function StudioPage() {
     setIssueForm((current) => ({ ...current, [field]: value }))
   }
 
+  const updateResourceTemplateField = <K extends keyof ResourceTemplateFormState>(
+    field: K,
+    value: ResourceTemplateFormState[K],
+  ) => {
+    setResourceTemplateForm((current) => ({ ...current, [field]: value }))
+  }
+
   const selectDraft = (draft: StudioDraft) => {
     setSelectedDraftId(draft.id)
     setDraftForm(draftToForm(draft))
@@ -334,6 +360,17 @@ export function StudioPage() {
       editorName: current.editorName || defaultDraftForm.editorName,
     }))
     setStatusText(`已生成 ${project.title} 的项目详情页草稿模板；保存后仍需审核再导出。`)
+  }
+
+  const applyResourceTemplate = () => {
+    const template = createResourceDraftTemplate(resourceTemplateForm)
+    setSelectedDraftId('')
+    setDraftForm((current) => ({
+      ...current,
+      ...template,
+      editorName: current.editorName || defaultDraftForm.editorName,
+    }))
+    setStatusText(`已生成 ${template.title}；保存后仍需审核再导出。`)
   }
 
   const saveDraft = async (event: FormEvent<HTMLFormElement>) => {
@@ -602,19 +639,60 @@ export function StudioPage() {
             </div>
 
             <div className="studio-template-strip">
-              <label className="assistant-field">
-                <span>项目详情模板</span>
-                <select value={projectTemplateId} onChange={(event) => setProjectTemplateId(event.target.value)}>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" onClick={applyProjectDetailTemplate}>
-                生成详情页草稿
-              </button>
+              <div className="studio-template-panel">
+                <label className="assistant-field">
+                  <span>项目详情模板</span>
+                  <select value={projectTemplateId} onChange={(event) => setProjectTemplateId(event.target.value)}>
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button type="button" onClick={applyProjectDetailTemplate}>
+                  生成详情页草稿
+                </button>
+              </div>
+
+              <div className="studio-template-panel">
+                <div className="studio-form-grid">
+                  <label className="assistant-field">
+                    <span>资源名称</span>
+                    <input
+                      value={resourceTemplateForm.title}
+                      onChange={(event) => updateResourceTemplateField('title', event.target.value)}
+                      placeholder="例如：某个工具、仓库或教程"
+                    />
+                  </label>
+                  <label className="assistant-field">
+                    <span>资源类型</span>
+                    <select
+                      value={resourceTemplateForm.resourceType}
+                      onChange={(event) =>
+                        updateResourceTemplateField('resourceType', event.target.value as StudioResourceDraftType)
+                      }
+                    >
+                      {Object.entries(studioResourceDraftTypeLabels).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label className="assistant-field">
+                  <span>公开 URL</span>
+                  <input
+                    value={resourceTemplateForm.url}
+                    onChange={(event) => updateResourceTemplateField('url', event.target.value)}
+                    placeholder="可选；建议使用无查询参数的公开主页"
+                  />
+                </label>
+                <button type="button" onClick={applyResourceTemplate}>
+                  生成资源分享草稿
+                </button>
+              </div>
             </div>
 
             <form className="studio-form" onSubmit={saveDraft}>
