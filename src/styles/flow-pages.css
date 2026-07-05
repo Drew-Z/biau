@@ -3208,6 +3208,29 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   gap: var(--space-12, 12px);
 }
 
+.studio-template-strip {
+  margin-bottom: var(--space-16);
+  padding: var(--space-12, 12px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-12, 12px);
+  align-items: end;
+  background: color-mix(in oklch, var(--blue) 7%, var(--panel-strong));
+  border: 1px solid color-mix(in oklch, var(--blue) 18%, var(--flow-ui-card-border));
+  border-radius: var(--radius-lg);
+}
+
+.studio-template-strip button {
+  min-height: 40px;
+  padding: 0 var(--space-12, 12px);
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel-strong) 58%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .studio-draft-item,
 .studio-review-item,
 .studio-source-list button,
@@ -3737,6 +3760,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .assistant-admin-form button:focus-visible,
 .assistant-admin-actions button:focus-visible,
 .assistant-citation-card:focus-visible,
+.studio-template-strip button:focus-visible,
 .studio-issue-card:focus-visible,
 .studio-review-item:focus-visible,
 .studio-source-card__footer a:focus-visible,
@@ -4354,6 +4378,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .assistant-form-grid,
   .assistant-admin-summary,
   .studio-form-grid,
+  .studio-template-strip,
   .studio-side-stack,
   .studio-issue-layout {
     grid-template-columns: 1fr;

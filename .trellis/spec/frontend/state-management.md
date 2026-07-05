@@ -159,6 +159,73 @@ const projectKnowledge = projects.map((project) => ({
 }))
 ```
 
+## Scenario: Studio Project Detail Draft Planning
+
+### 1. Scope / Trigger
+
+- Trigger: adding or changing Studio flows that prepare project detail page content, body-level screenshots, workflow diagrams, architecture notes, or assistant-facing project facts.
+- Goal: let Studio help draft project-detail material without letting an unreviewed database draft directly mutate `src/data/portfolio.ts`.
+
+### 2. Signatures
+
+- Template helper: `createProjectDetailDraftTemplate(project: Project): StudioProjectDetailDraftTemplate`.
+- Template fields mirror the Studio draft form: `title`, `slug`, `column`, `tag`, `detail`, `readTime`, `bodyText`, `knowledgePointsText`, `projectIdsText`, `visibility`, and `aiAssistance`.
+- Planning command: `npm.cmd run studio:project-detail-plan -- --sample <projectId>`.
+- Local draft planning command: `npm.cmd run studio:project-detail-plan -- --source <draft.json> [--project <projectId>]`.
+
+### 3. Contracts
+
+- Generated project-detail templates must keep `visibility: "hidden"` and `aiAssistance: "none"` until a real review/model task changes that state.
+- The template must set `column: "project-notes"` and include exactly one target project id in `projectIdsText`.
+- Template body headings should align with `projectDetailGroupLabels`: overview, workflow, architecture, quality, limitations, and roadmap.
+- Images in the template or source draft may be planned as `ProjectVisualBlock.image` only when they are public-safe paths; preferred paths start with `/images/projects/`.
+- Mermaid `flow` blocks are planning evidence only. They may become visual metadata, but publishing should convert important diagrams into public SVG/screenshot assets first.
+- The planning command outputs JSON only; it must not write `src/data/portfolio.ts`, public images, assistant knowledge, or sitemap files.
+
+### 4. Validation & Error Matrix
+
+- Unknown `--sample <projectId>` or `--project <projectId>` -> command exits with `未知项目 ID`.
+- Missing `--sample` and `--source` -> command exits with a usage error.
+- Invalid source JSON -> command exits with `source JSON 不是有效 Studio draft payload`.
+- Source draft without `projectIds` and no `--project` -> command exits with a project-id requirement.
+- Non-`project-notes` draft -> plan succeeds with a warning.
+- Non-hidden draft -> plan succeeds with a warning; do not treat it as publish-ready.
+- `visual.image` outside `/images/projects/` -> plan succeeds with a warning for manual review.
+
+### 5. Good/Base/Bad Cases
+
+- Good: select a project in `/studio`, generate a hidden project-detail draft, review the preview, then run the planning command before manually editing `portfolio.ts`.
+- Good: the planning output includes `detailContent`, `assistantContext`, `warnings`, and `manualNext`, giving a clear handoff for the static public project page.
+- Base: a draft with only headings, paragraphs, and lists still maps into text-only `ProjectDetailSection` groups.
+- Bad: a Studio API route writes directly into `src/data/portfolio.ts` from a request handler.
+- Bad: a project-detail template defaults to `featured`, exposes private screenshots, or implies a model-assisted draft when no approved model task ran.
+
+### 6. Tests Required
+
+- Run `npm.cmd run studio:project-detail-plan -- --sample <known-project-id>` after changing the template helper or planning command.
+- Run `npm.cmd run lint` and `npm.cmd run build` after changing Studio UI, `src/utils/studioProjectDraft.ts`, or project-detail planning types.
+- Run `npm.cmd run check:ui` after changing `/studio` layout or project-detail template controls.
+- If `src/data/portfolio.ts` is manually updated from a plan, also run `npm.cmd run assistant:index`, a public asset existence check for added images, `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui`.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+await writeFile('src/data/portfolio.ts', generatedProjectContent)
+```
+
+This makes an internal Studio draft mutate the public project catalog without a Git diff review or asset safety check.
+
+#### Correct
+
+```typescript
+const plan = buildProjectDetailExportPlan(draft)
+console.log(JSON.stringify(plan, null, 2))
+```
+
+The planner produces reviewable structured output; a human or later checked exporter owns the explicit `portfolio.ts` change.
+
 ## Scenario: Assistant MVP Browser State
 
 ### 1. Scope / Trigger

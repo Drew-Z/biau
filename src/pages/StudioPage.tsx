@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { Link } from 'react-router-dom'
 import { StudioDraftPreview } from '../components/StudioDraftPreview'
 import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
+import { projects } from '../data/portfolio'
 import {
   STUDIO_STORAGE_KEYS,
   normalizeStudioDraft,
@@ -28,6 +29,7 @@ import {
   type StudioVisibility,
 } from '../data/studio'
 import { bodyJsonFromText, textFromBodyJson } from '../utils/studioDraftBody'
+import { createProjectDetailDraftTemplate } from '../utils/studioProjectDraft'
 import { STUDIO_API_BASE, STUDIO_API_ENV_NAMES, explainStudioApiError, requestStudioApi } from '../utils/studioApi'
 
 interface DraftFormState {
@@ -184,6 +186,7 @@ export function StudioPage() {
   const [draftForm, setDraftForm] = useState<DraftFormState>(defaultDraftForm)
   const [sourceForm, setSourceForm] = useState<SourceFormState>(defaultSourceForm)
   const [issueForm, setIssueForm] = useState<IssueFormState>(() => defaultIssueForm())
+  const [projectTemplateId, setProjectTemplateId] = useState(projects[0]?.id ?? '')
   const [statusText, setStatusText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
@@ -315,6 +318,22 @@ export function StudioPage() {
     setSelectedDraftId('')
     setDraftForm(defaultDraftForm)
     setStatusText('已切换到新建草稿。')
+  }
+
+  const applyProjectDetailTemplate = () => {
+    const project = projects.find((item) => item.id === projectTemplateId)
+    if (!project) {
+      setStatusText('请选择有效的项目。')
+      return
+    }
+    const template = createProjectDetailDraftTemplate(project)
+    setSelectedDraftId('')
+    setDraftForm((current) => ({
+      ...current,
+      ...template,
+      editorName: current.editorName || defaultDraftForm.editorName,
+    }))
+    setStatusText(`已生成 ${project.title} 的项目详情页草稿模板；保存后仍需审核再导出。`)
   }
 
   const saveDraft = async (event: FormEvent<HTMLFormElement>) => {
@@ -580,6 +599,22 @@ export function StudioPage() {
                 <h2>{selectedDraft ? '编辑草稿' : '新建草稿'}</h2>
               </div>
               {selectedDraft && <span className="studio-status-pill">{studioDraftStatuses[selectedDraft.status]}</span>}
+            </div>
+
+            <div className="studio-template-strip">
+              <label className="assistant-field">
+                <span>项目详情模板</span>
+                <select value={projectTemplateId} onChange={(event) => setProjectTemplateId(event.target.value)}>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button type="button" onClick={applyProjectDetailTemplate}>
+                生成详情页草稿
+              </button>
             </div>
 
             <form className="studio-form" onSubmit={saveDraft}>
