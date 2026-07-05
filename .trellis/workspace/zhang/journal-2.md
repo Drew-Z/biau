@@ -446,3 +446,37 @@ Added an offline AI Daily source-pack draft generator, sample source pack and dr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 61: Legal RAG open demo verification
+
+**Date**: 2026-07-05
+**Task**: Legal RAG open demo verification
+**Branch**: `main`
+
+### Summary
+
+Confirmed public Legal RAG demo credentials are visible on the hosted login page, ran credentialed synthetic verification without committing the password, marked health, QA, contract review, and quality checks online, and archived the demo access closure task.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `34de741` | (see git log) |
+| `1a2e958` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
