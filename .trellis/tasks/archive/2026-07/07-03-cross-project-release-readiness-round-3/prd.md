@@ -41,12 +41,12 @@
 
 ## Acceptance Criteria
 
-- [ ] 所有 child task 都有清晰 PRD，说明目标、人工 gate、验收证据和不做事项。
-- [ ] 每个完成的 child task 都必须记录验证命令、线上检查证据或明确的人工 gate 阻塞原因。
-- [ ] ERP 注册、Legal RAG demo、Pet APK 和可靠性观测至少各有一个独立 child task。
-- [ ] 主站公开内容不得声称未上线、未部署、未审核或未签名的能力已经可用。
-- [ ] 新增或更新的部署/监控文档必须区分“代码已准备好”和“平台已启用”。
-- [ ] 本轮父任务完成时，长期 backlog 和下一轮候选事项必须沉淀在 `prd.md`、相关 docs 或 `.trellis/spec/` 中。
+- [x] 所有 child task 都有清晰 PRD，说明目标、人工 gate、验收证据和不做事项。
+- [x] 每个完成的 child task 都必须记录验证命令、线上检查证据或明确的人工 gate 阻塞原因。
+- [x] ERP 注册、Legal RAG demo、Pet APK 和可靠性观测至少各有一个独立 child task。
+- [x] 主站公开内容不得声称未上线、未部署、未审核或未签名的能力已经可用。
+- [x] 新增或更新的部署/监控文档必须区分“代码已准备好”和“平台已启用”。
+- [x] 本轮父任务完成时，长期 backlog 和下一轮候选事项必须沉淀在 `prd.md`、相关 docs 或 `.trellis/spec/` 中。
 
 ## Notes
 
@@ -60,3 +60,12 @@
 - 历史公开助手 GLM 部署验证任务 `07-03-public-assistant-glm-live-closure` 已完成并归档；新的公开助手前沿 RAG / Agentic Hybrid RAG 工作由 `07-04-public-assistant-kg-lite` 在长期主任务下跟踪。
 
 - 本父任务不直接进入实现态；实现态应落在具体 child task 上。
+
+## Completion Evidence
+
+- ERP 注册：已通过独立 child task 收口，主站保持生产注册可见性与安全边界说明。
+- Legal RAG demo：2026-07-05 credentialed synthetic 已验证 `demoAccessStatus=open-demo`，API health、法律问答 + citation、合同审查和质量报告均为 `online`；公开 demo 密码没有写入仓库或状态 JSON。
+- Pet APK：已通过独立 child task 关闭公开下载 gate；没有正式签名 release APK/AAB 前保持 planned/gated，不暴露 debug APK。
+- 可靠性观测：已新增 `reliability:check`、`reliability-suite.json` 和 GitHub Actions artifact 路线；Legal RAG 缺 env 时保留已有公开 synthetic 证据，避免本地配置缺口覆盖线上结果。
+- AI 日报：已新增离线 `ai-daily:draft`、样例来源包、样例草稿、使用文档和 AI Daily workflow spec；第一版明确保持 `draft/manual-review`，不伪装成自动发布。
+- 下一轮候选事项仍在长期主任务中跟踪：公开助手外部 RAG Orchestrator/生产配置、项目详情继续丰富、博客内容质量、各关联项目主体后续优化、真实平台监控/访问统计配置。
