@@ -153,6 +153,8 @@ function readPublishExportStatus(checks: unknown) {
   return typeof status === 'string' && status ? status : '已记录检查'
 }
 
+const reviewQueueStatuses = new Set<StudioDraft['status']>(['review-needed', 'approved', 'rejected'])
+
 function draftToForm(draft: StudioDraft): DraftFormState {
   return {
     title: draft.title,
@@ -191,6 +193,18 @@ export function StudioPage() {
   const selectedDraft = useMemo(
     () => drafts.find((draft) => draft.id === selectedDraftId) ?? null,
     [drafts, selectedDraftId],
+  )
+  const reviewQueue = useMemo(
+    () => drafts.filter((draft) => reviewQueueStatuses.has(draft.status)).slice(0, 6),
+    [drafts],
+  )
+  const reviewMetrics = useMemo(
+    () => ({
+      reviewNeeded: drafts.filter((draft) => draft.status === 'review-needed').length,
+      approved: drafts.filter((draft) => draft.status === 'approved').length,
+      rejected: drafts.filter((draft) => draft.status === 'rejected').length,
+    }),
+    [drafts],
   )
 
   const sortedSources = useMemo(
@@ -791,6 +805,46 @@ export function StudioPage() {
                   <span>{studioSourceTierLabels[source.sourceTier]}</span>
                 </button>
               ))}
+            </div>
+          </article>
+
+          <article className="studio-card">
+            <div className="studio-card__header">
+              <div>
+                <p className="assistant-panel__eyebrow">REVIEW QUEUE</p>
+                <h2>审核队列</h2>
+              </div>
+            </div>
+            <div className="studio-review-summary">
+              <div>
+                <span>待审核</span>
+                <strong>{reviewMetrics.reviewNeeded}</strong>
+              </div>
+              <div>
+                <span>可导出</span>
+                <strong>{reviewMetrics.approved}</strong>
+              </div>
+              <div>
+                <span>已拒绝</span>
+                <strong>{reviewMetrics.rejected}</strong>
+              </div>
+            </div>
+            <div className="studio-review-list">
+              {reviewQueue.map((draft) => (
+                <button
+                  key={draft.id}
+                  type="button"
+                  className={`studio-review-item ${draft.id === selectedDraftId ? 'is-active' : ''}`}
+                  onClick={() => selectDraft(draft)}
+                >
+                  <strong>{draft.title}</strong>
+                  <span>{draft.slug}</span>
+                  <em>
+                    {studioDraftStatuses[draft.status]} · {blogColumnMeta[draft.column as BlogColumn]?.titleZh ?? draft.column}
+                  </em>
+                </button>
+              ))}
+              {reviewQueue.length === 0 && <p className="assistant-status-text">还没有进入审核队列的草稿。</p>}
             </div>
           </article>
 

@@ -3194,6 +3194,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .studio-editor-stack,
 .studio-side-stack,
 .studio-draft-list,
+.studio-review-list,
 .studio-source-list,
 .studio-issue-list,
 .studio-publish-list {
@@ -3208,6 +3209,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .studio-draft-item,
+.studio-review-item,
 .studio-source-list button,
 .studio-issue-list article,
 .studio-issue-card {
@@ -3225,17 +3227,20 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .studio-draft-item,
+.studio-review-item,
 .studio-source-list button,
 .studio-issue-card {
   cursor: pointer;
 }
 
-.studio-draft-item.is-active {
+.studio-draft-item.is-active,
+.studio-review-item.is-active {
   border-color: color-mix(in oklch, var(--green) 34%, var(--flow-ui-card-border));
   background: color-mix(in oklch, var(--green) 10%, var(--panel-strong));
 }
 
 .studio-draft-item strong,
+.studio-review-item strong,
 .studio-source-list strong,
 .studio-issue-list strong,
 .studio-issue-card strong {
@@ -3245,6 +3250,8 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-draft-item span,
 .studio-draft-item em,
+.studio-review-item span,
+.studio-review-item em,
 .studio-source-list span,
 .studio-issue-list span,
 .studio-issue-card span {
@@ -3266,6 +3273,37 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 800;
+}
+
+.studio-review-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-8);
+  margin-bottom: var(--space-12, 12px);
+}
+
+.studio-review-summary div {
+  min-width: 0;
+  padding: var(--space-10, 10px);
+  display: grid;
+  gap: 3px;
+  background: color-mix(in oklch, var(--panel-strong) 52%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 var(--flow-ui-inset);
+}
+
+.studio-review-summary span {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.studio-review-summary strong {
+  color: var(--ink);
+  font-size: 1.15rem;
+  line-height: 1;
 }
 
 .studio-actions {
@@ -3700,6 +3738,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .assistant-admin-actions button:focus-visible,
 .assistant-citation-card:focus-visible,
 .studio-issue-card:focus-visible,
+.studio-review-item:focus-visible,
 .studio-source-card__footer a:focus-visible,
 .studio-source-card__footer button:focus-visible,
 .public-assistant__trigger:focus-visible,

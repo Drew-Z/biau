@@ -90,6 +90,8 @@ npm.cmd run build
 
 2026-07-05：已新增 Studio 草稿公开预览组件，正文 textarea 支持段落、标题、列表、图片、Mermaid 和 source-card 的轻量文本格式；`check:ui` 已覆盖 `/studio`。
 
+2026-07-05：`/studio` 已显式展示审核队列，按待审核、可导出、已拒绝汇总内容草稿，并可从队列直接选中草稿继续编辑或发布导出。
+
 ## Phase 4. Publish Export
 
 - [x] 实现导出器：
