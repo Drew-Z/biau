@@ -1,18 +1,18 @@
 {
-  "checkedAt": "2026-07-04T16:39:16.074Z",
-  "apiBaseConfigured": true,
+  "checkedAt": "2026-07-05T01:53:04.860Z",
+  "apiBaseConfigured": false,
   "hasCredentials": false,
-  "demoAccessStatus": "credential-required",
-  "demoAccessSummary": "Auth is enabled; protected demo checks require a low-permission public demo account.",
+  "demoAccessStatus": "offline",
+  "demoAccessSummary": "The API health check or API base configuration did not confirm a reachable Legal RAG demo backend.",
   "ok": true,
   "checks": [
     {
       "id": "legal-rag-health",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 13605,
-      "checkedAt": "2026-07-04T16:39:29.680Z",
-      "summary": "API health returned ok=true",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-05T01:53:04.861Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
       "issues": []
     },
     {
@@ -20,8 +20,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-04T16:39:30.048Z",
-      "summary": "Auth is enabled; credentials are required for RAG query checks",
+      "checkedAt": "2026-07-05T01:53:04.861Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
       "issues": []
     },
     {
@@ -29,8 +29,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-04T16:39:30.048Z",
-      "summary": "Auth is enabled; credentials are required for contract review checks",
+      "checkedAt": "2026-07-05T01:53:04.861Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
       "issues": []
     },
     {
@@ -38,8 +38,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-04T16:39:30.048Z",
-      "summary": "Auth is enabled; credentials are required for quality report checks",
+      "checkedAt": "2026-07-05T01:53:04.861Z",
+      "summary": "LEGAL_RAG_API_BASE_URL is not configured",
       "issues": []
     }
   ]

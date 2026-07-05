@@ -7,7 +7,7 @@
 当前不要一次性把 Cloudflare、Search Console、Plausible、Umami、ARMS、Prometheus、Grafana、OpenTelemetry、Sentry、Grafana Faro 和 Langfuse 全部接入。推荐按阶段推进：
 
 1. 主站访问分析：Cloudflare Web Analytics / Pages Analytics + Search Console / Webmaster + Plausible 或 Umami 二选一。
-2. 主站健康检查：继续使用 `npm.cmd run site:monitor`，后续再考虑 CI、定时器或合成监控。
+2. 主站和跨项目健康检查：使用 `npm.cmd run reliability:check` 作为统一入口，保留 `npm.cmd run site:monitor` 做单独核心路由巡检。
 3. Assistant API 工程指标：保留默认关闭的 `/metrics`，只有设置 `METRICS_ENABLED=true` 后才输出 Prometheus text 格式。
 4. 后端项目可观测性：ERP、Legal RAG、Xunqiu 后端、Pet Community API 等常驻服务再逐步接 Prometheus / OpenTelemetry / Grafana 或 ARMS。
 5. 错误体验闭环：如果公开助手或主站真实用户错误开始影响体验，再评估 Sentry 或 Grafana Faro。
@@ -20,7 +20,7 @@
 | CDN / 基础访问 | 有没有人来、从哪里来、看了哪些页面、设备和地区分布如何 | Cloudflare Web Analytics / Pages Analytics | 人工启用，仓库只记录配置边界 |
 | 搜索入口 | 搜索引擎是否收录、哪些查询词带来曝光和点击、sitemap 是否正常 | Google Search Console / Bing Webmaster | 人工验证所有权并提交 sitemap |
 | 产品事件 | 用户是否点击项目详情、外链、助手入口和关键按钮 | Plausible 或 Umami | 二选一，沿用 `src/utils/analytics.ts` |
-| 站点健康 | 首页、项目页、博客、sitemap、robots 是否可访问 | `npm.cmd run site:monitor` | 已可本地运行，后续可接 CI 或定时器 |
+| 站点健康 | 首页、项目页、博客、sitemap、robots 是否可访问，跨项目 synthetic 是否产出公开状态 | `npm.cmd run reliability:check`、`npm.cmd run site:monitor` | 先用统一套件跑本地/CI 检查，再按需接定时器 |
 | 前端真实用户体验 | 浏览器错误、慢页面、真实设备体验、回放或前端 trace | Sentry、Grafana Faro | 暂不默认接入，等真实错误影响体验后再做 |
 | 后端工程指标 | 请求量、错误率、延迟、依赖健康、数据库和队列状态 | Prometheus、Grafana、ARMS、OpenTelemetry | assistant API 已预留默认关闭 `/metrics` |
 | AI 助手质量 | 模型调用成本、延迟、失败率、prompt 版本、RAG 命中、回答质量 | Langfuse、Helicone、Phoenix、OpenTelemetry GenAI | 等助手流量和模型策略稳定后评估 |
@@ -67,7 +67,7 @@
 - 人工启用 Cloudflare Web Analytics / Pages Analytics。
 - 人工配置 Google Search Console / Bing Webmaster，并提交 `sitemap.xml`。
 - Plausible / Umami 二选一，接入当前 `src/utils/analytics.ts` adapter。
-- 继续使用 `npm.cmd run site:monitor` 做发布前或发布后检查。
+- 使用 `npm.cmd run reliability:check` 做跨项目发布前或发布后检查；需要单独巡检核心路由时继续运行 `npm.cmd run site:monitor`。
 
 ### Phase 2：后端基础指标
 
@@ -79,7 +79,7 @@
 
 - 选择自建 Prometheus + Grafana，或托管 Prometheus/Grafana/ARMS。
 - 加入核心告警：服务不可用、5xx 升高、p95 延迟升高、模型调用失败、数据库不可用。
-- 把 `site:monitor` 接入 CI、定时器或合成监控。
+- 把 `reliability:check` 接入 CI、定时器或合成监控。
 
 ### Phase 4：更完整的链路观测
 
@@ -148,8 +148,28 @@ GET /metrics -> text/plain; version=0.0.4; charset=utf-8
 - 更新公开文档和配置说明。
 - 扩展默认关闭的 analytics adapter。
 - 增加低敏、默认关闭、本地可验证的 metrics 代码。
-- 增加 `site:monitor` 或文档离线检查。
+- 增加 `reliability:check`、`site:monitor` 或文档离线检查。
 - 更新 `.trellis/spec/` 中的可观测性安全边界。
+
+## 第一版定时路线
+
+推荐先用 GitHub Actions 的 scheduled workflow 跑统一套件：
+
+```powershell
+npm.cmd run reliability:check -- --strict
+```
+
+套件会写出：
+
+- `public/status/blog-semi-synthetic.json`
+- `public/status/legal-rag-synthetic.json`
+- `public/status/erp-synthetic.json`
+- `public/status/xunqiu-synthetic.json`
+- `public/status/pet-gamer-synthetic.json`
+- `public/status/site-status.json`
+- `public/status/reliability-suite.json`
+
+CI 第一版只把这些 JSON 作为 artifact 上传，不自动提交回 `main`。这样可以做到“定时可查”和“失败可见”，同时避免定时任务不断改动仓库。需要把最新状态公开到站点时，再由人工或部署流程决定是否发布这些生成文件。
 
 ## 参考资料
 

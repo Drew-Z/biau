@@ -74,6 +74,7 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - `npm.cmd run <project>:synthetic` runs a project-specific script.
 - Script output path: `public/status/<project>-synthetic.json`.
 - Status aggregation: `npm.cmd run site:status` loads every `public/status/*-synthetic.json` file and merges checks by `id`.
+- Cross-project suite: `npm.cmd run reliability:check` runs safe synthetic/status/monitor steps sequentially and writes `public/status/reliability-suite.json`.
 - Static showcase example: `npm.cmd run pet:synthetic` writes `public/status/pet-gamer-synthetic.json` and updates the `pet-showcase` check only; release gates such as `pet-apk-gate` remain static `planned` until human approval.
 - Public synthetic reports may include low-sensitive gate metadata such as `apkGate` when it helps the status page explain why a capability is not open yet. Gate metadata must be public-safe and must not include absolute local paths, signing paths, private bucket URLs, release tokens, unapproved APK URLs, or hidden deployment endpoints.
 
@@ -87,7 +88,16 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
   - Protected API synthetic checks: `hasCredentials: boolean`
   - `ok: boolean`
   - `checks: Array<{ id, status, httpStatus, durationMs, checkedAt, summary, issues }>`
+- Reliability suite report shape:
+  - `checkedAt: string`
+  - `ok: boolean`
+  - `strict: boolean`
+  - `timeoutMs: number`
+  - `stepTimeoutMs: number`
+  - `summary: { total, passed, failed, skipped, durationMs }`
+  - `steps: Array<{ id, label, command, status, durationMs, exitCode, outputPath?, summary, issues }>`
 - Allowed statuses are `online`, `degraded`, `offline`, and `unchecked`. Static data may still use `planned`.
+- Reliability suite step statuses are `passed`, `failed`, and `skipped`.
 - A synthetic script must update only the check ids it can actually verify. Do not promote adjacent human gates such as APK release, production registration, or credential publication from `planned` to `online`.
 - Adjacent human gates can be mirrored as explanatory metadata, but their public status remains `planned`, `unchecked`, or `degraded` until the exact release credential, account, APK, or production configuration has been approved and verified.
 - If a live payload contains a business gate such as `registrationEnabled`,
@@ -107,6 +117,8 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
   local Function smoke passes -> write the check as `offline` and point the next
   action at Pages deployment / Functions enablement before model env setup.
 - Failed attempted request -> check becomes `offline` or `degraded` based on HTTP status; `--strict` may exit non-zero.
+- `reliability:check` default mode -> continue after failed steps, write `public/status/reliability-suite.json`, and leave process success unless the runner itself cannot write a report.
+- `reliability:check -- --strict` -> continue through all steps, write the report, then exit non-zero if any step failed.
 - Well-formed bootstrap payload with `registrationEnabled=false` -> auth or
   registration check becomes `degraded`, with a short issue such as deployment
   stale or registration closed; health can remain `online`.
@@ -122,6 +134,7 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - Base: a Pet showcase synthetic report records `apkGate.releaseCandidateFound=false` and a sanitized artifact summary, while `pet-apk-gate` remains `planned`.
 - Bad: report includes real hostnames, tokens, account names, raw response
   bodies, SKU/order metrics, or provider keys.
+- Bad: `reliability-suite.json` stores raw stdout/stderr, full checked URLs, environment variable values, CI dashboard URLs, or provider endpoints.
 - Bad: report includes a local Gradle output absolute path, signing keystore path, R2 private URL, or direct debug APK download link before public approval.
 - Bad: auth bootstrap returns `registrationEnabled=false`, but the check is
   marked `online` because the response shape was valid.

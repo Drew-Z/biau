@@ -1,41 +1,39 @@
 {
-  "checkedAt": "2026-07-04T16:46:26.907Z",
-  "apiBaseConfigured": true,
+  "checkedAt": "2026-07-05T01:53:05.137Z",
+  "apiBaseConfigured": false,
   "hasCredentials": false,
-  "registrationEnabled": false,
-  "registrationStatus": "deploy-stale",
-  "registrationSummary": "Auth bootstrap still reports registrationEnabled=false, and the live commit does not match the expected registration-open commit.",
-  "expectedCommitConfigured": true,
-  "liveCommit": "6b3dabc593c7",
+  "registrationEnabled": null,
+  "registrationStatus": "unchecked",
+  "registrationSummary": "ERP registration state was not checked.",
+  "expectedCommitConfigured": false,
+  "liveCommit": null,
   "ok": true,
   "checks": [
     {
       "id": "ozon-erp-health",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 1298,
-      "checkedAt": "2026-07-04T16:46:28.206Z",
-      "summary": "API health returned status=ok",
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-05T01:53:05.138Z",
+      "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     },
     {
       "id": "ozon-erp-auth",
-      "status": "degraded",
-      "httpStatus": 200,
-      "durationMs": 1047,
-      "checkedAt": "2026-07-04T16:46:29.253Z",
-      "summary": "Auth bootstrap returned registrationEnabled=false; registrationStatus=deploy-stale",
-      "issues": [
-        "deployment is stale; live commit 6b3dabc593c7 does not match expected 8f38437"
-      ]
+      "status": "unchecked",
+      "httpStatus": 0,
+      "durationMs": 0,
+      "checkedAt": "2026-07-05T01:53:05.138Z",
+      "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
+      "issues": []
     },
     {
       "id": "ozon-erp-plugin-sync",
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-04T16:46:29.253Z",
-      "summary": "Credentials are required before plugin or sync smoke checks",
+      "checkedAt": "2026-07-05T01:53:05.138Z",
+      "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     }
   ]

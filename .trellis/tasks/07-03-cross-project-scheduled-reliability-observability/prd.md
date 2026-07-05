@@ -27,12 +27,15 @@
 
 ## Acceptance Criteria
 
-- [ ] 定义每个项目的核心检查项、运行方式和状态落点。
-- [ ] 至少一个定时执行方案落档，例如 GitHub Actions、Cloudflare Cron、Render cron 或本地计划任务。
-- [ ] 状态详情页能跳转到每个项目的详细状态路由，而不是只在单页内锚点跳转。
-- [ ] synthetic 结果能被主站状态数据或文档消费，避免人工手填口径漂移。
-- [ ] 手动 gate 与真实故障在状态显示上区分清楚。
+- [x] 定义每个项目的核心检查项、运行方式和状态落点。
+- [x] 至少一个定时执行方案落档，例如 GitHub Actions、Cloudflare Cron、Render cron 或本地计划任务。
+- [x] 状态详情页能跳转到每个项目的详细状态路由，而不是只在单页内锚点跳转。
+- [x] synthetic 结果能被主站状态数据或文档消费，避免人工手填口径漂移。
+- [x] 手动 gate 与真实故障在状态显示上区分清楚。
 
 ## Notes
 
 - 推荐第一步：盘点现有 `scripts/check-*-synthetic.mjs`，决定先用 GitHub Actions 还是 Cloudflare Cron/外部监控来跑。
+- 2026-07-05：新增 `npm.cmd run reliability:check`，默认顺序运行主站、Legal RAG、ERP、Xunqiu、Pet synthetic、`site:status` 和 `site:monitor --json`，并写入 `public/status/reliability-suite.json`。
+- 2026-07-05：新增 `.github/workflows/reliability-check.yml`，支持手动和每日定时运行，上传 `public/status/*.json` artifact，不自动提交生成状态文件。
+- 2026-07-05：验证通过 `npm.cmd run reliability:check`、`npm.cmd run reliability:check -- --strict`、`npm.cmd run site:status`、`npm.cmd run docs:observability-check`、`npm.cmd run lint`、`npm.cmd run build`、`git diff --check`。

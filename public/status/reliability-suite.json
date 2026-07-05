@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-07-05T01:52:54.288Z",
+  "ok": true,
+  "strict": true,
+  "timeoutMs": 12000,
+  "stepTimeoutMs": 96000,
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 23708
+  },
+  "steps": [
+    {
+      "id": "main-site",
+      "label": "BIAU Port main site synthetic",
+      "command": "npm run main-site:synthetic -- --timeout 12000 --strict",
+      "status": "passed",
+      "durationMs": 10315,
+      "exitCode": 0,
+      "outputPath": "public/status/blog-semi-synthetic.json",
+      "summary": "synthetic checks: online=2 degraded=0 offline=0 unchecked=0",
+      "issues": []
+    },
+    {
+      "id": "legal-rag",
+      "label": "Legal RAG synthetic",
+      "command": "npm run legal-rag:synthetic -- --timeout 12000 --strict",
+      "status": "passed",
+      "durationMs": 281,
+      "exitCode": 0,
+      "outputPath": "public/status/legal-rag-synthetic.json",
+      "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=4",
+      "issues": []
+    },
+    {
+      "id": "erp",
+      "label": "ERP synthetic",
+      "command": "npm run erp:synthetic -- --timeout 12000 --strict",
+      "status": "passed",
+      "durationMs": 274,
+      "exitCode": 0,
+      "outputPath": "public/status/erp-synthetic.json",
+      "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
+      "issues": []
+    },
+    {
+      "id": "xunqiu",
+      "label": "Xunqiu synthetic",
+      "command": "npm run xunqiu:synthetic -- --timeout 12000 --strict",
+      "status": "passed",
+      "durationMs": 283,
+      "exitCode": 0,
+      "outputPath": "public/status/xunqiu-synthetic.json",
+      "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
+      "issues": []
+    },
+    {
+      "id": "pet",
+      "label": "Pet showcase synthetic",
+      "command": "npm run pet:synthetic -- --timeout 12000 --strict",
+      "status": "passed",
+      "durationMs": 4610,
+      "exitCode": 0,
+      "outputPath": "public/status/pet-gamer-synthetic.json",
+      "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=0",
+      "issues": []
+    },
+    {
+      "id": "site-status",
+      "label": "Public status aggregation",
+      "command": "npm run site:status -- --timeout 12000 --strict",
+      "status": "passed",
+      "durationMs": 4073,
+      "exitCode": 0,
+      "outputPath": "public/status/site-status.json",
+      "summary": "site status targets: online=5 degraded=0 offline=0 unchecked=0",
+      "issues": []
+    },
+    {
+      "id": "site-monitor",
+      "label": "Core route monitor",
+      "command": "npm run site:monitor -- --json --timeout 12000",
+      "status": "passed",
+      "durationMs": 3862,
+      "exitCode": 0,
+      "summary": "site monitor checks: passed=11 failed=0",
+      "issues": []
+    }
+  ]
+}
