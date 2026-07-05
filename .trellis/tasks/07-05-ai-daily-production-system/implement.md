@@ -129,12 +129,14 @@ git diff --check
   - 摘要
   - 标签
 - [x] `/studio` 单期列表。
-- [ ] `/studio/ai-daily/:issueId`：
+- [x] `/studio/ai-daily/:issueId`：
   - 选择来源
   - 生成 issue brief 草稿
   - 进入审核
   - 转为博客草稿
-- [ ] 保持 `npm.cmd run ai-daily:draft` 可用，作为文件导入/兼容工具。
+- [x] 保持 `npm.cmd run ai-daily:draft` 可用，作为文件导入/兼容工具。
+
+2026-07-05：已新增 AI Daily issue 详情页和后端详情/更新/转草稿接口。详情页支持从来源池添加/移除来源、编辑 issue brief JSON、进入 review-needed，并把一期 issue 转成 hidden + review-needed 的 `ai-daily` 内容草稿；转换不调用模型、不发布公开内容、不写 Git-tracked public data。离线 `ai-daily:draft` 样例命令已验证可用。
 
 验证：
 

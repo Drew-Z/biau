@@ -71,3 +71,82 @@ npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.js
 ```
 
 The command reads a public-safe source pack and writes a reviewable draft without model calls or publication side effects.
+
+## Scenario: Content Studio AI Daily Issue Detail
+
+### 1. Scope / Trigger
+
+- Trigger: adding or changing `/studio/ai-daily/:issueId`, `/studio/api/ai-daily/issues/*`, source selection, issue brief editing, or issue-to-draft conversion.
+- Goal: keep one AI Daily issue editable as an internal workflow object while public publication remains gated by hidden/review-needed drafts and static export.
+
+### 2. Signatures
+
+- `GET /studio/api/ai-daily/issues/:id` returns `{ issue, sources, draft }`.
+- `PATCH /studio/api/ai-daily/issues/:id` accepts `{ title?, date?, status?, sourceIds?, briefJson? }`.
+- `POST /studio/api/ai-daily/issues/:id/content-draft` accepts `{ editorName?: string }`.
+- Frontend route: `/studio/ai-daily/:issueId`.
+- Draft output from conversion:
+  - `column: "ai-daily"`
+  - `tag: "AI 日报"`
+  - `visibility: "hidden"`
+  - `status: "review-needed"`
+  - `aiAssistance: "none"`
+
+### 3. Contracts
+
+- All routes require the Studio bearer token and the Studio database boundary through `requireStudioDatabase()`.
+- `sourceIds` must reference existing `SourceItem.id` records before saving.
+- `briefJson` must be a JSON object, capped by size, and must not contain secret-looking values.
+- Converting an issue to a draft must not call a model, fetch external URLs, publish content, or write Git-tracked public data.
+- If an issue already links to an AI Daily draft, conversion returns the existing linked draft detail instead of creating duplicates.
+- If the derived slug `ai-daily-YYYY-MM-DD` already exists for a non-AI-Daily draft, conversion must fail with `duplicate-slug`.
+- The response `sources` array should be ordered according to the issue's `sourceIds`, not by database update time.
+
+### 4. Validation & Error Matrix
+
+- Issue not found -> `404 { error: "ai-daily-issue-not-found" }`.
+- Invalid date -> `400 { error: "invalid-date" }`.
+- Invalid status -> `400 { error: "invalid-ai-daily-status" }`.
+- Missing source id -> `400 { error: "invalid-source-ids" }`.
+- Invalid or oversized brief -> `400 { error: "invalid-brief-json" }`.
+- Secret-looking payload -> `400 { error: "sensitive-content-detected" }`.
+- Convert with no selected sources -> `409 { error: "ai-daily-issue-needs-sources" }`.
+- Duplicate derived slug -> `409 { error: "duplicate-slug" }`.
+
+### 5. Good/Base/Bad Cases
+
+- Good: editor opens `/studio/ai-daily/<id>`, adds three source cards, writes `summary`, `publicAngle`, `keySignals`, and `toVerify`, saves, then converts to a hidden review-needed draft.
+- Good: a converted issue stores source-card blocks in `bodyJson` so the Studio draft preview and export path see the same evidence scaffold.
+- Base: a fresh issue has empty `briefJson`; the page shows a safe JSON template and waits for manual editing.
+- Bad: conversion marks the draft approved, featured, published, or model-assisted without human review.
+- Bad: the frontend stores or displays `STUDIO_DATABASE_URL`, `DATABASE_URL`, model provider URLs, API keys, or raw backend stack traces.
+
+### 6. Tests Required
+
+- Run `npm.cmd run prisma:validate` after schema or Studio route changes.
+- Run `npm.cmd run server:build`, `npm.cmd run server:smoke`, and `npm.cmd run assistant:service-modes-smoke` after changing Studio API contracts.
+- Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after changing the `/studio/ai-daily/:issueId` page.
+- Run `npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --force` to keep the offline compatibility tool working.
+- Run `git diff --check` and a sensitive scan over changed files.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+await prisma.contentDraft.create({
+  data: { column: 'ai-daily', status: 'APPROVED', visibility: 'FEATURED' },
+})
+```
+
+This bypasses the AI Daily review gate and can make an unreviewed issue look publish-ready.
+
+#### Correct
+
+```ts
+await prisma.contentDraft.create({
+  data: { column: 'ai-daily', status: 'REVIEW_NEEDED', visibility: 'HIDDEN', aiAssistance: 'none' },
+})
+```
+
+The conversion creates an internal review draft only; public visibility still depends on human approval and static export.

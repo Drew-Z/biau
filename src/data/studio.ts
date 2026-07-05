@@ -5,6 +5,16 @@ export const STUDIO_STORAGE_KEYS = {
 export type StudioDraftStatus = 'draft' | 'review-needed' | 'approved' | 'published' | 'rejected' | 'archived'
 export type StudioReviewStatus = 'pending' | 'approved' | 'needs-changes' | 'rejected'
 export type StudioVisibility = 'hidden' | 'featured' | 'archive'
+export type StudioAiDailyIssueStatus =
+  | 'source-collected'
+  | 'extracted'
+  | 'summarized'
+  | 'synthesized'
+  | 'review-needed'
+  | 'approved'
+  | 'published'
+  | 'rejected'
+  | 'needs-more-evidence'
 export type StudioSourceTier =
   | 'official-primary'
   | 'official-secondary'
@@ -93,12 +103,18 @@ export interface StudioAiDailyIssue {
   id: string
   date: string
   title: string
-  status: string
+  status: StudioAiDailyIssueStatus
   sourceIds: string[]
   briefJson: unknown
   draftId: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface StudioAiDailyIssueDetail {
+  issue: StudioAiDailyIssue
+  sources: StudioSourceItem[]
+  draft: StudioDraft | null
 }
 
 export const studioDraftStatuses: Record<StudioDraftStatus, string> = {
@@ -114,6 +130,18 @@ export const studioVisibilityLabels: Record<StudioVisibility, string> = {
   hidden: '暂不公开',
   featured: '精选公开',
   archive: '归档公开',
+}
+
+export const studioAiDailyIssueStatusLabels: Record<StudioAiDailyIssueStatus, string> = {
+  'source-collected': '来源已收集',
+  extracted: '已抽取',
+  summarized: '已摘要',
+  synthesized: '已合成',
+  'review-needed': '待审核',
+  approved: '已批准',
+  published: '已发布',
+  rejected: '已拒绝',
+  'needs-more-evidence': '需补充证据',
 }
 
 export const studioSourceTierLabels: Record<StudioSourceTier, string> = {
@@ -161,6 +189,15 @@ function isVisibility(value: unknown): value is StudioVisibility {
 
 function isSourceTier(value: unknown): value is StudioSourceTier {
   return Object.prototype.hasOwnProperty.call(studioSourceTierLabels, String(value))
+}
+
+function isAiDailyIssueStatus(value: unknown): value is StudioAiDailyIssueStatus {
+  return Object.prototype.hasOwnProperty.call(studioAiDailyIssueStatusLabels, String(value))
+}
+
+export function readStoredStudioToken() {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem(STUDIO_STORAGE_KEYS.adminToken) ?? ''
 }
 
 export function normalizeStudioBody(value: unknown): StudioContentBody {
@@ -283,11 +320,12 @@ export function normalizeStudioSources(value: unknown): StudioSourceItem[] {
 
 export function normalizeStudioIssue(value: unknown): StudioAiDailyIssue | null {
   if (!isRecord(value) || typeof value.id !== 'string') return null
+  const status = isAiDailyIssueStatus(value.status) ? value.status : 'source-collected'
   return {
     id: value.id,
     date: readString(value.date),
     title: readString(value.title),
-    status: readString(value.status),
+    status,
     sourceIds: readStringArray(value.sourceIds),
     briefJson: value.briefJson,
     draftId: readNullableString(value.draftId),
@@ -299,6 +337,20 @@ export function normalizeStudioIssue(value: unknown): StudioAiDailyIssue | null 
 export function normalizeStudioIssues(value: unknown): StudioAiDailyIssue[] {
   if (!isRecord(value) || !Array.isArray(value.issues)) return []
   return value.issues.map((item) => normalizeStudioIssue(item)).filter((item): item is StudioAiDailyIssue => item !== null)
+}
+
+export function normalizeStudioIssueDetail(value: unknown): StudioAiDailyIssueDetail | null {
+  if (!isRecord(value)) return null
+  const issue = normalizeStudioIssue(value.issue)
+  if (!issue) return null
+  const sources = Array.isArray(value.sources)
+    ? value.sources.map((item) => normalizeStudioSource(item)).filter((item): item is StudioSourceItem => item !== null)
+    : []
+  return {
+    issue,
+    sources,
+    draft: normalizeStudioDraft(value.draft),
+  }
 }
 
 export function readStudioError(value: unknown) {

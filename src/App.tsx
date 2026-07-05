@@ -31,6 +31,9 @@ const ProjectDetailPage = lazy(() =>
 )
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((module) => ({ default: module.BlogPostPage })))
 const StudioPage = lazy(() => import('./pages/StudioPage').then((module) => ({ default: module.StudioPage })))
+const StudioAiDailyIssuePage = lazy(() =>
+  import('./pages/StudioAiDailyIssuePage').then((module) => ({ default: module.StudioAiDailyIssuePage })),
+)
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
 function getPageClass(pathname: string) {
@@ -97,6 +100,7 @@ function App() {
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/assistant" element={<AssistantPage />} />
           <Route path="/assistant/admin" element={<AssistantAdminPage />} />
+          <Route path="/studio/ai-daily/:issueId" element={<StudioAiDailyIssuePage />} />
           <Route path="/studio/*" element={<StudioPage />} />
           <Route path="/status" element={<SiteStatusPage />} />
           <Route path="/status/:projectId" element={<SiteStatusDetailPage />} />

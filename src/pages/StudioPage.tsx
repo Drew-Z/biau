@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { StudioDraftPreview } from '../components/StudioDraftPreview'
 import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
 import {
@@ -10,7 +11,9 @@ import {
   normalizeStudioIssues,
   normalizeStudioSource,
   normalizeStudioSources,
+  readStoredStudioToken,
   readStudioError,
+  studioAiDailyIssueStatusLabels,
   studioDraftStatuses,
   studioSourceTierLabels,
   studioVisibilityLabels,
@@ -96,11 +99,6 @@ function defaultIssueForm(): IssueFormState {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
-}
-
-function readStoredStudioToken() {
-  if (typeof window === 'undefined') return ''
-  return window.localStorage.getItem(STUDIO_STORAGE_KEYS.adminToken) ?? ''
 }
 
 function slugify(value: string) {
@@ -806,12 +804,12 @@ export function StudioPage() {
             </form>
             <div className="studio-issue-list">
               {issues.slice(0, 5).map((issue) => (
-                <article key={issue.id}>
+                <Link key={issue.id} className="studio-issue-card" to={`/studio/ai-daily/${issue.id}`}>
                   <strong>{issue.title}</strong>
                   <span>
-                    {issue.date} · {issue.status} · {issue.sourceIds.length} sources
+                    {issue.date} · {studioAiDailyIssueStatusLabels[issue.status]} · {issue.sourceIds.length} sources
                   </span>
-                </article>
+                </Link>
               ))}
             </div>
           </article>

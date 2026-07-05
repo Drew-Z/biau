@@ -44,5 +44,10 @@ export function explainStudioApiError(status: number, errorCode: string) {
   if (errorCode === 'invalid-url') return '来源 URL 必须是公开 http(s) 链接。'
   if (errorCode === 'invalid-source-tier') return '请选择有效来源等级。'
   if (errorCode === 'draft-not-approved') return '草稿还没有通过审核，不能进入发布导出记录。'
+  if (errorCode === 'ai-daily-issue-not-found') return '没有找到这个 AI 日报 issue。'
+  if (errorCode === 'invalid-ai-daily-status') return '请选择有效的 AI 日报状态。'
+  if (errorCode === 'invalid-source-ids') return '来源列表里包含不存在的 source id。'
+  if (errorCode === 'invalid-brief-json') return 'brief JSON 必须是对象，并且不能过大。'
+  if (errorCode === 'ai-daily-issue-needs-sources') return '请先给这期 AI 日报选择至少一个来源。'
   return `Studio API 返回 ${status}${errorCode ? ` / ${errorCode}` : ''}。`
 }

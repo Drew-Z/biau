@@ -92,6 +92,24 @@ export function getStaticSeo(pathname: string): SeoMeta {
     }
   }
 
+  if (path === '/studio') {
+    return {
+      title: '内容工作台 | BIAU Port',
+      description: 'BIAU Port 内容工作台，用于管理博客草稿、AI 日报 issue、来源池、审核和静态发布导出。',
+      canonicalPath: '/studio',
+      type: 'website',
+    }
+  }
+
+  if (path.startsWith('/studio/ai-daily/')) {
+    return {
+      title: 'AI 日报详情 | BIAU Port 内容工作台',
+      description: '在 BIAU Port 内容工作台中管理单期 AI 日报的来源、brief、审核状态和内容草稿转换。',
+      canonicalPath: path,
+      type: 'website',
+    }
+  }
+
   return {
     title: '页面没有靠岸 | BIAU Port',
     description: '这个地址暂时没有对应内容，可以回到 BIAU Port 泊岸首页、项目集或知识库继续浏览。',
