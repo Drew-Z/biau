@@ -142,3 +142,68 @@ await prisma.contentDraft.create({ data })
 ```
 
 The Studio route uses the Studio database boundary and returns the same standardized `database-not-configured` error when no Studio database is available.
+
+## Scenario: Content Studio Publish Export Reporting
+
+### 1. Scope / Trigger
+
+- Trigger: changing Studio publish-export records, local static export reporting, or `/studio/api/publish-exports/*`.
+- Goal: production Studio records a publish intent, while local/CI tooling writes public Git-tracked content files and reports the result back.
+
+### 2. Signatures
+
+- Create export intent: `POST /studio/api/content-drafts/:id/publish-exports`.
+- Report local export: `PATCH /studio/api/publish-exports/:id`.
+- Local command: `npm.cmd run studio:export -- --draft <id-or-slug>`.
+
+### 3. Contracts
+
+- `POST /content-drafts/:id/publish-exports` requires an approved draft and creates `PublishExport` with `checksJson.status = "pending-local-export"`.
+- `PATCH /publish-exports/:id` accepts `{ exportedFiles: string[], checks: object, exportedBy?: string }`.
+- `exportedFiles` must be public repo-relative paths such as `src/data/blog.ts`; absolute paths and `..` traversal are rejected.
+- `checks` must be sanitized JSON and must not include tokens, database URLs, provider URLs, request bodies, or stack traces.
+- The production Studio API must not write Git-tracked public content files directly.
+
+### 4. Validation & Error Matrix
+
+- Draft not found -> `404 { error: "draft-not-found" }`.
+- Draft not approved -> `409 { error: "draft-not-approved" }`.
+- PublishExport not found -> `404 { error: "publish-export-not-found" }`.
+- Invalid report payload -> `400 { error: "invalid-publish-export-payload" }`.
+- Secret-looking report payload -> `400 { error: "sensitive-content-detected" }`.
+
+### 5. Good/Base/Bad Cases
+
+- Good: `/studio` creates a pending export, then `studio:export --publish-export-id ... --run-checks` writes static files and reports file list plus check status.
+- Base: local export runs without `--publish-export-id`; files are written and Git diff remains the audit source.
+- Bad: the Render Studio service clones the repository and commits directly from a request handler.
+- Bad: a report stores local absolute paths, admin tokens, database connection strings, or provider diagnostics.
+
+### 6. Tests Required
+
+- Run `npm.cmd run studio:export -- --sample --dry-run` after changing export mapping.
+- Run `npm.cmd run server:build`, `npm.cmd run server:smoke`, and `npm.cmd run assistant:service-modes-smoke` after changing Studio API routes.
+- Run `npm.cmd run blog:audit`, `npm.cmd run blog:check`, `npm.cmd run lint`, `npm.cmd run build`, and `git diff --check` after changing export output shape.
+- Sensitive scan changed files for API keys, bearer tokens, database URLs, service-role keys, and real local paths.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+await writeFile('src/data/blog.ts', generatedContent)
+res.json({ ok: true })
+```
+
+This lets the production API mutate the public repository and hides the diff from human review.
+
+#### Correct
+
+```ts
+await prisma.publishExport.update({
+  where: { id },
+  data: { exportedFilesJson: exportedFiles, checksJson: checks },
+})
+```
+
+The API records the local export result; the local script owns file writes and Git review.

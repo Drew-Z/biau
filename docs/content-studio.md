@@ -50,9 +50,47 @@ VITE_STUDIO_API_BASE_URL=http://localhost:8787
 - 读取 Studio API health。
 - 创建、编辑和审核内容草稿。
 - 创建发布导出记录。
+- 把已审核草稿通过本地导出器写入公开静态博客数据。
 - 保存 AI 日报来源池条目。
 - 创建 AI 日报 issue 并关联来源 ID。
 - 后端会拦截明显的 key、token、数据库连接串等敏感内容。
+
+## 发布导出
+
+公开站不让线上 Studio 服务直接写 Git 仓库。审核通过后，先在 `/studio`
+里创建发布导出记录，然后在本地或 CI 执行导出器：
+
+```powershell
+$env:STUDIO_EXPORT_API_BASE="https://<studio-service>.onrender.com"
+$env:STUDIO_ADMIN_TOKEN="<owner token>"
+npm.cmd run studio:export -- --draft <draft-id-or-slug> --publish-export-id <export-id> --run-checks
+```
+
+导出器会写入：
+
+```text
+src/data/blog-posts/<slug>.ts
+src/data/blog.ts
+src/data/blogContent.ts
+src/data/blogCuration.ts
+```
+
+默认会拒绝覆盖已有 slug；确认重写时加 `--force`。`--run-checks` 会在写文件后自动运行
+`blog:audit`、`blog:check`、`lint` 和 `build`，并在提供 `--publish-export-id`
+时回写导出文件列表和检查结果。不写文件的检查命令：
+
+```powershell
+npm.cmd run studio:export -- --sample --dry-run
+```
+
+导出后运行：
+
+```powershell
+npm.cmd run blog:audit
+npm.cmd run blog:check
+npm.cmd run lint
+npm.cmd run build
+```
 
 ## 仍是人工 Gate 的事项
 
@@ -60,7 +98,7 @@ VITE_STUDIO_API_BASE_URL=http://localhost:8787
 - Render/Supabase 等平台上的 migration 执行。
 - 生产 `STUDIO_ADMIN_TOKEN`。
 - 第一次真实模型辅助摘要/润色任务。
-- 实际把 approved 草稿导出到 `src/data/blog*.ts` 的本地/CI 导出器。
+- 将本地导出的公开内容 diff 审核后提交发布。
 
 ## 验证
 

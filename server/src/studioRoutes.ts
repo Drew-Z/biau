@@ -228,6 +228,31 @@ export function createStudioRouter() {
     }
   })
 
+  router.patch('/publish-exports/:id', async (req, res, next) => {
+    try {
+      const input = readPublishExportPatch(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+
+      const prisma = requireStudioDatabase()
+      const existing = await prisma.publishExport.findUnique({ where: { id: req.params.id } })
+      if (!existing) {
+        res.status(404).json({ error: 'publish-export-not-found' })
+        return
+      }
+
+      const publishExport = await prisma.publishExport.update({
+        where: { id: existing.id },
+        data: input.data,
+      })
+      res.json({ publishExport: toPublishExportResponse(publishExport) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
   router.get('/source-items', async (_req, res, next) => {
     try {
       const prisma = requireStudioDatabase()
@@ -317,6 +342,11 @@ function isPublicUrl(value: string) {
 function readStringArrayJson(value: unknown): Prisma.InputJsonValue {
   if (!Array.isArray(value)) return []
   return value.map((item) => readString(item, 80)).filter(Boolean)
+}
+
+function readStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => readString(item, 240)).filter(Boolean)
 }
 
 function readBodyJson(value: unknown): Prisma.InputJsonValue {
@@ -489,6 +519,27 @@ function readAiDailyIssueInput(value: unknown):
   }
 }
 
+function readPublishExportPatch(value: unknown):
+  | { data: Prisma.PublishExportUpdateInput }
+  | { error: string } {
+  if (!isRecord(value)) return { error: 'invalid-publish-export-payload' }
+  if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
+
+  const exportedFiles = readStringArray(value.exportedFiles)
+    .filter((file) => !file.includes('..') && !file.startsWith('/') && /^[./a-z0-9_-]+(?:\.[a-z0-9]+)?$/iu.test(file))
+    .slice(0, 20)
+  const checksJson = isRecord(value.checks)
+    ? (JSON.parse(JSON.stringify(value.checks)) as Prisma.InputJsonValue)
+    : { status: 'local-exported' }
+  return {
+    data: {
+      exportedFilesJson: exportedFiles,
+      checksJson,
+      exportedBy: readString(value.exportedBy, 80) || undefined,
+    },
+  }
+}
+
 function readOptionalDate(value: unknown) {
   const text = readString(value, 40)
   if (!text) return undefined
@@ -535,6 +586,17 @@ function toReviewResponse(review: Prisma.ContentReviewGetPayload<Record<string, 
     notes: review.notes,
     reviewedBy: review.reviewedBy,
     reviewedAt: review.reviewedAt.toISOString(),
+  }
+}
+
+function toPublishExportResponse(publishExport: Prisma.PublishExportGetPayload<Record<string, never>>) {
+  return {
+    id: publishExport.id,
+    draftId: publishExport.draftId,
+    target: publishExport.target,
+    exportedFiles: jsonStringArray(publishExport.exportedFilesJson),
+    checks: publishExport.checksJson,
+    createdAt: publishExport.createdAt.toISOString(),
   }
 }
 

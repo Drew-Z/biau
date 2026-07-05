@@ -67,7 +67,8 @@ Public catalog and article data are static TypeScript exports in `src/data/`. Ke
 
 - Run `npm.cmd run lint` and `npm.cmd run build` after changing Studio preview or parser code.
 - Run `npm.cmd run check:ui` after changing Studio layout; `/studio` must be part of the route set.
-- Future export scripts should import `bodyJsonFromText` / `textFromBodyJson` or consume saved `StudioContentBody` directly rather than reparsing page state.
+- Export scripts should consume saved `StudioContentBody` directly or import the shared parser helpers; do not reparse page component state.
+- Run `npm.cmd run studio:export -- --sample --dry-run` after changing the Studio draft-to-blog mapping.
 
 ### 7. Wrong vs Correct
 

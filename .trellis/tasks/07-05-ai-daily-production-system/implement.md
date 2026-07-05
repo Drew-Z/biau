@@ -92,17 +92,17 @@ npm.cmd run build
 
 ## Phase 4. Publish Export
 
-- [ ] 实现导出器：
+- [x] 实现导出器：
   - approved draft -> `src/data/blog-posts/<slug>.ts`
   - 更新 `src/data/blog.ts`
   - 更新 `src/data/blogContent.ts`
   - 更新 `src/data/blogCuration.ts`
-- [ ] 导出前备份/冲突检测：
+- [x] 导出前备份/冲突检测：
   - 目标 slug 已存在时必须明确覆盖策略。
   - 不覆盖用户未提交改动。
 - [ ] 导出后运行检查。
 - [x] 记录 `PublishExport` 基础记录，保存导出目标和待本地导出状态。
-- [ ] 保存真实导出文件列表和检查结果。
+- [x] 保存真实导出文件列表和检查结果。
 
 验证：
 
@@ -112,6 +112,8 @@ npm.cmd run lint
 npm.cmd run build
 git diff --check
 ```
+
+2026-07-05：已新增 `npm.cmd run studio:export` 本地导出器，支持从 Studio API 或本地 JSON 读取 approved draft，默认拒绝覆盖已有 slug；`--run-checks` 可在写文件后执行 `blog:audit`、`blog:check`、`lint`、`build`，并通过 `--publish-export-id` 回写导出文件列表和检查状态。
 
 ## Phase 5. AI Daily Source Pool And Issue Workflow
 
