@@ -31,11 +31,19 @@
 
 - [x] 父任务和 8 个子任务已创建并包含可执行 PRD。
 - [x] 父任务包含 `design.md`、`implement.md` 和 `manual-gates.md`。
-- [ ] 至少完成一个 P1 子任务，或明确记录其被人工 gate 阻塞并切换到下一个可推进任务。
-- [ ] 每个已完成子任务都运行最小相关验证，并在任务记录中说明验证结果。
-- [ ] 主站数据、助手知识、sitemap/status 或相关文档在需要时已同步刷新。
-- [ ] 没有把任何密钥、数据库连接串、生产凭据、私有模型渠道或未批准 APK 链接写入仓库。
-- [ ] 完成整轮后，父任务汇总所有子任务结果、剩余 manual gates、提交和后续建议。
+- [x] 至少完成一个 P1 子任务，或明确记录其被人工 gate 阻塞并切换到下一个可推进任务。
+- [x] 每个已完成子任务都运行最小相关验证，并在任务记录中说明验证结果。
+- [x] 主站数据、助手知识、sitemap/status 或相关文档在需要时已同步刷新。
+- [x] 没有把任何密钥、数据库连接串、生产凭据、私有模型渠道或未批准 APK 链接写入仓库。
+- [x] 完成整轮后，父任务汇总所有子任务结果、剩余 manual gates、提交和后续建议。
+
+## Final Integration Summary
+
+- 8/8 child tasks have been completed and archived.
+- Latest cross-project evidence is captured in `public/status/*.json` and `public/status/reliability-suite.json`.
+- `npm.cmd run reliability:check` completed the full suite and recorded `passed=6 failed=1 skipped=1`; the remaining failure is the Legal RAG public workbench entry timing out, which is tracked as a platform/manual gate rather than a code blocker.
+- Legal RAG protected QA, contract review, and quality checks remain gated by low-permission demo credentials.
+- Pet and Xunqiu APK public downloads remain gated by signed release artifacts, checksums, release notes, scan/regression evidence, rollback notes, and explicit approval.
 
 ## Child Task Map
 

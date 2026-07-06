@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-06T19:06:57.051Z",
+  "checkedAt": "2026-07-06T19:38:50.732Z",
   "baseConfigured": true,
   "apkGate": {
     "status": "debug-only",
@@ -23,8 +23,8 @@
       "id": "pet-showcase",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 4292,
-      "checkedAt": "2026-07-06T19:06:57.051Z",
+      "durationMs": 4277,
+      "checkedAt": "2026-07-06T19:38:50.732Z",
       "summary": "Pet App showcase page and 4/4 screenshots returned expected responses",
       "issues": []
     }

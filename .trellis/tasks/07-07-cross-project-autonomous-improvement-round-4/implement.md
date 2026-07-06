@@ -41,3 +41,19 @@ Then continue to the next available local slice.
 ## Completion
 
 The parent task is complete only when all children are completed or explicitly deferred with manual gates, main-site integration is refreshed, checks are recorded, and journal/spec updates are committed.
+
+## Final Execution Record
+
+- Completed all 8 child tasks in this round.
+- Refreshed main status artifacts after the last reliability run:
+  - `public/status/blog-semi-synthetic.json`
+  - `public/status/legal-rag-synthetic.json` was preserved because live credentials/base URL are not configured locally.
+  - `public/status/erp-synthetic.json`
+  - `public/status/xunqiu-synthetic.json`
+  - `public/status/pet-gamer-synthetic.json`
+  - `public/status/biau-playlab-synthetic.json`
+  - `public/status/site-status.json`
+  - `public/status/reliability-suite.json`
+- Latest `reliability:check` evidence: 6 passed, 1 failed, 1 skipped. The failed step is `site-status` because the Legal RAG public entry currently reports a low-sensitive timeout. This is recorded in `manual-gates.md` for Render/platform follow-up.
+- No approved release APK has been published for Pet or Xunqiu; their status remains gated.
+- No model liveness probes were run.
