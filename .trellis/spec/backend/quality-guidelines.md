@@ -368,7 +368,7 @@ The authenticated member id is part of the database query, so another member's s
 
 ### 1. Scope / Trigger
 
-- Trigger: changing `/admin/summary`, `/admin/members`, `/admin/invites`, `/assistant/admin`, invite revocation, member disable/enable, or assistant admin payload normalizers.
+- Trigger: changing `/admin/summary`, `/admin/members`, `/admin/invites`, `/admin/usage`, `/assistant/admin`, invite revocation, member disable/enable, usage reporting, or assistant admin payload normalizers.
 - Goal: give the owner an operational admin surface without exposing invite codes, invite hashes, member token hashes, admin tokens, model endpoints, or provider secrets.
 
 ### 2. Signatures
@@ -381,11 +381,13 @@ The authenticated member id is part of the database query, so another member's s
   - `GET /admin/invites`
   - `POST /admin/invites`
   - `PATCH /admin/invites/:id`
+  - `GET /admin/usage`
 - Frontend normalizers:
   - `normalizeAssistantMember()`
   - `normalizeAssistantInvite()`
   - `normalizeAssistantInvites()`
   - `normalizeAssistantModelChannels()`
+  - `normalizeAssistantUsageSummaries()`
 
 ### 3. Contracts
 
@@ -395,6 +397,8 @@ The authenticated member id is part of the database query, so another member's s
 - `PATCH /admin/invites/:id` accepts `{ revoked: boolean }` and stores only `revokedAt`.
 - `PATCH /admin/members/:id` accepts `{ status?: "ACTIVE" | "DISABLED", modelChannelId?: string | null }`.
 - Disabling a member sets `disabledAt`; enabling clears `disabledAt`.
+- `GET /admin/usage` returns a bounded recent list with only `{ id, scope, model, tokensIn, tokensOut, createdAt, member }`, where `member` is a safe summary. It must not include prompts, answers, citations, bearer tokens, token hashes, invite hashes, provider endpoints, or raw request payloads.
+- `/assistant/admin` should present owner operations as a workspace with clear sections/tabs for overview, invites, members, knowledge, usage, and safety boundaries. Avoid outdated MVP copy once the corresponding operations exist.
 - `/assistant/admin` may store the admin token in local browser storage for convenience, but it must use `type="password"` and never render the token in status text.
 
 ### 4. Validation & Error Matrix
@@ -406,13 +410,16 @@ The authenticated member id is part of the database query, so another member's s
 - Unknown invite -> `404 { error: "invite-not-found" }`.
 - Non-boolean invite revocation payload -> `400 { error: "unsupported-invite-revocation" }`.
 - Unknown model channel assignment -> `400 { error: "unsupported-model-channel" }`.
+- Admin usage without database -> `503 { error: "database-not-configured" }`.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: owner refreshes invites, sees only labels/status/counts, and revokes an invite; future redemption fails because `revokedAt` is set.
 - Good: owner disables a member; `/chat/internal`, `/me`, and session APIs reject that member with `member-disabled`.
+- Good: owner opens the Usage tab and sees recent low-sensitive usage rows without any message content.
 - Base: no database configured; admin UI explains the deployment gap without showing stack traces or env values.
 - Bad: invite list includes `codeHash`, original plaintext code, bearer token, or a direct provider/base URL.
+- Bad: usage rows include raw chat text, citation JSON, request bodies, token hashes, or model provider URLs.
 - Bad: frontend constructs admin payloads from arbitrary objects without using assistant normalizers at the API boundary.
 
 ### 6. Tests Required

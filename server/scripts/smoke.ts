@@ -637,6 +637,11 @@ try {
     throw new Error(`admin knowledge list should require admin token, got ${adminKnowledge.status}`)
   }
 
+  const adminUsage = await fetch(`${base}/admin/usage`)
+  if (adminUsage.status !== 401) {
+    throw new Error(`admin usage list should require admin token, got ${adminUsage.status}`)
+  }
+
   if (!process.env.DATABASE_URL?.trim()) {
     const internalWithToken = await fetch(`${base}/chat/internal`, {
       method: 'POST',
@@ -690,6 +695,13 @@ try {
     })
     if (knowledgeSyncWithoutDb.status !== 503) {
       throw new Error(`admin knowledge sync should report missing database when admin token is present, got ${knowledgeSyncWithoutDb.status}`)
+    }
+
+    const usageWithAdminToken = await fetch(`${base}/admin/usage`, {
+      headers: { Authorization: 'Bearer admin-smoke-token' },
+    })
+    if (usageWithAdminToken.status !== 503) {
+      throw new Error(`admin usage list should report missing database when admin token is present, got ${usageWithAdminToken.status}`)
     }
   }
 

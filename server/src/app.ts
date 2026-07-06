@@ -493,6 +493,35 @@ function registerInternalAssistantRoutes(app: express.Express) {
     res.json({ modelChannels: listSafeModelChannels() })
   })
 
+  app.get('/admin/usage', async (req, res, next) => {
+    try {
+      if (!isAdminRequest(req.headers.authorization)) {
+        res.status(401).json({ error: 'missing-admin-token' })
+        return
+      }
+
+      const prisma = requireDatabase()
+      const usage = await prisma.usageLog.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        include: {
+          member: {
+            select: {
+              id: true,
+              name: true,
+              role: true,
+              status: true,
+              modelChannelId: true,
+            },
+          },
+        },
+      })
+      res.json({ usage: usage.map(serializeUsageLog) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
   app.get('/admin/members', async (req, res, next) => {
     try {
       if (!isAdminRequest(req.headers.authorization)) {
@@ -930,6 +959,31 @@ function serializeInternalKnowledgeSyncRun(
     startedAt: syncRun.startedAt.toISOString(),
     finishedAt: syncRun.finishedAt?.toISOString() ?? null,
     diagnostic: sanitizeInternalSyncDiagnostic(syncRun.diagnostic),
+  }
+}
+
+function serializeUsageLog(
+  usage: Pick<Prisma.UsageLogGetPayload<{ include: { member: true } }>, 'id' | 'scope' | 'model' | 'tokensIn' | 'tokensOut' | 'createdAt'> & {
+    member: Pick<Member, 'id' | 'name' | 'role' | 'status' | 'modelChannelId'> | null
+  },
+) {
+  return {
+    id: usage.id,
+    scope: usage.scope,
+    model: usage.model ?? 'fallback',
+    tokensIn: usage.tokensIn,
+    tokensOut: usage.tokensOut,
+    createdAt: usage.createdAt.toISOString(),
+    member: usage.member
+      ? {
+          id: usage.member.id,
+          name: usage.member.name,
+          role: usage.member.role,
+          status: usage.member.status,
+          modelChannelId: usage.member.modelChannelId ?? null,
+          modelChannel: getMemberModelChannel(usage.member.modelChannelId),
+        }
+      : null,
   }
 }
 

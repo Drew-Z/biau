@@ -205,3 +205,44 @@ Manual gate:
 
 - Real production internal corpus sync still requires user-approved reviewed/active documents plus deployed Render env for `ASSISTANT_RAG_API_BASE_URL`, `RAG_SYNC_TOKEN`, `QDRANT_*`, and `EMBEDDING_*`.
 - No real Qdrant, embedding provider, model provider, or relay endpoint was called during local validation.
+
+## 2026-07-06 admin workspace tabs and usage
+
+Completed a focused admin workspace slice for AC4/R6.
+
+Implemented:
+
+- Added `GET /admin/usage` with admin-token protection and database guard.
+- Usage responses are bounded to the latest 50 rows and expose only low-sensitive fields:
+  - usage id
+  - scope
+  - model
+  - tokens in/out
+  - created time
+  - safe member summary and safe model-channel summary
+- Added `normalizeAssistantUsageSummaries()` and related frontend types.
+- Converted `/assistant/admin` from one long card grid into tabs:
+  - Overview
+  - Invites
+  - Members
+  - Knowledge
+  - Usage
+  - Safety
+- Removed outdated "first version owner-only" copy from the admin hero.
+- Added a Usage tab that loads the new API and renders recent usage without message text, prompt text, citations, token hashes, invite hashes, provider URLs, or request bodies.
+- Smoke tests now cover `/admin/usage` auth/no-database behavior and service-mode route isolation.
+- Deployment docs now list the expanded admin route map and current admin workspace capabilities.
+- Backend quality spec now records the safe usage-reporting contract.
+
+Validation:
+
+- `npm.cmd run server:build`
+- `npm.cmd run server:smoke`
+- `npm.cmd run assistant:service-modes-smoke`
+- `npm.cmd run lint`
+- `npm.cmd run build`
+- `npm.cmd run check:ui`
+
+Manual gate:
+
+- Production usage list validation still requires the deployed internal API, migrated database, and user-managed `ADMIN_TOKEN`.

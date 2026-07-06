@@ -3087,6 +3087,42 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   gap: var(--space-16);
 }
 
+.assistant-admin-grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.assistant-admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  padding: var(--space-8);
+  background: color-mix(in oklch, var(--panel-strong) 46%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-lg);
+}
+
+.assistant-admin-tabs button {
+  min-height: 36px;
+  padding: 0 var(--space-14, 14px);
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.assistant-admin-tabs button:hover,
+.assistant-admin-tabs button:focus-visible,
+.assistant-admin-tabs button.is-active {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--green) 12%, var(--panel));
+  border-color: color-mix(in oklch, var(--green) 32%, var(--flow-ui-card-border));
+}
+
 .assistant-admin-card {
   min-width: 0;
   padding: var(--space-20, 20px);

@@ -120,6 +120,23 @@ export interface AssistantInternalKnowledgeSyncRun {
   diagnostic?: Record<string, string | number | boolean> | null
 }
 
+export interface AssistantUsageSummary {
+  id: string
+  scope: string
+  model: string
+  tokensIn: number
+  tokensOut: number
+  createdAt: string
+  member?: {
+    id: string
+    name: string
+    role: AssistantMemberRole
+    status?: AssistantMemberStatus
+    modelChannelId?: string | null
+    modelChannel?: AssistantModelChannelSummary
+  } | null
+}
+
 export const publicAssistantSuggestions: AssistantSuggestion[] = [
   {
     id: 'demo-ready-projects',
@@ -452,6 +469,53 @@ export function normalizeAssistantInternalKnowledgeSyncRun(value: unknown): Assi
     startedAt,
     finishedAt: typeof finishedAt === 'string' || finishedAt === null ? finishedAt : undefined,
     diagnostic: normalizeAssistantSyncDiagnostic(diagnostic),
+  }
+}
+
+export function normalizeAssistantUsageSummary(value: unknown): AssistantUsageSummary | null {
+  if (!isRecord(value)) return null
+  const { id, scope, model, tokensIn, tokensOut, createdAt, member } = value
+  if (
+    typeof id !== 'string' ||
+    typeof scope !== 'string' ||
+    typeof model !== 'string' ||
+    typeof tokensIn !== 'number' ||
+    typeof tokensOut !== 'number' ||
+    typeof createdAt !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    id,
+    scope,
+    model,
+    tokensIn,
+    tokensOut,
+    createdAt,
+    member: normalizeAssistantUsageMember(member),
+  }
+}
+
+export function normalizeAssistantUsageSummaries(value: unknown): AssistantUsageSummary[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => normalizeAssistantUsageSummary(item))
+    .filter((item): item is AssistantUsageSummary => item !== null)
+}
+
+function normalizeAssistantUsageMember(value: unknown): AssistantUsageSummary['member'] {
+  if (value === null || value === undefined) return null
+  if (!isRecord(value)) return null
+  const { id, name, role, status, modelChannelId, modelChannel } = value
+  if (typeof id !== 'string' || typeof name !== 'string' || !isAssistantMemberRole(role)) return null
+  return {
+    id,
+    name,
+    role,
+    status: isAssistantMemberStatus(status) ? status : undefined,
+    modelChannelId: typeof modelChannelId === 'string' || modelChannelId === null ? modelChannelId : undefined,
+    modelChannel: normalizeAssistantModelChannel(modelChannel) ?? undefined,
   }
 }
 

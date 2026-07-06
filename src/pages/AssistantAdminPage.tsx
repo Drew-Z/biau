@@ -7,12 +7,14 @@ import {
   normalizeAssistantInvites,
   normalizeAssistantMember,
   normalizeAssistantModelChannels,
+  normalizeAssistantUsageSummaries,
   type AssistantInternalKnowledgeDocument,
   type AssistantInternalKnowledgeStatus,
   type AssistantInternalKnowledgeSyncRun,
   type AssistantInviteSummary,
   type AssistantMemberProfile,
   type AssistantModelChannelSummary,
+  type AssistantUsageSummary,
 } from '../data/assistant'
 import { ASSISTANT_API_ENV_NAMES, INTERNAL_ASSISTANT_API_BASE } from '../utils/assistantApi'
 
@@ -52,6 +54,17 @@ interface KnowledgeFormState {
   sourceType: string
   safetyNotes: string
 }
+
+type AdminTab = 'overview' | 'invites' | 'members' | 'knowledge' | 'usage' | 'safety'
+
+const adminTabs: Array<{ id: AdminTab; label: string }> = [
+  { id: 'overview', label: '概览' },
+  { id: 'invites', label: '邀请' },
+  { id: 'members', label: '成员' },
+  { id: 'knowledge', label: '知识' },
+  { id: 'usage', label: '用量' },
+  { id: 'safety', label: '边界' },
+]
 
 const emptySummary: AdminSummary = {
   members: 0,
@@ -193,6 +206,7 @@ function splitTags(value: string) {
 }
 
 export function AssistantAdminPage() {
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview')
   const [adminToken, setAdminToken] = useState(() => readStoredAdminToken())
   const [draftToken, setDraftToken] = useState(() => readStoredAdminToken())
   const [summary, setSummary] = useState<AdminSummary>(emptySummary)
@@ -201,6 +215,7 @@ export function AssistantAdminPage() {
   const [invitesStatus, setInvitesStatus] = useState('')
   const [membersStatus, setMembersStatus] = useState('')
   const [knowledgeStatus, setKnowledgeStatus] = useState('')
+  const [usageStatus, setUsageStatus] = useState('')
   const [isLoadingSummary, setIsLoadingSummary] = useState(false)
   const [isCreatingInvite, setIsCreatingInvite] = useState(false)
   const [isLoadingInvites, setIsLoadingInvites] = useState(false)
@@ -208,6 +223,7 @@ export function AssistantAdminPage() {
   const [isLoadingKnowledge, setIsLoadingKnowledge] = useState(false)
   const [isSavingKnowledge, setIsSavingKnowledge] = useState(false)
   const [isSyncingKnowledge, setIsSyncingKnowledge] = useState(false)
+  const [isLoadingUsage, setIsLoadingUsage] = useState(false)
   const [updatingMemberId, setUpdatingMemberId] = useState('')
   const [updatingInviteId, setUpdatingInviteId] = useState('')
   const [inviteForm, setInviteForm] = useState<InviteFormState>(defaultInviteForm)
@@ -217,6 +233,7 @@ export function AssistantAdminPage() {
   const [knowledgeDocuments, setKnowledgeDocuments] = useState<AssistantInternalKnowledgeDocument[]>([])
   const [lastKnowledgeSyncRun, setLastKnowledgeSyncRun] = useState<AssistantInternalKnowledgeSyncRun | null>(null)
   const [modelChannels, setModelChannels] = useState<AssistantModelChannelSummary[]>([])
+  const [usageLogs, setUsageLogs] = useState<AssistantUsageSummary[]>([])
 
   const saveAdminToken = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -311,6 +328,41 @@ export function AssistantAdminPage() {
       setMembersStatus('无法连接成员 API。')
     } finally {
       setIsLoadingMembers(false)
+    }
+  }
+
+  const loadUsage = async () => {
+    if (!API_BASE) {
+      setUsageStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用用量 API。`)
+      return
+    }
+    if (!adminToken) {
+      setUsageStatus('请先保存 admin token。')
+      return
+    }
+
+    setIsLoadingUsage(true)
+    setUsageStatus('')
+    try {
+      const response = await fetch(`${API_BASE}/admin/usage`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+      const payload = (await response.json().catch(() => ({}))) as unknown
+      if (!response.ok) {
+        setUsageStatus(explainAdminError(response.status, getErrorCode(payload)))
+        return
+      }
+      if (!isRecord(payload)) {
+        setUsageStatus('用量 API 返回格式不完整。')
+        return
+      }
+
+      setUsageLogs(normalizeAssistantUsageSummaries(payload.usage))
+      setUsageStatus('最近用量已更新。')
+    } catch {
+      setUsageStatus('无法连接用量 API。')
+    } finally {
+      setIsLoadingUsage(false)
     }
   }
 
@@ -693,11 +745,32 @@ export function AssistantAdminPage() {
           <p className="section-subtitle">HIDDEN ADMIN</p>
           <h1 className="section-title">内部助手管理页</h1>
           <p className="section-description">
-            这是第一版 owner-only 管理面：手动保存 admin token，读取服务摘要，并创建少量内部邀请码。
+            面向内部助手的 owner 工作台：管理连接、邀请、成员渠道、内部知识、同步状态和最近用量。
           </p>
         </header>
 
-        <section className="assistant-admin-grid">
+        <nav className="assistant-admin-tabs" aria-label="内部助手管理分区" role="tablist">
+          {adminTabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              className={activeTab === tab.id ? 'is-active' : ''}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`assistant-admin-panel-${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+
+        <section
+          id="assistant-admin-panel-overview"
+          className="assistant-admin-grid assistant-admin-grid--single"
+          role="tabpanel"
+          hidden={activeTab !== 'overview'}
+        >
           <article className="assistant-admin-card">
             <h2>API 连接</h2>
             <p>admin token 只保存在当前浏览器本地，用于调用隐藏管理接口。</p>
@@ -764,7 +837,14 @@ export function AssistantAdminPage() {
               </span>
             </div>
           </article>
+        </section>
 
+        <section
+          id="assistant-admin-panel-invites"
+          className="assistant-admin-grid assistant-admin-grid--single"
+          role="tabpanel"
+          hidden={activeTab !== 'invites'}
+        >
           <article className="assistant-admin-card">
             <h2>创建邀请码</h2>
             <p>用于少量内部小伙伴兑换成员 token，不开放公共注册入口。</p>
@@ -859,7 +939,14 @@ export function AssistantAdminPage() {
               {invites.length === 0 && <p className="assistant-status-text">刷新后会显示最近的邀请码；不会展示明文邀请码或 hash。</p>}
             </div>
           </article>
+        </section>
 
+        <section
+          id="assistant-admin-panel-members"
+          className="assistant-admin-grid assistant-admin-grid--single"
+          role="tabpanel"
+          hidden={activeTab !== 'members'}
+        >
           <article className="assistant-admin-card">
             <h2>成员模型渠道</h2>
             <p>为每个内部成员分配服务端已配置的模型渠道；这里只显示渠道名称、模型和 provider，不展示 key 或 base URL。</p>
@@ -909,7 +996,14 @@ export function AssistantAdminPage() {
               {members.length === 0 && <p className="assistant-status-text">刷新后会显示已兑换邀请码的内部成员。</p>}
             </div>
           </article>
+        </section>
 
+        <section
+          id="assistant-admin-panel-knowledge"
+          className="assistant-admin-grid assistant-admin-grid--single"
+          role="tabpanel"
+          hidden={activeTab !== 'knowledge'}
+        >
           <article className="assistant-admin-card">
             <h2>内部知识源</h2>
             <p>维护经过审核的内部知识文档；只有已审核/已启用文档会进入同步计划。</p>
@@ -1041,7 +1135,54 @@ export function AssistantAdminPage() {
               {knowledgeDocuments.length === 0 && <p className="assistant-status-text">刷新后会显示数据库中的内部知识文档。</p>}
             </div>
           </article>
+        </section>
 
+        <section
+          id="assistant-admin-panel-usage"
+          className="assistant-admin-grid assistant-admin-grid--single"
+          role="tabpanel"
+          hidden={activeTab !== 'usage'}
+        >
+          <article className="assistant-admin-card">
+            <h2>基础用量</h2>
+            <p>查看最近 50 条内部助手使用记录，只显示成员摘要、scope、模型和低敏 token 计数。</p>
+            <div className="assistant-admin-actions">
+              <button type="button" onClick={() => void loadUsage()} disabled={isLoadingUsage || !adminToken}>
+                {isLoadingUsage ? '读取中…' : '刷新用量'}
+              </button>
+            </div>
+            {usageStatus && <p className="assistant-status-text">{usageStatus}</p>}
+            <div className="assistant-admin-table" aria-label="基础用量列表">
+              {usageLogs.map((usage) => (
+                <div key={usage.id} className="assistant-admin-row assistant-admin-row--member">
+                  <div>
+                    <strong>{usage.member?.name ?? '已删除成员'}</strong>
+                    <span>
+                      {usage.scope} · {usage.model}
+                    </span>
+                    <span>
+                      {formatAdminDate(usage.createdAt)} · {usage.member?.modelChannel?.label ?? '默认/未知渠道'}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>{usage.tokensIn + usage.tokensOut}</strong>
+                    <span>
+                      tokens · in {usage.tokensIn} / out {usage.tokensOut}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {usageLogs.length === 0 && <p className="assistant-status-text">刷新后会显示最近内部助手用量；不会展示消息正文或请求内容。</p>}
+            </div>
+          </article>
+        </section>
+
+        <section
+          id="assistant-admin-panel-safety"
+          className="assistant-admin-grid assistant-admin-grid--single"
+          role="tabpanel"
+          hidden={activeTab !== 'safety'}
+        >
           <article className="assistant-admin-card">
             <h2>安全边界</h2>
             <p>模型渠道密钥和服务地址只在服务端环境变量中维护；成员表只保存渠道 id。</p>

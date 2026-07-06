@@ -251,7 +251,7 @@ curl -X POST "$ASSISTANT_API/auth/redeem-invite" \
 
 前端内部助手第一版在 `/assistant` 提供邀请码兑换表单。兑换成功后会把 `biau-assistant-member-token`、基础成员信息和当前 `biau-assistant-session-id` 保存在当前浏览器的 `localStorage`。未配置 API、未兑换 token、数据库不可用或模型服务不可用时，页面会退回到已脱敏的公开站点知识，并明确说明限制。
 
-隐藏管理页位于 `/assistant/admin`。第一版通过手动输入并本地保存 `ADMIN_TOKEN` 调用 `GET /admin/summary` 和 `POST /admin/invites`，只用于验证轻量管理链路，不包含完整成员列表、历史记录浏览、删除/禁用、导出或私有知识源管理。
+隐藏管理页位于 `/assistant/admin`。当前管理页通过手动输入并本地保存 `ADMIN_TOKEN`，按页签管理概览、邀请码、成员模型渠道、成员启用/禁用、内部知识文档、RAG 同步状态和最近低敏用量。页面不会展示明文邀请码、token hash、模型 key、provider base URL、RAG sync token 或消息正文。
 
 当前公开助手和内部助手会先检索生成的公开站点知识；公开助手本地检索使用 docs/chunks/entities/relations 组成的轻量 Agentic Hybrid RAG 基线，覆盖意图路由、关键词/元数据/实体扩展、确定性 rerank 和 citation 边界。配置 `ASSISTANT_MODEL_*` 后，服务端可以在公开知识约束内调用 OpenAI-compatible 模型生成回答。未配置模型、模型服务不可用或公开知识置信度不足时，助手应回退到公开知识摘要并明确说明限制，而不是补造细节。网站博客页和项目页内容后续可以继续优化。
 
@@ -269,7 +269,15 @@ POST /auth/redeem-invite
 POST /chat/public
 POST /chat/internal
 GET /admin/summary
+GET /admin/members
+GET /admin/invites
 POST /admin/invites
+PATCH /admin/invites/:id
+GET /admin/knowledge-documents
+POST /admin/knowledge-documents
+PATCH /admin/knowledge-documents/:id
+POST /admin/knowledge/sync
+GET /admin/usage
 GET /metrics
 ```
 
