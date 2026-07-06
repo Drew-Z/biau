@@ -56,7 +56,10 @@ the image into view and wait for `complete && naturalWidth > 0` before reading
 layout metrics. Prefer `requestfailed` logs with URLs for actionable resource
 failures; anonymous Chromium `Failed to load resource: net::ERR_TIMED_OUT`
 console noise from local preview should not be the only failure signal when
-explicit route, image, and link assertions still pass.
+explicit route, image, and link assertions still pass. Local preview checks may
+ignore transient Google Fonts request failures for `fonts.googleapis.com` and
+`fonts.gstatic.com`; they must not ignore same-origin JS, CSS, image, JSON, or
+route failures.
 
 ### Blog Knowledge Quality Gate
 

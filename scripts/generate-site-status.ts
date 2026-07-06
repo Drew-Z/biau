@@ -54,6 +54,11 @@ interface SyntheticCheckResult {
   issues: string[]
 }
 
+type EvidenceFreshness = 'fresh' | 'aging' | 'stale' | 'unknown'
+
+const FRESH_EVIDENCE_MS = 24 * 60 * 60 * 1000
+const STALE_EVIDENCE_MS = 72 * 60 * 60 * 1000
+
 function parseArgs(argv: string[]) {
   const args = {
     timeoutMs: Number(process.env.SITE_STATUS_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
@@ -212,6 +217,44 @@ function normalizeSyntheticCheck(value: unknown): SyntheticCheckResult | null {
   }
 }
 
+function classifyEvidenceFreshness(checkedAt: string, generatedAtMs: number): EvidenceFreshness {
+  const checkedAtMs = Date.parse(checkedAt)
+  if (!Number.isFinite(checkedAtMs)) return 'unknown'
+  const ageMs = generatedAtMs - checkedAtMs
+  if (!Number.isFinite(ageMs) || ageMs < 0) return 'unknown'
+  if (ageMs <= FRESH_EVIDENCE_MS) return 'fresh'
+  if (ageMs <= STALE_EVIDENCE_MS) return 'aging'
+  return 'stale'
+}
+
+function formatEvidenceAge(checkedAt: string, generatedAtMs: number) {
+  const checkedAtMs = Date.parse(checkedAt)
+  if (!Number.isFinite(checkedAtMs)) return '时间不可读'
+  const ageMs = Math.max(0, generatedAtMs - checkedAtMs)
+  const ageMinutes = Math.round(ageMs / 60_000)
+  if (ageMinutes < 60) return `${Math.max(1, ageMinutes)} 分钟前`
+  const ageHours = Math.round(ageMinutes / 60)
+  if (ageHours < 48) return `${ageHours} 小时前`
+  return `${Math.round(ageHours / 24)} 天前`
+}
+
+function evidenceFreshnessLabel(freshness: EvidenceFreshness) {
+  if (freshness === 'fresh') return '新鲜'
+  if (freshness === 'aging') return '接近过期'
+  if (freshness === 'stale') return '已过期'
+  return '未知'
+}
+
+function applyFreshnessToStatus(status: GeneratedStatus, freshness: EvidenceFreshness): GeneratedStatus {
+  if (status === 'online' && (freshness === 'stale' || freshness === 'unknown')) return 'degraded'
+  return status
+}
+
+function formatFreshnessEvidence(check: SyntheticCheckResult, generatedAtMs: number) {
+  const freshness = classifyEvidenceFreshness(check.checkedAt, generatedAtMs)
+  return `证据时间：${check.checkedAt || '未记录'}；证据新鲜度：${evidenceFreshnessLabel(freshness)}（${formatEvidenceAge(check.checkedAt, generatedAtMs)}）`
+}
+
 async function loadSyntheticChecks(): Promise<Map<string, SyntheticCheckResult>> {
   const merged = new Map<string, SyntheticCheckResult>()
   let entries: string[]
@@ -247,6 +290,7 @@ async function loadSyntheticChecksFromFile(filePath: string): Promise<SyntheticC
 function mergeReliabilityProjects(
   targets: CheckResult[],
   syntheticChecks: Map<string, SyntheticCheckResult>,
+  generatedAtMs: number,
 ): ReliabilityProject[] {
   const targetStatus = new Map(targets.map((target) => [target.id, target]))
   return reliabilityProjects.map((project) => ({
@@ -255,12 +299,13 @@ function mergeReliabilityProjects(
       const synthetic = syntheticChecks.get(check.id)
       if (synthetic) {
         const issue = synthetic.issues[0]
+        const freshnessEvidence = formatFreshnessEvidence(synthetic, generatedAtMs)
         return {
           ...check,
-          status: synthetic.status,
+          status: applyFreshnessToStatus(synthetic.status, classifyEvidenceFreshness(synthetic.checkedAt, generatedAtMs)),
           evidence: issue
-            ? `最近一次 synthetic 检查：${synthetic.summary}；${issue}。${check.evidence}`
-            : `最近一次 synthetic 检查：${synthetic.summary}。${check.evidence}`,
+            ? `最近一次 synthetic 检查：${synthetic.summary}；${freshnessEvidence}；${issue}。${check.evidence}`
+            : `最近一次 synthetic 检查：${synthetic.summary}；${freshnessEvidence}。${check.evidence}`,
         }
       }
       if (!check.relatedTargetId) return check
@@ -299,7 +344,9 @@ async function checkTarget(target: SiteStatusTarget, timeoutMs: number): Promise
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const checkedAt = new Date().toISOString()
+  const generatedAt = new Date()
+  const checkedAt = generatedAt.toISOString()
+  const generatedAtMs = generatedAt.getTime()
   const targets = []
   const syntheticChecks = await loadSyntheticChecks()
 
@@ -314,7 +361,7 @@ async function main() {
     ok: summary.offline === 0,
     summary,
     targets,
-    reliabilityProjects: mergeReliabilityProjects(targets, syntheticChecks),
+    reliabilityProjects: mergeReliabilityProjects(targets, syntheticChecks, generatedAtMs),
   }
 
   await mkdir(dirname(outputPath), { recursive: true })

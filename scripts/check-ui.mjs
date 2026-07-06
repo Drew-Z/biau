@@ -115,6 +115,22 @@ async function waitForImageReady(imageLocator, timeout = 15_000) {
   )
 }
 
+function isIgnorableConsoleResourceError(message) {
+  return [
+    'Failed to load resource: net::ERR_TIMED_OUT',
+    'Failed to load resource: net::ERR_CONNECTION_TIMED_OUT',
+  ].includes(message)
+}
+
+function isIgnorableRequestFailure(request) {
+  try {
+    const url = new URL(request.url())
+    return ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname)
+  } catch {
+    return false
+  }
+}
+
 const failures = []
 const browser = await chromium.launch({ headless: true })
 
@@ -125,11 +141,14 @@ for (const viewport of viewports) {
 
     page.on('console', (message) => {
       if (['error', 'warning'].includes(message.type())) {
-        if (message.text() === 'Failed to load resource: net::ERR_TIMED_OUT') return
+        if (isIgnorableConsoleResourceError(message.text())) return
         logs.push(`${message.type()}: ${message.text()}`)
       }
     })
-    page.on('requestfailed', (request) => logs.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? 'failed'}`))
+    page.on('requestfailed', (request) => {
+      if (isIgnorableRequestFailure(request)) return
+      logs.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? 'failed'}`)
+    })
     page.on('pageerror', (error) => logs.push(`pageerror: ${error.message}`))
 
     await gotoApp(page, route.path)

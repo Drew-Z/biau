@@ -37,6 +37,7 @@ const xunqiuApkGateStatuses = new Set([
 ])
 const xunqiuRequiredCheckIds = new Set(['xunqiu-backend-health', 'xunqiu-compat-api', 'xunqiu-apk-gate'])
 const playlabRequiredCheckIds = new Set(['biau-playlab-web-builds', 'biau-playlab-mobile-hints'])
+const freshnessLabels = ['新鲜', '接近过期', '已过期', '未知']
 const disallowedKeys = new Set([
   'token',
   'password',
@@ -409,9 +410,48 @@ async function checkSyntheticSnapshots(knownCheckIds: Set<string>) {
   }
 }
 
+async function checkMergedSiteStatusEvidence() {
+  let payload: unknown
+  try {
+    payload = JSON.parse(await readFile(resolve(statusDir, 'site-status.json'), 'utf8')) as unknown
+  } catch {
+    fail('site-status.json is missing or unreadable; run npm.cmd run site:status')
+    return
+  }
+
+  if (!isRecord(payload)) {
+    fail('site-status.json: payload is not an object')
+    return
+  }
+
+  const projects = Array.isArray(payload.reliabilityProjects) ? payload.reliabilityProjects.filter(isRecord) : []
+  if (projects.length === 0) {
+    fail('site-status.json: reliabilityProjects must be a non-empty array')
+    return
+  }
+
+  for (const project of projects) {
+    const projectId = isNonEmptyString(project.id) ? project.id : 'unknown-project'
+    const checks = Array.isArray(project.checks) ? project.checks.filter(isRecord) : []
+    for (const check of checks) {
+      const checkId = isNonEmptyString(check.id) ? check.id : 'unknown-check'
+      const evidence = typeof check.evidence === 'string' ? check.evidence : ''
+      if (!evidence.includes('最近一次 synthetic 检查')) continue
+      if (!evidence.includes('证据时间：')) fail(`site-status.json:${projectId}:${checkId} merged synthetic evidence is missing checked-at context`)
+      if (!freshnessLabels.some((label) => evidence.includes(`证据新鲜度：${label}`))) {
+        fail(`site-status.json:${projectId}:${checkId} merged synthetic evidence is missing freshness context`)
+      }
+      if ((evidence.includes('证据新鲜度：已过期') || evidence.includes('证据新鲜度：未知')) && check.status === 'online') {
+        fail(`site-status.json:${projectId}:${checkId} stale/unknown synthetic evidence must not remain online`)
+      }
+    }
+  }
+}
+
 async function main() {
   const knownCheckIds = checkStaticStatusData()
   await checkSyntheticSnapshots(knownCheckIds)
+  await checkMergedSiteStatusEvidence()
 
   if (issues.length > 0) {
     console.error(`Status contract check failed with ${issues.length} issue(s):`)

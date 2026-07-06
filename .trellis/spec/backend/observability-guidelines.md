@@ -74,6 +74,9 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - `npm.cmd run <project>:synthetic` runs a project-specific script.
 - Script output path: `public/status/<project>-synthetic.json`.
 - Status aggregation: `npm.cmd run site:status` loads every `public/status/*-synthetic.json` file and merges checks by `id`.
+- Merged synthetic evidence in `public/status/site-status.json` must include
+  checked-at and freshness context in the rendered `evidence` string, for
+  example `证据时间：...；证据新鲜度：新鲜/接近过期/已过期/未知`.
 - Public entry aggregation should use bounded retry for transient timeout,
   network, connection, or 5xx failures before recording a target as `offline`.
   This reduces false negatives from cold-start demo hosts while still surfacing
@@ -108,6 +111,11 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - Allowed statuses are `online`, `degraded`, `offline`, and `unchecked`. Static data may still use `planned`.
 - Reliability suite step statuses are `passed`, `failed`, and `skipped`.
 - A synthetic script must update only the check ids it can actually verify. Do not promote adjacent human gates such as APK release, production registration, or credential publication from `planned` to `online`.
+- Evidence freshness is about evidence quality, not a production SLA. If a
+  merged synthetic check was previously `online` but its checked time is stale
+  or unreadable, `site:status` should degrade that merged check instead of
+  leaving it as `online`. Do not mark a project `offline` only because evidence
+  is stale.
 - Adjacent human gates can be mirrored as explanatory metadata, but their public status remains `planned`, `unchecked`, or `degraded` until the exact release credential, account, APK, or production configuration has been approved and verified.
 - Synthetic checks that can trigger a live model call must be opt-in. Default
   scheduled checks may verify low-sensitive health endpoints, but must not post
@@ -147,6 +155,14 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
   `skipped`, preserve the existing output report, and summarize that preserved
   report with low-sensitive counts when it is readable.
 - Malformed synthetic JSON -> `site:status` ignores that file and keeps static status data.
+- Synthetic checkedAt <= 24h old -> merged evidence freshness `新鲜`.
+- Synthetic checkedAt > 24h and <= 72h old -> merged evidence freshness `接近过期`.
+- Synthetic checkedAt > 72h old -> merged evidence freshness `已过期`; if the
+  synthetic status was `online`, the merged reliability check becomes
+  `degraded`.
+- Missing or unreadable synthetic checkedAt -> merged evidence freshness
+  `未知`; if the synthetic status was `online`, the merged reliability check
+  becomes `degraded`.
 
 ### 5. Good/Base/Bad Cases
 
@@ -174,7 +190,11 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - For static showcase pages with a public default base URL, run the synthetic script and assert required page text plus public asset URLs are reachable.
 - Use an ephemeral local API to verify configured-base paths when adding protected smoke logic.
 - Run `npm.cmd run site:status` and confirm `/status` receives merged check statuses.
-- Run `npm.cmd run status:contract` after changing `src/data/statusTargets.ts` or any `public/status/*-synthetic.json` snapshot, so static reliability checks, `relatedTargetId` links, synthetic check ids, ERP registration gates, APK gates, and low-sensitive report fields cannot drift silently.
+- Run `npm.cmd run status:contract` after changing `src/data/statusTargets.ts`
+  or any `public/status/*-synthetic.json` / `public/status/site-status.json`
+  snapshot, so static reliability checks, `relatedTargetId` links, synthetic
+  check ids, ERP registration gates, APK gates, freshness evidence, and
+  low-sensitive report fields cannot drift silently.
 - For business-gate checks, assert both the open and closed boolean paths. The
   closed path should be `degraded` or `planned` according to the feature gate,
   not `online`.
