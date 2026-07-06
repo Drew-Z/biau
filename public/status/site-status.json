@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-06T19:08:41.063Z",
+  "checkedAt": "2026-07-06T19:18:38.097Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": false,
   "summary": {
@@ -22,8 +22,8 @@
       "note": "工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "offline",
       "httpStatus": 0,
-      "durationMs": 10661,
-      "checkedAt": "2026-07-06T19:08:41.069Z",
+      "durationMs": 10625,
+      "checkedAt": "2026-07-06T19:18:38.106Z",
       "finalUrl": "https://legal-rag-web.onrender.com",
       "issueKind": "network_error",
       "issues": [
@@ -42,8 +42,8 @@
       "note": "展示页已接入 BIAU Port / 泊岸标题与 favicon；入口可达代表展示页和截图可访问，正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 724,
-      "checkedAt": "2026-07-06T19:08:51.730Z",
+      "durationMs": 1015,
+      "checkedAt": "2026-07-06T19:18:48.732Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issueKind": "none",
       "issues": []
@@ -60,8 +60,8 @@
       "note": "代码侧支持生产普通注册默认开放，但当前线上状态以 bootstrap synthetic 为准；登录页主品牌和后台侧栏已接入 BIAU Port / 泊岸外壳。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 897,
-      "checkedAt": "2026-07-06T19:08:52.454Z",
+      "durationMs": 1163,
+      "checkedAt": "2026-07-06T19:18:49.748Z",
       "finalUrl": "https://erp.ciallobill.qzz.io/",
       "issueKind": "none",
       "issues": []
@@ -78,8 +78,8 @@
       "note": "游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 841,
-      "checkedAt": "2026-07-06T19:08:53.351Z",
+      "durationMs": 849,
+      "checkedAt": "2026-07-06T19:18:50.911Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issueKind": "none",
       "issues": []
@@ -96,8 +96,8 @@
       "note": "展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；阶段 APK 是否公开发布仍需人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 654,
-      "checkedAt": "2026-07-06T19:08:54.192Z",
+      "durationMs": 807,
+      "checkedAt": "2026-07-06T19:18:51.760Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issueKind": "none",
       "issues": []
@@ -241,7 +241,7 @@
           "label": "演示入口",
           "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应，并确认入口以 BIAU Port / 泊岸品牌外壳承载 Ozon ERP 产品名。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 897 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1163 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -308,7 +308,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应，并确认标题/favicon 归属泊岸展示体系。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 654 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 807 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -339,17 +339,18 @@
           "label": "APK 发布 gate",
           "status": "unchecked",
           "description": "公开下载前检查签名包、版本说明、病毒扫描和回滚说明。",
-          "evidence": "最近一次 synthetic 检查：APK release gate requires a separate release artifact check。当前状态页只展示 gate，不公开未经批准的下载链接。",
+          "evidence": "最近一次 synthetic 检查：A stage APK was found; it may be shown as a stage package but is not a formal approved release.；formal public APK release is not approved。当前状态页只展示 gate，不公开未经批准的下载链接。",
           "cadence": "发布候选生成后",
           "ownerHint": "Release checklist"
         }
       ],
       "gates": [
-        "后端真实 URL、阶段 APK 下载和生产部署变更都需要人工确认。"
+        "最近一次 Xunqiu synthetic 的 `apkGate.status` 为 `stage-apk-found`：可以展示阶段包存在，但不能把它描述为正式批准发布。",
+        "后端真实 URL、正式 APK 下载和生产部署变更都需要人工确认。"
       ],
       "nextActions": [
         "配置 `XUNQIU_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run xunqiu:synthetic` 生成后端 health 与兼容 API 检查。",
-        "APK 下载公开前补签名、版本、扫描和回滚清单，不在 synthetic 脚本里暴露下载地址。",
+        "正式 APK 发布前补签名、版本、扫描、回滚清单和人工批准；synthetic 只保留脱敏 artifact 摘要。",
         "后续可把展示站 favicon/title 断言加入静态入口 synthetic。"
       ]
     },
@@ -412,7 +413,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应，并确认 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属已同步。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 841 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 849 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

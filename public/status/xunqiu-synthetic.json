@@ -1,7 +1,25 @@
 {
-  "checkedAt": "2026-07-06T18:13:34.062Z",
+  "checkedAt": "2026-07-06T19:17:30.450Z",
   "apiBaseConfigured": false,
   "hasCredentials": false,
+  "apkGate": {
+    "status": "stage-apk-found",
+    "publicDownloadApproved": false,
+    "stageArtifactCount": 1,
+    "releaseLikeArtifactCount": 0,
+    "debugArtifactCount": 0,
+    "unknownArtifactCount": 0,
+    "summary": "A stage APK was found; it may be shown as a stage package but is not a formal approved release.",
+    "artifacts": [
+      {
+        "fileName": "latest-xunqiu64.apk",
+        "buildType": "stage",
+        "sizeBytes": 5831285,
+        "updatedAt": "2026-05-02T14:32:55.153Z",
+        "source": "artifact-root-1"
+      }
+    ]
+  },
   "ok": true,
   "checks": [
     {
@@ -9,7 +27,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T18:13:34.063Z",
+      "checkedAt": "2026-07-06T19:17:30.452Z",
       "summary": "XUNQIU_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     },
@@ -18,7 +36,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T18:13:34.063Z",
+      "checkedAt": "2026-07-06T19:17:30.452Z",
       "summary": "XUNQIU_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     },
@@ -27,9 +45,11 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T18:13:34.063Z",
-      "summary": "APK release gate requires a separate release artifact check",
-      "issues": []
+      "checkedAt": "2026-07-06T19:17:30.452Z",
+      "summary": "A stage APK was found; it may be shown as a stage package but is not a formal approved release.",
+      "issues": [
+        "formal public APK release is not approved"
+      ]
     }
   ]
 }

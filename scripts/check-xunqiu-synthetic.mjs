@@ -1,10 +1,11 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const outputPath = resolve(repoRoot, 'public/status/xunqiu-synthetic.json')
 const DEFAULT_TIMEOUT_MS = 12_000
+const forceUnconfiguredFlags = new Set(['--force-unconfigured', '--force'])
 const COMPAT_ENDPOINTS = [
   {
     name: 'tweets',
@@ -28,6 +29,10 @@ function parseArgs(argv) {
   const args = {
     strict: process.env.XUNQIU_SYNTHETIC_STRICT === '1',
     timeoutMs: Number(process.env.XUNQIU_SYNTHETIC_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
+    artifactRoots: parseArtifactRoots(
+      process.env.XUNQIU_APK_ARTIFACT_ROOTS || process.env.XUNQIU_APK_ARTIFACT_ROOT || '',
+    ),
+    forceUnconfigured: process.env.XUNQIU_SYNTHETIC_FORCE_UNCONFIGURED === '1',
   }
 
   const readValue = (index) => argv[index + 1] ?? ''
@@ -35,6 +40,19 @@ function parseArgs(argv) {
     const item = argv[index]
     if (item === '--strict') {
       args.strict = true
+      continue
+    }
+    if (forceUnconfiguredFlags.has(item)) {
+      args.forceUnconfigured = true
+      continue
+    }
+    if (item === '--artifact-root') {
+      args.artifactRoots.push(String(readValue(index) || '').trim())
+      index += 1
+      continue
+    }
+    if (item.startsWith('--artifact-root=')) {
+      args.artifactRoots.push(String(item.slice('--artifact-root='.length) || '').trim())
       continue
     }
     if (item === '--timeout') {
@@ -48,7 +66,15 @@ function parseArgs(argv) {
   }
 
   if (!Number.isFinite(args.timeoutMs) || args.timeoutMs <= 0) args.timeoutMs = DEFAULT_TIMEOUT_MS
+  args.artifactRoots = args.artifactRoots.filter(Boolean)
   return args
+}
+
+function parseArtifactRoots(value) {
+  return String(value || '')
+    .split(/[;|]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
 }
 
 function normalizeBaseUrl(value) {
@@ -72,6 +98,7 @@ function emptyCheck(id, summary, issues = []) {
 
 function statusFromResponse(response, ok) {
   if (ok) return 'online'
+  if (response.error && response.status === 0) return 'offline'
   if ([401, 403, 404, 405, 408, 409, 425, 429].includes(response.status)) return 'degraded'
   if (response.status > 0) return 'offline'
   return 'unchecked'
@@ -80,10 +107,56 @@ function statusFromResponse(response, ok) {
 function issueFromResponse(response, fallback = '') {
   if (response.ok) return fallback
   if (fallback) return fallback
+  if (response.errorKind) return `request failed: ${response.errorKind}`
+  if (response.error) return 'request failed: network_error'
   if (response.status === 401 || response.status === 403) return 'requires authentication'
   if (response.status === 429) return 'rate limited'
   if (response.status >= 500) return `server returned HTTP ${response.status}`
   return response.status > 0 ? `HTTP ${response.status}` : 'request failed'
+}
+
+async function tryReadExistingReport() {
+  try {
+    return JSON.parse(await readFile(outputPath, 'utf8'))
+  } catch {
+    return null
+  }
+}
+
+function summarizeExistingReport(report) {
+  if (!report || !Array.isArray(report.checks)) return 'existing report'
+  const counts = report.checks.reduce(
+    (summary, check) => {
+      if (check && typeof check.status === 'string' && check.status in summary) summary[check.status] += 1
+      return summary
+    },
+    { online: 0, degraded: 0, offline: 0, unchecked: 0 },
+  )
+  const gate = report.apkGate?.status ? `, apkGate=${report.apkGate.status}` : ''
+  return `online=${counts.online} degraded=${counts.degraded} offline=${counts.offline} unchecked=${counts.unchecked}${gate}`
+}
+
+function classifyFetchError(error) {
+  if (!error || typeof error !== 'object') return 'network_error'
+  const code =
+    typeof error.code === 'string'
+      ? error.code
+      : error.cause && typeof error.cause === 'object'
+        ? (error.cause.code ?? '')
+        : ''
+
+  if (error.name === 'AbortError' || code === 'ETIMEDOUT') return 'timeout'
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'dns_error'
+  if (
+    code === 'CERT_HAS_EXPIRED' ||
+    code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+    code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+  ) {
+    return 'tls_error'
+  }
+  if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'UND_ERR_SOCKET') return 'connection_error'
+  return 'network_error'
 }
 
 async function requestJson(baseUrl, path, timeoutMs) {
@@ -106,6 +179,7 @@ async function requestJson(baseUrl, path, timeoutMs) {
       durationMs: Date.now() - startedAt,
       json,
       error: '',
+      errorKind: '',
     }
   } catch (error) {
     return {
@@ -114,6 +188,7 @@ async function requestJson(baseUrl, path, timeoutMs) {
       durationMs: Date.now() - startedAt,
       json: null,
       error: error instanceof Error ? error.message : String(error),
+      errorKind: classifyFetchError(error),
     }
   } finally {
     clearTimeout(timeout)
@@ -121,7 +196,7 @@ async function requestJson(baseUrl, path, timeoutMs) {
 }
 
 function checkFromResponse(id, response, ok, summary, fallbackIssue = '') {
-  const issue = ok ? '' : response.error || issueFromResponse(response, fallbackIssue)
+  const issue = ok ? '' : issueFromResponse(response, fallbackIssue)
   return {
     id,
     status: statusFromResponse(response, ok),
@@ -161,19 +236,137 @@ function compatCheckFromResults(results) {
   }
 }
 
+async function listApkArtifacts(roots) {
+  const artifacts = []
+
+  async function walk(dir, rootLabel) {
+    let entries = []
+    try {
+      entries = await readdir(dir, { withFileTypes: true })
+    } catch {
+      return
+    }
+
+    for (const entry of entries) {
+      const fullPath = resolve(dir, entry.name)
+      if (entry.isDirectory()) {
+        await walk(fullPath, rootLabel)
+        continue
+      }
+      if (!entry.isFile() || !/\.(apk|aab)$/i.test(entry.name)) continue
+      const fileStat = await stat(fullPath).catch(() => null)
+      const normalized = fullPath.replace(/\\/g, '/').toLowerCase()
+      artifacts.push({
+        fileName: entry.name,
+        buildType: classifyArtifactBuildType(normalized),
+        sizeBytes: fileStat?.size ?? 0,
+        updatedAt: fileStat?.mtime ? fileStat.mtime.toISOString() : '',
+        source: rootLabel,
+      })
+    }
+  }
+
+  for (const [index, root] of roots.entries()) {
+    await walk(root, `artifact-root-${index + 1}`)
+  }
+
+  return artifacts.sort((left, right) => `${left.buildType}:${left.fileName}`.localeCompare(`${right.buildType}:${right.fileName}`))
+}
+
+function classifyArtifactBuildType(normalizedPath) {
+  if (normalizedPath.includes('/debug/') || normalizedPath.includes('-debug')) return 'debug'
+  if (normalizedPath.includes('/downloads/') || normalizedPath.includes('latest-xunqiu64') || normalizedPath.includes('stage')) {
+    return 'stage'
+  }
+  if (normalizedPath.includes('/release/') || normalizedPath.includes('-release')) return 'release-like'
+  return 'unknown'
+}
+
+function summarizeApkGate(artifacts, artifactRootsConfigured) {
+  const stageArtifacts = artifacts.filter((artifact) => artifact.buildType === 'stage')
+  const releaseLikeArtifacts = artifacts.filter((artifact) => artifact.buildType === 'release-like')
+  const debugArtifacts = artifacts.filter((artifact) => artifact.buildType === 'debug')
+  const unknownArtifacts = artifacts.filter((artifact) => artifact.buildType === 'unknown')
+  const publicDownloadApproved = false
+  const status = !artifactRootsConfigured
+    ? 'not-configured'
+    : stageArtifacts.length > 0
+      ? 'stage-apk-found'
+      : releaseLikeArtifacts.length > 0
+        ? 'release-like-artifact-found'
+        : debugArtifacts.length > 0
+          ? 'debug-only'
+          : artifacts.length > 0
+            ? 'unknown-artifact-found'
+            : 'no-artifact'
+
+  return {
+    status,
+    publicDownloadApproved,
+    stageArtifactCount: stageArtifacts.length,
+    releaseLikeArtifactCount: releaseLikeArtifacts.length,
+    debugArtifactCount: debugArtifacts.length,
+    unknownArtifactCount: unknownArtifacts.length,
+    summary: apkGateSummary(status),
+    artifacts: artifacts.slice(0, 20).map((artifact) => ({
+      fileName: artifact.fileName,
+      buildType: artifact.buildType,
+      sizeBytes: artifact.sizeBytes,
+      updatedAt: artifact.updatedAt,
+      source: artifact.source,
+    })),
+  }
+}
+
+function apkGateSummary(status) {
+  if (status === 'not-configured') return 'APK artifact roots are not configured; public release remains gated.'
+  if (status === 'stage-apk-found') return 'A stage APK was found; it may be shown as a stage package but is not a formal approved release.'
+  if (status === 'release-like-artifact-found') return 'Release-like artifacts were found, but public download still needs signing, checksum, regression evidence, and approval.'
+  if (status === 'debug-only') return 'Only debug APK artifacts were found; public download remains gated.'
+  if (status === 'unknown-artifact-found') return 'APK/AAB artifacts were found but build type is unclear; public download remains gated.'
+  return 'No APK/AAB artifacts were found in configured artifact roots.'
+}
+
+function apkGateCheck(apkGate) {
+  const hasEvidence = apkGate.status !== 'not-configured'
+  return {
+    id: 'xunqiu-apk-gate',
+    status: apkGate.publicDownloadApproved ? 'online' : hasEvidence ? 'unchecked' : 'unchecked',
+    httpStatus: 0,
+    durationMs: 0,
+    checkedAt: new Date().toISOString(),
+    summary: apkGate.summary,
+    issues: apkGate.publicDownloadApproved ? [] : ['formal public APK release is not approved'],
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const baseUrl = normalizeBaseUrl(process.env.XUNQIU_SYNTHETIC_API_BASE_URL)
   const checkedAt = new Date().toISOString()
   const checks = []
+  const artifactRootsConfigured = args.artifactRoots.length > 0
+  const apkGate = summarizeApkGate(await listApkArtifacts(args.artifactRoots), artifactRootsConfigured)
 
   if (!baseUrl) {
+    if (!artifactRootsConfigured && !args.forceUnconfigured) {
+      const existingReport = await tryReadExistingReport()
+      if (existingReport) {
+        console.log(
+          `Xunqiu API base URL and APK artifact roots are not configured; preserving existing report (${summarizeExistingReport(
+            existingReport,
+          )}). Use --force-unconfigured to regenerate unchecked output.`,
+        )
+        return
+      }
+    }
+
     checks.push(
       emptyCheck('xunqiu-backend-health', 'XUNQIU_SYNTHETIC_API_BASE_URL is not configured'),
       emptyCheck('xunqiu-compat-api', 'XUNQIU_SYNTHETIC_API_BASE_URL is not configured'),
-      emptyCheck('xunqiu-apk-gate', 'APK release gate requires a separate release artifact check'),
+      apkGateCheck(apkGate),
     )
-    await writeReport({ checkedAt, apiBaseConfigured: false, checks })
+    await writeReport({ checkedAt, apiBaseConfigured: false, apkGate, checks })
     console.log('Xunqiu synthetic report generated without API base URL; all live checks are unchecked.')
     return
   }
@@ -204,9 +397,9 @@ async function main() {
     )
   }
   checks.push(compatCheckFromResults(compatResults))
-  checks.push(emptyCheck('xunqiu-apk-gate', 'APK release gate requires a separate release artifact check'))
+  checks.push(apkGateCheck(apkGate))
 
-  await writeReport({ checkedAt, apiBaseConfigured: true, checks })
+  await writeReport({ checkedAt, apiBaseConfigured: true, apkGate, checks })
   console.log(
     `Xunqiu synthetic report generated: online=${checks.filter((check) => check.status === 'online').length} unchecked=${checks.filter((check) => check.status === 'unchecked').length} offline=${checks.filter((check) => check.status === 'offline').length}`,
   )
@@ -219,6 +412,7 @@ async function writeReport(report) {
     checkedAt: report.checkedAt,
     apiBaseConfigured: report.apiBaseConfigured,
     hasCredentials: false,
+    apkGate: report.apkGate,
     ok: report.checks.every((check) => check.status !== 'offline'),
     checks: report.checks,
   }

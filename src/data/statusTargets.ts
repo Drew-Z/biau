@@ -343,10 +343,13 @@ export const reliabilityProjects: ReliabilityProject[] = [
         ownerHint: 'Release checklist',
       },
     ],
-    gates: ['后端真实 URL、阶段 APK 下载和生产部署变更都需要人工确认。'],
+    gates: [
+      '最近一次 Xunqiu synthetic 的 `apkGate.status` 为 `stage-apk-found`：可以展示阶段包存在，但不能把它描述为正式批准发布。',
+      '后端真实 URL、正式 APK 下载和生产部署变更都需要人工确认。',
+    ],
     nextActions: [
       '配置 `XUNQIU_SYNTHETIC_API_BASE_URL` 后运行 `npm.cmd run xunqiu:synthetic` 生成后端 health 与兼容 API 检查。',
-      'APK 下载公开前补签名、版本、扫描和回滚清单，不在 synthetic 脚本里暴露下载地址。',
+      '正式 APK 发布前补签名、版本、扫描、回滚清单和人工批准；synthetic 只保留脱敏 artifact 摘要。',
       '后续可把展示站 favicon/title 断言加入静态入口 synthetic。',
     ],
   },
