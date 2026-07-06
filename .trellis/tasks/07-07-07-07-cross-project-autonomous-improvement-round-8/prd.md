@@ -14,13 +14,39 @@ Continue sustained autonomous improvements after Round 7, focusing on reliabilit
 
 ## Acceptance Criteria
 
-- [ ] At least one child task is completed, verified, committed, and pushed.
+- [x] At least one child task is completed, verified, and committed locally; push is deferred to the GitHub SSH host key manual gate.
 - [x] Manual gates are recorded in task notes when encountered.
-- [ ] No secrets, production credentials, private URLs, model relay endpoints, or unapproved APK links are committed.
-- [ ] Finished child tasks are archived before the parent is archived.
+- [x] No secrets, production credentials, private URLs, model relay endpoints, or unapproved APK links are committed.
+- [x] Finished child tasks are archived before the parent is archived.
 
 ## Notes
 
 - Default child order: reliability/status observation first, then public demo readiness, then project detail/content improvements, then assistant or AI Daily follow-ups.
-- Current first child: `07-07-round-8-reliability-status-local-evidence-hardening`.
-- Push gate: local commit `aa7d284` is ready, but SSH host key verification blocked `git push origin main`; see `manual-gates.md`.
+- Completed children:
+  - `07-07-round-8-reliability-status-local-evidence-hardening`
+  - `07-07-round-8-status-detail-freshness-readability`
+- Push gate: local commits are ready, but SSH host key verification blocked `git push origin main`; see `manual-gates.md`.
+
+## Result
+
+- Reliability status generation now appends checked-at/freshness context to merged synthetic evidence.
+- `status:contract` enforces freshness evidence shape and prevents stale/unknown synthetic evidence from remaining `online`.
+- `/status/:projectId` now surfaces `证据时间` and `证据新鲜度` as readable detail facts instead of burying them only in a long evidence paragraph.
+- `check:ui` now asserts status detail freshness rows and badges from generated status data.
+- Trellis specs now document both the status evidence freshness contract and the frontend helper-driven display rule.
+
+## Validation
+
+- `npm.cmd run site:status`
+- `npm.cmd run status:contract`
+- `npm.cmd run check:ui`
+- `npm.cmd run lint`
+- `npm.cmd run build`
+- `npm.cmd run verify`
+- `git diff --check`
+- Targeted sensitive scans over changed status/UI/task files; only expected spec/example words or CSS `mask-` false positives appeared.
+
+## Recommended Next Round
+
+- Continue with a new child focused on visitor-facing project detail/asset polish, AI Daily authoring workflow, or internal assistant admin usability.
+- Keep GitHub SSH host key verification as the top manual action before attempting any push.
