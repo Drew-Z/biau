@@ -4,6 +4,7 @@ import {
   reliabilityProjects as staticReliabilityProjects,
   siteStatusTargets,
 } from '../src/data/statusTargets.ts'
+import { getReliabilityStatusSummary, mergeSiteStatusPayload } from '../src/data/siteStatusView.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -100,12 +101,25 @@ await statusPage.goto(`${base}/status`, { waitUntil: 'networkidle' })
 const statusCards = await statusPage.locator('.status-target').count()
 const expectedStatusCards = siteStatusTargets.length
 const reliabilityProjectCards = await statusPage.locator('.status-project-card').count()
-const statusOnlineText = await statusPage.locator('.status-summary-card.is-online strong').innerText().catch(() => '')
+const rawStatusPayload = await statusPage
+  .evaluate(async () => {
+    const response = await fetch('/status/site-status.json', { cache: 'no-store' })
+    if (!response.ok) return null
+    return response.json()
+  })
+  .catch(() => null)
+const mergedStatusPayload = mergeSiteStatusPayload(rawStatusPayload)
+const expectedEntrySummary = mergedStatusPayload.summary
+const expectedReliabilitySummary = getReliabilityStatusSummary(mergedStatusPayload.reliabilityProjects)
+const entrySummaryCards = statusPage.locator('[data-status-scope="entry"]')
+const reliabilitySummaryCards = statusPage.locator('[data-status-scope="reliability"]')
 const legalStatusLink = statusPage.getByRole('link', { name: '打开入口' }).first()
 const legalStatusHref = await legalStatusLink.getAttribute('href').catch(() => null)
 const legalStatusTarget = await legalStatusLink.getAttribute('target').catch(() => null)
 const legalStatusRel = await legalStatusLink.getAttribute('rel').catch(() => null)
 const detailStatusLinks = await statusPage.getByRole('link', { name: /^详细状态：/ }).count()
+const entrySummaryKeys = ['online', 'degraded', 'offline', 'unchecked']
+const reliabilitySummaryKeys = ['online', 'degraded', 'offline', 'unchecked', 'planned']
 if (statusCards !== expectedStatusCards) {
   failures.push(`/status targets: expected ${expectedStatusCards} homepage external targets, got ${statusCards}`)
 }
@@ -131,8 +145,37 @@ for (const target of siteStatusTargets) {
 if (reliabilityProjectCards < staticReliabilityProjects.length) {
   failures.push(`/status reliability: expected at least ${staticReliabilityProjects.length} project detail cards, got ${reliabilityProjectCards}`)
 }
-if (!/^\d+$/.test(statusOnlineText.trim())) {
-  failures.push(`/status summary: expected online count to be numeric, got "${statusOnlineText}"`)
+if ((await entrySummaryCards.count()) !== entrySummaryKeys.length) {
+  failures.push(`/status summary: expected ${entrySummaryKeys.length} entry summary cards, got ${await entrySummaryCards.count()}`)
+}
+if ((await reliabilitySummaryCards.count()) !== reliabilitySummaryKeys.length) {
+  failures.push(
+    `/status summary: expected ${reliabilitySummaryKeys.length} reliability summary cards, got ${await reliabilitySummaryCards.count()}`,
+  )
+}
+for (const key of entrySummaryKeys) {
+  const card = statusPage.locator(`[data-status-scope="entry"][data-status-key="${key}"]`).first()
+  const label = await card.locator('span').first().innerText().catch(() => '')
+  const value = await card.locator('strong').first().innerText().catch(() => '')
+  const expectedValue = String(expectedEntrySummary[key])
+  if (!label.includes('入口')) {
+    failures.push(`/status summary: expected entry ${key} label to mention 入口, got "${label}"`)
+  }
+  if (value.trim() !== expectedValue) {
+    failures.push(`/status summary: expected entry ${key} count ${expectedValue}, got "${value}"`)
+  }
+}
+for (const key of reliabilitySummaryKeys) {
+  const card = statusPage.locator(`[data-status-scope="reliability"][data-status-key="${key}"]`).first()
+  const label = await card.locator('span').first().innerText().catch(() => '')
+  const value = await card.locator('strong').first().innerText().catch(() => '')
+  const expectedValue = String(expectedReliabilitySummary[key])
+  if (!label.includes('能力')) {
+    failures.push(`/status summary: expected reliability ${key} label to mention 能力, got "${label}"`)
+  }
+  if (value.trim() !== expectedValue) {
+    failures.push(`/status summary: expected reliability ${key} count ${expectedValue}, got "${value}"`)
+  }
 }
 if (legalStatusHref !== 'https://legal-rag-web.onrender.com') {
   failures.push(`/status external link: expected Legal RAG href, got "${legalStatusHref}"`)

@@ -1,10 +1,12 @@
 import {
   SITE_STATUS_BASE_URL,
   reliabilityProjects,
+  reliabilityStatusOrder,
   siteStatusTargets,
   type ReliabilityLayer,
   type ReliabilityProject,
   type ReliabilityStatus,
+  type ReliabilityStatusCounts,
   type SiteStatusTarget,
 } from './statusTargets'
 
@@ -106,6 +108,33 @@ export function buildSummary(targets: SiteStatusCheck[]): SiteStatusSummary {
     },
     { total: 0, online: 0, degraded: 0, offline: 0, unchecked: 0 },
   )
+}
+
+export function getReliabilityStatusSummary(projects: ReliabilityProject[] | undefined = reliabilityProjects): ReliabilityStatusCounts {
+  const summary = reliabilityStatusOrder.reduce(
+    (counts, status) => {
+      counts[status] = 0
+      return counts
+    },
+    { total: 0 } as ReliabilityStatusCounts,
+  )
+
+  for (const project of projects ?? []) {
+    for (const check of project.checks) {
+      summary.total += 1
+      summary[check.status] += 1
+    }
+  }
+
+  return summary
+}
+
+export function hasEntryStatusAttention(summary: SiteStatusSummary) {
+  return summary.degraded > 0 || summary.offline > 0 || summary.unchecked > 0
+}
+
+export function hasReliabilityStatusAttention(summary: ReliabilityStatusCounts) {
+  return summary.degraded > 0 || summary.offline > 0 || summary.unchecked > 0
 }
 
 export function mergeSiteStatusPayload(payload: SiteStatusPayload | null): SiteStatusPayload {

@@ -983,10 +983,41 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   font-size: 13px;
 }
 
+.status-summary-clusters {
+  display: grid;
+  gap: var(--space-20);
+}
+
+.status-summary-cluster {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.status-summary-cluster__head {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  align-items: end;
+}
+
+.status-summary-cluster__head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif-display);
+  font-size: clamp(1.25rem, 2.4vw, 1.65rem);
+  font-weight: var(--weight-title);
+  line-height: 1.12;
+}
+
 .status-summary-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-16);
+}
+
+.status-summary-grid--reliability {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .status-summary-card {

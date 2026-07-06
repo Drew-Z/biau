@@ -62,6 +62,14 @@ When the selected slice touches a related repository:
 4. Run that repository's smallest relevant validation first, then broader validation when risk justifies it.
 5. Keep commits per repository; do not mix unrelated repositories in one commit.
 
+## Progress Log
+
+- 2026-07-06: Started parent task in execution mode and created child
+  `07-06-07-06-status-summary-semantics-polish` for an unblocked local status
+  UI/data semantics slice. The child separates `/status` entry reachability
+  counts from reliability ability coverage counts, updates UI regression
+  assertions, and requires no manual gate.
+
 ## Discovery Sweep Checklist
 
 - [ ] Compare homepage/project cards with `src/data/portfolio.ts`.

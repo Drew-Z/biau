@@ -11,30 +11,47 @@ import {
   formatCheckedAt,
   formatDuration,
   formatHttpStatus,
+  getReliabilityStatusSummary,
   getStatusDetailPath,
+  hasEntryStatusAttention,
+  hasReliabilityStatusAttention,
   layerLabels,
   projectCategoryLabels,
   statusMeta,
-  type SiteStatusPayload,
 } from '../data/siteStatusView'
 import { useSiteStatus } from '../hooks/useSiteStatus'
 
-function getReliabilitySummary(status: SiteStatusPayload) {
-  const checks = status.reliabilityProjects?.flatMap((project) => project.checks) ?? []
-  return checks.reduce(
-    (summary, check) => {
-      summary.total += 1
-      summary[check.status] += 1
-      return summary
-    },
-    { total: 0, online: 0, degraded: 0, offline: 0, unchecked: 0, planned: 0 },
-  )
+const entrySummaryKeys = ['online', 'degraded', 'offline', 'unchecked'] as const
+const reliabilitySummaryKeys = ['online', 'degraded', 'offline', 'unchecked', 'planned'] as const
+
+const entrySummaryLabels: Record<(typeof entrySummaryKeys)[number], { label: string; hint: string }> = {
+  online: { label: '可用入口', hint: '公开入口最近一次检测已响应' },
+  degraded: { label: '受限入口', hint: '入口响应但可能需要登录、重试或说明' },
+  offline: { label: '异常入口', hint: '最近一次检测未能确认入口可达' },
+  unchecked: { label: '未检测入口', hint: '尚未生成公开入口检测数据' },
+}
+
+const reliabilitySummaryLabels: Record<(typeof reliabilitySummaryKeys)[number], { label: string; hint: string }> = {
+  online: { label: '在线能力', hint: '已有入口或 synthetic 证据支撑的能力项' },
+  degraded: { label: '受限能力', hint: '能力可触达但存在登录、配置或人工 gate' },
+  offline: { label: '异常能力', hint: '最近一次检查显示能力不可用' },
+  unchecked: { label: '未检测能力', hint: '已有检查项但缺少当前公开检测数据' },
+  planned: { label: '待接入能力', hint: '已纳入观察路线，等待平台、凭据或发布门禁' },
 }
 
 export function SiteStatusPage() {
   const { status, loadError } = useSiteStatus()
-  const allClear = status.summary.offline === 0 && status.summary.unchecked === 0
-  const reliabilitySummary = useMemo(() => getReliabilitySummary(status), [status])
+  const reliabilitySummary = useMemo(
+    () => getReliabilityStatusSummary(status.reliabilityProjects),
+    [status.reliabilityProjects],
+  )
+  const entryNeedsAttention = hasEntryStatusAttention(status.summary)
+  const reliabilityNeedsAttention = hasReliabilityStatusAttention(reliabilitySummary)
+  const overviewTitle = entryNeedsAttention
+    ? '部分入口需要关注'
+    : reliabilityNeedsAttention
+      ? '部分能力仍待验证'
+      : '入口与关键能力稳定'
 
   return (
     <main className="site-status-page page-stack">
@@ -46,10 +63,10 @@ export function SiteStatusPage() {
 
       <section className="status-overview glass-card">
         <div className="status-overview__lead">
-          <span className={`status-pulse ${allClear ? 'online' : 'degraded'}`} aria-hidden />
+          <span className={`status-pulse ${entryNeedsAttention || reliabilityNeedsAttention ? 'degraded' : 'online'}`} aria-hidden />
           <div>
             <p className="section-subtitle">LAST CHECK</p>
-            <h2>{allClear ? '主要入口可访问' : '部分入口需要关注'}</h2>
+            <h2>{overviewTitle}</h2>
           </div>
         </div>
         <dl className="status-metrics" aria-label="站点入口状态摘要">
@@ -75,14 +92,48 @@ export function SiteStatusPage() {
         {loadError && <p className="status-load-error">状态数据暂未读取成功：{loadError}</p>}
       </section>
 
-      <section className="status-summary-grid" aria-label="状态统计">
-        {(['online', 'degraded', 'offline', 'unchecked', 'planned'] as const).map((key) => (
-          <div key={key} className={`status-summary-card glass-card is-${statusMeta[key].tone}`}>
-            <span>{statusMeta[key].label}</span>
-            <strong>{key === 'planned' ? reliabilitySummary.planned : status.summary[key]}</strong>
-            <p>{statusMeta[key].hint}</p>
+      <section className="status-summary-clusters" aria-label="状态统计">
+        <div className="status-summary-cluster" aria-label="公开入口统计">
+          <div className="status-summary-cluster__head">
+            <p className="section-subtitle">ENTRY REACHABILITY</p>
+            <h2>入口可达性</h2>
           </div>
-        ))}
+          <div className="status-summary-grid status-summary-grid--entry">
+            {entrySummaryKeys.map((key) => (
+              <div
+                key={key}
+                className={`status-summary-card glass-card is-${statusMeta[key].tone}`}
+                data-status-scope="entry"
+                data-status-key={key}
+              >
+                <span>{entrySummaryLabels[key].label}</span>
+                <strong>{status.summary[key]}</strong>
+                <p>{entrySummaryLabels[key].hint}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="status-summary-cluster" aria-label="可靠性能力统计">
+          <div className="status-summary-cluster__head">
+            <p className="section-subtitle">RELIABILITY COVERAGE</p>
+            <h2>能力检查项</h2>
+          </div>
+          <div className="status-summary-grid status-summary-grid--reliability">
+            {reliabilitySummaryKeys.map((key) => (
+              <div
+                key={key}
+                className={`status-summary-card glass-card is-${statusMeta[key].tone}`}
+                data-status-scope="reliability"
+                data-status-key={key}
+              >
+                <span>{reliabilitySummaryLabels[key].label}</span>
+                <strong>{reliabilitySummary[key]}</strong>
+                <p>{reliabilitySummaryLabels[key].hint}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="status-layer-grid" aria-label="可靠性分层">
