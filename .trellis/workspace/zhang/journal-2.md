@@ -581,3 +581,40 @@ Completed first-batch project case-study content upgrade for Legal RAG, Ozon ERP
 ### Next Steps
 
 - None - task complete
+
+
+## Session 65: Internal assistant finalization audit
+
+**Date**: 2026-07-06
+**Task**: Internal assistant finalization audit
+**Branch**: `main`
+
+### Summary
+
+Finalized internal assistant local implementation: answer diagnostics, refreshed public facts, persisted sanitized historical answer metadata, clarified production migration gates, ran broad verify plus service-mode/RAG/status checks, and recorded AC/manual-gate audit.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b3ef5ae` | (see git log) |
+| `27e16f4` | (see git log) |
+| `7805ab3` | (see git log) |
+| `686f4c6` | (see git log) |
+| `b0ca432` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
