@@ -126,6 +126,9 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - Well-formed bootstrap payload with `registrationEnabled=false` -> auth or
   registration check becomes `degraded`, with a short issue such as deployment
   stale or registration closed; health can remain `online`.
+- Step skipped because a required environment variable is absent -> keep status
+  `skipped`, preserve the existing output report, and summarize that preserved
+  report with low-sensitive counts when it is readable.
 - Malformed synthetic JSON -> `site:status` ignores that file and keeps static status data.
 
 ### 5. Good/Base/Bad Cases

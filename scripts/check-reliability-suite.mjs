@@ -358,6 +358,7 @@ async function runStep(step, args) {
 
   const missingEnv = (step.requiredEnv ?? []).filter((key) => !String(process.env[key] ?? '').trim())
   if (missingEnv.length > 0) {
+    const preservedReport = await summarizeOutputFile(step)
     return {
       id: step.id,
       label: step.label,
@@ -366,8 +367,10 @@ async function runStep(step, args) {
       durationMs: 0,
       exitCode: 0,
       outputPath: step.outputPath,
-      summary: `Skipped because required environment is not configured: ${missingEnv.join(', ')}. Existing report is preserved.`,
-      issues: [],
+      summary: preservedReport
+        ? `Skipped because required environment is not configured: ${missingEnv.join(', ')}. Existing report is preserved: ${preservedReport.summary}.`
+        : `Skipped because required environment is not configured: ${missingEnv.join(', ')}. No existing report was readable.`,
+      issues: preservedReport?.issues ?? [],
     }
   }
 
