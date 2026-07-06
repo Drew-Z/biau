@@ -7,6 +7,7 @@ const outputPath = resolve(repoRoot, 'public/status/pet-gamer-synthetic.json')
 const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 12_000
 const CHECK_ID = 'pet-showcase'
+const APK_GATE_CHECK_ID = 'pet-apk-gate'
 const DEFAULT_ANDROID_ARTIFACT_ROOT = resolve(
   repoRoot,
   '..',
@@ -259,6 +260,20 @@ function summarizeApkGate(artifacts) {
   }
 }
 
+function apkGateCheck(apkGate, checkedAt) {
+  return {
+    id: APK_GATE_CHECK_ID,
+    status: apkGate.publicDownloadApproved ? 'online' : 'unchecked',
+    httpStatus: 0,
+    durationMs: 0,
+    checkedAt,
+    summary: apkGate.summary,
+    issues: apkGate.publicDownloadApproved
+      ? []
+      : ['formal public APK release is not approved; signing, checksum, scan/regression evidence, rollback note, and human approval are required'],
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const checkedAt = new Date().toISOString()
@@ -296,6 +311,7 @@ async function main() {
             : `Pet App showcase check found ${issues.length} issue(s)`,
         issues,
       },
+      apkGateCheck(apkGate, checkedAt),
     ],
   }
 

@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Pet synthetic/status reports must keep APK gate metadata public-safe and not expose unapproved downloads."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Static public pages and gated downloads require asset/download assertions."}
