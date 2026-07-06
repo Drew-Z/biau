@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-06T05:48:36.956Z",
+  "checkedAt": "2026-07-06T06:58:06.137Z",
   "apiBaseConfigured": false,
   "hasCredentials": false,
   "registrationEnabled": null,
@@ -14,7 +14,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T05:48:36.957Z",
+      "checkedAt": "2026-07-06T06:58:06.138Z",
       "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     },
@@ -23,7 +23,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T05:48:36.957Z",
+      "checkedAt": "2026-07-06T06:58:06.138Z",
       "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     },
@@ -32,7 +32,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T05:48:36.957Z",
+      "checkedAt": "2026-07-06T06:58:06.138Z",
       "summary": "ERP_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     }
