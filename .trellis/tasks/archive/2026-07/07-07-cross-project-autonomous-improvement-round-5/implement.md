@@ -45,3 +45,26 @@ For associated projects:
 ## Completion
 
 Round 5 is complete when at least one P1 child is completed and the parent records what was done, what remains gated, what was validated, and what should be attempted next.
+
+## Round 5 Result Summary
+
+Completed child tasks:
+
+- `round-5-project-detail-case-study-visuals`: project detail pages now have stronger case-study visual/evidence checks.
+- `round-5-internal-assistant-agentic-workspace-polish`: assistant metadata normalizers and verification coverage were hardened.
+- `round-5-ai-daily-studio-authoring-flow`: Studio smoke coverage was wired into the broad verify gate.
+- `round-5-reliability-status-manual-gate-followup`: status contracts now enforce reliability target and gate semantics.
+- `round-5-erp-registration-demo-followup`: ERP registration availability was verified from the ERP project, and main-site status contracts enforce the registration gate language.
+- `round-5-pet-apk-showcase-gate-followup`: Pet APK public download stays gated unless approved release evidence exists.
+- `round-5-legal-rag-demo-gate-contract-followup`: Legal RAG protected checks cannot be marked online without credentialed demo evidence; UI check route readiness was stabilized.
+
+Validation record:
+
+- Latest full main-site gate: `npm.cmd run verify` passed.
+- Focused checks used across children included `project-details:check`, `assistant:meta-check`, `studio:smoke`, `status:contract`, `pet:synthetic`, `site:status`, ERP auth registration tests, and `check:ui`.
+- Sensitive-value scans were run on changed files before commits where public status, gate docs, or scripts changed.
+
+Next recommended round:
+
+- Continue with Round 6 rather than reopening Round 5.
+- Prefer tasks that improve visitor-visible trust signals and locally verifiable reliability: Xunqiu backend/APK gate, Playlab/game showcase status, project-detail screenshots/diagrams, and internal assistant knowledge admin polish.

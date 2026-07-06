@@ -15,4 +15,4 @@ Use this file for user/platform actions that cannot be safely completed from the
 
 ## Resolved Gates
 
-- None yet for round 5.
+- Main-site status contracts now guard ERP registration, Pet APK release, and Legal RAG credentialed protected checks, so these gates are visible and locally enforceable even while platform actions remain pending.
