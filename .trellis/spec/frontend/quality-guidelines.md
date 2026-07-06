@@ -106,6 +106,20 @@ Use Semi Design v19 components and `@douyinfe/semi-icons` first. Do not add othe
 
 Prefer real project screenshots and runtime screenshots. Missing assets should use stable fallback assets or be omitted; do not fabricate business data or visual evidence.
 
+### Project Detail Visual Composition
+
+Project detail pages should include both runtime evidence and structural explanation:
+
+- at least one in-body `screenshot` visual, so visitors can see the actual product/game/app state;
+- at least one in-body structural visual: `workflow`, `architecture`, `data-flow`, or `diagram`, so visitors can understand the implementation or usage path.
+
+`npm.cmd run project-details:check` enforces this composition. When a project
+lacks a safe runtime screenshot, record that as an asset/manual gate rather than
+inventing one. When a project lacks a safe structural visual, prefer a
+public-safe SVG/diagram that explains the current implementation boundary,
+workflow, or data flow without private URLs, local paths, credentials, or
+unapproved release claims.
+
 ## Static Public Pages
 
 When adding a pure static page under `public/` instead of a React route, add a

@@ -1,0 +1,28 @@
+{
+  "id": "07-07-cross-project-autonomous-improvement-round-9",
+  "name": "07-07-cross-project-autonomous-improvement-round-9",
+  "title": "Cross-project autonomous improvement round 9",
+  "description": "Continue autonomous local improvements for BIAU Port and related projects, prioritizing project detail visual semantics, visitor-facing demo clarity, and deterministic checks while recording manual gates for push, credentials, live model calls, cloud platforms, and APK releases.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-07-07-07-round-9-project-visual-semantics-guard"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

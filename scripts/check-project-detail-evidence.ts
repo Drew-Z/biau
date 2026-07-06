@@ -10,6 +10,7 @@ interface ProjectEvidenceSummary {
 
 const MIN_DETAIL_SECTIONS = 5
 const MIN_BODY_VISUALS = 2
+const STRUCTURAL_VISUAL_TYPES = new Set<ProjectVisualBlock['type']>(['workflow', 'architecture', 'data-flow', 'diagram'])
 const SENSITIVE_SOURCE_PATTERNS = [
   /^[A-Za-z]:[\\/]/u,
   /^file:/iu,
@@ -86,6 +87,12 @@ for (const project of projects) {
   }
   if (visuals.length < MIN_BODY_VISUALS) {
     fail(project.id, `needs at least ${MIN_BODY_VISUALS} in-body visuals, got ${visuals.length}`)
+  }
+  if (!visuals.some((visual) => visual.type === 'screenshot')) {
+    fail(project.id, 'needs at least one in-body screenshot visual for runtime evidence')
+  }
+  if (!visuals.some((visual) => STRUCTURAL_VISUAL_TYPES.has(visual.type))) {
+    fail(project.id, 'needs at least one workflow/architecture/data-flow/diagram visual for structural explanation')
   }
 
   for (const section of sections) {

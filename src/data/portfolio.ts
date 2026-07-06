@@ -1356,6 +1356,15 @@ export const projects: Project[] = [
           title: '发布与展示整理',
           body:
             '项目基于 Godot 4.6.1，docs、scenes、scripts 和 release 分别承接设计/测试/发布说明、战斗与 UI 场景、数据和自动加载逻辑、正式分发包。游戏站保留 GitHub Release、Web 试玩和源码入口。',
+          visual: {
+            id: 'space-war-playable-loop',
+            type: 'workflow',
+            title: '公开试玩闭环图',
+            description: '流程图说明从菜单、Web 试玩场景、战斗循环、结算到返回展示页的公开试玩路径。',
+            image: '/images/projects/showcase/space-war-loop.svg',
+            alt: 'Space War 公开试玩闭环流程图',
+            caption: '流程图只说明公开试玩体验路径，不公开本地构建路径、统计数据、账号或部署密钥。',
+          },
         },
       ],
       quality: [
