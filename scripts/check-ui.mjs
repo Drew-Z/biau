@@ -5,6 +5,7 @@ import {
   siteStatusTargets,
 } from '../src/data/statusTargets.ts'
 import { getReliabilityStatusSummary, mergeSiteStatusPayload } from '../src/data/siteStatusView.ts'
+import { projects } from '../src/data/portfolio.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -38,6 +39,19 @@ const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },
   { name: 'mobile', width: 390, height: 900 },
 ]
+
+const projectDetailVisualCases = projects
+  .map((project) => {
+    const sections = Object.values(project.detailContent ?? {}).flatMap((items) => items ?? [])
+    const visuals = sections.flatMap((section) => (section.visual ? [section.visual] : []))
+    return {
+      id: project.id,
+      title: project.title,
+      expectedVisuals: visuals.length,
+      expectedVisualImages: visuals.filter((visual) => visual.image).length,
+    }
+  })
+  .filter((project) => project.expectedVisuals > 0)
 
 const failures = []
 const browser = await chromium.launch({ headless: true })
@@ -736,6 +750,70 @@ if (!originalImageMobileMetrics) {
   }
 }
 await originalImageLinkPage.close()
+
+for (const project of projectDetailVisualCases) {
+  const projectVisualPage = await browser.newPage({ viewport: viewports[0] })
+  await projectVisualPage.goto(`${base}/projects/${project.id}`, { waitUntil: 'networkidle' })
+
+  const visualFigures = projectVisualPage.locator('.project-case-study .project-visual')
+  const renderedVisualCount = await visualFigures.count()
+  const visibleVisualCount = await projectVisualPage.locator('.project-case-study .project-visual:visible').count()
+  const visualImages = projectVisualPage.locator('.project-case-study .project-visual__image img')
+  const renderedImageCount = await visualImages.count()
+  const hasHorizontalOverflow = await projectVisualPage.evaluate(
+    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+  )
+
+  if (project.expectedVisuals < 2) {
+    failures.push(`/projects/${project.id} case visuals: expected project data to define at least 2 body visuals`)
+  }
+  if (renderedVisualCount !== project.expectedVisuals) {
+    failures.push(
+      `/projects/${project.id} case visuals: expected ${project.expectedVisuals} body visuals from project data, got ${renderedVisualCount}`,
+    )
+  }
+  if (visibleVisualCount !== project.expectedVisuals) {
+    failures.push(
+      `/projects/${project.id} case visuals: expected ${project.expectedVisuals} visible body visuals, got ${visibleVisualCount}`,
+    )
+  }
+  if (renderedImageCount !== project.expectedVisualImages) {
+    failures.push(
+      `/projects/${project.id} case visuals: expected ${project.expectedVisualImages} visual images, got ${renderedImageCount}`,
+    )
+  }
+  if (hasHorizontalOverflow) {
+    failures.push(`/projects/${project.id} case visuals: project detail page should not overflow horizontally`)
+  }
+
+  for (let index = 0; index < renderedImageCount; index += 1) {
+    const visualImage = visualImages.nth(index)
+    await visualImage.scrollIntoViewIfNeeded()
+    const metrics = await visualImage.evaluate((image) => {
+      const img = image instanceof HTMLImageElement ? image : null
+      if (!img) return null
+      const rect = img.getBoundingClientRect()
+      return {
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        complete: img.complete,
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        viewportWidth: document.documentElement.clientWidth,
+      }
+    })
+
+    if (!metrics || !metrics.complete || metrics.naturalWidth === 0 || metrics.naturalHeight === 0) {
+      failures.push(`/projects/${project.id} case visuals: visual image ${index + 1} did not load`)
+      continue
+    }
+    if (metrics.left < -1 || metrics.right > metrics.viewportWidth + 1) {
+      failures.push(`/projects/${project.id} case visuals: visual image ${index + 1} overflows horizontally`)
+    }
+  }
+
+  await projectVisualPage.close()
+}
 
 const detailQuickLinksPage = await browser.newPage({ viewport: viewports[1] })
 await detailQuickLinksPage.goto(`${base}/projects/legal-rag`, { waitUntil: 'networkidle' })
