@@ -162,8 +162,12 @@ function checkBody(route, response, base) {
 function extractLinks(html, pageUrl, base) {
   const links = []
   const baseOrigin = new URL(base).origin
-  for (const match of html.matchAll(/\s(?:href|src)=["']([^"']+)["']/gi)) {
-    const raw = match[1].trim()
+  for (const match of html.matchAll(/<([a-z][\w:-]*)\b[^>]*(?:href|src)=["'][^"']+["'][^>]*>/gi)) {
+    const tagName = match[1].toLowerCase()
+    const tag = match[0]
+    if (tagName === 'link' && isConnectionHint(tag)) continue
+
+    const raw = tag.match(/\s(?:href|src)=["']([^"']+)["']/i)?.[1]?.trim() ?? ''
     if (!raw || raw.startsWith('#') || raw.startsWith('data:') || raw.startsWith('mailto:') || raw.startsWith('tel:')) continue
     if (/^javascript:/i.test(raw)) continue
 
@@ -181,6 +185,15 @@ function extractLinks(html, pageUrl, base) {
     })
   }
   return links
+}
+
+function isConnectionHint(tag) {
+  const rel = tag.match(/\srel=["']([^"']+)["']/i)?.[1] ?? ''
+  const tokens = rel
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+  return tokens.includes('preconnect') || tokens.includes('dns-prefetch')
 }
 
 function uniqueByUrl(items) {
