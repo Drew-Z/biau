@@ -651,3 +651,36 @@ Finalized member-level model channel routing for the internal assistant: active/
 ### Next Steps
 
 - None - task complete
+
+
+## Session 67: Internal assistant agentic workspace runtime
+
+**Date**: 2026-07-06
+**Task**: Internal assistant agentic workspace runtime
+**Branch**: `main`
+
+### Summary
+
+Implemented the internal assistant Agentic Workflow Runtime: typed tools, guardrails, safe trace metadata, internal chat orchestration, frontend inspector, no-live smoke coverage, and code-spec documentation.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c566d06` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
