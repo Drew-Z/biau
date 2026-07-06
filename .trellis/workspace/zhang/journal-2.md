@@ -715,3 +715,36 @@ Implemented controlled Studio draft creation for internal assistant studio.draft
 ### Next Steps
 
 - None - task complete
+
+
+## Session 69: Polish internal assistant Studio draft workflow
+
+**Date**: 2026-07-06
+**Task**: Polish internal assistant Studio draft workflow
+**Branch**: `main`
+
+### Summary
+
+Added safe Studio draft deep links, Studio query selection, Agentic Workspace draft markers, clearer assistant draft-write diagnostics, no-live smoke coverage, and updated Agentic Workspace specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4deda24` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
