@@ -4,7 +4,11 @@ import {
   reliabilityProjects as staticReliabilityProjects,
   siteStatusTargets,
 } from '../src/data/statusTargets.ts'
-import { getReliabilityStatusSummary, mergeSiteStatusPayload } from '../src/data/siteStatusView.ts'
+import {
+  getReliabilityStatusSummary,
+  mergeSiteStatusPayload,
+  parseEvidenceFreshness,
+} from '../src/data/siteStatusView.ts'
 import { projects } from '../src/data/portfolio.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
@@ -294,11 +298,28 @@ await statusPage.waitForURL(`${base}/status/${legalDetailProject?.id ?? 'legal-r
 const legalDetailTitle = await statusPage.locator('.status-project h2').first().innerText().catch(() => '')
 const legalDetailChecks = await statusPage.locator('.status-check').count()
 const legalBackHref = await statusPage.getByRole('link', { name: '返回状态总览' }).first().getAttribute('href').catch(() => null)
+const legalMergedProject = mergedStatusPayload.reliabilityProjects?.find(
+  (project) => project.id === (legalDetailProject?.id ?? 'legal-rag'),
+)
+const expectedLegalFreshnessFacts =
+  legalMergedProject?.checks.filter((check) => parseEvidenceFreshness(check.evidence)).length ?? 0
+const legalFreshnessFacts = await statusPage.locator('.status-evidence-freshness').count()
+const legalFreshnessBadges = await statusPage.locator('.status-freshness-badge').count()
 if (!legalDetailTitle.includes(legalDetailProject?.title ?? 'Legal RAG')) {
   failures.push(`/status detail route: expected Legal RAG title on detail page, got "${legalDetailTitle}"`)
 }
 if (legalDetailChecks < 1) {
   failures.push('/status detail route: expected reliability checks on Legal RAG detail page')
+}
+if (expectedLegalFreshnessFacts > 0 && legalFreshnessFacts !== expectedLegalFreshnessFacts) {
+  failures.push(
+    `/status detail freshness: expected ${expectedLegalFreshnessFacts} freshness fact rows on Legal RAG detail page, got ${legalFreshnessFacts}`,
+  )
+}
+if (expectedLegalFreshnessFacts > 0 && legalFreshnessBadges !== expectedLegalFreshnessFacts) {
+  failures.push(
+    `/status detail freshness: expected ${expectedLegalFreshnessFacts} freshness badges on Legal RAG detail page, got ${legalFreshnessBadges}`,
+  )
 }
 if (legalBackHref !== '/status') {
   failures.push(`/status detail route: expected back link to /status, got "${legalBackHref}"`)

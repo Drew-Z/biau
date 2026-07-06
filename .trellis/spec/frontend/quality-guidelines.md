@@ -47,6 +47,13 @@ checks should assert the link count and `/status/:projectId` route target from
 the same data instead of duplicating project ids or fixed counts in Playwright
 code.
 
+For `/status/:projectId`, evidence freshness UI should be derived through
+`parseEvidenceFreshness()` in `src/data/siteStatusView.ts`, not by re-parsing
+the evidence string inside the page component. UI checks should derive the
+expected freshness row count from the same generated `site-status.json` payload
+that the page consumes, so synthetic check additions or removals do not require
+hardcoded Playwright count updates.
+
 For route-level UI checks, wait for route-specific async readiness in addition
 to the shared `.route-loading` Suspense fallback. Blog detail routes, for
 example, load the route module first and then load article content via

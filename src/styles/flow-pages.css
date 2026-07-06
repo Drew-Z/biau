@@ -1168,6 +1168,37 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   background: color-mix(in oklch, var(--muted) 11%, transparent);
 }
 
+.status-freshness-badge {
+  min-height: 24px;
+  padding: 0 var(--space-8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-pill);
+}
+
+.status-freshness-badge.is-online {
+  color: color-mix(in oklch, var(--green) 76%, var(--ink));
+  border-color: color-mix(in oklch, var(--green) 32%, var(--flow-ui-card-border));
+  background: color-mix(in oklch, var(--green) 12%, transparent);
+}
+
+.status-freshness-badge.is-degraded {
+  color: color-mix(in oklch, var(--amber) 80%, var(--ink));
+  border-color: color-mix(in oklch, var(--amber) 34%, var(--flow-ui-card-border));
+  background: color-mix(in oklch, var(--amber) 12%, transparent);
+}
+
+.status-freshness-badge.is-unchecked {
+  color: color-mix(in oklch, var(--blue) 76%, var(--ink));
+  border-color: color-mix(in oklch, var(--blue) 30%, var(--flow-ui-card-border));
+  background: color-mix(in oklch, var(--blue) 12%, transparent);
+}
+
 .status-target__facts {
   display: grid;
   grid-template-columns: 0.7fr 0.7fr 1.2fr;
@@ -1499,9 +1530,16 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .status-check__facts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-8);
   margin: 0;
+}
+
+.status-evidence-freshness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  align-items: center;
 }
 
 .status-project__footer {

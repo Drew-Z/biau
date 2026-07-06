@@ -167,6 +167,42 @@ export function formatCheckedAt(value: string) {
   }).format(date)
 }
 
+export type EvidenceFreshnessLabel = '新鲜' | '接近过期' | '已过期' | '未知'
+
+export interface ParsedEvidenceFreshness {
+  checkedAt: string
+  checkedAtLabel: string
+  freshnessLabel: EvidenceFreshnessLabel
+  ageText: string
+  tone: ReliabilityStatus
+}
+
+const evidenceFreshnessPattern = /证据时间：([^；。]+)；证据新鲜度：(新鲜|接近过期|已过期|未知)(?:（([^）]+)）)?/u
+
+const evidenceFreshnessTone: Record<EvidenceFreshnessLabel, ReliabilityStatus> = {
+  新鲜: 'online',
+  接近过期: 'degraded',
+  已过期: 'degraded',
+  未知: 'unchecked',
+}
+
+export function parseEvidenceFreshness(evidence: string): ParsedEvidenceFreshness | null {
+  const match = evidenceFreshnessPattern.exec(evidence)
+  if (!match) return null
+
+  const checkedAt = match[1]?.trim() ?? ''
+  const freshnessLabel = match[2] as EvidenceFreshnessLabel
+  const ageText = match[3]?.trim() ?? ''
+
+  return {
+    checkedAt,
+    checkedAtLabel: formatCheckedAt(checkedAt),
+    freshnessLabel,
+    ageText,
+    tone: evidenceFreshnessTone[freshnessLabel],
+  }
+}
+
 export function formatDuration(value: number) {
   if (!Number.isFinite(value) || value <= 0) return '未记录'
   if (value < 1000) return `${Math.round(value)} ms`

@@ -8,6 +8,7 @@ import {
 import {
   getStatusDetailPath,
   layerLabels,
+  parseEvidenceFreshness,
   projectCategoryLabels,
   statusMeta,
 } from '../data/siteStatusView'
@@ -46,6 +47,7 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
         {project.checks.map((check) => {
           const meta = statusMeta[check.status]
           const layer = layerLabels[check.layer]
+          const freshness = parseEvidenceFreshness(check.evidence)
           return (
             <section key={check.id} className={`status-check is-${meta.tone}`}>
               <div className="status-check__head">
@@ -71,6 +73,23 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
                   <dt>状态语义</dt>
                   <dd>{meta.hint}</dd>
                 </div>
+                {freshness && (
+                  <>
+                    <div>
+                      <dt>证据时间</dt>
+                      <dd>{freshness.checkedAtLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>证据新鲜度</dt>
+                      <dd className="status-evidence-freshness">
+                        <span className={`status-freshness-badge is-${statusMeta[freshness.tone].tone}`}>
+                          {freshness.freshnessLabel}
+                        </span>
+                        {freshness.ageText && <span>{freshness.ageText}</span>}
+                      </dd>
+                    </div>
+                  </>
+                )}
               </dl>
               <p className="status-target__note is-soft">{check.evidence}</p>
             </section>
