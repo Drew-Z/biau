@@ -632,6 +632,11 @@ try {
     throw new Error(`admin invite list should require admin token, got ${adminInvites.status}`)
   }
 
+  const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
+  if (adminKnowledge.status !== 401) {
+    throw new Error(`admin knowledge list should require admin token, got ${adminKnowledge.status}`)
+  }
+
   if (!process.env.DATABASE_URL?.trim()) {
     const internalWithToken = await fetch(`${base}/chat/internal`, {
       method: 'POST',
@@ -670,6 +675,21 @@ try {
     })
     if (revokeInviteWithoutDb.status !== 503) {
       throw new Error(`admin invite revoke should report missing database when admin token is present, got ${revokeInviteWithoutDb.status}`)
+    }
+
+    const knowledgeWithAdminToken = await fetch(`${base}/admin/knowledge-documents`, {
+      headers: { Authorization: 'Bearer admin-smoke-token' },
+    })
+    if (knowledgeWithAdminToken.status !== 503) {
+      throw new Error(`admin knowledge list should report missing database when admin token is present, got ${knowledgeWithAdminToken.status}`)
+    }
+
+    const knowledgeSyncWithoutDb = await fetch(`${base}/admin/knowledge/sync`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-smoke-token' },
+    })
+    if (knowledgeSyncWithoutDb.status !== 503) {
+      throw new Error(`admin knowledge sync should report missing database when admin token is present, got ${knowledgeSyncWithoutDb.status}`)
     }
   }
 

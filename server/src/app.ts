@@ -1,6 +1,6 @@
 import cors from 'cors'
 import express from 'express'
-import { Prisma, type Invite, type Member } from '@prisma/client'
+import { Prisma, type InternalKnowledgeDocument, type InternalKnowledgeSyncRun, type Invite, type Member } from '@prisma/client'
 import { env, hasDatabase } from './env.js'
 import { sha256 } from './crypto.js'
 import { issueMemberToken, readBearerMember, requireDatabase } from './auth.js'
@@ -10,6 +10,8 @@ import { retrieveAssistantContext, retrievePublicAssistantContext } from './ragC
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import { createStudioRouter } from './studioRoutes.js'
 import type { AssistantServiceMode, ChatPayload, ChatResponse } from './types.js'
+
+type InternalKnowledgeStatusValue = 'DRAFT' | 'REVIEWED' | 'ACTIVE' | 'ARCHIVED'
 
 export function createApp() {
   const app = express()
@@ -446,7 +448,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
       }
 
       const prisma = requireDatabase()
-      const [members, inviteRows, messages, usage, disabledMembers] = await Promise.all([
+      const [members, inviteRows, messages, usage, disabledMembers, internalKnowledgeDocuments, lastInternalKnowledgeSync] = await Promise.all([
         prisma.member.count(),
         prisma.invite.findMany({
           select: {
@@ -459,6 +461,8 @@ function registerInternalAssistantRoutes(app: express.Express) {
         prisma.chatMessage.count(),
         prisma.usageLog.count(),
         prisma.member.count({ where: { status: 'DISABLED' } }),
+        prisma.internalKnowledgeDocument.count(),
+        prisma.internalKnowledgeSyncRun.findFirst({ orderBy: { startedAt: 'desc' } }),
       ])
       const inviteSummary = summarizeInvites(inviteRows)
       res.json({
@@ -471,6 +475,8 @@ function registerInternalAssistantRoutes(app: express.Express) {
         messages,
         usage,
         disabledMembers,
+        internalKnowledgeDocuments,
+        lastInternalKnowledgeSync: lastInternalKnowledgeSync ? serializeInternalKnowledgeSyncRun(lastInternalKnowledgeSync) : null,
         modelChannels: listSafeModelChannels(),
       })
     } catch (error) {
@@ -597,6 +603,176 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
+  app.get('/admin/knowledge-documents', async (req, res, next) => {
+    try {
+      if (!isAdminRequest(req.headers.authorization)) {
+        res.status(401).json({ error: 'missing-admin-token' })
+        return
+      }
+
+      const prisma = requireDatabase()
+      const [documents, lastSyncRun] = await Promise.all([
+        prisma.internalKnowledgeDocument.findMany({
+          orderBy: { updatedAt: 'desc' },
+          take: 100,
+        }),
+        prisma.internalKnowledgeSyncRun.findFirst({ orderBy: { startedAt: 'desc' } }),
+      ])
+      res.json({
+        documents: documents.map(serializeInternalKnowledgeDocument),
+        lastSyncRun: lastSyncRun ? serializeInternalKnowledgeSyncRun(lastSyncRun) : null,
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.post('/admin/knowledge-documents', async (req, res, next) => {
+    try {
+      if (!isAdminRequest(req.headers.authorization)) {
+        res.status(401).json({ error: 'missing-admin-token' })
+        return
+      }
+
+      const payload = readInternalKnowledgePayload(req.body)
+      if (!payload.title || !payload.body) {
+        res.status(400).json({ error: 'missing-knowledge-document-fields' })
+        return
+      }
+
+      const prisma = requireDatabase()
+      const slug = payload.slug || toSlug(payload.title)
+      const existing = await prisma.internalKnowledgeDocument.findUnique({ where: { slug } })
+      if (existing) {
+        res.status(409).json({ error: 'knowledge-slug-exists' })
+        return
+      }
+
+      const document = await prisma.internalKnowledgeDocument.create({
+        data: {
+          slug,
+          title: payload.title,
+          summary: payload.summary,
+          body: payload.body,
+          tags: payload.tags as Prisma.InputJsonValue,
+          status: payload.status,
+          sourceType: payload.sourceType,
+          safetyNotes: payload.safetyNotes,
+          contentHash: hashInternalKnowledgeContent(payload),
+        },
+      })
+      res.json({ document: serializeInternalKnowledgeDocument(document) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.patch('/admin/knowledge-documents/:id', async (req, res, next) => {
+    try {
+      if (!isAdminRequest(req.headers.authorization)) {
+        res.status(401).json({ error: 'missing-admin-token' })
+        return
+      }
+
+      const prisma = requireDatabase()
+      const document = await prisma.internalKnowledgeDocument.findUnique({ where: { id: req.params.id } })
+      if (!document) {
+        res.status(404).json({ error: 'knowledge-document-not-found' })
+        return
+      }
+
+      const payload = readInternalKnowledgePayload(req.body, document)
+      if (!payload.title || !payload.body) {
+        res.status(400).json({ error: 'missing-knowledge-document-fields' })
+        return
+      }
+
+      const slug = payload.slug || document.slug
+      if (slug !== document.slug) {
+        const existing = await prisma.internalKnowledgeDocument.findUnique({ where: { slug } })
+        if (existing) {
+          res.status(409).json({ error: 'knowledge-slug-exists' })
+          return
+        }
+      }
+
+      const updated = await prisma.internalKnowledgeDocument.update({
+        where: { id: document.id },
+        data: {
+          slug,
+          title: payload.title,
+          summary: payload.summary,
+          body: payload.body,
+          tags: payload.tags as Prisma.InputJsonValue,
+          status: payload.status,
+          sourceType: payload.sourceType,
+          safetyNotes: payload.safetyNotes,
+          contentHash: hashInternalKnowledgeContent(payload),
+          ...(payload.contentChanged ? { lastSyncedAt: null } : {}),
+        },
+      })
+      res.json({ document: serializeInternalKnowledgeDocument(updated) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.post('/admin/knowledge/sync', async (req, res, next) => {
+    try {
+      if (!isAdminRequest(req.headers.authorization)) {
+        res.status(401).json({ error: 'missing-admin-token' })
+        return
+      }
+
+      const prisma = requireDatabase()
+      const documents = await prisma.internalKnowledgeDocument.findMany({
+        where: { status: { in: ['REVIEWED', 'ACTIVE'] } },
+        orderBy: { updatedAt: 'desc' },
+      })
+      const syncPlan = buildInternalKnowledgeSyncDocuments(documents)
+      const started = await prisma.internalKnowledgeSyncRun.create({
+        data: {
+          status: 'STARTED',
+          documentCount: documents.length,
+          chunkCount: syncPlan.chunkCount,
+          issueCount: 0,
+          diagnostic: {
+            mode: 'started',
+            scope: 'internal',
+            documentCount: documents.length,
+            chunkCount: syncPlan.chunkCount,
+          } as Prisma.InputJsonValue,
+        },
+      })
+
+      const syncResult = await syncInternalKnowledgeDocuments(syncPlan.documents)
+      const finishedAt = new Date()
+      const finalStatus = syncResult.accepted ? 'COMPLETED' : syncResult.status
+      const updatedRun = await prisma.internalKnowledgeSyncRun.update({
+        where: { id: started.id },
+        data: {
+          status: finalStatus,
+          finishedAt,
+          documentCount: documents.length,
+          chunkCount: syncPlan.chunkCount,
+          issueCount: syncResult.issueCount,
+          diagnostic: syncResult.diagnostic as Prisma.InputJsonValue,
+        },
+      })
+
+      if (syncResult.accepted && documents.length > 0) {
+        await prisma.internalKnowledgeDocument.updateMany({
+          where: { id: { in: documents.map((document) => document.id) } },
+          data: { lastSyncedAt: finishedAt },
+        })
+      }
+
+      res.json({ syncRun: serializeInternalKnowledgeSyncRun(updatedRun), accepted: syncResult.accepted })
+    } catch (error) {
+      next(error)
+    }
+  })
+
   app.post('/admin/invites', async (req, res, next) => {
     try {
       if (!isAdminRequest(req.headers.authorization)) {
@@ -702,6 +878,237 @@ function summarizeInvites(invites: Array<Pick<Invite, 'revokedAt' | 'expiresAt' 
     if (status === 'EXHAUSTED') summary.exhausted += 1
   }
   return summary
+}
+
+function serializeInternalKnowledgeDocument(
+  document: Pick<
+    InternalKnowledgeDocument,
+    | 'id'
+    | 'slug'
+    | 'title'
+    | 'summary'
+    | 'body'
+    | 'tags'
+    | 'status'
+    | 'sourceType'
+    | 'safetyNotes'
+    | 'contentHash'
+    | 'lastSyncedAt'
+    | 'createdAt'
+    | 'updatedAt'
+  >,
+) {
+  return {
+    id: document.id,
+    slug: document.slug,
+    title: document.title,
+    summary: document.summary,
+    body: document.body,
+    tags: readStringArray(document.tags),
+    status: document.status,
+    sourceType: document.sourceType,
+    safetyNotes: document.safetyNotes ?? '',
+    contentHash: document.contentHash,
+    lastSyncedAt: document.lastSyncedAt?.toISOString() ?? null,
+    createdAt: document.createdAt.toISOString(),
+    updatedAt: document.updatedAt.toISOString(),
+  }
+}
+
+function serializeInternalKnowledgeSyncRun(
+  syncRun: Pick<
+    InternalKnowledgeSyncRun,
+    'id' | 'status' | 'documentCount' | 'chunkCount' | 'issueCount' | 'startedAt' | 'finishedAt' | 'diagnostic'
+  >,
+) {
+  return {
+    id: syncRun.id,
+    status: syncRun.status,
+    documentCount: syncRun.documentCount,
+    chunkCount: syncRun.chunkCount,
+    issueCount: syncRun.issueCount,
+    startedAt: syncRun.startedAt.toISOString(),
+    finishedAt: syncRun.finishedAt?.toISOString() ?? null,
+    diagnostic: sanitizeInternalSyncDiagnostic(syncRun.diagnostic),
+  }
+}
+
+function readInternalKnowledgePayload(value: unknown, current?: InternalKnowledgeDocument) {
+  const record = isPlainRecord(value) ? value : {}
+  const title = readBoundedString(record.title ?? current?.title, 120)
+  const summary = readBoundedString(record.summary ?? current?.summary, 500)
+  const body = readBoundedString(record.body ?? current?.body, 20000)
+  const tags = readStringArray(record.tags ?? current?.tags).slice(0, 16)
+  const status = readInternalKnowledgeStatus(record.status ?? current?.status)
+  const sourceType = readBoundedString(record.sourceType ?? current?.sourceType ?? 'manual', 40) || 'manual'
+  const safetyNotes = readBoundedString(record.safetyNotes ?? current?.safetyNotes ?? '', 1000)
+  const slug = record.slug === undefined ? current?.slug ?? '' : toSlug(String(record.slug))
+  const contentChanged =
+    !current ||
+    title !== current.title ||
+    summary !== current.summary ||
+    body !== current.body ||
+    JSON.stringify(tags) !== JSON.stringify(readStringArray(current.tags)) ||
+    status !== current.status ||
+    sourceType !== current.sourceType ||
+    safetyNotes !== (current.safetyNotes ?? '')
+
+  return {
+    slug,
+    title,
+    summary,
+    body,
+    tags,
+    status,
+    sourceType,
+    safetyNotes,
+    contentChanged,
+  }
+}
+
+function readInternalKnowledgeStatus(value: unknown): InternalKnowledgeStatusValue {
+  if (value === 'DRAFT' || value === 'REVIEWED' || value === 'ACTIVE' || value === 'ARCHIVED') return value
+  return 'DRAFT'
+}
+
+function readStringArray(value: unknown) {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+    .map((item) => item.slice(0, 80))
+}
+
+function toSlug(value: string) {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+  return normalized || `internal-knowledge-${Date.now()}`
+}
+
+function hashInternalKnowledgeContent(payload: ReturnType<typeof readInternalKnowledgePayload>) {
+  return sha256(
+    JSON.stringify({
+      title: payload.title,
+      summary: payload.summary,
+      body: payload.body,
+      tags: payload.tags,
+      status: payload.status,
+      sourceType: payload.sourceType,
+      safetyNotes: payload.safetyNotes,
+    }),
+  )
+}
+
+function buildInternalKnowledgeSyncDocuments(documents: InternalKnowledgeDocument[]) {
+  return {
+    documents: documents.map((document) => ({
+      id: document.id,
+      slug: document.slug,
+      title: document.title,
+      summary: document.summary,
+      body: document.body,
+      tags: readStringArray(document.tags),
+      status: document.status,
+      sourceType: document.sourceType,
+      updatedAt: document.updatedAt.toISOString(),
+    })),
+    chunkCount: documents.reduce((total, document) => total + countInternalKnowledgeChunks(document.body), 0),
+  }
+}
+
+function countInternalKnowledgeChunks(body: string) {
+  const paragraphs = body
+    .split(/\n{2,}/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+  if (paragraphs.length === 0) return 0
+  return paragraphs.reduce((total, paragraph) => total + Math.max(1, Math.ceil(paragraph.length / 1200)), 0)
+}
+
+async function syncInternalKnowledgeDocuments(documents: ReturnType<typeof buildInternalKnowledgeSyncDocuments>['documents']) {
+  const diagnosticBase = {
+    scope: 'internal',
+    documentCount: documents.length,
+    chunkCount: documents.reduce((total, document) => total + countInternalKnowledgeChunks(document.body), 0),
+  }
+
+  if (documents.length === 0) {
+    return {
+      accepted: false,
+      status: 'SKIPPED' as const,
+      issueCount: 0,
+      diagnostic: { ...diagnosticBase, mode: 'local-planned', reason: 'no-reviewed-internal-documents' },
+    }
+  }
+
+  if (!env.assistantRagApiBaseUrl || !env.ragSyncToken) {
+    return {
+      accepted: false,
+      status: 'SKIPPED' as const,
+      issueCount: 0,
+      diagnostic: { ...diagnosticBase, mode: 'local-planned', reason: 'rag-sync-not-configured' },
+    }
+  }
+
+  try {
+    const endpoint = `${env.assistantRagApiBaseUrl.replace(/\/+$/, '')}/v1/sync`
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.ragSyncToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ scope: 'internal', documents }),
+      signal: AbortSignal.timeout(10000),
+    })
+    const payload = (await response.json().catch(() => ({}))) as unknown
+    if (!response.ok) {
+      return {
+        accepted: false,
+        status: 'FAILED' as const,
+        issueCount: 1,
+        diagnostic: { ...diagnosticBase, mode: 'external-rag', reason: 'http_status', httpStatus: response.status },
+      }
+    }
+    const accepted = isPlainRecord(payload) && payload.accepted === true
+    const mode = isPlainRecord(payload) && typeof payload.mode === 'string' ? payload.mode : 'external-rag'
+    return {
+      accepted,
+      status: accepted ? ('COMPLETED' as const) : ('SKIPPED' as const),
+      issueCount: accepted ? 0 : 1,
+      diagnostic: { ...diagnosticBase, mode, accepted },
+    }
+  } catch (error) {
+    return {
+      accepted: false,
+      status: 'FAILED' as const,
+      issueCount: 1,
+      diagnostic: {
+        ...diagnosticBase,
+        mode: 'external-rag',
+        reason: error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'network_error',
+      },
+    }
+  }
+}
+
+function sanitizeInternalSyncDiagnostic(value: unknown) {
+  if (!isPlainRecord(value)) return null
+  const result: Record<string, unknown> = {}
+  for (const key of ['mode', 'scope', 'reason', 'accepted', 'documentCount', 'chunkCount', 'issueCount', 'httpStatus']) {
+    if (typeof value[key] === 'string' || typeof value[key] === 'number' || typeof value[key] === 'boolean') {
+      result[key] = value[key]
+    }
+  }
+  return result
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function serializeChatSession(

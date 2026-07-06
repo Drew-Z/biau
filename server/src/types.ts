@@ -112,6 +112,23 @@ export interface RagRetrievePayload {
   locale?: string
 }
 
+export interface RagSyncDocument {
+  id: string
+  slug?: string
+  title: string
+  summary?: string
+  body: string
+  tags?: string[]
+  status?: string
+  sourceType?: string
+  updatedAt?: string
+}
+
+export interface RagSyncPayload {
+  scope?: AssistantScope
+  documents?: RagSyncDocument[]
+}
+
 export interface RagChunkCitation {
   id: string
   documentId: string

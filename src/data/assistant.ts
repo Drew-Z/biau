@@ -77,6 +77,8 @@ export interface AssistantModelChannelSummary {
 }
 
 export type AssistantInviteStatus = 'OPEN' | 'EXHAUSTED' | 'EXPIRED' | 'REVOKED'
+export type AssistantInternalKnowledgeStatus = 'DRAFT' | 'REVIEWED' | 'ACTIVE' | 'ARCHIVED'
+export type AssistantInternalKnowledgeSyncStatus = 'STARTED' | 'COMPLETED' | 'FAILED' | 'SKIPPED'
 
 export interface AssistantInviteSummary {
   id: string
@@ -89,6 +91,33 @@ export interface AssistantInviteSummary {
   expiresAt?: string | null
   revokedAt?: string | null
   createdAt?: string
+}
+
+export interface AssistantInternalKnowledgeDocument {
+  id: string
+  slug: string
+  title: string
+  summary: string
+  body: string
+  tags: string[]
+  status: AssistantInternalKnowledgeStatus
+  sourceType: string
+  safetyNotes: string
+  contentHash: string
+  lastSyncedAt?: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface AssistantInternalKnowledgeSyncRun {
+  id: string
+  status: AssistantInternalKnowledgeSyncStatus
+  documentCount: number
+  chunkCount: number
+  issueCount: number
+  startedAt: string
+  finishedAt?: string | null
+  diagnostic?: Record<string, string | number | boolean> | null
 }
 
 export const publicAssistantSuggestions: AssistantSuggestion[] = [
@@ -343,6 +372,98 @@ export function normalizeAssistantInvites(value: unknown): AssistantInviteSummar
   return value
     .map((item) => normalizeAssistantInvite(item))
     .filter((item): item is AssistantInviteSummary => item !== null)
+}
+
+export function normalizeAssistantInternalKnowledgeDocument(value: unknown): AssistantInternalKnowledgeDocument | null {
+  if (!isRecord(value)) return null
+  const {
+    id,
+    slug,
+    title,
+    summary,
+    body,
+    tags,
+    status,
+    sourceType,
+    safetyNotes,
+    contentHash,
+    lastSyncedAt,
+    createdAt,
+    updatedAt,
+  } = value
+  if (
+    typeof id !== 'string' ||
+    typeof slug !== 'string' ||
+    typeof title !== 'string' ||
+    typeof summary !== 'string' ||
+    typeof body !== 'string' ||
+    (status !== 'DRAFT' && status !== 'REVIEWED' && status !== 'ACTIVE' && status !== 'ARCHIVED') ||
+    typeof sourceType !== 'string' ||
+    typeof safetyNotes !== 'string' ||
+    typeof contentHash !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    id,
+    slug,
+    title,
+    summary,
+    body,
+    tags: Array.isArray(tags) ? tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    status,
+    sourceType,
+    safetyNotes,
+    contentHash,
+    lastSyncedAt: typeof lastSyncedAt === 'string' || lastSyncedAt === null ? lastSyncedAt : undefined,
+    createdAt: typeof createdAt === 'string' ? createdAt : undefined,
+    updatedAt: typeof updatedAt === 'string' ? updatedAt : undefined,
+  }
+}
+
+export function normalizeAssistantInternalKnowledgeDocuments(value: unknown): AssistantInternalKnowledgeDocument[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => normalizeAssistantInternalKnowledgeDocument(item))
+    .filter((item): item is AssistantInternalKnowledgeDocument => item !== null)
+}
+
+export function normalizeAssistantInternalKnowledgeSyncRun(value: unknown): AssistantInternalKnowledgeSyncRun | null {
+  if (!isRecord(value)) return null
+  const { id, status, documentCount, chunkCount, issueCount, startedAt, finishedAt, diagnostic } = value
+  if (
+    typeof id !== 'string' ||
+    (status !== 'STARTED' && status !== 'COMPLETED' && status !== 'FAILED' && status !== 'SKIPPED') ||
+    typeof documentCount !== 'number' ||
+    typeof chunkCount !== 'number' ||
+    typeof issueCount !== 'number' ||
+    typeof startedAt !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    id,
+    status,
+    documentCount,
+    chunkCount,
+    issueCount,
+    startedAt,
+    finishedAt: typeof finishedAt === 'string' || finishedAt === null ? finishedAt : undefined,
+    diagnostic: normalizeAssistantSyncDiagnostic(diagnostic),
+  }
+}
+
+function normalizeAssistantSyncDiagnostic(value: unknown): Record<string, string | number | boolean> | null {
+  if (!isRecord(value)) return null
+  const diagnostic: Record<string, string | number | boolean> = {}
+  for (const [key, item] of Object.entries(value)) {
+    if (typeof item === 'string' || typeof item === 'number' || typeof item === 'boolean') {
+      diagnostic[key] = item
+    }
+  }
+  return diagnostic
 }
 
 export function normalizeAssistantModelChannel(value: unknown): AssistantModelChannelSummary | null {

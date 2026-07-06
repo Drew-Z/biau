@@ -153,6 +153,11 @@ try {
       throw new Error(`public mode should not expose admin invite routes, got ${adminInvites.status}`)
     }
 
+    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
+    if (adminKnowledge.status !== 404) {
+      throw new Error(`public mode should not expose admin knowledge routes, got ${adminKnowledge.status}`)
+    }
+
     const ragHealth = await fetch(`${base}/rag/health`)
     if (ragHealth.status !== 404) throw new Error(`public mode should not expose /rag, got ${ragHealth.status}`)
   })
@@ -178,6 +183,9 @@ try {
     const adminInvites = await fetch(`${base}/admin/invites`)
     if (adminInvites.status !== 401) throw new Error(`internal mode should expose protected admin invite routes, got ${adminInvites.status}`)
 
+    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
+    if (adminKnowledge.status !== 401) throw new Error(`internal mode should expose protected admin knowledge routes, got ${adminKnowledge.status}`)
+
     const ragHealth = await fetch(`${base}/rag/health`)
     if (ragHealth.status !== 404) throw new Error(`internal mode should not expose /rag, got ${ragHealth.status}`)
   })
@@ -199,6 +207,11 @@ try {
     const adminInvites = await fetch(`${base}/admin/invites`)
     if (adminInvites.status !== 404) {
       throw new Error(`rag mode should not expose admin invite routes, got ${adminInvites.status}`)
+    }
+
+    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
+    if (adminKnowledge.status !== 404) {
+      throw new Error(`rag mode should not expose admin knowledge routes, got ${adminKnowledge.status}`)
     }
 
     const unauthorizedRetrieve = await postJson(`${base}/v1/retrieve`, { query: 'RAG 项目', scope: 'public' })
@@ -254,6 +267,11 @@ try {
     const adminInvites = await fetch(`${base}/admin/invites`)
     if (adminInvites.status !== 404) {
       throw new Error(`studio mode should not expose admin invite routes, got ${adminInvites.status}`)
+    }
+
+    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
+    if (adminKnowledge.status !== 404) {
+      throw new Error(`studio mode should not expose admin knowledge routes, got ${adminKnowledge.status}`)
     }
 
     const ragHealth = await fetch(`${base}/rag/health`)

@@ -1,7 +1,7 @@
 import express from 'express'
 import { env } from './env.js'
 import { getRagOrchestratorHealth, retrieveRagContext, syncRagStore } from './ragOrchestrator.js'
-import type { AssistantScope, RagRetrievePayload } from './types.js'
+import type { AssistantScope, RagRetrievePayload, RagSyncPayload } from './types.js'
 
 interface RagOrchestratorRouterOptions {
   requireAuth: boolean
@@ -44,8 +44,14 @@ export function createRagOrchestratorRouter(options: RagOrchestratorRouterOption
   router.post('/v1/sync', async (req, res, next) => {
     if (!authorizeSync(req.headers.authorization, options.requireAuth, res)) return
 
+    const payload = req.body as RagSyncPayload
+    if (payload?.scope !== undefined && !isAssistantScope(payload.scope)) {
+      res.status(400).json({ error: 'unsupported-scope' })
+      return
+    }
+
     try {
-      res.json(await syncRagStore())
+      res.json(await syncRagStore(payload))
     } catch (error) {
       next(error)
     }

@@ -1,9 +1,15 @@
 import { useState, type FormEvent } from 'react'
 import {
   ASSISTANT_STORAGE_KEYS,
+  normalizeAssistantInternalKnowledgeDocument,
+  normalizeAssistantInternalKnowledgeDocuments,
+  normalizeAssistantInternalKnowledgeSyncRun,
   normalizeAssistantInvites,
   normalizeAssistantMember,
   normalizeAssistantModelChannels,
+  type AssistantInternalKnowledgeDocument,
+  type AssistantInternalKnowledgeStatus,
+  type AssistantInternalKnowledgeSyncRun,
   type AssistantInviteSummary,
   type AssistantMemberProfile,
   type AssistantModelChannelSummary,
@@ -22,6 +28,8 @@ interface AdminSummary {
   exhaustedInvites: number
   messages: number
   usage: number
+  internalKnowledgeDocuments: number
+  lastInternalKnowledgeSync?: AssistantInternalKnowledgeSyncRun | null
   modelChannels: AssistantModelChannelSummary[]
 }
 
@@ -31,6 +39,18 @@ interface InviteFormState {
   role: 'MEMBER' | 'ADMIN'
   dailyQuota: string
   maxUses: string
+}
+
+interface KnowledgeFormState {
+  id: string
+  slug: string
+  title: string
+  summary: string
+  body: string
+  tagsText: string
+  status: AssistantInternalKnowledgeStatus
+  sourceType: string
+  safetyNotes: string
 }
 
 const emptySummary: AdminSummary = {
@@ -43,6 +63,8 @@ const emptySummary: AdminSummary = {
   exhaustedInvites: 0,
   messages: 0,
   usage: 0,
+  internalKnowledgeDocuments: 0,
+  lastInternalKnowledgeSync: null,
   modelChannels: [],
 }
 
@@ -52,6 +74,18 @@ const defaultInviteForm: InviteFormState = {
   role: 'MEMBER',
   dailyQuota: '24',
   maxUses: '1',
+}
+
+const defaultKnowledgeForm: KnowledgeFormState = {
+  id: '',
+  slug: '',
+  title: '',
+  summary: '',
+  body: '',
+  tagsText: '',
+  status: 'DRAFT',
+  sourceType: 'manual',
+  safetyNotes: '',
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -65,7 +99,20 @@ function readStoredAdminToken() {
 
 function normalizeSummary(value: unknown): AdminSummary | null {
   if (!isRecord(value)) return null
-  const { members, disabledMembers, invites, openInvites, revokedInvites, expiredInvites, exhaustedInvites, messages, usage, modelChannels } = value
+  const {
+    members,
+    disabledMembers,
+    invites,
+    openInvites,
+    revokedInvites,
+    expiredInvites,
+    exhaustedInvites,
+    messages,
+    usage,
+    internalKnowledgeDocuments,
+    lastInternalKnowledgeSync,
+    modelChannels,
+  } = value
   if (
     typeof members !== 'number' ||
     typeof invites !== 'number' ||
@@ -84,6 +131,8 @@ function normalizeSummary(value: unknown): AdminSummary | null {
     exhaustedInvites: typeof exhaustedInvites === 'number' ? exhaustedInvites : 0,
     messages,
     usage,
+    internalKnowledgeDocuments: typeof internalKnowledgeDocuments === 'number' ? internalKnowledgeDocuments : 0,
+    lastInternalKnowledgeSync: normalizeAssistantInternalKnowledgeSyncRun(lastInternalKnowledgeSync),
     modelChannels: normalizeAssistantModelChannels(modelChannels),
   }
 }
@@ -108,6 +157,9 @@ function explainAdminError(status: number, errorCode: string) {
   if (errorCode === 'invite-not-found') return '邀请码不存在或已被删除。'
   if (errorCode === 'unsupported-invite-revocation') return '邀请码撤销参数不正确。'
   if (errorCode === 'unsupported-member-status') return '成员状态参数不正确。'
+  if (errorCode === 'missing-knowledge-document-fields') return '内部知识文档需要标题和正文。'
+  if (errorCode === 'knowledge-slug-exists') return '内部知识文档 slug 已存在。'
+  if (errorCode === 'knowledge-document-not-found') return '内部知识文档不存在或已被删除。'
   return `管理接口返回 ${status}，请检查 API 服务。`
 }
 
@@ -125,6 +177,21 @@ const inviteStatusLabels: Record<AssistantInviteSummary['status'], string> = {
   REVOKED: '已撤销',
 }
 
+const knowledgeStatusLabels: Record<AssistantInternalKnowledgeStatus, string> = {
+  DRAFT: '草稿',
+  REVIEWED: '已审核',
+  ACTIVE: '已启用',
+  ARCHIVED: '已归档',
+}
+
+function splitTags(value: string) {
+  return value
+    .split(/[,\n，]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 16)
+}
+
 export function AssistantAdminPage() {
   const [adminToken, setAdminToken] = useState(() => readStoredAdminToken())
   const [draftToken, setDraftToken] = useState(() => readStoredAdminToken())
@@ -133,15 +200,22 @@ export function AssistantAdminPage() {
   const [inviteStatus, setInviteStatus] = useState('')
   const [invitesStatus, setInvitesStatus] = useState('')
   const [membersStatus, setMembersStatus] = useState('')
+  const [knowledgeStatus, setKnowledgeStatus] = useState('')
   const [isLoadingSummary, setIsLoadingSummary] = useState(false)
   const [isCreatingInvite, setIsCreatingInvite] = useState(false)
   const [isLoadingInvites, setIsLoadingInvites] = useState(false)
   const [isLoadingMembers, setIsLoadingMembers] = useState(false)
+  const [isLoadingKnowledge, setIsLoadingKnowledge] = useState(false)
+  const [isSavingKnowledge, setIsSavingKnowledge] = useState(false)
+  const [isSyncingKnowledge, setIsSyncingKnowledge] = useState(false)
   const [updatingMemberId, setUpdatingMemberId] = useState('')
   const [updatingInviteId, setUpdatingInviteId] = useState('')
   const [inviteForm, setInviteForm] = useState<InviteFormState>(defaultInviteForm)
+  const [knowledgeForm, setKnowledgeForm] = useState<KnowledgeFormState>(defaultKnowledgeForm)
   const [invites, setInvites] = useState<AssistantInviteSummary[]>([])
   const [members, setMembers] = useState<AssistantMemberProfile[]>([])
+  const [knowledgeDocuments, setKnowledgeDocuments] = useState<AssistantInternalKnowledgeDocument[]>([])
+  const [lastKnowledgeSyncRun, setLastKnowledgeSyncRun] = useState<AssistantInternalKnowledgeSyncRun | null>(null)
   const [modelChannels, setModelChannels] = useState<AssistantModelChannelSummary[]>([])
 
   const saveAdminToken = (event: FormEvent<HTMLFormElement>) => {
@@ -194,6 +268,7 @@ export function AssistantAdminPage() {
 
       setSummary(nextSummary)
       setModelChannels(nextSummary.modelChannels)
+      setLastKnowledgeSyncRun(nextSummary.lastInternalKnowledgeSync ?? null)
       setSummaryStatus('摘要已更新。')
     } catch {
       setSummaryStatus('无法连接管理 API。')
@@ -271,6 +346,151 @@ export function AssistantAdminPage() {
       setInvitesStatus('无法连接邀请码 API。')
     } finally {
       setIsLoadingInvites(false)
+    }
+  }
+
+  const loadKnowledgeDocuments = async () => {
+    if (!API_BASE) {
+      setKnowledgeStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用内部知识 API。`)
+      return
+    }
+    if (!adminToken) {
+      setKnowledgeStatus('请先保存 admin token。')
+      return
+    }
+
+    setIsLoadingKnowledge(true)
+    setKnowledgeStatus('')
+    try {
+      const response = await fetch(`${API_BASE}/admin/knowledge-documents`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+      const payload = (await response.json().catch(() => ({}))) as unknown
+      if (!response.ok) {
+        setKnowledgeStatus(explainAdminError(response.status, getErrorCode(payload)))
+        return
+      }
+      if (!isRecord(payload)) {
+        setKnowledgeStatus('内部知识 API 返回格式不完整。')
+        return
+      }
+
+      setKnowledgeDocuments(normalizeAssistantInternalKnowledgeDocuments(payload.documents))
+      setLastKnowledgeSyncRun(normalizeAssistantInternalKnowledgeSyncRun(payload.lastSyncRun))
+      setKnowledgeStatus('内部知识文档已更新。')
+    } catch {
+      setKnowledgeStatus('无法连接内部知识 API。')
+    } finally {
+      setIsLoadingKnowledge(false)
+    }
+  }
+
+  const saveKnowledgeDocument = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!API_BASE || !adminToken) {
+      setKnowledgeStatus('请先保存 admin token 并确认 API base 已配置。')
+      return
+    }
+
+    setIsSavingKnowledge(true)
+    setKnowledgeStatus('')
+    const isEditing = Boolean(knowledgeForm.id)
+    try {
+      const response = await fetch(
+        `${API_BASE}/admin/knowledge-documents${isEditing ? `/${knowledgeForm.id}` : ''}`,
+        {
+          method: isEditing ? 'PATCH' : 'POST',
+          headers: {
+            Authorization: `Bearer ${adminToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            slug: knowledgeForm.slug,
+            title: knowledgeForm.title,
+            summary: knowledgeForm.summary,
+            body: knowledgeForm.body,
+            tags: splitTags(knowledgeForm.tagsText),
+            status: knowledgeForm.status,
+            sourceType: knowledgeForm.sourceType,
+            safetyNotes: knowledgeForm.safetyNotes,
+          }),
+        },
+      )
+      const payload = (await response.json().catch(() => ({}))) as unknown
+      if (!response.ok) {
+        setKnowledgeStatus(explainAdminError(response.status, getErrorCode(payload)))
+        return
+      }
+      if (!isRecord(payload)) {
+        setKnowledgeStatus('内部知识保存 API 返回格式不完整。')
+        return
+      }
+
+      const document = normalizeAssistantInternalKnowledgeDocument(payload.document)
+      if (!document) {
+        setKnowledgeStatus('内部知识保存 API 返回的文档格式不完整。')
+        return
+      }
+
+      setKnowledgeDocuments((current) =>
+        [document, ...current.filter((item) => item.id !== document.id)].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')),
+      )
+      setKnowledgeForm(defaultKnowledgeForm)
+      setKnowledgeStatus(`内部知识文档已${isEditing ? '更新' : '创建'}：${document.title}`)
+      void loadSummary()
+    } catch {
+      setKnowledgeStatus('无法连接内部知识保存 API。')
+    } finally {
+      setIsSavingKnowledge(false)
+    }
+  }
+
+  const editKnowledgeDocument = (document: AssistantInternalKnowledgeDocument) => {
+    setKnowledgeForm({
+      id: document.id,
+      slug: document.slug,
+      title: document.title,
+      summary: document.summary,
+      body: document.body,
+      tagsText: document.tags.join('\n'),
+      status: document.status,
+      sourceType: document.sourceType,
+      safetyNotes: document.safetyNotes,
+    })
+    setKnowledgeStatus(`正在编辑：${document.title}`)
+  }
+
+  const syncKnowledgeDocuments = async () => {
+    if (!API_BASE || !adminToken) {
+      setKnowledgeStatus('请先保存 admin token 并确认 API base 已配置。')
+      return
+    }
+
+    setIsSyncingKnowledge(true)
+    setKnowledgeStatus('')
+    try {
+      const response = await fetch(`${API_BASE}/admin/knowledge/sync`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+      const payload = (await response.json().catch(() => ({}))) as unknown
+      if (!response.ok) {
+        setKnowledgeStatus(explainAdminError(response.status, getErrorCode(payload)))
+        return
+      }
+      if (!isRecord(payload)) {
+        setKnowledgeStatus('内部知识同步 API 返回格式不完整。')
+        return
+      }
+
+      const syncRun = normalizeAssistantInternalKnowledgeSyncRun(payload.syncRun)
+      setLastKnowledgeSyncRun(syncRun)
+      setKnowledgeStatus(payload.accepted === true ? '内部知识已提交同步。' : '内部知识同步已记录为本地计划/跳过，等待 RAG sync 配置。')
+      void loadKnowledgeDocuments()
+    } catch {
+      setKnowledgeStatus('无法连接内部知识同步 API。')
+    } finally {
+      setIsSyncingKnowledge(false)
     }
   }
 
@@ -407,6 +627,10 @@ export function AssistantAdminPage() {
     setInviteForm((current) => ({ ...current, [field]: value }))
   }
 
+  const updateKnowledgeField = <K extends keyof KnowledgeFormState>(field: K, value: KnowledgeFormState[K]) => {
+    setKnowledgeForm((current) => ({ ...current, [field]: value }))
+  }
+
   const createInvite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const code = inviteForm.code.trim()
@@ -533,6 +757,10 @@ export function AssistantAdminPage() {
               <span>
                 <strong>{summary.usage}</strong>
                 用量
+              </span>
+              <span>
+                <strong>{summary.internalKnowledgeDocuments}</strong>
+                内部知识
               </span>
             </div>
           </article>
@@ -683,12 +911,144 @@ export function AssistantAdminPage() {
           </article>
 
           <article className="assistant-admin-card">
+            <h2>内部知识源</h2>
+            <p>维护经过审核的内部知识文档；只有已审核/已启用文档会进入同步计划。</p>
+
+            <form className="assistant-admin-form" onSubmit={saveKnowledgeDocument}>
+              <label className="assistant-field">
+                <span>标题</span>
+                <input
+                  type="text"
+                  value={knowledgeForm.title}
+                  onChange={(event) => updateKnowledgeField('title', event.target.value)}
+                  placeholder="内部知识标题"
+                  maxLength={120}
+                />
+              </label>
+              <label className="assistant-field">
+                <span>Slug</span>
+                <input
+                  type="text"
+                  value={knowledgeForm.slug}
+                  onChange={(event) => updateKnowledgeField('slug', event.target.value)}
+                  placeholder="可留空自动生成"
+                  maxLength={80}
+                />
+              </label>
+              <label className="assistant-field">
+                <span>摘要</span>
+                <textarea
+                  value={knowledgeForm.summary}
+                  onChange={(event) => updateKnowledgeField('summary', event.target.value)}
+                  placeholder="一句话说明这份知识的边界"
+                  rows={2}
+                />
+              </label>
+              <label className="assistant-field">
+                <span>正文</span>
+                <textarea
+                  value={knowledgeForm.body}
+                  onChange={(event) => updateKnowledgeField('body', event.target.value)}
+                  placeholder="只写可进入内部助手的脱敏内容"
+                  rows={6}
+                />
+              </label>
+              <div className="assistant-form-grid">
+                <label className="assistant-field">
+                  <span>状态</span>
+                  <select
+                    value={knowledgeForm.status}
+                    onChange={(event) => updateKnowledgeField('status', event.target.value as AssistantInternalKnowledgeStatus)}
+                  >
+                    <option value="DRAFT">草稿</option>
+                    <option value="REVIEWED">已审核</option>
+                    <option value="ACTIVE">已启用</option>
+                    <option value="ARCHIVED">已归档</option>
+                  </select>
+                </label>
+                <label className="assistant-field">
+                  <span>来源类型</span>
+                  <input
+                    type="text"
+                    value={knowledgeForm.sourceType}
+                    onChange={(event) => updateKnowledgeField('sourceType', event.target.value)}
+                    placeholder="manual / project-note"
+                    maxLength={40}
+                  />
+                </label>
+              </div>
+              <label className="assistant-field">
+                <span>标签</span>
+                <textarea
+                  value={knowledgeForm.tagsText}
+                  onChange={(event) => updateKnowledgeField('tagsText', event.target.value)}
+                  placeholder="每行一个标签"
+                  rows={2}
+                />
+              </label>
+              <label className="assistant-field">
+                <span>安全备注</span>
+                <textarea
+                  value={knowledgeForm.safetyNotes}
+                  onChange={(event) => updateKnowledgeField('safetyNotes', event.target.value)}
+                  placeholder="脱敏范围、不可公开边界、人工审核备注"
+                  rows={2}
+                />
+              </label>
+              <div className="assistant-admin-actions">
+                <button type="submit" disabled={isSavingKnowledge || !adminToken}>
+                  {isSavingKnowledge ? '保存中…' : knowledgeForm.id ? '更新文档' : '创建文档'}
+                </button>
+                <button type="button" onClick={() => setKnowledgeForm(defaultKnowledgeForm)}>
+                  清空
+                </button>
+              </div>
+            </form>
+
+            <div className="assistant-admin-actions">
+              <button type="button" onClick={() => void loadKnowledgeDocuments()} disabled={isLoadingKnowledge || !adminToken}>
+                {isLoadingKnowledge ? '读取中…' : '刷新知识'}
+              </button>
+              <button type="button" onClick={() => void syncKnowledgeDocuments()} disabled={isSyncingKnowledge || !adminToken}>
+                {isSyncingKnowledge ? '同步中…' : '同步到 RAG'}
+              </button>
+            </div>
+            {knowledgeStatus && <p className="assistant-status-text">{knowledgeStatus}</p>}
+            {lastKnowledgeSyncRun && (
+              <p className="assistant-status-text">
+                最近同步：{lastKnowledgeSyncRun.status} · 文档 {lastKnowledgeSyncRun.documentCount} · chunk {lastKnowledgeSyncRun.chunkCount}
+              </p>
+            )}
+            <div className="assistant-admin-table" aria-label="内部知识文档列表">
+              {knowledgeDocuments.map((document) => (
+                <div key={document.id} className="assistant-admin-row assistant-admin-row--member">
+                  <div>
+                    <strong>{document.title}</strong>
+                    <span>
+                      {knowledgeStatusLabels[document.status]} · {document.sourceType} · {document.tags.join(' / ') || '无标签'}
+                    </span>
+                    <span>
+                      更新：{formatAdminDate(document.updatedAt)} · 上次同步：{formatAdminDate(document.lastSyncedAt)}
+                    </span>
+                  </div>
+                  <div className="assistant-admin-actions">
+                    <button type="button" onClick={() => editKnowledgeDocument(document)}>
+                      编辑
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {knowledgeDocuments.length === 0 && <p className="assistant-status-text">刷新后会显示数据库中的内部知识文档。</p>}
+            </div>
+          </article>
+
+          <article className="assistant-admin-card">
             <h2>安全边界</h2>
             <p>模型渠道密钥和服务地址只在服务端环境变量中维护；成员表只保存渠道 id。</p>
             <ul className="assistant-admin-list">
               <li>页面不会展示模型 key、base URL、token hash 或邀请码 hash。</li>
               <li>成员被分配到未配置渠道时，后端会安全回退并返回低敏状态。</li>
-              <li>后续还需要补齐完整历史消息、禁用/导出和内部知识源管理。</li>
+              <li>内部知识同步按钮只显示低敏诊断，不展示 RAG URL、sync token 或文档原始外部响应。</li>
               <li>生产环境必须继续依赖后端 `ADMIN_TOKEN` 校验。</li>
             </ul>
           </article>

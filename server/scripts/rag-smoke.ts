@@ -111,6 +111,27 @@ try {
     throw new Error('rag sync payload is invalid')
   }
 
+  const { response: internalSyncResponse, payload: internalSyncPayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {
+    scope: 'internal',
+    documents: [
+      {
+        id: 'internal-doc-smoke',
+        title: 'Internal smoke document',
+        body: '内部知识同步 smoke 文档。\n\n第二段用于验证 chunk 计数。',
+      },
+    ],
+  })
+  if (!internalSyncResponse.ok) throw new Error(`rag internal sync failed: ${internalSyncResponse.status}`)
+  if (
+    internalSyncPayload.mode !== 'local-readonly' ||
+    internalSyncPayload.accepted !== false ||
+    internalSyncPayload.diagnostics?.sourceName !== 'internal-knowledge-documents' ||
+    internalSyncPayload.diagnostics.documentCount !== 1 ||
+    internalSyncPayload.diagnostics.chunkCount !== 2
+  ) {
+    throw new Error('rag internal sync payload should stay local-readonly with low-sensitive diagnostics')
+  }
+
   console.log('Assistant RAG orchestrator smoke passed')
 } finally {
   server.close()

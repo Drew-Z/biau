@@ -122,3 +122,49 @@ Validation:
 Manual gate:
 
 - Production admin control validation still requires the deployed internal API, migrated database, and user-managed `ADMIN_TOKEN`. Local validation did not create, revoke, or inspect production invites.
+
+## 2026-07-06 internal knowledge admin groundwork
+
+Completed the next focused slice for curated internal knowledge management and local-safe sync groundwork.
+
+Implemented:
+
+- Added additive Prisma models and migration:
+  - `InternalKnowledgeDocument`
+  - `InternalKnowledgeSyncRun`
+  - `InternalKnowledgeStatus`
+  - `InternalKnowledgeSyncStatus`
+- Added admin knowledge APIs:
+  - `GET /admin/knowledge-documents`
+  - `POST /admin/knowledge-documents`
+  - `PATCH /admin/knowledge-documents/:id`
+  - `POST /admin/knowledge/sync`
+- `/admin/summary` now reports internal knowledge document count and last internal sync run.
+- Knowledge documents keep title, slug, summary, body, tags, status, source type, safety notes, content hash, and `lastSyncedAt`.
+- Sync eligibility is restricted to `REVIEWED` and `ACTIVE` documents.
+- Missing RAG sync configuration records a low-sensitive `SKIPPED` sync run instead of failing the admin workspace.
+- RAG `/v1/sync` now accepts `scope: "internal"` plus document payloads and returns local-readonly diagnostics in local mode.
+- `/assistant/admin` now has a Knowledge area for creating/editing documents, refreshing documents, and triggering sync.
+- Frontend assistant data normalizers now cover internal knowledge documents and sync runs.
+- Smoke tests cover admin knowledge route auth/no-database behavior, service-mode isolation, and local-readonly internal sync payloads.
+- `docs/deployment.md` and `.env.example` now state that Internal Assistant API needs the same `RAG_SYNC_TOKEN` to submit reviewed/active internal documents to the Orchestrator.
+- Backend quality spec now records the internal knowledge admin/sync contract.
+
+Validation:
+
+- `npm.cmd run prisma:validate`
+- `npm.cmd run prisma:generate`
+- `npm.cmd run server:build`
+- `npm.cmd run server:smoke`
+- `npm.cmd run assistant:service-modes-smoke`
+- `npm.cmd run assistant:rag-smoke`
+- `npm.cmd run assistant:rag-sync-local`
+- `npm.cmd run lint`
+- `npm.cmd run build`
+- `npm.cmd run check:ui`
+
+Manual gate:
+
+- Production deployment must run the new migration before using the Knowledge area.
+- Real internal Qdrant/embedding sync still requires user approval and configured `ASSISTANT_RAG_API_BASE_URL` plus `RAG_SYNC_TOKEN`.
+- First real internal corpus still requires user-confirmed source and脱敏标准.

@@ -137,6 +137,7 @@ ASSISTANT_MODEL_PROVIDER=mimo-compatible
 ASSISTANT_MODEL_CHANNELS_JSON=<可选，内部成员专用多渠道 JSON>
 ASSISTANT_RAG_API_BASE_URL=<biau-rag-orchestrator 的 Render URL>
 ASSISTANT_RAG_API_KEY=<只允许 internal scope 的 RAG key>
+RAG_SYNC_TOKEN=<内部知识同步到 RAG Orchestrator 的服务端 token>
 ASSISTANT_RAG_TIMEOUT_MS=3000
 METRICS_ENABLED=false
 PORT=10000
@@ -177,6 +178,8 @@ PORT=10000
 成员表只保存 `modelChannelId`；`/assistant/admin` 只展示渠道
 `id/label/provider/model/configured`，不会展示 `apiKey` 或 `baseUrl`。如果成员未分配渠道或渠道不存在，内部聊天会回到默认通道；如果默认通道也未配置，则使用本地 fallback。
 
+`/assistant/admin` 的内部知识源管理会把 `REVIEWED` / `ACTIVE` 文档作为 internal corpus 同步计划提交给 RAG Orchestrator。真实同步需要 Internal Assistant API 和 RAG Orchestrator 配置相同的 `RAG_SYNC_TOKEN`；未配置时只会记录低敏 `SKIPPED` 同步运行，不会把文档或 token 暴露给浏览器。
+
 ### RAG Orchestrator
 
 ```text
@@ -188,7 +191,7 @@ QDRANT_PUBLIC_COLLECTION=biau_public_chunks
 QDRANT_INTERNAL_COLLECTION=biau_internal_chunks
 RAG_PUBLIC_API_KEY=<公开助手调用 retrieve 的服务端 token>
 RAG_INTERNAL_API_KEY=<内部助手调用 retrieve 的服务端 token>
-RAG_SYNC_TOKEN=<同步 public knowledge 到 Qdrant 的服务端 token>
+RAG_SYNC_TOKEN=<同步 public knowledge / internal corpus 到 Qdrant 的服务端 token>
 EMBEDDING_BASE_URL=<OpenAI-compatible embedding /v1 base URL>
 EMBEDDING_API_KEY=<embedding key>
 EMBEDDING_MODEL=qwen3-embedding-8b

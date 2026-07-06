@@ -75,6 +75,34 @@ model UsageLog {
   member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
 }
 
+model InternalKnowledgeDocument {
+  id                String                  @id @default(cuid())
+  slug              String                  @unique
+  title             String
+  summary           String
+  body              String
+  tags              Json?
+  status            InternalKnowledgeStatus @default(DRAFT)
+  sourceType        String                  @default("manual")
+  safetyNotes       String?
+  contentHash       String
+  lastSyncedAt      DateTime?
+  createdByMemberId String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+}
+
+model InternalKnowledgeSyncRun {
+  id            String                      @id @default(cuid())
+  status        InternalKnowledgeSyncStatus @default(STARTED)
+  documentCount Int                         @default(0)
+  chunkCount    Int                         @default(0)
+  issueCount    Int                         @default(0)
+  startedAt     DateTime                    @default(now())
+  finishedAt    DateTime?
+  diagnostic    Json?
+}
+
 model ContentDraft {
   id              String             @id @default(cuid())
   slug            String             @unique
@@ -165,6 +193,20 @@ enum MessageRole {
   USER
   ASSISTANT
   SYSTEM
+}
+
+enum InternalKnowledgeStatus {
+  DRAFT
+  REVIEWED
+  ACTIVE
+  ARCHIVED
+}
+
+enum InternalKnowledgeSyncStatus {
+  STARTED
+  COMPLETED
+  FAILED
+  SKIPPED
 }
 
 enum ContentDraftStatus {

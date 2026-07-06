@@ -442,6 +442,91 @@ res.json({ invites: invites.map(serializeInvite) })
 
 `serializeInvite()` owns the public admin metadata contract and excludes all secret or hash fields.
 
+## Scenario: Internal Knowledge Admin And Sync
+
+### 1. Scope / Trigger
+
+- Trigger: changing `InternalKnowledgeDocument`, `InternalKnowledgeSyncRun`, `/admin/knowledge-*`, `/v1/sync` payloads, internal corpus sync, or `/assistant/admin` knowledge management.
+- Goal: let the internal assistant maintain a curated internal corpus without exposing raw provider diagnostics, sync tokens, vector endpoints, or unreviewed/private content to public surfaces.
+
+### 2. Signatures
+
+- Prisma:
+  - `InternalKnowledgeDocument`
+  - `InternalKnowledgeSyncRun`
+  - `InternalKnowledgeStatus = DRAFT | REVIEWED | ACTIVE | ARCHIVED`
+  - `InternalKnowledgeSyncStatus = STARTED | COMPLETED | FAILED | SKIPPED`
+- Internal admin APIs:
+  - `GET /admin/knowledge-documents`
+  - `POST /admin/knowledge-documents`
+  - `PATCH /admin/knowledge-documents/:id`
+  - `POST /admin/knowledge/sync`
+- RAG API:
+  - `POST /v1/sync` accepts optional `{ scope?: "public" | "internal", documents?: RagSyncDocument[] }`.
+
+### 3. Contracts
+
+- Internal knowledge documents contain `{ slug, title, summary, body, tags, status, sourceType, safetyNotes, contentHash, lastSyncedAt }`.
+- Admin create/update requires at least a title and body.
+- Only `REVIEWED` and `ACTIVE` documents are eligible for internal sync.
+- `contentHash` is derived server-side from normalized public-safe fields; clients do not submit it.
+- `POST /admin/knowledge/sync` records a sync run for every request, including skipped local plans.
+- Missing `ASSISTANT_RAG_API_BASE_URL` or `RAG_SYNC_TOKEN` does not fail the admin UI; it records `SKIPPED` with low-sensitive reason `rag-sync-not-configured`.
+- External sync diagnostics may include mode, scope, reason, accepted, counts, and numeric HTTP status only. They must not include RAG base URLs, sync tokens, embedding keys, Qdrant URLs, raw request bodies, raw responses, stack traces, or full document payloads.
+- RAG `/v1/sync` must keep no-payload public sync behavior intact. `scope: "internal"` uses the internal documents payload and may return `local-readonly` diagnostics in local mode.
+
+### 4. Validation & Error Matrix
+
+- Missing admin token -> `401 { error: "missing-admin-token" }`.
+- Valid admin token but no database -> `503 { error: "database-not-configured" }`.
+- Missing title/body -> `400 { error: "missing-knowledge-document-fields" }`.
+- Duplicate slug -> `409 { error: "knowledge-slug-exists" }`.
+- Unknown document id -> `404 { error: "knowledge-document-not-found" }`.
+- Unsupported RAG sync scope -> `400 { error: "unsupported-scope" }`.
+- No reviewed/active docs -> sync run status `SKIPPED`, reason `no-reviewed-internal-documents`.
+- RAG sync not configured -> sync run status `SKIPPED`, reason `rag-sync-not-configured`.
+- External RAG sync non-OK -> sync run status `FAILED`, reason `http_status`, numeric `httpStatus` only.
+
+### 5. Good/Base/Bad Cases
+
+- Good: admin creates a `DRAFT`, reviews it, changes status to `REVIEWED`, and sync records document/chunk counts without leaking the body in diagnostics.
+- Good: local development without RAG env can still create documents and record a skipped sync plan.
+- Base: internal corpus is empty; sync records `SKIPPED` and internal chat can still use public/local fallback.
+- Bad: browser sends RAG sync token or connects directly to `/v1/sync`.
+- Bad: public assistant retrieve or public sync returns citations or chunks with internal visibility.
+- Bad: sync diagnostic stores raw private document text, provider response bodies, Qdrant endpoint, database URL, or embedding key.
+
+### 6. Tests Required
+
+- Run `npm.cmd run prisma:validate` and `npm.cmd run prisma:generate` after schema changes.
+- Run `npm.cmd run server:build` after route, type, or Prisma changes.
+- Run `npm.cmd run server:smoke`; it must assert knowledge admin routes reject missing admin token and return `database-not-configured` when a valid admin token exists without persistence.
+- Run `npm.cmd run assistant:service-modes-smoke`; public/rag/studio modes must not expose admin knowledge routes.
+- Run `npm.cmd run assistant:rag-smoke`; it must assert internal sync payload returns low-sensitive local-readonly diagnostics without external credentials.
+- Run `npm.cmd run assistant:rag-sync-local` after changing sync planning or knowledge mapping.
+- Run `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run check:ui`, `git diff --check`, and sensitive scan before commit.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+res.json(await fetch(`${ragBaseUrl}/v1/sync`, { body: JSON.stringify(req.body) }).then((item) => item.json()))
+```
+
+This forwards browser-shaped payloads directly to the RAG service and can leak sync configuration or raw provider diagnostics.
+
+#### Correct
+
+```ts
+const documents = await prisma.internalKnowledgeDocument.findMany({
+  where: { status: { in: ['REVIEWED', 'ACTIVE'] } },
+})
+const syncRun = await recordInternalSyncPlan(documents)
+```
+
+The internal API owns corpus selection, records sanitized diagnostics, and keeps the browser away from RAG credentials.
+
 ## Avoid
 
 - Do not instantiate Prisma per request.
