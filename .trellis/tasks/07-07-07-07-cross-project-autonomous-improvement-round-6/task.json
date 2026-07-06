@@ -19,7 +19,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "07-07-round-6-xunqiu-status-apk-backend-gate"
+    "07-07-round-6-xunqiu-status-apk-backend-gate",
+    "07-07-round-6-playlab-game-showcase-contract"
   ],
   "parent": null,
   "relatedFiles": [],

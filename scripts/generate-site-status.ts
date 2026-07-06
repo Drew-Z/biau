@@ -124,6 +124,17 @@ function issueFromStatus(httpStatus: number, issueKind: SiteStatusIssueKind) {
   return httpStatus > 0 ? `HTTP ${httpStatus}` : 'not checked'
 }
 
+function delay(ms: number) {
+  return new Promise((resolveDelay) => {
+    setTimeout(resolveDelay, ms)
+  })
+}
+
+function shouldRetryStatus(result: Awaited<ReturnType<typeof fetchWithTimeout>>) {
+  if (['timeout', 'network_error', 'connection_error'].includes(result.issueKind)) return true
+  return result.httpStatus >= 500
+}
+
 async function fetchWithTimeout(url: string, timeoutMs: number) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
@@ -156,6 +167,18 @@ async function fetchWithTimeout(url: string, timeoutMs: number) {
     }
   } finally {
     clearTimeout(timeout)
+  }
+}
+
+async function fetchWithRetry(url: string, timeoutMs: number) {
+  const first = await fetchWithTimeout(url, timeoutMs)
+  if (!shouldRetryStatus(first)) return first
+
+  await delay(800)
+  const second = await fetchWithTimeout(url, timeoutMs)
+  return {
+    ...second,
+    durationMs: first.durationMs + second.durationMs,
   }
 }
 
@@ -257,7 +280,7 @@ function mergeReliabilityProjects(
 
 async function checkTarget(target: SiteStatusTarget, timeoutMs: number): Promise<CheckResult> {
   const checkedAt = new Date().toISOString()
-  const response = await fetchWithTimeout(target.url, timeoutMs)
+  const response = await fetchWithRetry(target.url, timeoutMs)
   const status = statusFromHttpStatus(response.httpStatus, Boolean(response.error))
   const issueKind = response.error ? response.issueKind : response.httpStatus > 0 ? 'http_status' : 'not_checked'
   const issue = issueFromStatus(response.httpStatus, response.error ? response.issueKind : 'none')

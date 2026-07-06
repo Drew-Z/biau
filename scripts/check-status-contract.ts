@@ -36,6 +36,7 @@ const xunqiuApkGateStatuses = new Set([
   'approved-release',
 ])
 const xunqiuRequiredCheckIds = new Set(['xunqiu-backend-health', 'xunqiu-compat-api', 'xunqiu-apk-gate'])
+const playlabRequiredCheckIds = new Set(['biau-playlab-web-builds', 'biau-playlab-mobile-hints'])
 const disallowedKeys = new Set([
   'token',
   'password',
@@ -322,6 +323,58 @@ function checkXunqiuGate(fileName: string, payload: Record<string, unknown>) {
   }
 }
 
+function numericField(record: Record<string, unknown>, field: string, label: string) {
+  const value = record[field]
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    fail(`${label}.${field} must be a non-negative number`)
+    return 0
+  }
+  return value
+}
+
+function checkPlaylabGate(fileName: string, payload: Record<string, unknown>) {
+  if (fileName !== 'biau-playlab-synthetic.json') return
+
+  const checks = Array.isArray(payload.checks) ? payload.checks.filter(isRecord) : []
+  const checksById = new Map(checks.map((check) => [String(check.id), check]))
+  const playableSummary = isRecord(payload.playableSummary) ? payload.playableSummary : null
+
+  if (typeof payload.baseConfigured !== 'boolean') fail(`${fileName}: baseConfigured must be boolean`)
+  for (const id of playlabRequiredCheckIds) {
+    if (!checksById.has(id)) fail(`${fileName}: required check "${id}" is missing`)
+  }
+
+  if (!playableSummary) {
+    fail(`${fileName}: playableSummary is missing`)
+    return
+  }
+
+  const discoveredPlayablePages = numericField(playableSummary, 'discoveredPlayablePages', `${fileName}:playableSummary`)
+  const checkedPlayablePages = numericField(playableSummary, 'checkedPlayablePages', `${fileName}:playableSummary`)
+  const passedPlayablePages = numericField(playableSummary, 'passedPlayablePages', `${fileName}:playableSummary`)
+  const checkedResources = numericField(playableSummary, 'checkedResources', `${fileName}:playableSummary`)
+  const passedResources = numericField(playableSummary, 'passedResources', `${fileName}:playableSummary`)
+  const webBuilds = checksById.get('biau-playlab-web-builds')
+
+  if (checkedPlayablePages > discoveredPlayablePages) {
+    fail(`${fileName}: checkedPlayablePages cannot exceed discoveredPlayablePages`)
+  }
+  if (passedPlayablePages > checkedPlayablePages) fail(`${fileName}: passedPlayablePages cannot exceed checkedPlayablePages`)
+  if (passedResources > checkedResources) fail(`${fileName}: passedResources cannot exceed checkedResources`)
+
+  if (webBuilds?.status === 'online') {
+    if (discoveredPlayablePages <= 0 || checkedPlayablePages <= 0) {
+      fail(`${fileName}: online web builds require at least one discovered playable page`)
+    }
+    if (passedPlayablePages !== checkedPlayablePages) {
+      fail(`${fileName}: online web builds require all checked playable pages to pass`)
+    }
+    if (checkedResources > 0 && passedResources !== checkedResources) {
+      fail(`${fileName}: online web builds require all checked resources to pass`)
+    }
+  }
+}
+
 async function checkSyntheticSnapshots(knownCheckIds: Set<string>) {
   let entries: string[]
   try {
@@ -352,6 +405,7 @@ async function checkSyntheticSnapshots(knownCheckIds: Set<string>) {
     checkErpRegistrationGate(fileName, payload)
     checkLegalRagDemoGate(fileName, payload)
     checkXunqiuGate(fileName, payload)
+    checkPlaylabGate(fileName, payload)
   }
 }
 

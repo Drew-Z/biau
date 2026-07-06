@@ -74,6 +74,10 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - `npm.cmd run <project>:synthetic` runs a project-specific script.
 - Script output path: `public/status/<project>-synthetic.json`.
 - Status aggregation: `npm.cmd run site:status` loads every `public/status/*-synthetic.json` file and merges checks by `id`.
+- Public entry aggregation should use bounded retry for transient timeout,
+  network, connection, or 5xx failures before recording a target as `offline`.
+  This reduces false negatives from cold-start demo hosts while still surfacing
+  persistent outages as low-sensitive status evidence.
 - Cross-project suite: `npm.cmd run reliability:check` runs safe synthetic/status/monitor steps sequentially and writes `public/status/reliability-suite.json`.
 - Static showcase example: `npm.cmd run pet:synthetic` writes `public/status/pet-gamer-synthetic.json` and updates the `pet-showcase` check only; release gates such as `pet-apk-gate` remain static `planned` until human approval.
 - Public synthetic reports may include low-sensitive gate metadata such as `apkGate` when it helps the status page explain why a capability is not open yet. Gate metadata must be public-safe and must not include absolute local paths, signing paths, private bucket URLs, release tokens, unapproved APK URLs, or hidden deployment endpoints.
