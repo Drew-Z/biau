@@ -454,6 +454,74 @@ setServiceState((current) => {
 
 Health-derived service status stays separate from per-answer fallback reasons.
 
+## Scenario: Internal Assistant Answer Diagnostics
+
+### 1. Scope / Trigger
+
+- Trigger: changing `/assistant` answer status panels, internal chat response parsing, citation display, retrieval diagnostics, or model-channel display in the member workspace.
+- Goal: show useful answer-level diagnostics without letting route components redefine backend payload contracts or expose provider secrets.
+
+### 2. Signatures
+
+- Backend response owner: `ChatResponse.meta` from `server/src/types.ts`.
+- Frontend decoder: `normalizeAssistantAnswerMeta(value: unknown): AssistantAnswerMetaSummary | null`.
+- Retrieval decoder: `normalizeAssistantRetrievalSummary(value: unknown): AssistantRetrievalSummary | undefined`.
+- UI state: `/assistant` stores `lastAnswerMeta: AssistantAnswerMetaSummary | null` and derives the right-panel display from that typed value plus the latest assistant citations.
+
+### 3. Contracts
+
+- Components must parse answer metadata through `src/data/assistant.ts`; they must not cast `payload.meta` inline.
+- The answer panel may render only low-sensitive fields: `mode`, `model`, `provider`, `reason`, `citationCount`, `intent`, `grounding`, safe `modelChannel`, and retrieval summary counts/classes.
+- Safe `modelChannel` means `{ id, label, provider, model, configured, isDefault }`; never render or persist `apiKey`, `baseUrl`, raw env JSON, request headers, or provider response bodies.
+- Retrieval diagnostics may show counts, `source`, `store`, `retrievalMode`, `sufficiency`, and `fallbackReason`; never show Qdrant URLs, embedding keys, RAG API keys, sync tokens, or raw private document text.
+- Reset member/session flows must clear stale `lastAnswerMeta` so a new session does not display diagnostics from a previous member or archived conversation.
+- Citation titles are display data only; the authoritative citation payload still comes from normalized assistant messages.
+
+### 4. Validation & Error Matrix
+
+- Missing `meta` -> panel shows waiting/local fallback state and uses latest normalized citations when available.
+- Malformed `meta` -> decoder returns `null`; component must not throw.
+- Missing `retrieval` -> answer mode/model/channel still renders, with no diagnostic chip group.
+- Local fallback answer -> `lastAnswerMeta` is cleared and the panel must not imply a live provider was used.
+- Member logout, new invite redemption, new session, or session archive -> stale answer diagnostics are cleared.
+- Unsafe backend addition such as `baseUrl` or `apiKey` in `meta` -> frontend decoder must ignore it; spec violation if UI renders it.
+
+### 5. Good/Base/Bad Cases
+
+- Good: internal API returns model answer plus sanitized retrieval meta; `/assistant` displays "模型回答", the safe channel label, citation count, and candidate count.
+- Good: model provider fails but citations exist; panel displays fallback reason and safe model-channel summary without exposing endpoint details.
+- Base: backend is not configured; local fallback still shows a bounded state and no stale diagnostics.
+- Bad: `AssistantPage.tsx` reads `(payload.meta as { retrieval?: ... })` directly and starts a second copy of the API contract.
+- Bad: UI prints raw model relay URL, RAG URL, Qdrant endpoint, or provider error body as a diagnostic.
+
+### 6. Tests Required
+
+- Run `npm.cmd run lint` and `npm.cmd run build` after changing answer meta normalizers or `/assistant` diagnostics.
+- Run `npm.cmd run check:ui` after changing `/assistant` right-panel rendering or empty/error states.
+- Run backend smoke tests when changing `ChatResponse.meta` shape, because the frontend decoder depends on that contract.
+- Sensitive-scan changed files for `apiKey`, `baseUrl`, model relay URLs, RAG URLs, Qdrant endpoints, member tokens, admin tokens, invite codes, and raw private document content.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```tsx
+const meta = (payload as { meta?: { model?: string; baseUrl?: string } }).meta
+setLastAnswerMeta(meta as AssistantAnswerMetaSummary)
+```
+
+The page now owns a private payload contract and may accidentally retain or render secret-bearing fields.
+
+#### Correct
+
+```tsx
+const payload = (await response.json()) as unknown
+const meta = isRecord(payload) ? normalizeAssistantAnswerMeta(payload.meta) : null
+setLastAnswerMeta(meta)
+```
+
+The data module owns the boundary decoder, and the component consumes a sanitized projection.
+
 ## Scenario: Public Blog Curation
 
 ### 1. Scope / Trigger

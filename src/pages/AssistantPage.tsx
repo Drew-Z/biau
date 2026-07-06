@@ -4,6 +4,7 @@ import {
   ASSISTANT_STORAGE_KEYS,
   internalAssistantSuggestions,
   normalizeAssistantCitations,
+  normalizeAssistantAnswerMeta,
   normalizeAssistantMember,
   normalizeAssistantMessages,
   normalizeAssistantSessionPreview,
@@ -11,6 +12,7 @@ import {
   publicKnowledgeBase,
   searchPublicKnowledge,
   type AssistantKnowledgeItem,
+  type AssistantAnswerMetaSummary,
   type AssistantMemberProfile,
   type AssistantMessage,
   type AssistantSessionPreview,
@@ -25,6 +27,7 @@ interface AssistantResponse {
   citations: AssistantKnowledgeItem[]
   sessionId?: string
   errorCode?: string
+  meta?: AssistantAnswerMetaSummary | null
 }
 
 interface AssistantApiResult<T> {
@@ -155,6 +158,7 @@ async function requestInternalAnswer(
   const answer = isRecord(payload) && typeof payload.answer === 'string' ? payload.answer.trim() : ''
   const nextSessionId = isRecord(payload) && typeof payload.sessionId === 'string' ? payload.sessionId : undefined
   const citations = isRecord(payload) ? normalizeAssistantCitations(payload.citations) : []
+  const meta = isRecord(payload) ? normalizeAssistantAnswerMeta(payload.meta) : null
 
   return {
     content:
@@ -162,6 +166,7 @@ async function requestInternalAnswer(
       '内部助手没有返回内容。你可以检查后端服务是否已部署，或先用本地回退模式继续整理页面。',
     citations,
     sessionId: nextSessionId,
+    meta,
   }
 }
 
@@ -297,6 +302,7 @@ export function AssistantPage() {
   const [memberName, setMemberName] = useState('')
   const [inviteStatus, setInviteStatus] = useState('')
   const [workspaceStatus, setWorkspaceStatus] = useState('')
+  const [lastAnswerMeta, setLastAnswerMeta] = useState<AssistantAnswerMetaSummary | null>(null)
   const [isRedeeming, setIsRedeeming] = useState(false)
   const messageSeq = useRef(0)
 
@@ -319,6 +325,10 @@ export function AssistantPage() {
     () => sessions.find((session) => session.id === selectedSessionId) ?? null,
     [selectedSessionId, sessions],
   )
+  const latestCitations = useMemo(() => {
+    const assistantMessage = [...messages].reverse().find((message) => message.role === 'assistant' && message.citations?.length)
+    return assistantMessage?.citations ?? []
+  }, [messages])
 
   useEffect(() => {
     let cancelled = false
@@ -428,6 +438,7 @@ export function AssistantPage() {
     setSessions([])
     setSelectedSessionId('')
     setMessages([createOpeningMessage()])
+    setLastAnswerMeta(null)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.memberToken)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.member)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
@@ -484,6 +495,7 @@ export function AssistantPage() {
       setMemberName('')
       setSelectedSessionId('')
       setMessages([createOpeningMessage()])
+      setLastAnswerMeta(null)
       window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
       setInviteStatus('邀请码已兑换，后续消息会优先调用内部助手 API。')
     } catch {
@@ -532,6 +544,7 @@ export function AssistantPage() {
     setSessions((current) => [session, ...current.filter((item) => item.id !== session.id)])
     setSelectedSessionId(session.id)
     setMessages([])
+    setLastAnswerMeta(null)
     window.localStorage.setItem(ASSISTANT_STORAGE_KEYS.sessionId, session.id)
     setWorkspaceStatus('新的内部会话已创建。')
   }
@@ -549,6 +562,7 @@ export function AssistantPage() {
     setSessions((current) => current.filter((session) => session.id !== selectedSessionId))
     setSelectedSessionId('')
     setMessages([createOpeningMessage()])
+    setLastAnswerMeta(null)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
     setWorkspaceStatus('会话已归档。')
   }
@@ -582,6 +596,7 @@ export function AssistantPage() {
         ...current,
         createMessage('assistant', result.content, result.citations),
       ])
+      setLastAnswerMeta(result.meta ?? null)
       if (memberToken && API_BASE) {
         const sessionsResult = await requestSessions(memberToken)
         if (sessionsResult.ok) setSessions(sessionsResult.data)
@@ -592,6 +607,7 @@ export function AssistantPage() {
         ...current,
         createMessage('assistant', fallback.content, fallback.citations),
       ])
+      setLastAnswerMeta(null)
     } finally {
       setIsLoading(false)
     }
@@ -599,6 +615,14 @@ export function AssistantPage() {
 
   const chatMode = API_BASE && memberToken ? 'API 持久化会话' : '本地公开知识回退'
   const composerDisabled = isLoading || draft.trim().length === 0
+  const retrieval = lastAnswerMeta?.retrieval
+  const answerMode = lastAnswerMeta
+    ? lastAnswerMeta.mode === 'model'
+      ? '模型回答'
+      : `回退：${lastAnswerMeta.reason ?? 'local'}`
+    : API_BASE && memberToken
+      ? '等待下一次回答'
+      : '本地回退'
 
   return (
     <main className="assistant-page page-stack">
@@ -783,32 +807,43 @@ export function AssistantPage() {
 
         <aside className="assistant-inspector">
           <section className="assistant-panel">
+            <p className="assistant-panel__eyebrow">ANSWER</p>
+            <h3>回答状态</h3>
+            <ul>
+              <li>模式：{answerMode}</li>
+              <li>模型：{lastAnswerMeta?.model ?? '等待回答'}</li>
+              <li>渠道：{lastAnswerMeta?.modelChannel?.label ?? member?.modelChannel?.label ?? '默认模型通道'}</li>
+              <li>引用：{lastAnswerMeta?.citationCount ?? latestCitations.length}</li>
+            </ul>
+            {retrieval && (
+              <div className="assistant-panel__facts" aria-label="检索诊断">
+                <span>{retrieval.source}</span>
+                <span>{retrieval.store}</span>
+                <span>{retrieval.sufficiency}</span>
+                <span>{retrieval.candidateCount} candidates</span>
+              </div>
+            )}
+          </section>
+
+          <section className="assistant-panel">
+            <p className="assistant-panel__eyebrow">SOURCES</p>
+            <h3>最近引用</h3>
+            <ul>
+              {latestCitations.slice(0, 4).map((citation) => (
+                <li key={citation.id}>{citation.title}</li>
+              ))}
+              {latestCitations.length === 0 && <li>下一次回答后会显示引用来源。</li>}
+            </ul>
+          </section>
+
+          <section className="assistant-panel">
             <p className="assistant-panel__eyebrow">BOUNDARY</p>
-            <h3>工作台边界</h3>
+            <h3>运行边界</h3>
             <ul>
-              <li>历史会话按成员 token 隔离。</li>
+              <li>会话历史按成员 token 隔离。</li>
               <li>模型渠道由管理员按成员分配。</li>
-              <li>内部知识源仍等待下一步接入。</li>
-            </ul>
-          </section>
-
-          <section className="assistant-panel">
-            <p className="assistant-panel__eyebrow">DEPLOY</p>
-            <h3>部署结构</h3>
-            <ul>
-              <li>Internal API：成员、会话、管理面。</li>
-              <li>RAG Orchestrator：scoped retrieval。</li>
-              <li>PostgreSQL：邀请码和会话持久化。</li>
-            </ul>
-          </section>
-
-          <section className="assistant-panel">
-            <p className="assistant-panel__eyebrow">NEXT</p>
-            <h3>后续再做</h3>
-            <ul>
-              <li>内部知识源管理和同步。</li>
-              <li>成员禁用/审计更完整的管理面。</li>
-              <li>更细的使用量和质量观察。</li>
+              <li>已审核内部知识可同步到 internal RAG collection。</li>
+              <li>公开助手不能读取 internal scope。</li>
             </ul>
           </section>
         </aside>

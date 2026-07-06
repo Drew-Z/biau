@@ -3075,6 +3075,27 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   padding-left: var(--space-16);
 }
 
+.assistant-panel__facts {
+  margin-top: var(--space-12, 12px);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.assistant-panel__facts span {
+  max-width: 100%;
+  padding: 4px 8px;
+  color: color-mix(in oklch, var(--green) 74%, var(--ink));
+  background: color-mix(in oklch, var(--green) 9%, transparent);
+  border: 1px solid color-mix(in oklch, var(--green) 22%, transparent);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
 .assistant-admin-shell {
   padding: clamp(var(--space-24), 4vw, var(--space-40));
   display: grid;

@@ -38,6 +38,31 @@ export interface AssistantMessage {
   citations?: AssistantKnowledgeItem[]
 }
 
+export interface AssistantRetrievalSummary {
+  source: string
+  retrievalMode: string
+  store: string
+  candidateCount: number
+  citationCount: number
+  sufficient: boolean
+  sufficiency: 'enough' | 'weak' | 'none'
+  fallbackReason?: string | null
+  expandedEntityCount?: number
+  modelCalls?: number
+}
+
+export interface AssistantAnswerMetaSummary {
+  mode: string
+  model: string
+  provider?: string
+  reason?: string
+  citationCount: number
+  intent?: string
+  grounding?: string
+  modelChannel?: AssistantModelChannelSummary
+  retrieval?: AssistantRetrievalSummary
+}
+
 export interface AssistantSessionPreview {
   id: string
   title: string
@@ -328,6 +353,62 @@ export function normalizeAssistantMessages(value: unknown): AssistantMessage[] {
   return value
     .map((item) => normalizeAssistantMessage(item))
     .filter((item): item is AssistantMessage => item !== null)
+}
+
+export function normalizeAssistantAnswerMeta(value: unknown): AssistantAnswerMetaSummary | null {
+  if (!isRecord(value)) return null
+  const { mode, model, provider, reason, citationCount, intent, grounding, modelChannel, retrieval } = value
+  if (typeof mode !== 'string' || typeof model !== 'string' || typeof citationCount !== 'number') return null
+  return {
+    mode,
+    model,
+    provider: typeof provider === 'string' ? provider : undefined,
+    reason: typeof reason === 'string' ? reason : undefined,
+    citationCount,
+    intent: typeof intent === 'string' ? intent : undefined,
+    grounding: typeof grounding === 'string' ? grounding : undefined,
+    modelChannel: normalizeAssistantModelChannel(modelChannel) ?? undefined,
+    retrieval: normalizeAssistantRetrievalSummary(retrieval),
+  }
+}
+
+function normalizeAssistantRetrievalSummary(value: unknown): AssistantRetrievalSummary | undefined {
+  if (!isRecord(value)) return undefined
+  const {
+    source,
+    retrievalMode,
+    store,
+    candidateCount,
+    citationCount,
+    sufficient,
+    sufficiency,
+    fallbackReason,
+    expandedEntityCount,
+    modelCalls,
+  } = value
+  if (
+    typeof source !== 'string' ||
+    typeof retrievalMode !== 'string' ||
+    typeof store !== 'string' ||
+    typeof candidateCount !== 'number' ||
+    typeof citationCount !== 'number' ||
+    typeof sufficient !== 'boolean' ||
+    (sufficiency !== 'enough' && sufficiency !== 'weak' && sufficiency !== 'none')
+  ) {
+    return undefined
+  }
+  return {
+    source,
+    retrievalMode,
+    store,
+    candidateCount,
+    citationCount,
+    sufficient,
+    sufficiency,
+    fallbackReason: typeof fallbackReason === 'string' || fallbackReason === null ? fallbackReason : undefined,
+    expandedEntityCount: typeof expandedEntityCount === 'number' ? expandedEntityCount : undefined,
+    modelCalls: typeof modelCalls === 'number' ? modelCalls : undefined,
+  }
 }
 
 export function normalizeAssistantSessionPreview(value: unknown): AssistantSessionPreview | null {

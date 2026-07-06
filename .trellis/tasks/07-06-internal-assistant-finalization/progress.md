@@ -246,3 +246,31 @@ Validation:
 Manual gate:
 
 - Production usage list validation still requires the deployed internal API, migrated database, and user-managed `ADMIN_TOKEN`.
+
+## 2026-07-06 internal answer diagnostics panel
+
+Completed a focused internal workspace slice for answer visibility.
+
+Implemented:
+
+- Added frontend normalizers for assistant answer meta and retrieval summaries.
+- `/assistant` now reads `payload.meta` through `normalizeAssistantAnswerMeta()` instead of casting response fields in the page.
+- The internal workspace right panel now shows:
+  - answer mode and fallback reason
+  - model and assigned model-channel label
+  - citation count
+  - low-sensitive retrieval diagnostics such as source, store, sufficiency, and candidate count
+  - recent citation titles from the latest assistant answer
+- Reset paths now clear stale answer diagnostics when the member logs out, redeems a new invite, creates a new session, archives a session, or falls back locally.
+- Added CSS for compact diagnostic chips without exposing provider endpoints, keys, prompts, or raw payloads.
+- Frontend state-management spec now records the answer-meta panel contract.
+
+Validation:
+
+- `npm.cmd run lint`
+- `npm.cmd run build`
+- `npm.cmd run check:ui`
+
+Manual gate:
+
+- Production verification of real answer quality and live provider behavior still requires user-approved real tasks. This slice only displays sanitized metadata returned by the internal API and does not call live model channels.
