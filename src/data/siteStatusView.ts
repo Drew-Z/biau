@@ -18,6 +18,7 @@ export interface SiteStatusCheck extends SiteStatusTarget {
   durationMs: number
   checkedAt: string
   finalUrl: string
+  issueKind?: 'none' | 'timeout' | 'dns_error' | 'tls_error' | 'connection_error' | 'network_error' | 'http_status' | 'not_checked'
   issues: string[]
 }
 
@@ -95,6 +96,7 @@ export function createUncheckedTarget(target: SiteStatusTarget): SiteStatusCheck
     durationMs: 0,
     checkedAt: '',
     finalUrl: target.url,
+    issueKind: 'not_checked',
     issues: ['status data not generated'],
   }
 }

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-06T07:55:02.671Z",
+  "checkedAt": "2026-07-06T18:13:30.663Z",
   "baseConfigured": true,
   "ok": true,
   "checks": [
@@ -7,8 +7,8 @@
       "id": "blog-semi-public-routes",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 2690,
-      "checkedAt": "2026-07-06T07:55:02.671Z",
+      "durationMs": 2439,
+      "checkedAt": "2026-07-06T18:13:30.663Z",
       "summary": "7/7 public routes returned expected responses",
       "issues": []
     },
@@ -16,8 +16,8 @@
       "id": "blog-semi-public-assistant",
       "status": "unchecked",
       "httpStatus": 200,
-      "durationMs": 256,
-      "checkedAt": "2026-07-06T07:55:02.671Z",
+      "durationMs": 257,
+      "checkedAt": "2026-07-06T18:13:30.663Z",
       "summary": "Assistant health returned valid JSON; live chat validation skipped by policy",
       "issues": []
     }

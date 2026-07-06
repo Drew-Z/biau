@@ -90,6 +90,7 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
   - API synthetic checks: `apiBaseConfigured: boolean`
   - Static page synthetic checks: `baseConfigured: boolean`
   - Protected API synthetic checks: `hasCredentials: boolean`
+  - Entry reachability checks may include `issueKind`, restricted to low-sensitive classes such as `timeout`, `dns_error`, `tls_error`, `connection_error`, `network_error`, `http_status`, or `not_checked`.
   - `ok: boolean`
   - `checks: Array<{ id, status, httpStatus, durationMs, checkedAt, summary, issues }>`
 - Reliability suite report shape:
@@ -129,6 +130,10 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
   local Function smoke passes -> write the check as `offline` and point the next
   action at Pages deployment / Functions enablement before model env setup.
 - Failed attempted request -> check becomes `offline` or `degraded` based on HTTP status; `--strict` may exit non-zero.
+- Fetch/network failures in public JSON -> store a low-sensitive class such as
+  `request failed: timeout` or `request failed: network_error`; do not persist
+  raw Node/undici messages like `fetch failed`, stack traces, hostnames,
+  request URLs, response bodies, or provider diagnostics.
 - `reliability:check` default mode -> continue after failed steps, write `public/status/reliability-suite.json`, and leave process success unless the runner itself cannot write a report.
 - `reliability:check -- --strict` -> continue through all steps, write the report, then exit non-zero if any step failed.
 - Well-formed bootstrap payload with `registrationEnabled=false` -> auth or
@@ -149,6 +154,8 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - Base: a Pet showcase synthetic report records `apkGate.releaseCandidateFound=false` and a sanitized artifact summary, while `pet-apk-gate` remains `planned`.
 - Bad: report includes real hostnames, tokens, account names, raw response
   bodies, SKU/order metrics, or provider keys.
+- Bad: status JSON says only `request failed: fetch failed`, leaving the user
+  unable to distinguish timeout, DNS, TLS, connection, and HTTP failures.
 - Bad: `reliability-suite.json` stores raw stdout/stderr, full checked URLs, environment variable values, CI dashboard URLs, or provider endpoints.
 - Bad: report includes a local Gradle output absolute path, signing keystore path, R2 private URL, or direct debug APK download link before public approval.
 - Bad: auth bootstrap returns `registrationEnabled=false`, but the check is

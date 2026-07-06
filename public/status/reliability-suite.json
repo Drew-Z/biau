@@ -1,23 +1,23 @@
 {
-  "checkedAt": "2026-07-06T07:55:02.374Z",
-  "ok": true,
-  "strict": true,
+  "checkedAt": "2026-07-06T18:13:30.108Z",
+  "ok": false,
+  "strict": false,
   "timeoutMs": 12000,
   "stepTimeoutMs": 96000,
   "summary": {
     "total": 8,
-    "passed": 7,
-    "failed": 0,
+    "passed": 6,
+    "failed": 1,
     "skipped": 1,
-    "durationMs": 77005
+    "durationMs": 73547
   },
   "steps": [
     {
       "id": "main-site",
       "label": "BIAU Port main site synthetic",
-      "command": "npm run main-site:synthetic -- --timeout 12000 --strict",
+      "command": "npm run main-site:synthetic -- --timeout 12000",
       "status": "passed",
-      "durationMs": 3271,
+      "durationMs": 3278,
       "exitCode": 0,
       "outputPath": "public/status/blog-semi-synthetic.json",
       "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=1",
@@ -37,9 +37,9 @@
     {
       "id": "erp",
       "label": "ERP synthetic",
-      "command": "npm run erp:synthetic -- --timeout 12000 --strict",
+      "command": "npm run erp:synthetic -- --timeout 12000",
       "status": "passed",
-      "durationMs": 533,
+      "durationMs": 319,
       "exitCode": 0,
       "outputPath": "public/status/erp-synthetic.json",
       "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
@@ -48,9 +48,9 @@
     {
       "id": "xunqiu",
       "label": "Xunqiu synthetic",
-      "command": "npm run xunqiu:synthetic -- --timeout 12000 --strict",
+      "command": "npm run xunqiu:synthetic -- --timeout 12000",
       "status": "passed",
-      "durationMs": 393,
+      "durationMs": 378,
       "exitCode": 0,
       "outputPath": "public/status/xunqiu-synthetic.json",
       "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
@@ -59,9 +59,9 @@
     {
       "id": "pet",
       "label": "Pet showcase synthetic",
-      "command": "npm run pet:synthetic -- --timeout 12000 --strict",
+      "command": "npm run pet:synthetic -- --timeout 12000",
       "status": "passed",
-      "durationMs": 10953,
+      "durationMs": 6191,
       "exitCode": 0,
       "outputPath": "public/status/pet-gamer-synthetic.json",
       "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=0",
@@ -70,9 +70,9 @@
     {
       "id": "playlab",
       "label": "BIAU Playlab synthetic",
-      "command": "npm run playlab:synthetic -- --timeout 12000 --strict",
+      "command": "npm run playlab:synthetic -- --timeout 12000",
       "status": "passed",
-      "durationMs": 53076,
+      "durationMs": 45199,
       "exitCode": 0,
       "outputPath": "public/status/biau-playlab-synthetic.json",
       "summary": "synthetic checks: online=2 degraded=0 offline=0 unchecked=0",
@@ -81,20 +81,22 @@
     {
       "id": "site-status",
       "label": "Public status aggregation",
-      "command": "npm run site:status -- --timeout 12000 --strict",
-      "status": "passed",
-      "durationMs": 5554,
+      "command": "npm run site:status -- --timeout 12000",
+      "status": "failed",
+      "durationMs": 14567,
       "exitCode": 0,
       "outputPath": "public/status/site-status.json",
-      "summary": "site status targets: online=5 degraded=0 offline=0 unchecked=0",
-      "issues": []
+      "summary": "site status targets: online=4 degraded=0 offline=1 unchecked=0",
+      "issues": [
+        "request failed: network_error"
+      ]
     },
     {
       "id": "site-monitor",
       "label": "Core route monitor",
       "command": "npm run site:monitor -- --json --timeout 12000",
       "status": "passed",
-      "durationMs": 3214,
+      "durationMs": 3601,
       "exitCode": 0,
       "summary": "site monitor checks: passed=11 failed=0",
       "issues": []

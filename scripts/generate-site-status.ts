@@ -11,6 +11,15 @@ import {
 } from '../src/data/statusTargets.ts'
 
 type GeneratedStatus = Extract<ReliabilityStatus, 'online' | 'degraded' | 'offline' | 'unchecked'>
+type SiteStatusIssueKind =
+  | 'none'
+  | 'timeout'
+  | 'dns_error'
+  | 'tls_error'
+  | 'connection_error'
+  | 'network_error'
+  | 'http_status'
+  | 'not_checked'
 
 interface CheckResult extends SiteStatusTarget {
   status: GeneratedStatus
@@ -18,6 +27,7 @@ interface CheckResult extends SiteStatusTarget {
   durationMs: number
   checkedAt: string
   finalUrl: string
+  issueKind: SiteStatusIssueKind
   issues: string[]
 }
 
@@ -79,8 +89,32 @@ function statusFromHttpStatus(httpStatus: number, hasNetworkError: boolean): Gen
   return 'unchecked'
 }
 
-function issueFromStatus(httpStatus: number, error: string) {
-  if (error) return `request failed: ${error}`
+function classifyFetchError(error: unknown): SiteStatusIssueKind {
+  if (!error || typeof error !== 'object') return 'network_error'
+  const record = error as { name?: unknown; code?: unknown; cause?: unknown }
+  const code =
+    typeof record.code === 'string'
+      ? record.code
+      : record.cause && typeof record.cause === 'object'
+        ? ((record.cause as { code?: unknown }).code ?? '')
+        : ''
+
+  if (record.name === 'AbortError' || code === 'ETIMEDOUT') return 'timeout'
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'dns_error'
+  if (
+    code === 'CERT_HAS_EXPIRED' ||
+    code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+    code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+  ) {
+    return 'tls_error'
+  }
+  if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'UND_ERR_SOCKET') return 'connection_error'
+  return 'network_error'
+}
+
+function issueFromStatus(httpStatus: number, issueKind: SiteStatusIssueKind) {
+  if (issueKind !== 'none') return `request failed: ${issueKind}`
   if (httpStatus >= 200 && httpStatus < 400) return ''
   if ([401, 403].includes(httpStatus)) return 'requires login or denies anonymous access'
   if (httpStatus === 404) return 'public route returned 404'
@@ -110,6 +144,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number) {
       finalUrl: response.url,
       durationMs: Date.now() - startedAt,
       error: '',
+      issueKind: 'none' as const,
     }
   } catch (error) {
     return {
@@ -117,6 +152,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number) {
       finalUrl: url,
       durationMs: Date.now() - startedAt,
       error: error instanceof Error ? error.message : String(error),
+      issueKind: classifyFetchError(error),
     }
   } finally {
     clearTimeout(timeout)
@@ -223,7 +259,8 @@ async function checkTarget(target: SiteStatusTarget, timeoutMs: number): Promise
   const checkedAt = new Date().toISOString()
   const response = await fetchWithTimeout(target.url, timeoutMs)
   const status = statusFromHttpStatus(response.httpStatus, Boolean(response.error))
-  const issue = issueFromStatus(response.httpStatus, response.error)
+  const issueKind = response.error ? response.issueKind : response.httpStatus > 0 ? 'http_status' : 'not_checked'
+  const issue = issueFromStatus(response.httpStatus, response.error ? response.issueKind : 'none')
 
   return {
     ...target,
@@ -232,6 +269,7 @@ async function checkTarget(target: SiteStatusTarget, timeoutMs: number): Promise
     durationMs: response.durationMs,
     checkedAt,
     finalUrl: response.finalUrl,
+    issueKind: issue ? issueKind : 'none',
     issues: issue ? [issue] : [],
   }
 }
