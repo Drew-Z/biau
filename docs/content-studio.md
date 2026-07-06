@@ -2,6 +2,8 @@
 
 内容工作台是站长侧内部编辑面，用来把博客、AI 日报来源、审核状态和发布导出记录先保存到后端数据库，再导出到公开静态内容。
 
+生产验收和分库变量边界见 [`docs/studio-ai-daily-production-readiness.md`](./studio-ai-daily-production-readiness.md)。
+
 ## 架构边界
 
 - 公开站仍然读取已审核的静态内容产物。
@@ -105,6 +107,7 @@ npm.cmd run build
 ## 仍是人工 Gate 的事项
 
 - 生产环境真实 `DATABASE_URL`。
+- 生产环境真实 `STUDIO_DATABASE_URL`，以及它是否和内部助手的 `STUDIO_DATABASE_URL` 指向同一个内容库。
 - Render/Supabase 等平台上的 migration 执行。
 - 生产 `STUDIO_ADMIN_TOKEN`。
 - 第一次真实模型辅助摘要/润色任务。

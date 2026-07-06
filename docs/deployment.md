@@ -151,6 +151,8 @@ PORT=10000
 - `biau-internal-assistant-api` 的 `STUDIO_DATABASE_URL` 必须和 `biau-content-studio-api` 的 `STUDIO_DATABASE_URL` 完全相同。
 - 不要把 Studio 数据库连接串填进 `DATABASE_URL`，否则 `/me` 会因为查不到成员 token 而返回 `401 missing-or-invalid-token`。
 
+Studio / AI Daily 的生产验收顺序和人工 gate 记录见 `docs/studio-ai-daily-production-readiness.md`。
+
 内部助手服务推荐 Start Command：
 
 ```bash
