@@ -75,6 +75,10 @@ queue when the user is available.
 
 - Related task: `07-04-biau-port-continuous-improvement`
 - Needed from user: confirm whether ERP, Legal RAG, Pet, Xunqiu, xunqiu-backend-modern, and Game/Playlab should be pushed automatically after successful commits, or left committed locally for review.
+- Current queued change: ERP has local commit `654cc79` on branch
+  `codex/ozon-plugin-parity`, one commit ahead of
+  `origin/codex/ozon-plugin-parity`; it preserves `?from=biau-port` across
+  login/register switching and has passed `npm.cmd run build --workspace @erp/web`.
 - Why manual: `blog-semi` has an explicit default push rule, but related repositories may have different branch/deployment safety expectations.
 - Codex can continue meanwhile: yes, by keeping commits per repository and reporting exactly which repo/branch changed.
 

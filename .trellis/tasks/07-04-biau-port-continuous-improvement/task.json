@@ -34,7 +34,8 @@
     "07-06-07-06-main-site-synthetic-assistant-chat-gate",
     "07-06-07-06-assistant-live-chat-spec-wording",
     "07-06-07-06-biau-playlab-public-synthetic",
-    "07-06-studio-ai-daily-local-smoke"
+    "07-06-studio-ai-daily-local-smoke",
+    "07-06-erp-auth-bridge-query-preservation"
   ],
   "parent": null,
   "relatedFiles": [],

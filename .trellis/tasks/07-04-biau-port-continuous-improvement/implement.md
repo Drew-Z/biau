@@ -100,6 +100,12 @@ When the selected slice touches a related repository:
   gate no longer reports "API base URL not configured" when the backend API base
   is missing; the gate now correctly points at a separate release artifact
   check and regenerated public status JSON.
+- 2026-07-06: Completed ERP bridge-context preservation slice in related repo
+  `D:\workspace4Cursor\erp`. The ERP login/register switch now preserves
+  `?from=biau-port`, so visitors arriving from BIAU Port keep the project-demo
+  context while toggling auth modes. Verified with
+  `npm.cmd run build --workspace @erp/web`; local ERP commit `654cc79` is
+  intentionally not pushed until the related-repository push policy is confirmed.
 
 ## Discovery Sweep Checklist
 
