@@ -36,6 +36,7 @@ export interface AssistantMessage {
   content: string
   timestamp: string
   citations?: AssistantKnowledgeItem[]
+  meta?: AssistantAnswerMetaSummary | null
 }
 
 export interface AssistantRetrievalSummary {
@@ -295,7 +296,7 @@ export function normalizeAssistantCitations(value: unknown): AssistantKnowledgeI
 
 export function normalizeAssistantMessage(value: unknown): AssistantMessage | null {
   if (!isRecord(value)) return null
-  const { id, role, content, timestamp, citations } = value
+  const { id, role, content, timestamp, citations, meta } = value
   if (
     typeof id !== 'string' ||
     (role !== 'user' && role !== 'assistant') ||
@@ -311,6 +312,7 @@ export function normalizeAssistantMessage(value: unknown): AssistantMessage | nu
     content,
     timestamp,
     citations: normalizeAssistantCitations(citations),
+    meta: normalizeAssistantAnswerMeta(meta),
   }
 }
 

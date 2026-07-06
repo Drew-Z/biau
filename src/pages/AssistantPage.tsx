@@ -286,6 +286,10 @@ function formatLoadedMessages(messages: AssistantMessage[]) {
   }))
 }
 
+function readLatestAnswerMeta(messages: AssistantMessage[]) {
+  return [...messages].reverse().find((message) => message.role === 'assistant' && message.meta)?.meta ?? null
+}
+
 export function AssistantPage() {
   const [messages, setMessages] = useState<AssistantMessage[]>(() => [createOpeningMessage()])
   const [sessions, setSessions] = useState<AssistantSessionPreview[]>([])
@@ -399,6 +403,7 @@ export function AssistantPage() {
         setSelectedSessionId('')
         window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
         setMessages([createOpeningMessage()])
+        setLastAnswerMeta(null)
         setIsLoadingMessages(false)
         return
       }
@@ -409,7 +414,9 @@ export function AssistantPage() {
           ? current.map((session) => (session.id === result.session.id ? result.session : session))
           : [result.session, ...current]
       })
-      setMessages(result.messages.length > 0 ? formatLoadedMessages(result.messages) : [])
+      const nextMessages = result.messages.length > 0 ? formatLoadedMessages(result.messages) : []
+      setMessages(nextMessages)
+      setLastAnswerMeta(readLatestAnswerMeta(nextMessages))
       setIsLoadingMessages(false)
     }
 
@@ -569,6 +576,7 @@ export function AssistantPage() {
 
   const selectSession = (sessionId: string) => {
     setSelectedSessionId(sessionId)
+    setLastAnswerMeta(null)
     window.localStorage.setItem(ASSISTANT_STORAGE_KEYS.sessionId, sessionId)
   }
 

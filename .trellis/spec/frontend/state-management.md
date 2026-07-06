@@ -471,6 +471,8 @@ Health-derived service status stays separate from per-answer fallback reasons.
 ### 3. Contracts
 
 - Components must parse answer metadata through `src/data/assistant.ts`; they must not cast `payload.meta` inline.
+- Persisted message payloads may include `message.meta`; `normalizeAssistantMessage()` must decode it through `normalizeAssistantAnswerMeta()` so history reload and immediate send use the same contract.
+- `/assistant` should restore `lastAnswerMeta` from the latest assistant message when loading a historical session, and clear it while switching sessions so diagnostics do not bleed between conversations.
 - The answer panel may render only low-sensitive fields: `mode`, `model`, `provider`, `reason`, `citationCount`, `intent`, `grounding`, safe `modelChannel`, and retrieval summary counts/classes.
 - Safe `modelChannel` means `{ id, label, provider, model, configured, isDefault }`; never render or persist `apiKey`, `baseUrl`, raw env JSON, request headers, or provider response bodies.
 - Retrieval diagnostics may show counts, `source`, `store`, `retrievalMode`, `sufficiency`, and `fallbackReason`; never show Qdrant URLs, embedding keys, RAG API keys, sync tokens, or raw private document text.
@@ -481,6 +483,8 @@ Health-derived service status stays separate from per-answer fallback reasons.
 
 - Missing `meta` -> panel shows waiting/local fallback state and uses latest normalized citations when available.
 - Malformed `meta` -> decoder returns `null`; component must not throw.
+- Historical assistant message with valid `meta` -> panel restores model/channel/retrieval state after session load.
+- Session selection before messages finish loading -> clear previous `lastAnswerMeta`.
 - Missing `retrieval` -> answer mode/model/channel still renders, with no diagnostic chip group.
 - Local fallback answer -> `lastAnswerMeta` is cleared and the panel must not imply a live provider was used.
 - Member logout, new invite redemption, new session, or session archive -> stale answer diagnostics are cleared.
@@ -489,6 +493,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 ### 5. Good/Base/Bad Cases
 
 - Good: internal API returns model answer plus sanitized retrieval meta; `/assistant` displays "模型回答", the safe channel label, citation count, and candidate count.
+- Good: user reopens a prior session and the diagnostics panel reflects the latest assistant message in that session, not the previous active conversation.
 - Good: model provider fails but citations exist; panel displays fallback reason and safe model-channel summary without exposing endpoint details.
 - Base: backend is not configured; local fallback still shows a bounded state and no stale diagnostics.
 - Bad: `AssistantPage.tsx` reads `(payload.meta as { retrieval?: ... })` directly and starts a second copy of the API contract.

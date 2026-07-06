@@ -298,3 +298,36 @@ Validation:
 Manual gate:
 
 - None for this content refresh beyond the existing production configuration gates.
+
+## 2026-07-06 persisted answer metadata
+
+Completed a cross-layer fix for internal assistant historical diagnostics.
+
+Implemented:
+
+- Added additive Prisma field `ChatMessage.meta Json?` plus migration `20260706020000_chat_message_meta`.
+- Internal chat now builds one sanitized answer-meta object and uses it for both:
+  - immediate `POST /chat/internal` response
+  - persisted assistant `ChatMessage.meta`
+- Persisted meta includes mode, model, provider, fallback reason, safe model-channel summary, citation count, retrieval summary, intent, and grounding.
+- Persisted meta intentionally excludes provider diagnostic bodies, API keys, model base URLs, RAG URLs, Qdrant endpoints, request headers, member/admin tokens, raw prompts, and private source text.
+- Historical message serialization returns sanitized `meta` or `null`.
+- `normalizeAssistantMessage()` decodes optional `message.meta` through `normalizeAssistantAnswerMeta()`.
+- `/assistant` restores the right-side answer diagnostics from the latest assistant message when loading a historical session, and clears stale diagnostics while switching sessions.
+- Backend and frontend specs now record the historical answer-meta contract.
+
+Validation:
+
+- `npm.cmd run prisma:validate`
+- `npm.cmd run prisma:generate`
+- `npm.cmd run server:build`
+- `npm.cmd run server:smoke`
+- `npm.cmd run assistant:service-modes-smoke`
+- `npm.cmd run assistant:rag-smoke`
+- `npm.cmd run lint`
+- `npm.cmd run build`
+- `npm.cmd run check:ui`
+
+Manual gate:
+
+- Production deployment must run the new migration before historical answer diagnostics can persist for new messages. Existing messages safely show no historical diagnostics until new answers are generated.

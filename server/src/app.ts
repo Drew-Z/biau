@@ -392,6 +392,17 @@ function registerInternalAssistantRoutes(app: express.Express) {
         grounding: answerPlan.grounding,
         modelChannelId: member.modelChannelId,
       })
+      const answerMeta = buildAssistantAnswerMeta({
+        mode: generated.mode,
+        model: generated.model,
+        provider: generated.provider,
+        reason: generated.reason,
+        modelChannel: generated.modelChannel,
+        citationCount: citations.length,
+        retrieval: context?.retrieval,
+        intent: answerPlan.intent,
+        grounding: answerPlan.grounding,
+      })
       const reply = await prisma.chatMessage.create({
         data: {
           memberId: member.id,
@@ -399,6 +410,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
           role: 'ASSISTANT',
           content: generated.answer,
           citations: citations as unknown as Prisma.InputJsonValue,
+          meta: answerMeta as unknown as Prisma.InputJsonValue,
         },
       })
       await prisma.usageLog.create({
@@ -421,16 +433,8 @@ function registerInternalAssistantRoutes(app: express.Express) {
         answer: generated.answer,
         citations,
         meta: {
-          mode: generated.mode,
-          model: generated.model,
-          provider: generated.provider,
-          reason: generated.reason,
+          ...answerMeta,
           diagnostic: generated.diagnostic,
-          modelChannel: generated.modelChannel,
-          citationCount: citations.length,
-          retrieval: context?.retrieval,
-          intent: answerPlan.intent,
-          grounding: answerPlan.grounding,
         },
         sessionId: activeSession.id,
         messageId: reply.id,
@@ -1198,6 +1202,7 @@ function serializeChatMessage(message: {
   role: string
   content: string
   citations: unknown
+  meta?: unknown
   createdAt: Date
 }) {
   const role = message.role === 'USER' ? 'user' : message.role === 'ASSISTANT' ? 'assistant' : 'assistant'
@@ -1206,8 +1211,113 @@ function serializeChatMessage(message: {
     role,
     content: message.content,
     citations: Array.isArray(message.citations) ? message.citations : [],
+    meta: sanitizeAssistantAnswerMeta(message.meta),
     timestamp: message.createdAt.toISOString(),
   }
+}
+
+function buildAssistantAnswerMeta(meta: NonNullable<ChatResponse['meta']>) {
+  return stripUndefinedJson({
+    mode: meta.mode,
+    model: meta.model,
+    provider: meta.provider,
+    reason: meta.reason,
+    modelChannel: meta.modelChannel,
+    citationCount: meta.citationCount,
+    retrieval: meta.retrieval,
+    intent: meta.intent,
+    grounding: meta.grounding,
+  } satisfies NonNullable<ChatResponse['meta']>)
+}
+
+function sanitizeAssistantAnswerMeta(value: unknown) {
+  if (!isPlainRecord(value)) return null
+  const mode = value.mode === 'model' || value.mode === 'fallback' ? value.mode : 'fallback'
+  const model = typeof value.model === 'string' ? value.model : 'unknown'
+  const reason =
+    value.reason === 'not_configured' ||
+    value.reason === 'provider_error' ||
+    value.reason === 'empty_response' ||
+    value.reason === 'no_public_context' ||
+    value.reason === 'self_check_failed'
+      ? value.reason
+      : undefined
+
+  return buildAssistantAnswerMeta({
+    mode,
+    model,
+    provider: typeof value.provider === 'string' ? value.provider : undefined,
+    reason,
+    modelChannel: sanitizeModelChannelSummary(value.modelChannel),
+    citationCount: typeof value.citationCount === 'number' ? value.citationCount : 0,
+    retrieval: sanitizeAssistantRetrievalMeta(value.retrieval),
+    intent: sanitizeAssistantAnswerIntent(value.intent),
+    grounding: sanitizeAssistantGroundingMode(value.grounding),
+  })
+}
+
+function sanitizeAssistantAnswerIntent(value: unknown) {
+  if (value === 'site_qa' || value === 'creative' || value === 'planning' || value === 'general') return value
+  return undefined
+}
+
+function sanitizeAssistantGroundingMode(value: unknown) {
+  if (value === 'strict' || value === 'background' || value === 'none') return value
+  return undefined
+}
+
+function sanitizeModelChannelSummary(value: unknown) {
+  if (!isPlainRecord(value)) return undefined
+  const id = typeof value.id === 'string' ? value.id : ''
+  const label = typeof value.label === 'string' ? value.label : ''
+  const provider = typeof value.provider === 'string' ? value.provider : ''
+  const model = typeof value.model === 'string' ? value.model : ''
+  if (!id || !label || !provider || !model) return undefined
+  return {
+    id,
+    label,
+    provider,
+    model,
+    configured: value.configured === true,
+    isDefault: value.isDefault === true,
+  }
+}
+
+function sanitizeAssistantRetrievalMeta(value: unknown) {
+  if (!isPlainRecord(value)) return undefined
+  const sufficiency = value.sufficiency === 'enough' || value.sufficiency === 'weak' || value.sufficiency === 'none' ? value.sufficiency : 'none'
+  return {
+    source: typeof value.source === 'string' ? value.source : 'unknown',
+    retrievalMode: typeof value.retrievalMode === 'string' ? value.retrievalMode : 'unknown',
+    store: typeof value.store === 'string' ? value.store : 'unknown',
+    candidateCount: typeof value.candidateCount === 'number' ? value.candidateCount : 0,
+    citationCount: typeof value.citationCount === 'number' ? value.citationCount : 0,
+    sufficient: value.sufficient === true,
+    sufficiency,
+    fallbackReason: sanitizeRagFallbackReason(value.fallbackReason),
+    expandedEntityCount: typeof value.expandedEntityCount === 'number' ? value.expandedEntityCount : undefined,
+    modelCalls: typeof value.modelCalls === 'number' ? value.modelCalls : undefined,
+  } as NonNullable<ChatResponse['meta']>['retrieval']
+}
+
+function sanitizeRagFallbackReason(value: unknown) {
+  if (
+    value === 'not_configured' ||
+    value === 'timeout' ||
+    value === 'network_error' ||
+    value === 'http_status' ||
+    value === 'invalid_response' ||
+    value === 'private-credential' ||
+    value === 'no_public_context' ||
+    value === null
+  ) {
+    return value
+  }
+  return undefined
+}
+
+function stripUndefinedJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
 }
 
 function getMemberModelChannel(modelChannelId: string | null | undefined) {

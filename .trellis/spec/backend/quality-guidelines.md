@@ -311,7 +311,10 @@ The database stores only a safe channel id; the server resolves keys and endpoin
 
 - Session list returns `{ sessions: AssistantSessionPreview[] }`, newest first, non-archived by default.
 - Session previews expose only `{ id, title, preview, updatedAt, createdAt, archived, archivedAt }`.
-- Message load returns `{ session, messages }`, where messages normalize to `{ id, role: "user" | "assistant", content, timestamp, citations }`.
+- Message load returns `{ session, messages }`, where messages normalize to `{ id, role: "user" | "assistant", content, timestamp, citations, meta? }`.
+- `ChatMessage.meta Json?` stores only sanitized assistant answer metadata: mode, model, provider, reason, safe model channel summary, citation count, retrieval summary, intent, and grounding.
+- `ChatMessage.meta` must not store provider API keys, model base URLs, RAG URLs, Qdrant endpoints, raw provider responses, raw prompts, member tokens, admin tokens, or private source document text.
+- Older messages may have `meta: null`; the UI must treat that as "no historical diagnostics", not as a broken message.
 - `POST /chat/internal` must resolve `sessionId` with `findFirst({ where: { id: sessionId, memberId: member.id } })`; never attach a message to a session owned by another member.
 - If `sessionId` is absent, internal chat creates a session for the authenticated member and returns its `sessionId`.
 - Public, RAG, and Studio service modes must not mount internal session routes; internal mode mounts them but keeps them protected.
@@ -325,13 +328,17 @@ The database stores only a safe channel id; the server resolves keys and endpoin
 - Unknown or cross-member session id -> `404 { error: "session-not-found" }`.
 - Blank session title on rename -> `400 { error: "missing-title" }`.
 - Malformed message/session payload in the browser -> drop invalid entries and show a low-sensitive degraded status.
+- Malformed stored message `meta` -> serialize as `null`; do not throw or leak the raw JSON.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: member A sends with no `sessionId`; the API creates session A1, stores user/assistant messages, updates `lastMessageAt`, and the UI refreshes A's session list.
+- Good: member A reloads A1 later; the latest assistant message still includes sanitized answer meta, so the right diagnostics panel can reconstruct model/channel/retrieval status.
 - Good: member B requests A1 through `GET /chat/internal/sessions/:id/messages`; the API returns `session-not-found`, not A's messages.
 - Base: no API base URL or no member token; `/assistant` keeps a clearly labeled local public-knowledge fallback.
+- Base: a pre-migration assistant message has no `meta`; the conversation still renders and the diagnostics panel shows a waiting/no-history state.
 - Bad: selecting a session by id with `findUnique({ where: { id } })` and then comparing owner in frontend.
+- Bad: storing the provider diagnostic body, relay endpoint, raw prompt, or private retrieved chunk text in `ChatMessage.meta`.
 - Bad: public mode exposes `/chat/internal/sessions` even though `/chat/internal` itself is hidden.
 
 ### 6. Tests Required
@@ -339,6 +346,7 @@ The database stores only a safe channel id; the server resolves keys and endpoin
 - Run `npm.cmd run server:build` after route or serializer changes.
 - Run `npm.cmd run server:smoke`; it must assert session routes reject missing auth and report `database-not-configured` when a bearer token exists but persistence is absent.
 - Run `npm.cmd run assistant:service-modes-smoke`; it must assert public/rag/studio do not expose session routes and internal exposes them only behind auth.
+- Run `npm.cmd run prisma:validate` and `npm.cmd run prisma:generate` after adding or changing `ChatMessage.meta`.
 - Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after `/assistant` or payload-normalizer changes.
 - Sensitive scan changed files for member tokens, admin tokens, invite codes, database URLs, model channels, raw session content from private users, and provider endpoints.
 
