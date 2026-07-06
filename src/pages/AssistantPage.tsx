@@ -884,6 +884,11 @@ export function AssistantPage() {
                 <li key={tool.id}>
                   {tool.label} · {formatPermission(tool.permission)} · {tool.status}
                   {tool.itemCount !== undefined ? ` · ${tool.itemCount}` : ''}
+                  {tool.artifacts?.map((artifact) => (
+                    <Link key={`${tool.id}-${artifact.id}`} to={artifact.href} className="assistant-tool-artifact">
+                      草稿已创建：{artifact.title} · {artifact.status} · {artifact.visibility}
+                    </Link>
+                  ))}
                 </li>
               ))}
               {tools.length === 0 && <li>下一次 Agent 回答后显示工具调用。</li>}

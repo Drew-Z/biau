@@ -32,7 +32,7 @@
 - The route must call `runInternalAgent()` for the main answer path; it must not directly call `planAssistantAnswer()` as the internal route-level planner.
 - `generateAnswer()` remains the model composer/fallback helper and may still use its local answer plan as a low-level default.
 - Normal chat permits only `read` and `draft-write` tools.
-- `draft-write` may create or plan review-required drafts only. It must not publish public content, deploy, mutate admin/member/channel/invite settings, or run external live diagnostics.
+- `draft-write` may create or plan review-required drafts only. `studio.draft` may create `ContentDraft` rows through `getStudioPrisma()` only when the user explicitly asks for draft-like work, and created drafts must stay `REVIEW_NEEDED`, `HIDDEN`, and `aiAssistance: "agentic-workspace"`. It must not publish public content, deploy, mutate admin/member/channel/invite settings, or run external live diagnostics.
 - `admin-write` and `external-live` tools are forbidden from normal chat unless a separate UI/action and review gate is implemented.
 - `ChatMessage.meta` may store only sanitized Agent summaries:
   - `agent`
@@ -45,6 +45,7 @@
   - `grounding`
   - `fallbackReason`
 - Tool traces may contain ids, labels, permission class, status, duration, counts, short summaries, and coarse error classes only.
+- Tool traces may include safe artifacts such as `{ kind: "studio-draft", id, slug, title, column, status: "review-needed", visibility: "hidden", reviewRequired: true, href: "/studio" }`. They must not include draft body text, Prisma payloads, review checklist internals, admin tokens, database roles, or API URLs.
 - Tool traces and metadata must not contain API keys, base URLs, database URLs, sync tokens, bearer tokens, invite codes, raw prompts, raw provider responses, raw retrieved document bodies, stack traces, or private dashboards.
 - Model-driven planning may be used for real internal chat when a member model channel is configured. Smoke/eval tests must use `plannerMode: "mock"` or local deterministic paths and must not probe real providers.
 

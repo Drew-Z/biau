@@ -2,8 +2,10 @@ import type { Member, PrismaClient } from '@prisma/client'
 import type {
   AgentPlannerMode,
   AgentRunMeta,
+  AgentToolArtifact,
   AgentToolId,
   AgentToolPermission,
+  AgentToolStatus,
   AgentToolTrace,
   AssistantAnswerIntent,
   AssistantGroundingMode,
@@ -22,6 +24,7 @@ export interface InternalAgentRunInput {
   sessionId: string
   prisma: PrismaClient
   plannerMode?: 'auto' | 'mock'
+  studioDraftMode?: 'auto' | 'plan-only'
 }
 
 export interface InternalAgentPlan {
@@ -44,6 +47,7 @@ export interface AgentToolContext {
   member: InternalAgentMemberContext
   sessionId: string
   prisma: PrismaClient
+  studioDraftMode?: 'auto' | 'plan-only'
 }
 
 export interface AgentToolPayload {
@@ -53,6 +57,9 @@ export interface AgentToolPayload {
   retrieval?: AssistantRetrievalMeta
   summary: string
   itemCount?: number
+  status?: AgentToolStatus
+  errorClass?: AgentToolTrace['errorClass']
+  artifacts?: AgentToolArtifact[]
 }
 
 export interface AgentToolExecutionResult extends AgentToolPayload {

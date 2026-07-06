@@ -13,6 +13,8 @@ import { runInternalAgent } from './agentOrchestrator.js'
 import type { AssistantServiceMode, ChatPayload, ChatResponse } from './types.js'
 
 type InternalKnowledgeStatusValue = 'DRAFT' | 'REVIEWED' | 'ACTIVE' | 'ARCHIVED'
+type SanitizedAgentToolTrace = NonNullable<NonNullable<ChatResponse['meta']>['tools']>[number]
+type SanitizedAgentToolArtifact = NonNullable<SanitizedAgentToolTrace['artifacts']>[number]
 
 export function createApp() {
   const app = express()
@@ -1376,6 +1378,49 @@ function sanitizeAgentToolTrace(value: unknown): NonNullable<NonNullable<ChatRes
     citationCount: typeof value.citationCount === 'number' ? value.citationCount : undefined,
     itemCount: typeof value.itemCount === 'number' ? value.itemCount : undefined,
     errorClass: value.errorClass === 'tool_error' || value.errorClass === 'policy_blocked' || value.errorClass === 'not_configured' ? value.errorClass : undefined,
+    artifacts: sanitizeAgentToolArtifacts(value.artifacts),
+  }
+}
+
+function sanitizeAgentToolArtifacts(value: unknown): SanitizedAgentToolTrace['artifacts'] {
+  if (!Array.isArray(value)) return undefined
+  const artifacts = value
+    .map((item) => sanitizeAgentToolArtifact(item))
+    .filter((item): item is SanitizedAgentToolArtifact => item !== null)
+  return artifacts.length > 0 ? artifacts.slice(0, 4) : undefined
+}
+
+function sanitizeAgentToolArtifact(value: unknown): SanitizedAgentToolArtifact | null {
+  if (!isPlainRecord(value)) return null
+  if (value.kind !== 'studio-draft') return null
+  const id = typeof value.id === 'string' ? value.id : ''
+  const slug = typeof value.slug === 'string' ? value.slug : ''
+  const title = readBoundedString(value.title, 120)
+  const column = readBoundedString(value.column, 40)
+  if (
+    !/^[a-z0-9_-]+$/iu.test(id) ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(slug) ||
+    id.length > 120 ||
+    slug.length > 96 ||
+    !title ||
+    !column ||
+    value.status !== 'review-needed' ||
+    value.visibility !== 'hidden' ||
+    value.reviewRequired !== true ||
+    value.href !== '/studio'
+  ) {
+    return null
+  }
+  return {
+    kind: 'studio-draft',
+    id,
+    slug,
+    title,
+    column,
+    status: 'review-needed',
+    visibility: 'hidden',
+    reviewRequired: true,
+    href: '/studio',
   }
 }
 

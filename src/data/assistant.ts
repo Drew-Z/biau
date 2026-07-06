@@ -74,7 +74,22 @@ export interface AssistantAgentToolTrace {
   citationCount?: number
   itemCount?: number
   errorClass?: string
+  artifacts?: AssistantAgentToolArtifact[]
 }
+
+export interface AssistantStudioDraftArtifact {
+  kind: 'studio-draft'
+  id: string
+  slug: string
+  title: string
+  column: string
+  status: 'review-needed'
+  visibility: 'hidden'
+  reviewRequired: true
+  href: '/studio'
+}
+
+export type AssistantAgentToolArtifact = AssistantStudioDraftArtifact
 
 export interface AssistantAgentGuardrails {
   status: 'passed' | 'warned' | 'blocked'
@@ -454,7 +469,7 @@ function normalizeAssistantAgentToolTraces(value: unknown): AssistantAgentToolTr
 
 function normalizeAssistantAgentToolTrace(value: unknown): AssistantAgentToolTrace | null {
   if (!isRecord(value)) return null
-  const { id, label, permission, status, durationMs, summary, citationCount, itemCount, errorClass } = value
+  const { id, label, permission, status, durationMs, summary, citationCount, itemCount, errorClass, artifacts } = value
   if (
     typeof id !== 'string' ||
     typeof label !== 'string' ||
@@ -476,6 +491,44 @@ function normalizeAssistantAgentToolTrace(value: unknown): AssistantAgentToolTra
     citationCount: typeof citationCount === 'number' ? citationCount : undefined,
     itemCount: typeof itemCount === 'number' ? itemCount : undefined,
     errorClass: typeof errorClass === 'string' ? errorClass : undefined,
+    artifacts: normalizeAssistantAgentToolArtifacts(artifacts),
+  }
+}
+
+function normalizeAssistantAgentToolArtifacts(value: unknown): AssistantAgentToolArtifact[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const artifacts = value
+    .map((item) => normalizeAssistantAgentToolArtifact(item))
+    .filter((item): item is AssistantAgentToolArtifact => item !== null)
+  return artifacts.length > 0 ? artifacts : undefined
+}
+
+function normalizeAssistantAgentToolArtifact(value: unknown): AssistantAgentToolArtifact | null {
+  if (!isRecord(value)) return null
+  const { kind, id, slug, title, column, status, visibility, reviewRequired, href } = value
+  if (
+    kind !== 'studio-draft' ||
+    typeof id !== 'string' ||
+    typeof slug !== 'string' ||
+    typeof title !== 'string' ||
+    typeof column !== 'string' ||
+    status !== 'review-needed' ||
+    visibility !== 'hidden' ||
+    reviewRequired !== true ||
+    href !== '/studio'
+  ) {
+    return null
+  }
+  return {
+    kind,
+    id,
+    slug,
+    title,
+    column,
+    status,
+    visibility,
+    reviewRequired,
+    href,
   }
 }
 

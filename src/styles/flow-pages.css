@@ -3127,6 +3127,25 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   overflow-wrap: anywhere;
 }
 
+.assistant-tool-artifact {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 6px;
+  display: block;
+  padding: 6px 8px;
+  color: color-mix(in oklch, var(--green) 76%, var(--ink));
+  background: color-mix(in oklch, var(--green) 9%, transparent);
+  border: 1px solid color-mix(in oklch, var(--green) 22%, transparent);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.assistant-tool-artifact:hover {
+  color: color-mix(in oklch, var(--green) 86%, var(--ink));
+  border-color: color-mix(in oklch, var(--green) 34%, transparent);
+}
+
 .assistant-admin-shell {
   padding: clamp(var(--space-24), 4vw, var(--space-40));
   display: grid;

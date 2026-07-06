@@ -684,3 +684,34 @@ Implemented the internal assistant Agentic Workflow Runtime: typed tools, guardr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 68: Internal assistant Studio draft-write
+
+**Date**: 2026-07-06
+**Task**: Internal assistant Studio draft-write
+**Branch**: `main`
+
+### Summary
+
+Implemented controlled Studio draft creation for internal assistant studio.draft: safe hidden/review-needed ContentDraft writes through Studio DB, sanitized tool artifacts, frontend inspector rendering, no-live smoke coverage, and updated Agentic Workspace specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

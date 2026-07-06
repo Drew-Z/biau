@@ -5,6 +5,7 @@ import { createApp } from '../src/app.js'
 import { env } from '../src/env.js'
 import { generateAnswer, planAssistantAnswer } from '../src/model.js'
 import { runInternalAgent } from '../src/agentOrchestrator.js'
+import { buildAgentStudioDraft } from '../src/agentStudioDrafts.js'
 
 function findAvailablePort(startPort: number) {
   return new Promise<number>((resolve, reject) => {
@@ -217,12 +218,35 @@ try {
     sessionId: 'smoke-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
+    studioDraftMode: 'plan-only',
   })
   if (
     !draftAgentRun.meta.tools.some((tool) => tool.id === 'studio.draft' && tool.permission === 'draft-write') ||
     draftAgentRun.meta.guardrails.blockedPermissions.length > 0
   ) {
     throw new Error('internal agent should allow draft-write planning without publish/admin mutation')
+  }
+
+  const draftPlan = buildAgentStudioDraft({
+    question: '帮我生成 Legal RAG 项目详情草稿',
+    memberId: 'smoke-member',
+  })
+  if (
+    !draftPlan.data ||
+    draftPlan.data.status !== 'REVIEW_NEEDED' ||
+    draftPlan.data.visibility !== 'HIDDEN' ||
+    draftPlan.data.aiAssistance !== 'agentic-workspace' ||
+    draftPlan.data.column !== 'project-notes'
+  ) {
+    throw new Error('studio draft builder should create review-needed hidden project draft data without live database access')
+  }
+
+  const sensitiveDraftPlan = buildAgentStudioDraft({
+    question: '帮我生成包含后台密码的项目草稿',
+    memberId: 'smoke-member',
+  })
+  if (sensitiveDraftPlan.blockedReason !== 'sensitive-content-detected' || sensitiveDraftPlan.data) {
+    throw new Error('studio draft builder should block sensitive draft writes')
   }
 
   const health = await fetch(`${base}/health`)

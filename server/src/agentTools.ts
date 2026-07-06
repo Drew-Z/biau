@@ -3,6 +3,13 @@ import path from 'node:path'
 import { retrieveKnowledge, publicKnowledge } from './knowledge.js'
 import { retrieveAssistantContext } from './ragClient.js'
 import { canUsePermission, sanitizeToolTrace } from './agentGuardrails.js'
+import { getStudioPrisma } from './db.js'
+import {
+  buildAgentStudioDraft,
+  buildStudioDraftArtifact,
+  isDuplicateSlugError,
+  withSlugSuffix,
+} from './agentStudioDrafts.js'
 import type {
   AgentToolContext,
   AgentToolDefinition,
@@ -117,11 +124,13 @@ export async function executeAgentTool(toolId: AgentToolId, context: AgentToolCo
       id: definition.id,
       label: definition.label,
       permission: definition.permission,
-      status: 'completed',
+      status: payload.status ?? 'completed',
       durationMs: Date.now() - startedAt,
       summary: payload.summary,
       citationCount: payload.citations.length,
       itemCount: payload.itemCount,
+      errorClass: payload.errorClass,
+      artifacts: payload.artifacts,
     }
     return {
       ...payload,
@@ -228,19 +237,91 @@ async function executeKnowledgeSearch(context: AgentToolContext): Promise<AgentT
   }
 }
 
-function executeStudioDraft(context: AgentToolContext): AgentToolPayload {
-  const draftKind = inferDraftKind(context.question)
-  const plan = [
-    `草稿类型：${draftKind}`,
-    '写入边界：只生成 Studio 草稿计划，公开发布、导出、部署和 admin 设置都需要人工审核。',
-    '建议结构：标题、摘要、正文区块、知识点、关联项目、review checklist、发布前验证命令。',
-  ]
-  return {
+async function executeStudioDraft(context: AgentToolContext): Promise<AgentToolPayload> {
+  const plan = buildAgentStudioDraft({
+    question: context.question,
+    memberId: context.member.id,
+  })
+  const basePlan = {
     citations: [],
     chunks: [],
-    contextBlocks: plan,
-    summary: `已生成 ${draftKind} 的 draft-write 计划，等待人工进入 Studio 创建或审核。`,
-    itemCount: plan.length,
+    contextBlocks: plan.planBlocks,
+    itemCount: plan.planBlocks.length,
+  }
+
+  if (plan.blockedReason === 'sensitive-content-detected') {
+    return {
+      ...basePlan,
+      summary: plan.summary,
+      status: 'blocked',
+      errorClass: 'policy_blocked',
+    }
+  }
+
+  if (plan.blockedReason === 'not-explicit-draft-request' || !plan.data) {
+    return {
+      ...basePlan,
+      summary: `${plan.draftKind} 仅生成计划：需要成员明确要求创建或生成草稿后才会写入 Studio。`,
+    }
+  }
+
+  if (context.studioDraftMode === 'plan-only') {
+    return {
+      ...basePlan,
+      summary: `${plan.draftKind} 已按 no-live 模式生成计划，未写入 Studio 数据库。`,
+    }
+  }
+
+  const prisma = getStudioPrisma()
+  if (!prisma) {
+    return {
+      ...basePlan,
+      summary: `Studio 数据库未配置，${plan.draftKind} 已降级为计划模式，未创建数据库草稿。`,
+      status: 'failed',
+      errorClass: 'not_configured',
+    }
+  }
+
+  for (let attemptIndex = 0; attemptIndex < 3; attemptIndex += 1) {
+    const slug = withSlugSuffix(plan.slug, attemptIndex)
+    try {
+      const draft = await prisma.contentDraft.create({
+        data: { ...plan.data, slug },
+      })
+      const artifact = buildStudioDraftArtifact({
+        id: draft.id,
+        slug: draft.slug,
+        title: draft.title,
+        column: draft.column,
+      })
+      const createdSummary = `已创建 Studio 草稿：${draft.title} · review-needed · hidden。`
+      return {
+        ...basePlan,
+        contextBlocks: [
+          createdSummary,
+          '草稿已进入 Studio 草稿箱；仍需人工审核、检查来源和通过发布 gate 后才能导出到公开站点。',
+          ...plan.planBlocks,
+        ],
+        summary: `${createdSummary} 等待进入 Studio 审核。`,
+        itemCount: plan.planBlocks.length + 1,
+        artifacts: [artifact],
+      }
+    } catch (error) {
+      if (isDuplicateSlugError(error)) continue
+      return {
+        ...basePlan,
+        summary: `${plan.draftKind} 写入 Studio 失败，已安全降级为计划模式。`,
+        status: 'failed',
+        errorClass: 'tool_error',
+      }
+    }
+  }
+
+  return {
+    ...basePlan,
+    summary: `${plan.draftKind} slug 冲突重试耗尽，已安全降级为计划模式。`,
+    status: 'failed',
+    errorClass: 'tool_error',
   }
 }
 
@@ -375,15 +456,6 @@ function extractTerms(value: string) {
 
 function mentionsProjectSurface(value: string) {
   return /项目|案例|技术栈|架构|实现|入口|演示|legal|rag|erp|pet|xunqiu|寻球|playlab|game/iu.test(value)
-}
-
-function inferDraftKind(value: string) {
-  const normalized = normalizeText(value)
-  if (normalized.includes('日报') || normalized.includes('ai daily')) return 'AI 日报草稿'
-  if (normalized.includes('项目') || normalized.includes('案例')) return '项目总结 / 详情页草稿'
-  if (normalized.includes('状态') || normalized.includes('可靠性')) return '状态页说明草稿'
-  if (normalized.includes('资源')) return '资源分享草稿'
-  return '知识积累草稿'
 }
 
 function toCitation(item: Citation): Citation {

@@ -101,7 +101,22 @@ export interface AgentToolTrace {
   citationCount?: number
   itemCount?: number
   errorClass?: 'tool_error' | 'policy_blocked' | 'not_configured'
+  artifacts?: AgentToolArtifact[]
 }
+
+export interface AgentStudioDraftArtifact {
+  kind: 'studio-draft'
+  id: string
+  slug: string
+  title: string
+  column: string
+  status: 'review-needed'
+  visibility: 'hidden'
+  reviewRequired: true
+  href: '/studio'
+}
+
+export type AgentToolArtifact = AgentStudioDraftArtifact
 
 export interface AgentGuardrailSummary {
   status: 'passed' | 'warned' | 'blocked'

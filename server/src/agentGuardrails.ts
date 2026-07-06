@@ -1,5 +1,6 @@
 import type {
   AgentGuardrailSummary,
+  AgentToolArtifact,
   AgentToolPermission,
   AgentToolTrace,
   AssistantGroundingMode,
@@ -23,7 +24,43 @@ export function sanitizeToolTrace(trace: AgentToolTrace): AgentToolTrace {
     citationCount: trace.citationCount,
     itemCount: trace.itemCount,
     errorClass: trace.errorClass,
+    artifacts: sanitizeToolArtifacts(trace.artifacts),
   })
+}
+
+function sanitizeToolArtifacts(value: AgentToolArtifact[] | undefined): AgentToolArtifact[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const artifacts = value
+    .map((artifact) => sanitizeToolArtifact(artifact))
+    .filter((artifact): artifact is AgentToolArtifact => artifact !== null)
+  return artifacts.length > 0 ? artifacts.slice(0, 4) : undefined
+}
+
+function sanitizeToolArtifact(value: AgentToolArtifact): AgentToolArtifact | null {
+  if (value.kind !== 'studio-draft') return null
+  if (
+    !isSafeIdentifier(value.id, 120) ||
+    !isSafeSlug(value.slug) ||
+    !isSafeText(value.title, 160) ||
+    !isSafeText(value.column, 40) ||
+    value.status !== 'review-needed' ||
+    value.visibility !== 'hidden' ||
+    value.reviewRequired !== true ||
+    value.href !== '/studio'
+  ) {
+    return null
+  }
+  return {
+    kind: 'studio-draft',
+    id: value.id,
+    slug: value.slug,
+    title: compactText(value.title, 120),
+    column: value.column,
+    status: 'review-needed',
+    visibility: 'hidden',
+    reviewRequired: true,
+    href: '/studio',
+  }
 }
 
 export function summarizeGuardrails(input: {
@@ -81,6 +118,18 @@ function compactText(value: string, maxLength: number) {
   const normalized = value.replace(/\s+/g, ' ').trim()
   if (normalized.length <= maxLength) return normalized
   return `${normalized.slice(0, maxLength - 1)}…`
+}
+
+function isSafeIdentifier(value: string, maxLength: number) {
+  return typeof value === 'string' && value.length > 0 && value.length <= maxLength && /^[a-z0-9_-]+$/iu.test(value)
+}
+
+function isSafeSlug(value: string) {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value) && value.length >= 3 && value.length <= 96
+}
+
+function isSafeText(value: string, maxLength: number) {
+  return typeof value === 'string' && value.trim().length > 0 && value.length <= maxLength && !containsSensitiveText(value)
 }
 
 function stripUndefinedJson<T>(value: T): T {

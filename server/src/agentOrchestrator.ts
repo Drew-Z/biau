@@ -26,6 +26,7 @@ export async function runInternalAgent(input: InternalAgentRunInput): Promise<In
       member: input.member,
       sessionId: input.sessionId,
       prisma: input.prisma,
+      studioDraftMode: input.studioDraftMode,
     }))
   }
 
