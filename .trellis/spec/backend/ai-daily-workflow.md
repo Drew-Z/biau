@@ -150,3 +150,86 @@ await prisma.contentDraft.create({
 ```
 
 The conversion creates an internal review draft only; public visibility still depends on human approval and static export.
+
+## Scenario: Content Studio Local Smoke Gate
+
+### 1. Scope / Trigger
+
+- Trigger: adding or changing Studio export scripts, project/status detail
+  planning scripts, offline AI Daily draft generation, or docs that describe
+  the local content pipeline validation path.
+- Goal: keep one deterministic `studio:smoke` command as the default local
+  no-live gate for autonomous work and CI-style checks.
+
+### 2. Signatures
+
+- `npm.cmd run studio:smoke`
+- The command runs:
+  - `npm.cmd run studio:export -- --sample --dry-run`
+  - `npm.cmd run studio:project-detail-plan -- --sample legal-rag`
+  - `npm.cmd run studio:status-plan -- --sample legal-rag`
+  - `npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --out <system-temp>/ai-daily-smoke.md --force`
+
+### 3. Contracts
+
+- The command must not call model providers, fetch external URLs, require a
+  Studio database, require production tokens, or write public Git-tracked
+  content.
+- AI Daily smoke output must be written under the system temporary directory
+  and removed after the command exits.
+- The command must print each sub-step name before running it so failures are
+  attributable.
+- The AI Daily smoke draft must still contain the evidence scaffold markers:
+  `column: "ai-daily"`, `status: "draft"`, `model channel: none`,
+  `publication state: draft/manual-review`, and `## Review Gates`.
+
+### 4. Validation & Error Matrix
+
+- Any sub-command exits non-zero -> fail `studio:smoke` and report the step
+  name.
+- AI Daily temp draft is missing a required marker -> fail with the missing
+  marker list.
+- Cleanup fails because the temp directory is already gone -> ignore through
+  force removal.
+- Need to validate live Studio API, production database, model summary, or web
+  scraping -> do not extend `studio:smoke`; create an explicit task and manual
+  gate instead.
+
+### 5. Good/Base/Bad Cases
+
+- Good: fresh local checkout with no model keys and no Studio database passes
+  `studio:smoke`.
+- Base: `studio:smoke` runs while source/docs files are dirty and still leaves
+  no new `content-drafts/*.md` smoke artifact.
+- Bad: `studio:smoke` writes `content-drafts/ai-daily-smoke.md` or calls
+  `blog:model -- doctor --live`.
+- Bad: `studio:smoke` reaches out to a deployed Studio service, RSS feed,
+  model relay, or arbitrary source URL.
+
+### 6. Tests Required
+
+- Run `npm.cmd run studio:smoke` after changing any command it wraps.
+- Run `git status --short` after smoke work to confirm no temporary AI Daily
+  draft was left in `content-drafts/`.
+- Run `npm.cmd run lint`, `npm.cmd run build`, and `git diff --check` before
+  committing script or docs changes.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```powershell
+npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --out content-drafts/ai-daily-smoke.md --force
+```
+
+This leaves a tracked-directory smoke artifact that can be committed by
+accident.
+
+#### Correct
+
+```powershell
+npm.cmd run studio:smoke
+```
+
+The wrapper writes the AI Daily sample draft to the system temp directory,
+verifies the safety markers, and cleans it up.

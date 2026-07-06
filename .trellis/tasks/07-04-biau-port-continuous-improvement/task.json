@@ -33,7 +33,8 @@
     "07-06-07-06-project-detail-visual-regression-guard",
     "07-06-07-06-main-site-synthetic-assistant-chat-gate",
     "07-06-07-06-assistant-live-chat-spec-wording",
-    "07-06-07-06-biau-playlab-public-synthetic"
+    "07-06-07-06-biau-playlab-public-synthetic",
+    "07-06-studio-ai-daily-local-smoke"
   ],
   "parent": null,
   "relatedFiles": [],

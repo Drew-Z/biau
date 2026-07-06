@@ -91,6 +91,11 @@ When the selected slice touches a related repository:
   ignoring `rel=preconnect` and `rel=dns-prefetch` connection hints. External
   link checking now stays green on the deployed site instead of treating font
   origin preconnect URLs as clickable links.
+- 2026-07-06: Created child `07-06-studio-ai-daily-local-smoke` and added
+  `npm.cmd run studio:smoke` as the no-live Content Studio / AI Daily local
+  smoke gate. The command wraps Studio sample export, project detail planning,
+  status detail planning, and AI Daily sample draft generation while writing
+  the AI Daily smoke draft only to the system temp directory.
 
 ## Discovery Sweep Checklist
 

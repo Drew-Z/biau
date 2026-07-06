@@ -85,6 +85,14 @@ src/data/blogCuration.ts
 npm.cmd run studio:export -- --sample --dry-run
 ```
 
+更完整的本地离线 smoke gate：
+
+```powershell
+npm.cmd run studio:smoke
+```
+
+`studio:smoke` 会串行检查 Studio sample export、项目详情导出计划、状态页导出计划和 AI Daily 样例草稿生成。它只写入系统临时目录，不调用模型、不访问外部 URL、不要求生产数据库。
+
 导出后运行：
 
 ```powershell
@@ -108,6 +116,7 @@ npm.cmd run build
 npm.cmd run prisma:validate
 npm.cmd run prisma:generate
 npm.cmd run prisma:migrate:studio
+npm.cmd run studio:smoke
 npm.cmd run server:build
 npm.cmd run server:smoke
 npm.cmd run lint

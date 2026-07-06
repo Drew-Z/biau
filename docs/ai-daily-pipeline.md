@@ -149,11 +149,14 @@ npm.cmd run studio:export -- --draft <draft-id-or-slug> --publish-export-id <exp
 推荐检查命令：
 
 ```powershell
+npm.cmd run studio:smoke
 npm.cmd run studio:export -- --sample --dry-run
 npm.cmd run blog:audit
 npm.cmd run blog:check
 npm.cmd run lint
 npm.cmd run build
 ```
+
+`studio:smoke` 是默认的无 live 检查入口：它会把 AI Daily 样例草稿写入系统临时目录并自动清理，不会在 `content-drafts/` 留下 smoke 副本，也不会调用模型或抓取网页。
 
 是否每日自动抓取来源、是否自动创建 issue、是否接入真实模型生成，都属于后续单独任务和人工 gate。
