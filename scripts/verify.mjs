@@ -112,6 +112,7 @@ await run(['run', 'build'])
 await run(['run', 'blog:check'])
 await run(['run', 'studio:smoke'])
 await run(['run', 'project-details:check'])
+await run(['run', 'status:contract'])
 
 const previewPort = await findAvailablePort(preferredPreviewPort)
 const previewBase = `http://127.0.0.1:${previewPort}`

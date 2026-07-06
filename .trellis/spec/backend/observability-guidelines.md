@@ -170,6 +170,7 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 - For static showcase pages with a public default base URL, run the synthetic script and assert required page text plus public asset URLs are reachable.
 - Use an ephemeral local API to verify configured-base paths when adding protected smoke logic.
 - Run `npm.cmd run site:status` and confirm `/status` receives merged check statuses.
+- Run `npm.cmd run status:contract` after changing `src/data/statusTargets.ts` or any `public/status/*-synthetic.json` snapshot, so static reliability checks, `relatedTargetId` links, synthetic check ids, APK gates, and low-sensitive report fields cannot drift silently.
 - For business-gate checks, assert both the open and closed boolean paths. The
   closed path should be `degraded` or `planned` according to the feature gate,
   not `online`.

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Status target data and pages live under the frontend data/route structure."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Reliability data changes must preserve typed unions and public-safe static data contracts."}
+{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Manual gates and reliability checks must stay low-sensitive and align with observability rollout rules."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Validation commands and backend/frontend smoke expectations apply before finishing."}
