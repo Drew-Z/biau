@@ -748,3 +748,36 @@ Added safe Studio draft deep links, Studio query selection, Agentic Workspace dr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 70: Studio draft deep-link production acceptance
+
+**Date**: 2026-07-07
+**Task**: Studio draft deep-link production acceptance
+**Branch**: `main`
+
+### Summary
+
+Validated production internal assistant to Studio draft deep-link flow, diagnosed database boundary issues, documented Render DATABASE_URL/STUDIO_DATABASE_URL contracts, and confirmed cross-service hidden review-needed draft readback.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1763a73` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

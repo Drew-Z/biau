@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 69
-- **Last Active**: 2026-07-06
+- **Total Sessions**: 70
+- **Last Active**: 2026-07-07
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~750 | Active |
+| `journal-2.md` | ~783 | Active |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 70 | 2026-07-07 | Studio draft deep-link production acceptance | `1763a73` | `main` |
 | 69 | 2026-07-06 | Polish internal assistant Studio draft workflow | `4deda24` | `main` |
 | 68 | 2026-07-06 | Internal assistant Studio draft-write | - | `main` |
 | 67 | 2026-07-06 | Internal assistant agentic workspace runtime | `c566d06` | `main` |
