@@ -80,7 +80,11 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 
 ### 3. Contracts
 
-- Environment keys must be optional by default. Missing API base URL writes `unchecked` results and exits successfully.
+- Environment keys must be optional by default. A missing API base URL on a
+  fresh clone writes `unchecked` results and exits successfully. If a readable
+  public report already exists, direct synthetic scripts should preserve that
+  report by default and require an explicit force flag or environment override
+  before replacing live evidence with local-runner configuration gaps.
 - Public report shape:
   - `checkedAt: string`
   - API synthetic checks: `apiBaseConfigured: boolean`
@@ -112,7 +116,11 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 
 ### 4. Validation & Error Matrix
 
-- Missing base URL -> all live checks `unchecked`; exit code `0`.
+- Missing base URL with no existing report -> all live checks `unchecked`; exit
+  code `0`.
+- Missing base URL with an existing readable report -> preserve the existing
+  report and exit `0`; provide a force flag for maintainers who intentionally
+  need to regenerate the unconfigured report.
 - Missing credentials -> run public health/bootstrap checks only; protected checks `unchecked`; exit code `0`.
 - Same-domain Cloudflare Function expected but `/api/health` returns static HTML
   -> write the affected API check as `offline` with an issue that Functions may
@@ -148,7 +156,10 @@ Also run a sensitive scan on changed files and manually inspect hits that mentio
 
 ### 6. Tests Required
 
-- Run the synthetic script with no env and assert it writes `unchecked` output.
+- Run the synthetic script with no env and an existing report, and assert the
+  existing report is preserved.
+- Run the synthetic script with no env and no existing report, or with the
+  explicit force flag, and assert it writes `unchecked` output.
 - For static showcase pages with a public default base URL, run the synthetic script and assert required page text plus public asset URLs are reachable.
 - Use an ephemeral local API to verify configured-base paths when adding protected smoke logic.
 - Run `npm.cmd run site:status` and confirm `/status` receives merged check statuses.

@@ -35,7 +35,8 @@
     "07-06-07-06-assistant-live-chat-spec-wording",
     "07-06-07-06-biau-playlab-public-synthetic",
     "07-06-studio-ai-daily-local-smoke",
-    "07-06-erp-auth-bridge-query-preservation"
+    "07-06-erp-auth-bridge-query-preservation",
+    "07-06-legal-rag-synthetic-preserve-evidence"
   ],
   "parent": null,
   "relatedFiles": [],

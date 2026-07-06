@@ -106,6 +106,13 @@ When the selected slice touches a related repository:
   context while toggling auth modes. Verified with
   `npm.cmd run build --workspace @erp/web`; local ERP commit `654cc79` is
   intentionally not pushed until the related-repository push policy is confirmed.
+- 2026-07-06: Hardened Legal RAG synthetic evidence preservation. Direct
+  `npm.cmd run legal-rag:synthetic` no longer overwrites an existing
+  credentialed `open-demo` report when `LEGAL_RAG_API_BASE_URL` is absent in
+  the local runner; fresh clones and explicit `--force-unconfigured` still
+  generate public-safe unchecked reports. Updated the observability spec and
+  verified `legal-rag:synthetic`, forced/no-report paths, `reliability:check`,
+  `site:status`, `lint`, `build`, and `git diff --check`.
 
 ## Discovery Sweep Checklist
 

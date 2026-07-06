@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -31,6 +31,7 @@ const SAMPLE_CONTRACT = [
 
 function parseArgs(argv) {
   const args = {
+    forceUnconfigured: process.env.LEGAL_RAG_SYNTHETIC_FORCE_UNCONFIGURED === '1',
     strict: process.env.LEGAL_RAG_SYNTHETIC_STRICT === '1',
     timeoutMs: Number(process.env.LEGAL_RAG_SYNTHETIC_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
   }
@@ -40,6 +41,10 @@ function parseArgs(argv) {
     const item = argv[index]
     if (item === '--strict') {
       args.strict = true
+      continue
+    }
+    if (item === '--force-unconfigured') {
+      args.forceUnconfigured = true
       continue
     }
     if (item === '--timeout') {
@@ -174,6 +179,30 @@ function demoAccessSummary(status) {
   }
 }
 
+async function readExistingReportSummary() {
+  try {
+    const payload = JSON.parse(await readFile(outputPath, 'utf8'))
+    const checks = Array.isArray(payload?.checks) ? payload.checks : []
+    const counts = checks.reduce(
+      (summary, check) => {
+        const status = typeof check?.status === 'string' ? check.status : 'other'
+        summary.total += 1
+        if (status in summary) summary[status] += 1
+        else summary.other += 1
+        return summary
+      },
+      { total: 0, online: 0, degraded: 0, offline: 0, unchecked: 0, other: 0 },
+    )
+
+    return {
+      demoAccessStatus: typeof payload?.demoAccessStatus === 'string' ? payload.demoAccessStatus : 'unknown',
+      counts,
+    }
+  } catch {
+    return null
+  }
+}
+
 async function waitForSeedJob(baseUrl, jobId, timeoutMs, cookieJar) {
   if (!jobId) return { ok: true, status: 200, durationMs: 0, json: null, error: '' }
   const startedAt = Date.now()
@@ -203,6 +232,14 @@ async function main() {
   const cookieJar = new Map()
 
   if (!baseUrl) {
+    const existingReport = args.forceUnconfigured ? null : await readExistingReportSummary()
+    if (existingReport) {
+      console.log(
+        `Legal RAG API base URL is not configured; preserving existing report (${existingReport.demoAccessStatus}, online=${existingReport.counts.online} degraded=${existingReport.counts.degraded} offline=${existingReport.counts.offline} unchecked=${existingReport.counts.unchecked}). Use --force-unconfigured to regenerate unchecked output.`,
+      )
+      return
+    }
+
     checks.push(...CHECK_IDS.map((id) => emptyCheck(id, 'LEGAL_RAG_API_BASE_URL is not configured')))
     await writeReport({
       checkedAt,
