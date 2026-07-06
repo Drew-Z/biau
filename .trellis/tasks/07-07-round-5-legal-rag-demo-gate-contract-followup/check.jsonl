@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Check protected Legal RAG checks stay gated without demo credentials."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Run status contract and verify for final validation."}

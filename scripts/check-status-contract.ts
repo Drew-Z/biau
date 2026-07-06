@@ -24,6 +24,8 @@ const issueKinds = new Set([
   'not_checked',
 ])
 const erpRegistrationStatuses = new Set(['open', 'closed-by-env', 'deploy-stale', 'blocked', 'unchecked'])
+const legalDemoAccessStatuses = new Set(['open-demo', 'credential-required', 'blocked-by-login', 'degraded', 'offline'])
+const legalProtectedCheckIds = new Set(['legal-rag-qa', 'legal-rag-contract-review', 'legal-rag-observability'])
 const disallowedKeys = new Set([
   'token',
   'password',
@@ -229,6 +231,39 @@ function checkErpRegistrationGate(fileName: string, payload: Record<string, unkn
   }
 }
 
+function checkLegalRagDemoGate(fileName: string, payload: Record<string, unknown>) {
+  if (fileName !== 'legal-rag-synthetic.json') return
+
+  const hasCredentials = payload.hasCredentials
+  const demoAccessStatus = payload.demoAccessStatus
+  const demoAccessSummary = payload.demoAccessSummary
+  const checks = Array.isArray(payload.checks) ? payload.checks.filter(isRecord) : []
+  const protectedChecks = checks.filter((check) => typeof check.id === 'string' && legalProtectedCheckIds.has(check.id))
+
+  if (typeof hasCredentials !== 'boolean') fail(`${fileName}: hasCredentials must be boolean`)
+  if (!isNonEmptyString(demoAccessStatus) || !legalDemoAccessStatuses.has(demoAccessStatus)) {
+    fail(`${fileName}: demoAccessStatus "${String(demoAccessStatus)}" is not allowed`)
+  }
+  if (!isNonEmptyString(demoAccessSummary)) fail(`${fileName}: demoAccessSummary is missing`)
+  for (const id of legalProtectedCheckIds) {
+    if (!protectedChecks.some((check) => check.id === id)) fail(`${fileName}: protected check "${id}" is missing`)
+  }
+
+  const credentialGateActive = demoAccessStatus === 'credential-required' || (hasCredentials === false && demoAccessStatus !== 'open-demo')
+  if (credentialGateActive) {
+    for (const check of protectedChecks) {
+      if (check.status === 'online') {
+        fail(`${fileName}:${String(check.id)} cannot be online while protected demo access is ${String(demoAccessStatus)}`)
+      }
+    }
+  }
+  if (demoAccessStatus === 'open-demo') {
+    for (const check of protectedChecks) {
+      if (check.status !== 'online') fail(`${fileName}:${String(check.id)} must be online when demoAccessStatus=open-demo`)
+    }
+  }
+}
+
 async function checkSyntheticSnapshots(knownCheckIds: Set<string>) {
   let entries: string[]
   try {
@@ -257,6 +292,7 @@ async function checkSyntheticSnapshots(knownCheckIds: Set<string>) {
     for (const check of payload.checks) checkSyntheticCheck(fileName, check, knownCheckIds)
     checkApkGate(fileName, payload)
     checkErpRegistrationGate(fileName, payload)
+    checkLegalRagDemoGate(fileName, payload)
   }
 }
 

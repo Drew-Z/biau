@@ -53,6 +53,12 @@ const projectDetailVisualCases = projects
   })
   .filter((project) => project.expectedVisuals > 0)
 
+async function gotoApp(page, path, options = {}) {
+  await page.goto(`${base}${path}`, { waitUntil: options.waitUntil ?? 'domcontentloaded' })
+  await page.locator('#root').waitFor({ state: 'attached', timeout: 10000 })
+  await page.locator('.route-loading').waitFor({ state: 'detached', timeout: 10000 }).catch(() => {})
+}
+
 const failures = []
 const browser = await chromium.launch({ headless: true })
 
@@ -68,7 +74,7 @@ for (const viewport of viewports) {
     })
     page.on('pageerror', (error) => logs.push(`pageerror: ${error.message}`))
 
-    await page.goto(`${base}${route.path}`, { waitUntil: 'networkidle' })
+    await gotoApp(page, route.path)
 
     const titleText = await page.locator('h1, .hero-title-main').first().innerText().catch(() => '')
     const navCount = await page.locator('.nav-all-tools').count()
@@ -111,7 +117,7 @@ for (const viewport of viewports) {
 }
 
 const statusPage = await browser.newPage({ viewport: viewports[0] })
-await statusPage.goto(`${base}/status`, { waitUntil: 'networkidle' })
+await gotoApp(statusPage, '/status')
 const statusCards = await statusPage.locator('.status-target').count()
 const expectedStatusCards = siteStatusTargets.length
 const reliabilityProjectCards = await statusPage.locator('.status-project-card').count()
@@ -223,7 +229,7 @@ if (legalBackHref !== '/status') {
 await statusPage.close()
 
 const interactionPage = await browser.newPage({ viewport: viewports[0] })
-await interactionPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
+await gotoApp(interactionPage, '/blog')
 const initialCards = await interactionPage.locator('.blog-card').count()
 const initialResultMeta = await interactionPage.locator('.blog-result-meta').innerText()
 const initialTotalMatch = initialResultMeta.match(/(\d+)\s*篇文章/)
@@ -262,7 +268,7 @@ if (!(await interactionPage.locator('.blog-empty').isVisible())) {
 await interactionPage.close()
 
 const navFocusPage = await browser.newPage({ viewport: viewports[0] })
-await navFocusPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
+await gotoApp(navFocusPage, '/blog')
 const expectedNavFocusTargets = new Set(['brand', '首页', '项目', '博客', '助手', 'theme', 'language', 'primary'])
 const seenNavFocusTargets = new Map()
 for (let index = 0; index < 24; index += 1) {
@@ -305,7 +311,7 @@ for (const target of expectedNavFocusTargets) {
 await navFocusPage.close()
 
 const navIndicatorPage = await browser.newPage({ viewport: viewports[0] })
-await navIndicatorPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
+await gotoApp(navIndicatorPage, '/blog')
 const navIndicator = await navIndicatorPage.locator('.nav-link-center.active').evaluate((item) => {
   const style = getComputedStyle(item, '::after')
   return {
@@ -321,7 +327,7 @@ if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow ==
 await navIndicatorPage.close()
 
 const assistantPage = await browser.newPage({ viewport: viewports[0] })
-await assistantPage.goto(`${base}/assistant`, { waitUntil: 'networkidle' })
+await gotoApp(assistantPage, '/assistant')
 if (await assistantPage.locator('.public-assistant').count()) {
   failures.push('/assistant: public assistant widget should be hidden on assistant routes')
 }
@@ -336,7 +342,7 @@ if ((await assistantPage.locator('.assistant-bubble.is-assistant').count()) < 2)
 await assistantPage.close()
 
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
-await publicAssistantPage.goto(`${base}/blog`, { waitUntil: 'networkidle' })
+await gotoApp(publicAssistantPage, '/blog')
 await publicAssistantPage.locator('.public-assistant__trigger').click()
 if (!(await publicAssistantPage.locator('.public-assistant__panel').isVisible())) {
   failures.push('/blog public assistant: expected panel to open')
@@ -498,7 +504,7 @@ const homeCarouselPage = await browser.newPage({ viewport: viewports[0] })
 await homeCarouselPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
 })
-await homeCarouselPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+await gotoApp(homeCarouselPage, '/')
 const carouselViewport = homeCarouselPage.locator('.carousel-viewport')
 const carouselTrack = homeCarouselPage.locator('.carousel-track')
 await carouselViewport.hover({ force: true })
@@ -544,7 +550,7 @@ const homeTitleDragPage = await browser.newPage({ viewport: viewports[0] })
 await homeTitleDragPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
 })
-await homeTitleDragPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+await gotoApp(homeTitleDragPage, '/')
 const titleRotator = homeTitleDragPage.locator('.hero-title-rotator')
 const titleBeforeDrag = await titleRotator.getAttribute('aria-label')
 const titleBox = await titleRotator.boundingBox()
@@ -576,7 +582,7 @@ const homeCarouselClickPage = await browser.newPage({ viewport: viewports[0] })
 await homeCarouselClickPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
 })
-await homeCarouselClickPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+await gotoApp(homeCarouselClickPage, '/')
 await homeCarouselClickPage.locator('.carousel-viewport').hover({ force: true })
 await homeCarouselClickPage.waitForTimeout(120)
 await homeCarouselClickPage.locator('.carousel-card').filter({ hasText: '法律智能机器人' }).nth(1).click({ force: true })
@@ -594,7 +600,7 @@ await homeCarouselActionKeyboardPage.addInitScript(() => {
     return null
   }
 })
-await homeCarouselActionKeyboardPage.goto(`${base}/`, { waitUntil: 'networkidle' })
+await gotoApp(homeCarouselActionKeyboardPage, '/')
 await homeCarouselActionKeyboardPage.locator('.carousel-viewport').hover({ force: true })
 const legalRagAction = homeCarouselActionKeyboardPage
   .getByRole('button', { name: '打开外部项目页面：法律智能机器人' })
@@ -617,7 +623,7 @@ if (!actionKeyboardResult.openedUrls.some((url) => url === 'https://legal-rag-we
 await homeCarouselActionKeyboardPage.close()
 
 const keyboardPage = await browser.newPage({ viewport: viewports[0] })
-await keyboardPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
+await gotoApp(keyboardPage, '/projects')
 for (let index = 0; index < 20; index += 1) {
   const focusedProject = await keyboardPage.evaluate(() => document.activeElement?.classList.contains('project-card'))
   if (focusedProject) break
@@ -635,7 +641,7 @@ if (!focusedProject) {
 await keyboardPage.close()
 
 const projectsMobileActionPage = await browser.newPage({ viewport: viewports[1] })
-await projectsMobileActionPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
+await gotoApp(projectsMobileActionPage, '/projects')
 const legalRagMobileCard = projectsMobileActionPage.locator('.project-card').filter({ hasText: 'Legal RAG' }).first()
 const mobileFooterVisible = await legalRagMobileCard.locator('.project-footer').isVisible().catch(() => false)
 const mobileDetailButtonVisible = await legalRagMobileCard
@@ -676,7 +682,7 @@ if (mobileActionPathname !== '/projects') {
 await projectsMobileActionPage.close()
 
 const projectDetailButtonKeyboardPage = await browser.newPage({ viewport: viewports[0] })
-await projectDetailButtonKeyboardPage.goto(`${base}/projects`, { waitUntil: 'networkidle' })
+await gotoApp(projectDetailButtonKeyboardPage, '/projects')
 await projectDetailButtonKeyboardPage
   .getByRole('button', { name: '查看项目详情：Legal RAG｜法律智能机器人与合同审查' })
   .press('Enter')
@@ -686,7 +692,7 @@ await projectDetailButtonKeyboardPage.waitForURL(`${base}/projects/legal-rag`, {
 await projectDetailButtonKeyboardPage.close()
 
 const imagePage = await browser.newPage({ viewport: viewports[1] })
-await imagePage.goto(`${base}/projects/legal-rag`, { waitUntil: 'networkidle' })
+await gotoApp(imagePage, '/projects/legal-rag')
 const imageOk = await imagePage.locator('.detail-hero-image img').evaluate((image) => {
   const img = image instanceof HTMLImageElement ? image : null
   if (!img || img.naturalWidth === 0 || img.naturalHeight === 0) return false
@@ -703,7 +709,7 @@ if (!webpSource?.endsWith('.webp')) {
 await imagePage.close()
 
 const originalImageLinkPage = await browser.newPage({ viewport: viewports[1] })
-await originalImageLinkPage.goto(`${base}/projects/xunqiu`, { waitUntil: 'networkidle' })
+await gotoApp(originalImageLinkPage, '/projects/xunqiu')
 const originalImageLink = originalImageLinkPage.getByRole('link', { name: /打开 .+ 项目截图原图/ })
 const originalImageHref = await originalImageLink.getAttribute('href')
 const originalImageTarget = await originalImageLink.getAttribute('target')
@@ -753,7 +759,7 @@ await originalImageLinkPage.close()
 
 for (const project of projectDetailVisualCases) {
   const projectVisualPage = await browser.newPage({ viewport: viewports[0] })
-  await projectVisualPage.goto(`${base}/projects/${project.id}`, { waitUntil: 'networkidle' })
+  await gotoApp(projectVisualPage, `/projects/${project.id}`)
 
   const visualFigures = projectVisualPage.locator('.project-case-study .project-visual')
   const renderedVisualCount = await visualFigures.count()
@@ -816,7 +822,7 @@ for (const project of projectDetailVisualCases) {
 }
 
 const detailQuickLinksPage = await browser.newPage({ viewport: viewports[1] })
-await detailQuickLinksPage.goto(`${base}/projects/legal-rag`, { waitUntil: 'networkidle' })
+await gotoApp(detailQuickLinksPage, '/projects/legal-rag')
 const legalQuickLinks = detailQuickLinksPage.locator('.detail-header .detail-quick-links')
 const legalQuickLinkCount = await legalQuickLinks.locator('a.link-badge').count()
 const legalQuickExternal = legalQuickLinks.getByRole('link', { name: '在线工作台' }).first()
@@ -883,7 +889,7 @@ if (!legalLowerExternalClass?.includes('link-badge--external') || !legalLowerInt
 await detailQuickLinksPage.close()
 
 const xunqiuQuickLinksPage = await browser.newPage({ viewport: viewports[1] })
-await xunqiuQuickLinksPage.goto(`${base}/projects/xunqiu`, { waitUntil: 'networkidle' })
+await gotoApp(xunqiuQuickLinksPage, '/projects/xunqiu')
 const xunqiuQuickLinks = xunqiuQuickLinksPage.locator('.detail-header .detail-quick-links')
 for (const label of ['产品展示页', '技术文档', '阶段 APK']) {
   if (!(await xunqiuQuickLinks.getByRole('link', { name: label }).first().isVisible().catch(() => false))) {
@@ -904,7 +910,7 @@ await xunqiuQuickLinksPage.close()
 for (const projectId of ['ozon-erp', 'xunqiu']) {
   const projectPath = `/projects/${projectId}`
   const relatedPage = await browser.newPage({ viewport: viewports[0] })
-  await relatedPage.goto(`${base}${projectPath}`, { waitUntil: 'networkidle' })
+  await gotoApp(relatedPage, projectPath)
 
   const relatedSection = relatedPage
     .locator('.detail-related', {
@@ -951,7 +957,7 @@ for (const projectId of ['ozon-erp', 'xunqiu']) {
 }
 
 const projectDetailInternalLinkPage = await browser.newPage({ viewport: viewports[0] })
-await projectDetailInternalLinkPage.goto(`${base}/projects/legal-rag`, { waitUntil: 'networkidle' })
+await gotoApp(projectDetailInternalLinkPage, '/projects/legal-rag')
 const projectDetailSpaMarker = await projectDetailInternalLinkPage.evaluate(() => {
   window.__projectDetailSpaMarker = `project-detail-${Date.now()}`
   return window.__projectDetailSpaMarker

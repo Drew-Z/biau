@@ -32,6 +32,14 @@ external targets, related projects, blog cards, or reliability groups, derive th
 expected value from the same public data source or generated manifest instead of
 hardcoding yesterday's number. This keeps tests useful when content grows.
 
+For Playwright route checks, avoid using `networkidle` as the default page
+readiness signal. Studio, status, assistant, or preview pages may keep background
+requests or lazy resources open long enough to create false timeouts. Prefer a
+shared helper that waits for `domcontentloaded`, the React root, and disappearance
+of the `.route-loading` Suspense fallback, then assert the route-specific visible
+content needed by the test. Use `networkidle` only for a narrowly documented case
+where the network becoming idle is the behavior under test.
+
 For `/status`, entry-card detail links and reliability project detail routes
 should be derived through shared helpers and `src/data/statusTargets.ts`. UI
 checks should assert the link count and `/status/:projectId` route target from
