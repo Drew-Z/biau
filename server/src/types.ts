@@ -46,6 +46,7 @@ export interface AssistantModelChannelSummary {
   model: string
   configured: boolean
   isDefault: boolean
+  isActive: boolean
 }
 
 export interface RagAdapterDiagnostic {

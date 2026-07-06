@@ -79,6 +79,7 @@ function buildFallbackAnswer(
 }
 
 function readDefaultModelChannel(): AssistantModelChannelConfig {
+  const configured = Boolean(env.assistantModelApiKey || env.openaiApiKey)
   return {
     id: DEFAULT_MODEL_CHANNEL_ID,
     label: '默认模型通道',
@@ -86,8 +87,9 @@ function readDefaultModelChannel(): AssistantModelChannelConfig {
     baseUrl: env.assistantModelBaseUrl || env.openaiBaseUrl,
     model: env.assistantModelName || env.openaiModel,
     provider: env.assistantModelProvider || 'openai-compatible',
-    configured: Boolean(env.assistantModelApiKey || env.openaiApiKey),
+    configured,
     isDefault: true,
+    isActive: true,
   }
 }
 
@@ -109,15 +111,15 @@ export function listSafeModelChannels(): AssistantModelChannelSummary[] {
 }
 
 export function resolveModelChannel(channelId?: string | null): AssistantModelChannelConfig {
-  const normalized = normalizeChannelId(channelId)
+  const normalized = normalizeModelChannelId(channelId)
   const channels = listModelChannels()
-  const selected = normalized ? channels.find((channel) => channel.id === normalized) : null
+  const selected = normalized ? channels.find((channel) => channel.id === normalized && channel.isActive) : null
   return selected ?? channels[0]
 }
 
 export function hasConfiguredModelChannel(channelId?: string | null) {
   if (channelId) return isModelChannelConfigured(resolveModelChannel(channelId))
-  return listModelChannels().some(isModelChannelConfigured)
+  return listModelChannels().some((channel) => channel.isActive && isModelChannelConfigured(channel))
 }
 
 function readExtraModelChannels(): AssistantModelChannelConfig[] {
@@ -137,12 +139,13 @@ function readExtraModelChannels(): AssistantModelChannelConfig[] {
 
 function readModelChannelConfig(value: unknown): AssistantModelChannelConfig | null {
   if (!isRecord(value)) return null
-  const id = normalizeChannelId(value.id)
+  const id = normalizeModelChannelId(value.id)
   if (!id || id === DEFAULT_MODEL_CHANNEL_ID) return null
 
   const model = readString(value.model, 120)
   const apiKey = readString(value.apiKey, 400)
   if (!model) return null
+  const isActive = readChannelActive(value)
 
   return {
     id,
@@ -153,6 +156,7 @@ function readModelChannelConfig(value: unknown): AssistantModelChannelConfig | n
     apiKey,
     configured: Boolean(apiKey),
     isDefault: false,
+    isActive,
   }
 }
 
@@ -164,6 +168,7 @@ function toSafeModelChannel(channel: AssistantModelChannelConfig): AssistantMode
     model: channel.model,
     configured: isModelChannelConfigured(channel),
     isDefault: channel.isDefault,
+    isActive: channel.isActive,
   }
 }
 
@@ -171,7 +176,13 @@ function isModelChannelConfigured(channel: Pick<AssistantModelChannelConfig, 'ap
   return Boolean(channel.apiKey && channel.baseUrl && channel.model && getChatCompletionEndpoints(channel.baseUrl).length > 0)
 }
 
-function normalizeChannelId(value: unknown) {
+function readChannelActive(value: Record<string, unknown>) {
+  if (value.isActive === false || value.active === false || value.enabled === false) return false
+  if (value.disabled === true) return false
+  return true
+}
+
+export function normalizeModelChannelId(value: unknown) {
   if (typeof value !== 'string') return ''
   const normalized = value.trim().toLowerCase()
   if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(normalized)) return ''

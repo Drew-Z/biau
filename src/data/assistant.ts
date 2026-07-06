@@ -100,6 +100,7 @@ export interface AssistantModelChannelSummary {
   model: string
   configured: boolean
   isDefault: boolean
+  isActive: boolean
 }
 
 export type AssistantInviteStatus = 'OPEN' | 'EXHAUSTED' | 'EXPIRED' | 'REVOKED'
@@ -150,6 +151,8 @@ export interface AssistantUsageSummary {
   id: string
   scope: string
   model: string
+  modelChannelId?: string | null
+  modelChannel?: AssistantModelChannelSummary
   tokensIn: number
   tokensOut: number
   createdAt: string
@@ -523,7 +526,7 @@ export function normalizeAssistantInternalKnowledgeSyncRun(value: unknown): Assi
 
 export function normalizeAssistantUsageSummary(value: unknown): AssistantUsageSummary | null {
   if (!isRecord(value)) return null
-  const { id, scope, model, tokensIn, tokensOut, createdAt, member } = value
+  const { id, scope, model, modelChannelId, modelChannel, tokensIn, tokensOut, createdAt, member } = value
   if (
     typeof id !== 'string' ||
     typeof scope !== 'string' ||
@@ -539,6 +542,8 @@ export function normalizeAssistantUsageSummary(value: unknown): AssistantUsageSu
     id,
     scope,
     model,
+    modelChannelId: typeof modelChannelId === 'string' || modelChannelId === null ? modelChannelId : undefined,
+    modelChannel: normalizeAssistantModelChannel(modelChannel) ?? undefined,
     tokensIn,
     tokensOut,
     createdAt,
@@ -581,7 +586,7 @@ function normalizeAssistantSyncDiagnostic(value: unknown): Record<string, string
 
 export function normalizeAssistantModelChannel(value: unknown): AssistantModelChannelSummary | null {
   if (!isRecord(value)) return null
-  const { id, label, provider, model, configured, isDefault } = value
+  const { id, label, provider, model, configured, isDefault, isActive } = value
   if (
     typeof id !== 'string' ||
     typeof label !== 'string' ||
@@ -593,7 +598,7 @@ export function normalizeAssistantModelChannel(value: unknown): AssistantModelCh
     return null
   }
 
-  return { id, label, provider, model, configured, isDefault }
+  return { id, label, provider, model, configured, isDefault, isActive: isActive !== false }
 }
 
 export function normalizeAssistantModelChannels(value: unknown): AssistantModelChannelSummary[] {

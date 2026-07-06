@@ -162,7 +162,8 @@ PORT=10000
     "provider": "mimo-compatible",
     "baseUrl": "<OpenAI-compatible relay base URL>",
     "apiKey": "<server-only key>",
-    "model": "mimo-chat"
+    "model": "mimo-chat",
+    "isActive": true
   },
   {
     "id": "deepseek",
@@ -170,13 +171,14 @@ PORT=10000
     "provider": "deepseek-compatible",
     "baseUrl": "<OpenAI-compatible relay base URL>",
     "apiKey": "<server-only key>",
-    "model": "deepseek-ai/deepseek-v4-pro"
+    "model": "deepseek-ai/deepseek-v4-pro",
+    "isActive": true
   }
 ]
 ```
 
 成员表只保存 `modelChannelId`；`/assistant/admin` 只展示渠道
-`id/label/provider/model/configured`，不会展示 `apiKey` 或 `baseUrl`。如果成员未分配渠道或渠道不存在，内部聊天会回到默认通道；如果默认通道也未配置，则使用本地 fallback。
+`id/label/provider/model/configured/isDefault/isActive`，不会展示 `apiKey` 或 `baseUrl`。如果成员未分配渠道、渠道不存在或渠道被标记为 `isActive:false`，内部聊天会回到默认通道；如果默认通道也未配置，则使用本地 fallback。用量记录只保存当次实际使用的低敏 `modelChannelId`，方便之后排查成员路由，不保存 endpoint 或 key。
 
 `/assistant/admin` 的内部知识源管理会把 `REVIEWED` / `ACTIVE` 文档作为 internal corpus 同步计划提交给 RAG Orchestrator。真实同步需要 Internal Assistant API 和 RAG Orchestrator 配置相同的 `RAG_SYNC_TOKEN`；未配置时只会记录低敏 `SKIPPED` 同步运行，不会把文档或 token 暴露给浏览器。
 

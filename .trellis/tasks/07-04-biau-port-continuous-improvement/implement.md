@@ -113,6 +113,11 @@ When the selected slice touches a related repository:
   generate public-safe unchecked reports. Updated the observability spec and
   verified `legal-rag:synthetic`, forced/no-report paths, `reliability:check`,
   `site:status`, `lint`, `build`, and `git diff --check`.
+- 2026-07-06: Advanced the internal assistant member model-channel slice toward
+  final shape. Member routing now honors active/inactive channel state, admin
+  assignment rejects inactive channels, answer/usage diagnostics show only safe
+  channel summaries, and smoke tests cover both assigned-channel selection and
+  inactive-channel fallback without live model calls.
 
 ## Discovery Sweep Checklist
 

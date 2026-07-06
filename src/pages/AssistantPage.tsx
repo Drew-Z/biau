@@ -58,6 +58,13 @@ function readStoredValue(key: string) {
   return window.localStorage.getItem(key) ?? ''
 }
 
+function formatModelChannelState(channel?: AssistantMemberProfile['modelChannel'] | AssistantAnswerMetaSummary['modelChannel'] | null) {
+  if (!channel) return '默认模型通道'
+  if (!channel.isActive) return '已停用'
+  if (!channel.configured) return '未配置'
+  return channel.isDefault ? '默认可用' : '可用'
+}
+
 function getErrorCode(payload: unknown) {
   return isRecord(payload) && typeof payload.error === 'string' ? payload.error : ''
 }
@@ -631,6 +638,7 @@ export function AssistantPage() {
     : API_BASE && memberToken
       ? '等待下一次回答'
       : '本地回退'
+  const answerChannel = lastAnswerMeta?.modelChannel ?? member?.modelChannel ?? null
 
   return (
     <main className="assistant-page page-stack">
@@ -656,7 +664,7 @@ export function AssistantPage() {
                 <p className="assistant-panel__eyebrow">MEMBER</p>
                 <strong>{member.name}</strong>
                 <span>{member.role} · {member.dailyQuota} / day</span>
-                <span>模型渠道：{member.modelChannel?.label ?? '默认模型通道'}</span>
+                <span>模型渠道：{member.modelChannel?.label ?? '默认模型通道'} · {formatModelChannelState(member.modelChannel)}</span>
                 <button type="button" onClick={clearMember}>
                   清除本地 token
                 </button>
@@ -820,7 +828,7 @@ export function AssistantPage() {
             <ul>
               <li>模式：{answerMode}</li>
               <li>模型：{lastAnswerMeta?.model ?? '等待回答'}</li>
-              <li>渠道：{lastAnswerMeta?.modelChannel?.label ?? member?.modelChannel?.label ?? '默认模型通道'}</li>
+              <li>渠道：{answerChannel?.label ?? '默认模型通道'} · {formatModelChannelState(answerChannel)}</li>
               <li>引用：{lastAnswerMeta?.citationCount ?? latestCitations.length}</li>
             </ul>
             {retrieval && (

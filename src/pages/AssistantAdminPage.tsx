@@ -110,6 +110,13 @@ function readStoredAdminToken() {
   return window.localStorage.getItem(ASSISTANT_STORAGE_KEYS.adminToken) ?? ''
 }
 
+function formatModelChannelState(channel?: AssistantModelChannelSummary | null) {
+  if (!channel) return '默认模型通道'
+  if (!channel.isActive) return '已停用'
+  if (!channel.configured) return '未配置'
+  return channel.isDefault ? '默认可用' : '可用'
+}
+
 function normalizeSummary(value: unknown): AdminSummary | null {
   if (!isRecord(value)) return null
   const {
@@ -581,7 +588,7 @@ export function AssistantAdminPage() {
 
       setMembers((current) => current.map((member) => (member.id === updated.id ? updated : member)))
       setModelChannels(normalizeAssistantModelChannels(payload.modelChannels))
-      setMembersStatus(`已为 ${updated.name} 分配模型渠道：${updated.modelChannel?.label ?? '默认模型通道'}`)
+      setMembersStatus(`已为 ${updated.name} 分配模型渠道：${updated.modelChannel?.label ?? '默认模型通道'}（${formatModelChannelState(updated.modelChannel)}）`)
     } catch {
       setMembersStatus('无法连接成员更新 API。')
     } finally {
@@ -965,7 +972,7 @@ export function AssistantAdminPage() {
                       {member.role} · {member.status ?? 'ACTIVE'} · {member.dailyQuota} / day
                     </span>
                     <span>
-                      当前渠道：{member.modelChannel?.label ?? '默认模型通道'} / {member.modelChannel?.model ?? 'fallback'}
+                      当前渠道：{member.modelChannel?.label ?? '默认模型通道'} / {member.modelChannel?.model ?? 'fallback'} · {formatModelChannelState(member.modelChannel)}
                     </span>
                   </div>
                   <label className="assistant-field assistant-field--compact">
@@ -975,9 +982,14 @@ export function AssistantAdminPage() {
                       disabled={updatingMemberId === member.id || modelChannels.length === 0}
                       onChange={(event) => void updateMemberModelChannel(member.id, event.target.value)}
                     >
+                      {member.modelChannel && !modelChannels.some((channel) => channel.id === member.modelChannel?.id) && (
+                        <option value={member.modelChannel.id} disabled>
+                          {member.modelChannel.label} · {member.modelChannel.model}（{formatModelChannelState(member.modelChannel)}）
+                        </option>
+                      )}
                       {modelChannels.map((channel) => (
-                        <option key={channel.id} value={channel.id}>
-                          {channel.label} · {channel.model}{channel.configured ? '' : '（未配置）'}
+                        <option key={channel.id} value={channel.id} disabled={!channel.isActive}>
+                          {channel.label} · {channel.model}（{formatModelChannelState(channel)}）
                         </option>
                       ))}
                     </select>
@@ -1161,7 +1173,7 @@ export function AssistantAdminPage() {
                       {usage.scope} · {usage.model}
                     </span>
                     <span>
-                      {formatAdminDate(usage.createdAt)} · {usage.member?.modelChannel?.label ?? '默认/未知渠道'}
+                      {formatAdminDate(usage.createdAt)} · {usage.modelChannel?.label ?? usage.member?.modelChannel?.label ?? '默认/未知渠道'}
                     </span>
                   </div>
                   <div>

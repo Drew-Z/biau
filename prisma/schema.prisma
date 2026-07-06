@@ -66,14 +66,15 @@ model ChatMessage {
 }
 
 model UsageLog {
-  id        String   @id @default(cuid())
-  memberId  String?
-  scope     String
-  model     String?
-  tokensIn  Int      @default(0)
-  tokensOut Int      @default(0)
-  createdAt DateTime @default(now())
-  member    Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  id             String   @id @default(cuid())
+  memberId       String?
+  scope          String
+  model          String?
+  modelChannelId String?
+  tokensIn       Int      @default(0)
+  tokensOut      Int      @default(0)
+  createdAt      DateTime @default(now())
+  member         Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
 }
 
 model InternalKnowledgeDocument {

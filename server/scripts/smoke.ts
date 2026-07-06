@@ -576,10 +576,16 @@ try {
   }
 
   const mockMemberChannelPort = await findAvailablePort(9377)
+  const mockDefaultChannelPort = await findAvailablePort(mockMemberChannelPort + 20)
   const mockMemberChannelServer = await startMockModelServer(
     mockMemberChannelPort,
     '/chat/completions',
     '成员渠道回答：这个回答来自被分配的 Mimo smoke 通道。',
+  )
+  const mockDefaultChannelServer = await startMockModelServer(
+    mockDefaultChannelPort,
+    '/chat/completions',
+    '默认渠道回答：这个回答来自默认 smoke 通道。',
   )
   try {
     env.assistantModelApiKey = ''
@@ -608,8 +614,42 @@ try {
     ) {
       throw new Error('member model channel assignment did not select the configured channel')
     }
+
+    env.assistantModelApiKey = 'smoke-model-key'
+    env.assistantModelBaseUrl = `http://127.0.0.1:${mockDefaultChannelPort}`
+    env.assistantModelName = 'default-smoke-model'
+    env.assistantModelProvider = 'default-compatible'
+    env.openaiApiKey = ''
+    env.openaiBaseUrl = `http://127.0.0.1:${mockDefaultChannelPort}`
+    env.openaiModel = 'default-smoke-model'
+    env.assistantModelChannelsJson = JSON.stringify([
+      {
+        id: 'mimo',
+        label: 'Mimo smoke disabled',
+        provider: 'mimo-compatible',
+        baseUrl: `http://127.0.0.1:${mockMemberChannelPort}`,
+        apiKey: 'smoke-model-key',
+        model: 'mimo-smoke-model',
+        isActive: false,
+      },
+    ])
+    const inactiveChannelAnswer = await generateAnswer('请写一句内部助手欢迎语', [], 'internal', {
+      intent: 'creative',
+      grounding: 'none',
+      modelChannelId: 'mimo',
+    })
+    if (
+      inactiveChannelAnswer.mode !== 'model' ||
+      inactiveChannelAnswer.model !== 'default-smoke-model' ||
+      inactiveChannelAnswer.provider !== 'default-compatible' ||
+      inactiveChannelAnswer.modelChannel?.id !== 'default' ||
+      !inactiveChannelAnswer.answer.includes('默认渠道回答')
+    ) {
+      throw new Error('inactive member model channel did not fall back to the default channel')
+    }
   } finally {
     await new Promise<void>((resolve) => mockMemberChannelServer.close(() => resolve()))
+    await new Promise<void>((resolve) => mockDefaultChannelServer.close(() => resolve()))
     restoreModelEnv(originalModelEnv)
   }
 

@@ -222,11 +222,12 @@ The server reads private env, applies public-citation grounding, and returns onl
 ### 3. Contracts
 
 - `ASSISTANT_MODEL_CHANNELS_JSON` accepts either an array or `{ "channels": [...] }`.
-- Each channel item uses `{ id, label, provider, baseUrl, apiKey, model }`.
+- Each channel item uses `{ id, label, provider, baseUrl, apiKey, model }` plus optional activation flags such as `isActive:false`, `active:false`, `enabled:false`, or `disabled:true`.
 - Channel `id` must be a low-sensitive slug matching lowercase alphanumeric plus `_` / `-`; `default` is reserved for existing `ASSISTANT_MODEL_*`.
-- API responses expose only `{ id, label, provider, model, configured, isDefault }`.
+- API responses expose only `{ id, label, provider, model, configured, isDefault, isActive }`.
 - API responses must never include `apiKey`, `baseUrl`, raw env JSON, endpoint URLs, request headers, or provider responses.
-- Unknown channel ids fall back to the default channel for generation; admin assignment rejects unknown ids with a stable error.
+- Unknown or inactive channel ids fall back to the default channel for generation; admin assignment rejects unknown or inactive ids with a stable error.
+- `UsageLog.modelChannelId` may store only the resolved low-sensitive channel id used for that call; it must not store endpoint URLs, keys, provider diagnostics, or raw channel JSON.
 - Selecting the default channel may persist `null` so default routing remains environment-driven.
 
 ### 4. Validation & Error Matrix
@@ -237,6 +238,7 @@ The server reads private env, applies public-citation grounding, and returns onl
 - Unknown `modelChannelId` in admin patch -> `400 { error: "unsupported-model-channel" }`.
 - Unsupported member status -> `400 { error: "unsupported-member-status" }`.
 - Assigned channel lacks a key/base/model -> `generateAnswer()` returns fallback with `reason: "not_configured"` and sanitized `modelChannel`.
+- Assigned channel is inactive -> generation uses the default channel; if the default channel is also unavailable, the answer falls back with a sanitized default-channel summary.
 - Provider failure for assigned channel -> fallback with sanitized diagnostic only.
 
 ### 5. Good/Base/Bad Cases
@@ -251,7 +253,7 @@ The server reads private env, applies public-citation grounding, and returns onl
 
 - Run `npm.cmd run prisma:validate` and `npm.cmd run prisma:generate` after schema changes.
 - Run `npm.cmd run server:build` after changing model-channel parsing, app routes, or types.
-- Run `npm.cmd run server:smoke`; it must use only a local mock model server to assert channel selection.
+- Run `npm.cmd run server:smoke`; it must use only a local mock model server to assert channel selection and inactive-channel fallback to default.
 - Run `npm.cmd run assistant:service-modes-smoke` after route additions to keep public/internal/rag/studio isolation.
 - Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after `/assistant/admin` or payload-normalizer changes.
 - Sensitive scan changed files for real model keys, relay URLs, database URLs, member tokens, admin tokens, invite codes, and raw channel JSON.

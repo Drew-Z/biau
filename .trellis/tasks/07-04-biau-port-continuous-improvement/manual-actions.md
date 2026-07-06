@@ -90,6 +90,13 @@ queue when the user is available.
 - Why manual: this requires cloud resources, private credentials, production sync choices, and live validation policy.
 - Codex can continue meanwhile: yes, by building local/mock Orchestrator contract, eval harness, provider-neutral adapters, and documentation.
 
+### M13. Apply internal assistant member-channel production rollout
+
+- Related task: `07-06-07-06-internal-assistant-member-model-routing`
+- Needed from user: run the production database migration for `UsageLog.modelChannelId`, configure server-only `ASSISTANT_MODEL_CHANNELS_JSON` on the internal assistant service with real active/inactive channel policy, and approve a real business task if live model validation is needed.
+- Why manual: production database access, Render environment variables, model keys, provider endpoints, and live model calls are external/manual gates.
+- Codex can continue meanwhile: yes, using local mock smoke tests and public-safe docs/UI refinements.
+
 ## Done
 
 ### M2. Record external RAG runtime decision

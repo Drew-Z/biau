@@ -4,7 +4,7 @@ import { Prisma, type InternalKnowledgeDocument, type InternalKnowledgeSyncRun, 
 import { env, hasDatabase } from './env.js'
 import { sha256 } from './crypto.js'
 import { issueMemberToken, readBearerMember, requireDatabase } from './auth.js'
-import { generateAnswer, hasConfiguredModelChannel, listSafeModelChannels, resolveModelChannel, planAssistantAnswer } from './model.js'
+import { generateAnswer, hasConfiguredModelChannel, listSafeModelChannels, normalizeModelChannelId, planAssistantAnswer } from './model.js'
 import { createMetricsMiddleware, renderPrometheusMetrics } from './metrics.js'
 import { retrieveAssistantContext, retrievePublicAssistantContext } from './ragClient.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
@@ -418,6 +418,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
           memberId: member.id,
           scope: 'internal-chat',
           model: generated.model,
+          modelChannelId: generated.modelChannel?.id ?? null,
         },
       })
       await prisma.member.update({
@@ -967,14 +968,17 @@ function serializeInternalKnowledgeSyncRun(
 }
 
 function serializeUsageLog(
-  usage: Pick<Prisma.UsageLogGetPayload<{ include: { member: true } }>, 'id' | 'scope' | 'model' | 'tokensIn' | 'tokensOut' | 'createdAt'> & {
+  usage: Pick<Prisma.UsageLogGetPayload<{ include: { member: true } }>, 'id' | 'scope' | 'model' | 'modelChannelId' | 'tokensIn' | 'tokensOut' | 'createdAt'> & {
     member: Pick<Member, 'id' | 'name' | 'role' | 'status' | 'modelChannelId'> | null
   },
 ) {
+  const modelChannel = getMemberModelChannel(usage.modelChannelId ?? usage.member?.modelChannelId ?? null)
   return {
     id: usage.id,
     scope: usage.scope,
     model: usage.model ?? 'fallback',
+    modelChannelId: usage.modelChannelId ?? null,
+    modelChannel,
     tokensIn: usage.tokensIn,
     tokensOut: usage.tokensOut,
     createdAt: usage.createdAt.toISOString(),
@@ -1280,6 +1284,7 @@ function sanitizeModelChannelSummary(value: unknown) {
     model,
     configured: value.configured === true,
     isDefault: value.isDefault === true,
+    isActive: value.isActive !== false,
   }
 }
 
@@ -1321,9 +1326,18 @@ function stripUndefinedJson<T>(value: T): T {
 }
 
 function getMemberModelChannel(modelChannelId: string | null | undefined) {
-  const resolved = resolveModelChannel(modelChannelId)
   const safeChannels = listSafeModelChannels()
-  return safeChannels.find((channel) => channel.id === resolved.id) ?? safeChannels[0]
+  const normalized = normalizeModelChannelId(modelChannelId)
+  if (!normalized) return safeChannels[0]
+  return safeChannels.find((channel) => channel.id === normalized) ?? {
+    id: normalized,
+    label: `未知模型渠道 (${normalized})`,
+    provider: 'unknown',
+    model: 'fallback',
+    configured: false,
+    isDefault: false,
+    isActive: false,
+  }
 }
 
 function readModelChannelAssignment(value: unknown):
@@ -1336,7 +1350,7 @@ function readModelChannelAssignment(value: unknown):
 
   const normalized = value.trim().toLowerCase()
   if (!normalized) return { ok: true, changed: true, value: null }
-  const channel = listSafeModelChannels().find((item) => item.id === normalized)
+  const channel = listSafeModelChannels().find((item) => item.id === normalized && item.isActive)
   if (!channel) return { ok: false, changed: false }
   return { ok: true, changed: true, value: channel.isDefault ? null : channel.id }
 }

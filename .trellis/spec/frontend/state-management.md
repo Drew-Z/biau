@@ -474,7 +474,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 - Persisted message payloads may include `message.meta`; `normalizeAssistantMessage()` must decode it through `normalizeAssistantAnswerMeta()` so history reload and immediate send use the same contract.
 - `/assistant` should restore `lastAnswerMeta` from the latest assistant message when loading a historical session, and clear it while switching sessions so diagnostics do not bleed between conversations.
 - The answer panel may render only low-sensitive fields: `mode`, `model`, `provider`, `reason`, `citationCount`, `intent`, `grounding`, safe `modelChannel`, and retrieval summary counts/classes.
-- Safe `modelChannel` means `{ id, label, provider, model, configured, isDefault }`; never render or persist `apiKey`, `baseUrl`, raw env JSON, request headers, or provider response bodies.
+- Safe `modelChannel` means `{ id, label, provider, model, configured, isDefault, isActive }`; never render or persist `apiKey`, `baseUrl`, raw env JSON, request headers, or provider response bodies.
 - Retrieval diagnostics may show counts, `source`, `store`, `retrievalMode`, `sufficiency`, and `fallbackReason`; never show Qdrant URLs, embedding keys, RAG API keys, sync tokens, or raw private document text.
 - Reset member/session flows must clear stale `lastAnswerMeta` so a new session does not display diagnostics from a previous member or archived conversation.
 - Citation titles are display data only; the authoritative citation payload still comes from normalized assistant messages.
