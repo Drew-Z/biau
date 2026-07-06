@@ -18,7 +18,7 @@ For broad confidence before handoff, run:
 npm.cmd run verify
 ```
 
-`verify` runs assistant knowledge generation, Prisma validation, lint, server build, smoke test, frontend build, blog check, preview startup, and UI checks.
+`verify` runs assistant knowledge generation, assistant metadata checks, Prisma validation, lint, server build, smoke tests, Cloudflare function smoke, frontend build, blog check, Studio/AI Daily local smoke, project detail evidence checks, preview startup, and UI checks.
 
 ## Smoke Test Contract
 

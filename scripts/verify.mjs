@@ -110,6 +110,7 @@ await run(['run', 'server:smoke'])
 await run(['run', 'cf-assistant:smoke'])
 await run(['run', 'build'])
 await run(['run', 'blog:check'])
+await run(['run', 'studio:smoke'])
 await run(['run', 'project-details:check'])
 
 const previewPort = await findAvailablePort(preferredPreviewPort)
