@@ -124,6 +124,10 @@ The browser sends only the origin in the `Origin` header, so the backend should 
   the static site HTML, or `POST /api/chat/public` returns `404` / `405`, treat
   the blocker as missing or stale Cloudflare Pages Functions deployment, not as a
   model-provider or API-key failure.
+- Live `/api/chat/public` checks can invoke a real model provider when production
+  model env is configured. Do not run them as a default liveness probe; require
+  explicit user approval or the `main-site:synthetic -- --assistant-chat` /
+  `MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT=1` opt-in gate.
 
 ### 4. Validation & Error Matrix
 
@@ -157,7 +161,8 @@ The browser sends only the origin in the `Origin` header, so the backend should 
 - `check:ui` should assert the public assistant opens in a concise default state before citations appear.
 - Before asking a user to rotate or re-enter `ASSISTANT_MODEL_*`, verify the
   live deployment layer first: `/api/health` must return JSON from the Function,
-  then `/api/chat/public` can be checked for `meta.mode`.
+  then `/api/chat/public` can be checked for `meta.mode` only through an
+  approved real task prompt or the explicit assistant-chat synthetic opt-in.
 - Run `assistant:index`, `server:build`, `server:smoke`, `lint`, `build`, `prisma:validate`, `git diff --check`, and a sensitive-value scan after model-provider work.
 
 ### 7. Wrong vs Correct
