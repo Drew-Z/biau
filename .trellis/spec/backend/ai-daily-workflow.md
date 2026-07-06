@@ -165,7 +165,7 @@ The conversion creates an internal review draft only; public visibility still de
 
 - `npm.cmd run studio:smoke`
 - The command runs:
-  - `npm.cmd run studio:export -- --sample --dry-run`
+  - `npm.cmd run studio:export -- --sample --dry-run --allow-dirty`
   - `npm.cmd run studio:project-detail-plan -- --sample legal-rag`
   - `npm.cmd run studio:status-plan -- --sample legal-rag`
   - `npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --out <system-temp>/ai-daily-smoke.md --force`
@@ -199,8 +199,8 @@ The conversion creates an internal review draft only; public visibility still de
 
 - Good: fresh local checkout with no model keys and no Studio database passes
   `studio:smoke`.
-- Base: `studio:smoke` runs while source/docs files are dirty and still leaves
-  no new `content-drafts/*.md` smoke artifact.
+- Base: `studio:smoke` runs while docs, scripts, or public blog data files are
+  dirty and still leaves no new `content-drafts/*.md` smoke artifact.
 - Bad: `studio:smoke` writes `content-drafts/ai-daily-smoke.md` or calls
   `blog:model -- doctor --live`.
 - Bad: `studio:smoke` reaches out to a deployed Studio service, RSS feed,

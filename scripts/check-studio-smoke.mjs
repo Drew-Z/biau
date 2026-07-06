@@ -55,7 +55,7 @@ async function main() {
   const steps = [
     {
       name: 'Studio export sample dry-run',
-      args: ['run', 'studio:export', '--', '--sample', '--dry-run'],
+      args: ['run', 'studio:export', '--', '--sample', '--dry-run', '--allow-dirty'],
     },
     {
       name: 'Project detail export plan sample',
