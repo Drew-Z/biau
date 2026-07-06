@@ -435,7 +435,9 @@ export const reliabilityProjects: ReliabilityProject[] = [
         ownerHint: 'UI regression',
       },
     ],
-    gates: ['是否上线新的试玩构建或公开测试版本需要人工确认。'],
+    gates: [
+      '最近一次 Playlab synthetic 已验证 6/6 个试玩页面和 36/36 个发现资源响应；上线新的试玩构建或公开测试版本仍需要人工确认。',
+    ],
     nextActions: ['把 Playlab synthetic 从 HTML 发现资源升级为版本化 manifest 检查。', '把关键游戏详情纳入 UI 回归截图。'],
   },
 ]

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-06T18:13:40.610Z",
+  "checkedAt": "2026-07-06T19:31:20.194Z",
   "baseConfigured": true,
   "ok": true,
   "playableSummary": {
@@ -14,8 +14,8 @@
       "id": "biau-playlab-web-builds",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 44840,
-      "checkedAt": "2026-07-06T18:13:40.610Z",
+      "durationMs": 43880,
+      "checkedAt": "2026-07-06T19:31:20.194Z",
       "summary": "3/3 public pages, 6/6 playable pages, 36/36 discovered resources responded",
       "issues": []
     },
@@ -23,8 +23,8 @@
       "id": "biau-playlab-mobile-hints",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1373,
-      "checkedAt": "2026-07-06T18:13:40.610Z",
+      "durationMs": 1578,
+      "checkedAt": "2026-07-06T19:31:20.194Z",
       "summary": "Found 5/5 mobile/control hint terms in public Playlab pages",
       "issues": []
     }

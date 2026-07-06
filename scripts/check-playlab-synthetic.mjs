@@ -87,6 +87,34 @@ function sanitizeIssue(value) {
     .slice(0, 220)
 }
 
+function classifyFetchError(error) {
+  if (!error || typeof error !== 'object') return 'network_error'
+  const code =
+    typeof error.code === 'string'
+      ? error.code
+      : error.cause && typeof error.cause === 'object'
+        ? (error.cause.code ?? '')
+        : ''
+
+  if (error.name === 'AbortError' || code === 'ETIMEDOUT') return 'timeout'
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'dns_error'
+  if (
+    code === 'CERT_HAS_EXPIRED' ||
+    code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
+    code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
+    code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
+  ) {
+    return 'tls_error'
+  }
+  if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'UND_ERR_SOCKET') return 'connection_error'
+  return 'network_error'
+}
+
+function issueFromResponse(label, response, noun) {
+  if (response.status > 0) return `${label}: ${noun} returned HTTP ${response.status}`
+  return `${label}: ${noun} request failed: ${response.errorKind || 'network_error'}`
+}
+
 async function fetchText(url, timeoutMs, accept = 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8') {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
@@ -109,6 +137,7 @@ async function fetchText(url, timeoutMs, accept = 'text/html,application/xhtml+x
       contentType: response.headers.get('content-type') || '',
       body,
       error: '',
+      errorKind: '',
     }
   } catch (error) {
     return {
@@ -118,6 +147,7 @@ async function fetchText(url, timeoutMs, accept = 'text/html,application/xhtml+x
       contentType: '',
       body: '',
       error: sanitizeIssue(error instanceof Error ? error.message : String(error)),
+      errorKind: classifyFetchError(error),
     }
   } finally {
     clearTimeout(timeout)
@@ -153,6 +183,7 @@ async function fetchResourceMethod(url, timeoutMs, method) {
       durationMs: Date.now() - startedAt,
       contentType: response.headers.get('content-type') || '',
       error: '',
+      errorKind: '',
     }
   } catch (error) {
     return {
@@ -161,6 +192,7 @@ async function fetchResourceMethod(url, timeoutMs, method) {
       durationMs: Date.now() - startedAt,
       contentType: '',
       error: sanitizeIssue(error instanceof Error ? error.message : String(error)),
+      errorKind: classifyFetchError(error),
     }
   } finally {
     clearTimeout(timeout)
@@ -171,7 +203,7 @@ function validatePage(target, response) {
   const issues = []
 
   if (!response.ok) {
-    issues.push(`${target.key}: HTTP ${response.status || 'request failed'}${response.error ? ` (${response.error})` : ''}`)
+    issues.push(issueFromResponse(target.key, response, 'page'))
     return issues
   }
 
@@ -265,7 +297,7 @@ function normalizeResourceUrl(pageUrl, value) {
 function validatePlayablePage(label, response) {
   const issues = []
   if (!response.ok) {
-    issues.push(`${label}: playable page returned HTTP ${response.status || 'request failed'}${response.error ? ` (${response.error})` : ''}`)
+    issues.push(issueFromResponse(label, response, 'playable page'))
     return issues
   }
   if (!response.contentType.includes('text/html')) issues.push(`${label}: playable page expected HTML response`)
@@ -276,7 +308,7 @@ function validatePlayablePage(label, response) {
 
 function validateResource(label, response) {
   if (response.ok) return []
-  return [`${label}: resource returned HTTP ${response.status || 'request failed'}${response.error ? ` (${response.error})` : ''}`]
+  return [issueFromResponse(label, response, 'resource')]
 }
 
 function statusFromWebIssues(coreIssues, playableUrlCount, playableIssues, resourceIssues) {
