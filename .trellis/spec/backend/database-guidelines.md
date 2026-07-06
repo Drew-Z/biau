@@ -96,6 +96,15 @@ Prisma models use PascalCase singular names (`Invite`, `Member`, `ChatSession`).
 - `STUDIO_ADMIN_TOKEN` protects Studio writes; if empty, the backend may fall back to `ADMIN_TOKEN`.
 - `ASSISTANT_SERVICE_MODE=studio` exposes Studio routes only. It must not expose `/chat/public`, `/chat/internal`, `/admin/*`, `/rag/*`, or RAG sync routes.
 - `VITE_STUDIO_API_BASE_URL` is only the public browser-facing base URL of the Studio API service. It is not a secret.
+- Production internal assistant draft-write uses two database boundaries:
+  - `DATABASE_URL` on `biau-internal-assistant-api` stores internal members, invites, sessions, messages, usage, model channels, and internal knowledge.
+  - `STUDIO_DATABASE_URL` on `biau-internal-assistant-api` must point to the same Studio database used by `biau-content-studio-api`.
+  - These values are usually different. Do not replace the internal assistant `DATABASE_URL` with the Studio database URL.
+- `biau-internal-assistant-api` start command must run both migrations when Studio draft-write is enabled:
+
+```bash
+npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
+```
 
 ### 4. Validation & Error Matrix
 
@@ -105,14 +114,19 @@ Prisma models use PascalCase singular names (`Invite`, `Member`, `ChatSession`).
 - Missing `STUDIO_DATABASE_URL` and `DATABASE_URL` for a DB route -> `503 { error: "database-not-configured" }`.
 - `ASSISTANT_SERVICE_MODE=studio` request to `/chat/public` or `/chat/internal` -> route not mounted.
 - `STUDIO_DATABASE_URL` differs from `DATABASE_URL` -> Studio health reports a dedicated database role.
+- `biau-internal-assistant-api` `DATABASE_URL` points at the Studio database -> `/me` and `/chat/internal` return `401 { error: "missing-or-invalid-token" }` for previously valid member tokens because `Member.tokenHash` is read from the wrong database.
+- `biau-internal-assistant-api` lacks `STUDIO_DATABASE_URL` while the dedicated Studio service uses a separate database -> `studio.draft` can complete, but the artifact only appears under the internal service `/studio/api`; the dedicated Studio page sees an empty or different draft list.
+- `npm run prisma:migrate` fails with `P1000 Authentication failed` during Render start -> fix `DATABASE_URL`; this stage does not use `STUDIO_DATABASE_URL`.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: a dedicated `biau-content-studio-api` Render service sets `ASSISTANT_SERVICE_MODE=studio`, `STUDIO_DATABASE_URL`, and `STUDIO_ADMIN_TOKEN`; Cloudflare Pages sets `VITE_STUDIO_API_BASE_URL` to that service URL.
+- Good: `biau-internal-assistant-api` keeps `DATABASE_URL` on the internal assistant database and sets `STUDIO_DATABASE_URL` to the same content-studio database used by the dedicated Studio service.
 - Base: local development leaves `STUDIO_DATABASE_URL` empty and Studio falls back to `DATABASE_URL`.
 - Bad: frontend code reads `STUDIO_DATABASE_URL`, `DATABASE_URL`, `STUDIO_ADMIN_TOKEN`, or `ADMIN_TOKEN`.
 - Bad: Studio route imports `requireDatabase()` and writes editorial drafts into the internal assistant member/chat database by accident.
 - Bad: internal assistant deployment runs only Studio migrations, leaving member/invite tables missing.
+- Bad: internal assistant deployment copies the content-studio connection string into `DATABASE_URL`; member tokens and invite redemption no longer target the internal assistant database.
 
 ### 6. Tests Required
 
@@ -122,6 +136,10 @@ Prisma models use PascalCase singular names (`Invite`, `Member`, `ChatSession`).
 - Run `npm.cmd run assistant:service-modes-smoke` to assert `studio` mode route isolation.
 - Run `npm.cmd run lint`, `npm.cmd run build`, and `git diff --check`.
 - Sensitive scan changed files for real database URLs, admin tokens, bearer tokens, and provider keys.
+- Production acceptance for internal assistant Studio draft-write:
+  - `GET /me` with a redeemed `biaum_*` member token -> `200`.
+  - `POST /chat/internal` with a real draft-write task -> `studio.draft` completed with `/studio?draft=<id>`, `status=review-needed`, and `visibility=hidden`.
+  - `GET /studio/api/content-drafts` on both the internal service base and dedicated Studio service base -> both return `200` and match the same draft id/slug.
 
 ### 7. Wrong vs Correct
 
@@ -142,6 +160,26 @@ await prisma.contentDraft.create({ data })
 ```
 
 The Studio route uses the Studio database boundary and returns the same standardized `database-not-configured` error when no Studio database is available.
+
+#### Wrong
+
+```text
+biau-internal-assistant-api
+DATABASE_URL=<content-studio database>
+STUDIO_DATABASE_URL=<content-studio database>
+```
+
+This makes member-token lookup use the editorial database and turns previously valid internal assistant tokens into `missing-or-invalid-token`.
+
+#### Correct
+
+```text
+biau-internal-assistant-api
+DATABASE_URL=<internal assistant database>
+STUDIO_DATABASE_URL=<content-studio database>
+```
+
+Internal auth and chat state stay in the internal assistant database, while `studio.draft` writes to the same database that the dedicated Studio service reads.
 
 ## Scenario: Content Studio Page Review Checklist
 

@@ -129,6 +129,7 @@ PORT=10000
 ASSISTANT_SERVICE_MODE=internal
 CORS_ORIGIN=https://biau.playlab.eu.cc
 DATABASE_URL=<内部助手成员/会话/邀请码数据库 URL>
+STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-content-studio-api 相同>
 ADMIN_TOKEN=<生成一个长随机字符串>
 ASSISTANT_MODEL_BASE_URL=<OpenAI-compatible relay base URL, for example https://.../v1>
 ASSISTANT_MODEL_API_KEY=<OpenAI 兼容中转 Key>
@@ -141,6 +142,19 @@ RAG_SYNC_TOKEN=<内部知识同步到 RAG Orchestrator 的服务端 token>
 ASSISTANT_RAG_TIMEOUT_MS=3000
 METRICS_ENABLED=false
 PORT=10000
+```
+
+如果内部助手需要创建 Studio 草稿，`DATABASE_URL` 和 `STUDIO_DATABASE_URL` 必须保持边界清楚：
+
+- `DATABASE_URL` 指向内部助手库，保存成员、邀请码、会话、消息、用量和成员模型渠道。
+- `STUDIO_DATABASE_URL` 指向内容工作台库，保存草稿、AI 日报 issue、source item 和 publish export。
+- `biau-internal-assistant-api` 的 `STUDIO_DATABASE_URL` 必须和 `biau-content-studio-api` 的 `STUDIO_DATABASE_URL` 完全相同。
+- 不要把 Studio 数据库连接串填进 `DATABASE_URL`，否则 `/me` 会因为查不到成员 token 而返回 `401 missing-or-invalid-token`。
+
+内部助手服务推荐 Start Command：
+
+```bash
+npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
 ```
 
 如果使用 Supabase Postgres / Supavisor pooler 作为内部助手数据库，`DATABASE_URL` 建议使用 Session pooler URI，并在 query 参数里显式加上 Prisma 7 / `@prisma/adapter-pg` 兼容参数：
