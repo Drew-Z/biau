@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Internal assistant, member model channels, sessions, knowledge admin, and answer diagnostics contracts apply."}
+{"file": ".trellis/spec/backend/agentic-workspace.md", "reason": "Agentic Workspace final-shape runtime and tool guardrails apply."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Assistant browser state, answer diagnostics, and frontend normalizers apply."}

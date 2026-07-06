@@ -467,6 +467,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 - Frontend decoder: `normalizeAssistantAnswerMeta(value: unknown): AssistantAnswerMetaSummary | null`.
 - Retrieval decoder: `normalizeAssistantRetrievalSummary(value: unknown): AssistantRetrievalSummary | undefined`.
 - UI state: `/assistant` stores `lastAnswerMeta: AssistantAnswerMetaSummary | null` and derives the right-panel display from that typed value plus the latest assistant citations.
+- Local safety check: `npm.cmd run assistant:meta-check` executes `scripts/check-assistant-meta-normalizers.ts` against intentionally unsafe Agent metadata.
 
 ### 3. Contracts
 
@@ -491,6 +492,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 - Local fallback answer -> `lastAnswerMeta` is cleared and the panel must not imply a live provider was used.
 - Member logout, new invite redemption, new session, or session archive -> stale answer diagnostics are cleared.
 - Unsafe backend addition such as `baseUrl` or `apiKey` in `meta` -> frontend decoder must ignore it; spec violation if UI renders it.
+- Unknown Agent tool ids, unknown workflow steps, invalid tool permissions, mismatched Studio artifact links, external artifact links, and extra secret-bearing fields -> decoder drops or sanitizes them; `assistant:meta-check` must fail if serialized normalized meta contains raw endpoint/key/prompt-like values.
 
 ### 5. Good/Base/Bad Cases
 
@@ -504,6 +506,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 ### 6. Tests Required
 
 - Run `npm.cmd run lint` and `npm.cmd run build` after changing answer meta normalizers or `/assistant` diagnostics.
+- Run `npm.cmd run assistant:meta-check` after changing `normalizeAssistantAnswerMeta()`, Agent tool trace decoding, Studio draft artifacts, guardrail decoding, or `/assistant` diagnostic projections. It must assert that unsafe fields such as `baseUrl`, `apiKey`, raw prompts, unknown tool ids, unknown steps, external Studio links, and mismatched draft links do not survive normalization.
 - Run `npm.cmd run check:ui` after changing `/assistant` right-panel rendering or empty/error states.
 - Run backend smoke tests when changing `ChatResponse.meta` shape, because the frontend decoder depends on that contract.
 - Sensitive-scan changed files for `apiKey`, `baseUrl`, model relay URLs, RAG URLs, Qdrant endpoints, member tokens, admin tokens, invite codes, and raw private document content.
@@ -528,6 +531,23 @@ setLastAnswerMeta(meta)
 ```
 
 The data module owns the boundary decoder, and the component consumes a sanitized projection.
+
+#### Wrong
+
+```tsx
+const tools = Array.isArray(meta.tools) ? meta.tools : []
+```
+
+This preserves unknown tool ids and any extra fields the backend accidentally added.
+
+#### Correct
+
+```tsx
+const meta = normalizeAssistantAnswerMeta(payload.meta)
+const tools = meta?.tools ?? []
+```
+
+`assistant:meta-check` covers the defensive decoder with unsafe sample payloads.
 
 ## Scenario: Public Blog Curation
 

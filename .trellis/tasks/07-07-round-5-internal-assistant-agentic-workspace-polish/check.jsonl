@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Smoke, route-boundary, model-channel, knowledge, and session validation rules."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "UI, lint, build, and check:ui requirements."}
+{"file": ".trellis/spec/guides/index.md", "reason": "Cross-layer thinking applies to frontend/backend assistant contracts."}

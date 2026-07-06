@@ -54,18 +54,28 @@ export interface AssistantRetrievalSummary {
 
 export type AssistantAgentPermission = 'read' | 'draft-write' | 'admin-write' | 'external-live'
 export type AssistantAgentToolStatus = 'selected' | 'skipped' | 'completed' | 'failed' | 'blocked'
+export type AssistantAgentStep = 'plan' | 'validate' | 'execute' | 'critique' | 'compose' | 'sanitize' | 'persist'
+export type AssistantAgentToolId =
+  | 'rag.retrieve'
+  | 'status.query'
+  | 'project.lookup'
+  | 'knowledge.search'
+  | 'studio.draft'
+  | 'memory.search'
+  | 'memory.write'
+  | 'answer.direct'
 
 export interface AssistantAgentRunSummary {
   mode: 'agentic-workspace'
   planner: 'model' | 'mock' | 'fallback'
   status: 'completed' | 'guarded' | 'degraded' | 'failed'
-  steps: string[]
+  steps: AssistantAgentStep[]
   toolCount: number
   durationMs: number
 }
 
 export interface AssistantAgentToolTrace {
-  id: string
+  id: AssistantAgentToolId
   label: string
   permission: AssistantAgentPermission
   status: AssistantAgentToolStatus
@@ -385,11 +395,11 @@ export function normalizeAssistantAnswerMeta(value: unknown): AssistantAnswerMet
   return {
     mode,
     model,
-    provider: typeof provider === 'string' ? provider : undefined,
-    reason: typeof reason === 'string' ? reason : undefined,
+    provider: readSafeString(provider, 80) || undefined,
+    reason: readSafeString(reason, 80) || undefined,
     citationCount,
-    intent: typeof intent === 'string' ? intent : undefined,
-    grounding: typeof grounding === 'string' ? grounding : undefined,
+    intent: readSafeString(intent, 40) || undefined,
+    grounding: readSafeString(grounding, 40) || undefined,
     modelChannel: normalizeAssistantModelChannel(modelChannel) ?? undefined,
     retrieval: normalizeAssistantRetrievalSummary(retrieval),
     agent: normalizeAssistantAgentRun(agent),
@@ -455,7 +465,7 @@ function normalizeAssistantAgentRun(value: unknown): AssistantAgentRunSummary | 
     mode,
     planner,
     status,
-    steps: Array.isArray(steps) ? steps.filter((step): step is string => typeof step === 'string') : [],
+    steps: Array.isArray(steps) ? steps.filter(isAgentStep) : [],
     toolCount,
     durationMs,
   }
@@ -470,27 +480,30 @@ function normalizeAssistantAgentToolTraces(value: unknown): AssistantAgentToolTr
 function normalizeAssistantAgentToolTrace(value: unknown): AssistantAgentToolTrace | null {
   if (!isRecord(value)) return null
   const { id, label, permission, status, durationMs, summary, citationCount, itemCount, errorClass, artifacts } = value
+  const safeId = isAgentToolId(id) ? id : null
+  const safeLabel = readSafeString(label, 80)
+  const safeSummary = readSafeString(summary, 240)
   if (
-    typeof id !== 'string' ||
-    typeof label !== 'string' ||
+    !safeId ||
+    !safeLabel ||
     !isAgentPermission(permission) ||
     !isAgentToolStatus(status) ||
     typeof durationMs !== 'number' ||
-    typeof summary !== 'string'
+    !safeSummary
   ) {
     return null
   }
 
   return {
-    id,
-    label,
+    id: safeId,
+    label: safeLabel,
     permission,
     status,
     durationMs,
-    summary,
+    summary: safeSummary,
     citationCount: typeof citationCount === 'number' ? citationCount : undefined,
     itemCount: typeof itemCount === 'number' ? itemCount : undefined,
-    errorClass: typeof errorClass === 'string' ? errorClass : undefined,
+    errorClass: isAgentToolErrorClass(errorClass) ? errorClass : undefined,
     artifacts: normalizeAssistantAgentToolArtifacts(artifacts),
   }
 }
@@ -506,14 +519,18 @@ function normalizeAssistantAgentToolArtifacts(value: unknown): AssistantAgentToo
 function normalizeAssistantAgentToolArtifact(value: unknown): AssistantAgentToolArtifact | null {
   if (!isRecord(value)) return null
   const { kind, id, slug, title, column, status, visibility, reviewRequired, href } = value
+  const safeId = readSafeString(id, 120)
+  const safeSlug = readSafeString(slug, 96)
+  const safeTitle = readSafeString(title, 120)
+  const safeColumn = readSafeString(column, 40)
   const safeHref =
-    typeof id === 'string' && typeof slug === 'string' ? normalizeStudioDraftArtifactHref(href, id, slug) : null
+    safeId && safeSlug ? normalizeStudioDraftArtifactHref(href, safeId, safeSlug) : null
   if (
     kind !== 'studio-draft' ||
-    typeof id !== 'string' ||
-    typeof slug !== 'string' ||
-    typeof title !== 'string' ||
-    typeof column !== 'string' ||
+    !/^[a-z0-9_-]+$/iu.test(safeId) ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(safeSlug) ||
+    !safeTitle ||
+    !safeColumn ||
     status !== 'review-needed' ||
     visibility !== 'hidden' ||
     reviewRequired !== true ||
@@ -523,10 +540,10 @@ function normalizeAssistantAgentToolArtifact(value: unknown): AssistantAgentTool
   }
   return {
     kind,
-    id,
-    slug,
-    title,
-    column,
+    id: safeId,
+    slug: safeSlug,
+    title: safeTitle,
+    column: safeColumn,
     status,
     visibility,
     reviewRequired,
@@ -566,8 +583,33 @@ function normalizeAssistantAgentGuardrails(value: unknown): AssistantAgentGuardr
     blockedPermissions: Array.isArray(blockedPermissions) ? blockedPermissions.filter(isAgentPermission) : [],
     citationSufficiency,
     sensitiveOutputBlocked,
-    issues: Array.isArray(issues) ? issues.filter((issue): issue is string => typeof issue === 'string') : [],
+    issues: Array.isArray(issues) ? issues.map((issue) => readSafeString(issue, 160)).filter(Boolean).slice(0, 8) : [],
   }
+}
+
+function isAgentStep(value: unknown): value is AssistantAgentStep {
+  return (
+    value === 'plan' ||
+    value === 'validate' ||
+    value === 'execute' ||
+    value === 'critique' ||
+    value === 'compose' ||
+    value === 'sanitize' ||
+    value === 'persist'
+  )
+}
+
+function isAgentToolId(value: unknown): value is AssistantAgentToolId {
+  return (
+    value === 'rag.retrieve' ||
+    value === 'status.query' ||
+    value === 'project.lookup' ||
+    value === 'knowledge.search' ||
+    value === 'studio.draft' ||
+    value === 'memory.search' ||
+    value === 'memory.write' ||
+    value === 'answer.direct'
+  )
 }
 
 function isAgentPermission(value: unknown): value is AssistantAgentPermission {
@@ -576,6 +618,14 @@ function isAgentPermission(value: unknown): value is AssistantAgentPermission {
 
 function isAgentToolStatus(value: unknown): value is AssistantAgentToolStatus {
   return value === 'selected' || value === 'skipped' || value === 'completed' || value === 'failed' || value === 'blocked'
+}
+
+function isAgentToolErrorClass(value: unknown): value is NonNullable<AssistantAgentToolTrace['errorClass']> {
+  return value === 'tool_error' || value === 'policy_blocked' || value === 'not_configured'
+}
+
+function readSafeString(value: unknown, maxLength: number) {
+  return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
 }
 
 export function normalizeAssistantSessionPreview(value: unknown): AssistantSessionPreview | null {
