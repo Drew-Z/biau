@@ -2,7 +2,7 @@
 
 这个文档记录 BIAU Port 第一版访问数据和站点健康监察方式。目标是先知道“有没有人来、从哪里来、看了什么、站点有没有坏”，再决定后续项目页、博客和助手怎么优化。
 
-更完整的工具选型、Prometheus / Grafana / OpenTelemetry / ARMS / Sentry / Langfuse 路线和人工配置边界见 `docs/observability-strategy.md`。
+更完整的工具选型、Prometheus / Grafana / OpenTelemetry / ARMS / Sentry / Langfuse 路线和人工配置边界见 `docs/observability-strategy.md`；跨项目人工队列见 [`docs/manual-gates.md`](./manual-gates.md)。
 
 ## 访问人数怎么看
 

@@ -13,6 +13,10 @@ const files = {
     label: 'docs/site-monitoring.md',
     path: resolve(repoRoot, 'docs/site-monitoring.md'),
   },
+  manualGates: {
+    label: 'docs/manual-gates.md',
+    path: resolve(repoRoot, 'docs/manual-gates.md'),
+  },
 }
 
 const strategyNeedles = [
@@ -20,6 +24,7 @@ const strategyNeedles = [
   'Assistant API 工程指标',
   'Langfuse、Helicone、Phoenix 或 OpenTelemetry GenAI',
   'docs/site-monitoring.md',
+  'docs/manual-gates.md',
   '| CDN / 基础访问 |',
   '| AI 助手质量 |',
   '| ARMS |',
@@ -36,9 +41,17 @@ const monitoringNeedles = [
   '| Umami 或 Plausible |',
   '| Prometheus / Grafana / ARMS |',
   '推荐第一阶段组合是：Cloudflare + Search Console + Plausible 或 Umami 二选一 + `site:monitor`',
+  'docs/manual-gates.md',
   '同一个站点同时接 Plausible 和 Umami 会重复采集',
   '多服务链路复杂后再接 OpenTelemetry',
   'AI 助手调用量稳定后再评估 Langfuse、Helicone、Phoenix 或 OpenTelemetry GenAI',
+]
+
+const manualGateNeedles = [
+  '## Observability And Analytics',
+  'Cloudflare Analytics / Search Console / Webmaster',
+  'Plausible 或 Umami 二选一',
+  'Prometheus / Grafana / ARMS',
 ]
 
 function collectMissing(label, text, needles) {
@@ -50,14 +63,16 @@ function collectMissing(label, text, needles) {
 }
 
 async function main() {
-  const [strategy, monitoring] = await Promise.all([
+  const [strategy, monitoring, manualGates] = await Promise.all([
     readFile(files.strategy.path, 'utf8'),
     readFile(files.monitoring.path, 'utf8'),
+    readFile(files.manualGates.path, 'utf8'),
   ])
 
   const issues = [
     ...collectMissing(files.strategy.label, strategy, strategyNeedles),
     ...collectMissing(files.monitoring.label, monitoring, monitoringNeedles),
+    ...collectMissing(files.manualGates.label, manualGates, manualGateNeedles),
   ]
 
   if (!strategy.includes('docs/site-monitoring.md') || !monitoring.includes('docs/observability-strategy.md')) {

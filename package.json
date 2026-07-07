@@ -39,6 +39,7 @@
     "blog:check": "node scripts/check-public-blog.mjs",
     "blog:knowledge-check": "tsx scripts/check-blog-knowledge-quality.ts",
     "project-details:check": "tsx scripts/check-project-detail-evidence.ts",
+    "docs:manual-gates-check": "node scripts/check-manual-gates.mjs",
     "docs:observability-check": "node scripts/check-observability-docs.mjs",
     "erp:synthetic": "node scripts/check-erp-synthetic.mjs",
     "legal-rag:synthetic": "node scripts/check-legal-rag-synthetic.mjs",

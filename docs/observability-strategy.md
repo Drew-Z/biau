@@ -1,6 +1,6 @@
 # 可观测性策略
 
-这个文档把 BIAU Port 的“访问分析”“SEO 数据”“产品事件”“前端真实用户体验”“后端工程指标”和“AI 助手调用观测”拆开。它们可以互补，但不要互相替代，也不要一次性全部接入。快速查看访问人数和站点健康时，先看 `docs/site-monitoring.md`。
+这个文档把 BIAU Port 的“访问分析”“SEO 数据”“产品事件”“前端真实用户体验”“后端工程指标”和“AI 助手调用观测”拆开。它们可以互补，但不要互相替代，也不要一次性全部接入。快速查看访问人数和站点健康时，先看 `docs/site-monitoring.md`；需要处理平台、凭据、模型 live 调用或 APK 发布批准时，看 [`docs/manual-gates.md`](./manual-gates.md)。
 
 ## 推荐结论
 
@@ -131,6 +131,8 @@ GET /metrics -> text/plain; version=0.0.4; charset=utf-8
 - 数据库连接串、模型 endpoint 或 provider key。
 
 ## 人工 Gate
+
+统一人工队列见 [`docs/manual-gates.md`](./manual-gates.md)。以下是可观测性相关边界：
 
 以下操作不能自动执行：
 

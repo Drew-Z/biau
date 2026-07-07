@@ -1,6 +1,6 @@
 # Studio / AI Daily 生产就绪记录
 
-这份记录用于收口内部助手、Content Studio 和 AI 日报之间的生产边界。它只记录公开安全的配置形状、验证命令和人工 gate，不包含真实 token、数据库 URL、模型渠道或后台地址。
+这份记录用于收口内部助手、Content Studio 和 AI 日报之间的生产边界。它只记录公开安全的配置形状、验证命令和人工 gate，不包含真实 token、数据库 URL、模型渠道或后台地址。跨项目人工队列统一记录在 [`docs/manual-gates.md`](./manual-gates.md)。
 
 ## 当前结论
 
@@ -66,4 +66,3 @@ npm.cmd run studio:smoke
 - 不让线上 Studio 服务直接写 Git 仓库。
 - 不把 issue 或 hidden draft 自动公开到博客列表、助手知识或 sitemap。
 - 不用模型 ping / doctor live 证明渠道可用；真实模型调用必须服务于一次明确内容任务。
-

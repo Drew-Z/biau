@@ -19,7 +19,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "07-07-round-12-ai-daily-issue-readiness-gate"
+    "07-07-round-12-ai-daily-issue-readiness-gate",
+    "07-07-round-12-manual-gates-ledger"
   ],
   "parent": null,
   "relatedFiles": [],
