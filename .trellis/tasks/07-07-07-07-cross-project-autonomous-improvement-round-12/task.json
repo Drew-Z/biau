@@ -1,0 +1,28 @@
+{
+  "id": "07-07-cross-project-autonomous-improvement-round-12",
+  "name": "07-07-cross-project-autonomous-improvement-round-12",
+  "title": "Cross-project autonomous improvement round 12",
+  "description": "Continue the long-running BIAU Port improvement goal with local-verifiable work across public showcase, internal assistant, AI Daily, project details, and reliability observation. Record manual gates for cloud, credentials, model live calls, and APK publication without blocking other progress.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-07-round-12-ai-daily-issue-readiness-gate"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

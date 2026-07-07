@@ -17,6 +17,7 @@ import {
 import {
   aiDailyBriefFieldLabels,
   createDefaultAiDailyBrief,
+  evaluateAiDailyIssueReadiness,
   formatAiDailyBrief,
   parseAiDailyBriefText,
 } from '../utils/studioAiDailyBrief'
@@ -42,6 +43,8 @@ const issueStatusOrder: StudioAiDailyIssueStatus[] = [
   'rejected',
   'needs-more-evidence',
 ]
+
+const reviewReadyIssueStatuses = new Set<StudioAiDailyIssueStatus>(['review-needed', 'approved', 'published'])
 
 function defaultForm(): IssueFormState {
   return {
@@ -80,6 +83,10 @@ function getSourceMeta(source: StudioSourceItem) {
     .join(' · ')
 }
 
+function sameStringList(left: string[], right: string[]) {
+  return left.length === right.length && left.every((item, index) => item === right[index])
+}
+
 export function StudioAiDailyIssuePage() {
   const { issueId } = useParams()
   const [adminToken, setAdminToken] = useState(() => readStoredStudioToken())
@@ -107,6 +114,20 @@ export function StudioAiDailyIssuePage() {
     return form.sourceIds.map((sourceId) => sourceMap.get(sourceId)).filter((source): source is StudioSourceItem => Boolean(source))
   }, [form.sourceIds, selectedSources, sourcePool])
   const briefValidation = useMemo(() => parseAiDailyBriefText(form.briefText), [form.briefText])
+  const issueReadiness = useMemo(
+    () => evaluateAiDailyIssueReadiness({ briefValidation, sources: orderedSelectedSources }),
+    [briefValidation, orderedSelectedSources],
+  )
+  const hasUnsavedIssueChanges = useMemo(() => {
+    if (!issue) return false
+    return (
+      form.title !== issue.title ||
+      form.date !== issue.date ||
+      form.status !== issue.status ||
+      form.briefText !== formatAiDailyBrief(issue.briefJson) ||
+      !sameStringList(form.sourceIds, issue.sourceIds)
+    )
+  }, [form, issue])
 
   const applyDetailPayload = (payload: unknown) => {
     const detail = normalizeStudioIssueDetail(payload)
@@ -215,6 +236,12 @@ export function StudioAiDailyIssuePage() {
       setStatusText(firstError?.message ?? 'brief JSON 不是有效对象，请先修正格式。')
       return
     }
+    const targetStatus = nextStatus ?? form.status
+    if (reviewReadyIssueStatuses.has(targetStatus) && issueReadiness.hasErrors) {
+      const firstError = issueReadiness.issues.find((issue) => issue.level === 'error')
+      setStatusText(firstError?.message ?? '进入审核前需要补齐 brief 和来源证据。')
+      return
+    }
 
     setIsSaving(true)
     setStatusText('')
@@ -250,6 +277,15 @@ export function StudioAiDailyIssuePage() {
   const convertToDraft = async () => {
     if (!adminToken || !issueId) {
       setStatusText('请先保存 Studio token。')
+      return
+    }
+    if (hasUnsavedIssueChanges) {
+      setStatusText('请先保存当前 issue，再转换为内容草稿。')
+      return
+    }
+    if (issueReadiness.hasErrors) {
+      const firstError = issueReadiness.issues.find((issue) => issue.level === 'error')
+      setStatusText(firstError?.message ?? '进入草稿前需要补齐 brief 和来源证据。')
       return
     }
     setIsConverting(true)
@@ -392,16 +428,67 @@ export function StudioAiDailyIssuePage() {
                 ))}
               </ul>
             </div>
+            <div
+              className={`studio-brief-quality ${
+                issueReadiness.hasErrors ? 'is-error' : issueReadiness.hasWarnings || hasUnsavedIssueChanges ? 'is-warning' : 'is-ready'
+              }`}
+            >
+              <div>
+                <strong>
+                  {issueReadiness.hasErrors
+                    ? 'Issue 尚未准备好'
+                    : hasUnsavedIssueChanges
+                      ? 'Issue 有未保存修改'
+                      : issueReadiness.hasWarnings
+                        ? 'Issue 可进入审核，但仍建议补强'
+                        : 'Issue 已满足审核入口'}
+                </strong>
+                <span>
+                  {issueReadiness.hasErrors
+                    ? '进入审核或转草稿前，先补齐 brief 和来源证据。'
+                    : hasUnsavedIssueChanges
+                      ? '转草稿会读取服务端已保存内容，请先保存当前修改。'
+                      : issueReadiness.hasWarnings
+                        ? '可以继续推进，但发布前应复核来源质量。'
+                        : 'brief、来源和证据骨架都已满足本地门禁。'}
+                </span>
+              </div>
+              <span className="studio-status-pill">
+                {issueReadiness.usefulSourceCount}/{issueReadiness.sourceCount} sources
+              </span>
+              <ul>
+                {[
+                  ...issueReadiness.issues,
+                  ...(hasUnsavedIssueChanges
+                    ? [{ level: 'warning' as const, field: 'sources' as const, message: '当前表单存在未保存修改，转草稿前需要先保存。' }]
+                    : []),
+                  ...(issueReadiness.issues.length === 0 && !hasUnsavedIssueChanges
+                    ? [
+                        { level: 'ready' as const, field: 'brief' as const, message: 'brief 字段已满足审核入口。' },
+                        { level: 'ready' as const, field: 'sources' as const, message: '来源证据可以写入隐藏审核草稿。' },
+                      ]
+                    : []),
+                ].map((issue) => (
+                  <li key={`${issue.field}-${issue.message}`} className={`is-${issue.level}`}>
+                    {issue.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div className="assistant-admin-actions studio-actions">
               <button type="submit" disabled={isSaving || !adminToken}>
                 {isSaving ? '保存中…' : '保存 Issue'}
               </button>
-              <button type="button" disabled={isSaving || !adminToken} onClick={() => void saveIssue('review-needed')}>
+              <button
+                type="button"
+                disabled={isSaving || !adminToken || issueReadiness.hasErrors}
+                onClick={() => void saveIssue('review-needed')}
+              >
                 进入审核
               </button>
               <button
                 type="button"
-                disabled={isConverting || !adminToken || form.sourceIds.length === 0}
+                disabled={isConverting || !adminToken || issueReadiness.hasErrors || hasUnsavedIssueChanges}
                 onClick={() => void convertToDraft()}
               >
                 {isConverting ? '转换中…' : '转为内容草稿'}

@@ -100,6 +100,7 @@ The command reads a public-safe source pack and writes a reviewable draft withou
 - Frontend brief parsing, formatting, and field validation must go through `src/utils/studioAiDailyBrief.ts`; route components should not maintain a second page-local brief contract.
 - The editorial brief fields `summary`, `publicAngle`, `keySignals`, and `toVerify` are required. Missing or wrong-typed fields are save-blocking errors; thin but correctly shaped fields are visible warnings so editors can continue incremental work.
 - `/studio/ai-daily/:issueId` should preserve partial saved brief objects in the textarea and surface their validation issues instead of silently replacing them with the empty default template.
+- Issue readiness is stricter than editable brief validation. Moving an issue to `review-needed`, `approved`, or `published`, or converting it to a draft, must require a substantive brief plus at least one selected public source with usable summary evidence. Normal non-review saves may keep incomplete work.
 - Converting an issue to a draft must not call a model, fetch external URLs, publish content, or write Git-tracked public data.
 - If an issue already links to an AI Daily draft, conversion returns the existing linked draft detail instead of creating duplicates.
 - If the derived slug `ai-daily-YYYY-MM-DD` already exists for a non-AI-Daily draft, conversion must fail with `duplicate-slug`.
@@ -116,13 +117,16 @@ The command reads a public-safe source pack and writes a reviewable draft withou
 - Malformed brief textarea -> the page shows a save-blocking error before sending `PATCH`.
 - Missing required brief fields -> the page shows save-blocking field errors before sending `PATCH`.
 - Empty strings or empty arrays inside a correctly shaped brief -> the page shows warnings but keeps the issue editable.
+- Review-ready status with thin brief, malformed brief, missing sources, invalid source URL, or no useful source summary -> `409 { error: "ai-daily-issue-not-ready", issues: [...] }`.
 - Convert with no selected sources -> `409 { error: "ai-daily-issue-needs-sources" }`.
+- Convert with selected but not review-ready evidence -> `409 { error: "ai-daily-issue-not-ready", issues: [...] }`.
 - Duplicate derived slug -> `409 { error: "duplicate-slug" }`.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: editor opens `/studio/ai-daily/<id>`, adds three source cards, writes `summary`, `publicAngle`, `keySignals`, and `toVerify`, saves, then converts to a hidden review-needed draft.
 - Good: a converted issue stores source-card blocks in `bodyJson` so the Studio draft preview and export path see the same evidence scaffold.
+- Good: editor can save an incomplete `source-collected` issue, but the UI and API both block entering review until readiness errors are resolved.
 - Base: a fresh issue has empty `briefJson`; the page shows a safe JSON template and waits for manual editing.
 - Bad: conversion marks the draft approved, featured, published, or model-assisted without human review.
 - Bad: the frontend stores or displays `STUDIO_DATABASE_URL`, `DATABASE_URL`, model provider URLs, API keys, or raw backend stack traces.
@@ -131,7 +135,7 @@ The command reads a public-safe source pack and writes a reviewable draft withou
 
 - Run `npm.cmd run prisma:validate` after schema or Studio route changes.
 - Run `npm.cmd run server:build`, `npm.cmd run server:smoke`, and `npm.cmd run assistant:service-modes-smoke` after changing Studio API contracts.
-- Run `npm.cmd run studio:ai-daily-brief-check` after changing the brief helper or issue editing page.
+- Run `npm.cmd run studio:ai-daily-brief-check` after changing the brief helper, issue readiness helper, or issue editing page.
 - Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after changing the `/studio/ai-daily/:issueId` page.
 - Run `npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --force` to keep the offline compatibility tool working.
 - Run `git diff --check` and a sensitive scan over changed files.

@@ -2,6 +2,7 @@ import express from 'express'
 import { Prisma } from '@prisma/client'
 import { requireStudioDatabase } from './db.js'
 import { env, hasStudioDatabase } from './env.js'
+import { buildAiDailyIssueReadinessIssues } from './studioAiDailyReadiness.js'
 
 const blogColumns = new Set(['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log'])
 const sourceTiers = new Set([
@@ -56,6 +57,8 @@ interface StudioAuthResult {
   status?: number
   error?: string
 }
+
+const reviewReadyAiDailyStatuses = new Set<StudioAiDailyStatus>(['REVIEW_NEEDED', 'APPROVED', 'PUBLISHED'])
 
 export function createStudioRouter() {
   const router = express.Router()
@@ -356,6 +359,17 @@ export function createStudioRouter() {
         }
       }
 
+      if (input.targetStatus && reviewReadyAiDailyStatuses.has(input.targetStatus)) {
+        const nextSourceIds = input.sourceIds ?? jsonStringArray(existing.sourceIdsJson)
+        const nextBriefJson = input.briefJson ?? existing.briefJson
+        const sources = await loadSourcesByIds(prisma, nextSourceIds)
+        const readinessIssues = buildAiDailyIssueReadinessIssues(nextBriefJson, sources)
+        if (readinessIssues.length > 0) {
+          res.status(409).json({ error: 'ai-daily-issue-not-ready', issues: readinessIssues })
+          return
+        }
+      }
+
       const issue = await prisma.aiDailyIssue.update({
         where: { id: existing.id },
         data: input.data,
@@ -389,6 +403,11 @@ export function createStudioRouter() {
       const sources = await loadSourcesByIds(prisma, sourceIds)
       if (sources.length === 0) {
         res.status(409).json({ error: 'ai-daily-issue-needs-sources' })
+        return
+      }
+      const readinessIssues = buildAiDailyIssueReadinessIssues(issue.briefJson, sources)
+      if (readinessIssues.length > 0) {
+        res.status(409).json({ error: 'ai-daily-issue-not-ready', issues: readinessIssues })
         return
       }
 
@@ -663,13 +682,15 @@ function readAiDailyIssueInput(value: unknown):
 }
 
 function readAiDailyIssuePatch(value: unknown):
-  | { data: Prisma.AiDailyIssueUpdateInput; sourceIds?: string[] }
+  | { data: Prisma.AiDailyIssueUpdateInput; sourceIds?: string[]; briefJson?: Prisma.InputJsonValue; targetStatus?: StudioAiDailyStatus }
   | { error: string } {
   if (!isRecord(value)) return { error: 'invalid-ai-daily-issue-payload' }
   if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
 
   const data: Prisma.AiDailyIssueUpdateInput = {}
   let sourceIds: string[] | undefined
+  let briefJsonInput: Prisma.InputJsonValue | undefined
+  let targetStatus: StudioAiDailyStatus | undefined
   if ('date' in value) {
     const date = readString(value.date, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/u.test(date)) return { error: 'invalid-date' }
@@ -687,14 +708,16 @@ function readAiDailyIssuePatch(value: unknown):
   if ('briefJson' in value) {
     const briefJson = readBriefJson(value.briefJson)
     if (!briefJson) return { error: 'invalid-brief-json' }
+    briefJsonInput = briefJson
     data.briefJson = briefJson
   }
   if ('status' in value) {
     const status = readAiDailyStatus(value.status)
     if (!status) return { error: 'invalid-ai-daily-status' }
+    targetStatus = status
     data.status = status
   }
-  return { data, sourceIds }
+  return { data, sourceIds, briefJson: briefJsonInput, targetStatus }
 }
 
 function readPublishExportPatch(value: unknown):
@@ -732,7 +755,7 @@ function readAiDailyStatus(value: unknown): StudioAiDailyStatus | null {
 }
 
 function readBriefJson(value: unknown): Prisma.InputJsonValue | null {
-  if (!isRecord(value)) return null
+  if (!isRecord(value) || Array.isArray(value)) return null
   const serialized = JSON.stringify(value)
   if (serialized.length > 12000) return null
   return JSON.parse(serialized) as Prisma.InputJsonValue

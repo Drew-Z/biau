@@ -68,6 +68,8 @@ VITE_STUDIO_API_BASE_URL=https://<studio-service>.onrender.com
 - JSON 格式错误、非对象，或缺少 `summary`、`publicAngle`、`keySignals`、`toVerify` 会阻止保存。
 - 字段存在但内容偏薄，例如空摘要、空数组，会显示警告；编辑者可以继续补充，不会被误判成发布完成。
 - 已保存的不完整对象会原样显示并提示问题，不会被自动替换成空模板。
+- 页面还会显示 issue readiness。进入审核或转为内容草稿前，需要有可审核的 brief、至少 1 个公开来源、有效来源 URL，以及至少 1 个有可转述摘要的来源。
+- 普通编辑态可以保存半成品；`review-needed` / `approved` / `published` 状态转换和转草稿由前端与 Studio API 同时守门。
 
 ## 离线兼容工具
 

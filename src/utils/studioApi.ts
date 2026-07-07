@@ -49,5 +49,6 @@ export function explainStudioApiError(status: number, errorCode: string) {
   if (errorCode === 'invalid-source-ids') return '来源列表里包含不存在的 source id。'
   if (errorCode === 'invalid-brief-json') return 'brief JSON 必须是对象，并且不能过大。'
   if (errorCode === 'ai-daily-issue-needs-sources') return '请先给这期 AI 日报选择至少一个来源。'
+  if (errorCode === 'ai-daily-issue-not-ready') return '这期 AI 日报还没有满足审核入口，请先补齐 brief 和来源证据。'
   return `Studio API 返回 ${status}${errorCode ? ` / ${errorCode}` : ''}。`
 }
