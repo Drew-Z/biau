@@ -15,10 +15,10 @@ Continue local-verifiable improvements across BIAU Port and related showcase sur
 
 ## Acceptance Criteria
 
-- [ ] At least one child task is completed, verified, committed, and archived.
-- [ ] Manual gates found during this round are recorded before parent archive.
-- [ ] Required validation for each child task passes or the residual risk is documented.
-- [ ] Finished child tasks are archived before the parent is archived.
+- [x] At least one child task is completed, verified, committed, and archived.
+- [x] Manual gates found during this round are recorded before parent archive.
+- [x] Required validation for each child task passes or the residual risk is documented.
+- [x] Finished child tasks are archived before the parent is archived.
 
 ## Candidate Task Map
 
@@ -30,6 +30,7 @@ Continue local-verifiable improvements across BIAU Port and related showcase sur
 
 ## Manual Gates
 
+- No new manual gates were introduced in this round.
 - Cloudflare, Render, Aiven/Supabase, Qdrant, Prometheus/Grafana/ARMS, Umami/Plausible, Search Console, and scheduled monitors remain platform setup tasks.
 - Live model prompts, provider diagnostics, production assistant checks, and AI Daily model-assisted generation remain opt-in real tasks only.
 - Legal RAG / ERP / Xunqiu credentialed checks require approved low-privilege demo credentials or production tokens.
