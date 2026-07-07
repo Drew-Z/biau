@@ -58,11 +58,18 @@ const projectDetailVisualCases = projects
   .map((project) => {
     const sections = Object.values(project.detailContent ?? {}).flatMap((items) => items ?? [])
     const visuals = sections.flatMap((section) => (section.visual ? [section.visual] : []))
+    const imageBackedVisuals = visuals.filter((visual) => visual.image)
     return {
       id: project.id,
       title: project.title,
       expectedVisuals: visuals.length,
-      expectedVisualImages: visuals.filter((visual) => visual.image).length,
+      expectedVisualImages: imageBackedVisuals.length,
+      expectedVisualAltTexts: imageBackedVisuals
+        .map((visual) => visual.alt ?? visual.title)
+        .filter((text) => text.trim().length > 0),
+      expectedVisualCaptions: imageBackedVisuals
+        .map((visual) => visual.caption ?? '')
+        .filter((text) => text.trim().length > 0),
     }
   })
   .filter((project) => project.expectedVisuals > 0)
@@ -890,6 +897,14 @@ for (const project of projectDetailVisualCases) {
   const visibleVisualCount = await projectVisualPage.locator('.project-case-study .project-visual:visible').count()
   const visualImages = projectVisualPage.locator('.project-case-study .project-visual__image img')
   const renderedImageCount = await visualImages.count()
+  const visualCaptions = projectVisualPage.locator('.project-case-study .project-visual__caption')
+  const renderedCaptionCount = await visualCaptions.count()
+  const renderedAltTexts = await visualImages.evaluateAll((images) =>
+    images.map((image) => image.getAttribute('alt')?.trim() ?? ''),
+  )
+  const renderedCaptionTexts = await visualCaptions.evaluateAll((captions) =>
+    captions.map((caption) => caption.textContent?.trim() ?? ''),
+  )
   const hasHorizontalOverflow = await projectVisualPage.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
   )
@@ -911,6 +926,21 @@ for (const project of projectDetailVisualCases) {
     failures.push(
       `/projects/${project.id} case visuals: expected ${project.expectedVisualImages} visual images, got ${renderedImageCount}`,
     )
+  }
+  if (renderedCaptionCount !== project.expectedVisualCaptions.length) {
+    failures.push(
+      `/projects/${project.id} case visuals: expected ${project.expectedVisualCaptions.length} visual captions, got ${renderedCaptionCount}`,
+    )
+  }
+  for (const expectedAltText of project.expectedVisualAltTexts) {
+    if (!renderedAltTexts.includes(expectedAltText)) {
+      failures.push(`/projects/${project.id} case visuals: expected rendered image alt "${expectedAltText}"`)
+    }
+  }
+  for (const expectedCaption of project.expectedVisualCaptions) {
+    if (!renderedCaptionTexts.some((caption) => caption.includes(expectedCaption))) {
+      failures.push(`/projects/${project.id} case visuals: expected visible caption "${expectedCaption}"`)
+    }
   }
   if (hasHorizontalOverflow) {
     failures.push(`/projects/${project.id} case visuals: project detail page should not overflow horizontally`)

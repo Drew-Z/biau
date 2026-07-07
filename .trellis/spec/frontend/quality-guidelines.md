@@ -139,6 +139,11 @@ public-safe SVG/diagram that explains the current implementation boundary,
 workflow, or data flow without private URLs, local paths, credentials, or
 unapproved release claims.
 
+`npm.cmd run check:ui` should also prove the rendered project detail page keeps
+the data contract visible: image-backed body visuals need rendered image alt
+text and visible captions derived from `src/data/portfolio.ts`, not just valid
+data entries that never reach the DOM.
+
 ## Static Public Pages
 
 When adding a pure static page under `public/` instead of a React route, add a
