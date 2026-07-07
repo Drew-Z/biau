@@ -3527,6 +3527,72 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   font-weight: 800;
 }
 
+.studio-brief-quality {
+  min-width: 0;
+  padding: var(--space-12, 12px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-10, 10px);
+  align-items: start;
+  background: color-mix(in oklch, var(--panel-strong) 50%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 var(--flow-ui-inset);
+}
+
+.studio-brief-quality.is-ready {
+  border-color: color-mix(in oklch, var(--green) 28%, var(--flow-ui-card-border));
+}
+
+.studio-brief-quality.is-warning {
+  border-color: color-mix(in oklch, var(--amber) 34%, var(--flow-ui-card-border));
+}
+
+.studio-brief-quality.is-error {
+  border-color: color-mix(in oklch, var(--rose) 34%, var(--flow-ui-card-border));
+}
+
+.studio-brief-quality strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.studio-brief-quality span,
+.studio-brief-quality li {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.studio-brief-quality button {
+  min-height: 34px;
+  padding: 0 var(--space-10, 10px);
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel) 48%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.studio-brief-quality ul {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.studio-brief-quality li.is-error {
+  color: color-mix(in oklch, var(--rose) 78%, var(--ink));
+}
+
+.studio-brief-quality li.is-warning {
+  color: color-mix(in oklch, var(--amber) 78%, var(--ink));
+}
+
+.studio-brief-quality li.is-ready {
+  color: color-mix(in oklch, var(--green) 74%, var(--ink));
+}
+
 .studio-review-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

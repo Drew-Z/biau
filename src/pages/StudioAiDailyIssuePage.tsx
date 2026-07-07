@@ -14,6 +14,12 @@ import {
   type StudioDraft,
   type StudioSourceItem,
 } from '../data/studio'
+import {
+  aiDailyBriefFieldLabels,
+  createDefaultAiDailyBrief,
+  formatAiDailyBrief,
+  parseAiDailyBriefText,
+} from '../utils/studioAiDailyBrief'
 import { STUDIO_API_BASE, STUDIO_API_ENV_NAMES, explainStudioApiError, requestStudioApi } from '../utils/studioApi'
 
 interface IssueFormState {
@@ -37,44 +43,26 @@ const issueStatusOrder: StudioAiDailyIssueStatus[] = [
   'needs-more-evidence',
 ]
 
-const defaultBrief = {
-  summary: '',
-  publicAngle: '',
-  keySignals: [],
-  toVerify: [],
-}
-
 function defaultForm(): IssueFormState {
   return {
     title: '',
     date: '',
     status: 'source-collected',
     sourceIds: [],
-    briefText: JSON.stringify(defaultBrief, null, 2),
+    briefText: formatAiDailyBrief(createDefaultAiDailyBrief()),
     editorName: '站长',
   }
 }
 
 function issueToForm(issue: StudioAiDailyIssue): IssueFormState {
-  const briefJson = isPlainBrief(issue.briefJson) ? issue.briefJson : defaultBrief
   return {
     title: issue.title,
     date: issue.date,
     status: issue.status,
     sourceIds: issue.sourceIds,
-    briefText: JSON.stringify(briefJson, null, 2),
+    briefText: formatAiDailyBrief(issue.briefJson),
     editorName: '站长',
   }
-}
-
-function isPlainBrief(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function parseBriefJson(value: string) {
-  const parsed = JSON.parse(value) as unknown
-  if (!isPlainBrief(parsed)) throw new Error('brief must be object')
-  return parsed
 }
 
 function formatDateTime(value: string) {
@@ -118,6 +106,7 @@ export function StudioAiDailyIssuePage() {
     const sourceMap = new Map([...selectedSources, ...sourcePool].map((source) => [source.id, source]))
     return form.sourceIds.map((sourceId) => sourceMap.get(sourceId)).filter((source): source is StudioSourceItem => Boolean(source))
   }, [form.sourceIds, selectedSources, sourcePool])
+  const briefValidation = useMemo(() => parseAiDailyBriefText(form.briefText), [form.briefText])
 
   const applyDetailPayload = (payload: unknown) => {
     const detail = normalizeStudioIssueDetail(payload)
@@ -196,6 +185,11 @@ export function StudioAiDailyIssuePage() {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  const resetBriefTemplate = () => {
+    updateForm('briefText', formatAiDailyBrief(createDefaultAiDailyBrief()))
+    setStatusText('已套用推荐 brief 模板。')
+  }
+
   const addSource = (sourceId: string) => {
     setForm((current) => {
       if (current.sourceIds.includes(sourceId)) return current
@@ -215,11 +209,10 @@ export function StudioAiDailyIssuePage() {
       return
     }
 
-    let briefJson: Record<string, unknown>
-    try {
-      briefJson = parseBriefJson(form.briefText)
-    } catch {
-      setStatusText('brief JSON 不是有效对象，请先修正格式。')
+    const parsedBrief = parseAiDailyBriefText(form.briefText)
+    if (parsedBrief.hasErrors || !parsedBrief.brief) {
+      const firstError = parsedBrief.issues.find((issue) => issue.level === 'error')
+      setStatusText(firstError?.message ?? 'brief JSON 不是有效对象，请先修正格式。')
       return
     }
 
@@ -233,7 +226,7 @@ export function StudioAiDailyIssuePage() {
           date: form.date,
           status: nextStatus ?? form.status,
           sourceIds: form.sourceIds,
-          briefJson,
+          briefJson: parsedBrief.brief,
         }),
       })
       if (!result.ok) {
@@ -363,9 +356,42 @@ export function StudioAiDailyIssuePage() {
                 onChange={(event) => updateForm('briefText', event.target.value)}
                 rows={14}
                 spellCheck={false}
-                placeholder={JSON.stringify(defaultBrief, null, 2)}
+                placeholder={formatAiDailyBrief(createDefaultAiDailyBrief())}
               />
             </label>
+            <div
+              className={`studio-brief-quality ${
+                briefValidation.hasErrors ? 'is-error' : briefValidation.hasWarnings ? 'is-warning' : 'is-ready'
+              }`}
+            >
+              <div>
+                <strong>{briefValidation.hasErrors ? 'brief 需要修正' : briefValidation.hasWarnings ? 'brief 待补充' : 'brief 可进入审核'}</strong>
+                <span>
+                  {briefValidation.hasErrors
+                    ? '保存前先修复阻塞错误。'
+                    : briefValidation.hasWarnings
+                      ? '结构可保存，但建议继续补充编辑判断。'
+                      : '字段完整，适合进入下一步人工审核。'}
+                </span>
+              </div>
+              <button type="button" onClick={resetBriefTemplate}>
+                套用模板
+              </button>
+              <ul>
+                {(briefValidation.issues.length > 0
+                  ? briefValidation.issues
+                  : (Object.keys(aiDailyBriefFieldLabels) as Array<keyof typeof aiDailyBriefFieldLabels>).map((field) => ({
+                      level: 'ready' as const,
+                      field,
+                      message: `${aiDailyBriefFieldLabels[field]} 已就绪。`,
+                    }))
+                ).map((issue) => (
+                  <li key={`${issue.field}-${issue.message}`} className={`is-${issue.level}`}>
+                    {issue.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
             <div className="assistant-admin-actions studio-actions">
               <button type="submit" disabled={isSaving || !adminToken}>
                 {isSaving ? '保存中…' : '保存 Issue'}

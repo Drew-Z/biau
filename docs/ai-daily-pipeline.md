@@ -63,6 +63,12 @@ VITE_STUDIO_API_BASE_URL=https://<studio-service>.onrender.com
 
 `briefJson` 不能包含 API key、数据库 URL、私有模型渠道、后台地址、账号密码或未公开部署信息。
 
+`/studio/ai-daily/:issueId` 会在 textarea 下方显示本地 brief 质量反馈：
+
+- JSON 格式错误、非对象，或缺少 `summary`、`publicAngle`、`keySignals`、`toVerify` 会阻止保存。
+- 字段存在但内容偏薄，例如空摘要、空数组，会显示警告；编辑者可以继续补充，不会被误判成发布完成。
+- 已保存的不完整对象会原样显示并提示问题，不会被自动替换成空模板。
+
 ## 离线兼容工具
 
 `npm.cmd run ai-daily:draft` 仍保留，适合把人工整理好的 source JSON 转成 review 草稿，或者在 Studio 不可用时做离线兼容。
@@ -151,6 +157,7 @@ npm.cmd run studio:export -- --draft <draft-id-or-slug> --publish-export-id <exp
 推荐检查命令：
 
 ```powershell
+npm.cmd run studio:ai-daily-brief-check
 npm.cmd run studio:smoke
 npm.cmd run studio:export -- --sample --dry-run
 npm.cmd run blog:audit
@@ -159,6 +166,6 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-`studio:smoke` 是默认的无 live 检查入口：它会把 AI Daily 样例草稿写入系统临时目录并自动清理，不会在 `content-drafts/` 留下 smoke 副本，也不会调用模型或抓取网页。
+`studio:ai-daily-brief-check` 会验证 issue brief 的默认模板、完整样例、错误 JSON、不完整对象和格式化行为。`studio:smoke` 是默认的无 live 检查入口：它会把 AI Daily 样例草稿写入系统临时目录并自动清理，不会在 `content-drafts/` 留下 smoke 副本，也不会调用模型或抓取网页。
 
 是否每日自动抓取来源、是否自动创建 issue、是否接入真实模型生成，都属于后续单独任务和人工 gate。

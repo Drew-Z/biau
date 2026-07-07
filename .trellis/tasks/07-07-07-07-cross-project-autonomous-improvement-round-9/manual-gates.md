@@ -12,5 +12,6 @@
 
 - Credentialed Legal RAG / ERP / Xunqiu checks require approved demo credentials or production tokens.
 - Public/internal assistant live model prompts remain opt-in real tasks only.
+- AI Daily live source fetching, model-assisted generation, first production issue conversion, and public export remain opt-in content tasks.
 - Prometheus, Grafana, ARMS, Umami/Plausible, Cloudflare dashboards, and alert routing remain platform setup.
 - Pet/Xunqiu APK/AAB signing, checksum publication, and public download approval remain release gates.

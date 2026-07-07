@@ -33,6 +33,7 @@
     "studio:export": "tsx scripts/export-studio-draft.ts",
     "studio:project-detail-plan": "tsx scripts/plan-project-detail-export.ts",
     "studio:status-plan": "tsx scripts/plan-status-detail-export.ts",
+    "studio:ai-daily-brief-check": "tsx scripts/check-studio-ai-daily-brief.ts",
     "studio:smoke": "node scripts/check-studio-smoke.mjs",
     "blog:audit": "tsx scripts/audit-blog-catalog.ts",
     "blog:check": "node scripts/check-public-blog.mjs",
