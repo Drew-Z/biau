@@ -1,12 +1,23 @@
+import { readFileSync } from 'node:fs'
+
 const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 10_000
 const DEFAULT_MAX_LINKS = 80
+
+function readReliabilityStatusPaths() {
+  const source = readFileSync('src/data/statusTargets.ts', 'utf8')
+  return Array.from(source.matchAll(/\{\s*id:\s*'([^']+)',\s*\r?\n\s*title:/gu), (match) => `/status/${match[1]}`)
+}
+
+const reliabilityStatusPaths = readReliabilityStatusPaths()
 
 const coreRoutes = [
   { label: 'home', path: '/', kind: 'page' },
   { label: 'projects', path: '/projects', kind: 'page' },
   { label: 'blog', path: '/blog', kind: 'page' },
   { label: 'assistant', path: '/assistant', kind: 'page' },
+  { label: 'status', path: '/status', kind: 'page' },
+  ...reliabilityStatusPaths.map((path) => ({ label: `status detail ${path.split('/').pop()}`, path, kind: 'page' })),
   { label: 'legal rag detail', path: '/projects/legal-rag', kind: 'page' },
   { label: 'erp detail', path: '/projects/ozon-erp', kind: 'page' },
   { label: 'playlab detail', path: '/projects/biau-playlab', kind: 'page' },
@@ -123,8 +134,24 @@ async function fetchWithTimeout(url, timeoutMs) {
   }
 }
 
-function textIncludesAll(text, needles) {
-  return needles.every((needle) => text.includes(needle))
+function normalizeSitemapPath(path) {
+  if (path === '/') return '/'
+  return path.replace(/\/+$/, '')
+}
+
+function sitemapContainsPath(body, path, base) {
+  if (body.includes(absoluteUrl(base, path))) return true
+  const expectedPath = normalizeSitemapPath(path)
+  const locs = Array.from(body.matchAll(/<loc>([^<]+)<\/loc>/gi), (match) => match[1])
+
+  return locs.some((loc) => {
+    try {
+      const url = new URL(loc)
+      return normalizeSitemapPath(url.pathname) === expectedPath
+    } catch {
+      return false
+    }
+  })
 }
 
 function checkBody(route, response, base) {
@@ -145,9 +172,11 @@ function checkBody(route, response, base) {
   }
 
   if (route.kind === 'sitemap') {
-    const requiredLocs = ['/', '/projects', '/blog'].map((path) => absoluteUrl(base, path))
+    const requiredPaths = ['/', '/projects', '/blog', '/status', ...reliabilityStatusPaths]
     if (!body.includes('<urlset')) issues.push('missing urlset')
-    if (!textIncludesAll(body, requiredLocs)) issues.push('missing one of core sitemap locs: /, /projects, /blog')
+    for (const path of requiredPaths) {
+      if (!sitemapContainsPath(body, path, base)) issues.push(`missing sitemap loc: ${path}`)
+    }
     return issues
   }
 

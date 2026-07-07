@@ -102,6 +102,13 @@ $env:MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT='1'; npm.cmd run main-site:synthetic; Re
 没有这个显式 opt-in 时，公开助手检查会记录为 `unchecked`，表示 health
 可读但 live chat/citation/model 状态未检查。
 
+本地 `vite preview` 只验证静态页面、sitemap 和 robots 时，可以显式跳过同域
+assistant Function 检查，避免把本地没有 `/api/health` 误记成线上故障：
+
+```powershell
+npm.cmd run main-site:synthetic -- --base http://127.0.0.1:4176 --skip-assistant-api
+```
+
 默认检查：
 
 - `https://biau.playlab.eu.cc/`

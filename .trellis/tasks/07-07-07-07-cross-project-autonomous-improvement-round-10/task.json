@@ -1,0 +1,28 @@
+{
+  "id": "07-07-cross-project-autonomous-improvement-round-10",
+  "name": "07-07-cross-project-autonomous-improvement-round-10",
+  "title": "Cross-project autonomous improvement round 10",
+  "description": "Continue autonomous local improvements for BIAU Port and related projects, prioritizing public discoverability, status reliability, Studio/AI Daily workflow quality, assistant usability, and project-detail trust evidence while recording cloud, credential, live model, and release gates as manual follow-ups.",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-07-07-07-round-10-status-detail-sitemap-coverage"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

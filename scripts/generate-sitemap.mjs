@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { getPublicBlogPosts } from '../src/data/blogCuration.ts'
+import { reliabilityProjects } from '../src/data/statusTargets.ts'
 
 const siteUrl = 'https://biau.playlab.eu.cc'
 const today = new Date().toISOString().slice(0, 10)
@@ -15,6 +16,7 @@ function escapeXml(value) {
 const portfolio = await readFile('src/data/portfolio.ts', 'utf8')
 
 const projectIds = [...portfolio.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1])
+const statusProjectIds = reliabilityProjects.map((project) => project.id)
 const posts = getPublicBlogPosts()
 
 const staticRoutes = [
@@ -28,6 +30,7 @@ const routes = [
   { loc: '/status', priority: '0.6', changefreq: 'daily' },
   ...staticRoutes,
   ...projectIds.map((id) => ({ loc: `/projects/${id}`, priority: '0.8', changefreq: 'monthly' })),
+  ...statusProjectIds.map((id) => ({ loc: `/status/${id}`, priority: '0.6', changefreq: 'daily' })),
   ...posts.map((post) => ({ loc: `/blog/${post.slug}`, priority: '0.7', changefreq: 'monthly', lastmod: post.date })),
 ]
 

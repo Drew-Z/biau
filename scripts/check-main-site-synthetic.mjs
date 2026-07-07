@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -8,7 +8,7 @@ const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 12_000
 const ROUTE_CHECK_ID = 'blog-semi-public-routes'
 const ASSISTANT_CHECK_ID = 'blog-semi-public-assistant'
-const sitemapRequiredPaths = ['/', '/projects', '/blog', '/status', '/pet-app-showcase/']
+const coreSitemapRequiredPaths = ['/', '/projects', '/blog', '/status', '/pet-app-showcase/']
 
 const targets = [
   { label: 'home', path: '/', kind: 'page', critical: true },
@@ -26,6 +26,7 @@ function parseArgs(argv) {
     timeoutMs: Number(process.env.MAIN_SITE_SYNTHETIC_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
     strict: process.env.MAIN_SITE_SYNTHETIC_STRICT === '1',
     assistantChat: isTruthy(process.env.MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT),
+    skipAssistantApi: isTruthy(process.env.MAIN_SITE_SYNTHETIC_SKIP_ASSISTANT_API),
   }
 
   const readValue = (index) => argv[index + 1] ?? ''
@@ -40,6 +41,11 @@ function parseArgs(argv) {
       continue
     }
     if (item === '--skip-assistant-chat' || item === '--no-assistant-chat') {
+      args.assistantChat = false
+      continue
+    }
+    if (item === '--skip-assistant-api' || item === '--no-assistant-api') {
+      args.skipAssistantApi = true
       args.assistantChat = false
       continue
     }
@@ -83,6 +89,11 @@ function absoluteUrl(baseUrl, path) {
 function normalizeSitemapPath(path) {
   if (path === '/') return '/'
   return path.replace(/\/+$/, '')
+}
+
+async function readReliabilityStatusPaths() {
+  const source = await readFile(resolve(repoRoot, 'src/data/statusTargets.ts'), 'utf8')
+  return Array.from(source.matchAll(/\{\s*id:\s*'([^']+)',\s*\r?\n\s*title:/gu), (match) => `/status/${match[1]}`)
 }
 
 function sitemapContainsPath(body, path, baseUrl) {
@@ -194,7 +205,7 @@ function isRecord(value) {
   return typeof value === 'object' && value !== null
 }
 
-function validateTarget(target, response, baseUrl) {
+async function validateTarget(target, response, baseUrl) {
   const issues = []
 
   if (!response.ok) {
@@ -211,7 +222,8 @@ function validateTarget(target, response, baseUrl) {
 
   if (target.kind === 'sitemap') {
     if (!response.body.includes('<urlset')) issues.push('sitemap: missing urlset')
-    for (const path of sitemapRequiredPaths) {
+    const requiredPaths = [...coreSitemapRequiredPaths, ...(await readReliabilityStatusPaths())]
+    for (const path of requiredPaths) {
       if (!sitemapContainsPath(response.body, path, baseUrl)) issues.push(`sitemap: missing ${path}`)
     }
     return issues
@@ -326,7 +338,19 @@ function summarizeAssistantFailure(issues) {
   return 'Public assistant API did not return valid health/chat JSON'
 }
 
-async function validateAssistantApi(baseUrl, timeoutMs, checkedAt, allowChat) {
+async function validateAssistantApi(baseUrl, timeoutMs, checkedAt, allowChat, skipAssistantApi) {
+  if (skipAssistantApi) {
+    return {
+      id: ASSISTANT_CHECK_ID,
+      status: 'unchecked',
+      httpStatus: 0,
+      durationMs: 0,
+      checkedAt,
+      summary: 'Assistant API check skipped for local route-only synthetic validation',
+      issues: [],
+    }
+  }
+
   const health = await requestJsonWithTimeout(absoluteUrl(baseUrl, '/api/health'), timeoutMs)
   const healthIssues = validateHealthResponse(health)
 
@@ -389,7 +413,7 @@ async function main() {
     results.push({
       target,
       response,
-      issues: validateTarget(target, response, args.baseUrl),
+      issues: await validateTarget(target, response, args.baseUrl),
     })
   }
 
@@ -405,7 +429,13 @@ async function main() {
     summary: `${passed}/${results.length} public routes returned expected responses`,
     issues,
   }
-  const assistantCheck = await validateAssistantApi(args.baseUrl, args.timeoutMs, checkedAt, args.assistantChat)
+  const assistantCheck = await validateAssistantApi(
+    args.baseUrl,
+    args.timeoutMs,
+    checkedAt,
+    args.assistantChat,
+    args.skipAssistantApi,
+  )
   const payload = {
     checkedAt,
     baseConfigured: true,
