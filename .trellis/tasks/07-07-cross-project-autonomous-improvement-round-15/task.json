@@ -1,0 +1,28 @@
+{
+  "id": "cross-project-autonomous-improvement-round-15",
+  "name": "cross-project-autonomous-improvement-round-15",
+  "title": "Cross-project autonomous improvement round 15",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-07-round-15-status-generated-json-drift-guard"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

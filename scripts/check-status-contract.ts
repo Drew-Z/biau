@@ -113,6 +113,40 @@ function checkUniqueIds(label: string, ids: string[]) {
   }
 }
 
+function readGeneratedRecords(value: unknown, label: string) {
+  if (!Array.isArray(value)) {
+    fail(`${label} must be an array`)
+    return []
+  }
+
+  return value.flatMap((item, index) => {
+    if (isRecord(item)) return [item]
+    fail(`${label}[${index}] must be an object`)
+    return []
+  })
+}
+
+function readGeneratedIds(records: Record<string, unknown>[], label: string) {
+  return records.flatMap((record, index) => {
+    const id = record.id
+    if (isNonEmptyString(id)) return [id]
+    fail(`${label}[${index}].id is missing`)
+    return []
+  })
+}
+
+function checkGeneratedIdSet(label: string, expectedIds: string[], actualIds: string[]) {
+  checkUniqueIds(label, actualIds)
+
+  const expected = new Set(expectedIds)
+  const actual = new Set(actualIds)
+  const missing = [...expected].filter((id) => !actual.has(id)).sort()
+  const extra = [...actual].filter((id) => !expected.has(id)).sort()
+
+  if (missing.length > 0) fail(`${label}: generated site-status.json is missing ${missing.join(', ')}`)
+  if (extra.length > 0) fail(`${label}: generated site-status.json has extra ${extra.join(', ')}`)
+}
+
 function checkStaticStatusData() {
   checkUniqueIds(
     'siteStatusTargets',
@@ -424,10 +458,44 @@ async function checkMergedSiteStatusEvidence() {
     return
   }
 
-  const projects = Array.isArray(payload.reliabilityProjects) ? payload.reliabilityProjects.filter(isRecord) : []
+  const targets = readGeneratedRecords(payload.targets, 'site-status.json.targets')
+  const targetIds = readGeneratedIds(targets, 'site-status.json.targets')
+  checkGeneratedIdSet(
+    'site-status.json targets',
+    siteStatusTargets.map((target) => target.id),
+    targetIds,
+  )
+
+  const projects = readGeneratedRecords(payload.reliabilityProjects, 'site-status.json.reliabilityProjects')
+  const projectIds = readGeneratedIds(projects, 'site-status.json.reliabilityProjects')
+  checkGeneratedIdSet(
+    'site-status.json reliabilityProjects',
+    reliabilityProjects.map((project) => project.id),
+    projectIds,
+  )
+
   if (projects.length === 0) {
     fail('site-status.json: reliabilityProjects must be a non-empty array')
     return
+  }
+
+  const generatedProjectById = new Map(projects.map((project) => [typeof project.id === 'string' ? project.id : '', project]))
+  for (const sourceProject of reliabilityProjects) {
+    const generatedProject = generatedProjectById.get(sourceProject.id)
+    if (!generatedProject) continue
+    const generatedChecks = readGeneratedRecords(
+      generatedProject.checks,
+      `site-status.json.reliabilityProjects.${sourceProject.id}.checks`,
+    )
+    const generatedCheckIds = readGeneratedIds(
+      generatedChecks,
+      `site-status.json.reliabilityProjects.${sourceProject.id}.checks`,
+    )
+    checkGeneratedIdSet(
+      `site-status.json reliabilityProjects.${sourceProject.id}.checks`,
+      sourceProject.checks.map((check) => check.id),
+      generatedCheckIds,
+    )
   }
 
   for (const project of projects) {

@@ -54,6 +54,12 @@ expected freshness row count from the same generated `site-status.json` payload
 that the page consumes, so synthetic check additions or removals do not require
 hardcoded Playwright count updates.
 
+`npm.cmd run status:contract` must also catch generated status JSON drift:
+`public/status/site-status.json` target ids, reliability project ids, and per
+project check ids must stay aligned with `src/data/statusTargets.ts`. Keep this
+guard offline; do not run live entry checks just to prove a generated JSON file
+matches the current source contracts.
+
 For route-level UI checks, wait for route-specific async readiness in addition
 to the shared `.route-loading` Suspense fallback. Blog detail routes, for
 example, load the route module first and then load article content via
