@@ -66,6 +66,7 @@ Other useful project commands:
 npm.cmd run verify
 npm.cmd run check:ui
 npm.cmd run blog:check
+npm.cmd run assistant:kg-check
 npm.cmd run server:build
 npm.cmd run server:smoke
 ```

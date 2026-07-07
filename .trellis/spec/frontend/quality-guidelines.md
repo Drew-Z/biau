@@ -11,7 +11,7 @@ npm.cmd run build
 
 `npm run build` includes `tsc -b`, so it is the required type-check gate. Run lint first and fix lint failures before build. Markdown-only or `content-drafts/`-only changes may skip this gate, but component, route, style, and `src/data/` changes must run it.
 
-For broad release checks, `npm.cmd run verify` also runs assistant index generation, Prisma validation, backend build/smoke, frontend build, blog checks, preview startup, and UI checks through `scripts/verify.mjs`.
+For broad release checks, `npm.cmd run verify` also runs assistant index generation, assistant V2 knowledge graph checks, Prisma validation, backend build/smoke, frontend build, blog checks, preview startup, and UI checks through `scripts/verify.mjs`.
 
 ## Node-Side Validation Helpers
 

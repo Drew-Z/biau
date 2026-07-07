@@ -68,6 +68,7 @@ npm run assistant:kg-check
 ```
 
 这个检查只使用本地公开数据，不会调用真实模型或中转站。
+`npm run verify` 已经包含这一步；单独运行 `assistant:kg-check` 适合在只改公开助手知识结构或检索 baseline 时快速确认。
 
 外部 RAG Orchestrator 是最终形态的一部分，由单独的 Render 服务承载。Cloudflare Pages Functions 或公开助手 API 只保存 Orchestrator endpoint 和服务端 token，不直接连接 Qdrant、Supabase、模型中转或 embedding provider：
 
