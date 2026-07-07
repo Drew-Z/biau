@@ -3,7 +3,7 @@
   "name": "cross-project-autonomous-improvement-round-13",
   "title": "Cross-project autonomous improvement round 13",
   "description": "Continue the long-running BIAU Port improvement goal with local-verifiable work across project details, public showcase, internal assistant, AI Daily, and reliability observation. Keep manual gates recorded without running live model/provider checks or cloud operations.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -19,7 +19,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "07-07-round-13-project-detail-asset-quality-gate"
+    "07-07-round-13-project-detail-asset-quality-gate",
+    "07-07-07-07-round-13-status-manual-gate-ledger-sync"
   ],
   "parent": null,
   "relatedFiles": [],

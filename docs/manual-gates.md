@@ -15,6 +15,7 @@
 - 需要平台控制台、真实凭据、生产账号、模型真实调用、付费资源或公开下载批准的事项，先记录到这里，不阻塞其他本地工作。
 - 任何完成记录都只写低敏结论，例如“已人工确认并重新运行本地检查”，不要写真实值。
 - 如果某项需要真实模型验证，只能用用户批准的具体业务任务，不能用 ping、doctor live、测活 prompt 或无意义小题。
+- 状态页的 `reliabilityProjects` 必须在本总账中有对应的人工作业覆盖；新增、删除或重命名状态项目后，同步更新本总账并运行 `npm.cmd run docs:manual-gates-check`。
 
 ## Git / Repository Publishing
 
@@ -74,8 +75,8 @@
 | Legal RAG 公开 demo 凭据 | 受保护问答、合同审查和质量面板需要低权限可回收账号 | `legal-rag:synthetic` 的 credentialed 低敏结果，不记录账号密码 |
 | ERP 生产注册开放策略 | 注册是否公开涉及业务安全和滥用风险 | `erp:synthetic` registration 状态、公开页面截图或低敏摘要 |
 | Xunqiu 后端 / APK / 兼容 API | 后端地址、凭据和 APK 发布批准都需要人工确认 | `xunqiu:synthetic`、APK gate 摘要、checksum 公开批准 |
-| Pet 展示页和 APK 下载 | APK/AAB、签名、checksum、下载入口需要 release 批准 | `pet:synthetic`、构建产物低敏摘要、公开下载批准记录 |
-| BIAU Playlab / Game 试玩入口 | 静态资源和试玩路径可以本地检查，外部发布仍需入口确认 | `playlab:synthetic`、`check:ui`、公开链接可达摘要 |
+| Pet 展示页和 APK 下载 | 正式 release 构建、APK/AAB、签名、checksum、下载入口需要 release 批准 | `pet:synthetic`、构建产物低敏摘要、公开下载批准记录 |
+| BIAU Playlab / Game 试玩入口 | 静态资源、Web 试玩资源和试玩路径可以本地检查，外部发布仍需入口确认 | `playlab:synthetic`、`check:ui`、公开链接可达摘要 |
 
 ## APK / Mobile Release
 

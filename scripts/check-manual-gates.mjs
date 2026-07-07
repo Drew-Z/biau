@@ -21,6 +21,10 @@ const files = {
     label: 'docs/studio-ai-daily-production-readiness.md',
     path: resolve(repoRoot, 'docs/studio-ai-daily-production-readiness.md'),
   },
+  statusTargets: {
+    label: 'src/data/statusTargets.ts',
+    path: resolve(repoRoot, 'src/data/statusTargets.ts'),
+  },
 }
 
 const ledgerNeedles = [
@@ -48,6 +52,33 @@ const ledgerLinks = [
   './deployment.md',
 ]
 
+const statusProjectLedgerCoverage = {
+  'blog-semi': {
+    label: 'BIAU Port 主站',
+    needles: ['Cloudflare Pages 环境变量和 Functions 部署', '公开助手模型真实调用', 'Prometheus / Grafana / ARMS'],
+  },
+  'legal-rag': {
+    label: 'Legal RAG 法律机器人',
+    needles: ['Legal RAG 公开 demo 凭据', 'legal-rag:synthetic', '合同审查'],
+  },
+  'ozon-erp': {
+    label: 'Ozon ERP',
+    needles: ['ERP 生产注册开放策略', 'erp:synthetic'],
+  },
+  xunqiu: {
+    label: '寻球',
+    needles: ['Xunqiu 后端 / APK / 兼容 API', 'xunqiu:synthetic', 'APK gate 摘要'],
+  },
+  'pet-gamer': {
+    label: 'Pet / Gamer',
+    needles: ['Pet 展示页和 APK 下载', 'pet:synthetic', '正式 release 构建'],
+  },
+  'biau-playlab': {
+    label: 'BIAU Playlab / Game',
+    needles: ['BIAU Playlab / Game 试玩入口', 'playlab:synthetic', 'Web 试玩'],
+  },
+}
+
 const secretPatterns = [
   { label: 'secret-like key', pattern: /\b(?:sk|pk|rk)-[A-Za-z0-9_-]{12,}\b/u },
   { label: 'bearer token', pattern: /\bBearer\s+[A-Za-z0-9._-]{8,}\b/iu },
@@ -74,18 +105,66 @@ function scanSecrets(label, text) {
   return issues
 }
 
+function extractReliabilityProjects(statusTargetsText) {
+  const start = statusTargetsText.indexOf('export const reliabilityProjects')
+  const end = statusTargetsText.indexOf('\nexport function getReliabilityAnchorId', start)
+  if (start < 0 || end < 0) return []
+
+  const block = statusTargetsText.slice(start, end)
+  const projects = []
+  const projectPattern = /\{\s*id:\s*'([^']+)',\s*title:\s*'([^']+)',\s*category:/gu
+  for (const match of block.matchAll(projectPattern)) {
+    projects.push({ id: match[1], title: match[2] })
+  }
+  return projects
+}
+
+function checkStatusProjectLedgerCoverage(ledger, statusTargets) {
+  const issues = []
+  const projects = extractReliabilityProjects(statusTargets)
+  if (projects.length === 0) {
+    issues.push(`${files.statusTargets.label} 未能解析 reliabilityProjects。`)
+    return issues
+  }
+
+  const projectIds = new Set(projects.map((project) => project.id))
+  for (const project of projects) {
+    const coverage = statusProjectLedgerCoverage[project.id]
+    if (!coverage) {
+      issues.push(`${project.title} (${project.id}) 缺少 manual-gates ledger 覆盖映射。`)
+      continue
+    }
+
+    for (const needle of coverage.needles) {
+      if (!ledger.includes(needle)) {
+        issues.push(`${project.title} (${project.id}) 的人工门禁总账缺少覆盖内容：${needle}`)
+      }
+    }
+  }
+
+  for (const [projectId, coverage] of Object.entries(statusProjectLedgerCoverage)) {
+    if (!projectIds.has(projectId)) {
+      issues.push(`${coverage.label} (${projectId}) 的 manual-gates 覆盖映射已经不对应任何 reliabilityProjects 项。`)
+    }
+  }
+
+  return issues
+}
+
 async function main() {
-  const [ledger, observability, monitoring, studioReadiness] = await Promise.all([
+  const [ledger, observability, monitoring, studioReadiness, statusTargets] = await Promise.all([
     readFile(files.ledger.path, 'utf8'),
     readFile(files.observability.path, 'utf8'),
     readFile(files.monitoring.path, 'utf8'),
     readFile(files.studioReadiness.path, 'utf8'),
+    readFile(files.statusTargets.path, 'utf8'),
   ])
 
   const issues = [
     ...collectMissing(files.ledger.label, ledger, ledgerNeedles),
     ...collectMissing(files.ledger.label, ledger, ledgerLinks),
     ...scanSecrets(files.ledger.label, ledger),
+    ...checkStatusProjectLedgerCoverage(ledger, statusTargets),
   ]
 
   for (const file of [files.observability, files.monitoring, files.studioReadiness]) {
