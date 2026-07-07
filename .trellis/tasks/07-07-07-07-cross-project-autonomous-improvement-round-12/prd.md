@@ -21,10 +21,10 @@ Continue the long-running BIAU Port improvement goal with local-verifiable work 
 
 ## Acceptance Criteria
 
-- [ ] At least one child task is completed, verified, committed locally, and archived.
-- [ ] Manual gates found during this round are recorded in this PRD before archiving.
-- [ ] No secrets, production credentials, private URLs, model relay endpoints, or unapproved APK links are committed.
-- [ ] Finished child tasks are archived before the parent is archived.
+- [x] At least one child task is completed, verified, committed locally, and archived.
+- [x] Manual gates found during this round are recorded in this PRD before archiving.
+- [x] No secrets, production credentials, private URLs, model relay endpoints, or unapproved APK links are committed.
+- [x] Finished child tasks are archived before the parent is archived.
 
 ## Initial Task Map
 
@@ -39,3 +39,22 @@ Continue the long-running BIAU Port improvement goal with local-verifiable work 
 - Live model prompts, provider diagnostics, production assistant checks, and AI Daily model-assisted generation remain opt-in real tasks only.
 - Legal RAG / ERP / Xunqiu credentialed checks require approved low-privilege demo credentials or production tokens.
 - Pet/Xunqiu APK/AAB signing, checksum publication, and public download approval remain release gates.
+
+## Results
+
+- Completed and archived `07-07-round-12-ai-daily-issue-readiness-gate`.
+  - Added combined AI Daily issue readiness for brief + selected source evidence.
+  - Gated `/studio/ai-daily/:issueId` review/draft progression while preserving normal incremental saves.
+  - Added server-side `ai-daily-issue-not-ready` checks for review-ready status transitions and draft conversion.
+  - Verified through targeted checks and full `npm.cmd run verify`.
+- Completed and archived `07-07-round-12-manual-gates-ledger`.
+  - Added `docs/manual-gates.md` as the public-safe human-action queue.
+  - Added `docs:manual-gates-check` and wired it into `verify`.
+  - Linked existing observability, site monitoring, and Studio / AI Daily readiness docs to the manual gate ledger.
+  - Verified through docs checks and full `npm.cmd run verify`.
+
+## Verification Summary
+
+- `npm.cmd run verify` passed after each implementation child.
+- Diff-level sensitive scans found no newly added secret-like values.
+- `git diff --check` passed.
