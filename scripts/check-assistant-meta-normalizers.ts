@@ -16,6 +16,31 @@ const safeArtifact = {
   href: '/studio?draft=draft_safe_01',
 }
 
+const secretFieldName = ['api', 'Key'].join('')
+const safeSlugArtifact = {
+  ...safeArtifact,
+  id: 'draft_slug_01',
+  href: '/studio?draft=legal-rag-project-notes',
+}
+const legacyArtifact = {
+  ...safeArtifact,
+  id: 'draft_legacy_01',
+  href: '/studio',
+}
+const extraQueryArtifact = {
+  ...safeArtifact,
+  id: 'draft_extra_01',
+  slug: 'extra-query-draft',
+  href: '/studio?draft=draft_extra_01&from=assistant',
+}
+const secretFieldArtifact = {
+  ...safeArtifact,
+  id: 'draft_secret_field_01',
+  slug: 'secret-field-draft',
+  href: '/studio?draft=draft_secret_field_01',
+  [secretFieldName]: 'fake-artifact-secret-should-not-survive',
+}
+
 const meta = normalizeAssistantAnswerMeta({
   mode: 'fallback',
   model: 'fallback',
@@ -23,7 +48,7 @@ const meta = normalizeAssistantAnswerMeta({
   reason: 'not_configured',
   citationCount: 0,
   baseUrl: 'https://private-relay.example.invalid',
-  apiKey: 'sk-secret-should-not-survive',
+  [secretFieldName]: 'fake-secret-should-not-survive',
   prompt: 'raw prompt should not survive',
   agent: {
     mode: 'agentic-workspace',
@@ -44,12 +69,18 @@ const meta = normalizeAssistantAnswerMeta({
       summary: 'Created a review-needed hidden draft.',
       errorClass: 'not_configured',
       baseUrl: 'https://private-studio.example.invalid',
-      apiKey: 'sk-tool-secret-should-not-survive',
+      [secretFieldName]: 'fake-tool-secret-should-not-survive',
       artifacts: [
         safeArtifact,
+        safeSlugArtifact,
+        legacyArtifact,
+        extraQueryArtifact,
+        secretFieldArtifact,
         { ...safeArtifact, id: 'draft_other', href: '/studio?draft=draft_safe_01' },
         { ...safeArtifact, href: 'https://private.example.invalid/studio?draft=draft_safe_01' },
-        { ...safeArtifact, apiKey: 'sk-artifact-secret-should-not-survive' },
+        { ...safeArtifact, id: 'draft_bad_status', href: '/studio?draft=draft_bad_status', status: 'approved' },
+        { ...safeArtifact, id: 'draft_bad_visibility', href: '/studio?draft=draft_bad_visibility', visibility: 'public' },
+        { ...safeArtifact, kind: 'download', href: '/studio?draft=draft_safe_01' },
       ],
     },
     {
@@ -75,8 +106,13 @@ assert(meta, 'meta should normalize')
 assert(meta.agent?.steps.join(',') === 'plan,execute,sanitize', 'agent steps should use a known-step allowlist')
 assert(meta.tools?.length === 1, 'unknown tools should be dropped')
 assert(meta.tools?.[0]?.id === 'studio.draft', 'safe studio.draft trace should remain')
-assert(meta.tools?.[0]?.artifacts?.length === 2, 'only matching same-site Studio draft artifacts should remain')
-assert(meta.tools?.[0]?.artifacts?.[0]?.href === '/studio?draft=draft_safe_01', 'safe deep link should remain')
+const artifacts = meta.tools?.[0]?.artifacts ?? []
+assert(artifacts.length === 5, 'only matching same-site Studio draft artifacts should remain')
+assert(artifacts[0]?.href === '/studio?draft=draft_safe_01', 'safe id deep link should remain')
+assert(artifacts[1]?.href === '/studio?draft=legal-rag-project-notes', 'safe slug deep link should remain')
+assert(artifacts[2]?.href === '/studio', 'legacy Studio link should remain')
+assert(artifacts[3]?.href === '/studio?draft=draft_extra_01', 'extra query params should be stripped from Studio links')
+assert(artifacts[4]?.href === '/studio?draft=draft_secret_field_01', 'artifact with extra unsafe fields should keep only safe fields')
 assert(meta.guardrails?.allowedPermissions.join(',') === 'read,draft-write', 'unknown allowed permissions should be dropped')
 assert(meta.guardrails?.blockedPermissions.join(',') === 'external-live', 'unknown blocked permissions should be dropped')
 
@@ -93,16 +129,19 @@ assert(message?.meta?.tools?.[0]?.artifacts?.[0]?.href === '/studio?draft=draft_
 const serialized = JSON.stringify(meta)
 for (const forbidden of [
   'baseUrl',
-  'apiKey',
+  secretFieldName,
   'raw prompt',
   'private-relay',
   'private-agent',
   'private-studio',
-  'sk-secret',
-  'sk-tool-secret',
-  'sk-artifact-secret',
+  'fake-secret',
+  'fake-tool-secret',
+  'fake-artifact-secret',
   'admin.delete-member',
   'leak-step',
+  'draft_other',
+  'draft_bad_status',
+  'draft_bad_visibility',
 ]) {
   assert(!serialized.includes(forbidden), `normalized assistant meta leaked forbidden token: ${forbidden}`)
 }

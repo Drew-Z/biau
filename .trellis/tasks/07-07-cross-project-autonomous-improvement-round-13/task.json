@@ -20,7 +20,8 @@
   "subtasks": [],
   "children": [
     "07-07-round-13-project-detail-asset-quality-gate",
-    "07-07-07-07-round-13-status-manual-gate-ledger-sync"
+    "07-07-07-07-round-13-status-manual-gate-ledger-sync",
+    "07-07-07-07-round-13-assistant-studio-artifact-link-check"
   ],
   "parent": null,
   "relatedFiles": [],
