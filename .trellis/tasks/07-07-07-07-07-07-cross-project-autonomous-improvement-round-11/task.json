@@ -1,0 +1,28 @@
+{
+  "id": "07-07-07-07-cross-project-autonomous-improvement-round-11",
+  "name": "07-07-07-07-cross-project-autonomous-improvement-round-11",
+  "title": "Cross-project autonomous improvement round 11",
+  "description": "",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-07",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-07-07-07-round-11-project-detail-evidence-gate"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}

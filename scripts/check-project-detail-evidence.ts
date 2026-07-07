@@ -1,6 +1,13 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { projects, type ProjectDetailSection, type ProjectVisualBlock } from '../src/data/portfolio'
+import {
+  projects,
+  type Project,
+  type ProjectDetailContentKey,
+  type ProjectDetailSection,
+  type ProjectLink,
+  type ProjectVisualBlock,
+} from '../src/data/portfolio'
 
 interface ProjectEvidenceSummary {
   id: string
@@ -10,10 +17,20 @@ interface ProjectEvidenceSummary {
 
 const MIN_DETAIL_SECTIONS = 5
 const MIN_BODY_VISUALS = 2
+const MIN_SECTION_DETAIL_CHARS = 60
+const REQUIRED_DETAIL_GROUPS: ProjectDetailContentKey[] = [
+  'overview',
+  'workflow',
+  'architecture',
+  'quality',
+  'limitations',
+  'roadmap',
+]
 const STRUCTURAL_VISUAL_TYPES = new Set<ProjectVisualBlock['type']>(['workflow', 'architecture', 'data-flow', 'diagram'])
 const SENSITIVE_SOURCE_PATTERNS = [
   /^[A-Za-z]:[\\/]/u,
   /^file:/iu,
+  /^\/\//u,
   /localhost/iu,
   /127\.0\.0\.1/u,
   /192\.168\./u,
@@ -23,6 +40,7 @@ const SENSITIVE_SOURCE_PATTERNS = [
 
 const issues: string[] = []
 const summaries: ProjectEvidenceSummary[] = []
+const globalVisualIds = new Map<string, string>()
 
 function fail(projectId: string, message: string) {
   issues.push(`${projectId}: ${message}`)
@@ -32,29 +50,98 @@ function flattenSections(sections: Record<string, ProjectDetailSection[] | undef
   return Object.values(sections ?? {}).flatMap((items) => items ?? [])
 }
 
-function isPublicSourceUrl(value: string) {
+function hasSensitivePattern(value: string) {
   if (SENSITIVE_SOURCE_PATTERNS.some((pattern) => pattern.test(value))) return false
+  return true
+}
+
+function isPublicHref(value: string) {
+  if (!hasSensitivePattern(value)) return false
   if (value.startsWith('/')) return true
 
   try {
     const parsed = new URL(value)
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+    return parsed.protocol === 'https:'
   } catch {
     return false
   }
 }
 
+function checkPublicText(projectId: string, context: string, value: string | undefined) {
+  if (typeof value !== 'string' || !value.trim()) return
+  if (!hasSensitivePattern(value)) fail(projectId, `${context} contains a local/private path or secret-like query string`)
+}
+
+function checkAsset(projectId: string, context: string, image: string | undefined) {
+  if (!image?.trim()) {
+    fail(projectId, `${context} is missing an image`)
+    return
+  }
+  if (!image.startsWith('/images/projects/')) {
+    fail(projectId, `${context} must use a public /images/projects/ asset`)
+    return
+  }
+
+  const publicPath = join(process.cwd(), 'public', image.replace(/^\//u, ''))
+  if (!existsSync(publicPath)) fail(projectId, `${context} references a missing asset: ${image}`)
+}
+
+function checkLink(projectId: string, link: ProjectLink, context: string) {
+  if (!link.label.trim()) fail(projectId, `${context} link is missing a label`)
+  if (!link.href.trim()) {
+    fail(projectId, `${context} link "${link.label}" is missing an href`)
+    return
+  }
+  if (!isPublicHref(link.href)) fail(projectId, `${context} link "${link.label}" must use a public same-site route or https URL`)
+}
+
+function checkProjectShell(project: Project) {
+  checkPublicText(project.id, 'title', project.title)
+  checkPublicText(project.id, 'summary', project.summary)
+  checkPublicText(project.id, 'role', project.role)
+  for (const item of project.highlights) checkPublicText(project.id, 'highlight', item)
+  for (const item of project.stack) checkPublicText(project.id, 'stack item', item)
+  for (const item of project.assistantContext ?? []) checkPublicText(project.id, 'assistantContext item', item)
+
+  checkAsset(project.id, 'hero image', project.image)
+  for (const link of project.links) checkLink(project.id, link, 'project')
+  if (project.detailLink) checkLink(project.id, project.detailLink, 'detailLink')
+}
+
+function checkRequiredGroups(project: Project) {
+  for (const key of REQUIRED_DETAIL_GROUPS) {
+    const group = project.detailContent?.[key]
+    if (!Array.isArray(group) || group.length === 0) fail(project.id, `missing required detailContent group: ${key}`)
+  }
+}
+
+function sectionTextLength(section: ProjectDetailSection) {
+  return [section.body ?? '', ...(section.items ?? [])].join(' ').trim().length
+}
+
 function checkVisual(projectId: string, visual: ProjectVisualBlock) {
+  const existingProjectId = globalVisualIds.get(visual.id)
+  if (existingProjectId) {
+    fail(projectId, `visual ${visual.id} duplicates an id already used by ${existingProjectId}`)
+  } else {
+    globalVisualIds.set(visual.id, projectId)
+  }
+
   if (!visual.title.trim()) fail(projectId, `visual ${visual.id} is missing a title`)
   if (!visual.description.trim()) fail(projectId, `visual ${visual.id} is missing a description`)
+  checkPublicText(projectId, `visual ${visual.id} title`, visual.title)
+  checkPublicText(projectId, `visual ${visual.id} description`, visual.description)
+  checkPublicText(projectId, `visual ${visual.id} alt`, visual.alt)
+  checkPublicText(projectId, `visual ${visual.id} caption`, visual.caption)
+  checkPublicText(projectId, `visual ${visual.id} sourceLabel`, visual.sourceLabel)
 
   if (visual.sourceUrl || visual.sourceLabel) {
     if (!visual.sourceUrl?.trim()) fail(projectId, `visual ${visual.id} has sourceLabel but no sourceUrl`)
     if (!visual.sourceLabel?.trim()) fail(projectId, `visual ${visual.id} has sourceUrl but no sourceLabel`)
   }
 
-  if (visual.sourceUrl && !isPublicSourceUrl(visual.sourceUrl)) {
-    fail(projectId, `visual ${visual.id} sourceUrl must be a public route or http(s) URL`)
+  if (visual.sourceUrl && !isPublicHref(visual.sourceUrl)) {
+    fail(projectId, `visual ${visual.id} sourceUrl must be a public route or https URL`)
   }
 
   if (!visual.image) return
@@ -73,10 +160,14 @@ function checkVisual(projectId: string, visual: ProjectVisualBlock) {
 }
 
 for (const project of projects) {
+  checkProjectShell(project)
+
   if (!project.detailContent) {
     fail(project.id, 'missing detailContent')
     continue
   }
+
+  checkRequiredGroups(project)
 
   const sections = flattenSections(project.detailContent)
   const visuals = sections.map((section) => section.visual).filter((visual): visual is ProjectVisualBlock => Boolean(visual))
@@ -95,11 +186,27 @@ for (const project of projects) {
     fail(project.id, 'needs at least one workflow/architecture/data-flow/diagram visual for structural explanation')
   }
 
+  const bodyVisualImages = visuals.map((visual) => visual.image).filter((image): image is string => Boolean(image))
+  const uniqueBodyVisualImages = new Set(bodyVisualImages)
+  if (uniqueBodyVisualImages.size !== bodyVisualImages.length) {
+    fail(project.id, 'in-body visuals should not reuse the same image within one project detail page')
+  }
+  if (project.image && bodyVisualImages.length > 0 && bodyVisualImages.every((image) => image === project.image)) {
+    fail(project.id, 'in-body visuals should include evidence beyond the hero image')
+  }
+
   for (const section of sections) {
     const hasBody = typeof section.body === 'string' && section.body.trim().length > 0
     const hasItems = Array.isArray(section.items) && section.items.length > 0
     if (!section.title.trim()) fail(project.id, 'a detail section is missing a title')
     if (!hasBody && !hasItems) fail(project.id, `section "${section.title}" needs body text or bullet items`)
+    if (sectionTextLength(section) < MIN_SECTION_DETAIL_CHARS) {
+      fail(project.id, `section "${section.title}" is too thin for a visitor-readable case study`)
+    }
+    checkPublicText(project.id, `section "${section.title}" title`, section.title)
+    checkPublicText(project.id, `section "${section.title}" body`, section.body)
+    for (const item of section.items ?? []) checkPublicText(project.id, `section "${section.title}" item`, item)
+    for (const link of section.links ?? []) checkLink(project.id, link, `section "${section.title}"`)
   }
 
   for (const visual of visuals) checkVisual(project.id, visual)

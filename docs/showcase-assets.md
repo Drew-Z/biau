@@ -19,7 +19,7 @@
 npm.cmd run project-details:check
 ```
 
-该检查会读取 `src/data/portfolio.ts`，确认每个项目都有详情内容、正文中至少有 2 个 visual、图片路径指向 `public/images/projects/` 下的真实文件，并检查 visual 标题、说明和图片 alt 文本。新增或修改项目详情页时先跑它，再跑 `assistant:index`、`lint`、`build` 和 UI 检查。
+该检查会读取 `src/data/portfolio.ts`，确认每个项目都有详情内容、完整的案例分组、正文中至少有 2 个 visual、至少 1 张运行截图、至少 1 张结构/流程类图示、非单纯复用 hero 图的正文证据、可读的 section 密度、唯一 visual id、公开安全的 hero 图和项目链接。所有图片路径必须指向 `public/images/projects/` 下的真实文件，并检查 visual 标题、说明、alt、caption 和 source 信息。新增或修改项目详情页时先跑它，再跑 `assistant:index`、`lint`、`build` 和 UI 检查。
 
 ## 当前覆盖
 

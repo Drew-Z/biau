@@ -112,6 +112,10 @@ Project detail pages should include both runtime evidence and structural explana
 
 - at least one in-body `screenshot` visual, so visitors can see the actual product/game/app state;
 - at least one in-body structural visual: `workflow`, `architecture`, `data-flow`, or `diagram`, so visitors can understand the implementation or usage path.
+- all standard case-study groups should be present: `overview`, `workflow`, `architecture`, `quality`, `limitations`, and `roadmap`;
+- body visuals should use unique ids and should not collapse to repeated copies of the hero image;
+- hero images, visual images, visual source links, project links, section links, and assistant-facing project facts must stay public-safe and free of local paths, private IPs, secret-like query strings, or non-HTTPS external URLs;
+- each section needs enough body text or bullet detail to read as a case-study note, not a bare heading.
 
 `npm.cmd run project-details:check` enforces this composition. When a project
 lacks a safe runtime screenshot, record that as an asset/manual gate rather than
