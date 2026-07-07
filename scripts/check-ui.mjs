@@ -22,6 +22,13 @@ const routes = [
   { path: '/status/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/status/legal-rag' },
   { path: '/studio', title: '内容工作台', nav: '回主页', canonical: '/studio' },
   {
+    path: '/studio?draft=ui_check_draft_01',
+    title: '内容工作台',
+    nav: '回主页',
+    canonical: '/studio',
+    expectedText: '请先保存 Studio token，保存后会自动定位助手创建的草稿。',
+  },
+  {
     path: '/studio/ai-daily/ui-check-issue',
     title: 'AI 日报详情',
     nav: '回主页',
@@ -187,6 +194,13 @@ for (const viewport of viewports) {
 
     if (viewport.name === 'desktop' && (!ogTitle || ogTitle.length < 8)) {
       failures.push(`${viewport.name} ${route.path}: missing useful og:title`)
+    }
+
+    if (route.expectedText) {
+      const expectedTextVisible = await page.getByText(route.expectedText).first().isVisible().catch(() => false)
+      if (!expectedTextVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected visible text "${route.expectedText}"`)
+      }
     }
 
     if (logs.length > 0) {
