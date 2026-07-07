@@ -14,14 +14,26 @@ Continue autonomous local improvements for BIAU Port and related project surface
 
 ## Acceptance Criteria
 
-- [ ] At least one child task is completed, verified, committed locally, and archived.
-- [ ] Manual gates are recorded in task notes.
-- [ ] No secrets, production credentials, private URLs, model relay endpoints, or unapproved APK links are committed.
-- [ ] Finished child tasks are archived before the parent is archived.
+- [x] At least one child task is completed, verified, committed locally, and archived.
+- [x] Manual gates are recorded in task notes.
+- [x] No secrets, production credentials, private URLs, model relay endpoints, or unapproved APK links are committed.
+- [x] Finished child tasks are archived before the parent is archived.
 
 ## Initial Task Map
 
 - `project-detail-evidence-gate`: add a deterministic quality check that prevents project detail pages from regressing to thin text, single-hero-only media, or mismatched evidence.
+- `assistant-rag-offline-verify-gate`: add local/offline assistant and RAG gates to the default `verify` command.
+
+## Results
+
+- Completed and archived `07-07-07-07-round-11-project-detail-evidence-gate`.
+  - Strengthened `project-details:check` so project case pages keep required groups, hero/link safety, section density, unique visuals, and body evidence beyond a single hero image.
+  - Updated showcase asset docs and frontend quality specs.
+  - Verified with `project-details:check`, `lint`, `build`, full `verify`, `git diff --check`, and a targeted sensitive-pattern scan.
+- Completed and archived `07-07-07-07-round-11-assistant-rag-offline-verify-gate`.
+  - Added `assistant:eval`, `assistant:rag-sync-local`, `assistant:service-modes-smoke`, and `assistant:rag-smoke` to `npm.cmd run verify`.
+  - Updated deployment docs and backend/frontend quality specs to state that these are deterministic local checks, not live model/provider diagnostics.
+  - Verified candidate commands individually and through full `verify`.
 
 ## Manual Gates
 
