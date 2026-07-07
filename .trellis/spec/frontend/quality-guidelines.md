@@ -68,6 +68,13 @@ ignore transient Google Fonts request failures for `fonts.googleapis.com` and
 `fonts.gstatic.com`; they must not ignore same-origin JS, CSS, image, JSON, or
 route failures.
 
+When a route check asserts a first-load browser state, make that state explicit
+in `scripts/check-ui.mjs`. For example, Studio no-token prompts must declare
+`clearLocalStorageKeys: ['biau-studio-admin-token']` on the route entry and clear
+those keys with `page.addInitScript()` before navigation. Do not rely on the
+current developer browser, a previously visited route, or a stale preview server
+to happen to have the right storage state.
+
 ### Blog Knowledge Quality Gate
 
 Public `知识积累 / Knowledge Notes` posts must pass

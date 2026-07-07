@@ -128,6 +128,7 @@ export function StudioAiDailyIssuePage() {
       !sameStringList(form.sourceIds, issue.sourceIds)
     )
   }, [form, issue])
+  const displayStatusText = statusText || (!adminToken ? '请先保存 Studio token，保存后可以刷新这期 AI 日报 issue。' : '')
 
   const applyDetailPayload = (payload: unknown) => {
     const detail = normalizeStudioIssueDetail(payload)
@@ -342,7 +343,7 @@ export function StudioAiDailyIssuePage() {
             </button>
           </div>
         </form>
-        {statusText && <p className="assistant-status-text">{statusText}</p>}
+        {displayStatusText && <p className="assistant-status-text">{displayStatusText}</p>}
       </section>
 
       <section className="studio-issue-layout">

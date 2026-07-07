@@ -27,12 +27,15 @@ const routes = [
     nav: '回主页',
     canonical: '/studio',
     expectedText: '请先保存 Studio token，保存后会自动定位助手创建的草稿。',
+    clearLocalStorageKeys: ['biau-studio-admin-token'],
   },
   {
     path: '/studio/ai-daily/ui-check-issue',
     title: 'AI 日报详情',
     nav: '回主页',
     canonical: '/studio/ai-daily/ui-check-issue',
+    expectedText: '请先保存 Studio token，保存后可以刷新这期 AI 日报 issue。',
+    clearLocalStorageKeys: ['biau-studio-admin-token'],
   },
   { path: '/assistant', title: '内部助手', nav: '回主页', canonical: '/assistant' },
   { path: '/assistant/admin', title: '内部助手管理页', nav: '回主页', canonical: '/assistant/admin' },
@@ -161,6 +164,13 @@ for (const viewport of viewports) {
       logs.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? 'failed'}`)
     })
     page.on('pageerror', (error) => logs.push(`pageerror: ${error.message}`))
+    if (route.clearLocalStorageKeys?.length) {
+      await page.addInitScript((keys) => {
+        for (const key of keys) {
+          window.localStorage.removeItem(key)
+        }
+      }, route.clearLocalStorageKeys)
+    }
 
     await gotoApp(page, route.path)
 
