@@ -300,6 +300,11 @@ export const publicAssistantSuggestions: AssistantSuggestion[] = [
     label: '查看可靠性状态',
     prompt: '项目可靠性观察页能告诉我哪些入口是否正常？',
   },
+  {
+    id: 'manual-gates',
+    label: '人工 gate 怎么处理',
+    prompt: '状态页里的人工 gate 和后续接入应该怎么处理？哪些信息不能公开？',
+  },
 ]
 
 export const internalAssistantSuggestions: AssistantSuggestion[] = [
@@ -352,9 +357,9 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
     id: 'site:status',
     title: '项目可靠性观察',
     summary:
-      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。',
+      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。它会把人工 gate 和后续接入拆成公开安全的下一步，例如低权限 demo 凭据、脱敏 fixture、后端 synthetic base URL、APK release 审批、访问分析或观测平台选择。处理这些事项时应在平台控制台、本机环境或受控演示账号中填写真实值；公开站点和助手只记录低敏证据，例如成功状态、检查命令、HTTP 状态、计数、时间和错误类别。不要把 token、密码、数据库 URL、模型渠道、签名文件路径、真实后台地址或生产敏感指标写进文章、状态页、聊天或仓库。当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。',
     href: '/status',
-    tags: ['状态页', '可靠性观察', '公开入口', 'health check', 'synthetic', '注册', '品牌统一'],
+    tags: ['状态页', '可靠性观察', '人工 gate', '低敏证据', '公开入口', 'health check', 'synthetic', '注册', '品牌统一'],
     visibility: 'public',
   },
   ...projectKnowledge,
