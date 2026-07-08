@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { reliabilityProjects } from '../src/data/statusTargets.ts'
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 const files = {
@@ -20,10 +22,6 @@ const files = {
   studioReadiness: {
     label: 'docs/studio-ai-daily-production-readiness.md',
     path: resolve(repoRoot, 'docs/studio-ai-daily-production-readiness.md'),
-  },
-  statusTargets: {
-    label: 'src/data/statusTargets.ts',
-    path: resolve(repoRoot, 'src/data/statusTargets.ts'),
   },
 }
 
@@ -52,6 +50,11 @@ const ledgerLinks = [
   './deployment.md',
 ]
 
+interface LedgerCoverage {
+  label: string
+  needles: string[]
+}
+
 const statusProjectLedgerCoverage = {
   'blog-semi': {
     label: 'BIAU Port 主站',
@@ -77,7 +80,7 @@ const statusProjectLedgerCoverage = {
     label: 'BIAU Playlab / Game',
     needles: ['BIAU Playlab / Game 试玩入口', 'playlab:synthetic', 'Web 试玩'],
   },
-}
+} satisfies Record<string, LedgerCoverage>
 
 const secretPatterns = [
   { label: 'secret-like key', pattern: /\b(?:sk|pk|rk)-[A-Za-z0-9_-]{12,}\b/u },
@@ -89,47 +92,32 @@ const secretPatterns = [
   { label: 'assignment-shaped password', pattern: /\bpassword\s*[:=]\s*[^\s`'"]{6,}/iu },
 ]
 
-function collectMissing(label, text, needles) {
-  const issues = []
+function collectMissing(label: string, text: string, needles: string[]) {
+  const issues: string[] = []
   for (const needle of needles) {
     if (!text.includes(needle)) issues.push(`${label} 缺少关键内容：${needle}`)
   }
   return issues
 }
 
-function scanSecrets(label, text) {
-  const issues = []
+function scanSecrets(label: string, text: string) {
+  const issues: string[] = []
   for (const { label: patternLabel, pattern } of secretPatterns) {
     if (pattern.test(text)) issues.push(`${label} contains ${patternLabel}`)
   }
   return issues
 }
 
-function extractReliabilityProjects(statusTargetsText) {
-  const start = statusTargetsText.indexOf('export const reliabilityProjects')
-  const end = statusTargetsText.indexOf('\nexport function getReliabilityAnchorId', start)
-  if (start < 0 || end < 0) return []
-
-  const block = statusTargetsText.slice(start, end)
-  const projects = []
-  const projectPattern = /\{\s*id:\s*'([^']+)',\s*title:\s*'([^']+)',\s*category:/gu
-  for (const match of block.matchAll(projectPattern)) {
-    projects.push({ id: match[1], title: match[2] })
-  }
-  return projects
-}
-
-function checkStatusProjectLedgerCoverage(ledger, statusTargets) {
-  const issues = []
-  const projects = extractReliabilityProjects(statusTargets)
-  if (projects.length === 0) {
-    issues.push(`${files.statusTargets.label} 未能解析 reliabilityProjects。`)
+function checkStatusProjectLedgerCoverage(ledger: string) {
+  const issues: string[] = []
+  if (reliabilityProjects.length === 0) {
+    issues.push('src/data/statusTargets.ts 未导出任何 reliabilityProjects。')
     return issues
   }
 
-  const projectIds = new Set(projects.map((project) => project.id))
-  for (const project of projects) {
-    const coverage = statusProjectLedgerCoverage[project.id]
+  const projectIds = new Set(reliabilityProjects.map((project) => project.id))
+  for (const project of reliabilityProjects) {
+    const coverage = statusProjectLedgerCoverage[project.id as keyof typeof statusProjectLedgerCoverage]
     if (!coverage) {
       issues.push(`${project.title} (${project.id}) 缺少 manual-gates ledger 覆盖映射。`)
       continue
@@ -152,19 +140,18 @@ function checkStatusProjectLedgerCoverage(ledger, statusTargets) {
 }
 
 async function main() {
-  const [ledger, observability, monitoring, studioReadiness, statusTargets] = await Promise.all([
+  const [ledger, observability, monitoring, studioReadiness] = await Promise.all([
     readFile(files.ledger.path, 'utf8'),
     readFile(files.observability.path, 'utf8'),
     readFile(files.monitoring.path, 'utf8'),
     readFile(files.studioReadiness.path, 'utf8'),
-    readFile(files.statusTargets.path, 'utf8'),
   ])
 
   const issues = [
     ...collectMissing(files.ledger.label, ledger, ledgerNeedles),
     ...collectMissing(files.ledger.label, ledger, ledgerLinks),
     ...scanSecrets(files.ledger.label, ledger),
-    ...checkStatusProjectLedgerCoverage(ledger, statusTargets),
+    ...checkStatusProjectLedgerCoverage(ledger),
   ]
 
   for (const file of [files.observability, files.monitoring, files.studioReadiness]) {
@@ -183,7 +170,7 @@ async function main() {
   console.log('人工门禁总账检查通过：分类、交叉链接和低敏边界均存在。')
 }
 
-main().catch((error) => {
+main().catch((error: unknown) => {
   console.error(error instanceof Error ? error.message : String(error))
   process.exitCode = 1
 })

@@ -119,6 +119,7 @@ Current low-sensitive production acceptance:
 - Project-detail planning prompt aligned: `studio:project-detail-plan` now tells editors to run `project-details:check` after applying a portfolio update, matching the stricter visual/content gate.
 - Status-detail planning prompt aligned: `studio:status-plan` now tells editors to run `status:contract` and `docs:manual-gates-check` after applying status data updates, matching the status/manual-gate contract.
 - Studio smoke guidance assertions added: `studio:smoke` now captures the project-detail and status-plan sample outputs and fails if the required validation markers disappear.
+- Manual-gate coverage guard hardened: `docs:manual-gates-check` now imports structured `reliabilityProjects` through `tsx` instead of regex-parsing `src/data/statusTargets.ts`, so manual-gate coverage follows the actual status data model and is not sensitive to source formatting.
 
 Validation:
 
