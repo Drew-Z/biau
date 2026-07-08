@@ -131,7 +131,7 @@ function buildPlan(draft: StudioDraft, options: Options): PlannedProjectDetailEx
     manualNext: [
       '人工审查 detailContent 是否适合写入 src/data/portfolio.ts 对应项目。',
       '确认 visual.image 均为 /images/projects/ 下的公开安全资产，且文件实际存在。',
-      '写入 portfolio.ts 后运行 npm.cmd run assistant:index、npm.cmd run lint、npm.cmd run build 和 npm.cmd run check:ui。',
+      '写入 portfolio.ts 后运行 npm.cmd run assistant:index、npm.cmd run project-details:check、npm.cmd run lint、npm.cmd run build 和 npm.cmd run check:ui。',
       '项目详情页发布前不要公开账号、密码、模型渠道、数据库 URL、内部后台或本地绝对路径。',
     ],
   }

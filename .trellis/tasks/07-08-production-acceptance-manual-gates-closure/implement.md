@@ -116,6 +116,7 @@ Current low-sensitive production acceptance:
 - Project-detail visual density guard tightened: `project-details:check` now requires at least 3 in-body visual blocks per standard case-study page, and `docs/showcase-assets.md` plus frontend quality spec describe the same baseline. The stricter gate passed for all 12 projects, with no project falling below 3 visuals.
 - Manual gate ledger cleanup completed: Git/SSH publishing is no longer listed as an active blocker because the main repository has pushed successfully multiple times. The ledger now treats SSH trust-root or remote rejection problems as conditional gates that should be reopened only if they recur.
 - Studio export validation guard aligned: `studio:export -- --run-checks` now runs the same blog quality gates used by release verification, including `blog:knowledge-check` and `blog:project-notes-check`, and the pending validation list is generated from one shared command list to avoid drift. Manual gates now list project-notes quality as part of Publish Export evidence.
+- Project-detail planning prompt aligned: `studio:project-detail-plan` now tells editors to run `project-details:check` after applying a portfolio update, matching the stricter visual/content gate.
 
 Validation:
 
