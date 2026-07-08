@@ -81,6 +81,7 @@ Current low-sensitive production acceptance:
 - Render service-boundary drift fixed: `render.yaml`, `.env.example`, `docs/deployment.md`, `docs/manual-gates.md`, and backend code-spec now describe the current four-service shape (`public`, `internal`, `studio`, `rag`), including Studio service migration, shared `STUDIO_DATABASE_URL` boundaries, and internal `RAG_SYNC_TOKEN` needs for admin knowledge sync.
 - Deployment contract guard added: `npm.cmd run docs:deployment-check` now validates that Render Blueprint, `.env.example`, deployment docs, manual gates, and backend code-spec all stay aligned on the four-service production boundary; `verify` runs this check before manual-gates validation.
 - Observability docs guard wired into full verify: existing `npm.cmd run docs:observability-check` now runs inside `npm.cmd run verify`, keeping Cloudflare/Search Console/Umami/Plausible/Prometheus/Langfuse strategy aligned with manual gates.
+- ERP related-project sync completed: validated the ERP web build on branch `codex/ozon-plugin-parity` and pushed the existing `fix(web): preserve biau port auth bridge` commit so the BIAU Port auth bridge fix is no longer local-only.
 
 Validation:
 
