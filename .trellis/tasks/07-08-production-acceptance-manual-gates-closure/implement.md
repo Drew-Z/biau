@@ -80,6 +80,7 @@ Current low-sensitive production acceptance:
 - Manual gate queue follow-up completed: `docs/manual-gates.md` now includes a wake-up processing order for Studio review/export, Legal RAG demo credentials, ERP demo/fixture checks, Xunqiu/Pet release gates, and analytics/observability choices, with explicit low-sensitive success standards.
 - Render service-boundary drift fixed: `render.yaml`, `.env.example`, `docs/deployment.md`, `docs/manual-gates.md`, and backend code-spec now describe the current four-service shape (`public`, `internal`, `studio`, `rag`), including Studio service migration, shared `STUDIO_DATABASE_URL` boundaries, and internal `RAG_SYNC_TOKEN` needs for admin knowledge sync.
 - Deployment contract guard added: `npm.cmd run docs:deployment-check` now validates that Render Blueprint, `.env.example`, deployment docs, manual gates, and backend code-spec all stay aligned on the four-service production boundary; `verify` runs this check before manual-gates validation.
+- Observability docs guard wired into full verify: existing `npm.cmd run docs:observability-check` now runs inside `npm.cmd run verify`, keeping Cloudflare/Search Console/Umami/Plausible/Prometheus/Langfuse strategy aligned with manual gates.
 
 Validation:
 
