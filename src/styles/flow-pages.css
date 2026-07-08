@@ -4006,6 +4006,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .public-assistant__message p {
   margin: 0;
+  line-height: 1.68;
   white-space: pre-line;
 }
 
@@ -4023,17 +4024,25 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .public-assistant__citations {
   display: flex;
   flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .public-assistant__citation {
   width: max-content;
-  max-width: 100%;
+  max-width: min(100%, 260px);
   min-height: 30px;
   padding: 5px 10px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   border-radius: 999px;
+}
+
+.public-assistant__citation strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .public-assistant__citation span {

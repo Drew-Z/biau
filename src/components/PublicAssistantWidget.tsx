@@ -47,7 +47,7 @@ interface ProviderDiagnostic {
 
 const CONFIGURED_API_BASE = PUBLIC_ASSISTANT_API_BASE
 const MAX_MESSAGE_LENGTH = 500
-const MAX_MODEL_ANSWER_LENGTH = 620
+const MAX_MODEL_ANSWER_LENGTH = 420
 const MAX_FALLBACK_ANSWER_LENGTH = 360
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -106,12 +106,31 @@ function formatProviderDiagnostic(diagnostic?: ProviderDiagnostic) {
 }
 
 function compactAnswerContent(content: string, maxLength: number) {
-  const normalized = content
+  const normalized = sanitizeAssistantAnswer(content)
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
   if (normalized.length <= maxLength) return normalized
   return `${normalized.slice(0, maxLength - 1).trim()}…`
+}
+
+function sanitizeAssistantAnswer(content: string) {
+  const lines: string[] = []
+  for (const rawLine of content.split('\n')) {
+    const trimmed = rawLine.trim()
+    if (/^(#{1,6}\s*)?想进一步了解[？?]?/.test(trimmed)) break
+    if (/^(来源|资料编号|参考资料)[:：]/.test(trimmed)) continue
+    const plain = trimmed
+      .replace(/^#{1,6}\s*/, '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/__([^_]+)__/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/^\s*[-*]\s+/, '• ')
+      .replace(/^\s*\d+[.)]\s+/, '')
+      .trim()
+    if (plain) lines.push(plain)
+  }
+  return lines.join('\n')
 }
 
 function buildLocalKnowledgeAnswer(question: string, citations: AssistantKnowledgeItem[], reason?: AssistantFallbackReason) {
