@@ -108,6 +108,9 @@ Current low-sensitive production acceptance:
 - Project note quality slice completed: `pet-workspace-pipeline` was expanded from a short generation-pipeline note into a fuller WIP case note covering Android App, Community API, Admin Review, pet.zip/package contract, human review, synthetic APK gate, low-sensitive test evidence, and release-gate follow-ups without exposing private deployment or generation details.
 - Project note quality slice completed: `legal-rag-production-upgrade-plan` was expanded from a short upgrade checklist into a fuller productionization case note covering project spaces, ingestion jobs, pgvector persistence, hybrid retrieval, rule-first contract review, quality/eval panels, audit logs, protected demo gates, and follow-up credentialed synthetic work.
 - Project note quality slice completed: `legal-rag-review` was expanded from an early MVP recap into the main Legal RAG case note covering the full demo path, project spaces, ingestion metadata, hybrid recall/refusal, structured contract review, quality panels, protected demo gates, evidence boundaries, and follow-up team-trial work.
+- Project note quality guard completed: added `blog:project-notes-check` and wired it into `verify` so public `项目总结 / Project Notes` posts must keep enough knowledge points, scenarios, checklist items, sections, takeaways, evidence/source-boundary language, follow-up gate language, and sensitive-content screening before they are treated as release-ready. The first gate run passed for all 6 public project notes after small Xunqiu and Playlab content thickening.
+- Public assistant retrieval parity completed: `demo-access` citation selection now mirrors the same project-citation backfill behavior in `src/data/assistantKnowledge.ts`, `server/src/knowledge.ts`, and `functions/_shared/assistant.ts`. This prevents the frontend fallback, Express API, and Cloudflare Pages Function from drifting when demo-ready questions need multiple `project:*` citations. Backend code-spec now records this three-surface contract.
+- Full local verification for this slice passed with `npm.cmd run verify`, including assistant index/kg/eval, local RAG sync, Prisma validate, lint, server build/smoke, service-mode smoke, RAG smoke, Cloudflare Function smoke, frontend build, blog checks, project-notes check, docs checks, Studio smoke, project-detail evidence, status contract, preview, and UI checks.
 
 Validation:
 
@@ -116,9 +119,11 @@ npm.cmd run studio:ai-daily-brief-check
 npm.cmd run studio:smoke
 npm.cmd run blog:check
 npm.cmd run blog:knowledge-check
+npm.cmd run blog:project-notes-check
 npm.cmd run assistant:index
 npm.cmd run lint
 npm.cmd run build
+npm.cmd run verify
 ```
 
 ## Phase 4: Project Credentialed Checks

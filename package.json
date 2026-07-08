@@ -38,6 +38,7 @@
     "blog:audit": "tsx scripts/audit-blog-catalog.ts",
     "blog:check": "node scripts/check-public-blog.mjs",
     "blog:knowledge-check": "tsx scripts/check-blog-knowledge-quality.ts",
+    "blog:project-notes-check": "tsx scripts/check-blog-project-notes-quality.ts",
     "project-details:check": "tsx scripts/check-project-detail-evidence.ts",
     "docs:deployment-check": "node scripts/check-deployment-contract.mjs",
     "docs:manual-gates-check": "node scripts/check-manual-gates.mjs",

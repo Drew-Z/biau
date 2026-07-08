@@ -153,7 +153,7 @@ export function retrieveKnowledge(query: string, limit = publicKnowledgeV2?.fall
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title, 'zh-CN'))
 
-  const citations = scored.slice(0, normalizedLimit).map((entry) => entry.item)
+  const citations = selectCitationsForIntent(scored, normalizedLimit, intent).map((entry) => entry.item)
   const diversity = new Set(citations.map((item) => inferSourceType(item))).size
   const sufficiency = citations.length === 0 ? 'none' : citations.length >= 2 || diversity >= 2 ? 'enough' : 'weak'
   const scoreByDocument = new Map(scored.map((entry) => [entry.item.id, entry.score]))
@@ -241,6 +241,42 @@ function emptyRetrieval(intent: RetrievalIntent): KnowledgeRetrievalResult {
     sufficiency: 'none',
     candidateCount: 0,
   }
+}
+
+function selectCitationsForIntent(
+  scored: Array<{ item: KnowledgeItem; score: number }>,
+  limit: number,
+  intent: RetrievalIntent,
+) {
+  const selected = scored.slice(0, limit)
+  if (intent !== 'demo-access' || selected.length < limit) return selected
+
+  const minimumProjectCitations = Math.min(2, limit)
+  let projectCount = selected.filter((entry) => inferSourceType(entry.item) === 'project').length
+  if (projectCount >= minimumProjectCitations) return selected
+
+  const selectedIds = new Set(selected.map((entry) => entry.item.id))
+  const adjusted = [...selected]
+  const projectBackfills = scored.filter((entry) => !selectedIds.has(entry.item.id) && inferSourceType(entry.item) === 'project')
+
+  for (const projectBackfill of projectBackfills) {
+    if (projectCount >= minimumProjectCitations) break
+
+    let replaceIndex = -1
+    for (let index = adjusted.length - 1; index >= 0; index -= 1) {
+      if (inferSourceType(adjusted[index].item) !== 'project') {
+        replaceIndex = index
+        break
+      }
+    }
+    if (replaceIndex === -1) break
+
+    adjusted[replaceIndex] = projectBackfill
+    selectedIds.add(projectBackfill.item.id)
+    projectCount += 1
+  }
+
+  return adjusted
 }
 
 function buildChunkResults(

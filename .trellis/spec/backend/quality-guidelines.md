@@ -193,6 +193,72 @@ const response = await fetch(`${modelConfig.baseUrl}/chat/completions`, {
 
 The server reads private env, applies public-citation grounding, and returns only sanitized `ChatResponse` fields to the frontend.
 
+## Scenario: Public Assistant Local Retrieval Parity
+
+### 1. Scope / Trigger
+
+- Trigger: changing public assistant keyword scoring, intent classification, citation selection, fallback answer grounding, or generated public knowledge shape.
+- Goal: keep the same local public-knowledge behavior across browser fallback, Express assistant API, and Cloudflare Pages Functions.
+
+### 2. Signatures
+
+- Frontend/local data helper: `src/data/assistantKnowledge.ts`
+  - `searchAssistantKnowledge(items, query, { limit?, knowledge? })`.
+- Express API helper: `server/src/knowledge.ts`
+  - `retrieveKnowledge(query, limit?)`.
+- Cloudflare Function helper: `functions/_shared/assistant.ts`
+  - `retrieveLocalKnowledge(query, limit?)`.
+- Generated data inputs:
+  - `server/data/public-knowledge.json`
+  - `server/data/public-knowledge-v2.json`
+
+### 3. Contracts
+
+- These three helpers must classify public assistant intents consistently.
+- Citation selection behavior must stay aligned for the default public assistant window.
+- `demo-access` questions should keep at least two `project:*` citations when enough project candidates exist, so demo-access answers do not collapse into only blog/status context.
+- `private-credential` questions must return no citations and must not call a model provider.
+- Local retrieval changes must preserve public-only data: no internal visibility citations, provider URLs, tokens, database URLs, prompts, or raw private diagnostics.
+
+### 4. Validation & Error Matrix
+
+- Express helper drifts from frontend helper -> `server:smoke` or `assistant:eval` should fail on citation expectations.
+- Cloudflare helper drifts from Express helper -> `cf-assistant:smoke` should fail on the same public chat scenarios.
+- Generated knowledge path is wrong -> `/chat/public` loses `project:legal-rag` and `server:smoke` fails.
+- Private credential query returns citations -> `server:smoke` / `cf-assistant:smoke` must fail.
+
+### 5. Good/Base/Bad Cases
+
+- Good: after adding demo-related vocabulary to a project note, `server:smoke` and `cf-assistant:smoke` both still return multiple project citations for "哪些项目可以演示？".
+- Base: if no external RAG Orchestrator is configured, both runtimes use local public knowledge and expose only low-sensitive retrieval metadata.
+- Bad: fixing `searchAssistantKnowledge()` only in `src/data/assistantKnowledge.ts` while leaving `server/src/knowledge.ts` or `functions/_shared/assistant.ts` on old `scored.slice(0, limit)` behavior.
+
+### 6. Tests Required
+
+- Run `npm.cmd run assistant:index` after public content or generated knowledge changes.
+- Run `npm.cmd run assistant:eval` after scoring, intent, entity expansion, or citation selection changes.
+- Run `npm.cmd run server:smoke` after Express local retrieval changes.
+- Run `npm.cmd run cf-assistant:smoke` after Cloudflare shared assistant changes.
+- Run `npm.cmd run verify` before committing cross-surface retrieval or public assistant fallback changes.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+const citations = scored.slice(0, normalizedLimit).map((entry) => entry.item)
+```
+
+This can let high-scoring blog/status content crowd out project citations for demo-access questions in one runtime while another runtime has already been fixed.
+
+#### Correct
+
+```ts
+const citations = selectCitationsForIntent(scored, normalizedLimit, intent).map((entry) => entry.item)
+```
+
+Keep intent-specific citation selection mirrored in all public assistant local retrieval surfaces, then prove parity with both Express and Cloudflare smoke checks.
+
 ## API Review Checklist
 
 - Inputs are trimmed, required fields are checked, and strings stored as names/titles are length-capped.
