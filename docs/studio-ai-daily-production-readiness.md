@@ -9,6 +9,14 @@
 - 内部助手可以创建 Studio 草稿，但只允许 `hidden + review-needed` 的 draft-write，不会审核、导出或发布。
 - AI Daily 自动化当前只应推进到草稿/审核态；每日自动抓取来源、模型摘要、自动发布都还是后续单独任务。
 
+## 最新低敏验收快照
+
+- 生产 `/studio` 已完成浏览器刷新验收：Studio token 可保存并连接，页面可以刷新数据库数据。
+- 生产 Studio API 直连验收通过：health、草稿、来源、AI Daily issue 和 publish export 列表均返回 `200`。
+- 最近低敏计数：草稿 `2`，来源 `3`，AI Daily issue `1`，publish export `0`。
+- 最近可靠性套件通过：`reliability:check` 结果为 7 passed、0 failed、1 skipped；跳过项是 Legal RAG credentialed synthetic，因为缺少本地低权限 demo 环境变量。
+- 公开发布仍未自动发生：现有 AI Daily 草稿保持 `hidden + review-needed`，需要人工审核和导出 diff 审查后才能进入公开静态内容。
+
 ## 服务与数据库边界
 
 | 服务 | 主要变量 | 应指向 | 说明 |
@@ -51,14 +59,19 @@ npm.cmd run studio:smoke
 8. 确认生成的草稿是 `hidden + review-needed + aiAssistance: none`。
 9. 人工审核通过后再创建 Publish Export，并在本地或 CI 执行 `studio:export -- --run-checks`。
 
+## 已完成的人工 gate
+
+- Studio production migration、服务重启和基础 token 登录验收已经完成。
+- 首次真实 AI Daily issue 已进入内容草稿链路，草稿保持 hidden/review-needed，不会自动公开。
+
 ## 仍需人工 gate
 
-- 生产数据库连接串和 Render 环境变量填写。
-- Studio production migration 执行与服务重启。
-- 首次真实 `/studio` token 登录和 `/studio/api/health` 验收。
-- 首次真实 AI Daily issue 到内容草稿转换。
+- Publish Export 生成后的公开内容 diff 审核和提交。
 - AI Daily 是否接入自动来源采集、定时任务、模型摘要或模型润色。
-- Publish Export 生成的公开内容 diff 审核和提交。
+- Legal RAG credentialed synthetic：需要低权限 demo 凭据和 `LEGAL_RAG_API_BASE_URL` 等本地/CI 环境变量。
+- ERP 插件与商品同步：需要脱敏 fixture 或低权限演示店铺。
+- Xunqiu 后端 synthetic：需要后端公开 base URL，并且 APK 发布 gate 仍需人工批准。
+- Pet APK 公开下载：需要正式 release 包、签名、SHA-256、扫描/回归证据、版本说明和回滚说明。
 
 ## 不应做的事
 

@@ -65,6 +65,12 @@ https://biau.playlab.eu.cc/studio
 
 如果 `/studio/api/health` 未带 token 返回 `missing-studio-token`，这是正常门禁，不代表 Studio 坏了。
 
+当前低敏记录：
+
+- `/studio` 已完成一次生产浏览器刷新验收，Studio token 可保存并刷新数据。
+- Studio API 直连 health、草稿、来源、AI Daily issue 和 publish export 列表均已返回 `200`。
+- 仍不要把 token、数据库 URL 或生产请求头写入聊天或仓库；后续只记录草稿 id/slug、状态、可见性和计数等低敏信息。
+
 ## 3. 首次 AI Daily issue 到草稿
 
 入口：
@@ -96,6 +102,12 @@ https://biau.playlab.eu.cc/studio
 - 可见性是 `hidden`。
 - `aiAssistance` 是 `none`，表示没有模型自动润色或摘要。
 - 公开发布仍需人工审核并执行 static export。
+
+当前低敏记录：
+
+- 首次生产 AI Daily issue 已转换出 hidden/review-needed 草稿。
+- 当前 publish export 数量仍为 `0`，公开博客数据尚未由 Studio 自动写入仓库。
+- 下一步是人工审阅草稿正文、来源和安全边界；审核通过后再创建 Publish Export，并在本地或 CI 导出公开静态数据。
 
 ## 4. 公开导出边界
 

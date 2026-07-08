@@ -98,9 +98,11 @@
 
 ## 当前人工队列摘要
 
-- 核验 GitHub SSH host key 后再允许推送本地领先提交。
-- 完成 Cloudflare / Render / 数据库 / Qdrant 等平台变量的人工配置和验收。
-- 给 Legal RAG、ERP、Xunqiu、Pet 等项目准备低权限、可回收的演示或发布凭据。
+- Studio 生产连接已刷新成功；下一步是人工审核 hidden/review-needed 草稿，创建 Publish Export 后再审查公开内容 diff。
+- Legal RAG 仍需低权限、可回收 demo 凭据和 credentialed synthetic 环境变量，用来验收法律问答、合同审查和质量面板。
+- ERP 注册入口已在线可达；插件与商品同步仍需要脱敏 fixture 或低权限演示店铺再做 credentialed smoke。
+- Xunqiu 后端 synthetic 仍需后端公开 base URL；APK 公开发布仍需正式 release 审批。
+- Pet 展示页在线；APK 公开下载仍需正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准。
 - 决定 Plausible 或 Umami 的访问分析方案，并避免两个同时接入同一站点。
 - 决定 Prometheus/Grafana/ARMS/Sentry/Langfuse 等平台的接入时机。
-- 批准 APK/AAB、checksum 和公开下载链接后，再更新公开下载入口。
+- 如后续更换机器或 SSH trust root 异常，再核验 GitHub SSH host key；当前主仓 `main` 推送已恢复正常。
