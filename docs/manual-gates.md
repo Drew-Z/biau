@@ -20,10 +20,12 @@
 
 ## Git / Repository Publishing
 
+当前主仓 `main` 已恢复正常提交与 `git push origin main`。GitHub SSH host key 冲突和本地领先远端不再是当前人工阻塞项；只有当后续再次出现 SSH trust root 异常、远端拒绝推送或权限错误时，才重新进入人工 gate。
+
 | Gate | Why Human | Safe Evidence |
 |---|---|---|
-| GitHub SSH host key 冲突核验 | 需要用户确认 GitHub 官方指纹并决定是否更新本机 known hosts；代理不应自动改 SSH 信任根 | `git status --short --branch`、本地提交哈希、用户手动确认后的 `git push origin main` 结果 |
-| 本地领先远端提交推送 | 当前本地可以继续提交，但远端同步依赖 SSH gate | 提交列表、验证命令结果、推送前 diff 摘要 |
+| GitHub SSH host key 异常复核 | 仅在 SSH 指纹或 known hosts 再次异常时需要用户确认；代理不应自动改 SSH 信任根 | `git status --short --branch`、本地提交哈希、用户手动确认后的 `git push origin main` 结果 |
+| 远端推送异常 | 仅在远端拒绝、权限变化或分支保护变化时需要用户确认下一步 | 提交列表、验证命令结果、推送失败的低敏错误类别 |
 
 ## Cloud And Deployment Platforms
 
