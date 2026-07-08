@@ -21,17 +21,20 @@ export const blogPosts: BlogPostSummary[] = [
   },
   {
     "slug": "legal-rag-production-upgrade-plan",
-    "title": "Legal RAG 生产化改造路线：从 MVP 闭环到可交付原型",
+    "title": "Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示",
     "tag": "项目复盘",
     "column": "project-notes",
-    "detail": "Legal RAG 已经跑通演示闭环，下一步要补文档解析、pgvector、队列、人审、评估和部署。本文把升级路线拆成可执行阶段。",
+    "detail": "Legal RAG 已经从 MVP 闭环推进到更接近可交付原型：项目空间、异步入库、pgvector、hybrid recall、合同审查评测、质量面板和受控 demo gate 都需要一起看。",
     "date": "2026-06-20",
-    "readTime": "10 min",
+    "readTime": "14 min",
     "series": "AI 应用知识库",
     "knowledgePoints": [
-      "项目改造清单",
       "RAG 生产化",
-      "交付路线"
+      "项目空间",
+      "pgvector 持久化",
+      "Hybrid Retrieval",
+      "质量评测",
+      "受控演示"
     ]
   },
   {

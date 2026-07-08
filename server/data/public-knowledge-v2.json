@@ -356,8 +356,8 @@
     },
     {
       "id": "blog:legal-rag-production-upgrade-plan",
-      "title": "Legal RAG 生产化改造路线：从 MVP 闭环到可交付原型",
-      "summary": "Legal RAG 已经跑通演示闭环，下一步要补文档解析、pgvector、队列、人审、评估和部署。本文把升级路线拆成可执行阶段。",
+      "title": "Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示",
+      "summary": "Legal RAG 已经从 MVP 闭环推进到更接近可交付原型：项目空间、异步入库、pgvector、hybrid recall、合同审查评测、质量面板和受控 demo gate 都需要一起看。",
       "href": "/blog/legal-rag-production-upgrade-plan",
       "tags": [
         "项目复盘",
@@ -368,9 +368,12 @@
         "精选",
         "迭代路线",
         "精选知识",
-        "项目改造清单",
         "RAG 生产化",
-        "交付路线"
+        "项目空间",
+        "pgvector 持久化",
+        "Hybrid Retrieval",
+        "质量评测",
+        "受控演示"
       ],
       "visibility": "public",
       "sourceType": "blog"
@@ -1657,7 +1660,7 @@
     {
       "id": "chunk:blog:legal-rag-production-upgrade-plan:1",
       "documentId": "blog:legal-rag-production-upgrade-plan",
-      "text": "Legal RAG 已经跑通演示闭环，下一步要补文档解析、pgvector、队列、人审、评估和部署。 本文把升级路线拆成可执行阶段。",
+      "text": "Legal RAG 已经从 MVP 闭环推进到更接近可交付原型：项目空间、异步入库、pgvector、hybrid recall、合同审查评测、质量面板和受控 demo gate 都需要一起看。",
       "section": "summary",
       "metadata": {
         "sourceType": "blog",
@@ -1670,9 +1673,12 @@
           "精选",
           "迭代路线",
           "精选知识",
-          "项目改造清单",
           "RAG 生产化",
-          "交付路线"
+          "项目空间",
+          "pgvector 持久化",
+          "Hybrid Retrieval",
+          "质量评测",
+          "受控演示"
         ]
       }
     },
@@ -2018,9 +2024,9 @@
     {
       "id": "blog:legal-rag-production-upgrade-plan",
       "type": "blog-post",
-      "name": "Legal RAG 生产化改造路线：从 MVP 闭环到可交付原型",
+      "name": "Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示",
       "aliases": [
-        "legal rag 生产化改造路线：从 mvp 闭环到可交付原型",
+        "legal rag 生产化路线：项目空间、pgvector、评测与受控演示",
         "项目复盘",
         "project-notes",
         "项目总结",
@@ -2029,9 +2035,12 @@
         "精选",
         "迭代路线",
         "精选知识",
-        "项目改造清单",
         "rag 生产化",
-        "交付路线"
+        "项目空间",
+        "pgvector 持久化",
+        "hybrid retrieval",
+        "质量评测",
+        "受控演示"
       ],
       "metadata": {
         "documentId": "blog:legal-rag-production-upgrade-plan",
