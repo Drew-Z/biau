@@ -50,6 +50,7 @@
     "reliability:check": "node scripts/check-reliability-suite.mjs",
     "status:contract": "tsx scripts/check-status-contract.ts",
     "site:monitor": "node scripts/check-site-monitor.mjs",
+    "public-links:check": "tsx scripts/check-public-links.ts",
     "site:status": "tsx scripts/generate-site-status.ts",
     "xunqiu:synthetic": "node scripts/check-xunqiu-synthetic.mjs",
     "preview": "vite preview",

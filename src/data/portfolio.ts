@@ -68,6 +68,7 @@ const GAME_SITE_URL = 'https://games.playlab.eu.cc'
 const PLAY_SITE_URL = 'https://play.playlab.eu.cc'
 const XUNQIU_SITE_URL = 'https://xunqiu.playlab.eu.cc'
 const XUNQIU_DOCS_URL = `${XUNQIU_SITE_URL}/docs.html`
+const XUNQIU_BACKEND_DOCS_URL = `${XUNQIU_SITE_URL}/docs/technical/validation-and-deploy.md`
 const XUNQIU_STAGE_APK_URL = `${XUNQIU_SITE_URL}/downloads/latest-xunqiu64.apk`
 
 function externalLink(label: string, href: string): ProjectLink {
@@ -1512,7 +1513,7 @@ export const projects: Project[] = [
       externalLink('产品展示页', `${XUNQIU_SITE_URL}/`),
       externalLink('技术文档', XUNQIU_DOCS_URL),
       externalLink('阶段 APK', XUNQIU_STAGE_APK_URL),
-      externalLink('新后端仓库', 'https://github.com/Drew-Z/xunqiu-backend-modern'),
+      externalLink('后端验证文档', XUNQIU_BACKEND_DOCS_URL),
       internalLink('迁移复盘文章', '/blog/xunqiu-android64-rebuild'),
     ],
     detailContent: {
