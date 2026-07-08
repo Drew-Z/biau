@@ -410,6 +410,49 @@ function checkPlaylabGate(fileName: string, payload: Record<string, unknown>) {
   }
 }
 
+function checkPublicLinksGate(fileName: string, payload: Record<string, unknown>) {
+  if (fileName !== 'public-links-synthetic.json') return
+
+  const linkCount = payload.linkCount
+  const failedCount = payload.failedCount
+  const checks = Array.isArray(payload.checks) ? payload.checks.filter(isRecord) : []
+  const publicLinksCheck = checks.find((check) => check.id === 'blog-semi-public-links')
+
+  if (typeof linkCount !== 'number' || !Number.isFinite(linkCount) || linkCount < 0) {
+    fail(`${fileName}: linkCount must be a non-negative number`)
+  }
+  if (typeof failedCount !== 'number' || !Number.isFinite(failedCount) || failedCount < 0) {
+    fail(`${fileName}: failedCount must be a non-negative number`)
+  }
+  if (typeof linkCount === 'number' && typeof failedCount === 'number' && failedCount > linkCount) {
+    fail(`${fileName}: failedCount cannot exceed linkCount`)
+  }
+  if (!publicLinksCheck) {
+    fail(`${fileName}: blog-semi-public-links check is missing`)
+    return
+  }
+
+  if (failedCount === 0) {
+    if (payload.ok !== true) fail(`${fileName}: ok must be true when failedCount=0`)
+    if (linkCount === 0 && publicLinksCheck.status !== 'unchecked') {
+      fail(`${fileName}: blog-semi-public-links must be unchecked when linkCount=0`)
+    }
+    if (linkCount !== 0 && publicLinksCheck.status !== 'online') {
+      fail(`${fileName}: blog-semi-public-links must be online when all links pass`)
+    }
+  }
+
+  if (typeof failedCount === 'number' && failedCount > 0) {
+    if (payload.ok !== false) fail(`${fileName}: ok must be false when failedCount>0`)
+    if (publicLinksCheck.status === 'online') {
+      fail(`${fileName}: blog-semi-public-links cannot be online when failedCount>0`)
+    }
+    if (!Array.isArray(publicLinksCheck.issues) || publicLinksCheck.issues.length === 0) {
+      fail(`${fileName}: blog-semi-public-links must include a low-sensitive issue summary when links fail`)
+    }
+  }
+}
+
 async function checkSyntheticSnapshots(knownCheckIds: Set<string>) {
   let entries: string[]
   try {
@@ -441,6 +484,7 @@ async function checkSyntheticSnapshots(knownCheckIds: Set<string>) {
     checkLegalRagDemoGate(fileName, payload)
     checkXunqiuGate(fileName, payload)
     checkPlaylabGate(fileName, payload)
+    checkPublicLinksGate(fileName, payload)
   }
 }
 
