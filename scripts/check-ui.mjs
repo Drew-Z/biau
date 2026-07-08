@@ -197,9 +197,14 @@ async function collectStudioOverflow(page) {
   })
 }
 
-async function collectStudioVisualIssues(page, viewportName) {
-  return page.evaluate((name) => {
+async function collectStudioVisualIssues(page, viewportName, routePath) {
+  return page.evaluate(({ name, path }) => {
     const issues = []
+    const isMainStudioRoute = path === '/studio' || path.startsWith('/studio?')
+    if (isMainStudioRoute && !document.querySelector('.studio-review-guide')) {
+      issues.push('studio review guide missing')
+    }
+
     const title = document.querySelector('.studio-page > .page-hero .section-title')
     if (title) {
       const fontSize = Number.parseFloat(window.getComputedStyle(title).fontSize)
@@ -228,7 +233,7 @@ async function collectStudioVisualIssues(page, viewportName) {
     }
 
     return issues
-  }, viewportName)
+  }, { name: viewportName, path: routePath })
 }
 
 const failures = []
@@ -287,7 +292,7 @@ for (const viewport of viewports) {
           `${viewport.name} ${route.path}: studio visible overflow ${JSON.stringify(studioOverflow)}`,
         )
       }
-      const studioVisualIssues = await collectStudioVisualIssues(page, viewport.name)
+      const studioVisualIssues = await collectStudioVisualIssues(page, viewport.name, route.path)
       for (const issue of studioVisualIssues) {
         failures.push(`${viewport.name} ${route.path}: ${issue}`)
       }

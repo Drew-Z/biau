@@ -67,6 +67,7 @@ Current low-sensitive production acceptance:
 - UI overflow follow-up completed: natural `/studio` DOM scan is clean across desktop, 1024px narrow desktop, and mobile; `check:ui` now fails if visible Studio descendants overflow their parent or viewport.
 - Final local validation for this UI overflow slice passed: `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run check:ui`, and `npm.cmd run studio:smoke`. `check:ui` covered 13 routes across desktop and mobile against local preview on `127.0.0.1:5174`.
 - Studio workbench visual follow-up completed after production screenshot review: the first fix prevented overflow but did not solve the page-level design problem. Root cause was that `/studio` inherited public showcase `page-hero` and dense three-column card composition. The Studio route now uses a compact workbench hero, toolbar-like token controls, a two-column desktop editor layout, one-column mobile side stack, and `check:ui` visual assertions for hero size, grid density, and token action wrapping.
+- Studio review workflow clarity follow-up completed: `/studio` now shows a first-screen review guide explaining where to click drafts, where content and preview live, and which actions approve or create publish exports. The guide also exposes current draft state and anchors to edit/preview, and `check:ui` now treats a missing review guide as a regression.
 
 Validation:
 

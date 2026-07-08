@@ -765,6 +765,57 @@ export function StudioPage() {
         {displayStatusText && <p className="assistant-status-text">{displayStatusText}</p>}
       </section>
 
+      <section className="studio-review-guide" aria-label="Studio 审核流程">
+        <div className="studio-review-guide__intro">
+          <p className="assistant-panel__eyebrow">REVIEW FLOW</p>
+          <h2>审核从草稿箱开始</h2>
+          <p>
+            先在左侧点一篇草稿；内容会载入中间编辑器，公开效果在编辑器下方的预览区。确认正文、来源、可见性和安全边界都没问题后，再点审核通过。
+          </p>
+        </div>
+        <ol className="studio-review-steps">
+          <li>
+            <span>1</span>
+            <strong>点草稿</strong>
+            <em>左侧草稿箱选择要审核的文章。</em>
+          </li>
+          <li>
+            <span>2</span>
+            <strong>看内容</strong>
+            <em>中间编辑器是正文，下面是公开预览。</em>
+          </li>
+          <li>
+            <span>3</span>
+            <strong>通过审核</strong>
+            <em>确认无误后点审核通过。</em>
+          </li>
+          <li>
+            <span>4</span>
+            <strong>创建导出</strong>
+            <em>通过后才能生成发布导出记录。</em>
+          </li>
+        </ol>
+        <div className="studio-review-current">
+          <span>当前草稿</span>
+          <strong>{selectedDraft ? selectedDraft.title : drafts.length > 0 ? '请先从左侧草稿箱选择一篇草稿' : '暂无可审核草稿'}</strong>
+          <p>
+            {selectedDraft
+              ? `${studioDraftStatuses[selectedDraft.status]} · ${studioVisibilityLabels[draftForm.visibility]} · ${draftForm.slug || '未填写 slug'}`
+              : '选中草稿后，这里会显示审核状态和下一步动作。'}
+          </p>
+          <div className="studio-review-current__actions">
+            <a href="#studio-draft-editor">编辑内容</a>
+            <a href="#studio-draft-preview">查看预览</a>
+            <button type="button" disabled={!selectedDraft || !adminToken} onClick={() => void reviewDraft('approved')}>
+              审核通过
+            </button>
+            <button type="button" disabled={!canExport || !adminToken} onClick={() => void createPublishExport()}>
+              创建导出记录
+            </button>
+          </div>
+        </div>
+      </section>
+
       <section className="studio-grid">
         <aside className="studio-card studio-list-panel">
           <div className="studio-card__header">
@@ -800,7 +851,7 @@ export function StudioPage() {
         </aside>
 
         <section className="studio-editor-stack">
-          <section className="studio-card studio-editor">
+          <section id="studio-draft-editor" className="studio-card studio-editor">
             <div className="studio-card__header">
               <div>
                 <p className="assistant-panel__eyebrow">BLOG EDITOR</p>
@@ -1026,21 +1077,23 @@ export function StudioPage() {
             </form>
           </section>
 
-          <StudioDraftPreview
-            title={draftForm.title}
-            slug={draftForm.slug}
-            column={draftForm.column}
-            tag={draftForm.tag}
-            detail={draftForm.detail}
-            readTime={draftForm.readTime}
-            date={previewDate}
-            body={previewBody}
-            knowledgePoints={previewKnowledgePoints}
-            projectIds={previewProjectIds}
-            statusLabel={selectedDraft ? studioDraftStatuses[selectedDraft.status] : '未保存'}
-            visibilityLabel={studioVisibilityLabels[draftForm.visibility]}
-            aiAssistance={draftForm.aiAssistance}
-          />
+          <div id="studio-draft-preview" className="studio-preview-anchor">
+            <StudioDraftPreview
+              title={draftForm.title}
+              slug={draftForm.slug}
+              column={draftForm.column}
+              tag={draftForm.tag}
+              detail={draftForm.detail}
+              readTime={draftForm.readTime}
+              date={previewDate}
+              body={previewBody}
+              knowledgePoints={previewKnowledgePoints}
+              projectIds={previewProjectIds}
+              statusLabel={selectedDraft ? studioDraftStatuses[selectedDraft.status] : '未保存'}
+              visibilityLabel={studioVisibilityLabels[draftForm.visibility]}
+              aiAssistance={draftForm.aiAssistance}
+            />
+          </div>
         </section>
 
         <aside className="studio-side-stack">

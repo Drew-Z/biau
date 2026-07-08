@@ -97,6 +97,13 @@ at normal desktop widths. `check:ui` asserts these basics so a page can no longe
 pass only because it has no horizontal scrollbar while still looking like a
 public landing page with dense admin forms forced into it.
 
+The main `/studio` route must also provide an obvious review path in the first
+screen. Editors should not have to infer where the content lives or which action
+publishes the next step: the page needs a visible review guide, a current-draft
+summary, anchors to edit and preview, and clear actions for "审核通过" and
+"创建导出记录". `check:ui` treats a missing review guide on `/studio` as a UI
+regression.
+
 ### Blog Knowledge Quality Gate
 
 Public `知识积累 / Knowledge Notes` posts must pass
