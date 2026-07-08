@@ -14,7 +14,7 @@
 - 生产 `/studio` 已完成浏览器刷新验收：Studio token 可保存并连接，页面可以刷新数据库数据。
 - 生产 Studio API 直连验收通过：health、草稿、来源、AI Daily issue 和 publish export 列表均返回 `200`。
 - 最近低敏计数：草稿 `2`，来源 `3`，AI Daily issue `1`，publish export `0`。
-- 最近可靠性套件通过：`reliability:check` 结果为 7 passed、0 failed、1 skipped；跳过项是 Legal RAG credentialed synthetic，因为缺少本地低权限 demo 环境变量。
+- 最近可靠性套件通过：`reliability:check` 结果为 8 passed、0 failed、1 skipped；新增通过项包含公开项目外链 synthetic，跳过项仍是 Legal RAG credentialed synthetic，因为缺少本地低权限 demo 环境变量。
 - 公开发布仍未自动发生：现有 AI Daily 草稿保持 `hidden + review-needed`，需要人工审核和导出 diff 审查后才能进入公开静态内容。
 
 ## 服务与数据库边界
