@@ -225,6 +225,10 @@ const syncDiagnosticLabels: Record<string, string> = {
   httpStatus: 'HTTP 状态',
   expectedDimension: '期望维度',
   actualDimension: '实际维度',
+  providerStep: 'Provider 步骤',
+  errorKind: '错误类型',
+  attemptedEndpoints: '尝试端点数',
+  timeoutMs: '超时毫秒',
   sourceName: '来源',
   sourceChecksum: '来源摘要',
 }

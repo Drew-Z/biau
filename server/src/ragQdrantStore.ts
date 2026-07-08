@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { env } from './env.js'
 import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
-import { embedText, EmbeddingDimensionMismatchError, isExternalEmbeddingConfigured } from './ragEmbeddings.js'
+import { embedText, EmbeddingDimensionMismatchError, EmbeddingProviderError, isExternalEmbeddingConfigured } from './ragEmbeddings.js'
 import type {
   AssistantScope,
   Citation,
@@ -48,20 +48,40 @@ const DEFAULT_QDRANT_DIMENSION = 4096
 const QDRANT_BATCH_SIZE = 32
 const INTERNAL_CHUNK_TARGET_LENGTH = 1200
 const QDRANT_DISTANCE = 'Cosine'
+const QDRANT_TIMEOUT_MS = 15000
 
 class QdrantProviderError extends Error {
   readonly reason: string
   readonly httpStatus?: number
   readonly expectedDimension?: number
   readonly actualDimension?: number
+  readonly providerStep?: string
+  readonly errorKind?: string
+  readonly attemptedEndpoints?: number
+  readonly timeoutMs?: number
 
-  constructor(reason: string, httpStatus?: number, details: { expectedDimension?: number; actualDimension?: number } = {}) {
+  constructor(
+    reason: string,
+    httpStatus?: number,
+    details: {
+      expectedDimension?: number
+      actualDimension?: number
+      providerStep?: string
+      errorKind?: string
+      attemptedEndpoints?: number
+      timeoutMs?: number
+    } = {},
+  ) {
     super(reason)
     this.name = 'QdrantProviderError'
     this.reason = reason
     this.httpStatus = httpStatus
     if (typeof details.expectedDimension === 'number') this.expectedDimension = details.expectedDimension
     if (typeof details.actualDimension === 'number') this.actualDimension = details.actualDimension
+    if (typeof details.providerStep === 'string') this.providerStep = details.providerStep
+    if (typeof details.errorKind === 'string') this.errorKind = details.errorKind
+    if (typeof details.attemptedEndpoints === 'number') this.attemptedEndpoints = details.attemptedEndpoints
+    if (typeof details.timeoutMs === 'number') this.timeoutMs = details.timeoutMs
   }
 }
 
@@ -208,9 +228,14 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
     }
 
     for (let index = 0; index < points.length; index += QDRANT_BATCH_SIZE) {
-      await requestQdrantJson(`/collections/${encodeURIComponent(env.qdrantPublicCollection)}/points?wait=true`, 'PUT', {
-        points: points.slice(index, index + QDRANT_BATCH_SIZE),
-      })
+      await requestQdrantJson(
+        `/collections/${encodeURIComponent(env.qdrantPublicCollection)}/points?wait=true`,
+        'PUT',
+        {
+          points: points.slice(index, index + QDRANT_BATCH_SIZE),
+        },
+        'qdrant_upsert_points',
+      )
     }
 
     const issueCount = await deleteStalePublicPoints(new Set(publicKnowledgeV2.knowledge_chunks.map((chunk) => chunk.id))).catch(() => 1)
@@ -238,6 +263,10 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       {
         expectedDimension: providerError.expectedDimension,
         actualDimension: providerError.actualDimension,
+        providerStep: providerError.providerStep,
+        errorKind: providerError.errorKind,
+        attemptedEndpoints: providerError.attemptedEndpoints,
+        timeoutMs: providerError.timeoutMs,
       },
     )
   }
@@ -324,9 +353,14 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
     }
 
     for (let index = 0; index < points.length; index += QDRANT_BATCH_SIZE) {
-      await requestQdrantJson(`/collections/${encodeURIComponent(env.qdrantInternalCollection)}/points?wait=true`, 'PUT', {
-        points: points.slice(index, index + QDRANT_BATCH_SIZE),
-      })
+      await requestQdrantJson(
+        `/collections/${encodeURIComponent(env.qdrantInternalCollection)}/points?wait=true`,
+        'PUT',
+        {
+          points: points.slice(index, index + QDRANT_BATCH_SIZE),
+        },
+        'qdrant_upsert_points',
+      )
     }
 
     const issueCount = await deleteStaleInternalPoints(new Set(chunks.map((chunk) => chunk.id))).catch(() => 1)
@@ -346,6 +380,10 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
       {
         expectedDimension: providerError.expectedDimension,
         actualDimension: providerError.actualDimension,
+        providerStep: providerError.providerStep,
+        errorKind: providerError.errorKind,
+        attemptedEndpoints: providerError.attemptedEndpoints,
+        timeoutMs: providerError.timeoutMs,
       },
     )
   }
@@ -373,25 +411,42 @@ async function queryCollection(collection: string, vector: number[], limit: numb
 }
 
 async function getCollectionPointCount(collection: string) {
-  const payload = await requestQdrantJson(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true })
+  const payload = await requestQdrantJson(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true }, 'qdrant_count_points')
   const result = isRecord(payload) && isRecord(payload.result) ? payload.result : null
   const count = result?.count
   return typeof count === 'number' && Number.isFinite(count) ? count : 0
 }
 
 async function ensureQdrantCollection(collection: string) {
-  const countResponse = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true })
+  const countResponse = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true }, 'qdrant_count_collection')
   if (countResponse.ok) return
-  if (countResponse.status !== 404) throw new QdrantProviderError(reasonForQdrantStatus(countResponse.status), countResponse.status)
+  if (countResponse.status !== 404) {
+    throw new QdrantProviderError(reasonForQdrantStatus(countResponse.status), countResponse.status, {
+      providerStep: 'qdrant_count_collection',
+      errorKind: 'http_status',
+    })
+  }
 
-  const createResponse = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}?wait=true`, 'PUT', {
-    vectors: {
-      size: expectedEmbeddingDimensions(),
-      distance: QDRANT_DISTANCE,
+  const createResponse = await requestQdrantRaw(
+    `/collections/${encodeURIComponent(collection)}?wait=true`,
+    'PUT',
+    {
+      vectors: {
+        size: expectedEmbeddingDimensions(),
+        distance: QDRANT_DISTANCE,
+      },
     },
-  })
+    'qdrant_create_collection',
+  )
   if (!createResponse.ok) {
-    throw new QdrantProviderError(createResponse.status === 400 ? 'qdrant_dimension_mismatch' : reasonForQdrantStatus(createResponse.status), createResponse.status)
+    throw new QdrantProviderError(
+      createResponse.status === 400 ? 'qdrant_dimension_mismatch' : reasonForQdrantStatus(createResponse.status),
+      createResponse.status,
+      {
+        providerStep: 'qdrant_create_collection',
+        errorKind: 'http_status',
+      },
+    )
   }
 }
 
@@ -425,7 +480,7 @@ async function deleteStaleScopedPoints(
       },
     }
     if (offset !== undefined && offset !== null) payload.offset = offset
-    const response = await requestQdrantJson(`/collections/${encodeURIComponent(collection)}/points/scroll`, 'POST', payload)
+    const response = await requestQdrantJson(`/collections/${encodeURIComponent(collection)}/points/scroll`, 'POST', payload, 'qdrant_scroll_points')
     const result = isRecord(response) && isRecord(response.result) ? response.result : null
     const points = Array.isArray(result?.points) ? result.points : []
     for (const point of points) {
@@ -441,30 +496,54 @@ async function deleteStaleScopedPoints(
 
   for (let index = 0; index < stalePointIds.length; index += QDRANT_BATCH_SIZE) {
     const ids = stalePointIds.slice(index, index + QDRANT_BATCH_SIZE)
-    const response = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}/points/delete?wait=true`, 'POST', {
-      points: ids,
-    })
+    const response = await requestQdrantRaw(
+      `/collections/${encodeURIComponent(collection)}/points/delete?wait=true`,
+      'POST',
+      {
+        points: ids,
+      },
+      'qdrant_delete_points',
+    )
     if (!response.ok) issueCount += ids.length
   }
   return issueCount
 }
 
-async function requestQdrantJson(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown) {
-  const response = await requestQdrantRaw(path, method, body)
-  if (!response.ok) throw new QdrantProviderError(reasonForQdrantStatus(response.status), response.status)
+async function requestQdrantJson(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown, providerStep = 'qdrant_request') {
+  const response = await requestQdrantRaw(path, method, body, providerStep)
+  if (!response.ok) {
+    throw new QdrantProviderError(reasonForQdrantStatus(response.status), response.status, {
+      providerStep,
+      errorKind: 'http_status',
+    })
+  }
   return (await response.json().catch(() => null)) as unknown
 }
 
-async function requestQdrantRaw(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown) {
-  const url = `${env.qdrantUrl}${path}`
-  return fetch(url, {
-    method,
-    headers: {
-      'api-key': env.qdrantApiKey,
-      'Content-Type': 'application/json',
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+async function requestQdrantRaw(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown, providerStep = 'qdrant_request') {
+  const url = `${env.qdrantUrl.replace(/\/+$/, '')}${path}`
+  const abort = new AbortController()
+  const timeout = setTimeout(() => abort.abort(), QDRANT_TIMEOUT_MS)
+  try {
+    return await fetch(url, {
+      method,
+      headers: {
+        'api-key': env.qdrantApiKey,
+        'Content-Type': 'application/json',
+      },
+      signal: abort.signal,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch (error) {
+    const timedOut = isAbortError(error)
+    throw new QdrantProviderError(timedOut ? 'qdrant_timeout' : 'qdrant_network_error', undefined, {
+      providerStep,
+      errorKind: timedOut ? 'timeout' : 'network_error',
+      timeoutMs: QDRANT_TIMEOUT_MS,
+    })
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 function normalizeQdrantError(error: unknown) {
@@ -473,10 +552,22 @@ function normalizeQdrantError(error: unknown) {
     return new QdrantProviderError('embedding_dimension_mismatch', undefined, {
       expectedDimension: error.expectedDimensions,
       actualDimension: error.actualDimensions,
+      providerStep: 'embedding',
+      errorKind: 'dimension_mismatch',
+    })
+  }
+  if (error instanceof EmbeddingProviderError) {
+    return new QdrantProviderError(error.reason, error.httpStatus, {
+      providerStep: 'embedding',
+      errorKind: error.reason,
+      attemptedEndpoints: error.attemptedEndpoints,
+      timeoutMs: error.timeoutMs,
     })
   }
   const reason = error instanceof Error && error.message === 'embedding-dimension-mismatch' ? 'embedding_dimension_mismatch' : 'qdrant_provider_error'
-  return new QdrantProviderError(reason)
+  return new QdrantProviderError(reason, undefined, {
+    errorKind: 'unknown',
+  })
 }
 
 function reasonForQdrantStatus(status: number) {
@@ -595,7 +686,14 @@ function qdrantSyncDiagnostics(
   issueCount: number,
   reason?: string,
   httpStatus?: number,
-  details: { expectedDimension?: number; actualDimension?: number } = {},
+  details: {
+    expectedDimension?: number
+    actualDimension?: number
+    providerStep?: string
+    errorKind?: string
+    attemptedEndpoints?: number
+    timeoutMs?: number
+  } = {},
 ): RagSyncResponse {
   return {
     ok: true,
@@ -618,6 +716,10 @@ function qdrantSyncDiagnostics(
       ...(typeof httpStatus === 'number' ? { httpStatus } : {}),
       ...(typeof details.expectedDimension === 'number' ? { expectedDimension: details.expectedDimension } : {}),
       ...(typeof details.actualDimension === 'number' ? { actualDimension: details.actualDimension } : {}),
+      ...(typeof details.providerStep === 'string' ? { providerStep: details.providerStep } : {}),
+      ...(typeof details.errorKind === 'string' ? { errorKind: details.errorKind } : {}),
+      ...(typeof details.attemptedEndpoints === 'number' ? { attemptedEndpoints: details.attemptedEndpoints } : {}),
+      ...(typeof details.timeoutMs === 'number' ? { timeoutMs: details.timeoutMs } : {}),
     },
   }
 }
@@ -809,4 +911,8 @@ function readStringArray(value: unknown) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === 'AbortError'
 }

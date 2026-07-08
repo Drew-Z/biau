@@ -20,6 +20,22 @@ export class EmbeddingDimensionMismatchError extends Error {
   }
 }
 
+export class EmbeddingProviderError extends Error {
+  readonly reason: string
+  readonly httpStatus?: number
+  readonly attemptedEndpoints: number
+  readonly timeoutMs: number
+
+  constructor(reason: string, details: { httpStatus?: number; attemptedEndpoints?: number; timeoutMs?: number } = {}) {
+    super(reason)
+    this.name = 'EmbeddingProviderError'
+    this.reason = reason
+    this.httpStatus = details.httpStatus
+    this.attemptedEndpoints = details.attemptedEndpoints ?? 0
+    this.timeoutMs = details.timeoutMs ?? env.embeddingTimeoutMs
+  }
+}
+
 interface EmbedTextOptions {
   expectedDimensions?: number
 }
@@ -60,16 +76,34 @@ export function formatVector(vector: number[]) {
 async function requestEmbedding(text: string) {
   const endpoints = getEmbeddingEndpoints(env.embeddingBaseUrl)
   let response: Response | null = null
+  let attemptedEndpoints = 0
   for (const endpoint of endpoints) {
-    const attempt = await requestEmbeddingEndpoint(endpoint, text)
+    attemptedEndpoints += 1
+    const attempt = await requestEmbeddingEndpoint(endpoint, text).catch((error: unknown) => {
+      throw new EmbeddingProviderError(isAbortError(error) ? 'embedding_timeout' : 'embedding_network_error', {
+        attemptedEndpoints,
+        timeoutMs: env.embeddingTimeoutMs,
+      })
+    })
     response = attempt
     if (response?.ok) break
     if (!response || ![404, 405].includes(response.status)) break
   }
-  if (!response?.ok) throw new Error('embedding-provider-error')
+  if (!response?.ok) {
+    throw new EmbeddingProviderError('embedding_provider_error', {
+      httpStatus: response?.status,
+      attemptedEndpoints,
+      timeoutMs: env.embeddingTimeoutMs,
+    })
+  }
   const payload = (await response.json().catch(() => null)) as unknown
   const embedding = readEmbedding(payload)
-  if (!embedding) throw new Error('embedding-empty-response')
+  if (!embedding) {
+    throw new EmbeddingProviderError('embedding_empty_response', {
+      attemptedEndpoints,
+      timeoutMs: env.embeddingTimeoutMs,
+    })
+  }
   return embedding
 }
 
@@ -113,4 +147,8 @@ function getEmbeddingEndpoints(baseUrl: string) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === 'AbortError'
 }

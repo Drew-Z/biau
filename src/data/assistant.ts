@@ -813,6 +813,10 @@ const ASSISTANT_SYNC_DIAGNOSTIC_KEYS = new Set([
   'httpStatus',
   'expectedDimension',
   'actualDimension',
+  'providerStep',
+  'errorKind',
+  'attemptedEndpoints',
+  'timeoutMs',
   'sourceName',
   'sourceChecksum',
 ])

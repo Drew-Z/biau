@@ -810,7 +810,7 @@ The route validates public input, delegates retrieval to the Orchestrator bounda
 - `POST /admin/knowledge/sync` still owns internal corpus selection from reviewed/active database documents, then posts `scope:"internal"` to the Orchestrator.
 - Qdrant sync must ensure the target collection exists before upserting points. Collection vector size comes from `EMBEDDING_DIMENSION` or the Qdrant default path in code.
 - RAG health may expose low-sensitive collection status: collection name, scope, point count, and ready boolean. It must not expose Qdrant host, API key, embedding endpoint, sync token, request body, or raw provider response.
-- Sync diagnostics may expose `mode`, `scope`, `reason`, `accepted`, `documentCount`, `chunkCount`, `entityCount`, `relationCount`, `issueCount`, `httpStatus`, `expectedDimension`, `actualDimension`, `sourceName`, and `sourceChecksum` only.
+- Sync diagnostics may expose `mode`, `scope`, `reason`, `accepted`, `documentCount`, `chunkCount`, `entityCount`, `relationCount`, `issueCount`, `httpStatus`, `expectedDimension`, `actualDimension`, `providerStep`, `errorKind`, `attemptedEndpoints`, `timeoutMs`, `sourceName`, and `sourceChecksum` only.
 
 ### 4. Validation & Error Matrix
 
@@ -820,6 +820,8 @@ The route validates public input, delegates retrieval to the Orchestrator bounda
 - RAG sync non-OK response -> admin sync returns `FAILED` with `reason:"http_status"` and numeric `httpStatus`.
 - Missing Qdrant collection during sync -> server attempts collection creation before point upsert.
 - Qdrant auth failure -> sync returns `accepted:false`, `reason:"qdrant_auth_failed"` without leaking URL or key.
+- Qdrant network or timeout failure -> sync returns `accepted:false`, `reason:"qdrant_network_error"` or `reason:"qdrant_timeout"` plus a low-sensitive `providerStep`.
+- Embedding provider failure during sync -> sync returns `accepted:false`, `reason:"embedding_provider_error"`, `reason:"embedding_timeout"`, `reason:"embedding_network_error"`, or `reason:"embedding_empty_response"` plus low-sensitive `providerStep`, `attemptedEndpoints`, and `timeoutMs` when available.
 - Embedding dimension mismatch -> sync returns `accepted:false`, `reason:"embedding_dimension_mismatch"` or `reason:"qdrant_dimension_mismatch"`; when the embedding provider returns a vector with an unexpected length, sync diagnostics should include low-sensitive `expectedDimension` and `actualDimension` values.
 - No reviewed/active internal documents -> internal sync records `SKIPPED`, `reason:"no-reviewed-internal-documents"`.
 

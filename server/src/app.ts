@@ -1380,6 +1380,10 @@ function sanitizeRagSyncDiagnostic(value: unknown) {
     'httpStatus',
     'expectedDimension',
     'actualDimension',
+    'providerStep',
+    'errorKind',
+    'attemptedEndpoints',
+    'timeoutMs',
     'sourceName',
     'sourceChecksum',
   ]) {
@@ -1406,6 +1410,10 @@ function sanitizeInternalSyncDiagnostic(value: unknown) {
     'httpStatus',
     'expectedDimension',
     'actualDimension',
+    'providerStep',
+    'errorKind',
+    'attemptedEndpoints',
+    'timeoutMs',
     'sourceName',
     'sourceChecksum',
   ]) {

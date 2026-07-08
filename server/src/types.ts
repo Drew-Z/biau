@@ -259,5 +259,9 @@ export interface RagSyncResponse {
     httpStatus?: number
     expectedDimension?: number
     actualDimension?: number
+    providerStep?: string
+    errorKind?: string
+    attemptedEndpoints?: number
+    timeoutMs?: number
   }
 }
