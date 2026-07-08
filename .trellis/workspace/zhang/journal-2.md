@@ -814,3 +814,36 @@ Implemented admin RAG management: internal admin proxy routes for RAG status and
 ### Next Steps
 
 - None - task complete
+
+
+## Session 72: Internal RAG Studio gates closure
+
+**Date**: 2026-07-08
+**Task**: Internal RAG Studio gates closure
+**Branch**: `main`
+
+### Summary
+
+Clarified internal RAG readiness in the admin UI, added a low-sensitive Internal RAG / Studio / AI Daily production acceptance runbook, linked it from manual gates, and verified docs/admin/studio/frontend checks.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e3da115` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
