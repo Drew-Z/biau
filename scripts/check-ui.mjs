@@ -6,6 +6,7 @@ import {
 } from '../src/data/statusTargets.ts'
 import {
   getReliabilityStatusSummary,
+  getStatusManualActionQueue,
   mergeSiteStatusPayload,
   parseEvidenceFreshness,
 } from '../src/data/siteStatusView.ts'
@@ -343,8 +344,11 @@ const rawStatusPayload = await statusPage
 const mergedStatusPayload = mergeSiteStatusPayload(rawStatusPayload)
 const expectedEntrySummary = mergedStatusPayload.summary
 const expectedReliabilitySummary = getReliabilityStatusSummary(mergedStatusPayload.reliabilityProjects)
+const expectedManualActionQueue = getStatusManualActionQueue(mergedStatusPayload.reliabilityProjects)
 const entrySummaryCards = statusPage.locator('[data-status-scope="entry"]')
 const reliabilitySummaryCards = statusPage.locator('[data-status-scope="reliability"]')
+const manualActionCards = statusPage.locator('.status-manual-action')
+const manualActionLinks = statusPage.locator('.status-manual-action__link')
 const legalStatusLink = statusPage.getByRole('link', { name: '打开入口' }).first()
 const legalStatusHref = await legalStatusLink.getAttribute('href').catch(() => null)
 const legalStatusTarget = await legalStatusLink.getAttribute('target').catch(() => null)
@@ -389,6 +393,30 @@ if ((await reliabilitySummaryCards.count()) !== reliabilitySummaryKeys.length) {
   failures.push(
     `/status summary: expected ${reliabilitySummaryKeys.length} reliability summary cards, got ${await reliabilitySummaryCards.count()}`,
   )
+}
+if ((await manualActionCards.count()) !== expectedManualActionQueue.length) {
+  failures.push(`/status manual queue: expected ${expectedManualActionQueue.length} action cards, got ${await manualActionCards.count()}`)
+}
+if ((await manualActionLinks.count()) !== expectedManualActionQueue.length) {
+  failures.push(`/status manual queue: expected ${expectedManualActionQueue.length} detail links, got ${await manualActionLinks.count()}`)
+}
+for (const action of expectedManualActionQueue) {
+  const card = statusPage
+    .locator(`.status-manual-action[data-project-id="${action.projectId}"][data-manual-action-type="${action.type}"]`)
+    .first()
+  const cardCount = await card.count()
+  if (cardCount !== 1) {
+    failures.push(`/status manual queue: expected one ${action.type} card for ${action.projectId}, got ${cardCount}`)
+    continue
+  }
+  const href = await card.locator('.status-manual-action__link').getAttribute('href').catch(() => null)
+  const text = await card.innerText().catch(() => '')
+  if (href !== action.detailPath) {
+    failures.push(`/status manual queue: expected ${action.id} to link to ${action.detailPath}, got "${href}"`)
+  }
+  if (!text.includes(action.projectTitle) || !text.includes(action.typeLabel)) {
+    failures.push(`/status manual queue: expected ${action.id} to render title and type label`)
+  }
 }
 for (const key of entrySummaryKeys) {
   const card = statusPage.locator(`[data-status-scope="entry"][data-status-key="${key}"]`).first()

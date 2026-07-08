@@ -1051,6 +1051,133 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   line-height: 1.5;
 }
 
+.status-manual-queue {
+  display: grid;
+  gap: var(--space-16);
+}
+
+.status-manual-queue__head {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-16);
+  align-items: end;
+}
+
+.status-manual-queue__head h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif-display);
+  font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+  font-weight: var(--weight-title);
+  line-height: 1.12;
+}
+
+.status-manual-queue__head p:not(.section-subtitle) {
+  max-width: 68ch;
+  margin: var(--space-8) 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.status-manual-queue__head > span {
+  min-height: 34px;
+  padding: 0 var(--space-12, 12px);
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--blue) 10%, transparent);
+  border: 1px solid color-mix(in oklch, var(--blue) 22%, var(--flow-ui-card-border));
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.status-manual-queue__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-16);
+}
+
+.status-manual-action {
+  min-width: 0;
+  min-height: 230px;
+  padding: var(--space-18, 18px);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--space-12, 12px);
+  background: color-mix(in oklch, var(--panel) 58%, transparent);
+  border-color: var(--flow-ui-card-border);
+}
+
+.status-manual-action.is-manual-gate {
+  border-color: color-mix(in oklch, var(--amber) 24%, var(--flow-ui-card-border));
+}
+
+.status-manual-action.is-next-action {
+  border-color: color-mix(in oklch, var(--blue) 20%, var(--flow-ui-card-border));
+}
+
+.status-manual-action__meta {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.status-manual-action__meta span {
+  min-height: 28px;
+  padding: 0 var(--space-10, 10px);
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  color: var(--muted);
+  background: color-mix(in oklch, var(--panel-strong) 42%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.status-manual-action.is-manual-gate .status-manual-action__meta span:first-child {
+  color: color-mix(in oklch, var(--amber) 72%, var(--ink));
+  background: color-mix(in oklch, var(--amber) 10%, transparent);
+  border-color: color-mix(in oklch, var(--amber) 22%, transparent);
+}
+
+.status-manual-action.is-next-action .status-manual-action__meta span:first-child {
+  color: color-mix(in oklch, var(--blue) 78%, var(--ink));
+  background: color-mix(in oklch, var(--blue) 9%, transparent);
+  border-color: color-mix(in oklch, var(--blue) 20%, transparent);
+}
+
+.status-manual-action h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif-display);
+  font-size: 1.16rem;
+  font-weight: var(--weight-title);
+  line-height: 1.18;
+}
+
+.status-manual-action p {
+  min-width: 0;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.68;
+  overflow-wrap: anywhere;
+}
+
+.status-manual-action__link {
+  justify-self: start;
+}
+
 .status-targets {
   scroll-margin-top: 112px;
   display: grid;
@@ -4980,6 +5107,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .studio-issue-layout,
   .studio-token-form,
   .status-overview,
+  .status-manual-queue__grid,
   .status-targets,
   .status-project-index,
   .status-check-list,
@@ -5135,11 +5263,17 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   }
 
   .status-metrics,
+  .status-manual-queue__grid,
   .status-target__facts,
   .status-check__facts,
   .status-layer-grid,
   .status-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .status-manual-queue__head {
+    display: grid;
+    align-items: start;
   }
 
   .status-project__header {

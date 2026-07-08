@@ -122,6 +122,7 @@ Current low-sensitive production acceptance:
 - Manual-gate coverage guard hardened: `docs:manual-gates-check` now imports structured `reliabilityProjects` through `tsx` instead of regex-parsing `src/data/statusTargets.ts`, so manual-gate coverage follows the actual status data model and is not sensitive to source formatting.
 - Studio review runbook clarified: the production handoff now documents exactly how to choose a draft from `/studio`, inspect editor metadata and public preview, approve the draft, create a Publish Export, and record only low-sensitive evidence; `docs:manual-gates-check` now guards that this review path remains documented.
 - Fresh reliability evidence refresh completed after Studio review/runbook guard work: `npm.cmd run reliability:check -- --timeout 20000 --step-timeout 140000` passed with 8 passed, 0 failed, 1 skipped, regenerating main-site, public-link, Pet, Playlab, reliability-suite, and aggregate site-status snapshots. The skipped item remains Legal RAG credentialed synthetic until low-privilege demo credentials are configured.
+- Child task `07-09-07-09-status-manual-action-queue` completed: `/status` now includes a data-derived "下一步人工队列" that surfaces primary manual gates and next actions without requiring users to open every project detail route. The UI regression check derives expected queue items from the same merged status payload and verifies dedicated `/status/:projectId` links.
 
 Validation:
 

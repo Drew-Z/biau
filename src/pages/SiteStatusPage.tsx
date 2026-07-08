@@ -12,6 +12,7 @@ import {
   formatDuration,
   formatHttpStatus,
   getReliabilityStatusSummary,
+  getStatusManualActionQueue,
   getStatusDetailPath,
   hasEntryStatusAttention,
   hasReliabilityStatusAttention,
@@ -43,6 +44,10 @@ export function SiteStatusPage() {
   const { status, loadError } = useSiteStatus()
   const reliabilitySummary = useMemo(
     () => getReliabilityStatusSummary(status.reliabilityProjects),
+    [status.reliabilityProjects],
+  )
+  const manualActionQueue = useMemo(
+    () => getStatusManualActionQueue(status.reliabilityProjects),
     [status.reliabilityProjects],
   )
   const entryNeedsAttention = hasEntryStatusAttention(status.summary)
@@ -147,6 +152,38 @@ export function SiteStatusPage() {
             </article>
           )
         })}
+      </section>
+
+      <section className="status-manual-queue" aria-label="待处理人工任务">
+        <div className="status-manual-queue__head">
+          <div>
+            <p className="section-subtitle">ACTION QUEUE</p>
+            <h2>下一步人工队列</h2>
+            <p>从每个项目的人工 gate 和后续接入里提取首要事项；这里只展示公开安全摘要，细节仍回到项目状态页。</p>
+          </div>
+          <span>{manualActionQueue.length} items</span>
+        </div>
+        <div className="status-manual-queue__grid">
+          {manualActionQueue.map((item) => (
+            <article
+              key={item.id}
+              className={`status-manual-action glass-card is-${item.type}`}
+              data-manual-action-type={item.type}
+              data-project-id={item.projectId}
+            >
+              <div className="status-manual-action__meta">
+                <span>{item.typeLabel}</span>
+                <span>{projectCategoryLabels[item.projectCategory]}</span>
+              </div>
+              <h3>{item.projectTitle}</h3>
+              <p>{item.text}</p>
+              <Link to={item.detailPath} className="btn status-manual-action__link" aria-label={`查看${item.projectTitle}详细状态`}>
+                <IconListView aria-hidden />
+                <span>查看详情</span>
+              </Link>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section id="status-targets" className="status-targets" aria-label="主页外链检测结果">

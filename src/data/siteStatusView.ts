@@ -1,5 +1,6 @@
 import {
   SITE_STATUS_BASE_URL,
+  getReliabilityProjectStatusCounts,
   reliabilityProjects,
   reliabilityStatusOrder,
   siteStatusTargets,
@@ -37,6 +38,19 @@ export interface SiteStatusPayload {
   summary: SiteStatusSummary
   targets: SiteStatusCheck[]
   reliabilityProjects?: ReliabilityProject[]
+}
+
+export type StatusManualActionType = 'manual-gate' | 'next-action'
+
+export interface StatusManualActionItem {
+  id: string
+  projectId: string
+  projectTitle: string
+  projectCategory: ReliabilityProject['category']
+  type: StatusManualActionType
+  typeLabel: string
+  text: string
+  detailPath: string
 }
 
 export const statusMeta: Record<ReliabilityStatus, { label: string; tone: string; hint: string }> = {
@@ -129,6 +143,59 @@ export function getReliabilityStatusSummary(projects: ReliabilityProject[] | und
   }
 
   return summary
+}
+
+export function getStatusManualActionQueue(
+  projects: ReliabilityProject[] | undefined = reliabilityProjects,
+  options: { limit?: number } = {},
+): StatusManualActionItem[] {
+  const limit = Math.max(0, options.limit ?? 12)
+  const sourceProjects = Array.isArray(projects) ? projects : []
+  const rankedProjects = sourceProjects
+    .map((project, index) => {
+      const counts = getReliabilityProjectStatusCounts(project)
+      const needsAttention = counts.degraded + counts.offline + counts.unchecked + counts.planned > 0
+      return { project, index, needsAttention }
+    })
+    .sort((left, right) => {
+      if (left.needsAttention !== right.needsAttention) return left.needsAttention ? -1 : 1
+      return left.index - right.index
+    })
+
+  const actions: StatusManualActionItem[] = []
+  for (const { project } of rankedProjects) {
+    const detailPath = getStatusDetailPath(project.id)
+    const firstGate = project.gates[0]?.trim()
+    const firstNextAction = project.nextActions[0]?.trim()
+
+    if (firstGate) {
+      actions.push({
+        id: `${project.id}:manual-gate`,
+        projectId: project.id,
+        projectTitle: project.title,
+        projectCategory: project.category,
+        type: 'manual-gate',
+        typeLabel: '人工 gate',
+        text: firstGate,
+        detailPath,
+      })
+    }
+
+    if (firstNextAction) {
+      actions.push({
+        id: `${project.id}:next-action`,
+        projectId: project.id,
+        projectTitle: project.title,
+        projectCategory: project.category,
+        type: 'next-action',
+        typeLabel: '后续接入',
+        text: firstNextAction,
+        detailPath,
+      })
+    }
+  }
+
+  return actions.slice(0, limit)
 }
 
 export function hasEntryStatusAttention(summary: SiteStatusSummary) {
