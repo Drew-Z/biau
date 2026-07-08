@@ -7,6 +7,8 @@ import {
   normalizeAssistantInvites,
   normalizeAssistantMember,
   normalizeAssistantModelChannels,
+  normalizeAssistantRagAdminStatus,
+  normalizeAssistantRagSyncResult,
   normalizeAssistantUsageSummaries,
   summarizeAssistantKnowledgeOps,
   type AssistantInternalKnowledgeDocument,
@@ -15,6 +17,9 @@ import {
   type AssistantInviteSummary,
   type AssistantMemberProfile,
   type AssistantModelChannelSummary,
+  type AssistantRagAdminStatus,
+  type AssistantRagCollectionHealth,
+  type AssistantRagSyncResult,
   type AssistantUsageSummary,
 } from '../data/assistant'
 import { ASSISTANT_API_ENV_NAMES, INTERNAL_ASSISTANT_API_BASE } from '../utils/assistantApi'
@@ -209,9 +214,13 @@ const syncDiagnosticLabels: Record<string, string> = {
   mode: '模式',
   scope: '范围',
   reason: '原因',
+  configured: 'RAG 已配置',
+  syncConfigured: '同步 token 已配置',
   accepted: '已接收',
   documentCount: '文档数',
   chunkCount: 'Chunk 数',
+  entityCount: '实体数',
+  relationCount: '关系数',
   issueCount: '问题数',
   httpStatus: 'HTTP 状态',
   sourceName: '来源',
@@ -240,6 +249,11 @@ function formatKnowledgeDocumentSyncState(document: AssistantInternalKnowledgeDo
   return '已同步'
 }
 
+function formatRagCollection(collection?: AssistantRagCollectionHealth) {
+  if (!collection) return '未返回'
+  return `${collection.vectorReady ? 'ready' : 'empty'} · ${collection.pointCount} chunks`
+}
+
 export function AssistantAdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview')
   const [adminToken, setAdminToken] = useState(() => readStoredAdminToken())
@@ -250,6 +264,7 @@ export function AssistantAdminPage() {
   const [invitesStatus, setInvitesStatus] = useState('')
   const [membersStatus, setMembersStatus] = useState('')
   const [knowledgeStatus, setKnowledgeStatus] = useState('')
+  const [ragStatusText, setRagStatusText] = useState('')
   const [usageStatus, setUsageStatus] = useState('')
   const [isLoadingSummary, setIsLoadingSummary] = useState(false)
   const [isCreatingInvite, setIsCreatingInvite] = useState(false)
@@ -258,6 +273,8 @@ export function AssistantAdminPage() {
   const [isLoadingKnowledge, setIsLoadingKnowledge] = useState(false)
   const [isSavingKnowledge, setIsSavingKnowledge] = useState(false)
   const [isSyncingKnowledge, setIsSyncingKnowledge] = useState(false)
+  const [isLoadingRagStatus, setIsLoadingRagStatus] = useState(false)
+  const [isSyncingPublicRag, setIsSyncingPublicRag] = useState(false)
   const [isLoadingUsage, setIsLoadingUsage] = useState(false)
   const [updatingMemberId, setUpdatingMemberId] = useState('')
   const [updatingInviteId, setUpdatingInviteId] = useState('')
@@ -267,10 +284,14 @@ export function AssistantAdminPage() {
   const [members, setMembers] = useState<AssistantMemberProfile[]>([])
   const [knowledgeDocuments, setKnowledgeDocuments] = useState<AssistantInternalKnowledgeDocument[]>([])
   const [lastKnowledgeSyncRun, setLastKnowledgeSyncRun] = useState<AssistantInternalKnowledgeSyncRun | null>(null)
+  const [ragAdminStatus, setRagAdminStatus] = useState<AssistantRagAdminStatus | null>(null)
+  const [lastPublicRagSync, setLastPublicRagSync] = useState<AssistantRagSyncResult | null>(null)
   const [modelChannels, setModelChannels] = useState<AssistantModelChannelSummary[]>([])
   const [usageLogs, setUsageLogs] = useState<AssistantUsageSummary[]>([])
   const knowledgeOps = summarizeAssistantKnowledgeOps(knowledgeDocuments, lastKnowledgeSyncRun)
   const syncDiagnosticEntries = Object.entries(lastKnowledgeSyncRun?.diagnostic ?? {})
+  const ragDiagnosticEntries = Object.entries(ragAdminStatus?.diagnostic ?? {})
+  const publicRagSyncDiagnosticEntries = Object.entries(lastPublicRagSync?.diagnostic ?? {})
 
   const saveAdminToken = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -474,6 +495,43 @@ export function AssistantAdminPage() {
     }
   }
 
+  const loadRagStatus = async () => {
+    if (!API_BASE) {
+      setRagStatusText(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用 RAG 管理 API。`)
+      return
+    }
+    if (!adminToken) {
+      setRagStatusText('请先保存 admin token。')
+      return
+    }
+
+    setIsLoadingRagStatus(true)
+    setRagStatusText('')
+    try {
+      const response = await fetch(`${API_BASE}/admin/rag/status`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+      const payload = (await response.json().catch(() => ({}))) as unknown
+      if (!response.ok) {
+        setRagStatusText(explainAdminError(response.status, getErrorCode(payload)))
+        return
+      }
+
+      const status = normalizeAssistantRagAdminStatus(payload)
+      if (!status) {
+        setRagStatusText('RAG 管理 API 返回格式不完整。')
+        return
+      }
+
+      setRagAdminStatus(status)
+      setRagStatusText(status.health?.vectorReady ? 'RAG 状态已更新：向量库 ready。' : 'RAG 状态已更新：向量库尚未 ready。')
+    } catch {
+      setRagStatusText('无法连接 RAG 管理 API。')
+    } finally {
+      setIsLoadingRagStatus(false)
+    }
+  }
+
   const saveKnowledgeDocument = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!API_BASE || !adminToken) {
@@ -580,6 +638,53 @@ export function AssistantAdminPage() {
       setKnowledgeStatus('无法连接内部知识同步 API。')
     } finally {
       setIsSyncingKnowledge(false)
+    }
+  }
+
+  const syncPublicRagKnowledge = async () => {
+    if (!API_BASE) {
+      setRagStatusText(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用 RAG 管理 API。`)
+      return
+    }
+    if (!adminToken) {
+      setRagStatusText('请先保存 admin token。')
+      return
+    }
+
+    setIsSyncingPublicRag(true)
+    setRagStatusText('')
+    try {
+      const response = await fetch(`${API_BASE}/admin/rag/sync-public`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${adminToken}` },
+      })
+      const payload = (await response.json().catch(() => ({}))) as unknown
+      if (!response.ok) {
+        setRagStatusText(explainAdminError(response.status, getErrorCode(payload)))
+        return
+      }
+
+      const syncPayload = isRecord(payload) ? payload.sync : null
+      const sync = normalizeAssistantRagSyncResult(syncPayload)
+      if (!sync) {
+        setRagStatusText('公开知识库同步 API 返回格式不完整。')
+        return
+      }
+
+      setLastPublicRagSync(sync)
+      if (sync.health) {
+        setRagAdminStatus((current) => ({
+          configured: current?.configured ?? true,
+          syncConfigured: current?.syncConfigured ?? true,
+          health: sync.health,
+          diagnostic: sync.diagnostic ?? current?.diagnostic ?? null,
+        }))
+      }
+      setRagStatusText(sync.accepted ? '公开知识库已同步到 RAG。' : '公开知识库同步未完成，请查看低敏诊断。')
+    } catch {
+      setRagStatusText('无法连接公开知识库同步 API。')
+    } finally {
+      setIsSyncingPublicRag(false)
     }
   }
 
@@ -1047,6 +1152,87 @@ export function AssistantAdminPage() {
           hidden={activeTab !== 'knowledge'}
         >
           <article className="assistant-admin-card">
+            <h2>RAG 管理</h2>
+            <p>初始化和观察公开/内部知识库的向量检索状态；同步由后端代理执行，不在浏览器暴露 RAG token。</p>
+            <div className="assistant-admin-actions">
+              <button type="button" onClick={() => void loadRagStatus()} disabled={isLoadingRagStatus || !adminToken}>
+                {isLoadingRagStatus ? '读取中…' : '刷新 RAG 状态'}
+              </button>
+              <button type="button" onClick={() => void syncPublicRagKnowledge()} disabled={isSyncingPublicRag || !adminToken}>
+                {isSyncingPublicRag ? '同步中…' : '同步公开知识库'}
+              </button>
+              <button type="button" onClick={() => void syncKnowledgeDocuments()} disabled={isSyncingKnowledge || !adminToken}>
+                {isSyncingKnowledge ? '同步中…' : '同步内部知识库'}
+              </button>
+            </div>
+            {ragStatusText && <p className="assistant-status-text">{ragStatusText}</p>}
+            <div className="assistant-admin-summary" aria-label="RAG Orchestrator 状态">
+              <span>
+                <strong>{ragAdminStatus?.configured ? '已配置' : '未配置'}</strong>
+                RAG 服务
+              </span>
+              <span>
+                <strong>{ragAdminStatus?.syncConfigured ? '已配置' : '未配置'}</strong>
+                同步 token
+              </span>
+              <span>
+                <strong>{ragAdminStatus?.health?.store ?? 'unknown'}</strong>
+                Store
+              </span>
+              <span>
+                <strong>{ragAdminStatus?.health?.vectorReady ? 'ready' : 'not ready'}</strong>
+                向量状态
+              </span>
+              <span>
+                <strong>{ragAdminStatus?.health?.chunkCount ?? 0}</strong>
+                总 chunks
+              </span>
+            </div>
+            <div className="assistant-admin-row assistant-admin-row--member" aria-label="RAG collection 状态">
+              <div>
+                <strong>公开知识库</strong>
+                <span>{formatRagCollection(ragAdminStatus?.health?.collections?.public)}</span>
+              </div>
+              <div>
+                <strong>内部知识库</strong>
+                <span>{formatRagCollection(ragAdminStatus?.health?.collections?.internal)}</span>
+              </div>
+            </div>
+            {lastPublicRagSync && (
+              <div className="assistant-admin-row assistant-admin-row--member" aria-label="最近公开知识库同步结果">
+                <div>
+                  <strong>公开同步：{lastPublicRagSync.status}</strong>
+                  <span>
+                    accepted：{lastPublicRagSync.accepted ? '是' : '否'} · issue：{lastPublicRagSync.issueCount}
+                  </span>
+                </div>
+                <div>
+                  <strong>{lastPublicRagSync.diagnostic?.reason ?? lastPublicRagSync.diagnostic?.mode ?? '低敏诊断'}</strong>
+                  <span>chunk：{lastPublicRagSync.diagnostic?.chunkCount ?? lastPublicRagSync.health?.chunkCount ?? 0}</span>
+                </div>
+              </div>
+            )}
+            {ragDiagnosticEntries.length > 0 && (
+              <ul className="assistant-admin-list" aria-label="RAG 状态低敏诊断字段">
+                {ragDiagnosticEntries.map(([key, value]) => (
+                  <li key={key}>
+                    {syncDiagnosticLabels[key] ?? key}：{formatDiagnosticValue(value)}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {publicRagSyncDiagnosticEntries.length > 0 && (
+              <ul className="assistant-admin-list" aria-label="公开知识库同步低敏诊断字段">
+                {publicRagSyncDiagnosticEntries.map(([key, value]) => (
+                  <li key={key}>
+                    {syncDiagnosticLabels[key] ?? key}：{formatDiagnosticValue(value)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </article>
+
+          <article className="assistant-admin-card">
             <h2>内部知识源</h2>
             <p>维护经过审核的内部知识文档；只有已审核/已启用文档会进入同步计划。</p>
 
@@ -1146,7 +1332,7 @@ export function AssistantAdminPage() {
                 {isLoadingKnowledge ? '读取中…' : '刷新知识'}
               </button>
               <button type="button" onClick={() => void syncKnowledgeDocuments()} disabled={isSyncingKnowledge || !adminToken}>
-                {isSyncingKnowledge ? '同步中…' : '同步到 RAG'}
+                {isSyncingKnowledge ? '同步中…' : '同步内部知识库'}
               </button>
             </div>
             {knowledgeStatus && <p className="assistant-status-text">{knowledgeStatus}</p>}

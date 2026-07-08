@@ -839,6 +839,32 @@ try {
       throw new Error(`admin knowledge sync should report missing database when admin token is present, got ${knowledgeSyncWithoutDb.status}`)
     }
 
+    env.assistantRagApiBaseUrl = ''
+    env.ragSyncToken = ''
+
+    const ragStatusWithAdminToken = await fetch(`${base}/admin/rag/status`, {
+      headers: { Authorization: 'Bearer admin-smoke-token' },
+    })
+    if (!ragStatusWithAdminToken.ok) {
+      throw new Error(`admin rag status should work without database, got ${ragStatusWithAdminToken.status}`)
+    }
+    const ragStatusPayload = (await ragStatusWithAdminToken.json()) as { configured?: boolean; syncConfigured?: boolean; health?: unknown }
+    if (ragStatusPayload.configured !== false || ragStatusPayload.syncConfigured !== false || ragStatusPayload.health !== null) {
+      throw new Error('admin rag status without env should return low-sensitive unconfigured state')
+    }
+
+    const ragPublicSyncWithAdminToken = await fetch(`${base}/admin/rag/sync-public`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer admin-smoke-token' },
+    })
+    if (!ragPublicSyncWithAdminToken.ok) {
+      throw new Error(`admin public rag sync should record skipped state without database, got ${ragPublicSyncWithAdminToken.status}`)
+    }
+    const ragPublicSyncPayload = (await ragPublicSyncWithAdminToken.json()) as { sync?: { accepted?: boolean; status?: string } }
+    if (ragPublicSyncPayload.sync?.accepted !== false || ragPublicSyncPayload.sync.status !== 'SKIPPED') {
+      throw new Error('admin public rag sync without env should return skipped state')
+    }
+
     const usageWithAdminToken = await fetch(`${base}/admin/usage`, {
       headers: { Authorization: 'Bearer admin-smoke-token' },
     })

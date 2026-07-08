@@ -209,6 +209,45 @@ export interface AssistantInternalKnowledgeSyncRun {
   diagnostic?: Record<string, string | number | boolean> | null
 }
 
+export interface AssistantRagCollectionHealth {
+  name: string
+  scope: 'public' | 'internal'
+  pointCount: number
+  vectorReady: boolean
+}
+
+export interface AssistantRagHealth {
+  service: 'biau-rag-orchestrator'
+  store: string
+  vectorReady: boolean
+  keywordReady: boolean
+  rerankerReady: boolean
+  lastSyncAt: string | null
+  documentCount: number
+  chunkCount: number
+  entityCount: number
+  relationCount: number
+  collections?: {
+    public?: AssistantRagCollectionHealth
+    internal?: AssistantRagCollectionHealth
+  }
+}
+
+export interface AssistantRagAdminStatus {
+  configured: boolean
+  syncConfigured: boolean
+  health: AssistantRagHealth | null
+  diagnostic?: Record<string, string | number | boolean> | null
+}
+
+export interface AssistantRagSyncResult {
+  accepted: boolean
+  status: AssistantInternalKnowledgeSyncStatus
+  issueCount: number
+  health: AssistantRagHealth | null
+  diagnostic?: Record<string, string | number | boolean> | null
+}
+
 export interface AssistantKnowledgeOpsSummary {
   total: number
   draft: number
@@ -768,6 +807,8 @@ const ASSISTANT_SYNC_DIAGNOSTIC_KEYS = new Set([
   'accepted',
   'documentCount',
   'chunkCount',
+  'entityCount',
+  'relationCount',
   'issueCount',
   'httpStatus',
   'sourceName',
@@ -844,6 +885,106 @@ export function normalizeAssistantInternalKnowledgeSyncRun(value: unknown): Assi
     finishedAt: typeof finishedAt === 'string' || finishedAt === null ? finishedAt : undefined,
     diagnostic: normalizeAssistantSyncDiagnostic(diagnostic),
   }
+}
+
+export function normalizeAssistantRagAdminStatus(value: unknown): AssistantRagAdminStatus | null {
+  if (!isRecord(value)) return null
+  const { configured, syncConfigured, health, diagnostic } = value
+  if (typeof configured !== 'boolean' || typeof syncConfigured !== 'boolean') return null
+  return {
+    configured,
+    syncConfigured,
+    health: normalizeAssistantRagHealth(health),
+    diagnostic: normalizeAssistantSyncDiagnostic(diagnostic),
+  }
+}
+
+export function normalizeAssistantRagSyncResult(value: unknown): AssistantRagSyncResult | null {
+  if (!isRecord(value)) return null
+  const { accepted, status, issueCount, health, diagnostic } = value
+  if (
+    typeof accepted !== 'boolean' ||
+    (status !== 'STARTED' && status !== 'COMPLETED' && status !== 'FAILED' && status !== 'SKIPPED') ||
+    typeof issueCount !== 'number'
+  ) {
+    return null
+  }
+  return {
+    accepted,
+    status,
+    issueCount,
+    health: normalizeAssistantRagHealth(health),
+    diagnostic: normalizeAssistantSyncDiagnostic(diagnostic),
+  }
+}
+
+export function normalizeAssistantRagHealth(value: unknown): AssistantRagHealth | null {
+  if (!isRecord(value)) return null
+  const {
+    service,
+    store,
+    vectorReady,
+    keywordReady,
+    rerankerReady,
+    lastSyncAt,
+    documentCount,
+    chunkCount,
+    entityCount,
+    relationCount,
+    collections,
+  } = value
+  if (
+    service !== 'biau-rag-orchestrator' ||
+    typeof store !== 'string' ||
+    typeof vectorReady !== 'boolean' ||
+    typeof keywordReady !== 'boolean' ||
+    typeof rerankerReady !== 'boolean' ||
+    (typeof lastSyncAt !== 'string' && lastSyncAt !== null) ||
+    typeof documentCount !== 'number' ||
+    typeof chunkCount !== 'number' ||
+    typeof entityCount !== 'number' ||
+    typeof relationCount !== 'number'
+  ) {
+    return null
+  }
+  return {
+    service,
+    store,
+    vectorReady,
+    keywordReady,
+    rerankerReady,
+    lastSyncAt,
+    documentCount,
+    chunkCount,
+    entityCount,
+    relationCount,
+    collections: normalizeAssistantRagCollections(collections),
+  }
+}
+
+function normalizeAssistantRagCollections(value: unknown): AssistantRagHealth['collections'] | undefined {
+  if (!isRecord(value)) return undefined
+  const publicCollection = normalizeAssistantRagCollection(value.public)
+  const internalCollection = normalizeAssistantRagCollection(value.internal)
+  if (!publicCollection && !internalCollection) return undefined
+  return {
+    ...(publicCollection ? { public: publicCollection } : {}),
+    ...(internalCollection ? { internal: internalCollection } : {}),
+  }
+}
+
+function normalizeAssistantRagCollection(value: unknown): AssistantRagCollectionHealth | null {
+  if (!isRecord(value)) return null
+  const { name, scope, pointCount, vectorReady } = value
+  if (
+    typeof name !== 'string' ||
+    (scope !== 'public' && scope !== 'internal') ||
+    typeof pointCount !== 'number' ||
+    typeof vectorReady !== 'boolean'
+  ) {
+    return null
+  }
+  return { name, scope, pointCount, vectorReady }
 }
 
 export function normalizeAssistantUsageSummary(value: unknown): AssistantUsageSummary | null {

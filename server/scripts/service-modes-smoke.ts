@@ -163,6 +163,11 @@ try {
       throw new Error(`public mode should not expose admin usage routes, got ${adminUsage.status}`)
     }
 
+    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
+    if (adminRagStatus.status !== 404) {
+      throw new Error(`public mode should not expose admin rag routes, got ${adminRagStatus.status}`)
+    }
+
     const ragHealth = await fetch(`${base}/rag/health`)
     if (ragHealth.status !== 404) throw new Error(`public mode should not expose /rag, got ${ragHealth.status}`)
   })
@@ -193,6 +198,9 @@ try {
 
     const adminUsage = await fetch(`${base}/admin/usage`)
     if (adminUsage.status !== 401) throw new Error(`internal mode should expose protected admin usage routes, got ${adminUsage.status}`)
+
+    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
+    if (adminRagStatus.status !== 401) throw new Error(`internal mode should expose protected admin rag routes, got ${adminRagStatus.status}`)
 
     const ragHealth = await fetch(`${base}/rag/health`)
     if (ragHealth.status !== 404) throw new Error(`internal mode should not expose /rag, got ${ragHealth.status}`)
@@ -225,6 +233,11 @@ try {
     const adminUsage = await fetch(`${base}/admin/usage`)
     if (adminUsage.status !== 404) {
       throw new Error(`rag mode should not expose admin usage routes, got ${adminUsage.status}`)
+    }
+
+    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
+    if (adminRagStatus.status !== 404) {
+      throw new Error(`rag mode should not expose admin rag routes, got ${adminRagStatus.status}`)
     }
 
     const unauthorizedRetrieve = await postJson(`${base}/v1/retrieve`, { query: 'RAG 项目', scope: 'public' })
@@ -290,6 +303,11 @@ try {
     const adminUsage = await fetch(`${base}/admin/usage`)
     if (adminUsage.status !== 404) {
       throw new Error(`studio mode should not expose admin usage routes, got ${adminUsage.status}`)
+    }
+
+    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
+    if (adminRagStatus.status !== 404) {
+      throw new Error(`studio mode should not expose admin rag routes, got ${adminRagStatus.status}`)
     }
 
     const ragHealth = await fetch(`${base}/rag/health`)

@@ -10,9 +10,10 @@ import { retrievePublicAssistantContext } from './ragClient.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import { createStudioRouter } from './studioRoutes.js'
 import { runInternalAgent } from './agentOrchestrator.js'
-import type { AssistantServiceMode, ChatPayload, ChatResponse } from './types.js'
+import type { AssistantServiceMode, ChatPayload, ChatResponse, RagCollectionHealth, RagHealthResponse } from './types.js'
 
 type InternalKnowledgeStatusValue = 'DRAFT' | 'REVIEWED' | 'ACTIVE' | 'ARCHIVED'
+type AdminRagSyncStatus = 'COMPLETED' | 'FAILED' | 'SKIPPED'
 type SanitizedAgentToolTrace = NonNullable<NonNullable<ChatResponse['meta']>['tools']>[number]
 type SanitizedAgentToolArtifact = NonNullable<SanitizedAgentToolTrace['artifacts']>[number]
 
@@ -478,6 +479,24 @@ function registerInternalAssistantRoutes(app: express.Express) {
     } catch (error) {
       next(error)
     }
+  })
+
+  app.get('/admin/rag/status', async (req, res) => {
+    if (!isAdminRequest(req.headers.authorization)) {
+      res.status(401).json({ error: 'missing-admin-token' })
+      return
+    }
+
+    res.json(await getAdminRagStatus())
+  })
+
+  app.post('/admin/rag/sync-public', async (req, res) => {
+    if (!isAdminRequest(req.headers.authorization)) {
+      res.status(401).json({ error: 'missing-admin-token' })
+      return
+    }
+
+    res.json({ sync: await syncPublicRagKnowledge() })
   })
 
   app.get('/admin/model-channels', async (req, res) => {
@@ -1082,6 +1101,125 @@ function countInternalKnowledgeChunks(body: string) {
   return paragraphs.reduce((total, paragraph) => total + Math.max(1, Math.ceil(paragraph.length / 1200)), 0)
 }
 
+async function getAdminRagStatus() {
+  const diagnosticBase = {
+    mode: 'external-rag',
+    configured: Boolean(env.assistantRagApiBaseUrl),
+    syncConfigured: Boolean(env.ragSyncToken),
+  }
+
+  if (!env.assistantRagApiBaseUrl) {
+    return {
+      ok: true,
+      configured: false,
+      syncConfigured: Boolean(env.ragSyncToken),
+      health: null,
+      diagnostic: { ...diagnosticBase, reason: 'rag-sync-not-configured' },
+    }
+  }
+
+  try {
+    const response = await fetch(`${env.assistantRagApiBaseUrl.replace(/\/+$/, '')}/health`, {
+      signal: AbortSignal.timeout(10000),
+    })
+    const payload = (await response.json().catch(() => null)) as unknown
+    if (!response.ok) {
+      return {
+        ok: true,
+        configured: true,
+        syncConfigured: Boolean(env.ragSyncToken),
+        health: null,
+        diagnostic: { ...diagnosticBase, reason: 'http_status', httpStatus: response.status },
+      }
+    }
+
+    return {
+      ok: true,
+      configured: true,
+      syncConfigured: Boolean(env.ragSyncToken),
+      health: normalizeRagHealth(payload),
+      diagnostic: { ...diagnosticBase, reason: 'ok' },
+    }
+  } catch (error) {
+    return {
+      ok: true,
+      configured: true,
+      syncConfigured: Boolean(env.ragSyncToken),
+      health: null,
+      diagnostic: {
+        ...diagnosticBase,
+        reason: error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'network_error',
+      },
+    }
+  }
+}
+
+async function syncPublicRagKnowledge() {
+  const diagnosticBase = {
+    mode: 'external-rag',
+    scope: 'public',
+    documentCount: 0,
+    chunkCount: 0,
+  }
+
+  if (!env.assistantRagApiBaseUrl || !env.ragSyncToken) {
+    return {
+      accepted: false,
+      status: 'SKIPPED' as AdminRagSyncStatus,
+      issueCount: 0,
+      health: null,
+      diagnostic: { ...diagnosticBase, reason: 'rag-sync-not-configured' },
+    }
+  }
+
+  try {
+    const response = await fetch(`${env.assistantRagApiBaseUrl.replace(/\/+$/, '')}/v1/sync`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.ragSyncToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ scope: 'public' }),
+      signal: AbortSignal.timeout(20000),
+    })
+    const payload = (await response.json().catch(() => ({}))) as unknown
+    if (!response.ok) {
+      return {
+        accepted: false,
+        status: 'FAILED' as AdminRagSyncStatus,
+        issueCount: 1,
+        health: null,
+        diagnostic: { ...diagnosticBase, reason: 'http_status', httpStatus: response.status, issueCount: 1 },
+      }
+    }
+
+    const accepted = isPlainRecord(payload) && payload.accepted === true
+    const mode = isPlainRecord(payload) && typeof payload.mode === 'string' ? payload.mode : 'external-rag'
+    const scope = isPlainRecord(payload) && typeof payload.scope === 'string' ? payload.scope : 'public'
+    const diagnostic = sanitizeRagSyncDiagnostic(isPlainRecord(payload) ? payload.diagnostics : null)
+    const issueCount = typeof diagnostic.issueCount === 'number' ? diagnostic.issueCount : accepted ? 0 : 1
+    return {
+      accepted,
+      status: accepted ? ('COMPLETED' as AdminRagSyncStatus) : mode === 'local-readonly' ? ('SKIPPED' as AdminRagSyncStatus) : ('FAILED' as AdminRagSyncStatus),
+      issueCount,
+      health: normalizeRagHealth(isPlainRecord(payload) ? payload.health : null),
+      diagnostic: { ...diagnosticBase, ...diagnostic, mode, scope, accepted, issueCount },
+    }
+  } catch (error) {
+    return {
+      accepted: false,
+      status: 'FAILED' as AdminRagSyncStatus,
+      issueCount: 1,
+      health: null,
+      diagnostic: {
+        ...diagnosticBase,
+        reason: error instanceof DOMException && error.name === 'TimeoutError' ? 'timeout' : 'network_error',
+        issueCount: 1,
+      },
+    }
+  }
+}
+
 async function syncInternalKnowledgeDocuments(documents: ReturnType<typeof buildInternalKnowledgeSyncDocuments>['documents']) {
   const diagnosticBase = {
     scope: 'internal',
@@ -1130,14 +1268,14 @@ async function syncInternalKnowledgeDocuments(documents: ReturnType<typeof build
     const accepted = isPlainRecord(payload) && payload.accepted === true
     const mode = isPlainRecord(payload) && typeof payload.mode === 'string' ? payload.mode : 'external-rag'
     const scope = isPlainRecord(payload) && typeof payload.scope === 'string' ? payload.scope : 'internal'
-    const diagnostics = isPlainRecord(payload) && isPlainRecord(payload.diagnostics) ? payload.diagnostics : {}
+    const diagnostics = sanitizeRagSyncDiagnostic(isPlainRecord(payload) ? payload.diagnostics : null)
     const payloadIssueCount = typeof diagnostics.issueCount === 'number' && Number.isFinite(diagnostics.issueCount) ? diagnostics.issueCount : 0
     const issueCount = accepted ? payloadIssueCount : Math.max(1, payloadIssueCount)
     return {
       accepted,
       status: accepted ? ('COMPLETED' as const) : mode === 'local-readonly' ? ('SKIPPED' as const) : ('FAILED' as const),
       issueCount,
-      diagnostic: { ...diagnosticBase, mode, scope, accepted, issueCount },
+      diagnostic: { ...diagnosticBase, ...diagnostics, mode, scope, accepted, issueCount },
     }
   } catch (error) {
     return {
@@ -1153,10 +1291,120 @@ async function syncInternalKnowledgeDocuments(documents: ReturnType<typeof build
   }
 }
 
+function normalizeRagHealth(value: unknown): RagHealthResponse | null {
+  if (!isPlainRecord(value)) return null
+  const {
+    ok,
+    service,
+    store,
+    vectorReady,
+    keywordReady,
+    rerankerReady,
+    lastSyncAt,
+    documentCount,
+    chunkCount,
+    entityCount,
+    relationCount,
+    collections,
+  } = value
+  if (
+    ok !== true ||
+    service !== 'biau-rag-orchestrator' ||
+    typeof store !== 'string' ||
+    typeof vectorReady !== 'boolean' ||
+    typeof keywordReady !== 'boolean' ||
+    typeof rerankerReady !== 'boolean' ||
+    (typeof lastSyncAt !== 'string' && lastSyncAt !== null) ||
+    typeof documentCount !== 'number' ||
+    typeof chunkCount !== 'number' ||
+    typeof entityCount !== 'number' ||
+    typeof relationCount !== 'number'
+  ) {
+    return null
+  }
+
+  return {
+    ok,
+    service,
+    store,
+    vectorReady,
+    keywordReady,
+    rerankerReady,
+    lastSyncAt,
+    documentCount,
+    chunkCount,
+    entityCount,
+    relationCount,
+    collections: normalizeRagCollections(collections),
+  }
+}
+
+function normalizeRagCollections(value: unknown): RagHealthResponse['collections'] | undefined {
+  if (!isPlainRecord(value)) return undefined
+  const publicCollection = normalizeRagCollection(value.public)
+  const internalCollection = normalizeRagCollection(value.internal)
+  if (!publicCollection && !internalCollection) return undefined
+  return {
+    ...(publicCollection ? { public: publicCollection } : {}),
+    ...(internalCollection ? { internal: internalCollection } : {}),
+  }
+}
+
+function normalizeRagCollection(value: unknown): RagCollectionHealth | null {
+  if (!isPlainRecord(value)) return null
+  const { name, scope, pointCount, vectorReady } = value
+  if (
+    typeof name !== 'string' ||
+    (scope !== 'public' && scope !== 'internal') ||
+    typeof pointCount !== 'number' ||
+    typeof vectorReady !== 'boolean'
+  ) {
+    return null
+  }
+  return { name, scope, pointCount, vectorReady }
+}
+
+function sanitizeRagSyncDiagnostic(value: unknown) {
+  if (!isPlainRecord(value)) return {}
+  const result: Record<string, string | number | boolean> = {}
+  for (const key of [
+    'mode',
+    'scope',
+    'reason',
+    'accepted',
+    'documentCount',
+    'chunkCount',
+    'entityCount',
+    'relationCount',
+    'issueCount',
+    'httpStatus',
+    'sourceName',
+    'sourceChecksum',
+  ]) {
+    if (typeof value[key] === 'string' || typeof value[key] === 'number' || typeof value[key] === 'boolean') {
+      result[key] = value[key]
+    }
+  }
+  return result
+}
+
 function sanitizeInternalSyncDiagnostic(value: unknown) {
   if (!isPlainRecord(value)) return null
   const result: Record<string, unknown> = {}
-  for (const key of ['mode', 'scope', 'reason', 'accepted', 'documentCount', 'chunkCount', 'issueCount', 'httpStatus']) {
+  for (const key of [
+    'mode',
+    'scope',
+    'reason',
+    'accepted',
+    'documentCount',
+    'chunkCount',
+    'entityCount',
+    'relationCount',
+    'issueCount',
+    'httpStatus',
+    'sourceName',
+    'sourceChecksum',
+  ]) {
     if (typeof value[key] === 'string' || typeof value[key] === 'number' || typeof value[key] === 'boolean') {
       result[key] = value[key]
     }

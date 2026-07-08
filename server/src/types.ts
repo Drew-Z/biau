@@ -174,6 +174,17 @@ export interface RagHealthResponse {
   chunkCount: number
   entityCount: number
   relationCount: number
+  collections?: {
+    public?: RagCollectionHealth
+    internal?: RagCollectionHealth
+  }
+}
+
+export interface RagCollectionHealth {
+  name: string
+  scope: AssistantScope
+  pointCount: number
+  vectorReady: boolean
 }
 
 export interface RagRetrievePayload {
@@ -234,6 +245,10 @@ export interface RagSyncResponse {
   scope?: AssistantScope
   health: RagHealthResponse
   diagnostics?: {
+    mode?: string
+    scope?: AssistantScope
+    reason?: string
+    accepted?: boolean
     sourceName?: string
     sourceChecksum?: string
     documentCount?: number
@@ -241,5 +256,6 @@ export interface RagSyncResponse {
     entityCount?: number
     relationCount?: number
     issueCount?: number
+    httpStatus?: number
   }
 }

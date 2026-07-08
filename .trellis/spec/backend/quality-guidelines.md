@@ -780,3 +780,84 @@ router.post('/v1/retrieve', (req, res) => {
 ```
 
 The route validates public input, delegates retrieval to the Orchestrator boundary, and returns only the stable public contract.
+
+## Scenario: Admin RAG Management And Qdrant Bootstrap
+
+### 1. Scope / Trigger
+
+- Trigger: adding or changing `/assistant/admin` RAG management, internal admin RAG proxy routes, Qdrant collection bootstrap, public/internal corpus sync, or RAG health diagnostics.
+- Goal: make RAG setup a normal admin workflow instead of requiring browser-side tokens, ad hoc PowerShell, or manual Qdrant collection creation.
+
+### 2. Signatures
+
+- Internal admin API:
+  - `GET /admin/rag/status`
+  - `POST /admin/rag/sync-public`
+  - `POST /admin/knowledge/sync`
+- RAG Orchestrator API:
+  - `GET /health`
+  - `POST /v1/sync` with `{ scope?: "public" | "internal", documents?: RagSyncDocument[] }`
+- Qdrant store:
+  - `QDRANT_PUBLIC_COLLECTION`
+  - `QDRANT_INTERNAL_COLLECTION`
+  - `EMBEDDING_DIMENSION`
+
+### 3. Contracts
+
+- Browser code must call only the internal admin API with `Authorization: Bearer <ADMIN_TOKEN>`; it must never read `RAG_SYNC_TOKEN`, `ASSISTANT_RAG_API_KEY`, `QDRANT_API_KEY`, `QDRANT_URL`, `EMBEDDING_API_KEY`, or provider base URLs.
+- `GET /admin/rag/status` works without `DATABASE_URL`; it reports whether RAG base/sync config exists, plus sanitized `/health` fields when reachable.
+- `POST /admin/rag/sync-public` works without `DATABASE_URL`; it uses server-side `RAG_SYNC_TOKEN` to ask the RAG Orchestrator to sync bundled public knowledge.
+- `POST /admin/knowledge/sync` still owns internal corpus selection from reviewed/active database documents, then posts `scope:"internal"` to the Orchestrator.
+- Qdrant sync must ensure the target collection exists before upserting points. Collection vector size comes from `EMBEDDING_DIMENSION` or the Qdrant default path in code.
+- RAG health may expose low-sensitive collection status: collection name, scope, point count, and ready boolean. It must not expose Qdrant host, API key, embedding endpoint, sync token, request body, or raw provider response.
+- Sync diagnostics may expose `mode`, `scope`, `reason`, `accepted`, `documentCount`, `chunkCount`, `entityCount`, `relationCount`, `issueCount`, `httpStatus`, `sourceName`, and `sourceChecksum` only.
+
+### 4. Validation & Error Matrix
+
+- Missing admin token -> `401 { error: "missing-admin-token" }`.
+- Missing RAG base or sync token -> admin sync returns `SKIPPED` with `reason:"rag-sync-not-configured"`.
+- RAG health network failure -> admin status returns `ok:true`, `health:null`, and `reason:"network_error"` or `reason:"timeout"`.
+- RAG sync non-OK response -> admin sync returns `FAILED` with `reason:"http_status"` and numeric `httpStatus`.
+- Missing Qdrant collection during sync -> server attempts collection creation before point upsert.
+- Qdrant auth failure -> sync returns `accepted:false`, `reason:"qdrant_auth_failed"` without leaking URL or key.
+- Embedding dimension mismatch -> sync returns `accepted:false`, `reason:"embedding_dimension_mismatch"` or `reason:"qdrant_dimension_mismatch"`.
+- No reviewed/active internal documents -> internal sync records `SKIPPED`, `reason:"no-reviewed-internal-documents"`.
+
+### 5. Good/Base/Bad Cases
+
+- Good: admin opens `/assistant/admin`, refreshes RAG status, clicks "同步公开知识库", sees public collection chunk count become non-zero, then syncs reviewed internal docs separately.
+- Good: fresh Qdrant collections are created automatically by the first accepted sync.
+- Base: RAG env is absent in local development; admin routes return low-sensitive skipped/unconfigured states and local deterministic checks still pass.
+- Bad: the frontend calls `https://.../v1/sync` directly or stores `RAG_SYNC_TOKEN` in localStorage.
+- Bad: sync diagnostics include Qdrant URL, embedding URL, raw document body, raw provider error, bearer token, stack trace, or database URL.
+
+### 6. Tests Required
+
+- Run `npm.cmd run server:smoke`; it must assert admin RAG routes are protected and can return unconfigured/skipped states without a database.
+- Run `npm.cmd run assistant:service-modes-smoke`; public, rag, and studio modes must not expose `/admin/rag/*`.
+- Run `npm.cmd run assistant:rag-smoke`; mock Qdrant sync must still accept internal docs and public scope must not retrieve internal citations.
+- Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after `/assistant/admin` UI changes.
+- Run `npm.cmd run verify` before committing cross-layer RAG management work.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+await fetch(`${import.meta.env.VITE_RAG_API_BASE_URL}/v1/sync`, {
+  headers: { Authorization: `Bearer ${import.meta.env.VITE_RAG_SYNC_TOKEN}` },
+})
+```
+
+This exposes sync credentials and vector infrastructure to the browser.
+
+#### Correct
+
+```typescript
+await fetch(`${API_BASE}/admin/rag/sync-public`, {
+  method: 'POST',
+  headers: { Authorization: `Bearer ${adminToken}` },
+})
+```
+
+The internal admin API authenticates the user, uses server-side RAG credentials, and returns only sanitized sync diagnostics.

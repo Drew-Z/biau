@@ -47,6 +47,19 @@ const QDRANT_STORE_NAME = 'qdrant'
 const DEFAULT_QDRANT_DIMENSION = 4096
 const QDRANT_BATCH_SIZE = 32
 const INTERNAL_CHUNK_TARGET_LENGTH = 1200
+const QDRANT_DISTANCE = 'Cosine'
+
+class QdrantProviderError extends Error {
+  readonly reason: string
+  readonly httpStatus?: number
+
+  constructor(reason: string, httpStatus?: number) {
+    super(reason)
+    this.name = 'QdrantProviderError'
+    this.reason = reason
+    this.httpStatus = httpStatus
+  }
+}
 
 export function isQdrantRagStoreSelected() {
   return env.ragStoreProvider.toLowerCase() === 'qdrant'
@@ -77,6 +90,10 @@ export async function getQdrantRagHealth(): Promise<RagHealthResponse> {
     chunkCount,
     entityCount: publicKnowledgeV2?.entities.length ?? 0,
     relationCount: publicKnowledgeV2?.relations.length ?? 0,
+    collections: {
+      public: buildCollectionHealth(env.qdrantPublicCollection, 'public', publicCount),
+      ...(env.qdrantInternalCollection ? { internal: buildCollectionHealth(env.qdrantInternalCollection, 'internal', internalCount) } : {}),
+    },
   }
 }
 
@@ -134,6 +151,7 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
   if (!publicKnowledgeV2) return qdrantSyncDiagnostics(false, 'public', 'server/data/public-knowledge-v2.json', '', 0, 0, 1)
 
   try {
+    await ensureQdrantCollection(env.qdrantPublicCollection)
     if (!isExternalEmbeddingConfigured()) {
       const localEmbedding = await embedText('dimension check').catch(() => null)
       if (!localEmbedding || localEmbedding.dimensions !== expectedEmbeddingDimensions()) {
@@ -145,6 +163,7 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
           publicKnowledgeV2.public_documents.length,
           publicKnowledgeV2.knowledge_chunks.length,
           1,
+          'embedding_dimension_mismatch',
         )
       }
     }
@@ -195,7 +214,8 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       points.length,
       issueCount,
     )
-  } catch {
+  } catch (error) {
+    const providerError = normalizeQdrantError(error)
     return qdrantSyncDiagnostics(
       false,
       'public',
@@ -204,6 +224,8 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       publicKnowledgeV2.public_documents.length,
       publicKnowledgeV2.knowledge_chunks.length,
       1,
+      providerError.reason,
+      providerError.httpStatus,
     )
   }
 }
@@ -231,10 +253,20 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
   }
 
   try {
+    await ensureQdrantCollection(env.qdrantInternalCollection)
     if (!isExternalEmbeddingConfigured()) {
       const localEmbedding = await embedText('dimension check').catch(() => null)
       if (!localEmbedding || localEmbedding.dimensions !== expectedEmbeddingDimensions()) {
-        return qdrantSyncDiagnostics(false, 'internal', 'internal-knowledge-documents', sourceChecksum, documents.length, chunks.length, 1)
+        return qdrantSyncDiagnostics(
+          false,
+          'internal',
+          'internal-knowledge-documents',
+          sourceChecksum,
+          documents.length,
+          chunks.length,
+          1,
+          'embedding_dimension_mismatch',
+        )
       }
     }
 
@@ -281,8 +313,19 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
 
     const issueCount = await deleteStaleInternalPoints(new Set(chunks.map((chunk) => chunk.id))).catch(() => 1)
     return qdrantSyncDiagnostics(true, 'internal', 'internal-knowledge-documents', sourceChecksum, documents.length, points.length, issueCount)
-  } catch {
-    return qdrantSyncDiagnostics(false, 'internal', 'internal-knowledge-documents', sourceChecksum, documents.length, chunks.length, 1)
+  } catch (error) {
+    const providerError = normalizeQdrantError(error)
+    return qdrantSyncDiagnostics(
+      false,
+      'internal',
+      'internal-knowledge-documents',
+      sourceChecksum,
+      documents.length,
+      chunks.length,
+      1,
+      providerError.reason,
+      providerError.httpStatus,
+    )
   }
 }
 
@@ -312,6 +355,22 @@ async function getCollectionPointCount(collection: string) {
   const result = isRecord(payload) && isRecord(payload.result) ? payload.result : null
   const count = result?.count
   return typeof count === 'number' && Number.isFinite(count) ? count : 0
+}
+
+async function ensureQdrantCollection(collection: string) {
+  const countResponse = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true })
+  if (countResponse.ok) return
+  if (countResponse.status !== 404) throw new QdrantProviderError(reasonForQdrantStatus(countResponse.status), countResponse.status)
+
+  const createResponse = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}?wait=true`, 'PUT', {
+    vectors: {
+      size: expectedEmbeddingDimensions(),
+      distance: QDRANT_DISTANCE,
+    },
+  })
+  if (!createResponse.ok) {
+    throw new QdrantProviderError(createResponse.status === 400 ? 'qdrant_dimension_mismatch' : reasonForQdrantStatus(createResponse.status), createResponse.status)
+  }
 }
 
 async function deleteStalePublicPoints(currentChunkIds: Set<string>) {
@@ -370,7 +429,7 @@ async function deleteStaleScopedPoints(
 
 async function requestQdrantJson(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown) {
   const response = await requestQdrantRaw(path, method, body)
-  if (!response.ok) throw new Error('qdrant-provider-error')
+  if (!response.ok) throw new QdrantProviderError(reasonForQdrantStatus(response.status), response.status)
   return (await response.json().catch(() => null)) as unknown
 }
 
@@ -384,6 +443,20 @@ async function requestQdrantRaw(path: string, method: 'GET' | 'POST' | 'PUT', bo
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
+}
+
+function normalizeQdrantError(error: unknown) {
+  if (error instanceof QdrantProviderError) return error
+  const reason = error instanceof Error && error.message === 'embedding-dimension-mismatch' ? 'embedding_dimension_mismatch' : 'qdrant_provider_error'
+  return new QdrantProviderError(reason)
+}
+
+function reasonForQdrantStatus(status: number) {
+  if (status === 401 || status === 403) return 'qdrant_auth_failed'
+  if (status === 404) return 'qdrant_collection_missing'
+  if (status === 400) return 'qdrant_dimension_mismatch'
+  if (status >= 500) return 'qdrant_unavailable'
+  return 'qdrant_provider_error'
 }
 
 function mergeCandidates(points: QdrantScoredPoint[]) {
@@ -492,21 +565,28 @@ function qdrantSyncDiagnostics(
   documentCount: number,
   chunkCount: number,
   issueCount: number,
+  reason?: string,
+  httpStatus?: number,
 ): RagSyncResponse {
   return {
     ok: true,
     mode: 'qdrant',
     scope,
     accepted,
-    health: accepted ? emptyQdrantHealthWithCounts(documentCount, chunkCount) : emptyQdrantHealth(),
+    health: accepted ? emptyQdrantHealthWithCounts(documentCount, chunkCount, scope) : emptyQdrantHealth(),
     diagnostics: {
       sourceName,
       sourceChecksum,
+      mode: QDRANT_STORE_NAME,
+      scope,
+      accepted,
       documentCount,
       chunkCount,
       entityCount: scope === 'public' ? publicKnowledgeV2?.entities.length ?? 0 : 0,
       relationCount: scope === 'public' ? publicKnowledgeV2?.relations.length ?? 0 : 0,
       issueCount,
+      ...(reason ? { reason } : {}),
+      ...(typeof httpStatus === 'number' ? { httpStatus } : {}),
     },
   }
 }
@@ -515,7 +595,9 @@ function emptyQdrantHealth(): RagHealthResponse {
   return emptyQdrantHealthWithCounts(0, 0)
 }
 
-function emptyQdrantHealthWithCounts(documentCount: number, chunkCount: number): RagHealthResponse {
+function emptyQdrantHealthWithCounts(documentCount: number, chunkCount: number, scope: AssistantScope = 'public'): RagHealthResponse {
+  const publicCount = scope === 'public' ? chunkCount : 0
+  const internalCount = scope === 'internal' ? chunkCount : 0
   return {
     ok: true,
     service: SERVICE_NAME,
@@ -528,8 +610,22 @@ function emptyQdrantHealthWithCounts(documentCount: number, chunkCount: number):
     chunkCount,
     entityCount: publicKnowledgeV2?.entities.length ?? 0,
     relationCount: publicKnowledgeV2?.relations.length ?? 0,
+    collections: {
+      public: buildCollectionHealth(env.qdrantPublicCollection || 'biau_public_chunks', 'public', publicCount),
+      ...(env.qdrantInternalCollection ? { internal: buildCollectionHealth(env.qdrantInternalCollection, 'internal', internalCount) } : {}),
+    },
   }
 }
+
+function buildCollectionHealth(name: string, scope: AssistantScope, pointCount: number) {
+  return {
+    name,
+    scope,
+    pointCount,
+    vectorReady: pointCount > 0,
+  }
+}
+
 
 function buildEmptyResponse(intent: string, fallbackReason: 'private-credential' | 'no_public_context'): RagRetrieveResponse {
   return {
