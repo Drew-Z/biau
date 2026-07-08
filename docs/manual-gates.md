@@ -7,6 +7,7 @@
 - [可观测性策略](./observability-strategy.md)
 - [站点监察与访问数据](./site-monitoring.md)
 - [Studio / AI Daily 生产就绪记录](./studio-ai-daily-production-readiness.md)
+- [Internal RAG / Studio / AI Daily 验收手册](./internal-rag-studio-ai-daily-runbook.md)
 - [部署说明](./deployment.md)
 
 ## 使用规则

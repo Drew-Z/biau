@@ -12,6 +12,7 @@ import {
   normalizeAssistantUsageSummaries,
   summarizeAssistantKnowledgeOps,
   type AssistantInternalKnowledgeDocument,
+  type AssistantKnowledgeOpsSummary,
   type AssistantInternalKnowledgeStatus,
   type AssistantInternalKnowledgeSyncRun,
   type AssistantInviteSummary,
@@ -258,6 +259,24 @@ function formatKnowledgeDocumentSyncState(document: AssistantInternalKnowledgeDo
 function formatRagCollection(collection?: AssistantRagCollectionHealth) {
   if (!collection) return '未返回'
   return `${collection.vectorReady ? 'ready' : 'empty'} · ${collection.pointCount} chunks`
+}
+
+function describeRagAdminStatus(status: AssistantRagAdminStatus | null, knowledgeOps: AssistantKnowledgeOpsSummary) {
+  if (!status) return '尚未读取 RAG 状态。先保存 admin token，然后刷新 RAG 状态。'
+  if (!status.configured) return 'RAG Orchestrator 尚未配置，公开/内部检索会继续使用本地降级路径。'
+  if (!status.syncConfigured) return 'RAG 服务可读，但同步 token 尚未配置；同步按钮只会记录跳过或失败的低敏诊断。'
+  if (!status.health) return 'RAG 服务配置存在，但 health 尚未返回；先刷新状态或查看低敏诊断。'
+
+  const publicReady = status.health.collections?.public?.vectorReady === true && (status.health.collections.public.pointCount ?? 0) > 0
+  const internalReady = status.health.collections?.internal?.vectorReady === true && (status.health.collections.internal.pointCount ?? 0) > 0
+
+  if (publicReady && internalReady) return '公开和内部 RAG collection 都已有向量数据；后续只需在内部知识变更后重新同步。'
+  if (publicReady && knowledgeOps.eligible === 0) {
+    return '公开 RAG 已可用；内部 collection 为空。先创建内部知识文档，并把状态设为“已审核”或“已启用”，再同步内部知识库。'
+  }
+  if (publicReady) return '公开 RAG 已可用；内部 collection 仍为空或未 ready。请刷新内部知识，确认可同步数量，然后点击“同步内部知识库”。'
+  if (internalReady) return '内部 RAG 已有向量数据；公开 collection 尚未 ready，可点击“同步公开知识库”补齐公开检索。'
+  return 'RAG 服务已连接，但公开/内部 collection 尚未 ready。先同步公开知识库，再准备 REVIEWED/ACTIVE 内部知识并同步内部知识库。'
 }
 
 export function AssistantAdminPage() {
@@ -530,7 +549,7 @@ export function AssistantAdminPage() {
       }
 
       setRagAdminStatus(status)
-      setRagStatusText(status.health?.vectorReady ? 'RAG 状态已更新：向量库 ready。' : 'RAG 状态已更新：向量库尚未 ready。')
+      setRagStatusText(describeRagAdminStatus(status, knowledgeOps))
     } catch {
       setRagStatusText('无法连接 RAG 管理 API。')
     } finally {
@@ -1204,6 +1223,7 @@ export function AssistantAdminPage() {
                 <span>{formatRagCollection(ragAdminStatus?.health?.collections?.internal)}</span>
               </div>
             </div>
+            <p className="assistant-status-text">{describeRagAdminStatus(ragAdminStatus, knowledgeOps)}</p>
             {lastPublicRagSync && (
               <div className="assistant-admin-row assistant-admin-row--member" aria-label="最近公开知识库同步结果">
                 <div>
