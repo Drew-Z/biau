@@ -21,6 +21,14 @@ const blogContentPath = resolve(repoRoot, 'src/data/blogContent.ts')
 const blogCurationPath = resolve(repoRoot, 'src/data/blogCuration.ts')
 const blogPostsDir = resolve(repoRoot, 'src/data/blog-posts')
 const publicBlogVisibility: BlogVisibility = 'featured'
+const exportValidationCommands = [
+  'blog:audit',
+  'blog:check',
+  'blog:knowledge-check',
+  'blog:project-notes-check',
+  'lint',
+  'build',
+] as const
 
 interface ExportOptions {
   draftRef?: string
@@ -126,7 +134,7 @@ function printHelp() {
   --series <text>           写入 BlogPost.series
   --date <YYYY-MM-DD>       覆盖公开文章日期
   --publish-export-id <id>  导出后回写 Studio PublishExport 记录
-  --run-checks              写文件后自动运行 blog:audit/blog:check/lint/build
+  --run-checks              写文件后自动运行 ${exportValidationCommands.join(' / ')}
 
 从 Studio API 读取时需要环境变量：
   STUDIO_EXPORT_API_BASE 或 VITE_STUDIO_API_BASE_URL
@@ -503,11 +511,10 @@ async function reportPublishExport(plan: ExportPlan, options: ExportOptions, che
 }
 
 function runValidationChecks(): ExportChecks {
-  const commands = ['blog:audit', 'blog:check', 'lint', 'build']
   const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
   const results: Array<{ command: string; exitCode: number | null }> = []
 
-  for (const command of commands) {
+  for (const command of exportValidationCommands) {
     const result = spawnSync(npmCommand, ['run', command], {
       cwd: repoRoot,
       stdio: 'inherit',
@@ -527,12 +534,7 @@ function pendingValidationChecks(): ExportChecks {
   return {
     status: 'local-export-written',
     exportedAt: new Date().toISOString(),
-    validationNext: [
-      `${npmCommand} run blog:audit`,
-      `${npmCommand} run blog:check`,
-      `${npmCommand} run lint`,
-      `${npmCommand} run build`,
-    ],
+    validationNext: exportValidationCommands.map((command) => `${npmCommand} run ${command}`),
   }
 }
 

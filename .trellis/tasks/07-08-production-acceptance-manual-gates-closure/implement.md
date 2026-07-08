@@ -115,6 +115,7 @@ Current low-sensitive production acceptance:
 - Legal RAG project-detail visual follow-up completed: the workflow section now uses the existing public-safe `legal-rag-qa.png` screenshot so visitors can see answer, citation, and diagnostics UI in the case-study body, not only abstract flow diagrams. `project-details:check` now reports Legal RAG at `16/4` sections/visuals, and targeted `check:ui` passed across desktop and mobile preview.
 - Project-detail visual density guard tightened: `project-details:check` now requires at least 3 in-body visual blocks per standard case-study page, and `docs/showcase-assets.md` plus frontend quality spec describe the same baseline. The stricter gate passed for all 12 projects, with no project falling below 3 visuals.
 - Manual gate ledger cleanup completed: Git/SSH publishing is no longer listed as an active blocker because the main repository has pushed successfully multiple times. The ledger now treats SSH trust-root or remote rejection problems as conditional gates that should be reopened only if they recur.
+- Studio export validation guard aligned: `studio:export -- --run-checks` now runs the same blog quality gates used by release verification, including `blog:knowledge-check` and `blog:project-notes-check`, and the pending validation list is generated from one shared command list to avoid drift. Manual gates now list project-notes quality as part of Publish Export evidence.
 
 Validation:
 
@@ -133,6 +134,7 @@ npm.cmd run status:contract
 npm.cmd run docs:manual-gates-check
 npm.cmd run project-details:check
 npm.cmd run check:ui
+npm.cmd run studio:smoke
 ```
 
 ## Phase 4: Project Credentialed Checks

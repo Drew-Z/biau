@@ -67,7 +67,7 @@
 | Gate | Why Human | Safe Evidence |
 |---|---|---|
 | 首次真实 AI Daily issue 转草稿 | 需要生产 Studio token、数据库和真实来源池 | `studio:ai-daily-brief-check`、issue readiness、草稿 status/visibility 摘要 |
-| Publish Export 审核 | 公开博客数据写入必须由 Git diff 审查 | `studio:export -- --run-checks`、`blog:check`、`blog:knowledge-check` |
+| Publish Export 审核 | 公开博客数据写入必须由 Git diff 审查 | `studio:export -- --run-checks`、`blog:check`、`blog:knowledge-check`、`blog:project-notes-check` |
 | AI 日报自动抓取 / 定时发布 | 来源选择、版权、事实核查和发布节奏需要人工策略 | 先保留为 planned；不要自动发布未审核内容 |
 | 资源分享栏目内容 | 资源分享是站长主观筛选，不应由模型批量填充 | 手写或审稿后的草稿、来源和使用边界 |
 
