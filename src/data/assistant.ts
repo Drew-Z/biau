@@ -811,6 +811,8 @@ const ASSISTANT_SYNC_DIAGNOSTIC_KEYS = new Set([
   'relationCount',
   'issueCount',
   'httpStatus',
+  'expectedDimension',
+  'actualDimension',
   'sourceName',
   'sourceChecksum',
 ])

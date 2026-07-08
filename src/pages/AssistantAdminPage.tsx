@@ -223,6 +223,8 @@ const syncDiagnosticLabels: Record<string, string> = {
   relationCount: '关系数',
   issueCount: '问题数',
   httpStatus: 'HTTP 状态',
+  expectedDimension: '期望维度',
+  actualDimension: '实际维度',
   sourceName: '来源',
   sourceChecksum: '来源摘要',
 }

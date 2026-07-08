@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { env } from './env.js'
 import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
-import { embedText, isExternalEmbeddingConfigured } from './ragEmbeddings.js'
+import { embedText, EmbeddingDimensionMismatchError, isExternalEmbeddingConfigured } from './ragEmbeddings.js'
 import type {
   AssistantScope,
   Citation,
@@ -52,12 +52,16 @@ const QDRANT_DISTANCE = 'Cosine'
 class QdrantProviderError extends Error {
   readonly reason: string
   readonly httpStatus?: number
+  readonly expectedDimension?: number
+  readonly actualDimension?: number
 
-  constructor(reason: string, httpStatus?: number) {
+  constructor(reason: string, httpStatus?: number, details: { expectedDimension?: number; actualDimension?: number } = {}) {
     super(reason)
     this.name = 'QdrantProviderError'
     this.reason = reason
     this.httpStatus = httpStatus
+    if (typeof details.expectedDimension === 'number') this.expectedDimension = details.expectedDimension
+    if (typeof details.actualDimension === 'number') this.actualDimension = details.actualDimension
   }
 }
 
@@ -164,6 +168,11 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
           publicKnowledgeV2.knowledge_chunks.length,
           1,
           'embedding_dimension_mismatch',
+          undefined,
+          {
+            expectedDimension: expectedEmbeddingDimensions(),
+            actualDimension: localEmbedding?.dimensions,
+          },
         )
       }
     }
@@ -226,6 +235,10 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       1,
       providerError.reason,
       providerError.httpStatus,
+      {
+        expectedDimension: providerError.expectedDimension,
+        actualDimension: providerError.actualDimension,
+      },
     )
   }
 }
@@ -266,6 +279,11 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
           chunks.length,
           1,
           'embedding_dimension_mismatch',
+          undefined,
+          {
+            expectedDimension: expectedEmbeddingDimensions(),
+            actualDimension: localEmbedding?.dimensions,
+          },
         )
       }
     }
@@ -325,6 +343,10 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
       1,
       providerError.reason,
       providerError.httpStatus,
+      {
+        expectedDimension: providerError.expectedDimension,
+        actualDimension: providerError.actualDimension,
+      },
     )
   }
 }
@@ -447,6 +469,12 @@ async function requestQdrantRaw(path: string, method: 'GET' | 'POST' | 'PUT', bo
 
 function normalizeQdrantError(error: unknown) {
   if (error instanceof QdrantProviderError) return error
+  if (error instanceof EmbeddingDimensionMismatchError) {
+    return new QdrantProviderError('embedding_dimension_mismatch', undefined, {
+      expectedDimension: error.expectedDimensions,
+      actualDimension: error.actualDimensions,
+    })
+  }
   const reason = error instanceof Error && error.message === 'embedding-dimension-mismatch' ? 'embedding_dimension_mismatch' : 'qdrant_provider_error'
   return new QdrantProviderError(reason)
 }
@@ -567,6 +595,7 @@ function qdrantSyncDiagnostics(
   issueCount: number,
   reason?: string,
   httpStatus?: number,
+  details: { expectedDimension?: number; actualDimension?: number } = {},
 ): RagSyncResponse {
   return {
     ok: true,
@@ -587,6 +616,8 @@ function qdrantSyncDiagnostics(
       issueCount,
       ...(reason ? { reason } : {}),
       ...(typeof httpStatus === 'number' ? { httpStatus } : {}),
+      ...(typeof details.expectedDimension === 'number' ? { expectedDimension: details.expectedDimension } : {}),
+      ...(typeof details.actualDimension === 'number' ? { actualDimension: details.actualDimension } : {}),
     },
   }
 }

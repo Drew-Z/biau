@@ -257,5 +257,7 @@ export interface RagSyncResponse {
     relationCount?: number
     issueCount?: number
     httpStatus?: number
+    expectedDimension?: number
+    actualDimension?: number
   }
 }

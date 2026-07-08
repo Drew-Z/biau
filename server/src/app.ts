@@ -1378,6 +1378,8 @@ function sanitizeRagSyncDiagnostic(value: unknown) {
     'relationCount',
     'issueCount',
     'httpStatus',
+    'expectedDimension',
+    'actualDimension',
     'sourceName',
     'sourceChecksum',
   ]) {
@@ -1402,6 +1404,8 @@ function sanitizeInternalSyncDiagnostic(value: unknown) {
     'relationCount',
     'issueCount',
     'httpStatus',
+    'expectedDimension',
+    'actualDimension',
     'sourceName',
     'sourceChecksum',
   ]) {

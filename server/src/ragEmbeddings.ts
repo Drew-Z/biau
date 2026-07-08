@@ -8,6 +8,18 @@ export interface RagEmbeddingResult {
   modelCalls: number
 }
 
+export class EmbeddingDimensionMismatchError extends Error {
+  readonly expectedDimensions: number
+  readonly actualDimensions: number
+
+  constructor(expectedDimensions: number, actualDimensions: number) {
+    super('embedding-dimension-mismatch')
+    this.name = 'EmbeddingDimensionMismatchError'
+    this.expectedDimensions = expectedDimensions
+    this.actualDimensions = actualDimensions
+  }
+}
+
 interface EmbedTextOptions {
   expectedDimensions?: number
 }
@@ -33,7 +45,7 @@ export async function embedText(text: string, options: EmbedTextOptions = {}): P
   const dimensions = result.vector.length
   const expectedDimensions = options.expectedDimensions ?? env.embeddingDimension
   if (expectedDimensions > 0 && dimensions !== expectedDimensions) {
-    throw new Error('embedding-dimension-mismatch')
+    throw new EmbeddingDimensionMismatchError(expectedDimensions, dimensions)
   }
   return {
     ...result,
@@ -75,6 +87,7 @@ async function requestEmbeddingEndpoint(endpoint: string, text: string) {
       body: JSON.stringify({
         model: env.embeddingModel,
         input: text,
+        ...(env.embeddingDimension > 0 ? { dimensions: env.embeddingDimension } : {}),
       }),
     })
   } finally {
