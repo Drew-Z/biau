@@ -83,6 +83,7 @@ Current low-sensitive production acceptance:
 - Observability docs guard wired into full verify: existing `npm.cmd run docs:observability-check` now runs inside `npm.cmd run verify`, keeping Cloudflare/Search Console/Umami/Plausible/Prometheus/Langfuse strategy aligned with manual gates.
 - ERP related-project sync completed: validated the ERP web build on branch `codex/ozon-plugin-parity` and pushed the existing `fix(web): preserve biau port auth bridge` commit so the BIAU Port auth bridge fix is no longer local-only.
 - Legal RAG related-project low-sensitive check completed: branch `codex/project-quality-dashboard` is clean, and local `npm.cmd run typecheck` plus `npm.cmd run build` both passed without production credentials. Credentialed Legal RAG workflow checks remain gated on low-privilege demo credentials.
+- Xunqiu backend related-project check completed: backend `main` is clean; `mvn test` passed with 11 tests, 0 failures, 1 Docker/Testcontainers-dependent PostgreSQL test skipped in the local environment, and `mvn -DskipTests package` produced the Spring Boot jar successfully.
 
 Validation:
 
