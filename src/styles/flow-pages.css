@@ -2581,9 +2581,23 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   align-items: center;
 }
 
-.project-visual__caption a {
+.project-visual__caption-text {
+  min-width: min(100%, 24ch);
+  flex: 1 1 260px;
+}
+
+.project-visual__source-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 var(--space-8, 8px);
+  border: 1px solid color-mix(in oklch, var(--green) 22%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklch, var(--green) 8%, transparent);
   color: color-mix(in oklch, var(--green) 86%, var(--ink));
   font-weight: 800;
+  line-height: 1.2;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 4px;

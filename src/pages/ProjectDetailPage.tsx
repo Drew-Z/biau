@@ -256,9 +256,14 @@ function ProjectVisualFigure({ visual }: { visual: ProjectVisualBlock }) {
       )}
       {(visual.caption || visual.sourceUrl) && (
         <p className="project-visual__caption">
-          {visual.caption}
+          {visual.caption && <span className="project-visual__caption-text">{visual.caption}</span>}
           {visual.sourceUrl && (
-            <a href={visual.sourceUrl} target="_blank" rel="noopener noreferrer">
+            <a
+              href={visual.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="project-visual__source-link"
+            >
               {visual.sourceLabel ?? '查看来源'}
             </a>
           )}

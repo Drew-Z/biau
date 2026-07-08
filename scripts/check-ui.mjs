@@ -70,6 +70,7 @@ const projectDetailVisualCases = projects
       expectedVisualCaptions: imageBackedVisuals
         .map((visual) => visual.caption ?? '')
         .filter((text) => text.trim().length > 0),
+      expectedVisualSourceLinks: visuals.filter((visual) => Boolean(visual.sourceUrl)).length,
     }
   })
   .filter((project) => project.expectedVisuals > 0)
@@ -996,6 +997,8 @@ for (const project of projectDetailVisualCases) {
   const renderedImageCount = await visualImages.count()
   const visualCaptions = projectVisualPage.locator('.project-case-study .project-visual__caption')
   const renderedCaptionCount = await visualCaptions.count()
+  const visualSourceLinks = projectVisualPage.locator('.project-case-study .project-visual__source-link')
+  const renderedSourceLinkCount = await visualSourceLinks.count()
   const renderedAltTexts = await visualImages.evaluateAll((images) =>
     images.map((image) => image.getAttribute('alt')?.trim() ?? ''),
   )
@@ -1027,6 +1030,11 @@ for (const project of projectDetailVisualCases) {
   if (renderedCaptionCount !== project.expectedVisualCaptions.length) {
     failures.push(
       `/projects/${project.id} case visuals: expected ${project.expectedVisualCaptions.length} visual captions, got ${renderedCaptionCount}`,
+    )
+  }
+  if (renderedSourceLinkCount !== project.expectedVisualSourceLinks) {
+    failures.push(
+      `/projects/${project.id} case visuals: expected ${project.expectedVisualSourceLinks} visual source links, got ${renderedSourceLinkCount}`,
     )
   }
   for (const expectedAltText of project.expectedVisualAltTexts) {
