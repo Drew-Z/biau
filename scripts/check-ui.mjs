@@ -471,6 +471,7 @@ const legalFreshnessFacts = await statusPage.locator('.status-evidence-freshness
 const legalFreshnessBadges = await statusPage.locator('.status-freshness-badge').count()
 const legalGateItems = await statusPage.locator('.status-project__manual-list.is-gate li').count()
 const legalNextActionItems = await statusPage.locator('.status-project__manual-list.is-next li').count()
+const legalManualGuidance = statusPage.locator('.status-project__handling-guide')
 if (!legalDetailTitle.includes(legalDetailProject?.title ?? 'Legal RAG')) {
   failures.push(`/status detail route: expected Legal RAG title on detail page, got "${legalDetailTitle}"`)
 }
@@ -486,6 +487,12 @@ if (legalNextActionItems !== (legalMergedProject?.nextActions.length ?? 0)) {
   failures.push(
     `/status detail manual gates: expected ${legalMergedProject?.nextActions.length ?? 0} next-action checklist items, got ${legalNextActionItems}`,
   )
+}
+if (!(await legalManualGuidance.filter({ hasText: '低敏证据' }).isVisible())) {
+  failures.push('/status detail manual guidance: expected low-sensitive evidence handling guidance')
+}
+if (!(await legalManualGuidance.filter({ hasText: 'token、密码、数据库 URL、模型渠道' }).isVisible())) {
+  failures.push('/status detail manual guidance: expected sensitive-field warning')
 }
 if (expectedLegalFreshnessFacts > 0 && legalFreshnessFacts !== expectedLegalFreshnessFacts) {
   failures.push(

@@ -98,6 +98,20 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
       </div>
 
       <div className="status-project__footer">
+        <section className="status-project__handling-guide" aria-label={`${project.title} 人工处理规则`}>
+          <div className="status-project__footer-head">
+            <h3>人工处理规则</h3>
+            <span>SAFE</span>
+          </div>
+          <p>
+            这些事项需要在平台控制台、本机环境或受控演示账号里完成；公开站点只记录低敏证据，不保存真实凭据。
+          </p>
+          <ul className="status-project__guidance-list">
+            <li>不要写入 token、密码、数据库 URL、模型渠道、签名文件路径或真实后台地址。</li>
+            <li>完成后只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别。</li>
+            <li>失败时保持 planned / unchecked / gated，不为了展示效果改成 online。</li>
+          </ul>
+        </section>
         <section aria-label={`${project.title} 人工 gate 清单`}>
           <div className="status-project__footer-head">
             <h3>人工 gate</h3>
