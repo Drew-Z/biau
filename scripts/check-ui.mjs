@@ -11,7 +11,7 @@ import {
   parseEvidenceFreshness,
 } from '../src/data/siteStatusView.ts'
 import { projects } from '../src/data/portfolio.ts'
-import { blogColumnMeta, blogColumnOrder } from '../src/data/blog.ts'
+import { blogColumnMeta, blogColumnOrder, getBlogEmptyState } from '../src/data/blog.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -512,8 +512,20 @@ for (const column of blogColumnOrder) {
 }
 await interactionPage.getByRole('button', { name: /AI 日报/ }).click()
 await interactionPage.waitForTimeout(100)
-if (!(await interactionPage.locator('.blog-empty').filter({ hasText: 'AI 日报 暂无公开文章' }).isVisible())) {
-  failures.push('/blog columns: expected AI Daily empty column to show a clear unpublished state')
+for (const column of ['ai-daily', 'resources']) {
+  const expectedEmptyState = getBlogEmptyState(column, '')
+  await interactionPage.getByRole('button', { name: new RegExp(blogColumnMeta[column].titleZh) }).click()
+  await interactionPage.waitForTimeout(100)
+  const columnEmptyState = interactionPage.locator(`.blog-empty[data-blog-empty-column="${column}"]`)
+  if (!(await columnEmptyState.filter({ hasText: expectedEmptyState.title }).isVisible())) {
+    failures.push(`/blog columns: expected ${blogColumnMeta[column].titleZh} empty state title to match shared projection`)
+  }
+  if (!(await columnEmptyState.filter({ hasText: expectedEmptyState.description }).isVisible())) {
+    failures.push(`/blog columns: expected ${blogColumnMeta[column].titleZh} empty state description to match shared projection`)
+  }
+  if (expectedEmptyState.note && !(await columnEmptyState.filter({ hasText: expectedEmptyState.note }).isVisible())) {
+    failures.push(`/blog columns: expected ${blogColumnMeta[column].titleZh} empty state note to match shared projection`)
+  }
 }
 await interactionPage.getByRole('button', { name: '全部' }).click()
 await interactionPage.waitForTimeout(100)
@@ -549,8 +561,13 @@ if (!(await interactionPage.locator('.blog-empty').isVisible())) {
 }
 await interactionPage.locator('.blog-search').fill('no-result-for-ui-check')
 await interactionPage.waitForTimeout(100)
-if (!(await interactionPage.locator('.blog-empty').isVisible())) {
+const expectedQueryEmptyState = getBlogEmptyState('all', 'no-result-for-ui-check')
+const queryEmptyState = interactionPage.locator('.blog-empty[data-blog-empty-query="true"]')
+if (!(await queryEmptyState.filter({ hasText: expectedQueryEmptyState.title }).isVisible())) {
   failures.push('/blog empty state: expected empty state for unmatched search')
+}
+if (!(await queryEmptyState.filter({ hasText: expectedQueryEmptyState.description }).isVisible())) {
+  failures.push('/blog empty state: expected unmatched search to use query-specific guidance')
 }
 await interactionPage.close()
 

@@ -1,6 +1,6 @@
 import type { BlogPostSummary } from './blogShared'
 
-export { blogColumnMeta, blogColumnOrder } from './blogShared'
+export { blogColumnMeta, blogColumnOrder, getBlogEmptyState } from './blogShared'
 export type { BlogColumn, BlogPostSummary } from './blogShared'
 
 export const blogPosts: BlogPostSummary[] = [

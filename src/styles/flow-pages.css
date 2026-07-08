@@ -2345,6 +2345,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   font-size: 14px;
 }
 
+.blog-empty-note {
+  max-width: min(640px, 100%);
+  color: color-mix(in oklch, var(--muted), var(--ink) 14%);
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
 .blog-pagination .btn:disabled {
   opacity: 0.42;
   cursor: not-allowed;

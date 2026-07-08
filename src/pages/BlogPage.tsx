@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BlogCard } from '../components/BlogCard'
 import { BlogColumnFilter } from '../components/BlogColumnFilter'
-import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
+import { blogColumnOrder, getBlogEmptyState, type BlogColumn } from '../data/blog'
 import {
   filterBlogPosts,
   getPublicBlogPosts,
@@ -45,16 +45,7 @@ export function BlogPage() {
     return counts
   }, [publicBlogs])
 
-  const emptyTitle =
-    selectedBlogColumn === 'all'
-      ? '没有找到相关文章'
-      : `${blogColumnMeta[selectedBlogColumn].titleZh} 暂无公开文章`
-  const emptyDescription =
-    selectedBlogColumn === 'all'
-      ? '换一个关键词或分类试试看。'
-      : searchQuery.trim()
-        ? '当前栏目下没有匹配关键词的公开文章。'
-        : '内容仍在整理或人工审核中，通过发布门禁后会出现在这里。'
+  const emptyState = getBlogEmptyState(selectedBlogColumn, searchQuery)
 
   const handleSelectColumn = (column: BlogColumn | 'all') => {
     setSelectedBlogColumn(column)
@@ -110,9 +101,14 @@ export function BlogPage() {
       </div>
 
       {visibleBlogs.length === 0 && (
-        <section className="blog-empty">
-          <h2>{emptyTitle}</h2>
-          <p>{emptyDescription}</p>
+        <section
+          className="blog-empty"
+          data-blog-empty-column={selectedBlogColumn}
+          data-blog-empty-query={searchQuery.trim() ? 'true' : 'false'}
+        >
+          <h2>{emptyState.title}</h2>
+          <p>{emptyState.description}</p>
+          {emptyState.note && <p className="blog-empty-note">{emptyState.note}</p>}
         </section>
       )}
 
