@@ -197,6 +197,40 @@ async function collectStudioOverflow(page) {
   })
 }
 
+async function collectStudioVisualIssues(page, viewportName) {
+  return page.evaluate((name) => {
+    const issues = []
+    const title = document.querySelector('.studio-page > .page-hero .section-title')
+    if (title) {
+      const fontSize = Number.parseFloat(window.getComputedStyle(title).fontSize)
+      if (fontSize > 44) {
+        issues.push(`studio hero title too large: ${Math.round(fontSize)}px`)
+      }
+    }
+
+    const grid = document.querySelector('.studio-grid')
+    if (grid) {
+      const columns = window
+        .getComputedStyle(grid)
+        .gridTemplateColumns.split(' ')
+        .filter((value) => value && value !== 'none')
+      if (name === 'desktop' && columns.length > 2) {
+        issues.push(`studio grid is too dense: ${columns.length} columns`)
+      }
+    }
+
+    const tokenActions = [...document.querySelectorAll('.studio-token-form .assistant-admin-actions button')]
+    if (name === 'desktop' && tokenActions.length > 2) {
+      const rows = new Set(tokenActions.map((button) => Math.round(button.getBoundingClientRect().top)))
+      if (rows.size > 1) {
+        issues.push(`studio token actions wrapped into ${rows.size} rows`)
+      }
+    }
+
+    return issues
+  }, viewportName)
+}
+
 const failures = []
 const browser = await chromium.launch({ headless: true })
 
@@ -252,6 +286,10 @@ for (const viewport of viewports) {
         failures.push(
           `${viewport.name} ${route.path}: studio visible overflow ${JSON.stringify(studioOverflow)}`,
         )
+      }
+      const studioVisualIssues = await collectStudioVisualIssues(page, viewport.name)
+      for (const issue of studioVisualIssues) {
+        failures.push(`${viewport.name} ${route.path}: ${issue}`)
       }
     }
 

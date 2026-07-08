@@ -89,6 +89,14 @@ names, model labels, and status text should use `min-width: 0` plus
 `overflow-wrap: anywhere` / bounded grid columns instead of relying on a perfect
 content length.
 
+Studio is an internal workbench route, not a marketing/case-study route. It may
+reuse the public shell and navigation, but its main surface should stay compact:
+the hero title must be dashboard-sized, token controls should behave like a
+toolbar on desktop, and the primary `/studio` grid should use at most two columns
+at normal desktop widths. `check:ui` asserts these basics so a page can no longer
+pass only because it has no horizontal scrollbar while still looking like a
+public landing page with dense admin forms forced into it.
+
 ### Blog Knowledge Quality Gate
 
 Public `知识积累 / Knowledge Notes` posts must pass

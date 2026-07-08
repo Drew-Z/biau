@@ -3327,8 +3327,15 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .studio-page {
-  gap: var(--space-24);
+  gap: var(--space-16);
   overflow-x: clip;
+}
+
+.studio-page.page-stack {
+  width: min(calc(100% - 40px), 1280px);
+  max-width: 1280px;
+  margin-top: var(--space-16);
+  padding-bottom: var(--space-32);
 }
 
 .studio-page,
@@ -3364,6 +3371,36 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   max-width: 100%;
 }
 
+.studio-page > .page-hero {
+  padding: var(--space-20, 20px) var(--space-24);
+  display: grid;
+  gap: var(--space-8);
+  border-radius: var(--radius-lg);
+}
+
+.studio-page > .page-hero .section-subtitle {
+  margin: 0;
+  color: color-mix(in oklch, var(--amber) 72%, var(--muted));
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+
+.studio-page > .page-hero .section-title {
+  max-width: 100%;
+  font-family: var(--font-ui);
+  font-size: clamp(1.65rem, 2.2vw, 2.35rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
+.studio-page > .page-hero .section-description {
+  max-width: 76ch;
+  margin-top: 0;
+  font-size: 14px;
+  line-height: 1.62;
+}
+
 .studio-page p,
 .studio-page li,
 .studio-page strong,
@@ -3389,23 +3426,34 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-control-bar,
 .studio-card {
-  background: var(--panel);
+  background: color-mix(in oklch, var(--panel-strong) 82%, var(--panel));
   border: 1px solid var(--flow-ui-border-strong);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   -webkit-backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
   backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
 }
 
 .studio-control-bar {
-  padding: var(--space-20);
+  padding: var(--space-14, 14px) var(--space-16);
   display: grid;
-  gap: var(--space-12, 12px);
+  gap: var(--space-10, 10px);
 }
 
 .studio-token-form {
-  grid-template-columns: minmax(260px, 1fr) auto;
+  grid-template-columns: minmax(260px, 1fr) minmax(300px, max-content);
+  gap: var(--space-12, 12px);
   align-items: end;
+}
+
+.studio-token-form .assistant-admin-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(86px, 1fr));
+  align-items: stretch;
+}
+
+.studio-token-form .assistant-admin-actions > button {
+  width: 100%;
 }
 
 .studio-health {
@@ -3417,14 +3465,34 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 0.64fr) minmax(520px, 1.34fr) minmax(360px, 0.92fr);
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  grid-template-areas:
+    "drafts editor"
+    "side side";
   gap: var(--space-16);
   align-items: start;
 }
 
+.studio-grid > .studio-list-panel {
+  grid-area: drafts;
+  position: sticky;
+  top: var(--space-16);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.studio-grid > .studio-editor-stack {
+  grid-area: editor;
+}
+
+.studio-grid > .studio-side-stack {
+  grid-area: side;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .studio-card {
   min-width: 0;
-  padding: var(--space-20);
+  padding: var(--space-16);
 }
 
 .studio-card__header {
@@ -3446,11 +3514,33 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   max-width: 100%;
   margin: 0;
   color: var(--ink);
-  font-family: var(--font-serif-display);
-  font-weight: var(--weight-title);
+  font-family: var(--font-ui);
+  font-size: 1.12rem;
+  font-weight: 700;
   letter-spacing: 0;
+  line-height: 1.22;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.studio-page .assistant-field span {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.studio-page .assistant-field input,
+.studio-page .assistant-field select {
+  min-height: 36px;
+  padding: 0 var(--space-10, 10px);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+}
+
+.studio-page .assistant-field textarea {
+  min-height: 96px;
+  padding: var(--space-12, 12px);
+  border-radius: var(--radius-md);
+  font-size: 13px;
 }
 
 .studio-form,
@@ -4576,6 +4666,19 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     grid-template-columns: 1fr;
   }
 
+  .studio-grid {
+    grid-template-areas:
+      "drafts"
+      "editor"
+      "side";
+  }
+
+  .studio-list-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .studio-grid > .studio-side-stack,
   .studio-side-stack {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4646,6 +4749,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .studio-grid > .studio-side-stack,
   .studio-side-stack {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4955,6 +5059,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .assistant-admin-summary,
   .studio-form-grid,
   .studio-template-strip,
+  .studio-grid > .studio-side-stack,
   .studio-side-stack,
   .studio-issue-layout {
     grid-template-columns: 1fr;
@@ -4968,6 +5073,10 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .studio-card__header,
   .studio-token-form {
     display: grid;
+  }
+
+  .studio-token-form .assistant-admin-actions {
+    grid-template-columns: 1fr;
   }
 
   .public-assistant {
