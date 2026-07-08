@@ -96,6 +96,14 @@
 | Prometheus / Grafana / ARMS | 需要 scrape 权限、告警渠道和平台账号 | 默认关闭 `/metrics`，先用本地 smoke 和 docs 检查 |
 | Sentry / Grafana Faro | 需要 DSN、采样和隐私策略 | 真实错误影响体验后再接入 |
 
+## 当前低敏复核记录
+
+- ERP：关联 Web 构建已通过，认证桥修复已同步到远端分支；演示登录和插件同步仍等低权限账号 / 脱敏 fixture。
+- Legal RAG：本地 `typecheck` 与 `build` 已通过；法律问答、合同审查和质量面板仍等低权限 demo 凭据做 credentialed synthetic。
+- Xunqiu：现代后端测试和打包已通过，展示站本地静态资源引用与公开入口可达性已复核；后端 synthetic base URL 和 APK 正式发布批准仍是人工门禁。
+- Pet / Gamer：Node workspace 测试已通过，现有工作区有历史 WIP 未整理；APK 公开下载仍必须等待正式 release 证据和人工批准。
+- BIAU Playlab：内容审计、生产构建、构建产物审计和公开端点检查已通过；新试玩构建上线仍需入口确认。
+
 ## 当前人工队列摘要
 
 - Studio 生产连接已刷新成功；下一步是人工审核 hidden/review-needed 草稿，创建 Publish Export 后再审查公开内容 diff。
