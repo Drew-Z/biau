@@ -106,3 +106,32 @@
 - 决定 Plausible 或 Umami 的访问分析方案，并避免两个同时接入同一站点。
 - 决定 Prometheus/Grafana/ARMS/Sentry/Langfuse 等平台的接入时机。
 - 如后续更换机器或 SSH trust root 异常，再核验 GitHub SSH host key；当前主仓 `main` 推送已恢复正常。
+
+## 醒来后推荐处理顺序
+
+这部分用于把长表压缩成可执行队列。每一步只记录低敏成功标准，不需要把真实 token、账号、密码、连接串、模型地址或签名材料发到聊天或写进仓库。
+
+1. Studio 草稿审核
+   - 打开 `/studio`，确认当前 `hidden / review-needed` 草稿内容是否可公开。
+   - 如果内容通过，再创建 Publish Export；如果内容不通过，先在 Studio 修改草稿，不直接导出。
+   - 成功标准：有一条低敏 export 记录，后续由本地或 CI 做静态导出和 Git diff 审查。
+
+2. Legal RAG 演示凭据
+   - 准备低权限、可回收 demo 账号，只允许访问公开安全数据集。
+   - 把凭据放入本机或平台环境变量，再运行 credentialed synthetic；不要把凭据写入文章、项目页、状态页或聊天。
+   - 成功标准：法律问答、合同审查、质量面板可以从 `planned / unchecked` 更新为有低敏证据的状态。
+
+3. ERP 演示账号和同步 fixture
+   - 生产注册已确认开放，但登录 smoke 仍建议用专门低权限 demo 账号。
+   - 插件与商品同步检查需要脱敏 fixture 或演示店铺，不能使用真实店铺凭据。
+   - 成功标准：注册/登录策略、默认角色、插件同步路径都有可复跑 smoke 证据。
+
+4. Xunqiu 和 Pet 发布门禁
+   - Xunqiu 先配置后端公开 base URL 再跑后端 health / 兼容 API synthetic。
+   - Pet 和 Xunqiu 的 APK 公开下载都必须等正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准。
+   - 成功标准：状态页只公开批准后的 release 摘要，不公开 debug 包或未经批准的下载链接。
+
+5. 访问分析与工程观测
+   - 先完成 Cloudflare Analytics 和 Search Console 的低敏配置确认。
+   - Umami / Plausible 二选一后再接入站点 analytics adapter；不要同时接两套访客统计。
+   - Prometheus / Grafana / ARMS / Sentry / Langfuse 等需要另行确认采样、脱敏、保留策略和平台成本。
