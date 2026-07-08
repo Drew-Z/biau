@@ -48,7 +48,7 @@ VITE_PUBLIC_ASSISTANT_API_BASE_URL=/api
 VITE_INTERNAL_ASSISTANT_API_BASE_URL=https://biau-internal-assistant-api.onrender.com
 ```
 
-公开助手前端也会在打开时自动探测同域 `/api/health`；如果 Functions 未部署或未配置模型，会使用本地公开知识回退。内部助手页面如需使用邀请码、数据库和管理能力，必须把 `VITE_INTERNAL_ASSISTANT_API_BASE_URL` 指向独立的 internal API。旧的 `VITE_CHAT_API_BASE_URL` 仍可作为兼容回退，但三服务部署不要只配置这一个变量，否则公开助手和内部管理页会误打到同一个服务。
+公开助手前端也会在打开时自动探测同域 `/api/health`；如果 Functions 未部署或未配置模型，会使用本地公开知识回退。内部助手页面如需使用邀请码、数据库和管理能力，必须把 `VITE_INTERNAL_ASSISTANT_API_BASE_URL` 指向独立的 internal API。旧的 `VITE_CHAT_API_BASE_URL` 仍可作为兼容回退，但四服务部署不要只配置这一个变量，否则公开助手和内部管理页会误打到同一个服务。
 
 Cloudflare Pages Functions 需要在 Pages 的运行时环境变量中配置模型通道：
 
@@ -73,7 +73,7 @@ npm run assistant:rag-smoke
 
 这些检查只使用本地公开数据、本地 Express app、假 token 和 mock Qdrant，不会调用真实模型、中转站、生产 RAG Orchestrator 或外部向量库。其中 `assistant:eval` 会报告 `modelCalls=0`，用于确认公开助手检索意图、citation、拒答和敏感输出边界；`assistant:rag-sync-local` 只验证本地 knowledge V2 到 provider-neutral store 的同步计划；`assistant:service-modes-smoke` 验证 public/internal/rag/studio 服务边界；`assistant:rag-smoke` 验证本地/mock RAG Orchestrator contract。
 
-`npm run verify` 已经包含这些离线门禁；单独运行上述命令适合在只改公开助手知识结构、检索 baseline、RAG contract 或三服务边界时快速确认。真实 Qdrant/embedding/reranker/model 同步和生产 Render 检查仍是人工批准后的单独任务。
+`npm run verify` 已经包含这些离线门禁；单独运行上述命令适合在只改公开助手知识结构、检索 baseline、RAG contract 或服务边界时快速确认。真实 Qdrant/embedding/reranker/model 同步和生产 Render 检查仍是人工批准后的单独任务。
 
 外部 RAG Orchestrator 是最终形态的一部分，由单独的 Render 服务承载。Cloudflare Pages Functions 或公开助手 API 只保存 Orchestrator endpoint 和服务端 token，不直接连接 Qdrant、Supabase、模型中转或 embedding provider：
 
@@ -89,27 +89,31 @@ ASSISTANT_RAG_TIMEOUT_MS=3000
 
 ## 助手后端与 RAG Orchestrator 部署
 
-助手后端位于当前仓库的 `server/`，和静态前端独立部署。最终形态使用同一个 GitHub 仓库创建三个 Render Web Service，通过 `ASSISTANT_SERVICE_MODE` 明确运行边界：
+助手后端位于当前仓库的 `server/`，和静态前端独立部署。最终形态使用同一个 GitHub 仓库创建四个 Render Web Service，通过 `ASSISTANT_SERVICE_MODE` 明确运行边界：
 
 ```text
 biau-public-assistant-api    ASSISTANT_SERVICE_MODE=public
 biau-internal-assistant-api  ASSISTANT_SERVICE_MODE=internal
+biau-content-studio-api      ASSISTANT_SERVICE_MODE=studio
 biau-rag-orchestrator        ASSISTANT_SERVICE_MODE=rag
 ```
 
-这样可以复用同一套 TypeScript 类型、模型客户端、RAG contract 和测试，同时让公开接口、内部接口和检索服务拥有独立路由、密钥、日志、扩容和故障范围。不要把模型 key、RAG key、Qdrant key、Supabase service role、数据库 URL 或 admin token 放进 `VITE_*`。
+这样可以复用同一套 TypeScript 类型、模型客户端、RAG contract、Studio API 和测试，同时让公开接口、内部接口、内容工作台和检索服务拥有独立路由、密钥、日志、扩容和故障范围。不要把模型 key、RAG key、Qdrant key、Supabase service role、数据库 URL 或 admin token 放进 `VITE_*`。
 
 Render 配置建议：
 
 ```text
 Runtime: Node
-Build Command: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
+Build Command:
+  public/internal/rag: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
+  studio: npm ci && npm run prisma:generate && npm run server:build
 Start Command:
   public/rag: npm run server:start
-  internal: npm run prisma:migrate && npm run server:start
+  internal: npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
+  studio: npm run prisma:migrate:studio && npm run server:start
 ```
 
-仓库根目录提供了 `render.yaml` Blueprint，可直接作为三服务配置参考；其中所有真实密钥、数据库 URL 和 provider endpoint 都使用 `sync: false`，需要在 Render 后台手动填写。
+仓库根目录提供了 `render.yaml` Blueprint，可直接作为四服务配置参考；其中所有真实密钥、数据库 URL 和 provider endpoint 都使用 `sync: false`，需要在 Render 后台手动填写。
 
 ### Public Assistant API
 
@@ -205,6 +209,31 @@ npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
 `/assistant/admin` 的内部知识源管理会把 `REVIEWED` / `ACTIVE` 文档作为 internal corpus 同步计划提交给 RAG Orchestrator。真实同步需要 Internal Assistant API 和 RAG Orchestrator 配置相同的 `RAG_SYNC_TOKEN`；未配置时只会记录低敏 `SKIPPED` 同步运行，不会把文档或 token 暴露给浏览器。
 
 当 RAG Orchestrator 使用 `RAG_STORE_PROVIDER=qdrant` 且 Qdrant 与 embedding 变量完整时，`scope=internal` 的同步会把内部知识文档切分为 chunks、生成 embedding，并写入 `QDRANT_INTERNAL_COLLECTION`。本地或未配置 Qdrant/embedding 时，`/v1/sync` 只返回 `local-readonly` 或低敏未接受诊断，不会触碰真实向量库，也不会把文档正文写入诊断。
+
+### Content Studio API
+
+```text
+ASSISTANT_SERVICE_MODE=studio
+CORS_ORIGIN=https://biau.playlab.eu.cc
+STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-internal-assistant-api 相同>
+STUDIO_ADMIN_TOKEN=<生成一个长随机字符串>
+METRICS_ENABLED=false
+PORT=10000
+```
+
+Studio API 只挂载 `/health` 和 `/studio/api/*`。它不挂载公开聊天、内部成员、admin 成员管理或 RAG sync 路由。生产分库时，`biau-content-studio-api` 的 `STUDIO_DATABASE_URL` 必须和 `biau-internal-assistant-api` 的 `STUDIO_DATABASE_URL` 指向同一个内容工作台库，这样内部 Agent 的 draft-write 和 `/studio` 审核页面才会看到同一批草稿、AI Daily issue、source item 和 publish export。
+
+Studio 服务推荐 Start Command：
+
+```bash
+npm run prisma:migrate:studio && npm run server:start
+```
+
+主站前端只填写公开安全的后端 origin：
+
+```text
+VITE_STUDIO_API_BASE_URL=https://<studio-service>.onrender.com
+```
 
 ### RAG Orchestrator
 

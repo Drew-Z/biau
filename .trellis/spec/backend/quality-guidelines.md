@@ -570,14 +570,15 @@ The internal API owns corpus selection, records sanitized diagnostics, and keeps
 
 ### 1. Scope / Trigger
 
-- Trigger: changing assistant backend runtime boundaries, Render deployment contracts, RAG Orchestrator auth/scope, external vector storage, sync, or retrieval code.
-- Use this whenever editing `ASSISTANT_SERVICE_MODE`, `RAG_*`, `QDRANT_*`, `EMBEDDING_*`, `server/src/app.ts`, `server/src/ragRoutes.ts`, `server/src/ragOrchestrator.ts`, `server/src/ragQdrantStore.ts`, `server/src/ragPostgresStore.ts`, `server/sql/rag-store-pgvector.sql`, or related smoke scripts.
+- Trigger: changing assistant backend runtime boundaries, Render deployment contracts, Studio service isolation, RAG Orchestrator auth/scope, external vector storage, sync, or retrieval code.
+- Use this whenever editing `ASSISTANT_SERVICE_MODE`, `STUDIO_*`, `RAG_*`, `QDRANT_*`, `EMBEDDING_*`, `server/src/app.ts`, `server/src/studioRoutes.ts`, `server/src/ragRoutes.ts`, `server/src/ragOrchestrator.ts`, `server/src/ragQdrantStore.ts`, `server/src/ragPostgresStore.ts`, `server/sql/rag-store-pgvector.sql`, or related smoke scripts.
 
 ### 2. Signatures
 
 - Runtime modes:
   - `ASSISTANT_SERVICE_MODE=public`
   - `ASSISTANT_SERVICE_MODE=internal`
+  - `ASSISTANT_SERVICE_MODE=studio`
   - `ASSISTANT_SERVICE_MODE=rag`
   - empty/unknown local default: `all`
 - Public API mode:
@@ -589,23 +590,35 @@ The internal API owns corpus selection, records sanitized diagnostics, and keeps
   - `POST /chat/internal`
   - `GET /admin/summary`
   - `POST /admin/invites`
+- Studio API mode:
+  - `GET /health`
+  - `GET /studio/api/health`
+  - `GET /studio/api/content-drafts`
+  - `POST /studio/api/content-drafts`
+  - `GET /studio/api/ai-daily/issues`
+  - `POST /studio/api/publish-exports`
 - RAG mode:
   - `GET /health`
   - `POST /v1/retrieve`
   - `POST /v1/sync`
 - Local all mode keeps compatibility:
   - public/internal assistant routes at root
+  - Studio routes under `/studio/api`
   - mock/local Orchestrator under `/rag/*`
 
 ### 3. Contracts
 
-- Render final shape is one repository deployed as three Web Services:
+- Render final shape is one repository deployed as four Web Services:
   - `biau-public-assistant-api` with `ASSISTANT_SERVICE_MODE=public`.
   - `biau-internal-assistant-api` with `ASSISTANT_SERVICE_MODE=internal`.
+  - `biau-content-studio-api` with `ASSISTANT_SERVICE_MODE=studio`.
   - `biau-rag-orchestrator` with `ASSISTANT_SERVICE_MODE=rag`.
 - Public API must not mount internal/admin/RAG routes.
 - Internal API must not mount public chat or RAG routes; internal chat remains member-token protected.
+- Studio API must not mount public chat, internal auth/admin, or RAG routes; Studio routes stay under `/studio/api/*` and use `STUDIO_ADMIN_TOKEN` or `ADMIN_TOKEN` fallback.
 - RAG API must not mount chat/auth/admin routes.
+- Production split-database deployments must set `STUDIO_DATABASE_URL` on both `biau-content-studio-api` and `biau-internal-assistant-api` when internal Agent draft-write should create reviewable Studio drafts.
+- `biau-internal-assistant-api` may also need `RAG_SYNC_TOKEN` so admin knowledge sync can submit reviewed/active internal documents to the RAG Orchestrator. The browser must never receive that token.
 - `POST /v1/retrieve` accepts `{ query: string, scope?: "public" | "internal", limit?: number, locale?: string }`.
 - Public RAG key can retrieve only `scope: "public"`. Internal RAG key can retrieve only `scope: "internal"`.
 - `POST /v1/sync` requires `RAG_SYNC_TOKEN` in standalone RAG mode.
@@ -625,11 +638,13 @@ The internal API owns corpus selection, records sanitized diagnostics, and keeps
 - Qdrant/Supabase store unset or unavailable in local/all mode -> use deterministic local retrieval for tests and safe fallback.
 - Public mode request to `/chat/internal` or `/rag/health` -> route not mounted.
 - Internal mode request to `/chat/public` or `/rag/health` -> route not mounted.
+- Studio mode request to `/chat/public`, `/chat/internal`, `/admin/summary`, or `/v1/sync` -> route not mounted.
 - RAG mode request to `/chat/public` -> route not mounted.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: `assistant:service-modes-smoke` proves each service mode exposes only its route group.
+- Good: `biau-content-studio-api` runs `npm run prisma:migrate:studio && npm run server:start` and reports `serviceMode: "studio"` / `service: "biau-content-studio-api"` from `/health`.
 - Good: standalone RAG mode rejects a public key for `scope: "internal"`.
 - Good: `assistant:rag-smoke` still validates local `/rag/*` contract without external credentials.
 - Good: Qdrant config stays server-only and public scope queries only the public collection.

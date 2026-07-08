@@ -34,7 +34,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
-    startCommand: npm run prisma:migrate && npm run server:start
+    startCommand: npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -43,6 +43,8 @@ services:
       - key: CORS_ORIGIN
         value: https://biau.playlab.eu.cc
       - key: DATABASE_URL
+        sync: false
+      - key: STUDIO_DATABASE_URL
         sync: false
       - key: ADMIN_TOKEN
         sync: false
@@ -58,8 +60,30 @@ services:
         sync: false
       - key: ASSISTANT_RAG_API_KEY
         sync: false
+      - key: RAG_SYNC_TOKEN
+        sync: false
       - key: ASSISTANT_RAG_TIMEOUT_MS
         value: "3000"
+      - key: METRICS_ENABLED
+        value: "false"
+
+  - type: web
+    name: biau-content-studio-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run prisma:generate && npm run server:build
+    startCommand: npm run prisma:migrate:studio && npm run server:start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: ASSISTANT_SERVICE_MODE
+        value: studio
+      - key: CORS_ORIGIN
+        value: https://biau.playlab.eu.cc
+      - key: STUDIO_DATABASE_URL
+        sync: false
+      - key: STUDIO_ADMIN_TOKEN
+        sync: false
       - key: METRICS_ENABLED
         value: "false"
 

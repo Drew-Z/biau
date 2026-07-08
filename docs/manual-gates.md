@@ -30,7 +30,7 @@
 | Gate | Why Human | Safe Evidence |
 |---|---|---|
 | Cloudflare Pages 环境变量和 Functions 部署 | 需要平台权限；变量可能含密钥 | 本地 `cf-assistant:smoke`、部署后低敏 `/api/health` 结果截图或文字摘要 |
-| Render 三服务边界 | 需要控制台配置 public/internal/rag/studio 服务、启动命令和环境变量 | `assistant:service-modes-smoke`、`server:smoke`、低敏健康检查 |
+| Render 四服务边界 | 需要控制台配置 public/internal/studio/rag 服务、启动命令和环境变量 | `assistant:service-modes-smoke`、`server:smoke`、低敏健康检查 |
 | Aiven / Supabase / Qdrant / 数据库连接 | 连接串和 service key 只能放平台变量 | `prisma:validate`、迁移是否完成的低敏结论，不记录连接串 |
 | 计划任务、CI、合成监控 | 需要仓库/平台权限和运行频率选择 | `reliability:check -- --strict` 的 artifact 或低敏摘要 |
 
