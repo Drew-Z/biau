@@ -288,7 +288,7 @@ export function searchAssistantKnowledge<T extends AssistantKnowledgeItemLike>(
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title, 'zh-CN'))
 
-  const citations = scored.slice(0, limit).map((entry) => entry.item)
+  const citations = selectCitationsForIntent(scored, limit, intent).map((entry) => entry.item)
   const diversity = new Set(citations.map((item) => inferSourceType(item))).size
   const sufficiency = citations.length === 0 ? 'none' : citations.length >= 2 || diversity >= 2 ? 'enough' : 'weak'
 
@@ -299,6 +299,42 @@ export function searchAssistantKnowledge<T extends AssistantKnowledgeItemLike>(
     expandedEntityIds: Array.from(expanded.entityIds),
     sufficiency,
   }
+}
+
+function selectCitationsForIntent<T extends AssistantKnowledgeItemLike>(
+  scored: Array<{ item: T; score: number }>,
+  limit: number,
+  intent: AssistantRetrievalIntent,
+) {
+  const selected = scored.slice(0, limit)
+  if (intent !== 'demo-access' || selected.length < limit) return selected
+
+  const minimumProjectCitations = Math.min(2, limit)
+  let projectCount = selected.filter((entry) => inferSourceType(entry.item) === 'project').length
+  if (projectCount >= minimumProjectCitations) return selected
+
+  const selectedIds = new Set(selected.map((entry) => entry.item.id))
+  const adjusted = [...selected]
+  const projectBackfills = scored.filter((entry) => !selectedIds.has(entry.item.id) && inferSourceType(entry.item) === 'project')
+
+  for (const projectBackfill of projectBackfills) {
+    if (projectCount >= minimumProjectCitations) break
+
+    let replaceIndex = -1
+    for (let index = adjusted.length - 1; index >= 0; index -= 1) {
+      if (inferSourceType(adjusted[index].item) !== 'project') {
+        replaceIndex = index
+        break
+      }
+    }
+    if (replaceIndex === -1) break
+
+    adjusted[replaceIndex] = projectBackfill
+    selectedIds.add(projectBackfill.item.id)
+    projectCount += 1
+  }
+
+  return adjusted
 }
 
 export function buildPublicKnowledgeFallbackAnswer(

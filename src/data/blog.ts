@@ -39,14 +39,17 @@ export const blogPosts: BlogPostSummary[] = [
     "title": "电商 ERP 架构：后台、队列、插件与审计如何协同",
     "tag": "全栈开发",
     "column": "project-notes",
-    "detail": "电商 ERP 的价值不在页面数量，而在业务对象、任务状态、平台写入和审计闭环。本文讨论后台、API、Worker、插件和数据库如何形成可运营系统。",
+    "detail": "电商 ERP 的价值不在页面数量，而在业务对象、注册/登录边界、任务状态、平台写入和审计闭环。本文复盘后台、API、Worker、插件和数据库如何形成可演示的运营系统。",
     "date": "2026-06-12",
-    "readTime": "9 min",
+    "readTime": "12 min",
     "series": "项目案例",
     "knowledgePoints": [
       "业务建模",
       "异步任务",
-      "操作审计"
+      "注册登录边界",
+      "浏览器插件",
+      "操作审计",
+      "演示 Gate"
     ]
   },
   {

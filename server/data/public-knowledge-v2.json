@@ -378,7 +378,7 @@
     {
       "id": "blog:ozon-erp-architecture",
       "title": "电商 ERP 架构：后台、队列、插件与审计如何协同",
-      "summary": "电商 ERP 的价值不在页面数量，而在业务对象、任务状态、平台写入和审计闭环。本文讨论后台、API、Worker、插件和数据库如何形成可运营系统。",
+      "summary": "电商 ERP 的价值不在页面数量，而在业务对象、注册/登录边界、任务状态、平台写入和审计闭环。本文复盘后台、API、Worker、插件和数据库如何形成可演示的运营系统。",
       "href": "/blog/ozon-erp-architecture",
       "tags": [
         "全栈开发",
@@ -390,7 +390,10 @@
         "精选知识",
         "业务建模",
         "异步任务",
-        "操作审计"
+        "注册登录边界",
+        "浏览器插件",
+        "操作审计",
+        "演示 Gate"
       ],
       "visibility": "public",
       "sourceType": "blog"
@@ -1673,7 +1676,7 @@
     {
       "id": "chunk:blog:ozon-erp-architecture:1",
       "documentId": "blog:ozon-erp-architecture",
-      "text": "电商 ERP 的价值不在页面数量，而在业务对象、任务状态、平台写入和审计闭环。 本文讨论后台、API、Worker、插件和数据库如何形成可运营系统。",
+      "text": "电商 ERP 的价值不在页面数量，而在业务对象、注册/登录边界、任务状态、平台写入和审计闭环。 本文复盘后台、API、Worker、插件和数据库如何形成可演示的运营系统。",
       "section": "summary",
       "metadata": {
         "sourceType": "blog",
@@ -1687,7 +1690,10 @@
           "精选知识",
           "业务建模",
           "异步任务",
-          "操作审计"
+          "注册登录边界",
+          "浏览器插件",
+          "操作审计",
+          "演示 Gate"
         ]
       }
     },
@@ -2064,7 +2070,10 @@
         "精选知识",
         "业务建模",
         "异步任务",
-        "操作审计"
+        "注册登录边界",
+        "浏览器插件",
+        "操作审计",
+        "演示 gate"
       ],
       "metadata": {
         "documentId": "blog:ozon-erp-architecture",
