@@ -16,6 +16,7 @@
 - 最近低敏计数：草稿 `2`，来源 `3`，AI Daily issue `1`，publish export `0`。
 - 最近可靠性套件通过：`reliability:check` 结果为 8 passed、0 failed、1 skipped；新增通过项包含公开项目外链 synthetic，跳过项仍是 Legal RAG credentialed synthetic，因为缺少本地低权限 demo 环境变量。
 - 公开发布仍未自动发生：现有 AI Daily 草稿保持 `hidden + review-needed`，需要人工审核和导出 diff 审查后才能进入公开静态内容。
+- 草稿审核路径已写入 [`Internal RAG / Studio / AI Daily 验收手册`](./internal-rag-studio-ai-daily-runbook.md)：从 `/studio` 草稿箱选择草稿，检查编辑器和公开预览，通过后创建 Publish Export，再由本地或 CI 执行静态导出。
 
 ## 服务与数据库边界
 
@@ -57,7 +58,8 @@ npm.cmd run studio:smoke
 6. 用浏览器打开 `/studio`，粘贴 Studio token，检查 `/studio/api/health` 能返回低敏状态。
 7. 创建一条公开安全 source item，再创建 AI Daily issue，并在 `/studio/ai-daily/:issueId` 转为内容草稿。
 8. 确认生成的草稿是 `hidden + review-needed + aiAssistance: none`。
-9. 人工审核通过后再创建 Publish Export，并在本地或 CI 执行 `studio:export -- --run-checks`。
+9. 按验收手册中的“草稿审核路径”检查正文、来源、预览和安全边界。
+10. 人工审核通过后再创建 Publish Export，并在本地或 CI 执行 `studio:export -- --run-checks`。
 
 ## 已完成的人工 gate
 

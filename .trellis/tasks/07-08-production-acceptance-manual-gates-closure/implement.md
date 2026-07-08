@@ -120,6 +120,7 @@ Current low-sensitive production acceptance:
 - Status-detail planning prompt aligned: `studio:status-plan` now tells editors to run `status:contract` and `docs:manual-gates-check` after applying status data updates, matching the status/manual-gate contract.
 - Studio smoke guidance assertions added: `studio:smoke` now captures the project-detail and status-plan sample outputs and fails if the required validation markers disappear.
 - Manual-gate coverage guard hardened: `docs:manual-gates-check` now imports structured `reliabilityProjects` through `tsx` instead of regex-parsing `src/data/statusTargets.ts`, so manual-gate coverage follows the actual status data model and is not sensitive to source formatting.
+- Studio review runbook clarified: the production handoff now documents exactly how to choose a draft from `/studio`, inspect editor metadata and public preview, approve the draft, create a Publish Export, and record only low-sensitive evidence; `docs:manual-gates-check` now guards that this review path remains documented.
 
 Validation:
 

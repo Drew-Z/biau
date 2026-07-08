@@ -1,6 +1,6 @@
 # Internal RAG / Studio / AI Daily 验收手册
 
-这份手册用于生产环境浏览器验收。不要把 `ADMIN_TOKEN`、`STUDIO_ADMIN_TOKEN`、数据库连接串、模型 key、RAG token 或后台地址发到聊天里，也不要写进仓库。
+这份手册用于生产环境浏览器验收。不要把 `ADMIN_TOKEN`、`STUDIO_ADMIN_TOKEN`、数据库连接串、模型 key、RAG token 或后台地址发到聊天里，也不要写进仓库。跨项目人工队列统一记录在 [`docs/manual-gates.md`](./manual-gates.md)。
 
 ## 1. 内部知识库同步
 
@@ -70,6 +70,26 @@ https://biau.playlab.eu.cc/studio
 - `/studio` 已完成一次生产浏览器刷新验收，Studio token 可保存并刷新数据。
 - Studio API 直连 health、草稿、来源、AI Daily issue 和 publish export 列表均已返回 `200`。
 - 仍不要把 token、数据库 URL 或生产请求头写入聊天或仓库；后续只记录草稿 id/slug、状态、可见性和计数等低敏信息。
+
+### 草稿审核路径
+
+当草稿已经存在但不知道从哪里审核时，按这个顺序走：
+
+1. 在 `/studio` 顶部保存 token 并点击“刷新数据”。
+2. 看页面第一屏的“审核从草稿箱开始”指引，先确认当前显示的“当前草稿”。
+3. 在左侧“草稿箱”点击要审核的草稿；如果是助手创建的草稿，也可以用 `/studio?draft=<draft-id-or-slug>` 定位。
+4. 中间“编辑草稿”区域是正文和元数据；检查标题、slug、栏目、标签、摘要、正文、知识点、关联项目、可见性和 `aiAssistance`。
+5. 下方“公开文章预览”是访客视角；检查正文结构、来源卡、图片/流程图、项目关联和是否出现敏感信息。
+6. 如果需要修改，先点“保存草稿”；如果不适合公开，不要审核通过。
+7. 如果内容、来源、可见性和安全边界都通过，点击“审核通过”。
+8. 审核状态变成 `approved` 后，再点击“创建导出记录”。
+
+成功标准：
+
+- 草稿状态从 `review-needed` 变为 `approved`。
+- Publish Export 列表新增一条记录。
+- 只记录低敏信息：草稿 id/slug、栏目、状态、可见性、export id 和检查结果。
+- 不把 Studio token、数据库 URL、真实请求头、后台地址或模型渠道写入聊天或仓库。
 
 ## 3. 首次 AI Daily issue 到草稿
 

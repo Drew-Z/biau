@@ -23,6 +23,10 @@ const files = {
     label: 'docs/studio-ai-daily-production-readiness.md',
     path: resolve(repoRoot, 'docs/studio-ai-daily-production-readiness.md'),
   },
+  runbook: {
+    label: 'docs/internal-rag-studio-ai-daily-runbook.md',
+    path: resolve(repoRoot, 'docs/internal-rag-studio-ai-daily-runbook.md'),
+  },
 }
 
 const ledgerNeedles = [
@@ -48,6 +52,16 @@ const ledgerLinks = [
   './site-monitoring.md',
   './studio-ai-daily-production-readiness.md',
   './deployment.md',
+]
+
+const studioRunbookNeedles = [
+  '### 草稿审核路径',
+  '审核从草稿箱开始',
+  '公开文章预览',
+  '审核通过',
+  '创建导出记录',
+  'Publish Export 列表新增一条记录',
+  '不把 Studio token、数据库 URL、真实请求头、后台地址或模型渠道写入聊天或仓库',
 ]
 
 interface LedgerCoverage {
@@ -140,11 +154,12 @@ function checkStatusProjectLedgerCoverage(ledger: string) {
 }
 
 async function main() {
-  const [ledger, observability, monitoring, studioReadiness] = await Promise.all([
+  const [ledger, observability, monitoring, studioReadiness, runbook] = await Promise.all([
     readFile(files.ledger.path, 'utf8'),
     readFile(files.observability.path, 'utf8'),
     readFile(files.monitoring.path, 'utf8'),
     readFile(files.studioReadiness.path, 'utf8'),
+    readFile(files.runbook.path, 'utf8'),
   ])
 
   const issues = [
@@ -152,11 +167,19 @@ async function main() {
     ...collectMissing(files.ledger.label, ledger, ledgerLinks),
     ...scanSecrets(files.ledger.label, ledger),
     ...checkStatusProjectLedgerCoverage(ledger),
+    ...collectMissing(files.runbook.label, runbook, studioRunbookNeedles),
+    ...scanSecrets(files.runbook.label, runbook),
   ]
 
-  for (const file of [files.observability, files.monitoring, files.studioReadiness]) {
+  for (const file of [files.observability, files.monitoring, files.studioReadiness, files.runbook]) {
     const text =
-      file === files.observability ? observability : file === files.monitoring ? monitoring : studioReadiness
+      file === files.observability
+        ? observability
+        : file === files.monitoring
+          ? monitoring
+          : file === files.studioReadiness
+            ? studioReadiness
+            : runbook
     if (!text.includes('manual-gates.md')) issues.push(`${file.label} 缺少 docs/manual-gates.md 导航。`)
   }
 
