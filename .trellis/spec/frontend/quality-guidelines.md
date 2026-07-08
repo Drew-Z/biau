@@ -104,6 +104,13 @@ summary, anchors to edit and preview, and clear actions for "审核通过" and
 "创建导出记录". `check:ui` treats a missing review guide on `/studio` as a UI
 regression.
 
+Studio API failures should distinguish user-fixable token problems from real
+network or service failures. Before sending `Authorization`, reject tokens that
+contain control characters or non-header-safe characters, and explain that the
+editor should clear and paste a plain-text token. Fetch/CORS failures may be
+reported as a generic browser connection problem, but HTTP responses such as
+`401 missing-studio-token` must still use the normal token mismatch message.
+
 ### Blog Knowledge Quality Gate
 
 Public `知识积累 / Knowledge Notes` posts must pass

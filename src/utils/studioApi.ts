@@ -19,20 +19,37 @@ export interface StudioApiResult {
   payload: unknown
 }
 
-export async function requestStudioApi(path: string, token: string, init: RequestInit = {}): Promise<StudioApiResult> {
-  const response = await fetch(`${STUDIO_API_BASE}/studio/api${path}`, {
-    ...init,
-    headers: {
-      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-      ...init.headers,
-      Authorization: `Bearer ${token}`,
-    },
+function tokenHasInvalidHeaderCharacters(token: string) {
+  return [...token].some((char) => {
+    const codePoint = char.codePointAt(0) ?? 0
+    return codePoint > 255 || codePoint === 127 || codePoint < 32
   })
-  const payload = (await response.json().catch(() => ({}))) as unknown
-  return { ok: response.ok, status: response.status, payload }
+}
+
+export async function requestStudioApi(path: string, token: string, init: RequestInit = {}): Promise<StudioApiResult> {
+  if (tokenHasInvalidHeaderCharacters(token)) {
+    return { ok: false, status: 0, payload: { error: 'invalid-token-format' } }
+  }
+
+  try {
+    const response = await fetch(`${STUDIO_API_BASE}/studio/api${path}`, {
+      ...init,
+      headers: {
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
+        ...init.headers,
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    const payload = (await response.json().catch(() => ({}))) as unknown
+    return { ok: response.ok, status: response.status, payload }
+  } catch {
+    return { ok: false, status: 0, payload: { error: 'studio-network-error' } }
+  }
 }
 
 export function explainStudioApiError(status: number, errorCode: string) {
+  if (errorCode === 'invalid-token-format') return 'Studio token 格式不正确：请清除后重新粘贴纯文本 token，不要包含换行、空格、中文或不可见字符。'
+  if (errorCode === 'studio-network-error') return '浏览器无法连接 Studio API。请检查 Studio API 地址是否仍是当前 Render 服务，或稍后重试；如果后端健康但页面失败，通常是浏览器网络、CORS 或代理拦截。'
   if (errorCode === 'studio-auth-not-configured') return '后端还没有配置 STUDIO_ADMIN_TOKEN 或 ADMIN_TOKEN。'
   if (status === 401 || errorCode === 'missing-studio-token') return 'Studio token 缺失或不匹配。'
   if (status === 503 || errorCode === 'database-not-configured') return '后端数据库尚未配置，内容工作台暂不能写入。'
