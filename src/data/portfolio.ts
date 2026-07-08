@@ -190,6 +190,17 @@ export const projects: Project[] = [
             '问答结果附带 citations 和 diagnostics，帮助用户检查命中文档、片段、召回路径和回答边界。',
             '项目空间、文档、导入任务、问答、质量报告、评测运行和审计日志在后端路由中分别建模。',
           ],
+          visual: {
+            id: 'legal-rag-qa-citations',
+            type: 'screenshot',
+            title: '问答与引用诊断截图',
+            description: '用真实工作台截图展示一次公开安全数据集问答如何同时返回 answer、citations 和 diagnostics。',
+            image: '/images/projects/showcase/legal-rag-qa.png',
+            alt: 'Legal RAG 问答结果与引用诊断界面截图',
+            caption: '截图展示公开安全数据集上的问答、引用和诊断信息，不包含真实法律业务资料、账号或模型配置。',
+            sourceLabel: '打开工作台',
+            sourceUrl: 'https://legal-rag-web.onrender.com',
+          },
         },
         {
           title: '合同审查链路',

@@ -112,6 +112,7 @@ Current low-sensitive production acceptance:
 - Public assistant retrieval parity completed: `demo-access` citation selection now mirrors the same project-citation backfill behavior in `src/data/assistantKnowledge.ts`, `server/src/knowledge.ts`, and `functions/_shared/assistant.ts`. This prevents the frontend fallback, Express API, and Cloudflare Pages Function from drifting when demo-ready questions need multiple `project:*` citations. Backend code-spec now records this three-surface contract.
 - Full local verification for this slice passed with `npm.cmd run verify`, including assistant index/kg/eval, local RAG sync, Prisma validate, lint, server build/smoke, service-mode smoke, RAG smoke, Cloudflare Function smoke, frontend build, blog checks, project-notes check, docs checks, Studio smoke, project-detail evidence, status contract, preview, and UI checks.
 - Fresh low-sensitive reliability refresh completed after the project-note guard slice: `npm.cmd run reliability:check -- --timeout 20000 --step-timeout 140000` passed with 8 passed, 0 failed, 1 skipped, regenerating main-site, public-link, Pet, Playlab, reliability-suite, and aggregate site-status snapshots. The skipped item remains Legal RAG credentialed synthetic until low-privilege demo credentials are configured.
+- Legal RAG project-detail visual follow-up completed: the workflow section now uses the existing public-safe `legal-rag-qa.png` screenshot so visitors can see answer, citation, and diagnostics UI in the case-study body, not only abstract flow diagrams. `project-details:check` now reports Legal RAG at `16/4` sections/visuals, and targeted `check:ui` passed across desktop and mobile preview.
 
 Validation:
 
@@ -128,6 +129,8 @@ npm.cmd run verify
 npm.cmd run reliability:check -- --timeout 20000 --step-timeout 140000
 npm.cmd run status:contract
 npm.cmd run docs:manual-gates-check
+npm.cmd run project-details:check
+npm.cmd run check:ui
 ```
 
 ## Phase 4: Project Credentialed Checks
