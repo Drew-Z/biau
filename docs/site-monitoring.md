@@ -78,7 +78,7 @@ npm.cmd run site:monitor
 npm.cmd run public-links:check
 ```
 
-`reliability:check` 是跨项目可靠性总入口，会顺序运行主站、Legal RAG、ERP、Xunqiu、Pet、BIAU Playlab 的 synthetic 检查，再生成 `public/status/site-status.json` 和 `public/status/reliability-suite.json`。默认会继续执行后续步骤并写出套件报告；需要让 CI 在故障时失败时使用：
+`reliability:check` 是跨项目可靠性总入口，会顺序运行主站、公开项目外链、Legal RAG、ERP、Xunqiu、Pet、BIAU Playlab 的 synthetic 检查，再生成 `public/status/site-status.json` 和 `public/status/reliability-suite.json`。默认会继续执行后续步骤并写出套件报告；需要让 CI 在故障时失败时使用：
 
 ```powershell
 npm.cmd run reliability:check -- --strict
