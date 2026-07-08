@@ -6,17 +6,20 @@ export type { BlogColumn, BlogPostSummary } from './blogShared'
 export const blogPosts: BlogPostSummary[] = [
   {
     "slug": "legal-rag-review",
-    "title": "合同审查 RAG 项目复盘：从可演示 MVP 到生产化路线",
+    "title": "合同审查 RAG 项目复盘：引用、诊断、评测与受控演示",
     "tag": "AI 应用",
     "column": "project-notes",
-    "detail": "复盘法律智能机器人与合同审查项目的设计思路：如何从文档导入、条款切分、引用问答和风险审查，走向可解释、可复核、可迭代的 AI 应用。",
+    "detail": "复盘 Legal RAG 如何把文档入库、项目空间、引用问答、合同风险审查、质量面板和登录门禁组织成一个可演示、可复核的法律 AI 工作台。",
     "date": "2026-06-11",
-    "readTime": "12 min",
+    "readTime": "14 min",
     "series": "项目复盘",
     "knowledgePoints": [
       "Legal RAG",
+      "引用溯源",
       "合同风险审查",
-      "AI 应用 MVP"
+      "项目空间",
+      "质量评测",
+      "受控演示"
     ]
   },
   {

@@ -335,8 +335,8 @@
     },
     {
       "id": "blog:legal-rag-review",
-      "title": "合同审查 RAG 项目复盘：从可演示 MVP 到生产化路线",
-      "summary": "复盘法律智能机器人与合同审查项目的设计思路：如何从文档导入、条款切分、引用问答和风险审查，走向可解释、可复核、可迭代的 AI 应用。",
+      "title": "合同审查 RAG 项目复盘：引用、诊断、评测与受控演示",
+      "summary": "复盘 Legal RAG 如何把文档入库、项目空间、引用问答、合同风险审查、质量面板和登录门禁组织成一个可演示、可复核的法律 AI 工作台。",
       "href": "/blog/legal-rag-review",
       "tags": [
         "AI 应用",
@@ -348,8 +348,11 @@
         "项目案例",
         "精选知识",
         "Legal RAG",
+        "引用溯源",
         "合同风险审查",
-        "AI 应用 MVP"
+        "项目空间",
+        "质量评测",
+        "受控演示"
       ],
       "visibility": "public",
       "sourceType": "blog"
@@ -1638,7 +1641,7 @@
     {
       "id": "chunk:blog:legal-rag-review:1",
       "documentId": "blog:legal-rag-review",
-      "text": "复盘法律智能机器人与合同审查项目的设计思路：如何从文档导入、条款切分、引用问答和风险审查，走向可解释、可复核、可迭代的 AI 应用。",
+      "text": "复盘 Legal RAG 如何把文档入库、项目空间、引用问答、合同风险审查、质量面板和登录门禁组织成一个可演示、可复核的法律 AI 工作台。",
       "section": "summary",
       "metadata": {
         "sourceType": "blog",
@@ -1652,8 +1655,11 @@
           "项目案例",
           "精选知识",
           "Legal RAG",
+          "引用溯源",
           "合同风险审查",
-          "AI 应用 MVP"
+          "项目空间",
+          "质量评测",
+          "受控演示"
         ]
       }
     },
@@ -2050,9 +2056,9 @@
     {
       "id": "blog:legal-rag-review",
       "type": "blog-post",
-      "name": "合同审查 RAG 项目复盘：从可演示 MVP 到生产化路线",
+      "name": "合同审查 RAG 项目复盘：引用、诊断、评测与受控演示",
       "aliases": [
-        "合同审查 rag 项目复盘：从可演示 mvp 到生产化路线",
+        "合同审查 rag 项目复盘：引用、诊断、评测与受控演示",
         "ai 应用",
         "project-notes",
         "项目总结",
@@ -2062,8 +2068,11 @@
         "项目案例",
         "精选知识",
         "legal rag",
+        "引用溯源",
         "合同风险审查",
-        "ai 应用 mvp"
+        "项目空间",
+        "质量评测",
+        "受控演示"
       ],
       "metadata": {
         "documentId": "blog:legal-rag-review",

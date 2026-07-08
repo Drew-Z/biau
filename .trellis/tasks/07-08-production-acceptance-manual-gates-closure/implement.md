@@ -107,6 +107,7 @@ Current low-sensitive production acceptance:
 - Public assistant retrieval follow-up completed: after the Ozon article added demo-related vocabulary, the local demo-access query could return too few project citations in the default window. `searchAssistantKnowledge` now keeps at least two project citations for demo-access questions when project candidates exist, preserving useful blog/status context without weakening `assistant:kg-check` or `assistant:eval`.
 - Project note quality slice completed: `pet-workspace-pipeline` was expanded from a short generation-pipeline note into a fuller WIP case note covering Android App, Community API, Admin Review, pet.zip/package contract, human review, synthetic APK gate, low-sensitive test evidence, and release-gate follow-ups without exposing private deployment or generation details.
 - Project note quality slice completed: `legal-rag-production-upgrade-plan` was expanded from a short upgrade checklist into a fuller productionization case note covering project spaces, ingestion jobs, pgvector persistence, hybrid retrieval, rule-first contract review, quality/eval panels, audit logs, protected demo gates, and follow-up credentialed synthetic work.
+- Project note quality slice completed: `legal-rag-review` was expanded from an early MVP recap into the main Legal RAG case note covering the full demo path, project spaces, ingestion metadata, hybrid recall/refusal, structured contract review, quality panels, protected demo gates, evidence boundaries, and follow-up team-trial work.
 
 Validation:
 
