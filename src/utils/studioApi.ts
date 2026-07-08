@@ -69,3 +69,8 @@ export function explainStudioApiError(status: number, errorCode: string) {
   if (errorCode === 'ai-daily-issue-not-ready') return '这期 AI 日报还没有满足审核入口，请先补齐 brief 和来源证据。'
   return `Studio API 返回 ${status}${errorCode ? ` / ${errorCode}` : ''}。`
 }
+
+export function explainStudioClientException(error: unknown, action: string) {
+  const name = error instanceof Error && error.name ? error.name : 'unknown'
+  return `Studio 页面处理${action}时发生前端异常（${name}）。这通常不是 token 不匹配；token 错误会显示 401 / token 缺失或不匹配。请刷新页面后重试，如果仍失败，把浏览器控制台错误发给 Codex 定位。`
+}

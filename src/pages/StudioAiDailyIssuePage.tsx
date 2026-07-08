@@ -21,7 +21,13 @@ import {
   formatAiDailyBrief,
   parseAiDailyBriefText,
 } from '../utils/studioAiDailyBrief'
-import { STUDIO_API_BASE, STUDIO_API_ENV_NAMES, explainStudioApiError, requestStudioApi } from '../utils/studioApi'
+import {
+  STUDIO_API_BASE,
+  STUDIO_API_ENV_NAMES,
+  explainStudioApiError,
+  explainStudioClientException,
+  requestStudioApi,
+} from '../utils/studioApi'
 
 interface IssueFormState {
   title: string
@@ -172,8 +178,8 @@ export function StudioAiDailyIssuePage() {
         if (!applyDetailPayload(issueResult.payload)) return
         if (sourceResult.ok) setSourcePool(normalizeStudioSources(sourceResult.payload))
         setStatusText('AI 日报 issue 详情已刷新。')
-      } catch {
-        setStatusText('无法连接 Studio API。')
+      } catch (error) {
+        setStatusText(explainStudioClientException(error, '刷新 AI 日报 issue'))
       } finally {
         setIsLoading(false)
       }
@@ -263,8 +269,8 @@ export function StudioAiDailyIssuePage() {
       }
       if (!applyDetailPayload(result.payload)) return
       setStatusText(nextStatus === 'review-needed' ? 'AI 日报 issue 已进入待审核。' : 'AI 日报 issue 已保存。')
-    } catch {
-      setStatusText('无法连接 Studio API。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '保存 AI 日报 issue'))
     } finally {
       setIsSaving(false)
     }
@@ -302,8 +308,8 @@ export function StudioAiDailyIssuePage() {
       }
       if (!applyDetailPayload(result.payload)) return
       setStatusText('已根据本期来源创建 AI 日报内容草稿，可返回 Studio 草稿箱继续预览和审核。')
-    } catch {
-      setStatusText('无法连接 Studio API。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '转换内容草稿'))
     } finally {
       setIsConverting(false)
     }

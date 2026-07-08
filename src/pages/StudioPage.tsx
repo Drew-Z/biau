@@ -37,7 +37,13 @@ import {
   type StudioResourceDraftType,
 } from '../utils/studioResourceDraft'
 import { createStatusDraftTemplate } from '../utils/studioStatusDraft'
-import { STUDIO_API_BASE, STUDIO_API_ENV_NAMES, explainStudioApiError, requestStudioApi } from '../utils/studioApi'
+import {
+  STUDIO_API_BASE,
+  STUDIO_API_ENV_NAMES,
+  explainStudioApiError,
+  explainStudioClientException,
+  requestStudioApi,
+} from '../utils/studioApi'
 
 interface DraftFormState {
   title: string
@@ -431,8 +437,8 @@ export function StudioPage() {
       if (issueResult.ok) setIssues(normalizeStudioIssues(issueResult.payload))
       if (publishExportResult.ok) setPublishExports(normalizeStudioPublishExports(publishExportResult.payload))
       setStatusText(nextStatusText)
-    } catch {
-      setStatusText('无法连接 Studio API。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '初始化数据'))
     } finally {
       setIsLoading(false)
     }
@@ -563,8 +569,8 @@ export function StudioPage() {
       setSelectedDraftId(nextDraft.id)
       setDraftForm(draftToForm(nextDraft))
       setStatusText(selectedDraft ? '草稿已保存。' : '草稿已创建。')
-    } catch {
-      setStatusText('无法连接 Studio API。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '保存草稿'))
     } finally {
       setIsSavingDraft(false)
     }
@@ -656,8 +662,8 @@ export function StudioPage() {
       setSourcePickerId(source.id)
       setSourceForm(defaultSourceForm)
       setStatusText('来源已保存，已设为日报来源选择器的当前选项。')
-    } catch {
-      setStatusText('无法连接 Studio API。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '保存来源'))
     } finally {
       setIsSavingSource(false)
     }
@@ -716,8 +722,8 @@ export function StudioPage() {
       setIssues((current) => [issue, ...current])
       setIssueForm(defaultIssueForm())
       setStatusText('AI 日报 issue 已创建。')
-    } catch {
-      setStatusText('无法连接 Studio API。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '创建 AI 日报 issue'))
     } finally {
       setIsSavingIssue(false)
     }

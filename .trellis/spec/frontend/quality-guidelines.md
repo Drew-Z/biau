@@ -110,6 +110,10 @@ contain control characters or non-header-safe characters, and explain that the
 editor should clear and paste a plain-text token. Fetch/CORS failures may be
 reported as a generic browser connection problem, but HTTP responses such as
 `401 missing-studio-token` must still use the normal token mismatch message.
+Do not leave page-level `catch` blocks that overwrite these diagnostics with
+`无法连接 Studio API`; route components should route unexpected client exceptions
+through the shared Studio client-exception explainer so frontend parsing errors,
+bad saved header values, and real token mismatches stay distinguishable.
 
 ### Blog Knowledge Quality Gate
 
