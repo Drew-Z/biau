@@ -16,15 +16,34 @@ function spawnNpm(args, options = {}) {
   })
 }
 
-function runStep(index, total, name, args) {
+function runStep(index, total, name, args, options = {}) {
   console.log(`\n[studio:smoke] ${index}/${total} ${name}`)
   console.log(`[studio:smoke] ${npmCommand} ${args.join(' ')}`)
 
   return new Promise((resolve, reject) => {
-    const child = spawnNpm(args, { stdio: 'inherit' })
+    const shouldCapture = Array.isArray(options.expectedOutputMarkers) && options.expectedOutputMarkers.length > 0
+    const child = spawnNpm(args, { stdio: shouldCapture ? ['ignore', 'pipe', 'pipe'] : 'inherit' })
+    let output = ''
+    if (shouldCapture) {
+      child.stdout?.on('data', (chunk) => {
+        const text = chunk.toString()
+        output += text
+        process.stdout.write(text)
+      })
+      child.stderr?.on('data', (chunk) => {
+        const text = chunk.toString()
+        output += text
+        process.stderr.write(text)
+      })
+    }
     child.on('error', reject)
     child.on('exit', (code) => {
+      const missing = shouldCapture ? options.expectedOutputMarkers.filter((marker) => !output.includes(marker)) : []
       if (code === 0) {
+        if (missing.length > 0) {
+          reject(new Error(`${name} output missing required marker(s): ${missing.join(', ')}`))
+          return
+        }
         resolve()
         return
       }
@@ -60,10 +79,12 @@ async function main() {
     {
       name: 'Project detail export plan sample',
       args: ['run', 'studio:project-detail-plan', '--', '--sample', 'legal-rag'],
+      expectedOutputMarkers: ['project-details:check'],
     },
     {
       name: 'Status detail export plan sample',
       args: ['run', 'studio:status-plan', '--', '--sample', 'legal-rag'],
+      expectedOutputMarkers: ['status:contract', 'docs:manual-gates-check'],
     },
     {
       name: 'Offline AI Daily draft sample',
@@ -83,7 +104,9 @@ async function main() {
   try {
     for (let index = 0; index < steps.length; index += 1) {
       const step = steps[index]
-      await runStep(index + 1, steps.length, step.name, step.args)
+      await runStep(index + 1, steps.length, step.name, step.args, {
+        expectedOutputMarkers: step.expectedOutputMarkers,
+      })
     }
     await assertAiDailySmokeOutput(aiDailySmokePath)
     console.log('\n[studio:smoke] passed without live model calls, external fetches, or tracked draft output.')

@@ -118,6 +118,7 @@ Current low-sensitive production acceptance:
 - Studio export validation guard aligned: `studio:export -- --run-checks` now runs the same blog quality gates used by release verification, including `blog:knowledge-check` and `blog:project-notes-check`, and the pending validation list is generated from one shared command list to avoid drift. Manual gates now list project-notes quality as part of Publish Export evidence.
 - Project-detail planning prompt aligned: `studio:project-detail-plan` now tells editors to run `project-details:check` after applying a portfolio update, matching the stricter visual/content gate.
 - Status-detail planning prompt aligned: `studio:status-plan` now tells editors to run `status:contract` and `docs:manual-gates-check` after applying status data updates, matching the status/manual-gate contract.
+- Studio smoke guidance assertions added: `studio:smoke` now captures the project-detail and status-plan sample outputs and fails if the required validation markers disappear.
 
 Validation:
 
