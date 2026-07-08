@@ -184,6 +184,7 @@ Prefer real project screenshots and runtime screenshots. Missing assets should u
 
 Project detail pages should include both runtime evidence and structural explanation:
 
+- at least three in-body visual blocks for each standard case-study page, so the detail body is not just a hero image plus text;
 - at least one in-body `screenshot` visual, so visitors can see the actual product/game/app state;
 - at least one in-body structural visual: `workflow`, `architecture`, `data-flow`, or `diagram`, so visitors can understand the implementation or usage path.
 - all standard case-study groups should be present: `overview`, `workflow`, `architecture`, `quality`, `limitations`, and `roadmap`;

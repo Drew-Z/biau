@@ -113,6 +113,7 @@ Current low-sensitive production acceptance:
 - Full local verification for this slice passed with `npm.cmd run verify`, including assistant index/kg/eval, local RAG sync, Prisma validate, lint, server build/smoke, service-mode smoke, RAG smoke, Cloudflare Function smoke, frontend build, blog checks, project-notes check, docs checks, Studio smoke, project-detail evidence, status contract, preview, and UI checks.
 - Fresh low-sensitive reliability refresh completed after the project-note guard slice: `npm.cmd run reliability:check -- --timeout 20000 --step-timeout 140000` passed with 8 passed, 0 failed, 1 skipped, regenerating main-site, public-link, Pet, Playlab, reliability-suite, and aggregate site-status snapshots. The skipped item remains Legal RAG credentialed synthetic until low-privilege demo credentials are configured.
 - Legal RAG project-detail visual follow-up completed: the workflow section now uses the existing public-safe `legal-rag-qa.png` screenshot so visitors can see answer, citation, and diagnostics UI in the case-study body, not only abstract flow diagrams. `project-details:check` now reports Legal RAG at `16/4` sections/visuals, and targeted `check:ui` passed across desktop and mobile preview.
+- Project-detail visual density guard tightened: `project-details:check` now requires at least 3 in-body visual blocks per standard case-study page, and `docs/showcase-assets.md` plus frontend quality spec describe the same baseline. The stricter gate passed for all 12 projects, with no project falling below 3 visuals.
 
 Validation:
 

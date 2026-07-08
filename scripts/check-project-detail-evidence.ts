@@ -17,7 +17,7 @@ interface ProjectEvidenceSummary {
 }
 
 const MIN_DETAIL_SECTIONS = 5
-const MIN_BODY_VISUALS = 2
+const MIN_BODY_VISUALS = 3
 const MIN_SECTION_DETAIL_CHARS = 60
 const MIN_VISUAL_ALT_CHARS = 16
 const MIN_VISUAL_CAPTION_CHARS = 30
