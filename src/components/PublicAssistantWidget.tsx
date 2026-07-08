@@ -60,6 +60,10 @@ interface PublicAnswerResult {
   meta: AssistantAnswerMeta
 }
 
+interface PublicAnswerAttempt extends PublicAnswerResult {
+  apiBase: string | null
+}
+
 function isAssistantFallbackReason(value: unknown): value is AssistantFallbackReason {
   return (
     value === 'not_configured' ||
@@ -112,6 +116,12 @@ function compactAnswerContent(content: string, maxLength: number) {
 
 function buildLocalKnowledgeAnswer(question: string, citations: AssistantKnowledgeItem[], reason?: AssistantFallbackReason) {
   return buildPublicKnowledgeFallbackAnswer(question, citations, { reason, maxLength: MAX_FALLBACK_ANSWER_LENGTH })
+}
+
+function getAssistantApiCandidates(preferredApiBase?: string | null) {
+  return Array.from(
+    new Set([preferredApiBase, CONFIGURED_API_BASE, SAME_ORIGIN_ASSISTANT_API_BASE].filter((item): item is string => Boolean(item))),
+  )
 }
 
 async function requestPublicAnswer(question: string, apiBase: string | null): Promise<PublicAnswerResult> {
@@ -174,6 +184,30 @@ async function requestPublicAnswer(question: string, apiBase: string | null): Pr
   }
 }
 
+async function requestPublicAnswerWithFallback(question: string, preferredApiBase: string | null): Promise<PublicAnswerAttempt> {
+  const candidates = getAssistantApiCandidates(preferredApiBase)
+  if (candidates.length === 0) {
+    return {
+      ...(await requestPublicAnswer(question, null)),
+      apiBase: null,
+    }
+  }
+
+  let lastError: unknown
+  for (const candidate of candidates) {
+    try {
+      return {
+        ...(await requestPublicAnswer(question, candidate)),
+        apiBase: candidate,
+      }
+    } catch (error) {
+      lastError = error
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('public-chat-request-failed')
+}
+
 function getFallbackLabel(reason?: AssistantFallbackReason) {
   if (reason === 'provider_error') return '模型通道失败，已回退'
   if (reason === 'empty_response') return '模型无内容，已回退'
@@ -233,25 +267,30 @@ export function PublicAssistantWidget() {
   useEffect(() => {
     if (!isOpen) return
     let cancelled = false
-    const candidateApiBase = CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE
+    const candidateApiBases = getAssistantApiCandidates(CONFIGURED_API_BASE)
 
     async function refreshServiceHealth() {
-      try {
-        const response = await fetch(`${candidateApiBase}/health`)
-        if (!response.ok) throw new Error('assistant-health-failed')
-        const payload = (await response.json()) as unknown
-        const model = isRecord(payload) && typeof payload.model === 'string' ? payload.model.trim() : ''
-        const mode = isRecord(payload) && typeof payload.mode === 'string' ? payload.mode.trim() : ''
-        const modelConfigured = isRecord(payload) && payload.modelConfigured === true
-        if (!cancelled) {
-          setApiBase(candidateApiBase)
-          setServiceState(mode === 'model' || modelConfigured || (model && model !== 'fallback') ? 'model' : 'fallback')
+      for (const candidateApiBase of candidateApiBases) {
+        try {
+          const response = await fetch(`${candidateApiBase}/health`)
+          if (!response.ok) throw new Error('assistant-health-failed')
+          const payload = (await response.json()) as unknown
+          const model = isRecord(payload) && typeof payload.model === 'string' ? payload.model.trim() : ''
+          const mode = isRecord(payload) && typeof payload.mode === 'string' ? payload.mode.trim() : ''
+          const modelConfigured = isRecord(payload) && payload.modelConfigured === true
+          if (!cancelled) {
+            setApiBase(candidateApiBase)
+            setServiceState(mode === 'model' || modelConfigured || (model && model !== 'fallback') ? 'model' : 'fallback')
+          }
+          return
+        } catch {
+          // Try the next public-safe assistant API candidate.
         }
-      } catch {
-        if (!cancelled) {
-          setApiBase(CONFIGURED_API_BASE || null)
-          setServiceState(CONFIGURED_API_BASE ? 'error' : 'local')
-        }
+      }
+
+      if (!cancelled) {
+        setApiBase(CONFIGURED_API_BASE || null)
+        setServiceState(CONFIGURED_API_BASE ? 'error' : 'local')
       }
     }
 
@@ -290,8 +329,9 @@ export function PublicAssistantWidget() {
     setIsLoading(true)
 
     try {
-      const result = await requestPublicAnswer(trimmed, apiBase)
-      setServiceState((current) => getServiceStateAfterAnswer(current, result.meta, Boolean(apiBase)))
+      const result = await requestPublicAnswerWithFallback(trimmed, apiBase)
+      setApiBase(result.apiBase)
+      setServiceState((current) => getServiceStateAfterAnswer(current, result.meta, Boolean(result.apiBase)))
       setMessages((current) => [
         ...current,
         {
