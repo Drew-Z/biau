@@ -81,6 +81,33 @@ those keys with `page.addInitScript()` before navigation. Do not rely on the
 current developer browser, a previously visited route, or a stale preview server
 to happen to have the right storage state.
 
+### Generated Route Lists And Sitemaps
+
+Generated route lists must read structured public data, not parse source files
+with broad regular expressions. `src/data/portfolio.ts` contains nested
+`visual.id` values in addition to top-level `project.id` values; regex scanning
+for `id:` can accidentally create fake routes such as `/projects/<visual-id>`.
+
+Good:
+
+```typescript
+import { projects } from '../src/data/portfolio.ts'
+
+const projectIds = projects.map((project) => project.id)
+```
+
+Bad:
+
+```typescript
+const portfolio = await readFile('src/data/portfolio.ts', 'utf8')
+const projectIds = [...portfolio.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1])
+```
+
+After changing sitemap generation, project ids, status ids, blog curation, or
+visual ids, run `npm.cmd run sitemap:generate` and inspect `public/sitemap.xml`
+for only real routable paths. For broad release checks, also run
+`npm.cmd run status:contract` when status data is involved.
+
 Studio routes must also pass the visible overflow guard in `scripts/check-ui.mjs`.
 When changing `/studio` layout, form controls, cards, chips, preview headers, or
 AI Daily source controls, ensure `.studio-page` descendants stay within their

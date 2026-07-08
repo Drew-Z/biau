@@ -84,14 +84,17 @@ export const blogPosts: BlogPostSummary[] = [
     "title": "游戏项目展示系统：玩法模型、试玩入口与版本证据",
     "tag": "游戏项目",
     "column": "project-notes",
-    "detail": "游戏项目展示不能只放源码和截图。本文讨论如何用玩法模型、操作说明、试玩入口、截图证据和版本状态，让原型被理解成可体验项目。",
+    "detail": "游戏项目展示不能只放源码和截图。本文复盘 BIAU Playlab 如何用玩法模型、试玩入口、截图证据、版本状态和外链检查，把多个 Godot 原型整理成可体验案例。",
     "date": "2026-06-13",
-    "readTime": "8 min",
+    "readTime": "11 min",
     "series": "项目案例",
     "knowledgePoints": [
       "互动项目展示",
       "Godot Web 导出",
-      "版本证据"
+      "试玩入口",
+      "截图证据",
+      "版本状态",
+      "外链巡检"
     ]
   },
   {

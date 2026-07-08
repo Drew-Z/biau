@@ -438,7 +438,7 @@
     {
       "id": "blog:game-showcase-standard",
       "title": "游戏项目展示系统：玩法模型、试玩入口与版本证据",
-      "summary": "游戏项目展示不能只放源码和截图。本文讨论如何用玩法模型、操作说明、试玩入口、截图证据和版本状态，让原型被理解成可体验项目。",
+      "summary": "游戏项目展示不能只放源码和截图。本文复盘 BIAU Playlab 如何用玩法模型、试玩入口、截图证据、版本状态和外链检查，把多个 Godot 原型整理成可体验案例。",
       "href": "/blog/game-showcase-standard",
       "tags": [
         "游戏项目",
@@ -450,7 +450,10 @@
         "精选知识",
         "互动项目展示",
         "Godot Web 导出",
-        "版本证据"
+        "试玩入口",
+        "截图证据",
+        "版本状态",
+        "外链巡检"
       ],
       "visibility": "public",
       "sourceType": "blog"
@@ -1730,7 +1733,7 @@
     {
       "id": "chunk:blog:game-showcase-standard:1",
       "documentId": "blog:game-showcase-standard",
-      "text": "游戏项目展示不能只放源码和截图。 本文讨论如何用玩法模型、操作说明、试玩入口、截图证据和版本状态，让原型被理解成可体验项目。",
+      "text": "游戏项目展示不能只放源码和截图。 本文复盘 BIAU Playlab 如何用玩法模型、试玩入口、截图证据、版本状态和外链检查，把多个 Godot 原型整理成可体验案例。",
       "section": "summary",
       "metadata": {
         "sourceType": "blog",
@@ -1744,7 +1747,10 @@
           "精选知识",
           "互动项目展示",
           "Godot Web 导出",
-          "版本证据"
+          "试玩入口",
+          "截图证据",
+          "版本状态",
+          "外链巡检"
         ]
       }
     },
@@ -1981,7 +1987,10 @@
         "精选知识",
         "互动项目展示",
         "godot web 导出",
-        "版本证据"
+        "试玩入口",
+        "截图证据",
+        "版本状态",
+        "外链巡检"
       ],
       "metadata": {
         "documentId": "blog:game-showcase-standard",

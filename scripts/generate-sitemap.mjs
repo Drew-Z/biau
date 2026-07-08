@@ -1,5 +1,6 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { writeFile } from 'node:fs/promises'
 import { getPublicBlogPosts } from '../src/data/blogCuration.ts'
+import { projects } from '../src/data/portfolio.ts'
 import { reliabilityProjects } from '../src/data/statusTargets.ts'
 
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -13,9 +14,7 @@ function escapeXml(value) {
     .replaceAll('"', '&quot;')
 }
 
-const portfolio = await readFile('src/data/portfolio.ts', 'utf8')
-
-const projectIds = [...portfolio.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1])
+const projectIds = projects.map((project) => project.id)
 const statusProjectIds = reliabilityProjects.map((project) => project.id)
 const posts = getPublicBlogPosts()
 
