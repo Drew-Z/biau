@@ -1315,6 +1315,39 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   line-height: 1.12;
 }
 
+.status-project-card__meta {
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+}
+
+.status-project-card__meta div {
+  min-width: 0;
+  padding: var(--space-10);
+  border: 1px solid color-mix(in oklch, var(--flow-ui-card-border) 86%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklch, var(--panel-strong) 46%, transparent);
+}
+
+.status-project-card__meta dt {
+  margin: 0 0 var(--space-4);
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.status-project-card__meta dd {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif-display);
+  font-size: 1.22rem;
+  font-weight: var(--weight-title);
+}
+
 .status-project-card__link,
 .status-detail-actions .btn,
 .detail-missing .btn {

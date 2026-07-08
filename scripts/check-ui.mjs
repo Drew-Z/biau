@@ -331,6 +331,7 @@ await gotoApp(statusPage, '/status')
 const statusCards = await statusPage.locator('.status-target').count()
 const expectedStatusCards = siteStatusTargets.length
 const reliabilityProjectCards = await statusPage.locator('.status-project-card').count()
+const reliabilityProjectManualMetaCells = await statusPage.locator('.status-project-card__meta div').count()
 const rawStatusPayload = await statusPage
   .evaluate(async () => {
     const response = await fetch('/status/site-status.json', { cache: 'no-store' })
@@ -374,6 +375,11 @@ for (const target of siteStatusTargets) {
 }
 if (reliabilityProjectCards < staticReliabilityProjects.length) {
   failures.push(`/status reliability: expected at least ${staticReliabilityProjects.length} project detail cards, got ${reliabilityProjectCards}`)
+}
+if (reliabilityProjectManualMetaCells !== staticReliabilityProjects.length * 2) {
+  failures.push(
+    `/status reliability: expected ${staticReliabilityProjects.length * 2} manual gate summary cells, got ${reliabilityProjectManualMetaCells}`,
+  )
 }
 if ((await entrySummaryCards.count()) !== entrySummaryKeys.length) {
   failures.push(`/status summary: expected ${entrySummaryKeys.length} entry summary cards, got ${await entrySummaryCards.count()}`)

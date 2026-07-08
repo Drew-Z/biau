@@ -228,6 +228,16 @@ export function SiteStatusPage() {
                   )
                 })}
               </dl>
+              <dl className="status-project-card__meta" aria-label={`${project.title} 人工门禁摘要`}>
+                <div>
+                  <dt>人工 gate</dt>
+                  <dd>{project.gates.length}</dd>
+                </div>
+                <div>
+                  <dt>后续接入</dt>
+                  <dd>{project.nextActions.length}</dd>
+                </div>
+              </dl>
               <Link to={getStatusDetailPath(project.id)} className="btn status-project-card__link">
                 <IconListView aria-hidden />
                 <span>查看详细状态</span>
