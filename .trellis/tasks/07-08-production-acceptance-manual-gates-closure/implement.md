@@ -105,6 +105,7 @@ Current low-sensitive production acceptance:
 - Project note quality slice completed: `xunqiu-android64-rebuild` was expanded from a short migration principle note into a fuller Xunqiu case note covering 64-bit client migration, old API compatibility, Spring Boot 3 backend modernization, stage APK boundaries, validation evidence, public-safe evidence references, and release-gate follow-ups.
 - Project note quality slice completed: `ozon-erp-architecture` was expanded from a short ERP architecture checklist into a fuller case note covering business objects, registration/login boundaries, worker jobs, browser-plugin ingress, PendingAction/AuditLog safety, low-privilege demo gates, evidence boundaries, and follow-up fixture/smoke work.
 - Public assistant retrieval follow-up completed: after the Ozon article added demo-related vocabulary, the local demo-access query could return too few project citations in the default window. `searchAssistantKnowledge` now keeps at least two project citations for demo-access questions when project candidates exist, preserving useful blog/status context without weakening `assistant:kg-check` or `assistant:eval`.
+- Project note quality slice completed: `pet-workspace-pipeline` was expanded from a short generation-pipeline note into a fuller WIP case note covering Android App, Community API, Admin Review, pet.zip/package contract, human review, synthetic APK gate, low-sensitive test evidence, and release-gate follow-ups without exposing private deployment or generation details.
 
 Validation:
 

@@ -54,17 +54,20 @@ export const blogPosts: BlogPostSummary[] = [
   },
   {
     "slug": "pet-workspace-pipeline",
-    "title": "AI 生成管线：任务编排、QA Gate 与 App 发布边界",
+    "title": "AI 桌宠工程：社区 App、生成管线与 APK 发布门禁",
     "tag": "AI 应用",
     "column": "project-notes",
-    "detail": "生成类 AI 项目不能停在单次出图。本文讨论如何把生成任务、自动质检、人工复核、发布记录和 App API 组织成可控管线。",
+    "detail": "AI 桌宠项目不能只展示生成效果，还要说明 Android App、Community API、人审发布、pet.zip 契约和 APK gate 如何协同。本文复盘 Pet Workspace 当前可展示的工程边界。",
     "date": "2026-06-14",
-    "readTime": "11 min",
+    "readTime": "14 min",
     "series": "项目案例",
     "knowledgePoints": [
-      "AI 生成管线",
-      "QA Gate",
-      "App API 契约"
+      "WIP 工程展示",
+      "Community API",
+      "Android 社区 App",
+      "人审发布",
+      "pet.zip 契约",
+      "APK 发布门禁"
     ]
   },
   {
