@@ -279,6 +279,18 @@ function describeRagAdminStatus(status: AssistantRagAdminStatus | null, knowledg
   return 'RAG 服务已连接，但公开/内部 collection 尚未 ready。先同步公开知识库，再准备 REVIEWED/ACTIVE 内部知识并同步内部知识库。'
 }
 
+function describeRagSyncResult(sync: AssistantRagSyncResult) {
+  const httpStatus = sync.diagnostic?.httpStatus
+  if (sync.accepted) return '公开知识库已同步到 RAG。'
+  if (httpStatus === 429) return '公开知识库同步被上游限流（HTTP 429）。请等待几分钟后重试；如果反复出现，需要降低同步频率或调整 embedding 渠道限额。'
+  const reason = sync.diagnostic?.reason
+  if (reason === 'timeout') return '公开知识库同步超时。Render 冷启动或上游响应慢时可能出现，稍后重试即可。'
+  if (reason === 'network_error') return '公开知识库同步遇到网络错误。先刷新 RAG 状态确认服务在线，再稍后重试。'
+  if (reason === 'rag-sync-not-configured') return '公开知识库同步尚未配置 RAG base 或 sync token。请检查 Render 服务端环境变量。'
+  if (reason === 'embedding_dimension_mismatch' || reason === 'qdrant_dimension_mismatch') return '公开知识库同步遇到向量维度不一致。请确认 embedding 模型维度和 Qdrant collection 维度一致。'
+  return '公开知识库同步未完成，请查看低敏诊断。'
+}
+
 export function AssistantAdminPage() {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview')
   const [adminToken, setAdminToken] = useState(() => readStoredAdminToken())
@@ -324,7 +336,10 @@ export function AssistantAdminPage() {
     setAdminToken(token)
     if (token) {
       window.localStorage.setItem(ASSISTANT_STORAGE_KEYS.adminToken, token)
-      setSummaryStatus('admin token 已保存在当前浏览器。')
+      setSummaryStatus('admin token 已保存在当前浏览器，正在刷新概览、成员和内部知识。')
+      void loadSummary(token)
+      void loadMembers(token)
+      void loadKnowledgeDocuments(token)
     } else {
       window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.adminToken)
       setSummaryStatus('admin token 已清除。')
@@ -338,12 +353,12 @@ export function AssistantAdminPage() {
     setSummaryStatus('admin token 已清除。')
   }
 
-  const loadSummary = async () => {
+  const loadSummary = async (tokenOverride = adminToken) => {
     if (!API_BASE) {
       setSummaryStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用管理 API。`)
       return
     }
-    if (!adminToken) {
+    if (!tokenOverride) {
       setSummaryStatus('请先保存 admin token。')
       return
     }
@@ -352,7 +367,7 @@ export function AssistantAdminPage() {
     setSummaryStatus('')
     try {
       const response = await fetch(`${API_BASE}/admin/summary`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
+        headers: { Authorization: `Bearer ${tokenOverride}` },
       })
       const payload = (await response.json().catch(() => ({}))) as unknown
       if (!response.ok) {
@@ -377,12 +392,12 @@ export function AssistantAdminPage() {
     }
   }
 
-  const loadMembers = async () => {
+  const loadMembers = async (tokenOverride = adminToken) => {
     if (!API_BASE) {
       setMembersStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用成员 API。`)
       return
     }
-    if (!adminToken) {
+    if (!tokenOverride) {
       setMembersStatus('请先保存 admin token。')
       return
     }
@@ -391,7 +406,7 @@ export function AssistantAdminPage() {
     setMembersStatus('')
     try {
       const response = await fetch(`${API_BASE}/admin/members`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
+        headers: { Authorization: `Bearer ${tokenOverride}` },
       })
       const payload = (await response.json().catch(() => ({}))) as unknown
       if (!response.ok) {
@@ -484,12 +499,12 @@ export function AssistantAdminPage() {
     }
   }
 
-  const loadKnowledgeDocuments = async () => {
+  const loadKnowledgeDocuments = async (tokenOverride = adminToken) => {
     if (!API_BASE) {
       setKnowledgeStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用内部知识 API。`)
       return
     }
-    if (!adminToken) {
+    if (!tokenOverride) {
       setKnowledgeStatus('请先保存 admin token。')
       return
     }
@@ -498,7 +513,7 @@ export function AssistantAdminPage() {
     setKnowledgeStatus('')
     try {
       const response = await fetch(`${API_BASE}/admin/knowledge-documents`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
+        headers: { Authorization: `Bearer ${tokenOverride}` },
       })
       const payload = (await response.json().catch(() => ({}))) as unknown
       if (!response.ok) {
@@ -705,7 +720,7 @@ export function AssistantAdminPage() {
           diagnostic: sync.diagnostic ?? current?.diagnostic ?? null,
         }))
       }
-      setRagStatusText(sync.accepted ? '公开知识库已同步到 RAG。' : '公开知识库同步未完成，请查看低敏诊断。')
+      setRagStatusText(describeRagSyncResult(sync))
     } catch {
       setRagStatusText('无法连接公开知识库同步 API。')
     } finally {
