@@ -1,4 +1,7 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
+import { fileURLToPath } from 'node:url'
 import { heroContent } from '../src/data/hero'
 import { projects, type ProjectDetailSection, type ProjectLink, type ProjectVisualBlock } from '../src/data/portfolio'
 import { MAIN_SITE_URL } from '../src/data/siteLinks'
@@ -19,12 +22,14 @@ interface CheckResult extends LinkTarget {
 
 const DEFAULT_TIMEOUT_MS = 20_000
 const DEFAULT_MAX_LINKS = 200
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 function parseArgs(argv: string[]) {
   const args = {
     json: false,
     timeoutMs: Number(process.env.PUBLIC_LINKS_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
     maxLinks: Number(process.env.PUBLIC_LINKS_MAX || DEFAULT_MAX_LINKS),
+    writeStatusPath: '',
   }
 
   const readValue = (index: number) => argv[index + 1] ?? ''
@@ -32,6 +37,15 @@ function parseArgs(argv: string[]) {
     const item = argv[index]
     if (item === '--json') {
       args.json = true
+      continue
+    }
+    if (item === '--write-status') {
+      args.writeStatusPath = readValue(index)
+      index += 1
+      continue
+    }
+    if (item.startsWith('--write-status=')) {
+      args.writeStatusPath = item.slice('--write-status='.length)
       continue
     }
     if (item === '--timeout') {
@@ -56,6 +70,62 @@ function parseArgs(argv: string[]) {
   if (!Number.isFinite(args.timeoutMs) || args.timeoutMs <= 0) args.timeoutMs = DEFAULT_TIMEOUT_MS
   if (!Number.isFinite(args.maxLinks) || args.maxLinks <= 0) args.maxLinks = DEFAULT_MAX_LINKS
   return args
+}
+
+function classifyIssueKind(result: CheckResult) {
+  if (result.ok) return ''
+  const issue = result.issue.toLowerCase()
+  if (issue.includes('timeout') || issue.includes('abort')) return 'timeout'
+  if (issue.includes('enotfound') || issue.includes('eai_again')) return 'dns_error'
+  if (issue.includes('certificate') || issue.includes('cert') || issue.includes('tls')) return 'tls_error'
+  if (issue.includes('econnrefused') || issue.includes('econnreset') || issue.includes('socket')) return 'connection_error'
+  if (result.status > 0) return 'http_status'
+  return 'network_error'
+}
+
+function buildStatusIssues(results: CheckResult[]) {
+  const failed = results.filter((result) => !result.ok)
+  if (failed.length === 0) return []
+
+  const issueKinds = Array.from(new Set(failed.map(classifyIssueKind).filter(Boolean))).sort()
+  return [
+    `${failed.length} public project links failed; issue classes: ${issueKinds.join(', ') || 'unknown'}. Run npm.cmd run public-links:check for details.`,
+  ]
+}
+
+function buildStatusPayload(checkedAt: string, results: CheckResult[]) {
+  const failed = results.filter((result) => !result.ok)
+  const passedCount = results.length - failed.length
+  const firstFailedHttpStatus = failed.find((result) => result.status > 0)?.status ?? 0
+  const firstIssueKind = failed.length > 0 ? classifyIssueKind(failed[0]) : ''
+  const status =
+    results.length === 0 ? 'unchecked' : failed.length === 0 ? 'online' : failed.length < results.length ? 'degraded' : 'offline'
+
+  return {
+    checkedAt,
+    baseConfigured: true,
+    ok: failed.length === 0,
+    linkCount: results.length,
+    failedCount: failed.length,
+    checks: [
+      {
+        id: 'blog-semi-public-links',
+        status,
+        httpStatus: failed.length === 0 ? 200 : firstFailedHttpStatus,
+        durationMs: results.reduce((sum, result) => sum + result.durationMs, 0),
+        checkedAt,
+        summary: `${passedCount}/${results.length} public project links returned expected responses`,
+        issues: buildStatusIssues(results),
+        ...(firstIssueKind ? { issueKind: firstIssueKind } : {}),
+      },
+    ],
+  }
+}
+
+async function writeStatusPayload(relativeOutputPath: string, payload: unknown) {
+  const outputPath = resolve(repoRoot, relativeOutputPath)
+  await mkdir(dirname(outputPath), { recursive: true })
+  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
 }
 
 function normalizePublicUrl(value: string) {
@@ -229,6 +299,11 @@ async function main() {
     linkCount: results.length,
     failedCount: results.filter((result) => !result.ok).length,
     results,
+  }
+
+  if (args.writeStatusPath) {
+    const statusPayload = buildStatusPayload(checkedAt, results)
+    await writeStatusPayload(args.writeStatusPath, statusPayload)
   }
 
   if (args.json) {

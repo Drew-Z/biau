@@ -148,12 +148,17 @@ npm.cmd run site:monitor -- --timeout 15000
 npm.cmd run public-links:check
 npm.cmd run public-links:check -- --json
 npm.cmd run public-links:check -- --timeout 20000
+npm.cmd run public-links:check -- --write-status public/status/public-links-synthetic.json
 ```
 
 `public-links:check` 从 `src/data/hero.ts` 和 `src/data/portfolio.ts`
 收集公开 HTTP(S) 或同站相对链接，只记录 URL、状态码、耗时和来源上下文数量。
 它不请求模型、不读取 token、不保存响应正文；如果外部平台冷启动或临时限流导致
 失败，应先复跑确认，再决定是否更新状态页或人工门禁。
+
+当传入 `--write-status public/status/public-links-synthetic.json` 时，脚本会额外生成
+低敏 synthetic 快照，供 `/status` 和 `reliability:check` 合并展示。这个快照只保存
+链接总数、失败总数、聚合状态和错误类别，不保存具体 URL、最终跳转地址或原始错误正文。
 
 脚本失败会返回非 0，适合后续放进 GitHub Actions、定时器或手动发布检查。
 

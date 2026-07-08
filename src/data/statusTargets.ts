@@ -122,6 +122,17 @@ export const reliabilityProjects: ReliabilityProject[] = [
         ownerHint: '主站脚本',
       },
       {
+        id: 'blog-semi-public-links',
+        layer: 'synthetic',
+        label: '公开项目按钮与资料链接',
+        status: 'unchecked',
+        description: '检查首页项目卡片、项目详情按钮、正文资料来源链接和公开文档入口是否仍可访问。',
+        evidence:
+          '`npm.cmd run public-links:check -- --write-status public/status/public-links-synthetic.json` 会生成低敏外链快照；快照只记录通过数量、失败数量和错误类别，不保存具体 URL。',
+        cadence: '外链或项目详情更新后',
+        ownerHint: '主站链接巡检',
+      },
+      {
         id: 'blog-semi-public-assistant',
         layer: 'synthetic',
         label: '公开助手 health / live chat gate',
@@ -156,6 +167,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     gates: ['开启生产模型、生产 metrics scrape 或第三方告警前需要人工确认。'],
     nextActions: [
       '把 `main-site:synthetic` 接入定时任务或内部监控。',
+      '把 `public-links:check` 纳入发布前和外链更新后的可靠性巡检，避免首页按钮或项目详情来源链接再次指向访客不可见页面。',
       'Cloudflare Pages Functions 部署后先复查 `/api/health`；需要验证模型回答时，再显式运行 `main-site:synthetic -- --assistant-chat`。',
       '把生产 RAG Orchestrator `/health` 和内部知识 sync run 的低敏摘要纳入定时 synthetic 或内部监控。',
     ],

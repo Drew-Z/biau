@@ -20,6 +20,15 @@ const steps = [
     reportKind: 'synthetic',
   },
   {
+    id: 'public-links',
+    label: 'Public project link manifest',
+    script: 'public-links:check',
+    extraArgs: ['--write-status', 'public/status/public-links-synthetic.json'],
+    supportsStrict: true,
+    outputPath: 'public/status/public-links-synthetic.json',
+    reportKind: 'synthetic',
+  },
+  {
     id: 'legal-rag',
     label: 'Legal RAG synthetic',
     script: 'legal-rag:synthetic',
