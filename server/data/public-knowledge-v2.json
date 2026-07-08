@@ -418,7 +418,7 @@
     {
       "id": "blog:xunqiu-android64-rebuild",
       "title": "Android 历史项目重构：64 位客户端、接口复用与阶段验收",
-      "summary": "历史移动端项目的难点不只是补页面，而是识别旧依赖、接口边界和发布风险。本文讨论新建 64 位客户端、复用协议和沉淀验收证据的路线。",
+      "summary": "历史移动端项目的难点不只是补页面，而是识别旧依赖、接口边界、现代后端、发布风险和公开展示边界。本文复盘寻球 64 位客户端与 Spring Boot 后端重建路线。",
       "href": "/blog/xunqiu-android64-rebuild",
       "tags": [
         "移动端",
@@ -430,7 +430,10 @@
         "精选知识",
         "Android 64 位迁移",
         "历史系统接手",
-        "接口脱敏"
+        "旧接口兼容",
+        "Spring Boot 3",
+        "阶段 APK",
+        "迁移验收"
       ],
       "visibility": "public",
       "sourceType": "blog"
@@ -1712,7 +1715,7 @@
     {
       "id": "chunk:blog:xunqiu-android64-rebuild:1",
       "documentId": "blog:xunqiu-android64-rebuild",
-      "text": "历史移动端项目的难点不只是补页面，而是识别旧依赖、接口边界和发布风险。 本文讨论新建 64 位客户端、复用协议和沉淀验收证据的路线。",
+      "text": "历史移动端项目的难点不只是补页面，而是识别旧依赖、接口边界、现代后端、发布风险和公开展示边界。 本文复盘寻球 64 位客户端与 Spring Boot 后端重建路线。",
       "section": "summary",
       "metadata": {
         "sourceType": "blog",
@@ -1726,7 +1729,10 @@
           "精选知识",
           "Android 64 位迁移",
           "历史系统接手",
-          "接口脱敏"
+          "旧接口兼容",
+          "Spring Boot 3",
+          "阶段 APK",
+          "迁移验收"
         ]
       }
     },
@@ -2155,7 +2161,10 @@
         "精选知识",
         "android 64 位迁移",
         "历史系统接手",
-        "接口脱敏"
+        "旧接口兼容",
+        "spring boot 3",
+        "阶段 apk",
+        "迁移验收"
       ],
       "metadata": {
         "documentId": "blog:xunqiu-android64-rebuild",

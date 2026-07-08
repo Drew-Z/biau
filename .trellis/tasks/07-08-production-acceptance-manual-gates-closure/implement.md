@@ -102,6 +102,7 @@ Current low-sensitive production acceptance:
 - Blog column visibility follow-up completed: `/blog` now always shows all public column categories, including `AI 日报` and `资源分享` before their first public post, with per-column counts and a clear unpublished empty state. `check:ui` now asserts the empty columns remain visible so AI Daily does not look like it disappeared while its hidden draft waits for human review/export.
 - Project note quality slice completed: `game-showcase-standard` was expanded from a short checklist into a fuller Playlab case note covering gameplay modeling, Web trial contracts, screenshot evidence, version maturity, six-game routing, link/resource checks, public evidence boundaries, and follow-up observability.
 - Sitemap route generation bug fixed: `scripts/generate-sitemap.mjs` now imports structured `projects` data instead of regex-scanning `src/data/portfolio.ts`, preventing nested `visual.id` values from becoming fake `/projects/<visual-id>` URLs. The frontend quality spec now records this route-list convention.
+- Project note quality slice completed: `xunqiu-android64-rebuild` was expanded from a short migration principle note into a fuller Xunqiu case note covering 64-bit client migration, old API compatibility, Spring Boot 3 backend modernization, stage APK boundaries, validation evidence, public-safe evidence references, and release-gate follow-ups.
 
 Validation:
 

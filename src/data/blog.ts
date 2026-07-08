@@ -69,14 +69,17 @@ export const blogPosts: BlogPostSummary[] = [
     "title": "Android 历史项目重构：64 位客户端、接口复用与阶段验收",
     "tag": "移动端",
     "column": "project-notes",
-    "detail": "历史移动端项目的难点不只是补页面，而是识别旧依赖、接口边界和发布风险。本文讨论新建 64 位客户端、复用协议和沉淀验收证据的路线。",
+    "detail": "历史移动端项目的难点不只是补页面，而是识别旧依赖、接口边界、现代后端、发布风险和公开展示边界。本文复盘寻球 64 位客户端与 Spring Boot 后端重建路线。",
     "date": "2026-06-15",
-    "readTime": "10 min",
+    "readTime": "12 min",
     "series": "项目案例",
     "knowledgePoints": [
       "Android 64 位迁移",
       "历史系统接手",
-      "接口脱敏"
+      "旧接口兼容",
+      "Spring Boot 3",
+      "阶段 APK",
+      "迁移验收"
     ]
   },
   {
