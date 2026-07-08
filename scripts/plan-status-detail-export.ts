@@ -143,7 +143,7 @@ function buildPlan(draft: StudioDraft, project: ReliabilityProject) {
     manualNext: [
       '人工比对 updateCandidate 与 src/data/statusTargets.ts 的现有 ReliabilityProject。',
       '确认没有公开真实凭据、后台地址、模型渠道、生产数据库、私有监控地址或敏感指标。',
-      '如需落地状态数据，再手动编辑 statusTargets.ts 并运行 site:status、lint、build、check:ui。',
+      '如需落地状态数据，再手动编辑 statusTargets.ts 并运行 site:status、status:contract、docs:manual-gates-check、lint、build、check:ui。',
     ],
   }
 }
