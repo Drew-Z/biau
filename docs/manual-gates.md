@@ -101,6 +101,7 @@
 - ERP：关联 Web 构建、root workspace 测试和全 workspace build 已通过，认证桥修复已同步到远端分支；演示登录和插件同步仍等低权限账号 / 脱敏 fixture。
 - Legal RAG：本地 `typecheck`、`build`、API unit、MVP validate、RAG eval 和合同审查 eval 已通过；生产法律问答、合同审查和质量面板仍等低权限 demo 凭据做 credentialed synthetic。
 - Xunqiu：现代后端测试和打包已通过，展示站本地静态资源引用与公开入口可达性已复核；后端 synthetic base URL 和 APK 正式发布批准仍是人工门禁。
+- Xunqiu Android64：本机 debug Java 编译和 debug APK 构建已通过；release 签名只应通过本机环境变量或本地 Gradle 属性提供，正式阶段 APK 仍需签名、校验和、扫描/回归证据与人工批准。
 - Xunqiu 展示站：不可公开 GitHub 后端仓库链接已改为公开后端验证文档，线上首页和文档页已确认更新生效。
 - Pet / Gamer：Node workspace 测试、Android debug unit test 和 debug APK 构建已通过，现有工作区有历史 WIP 未整理；当前证据仍是 debug-only，APK 公开下载必须等待正式 release 证据和人工批准。
 - BIAU Playlab：内容审计、生产构建、构建产物审计和公开端点检查已通过；新试玩构建上线仍需入口确认。
