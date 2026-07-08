@@ -98,18 +98,34 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
       </div>
 
       <div className="status-project__footer">
-        <div>
-          <h3>人工 gate</h3>
-          {project.gates.map((gate) => (
-            <p key={gate}>{gate}</p>
-          ))}
-        </div>
-        <div>
-          <h3>后续接入</h3>
-          {project.nextActions.map((action) => (
-            <p key={action}>{action}</p>
-          ))}
-        </div>
+        <section aria-label={`${project.title} 人工 gate 清单`}>
+          <div className="status-project__footer-head">
+            <h3>人工 gate</h3>
+            <span>{project.gates.length}</span>
+          </div>
+          <ol className="status-project__manual-list is-gate">
+            {project.gates.map((gate, index) => (
+              <li key={gate}>
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <p>{gate}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+        <section aria-label={`${project.title} 后续接入清单`}>
+          <div className="status-project__footer-head">
+            <h3>后续接入</h3>
+            <span>{project.nextActions.length}</span>
+          </div>
+          <ol className="status-project__manual-list is-next">
+            {project.nextActions.map((action, index) => (
+              <li key={action}>
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <p>{action}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
       </div>
     </article>
   )

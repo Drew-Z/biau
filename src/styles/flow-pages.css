@@ -1581,21 +1581,88 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   gap: var(--space-12);
 }
 
-.status-project__footer > div {
+.status-project__footer > section {
   min-width: 0;
   padding: var(--space-16);
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-12);
   align-content: start;
   background: color-mix(in oklch, var(--panel-strong) 30%, transparent);
   border: 1px solid var(--flow-ui-card-border);
   border-radius: var(--radius-md);
 }
 
+.status-project__footer-head {
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-12);
+  align-items: center;
+}
+
 .status-project__footer h3 {
   margin: 0;
   color: var(--ink);
   font-size: 0.95rem;
+}
+
+.status-project__footer-head span {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 var(--space-8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklch, var(--panel) 54%, transparent);
+}
+
+.status-project__manual-list {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-8);
+  list-style: none;
+}
+
+.status-project__manual-list li {
+  min-width: 0;
+  padding: var(--space-10);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-10);
+  align-items: start;
+  border: 1px solid color-mix(in oklch, var(--flow-ui-card-border) 82%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklch, var(--panel) 34%, transparent);
+}
+
+.status-project__manual-list li > span {
+  min-width: 30px;
+  padding-top: 2px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.status-project__manual-list p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.status-project__manual-list.is-gate li {
+  border-color: color-mix(in oklch, var(--amber) 22%, var(--flow-ui-card-border));
+}
+
+.status-project__manual-list.is-next li {
+  border-color: color-mix(in oklch, var(--blue) 20%, var(--flow-ui-card-border));
 }
 
 .project-group {

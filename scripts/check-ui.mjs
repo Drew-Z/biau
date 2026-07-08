@@ -440,11 +440,23 @@ const expectedLegalFreshnessFacts =
   legalMergedProject?.checks.filter((check) => parseEvidenceFreshness(check.evidence)).length ?? 0
 const legalFreshnessFacts = await statusPage.locator('.status-evidence-freshness').count()
 const legalFreshnessBadges = await statusPage.locator('.status-freshness-badge').count()
+const legalGateItems = await statusPage.locator('.status-project__manual-list.is-gate li').count()
+const legalNextActionItems = await statusPage.locator('.status-project__manual-list.is-next li').count()
 if (!legalDetailTitle.includes(legalDetailProject?.title ?? 'Legal RAG')) {
   failures.push(`/status detail route: expected Legal RAG title on detail page, got "${legalDetailTitle}"`)
 }
 if (legalDetailChecks < 1) {
   failures.push('/status detail route: expected reliability checks on Legal RAG detail page')
+}
+if (legalGateItems !== (legalMergedProject?.gates.length ?? 0)) {
+  failures.push(
+    `/status detail manual gates: expected ${legalMergedProject?.gates.length ?? 0} gate checklist items, got ${legalGateItems}`,
+  )
+}
+if (legalNextActionItems !== (legalMergedProject?.nextActions.length ?? 0)) {
+  failures.push(
+    `/status detail manual gates: expected ${legalMergedProject?.nextActions.length ?? 0} next-action checklist items, got ${legalNextActionItems}`,
+  )
 }
 if (expectedLegalFreshnessFacts > 0 && legalFreshnessFacts !== expectedLegalFreshnessFacts) {
   failures.push(
