@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-2.md`
-- **Total Sessions**: 70
-- **Last Active**: 2026-07-07
+- **Total Sessions**: 71
+- **Last Active**: 2026-07-08
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-2.md` | ~783 | Active |
+| `journal-2.md` | ~816 | Active |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
 
@@ -30,6 +30,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 71 | 2026-07-08 | RAG admin management | `5953581` | `main` |
 | 70 | 2026-07-07 | Studio draft deep-link production acceptance | `1763a73` | `main` |
 | 69 | 2026-07-06 | Polish internal assistant Studio draft workflow | `4deda24` | `main` |
 | 68 | 2026-07-06 | Internal assistant Studio draft-write | - | `main` |

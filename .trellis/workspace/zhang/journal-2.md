@@ -781,3 +781,36 @@ Validated production internal assistant to Studio draft deep-link flow, diagnose
 ### Next Steps
 
 - None - task complete
+
+
+## Session 71: RAG admin management
+
+**Date**: 2026-07-08
+**Task**: RAG admin management
+**Branch**: `main`
+
+### Summary
+
+Implemented admin RAG management: internal admin proxy routes for RAG status and public sync, Qdrant collection bootstrap with low-sensitive diagnostics, admin UI controls, smoke coverage, and backend spec update.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5953581` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
