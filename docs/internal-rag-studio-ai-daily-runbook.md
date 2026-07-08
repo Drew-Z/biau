@@ -76,17 +76,18 @@ https://biau.playlab.eu.cc/studio
 步骤：
 
 1. 在 Studio 里先创建或确认来源池条目，来源必须是公开 URL，摘要和影响说明要人工可核查。
-2. 创建 AI Daily issue。
-3. 打开 `/studio/ai-daily/<issue-id>`。
-4. 填写或套用 brief JSON，至少补齐：
+2. 在“创建日报 Issue”里从“已有来源”下拉选择来源标题，点击“加入本期”，确认“本期已选来源”列表正确。
+3. 创建 AI Daily issue。
+4. 打开 `/studio/ai-daily/<issue-id>`。
+5. 填写或套用 brief JSON，至少补齐：
    - `summary`
    - `publicAngle`
    - `keySignals`
    - `toVerify`
-5. 选择本期来源，保存 Issue。
-6. 页面显示 Issue 满足审核入口后，点击“进入审核”。
-7. 点击“转为内容草稿”。
-8. 回到 `/studio` 草稿箱继续预览和人工审核。
+6. 如需补充来源，继续在详情页选择本期来源并保存 Issue。
+7. 页面显示 Issue 满足审核入口后，点击“进入审核”。
+8. 点击“转为内容草稿”。
+9. 回到 `/studio` 草稿箱继续预览和人工审核。
 
 成功标准：
 

@@ -301,6 +301,7 @@ export function StudioPage() {
   const [draftForm, setDraftForm] = useState<DraftFormState>(defaultDraftForm)
   const [sourceForm, setSourceForm] = useState<SourceFormState>(defaultSourceForm)
   const [issueForm, setIssueForm] = useState<IssueFormState>(() => defaultIssueForm())
+  const [sourcePickerId, setSourcePickerId] = useState('')
   const [projectTemplateId, setProjectTemplateId] = useState(projects[0]?.id ?? '')
   const [resourceTemplateForm, setResourceTemplateForm] =
     useState<ResourceTemplateFormState>(defaultResourceTemplateForm)
@@ -332,6 +333,13 @@ export function StudioPage() {
     () => [...sources].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
     [sources],
   )
+  const selectedIssueSourceIds = useMemo(() => splitList(issueForm.sourceIdsText), [issueForm.sourceIdsText])
+  const selectedIssueSources = useMemo(() => {
+    const sourceMap = new Map(sources.map((source) => [source.id, source]))
+    return selectedIssueSourceIds
+      .map((sourceId) => sourceMap.get(sourceId))
+      .filter((source): source is StudioSourceItem => Boolean(source))
+  }, [selectedIssueSourceIds, sources])
   const previewBody = useMemo(() => bodyJsonFromText(draftForm.bodyText), [draftForm.bodyText])
   const previewKnowledgePoints = useMemo(() => splitList(draftForm.knowledgePointsText), [draftForm.knowledgePointsText])
   const previewProjectIds = useMemo(() => splitList(draftForm.projectIdsText), [draftForm.projectIdsText])
@@ -645,8 +653,9 @@ export function StudioPage() {
         return
       }
       setSources((current) => [source, ...current])
+      setSourcePickerId(source.id)
       setSourceForm(defaultSourceForm)
-      setStatusText('来源已保存。')
+      setStatusText('来源已保存，已设为日报来源选择器的当前选项。')
     } catch {
       setStatusText('无法连接 Studio API。')
     } finally {
@@ -655,9 +664,27 @@ export function StudioPage() {
   }
 
   const appendSourceToIssue = (sourceId: string) => {
+    if (!sourceId) {
+      setStatusText('请先选择一个已保存来源。')
+      return
+    }
     const ids = new Set(splitList(issueForm.sourceIdsText))
+    if (ids.has(sourceId)) {
+      setStatusText('这个来源已经在本期日报里。')
+      return
+    }
     ids.add(sourceId)
     updateIssueField('sourceIdsText', Array.from(ids).join('\n'))
+    const source = sources.find((item) => item.id === sourceId)
+    setStatusText(source ? `已加入来源：${source.title}` : '已加入来源 ID。')
+  }
+
+  const appendPickedSourceToIssue = () => {
+    appendSourceToIssue(sourcePickerId)
+  }
+
+  const removeSourceFromIssue = (sourceId: string) => {
+    updateIssueField('sourceIdsText', splitList(issueForm.sourceIdsText).filter((id) => id !== sourceId).join('\n'))
   }
 
   const saveIssue = async (event: FormEvent<HTMLFormElement>) => {
@@ -1017,21 +1044,130 @@ export function StudioPage() {
         </section>
 
         <aside className="studio-side-stack">
-          <article className="studio-card">
+          <article className="studio-card studio-ai-daily-card">
+            <div className="studio-card__header">
+              <div>
+                <p className="assistant-panel__eyebrow">AI DAILY</p>
+                <h2>创建日报 Issue</h2>
+              </div>
+            </div>
+            <form className="studio-form" onSubmit={saveIssue}>
+              <div className="studio-form-grid">
+                <label className="assistant-field">
+                  <span>日期</span>
+                  <input value={issueForm.date} onChange={(event) => updateIssueField('date', event.target.value)} />
+                </label>
+                <label className="assistant-field">
+                  <span>标题</span>
+                  <input value={issueForm.title} onChange={(event) => updateIssueField('title', event.target.value)} />
+                </label>
+              </div>
+              <div className="studio-source-picker">
+                <div className="studio-source-picker__header">
+                  <div>
+                    <strong>从来源池选择</strong>
+                    <span>保存来源后，在这里把它加入本期日报</span>
+                  </div>
+                  <span>{selectedIssueSourceIds.length} selected</span>
+                </div>
+                <div className="studio-source-picker__controls">
+                  <label className="assistant-field">
+                    <span>已有来源</span>
+                    <select
+                      value={sourcePickerId}
+                      onChange={(event) => setSourcePickerId(event.target.value)}
+                      disabled={sortedSources.length === 0}
+                    >
+                      <option value="">选择一个来源标题</option>
+                      {sortedSources.map((source) => (
+                        <option key={source.id} value={source.id}>
+                          {source.title} · {source.sourceName || '未填写来源名'}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button type="button" onClick={appendPickedSourceToIssue} disabled={!sourcePickerId}>
+                    加入本期
+                  </button>
+                </div>
+                {sortedSources.length === 0 && <p className="assistant-status-text">还没有保存来源。先在下方录入公开来源。</p>}
+              </div>
+              <div className="studio-selected-sources">
+                <div className="studio-source-picker__header">
+                  <div>
+                    <strong>本期已选来源</strong>
+                    <span>创建 Issue 后会进入日报详情页继续填写 brief</span>
+                  </div>
+                  <span>{selectedIssueSourceIds.length}</span>
+                </div>
+                {selectedIssueSources.map((source) => (
+                  <div key={source.id} className="studio-selected-source">
+                    <span>
+                      <strong>{source.title}</strong>
+                      <em>{source.sourceName || '未填写来源名'}</em>
+                    </span>
+                    <button type="button" onClick={() => removeSourceFromIssue(source.id)}>
+                      移除
+                    </button>
+                  </div>
+                ))}
+                {selectedIssueSourceIds.length > selectedIssueSources.length && (
+                  <p className="assistant-status-text">有手动粘贴的来源 ID 尚未在当前来源池中载入。</p>
+                )}
+                {selectedIssueSourceIds.length === 0 && <p className="assistant-status-text">还没有为这期日报选择来源。</p>}
+              </div>
+              <details className="studio-advanced-source-ids">
+                <summary>高级：手动粘贴来源 ID</summary>
+                <label className="assistant-field">
+                  <span>来源 ID</span>
+                  <textarea
+                    value={issueForm.sourceIdsText}
+                    onChange={(event) => updateIssueField('sourceIdsText', event.target.value)}
+                    rows={3}
+                    placeholder="每行一个 source id；一般不需要手动填写"
+                  />
+                </label>
+              </details>
+              <button type="submit" disabled={isSavingIssue || !adminToken}>
+                {isSavingIssue ? '创建中…' : '创建 Issue'}
+              </button>
+            </form>
+            <div className="studio-issue-list">
+              {issues.slice(0, 5).map((issue) => (
+                <Link key={issue.id} className="studio-issue-card" to={`/studio/ai-daily/${issue.id}`}>
+                  <strong>{issue.title}</strong>
+                  <span>
+                    {issue.date} · {studioAiDailyIssueStatusLabels[issue.status]} · {issue.sourceIds.length} sources
+                  </span>
+                </Link>
+              ))}
+              {issues.length === 0 && <p className="assistant-status-text">还没有日报 Issue。</p>}
+            </div>
+          </article>
+
+          <article className="studio-card studio-source-workbench">
             <div className="studio-card__header">
               <div>
                 <p className="assistant-panel__eyebrow">SOURCES</p>
-                <h2>来源池</h2>
+                <h2>新增来源</h2>
               </div>
             </div>
             <form className="studio-form" onSubmit={saveSource}>
               <label className="assistant-field">
                 <span>来源标题</span>
-                <input value={sourceForm.title} onChange={(event) => updateSourceField('title', event.target.value)} />
+                <input
+                  value={sourceForm.title}
+                  onChange={(event) => updateSourceField('title', event.target.value)}
+                  placeholder="公开来源或文章标题"
+                />
               </label>
               <label className="assistant-field">
                 <span>公开 URL</span>
-                <input value={sourceForm.url} onChange={(event) => updateSourceField('url', event.target.value)} />
+                <input
+                  value={sourceForm.url}
+                  onChange={(event) => updateSourceField('url', event.target.value)}
+                  placeholder="https://..."
+                />
               </label>
               <div className="studio-form-grid">
                 <label className="assistant-field">
@@ -1062,6 +1198,7 @@ export function StudioPage() {
                   value={sourceForm.summary}
                   onChange={(event) => updateSourceField('summary', event.target.value)}
                   rows={4}
+                  placeholder="人工转述来源要点，发布前继续复核原文。"
                 />
               </label>
               <label className="assistant-field">
@@ -1076,13 +1213,25 @@ export function StudioPage() {
                 {isSavingSource ? '保存中…' : '保存来源'}
               </button>
             </form>
-            <div className="studio-source-list">
-              {sortedSources.slice(0, 6).map((source) => (
-                <button key={source.id} type="button" onClick={() => appendSourceToIssue(source.id)}>
-                  <strong>{source.title}</strong>
-                  <span>{studioSourceTierLabels[source.sourceTier]}</span>
-                </button>
-              ))}
+            <div className="studio-source-list-preview">
+              <div className="studio-source-picker__header">
+                <div>
+                  <strong>最近保存来源</strong>
+                  <span>选择来源请回到上方日报 Issue</span>
+                </div>
+                <span>{sortedSources.length}</span>
+              </div>
+              <div className="studio-source-list studio-source-list--compact">
+                {sortedSources.slice(0, 6).map((source) => (
+                  <article key={source.id} className="studio-source-mini-card">
+                    <strong>{source.title}</strong>
+                    <span>
+                      {source.sourceName || '未填写来源名'} · {studioSourceTierLabels[source.sourceTier]}
+                    </span>
+                  </article>
+                ))}
+                {sortedSources.length === 0 && <p className="assistant-status-text">还没有保存来源。</p>}
+              </div>
             </div>
           </article>
 
@@ -1123,49 +1272,6 @@ export function StudioPage() {
                 </button>
               ))}
               {reviewQueue.length === 0 && <p className="assistant-status-text">还没有进入审核队列的草稿。</p>}
-            </div>
-          </article>
-
-          <article className="studio-card">
-            <div className="studio-card__header">
-              <div>
-                <p className="assistant-panel__eyebrow">AI DAILY</p>
-                <h2>日报 Issue</h2>
-              </div>
-            </div>
-            <form className="studio-form" onSubmit={saveIssue}>
-              <div className="studio-form-grid">
-                <label className="assistant-field">
-                  <span>日期</span>
-                  <input value={issueForm.date} onChange={(event) => updateIssueField('date', event.target.value)} />
-                </label>
-                <label className="assistant-field">
-                  <span>标题</span>
-                  <input value={issueForm.title} onChange={(event) => updateIssueField('title', event.target.value)} />
-                </label>
-              </div>
-              <label className="assistant-field">
-                <span>来源 ID</span>
-                <textarea
-                  value={issueForm.sourceIdsText}
-                  onChange={(event) => updateIssueField('sourceIdsText', event.target.value)}
-                  rows={4}
-                  placeholder="点击上方来源可追加，也可以每行粘贴一个 source id"
-                />
-              </label>
-              <button type="submit" disabled={isSavingIssue || !adminToken}>
-                {isSavingIssue ? '创建中…' : '创建 Issue'}
-              </button>
-            </form>
-            <div className="studio-issue-list">
-              {issues.slice(0, 5).map((issue) => (
-                <Link key={issue.id} className="studio-issue-card" to={`/studio/ai-daily/${issue.id}`}>
-                  <strong>{issue.title}</strong>
-                  <span>
-                    {issue.date} · {studioAiDailyIssueStatusLabels[issue.status]} · {issue.sourceIds.length} sources
-                  </span>
-                </Link>
-              ))}
             </div>
           </article>
 

@@ -88,6 +88,70 @@ const previewBody = bodyJsonFromText(draftForm.bodyText)
 
 One parser owns the lightweight authoring format, and both preview and save use its `StudioContentBody`.
 
+## Scenario: Studio AI Daily Source Selection
+
+### 1. Scope / Trigger
+
+- Trigger: changing `/studio` source-pool creation, AI Daily issue creation, selected source display, or source-id editing.
+- Goal: keep the visitor-facing editor workflow title-based and clear while preserving the backend contract that AI Daily issues store source item ids.
+
+### 2. Signatures
+
+- `IssueFormState.sourceIdsText: string` remains the form-local backing field for newline/comma-separated source ids.
+- `selectedIssueSourceIds = splitList(issueForm.sourceIdsText)` derives the id list.
+- `selectedIssueSources` maps ids through the loaded `StudioSourceItem[]` for display.
+- `appendSourceToIssue(sourceId: string)` appends one source id and guards empty/duplicate selection.
+- `removeSourceFromIssue(sourceId: string)` removes one source id from `sourceIdsText`.
+
+### 3. Contracts
+
+- The primary UI path must let editors choose saved sources by readable source title, not by manually typing source ids.
+- The source creation form is only for adding new source items; it must not look like the source selector for the current issue.
+- The selected-source summary must show readable titles and source names before issue creation.
+- Manual source-id editing may exist as an advanced fallback, but it should not be the default visible workflow.
+- Saving a new source may set it as the current picker option, but should not silently add it to an issue.
+
+### 4. Validation & Error Matrix
+
+- Empty picker selection -> show a status message and do not mutate `sourceIdsText`.
+- Duplicate source selection -> show a status message and keep the id list stable.
+- `sourceIdsText` contains ids not in the loaded source pool -> show a warning that some ids are not loaded.
+- No saved sources -> disable the picker and direct the editor to add a public source first.
+
+### 5. Good/Base/Bad Cases
+
+- Good: editor saves a public source, chooses it from the existing-source dropdown, clicks "加入本期", and sees it in "本期已选来源".
+- Base: advanced editor pastes known source ids into the collapsed advanced field and still sees loaded matches.
+- Bad: the main AI Daily issue form exposes only a textarea labelled `来源 ID`, forcing editors to copy internal ids by hand.
+
+### 6. Tests Required
+
+- Run `npm.cmd run lint` and `npm.cmd run build` after changing `/studio` source or issue state.
+- Run `npm.cmd run check:ui` after changing Studio layout or first-load state.
+- Run `npm.cmd run studio:smoke` to keep Studio export, project-detail plan, status plan, and offline AI Daily draft checks green.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```tsx
+<textarea value={issueForm.sourceIdsText} />
+```
+
+This makes internal ids the only practical creation path.
+
+#### Correct
+
+```tsx
+<select value={sourcePickerId} onChange={(event) => setSourcePickerId(event.target.value)}>
+  {sortedSources.map((source) => (
+    <option key={source.id} value={source.id}>{source.title}</option>
+  ))}
+</select>
+```
+
+The UI speaks in source titles, while the saved issue payload still receives source ids.
+
 ## Scenario: Project Detail Content And Assistant Projection
 
 ### 1. Scope / Trigger
