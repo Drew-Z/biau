@@ -809,6 +809,7 @@ The route validates public input, delegates retrieval to the Orchestrator bounda
 - `POST /admin/rag/sync-public` works without `DATABASE_URL`; it uses server-side `RAG_SYNC_TOKEN` to ask the RAG Orchestrator to sync bundled public knowledge.
 - `POST /admin/knowledge/sync` still owns internal corpus selection from reviewed/active database documents, then posts `scope:"internal"` to the Orchestrator.
 - Qdrant sync must ensure the target collection exists before upserting points. Collection vector size comes from `EMBEDDING_DIMENSION` or the Qdrant default path in code.
+- Qdrant sync should batch embedding generation for corpus chunks instead of issuing one provider request per chunk; this keeps small public/internal corpus syncs below common relay rate limits.
 - RAG health may expose low-sensitive collection status: collection name, scope, point count, and ready boolean. It must not expose Qdrant host, API key, embedding endpoint, sync token, request body, or raw provider response.
 - Sync diagnostics may expose `mode`, `scope`, `reason`, `accepted`, `documentCount`, `chunkCount`, `entityCount`, `relationCount`, `issueCount`, `httpStatus`, `expectedDimension`, `actualDimension`, `providerStep`, `errorKind`, `attemptedEndpoints`, `timeoutMs`, `sourceName`, and `sourceChecksum` only.
 
@@ -821,7 +822,7 @@ The route validates public input, delegates retrieval to the Orchestrator bounda
 - Missing Qdrant collection during sync -> server attempts collection creation before point upsert.
 - Qdrant auth failure -> sync returns `accepted:false`, `reason:"qdrant_auth_failed"` without leaking URL or key.
 - Qdrant network or timeout failure -> sync returns `accepted:false`, `reason:"qdrant_network_error"` or `reason:"qdrant_timeout"` plus a low-sensitive `providerStep`.
-- Embedding provider failure during sync -> sync returns `accepted:false`, `reason:"embedding_provider_error"`, `reason:"embedding_timeout"`, `reason:"embedding_network_error"`, or `reason:"embedding_empty_response"` plus low-sensitive `providerStep`, `attemptedEndpoints`, and `timeoutMs` when available.
+- Embedding provider failure during sync -> sync returns `accepted:false`, `reason:"embedding_provider_error"`, `reason:"embedding_rate_limited"`, `reason:"embedding_timeout"`, `reason:"embedding_network_error"`, or `reason:"embedding_empty_response"` plus low-sensitive `providerStep`, `attemptedEndpoints`, `timeoutMs`, and numeric `httpStatus` when available.
 - Embedding dimension mismatch -> sync returns `accepted:false`, `reason:"embedding_dimension_mismatch"` or `reason:"qdrant_dimension_mismatch"`; when the embedding provider returns a vector with an unexpected length, sync diagnostics should include low-sensitive `expectedDimension` and `actualDimension` values.
 - No reviewed/active internal documents -> internal sync records `SKIPPED`, `reason:"no-reviewed-internal-documents"`.
 

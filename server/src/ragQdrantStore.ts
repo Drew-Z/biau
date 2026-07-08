@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { env } from './env.js'
 import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
-import { embedText, EmbeddingDimensionMismatchError, EmbeddingProviderError, isExternalEmbeddingConfigured } from './ragEmbeddings.js'
+import { embedText, embedTexts, EmbeddingDimensionMismatchError, EmbeddingProviderError, isExternalEmbeddingConfigured } from './ragEmbeddings.js'
 import type {
   AssistantScope,
   Citation,
@@ -198,13 +198,25 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
     }
 
     const documentById = new Map(publicKnowledgeV2.public_documents.map((document) => [document.id, document]))
-    const points = []
-    for (const chunk of publicKnowledgeV2.knowledge_chunks) {
-      const document = documentById.get(chunk.documentId)
-      if (!document) continue
-      const embedding = await embedText([chunk.section, chunk.text, ...chunk.metadata.tags].join('\n'), {
-        expectedDimensions: expectedEmbeddingDimensions(),
+    const syncInputs = publicKnowledgeV2.knowledge_chunks
+      .map((chunk) => {
+        const document = documentById.get(chunk.documentId)
+        if (!document) return null
+        return {
+          chunk,
+          document,
+          embeddingText: [chunk.section, chunk.text, ...chunk.metadata.tags].join('\n'),
+        }
       })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
+    const embeddings = await embedTexts(
+      syncInputs.map((input) => input.embeddingText),
+      { expectedDimensions: expectedEmbeddingDimensions() },
+    )
+    const points = []
+    for (const [index, input] of syncInputs.entries()) {
+      const embedding = embeddings[index]
+      const { chunk, document } = input
       points.push({
         id: toQdrantPointId(chunk.id),
         vector: embedding.vector,
@@ -318,13 +330,25 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
     }
 
     const documentById = new Map(documents.map((document) => [document.id, document]))
-    const points = []
-    for (const chunk of chunks) {
-      const document = documentById.get(chunk.documentId)
-      if (!document) continue
-      const embedding = await embedText([document.title, chunk.section, chunk.text, ...(document.tags ?? [])].join('\n'), {
-        expectedDimensions: expectedEmbeddingDimensions(),
+    const syncInputs = chunks
+      .map((chunk) => {
+        const document = documentById.get(chunk.documentId)
+        if (!document) return null
+        return {
+          chunk,
+          document,
+          embeddingText: [document.title, chunk.section, chunk.text, ...(document.tags ?? [])].join('\n'),
+        }
       })
+      .filter((item): item is NonNullable<typeof item> => item !== null)
+    const embeddings = await embedTexts(
+      syncInputs.map((input) => input.embeddingText),
+      { expectedDimensions: expectedEmbeddingDimensions() },
+    )
+    const points = []
+    for (const [index, input] of syncInputs.entries()) {
+      const embedding = embeddings[index]
+      const { chunk, document } = input
       points.push({
         id: toQdrantPointId(chunk.id),
         vector: embedding.vector,

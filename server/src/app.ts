@@ -17,6 +17,8 @@ type AdminRagSyncStatus = 'COMPLETED' | 'FAILED' | 'SKIPPED'
 type SanitizedAgentToolTrace = NonNullable<NonNullable<ChatResponse['meta']>['tools']>[number]
 type SanitizedAgentToolArtifact = NonNullable<SanitizedAgentToolTrace['artifacts']>[number]
 
+const ADMIN_RAG_SYNC_TIMEOUT_MS = 120000
+
 export function createApp() {
   const app = express()
   app.use(cors({ origin: env.corsOrigin === '*' ? true : env.corsOrigin }))
@@ -1180,7 +1182,7 @@ async function syncPublicRagKnowledge() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ scope: 'public' }),
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(ADMIN_RAG_SYNC_TIMEOUT_MS),
     })
     const payload = (await response.json().catch(() => ({}))) as unknown
     if (!response.ok) {
@@ -1254,7 +1256,7 @@ async function syncInternalKnowledgeDocuments(documents: ReturnType<typeof build
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ scope: 'internal', documents }),
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(ADMIN_RAG_SYNC_TIMEOUT_MS),
     })
     const payload = (await response.json().catch(() => ({}))) as unknown
     if (!response.ok) {
