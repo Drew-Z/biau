@@ -145,10 +145,11 @@ export const reliabilityProjects: ReliabilityProject[] = [
         id: 'blog-semi-rag-orchestrator',
         layer: 'observability',
         label: 'RAG Orchestrator health',
-        status: 'planned',
-        description: '后续检查外部 RAG Orchestrator `/health`、sync 状态、vector/keyword/reranker readiness 和低敏 retrieval diagnostics。',
-        evidence: '本地 `/rag/health`、`/rag/v1/retrieve`、`assistant:rag-smoke`、`assistant:rag-sync-local` 已可验证；生产 health check 等待 Orchestrator 部署和用户批准。',
-        cadence: '生产 Orchestrator 部署后 + 每日',
+        status: 'online',
+        description: '检查外部 RAG Orchestrator `/health`、Qdrant store、public/internal collection readiness 和低敏同步结果。',
+        evidence:
+          '生产 RAG Orchestrator health 已低敏验收：store=qdrant，public collection ready=50 points，internal collection ready=5 points；内部知识同步最近一次为 COMPLETED，1 个 reviewed 文档写入 5 个 chunks。真实 RAG token、Qdrant key、embedding endpoint 和文档正文不进入公开状态。',
+        cadence: '部署后 + 每日',
         ownerHint: 'RAG Orchestrator',
       },
     ],
@@ -156,7 +157,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     nextActions: [
       '把 `main-site:synthetic` 接入定时任务或内部监控。',
       'Cloudflare Pages Functions 部署后先复查 `/api/health`；需要验证模型回答时，再显式运行 `main-site:synthetic -- --assistant-chat`。',
-      '生产 RAG Orchestrator 部署并确认可检查后，再把 `/health` 纳入 synthetic 或内部监控。',
+      '把生产 RAG Orchestrator `/health` 和内部知识 sync run 的低敏摘要纳入定时 synthetic 或内部监控。',
     ],
   },
   {
