@@ -111,6 +111,7 @@ Current low-sensitive production acceptance:
 - Project note quality guard completed: added `blog:project-notes-check` and wired it into `verify` so public `项目总结 / Project Notes` posts must keep enough knowledge points, scenarios, checklist items, sections, takeaways, evidence/source-boundary language, follow-up gate language, and sensitive-content screening before they are treated as release-ready. The first gate run passed for all 6 public project notes after small Xunqiu and Playlab content thickening.
 - Public assistant retrieval parity completed: `demo-access` citation selection now mirrors the same project-citation backfill behavior in `src/data/assistantKnowledge.ts`, `server/src/knowledge.ts`, and `functions/_shared/assistant.ts`. This prevents the frontend fallback, Express API, and Cloudflare Pages Function from drifting when demo-ready questions need multiple `project:*` citations. Backend code-spec now records this three-surface contract.
 - Full local verification for this slice passed with `npm.cmd run verify`, including assistant index/kg/eval, local RAG sync, Prisma validate, lint, server build/smoke, service-mode smoke, RAG smoke, Cloudflare Function smoke, frontend build, blog checks, project-notes check, docs checks, Studio smoke, project-detail evidence, status contract, preview, and UI checks.
+- Fresh low-sensitive reliability refresh completed after the project-note guard slice: `npm.cmd run reliability:check -- --timeout 20000 --step-timeout 140000` passed with 8 passed, 0 failed, 1 skipped, regenerating main-site, public-link, Pet, Playlab, reliability-suite, and aggregate site-status snapshots. The skipped item remains Legal RAG credentialed synthetic until low-privilege demo credentials are configured.
 
 Validation:
 
@@ -124,6 +125,9 @@ npm.cmd run assistant:index
 npm.cmd run lint
 npm.cmd run build
 npm.cmd run verify
+npm.cmd run reliability:check -- --timeout 20000 --step-timeout 140000
+npm.cmd run status:contract
+npm.cmd run docs:manual-gates-check
 ```
 
 ## Phase 4: Project Credentialed Checks
