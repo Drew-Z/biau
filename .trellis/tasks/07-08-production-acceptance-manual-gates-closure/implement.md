@@ -76,6 +76,7 @@ Current low-sensitive production acceptance:
 - Project detail visual polish completed: in-body visual captions now separate visitor-facing caption text from source links, and `check:ui` asserts source links render through the dedicated project visual source-link class. This improves case-study readability without changing project facts or adding unverified assets.
 - Status overview manual-gate visibility completed: reliability project cards now show counts for `人工 gate` and `后续接入`, and `check:ui` asserts the summary cells exist for every reliability project so users can see where manual work remains before opening a detail route.
 - Status detail manual checklist follow-up completed: `/status/:projectId` now renders `人工 gate` and `后续接入` as counted, numbered checklist panels with long-text wrapping, and `check:ui` asserts Legal RAG detail checklist counts against the merged status payload.
+- Fresh reliability evidence refresh completed after Studio connection was confirmed: `npm.cmd run reliability:check -- --timeout 20000 --step-timeout 140000` passed with 7 passed, 0 failed, 1 skipped, regenerating public status snapshots without live assistant chat or model testing. The skipped item remains Legal RAG credentialed synthetic until low-privilege demo credentials are configured.
 
 Validation:
 

@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-08T19:32:13.532Z",
+  "checkedAt": "2026-07-08T20:08:51.700Z",
   "ok": true,
   "strict": false,
   "timeoutMs": 20000,
@@ -9,7 +9,7 @@
     "passed": 7,
     "failed": 0,
     "skipped": 1,
-    "durationMs": 62777
+    "durationMs": 62764
   },
   "steps": [
     {
@@ -17,7 +17,7 @@
       "label": "BIAU Port main site synthetic",
       "command": "npm run main-site:synthetic -- --timeout 20000",
       "status": "passed",
-      "durationMs": 2866,
+      "durationMs": 3126,
       "exitCode": 0,
       "outputPath": "public/status/blog-semi-synthetic.json",
       "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=1",
@@ -39,7 +39,7 @@
       "label": "ERP synthetic",
       "command": "npm run erp:synthetic -- --timeout 20000",
       "status": "passed",
-      "durationMs": 269,
+      "durationMs": 283,
       "exitCode": 0,
       "outputPath": "public/status/erp-synthetic.json",
       "summary": "synthetic checks: online=2 degraded=0 offline=0 unchecked=1",
@@ -50,7 +50,7 @@
       "label": "Xunqiu synthetic",
       "command": "npm run xunqiu:synthetic -- --timeout 20000",
       "status": "passed",
-      "durationMs": 294,
+      "durationMs": 271,
       "exitCode": 0,
       "outputPath": "public/status/xunqiu-synthetic.json",
       "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
@@ -63,7 +63,7 @@
       "label": "Pet showcase synthetic",
       "command": "npm run pet:synthetic -- --timeout 20000",
       "status": "passed",
-      "durationMs": 4621,
+      "durationMs": 5156,
       "exitCode": 0,
       "outputPath": "public/status/pet-gamer-synthetic.json",
       "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=1",
@@ -76,7 +76,7 @@
       "label": "BIAU Playlab synthetic",
       "command": "npm run playlab:synthetic -- --timeout 20000",
       "status": "passed",
-      "durationMs": 44473,
+      "durationMs": 44505,
       "exitCode": 0,
       "outputPath": "public/status/biau-playlab-synthetic.json",
       "summary": "synthetic checks: online=2 degraded=0 offline=0 unchecked=0",
@@ -87,7 +87,7 @@
       "label": "Public status aggregation",
       "command": "npm run site:status -- --timeout 20000",
       "status": "passed",
-      "durationMs": 4981,
+      "durationMs": 4551,
       "exitCode": 0,
       "outputPath": "public/status/site-status.json",
       "summary": "site status targets: online=5 degraded=0 offline=0 unchecked=0",
@@ -98,7 +98,7 @@
       "label": "Core route monitor",
       "command": "npm run site:monitor -- --json --timeout 20000",
       "status": "passed",
-      "durationMs": 5261,
+      "durationMs": 4864,
       "exitCode": 0,
       "summary": "site monitor checks: passed=18 failed=0",
       "issues": []
