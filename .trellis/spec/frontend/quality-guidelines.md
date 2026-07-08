@@ -81,6 +81,14 @@ those keys with `page.addInitScript()` before navigation. Do not rely on the
 current developer browser, a previously visited route, or a stale preview server
 to happen to have the right storage state.
 
+Studio routes must also pass the visible overflow guard in `scripts/check-ui.mjs`.
+When changing `/studio` layout, form controls, cards, chips, preview headers, or
+AI Daily source controls, ensure `.studio-page` descendants stay within their
+parent and viewport at desktop and mobile widths. Long titles, slugs, source
+names, model labels, and status text should use `min-width: 0` plus
+`overflow-wrap: anywhere` / bounded grid columns instead of relying on a perfect
+content length.
+
 ### Blog Knowledge Quality Gate
 
 Public `知识积累 / Knowledge Notes` posts must pass

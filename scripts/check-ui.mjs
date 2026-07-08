@@ -152,6 +152,51 @@ function isIgnorableRequestFailure(request) {
   }
 }
 
+async function collectStudioOverflow(page) {
+  return page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth
+    return [...document.querySelectorAll('.studio-page, .studio-page *')]
+      .map((element) => {
+        const rect = element.getBoundingClientRect()
+        const parentRect = element.parentElement?.getBoundingClientRect()
+        const className = typeof element.className === 'string' ? element.className : ''
+        const tagName = element.tagName.toLowerCase()
+        const text = (element.textContent ?? '').replace(/\s+/gu, ' ').trim().slice(0, 96)
+        const hidden =
+          rect.width <= 0 ||
+          rect.height <= 0 ||
+          window.getComputedStyle(element).visibility === 'hidden' ||
+          window.getComputedStyle(element).display === 'none'
+        const ignoreSelfOverflow =
+          ['input', 'textarea', 'select'].includes(tagName) ||
+          className.includes('detail-header')
+        const selfOverflow = !ignoreSelfOverflow && element.scrollWidth > element.clientWidth + 2
+        const viewportOverflow = rect.left < -2 || rect.right > viewportWidth + 2
+        const parentOverflow = parentRect ? rect.left < parentRect.left - 2 || rect.right > parentRect.right + 2 : false
+
+        return {
+          tagName,
+          className,
+          text,
+          hidden,
+          selfOverflow,
+          viewportOverflow,
+          parentOverflow,
+          width: Math.round(rect.width),
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+        }
+      })
+      .filter(
+        (item) =>
+          !item.hidden &&
+          (item.selfOverflow || item.viewportOverflow || item.parentOverflow) &&
+          item.width > 0,
+      )
+      .slice(0, 8)
+  })
+}
+
 const failures = []
 const browser = await chromium.launch({ headless: true })
 
@@ -199,6 +244,15 @@ for (const viewport of viewports) {
 
     if (overflowX) {
       failures.push(`${viewport.name} ${route.path}: horizontal overflow detected`)
+    }
+
+    if (route.path.startsWith('/studio')) {
+      const studioOverflow = await collectStudioOverflow(page)
+      if (studioOverflow.length > 0) {
+        failures.push(
+          `${viewport.name} ${route.path}: studio visible overflow ${JSON.stringify(studioOverflow)}`,
+        )
+      }
     }
 
     if (viewport.name === 'desktop' && canonical !== `${siteUrl}${route.canonical}`) {

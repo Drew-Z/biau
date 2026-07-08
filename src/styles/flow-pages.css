@@ -2847,10 +2847,12 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   min-height: 28px;
   display: inline-flex;
   align-items: center;
+  max-width: 100%;
   padding: 0 var(--space-8);
   background: color-mix(in oklch, var(--amber) 10%, transparent);
   border: 1px solid color-mix(in oklch, var(--amber) 24%, transparent);
   border-radius: var(--radius-sm);
+  overflow-wrap: anywhere;
 }
 
 .assistant-session-list {
@@ -3081,11 +3083,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .assistant-field textarea,
 .public-assistant__composer input {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   color: var(--ink);
   background: color-mix(in oklch, var(--panel-strong) 52%, transparent);
   border: 1px solid var(--flow-ui-border);
   border-radius: var(--radius-lg);
   outline: none;
+  text-overflow: ellipsis;
 }
 
 .assistant-field input,
@@ -3323,6 +3328,63 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-page {
   gap: var(--space-24);
+  overflow-x: clip;
+}
+
+.studio-page,
+.studio-page * {
+  box-sizing: border-box;
+}
+
+.studio-page > *,
+.studio-page section,
+.studio-page aside,
+.studio-page article,
+.studio-page form,
+.studio-page label,
+.studio-page div,
+.studio-page header,
+.studio-page ul,
+.studio-page li,
+.studio-page p,
+.studio-page h1,
+.studio-page h2,
+.studio-page h3 {
+  min-width: 0;
+}
+
+.studio-page > .page-hero,
+.studio-control-bar,
+.studio-grid,
+.studio-editor-stack,
+.studio-side-stack,
+.studio-card,
+.studio-preview {
+  width: 100%;
+  max-width: 100%;
+}
+
+.studio-page p,
+.studio-page li,
+.studio-page strong,
+.studio-page span,
+.studio-page em,
+.studio-page summary,
+.studio-page button,
+.studio-page a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.studio-page button {
+  min-width: 0;
+  white-space: normal;
+}
+
+.studio-page .assistant-admin-actions > button,
+.studio-page .studio-form > button {
+  flex: 1 1 120px;
 }
 
 .studio-control-bar,
@@ -3350,6 +3412,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-8);
+  min-width: 0;
 }
 
 .studio-grid {
@@ -3370,15 +3433,24 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   gap: var(--space-12, 12px);
   align-items: flex-start;
   justify-content: space-between;
+  min-width: 0;
+}
+
+.studio-card__header > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .studio-card__header h2,
 .studio-card h2 {
+  max-width: 100%;
   margin: 0;
   color: var(--ink);
   font-family: var(--font-serif-display);
   font-weight: var(--weight-title);
   letter-spacing: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .studio-form,
@@ -3456,7 +3528,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-source-picker__controls {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, 0.34fr);
   gap: var(--space-10, 10px);
   align-items: end;
 }
@@ -3505,13 +3577,15 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .studio-selected-source button,
 .studio-source-picker__controls button {
   min-height: 36px;
+  max-width: 100%;
   padding: 0 var(--space-10, 10px);
   color: var(--ink);
   background: color-mix(in oklch, var(--panel-strong) 54%, transparent);
   border: 1px solid var(--flow-ui-card-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .studio-selected-source button {
@@ -3559,13 +3633,15 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-template-strip button {
   min-height: 40px;
+  max-width: 100%;
   padding: 0 var(--space-12, 12px);
   color: var(--ink);
   background: color-mix(in oklch, var(--panel-strong) 58%, transparent);
   border: 1px solid var(--flow-ui-card-border);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .studio-draft-item,
@@ -3591,6 +3667,9 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .studio-source-list button,
 .studio-issue-card {
   cursor: pointer;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .studio-draft-item.is-active,
@@ -3604,12 +3683,15 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .studio-source-list strong,
 .studio-issue-list strong,
 .studio-issue-card strong {
+  min-width: 0;
   color: var(--ink);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 .studio-draft-item__title,
 .studio-editor-statuses {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -3627,6 +3709,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .studio-source-list span,
 .studio-issue-list span,
 .studio-issue-card span {
+  min-width: 0;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
@@ -3795,18 +3878,23 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .studio-preview-article .detail-header {
+  min-width: 0;
   padding: var(--space-24);
   border-radius: var(--radius-lg);
+  overflow-wrap: anywhere;
 }
 
 .studio-preview-article .detail-title {
-  max-width: 18ch;
+  max-width: min(18ch, 100%);
   font-size: clamp(2rem, 6vw, 3.45rem);
   line-height: 1.04;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .studio-preview-article .detail-summary {
-  max-width: 64ch;
+  max-width: min(64ch, 100%);
+  overflow-wrap: anywhere;
 }
 
 .studio-preview-article .detail-body {
@@ -4475,6 +4563,34 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   100% {
     opacity: calc(var(--harbor-mist-opacity) * 0.66);
     transform: translate3d(-4%, -1%, 0) scale(1.14) rotate(-1.4deg);
+  }
+}
+
+@media (max-width: 1180px) {
+  .studio-page {
+    width: min(calc(100% - 32px), var(--shell-max));
+  }
+
+  .studio-grid,
+  .studio-token-form {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-side-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-source-picker__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-card__header {
+    flex-wrap: wrap;
+  }
+
+  .studio-card__header button {
+    max-width: 100%;
+    white-space: normal;
   }
 }
 

@@ -33,6 +33,7 @@ Current low-sensitive production check:
 - First dedicated Studio health request took about 53 seconds, likely Render cold start; follow-up list requests returned in milliseconds to a few seconds.
 - Follow-up production read-only API check after UI polish returned `200` for health, drafts, source items, AI Daily issues, and publish exports. Low-sensitive counts at that time: drafts `2`, sources `3`, issues `1`, publish exports `0`; first health request again showed Render cold start behavior at about 58 seconds.
 - `/studio` UI was polished so AI Daily issue creation uses a readable existing-source picker, selected-source summary, and collapsed advanced source-id fallback. The separate source creation card now reads as "新增来源" and no longer doubles as the primary issue source selector.
+- UI overflow follow-up completed: Studio now has scoped width/min-width/overflow-wrap safeguards, a `1180px` responsive breakpoint before the three-column layout gets cramped, safer button/source picker wrapping, and a `check:ui` Studio visible-overflow guard.
 
 Validation:
 
@@ -63,6 +64,8 @@ Current low-sensitive production acceptance:
 - No model call, external fetch, public publish, or Git-tracked content export was performed.
 - UI follow-up discovered during acceptance: `/studio` source workflow is visually cramped and confusing; users can mistake the source creation form for source selection. Improve layout/copy so source creation and issue source selection are clearer.
 - UI follow-up completed: issue creation now appears before the source creation card, source selection is by existing source title, selected sources are visible before creating an issue, and manual source-id editing is under an advanced disclosure.
+- UI overflow follow-up completed: natural `/studio` DOM scan is clean across desktop, 1024px narrow desktop, and mobile; `check:ui` now fails if visible Studio descendants overflow their parent or viewport.
+- Final local validation for this UI overflow slice passed: `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run check:ui`, and `npm.cmd run studio:smoke`. `check:ui` covered 13 routes across desktop and mobile against local preview on `127.0.0.1:5174`.
 
 Validation:
 
