@@ -1918,6 +1918,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   margin: 0;
   padding: var(--space-8) var(--space-16);
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-8);
   align-items: center;
   justify-content: center;
@@ -1931,7 +1932,13 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .blog-index-page .filter-btn {
   min-height: 52px;
+  min-width: 124px;
+  max-width: 172px;
   padding: 0 var(--space-16);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   color: var(--muted);
   background: transparent;
   border: 1px solid transparent;
@@ -1940,6 +1947,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   font-size: 13px;
   font-weight: 800;
   letter-spacing: 0.02em;
+  text-align: center;
 }
 
 .blog-index-page .filter-btn-title {
@@ -1953,6 +1961,12 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   line-height: 1.15;
   letter-spacing: 0;
   opacity: 0.72;
+  overflow-wrap: anywhere;
+}
+
+.blog-index-page .filter-btn.is-empty {
+  color: color-mix(in oklch, var(--muted) 78%, transparent);
+  border-color: color-mix(in oklch, var(--ink) 8%, transparent);
 }
 
 .blog-index-page .filter-btn:hover {

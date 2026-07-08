@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { BlogCard } from '../components/BlogCard'
 import { BlogColumnFilter } from '../components/BlogColumnFilter'
-import { blogColumnOrder, type BlogColumn } from '../data/blog'
+import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
 import {
   filterBlogPosts,
   getPublicBlogPosts,
@@ -29,9 +29,32 @@ export function BlogPage() {
   const visibleBlogs = filteredBlogs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const availableColumns = useMemo(() => {
-    const columns = new Set(publicBlogs.map((post) => post.column))
-    return blogColumnOrder.filter((column) => columns.has(column))
+    return blogColumnOrder
+  }, [])
+
+  const blogColumnCounts = useMemo(() => {
+    const counts: Record<BlogColumn, number> = {
+      knowledge: 0,
+      'project-notes': 0,
+      resources: 0,
+      'ai-daily': 0,
+      'build-log': 0,
+    }
+
+    for (const post of publicBlogs) counts[post.column] += 1
+    return counts
   }, [publicBlogs])
+
+  const emptyTitle =
+    selectedBlogColumn === 'all'
+      ? '没有找到相关文章'
+      : `${blogColumnMeta[selectedBlogColumn].titleZh} 暂无公开文章`
+  const emptyDescription =
+    selectedBlogColumn === 'all'
+      ? '换一个关键词或分类试试看。'
+      : searchQuery.trim()
+        ? '当前栏目下没有匹配关键词的公开文章。'
+        : '内容仍在整理或人工审核中，通过发布门禁后会出现在这里。'
 
   const handleSelectColumn = (column: BlogColumn | 'all') => {
     setSelectedBlogColumn(column)
@@ -53,6 +76,8 @@ export function BlogPage() {
 
       <BlogColumnFilter
         columns={availableColumns}
+        counts={blogColumnCounts}
+        totalCount={publicBlogs.length}
         selectedColumn={selectedBlogColumn}
         onSelect={handleSelectColumn}
       />
@@ -86,8 +111,8 @@ export function BlogPage() {
 
       {visibleBlogs.length === 0 && (
         <section className="blog-empty">
-          <h2>没有找到相关文章</h2>
-          <p>换一个关键词或分类试试看。</p>
+          <h2>{emptyTitle}</h2>
+          <p>{emptyDescription}</p>
         </section>
       )}
 

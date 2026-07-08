@@ -10,6 +10,7 @@ import {
   parseEvidenceFreshness,
 } from '../src/data/siteStatusView.ts'
 import { projects } from '../src/data/portfolio.ts'
+import { blogColumnMeta, blogColumnOrder } from '../src/data/blog.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -475,6 +476,19 @@ await statusPage.close()
 
 const interactionPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(interactionPage, '/blog')
+for (const column of blogColumnOrder) {
+  const label = blogColumnMeta[column].titleZh
+  if (!(await interactionPage.getByRole('button', { name: new RegExp(label) }).isVisible().catch(() => false))) {
+    failures.push(`/blog columns: expected ${label} column filter to stay visible even before first public post`)
+  }
+}
+await interactionPage.getByRole('button', { name: /AI 日报/ }).click()
+await interactionPage.waitForTimeout(100)
+if (!(await interactionPage.locator('.blog-empty').filter({ hasText: 'AI 日报 暂无公开文章' }).isVisible())) {
+  failures.push('/blog columns: expected AI Daily empty column to show a clear unpublished state')
+}
+await interactionPage.getByRole('button', { name: '全部' }).click()
+await interactionPage.waitForTimeout(100)
 const initialCards = await interactionPage.locator('.blog-card').count()
 const initialResultMeta = await interactionPage.locator('.blog-result-meta').innerText()
 const initialTotalMatch = initialResultMeta.match(/(\d+)\s*篇文章/)
