@@ -10,7 +10,7 @@ This file tracks the multi-repository README and deployment packaging work for t
 | `D:\workspace4Cursor\blog-semi` | First slice complete | Root README rewritten as an open-source entry point covering the main site, LangGraph internal assistant, Studio, AI Daily, four-service deployment boundary, RAG Orchestrator, checks, and public-safe rules. | README link/image/sensitive-shape checks; `npm.cmd run docs:manual-gates-check`; `npm.cmd run docs:deployment-check`; `git diff --check` only reported LF/CRLF normalization warnings. | Choose license; configure GitHub repo metadata/topics/visibility; optional deploy buttons; production provider secrets stay platform-only. |
 | `D:\workspace4Cursor\erp` | First slice complete | README rewritten as an open-source entry point; Docker Compose defaults changed to mock/false Ozon writes; fixed SFTP host/username removed from `deploy:upload`. Committed and pushed on `codex/ozon-plugin-parity` at `3dc9652`. | `python -m py_compile scripts\upload_sftp.py`; `docker compose config`; `npm.cmd pkg get scripts.deploy:upload`; `npm.cmd run test`; `npm.cmd run build`; `git diff --check` only reported LF/CRLF normalization warnings. | Choose license; configure public repo metadata; decide demo account policy; real Ozon/SFTP/database/JWT/encryption secrets stay platform-only. |
 | `D:\workspace4Codex\xunqiu` / `D:\workspace4Codex\xunqiu-backend-modern` | First slice complete | Static showcase README and Spring Boot backend README rewritten; backend `.env.example` added; old backend IP and fixed historical Render URL removed from public docs/config; smoke script parameterized. Showcase commit `117d3ba`; backend commit `87a0f1b`. | Showcase file/link checks and `git diff --check`; backend `mvn test`, `mvn -DskipTests package`, local jar smoke, Docker build, and sensitive-shape scan. PostgreSQL Testcontainers test skipped because the Java Docker client could not detect a valid Docker environment. | Choose licenses; GitHub metadata; confirm public APK download/release policy and SHA-256; fill Render `APP_PUBLIC_BASE_URL`; keep R2/database/signing secrets platform-only; add production auth/rate-limit/CORS before real production use. |
-| `D:\workspace4Cursor\pet` | Planned | README should describe current workbench state, app showcase, APK release gate, and future release path. | Pending. | Release signing, SHA-256, official APK/AAB upload approval. |
+| `D:\workspace4Cursor\pet` | Showcase sub-slice complete | `gamer/pet-app-showcase-site/README.md` rewritten as a static showcase/download-status entry; broader Pet implementation repos left untouched because multiple worktrees are already dirty. Commit `30d6118` on `gamer` branch `cursor-windows-migration`. | Showcase file checks, local href check, `git diff --check -- pet-app-showcase-site/README.md`, and focused sensitive scan. | Resolve/commit dirty Pet worktrees before full README packaging; choose licenses; approve screenshots; public APK needs reproducible build, signing policy, SHA-256, release notes, regression evidence, and human approval. |
 | `D:\workspace4Cursor\game` | Planned | README should package the Playlab/game showcase as a reusable static/game project with asset and hosting notes. | Pending. | Public asset/license review and hosting metadata. |
 
 ## Legal RAG Audit Notes
@@ -92,3 +92,33 @@ Known manual gates:
 - Render `APP_PUBLIC_BASE_URL` and optional R2 variables must be filled in the platform dashboard.
 - Production readiness still requires auth, rate limits, stricter CORS, backups, logging/audit policy, and separation of demo seed data.
 - PostgreSQL Testcontainers could not run in this Windows session because the Java Docker client did not detect a valid Docker environment, although Docker CLI image build succeeded.
+
+## Pet Audit Notes
+
+Evidence inspected:
+
+- Pet workspace root `README.md` and `SDLC-INDEX.md`.
+- `gamer/AGENTS.md`, `gamer/README.md`, `gamer/package.json`, and `gamer/docs/agents/domain.md`.
+- `gamer/pet-app-showcase-site/README.md`, `index.html`, `styles.css`, `favicon.svg`, and `assets/*`.
+- Relevant `gamer` docs/code references around Android APK, package download gates, human review, and public API boundaries.
+
+Confirmed stack:
+
+- Pet is a multi-repository workspace, not a single root git repo.
+- `gamer/` owns Android app, Community API, Admin Review, app-facing packages, and the static Pet App showcase page.
+- `fantasy-pet-rule/` owns the server-side generation worker, app API contract, QA, package gates, and private adapter/runtime concerns.
+- `pet-app-showcase-site/` is a pure static HTML/CSS page with public-safe Android screenshots and a disabled APK download state.
+
+Fixes made in the Pet showcase slice:
+
+- Rewrote `pet-app-showcase-site/README.md` into an open-source style static showcase entry.
+- Added preview, purpose, features, architecture, quick start, static deployment, assets, APK download policy, testing, security, roadmap, and public links.
+- Preserved the public APK gate and documented that no debug/internal APK should be exposed as a release.
+
+Known manual gates:
+
+- The broader Pet workspace currently has several dirty implementation/documentation worktrees. Full README packaging should wait until those changes are committed or explicitly assigned.
+- No license decision is recorded for the public Pet repositories.
+- Public APK requires reproducible build, signing policy, SHA-256, release notes, regression evidence, and human approval.
+- Screenshots should be reapproved after the next Android UI polish pass.
+- Private worker routes, model/provider endpoints, tokens, raw run artifacts, signing files, and live logs must remain out of public docs.
