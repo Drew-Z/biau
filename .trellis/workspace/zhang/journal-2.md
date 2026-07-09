@@ -847,3 +847,37 @@ Clarified internal RAG readiness in the admin UI, added a low-sensitive Internal
 ### Next Steps
 
 - None - task complete
+
+
+## Session 73: LangGraph internal assistant runtime
+
+**Date**: 2026-07-09
+**Task**: LangGraph internal assistant runtime
+**Branch**: `main`
+
+### Summary
+
+Planned open-source README packaging, migrated the internal assistant runtime to LangGraph.js, preserved typed tool and guardrail contracts, updated the assistant inspector, docs, and specs, and passed full npm verify.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7654e71` | (see git log) |
+| `c0b6b6d` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
