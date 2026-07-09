@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { getPublicBlogPostSummary } from '../data/blogCuration'
+import { projects } from '../data/portfolio'
 import {
   DEFAULT_IMAGE,
   SITE_NAME,
@@ -53,28 +55,18 @@ export function SeoManager() {
   const { pathname } = useLocation()
 
   useEffect(() => {
-    let cancelled = false
     const path = pathname.replace(/\/+$/, '') || '/'
 
     applySeo(getStaticSeo(path))
 
-    async function loadRouteSeo() {
-      if (path.startsWith('/projects/')) {
-        const { projects } = await import('../data/portfolio')
-        const project = projects.find((item) => `/projects/${item.id}` === path)
-        if (!cancelled && project) applySeo(getProjectSeo(project))
-      }
-
-      if (path.startsWith('/blog/')) {
-        const { getPublicBlogPostSummary } = await import('../data/blogCuration')
-        const post = getPublicBlogPostSummary(path.replace('/blog/', ''))
-        if (!cancelled && post) applySeo(getBlogPostSeo(post))
-      }
+    if (path.startsWith('/projects/')) {
+      const project = projects.find((item) => `/projects/${item.id}` === path)
+      if (project) applySeo(getProjectSeo(project))
     }
 
-    void loadRouteSeo()
-    return () => {
-      cancelled = true
+    if (path.startsWith('/blog/')) {
+      const post = getPublicBlogPostSummary(path.replace('/blog/', ''))
+      if (post) applySeo(getBlogPostSeo(post))
     }
   }, [pathname])
 

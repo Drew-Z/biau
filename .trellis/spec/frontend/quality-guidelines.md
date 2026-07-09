@@ -32,6 +32,16 @@ external targets, related projects, blog cards, or reliability groups, derive th
 expected value from the same public data source or generated manifest instead of
 hardcoding yesterday's number. This keeps tests useful when content grows.
 
+Public data modules that are already statically imported by the main route tree
+should not be dynamically imported from small shell components just to look lazy.
+For example, `SeoManager` should statically import `projects` and
+`getPublicBlogPostSummary()` because those modules are already pulled into the
+main bundle by public pages and assistant data. A redundant dynamic import causes
+Vite/Rolldown `INEFFECTIVE_DYNAMIC_IMPORT` warnings without reducing shipped
+JavaScript. If a future SEO or shell helper truly needs lazy data, first confirm
+the target module is not already statically imported elsewhere in the same chunk,
+then guard the behavior with `npm.cmd run build` output.
+
 For Playwright route checks, avoid using `networkidle` as the default page
 readiness signal. Studio, status, assistant, or preview pages may keep background
 requests or lazy resources open long enough to create false timeouts. Prefer a
