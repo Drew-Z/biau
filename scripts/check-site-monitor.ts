@@ -1,31 +1,46 @@
-import { readFileSync } from 'node:fs'
+import { getPublicBlogPosts } from '../src/data/blogCuration'
+import { projects } from '../src/data/portfolio'
+import { reliabilityProjects } from '../src/data/statusTargets'
 
 const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 10_000
 const DEFAULT_MAX_LINKS = 80
 
-function readReliabilityStatusPaths() {
-  const source = readFileSync('src/data/statusTargets.ts', 'utf8')
-  return Array.from(source.matchAll(/\{\s*id:\s*'([^']+)',\s*\r?\n\s*title:/gu), (match) => `/status/${match[1]}`)
+type RouteKind = 'page' | 'sitemap' | 'robots'
+
+interface MonitorRoute {
+  label: string
+  path: string
+  kind: RouteKind
+  expectInSitemap?: boolean
 }
 
-const reliabilityStatusPaths = readReliabilityStatusPaths()
+function pageRoute(label: string, path: string, expectInSitemap = true): MonitorRoute {
+  return { label, path, kind: 'page', expectInSitemap }
+}
 
-const coreRoutes = [
-  { label: 'home', path: '/', kind: 'page' },
-  { label: 'projects', path: '/projects', kind: 'page' },
-  { label: 'blog', path: '/blog', kind: 'page' },
-  { label: 'assistant', path: '/assistant', kind: 'page' },
-  { label: 'status', path: '/status', kind: 'page' },
-  ...reliabilityStatusPaths.map((path) => ({ label: `status detail ${path.split('/').pop()}`, path, kind: 'page' })),
-  { label: 'legal rag detail', path: '/projects/legal-rag', kind: 'page' },
-  { label: 'erp detail', path: '/projects/ozon-erp', kind: 'page' },
-  { label: 'playlab detail', path: '/projects/biau-playlab', kind: 'page' },
-  { label: 'xunqiu detail', path: '/projects/xunqiu', kind: 'page' },
-  { label: 'legal rag article', path: '/blog/legal-rag-review', kind: 'page' },
+const projectRoutes = projects.map((project) => pageRoute(`project detail ${project.id}`, `/projects/${project.id}`))
+const statusRoutes = reliabilityProjects.map((project) => pageRoute(`status detail ${project.id}`, `/status/${project.id}`))
+const blogRoutes = getPublicBlogPosts().map((post) => pageRoute(`blog article ${post.slug}`, `/blog/${post.slug}`))
+const staticRoutes = [pageRoute('pet app showcase', '/pet-app-showcase/')]
+
+const coreRoutes: MonitorRoute[] = [
+  pageRoute('home', '/'),
+  pageRoute('projects', '/projects'),
+  pageRoute('blog', '/blog'),
+  pageRoute('assistant', '/assistant', false),
+  pageRoute('status', '/status'),
+  ...staticRoutes,
+  ...projectRoutes,
+  ...statusRoutes,
+  ...blogRoutes,
   { label: 'sitemap', path: '/sitemap.xml', kind: 'sitemap' },
   { label: 'robots', path: '/robots.txt', kind: 'robots' },
 ]
+
+const sitemapRequiredPaths = coreRoutes
+  .filter((route) => route.kind === 'page' && route.expectInSitemap !== false)
+  .map((route) => route.path)
 
 function parseArgs(argv) {
   const args = {
@@ -172,9 +187,8 @@ function checkBody(route, response, base) {
   }
 
   if (route.kind === 'sitemap') {
-    const requiredPaths = ['/', '/projects', '/blog', '/status', ...reliabilityStatusPaths]
     if (!body.includes('<urlset')) issues.push('missing urlset')
-    for (const path of requiredPaths) {
+    for (const path of sitemapRequiredPaths) {
       if (!sitemapContainsPath(body, path, base)) issues.push(`missing sitemap loc: ${path}`)
     }
     return issues

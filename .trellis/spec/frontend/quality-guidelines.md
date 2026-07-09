@@ -87,6 +87,9 @@ Generated route lists must read structured public data, not parse source files
 with broad regular expressions. `src/data/portfolio.ts` contains nested
 `visual.id` values in addition to top-level `project.id` values; regex scanning
 for `id:` can accidentally create fake routes such as `/projects/<visual-id>`.
+This applies to sitemap generation, route monitors, and UI checks. For example,
+`scripts/check-site-monitor.ts` should import `projects`, `reliabilityProjects`,
+and `getPublicBlogPosts()` instead of reading TypeScript source with regex.
 
 Good:
 
