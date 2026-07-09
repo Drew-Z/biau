@@ -108,6 +108,7 @@
 - Pet / Gamer：Node workspace 测试、Android debug unit test 和 debug APK 构建已通过，现有工作区有历史 WIP 未整理；当前证据仍是 debug-only，APK 公开下载必须等待正式 release 证据和人工批准。
 - BIAU Playlab：内容审计、生产构建、构建产物审计和公开端点检查已通过；新试玩构建上线仍需入口确认。
 - BIAU Port 主站：公开项目按钮与项目详情资料链接已接入 `public-links:check` synthetic 快照；状态页只展示通过数量、失败数量和错误类别，不保存具体外链 URL。
+- BIAU Port 主站访问分析：`src/utils/analytics.ts` 已提供默认关闭的 Plausible/Umami/debug adapter，`route_view` 只发送归一化 `routePattern` / `routeArea` / `routeDepth`；`analytics:check` 已纳入 `verify`，防止完整 URL、query、hash 或动态 id 泄漏到事件元数据。
 
 ## 当前人工队列摘要
 
@@ -116,7 +117,7 @@
 - ERP 注册入口已在线可达；插件与商品同步仍需要脱敏 fixture 或低权限演示店铺再做 credentialed smoke。
 - Xunqiu 后端 synthetic 仍需后端公开 base URL；APK 公开发布仍需正式 release 审批。
 - Pet 展示页在线；APK 公开下载仍需正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准。
-- 决定 Plausible 或 Umami 的访问分析方案，并避免两个同时接入同一站点。
+- 决定 Plausible 或 Umami 的访问分析方案，并避免两个同时接入同一站点；代码侧 adapter 和 `route_view` 低敏 guard 已准备好，但生产 provider 脚本、site id 和平台配置仍需人工处理。
 - 决定 Prometheus/Grafana/ARMS/Sentry/Langfuse 等平台的接入时机。
 - 如后续更换机器或 SSH trust root 异常，再核验 GitHub SSH host key；当前主仓 `main` 推送已恢复正常。
 
@@ -146,5 +147,5 @@
 
 5. 访问分析与工程观测
    - 先完成 Cloudflare Analytics 和 Search Console 的低敏配置确认。
-   - Umami / Plausible 二选一后再接入站点 analytics adapter；不要同时接两套访客统计。
+   - Umami / Plausible 二选一后再接入站点 analytics adapter；不要同时接两套访客统计。当前代码侧已准备好默认关闭的 adapter 和 `route_view` 低敏 guard，人工只需要处理 provider 选择、平台脚本注入和公开配置。
    - Prometheus / Grafana / ARMS / Sentry / Langfuse 等需要另行确认采样、脱敏、保留策略和平台成本。
