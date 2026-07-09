@@ -29,7 +29,8 @@
     "07-09-07-09-analytics-route-metadata-guard",
     "07-09-07-09-analytics-manual-gate-handoff",
     "07-09-07-09-credential-free-synthetic-refresh",
-    "07-09-07-09-site-monitor-structured-routes"
+    "07-09-07-09-site-monitor-structured-routes",
+    "07-09-07-09-assistant-admin-refresh-ergonomics"
   ],
   "parent": null,
   "relatedFiles": [],

@@ -297,6 +297,7 @@ export function AssistantAdminPage() {
   const [draftToken, setDraftToken] = useState(() => readStoredAdminToken())
   const [summary, setSummary] = useState<AdminSummary>(emptySummary)
   const [summaryStatus, setSummaryStatus] = useState('')
+  const [workspaceRefreshStatus, setWorkspaceRefreshStatus] = useState('')
   const [inviteStatus, setInviteStatus] = useState('')
   const [invitesStatus, setInvitesStatus] = useState('')
   const [membersStatus, setMembersStatus] = useState('')
@@ -313,6 +314,7 @@ export function AssistantAdminPage() {
   const [isLoadingRagStatus, setIsLoadingRagStatus] = useState(false)
   const [isSyncingPublicRag, setIsSyncingPublicRag] = useState(false)
   const [isLoadingUsage, setIsLoadingUsage] = useState(false)
+  const [isRefreshingWorkspace, setIsRefreshingWorkspace] = useState(false)
   const [updatingMemberId, setUpdatingMemberId] = useState('')
   const [updatingInviteId, setUpdatingInviteId] = useState('')
   const [inviteForm, setInviteForm] = useState<InviteFormState>(defaultInviteForm)
@@ -330,18 +332,30 @@ export function AssistantAdminPage() {
   const ragDiagnosticEntries = Object.entries(ragAdminStatus?.diagnostic ?? {})
   const publicRagSyncDiagnosticEntries = Object.entries(lastPublicRagSync?.diagnostic ?? {})
 
+  const resetAdminWorkspaceState = () => {
+    setSummary(emptySummary)
+    setInvites([])
+    setMembers([])
+    setKnowledgeDocuments([])
+    setLastKnowledgeSyncRun(null)
+    setRagAdminStatus(null)
+    setLastPublicRagSync(null)
+    setModelChannels([])
+    setUsageLogs([])
+  }
+
   const saveAdminToken = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const token = draftToken.trim()
     setAdminToken(token)
     if (token) {
       window.localStorage.setItem(ASSISTANT_STORAGE_KEYS.adminToken, token)
-      setSummaryStatus('admin token 已保存在当前浏览器，正在刷新概览、成员和内部知识。')
-      void loadSummary(token)
-      void loadMembers(token)
-      void loadKnowledgeDocuments(token)
+      setWorkspaceRefreshStatus('admin token 已保存在当前浏览器，正在刷新管理工作台。')
+      void refreshAdminWorkspace(token)
     } else {
       window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.adminToken)
+      resetAdminWorkspaceState()
+      setWorkspaceRefreshStatus('')
       setSummaryStatus('admin token 已清除。')
     }
   }
@@ -350,6 +364,8 @@ export function AssistantAdminPage() {
     setDraftToken('')
     setAdminToken('')
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.adminToken)
+    resetAdminWorkspaceState()
+    setWorkspaceRefreshStatus('')
     setSummaryStatus('admin token 已清除。')
   }
 
@@ -429,12 +445,12 @@ export function AssistantAdminPage() {
     }
   }
 
-  const loadUsage = async () => {
+  const loadUsage = async (tokenOverride = adminToken) => {
     if (!API_BASE) {
       setUsageStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用用量 API。`)
       return
     }
-    if (!adminToken) {
+    if (!tokenOverride) {
       setUsageStatus('请先保存 admin token。')
       return
     }
@@ -443,7 +459,7 @@ export function AssistantAdminPage() {
     setUsageStatus('')
     try {
       const response = await fetch(`${API_BASE}/admin/usage`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
+        headers: { Authorization: `Bearer ${tokenOverride}` },
       })
       const payload = (await response.json().catch(() => ({}))) as unknown
       if (!response.ok) {
@@ -464,12 +480,12 @@ export function AssistantAdminPage() {
     }
   }
 
-  const loadInvites = async () => {
+  const loadInvites = async (tokenOverride = adminToken) => {
     if (!API_BASE) {
       setInvitesStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用邀请码 API。`)
       return
     }
-    if (!adminToken) {
+    if (!tokenOverride) {
       setInvitesStatus('请先保存 admin token。')
       return
     }
@@ -478,7 +494,7 @@ export function AssistantAdminPage() {
     setInvitesStatus('')
     try {
       const response = await fetch(`${API_BASE}/admin/invites`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
+        headers: { Authorization: `Bearer ${tokenOverride}` },
       })
       const payload = (await response.json().catch(() => ({}))) as unknown
       if (!response.ok) {
@@ -535,12 +551,12 @@ export function AssistantAdminPage() {
     }
   }
 
-  const loadRagStatus = async () => {
+  const loadRagStatus = async (tokenOverride = adminToken) => {
     if (!API_BASE) {
       setRagStatusText(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法调用 RAG 管理 API。`)
       return
     }
-    if (!adminToken) {
+    if (!tokenOverride) {
       setRagStatusText('请先保存 admin token。')
       return
     }
@@ -549,7 +565,7 @@ export function AssistantAdminPage() {
     setRagStatusText('')
     try {
       const response = await fetch(`${API_BASE}/admin/rag/status`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
+        headers: { Authorization: `Bearer ${tokenOverride}` },
       })
       const payload = (await response.json().catch(() => ({}))) as unknown
       if (!response.ok) {
@@ -569,6 +585,33 @@ export function AssistantAdminPage() {
       setRagStatusText('无法连接 RAG 管理 API。')
     } finally {
       setIsLoadingRagStatus(false)
+    }
+  }
+
+  const refreshAdminWorkspace = async (tokenOverride = adminToken) => {
+    if (!API_BASE) {
+      setWorkspaceRefreshStatus(`当前没有配置 ${ASSISTANT_API_ENV_NAMES.internal}，无法刷新管理工作台。`)
+      return
+    }
+    if (!tokenOverride) {
+      setWorkspaceRefreshStatus('请先保存 admin token。')
+      return
+    }
+
+    setIsRefreshingWorkspace(true)
+    try {
+      setWorkspaceRefreshStatus('正在刷新管理工作台：摘要、成员、邀请、知识、RAG 和用量。')
+      await Promise.allSettled([
+        loadSummary(tokenOverride),
+        loadMembers(tokenOverride),
+        loadInvites(tokenOverride),
+        loadKnowledgeDocuments(tokenOverride),
+        loadRagStatus(tokenOverride),
+        loadUsage(tokenOverride),
+      ])
+      setWorkspaceRefreshStatus('管理工作台已刷新；各分区保留自己的低敏诊断结果。')
+    } finally {
+      setIsRefreshingWorkspace(false)
     }
   }
 
@@ -623,8 +666,8 @@ export function AssistantAdminPage() {
         [document, ...current.filter((item) => item.id !== document.id)].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '')),
       )
       setKnowledgeForm(defaultKnowledgeForm)
+      await Promise.allSettled([loadKnowledgeDocuments(), loadSummary(), loadRagStatus()])
       setKnowledgeStatus(`内部知识文档已${isEditing ? '更新' : '创建'}：${document.title}`)
-      void loadSummary()
     } catch {
       setKnowledgeStatus('无法连接内部知识保存 API。')
     } finally {
@@ -672,8 +715,8 @@ export function AssistantAdminPage() {
 
       const syncRun = normalizeAssistantInternalKnowledgeSyncRun(payload.syncRun)
       setLastKnowledgeSyncRun(syncRun)
+      await Promise.allSettled([loadKnowledgeDocuments(), loadRagStatus(), loadSummary()])
       setKnowledgeStatus(payload.accepted === true ? '内部知识已提交同步。' : '内部知识同步已记录为本地计划/跳过，等待 RAG sync 配置。')
-      void loadKnowledgeDocuments()
     } catch {
       setKnowledgeStatus('无法连接内部知识同步 API。')
     } finally {
@@ -720,6 +763,7 @@ export function AssistantAdminPage() {
           diagnostic: sync.diagnostic ?? current?.diagnostic ?? null,
         }))
       }
+      await loadRagStatus()
       setRagStatusText(describeRagSyncResult(sync))
     } catch {
       setRagStatusText('无法连接公开知识库同步 API。')
@@ -763,6 +807,7 @@ export function AssistantAdminPage() {
 
       setMembers((current) => current.map((member) => (member.id === updated.id ? updated : member)))
       setModelChannels(normalizeAssistantModelChannels(payload.modelChannels))
+      await Promise.allSettled([loadMembers(), loadSummary()])
       setMembersStatus(`已为 ${updated.name} 分配模型渠道：${updated.modelChannel?.label ?? '默认模型通道'}（${formatModelChannelState(updated.modelChannel)}）`)
     } catch {
       setMembersStatus('无法连接成员更新 API。')
@@ -805,8 +850,8 @@ export function AssistantAdminPage() {
       }
 
       setMembers((current) => current.map((member) => (member.id === updated.id ? updated : member)))
+      await Promise.allSettled([loadMembers(), loadSummary()])
       setMembersStatus(`${updated.name} 已${status === 'DISABLED' ? '禁用' : '启用'}。`)
-      void loadSummary()
     } catch {
       setMembersStatus('无法连接成员更新 API。')
     } finally {
@@ -848,8 +893,8 @@ export function AssistantAdminPage() {
       }
 
       setInvites((current) => current.map((invite) => (invite.id === updated.id ? updated : invite)))
+      await Promise.allSettled([loadInvites(), loadSummary()])
       setInvitesStatus(`邀请码已${revoked ? '撤销' : '恢复'}：${updated.label}`)
-      void loadSummary()
     } catch {
       setInvitesStatus('无法连接邀请码更新 API。')
     } finally {
@@ -910,9 +955,9 @@ export function AssistantAdminPage() {
       if (invite) {
         setInvites((current) => [invite, ...current.filter((item) => item.id !== invite.id)])
       }
-      setInviteStatus(`邀请码已创建：${label}`)
       setInviteForm({ ...defaultInviteForm, label: inviteForm.label || defaultInviteForm.label })
-      void loadSummary()
+      await Promise.allSettled([loadInvites(), loadSummary()])
+      setInviteStatus(`邀请码已创建：${label}`)
     } catch {
       setInviteStatus('无法连接管理 API。')
     } finally {
@@ -977,11 +1022,15 @@ export function AssistantAdminPage() {
             </form>
 
             <div className="assistant-admin-actions">
+              <button type="button" onClick={() => void refreshAdminWorkspace()} disabled={isRefreshingWorkspace || !adminToken}>
+                {isRefreshingWorkspace ? '刷新中…' : '刷新全部状态'}
+              </button>
               <button type="button" onClick={() => void loadSummary()} disabled={isLoadingSummary || !adminToken}>
                 {isLoadingSummary ? '读取中…' : '刷新摘要'}
               </button>
             </div>
 
+            {workspaceRefreshStatus && <p className="assistant-status-text">{workspaceRefreshStatus}</p>}
             {summaryStatus && <p className="assistant-status-text">{summaryStatus}</p>}
 
             <div className="assistant-admin-summary" aria-label="管理摘要">
