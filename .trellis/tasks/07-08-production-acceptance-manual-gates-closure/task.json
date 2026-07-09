@@ -32,7 +32,8 @@
     "07-09-07-09-site-monitor-structured-routes",
     "07-09-07-09-assistant-admin-refresh-ergonomics",
     "07-09-07-09-assistant-admin-runbook-refresh",
-    "07-09-07-09-assistant-admin-ui-refresh-guard"
+    "07-09-07-09-assistant-admin-ui-refresh-guard",
+    "07-09-07-09-manual-gates-assistant-admin-queue"
   ],
   "parent": null,
   "relatedFiles": [],

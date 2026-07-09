@@ -59,6 +59,7 @@
 |---|---|---|
 | RAG Orchestrator 外部存储启用 | Qdrant/pgvector/embedding/reranker 配置是服务端私密资源 | `assistant:rag-smoke`、`assistant:rag-sync-local`、低敏 sync/retrieve 摘要 |
 | 内部知识库生产同步 | 可能包含内部内容和权限范围 | 本地 reviewed/active 文档数量、sync run 低敏状态 |
+| 内部助手管理台刷新 / 成员渠道复核 | 需要浏览器里的 admin token 和成员上下文；模型渠道真实配置只在服务端 | `/assistant/admin` 点击“刷新全部状态”，成员页只记录 channel id/label、provider、model、configured / active |
 | Studio token 生产验收 | token 不能写入仓库或页面源码 | 浏览器手动输入 token 后的健康状态和草稿列表低敏结果 |
 | Agent draft-write 能力 | 只能创建 hidden + review-needed 草稿，不能发布 | Studio artifact id/slug、状态、可见性摘要 |
 
@@ -109,10 +110,13 @@
 - BIAU Playlab：内容审计、生产构建、构建产物审计和公开端点检查已通过；新试玩构建上线仍需入口确认。
 - BIAU Port 主站：公开项目按钮与项目详情资料链接已接入 `public-links:check` synthetic 快照；状态页只展示通过数量、失败数量和错误类别，不保存具体外链 URL。
 - BIAU Port 主站访问分析：`src/utils/analytics.ts` 已提供默认关闭的 Plausible/Umami/debug adapter，`route_view` 只发送归一化 `routePattern` / `routeArea` / `routeDepth`；`analytics:check` 已纳入 `verify`，防止完整 URL、query、hash 或动态 id 泄漏到事件元数据。
+- BIAU Port 内部助手管理台：`/assistant/admin` 已提供“刷新全部状态”，会统一刷新摘要、成员、邀请、内部知识、RAG 状态和用量；`check:ui` 已守护无 token 时按钮可见且禁用、token 只保存在当前浏览器的提示仍可见。
+- BIAU Port 全链路本地验证：`npm.cmd run verify` 已通过；覆盖 assistant index、知识图谱检查、离线 RAG eval、本地 RAG sync plan、meta/admin 检查、Prisma validate、server smoke、服务模式 smoke、RAG smoke、Cloudflare function smoke、build、博客质量、部署/manual-gates/observability 文档、analytics、Studio smoke、项目详情、status contract 和 UI check；本轮没有 live model calls。
 
 ## 当前人工队列摘要
 
 - Studio 生产连接已刷新成功；下一步是人工审核 hidden/review-needed 草稿，创建 Publish Export 后再审查公开内容 diff。
+- 内部助手管理台已具备“刷新全部状态”；醒来后可先复核成员列表和成员模型渠道是否符合预期，不需要把 admin token、member token、模型 key 或 base URL 发到聊天里。
 - Legal RAG 仍需低权限、可回收 demo 凭据和 credentialed synthetic 环境变量，用来验收法律问答、合同审查和质量面板。
 - ERP 注册入口已在线可达；插件与商品同步仍需要脱敏 fixture 或低权限演示店铺再做 credentialed smoke。
 - Xunqiu 后端 synthetic 仍需后端公开 base URL；APK 公开发布仍需正式 release 审批。
@@ -125,27 +129,32 @@
 
 这部分用于把长表压缩成可执行队列。每一步只记录低敏成功标准，不需要把真实 token、账号、密码、连接串、模型地址或签名材料发到聊天或写进仓库。
 
-1. Studio 草稿审核
+1. 内部助手管理台快速复核
+   - 打开 `/assistant/admin`，保存 `ADMIN_TOKEN` 后点击“刷新全部状态”。
+   - 在“成员”页签确认成员列表、成员状态和模型渠道符合预期；如果刚新增成员或改过渠道，先点“刷新全部状态”，再点“刷新成员”定向复核。
+   - 成功标准：成员行只显示低敏 channel id/label、provider、model、configured / active，不显示 key、base URL、token hash、请求头或模型响应。
+
+2. Studio 草稿审核
    - 打开 `/studio`，确认当前 `hidden / review-needed` 草稿内容是否可公开。
    - 如果内容通过，再创建 Publish Export；如果内容不通过，先在 Studio 修改草稿，不直接导出。
    - 成功标准：有一条低敏 export 记录，后续由本地或 CI 做静态导出和 Git diff 审查。
 
-2. Legal RAG 演示凭据
+3. Legal RAG 演示凭据
    - 准备低权限、可回收 demo 账号，只允许访问公开安全数据集。
    - 把凭据放入本机或平台环境变量，再运行 credentialed synthetic；不要把凭据写入文章、项目页、状态页或聊天。
    - 成功标准：法律问答、合同审查、质量面板可以从 `planned / unchecked` 更新为有低敏证据的状态。
 
-3. ERP 演示账号和同步 fixture
+4. ERP 演示账号和同步 fixture
    - 生产注册已确认开放，但登录 smoke 仍建议用专门低权限 demo 账号。
    - 插件与商品同步检查需要脱敏 fixture 或演示店铺，不能使用真实店铺凭据。
    - 成功标准：注册/登录策略、默认角色、插件同步路径都有可复跑 smoke 证据。
 
-4. Xunqiu 和 Pet 发布门禁
+5. Xunqiu 和 Pet 发布门禁
    - Xunqiu 先配置后端公开 base URL 再跑后端 health / 兼容 API synthetic。
    - Pet 和 Xunqiu 的 APK 公开下载都必须等正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准。
    - 成功标准：状态页只公开批准后的 release 摘要，不公开 debug 包或未经批准的下载链接。
 
-5. 访问分析与工程观测
+6. 访问分析与工程观测
    - 先完成 Cloudflare Analytics 和 Search Console 的低敏配置确认。
    - Umami / Plausible 二选一后再接入站点 analytics adapter；不要同时接两套访客统计。当前代码侧已准备好默认关闭的 adapter 和 `route_view` 低敏 guard，人工只需要处理 provider 选择、平台脚本注入和公开配置。
    - Prometheus / Grafana / ARMS / Sentry / Langfuse 等需要另行确认采样、脱敏、保留策略和平台成本。
