@@ -38,7 +38,15 @@ export type ChatFallbackReason =
   | 'policy_blocked'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
 export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
-export type AgentWorkflowStepId = 'plan' | 'validate' | 'execute' | 'critique' | 'compose' | 'sanitize' | 'persist'
+export type AgentGraphNodeId =
+  | 'input_guard'
+  | 'plan'
+  | 'validate_plan'
+  | 'execute_tools'
+  | 'compose_answer'
+  | 'self_check'
+  | 'persist_trace'
+export type AgentWorkflowStepId = AgentGraphNodeId
 export type AgentPlannerMode = 'model' | 'mock' | 'fallback'
 export type AgentRunStatus = 'completed' | 'guarded' | 'degraded' | 'failed'
 export type AgentToolPermission = 'read' | 'draft-write' | 'admin-write' | 'external-live'

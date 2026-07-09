@@ -116,6 +116,17 @@ function formatGuardrailStatus(status?: string) {
   return '等待'
 }
 
+function formatAgentStep(step: string) {
+  if (step === 'input_guard') return '输入守卫'
+  if (step === 'plan') return '规划'
+  if (step === 'validate_plan' || step === 'validate') return '计划校验'
+  if (step === 'execute_tools' || step === 'execute') return '工具执行'
+  if (step === 'compose_answer' || step === 'compose') return '答案生成'
+  if (step === 'self_check' || step === 'critique' || step === 'sanitize') return '安全自检'
+  if (step === 'persist_trace' || step === 'persist') return '轨迹投影'
+  return step
+}
+
 function getErrorCode(payload: unknown) {
   return isRecord(payload) && typeof payload.error === 'string' ? payload.error : ''
 }
@@ -878,15 +889,23 @@ export function AssistantPage() {
         <aside className="assistant-inspector">
           <section className="assistant-panel">
             <p className="assistant-panel__eyebrow">AGENT</p>
-            <h3>运行状态</h3>
+            <h3>LangGraph 运行状态</h3>
             <ul>
-              <li>Agent：{formatAgentStatus(agent?.status)} · {formatPlanner(agent?.planner)}</li>
+              <li>Graph：{agent ? 'LangGraph.js' : '等待运行'} · {formatAgentStatus(agent?.status)}</li>
+              <li>Planner：{formatPlanner(agent?.planner)}</li>
               <li>模式：{answerMode}</li>
               <li>模型：{lastAnswerMeta?.model ?? '等待回答'}</li>
               <li>渠道：{answerChannel?.label ?? '默认模型通道'} · {formatModelChannelState(answerChannel)}</li>
               <li>引用：{lastAnswerMeta?.citationCount ?? latestCitations.length}</li>
               <li>耗时：{agent ? `${agent.durationMs} ms` : '等待回答'}</li>
             </ul>
+            {agent && agent.steps.length > 0 && (
+              <div className="assistant-panel__facts" aria-label="LangGraph 节点">
+                {agent.steps.map((step) => (
+                  <span key={step}>{formatAgentStep(step)}</span>
+                ))}
+              </div>
+            )}
             {retrieval && (
               <div className="assistant-panel__facts" aria-label="检索诊断">
                 <span>{retrieval.source}</span>

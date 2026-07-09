@@ -54,7 +54,7 @@ const meta = normalizeAssistantAnswerMeta({
     mode: 'agentic-workspace',
     planner: 'mock',
     status: 'degraded',
-    steps: ['plan', 'execute', 'leak-step', 'sanitize'],
+    steps: ['input_guard', 'plan', 'execute_tools', 'leak-step', 'self_check', 'persist_trace'],
     toolCount: 2,
     durationMs: 12,
     endpoint: 'https://private-agent.example.invalid',
@@ -103,7 +103,10 @@ const meta = normalizeAssistantAnswerMeta({
 })
 
 assert(meta, 'meta should normalize')
-assert(meta.agent?.steps.join(',') === 'plan,execute,sanitize', 'agent steps should use a known-step allowlist')
+assert(
+  meta.agent?.steps.join(',') === 'input_guard,plan,execute_tools,self_check,persist_trace',
+  'agent steps should use a known graph-node allowlist',
+)
 assert(meta.tools?.length === 1, 'unknown tools should be dropped')
 assert(meta.tools?.[0]?.id === 'studio.draft', 'safe studio.draft trace should remain')
 const artifacts = meta.tools?.[0]?.artifacts ?? []

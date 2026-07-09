@@ -1593,13 +1593,13 @@ function sanitizeAgentRunMeta(value: unknown): NonNullable<ChatResponse['meta']>
       : 'degraded'
   const steps = Array.isArray(value.steps)
     ? value.steps.filter((step): step is NonNullable<NonNullable<ChatResponse['meta']>['agent']>['steps'][number] =>
+        step === 'input_guard' ||
         step === 'plan' ||
-        step === 'validate' ||
-        step === 'execute' ||
-        step === 'critique' ||
-        step === 'compose' ||
-        step === 'sanitize' ||
-        step === 'persist',
+        step === 'validate_plan' ||
+        step === 'execute_tools' ||
+        step === 'compose_answer' ||
+        step === 'self_check' ||
+        step === 'persist_trace',
       )
     : []
   return {

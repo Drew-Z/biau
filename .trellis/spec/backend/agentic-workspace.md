@@ -129,3 +129,97 @@ trace = {
 ```
 
 The trace is actionable for the UI and safe to persist.
+
+## Scenario: LangGraph Internal Agent Orchestration
+
+### 1. Scope / Trigger
+
+- Trigger: adding or changing `server/src/agentGraph.ts`, `server/src/agentPlanner.ts`, `server/src/agentOrchestrator.ts`, Agent graph node names, `AgentRunMeta.steps`, or `/assistant` graph diagnostics.
+- Goal: keep the internal assistant implemented as a formal LangGraph state graph while preserving the existing `runInternalAgent()` public contract and sanitized frontend metadata.
+
+### 2. Signatures
+
+- Dependency: `@langchain/langgraph`.
+- Runtime entry remains:
+
+```typescript
+runInternalAgent(input: InternalAgentRunInput): Promise<InternalAgentRunResult>
+```
+
+- Orchestration modules:
+  - `server/src/agentGraph.ts`: LangGraph state annotation, graph nodes, graph compilation, graph runner.
+  - `server/src/agentPlanner.ts`: model planner adapter, deterministic planner, tool-id validation.
+  - `server/src/agentOrchestrator.ts`: thin compatibility wrapper only.
+- Graph node ids:
+  - `input_guard`
+  - `plan`
+  - `validate_plan`
+  - `execute_tools`
+  - `compose_answer`
+  - `self_check`
+  - `persist_trace`
+- Response projection:
+  - `ChatResponse.meta.agent.steps: AgentWorkflowStepId[]`.
+
+### 3. Contracts
+
+- `POST /chat/internal` must still call `runInternalAgent()` and must not know LangGraph node internals.
+- The compiled LangGraph graph must execute the main answer path; do not reintroduce a route-level keyword planner or a hand-rolled sequential orchestrator in `agentOrchestrator.ts`.
+- Graph nodes may call model planning and answer composition helpers, but tool execution must go through `executeAgentTool()`.
+- Graph state must not store API keys, model endpoints, database URLs, bearer tokens, invite codes, raw prompts, raw provider responses, raw private document bodies, stack traces, or private dashboards.
+- LangGraph node names cannot also be state channel names. If a node is named `plan`, the state channel must use a non-conflicting name such as `agentPlan`.
+- `meta.agent.steps` should expose graph node ids, not old sequential workflow labels.
+- Frontend decoders may keep legacy step compatibility for historical messages, but new backend responses should emit graph node ids.
+
+### 4. Validation & Error Matrix
+
+- LangGraph node name equals a state channel name -> runtime graph compile error before smoke tests complete.
+- Model planner unavailable, invalid, or unconfigured -> deterministic planner result, safe planner metadata, no raw provider diagnostics.
+- Forbidden tool permission -> `executeAgentTool()` returns a blocked trace; normal chat does not perform the action.
+- Tool failure -> graph continues when possible and returns a degraded answer with low-sensitive trace metadata.
+- Sensitive input or output -> graph returns policy-safe fallback text and `guardrails.status` becomes `blocked`.
+- Missing final answer/meta due to unexpected graph failure -> wrapper returns a safe fallback `InternalAgentRunResult`.
+
+### 5. Good/Base/Bad Cases
+
+- Good: `agentOrchestrator.ts` imports `runInternalAgentGraph()` and exports only `runInternalAgent()`.
+- Good: `/assistant` shows `LangGraph.js`, graph status, planner type, and graph node labels from normalized metadata.
+- Good: deterministic smoke tests use `plannerMode: "mock"` and do not call live model providers.
+- Base: old persisted messages with legacy steps still normalize safely in the frontend.
+- Bad: graph node functions query project/status/RAG data directly instead of using the typed tool registry.
+- Bad: `ChatMessage.meta` stores LangGraph raw state, raw tool payloads, prompts, chunks, endpoints, stack traces, or provider responses.
+
+### 6. Tests Required
+
+- Run `npm.cmd run server:build` after changing graph modules or Agent types.
+- Run `npm.cmd run server:smoke` to prove `runInternalAgent()` and protected route behavior still work.
+- Run `npm.cmd run assistant:service-modes-smoke` after changing service route boundaries or imports.
+- Run `npm.cmd run assistant:meta-check` after changing `AgentRunMeta.steps`, tool trace fields, artifacts, or frontend normalizers.
+- Run `npm.cmd run assistant:rag-smoke` after changing `rag.retrieve` execution or retrieval metadata.
+- Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after changing `/assistant` diagnostics.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+const GraphState = Annotation.Root({
+  plan: Annotation<InternalAgentPlan | undefined>,
+})
+
+new StateGraph(GraphState).addNode('plan', planNode)
+```
+
+LangGraph rejects this because `plan` is both a state channel and a node name.
+
+#### Correct
+
+```typescript
+const GraphState = Annotation.Root({
+  agentPlan: Annotation<InternalAgentPlan | undefined>,
+})
+
+new StateGraph(GraphState).addNode('plan', planNode)
+```
+
+The public graph node remains `plan`, while the internal state channel avoids the reserved name collision.

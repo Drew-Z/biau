@@ -543,6 +543,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 - Safe `modelChannel` means `{ id, label, provider, model, configured, isDefault, isActive }`; never render or persist `apiKey`, `baseUrl`, raw env JSON, request headers, or provider response bodies.
 - Retrieval diagnostics may show counts, `source`, `store`, `retrievalMode`, `sufficiency`, and `fallbackReason`; never show Qdrant URLs, embedding keys, RAG API keys, sync tokens, or raw private document text.
 - Agent diagnostics must be normalized through `normalizeAssistantAnswerMeta()` and may show only `agent`, `tools`, `guardrails`, and `fallbackReason` safe projections. Components must not render raw tool payloads, raw JSON dumps, provider diagnostics, RAG chunks, private document bodies, prompts, endpoint URLs, or stack traces.
+- New internal Agent responses expose LangGraph node ids in `agent.steps`, such as `input_guard`, `validate_plan`, `execute_tools`, `compose_answer`, `self_check`, and `persist_trace`. Frontend normalizers may keep legacy step names only for historical messages; UI labels should describe the graph nodes instead of the old self-built sequential runtime.
 - Reset member/session flows must clear stale `lastAnswerMeta` so a new session does not display diagnostics from a previous member or archived conversation.
 - Citation titles are display data only; the authoritative citation payload still comes from normalized assistant messages.
 

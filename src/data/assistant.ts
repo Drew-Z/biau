@@ -54,7 +54,20 @@ export interface AssistantRetrievalSummary {
 
 export type AssistantAgentPermission = 'read' | 'draft-write' | 'admin-write' | 'external-live'
 export type AssistantAgentToolStatus = 'selected' | 'skipped' | 'completed' | 'failed' | 'blocked'
-export type AssistantAgentStep = 'plan' | 'validate' | 'execute' | 'critique' | 'compose' | 'sanitize' | 'persist'
+export type AssistantAgentStep =
+  | 'input_guard'
+  | 'plan'
+  | 'validate_plan'
+  | 'execute_tools'
+  | 'compose_answer'
+  | 'self_check'
+  | 'persist_trace'
+  | 'validate'
+  | 'execute'
+  | 'critique'
+  | 'compose'
+  | 'sanitize'
+  | 'persist'
 export type AssistantAgentToolId =
   | 'rag.retrieve'
   | 'status.query'
@@ -668,7 +681,13 @@ function normalizeAssistantAgentGuardrails(value: unknown): AssistantAgentGuardr
 
 function isAgentStep(value: unknown): value is AssistantAgentStep {
   return (
+    value === 'input_guard' ||
     value === 'plan' ||
+    value === 'validate_plan' ||
+    value === 'execute_tools' ||
+    value === 'compose_answer' ||
+    value === 'self_check' ||
+    value === 'persist_trace' ||
     value === 'validate' ||
     value === 'execute' ||
     value === 'critique' ||
