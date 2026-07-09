@@ -66,7 +66,7 @@
 
 - 人工启用 Cloudflare Web Analytics / Pages Analytics。
 - 人工配置 Google Search Console / Bing Webmaster，并提交 `sitemap.xml`。
-- Plausible / Umami 二选一，接入当前 `src/utils/analytics.ts` adapter。
+- Plausible / Umami 二选一，接入当前 `src/utils/analytics.ts` adapter；当前 adapter 已包含默认关闭的 `route_view` 和项目/助手交互事件，路由事件只发送归一化 route metadata。
 - 使用 `npm.cmd run reliability:check` 做跨项目发布前或发布后检查；需要单独巡检核心路由时继续运行 `npm.cmd run site:monitor`。
 
 ### Phase 2：后端基础指标

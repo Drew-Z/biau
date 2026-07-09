@@ -1,4 +1,4 @@
-import { lazy, Suspense, useLayoutEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import { useTheme } from './hooks/useTheme'
@@ -13,6 +13,7 @@ import { AssistantPage } from './pages/AssistantPage'
 import { AssistantAdminPage } from './pages/AssistantAdminPage'
 import { SiteStatusPage } from './pages/SiteStatusPage'
 import { SiteStatusDetailPage } from './pages/SiteStatusDetailPage'
+import { trackRouteView } from './utils/analytics'
 
 type SiteLanguage = 'zh' | 'en'
 type HarborScene = 'dusk' | 'garden' | 'stellar'
@@ -59,6 +60,10 @@ function App() {
     root.dataset.harborScene = harborScene
     window.localStorage.setItem(HARBOR_SCENE_STORAGE_KEY, harborScene)
   }, [harborScene])
+
+  useEffect(() => {
+    trackRouteView(pathname)
+  }, [pathname])
 
   const pageClass = getPageClass(pathname)
   const showPublicAssistant = !pathname.startsWith('/assistant') && !pathname.startsWith('/studio')

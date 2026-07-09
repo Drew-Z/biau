@@ -180,6 +180,67 @@ Use Semi Design v19 components and `@douyinfe/semi-icons` first. Do not add othe
 
 Prefer real project screenshots and runtime screenshots. Missing assets should use stable fallback assets or be omitted; do not fabricate business data or visual evidence.
 
+## Scenario: Default-Off Analytics Adapter
+
+### 1. Scope / Trigger
+
+- Trigger: changing `src/utils/analytics.ts`, route-view tracking in `src/App.tsx`, product interaction analytics, or the public docs for Umami/Plausible.
+- Goal: keep visitor analytics useful for product decisions without shipping provider secrets, full URLs, query strings, raw prompts, or private identifiers.
+
+### 2. Signatures
+
+- Env selector: `VITE_ANALYTICS_PROVIDER = "umami" | "plausible" | "debug" | unset`.
+- Route helper: `getAnalyticsRouteMetadata(pathname)` returns `{ routePattern, routeArea, routeDepth }`.
+- Route event helper: `trackRouteView(pathname)` emits `route_view` once per normalized pathname change.
+- Interaction helper: `trackAnalyticsEvent(name, properties?)` sends custom events through the configured browser global.
+
+### 3. Contracts
+
+- Analytics is default-off. Unsupported or missing `VITE_ANALYTICS_PROVIDER` must result in no network or browser-global calls.
+- The repository must not contain Umami/Plausible site ids, provider script URLs, dashboard URLs, tokens, or API keys.
+- Route-view events must send normalized metadata such as `/projects/:id`, `/blog/:slug`, `routeArea`, and `routeDepth`; do not send full URLs, query strings, hashes, dynamic ids, user-entered text, or external URLs.
+- `debug` may dispatch `biau:analytics` for local inspection, but production collection still requires the user to choose and configure one provider.
+- React StrictMode can double-run effects in development, so route tracking must dedupe repeated normalized pathnames.
+
+### 4. Validation & Error Matrix
+
+- Missing provider -> no event is sent.
+- `debug` provider -> browser dispatches `CustomEvent("biau:analytics")` with low-sensitive event detail.
+- `umami` provider -> call `window.umami?.track(name, props)` if the admin-injected script exists.
+- `plausible` provider -> call `window.plausible?.(name, { props })` if the admin-injected script exists.
+- Route `/projects/legal-rag?token=x` -> event properties must still look like `{ routePattern: "/projects/:id", routeArea: "project-detail", routeDepth: 2 }`.
+
+### 5. Good/Base/Bad Cases
+
+- Good: navigating from `/projects` to `/projects/legal-rag` emits one `route_view` with `routePattern: "/projects/:id"` and no project id or query.
+- Base: analytics provider unset; interaction handlers can still call `trackAnalyticsEvent()` safely because it no-ops.
+- Bad: adding a Plausible/Umami script tag, site id, or endpoint URL directly in `index.html`, `src/`, docs, or generated status files.
+- Bad: sending raw assistant questions, Studio tokens, full external URLs, or project detail slugs as analytics properties.
+
+### 6. Tests Required
+
+- Run `npm.cmd run lint` and `npm.cmd run build` after changing analytics code or route tracking.
+- Run `npm.cmd run docs:observability-check` and `npm.cmd run docs:manual-gates-check` after changing analytics/observability docs.
+- Search changed files for `umami`, `plausible`, `token`, `apiKey`, `password`, `database URL`, and full provider URLs before committing analytics work.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+trackAnalyticsEvent('route_view', { href: window.location.href, question: input })
+```
+
+This leaks full URLs, query strings, and user-entered content into a third-party analytics system.
+
+#### Correct
+
+```ts
+trackRouteView(pathname)
+```
+
+The helper normalizes the route to a public-safe pattern and dedupes repeated pathnames before calling the configured provider.
+
 ### Project Detail Visual Composition
 
 Project detail pages should include both runtime evidence and structural explanation:

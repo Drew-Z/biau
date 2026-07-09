@@ -51,6 +51,7 @@
 - 项目外链点击。
 - 公开助手打开。
 - 公开助手提问次数。
+- 路由浏览事件 `route_view`，只包含 `routePattern`、`routeArea` 和 `routeDepth`，不发送完整 URL、query、hash 或动态 id。
 
 本仓库已经提供默认关闭的 `src/utils/analytics.ts` 适配层。只有设置 `VITE_ANALYTICS_PROVIDER=umami` 或 `plausible`，并由站点管理员自行注入对应 provider 脚本后，事件才会发送。未配置时不会采集数据。
 
