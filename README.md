@@ -360,4 +360,4 @@ npm run verify
 
 ## License
 
-No license file is currently included. Choose and add a license before presenting this repository as reusable open-source software.
+This repository is licensed under the [Apache License 2.0](LICENSE).
