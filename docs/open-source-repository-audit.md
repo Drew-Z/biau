@@ -11,7 +11,7 @@ This file tracks the multi-repository README and deployment packaging work for t
 | `D:\workspace4Cursor\erp` | First slice complete | README rewritten as an open-source entry point; Docker Compose defaults changed to mock/false Ozon writes; fixed SFTP host/username removed from `deploy:upload`. Committed and pushed on `codex/ozon-plugin-parity` at `3dc9652`. | `python -m py_compile scripts\upload_sftp.py`; `docker compose config`; `npm.cmd pkg get scripts.deploy:upload`; `npm.cmd run test`; `npm.cmd run build`; `git diff --check` only reported LF/CRLF normalization warnings. | Choose license; configure public repo metadata; decide demo account policy; real Ozon/SFTP/database/JWT/encryption secrets stay platform-only. |
 | `D:\workspace4Codex\xunqiu` / `D:\workspace4Codex\xunqiu-backend-modern` | First slice complete | Static showcase README and Spring Boot backend README rewritten; backend `.env.example` added; old backend IP and fixed historical Render URL removed from public docs/config; smoke script parameterized. Showcase commit `117d3ba`; backend commit `87a0f1b`. | Showcase file/link checks and `git diff --check`; backend `mvn test`, `mvn -DskipTests package`, local jar smoke, Docker build, and sensitive-shape scan. PostgreSQL Testcontainers test skipped because the Java Docker client could not detect a valid Docker environment. | Choose licenses; GitHub metadata; confirm public APK download/release policy and SHA-256; fill Render `APP_PUBLIC_BASE_URL`; keep R2/database/signing secrets platform-only; add production auth/rate-limit/CORS before real production use. |
 | `D:\workspace4Cursor\pet` | Showcase sub-slice complete | `gamer/pet-app-showcase-site/README.md` rewritten as a static showcase/download-status entry; broader Pet implementation repos left untouched because multiple worktrees are already dirty. Commit `30d6118` on `gamer` branch `cursor-windows-migration`. | Showcase file checks, local href check, `git diff --check -- pet-app-showcase-site/README.md`, and focused sensitive scan. | Resolve/commit dirty Pet worktrees before full README packaging; choose licenses; approve screenshots; public APK needs reproducible build, signing policy, SHA-256, release notes, regression evidence, and human approval. |
-| `D:\workspace4Cursor\game` | Planned | README should package the Playlab/game showcase as a reusable static/game project with asset and hosting notes. | Pending. | Public asset/license review and hosting metadata. |
+| `D:\workspace4Cursor\game` | First slice complete | `blog/README.md` rewritten as a normal open-source entry for the Astro Playlab static site, game case pages, devlogs, public articles, and separate Godot Web playable hosting. Commit `f6cbb78` on `game/blog` branch `main`. | `npm run verify`; `git diff --check`; focused README sensitive-shape scan. `verify` ran content audit, Astro build, dist link audit, JSON-LD audit, and legacy redirect check. | Choose license; configure GitHub metadata; review public screenshots/videos/playable links; keep Cloudflare/R2 credentials and local Godot export paths out of public docs; run live `deploy:check` only intentionally. |
 
 ## Legal RAG Audit Notes
 
@@ -122,3 +122,44 @@ Known manual gates:
 - Public APK requires reproducible build, signing policy, SHA-256, release notes, regression evidence, and human approval.
 - Screenshots should be reapproved after the next Android UI polish pass.
 - Private worker routes, model/provider endpoints, tokens, raw run artifacts, signing files, and live logs must remain out of public docs.
+
+## Game / Playlab Audit Notes
+
+Evidence inspected:
+
+- `D:\workspace4Cursor\game\blog\AGENTS.md`
+- `D:\workspace4Cursor\game\blog\README.md`
+- `D:\workspace4Cursor\game\blog\package.json`
+- `D:\workspace4Cursor\game\blog\astro.config.mjs`
+- `D:\workspace4Cursor\game\blog\.env.example`
+- `D:\workspace4Cursor\game\blog\docs\cloudflare-pages.md`
+- `D:\workspace4Cursor\game\blog\docs\deploy-guide.md`
+- `D:\workspace4Cursor\game\blog\docs\r2-play-upload.md`
+- `D:\workspace4Cursor\game\blog\docs\godot-export-playbook.md`
+- `D:\workspace4Cursor\game\blog\src\content\config.ts`
+- `D:\workspace4Cursor\game\blog\tools\audit_site_content.mjs`
+- `D:\workspace4Cursor\game\blog\tools\audit_dist_links.mjs`
+- `D:\workspace4Cursor\game\blog\tools\check_public_endpoints.mjs`
+- `D:\workspace4Cursor\game\blog\tools\deploy_pages.mjs`
+
+Confirmed stack:
+
+- Astro 5 static site.
+- Content collections for games, devlogs, published articles, and article workbench entries.
+- Public assets under `public/images/`, `public/videos/`, and `public/games/`.
+- Cloudflare Pages is the preferred static host.
+- Godot Web playable exports are staged and uploaded separately from the Astro `dist/` build.
+
+Fixes made in the Game / Playlab slice:
+
+- Rewrote `blog/README.md` into a full open-source style entry point.
+- Added preview, features, architecture, quick start, content model, deployment, Godot Web playable workflow, scripts, testing, security, roadmap, and license gate notes.
+- Documented the current six game slugs and the separation between static site hosting and playable export hosting.
+- Avoided private credentials, local paths, and unverified one-click deployment claims.
+
+Known manual gates:
+
+- No standalone license file exists yet.
+- GitHub repository description, topics, and visibility should be configured by the maintainer.
+- Public screenshots, videos, posters, and playable links should be reviewed before broad promotion.
+- Live endpoint checks through `npm run deploy:check` should be run only when the public host is expected to be reachable.
