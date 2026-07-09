@@ -43,6 +43,7 @@
     "docs:deployment-check": "node scripts/check-deployment-contract.mjs",
     "docs:manual-gates-check": "tsx scripts/check-manual-gates.ts",
     "docs:observability-check": "node scripts/check-observability-docs.mjs",
+    "analytics:check": "tsx scripts/check-analytics-route-metadata.ts",
     "erp:synthetic": "node scripts/check-erp-synthetic.mjs",
     "legal-rag:synthetic": "node scripts/check-legal-rag-synthetic.mjs",
     "main-site:synthetic": "node scripts/check-main-site-synthetic.mjs",

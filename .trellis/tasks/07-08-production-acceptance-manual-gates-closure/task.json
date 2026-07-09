@@ -25,7 +25,8 @@
     "07-09-07-09-public-assistant-status-gate-knowledge",
     "07-09-07-09-public-assistant-suggestion-ui-guard",
     "07-09-07-09-public-assistant-manual-gate-eval",
-    "07-09-07-09-analytics-route-view-adapter"
+    "07-09-07-09-analytics-route-view-adapter",
+    "07-09-07-09-analytics-route-metadata-guard"
   ],
   "parent": null,
   "relatedFiles": [],

@@ -220,6 +220,7 @@ Prefer real project screenshots and runtime screenshots. Missing assets should u
 ### 6. Tests Required
 
 - Run `npm.cmd run lint` and `npm.cmd run build` after changing analytics code or route tracking.
+- Run `npm.cmd run analytics:check` after changing route metadata, route tracking, or analytics event payloads.
 - Run `npm.cmd run docs:observability-check` and `npm.cmd run docs:manual-gates-check` after changing analytics/observability docs.
 - Search changed files for `umami`, `plausible`, `token`, `apiKey`, `password`, `database URL`, and full provider URLs before committing analytics work.
 
