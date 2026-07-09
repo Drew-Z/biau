@@ -149,6 +149,58 @@ function splitList(value: string) {
     .filter(Boolean)
 }
 
+function isStudioUiCheckFixture(searchParams: URLSearchParams) {
+  if (searchParams.get('ui-check') !== 'review-queue') return false
+  if (typeof window === 'undefined') return false
+  return ['127.0.0.1', 'localhost'].includes(window.location.hostname)
+}
+
+function createStudioUiCheckDrafts(): StudioDraft[] {
+  const baseDraft = {
+    tag: 'UI Check',
+    detail: '本地 UI 检查用草稿，只验证审核队列交互。',
+    readTime: '3 min',
+    bodyJson: {
+      blocks: [
+        {
+          type: 'paragraph',
+          text: '这是本地 UI 检查用正文，不会连接生产 Studio API。',
+        },
+      ],
+    },
+    knowledgePoints: ['审核队列', '本地 UI 检查'],
+    projectIds: ['blog-semi'],
+    aiAssistance: 'none',
+    createdBy: 'ui-check',
+    updatedBy: 'ui-check',
+    publishedAt: null,
+    createdAt: '2026-07-09T00:00:00.000Z',
+    updatedAt: '2026-07-09T00:00:00.000Z',
+    latestReview: null,
+  } satisfies Omit<StudioDraft, 'id' | 'slug' | 'title' | 'column' | 'status' | 'visibility'>
+
+  return [
+    {
+      ...baseDraft,
+      id: 'ui-check-review-needed',
+      slug: 'ui-check-review-needed',
+      title: 'UI Check 待审核草稿',
+      column: 'ai-daily',
+      status: 'review-needed',
+      visibility: 'hidden',
+    },
+    {
+      ...baseDraft,
+      id: 'ui-check-approved',
+      slug: 'ui-check-approved',
+      title: 'UI Check 已批准草稿',
+      column: 'knowledge',
+      status: 'approved',
+      visibility: 'hidden',
+    },
+  ]
+}
+
 function getDraftFromPayload(payload: unknown) {
   return isRecord(payload) ? normalizeStudioDraft(payload.draft) : null
 }
@@ -296,6 +348,7 @@ function isAgenticWorkspaceDraft(draft: Pick<StudioDraft, 'aiAssistance'> | null
 export function StudioPage() {
   const [searchParams] = useSearchParams()
   const draftLinkTarget = normalizeDraftLookupTarget(searchParams.get('draft'))
+  const useStudioUiCheckFixture = isStudioUiCheckFixture(searchParams)
   const [adminToken, setAdminToken] = useState(() => readStoredStudioToken())
   const [draftToken, setDraftToken] = useState(() => readStoredStudioToken())
   const [health, setHealth] = useState<StudioHealth | null>(null)
@@ -386,6 +439,17 @@ export function StudioPage() {
   }
 
   const loadStudio = useCallback(async (token: string) => {
+    if (useStudioUiCheckFixture) {
+      setHealth({ ok: true, service: 'ui-check-studio', database: true, auth: 'fixture', publishMode: 'static-export' })
+      setDrafts(createStudioUiCheckDrafts())
+      setSources([])
+      setIssues([])
+      setPublishExports([])
+      setSelectedDraftId('')
+      setStatusText('Studio UI check fixture 已加载。')
+      return
+    }
+
     if (!STUDIO_API_BASE) {
       setStatusText(`当前没有配置 ${STUDIO_API_ENV_NAMES.studio} 或 ${STUDIO_API_ENV_NAMES.internal}。`)
       return
@@ -447,7 +511,7 @@ export function StudioPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [draftLinkTarget])
+  }, [draftLinkTarget, useStudioUiCheckFixture])
 
   useEffect(() => {
     if (adminToken) void loadStudio(adminToken)

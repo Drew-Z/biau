@@ -25,6 +25,14 @@ const routes = [
   { path: '/status/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/status/legal-rag' },
   { path: '/studio', title: '内容工作台', nav: '回主页', canonical: '/studio' },
   {
+    path: '/studio?ui-check=review-queue',
+    title: '内容工作台',
+    nav: '回主页',
+    canonical: '/studio',
+    localStorageValues: { 'biau-studio-admin-token': 'ui-check-token' },
+    studioReviewFixture: true,
+  },
+  {
     path: '/studio?draft=ui_check_draft_01',
     title: '内容工作台',
     nav: '回主页',
@@ -265,12 +273,15 @@ for (const viewport of viewports) {
       logs.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? 'failed'}`)
     })
     page.on('pageerror', (error) => logs.push(`pageerror: ${error.message}`))
-    if (route.clearLocalStorageKeys?.length) {
-      await page.addInitScript((keys) => {
+    if (route.clearLocalStorageKeys?.length || route.localStorageValues) {
+      await page.addInitScript(({ keys, values }) => {
         for (const key of keys) {
           window.localStorage.removeItem(key)
         }
-      }, route.clearLocalStorageKeys)
+        for (const [key, value] of Object.entries(values)) {
+          window.localStorage.setItem(key, value)
+        }
+      }, { keys: route.clearLocalStorageKeys ?? [], values: route.localStorageValues ?? {} })
     }
 
     await gotoApp(page, route.path)
@@ -363,6 +374,32 @@ for (const viewport of viewports) {
       }
       if (!nextReviewButtonDisabled) {
         failures.push(`${viewport.name} ${route.path}: next review draft action should be disabled before drafts load`)
+      }
+    }
+
+    if (route.studioReviewFixture) {
+      await page.getByText('UI Check 待审核草稿').first().waitFor({ state: 'visible', timeout: 10_000 })
+      const hiddenReviewMetric = await page.locator('.studio-review-queue-metrics span').filter({ hasText: 'Hidden 待审' }).innerText()
+      const nextReviewButton = page.getByRole('button', { name: '打开下一篇待审核' })
+      const nextReviewButtonDisabled = await nextReviewButton.isDisabled().catch(() => true)
+
+      if (!hiddenReviewMetric.includes('1')) {
+        failures.push(`${viewport.name} ${route.path}: expected one hidden review-needed draft, got "${hiddenReviewMetric}"`)
+      }
+      if (nextReviewButtonDisabled) {
+        failures.push(`${viewport.name} ${route.path}: next review draft action should be enabled with fixture drafts`)
+      } else {
+        await nextReviewButton.click()
+        const currentDraftTitle = await page.locator('.studio-review-current > strong').first().innerText().catch(() => '')
+        const activeDraftVisible = await page
+          .locator('.studio-draft-item.is-active')
+          .filter({ hasText: 'UI Check 待审核草稿' })
+          .isVisible()
+          .catch(() => false)
+
+        if (!currentDraftTitle.includes('UI Check 待审核草稿') || !activeDraftVisible) {
+          failures.push(`${viewport.name} ${route.path}: next review action did not select the review-needed draft`)
+        }
       }
     }
 
