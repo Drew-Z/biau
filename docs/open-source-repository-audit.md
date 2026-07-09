@@ -7,7 +7,7 @@ This file tracks the multi-repository README and deployment packaging work for t
 | Repository | Status | Current Slice | Verification | Manual Gates |
 | --- | --- | --- | --- | --- |
 | `D:\workspace4Cursor\legal-rag` | First slice complete | README rewritten as a normal open-source project; Docker web build args aligned with public demo hint env variables; committed and pushed on `codex/project-quality-dashboard` at `7d8470c`. | `npm.cmd run typecheck`; `npm.cmd --workspace apps/api run test:unit`; `npm.cmd --workspace apps/api run validate`; `npm.cmd --workspace apps/api run evaluate`; `npm.cmd --workspace apps/api run evaluate:review`; `npm.cmd run build`; `docker compose -f docker-compose.prod.yml config`. | Choose license; configure public repo description/topics; decide whether to publish public demo credentials; production pgvector/model validation requires user-owned env. |
-| `D:\workspace4Cursor\blog-semi` | Planned | Main README should now document the stable LangGraph internal assistant architecture and four-service deployment boundaries. | Pending. | GitHub repo metadata, deploy buttons, public screenshots. |
+| `D:\workspace4Cursor\blog-semi` | First slice complete | Root README rewritten as an open-source entry point covering the main site, LangGraph internal assistant, Studio, AI Daily, four-service deployment boundary, RAG Orchestrator, checks, and public-safe rules. | README link/image/sensitive-shape checks; `npm.cmd run docs:manual-gates-check`; `npm.cmd run docs:deployment-check`; `git diff --check` only reported LF/CRLF normalization warnings. | Choose license; configure GitHub repo metadata/topics/visibility; optional deploy buttons; production provider secrets stay platform-only. |
 | `D:\workspace4Cursor\erp` | Planned | README should expose production registration behavior, setup, deployment, and demo-safe boundaries. | Pending. | Production registration verification and demo account policy. |
 | `D:\workspace4Codex\xunqiu` / `D:\workspace4Codex\xunqiu-backend-modern` | Planned | README split should explain app/showcase/backend boundaries, health checks, and release artifacts. | Pending. | APK/release approval, backend production URL, storage/database config. |
 | `D:\workspace4Cursor\pet` | Planned | README should describe current workbench state, app showcase, APK release gate, and future release path. | Pending. | Release signing, SHA-256, official APK/AAB upload approval. |
@@ -49,7 +49,7 @@ Confirmed stack:
 
 Fixes made in the Legal RAG slice:
 
-- Removed resume/interview-only positioning from the README and reframed it as a reusable legal-document RAG workbench.
+- Removed old demo-only positioning from the README and reframed it as a reusable legal-document RAG workbench.
 - Replaced concrete old Render demo URLs with provider-neutral deployment guidance and placeholders.
 - Added a public-safe README structure: preview, what it does, features, architecture, quick start, configuration, Docker Compose, deployment, project structure, API, testing, roadmap, security, license.
 - Documented that `VITE_*` variables are public and that public demo credentials must be low-privilege and revocable.

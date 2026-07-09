@@ -74,6 +74,10 @@ For each repo:
 - [ ] Record manual gates.
 - [ ] Commit/push according to repo rules.
 
+Progress:
+
+- `blog-semi` root README first slice is complete; slice artifact: `slices/blog-semi.md`.
+
 Repository slices can be implemented concurrently only in separate worktrees/sessions and only when they do not touch shared `blog-semi` data. In this inline session, execute one slice at a time.
 
 ## Phase 4: Main Site Sync
