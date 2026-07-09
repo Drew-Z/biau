@@ -40,7 +40,8 @@
     "07-09-07-09-studio-review-queue-affordance",
     "07-09-07-09-studio-review-queue-loaded-state-guard",
     "07-09-07-09-public-synthetic-evidence-refresh",
-    "07-09-07-09-ai-daily-assistant-empty-state-guidance"
+    "07-09-07-09-ai-daily-assistant-empty-state-guidance",
+    "07-09-07-09-resource-sharing-assistant-empty-state-guidance"
   ],
   "parent": null,
   "relatedFiles": [],

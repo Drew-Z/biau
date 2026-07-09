@@ -493,6 +493,9 @@ function buildIntentAnswerBody(question: string, titleList: string) {
   if (['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript'].some((term) => normalized.includes(term))) {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'
   }
+  if (['资源分享', 'resources', 'resource sharing', '资源栏目', '链接清单', '工具推荐'].some((term) => normalized.includes(term))) {
+    return '资源分享是人工精选栏目；如果公开列表还没有文章，代表资源条目还在补充真实使用判断、适用场景、使用边界、公开来源和安全检查。它不会自动生成无筛选的链接清单，仍需经过 Studio 草稿、人工审核、Publish Export、静态导出和 Git diff 审查后才会公开。'
+  }
   if (['ai daily', 'ai 日报', '日报', '首发', 'publish export', 'hidden', 'review-needed'].some((term) => normalized.includes(term))) {
     return 'AI 日报是独立栏目；如果公开列表还没有文章，代表首期仍在 Studio-first 内部流程里等待人工审核、Publish Export、静态导出和 Git diff 审查。未审核的 hidden / review-needed 草稿不会展示给访客。'
   }

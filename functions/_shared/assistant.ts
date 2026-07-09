@@ -196,6 +196,11 @@ const SEARCH_KEYWORDS_FALLBACK = [
   'review-needed',
   '人工审核',
   '静态导出',
+  '资源分享',
+  'resources',
+  '链接清单',
+  '工具推荐',
+  '公开来源',
   '后续接入',
   '低敏证据',
   '合同审查',
@@ -259,6 +264,10 @@ const SEARCH_ALIASES_FALLBACK: SearchAliasGroup[] = [
     terms: ['AI 日报', 'AI Daily', 'Studio-first', '来源池', '日报 issue', 'hidden', 'review-needed', 'Publish Export', '人工审核', '静态导出', 'Git diff 审查'],
   },
   {
+    triggers: ['资源分享', 'resources', 'resource sharing', '链接清单', '工具推荐', '资源栏目'],
+    terms: ['资源分享', 'Resources', '人工精选', '链接清单', '工具推荐', '适用场景', '使用边界', '公开来源', 'Studio 草稿', 'Publish Export', '人工审核'],
+  },
+  {
     triggers: ['游戏', '互动体验', '试玩', 'godot', 'playlab'],
     terms: ['biau playlab', 'godot web', 'web 试玩', '互动体验'],
   },
@@ -291,7 +300,7 @@ const INTENT_TERMS: Record<RetrievalIntent, string[]> = {
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
-  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', 'ai daily', '首发', 'publish export', 'hidden', 'review-needed', '手记'],
+  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '资源分享', '栏目', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
@@ -852,6 +861,9 @@ function buildIntentAnswerBody(question: string, titleList: string) {
   if (['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript'].some((term) => normalized.includes(term))) {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'
   }
+  if (isResourceSharingKnowledgeRequest(normalized)) {
+    return '资源分享是人工精选栏目；如果公开列表还没有文章，代表资源条目还在补充真实使用判断、适用场景、使用边界、公开来源和安全检查。它不会自动生成无筛选的链接清单，仍需经过 Studio 草稿、人工审核、Publish Export、静态导出和 Git diff 审查后才会公开。'
+  }
   if (['ai daily', 'ai 日报', '日报', '首发', 'publish export', 'hidden', 'review-needed'].some((term) => normalized.includes(term))) {
     return 'AI 日报是独立栏目；如果公开列表还没有文章，代表首期仍在 Studio-first 内部流程里等待人工审核、Publish Export、静态导出和 Git diff 审查。未审核的 hidden / review-needed 草稿不会展示给访客。'
   }
@@ -995,7 +1007,10 @@ function scoreKnowledgeItem(
 
   if (intent === 'site-overview' && item.id === 'site:intro') score += 16
   if (intent === 'reliability-status' && (item.id === 'site:status' || item.href === '/status')) score += 14
-  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily') score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && isAiDailyKnowledgeRequest(normalized)) score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && !isAiDailyKnowledgeRequest(normalized)) score -= 30
+  if (intent === 'blog-knowledge' && item.id === 'site:resources' && isResourceSharingKnowledgeRequest(normalized)) score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:resources' && !isResourceSharingKnowledgeRequest(normalized)) score -= 30
   if (intent === 'project-experience' && sourceType === 'project') score += 9
   if (intent === 'demo-access' && sourceType === 'project') score += 8
   if (intent === 'technology-architecture' && sourceType === 'project') score += 6
@@ -1040,6 +1055,10 @@ function isPrivateCredentialRequest(question: string) {
 
 function isAiDailyKnowledgeRequest(normalized: string) {
   return ['ai daily', 'ai日报', 'ai 日报', '日报'].some((term) => normalized.includes(term))
+}
+
+function isResourceSharingKnowledgeRequest(normalized: string) {
+  return ['资源分享', 'resources', 'resource sharing', '资源栏目', '链接清单', '工具推荐'].some((term) => normalized.includes(term))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

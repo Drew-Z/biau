@@ -129,6 +129,11 @@ export const ASSISTANT_SEARCH_KEYWORDS = [
   'review-needed',
   '人工审核',
   '静态导出',
+  '资源分享',
+  'resources',
+  '链接清单',
+  '工具推荐',
+  '公开来源',
   '后续接入',
   '低敏证据',
   '刷新全部状态',
@@ -203,6 +208,10 @@ export const ASSISTANT_SEARCH_ALIASES: AssistantSearchAliasGroup[] = [
     terms: ['AI 日报', 'AI Daily', 'Studio-first', '来源池', '日报 issue', 'hidden', 'review-needed', 'Publish Export', '人工审核', '静态导出', 'Git diff 审查'],
   },
   {
+    triggers: ['资源分享', 'resources', 'resource sharing', '链接清单', '工具推荐', '资源栏目'],
+    terms: ['资源分享', 'Resources', '人工精选', '链接清单', '工具推荐', '适用场景', '使用边界', '公开来源', 'Studio 草稿', 'Publish Export', '人工审核'],
+  },
+  {
     triggers: ['游戏', '互动体验', '试玩', 'godot', 'playlab'],
     terms: ['biau playlab', 'godot web', 'web 试玩', '互动体验'],
   },
@@ -234,7 +243,7 @@ const INTENT_TERMS: Record<AssistantRetrievalIntent, string[]> = {
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '人工队列', '手动', '手动处理', '下一步', '先做什么', '醒来', '明早', '复核', '刷新全部状态', '成员模型渠道', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
-  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', 'ai daily', '首发', 'publish export', 'hidden', 'review-needed', '手记'],
+  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '资源分享', '栏目', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
@@ -383,9 +392,15 @@ export function buildPublicKnowledgeFallbackAnswer(
     .map((item) => item.title.replace(/｜.*$/, '').trim())
     .join('、')
   const intro = getFallbackIntro(options.reason)
-  const body = citations.some((item) => item.id === 'site:ai-daily')
-    ? 'AI 日报是独立栏目；如果公开列表还没有文章，代表首期仍在 Studio-first 内部流程里等待人工审核、Publish Export、静态导出和 Git diff 审查。未审核的 hidden / review-needed 草稿不会展示给访客。'
-    : buildIntentAnswerBody(intent, titleList)
+  const normalizedQuestion = normalizeText(question)
+  let body = buildIntentAnswerBody(intent, titleList)
+  if (citations.some((item) => item.id === 'site:resources') && isResourceSharingKnowledgeRequest(normalizedQuestion)) {
+    body =
+      '资源分享是人工精选栏目；如果公开列表还没有文章，代表资源条目还在补充真实使用判断、适用场景、使用边界、公开来源和安全检查。它不会自动生成无筛选的链接清单，仍需经过 Studio 草稿、人工审核、Publish Export、静态导出和 Git diff 审查后才会公开。'
+  } else if (citations.some((item) => item.id === 'site:ai-daily') && isAiDailyKnowledgeRequest(normalizedQuestion)) {
+    body =
+      'AI 日报是独立栏目；如果公开列表还没有文章，代表首期仍在 Studio-first 内部流程里等待人工审核、Publish Export、静态导出和 Git diff 审查。未审核的 hidden / review-needed 草稿不会展示给访客。'
+  }
   return compactAnswer(`${intro}${body}详情和路径放在下方来源卡片里，建议从 ${titleList} 开始看。`, maxLength)
 }
 
@@ -461,6 +476,18 @@ function createEntitiesAndRelations(
         metadata: { documentId: document.id, href: document.href },
       })
       addRelation(relations, 'site:biau-port', 'site:ai-daily', 'contains', [document.id], 0.85)
+      continue
+    }
+
+    if (document.id === 'site:resources') {
+      addEntity(entities, {
+        id: 'site:resources',
+        type: 'feature',
+        name: '资源分享',
+        aliases: ['Resources', '资源分享', '资源栏目', '链接清单', '工具推荐', '人工精选', '使用边界', '公开来源'],
+        metadata: { documentId: document.id, href: document.href },
+      })
+      addRelation(relations, 'site:biau-port', 'site:resources', 'contains', [document.id], 0.85)
       continue
     }
 
@@ -688,7 +715,10 @@ function scoreKnowledgeItem(
 
   if (intent === 'site-overview' && item.id === 'site:intro') score += 16
   if (intent === 'reliability-status' && (item.id === 'site:status' || item.href === '/status')) score += 14
-  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily') score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && isAiDailyKnowledgeRequest(normalized)) score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && !isAiDailyKnowledgeRequest(normalized)) score -= 30
+  if (intent === 'blog-knowledge' && item.id === 'site:resources' && isResourceSharingKnowledgeRequest(normalized)) score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:resources' && !isResourceSharingKnowledgeRequest(normalized)) score -= 30
   if (intent === 'project-experience' && sourceType === 'project') score += 9
   if (intent === 'demo-access' && sourceType === 'project') score += 8
   if (intent === 'technology-architecture' && sourceType === 'project') score += 6
@@ -812,6 +842,10 @@ function isPrivateCredentialRequest(normalized: string) {
 
 function isAiDailyKnowledgeRequest(normalized: string) {
   return ['ai daily', 'ai日报', 'ai 日报', '日报'].some((term) => normalized.includes(term))
+}
+
+function isResourceSharingKnowledgeRequest(normalized: string) {
+  return ['资源分享', 'resources', 'resource sharing', '资源栏目', '链接清单', '工具推荐'].some((term) => normalized.includes(term))
 }
 
 function uniqueTerms(values: string[]) {

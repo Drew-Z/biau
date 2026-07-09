@@ -37,6 +37,29 @@
       "sourceType": "status"
     },
     {
+      "id": "site:resources",
+      "title": "资源分享栏目发布状态",
+      "summary": "资源分享 / Resources 是博客里的人工精选栏目，用来记录真实使用后的工具、文章、仓库、模型、课程或素材判断。它不会自动批量生成无筛选的链接清单；每条资源都需要补足适用场景、筛选理由、使用边界、公开来源和安全检查。当前公开列表可能还没有资源分享文章，因为内容仍需先进入 Studio 草稿和人工审核流程，通过 Publish Export、静态导出、Git diff 审查和博客质量检查后才会展示给访客。",
+      "href": "/blog",
+      "tags": [
+        "资源分享",
+        "Resources",
+        "博客栏目",
+        "人工精选",
+        "链接清单",
+        "工具推荐",
+        "使用边界",
+        "公开来源",
+        "Studio 草稿",
+        "人工审核",
+        "Publish Export",
+        "静态导出",
+        "Git diff 审查"
+      ],
+      "visibility": "public",
+      "sourceType": "site"
+    },
+    {
       "id": "site:ai-daily",
       "title": "AI 日报栏目发布状态",
       "summary": "AI 日报 / AI Daily 是博客里的独立栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。未审核草稿不会展示给访客，也不会进入公开助手索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。",
@@ -706,6 +729,30 @@
           "品牌统一",
           "刷新全部状态",
           "成员模型渠道"
+        ]
+      }
+    },
+    {
+      "id": "chunk:site:resources:1",
+      "documentId": "site:resources",
+      "text": "资源分享 / Resources 是博客里的人工精选栏目，用来记录真实使用后的工具、文章、仓库、模型、课程或素材判断。 它不会自动批量生成无筛选的链接清单；每条资源都需要补足适用场景、筛选理由、使用边界、公开来源和安全检查。 当前公开列表可能还没有资源分享文章，因为内容仍需先进入 Studio 草稿和人工审核流程，通过 Publish Export、静态导出、Git diff 审查和博客质量检查后才会展示给访客。",
+      "section": "summary",
+      "metadata": {
+        "sourceType": "site",
+        "tags": [
+          "资源分享",
+          "Resources",
+          "博客栏目",
+          "人工精选",
+          "链接清单",
+          "工具推荐",
+          "使用边界",
+          "公开来源",
+          "Studio 草稿",
+          "人工审核",
+          "Publish Export",
+          "静态导出",
+          "Git diff 审查"
         ]
       }
     },
@@ -3459,6 +3506,25 @@
       }
     },
     {
+      "id": "site:resources",
+      "type": "feature",
+      "name": "资源分享",
+      "aliases": [
+        "resources",
+        "资源分享",
+        "资源栏目",
+        "链接清单",
+        "工具推荐",
+        "人工精选",
+        "使用边界",
+        "公开来源"
+      ],
+      "metadata": {
+        "documentId": "site:resources",
+        "href": "/blog"
+      }
+    },
+    {
       "id": "status:biau-playlab",
       "type": "status-check",
       "name": "BIAU Playlab 状态检查",
@@ -4138,6 +4204,16 @@
       "weight": 0.85,
       "evidenceDocumentIds": [
         "site:ai-daily"
+      ]
+    },
+    {
+      "id": "contains:site:biau-port->site:resources",
+      "fromEntityId": "site:biau-port",
+      "toEntityId": "site:resources",
+      "type": "contains",
+      "weight": 0.85,
+      "evidenceDocumentIds": [
+        "site:resources"
       ]
     },
     {
@@ -5872,6 +5948,11 @@
       "review-needed",
       "人工审核",
       "静态导出",
+      "资源分享",
+      "resources",
+      "链接清单",
+      "工具推荐",
+      "公开来源",
       "后续接入",
       "低敏证据",
       "刷新全部状态",
@@ -6023,6 +6104,29 @@
           "人工审核",
           "静态导出",
           "Git diff 审查"
+        ]
+      },
+      {
+        "triggers": [
+          "资源分享",
+          "resources",
+          "resource sharing",
+          "链接清单",
+          "工具推荐",
+          "资源栏目"
+        ],
+        "terms": [
+          "资源分享",
+          "Resources",
+          "人工精选",
+          "链接清单",
+          "工具推荐",
+          "适用场景",
+          "使用边界",
+          "公开来源",
+          "Studio 草稿",
+          "Publish Export",
+          "人工审核"
         ]
       },
       {

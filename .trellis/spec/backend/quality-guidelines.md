@@ -218,6 +218,8 @@ The server reads private env, applies public-citation grounding, and returns onl
 - Citation selection behavior must stay aligned for the default public assistant window.
 - `demo-access` questions should keep at least two `project:*` citations when enough project candidates exist, so demo-access answers do not collapse into only blog/status context.
 - `reliability-status` / manual-gate questions must cite `site:status` when available and explain the public/private boundary: public status may record low-sensitive evidence and action classes, but must not expose tokens, passwords, database URLs, model channels, signing material, or provider endpoints.
+- Blog-column empty-state documents such as `site:ai-daily` and `site:resources` are explicit column status entries, not generic blog citations. Give them strong scoring only when the query names that column; otherwise let public blog posts and project/context documents rank ahead of non-target column status entries.
+- When adding a new column status entry, update `publicKnowledgeBase`, search aliases, generated entity expansion, frontend fallback wording, Express scoring/fallback, Cloudflare Function scoring/fallback, and `assistant:eval` regression cases together.
 - `private-credential` questions must return no citations and must not call a model provider.
 - Local retrieval changes must preserve public-only data: no internal visibility citations, provider URLs, tokens, database URLs, prompts, or raw private diagnostics.
 
@@ -227,19 +229,23 @@ The server reads private env, applies public-citation grounding, and returns onl
 - Cloudflare helper drifts from Express helper -> `cf-assistant:smoke` should fail on the same public chat scenarios.
 - Generated knowledge path is wrong -> `/chat/public` loses `project:legal-rag` and `server:smoke` fails.
 - Manual-gate fallback answer omits the sensitive-field boundary -> `assistant:eval` must fail through `requiredAnswerIncludes` checks, not only citation checks.
+- A resource-sharing query cites or answers from `site:ai-daily` before `site:resources` -> `assistant:eval` should fail through a required `site:resources` citation and resource-specific answer phrases.
+- A generic knowledge-note query is crowded out by unrelated `site:*` column status entries -> adjust column-specific scoring so real public `blog:*` citations remain visible.
 - Private credential query returns citations -> `server:smoke` / `cf-assistant:smoke` must fail.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: after adding demo-related vocabulary to a project note, `server:smoke` and `cf-assistant:smoke` both still return multiple project citations for "哪些项目可以演示？".
 - Good: a status/manual-gate query returns `site:status`, mentions low-sensitive evidence, and names sensitive classes such as token, password, database URL, and model channel as non-public.
+- Good: "资源分享会自动生成链接清单吗？" cites `site:resources`, explains manual curation and review/export gates, and does not reuse the AI Daily empty-state body.
 - Base: if no external RAG Orchestrator is configured, both runtimes use local public knowledge and expose only low-sensitive retrieval metadata.
 - Bad: fixing `searchAssistantKnowledge()` only in `src/data/assistantKnowledge.ts` while leaving `server/src/knowledge.ts` or `functions/_shared/assistant.ts` on old `scored.slice(0, limit)` behavior.
+- Bad: adding `site:ai-daily` or another column status item with a blanket `blog-knowledge` score boost, causing unrelated resource-sharing or knowledge-note questions to cite the wrong column.
 
 ### 6. Tests Required
 
 - Run `npm.cmd run assistant:index` after public content or generated knowledge changes.
-- Run `npm.cmd run assistant:eval` after scoring, intent, entity expansion, citation selection, or fallback answer wording changes. Manual-gate cases should assert both required citations and required answer phrases.
+- Run `npm.cmd run assistant:eval` after scoring, intent, entity expansion, citation selection, or fallback answer wording changes. Manual-gate and blog-column empty-state cases should assert both required citations and required answer phrases.
 - Run `npm.cmd run server:smoke` after Express local retrieval changes.
 - Run `npm.cmd run cf-assistant:smoke` after Cloudflare shared assistant changes.
 - Run `npm.cmd run verify` before committing cross-surface retrieval or public assistant fallback changes.
@@ -261,6 +267,23 @@ const citations = selectCitationsForIntent(scored, normalizedLimit, intent).map(
 ```
 
 Keep intent-specific citation selection mirrored in all public assistant local retrieval surfaces, then prove parity with both Express and Cloudflare smoke checks.
+
+#### Wrong
+
+```ts
+if (intent === 'blog-knowledge' && item.id === 'site:ai-daily') score += 16
+```
+
+This makes every blog-column query look like an AI Daily question.
+
+#### Correct
+
+```ts
+if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && isAiDailyKnowledgeRequest(normalized)) score += 16
+if (intent === 'blog-knowledge' && item.id === 'site:resources' && isResourceSharingKnowledgeRequest(normalized)) score += 16
+```
+
+Column status entries need column-specific triggers and regression evals, then the same scoring rule must be mirrored in frontend, Express, and Cloudflare local retrieval.
 
 ## API Review Checklist
 

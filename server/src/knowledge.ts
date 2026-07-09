@@ -85,7 +85,7 @@ const INTENT_TERMS: Record<RetrievalIntent, string[]> = {
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
-  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', 'ai daily', '首发', 'publish export', 'hidden', 'review-needed', '手记'],
+  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '资源分享', '栏目', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
@@ -334,7 +334,10 @@ function scoreKnowledgeItem(
 
   if (intent === 'site-overview' && item.id === 'site:intro') score += 16
   if (intent === 'reliability-status' && (item.id === 'site:status' || item.href === '/status')) score += 14
-  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily') score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && isAiDailyKnowledgeRequest(normalized)) score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && !isAiDailyKnowledgeRequest(normalized)) score -= 30
+  if (intent === 'blog-knowledge' && item.id === 'site:resources' && isResourceSharingKnowledgeRequest(normalized)) score += 16
+  if (intent === 'blog-knowledge' && item.id === 'site:resources' && !isResourceSharingKnowledgeRequest(normalized)) score -= 30
   if (intent === 'project-experience' && sourceType === 'project') score += 9
   if (intent === 'demo-access' && sourceType === 'project') score += 8
   if (intent === 'technology-architecture' && sourceType === 'project') score += 6
@@ -383,6 +386,10 @@ function isPrivateCredentialRequest(normalized: string) {
 
 function isAiDailyKnowledgeRequest(normalized: string) {
   return ['ai daily', 'ai日报', 'ai 日报', '日报'].some((term) => normalized.includes(term))
+}
+
+function isResourceSharingKnowledgeRequest(normalized: string) {
+  return ['资源分享', 'resources', 'resource sharing', '资源栏目', '链接清单', '工具推荐'].some((term) => normalized.includes(term))
 }
 
 function uniqueTerms(values: string[]) {

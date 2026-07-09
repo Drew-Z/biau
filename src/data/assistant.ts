@@ -363,6 +363,15 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
     visibility: 'public',
   },
   {
+    id: 'site:resources',
+    title: '资源分享栏目发布状态',
+    summary:
+      '资源分享 / Resources 是博客里的人工精选栏目，用来记录真实使用后的工具、文章、仓库、模型、课程或素材判断。它不会自动批量生成无筛选的链接清单；每条资源都需要补足适用场景、筛选理由、使用边界、公开来源和安全检查。当前公开列表可能还没有资源分享文章，因为内容仍需先进入 Studio 草稿和人工审核流程，通过 Publish Export、静态导出、Git diff 审查和博客质量检查后才会展示给访客。',
+    href: '/blog',
+    tags: ['资源分享', 'Resources', '博客栏目', '人工精选', '链接清单', '工具推荐', '使用边界', '公开来源', 'Studio 草稿', '人工审核', 'Publish Export', '静态导出', 'Git diff 审查'],
+    visibility: 'public',
+  },
+  {
     id: 'site:ai-daily',
     title: 'AI 日报栏目发布状态',
     summary:
