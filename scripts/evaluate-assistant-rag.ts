@@ -15,6 +15,7 @@ interface EvalCase {
   expectedIntent: AssistantRetrievalIntent
   requiredCitationIds?: string[]
   requiredCitationPrefixes?: string[]
+  requiredAnswerIncludes?: string[]
   minCitationCount?: number
   minProjectCitationCount?: number
   expectNoCitations?: boolean
@@ -113,6 +114,15 @@ const evalCases: EvalCase[] = [
     description: '可靠性问题应引用状态页。',
   },
   {
+    id: 'manual-gate-handling',
+    question: '状态页里的人工 gate 和后续接入应该怎么处理？哪些信息不能公开？',
+    expectedIntent: 'reliability-status',
+    requiredCitationIds: ['site:status'],
+    requiredAnswerIncludes: ['低敏证据', 'token', '密码', '数据库 URL', '模型渠道'],
+    minCitationCount: 1,
+    description: '人工 gate 问题应引用状态页，并说明低敏证据与敏感字段边界。',
+  },
+  {
     id: 'blog-knowledge',
     question: '博客里有什么知识积累内容？',
     expectedIntent: 'blog-knowledge',
@@ -185,6 +195,7 @@ function runEvalCase(testCase: EvalCase): EvalCaseResult {
     checkMinCount('project-citation-count', countProjectCitations(retrieval.citations), testCase.minProjectCitationCount),
     ...checkRequiredCitationIds(citationIds, testCase.requiredCitationIds),
     ...checkRequiredCitationPrefixes(citationIds, testCase.requiredCitationPrefixes),
+    ...checkRequiredAnswerIncludes(answer, testCase.requiredAnswerIncludes),
     check('no-raw-paths-in-answer', !hasRawPath(answer), 'answer should not print raw routes or source logs'),
     check('no-sensitive-output', !hasSensitiveOutput(answer), 'answer matched sensitive output pattern'),
     check('no-provider-details', !hasProviderDetails(answer), 'answer should not expose provider/runtime details'),
@@ -229,6 +240,10 @@ function checkRequiredCitationPrefixes(citationIds: string[], expected?: string[
   return (expected ?? []).map((prefix) =>
     check(`citation-prefix:${prefix}`, citationIds.some((id) => id.startsWith(prefix)), `got ${citationIds.join(', ') || 'none'}`),
   )
+}
+
+function checkRequiredAnswerIncludes(answer: string, expected?: string[]) {
+  return (expected ?? []).map((phrase) => check(`answer-includes:${phrase}`, answer.includes(phrase), `missing "${phrase}"`))
 }
 
 function countProjectCitations(citations: AssistantKnowledgeItem[]) {

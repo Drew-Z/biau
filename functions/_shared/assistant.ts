@@ -185,6 +185,9 @@ const SEARCH_KEYWORDS_FALLBACK = [
   '状态页',
   '健康检查',
   '外链',
+  '人工 gate',
+  '后续接入',
+  '低敏证据',
   '合同审查',
   '合同',
   '法律',
@@ -238,8 +241,8 @@ const SEARCH_ALIASES_FALLBACK: SearchAliasGroup[] = [
     terms: ['legal rag', '登录门禁', '公开演示凭据', '受控演示', 'demo 凭据'],
   },
   {
-    triggers: ['状态', '状态页', '可靠性', '健康检查', '外链'],
-    terms: ['项目可靠性观察', '状态页', 'health', 'synthetic', '公开入口'],
+    triggers: ['状态', '状态页', '可靠性', '健康检查', '外链', '人工 gate', '后续接入', '低敏证据'],
+    terms: ['项目可靠性观察', '状态页', 'health', 'synthetic', '公开入口', '人工 gate', '后续接入', '低敏证据'],
   },
   {
     triggers: ['游戏', '互动体验', '试玩', 'godot', 'playlab'],
@@ -272,7 +275,7 @@ const INTENT_TERMS: Record<RetrievalIntent, string[]> = {
   'site-overview': ['站点', '网站', '当前网站', '泊岸', 'biau', '能做什么', '主要展示', '关于当前'],
   'project-experience': ['项目', '案例', '作品', '展示', '体验', '看什么'],
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
-  'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性'],
+  'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
   'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
@@ -829,8 +832,8 @@ function buildIntentAnswerBody(question: string, titleList: string) {
   if (['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'].some((term) => normalized.includes(term))) {
     return '适合先看有公开入口或受控演示路径的项目；如果入口需要登录，就以页面显示的公开 demo 凭据和状态页说明为准。'
   }
-  if (['状态', '可靠性', '健康检查', '监控', '外链', '是否正常'].some((term) => normalized.includes(term))) {
-    return '状态页会区分入口可达、登录门禁、synthetic 检查、指标和人工 gate，适合判断“能不能演示”以及还有哪些验证没完成。'
+  if (['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '人工 gate', '后续接入', '低敏证据'].some((term) => normalized.includes(term))) {
+    return '状态页会区分入口可达、登录门禁、synthetic 检查、指标、人工 gate 和后续接入；人工 gate 应在平台控制台、本机环境或受控演示账号里处理，公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道或签名材料。'
   }
   if (['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript'].some((term) => normalized.includes(term))) {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'

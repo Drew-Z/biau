@@ -487,8 +487,8 @@ function buildIntentAnswerBody(question: string, titleList: string) {
   if (['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'].some((term) => normalized.includes(term))) {
     return '适合先看有公开入口或受控演示路径的项目；如果入口需要登录，就以页面显示的公开 demo 凭据和状态页说明为准。'
   }
-  if (['状态', '可靠性', '健康检查', '监控', '外链', '是否正常'].some((term) => normalized.includes(term))) {
-    return '状态页会区分入口可达、登录门禁、synthetic 检查、指标和人工 gate，适合判断“能不能演示”以及还有哪些验证没完成。'
+  if (['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '人工 gate', '后续接入', '低敏证据'].some((term) => normalized.includes(term))) {
+    return '状态页会区分入口可达、登录门禁、synthetic 检查、指标、人工 gate 和后续接入；人工 gate 应在平台控制台、本机环境或受控演示账号里处理，公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道或签名材料。'
   }
   if (['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript'].some((term) => normalized.includes(term))) {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'

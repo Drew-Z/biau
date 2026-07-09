@@ -83,7 +83,7 @@ const INTENT_TERMS: Record<RetrievalIntent, string[]> = {
   'site-overview': ['站点', '网站', '当前网站', '泊岸', 'biau', '能做什么', '主要展示', '关于当前'],
   'project-experience': ['项目', '案例', '作品', '展示', '体验', '看什么'],
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
-  'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性'],
+  'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
   'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],

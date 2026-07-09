@@ -23,7 +23,8 @@
     "07-09-07-09-blog-column-empty-state-guidance",
     "07-09-07-09-status-detail-manual-guidance",
     "07-09-07-09-public-assistant-status-gate-knowledge",
-    "07-09-07-09-public-assistant-suggestion-ui-guard"
+    "07-09-07-09-public-assistant-suggestion-ui-guard",
+    "07-09-07-09-public-assistant-manual-gate-eval"
   ],
   "parent": null,
   "relatedFiles": [],
