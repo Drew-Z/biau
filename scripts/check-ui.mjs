@@ -41,7 +41,13 @@ const routes = [
     clearLocalStorageKeys: ['biau-studio-admin-token'],
   },
   { path: '/assistant', title: '内部助手', nav: '回主页', canonical: '/assistant' },
-  { path: '/assistant/admin', title: '内部助手管理页', nav: '回主页', canonical: '/assistant/admin' },
+  {
+    path: '/assistant/admin',
+    title: '内部助手管理页',
+    nav: '回主页',
+    canonical: '/assistant/admin',
+    clearLocalStorageKeys: ['biau-assistant-admin-token'],
+  },
   { path: '/projects/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/projects/legal-rag' },
   {
     path: '/blog/legal-rag-review',
@@ -318,6 +324,23 @@ for (const viewport of viewports) {
       const expectedTextVisible = await page.getByText(route.expectedText).first().isVisible().catch(() => false)
       if (!expectedTextVisible) {
         failures.push(`${viewport.name} ${route.path}: expected visible text "${route.expectedText}"`)
+      }
+    }
+
+    if (route.path === '/assistant/admin') {
+      const refreshAllButton = page.getByRole('button', { name: '刷新全部状态' })
+      const refreshAllVisible = await refreshAllButton.isVisible().catch(() => false)
+      const refreshAllDisabled = await refreshAllButton.isDisabled().catch(() => false)
+      const tokenBoundaryVisible = await page.getByText('admin token 只保存在当前浏览器本地').isVisible().catch(() => false)
+
+      if (!refreshAllVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected visible refresh-all action`)
+      }
+      if (!refreshAllDisabled) {
+        failures.push(`${viewport.name} ${route.path}: refresh-all action should be disabled without admin token`)
+      }
+      if (!tokenBoundaryVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected local-only admin token boundary text`)
       }
     }
 
