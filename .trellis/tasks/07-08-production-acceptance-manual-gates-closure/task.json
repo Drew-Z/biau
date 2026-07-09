@@ -38,7 +38,8 @@
     "07-09-07-09-credential-free-reliability-refresh",
     "07-09-07-09-assistant-manual-queue-knowledge-eval",
     "07-09-07-09-studio-review-queue-affordance",
-    "07-09-07-09-studio-review-queue-loaded-state-guard"
+    "07-09-07-09-studio-review-queue-loaded-state-guard",
+    "07-09-07-09-public-synthetic-evidence-refresh"
   ],
   "parent": null,
   "relatedFiles": [],
