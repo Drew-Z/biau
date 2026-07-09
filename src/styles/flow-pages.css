@@ -3830,6 +3830,57 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   gap: var(--space-8);
 }
 
+.studio-review-queue-brief {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-8);
+  padding: var(--space-10, 10px);
+  background: color-mix(in oklch, var(--panel) 38%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+}
+
+.studio-review-queue-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-6, 6px);
+}
+
+.studio-review-queue-metrics span {
+  min-width: 0;
+  padding: var(--space-8, 8px);
+  display: grid;
+  gap: 2px;
+  background: color-mix(in oklch, var(--panel-strong) 52%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+}
+
+.studio-review-queue-metrics em,
+.studio-review-queue-brief p > span,
+.studio-review-queue-brief p > em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.studio-review-queue-metrics strong,
+.studio-review-queue-brief p > strong {
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.studio-review-queue-brief p {
+  display: grid;
+  gap: 3px;
+}
+
 .studio-review-current__actions a,
 .studio-review-current__actions button {
   min-height: 34px;
@@ -5490,6 +5541,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .assistant-admin-summary,
   .studio-form-grid,
   .studio-review-steps,
+  .studio-review-queue-metrics,
   .studio-review-current__actions,
   .studio-template-strip,
   .studio-grid > .studio-side-stack,

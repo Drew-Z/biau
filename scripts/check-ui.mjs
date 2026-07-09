@@ -344,6 +344,28 @@ for (const viewport of viewports) {
       }
     }
 
+    if (route.path === '/studio') {
+      const reviewQueueSummary = await page.getByLabel('Studio 待审核草稿摘要').isVisible().catch(() => false)
+      const nextReviewLabel = await page.getByText('下一篇待审核').first().isVisible().catch(() => false)
+      const hiddenReviewMetric = await page.getByText('Hidden 待审').isVisible().catch(() => false)
+      const nextReviewButton = page.getByRole('button', { name: '打开下一篇待审核' })
+      const nextReviewButtonVisible = await nextReviewButton.isVisible().catch(() => false)
+      const nextReviewButtonDisabled = await nextReviewButton.isDisabled().catch(() => false)
+
+      if (!reviewQueueSummary) {
+        failures.push(`${viewport.name} ${route.path}: expected visible studio review queue summary`)
+      }
+      if (!nextReviewLabel || !hiddenReviewMetric) {
+        failures.push(`${viewport.name} ${route.path}: expected review queue labels for next draft and hidden review-needed count`)
+      }
+      if (!nextReviewButtonVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected next review draft action`)
+      }
+      if (!nextReviewButtonDisabled) {
+        failures.push(`${viewport.name} ${route.path}: next review draft action should be disabled before drafts load`)
+      }
+    }
+
     if (logs.length > 0) {
       failures.push(`${viewport.name} ${route.path}: ${logs.join(' | ')}`)
     }

@@ -326,8 +326,13 @@ export function StudioPage() {
     () => drafts.filter((draft) => reviewQueueStatuses.has(draft.status)).slice(0, 6),
     [drafts],
   )
+  const nextReviewDraft = useMemo(
+    () => drafts.find((draft) => draft.status === 'review-needed') ?? drafts.find((draft) => reviewQueueStatuses.has(draft.status)) ?? null,
+    [drafts],
+  )
   const reviewMetrics = useMemo(
     () => ({
+      hiddenReviewNeeded: drafts.filter((draft) => draft.status === 'review-needed' && draft.visibility === 'hidden').length,
       reviewNeeded: drafts.filter((draft) => draft.status === 'review-needed').length,
       approved: drafts.filter((draft) => draft.status === 'approved').length,
       rejected: drafts.filter((draft) => draft.status === 'rejected').length,
@@ -809,7 +814,37 @@ export function StudioPage() {
               ? `${studioDraftStatuses[selectedDraft.status]} · ${studioVisibilityLabels[draftForm.visibility]} · ${draftForm.slug || '未填写 slug'}`
               : '选中草稿后，这里会显示审核状态和下一步动作。'}
           </p>
+          <div className="studio-review-queue-brief" aria-label="Studio 待审核草稿摘要">
+            <div className="studio-review-queue-metrics">
+              <span>
+                <em>Hidden 待审</em>
+                <strong>{reviewMetrics.hiddenReviewNeeded}</strong>
+              </span>
+              <span>
+                <em>全部待审</em>
+                <strong>{reviewMetrics.reviewNeeded}</strong>
+              </span>
+              <span>
+                <em>可导出</em>
+                <strong>{reviewMetrics.approved}</strong>
+              </span>
+            </div>
+            <p>
+              <span>下一篇待审核</span>
+              <strong>{nextReviewDraft ? nextReviewDraft.title : '暂无待审核草稿'}</strong>
+              <em>
+                {nextReviewDraft
+                  ? `${studioDraftStatuses[nextReviewDraft.status]} · ${studioVisibilityLabels[nextReviewDraft.visibility]}`
+                  : adminToken
+                    ? '刷新数据后仍为空，就先创建或等待新的 review-needed 草稿。'
+                    : '保存 Studio token 并刷新数据后，这里会显示下一篇。'}
+              </em>
+            </p>
+          </div>
           <div className="studio-review-current__actions">
+            <button type="button" disabled={!nextReviewDraft} onClick={() => nextReviewDraft && selectDraft(nextReviewDraft)}>
+              打开下一篇待审核
+            </button>
             <a href="#studio-draft-editor">编辑内容</a>
             <a href="#studio-draft-preview">查看预览</a>
             <button type="button" disabled={!selectedDraft || !adminToken} onClick={() => void reviewDraft('approved')}>
