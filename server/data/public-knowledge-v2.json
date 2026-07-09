@@ -18,7 +18,7 @@
     {
       "id": "site:status",
       "title": "项目可靠性观察",
-      "summary": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。它会把人工 gate 和后续接入拆成公开安全的下一步，例如低权限 demo 凭据、脱敏 fixture、后端 synthetic base URL、APK release 审批、访问分析或观测平台选择。处理这些事项时应在平台控制台、本机环境或受控演示账号中填写真实值；公开站点和助手只记录低敏证据，例如成功状态、检查命令、HTTP 状态、计数、时间和错误类别。不要把 token、密码、数据库 URL、模型渠道、签名文件路径、真实后台地址或生产敏感指标写进文章、状态页、聊天或仓库。当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。",
+      "summary": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。它会把人工 gate 和后续接入拆成公开安全的下一步，例如低权限 demo 凭据、脱敏 fixture、后端 synthetic base URL、APK release 审批、访问分析或观测平台选择。当前醒来后的推荐人工队列是：先在内部助手管理台点击“刷新全部状态”并复核成员列表、成员状态和成员模型渠道；再审核 Studio hidden / review-needed 草稿和 Publish Export；然后准备 Legal RAG 低权限 demo 凭据、ERP demo 账号或脱敏同步 fixture、Xunqiu / Pet 正式 release 证据；最后决定访问分析与工程观测平台。处理这些事项时应在平台控制台、本机环境或受控演示账号中填写真实值；公开站点和助手只记录低敏证据，例如成功状态、检查命令、HTTP 状态、计数、时间、错误类别，以及模型渠道的 channel id/label、provider、model、configured / active 状态。不要把 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名文件路径、真实后台地址或生产敏感指标写进文章、状态页、聊天或仓库。当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。",
       "href": "/status",
       "tags": [
         "状态页",
@@ -29,7 +29,9 @@
         "health check",
         "synthetic",
         "注册",
-        "品牌统一"
+        "品牌统一",
+        "刷新全部状态",
+        "成员模型渠道"
       ],
       "visibility": "public",
       "sourceType": "status"
@@ -622,7 +624,7 @@
     {
       "id": "chunk:site:status:1",
       "documentId": "site:status",
-      "text": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。 它会把人工 gate 和后续接入拆成公开安全的下一步，例如低权限 demo 凭据、脱敏 fixture、后端 synthetic base URL、APK release 审批、访问分析或观测平台选择。 处理这些事项时应在平台控制台、本机环境或受控演示账号中填写真实值；公开站点和助手只记录低敏证据，例如成功状态、检查命令、HTTP 状态、计数、时间和错误类别。",
+      "text": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。 它会把人工 gate 和后续接入拆成公开安全的下一步，例如低权限 demo 凭据、脱敏 fixture、后端 synthetic base URL、APK release 审批、访问分析或观测平台选择。",
       "section": "summary",
       "metadata": {
         "sourceType": "status",
@@ -635,14 +637,16 @@
           "health check",
           "synthetic",
           "注册",
-          "品牌统一"
+          "品牌统一",
+          "刷新全部状态",
+          "成员模型渠道"
         ]
       }
     },
     {
       "id": "chunk:site:status:2",
       "documentId": "site:status",
-      "text": "不要把 token、密码、数据库 URL、模型渠道、签名文件路径、真实后台地址或生产敏感指标写进文章、状态页、聊天或仓库。 当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。",
+      "text": "当前醒来后的推荐人工队列是：先在内部助手管理台点击“刷新全部状态”并复核成员列表、成员状态和成员模型渠道；再审核 Studio hidden / review-needed 草稿和 Publish Export；然后准备 Legal RAG 低权限 demo 凭据、ERP demo 账号或脱敏同步 fixture、Xunqiu / Pet 正式 release 证据；最后决定访问分析与工程观测平台。",
       "section": "summary-2",
       "metadata": {
         "sourceType": "status",
@@ -655,7 +659,31 @@
           "health check",
           "synthetic",
           "注册",
-          "品牌统一"
+          "品牌统一",
+          "刷新全部状态",
+          "成员模型渠道"
+        ]
+      }
+    },
+    {
+      "id": "chunk:site:status:3",
+      "documentId": "site:status",
+      "text": "处理这些事项时应在平台控制台、本机环境或受控演示账号中填写真实值；公开站点和助手只记录低敏证据，例如成功状态、检查命令、HTTP 状态、计数、时间、错误类别，以及模型渠道的 channel id/label、provider、model、configured / active 状态。 不要把 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名文件路径、真实后台地址或生产敏感指标写进文章、状态页、聊天或仓库。 当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。",
+      "section": "summary-3",
+      "metadata": {
+        "sourceType": "status",
+        "tags": [
+          "状态页",
+          "可靠性观察",
+          "人工 gate",
+          "低敏证据",
+          "公开入口",
+          "health check",
+          "synthetic",
+          "注册",
+          "品牌统一",
+          "刷新全部状态",
+          "成员模型渠道"
         ]
       }
     },
@@ -5758,8 +5786,12 @@
       "健康检查",
       "外链",
       "人工 gate",
+      "人工队列",
+      "手动处理",
       "后续接入",
       "低敏证据",
+      "刷新全部状态",
+      "成员模型渠道",
       "合同审查",
       "合同",
       "法律",
@@ -5856,6 +5888,15 @@
           "健康检查",
           "外链",
           "人工 gate",
+          "人工队列",
+          "手动处理",
+          "下一步",
+          "先做什么",
+          "醒来",
+          "明早",
+          "复核",
+          "刷新全部状态",
+          "成员模型渠道",
           "后续接入",
           "低敏证据"
         ],
@@ -5867,6 +5908,9 @@
           "公开入口",
           "监控",
           "人工 gate",
+          "人工队列",
+          "刷新全部状态",
+          "成员模型渠道",
           "后续接入",
           "低敏证据"
         ]

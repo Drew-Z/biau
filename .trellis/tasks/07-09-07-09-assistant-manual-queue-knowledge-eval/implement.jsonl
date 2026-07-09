@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Public assistant knowledge constants live under src/data and must preserve typed public data contracts."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Defines assistant index/eval, lint, build, public data safety, and generated artifact expectations."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Defines public assistant local retrieval parity, no-live-model eval behavior, and sensitive diagnostic constraints."}

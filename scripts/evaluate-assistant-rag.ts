@@ -123,6 +123,15 @@ const evalCases: EvalCase[] = [
     description: '人工 gate 问题应引用状态页，并说明低敏证据与敏感字段边界。',
   },
   {
+    id: 'wake-up-manual-queue',
+    question: '我明早醒来后应该先手动处理哪些事情？',
+    expectedIntent: 'reliability-status',
+    requiredCitationIds: ['site:status'],
+    requiredAnswerIncludes: ['刷新全部状态', '成员', 'Studio', 'Legal RAG', 'token', '模型渠道'],
+    minCitationCount: 1,
+    description: '醒来后的人工队列问题应引用状态页，并优先说明内部助手、Studio 和受控 demo/release gate。',
+  },
+  {
     id: 'blog-knowledge',
     question: '博客里有什么知识积累内容？',
     expectedIntent: 'blog-knowledge',
