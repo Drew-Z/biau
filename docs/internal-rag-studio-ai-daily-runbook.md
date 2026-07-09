@@ -13,18 +13,19 @@ https://biau.playlab.eu.cc/assistant/admin
 步骤：
 
 1. 在管理页粘贴 `ADMIN_TOKEN`，点击“保存 token”。
-2. 切到“知识”页签。
-3. 点击“刷新 RAG 状态”。
-4. 查看 RAG 管理卡片：
+2. 页面会自动执行一次“刷新全部状态”；如果 token 已经保存过，点击“API 连接”卡片里的“刷新全部状态”。
+3. 这一次刷新会同时读取低敏摘要、成员列表、邀请码列表、内部知识文档、RAG 状态和最近用量。各页签仍会保留自己的错误提示，方便定位是 token、数据库、RAG 还是网络问题。
+4. 切到“知识”页签，查看 RAG 管理卡片：
    - `RAG 服务` 应为“已配置”。
    - `同步 token` 应为“已配置”。
    - `公开知识库` 已同步时会显示 `ready · <n> chunks`。
    - `内部知识库` 如果仍是 `empty · 0 chunks`，说明 internal collection 还没有完成入库。
-5. 点击“刷新知识”，查看“内部知识同步准备度”：
+5. 查看“内部知识同步准备度”：
    - `可同步 = 0`：先创建内部知识文档，把状态设为“已审核”或“已启用”。
    - `可同步 > 0`：可以点击“同步内部知识库”。
 6. 点击“同步内部知识库”，等待状态文本更新。
-7. 再点击“刷新 RAG 状态”，确认 `内部知识库` 从 `empty · 0 chunks` 变为 `ready · <n> chunks`。
+7. 页面会刷新内部知识、摘要和 RAG 状态；如果需要定向排障，再分别点击“刷新 RAG 状态”或“刷新知识”。
+8. 确认 `内部知识库` 从 `empty · 0 chunks` 变为 `ready · <n> chunks`。
 
 成功标准：
 
@@ -39,7 +40,35 @@ https://biau.playlab.eu.cc/assistant/admin
 - `rag-sync-not-configured`：internal API 和 RAG Orchestrator 的 `RAG_SYNC_TOKEN` 或 RAG base 配置不一致/未配置。
 - `embedding_*` 或 `qdrant_*` 原因：看 Render 的 RAG Orchestrator 环境变量和部署日志，但不要公开真实值。
 
-## 2. Studio 生产验收
+## 2. 内部成员模型渠道复核
+
+入口：
+
+```text
+https://biau.playlab.eu.cc/assistant/admin
+```
+
+步骤：
+
+1. 保存 `ADMIN_TOKEN` 后点击“刷新全部状态”。
+2. 切到“成员”页签。
+3. 确认成员列表里能看到已兑换邀请码的成员；如果刚创建或刚兑换成员但列表没变，优先点“刷新全部状态”，再点“刷新成员”做定向复核。
+4. 在“模型渠道”下拉里为成员选择服务端已配置的渠道。
+5. 等待状态文本显示“已为 <成员> 分配模型渠道”，并确认成员行里的当前渠道、provider、model 和配置状态已更新。
+
+成功标准：
+
+- 成员列表能显示成员名称、角色、状态、日限额和当前模型渠道。
+- 页面只显示渠道 id/label、provider、model、configured / active 状态，不展示 key、base URL、请求头或 provider 响应。
+- 成员禁用/启用或渠道切换后，摘要和成员列表不需要整页浏览器刷新即可更新。
+
+如果仍未成功：
+
+- 成员列表为空：确认成员已经使用邀请码兑换，并重新点“刷新全部状态”。
+- 渠道显示“未配置”或“已停用”：检查 internal API 的服务端模型渠道环境变量；不要把真实 key、base URL 或模型中转地址发到聊天或写入仓库。
+- `unsupported-model-channel`：前端选择的渠道 id 与服务端配置不一致，先重新部署 internal API，再刷新全部状态。
+
+## 3. Studio 生产验收
 
 入口：
 
@@ -91,7 +120,7 @@ https://biau.playlab.eu.cc/studio
 - 只记录低敏信息：草稿 id/slug、栏目、状态、可见性、export id 和检查结果。
 - 不把 Studio token、数据库 URL、真实请求头、后台地址或模型渠道写入聊天或仓库。
 
-## 3. 首次 AI Daily issue 到草稿
+## 4. 首次 AI Daily issue 到草稿
 
 入口：
 
@@ -129,7 +158,7 @@ https://biau.playlab.eu.cc/studio
 - 当前 publish export 数量仍为 `0`，公开博客数据尚未由 Studio 自动写入仓库。
 - 下一步是人工审阅草稿正文、来源和安全边界；审核通过后再创建 Publish Export，并在本地或 CI 导出公开静态数据。
 
-## 4. 公开导出边界
+## 5. 公开导出边界
 
 线上 Studio 服务只记录草稿和发布意图，不直接写 Git 仓库。审核通过后，在本地或 CI 执行导出命令，并审查 Git diff 后再提交：
 
