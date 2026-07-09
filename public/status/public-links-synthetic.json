@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-07-08T23:16:16.100Z",
+  "checkedAt": "2026-07-09T00:03:33.956Z",
   "baseConfigured": true,
   "ok": true,
   "linkCount": 34,
@@ -9,8 +9,8 @@
       "id": "blog-semi-public-links",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 60709,
-      "checkedAt": "2026-07-08T23:16:16.100Z",
+      "durationMs": 44386,
+      "checkedAt": "2026-07-09T00:03:33.956Z",
       "summary": "34/34 public project links returned expected responses",
       "issues": []
     }
