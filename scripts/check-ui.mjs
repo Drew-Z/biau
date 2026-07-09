@@ -12,6 +12,7 @@ import {
 } from '../src/data/siteStatusView.ts'
 import { projects } from '../src/data/portfolio.ts'
 import { blogColumnMeta, blogColumnOrder, getBlogEmptyState } from '../src/data/blog.ts'
+import { publicAssistantSuggestions } from '../src/data/assistant.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -667,6 +668,13 @@ if (!publicAssistantStatus.includes('未连接模型')) {
 }
 if ((await publicAssistantPage.locator('.public-assistant__citation').count()) !== 0) {
   failures.push('/blog public assistant: expected initial panel to stay concise without citation cards')
+}
+const manualGateSuggestion = publicAssistantSuggestions.find((suggestion) => suggestion.id === 'manual-gates')
+if (
+  manualGateSuggestion &&
+  !(await publicAssistantPage.getByRole('button', { name: manualGateSuggestion.label }).isVisible().catch(() => false))
+) {
+  failures.push('/blog public assistant: expected manual gate suggestion to stay visible')
 }
 await publicAssistantPage.locator('.public-assistant__suggestion').first().click()
 await publicAssistantPage.waitForTimeout(150)
