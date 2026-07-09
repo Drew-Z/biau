@@ -217,6 +217,7 @@ The server reads private env, applies public-citation grounding, and returns onl
 - These three helpers must classify public assistant intents consistently.
 - Citation selection behavior must stay aligned for the default public assistant window.
 - `demo-access` questions should keep at least two `project:*` citations when enough project candidates exist, so demo-access answers do not collapse into only blog/status context.
+- `reliability-status` / manual-gate questions must cite `site:status` when available and explain the public/private boundary: public status may record low-sensitive evidence and action classes, but must not expose tokens, passwords, database URLs, model channels, signing material, or provider endpoints.
 - `private-credential` questions must return no citations and must not call a model provider.
 - Local retrieval changes must preserve public-only data: no internal visibility citations, provider URLs, tokens, database URLs, prompts, or raw private diagnostics.
 
@@ -225,18 +226,20 @@ The server reads private env, applies public-citation grounding, and returns onl
 - Express helper drifts from frontend helper -> `server:smoke` or `assistant:eval` should fail on citation expectations.
 - Cloudflare helper drifts from Express helper -> `cf-assistant:smoke` should fail on the same public chat scenarios.
 - Generated knowledge path is wrong -> `/chat/public` loses `project:legal-rag` and `server:smoke` fails.
+- Manual-gate fallback answer omits the sensitive-field boundary -> `assistant:eval` must fail through `requiredAnswerIncludes` checks, not only citation checks.
 - Private credential query returns citations -> `server:smoke` / `cf-assistant:smoke` must fail.
 
 ### 5. Good/Base/Bad Cases
 
 - Good: after adding demo-related vocabulary to a project note, `server:smoke` and `cf-assistant:smoke` both still return multiple project citations for "哪些项目可以演示？".
+- Good: a status/manual-gate query returns `site:status`, mentions low-sensitive evidence, and names sensitive classes such as token, password, database URL, and model channel as non-public.
 - Base: if no external RAG Orchestrator is configured, both runtimes use local public knowledge and expose only low-sensitive retrieval metadata.
 - Bad: fixing `searchAssistantKnowledge()` only in `src/data/assistantKnowledge.ts` while leaving `server/src/knowledge.ts` or `functions/_shared/assistant.ts` on old `scored.slice(0, limit)` behavior.
 
 ### 6. Tests Required
 
 - Run `npm.cmd run assistant:index` after public content or generated knowledge changes.
-- Run `npm.cmd run assistant:eval` after scoring, intent, entity expansion, or citation selection changes.
+- Run `npm.cmd run assistant:eval` after scoring, intent, entity expansion, citation selection, or fallback answer wording changes. Manual-gate cases should assert both required citations and required answer phrases.
 - Run `npm.cmd run server:smoke` after Express local retrieval changes.
 - Run `npm.cmd run cf-assistant:smoke` after Cloudflare shared assistant changes.
 - Run `npm.cmd run verify` before committing cross-surface retrieval or public assistant fallback changes.
