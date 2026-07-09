@@ -2,6 +2,8 @@
 
 AI applications, project case studies, content studio, and agentic assistant workspace for the BIAU Port ecosystem.
 
+简体中文文档：[README.zh-CN.md](README.zh-CN.md)
+
 ![React](https://img.shields.io/badge/React-19-61dafb)
 ![Vite](https://img.shields.io/badge/Vite-8-646cff)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6)

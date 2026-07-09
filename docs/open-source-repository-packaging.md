@@ -6,6 +6,8 @@ This checklist is the shared packaging standard for BIAU Port repositories. It i
 
 Use this layout as a baseline, then adapt it to the repository type:
 
+For bilingual repositories, keep `README.md` as the default GitHub landing page and add `README.zh-CN.md` for Simplified Chinese readers. Link both files to each other near the top. If the default README is already Chinese, a short `README.zh-CN.md` pointer is acceptable for cross-repository consistency.
+
 ```markdown
 # Project Name
 
