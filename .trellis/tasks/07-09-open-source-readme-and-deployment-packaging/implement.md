@@ -2,7 +2,7 @@
 
 ## Phase 1: Shared Template And Audit
 
-- [ ] Create a reusable README checklist/template in `docs/` or the task directory.
+- [x] Create a reusable README checklist/template in `docs/` or the task directory.
 - [ ] Audit each target repo for:
   - current README state
   - real tech stack
@@ -13,6 +13,11 @@
   - screenshots/diagrams
   - manual gates
 - [ ] Prioritize repositories by public usefulness and readiness.
+
+Progress:
+
+- `docs/open-source-repository-packaging.md` now defines the reusable README/checklist contract.
+- `docs/open-source-repository-audit.md` records the initial multi-repo audit table and a completed Legal RAG evidence pass.
 
 Audits may be done in parallel because they are read-heavy and repository-scoped. Shared template edits and final priority decisions stay sequential.
 
@@ -27,13 +32,32 @@ Recommended priority:
 
 ## Phase 2: First Repository Slice
 
-- [ ] Create child task for the first repo.
-- [ ] Read local repo rules before editing.
-- [ ] Verify quick-start/build/test commands.
-- [ ] Rewrite README with open-source structure.
-- [ ] Add or update `.env.example` / setup docs if missing.
-- [ ] Add safe architecture diagram if helpful.
-- [ ] Commit in that repository only after checks pass.
+- [x] Create child task for the first repo.
+- [x] Read local repo rules before editing.
+- [x] Verify quick-start/build/test commands.
+- [x] Rewrite README with open-source structure.
+- [x] Add or update `.env.example` / setup docs if missing.
+- [x] Add safe architecture diagram if helpful.
+- [x] Commit in that repository only after checks pass.
+
+Legal RAG validation passed:
+
+```powershell
+npm.cmd run typecheck
+npm.cmd --workspace apps/api run test:unit
+npm.cmd --workspace apps/api run validate
+npm.cmd --workspace apps/api run evaluate
+npm.cmd --workspace apps/api run evaluate:review
+npm.cmd run build
+docker compose -f docker-compose.prod.yml config
+```
+
+Inline child artifact: `slices/legal-rag.md`.
+
+Legal RAG slice committed and pushed:
+
+- Repository branch: `codex/project-quality-dashboard`
+- Commit: `7d8470c docs: package legal rag for open-source use`
 
 Recommended first implementation slice remains a single repository so the template quality can be proven before repeating it broadly.
 
