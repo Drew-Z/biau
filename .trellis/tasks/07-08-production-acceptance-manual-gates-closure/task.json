@@ -27,7 +27,8 @@
     "07-09-07-09-public-assistant-manual-gate-eval",
     "07-09-07-09-analytics-route-view-adapter",
     "07-09-07-09-analytics-route-metadata-guard",
-    "07-09-07-09-analytics-manual-gate-handoff"
+    "07-09-07-09-analytics-manual-gate-handoff",
+    "07-09-07-09-credential-free-synthetic-refresh"
   ],
   "parent": null,
   "relatedFiles": [],
