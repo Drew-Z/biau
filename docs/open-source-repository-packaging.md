@@ -48,6 +48,13 @@ Record any manual gate instead of pretending it is complete:
 - production model/database/vector/analytics keys;
 - release signing, APK/AAB upload, public download approval.
 
+Before pushing a repository as a public project, audit local workflow artifacts:
+
+- keep public-safe config/examples such as `.github/`, `.gitignore`, `.dockerignore`, `.env.example`, reusable `.agents/skills/`, `.codex/config.toml`, `.claude/commands/`, `.trellis/spec/`, and `.trellis/scripts/` when they are intentional contributor workflow assets;
+- remove from Git tracking, but keep local if useful, process-history folders such as `.agent-work/`, `.scratch/`, `.trellis/workspace/`, and `.trellis/tasks/archive/`;
+- ignore local assistant/runtime state such as `.claude/settings.local.json`, `.codex/sessions/`, `.codex/tmp/`, `.trellis/.developer`, `.trellis/.runtime/`, and `.trellis/tmp/`;
+- do not bulk-delete hidden directories without checking whether they are source, CI/deploy config, examples, or contributor workflow.
+
 ## Public-Safe Rules
 
 README files and public docs may include:
