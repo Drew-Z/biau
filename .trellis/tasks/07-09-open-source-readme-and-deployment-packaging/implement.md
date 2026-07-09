@@ -82,6 +82,7 @@ Progress:
 - `pet` static app showcase README sub-slice is complete; broader Pet README packaging is gated by existing dirty worktrees; slice artifact: `slices/pet.md`.
 - `game/blog` Playlab static site README first slice is complete; slice artifact: `slices/game.md`.
 - GitHub README preview image cleanup is complete for `blog-semi`, `legal-rag`, `space-war`, and `spacewar II`; slice artifact: `slices/readme-preview-assets.md`.
+- `blog-semi` README preview images were regenerated from current local routes on 2026-07-10, re-embedded in English and Chinese README files, and the screenshot capture gotcha was captured in `.trellis/spec/frontend/quality-guidelines.md`.
 - Simplified Chinese README entry points and cleanup audit are complete across the packaged repositories; slice artifact: `slices/localized-readmes-and-cleanup-audit.md`.
 - `blog-semi` hidden tooling cleanup identified `.agent-work/`, `.trellis/workspace/`, and `.trellis/tasks/archive/` as process-history artifacts that should be kept local-only instead of shown on GitHub; the active Trellis specs, scripts, current tasks, Codex/Claude configs, custom skills, and GitHub workflow remain tracked.
 - Cross-repo hidden artifact prevention is complete: all packaged repositories now ignore local AI/session artifacts such as `.agent-work/`, `.scratch/`, `.claude/settings.local.json`, `.codex/sessions/`, `.codex/tmp/`, `.trellis/.runtime/`, `.trellis/tmp/`, `.trellis/workspace/`, and `.trellis/tasks/archive/`.

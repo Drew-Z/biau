@@ -18,6 +18,9 @@ Main site:
 - Removed the inline screenshot grid from `README.md`.
 - Replaced it with current public routes and a note that screenshot assets are tracked in `docs/showcase-assets.md`.
 - Kept badges because they are stack metadata, not product screenshots.
+- Follow-up on 2026-07-10 regenerated `blog-semi-home-*`, `blog-semi-projects-*`, and `blog-semi-blogs-*` from current local routes with the first-entry harbor intro skipped.
+- Reintroduced README preview images in `README.md` and `README.zh-CN.md` using the refreshed WebP assets.
+- Updated `docs/showcase-assets.md` and `docs/open-source-repository-audit.md` so the main `Drew-Z/biau` README screenshot gate is no longer recorded as open.
 
 Legal RAG:
 
@@ -43,6 +46,7 @@ Spacewar II:
 Main site:
 
 ```powershell
+npm.cmd run images:optimize -- --force
 npm.cmd run docs:manual-gates-check
 npm.cmd run docs:deployment-check
 git diff --check -- README.md
@@ -90,6 +94,6 @@ Notes:
 
 ## Manual Gates
 
-- Reintroduce README-embedded screenshots only after they are regenerated from the current application state and reviewed.
+- Main `Drew-Z/biau` README screenshots were regenerated from the current local route state and reintroduced on 2026-07-10.
 - Review GitHub repository social preview images in the GitHub UI; they are account-side settings and cannot be verified from the local repo alone.
 - Continue keeping screenshots that contain credentials, private dashboards, local paths, model/provider details, or unapproved release artifacts out of GitHub README pages.

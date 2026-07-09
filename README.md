@@ -37,7 +37,15 @@ https://biau.playlab.eu.cc
 
 ## Preview
 
-The public site is route-first rather than README-screenshot-first. Use the live site or a local dev server for the current UI state:
+These public-safe screenshots were refreshed from the local routes on 2026-07-10. The first-entry harbor intro was skipped during capture so the images show the stable visitor UI instead of the opening animation.
+
+![BIAU Port home route](public/images/projects/showcase/blog-semi-home-desktop.webp)
+
+| Projects | Blog |
+| --- | --- |
+| ![BIAU Port projects route](public/images/projects/showcase/blog-semi-projects-desktop.webp) | ![BIAU Port blog route](public/images/projects/showcase/blog-semi-blogs-desktop.webp) |
+
+Use the live site or a local dev server for the current route state:
 
 | Surface | Route |
 | --- | --- |
@@ -50,7 +58,7 @@ The public site is route-first rather than README-screenshot-first. Use the live
 | Content Studio | `/studio` |
 | Pet app showcase | `/pet-app-showcase/` |
 
-Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/showcase-assets.md). Do not embed stale screenshots in this README; refresh the public-safe assets and run the visual checks before adding screenshots back to the GitHub landing view.
+Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/showcase-assets.md). Refresh the public-safe assets and run the relevant visual checks before replacing these README images.
 
 ## What It Does
 

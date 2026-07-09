@@ -33,7 +33,7 @@ npm.cmd run project-details:check
 | xunqiu | 64 位客户端模块地图、迁移流程图、验收链路图、64 位客户端欢迎页运行截图 | 无 | 已补充由新 64 位客户端临时 debug 构建生成的未登录欢迎页脱敏运行截图 |
 | Space War | 主菜单、玩法画面、结算页、试玩闭环流程图、站内试玩展示入口截图 | 无 | 已补充 `/games/space-war` 站内展示入口截图和公开试玩闭环图；真实 Godot Web 包后续单独接入 |
 | 其他 Godot 项目 | Tetris 桌面运行截图、Tetris 移动端主菜单截图、Tetris 结构图、Next Spacewar 主菜单、Next Spacewar 战斗 HUD、Next Spacewar 结果复盘、Next Spacewar 展示路径图、InteSpace 玩家中枢、InteSpace 战斗 HUD、InteSpace 结果总结、InteSpace 系统闭环图、Raiden 主菜单、Raiden Stage 01 战斗、Raiden Stage 02 风暴机关、Raiden 结果复盘、Raiden 章节总结、Raiden 垂直切片图 | 暂无明显 Godot 结果页截图缺口 | Tetris 截图来自 Godot 4.6.1 临时副本截图回归；Next Spacewar、InteSpace 和 Raiden 截图来自 Godot 4.6.1 Windows 运行时临时副本；Next Spacewar 和 InteSpace 结果复盘使用临时副本构造公开安全单局完成状态后截取真实 UI；Raiden 结果复盘使用临时副本构造公开安全章节完成状态后截取真实 UI |
-| blog-semi | 首页、项目页、博客页桌面与移动端版本化截图 | 无 | 每次大改后继续保留桌面和移动端截图 |
+| blog-semi | 首页、项目页、博客页桌面与移动端版本化截图 | 无 | 2026-07-10 已从本地当前路由重新抓取首页、项目集和博客截图，并跳过首次访问开屏动画；每次大改后继续保留桌面和移动端截图 |
 
 ## 已上线文件
 

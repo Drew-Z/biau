@@ -4,6 +4,16 @@
 
 BIAU Port / 泊岸是一个基于 React、Vite、TypeScript 和 Semi Design 的产品官网，用来集中展示 AI 应用、业务系统、移动端应用、游戏体验、技术内容、公开助手、内部助手、内容 Studio 和可靠性状态。
 
+## 预览
+
+以下截图已在 2026-07-10 从本地当前路由重新抓取。截图时跳过了首次访问的泊岸开屏动画，因此展示的是稳定访客界面。
+
+![BIAU Port 泊岸首页](public/images/projects/showcase/blog-semi-home-desktop.webp)
+
+| 项目集 | 博客 |
+| --- | --- |
+| ![BIAU Port 泊岸项目集](public/images/projects/showcase/blog-semi-projects-desktop.webp) | ![BIAU Port 泊岸博客页](public/images/projects/showcase/blog-semi-blogs-desktop.webp) |
+
 ## 功能概览
 
 - 项目案例页：展示 Legal RAG、Ozon ERP、Pet、Xunqiu、BIAU Playlab 等项目的实现、架构、截图、流程、质量证据和后续路线。

@@ -293,6 +293,31 @@ small assertion or manual check that proves:
 This prevents the page from passing build/lint while still shipping broken
 screenshots or an accidentally public gated download.
 
+### Convention: README Screenshot Capture
+
+When refreshing README or GitHub landing screenshots for the main site, capture
+the stable route UI instead of the first-entry harbor intro. Add this init script
+before navigating in Playwright:
+
+```js
+await context.addInitScript(() => {
+  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+})
+```
+
+After navigation, wait for `#root`, wait for `.harbor-intro` to detach when it is
+present, and give the route a short settling delay before `page.screenshot()`.
+The home, projects, and blog screenshots should be regenerated as paired
+PNG/WebP files under `public/images/projects/showcase/`, then optimized with:
+
+```powershell
+npm.cmd run images:optimize -- --force
+```
+
+Good: README screenshots show `/`, `/projects`, or `/blog` visitor content with
+the BIAU Port / 泊岸 shell visible. Bad: README screenshots show only the
+animated intro gradient, logo, or loading state.
+
 ### Convention: Root Static SEO Shell
 
 `index.html` is the first SEO and social-card shell before React mounts. Keep
