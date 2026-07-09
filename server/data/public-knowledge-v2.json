@@ -37,6 +37,28 @@
       "sourceType": "status"
     },
     {
+      "id": "site:ai-daily",
+      "title": "AI 日报栏目发布状态",
+      "summary": "AI 日报 / AI Daily 是博客里的独立栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。未审核草稿不会展示给访客，也不会进入公开助手索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。",
+      "href": "/blog",
+      "tags": [
+        "AI 日报",
+        "AI Daily",
+        "博客栏目",
+        "Studio-first",
+        "来源池",
+        "日报 issue",
+        "hidden",
+        "review-needed",
+        "Publish Export",
+        "人工审核",
+        "静态导出",
+        "Git diff 审查"
+      ],
+      "visibility": "public",
+      "sourceType": "site"
+    },
+    {
       "id": "project:legal-rag",
       "title": "Legal RAG｜法律智能机器人与合同审查",
       "summary": "已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。 Legal RAG 是已部署的全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。 系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。 合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。 项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。 Legal RAG 后端还把配置用户、项目成员、项目空间授权、ingestion job 和 audit log 纳入数据模型，让公开演示能够解释“谁在什么项目空间里做了什么 AI 操作”。 Legal RAG Web 工作台的标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸品牌；公开试用凭据仍只能通过低权限、可轮换、可公开的 demo 配置展示。 线上工作台入口是 https://legal-rag-web.onrender.com，有登录门禁，公开页面不会放真实后台/admin 密码；如果 Legal RAG 登录页显示公开演示凭据，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则仍是受控演示入口。 Legal RAG 公开自助试用需要维护者同时配置 API 侧登录校验密码和 Web 侧 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD；VITE_PUBLIC_DEMO_PASSWORD 会进入前端包，所以只能填写可公开、低权限、可轮换的 demo 密码。 推荐公开演示顺序是：登录受保护工作台、初始化公开安全数据集、执行带 citation/diagnostics 的 RAG 问答、运行示例合同审查、查看质量面板的 runtime、citation/refusal 评测、审查召回、readiness checks、趋势和审计日志。 后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。",
@@ -684,6 +706,29 @@
           "品牌统一",
           "刷新全部状态",
           "成员模型渠道"
+        ]
+      }
+    },
+    {
+      "id": "chunk:site:ai-daily:1",
+      "documentId": "site:ai-daily",
+      "text": "AI 日报 / AI Daily 是博客里的独立栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。 当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。 未审核草稿不会展示给访客，也不会进入公开助手索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。",
+      "section": "summary",
+      "metadata": {
+        "sourceType": "site",
+        "tags": [
+          "AI 日报",
+          "AI Daily",
+          "博客栏目",
+          "Studio-first",
+          "来源池",
+          "日报 issue",
+          "hidden",
+          "review-needed",
+          "Publish Export",
+          "人工审核",
+          "静态导出",
+          "Git diff 审查"
         ]
       }
     },
@@ -3379,6 +3424,25 @@
       }
     },
     {
+      "id": "site:ai-daily",
+      "type": "feature",
+      "name": "AI 日报",
+      "aliases": [
+        "ai daily",
+        "ai 日报",
+        "日报",
+        "首发",
+        "studio-first",
+        "publish export",
+        "hidden",
+        "review-needed"
+      ],
+      "metadata": {
+        "documentId": "site:ai-daily",
+        "href": "/blog"
+      }
+    },
+    {
       "id": "site:biau-port",
       "type": "site",
       "name": "BIAU Port 泊岸",
@@ -4064,6 +4128,16 @@
       "weight": 1,
       "evidenceDocumentIds": [
         "project:xunqiu"
+      ]
+    },
+    {
+      "id": "contains:site:biau-port->site:ai-daily",
+      "fromEntityId": "site:biau-port",
+      "toEntityId": "site:ai-daily",
+      "type": "contains",
+      "weight": 0.85,
+      "evidenceDocumentIds": [
+        "site:ai-daily"
       ]
     },
     {
@@ -5788,6 +5862,16 @@
       "人工 gate",
       "人工队列",
       "手动处理",
+      "ai daily",
+      "ai 日报",
+      "日报",
+      "首发",
+      "studio-first",
+      "publish export",
+      "hidden",
+      "review-needed",
+      "人工审核",
+      "静态导出",
       "后续接入",
       "低敏证据",
       "刷新全部状态",
@@ -5913,6 +5997,32 @@
           "成员模型渠道",
           "后续接入",
           "低敏证据"
+        ]
+      },
+      {
+        "triggers": [
+          "ai daily",
+          "ai 日报",
+          "日报",
+          "首发",
+          "publish export",
+          "hidden",
+          "review-needed",
+          "人工审核",
+          "静态导出"
+        ],
+        "terms": [
+          "AI 日报",
+          "AI Daily",
+          "Studio-first",
+          "来源池",
+          "日报 issue",
+          "hidden",
+          "review-needed",
+          "Publish Export",
+          "人工审核",
+          "静态导出",
+          "Git diff 审查"
         ]
       },
       {

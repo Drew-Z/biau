@@ -186,6 +186,16 @@ const SEARCH_KEYWORDS_FALLBACK = [
   '健康检查',
   '外链',
   '人工 gate',
+  'ai daily',
+  'ai 日报',
+  '日报',
+  '首发',
+  'studio-first',
+  'publish export',
+  'hidden',
+  'review-needed',
+  '人工审核',
+  '静态导出',
   '后续接入',
   '低敏证据',
   '合同审查',
@@ -245,6 +255,10 @@ const SEARCH_ALIASES_FALLBACK: SearchAliasGroup[] = [
     terms: ['项目可靠性观察', '状态页', 'health', 'synthetic', '公开入口', '人工 gate', '后续接入', '低敏证据'],
   },
   {
+    triggers: ['ai daily', 'ai 日报', '日报', '首发', 'publish export', 'hidden', 'review-needed', '人工审核', '静态导出'],
+    terms: ['AI 日报', 'AI Daily', 'Studio-first', '来源池', '日报 issue', 'hidden', 'review-needed', 'Publish Export', '人工审核', '静态导出', 'Git diff 审查'],
+  },
+  {
     triggers: ['游戏', '互动体验', '试玩', 'godot', 'playlab'],
     terms: ['biau playlab', 'godot web', 'web 试玩', '互动体验'],
   },
@@ -277,7 +291,7 @@ const INTENT_TERMS: Record<RetrievalIntent, string[]> = {
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
-  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', '手记'],
+  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', 'ai daily', '首发', 'publish export', 'hidden', 'review-needed', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
@@ -838,7 +852,10 @@ function buildIntentAnswerBody(question: string, titleList: string) {
   if (['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript'].some((term) => normalized.includes(term))) {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'
   }
-  if (['文章', '博客', '知识', '总结', '资源', '日报', '手记'].some((term) => normalized.includes(term))) {
+  if (['ai daily', 'ai 日报', '日报', '首发', 'publish export', 'hidden', 'review-needed'].some((term) => normalized.includes(term))) {
+    return 'AI 日报是独立栏目；如果公开列表还没有文章，代表首期仍在 Studio-first 内部流程里等待人工审核、Publish Export、静态导出和 Git diff 审查。未审核的 hidden / review-needed 草稿不会展示给访客。'
+  }
+  if (['文章', '博客', '知识', '总结', '资源', '手记'].some((term) => normalized.includes(term))) {
     return '知识文章更适合看方法、复盘和构建过程；项目稳定事实仍以项目详情页和状态页为准。'
   }
   if (normalized.includes('项目') || normalized.includes('案例') || normalized.includes('作品')) {
@@ -910,6 +927,7 @@ function extractQueryTerms(query: string) {
 function classifyAssistantIntent(query: string): RetrievalIntent {
   const normalized = query.trim().toLowerCase()
   if (isPrivateCredentialRequest(query)) return 'private-credential'
+  if (isAiDailyKnowledgeRequest(normalized)) return 'blog-knowledge'
 
   const order: RetrievalIntent[] = [
     'reliability-status',
@@ -977,6 +995,7 @@ function scoreKnowledgeItem(
 
   if (intent === 'site-overview' && item.id === 'site:intro') score += 16
   if (intent === 'reliability-status' && (item.id === 'site:status' || item.href === '/status')) score += 14
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily') score += 16
   if (intent === 'project-experience' && sourceType === 'project') score += 9
   if (intent === 'demo-access' && sourceType === 'project') score += 8
   if (intent === 'technology-architecture' && sourceType === 'project') score += 6
@@ -1017,6 +1036,10 @@ function isPrivateCredentialRequest(question: string) {
     'admin password',
   ]
   return credentialTerms.some((term) => normalized.includes(term))
+}
+
+function isAiDailyKnowledgeRequest(normalized: string) {
+  return ['ai daily', 'ai日报', 'ai 日报', '日报'].some((term) => normalized.includes(term))
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

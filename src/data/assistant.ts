@@ -362,6 +362,15 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
     tags: ['状态页', '可靠性观察', '人工 gate', '低敏证据', '公开入口', 'health check', 'synthetic', '注册', '品牌统一', '刷新全部状态', '成员模型渠道'],
     visibility: 'public',
   },
+  {
+    id: 'site:ai-daily',
+    title: 'AI 日报栏目发布状态',
+    summary:
+      'AI 日报 / AI Daily 是博客里的独立栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。未审核草稿不会展示给访客，也不会进入公开助手索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。',
+    href: '/blog',
+    tags: ['AI 日报', 'AI Daily', '博客栏目', 'Studio-first', '来源池', '日报 issue', 'hidden', 'review-needed', 'Publish Export', '人工审核', '静态导出', 'Git diff 审查'],
+    visibility: 'public',
+  },
   ...projectKnowledge,
   ...blogKnowledge,
 ]

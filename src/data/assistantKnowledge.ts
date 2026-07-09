@@ -119,6 +119,16 @@ export const ASSISTANT_SEARCH_KEYWORDS = [
   '人工 gate',
   '人工队列',
   '手动处理',
+  'ai daily',
+  'ai 日报',
+  '日报',
+  '首发',
+  'studio-first',
+  'publish export',
+  'hidden',
+  'review-needed',
+  '人工审核',
+  '静态导出',
   '后续接入',
   '低敏证据',
   '刷新全部状态',
@@ -189,6 +199,10 @@ export const ASSISTANT_SEARCH_ALIASES: AssistantSearchAliasGroup[] = [
     terms: ['项目可靠性观察', '状态页', 'health', 'synthetic', '公开入口', '监控', '人工 gate', '人工队列', '刷新全部状态', '成员模型渠道', '后续接入', '低敏证据'],
   },
   {
+    triggers: ['ai daily', 'ai 日报', '日报', '首发', 'publish export', 'hidden', 'review-needed', '人工审核', '静态导出'],
+    terms: ['AI 日报', 'AI Daily', 'Studio-first', '来源池', '日报 issue', 'hidden', 'review-needed', 'Publish Export', '人工审核', '静态导出', 'Git diff 审查'],
+  },
+  {
     triggers: ['游戏', '互动体验', '试玩', 'godot', 'playlab'],
     terms: ['biau playlab', 'godot web', 'web 试玩', '互动体验'],
   },
@@ -220,7 +234,7 @@ const INTENT_TERMS: Record<AssistantRetrievalIntent, string[]> = {
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
   'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '人工队列', '手动', '手动处理', '下一步', '先做什么', '醒来', '明早', '复核', '刷新全部状态', '成员模型渠道', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
-  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', '手记'],
+  'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '日报', 'ai daily', '首发', 'publish export', 'hidden', 'review-needed', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
   'broad-unknown': [],
 }
@@ -369,13 +383,16 @@ export function buildPublicKnowledgeFallbackAnswer(
     .map((item) => item.title.replace(/｜.*$/, '').trim())
     .join('、')
   const intro = getFallbackIntro(options.reason)
-  const body = buildIntentAnswerBody(intent, titleList)
+  const body = citations.some((item) => item.id === 'site:ai-daily')
+    ? 'AI 日报是独立栏目；如果公开列表还没有文章，代表首期仍在 Studio-first 内部流程里等待人工审核、Publish Export、静态导出和 Git diff 审查。未审核的 hidden / review-needed 草稿不会展示给访客。'
+    : buildIntentAnswerBody(intent, titleList)
   return compactAnswer(`${intro}${body}详情和路径放在下方来源卡片里，建议从 ${titleList} 开始看。`, maxLength)
 }
 
 export function classifyAssistantIntent(query: string): AssistantRetrievalIntent {
   const normalized = normalizeText(query)
   if (isPrivateCredentialRequest(normalized)) return 'private-credential'
+  if (isAiDailyKnowledgeRequest(normalized)) return 'blog-knowledge'
 
   const order: AssistantRetrievalIntent[] = [
     'reliability-status',
@@ -432,6 +449,18 @@ function createEntitiesAndRelations(
         metadata: { documentId: document.id, href: document.href },
       })
       addRelation(relations, 'site:biau-port', 'status:site-status', 'contains', [document.id], 0.9)
+      continue
+    }
+
+    if (document.id === 'site:ai-daily') {
+      addEntity(entities, {
+        id: 'site:ai-daily',
+        type: 'feature',
+        name: 'AI 日报',
+        aliases: ['AI Daily', 'AI 日报', '日报', '首发', 'Studio-first', 'Publish Export', 'hidden', 'review-needed'],
+        metadata: { documentId: document.id, href: document.href },
+      })
+      addRelation(relations, 'site:biau-port', 'site:ai-daily', 'contains', [document.id], 0.85)
       continue
     }
 
@@ -659,6 +688,7 @@ function scoreKnowledgeItem(
 
   if (intent === 'site-overview' && item.id === 'site:intro') score += 16
   if (intent === 'reliability-status' && (item.id === 'site:status' || item.href === '/status')) score += 14
+  if (intent === 'blog-knowledge' && item.id === 'site:ai-daily') score += 16
   if (intent === 'project-experience' && sourceType === 'project') score += 9
   if (intent === 'demo-access' && sourceType === 'project') score += 8
   if (intent === 'technology-architecture' && sourceType === 'project') score += 6
@@ -778,6 +808,10 @@ function isPrivateCredentialRequest(normalized: string) {
     'admin password',
   ]
   return credentialTerms.some((term) => normalized.includes(term))
+}
+
+function isAiDailyKnowledgeRequest(normalized: string) {
+  return ['ai daily', 'ai日报', 'ai 日报', '日报'].some((term) => normalized.includes(term))
 }
 
 function uniqueTerms(values: string[]) {
