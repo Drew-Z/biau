@@ -34,7 +34,8 @@
     "07-09-07-09-assistant-admin-runbook-refresh",
     "07-09-07-09-assistant-admin-ui-refresh-guard",
     "07-09-07-09-manual-gates-assistant-admin-queue",
-    "07-09-07-09-public-links-status-refresh"
+    "07-09-07-09-public-links-status-refresh",
+    "07-09-07-09-credential-free-reliability-refresh"
   ],
   "parent": null,
   "relatedFiles": [],
