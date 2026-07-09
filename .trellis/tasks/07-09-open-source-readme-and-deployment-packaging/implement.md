@@ -81,6 +81,7 @@ Progress:
 - `xunqiu` static showcase and `xunqiu-backend-modern` README/deployment packaging first slice is complete; slice artifact: `slices/xunqiu.md`.
 - `pet` static app showcase README sub-slice is complete; broader Pet README packaging is gated by existing dirty worktrees; slice artifact: `slices/pet.md`.
 - `game/blog` Playlab static site README first slice is complete; slice artifact: `slices/game.md`.
+- GitHub README preview image cleanup is complete for `blog-semi`, `legal-rag`, `space-war`, and `spacewar II`; slice artifact: `slices/readme-preview-assets.md`.
 
 Repository slices can be implemented concurrently only in separate worktrees/sessions and only when they do not touch shared `blog-semi` data. In this inline session, execute one slice at a time.
 
