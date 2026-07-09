@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify public SEO/doc text is safe and build gates pass."}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Use existing SEO constants as the typed source of truth when checking consistency."}

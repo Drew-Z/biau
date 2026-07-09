@@ -1,6 +1,0 @@
-{"file":".trellis/spec/backend/directory-structure.md","reason":"RAG Orchestrator server modules, scripts, and environment contracts must follow existing backend ownership boundaries."}
-{"file":".trellis/spec/backend/error-handling.md","reason":"Orchestrator and assistant adapter failures must return safe JSON errors and fall back without leaking internals."}
-{"file":".trellis/spec/backend/logging-guidelines.md","reason":"RAG diagnostics and provider failures must be low-sensitive and must not log keys, endpoints, prompts, or private data."}
-{"file":".trellis/spec/backend/observability-guidelines.md","reason":"RAG health, metrics, and status integration must use safe labels and default-closed production gates."}
-{"file":".trellis/spec/frontend/type-safety.md","reason":"Assistant response shape, citations, and metadata must remain typed and compatible across UI/API/fallback paths."}
-{"file":".trellis/tasks/07-04-public-assistant-kg-lite/design.md","reason":"Phase 2 must build on the confirmed Agentic Hybrid RAG architecture and preserve the local fallback boundary."}

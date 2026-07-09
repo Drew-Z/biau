@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "Public blog curation rules govern draft visibility, project relations, and assistant knowledge."}
-{"file": ".agents/skills/blog-content-pipeline/SKILL.md", "reason": "The blog-content-pipeline skill defines evidence-first draft, review, and publishing gates."}

@@ -1,6 +1,0 @@
-{"file":".trellis/spec/frontend/component-guidelines.md","reason":"公开助手组件 UI、交互和可访问性。"}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"前端质量门、公开数据安全和 UI 回归。"}
-{"file":".trellis/spec/backend/directory-structure.md","reason":"server/src 模块边界与 Express route 组织。"}
-{"file":".trellis/spec/backend/error-handling.md","reason":"模型失败和 fallback 的错误响应语义。"}
-{"file":".trellis/spec/backend/logging-guidelines.md","reason":"不得记录 API key、prompt 私密信息或 provider 配置。"}
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"server build/smoke、lint/build 与敏感扫描。"}

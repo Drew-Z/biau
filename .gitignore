@@ -26,6 +26,16 @@ output
 *.sw?
 
 # Local scratch artifacts
+.agent-work/
+.scratch/
+.claude/settings.local.json
+.codex/sessions/
+.codex/tmp/
+.trellis/.developer
+.trellis/.runtime/
+.trellis/tmp/
+.trellis/workspace/
+.trellis/tasks/archive/
 ref/
 original-src/
 content-drafts/.checkpoints/

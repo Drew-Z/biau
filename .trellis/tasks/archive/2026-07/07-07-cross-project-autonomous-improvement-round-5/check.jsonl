@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Required validation for frontend, public data, project detail, and static asset changes."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Required validation for assistant, Studio, AI Daily, RAG, and backend-adjacent changes."}
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Reliability status and synthetic report contracts apply to continued cross-project checks."}

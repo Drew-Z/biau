@@ -1,2 +1,0 @@
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Required lint/build gates and static page sitemap assertions."}
-{"file":".trellis/spec/backend/observability-guidelines.md","reason":"Synthetic JSON output and sensitive scan expectations."}

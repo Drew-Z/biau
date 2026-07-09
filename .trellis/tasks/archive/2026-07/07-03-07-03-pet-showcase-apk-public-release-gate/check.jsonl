@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Validate static showcase assets, gated downloads, and public data safety."}
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Confirm public showcase files and src data ownership before publishing APK links."}

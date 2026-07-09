@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Validate low-sensitive APK gate and synthetic report semantics."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Validate gated static download behavior and public asset safety."}

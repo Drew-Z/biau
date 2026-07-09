@@ -1,5 +1,0 @@
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Review Prisma migrations, protected route scoping, and database-not-configured behavior."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Review service-mode isolation, RAG scope isolation, smoke coverage, and safe error codes."}
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Review sanitized diagnostics, metrics/status behavior, and no-secret observability output."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Review UI checks, build/lint requirements, and sensitive information exposure in frontend changes."}
-{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Review cross-layer auth/session/RAG/admin flows so frontend, API, DB, and orchestrator contracts stay aligned."}

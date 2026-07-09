@@ -1,2 +1,0 @@
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Lint/build gates, static asset checks, and APK link safety."}
-{"file":".trellis/spec/backend/observability-guidelines.md","reason":"Synthetic report shape, gate preservation, and sensitive scan expectations."}

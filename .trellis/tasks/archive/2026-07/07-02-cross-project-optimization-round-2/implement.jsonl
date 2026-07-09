@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Long-term work centers on the public React/Vite project showcase and data ownership boundaries."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Parent task requires each child to run scoped verification and keep public content safe."}

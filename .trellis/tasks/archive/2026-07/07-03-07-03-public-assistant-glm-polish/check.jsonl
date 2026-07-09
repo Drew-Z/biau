@@ -1,3 +1,0 @@
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"公开助手 UI 验证、lint、build。"}
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"server build/smoke 与公开助手 API 验证。"}
-{"file":".trellis/spec/backend/logging-guidelines.md","reason":"敏感信息和模型配置不得进入日志或公开输出。"}

@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Check public content safety and required blog verification commands."}
-{"file": ".agents/skills/blog-content-pipeline/SKILL.md", "reason": "Ensure draft-only evidence packs do not publish or delete content without human review."}

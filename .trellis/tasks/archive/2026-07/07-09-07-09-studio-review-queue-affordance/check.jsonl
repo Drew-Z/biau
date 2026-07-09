@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Check that the Studio UI remains accessible, compact, and uses existing component patterns."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Run and update check:ui for the review affordance, then lint/build."}

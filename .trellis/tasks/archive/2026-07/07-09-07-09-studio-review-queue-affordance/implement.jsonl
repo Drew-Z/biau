@@ -1,4 +1,0 @@
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Studio route and data helpers must stay in the established frontend ownership boundaries."}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Studio UI changes should follow Semi Design and compact workbench layout rules."}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "Review queue summary is derived from existing draft state and should not create duplicated state."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Studio visible review path and overflow checks are guarded by check:ui plus lint/build."}

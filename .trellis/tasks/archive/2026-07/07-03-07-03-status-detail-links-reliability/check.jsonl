@@ -1,2 +1,0 @@
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"check:ui、lint、build、diff check 与敏感扫描。"}
-{"file":".trellis/spec/backend/observability-guidelines.md","reason":"确认 planned/unchecked/online 不被误提升，状态数据保持低敏。"}

@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ProjectCard click and keyboard behavior must follow shared component accessibility rules."}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "ProjectsPage owns route navigation and derived project grouping."}

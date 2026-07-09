@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Status page/public data/UI validation requirements."}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Typed status target data and public JSON normalization rules."}
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Metrics/status/monitoring safety boundaries."}

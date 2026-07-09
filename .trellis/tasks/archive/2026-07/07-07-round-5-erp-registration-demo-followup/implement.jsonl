@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "ERP synthetic and status reports must preserve credential/platform gates and low-sensitive output."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "If main-site status data or routes change, frontend validation and public-data safety rules apply."}

@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Lists backend validation and smoke expectations for assistant API changes."}
-{"file": ".trellis/spec/backend/agentic-workspace.md", "reason": "Provides acceptance rules for safe Agent tool traces and forbidden normal-chat writes."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Lists frontend lint/build/check:ui gates for /assistant diagnostics changes."}

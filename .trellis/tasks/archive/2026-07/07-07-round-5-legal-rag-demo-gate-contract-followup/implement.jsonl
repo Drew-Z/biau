@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Legal RAG synthetic checks must preserve credential gates and low-sensitive public status semantics."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Use project-wide verify and status contract gates before finishing."}

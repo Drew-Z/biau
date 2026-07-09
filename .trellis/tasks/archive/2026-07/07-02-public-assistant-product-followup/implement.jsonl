@@ -1,9 +1,0 @@
-{"file":".trellis/spec/backend/index.md","reason":"Assistant API, env contract, model adapter, and response metadata changes."}
-{"file":".trellis/spec/backend/directory-structure.md","reason":"Server module ownership and ESM import conventions."}
-{"file":".trellis/spec/backend/error-handling.md","reason":"Public chat fallback/error behavior and sanitized API responses."}
-{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Provider failure handling must not leak secrets."}
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Required backend validation commands."}
-{"file":".trellis/spec/frontend/index.md","reason":"Public assistant widget UI and static data safety."}
-{"file":".trellis/spec/frontend/component-guidelines.md","reason":"React component, accessibility, and Semi/UI conventions."}
-{"file":".trellis/spec/frontend/type-safety.md","reason":"Chat response meta contract and defensive parsing."}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Frontend validation and public content safety."}

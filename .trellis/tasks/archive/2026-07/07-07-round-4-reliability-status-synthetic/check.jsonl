@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Required lint/build/UI checks when status UI or data changes."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Synthetic and service-mode validation conventions."}
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Status/metrics public-safety validation."}

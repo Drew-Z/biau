@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/backend/ai-daily-workflow.md", "reason": "AI Daily source pack, draft, review, and publication gate contracts apply."}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "Studio preview and draft block contracts apply."}
-{"file": ".trellis/spec/backend/blog-draft-workflow.md", "reason": "Draft generation model-channel and review-gate safety overlaps with AI Daily authoring."}

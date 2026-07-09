@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/backend/ai-daily-workflow.md", "reason": "Defines AI Daily validation and no-auto-publish gates."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend build/UI/public data safety validation."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend and script validation requirements."}

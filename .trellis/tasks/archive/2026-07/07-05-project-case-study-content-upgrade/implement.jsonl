@@ -1,6 +1,0 @@
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "确认项目详情静态数据、public assets 和路由页面的所有权。"}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "读取 Project Detail Content And Assistant Projection 契约，保证 detailContent 与 assistantContext 同源更新。"}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "确认 portfolio.ts 中 union、Record 和 typed data 的维护方式。"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "确认 src/data 修改后的 lint、build、assistant:index、资产和 UI 检查要求。"}
-{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "检查项目详情、助手索引和公开知识生成之间的数据流边界。"}
-{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "确认复用 portfolio.ts 现有 project/detail/assistant projection，而不是新增平行内容源。"}

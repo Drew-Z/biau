@@ -6,6 +6,7 @@
 
 # Session/window scoped runtime state
 .runtime/
+tmp/
 
 # Ralph Loop state file
 .ralph-state.json
@@ -14,9 +15,11 @@
 .agents/
 .agent-log
 .session-id
+workspace/
 
 # Task directory runtime files
 .plan-log
+tasks/archive/
 
 # Atomic update temp files
 *.tmp

@@ -1,6 +1,0 @@
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Internal assistant finalization changes Prisma models, database boundaries, protected routes, and assistant/Studio database separation."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Defines assistant service modes, scoped RAG auth, Qdrant variables, route isolation, and backend validation commands."}
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Needed for low-sensitive health, metrics, diagnostics, and reliability reporting around internal assistant services."}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Internal assistant and admin UI changes should follow the repository's Semi Design and component conventions."}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "Defines assistant/static data boundaries and frontend state practices for runtime assistant conversations."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Defines frontend validation expectations, sensitive content rules, and assistant knowledge checks."}

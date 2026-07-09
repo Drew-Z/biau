@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Final check must include assistant index/eval plus lint/build for src/data changes."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Final check must preserve modelCalls=0 eval behavior and public assistant retrieval safety."}

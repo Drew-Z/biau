@@ -1,3 +1,0 @@
-{"file":".agents/skills/blog-content-pipeline/SKILL.md","reason":"Review draft safety, evidence coverage, and publish/stage boundary."}
-{"file":".trellis/spec/frontend/state-management.md","reason":"Verify no hidden/public selector or curation contract is bypassed."}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Lint/build validation and public content safety."}

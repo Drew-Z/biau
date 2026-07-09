@@ -1,4 +1,0 @@
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Add `blog-semi-public-assistant` without storing API URLs, provider secrets, or raw responses."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Keep `/api/chat/public` and Express `/chat/public` compatible with model/fallback meta."}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "Keep public assistant runtime state local and API payload normalization centralized."}
-{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Trace health/chat meta from Function/Express through widget and status aggregation."}

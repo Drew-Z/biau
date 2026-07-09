@@ -1,4 +1,0 @@
-{"file":".trellis/spec/frontend/directory-structure.md","reason":"Homepage project cards and static public page data ownership."}
-{"file":".trellis/spec/frontend/type-safety.md","reason":"Hero and portfolio data updates must preserve typed structured data."}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Static public page APK gate and public data safety requirements."}
-{"file":".trellis/spec/backend/observability-guidelines.md","reason":"Pet synthetic status must not promote APK release gate to online."}

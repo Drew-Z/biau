@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "验证 Project.detailContent、visual 和 assistantContext 更新后仍符合公开助手投影契约。"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验证 assistant:index、asset existence、lint、build、check:ui、diff check 和敏感信息扫描结果。"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "确认正文 visual 继续使用现有 ProjectDetailPage 渲染路径，无需新增组件或伪造截图。"}

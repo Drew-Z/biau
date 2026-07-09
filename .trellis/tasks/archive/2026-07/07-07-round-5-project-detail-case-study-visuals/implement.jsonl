@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/index.md", "reason": "Project detail page, data, component, and quality rules apply to this task."}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Visible UI section and optional diagram blocks must match existing Semi Design patterns."}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Project data shape changes require literal and runtime-safe TypeScript contracts."}

@@ -1,5 +1,0 @@
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Phase 2 implementation must pass backend smoke/build checks and keep assistant behavior verifiable."}
-{"file":".trellis/spec/backend/observability-guidelines.md","reason":"RAG health/status checks must not expose provider URLs, secrets, or high-cardinality private labels."}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Public assistant UI and response metadata changes must keep lint/build and user-facing fallback quality intact."}
-{"file":".trellis/spec/frontend/type-safety.md","reason":"Check assistant response/citation/meta compatibility after adding Orchestrator paths."}
-{"file":".trellis/tasks/07-04-public-assistant-rag-orchestrator-phase-2/prd.md","reason":"Verify implementation against Phase 2 requirements and acceptance criteria."}

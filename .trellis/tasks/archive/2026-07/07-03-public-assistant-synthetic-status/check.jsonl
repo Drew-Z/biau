@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Synthetic status report shape, low-sensitive evidence, and no-secret persistence rules."}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Public assistant model-provider fallback contract and validation expectations."}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Public UI validation, status-page data safety, and check:ui expectations."}

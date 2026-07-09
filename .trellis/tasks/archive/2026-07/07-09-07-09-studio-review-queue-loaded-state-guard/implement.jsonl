@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "check:ui owns Studio first-load state and route-level UI regression guards."}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "The test should verify derived review queue state without adding new page state."}

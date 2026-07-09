@@ -1,3 +1,0 @@
-{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Server build/smoke validation for assistant API changes."}
-{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Lint/build/UI validation for public assistant widget changes."}
-{"file":".trellis/spec/backend/logging-guidelines.md","reason":"Check provider failure output remains redacted."}

@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Static public HTML and README changes must keep public data sanitized and pass lint/build."}
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Confirms root HTML, public assets, and src SEO ownership boundaries."}

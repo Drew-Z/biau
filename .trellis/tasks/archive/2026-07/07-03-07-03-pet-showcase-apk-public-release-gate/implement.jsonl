@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Static showcase pages and gated downloads must not expose unapproved APK links or private artifacts."}
-{"file": ".trellis/spec/backend/observability-guidelines.md", "reason": "Synthetic status reports must not promote human release gates without evidence."}
