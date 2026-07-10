@@ -66,6 +66,13 @@ function formatModelChannelState(channel?: AssistantMemberProfile['modelChannel'
   return channel.isDefault ? '默认可用' : '可用'
 }
 
+function formatRetrievalSufficiency(sufficiency?: string) {
+  if (sufficiency === 'enough') return '证据充足'
+  if (sufficiency === 'weak') return '证据偏弱'
+  if (sufficiency === 'none') return '暂无证据'
+  return '等待回答'
+}
+
 function formatAgentStatus(status?: string) {
   if (status === 'completed') return '已完成'
   if (status === 'guarded') return '已拦截'
@@ -109,6 +116,32 @@ function getToolTraceHint(tool: AssistantAgentToolTrace) {
   return ''
 }
 
+function getWorkspaceNextAction({
+  apiAvailable,
+  memberToken,
+  member,
+  selectedSessionId,
+  meta,
+  tools,
+}: {
+  apiAvailable: boolean
+  memberToken: string
+  member: AssistantMemberProfile | null
+  selectedSessionId: string
+  meta: AssistantAnswerMetaSummary | null
+  tools: AssistantAgentToolTrace[]
+}) {
+  if (!apiAvailable) return `配置 ${ASSISTANT_API_ENV_NAMES.internal} 后启用成员会话、模型渠道和 Studio 草稿。`
+  if (!memberToken) return '先兑换邀请码，解锁成员会话、模型渠道和 Agent 工具轨迹。'
+  if (!member) return '正在读取成员信息；也可以先发送消息触发当前 token。'
+  if (meta?.guardrails?.status === 'blocked') return '请求触发安全边界，请去掉密钥、密码、连接串或私有地址后重试。'
+  if (tools.some((tool) => tool.artifacts?.length)) return '已有 Studio 草稿待审核，可以从工具轨迹打开。'
+  if (meta?.agent?.status === 'degraded') return '本次已降级完成；查看工具轨迹里的原因后再重试或转为手动草稿。'
+  if (!selectedSessionId) return '直接发送消息会自动创建会话，也可以先点“新建”。'
+  if (meta) return '可以继续追问，或让助手生成一个待审核的 Studio 草稿。'
+  return '发送问题后，这里会展示规划、工具、引用和安全检查。'
+}
+
 function formatGuardrailStatus(status?: string) {
   if (status === 'passed') return '通过'
   if (status === 'warned') return '提醒'
@@ -135,10 +168,8 @@ function createOpeningMessage(): AssistantMessage {
   return {
     id: 'assistant-opening',
     role: 'assistant',
-    content:
-      '这里是内部助手工作台。兑换邀请码后，我会把对话保存到你的内部会话列表；未连接 API 时仍可用公开站点知识做临时整理。',
+    content: '我是泊岸内部助手。给我项目、状态或写作目标，我会展示计划、工具、引用和草稿出口。',
     timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-    citations: publicKnowledgeBase.filter((item) => ['site:intro', 'site:status'].includes(item.id)),
   }
 }
 
@@ -383,6 +414,7 @@ export function AssistantPage() {
     role: AssistantMessage['role'],
     content: string,
     citations?: AssistantKnowledgeItem[],
+    meta?: AssistantAnswerMetaSummary | null,
   ): AssistantMessage => {
     messageSeq.current += 1
     return {
@@ -391,6 +423,7 @@ export function AssistantPage() {
       content,
       timestamp: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
       citations,
+      meta,
     }
   }
 
@@ -671,7 +704,7 @@ export function AssistantPage() {
       }
       setMessages((current) => [
         ...current,
-        createMessage('assistant', result.content, result.citations),
+        createMessage('assistant', result.content, result.citations, result.meta),
       ])
       setLastAnswerMeta(result.meta ?? null)
       if (memberToken && API_BASE) {
@@ -690,7 +723,8 @@ export function AssistantPage() {
     }
   }
 
-  const chatMode = API_BASE && memberToken ? 'API 持久化会话' : '本地公开知识回退'
+  const apiAvailable = Boolean(API_BASE)
+  const chatMode = apiAvailable && memberToken ? 'Agent API 持久化' : apiAvailable ? 'API 已配置，待兑换' : '本地公开知识回退'
   const composerDisabled = isLoading || draft.trim().length === 0
   const retrieval = lastAnswerMeta?.retrieval
   const agent = lastAnswerMeta?.agent
@@ -704,6 +738,14 @@ export function AssistantPage() {
       ? '等待下一次回答'
       : '本地回退'
   const answerChannel = lastAnswerMeta?.modelChannel ?? member?.modelChannel ?? null
+  const workspaceNextAction = getWorkspaceNextAction({
+    apiAvailable,
+    memberToken,
+    member,
+    selectedSessionId,
+    meta: lastAnswerMeta,
+    tools,
+  })
 
   return (
     <main className="assistant-page page-stack">
@@ -822,6 +864,24 @@ export function AssistantPage() {
             </div>
           </header>
 
+          <section className="assistant-run-strip" aria-label="内部助手运行状态">
+            <div className="assistant-run-card">
+              <span>运行模式</span>
+              <strong>{chatMode}</strong>
+              <em>{selectedSessionId ? '会话已绑定' : '临时上下文'}</em>
+            </div>
+            <div className="assistant-run-card">
+              <span>模型渠道</span>
+              <strong>{answerChannel?.label ?? '默认模型通道'}</strong>
+              <em>{formatModelChannelState(answerChannel)} · {answerChannel?.model ?? lastAnswerMeta?.model ?? '等待成员渠道'}</em>
+            </div>
+            <div className="assistant-run-card assistant-run-card--wide">
+              <span>下一步</span>
+              <strong>{formatAgentStatus(agent?.status)}</strong>
+              <em>{workspaceNextAction}</em>
+            </div>
+          </section>
+
           <div className="assistant-thread" aria-live="polite">
             {messages.length === 0 && !isLoadingMessages && (
               <div className="assistant-empty-state">这个会话还没有消息，输入问题即可开始。</div>
@@ -890,15 +950,28 @@ export function AssistantPage() {
           <section className="assistant-panel">
             <p className="assistant-panel__eyebrow">AGENT</p>
             <h3>LangGraph 运行状态</h3>
-            <ul>
-              <li>Graph：{agent ? 'LangGraph.js' : '等待运行'} · {formatAgentStatus(agent?.status)}</li>
-              <li>Planner：{formatPlanner(agent?.planner)}</li>
-              <li>模式：{answerMode}</li>
-              <li>模型：{lastAnswerMeta?.model ?? '等待回答'}</li>
-              <li>渠道：{answerChannel?.label ?? '默认模型通道'} · {formatModelChannelState(answerChannel)}</li>
-              <li>引用：{lastAnswerMeta?.citationCount ?? latestCitations.length}</li>
-              <li>耗时：{agent ? `${agent.durationMs} ms` : '等待回答'}</li>
-            </ul>
+            <div className="assistant-diagnostic-grid">
+              <div className="assistant-diagnostic-cell">
+                <span>Graph</span>
+                <strong>{agent ? 'LangGraph.js' : '等待运行'}</strong>
+                <em>{formatAgentStatus(agent?.status)}</em>
+              </div>
+              <div className="assistant-diagnostic-cell">
+                <span>Planner</span>
+                <strong>{formatPlanner(agent?.planner)}</strong>
+                <em>{answerMode}</em>
+              </div>
+              <div className="assistant-diagnostic-cell">
+                <span>Evidence</span>
+                <strong>{lastAnswerMeta?.citationCount ?? latestCitations.length}</strong>
+                <em>{formatRetrievalSufficiency(retrieval?.sufficiency)}</em>
+              </div>
+              <div className="assistant-diagnostic-cell">
+                <span>Latency</span>
+                <strong>{agent ? `${agent.durationMs} ms` : '等待'}</strong>
+                <em>{lastAnswerMeta?.model ?? '等待回答'}</em>
+              </div>
+            </div>
             {agent && agent.steps.length > 0 && (
               <div className="assistant-panel__facts" aria-label="LangGraph 节点">
                 {agent.steps.map((step) => (
@@ -910,7 +983,7 @@ export function AssistantPage() {
               <div className="assistant-panel__facts" aria-label="检索诊断">
                 <span>{retrieval.source}</span>
                 <span>{retrieval.store}</span>
-                <span>{retrieval.sufficiency}</span>
+                <span>{formatRetrievalSufficiency(retrieval.sufficiency)}</span>
                 <span>{retrieval.candidateCount} candidates</span>
               </div>
             )}
@@ -919,11 +992,20 @@ export function AssistantPage() {
           <section className="assistant-panel">
             <p className="assistant-panel__eyebrow">TOOLS</p>
             <h3>工具轨迹</h3>
-            <ul>
+            <ul className="assistant-tool-list">
               {tools.map((tool) => (
-                <li key={tool.id}>
-                  {tool.label} · {formatPermission(tool.permission)} · {formatToolStatus(tool.status)}
-                  {tool.itemCount !== undefined ? ` · ${tool.itemCount}` : ''}
+                <li key={tool.id} className={`assistant-tool-trace is-${tool.status}`}>
+                  <div className="assistant-tool-trace__header">
+                    <strong>{tool.label}</strong>
+                    <span>{formatPermission(tool.permission)} · {formatToolStatus(tool.status)}</span>
+                  </div>
+                  <p>{tool.summary}</p>
+                  <div className="assistant-panel__facts">
+                    <span>{tool.id}</span>
+                    {tool.itemCount !== undefined && <span>{tool.itemCount} items</span>}
+                    {tool.citationCount !== undefined && <span>{tool.citationCount} citations</span>}
+                    {tool.errorClass && <span>{tool.errorClass}</span>}
+                  </div>
                   {getToolTraceHint(tool) && <p className="assistant-tool-hint">{getToolTraceHint(tool)}</p>}
                   {tool.artifacts?.map((artifact) => (
                     <Link key={`${tool.id}-${artifact.id}`} to={artifact.href} className="assistant-tool-artifact">

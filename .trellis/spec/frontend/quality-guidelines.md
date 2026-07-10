@@ -193,6 +193,17 @@ Use Semi Design v19 components and `@douyinfe/semi-icons` first. Do not add othe
 
 Prefer real project screenshots and runtime screenshots. Missing assets should use stable fallback assets or be omitted; do not fabricate business data or visual evidence.
 
+### Internal Assistant Workspace First Load
+
+`/assistant` should open as a productized Agent workspace, not as a long explanatory chat transcript. Keep the default assistant opening concise, do not render default citation cards before the user asks a question, and keep the first screen focused on run mode, model channel, next action, conversation, and the Agent inspector.
+
+`scripts/check-ui.mjs` must keep assertions for this contract:
+
+- the opening assistant message stays short;
+- default first load has no citation cards;
+- the run-status strip is visible;
+- the Agent, tool, and guardrail inspector panels are visible on desktop and mobile.
+
 ## Scenario: Default-Off Analytics Adapter
 
 ### 1. Scope / Trigger

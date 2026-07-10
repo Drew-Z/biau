@@ -355,6 +355,33 @@ for (const viewport of viewports) {
       }
     }
 
+    if (route.path === '/assistant') {
+      const openingText = await page.locator('.assistant-bubble.is-assistant p').first().innerText().catch(() => '')
+      const openingCitationCards = await page
+        .locator('.assistant-bubble.is-assistant')
+        .first()
+        .locator('.assistant-citation-card')
+        .count()
+      const runCards = await page.locator('.assistant-run-card').count()
+      const inspectorPanels = await page.locator('.assistant-inspector .assistant-panel').count()
+      const agentPanelVisible = await page.getByRole('heading', { name: 'LangGraph 运行状态' }).isVisible().catch(() => false)
+      const toolPanelVisible = await page.getByRole('heading', { name: '工具轨迹' }).isVisible().catch(() => false)
+      const guardrailPanelVisible = await page.getByRole('heading', { name: '安全检查' }).isVisible().catch(() => false)
+
+      if (openingText.length > 52) {
+        failures.push(`${viewport.name} ${route.path}: opening message should stay concise, got ${openingText.length} chars`)
+      }
+      if (openingCitationCards !== 0) {
+        failures.push(`${viewport.name} ${route.path}: opening message should not render default citation cards`)
+      }
+      if (runCards < 3) {
+        failures.push(`${viewport.name} ${route.path}: expected assistant run status strip with at least 3 cards`)
+      }
+      if (inspectorPanels < 5 || !agentPanelVisible || !toolPanelVisible || !guardrailPanelVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected productized Agent inspector panels`)
+      }
+    }
+
     if (route.path === '/studio') {
       const reviewQueueSummary = await page.getByLabel('Studio 待审核草稿摘要').isVisible().catch(() => false)
       const nextReviewLabel = await page.getByText('下一篇待审核').first().isVisible().catch(() => false)
