@@ -93,8 +93,8 @@ Repository slices can be implemented concurrently only in separate worktrees/ses
 
 ## Phase 4: Main Site Sync
 
-- [ ] If project public facts changed, update BIAU Port project detail/status data.
-- [ ] Run:
+- [x] If project public facts changed, update BIAU Port project detail/status data.
+- [x] Run:
 
 ```powershell
 npm.cmd run assistant:index
@@ -105,17 +105,32 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
+Validation on 2026-07-10:
+
+- [x] `npm.cmd run assistant:index` -> passed; regenerated 27 public knowledge items and 27 V2 docs / 54 chunks / 129 entities / 180 relations with no working-tree drift.
+- [x] `npm.cmd run project-details:check` -> passed for 12 projects.
+- [x] `npm.cmd run public-links:check` -> passed for 34 public links.
+- [x] `npm.cmd run docs:manual-gates-check` -> passed.
+- [x] `npm.cmd run docs:deployment-check` -> passed.
+- [x] `npm.cmd run lint` -> passed.
+- [x] `npm.cmd run build` -> passed.
+
 ## Phase 5: Final Review
 
-- [ ] Produce a summary table:
+- [x] Produce a summary table:
   - repository
   - README status
   - quick-start status
   - deployment status
   - tests run
   - manual gates
-- [ ] Ensure no README contains secrets or private endpoints.
-- [ ] Ensure no project falsely claims one-click deploy.
+- [x] Ensure no README contains secrets or private endpoints.
+- [x] Ensure no project falsely claims one-click deploy.
+
+Final review output:
+
+- `docs/open-source-repository-audit.md` now includes `Final Review Snapshot`, a cross-repository summary table covering README status, quick-start status, deployment status, recorded checks, and remaining manual gates.
+- Remaining items are account-side, credential-side, production-validation, or release-signing gates rather than README structure blockers.
 
 ## Validation Notes
 

@@ -102,12 +102,12 @@ README and docs must not include:
 
 ## Acceptance Criteria
 
-- [ ] A reusable README template/checklist exists in the main repo docs.
-- [ ] Each target repository has an inspected status note: current README quality, runnable commands, missing env/deploy pieces, public-safe assets, and manual gates.
-- [ ] At least the first priority repository receives a polished README and verified quick-start/deployment instructions.
-- [ ] Any "one-command" or "Docker" claim is backed by an actual command/config and a local verification result.
-- [ ] Manual gates are listed for items that need user action, such as public repo settings, cloud deploy buttons, release signing, official APK upload, demo credentials, or analytics/tracing provider setup.
-- [ ] Main BIAU Port project/status/blog data is updated only when public facts changed and after relevant checks pass.
+- [x] A reusable README template/checklist exists in the main repo docs.
+- [x] Each target repository has an inspected status note: current README quality, runnable commands, missing env/deploy pieces, public-safe assets, and manual gates.
+- [x] At least the first priority repository receives a polished README and verified quick-start/deployment instructions.
+- [x] Any "one-command" or "Docker" claim is backed by an actual command/config and a local verification result.
+- [x] Manual gates are listed for items that need user action, such as public repo settings, cloud deploy buttons, release signing, official APK upload, demo credentials, or analytics/tracing provider setup.
+- [x] Main BIAU Port project/status/blog data is updated only when public facts changed and after relevant checks pass.
 
 ## References
 
