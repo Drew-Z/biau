@@ -73,9 +73,9 @@ Run conditional checks if the slice touches route boundaries, backend runtime, R
 Plan and execute later slices one at a time:
 
 - [ ] Agent run replay / richer safe history meta.
-- [ ] Internal knowledge source presets and review readiness.
+- [x] Internal knowledge source presets and review readiness.
 - [x] Local eval cases for status/project/Studio draft workflows.
-- [ ] Admin operations polish for RAG and member-channel confidence.
+- [x] Admin operations polish for RAG and member-channel confidence.
 - [ ] Main-site public data sync when product facts change.
 - [ ] Manual gate ledger updates for cloud/model/APK/production-only work.
 
@@ -97,6 +97,34 @@ Validation:
 
 ```powershell
 npm.cmd run assistant:agent-eval # passed, 4 cases
+```
+
+### Phase 4 Slice: Admin Knowledge Readiness
+
+Improved the internal assistant admin control surface:
+
+- Replaced free-form internal knowledge `sourceType` input with curated presets:
+  - manual;
+  - project-note;
+  - runbook;
+  - status-note;
+  - ai-daily;
+  - resource;
+  - incident-note.
+- Added a visible internal knowledge sync readiness path:
+  - review eligible content;
+  - handle unsynced/stale documents;
+  - execute backend-proxied sync;
+  - verify internal RAG collection readiness.
+- Updated `/assistant/admin` UI checks to click the knowledge tab and assert the readiness path plus source-type presets.
+
+Validation:
+
+```powershell
+npm.cmd run assistant:admin-check # passed
+npm.cmd run lint # passed
+npm.cmd run build # passed
+npm.cmd run check:ui # passed, 14 routes x 2 viewports at http://127.0.0.1:5174
 ```
 
 ## Manual Gates

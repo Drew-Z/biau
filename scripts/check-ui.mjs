@@ -353,6 +353,26 @@ for (const viewport of viewports) {
       if (!tokenBoundaryVisible) {
         failures.push(`${viewport.name} ${route.path}: expected local-only admin token boundary text`)
       }
+
+      await page.getByRole('tab', { name: '知识' }).click()
+      const knowledgeReadinessVisible = await page.getByLabel('内部知识同步路径').isVisible().catch(() => false)
+      const sourceTypeSelectVisible = await page
+        .locator('#assistant-admin-panel-knowledge label')
+        .filter({ hasText: '来源类型' })
+        .locator('select')
+        .isVisible()
+        .catch(() => false)
+      const runbookSourceVisible = await page
+        .locator('#assistant-admin-panel-knowledge .assistant-source-type-help')
+        .getByText('运行手册')
+        .isVisible()
+        .catch(() => false)
+      if (!knowledgeReadinessVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected internal knowledge readiness path`)
+      }
+      if (!sourceTypeSelectVisible || !runbookSourceVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected source type presets for internal knowledge`)
+      }
     }
 
     if (route.path === '/assistant') {

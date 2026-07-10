@@ -204,6 +204,8 @@ Prefer real project screenshots and runtime screenshots. Missing assets should u
 - the run-status strip is visible;
 - the Agent, tool, and guardrail inspector panels are visible on desktop and mobile.
 
+For `/assistant/admin`, the knowledge tab must keep a visible internal knowledge sync path and curated `sourceType` presets. Editors should not have to guess whether a document is a runbook, project note, status note, resource, AI Daily source, or incident note from a blank text input. `check:ui` should click the knowledge tab and assert the readiness path and source-type preset UI without requiring a live admin token.
+
 ## Scenario: Default-Off Analytics Adapter
 
 ### 1. Scope / Trigger

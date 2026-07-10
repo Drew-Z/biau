@@ -108,6 +108,16 @@ const defaultKnowledgeForm: KnowledgeFormState = {
   safetyNotes: '',
 }
 
+const knowledgeSourceTypeOptions = [
+  { value: 'manual', label: '手动整理', description: '适合人工沉淀的内部说明、决策和操作边界。' },
+  { value: 'project-note', label: '项目说明', description: '适合项目架构、演示能力、部署边界和后续路线。' },
+  { value: 'runbook', label: '运行手册', description: '适合 RAG 同步、部署检查、故障恢复和例行操作。' },
+  { value: 'status-note', label: '状态记录', description: '适合可靠性观察、synthetic 结果和 manual gate 处理。' },
+  { value: 'ai-daily', label: 'AI 日报素材', description: '适合日报来源、摘要规则和内容审核线索。' },
+  { value: 'resource', label: '资源分享', description: '适合工具、资料、仓库和使用边界记录。' },
+  { value: 'incident-note', label: '问题复盘', description: '适合错误原因、修复动作和防复发记录。' },
+] as const
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
@@ -256,6 +266,10 @@ function formatKnowledgeDocumentSyncState(document: AssistantInternalKnowledgeDo
   return '已同步'
 }
 
+function formatKnowledgeSourceType(value: string) {
+  return knowledgeSourceTypeOptions.find((option) => option.value === value)?.label ?? value
+}
+
 function formatRagCollection(collection?: AssistantRagCollectionHealth) {
   if (!collection) return '未返回'
   return `${collection.vectorReady ? 'ready' : 'empty'} · ${collection.pointCount} chunks`
@@ -331,6 +345,32 @@ export function AssistantAdminPage() {
   const syncDiagnosticEntries = Object.entries(lastKnowledgeSyncRun?.diagnostic ?? {})
   const ragDiagnosticEntries = Object.entries(ragAdminStatus?.diagnostic ?? {})
   const publicRagSyncDiagnosticEntries = Object.entries(lastPublicRagSync?.diagnostic ?? {})
+  const knowledgeReadinessSteps = [
+    {
+      id: 'review',
+      title: '审核可同步内容',
+      value: knowledgeOps.eligible,
+      detail: 'REVIEWED / ACTIVE 才会进入 internal collection 同步计划。',
+    },
+    {
+      id: 'queue',
+      title: '处理待同步',
+      value: knowledgeOps.unsyncedEligible + knowledgeOps.staleEligible,
+      detail: '首次同步和内容变更都需要重新触发内部知识库同步。',
+    },
+    {
+      id: 'sync',
+      title: '执行同步',
+      value: lastKnowledgeSyncRun?.status ?? '未执行',
+      detail: '同步只走后端代理，页面只显示低敏诊断和计数。',
+    },
+    {
+      id: 'verify',
+      title: '验证 RAG 就绪',
+      value: ragAdminStatus?.health?.collections?.internal?.vectorReady ? 'ready' : '待确认',
+      detail: '刷新 RAG 状态，确认 internal collection 有向量数据。',
+    },
+  ]
 
   const resetAdminWorkspaceState = () => {
     setSummary(emptySummary)
@@ -1325,6 +1365,16 @@ export function AssistantAdminPage() {
           <article className="assistant-admin-card">
             <h2>内部知识源</h2>
             <p>维护经过审核的内部知识文档；只有已审核/已启用文档会进入同步计划。</p>
+            <div className="assistant-readiness-grid" aria-label="内部知识同步路径">
+              {knowledgeReadinessSteps.map((step, index) => (
+                <div key={step.id} className="assistant-readiness-step">
+                  <span>{index + 1}</span>
+                  <strong>{step.title}</strong>
+                  <em>{step.value}</em>
+                  <p>{step.detail}</p>
+                </div>
+              ))}
+            </div>
 
             <form className="assistant-admin-form" onSubmit={saveKnowledgeDocument}>
               <label className="assistant-field">
@@ -1380,14 +1430,28 @@ export function AssistantAdminPage() {
                 </label>
                 <label className="assistant-field">
                   <span>来源类型</span>
-                  <input
-                    type="text"
+                  <select
                     value={knowledgeForm.sourceType}
                     onChange={(event) => updateKnowledgeField('sourceType', event.target.value)}
-                    placeholder="manual / project-note"
-                    maxLength={40}
-                  />
+                  >
+                    {!knowledgeSourceTypeOptions.some((option) => option.value === knowledgeForm.sourceType) && (
+                      <option value={knowledgeForm.sourceType}>{knowledgeForm.sourceType}</option>
+                    )}
+                    {knowledgeSourceTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label} · {option.value}
+                      </option>
+                    ))}
+                  </select>
                 </label>
+              </div>
+              <div className="assistant-source-type-help" aria-label="来源类型说明">
+                {knowledgeSourceTypeOptions.map((option) => (
+                  <span key={option.value}>
+                    <strong>{option.label}</strong>
+                    {option.description}
+                  </span>
+                ))}
               </div>
               <label className="assistant-field">
                 <span>标签</span>
@@ -1481,7 +1545,7 @@ export function AssistantAdminPage() {
                   <div>
                     <strong>{document.title}</strong>
                     <span>
-                      {knowledgeStatusLabels[document.status]} · {document.sourceType} · {document.tags.join(' / ') || '无标签'}
+                      {knowledgeStatusLabels[document.status]} · {formatKnowledgeSourceType(document.sourceType)} · {document.tags.join(' / ') || '无标签'}
                     </span>
                     <span>
                       更新：{formatAdminDate(document.updatedAt)} · 上次同步：{formatAdminDate(document.lastSyncedAt)} · {formatKnowledgeDocumentSyncState(document)}
