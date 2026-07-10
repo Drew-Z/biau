@@ -20,7 +20,7 @@ export function sanitizeToolTrace(trace: AgentToolTrace): AgentToolTrace {
     permission: trace.permission,
     status: trace.status,
     durationMs: Math.max(0, Math.trunc(trace.durationMs)),
-    summary: compactText(trace.summary, 180),
+    summary: sanitizeTraceSummary(trace.summary),
     citationCount: trace.citationCount,
     itemCount: trace.itemCount,
     errorClass: trace.errorClass,
@@ -120,6 +120,11 @@ export function containsSensitiveText(value: string) {
     /ASSISTANT_MODEL_API_KEY|ASSISTANT_RAG_API_KEY|RAG_SYNC_TOKEN|DATABASE_URL/u,
   ]
   return patterns.some((pattern) => pattern.test(value))
+}
+
+function sanitizeTraceSummary(value: string) {
+  if (containsSensitiveText(value)) return '工具摘要包含敏感形态，已隐藏。'
+  return compactText(value, 180)
 }
 
 function summarizeCitationSufficiency(citations: Citation[], grounding: AssistantGroundingMode) {

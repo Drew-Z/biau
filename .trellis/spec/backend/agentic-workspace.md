@@ -45,6 +45,7 @@
   - `grounding`
   - `fallbackReason`
 - Tool traces may contain ids, labels, permission class, status, duration, counts, short summaries, and coarse error classes only.
+- Tool trace summaries that contain secret-like shapes must be replaced with a safe redaction message instead of being truncated and persisted.
 - Tool traces may include safe artifacts such as `{ kind: "studio-draft", id, slug, title, column, status: "review-needed", visibility: "hidden", reviewRequired: true, href: "/studio?draft=<id>" }`. Legacy persisted artifacts may keep `href: "/studio"`, but new created-draft artifacts should deep-link by draft id. Artifact links must stay same-site Studio routes and must not include draft body text, Prisma payloads, review checklist internals, admin tokens, database roles, API URLs, or bearer tokens.
 - Tool traces and metadata must not contain API keys, base URLs, database URLs, sync tokens, bearer tokens, invite codes, raw prompts, raw provider responses, raw retrieved document bodies, stack traces, or private dashboards.
 - Model-driven planning may be used for real internal chat when a member model channel is configured. Smoke/eval tests must use `plannerMode: "mock"` or local deterministic paths and must not probe real providers.
@@ -75,6 +76,7 @@
 ### 6. Tests Required
 
 - `npm.cmd run server:build` after changing Agent runtime modules or `ChatResponse.meta`.
+- `npm.cmd run assistant:agent-contract` after changing LangGraph steps, Agent tool permissions, guardrails, Studio draft artifacts, or trace sanitization.
 - `npm.cmd run server:smoke` must assert mock planner tool selection and protected internal chat behavior.
 - `npm.cmd run assistant:service-modes-smoke` must prove public/rag/studio modes do not expose internal Agent routes.
 - `npm.cmd run assistant:rag-smoke` after changing `rag.retrieve` or scoped retrieval behavior.
@@ -192,6 +194,7 @@ runInternalAgent(input: InternalAgentRunInput): Promise<InternalAgentRunResult>
 ### 6. Tests Required
 
 - Run `npm.cmd run server:build` after changing graph modules or Agent types.
+- Run `npm.cmd run assistant:agent-contract` after changing graph node order, `runInternalAgent()`, tool trace fields, guardrails, or Studio draft artifacts.
 - Run `npm.cmd run server:smoke` to prove `runInternalAgent()` and protected route behavior still work.
 - Run `npm.cmd run assistant:service-modes-smoke` after changing service route boundaries or imports.
 - Run `npm.cmd run assistant:meta-check` after changing `AgentRunMeta.steps`, tool trace fields, artifacts, or frontend normalizers.

@@ -221,6 +221,14 @@ async function selfCheckNode(state: AgentGraphState) {
       answer,
     })
   }
+  if (state.inputBlocked) {
+    guardrails = {
+      ...guardrails,
+      status: 'blocked',
+      citationSufficiency: 'none',
+      issues: [...new Set(['input-policy-blocked', ...guardrails.issues])].slice(0, 8),
+    }
+  }
 
   return {
     answer,
