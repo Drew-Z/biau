@@ -87,7 +87,7 @@ function App() {
         <span className="harbor-environment__mist" />
       </div>
       <div className="muxing-flow-grain" aria-hidden="true" />
-      {pathname === '/' && <HarborIntro />}
+      {pathname === '/' && <HarborIntro harborScene={harborScene} />}
       <SeoManager />
 
       <Navigation

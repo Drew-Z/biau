@@ -190,7 +190,7 @@ knowledge with `npm.cmd run assistant:index` and let `npm.cmd run verify` rerun
 
 ## UI Rules
 
-Use Semi Design v19 components and `@douyinfe/semi-icons` first. Do not add other UI frameworks or CSS-in-JS stacks. When Semi APIs are uncertain, check current official docs before relying on memory.
+Use the existing class-based design system and `lucide-react`. Do not add other UI frameworks or CSS-in-JS stacks unless the repository has a concrete product requirement that the current system cannot meet.
 
 Prefer real project screenshots and runtime screenshots. Missing assets should use stable fallback assets or be omitted; do not fabricate business data or visual evidence.
 
@@ -248,7 +248,7 @@ layout contract, not a screenshot-only check.
 ### 2. Signatures
 
 - Build budget command: `npm.cmd run performance:check`.
-- Intro completion key: `sessionStorage['biau-port-harbor-intro:v2']`.
+- Intro completion key: `sessionStorage['biau-port-harbor-intro:v3']`.
 - Cloudflare Pages cache contract: `public/_headers` owns `/assets/*` immutable
   cache behavior.
 
@@ -257,9 +257,9 @@ layout contract, not a screenshot-only check.
 - `dist/index.html` must not contain render-blocking third-party stylesheets.
   Use the system font stacks in `src/styles/theme.css`; a future custom font
   must be self-hosted and explicitly budgeted.
-- Do not import the full Semi UI stylesheet when the public shell only uses
-  `@douyinfe/semi-icons`. Reintroducing component CSS requires proof that the
-  used components need it and that the build budget remains green.
+- Keep the public shell free of component-framework stylesheets. UI controls
+  use repository CSS tokens and tree-shaken Lucide icons; adding a framework
+  requires proof that the product need and build budget justify it.
 - The built entry CSS must stay at or below `240000` raw bytes and the built
   entry JavaScript at or below `430000` raw bytes. These are regression budgets,
   not user-network transfer estimates.
@@ -267,7 +267,9 @@ layout contract, not a screenshot-only check.
   chunks unless direct-route UX proves that a specific route must be eager.
 - Hashed `/assets/*` files use `Cache-Control: public, max-age=31536000,
   immutable`; HTML remains revalidatable so new hashes can deploy safely.
-- The harbor intro writes its seen marker only after `harborIntroVeil`
+- The harbor intro uses the measured navigation Logo box as its final geometry,
+  clears the center wordmark before handoff, and writes its seen marker only
+  after `harborIntroVeil`
   completes. A slow or interrupted load must not permanently suppress the next
   attempt. `prefers-reduced-motion: reduce` still skips the animation.
 
@@ -310,7 +312,7 @@ layout contract, not a screenshot-only check.
 #### Wrong
 
 ```tsx
-import '@douyinfe/semi-ui-19/dist/css/semi.min.css'
+import 'large-ui-framework/dist/full.css'
 
 useLayoutEffect(() => {
   sessionStorage.setItem(INTRO_STORAGE_KEY, '1')
@@ -453,7 +455,7 @@ before navigating in Playwright:
 
 ```js
 await context.addInitScript(() => {
-  window.sessionStorage.setItem('biau-port-harbor-intro:v2', '1')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
 ```
 

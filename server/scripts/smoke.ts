@@ -399,7 +399,7 @@ try {
   const techChat = await fetch(`${base}/chat/public`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: '哪些项目用了 React / Vite / Semi Design？' }),
+    body: JSON.stringify({ message: '哪些项目用了 React / Vite / TypeScript？' }),
   })
   if (!techChat.ok) throw new Error(`tech public chat failed: ${techChat.status}`)
   const techPayload = (await techChat.json()) as {
@@ -407,7 +407,7 @@ try {
     citations?: unknown[]
   }
   if (!techPayload.answer || !Array.isArray(techPayload.citations) || !hasCitation(techPayload.citations, 'project:blog-semi')) {
-    throw new Error('public chat should cite BIAU Port for React / Vite / Semi Design query')
+    throw new Error('public chat should cite BIAU Port for React / Vite / TypeScript query')
   }
 
   const privateCredentialChat = await fetch(`${base}/chat/public`, {

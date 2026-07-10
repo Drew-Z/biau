@@ -98,8 +98,8 @@ const evalCases: EvalCase[] = [
     description: 'Pet APK gate 问题应引用 Pet 项目。',
   },
   {
-    id: 'tech-stack-react-vite-semi',
-    question: '哪些项目用了 React / Vite / Semi Design？',
+    id: 'tech-stack-react-vite-typescript',
+    question: '哪些项目用了 React / Vite / TypeScript？',
     expectedIntent: 'technology-architecture',
     requiredCitationIds: ['project:blog-semi'],
     minCitationCount: 2,

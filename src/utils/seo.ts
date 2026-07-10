@@ -5,7 +5,7 @@ export const SITE_URL = 'https://biau.playlab.eu.cc'
 export const SITE_NAME = 'BIAU Port / 泊岸'
 export const DEFAULT_TITLE = 'BIAU Port 泊岸 | AI 应用、项目展示与知识库'
 export const DEFAULT_DESCRIPTION =
-  'BIAU Port 泊岸用 React、Vite 与 Semi Design 组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。'
+  'BIAU Port 泊岸用 React、Vite 与自定义设计系统组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。'
 export const DEFAULT_IMAGE = `${SITE_URL}/images/projects/showcase/blog-semi-home-desktop.png`
 
 export interface SeoMeta {

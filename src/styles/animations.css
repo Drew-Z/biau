@@ -51,7 +51,16 @@ html.harbor-intro-active body {
 .harbor-intro {
   --harbor-logo-x: clamp(88px, 7.6vw, 118px);
   --harbor-logo-y: 72px;
-  --harbor-logo-target-scale: 0.32;
+  --harbor-logo-width: 48px;
+  --harbor-logo-height: 48px;
+  --harbor-logo-stage-scale: 3.2;
+  --harbor-logo-stage-start-scale: 2.3;
+  --harbor-logo-stage-soft-scale: 3.07;
+  --harbor-logo-background: linear-gradient(145deg, #1b2141 0%, #090d1f 100%);
+  --harbor-logo-border: 1px solid rgba(242, 162, 58, 0.24);
+  --harbor-logo-radius: 16px;
+  --harbor-logo-shadow: 0 12px 28px rgba(0, 0, 0, 0.38);
+  --harbor-logo-mark-filter: brightness(1.08) saturate(1.08) drop-shadow(0 0 8px rgba(214, 168, 90, 0.24));
   position: fixed;
   inset: 0;
   z-index: 2147482000;
@@ -199,8 +208,8 @@ html.harbor-intro-active:not(.harbor-intro-settling) .nav-logo {
   left: 0;
   top: 0;
   z-index: 4;
-  width: clamp(82px, 8.8vw, 122px);
-  aspect-ratio: 1;
+  width: var(--harbor-logo-width);
+  height: var(--harbor-logo-height);
   filter:
     drop-shadow(0 14px 22px rgba(0, 0, 0, 0.34))
     drop-shadow(0 0 16px rgba(255, 211, 110, 0.18));
@@ -218,6 +227,18 @@ html.harbor-intro-active:not(.harbor-intro-settling) .nav-logo {
     brightness(1.06)
     contrast(1.04);
   animation: harborBoatBob 0.72s ease-in-out 0s 2;
+}
+
+.harbor-intro__logo-shell {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: var(--harbor-logo-border);
+  border-radius: var(--harbor-logo-radius);
+  background: var(--harbor-logo-background);
+  box-shadow: var(--harbor-logo-shadow);
+  overflow: hidden;
 }
 
 .harbor-intro__b-spine,
@@ -502,20 +523,16 @@ html.harbor-intro-active:not(.harbor-intro-settling) .nav-logo {
 
 /* BIAU Port logo-based intro, layered after the legacy harbor scene rules. */
 .harbor-intro__vessel {
-  width: clamp(132px, 12vw, 174px);
-  filter:
-    drop-shadow(0 18px 30px rgba(0, 0, 0, 0.34))
-    drop-shadow(0 0 22px rgba(242, 162, 58, 0.2));
+  width: var(--harbor-logo-width);
+  height: var(--harbor-logo-height);
+  filter: none;
   transform-origin: 50% 50%;
   animation: harborVesselDock 2.08s cubic-bezier(0.2, 0.82, 0.18, 1) forwards;
 }
 
 .harbor-intro__boat {
   overflow: visible;
-  filter:
-    drop-shadow(0 1px 3px rgba(5, 11, 24, 0.28))
-    brightness(1.08)
-    contrast(1.05);
+  filter: var(--harbor-logo-mark-filter);
   animation: none;
 }
 
@@ -584,7 +601,7 @@ html.harbor-intro-active:not(.harbor-intro-settling) .nav-logo {
   box-shadow: none;
   opacity: 0;
   transform: translate(-50%, -50%) translateY(12px);
-  animation: harborMarkLand 0.72s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) 0.98s forwards;
+  animation: harborMarkLand 2.08s var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 }
 
 .harbor-intro__mark::before,
@@ -680,52 +697,50 @@ html.harbor-intro-active:not(.harbor-intro-settling) .nav-logo {
 @keyframes harborVesselDock {
   0% {
     opacity: 0;
-    transform: translate3d(50vw, 50vh, 0) translate(-50%, -50%) scale(0.72);
+    transform: translate3d(50vw, 50vh, 0) translate(-50%, -50%) scale(var(--harbor-logo-stage-start-scale));
   }
   10% {
     opacity: 1;
   }
   70% {
     opacity: 1;
-    transform: translate3d(50vw, 50vh, 0) translate(-50%, -50%) scale(1);
+    transform: translate3d(50vw, 50vh, 0) translate(-50%, -50%) scale(var(--harbor-logo-stage-scale));
   }
   84% {
     opacity: 1;
-    transform: translate3d(50vw, 50vh, 0) translate(-50%, -50%) scale(0.96);
+    transform: translate3d(50vw, 50vh, 0) translate(-50%, -50%) scale(var(--harbor-logo-stage-soft-scale));
   }
   96% {
     opacity: 1;
-    transform: translate3d(calc(var(--harbor-logo-x) + 4px), calc(var(--harbor-logo-y) + 4px), 0) translate(-50%, -50%) scale(calc(var(--harbor-logo-target-scale) * 1.08));
+    transform: translate3d(calc(var(--harbor-logo-x) + 4px), calc(var(--harbor-logo-y) + 4px), 0) translate(-50%, -50%) scale(1.08);
   }
   100% {
     opacity: 1;
-    transform: translate3d(var(--harbor-logo-x), var(--harbor-logo-y), 0) translate(-50%, -50%) scale(var(--harbor-logo-target-scale));
+    transform: translate3d(var(--harbor-logo-x), var(--harbor-logo-y), 0) translate(-50%, -50%) scale(1);
   }
 }
 
 @keyframes harborMarkLand {
-  0% {
+  0%,
+  22% {
     opacity: 0;
     filter: blur(10px);
     transform: translate(-50%, -50%) translateY(18px);
   }
-  60% {
+  42%,
+  68% {
     opacity: 1;
     filter: blur(0);
     transform: translate(-50%, -50%) translateY(0);
   }
   100% {
-    opacity: 1;
-    filter: blur(0);
-    transform: translate(-50%, -50%) translateY(0);
+    opacity: 0;
+    filter: blur(6px);
+    transform: translate(-50%, -50%) translateY(-10px);
   }
 }
 
 @media (max-width: 768px) {
-  .harbor-intro__vessel {
-    width: clamp(112px, 36vw, 148px);
-  }
-
   .harbor-intro__mark {
     top: calc(50% + 98px);
   }

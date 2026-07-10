@@ -7,7 +7,7 @@ AI applications, project case studies, content studio, and agentic assistant wor
 ![React](https://img.shields.io/badge/React-19-61dafb)
 ![Vite](https://img.shields.io/badge/Vite-8-646cff)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6-3178c6)
-![Semi Design](https://img.shields.io/badge/Semi%20Design-2.100-1f6feb)
+![Lucide](https://img.shields.io/badge/Lucide-icons-f5a623)
 ![LangGraph](https://img.shields.io/badge/LangGraph-agentic%20workspace-1c7ed6)
 ![Prisma](https://img.shields.io/badge/Prisma-7-2d3748)
 
@@ -71,7 +71,7 @@ Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/s
 
 ## Features
 
-- React 19, Vite, TypeScript, React Router, and Semi Design UI.
+- React 19, Vite, TypeScript, React Router, custom token-based CSS, and Lucide icons.
 - Public project catalog with filters, detail pages, screenshots, workflow visuals, architecture notes, quality evidence, limitations, and roadmap sections.
 - Public assistant knowledge generation with docs, chunks, entities, relations, deterministic local eval, and public-only citation boundaries.
 - Cloudflare Pages Functions for same-domain public assistant endpoints.
@@ -89,7 +89,7 @@ Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/s
 
 ```mermaid
 flowchart TB
-  Browser["Browser\nReact + Semi Design"] --> Pages["Cloudflare Pages\nstatic site + Functions"]
+  Browser["Browser\nReact + custom CSS"] --> Pages["Cloudflare Pages\nstatic site + Functions"]
   Pages --> PublicAPI["Public assistant API\nASSISTANT_SERVICE_MODE=public"]
   Browser --> InternalAPI["Internal assistant API\nASSISTANT_SERVICE_MODE=internal"]
   Browser --> StudioAPI["Content Studio API\nASSISTANT_SERVICE_MODE=studio"]

@@ -189,19 +189,19 @@
     },
     {
       "id": "project:blog-semi",
-      "title": "React + Semi 博客系统｜当前主站",
-      "summary": "当前主站，用 React、Semi Design 和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript 和 Semi Design 构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含一个 Express/TypeScript 助手后端，配合 Prisma/PostgreSQL 支持 invite、member、chat session、message、usage log、内部知识文档和同步运行记录；前端未配置 API 时会使用公开知识 fallback。 内部助手已经产品化为 LangGraph Agentic Workspace：`runInternalAgent()` 进入 compiled graph，工具注册表覆盖 scoped RAG、状态查询、项目查询、知识搜索、Studio 草稿、会话记忆和 direct answer，普通成员只允许 read 与 draft-write。 内部助手前端已经具备运行状态条、LangGraph inspector、工具卡片、Studio artifact 链接、消息级 Agent trace replay 和降级/guardrail 下一步提示；管理台具备成员模型渠道、内部知识 sourceType 预设、RAG readiness 路径和低敏 usage 摘要。 公开助手方向已经从本地知识 fallback 推进到 Agentic Hybrid RAG groundwork：server 侧包含 RAG Orchestrator、embedding client、PostgreSQL/pgvector store、Qdrant store 和 sync/smoke 脚本。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、assistant:agent-contract、assistant:agent-eval、assistant:meta-check、assistant:admin-check、sitemap:generate、blog:check、lint、build、check:ui 和 verify，其中 verify 会串起助手知识、Prisma、server build/smoke、前端构建、博客检查、preview 和 UI 检查。 当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；内部助手真实生产质量仍需要用户维护 Render 环境变量、数据库 migration、内部 corpus 脱敏标准和真实业务任务验证。",
+      "title": "BIAU Port 内容与助手平台｜当前主站",
+      "summary": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含一个 Express/TypeScript 助手后端，配合 Prisma/PostgreSQL 支持 invite、member、chat session、message、usage log、内部知识文档和同步运行记录；前端未配置 API 时会使用公开知识 fallback。 内部助手已经产品化为 LangGraph Agentic Workspace：`runInternalAgent()` 进入 compiled graph，工具注册表覆盖 scoped RAG、状态查询、项目查询、知识搜索、Studio 草稿、会话记忆和 direct answer，普通成员只允许 read 与 draft-write。 内部助手前端已经具备运行状态条、LangGraph inspector、工具卡片、Studio artifact 链接、消息级 Agent trace replay 和降级/guardrail 下一步提示；管理台具备成员模型渠道、内部知识 sourceType 预设、RAG readiness 路径和低敏 usage 摘要。 公开助手方向已经从本地知识 fallback 推进到 Agentic Hybrid RAG groundwork：server 侧包含 RAG Orchestrator、embedding client、PostgreSQL/pgvector store、Qdrant store 和 sync/smoke 脚本。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、assistant:agent-contract、assistant:agent-eval、assistant:meta-check、assistant:admin-check、sitemap:generate、blog:check、lint、build、check:ui 和 verify，其中 verify 会串起助手知识、Prisma、server build/smoke、前端构建、博客检查、preview 和 UI 检查。 当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；内部助手真实生产质量仍需要用户维护 Render 环境变量、数据库 migration、内部 corpus 脱敏标准和真实业务任务验证。",
       "href": "/projects/blog-semi",
       "tags": [
         "platform",
         "博客系统",
         "ongoing",
         "建设中",
-        "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+        "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
         "React 19",
         "Vite",
         "TypeScript",
-        "Semi Design",
+        "Lucide",
         "Express",
         "Prisma",
         "PostgreSQL",
@@ -1307,7 +1307,7 @@
     {
       "id": "chunk:project:blog-semi:1",
       "documentId": "project:blog-semi",
-      "text": "当前主站，用 React、Semi Design 和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript 和 Semi Design 构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。",
+      "text": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。",
       "section": "summary",
       "metadata": {
         "sourceType": "project",
@@ -1317,11 +1317,11 @@
           "博客系统",
           "ongoing",
           "建设中",
-          "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
           "React 19",
           "Vite",
           "TypeScript",
-          "Semi Design",
+          "Lucide",
           "Express",
           "Prisma",
           "PostgreSQL",
@@ -1348,11 +1348,11 @@
           "博客系统",
           "ongoing",
           "建设中",
-          "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
           "React 19",
           "Vite",
           "TypeScript",
-          "Semi Design",
+          "Lucide",
           "Express",
           "Prisma",
           "PostgreSQL",
@@ -1379,11 +1379,11 @@
           "博客系统",
           "ongoing",
           "建设中",
-          "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
           "React 19",
           "Vite",
           "TypeScript",
-          "Semi Design",
+          "Lucide",
           "Express",
           "Prisma",
           "PostgreSQL",
@@ -1410,11 +1410,11 @@
           "博客系统",
           "ongoing",
           "建设中",
-          "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
           "React 19",
           "Vite",
           "TypeScript",
-          "Semi Design",
+          "Lucide",
           "Express",
           "Prisma",
           "PostgreSQL",
@@ -1441,11 +1441,11 @@
           "博客系统",
           "ongoing",
           "建设中",
-          "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
           "React 19",
           "Vite",
           "TypeScript",
-          "Semi Design",
+          "Lucide",
           "Express",
           "Prisma",
           "PostgreSQL",
@@ -1472,11 +1472,11 @@
           "博客系统",
           "ongoing",
           "建设中",
-          "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
           "React 19",
           "Vite",
           "TypeScript",
-          "Semi Design",
+          "Lucide",
           "Express",
           "Prisma",
           "PostgreSQL",
@@ -1503,11 +1503,11 @@
           "博客系统",
           "ongoing",
           "建设中",
-          "React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
           "React 19",
           "Vite",
           "TypeScript",
-          "Semi Design",
+          "Lucide",
           "Express",
           "Prisma",
           "PostgreSQL",
@@ -2439,7 +2439,7 @@
     {
       "id": "demo:blog-semi",
       "type": "demo",
-      "name": "React + Semi 博客系统 演示入口",
+      "name": "BIAU Port 内容与助手平台 演示入口",
       "aliases": [
         "演示",
         "入口",
@@ -2858,7 +2858,7 @@
     {
       "id": "limitation:blog-semi",
       "type": "limitation",
-      "name": "React + Semi 博客系统 当前边界",
+      "name": "BIAU Port 内容与助手平台 当前边界",
       "aliases": [
         "边界",
         "限制",
@@ -3052,19 +3052,19 @@
     {
       "id": "project:blog-semi",
       "type": "project",
-      "name": "React + Semi 博客系统｜当前主站",
+      "name": "BIAU Port 内容与助手平台｜当前主站",
       "aliases": [
-        "react + semi 博客系统｜当前主站",
+        "biau port 内容与助手平台｜当前主站",
         "blog-semi",
         "platform",
         "博客系统",
         "ongoing",
         "建设中",
-        "react 主站 / semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识",
+        "react 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
         "react 19",
         "vite",
         "typescript",
-        "semi design",
+        "lucide",
         "express",
         "prisma",
         "postgresql",
@@ -3388,7 +3388,7 @@
     {
       "id": "roadmap:blog-semi",
       "type": "roadmap",
-      "name": "React + Semi 博客系统 后续优化",
+      "name": "BIAU Port 内容与助手平台 后续优化",
       "aliases": [
         "后续",
         "路线",
@@ -3624,9 +3624,9 @@
     {
       "id": "status:blog-semi",
       "type": "status-check",
-      "name": "React + Semi 博客系统 状态检查",
+      "name": "BIAU Port 内容与助手平台 状态检查",
       "aliases": [
-        "react + semi 博客系统｜当前主站",
+        "biau port 内容与助手平台｜当前主站",
         "blog-semi",
         "状态",
         "可靠性",
@@ -4006,6 +4006,15 @@
       "metadata": {}
     },
     {
+      "id": "tech:lucide",
+      "type": "tech",
+      "name": "Lucide",
+      "aliases": [
+        "lucide"
+      ],
+      "metadata": {}
+    },
+    {
       "id": "tech:node.js",
       "type": "tech",
       "name": "Node.js",
@@ -4093,16 +4102,6 @@
       "name": "Render",
       "aliases": [
         "render"
-      ],
-      "metadata": {}
-    },
-    {
-      "id": "tech:semi-design",
-      "type": "tech",
-      "name": "Semi Design",
-      "aliases": [
-        "semi design",
-        "semidesign"
       ],
       "metadata": {}
     },
@@ -5518,6 +5517,16 @@
       ]
     },
     {
+      "id": "uses:project:blog-semi->tech:lucide",
+      "fromEntityId": "project:blog-semi",
+      "toEntityId": "tech:lucide",
+      "type": "uses",
+      "weight": 0.9,
+      "evidenceDocumentIds": [
+        "project:blog-semi"
+      ]
+    },
+    {
       "id": "uses:project:blog-semi->tech:playwright",
       "fromEntityId": "project:blog-semi",
       "toEntityId": "tech:playwright",
@@ -5551,16 +5560,6 @@
       "id": "uses:project:blog-semi->tech:react-19",
       "fromEntityId": "project:blog-semi",
       "toEntityId": "tech:react-19",
-      "type": "uses",
-      "weight": 0.9,
-      "evidenceDocumentIds": [
-        "project:blog-semi"
-      ]
-    },
-    {
-      "id": "uses:project:blog-semi->tech:semi-design",
-      "fromEntityId": "project:blog-semi",
-      "toEntityId": "tech:semi-design",
       "type": "uses",
       "weight": 0.9,
       "evidenceDocumentIds": [

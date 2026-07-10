@@ -79,7 +79,7 @@ function assertDemoQuery() {
 }
 
 function assertTechQuery() {
-  const result = searchAssistantKnowledge(publicKnowledgeBase, '哪些项目用了 React / Vite / Semi Design？', {
+  const result = searchAssistantKnowledge(publicKnowledgeBase, '哪些项目用了 React / Vite / TypeScript？', {
     knowledge: publicKnowledgeV2,
   })
   assert(

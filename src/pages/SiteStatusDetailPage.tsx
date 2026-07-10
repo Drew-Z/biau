@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { IconArrowLeft, IconListView } from '@douyinfe/semi-icons'
+import { ArrowLeft, List } from 'lucide-react'
 import {
   getReliabilityProjectStatusCounts,
   reliabilityStatusOrder,
@@ -159,7 +159,7 @@ export function SiteStatusDetailPage() {
           <p>这个项目状态详情暂时不存在，或者状态数据还没有生成。</p>
           {loadError && <p className="status-load-error">状态数据暂未读取成功：{loadError}</p>}
           <Link to="/status" className="btn">
-            <IconArrowLeft aria-hidden />
+            <ArrowLeft size={16} aria-hidden />
             <span>返回状态总览</span>
           </Link>
         </section>
@@ -175,11 +175,11 @@ export function SiteStatusDetailPage() {
         <p className="section-description">{project.summary}</p>
         <div className="status-detail-actions">
           <Link to="/status" className="btn">
-            <IconArrowLeft aria-hidden />
+            <ArrowLeft size={16} aria-hidden />
             <span>返回状态总览</span>
           </Link>
           <Link to={getStatusDetailPath(project.id)} className="btn btn-primary" aria-current="page">
-            <IconListView aria-hidden />
+            <List size={16} aria-hidden />
             <span>当前详情页</span>
           </Link>
         </div>

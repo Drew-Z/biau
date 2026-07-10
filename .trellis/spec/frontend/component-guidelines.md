@@ -2,14 +2,18 @@
 
 ## UI System
 
-Prefer Semi Design for UI controls and icons. This project is pinned to `@douyinfe/semi-ui-19` for React 19 compatibility and `@douyinfe/semi-icons` for icons. If Semi has a suitable component, use it before introducing custom controls.
+Use the existing class-based components and design tokens for UI controls. Use `lucide-react` for familiar command and navigation icons so the frontend stays framework-light and tree-shakeable.
 
 ```tsx
-import { Button, Card } from '@douyinfe/semi-ui-19'
-import { IconArrowRight } from '@douyinfe/semi-icons'
+import { ArrowRight } from 'lucide-react'
+
+<button type="button" className="btn">
+  <span>查看详情</span>
+  <ArrowRight size={16} aria-hidden />
+</button>
 ```
 
-Do not import `antd`, `@mui/*`, `chakra-ui`, `tailwindcss`, `styled-components`, or Emotion. Do not import `@douyinfe/semi-ui`; use `@douyinfe/semi-ui-19`.
+Do not import `antd`, `@mui/*`, `chakra-ui`, `tailwindcss`, `styled-components`, Emotion, or Semi UI. Extend the existing tokens and class-based CSS before adding another component framework.
 
 ## Component Shape
 
@@ -39,7 +43,7 @@ intro.style.setProperty('--harbor-logo-x', `${navRect.left + navRect.width / 2}p
 intro.style.setProperty('--harbor-logo-y', `${navRect.top + navRect.height / 2}px`)
 ```
 
-Hide or crossfade the underlying navigation logo during the docking segment to avoid a double-image effect, then let the real navigation logo resume its normal hover, focus, and click behavior after the intro unmounts. `scripts/check-ui.mjs` should assert that the intro target center and scale match `.nav-logo` so responsive navigation changes cannot silently break the landing motion.
+Use the live Logo width and height as the animated element's base box, enlarge that exact shell for the center stage, and return to scale `1` at the measured target. Copy the live Logo background, border, radius, and shadow into the intro shell so the handoff does not swap between two visually different containers. Hide or crossfade the underlying navigation Logo during docking, clear centered wordmarks before landing, then let the real navigation Logo resume its normal hover, focus, and click behavior after the intro unmounts. `scripts/check-ui.mjs` should assert target center, final geometry, shell parity, and wordmark clearance so responsive navigation changes cannot silently break the landing motion.
 
 ## Content and Assets
 
@@ -50,4 +54,4 @@ Use real sanitized project screenshots when available. If an asset is missing, u
 - Interactive non-button containers need keyboard handlers and ARIA labels.
 - External links use `target="_blank"` with `rel="noopener noreferrer"`.
 - Images rendered through `ResponsiveImage` need useful alt text, usually the project or content title.
-- Button text must fit at mobile and desktop sizes; prefer icons from `@douyinfe/semi-icons` when a known command has a standard symbol.
+- Button text must fit at mobile and desktop sizes; prefer icons from `lucide-react` when a known command has a standard symbol.

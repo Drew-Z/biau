@@ -4,7 +4,7 @@
 
 ## Project
 
-这是一个基于 React、Vite、TypeScript 和 Semi Design 的产品官网。目标是把 AI 产品、业务系统、移动端应用、互动体验和资源内容组织成一个可筛选、可搜索、可演示的解决方案网站。
+这是一个基于 React、Vite、TypeScript、自定义设计令牌和 Lucide 图标的产品官网。目标是把 AI 产品、业务系统、移动端应用、互动体验和资源内容组织成一个可筛选、可搜索、可演示的解决方案网站。
 
 ## Operating Principles
 
@@ -33,7 +33,7 @@
 - 优先做小步、可验证的改动。
 - 不要删除或覆盖用户已有内容。
 - 修改后尽量运行 `npm run build` 和 `npm run lint`。
-- UI 组件优先使用 Semi Design：`@douyinfe/semi-ui-19` 和 `@douyinfe/semi-icons`。
+- UI 优先复用现有 class-based CSS、设计令牌和 `lucide-react`，不要无依据引入新的组件框架。
 - 复杂业务数据先放在 `src/data/`，后续再考虑接入后端或 CMS。
 
 ## Shell Preference

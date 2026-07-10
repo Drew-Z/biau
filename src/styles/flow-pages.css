@@ -4941,6 +4941,16 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   cursor: pointer;
   -webkit-backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
   backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
+  transition:
+    opacity 0.2s var(--ease-smooth),
+    transform 0.24s var(--ease-out-expo),
+    border-color 0.2s var(--ease-smooth);
+}
+
+.public-assistant.is-footer-visible:not(.is-open) .public-assistant__trigger {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
 }
 
 .public-assistant__trigger-mark {

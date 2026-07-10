@@ -155,11 +155,11 @@ if (
   throw new Error('Cloudflare public chat should answer current-site questions from site intro knowledge')
 }
 
-const techResponse = await publicChat({ request: makeChatRequest('哪些项目用了 React / Vite / Semi Design？'), env: emptyEnv })
+const techResponse = await publicChat({ request: makeChatRequest('哪些项目用了 React / Vite / TypeScript？'), env: emptyEnv })
 if (!techResponse.ok) throw new Error(`tech public chat failed: ${techResponse.status}`)
 const techPayload = await readJsonResponse(techResponse)
 if (!techPayload.answer || !Array.isArray(techPayload.citations) || !hasCitation(techPayload.citations, 'project:blog-semi')) {
-  throw new Error('Cloudflare public chat should cite BIAU Port for React / Vite / Semi Design query')
+  throw new Error('Cloudflare public chat should cite BIAU Port for React / Vite / TypeScript query')
 }
 
 const demoResponse = await publicChat({ request: makeChatRequest('哪些项目可以演示？每个项目适合看什么？'), env: emptyEnv })

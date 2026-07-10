@@ -43,7 +43,7 @@ Do not create planning files for small, obvious edits unless the user asks or th
 
 Keep changes narrow and project-native.
 
-- Reuse existing components, Semi Design primitives, icons, data files, utilities, styles, and route patterns.
+- Reuse existing components, design tokens, Lucide icons, data files, utilities, styles, and route patterns.
 - Keep product language aligned with a production website or solution showcase, not a personal portfolio tone.
 - Put structured business/content data under `src/data/` unless the current architecture clearly says otherwise.
 - Avoid new dependencies, broad abstractions, file moves, or opportunistic rewrites unless they are necessary.

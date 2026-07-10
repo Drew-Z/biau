@@ -1,8 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { BiauPortMark } from './BiauPortMark'
 
-const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v2'
+const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v3'
 let introTriggeredThisRuntime = false
+
+interface HarborIntroProps {
+  harborScene: 'dusk' | 'garden' | 'stellar'
+}
 
 function canShowIntro() {
   if (typeof window === 'undefined') return false
@@ -27,7 +31,7 @@ function markIntroSeen() {
   }
 }
 
-export function HarborIntro() {
+export function HarborIntro({ harborScene }: HarborIntroProps) {
   const [visible, setVisible] = useState(() => !introTriggeredThisRuntime && canShowIntro())
   const [leaving, setLeaving] = useState(false)
   const introRef = useRef<HTMLDivElement>(null)
@@ -56,12 +60,28 @@ export function HarborIntro() {
       if (!navLogo) return
 
       const navRect = navLogo.getBoundingClientRect()
-      const vesselWidth = vessel.offsetWidth
-      const targetScale = navRect.width > 0 && vesselWidth > 0 ? navRect.width / vesselWidth : 0.32
+      const compact = window.matchMedia('(max-width: 768px)').matches
+      const stageWidth = compact
+        ? Math.min(148, Math.max(112, window.innerWidth * 0.36))
+        : Math.min(174, Math.max(132, window.innerWidth * 0.12))
+      const stageScale = navRect.width > 0 ? stageWidth / navRect.width : 3
+      const navStyle = window.getComputedStyle(navLogo)
+      const navMark = navLogo.querySelector<SVGElement>('.nav-logo-mark')
 
       intro.style.setProperty('--harbor-logo-x', `${navRect.left + navRect.width / 2}px`)
       intro.style.setProperty('--harbor-logo-y', `${navRect.top + navRect.height / 2}px`)
-      intro.style.setProperty('--harbor-logo-target-scale', targetScale.toFixed(4))
+      intro.style.setProperty('--harbor-logo-width', `${navRect.width}px`)
+      intro.style.setProperty('--harbor-logo-height', `${navRect.height}px`)
+      intro.style.setProperty('--harbor-logo-stage-scale', stageScale.toFixed(4))
+      intro.style.setProperty('--harbor-logo-stage-start-scale', (stageScale * 0.72).toFixed(4))
+      intro.style.setProperty('--harbor-logo-stage-soft-scale', (stageScale * 0.96).toFixed(4))
+      intro.style.setProperty('--harbor-logo-background', navStyle.background)
+      intro.style.setProperty('--harbor-logo-border', navStyle.border)
+      intro.style.setProperty('--harbor-logo-radius', navStyle.borderRadius)
+      intro.style.setProperty('--harbor-logo-shadow', navStyle.boxShadow)
+      if (navMark) {
+        intro.style.setProperty('--harbor-logo-mark-filter', window.getComputedStyle(navMark).filter)
+      }
     }
 
     syncDockTarget()
@@ -123,7 +143,9 @@ export function HarborIntro() {
       <div className="harbor-intro__wake harbor-intro__wake--a" />
       <div className="harbor-intro__wake harbor-intro__wake--b" />
       <div ref={vesselRef} className="harbor-intro__vessel">
-        <BiauPortMark className="harbor-intro__boat" animated />
+        <span className="harbor-intro__logo-shell" data-scene={harborScene}>
+          <BiauPortMark className="harbor-intro__boat" animated />
+        </span>
       </div>
       <div className="harbor-intro__mark">
         <span className="harbor-intro__mark-title">BIAU PORT</span>

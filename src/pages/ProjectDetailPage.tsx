@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { IconArrowLeft, IconExternalOpen, IconLink } from '@douyinfe/semi-icons'
+import { ArrowLeft, ExternalLink, Link as LinkIcon } from 'lucide-react'
 import { blogColumnMeta } from '../data/blog'
 import { getProjectBlogPosts } from '../data/blogCuration'
 import { getRelatedProjects, getRelatedProjectsTitle } from '../data/projectRecommendations'
@@ -59,7 +59,7 @@ export function ProjectDetailPage() {
           <h1 className="section-title">未找到该项目</h1>
           <p className="section-description">该项目可能已下线或链接有误。</p>
           <button className="btn" onClick={() => navigate('/projects')}>
-            <IconArrowLeft />
+            <ArrowLeft size={16} aria-hidden />
             <span>返回项目集</span>
           </button>
         </div>
@@ -70,7 +70,7 @@ export function ProjectDetailPage() {
   return (
     <article className="page-stack detail-page project-detail-page">
       <Link to="/projects" className="detail-back">
-        <IconArrowLeft />
+        <ArrowLeft size={16} aria-hidden />
         <span>项目集</span>
       </Link>
 
@@ -101,7 +101,7 @@ export function ProjectDetailPage() {
         >
           <ResponsiveImage src={project.image} alt={project.title} loading="eager" />
           <span className="detail-hero-image-action" aria-hidden="true">
-            <IconLink />
+            <LinkIcon size={16} aria-hidden />
             <span>打开原图</span>
           </span>
         </a>
@@ -277,7 +277,7 @@ function ProjectLinkBadge({ link }: { link: ProjectLink }) {
   const linkClassName = `link-badge link-badge--${link.type}`
   const content = (
     <>
-      {link.type === 'external' ? <IconExternalOpen aria-hidden /> : <IconLink aria-hidden />}
+      {link.type === 'external' ? <ExternalLink size={16} aria-hidden /> : <LinkIcon size={16} aria-hidden />}
       <span>{link.label}</span>
     </>
   )

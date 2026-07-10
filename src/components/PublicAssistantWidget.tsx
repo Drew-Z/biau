@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { IconClose, IconSend } from '@douyinfe/semi-icons'
+import { Send, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   publicAssistantSuggestions,
@@ -264,6 +264,7 @@ function getServiceStateAfterAnswer(
 
 export function PublicAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false)
+  const [footerVisible, setFooterVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<WidgetMessage[]>([])
@@ -282,6 +283,18 @@ export function PublicAssistantWidget() {
     if (!scrollRef.current) return
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, isOpen])
+
+  useEffect(() => {
+    const footer = document.querySelector('.site-footer')
+    if (!footer || typeof IntersectionObserver === 'undefined') return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setFooterVisible(entry.isIntersecting),
+      { threshold: 0.08 },
+    )
+    observer.observe(footer)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (!isOpen) return
@@ -386,7 +399,7 @@ export function PublicAssistantWidget() {
   }
 
   return (
-    <div className={`public-assistant ${isOpen ? 'is-open' : ''}`}>
+    <div className={`public-assistant ${isOpen ? 'is-open' : ''} ${footerVisible ? 'is-footer-visible' : ''}`}>
       <button
         type="button"
         className="public-assistant__trigger"
@@ -411,7 +424,7 @@ export function PublicAssistantWidget() {
               </span>
             </div>
             <button type="button" className="public-assistant__close" onClick={() => setIsOpen(false)} aria-label="关闭公开助手">
-              <IconClose aria-hidden />
+              <X size={18} aria-hidden />
             </button>
           </header>
 
@@ -481,7 +494,7 @@ export function PublicAssistantWidget() {
               placeholder="问项目、演示入口或技术方向"
             />
             <button type="submit" disabled={isLoading || input.trim().length === 0}>
-              <IconSend aria-hidden />
+              <Send size={16} aria-hidden />
               <span>发送</span>
             </button>
           </form>

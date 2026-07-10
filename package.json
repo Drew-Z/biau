@@ -65,13 +65,12 @@
     "verify": "node scripts/verify.mjs"
   },
   "dependencies": {
-    "@douyinfe/semi-icons": "^2.100.0",
-    "@douyinfe/semi-ui-19": "^2.100.0",
     "@langchain/langgraph": "^1.4.7",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
+    "lucide-react": "^1.24.0",
     "pg": "^8.22.0",
     "playwright": "^1.61.1",
     "react": "^19.2.6",

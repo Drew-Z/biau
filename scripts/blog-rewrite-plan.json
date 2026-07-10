@@ -343,13 +343,13 @@
   {
     "order": 13,
     "slug": "blog-semi-project-notes-draft",
-    "title": "BIAU Port 项目总结：React + Semi 主站如何承接项目案例和博客治理",
+    "title": "BIAU Port 项目总结：React 主站如何承接项目案例和博客治理",
     "column": "project-notes",
     "tag": "项目总结",
     "series": "项目工程复盘",
     "summary": "整理当前主站的 React/Vite/Semi 架构、项目数据、博客栏目、草稿生成器、公开策展和校验脚本，形成主站自身的项目总结草稿。",
     "targetReader": "关注项目展示站、内容治理、AI 助手知识索引和前端工程化的访客与协作者",
-    "knowledgePoints": ["React 主站", "Semi Design", "项目案例数据", "博客栏目", "公开策展", "AI 助手知识索引"],
+    "knowledgePoints": ["React 主站", "自定义设计系统", "项目案例数据", "博客栏目", "公开策展", "AI 助手知识索引"],
     "projectExamples": ["BIAU Port 主站", "blog-content-pipeline", "Project Notes 草稿系统"],
     "publicAngle": "复盘主站如何从作品展示页发展成项目案例、博客栏目、公开助手和 Trellis 内容治理共同工作的产品入口。",
     "evidenceSources": [
@@ -368,7 +368,7 @@
       ".trellis/tasks/07-01-project-notes-draft-evidence-packs/research/evidence-snapshots.md"
     ],
     "safeFacts": [
-      "BIAU Port 是 React、Vite、TypeScript 和 Semi Design 构建的产品/解决方案展示主站。",
+      "BIAU Port 是 React、Vite、TypeScript、自定义设计系统和 Lucide 图标构建的产品/解决方案展示主站。",
       "博客系统当前有 Knowledge Notes、Project Notes、Resource Picks、AI Daily 和 Build Log 五个一级栏目。",
       "公开博客通过策展数据控制可见性，draft 文件保留在 content-drafts 中。",
       "草稿生成器支持 evidence-first scaffold，也保留显式 --generate 的模型辅助路径。",

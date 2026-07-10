@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { IconExternalOpen, IconLink, IconListView } from '@douyinfe/semi-icons'
+import { ExternalLink, Link as LinkIcon, List } from 'lucide-react'
 import {
   findReliabilityProjectForTarget,
   getReliabilityProjectStatusCounts,
@@ -178,7 +178,7 @@ export function SiteStatusPage() {
               <h3>{item.projectTitle}</h3>
               <p>{item.text}</p>
               <Link to={item.detailPath} className="btn status-manual-action__link" aria-label={`查看${item.projectTitle}详细状态`}>
-                <IconListView aria-hidden />
+                <List size={16} aria-hidden />
                 <span>查看详情</span>
               </Link>
             </article>
@@ -226,16 +226,16 @@ export function SiteStatusPage() {
                   to={detailHref}
                   aria-label={`详细状态：${detailProject?.title ?? target.label}`}
                 >
-                  <IconListView aria-hidden />
+                  <List size={16} aria-hidden />
                   <span>详细状态</span>
                 </Link>
                 <Link to={`/projects/${target.projectId}`} className="btn">
-                  <IconLink aria-hidden />
+                  <LinkIcon size={16} aria-hidden />
                   <span>项目详情</span>
                 </Link>
                 <a className="btn btn-primary" href={target.url} target="_blank" rel="noopener noreferrer">
                   <span>打开入口</span>
-                  <IconExternalOpen aria-hidden />
+                  <ExternalLink size={16} aria-hidden />
                 </a>
               </div>
             </article>
@@ -276,7 +276,7 @@ export function SiteStatusPage() {
                 </div>
               </dl>
               <Link to={getStatusDetailPath(project.id)} className="btn status-project-card__link">
-                <IconListView aria-hidden />
+                <List size={16} aria-hidden />
                 <span>查看详细状态</span>
               </Link>
             </article>

@@ -1,6 +1,6 @@
 # Frontend Directory Structure
 
-This repository is a React 19, Vite, TypeScript, and Semi Design product website. It presents AI products, business systems, mobile and interactive experiences, and public resource content as searchable and demonstrable solution pages.
+This repository is a React 19, Vite, TypeScript, custom CSS, and Lucide product website. It presents AI products, business systems, mobile and interactive experiences, and public resource content as searchable and demonstrable solution pages.
 
 ## Layout
 

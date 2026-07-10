@@ -1,5 +1,5 @@
 import type { HeroProject } from '../data/hero'
-import { IconExternalOpen } from '@douyinfe/semi-icons'
+import { ExternalLink } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 
 interface ColoredCardProps {
@@ -53,7 +53,7 @@ export function ColoredCard({ project, index, loopCopy = false, onClick, onActio
           }}
         >
           <span>{project.action}</span>
-          <IconExternalOpen aria-hidden />
+          <ExternalLink size={16} aria-hidden />
         </button>
       )}
     </article>

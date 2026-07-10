@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { IconClose, IconMenu } from '@douyinfe/semi-icons'
+import { Menu, X } from 'lucide-react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BiauPortMark } from './BiauPortMark'
 
@@ -69,10 +69,7 @@ export function Navigation({
           <span
             className="nav-logo"
             data-scene={harborScene}
-            onClick={(event) => {
-              event.preventDefault()
-              onCycleHarborScene()
-            }}
+            onClick={onCycleHarborScene}
           >
             <BiauPortMark className="nav-logo-mark" />
           </span>
@@ -131,7 +128,7 @@ export function Navigation({
             aria-expanded={mobileMenuOpen}
             aria-controls={mobileMenuId}
           >
-            {mobileMenuOpen ? <IconClose aria-hidden /> : <IconMenu aria-hidden />}
+            {mobileMenuOpen ? <X size={18} aria-hidden /> : <Menu size={18} aria-hidden />}
           </button>
         </div>
 

@@ -32,7 +32,7 @@ Conclusion: the packaging task has reached a public-safe first pass for the sele
 
 On 2026-07-09, public GitHub repository landing metadata was updated with `gh repo edit` for:
 
-- `Drew-Z/biau`: description, homepage `https://biau.playlab.eu.cc`, and current React/Vite/Semi/assistant/content-studio topics.
+- `Drew-Z/biau`: description, homepage `https://biau.playlab.eu.cc`, and current React/Vite/LangGraph/assistant/content-studio topics.
 - `Drew-Z/legal-rag`: description, homepage `https://legal-rag-web.onrender.com`, and contract-review / hybrid-search / evaluation topics.
 - `Drew-Z/gamer`: description, homepage `https://biau.playlab.eu.cc/pet-app-showcase/`, and Android / Kotlin / community API / admin review topics.
 - `Drew-Z/xunqiu`: description, homepage `https://xunqiu.playlab.eu.cc/`, and static showcase / Android migration / football topics.

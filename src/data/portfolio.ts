@@ -820,13 +820,13 @@ export const projects: Project[] = [
   },
   {
     id: 'blog-semi',
-    title: 'React + Semi 博客系统｜当前主站',
-    summary: '当前主站，用 React、Semi Design 和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。',
+    title: 'BIAU Port 内容与助手平台｜当前主站',
+    summary: '当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。',
     category: 'platform',
     status: 'ongoing',
-    role: 'React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识',
+    role: 'React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识',
     image: '/images/projects/showcase/blog-semi-home-desktop.png',
-    stack: ['React 19', 'Vite', 'TypeScript', 'Semi Design', 'Express', 'Prisma', 'PostgreSQL', 'LangGraph', 'Playwright'],
+    stack: ['React 19', 'Vite', 'TypeScript', 'Lucide', 'Express', 'Prisma', 'PostgreSQL', 'LangGraph', 'Playwright'],
     highlights: ['多视图主站', '项目案例', 'LangGraph Agent', '内容治理', 'UI 验证'],
     links: [
       internalLink('内容模型文章', '/blog/content-modeling-project-site'),
@@ -891,7 +891,7 @@ export const projects: Project[] = [
         {
           title: '前端路由与数据组织',
           body:
-            '前端使用 React 19、Vite、TypeScript 和 Semi Design。`App.tsx` 管理首页、项目集、项目详情、博客、博客详情、助手和管理页路由；项目、博客、助手建议和公开知识都放在 `src/data/`，页面组件只消费已整理好的 typed data。',
+            '前端使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标。`App.tsx` 管理首页、项目集、项目详情、博客、博客详情、助手和管理页路由；项目、博客、助手建议和公开知识都放在 `src/data/`，页面组件只消费已整理好的 typed data。',
         },
         {
           title: '助手后端与公开知识生成',
@@ -953,7 +953,7 @@ export const projects: Project[] = [
       ],
     },
     assistantContext: [
-      'BIAU Port 当前主站使用 React 19、Vite、TypeScript 和 Semi Design 构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。',
+      'BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。',
       '项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。',
       '仓库包含一个 Express/TypeScript 助手后端，配合 Prisma/PostgreSQL 支持 invite、member、chat session、message、usage log、内部知识文档和同步运行记录；前端未配置 API 时会使用公开知识 fallback。',
       '内部助手已经产品化为 LangGraph Agentic Workspace：`runInternalAgent()` 进入 compiled graph，工具注册表覆盖 scoped RAG、状态查询、项目查询、知识搜索、Studio 草稿、会话记忆和 direct answer，普通成员只允许 read 与 draft-write。',
@@ -1791,5 +1791,5 @@ export const capabilityTracks = [
   { title: 'AI 应用', detail: 'RAG、Agent、引用溯源、审核闭环', value: 'Legal RAG / Pet Workspace' },
   { title: '业务系统', detail: '后台、API、数据库、队列、审计日志', value: 'Ozon 电商 ERP' },
   { title: '互动体验', detail: 'Godot 展示入口、试玩计划、游戏展示页', value: '6 个游戏项目' },
-  { title: '博客系统', detail: 'React + Semi、Astro、内容审计、部署准备', value: 'BIAU Port / Playlab' },
+  { title: '博客系统', detail: 'React + 自定义 CSS、Astro、内容审计、部署准备', value: 'BIAU Port / Playlab' },
 ]

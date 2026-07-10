@@ -123,8 +123,9 @@ git diff --check
 - Simulated mobile 4G plus 4x CPU slowdown on the new local build produced first
   paint around `0.7s`, FCP around `1.87s`, intro mount at DOM readiness, and
   completed docking around `4.5s`.
-- Production still needs a deployment before the new bundle and `_headers`
-  behavior can be observed on the public domain.
+- Production deployment was observed on the public domain: the new hashed CSS
+  uses one-year immutable caching, external font stylesheets are absent, and a
+  mobile first-entry run completes the intro before persisting the `v2` marker.
 
 Validation completed for this slice:
 
@@ -143,6 +144,39 @@ npm.cmd run check:ui
 npm.cmd run public-links:check
 npm.cmd run status:contract
 ```
+
+## Phase 6: Exact Intro Handoff And Framework Cleanup
+
+- [x] Make the animated mark use the live navigation Logo width and height as
+  its base box, then enlarge it for the center stage instead of shrinking an
+  unrelated large SVG into an approximate target.
+- [x] Copy the live Logo background, border, radius, and shadow into the intro
+  shell so the landing frame and stable navigation mark are visually identical.
+- [x] Fade the centered BIAU PORT / 泊岸 wordmark before the docking handoff.
+- [x] Upgrade the completion marker to `biau-port-harbor-intro:v3` so visitors
+  can see the corrected animation once after deployment.
+- [x] Remove unused `@douyinfe/semi-ui-19` and replace the remaining Semi icon
+  imports with tree-shaken `lucide-react` icons.
+- [x] Update README, SEO, project facts, assistant knowledge, root rules, Cursor
+  rules, and Trellis specs to describe the current custom CSS design system.
+- [x] Fix navigation Logo clicks so subpages still return to the home route.
+- [x] Hide the collapsed public-assistant launcher while the trust footer is in
+  view, preventing it from covering mobile footer copy.
+
+### Phase 6 Validation
+
+- [x] `npm.cmd run assistant:index`
+- [x] `npm.cmd run assistant:kg-check`
+- [x] `npm.cmd run project-details:check`
+- [x] `npm.cmd run lint`
+- [x] `npm.cmd run build`
+- [x] `npm.cmd run performance:check`
+- [x] `$env:UI_CHECK_BASE='http://127.0.0.1:5197'; npm.cmd run check:ui`
+
+The UI check now verifies final landing geometry, shell background/radius parity,
+wordmark clearance, and the mobile footer/assistant overlap contract. It passed
+14 routes across desktop and mobile viewports, including dedicated `320 / 390 /
+430px` home checks.
 
 ## Candidate Projects
 

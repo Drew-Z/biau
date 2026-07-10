@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { IconArrowLeft } from '@douyinfe/semi-icons'
+import { ArrowLeft } from 'lucide-react'
 import { blogColumnMeta } from '../data/blog'
 import { getBlogProjectIds, getPublicBlogPostSummary, getRelatedBlogPosts } from '../data/blogCuration'
 import { getBlogPost } from '../data/blogContent'
@@ -61,7 +61,7 @@ export function BlogPostPage() {
           <h1 className="section-title">未找到该文章</h1>
           <p className="section-description">该文章可能已下线或链接有误。</p>
           <button className="btn" onClick={() => navigate('/blog')}>
-            <IconArrowLeft />
+            <ArrowLeft size={16} aria-hidden />
             <span>返回知识库</span>
           </button>
         </div>
@@ -72,7 +72,7 @@ export function BlogPostPage() {
   return (
     <article className="page-stack detail-page blog-post-page">
       <Link to="/blog" className="detail-back">
-        <IconArrowLeft />
+        <ArrowLeft size={16} aria-hidden />
         <span>知识库</span>
       </Link>
 

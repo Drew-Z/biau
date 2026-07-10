@@ -1,13 +1,13 @@
 # Frontend Development Guidelines
 
-These guidelines describe the actual React/Vite/Semi Design frontend in this repository. Read them before changing `src/`, public UI assets, route structure, or static content data.
+These guidelines describe the actual React/Vite/custom CSS frontend in this repository. Read them before changing `src/`, public UI assets, route structure, or static content data.
 
 ## Guidelines Index
 
 | Guide | Description | Status |
 |-------|-------------|--------|
 | [Directory Structure](./directory-structure.md) | Frontend module ownership, route/data/style layout, naming | Filled |
-| [Component Guidelines](./component-guidelines.md) | Semi Design usage, component shape, props, styling, accessibility | Filled |
+| [Component Guidelines](./component-guidelines.md) | Component shape, Lucide icons, props, styling, accessibility | Filled |
 | [Hook Guidelines](./hook-guidelines.md) | Custom hook patterns, browser API guards, effect cleanup | Filled |
 | [State Management](./state-management.md) | Local state, route-derived state, persistent UI state, static data | Filled |
 | [Quality Guidelines](./quality-guidelines.md) | Lint/build gates, UI rules, public data safety | Filled |
@@ -26,12 +26,12 @@ Before frontend edits:
 
 ## Local Rules Imported
 
-These specs incorporate rules from `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/semi-ui.mdc`, `.cursor/rules/data-safety.mdc`, and `.cursor/rules/verify.mdc`.
+These specs incorporate rules from `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/ui-system.mdc`, `.cursor/rules/data-safety.mdc`, and `.cursor/rules/verify.mdc`.
 
 ## Core Project Rules
 
 - Communicate with the developer in Simplified Chinese, while code, commands, paths, and errors may remain English.
 - Treat this as a product website / solution showcase, not a personal portfolio.
-- Prefer Semi Design v19 packages: `@douyinfe/semi-ui-19` and `@douyinfe/semi-icons`.
+- Use the existing class-based design system and `lucide-react`; do not introduce another UI framework without a concrete product need.
 - Keep public content sanitized; anything committed to the repository should be considered public.
 - Run `npm.cmd run lint` then `npm.cmd run build` for `src/` or config changes.

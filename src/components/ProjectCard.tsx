@@ -1,4 +1,4 @@
-import { IconArrowRight } from '@douyinfe/semi-icons'
+import { ArrowRight } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import type { Project } from '../data/portfolio'
 import { ResponsiveImage } from './ResponsiveImage'
@@ -74,7 +74,7 @@ export function ProjectCard({ project, index, onViewDetails }: ProjectCardProps)
             }}
           >
             <span>查看详情</span>
-            <IconArrowRight />
+            <ArrowRight size={16} aria-hidden />
           </button>
           
           {project.links.length > 0 && (

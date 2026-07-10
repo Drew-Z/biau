@@ -4,7 +4,7 @@
 
 ## 项目定位
 
-这是一个基于 React、Vite、TypeScript 和 Semi Design 的产品官网/展示系统，不要写成个人作品集口吻。目标是把 AI 应用、全栈业务系统、移动端/互动体验和资源内容组织成一个可筛选、可搜索、可演示的解决方案网站。
+这是一个基于 React、Vite、TypeScript、自定义设计令牌和 Lucide 图标的产品官网/展示系统，不要写成个人作品集口吻。目标是把 AI 应用、全栈业务系统、移动端/互动体验和资源内容组织成一个可筛选、可搜索、可演示的解决方案网站。
 
 ## 工作边界
 
@@ -20,7 +20,7 @@
 - 修改前先查看 `git status --short --branch`。
 - 优先小步修改，完成后运行可行的验证命令。
 - 常规验证顺序：`npm run lint`，再 `npm run build`。
-- UI 组件优先使用 Semi Design：`@douyinfe/semi-ui-19` 和 `@douyinfe/semi-icons`。
+- UI 优先复用现有 class-based CSS、设计令牌和 `lucide-react`，不要无依据引入新的组件框架。
 - 数据优先集中在 `src/data/portfolio.ts`，复杂结构再拆分。
 - 不要使用破坏性 Git 命令，例如 `git reset --hard`、`git clean -fd`、`git checkout -- <file>`，除非用户明确要求。
 - 不要自动执行 `git push`，除非用户明确要求。
