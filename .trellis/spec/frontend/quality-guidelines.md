@@ -193,6 +193,48 @@ Use Semi Design v19 components and `@douyinfe/semi-icons` first. Do not add othe
 
 Prefer real project screenshots and runtime screenshots. Missing assets should use stable fallback assets or be omitted; do not fabricate business data or visual evidence.
 
+### Convention: Mobile Gesture Ownership
+
+On mobile, the document is the only owner of vertical panning. Interactive hero
+regions may react to an explicit tap or a clearly horizontal gesture, but they
+must release vertical movement to normal page scrolling before calling
+`preventDefault()` or taking pointer capture.
+
+```typescript
+// Good: classify the gesture before taking ownership.
+if (Math.abs(deltaY) > Math.abs(deltaX) * 1.18) {
+  return
+}
+
+if (Math.abs(deltaX) >= 18) {
+  event.preventDefault()
+  element.setPointerCapture(event.pointerId)
+}
+```
+
+For the home page specifically:
+
+- `.hero-title-rotator` keeps `touch-action: pan-y`; a tap or clearly horizontal
+  swipe may switch the poem, while a vertical drag must scroll the page.
+- The mobile project rail uses native horizontal scrolling with
+  `scroll-snap-type: x mandatory` and leaves vertical panning enabled. Do not
+  reuse the desktop pointer-drag/infinite-transform controller on mobile.
+- Desktop infinite-loop duplicate cards must carry an explicit marker such as
+  `data-loop-copy="true"` and stay hidden in the mobile native rail. Mobile
+  visitors should receive one semantic copy of each project.
+- Mobile navigation keeps only the brand, theme action, and menu trigger in the
+  top row. Language and route actions belong in the expanded panel when the
+  compact row cannot fit them without overlap.
+- The expanded navigation panel must render above hero/page stacking contexts;
+  `elementFromPoint()` in the UI check should resolve to the panel over its
+  visible area.
+
+`scripts/check-ui.mjs` must cover the home page at `320`, `390`, and `430` CSS
+pixels and assert: no navigation overlap, no page-level horizontal overflow,
+vertical panning on the title and project rail, one visible project-card set,
+the next project card peeking into view, and an operable mobile menu. This is a
+layout contract, not a screenshot-only check.
+
 ### Internal Assistant Workspace First Load
 
 `/assistant` should open as a productized Agent workspace, not as a long explanatory chat transcript. Keep the default assistant opening concise, do not render default citation cards before the user asks a question, and keep the first screen focused on run mode, model channel, next action, conversation, and the Agent inspector.

@@ -58,6 +58,44 @@ Current first-slice results:
 - [x] `npm.cmd run check:ui`
 - [x] `git diff --check`
 
+## Phase 4: Mobile Home Interaction And Trust Slice
+
+- [x] Resolve compact-navigation overlap by moving route and language actions
+  into a mobile menu while preserving brand and theme access.
+- [x] Keep the document as the vertical-scroll owner on touch devices.
+- [x] Preserve poem interaction through tap and direction-locked horizontal
+  gestures without intercepting vertical page movement.
+- [x] Replace the desktop Port pointer-drag loop with a native horizontal
+  `scroll-snap` rail on mobile, showing one project set and a partial next card.
+- [x] Add a full-width trust footer with project nature, privacy, disclaimer,
+  and public contact information.
+- [x] Add UI regression coverage for `320`, `390`, and `430` pixel home-page
+  viewports, including navigation layering and gesture CSS contracts.
+
+### Mobile Slice Result
+
+- Desktop poem elasticity and vertical infinite Port scrolling remain active.
+- Mobile visitors can scroll the page vertically from the title or project
+  rail, tap or swipe horizontally to change the poem, and swipe the Port rail
+  horizontally using browser-native momentum and snapping.
+- The mobile header now exposes Logo, theme, and menu without overlap; language
+  switching and primary navigation remain available in the menu.
+- The public footer now explains site ownership boundaries and links contact to
+  the repository issue tracker without exposing private contact details.
+
+Validation completed for this slice:
+
+```powershell
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run public-links:check
+npm.cmd run check:ui
+git diff --check
+```
+
+`check:ui` passed 14 routes across desktop/mobile route checks and the dedicated
+`320 / 390 / 430px` home-page regression loop.
+
 Conditional:
 
 ```powershell

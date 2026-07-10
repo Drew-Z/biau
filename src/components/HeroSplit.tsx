@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, type PointerEvent } from 'rea
 import { heroContent, type HeroPoem } from '../data/hero'
 import { AnimatedText } from './AnimatedText'
 import { RightScrollCards } from './RightScrollCards'
+import { usesMobileInteractionMode } from '../utils/responsive'
 import { getGreeting, formatDateTime } from '../utils/time'
 
 interface HeroSplitProps {
@@ -11,6 +12,8 @@ interface HeroSplitProps {
 
 const POEM_ROTATE_MS = 6300
 const TITLE_SWITCH_DISTANCE = 120
+const TOUCH_TITLE_SWITCH_DISTANCE = 58
+const TOUCH_HORIZONTAL_BIAS = 1.18
 
 export function HeroSplit({ onProjectClick, onProjectAction }: HeroSplitProps) {
   const { poems, projects } = heroContent
@@ -48,6 +51,8 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
     lastVelocityX: 0,
     lastVelocityY: 0,
     dragging: false,
+    isTouch: false,
+    suppressClick: false,
   })
 
   useEffect(() => {
@@ -108,10 +113,11 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
     const sampledSpeed = Math.hypot(drag.lastVelocityX, drag.lastVelocityY)
     const distanceSpeed = Math.min(1050, drag.lastDistance * 5.2)
     const releaseSpeed = Math.max(sampledSpeed, distanceSpeed)
-    const shouldSwitch = wasDragging && releaseDistance >= TITLE_SWITCH_DISTANCE
+    const switchDistance = drag.isTouch ? TOUCH_TITLE_SWITCH_DISTANCE : TITLE_SWITCH_DISTANCE
+    const shouldSwitch = wasDragging && releaseDistance >= switchDistance
     const strength = Math.max(
       0.74,
-      Math.min(1.55, Math.max(0.74 + (releaseDistance - TITLE_SWITCH_DISTANCE) / 120, 0.72 + releaseSpeed / 1050)),
+      Math.min(1.55, Math.max(0.74 + (releaseDistance - switchDistance) / 120, 0.72 + releaseSpeed / 1050)),
     )
     const exitDistance = shouldSwitch ? 78 + strength * 58 + Math.min(1, releaseSpeed / 1200) * 68 : 0
     const entryDistance = shouldSwitch ? 42 + strength * 38 : 0
@@ -131,6 +137,12 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
     if (shouldSwitch && poems.length > 1) {
       advancePoem()
     }
+    if (wasDragging) {
+      drag.suppressClick = true
+      window.setTimeout(() => {
+        drag.suppressClick = false
+      }, 180)
+    }
     window.setTimeout(() => {
       if (!title.isConnected) return
       title.style.transition = ''
@@ -147,6 +159,7 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
     if (event.button !== 0) return
     const title = titleRef.current
     if (!title) return
+    const isTouch = event.pointerType === 'touch' || event.pointerType === 'pen'
 
     dragRef.current = {
       pointerId: event.pointerId,
@@ -159,13 +172,17 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
       lastVelocityX: 0,
       lastVelocityY: 0,
       dragging: false,
+      isTouch,
+      suppressClick: false,
     }
     pausedRef.current = true
     title.dataset.heroElasticDragged = '0'
     title.style.animation = 'none'
     title.style.opacity = '1'
     title.style.transition = ''
-    title.setPointerCapture?.(event.pointerId)
+    if (!isTouch) {
+      title.setPointerCapture?.(event.pointerId)
+    }
   }
 
   const handlePointerMove = (event: PointerEvent<HTMLHeadingElement>) => {
@@ -185,11 +202,28 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
     drag.lastDy = dy
     drag.lastDistance = distance
     if (distance < 5 && !drag.dragging) return
+    if (drag.isTouch && !drag.dragging) {
+      const absX = Math.abs(dx)
+      const absY = Math.abs(dy)
+      if (absY > absX * TOUCH_HORIZONTAL_BIAS) {
+        drag.pointerId = -1
+        drag.dragging = false
+        pausedRef.current = false
+        title.dataset.heroElasticDragged = '0'
+        title.style.animation = ''
+        title.style.transition = ''
+        title.style.transform = ''
+        title.classList.remove('is-hero-title-dragging')
+        return
+      }
+      if (absX < absY * TOUCH_HORIZONTAL_BIAS || absX < 18) return
+    }
 
     event.preventDefault()
     drag.dragging = true
     title.dataset.heroElasticDragged = '1'
     title.classList.add('is-hero-title-dragging')
+    title.setPointerCapture?.(event.pointerId)
 
     const pull = Math.min(74, distance * 0.44)
     const unitX = distance ? dx / distance : 0
@@ -201,6 +235,12 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
     const skewY = Math.max(-2.2, Math.min(2.2, dy * -0.018))
 
     title.style.transform = `translate3d(${(unitX * pull).toFixed(2)}px, ${(unitY * pull).toFixed(2)}px, 0) skew(${skewX.toFixed(2)}deg, ${skewY.toFixed(2)}deg) scale(${scaleX.toFixed(3)}, ${scaleY.toFixed(3)})`
+  }
+
+  const handleTitleClick = () => {
+    const drag = dragRef.current
+    if (drag.suppressClick || !usesMobileInteractionMode()) return
+    advancePoem()
   }
 
   return (
@@ -215,6 +255,7 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
       onPointerUp={releaseTitle}
       onPointerCancel={releaseTitle}
       onLostPointerCapture={releaseTitle}
+      onClick={handleTitleClick}
     >
       <AnimatedText key={`main-${index}`} text={poem.main} />
       {poem.sub && (

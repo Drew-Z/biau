@@ -1,11 +1,13 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
+import './styles/site-footer.css'
 import { useTheme } from './hooks/useTheme'
 import { Navigation } from './components/Navigation'
 import { PublicAssistantWidget } from './components/PublicAssistantWidget'
 import { SeoManager } from './components/SeoManager'
 import { HarborIntro } from './components/HarborIntro'
+import { SiteFooter } from './components/SiteFooter'
 import { BlogPage } from './pages/BlogPage'
 import { HomePage } from './pages/HomePage'
 import { ProjectsPage } from './pages/ProjectsPage'
@@ -114,6 +116,7 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Suspense>
+      <SiteFooter />
     </div>
   )
 }

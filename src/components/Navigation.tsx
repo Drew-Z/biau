@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { IconClose, IconMenu } from '@douyinfe/semi-icons'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BiauPortMark } from './BiauPortMark'
 
@@ -47,9 +49,17 @@ export function Navigation({
   const theme = themeMeta[themeMode]
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const [mobileMenuState, setMobileMenuState] = useState({ open: false, pathname })
   const isHome = pathname === '/'
   const primaryActionLabel = isHome ? allProjectsLabel[language] : backHomeLabel[language]
   const primaryActionTarget = isHome ? '/projects' : '/'
+  const mobileMenuId = 'site-mobile-navigation'
+  const mobileMenuOpen = mobileMenuState.pathname === pathname && mobileMenuState.open
+
+  const handlePrimaryAction = () => {
+    setMobileMenuState({ open: false, pathname })
+    navigate(primaryActionTarget)
+  }
 
   return (
     <nav className="navigation-top">
@@ -108,11 +118,44 @@ export function Navigation({
           <button
             type="button"
             className="nav-all-tools"
-            onClick={() => navigate(primaryActionTarget)}
+            onClick={handlePrimaryAction}
             aria-label={primaryActionLabel}
           >
             {primaryActionLabel}
           </button>
+          <button
+            type="button"
+            className="nav-menu-toggle"
+            onClick={() => setMobileMenuState({ open: !mobileMenuOpen, pathname })}
+            aria-label={mobileMenuOpen ? '关闭导航菜单 / Close menu' : '打开导航菜单 / Open menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls={mobileMenuId}
+          >
+            {mobileMenuOpen ? <IconClose aria-hidden /> : <IconMenu aria-hidden />}
+          </button>
+        </div>
+
+        <div id={mobileMenuId} className="nav-mobile-panel" hidden={!mobileMenuOpen}>
+          <div className="nav-mobile-links">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) => `nav-mobile-link ${isActive ? 'active' : ''}`}
+              >
+                {item.label[language]}
+              </NavLink>
+            ))}
+          </div>
+          <div className="nav-mobile-actions">
+            <button type="button" className="nav-mobile-primary nav-mobile-language" onClick={onToggleLanguage}>
+              {language === 'zh' ? 'English' : '简体中文'}
+            </button>
+            <button type="button" className="nav-mobile-primary" onClick={handlePrimaryAction}>
+              {primaryActionLabel}
+            </button>
+          </div>
         </div>
       </div>
     </nav>

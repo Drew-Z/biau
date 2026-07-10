@@ -562,19 +562,96 @@
 
 @media (max-width: 768px) {
   .home-hero {
-    padding: var(--space-24);
-    padding-top: calc(var(--space-24) + 64px);
+    min-height: auto;
+    padding: var(--space-16);
+    padding-top: var(--space-24);
     margin-top: var(--space-16);
+    align-items: start;
   }
 
   .hero-intro h2.hero-title-rotator {
-    font-size: clamp(2.4rem, 8vw, 3rem);
+    font-size: 2.7rem;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+
+  .hero-panel {
+    width: 100%;
+    padding: var(--space-16);
+    translate: 0;
+  }
+
+  .carousel-wrapper,
+  .carousel-wrapper:active,
+  .carousel-wrapper.is-dragging {
+    cursor: default;
+    user-select: auto;
+    transform: none;
+  }
+
+  .carousel-viewport {
+    height: auto;
+    min-height: 160px;
+    margin: 0;
+    padding: 2px var(--space-16) 14px 0;
+    overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: auto;
+    scroll-padding-inline: 2px;
+    scroll-snap-type: x mandatory;
+    touch-action: pan-x pan-y;
+    mask-image: none;
+    -webkit-mask-image: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .carousel-viewport::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .carousel-viewport::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--ink) 18%, transparent);
+  }
+
+  .carousel-track {
+    width: max-content;
+    max-width: none;
+    flex-direction: row;
+    transform: none !important;
   }
 
   .carousel-card {
+    width: clamp(236px, 74vw, 310px);
+    height: 152px;
     grid-template-columns: 28px minmax(0, 1fr) auto;
     gap: var(--space-8);
     padding: var(--space-16) var(--space-8);
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .carousel-card[data-loop-copy='true'] {
+    display: none;
+  }
+
+  .carousel-card:hover {
+    transform: none;
+  }
+
+  .carousel-card .carousel-action {
+    min-width: 72px;
+    padding: 0.65rem 0.72rem;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 360px) {
+  .hero-intro h2.hero-title-rotator {
+    font-size: 2.4rem;
   }
 }
 

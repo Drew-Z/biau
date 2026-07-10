@@ -5,11 +5,12 @@ import type { KeyboardEvent } from 'react'
 interface ColoredCardProps {
   project: HeroProject
   index: number
+  loopCopy?: boolean
   onClick: () => void
   onActionClick?: () => void
 }
 
-export function ColoredCard({ project, index, onClick, onActionClick }: ColoredCardProps) {
+export function ColoredCard({ project, index, loopCopy = false, onClick, onActionClick }: ColoredCardProps) {
   const number = String((index % 5) + 1).padStart(2, '0')
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return
@@ -22,6 +23,7 @@ export function ColoredCard({ project, index, onClick, onActionClick }: ColoredC
     <article
       className={`carousel-card ${project.accent}`}
       data-port-index={number}
+      data-loop-copy={loopCopy ? 'true' : undefined}
       aria-label={`查看项目详情：${project.title}`}
       role="link"
       tabIndex={0}

@@ -11,6 +11,7 @@ import {
   parseEvidenceFreshness,
 } from '../src/data/siteStatusView.ts'
 import { projects } from '../src/data/portfolio.ts'
+import { heroContent } from '../src/data/hero.ts'
 import { blogColumnMeta, blogColumnOrder, getBlogEmptyState } from '../src/data/blog.ts'
 import { publicAssistantSuggestions } from '../src/data/assistant.ts'
 
@@ -1453,6 +1454,136 @@ if (projectDetailSpaMarkerAfter !== projectDetailSpaMarker) {
   failures.push('/projects/legal-rag internal link: expected internal link to preserve SPA page context')
 }
 await projectDetailInternalLinkPage.close()
+
+for (const width of [320, 390, 430]) {
+  const mobileHomePage = await browser.newPage({ viewport: { width, height: 900 } })
+  await mobileHomePage.addInitScript(() => {
+    window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+  })
+  await gotoApp(mobileHomePage, '/')
+  await mobileHomePage.waitForTimeout(160)
+
+  const mobileLayout = await mobileHomePage.evaluate(() => {
+    const brand = document.querySelector('.nav-brand-section')
+    const actions = document.querySelector('.nav-actions')
+    const inner = document.querySelector('.nav-inner')
+    const navItems = document.querySelector('.nav-items-center')
+    const languageButton = document.querySelector('.nav-lang-toggle')
+    const title = document.querySelector('.hero-title-rotator')
+    const viewport = document.querySelector('.carousel-viewport')
+    const track = document.querySelector('.carousel-track')
+    const cards = [...document.querySelectorAll('.carousel-card')]
+    const visibleCards = cards.filter((card) => window.getComputedStyle(card).display !== 'none')
+    const firstCard = visibleCards[0]
+    const secondCard = visibleCards[1]
+    if (!brand || !actions || !inner || !navItems || !languageButton || !title || !viewport || !track) return null
+
+    const brandRect = brand.getBoundingClientRect()
+    const actionsRect = actions.getBoundingClientRect()
+    const innerRect = inner.getBoundingClientRect()
+    const viewportRect = viewport.getBoundingClientRect()
+    const secondCardRect = secondCard?.getBoundingClientRect()
+
+    return {
+      brandRight: Math.round(brandRect.right),
+      actionsLeft: Math.round(actionsRect.left),
+      innerLeft: Math.round(innerRect.left),
+      innerRight: Math.round(innerRect.right),
+      viewportWidth: document.documentElement.clientWidth,
+      navItemsDisplay: window.getComputedStyle(navItems).display,
+      languageDisplay: window.getComputedStyle(languageButton).display,
+      titleTouchAction: window.getComputedStyle(title).touchAction,
+      carouselOverflowX: window.getComputedStyle(viewport).overflowX,
+      carouselTouchAction: window.getComputedStyle(viewport).touchAction,
+      carouselDirection: window.getComputedStyle(track).flexDirection,
+      carouselTransform: window.getComputedStyle(track).transform,
+      visibleCardCount: visibleCards.length,
+      nextCardPeeks: Boolean(secondCardRect && secondCardRect.left < viewportRect.right),
+      horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    }
+  })
+
+  if (!mobileLayout) {
+    failures.push(`/ home mobile ${width}px: expected measurable navigation and carousel layout`)
+    await mobileHomePage.close()
+    continue
+  }
+  if (mobileLayout.brandRight > mobileLayout.actionsLeft) {
+    failures.push(`/ home mobile ${width}px: navigation brand overlaps actions`)
+  }
+  if (mobileLayout.innerLeft < -1 || mobileLayout.innerRight > mobileLayout.viewportWidth + 1) {
+    failures.push(`/ home mobile ${width}px: navigation shell exceeds viewport`)
+  }
+  if (mobileLayout.navItemsDisplay !== 'none' || mobileLayout.languageDisplay !== 'none') {
+    failures.push(`/ home mobile ${width}px: desktop navigation controls should be collapsed`)
+  }
+  if (!mobileLayout.titleTouchAction.includes('pan-y')) {
+    failures.push(`/ home mobile ${width}px: title should preserve vertical page panning`)
+  }
+  if (!['auto', 'scroll'].includes(mobileLayout.carouselOverflowX)) {
+    failures.push(`/ home mobile ${width}px: project rail should use native horizontal scrolling`)
+  }
+  if (!mobileLayout.carouselTouchAction.includes('pan-y') || mobileLayout.carouselDirection !== 'row') {
+    failures.push(`/ home mobile ${width}px: project rail should allow page panning and use a horizontal row`)
+  }
+  if (mobileLayout.carouselTransform !== 'none') {
+    failures.push(`/ home mobile ${width}px: desktop vertical transform should be disabled`)
+  }
+  if (mobileLayout.visibleCardCount !== heroContent.projects.length) {
+    failures.push(
+      `/ home mobile ${width}px: expected ${heroContent.projects.length} unique project cards, got ${mobileLayout.visibleCardCount}`,
+    )
+  }
+  if (!mobileLayout.nextCardPeeks) {
+    failures.push(`/ home mobile ${width}px: expected the next project card to remain partially visible`)
+  }
+  if (mobileLayout.horizontalOverflow) {
+    failures.push(`/ home mobile ${width}px: page should not overflow horizontally`)
+  }
+
+  const menuToggle = mobileHomePage.getByRole('button', { name: /打开导航菜单/ })
+  if (!(await menuToggle.isVisible().catch(() => false))) {
+    failures.push(`/ home mobile ${width}px: expected visible mobile menu button`)
+  } else {
+    await menuToggle.click()
+    const mobilePanelVisible = await mobileHomePage.locator('.nav-mobile-panel').isVisible().catch(() => false)
+    const languageActionVisible = await mobileHomePage
+      .locator('.nav-mobile-language')
+      .isVisible()
+      .catch(() => false)
+    const mobilePanelAboveHero = await mobileHomePage.evaluate(() => {
+      const panel = document.querySelector('.nav-mobile-panel')
+      if (!panel) return false
+      const rect = panel.getBoundingClientRect()
+      const topElement = document.elementFromPoint(rect.left + rect.width / 2, rect.top + Math.min(90, rect.height / 2))
+      return Boolean(topElement?.closest('.nav-mobile-panel'))
+    })
+    if (!mobilePanelVisible || !languageActionVisible || !mobilePanelAboveHero) {
+      failures.push(`/ home mobile ${width}px: expected navigation panel with language action`)
+    }
+    await mobileHomePage.getByRole('button', { name: /关闭导航菜单/ }).click()
+  }
+
+  const title = mobileHomePage.locator('.hero-title-rotator')
+  const titleBefore = await title.getAttribute('aria-label')
+  await title.click()
+  await mobileHomePage
+    .waitForFunction((previous) => document.querySelector('.hero-title-rotator')?.getAttribute('aria-label') !== previous, titleBefore)
+    .catch(() => failures.push(`/ home mobile ${width}px: tapping the title should switch the poem`))
+
+  const footer = mobileHomePage.locator('.site-footer')
+  await footer.scrollIntoViewIfNeeded()
+  const trustLabelsVisible = await Promise.all(
+    ['项目性质', '隐私说明', '免责声明', '联系方式'].map((label) =>
+      footer.getByText(label, { exact: true }).isVisible().catch(() => false),
+    ),
+  )
+  if (trustLabelsVisible.some((visible) => !visible)) {
+    failures.push(`/ home mobile ${width}px: expected complete site trust footer`)
+  }
+
+  await mobileHomePage.close()
+}
 
 await browser.close()
 

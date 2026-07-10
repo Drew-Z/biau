@@ -699,9 +699,6 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   opacity: 0 !important;
 }
 
-.app.page-home > .navigation-top,
-.app.page-tools > .navigation-top,
-.app.page-subpage > .navigation-top,
 .app.page-home > main,
 .app.page-tools > main,
 .app.page-subpage > main,
@@ -713,6 +710,8 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .app.page-home > .navigation-top,
 .app.page-tools > .navigation-top,
 .app.page-subpage > .navigation-top {
+  position: relative;
+  z-index: 100;
   background: transparent;
   border-bottom: 0;
 }
@@ -5796,6 +5795,18 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .public-assistant {
     right: var(--space-16);
     bottom: var(--space-16);
+  }
+
+  .public-assistant__trigger {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .public-assistant__trigger-mark {
+    width: 26px;
+    height: 26px;
   }
 
   .public-assistant__trigger-text {

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback, type PointerEvent } from 'react'
 import { ColoredCard } from './ColoredCard'
 import type { HeroProject } from '../data/hero'
+import { usesMobileInteractionMode } from '../utils/responsive'
 
 interface RightScrollCardsProps {
   projects: HeroProject[]
@@ -42,6 +43,19 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
     const friction = 0.92
     const minVelocity = 0.15
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+
+    if (usesMobileInteractionMode()) {
+      scrollYRef.current = 0
+      velocityYRef.current = 0
+      track.style.transform = ''
+      track.style.removeProperty('--carousel-scroll-y')
+      wrapper.style.removeProperty('--carousel-tilt-x')
+      wrapper.style.removeProperty('--carousel-tilt-y')
+      wrapper.classList.remove('is-dragging')
+      return () => {
+        wrapper.classList.remove('is-dragging')
+      }
+    }
 
     const updateCycleHeight = () => {
       const firstCard = track.querySelector<HTMLElement>('.carousel-card')
@@ -132,6 +146,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
     if (!viewport) return
 
     const handleNativeWheel = (event: WheelEvent) => {
+      if (usesMobileInteractionMode()) return
       event.preventDefault()
       applyWheelDelta(event.deltaY, event.deltaMode)
     }
@@ -141,6 +156,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
   }, [applyWheelDelta])
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (usesMobileInteractionMode()) return
     if (event.button !== 0) return
     const drag = dragRef.current
     drag.isPointerDown = true
@@ -157,6 +173,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
   }
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (usesMobileInteractionMode()) return
     const drag = dragRef.current
     if (!drag.isPointerDown) {
       const wrapper = wrapperRef.current
@@ -200,6 +217,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
   }
 
   const handlePointerEnd = (event?: PointerEvent<HTMLDivElement>) => {
+    if (usesMobileInteractionMode()) return
     const drag = dragRef.current
     if (!drag.isPointerDown) return
 
@@ -250,7 +268,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
-        aria-label="滚轮浏览 IN PORT 项目"
+        aria-label="浏览 IN PORT 项目"
       >
         <div
           ref={trackRef}
@@ -268,6 +286,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
                 key={`${project.id}-${index}`}
                 project={project}
                 index={index}
+                loopCopy={index >= projects.length}
                 onClick={() => onProjectClick(project.detailLink)}
                 onActionClick={externalLink ? () => onProjectAction(externalLink) : undefined}
               />
