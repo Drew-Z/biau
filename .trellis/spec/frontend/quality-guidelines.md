@@ -236,6 +236,26 @@ vertical panning on the title and project rail, one visible project-card set,
 the next project card peeking into view, and an operable mobile menu. This is a
 layout contract, not a screenshot-only check.
 
+### Convention: Light Theme Restraint
+
+The light theme uses a morning-harbor palette rather than a high-saturation
+rainbow field or a flat cream background. Muted rose, daylight, sea mist, and
+harbor blue may all remain visible, but background field saturation stays below
+`100%`, decorative field opacity stays at or below `0.7`, and primary panel
+alpha stays at or above `0.55` for readable content.
+
+`dusk`, `garden`, and `stellar` must keep distinct light palettes. A light scene
+must never reuse dark endpoints such as `#052433`; scene switching changes
+atmosphere without silently changing the theme or reducing text contrast.
+
+Light navigation controls, cards, footer surfaces, and status indicators use
+the same cool translucent surface language with ink-tinted borders and restrained
+shadows. Avoid pure-white outlines, neon active states, or multiple unrelated
+accent systems competing in one viewport.
+
+`scripts/check-ui.mjs` owns the token-level light scene contract in addition to
+normal overflow and interaction checks.
+
 ## Scenario: Mobile First-Load Performance And Harbor Intro
 
 ### 1. Scope / Trigger

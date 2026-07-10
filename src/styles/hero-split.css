@@ -2,16 +2,16 @@
 
 /* Design tokens from the original site */
 :root.light-theme {
-  --panel: #fcf7efc2;
-  --panel-strong: #fffcf7e0;
-  --ink: #18243a;
-  --muted: #586377;
-  --line: #18243a14;
-  --blue: #5a77ca;
-  --green: #009176;
-  --amber: #c88d26;
-  --violet: #6b71c8;
-  --rose: #bb566c;
+  --panel: rgba(242, 247, 246, 0.74);
+  --panel-strong: rgba(248, 250, 248, 0.88);
+  --ink: #173047;
+  --muted: #5b6f7b;
+  --line: #29495b1c;
+  --blue: #537895;
+  --green: #3f806f;
+  --amber: #a96e27;
+  --violet: #747399;
+  --rose: #a45f70;
   --weight-display: 360;
   --weight-title: 440;
   --shell-max: 1360px;
@@ -29,13 +29,12 @@
   --radius-xl: 32px;
   --radius-pill: 999px;
 
-  --shadow: 0 24px 80px #131e2f1f;
-  --hero-bg: radial-gradient(circle at 78% 18%, #3e63ff14, transparent 22%),
-    linear-gradient(135deg, #fffbf5f0, #fcf6edc2);
-  --hero-panel-bg: radial-gradient(circle at 85% 15%, #e6b4aa47, transparent 45%),
-    radial-gradient(circle at 20% 80%, #c8d2e638, transparent 50%),
-    radial-gradient(circle at 50% 40%, #f0dcc82e, transparent 55%),
-    linear-gradient(180deg, #fcf8f3f2, #f5f0e8d9);
+  --shadow: 0 24px 72px rgba(38, 63, 76, 0.14);
+  --hero-bg: radial-gradient(circle at 78% 18%, rgba(83, 120, 149, 0.1), transparent 24%),
+    linear-gradient(135deg, rgba(246, 249, 248, 0.9), rgba(229, 237, 237, 0.76));
+  --hero-panel-bg: radial-gradient(circle at 85% 15%, rgba(164, 95, 112, 0.1), transparent 46%),
+    radial-gradient(circle at 20% 80%, rgba(83, 120, 149, 0.12), transparent 52%),
+    linear-gradient(180deg, rgba(248, 250, 248, 0.92), rgba(231, 238, 237, 0.84));
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -48,7 +47,7 @@
 /* Page background gradient (warm beige), matches the original home body */
 .light-theme body,
 .light-theme .app {
-  background: linear-gradient(180deg, #f0e9dd 0%, #e6ddcc 100%);
+  background: linear-gradient(180deg, #e4eaeb 0%, #cedadc 100%);
 }
 
 /* ===== Hero grid shell ===== */

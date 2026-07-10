@@ -758,6 +758,49 @@ if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow ==
 }
 await navIndicatorPage.close()
 
+const lightScenePalettes = []
+for (const scene of ['dusk', 'garden', 'stellar']) {
+  const lightThemePage = await browser.newPage({ viewport: viewports[0], colorScheme: 'light' })
+  await lightThemePage.addInitScript((harborScene) => {
+    window.localStorage.setItem('theme', 'light')
+    window.localStorage.setItem('biau-port-harbor-scene', harborScene)
+    window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+  }, scene)
+  await gotoApp(lightThemePage, '/')
+  const palette = await lightThemePage.evaluate(() => {
+    const app = document.querySelector('.app.page-home')
+    if (!(app instanceof HTMLElement)) return null
+    const style = getComputedStyle(app)
+    return {
+      light: document.documentElement.classList.contains('light-theme'),
+      c1: style.getPropertyValue('--flow-c1').trim().toLowerCase(),
+      c5: style.getPropertyValue('--flow-c5').trim().toLowerCase(),
+      fieldOpacity: Number.parseFloat(style.getPropertyValue('--flow-field-opacity')),
+      panelAlpha: Number.parseFloat(style.getPropertyValue('--flow-panel-alpha')),
+      saturation: Number.parseFloat(style.getPropertyValue('--flow-saturation')),
+      ink: style.getPropertyValue('--ink').trim().toLowerCase(),
+    }
+  })
+  if (!palette) {
+    failures.push(`/ home light ${scene}: expected measurable theme tokens`)
+  } else {
+    lightScenePalettes.push(palette)
+    if (!palette.light || palette.ink !== '#173047') {
+      failures.push(`/ home light ${scene}: expected the morning-harbor light theme ink contract`)
+    }
+    if (palette.fieldOpacity > 0.7 || palette.panelAlpha < 0.55 || palette.saturation > 100) {
+      failures.push(`/ home light ${scene}: expected restrained field, readable panels, and sub-100% saturation`)
+    }
+    if (palette.c5 === '#052433' || palette.c5 === '#16497b') {
+      failures.push(`/ home light ${scene}: light palette should not reuse the old dark/deep-blue endpoint`)
+    }
+  }
+  await lightThemePage.close()
+}
+if (new Set(lightScenePalettes.map((palette) => `${palette.c1}:${palette.c5}`)).size !== 3) {
+  failures.push('/ home light scenes: dusk, garden, and stellar should keep distinct restrained palettes')
+}
+
 const assistantPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(assistantPage, '/assistant')
 if (await assistantPage.locator('.public-assistant').count()) {

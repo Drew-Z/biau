@@ -178,6 +178,31 @@ wordmark clearance, and the mobile footer/assistant overlap contract. It passed
 14 routes across desktop and mobile viewports, including dedicated `320 / 390 /
 430px` home checks.
 
+## Phase 7: Light Theme Visual Cohesion
+
+- [x] Replace the high-saturation rainbow light field with a restrained morning
+  harbor palette using muted rose, soft daylight, sea mist, and harbor blue.
+- [x] Increase panel readability without turning cards into opaque white blocks;
+  borders, inset highlights, and shadows now use cool ink-tinted values.
+- [x] Keep `dusk`, `garden`, and `stellar` visually distinct in light mode while
+  preventing the stellar scene from falling back to dark background colors.
+- [x] Align light navigation buttons, Logo shell, footer, and status pulse with
+  the same cool translucent surface language.
+- [x] Preserve the existing dark theme palette and interaction behavior.
+- [x] Add UI regression coverage for restrained light field opacity, readable
+  panel alpha, sub-100% saturation, and distinct light scene endpoints.
+
+### Phase 7 Validation
+
+- [x] `npm.cmd run lint`
+- [x] `npm.cmd run build`
+- [x] `npm.cmd run performance:check`
+- [x] `$env:UI_CHECK_BASE='http://127.0.0.1:5198'; npm.cmd run check:ui`
+
+Visual review covered the home, projects, blog, status, project-detail, and
+mobile project routes in light mode, plus a dark home regression. The UI check
+passed 14 routes across desktop/mobile viewports and all three light scenes.
+
 ## Candidate Projects
 
 - `blog-semi`: recently changed Agent productization facts; good for verifying project page and assistant sync.

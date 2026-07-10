@@ -1,42 +1,39 @@
-/* Light Theme Variables - 浅色主题覆盖 */
+/* Light Theme Variables - muted morning harbor palette */
 :root.light-theme {
-  /* Backgrounds - 精确颜色值 */
-  --bg-primary: #ece4d5; /* 温暖米色 - 原版精确值 */
-  --bg-secondary: #F5F0E8;
-  --bg-tertiary: #DED8CB;
-  --bg-card: #ebf0ea; /* 淡绿灰 - 原版卡片背景 */
-  --bg-card-hover: #e5ebe6;
+  --bg-primary: #dce4e6;
+  --bg-secondary: #e8eeed;
+  --bg-tertiary: #cbd7d9;
+  --bg-card: rgba(246, 249, 248, 0.76);
+  --bg-card-hover: rgba(249, 251, 250, 0.9);
   
-  /* Text Colors - 原版颜色 */
-  --text-primary: #18243a; /* 深蓝灰 */
-  --text-secondary: #2a3328; /* 深绿灰 */
-  --text-tertiary: #7a8087; /* 中灰 */
-  --text-muted: #9ca3af;
+  --text-primary: #173047;
+  --text-secondary: #405766;
+  --text-tertiary: #687c87;
+  --text-muted: #83939b;
   
   /* Accent Colors */
-  --accent-blue: #667eea;
-  --accent-purple: #764ba2;
-  --accent-cyan: #06b6d4;
-  --accent-orange: #d97706; /* 橙黄色高亮 */
+  --accent-blue: #4f7390;
+  --accent-purple: #716f98;
+  --accent-cyan: #3f8290;
+  --accent-orange: #a96e27;
   
-  /* 彩色编号 - 原版精确值 */
-  --color-01: #4ECDC4; /* 青绿色 */
-  --color-02: #FF6B6B; /* 橙红色 */
-  --color-03: #FFB6C1; /* 粉红色 */
-  --color-04: #C8B6FF; /* 浅紫色 */
-  --color-05: #FF9A76; /* 珊瑚色 */
+  --color-01: #4f9788;
+  --color-02: #a96776;
+  --color-03: #bd8a92;
+  --color-04: #8584aa;
+  --color-05: #b7835d;
   
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  --gradient-secondary: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+  --gradient-primary: linear-gradient(135deg, #587b96 0%, #77749a 100%);
+  --gradient-secondary: linear-gradient(135deg, #4c8b91 0%, #537995 100%);
   
   /* Border & Shadow */
-  --border-subtle: rgba(0, 0, 0, 0.06);
-  --border-accent: rgba(102, 126, 234, 0.3);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03);
-  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.06);
+  --border-subtle: rgba(37, 67, 82, 0.12);
+  --border-accent: rgba(79, 115, 144, 0.3);
+  --shadow-card: 0 12px 30px rgba(38, 63, 76, 0.08);
+  --shadow-sm: 0 2px 8px rgba(38, 63, 76, 0.05);
+  --shadow-md: 0 8px 20px rgba(38, 63, 76, 0.07);
+  --shadow-lg: 0 18px 44px rgba(38, 63, 76, 0.1);
   
   /* Spacing - 原版间距系统 */
   --space-2: 2px;
@@ -61,8 +58,8 @@
 
 /* Light Theme Navigation Override */
 .light-theme .navigation-minimal {
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(244, 248, 247, 0.82);
+  border: 1px solid rgba(37, 67, 82, 0.1);
   backdrop-filter: blur(12px);
 }
 
@@ -72,12 +69,12 @@
 
 .light-theme .nav-link-minimal:hover {
   color: var(--text-primary);
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(37, 67, 82, 0.05);
 }
 
 .light-theme .nav-link-minimal.active {
   color: var(--accent-orange);
-  background: rgba(217, 119, 6, 0.08);
+  background: rgba(169, 110, 39, 0.08);
   border: none;
 }
 
