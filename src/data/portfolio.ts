@@ -346,6 +346,22 @@ export const projects: Project[] = [
           },
         },
         {
+          title: '展示页不等同于发布页',
+          body:
+            'App 展示页现在承担的是“让访客看见当前工作面”的职责：桌宠模式、孵化、社区和个人页都可以通过模拟器截图理解产品方向；APK 区域则明确写成 release gate，而不是把 debug 构建伪装成可公开下载。这样项目页可以展示真实进展，同时保留正式签名、回归和人工批准的边界。',
+          visual: {
+            id: 'pet-android-hatch-showcase',
+            type: 'screenshot',
+            title: '孵化桌宠界面截图',
+            description: '展示当前 App 中孵化桌宠的产品面，让访客理解生成与养成体验的目标状态。',
+            image: '/images/projects/showcase/android-hatch.png',
+            alt: 'Gamer Pet App 孵化桌宠界面截图',
+            caption: '模拟器截图展示孵化桌宠页面的当前设计状态；它是展示证据，不代表公开 APK 已发布。',
+            sourceLabel: '打开 App 展示页',
+            sourceUrl: '/pet-app-showcase/',
+          },
+        },
+        {
           title: 'APK 发布门禁最新结论',
           body:
             '最近一次发布门禁审计只在 Pet 工作区找到 debug APK，没有找到满足公开条件的 release APK 或 AAB。因此主站和展示页继续保持 APK 下载关闭；后续必须补正式 release 构建、签名策略、校验摘要、版本说明、基础回归和人工确认后才能公开下载。',
@@ -360,6 +376,17 @@ export const projects: Project[] = [
             'Admin Review 提供内部审核队列和审核决策界面，用来把候选桌宠从“可看”推进到“可发布”。',
             '静态展示页把当前 App 画面、下载门禁和后续发布条件整理给访客查看，避免只展示内部工程文档。',
           ],
+          visual: {
+            id: 'pet-android-community-showcase',
+            type: 'screenshot',
+            title: '社区页面截图',
+            description: '展示桌宠社区 Feed 和内容分发入口，说明 App 不只是单一桌宠壳，而是连接生成、审核和社区展示。',
+            image: '/images/projects/showcase/android-community.png',
+            alt: 'Gamer Pet App 社区页面截图',
+            caption: '模拟器截图展示社区页和内容流状态；真实社区数据、账号和后台配置不进入公开页面。',
+            sourceLabel: '打开 App 展示页',
+            sourceUrl: '/pet-app-showcase/',
+          },
         },
         {
           title: '生成与人审链路',
@@ -460,6 +487,7 @@ export const projects: Project[] = [
       '质量证据包括 Node workspace tests、Android 单元测试、Community API routes/server/store/rate-limit/metrics/SLA/logging/postgres 测试、pet package contract 测试、追踪矩阵、结构化日志、Prometheus metrics 和 SLA 文档。',
       '私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。',
       '项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待正式签名包，debug 构建只作为内部验证信号，不提供占位下载。',
+      'Pet 项目详情页正文已经穿插 Android 首页、孵化桌宠和社区页截图，说明这些是公开展示当前工作面的证据；正式 APK 下载仍必须等待 release 构建、签名、SHA-256、版本说明、回归和人工批准。',
       '最近一次 APK 发布门禁审计只找到 debug APK，没有 release APK/AAB 候选；公开下载继续关闭，后续需要正式构建、签名策略、校验摘要、版本说明、回归证据和人工确认。',
       '当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。',
     ],
