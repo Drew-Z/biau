@@ -77,6 +77,7 @@
 
 - `npm.cmd run server:build` after changing Agent runtime modules or `ChatResponse.meta`.
 - `npm.cmd run assistant:agent-contract` after changing LangGraph steps, Agent tool permissions, guardrails, Studio draft artifacts, or trace sanitization.
+- `npm.cmd run assistant:agent-eval` after changing planner heuristics, tool routing, Agent tool outputs, local eval fixtures, Studio draft plan-only behavior, or internal knowledge/memory tool behavior.
 - `npm.cmd run server:smoke` must assert mock planner tool selection and protected internal chat behavior.
 - `npm.cmd run assistant:service-modes-smoke` must prove public/rag/studio modes do not expose internal Agent routes.
 - `npm.cmd run assistant:rag-smoke` after changing `rag.retrieve` or scoped retrieval behavior.
@@ -195,6 +196,7 @@ runInternalAgent(input: InternalAgentRunInput): Promise<InternalAgentRunResult>
 
 - Run `npm.cmd run server:build` after changing graph modules or Agent types.
 - Run `npm.cmd run assistant:agent-contract` after changing graph node order, `runInternalAgent()`, tool trace fields, guardrails, or Studio draft artifacts.
+- Run `npm.cmd run assistant:agent-eval` after changing deterministic planner cases, tool-routing heuristics, local Agent fixtures, or productized Agent capabilities.
 - Run `npm.cmd run server:smoke` to prove `runInternalAgent()` and protected route behavior still work.
 - Run `npm.cmd run assistant:service-modes-smoke` after changing service route boundaries or imports.
 - Run `npm.cmd run assistant:meta-check` after changing `AgentRunMeta.steps`, tool trace fields, artifacts, or frontend normalizers.

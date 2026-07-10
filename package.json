@@ -9,6 +9,7 @@
     "assistant:kg-check": "tsx scripts/check-assistant-knowledge-v2.ts",
     "assistant:meta-check": "tsx scripts/check-assistant-meta-normalizers.ts",
     "assistant:agent-contract": "tsx server/scripts/agent-framework-contract.ts",
+    "assistant:agent-eval": "tsx server/scripts/agent-eval-workbench.ts",
     "assistant:admin-check": "tsx scripts/check-assistant-admin-knowledge-ops.ts",
     "assistant:eval": "tsx scripts/evaluate-assistant-rag.ts",
     "assistant:rag-smoke": "tsx server/scripts/rag-smoke.ts",

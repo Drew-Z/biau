@@ -74,10 +74,30 @@ Plan and execute later slices one at a time:
 
 - [ ] Agent run replay / richer safe history meta.
 - [ ] Internal knowledge source presets and review readiness.
-- [ ] Local eval cases for status/project/Studio draft workflows.
+- [x] Local eval cases for status/project/Studio draft workflows.
 - [ ] Admin operations polish for RAG and member-channel confidence.
 - [ ] Main-site public data sync when product facts change.
 - [ ] Manual gate ledger updates for cloud/model/APK/production-only work.
+
+### Phase 4 Slice: Local Agent Evaluation Workbench
+
+Implemented a deterministic internal Agent eval gate:
+
+- Added `server/scripts/agent-eval-workbench.ts`.
+- Added `npm.cmd run assistant:agent-eval`.
+- Added the eval gate to `scripts/verify.mjs`.
+- Covered local no-live cases for:
+  - Legal RAG status/project routing;
+  - reviewed internal knowledge search;
+  - Studio draft `plan-only` behavior;
+  - planning plus current-session memory search.
+- The script forces local-only runtime env during execution and restores the previous process env snapshot afterward. It does not call real model providers, relays, production RAG services, or external vector databases.
+
+Validation:
+
+```powershell
+npm.cmd run assistant:agent-eval # passed, 4 cases
+```
 
 ## Manual Gates
 

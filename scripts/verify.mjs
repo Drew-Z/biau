@@ -104,6 +104,8 @@ async function stopPreview(child) {
 await run(['run', 'assistant:index'])
 await run(['run', 'assistant:kg-check'])
 await run(['run', 'assistant:eval'])
+await run(['run', 'assistant:agent-contract'])
+await run(['run', 'assistant:agent-eval'])
 await run(['run', 'assistant:rag-sync-local'])
 await run(['run', 'assistant:meta-check'])
 await run(['run', 'assistant:admin-check'])

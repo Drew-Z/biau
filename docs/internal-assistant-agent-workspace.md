@@ -56,6 +56,7 @@ The graph does not hard-code project, status, RAG, Studio, or memory behavior in
 - `knowledge.search`: public knowledge plus reviewed/active internal knowledge summaries.
 - `studio.draft`: review-required, hidden Studio draft planning/creation.
 - `memory.search`: current member/session history summaries.
+- `memory.write`: restricted low-sensitive memory-note planning, currently review-gated and plan-only.
 - `answer.direct`: direct answer path when tools are not needed.
 
 Normal internal chat allows only `read` and `draft-write`. `admin-write` and `external-live` remain unavailable from normal chat.
@@ -97,6 +98,8 @@ Relevant local checks:
 ```powershell
 npm.cmd run server:build
 npm.cmd run server:smoke
+npm.cmd run assistant:agent-contract
+npm.cmd run assistant:agent-eval
 npm.cmd run assistant:service-modes-smoke
 npm.cmd run assistant:meta-check
 npm.cmd run assistant:rag-smoke
