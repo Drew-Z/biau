@@ -76,8 +76,8 @@ Plan and execute later slices one at a time:
 - [x] Internal knowledge source presets and review readiness.
 - [x] Local eval cases for status/project/Studio draft workflows.
 - [x] Admin operations polish for RAG and member-channel confidence.
-- [ ] Main-site public data sync when product facts change.
-- [ ] Manual gate ledger updates for cloud/model/APK/production-only work.
+- [x] Main-site public data sync when product facts change.
+- [x] Manual gate ledger updates for cloud/model/APK/production-only work.
 
 ### Phase 4 Slice: Local Agent Evaluation Workbench
 
@@ -126,6 +126,25 @@ npm.cmd run lint # passed
 npm.cmd run build # passed
 npm.cmd run check:ui # passed, 14 routes x 2 viewports at http://127.0.0.1:5174
 ```
+
+### Phase 4 Slice: Public Project Fact Sync And Manual Gates
+
+Synchronized the productized Agent facts back into public-safe site surfaces:
+
+- Updated the BIAU Port project detail content in `src/data/portfolio.ts`:
+  - stack/highlights now mention LangGraph Agent work;
+  - workflow now describes the productized internal Agent workspace, trace replay, and admin readiness;
+  - architecture now describes `runInternalAgent()` entering a LangGraph compiled graph and typed tools;
+  - quality gates now list `assistant:agent-contract`, `assistant:agent-eval`, `assistant:meta-check`, and `assistant:admin-check`;
+  - assistant-facing project context now reflects LangGraph runtime, tool registry, trace replay, and admin readiness.
+- Updated the internal assistant suggestion text away from "MVP" toward the current productized Agent workspace direction.
+- Updated `docs/manual-gates.md` with low-sensitive records for:
+  - `/assistant` Agent workspace product surface;
+  - `/assistant/admin` sourceType presets and readiness path;
+  - `assistant:agent-contract` / `assistant:agent-eval` as local no-live gates;
+  - `verify` coverage including internal Agent contract/eval.
+
+Validation will regenerate assistant knowledge from these public facts and run project/assistant/manual-gate checks.
 
 ### Phase 4 Slice: Message-Level Agent Trace Replay
 

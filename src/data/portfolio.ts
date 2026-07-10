@@ -798,8 +798,8 @@ export const projects: Project[] = [
     status: 'ongoing',
     role: 'React 主站 / Semi 组件体系 / 项目案例路由 / 内容治理 / 助手知识',
     image: '/images/projects/showcase/blog-semi-home-desktop.png',
-    stack: ['React 19', 'Vite', 'TypeScript', 'Semi Design', 'Express', 'Prisma', 'PostgreSQL', 'Playwright'],
-    highlights: ['多视图主站', '项目案例', '公开助手', '内容治理', 'UI 验证'],
+    stack: ['React 19', 'Vite', 'TypeScript', 'Semi Design', 'Express', 'Prisma', 'PostgreSQL', 'LangGraph', 'Playwright'],
+    highlights: ['多视图主站', '项目案例', 'LangGraph Agent', '内容治理', 'UI 验证'],
     links: [
       internalLink('内容模型文章', '/blog/content-modeling-project-site'),
       internalLink('公开内容治理', '/blog/public-content-governance'),
@@ -853,8 +853,8 @@ export const projects: Project[] = [
           title: '助手与内容联动',
           items: [
             '公开助手从 `src/data/portfolio.ts` 和公开博客 curation 生成本地知识，未配置后端时仍可回答站点公开内容。',
-            '内部助手已从示例会话推进到成员工作台：支持邀请码兑换、成员身份校验、真实会话历史、会话归档、成员级模型渠道和回答诊断面板。',
-            '隐藏管理页已扩展为内部运营后台，可管理邀请码、成员状态、模型渠道、内部知识文档、同步状态和低敏 usage 列表。',
+            '内部助手已经推进到 LangGraph Agentic Workspace：支持邀请码兑换、成员身份校验、真实会话历史、会话归档、成员级模型渠道、运行状态条、消息级 Agent 轨迹回放和低敏回答诊断。',
+            '隐藏管理页已扩展为内部运营后台，可管理邀请码、成员状态、模型渠道、内部知识文档、同步状态、sourceType 预设、RAG readiness 路径和低敏 usage 列表。',
             '项目详情和助手知识共用 `getProjectAssistantSummary` 与 `getProjectAssistantTags`，减少页面文案和助手答案互相漂移。',
           ],
         },
@@ -868,7 +868,7 @@ export const projects: Project[] = [
         {
           title: '助手后端与公开知识生成',
           body:
-            '仓库同时保留一个 Express/TypeScript 助手后端，配合 Prisma 与 PostgreSQL 支持 invite、member、chat session、message、usage log、内部知识文档和同步运行记录。公开助手方向已经推进到 Agentic Hybrid RAG groundwork；内部助手则使用成员隔离、scoped RAG、成员级模型渠道和 Qdrant internal collection 同步路径。`scripts/generate-assistant-knowledge.ts` 会把公开项目和精选博客生成到 `server/data/public-knowledge.json`，让前端 fallback 和后端知识源保持同一份公开事实。',
+            '仓库同时保留一个 Express/TypeScript 助手后端，配合 Prisma 与 PostgreSQL 支持 invite、member、chat session、message、usage log、内部知识文档和同步运行记录。内部助手主路径已由 `runInternalAgent()` 进入 LangGraph compiled graph，节点覆盖 input guard、plan、validate、execute tools、compose answer、self-check 和 persist trace；工具注册表包含 scoped RAG、状态查询、项目查询、知识搜索、Studio 草稿、会话记忆和 direct answer。公开助手仍使用公开知识与可选 RAG Orchestrator，`scripts/generate-assistant-knowledge.ts` 会把公开项目和精选博客生成到 `server/data/public-knowledge.json`，让前端 fallback 和后端知识源保持同一份公开事实。',
         },
         {
           title: '内容与 SEO 管线',
@@ -890,6 +890,9 @@ export const projects: Project[] = [
           title: '自动化验证',
           items: [
             '`npm.cmd run assistant:index` 生成公开助手知识。',
+            '`npm.cmd run assistant:agent-contract` 验证 LangGraph 节点、工具权限、Studio artifact 和敏感形态不会漂移。',
+            '`npm.cmd run assistant:agent-eval` 在 no-live 模式下覆盖状态/项目、内部知识、Studio draft plan-only 和会话记忆用例。',
+            '`npm.cmd run assistant:meta-check` 和 `assistant:admin-check` 守住前端 meta normalizer、管理台知识同步摘要和低敏诊断。',
             '`npm.cmd run sitemap:generate` 更新公开 sitemap。',
             '`npm.cmd run blog:check` 检查公开博客内容边界。',
             '`npm.cmd run lint` 和 `npm.cmd run build` 覆盖 ESLint、TypeScript 和 Vite 构建。',
@@ -904,7 +907,7 @@ export const projects: Project[] = [
           items: [
             '主站内容仍以静态 TypeScript 数据为主，不是多人 CMS；内容发布需要代码审查和构建验证。',
             '博客仍在持续筛选和重写，旧内容不会因为存在归档就自动公开。',
-            '内部助手的产品骨架已具备成员、历史、管理后台和内部知识同步路径；真实生产使用仍依赖 Render 环境变量、数据库 migration、用户批准的内部 corpus 和真实模型任务验证。',
+            '内部助手的本地产品化能力已经具备 LangGraph runtime、工具轨迹、消息级 replay、管理台 readiness 和本地 eval；真实生产质量仍依赖 Render 环境变量、数据库 migration、用户批准的内部 corpus、生产 RAG sync 和真实业务任务验证。',
             '项目页只展示公开安全事实；部署凭据、账号、生产数据、私有后台和未确认下载包不会放进公开站点。',
           ],
         },
@@ -915,7 +918,7 @@ export const projects: Project[] = [
           items: [
             '继续补齐各项目的案例页细节，让实现、架构、验证、边界和后续版本方向都能从仓库证据追溯。',
             '把博客内容生成流水线继续沉淀为 review-only 证据包、模型辅助草稿、人工审核和公开发布的稳定流程。',
-            '增强公开助手对项目页、精选博客和资源内容的引用质量，并把内部助手逐步扩展到更真实的团队协作场景。',
+            '继续增强公开助手和内部助手的项目事实覆盖，用 reviewed/active 内部知识、RAG sync 低敏诊断和本地 eval case 驱动后续迭代。',
             '完善图片、移动端布局、链接审计、UI 回归和部署记录，让主站更接近长期维护的产品展示系统。',
           ],
         },
@@ -925,10 +928,12 @@ export const projects: Project[] = [
       'BIAU Port 当前主站使用 React 19、Vite、TypeScript 和 Semi Design 构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。',
       '项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。',
       '仓库包含一个 Express/TypeScript 助手后端，配合 Prisma/PostgreSQL 支持 invite、member、chat session、message、usage log、内部知识文档和同步运行记录；前端未配置 API 时会使用公开知识 fallback。',
-      '公开助手方向已经从本地知识 fallback 推进到 Agentic Hybrid RAG groundwork：server 侧包含 RAG Orchestrator、embedding client、PostgreSQL/pgvector store、Qdrant store 和 sync/smoke 脚本；内部助手已具备成员隔离、真实会话历史、成员级模型渠道、内部知识管理、Qdrant internal collection 同步路径和低敏回答诊断。',
+      '内部助手已经产品化为 LangGraph Agentic Workspace：`runInternalAgent()` 进入 compiled graph，工具注册表覆盖 scoped RAG、状态查询、项目查询、知识搜索、Studio 草稿、会话记忆和 direct answer，普通成员只允许 read 与 draft-write。',
+      '内部助手前端已经具备运行状态条、LangGraph inspector、工具卡片、Studio artifact 链接、消息级 Agent trace replay 和降级/guardrail 下一步提示；管理台具备成员模型渠道、内部知识 sourceType 预设、RAG readiness 路径和低敏 usage 摘要。',
+      '公开助手方向已经从本地知识 fallback 推进到 Agentic Hybrid RAG groundwork：server 侧包含 RAG Orchestrator、embedding client、PostgreSQL/pgvector store、Qdrant store 和 sync/smoke 脚本。',
       'Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。',
       '内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。',
-      '验证链路包括 assistant:index、sitemap:generate、blog:check、lint、build、check:ui 和 verify，其中 verify 会串起助手知识、Prisma、server build/smoke、前端构建、博客检查、preview 和 UI 检查。',
+      '验证链路包括 assistant:index、assistant:agent-contract、assistant:agent-eval、assistant:meta-check、assistant:admin-check、sitemap:generate、blog:check、lint、build、check:ui 和 verify，其中 verify 会串起助手知识、Prisma、server build/smoke、前端构建、博客检查、preview 和 UI 检查。',
       '当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；内部助手真实生产质量仍需要用户维护 Render 环境变量、数据库 migration、内部 corpus 脱敏标准和真实业务任务验证。',
     ],
   },

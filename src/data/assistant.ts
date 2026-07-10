@@ -334,7 +334,7 @@ export const internalAssistantSuggestions: AssistantSuggestion[] = [
   {
     id: 'delivery-check',
     label: '交付检查',
-    prompt: '如果我要交付一个内部 AI 助手 MVP，这个站里的哪些文章最值得先读？',
+    prompt: '如果我要交付一个产品化内部 Agent 工作台，这个站里的哪些文章和项目说明最值得先读？',
   },
 ]
 
