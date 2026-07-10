@@ -162,15 +162,6 @@ function isIgnorableConsoleResourceError(message) {
   ].includes(message)
 }
 
-function isIgnorableRequestFailure(request) {
-  try {
-    const url = new URL(request.url())
-    return ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(url.hostname)
-  } catch {
-    return false
-  }
-}
-
 async function collectStudioOverflow(page) {
   return page.evaluate(() => {
     const viewportWidth = document.documentElement.clientWidth
@@ -270,7 +261,6 @@ for (const viewport of viewports) {
       }
     })
     page.on('requestfailed', (request) => {
-      if (isIgnorableRequestFailure(request)) return
       logs.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? 'failed'}`)
     })
     page.on('pageerror', (error) => logs.push(`pageerror: ${error.message}`))
@@ -847,7 +837,7 @@ for (const path of ['/projects', '/blog']) {
 
 const homeIntroPage = await browser.newPage({ viewport: viewports[0] })
 await homeIntroPage.addInitScript(() => {
-  window.sessionStorage.removeItem('biau-port-harbor-intro:v1')
+  window.sessionStorage.removeItem('biau-port-harbor-intro:v2')
   window.__harborIntroEvents = []
   for (const type of ['animationstart', 'animationend']) {
     document.addEventListener(
@@ -892,6 +882,10 @@ const harborDockMetrics = await homeIntroPage.evaluate(() => {
     dockScale,
     expectedScale,
     navOpacity: getComputedStyle(navLogo).opacity,
+    introSeen: window.sessionStorage.getItem('biau-port-harbor-intro:v2'),
+    externalStylesheets: [...document.querySelectorAll('link[rel="stylesheet"]')]
+      .map((link) => link.getAttribute('href') ?? '')
+      .filter((href) => href.startsWith('http')),
   }
 })
 if (!harborDockMetrics) {
@@ -918,6 +912,12 @@ if (!harborDockMetrics) {
   if (harborDockMetrics.navOpacity !== '0') {
     failures.push('/ home intro docking: expected nav logo hidden before settling crossfade')
   }
+  if (harborDockMetrics.introSeen !== null) {
+    failures.push('/ home intro: should mark the intro as seen only after the animation completes')
+  }
+  if (harborDockMetrics.externalStylesheets.length > 0) {
+    failures.push(`/ home performance: render-blocking external stylesheets found: ${harborDockMetrics.externalStylesheets.join(', ')}`)
+  }
 }
 await homeIntroPage
   .waitForFunction(
@@ -932,6 +932,7 @@ await homeIntroPage
     failures.push('/ home intro: expected harbor intro to finish and unmount')
   })
 const harborIntroEvents = await homeIntroPage.evaluate(() => window.__harborIntroEvents ?? [])
+const harborIntroSeen = await homeIntroPage.evaluate(() => window.sessionStorage.getItem('biau-port-harbor-intro:v2'))
 const vesselStartEvent = harborIntroEvents.find(
   (event) => event.type === 'animationstart' && event.name === 'harborVesselDock',
 )
@@ -947,11 +948,45 @@ if (vesselEndIndex < 0 || markEndIndex < 0 || veilEndIndex < 0) {
 } else if (!vesselStartEvent || harborIntroEvents[veilEndIndex].time - vesselStartEvent.time > 3000) {
   failures.push('/ home intro: expected harbor intro animation span to complete within 3s')
 }
+if (harborIntroSeen !== '1') {
+  failures.push('/ home intro: expected completed animation to persist the seen marker')
+}
 await homeIntroPage.close()
+
+const mobileIntroContext = await browser.newContext({
+  viewport: { width: 390, height: 844 },
+  deviceScaleFactor: 3,
+  hasTouch: true,
+  isMobile: true,
+  reducedMotion: 'no-preference',
+})
+const mobileIntroPage = await mobileIntroContext.newPage()
+await mobileIntroPage.addInitScript(() => {
+  window.sessionStorage.removeItem('biau-port-harbor-intro:v2')
+})
+await gotoApp(mobileIntroPage, '/', { waitUntil: 'domcontentloaded' })
+await mobileIntroPage.waitForSelector('.harbor-intro__vessel', { timeout: 3000 }).catch(() => {
+  failures.push('/ home mobile intro: expected harbor animation to mount on a first mobile visit')
+})
+const mobileIntroState = await mobileIntroPage.evaluate(() => ({
+  active: document.documentElement.classList.contains('harbor-intro-active'),
+  seen: window.sessionStorage.getItem('biau-port-harbor-intro:v2'),
+}))
+if (!mobileIntroState.active || mobileIntroState.seen !== null) {
+  failures.push('/ home mobile intro: expected active animation without an early seen marker')
+}
+await mobileIntroPage.locator('.harbor-intro').waitFor({ state: 'detached', timeout: 10_000 }).catch(() => {
+  failures.push('/ home mobile intro: expected harbor animation to complete and unmount')
+})
+const mobileIntroSeen = await mobileIntroPage.evaluate(() => window.sessionStorage.getItem('biau-port-harbor-intro:v2'))
+if (mobileIntroSeen !== '1') {
+  failures.push('/ home mobile intro: expected completed animation to persist the seen marker')
+}
+await mobileIntroContext.close()
 
 const homeCarouselPage = await browser.newPage({ viewport: viewports[0] })
 await homeCarouselPage.addInitScript(() => {
-  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v2', '1')
 })
 await gotoApp(homeCarouselPage, '/')
 const carouselViewport = homeCarouselPage.locator('.carousel-viewport')
@@ -997,7 +1032,7 @@ await homeCarouselPage.close()
 
 const homeTitleDragPage = await browser.newPage({ viewport: viewports[0] })
 await homeTitleDragPage.addInitScript(() => {
-  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v2', '1')
 })
 await gotoApp(homeTitleDragPage, '/')
 const titleRotator = homeTitleDragPage.locator('.hero-title-rotator')
@@ -1029,7 +1064,7 @@ await homeTitleDragPage.close()
 
 const homeCarouselClickPage = await browser.newPage({ viewport: viewports[0] })
 await homeCarouselClickPage.addInitScript(() => {
-  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v2', '1')
 })
 await gotoApp(homeCarouselClickPage, '/')
 await homeCarouselClickPage.locator('.carousel-viewport').hover({ force: true })
@@ -1042,7 +1077,7 @@ await homeCarouselClickPage.close()
 
 const homeCarouselActionKeyboardPage = await browser.newPage({ viewport: viewports[0] })
 await homeCarouselActionKeyboardPage.addInitScript(() => {
-  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v2', '1')
   window.__openedUrls = []
   window.open = (url) => {
     window.__openedUrls.push(String(url))
@@ -1458,7 +1493,7 @@ await projectDetailInternalLinkPage.close()
 for (const width of [320, 390, 430]) {
   const mobileHomePage = await browser.newPage({ viewport: { width, height: 900 } })
   await mobileHomePage.addInitScript(() => {
-    window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+    window.sessionStorage.setItem('biau-port-harbor-intro:v2', '1')
   })
   await gotoApp(mobileHomePage, '/')
   await mobileHomePage.waitForTimeout(160)

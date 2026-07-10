@@ -79,10 +79,11 @@ the image into view and wait for `complete && naturalWidth > 0` before reading
 layout metrics. Prefer `requestfailed` logs with URLs for actionable resource
 failures; anonymous Chromium `Failed to load resource: net::ERR_TIMED_OUT`
 console noise from local preview should not be the only failure signal when
-explicit route, image, and link assertions still pass. Local preview checks may
-ignore transient Google Fonts request failures for `fonts.googleapis.com` and
-`fonts.gstatic.com`; they must not ignore same-origin JS, CSS, image, JSON, or
-route failures.
+explicit route, image, and link assertions still pass. Local preview checks
+must not ignore same-origin JS, CSS, image, JSON, or route failures. The public
+shell must not add render-blocking third-party font stylesheets; use the project
+system-font stacks unless a later self-hosted font asset has an explicit
+performance budget.
 
 When a route check asserts a first-load browser state, make that state explicit
 in `scripts/check-ui.mjs`. For example, Studio no-token prompts must declare
@@ -235,6 +236,102 @@ vertical panning on the title and project rail, one visible project-card set,
 the next project card peeking into view, and an operable mobile menu. This is a
 layout contract, not a screenshot-only check.
 
+## Scenario: Mobile First-Load Performance And Harbor Intro
+
+### 1. Scope / Trigger
+
+- Trigger: changing `index.html`, `src/main.tsx`, top-level route imports,
+  `HarborIntro`, global CSS imports, or Cloudflare Pages cache headers.
+- Goal: let the harbor animation begin promptly on a cold mobile visit without
+  turning the animation itself into a permanent loading screen.
+
+### 2. Signatures
+
+- Build budget command: `npm.cmd run performance:check`.
+- Intro completion key: `sessionStorage['biau-port-harbor-intro:v2']`.
+- Cloudflare Pages cache contract: `public/_headers` owns `/assets/*` immutable
+  cache behavior.
+
+### 3. Contracts
+
+- `dist/index.html` must not contain render-blocking third-party stylesheets.
+  Use the system font stacks in `src/styles/theme.css`; a future custom font
+  must be self-hosted and explicitly budgeted.
+- Do not import the full Semi UI stylesheet when the public shell only uses
+  `@douyinfe/semi-icons`. Reintroducing component CSS requires proof that the
+  used components need it and that the build budget remains green.
+- The built entry CSS must stay at or below `240000` raw bytes and the built
+  entry JavaScript at or below `430000` raw bytes. These are regression budgets,
+  not user-network transfer estimates.
+- Heavy non-home routes and the public assistant widget should remain lazy
+  chunks unless direct-route UX proves that a specific route must be eager.
+- Hashed `/assets/*` files use `Cache-Control: public, max-age=31536000,
+  immutable`; HTML remains revalidatable so new hashes can deploy safely.
+- The harbor intro writes its seen marker only after `harborIntroVeil`
+  completes. A slow or interrupted load must not permanently suppress the next
+  attempt. `prefers-reduced-motion: reduce` still skips the animation.
+
+### 4. Validation & Error Matrix
+
+- External stylesheet in built HTML -> `performance:check` fails.
+- Entry CSS or JS exceeds its budget -> `performance:check` fails with actual
+  and allowed byte counts.
+- Missing immutable asset header -> `performance:check` fails.
+- Intro marker exists while `.harbor-intro` is active -> `check:ui` fails.
+- First mobile visit with no reduced-motion preference does not mount or finish
+  the intro -> `check:ui` fails.
+- Reduced-motion visitor -> no intro is required and normal page content must
+  remain available.
+
+### 5. Good/Base/Bad Cases
+
+- Good: cold 390px visit loads local CSS/JS, mounts the harbor animation, then
+  stores `v2=1` only after docking and veil completion.
+- Base: a completed intro in the same tab is skipped on later SPA/home visits.
+- Base: a reduced-motion visitor sees the page directly.
+- Bad: a Google Fonts `<link rel="stylesheet">` blocks React and the animation.
+- Bad: importing `semi.min.css` adds hundreds of unused component rules to the
+  public shell.
+- Bad: setting the intro marker in the mount effect before any frame is painted.
+
+### 6. Tests Required
+
+- Run `npm.cmd run lint`, `npm.cmd run build`, and
+  `npm.cmd run performance:check` after changing entry resources or caching.
+- Run `npm.cmd run check:ui` after changing the intro, route splitting, or
+  top-level Suspense behavior.
+- The UI check must include a mobile context with `390x844`, touch enabled, and
+  `reducedMotion: 'no-preference'`.
+- When production is redeployed, verify the new hashed asset headers and repeat
+  a cold mobile trace; local preview cannot prove Cloudflare applied `_headers`.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```tsx
+import '@douyinfe/semi-ui-19/dist/css/semi.min.css'
+
+useLayoutEffect(() => {
+  sessionStorage.setItem(INTRO_STORAGE_KEY, '1')
+}, [])
+```
+
+The public shell pays for unused CSS, and an interrupted first frame suppresses
+future intro attempts.
+
+#### Correct
+
+```tsx
+if (event.animationName === 'harborIntroVeil') {
+  markIntroSeen()
+  setVisible(false)
+}
+```
+
+Only the CSS actually used by the site ships in the entry bundle, and the
+completion marker represents a completed animation.
+
 ### Internal Assistant Workspace First Load
 
 `/assistant` should open as a productized Agent workspace, not as a long explanatory chat transcript. Keep the default assistant opening concise, do not render default citation cards before the user asks a question, and keep the first screen focused on run mode, model channel, next action, conversation, and the Agent inspector.
@@ -356,7 +453,7 @@ before navigating in Playwright:
 
 ```js
 await context.addInitScript(() => {
-  window.sessionStorage.setItem('biau-port-harbor-intro:v1', '1')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v2', '1')
 })
 ```
 

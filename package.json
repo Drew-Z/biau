@@ -25,6 +25,7 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:migrate:studio": "node scripts/migrate-studio-database.mjs",
     "build": "tsc -b && vite build",
+    "performance:check": "node scripts/check-build-performance.mjs",
     "lint": "eslint .",
     "blog:plan": "node scripts/generate-blog-draft.mjs --list",
     "blog:draft": "node scripts/generate-blog-draft.mjs",

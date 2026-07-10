@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { BiauPortMark } from './BiauPortMark'
 
-const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v1'
+const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v2'
 let introTriggeredThisRuntime = false
 
 function canShowIntro() {
@@ -37,7 +37,6 @@ export function HarborIntro() {
   useLayoutEffect(() => {
     if (!visible) return
     introTriggeredThisRuntime = true
-    markIntroSeen()
     document.documentElement.classList.add('harbor-intro-active')
 
     return () => {
@@ -98,6 +97,7 @@ export function HarborIntro() {
       aria-hidden="true"
       onAnimationEnd={(event) => {
         if (event.currentTarget === event.target && event.animationName === 'harborIntroVeil') {
+          markIntroSeen()
           setVisible(false)
           return
         }

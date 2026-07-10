@@ -4,17 +4,12 @@ import './App.css'
 import './styles/site-footer.css'
 import { useTheme } from './hooks/useTheme'
 import { Navigation } from './components/Navigation'
-import { PublicAssistantWidget } from './components/PublicAssistantWidget'
 import { SeoManager } from './components/SeoManager'
 import { HarborIntro } from './components/HarborIntro'
 import { SiteFooter } from './components/SiteFooter'
 import { BlogPage } from './pages/BlogPage'
 import { HomePage } from './pages/HomePage'
 import { ProjectsPage } from './pages/ProjectsPage'
-import { AssistantPage } from './pages/AssistantPage'
-import { AssistantAdminPage } from './pages/AssistantAdminPage'
-import { SiteStatusPage } from './pages/SiteStatusPage'
-import { SiteStatusDetailPage } from './pages/SiteStatusDetailPage'
 import { trackRouteView } from './utils/analytics'
 
 type SiteLanguage = 'zh' | 'en'
@@ -32,12 +27,25 @@ function readHarborScene(): HarborScene {
 const ProjectDetailPage = lazy(() =>
   import('./pages/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })),
 )
+const AssistantPage = lazy(() => import('./pages/AssistantPage').then((module) => ({ default: module.AssistantPage })))
+const AssistantAdminPage = lazy(() =>
+  import('./pages/AssistantAdminPage').then((module) => ({ default: module.AssistantAdminPage })),
+)
+const SiteStatusPage = lazy(() =>
+  import('./pages/SiteStatusPage').then((module) => ({ default: module.SiteStatusPage })),
+)
+const SiteStatusDetailPage = lazy(() =>
+  import('./pages/SiteStatusDetailPage').then((module) => ({ default: module.SiteStatusDetailPage })),
+)
 const BlogPostPage = lazy(() => import('./pages/BlogPostPage').then((module) => ({ default: module.BlogPostPage })))
 const StudioPage = lazy(() => import('./pages/StudioPage').then((module) => ({ default: module.StudioPage })))
 const StudioAiDailyIssuePage = lazy(() =>
   import('./pages/StudioAiDailyIssuePage').then((module) => ({ default: module.StudioAiDailyIssuePage })),
 )
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
+const PublicAssistantWidget = lazy(() =>
+  import('./components/PublicAssistantWidget').then((module) => ({ default: module.PublicAssistantWidget })),
+)
 
 function getPageClass(pathname: string) {
   if (pathname === '/') return 'page-home'
@@ -92,7 +100,11 @@ function App() {
         }
         onToggleLanguage={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
       />
-      {showPublicAssistant && <PublicAssistantWidget />}
+      {showPublicAssistant && (
+        <Suspense fallback={null}>
+          <PublicAssistantWidget />
+        </Suspense>
+      )}
 
       <Suspense
         fallback={

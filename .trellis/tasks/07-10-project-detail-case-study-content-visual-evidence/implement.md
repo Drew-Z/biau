@@ -96,6 +96,46 @@ git diff --check
 `check:ui` passed 14 routes across desktop/mobile route checks and the dedicated
 `320 / 390 / 430px` home-page regression loop.
 
+## Phase 5: Mobile First-Load Performance And Intro Reliability
+
+- [x] Measure the deployed mobile cold-load resource chain and animation state.
+- [x] Remove the unused full Semi UI stylesheet from the public entry.
+- [x] Remove the render-blocking Google Fonts stylesheet and use system font
+  stacks for Chinese/Latin UI and display text.
+- [x] Split the public assistant, Assistant workspace, admin, Studio, status,
+  project-detail, blog-detail, and missing-page code from the home entry where
+  route UX permits.
+- [x] Add Cloudflare Pages immutable cache headers for hashed assets and bounded
+  cache headers for public images/favicon.
+- [x] Upgrade the intro completion marker to `v2` and persist it only after the
+  animation veil completes.
+- [x] Add a build performance budget and mobile first-entry animation regression.
+
+### Performance Slice Result
+
+- Deployed pre-fix trace: mobile FCP was about `5.7s`; the blocking Google Fonts
+  stylesheet transferred about `217KB`, and the intro could only mount after the
+  React entry finished loading.
+- Entry CSS changed from about `836KB` raw / `108KB` gzip to `181KB` raw /
+  `30KB` gzip.
+- Entry JavaScript changed from about `485KB` raw / `149KB` gzip to `385KB` raw /
+  `126KB` gzip; non-critical product surfaces now have separate chunks.
+- Simulated mobile 4G plus 4x CPU slowdown on the new local build produced first
+  paint around `0.7s`, FCP around `1.87s`, intro mount at DOM readiness, and
+  completed docking around `4.5s`.
+- Production still needs a deployment before the new bundle and `_headers`
+  behavior can be observed on the public domain.
+
+Validation completed for this slice:
+
+```powershell
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run performance:check
+$env:UI_CHECK_BASE='http://127.0.0.1:5196'; npm.cmd run check:ui
+git diff --check
+```
+
 Conditional:
 
 ```powershell
