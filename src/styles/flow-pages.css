@@ -3331,6 +3331,29 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   line-height: 1.78;
 }
 
+.assistant-bubble__trace {
+  width: fit-content;
+  max-width: 100%;
+  min-height: 30px;
+  margin-top: var(--space-10, 10px);
+  padding: 0 var(--space-10, 10px);
+  color: color-mix(in oklch, var(--green) 78%, var(--ink));
+  background: color-mix(in oklch, var(--green) 8%, transparent);
+  border: 1px solid color-mix(in oklch, var(--green) 22%, transparent);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.assistant-bubble__trace.is-active {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--green) 16%, var(--panel-strong));
+  border-color: color-mix(in oklch, var(--green) 36%, var(--flow-ui-card-border));
+}
+
 .assistant-bubble__citations,
 .public-assistant__citations {
   margin-top: var(--space-12, 12px);
@@ -3538,6 +3561,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.58;
+  overflow-wrap: anywhere;
+}
+
+.assistant-panel__note {
+  margin: var(--space-8) 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
 
@@ -5045,6 +5076,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .assistant-suggestions button:focus-visible,
 .assistant-auth button:focus-visible,
 .assistant-composer button:focus-visible,
+.assistant-bubble__trace:focus-visible,
 .assistant-composer textarea:focus-visible,
 .assistant-field input:focus-visible,
 .assistant-field select:focus-visible,

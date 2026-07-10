@@ -72,7 +72,7 @@ Run conditional checks if the slice touches route boundaries, backend runtime, R
 
 Plan and execute later slices one at a time:
 
-- [ ] Agent run replay / richer safe history meta.
+- [x] Agent run replay / richer safe history meta.
 - [x] Internal knowledge source presets and review readiness.
 - [x] Local eval cases for status/project/Studio draft workflows.
 - [x] Admin operations polish for RAG and member-channel confidence.
@@ -122,6 +122,25 @@ Validation:
 
 ```powershell
 npm.cmd run assistant:admin-check # passed
+npm.cmd run lint # passed
+npm.cmd run build # passed
+npm.cmd run check:ui # passed, 14 routes x 2 viewports at http://127.0.0.1:5174
+```
+
+### Phase 4 Slice: Message-Level Agent Trace Replay
+
+Improved `/assistant` run replay:
+
+- Assistant messages created from API responses now keep normalized `meta` in the local message state.
+- Historical sessions restore the latest assistant message with `meta` as the inspected run.
+- Each assistant message with safe Agent metadata exposes a lightweight `查看运行轨迹` action.
+- Clicking the action switches the right-side Agent inspector to that message's LangGraph/tool/guardrail projection.
+- Reset flows clear stale inspected-message state when switching members, sessions, or falling back to temporary chats.
+
+Validation:
+
+```powershell
+npm.cmd run assistant:meta-check # passed
 npm.cmd run lint # passed
 npm.cmd run build # passed
 npm.cmd run check:ui # passed, 14 routes x 2 viewports at http://127.0.0.1:5174

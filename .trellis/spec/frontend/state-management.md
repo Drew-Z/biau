@@ -538,6 +538,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 - Components must parse answer metadata through `src/data/assistant.ts`; they must not cast `payload.meta` inline.
 - Persisted message payloads may include `message.meta`; `normalizeAssistantMessage()` must decode it through `normalizeAssistantAnswerMeta()` so history reload and immediate send use the same contract.
 - `/assistant` should restore `lastAnswerMeta` from the latest assistant message when loading a historical session, and clear it while switching sessions so diagnostics do not bleed between conversations.
+- `/assistant` may let users inspect a specific assistant message's normalized `meta`, but the selected trace id must be browser UI state only. Switching members, sessions, archiving, token reset, or local fallback must clear stale inspected-message state.
 - The answer panel may render only low-sensitive fields: `mode`, `model`, `provider`, `reason`, `citationCount`, `intent`, `grounding`, safe `modelChannel`, retrieval summary counts/classes, Agent run status, typed tool trace summaries, and guardrail summaries.
 - Tool trace artifacts must be decoded through `src/data/assistant.ts`. The only current artifact is a safe Studio draft summary (`kind: "studio-draft"`) with title, column, `review-needed`, `hidden`, and a same-site Studio link. New artifacts should use `/studio?draft=<id>` so Studio can locate the draft; legacy `/studio` links remain renderable. Route components must not render raw draft body JSON, Prisma payloads, admin tokens, bearer tokens, API URLs, or secret-bearing query parameters.
 - Safe `modelChannel` means `{ id, label, provider, model, configured, isDefault, isActive }`; never render or persist `apiKey`, `baseUrl`, raw env JSON, request headers, or provider response bodies.
@@ -552,6 +553,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 - Missing `meta` -> panel shows waiting/local fallback state and uses latest normalized citations when available.
 - Malformed `meta` -> decoder returns `null`; component must not throw.
 - Historical assistant message with valid `meta` -> panel restores model/channel/retrieval state after session load.
+- Clicking an assistant message's `查看运行轨迹` action -> panel shows that message's normalized Agent/tool/guardrail projection without rendering raw JSON or hidden fields.
 - Session selection before messages finish loading -> clear previous `lastAnswerMeta`.
 - Missing `retrieval` -> answer mode/model/channel still renders, with no diagnostic chip group.
 - Local fallback answer -> `lastAnswerMeta` is cleared and the panel must not imply a live provider was used.
@@ -563,6 +565,7 @@ Health-derived service status stays separate from per-answer fallback reasons.
 
 - Good: internal API returns model answer plus sanitized retrieval meta; `/assistant` displays "模型回答", the safe channel label, citation count, and candidate count.
 - Good: user reopens a prior session and the diagnostics panel reflects the latest assistant message in that session, not the previous active conversation.
+- Good: user clicks an older assistant message with safe `meta` and the inspector replays that run summary while staying inside the normalized frontend contract.
 - Good: model provider fails but citations exist; panel displays fallback reason and safe model-channel summary without exposing endpoint details.
 - Base: backend is not configured; local fallback still shows a bounded state and no stale diagnostics.
 - Bad: `AssistantPage.tsx` reads `(payload.meta as { retrieval?: ... })` directly and starts a second copy of the API contract.

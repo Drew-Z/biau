@@ -386,8 +386,8 @@ function formatLoadedMessages(messages: AssistantMessage[]) {
   }))
 }
 
-function readLatestAnswerMeta(messages: AssistantMessage[]) {
-  return [...messages].reverse().find((message) => message.role === 'assistant' && message.meta)?.meta ?? null
+function readLatestAnswerMetaMessage(messages: AssistantMessage[]) {
+  return [...messages].reverse().find((message) => message.role === 'assistant' && message.meta) ?? null
 }
 
 export function AssistantPage() {
@@ -407,6 +407,7 @@ export function AssistantPage() {
   const [inviteStatus, setInviteStatus] = useState('')
   const [workspaceStatus, setWorkspaceStatus] = useState('')
   const [lastAnswerMeta, setLastAnswerMeta] = useState<AssistantAnswerMetaSummary | null>(null)
+  const [inspectedMessageId, setInspectedMessageId] = useState('')
   const [isRedeeming, setIsRedeeming] = useState(false)
   const messageSeq = useRef(0)
 
@@ -506,6 +507,7 @@ export function AssistantPage() {
         window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
         setMessages([createOpeningMessage()])
         setLastAnswerMeta(null)
+        setInspectedMessageId('')
         setIsLoadingMessages(false)
         return
       }
@@ -517,8 +519,10 @@ export function AssistantPage() {
           : [result.session, ...current]
       })
       const nextMessages = result.messages.length > 0 ? formatLoadedMessages(result.messages) : []
+      const latestMetaMessage = readLatestAnswerMetaMessage(nextMessages)
       setMessages(nextMessages)
-      setLastAnswerMeta(readLatestAnswerMeta(nextMessages))
+      setLastAnswerMeta(latestMetaMessage?.meta ?? null)
+      setInspectedMessageId(latestMetaMessage?.id ?? '')
       setIsLoadingMessages(false)
     }
 
@@ -548,6 +552,7 @@ export function AssistantPage() {
     setSelectedSessionId('')
     setMessages([createOpeningMessage()])
     setLastAnswerMeta(null)
+    setInspectedMessageId('')
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.memberToken)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.member)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
@@ -605,6 +610,7 @@ export function AssistantPage() {
       setSelectedSessionId('')
       setMessages([createOpeningMessage()])
       setLastAnswerMeta(null)
+      setInspectedMessageId('')
       window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
       setInviteStatus('邀请码已兑换，后续消息会优先调用内部助手 API。')
     } catch {
@@ -654,6 +660,7 @@ export function AssistantPage() {
     setSelectedSessionId(session.id)
     setMessages([])
     setLastAnswerMeta(null)
+    setInspectedMessageId('')
     window.localStorage.setItem(ASSISTANT_STORAGE_KEYS.sessionId, session.id)
     setWorkspaceStatus('新的内部会话已创建。')
   }
@@ -672,6 +679,7 @@ export function AssistantPage() {
     setSelectedSessionId('')
     setMessages([createOpeningMessage()])
     setLastAnswerMeta(null)
+    setInspectedMessageId('')
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
     setWorkspaceStatus('会话已归档。')
   }
@@ -679,6 +687,7 @@ export function AssistantPage() {
   const selectSession = (sessionId: string) => {
     setSelectedSessionId(sessionId)
     setLastAnswerMeta(null)
+    setInspectedMessageId('')
     window.localStorage.setItem(ASSISTANT_STORAGE_KEYS.sessionId, sessionId)
   }
 
@@ -702,11 +711,10 @@ export function AssistantPage() {
         setSelectedSessionId('')
         window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
       }
-      setMessages((current) => [
-        ...current,
-        createMessage('assistant', result.content, result.citations, result.meta),
-      ])
+      const assistantMessage = createMessage('assistant', result.content, result.citations, result.meta)
+      setMessages((current) => [...current, assistantMessage])
       setLastAnswerMeta(result.meta ?? null)
+      setInspectedMessageId(result.meta ? assistantMessage.id : '')
       if (memberToken && API_BASE) {
         const sessionsResult = await requestSessions(memberToken)
         if (sessionsResult.ok) setSessions(sessionsResult.data)
@@ -718,6 +726,7 @@ export function AssistantPage() {
         createMessage('assistant', fallback.content, fallback.citations),
       ])
       setLastAnswerMeta(null)
+      setInspectedMessageId('')
     } finally {
       setIsLoading(false)
     }
@@ -738,6 +747,7 @@ export function AssistantPage() {
       ? '等待下一次回答'
       : '本地回退'
   const answerChannel = lastAnswerMeta?.modelChannel ?? member?.modelChannel ?? null
+  const inspectedMessage = inspectedMessageId ? messages.find((message) => message.id === inspectedMessageId) ?? null : null
   const workspaceNextAction = getWorkspaceNextAction({
     apiAvailable,
     memberToken,
@@ -894,6 +904,18 @@ export function AssistantPage() {
                   <span>{message.timestamp}</span>
                 </div>
                 <p>{message.content}</p>
+                {message.role === 'assistant' && message.meta && (
+                  <button
+                    type="button"
+                    className={`assistant-bubble__trace ${inspectedMessageId === message.id ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setLastAnswerMeta(message.meta ?? null)
+                      setInspectedMessageId(message.id)
+                    }}
+                  >
+                    {inspectedMessageId === message.id ? '正在查看轨迹' : '查看运行轨迹'}
+                  </button>
+                )}
                 {message.citations && message.citations.length > 0 && (
                   <div className="assistant-bubble__citations">
                     {message.citations.map((item) => (
@@ -950,6 +972,13 @@ export function AssistantPage() {
           <section className="assistant-panel">
             <p className="assistant-panel__eyebrow">AGENT</p>
             <h3>LangGraph 运行状态</h3>
+            <p className="assistant-panel__note">
+              {inspectedMessage
+                ? `正在查看 ${inspectedMessage.timestamp} 的回答轨迹。`
+                : lastAnswerMeta
+                  ? '正在查看最近一次回答轨迹。'
+                  : '下一次 Agent 回答后会显示可回放轨迹。'}
+            </p>
             <div className="assistant-diagnostic-grid">
               <div className="assistant-diagnostic-cell">
                 <span>Graph</span>
