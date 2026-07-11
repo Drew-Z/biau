@@ -82,3 +82,13 @@ native `select`. Both surfaces must share the same controlled value and callback
 do not duplicate filtering state. Every option must expose the complete Chinese
 and English identity plus its count or pending state. Do not use a clipped,
 no-wrap horizontal rail or partial-card peek as the only discovery mechanism.
+### Mobile Chat-First Workspaces
+
+For desktop workspaces that combine a primary editor/chat with member, history,
+memory, or administration sidebars, mobile must keep the primary task first in
+the document experience. Reuse the same stateful sidebar subtree as a bounded
+modal drawer instead of duplicating forms or hiding capabilities. The drawer
+requires an explicit 44px trigger, backdrop, close command, Escape handling,
+focus containment and restoration, document scroll locking, safe-area padding,
+and no overlap from global navigation. Runtime evidence may move after the core
+interaction on mobile, but it must remain available.

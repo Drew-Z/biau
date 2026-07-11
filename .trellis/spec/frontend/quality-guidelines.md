@@ -621,3 +621,12 @@ Assert that the mobile selector is visible and bounded, the desktop button group
 is hidden, every option exists, populated and empty selections use the shared
 projection, pagination resets, and the document has no horizontal overflow.
 Desktop checks must assert the inverse visibility contract.
+### Mobile Workspace Drawer Regression
+
+For chat-first responsive workspaces, test desktop inverse visibility plus
+320px, 390px, and 430px mobile widths. Assert the primary workspace starts in
+the first viewport; the drawer starts inaccessible and closed; opening exposes
+`dialog` / `aria-modal` semantics, focuses the close control, traps focus, locks
+document scrolling, and prevents global-navigation overlap; Escape, backdrop,
+and close-button paths restore scrolling and trigger focus. Also assert drawer
+bounds, retained secondary capabilities, and no page-level horizontal overflow.

@@ -721,3 +721,13 @@ Do not add a state library for a single page or a small interaction. Consider on
 - Do not store secrets or private business data in frontend state or `src/data/`.
 - Do not duplicate derived data arrays in multiple files; derive from `src/data/portfolio.ts` or shared data modules.
 - Do not use `npm run dev` as validation for state changes; run lint/build because build catches TypeScript errors.
+
+### Scenario: Mobile Assistant Workspace Drawer
+
+`AssistantPage` owns mobile drawer visibility as ephemeral local UI state. The
+existing member, session, and memory states remain the only data sources; the
+mobile drawer reuses the desktop sidebar DOM rather than creating a second
+state tree. A `matchMedia('(max-width: 920px)')` effect controls modal semantics
+and closes the drawer when returning to desktop. The open-state effect owns and
+cleans up Escape handling, root scroll locking, navigation suppression, and
+trigger focus restoration.

@@ -277,7 +277,7 @@ for (const viewport of viewports) {
 
     await gotoApp(page, route.path)
 
-    const titleText = await page.locator('h1, .hero-title-main').first().innerText().catch(() => '')
+    const titleText = await page.locator('h1:visible, .hero-title-main:visible').first().innerText().catch(() => '')
     const navCount = await page.locator('.nav-all-tools').count()
     const navText = navCount > 0 ? (await page.locator('.nav-all-tools').innerText()).trim() : 'hidden'
     const overflowX = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
@@ -394,8 +394,11 @@ for (const viewport of viewports) {
       if (inspectorPanels < 5 || !agentPanelVisible || !toolPanelVisible || !guardrailPanelVisible) {
         failures.push(`${viewport.name} ${route.path}: expected productized Agent inspector panels`)
       }
-      if (!memoryPanelVisible || !memoryToggleVisible || !memoryRefreshVisible) {
+      if (viewport.name === 'desktop' && (!memoryPanelVisible || !memoryToggleVisible || !memoryRefreshVisible)) {
         failures.push(`${viewport.name} ${route.path}: expected durable memory management panel`)
+      }
+      if (viewport.name === 'mobile' && !(await page.locator('.assistant-mobile-workspace-button').isVisible())) {
+        failures.push(`${viewport.name} ${route.path}: expected mobile member workspace access`)
       }
     }
 
@@ -762,6 +765,122 @@ for (const width of [320, 390, 430]) {
   }
 
   await mobileBlogPage.close()
+}
+
+const assistantDesktopPage = await browser.newPage({ viewport: viewports[0] })
+await gotoApp(assistantDesktopPage, '/assistant')
+if (await assistantDesktopPage.locator('.assistant-mobile-workspace-button').isVisible().catch(() => false)) {
+  failures.push('/assistant desktop workspace: mobile controls trigger should stay hidden')
+}
+if (!(await assistantDesktopPage.locator('.assistant-sidebar').isVisible().catch(() => false))) {
+  failures.push('/assistant desktop workspace: static sidebar should remain visible')
+}
+if (await assistantDesktopPage.locator('.assistant-sidebar').getAttribute('role')) {
+  failures.push('/assistant desktop workspace: static sidebar should not use modal dialog semantics')
+}
+await assistantDesktopPage.close()
+
+for (const width of [320, 390, 430]) {
+  const mobileAssistantPage = await browser.newPage({ viewport: { width, height: 900 } })
+  await gotoApp(mobileAssistantPage, '/assistant')
+
+  const assistantMain = mobileAssistantPage.locator('.assistant-main')
+  const assistantSidebar = mobileAssistantPage.locator('#assistant-member-workspace')
+  const workspaceTrigger = mobileAssistantPage.getByRole('button', { name: /登录与会话|成员与会话/ })
+  const mainBounds = await assistantMain.boundingBox()
+  const triggerBounds = await workspaceTrigger.boundingBox()
+  if (!mainBounds || mainBounds.y >= 300) {
+    failures.push(`/assistant mobile workspace ${width}px: conversation should begin in the first viewport`)
+  }
+  if (!triggerBounds || triggerBounds.height < 44 || triggerBounds.x < 0 || triggerBounds.x + triggerBounds.width > width + 0.5) {
+    failures.push(`/assistant mobile workspace ${width}px: workspace trigger should be at least 44px high and stay bounded`)
+  }
+  if (await assistantSidebar.isVisible().catch(() => false)) {
+    failures.push(`/assistant mobile workspace ${width}px: member drawer should start closed`)
+  }
+  if ((await assistantSidebar.getAttribute('aria-hidden')) !== 'true') {
+    failures.push(`/assistant mobile workspace ${width}px: closed drawer should be hidden from assistive technology`)
+  }
+
+  await workspaceTrigger.click()
+  await assistantSidebar.waitFor({ state: 'visible' })
+  await mobileAssistantPage.waitForFunction(() => {
+    const drawer = document.querySelector('#assistant-member-workspace')
+    if (!(drawer instanceof HTMLElement)) return false
+    const transform = getComputedStyle(drawer).transform
+    if (transform === 'none') return true
+    return Math.abs(new DOMMatrixReadOnly(transform).m41) < 0.5
+  })
+  const drawerBounds = await assistantSidebar.boundingBox()
+  if (!(await assistantSidebar.isVisible()) || (await assistantSidebar.getAttribute('role')) !== 'dialog') {
+    failures.push(`/assistant mobile workspace ${width}px: trigger should open a visible dialog`)
+  }
+  if ((await assistantSidebar.getAttribute('aria-modal')) !== 'true') {
+    failures.push(`/assistant mobile workspace ${width}px: drawer should expose modal semantics`)
+  }
+  if (!drawerBounds || drawerBounds.x < 0 || drawerBounds.x + drawerBounds.width > width + 0.5 || drawerBounds.height > 902) {
+    failures.push(`/assistant mobile workspace ${width}px: drawer should remain inside the viewport`)
+  }
+  for (const [selector, label] of [
+    ['.assistant-auth', '成员访问'],
+    ['.assistant-session-list', '会话历史'],
+    ['.assistant-memory-panel', '长期记忆'],
+  ]) {
+    if (!(await assistantSidebar.locator(selector).isVisible().catch(() => false))) {
+      failures.push(`/assistant mobile workspace ${width}px: drawer should retain ${label}`)
+    }
+  }
+  if (!(await assistantSidebar.getByRole('link', { name: /管理员入口/ }).isVisible().catch(() => false))) {
+    failures.push(`/assistant mobile workspace ${width}px: drawer should retain the admin entry`)
+  }
+  if ((await mobileAssistantPage.evaluate(() => document.documentElement.style.overflow)) !== 'hidden') {
+    failures.push(`/assistant mobile workspace ${width}px: opening the drawer should lock document scrolling`)
+  }
+  if ((await mobileAssistantPage.locator('.navigation-top').evaluate((item) => getComputedStyle(item).visibility)) !== 'hidden') {
+    failures.push(`/assistant mobile workspace ${width}px: global navigation should not overlap the modal drawer`)
+  }
+  const closeButton = assistantSidebar.getByRole('button', { name: '关闭成员工作区' })
+  await mobileAssistantPage.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === '关闭成员工作区')
+  if (!(await closeButton.evaluate((item) => item === document.activeElement))) {
+    failures.push(`/assistant mobile workspace ${width}px: opening the drawer should focus the close button`)
+  }
+  await mobileAssistantPage.keyboard.press('Shift+Tab')
+  if (!(await assistantSidebar.evaluate((item) => item.contains(document.activeElement)))) {
+    failures.push(`/assistant mobile workspace ${width}px: keyboard focus should remain trapped in the drawer`)
+  }
+  await mobileAssistantPage.keyboard.press('Escape')
+  await assistantSidebar.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => undefined)
+  if (await assistantSidebar.isVisible().catch(() => false)) {
+    failures.push(`/assistant mobile workspace ${width}px: Escape should close the drawer`)
+  }
+  if (!(await workspaceTrigger.evaluate((item) => item === document.activeElement))) {
+    failures.push(`/assistant mobile workspace ${width}px: closing should restore focus to the trigger`)
+  }
+  if ((await mobileAssistantPage.evaluate(() => document.documentElement.style.overflow)) !== '') {
+    failures.push(`/assistant mobile workspace ${width}px: closing should restore document scrolling`)
+  }
+
+  await workspaceTrigger.click()
+  await mobileAssistantPage.waitForTimeout(40)
+  await mobileAssistantPage.locator('.assistant-mobile-backdrop').click({ position: { x: 6, y: 450 } })
+  await assistantSidebar.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => undefined)
+  if (await assistantSidebar.isVisible().catch(() => false)) {
+    failures.push(`/assistant mobile workspace ${width}px: backdrop click should close the drawer`)
+  }
+
+  await workspaceTrigger.click()
+  await mobileAssistantPage.waitForTimeout(180)
+  await closeButton.click()
+  await assistantSidebar.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => undefined)
+  if (await assistantSidebar.isVisible().catch(() => false)) {
+    failures.push(`/assistant mobile workspace ${width}px: close button should dismiss the drawer`)
+  }
+
+  const assistantOverflow = await mobileAssistantPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
+  if (assistantOverflow) {
+    failures.push(`/assistant mobile workspace ${width}px: page should not overflow horizontally`)
+  }
+  await mobileAssistantPage.close()
 }
 
 const navFocusPage = await browser.newPage({ viewport: viewports[0] })

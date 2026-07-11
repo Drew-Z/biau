@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { Archive, RefreshCw, RotateCcw } from 'lucide-react'
+import { Archive, RefreshCw, RotateCcw, SlidersHorizontal, X } from 'lucide-react'
 import {
   ASSISTANT_STORAGE_KEYS,
   internalAssistantSuggestions,
@@ -475,7 +475,12 @@ export function AssistantPage() {
   const [lastAnswerMeta, setLastAnswerMeta] = useState<AssistantAnswerMetaSummary | null>(null)
   const [inspectedMessageId, setInspectedMessageId] = useState('')
   const [isRedeeming, setIsRedeeming] = useState(false)
+  const [isMobileLayout, setIsMobileLayout] = useState(false)
+  const [isMobileWorkspaceOpen, setIsMobileWorkspaceOpen] = useState(false)
   const messageSeq = useRef(0)
+  const mobileWorkspaceTriggerRef = useRef<HTMLButtonElement>(null)
+  const mobileWorkspaceCloseRef = useRef<HTMLButtonElement>(null)
+  const mobileWorkspaceRef = useRef<HTMLElement>(null)
 
   const createMessage = (
     role: AssistantMessage['role'],
@@ -502,6 +507,57 @@ export function AssistantPage() {
     const assistantMessage = [...messages].reverse().find((message) => message.role === 'assistant' && message.citations?.length)
     return assistantMessage?.citations ?? []
   }, [messages])
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 920px)')
+    const updateLayout = () => {
+      setIsMobileLayout(mediaQuery.matches)
+      if (!mediaQuery.matches) setIsMobileWorkspaceOpen(false)
+    }
+
+    updateLayout()
+    mediaQuery.addEventListener('change', updateLayout)
+    return () => mediaQuery.removeEventListener('change', updateLayout)
+  }, [])
+
+  useEffect(() => {
+    if (!isMobileLayout || !isMobileWorkspaceOpen) return
+
+    const previousOverflow = document.documentElement.style.overflow
+    const trigger = mobileWorkspaceTriggerRef.current
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMobileWorkspaceOpen(false)
+        return
+      }
+      if (event.key !== 'Tab') return
+
+      const focusable = mobileWorkspaceRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      if (!focusable || focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    mobileWorkspaceCloseRef.current?.focus()
+
+    document.documentElement.style.overflow = 'hidden'
+    document.documentElement.classList.add('assistant-mobile-drawer-open')
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.documentElement.style.overflow = previousOverflow
+      document.documentElement.classList.remove('assistant-mobile-drawer-open')
+      window.removeEventListener('keydown', handleKeyDown)
+      trigger?.focus()
+    }
+  }, [isMobileLayout, isMobileWorkspaceOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -888,9 +944,39 @@ export function AssistantPage() {
   })
 
   return (
-    <main className="assistant-page page-stack">
+    <main className={`assistant-page page-stack ${isMobileWorkspaceOpen ? 'is-workspace-open' : ''}`}>
       <section className="assistant-shell">
-        <aside className="assistant-sidebar">
+        <button
+          type="button"
+          className={`assistant-mobile-backdrop ${isMobileWorkspaceOpen ? 'is-open' : ''}`}
+          aria-label="关闭成员工作区"
+          tabIndex={isMobileWorkspaceOpen ? 0 : -1}
+          onClick={() => setIsMobileWorkspaceOpen(false)}
+        />
+        <aside
+          ref={mobileWorkspaceRef}
+          id="assistant-member-workspace"
+          className={`assistant-sidebar ${isMobileWorkspaceOpen ? 'is-mobile-open' : ''}`}
+          role={isMobileLayout ? 'dialog' : undefined}
+          aria-modal={isMobileLayout ? true : undefined}
+          aria-labelledby={isMobileLayout ? 'assistant-member-workspace-title' : undefined}
+          aria-hidden={isMobileLayout ? !isMobileWorkspaceOpen : undefined}
+        >
+          <div className="assistant-mobile-drawer__header">
+            <div>
+              <span>MEMBER WORKSPACE</span>
+              <strong id="assistant-member-workspace-title">成员工作区</strong>
+            </div>
+            <button
+              ref={mobileWorkspaceCloseRef}
+              type="button"
+              className="assistant-icon-button"
+              aria-label="关闭成员工作区"
+              onClick={() => setIsMobileWorkspaceOpen(false)}
+            >
+              <X size={18} aria-hidden />
+            </button>
+          </div>
           <div className="assistant-sidebar__header">
             <p className="section-subtitle">INTERNAL ASSISTANT</p>
             <h1 className="assistant-sidebar__title">内部助手</h1>
@@ -1049,9 +1135,25 @@ export function AssistantPage() {
         <section className="assistant-main">
           <header className="assistant-main__header">
             <div>
+              <h1 className="assistant-mobile-page-title">内部助手</h1>
               <p className="assistant-main__eyebrow">CURRENT SESSION</p>
               <h2>{selectedSession?.title ?? '临时会话'}</h2>
             </div>
+            <button
+              ref={mobileWorkspaceTriggerRef}
+              type="button"
+              className="assistant-mobile-workspace-button"
+              aria-haspopup="dialog"
+              aria-expanded={isMobileWorkspaceOpen}
+              aria-controls="assistant-member-workspace"
+              onClick={() => {
+                setIsMobileWorkspaceOpen(true)
+                window.setTimeout(() => mobileWorkspaceCloseRef.current?.focus(), 120)
+              }}
+            >
+              <SlidersHorizontal size={18} aria-hidden />
+              <span>{member ? '成员与会话' : '登录与会话'}</span>
+            </button>
             <div className="assistant-main__meta">
               <span>{member ? `成员：${member.name}` : '未兑换：本地回退'}</span>
               <span>{chatMode}</span>

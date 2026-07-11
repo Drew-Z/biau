@@ -3585,6 +3585,29 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   align-items: stretch;
 }
 
+.assistant-mobile-backdrop,
+.assistant-mobile-drawer__header,
+.assistant-mobile-workspace-button,
+.assistant-mobile-page-title {
+  display: none;
+}
+
+.assistant-mobile-workspace-button {
+  min-height: 44px;
+  padding: 0 var(--space-12, 12px);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel-strong) 60%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
 .assistant-sidebar,
 .assistant-main,
 .assistant-inspector,
@@ -6179,8 +6202,145 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     grid-column: auto;
   }
 
+  .assistant-mobile-drawer-open .navigation-top {
+    visibility: hidden;
+  }
+
+  .assistant-page.is-workspace-open {
+    position: relative;
+    z-index: 200;
+  }
+
   .assistant-main {
     min-height: 620px;
+    order: 1;
+  }
+
+  .assistant-main__header {
+    order: 1;
+  }
+
+  .assistant-thread {
+    order: 2;
+  }
+
+  .assistant-suggestions {
+    order: 3;
+  }
+
+  .assistant-composer {
+    order: 4;
+  }
+
+  .assistant-run-strip {
+    order: 5;
+  }
+
+  .assistant-inspector {
+    order: 2;
+  }
+
+  .assistant-mobile-workspace-button {
+    display: inline-flex;
+  }
+
+  .assistant-mobile-page-title {
+    margin: 0 0 4px;
+    display: block;
+    color: var(--muted);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .assistant-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 119;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: color-mix(in oklch, var(--deep) 54%, transparent);
+    border: 0;
+    border-radius: 0;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    transition: opacity 180ms ease, visibility 180ms ease;
+  }
+
+  .assistant-mobile-backdrop.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .assistant-sidebar {
+    width: min(88vw, 400px);
+    height: 100dvh;
+    max-height: 100dvh;
+    padding:
+      max(var(--space-16), env(safe-area-inset-top, 0px))
+      max(var(--space-16), env(safe-area-inset-right, 0px))
+      max(var(--space-20, 20px), env(safe-area-inset-bottom, 0px))
+      var(--space-16);
+    position: fixed;
+    z-index: 120;
+    inset: 0 0 0 auto;
+    order: 3;
+    visibility: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    opacity: 0;
+    pointer-events: none;
+    border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+    transform: translateX(104%);
+    transition:
+      transform 220ms var(--ease-out-expo),
+      opacity 180ms ease,
+      visibility 220ms ease;
+  }
+
+  .assistant-sidebar.is-mobile-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  .assistant-mobile-drawer__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-12, 12px);
+    padding-bottom: var(--space-12, 12px);
+    border-bottom: 1px solid var(--flow-ui-card-border);
+  }
+
+  .assistant-mobile-drawer__header > div {
+    min-width: 0;
+    display: grid;
+    gap: 3px;
+  }
+
+  .assistant-mobile-drawer__header span {
+    color: var(--amber);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+  }
+
+  .assistant-mobile-drawer__header strong {
+    color: var(--ink);
+    font-family: var(--font-serif-display);
+    font-size: 20px;
+    letter-spacing: 0;
   }
 
   .assistant-inspector {
@@ -6617,7 +6777,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
   .assistant-main {
     min-height: 0;
-    grid-template-rows: auto auto minmax(280px, 48vh) auto auto;
+    grid-template-rows: auto minmax(220px, 32vh) auto auto auto;
     padding: var(--space-16);
   }
 
