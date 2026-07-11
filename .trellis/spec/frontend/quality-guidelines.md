@@ -240,9 +240,15 @@ layout contract, not a screenshot-only check.
 
 The light theme uses a morning-harbor palette rather than a high-saturation
 rainbow field or a flat cream background. Muted rose, daylight, sea mist, and
-harbor blue may all remain visible, but background field saturation stays below
-`100%`, decorative field opacity stays at or below `0.7`, and primary panel
-alpha stays at or above `0.55` for readable content.
+harbor blue may all remain visible, but background saturation stays below
+`100%` and primary panel alpha stays between `0.55` and `0.74` for readable,
+still-translucent content.
+
+The visible background contract is the stabilized three-layer motion on
+`.gradient-bg`: `biauReferenceColorFlow`, `biauReferenceMistFlow`, and
+`biauReferenceEdgeFlow`. Light scenes keep mist opacity at or above `0.18` and
+edge opacity at or above `0.22`; do not weaken or replace these layers merely
+to make cards look calmer. Adjust surface alpha, borders, and shadows first.
 
 `dusk`, `garden`, and `stellar` must keep distinct light palettes. A light scene
 must never reuse dark endpoints such as `#052433`; scene switching changes

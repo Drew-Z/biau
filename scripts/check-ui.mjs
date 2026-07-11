@@ -775,15 +775,23 @@ for (const scene of ['dusk', 'garden', 'stellar']) {
   await gotoApp(lightThemePage, '/')
   const palette = await lightThemePage.evaluate(() => {
     const app = document.querySelector('.app.page-home')
-    if (!(app instanceof HTMLElement)) return null
+    const gradient = document.querySelector('.app.page-home .gradient-bg')
+    if (!(app instanceof HTMLElement) || !(gradient instanceof HTMLElement)) return null
     const style = getComputedStyle(app)
+    const gradientStyle = getComputedStyle(gradient)
+    const mistStyle = getComputedStyle(gradient, '::before')
+    const edgeStyle = getComputedStyle(gradient, '::after')
     return {
       light: document.documentElement.classList.contains('light-theme'),
       c1: style.getPropertyValue('--flow-c1').trim().toLowerCase(),
       c5: style.getPropertyValue('--flow-c5').trim().toLowerCase(),
-      fieldOpacity: Number.parseFloat(style.getPropertyValue('--flow-field-opacity')),
       panelAlpha: Number.parseFloat(style.getPropertyValue('--flow-panel-alpha')),
       saturation: Number.parseFloat(style.getPropertyValue('--flow-saturation')),
+      mistOpacity: Number.parseFloat(style.getPropertyValue('--harbor-mist-opacity')),
+      edgeOpacity: Number.parseFloat(style.getPropertyValue('--harbor-edge-opacity')),
+      colorAnimationName: gradientStyle.animationName,
+      mistAnimationName: mistStyle.animationName,
+      edgeAnimationName: edgeStyle.animationName,
       ink: style.getPropertyValue('--ink').trim().toLowerCase(),
     }
   })
@@ -794,8 +802,21 @@ for (const scene of ['dusk', 'garden', 'stellar']) {
     if (!palette.light || palette.ink !== '#173047') {
       failures.push(`/ home light ${scene}: expected the morning-harbor light theme ink contract`)
     }
-    if (palette.fieldOpacity > 0.7 || palette.panelAlpha < 0.55 || palette.saturation > 100) {
-      failures.push(`/ home light ${scene}: expected restrained field, readable panels, and sub-100% saturation`)
+    if (
+      palette.mistOpacity < 0.18 ||
+      palette.edgeOpacity < 0.22 ||
+      palette.panelAlpha < 0.55 ||
+      palette.panelAlpha > 0.74 ||
+      palette.saturation > 100
+    ) {
+      failures.push(`/ home light ${scene}: expected visible motion layers, readable panels, and sub-100% saturation`)
+    }
+    if (
+      palette.colorAnimationName !== 'biauReferenceColorFlow' ||
+      palette.mistAnimationName !== 'biauReferenceMistFlow' ||
+      palette.edgeAnimationName !== 'biauReferenceEdgeFlow'
+    ) {
+      failures.push(`/ home light ${scene}: expected the color, mist, and edge motion layers to remain active`)
     }
     if (palette.c5 === '#052433' || palette.c5 === '#16497b') {
       failures.push(`/ home light ${scene}: light palette should not reuse the old dark/deep-blue endpoint`)

@@ -41,6 +41,7 @@
   --flow-ui-border-strong: #ffffff6b;
   --flow-ui-card-border: #ffffff52;
   --flow-ui-inset: #ffffff70;
+  --flow-shadow-alpha: 0.18;
   --bg-gradient: linear-gradient(
     122deg,
     var(--flow-c1) 0%,
@@ -61,7 +62,7 @@
     rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha)),
     rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha))
   );
-  --shadow: 0 26px 80px rgb(var(--flow-ui-shadow-rgb) / 0.18);
+  --shadow: 0 26px 80px rgb(var(--flow-ui-shadow-rgb) / var(--flow-shadow-alpha));
   isolation: isolate;
   overflow-x: hidden;
   background: var(--bg-gradient);
@@ -72,37 +73,38 @@
 :root.light-theme .app.page-home,
 :root.light-theme .app.page-tools,
 :root.light-theme .app.page-subpage {
-  --flow-c1: #ccaeb5;
-  --flow-c2: #d4c9aa;
-  --flow-c3: #b8d1d2;
-  --flow-c4: #9ebbc8;
-  --flow-c5: #7f9eab;
-  --flow-light-rgb: 190 143 153;
-  --flow-aqua-rgb: 166 204 203;
-  --flow-blue-rgb: 124 165 184;
-  --flow-deep-rgb: 88 127 145;
+  --flow-c1: #d2aab6;
+  --flow-c2: #d9ceaa;
+  --flow-c3: #b2d1d3;
+  --flow-c4: #95b7c8;
+  --flow-c5: #7397a9;
+  --flow-light-rgb: 196 139 154;
+  --flow-aqua-rgb: 158 207 206;
+  --flow-blue-rgb: 116 164 188;
+  --flow-deep-rgb: 78 124 146;
   --flow-field-opacity: 0.68;
   --flow-ribbon-opacity: 0.25;
-  --flow-panel-alpha: 0.66;
-  --flow-hero-alpha: 0.62;
-  --flow-hero-alpha-soft: 0.4;
-  --flow-card-alpha: 0.56;
+  --flow-panel-alpha: 0.64;
+  --flow-hero-alpha: 0.6;
+  --flow-hero-alpha-soft: 0.38;
+  --flow-card-alpha: 0.52;
   --flow-backdrop-blur: 20px;
   --flow-grain-opacity: 0.04;
   --flow-brightness: 103%;
   --flow-contrast: 98%;
-  --flow-saturation: 92%;
-  --harbor-edge-opacity: 0.2;
+  --flow-saturation: 98%;
+  --harbor-edge-opacity: 0.24;
   --harbor-beam-opacity: 0.08;
   --harbor-spectrum-opacity: 0.14;
-  --harbor-mist-opacity: 0.18;
+  --harbor-mist-opacity: 0.22;
   --flow-ui-panel-rgb: 242 247 246;
   --flow-ui-card-rgb: 248 250 248;
   --flow-ui-shadow-rgb: 38 63 76;
-  --flow-ui-border: #29495b2b;
-  --flow-ui-border-strong: #29495b3b;
-  --flow-ui-card-border: #29495b24;
+  --flow-ui-border: #29495b30;
+  --flow-ui-border-strong: #29495b40;
+  --flow-ui-card-border: #29495b2a;
   --flow-ui-inset: #ffffffa6;
+  --flow-shadow-alpha: 0.13;
 }
 
 :root:not(.light-theme) .app.page-home,
@@ -164,25 +166,26 @@
 :root.light-theme[data-harbor-scene='garden'] .app.page-home,
 :root.light-theme[data-harbor-scene='garden'] .app.page-tools,
 :root.light-theme[data-harbor-scene='garden'] .app.page-subpage {
-  --flow-c1: #d2c8d5;
-  --flow-c2: #c7d5cd;
-  --flow-c3: #b7d2cf;
-  --flow-c4: #a5c4b2;
-  --flow-c5: #88a995;
-  --flow-light-rgb: 185 166 190;
-  --flow-aqua-rgb: 166 205 201;
-  --flow-blue-rgb: 133 180 157;
-  --flow-deep-rgb: 99 145 121;
+  --flow-c1: #cec2d8;
+  --flow-c2: #c6d7cb;
+  --flow-c3: #add2cc;
+  --flow-c4: #98c1aa;
+  --flow-c5: #7ca18c;
+  --flow-light-rgb: 184 158 194;
+  --flow-aqua-rgb: 157 207 199;
+  --flow-blue-rgb: 119 178 150;
+  --flow-deep-rgb: 87 139 112;
   --flow-field-opacity: 0.64;
   --flow-ribbon-opacity: 0.22;
   --flow-blur: 32px;
   --flow-ribbon-blur: 48px;
   --flow-brightness: 102%;
   --flow-contrast: 98%;
-  --flow-saturation: 82%;
+  --flow-saturation: 96%;
+  --harbor-edge-opacity: 0.22;
   --harbor-beam-opacity: 0.07;
   --harbor-spectrum-opacity: 0.12;
-  --harbor-mist-opacity: 0.18;
+  --harbor-mist-opacity: 0.22;
   --harbor-mist-blend: soft-light;
 }
 
@@ -213,26 +216,26 @@
 :root.light-theme[data-harbor-scene='stellar'] .app.page-home,
 :root.light-theme[data-harbor-scene='stellar'] .app.page-tools,
 :root.light-theme[data-harbor-scene='stellar'] .app.page-subpage {
-  --flow-c1: #c9c6d1;
-  --flow-c2: #c3ccd7;
-  --flow-c3: #b5c8d5;
-  --flow-c4: #9fb7c6;
-  --flow-c5: #829daa;
-  --flow-light-rgb: 177 171 191;
-  --flow-aqua-rgb: 170 194 207;
-  --flow-blue-rgb: 128 162 181;
-  --flow-deep-rgb: 91 128 146;
+  --flow-c1: #c9c2d6;
+  --flow-c2: #bdcbdc;
+  --flow-c3: #abc8da;
+  --flow-c4: #93b2c6;
+  --flow-c5: #7795a8;
+  --flow-light-rgb: 180 165 198;
+  --flow-aqua-rgb: 158 193 211;
+  --flow-blue-rgb: 116 157 184;
+  --flow-deep-rgb: 80 122 145;
   --flow-field-opacity: 0.62;
   --flow-ribbon-opacity: 0.22;
   --flow-blur: 26px;
   --flow-ribbon-blur: 54px;
   --flow-brightness: 101%;
   --flow-contrast: 99%;
-  --flow-saturation: 78%;
-  --harbor-edge-opacity: 0.2;
+  --flow-saturation: 94%;
+  --harbor-edge-opacity: 0.22;
   --harbor-beam-opacity: 0.08;
   --harbor-spectrum-opacity: 0.13;
-  --harbor-mist-opacity: 0.14;
+  --harbor-mist-opacity: 0.18;
 }
 
 :root:not(.light-theme)[data-harbor-scene='stellar'] .app.page-home,
@@ -304,13 +307,13 @@
 :root.light-theme .app.page-home::before,
 :root.light-theme .app.page-tools::before,
 :root.light-theme .app.page-subpage::before {
-  filter: blur(var(--flow-blur)) saturate(0.9);
+  filter: blur(var(--flow-blur)) saturate(var(--flow-saturation));
 }
 
 :root.light-theme .app.page-home::after,
 :root.light-theme .app.page-tools::after,
 :root.light-theme .app.page-subpage::after {
-  filter: blur(var(--flow-ribbon-blur)) saturate(0.86);
+  filter: blur(var(--flow-ribbon-blur)) saturate(var(--flow-saturation));
 }
 
 .app.page-home .gradient-bg,
@@ -685,6 +688,12 @@
     );
   background-size: 260% 260%;
   animation: biauReferenceColorFlow 28s var(--ease-in-out) infinite alternate;
+}
+
+:root.light-theme .app.page-home .gradient-bg,
+:root.light-theme .app.page-tools .gradient-bg,
+:root.light-theme .app.page-subpage .gradient-bg {
+  filter: brightness(var(--flow-brightness)) contrast(var(--flow-contrast)) saturate(var(--flow-saturation));
 }
 
 .app.page-home .gradient-bg::before,
@@ -1957,6 +1966,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
 }
 
+:root.light-theme .app.page-tools .projects-grid {
+  background: color-mix(in oklch, var(--panel) 50%, transparent);
+  border-color: var(--flow-ui-border-strong);
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 22px 58px rgb(var(--flow-ui-shadow-rgb) / 0.11);
+}
+
 .app.page-tools .project-card {
   --card-accent: var(--green);
   grid-column: span 3;
@@ -2006,6 +2023,23 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     0 0 5px 1px #ffffffe0,
     0 0 15px 3px color-mix(in oklch, var(--card-accent) 42%, transparent),
     0 14px 34px rgb(var(--flow-ui-shadow-rgb) / 0.2);
+}
+
+:root.light-theme .app.page-tools .project-card {
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in oklch, var(--card-accent) 9%, transparent), transparent 36%),
+    linear-gradient(150deg, color-mix(in oklch, var(--card-accent) 5%, var(--panel)), color-mix(in oklch, var(--panel) 88%, transparent) 72%);
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 12px 28px rgb(var(--flow-ui-shadow-rgb) / 0.09);
+}
+
+:root.light-theme .app.page-tools .project-card:hover {
+  border-color: color-mix(in oklch, var(--card-accent) 34%, var(--flow-ui-card-border));
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 0 0 1px color-mix(in oklch, var(--card-accent) 12%, transparent),
+    0 16px 36px rgb(var(--flow-ui-shadow-rgb) / 0.14);
 }
 
 .app.page-tools .project-card::before {
@@ -2178,6 +2212,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
 }
 
+:root.light-theme .blog-index-page .blog-column-filter {
+  background: color-mix(in oklch, var(--panel) 52%, transparent);
+  border-color: var(--flow-ui-border-strong);
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 20px 52px rgb(var(--flow-ui-shadow-rgb) / 0.1);
+}
+
 .blog-index-page .filter-btn {
   min-height: 52px;
   min-width: 124px;
@@ -2331,6 +2373,22 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   background:
     radial-gradient(circle at 12% 0%, color-mix(in oklch, var(--amber) 14%, transparent), transparent 38%),
     linear-gradient(150deg, color-mix(in oklch, var(--panel) 92%, transparent), color-mix(in oklch, var(--panel-strong) 74%, transparent));
+}
+
+:root.light-theme .app.page-blog .blog-card {
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in oklch, var(--amber) 10%, transparent), transparent 38%),
+    linear-gradient(150deg, color-mix(in oklch, var(--panel) 88%, transparent), color-mix(in oklch, var(--panel-strong) 66%, transparent));
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 16px 42px rgb(var(--flow-ui-shadow-rgb) / 0.11);
+}
+
+:root.light-theme .app.page-blog .blog-card:hover {
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 0 0 1px color-mix(in oklch, var(--amber) 12%, transparent),
+    0 18px 42px rgb(var(--flow-ui-shadow-rgb) / 0.14);
 }
 
 .app.page-blog .blog-header,
@@ -3110,6 +3168,16 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   box-shadow: var(--shadow);
   -webkit-backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
   backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
+}
+
+:root.light-theme .blog-tools,
+:root.light-theme .blog-empty,
+:root.light-theme .blog-pagination {
+  background: color-mix(in oklch, var(--panel) 52%, transparent);
+  border-color: var(--flow-ui-border-strong);
+  box-shadow:
+    inset 0 1px 0 var(--flow-ui-inset),
+    0 20px 52px rgb(var(--flow-ui-shadow-rgb) / 0.1);
 }
 
 .assistant-sidebar,
