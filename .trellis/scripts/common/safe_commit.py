@@ -16,10 +16,11 @@ Design
 - Scripts only stage SPECIFIC product paths (journal files, index.md, the
   current task dir, the archive dir). Never the whole `.trellis/` tree.
 - If plain `git add <specific>` fails with "ignored by", DO NOT retry with
-  ``-f``. The presence of `.trellis/` in `.gitignore` is treated as user
-  intent ("keep .trellis/ local-only"). The script warns and skips the
-  auto-commit; users who want auto-staging can either fix their `.gitignore`
-  or set ``session_auto_commit: false`` and manage git themselves.
+  ``-f``. The only exception is the task archive operation, which may call
+  :func:`safe_git_add_exact_archives` with a validated path shaped exactly as
+  ``.trellis/tasks/archive/<month>/<task>``. This preserves local-only archive
+  history while letting the one task currently being archived keep its Git
+  rename history.
 - The warning includes a negative example: ``Do NOT use `git add -f .trellis/` ...``
   so any AI rereading the log doesn't reinvent the bug.
 
@@ -179,9 +180,16 @@ def safe_archive_paths_to_add(
         # handles the source-side deletes via `git rm --cached`
         # explicitly.
         if archive_dir.is_dir():
-            paths.append(
-                f"{DIR_WORKFLOW}/{DIR_TASKS}/{DIR_ARCHIVE}"
-            )
+            matches = [
+                candidate
+                for candidate in archive_dir.glob(f"*/{task_name}")
+                if candidate.is_dir()
+            ]
+            if len(matches) == 1:
+                month = matches[0].parent.name
+                paths.append(
+                    f"{DIR_WORKFLOW}/{DIR_TASKS}/{DIR_ARCHIVE}/{month}/{task_name}"
+                )
         for child_name in modified_children or []:
             paths.append(f"{DIR_WORKFLOW}/{DIR_TASKS}/{child_name}")
         return paths
@@ -229,6 +237,47 @@ def safe_git_add(
     rc, _, err = run_git(["add", "--", *paths], cwd=repo_root)
     if rc == 0:
         return True, False, ""
+    return False, False, err
+
+
+def is_safe_exact_archive_path(path: str, repo_root: Path) -> bool:
+    """Return whether ``path`` is one concrete task archive directory.
+
+    The accepted shape is exactly
+    ``.trellis/tasks/archive/<YYYY-MM>/<task-name>``. Wildcards, traversal,
+    the archive root, and runtime/workspace paths are rejected before any
+    force-add can run.
+    """
+    candidate = Path(path)
+    parts = candidate.parts
+    if len(parts) != 5:
+        return False
+    if parts[:3] != (DIR_WORKFLOW, DIR_TASKS, DIR_ARCHIVE):
+        return False
+    if not parts[3] or not parts[4] or any(char in path for char in "*?[]"):
+        return False
+
+    archive_root = (repo_root / DIR_WORKFLOW / DIR_TASKS / DIR_ARCHIVE).resolve()
+    resolved = (repo_root / candidate).resolve()
+    try:
+        resolved.relative_to(archive_root)
+    except ValueError:
+        return False
+    return resolved.is_dir()
+
+
+def safe_git_add_exact_archives(
+    paths: list[str], repo_root: Path
+) -> tuple[bool, bool, str]:
+    """Force-stage only validated, concrete archived task directories."""
+    if not paths:
+        return True, False, ""
+    if not all(is_safe_exact_archive_path(path, repo_root) for path in paths):
+        return False, False, "refusing to force-stage a non-task archive path"
+
+    rc, _, err = run_git(["add", "-f", "--", *paths], cwd=repo_root)
+    if rc == 0:
+        return True, True, ""
     return False, False, err
 
 

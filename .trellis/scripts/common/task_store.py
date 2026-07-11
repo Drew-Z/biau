@@ -45,6 +45,7 @@ from .paths import (
 from .safe_commit import (
     print_gitignore_warning,
     safe_archive_paths_to_add,
+    safe_git_add_exact_archives,
     safe_git_add,
 )
 from .task_utils import (
@@ -477,10 +478,10 @@ def _auto_commit_archive(
     children relationship update). Dirty changes in OTHER active task
     dirs are NOT bundled into the archive commit.
 
-    If ``.gitignore`` blocks the paths, we warn + skip — we do NOT
-    retry with ``git add -f``. The warning explicitly forbids
-    ``git add -f .trellis/`` (which would fan out to caches/backups)
-    and points users at ``session_auto_commit: false``.
+    Normal paths use plain ``git add``. The one concrete destination shaped
+    as ``.trellis/tasks/archive/<month>/<task>`` uses the guarded exact-path
+    force helper so a local-only archive root does not fan out into unrelated
+    historical tasks, caches, backups, or runtime state.
 
     Honors ``session_auto_commit`` in ``.trellis/config.yaml``: when
     set to ``false``, this function returns immediately without
@@ -507,7 +508,11 @@ def _auto_commit_archive(
         print("[OK] No task changes to commit.", file=sys.stderr)
         return True
 
-    success, _, err = safe_git_add(paths, repo_root)
+    archive_prefix = f"{DIR_WORKFLOW}/{DIR_TASKS}/{DIR_ARCHIVE}/"
+    archive_paths = [path for path in paths if path.startswith(archive_prefix)]
+    regular_paths = [path for path in paths if path not in archive_paths]
+
+    success, _, err = safe_git_add(regular_paths, repo_root)
     if not success:
         if err and "ignored by" in err.lower():
             print_gitignore_warning(paths)
@@ -516,6 +521,14 @@ def _auto_commit_archive(
                 f"[WARN] git add failed: {err.strip() if err else 'unknown error'}",
                 file=sys.stderr,
             )
+        return not source_was_tracked
+
+    success, _, err = safe_git_add_exact_archives(archive_paths, repo_root)
+    if not success:
+        print(
+            f"[WARN] exact archive git add failed: {err.strip() if err else 'unknown error'}",
+            file=sys.stderr,
+        )
         return not source_was_tracked
 
     # Belt-and-suspenders for the phantom-delete bug: `safe_git_add` uses
