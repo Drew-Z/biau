@@ -244,11 +244,18 @@ harbor blue may all remain visible, but background saturation stays below
 `100%` and primary panel alpha stays between `0.55` and `0.74` for readable,
 still-translucent content.
 
-The visible background contract is the stabilized three-layer motion on
-`.gradient-bg`: `biauReferenceColorFlow`, `biauReferenceMistFlow`, and
-`biauReferenceEdgeFlow`. Light scenes keep mist opacity at or above `0.18` and
-edge opacity at or above `0.22`; do not weaken or replace these layers merely
-to make cards look calmer. Adjust surface alpha, borders, and shadows first.
+The visible background contract uses five composited levels: the animated
+`.gradient-bg` base, the app fluid field, the app ribbon field, the gradient
+mist/edge pair, and `.harbor-environment` beam/spectrum/mist/edge layers.
+Desktop scenes must keep all levels active. Mobile scenes may reduce inset,
+blur, opacity, and layer area, but must not globally hide the fluid/ribbon or
+harbor layers merely to make cards calmer or to address a performance concern.
+Adjust mobile cost tokens, surface alpha, borders, and shadows first.
+
+`dusk`, `garden`, and `stellar` must remain visibly distinct in both light and
+dark themes. `scripts/check-ui.mjs` owns the computed-style contract for the
+fluid/ribbon animations, harbor environment animations, six theme signatures,
+mobile visibility, and the static `prefers-reduced-motion` fallback.
 
 `dusk`, `garden`, and `stellar` must keep distinct light palettes. A light scene
 must never reuse dark endpoints such as `#052433`; scene switching changes

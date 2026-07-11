@@ -764,23 +764,40 @@ if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow ==
 }
 await navIndicatorPage.close()
 
-const lightScenePalettes = []
-for (const scene of ['dusk', 'garden', 'stellar']) {
-  const lightThemePage = await browser.newPage({ viewport: viewports[0], colorScheme: 'light' })
-  await lightThemePage.addInitScript((harborScene) => {
-    window.localStorage.setItem('theme', 'light')
-    window.localStorage.setItem('biau-port-harbor-scene', harborScene)
-    window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
-  }, scene)
-  await gotoApp(lightThemePage, '/')
-  const palette = await lightThemePage.evaluate(() => {
+const harborThemeSignatures = []
+for (const theme of ['light', 'dark']) {
+  for (const scene of ['dusk', 'garden', 'stellar']) {
+    const harborThemePage = await browser.newPage({ viewport: viewports[0], colorScheme: theme })
+    await harborThemePage.addInitScript(({ harborScene, harborTheme }) => {
+      window.localStorage.setItem('theme', harborTheme)
+      window.localStorage.setItem('biau-port-harbor-scene', harborScene)
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    }, { harborScene: scene, harborTheme: theme })
+    await gotoApp(harborThemePage, '/')
+    const palette = await harborThemePage.evaluate(() => {
     const app = document.querySelector('.app.page-home')
     const gradient = document.querySelector('.app.page-home .gradient-bg')
-    if (!(app instanceof HTMLElement) || !(gradient instanceof HTMLElement)) return null
+    const environment = document.querySelector('.harbor-environment')
+    const beam = document.querySelector('.harbor-environment__beam')
+    const spectrum = document.querySelector('.harbor-environment__spectrum')
+    const mist = document.querySelector('.harbor-environment__mist')
+    if (
+      !(app instanceof HTMLElement) ||
+      !(gradient instanceof HTMLElement) ||
+      !(environment instanceof HTMLElement) ||
+      !(beam instanceof HTMLElement) ||
+      !(spectrum instanceof HTMLElement) ||
+      !(mist instanceof HTMLElement)
+    ) return null
     const style = getComputedStyle(app)
+    const fieldStyle = getComputedStyle(app, '::before')
+    const ribbonStyle = getComputedStyle(app, '::after')
     const gradientStyle = getComputedStyle(gradient)
-    const mistStyle = getComputedStyle(gradient, '::before')
-    const edgeStyle = getComputedStyle(gradient, '::after')
+    const gradientMistStyle = getComputedStyle(gradient, '::before')
+    const gradientEdgeStyle = getComputedStyle(gradient, '::after')
+    const environmentStyle = getComputedStyle(environment)
+    const environmentEdgeStyle = getComputedStyle(environment, '::before')
+    const environmentVeilStyle = getComputedStyle(environment, '::after')
     return {
       light: document.documentElement.classList.contains('light-theme'),
       c1: style.getPropertyValue('--flow-c1').trim().toLowerCase(),
@@ -790,43 +807,143 @@ for (const scene of ['dusk', 'garden', 'stellar']) {
       mistOpacity: Number.parseFloat(style.getPropertyValue('--harbor-mist-opacity')),
       edgeOpacity: Number.parseFloat(style.getPropertyValue('--harbor-edge-opacity')),
       colorAnimationName: gradientStyle.animationName,
-      mistAnimationName: mistStyle.animationName,
-      edgeAnimationName: edgeStyle.animationName,
+      gradientMistAnimationName: gradientMistStyle.animationName,
+      gradientEdgeAnimationName: gradientEdgeStyle.animationName,
+      fieldDisplay: fieldStyle.display,
+      fieldAnimationName: fieldStyle.animationName,
+      fieldBlend: fieldStyle.mixBlendMode,
+      ribbonDisplay: ribbonStyle.display,
+      ribbonAnimationName: ribbonStyle.animationName,
+      ribbonBlend: ribbonStyle.mixBlendMode,
+      environmentDisplay: environmentStyle.display,
+      environmentEdgeAnimationName: environmentEdgeStyle.animationName,
+      environmentVeilAnimationName: environmentVeilStyle.animationName,
+      beamAnimationName: getComputedStyle(beam).animationName,
+      spectrumAnimationName: getComputedStyle(spectrum).animationName,
+      mistAnimationName: getComputedStyle(mist).animationName,
       ink: style.getPropertyValue('--ink').trim().toLowerCase(),
     }
-  })
-  if (!palette) {
-    failures.push(`/ home light ${scene}: expected measurable theme tokens`)
-  } else {
-    lightScenePalettes.push(palette)
-    if (!palette.light || palette.ink !== '#173047') {
-      failures.push(`/ home light ${scene}: expected the morning-harbor light theme ink contract`)
+    })
+    if (!palette) {
+      failures.push(`/ home ${theme} ${scene}: expected measurable theme and motion layers`)
+    } else {
+      harborThemeSignatures.push({ theme, scene, palette })
+      if (theme === 'light' && (!palette.light || palette.ink !== '#173047')) {
+        failures.push(`/ home light ${scene}: expected the morning-harbor light theme ink contract`)
+      }
+      if (theme === 'dark' && palette.light) {
+        failures.push(`/ home dark ${scene}: expected dark theme to remain active`)
+      }
+      if (theme === 'light' && (
+        palette.mistOpacity < 0.18 ||
+        palette.edgeOpacity < 0.22 ||
+        palette.panelAlpha < 0.55 ||
+        palette.panelAlpha > 0.74 ||
+        palette.saturation > 100
+      )) {
+        failures.push(`/ home light ${scene}: expected visible motion layers, readable panels, and sub-100% saturation`)
+      }
+      if (
+        palette.colorAnimationName !== 'biauReferenceColorFlow' ||
+        palette.gradientMistAnimationName !== 'biauReferenceMistFlow' ||
+        palette.gradientEdgeAnimationName !== 'biauReferenceEdgeFlow'
+      ) {
+        failures.push(`/ home ${theme} ${scene}: expected the color, mist, and edge base layers to remain active`)
+      }
+      if (
+        palette.fieldDisplay === 'none' ||
+        palette.fieldAnimationName !== 'muxingFluidField' ||
+        palette.ribbonDisplay === 'none' ||
+        palette.ribbonAnimationName !== 'muxingFlowRibbons'
+      ) {
+        failures.push(`/ home ${theme} ${scene}: expected visible fluid-field and ribbon motion`)
+      }
+      if (
+        palette.environmentDisplay === 'none' ||
+        palette.environmentEdgeAnimationName !== 'harborEdgeTrace' ||
+        palette.environmentVeilAnimationName !== 'harborVeilDrift' ||
+        palette.beamAnimationName !== 'harborDeepBeam' ||
+        palette.spectrumAnimationName !== 'harborSpectrumSwim' ||
+        palette.mistAnimationName !== 'harborLowMist'
+      ) {
+        failures.push(`/ home ${theme} ${scene}: expected the full harbor environment motion stack`)
+      }
+      if (theme === 'light' && (palette.c5 === '#052433' || palette.c5 === '#16497b')) {
+        failures.push(`/ home light ${scene}: light palette should not reuse the old dark/deep-blue endpoint`)
+      }
     }
-    if (
-      palette.mistOpacity < 0.18 ||
-      palette.edgeOpacity < 0.22 ||
-      palette.panelAlpha < 0.55 ||
-      palette.panelAlpha > 0.74 ||
-      palette.saturation > 100
-    ) {
-      failures.push(`/ home light ${scene}: expected visible motion layers, readable panels, and sub-100% saturation`)
-    }
-    if (
-      palette.colorAnimationName !== 'biauReferenceColorFlow' ||
-      palette.mistAnimationName !== 'biauReferenceMistFlow' ||
-      palette.edgeAnimationName !== 'biauReferenceEdgeFlow'
-    ) {
-      failures.push(`/ home light ${scene}: expected the color, mist, and edge motion layers to remain active`)
-    }
-    if (palette.c5 === '#052433' || palette.c5 === '#16497b') {
-      failures.push(`/ home light ${scene}: light palette should not reuse the old dark/deep-blue endpoint`)
-    }
+    await harborThemePage.close()
   }
-  await lightThemePage.close()
 }
-if (new Set(lightScenePalettes.map((palette) => `${palette.c1}:${palette.c5}`)).size !== 3) {
-  failures.push('/ home light scenes: dusk, garden, and stellar should keep distinct restrained palettes')
+const harborSignatureKeys = harborThemeSignatures.map(({ theme, scene, palette }) =>
+  `${theme}:${scene}:${palette.c1}:${palette.c5}:${palette.fieldBlend}:${palette.ribbonBlend}:${palette.mistOpacity}:${palette.edgeOpacity}`,
+)
+if (new Set(harborSignatureKeys).size !== 6) {
+  failures.push('/ home harbor scenes: light/dark dusk, garden, and stellar should keep six distinct motion signatures')
 }
+
+const mobileHarborPage = await browser.newPage({ viewport: { width: 390, height: 844 }, colorScheme: 'dark' })
+await mobileHarborPage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(mobileHarborPage, '/')
+const mobileHarbor = await mobileHarborPage.evaluate(() => {
+  const app = document.querySelector('.app.page-home')
+  const environment = document.querySelector('.harbor-environment')
+  if (!(app instanceof HTMLElement) || !(environment instanceof HTMLElement)) return null
+  return {
+    pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    fieldDisplay: getComputedStyle(app, '::before').display,
+    fieldAnimationName: getComputedStyle(app, '::before').animationName,
+    environmentDisplay: getComputedStyle(environment).display,
+    beamAnimationName: getComputedStyle(document.querySelector('.harbor-environment__beam')).animationName,
+  }
+})
+if (
+  !mobileHarbor ||
+  mobileHarbor.pageOverflow > 1 ||
+  mobileHarbor.fieldDisplay === 'none' ||
+  mobileHarbor.fieldAnimationName !== 'muxingFluidField' ||
+  mobileHarbor.environmentDisplay === 'none' ||
+  mobileHarbor.beamAnimationName !== 'harborDeepBeam'
+) {
+  failures.push('/ home mobile harbor: expected bounded overflow and visible low-cost motion layers at 390px')
+}
+await mobileHarborPage.close()
+
+const reducedHarborPage = await browser.newPage({
+  viewport: viewports[0],
+  colorScheme: 'dark',
+  reducedMotion: 'reduce',
+})
+await reducedHarborPage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+})
+await gotoApp(reducedHarborPage, '/')
+const reducedAnimations = await reducedHarborPage.evaluate(() => {
+  const app = document.querySelector('.app.page-home')
+  const gradient = document.querySelector('.gradient-bg')
+  const environment = document.querySelector('.harbor-environment')
+  if (!(app instanceof HTMLElement) || !(gradient instanceof HTMLElement) || !(environment instanceof HTMLElement)) return []
+  return [
+    getComputedStyle(app).animationName,
+    getComputedStyle(app, '::before').animationName,
+    getComputedStyle(app, '::after').animationName,
+    getComputedStyle(gradient).animationName,
+    getComputedStyle(gradient, '::before').animationName,
+    getComputedStyle(gradient, '::after').animationName,
+    getComputedStyle(environment, '::before').animationName,
+    getComputedStyle(environment, '::after').animationName,
+    ...Array.from(environment.querySelectorAll('span'), (item) => getComputedStyle(item).animationName),
+  ]
+})
+if (!reducedAnimations.length || reducedAnimations.some((name) => name !== 'none')) {
+  failures.push(`/ home reduced motion: expected a static harbor field, got ${reducedAnimations.join(', ')}`)
+}
+await reducedHarborPage.close()
 
 const assistantPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(assistantPage, '/assistant')
