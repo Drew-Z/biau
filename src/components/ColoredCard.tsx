@@ -5,13 +5,14 @@ import type { KeyboardEvent } from 'react'
 interface ColoredCardProps {
   project: HeroProject
   index: number
+  projectCount: number
   loopCopy?: boolean
   onClick: () => void
   onActionClick?: () => void
 }
 
-export function ColoredCard({ project, index, loopCopy = false, onClick, onActionClick }: ColoredCardProps) {
-  const number = String((index % 5) + 1).padStart(2, '0')
+export function ColoredCard({ project, index, projectCount, loopCopy = false, onClick, onActionClick }: ColoredCardProps) {
+  const number = String((index % Math.max(projectCount, 1)) + 1).padStart(2, '0')
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return
     if (event.key !== 'Enter' && event.key !== ' ') return

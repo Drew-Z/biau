@@ -586,51 +586,44 @@
     cursor: default;
     user-select: auto;
     transform: none;
+    overflow: visible;
   }
 
   .carousel-viewport {
+    width: 100%;
+    max-width: 100%;
     height: auto;
-    min-height: 160px;
+    min-height: 0;
     margin: 0;
-    padding: 2px var(--space-16) 14px 0;
-    overflow-x: auto;
+    padding: 0;
+    overflow-x: visible;
     overflow-y: visible;
-    overscroll-behavior-x: contain;
+    overscroll-behavior-x: auto;
     overscroll-behavior-y: auto;
-    scroll-padding-inline: 2px;
-    scroll-snap-type: x mandatory;
-    touch-action: pan-x pan-y;
+    scroll-snap-type: none;
+    touch-action: pan-y;
     mask-image: none;
     -webkit-mask-image: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .carousel-viewport::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .carousel-viewport::-webkit-scrollbar-thumb {
-    border-radius: 999px;
-    background: color-mix(in oklch, var(--ink) 18%, transparent);
   }
 
   .carousel-track {
-    width: max-content;
-    max-width: none;
-    flex-direction: row;
+    width: 100%;
+    max-width: 100%;
+    flex-direction: column;
     transform: none !important;
+    will-change: auto;
   }
 
   .carousel-card {
-    width: clamp(236px, 74vw, 310px);
-    height: 152px;
-    grid-template-columns: 28px minmax(0, 1fr) auto;
-    gap: var(--space-8);
-    padding: var(--space-16) var(--space-8);
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-    user-select: none;
-    -webkit-user-select: none;
+    width: 100%;
+    min-height: 88px;
+    height: auto;
+    grid-template-columns: 30px minmax(0, 1fr) 44px;
+    gap: var(--space-12, 12px);
+    padding: var(--space-12, 12px) var(--space-14, 14px);
+    scroll-snap-align: none;
+    user-select: auto;
+    -webkit-user-select: auto;
   }
 
   .carousel-card[data-loop-copy='true'] {
@@ -642,9 +635,27 @@
   }
 
   .carousel-card .carousel-action {
-    min-width: 72px;
-    padding: 0.65rem 0.72rem;
-    font-size: 11px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: var(--radius-md);
+  }
+
+  .carousel-card .carousel-action span {
+    display: none;
+  }
+
+  .carousel-card .carousel-action svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .carousel-card .desc {
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    font-size: 12px;
+    line-height: 1.4;
   }
 }
 

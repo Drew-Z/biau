@@ -217,11 +217,11 @@ For the home page specifically:
 
 - `.hero-title-rotator` keeps `touch-action: pan-y`; a tap or clearly horizontal
   swipe may switch the poem, while a vertical drag must scroll the page.
-- The mobile project rail uses native horizontal scrolling with
-  `scroll-snap-type: x mandatory` and leaves vertical panning enabled. Do not
-  reuse the desktop pointer-drag/infinite-transform controller on mobile.
+- The mobile project manifest is a full-width vertical list. It must not create
+  an internal horizontal or vertical scroll owner; each row leaves vertical
+  panning to the document and exposes a separate trailing external action.
 - Desktop infinite-loop duplicate cards must carry an explicit marker such as
-  `data-loop-copy="true"` and stay hidden in the mobile native rail. Mobile
+  `data-loop-copy="true"` and stay hidden in the mobile manifest. Mobile
   visitors should receive one semantic copy of each project.
 - Mobile navigation keeps only the brand, theme action, and menu trigger in the
   top row. Language and route actions belong in the expanded panel when the
@@ -232,9 +232,16 @@ For the home page specifically:
 
 `scripts/check-ui.mjs` must cover the home page at `320`, `390`, and `430` CSS
 pixels and assert: no navigation overlap, no page-level horizontal overflow,
-vertical panning on the title and project rail, one visible project-card set,
-the next project card peeking into view, and an operable mobile menu. This is a
-layout contract, not a screenshot-only check.
+vertical panning on the title and project manifest, one visible project-card
+set arranged in a non-overlapping column, bounded trailing actions, and an
+operable mobile menu. This is a layout contract, not a screenshot-only check.
+
+Mobile blog and project detail routes use the document as the only full-page
+vertical scroll owner. The detail body is an unframed continuous reading band:
+text sections use separators and rhythm instead of nested panel borders and
+shadows, while screenshots, diagrams, code, tables, and related-item cards keep
+their own meaningful boundaries. Primary body text must be at least `15px`, and
+rich media may scroll horizontally only inside its own bounded container.
 
 ### Convention: Light Theme Restraint
 
@@ -262,7 +269,7 @@ background. The home hero panel, project rail, and project cards use shared
 scene tokens for tint, highlight, edge, depth, and sheen. Keep six distinct
 light/dark material signatures, preserve project-specific card accents, and use
 bounded pseudo-element highlights that never resize content. On mobile, reduce
-sheen intensity and retain native horizontal scrolling; under reduced motion,
+sheen intensity and retain the vertical project manifest; under reduced motion,
 the sheen must be static with no transition.
 
 `dusk`, `garden`, and `stellar` must keep distinct light palettes. A light scene

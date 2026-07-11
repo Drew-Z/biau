@@ -1857,15 +1857,26 @@ for (const width of [320, 390, 430]) {
     const track = document.querySelector('.carousel-track')
     const cards = [...document.querySelectorAll('.carousel-card')]
     const visibleCards = cards.filter((card) => window.getComputedStyle(card).display !== 'none')
-    const firstCard = visibleCards[0]
-    const secondCard = visibleCards[1]
     if (!brand || !actions || !inner || !navItems || !languageButton || !title || !viewport || !track) return null
 
     const brandRect = brand.getBoundingClientRect()
     const actionsRect = actions.getBoundingClientRect()
     const innerRect = inner.getBoundingClientRect()
-    const viewportRect = viewport.getBoundingClientRect()
-    const secondCardRect = secondCard?.getBoundingClientRect()
+    const cardRects = visibleCards.map((card) => {
+      const rect = card.getBoundingClientRect()
+      const action = card.querySelector('.carousel-action')
+      const actionRect = action?.getBoundingClientRect()
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        hasAction: Boolean(actionRect),
+        actionWidth: actionRect?.width ?? 0,
+        actionHeight: actionRect?.height ?? 0,
+        actionRight: actionRect?.right ?? rect.right,
+      }
+    })
 
     return {
       brandRight: Math.round(brandRect.right),
@@ -1881,7 +1892,8 @@ for (const width of [320, 390, 430]) {
       carouselDirection: window.getComputedStyle(track).flexDirection,
       carouselTransform: window.getComputedStyle(track).transform,
       visibleCardCount: visibleCards.length,
-      nextCardPeeks: Boolean(secondCardRect && secondCardRect.left < viewportRect.right),
+      portIndices: visibleCards.map((card) => card.getAttribute('data-port-index')),
+      cardRects,
       horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
     }
   })
@@ -1903,11 +1915,11 @@ for (const width of [320, 390, 430]) {
   if (!mobileLayout.titleTouchAction.includes('pan-y')) {
     failures.push(`/ home mobile ${width}px: title should preserve vertical page panning`)
   }
-  if (!['auto', 'scroll'].includes(mobileLayout.carouselOverflowX)) {
-    failures.push(`/ home mobile ${width}px: project rail should use native horizontal scrolling`)
+  if (['auto', 'scroll'].includes(mobileLayout.carouselOverflowX)) {
+    failures.push(`/ home mobile ${width}px: project manifest should not own horizontal scrolling`)
   }
-  if (!mobileLayout.carouselTouchAction.includes('pan-y') || mobileLayout.carouselDirection !== 'row') {
-    failures.push(`/ home mobile ${width}px: project rail should allow page panning and use a horizontal row`)
+  if (!mobileLayout.carouselTouchAction.includes('pan-y') || mobileLayout.carouselDirection !== 'column') {
+    failures.push(`/ home mobile ${width}px: project manifest should allow page panning and use a vertical column`)
   }
   if (mobileLayout.carouselTransform !== 'none') {
     failures.push(`/ home mobile ${width}px: desktop vertical transform should be disabled`)
@@ -1917,8 +1929,24 @@ for (const width of [320, 390, 430]) {
       `/ home mobile ${width}px: expected ${heroContent.projects.length} unique project cards, got ${mobileLayout.visibleCardCount}`,
     )
   }
-  if (!mobileLayout.nextCardPeeks) {
-    failures.push(`/ home mobile ${width}px: expected the next project card to remain partially visible`)
+  const expectedPortIndices = heroContent.projects.map((_, index) => String(index + 1).padStart(2, '0'))
+  if (mobileLayout.portIndices.join(',') !== expectedPortIndices.join(',')) {
+    failures.push(`/ home mobile ${width}px: project manifest should use one continuous port index sequence`)
+  }
+  const cardsStayBounded = mobileLayout.cardRects.every(
+    (rect) => rect.left >= -1 && rect.right <= mobileLayout.viewportWidth + 1 && rect.actionRight <= mobileLayout.viewportWidth + 1,
+  )
+  const cardsDoNotOverlap = mobileLayout.cardRects.every(
+    (rect, index, rects) => index === 0 || rect.top >= rects[index - 1].bottom - 1,
+  )
+  const actionsAreOperable = mobileLayout.cardRects.every(
+    (rect) => !rect.hasAction || (rect.actionWidth >= 40 && rect.actionHeight >= 40),
+  )
+  if (!cardsStayBounded || !cardsDoNotOverlap) {
+    failures.push(`/ home mobile ${width}px: project rows should stay in the viewport and form a non-overlapping column`)
+  }
+  if (!actionsAreOperable) {
+    failures.push(`/ home mobile ${width}px: project external actions should remain visible and at least 40px`)
   }
   if (mobileLayout.horizontalOverflow) {
     failures.push(`/ home mobile ${width}px: page should not overflow horizontally`)
@@ -1956,7 +1984,14 @@ for (const width of [320, 390, 430]) {
 
   const footer = mobileHomePage.locator('.site-footer')
   await footer.scrollIntoViewIfNeeded()
-  await mobileHomePage.waitForTimeout(180)
+  await mobileHomePage
+    .waitForFunction(() => {
+      const trigger = document.querySelector('.public-assistant__trigger')
+      if (!trigger) return false
+      const style = getComputedStyle(trigger)
+      return Number.parseFloat(style.opacity) <= 0.05 && style.pointerEvents === 'none'
+    })
+    .catch(() => {})
   const trustLabelsVisible = await Promise.all(
     ['项目性质', '隐私说明', '免责声明', '联系方式'].map((label) =>
       footer.getByText(label, { exact: true }).isVisible().catch(() => false),
@@ -1974,6 +2009,121 @@ for (const width of [320, 390, 430]) {
   }
 
   await mobileHomePage.close()
+}
+
+const mobileDetailRoutes = ['/blog/legal-rag-review', '/projects/legal-rag']
+
+for (const width of [320, 390, 430]) {
+  for (const path of mobileDetailRoutes) {
+    const mobileDetailPage = await browser.newPage({ viewport: { width, height: 900 } })
+    await mobileDetailPage.addInitScript(() => {
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    })
+    await gotoApp(mobileDetailPage, path)
+
+    const readingLayout = await mobileDetailPage.evaluate(() => {
+      document.documentElement.style.scrollBehavior = 'auto'
+      const app = document.querySelector('.app.page-detail')
+      const detailBody = document.querySelector('.detail-body')
+      const bodyText = document.querySelector('.blog-post-body-text, .detail-highlights li')
+      if (!(app instanceof HTMLElement) || !(detailBody instanceof HTMLElement) || !(bodyText instanceof HTMLElement)) {
+        return null
+      }
+
+      const viewportWidth = document.documentElement.clientWidth
+      const boundedElements = [
+        ...document.querySelectorAll(
+          '.detail-page .detail-body, .detail-page .detail-block, .detail-page .blog-post-section, .detail-page .project-visual, .detail-page figure, .detail-page img, .detail-page pre, .detail-page table',
+        ),
+      ].filter((element) => {
+        const style = getComputedStyle(element)
+        const rect = element.getBoundingClientRect()
+        return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0
+      })
+      const outOfBounds = boundedElements.filter((element) => {
+        const rect = element.getBoundingClientRect()
+        return rect.left < -1 || rect.right > viewportWidth + 1
+      }).length
+      const bodyStyle = getComputedStyle(detailBody)
+
+      return {
+        viewportWidth,
+        horizontalOverflow: document.documentElement.scrollWidth > viewportWidth + 1,
+        appOverflowY: getComputedStyle(app).overflowY,
+        bodyFontSize: Number.parseFloat(getComputedStyle(bodyText).fontSize),
+        bodyBackground: bodyStyle.backgroundColor,
+        bodyBorderTopWidth: bodyStyle.borderTopWidth,
+        bodyBoxShadow: bodyStyle.boxShadow,
+        outOfBounds,
+      }
+    })
+
+    if (!readingLayout) {
+      failures.push(`${path} mobile ${width}px: expected measurable detail reading layout`)
+      await mobileDetailPage.close()
+      continue
+    }
+    if (readingLayout.horizontalOverflow || readingLayout.outOfBounds > 0) {
+      failures.push(`${path} mobile ${width}px: detail content should stay inside the reading viewport`)
+    }
+    if (readingLayout.appOverflowY !== 'visible') {
+      failures.push(`${path} mobile ${width}px: document should own vertical scrolling`)
+    }
+    if (readingLayout.bodyFontSize < 15) {
+      failures.push(`${path} mobile ${width}px: primary detail text should be at least 15px`)
+    }
+    if (
+      readingLayout.bodyBackground !== 'rgba(0, 0, 0, 0)' ||
+      readingLayout.bodyBorderTopWidth !== '0px' ||
+      readingLayout.bodyBoxShadow !== 'none'
+    ) {
+      failures.push(`${path} mobile ${width}px: detail body should use a flattened transparent reading surface`)
+    }
+
+    const finalRelated = mobileDetailPage.locator('.detail-related').last()
+    if ((await finalRelated.count()) > 0) {
+      await finalRelated.scrollIntoViewIfNeeded()
+      if (!(await finalRelated.isVisible().catch(() => false))) {
+        failures.push(`${path} mobile ${width}px: final related-content section should remain reachable`)
+      }
+    }
+
+    await mobileDetailPage.evaluate(() => {
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, document.documentElement.scrollHeight)
+    })
+    await mobileDetailPage
+      .waitForFunction(() => {
+        const trigger = document.querySelector('.public-assistant__trigger')
+        if (!trigger) return false
+        const style = getComputedStyle(trigger)
+        return Number.parseFloat(style.opacity) <= 0.05 && style.pointerEvents === 'none'
+      })
+      .catch(() => {})
+    const bottomState = await mobileDetailPage.evaluate(() => ({
+      reachedBottom: window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2,
+      footerVisible: Boolean(document.querySelector('.site-footer')?.getBoundingClientRect().bottom <= window.innerHeight + 1),
+    }))
+    if (!bottomState.reachedBottom || !bottomState.footerVisible) {
+      failures.push(`${path} mobile ${width}px: document scrolling should reach the true footer bottom`)
+    }
+
+    const footerTrust = mobileDetailPage.locator('.site-footer__trust')
+    if (!(await footerTrust.isVisible().catch(() => false))) {
+      failures.push(`${path} mobile ${width}px: footer trust content should remain visible at the bottom`)
+    }
+    const assistantTriggerAtFooter = await mobileDetailPage
+      .locator('.public-assistant__trigger')
+      .evaluate((trigger) => ({
+        opacity: Number.parseFloat(getComputedStyle(trigger).opacity),
+        pointerEvents: getComputedStyle(trigger).pointerEvents,
+      }))
+    if (assistantTriggerAtFooter.opacity > 0.05 || assistantTriggerAtFooter.pointerEvents !== 'none') {
+      failures.push(`${path} mobile ${width}px: collapsed assistant trigger should not cover final reading content`)
+    }
+
+    await mobileDetailPage.close()
+  }
 }
 
 await browser.close()
