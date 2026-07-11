@@ -378,6 +378,9 @@ for (const viewport of viewports) {
       const agentPanelVisible = await page.getByRole('heading', { name: 'LangGraph 运行状态' }).isVisible().catch(() => false)
       const toolPanelVisible = await page.getByRole('heading', { name: '工具轨迹' }).isVisible().catch(() => false)
       const guardrailPanelVisible = await page.getByRole('heading', { name: '安全检查' }).isVisible().catch(() => false)
+      const memoryPanelVisible = await page.getByRole('region', { name: '长期记忆' }).isVisible().catch(() => false)
+      const memoryToggleVisible = await page.getByText('显示已归档').isVisible().catch(() => false)
+      const memoryRefreshVisible = await page.getByRole('button', { name: '刷新长期记忆' }).isVisible().catch(() => false)
 
       if (openingText.length > 52) {
         failures.push(`${viewport.name} ${route.path}: opening message should stay concise, got ${openingText.length} chars`)
@@ -390,6 +393,9 @@ for (const viewport of viewports) {
       }
       if (inspectorPanels < 5 || !agentPanelVisible || !toolPanelVisible || !guardrailPanelVisible) {
         failures.push(`${viewport.name} ${route.path}: expected productized Agent inspector panels`)
+      }
+      if (!memoryPanelVisible || !memoryToggleVisible || !memoryRefreshVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected durable memory management panel`)
       }
     }
 

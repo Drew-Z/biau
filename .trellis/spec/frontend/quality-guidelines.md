@@ -367,6 +367,8 @@ completion marker represents a completed animation.
 
 For `/assistant/admin`, the knowledge tab must keep a visible internal knowledge sync path and curated `sourceType` presets. Editors should not have to guess whether a document is a runbook, project note, status note, resource, AI Daily source, or incident note from a blank text input. `check:ui` should click the knowledge tab and assert the readiness path and source-type preset UI without requiring a live admin token.
 
+For `/assistant`, keep a visible member durable-memory panel on desktop and mobile. It must expose refresh and archived-item controls, show a clear no-token/empty state, wrap long content, and avoid a direct create form. Memory writes are initiated through explicit Agent conversation only, and a memory API failure must not disable the chat workspace.
+
 ## Scenario: Default-Off Analytics Adapter
 
 ### 1. Scope / Trigger

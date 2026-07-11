@@ -3,6 +3,7 @@ import path from 'node:path'
 import { retrieveKnowledge, publicKnowledge } from './knowledge.js'
 import { retrieveAssistantContext } from './ragClient.js'
 import { canUsePermission, sanitizeToolTrace } from './agentGuardrails.js'
+import { buildAgentMemoryCandidate } from './agentMemory.js'
 import { getStudioPrisma } from './db.js'
 import {
   buildAgentStudioDraft,
@@ -64,17 +65,17 @@ const toolDefinitions: AgentToolRuntimeDefinition[] = [
   },
   {
     id: 'memory.search',
-    label: 'Session Memory',
+    label: 'Member Memory',
     permission: 'read',
-    description: '读取当前成员当前会话的低敏历史摘要，不能跨成员读取。',
+    description: '读取当前成员的 ACTIVE 长期记忆和当前会话低敏摘要，不能跨成员读取。',
     execute: executeMemorySearch,
   },
   {
     id: 'memory.write',
-    label: 'Memory Note',
+    label: 'Memory Write',
     permission: 'draft-write',
-    description: '未来写入低敏会话偏好或摘要；当前实现只返回待审核计划。',
-    execute: executeMemoryWritePlan,
+    description: '仅在成员明确要求记住时保存低敏偏好、项目约束、工作流或上下文。',
+    execute: executeMemoryWrite,
   },
   {
     id: 'answer.direct',
@@ -326,34 +327,137 @@ async function executeStudioDraft(context: AgentToolContext): Promise<AgentToolP
 }
 
 async function executeMemorySearch(context: AgentToolContext): Promise<AgentToolPayload> {
-  const messages = await context.prisma.chatMessage.findMany({
-    where: {
-      memberId: context.member.id,
-      sessionId: context.sessionId,
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 8,
-  })
+  const [memories, messages] = await Promise.all([
+    context.prisma.agentMemory.findMany({
+      where: {
+        memberId: context.member.id,
+        status: 'ACTIVE',
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 24,
+    }),
+    context.prisma.chatMessage.findMany({
+      where: {
+        memberId: context.member.id,
+        sessionId: context.sessionId,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 6,
+    }),
+  ])
+  const selectedMemories = selectRelevantMemories(memories, context.question)
+  const memoryBlocks = selectedMemories.map(
+    (memory) => `长期记忆（${memory.kind}）：${compactText(memory.content, 280)}`,
+  )
   const snippets = messages
     .reverse()
     .map((message) => `${message.role === 'USER' ? '用户' : '助手'}：${compactText(message.content, 220)}`)
   return {
     citations: [],
     chunks: [],
-    contextBlocks: snippets,
-    summary: snippets.length > 0 ? `读取当前会话 ${snippets.length} 条低敏历史摘要。` : '当前会话暂无可用历史摘要。',
-    itemCount: snippets.length,
+    contextBlocks: [...memoryBlocks, ...snippets],
+    summary:
+      selectedMemories.length > 0 || snippets.length > 0
+        ? `读取 ${selectedMemories.length} 条长期记忆和 ${snippets.length} 条会话摘要。`
+        : '当前成员暂无可用长期记忆或会话摘要。',
+    itemCount: selectedMemories.length + snippets.length,
   }
 }
 
-function executeMemoryWritePlan(): AgentToolPayload {
+async function executeMemoryWrite(context: AgentToolContext): Promise<AgentToolPayload> {
+  const candidate = buildAgentMemoryCandidate(context.question)
+  if (!candidate.allowed) {
+    const sensitive = candidate.reason === 'sensitive-content-detected'
+    return {
+      citations: [],
+      chunks: [],
+      contextBlocks: [
+        sensitive
+          ? '请求包含可能的凭据、私有地址或连接信息，未保存长期记忆。'
+          : '只有明确提出“请记住”并提供实际低敏内容时，才会保存长期记忆。',
+      ],
+      summary: sensitive ? '长期记忆写入因敏感内容被拦截。' : '长期记忆写入未满足明确同意条件。',
+      itemCount: 0,
+      status: sensitive ? 'blocked' : 'skipped',
+      errorClass: sensitive ? 'policy_blocked' : undefined,
+    }
+  }
+
+  const existing = await context.prisma.agentMemory.findUnique({
+    where: {
+      memberId_contentHash: {
+        memberId: context.member.id,
+        contentHash: candidate.contentHash,
+      },
+    },
+  })
+
+  if (existing) {
+    if (existing.status === 'ARCHIVED') {
+      await context.prisma.agentMemory.update({
+        where: { id: existing.id },
+        data: {
+          status: 'ACTIVE',
+          archivedAt: null,
+          sessionId: context.sessionId,
+          sourceMessageId: context.sourceMessageId ?? null,
+        },
+      })
+      return memoryWriteResult(candidate.kind, candidate.title, 'restored')
+    }
+    return memoryWriteResult(candidate.kind, candidate.title, 'existing')
+  }
+
+  await context.prisma.agentMemory.create({
+    data: {
+      memberId: context.member.id,
+      sessionId: context.sessionId,
+      sourceMessageId: context.sourceMessageId,
+      kind: candidate.kind,
+      title: candidate.title,
+      content: candidate.content,
+      contentHash: candidate.contentHash,
+    },
+  })
+  return memoryWriteResult(candidate.kind, candidate.title, 'created')
+}
+
+function memoryWriteResult(kind: string, title: string, result: 'created' | 'existing' | 'restored'): AgentToolPayload {
+  const action = result === 'created' ? '已保存' : result === 'restored' ? '已恢复' : '已存在'
   return {
     citations: [],
     chunks: [],
-    contextBlocks: ['当前版本不直接写入长期记忆；如需保留偏好，应先生成低敏摘要并由成员确认。'],
-    summary: '长期记忆写入被限制为待审核计划。',
+    contextBlocks: [`${action}长期记忆：${compactText(title, 80)}。成员可在长期记忆面板中查看或归档。`],
+    summary: `${action} 1 条 ${kind.toLowerCase()} 长期记忆。`,
     itemCount: 1,
   }
+}
+
+function selectRelevantMemories<
+  T extends { kind: string; title: string; content: string; updatedAt: Date },
+>(memories: T[], question: string) {
+  const terms = getMemorySearchTerms(question)
+  return [...memories]
+    .map((memory, index) => ({
+      memory,
+      index,
+      score:
+        (memory.kind === 'PREFERENCE' ? 4 : memory.kind === 'WORKFLOW' ? 3 : 0) +
+        terms.filter((term) => `${memory.title} ${memory.content}`.toLocaleLowerCase().includes(term)).length * 2,
+    }))
+    .filter((item) => item.score > 0)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .slice(0, 6)
+    .map((item) => item.memory)
+}
+
+function getMemorySearchTerms(question: string) {
+  const normalized = question.toLocaleLowerCase()
+  const words = normalized.split(/[^\p{L}\p{N}]+/gu).filter((term) => term.length >= 2)
+  const cjkTerms = Array.from(normalized.matchAll(/[\u4e00-\u9fff]{2,}/gu)).flatMap(([term]) =>
+    Array.from({ length: Math.max(0, term.length - 1) }, (_, index) => term.slice(index, index + 2)),
+  )
+  return [...new Set([...words, ...cjkTerms])].slice(0, 24)
 }
 
 function executeDirectAnswer(): AgentToolPayload {

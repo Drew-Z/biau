@@ -22,6 +22,7 @@ export interface InternalAgentRunInput {
   question: string
   member: InternalAgentMemberContext
   sessionId: string
+  sourceMessageId?: string
   prisma: PrismaClient
   plannerMode?: 'auto' | 'mock'
   studioDraftMode?: 'auto' | 'plan-only'
@@ -46,6 +47,7 @@ export interface AgentToolContext {
   question: string
   member: InternalAgentMemberContext
   sessionId: string
+  sourceMessageId?: string
   prisma: PrismaClient
   studioDraftMode?: 'auto' | 'plan-only'
 }

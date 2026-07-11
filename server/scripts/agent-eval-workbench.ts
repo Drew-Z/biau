@@ -12,6 +12,7 @@ interface AgentEvalCase {
   expectedGrounding: string
   requireInternalCitation?: boolean
   requirePlanOnlyDraft?: boolean
+  requireMemoryWrite?: boolean
 }
 
 const expectedGraphSteps: AgentGraphNodeId[] = [
@@ -55,7 +56,37 @@ const evalCases: AgentEvalCase[] = [
     expectedIntent: 'planning',
     expectedGrounding: 'background',
   },
+  {
+    id: 'explicit-memory-write',
+    question: '请记住以后默认使用简体中文回答',
+    expectedTools: ['memory.write'],
+    expectedIntent: 'general',
+    expectedGrounding: 'none',
+    requireMemoryWrite: true,
+  },
+  {
+    id: 'memory-query-only',
+    question: '你还记得我的输出偏好吗？',
+    expectedTools: ['memory.search'],
+    expectedIntent: 'site_qa',
+    expectedGrounding: 'strict',
+  },
 ]
+
+const memoryRows: Array<{
+  id: string
+  memberId: string
+  sessionId: string | null
+  sourceMessageId: string | null
+  kind: 'PREFERENCE' | 'PROJECT' | 'WORKFLOW' | 'CONTEXT'
+  title: string
+  content: string
+  contentHash: string
+  status: 'ACTIVE' | 'ARCHIVED'
+  archivedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+}> = []
 
 const mockAgentPrisma = {
   internalKnowledgeDocument: {
@@ -90,6 +121,35 @@ const mockAgentPrisma = {
         createdAt: new Date(1),
       },
     ],
+  },
+  agentMemory: {
+    findMany: async ({ where }: { where: { memberId: string; status: string } }) =>
+      memoryRows.filter((row) => row.memberId === where.memberId && row.status === where.status),
+    findUnique: async ({ where }: { where: { memberId_contentHash: { memberId: string; contentHash: string } } }) =>
+      memoryRows.find(
+        (row) => row.memberId === where.memberId_contentHash.memberId && row.contentHash === where.memberId_contentHash.contentHash,
+      ) ?? null,
+    create: async ({ data }: { data: Omit<(typeof memoryRows)[number], 'id' | 'status' | 'archivedAt' | 'createdAt' | 'updatedAt'> }) => {
+      const now = new Date()
+      const row = {
+        ...data,
+        id: `eval-memory-${memoryRows.length + 1}`,
+        sessionId: data.sessionId ?? null,
+        sourceMessageId: data.sourceMessageId ?? null,
+        status: 'ACTIVE' as const,
+        archivedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      }
+      memoryRows.push(row)
+      return row
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Partial<(typeof memoryRows)[number]> }) => {
+      const row = memoryRows.find((item) => item.id === where.id)
+      if (!row) throw new Error('memory-not-found')
+      Object.assign(row, data, { updatedAt: new Date() })
+      return row
+    },
   },
 } as unknown as PrismaClient
 
@@ -164,6 +224,7 @@ function assertNoSensitiveShape(label: string, value: unknown) {
 }
 
 async function runEvalCase(testCase: AgentEvalCase) {
+  const memoryCountBefore = memoryRows.length
   const member = { id: 'eval-member', name: 'Eval Member', role: 'MEMBER' as const, modelChannelId: null }
   const result = await runInternalAgent({
     question: testCase.question,
@@ -201,6 +262,15 @@ async function runEvalCase(testCase: AgentEvalCase) {
     assert(draftTrace?.permission === 'draft-write', `${testCase.id}: studio draft should be draft-write`)
     assert(draftTrace.status === 'completed', `${testCase.id}: plan-only draft should complete`)
     assert(!draftTrace.artifacts?.length, `${testCase.id}: plan-only draft must not create Studio artifacts`)
+  }
+
+  if (testCase.requireMemoryWrite) {
+    const memoryTrace = getToolTrace(result.meta.tools, 'memory.write')
+    assert(memoryTrace?.permission === 'draft-write', `${testCase.id}: memory.write should use draft-write permission`)
+    assert(memoryTrace.status === 'completed', `${testCase.id}: explicit memory write should complete`)
+    assert(memoryRows.length === memoryCountBefore + 1, `${testCase.id}: explicit memory write should persist one row`)
+  } else {
+    assert(memoryRows.length === memoryCountBefore, `${testCase.id}: non-write case must not persist memory`)
   }
 
   assertNoSensitiveShape(`${testCase.id} answer`, result.answer)

@@ -149,6 +149,21 @@ export interface AssistantSessionPreview {
   createdAt?: string
 }
 
+export type AssistantMemoryKind = 'PREFERENCE' | 'PROJECT' | 'WORKFLOW' | 'CONTEXT'
+export type AssistantMemoryStatus = 'ACTIVE' | 'ARCHIVED'
+
+export interface AssistantMemory {
+  id: string
+  sessionId?: string | null
+  kind: AssistantMemoryKind
+  title: string
+  content: string
+  status: AssistantMemoryStatus
+  archivedAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface AssistantSuggestion {
   id: string
   label: string
@@ -749,6 +764,49 @@ export function normalizeAssistantSessionPreviews(value: unknown): AssistantSess
   return value
     .map((item) => normalizeAssistantSessionPreview(item))
     .filter((item): item is AssistantSessionPreview => item !== null)
+}
+
+export function normalizeAssistantMemory(value: unknown): AssistantMemory | null {
+  if (!isRecord(value)) return null
+  const { id, sessionId, kind, title, content, status, archivedAt, createdAt, updatedAt } = value
+  if (
+    typeof id !== 'string' ||
+    !isAssistantMemoryKind(kind) ||
+    typeof title !== 'string' ||
+    typeof content !== 'string' ||
+    !isAssistantMemoryStatus(status) ||
+    typeof createdAt !== 'string' ||
+    typeof updatedAt !== 'string'
+  ) {
+    return null
+  }
+
+  return {
+    id,
+    sessionId: typeof sessionId === 'string' || sessionId === null ? sessionId : undefined,
+    kind,
+    title,
+    content,
+    status,
+    archivedAt: typeof archivedAt === 'string' || archivedAt === null ? archivedAt : undefined,
+    createdAt,
+    updatedAt,
+  }
+}
+
+export function normalizeAssistantMemories(value: unknown): AssistantMemory[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => normalizeAssistantMemory(item))
+    .filter((item): item is AssistantMemory => item !== null)
+}
+
+function isAssistantMemoryKind(value: unknown): value is AssistantMemoryKind {
+  return value === 'PREFERENCE' || value === 'PROJECT' || value === 'WORKFLOW' || value === 'CONTEXT'
+}
+
+function isAssistantMemoryStatus(value: unknown): value is AssistantMemoryStatus {
+  return value === 'ACTIVE' || value === 'ARCHIVED'
 }
 
 export function normalizeAssistantInvite(value: unknown): AssistantInviteSummary | null {

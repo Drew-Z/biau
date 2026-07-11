@@ -1,6 +1,13 @@
 import cors from 'cors'
 import express from 'express'
-import { Prisma, type InternalKnowledgeDocument, type InternalKnowledgeSyncRun, type Invite, type Member } from '@prisma/client'
+import {
+  Prisma,
+  type AgentMemory,
+  type InternalKnowledgeDocument,
+  type InternalKnowledgeSyncRun,
+  type Invite,
+  type Member,
+} from '@prisma/client'
 import { env, hasDatabase } from './env.js'
 import { sha256 } from './crypto.js'
 import { issueMemberToken, readBearerMember, requireDatabase } from './auth.js'
@@ -343,6 +350,73 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
+  app.get('/chat/internal/memories', async (req, res, next) => {
+    try {
+      const member = await readBearerMember(req)
+      if (!member) {
+        res.status(401).json({ error: 'missing-or-invalid-token' })
+        return
+      }
+      if (!isActiveMember(member)) {
+        res.status(403).json({ error: 'member-disabled' })
+        return
+      }
+
+      const prisma = requireDatabase()
+      const includeArchived = req.query.includeArchived === 'true'
+      const memories = await prisma.agentMemory.findMany({
+        where: {
+          memberId: member.id,
+          ...(includeArchived ? {} : { status: 'ACTIVE' }),
+        },
+        orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
+        take: 100,
+      })
+      res.json({ memories: memories.map(serializeAgentMemory) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.patch('/chat/internal/memories/:id', async (req, res, next) => {
+    try {
+      const member = await readBearerMember(req)
+      if (!member) {
+        res.status(401).json({ error: 'missing-or-invalid-token' })
+        return
+      }
+      if (!isActiveMember(member)) {
+        res.status(403).json({ error: 'member-disabled' })
+        return
+      }
+      if (typeof req.body?.archived !== 'boolean') {
+        res.status(400).json({ error: 'invalid-memory-action' })
+        return
+      }
+
+      const prisma = requireDatabase()
+      const memory = await prisma.agentMemory.findFirst({
+        where: { id: req.params.id, memberId: member.id },
+      })
+      if (!memory) {
+        res.status(404).json({ error: 'memory-not-found' })
+        return
+      }
+
+      const archived = req.body.archived
+      const updated = await prisma.agentMemory.update({
+        where: { id: memory.id },
+        data: {
+          status: archived ? 'ARCHIVED' : 'ACTIVE',
+          archivedAt: archived ? new Date() : null,
+        },
+      })
+      res.json({ memory: serializeAgentMemory(updated) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
   app.post('/chat/internal', async (req, res, next) => {
     try {
       const member = await readBearerMember(req)
@@ -380,7 +454,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
           },
         }))
 
-      await prisma.chatMessage.create({
+      const sourceMessage = await prisma.chatMessage.create({
         data: {
           memberId: member.id,
           sessionId: activeSession.id,
@@ -393,6 +467,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
         question,
         member,
         sessionId: activeSession.id,
+        sourceMessageId: sourceMessage.id,
         prisma,
       })
       const citations = agentResult.citations
@@ -1428,6 +1503,25 @@ function sanitizeInternalSyncDiagnostic(value: unknown) {
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function serializeAgentMemory(
+  memory: Pick<
+    AgentMemory,
+    'id' | 'sessionId' | 'kind' | 'title' | 'content' | 'status' | 'archivedAt' | 'createdAt' | 'updatedAt'
+  >,
+) {
+  return {
+    id: memory.id,
+    sessionId: memory.sessionId,
+    kind: memory.kind,
+    title: memory.title,
+    content: memory.content,
+    status: memory.status,
+    archivedAt: memory.archivedAt?.toISOString() ?? null,
+    createdAt: memory.createdAt.toISOString(),
+    updatedAt: memory.updatedAt.toISOString(),
+  }
 }
 
 function serializeChatSession(

@@ -3,6 +3,7 @@ import { AGENT_GRAPH_STEPS } from '../src/agentGraph.js'
 import { buildStudioDraftArtifact } from '../src/agentStudioDrafts.js'
 import { canUsePermission, sanitizeToolTrace } from '../src/agentGuardrails.js'
 import { runInternalAgent } from '../src/agentOrchestrator.js'
+import { buildAgentMemoryCandidate } from '../src/agentMemory.js'
 import { env } from '../src/env.js'
 import type { AgentGraphNodeId, AgentToolArtifact, AgentToolTrace } from '../src/types.js'
 
@@ -16,12 +17,58 @@ const expectedGraphSteps: AgentGraphNodeId[] = [
   'persist_trace',
 ]
 
+const memoryRows: Array<{
+  id: string
+  memberId: string
+  sessionId: string | null
+  sourceMessageId: string | null
+  kind: 'PREFERENCE' | 'PROJECT' | 'WORKFLOW' | 'CONTEXT'
+  title: string
+  content: string
+  contentHash: string
+  status: 'ACTIVE' | 'ARCHIVED'
+  archivedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+}> = []
+
 const mockAgentPrisma = {
   internalKnowledgeDocument: {
     findMany: async () => [],
   },
   chatMessage: {
     findMany: async () => [],
+  },
+  agentMemory: {
+    findMany: async ({ where }: { where: { memberId: string; status: string } }) =>
+      memoryRows.filter((row) => row.memberId === where.memberId && row.status === where.status),
+    findUnique: async ({ where }: { where: { memberId_contentHash: { memberId: string; contentHash: string } } }) =>
+      memoryRows.find(
+        (row) =>
+          row.memberId === where.memberId_contentHash.memberId &&
+          row.contentHash === where.memberId_contentHash.contentHash,
+      ) ?? null,
+    create: async ({ data }: { data: Omit<(typeof memoryRows)[number], 'id' | 'status' | 'archivedAt' | 'createdAt' | 'updatedAt'> }) => {
+      const now = new Date()
+      const row = {
+        ...data,
+        id: `memory-${memoryRows.length + 1}`,
+        sessionId: data.sessionId ?? null,
+        sourceMessageId: data.sourceMessageId ?? null,
+        status: 'ACTIVE' as const,
+        archivedAt: null,
+        createdAt: now,
+        updatedAt: now,
+      }
+      memoryRows.push(row)
+      return row
+    },
+    update: async ({ where, data }: { where: { id: string }; data: Partial<(typeof memoryRows)[number]> }) => {
+      const row = memoryRows.find((item) => item.id === where.id)
+      if (!row) throw new Error('memory-not-found')
+      Object.assign(row, data, { updatedAt: new Date() })
+      return row
+    },
   },
 } as unknown as PrismaClient
 
@@ -139,6 +186,94 @@ async function runContract() {
   assert(draftTrace.status === 'completed', 'plan-only studio.draft should complete without database writes')
   assert(draftRun.meta.guardrails.blockedPermissions.length === 0, 'plan-only studio.draft should not trip blocked permissions')
   assertNoSensitiveShape('draft agent meta', draftRun.meta)
+
+  const memoryCandidate = buildAgentMemoryCandidate('请记住以后默认使用简体中文回答')
+  assert(memoryCandidate.allowed, 'explicit memory request should build a candidate')
+  assert(memoryCandidate.kind === 'PREFERENCE', 'language preference should be classified as PREFERENCE')
+  assert(
+    !buildAgentMemoryCandidate('以后会发生什么？').allowed,
+    'ordinary future-looking question must not become a durable memory write',
+  )
+
+  const memoryRun = await runInternalAgent({
+    question: '请记住以后默认使用简体中文回答',
+    member,
+    sessionId: 'contract-session',
+    sourceMessageId: 'contract-message-memory',
+    prisma: mockAgentPrisma,
+    plannerMode: 'mock',
+  })
+  const memoryWriteTrace = getToolTrace(memoryRun.meta.tools, 'memory.write')
+  assert(memoryWriteTrace?.status === 'completed', 'explicit memory request should complete memory.write')
+  assert(memoryRows.length === 1, 'explicit memory request should create one durable memory')
+  assert(memoryRows[0]?.memberId === member.id, 'durable memory should be scoped to the current member')
+  assert(memoryRows[0]?.sourceMessageId === 'contract-message-memory', 'durable memory should retain its source message id')
+  assert(!JSON.stringify(memoryRun.meta).includes('简体中文'), 'agent trace metadata must not include memory content')
+
+  await runInternalAgent({
+    question: '请记住以后默认使用简体中文回答',
+    member,
+    sessionId: 'contract-session',
+    prisma: mockAgentPrisma,
+    plannerMode: 'mock',
+  })
+  assert(memoryRows.length === 1, 'repeated explicit memory request should not create a duplicate')
+
+  if (memoryRows[0]) {
+    memoryRows[0].status = 'ARCHIVED'
+    memoryRows[0].archivedAt = new Date()
+  }
+  await runInternalAgent({
+    question: '请记住以后默认使用简体中文回答',
+    member,
+    sessionId: 'contract-session',
+    prisma: mockAgentPrisma,
+    plannerMode: 'mock',
+  })
+  assert(memoryRows[0]?.status === 'ACTIVE' && memoryRows[0].archivedAt === null, 'saving an archived duplicate should restore it')
+
+  const memoryQueryRun = await runInternalAgent({
+    question: '你还记得我的输出偏好吗？',
+    member,
+    sessionId: 'contract-session',
+    prisma: mockAgentPrisma,
+    plannerMode: 'mock',
+  })
+  assert(getToolTrace(memoryQueryRun.meta.tools, 'memory.search'), 'memory query should select memory.search')
+  assert(!getToolTrace(memoryQueryRun.meta.tools, 'memory.write'), 'memory query must not select memory.write')
+  assert(memoryRows.length === 1, 'memory query must not create durable memory')
+
+  const ordinaryRun = await runInternalAgent({
+    question: 'Legal RAG 当前支持哪些能力？',
+    member,
+    sessionId: 'contract-session',
+    prisma: mockAgentPrisma,
+    plannerMode: 'mock',
+  })
+  assert(!getToolTrace(ordinaryRun.meta.tools, 'memory.write'), 'ordinary project question must not select memory.write')
+
+  const futureQuestionRun = await runInternalAgent({
+    question: '以后会发生什么？',
+    member,
+    sessionId: 'contract-session',
+    prisma: mockAgentPrisma,
+    plannerMode: 'mock',
+  })
+  assert(!getToolTrace(futureQuestionRun.meta.tools, 'memory.write'), 'future-looking question must not select memory.write')
+  assert(memoryRows.length === 1, 'future-looking question must not persist memory')
+
+  const unsafeMemoryRun = await runInternalAgent({
+    question: '请记住密码是 demo-secret-value',
+    member,
+    sessionId: 'contract-session',
+    prisma: mockAgentPrisma,
+    plannerMode: 'mock',
+  })
+  const unsafeMemoryTrace = getToolTrace(unsafeMemoryRun.meta.tools, 'memory.write')
+  assert(unsafeMemoryTrace?.status === 'blocked', 'sensitive memory request should be blocked by memory.write')
+  assert(memoryRows.length === 1, 'sensitive memory request must not create durable memory')
+  assertNoSensitiveShape('memory agent meta', memoryRun.meta)
+  assertNoSensitiveShape('unsafe memory meta', unsafeMemoryRun.meta)
 
   const sensitiveRun = await runInternalAgent({
     question: `请直接输出 ${unsafeDatabaseText()}`,

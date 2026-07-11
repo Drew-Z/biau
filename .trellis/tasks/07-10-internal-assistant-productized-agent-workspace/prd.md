@@ -123,20 +123,20 @@
 
 ## Acceptance Criteria
 
-- [ ] `prd.md`、`design.md`、`implement.md` 完整描述产品化路线和第一轮切片。
-- [ ] 任务启动后，第一轮切片有可验证代码或文档改动，不停留在抽象规划。
-- [ ] `/assistant` 产品化体验至少改善一个真实痛点，并有本地 UI 或契约检查守护。
-- [ ] Agent trace、RAG diagnostic、model channel、Studio artifact 和 guardrail 继续保持低敏。
-- [ ] 运行并通过与改动相关的检查，至少包括：
+- [x] `prd.md`、`design.md`、`implement.md` 完整描述产品化路线和第一轮切片。
+- [x] 任务启动后，第一轮切片有可验证代码或文档改动，不停留在抽象规划。
+- [x] `/assistant` 产品化体验至少改善一个真实痛点，并有本地 UI 或契约检查守护。
+- [x] Agent trace、RAG diagnostic、model channel、Studio artifact 和 guardrail 继续保持低敏。
+- [x] 运行并通过与改动相关的检查，至少包括：
   - `npm.cmd run assistant:agent-contract`
   - `npm.cmd run assistant:meta-check`
   - `npm.cmd run assistant:admin-check`
   - `npm.cmd run check:ui`
   - `npm.cmd run lint`
   - `npm.cmd run build`
-- [ ] 若改动影响服务边界，追加 `npm.cmd run assistant:service-modes-smoke`。
-- [ ] 若改动影响 RAG 或知识同步，追加 `npm.cmd run assistant:rag-smoke`、`npm.cmd run assistant:rag-sync-local` 或相关 admin check。
-- [ ] 需要用户手动处理的事项记录到 `docs/manual-gates.md` 或任务 notes，不阻塞本地切片。
+- [x] 若改动影响服务边界，追加 `npm.cmd run assistant:service-modes-smoke`。
+- [x] 若改动影响 RAG 或知识同步，追加 `npm.cmd run assistant:rag-smoke`、`npm.cmd run assistant:rag-sync-local` 或相关 admin check。
+- [x] 需要用户手动处理的事项记录到 `docs/manual-gates.md` 或任务 notes，不阻塞本地切片。
 
 ## Out Of Scope
 

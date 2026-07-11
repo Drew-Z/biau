@@ -1,5 +1,6 @@
 import { planInternalAgentTools } from './model.js'
 import { canUsePermission } from './agentGuardrails.js'
+import { hasExplicitMemoryWriteIntent, isMemoryQueryOnly } from './agentMemory.js'
 import { agentToolRegistry, listAgentToolMenu } from './agentTools.js'
 import type { InternalAgentPlan, InternalAgentRunInput } from './agentTypes.js'
 import type {
@@ -40,18 +41,21 @@ export function buildDeterministicAgentPlan(question: string): InternalAgentPlan
   const project = includesAny(normalized, ['项目', '案例', '技术栈', '架构', '实现', '入口', '演示', 'legal', 'rag', 'erp', 'pet', 'xunqiu', '寻球', 'playlab', 'game'])
   const knowledge = includesAny(normalized, ['知识', '博客', '文档', '资料', '之前', '历史', '上下文'])
   const planning = includesAny(normalized, ['计划', '规划', '方案', '下一步', '怎么做', 'roadmap'])
+  const memoryWrite = hasExplicitMemoryWriteIntent(question)
+  const memoryQuery = isMemoryQueryOnly(question) || includesAny(normalized, ['记忆', '偏好', '记得', '历史习惯'])
 
+  if (memoryWrite) toolIds.push('memory.write')
+  if (memoryQuery || planning) toolIds.push('memory.search')
   if (status) toolIds.push('status.query')
   if (project) toolIds.push('project.lookup', 'rag.retrieve')
   if (knowledge || planning) toolIds.push('knowledge.search')
-  if (planning) toolIds.push('memory.search')
   if (writing && (project || status || knowledge)) toolIds.push('studio.draft')
   if (toolIds.length === 0) toolIds.push(writing ? 'answer.direct' : 'knowledge.search')
 
   return {
     toolIds: dedupeToolIds(toolIds).slice(0, MAX_AGENT_TOOL_CALLS),
-    intent: inferIntent({ writing, status, project, knowledge, planning }),
-    grounding: inferGrounding({ writing, status, project, knowledge, planning }),
+    intent: inferIntent({ writing, status, project, knowledge, planning, memoryQuery }),
+    grounding: inferGrounding({ writing, status, project, knowledge, planning, memoryQuery }),
     planner: 'mock',
   }
 }
@@ -80,15 +84,31 @@ export function normalizePlannerFallbackReason(reason: string | undefined): Chat
   return undefined
 }
 
-function inferIntent(flags: { writing: boolean; status: boolean; project: boolean; knowledge: boolean; planning: boolean }): AssistantAnswerIntent {
+function inferIntent(flags: {
+  writing: boolean
+  status: boolean
+  project: boolean
+  knowledge: boolean
+  planning: boolean
+  memoryQuery: boolean
+}): AssistantAnswerIntent {
   if (flags.writing) return 'creative'
   if (flags.planning) return 'planning'
-  if (flags.status || flags.project || flags.knowledge) return 'site_qa'
+  if (flags.status || flags.project || flags.knowledge || flags.memoryQuery) return 'site_qa'
   return 'general'
 }
 
-function inferGrounding(flags: { writing: boolean; status: boolean; project: boolean; knowledge: boolean; planning: boolean }): AssistantGroundingMode {
-  if (flags.status || flags.project || flags.knowledge) return flags.writing || flags.planning ? 'background' : 'strict'
+function inferGrounding(flags: {
+  writing: boolean
+  status: boolean
+  project: boolean
+  knowledge: boolean
+  planning: boolean
+  memoryQuery: boolean
+}): AssistantGroundingMode {
+  if (flags.status || flags.project || flags.knowledge || flags.memoryQuery) {
+    return flags.writing || flags.planning ? 'background' : 'strict'
+  }
   return 'none'
 }
 

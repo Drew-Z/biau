@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { Archive, RefreshCw, RotateCcw } from 'lucide-react'
 import {
   ASSISTANT_STORAGE_KEYS,
   internalAssistantSuggestions,
   normalizeAssistantCitations,
   normalizeAssistantAnswerMeta,
   normalizeAssistantMember,
+  normalizeAssistantMemories,
   normalizeAssistantMessages,
   normalizeAssistantSessionPreview,
   normalizeAssistantSessionPreviews,
@@ -15,6 +17,7 @@ import {
   type AssistantAnswerMetaSummary,
   type AssistantAgentToolTrace,
   type AssistantMemberProfile,
+  type AssistantMemory,
   type AssistantMessage,
   type AssistantSessionPreview,
 } from '../data/assistant'
@@ -324,6 +327,57 @@ async function requestSessions(memberToken: string) {
   }
 }
 
+async function requestMemories(memberToken: string, includeArchived: boolean) {
+  const emptyResult: AssistantApiResult<AssistantMemory[]> = {
+    ok: false,
+    status: 0,
+    errorCode: '',
+    data: [],
+  }
+  if (!API_BASE || !memberToken) return emptyResult
+  try {
+    const query = includeArchived ? '?includeArchived=true' : ''
+    const response = await fetch(`${API_BASE}/chat/internal/memories${query}`, {
+      headers: { Authorization: `Bearer ${memberToken}` },
+    })
+    const payload = (await response.json().catch(() => ({}))) as unknown
+    if (!response.ok || !isRecord(payload)) {
+      return {
+        ...emptyResult,
+        status: response.status,
+        errorCode: getErrorCode(payload),
+      }
+    }
+    return {
+      ok: true,
+      status: response.status,
+      errorCode: '',
+      data: normalizeAssistantMemories(payload.memories),
+    }
+  } catch {
+    return emptyResult
+  }
+}
+
+async function requestMemoryArchive(memberToken: string, memoryId: string, archived: boolean) {
+  if (!API_BASE || !memberToken || !memoryId) return null
+  try {
+    const response = await fetch(`${API_BASE}/chat/internal/memories/${memoryId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${memberToken}`,
+      },
+      body: JSON.stringify({ archived }),
+    })
+    const payload = (await response.json().catch(() => ({}))) as unknown
+    if (!response.ok || !isRecord(payload)) return null
+    return normalizeAssistantMemories([payload.memory])[0] ?? null
+  } catch {
+    return null
+  }
+}
+
 async function requestSessionMessages(memberToken: string, sessionId: string) {
   if (!API_BASE || !memberToken || !sessionId) return null
   const response = await fetch(`${API_BASE}/chat/internal/sessions/${sessionId}/messages`, {
@@ -379,6 +433,13 @@ function formatSessionUpdatedAt(value: string) {
   return new Date(parsed).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 }
 
+function formatMemoryKind(kind: AssistantMemory['kind']) {
+  if (kind === 'PREFERENCE') return '偏好'
+  if (kind === 'PROJECT') return '项目'
+  if (kind === 'WORKFLOW') return '工作流'
+  return '上下文'
+}
+
 function formatLoadedMessages(messages: AssistantMessage[]) {
   return messages.map((message) => ({
     ...message,
@@ -393,12 +454,17 @@ function readLatestAnswerMetaMessage(messages: AssistantMessage[]) {
 export function AssistantPage() {
   const [messages, setMessages] = useState<AssistantMessage[]>(() => [createOpeningMessage()])
   const [sessions, setSessions] = useState<AssistantSessionPreview[]>([])
+  const [memories, setMemories] = useState<AssistantMemory[]>([])
   const [draft, setDraft] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
   const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const [isCreatingSession, setIsCreatingSession] = useState(false)
   const [isArchivingSession, setIsArchivingSession] = useState(false)
+  const [isLoadingMemories, setIsLoadingMemories] = useState(false)
+  const [updatingMemoryId, setUpdatingMemoryId] = useState('')
+  const [showArchivedMemories, setShowArchivedMemories] = useState(false)
+  const [memoryStatus, setMemoryStatus] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState(() => readStoredValue(ASSISTANT_STORAGE_KEYS.sessionId))
   const [memberToken, setMemberToken] = useState(() => readStoredValue(ASSISTANT_STORAGE_KEYS.memberToken))
   const [member, setMember] = useState<AssistantMemberProfile | null>(() => readStoredMember())
@@ -444,9 +510,10 @@ export function AssistantPage() {
     async function loadWorkspace() {
       setIsLoadingSessions(true)
       setWorkspaceStatus('')
-      const [profileResult, sessionsResult] = await Promise.all([
+      const [profileResult, sessionsResult, memoriesResult] = await Promise.all([
         requestMemberProfile(memberToken),
         requestSessions(memberToken),
+        requestMemories(memberToken, false),
       ])
       if (cancelled) return
 
@@ -455,6 +522,7 @@ export function AssistantPage() {
         window.localStorage.setItem(ASSISTANT_STORAGE_KEYS.member, JSON.stringify(profileResult.data))
       }
       const nextSessions = sessionsResult.data
+      setMemories(memoriesResult.data)
       setSessions(nextSessions)
       setSelectedSessionId((currentSelectedSessionId) => {
         if (currentSelectedSessionId && nextSessions.some((session) => session.id === currentSelectedSessionId)) {
@@ -477,6 +545,15 @@ export function AssistantPage() {
       } else {
         setWorkspaceStatus(nextSessions.length > 0 ? '历史会话已同步。' : '还没有历史会话，可以直接发送第一条消息。')
       }
+      setMemoryStatus(
+        memoriesResult.ok
+          ? memoriesResult.data.length > 0
+            ? `已同步 ${memoriesResult.data.length} 条长期记忆。`
+            : '还没有长期记忆；明确说“请记住”后才会保存。'
+          : memoriesResult.status === 404
+            ? '当前 API 版本还未提供长期记忆接口。'
+            : '长期记忆暂时无法同步，不影响当前聊天。',
+      )
       setIsLoadingSessions(false)
     }
 
@@ -549,10 +626,13 @@ export function AssistantPage() {
     setMemberToken('')
     setMember(null)
     setSessions([])
+    setMemories([])
     setSelectedSessionId('')
     setMessages([createOpeningMessage()])
     setLastAnswerMeta(null)
     setInspectedMessageId('')
+    setMemoryStatus('')
+    setShowArchivedMemories(false)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.memberToken)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.member)
     window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
@@ -609,6 +689,8 @@ export function AssistantPage() {
       setMemberName('')
       setSelectedSessionId('')
       setMessages([createOpeningMessage()])
+      setMemories([])
+      setMemoryStatus('还没有长期记忆；明确说“请记住”后才会保存。')
       setLastAnswerMeta(null)
       setInspectedMessageId('')
       window.localStorage.removeItem(ASSISTANT_STORAGE_KEYS.sessionId)
@@ -640,6 +722,45 @@ export function AssistantPage() {
           : '刷新历史会话失败，请稍后再试。',
     )
     setIsLoadingSessions(false)
+  }
+
+  const refreshMemories = async (includeArchived = showArchivedMemories) => {
+    if (!memberToken || !API_BASE) {
+      setMemoryStatus('需要先兑换邀请码并配置内部助手 API。')
+      return
+    }
+
+    setIsLoadingMemories(true)
+    const result = await requestMemories(memberToken, includeArchived)
+    if (result.ok) {
+      setMemories(result.data)
+      setMemoryStatus(result.data.length > 0 ? `已刷新 ${result.data.length} 条长期记忆。` : '当前没有长期记忆。')
+    } else {
+      setMemoryStatus('刷新长期记忆失败，不影响当前聊天。')
+    }
+    setIsLoadingMemories(false)
+  }
+
+  const toggleArchivedMemories = (next: boolean) => {
+    setShowArchivedMemories(next)
+    void refreshMemories(next)
+  }
+
+  const updateMemoryStatus = async (memory: AssistantMemory) => {
+    if (!memberToken) return
+    setUpdatingMemoryId(memory.id)
+    const archived = memory.status !== 'ARCHIVED'
+    const updated = await requestMemoryArchive(memberToken, memory.id, archived)
+    setUpdatingMemoryId('')
+    if (!updated) {
+      setMemoryStatus(archived ? '归档长期记忆失败。' : '恢复长期记忆失败。')
+      return
+    }
+    setMemories((current) => {
+      if (archived && !showArchivedMemories) return current.filter((item) => item.id !== memory.id)
+      return current.map((item) => (item.id === updated.id ? updated : item))
+    })
+    setMemoryStatus(archived ? '长期记忆已归档。' : '长期记忆已恢复。')
   }
 
   const createSession = async () => {
@@ -716,8 +837,17 @@ export function AssistantPage() {
       setLastAnswerMeta(result.meta ?? null)
       setInspectedMessageId(result.meta ? assistantMessage.id : '')
       if (memberToken && API_BASE) {
-        const sessionsResult = await requestSessions(memberToken)
+        const [sessionsResult, memoriesResult] = await Promise.all([
+          requestSessions(memberToken),
+          result.meta?.tools?.some((tool) => tool.id === 'memory.write' && tool.status === 'completed')
+            ? requestMemories(memberToken, showArchivedMemories)
+            : Promise.resolve(null),
+        ])
         if (sessionsResult.ok) setSessions(sessionsResult.data)
+        if (memoriesResult?.ok) {
+          setMemories(memoriesResult.data)
+          setMemoryStatus('长期记忆已更新。')
+        }
       }
     } catch {
       const fallback = buildLocalInternalAnswer(trimmed, '内部助手 API 暂时不可用，本地回退继续：')
@@ -848,6 +978,64 @@ export function AssistantPage() {
                 {member ? '还没有历史会话，发送消息后会自动创建。' : '兑换邀请码后会显示你的历史会话。'}
               </p>
             )}
+          </section>
+
+          <section className="assistant-memory-panel" aria-label="长期记忆">
+            <div className="assistant-memory-panel__header">
+              <div>
+                <p className="assistant-panel__eyebrow">MEMORY</p>
+                <strong>长期记忆</strong>
+              </div>
+              <button
+                type="button"
+                className="assistant-icon-button"
+                onClick={() => void refreshMemories()}
+                disabled={!memberToken || isLoadingMemories}
+                title="刷新长期记忆"
+                aria-label="刷新长期记忆"
+              >
+                <RefreshCw size={16} aria-hidden />
+              </button>
+            </div>
+
+            <label className="assistant-memory-toggle">
+              <input
+                type="checkbox"
+                checked={showArchivedMemories}
+                onChange={(event) => toggleArchivedMemories(event.target.checked)}
+                disabled={!memberToken || isLoadingMemories}
+              />
+              <span>显示已归档</span>
+            </label>
+
+            <div className="assistant-memory-list">
+              {memories.map((memory) => (
+                <article key={memory.id} className={`assistant-memory is-${memory.status.toLowerCase()}`}>
+                  <div className="assistant-memory__meta">
+                    <span>{formatMemoryKind(memory.kind)}</span>
+                    <time dateTime={memory.updatedAt}>{formatSessionUpdatedAt(memory.updatedAt)}</time>
+                  </div>
+                  <strong>{memory.title}</strong>
+                  <p>{memory.content}</p>
+                  <button
+                    type="button"
+                    className="assistant-icon-button"
+                    onClick={() => void updateMemoryStatus(memory)}
+                    disabled={updatingMemoryId === memory.id}
+                    title={memory.status === 'ARCHIVED' ? '恢复长期记忆' : '归档长期记忆'}
+                    aria-label={memory.status === 'ARCHIVED' ? '恢复长期记忆' : '归档长期记忆'}
+                  >
+                    {memory.status === 'ARCHIVED' ? <RotateCcw size={15} aria-hidden /> : <Archive size={15} aria-hidden />}
+                  </button>
+                </article>
+              ))}
+              {memories.length === 0 && (
+                <p className="assistant-status-text">
+                  {member ? '明确说“请记住……”后，低敏内容会出现在这里。' : '兑换邀请码后可以使用成员长期记忆。'}
+                </p>
+              )}
+            </div>
+            {memoryStatus && <p className="assistant-status-text">{memoryStatus}</p>}
           </section>
 
           <div className="assistant-sidebar__footer">

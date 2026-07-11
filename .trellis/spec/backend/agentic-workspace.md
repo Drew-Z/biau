@@ -24,6 +24,7 @@
   - `knowledge.search`
   - `studio.draft`
   - `memory.search`
+  - `memory.write`
   - `answer.direct`
 
 ### 3. Contracts
@@ -49,6 +50,8 @@
 - Tool traces may include safe artifacts such as `{ kind: "studio-draft", id, slug, title, column, status: "review-needed", visibility: "hidden", reviewRequired: true, href: "/studio?draft=<id>" }`. Legacy persisted artifacts may keep `href: "/studio"`, but new created-draft artifacts should deep-link by draft id. Artifact links must stay same-site Studio routes and must not include draft body text, Prisma payloads, review checklist internals, admin tokens, database roles, API URLs, or bearer tokens.
 - Tool traces and metadata must not contain API keys, base URLs, database URLs, sync tokens, bearer tokens, invite codes, raw prompts, raw provider responses, raw retrieved document bodies, stack traces, or private dashboards.
 - Model-driven planning may be used for real internal chat when a member model channel is configured. Smoke/eval tests must use `plannerMode: "mock"` or local deterministic paths and must not probe real providers.
+- `memory.write` remains `draft-write` and may persist only an explicitly requested, low-sensitive member memory. The planner and tool executor must both apply the shared consent/candidate helper; normal questions and memory queries must never create memory rows.
+- `memory.search` may read only the current member's ACTIVE durable memories plus the current session's bounded message summary. Durable memory content must not be copied into tool traces or `ChatMessage.meta`.
 
 ### 4. Validation & Error Matrix
 
@@ -228,3 +231,48 @@ new StateGraph(GraphState).addNode('plan', planNode)
 ```
 
 The public graph node remains `plan`, while the internal state channel avoids the reserved name collision.
+
+## Scenario: Member Durable Memory
+
+### 1. Scope / Trigger
+
+- Trigger: changing `AgentMemory`, `/chat/internal/memories`, `server/src/agentMemory.ts`, `memory.search`, `memory.write`, memory planner heuristics, or `/assistant` memory management.
+- Goal: provide useful member-level memory without silent writes, cross-member access, sensitive persistence, or raw memory content in Agent traces.
+
+### 2. Signatures
+
+- Candidate owner: `buildAgentMemoryCandidate(question)` in `server/src/agentMemory.ts`.
+- Intent check: `hasExplicitMemoryWriteIntent(question)`.
+- Member API: `GET /chat/internal/memories?includeArchived=true` and `PATCH /chat/internal/memories/:id` with `{ archived: boolean }`.
+- Tool ids remain `memory.search` and `memory.write`.
+
+### 3. Contracts
+
+- A durable write requires an explicit future-facing save instruction such as `请记住...`; ordinary chat and query-only phrases such as `你还记得吗` cannot write.
+- Planner selection is not authorization. `memory.write` must rebuild and validate the candidate immediately before persistence.
+- Memory rows are scoped by `memberId`; route ownership checks use `{ id, memberId }` and cross-member ids return `memory-not-found`.
+- Duplicate normalized content for one member reuses the existing row; saving an archived duplicate restores it.
+- Sensitive-looking content, empty content, and overlong content do not create rows.
+- `memory.search` reads ACTIVE rows for the current member and bounded current-session summaries. It does not accept another member id from the model or browser.
+- Tool traces may expose kind, action class, and counts, but not content, content hash, source message text, member id, token, or database metadata.
+- Member API serializers omit `memberId`, `sourceMessageId`, and `contentHash`.
+- Member UI supports list, refresh, archive, and restore only. It must not add a direct create form that bypasses Agent consent checks.
+
+### 4. Validation & Error Matrix
+
+- Missing token -> `401 missing-or-invalid-token`.
+- Disabled member -> `403 member-disabled`.
+- Database missing -> `503 database-not-configured`.
+- Missing or cross-member memory -> `404 memory-not-found`.
+- Missing boolean archive action -> `400 invalid-memory-action`.
+- Sensitive memory request -> blocked `memory.write`, no row created.
+- Memory endpoint unavailable in an older deployment -> `/assistant` shows a low-sensitive degraded message and chat remains usable.
+
+### 5. Tests Required
+
+- `prisma:validate` and `prisma:generate` after schema changes.
+- `assistant:agent-contract` for explicit write, dedupe, restore, query-only, ordinary-chat, sensitive-write, and trace redaction.
+- `assistant:agent-eval` for deterministic no-live planner behavior.
+- `server:smoke` for auth and missing-database route boundaries.
+- `lint`, `build`, and `check:ui` for member memory normalization and responsive UI.
+- Production migration and cross-restart persistence remain a documented manual gate.

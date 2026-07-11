@@ -769,6 +769,20 @@ try {
     throw new Error(`internal session list should require auth, got ${internalSessions.status}`)
   }
 
+  const internalMemories = await fetch(`${base}/chat/internal/memories`)
+  if (internalMemories.status !== 401) {
+    throw new Error(`internal memory list should require auth, got ${internalMemories.status}`)
+  }
+
+  const internalMemoryPatch = await fetch(`${base}/chat/internal/memories/smoke-memory`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ archived: true }),
+  })
+  if (internalMemoryPatch.status !== 401) {
+    throw new Error(`internal memory update should require auth, got ${internalMemoryPatch.status}`)
+  }
+
   const adminInvites = await fetch(`${base}/admin/invites`)
   if (adminInvites.status !== 401) {
     throw new Error(`admin invite list should require admin token, got ${adminInvites.status}`)
@@ -802,6 +816,13 @@ try {
     })
     if (sessionsWithToken.status !== 503) {
       throw new Error(`internal session list should report missing database when token is present, got ${sessionsWithToken.status}`)
+    }
+
+    const memoriesWithToken = await fetch(`${base}/chat/internal/memories`, {
+      headers: { Authorization: 'Bearer smoke-test-token' },
+    })
+    if (memoriesWithToken.status !== 503) {
+      throw new Error(`internal memory list should report missing database when token is present, got ${memoriesWithToken.status}`)
     }
 
     env.adminToken = 'admin-smoke-token'

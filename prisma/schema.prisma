@@ -37,6 +37,7 @@ model Member {
   invite         Invite?      @relation(fields: [inviteId], references: [id])
   sessions       ChatSession[]
   messages       ChatMessage[]
+  memories       AgentMemory[]
   usageLogs      UsageLog[]
 }
 
@@ -50,6 +51,7 @@ model ChatSession {
   updatedAt     DateTime      @updatedAt
   member        Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
   messages      ChatMessage[]
+  memories      AgentMemory[]
 }
 
 model ChatMessage {
@@ -63,6 +65,30 @@ model ChatMessage {
   createdAt DateTime    @default(now())
   member    Member?     @relation(fields: [memberId], references: [id], onDelete: SetNull)
   session   ChatSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sourceMemories AgentMemory[]
+}
+
+model AgentMemory {
+  id              String            @id @default(cuid())
+  memberId        String
+  sessionId       String?
+  sourceMessageId String?
+  kind            AgentMemoryKind
+  title           String
+  content         String
+  contentHash     String
+  status          AgentMemoryStatus @default(ACTIVE)
+  archivedAt      DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  member          Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  session         ChatSession?      @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  sourceMessage   ChatMessage?      @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
+
+  @@unique([memberId, contentHash])
+  @@index([memberId, status, updatedAt])
+  @@index([sessionId])
+  @@index([sourceMessageId])
 }
 
 model UsageLog {
@@ -195,6 +221,18 @@ enum MessageRole {
   USER
   ASSISTANT
   SYSTEM
+}
+
+enum AgentMemoryKind {
+  PREFERENCE
+  PROJECT
+  WORKFLOW
+  CONTEXT
+}
+
+enum AgentMemoryStatus {
+  ACTIVE
+  ARCHIVED
 }
 
 enum InternalKnowledgeStatus {

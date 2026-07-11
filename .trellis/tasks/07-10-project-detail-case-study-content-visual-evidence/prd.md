@@ -60,9 +60,9 @@
 
 ## Acceptance Criteria
 
-- [ ] 任务文档明确案例页内容、视觉证据、助手知识和 manual gate 的边界。
-- [ ] 至少一个项目详情页有真实可见的内容/视觉/assistantContext 改进，且不是只改文案口号。
-- [ ] 新增或更新内容通过 `project-details:check`。
-- [ ] 公开助手知识已重新生成并通过 `assistant:kg-check`。
-- [ ] 改动通过 `lint`、`build`，必要时通过 `check:ui`。
-- [ ] 需要人工处理的素材、部署、凭据、APK 或云平台事项已记录，不阻塞本地实现。
+- [x] 任务文档明确案例页内容、视觉证据、助手知识和 manual gate 的边界。
+- [x] 至少一个项目详情页有真实可见的内容/视觉/assistantContext 改进，且不是只改文案口号。
+- [x] 新增或更新内容通过 `project-details:check`。
+- [x] 公开助手知识已重新生成并通过 `assistant:kg-check`。
+- [x] 改动通过 `lint`、`build`，必要时通过 `check:ui`。
+- [x] 需要人工处理的素材、部署、凭据、APK 或云平台事项已记录，不阻塞本地实现。

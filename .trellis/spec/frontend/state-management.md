@@ -691,6 +691,31 @@ React 19 lint can flag effect bodies that call functions which synchronously set
 
 Do not add a state library for a single page or a small interaction. Consider one only if multiple distant route trees need frequent synchronized updates that are awkward with local state and props.
 
+## Scenario: Internal Assistant Durable Memory UI
+
+### 1. Scope / Trigger
+
+- Trigger: changing `/assistant` member memory loading, archive/restore actions, memory normalizers, or memory panel state.
+- Goal: let a member inspect and manage only their own Agent-created durable memories without making memory availability a prerequisite for chat.
+
+### 2. Contracts
+
+- `AssistantMemory` and `normalizeAssistantMemories()` own the browser payload boundary.
+- Initial member workspace loading may request profile, sessions, and active memories together, but a memory request failure must not clear a valid member or session list.
+- `showArchivedMemories` controls `includeArchived=true`; it is page-local UI state and is not a second backend source of truth.
+- Archive/restore updates the returned normalized row and removes archived rows from the default ACTIVE-only view.
+- A completed `memory.write` tool trace triggers a list refresh; the UI does not infer or create a memory from raw user text.
+- Clearing the local member token clears member memory state.
+- The panel exposes no content hash, source message id, member id, token, or provider metadata.
+
+### 3. Validation
+
+- No token -> visible gated memory panel and disabled refresh/toggle controls.
+- Empty list -> explicit consent guidance, not a fake example memory.
+- Long title/content -> wraps inside the panel without horizontal overflow.
+- Mobile -> memory list remains bounded and vertically scrollable; document vertical scrolling remains available.
+- Run `lint`, `build`, and `check:ui` after changes.
+
 ## Avoid
 
 - Do not store secrets or private business data in frontend state or `src/data/`.

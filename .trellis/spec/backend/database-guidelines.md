@@ -14,7 +14,16 @@ Use `getPrisma()` when a route can gracefully degrade without a database. Use `r
 
 ## Schema Ownership
 
-Database models live in `prisma/schema.prisma`. Current persisted concepts are invites, members, chat sessions, chat messages, usage logs, and the `MemberRole` / `MessageRole` enums.
+Database models live in `prisma/schema.prisma`. Current persisted concepts are invites, members, chat sessions, chat messages, member durable memories, usage logs, internal knowledge, and Studio content records.
+
+### Member Durable Memory Persistence
+
+- `AgentMemory.memberId` is required and cascades on member deletion.
+- `sessionId` and `sourceMessageId` are optional and use `onDelete: SetNull`, so deleting a session does not erase an intentionally saved member memory.
+- `@@unique([memberId, contentHash])` prevents duplicate saves for one member without sharing or deduplicating across members.
+- Member list/update routes must query by current authenticated `memberId`; never accept ownership from request JSON.
+- API serializers must omit `contentHash`, `memberId`, and `sourceMessageId`.
+- Production migration is manual because it requires the private internal-assistant database connection; local development must not connect to production to prove the schema.
 
 Migrations live under `prisma/migrations/`. Validate schema changes with:
 
