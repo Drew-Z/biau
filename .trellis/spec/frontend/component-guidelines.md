@@ -45,6 +45,24 @@ intro.style.setProperty('--harbor-logo-y', `${navRect.top + navRect.height / 2}p
 
 Use the live Logo width and height as the animated element's base box, enlarge that exact shell for the center stage, and return to scale `1` at the measured target. Copy the live Logo background, border, radius, and shadow into the intro shell so the handoff does not swap between two visually different containers. Hide or crossfade the underlying navigation Logo during docking, clear centered wordmarks before landing, then let the real navigation Logo resume its normal hover, focus, and click behavior after the intro unmounts. `scripts/check-ui.mjs` should assert target center, final geometry, shell parity, and wordmark clearance so responsive navigation changes cannot silently break the landing motion.
 
+### Convention: Long-Form Reading Guide
+
+Blog and project detail routes longer than a few viewports use the shared
+`DetailReadingGuide`. Pages own the ordered public section model and render a
+deterministic id for every guide entry; the guide must not infer ids by slugifying
+localized or user-authored headings.
+
+The guide is a sticky in-flow orientation control, not a fixed sidebar or mobile
+bottom bar. Its collapsed state exposes the current major section and whole-page
+progress. The explicit outline may use bounded local scrolling while open, but
+normal reading remains document-owned. Opening the outline brings the complete
+guide into view; `Escape`, outside pointer interaction, and selecting a real
+anchor all close it.
+
+Use `prefers-reduced-motion` to choose instant versus smooth section navigation.
+Loading and missing-detail states do not render an empty guide. Keep the public
+assistant behind the open outline and verify the guide at `320`, `390`, `430`,
+and desktop widths.
 ## Content and Assets
 
 Use real sanitized project screenshots when available. If an asset is missing, use a stable fallback asset or omit the image; do not fabricate business evidence, metrics, customers, or screenshots.

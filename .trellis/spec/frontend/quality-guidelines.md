@@ -243,6 +243,20 @@ shadows, while screenshots, diagrams, code, tables, and related-item cards keep
 their own meaningful boundaries. Primary body text must be at least `15px`, and
 rich media may scroll horizontally only inside its own bounded container.
 
+### Convention: Detail Reading Orientation
+
+Representative long blog and project detail routes must expose a shared sticky
+reading guide with unique existing targets, current-section context, and a
+semantic `progressbar`. The outline starts collapsed, stays horizontally and
+vertically operable when opened, supports `Escape` and outside-click closing,
+and uses real hash anchors even when JavaScript chooses the scroll behavior.
+
+`scripts/check-ui.mjs` verifies the guide at desktop plus `320`, `390`, and `430`
+CSS pixels. Checks cover target integrity, deterministic unique ids, toggle and
+focus semantics, section navigation, active-section updates, reduced-motion
+operation, at least `95%` progress at the true document bottom, no empty guide
+on missing routes, and no page-level overflow. Do not replace these behavioral
+checks with screenshots alone.
 ### Convention: Light Theme Restraint
 
 The light theme uses a morning-harbor palette rather than a high-saturation

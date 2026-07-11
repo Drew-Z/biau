@@ -1838,6 +1838,152 @@ if (projectDetailSpaMarkerAfter !== projectDetailSpaMarker) {
 }
 await projectDetailInternalLinkPage.close()
 
+const readingGuideRoutes = ['/blog/legal-rag-review', '/projects/legal-rag']
+const readingGuideViewports = [
+  { name: 'desktop', width: 1440, height: 1000 },
+  { name: 'mobile-320', width: 320, height: 900 },
+  { name: 'mobile-390-reduced', width: 390, height: 900, reducedMotion: true },
+  { name: 'mobile-430', width: 430, height: 900 },
+]
+
+for (const viewport of readingGuideViewports) {
+  for (const path of readingGuideRoutes) {
+    const readingPage = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } })
+    if (viewport.reducedMotion) await readingPage.emulateMedia({ reducedMotion: 'reduce' })
+    await readingPage.addInitScript(() => {
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    })
+    await gotoApp(readingPage, path)
+
+    const guide = readingPage.locator('.detail-reading-guide')
+    const toggle = guide.locator('.detail-reading-guide__toggle')
+    const outline = guide.locator('.detail-reading-guide__outline')
+    const outlineLinks = outline.locator('a')
+    if (!(await guide.isVisible().catch(() => false))) {
+      failures.push(`${path} ${viewport.name}: expected a visible detail reading guide`)
+      await readingPage.close()
+      continue
+    }
+
+    const initialGuideState = await guide.evaluate((element) => {
+      const toggleElement = element.querySelector('.detail-reading-guide__toggle')
+      const progress = element.querySelector('[role="progressbar"]')
+      const links = [...element.querySelectorAll('.detail-reading-guide__outline a')]
+      const targetIds = links.map((link) => link.getAttribute('href')?.slice(1) ?? '')
+      const rect = element.getBoundingClientRect()
+      return {
+        expanded: toggleElement?.getAttribute('aria-expanded'),
+        progress: Number(progress?.getAttribute('aria-valuenow')),
+        targetIds,
+        missingTargets: targetIds.filter((id) => !id || !document.getElementById(id)),
+        duplicateTargets: targetIds.length - new Set(targetIds).size,
+        left: rect.left,
+        right: rect.right,
+        viewportWidth: document.documentElement.clientWidth,
+        horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      }
+    })
+
+    if (initialGuideState.expanded !== 'false' || initialGuideState.progress < 0) {
+      failures.push(`${path} ${viewport.name}: reading guide should start collapsed with measurable progress`)
+    }
+    if (
+      initialGuideState.targetIds.length < 5 ||
+      initialGuideState.missingTargets.length > 0 ||
+      initialGuideState.duplicateTargets > 0
+    ) {
+      failures.push(`${path} ${viewport.name}: outline targets should be unique, existing, and cover major sections`)
+    }
+    if (
+      initialGuideState.left < -1 ||
+      initialGuideState.right > initialGuideState.viewportWidth + 1 ||
+      initialGuideState.horizontalOverflow
+    ) {
+      failures.push(`${path} ${viewport.name}: reading guide should stay inside the viewport without page overflow`)
+    }
+
+    await toggle.click()
+    await readingPage
+      .waitForFunction(() => {
+        const element = document.querySelector('.detail-reading-guide__outline')
+        if (!element || element.hasAttribute('hidden')) return false
+        const rect = element.getBoundingClientRect()
+        return rect.top >= -1 && rect.bottom <= window.innerHeight + 1
+      })
+      .catch(() => {})
+    const openState = await outline.evaluate((element) => {
+      const rect = element.getBoundingClientRect()
+      return {
+        hidden: element.hasAttribute('hidden'),
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        viewportWidth: document.documentElement.clientWidth,
+        viewportHeight: window.innerHeight,
+      }
+    })
+    if (
+      openState.hidden ||
+      openState.left < -1 ||
+      openState.right > openState.viewportWidth + 1 ||
+      openState.top < -1 ||
+      openState.bottom > openState.viewportHeight + 1
+    ) {
+      failures.push(`${path} ${viewport.name}: open reading outline should remain fully operable inside the viewport`)
+    }
+
+    await readingPage.keyboard.press('Escape')
+    if ((await toggle.getAttribute('aria-expanded')) !== 'false' || !(await toggle.evaluate((element) => element === document.activeElement))) {
+      failures.push(`${path} ${viewport.name}: Escape should close the outline and restore toggle focus`)
+    }
+
+    await toggle.click()
+    const targetLink = outlineLinks.last()
+    const targetId = ((await targetLink.getAttribute('href')) ?? '').slice(1)
+    const scrollBeforeNavigate = await readingPage.evaluate(() => window.scrollY)
+    await targetLink.click()
+    await readingPage
+      .waitForFunction(
+        (id) => document.querySelector('.detail-reading-guide')?.getAttribute('data-active-section') === id,
+        targetId,
+      )
+      .catch(() => failures.push(`${path} ${viewport.name}: selected outline target should become the current section`))
+    const navigationState = await readingPage.evaluate(() => ({
+      scrollY: window.scrollY,
+      expanded: document.querySelector('.detail-reading-guide__toggle')?.getAttribute('aria-expanded'),
+    }))
+    if (navigationState.scrollY <= scrollBeforeNavigate || navigationState.expanded !== 'false') {
+      failures.push(`${path} ${viewport.name}: outline navigation should scroll forward and close the panel`)
+    }
+
+    await toggle.click()
+    await readingPage.mouse.click(2, 2)
+    if ((await toggle.getAttribute('aria-expanded')) !== 'false') {
+      failures.push(`${path} ${viewport.name}: outside pointer interaction should close the outline`)
+    }
+
+    await readingPage.evaluate(() => {
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, document.documentElement.scrollHeight)
+    })
+    await readingPage
+      .waitForFunction(() => Number(document.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')) >= 95)
+      .catch(() => failures.push(`${path} ${viewport.name}: reading progress should reach at least 95% at page bottom`))
+
+    await readingPage.close()
+  }
+}
+
+for (const path of ['/blog/missing-reading-guide', '/projects/missing-reading-guide']) {
+  const missingDetailPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  await gotoApp(missingDetailPage, path)
+  if ((await missingDetailPage.locator('.detail-reading-guide').count()) !== 0) {
+    failures.push(`${path}: missing detail states should not render an empty reading guide`)
+  }
+  await missingDetailPage.close()
+}
+
 for (const width of [320, 390, 430]) {
   const mobileHomePage = await browser.newPage({ viewport: { width, height: 900 } })
   await mobileHomePage.addInitScript(() => {

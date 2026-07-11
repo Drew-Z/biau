@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ExternalLink, Link as LinkIcon } from 'lucide-react'
+import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
 import { blogColumnMeta } from '../data/blog'
 import { getProjectBlogPosts } from '../data/blogCuration'
 import { getRelatedProjects, getRelatedProjectsTitle } from '../data/projectRecommendations'
@@ -26,6 +27,18 @@ const projectDetailContentOrder: ProjectDetailContentKey[] = [
   'roadmap',
 ]
 
+interface ProjectDetailGroup {
+  key: ProjectDetailContentKey
+  sections: ProjectDetailSection[]
+}
+
+function getProjectDetailGroups(content?: ProjectDetailContent): ProjectDetailGroup[] {
+  if (!content) return []
+  return projectDetailContentOrder
+    .map((key) => ({ key, sections: content[key] ?? [] }))
+    .filter((group) => group.sections.length > 0)
+}
+
 const projectVisualTypeLabels: Record<ProjectVisualBlock['type'], string> = {
   screenshot: '界面截图',
   architecture: '架构图',
@@ -41,6 +54,7 @@ export function ProjectDetailPage() {
   const navigate = useNavigate()
 
   const project = useMemo(() => projects.find((p) => p.id === id), [id])
+  const detailGroups = useMemo(() => getProjectDetailGroups(project?.detailContent), [project])
 
   const related = useMemo(() => {
     if (!project) return []
@@ -51,6 +65,21 @@ export function ProjectDetailPage() {
     if (!project) return []
     return getProjectBlogPosts(project.id).slice(0, 4)
   }, [project])
+
+  const readingItems = useMemo<DetailReadingItem[]>(() => {
+    if (!project) return []
+    const items: DetailReadingItem[] = [
+      { id: 'project-highlights', label: '核心亮点' },
+      { id: 'project-stack', label: '技术栈' },
+    ]
+    if (project.links.length) items.push({ id: 'project-links', label: '相关链接' })
+    detailGroups.forEach((group) => {
+      items.push({ id: `project-${group.key}`, label: projectDetailGroupLabels[group.key] })
+    })
+    if (projectReadings.length) items.push({ id: 'project-readings', label: '延展阅读' })
+    if (related.length) items.push({ id: 'project-related', label: getRelatedProjectsTitle(project, related) })
+    return items
+  }, [detailGroups, project, projectReadings, related])
 
   if (!project) {
     return (
@@ -107,8 +136,10 @@ export function ProjectDetailPage() {
         </a>
       )}
 
+      <DetailReadingGuide items={readingItems} />
+
       <div className="detail-body">
-        <section className="detail-block">
+        <section id="project-highlights" className="detail-block">
           <h2 className="detail-block-title">核心亮点</h2>
           <ul className="detail-highlights">
             {project.highlights.map((highlight) => (
@@ -117,7 +148,7 @@ export function ProjectDetailPage() {
           </ul>
         </section>
 
-        <section className="detail-block">
+        <section id="project-stack" className="detail-block">
           <h2 className="detail-block-title">技术栈</h2>
           <div className="detail-stack">
             {project.stack.map((tech) => (
@@ -129,7 +160,7 @@ export function ProjectDetailPage() {
         </section>
 
         {project.links.length > 0 && (
-          <section className="detail-block">
+          <section id="project-links" className="detail-block">
             <h2 className="detail-block-title">相关链接</h2>
             <div className="detail-links">
               {project.links.map((link) => (
@@ -140,10 +171,10 @@ export function ProjectDetailPage() {
         )}
       </div>
 
-      {project.detailContent && <ProjectDetailContentSections content={project.detailContent} />}
+      {detailGroups.length > 0 && <ProjectDetailContentSections groups={detailGroups} />}
 
       {projectReadings.length > 0 && (
-        <section className="detail-related">
+        <section id="project-readings" className="detail-related">
           <h2 className="detail-block-title">延展阅读</h2>
           <div className="detail-related-grid">
             {projectReadings.map((post) => (
@@ -158,7 +189,7 @@ export function ProjectDetailPage() {
       )}
 
       {related.length > 0 && (
-        <section className="detail-related">
+        <section id="project-related" className="detail-related">
           <h2 className="detail-block-title">{getRelatedProjectsTitle(project, related)}</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
@@ -176,20 +207,14 @@ export function ProjectDetailPage() {
 }
 
 interface ProjectDetailContentSectionsProps {
-  content: ProjectDetailContent
+  groups: ProjectDetailGroup[]
 }
 
-function ProjectDetailContentSections({ content }: ProjectDetailContentSectionsProps) {
-  const groups = projectDetailContentOrder
-    .map((key) => ({ key, sections: content[key] ?? [] }))
-    .filter((group) => group.sections.length > 0)
-
-  if (groups.length === 0) return null
-
+function ProjectDetailContentSections({ groups }: ProjectDetailContentSectionsProps) {
   return (
     <section className="detail-body project-case-study" aria-label="项目案例分析">
       {groups.map((group) => (
-        <section key={group.key} className="detail-block detail-block-wide project-case-study__group">
+        <section id={`project-${group.key}`} key={group.key} className="detail-block detail-block-wide project-case-study__group">
           <p className="project-case-study__eyebrow">{projectDetailGroupLabels[group.key]}</p>
           <div className="project-case-study__sections">
             {group.sections.map((section) => (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
 import { blogColumnMeta } from '../data/blog'
 import { getBlogProjectIds, getPublicBlogPostSummary, getRelatedBlogPosts } from '../data/blogCuration'
 import { getBlogPost } from '../data/blogContent'
@@ -42,6 +43,21 @@ export function BlogPostPage() {
     const projectIds = new Set(getBlogProjectIds(post.slug))
     return projects.filter((project) => projectIds.has(project.id))
   }, [post])
+
+  const readingItems = useMemo<DetailReadingItem[]>(() => {
+    if (!post) return []
+    const items: DetailReadingItem[] = []
+    if (post.knowledgePoints?.length) items.push({ id: 'blog-knowledge', label: '知识点' })
+    if (post.scenarios?.length) items.push({ id: 'blog-scenarios', label: '应用场景' })
+    post.sections.forEach((section, index) => {
+      items.push({ id: `blog-section-${index + 1}`, label: section.title })
+    })
+    if (post.practiceChecklist?.length) items.push({ id: 'blog-practice', label: '实践清单' })
+    if (post.takeaways.length) items.push({ id: 'blog-takeaways', label: '关键收获' })
+    if (relatedProjects.length) items.push({ id: 'blog-related-projects', label: '关联项目' })
+    if (related.length) items.push({ id: 'blog-related-posts', label: '延展阅读' })
+    return items
+  }, [post, related, relatedProjects])
 
   if (post === undefined) {
     return (
@@ -92,9 +108,11 @@ export function BlogPostPage() {
         </div>
       </header>
 
+      <DetailReadingGuide items={readingItems} />
+
       <div className="detail-body blog-post-body">
         {post.knowledgePoints && post.knowledgePoints.length > 0 && (
-          <section className="detail-block">
+          <section id="blog-knowledge" className="detail-block">
             <h2 className="detail-block-title">知识点</h2>
             <ul className="detail-highlights">
               {post.knowledgePoints.map((point) => (
@@ -105,7 +123,7 @@ export function BlogPostPage() {
         )}
 
         {post.scenarios && post.scenarios.length > 0 && (
-          <section className="detail-block">
+          <section id="blog-scenarios" className="detail-block">
             <h2 className="detail-block-title">应用场景</h2>
             <ul className="detail-highlights">
               {post.scenarios.map((scenario) => (
@@ -115,15 +133,15 @@ export function BlogPostPage() {
           </section>
         )}
 
-        {post.sections.map((section) => (
-          <section key={section.title} className="detail-block blog-post-section">
+        {post.sections.map((section, index) => (
+          <section id={`blog-section-${index + 1}`} key={section.title} className="detail-block blog-post-section">
             <h2 className="detail-block-title">{section.title}</h2>
             <p className="blog-post-body-text">{section.body}</p>
           </section>
         ))}
 
         {post.practiceChecklist && post.practiceChecklist.length > 0 && (
-          <section className="detail-block">
+          <section id="blog-practice" className="detail-block">
             <h2 className="detail-block-title">实践清单</h2>
             <ul className="detail-highlights">
               {post.practiceChecklist.map((item) => (
@@ -134,7 +152,7 @@ export function BlogPostPage() {
         )}
 
         {post.takeaways.length > 0 && (
-          <section className="detail-block">
+          <section id="blog-takeaways" className="detail-block">
             <h2 className="detail-block-title">关键收获</h2>
             <ul className="detail-highlights">
               {post.takeaways.map((takeaway) => (
@@ -146,7 +164,7 @@ export function BlogPostPage() {
       </div>
 
       {relatedProjects.length > 0 && (
-        <section className="detail-related">
+        <section id="blog-related-projects" className="detail-related">
           <h2 className="detail-block-title">关联项目</h2>
           <div className="detail-related-grid">
             {relatedProjects.map((project) => (
@@ -161,7 +179,7 @@ export function BlogPostPage() {
       )}
 
       {related.length > 0 && (
-        <section className="detail-related">
+        <section id="blog-related-posts" className="detail-related">
           <h2 className="detail-block-title">延展阅读</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
