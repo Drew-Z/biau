@@ -613,3 +613,11 @@ Use `.env.example` for structure. Do not read or quote `.env`, `.env.local`, `.e
 - Do not add broad `// eslint-disable` comments to force lint success.
 - Do not treat `npm run dev` as verification; it does not run strict TypeScript checks.
 - Do not use destructive git commands or push without an explicit user request.
+
+### Mobile Taxonomy Regression
+
+For responsive taxonomy controls, UI checks must cover 320px, 390px, and 430px.
+Assert that the mobile selector is visible and bounded, the desktop button group
+is hidden, every option exists, populated and empty selections use the shared
+projection, pagination resets, and the document has no horizontal overflow.
+Desktop checks must assert the inverse visibility contract.

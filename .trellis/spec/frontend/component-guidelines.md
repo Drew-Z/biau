@@ -73,3 +73,12 @@ Use real sanitized project screenshots when available. If an asset is missing, u
 - External links use `target="_blank"` with `rel="noopener noreferrer"`.
 - Images rendered through `ResponsiveImage` need useful alt text, usually the project or content title.
 - Button text must fit at mobile and desktop sizes; prefer icons from `lucide-react` when a known command has a standard symbol.
+
+### Responsive Taxonomy Controls
+
+When a taxonomy has more options than a 320px mobile viewport can show in full,
+keep the desktop segmented buttons but replace them on mobile with one labeled
+native `select`. Both surfaces must share the same controlled value and callback;
+do not duplicate filtering state. Every option must expose the complete Chinese
+and English identity plus its count or pending state. Do not use a clipped,
+no-wrap horizontal rail or partial-card peek as the only discovery mechanism.

@@ -638,6 +638,9 @@ await statusPage.close()
 
 const interactionPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(interactionPage, '/blog')
+if (await interactionPage.locator('.blog-column-select').isVisible().catch(() => false)) {
+  failures.push('/blog columns: mobile column selector should stay hidden on desktop')
+}
 for (const column of blogColumnOrder) {
   const label = blogColumnMeta[column].titleZh
   if (!(await interactionPage.getByRole('button', { name: new RegExp(label) }).isVisible().catch(() => false))) {
@@ -704,6 +707,62 @@ if (!(await queryEmptyState.filter({ hasText: expectedQueryEmptyState.descriptio
   failures.push('/blog empty state: expected unmatched search to use query-specific guidance')
 }
 await interactionPage.close()
+
+for (const width of [320, 390, 430]) {
+  const mobileBlogPage = await browser.newPage({ viewport: { width, height: 900 } })
+  await gotoApp(mobileBlogPage, '/blog')
+
+  const mobileSelectorShell = mobileBlogPage.locator('.blog-column-select')
+  const mobileSelector = mobileBlogPage.getByRole('combobox', { name: '选择知识库栏目' })
+  if (!(await mobileSelectorShell.isVisible().catch(() => false))) {
+    failures.push(`/blog mobile columns ${width}px: expected the complete column selector to be visible`)
+  }
+  if (await mobileBlogPage.locator('.blog-column-filter').isVisible().catch(() => false)) {
+    failures.push(`/blog mobile columns ${width}px: desktop column buttons should be hidden`)
+  }
+
+  const options = await mobileSelector.locator('option').allTextContents()
+  if (options.length !== blogColumnOrder.length + 1) {
+    failures.push(`/blog mobile columns ${width}px: expected ${blogColumnOrder.length + 1} options, got ${options.length}`)
+  }
+  for (const column of blogColumnOrder) {
+    const meta = blogColumnMeta[column]
+    if (!options.some((option) => option.includes(meta.titleZh) && option.includes(meta.titleEn))) {
+      failures.push(`/blog mobile columns ${width}px: expected an option for ${meta.titleZh} / ${meta.titleEn}`)
+    }
+  }
+
+  const selectorBounds = await mobileSelectorShell.boundingBox()
+  if (!selectorBounds || selectorBounds.height < 44 || selectorBounds.x < 0 || selectorBounds.x + selectorBounds.width > width + 0.5) {
+    failures.push(`/blog mobile columns ${width}px: selector should be at least 44px high and stay inside the viewport`)
+  }
+
+  const hasHorizontalOverflow = await mobileBlogPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
+  if (hasHorizontalOverflow) {
+    failures.push(`/blog mobile columns ${width}px: page should not overflow horizontally`)
+  }
+
+  await mobileSelector.selectOption('knowledge')
+  await mobileBlogPage.waitForTimeout(100)
+  if ((await mobileBlogPage.locator('.blog-card').count()) === 0) {
+    failures.push(`/blog mobile columns ${width}px: selecting a populated column should show curated cards`)
+  }
+  const populatedPageMeta = await mobileBlogPage.locator('.blog-result-meta').innerText()
+  if (!populatedPageMeta.includes('第 1 /')) {
+    failures.push(`/blog mobile columns ${width}px: changing columns should reset pagination to page one`)
+  }
+
+  const emptyColumn = 'resources'
+  await mobileSelector.selectOption(emptyColumn)
+  await mobileBlogPage.waitForTimeout(100)
+  const expectedMobileEmptyState = getBlogEmptyState(emptyColumn, '')
+  const mobileEmptyState = mobileBlogPage.locator(`.blog-empty[data-blog-empty-column="${emptyColumn}"]`)
+  if (!(await mobileEmptyState.filter({ hasText: expectedMobileEmptyState.title }).isVisible())) {
+    failures.push(`/blog mobile columns ${width}px: expected the shared ${emptyColumn} empty state`)
+  }
+
+  await mobileBlogPage.close()
+}
 
 const navFocusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(navFocusPage, '/blog')

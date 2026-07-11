@@ -2394,6 +2394,67 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     0 20px 52px rgb(var(--flow-ui-shadow-rgb) / 0.1);
 }
 
+.blog-index-page .blog-column-select {
+  display: none;
+}
+
+.blog-index-page .blog-column-select__label {
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.blog-index-page .blog-column-select__control {
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 var(--space-12, 12px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-8);
+  align-items: center;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel) 58%, transparent);
+  border: 1px solid var(--flow-ui-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 1px 0 var(--flow-ui-inset);
+}
+
+.blog-index-page .blog-column-select__control > svg {
+  color: var(--amber);
+  pointer-events: none;
+}
+
+.blog-index-page .blog-column-select select {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  outline: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+}
+
+.blog-index-page .blog-column-select select:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.blog-index-page .blog-column-select option {
+  color: var(--ink);
+  background: var(--panel);
+}
+
 .blog-index-page .filter-btn {
   min-height: 52px;
   min-width: 124px;
@@ -6349,18 +6410,21 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   }
 
   .blog-index-page .blog-column-filter {
-    justify-content: flex-start;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    scrollbar-width: none;
-  }
-
-  .blog-index-page .blog-column-filter::-webkit-scrollbar {
     display: none;
   }
 
-  .blog-index-page .filter-btn {
-    flex: 0 0 auto;
+  .blog-index-page .blog-column-select {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-12, 12px);
+    display: grid;
+    gap: var(--space-8);
+    background: color-mix(in oklch, var(--panel) 48%, transparent);
+    border: 1px solid var(--flow-ui-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
+    backdrop-filter: blur(var(--flow-backdrop-blur)) saturate(1.08);
   }
 
   .blog-tools {
