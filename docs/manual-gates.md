@@ -113,7 +113,7 @@
 - BIAU Port 主站：公开项目按钮与项目详情资料链接已接入 `public-links:check` synthetic 快照；状态页只展示通过数量、失败数量和错误类别，不保存具体外链 URL。
 - BIAU Port 主站访问分析：`src/utils/analytics.ts` 已提供默认关闭的 Plausible/Umami/debug adapter，`route_view` 只发送归一化 `routePattern` / `routeArea` / `routeDepth`；`analytics:check` 已纳入 `verify`，防止完整 URL、query、hash 或动态 id 泄漏到事件元数据。
 - BIAU Port 内部助手 Agent 工作台：`/assistant` 已提供简洁首屏、运行状态条、LangGraph inspector、工具轨迹卡、Studio artifact 链接、消息级 Agent trace replay、降级/guardrail 下一步提示；`assistant:agent-contract` 和 `assistant:agent-eval` 已覆盖本地 no-live 的 LangGraph 节点、工具权限、状态/项目、内部知识、Studio draft plan-only 和会话记忆用例。
-- BIAU Port 内部助手长期记忆：本地已具备明确同意写入、敏感拦截、成员隔离、重复去重、归档恢复、长期记忆与会话摘要联合检索，以及 `/assistant` 管理面板；生产仍需执行新 migration 并做真实成员跨重启验收。
+- BIAU Port 内部助手长期记忆：生产成员 API 已确认 `AgentMemory` migration 生效；使用真实成员完成了明确同意保存、重复去重、归档和恢复验收，最终记录保持 `ACTIVE`。剩余人工项仅为重启 internal service 后确认同一成员仍能读取该记忆；不记录 token、成员信息或记忆正文。
 - BIAU Port 内部助手管理台：`/assistant/admin` 已提供“刷新全部状态”，会统一刷新摘要、成员、邀请、内部知识、RAG 状态和用量；知识页已提供 sourceType 预设和 internal RAG readiness 路径；`check:ui` 已守护无 token 时按钮可见且禁用、token 只保存在当前浏览器的提示仍可见。
 - BIAU Port Studio：`/studio` 第一屏已显示待审核队列摘要、下一篇待审核和“打开下一篇待审核”动作；`check:ui` 已守护无 token / 无草稿首屏仍能看见审核入口，真实审核和导出仍是人工 gate。
 - BIAU Port 全链路本地验证：`npm.cmd run verify` 已通过；覆盖 assistant index、知识图谱检查、离线 RAG eval、内部 Agent contract/eval、本地 RAG sync plan、meta/admin 检查、Prisma validate、server smoke、服务模式 smoke、RAG smoke、Cloudflare function smoke、build、博客质量、部署/manual-gates/observability 文档、analytics、Studio smoke、项目详情、status contract 和 UI check；本轮没有 live model calls。
@@ -122,7 +122,7 @@
 
 - Studio 生产连接已刷新成功；下一步是人工审核 hidden/review-needed 草稿，创建 Publish Export 后再审查公开内容 diff。
 - 内部助手管理台已具备“刷新全部状态”；醒来后可先复核成员列表和成员模型渠道是否符合预期，不需要把 admin token、member token、模型 key 或 base URL 发到聊天里。
-- 内部助手长期记忆需要在新的 Render 账号对应内部助手数据库执行 migration；随后用一个真实成员完成保存、重复保存、归档、恢复和服务重启后的持久化复核。
+- 内部助手长期记忆的 migration、保存、重复去重、归档和恢复已经通过生产验收；只剩 Render 重启后的持久化复核。
 - Legal RAG 仍需低权限、可回收 demo 凭据和 credentialed synthetic 环境变量，用来验收法律问答、合同审查和质量面板。
 - ERP 注册入口已在线可达；插件与商品同步仍需要脱敏 fixture 或低权限演示店铺再做 credentialed smoke。
 - Xunqiu 后端 synthetic 仍需后端公开 base URL；APK 公开发布仍需正式 release 审批。
@@ -136,10 +136,10 @@
 这部分用于把长表压缩成可执行队列。每一步只记录低敏成功标准，不需要把真实 token、账号、密码、连接串、模型地址或签名材料发到聊天或写进仓库。
 
 1. 内部助手管理台快速复核
-   - 部署最新 `biau-internal-assistant-api`；现有 start command 中的 `npm run prisma:migrate` 应创建 `AgentMemory` 表，只确认迁移成功，不复制数据库连接串或完整日志到公开内容。
+   - `AgentMemory` migration、保存、重复去重、归档和恢复已经通过；无需重新迁移或重复创建测试记忆。
    - 打开 `/assistant/admin`，保存 `ADMIN_TOKEN` 后点击“刷新全部状态”。
    - 在“成员”页签确认成员列表、成员状态和模型渠道符合预期；如果刚新增成员或改过渠道，先点“刷新全部状态”，再点“刷新成员”定向复核。
-   - 使用一个真实成员在 `/assistant` 依次测试“请记住以后默认使用简体中文回答”、重复发送、归档、恢复，再重启服务确认记忆仍存在。
+   - 只需在 Render 手动重启 `biau-internal-assistant-api`，待 `/health` 恢复后刷新 `/assistant` 的长期记忆列表，确认已有 ACTIVE 记忆仍存在。
    - 成功标准：成员行只显示低敏 channel id/label、provider、model、configured / active，不显示 key、base URL、token hash、请求头或模型响应。
 
 2. Studio 草稿审核
