@@ -257,6 +257,14 @@ dark themes. `scripts/check-ui.mjs` owns the computed-style contract for the
 fluid/ribbon animations, harbor environment animations, six theme signatures,
 mobile visibility, and the static `prefers-reduced-motion` fallback.
 
+Foreground material must follow the active harbor scene as well as the moving
+background. The home hero panel, project rail, and project cards use shared
+scene tokens for tint, highlight, edge, depth, and sheen. Keep six distinct
+light/dark material signatures, preserve project-specific card accents, and use
+bounded pseudo-element highlights that never resize content. On mobile, reduce
+sheen intensity and retain native horizontal scrolling; under reduced motion,
+the sheen must be static with no transition.
+
 `dusk`, `garden`, and `stellar` must keep distinct light palettes. A light scene
 must never reuse dark endpoints such as `#052433`; scene switching changes
 atmosphere without silently changing the theme or reducing text contrast.

@@ -37,6 +37,11 @@
   --harbor-spectrum-blend: normal;
   --harbor-mist-opacity: 0.3;
   --harbor-mist-blend: soft-light;
+  --flow-surface-tint-rgb: 144 191 224;
+  --flow-surface-highlight-rgb: 255 230 171;
+  --flow-surface-edge-rgb: 84 224 192;
+  --flow-surface-depth-alpha: 0.16;
+  --flow-surface-sheen-opacity: 0.28;
   --hero-title-light-shadow: none;
   --hero-title-accent-shadow: none;
   --flow-ui-panel-rgb: 255 255 255;
@@ -106,6 +111,11 @@
   --harbor-spectrum-blend: soft-light;
   --harbor-mist-opacity: 0.22;
   --harbor-mist-blend: soft-light;
+  --flow-surface-tint-rgb: 158 207 206;
+  --flow-surface-highlight-rgb: 255 239 199;
+  --flow-surface-edge-rgb: 83 120 149;
+  --flow-surface-depth-alpha: 0.12;
+  --flow-surface-sheen-opacity: 0.2;
   --flow-ui-panel-rgb: 242 247 246;
   --flow-ui-card-rgb: 248 250 248;
   --flow-ui-shadow-rgb: 38 63 76;
@@ -150,6 +160,11 @@
   --harbor-spectrum-blend: screen;
   --harbor-mist-opacity: 0.32;
   --harbor-mist-blend: screen;
+  --flow-surface-tint-rgb: 70 154 165;
+  --flow-surface-highlight-rgb: 209 171 92;
+  --flow-surface-edge-rgb: 117 172 234;
+  --flow-surface-depth-alpha: 0.3;
+  --flow-surface-sheen-opacity: 0.26;
 }
 
 :root:not(.light-theme)[data-harbor-scene='dusk'] .app.page-home,
@@ -177,6 +192,11 @@
   --harbor-spectrum-blend: screen;
   --harbor-mist-opacity: 0.2;
   --harbor-mist-blend: soft-light;
+  --flow-surface-tint-rgb: 91 173 184;
+  --flow-surface-highlight-rgb: 227 142 125;
+  --flow-surface-edge-rgb: 209 171 92;
+  --flow-surface-depth-alpha: 0.24;
+  --flow-surface-sheen-opacity: 0.24;
 }
 
 :root.light-theme[data-harbor-scene='garden'] .app.page-home,
@@ -206,6 +226,11 @@
   --harbor-spectrum-blend: soft-light;
   --harbor-mist-opacity: 0.22;
   --harbor-mist-blend: soft-light;
+  --flow-surface-tint-rgb: 157 207 199;
+  --flow-surface-highlight-rgb: 231 241 218;
+  --flow-surface-edge-rgb: 90 135 72;
+  --flow-surface-depth-alpha: 0.1;
+  --flow-surface-sheen-opacity: 0.17;
 }
 
 :root:not(.light-theme)[data-harbor-scene='garden'] .app.page-home,
@@ -233,6 +258,11 @@
   --harbor-spectrum-blend: screen;
   --harbor-mist-opacity: 0.34;
   --harbor-mist-blend: screen;
+  --flow-surface-tint-rgb: 55 122 126;
+  --flow-surface-highlight-rgb: 123 186 125;
+  --flow-surface-edge-rgb: 65 189 183;
+  --flow-surface-depth-alpha: 0.28;
+  --flow-surface-sheen-opacity: 0.22;
 }
 
 :root.light-theme[data-harbor-scene='stellar'] .app.page-home,
@@ -262,6 +292,11 @@
   --harbor-spectrum-blend: soft-light;
   --harbor-mist-opacity: 0.18;
   --harbor-mist-blend: soft-light;
+  --flow-surface-tint-rgb: 158 193 211;
+  --flow-surface-highlight-rgb: 220 204 236;
+  --flow-surface-edge-rgb: 116 157 184;
+  --flow-surface-depth-alpha: 0.12;
+  --flow-surface-sheen-opacity: 0.19;
 }
 
 :root:not(.light-theme)[data-harbor-scene='stellar'] .app.page-home,
@@ -291,6 +326,11 @@
   --harbor-spectrum-blend: screen;
   --harbor-mist-opacity: 0.16;
   --harbor-mist-blend: screen;
+  --flow-surface-tint-rgb: 53 75 123;
+  --flow-surface-highlight-rgb: 209 171 92;
+  --flow-surface-edge-rgb: 84 224 192;
+  --flow-surface-depth-alpha: 0.34;
+  --flow-surface-sheen-opacity: 0.3;
 }
 
 .app.page-home::before,
@@ -866,23 +906,108 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .app.page-home .hero-panel {
-  border-color: var(--flow-ui-border);
+  background:
+    radial-gradient(
+      circle at 88% 10%,
+      rgb(var(--flow-surface-highlight-rgb) / 0.16),
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse 58% 46% at 10% 92%,
+      rgb(var(--flow-surface-tint-rgb) / 0.2),
+      transparent 72%
+    ),
+    linear-gradient(
+      158deg,
+      rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha)),
+      rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha))
+    );
+  border-color: color-mix(
+    in oklch,
+    rgb(var(--flow-surface-edge-rgb) / 0.42),
+    var(--flow-ui-border) 68%
+  );
   box-shadow:
-    0 20px 52px rgb(var(--flow-ui-shadow-rgb) / 0.13),
-    inset 0 1px 0 var(--flow-ui-inset);
+    0 30px 72px rgb(var(--flow-ui-shadow-rgb) / var(--flow-surface-depth-alpha)),
+    0 10px 30px rgb(var(--flow-surface-tint-rgb) / 0.12),
+    inset 0 1px 0 rgb(var(--flow-surface-highlight-rgb) / 0.34);
 }
 
 .app.page-home .carousel-card {
-  border-color: var(--flow-ui-card-border);
+  --flow-card-sheen-opacity: 0.22;
+  --flow-card-sheen-shift: -36%;
+  background:
+    linear-gradient(
+      132deg,
+      rgb(var(--flow-surface-highlight-rgb) / 0.09),
+      transparent 34%
+    ),
+    radial-gradient(
+      ellipse 72% 100% at 8% 100%,
+      rgb(var(--flow-surface-tint-rgb) / 0.12),
+      transparent 74%
+    ),
+    linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--card-accent) 7%, var(--panel-strong)),
+      var(--panel-strong) 72%
+    );
+  border-color: color-mix(
+    in oklch,
+    rgb(var(--flow-surface-edge-rgb) / 0.34),
+    var(--flow-ui-card-border) 74%
+  );
   box-shadow:
-    inset 0 1px 0 var(--flow-ui-inset),
-    0 8px 22px rgb(var(--flow-ui-shadow-rgb) / 0.08);
+    inset 0 1px 0 rgb(var(--flow-surface-highlight-rgb) / 0.3),
+    0 10px 24px rgb(var(--flow-ui-shadow-rgb) / calc(var(--flow-surface-depth-alpha) * 0.42)),
+    0 2px 10px rgb(var(--flow-surface-tint-rgb) / 0.08);
+}
+
+.app.page-home .carousel-card::before {
+  position: relative;
+  z-index: 1;
+}
+
+.app.page-home .carousel-card::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: -48% -22%;
+  z-index: 0;
+  background: linear-gradient(
+    112deg,
+    transparent 34%,
+    rgb(var(--flow-surface-highlight-rgb) / var(--flow-surface-sheen-opacity)) 45%,
+    rgb(var(--flow-surface-edge-rgb) / 0.12) 51%,
+    transparent 62%
+  );
+  opacity: var(--flow-card-sheen-opacity);
+  transform: translate3d(var(--flow-card-sheen-shift), 0, 0) rotate(1.5deg);
+  transition:
+    transform 0.62s var(--ease-out-expo),
+    opacity 0.28s var(--ease-smooth);
+  will-change: transform, opacity;
+}
+
+.app.page-home .carousel-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.app.page-home .carousel-card:hover,
+.app.page-home .carousel-card:focus-visible {
+  --flow-card-sheen-opacity: 0.78;
+  --flow-card-sheen-shift: 30%;
 }
 
 .app.page-home .carousel-wrapper {
   position: relative;
   overflow: hidden;
-  border-color: color-mix(in oklch, var(--flow-ui-border-strong) 78%, white);
+  border-color: color-mix(
+    in oklch,
+    rgb(var(--flow-surface-edge-rgb) / 0.4),
+    var(--flow-ui-border-strong) 74%
+  );
 }
 
 .app.page-home .carousel-wrapper::before,
@@ -902,13 +1027,17 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
       from 210deg,
       transparent 0deg,
       transparent 58deg,
-      rgba(255, 255, 255, 0.18) 78deg,
-      rgba(255, 255, 255, 0.92) 93deg,
-      rgba(255, 255, 255, 0.24) 112deg,
+      rgb(var(--flow-surface-edge-rgb) / 0.18) 78deg,
+      rgb(var(--flow-surface-highlight-rgb) / 0.78) 93deg,
+      rgb(var(--flow-surface-tint-rgb) / 0.24) 112deg,
       transparent 138deg,
       transparent 360deg
     ),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0.04));
+    linear-gradient(
+      180deg,
+      rgb(var(--flow-surface-highlight-rgb) / 0.24),
+      rgb(var(--flow-surface-edge-rgb) / 0.04)
+    );
   opacity: 0.82;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -924,8 +1053,17 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .app.page-home .carousel-wrapper::after {
   z-index: 0;
   background:
-    linear-gradient(118deg, transparent 0 35%, rgba(255, 255, 255, 0.22) 46%, transparent 58%),
-    radial-gradient(ellipse 42% 26% at 16% 12%, rgba(255, 255, 255, 0.14), transparent 70%);
+    linear-gradient(
+      118deg,
+      transparent 0 35%,
+      rgb(var(--flow-surface-highlight-rgb) / 0.2) 46%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 42% 26% at 16% 12%,
+      rgb(var(--flow-surface-tint-rgb) / 0.14),
+      transparent 70%
+    );
   background-size:
     260% 260%,
     100% 100%;
@@ -5867,6 +6005,23 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     filter: blur(18px) contrast(1.02);
   }
 
+  .app.page-home .hero-panel {
+    box-shadow:
+      0 18px 42px rgb(var(--flow-ui-shadow-rgb) / calc(var(--flow-surface-depth-alpha) * 0.72)),
+      inset 0 1px 0 rgb(var(--flow-surface-highlight-rgb) / 0.26);
+  }
+
+  .app.page-home .carousel-card,
+  .app.page-home .carousel-card:hover {
+    --flow-card-sheen-opacity: 0.16;
+    --flow-card-sheen-shift: -12%;
+  }
+
+  .app.page-home .carousel-card:focus-visible {
+    --flow-card-sheen-opacity: 0.48;
+    --flow-card-sheen-shift: 12%;
+  }
+
   .app.page-home .nav-inner,
   .app.page-tools .nav-inner,
   .app.page-subpage .nav-inner {
@@ -6345,5 +6500,15 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .harbor-environment::after,
   .harbor-environment > span {
     animation: none !important;
+  }
+
+  .app.page-home .carousel-card {
+    --flow-card-sheen-opacity: 0.12;
+    --flow-card-sheen-shift: 0%;
+  }
+
+  .app.page-home .carousel-card::after {
+    transform: translate3d(0, 0, 0) rotate(0deg) !important;
+    transition: none !important;
   }
 }

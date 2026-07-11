@@ -781,13 +781,17 @@ for (const theme of ['light', 'dark']) {
     const beam = document.querySelector('.harbor-environment__beam')
     const spectrum = document.querySelector('.harbor-environment__spectrum')
     const mist = document.querySelector('.harbor-environment__mist')
+    const panel = document.querySelector('.hero-panel')
+    const card = document.querySelector('.carousel-card:not([data-loop-copy="true"])')
     if (
       !(app instanceof HTMLElement) ||
       !(gradient instanceof HTMLElement) ||
       !(environment instanceof HTMLElement) ||
       !(beam instanceof HTMLElement) ||
       !(spectrum instanceof HTMLElement) ||
-      !(mist instanceof HTMLElement)
+      !(mist instanceof HTMLElement) ||
+      !(panel instanceof HTMLElement) ||
+      !(card instanceof HTMLElement)
     ) return null
     const style = getComputedStyle(app)
     const fieldStyle = getComputedStyle(app, '::before')
@@ -798,6 +802,9 @@ for (const theme of ['light', 'dark']) {
     const environmentStyle = getComputedStyle(environment)
     const environmentEdgeStyle = getComputedStyle(environment, '::before')
     const environmentVeilStyle = getComputedStyle(environment, '::after')
+    const panelStyle = getComputedStyle(panel)
+    const cardStyle = getComputedStyle(card)
+    const cardSheenStyle = getComputedStyle(card, '::after')
     return {
       light: document.documentElement.classList.contains('light-theme'),
       c1: style.getPropertyValue('--flow-c1').trim().toLowerCase(),
@@ -806,6 +813,11 @@ for (const theme of ['light', 'dark']) {
       saturation: Number.parseFloat(style.getPropertyValue('--flow-saturation')),
       mistOpacity: Number.parseFloat(style.getPropertyValue('--harbor-mist-opacity')),
       edgeOpacity: Number.parseFloat(style.getPropertyValue('--harbor-edge-opacity')),
+      surfaceTint: style.getPropertyValue('--flow-surface-tint-rgb').trim(),
+      surfaceHighlight: style.getPropertyValue('--flow-surface-highlight-rgb').trim(),
+      surfaceEdge: style.getPropertyValue('--flow-surface-edge-rgb').trim(),
+      surfaceDepth: Number.parseFloat(style.getPropertyValue('--flow-surface-depth-alpha')),
+      surfaceSheen: Number.parseFloat(style.getPropertyValue('--flow-surface-sheen-opacity')),
       colorAnimationName: gradientStyle.animationName,
       gradientMistAnimationName: gradientMistStyle.animationName,
       gradientEdgeAnimationName: gradientEdgeStyle.animationName,
@@ -821,6 +833,12 @@ for (const theme of ['light', 'dark']) {
       beamAnimationName: getComputedStyle(beam).animationName,
       spectrumAnimationName: getComputedStyle(spectrum).animationName,
       mistAnimationName: getComputedStyle(mist).animationName,
+      panelBackground: panelStyle.backgroundImage,
+      panelShadow: panelStyle.boxShadow,
+      cardBackground: cardStyle.backgroundImage,
+      cardSheenContent: cardSheenStyle.content,
+      cardSheenOpacity: Number.parseFloat(cardSheenStyle.opacity),
+      cardSheenTransform: cardSheenStyle.transform,
       ink: style.getPropertyValue('--ink').trim().toLowerCase(),
     }
     })
@@ -868,6 +886,21 @@ for (const theme of ['light', 'dark']) {
       ) {
         failures.push(`/ home ${theme} ${scene}: expected the full harbor environment motion stack`)
       }
+      if (
+        !palette.surfaceTint ||
+        !palette.surfaceHighlight ||
+        !palette.surfaceEdge ||
+        !Number.isFinite(palette.surfaceDepth) ||
+        !Number.isFinite(palette.surfaceSheen) ||
+        palette.panelBackground === 'none' ||
+        palette.panelShadow === 'none' ||
+        palette.cardBackground === 'none' ||
+        palette.cardSheenContent === 'none' ||
+        palette.cardSheenOpacity <= 0 ||
+        palette.cardSheenTransform === 'none'
+      ) {
+        failures.push(`/ home ${theme} ${scene}: expected scene-responsive panel/card material and bounded sheen`)
+      }
       if (theme === 'light' && (palette.c5 === '#052433' || palette.c5 === '#16497b')) {
         failures.push(`/ home light ${scene}: light palette should not reuse the old dark/deep-blue endpoint`)
       }
@@ -881,6 +914,65 @@ const harborSignatureKeys = harborThemeSignatures.map(({ theme, scene, palette }
 if (new Set(harborSignatureKeys).size !== 6) {
   failures.push('/ home harbor scenes: light/dark dusk, garden, and stellar should keep six distinct motion signatures')
 }
+const harborSurfaceSignatureKeys = harborThemeSignatures.map(({ theme, scene, palette }) =>
+  `${theme}:${scene}:${palette.surfaceTint}:${palette.surfaceHighlight}:${palette.surfaceEdge}:${palette.surfaceDepth}:${palette.surfaceSheen}`,
+)
+if (new Set(harborSurfaceSignatureKeys).size !== 6) {
+  failures.push('/ home harbor surfaces: all six theme combinations should keep distinct foreground material signatures')
+}
+
+const cardResponsePage = await browser.newPage({ viewport: viewports[0], colorScheme: 'dark' })
+await cardResponsePage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(cardResponsePage, '/')
+const responseCards = cardResponsePage.locator('.carousel-card')
+const visibleResponseCardIndex = await responseCards.evaluateAll((cards) => {
+  const viewport = document.querySelector('.carousel-viewport')?.getBoundingClientRect()
+  if (!viewport) return -1
+  return cards.findIndex((card) => {
+    const rect = card.getBoundingClientRect()
+    return (
+      rect.top >= viewport.top + 24 &&
+      rect.bottom <= viewport.bottom - 24 &&
+      rect.left >= viewport.left &&
+      rect.right <= viewport.right
+    )
+  })
+})
+const responseCard = responseCards.nth(Math.max(0, visibleResponseCardIndex))
+const cardSheenBefore = await responseCard.evaluate((card) => {
+  const style = getComputedStyle(card)
+  return {
+    opacity: Number.parseFloat(style.getPropertyValue('--flow-card-sheen-opacity')),
+    shift: style.getPropertyValue('--flow-card-sheen-shift').trim(),
+  }
+})
+const responseCardBox = await responseCard.boundingBox()
+if (responseCardBox) {
+  await cardResponsePage.mouse.move(
+    responseCardBox.x + responseCardBox.width * 0.5,
+    responseCardBox.y + responseCardBox.height * 0.5,
+  )
+}
+await cardResponsePage.waitForTimeout(180)
+const cardSheenAfter = await responseCard.evaluate((card) => {
+  const style = getComputedStyle(card)
+  return {
+    opacity: Number.parseFloat(style.getPropertyValue('--flow-card-sheen-opacity')),
+    shift: style.getPropertyValue('--flow-card-sheen-shift').trim(),
+  }
+})
+if (
+  !responseCardBox ||
+  cardSheenAfter.opacity <= cardSheenBefore.opacity ||
+  cardSheenAfter.shift === cardSheenBefore.shift
+) {
+  failures.push('/ home card response: desktop hover should strengthen and move the bounded specular sheen')
+}
+await cardResponsePage.close()
 
 const mobileHarborPage = await browser.newPage({ viewport: { width: 390, height: 844 }, colorScheme: 'dark' })
 await mobileHarborPage.addInitScript(() => {
@@ -892,13 +984,15 @@ await gotoApp(mobileHarborPage, '/')
 const mobileHarbor = await mobileHarborPage.evaluate(() => {
   const app = document.querySelector('.app.page-home')
   const environment = document.querySelector('.harbor-environment')
-  if (!(app instanceof HTMLElement) || !(environment instanceof HTMLElement)) return null
+  const card = document.querySelector('.carousel-card:not([data-loop-copy="true"])')
+  if (!(app instanceof HTMLElement) || !(environment instanceof HTMLElement) || !(card instanceof HTMLElement)) return null
   return {
     pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
     fieldDisplay: getComputedStyle(app, '::before').display,
     fieldAnimationName: getComputedStyle(app, '::before').animationName,
     environmentDisplay: getComputedStyle(environment).display,
     beamAnimationName: getComputedStyle(document.querySelector('.harbor-environment__beam')).animationName,
+    cardSheenOpacity: Number.parseFloat(getComputedStyle(card, '::after').opacity),
   }
 })
 if (
@@ -907,7 +1001,9 @@ if (
   mobileHarbor.fieldDisplay === 'none' ||
   mobileHarbor.fieldAnimationName !== 'muxingFluidField' ||
   mobileHarbor.environmentDisplay === 'none' ||
-  mobileHarbor.beamAnimationName !== 'harborDeepBeam'
+  mobileHarbor.beamAnimationName !== 'harborDeepBeam' ||
+  mobileHarbor.cardSheenOpacity <= 0 ||
+  mobileHarbor.cardSheenOpacity > 0.25
 ) {
   failures.push('/ home mobile harbor: expected bounded overflow and visible low-cost motion layers at 390px')
 }
@@ -923,25 +1019,42 @@ await reducedHarborPage.addInitScript(() => {
   window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
 })
 await gotoApp(reducedHarborPage, '/')
-const reducedAnimations = await reducedHarborPage.evaluate(() => {
+const reducedHarbor = await reducedHarborPage.evaluate(() => {
   const app = document.querySelector('.app.page-home')
   const gradient = document.querySelector('.gradient-bg')
   const environment = document.querySelector('.harbor-environment')
-  if (!(app instanceof HTMLElement) || !(gradient instanceof HTMLElement) || !(environment instanceof HTMLElement)) return []
-  return [
-    getComputedStyle(app).animationName,
-    getComputedStyle(app, '::before').animationName,
-    getComputedStyle(app, '::after').animationName,
-    getComputedStyle(gradient).animationName,
-    getComputedStyle(gradient, '::before').animationName,
-    getComputedStyle(gradient, '::after').animationName,
-    getComputedStyle(environment, '::before').animationName,
-    getComputedStyle(environment, '::after').animationName,
-    ...Array.from(environment.querySelectorAll('span'), (item) => getComputedStyle(item).animationName),
-  ]
+  const card = document.querySelector('.carousel-card:not([data-loop-copy="true"])')
+  if (
+    !(app instanceof HTMLElement) ||
+    !(gradient instanceof HTMLElement) ||
+    !(environment instanceof HTMLElement) ||
+    !(card instanceof HTMLElement)
+  ) return null
+  const sheenStyle = getComputedStyle(card, '::after')
+  return {
+    animations: [
+      getComputedStyle(app).animationName,
+      getComputedStyle(app, '::before').animationName,
+      getComputedStyle(app, '::after').animationName,
+      getComputedStyle(gradient).animationName,
+      getComputedStyle(gradient, '::before').animationName,
+      getComputedStyle(gradient, '::after').animationName,
+      getComputedStyle(environment, '::before').animationName,
+      getComputedStyle(environment, '::after').animationName,
+      ...Array.from(environment.querySelectorAll('span'), (item) => getComputedStyle(item).animationName),
+    ],
+    sheenTransitionDuration: sheenStyle.transitionDuration,
+    sheenTransform: sheenStyle.transform,
+  }
 })
-if (!reducedAnimations.length || reducedAnimations.some((name) => name !== 'none')) {
-  failures.push(`/ home reduced motion: expected a static harbor field, got ${reducedAnimations.join(', ')}`)
+if (
+  !reducedHarbor ||
+  reducedHarbor.animations.some((name) => name !== 'none') ||
+  reducedHarbor.sheenTransitionDuration !== '0s'
+) {
+  failures.push(
+    `/ home reduced motion: expected a static harbor field and card sheen, got ${reducedHarbor?.animations.join(', ') ?? 'missing'}`,
+  )
 }
 await reducedHarborPage.close()
 
