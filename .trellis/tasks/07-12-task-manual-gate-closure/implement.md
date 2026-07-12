@@ -5,8 +5,8 @@
 - [x] Remove stale or completed actions from the recommended human queue while preserving low-sensitive completion evidence.
 - [x] Set Trellis `session_auto_commit: false` while keeping `.trellis/workspace/` local-only.
 - [x] Run `npm.cmd run docs:manual-gates-check`, relevant documentation checks, and `git diff --check`.
-- [ ] Commit and push the ledger/configuration closure.
-- [ ] Archive the three completed tasks and the completed 24/24 production-acceptance coordination task.
+- [x] Commit and push the ledger/configuration closure.
+- [x] Archive the three completed tasks and the completed 24/24 production-acceptance coordination task.
 - [ ] Archive this closure task, record the session locally, and push archive commits.
 
 ## Risk Controls
