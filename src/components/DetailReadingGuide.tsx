@@ -27,6 +27,8 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
   const rootRef = useRef<HTMLElement | null>(null)
   const toggleRef = useRef<HTMLButtonElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
+  const [isAutoHidden, setIsAutoHidden] = useState(false)
+  const lastScrollYRef = useRef(0)
   const [activeId, setActiveId] = useState(items[0]?.id ?? '')
   const [progress, setProgress] = useState(0)
   const activeItem = useMemo(() => items.find((item) => item.id === activeId) ?? items[0], [activeId, items])
@@ -54,7 +56,18 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
       frame = 0
       const documentHeight = document.documentElement.scrollHeight
       const maxScroll = Math.max(documentHeight - window.innerHeight, 0)
-      setProgress(clampProgress(maxScroll === 0 ? 100 : (window.scrollY / maxScroll) * 100))
+      const currentScrollY = window.scrollY
+      const scrollDelta = currentScrollY - lastScrollYRef.current
+      setProgress(clampProgress(maxScroll === 0 ? 100 : (currentScrollY / maxScroll) * 100))
+
+      if (window.innerWidth > 720 || currentScrollY <= 120 || isOpen) {
+        setIsAutoHidden(false)
+      } else if (scrollDelta >= 10) {
+        setIsAutoHidden(true)
+      } else if (scrollDelta <= -10) {
+        setIsAutoHidden(false)
+      }
+      lastScrollYRef.current = currentScrollY
 
       const readingAnchor = Math.min(240, Math.max(120, window.innerHeight * 0.28))
       let nextActiveId = items[0]?.id ?? ''
@@ -81,7 +94,7 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
       window.removeEventListener('resize', scheduleMeasure)
       if (frame !== 0) window.cancelAnimationFrame(frame)
     }
-  }, [items])
+  }, [isOpen, items])
 
   useEffect(() => {
     if (!isOpen) return
@@ -132,7 +145,7 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
   return (
     <aside
       ref={rootRef}
-      className={`detail-reading-guide ${isOpen ? 'is-open' : ''}`}
+      className={`detail-reading-guide ${isOpen ? 'is-open' : ''} ${isAutoHidden ? 'is-auto-hidden' : ''}`}
       aria-label={label}
       data-active-section={activeItem?.id ?? ''}
     >
@@ -144,6 +157,7 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
           aria-expanded={isOpen}
           aria-controls="detail-reading-outline"
           onClick={() => {
+            setIsAutoHidden(false)
             if (!isOpen) announceMobileSurfaceOpen('detail-reading-guide')
             setIsOpen(!isOpen)
           }}

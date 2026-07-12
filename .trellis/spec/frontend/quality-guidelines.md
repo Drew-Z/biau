@@ -713,3 +713,8 @@ Run `npm.cmd run performance-profile:check` after changing signal resolution, am
 On coarse-pointer mobile layouts, navigable home, project, and blog cards must keep `touch-action: pan-y` and use short press confirmation rather than custom swipe handling. Whole-card entry, visible focus, Enter/Space activation, and nested action isolation must remain consistent; nested buttons or links stop propagation so one gesture causes exactly one navigation.
 
 UI checks must use real `isMobile + hasTouch` contexts at 320px, 390px, and 430px. Assert vertical panning, bounded layout, feedback latency no greater than 100ms, whole-card article navigation, nested-button single navigation, and desktop keyboard access. Reduced-motion removes press transforms without removing the navigation affordance.
+### Mobile Reading Guide Auto-Reveal Regression
+
+Detail reading guides remain top-sticky because the global mobile tabbar and public assistant already own the bottom edge. At widths up to 720px, a collapsed guide may auto-hide after a deliberate downward delta and must immediately return on upward movement or near the page top. Open or keyboard-focused guides never auto-hide; desktop guides stay visible.
+
+Reuse the guide's existing requestAnimationFrame scroll measurement instead of adding another scroll listener. Direction tests must cover blog, project, and reliability detail routes at 320px, 390px reduced-motion, and 430px, plus desktop inverse behavior. Verify the hidden shell reaches `pointer-events: none`, leaves no transparent hit layer or horizontal overflow, open outlines remain visible while scrolling, and anchor navigation can reveal and reopen the guide.

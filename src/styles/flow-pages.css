@@ -7278,6 +7278,17 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     top: var(--space-8);
   }
 
+  .detail-reading-guide__shell {
+    transition:
+      transform 0.2s var(--ease-out-expo),
+      opacity 0.16s var(--ease-smooth);
+  }
+
+  .detail-reading-guide.is-auto-hidden:not(.is-open):not(:focus-within) .detail-reading-guide__shell {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(calc(-100% - var(--space-12, 12px)));
+  }
   .detail-reading-guide__toggle {
     min-height: 50px;
     padding-inline: var(--space-10, 10px);
@@ -7305,6 +7316,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .detail-reading-guide__shell,
   .detail-reading-guide__chevron,
   .detail-reading-guide__progress span,
   .app.page-detail .public-assistant:not(.is-open) {

@@ -2894,7 +2894,7 @@ if (projectDetailSpaMarkerAfter !== projectDetailSpaMarker) {
 }
 await projectDetailInternalLinkPage.close()
 
-const readingGuideRoutes = ['/blog/legal-rag-review', '/projects/legal-rag']
+const readingGuideRoutes = ['/blog/legal-rag-review', '/projects/legal-rag', '/status/legal-rag']
 const readingGuideViewports = [
   { name: 'desktop', width: 1440, height: 1000 },
   { name: 'mobile-320', width: 320, height: 900 },
@@ -2958,6 +2958,51 @@ for (const viewport of readingGuideViewports) {
       failures.push(`${path} ${viewport.name}: reading guide should stay inside the viewport without page overflow`)
     }
 
+    if (viewport.width <= 720) {
+      await readingPage.evaluate(() => {
+        document.documentElement.style.scrollBehavior = 'auto'
+        window.scrollTo(0, Math.min(640, document.documentElement.scrollHeight - window.innerHeight - 160))
+      })
+      await readingPage
+        .waitForFunction(() => {
+          const guide = document.querySelector('.detail-reading-guide')
+          const shell = guide?.querySelector('.detail-reading-guide__shell')
+          return Boolean(
+            guide?.classList.contains('is-auto-hidden') &&
+              shell &&
+              Number.parseFloat(getComputedStyle(shell).opacity) <= 0.05,
+          )
+        })
+        .catch(() => failures.push(`${path} ${viewport.name}: downward reading should hide the collapsed guide`))
+      const hiddenGuideState = await guide.evaluate((element) => {
+        const shell = element.querySelector('.detail-reading-guide__shell')
+        const style = shell ? getComputedStyle(shell) : null
+        return {
+          pointerEvents: style?.pointerEvents,
+          opacity: Number.parseFloat(style?.opacity ?? '1'),
+          horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+        }
+      })
+      if (
+        hiddenGuideState.pointerEvents !== 'none' ||
+        hiddenGuideState.opacity > 0.05 ||
+        hiddenGuideState.horizontalOverflow
+      ) {
+        failures.push(`${path} ${viewport.name}: hidden guide should not leave an interactive transparent layer`)
+      }
+
+      await readingPage.evaluate(() => window.scrollBy(0, -120))
+      await readingPage
+        .waitForFunction(() => !document.querySelector('.detail-reading-guide')?.classList.contains('is-auto-hidden'))
+        .catch(() => failures.push(`${path} ${viewport.name}: upward reading should reveal the guide`))
+      await readingPage.evaluate(() => window.scrollTo(0, 0))
+    } else {
+      await readingPage.evaluate(() => window.scrollTo(0, 640))
+      if (await guide.evaluate((element) => element.classList.contains('is-auto-hidden'))) {
+        failures.push(`${path} ${viewport.name}: desktop reading guide should never auto-hide`)
+      }
+      await readingPage.evaluate(() => window.scrollTo(0, 0))
+    }
     await toggle.click()
     await readingPage
       .waitForFunction(() => {
@@ -2989,6 +3034,13 @@ for (const viewport of readingGuideViewports) {
       failures.push(`${path} ${viewport.name}: open reading outline should remain fully operable inside the viewport`)
     }
 
+    if (viewport.width <= 720) {
+      await readingPage.evaluate(() => window.scrollBy(0, 180))
+      await readingPage.waitForTimeout(80)
+      if (await guide.evaluate((element) => element.classList.contains('is-auto-hidden'))) {
+        failures.push(`${path} ${viewport.name}: an open reading outline should not auto-hide`)
+      }
+    }
     await readingPage.keyboard.press('Escape')
     if ((await toggle.getAttribute('aria-expanded')) !== 'false' || !(await toggle.evaluate((element) => element === document.activeElement))) {
       failures.push(`${path} ${viewport.name}: Escape should close the outline and restore toggle focus`)
@@ -3013,7 +3065,12 @@ for (const viewport of readingGuideViewports) {
       failures.push(`${path} ${viewport.name}: outline navigation should scroll forward and close the panel`)
     }
 
-    await toggle.click()
+    if (viewport.width <= 720) {
+      await readingPage.evaluate(() => window.scrollBy(0, -120))
+      await readingPage
+        .waitForFunction(() => !document.querySelector('.detail-reading-guide')?.classList.contains('is-auto-hidden'))
+        .catch(() => failures.push(`${path} ${viewport.name}: guide should return before reopening after anchor navigation`))
+    }    await toggle.click()
     await readingPage.mouse.click(2, 2)
     if ((await toggle.getAttribute('aria-expanded')) !== 'false') {
       failures.push(`${path} ${viewport.name}: outside pointer interaction should close the outline`)
