@@ -708,3 +708,8 @@ Mobile visual performance uses the root `data-performance="balanced|static"` con
 The `static` profile may stop perpetual background, ribbon, field, grain, and harbor-environment work and reduce backdrop blur. It must not remove content, navigation, title transitions, reading controls, or the one-shot BIAU harbor intro. `prefers-reduced-motion` keeps its stronger existing intro opt-out.
 
 Run `npm.cmd run performance-profile:check` after changing signal resolution, ambient layers, the harbor intro, or mobile viewport behavior. The focused check must cover pure rule decisions, runtime connection changes, 320/390/430px static rendering, horizontal overflow, retained low-power intro, Save-Data, and reduced-motion.
+### Mobile Navigable Card Regression
+
+On coarse-pointer mobile layouts, navigable home, project, and blog cards must keep `touch-action: pan-y` and use short press confirmation rather than custom swipe handling. Whole-card entry, visible focus, Enter/Space activation, and nested action isolation must remain consistent; nested buttons or links stop propagation so one gesture causes exactly one navigation.
+
+UI checks must use real `isMobile + hasTouch` contexts at 320px, 390px, and 430px. Assert vertical panning, bounded layout, feedback latency no greater than 100ms, whole-card article navigation, nested-button single navigation, and desktop keyboard access. Reduced-motion removes press transforms without removing the navigation affordance.

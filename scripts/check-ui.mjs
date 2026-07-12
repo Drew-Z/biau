@@ -2423,6 +2423,93 @@ if (!actionKeyboardResult.openedUrls.some((url) => url === 'https://legal-rag-we
 }
 await homeCarouselActionKeyboardPage.close()
 
+const blogCardKeyboardPage = await browser.newPage({ viewport: viewports[0] })
+await gotoApp(blogCardKeyboardPage, '/blog')
+const firstKeyboardBlogCard = blogCardKeyboardPage.locator('.blog-card[role="link"]').first()
+await firstKeyboardBlogCard.focus()
+await blogCardKeyboardPage.keyboard.press('Enter')
+await blogCardKeyboardPage.waitForURL(/\/blog\/[^/]+$/, { timeout: 5000 }).catch(() => {
+  failures.push('/blog keyboard: Enter on a focused blog card should navigate to the article')
+})
+await blogCardKeyboardPage.close()
+
+for (const width of [320, 390, 430]) {
+  const touchContext = await browser.newContext({
+    viewport: { width, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+    reducedMotion: 'no-preference',
+  })
+  const touchPage = await touchContext.newPage()
+  await touchPage.addInitScript(() => {
+    window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    window.__uiCheckPushStateCount = 0
+    const originalPushState = window.history.pushState.bind(window.history)
+    window.history.pushState = (...args) => {
+      window.__uiCheckPushStateCount += 1
+      return originalPushState(...args)
+    }
+  })
+
+  await gotoApp(touchPage, '/')
+  const homeCardTouchAction = await touchPage
+    .locator('.carousel-card:not([data-loop-copy="true"])')
+    .first()
+    .evaluate((card) => getComputedStyle(card).touchAction)
+  if (homeCardTouchAction !== 'pan-y') {
+    failures.push(`/ mobile card feedback ${width}px: home card should preserve vertical panning`)
+  }
+
+  await gotoApp(touchPage, '/projects')
+  const projectCardState = await touchPage.locator('.project-card').first().evaluate((card) => ({
+    touchAction: getComputedStyle(card).touchAction,
+    horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+  }))
+  if (projectCardState.touchAction !== 'pan-y' || projectCardState.horizontalOverflow) {
+    failures.push(`/ mobile card feedback ${width}px: project cards should be touch-safe and bounded`)
+  }
+
+  await gotoApp(touchPage, '/blog')
+  const firstBlogCard = touchPage.locator('.blog-card[role="link"]').first()
+  const blogCardState = await firstBlogCard.evaluate((card) => ({
+    touchAction: getComputedStyle(card).touchAction,
+    minTransitionMs: getComputedStyle(card)
+      .transitionDuration.split(',')
+      .map((duration) => Number.parseFloat(duration) * (duration.includes('ms') ? 1 : 1000))
+      .filter(Number.isFinite)
+      .reduce((minimum, duration) => Math.min(minimum, duration), Number.POSITIVE_INFINITY),
+    horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+  }))
+  if (blogCardState.touchAction !== 'pan-y' || blogCardState.horizontalOverflow) {
+    failures.push(`/ mobile card feedback ${width}px: blog cards should be touch-safe and bounded`)
+  }
+  if (!Number.isFinite(blogCardState.minTransitionMs) || blogCardState.minTransitionMs > 100) {
+    failures.push(`/ mobile card feedback ${width}px: press feedback should respond within 100ms`)
+  }
+
+  const pushesBeforeButton = await touchPage.evaluate(() => window.__uiCheckPushStateCount ?? 0)
+  await firstBlogCard.locator('button').click()
+  await touchPage.waitForURL(/\/blog\/[^/]+$/, { timeout: 5000 }).catch(() => {
+    failures.push(`/ mobile card feedback ${width}px: blog button should navigate to the article`)
+  })
+  const pushesAfterButton = await touchPage.evaluate(() => window.__uiCheckPushStateCount ?? 0)
+  if (pushesAfterButton - pushesBeforeButton !== 1) {
+    failures.push(`/ mobile card feedback ${width}px: nested blog button should trigger exactly one navigation`)
+  }
+
+  await gotoApp(touchPage, '/blog')
+  const pushesBeforeCard = await touchPage.evaluate(() => window.__uiCheckPushStateCount ?? 0)
+  await touchPage.locator('.blog-card[role="link"]').first().locator('.blog-title').click()
+  await touchPage.waitForURL(/\/blog\/[^/]+$/, { timeout: 5000 }).catch(() => {
+    failures.push(`/ mobile card feedback ${width}px: tapping blog card content should navigate to the article`)
+  })
+  const pushesAfterCard = await touchPage.evaluate(() => window.__uiCheckPushStateCount ?? 0)
+  if (pushesAfterCard - pushesBeforeCard !== 1) {
+    failures.push(`/ mobile card feedback ${width}px: blog card content should trigger exactly one navigation`)
+  }
+
+  await touchContext.close()
+}
 const keyboardPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(keyboardPage, '/projects')
 for (let index = 0; index < 20; index += 1) {
