@@ -116,53 +116,40 @@
 - BIAU Port 内部助手长期记忆：生产成员 API 已确认 `AgentMemory` migration 生效；使用真实成员完成了明确同意保存、重复去重、归档和恢复验收，最终记录保持 `ACTIVE`。剩余人工项仅为重启 internal service 后确认同一成员仍能读取该记忆；不记录 token、成员信息或记忆正文。
 - BIAU Port 内部助手管理台：`/assistant/admin` 已提供“刷新全部状态”，会统一刷新摘要、成员、邀请、内部知识、RAG 状态和用量；知识页已提供 sourceType 预设和 internal RAG readiness 路径；`check:ui` 已守护无 token 时按钮可见且禁用、token 只保存在当前浏览器的提示仍可见。
 - BIAU Port Studio：`/studio` 第一屏已显示待审核队列摘要、下一篇待审核和“打开下一篇待审核”动作；`check:ui` 已守护无 token / 无草稿首屏仍能看见审核入口，真实审核和导出仍是人工 gate。
-- BIAU Port 全链路本地验证：`npm.cmd run verify` 已通过；覆盖 assistant index、知识图谱检查、离线 RAG eval、内部 Agent contract/eval、本地 RAG sync plan、meta/admin 检查、Prisma validate、server smoke、服务模式 smoke、RAG smoke、Cloudflare function smoke、build、博客质量、部署/manual-gates/observability 文档、analytics、Studio smoke、项目详情、status contract 和 UI check；本轮没有 live model calls。
+- BIAU Port 全链路本地验证：`npm.cmd run verify` 已通过；覆盖 assistant index、知识图谱检查、离线 RAG eval、内部 Agent contract/eval、本地 RAG sync plan、meta/admin 检查、Prisma validate、server smoke、服务模式 smoke、RAG smoke、Cloudflare function smoke、build、博客质量、部署/manual-gates/observability 文档、analytics、Studio smoke、项目详情、status contract 和 UI check；本轮没有 live model calls。`r`n`r`n## 当前人工队列摘要
 
-## 当前人工队列摘要
+以下是唯一的当前人工队列。已经完成的迁移、基础连接、保存/去重/归档/恢复验收不再列为待办；每一步只记录低敏结果，不记录 token、密码、连接串、模型地址、成员信息或私有内容。
 
-- Studio 生产连接已刷新成功；下一步是人工审核 hidden/review-needed 草稿，创建 Publish Export 后再审查公开内容 diff。
-- 内部助手管理台已具备“刷新全部状态”；醒来后可先复核成员列表和成员模型渠道是否符合预期，不需要把 admin token、member token、模型 key 或 base URL 发到聊天里。
-- 内部助手长期记忆的 migration、保存、重复去重、归档和恢复已经通过生产验收；只剩 Render 重启后的持久化复核。
-- Legal RAG 仍需低权限、可回收 demo 凭据和 credentialed synthetic 环境变量，用来验收法律问答、合同审查和质量面板。
-- ERP 注册入口已在线可达；插件与商品同步仍需要脱敏 fixture 或低权限演示店铺再做 credentialed smoke。
-- Xunqiu 后端 synthetic 仍需后端公开 base URL；APK 公开发布仍需正式 release 审批。
-- Pet 展示页在线；APK 公开下载仍需正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准。
-- 决定 Plausible 或 Umami 的访问分析方案，并避免两个同时接入同一站点；代码侧 adapter 和 `route_view` 低敏 guard 已准备好，但生产 provider 脚本、site id 和平台配置仍需人工处理。
-- 决定 Prometheus/Grafana/ARMS/Sentry/Langfuse 等平台的接入时机。
-- 如后续更换机器或 SSH trust root 异常，再核验 GitHub SSH host key；当前主仓 `main` 推送已恢复正常。
+1. 内部助手生产复核
+   - 打开 `/assistant/admin`，在当前浏览器保存 admin token 后点击“刷新全部状态”。
+   - 在“成员”页签确认成员状态和模型渠道符合预期。
+   - 在 Render 手动重启 `biau-internal-assistant-api`；健康状态恢复后，用原成员打开 `/assistant`，确认已有 ACTIVE 长期记忆仍然存在。
+   - 成功标准：成员渠道只显示低敏 channel id/label、provider、model、configured / active；长期记忆跨重启仍可读取。
 
-## 醒来后推荐处理顺序
+2. Studio 首次公开导出
+   - 打开 `/studio`，选择第一篇 `hidden + review-needed` 草稿，检查正文、来源、可见性和公开预览。
+   - 内容不合格时先修改草稿；通过后才创建 Publish Export。
+   - 成功标准：生成一条低敏 export 记录，并在本地或 CI 执行 `studio:export -- --run-checks` 后审查 Git diff。
 
-这部分用于把长表压缩成可执行队列。每一步只记录低敏成功标准，不需要把真实 token、账号、密码、连接串、模型地址或签名材料发到聊天或写进仓库。
-
-1. 内部助手管理台快速复核
-   - `AgentMemory` migration、保存、重复去重、归档和恢复已经通过；无需重新迁移或重复创建测试记忆。
-   - 打开 `/assistant/admin`，保存 `ADMIN_TOKEN` 后点击“刷新全部状态”。
-   - 在“成员”页签确认成员列表、成员状态和模型渠道符合预期；如果刚新增成员或改过渠道，先点“刷新全部状态”，再点“刷新成员”定向复核。
-   - 只需在 Render 手动重启 `biau-internal-assistant-api`，待 `/health` 恢复后刷新 `/assistant` 的长期记忆列表，确认已有 ACTIVE 记忆仍存在。
-   - 成功标准：成员行只显示低敏 channel id/label、provider、model、configured / active，不显示 key、base URL、token hash、请求头或模型响应。
-
-2. Studio 草稿审核
-   - 打开 `/studio`，查看第一屏“下一篇待审核”；如果有内容，点击“打开下一篇待审核”，再确认当前 `hidden / review-needed` 草稿内容是否可公开。
-   - 如果内容通过，再创建 Publish Export；如果内容不通过，先在 Studio 修改草稿，不直接导出。
-   - 成功标准：有一条低敏 export 记录，后续由本地或 CI 做静态导出和 Git diff 审查。
-
-3. Legal RAG 演示凭据
+3. Legal RAG 演示验收
    - 准备低权限、可回收 demo 账号，只允许访问公开安全数据集。
-   - 把凭据放入本机或平台环境变量，再运行 credentialed synthetic；不要把凭据写入文章、项目页、状态页或聊天。
-   - 成功标准：法律问答、合同审查、质量面板可以从 `planned / unchecked` 更新为有低敏证据的状态。
+   - 在本机或 CI 环境变量中配置凭据后运行 credentialed synthetic。
+   - 成功标准：法律问答、合同审查和质量面板具有可复跑的低敏证据，不在仓库或聊天中记录凭据。
 
-4. ERP 演示账号和同步 fixture
-   - 生产注册已确认开放，但登录 smoke 仍建议用专门低权限 demo 账号。
-   - 插件与商品同步检查需要脱敏 fixture 或演示店铺，不能使用真实店铺凭据。
-   - 成功标准：注册/登录策略、默认角色、插件同步路径都有可复跑 smoke 证据。
+4. ERP 演示验收
+   - 使用专门的低权限 demo 账号复核注册、登录和默认角色。
+   - 为插件与商品同步准备脱敏 fixture 或演示店铺，禁止使用真实店铺凭据。
+   - 成功标准：注册/登录策略、默认角色和同步路径具有可复跑 smoke 证据。
 
-5. Xunqiu 和 Pet 发布门禁
-   - Xunqiu 先配置后端公开 base URL 再跑后端 health / 兼容 API synthetic。
-   - Pet 和 Xunqiu 的 APK 公开下载都必须等正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准。
+5. Xunqiu 与 Pet 发布门禁
+   - 为 Xunqiu 配置公开后端 base URL 后运行 health / 兼容 API synthetic。
+   - Pet 与 Xunqiu 只有在正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准齐全后才能公开 APK。
    - 成功标准：状态页只公开批准后的 release 摘要，不公开 debug 包或未经批准的下载链接。
 
 6. 访问分析与工程观测
-   - 先完成 Cloudflare Analytics 和 Search Console 的低敏配置确认。
-   - Umami / Plausible 二选一后再接入站点 analytics adapter；不要同时接两套访客统计。当前代码侧已准备好默认关闭的 adapter 和 `route_view` 低敏 guard，人工只需要处理 provider 选择、平台脚本注入和公开配置。
-   - Prometheus / Grafana / ARMS / Sentry / Langfuse 等需要另行确认采样、脱敏、保留策略和平台成本。
+   - 先确认 Cloudflare Analytics 与 Search Console 的站点配置。
+   - Umami / Plausible 二选一后再启用现有 analytics adapter，不同时接入两套访客统计。
+   - Prometheus、Grafana、ARMS、Sentry、Langfuse 等需先确定采样、脱敏、保留周期、告警渠道和成本。
+   - 成功标准：生产只启用经过明确选择的工具，公开事件不包含完整 URL、query、hash、动态 ID 或敏感业务内容。
+
+如后续更换机器、SSH trust root 异常、远端拒绝推送或权限变化，再重新进入 GitHub 人工 gate；当前主仓 `main` 推送正常，不属于当前待办。
