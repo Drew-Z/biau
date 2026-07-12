@@ -701,3 +701,10 @@ and next-action counts at desktop plus 320px, 390px, and 430px. `/status` keeps
 `StatusSectionNavigator`; missing `/status/:projectId` routes render no reading
 guide. Use condition-based waits for geometry and React state, and force test
 scrolling to `scroll-behavior: auto` when a check needs deterministic placement.
+### Adaptive Performance Profile Regression
+
+Mobile visual performance uses the root `data-performance="balanced|static"` contract. Resolve the profile from reduced-motion, Save-Data, constrained network, and combined low-memory/low-CPU mobile signals; missing signals must remain `balanced`. Apply the initial value before React renders, subscribe to media/network changes with cleanup, and do not persist or expose device diagnostics.
+
+The `static` profile may stop perpetual background, ribbon, field, grain, and harbor-environment work and reduce backdrop blur. It must not remove content, navigation, title transitions, reading controls, or the one-shot BIAU harbor intro. `prefers-reduced-motion` keeps its stronger existing intro opt-out.
+
+Run `npm.cmd run performance-profile:check` after changing signal resolution, ambient layers, the harbor intro, or mobile viewport behavior. The focused check must cover pure rule decisions, runtime connection changes, 320/390/430px static rendering, horizontal overflow, retained low-power intro, Save-Data, and reduced-motion.

@@ -7311,6 +7311,54 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     transition: none;
   }
 }
+/* Adaptive static profile keeps the harbor palette while removing perpetual compositor work. */
+:root[data-performance='static'] .app.page-home,
+:root[data-performance='static'] .app.page-tools,
+:root[data-performance='static'] .app.page-subpage {
+  --flow-backdrop-blur: 6px;
+  --flow-field-opacity: 0.34;
+  --flow-ribbon-opacity: 0.1;
+  --flow-field-blend: normal;
+  --flow-ribbon-blend: normal;
+  --harbor-beam-opacity: 0.055;
+  --harbor-spectrum-opacity: 0.08;
+  --harbor-spectrum-blend: normal;
+  --harbor-mist-opacity: 0.08;
+  --harbor-mist-blend: normal;
+}
+
+:root[data-performance='static'] .app.page-home::before,
+:root[data-performance='static'] .app.page-tools::before,
+:root[data-performance='static'] .app.page-subpage::before,
+:root[data-performance='static'] .app.page-home::after,
+:root[data-performance='static'] .app.page-tools::after,
+:root[data-performance='static'] .app.page-subpage::after,
+:root[data-performance='static'] .app.page-home .gradient-bg,
+:root[data-performance='static'] .app.page-tools .gradient-bg,
+:root[data-performance='static'] .app.page-subpage .gradient-bg,
+:root[data-performance='static'] .app.page-home .gradient-bg::before,
+:root[data-performance='static'] .app.page-tools .gradient-bg::before,
+:root[data-performance='static'] .app.page-subpage .gradient-bg::before,
+:root[data-performance='static'] .app.page-home .gradient-bg::after,
+:root[data-performance='static'] .app.page-tools .gradient-bg::after,
+:root[data-performance='static'] .app.page-subpage .gradient-bg::after,
+:root[data-performance='static'] .app.page-home .carousel-wrapper::before,
+:root[data-performance='static'] .harbor-environment::before,
+:root[data-performance='static'] .harbor-environment::after,
+:root[data-performance='static'] .harbor-environment > span {
+  animation: none !important;
+  will-change: auto;
+}
+
+:root[data-performance='static'] .app.page-home .gradient-bg,
+:root[data-performance='static'] .app.page-tools .gradient-bg,
+:root[data-performance='static'] .app.page-subpage .gradient-bg {
+  background-position: 50% 50%;
+}
+
+:root[data-performance='static'] .muxing-flow-grain {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .app.page-home,
   .app.page-tools,

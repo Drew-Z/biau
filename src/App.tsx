@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/site-footer.css'
 import { useTheme } from './hooks/useTheme'
+import { usePerformanceProfile } from './hooks/usePerformanceProfile'
 import { Navigation } from './components/Navigation'
 import { SeoManager } from './components/SeoManager'
 import { HarborIntro } from './components/HarborIntro'
@@ -61,6 +62,7 @@ function getPageClass(pathname: string) {
 }
 
 function App() {
+  usePerformanceProfile()
   const [language, setLanguage] = useState<SiteLanguage>('zh')
   const [harborScene, setHarborScene] = useState<HarborScene>(readHarborScene)
   const { mode: themeMode, cycleMode: cycleThemeMode } = useTheme()
