@@ -1,0 +1,6 @@
+import { FlowRenderer } from './FlowRenderer'
+import type { FlowPalette } from './flowPalettes'
+type Message={type:'init';canvas:OffscreenCanvas;width:number;height:number;dpr:number;palette:FlowPalette;reducedMotion:boolean}|{type:'resize';width:number;height:number;dpr:number}|{type:'palette';palette:FlowPalette}|{type:'running';running:boolean}
+let renderer:FlowRenderer|undefined,palette:FlowPalette,running=false,reduced=false,timer:ReturnType<typeof setTimeout>|undefined,start=performance.now()
+function frame(){if(!renderer||!palette)return;renderer.draw((performance.now()-start)/1000,palette);self.postMessage({type:'frame'});if(running&&!reduced)timer=setTimeout(frame,1000/30)}
+self.onmessage=({data}:MessageEvent<Message>)=>{try{if(data.type==='init'){renderer=new FlowRenderer(data.canvas);palette=data.palette;reduced=data.reducedMotion;renderer.resize(data.width,data.height,data.dpr);running=!reduced;frame()}else if(data.type==='resize'){renderer?.resize(data.width,data.height,data.dpr);frame()}else if(data.type==='palette'){palette=data.palette;frame()}else{running=data.running&&!reduced;if(timer)clearTimeout(timer);if(running){start=performance.now();frame()}}}catch(error){self.postMessage({type:'error',message:error instanceof Error?error.message:'Flow worker failed'})}}

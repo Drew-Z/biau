@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useTheme } from '../hooks/useTheme'
 import { Navigation } from './Navigation'
+import { FlowBackground } from './FlowBackground'
 
 export type SiteLanguage = 'zh' | 'en'
 type HarborScene = 'dusk' | 'garden' | 'stellar'
@@ -31,7 +32,7 @@ export function Layout() {
 
   return (
     <div className="app">
-      <div className="gradient-bg" />
+      <FlowBackground scene={harborScene} />
 
       <Navigation
         language={language}

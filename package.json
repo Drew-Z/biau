@@ -26,7 +26,6 @@
     "prisma:migrate:studio": "node scripts/migrate-studio-database.mjs",
     "build": "tsc -b && vite build",
     "performance:check": "node scripts/check-build-performance.mjs",
-    "performance-profile:check": "tsx scripts/check-performance-profile.ts",
     "trellis:archive-check": "python ./scripts/check-trellis-archive-tracking.py",
     "lint": "eslint .",
     "blog:plan": "node scripts/generate-blog-draft.mjs --list",

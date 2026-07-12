@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
-import { applyPerformanceProfile } from './utils/performanceProfile'
 
 function applyInitialThemeAndScene() {
   const root = document.documentElement
@@ -28,7 +27,6 @@ function applyInitialThemeAndScene() {
 }
 
 applyInitialThemeAndScene()
-applyPerformanceProfile()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
