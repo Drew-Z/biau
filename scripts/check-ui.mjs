@@ -347,6 +347,85 @@ async function checkStudioWorkspaceModes(browser, failures) {
   }
   await desktop.close()
 }
+async function checkAssistantAdminSections(browser, failures) {
+  const sections = ['overview', 'invites', 'members', 'knowledge', 'usage', 'safety']
+  const mobileWidths = [320, 390, 430]
+
+  for (const width of mobileWidths) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    await gotoApp(page, '/assistant/admin')
+    const tabs = page.getByRole('tablist', { name: '内部助手管理分区' })
+    const picker = page.locator('.assistant-admin-section-picker')
+    const select = picker.locator('select')
+
+    if (await tabs.isVisible().catch(() => false)) {
+      failures.push(`mobile-${width} /assistant/admin: desktop tabs should stay hidden`)
+    }
+    if (!(await picker.isVisible().catch(() => false))) {
+      failures.push(`mobile-${width} /assistant/admin: expected visible section selector`)
+      await page.close()
+      continue
+    }
+
+    const selectBox = await select.boundingBox()
+    const optionValues = await select.locator('option').evaluateAll((options) => options.map((option) => option.value))
+    if (!selectBox || selectBox.height < 44 || JSON.stringify(optionValues) !== JSON.stringify(sections)) {
+      failures.push(`mobile-${width} /assistant/admin: section selector must expose six complete options and a 44px target`)
+    }
+
+    const tokenInput = page.getByLabel('Admin token')
+    const stateValue = `mobile-admin-state-${width}`
+    await tokenInput.fill(stateValue)
+
+    for (const section of sections) {
+      await select.selectOption(section)
+      const visiblePanels = page.locator('.assistant-admin-grid:visible')
+      const selectedPanelVisible = await page.locator(`#assistant-admin-panel-${section}`).isVisible().catch(() => false)
+      if ((await visiblePanels.count()) !== 1 || !selectedPanelVisible) {
+        failures.push(`mobile-${width} /assistant/admin: ${section} should be the only visible panel`)
+      }
+    }
+
+    await select.selectOption('overview')
+    if ((await tokenInput.inputValue()) !== stateValue) {
+      failures.push(`mobile-${width} /assistant/admin: switching sections lost local form state`)
+    }
+
+    const pageMetrics = await page.evaluate(() => ({
+      height: document.documentElement.scrollHeight,
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      heroBottom: document.querySelector('.assistant-admin-hero')?.getBoundingClientRect().bottom ?? 0,
+      pickerTop: document.querySelector('.assistant-admin-section-picker')?.getBoundingClientRect().top ?? 0,
+      panelTop: document.querySelector('#assistant-admin-panel-overview')?.getBoundingClientRect().top ?? 0,
+    }))
+    if (pageMetrics.height >= 3000) {
+      failures.push(`mobile-${width} /assistant/admin: focused overview is still unexpectedly tall at ${pageMetrics.height}px`)
+    }
+    if (pageMetrics.overflow) {
+      failures.push(`mobile-${width} /assistant/admin: section selector caused horizontal overflow`)
+    }
+    if (!(pageMetrics.heroBottom <= pageMetrics.pickerTop && pageMetrics.pickerTop < pageMetrics.panelTop)) {
+      failures.push(`mobile-${width} /assistant/admin: expected hero, selector, then active panel order`)
+    }
+    await page.close()
+  }
+
+  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  await gotoApp(desktop, '/assistant/admin')
+  const desktopTabs = desktop.getByRole('tablist', { name: '内部助手管理分区' })
+  const desktopPickerVisible = await desktop.locator('.assistant-admin-section-picker').isVisible().catch(() => false)
+  if (!(await desktopTabs.isVisible()) || desktopPickerVisible) {
+    failures.push('desktop /assistant/admin: expected desktop tabs and hidden mobile selector')
+  }
+  for (const section of sections) {
+    await desktop.locator(`#assistant-admin-tab-${section}`).click()
+    const visiblePanels = desktop.locator('.assistant-admin-grid:visible')
+    if ((await visiblePanels.count()) !== 1 || !(await desktop.locator(`#assistant-admin-panel-${section}`).isVisible())) {
+      failures.push(`desktop /assistant/admin: ${section} should be the only visible panel`)
+    }
+  }
+  await desktop.close()
+}
 const failures = []
 const browser = await chromium.launch({ headless: true })
 
@@ -446,7 +525,11 @@ for (const viewport of viewports) {
         failures.push(`${viewport.name} ${route.path}: expected local-only admin token boundary text`)
       }
 
-      await page.getByRole('tab', { name: '知识' }).click()
+      if (viewport.name === 'desktop') {
+        await page.getByRole('tab', { name: '知识' }).click()
+      } else {
+        await page.locator('.assistant-admin-section-picker select').selectOption('knowledge')
+      }
       const knowledgeReadinessVisible = await page.getByLabel('内部知识同步路径').isVisible().catch(() => false)
       const sourceTypeSelectVisible = await page
         .locator('#assistant-admin-panel-knowledge label')
@@ -571,6 +654,7 @@ for (const viewport of viewports) {
 }
 
 await checkStudioWorkspaceModes(browser, failures)
+await checkAssistantAdminSections(browser, failures)
 
 const statusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(statusPage, '/status')

@@ -1020,6 +1020,7 @@ export function AssistantAdminPage() {
           {adminTabs.map((tab) => (
             <button
               key={tab.id}
+              id={`assistant-admin-tab-${tab.id}`}
               type="button"
               role="tab"
               className={activeTab === tab.id ? 'is-active' : ''}
@@ -1032,10 +1033,22 @@ export function AssistantAdminPage() {
           ))}
         </nav>
 
+        <label className="assistant-admin-section-picker">
+          <span>管理分区</span>
+          <select value={activeTab} onChange={(event) => setActiveTab(event.target.value as AdminTab)}>
+            {adminTabs.map((tab) => (
+              <option key={tab.id} value={tab.id}>
+                {tab.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <section
           id="assistant-admin-panel-overview"
           className="assistant-admin-grid assistant-admin-grid--single"
           role="tabpanel"
+          aria-labelledby="assistant-admin-tab-overview"
           hidden={activeTab !== 'overview'}
         >
           <article className="assistant-admin-card">
@@ -1114,6 +1127,7 @@ export function AssistantAdminPage() {
           id="assistant-admin-panel-invites"
           className="assistant-admin-grid assistant-admin-grid--single"
           role="tabpanel"
+          aria-labelledby="assistant-admin-tab-invites"
           hidden={activeTab !== 'invites'}
         >
           <article className="assistant-admin-card">
@@ -1216,6 +1230,7 @@ export function AssistantAdminPage() {
           id="assistant-admin-panel-members"
           className="assistant-admin-grid assistant-admin-grid--single"
           role="tabpanel"
+          aria-labelledby="assistant-admin-tab-members"
           hidden={activeTab !== 'members'}
         >
           <article className="assistant-admin-card">
@@ -1278,6 +1293,7 @@ export function AssistantAdminPage() {
           id="assistant-admin-panel-knowledge"
           className="assistant-admin-grid assistant-admin-grid--single"
           role="tabpanel"
+          aria-labelledby="assistant-admin-tab-knowledge"
           hidden={activeTab !== 'knowledge'}
         >
           <article className="assistant-admin-card">
@@ -1567,6 +1583,7 @@ export function AssistantAdminPage() {
           id="assistant-admin-panel-usage"
           className="assistant-admin-grid assistant-admin-grid--single"
           role="tabpanel"
+          aria-labelledby="assistant-admin-tab-usage"
           hidden={activeTab !== 'usage'}
         >
           <article className="assistant-admin-card">
@@ -1607,6 +1624,7 @@ export function AssistantAdminPage() {
           id="assistant-admin-panel-safety"
           className="assistant-admin-grid assistant-admin-grid--single"
           role="tabpanel"
+          aria-labelledby="assistant-admin-tab-safety"
           hidden={activeTab !== 'safety'}
         >
           <article className="assistant-admin-card">

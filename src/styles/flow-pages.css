@@ -4400,6 +4400,14 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.assistant-admin-grid[hidden] {
+  display: none;
+}
+
+.assistant-admin-section-picker {
+  display: none;
+}
+
 .assistant-admin-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -7013,6 +7021,33 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     max-height: 240px;
   }
 
+  .assistant-admin-tabs {
+    display: none;
+  }
+
+  .assistant-admin-section-picker {
+    min-width: 0;
+    display: grid;
+    gap: var(--space-8);
+    color: var(--muted);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .assistant-admin-section-picker select {
+    width: 100%;
+    min-height: 48px;
+    padding: 0 var(--space-14, 14px);
+    color: var(--ink);
+    background: color-mix(in oklch, var(--panel-strong) 78%, var(--panel));
+    border: 1px solid var(--flow-ui-border-strong);
+    border-radius: var(--radius-md);
+    font: 800 14px/1 var(--font-ui);
+    letter-spacing: 0;
+  }
+
   .assistant-admin-row {
     grid-template-columns: 1fr;
   }
@@ -7029,6 +7064,10 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .studio-side-stack,
   .studio-issue-layout {
     grid-template-columns: 1fr;
+  }
+
+  .assistant-admin-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .studio-card,

@@ -1,0 +1,5 @@
+# Design: Mobile Assistant Admin Focused Sections
+
+`AssistantAdminPage` keeps its existing `activeTab` union as the only responsive navigation state. The existing desktop `role=tablist` remains, while a mobile-only labeled native `select` writes the same state. Every existing panel remains in the DOM and retains its form/API state, but `.assistant-admin-grid[hidden]` receives an explicit `display: none` contract so author CSS cannot override inactive visibility.
+
+The mobile selector uses the existing `adminTabs` data, avoiding a second label map. It sits between the hero and panel content. Desktop panel/tab behavior remains unchanged apart from fixing the previously broken hidden contract. UI regression tests enumerate all six values at 320/390/430px, verify inverse desktop visibility, state preservation, page-height reduction, and overflow.

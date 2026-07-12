@@ -741,3 +741,12 @@ single existing sources of truth. The default is `editor`. Draft selection and
 new-draft actions set the view to `editor` before applying their normal state
 updates. Do not persist this preference or clone forms for responsive layouts.
 Desktop ignores the mode value and renders all three workspace areas.
+
+### Scenario: Responsive Assistant Admin Sections
+
+`AssistantAdminPage.activeTab` is the only source of truth for Overview,
+Invites, Members, Knowledge, Usage, and Safety navigation. Desktop tab buttons
+and the mobile native selector write the same typed union. Panels keep their
+existing mounted React state but use the semantic `hidden` attribute plus an
+explicit CSS hidden contract. Do not create mobile copies of token, invite,
+member-channel, knowledge, RAG, usage, or safety state.

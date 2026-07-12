@@ -651,3 +651,12 @@ form state; selecting, creating, or opening a review record returns to the
 editor; token controls remain before the workspace and guidance remains after
 it; and no horizontal overflow appears. Desktop must hide the mode control and
 keep every original workspace panel visible.
+
+### Mobile Administrative Section Regression
+
+For `/assistant/admin`, test the six section values at 320px, 390px, and 430px.
+Assert that mobile shows one labeled native selector and hides desktop tabs;
+each selection leaves exactly one corresponding panel visible; entered form
+state survives round trips; the default overview remains below the documented
+height budget; and the page has no horizontal overflow. Desktop must expose the
+tablist, hide the selector, and obey the same one-panel contract.

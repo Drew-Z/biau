@@ -113,3 +113,13 @@ relationships, selected state, Lucide icons, and at least 44px targets. Actions
 that select or create the primary record should return to its editor mode.
 Authentication controls stay before the mode switch; guidance can follow the
 focused workspace. Desktop hides the switch and keeps every column visible.
+
+### Mobile Administrative Sections
+
+For dense administration routes with several mutually exclusive domains, the
+desktop tablist and mobile native selector must share one typed section state.
+Do not render all panels as a mobile stack. Author CSS must explicitly preserve
+the semantic `[hidden]` contract when panel classes define `display`; inactive
+panels must be neither visible nor interactive. Keep all option labels complete,
+avoid horizontal tab rails, and preserve the existing form/API state while
+switching sections.
