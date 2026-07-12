@@ -453,7 +453,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
         if (!assistant || !assistantRect || !guideRect) return false
         const overlapWidth = Math.max(0, Math.min(assistantRect.right, guideRect.right) - Math.max(assistantRect.left, guideRect.left))
         const overlapHeight = Math.max(0, Math.min(assistantRect.bottom, guideRect.bottom) - Math.max(assistantRect.top, guideRect.top))
-        return Number(assistant.getAttribute('data-collision-offset')) > 0 && overlapWidth * overlapHeight === 0 && guideRect.top - assistantRect.bottom >= 7
+        return overlapWidth * overlapHeight === 0 && guideRect.top - assistantRect.bottom >= 7
       }, null, { timeout: 2_000 })
       .catch(() => {})
 
@@ -473,7 +473,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
       }
     })
     const initialOffset = Number(await assistant.getAttribute('data-collision-offset'))
-    if (!initialMetrics || initialMetrics.overlapArea > 0 || initialMetrics.gap < 7 || initialMetrics.overflow || initialOffset <= 0) {
+    if (!initialMetrics || initialMetrics.overlapArea > 0 || initialMetrics.gap < 7 || initialMetrics.overflow || initialOffset < 0) {
       failures.push(`mobile-${width} project detail: floating controls must resolve collision with an 8px gap`)
     }
 
@@ -532,6 +532,123 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
     (await desktopAssistant.getAttribute('aria-expanded')) !== 'true'
   ) {
     failures.push('desktop project detail: mobile collision rules must not affect the assistant')
+  }
+  await desktop.close()
+}
+async function checkMobilePrimaryNavigation(browser, failures) {
+  const expectedTabs = [
+    { href: '/', label: '首页' },
+    { href: '/projects', label: '项目' },
+    { href: '/blog', label: '知识' },
+    { href: '/status', label: '状态' },
+    { href: '/assistant', label: '助手' },
+  ]
+  const routeCases = [
+    { path: '/', activeHref: '/' },
+    { path: '/projects/biau-playlab', activeHref: '/projects' },
+    { path: '/blog/legal-rag-review', activeHref: '/blog' },
+    { path: '/status/legal-rag', activeHref: '/status' },
+    { path: '/assistant', activeHref: '/assistant' },
+  ]
+
+  for (const width of [320, 390, 430]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    await page.route('**/health', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ mode: 'fallback', modelConfigured: false }),
+      }),
+    )
+    await page.addInitScript(() => {
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    })
+
+    for (const routeCase of routeCases) {
+      await gotoApp(page, routeCase.path)
+      const tabbar = page.locator('.mobile-tabbar')
+      const tabs = tabbar.locator('.mobile-tab')
+      const tabbarBox = await tabbar.boundingBox()
+      const tabData = await tabs.evaluateAll((items) =>
+        items.map((item) => {
+          const rect = item.getBoundingClientRect()
+          return {
+            href: item.getAttribute('href'),
+            label: item.textContent?.trim() ?? '',
+            active: item.classList.contains('is-active'),
+            width: rect.width,
+            height: rect.height,
+          }
+        }),
+      )
+      const activeTabs = tabData.filter((tab) => tab.active)
+
+      if (!tabbarBox || tabbarBox.left < -1 || tabbarBox.right > width + 1 || Math.abs(tabbarBox.bottom - 900) > 1) {
+        failures.push(`${routeCase.path} mobile ${width}px: bottom navigation should stay fixed and bounded`)
+      }
+      if (
+        tabData.length !== expectedTabs.length ||
+        JSON.stringify(tabData.map(({ href, label }) => ({ href, label }))) !== JSON.stringify(expectedTabs)
+      ) {
+        failures.push(`${routeCase.path} mobile ${width}px: expected the five ordered primary route tabs`)
+      }
+      if (tabData.some((tab) => tab.width < 44 || tab.height < 44)) {
+        failures.push(`${routeCase.path} mobile ${width}px: every bottom navigation target must be at least 44px`)
+      }
+      if (activeTabs.length !== 1 || activeTabs[0].href !== routeCase.activeHref) {
+        failures.push(`${routeCase.path} mobile ${width}px: expected active parent tab ${routeCase.activeHref}`)
+      }
+      const horizontalOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      )
+      if (horizontalOverflow) {
+        failures.push(`${routeCase.path} mobile ${width}px: bottom navigation must not introduce horizontal overflow`)
+      }
+
+      if (routeCase.path === '/') {
+        await page.locator('.public-assistant__trigger').waitFor({ state: 'visible' })
+        const floatingGap = await page.evaluate(() => {
+          const bar = document.querySelector('.mobile-tabbar')?.getBoundingClientRect()
+          const trigger = document.querySelector('.public-assistant__trigger')?.getBoundingClientRect()
+          if (!bar || !trigger) return null
+          return bar.top - trigger.bottom
+        })
+        if (floatingGap === null || floatingGap < 8) {
+          failures.push(`/ home mobile ${width}px: assistant trigger should clear the bottom navigation by at least 8px`)
+        }
+        if (await page.getByRole('button', { name: /导航菜单/ }).isVisible().catch(() => false)) {
+          failures.push(`/ home mobile ${width}px: persistent tabs should replace the hamburger menu`)
+        }
+        const languageBox = await page.locator('.nav-lang-toggle').boundingBox()
+        if (!languageBox || languageBox.width < 43.5 || languageBox.height < 43.5) {
+          failures.push(`/ home mobile ${width}px: language control should remain visible and touch-sized`)
+        }
+
+        await page.evaluate(() => {
+          document.documentElement.style.scrollBehavior = 'auto'
+          window.scrollTo(0, document.documentElement.scrollHeight)
+        })
+        await page.waitForFunction(() =>
+          window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1,
+        )
+        const footerClearance = await page.evaluate(() => {
+          const bar = document.querySelector('.mobile-tabbar')?.getBoundingClientRect()
+          const copyright = document.querySelector('.site-footer__copyright')?.getBoundingClientRect()
+          if (!bar || !copyright) return null
+          return bar.top - copyright.bottom
+        })
+        if (footerClearance === null || footerClearance < 16) {
+          failures.push(`/ home mobile ${width}px: footer content should remain readable above the bottom navigation`)
+        }
+      }
+    }
+    await page.close()
+  }
+
+  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  await gotoApp(desktop, '/')
+  if (await desktop.locator('.mobile-tabbar').isVisible().catch(() => false)) {
+    failures.push('/ home desktop: mobile bottom navigation must remain hidden')
   }
   await desktop.close()
 }
@@ -1053,6 +1170,7 @@ for (const viewport of viewports) {
 await checkStudioWorkspaceModes(browser, failures)
 await checkAssistantAdminSections(browser, failures)
 await checkMobileDetailSurfaceCoordination(browser, failures)
+await checkMobilePrimaryNavigation(browser, failures)
 await checkMobileProjectCatalog(browser, failures)
 await checkStatusDetailReadingNavigation(browser, failures)
 
@@ -2906,8 +3024,8 @@ for (const width of [320, 390, 430]) {
   if (mobileLayout.innerLeft < -1 || mobileLayout.innerRight > mobileLayout.viewportWidth + 1) {
     failures.push(`/ home mobile ${width}px: navigation shell exceeds viewport`)
   }
-  if (mobileLayout.navItemsDisplay !== 'none' || mobileLayout.languageDisplay !== 'none') {
-    failures.push(`/ home mobile ${width}px: desktop navigation controls should be collapsed`)
+  if (mobileLayout.navItemsDisplay !== 'none' || mobileLayout.languageDisplay === 'none') {
+    failures.push(`/ home mobile ${width}px: desktop links should collapse while the language control remains available`)
   }
   if (!mobileLayout.titleTouchAction.includes('pan-y')) {
     failures.push(`/ home mobile ${width}px: title should preserve vertical page panning`)
@@ -2949,29 +3067,15 @@ for (const width of [320, 390, 430]) {
     failures.push(`/ home mobile ${width}px: page should not overflow horizontally`)
   }
 
-  const menuToggle = mobileHomePage.getByRole('button', { name: /打开导航菜单/ })
-  if (!(await menuToggle.isVisible().catch(() => false))) {
-    failures.push(`/ home mobile ${width}px: expected visible mobile menu button`)
-  } else {
-    await menuToggle.click()
-    const mobilePanelVisible = await mobileHomePage.locator('.nav-mobile-panel').isVisible().catch(() => false)
-    const languageActionVisible = await mobileHomePage
-      .locator('.nav-mobile-language')
-      .isVisible()
-      .catch(() => false)
-    const mobilePanelAboveHero = await mobileHomePage.evaluate(() => {
-      const panel = document.querySelector('.nav-mobile-panel')
-      if (!panel) return false
-      const rect = panel.getBoundingClientRect()
-      const topElement = document.elementFromPoint(rect.left + rect.width / 2, rect.top + Math.min(90, rect.height / 2))
-      return Boolean(topElement?.closest('.nav-mobile-panel'))
-    })
-    if (!mobilePanelVisible || !languageActionVisible || !mobilePanelAboveHero) {
-      failures.push(`/ home mobile ${width}px: expected navigation panel with language action`)
-    }
-    await mobileHomePage.getByRole('button', { name: /关闭导航菜单/ }).click()
+  const menuToggle = mobileHomePage.getByRole('button', { name: /导航菜单/ })
+  if (await menuToggle.isVisible().catch(() => false)) {
+    failures.push(`/ home mobile ${width}px: bottom navigation should replace the redundant menu button`)
   }
-
+  const languageToggle = mobileHomePage.locator('.nav-lang-toggle')
+  const languageToggleBox = await languageToggle.boundingBox()
+  if (!languageToggleBox || languageToggleBox.width < 43.5 || languageToggleBox.height < 43.5) {
+    failures.push(`/ home mobile ${width}px: language control should remain visible and touch-sized`)
+  }
   const title = mobileHomePage.locator('.hero-title-rotator')
   const titleBefore = await title.getAttribute('aria-label')
   await title.click()

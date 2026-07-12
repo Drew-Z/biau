@@ -158,3 +158,9 @@
     flex: 0 0 auto;
   }
 }
+
+@media (max-width: 768px) {
+  .site-footer {
+    padding-bottom: calc(var(--space-32, 32px) + var(--mobile-tabbar-clearance, 0px));
+  }
+}

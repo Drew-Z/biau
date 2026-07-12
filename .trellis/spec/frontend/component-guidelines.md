@@ -113,6 +113,17 @@ focus containment and restoration, document scroll locking, safe-area padding,
 and no overlap from global navigation. Runtime evidence may move after the core
 interaction on mobile, but it must remain available.
 
+### Mobile Primary Navigation
+
+When the site has a small, stable set of high-frequency route families, mobile
+may expose them as a persistent bottom tabbar instead of hiding every destination
+behind a hamburger menu. Keep the route registry in `Navigation`, use Lucide
+icons plus short labels, make nested routes activate their parent tab, and keep
+every target at least 44px. The bar must respect safe-area insets and reserve
+clearance for footer content and fixed assistant controls. Mobile top navigation
+still owns brand, theme, and language controls; desktop keeps the full center
+navigation and hides the tabbar. Do not use a horizontal scroll rail, gesture-only
+navigation, or duplicate route metadata in CSS and tests.
 ### Long Mobile Page Navigation
 
 When an evidence-heavy mobile page exceeds several viewports, preserve its

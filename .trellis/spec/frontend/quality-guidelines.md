@@ -615,6 +615,16 @@ Use `.env.example` for structure. Do not read or quote `.env`, `.env.local`, `.e
 - Do not treat `npm run dev` as verification; it does not run strict TypeScript checks.
 - Do not use destructive git commands or push without an explicit user request.
 
+### Mobile Primary Navigation Regression
+
+Test the five source-ordered Home, Projects, Knowledge, Status, and Assistant
+tabs at 320px, 390px, and 430px. Assert fixed viewport bounds, 44px targets,
+no horizontal overflow, and exactly one active tab for both index and nested
+route families. Verify the mobile header keeps theme and language controls but
+has no redundant hamburger menu. The public assistant must clear the tabbar by
+at least 8px, footer content must remain readable above its safe-area clearance,
+and assistant drawers must suppress the global tabbar while open. Desktop must
+hide the mobile tabbar and preserve keyboard access to the full navigation.
 ### Mobile Taxonomy Regression
 
 For responsive taxonomy controls, UI checks must cover 320px, 390px, and 430px.

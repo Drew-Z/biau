@@ -6474,9 +6474,6 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .app.page-home .nav-brand-text,
   .app.page-tools .nav-brand-text,
   .app.page-subpage .nav-brand-text,
-  .app.page-home .nav-lang-toggle,
-  .app.page-tools .nav-lang-toggle,
-  .app.page-subpage .nav-lang-toggle,
   .app.page-home .nav-all-tools,
   .app.page-tools .nav-all-tools,
   .app.page-subpage .nav-all-tools {
@@ -7349,5 +7346,16 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .app.page-home .carousel-card::after {
     transform: translate3d(0, 0, 0) rotate(0deg) !important;
     transition: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .public-assistant {
+    z-index: 60;
+    bottom: calc(var(--mobile-tabbar-clearance, 72px) + var(--space-12, 12px));
+  }
+
+  .public-assistant__panel {
+    max-height: calc(100svh - var(--mobile-tabbar-clearance, 72px) - 40px);
   }
 }
