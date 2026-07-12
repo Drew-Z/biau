@@ -82,6 +82,7 @@ native `select`. Both surfaces must share the same controlled value and callback
 do not duplicate filtering state. Every option must expose the complete Chinese
 and English identity plus its count or pending state. Do not use a clipped,
 no-wrap horizontal rail or partial-card peek as the only discovery mechanism.
+
 ### Mobile Chat-First Workspaces
 
 For desktop workspaces that combine a primary editor/chat with member, history,
@@ -92,6 +93,7 @@ requires an explicit 44px trigger, backdrop, close command, Escape handling,
 focus containment and restoration, document scroll locking, safe-area padding,
 and no overlap from global navigation. Runtime evidence may move after the core
 interaction on mobile, but it must remain available.
+
 ### Long Mobile Page Navigation
 
 When an evidence-heavy mobile page exceeds several viewports, preserve its
@@ -100,3 +102,14 @@ sections or introducing a horizontal rail. Map every option to a stable section
 ID, show the current section and position, and keep the navigator in document
 flow. Use immediate movement for jumps longer than two viewports and smooth
 movement only for short jumps; always respect reduced-motion preferences.
+
+### Mobile Focused Workspaces
+
+When a desktop authoring workspace contains several persistent columns, mobile
+may expose them as explicit task modes instead of one long stack. Reuse the
+existing column DOM and state, keep the primary mode selected by default, and
+show exactly one mode panel below the control. Mode buttons need stable tab/panel
+relationships, selected state, Lucide icons, and at least 44px targets. Actions
+that select or create the primary record should return to its editor mode.
+Authentication controls stay before the mode switch; guidance can follow the
+focused workspace. Desktop hides the switch and keeps every column visible.

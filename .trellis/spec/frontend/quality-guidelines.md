@@ -257,6 +257,7 @@ focus semantics, section navigation, active-section updates, reduced-motion
 operation, at least `95%` progress at the true document bottom, no empty guide
 on missing routes, and no page-level overflow. Do not replace these behavioral
 checks with screenshots alone.
+
 ### Convention: Light Theme Restraint
 
 The light theme uses a morning-harbor palette rather than a high-saturation
@@ -621,6 +622,7 @@ Assert that the mobile selector is visible and bounded, the desktop button group
 is hidden, every option exists, populated and empty selections use the shared
 projection, pagination resets, and the document has no horizontal overflow.
 Desktop checks must assert the inverse visibility contract.
+
 ### Mobile Workspace Drawer Regression
 
 For chat-first responsive workspaces, test desktop inverse visibility plus
@@ -630,6 +632,7 @@ the first viewport; the drawer starts inaccessible and closed; opening exposes
 document scrolling, and prevents global-navigation overlap; Escape, backdrop,
 and close-button paths restore scrolling and trigger focus. Also assert drawer
 bounds, retained secondary capabilities, and no page-level horizontal overflow.
+
 ### Long Status Page Navigation Regression
 
 For `/status`, verify the mobile-only section navigator at 320px, 390px, and
@@ -638,3 +641,13 @@ control, passive scroll tracking updates the selected section, the control stays
 bounded near the viewport top, and entry/project evidence counts are unchanged.
 Desktop must hide the mobile navigator, and no viewport may gain horizontal
 overflow.
+
+### Mobile Focused Workspace Regression
+
+For multi-column authoring routes such as `/studio`, verify 320px, 390px, and
+430px. Assert the mode control is visible and every target is at least 44px;
+only the default editor panel is visible initially; switching modes preserves
+form state; selecting, creating, or opening a review record returns to the
+editor; token controls remain before the workspace and guidance remains after
+it; and no horizontal overflow appears. Desktop must hide the mode control and
+keep every original workspace panel visible.

@@ -4685,6 +4685,10 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   flex: 1 1 120px;
 }
 
+.studio-workspace-tabs {
+  display: none;
+}
+
 .studio-control-bar,
 .studio-card {
   background: color-mix(in oklch, var(--panel-strong) 82%, var(--panel));
@@ -6867,6 +6871,96 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .detail-missing {
     min-height: 280px;
     padding: var(--space-24);
+  }
+
+  .studio-control-bar {
+    order: 1;
+  }
+
+  .studio-workspace-tabs {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-6, 6px);
+    position: sticky;
+    top: max(var(--space-8), env(safe-area-inset-top, 0px));
+    z-index: 18;
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-6, 6px);
+    background: color-mix(in oklch, var(--panel) 84%, transparent);
+    border: 1px solid var(--flow-ui-border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(calc(var(--flow-backdrop-blur) + 6px)) saturate(1.12);
+    backdrop-filter: blur(calc(var(--flow-backdrop-blur) + 6px)) saturate(1.12);
+  }
+
+  .studio-workspace-tabs button {
+    min-width: 0;
+    min-height: 48px;
+    padding: var(--space-6, 6px) var(--space-4, 4px);
+    display: grid;
+    grid-template-columns: auto minmax(0, auto);
+    grid-template-rows: auto auto;
+    align-content: center;
+    justify-content: center;
+    column-gap: 6px;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-family: var(--font-ui);
+    letter-spacing: 0;
+  }
+
+  .studio-workspace-tabs button svg {
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .studio-workspace-tabs button span {
+    min-width: 0;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  .studio-workspace-tabs button em {
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .studio-workspace-tabs button[aria-selected='true'] {
+    color: var(--ink);
+    background: color-mix(in oklch, var(--amber) 14%, var(--panel-strong));
+    border-color: color-mix(in oklch, var(--amber) 34%, var(--flow-ui-card-border));
+    box-shadow: inset 0 1px 0 var(--flow-ui-inset);
+  }
+
+  .studio-grid {
+    order: 3;
+  }
+
+  .studio-review-guide {
+    order: 4;
+  }
+
+  .studio-grid > .studio-list-panel,
+  .studio-grid > .studio-editor-stack,
+  .studio-grid > .studio-side-stack {
+    display: none;
+  }
+
+  .studio-grid[data-mobile-view='drafts'] > .studio-list-panel,
+  .studio-grid[data-mobile-view='editor'] > .studio-editor-stack,
+  .studio-grid[data-mobile-view='support'] > .studio-side-stack {
+    display: grid;
   }
 
   .assistant-sidebar,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { FileStack, PencilLine, Wrench } from 'lucide-react'
 import { StudioDraftPreview } from '../components/StudioDraftPreview'
 import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
 import { projects } from '../data/portfolio'
@@ -44,6 +45,8 @@ import {
   explainStudioClientException,
   requestStudioApi,
 } from '../utils/studioApi'
+
+type StudioMobileWorkspaceView = 'drafts' | 'editor' | 'support'
 
 interface DraftFormState {
   title: string
@@ -357,6 +360,7 @@ export function StudioPage() {
   const [issues, setIssues] = useState<StudioAiDailyIssue[]>([])
   const [publishExports, setPublishExports] = useState<StudioPublishExport[]>([])
   const [selectedDraftId, setSelectedDraftId] = useState('')
+  const [mobileWorkspaceView, setMobileWorkspaceView] = useState<StudioMobileWorkspaceView>('editor')
   const [draftForm, setDraftForm] = useState<DraftFormState>(defaultDraftForm)
   const [sourceForm, setSourceForm] = useState<SourceFormState>(defaultSourceForm)
   const [issueForm, setIssueForm] = useState<IssueFormState>(() => defaultIssueForm())
@@ -537,12 +541,14 @@ export function StudioPage() {
   }
 
   const selectDraft = (draft: StudioDraft) => {
+    setMobileWorkspaceView('editor')
     setSelectedDraftId(draft.id)
     setDraftForm(draftToForm(draft))
     setStatusText(`正在编辑：${draft.title}`)
   }
 
   const newDraft = () => {
+    setMobileWorkspaceView('editor')
     setSelectedDraftId('')
     setDraftForm(defaultDraftForm)
     setStatusText('已切换到新建草稿。')
@@ -921,8 +927,47 @@ export function StudioPage() {
         </div>
       </section>
 
-      <section className="studio-grid">
-        <aside className="studio-card studio-list-panel">
+      <nav className="studio-workspace-tabs" role="tablist" aria-label="Studio 手机工作模式">
+        <button
+          id="studio-mobile-tab-drafts"
+          type="button"
+          role="tab"
+          aria-selected={mobileWorkspaceView === 'drafts'}
+          aria-controls="studio-mobile-panel-drafts"
+          onClick={() => setMobileWorkspaceView('drafts')}
+        >
+          <FileStack size={17} aria-hidden />
+          <span>草稿箱</span>
+          <em>{drafts.length}</em>
+        </button>
+        <button
+          id="studio-mobile-tab-editor"
+          type="button"
+          role="tab"
+          aria-selected={mobileWorkspaceView === 'editor'}
+          aria-controls="studio-mobile-panel-editor"
+          onClick={() => setMobileWorkspaceView('editor')}
+        >
+          <PencilLine size={17} aria-hidden />
+          <span>编辑</span>
+          <em>{selectedDraft ? '已选' : '新建'}</em>
+        </button>
+        <button
+          id="studio-mobile-tab-support"
+          type="button"
+          role="tab"
+          aria-selected={mobileWorkspaceView === 'support'}
+          aria-controls="studio-mobile-panel-support"
+          onClick={() => setMobileWorkspaceView('support')}
+        >
+          <Wrench size={17} aria-hidden />
+          <span>辅助</span>
+          <em>{reviewQueue.length}</em>
+        </button>
+      </nav>
+
+      <section className="studio-grid" data-mobile-view={mobileWorkspaceView}>
+        <aside id="studio-mobile-panel-drafts" className="studio-card studio-list-panel" role="tabpanel" aria-label="草稿箱">
           <div className="studio-card__header">
             <div>
               <p className="assistant-panel__eyebrow">DRAFTS</p>
@@ -955,7 +1000,7 @@ export function StudioPage() {
           </div>
         </aside>
 
-        <section className="studio-editor-stack">
+        <section id="studio-mobile-panel-editor" className="studio-editor-stack" role="tabpanel" aria-label="草稿编辑">
           <section id="studio-draft-editor" className="studio-card studio-editor">
             <div className="studio-card__header">
               <div>
@@ -1201,7 +1246,7 @@ export function StudioPage() {
           </div>
         </section>
 
-        <aside className="studio-side-stack">
+        <aside id="studio-mobile-panel-support" className="studio-side-stack" role="tabpanel" aria-label="Studio 辅助工具">
           <article className="studio-card studio-ai-daily-card">
             <div className="studio-card__header">
               <div>

@@ -731,3 +731,13 @@ state tree. A `matchMedia('(max-width: 920px)')` effect controls modal semantics
 and closes the drawer when returning to desktop. The open-state effect owns and
 cleans up Escape handling, root scroll locking, navigation suppression, and
 trigger focus restoration.
+
+### Scenario: Mobile Studio Focused Modes
+
+`StudioPage` owns `mobileWorkspaceView` as ephemeral local UI state. It only
+selects which existing `drafts`, `editor`, or `support` grid child is visible on
+mobile; draft data, form values, sources, review queues, and API state remain the
+single existing sources of truth. The default is `editor`. Draft selection and
+new-draft actions set the view to `editor` before applying their normal state
+updates. Do not persist this preference or clone forms for responsive layouts.
+Desktop ignores the mode value and renders all three workspace areas.

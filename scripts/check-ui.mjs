@@ -246,6 +246,107 @@ async function collectStudioVisualIssues(page, viewportName, routePath) {
   }, { name: viewportName, path: routePath })
 }
 
+async function checkStudioWorkspaceModes(browser, failures) {
+  const mobileWidths = [320, 390, 430]
+
+  for (const width of mobileWidths) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    await page.addInitScript(() => {
+      window.localStorage.setItem('biau-studio-admin-token', 'ui-check-token')
+    })
+    await gotoApp(page, '/studio?ui-check=review-queue')
+
+    const tabs = page.getByRole('tablist', { name: 'Studio 手机工作模式' })
+    const draftsTab = page.getByRole('tab', { name: /^草稿箱/ })
+    const editorTab = page.getByRole('tab', { name: /^编辑/ })
+    const supportTab = page.getByRole('tab', { name: /^辅助/ })
+    const draftsPanel = page.locator('#studio-mobile-panel-drafts')
+    const editorPanel = page.locator('#studio-mobile-panel-editor')
+    const supportPanel = page.locator('#studio-mobile-panel-support')
+
+    if (!(await tabs.isVisible().catch(() => false))) {
+      failures.push(`mobile-${width} /studio: expected visible workspace mode tabs`)
+      await page.close()
+      continue
+    }
+
+    for (const tab of [draftsTab, editorTab, supportTab]) {
+      const box = await tab.boundingBox()
+      if (!box || box.height < 44) {
+        failures.push(`mobile-${width} /studio: workspace mode target must be at least 44px high`)
+      }
+    }
+
+    if (
+      !(await editorPanel.isVisible()) ||
+      (await draftsPanel.isVisible()) ||
+      (await supportPanel.isVisible()) ||
+      (await editorTab.getAttribute('aria-selected')) !== 'true'
+    ) {
+      failures.push(`mobile-${width} /studio: Edit should be the only default workspace mode`)
+    }
+
+    const titleInput = editorPanel.locator('label').filter({ hasText: '标题' }).locator('input').first()
+    const titleValue = `移动模式状态保留 ${width}`
+    await titleInput.fill(titleValue)
+    await draftsTab.click()
+    if (!(await draftsPanel.isVisible()) || (await editorPanel.isVisible()) || (await supportPanel.isVisible())) {
+      failures.push(`mobile-${width} /studio: Drafts mode did not isolate the draft list`)
+    }
+    await supportTab.click()
+    if (!(await supportPanel.isVisible()) || (await draftsPanel.isVisible()) || (await editorPanel.isVisible())) {
+      failures.push(`mobile-${width} /studio: Support mode did not isolate auxiliary tools`)
+    }
+    await editorTab.click()
+    if ((await titleInput.inputValue()) !== titleValue) {
+      failures.push(`mobile-${width} /studio: switching modes lost editor form state`)
+    }
+
+    await draftsTab.click()
+    await draftsPanel.getByRole('button', { name: '新建' }).click()
+    if ((await editorTab.getAttribute('aria-selected')) !== 'true' || !(await editorPanel.isVisible())) {
+      failures.push(`mobile-${width} /studio: creating a draft should return to Edit mode`)
+    }
+
+    await draftsTab.click()
+    await draftsPanel.getByRole('button', { name: /UI Check 待审核草稿/ }).click()
+    if ((await editorTab.getAttribute('aria-selected')) !== 'true' || !(await editorPanel.isVisible())) {
+      failures.push(`mobile-${width} /studio: selecting a draft should return to Edit mode`)
+    }
+
+    const layoutOrder = await page.evaluate(() => {
+      const token = document.querySelector('.studio-control-bar')?.getBoundingClientRect().top ?? 0
+      const tabsTop = document.querySelector('.studio-workspace-tabs')?.getBoundingClientRect().top ?? 0
+      const grid = document.querySelector('.studio-grid')?.getBoundingClientRect().top ?? 0
+      const review = document.querySelector('.studio-review-guide')?.getBoundingClientRect().top ?? 0
+      return { token, tabsTop, grid, review }
+    })
+    if (!(layoutOrder.token < layoutOrder.tabsTop && layoutOrder.tabsTop < layoutOrder.grid && layoutOrder.grid < layoutOrder.review)) {
+      failures.push(`mobile-${width} /studio: expected token, modes, workspace, then review guidance order`)
+    }
+
+    const overflowX = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
+    if (overflowX) failures.push(`mobile-${width} /studio: workspace modes caused horizontal overflow`)
+    await page.close()
+  }
+
+  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  await desktop.addInitScript(() => {
+    window.localStorage.setItem('biau-studio-admin-token', 'ui-check-token')
+  })
+  await gotoApp(desktop, '/studio?ui-check=review-queue')
+  const desktopTabsVisible = await desktop
+    .getByRole('tablist', { name: 'Studio 手机工作模式' })
+    .isVisible()
+    .catch(() => false)
+  const desktopPanelsVisible = await Promise.all(
+    ['drafts', 'editor', 'support'].map((panel) => desktop.locator(`#studio-mobile-panel-${panel}`).isVisible()),
+  )
+  if (desktopTabsVisible || desktopPanelsVisible.some((visible) => !visible)) {
+    failures.push('desktop /studio: mode tabs should stay hidden while all workspace areas remain visible')
+  }
+  await desktop.close()
+}
 const failures = []
 const browser = await chromium.launch({ headless: true })
 
@@ -438,14 +539,25 @@ for (const viewport of viewports) {
       } else {
         await nextReviewButton.click()
         const currentDraftTitle = await page.locator('.studio-review-current > strong').first().innerText().catch(() => '')
-        const activeDraftVisible = await page
-          .locator('.studio-draft-item.is-active')
-          .filter({ hasText: 'UI Check 待审核草稿' })
-          .isVisible()
-          .catch(() => false)
+        const activeDraftSelected =
+          (await page
+            .locator('.studio-draft-item.is-active')
+            .filter({ hasText: 'UI Check 待审核草稿' })
+            .count()) > 0
+        const editorLoadedDraft = await page
+          .locator('#studio-mobile-panel-editor label')
+          .filter({ hasText: '标题' })
+          .locator('input')
+          .first()
+          .inputValue()
+          .catch(() => '')
 
-        if (!currentDraftTitle.includes('UI Check 待审核草稿') || !activeDraftVisible) {
-          failures.push(`${viewport.name} ${route.path}: next review action did not select the review-needed draft`)
+        if (
+          !currentDraftTitle.includes('UI Check 待审核草稿') ||
+          !activeDraftSelected ||
+          !editorLoadedDraft.includes('UI Check 待审核草稿')
+        ) {
+          failures.push(`${viewport.name} ${route.path}: next review action did not load the review-needed draft in the editor`)
         }
       }
     }
@@ -457,6 +569,8 @@ for (const viewport of viewports) {
     await page.close()
   }
 }
+
+await checkStudioWorkspaceModes(browser, failures)
 
 const statusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(statusPage, '/status')
