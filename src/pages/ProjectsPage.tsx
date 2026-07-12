@@ -2,10 +2,10 @@ import { ChevronDown } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ProjectCard } from '../components/ProjectCard'
-import { projects } from '../data/portfolio'
+import { catalogProjects } from '../data/portfolio'
 import { trackAnalyticsEvent } from '../utils/analytics'
 
-type ProjectGroupKey = 'ai' | 'fullstack' | 'games'
+type ProjectGroupKey = 'ai' | 'fullstack'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
@@ -21,16 +21,14 @@ export function ProjectsPage() {
   }
 
   const projectGroups = useMemo(() => {
-    const ai = projects.filter((project) => project.category === 'ai')
-    const business = projects.filter((project) => project.category === 'business')
-    const interactive = projects.filter((project) => project.category === 'interactive')
-    const mobile = projects.filter((project) => project.category === 'mobile')
-    const platform = projects.filter((project) => project.category === 'platform')
+    const ai = catalogProjects.filter((project) => project.category === 'ai')
+    const business = catalogProjects.filter((project) => project.category === 'business')
+    const mobile = catalogProjects.filter((project) => project.category === 'mobile')
+    const platform = catalogProjects.filter((project) => project.category === 'platform')
 
     return [
       { key: 'ai' as const, title: 'AI 应用', projects: ai },
       { key: 'fullstack' as const, title: '全栈开发', projects: [...business, ...platform, ...mobile] },
-      { key: 'games' as const, title: '游戏项目', projects: interactive },
     ]
   }, [])
 

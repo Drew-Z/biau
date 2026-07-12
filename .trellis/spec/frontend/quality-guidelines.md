@@ -625,13 +625,16 @@ Desktop checks must assert the inverse visibility contract.
 
 ### Mobile Project Catalog Regression
 
-For `/projects`, test 320px, 390px, and 430px against expectations derived
-from `src/data/portfolio.ts`. Assert three complete vertical controls, AI as
-the only default panel, one visible grid after every switch, source order and
-counts, every project reachable exactly once, 44px group/card actions, material
-390px height reduction, and no horizontal overflow. Desktop must hide the
-mobile controls and show every source group and card simultaneously. Do not
-derive expected titles or counts from the rendered DOM.
+For `/projects`, test 320px, 390px, and 430px against `catalogProjects` from
+`src/data/portfolio.ts`. Assert two complete vertical controls, AI as the only
+default panel, one visible grid after every switch, source order and counts,
+every catalog project reachable exactly once, one BIAU Playlab card, no
+standalone `interactive` cards, 44px group/card actions, material 390px height
+reduction, and no horizontal overflow. Desktop must hide the mobile controls
+and show both catalog groups and every catalog card simultaneously. Separately
+verify the full `projects` registry still renders every retained child game
+detail route, and verify Playlab exposes all internal case links and Web-play
+links. Do not derive expected titles or counts from the rendered DOM.
 
 ### Mobile Workspace Drawer Regression
 

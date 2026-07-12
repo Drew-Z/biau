@@ -10,7 +10,7 @@ import {
   mergeSiteStatusPayload,
   parseEvidenceFreshness,
 } from '../src/data/siteStatusView.ts'
-import { projects } from '../src/data/portfolio.ts'
+import { catalogProjects, projects } from '../src/data/portfolio.ts'
 import { heroContent } from '../src/data/hero.ts'
 import { blogColumnMeta, blogColumnOrder, getBlogEmptyState } from '../src/data/blog.ts'
 import { publicAssistantSuggestions } from '../src/data/assistant.ts'
@@ -537,14 +537,14 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
 }
 async function checkMobileProjectCatalog(browser, failures) {
   const expectedGroups = [
-    { key: 'ai', title: 'AI 应用', projects: projects.filter((project) => project.category === 'ai') },
+    { key: 'ai', title: 'AI 应用', projects: catalogProjects.filter((project) => project.category === 'ai') },
     {
       key: 'fullstack',
       title: '全栈开发',
-      projects: projects.filter((project) => ['business', 'platform', 'mobile'].includes(project.category)),
+      projects: catalogProjects.filter((project) => ['business', 'platform', 'mobile'].includes(project.category)),
     },
-    { key: 'games', title: '游戏项目', projects: projects.filter((project) => project.category === 'interactive') },
   ]
+  const standaloneGames = projects.filter((project) => project.category === 'interactive')
 
   for (const width of [320, 390, 430]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } })
@@ -552,11 +552,11 @@ async function checkMobileProjectCatalog(browser, failures) {
       window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
     })
     await gotoApp(page, '/projects')
-    await page.waitForFunction(() => document.querySelectorAll('.project-group-toggle').length === 3)
+    await page.waitForFunction(() => document.querySelectorAll('.project-group-toggle').length === 2)
 
     const toggles = page.locator('.project-group-toggle')
     if ((await toggles.count()) !== expectedGroups.length) {
-      failures.push(`/projects mobile ${width}px: expected three project group controls`)
+      failures.push(`/projects mobile ${width}px: expected two project group controls`)
     }
 
     const initialState = await page.evaluate(() => ({
@@ -566,7 +566,7 @@ async function checkMobileProjectCatalog(browser, failures) {
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     }))
     if (
-      initialState.expanded.join(',') !== 'true,false,false' ||
+      initialState.expanded.join(',') !== 'true,false' ||
       initialState.visiblePanels.join(',') !== 'project-group-panel-ai'
     ) {
       failures.push(`/projects mobile ${width}px: AI applications should be the only default group`)
@@ -617,11 +617,17 @@ async function checkMobileProjectCatalog(browser, failures) {
     }
 
     if (
-      reachableTitles.length !== projects.length ||
-      new Set(reachableTitles).size !== projects.length ||
-      projects.some((project) => !reachableTitles.includes(project.title))
+      reachableTitles.length !== catalogProjects.length ||
+      new Set(reachableTitles).size !== catalogProjects.length ||
+      catalogProjects.some((project) => !reachableTitles.includes(project.title))
     ) {
-      failures.push(`/projects mobile ${width}px: every source project should remain reachable exactly once`)
+      failures.push(`/projects mobile ${width}px: every catalog project should remain reachable exactly once`)
+    }
+    if (
+      reachableTitles.filter((title) => title.includes('BIAU Playlab')).length !== 1 ||
+      standaloneGames.some((project) => reachableTitles.includes(project.title))
+    ) {
+      failures.push(`/projects mobile ${width}px: Playlab should replace standalone game cards in the catalog`)
     }
     await page.close()
   }
@@ -631,11 +637,49 @@ async function checkMobileProjectCatalog(browser, failures) {
   if (
     (await desktop.locator('.project-group-toggle:visible').count()) !== 0 ||
     (await desktop.locator('.projects-grid:visible').count()) !== expectedGroups.length ||
-    (await desktop.locator('.project-card:visible').count()) !== projects.length
+    (await desktop.locator('.project-card:visible').count()) !== catalogProjects.length
   ) {
-    failures.push('/projects desktop: all project groups and source projects should remain visible')
+    failures.push('/projects desktop: both catalog groups and all catalog projects should remain visible')
+  }
+  const desktopTitles = await desktop.locator('.project-card:visible').evaluateAll((cards) =>
+    cards.map((card) => card.getAttribute('data-graph-label') ?? ''),
+  )
+  if (
+    desktopTitles.filter((title) => title.includes('BIAU Playlab')).length !== 1 ||
+    standaloneGames.some((project) => desktopTitles.includes(project.title))
+  ) {
+    failures.push('/projects desktop: standalone game cards should be consolidated into one Playlab card')
   }
   await desktop.close()
+
+  const playlab = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  await gotoApp(playlab, '/projects/biau-playlab')
+  const expectedDetailHrefs = standaloneGames.map((project) => `/projects/${project.id}`)
+  const expectedPlayHrefs = [
+    'https://play.playlab.eu.cc/first-tetris/index.html',
+    'https://play.playlab.eu.cc/next-spacewar/index.html',
+    'https://play.playlab.eu.cc/intespace/index.html',
+    'https://play.playlab.eu.cc/raiden/index.html',
+    'https://play.playlab.eu.cc/space-war/index.html',
+    'https://play.playlab.eu.cc/spacewar-ii/index.html',
+  ]
+  const playlabHrefs = await playlab.locator('a').evaluateAll((links) => links.map((link) => link.getAttribute('href')))
+  for (const href of [...expectedDetailHrefs, ...expectedPlayHrefs]) {
+    if (!playlabHrefs.includes(href)) {
+      failures.push(`/projects/biau-playlab: expected consolidated link ${href}`)
+    }
+  }
+  await playlab.close()
+
+  for (const game of standaloneGames) {
+    const detail = await browser.newPage({ viewport: { width: 390, height: 900 } })
+    await gotoApp(detail, `/projects/${game.id}`)
+    const title = await detail.locator('.project-detail-page .detail-title').first().innerText().catch(() => '')
+    if (!title.includes(game.title)) {
+      failures.push(`/projects/${game.id}: retained game detail route should render its source title`)
+    }
+    await detail.close()
+  }
 }
 async function checkStatusDetailReadingNavigation(browser, failures) {
   const routePath = '/status/legal-rag'

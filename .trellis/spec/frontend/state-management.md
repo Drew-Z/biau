@@ -725,11 +725,17 @@ Do not add a state library for a single page or a small interaction. Consider on
 ### Scenario: Mobile Project Catalog Groups
 
 `ProjectsPage.activeMobileGroup` is ephemeral presentation state initialized to
-`ai`; `projects` and the memoized group projection remain the only catalog data
-sources. A `matchMedia('(max-width: 720px)')` effect decides whether inactive
-panels receive `hidden`, so desktop renders every group regardless of the
-mobile selection. Clean up the media-query listener and do not persist the
-selection or duplicate project arrays for responsive layouts.
+`ai`. `projects` remains the complete authoritative registry for detail routes,
+SEO, assistant context, Studio, recommendations, and status mapping;
+`catalogProjects` is the source-derived public catalog projection and excludes
+`interactive` child games because BIAU Playlab is their single catalog-level
+parent. Do not delete child records to simplify the catalog and do not recreate
+this filter in page components. The memoized page grouping uses only
+`catalogProjects` and exposes `ai` plus `fullstack`. A
+`matchMedia('(max-width: 720px)')` effect decides whether inactive panels receive
+`hidden`, so desktop renders both catalog groups regardless of the mobile
+selection. Clean up the media-query listener and do not persist the selection
+or duplicate project arrays for responsive layouts.
 
 ### Scenario: Mobile Assistant Workspace Drawer
 

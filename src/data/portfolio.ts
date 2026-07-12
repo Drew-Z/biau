@@ -715,6 +715,40 @@ export const projects: Project[] = [
       ],
       workflow: [
         {
+          title: '六个游戏项目索引',
+          items: [
+            'Tetris：经典计分与 Rogue 强化并行的长期原型，已经具备 Web 试玩、触屏桥接和多尺寸截图回归。',
+            'Next Spacewar：以三波短任务、目标差异和单局复盘为核心的展示构建，重点验证紧凑射击流程。',
+            'intespace：围绕章节、生存、Boss、武器树和局内外成长组织的竖屏 Roguelite，已形成完整 session 链路。',
+            'Raiden Prototype：双关卡、火力成长、连锁奖励与首领相位组成的纵版射击垂直切片。',
+            'space-war：包含五个 Sector、首领战、高分与发布材料的完整复古横版射击版本。',
+            'Spacewar II：面向移动端的纵向射击续作原型，作为第六个项目接入统一内容和 Web 导出流程。',
+          ],
+          links: [
+            internalLink('查看 Tetris 案例', '/projects/game-first-tetris'),
+            internalLink('查看 Next Spacewar 案例', '/projects/game-next-spacewar'),
+            internalLink('查看 intespace 案例', '/projects/intespace'),
+            internalLink('查看 Raiden 案例', '/projects/raiden-prototype'),
+            internalLink('查看 space-war 案例', '/projects/space-war'),
+            internalLink('查看 Spacewar II 案例', '/projects/spacewar-ii'),
+          ],
+        },
+        {
+          title: '统一 Web 试玩入口',
+          items: [
+            '六个游戏沿用统一 slug 规则发布到独立试玩域名；Playlab 负责项目说明，试玩站负责承载 Godot Web 构建。',
+            '试玩入口用于验证真实构建和核心玩法，不等同于所有浏览器、移动设备与网络环境下的发行质量承诺。',
+          ],
+          links: [
+            gamePlayLink('first-tetris'),
+            gamePlayLink('next-spacewar'),
+            gamePlayLink('intespace'),
+            gamePlayLink('raiden'),
+            gamePlayLink('space-war'),
+            gamePlayLink('spacewar-ii'),
+          ],
+        },
+        {
           title: '访客路径',
           items: [
             '首页和游戏列表展示六个项目：俄罗斯方块、Next Spacewar、intespace、Raiden、space-war 和 Spacewar II。',
@@ -863,7 +897,7 @@ export const projects: Project[] = [
           title: '访客浏览闭环',
           items: [
             '首页 hero 项目卡片先进入主站项目详情，卡片按钮再打开外部 demo 或项目网站。',
-            '项目集按 AI、全栈/平台/移动端和游戏项目分组，整卡与键盘 Enter/Space 都进入主站详情页。',
+            '项目集按 AI 应用和全栈开发两组组织公开案例，六个游戏统一收口到 BIAU Playlab，整卡与键盘 Enter/Space 都进入主站详情页。',
             '项目详情页统一展示核心亮点、技术栈、相关链接、案例分析、延展阅读和同类项目。',
             '博客页通过公开精选与栏目过滤展示知识积累、项目总结、资源分享、AI 日报和构建手记等内容边界。',
           ],
@@ -1766,6 +1800,8 @@ export const projects: Project[] = [
     ],
   },
 ]
+
+export const catalogProjects = projects.filter((project) => project.category !== 'interactive')
 
 function uniqueStrings(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)))
