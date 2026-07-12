@@ -623,6 +623,16 @@ is hidden, every option exists, populated and empty selections use the shared
 projection, pagination resets, and the document has no horizontal overflow.
 Desktop checks must assert the inverse visibility contract.
 
+### Mobile Project Catalog Regression
+
+For `/projects`, test 320px, 390px, and 430px against expectations derived
+from `src/data/portfolio.ts`. Assert three complete vertical controls, AI as
+the only default panel, one visible grid after every switch, source order and
+counts, every project reachable exactly once, 44px group/card actions, material
+390px height reduction, and no horizontal overflow. Desktop must hide the
+mobile controls and show every source group and card simultaneously. Do not
+derive expected titles or counts from the rendered DOM.
+
 ### Mobile Workspace Drawer Regression
 
 For chat-first responsive workspaces, test desktop inverse visibility plus

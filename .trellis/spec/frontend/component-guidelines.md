@@ -90,6 +90,18 @@ do not duplicate filtering state. Every option must expose the complete Chinese
 and English identity plus its count or pending state. Do not use a clipped,
 no-wrap horizontal rail or partial-card peek as the only discovery mechanism.
 
+### Mobile Catalog Progressive Disclosure
+
+When a public catalog has a small number of stable groups but many repeated
+cards, mobile may expose the groups as vertical single-open controls. Keep the
+source projection and card subtree shared with desktop; do not clone cards or
+introduce a horizontal rail. Each control exposes its label, source-derived
+count, `aria-expanded`, `aria-controls`, and a 44px target. Non-active mobile
+panels use the semantic `hidden` attribute plus a scoped `[hidden] { display:
+none; }` rule whenever an existing grid declaration could override browser
+defaults. Desktop must remove `hidden` rather than merely restyling hidden
+content.
+
 ### Mobile Chat-First Workspaces
 
 For desktop workspaces that combine a primary editor/chat with member, history,

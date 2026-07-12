@@ -722,6 +722,15 @@ Do not add a state library for a single page or a small interaction. Consider on
 - Do not duplicate derived data arrays in multiple files; derive from `src/data/portfolio.ts` or shared data modules.
 - Do not use `npm run dev` as validation for state changes; run lint/build because build catches TypeScript errors.
 
+### Scenario: Mobile Project Catalog Groups
+
+`ProjectsPage.activeMobileGroup` is ephemeral presentation state initialized to
+`ai`; `projects` and the memoized group projection remain the only catalog data
+sources. A `matchMedia('(max-width: 720px)')` effect decides whether inactive
+panels receive `hidden`, so desktop renders every group regardless of the
+mobile selection. Clean up the media-query listener and do not persist the
+selection or duplicate project arrays for responsive layouts.
+
 ### Scenario: Mobile Assistant Workspace Drawer
 
 `AssistantPage` owns mobile drawer visibility as ephemeral local UI state. The

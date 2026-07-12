@@ -535,6 +535,108 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
   }
   await desktop.close()
 }
+async function checkMobileProjectCatalog(browser, failures) {
+  const expectedGroups = [
+    { key: 'ai', title: 'AI 应用', projects: projects.filter((project) => project.category === 'ai') },
+    {
+      key: 'fullstack',
+      title: '全栈开发',
+      projects: projects.filter((project) => ['business', 'platform', 'mobile'].includes(project.category)),
+    },
+    { key: 'games', title: '游戏项目', projects: projects.filter((project) => project.category === 'interactive') },
+  ]
+
+  for (const width of [320, 390, 430]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    await page.addInitScript(() => {
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    })
+    await gotoApp(page, '/projects')
+    await page.waitForFunction(() => document.querySelectorAll('.project-group-toggle').length === 3)
+
+    const toggles = page.locator('.project-group-toggle')
+    if ((await toggles.count()) !== expectedGroups.length) {
+      failures.push(`/projects mobile ${width}px: expected three project group controls`)
+    }
+
+    const initialState = await page.evaluate(() => ({
+      expanded: [...document.querySelectorAll('.project-group-toggle')].map((toggle) => toggle.getAttribute('aria-expanded')),
+      visiblePanels: [...document.querySelectorAll('.projects-grid')].filter((panel) => !panel.hasAttribute('hidden')).map((panel) => panel.id),
+      height: document.documentElement.scrollHeight,
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    }))
+    if (
+      initialState.expanded.join(',') !== 'true,false,false' ||
+      initialState.visiblePanels.join(',') !== 'project-group-panel-ai'
+    ) {
+      failures.push(`/projects mobile ${width}px: AI applications should be the only default group`)
+    }
+    if (initialState.overflow) {
+      failures.push(`/projects mobile ${width}px: focused catalog should not overflow horizontally`)
+    }
+    if (width === 390 && initialState.height >= 3_000) {
+      failures.push(`/projects mobile 390px: focused catalog should materially reduce the 4,144px baseline`)
+    }
+
+    const reachableTitles = []
+    for (const group of expectedGroups) {
+      const toggle = page.getByRole('button', { name: new RegExp(group.title) })
+      const toggleBox = await toggle.boundingBox()
+      if (!toggleBox || toggleBox.height < 44) {
+        failures.push(`/projects mobile ${width}px: ${group.title} control must be at least 44px high`)
+      }
+      await toggle.click()
+      const panel = page.locator(`#project-group-panel-${group.key}`)
+      await panel.waitFor({ state: 'visible' })
+
+      const visiblePanelIds = await page.locator('.projects-grid:visible').evaluateAll((panels) => panels.map((panel) => panel.id))
+      const visibleTitles = await panel.locator('.project-card').evaluateAll((cards) =>
+        cards.map((card) => card.getAttribute('data-graph-label') ?? ''),
+      )
+      if (visiblePanelIds.length !== 1 || visiblePanelIds[0] !== `project-group-panel-${group.key}`) {
+        failures.push(`/projects mobile ${width}px: ${group.title} should be the only visible project group`)
+      }
+      if (JSON.stringify(visibleTitles) !== JSON.stringify(group.projects.map((project) => project.title))) {
+        failures.push(`/projects mobile ${width}px: ${group.title} should preserve source project order and count`)
+      }
+      reachableTitles.push(...visibleTitles)
+
+      const shortActions = await panel.locator('.project-card button, .project-card a').evaluateAll((actions) =>
+        actions
+          .filter((action) => {
+            const style = getComputedStyle(action)
+            const rect = action.getBoundingClientRect()
+            return style.display !== 'none' && rect.width > 0 && rect.height > 0
+          })
+          .filter((action) => action.getBoundingClientRect().height < 44)
+          .map((action) => (action.textContent ?? '').trim()),
+      )
+      if (shortActions.length > 0) {
+        failures.push(`/projects mobile ${width}px: ${group.title} has project actions below 44px`)
+      }
+    }
+
+    if (
+      reachableTitles.length !== projects.length ||
+      new Set(reachableTitles).size !== projects.length ||
+      projects.some((project) => !reachableTitles.includes(project.title))
+    ) {
+      failures.push(`/projects mobile ${width}px: every source project should remain reachable exactly once`)
+    }
+    await page.close()
+  }
+
+  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  await gotoApp(desktop, '/projects')
+  if (
+    (await desktop.locator('.project-group-toggle:visible').count()) !== 0 ||
+    (await desktop.locator('.projects-grid:visible').count()) !== expectedGroups.length ||
+    (await desktop.locator('.project-card:visible').count()) !== projects.length
+  ) {
+    failures.push('/projects desktop: all project groups and source projects should remain visible')
+  }
+  await desktop.close()
+}
 async function checkStatusDetailReadingNavigation(browser, failures) {
   const routePath = '/status/legal-rag'
   const expectedIds = [
@@ -618,7 +720,13 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
       }
     }
 
-    await page.evaluate(() => document.getElementById('status-detail-checks')?.scrollIntoView())
+    await page.evaluate(() => {
+      const target = document.getElementById('status-detail-checks')
+      if (!target) return
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, window.scrollY + target.getBoundingClientRect().top - 120)
+      window.dispatchEvent(new Event('scroll'))
+    })
     await page
       .waitForFunction(
         () => document.querySelector('.detail-reading-guide')?.getAttribute('data-active-section') === 'status-detail-checks',
@@ -901,6 +1009,7 @@ for (const viewport of viewports) {
 await checkStudioWorkspaceModes(browser, failures)
 await checkAssistantAdminSections(browser, failures)
 await checkMobileDetailSurfaceCoordination(browser, failures)
+await checkMobileProjectCatalog(browser, failures)
 await checkStatusDetailReadingNavigation(browser, failures)
 
 const statusPage = await browser.newPage({ viewport: viewports[0] })
