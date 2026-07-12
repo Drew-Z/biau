@@ -1,6 +1,13 @@
 import { BookOpen, Check, ChevronDown } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
+import {
+  announceMobileSurfaceLayout,
+  announceMobileSurfaceOpen,
+  isMobileSurfaceViewport,
+  MOBILE_SURFACE_OPEN_EVENT,
+  type MobileSurfaceOpenDetail,
+} from '../utils/mobileSurface'
 
 export interface DetailReadingItem {
   id: string
@@ -23,6 +30,22 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
   const [activeId, setActiveId] = useState(items[0]?.id ?? '')
   const [progress, setProgress] = useState(0)
   const activeItem = useMemo(() => items.find((item) => item.id === activeId) ?? items[0], [activeId, items])
+
+  useEffect(() => {
+    announceMobileSurfaceLayout()
+    return () => {
+      window.requestAnimationFrame(announceMobileSurfaceLayout)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleSurfaceOpen = (event: Event) => {
+      const detail = (event as CustomEvent<MobileSurfaceOpenDetail>).detail
+      if (isMobileSurfaceViewport() && detail?.surface === 'public-assistant') setIsOpen(false)
+    }
+    window.addEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
+    return () => window.removeEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
+  }, [])
 
   useEffect(() => {
     let frame = 0
@@ -118,7 +141,10 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
           className="detail-reading-guide__toggle"
           aria-expanded={isOpen}
           aria-controls="detail-reading-outline"
-          onClick={() => setIsOpen((current) => !current)}
+          onClick={() => {
+            if (!isOpen) announceMobileSurfaceOpen('detail-reading-guide')
+            setIsOpen(!isOpen)
+          }}
         >
           <BookOpen size={18} aria-hidden />
           <span className="detail-reading-guide__copy">

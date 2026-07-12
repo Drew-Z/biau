@@ -10,6 +10,13 @@ import {
 } from '../data/assistant'
 import { PUBLIC_ASSISTANT_API_BASE, SAME_ORIGIN_ASSISTANT_API_BASE } from '../utils/assistantApi'
 import { trackAnalyticsEvent } from '../utils/analytics'
+import {
+  announceMobileSurfaceOpen,
+  isMobileSurfaceViewport,
+  MOBILE_SURFACE_LAYOUT_EVENT,
+  MOBILE_SURFACE_OPEN_EVENT,
+  type MobileSurfaceOpenDetail,
+} from '../utils/mobileSurface'
 
 interface WidgetMessage {
   id: string
@@ -270,7 +277,9 @@ export function PublicAssistantWidget() {
   const [messages, setMessages] = useState<WidgetMessage[]>([])
   const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || null)
   const [serviceState, setServiceState] = useState<AssistantServiceState>(CONFIGURED_API_BASE ? 'api-ready' : 'local')
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const collisionOffsetRef = useRef(0)
   const messageSeq = useRef(0)
   const serviceStatus = getServiceStatus(serviceState)
 
@@ -283,6 +292,66 @@ export function PublicAssistantWidget() {
     if (!scrollRef.current) return
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [messages, isOpen])
+
+  useEffect(() => {
+    const handleSurfaceOpen = (event: Event) => {
+      const detail = (event as CustomEvent<MobileSurfaceOpenDetail>).detail
+      if (isMobileSurfaceViewport() && detail?.surface === 'detail-reading-guide') setIsOpen(false)
+    }
+    window.addEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
+    return () => window.removeEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
+  }, [])
+
+  useEffect(() => {
+    let frame = 0
+
+    const applyOffset = (nextOffset: number) => {
+      const normalizedOffset = Math.max(0, Math.ceil(nextOffset))
+      collisionOffsetRef.current = normalizedOffset
+      rootRef.current?.style.setProperty('--public-assistant-collision-offset', `${normalizedOffset}px`)
+      if (rootRef.current) rootRef.current.dataset.collisionOffset = String(normalizedOffset)
+    }
+
+    const measureCollision = () => {
+      frame = 0
+      const root = rootRef.current
+      const trigger = root?.querySelector<HTMLElement>('.public-assistant__trigger')
+      const guide = document.querySelector<HTMLElement>('.detail-reading-guide__toggle')
+      const isMobileDetail = window.matchMedia('(max-width: 720px)').matches && Boolean(document.querySelector('.app.page-detail'))
+      if (!root || !trigger || !guide || !isMobileDetail || isOpen) {
+        applyOffset(0)
+        return
+      }
+
+      const triggerRect = trigger.getBoundingClientRect()
+      const guideRect = guide.getBoundingClientRect()
+      const transform = window.getComputedStyle(root).transform
+      const translateY = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42
+      const baseTop = triggerRect.top - translateY
+      const baseBottom = triggerRect.bottom - translateY
+      const overlapsHorizontally = triggerRect.left < guideRect.right && triggerRect.right > guideRect.left
+      const overlapsVertically = baseTop < guideRect.bottom && baseBottom > guideRect.top
+      applyOffset(overlapsHorizontally && overlapsVertically ? baseBottom - guideRect.top + 8 : 0)
+    }
+
+    const scheduleMeasure = () => {
+      if (frame !== 0) return
+      frame = window.requestAnimationFrame(measureCollision)
+    }
+
+    scheduleMeasure()
+    window.addEventListener('scroll', scheduleMeasure, { passive: true })
+    window.addEventListener('resize', scheduleMeasure)
+    window.addEventListener('load', scheduleMeasure)
+    window.addEventListener(MOBILE_SURFACE_LAYOUT_EVENT, scheduleMeasure)
+    return () => {
+      window.removeEventListener('scroll', scheduleMeasure)
+      window.removeEventListener('resize', scheduleMeasure)
+      window.removeEventListener('load', scheduleMeasure)
+      window.removeEventListener(MOBILE_SURFACE_LAYOUT_EVENT, scheduleMeasure)
+      if (frame !== 0) window.cancelAnimationFrame(frame)
+    }
+  }, [isOpen])
 
   useEffect(() => {
     const footer = document.querySelector('.site-footer')
@@ -334,11 +403,14 @@ export function PublicAssistantWidget() {
 
   const toggleWidget = () => {
     if (!isOpen) {
+      announceMobileSurfaceOpen('public-assistant')
+      rootRef.current?.style.setProperty('--public-assistant-collision-offset', '0px')
+      collisionOffsetRef.current = 0
       trackAnalyticsEvent('public_assistant_open', {
         source: 'floating-widget',
       })
     }
-    setIsOpen((value) => !value)
+    setIsOpen(!isOpen)
   }
 
   const submitQuestion = async (question: string) => {
@@ -399,7 +471,7 @@ export function PublicAssistantWidget() {
   }
 
   return (
-    <div className={`public-assistant ${isOpen ? 'is-open' : ''} ${footerVisible ? 'is-footer-visible' : ''}`}>
+    <div ref={rootRef} className={`public-assistant ${isOpen ? 'is-open' : ''} ${footerVisible ? 'is-footer-visible' : ''}`}>
       <button
         type="button"
         className="public-assistant__trigger"

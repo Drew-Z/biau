@@ -660,3 +660,13 @@ each selection leaves exactly one corresponding panel visible; entered form
 state survives round trips; the default overview remains below the documented
 height budget; and the page has no horizontal overflow. Desktop must expose the
 tablist, hide the selector, and obey the same one-panel contract.
+
+### Mobile Floating Surface Regression
+
+For detail routes with both a reading guide and public assistant, test 320px,
+390px, and 430px using actual bounding rectangles. Assert zero positive-area
+intersection, the intended 8px gap when collision exists, stale-offset reset
+after scrolling, no offset on a non-colliding blog detail, bidirectional mobile
+open-state exclusion, desktop inverse behavior, and no horizontal overflow.
+Mock assistant health in UI checks; never probe a real model/provider merely to
+exercise floating-surface behavior.

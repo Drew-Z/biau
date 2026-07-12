@@ -7089,6 +7089,11 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
     bottom: var(--space-16);
   }
 
+  .app.page-detail .public-assistant:not(.is-open) {
+    transform: translateY(calc(0px - var(--public-assistant-collision-offset, 0px)));
+    transition: transform 0.24s var(--ease-out-expo);
+  }
+
   .public-assistant__trigger {
     width: 44px;
     min-height: 44px;
@@ -7229,7 +7234,8 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 @media (prefers-reduced-motion: reduce) {
   .detail-reading-guide__chevron,
-  .detail-reading-guide__progress span {
+  .detail-reading-guide__progress span,
+  .app.page-detail .public-assistant:not(.is-open) {
     transition: none;
   }
 }

@@ -314,6 +314,8 @@ async function checkStudioWorkspaceModes(browser, failures) {
       failures.push(`mobile-${width} /studio: selecting a draft should return to Edit mode`)
     }
 
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.waitForTimeout(100)
     const layoutOrder = await page.evaluate(() => {
       const token = document.querySelector('.studio-control-bar')?.getBoundingClientRect().top ?? 0
       const tabsTop = document.querySelector('.studio-workspace-tabs')?.getBoundingClientRect().top ?? 0
@@ -423,6 +425,97 @@ async function checkAssistantAdminSections(browser, failures) {
     if ((await visiblePanels.count()) !== 1 || !(await desktop.locator(`#assistant-admin-panel-${section}`).isVisible())) {
       failures.push(`desktop /assistant/admin: ${section} should be the only visible panel`)
     }
+  }
+  await desktop.close()
+}
+
+async function checkMobileDetailSurfaceCoordination(browser, failures) {
+  const mobileWidths = [320, 390, 430]
+
+  for (const width of mobileWidths) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    await page.route('**/health', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ mode: 'fallback', modelConfigured: false }),
+      }),
+    )
+    await gotoApp(page, '/projects/legal-rag')
+    await page.waitForTimeout(500)
+
+    const assistant = page.locator('.public-assistant')
+    const assistantTrigger = page.locator('.public-assistant__trigger')
+    const guideToggle = page.locator('.detail-reading-guide__toggle')
+    const initialMetrics = await page.evaluate(() => {
+      const assistantRect = document.querySelector('.public-assistant__trigger')?.getBoundingClientRect()
+      const guideRect = document.querySelector('.detail-reading-guide__toggle')?.getBoundingClientRect()
+      if (!assistantRect || !guideRect) return null
+      const overlapWidth = Math.max(0, Math.min(assistantRect.right, guideRect.right) - Math.max(assistantRect.left, guideRect.left))
+      const overlapHeight = Math.max(0, Math.min(assistantRect.bottom, guideRect.bottom) - Math.max(assistantRect.top, guideRect.top))
+      return {
+        overlapArea: overlapWidth * overlapHeight,
+        gap: guideRect.top - assistantRect.bottom,
+        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      }
+    })
+    const initialOffset = Number(await assistant.getAttribute('data-collision-offset'))
+    if (!initialMetrics || initialMetrics.overlapArea > 0 || initialMetrics.gap < 7 || initialMetrics.overflow || initialOffset <= 0) {
+      failures.push(`mobile-${width} project detail: floating controls must resolve collision with an 8px gap`)
+    }
+
+    await page.evaluate(() => window.scrollTo(0, 1200))
+    await page.waitForTimeout(350)
+    if (Number(await assistant.getAttribute('data-collision-offset')) !== 0) {
+      failures.push(`mobile-${width} project detail: stale assistant offset should clear after the guide sticks to the top`)
+    }
+
+    await guideToggle.click()
+    await page.waitForTimeout(100)
+    await assistantTrigger.click()
+    await page.waitForTimeout(100)
+    if ((await guideToggle.getAttribute('aria-expanded')) !== 'false' || (await assistantTrigger.getAttribute('aria-expanded')) !== 'true') {
+      failures.push(`mobile-${width} project detail: opening assistant should close reading outline`)
+    }
+
+    await assistantTrigger.click()
+    await assistantTrigger.click()
+    await page.waitForTimeout(100)
+    await guideToggle.click()
+    await page.waitForTimeout(100)
+    if ((await assistantTrigger.getAttribute('aria-expanded')) !== 'false' || (await guideToggle.getAttribute('aria-expanded')) !== 'true') {
+      failures.push(`mobile-${width} project detail: opening reading outline should close assistant`)
+    }
+    await page.close()
+  }
+
+  const blog = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  await gotoApp(blog, '/blog/legal-rag-review')
+  await blog.waitForTimeout(400)
+  if (Number(await blog.locator('.public-assistant').getAttribute('data-collision-offset')) !== 0) {
+    failures.push('mobile blog detail: non-colliding controls should keep the normal assistant position')
+  }
+  await blog.close()
+
+  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  await desktop.route('**/health', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ mode: 'fallback', modelConfigured: false }),
+    }),
+  )
+  await gotoApp(desktop, '/projects/legal-rag')
+  const desktopGuide = desktop.locator('.detail-reading-guide__toggle')
+  const desktopAssistant = desktop.locator('.public-assistant__trigger')
+  await desktopGuide.click()
+  await desktopAssistant.click()
+  await desktop.waitForTimeout(100)
+  if (
+    Number(await desktop.locator('.public-assistant').getAttribute('data-collision-offset')) !== 0 ||
+    (await desktopAssistant.getAttribute('aria-expanded')) !== 'true'
+  ) {
+    failures.push('desktop project detail: mobile collision rules must not affect the assistant')
   }
   await desktop.close()
 }
@@ -655,6 +748,7 @@ for (const viewport of viewports) {
 
 await checkStudioWorkspaceModes(browser, failures)
 await checkAssistantAdminSections(browser, failures)
+await checkMobileDetailSurfaceCoordination(browser, failures)
 
 const statusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(statusPage, '/status')

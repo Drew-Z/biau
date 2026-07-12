@@ -123,3 +123,14 @@ the semantic `[hidden]` contract when panel classes define `display`; inactive
 panels must be neither visible nor interactive. Keep all option labels complete,
 avoid horizontal tab rails, and preserve the existing form/API state while
 switching sections.
+
+### Mobile Floating Surface Coordination
+
+When fixed and sticky mobile tools can share a viewport, do not assign permanent
+stacked offsets from one screenshot. Measure their real interactive rectangles
+and apply only the minimum collision offset plus a stable gap. Reconstruct the
+unshifted rectangle from the live CSS transform during transitions so repeated
+measurements cannot amplify the offset. High-occupancy surfaces should announce
+a typed mobile-only open event so peers close, while each component retains its
+own content and progress state. Desktop and non-colliding routes keep their
+original behavior, and reduced-motion disables the positioning transition.

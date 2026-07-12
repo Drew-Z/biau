@@ -750,3 +750,13 @@ and the mobile native selector write the same typed union. Panels keep their
 existing mounted React state but use the semantic `hidden` attribute plus an
 explicit CSS hidden contract. Do not create mobile copies of token, invite,
 member-channel, knowledge, RAG, usage, or safety state.
+
+### Scenario: Mobile Detail Surface Coordination
+
+`PublicAssistantWidget` and `DetailReadingGuide` keep independent local state.
+A small typed custom-event protocol coordinates only mobile open actions; it is
+not a new global store. The assistant owns its ephemeral collision offset in a
+DOM ref/CSS custom property and recalculates it from live geometry. Route
+content, assistant messages, reading progress, and active section remain their
+existing sources of truth. Event listeners, scroll/resize/load listeners, and
+requestAnimationFrame work must always be cleaned up by their owning effects.
