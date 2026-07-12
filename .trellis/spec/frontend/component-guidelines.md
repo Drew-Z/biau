@@ -92,3 +92,11 @@ requires an explicit 44px trigger, backdrop, close command, Escape handling,
 focus containment and restoration, document scroll locking, safe-area padding,
 and no overlap from global navigation. Runtime evidence may move after the core
 interaction on mobile, but it must remain available.
+### Long Mobile Page Navigation
+
+When an evidence-heavy mobile page exceeds several viewports, preserve its
+content and add one compact sticky native section selector instead of hiding
+sections or introducing a horizontal rail. Map every option to a stable section
+ID, show the current section and position, and keep the navigator in document
+flow. Use immediate movement for jumps longer than two viewports and smooth
+movement only for short jumps; always respect reduced-motion preferences.

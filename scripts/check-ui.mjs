@@ -460,6 +460,9 @@ for (const viewport of viewports) {
 
 const statusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(statusPage, '/status')
+if (await statusPage.locator('.status-section-navigator').isVisible().catch(() => false)) {
+  failures.push('/status desktop navigator: mobile section navigator should stay hidden')
+}
 const statusCards = await statusPage.locator('.status-target').count()
 const expectedStatusCards = siteStatusTargets.length
 const reliabilityProjectCards = await statusPage.locator('.status-project-card').count()
@@ -638,6 +641,78 @@ if (legalBackHref !== '/status') {
   failures.push(`/status detail route: expected back link to /status, got "${legalBackHref}"`)
 }
 await statusPage.close()
+
+const statusSectionIds = [
+  'status-overview',
+  'status-summary',
+  'status-layers',
+  'status-manual',
+  'status-targets',
+  'status-projects',
+]
+for (const width of [320, 390, 430]) {
+  const mobileStatusPage = await browser.newPage({ viewport: { width, height: 900 } })
+  await gotoApp(mobileStatusPage, '/status')
+  const navigator = mobileStatusPage.locator('.status-section-navigator')
+  const sectionSelect = mobileStatusPage.getByRole('combobox', { name: '选择状态页分区' })
+  const navigatorBounds = await navigator.boundingBox()
+  if (!navigatorBounds || navigatorBounds.height < 44 || navigatorBounds.x < 0 || navigatorBounds.x + navigatorBounds.width > width + 0.5) {
+    failures.push(`/status mobile navigator ${width}px: navigator should be visible, touch-sized, and bounded`)
+  }
+  if ((await sectionSelect.locator('option').count()) !== statusSectionIds.length) {
+    failures.push(`/status mobile navigator ${width}px: expected all ${statusSectionIds.length} section options`)
+  }
+  if ((await mobileStatusPage.locator('.status-target').count()) !== siteStatusTargets.length) {
+    failures.push(`/status mobile navigator ${width}px: entry evidence cards should remain rendered`)
+  }
+  if ((await mobileStatusPage.locator('.status-project-card').count()) < staticReliabilityProjects.length) {
+    failures.push(`/status mobile navigator ${width}px: project reliability evidence should remain rendered`)
+  }
+
+  for (const sectionId of statusSectionIds) {
+    await sectionSelect.selectOption(sectionId)
+    await mobileStatusPage.waitForFunction(
+      (id) => {
+        const target = document.getElementById(id)
+        if (!target) return false
+        const top = target.getBoundingClientRect().top
+        return top >= 70 && top <= 105
+      },
+      sectionId,
+      { timeout: 2500 },
+    ).catch(() => undefined)
+    const sectionTop = await mobileStatusPage.locator(`#${sectionId}`).evaluate((item) => item.getBoundingClientRect().top)
+    if (sectionTop < 70 || sectionTop > 105) {
+      failures.push(`/status mobile navigator ${width}px: ${sectionId} should land below the sticky navigator, got ${sectionTop.toFixed(1)}px`)
+    }
+    if ((await sectionSelect.inputValue()) !== sectionId) {
+      failures.push(`/status mobile navigator ${width}px: selector should retain ${sectionId} after navigation`)
+    }
+  }
+
+  await mobileStatusPage.evaluate(() => {
+    const root = document.documentElement
+    const previous = root.style.scrollBehavior
+    root.style.scrollBehavior = 'auto'
+    document.querySelector('#status-manual')?.scrollIntoView({ block: 'start' })
+    root.style.scrollBehavior = previous
+  })
+  await mobileStatusPage.waitForFunction(
+    () => document.querySelector('.status-section-navigator select')?.value === 'status-manual',
+    undefined,
+    { timeout: 2000 },
+  ).catch(() => undefined)
+  if ((await sectionSelect.inputValue()) !== 'status-manual') {
+    failures.push(`/status mobile navigator ${width}px: scrolling should update the current section`)
+  }
+  const stickyTop = await navigator.evaluate((item) => item.getBoundingClientRect().top)
+  if (stickyTop < 0 || stickyTop > 16) {
+    failures.push(`/status mobile navigator ${width}px: sticky navigator should remain near the viewport top`)
+  }
+  const overflow = await mobileStatusPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
+  if (overflow) failures.push(`/status mobile navigator ${width}px: page should not overflow horizontally`)
+  await mobileStatusPage.close()
+}
 
 const interactionPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(interactionPage, '/blog')

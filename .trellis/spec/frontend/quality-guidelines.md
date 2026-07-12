@@ -630,3 +630,11 @@ the first viewport; the drawer starts inaccessible and closed; opening exposes
 document scrolling, and prevents global-navigation overlap; Escape, backdrop,
 and close-button paths restore scrolling and trigger focus. Also assert drawer
 bounds, retained secondary capabilities, and no page-level horizontal overflow.
+### Long Status Page Navigation Regression
+
+For `/status`, verify the mobile-only section navigator at 320px, 390px, and
+430px. Assert all stable section options exist, each jump lands below the sticky
+control, passive scroll tracking updates the selected section, the control stays
+bounded near the viewport top, and entry/project evidence counts are unchanged.
+Desktop must hide the mobile navigator, and no viewport may gain horizontal
+overflow.

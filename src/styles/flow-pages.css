@@ -1158,6 +1158,10 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.status-section-navigator {
+  display: none;
+}
+
 .status-overview {
   padding: var(--space-24);
   display: grid;
@@ -6511,6 +6515,105 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .page-stack .section-description {
     font-size: 14px;
     line-height: 1.55;
+  }
+
+  .status-section-navigator {
+    width: 100%;
+    min-width: 0;
+    padding: var(--space-8);
+    position: sticky;
+    top: max(var(--space-8), env(safe-area-inset-top, 0px));
+    z-index: 18;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-8);
+    align-items: center;
+    background: color-mix(in oklch, var(--panel) 82%, transparent);
+    border: 1px solid var(--flow-ui-border-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(calc(var(--flow-backdrop-blur) + 6px)) saturate(1.12);
+    backdrop-filter: blur(calc(var(--flow-backdrop-blur) + 6px)) saturate(1.12);
+  }
+
+  .status-section-navigator__meta {
+    min-width: 58px;
+    display: grid;
+    gap: 1px;
+    align-content: center;
+  }
+
+  .status-section-navigator__meta span,
+  .status-section-navigator__meta em {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .status-section-navigator__meta strong {
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .status-section-navigator__control {
+    min-width: 0;
+    min-height: 46px;
+    padding: 0 var(--space-10, 10px);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-8);
+    align-items: center;
+    color: var(--ink);
+    background: color-mix(in oklch, var(--panel-strong) 64%, transparent);
+    border: 1px solid var(--flow-ui-card-border);
+    border-radius: var(--radius-md);
+  }
+
+  .status-section-navigator__control > svg {
+    color: var(--amber);
+    pointer-events: none;
+  }
+
+  .status-section-navigator select {
+    width: 100%;
+    min-width: 0;
+    height: 44px;
+    padding: 0;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+  }
+
+  .status-section-navigator select:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+    border-radius: var(--radius-sm);
+  }
+
+  .status-section-navigator option {
+    color: var(--ink);
+    background: var(--panel);
+  }
+
+  #status-overview,
+  #status-summary,
+  #status-layers,
+  #status-manual,
+  #status-targets,
+  #status-projects {
+    scroll-margin-top: 86px;
   }
 
   .status-overview,

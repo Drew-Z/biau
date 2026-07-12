@@ -20,6 +20,7 @@ import {
   projectCategoryLabels,
   statusMeta,
 } from '../data/siteStatusView'
+import { StatusSectionNavigator } from '../components/StatusSectionNavigator'
 import { useSiteStatus } from '../hooks/useSiteStatus'
 
 const entrySummaryKeys = ['online', 'degraded', 'offline', 'unchecked'] as const
@@ -66,7 +67,9 @@ export function SiteStatusPage() {
         <p className="section-description">最近一次公开入口检测，以及每个重点项目的关键能力、指标接入和人工 gate。</p>
       </section>
 
-      <section className="status-overview glass-card">
+      <StatusSectionNavigator />
+
+      <section id="status-overview" className="status-overview glass-card">
         <div className="status-overview__lead">
           <span className={`status-pulse ${entryNeedsAttention || reliabilityNeedsAttention ? 'degraded' : 'online'}`} aria-hidden />
           <div>
@@ -97,7 +100,7 @@ export function SiteStatusPage() {
         {loadError && <p className="status-load-error">状态数据暂未读取成功：{loadError}</p>}
       </section>
 
-      <section className="status-summary-clusters" aria-label="状态统计">
+      <section id="status-summary" className="status-summary-clusters" aria-label="状态统计">
         <div className="status-summary-cluster" aria-label="公开入口统计">
           <div className="status-summary-cluster__head">
             <p className="section-subtitle">ENTRY REACHABILITY</p>
@@ -141,7 +144,7 @@ export function SiteStatusPage() {
         </div>
       </section>
 
-      <section className="status-layer-grid" aria-label="可靠性分层">
+      <section id="status-layers" className="status-layer-grid" aria-label="可靠性分层">
         {(Object.keys(layerLabels) as Array<keyof typeof layerLabels>).map((layer) => {
           const meta = layerLabels[layer]
           return (
@@ -154,7 +157,7 @@ export function SiteStatusPage() {
         })}
       </section>
 
-      <section className="status-manual-queue" aria-label="待处理人工任务">
+      <section id="status-manual" className="status-manual-queue" aria-label="待处理人工任务">
         <div className="status-manual-queue__head">
           <div>
             <p className="section-subtitle">ACTION QUEUE</p>
@@ -243,7 +246,7 @@ export function SiteStatusPage() {
         })}
       </section>
 
-      <section className="status-project-index" aria-label="可靠性详情页">
+      <section id="status-projects" className="status-project-index" aria-label="可靠性详情页">
         {status.reliabilityProjects?.map((project) => {
           const projectCounts = getReliabilityProjectStatusCounts(project)
           const visibleStatuses = reliabilityStatusOrder.filter((statusKey) => projectCounts[statusKey] > 0)
