@@ -670,3 +670,11 @@ after scrolling, no offset on a non-colliding blog detail, bidirectional mobile
 open-state exclusion, desktop inverse behavior, and no horizontal overflow.
 Mock assistant health in UI checks; never probe a real model/provider merely to
 exercise floating-surface behavior.
+
+Status reliability detail routes use the same regression boundary. Verify the
+six ordered stable anchors, every anchor landing below the collapsed sticky
+guide, passive active-section tracking, and preservation of source check, gate,
+and next-action counts at desktop plus 320px, 390px, and 430px. `/status` keeps
+`StatusSectionNavigator`; missing `/status/:projectId` routes render no reading
+guide. Use condition-based waits for geometry and React state, and force test
+scrolling to `scroll-behavior: auto` when a check needs deterministic placement.

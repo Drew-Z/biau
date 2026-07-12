@@ -123,8 +123,10 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
     if (!target) return
     event.preventDefault()
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
     setIsOpen(false)
+    window.setTimeout(() => {
+      target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' })
+    }, 0)
   }
 
   return (

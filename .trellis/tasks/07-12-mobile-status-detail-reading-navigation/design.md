@@ -1,0 +1,5 @@
+# Design: Mobile Status Detail Reading Navigation
+
+`SiteStatusDetailPage` imports the existing `DetailReadingGuide` and supplies a static ordered item list. Stable IDs are assigned to the hero, project distribution/header, check list, handling guide, gate section, and next-action section. `StatusProjectDetail` remains the single renderer for all reliability data.
+
+`App.getPageClass` separates `/status` from `/status/:projectId`; detail routes add `page-detail page-status-detail`, enabling the existing public-assistant collision and mobile-surface protocol. CSS adds scoped scroll margins only for status-detail anchors. Tests verify item completeness, navigation landing, active tracking, assistant separation, missing-route absence, and preservation of check/gate counts at 320/390/430px and desktop.

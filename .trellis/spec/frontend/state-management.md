@@ -760,3 +760,7 @@ DOM ref/CSS custom property and recalculates it from live geometry. Route
 content, assistant messages, reading progress, and active section remain their
 existing sources of truth. Event listeners, scroll/resize/load listeners, and
 requestAnimationFrame work must always be cleaned up by their owning effects.
+Status detail routes opt into this protocol through `page-status-detail
+page-detail`; the `/status` overview must not receive those classes. Page-owned
+anchor arrays remain static typed data, while `DetailReadingGuide` remains the
+only owner of outline, progress, and active-section state.

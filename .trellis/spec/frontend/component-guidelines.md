@@ -60,6 +60,13 @@ guide into view; `Escape`, outside pointer interaction, and selecting a real
 anchor all close it.
 
 Use `prefers-reduced-motion` to choose instant versus smooth section navigation.
+When an outline is in normal flow, close it before scrolling the target and defer
+`scrollIntoView` until the collapsed layout is committed. Scrolling first and
+then collapsing shifts the target by the removed outline height; scheduling the
+jump in the same animation-frame queue as the open-state effect can also be
+cancelled by that effect's cleanup. Reduced-motion mode must additionally set
+`html { scroll-behavior: auto; }`; `behavior: auto` otherwise inherits the site's
+global smooth-scroll rule.
 Loading and missing-detail states do not render an empty guide. Keep the public
 assistant behind the open outline and verify the guide at `320`, `390`, `430`,
 and desktop widths.

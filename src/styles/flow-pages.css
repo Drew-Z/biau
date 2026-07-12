@@ -2914,7 +2914,8 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 }
 
 .detail-page .detail-block[id],
-.detail-page .detail-related[id] {
+.detail-page .detail-related[id],
+.app.page-status-detail [id^='status-detail-'] {
   scroll-margin-top: 92px;
 }
 

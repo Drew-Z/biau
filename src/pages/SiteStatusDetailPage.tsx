@@ -13,6 +13,16 @@ import {
   statusMeta,
 } from '../data/siteStatusView'
 import { useSiteStatus } from '../hooks/useSiteStatus'
+import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
+
+const statusDetailReadingItems: DetailReadingItem[] = [
+  { id: 'status-detail-overview', label: '状态概览' },
+  { id: 'status-detail-distribution', label: '检查分布' },
+  { id: 'status-detail-checks', label: '可靠性检查' },
+  { id: 'status-detail-handling', label: '人工处理' },
+  { id: 'status-detail-gates', label: '人工 Gate' },
+  { id: 'status-detail-next-actions', label: '后续接入' },
+]
 
 function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
   const projectCounts = getReliabilityProjectStatusCounts(project)
@@ -31,7 +41,7 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
         </div>
       </div>
       <p className="status-project__summary">{project.summary}</p>
-      <dl className="status-project__status-strip" aria-label={`${project.title} 状态分布`}>
+      <dl id="status-detail-distribution" className="status-project__status-strip" aria-label={`${project.title} 状态分布`}>
         {visibleStatuses.map((statusKey) => {
           const meta = statusMeta[statusKey]
           return (
@@ -43,7 +53,7 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
         })}
       </dl>
 
-      <div className="status-check-list">
+      <div id="status-detail-checks" className="status-check-list">
         {project.checks.map((check) => {
           const meta = statusMeta[check.status]
           const layer = layerLabels[check.layer]
@@ -98,7 +108,7 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
       </div>
 
       <div className="status-project__footer">
-        <section className="status-project__handling-guide" aria-label={`${project.title} 人工处理规则`}>
+        <section id="status-detail-handling" className="status-project__handling-guide" aria-label={`${project.title} 人工处理规则`}>
           <div className="status-project__footer-head">
             <h3>人工处理规则</h3>
             <span>SAFE</span>
@@ -112,7 +122,7 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
             <li>失败时保持 planned / unchecked / gated，不为了展示效果改成 online。</li>
           </ul>
         </section>
-        <section aria-label={`${project.title} 人工 gate 清单`}>
+        <section id="status-detail-gates" aria-label={`${project.title} 人工 gate 清单`}>
           <div className="status-project__footer-head">
             <h3>人工 gate</h3>
             <span>{project.gates.length}</span>
@@ -126,7 +136,7 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
             ))}
           </ol>
         </section>
-        <section aria-label={`${project.title} 后续接入清单`}>
+        <section id="status-detail-next-actions" aria-label={`${project.title} 后续接入清单`}>
           <div className="status-project__footer-head">
             <h3>后续接入</h3>
             <span>{project.nextActions.length}</span>
@@ -169,7 +179,7 @@ export function SiteStatusDetailPage() {
 
   return (
     <main className="site-status-page page-stack">
-      <section className="section-header page-hero status-hero">
+      <section id="status-detail-overview" className="section-header page-hero status-hero">
         <p className="section-subtitle">STATUS DETAIL</p>
         <h1 className="section-title">{project.title}</h1>
         <p className="section-description">{project.summary}</p>
@@ -185,6 +195,7 @@ export function SiteStatusDetailPage() {
         </div>
       </section>
       {loadError && <p className="status-load-error">状态数据暂未读取成功：{loadError}</p>}
+      <DetailReadingGuide items={statusDetailReadingItems} label="状态导航" />
       <section className="status-reliability" aria-label={`${project.title} 可靠性详情`}>
         <StatusProjectDetail project={project} />
       </section>

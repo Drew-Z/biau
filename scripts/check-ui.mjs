@@ -314,7 +314,10 @@ async function checkStudioWorkspaceModes(browser, failures) {
       failures.push(`mobile-${width} /studio: selecting a draft should return to Edit mode`)
     }
 
-    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.evaluate(() => {
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, 0)
+    })
     await page.waitForTimeout(100)
     const layoutOrder = await page.evaluate(() => {
       const token = document.querySelector('.studio-control-bar')?.getBoundingClientRect().top ?? 0
@@ -442,7 +445,17 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
       }),
     )
     await gotoApp(page, '/projects/legal-rag')
-    await page.waitForTimeout(500)
+    await page
+      .waitForFunction(() => {
+        const assistant = document.querySelector('.public-assistant')
+        const assistantRect = document.querySelector('.public-assistant__trigger')?.getBoundingClientRect()
+        const guideRect = document.querySelector('.detail-reading-guide__toggle')?.getBoundingClientRect()
+        if (!assistant || !assistantRect || !guideRect) return false
+        const overlapWidth = Math.max(0, Math.min(assistantRect.right, guideRect.right) - Math.max(assistantRect.left, guideRect.left))
+        const overlapHeight = Math.max(0, Math.min(assistantRect.bottom, guideRect.bottom) - Math.max(assistantRect.top, guideRect.top))
+        return Number(assistant.getAttribute('data-collision-offset')) > 0 && overlapWidth * overlapHeight === 0 && guideRect.top - assistantRect.bottom >= 7
+      }, null, { timeout: 2_000 })
+      .catch(() => {})
 
     const assistant = page.locator('.public-assistant')
     const assistantTrigger = page.locator('.public-assistant__trigger')
@@ -464,7 +477,10 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
       failures.push(`mobile-${width} project detail: floating controls must resolve collision with an 8px gap`)
     }
 
-    await page.evaluate(() => window.scrollTo(0, 1200))
+    await page.evaluate(() => {
+      document.documentElement.style.scrollBehavior = 'auto'
+      window.scrollTo(0, 1200)
+    })
     await page.waitForTimeout(350)
     if (Number(await assistant.getAttribute('data-collision-offset')) !== 0) {
       failures.push(`mobile-${width} project detail: stale assistant offset should clear after the guide sticks to the top`)
@@ -518,6 +534,142 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
     failures.push('desktop project detail: mobile collision rules must not affect the assistant')
   }
   await desktop.close()
+}
+async function checkStatusDetailReadingNavigation(browser, failures) {
+  const routePath = '/status/legal-rag'
+  const expectedIds = [
+    'status-detail-overview',
+    'status-detail-distribution',
+    'status-detail-checks',
+    'status-detail-handling',
+    'status-detail-gates',
+    'status-detail-next-actions',
+  ]
+  const expectedProject = staticReliabilityProjects.find((project) => project.id === 'legal-rag')
+  const viewports = [
+    { name: 'desktop', width: 1440, height: 1000 },
+    { name: 'mobile-320', width: 320, height: 900 },
+    { name: 'mobile-390', width: 390, height: 900 },
+    { name: 'mobile-430', width: 430, height: 900 },
+  ]
+
+  for (const viewport of viewports) {
+    const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } })
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.route('**/health', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ mode: 'fallback', modelConfigured: false }),
+      }),
+    )
+    await page.addInitScript(() => {
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    })
+    await gotoApp(page, routePath)
+
+    const guide = page.locator('.detail-reading-guide')
+    const toggle = guide.locator('.detail-reading-guide__toggle')
+    const targetIds = await guide.locator('.detail-reading-guide__outline a').evaluateAll((links) =>
+      links.map((link) => link.getAttribute('href')?.slice(1) ?? ''),
+    )
+    if (JSON.stringify(targetIds) !== JSON.stringify(expectedIds)) {
+      failures.push(`${routePath} ${viewport.name}: expected six ordered status navigation targets`)
+    }
+
+    const contentState = await page.evaluate(() => ({
+      checks: document.querySelectorAll('#status-detail-checks .status-check').length,
+      gates: document.querySelectorAll('#status-detail-gates .status-project__manual-list > li').length,
+      nextActions: document.querySelectorAll('#status-detail-next-actions .status-project__manual-list > li').length,
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    }))
+    if (
+      !expectedProject ||
+      contentState.checks !== expectedProject.checks.length ||
+      contentState.gates !== expectedProject.gates.length ||
+      contentState.nextActions !== expectedProject.nextActions.length
+    ) {
+      failures.push(`${routePath} ${viewport.name}: reading navigation must preserve checks, gates, and next actions`)
+    }
+    if (contentState.overflow) {
+      failures.push(`${routePath} ${viewport.name}: status detail should not overflow horizontally`)
+    }
+
+    for (const id of expectedIds) {
+      await toggle.click()
+      await page.waitForTimeout(50)
+      await guide.locator(`a[href="#${id}"]`).click()
+      await page.waitForTimeout(200)
+      const landing = await page.evaluate((targetId) => {
+        const target = document.getElementById(targetId)
+        const guideElement = document.querySelector('.detail-reading-guide')
+        if (!target || !guideElement) return null
+        const targetRect = target.getBoundingClientRect()
+        const guideRect = guideElement.getBoundingClientRect()
+        return {
+          expanded: guideElement.querySelector('.detail-reading-guide__toggle')?.getAttribute('aria-expanded'),
+          targetTop: targetRect.top,
+          guideBottom: guideRect.bottom,
+          guideSticky: guideRect.top <= 93,
+        }
+      }, id)
+      if (!landing || landing.expanded !== 'false' || landing.targetTop < (landing.guideSticky ? landing.guideBottom - 2 : -1)) {
+        failures.push(`${routePath} ${viewport.name}: ${id} should land below the closed sticky guide`)
+      }
+    }
+
+    await page.evaluate(() => document.getElementById('status-detail-checks')?.scrollIntoView())
+    await page
+      .waitForFunction(
+        () => document.querySelector('.detail-reading-guide')?.getAttribute('data-active-section') === 'status-detail-checks',
+        null,
+        { timeout: 2_000 },
+      )
+      .catch(() => failures.push(`${routePath} ${viewport.name}: passive scrolling should update the active section`))
+
+    if (viewport.width <= 430) {
+      const assistantTrigger = page.locator('.public-assistant__trigger')
+      await toggle.click()
+      await assistantTrigger.click()
+      await page.waitForTimeout(100)
+      const openState = await page.evaluate(() => {
+        const guideToggle = document.querySelector('.detail-reading-guide__toggle')
+        const assistantToggle = document.querySelector('.public-assistant__trigger')
+        const guideRect = guideToggle?.getBoundingClientRect()
+        const assistantRect = assistantToggle?.getBoundingClientRect()
+        if (!guideRect || !assistantRect) return null
+        const overlapWidth = Math.max(0, Math.min(guideRect.right, assistantRect.right) - Math.max(guideRect.left, assistantRect.left))
+        const overlapHeight = Math.max(0, Math.min(guideRect.bottom, assistantRect.bottom) - Math.max(guideRect.top, assistantRect.top))
+        return {
+          guideExpanded: guideToggle?.getAttribute('aria-expanded'),
+          assistantExpanded: assistantToggle?.getAttribute('aria-expanded'),
+          overlapArea: overlapWidth * overlapHeight,
+        }
+      })
+      if (!openState || openState.guideExpanded !== 'false' || openState.assistantExpanded !== 'true' || openState.overlapArea > 0) {
+        failures.push(`${routePath} ${viewport.name}: assistant should close and avoid the status reading guide`)
+      }
+    }
+
+    await page.close()
+  }
+
+  const statusOverview = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  await gotoApp(statusOverview, '/status')
+  if (
+    !(await statusOverview.locator('.status-section-navigator').isVisible().catch(() => false)) ||
+    (await statusOverview.locator('.detail-reading-guide').count()) !== 0
+  ) {
+    failures.push('/status: main status navigator should remain unchanged')
+  }
+  await statusOverview.close()
+
+  const missing = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  await gotoApp(missing, '/status/missing-reading-guide')
+  if ((await missing.locator('.detail-reading-guide').count()) !== 0) {
+    failures.push('/status/missing-reading-guide: missing status detail should not render a reading guide')
+  }
+  await missing.close()
 }
 const failures = []
 const browser = await chromium.launch({ headless: true })
@@ -749,6 +901,7 @@ for (const viewport of viewports) {
 await checkStudioWorkspaceModes(browser, failures)
 await checkAssistantAdminSections(browser, failures)
 await checkMobileDetailSurfaceCoordination(browser, failures)
+await checkStatusDetailReadingNavigation(browser, failures)
 
 const statusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(statusPage, '/status')
