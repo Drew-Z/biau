@@ -65,30 +65,32 @@ export function BlogPage() {
         <p className="section-description">从实践中提炼项目方法、技术路线和公开内容系统。</p>
       </section>
 
-      <BlogColumnFilter
-        columns={availableColumns}
-        counts={blogColumnCounts}
-        totalCount={publicBlogs.length}
-        selectedColumn={selectedBlogColumn}
-        onSelect={handleSelectColumn}
-      />
-
-      <section className="blog-tools" aria-label="文章检索">
-        <label className="sr-only" htmlFor="blog-search">
-          搜索知识库文章
-        </label>
-        <input
-          id="blog-search"
-          className="blog-search"
-          type="search"
-          value={searchQuery}
-          onChange={(event) => handleSearchChange(event.target.value)}
-          placeholder="搜索文章、项目方法、技术关键词"
+      <div className="blog-discovery">
+        <BlogColumnFilter
+          columns={availableColumns}
+          counts={blogColumnCounts}
+          totalCount={publicBlogs.length}
+          selectedColumn={selectedBlogColumn}
+          onSelect={handleSelectColumn}
         />
-        <p className="blog-result-meta" aria-live="polite">
-          公开精选 · {filteredBlogs.length} 篇文章 · 第 {page} / {totalPages} 页
-        </p>
-      </section>
+
+        <section className="blog-tools" aria-label="文章检索">
+          <label className="sr-only" htmlFor="blog-search">
+            搜索知识库文章
+          </label>
+          <input
+            id="blog-search"
+            className="blog-search"
+            type="search"
+            value={searchQuery}
+            onChange={(event) => handleSearchChange(event.target.value)}
+            placeholder="搜索文章、项目方法、技术关键词"
+          />
+          <p className="blog-result-meta" aria-live="polite">
+            公开精选 · {filteredBlogs.length} 篇文章 · 第 {page} / {totalPages} 页
+          </p>
+        </section>
+      </div>
 
       <div className="blogs-grid">
         {visibleBlogs.map((post) => (

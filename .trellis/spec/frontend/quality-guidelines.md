@@ -710,6 +710,15 @@ Do not infer a static mode from mobile/coarse pointer, device memory, hardware c
 After the first canvas frame, legacy fixed blur, blend, gradient, grain, and harbor-environment layers must not remain active. Pause rendering while the document is hidden and while the harbor intro owns the viewport. Theme and dusk/garden/stellar scene updates must change the palette without replacing or retransferring the canvas.
 
 UI checks must assert six distinct light/dark scene frames, viewport-sized capped-DPR backing dimensions, animated frame changes in normal mode, stable frames in reduced-motion mode, zero horizontal overflow, and long project/blog scrolling without blank frames or rectangular compositor tiles. Chromium `ReadPixels` driver warnings caused by screenshot capture may be filtered narrowly; other WebGL warnings remain failures.
+### Mobile Editorial Rhythm Regression
+
+Mobile public pages should move useful content into the first viewport without removing brand context. At 390px, the first home project and first blog card should start no later than 410px, and the first project group control no later than 300px. At 320px, allow the blog entry boundary to grow to 430px for legitimate text wrapping.
+
+Consolidate related discovery controls into one visual surface. The blog column selector and search field remain separate semantic controls with at least 44px height, but share one `.blog-discovery` panel on mobile. Do not use `display: contents` on the `<label>` itself because UI and accessibility checks need a measurable labeled control boundary.
+
+Project groups use one light toggle surface followed by an unframed grid of project cards. The grid must have no border or shadow on mobile; the cards remain the primary repeated surfaces. Detail titles use fixed breakpoint sizes rather than viewport-scaled `vw` typography so font loading and long titles cannot unpredictably shift the first content boundary.
+
+UI checks cover 320/390/430px with real touch contexts. Assert entry y-coordinates, 44px controls, zero horizontal overflow, unframed project grids, whole-card navigation, and stable desktop inverse behavior. When testing mutually exclusive mobile overlays, dispatch the documented `biau:mobile-surface-open` intent before clicking an entry that an open full-height panel physically covers; do not use force-click to bypass actual pointer geometry.
 ### Mobile Navigable Card Regression
 
 On coarse-pointer mobile layouts, navigable home, project, and blog cards must keep `touch-action: pan-y` and use short press confirmation rather than custom swipe handling. Whole-card entry, visible focus, Enter/Space activation, and nested action isolation must remain consistent; nested buttons or links stop propagation so one gesture causes exactly one navigation.

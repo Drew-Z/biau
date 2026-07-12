@@ -311,6 +311,7 @@ async function checkStudioWorkspaceModes(browser, failures) {
 
     await draftsTab.click()
     await draftsPanel.getByRole('button', { name: /UI Check 待审核草稿/ }).click()
+    await editorPanel.waitFor({ state: 'visible' })
     if ((await editorTab.getAttribute('aria-selected')) !== 'true' || !(await editorPanel.isVisible())) {
       failures.push(`mobile-${width} /studio: selecting a draft should return to Edit mode`)
     }
@@ -319,7 +320,7 @@ async function checkStudioWorkspaceModes(browser, failures) {
       document.documentElement.style.scrollBehavior = 'auto'
       window.scrollTo(0, 0)
     })
-    await page.waitForTimeout(100)
+    await page.waitForTimeout(250)
     const layoutOrder = await page.evaluate(() => {
       const token = document.querySelector('.studio-control-bar')?.getBoundingClientRect().top ?? 0
       const tabsTop = document.querySelector('.studio-workspace-tabs')?.getBoundingClientRect().top ?? 0
@@ -328,7 +329,9 @@ async function checkStudioWorkspaceModes(browser, failures) {
       return { token, tabsTop, grid, review }
     })
     if (!(layoutOrder.token < layoutOrder.tabsTop && layoutOrder.tabsTop < layoutOrder.grid && layoutOrder.grid < layoutOrder.review)) {
-      failures.push(`mobile-${width} /studio: expected token, modes, workspace, then review guidance order`)
+      failures.push(
+        `mobile-${width} /studio: expected token, modes, workspace, then review guidance order (${JSON.stringify(layoutOrder)})`,
+      )
     }
 
     const overflowX = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
@@ -497,11 +500,17 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
 
     await assistantTrigger.click()
     await assistantTrigger.click()
-    await page.waitForTimeout(100)
+    await page.waitForTimeout(250)
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent('biau:mobile-surface-open', { detail: { surface: 'detail-reading-guide' } }))
+    })
+    await page.waitForFunction(
+      () => document.querySelector('.public-assistant__trigger')?.getAttribute('aria-expanded') === 'false',
+    )
     await guideToggle.click()
-    await page.waitForTimeout(100)
+    await page.waitForTimeout(250)
     if ((await assistantTrigger.getAttribute('aria-expanded')) !== 'false' || (await guideToggle.getAttribute('aria-expanded')) !== 'true') {
-      failures.push(`mobile-${width} project detail: opening reading outline should close assistant`)
+      failures.push(`mobile-${width} project detail: reading-guide intent should close assistant before the outline opens`)
     }
     await page.close()
   }
@@ -706,6 +715,7 @@ async function checkMobileProjectCatalog(browser, failures) {
       await toggle.click()
       const panel = page.locator(`#project-group-panel-${group.key}`)
       await panel.waitFor({ state: 'visible' })
+      await page.waitForTimeout(350)
 
       const visiblePanelIds = await page.locator('.projects-grid:visible').evaluateAll((panels) => panels.map((panel) => panel.id))
       const visibleTitles = await panel.locator('.project-card').evaluateAll((cards) =>
@@ -724,9 +734,16 @@ async function checkMobileProjectCatalog(browser, failures) {
           .filter((action) => {
             const style = getComputedStyle(action)
             const rect = action.getBoundingClientRect()
-            return style.display !== 'none' && rect.width > 0 && rect.height > 0
+            return (
+              style.display !== 'none' &&
+              style.visibility !== 'hidden' &&
+              Number.parseFloat(style.opacity || '1') > 0 &&
+              action.getClientRects().length > 0 &&
+              rect.width > 0 &&
+              rect.height > 0
+            )
           })
-          .filter((action) => action.getBoundingClientRect().height < 44)
+          .filter((action) => action.getBoundingClientRect().height + 0.01 < 44)
           .map((action) => (action.textContent ?? '').trim()),
       )
       if (shortActions.length > 0) {
@@ -2272,6 +2289,10 @@ for (const width of [320, 390, 430]) {
   if (homeCardTouchAction !== 'pan-y') {
     failures.push(`/ mobile card feedback ${width}px: home card should preserve vertical panning`)
   }
+  const homeEntryTop = await touchPage.locator('.carousel-card:not([data-loop-copy="true"])').first().evaluate((card) => card.getBoundingClientRect().top)
+  if (homeEntryTop > 410) {
+    failures.push(`/ mobile editorial rhythm ${width}px: first home project should enter the first viewport, got y=${homeEntryTop}`)
+  }
 
   await gotoApp(touchPage, '/projects')
   const projectCardState = await touchPage.locator('.project-card').first().evaluate((card) => ({
@@ -2281,20 +2302,52 @@ for (const width of [320, 390, 430]) {
   if (projectCardState.touchAction !== 'pan-y' || projectCardState.horizontalOverflow) {
     failures.push(`/ mobile card feedback ${width}px: project cards should be touch-safe and bounded`)
   }
+  const projectRhythm = await touchPage.evaluate(() => {
+    const toggle = document.querySelector('.project-group-toggle')
+    const grid = document.querySelector('.projects-grid')
+    if (!(toggle instanceof HTMLElement) || !(grid instanceof HTMLElement)) return null
+    const gridStyle = getComputedStyle(grid)
+    return {
+      entryTop: toggle.getBoundingClientRect().top,
+      toggleHeight: toggle.getBoundingClientRect().height,
+      gridBorderWidth: Number.parseFloat(gridStyle.borderTopWidth),
+      gridShadow: gridStyle.boxShadow,
+    }
+  })
+  if (!projectRhythm || projectRhythm.entryTop > 300 || projectRhythm.toggleHeight < 44 || projectRhythm.gridBorderWidth > 0 || projectRhythm.gridShadow !== 'none') {
+    failures.push(`/ mobile editorial rhythm ${width}px: project grouping should be compact, touch-safe, and free of nested-card framing`)
+  }
 
   await gotoApp(touchPage, '/blog')
   const firstBlogCard = touchPage.locator('.blog-card[role="link"]').first()
-  const blogCardState = await firstBlogCard.evaluate((card) => ({
-    touchAction: getComputedStyle(card).touchAction,
-    minTransitionMs: getComputedStyle(card)
-      .transitionDuration.split(',')
-      .map((duration) => Number.parseFloat(duration) * (duration.includes('ms') ? 1 : 1000))
-      .filter(Number.isFinite)
-      .reduce((minimum, duration) => Math.min(minimum, duration), Number.POSITIVE_INFINITY),
-    horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-  }))
+  const blogCardState = await firstBlogCard.evaluate((card) => {
+    const discovery = document.querySelector('.blog-discovery')
+    const select = document.querySelector('.blog-column-select__control')
+    const search = document.querySelector('.blog-search')
+    return {
+      touchAction: getComputedStyle(card).touchAction,
+      minTransitionMs: getComputedStyle(card)
+        .transitionDuration.split(',')
+        .map((duration) => Number.parseFloat(duration) * (duration.includes('ms') ? 1 : 1000))
+        .filter(Number.isFinite)
+        .reduce((minimum, duration) => Math.min(minimum, duration), Number.POSITIVE_INFINITY),
+      horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+      entryTop: card.getBoundingClientRect().top,
+      discoveryDisplay: discovery ? getComputedStyle(discovery).display : '',
+      selectHeight: select?.getBoundingClientRect().height ?? 0,
+      searchHeight: search?.getBoundingClientRect().height ?? 0,
+    }
+  })
   if (blogCardState.touchAction !== 'pan-y' || blogCardState.horizontalOverflow) {
     failures.push(`/ mobile card feedback ${width}px: blog cards should be touch-safe and bounded`)
+  }
+  if (
+    blogCardState.entryTop > (width === 320 ? 430 : 410) ||
+    blogCardState.discoveryDisplay !== 'grid' ||
+    blogCardState.selectHeight < 44 ||
+    blogCardState.searchHeight < 44
+  ) {
+    failures.push(`/ mobile editorial rhythm ${width}px: blog discovery should meet the responsive first-entry boundary`)
   }
   if (!Number.isFinite(blogCardState.minTransitionMs) || blogCardState.minTransitionMs > 100) {
     failures.push(`/ mobile card feedback ${width}px: press feedback should respond within 100ms`)

@@ -680,3 +680,30 @@
     transform: none !important;
   }
 }
+
+@media (max-width: 768px) {
+  .home-hero {
+    gap: var(--space-12, 12px);
+    padding-top: var(--space-8);
+    margin-top: var(--space-8);
+  }
+
+  .hero-intro { gap: var(--space-4, 4px); }
+
+  .hero-intro h2.hero-title-rotator {
+    font-size: 2.35rem;
+    line-height: 1.04;
+  }
+
+  .hero-intro .hero-greeting,
+  .hero-intro .hero-time { margin-top: var(--space-6, 6px); }
+
+  .hero-panel {
+    padding: var(--space-12, 12px);
+    border-radius: var(--radius-lg);
+  }
+}
+
+@media (max-width: 360px) {
+  .hero-intro h2.hero-title-rotator { font-size: 2.15rem; }
+}
