@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Archive, RefreshCw, RotateCcw, SlidersHorizontal, X } from 'lucide-react'
 import {
@@ -520,6 +520,10 @@ export function AssistantPage() {
     return () => mediaQuery.removeEventListener('change', updateLayout)
   }, [])
 
+  useLayoutEffect(() => {
+    if (isMobileLayout && isMobileWorkspaceOpen) mobileWorkspaceCloseRef.current?.focus()
+  }, [isMobileLayout, isMobileWorkspaceOpen])
+
   useEffect(() => {
     if (!isMobileLayout || !isMobileWorkspaceOpen) return
 
@@ -546,8 +550,6 @@ export function AssistantPage() {
         first.focus()
       }
     }
-    mobileWorkspaceCloseRef.current?.focus()
-
     document.documentElement.style.overflow = 'hidden'
     document.documentElement.classList.add('assistant-mobile-drawer-open')
     window.addEventListener('keydown', handleKeyDown)
@@ -961,6 +963,11 @@ export function AssistantPage() {
           aria-modal={isMobileLayout ? true : undefined}
           aria-labelledby={isMobileLayout ? 'assistant-member-workspace-title' : undefined}
           aria-hidden={isMobileLayout ? !isMobileWorkspaceOpen : undefined}
+          onTransitionEnd={(event) => {
+            if (event.target === event.currentTarget && event.propertyName === 'transform' && isMobileWorkspaceOpen) {
+              mobileWorkspaceCloseRef.current?.focus()
+            }
+          }}
         >
           <div className="assistant-mobile-drawer__header">
             <div>
@@ -1146,10 +1153,7 @@ export function AssistantPage() {
               aria-haspopup="dialog"
               aria-expanded={isMobileWorkspaceOpen}
               aria-controls="assistant-member-workspace"
-              onClick={() => {
-                setIsMobileWorkspaceOpen(true)
-                window.setTimeout(() => mobileWorkspaceCloseRef.current?.focus(), 120)
-              }}
+              onClick={() => setIsMobileWorkspaceOpen(true)}
             >
               <SlidersHorizontal size={18} aria-hidden />
               <span>{member ? '成员与会话' : '登录与会话'}</span>
