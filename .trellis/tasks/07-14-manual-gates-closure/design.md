@@ -34,10 +34,10 @@ Only one human gate is active in the conversation at a time. After the user repo
 
 The Xunqiu stage-APK policy mismatch is resolved. The user approved withdrawing the artifact; the matching local archive was verified by SHA-256, the public repository copy and download links were removed, `.gitignore` now blocks `downloads/*.apk`, and the deployed legacy download path returns `404`.
 
-The next gate is Internal Assistant production recheck:
-
-1. Restart only `biau-internal-assistant-api` in Render.
-2. Reopen `/assistant` with the same member context and verify the existing ACTIVE memory still exists.
+The Internal Assistant production recheck is complete. After deploying the latest
+`biau-internal-assistant-api` revision, the same member context refreshed one
+existing durable memory successfully. The next gate is the first Studio Publish
+Export review.
 
 No member token, admin token, memory text, model endpoint, or database URL is recorded.
 

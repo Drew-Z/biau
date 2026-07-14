@@ -115,7 +115,7 @@
 - BIAU Port 公开入口复核：2026-07-14 的无凭据检查中，主站、项目/博客详情、状态详情、Pet 展示页、sitemap 和 robots 共 37 个入口通过；撤下 Xunqiu 阶段 APK 后，剩余显式项目/试玩/API health/展示资料共 39 个外链通过。检查未发送助手问题，也未调用模型。
 - BIAU Port 主站访问分析：`src/utils/analytics.ts` 已提供默认关闭的 Plausible/Umami/debug adapter，`route_view` 只发送归一化 `routePattern` / `routeArea` / `routeDepth`；`analytics:check` 已纳入 `verify`，防止完整 URL、query、hash 或动态 id 泄漏到事件元数据。
 - BIAU Port 内部助手 Agent 工作台：`/assistant` 已提供简洁首屏、运行状态条、LangGraph inspector、工具轨迹卡、Studio artifact 链接、消息级 Agent trace replay、降级/guardrail 下一步提示；`assistant:agent-contract` 和 `assistant:agent-eval` 已覆盖本地 no-live 的 LangGraph 节点、工具权限、状态/项目、内部知识、Studio draft plan-only 和会话记忆用例。
-- BIAU Port 内部助手长期记忆：生产成员 API 已确认 `AgentMemory` migration 生效；使用真实成员完成了明确同意保存、重复去重、归档和恢复验收，最终记录保持 `ACTIVE`。剩余人工项仅为重启 internal service 后确认同一成员仍能读取该记忆；不记录 token、成员信息或记忆正文。
+- BIAU Port 内部助手长期记忆：生产成员 API 已确认 `AgentMemory` migration 生效；使用真实成员完成了明确同意保存、重复去重、归档和恢复验收，最终记录保持 `ACTIVE`。重新部署 internal service 后，同一成员上下文仍成功刷新到 1 条长期记忆，跨部署持久化验收已通过；未记录 token、成员信息或记忆正文。
 - BIAU Port 内部助手管理台：`/assistant/admin` 已提供“刷新全部状态”，会统一刷新摘要、成员、邀请、内部知识、RAG 状态和用量；知识页已提供 sourceType 预设和 internal RAG readiness 路径；`check:ui` 已守护无 token 时按钮可见且禁用、token 只保存在当前浏览器的提示仍可见。
 - BIAU Port Qdrant：公开知识库已完成 27 documents / 56 chunks 同步，内部知识库已完成 1 document / 5 chunks 同步；两者均 `accepted=true`、`issue=0` 且旧分块清理完成。Qdrant collection、embedding 维度和同步 token 不再属于当前配置待办。
 - BIAU Port Studio：`/studio` 第一屏已显示待审核队列摘要、下一篇待审核和“打开下一篇待审核”动作；`check:ui` 已守护无 token / 无草稿首屏仍能看见审核入口，真实审核和导出仍是人工 gate。
@@ -126,27 +126,22 @@
 
 以下是唯一的当前人工队列。已经完成的迁移、基础连接、保存/去重/归档/恢复验收不再列为待办；每一步只记录低敏结果，不记录 token、密码、连接串、模型地址、成员信息或私有内容。
 
-1. 内部助手长期记忆跨重启复核
-   - 管理台刷新、成员渠道展示、公开/内部知识库同步已经完成，不需要重新配置。
-   - 在 Render 手动重启 `biau-internal-assistant-api`；健康状态恢复后，用原成员打开 `/assistant`，确认已有 ACTIVE 长期记忆仍然存在。
-   - 成功标准：同一成员在服务重启后仍能读取原有 ACTIVE 记忆；只记录“通过/失败”，不记录 token、成员信息或记忆正文。
-
-2. Studio 首次公开导出
+1. Studio 首次公开导出
    - 打开 `/studio`，选择第一篇 `hidden + review-needed` 草稿，检查正文、来源、可见性和公开预览。
    - 内容不合格时先修改草稿；通过后才创建 Publish Export。
    - 成功标准：生成一条低敏 export 记录，并在本地或 CI 执行 `studio:export -- --run-checks` 后审查 Git diff。
 
-3. Legal RAG 演示验收
+2. Legal RAG 演示验收
    - 准备低权限、可回收 demo 账号，只允许访问公开安全数据集。
    - 在本机或 CI 环境变量中配置凭据后运行 credentialed synthetic。
    - 成功标准：法律问答、合同审查和质量面板具有可复跑的低敏证据，不在仓库或聊天中记录凭据。
 
-4. ERP 演示验收
+3. ERP 演示验收
    - 使用专门的低权限 demo 账号复核注册、登录和默认角色。
    - 为插件与商品同步准备脱敏 fixture 或演示店铺，禁止使用真实店铺凭据。
    - 成功标准：注册/登录策略、默认角色和同步路径具有可复跑 smoke 证据。
 
-5. Xunqiu 与 Pet 其余发布门禁
+4. Xunqiu 与 Pet 其余发布门禁
    - 为 Xunqiu 配置公开后端 base URL 后运行 health / 兼容 API synthetic。
    - Pet 与 Xunqiu 只有在正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准齐全后才能公开 APK。
    - 成功标准：状态页只公开批准后的 release 摘要，不公开 debug 包或未经批准的下载链接。
