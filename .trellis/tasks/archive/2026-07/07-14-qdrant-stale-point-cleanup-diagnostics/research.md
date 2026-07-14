@@ -33,3 +33,13 @@ The first deployed public sync after structured diagnostics reported:
 The earlier `qdrant_dimension_mismatch` reason was a local classification defect: `reasonForQdrantStatus()` mapped every Qdrant HTTP 400 to a dimension mismatch even outside collection creation or point upsert. The current Qdrant API reference confirms `POST /collections/:collection_name/points/scroll` permits pagination without a filter. The compatibility fix therefore uses unfiltered collection scroll plus local `scope + source` guards, while mapping non-upsert HTTP 400 responses to `qdrant_bad_request`.
 
 Source: https://api.qdrant.tech/api-reference/points/scroll-points
+
+## Final Production Acceptance
+
+After deploying commit `bfc6330`, both approved synchronization paths completed without cleanup warnings:
+
+- Public: 27 documents, 56 chunks, accepted=true, issueCount=0, cleanupStatus=completed, cleanupReason=ok, scanned=56, stale=0, deleted=0.
+- Internal: 1 document, 5 chunks, accepted=true, issueCount=0, cleanupStatus=completed, cleanupReason=ok, scanned=5, stale=0, deleted=0.
+- RAG health reported Qdrant ready with 61 total chunks across the public and internal collections.
+
+This confirms the production write, unfiltered pagination, local scope/source isolation, and stale-point reconciliation paths are operational. No additional provider-specific follow-up is required.
