@@ -8,6 +8,8 @@
 - [x] Commit and push the implementation closure.
 - [x] Guide the user through the first human gate: decide whether the currently public Xunqiu stage APK must be withdrawn until formal release approval.
 - [x] Guide the user through Internal Assistant post-restart memory persistence after the APK policy is truthful.
+- [x] Audit the production Studio review queue, record `needs-changes` for both non-publishable drafts, and verify no Publish Export was created.
+- [ ] Rewrite or archive the rejected Studio drafts, approve one evidence-complete revision, and create the first Publish Export.
 - [ ] After each user-confirmed gate, verify low-sensitive evidence, update the ledger, commit/push, and present the next single gate.
 
 ## Validation Commands

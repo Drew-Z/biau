@@ -118,7 +118,7 @@
 - BIAU Port 内部助手长期记忆：生产成员 API 已确认 `AgentMemory` migration 生效；使用真实成员完成了明确同意保存、重复去重、归档和恢复验收，最终记录保持 `ACTIVE`。重新部署 internal service 后，同一成员上下文仍成功刷新到 1 条长期记忆，跨部署持久化验收已通过；未记录 token、成员信息或记忆正文。
 - BIAU Port 内部助手管理台：`/assistant/admin` 已提供“刷新全部状态”，会统一刷新摘要、成员、邀请、内部知识、RAG 状态和用量；知识页已提供 sourceType 预设和 internal RAG readiness 路径；`check:ui` 已守护无 token 时按钮可见且禁用、token 只保存在当前浏览器的提示仍可见。
 - BIAU Port Qdrant：公开知识库已完成 27 documents / 56 chunks 同步，内部知识库已完成 1 document / 5 chunks 同步；两者均 `accepted=true`、`issue=0` 且旧分块清理完成。Qdrant collection、embedding 维度和同步 token 不再属于当前配置待办。
-- BIAU Port Studio：`/studio` 第一屏已显示待审核队列摘要、下一篇待审核和“打开下一篇待审核”动作；`check:ui` 已守护无 token / 无草稿首屏仍能看见审核入口，真实审核和导出仍是人工 gate。
+- BIAU Port Studio：`/studio` 第一屏已显示待审核队列摘要、下一篇待审核和“打开下一篇待审核”动作；`check:ui` 已守护无 token / 无草稿首屏仍能看见审核入口。生产队列中的 2 篇 `hidden + review-needed` 草稿已完成首次只读审核，均写入 `needs-changes`，未创建 Publish Export。AI 日报草稿只有来源主页和流程验收说明，缺少具体、带日期的新闻事实；Legal RAG 草稿大部分仍是模板占位，且与项目详情页和现有文章高度重复。
 - BIAU Port 全链路本地验证：`npm.cmd run verify` 已通过；覆盖 assistant index、知识图谱检查、离线 RAG eval、内部 Agent contract/eval、本地 RAG sync plan、meta/admin 检查、Prisma validate、server smoke、服务模式 smoke、RAG smoke、Cloudflare function smoke、build、博客质量、部署/manual-gates/observability 文档、analytics、Studio smoke、项目详情、status contract 和 UI check；本轮没有 live model calls。
 - BIAU Port reduced-motion 背景：静态 WebGL 帧只在减少动态效果模式启用 drawing-buffer 保留，正常动画模式不增加该开销；`check:ui` 已通过 14 个路由、2 个视口。
 
@@ -127,8 +127,9 @@
 以下是唯一的当前人工队列。已经完成的迁移、基础连接、保存/去重/归档/恢复验收不再列为待办；每一步只记录低敏结果，不记录 token、密码、连接串、模型地址、成员信息或私有内容。
 
 1. Studio 首次公开导出
-   - 打开 `/studio`，选择第一篇 `hidden + review-needed` 草稿，检查正文、来源、可见性和公开预览。
-   - 内容不合格时先修改草稿；通过后才创建 Publish Export。
+   - 首次生产审核已完成：2 篇草稿均保持 `hidden + review-needed`，最新审核为 `needs-changes`，当前 Publish Export 数量为 0。
+   - AI 日报需要改为由具体文章、发布日期、事实摘要和逐条影响判断组成；不能把来源主页、内部 issue id 或流程验收说明当作日报正文。
+   - Legal RAG 草稿应归档或改成与现有项目详情页、项目复盘和生产化路线不同的主题，再补真实证据、配图和架构内容。
    - 成功标准：生成一条低敏 export 记录，并在本地或 CI 执行 `studio:export -- --run-checks` 后审查 Git diff。
 
 2. Legal RAG 演示验收

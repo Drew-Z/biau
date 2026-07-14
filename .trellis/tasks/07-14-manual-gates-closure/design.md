@@ -36,8 +36,10 @@ The Xunqiu stage-APK policy mismatch is resolved. The user approved withdrawing 
 
 The Internal Assistant production recheck is complete. After deploying the latest
 `biau-internal-assistant-api` revision, the same member context refreshed one
-existing durable memory successfully. The next gate is the first Studio Publish
-Export review.
+existing durable memory successfully. The first production Studio review is also
+complete: both hidden drafts were marked `needs-changes`, and no Publish Export
+was created. The next action inside this gate is to rewrite or archive the
+non-publishable drafts before approving one revised draft for export.
 
 No member token, admin token, memory text, model endpoint, or database URL is recorded.
 
