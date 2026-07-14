@@ -705,6 +705,8 @@ scrolling to `scroll-behavior: auto` when a check needs deterministic placement.
 
 Ambient harbor motion uses one fixed viewport WebGL canvas. Production prefers an OffscreenCanvas Worker and falls back to the shared main-thread renderer; WebGL initialization failure must leave a stable CSS background rather than a blank page. Canvas backing dimensions must use viewport size with DPR capped at 1.25, never document height.
 
+Before transferring an `HTMLCanvasElement` to an OffscreenCanvas Worker, set its backing width and height from the capped-DPR viewport size. `data-flow-ready="true"` may be exposed only after the first worker frame has reached the browser presentation queue; use a one-time deferred ready signal rather than marking ready directly inside the worker message callback. Reduced-motion frames must always render with a fixed time value so resize or palette synchronization cannot advance the animation.
+
 Do not infer a static mode from mobile/coarse pointer, device memory, hardware concurrency, Save-Data, or effective network type. Normal devices retain the full flow background. Only `prefers-reduced-motion: reduce` renders a stable frame and stops time progression because this is an explicit accessibility preference.
 
 After the first canvas frame, legacy fixed blur, blend, gradient, grain, and harbor-environment layers must not remain active. Pause rendering while the document is hidden and while the harbor intro owns the viewport. Theme and dusk/garden/stellar scene updates must change the palette without replacing or retransferring the canvas.
@@ -729,3 +731,11 @@ UI checks must use real `isMobile + hasTouch` contexts at 320px, 390px, and 430p
 Detail reading guides remain top-sticky because the global mobile tabbar and public assistant already own the bottom edge. At widths up to 720px, a collapsed guide may auto-hide after a deliberate downward delta and must immediately return on upward movement or near the page top. Open or keyboard-focused guides never auto-hide; desktop guides stay visible.
 
 Reuse the guide's existing requestAnimationFrame scroll measurement instead of adding another scroll listener. Direction tests must cover blog, project, and reliability detail routes at 320px, 390px reduced-motion, and 430px, plus desktop inverse behavior. Verify the hidden shell reaches `pointer-events: none`, leaves no transparent hit layer or horizontal overflow, open outlines remain visible while scrolling, and anchor navigation can reveal and reopen the guide.
+
+### Assistant RAG Cleanup Diagnostic Regression
+
+The `/assistant/admin` frontend accepts RAG sync diagnostics through an explicit allowlist. When backend cleanup fields change, update the shared response type, both backend sanitizers, the frontend normalizer, and the visible label map together. Unknown keys, provider endpoints, collection names, API keys, raw responses, vectors, document bodies, and stack traces must never reach the rendered diagnostic surface.
+
+Treat `accepted=true` with `cleanupStatus="warning"` as a successful current-vector update with a stale-point cleanup warning. The UI must not call the whole sync failed or instruct the operator to repeat synchronization blindly. Rejected upserts continue to use the existing failure copy, and legacy records without cleanup fields continue to render their generic low-sensitive reason/mode.
+
+After changing this path, run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui`. The RAG smoke test must separately prove that cleanup warnings expose only the documented fields and never private provider/document values.

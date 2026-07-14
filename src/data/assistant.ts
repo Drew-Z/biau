@@ -919,6 +919,16 @@ const ASSISTANT_SYNC_DIAGNOSTIC_KEYS = new Set([
   'timeoutMs',
   'sourceName',
   'sourceChecksum',
+  'cleanupStatus',
+  'cleanupReason',
+  'cleanupProviderStep',
+  'cleanupErrorKind',
+  'cleanupHttpStatus',
+  'cleanupTimeoutMs',
+  'cleanupScannedPointCount',
+  'cleanupStalePointCount',
+  'cleanupDeletedPointCount',
+  'cleanupIssueCount',
 ])
 
 export function summarizeAssistantKnowledgeOps(

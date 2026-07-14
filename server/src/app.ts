@@ -1463,6 +1463,16 @@ function sanitizeRagSyncDiagnostic(value: unknown) {
     'timeoutMs',
     'sourceName',
     'sourceChecksum',
+    'cleanupStatus',
+    'cleanupReason',
+    'cleanupProviderStep',
+    'cleanupErrorKind',
+    'cleanupHttpStatus',
+    'cleanupTimeoutMs',
+    'cleanupScannedPointCount',
+    'cleanupStalePointCount',
+    'cleanupDeletedPointCount',
+    'cleanupIssueCount',
   ]) {
     if (typeof value[key] === 'string' || typeof value[key] === 'number' || typeof value[key] === 'boolean') {
       result[key] = value[key]
@@ -1493,6 +1503,16 @@ function sanitizeInternalSyncDiagnostic(value: unknown) {
     'timeoutMs',
     'sourceName',
     'sourceChecksum',
+    'cleanupStatus',
+    'cleanupReason',
+    'cleanupProviderStep',
+    'cleanupErrorKind',
+    'cleanupHttpStatus',
+    'cleanupTimeoutMs',
+    'cleanupScannedPointCount',
+    'cleanupStalePointCount',
+    'cleanupDeletedPointCount',
+    'cleanupIssueCount',
   ]) {
     if (typeof value[key] === 'string' || typeof value[key] === 'number' || typeof value[key] === 'boolean') {
       result[key] = value[key]

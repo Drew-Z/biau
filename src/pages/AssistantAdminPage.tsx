@@ -242,6 +242,16 @@ const syncDiagnosticLabels: Record<string, string> = {
   timeoutMs: '超时毫秒',
   sourceName: '来源',
   sourceChecksum: '来源摘要',
+  cleanupStatus: '旧分块清理状态',
+  cleanupReason: '旧分块清理原因',
+  cleanupProviderStep: '旧分块清理步骤',
+  cleanupErrorKind: '旧分块清理错误类型',
+  cleanupHttpStatus: '旧分块清理 HTTP 状态',
+  cleanupTimeoutMs: '旧分块清理超时毫秒',
+  cleanupScannedPointCount: '已扫描 points',
+  cleanupStalePointCount: '过期 points',
+  cleanupDeletedPointCount: '已删除 points',
+  cleanupIssueCount: '旧分块清理问题数',
 }
 
 function splitTags(value: string) {
@@ -295,6 +305,9 @@ function describeRagAdminStatus(status: AssistantRagAdminStatus | null, knowledg
 
 function describeRagSyncResult(sync: AssistantRagSyncResult) {
   const httpStatus = sync.diagnostic?.httpStatus
+  if (sync.accepted && sync.diagnostic?.cleanupStatus === 'warning') {
+    return '公开知识库已更新，但旧分块清理出现警告。当前检索可以继续使用，请查看低敏 cleanup 诊断。'
+  }
   if (sync.accepted) return '公开知识库已同步到 RAG。'
   if (httpStatus === 429) return '公开知识库同步被上游限流（HTTP 429）。请等待几分钟后重试；如果反复出现，需要降低同步频率或调整 embedding 渠道限额。'
   const reason = sync.diagnostic?.reason
@@ -756,7 +769,11 @@ export function AssistantAdminPage() {
       const syncRun = normalizeAssistantInternalKnowledgeSyncRun(payload.syncRun)
       setLastKnowledgeSyncRun(syncRun)
       await Promise.allSettled([loadKnowledgeDocuments(), loadRagStatus(), loadSummary()])
-      setKnowledgeStatus(payload.accepted === true ? '内部知识已提交同步。' : '内部知识同步已记录为本地计划/跳过，等待 RAG sync 配置。')
+      if (payload.accepted === true && syncRun?.diagnostic?.cleanupStatus === 'warning') {
+        setKnowledgeStatus('内部知识已更新，但旧分块清理出现警告。当前向量可用，请查看低敏 cleanup 诊断。')
+      } else {
+        setKnowledgeStatus(payload.accepted === true ? '内部知识已提交同步。' : '内部知识同步已记录为本地计划/跳过，等待 RAG sync 配置。')
+      }
     } catch {
       setKnowledgeStatus('无法连接内部知识同步 API。')
     } finally {
@@ -1540,7 +1557,11 @@ export function AssistantAdminPage() {
                   </span>
                 </div>
                 <div>
-                  <strong>{knowledgeOps.lastSyncReason ?? knowledgeOps.lastSyncMode ?? '低敏诊断'}</strong>
+                  <strong>
+                    {lastKnowledgeSyncRun.diagnostic?.cleanupStatus === 'warning'
+                      ? `旧分块清理警告：${lastKnowledgeSyncRun.diagnostic.cleanupReason ?? 'unknown'}`
+                      : knowledgeOps.lastSyncReason ?? knowledgeOps.lastSyncMode ?? '低敏诊断'}
+                  </strong>
                   <span>accepted：{knowledgeOps.lastSyncAccepted === undefined ? '未返回' : knowledgeOps.lastSyncAccepted ? '是' : '否'}</span>
                   <span>issue：{knowledgeOps.lastSyncIssueCount ?? 0}</span>
                 </div>

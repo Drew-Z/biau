@@ -271,5 +271,15 @@ export interface RagSyncResponse {
     errorKind?: string
     attemptedEndpoints?: number
     timeoutMs?: number
+    cleanupStatus?: 'completed' | 'warning'
+    cleanupReason?: string
+    cleanupProviderStep?: string
+    cleanupErrorKind?: string
+    cleanupHttpStatus?: number
+    cleanupTimeoutMs?: number
+    cleanupScannedPointCount?: number
+    cleanupStalePointCount?: number
+    cleanupDeletedPointCount?: number
+    cleanupIssueCount?: number
   }
 }

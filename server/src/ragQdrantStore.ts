@@ -42,6 +42,19 @@ interface QdrantCandidate {
   citation: Citation
 }
 
+interface QdrantCleanupResult {
+  status: 'completed' | 'warning'
+  reason: string
+  providerStep?: string
+  errorKind?: string
+  httpStatus?: number
+  timeoutMs?: number
+  scannedPointCount: number
+  stalePointCount: number
+  deletedPointCount: number
+  issueCount: number
+}
+
 const SERVICE_NAME = 'biau-rag-orchestrator'
 const QDRANT_STORE_NAME = 'qdrant'
 const DEFAULT_QDRANT_DIMENSION = 4096
@@ -250,7 +263,7 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       )
     }
 
-    const issueCount = await deleteStalePublicPoints(new Set(publicKnowledgeV2.knowledge_chunks.map((chunk) => chunk.id))).catch(() => 1)
+    const cleanup = await deleteStalePublicPoints(new Set(publicKnowledgeV2.knowledge_chunks.map((chunk) => chunk.id)))
     return qdrantSyncDiagnostics(
       true,
       'public',
@@ -258,7 +271,10 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       hashJson(publicKnowledgeV2),
       publicKnowledgeV2.public_documents.length,
       points.length,
-      issueCount,
+      cleanup.issueCount,
+      undefined,
+      undefined,
+      { cleanup },
     )
   } catch (error) {
     const providerError = normalizeQdrantError(error)
@@ -387,8 +403,19 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
       )
     }
 
-    const issueCount = await deleteStaleInternalPoints(new Set(chunks.map((chunk) => chunk.id))).catch(() => 1)
-    return qdrantSyncDiagnostics(true, 'internal', 'internal-knowledge-documents', sourceChecksum, documents.length, points.length, issueCount)
+    const cleanup = await deleteStaleInternalPoints(new Set(chunks.map((chunk) => chunk.id)))
+    return qdrantSyncDiagnostics(
+      true,
+      'internal',
+      'internal-knowledge-documents',
+      sourceChecksum,
+      documents.length,
+      points.length,
+      cleanup.issueCount,
+      undefined,
+      undefined,
+      { cleanup },
+    )
   } catch (error) {
     const providerError = normalizeQdrantError(error)
     return qdrantSyncDiagnostics(
@@ -487,50 +514,98 @@ async function deleteStaleScopedPoints(
   scope: AssistantScope,
   source: QdrantPayload['source'],
   currentChunkIds: Set<string>,
-) {
+): Promise<QdrantCleanupResult> {
   let offset: unknown
-  let issueCount = 0
+  let scannedPointCount = 0
   const stalePointIds: Array<string | number> = []
-  do {
-    const payload: Record<string, unknown> = {
-      limit: 256,
-      with_payload: true,
-      with_vector: false,
-      filter: {
-        must: [
-          { key: 'scope', match: { value: scope } },
-          { key: 'source', match: { value: source } },
-        ],
-      },
-    }
-    if (offset !== undefined && offset !== null) payload.offset = offset
-    const response = await requestQdrantJson(`/collections/${encodeURIComponent(collection)}/points/scroll`, 'POST', payload, 'qdrant_scroll_points')
-    const result = isRecord(response) && isRecord(response.result) ? response.result : null
-    const points = Array.isArray(result?.points) ? result.points : []
-    for (const point of points) {
-      if (!isRecord(point)) continue
-      const payloadValue = isRecord(point.payload) ? point.payload : {}
-      const chunkId = typeof payloadValue.chunkId === 'string' ? payloadValue.chunkId : ''
-      if (chunkId && !currentChunkIds.has(chunkId) && (typeof point.id === 'string' || typeof point.id === 'number')) {
-        stalePointIds.push(point.id)
+  try {
+    do {
+      const payload: Record<string, unknown> = {
+        limit: 256,
+        with_payload: true,
+        with_vector: false,
+        filter: {
+          must: [
+            { key: 'scope', match: { value: scope } },
+            { key: 'source', match: { value: source } },
+          ],
+        },
       }
-    }
-    offset = result?.next_page_offset
-  } while (offset !== undefined && offset !== null)
+      if (offset !== undefined && offset !== null) payload.offset = offset
+      const response = await requestQdrantJson(
+        `/collections/${encodeURIComponent(collection)}/points/scroll`,
+        'POST',
+        payload,
+        'qdrant_scroll_points',
+      )
+      const result = isRecord(response) && isRecord(response.result) ? response.result : null
+      const points = Array.isArray(result?.points) ? result.points : []
+      scannedPointCount += points.length
+      for (const point of points) {
+        if (!isRecord(point)) continue
+        const payloadValue = isRecord(point.payload) ? point.payload : {}
+        const chunkId = typeof payloadValue.chunkId === 'string' ? payloadValue.chunkId : ''
+        if (chunkId && !currentChunkIds.has(chunkId) && (typeof point.id === 'string' || typeof point.id === 'number')) {
+          stalePointIds.push(point.id)
+        }
+      }
+      offset = result?.next_page_offset
+    } while (offset !== undefined && offset !== null)
+  } catch (error) {
+    return cleanupWarning(error, scannedPointCount, stalePointIds.length, 0, 1)
+  }
 
+  let deletedPointCount = 0
   for (let index = 0; index < stalePointIds.length; index += QDRANT_BATCH_SIZE) {
     const ids = stalePointIds.slice(index, index + QDRANT_BATCH_SIZE)
-    const response = await requestQdrantRaw(
-      `/collections/${encodeURIComponent(collection)}/points/delete?wait=true`,
-      'POST',
-      {
-        points: ids,
-      },
-      'qdrant_delete_points',
-    )
-    if (!response.ok) issueCount += ids.length
+    try {
+      await requestQdrantJson(
+        `/collections/${encodeURIComponent(collection)}/points/delete?wait=true`,
+        'POST',
+        { points: ids },
+        'qdrant_delete_points',
+      )
+      deletedPointCount += ids.length
+    } catch (error) {
+      return cleanupWarning(
+        error,
+        scannedPointCount,
+        stalePointIds.length,
+        deletedPointCount,
+        Math.max(1, stalePointIds.length - deletedPointCount),
+      )
+    }
   }
-  return issueCount
+  return {
+    status: 'completed',
+    reason: 'ok',
+    scannedPointCount,
+    stalePointCount: stalePointIds.length,
+    deletedPointCount,
+    issueCount: 0,
+  }
+}
+
+function cleanupWarning(
+  error: unknown,
+  scannedPointCount: number,
+  stalePointCount: number,
+  deletedPointCount: number,
+  issueCount: number,
+): QdrantCleanupResult {
+  const providerError = normalizeQdrantError(error)
+  return {
+    status: 'warning',
+    reason: providerError.reason,
+    ...(providerError.providerStep ? { providerStep: providerError.providerStep } : {}),
+    ...(providerError.errorKind ? { errorKind: providerError.errorKind } : {}),
+    ...(typeof providerError.httpStatus === 'number' ? { httpStatus: providerError.httpStatus } : {}),
+    ...(typeof providerError.timeoutMs === 'number' ? { timeoutMs: providerError.timeoutMs } : {}),
+    scannedPointCount,
+    stalePointCount,
+    deletedPointCount,
+    issueCount,
+  }
 }
 
 async function requestQdrantJson(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown, providerStep = 'qdrant_request') {
@@ -717,6 +792,7 @@ function qdrantSyncDiagnostics(
     errorKind?: string
     attemptedEndpoints?: number
     timeoutMs?: number
+    cleanup?: QdrantCleanupResult
   } = {},
 ): RagSyncResponse {
   return {
@@ -744,6 +820,20 @@ function qdrantSyncDiagnostics(
       ...(typeof details.errorKind === 'string' ? { errorKind: details.errorKind } : {}),
       ...(typeof details.attemptedEndpoints === 'number' ? { attemptedEndpoints: details.attemptedEndpoints } : {}),
       ...(typeof details.timeoutMs === 'number' ? { timeoutMs: details.timeoutMs } : {}),
+      ...(details.cleanup
+        ? {
+            cleanupStatus: details.cleanup.status,
+            cleanupReason: details.cleanup.reason,
+            cleanupScannedPointCount: details.cleanup.scannedPointCount,
+            cleanupStalePointCount: details.cleanup.stalePointCount,
+            cleanupDeletedPointCount: details.cleanup.deletedPointCount,
+            cleanupIssueCount: details.cleanup.issueCount,
+            ...(details.cleanup.providerStep ? { cleanupProviderStep: details.cleanup.providerStep } : {}),
+            ...(details.cleanup.errorKind ? { cleanupErrorKind: details.cleanup.errorKind } : {}),
+            ...(typeof details.cleanup.httpStatus === 'number' ? { cleanupHttpStatus: details.cleanup.httpStatus } : {}),
+            ...(typeof details.cleanup.timeoutMs === 'number' ? { cleanupTimeoutMs: details.cleanup.timeoutMs } : {}),
+          }
+        : {}),
     },
   }
 }

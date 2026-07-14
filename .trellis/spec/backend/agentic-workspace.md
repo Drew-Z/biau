@@ -276,3 +276,72 @@ The public graph node remains `plan`, while the internal state channel avoids th
 - `server:smoke` for auth and missing-database route boundaries.
 - `lint`, `build`, and `check:ui` for member memory normalization and responsive UI.
 - Production migration and cross-restart persistence remain a documented manual gate.
+
+## Scenario: Qdrant Stale Point Reconciliation
+
+### 1. Scope / Trigger
+
+- Trigger: changing `server/src/ragQdrantStore.ts`, `POST /rag/v1/sync`, `/admin/knowledge/sync`, `RagSyncResponse.diagnostics`, or Qdrant cleanup tests.
+- Goal: keep authoritative vector upsert separate from best-effort stale-point reconciliation, while preserving low-sensitive diagnostics across storage, API, persistence, and admin UI layers.
+
+### 2. Signatures
+
+- RAG API: `POST /rag/v1/sync` with public or internal scoped documents.
+- Qdrant cleanup adapter: `deleteStaleScopedPoints(collection, scope, source, currentChunkIds): Promise<QdrantCleanupResult>`.
+- Persisted admin record: `InternalKnowledgeSyncRun.diagnostic` JSON, serialized through `sanitizeInternalSyncDiagnostic()`.
+- Shared response: `RagSyncResponse.diagnostics.cleanup*` in `server/src/types.ts`.
+
+### 3. Contracts
+
+- Collection creation, embedding, and current-point upsert are authoritative. A failure in these steps returns `accepted=false` through the existing fatal provider diagnostic.
+- Stale-point scroll and delete are reconciliation. When upsert succeeds but reconciliation fails, return `accepted=true`, `cleanupStatus="warning"`, and a nonzero `cleanupIssueCount`.
+- Completed reconciliation returns `cleanupStatus="completed"`, `cleanupReason="ok"`, accurate scanned/stale/deleted counts, and zero cleanup issues.
+- Scroll failure must stop before delete because the stale set is incomplete. Delete failure must preserve scanned/stale/deleted counts and leave unresolved point count visible through low-sensitive diagnostics.
+- Allowed cleanup fields are `cleanupStatus`, `cleanupReason`, `cleanupProviderStep`, `cleanupErrorKind`, `cleanupHttpStatus`, `cleanupTimeoutMs`, `cleanupScannedPointCount`, `cleanupStalePointCount`, `cleanupDeletedPointCount`, and `cleanupIssueCount`.
+- Diagnostics must not contain Qdrant URL, collection names, API keys, request headers, raw responses, point payloads, vectors, document bodies, or stack traces.
+- The internal sync run may persist only the sanitized diagnostic allowlist. No Prisma migration is required for additive JSON fields.
+
+### 4. Validation & Error Matrix
+
+- Collection/embedding/upsert failure -> `accepted=false`; retain existing fatal `providerStep`, `errorKind`, HTTP status, dimension, and timeout fields.
+- Scroll non-OK, timeout, or network failure -> `accepted=true`, `cleanupStatus="warning"`, `cleanupProviderStep="qdrant_scroll_points"`; do not issue delete requests.
+- Delete non-OK, timeout, or network failure -> `accepted=true`, `cleanupStatus="warning"`, `cleanupProviderStep="qdrant_delete_points"`; report zero or partial deleted count and unresolved cleanup issues.
+- No stale points -> completed cleanup with stale/deleted count zero.
+- Stale points deleted -> completed cleanup with stale count equal to deleted count.
+
+### 5. Good/Base/Bad Cases
+
+- Good: a two-page scroll collects all scoped points, deletes obsolete IDs in batches, and reports exact counts.
+- Good: an accepted internal sync with a cleanup warning is persisted and shown as usable current vectors plus an operator warning.
+- Base: older sync records without cleanup fields continue to normalize and render through existing generic diagnostics.
+- Bad: `.catch(() => 1)` converts every reconciliation exception into an anonymous issue count.
+- Bad: cleanup failure changes an already successful upsert to `accepted=false` or exposes provider configuration to the browser.
+
+### 6. Tests Required
+
+- `npm.cmd run server:build` for shared response and adapter type safety.
+- `npm.cmd run assistant:rag-smoke` must cover forced pagination, no-stale success, stale deletion success, scroll failure without delete, delete failure with unresolved points, and diagnostic secret-shape rejection.
+- `npm.cmd run server:smoke` and `npm.cmd run assistant:service-modes-smoke` must preserve route/auth/service boundaries.
+- `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after admin normalizer or warning-copy changes.
+- Before production acceptance, deploy both shared-code services and run exactly one user-approved internal sync; repeated live sync is not an automated health check.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+const issueCount = await deleteStaleInternalPoints(currentIds).catch(() => 1)
+```
+
+This loses the failed provider step, HTTP status, timeout class, and reconciliation counts.
+
+#### Correct
+
+```typescript
+const cleanup = await deleteStaleInternalPoints(currentIds)
+return qdrantSyncDiagnostics(true, 'internal', sourceName, checksum, documentCount, chunkCount, cleanup.issueCount, undefined, undefined, {
+  cleanup,
+})
+```
+
+The current vectors remain accepted, while cleanup diagnostics stay actionable and low-sensitive.
