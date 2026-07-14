@@ -512,6 +512,69 @@ small assertion or manual check that proves:
 This prevents the page from passing build/lint while still shipping broken
 screenshots or an accidentally public gated download.
 
+## Scenario: Withdrawing An Unapproved Public Download
+
+### 1. Scope / Trigger
+
+- Trigger: an APK, AAB, archive, or other gated artifact is already committed or deployed, but formal release approval is absent or withdrawn.
+- Goal: remove public distribution without losing the maintainer's local evidence or leaving stale links, assistant facts, status claims, or CDN paths behind.
+
+### 2. Signatures
+
+- Static repository artifact: `downloads/*.apk` or equivalent deployment path.
+- Main-site project link: `Project.links[]` in `src/data/portfolio.ts`.
+- Public release state: `src/data/statusTargets.ts` plus the related synthetic JSON.
+- Assistant projection: `npm.cmd run assistant:index` regenerates both public knowledge files.
+
+### 3. Contracts
+
+- Before deleting the public copy, verify a local non-deployed archive exists and its SHA-256 matches the public artifact.
+- Remove the artifact from the public repository and add an ignore rule such as `downloads/*.apk` so it is not accidentally recommitted.
+- Remove every public download `href`; a disabled release-status label may remain, but it must not be an anchor to the artifact.
+- Update project details, blog claims, status targets, synthetic summaries, READMEs, deployment docs, and assistant knowledge from the same decision.
+- After deployment, the old public artifact URL must no longer return `200`; expected behavior is `404` unless an intentional safe redirect was explicitly chosen.
+
+### 4. Validation & Error Matrix
+
+- Local archive missing -> abort withdrawal deletion until preservation is resolved.
+- SHA-256 mismatch -> abort; do not assume the files are equivalent.
+- Repository still contains `downloads/*.apk` -> fail the release-gate check.
+- Any public page or project link still points at the withdrawn URL -> fail link/UI checks.
+- Deployed old URL returns `200` -> gate remains open; investigate deployment or CDN invalidation before closing the manual item.
+- Assistant/status text still says the package is downloadable -> regenerate projections and keep the gate open.
+
+### 5. Good/Base/Bad Cases
+
+- Good: matching local archive is verified, the deployed copy and links are removed, `.gitignore` blocks recommit, public facts say `local archive / download gated`, and the old URL returns `404`.
+- Base: no artifact was ever public; keep the disabled release status and existing gate checks.
+- Bad: remove only the visible button while the tracked artifact and direct URL still work.
+
+### 6. Tests Required
+
+- Static repository file and `href` scan plus `git diff --check`.
+- Local static server: home/docs return `200`, withdrawn artifact path returns `404`.
+- `npm.cmd run public-links:check`, `npm.cmd run project-details:check`, `npm.cmd run status:contract`, and `npm.cmd run check:ui`.
+- `npm.cmd run assistant:index`, `npm.cmd run assistant:kg-check`, and `npm.cmd run assistant:eval` with `modelCalls=0`.
+- Production follow-up checks the current page copy and the exact old artifact URL.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```html
+<a href="downloads/latest.apk">Stage APK</a>
+```
+
+The label is cautious, but the unapproved artifact is still publicly distributed.
+
+#### Correct
+
+```html
+<span class="btn" aria-disabled="true">APK pending formal release</span>
+```
+
+The page communicates status without exposing a download until the release gate is complete.
+
 ### Convention: README Screenshot Capture
 
 When refreshing README or GitHub landing screenshots for the main site, capture

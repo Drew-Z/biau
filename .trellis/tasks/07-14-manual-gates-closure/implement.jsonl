@@ -3,3 +3,4 @@
 {"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"The defect spans Prisma timestamps, API serialization, admin summary derivation, and UI state labels."}
 {"file":"docs/manual-gates.md","reason":"Durable source of truth for all current cross-project human-only actions."}
 {"file":"docs/studio-ai-daily-production-readiness.md","reason":"Confirms completed Studio setup and the remaining review/export gate."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Defines the cross-repository withdrawal contract for an already-public but unapproved gated download."}

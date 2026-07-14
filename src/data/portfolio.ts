@@ -69,7 +69,6 @@ const PLAY_SITE_URL = 'https://play.playlab.eu.cc'
 const XUNQIU_SITE_URL = 'https://xunqiu.playlab.eu.cc'
 const XUNQIU_DOCS_URL = `${XUNQIU_SITE_URL}/docs.html`
 const XUNQIU_BACKEND_DOCS_URL = `${XUNQIU_SITE_URL}/docs/technical/validation-and-deploy.md`
-const XUNQIU_STAGE_APK_URL = `${XUNQIU_SITE_URL}/downloads/latest-xunqiu64.apk`
 
 function externalLink(label: string, href: string): ProjectLink {
   return { label, href, type: 'external' }
@@ -1639,7 +1638,6 @@ export const projects: Project[] = [
     links: [
       externalLink('产品展示页', `${XUNQIU_SITE_URL}/`),
       externalLink('技术文档', XUNQIU_DOCS_URL),
-      externalLink('阶段 APK', XUNQIU_STAGE_APK_URL),
       externalLink('后端验证文档', XUNQIU_BACKEND_DOCS_URL),
       internalLink('迁移复盘文章', '/blog/xunqiu-android64-rebuild'),
     ],
@@ -1656,7 +1654,7 @@ export const projects: Project[] = [
             description: '真实运行截图用于说明当前展示的重点是移动端迁移后的新客户端链路。',
             image: '/images/projects/showcase/xunqiu-android64-runtime.png',
             alt: '寻球 64 位 Android 客户端运行截图',
-            caption: '真实运行截图来自公开展示页，用于说明 64 位客户端迁移结果；阶段 APK 不等同于应用商店发布承诺。',
+            caption: '真实运行截图来自公开展示页，用于说明 64 位客户端迁移结果；APK 在正式 release 审核完成前不提供公开下载。',
             sourceLabel: '打开产品展示页',
             sourceUrl: 'https://xunqiu.playlab.eu.cc/',
           },
@@ -1678,7 +1676,7 @@ export const projects: Project[] = [
         {
           title: '展示站品牌入口对齐',
           body:
-            '寻球静态展示站的首页、技术文档和 404 页已经补充 BIAU Port / 泊岸标题与统一 favicon，页脚也明确说明它归属于泊岸项目展示体系。寻球仍保留自己的产品名、文档入口和阶段 APK 边界。',
+            '寻球静态展示站的首页、技术文档和 404 页已经补充 BIAU Port / 泊岸标题与统一 favicon，页脚也明确说明它归属于泊岸项目展示体系。寻球仍保留自己的产品名、文档入口和 APK 正式发布门禁。',
         },
       ],
       workflow: [
@@ -1760,7 +1758,7 @@ export const projects: Project[] = [
         {
           title: '部署和展示边界',
           body:
-            '公开产品展示站由 Cloudflare Pages 承载静态页面、技术文档、素材和阶段 APK 下载；展示站中的 latest-xunqiu64.apk 是当前用于展示的阶段包副本，用来说明迁移进展，不等同于应用商店发布承诺。动态 API 由独立 Render 服务承载，数据库由 PostgreSQL/Flyway 初始化，文件上传走 R2。静态站和 BIAU Port 都只展示项目材料，不保存旧后端 IP、测试密码、签名路径、数据库连接、R2 密钥或 Render 私有配置。',
+            '公开产品展示站由 Cloudflare Pages 承载静态页面、技术文档、素材和 APK 发布状态，不再托管未批准的阶段包。动态 API 由独立 Render 服务承载，数据库由 PostgreSQL/Flyway 初始化，文件上传走 R2。静态站和 BIAU Port 都只展示项目材料，不保存旧后端 IP、测试密码、签名路径、数据库连接、R2 密钥或 Render 私有配置。',
         },
       ],
       limitations: [
@@ -1769,8 +1767,8 @@ export const projects: Project[] = [
           items: [
             '64 位客户端仍有一部分页面处于需回归或安全等价状态，不能把所有旧版深层能力都表述为完整生产可用。',
             '支付、IM、推送、地图、分享、真实兑换、赛事创建和比分提交等高副作用能力保留边界，不在展示环境触发真实外部服务。',
-            'Render 免费服务、演示数据、静态阶段 APK 下载和 R2 配置都更适合展示和轻量验证，不应被描述为长期生产运营方案。',
-            '阶段 APK 可以帮助访客理解 Android 64 位迁移结果，但公开下载前仍需要补齐签名、版本说明、扫描、回滚和发布渠道策略。',
+            'Render 免费服务、演示数据和 R2 配置都更适合展示和轻量验证，不应被描述为长期生产运营方案。',
+            '阶段 APK 只保留在本地归档；正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准完成前，公开站不提供 APK 文件或下载入口。',
           ],
         },
       ],
@@ -1793,8 +1791,8 @@ export const projects: Project[] = [
       '短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。',
       '项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。',
       '现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。',
-      '公开展示站提供产品页、技术文档和 latest-xunqiu64.apk 阶段包副本；这些入口用于展示与轻量验证，不代表完整生产发布或长期生产运营方案，也不包含旧后端 IP、测试密码、签名路径或私有云配置。',
-      'latest-xunqiu64.apk 是展示站阶段包，不等同于应用商店发布承诺；后续公开下载策略仍需要签名、版本说明、扫描、回滚和发布渠道策略。',
+      '公开展示站提供产品页、技术文档和 APK 发布状态；未批准的阶段包已从公开仓库与下载入口撤下，不包含旧后端 IP、测试密码、签名路径或私有云配置。',
+      '阶段 APK 继续保留在维护者本地归档；后续公开下载需要正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准。',
       '寻球静态展示站首页、技术文档页和 404 页已统一 BIAU Port / 泊岸标题与 favicon，并在页脚说明归属泊岸项目展示体系。',
       '后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。',
     ],

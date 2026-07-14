@@ -106,13 +106,13 @@
 
 - ERP：关联 Web 构建、root workspace 测试和全 workspace build 已通过，认证桥修复已同步到远端分支；演示登录和插件同步仍等低权限账号 / 脱敏 fixture。
 - Legal RAG：本地 `typecheck`、`build`、API unit、MVP validate、RAG eval 和合同审查 eval 已通过；生产法律问答、合同审查和质量面板仍等低权限 demo 凭据做 credentialed synthetic。
-- Xunqiu：现代后端测试和打包已通过，展示站本地静态资源引用与公开入口可达性已复核；后端 synthetic base URL 和 APK 正式发布批准仍是人工门禁。
+- Xunqiu：现代后端测试和打包已通过；未批准阶段 APK 已从公开展示仓库、主站入口和 Cloudflare Pages 下载路径撤下，线上旧路径返回 `404`，匹配的本地归档仍保留。后端 synthetic base URL 和未来正式 APK 发布批准仍是人工门禁。
 - Xunqiu Android64：本机 debug Java 编译和 debug APK 构建已通过；release 签名只应通过本机环境变量或本地 Gradle 属性提供，正式阶段 APK 仍需签名、校验和、扫描/回归证据与人工批准。
 - Xunqiu 展示站：不可公开 GitHub 后端仓库链接已改为公开后端验证文档，线上首页和文档页已确认更新生效。
 - Pet / Gamer：Node workspace 测试、Android debug unit test 和 debug APK 构建已通过，现有工作区有历史 WIP 未整理；当前证据仍是 debug-only，APK 公开下载必须等待正式 release 证据和人工批准。
 - BIAU Playlab：内容审计、生产构建、构建产物审计和公开端点检查已通过；新试玩构建上线仍需入口确认。
 - BIAU Port 主站：公开项目按钮与项目详情资料链接已接入 `public-links:check` synthetic 快照；状态页只展示通过数量、失败数量和错误类别，不保存具体外链 URL。
-- BIAU Port 公开入口复核：2026-07-14 的无凭据检查中，主站、项目/博客详情、状态详情、Pet 展示页、sitemap 和 robots 共 37 个入口通过；显式项目/试玩/API health/展示资料共 40 个外链通过。检查未发送助手问题，也未调用模型。
+- BIAU Port 公开入口复核：2026-07-14 的无凭据检查中，主站、项目/博客详情、状态详情、Pet 展示页、sitemap 和 robots 共 37 个入口通过；撤下 Xunqiu 阶段 APK 后，剩余显式项目/试玩/API health/展示资料共 39 个外链通过。检查未发送助手问题，也未调用模型。
 - BIAU Port 主站访问分析：`src/utils/analytics.ts` 已提供默认关闭的 Plausible/Umami/debug adapter，`route_view` 只发送归一化 `routePattern` / `routeArea` / `routeDepth`；`analytics:check` 已纳入 `verify`，防止完整 URL、query、hash 或动态 id 泄漏到事件元数据。
 - BIAU Port 内部助手 Agent 工作台：`/assistant` 已提供简洁首屏、运行状态条、LangGraph inspector、工具轨迹卡、Studio artifact 链接、消息级 Agent trace replay、降级/guardrail 下一步提示；`assistant:agent-contract` 和 `assistant:agent-eval` 已覆盖本地 no-live 的 LangGraph 节点、工具权限、状态/项目、内部知识、Studio draft plan-only 和会话记忆用例。
 - BIAU Port 内部助手长期记忆：生产成员 API 已确认 `AgentMemory` migration 生效；使用真实成员完成了明确同意保存、重复去重、归档和恢复验收，最终记录保持 `ACTIVE`。剩余人工项仅为重启 internal service 后确认同一成员仍能读取该记忆；不记录 token、成员信息或记忆正文。
@@ -126,32 +126,27 @@
 
 以下是唯一的当前人工队列。已经完成的迁移、基础连接、保存/去重/归档/恢复验收不再列为待办；每一步只记录低敏结果，不记录 token、密码、连接串、模型地址、成员信息或私有内容。
 
-1. Xunqiu 阶段 APK 公开策略复核
-   - 公开外链检查确认 `latest-xunqiu64.apk` 当前可直接下载，主站也存在“阶段 APK”入口；但现有发布记录仍写明正式签名、SHA-256、扫描/回归、版本说明、回滚说明和正式发布批准未完成。
-   - 推荐选择：在正式 release 证据完成前，撤下主站和展示站的公开下载入口，只保留迁移进展、截图和发布清单。
-   - 成功标准：用户明确选择“暂时撤下”或“批准阶段包继续公开”；若继续公开，必须补充阶段包用途、风险提示和低敏 SHA-256，不得描述为正式 release。
-
-2. 内部助手长期记忆跨重启复核
+1. 内部助手长期记忆跨重启复核
    - 管理台刷新、成员渠道展示、公开/内部知识库同步已经完成，不需要重新配置。
    - 在 Render 手动重启 `biau-internal-assistant-api`；健康状态恢复后，用原成员打开 `/assistant`，确认已有 ACTIVE 长期记忆仍然存在。
    - 成功标准：同一成员在服务重启后仍能读取原有 ACTIVE 记忆；只记录“通过/失败”，不记录 token、成员信息或记忆正文。
 
-3. Studio 首次公开导出
+2. Studio 首次公开导出
    - 打开 `/studio`，选择第一篇 `hidden + review-needed` 草稿，检查正文、来源、可见性和公开预览。
    - 内容不合格时先修改草稿；通过后才创建 Publish Export。
    - 成功标准：生成一条低敏 export 记录，并在本地或 CI 执行 `studio:export -- --run-checks` 后审查 Git diff。
 
-4. Legal RAG 演示验收
+3. Legal RAG 演示验收
    - 准备低权限、可回收 demo 账号，只允许访问公开安全数据集。
    - 在本机或 CI 环境变量中配置凭据后运行 credentialed synthetic。
    - 成功标准：法律问答、合同审查和质量面板具有可复跑的低敏证据，不在仓库或聊天中记录凭据。
 
-5. ERP 演示验收
+4. ERP 演示验收
    - 使用专门的低权限 demo 账号复核注册、登录和默认角色。
    - 为插件与商品同步准备脱敏 fixture 或演示店铺，禁止使用真实店铺凭据。
    - 成功标准：注册/登录策略、默认角色和同步路径具有可复跑 smoke 证据。
 
-6. Xunqiu 与 Pet 其余发布门禁
+5. Xunqiu 与 Pet 其余发布门禁
    - 为 Xunqiu 配置公开后端 base URL 后运行 health / 兼容 API synthetic。
    - Pet 与 Xunqiu 只有在正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准齐全后才能公开 APK。
    - 成功标准：状态页只公开批准后的 release 摘要，不公开 debug 包或未经批准的下载链接。

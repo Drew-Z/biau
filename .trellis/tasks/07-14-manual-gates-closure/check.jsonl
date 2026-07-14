@@ -2,3 +2,4 @@
 {"file":".trellis/spec/backend/database-guidelines.md","reason":"Review the timestamp update against Prisma @updatedAt behavior and persistence semantics."}
 {"file":"docs/manual-gates.md","reason":"Verify the active queue contains only current human gates and retains low-sensitive success criteria."}
 {"file":"docs/observability-strategy.md","reason":"Ensure optional analytics/observability choices are not misrepresented as current product blockers."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Verify public artifact removal, link cleanup, assistant/status projection refresh, and deployed URL closure."}

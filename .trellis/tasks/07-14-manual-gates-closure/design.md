@@ -32,9 +32,9 @@ Regression coverage must prove:
 
 Only one human gate is active in the conversation at a time. After the user reports completion, Codex first verifies whatever can be checked without secrets, updates the ledger, and only then presents the next gate.
 
-The first recommended gate is the Xunqiu stage-APK policy mismatch. Public link inspection currently finds a downloadable `latest-xunqiu64.apk`, while the durable ledger still says formal release approval, signing, checksum, scan/regression evidence, and rollback notes are incomplete. The safe recommendation is to remove public download links until that evidence is approved; the user must confirm whether the current stage package was intentionally approved for public distribution.
+The Xunqiu stage-APK policy mismatch is resolved. The user approved withdrawing the artifact; the matching local archive was verified by SHA-256, the public repository copy and download links were removed, `.gitignore` now blocks `downloads/*.apk`, and the deployed legacy download path returns `404`.
 
-After that decision, the next gate is Internal Assistant production recheck:
+The next gate is Internal Assistant production recheck:
 
 1. Restart only `biau-internal-assistant-api` in Render.
 2. Reopen `/assistant` with the same member context and verify the existing ACTIVE memory still exists.

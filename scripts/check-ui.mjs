@@ -2679,10 +2679,13 @@ await detailQuickLinksPage.close()
 const xunqiuQuickLinksPage = await browser.newPage({ viewport: viewports[1] })
 await gotoApp(xunqiuQuickLinksPage, '/projects/xunqiu')
 const xunqiuQuickLinks = xunqiuQuickLinksPage.locator('.detail-header .detail-quick-links')
-for (const label of ['产品展示页', '技术文档', '阶段 APK']) {
+for (const label of ['产品展示页', '技术文档']) {
   if (!(await xunqiuQuickLinks.getByRole('link', { name: label }).first().isVisible().catch(() => false))) {
     failures.push(`/projects/xunqiu quick links: expected visible "${label}" quick link`)
   }
+}
+if (await xunqiuQuickLinks.getByRole('link', { name: '阶段 APK' }).count()) {
+  failures.push('/projects/xunqiu quick links: unapproved stage APK link should not be public')
 }
 const xunqiuQuickLinksBeforeImage = await xunqiuQuickLinksPage.evaluate(() => {
   const quickLinks = document.querySelector('.detail-header .detail-quick-links')

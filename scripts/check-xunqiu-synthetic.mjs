@@ -320,7 +320,7 @@ function summarizeApkGate(artifacts, artifactRootsConfigured) {
 
 function apkGateSummary(status) {
   if (status === 'not-configured') return 'APK artifact roots are not configured; public release remains gated.'
-  if (status === 'stage-apk-found') return 'A stage APK was found; it may be shown as a stage package but is not a formal approved release.'
+  if (status === 'stage-apk-found') return 'A stage APK was found in the local archive; public download remains gated until formal release approval.'
   if (status === 'release-like-artifact-found') return 'Release-like artifacts were found, but public download still needs signing, checksum, regression evidence, and approval.'
   if (status === 'debug-only') return 'Only debug APK artifacts were found; public download remains gated.'
   if (status === 'unknown-artifact-found') return 'APK/AAB artifacts were found but build type is unclear; public download remains gated.'

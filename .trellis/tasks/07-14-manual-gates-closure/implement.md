@@ -6,7 +6,7 @@
 - [x] Run safe local and public synthetic checks without live assistant chat or model probes; use results to close agent-verifiable items.
 - [x] Run focused backend/admin/UI/documentation checks, then full lint/build or `verify` as appropriate.
 - [x] Commit and push the implementation closure.
-- [ ] Guide the user through the first human gate: decide whether the currently public Xunqiu stage APK must be withdrawn until formal release approval.
+- [x] Guide the user through the first human gate: decide whether the currently public Xunqiu stage APK must be withdrawn until formal release approval.
 - [ ] Guide the user through Internal Assistant post-restart memory persistence after the APK policy is truthful.
 - [ ] After each user-confirmed gate, verify low-sensitive evidence, update the ledger, commit/push, and present the next single gate.
 

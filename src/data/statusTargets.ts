@@ -73,8 +73,8 @@ const targetMeta: Record<
     label: '寻球产品展示页',
     kind: 'mobile',
     expectation: 'static-site',
-    description: '寻球 Android 64 位迁移展示页、文档和阶段包入口。',
-    note: '展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；阶段 APK 是否公开发布仍需人工确认。',
+    description: '寻球 Android 64 位迁移展示页、技术文档和 APK 发布状态。',
+    note: '展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；未批准阶段 APK 已撤下，公开下载等待正式 release 证据。',
   },
   'pet-workspace': {
     label: 'Pet App 展示页',
@@ -312,7 +312,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'xunqiu',
     title: '寻球',
     category: 'mobile-app',
-    summary: '寻球需要同时看静态展示页、后端健康、兼容 API、阶段 APK 说明和移动端下载 gate。',
+    summary: '寻球需要同时看静态展示页、后端健康、兼容 API、APK 本地归档和移动端正式发布 gate。',
     checks: [
       {
         id: 'xunqiu-entry',

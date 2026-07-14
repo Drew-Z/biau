@@ -1,21 +1,154 @@
 {
-  "checkedAt": "2026-07-06T19:17:30.450Z",
+  "checkedAt": "2026-07-14T14:02:11.220Z",
   "apiBaseConfigured": false,
   "hasCredentials": false,
   "apkGate": {
     "status": "stage-apk-found",
     "publicDownloadApproved": false,
-    "stageArtifactCount": 1,
-    "releaseLikeArtifactCount": 0,
+    "stageArtifactCount": 8,
+    "releaseLikeArtifactCount": 31,
     "debugArtifactCount": 0,
     "unknownArtifactCount": 0,
-    "summary": "A stage APK was found; it may be shown as a stage package but is not a formal approved release.",
+    "summary": "A stage APK was found in the local archive; public download remains gated until formal release approval.",
     "artifacts": [
       {
-        "fileName": "latest-xunqiu64.apk",
-        "buildType": "stage",
-        "sizeBytes": 5831285,
-        "updatedAt": "2026-05-02T14:32:55.153Z",
+        "fileName": "xunqiu-android-3.3.5-other-release-20260422.apk",
+        "buildType": "release-like",
+        "sizeBytes": 63951672,
+        "updatedAt": "2026-04-22T15:45:18.593Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu-android-3.3.5-other-release.apk",
+        "buildType": "release-like",
+        "sizeBytes": 63951672,
+        "updatedAt": "2026-04-22T15:45:18.593Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu-android-other-release.apk",
+        "buildType": "release-like",
+        "sizeBytes": 63951578,
+        "updatedAt": "2026-04-22T12:12:48.681Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-asset-player-kick-intro-20260429-2352.apk",
+        "buildType": "release-like",
+        "sizeBytes": 4908407,
+        "updatedAt": "2026-04-29T15:53:32.701Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-canvas-intro-20260430-0941.apk",
+        "buildType": "release-like",
+        "sizeBytes": 4909718,
+        "updatedAt": "2026-04-30T01:42:25.397Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-cinematic-kick-intro-20260429-2219.apk",
+        "buildType": "release-like",
+        "sizeBytes": 3100614,
+        "updatedAt": "2026-04-29T14:19:44.913Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-community-fallback-feed-20260501-1006.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5757202,
+        "updatedAt": "2026-05-01T02:07:29.414Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-community-feed-20260430-2231.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5755553,
+        "updatedAt": "2026-04-30T14:32:19.768Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-dark-publish-schedule-20260501-1045.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5758016,
+        "updatedAt": "2026-05-01T02:46:23.689Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-dark-secondary-pages-20260501-1055.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5758320,
+        "updatedAt": "2026-05-01T02:56:26.654Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-discover-organized-20260430-2242.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5755816,
+        "updatedAt": "2026-04-30T14:43:41.612Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-home-actions-20260501-0937.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5756273,
+        "updatedAt": "2026-05-01T01:37:47.127Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-home-drawer-settings-20260501-0949.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5756896,
+        "updatedAt": "2026-05-01T01:50:07.009Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-home-entry-legacy-20260430-2105.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5754253,
+        "updatedAt": "2026-04-30T13:11:35.938Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-home-fallback-feed-20260501-0955.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5757115,
+        "updatedAt": "2026-05-01T01:56:01.261Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-home-message-20260429-2045.apk",
+        "buildType": "release-like",
+        "sizeBytes": 3089627,
+        "updatedAt": "2026-04-29T12:48:59.771Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-home-polish2-20260430-2340.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5756245,
+        "updatedAt": "2026-04-30T15:41:16.497Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-home-tweet-detail-20260430-2206.apk",
+        "buildType": "release-like",
+        "sizeBytes": 5755292,
+        "updatedAt": "2026-04-30T14:07:19.289Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-kick-intro-20260429-2141.apk",
+        "buildType": "release-like",
+        "sizeBytes": 3097594,
+        "updatedAt": "2026-04-29T13:41:42.263Z",
+        "source": "artifact-root-1"
+      },
+      {
+        "fileName": "xunqiu64-kick-intro-polish-20260429-2241.apk",
+        "buildType": "release-like",
+        "sizeBytes": 3101838,
+        "updatedAt": "2026-04-29T14:42:17.642Z",
         "source": "artifact-root-1"
       }
     ]
@@ -27,7 +160,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T19:17:30.452Z",
+      "checkedAt": "2026-07-14T14:02:11.230Z",
       "summary": "XUNQIU_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     },
@@ -36,7 +169,7 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T19:17:30.452Z",
+      "checkedAt": "2026-07-14T14:02:11.230Z",
       "summary": "XUNQIU_SYNTHETIC_API_BASE_URL is not configured",
       "issues": []
     },
@@ -45,8 +178,8 @@
       "status": "unchecked",
       "httpStatus": 0,
       "durationMs": 0,
-      "checkedAt": "2026-07-06T19:17:30.452Z",
-      "summary": "A stage APK was found; it may be shown as a stage package but is not a formal approved release.",
+      "checkedAt": "2026-07-14T14:02:11.230Z",
+      "summary": "A stage APK was found in the local archive; public download remains gated until formal release approval.",
       "issues": [
         "formal public APK release is not approved"
       ]
