@@ -17,6 +17,7 @@ The sync diagnostic flattens these fields using explicit cleanup-prefixed names 
 
 ## Failure Semantics
 
+- Scroll the dedicated collection without a provider-side payload filter, request payloads without vectors, and enforce `scope + source` locally before collecting stale IDs. This avoids provider-specific filtered-scroll rejection without weakening deletion isolation.
 - Scroll/pagination failure: return warning with cleanupProviderStep=qdrant_scroll_points; do not attempt deletion from incomplete scan results.
 - Delete request failure: retain counts gathered so far, report the failing delete step and unresolved stale-point count.
 - No stale points: completed with scanned count and zero stale/deleted/issues.
@@ -47,6 +48,7 @@ Use deterministic fetch mocks in the existing RAG smoke surface to model:
 - scroll 4xx/5xx;
 - scroll timeout/network error;
 - delete non-OK response.
+- an unrelated source in the same collection that must survive local reconciliation.
 
 No live Qdrant or embedding call is required for automated tests.
 

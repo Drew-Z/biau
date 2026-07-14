@@ -296,6 +296,7 @@ The public graph node remains `plan`, while the internal state channel avoids th
 - Collection creation, embedding, and current-point upsert are authoritative. A failure in these steps returns `accepted=false` through the existing fatal provider diagnostic.
 - Stale-point scroll and delete are reconciliation. When upsert succeeds but reconciliation fails, return `accepted=true`, `cleanupStatus="warning"`, and a nonzero `cleanupIssueCount`.
 - Completed reconciliation returns `cleanupStatus="completed"`, `cleanupReason="ok"`, accurate scanned/stale/deleted counts, and zero cleanup issues.
+- Cleanup scrolls the dedicated collection without a provider-side payload filter and with vectors disabled. It must apply exact `scope + source` guards locally before treating any point as stale, so another source in the same collection cannot be deleted.
 - Scroll failure must stop before delete because the stale set is incomplete. Delete failure must preserve scanned/stale/deleted counts and leave unresolved point count visible through low-sensitive diagnostics.
 - Allowed cleanup fields are `cleanupStatus`, `cleanupReason`, `cleanupProviderStep`, `cleanupErrorKind`, `cleanupHttpStatus`, `cleanupTimeoutMs`, `cleanupScannedPointCount`, `cleanupStalePointCount`, `cleanupDeletedPointCount`, and `cleanupIssueCount`.
 - Diagnostics must not contain Qdrant URL, collection names, API keys, request headers, raw responses, point payloads, vectors, document bodies, or stack traces.
@@ -304,7 +305,7 @@ The public graph node remains `plan`, while the internal state channel avoids th
 ### 4. Validation & Error Matrix
 
 - Collection/embedding/upsert failure -> `accepted=false`; retain existing fatal `providerStep`, `errorKind`, HTTP status, dimension, and timeout fields.
-- Scroll non-OK, timeout, or network failure -> `accepted=true`, `cleanupStatus="warning"`, `cleanupProviderStep="qdrant_scroll_points"`; do not issue delete requests.
+- Scroll non-OK, timeout, or network failure -> `accepted=true`, `cleanupStatus="warning"`, `cleanupProviderStep="qdrant_scroll_points"`; do not issue delete requests. A non-upsert HTTP 400 is `qdrant_bad_request`, not a dimension mismatch.
 - Delete non-OK, timeout, or network failure -> `accepted=true`, `cleanupStatus="warning"`, `cleanupProviderStep="qdrant_delete_points"`; report zero or partial deleted count and unresolved cleanup issues.
 - No stale points -> completed cleanup with stale/deleted count zero.
 - Stale points deleted -> completed cleanup with stale count equal to deleted count.
@@ -320,7 +321,7 @@ The public graph node remains `plan`, while the internal state channel avoids th
 ### 6. Tests Required
 
 - `npm.cmd run server:build` for shared response and adapter type safety.
-- `npm.cmd run assistant:rag-smoke` must cover forced pagination, no-stale success, stale deletion success, scroll failure without delete, delete failure with unresolved points, and diagnostic secret-shape rejection.
+- `npm.cmd run assistant:rag-smoke` must cover forced pagination, unfiltered scroll, local source isolation, no-stale success, stale deletion success, scroll failure without delete, delete failure with unresolved points, and diagnostic secret-shape rejection.
 - `npm.cmd run server:smoke` and `npm.cmd run assistant:service-modes-smoke` must preserve route/auth/service boundaries.
 - `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after admin normalizer or warning-copy changes.
 - Before production acceptance, deploy both shared-code services and run exactly one user-approved internal sync; repeated live sync is not an automated health check.

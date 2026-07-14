@@ -472,7 +472,7 @@ async function ensureQdrantCollection(collection: string) {
   const countResponse = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true }, 'qdrant_count_collection')
   if (countResponse.ok) return
   if (countResponse.status !== 404) {
-    throw new QdrantProviderError(reasonForQdrantStatus(countResponse.status), countResponse.status, {
+    throw new QdrantProviderError(reasonForQdrantStatus(countResponse.status, 'qdrant_count_collection'), countResponse.status, {
       providerStep: 'qdrant_count_collection',
       errorKind: 'http_status',
     })
@@ -524,12 +524,6 @@ async function deleteStaleScopedPoints(
         limit: 256,
         with_payload: true,
         with_vector: false,
-        filter: {
-          must: [
-            { key: 'scope', match: { value: scope } },
-            { key: 'source', match: { value: source } },
-          ],
-        },
       }
       if (offset !== undefined && offset !== null) payload.offset = offset
       const response = await requestQdrantJson(
@@ -544,6 +538,7 @@ async function deleteStaleScopedPoints(
       for (const point of points) {
         if (!isRecord(point)) continue
         const payloadValue = isRecord(point.payload) ? point.payload : {}
+        if (payloadValue.scope !== scope || payloadValue.source !== source) continue
         const chunkId = typeof payloadValue.chunkId === 'string' ? payloadValue.chunkId : ''
         if (chunkId && !currentChunkIds.has(chunkId) && (typeof point.id === 'string' || typeof point.id === 'number')) {
           stalePointIds.push(point.id)
@@ -611,7 +606,7 @@ function cleanupWarning(
 async function requestQdrantJson(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown, providerStep = 'qdrant_request') {
   const response = await requestQdrantRaw(path, method, body, providerStep)
   if (!response.ok) {
-    throw new QdrantProviderError(reasonForQdrantStatus(response.status), response.status, {
+    throw new QdrantProviderError(reasonForQdrantStatus(response.status, providerStep), response.status, {
       providerStep,
       errorKind: 'http_status',
     })
@@ -669,10 +664,10 @@ function normalizeQdrantError(error: unknown) {
   })
 }
 
-function reasonForQdrantStatus(status: number) {
+function reasonForQdrantStatus(status: number, providerStep?: string) {
   if (status === 401 || status === 403) return 'qdrant_auth_failed'
   if (status === 404) return 'qdrant_collection_missing'
-  if (status === 400) return 'qdrant_dimension_mismatch'
+  if (status === 400) return providerStep === 'qdrant_upsert_points' ? 'qdrant_dimension_mismatch' : 'qdrant_bad_request'
   if (status >= 500) return 'qdrant_unavailable'
   return 'qdrant_provider_error'
 }

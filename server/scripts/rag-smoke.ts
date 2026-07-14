@@ -30,6 +30,7 @@ interface MockQdrantOptions {
 
 interface MockQdrantMetrics {
   scrollRequests: number
+  filteredScrollRequests: number
   deleteRequests: number
 }
 
@@ -139,7 +140,7 @@ function restoreRagEnv(snapshot: RagEnvSnapshot) {
 
 async function startMockQdrant(options: MockQdrantOptions = {}) {
   const collections = new Map<string, Map<string | number, MockQdrantPoint>>()
-  const metrics: MockQdrantMetrics = { scrollRequests: 0, deleteRequests: 0 }
+  const metrics: MockQdrantMetrics = { scrollRequests: 0, filteredScrollRequests: 0, deleteRequests: 0 }
   const port = await findAvailablePort(9477)
   const server = createHttpServer(async (req, res) => {
     try {
@@ -199,6 +200,7 @@ async function handleMockQdrantRequest(
 
   if (req.method === 'POST' && action === 'scroll') {
     metrics.scrollRequests += 1
+    if (isRecord(body) && body.filter !== undefined) metrics.filteredScrollRequests += 1
     if (options.scrollFailureStatus) {
       sendJson(res, options.scrollFailureStatus, { error: 'mock-scroll-failure' })
       return
@@ -427,7 +429,8 @@ try {
       qdrantSyncPayload.diagnostics.cleanupStatus !== 'completed' ||
       qdrantSyncPayload.diagnostics.cleanupIssueCount !== 0 ||
       qdrantSyncPayload.diagnostics.cleanupScannedPointCount !== 2 ||
-      mockQdrant.metrics.scrollRequests < 2
+      mockQdrant.metrics.scrollRequests < 2 ||
+      mockQdrant.metrics.filteredScrollRequests !== 0
     ) {
       throw new Error('rag qdrant internal sync payload is invalid')
     }
@@ -441,6 +444,17 @@ try {
 
     const internalPoints = mockQdrant.collections.get(env.qdrantInternalCollection)
     const stalePointId = '00000000-0000-4000-8000-000000000001'
+    const unrelatedPointId = '00000000-0000-4000-8000-000000000002'
+    internalPoints?.set(unrelatedPointId, {
+      id: unrelatedPointId,
+      vector: new Array(env.embeddingDimension).fill(0),
+      payload: {
+        scope: 'internal',
+        source: 'another-internal-source',
+        documentId: 'unrelated-document',
+        chunkId: 'unrelated-stale-chunk',
+      },
+    })
     internalPoints?.set(stalePointId, {
       id: stalePointId,
       vector: new Array(env.embeddingDimension).fill(0),
@@ -472,7 +486,8 @@ try {
       cleanupSyncPayload.diagnostics.cleanupStalePointCount !== 1 ||
       cleanupSyncPayload.diagnostics.cleanupDeletedPointCount !== 1 ||
       cleanupSyncPayload.diagnostics.cleanupIssueCount !== 0 ||
-      internalPoints?.has(stalePointId)
+      internalPoints?.has(stalePointId) ||
+      !internalPoints?.has(unrelatedPointId)
     ) {
       throw new Error('rag qdrant stale cleanup should delete obsolete internal points')
     }
@@ -508,7 +523,7 @@ try {
       throw new Error('rag qdrant public retrieve must not return internal citations')
     }
 
-    const scrollFailureQdrant = await startMockQdrant({ scrollFailureStatus: 503 })
+    const scrollFailureQdrant = await startMockQdrant({ scrollFailureStatus: 400 })
     try {
       env.qdrantUrl = scrollFailureQdrant.baseUrl
       const { payload: scrollFailurePayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {
@@ -526,8 +541,9 @@ try {
       if (
         scrollFailurePayload.accepted !== true ||
         scrollFailurePayload.diagnostics?.cleanupStatus !== 'warning' ||
+        scrollFailurePayload.diagnostics.cleanupReason !== 'qdrant_bad_request' ||
         scrollFailurePayload.diagnostics.cleanupProviderStep !== 'qdrant_scroll_points' ||
-        scrollFailurePayload.diagnostics.cleanupHttpStatus !== 503 ||
+        scrollFailurePayload.diagnostics.cleanupHttpStatus !== 400 ||
         scrollFailurePayload.diagnostics.cleanupIssueCount !== 1 ||
         scrollFailureQdrant.metrics.deleteRequests !== 0
       ) {

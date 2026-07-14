@@ -9,6 +9,8 @@
 - [x] Stabilize the reduced-motion OffscreenCanvas ready signal exposed by the full UI quality gate.
 - [x] Run focused RAG/server checks, lint, build, UI checks if admin rendering changes, sensitive scan, and git diff --check.
 - [x] Commit and push implementation.
+- [x] Use the first production diagnostic to identify filtered scroll HTTP 400 and correct the misleading dimension classification.
+- [x] Switch cleanup to unfiltered scroll with local scope/source isolation and verify the provider-specific follow-up.
 - [ ] Record deployment and one approved production resync as a manual acceptance gate.
 - [ ] Archive the task after production diagnostics confirm cleanup success or identify a separately tracked provider-specific follow-up.
 
