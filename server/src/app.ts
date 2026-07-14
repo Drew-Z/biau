@@ -882,10 +882,21 @@ function registerInternalAssistantRoutes(app: express.Express) {
       })
 
       if (syncResult.accepted && documents.length > 0) {
-        await prisma.internalKnowledgeDocument.updateMany({
-          where: { id: { in: documents.map((document) => document.id) } },
-          data: { lastSyncedAt: finishedAt },
-        })
+        await prisma.$transaction(
+          documents.map((document) =>
+            prisma.internalKnowledgeDocument.updateMany({
+              where: {
+                id: document.id,
+                contentHash: document.contentHash,
+                updatedAt: document.updatedAt,
+              },
+              data: {
+                lastSyncedAt: finishedAt,
+                updatedAt: document.updatedAt,
+              },
+            }),
+          ),
+        )
       }
 
       res.json({ syncRun: serializeInternalKnowledgeSyncRun(updatedRun), accepted: syncResult.accepted })

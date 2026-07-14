@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Review must enforce server/admin checks, lint/build, and sensitive-output boundaries."}
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"Review the timestamp update against Prisma @updatedAt behavior and persistence semantics."}
+{"file":"docs/manual-gates.md","reason":"Verify the active queue contains only current human gates and retains low-sensitive success criteria."}
+{"file":"docs/observability-strategy.md","reason":"Ensure optional analytics/observability choices are not misrepresented as current product blockers."}

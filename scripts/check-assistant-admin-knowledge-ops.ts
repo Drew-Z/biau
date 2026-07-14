@@ -1,4 +1,5 @@
 import {
+  getAssistantKnowledgeDocumentSyncState,
   normalizeAssistantInternalKnowledgeSyncRun,
   summarizeAssistantKnowledgeOps,
   type AssistantInternalKnowledgeDocument,
@@ -68,6 +69,21 @@ const documents: AssistantInternalKnowledgeDocument[] = [
     createdAt: '2026-07-07T00:00:00.000Z',
     updatedAt: '2026-07-07T02:00:00.000Z',
   },
+  {
+    id: 'doc-active-synced-equal-timestamps',
+    slug: 'active-synced-equal-timestamps',
+    title: 'Active synced with equal timestamps',
+    summary: '',
+    body: 'synced body',
+    tags: [],
+    status: 'ACTIVE',
+    sourceType: 'manual',
+    safetyNotes: '',
+    contentHash: 'hash-synced-equal',
+    lastSyncedAt: '2026-07-07T04:00:00.000Z',
+    createdAt: '2026-07-07T00:00:00.000Z',
+    updatedAt: '2026-07-07T04:00:00.000Z',
+  },
 ]
 
 const syncRun = normalizeAssistantInternalKnowledgeSyncRun({
@@ -105,14 +121,19 @@ for (const forbidden of ['baseUrl', 'apiKey', 'rawResponse', 'private-rag', 'moc
 }
 
 const summary = summarizeAssistantKnowledgeOps(documents, syncRun)
-assert(summary.total === 4, 'summary should count all documents')
+assert(getAssistantKnowledgeDocumentSyncState(documents[0]) === 'ineligible', 'draft should be ineligible')
+assert(getAssistantKnowledgeDocumentSyncState(documents[1]) === 'pending', 'never-synced reviewed document should be pending')
+assert(getAssistantKnowledgeDocumentSyncState(documents[2]) === 'stale', 'newer content should be stale')
+assert(getAssistantKnowledgeDocumentSyncState(documents[3]) === 'synced', 'older content timestamp should be synced')
+assert(getAssistantKnowledgeDocumentSyncState(documents[4]) === 'synced', 'equal sync and update timestamps should be synced')
+assert(summary.total === 5, 'summary should count all documents')
 assert(summary.draft === 1, 'summary should count draft documents')
 assert(summary.reviewed === 2, 'summary should count reviewed documents')
-assert(summary.active === 1, 'summary should count active documents')
-assert(summary.eligible === 3, 'summary should count reviewed/active as eligible')
+assert(summary.active === 2, 'summary should count active documents')
+assert(summary.eligible === 4, 'summary should count reviewed/active as eligible')
 assert(summary.unsyncedEligible === 1, 'summary should count never-synced eligible documents')
 assert(summary.staleEligible === 1, 'summary should count stale eligible documents')
-assert(summary.syncedEligible === 1, 'summary should count fresh synced eligible documents')
+assert(summary.syncedEligible === 2, 'summary should count fresh synced eligible documents')
 assert(summary.lastSyncStatus === 'SKIPPED', 'summary should expose last sync status')
 assert(summary.lastSyncReason === 'rag-sync-not-configured', 'summary should expose sanitized reason')
 assert(summary.lastSyncMode === 'local-planned', 'summary should expose sanitized mode')

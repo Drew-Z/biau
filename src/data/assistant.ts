@@ -931,6 +931,16 @@ const ASSISTANT_SYNC_DIAGNOSTIC_KEYS = new Set([
   'cleanupIssueCount',
 ])
 
+export type AssistantKnowledgeDocumentSyncState = 'ineligible' | 'pending' | 'stale' | 'synced'
+
+export function getAssistantKnowledgeDocumentSyncState(
+  document: AssistantInternalKnowledgeDocument,
+): AssistantKnowledgeDocumentSyncState {
+  if (!isSyncEligibleKnowledgeStatus(document.status)) return 'ineligible'
+  if (!document.lastSyncedAt) return 'pending'
+  return isAfter(document.updatedAt, document.lastSyncedAt) ? 'stale' : 'synced'
+}
+
 export function summarizeAssistantKnowledgeOps(
   documents: AssistantInternalKnowledgeDocument[],
   lastSyncRun?: AssistantInternalKnowledgeSyncRun | null,
@@ -947,14 +957,18 @@ export function summarizeAssistantKnowledgeOps(
 
   for (const document of documents) {
     counts[document.status] += 1
-    if (!isSyncEligibleKnowledgeStatus(document.status)) continue
-
-    if (!document.lastSyncedAt) {
-      unsyncedEligible += 1
-    } else if (isAfter(document.updatedAt, document.lastSyncedAt)) {
-      staleEligible += 1
-    } else {
-      syncedEligible += 1
+    switch (getAssistantKnowledgeDocumentSyncState(document)) {
+      case 'pending':
+        unsyncedEligible += 1
+        break
+      case 'stale':
+        staleEligible += 1
+        break
+      case 'synced':
+        syncedEligible += 1
+        break
+      default:
+        break
     }
   }
 

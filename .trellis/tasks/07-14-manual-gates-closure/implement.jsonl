@@ -1,0 +1,5 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"InternalKnowledgeDocument uses Prisma @updatedAt; the sync bookkeeping fix must preserve database and migration conventions."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Defines the backend smoke, build, and validation gates required after changing the internal knowledge admin flow."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"The defect spans Prisma timestamps, API serialization, admin summary derivation, and UI state labels."}
+{"file":"docs/manual-gates.md","reason":"Durable source of truth for all current cross-project human-only actions."}
+{"file":"docs/studio-ai-daily-production-readiness.md","reason":"Confirms completed Studio setup and the remaining review/export gate."}

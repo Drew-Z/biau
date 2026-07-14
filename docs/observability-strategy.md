@@ -30,7 +30,7 @@
 | 工具 | 主要用途 | 不适合替代 | 当前建议 |
 |---|---|---|---|
 | Cloudflare Web Analytics / Pages Analytics | PV、UV、来源、热门路径、地区、设备、基础性能 | 搜索查询词、站内按钮事件、服务内部错误 | 先启用，适合当前 Cloudflare Pages 主站 |
-| Google Search Console / Bing Webmaster | 搜索曝光、点击、查询词、收录、sitemap 状态 | 全站真实访问人数、站内事件、接口健康 | 必须配置，用来看 SEO 入口 |
+| Google Search Console / Bing Webmaster | 搜索曝光、点击、查询词、收录、sitemap 状态 | 全站真实访问人数、站内事件、接口健康 | 需要 SEO 数据时推荐配置，不阻塞站点可用性 |
 | Plausible | 简洁隐私友好统计、目标转化、外链和自定义事件 | 深度自托管控制、复杂路径分析 | 想省心时优先选它 |
 | Umami | 开源自托管、事件、漏斗、用户路径、API | 托管维护成本较低的省心方案 | 想掌控数据和扩展性时选它 |
 | Prometheus | 数值型时序指标采集和查询 | 访客行为分析、搜索数据、逐请求审计和计费 | 后端服务优先，静态主站不优先 |
@@ -62,7 +62,7 @@
 
 ## 当前项目推荐路线
 
-### Phase 1：主站轻量分析
+### Phase 1：主站轻量分析（可选运营增强）
 
 - 人工启用 Cloudflare Web Analytics / Pages Analytics。
 - 人工配置 Google Search Console / Bing Webmaster，并提交 `sitemap.xml`。

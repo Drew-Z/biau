@@ -66,14 +66,15 @@ npm.cmd run studio:smoke
 - Studio production migration、服务重启和基础 token 登录验收已经完成。
 - 首次真实 AI Daily issue 已进入内容草稿链路，草稿保持 hidden/review-needed，不会自动公开。
 
-## 仍需人工 gate
+## 当前仍需人工 gate
 
 - Publish Export 生成后的公开内容 diff 审核和提交。
-- AI Daily 是否接入自动来源采集、定时任务、模型摘要或模型润色。
 - Legal RAG credentialed synthetic：需要低权限 demo 凭据和 `LEGAL_RAG_API_BASE_URL` 等本地/CI 环境变量。
 - ERP 插件与商品同步：需要脱敏 fixture 或低权限演示店铺。
 - Xunqiu 后端 synthetic：需要后端公开 base URL，并且 APK 发布 gate 仍需人工批准。
 - Pet APK 公开下载：需要正式 release 包、签名、SHA-256、扫描/回归证据、版本说明和回滚说明。
+
+AI Daily 自动来源采集、定时任务、模型摘要或模型润色属于可选后续项，不阻塞首次人工审核和 Publish Export。
 
 ## 不应做的事
 

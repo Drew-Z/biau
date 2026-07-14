@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import {
   ASSISTANT_STORAGE_KEYS,
+  getAssistantKnowledgeDocumentSyncState,
   normalizeAssistantInternalKnowledgeDocument,
   normalizeAssistantInternalKnowledgeDocuments,
   normalizeAssistantInternalKnowledgeSyncRun,
@@ -268,12 +269,13 @@ function formatDiagnosticValue(value: string | number | boolean) {
 }
 
 function formatKnowledgeDocumentSyncState(document: AssistantInternalKnowledgeDocument) {
-  if (document.status !== 'REVIEWED' && document.status !== 'ACTIVE') return '不参与同步'
-  if (!document.lastSyncedAt) return '待同步'
-  const updatedAt = document.updatedAt ? Date.parse(document.updatedAt) : Number.NaN
-  const syncedAt = Date.parse(document.lastSyncedAt)
-  if (!Number.isNaN(updatedAt) && !Number.isNaN(syncedAt) && updatedAt > syncedAt) return '内容已变更'
-  return '已同步'
+  const labels = {
+    ineligible: '不参与同步',
+    pending: '待同步',
+    stale: '内容已变更',
+    synced: '已同步',
+  } as const
+  return labels[getAssistantKnowledgeDocumentSyncState(document)]
 }
 
 function formatKnowledgeSourceType(value: string) {

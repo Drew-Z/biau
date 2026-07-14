@@ -14,6 +14,7 @@
 
 - Codex 可以继续做本地可验证的代码、文档、脚本、状态页和 smoke 改进。
 - 需要平台控制台、真实凭据、生产账号、模型真实调用、付费资源或公开下载批准的事项，先记录到这里，不阻塞其他本地工作。
+- 下方分类表描述长期安全边界，不代表每一行都是当前待办；唯一的当前执行清单是文末“当前人工队列摘要”。
 - 任何完成记录都只写低敏结论，例如“已人工确认并重新运行本地检查”，不要写真实值。
 - 如果某项需要真实模型验证，只能用用户批准的具体业务任务，不能用 ping、doctor live、测活 prompt 或无意义小题。
 - 状态页的 `reliabilityProjects` 必须在本总账中有对应的人工作业覆盖；新增、删除或重命名状态项目后，同步更新本总账并运行 `npm.cmd run docs:manual-gates-check`。
@@ -111,45 +112,59 @@
 - Pet / Gamer：Node workspace 测试、Android debug unit test 和 debug APK 构建已通过，现有工作区有历史 WIP 未整理；当前证据仍是 debug-only，APK 公开下载必须等待正式 release 证据和人工批准。
 - BIAU Playlab：内容审计、生产构建、构建产物审计和公开端点检查已通过；新试玩构建上线仍需入口确认。
 - BIAU Port 主站：公开项目按钮与项目详情资料链接已接入 `public-links:check` synthetic 快照；状态页只展示通过数量、失败数量和错误类别，不保存具体外链 URL。
+- BIAU Port 公开入口复核：2026-07-14 的无凭据检查中，主站、项目/博客详情、状态详情、Pet 展示页、sitemap 和 robots 共 37 个入口通过；显式项目/试玩/API health/展示资料共 40 个外链通过。检查未发送助手问题，也未调用模型。
 - BIAU Port 主站访问分析：`src/utils/analytics.ts` 已提供默认关闭的 Plausible/Umami/debug adapter，`route_view` 只发送归一化 `routePattern` / `routeArea` / `routeDepth`；`analytics:check` 已纳入 `verify`，防止完整 URL、query、hash 或动态 id 泄漏到事件元数据。
 - BIAU Port 内部助手 Agent 工作台：`/assistant` 已提供简洁首屏、运行状态条、LangGraph inspector、工具轨迹卡、Studio artifact 链接、消息级 Agent trace replay、降级/guardrail 下一步提示；`assistant:agent-contract` 和 `assistant:agent-eval` 已覆盖本地 no-live 的 LangGraph 节点、工具权限、状态/项目、内部知识、Studio draft plan-only 和会话记忆用例。
 - BIAU Port 内部助手长期记忆：生产成员 API 已确认 `AgentMemory` migration 生效；使用真实成员完成了明确同意保存、重复去重、归档和恢复验收，最终记录保持 `ACTIVE`。剩余人工项仅为重启 internal service 后确认同一成员仍能读取该记忆；不记录 token、成员信息或记忆正文。
 - BIAU Port 内部助手管理台：`/assistant/admin` 已提供“刷新全部状态”，会统一刷新摘要、成员、邀请、内部知识、RAG 状态和用量；知识页已提供 sourceType 预设和 internal RAG readiness 路径；`check:ui` 已守护无 token 时按钮可见且禁用、token 只保存在当前浏览器的提示仍可见。
+- BIAU Port Qdrant：公开知识库已完成 27 documents / 56 chunks 同步，内部知识库已完成 1 document / 5 chunks 同步；两者均 `accepted=true`、`issue=0` 且旧分块清理完成。Qdrant collection、embedding 维度和同步 token 不再属于当前配置待办。
 - BIAU Port Studio：`/studio` 第一屏已显示待审核队列摘要、下一篇待审核和“打开下一篇待审核”动作；`check:ui` 已守护无 token / 无草稿首屏仍能看见审核入口，真实审核和导出仍是人工 gate。
-- BIAU Port 全链路本地验证：`npm.cmd run verify` 已通过；覆盖 assistant index、知识图谱检查、离线 RAG eval、内部 Agent contract/eval、本地 RAG sync plan、meta/admin 检查、Prisma validate、server smoke、服务模式 smoke、RAG smoke、Cloudflare function smoke、build、博客质量、部署/manual-gates/observability 文档、analytics、Studio smoke、项目详情、status contract 和 UI check；本轮没有 live model calls。`r`n`r`n## 当前人工队列摘要
+- BIAU Port 全链路本地验证：`npm.cmd run verify` 已通过；覆盖 assistant index、知识图谱检查、离线 RAG eval、内部 Agent contract/eval、本地 RAG sync plan、meta/admin 检查、Prisma validate、server smoke、服务模式 smoke、RAG smoke、Cloudflare function smoke、build、博客质量、部署/manual-gates/observability 文档、analytics、Studio smoke、项目详情、status contract 和 UI check；本轮没有 live model calls。
+- BIAU Port reduced-motion 背景：静态 WebGL 帧只在减少动态效果模式启用 drawing-buffer 保留，正常动画模式不增加该开销；`check:ui` 已通过 14 个路由、2 个视口。
+
+## 当前人工队列摘要
 
 以下是唯一的当前人工队列。已经完成的迁移、基础连接、保存/去重/归档/恢复验收不再列为待办；每一步只记录低敏结果，不记录 token、密码、连接串、模型地址、成员信息或私有内容。
 
-1. 内部助手生产复核
-   - 打开 `/assistant/admin`，在当前浏览器保存 admin token 后点击“刷新全部状态”。
-   - 在“成员”页签确认成员状态和模型渠道符合预期。
-   - 在 Render 手动重启 `biau-internal-assistant-api`；健康状态恢复后，用原成员打开 `/assistant`，确认已有 ACTIVE 长期记忆仍然存在。
-   - 成功标准：成员渠道只显示低敏 channel id/label、provider、model、configured / active；长期记忆跨重启仍可读取。
+1. Xunqiu 阶段 APK 公开策略复核
+   - 公开外链检查确认 `latest-xunqiu64.apk` 当前可直接下载，主站也存在“阶段 APK”入口；但现有发布记录仍写明正式签名、SHA-256、扫描/回归、版本说明、回滚说明和正式发布批准未完成。
+   - 推荐选择：在正式 release 证据完成前，撤下主站和展示站的公开下载入口，只保留迁移进展、截图和发布清单。
+   - 成功标准：用户明确选择“暂时撤下”或“批准阶段包继续公开”；若继续公开，必须补充阶段包用途、风险提示和低敏 SHA-256，不得描述为正式 release。
 
-2. Studio 首次公开导出
+2. 内部助手长期记忆跨重启复核
+   - 管理台刷新、成员渠道展示、公开/内部知识库同步已经完成，不需要重新配置。
+   - 在 Render 手动重启 `biau-internal-assistant-api`；健康状态恢复后，用原成员打开 `/assistant`，确认已有 ACTIVE 长期记忆仍然存在。
+   - 成功标准：同一成员在服务重启后仍能读取原有 ACTIVE 记忆；只记录“通过/失败”，不记录 token、成员信息或记忆正文。
+
+3. Studio 首次公开导出
    - 打开 `/studio`，选择第一篇 `hidden + review-needed` 草稿，检查正文、来源、可见性和公开预览。
    - 内容不合格时先修改草稿；通过后才创建 Publish Export。
    - 成功标准：生成一条低敏 export 记录，并在本地或 CI 执行 `studio:export -- --run-checks` 后审查 Git diff。
 
-3. Legal RAG 演示验收
+4. Legal RAG 演示验收
    - 准备低权限、可回收 demo 账号，只允许访问公开安全数据集。
    - 在本机或 CI 环境变量中配置凭据后运行 credentialed synthetic。
    - 成功标准：法律问答、合同审查和质量面板具有可复跑的低敏证据，不在仓库或聊天中记录凭据。
 
-4. ERP 演示验收
+5. ERP 演示验收
    - 使用专门的低权限 demo 账号复核注册、登录和默认角色。
    - 为插件与商品同步准备脱敏 fixture 或演示店铺，禁止使用真实店铺凭据。
    - 成功标准：注册/登录策略、默认角色和同步路径具有可复跑 smoke 证据。
 
-5. Xunqiu 与 Pet 发布门禁
+6. Xunqiu 与 Pet 其余发布门禁
    - 为 Xunqiu 配置公开后端 base URL 后运行 health / 兼容 API synthetic。
    - Pet 与 Xunqiu 只有在正式 release 包、签名、SHA-256、扫描/回归证据、版本说明、回滚说明和人工批准齐全后才能公开 APK。
    - 成功标准：状态页只公开批准后的 release 摘要，不公开 debug 包或未经批准的下载链接。
 
-6. 访问分析与工程观测
-   - 先确认 Cloudflare Analytics 与 Search Console 的站点配置。
-   - Umami / Plausible 二选一后再启用现有 analytics adapter，不同时接入两套访客统计。
-   - Prometheus、Grafana、ARMS、Sentry、Langfuse 等需先确定采样、脱敏、保留周期、告警渠道和成本。
-   - 成功标准：生产只启用经过明确选择的工具，公开事件不包含完整 URL、query、hash、动态 ID 或敏感业务内容。
+
+## 可选或延期事项
+
+以下事项不阻塞当前产品验收，可在核心人工队列完成后再决定：
+
+- Cloudflare Analytics 与 Search Console / Bing Webmaster：用于访问和 SEO 观察，不影响站点基本可用性。
+- Umami / Plausible：需要时二选一启用现有 analytics adapter，不同时接入两套访客统计。
+- Prometheus、Grafana、ARMS、Sentry、Grafana Faro、Langfuse：只有明确了采样、脱敏、保留周期、告警渠道和成本后再接入。
+- AI Daily 自动来源采集、定时摘要和自动发布：继续保持 planned；人工审核和 Publish Export 没有稳定前不启用自动发布。
+- GitHub Social Preview、额外仓库宣传素材和运营数据公开展示：属于开源运营优化，不是当前功能门禁。
 
 如后续更换机器、SSH trust root 异常、远端拒绝推送或权限变化，再重新进入 GitHub 人工 gate；当前主仓 `main` 推送正常，不属于当前待办。
