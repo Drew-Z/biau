@@ -455,7 +455,7 @@ export function StudioPage() {
     }
 
     if (!STUDIO_API_BASE) {
-      setStatusText(`当前没有配置 ${STUDIO_API_ENV_NAMES.studio} 或 ${STUDIO_API_ENV_NAMES.internal}。`)
+      setStatusText(`当前没有配置 ${STUDIO_API_ENV_NAMES.studio} 或 ${STUDIO_API_ENV_NAMES.legacy}。`)
       return
     }
     if (!token) {

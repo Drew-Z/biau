@@ -2,803 +2,120 @@
 
 ## Required Verification
 
-For changes under `src/` or project configuration, run these in order on Windows PowerShell:
+For frontend/config changes:
 
 ```powershell
 npm.cmd run lint
 npm.cmd run build
+npm.cmd run check:ui
+git diff --check
 ```
 
-`npm run build` includes `tsc -b`, so it is the required type-check gate. Run lint first and fix lint failures before build. Markdown-only or `content-drafts/`-only changes may skip this gate, but component, route, style, and `src/data/` changes must run it.
-
-For broad release checks, `npm.cmd run verify` also runs assistant index generation, assistant V2 knowledge graph checks, offline assistant RAG eval, local RAG sync planning, assistant metadata/admin checks, Prisma validation, backend build/smoke, assistant service-mode isolation, local/mock RAG orchestrator smoke, Cloudflare function smoke, frontend build, blog checks, Studio/AI Daily smoke, project-detail evidence checks, preview startup, and UI checks through `scripts/verify.mjs`.
-
-## Node-Side Validation Helpers
-
-When a task needs a `tsx` sampling script or assertion script for frontend-derived logic, keep the pure logic in `src/data/` or `src/utils/` instead of exporting it from a page component that imports UI packages, CSS, icons, or browser-only modules.
-
-```typescript
-// Good: Node-side scripts can import this without loading page UI dependencies.
-import { getRelatedProjects } from './src/data/projectRecommendations.ts'
-
-// Bad: importing a page can transitively load Semi icon CSS and fail in Node.
-import { getRelatedProjects } from './src/pages/ProjectDetailPage.tsx'
-```
-
-This keeps validation scripts executable with `npx tsx` and prevents page rendering dependencies from becoming hidden test dependencies.
-
-When a UI regression check asserts counts for data-driven lists such as homepage
-external targets, related projects, blog cards, or reliability groups, derive the
-expected value from the same public data source or generated manifest instead of
-hardcoding yesterday's number. This keeps tests useful when content grows.
-
-Public data modules that are already statically imported by the main route tree
-should not be dynamically imported from small shell components just to look lazy.
-For example, `SeoManager` should statically import `projects` and
-`getPublicBlogPostSummary()` because those modules are already pulled into the
-main bundle by public pages and assistant data. A redundant dynamic import causes
-Vite/Rolldown `INEFFECTIVE_DYNAMIC_IMPORT` warnings without reducing shipped
-JavaScript. If a future SEO or shell helper truly needs lazy data, first confirm
-the target module is not already statically imported elsewhere in the same chunk,
-then guard the behavior with `npm.cmd run build` output.
-
-For Playwright route checks, avoid using `networkidle` as the default page
-readiness signal. Studio, status, assistant, or preview pages may keep background
-requests or lazy resources open long enough to create false timeouts. Prefer a
-shared helper with a bounded retry that waits for `domcontentloaded`, the React
-root, and disappearance of the `.route-loading` Suspense fallback, then assert
-the route-specific visible content needed by the test. Use `networkidle` only for
-a narrowly documented case where the network becoming idle is the behavior under
-test.
-
-For `/status`, entry-card detail links and reliability project detail routes
-should be derived through shared helpers and `src/data/statusTargets.ts`. UI
-checks should assert the link count and `/status/:projectId` route target from
-the same data instead of duplicating project ids or fixed counts in Playwright
-code.
-
-For `/status/:projectId`, evidence freshness UI should be derived through
-`parseEvidenceFreshness()` in `src/data/siteStatusView.ts`, not by re-parsing
-the evidence string inside the page component. UI checks should derive the
-expected freshness row count from the same generated `site-status.json` payload
-that the page consumes, so synthetic check additions or removals do not require
-hardcoded Playwright count updates.
-
-`npm.cmd run status:contract` must also catch generated status JSON drift:
-`public/status/site-status.json` target ids, reliability project ids, and per
-project check ids must stay aligned with `src/data/statusTargets.ts`. Keep this
-guard offline; do not run live entry checks just to prove a generated JSON file
-matches the current source contracts.
-
-For route-level UI checks, wait for route-specific async readiness in addition
-to the shared `.route-loading` Suspense fallback. Blog detail routes, for
-example, load the route module first and then load article content via
-`getBlogPost()`, so `check:ui` must wait until the title is no longer
-`文章载入中` before asserting the final heading. When checking lazy images, scroll
-the image into view and wait for `complete && naturalWidth > 0` before reading
-layout metrics. Prefer `requestfailed` logs with URLs for actionable resource
-failures; anonymous Chromium `Failed to load resource: net::ERR_TIMED_OUT`
-console noise from local preview should not be the only failure signal when
-explicit route, image, and link assertions still pass. Local preview checks
-must not ignore same-origin JS, CSS, image, JSON, or route failures. The public
-shell must not add render-blocking third-party font stylesheets; use the project
-system-font stacks unless a later self-hosted font asset has an explicit
-performance budget.
-
-When a route check asserts a first-load browser state, make that state explicit
-in `scripts/check-ui.mjs`. For example, Studio no-token prompts must declare
-`clearLocalStorageKeys: ['biau-studio-admin-token']` on the route entry and clear
-those keys with `page.addInitScript()` before navigation. Do not rely on the
-current developer browser, a previously visited route, or a stale preview server
-to happen to have the right storage state.
-
-### Generated Route Lists And Sitemaps
-
-Generated route lists must read structured public data, not parse source files
-with broad regular expressions. `src/data/portfolio.ts` contains nested
-`visual.id` values in addition to top-level `project.id` values; regex scanning
-for `id:` can accidentally create fake routes such as `/projects/<visual-id>`.
-This applies to sitemap generation, route monitors, and UI checks. For example,
-`scripts/check-site-monitor.ts` should import `projects`, `reliabilityProjects`,
-and `getPublicBlogPosts()` instead of reading TypeScript source with regex.
-
-Good:
-
-```typescript
-import { projects } from '../src/data/portfolio.ts'
-
-const projectIds = projects.map((project) => project.id)
-```
-
-Bad:
-
-```typescript
-const portfolio = await readFile('src/data/portfolio.ts', 'utf8')
-const projectIds = [...portfolio.matchAll(/id:\s*'([^']+)'/g)].map((match) => match[1])
-```
-
-After changing sitemap generation, project ids, status ids, blog curation, or
-visual ids, run `npm.cmd run sitemap:generate` and inspect `public/sitemap.xml`
-for only real routable paths. For broad release checks, also run
-`npm.cmd run status:contract` when status data is involved.
-
-Studio routes must also pass the visible overflow guard in `scripts/check-ui.mjs`.
-When changing `/studio` layout, form controls, cards, chips, preview headers, or
-AI Daily source controls, ensure `.studio-page` descendants stay within their
-parent and viewport at desktop and mobile widths. Long titles, slugs, source
-names, model labels, and status text should use `min-width: 0` plus
-`overflow-wrap: anywhere` / bounded grid columns instead of relying on a perfect
-content length.
-
-Studio is an internal workbench route, not a marketing/case-study route. It may
-reuse the public shell and navigation, but its main surface should stay compact:
-the hero title must be dashboard-sized, token controls should behave like a
-toolbar on desktop, and the primary `/studio` grid should use at most two columns
-at normal desktop widths. `check:ui` asserts these basics so a page can no longer
-pass only because it has no horizontal scrollbar while still looking like a
-public landing page with dense admin forms forced into it.
-
-The main `/studio` route must also provide an obvious review path in the first
-screen. Editors should not have to infer where the content lives or which action
-publishes the next step: the page needs a visible review guide, a current-draft
-summary, anchors to edit and preview, and clear actions for "审核通过" and
-"创建导出记录". `check:ui` treats a missing review guide on `/studio` as a UI
-regression.
-
-Studio API failures should distinguish user-fixable token problems from real
-network or service failures. Before sending `Authorization`, reject tokens that
-contain control characters or non-header-safe characters, and explain that the
-editor should clear and paste a plain-text token. Fetch/CORS failures may be
-reported as a generic browser connection problem, but HTTP responses such as
-`401 missing-studio-token` must still use the normal token mismatch message.
-Do not leave page-level `catch` blocks that overwrite these diagnostics with
-`无法连接 Studio API`; route components should route unexpected client exceptions
-through the shared Studio client-exception explainer so frontend parsing errors,
-bad saved header values, and real token mismatches stay distinguishable.
-
-### Blog Knowledge Quality Gate
-
-Public `知识积累 / Knowledge Notes` posts must pass
-`npm.cmd run blog:knowledge-check` before they are treated as publishable. The
-gate reads `getPublicBlogPosts()` plus the loadable runtime article from
-`getBlogPost()`, so it checks the same public selector and route content that
-visitors and the public assistant use.
-
-The gate enforces:
-
-- at least three concrete `knowledgePoints`;
-- reusable `scenarios` and `practiceChecklist` entries;
-- multiple substantive sections and takeaways;
-- a source/evidence section whose body cites public references, official docs,
-  or safe repo paths such as `src/data/...`, `scripts/...`, or `package.json`;
-- reusable knowledge-first framing before local project application notes;
-- no local absolute paths, private IPs, file URLs, or secret-like query strings.
-
-Do not satisfy this gate by inventing citations. If a knowledge article is based
-on this repository's public engineering work, cite the relevant public source
-files and scripts. If public blog body content changes, regenerate assistant
-knowledge with `npm.cmd run assistant:index` and let `npm.cmd run verify` rerun
-`blog:knowledge-check`.
+Also run feature-specific checks such as `analytics:check`, `project-details:check`, `blog:check`, `status:contract`, or `operator:facade-smoke` when their contracts change.
 
 ## Review Priorities
 
-- Preserve the product website / solution showcase voice.
-- Keep Home, Projects, Assistant, Blog, and detail pages clearly distinct.
-- Maintain theme, language, and harbor-scene behavior across routes.
-- Verify links and route changes through `react-router-dom` patterns already used in `src/App.tsx` and page files.
-- Keep public content sanitized before it enters `src/data/`.
+1. Broken routes, hidden content leaks, or credential exposure.
+2. Mobile overflow, overlap, inaccessible controls, or unreadable detail pages.
+3. Cross-layer payload drift and stale public facts.
+4. Performance regressions, flicker, unstable canvas/intro state, and unnecessary bundle cost.
+5. Visual polish.
 
 ## UI Rules
 
-Use the existing class-based design system and `lucide-react`. Do not add other UI frameworks or CSS-in-JS stacks unless the repository has a concrete product requirement that the current system cannot meet.
-
-Prefer real project screenshots and runtime screenshots. Missing assets should use stable fallback assets or be omitted; do not fabricate business data or visual evidence.
-
-### Convention: Mobile Gesture Ownership
-
-On mobile, the document is the only owner of vertical panning. Interactive hero
-regions may react to an explicit tap or a clearly horizontal gesture, but they
-must release vertical movement to normal page scrolling before calling
-`preventDefault()` or taking pointer capture.
-
-```typescript
-// Good: classify the gesture before taking ownership.
-if (Math.abs(deltaY) > Math.abs(deltaX) * 1.18) {
-  return
-}
-
-if (Math.abs(deltaX) >= 18) {
-  event.preventDefault()
-  element.setPointerCapture(event.pointerId)
-}
-```
-
-For the home page specifically:
-
-- `.hero-title-rotator` keeps `touch-action: pan-y`; a tap or clearly horizontal
-  swipe may switch the poem, while a vertical drag must scroll the page.
-- The mobile project manifest is a full-width vertical list. It must not create
-  an internal horizontal or vertical scroll owner; each row leaves vertical
-  panning to the document and exposes a separate trailing external action.
-- Desktop infinite-loop duplicate cards must carry an explicit marker such as
-  `data-loop-copy="true"` and stay hidden in the mobile manifest. Mobile
-  visitors should receive one semantic copy of each project.
-- Mobile navigation keeps only the brand, theme action, and menu trigger in the
-  top row. Language and route actions belong in the expanded panel when the
-  compact row cannot fit them without overlap.
-- The expanded navigation panel must render above hero/page stacking contexts;
-  `elementFromPoint()` in the UI check should resolve to the panel over its
-  visible area.
-
-`scripts/check-ui.mjs` must cover the home page at `320`, `390`, and `430` CSS
-pixels and assert: no navigation overlap, no page-level horizontal overflow,
-vertical panning on the title and project manifest, one visible project-card
-set arranged in a non-overlapping column, bounded trailing actions, and an
-operable mobile menu. This is a layout contract, not a screenshot-only check.
-
-Mobile blog and project detail routes use the document as the only full-page
-vertical scroll owner. The detail body is an unframed continuous reading band:
-text sections use separators and rhythm instead of nested panel borders and
-shadows, while screenshots, diagrams, code, tables, and related-item cards keep
-their own meaningful boundaries. Primary body text must be at least `15px`, and
-rich media may scroll horizontally only inside its own bounded container.
-
-### Convention: Detail Reading Orientation
-
-Representative long blog and project detail routes must expose a shared sticky
-reading guide with unique existing targets, current-section context, and a
-semantic `progressbar`. The outline starts collapsed, stays horizontally and
-vertically operable when opened, supports `Escape` and outside-click closing,
-and uses real hash anchors even when JavaScript chooses the scroll behavior.
-
-`scripts/check-ui.mjs` verifies the guide at desktop plus `320`, `390`, and `430`
-CSS pixels. Checks cover target integrity, deterministic unique ids, toggle and
-focus semantics, section navigation, active-section updates, reduced-motion
-operation, at least `95%` progress at the true document bottom, no empty guide
-on missing routes, and no page-level overflow. Do not replace these behavioral
-checks with screenshots alone.
-
-### Convention: Light Theme Restraint
-
-The light theme uses a morning-harbor palette rather than a high-saturation
-rainbow field or a flat cream background. Muted rose, daylight, sea mist, and
-harbor blue may all remain visible, but background saturation stays below
-`100%` and primary panel alpha stays between `0.55` and `0.74` for readable,
-still-translucent content.
-
-The visible background contract uses five composited levels: the animated
-`.gradient-bg` base, the app fluid field, the app ribbon field, the gradient
-mist/edge pair, and `.harbor-environment` beam/spectrum/mist/edge layers.
-Desktop scenes must keep all levels active. Mobile scenes may reduce inset,
-blur, opacity, and layer area, but must not globally hide the fluid/ribbon or
-harbor layers merely to make cards calmer or to address a performance concern.
-Adjust mobile cost tokens, surface alpha, borders, and shadows first.
-
-`dusk`, `garden`, and `stellar` must remain visibly distinct in both light and
-dark themes. `scripts/check-ui.mjs` owns the computed-style contract for the
-fluid/ribbon animations, harbor environment animations, six theme signatures,
-mobile visibility, and the static `prefers-reduced-motion` fallback.
-
-Foreground material must follow the active harbor scene as well as the moving
-background. The home hero panel, project rail, and project cards use shared
-scene tokens for tint, highlight, edge, depth, and sheen. Keep six distinct
-light/dark material signatures, preserve project-specific card accents, and use
-bounded pseudo-element highlights that never resize content. On mobile, reduce
-sheen intensity and retain the vertical project manifest; under reduced motion,
-the sheen must be static with no transition.
-
-`dusk`, `garden`, and `stellar` must keep distinct light palettes. A light scene
-must never reuse dark endpoints such as `#052433`; scene switching changes
-atmosphere without silently changing the theme or reducing text contrast.
-
-Light navigation controls, cards, footer surfaces, and status indicators use
-the same cool translucent surface language with ink-tinted borders and restrained
-shadows. Avoid pure-white outlines, neon active states, or multiple unrelated
-accent systems competing in one viewport.
-
-`scripts/check-ui.mjs` owns the token-level light scene contract in addition to
-normal overflow and interaction checks.
-
-## Scenario: Mobile First-Load Performance And Harbor Intro
-
-### 1. Scope / Trigger
-
-- Trigger: changing `index.html`, `src/main.tsx`, top-level route imports,
-  `HarborIntro`, global CSS imports, or Cloudflare Pages cache headers.
-- Goal: let the harbor animation begin promptly on a cold mobile visit without
-  turning the animation itself into a permanent loading screen.
-
-### 2. Signatures
-
-- Build budget command: `npm.cmd run performance:check`.
-- Intro completion key: `sessionStorage['biau-port-harbor-intro:v3']`.
-- Cloudflare Pages cache contract: `public/_headers` owns `/assets/*` immutable
-  cache behavior.
-
-### 3. Contracts
-
-- `dist/index.html` must not contain render-blocking third-party stylesheets.
-  Use the system font stacks in `src/styles/theme.css`; a future custom font
-  must be self-hosted and explicitly budgeted.
-- Keep the public shell free of component-framework stylesheets. UI controls
-  use repository CSS tokens and tree-shaken Lucide icons; adding a framework
-  requires proof that the product need and build budget justify it.
-- The built entry CSS must stay at or below `240000` raw bytes and the built
-  entry JavaScript at or below `430000` raw bytes. These are regression budgets,
-  not user-network transfer estimates.
-- Heavy non-home routes and the public assistant widget should remain lazy
-  chunks unless direct-route UX proves that a specific route must be eager.
-- Hashed `/assets/*` files use `Cache-Control: public, max-age=31536000,
-  immutable`; HTML remains revalidatable so new hashes can deploy safely.
-- The harbor intro uses the measured navigation Logo box as its final geometry,
-  clears the center wordmark before handoff, and writes its seen marker only
-  after `harborIntroVeil`
-  completes. A slow or interrupted load must not permanently suppress the next
-  attempt. `prefers-reduced-motion: reduce` still skips the animation.
-
-### 4. Validation & Error Matrix
-
-- External stylesheet in built HTML -> `performance:check` fails.
-- Entry CSS or JS exceeds its budget -> `performance:check` fails with actual
-  and allowed byte counts.
-- Missing immutable asset header -> `performance:check` fails.
-- Intro marker exists while `.harbor-intro` is active -> `check:ui` fails.
-- First mobile visit with no reduced-motion preference does not mount or finish
-  the intro -> `check:ui` fails.
-- Reduced-motion visitor -> no intro is required and normal page content must
-  remain available.
-
-### 5. Good/Base/Bad Cases
-
-- Good: cold 390px visit loads local CSS/JS, mounts the harbor animation, then
-  stores `v2=1` only after docking and veil completion.
-- Base: a completed intro in the same tab is skipped on later SPA/home visits.
-- Base: a reduced-motion visitor sees the page directly.
-- Bad: a Google Fonts `<link rel="stylesheet">` blocks React and the animation.
-- Bad: importing `semi.min.css` adds hundreds of unused component rules to the
-  public shell.
-- Bad: setting the intro marker in the mount effect before any frame is painted.
-
-### 6. Tests Required
-
-- Run `npm.cmd run lint`, `npm.cmd run build`, and
-  `npm.cmd run performance:check` after changing entry resources or caching.
-- Run `npm.cmd run check:ui` after changing the intro, route splitting, or
-  top-level Suspense behavior.
-- The UI check must include a mobile context with `390x844`, touch enabled, and
-  `reducedMotion: 'no-preference'`.
-- When production is redeployed, verify the new hashed asset headers and repeat
-  a cold mobile trace; local preview cannot prove Cloudflare applied `_headers`.
-
-### 7. Wrong vs Correct
-
-#### Wrong
-
-```tsx
-import 'large-ui-framework/dist/full.css'
-
-useLayoutEffect(() => {
-  sessionStorage.setItem(INTRO_STORAGE_KEY, '1')
-}, [])
-```
-
-The public shell pays for unused CSS, and an interrupted first frame suppresses
-future intro attempts.
-
-#### Correct
-
-```tsx
-if (event.animationName === 'harborIntroVeil') {
-  markIntroSeen()
-  setVisible(false)
-}
-```
-
-Only the CSS actually used by the site ships in the entry bundle, and the
-completion marker represents a completed animation.
-
-### Internal Assistant Workspace First Load
-
-`/assistant` should open as a productized Agent workspace, not as a long explanatory chat transcript. Keep the default assistant opening concise, do not render default citation cards before the user asks a question, and keep the first screen focused on run mode, model channel, next action, conversation, and the Agent inspector.
-
-`scripts/check-ui.mjs` must keep assertions for this contract:
-
-- the opening assistant message stays short;
-- default first load has no citation cards;
-- the run-status strip is visible;
-- the Agent, tool, and guardrail inspector panels are visible on desktop and mobile.
-
-For `/assistant/admin`, the knowledge tab must keep a visible internal knowledge sync path and curated `sourceType` presets. Editors should not have to guess whether a document is a runbook, project note, status note, resource, AI Daily source, or incident note from a blank text input. `check:ui` should click the knowledge tab and assert the readiness path and source-type preset UI without requiring a live admin token.
-
-For `/assistant`, keep a visible member durable-memory panel on desktop and mobile. It must expose refresh and archived-item controls, show a clear no-token/empty state, wrap long content, and avoid a direct create form. Memory writes are initiated through explicit Agent conversation only, and a memory API failure must not disable the chat workspace.
-
-## Scenario: Default-Off Analytics Adapter
-
-### 1. Scope / Trigger
-
-- Trigger: changing `src/utils/analytics.ts`, route-view tracking in `src/App.tsx`, product interaction analytics, or the public docs for Umami/Plausible.
-- Goal: keep visitor analytics useful for product decisions without shipping provider secrets, full URLs, query strings, raw prompts, or private identifiers.
-
-### 2. Signatures
-
-- Env selector: `VITE_ANALYTICS_PROVIDER = "umami" | "plausible" | "debug" | unset`.
-- Route helper: `getAnalyticsRouteMetadata(pathname)` returns `{ routePattern, routeArea, routeDepth }`.
-- Route event helper: `trackRouteView(pathname)` emits `route_view` once per normalized pathname change.
-- Interaction helper: `trackAnalyticsEvent(name, properties?)` sends custom events through the configured browser global.
-
-### 3. Contracts
-
-- Analytics is default-off. Unsupported or missing `VITE_ANALYTICS_PROVIDER` must result in no network or browser-global calls.
-- The repository must not contain Umami/Plausible site ids, provider script URLs, dashboard URLs, tokens, or API keys.
-- Route-view events must send normalized metadata such as `/projects/:id`, `/blog/:slug`, `routeArea`, and `routeDepth`; do not send full URLs, query strings, hashes, dynamic ids, user-entered text, or external URLs.
-- `debug` may dispatch `biau:analytics` for local inspection, but production collection still requires the user to choose and configure one provider.
-- React StrictMode can double-run effects in development, so route tracking must dedupe repeated normalized pathnames.
-
-### 4. Validation & Error Matrix
-
-- Missing provider -> no event is sent.
-- `debug` provider -> browser dispatches `CustomEvent("biau:analytics")` with low-sensitive event detail.
-- `umami` provider -> call `window.umami?.track(name, props)` if the admin-injected script exists.
-- `plausible` provider -> call `window.plausible?.(name, { props })` if the admin-injected script exists.
-- Route `/projects/legal-rag?token=x` -> event properties must still look like `{ routePattern: "/projects/:id", routeArea: "project-detail", routeDepth: 2 }`.
-
-### 5. Good/Base/Bad Cases
-
-- Good: navigating from `/projects` to `/projects/legal-rag` emits one `route_view` with `routePattern: "/projects/:id"` and no project id or query.
-- Base: analytics provider unset; interaction handlers can still call `trackAnalyticsEvent()` safely because it no-ops.
-- Bad: adding a Plausible/Umami script tag, site id, or endpoint URL directly in `index.html`, `src/`, docs, or generated status files.
-- Bad: sending raw assistant questions, Studio tokens, full external URLs, or project detail slugs as analytics properties.
-
-### 6. Tests Required
-
-- Run `npm.cmd run lint` and `npm.cmd run build` after changing analytics code or route tracking.
-- Run `npm.cmd run analytics:check` after changing route metadata, route tracking, or analytics event payloads.
-- Run `npm.cmd run docs:observability-check` and `npm.cmd run docs:manual-gates-check` after changing analytics/observability docs.
-- Search changed files for `umami`, `plausible`, `token`, `apiKey`, `password`, `database URL`, and full provider URLs before committing analytics work.
-
-### 7. Wrong vs Correct
-
-#### Wrong
-
-```ts
-trackAnalyticsEvent('route_view', { href: window.location.href, question: input })
-```
-
-This leaks full URLs, query strings, and user-entered content into a third-party analytics system.
-
-#### Correct
-
-```ts
-trackRouteView(pathname)
-```
-
-The helper normalizes the route to a public-safe pattern and dedupes repeated pathnames before calling the configured provider.
-
-### Project Detail Visual Composition
-
-Project detail pages should include both runtime evidence and structural explanation:
-
-- at least three in-body visual blocks for each standard case-study page, so the detail body is not just a hero image plus text;
-- at least one in-body `screenshot` visual, so visitors can see the actual product/game/app state;
-- at least one in-body structural visual: `workflow`, `architecture`, `data-flow`, or `diagram`, so visitors can understand the implementation or usage path.
-- all standard case-study groups should be present: `overview`, `workflow`, `architecture`, `quality`, `limitations`, and `roadmap`;
-- body visuals should use unique ids and should not collapse to repeated copies of the hero image;
-- hero images, visual images, visual source links, project links, section links, and assistant-facing project facts must stay public-safe and free of local paths, private IPs, secret-like query strings, or non-HTTPS external URLs;
-- hero and body visual image files must be parseable by the local image pipeline, large enough for visitor-readable case-study pages, and raster assets such as PNG/JPEG should keep same-name WebP sidecars;
-- image-backed body visuals need visitor-readable alt text and captions, not placeholder labels; `project-details:check` enforces conservative minimum lengths for both;
-- each section needs enough body text or bullet detail to read as a case-study note, not a bare heading.
-
-`npm.cmd run project-details:check` enforces this composition. When a project
-lacks a safe runtime screenshot, record that as an asset/manual gate rather than
-inventing one. When a project lacks a safe structural visual, prefer a
-public-safe SVG/diagram that explains the current implementation boundary,
-workflow, or data flow without private URLs, local paths, credentials, or
-unapproved release claims.
-
-`npm.cmd run check:ui` should also prove the rendered project detail page keeps
-the data contract visible: image-backed body visuals need rendered image alt
-text and visible captions derived from `src/data/portfolio.ts`, not just valid
-data entries that never reach the DOM.
-
-## Static Public Pages
-
-When adding a pure static page under `public/` instead of a React route, add a
-small assertion or manual check that proves:
-
-- every referenced `/images/...` asset exists in `public/`;
-- gated downloads such as APKs do not expose a real `href` until approved;
-- generated sitemap output contains the static route when it should be indexed.
-
-This prevents the page from passing build/lint while still shipping broken
-screenshots or an accidentally public gated download.
-
-## Scenario: Withdrawing An Unapproved Public Download
-
-### 1. Scope / Trigger
-
-- Trigger: an APK, AAB, archive, or other gated artifact is already committed or deployed, but formal release approval is absent or withdrawn.
-- Goal: remove public distribution without losing the maintainer's local evidence or leaving stale links, assistant facts, status claims, or CDN paths behind.
-
-### 2. Signatures
-
-- Static repository artifact: `downloads/*.apk` or equivalent deployment path.
-- Main-site project link: `Project.links[]` in `src/data/portfolio.ts`.
-- Public release state: `src/data/statusTargets.ts` plus the related synthetic JSON.
-- Assistant projection: `npm.cmd run assistant:index` regenerates both public knowledge files.
-
-### 3. Contracts
-
-- Before deleting the public copy, verify a local non-deployed archive exists and its SHA-256 matches the public artifact.
-- Remove the artifact from the public repository and add an ignore rule such as `downloads/*.apk` so it is not accidentally recommitted.
-- Remove every public download `href`; a disabled release-status label may remain, but it must not be an anchor to the artifact.
-- Update project details, blog claims, status targets, synthetic summaries, READMEs, deployment docs, and assistant knowledge from the same decision.
-- After deployment, the old public artifact URL must no longer return `200`; expected behavior is `404` unless an intentional safe redirect was explicitly chosen.
-
-### 4. Validation & Error Matrix
-
-- Local archive missing -> abort withdrawal deletion until preservation is resolved.
-- SHA-256 mismatch -> abort; do not assume the files are equivalent.
-- Repository still contains `downloads/*.apk` -> fail the release-gate check.
-- Any public page or project link still points at the withdrawn URL -> fail link/UI checks.
-- Deployed old URL returns `200` -> gate remains open; investigate deployment or CDN invalidation before closing the manual item.
-- Assistant/status text still says the package is downloadable -> regenerate projections and keep the gate open.
-
-### 5. Good/Base/Bad Cases
-
-- Good: matching local archive is verified, the deployed copy and links are removed, `.gitignore` blocks recommit, public facts say `local archive / download gated`, and the old URL returns `404`.
-- Base: no artifact was ever public; keep the disabled release status and existing gate checks.
-- Bad: remove only the visible button while the tracked artifact and direct URL still work.
-
-### 6. Tests Required
-
-- Static repository file and `href` scan plus `git diff --check`.
-- Local static server: home/docs return `200`, withdrawn artifact path returns `404`.
-- `npm.cmd run public-links:check`, `npm.cmd run project-details:check`, `npm.cmd run status:contract`, and `npm.cmd run check:ui`.
-- `npm.cmd run assistant:index`, `npm.cmd run assistant:kg-check`, and `npm.cmd run assistant:eval` with `modelCalls=0`.
-- Production follow-up checks the current page copy and the exact old artifact URL.
-
-### 7. Wrong vs Correct
-
-#### Wrong
-
-```html
-<a href="downloads/latest.apk">Stage APK</a>
-```
-
-The label is cautious, but the unapproved artifact is still publicly distributed.
-
-#### Correct
-
-```html
-<span class="btn" aria-disabled="true">APK pending formal release</span>
-```
-
-The page communicates status without exposing a download until the release gate is complete.
-
-### Convention: README Screenshot Capture
-
-When refreshing README or GitHub landing screenshots for the main site, capture
-the stable route UI instead of the first-entry harbor intro. Add this init script
-before navigating in Playwright:
-
-```js
-await context.addInitScript(() => {
-  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
-})
-```
-
-After navigation, wait for `#root`, wait for `.harbor-intro` to detach when it is
-present, and give the route a short settling delay before `page.screenshot()`.
-The home, projects, and blog screenshots should be regenerated as paired
-PNG/WebP files under `public/images/projects/showcase/`, then optimized with:
-
-```powershell
-npm.cmd run images:optimize -- --force
-```
-
-Good: README screenshots show `/`, `/projects`, or `/blog` visitor content with
-the BIAU Port / 泊岸 shell visible. Bad: README screenshots show only the
-animated intro gradient, logo, or loading state.
-
-### Convention: Root Static SEO Shell
-
-`index.html` is the first SEO and social-card shell before React mounts. Keep
-its `<title>`, description, Open Graph, and Twitter fields aligned with the
-defaults in `src/utils/seo.ts`.
-
-Good:
-
-```html
-<meta property="og:site_name" content="BIAU Port" />
-<title>BIAU Port 泊岸 | AI 应用、项目展示与知识库</title>
-```
-
-Bad:
-
-```html
-<meta property="og:site_name" content="Old Brand" />
-<title>Old Brand | AI 应用、项目展示与知识库</title>
-```
-
-After changing brand, default title, default description, canonical host, or
-default social image, search both the static shell and runtime SEO source:
-
-```powershell
-rg -n "old brand|new brand" index.html src/utils/seo.ts README.md
-```
-
-### Convention: Cross-Site BIAU Port Brand Alignment
-
-When aligning a project demo or sibling showcase with BIAU Port / 泊岸, do not
-stop at browser metadata. The public visitor must see the relationship in the
-page chrome too.
-
-Check these surfaces:
-
-- Browser shell: `<title>`, `og:site_name`, favicon, apple touch icon, manifest
-  or Astro/Vite site metadata.
-- Visible shell: login hero, nav brand, sidebar logo, footer ownership line,
-  bridge banner, and "back to BIAU Port" links.
-- Main-site data: `src/data/portfolio.ts`, `src/data/statusTargets.ts`,
-  `src/data/assistant.ts`, generated assistant knowledge, sitemap, and status
-  JSON when relevant.
-
-Preserve product names such as `Ozon ERP`, `Legal RAG`, `BIAU Playlab`, and
-`寻球`; the BIAU Port / 泊岸 mark is the parent shell, not a replacement for the
-case-study product identity.
-
-Good:
-
-```text
-BIAU Port / 泊岸
-Ozon ERP 运营控制台
-```
-
-Bad:
-
-```text
-Ozon ERP
-```
-
-if BIAU Port only appears in a small bridge card or browser favicon.
-
-Validation should include a targeted `rg` for old/new brand strings, the
-affected site build, and main-site generated outputs if public data changed.
+- Reuse class-based CSS, design tokens, and `lucide-react`.
+- Keep cards at 8px radius or less unless an existing component requires otherwise.
+- Use icons for familiar actions and accessible labels/tooltips for unfamiliar controls.
+- Do not nest decorative cards or turn whole page sections into floating cards.
+- Text must wrap within controls/panels at 320px through desktop widths.
+- Stable tools, boards, tab bars, counters, and media use explicit responsive dimensions.
+- Letter spacing is `0`; do not scale font size directly with viewport width.
+- Preserve a multi-color but restrained palette; do not regress to a one-note dark-blue/purple/beige theme.
+
+## BIAU Operator
+
+- `/operator` opens as a work surface, not a long explanatory landing page.
+- Opening copy is concise and contains no default citation dump.
+- Desktop shows session sidebar, conversation, and runtime inspector.
+- Mobile shows conversation first and uses a bounded drawer for sessions.
+- `/operator/settings` provides five complete areas: overview, knowledge, RAG, memory, usage.
+- Settings expose safe model/channel/configured state only; no browser token form exists.
+- The public assistant widget is hidden on all Operator routes.
+- Operator is absent from public navigation and unauthenticated public synthetic.
+- Old private routes render NotFound; do not add redirects for compatibility.
+
+## Content Studio
+
+- Mobile uses focused workspace modes; desktop keeps the complete workspace visible.
+- The review queue and next-review action remain visible before records load.
+- Token inputs use password semantics and never echo values in status copy.
+- Draft, source, AI Daily, review, and export forms preserve local edits when switching focused sections.
+- Public preview is clearly separate from editable/internal metadata.
+
+## Mobile Navigation And Reading
+
+- Mobile tab bar includes exactly the public primary sections.
+- Touch targets are at least 44px where practical.
+- Blog/project/status details remain vertically readable without forced horizontal swiping.
+- Floating assistant/reading controls collapse or offset near final content and footer.
+- Drawers/modals remain within viewport, expose close actions, and avoid global-nav overlap.
+- Page scroll remains the default gesture; component effects use explicit buttons/taps where gesture conflict would harm reading.
+
+## Flow Background And Intro
+
+- Normal mode may use the full animated background; reduced motion must show a stable nonblank frame.
+- Avoid continuous React state updates from animation frames.
+- Canvas owns its render loop and disposes resources/listeners on unmount.
+- Route changes must not repeatedly restart expensive initialization or cause project/blog page flicker.
+- Intro completion must land on the stable navigation logo position and not block first interaction indefinitely.
+- Visual checks compare desktop/mobile framing and confirm the canvas is nonblank.
+
+## Public Content
+
+- Public project/blog/status data is treated as publishable.
+- Hidden drafts, private docs, credentials, private URLs, debug APKs, and unapproved downloads never render.
+- External links expose external affordance and safe target/rel behavior.
+- Internal links preserve SPA navigation.
+- Project details include useful screenshots/diagrams inside the article flow, not only one hero image.
+
+## SEO And Analytics
+
+- Every public route has useful title, description, canonical, and Open Graph metadata.
+- Private Operator routes may have metadata but are excluded from public sitemap/navigation.
+- Analytics events use normalized route patterns/areas/depth; never send query/hash/dynamic ids/tokens.
+- Root static HTML retains a meaningful SEO shell before hydration.
+
+## Accessibility
+
+- Semantic buttons/links for actions/navigation.
+- Visible focus states and keyboard activation for cards/commands.
+- Icon-only controls have `aria-label`.
+- Dialog/drawer state is conveyed to assistive technology.
+- Images have meaningful alt text; decorative visuals are hidden.
+- Color is not the only status signal.
+
+## Performance
+
+- Lazy-load route-heavy private/Studio surfaces.
+- Do not ship obsolete page CSS/components after route removal.
+- Optimize screenshots to web-friendly formats and dimensions.
+- Avoid duplicate data indexes or repeated normalization in render loops.
+- Run `performance:check` when changing background, intro, route chunks, or large assets.
 
 ## Data Safety
 
-Everything committed to this public site should be treated as public. Never write real IPs, internal domains, database URLs, API keys, tokens, signing paths, certificates, private account details, exact sensitive metrics, or unsanitized customer/company names.
+- Treat committed frontend code/data as public.
+- Never place API keys, database URLs, model/vector endpoints, owner emails, Access values, service/admin tokens, or private content in `VITE_*`, local fixtures, screenshots, or console output.
 
-Use `.env.example` for structure. Do not read or quote `.env`, `.env.local`, `.env.*.local`, `*.pem`, `*.key`, `*.p12`, or `~/.ssh/*`.
+## Regression Expectations
 
-## Avoid
+`check:ui` should cover:
 
-- Do not use `--no-verify` or bypass checks.
-- Do not add broad `// eslint-disable` comments to force lint success.
-- Do not treat `npm run dev` as verification; it does not run strict TypeScript checks.
-- Do not use destructive git commands or push without an explicit user request.
-
-### Mobile Primary Navigation Regression
-
-Test the five source-ordered Home, Projects, Knowledge, Status, and Assistant
-tabs at 320px, 390px, and 430px. Assert fixed viewport bounds, 44px targets,
-no horizontal overflow, and exactly one active tab for both index and nested
-route families. Verify the mobile header keeps theme and language controls but
-has no redundant hamburger menu. The public assistant must clear the tabbar by
-at least 8px, footer content must remain readable above its safe-area clearance,
-and assistant drawers must suppress the global tabbar while open. Desktop must
-hide the mobile tabbar and preserve keyboard access to the full navigation.
-### Mobile Taxonomy Regression
-
-For responsive taxonomy controls, UI checks must cover 320px, 390px, and 430px.
-Assert that the mobile selector is visible and bounded, the desktop button group
-is hidden, every option exists, populated and empty selections use the shared
-projection, pagination resets, and the document has no horizontal overflow.
-Desktop checks must assert the inverse visibility contract.
-
-### Mobile Project Catalog Regression
-
-For `/projects`, test 320px, 390px, and 430px against `catalogProjects` from
-`src/data/portfolio.ts`. Assert two complete vertical controls, AI as the only
-default panel, one visible grid after every switch, source order and counts,
-every catalog project reachable exactly once, one BIAU Playlab card, no
-standalone `interactive` cards, 44px group/card actions, material 390px height
-reduction, and no horizontal overflow. Desktop must hide the mobile controls
-and show both catalog groups and every catalog card simultaneously. Separately
-verify the full `projects` registry still renders every retained child game
-detail route, and verify Playlab exposes all internal case links and Web-play
-links. Do not derive expected titles or counts from the rendered DOM.
-
-### Mobile Workspace Drawer Regression
-
-For chat-first responsive workspaces, test desktop inverse visibility plus
-320px, 390px, and 430px mobile widths. Assert the primary workspace starts in
-the first viewport; the drawer starts inaccessible and closed; opening exposes
-`dialog` / `aria-modal` semantics, focuses the close control, traps focus, locks
-document scrolling, and prevents global-navigation overlap; Escape, backdrop,
-and close-button paths restore scrolling and trigger focus. Also assert drawer
-bounds, retained secondary capabilities, and no page-level horizontal overflow.
-
-### Long Status Page Navigation Regression
-
-For `/status`, verify the mobile-only section navigator at 320px, 390px, and
-430px. Assert all stable section options exist, each jump lands below the sticky
-control, passive scroll tracking updates the selected section, the control stays
-bounded near the viewport top, and entry/project evidence counts are unchanged.
-Desktop must hide the mobile navigator, and no viewport may gain horizontal
-overflow.
-
-### Mobile Focused Workspace Regression
-
-For multi-column authoring routes such as `/studio`, verify 320px, 390px, and
-430px. Assert the mode control is visible and every target is at least 44px;
-only the default editor panel is visible initially; switching modes preserves
-form state; selecting, creating, or opening a review record returns to the
-editor; token controls remain before the workspace and guidance remains after
-it; and no horizontal overflow appears. Desktop must hide the mode control and
-keep every original workspace panel visible.
-
-### Mobile Administrative Section Regression
-
-For `/assistant/admin`, test the six section values at 320px, 390px, and 430px.
-Assert that mobile shows one labeled native selector and hides desktop tabs;
-each selection leaves exactly one corresponding panel visible; entered form
-state survives round trips; the default overview remains below the documented
-height budget; and the page has no horizontal overflow. Desktop must expose the
-tablist, hide the selector, and obey the same one-panel contract.
-
-### Mobile Floating Surface Regression
-
-For detail routes with both a reading guide and public assistant, test 320px,
-390px, and 430px using actual bounding rectangles. Assert zero positive-area
-intersection, the intended 8px gap when collision exists, stale-offset reset
-after scrolling, no offset on a non-colliding blog detail, bidirectional mobile
-open-state exclusion, desktop inverse behavior, and no horizontal overflow.
-Mock assistant health in UI checks; never probe a real model/provider merely to
-exercise floating-surface behavior.
-
-Status reliability detail routes use the same regression boundary. Verify the
-six ordered stable anchors, every anchor landing below the collapsed sticky
-guide, passive active-section tracking, and preservation of source check, gate,
-and next-action counts at desktop plus 320px, 390px, and 430px. `/status` keeps
-`StatusSectionNavigator`; missing `/status/:projectId` routes render no reading
-guide. Use condition-based waits for geometry and React state, and force test
-scrolling to `scroll-behavior: auto` when a check needs deterministic placement.
-### Flow Background Compositor Regression
-
-Ambient harbor motion uses one fixed viewport WebGL canvas. Production prefers an OffscreenCanvas Worker and falls back to the shared main-thread renderer; WebGL initialization failure must leave a stable CSS background rather than a blank page. Canvas backing dimensions must use viewport size with DPR capped at 1.25, never document height.
-
-Before transferring an `HTMLCanvasElement` to an OffscreenCanvas Worker, set its backing width and height from the capped-DPR viewport size. `data-flow-ready="true"` may be exposed only after the first worker frame has reached the browser presentation queue; use a one-time deferred ready signal rather than marking ready directly inside the worker message callback. Reduced-motion frames must always render with a fixed time value so resize or palette synchronization cannot advance the animation.
-
-Do not infer a static mode from mobile/coarse pointer, device memory, hardware concurrency, Save-Data, or effective network type. Normal devices retain the full flow background. Only `prefers-reduced-motion: reduce` renders a stable frame and stops time progression because this is an explicit accessibility preference.
-
-After the first canvas frame, legacy fixed blur, blend, gradient, grain, and harbor-environment layers must not remain active. Pause rendering while the document is hidden and while the harbor intro owns the viewport. Theme and dusk/garden/stellar scene updates must change the palette without replacing or retransferring the canvas.
-
-UI checks must assert six distinct light/dark scene frames, viewport-sized capped-DPR backing dimensions, animated frame changes in normal mode, stable frames in reduced-motion mode, zero horizontal overflow, and long project/blog scrolling without blank frames or rectangular compositor tiles. Chromium `ReadPixels` driver warnings caused by screenshot capture may be filtered narrowly; other WebGL warnings remain failures.
-### Mobile Editorial Rhythm Regression
-
-Mobile public pages should move useful content into the first viewport without removing brand context. At 390px, the first home project and first blog card should start no later than 410px, and the first project group control no later than 300px. At 320px, allow the blog entry boundary to grow to 430px for legitimate text wrapping.
-
-Consolidate related discovery controls into one visual surface. The blog column selector and search field remain separate semantic controls with at least 44px height, but share one `.blog-discovery` panel on mobile. Do not use `display: contents` on the `<label>` itself because UI and accessibility checks need a measurable labeled control boundary.
-
-Project groups use one light toggle surface followed by an unframed grid of project cards. The grid must have no border or shadow on mobile; the cards remain the primary repeated surfaces. Detail titles use fixed breakpoint sizes rather than viewport-scaled `vw` typography so font loading and long titles cannot unpredictably shift the first content boundary.
-
-UI checks cover 320/390/430px with real touch contexts. Assert entry y-coordinates, 44px controls, zero horizontal overflow, unframed project grids, whole-card navigation, and stable desktop inverse behavior. When testing mutually exclusive mobile overlays, dispatch the documented `biau:mobile-surface-open` intent before clicking an entry that an open full-height panel physically covers; do not use force-click to bypass actual pointer geometry.
-### Mobile Navigable Card Regression
-
-On coarse-pointer mobile layouts, navigable home, project, and blog cards must keep `touch-action: pan-y` and use short press confirmation rather than custom swipe handling. Whole-card entry, visible focus, Enter/Space activation, and nested action isolation must remain consistent; nested buttons or links stop propagation so one gesture causes exactly one navigation.
-
-UI checks must use real `isMobile + hasTouch` contexts at 320px, 390px, and 430px. Assert vertical panning, bounded layout, feedback latency no greater than 100ms, whole-card article navigation, nested-button single navigation, and desktop keyboard access. Reduced-motion removes press transforms without removing the navigation affordance.
-### Mobile Reading Guide Auto-Reveal Regression
-
-Detail reading guides remain top-sticky because the global mobile tabbar and public assistant already own the bottom edge. At widths up to 720px, a collapsed guide may auto-hide after a deliberate downward delta and must immediately return on upward movement or near the page top. Open or keyboard-focused guides never auto-hide; desktop guides stay visible.
-
-Reuse the guide's existing requestAnimationFrame scroll measurement instead of adding another scroll listener. Direction tests must cover blog, project, and reliability detail routes at 320px, 390px reduced-motion, and 430px, plus desktop inverse behavior. Verify the hidden shell reaches `pointer-events: none`, leaves no transparent hit layer or horizontal overflow, open outlines remain visible while scrolling, and anchor navigation can reveal and reopen the guide.
-
-### Assistant RAG Cleanup Diagnostic Regression
-
-The `/assistant/admin` frontend accepts RAG sync diagnostics through an explicit allowlist. When backend cleanup fields change, update the shared response type, both backend sanitizers, the frontend normalizer, and the visible label map together. Unknown keys, provider endpoints, collection names, API keys, raw responses, vectors, document bodies, and stack traces must never reach the rendered diagnostic surface.
-
-Treat `accepted=true` with `cleanupStatus="warning"` as a successful current-vector update with a stale-point cleanup warning. The UI must not call the whole sync failed or instruct the operator to repeat synchronization blindly. Rejected upserts continue to use the existing failure copy, and legacy records without cleanup fields continue to render their generic low-sensitive reason/mode.
-
-After changing this path, run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui`. The RAG smoke test must separately prove that cleanup warnings expose only the documented fields and never private provider/document values.
+- Main public routes at desktop/mobile widths.
+- Operator workspace/settings with deterministic API fixtures.
+- Old private routes as NotFound.
+- Public assistant concise/fallback behavior.
+- Mobile public navigation and detail reading.
+- Studio focused modes and review entry.
+- Background animation/reduced-motion frames.
+- SEO metadata, overflow, focus, and external/internal link behavior.

@@ -1,459 +1,207 @@
-# 部署方案
+# BIAU Port 部署说明
 
-## 当前线上地址
+本文描述当前最终部署边界。仓库中只记录变量名、职责和验证方法；真实 token、数据库 URL、模型地址、Cloudflare Access 配置值和私有域名只保存在对应平台。
 
-```text
-https://biau.playlab.eu.cc
-```
+## 最终拓扑
 
-## 部署结论
+同一仓库部署为静态前端加四个 Render Web Service：
 
-当前站点部署在 Cloudflare Pages，并通过 GitHub `main` 分支自动更新。
+| 服务 | `ASSISTANT_SERVICE_MODE` | 责任 |
+| --- | --- | --- |
+| `biau-public-assistant-api` | `public` | 公开助手、公开知识检索和公开模型回答。 |
+| `biau-operator-api` | `operator` | owner-only 泊岸站务、LangGraph、站长会话/记忆、站务知识和 Studio draft-write。 |
+| `biau-content-studio-api` | `studio` | 草稿、审核、AI Daily、来源池和发布导出记录。 |
+| `biau-rag-orchestrator` | `rag` | public/internal scope 检索、Qdrant、embedding、可选 rerank 和知识同步。 |
 
-推荐继续使用 Cloudflare Pages 的原因：
+Cloudflare Pages 承载 React 静态站点和 `/api/*` Functions。`/operator` 与 `/api/operator/*` 必须位于 Cloudflare Access 后；浏览器不直接持有 Render Operator service token。
 
-- 当前站点是 React + Vite 静态应用，生产产物是 `dist`，非常适合 Pages 的 GitHub 自动构建。
-- 页面主要是官网展示、项目展示、案例中心和博客内容，不依赖常驻 Node 服务。
-- Cloudflare Pages 自带 CDN、HTTPS、预览环境和回滚能力。
-- `public/_redirects` 已加入，生产环境刷新 `/projects`、`/blog` 和详情页会回退到 `index.html`。
+## Cloudflare Pages
 
-## Cloudflare Pages 配置
-
-GitHub 仓库：
+### 前端公开变量
 
 ```text
-git@github.com-bill:ciallo-bill/biau.git
+VITE_CHAT_API_BASE_URL=<公开助手浏览器 API base，推荐 /api>
+VITE_STUDIO_API_BASE_URL=<Content Studio API 的公开浏览器 base>
+VITE_ANALYTICS_PROVIDER=<可选：umami | plausible | debug>
 ```
 
-Cloudflare Pages 项目配置：
+Operator 浏览器地址固定为同源 `/api/operator/*`，不需要 `VITE_OPERATOR_*`。不要把任何 token 写进 `VITE_*`。
+
+### Operator Function 私有变量
 
 ```text
-Framework preset: None
-Production branch: main
-Build command: npm run build
-Build output directory: dist
-Root directory: 留空
+OPERATOR_API_BASE_URL=<biau-operator-api 的 Render base URL>
+OPERATOR_SERVICE_TOKEN=<Cloudflare facade 与 Render 共享的随机服务凭据>
+OPERATOR_OWNER_ID=<稳定 owner id>
+OPERATOR_OWNER_EMAILS=<允许访问的 Access 邮箱，逗号分隔>
+OPERATOR_DISPLAY_NAME=<站务显示名>
+CF_ACCESS_TEAM_DOMAIN=<Cloudflare Access team domain>
+CF_ACCESS_AUD=<Access application audience>
 ```
 
-如果 Cloudflare 需要指定 Node 版本，建议使用：
+`functions/api/operator/[[path]].ts` 会验证 `Cf-Access-Jwt-Assertion` 的 RS256 签名、issuer、audience 和有效期，再检查 owner 邮箱。它会丢弃浏览器提供的授权/身份头，并注入服务端保存的 `OPERATOR_SERVICE_TOKEN` 和已验证 owner identity。
+
+Cloudflare Access application 与 policy 需要在平台手工创建，至少覆盖：
+
+- `/operator`
+- `/operator/*`
+- `/api/operator/*`
+
+## Render 四服务边界
+
+所有服务建议使用：
 
 ```text
 NODE_VERSION=22
+METRICS_ENABLED=false
 ```
 
-前端如果要让公开助手优先走同域 Cloudflare Pages Functions，建议在 Cloudflare Pages 环境变量中增加：
+### 1. Public Assistant
+
+服务名：`biau-public-assistant-api`
 
 ```text
-VITE_PUBLIC_ASSISTANT_API_BASE_URL=/api
-VITE_INTERNAL_ASSISTANT_API_BASE_URL=https://biau-internal-assistant-api.onrender.com
+Build Command: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
+Start Command: npm run server:start
 ```
-
-公开助手前端也会在打开时自动探测同域 `/api/health`；如果 Functions 未部署或未配置模型，会使用本地公开知识回退。内部助手页面如需使用邀请码、数据库和管理能力，必须把 `VITE_INTERNAL_ASSISTANT_API_BASE_URL` 指向独立的 internal API。旧的 `VITE_CHAT_API_BASE_URL` 仍可作为兼容回退，但四服务部署不要只配置这一个变量，否则公开助手和内部管理页会误打到同一个服务。
-
-Cloudflare Pages Functions 需要在 Pages 的运行时环境变量中配置模型通道：
-
-```text
-ASSISTANT_MODEL_BASE_URL=<OpenAI-compatible relay base URL, for example https://.../v1>
-ASSISTANT_MODEL_API_KEY=<OpenAI 兼容中转 Key>
-ASSISTANT_MODEL_NAME=glm-5.2
-ASSISTANT_MODEL_PROVIDER=glm-compatible
-```
-
-这些变量只在 Pages Functions 服务端读取，不会进入浏览器 bundle。未配置 `ASSISTANT_MODEL_API_KEY` 时，`/api/chat/public` 会回退到公开知识摘要。
-
-公开助手已经生成 V2 本地知识结构：`npm run assistant:index` 会写入 `server/data/public-knowledge.json` 和 `server/data/public-knowledge-v2.json`，后者包含 docs、chunks、entities、relations 和 fallback 检索配置。部署前可运行：
-
-```text
-npm run assistant:kg-check
-npm run assistant:eval
-npm run assistant:rag-sync-local
-npm run assistant:service-modes-smoke
-npm run assistant:rag-smoke
-```
-
-这些检查只使用本地公开数据、本地 Express app、假 token 和 mock Qdrant，不会调用真实模型、中转站、生产 RAG Orchestrator 或外部向量库。其中 `assistant:eval` 会报告 `modelCalls=0`，用于确认公开助手检索意图、citation、拒答和敏感输出边界；`assistant:rag-sync-local` 只验证本地 knowledge V2 到 provider-neutral store 的同步计划；`assistant:service-modes-smoke` 验证 public/internal/rag/studio 服务边界；`assistant:rag-smoke` 验证本地/mock RAG Orchestrator contract。
-
-`npm run verify` 已经包含这些离线门禁；单独运行上述命令适合在只改公开助手知识结构、检索 baseline、RAG contract 或服务边界时快速确认。真实 Qdrant/embedding/reranker/model 同步和生产 Render 检查仍是人工批准后的单独任务。
-
-外部 RAG Orchestrator 是最终形态的一部分，由单独的 Render 服务承载。Cloudflare Pages Functions 或公开助手 API 只保存 Orchestrator endpoint 和服务端 token，不直接连接 Qdrant、Supabase、模型中转或 embedding provider：
-
-```text
-ASSISTANT_RAG_API_BASE_URL=
-ASSISTANT_RAG_API_KEY=
-ASSISTANT_RAG_TIMEOUT_MS=3000
-```
-
-这些变量不能放进 `VITE_*`。最终推荐使用下面的 `biau-rag-orchestrator` 服务连接 Qdrant Cloud；如果暂时清空 `ASSISTANT_RAG_API_BASE_URL`，公开助手会退回本地公开知识，但这只是可靠性降级，不是最终目标架构。
-
-部署后先检查 `https://<站点域名>/api/health`。它应该返回 JSON，并包含 `ok: true` 与 `mode` / `modelConfigured` 这类低敏状态；如果返回的是首页 HTML，或 `POST /api/chat/public` 返回 404/405，说明当前 Pages 部署没有把 `functions/` 目录发布为 Functions。此时单独增加模型 Key 不会生效，需要先确认 Cloudflare Pages 项目使用最新 `main` 提交重新构建，或用 Wrangler 部署时确认 Functions 一起上传。
-
-## 助手后端与 RAG Orchestrator 部署
-
-助手后端位于当前仓库的 `server/`，和静态前端独立部署。最终形态使用同一个 GitHub 仓库创建四个 Render Web Service，通过 `ASSISTANT_SERVICE_MODE` 明确运行边界：
-
-```text
-biau-public-assistant-api    ASSISTANT_SERVICE_MODE=public
-biau-internal-assistant-api  ASSISTANT_SERVICE_MODE=internal
-biau-content-studio-api      ASSISTANT_SERVICE_MODE=studio
-biau-rag-orchestrator        ASSISTANT_SERVICE_MODE=rag
-```
-
-这样可以复用同一套 TypeScript 类型、模型客户端、RAG contract、Studio API 和测试，同时让公开接口、内部接口、内容工作台和检索服务拥有独立路由、密钥、日志、扩容和故障范围。不要把模型 key、RAG key、Qdrant key、Supabase service role、数据库 URL 或 admin token 放进 `VITE_*`。
-
-Render 配置建议：
-
-```text
-Runtime: Node
-Build Command:
-  public/internal/rag: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
-  studio: npm ci && npm run prisma:generate && npm run server:build
-Start Command:
-  public/rag: npm run server:start
-  internal: npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
-  studio: npm run prisma:migrate:studio && npm run server:start
-```
-
-仓库根目录提供了 `render.yaml` Blueprint，可直接作为四服务配置参考；其中所有真实密钥、数据库 URL 和 provider endpoint 都使用 `sync: false`，需要在 Render 后台手动填写。
-
-### Public Assistant API
 
 ```text
 ASSISTANT_SERVICE_MODE=public
-CORS_ORIGIN=https://biau.playlab.eu.cc
-ASSISTANT_MODEL_BASE_URL=<OpenAI-compatible relay base URL, for example https://.../v1>
-ASSISTANT_MODEL_API_KEY=<OpenAI 兼容中转 Key，可留空使用公开知识回退>
-ASSISTANT_MODEL_NAME=<mimo 或其他 OpenAI-compatible 模型名>
-ASSISTANT_MODEL_PROVIDER=mimo-compatible
-ASSISTANT_RAG_API_BASE_URL=<biau-rag-orchestrator 的 Render URL>
-ASSISTANT_RAG_API_KEY=<只允许 public scope 的 RAG key>
+CORS_ORIGIN=<站点公开 origin>
+ASSISTANT_MODEL_BASE_URL=<server-only OpenAI-compatible base>
+ASSISTANT_MODEL_API_KEY=<server-only key>
+ASSISTANT_MODEL_NAME=<model id>
+ASSISTANT_MODEL_PROVIDER=<safe provider label>
+ASSISTANT_RAG_API_BASE_URL=<RAG Orchestrator base>
+ASSISTANT_RAG_API_KEY=<RAG_PUBLIC_API_KEY 对应值>
 ASSISTANT_RAG_TIMEOUT_MS=3000
-METRICS_ENABLED=false
-PORT=10000
 ```
 
-公开助手的模型接入点在服务端，不在前端。前端只配置 `VITE_PUBLIC_ASSISTANT_API_BASE_URL` 指向公开助手 API 或同域 `/api` facade，`VITE_INTERNAL_ASSISTANT_API_BASE_URL` 指向内部助手 API；真实模型 Key、Base URL 和模型名只放在 Render / Cloudflare Pages Functions / 本地 `.env.local` 等私有环境里。`ASSISTANT_MODEL_BASE_URL` 推荐填写 `/v1` base URL，也可以填写完整 `/chat/completions` endpoint。旧的 `OPENAI_BASE_URL`、`OPENAI_API_KEY`、`OPENAI_MODEL` 仍兼容，但新部署建议统一使用 `ASSISTANT_MODEL_*`。
+公开助手无模型或 RAG 不可用时保留公开知识 fallback，不需要 Operator 数据库。
 
-### Internal Assistant API
+### 2. BIAU Operator
+
+服务名：`biau-operator-api`
 
 ```text
-ASSISTANT_SERVICE_MODE=internal
-CORS_ORIGIN=https://biau.playlab.eu.cc
-DATABASE_URL=<内部助手成员/会话/邀请码数据库 URL>
-STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-content-studio-api 相同>
-ADMIN_TOKEN=<生成一个长随机字符串>
-ASSISTANT_MODEL_BASE_URL=<OpenAI-compatible relay base URL, for example https://.../v1>
-ASSISTANT_MODEL_API_KEY=<OpenAI 兼容中转 Key>
-ASSISTANT_MODEL_NAME=<mimo 或其他 OpenAI-compatible 模型名>
-ASSISTANT_MODEL_PROVIDER=mimo-compatible
-ASSISTANT_MODEL_CHANNELS_JSON=<可选，内部成员专用多渠道 JSON>
-ASSISTANT_RAG_API_BASE_URL=<biau-rag-orchestrator 的 Render URL>
-ASSISTANT_RAG_API_KEY=<只允许 internal scope 的 RAG key>
-RAG_SYNC_TOKEN=<内部知识同步到 RAG Orchestrator 的服务端 token>
-ASSISTANT_RAG_TIMEOUT_MS=3000
-METRICS_ENABLED=false
-PORT=10000
+Build Command: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
+Start Command: npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
 ```
-
-如果内部助手需要创建 Studio 草稿，`DATABASE_URL` 和 `STUDIO_DATABASE_URL` 必须保持边界清楚：
-
-- `DATABASE_URL` 指向内部助手库，保存成员、邀请码、会话、消息、用量和成员模型渠道。
-- `STUDIO_DATABASE_URL` 指向内容工作台库，保存草稿、AI 日报 issue、source item 和 publish export。
-- `biau-internal-assistant-api` 的 `STUDIO_DATABASE_URL` 必须和 `biau-content-studio-api` 的 `STUDIO_DATABASE_URL` 完全相同。
-- 不要把 Studio 数据库连接串填进 `DATABASE_URL`，否则 `/me` 会因为查不到成员 token 而返回 `401 missing-or-invalid-token`。
-
-Studio / AI Daily 的生产验收顺序和人工 gate 记录见 `docs/studio-ai-daily-production-readiness.md`。
-
-内部助手服务推荐 Start Command：
-
-```bash
-npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
-```
-
-如果使用 Supabase Postgres / Supavisor pooler 作为内部助手数据库，`DATABASE_URL` 建议使用 Session pooler URI，并在 query 参数里显式加上 Prisma 7 / `@prisma/adapter-pg` 兼容参数：
 
 ```text
-?sslmode=require&uselibpqcompat=true
+ASSISTANT_SERVICE_MODE=operator
+CORS_ORIGIN=<站点公开 origin>
+DATABASE_URL=<Operator owner 会话、消息、记忆、用量和站务知识数据库 URL>
+STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-operator-api 相同>
+OPERATOR_SERVICE_TOKEN=<与 Cloudflare Function 相同的随机服务凭据>
+OPERATOR_OWNER_ID=<稳定 owner id>
+OPERATOR_OWNER_EMAILS=<Access owner 邮箱白名单>
+OPERATOR_DISPLAY_NAME=<站务显示名>
+OPERATOR_MODEL_CHANNEL_ID=<可选，选定 server-only 模型通道>
+ASSISTANT_MODEL_BASE_URL=<默认模型 base>
+ASSISTANT_MODEL_API_KEY=<默认模型 key>
+ASSISTANT_MODEL_NAME=<默认模型 id>
+ASSISTANT_MODEL_PROVIDER=<safe provider label>
+ASSISTANT_MODEL_CHANNELS_JSON=<可选 server-only fallback 通道列表>
+ASSISTANT_RAG_API_BASE_URL=<RAG Orchestrator base>
+ASSISTANT_RAG_API_KEY=<RAG_INTERNAL_API_KEY 对应值>
+RAG_SYNC_TOKEN=<与 Orchestrator 相同的同步 token>
 ```
 
-如果连接串已经有其他参数，用 `&` 追加。缺少 `uselibpqcompat=true` 时，Render 上可能在创建邀请码或读写会话时出现 `P1011` / `self-signed certificate in certificate chain`。
+Operator API 只挂载 `/health` 与 `/operator/*`。它不挂载公开聊天、旧 `/chat/internal`、邀请码/成员管理、独立 Studio API 或 RAG HTTP API。`studio.draft` 通过 `STUDIO_DATABASE_URL` 直接创建 `hidden + review-needed` 草稿，发布与导出仍由人工审核。
 
-内部助手支持给不同成员分配不同模型渠道。推荐把 `ASSISTANT_MODEL_*`
-作为默认/兜底通道，再用 `ASSISTANT_MODEL_CHANNELS_JSON` 定义可分配渠道：
+`DATABASE_URL` 与 `STUDIO_DATABASE_URL` 通常指向两个不同数据库。Operator 服务和 `biau-content-studio-api` 的 `STUDIO_DATABASE_URL` 必须指向同一个内容库。
 
-```json
-[
-  {
-    "id": "mimo",
-    "label": "Mimo member channel",
-    "provider": "mimo-compatible",
-    "baseUrl": "<OpenAI-compatible relay base URL>",
-    "apiKey": "<server-only key>",
-    "model": "mimo-chat",
-    "isActive": true
-  },
-  {
-    "id": "deepseek",
-    "label": "DeepSeek review channel",
-    "provider": "deepseek-compatible",
-    "baseUrl": "<OpenAI-compatible relay base URL>",
-    "apiKey": "<server-only key>",
-    "model": "deepseek-ai/deepseek-v4-pro",
-    "isActive": true
-  }
-]
+PostgreSQL 使用需要兼容证书链的 pooler 时，连接串按供应商说明配置 Prisma 7 / libpq 兼容参数；不要把连接串写入文档或 Git。
+
+### 3. Content Studio
+
+服务名：`biau-content-studio-api`
+
+```text
+Build Command: npm ci && npm run prisma:generate && npm run server:build
+Start Command: npm run prisma:migrate:studio && npm run server:start
 ```
-
-成员表只保存 `modelChannelId`；`/assistant/admin` 只展示渠道
-`id/label/provider/model/configured/isDefault/isActive`，不会展示 `apiKey` 或 `baseUrl`。如果成员未分配渠道、渠道不存在或渠道被标记为 `isActive:false`，内部聊天会回到默认通道；如果默认通道也未配置，则使用本地 fallback。用量记录只保存当次实际使用的低敏 `modelChannelId`，方便之后排查成员路由，不保存 endpoint 或 key。
-
-`/assistant/admin` 的内部知识源管理会把 `REVIEWED` / `ACTIVE` 文档作为 internal corpus 同步计划提交给 RAG Orchestrator。真实同步需要 Internal Assistant API 和 RAG Orchestrator 配置相同的 `RAG_SYNC_TOKEN`；未配置时只会记录低敏 `SKIPPED` 同步运行，不会把文档或 token 暴露给浏览器。
-
-当 RAG Orchestrator 使用 `RAG_STORE_PROVIDER=qdrant` 且 Qdrant 与 embedding 变量完整时，`scope=internal` 的同步会把内部知识文档切分为 chunks、生成 embedding，并写入 `QDRANT_INTERNAL_COLLECTION`。本地或未配置 Qdrant/embedding 时，`/v1/sync` 只返回 `local-readonly` 或低敏未接受诊断，不会触碰真实向量库，也不会把文档正文写入诊断。
-
-### Content Studio API
 
 ```text
 ASSISTANT_SERVICE_MODE=studio
-CORS_ORIGIN=https://biau.playlab.eu.cc
-STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-internal-assistant-api 相同>
-STUDIO_ADMIN_TOKEN=<生成一个长随机字符串>
-METRICS_ENABLED=false
-PORT=10000
+CORS_ORIGIN=<站点公开 origin>
+STUDIO_DATABASE_URL=<与 biau-operator-api 相同的 Studio 数据库 URL>
+STUDIO_ADMIN_TOKEN=<编辑和审核 token>
 ```
 
-Studio API 只挂载 `/health` 和 `/studio/api/*`。它不挂载公开聊天、内部成员、admin 成员管理或 RAG sync 路由。生产分库时，`biau-content-studio-api` 的 `STUDIO_DATABASE_URL` 必须和 `biau-internal-assistant-api` 的 `STUDIO_DATABASE_URL` 指向同一个内容工作台库，这样内部 Agent 的 draft-write 和 `/studio` 审核页面才会看到同一批草稿、AI Daily issue、source item 和 publish export。
+Studio 模式只挂载 `/health` 和 `/studio/api/*`，不挂载聊天、Operator 或 RAG 路由。
 
-Studio 服务推荐 Start Command：
+### 4. RAG Orchestrator
 
-```bash
-npm run prisma:migrate:studio && npm run server:start
-```
-
-主站前端只填写公开安全的后端 origin：
+服务名：`biau-rag-orchestrator`
 
 ```text
-VITE_STUDIO_API_BASE_URL=https://<studio-service>.onrender.com
+Build Command: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
+Start Command: npm run server:start
 ```
-
-### RAG Orchestrator
 
 ```text
 ASSISTANT_SERVICE_MODE=rag
 RAG_STORE_PROVIDER=qdrant
-QDRANT_URL=<Qdrant Cloud HTTPS endpoint>
-QDRANT_API_KEY=<Qdrant API key>
+QDRANT_URL=<Qdrant URL>
+QDRANT_API_KEY=<Qdrant key>
 QDRANT_PUBLIC_COLLECTION=biau_public_chunks
 QDRANT_INTERNAL_COLLECTION=biau_internal_chunks
-RAG_PUBLIC_API_KEY=<公开助手调用 retrieve 的服务端 token>
-RAG_INTERNAL_API_KEY=<内部助手调用 retrieve 的服务端 token>
-RAG_SYNC_TOKEN=<同步 public knowledge / internal corpus 到 Qdrant 的服务端 token>
-EMBEDDING_BASE_URL=<OpenAI-compatible embedding /v1 base URL>
+RAG_PUBLIC_API_KEY=<公开助手 retrieve key>
+RAG_INTERNAL_API_KEY=<Operator retrieve key>
+RAG_SYNC_TOKEN=<知识同步 token>
+EMBEDDING_BASE_URL=<embedding base>
 EMBEDDING_API_KEY=<embedding key>
-EMBEDDING_MODEL=qwen3-embedding-8b
+EMBEDDING_MODEL=<embedding model>
 EMBEDDING_DIMENSION=4096
 EMBEDDING_TIMEOUT_MS=20000
-RERANKER_BASE_URL=<可选 reranker base URL>
-RERANKER_API_KEY=<可选 reranker key>
-RERANKER_MODEL=<可选 reranker model>
-METRICS_ENABLED=false
-PORT=10000
+RERANKER_BASE_URL=<可选>
+RERANKER_API_KEY=<可选>
+RERANKER_MODEL=<可选>
 ```
 
-Qdrant collection 已按最终向量路径创建：
+当前 Qdrant `internal` scope 表示 owner/private 站务知识的检索隔离层，不代表成员制产品。公开助手只能使用 public key/scope，Operator 使用 internal key/scope。
+
+## Owner 数据迁移
+
+旧成员制数据不会整体迁入 Operator。只迁移用户明确确认属于站长、状态为 `ACTIVE` 的长期记忆：
+
+```powershell
+npm.cmd run operator:memory-migration:check
+npm.cmd run operator:memory-migration:apply -- --ids <approved-record-ids>
+```
+
+先保存脱敏 check 报告并人工确认记录 ID，再运行 apply。普通聊天、邀请码、成员、成员模型分配、成员用量和不确定记录都不迁移。生产迁移完成前保留数据库备份与上一 Render revision。
+
+## 本地开发
+
+本地 Vite 可使用 server-only 代理连接 Operator API：
 
 ```text
-biau_public_chunks    4096 / Cosine
-biau_internal_chunks  4096 / Cosine
+OPERATOR_API_BASE_URL=http://127.0.0.1:8787
+OPERATOR_SERVICE_TOKEN=<local placeholder>
+OPERATOR_OWNER_ID=site-owner
+OPERATOR_OWNER_EMAILS=owner@example.invalid
+OPERATOR_DISPLAY_NAME=Local Owner
 ```
 
-`QDRANT_URL`、`QDRANT_API_KEY`、embedding key 和 RAG token 只放在 Render 的 `biau-rag-orchestrator` 环境变量中。Supabase / Postgres 仍可用于内部助手的成员、会话、邀请码和管理数据；它不再是最终向量检索主路径。
+这些值放在 `.env.local`。`vite.config.ts` 只在开发服务器进程中注入请求头，不会把 service token 打包到浏览器代码。
 
-本地后端开发：
+## 验证
 
-```bash
-npm run assistant:index
-npm run prisma:validate
-npm run prisma:generate
-npm run server:dev
+本地确定性验证不调用真实模型：
+
+```powershell
+npm.cmd run operator:facade-smoke
+npm.cmd run operator:knowledge-check
+npm.cmd run assistant:agent-contract
+npm.cmd run assistant:agent-eval
+npm.cmd run assistant:service-modes-smoke
+npm.cmd run server:smoke
+npm.cmd run docs:deployment-check
+npm.cmd run lint
+npm.cmd run build
 ```
 
-生产数据库迁移：
-
-```bash
-npm run prisma:migrate
-```
-
-### 邀请码初始化
-
-管理员用 `ADMIN_TOKEN` 创建邀请码：
-
-```bash
-curl -X POST "$ASSISTANT_API/admin/invites" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"code":"BIAU-PORT-ALPHA","label":"Alpha member","role":"MEMBER","dailyQuota":24,"maxUses":1}'
-```
-
-内部成员用邀请码兑换成员 token：
-
-```bash
-curl -X POST "$ASSISTANT_API/auth/redeem-invite" \
-  -H "Content-Type: application/json" \
-  -d '{"code":"BIAU-PORT-ALPHA","name":"成员名称"}'
-```
-
-前端内部助手第一版在 `/assistant` 提供邀请码兑换表单。兑换成功后会把 `biau-assistant-member-token`、基础成员信息和当前 `biau-assistant-session-id` 保存在当前浏览器的 `localStorage`。未配置 API、未兑换 token、数据库不可用或模型服务不可用时，页面会退回到已脱敏的公开站点知识，并明确说明限制。
-
-隐藏管理页位于 `/assistant/admin`。当前管理页通过手动输入并本地保存 `ADMIN_TOKEN`，按页签管理概览、邀请码、成员模型渠道、成员启用/禁用、内部知识文档、RAG 同步状态和最近低敏用量。页面不会展示明文邀请码、token hash、模型 key、provider base URL、RAG sync token 或消息正文。
-
-当前公开助手和内部助手会先检索生成的公开站点知识；公开助手本地检索使用 docs/chunks/entities/relations 组成的轻量 Agentic Hybrid RAG 基线，覆盖意图路由、关键词/元数据/实体扩展、确定性 rerank 和 citation 边界。配置 `ASSISTANT_MODEL_*` 后，服务端可以在公开知识约束内调用 OpenAI-compatible 模型生成回答。未配置模型、模型服务不可用或公开知识置信度不足时，助手应回退到公开知识摘要并明确说明限制，而不是补造细节。网站博客页和项目页内容后续可以继续优化。
-
-### API 健康检查
-
-```bash
-curl "$ASSISTANT_API/health"
-```
-
-最小接口包括：
-
-```text
-GET /health
-POST /auth/redeem-invite
-POST /chat/public
-POST /chat/internal
-GET /admin/summary
-GET /admin/members
-GET /admin/invites
-POST /admin/invites
-PATCH /admin/invites/:id
-GET /admin/knowledge-documents
-POST /admin/knowledge-documents
-PATCH /admin/knowledge-documents/:id
-POST /admin/knowledge/sync
-GET /admin/usage
-GET /metrics
-```
-
-`/metrics` 默认关闭。只有设置 `METRICS_ENABLED=true` 后才输出 Prometheus text 格式指标；未开启时返回 `404 { "error": "metrics-disabled" }`。不要在没有访问控制或 scrape 计划的情况下把生产指标公开给第三方，后续 Prometheus / Grafana / ARMS 路线见 `docs/observability-strategy.md`。
-
-## 自定义域名
-
-当前绑定域名：
-
-```text
-biau.playlab.eu.cc
-```
-
-域名已在 Cloudflare Pages 的 `Custom domains` 中绑定，线上访问地址为：
-
-```text
-https://biau.playlab.eu.cc
-```
-
-## 自动更新流程
-
-以后每次修改站点后，在本地执行：
-
-```bash
-npm run lint
-npm run build
-git add .
-git commit -m "Update site"
-git push
-```
-
-推送到 GitHub 的 `main` 分支后，Cloudflare Pages 会自动触发构建并更新线上站点。
-
-## 如果 GitHub 已更新但线上还是旧版本
-
-本地确认方式：
-
-```bash
-git log --oneline -3
-git ls-remote origin refs/heads/main
-```
-
-如果两边都能看到最新 commit，但线上页面仍加载旧的 `/assets/index-*.js`，优先检查 Cloudflare Pages 后台：
-
-- `Deployments` 是否出现最新 commit。
-- 最新部署是否成功。
-- `Production branch` 是否仍是 `main`。
-- `Root directory` 是否留空。
-- `Build command` 是否为 `npm run build`。
-- `Build output directory` 是否为 `dist`。
-
-如果没有出现最新部署，可以在 Cloudflare Pages 项目中手动点击 `Retry deployment` 或 `Create deployment`。
-
-## 手动部署备用方案
-
-如果 Git 集成暂时没有触发，可以用 Wrangler 直接上传本地构建产物。首次使用需要在本机登录 Cloudflare：
-
-```bash
-npx wrangler login
-```
-
-确认登录状态：
-
-```bash
-npx wrangler whoami
-```
-
-构建并部署：
-
-```bash
-npm run build
-npx wrangler pages deploy dist --project-name=biau
-```
-
-如果 Cloudflare Pages 项目名不是 `biau`，把 `--project-name` 改成 Pages 后台显示的项目名。
-
-## hidencloud 适用场景
-
-hidencloud 当前更适合作为桌宠项目的公开 API、社区数据和生成代理层，而不是第一版静态官网的主托管入口。
-
-适合放到 hidencloud 的内容：
-
-- 桌宠社区 API
-- 生成任务、审核、发布等后端接口
-- 需要和桌宠 App 同域或同服务编排的页面
-- 未来官网中需要读取真实社区数据的接口代理
-
-不建议第一版官网直接放到 hidencloud 的原因：
-
-- 静态官网不需要常驻服务，放在 Pages 更简单。
-- hidencloud 已经承担社区 API 和生成代理职责，继续叠加官网静态托管会增加运维耦合。
-- 官网内容更新更适合走 GitHub -> Cloudflare Pages 的自动部署链路。
-
-## 线上检查记录
-
-线上站点健康检查已固化为脚本：
-
-```bash
-npm run site:monitor
-```
-
-默认会检查以下核心路径返回状态、HTML SEO 基础信息、`sitemap.xml` 和 `robots.txt`：
-
-```text
-https://biau.playlab.eu.cc/
-https://biau.playlab.eu.cc/projects
-https://biau.playlab.eu.cc/blog
-https://biau.playlab.eu.cc/assistant
-https://biau.playlab.eu.cc/projects/legal-rag
-https://biau.playlab.eu.cc/projects/ozon-erp
-https://biau.playlab.eu.cc/projects/biau-playlab
-https://biau.playlab.eu.cc/projects/xunqiu
-https://biau.playlab.eu.cc/blog/legal-rag-review
-https://biau.playlab.eu.cc/sitemap.xml
-https://biau.playlab.eu.cc/robots.txt
-```
-
-如需检查预览环境或外链：
-
-```bash
-npm run site:monitor -- --base https://<preview-domain>
-npm run site:monitor -- --check-links
-npm run site:monitor -- --check-external
-```
-
-访问人数、来源、热门页面、搜索曝光和事件统计查看方式见 `docs/site-monitoring.md`。
+生产人工验收只使用真实站务任务，不发送 ping、doctor、空 prompt 或模型测活请求。验收记录只保留 HTTP 状态、低敏错误类别、工具结果和是否生成待审核草稿，不记录正文、token、模型端点或数据库信息。

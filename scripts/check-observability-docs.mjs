@@ -48,7 +48,7 @@ const monitoringNeedles = [
 ]
 
 const manualGateNeedles = [
-  '## Observability And Analytics',
+  '## 访问分析与可观测性',
   'Cloudflare Analytics / Search Console / Webmaster',
   'Plausible 或 Umami 二选一',
   'Prometheus / Grafana / ARMS',

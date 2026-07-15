@@ -15,7 +15,7 @@
   {
     "id": "site:status",
     "title": "项目可靠性观察",
-    "summary": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。它会把人工 gate 和后续接入拆成公开安全的下一步，例如低权限 demo 凭据、脱敏 fixture、后端 synthetic base URL、APK release 审批、访问分析或观测平台选择。当前醒来后的推荐人工队列是：先在内部助手管理台点击“刷新全部状态”并复核成员列表、成员状态和成员模型渠道；再审核 Studio hidden / review-needed 草稿和 Publish Export；然后准备 Legal RAG 低权限 demo 凭据、ERP demo 账号或脱敏同步 fixture、Xunqiu / Pet 正式 release 证据；最后决定访问分析与工程观测平台。处理这些事项时应在平台控制台、本机环境或受控演示账号中填写真实值；公开站点和助手只记录低敏证据，例如成功状态、检查命令、HTTP 状态、计数、时间、错误类别，以及模型渠道的 channel id/label、provider、model、configured / active 状态。不要把 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名文件路径、真实后台地址或生产敏感指标写进文章、状态页、聊天或仓库。当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。",
+    "summary": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。当前人工队列优先完成 BIAU Operator 的 Cloudflare Access、Render 服务变量、owner memory 选择性迁移和真实站务 draft-write 验收，再处理 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 证据。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。",
     "href": "/status",
     "tags": [
       "状态页",
@@ -25,10 +25,9 @@
       "公开入口",
       "health check",
       "synthetic",
-      "注册",
-      "品牌统一",
-      "刷新全部状态",
-      "成员模型渠道"
+      "Cloudflare Access",
+      "BIAU Operator",
+      "release gate"
     ],
     "visibility": "public"
   },
@@ -176,7 +175,7 @@
   {
     "id": "project:blog-semi",
     "title": "BIAU Port 内容与助手平台｜当前主站",
-    "summary": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开助手、内部助手和隐藏管理页。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含一个 Express/TypeScript 助手后端，配合 Prisma/PostgreSQL 支持 invite、member、chat session、message、usage log、内部知识文档和同步运行记录；前端未配置 API 时会使用公开知识 fallback。 内部助手已经产品化为 LangGraph Agentic Workspace：`runInternalAgent()` 进入 compiled graph，工具注册表覆盖 scoped RAG、状态查询、项目查询、知识搜索、Studio 草稿、会话记忆和 direct answer，普通成员只允许 read 与 draft-write。 内部助手前端已经具备运行状态条、LangGraph inspector、工具卡片、Studio artifact 链接、消息级 Agent trace replay 和降级/guardrail 下一步提示；管理台具备成员模型渠道、内部知识 sourceType 预设、RAG readiness 路径和低敏 usage 摘要。 公开助手方向已经从本地知识 fallback 推进到 Agentic Hybrid RAG groundwork：server 侧包含 RAG Orchestrator、embedding client、PostgreSQL/pgvector store、Qdrant store 和 sync/smoke 脚本。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、assistant:agent-contract、assistant:agent-eval、assistant:meta-check、assistant:admin-check、sitemap:generate、blog:check、lint、build、check:ui 和 verify，其中 verify 会串起助手知识、Prisma、server build/smoke、前端构建、博客检查、preview 和 UI 检查。 当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；内部助手真实生产质量仍需要用户维护 Render 环境变量、数据库 migration、内部 corpus 脱敏标准和真实业务任务验证。",
+    "summary": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开助手、owner-only 泊岸站务和内容 Studio。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含公开助手、BIAU Operator、Content Studio 和 RAG Orchestrator 四种 Express/TypeScript 服务模式；Operator 使用独立 owner 数据库，Studio 使用独立内容数据库，前端未配置公开 API 时仍可使用公开知识 fallback。 泊岸站务已经产品化为 owner-only LangGraph Agent Workspace：`runOperatorAgent()` 进入 compiled graph，typed tools 覆盖站点、项目、内容、布局、状态、scoped RAG、站务知识、Studio 草稿、长期记忆和 direct answer，只允许 read 与 draft-write。 `/operator` 提供会话、引用、工具轨迹和 Studio artifact，`/operator/settings` 提供知识、RAG、记忆、用量和低敏模型通道状态；Cloudflare Access 与同源 facade 取代浏览器 token、邀请码和成员管理。 公开助手方向已经从本地知识 fallback 推进到 Agentic Hybrid RAG groundwork：server 侧包含 RAG Orchestrator、embedding client、PostgreSQL/pgvector store、Qdrant store 和 sync/smoke 脚本。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、assistant:agent-contract、assistant:agent-eval、assistant:meta-check、operator:knowledge-check、operator:facade-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。 当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；BIAU Operator 的真实生产质量仍需要用户完成 Cloudflare Access、Render Operator 变量、数据库 migration、owner memory 选择性迁移和真实站务任务验证。",
     "href": "/projects/blog-semi",
     "tags": [
       "platform",

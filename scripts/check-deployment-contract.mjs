@@ -34,9 +34,18 @@ const serviceContracts = [
     requiredEnv: ['ASSISTANT_MODEL_BASE_URL', 'ASSISTANT_MODEL_API_KEY', 'ASSISTANT_RAG_API_BASE_URL', 'ASSISTANT_RAG_API_KEY'],
   },
   {
-    name: 'biau-internal-assistant-api',
-    mode: 'internal',
-    requiredEnv: ['DATABASE_URL', 'STUDIO_DATABASE_URL', 'ADMIN_TOKEN', 'ASSISTANT_RAG_API_BASE_URL', 'ASSISTANT_RAG_API_KEY', 'RAG_SYNC_TOKEN'],
+    name: 'biau-operator-api',
+    mode: 'operator',
+    requiredEnv: [
+      'DATABASE_URL',
+      'STUDIO_DATABASE_URL',
+      'OPERATOR_SERVICE_TOKEN',
+      'OPERATOR_OWNER_ID',
+      'OPERATOR_OWNER_EMAILS',
+      'ASSISTANT_RAG_API_BASE_URL',
+      'ASSISTANT_RAG_API_KEY',
+      'RAG_SYNC_TOKEN',
+    ],
     requiredStart: 'npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start',
   },
   {
@@ -58,6 +67,10 @@ const stalePhrases = [
   '三服务边界',
   '三个 Render Web Service',
   'public, internal, and rag',
+  'public, internal, studio, and rag',
+  'public/internal/studio/rag',
+  'biau-internal-assistant-api',
+  'ASSISTANT_SERVICE_MODE=internal',
 ]
 
 function collectMissing(label, text, needles) {
@@ -127,21 +140,31 @@ async function main() {
 
   const issues = [
     ...checkRenderBlueprint(render),
-    ...collectMissing(files.envExample.label, envExample, ['four Web Services', 'public, internal, studio, and rag']),
+    ...collectMissing(files.envExample.label, envExample, [
+      'four Web Services',
+      'public, operator, studio, and rag',
+      'OPERATOR_SERVICE_TOKEN',
+      'CF_ACCESS_TEAM_DOMAIN',
+    ]),
     ...collectMissing(files.deployment.label, deployment, [
       '四个 Render Web Service',
+      'biau-operator-api',
       'biau-content-studio-api',
+      'ASSISTANT_SERVICE_MODE=operator',
       'ASSISTANT_SERVICE_MODE=studio',
       'npm run prisma:migrate:studio && npm run server:start',
-      'STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-internal-assistant-api 相同>',
+      'OPERATOR_SERVICE_TOKEN',
+      'CF_ACCESS_TEAM_DOMAIN',
+      'STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-operator-api 相同>',
     ]),
-    ...collectMissing(files.manualGates.label, manualGates, ['Render 四服务边界', 'public/internal/studio/rag']),
+    ...collectMissing(files.manualGates.label, manualGates, ['Render 四服务边界', 'public/operator/studio/rag', 'Cloudflare Access']),
     ...collectMissing(files.backendSpec.label, backendSpec, [
       'Render final shape is one repository deployed as four Web Services',
+      '`ASSISTANT_SERVICE_MODE=operator`',
       '`ASSISTANT_SERVICE_MODE=studio`',
       'Studio API mode',
       'Production split-database deployments must set `STUDIO_DATABASE_URL`',
-      '`biau-internal-assistant-api` may also need `RAG_SYNC_TOKEN`',
+      '`biau-operator-api` also needs `RAG_SYNC_TOKEN`',
     ]),
     ...collectPresent(files.envExample.label, envExample, stalePhrases),
     ...collectPresent(files.deployment.label, deployment, stalePhrases),

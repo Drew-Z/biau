@@ -21,7 +21,7 @@ Public browser assets and screenshots live under `public/`, especially `/images/
 
 ## Route Ownership
 
-Route wiring belongs in `src/App.tsx`. Current routes include `/`, `/projects`, `/projects/:id`, `/assistant`, `/assistant/admin`, `/blog`, and `/blog/:slug`. Large or less common pages are lazy-loaded, as shown by `ProjectDetailPage`, `BlogPostPage`, and `NotFoundPage`.
+Route wiring belongs in `src/App.tsx`. Current routes include `/`, `/projects`, `/projects/:id`, `/blog`, `/blog/:slug`, `/status`, `/operator`, `/operator/settings`, and `/studio/*`. Large or less common pages are lazy-loaded, including private Operator and Studio surfaces.
 
 Route-level rendering belongs in `src/pages/*Page.tsx`. Shared display primitives belong in `src/components/`, for example `ProjectCard`, `ResponsiveImage`, `Navigation`, `SeoManager`, and `PublicAssistantWidget`.
 

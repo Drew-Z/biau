@@ -49,14 +49,10 @@ const routes = [
     expectedText: '请先保存 Studio token，保存后可以刷新这期 AI 日报 issue。',
     clearLocalStorageKeys: ['biau-studio-admin-token'],
   },
-  { path: '/assistant', title: '内部助手', nav: '回主页', canonical: '/assistant' },
-  {
-    path: '/assistant/admin',
-    title: '内部助手管理页',
-    nav: '回主页',
-    canonical: '/assistant/admin',
-    clearLocalStorageKeys: ['biau-assistant-admin-token'],
-  },
+  { path: '/operator', title: '新的站务任务', nav: '回主页', canonical: '/operator' },
+  { path: '/operator/settings', title: '泊岸站务', nav: '回主页', canonical: '/operator/settings' },
+  { path: '/assistant', title: '页面没有靠岸', nav: '回主页', canonical: '/assistant' },
+  { path: '/assistant/admin', title: '页面没有靠岸', nav: '回主页', canonical: '/assistant/admin' },
   { path: '/projects/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/projects/legal-rag' },
   {
     path: '/blog/legal-rag-review',
@@ -71,6 +67,69 @@ const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },
   { name: 'mobile', width: 390, height: 900 },
 ]
+
+const operatorModelChannelFixture = {
+  id: 'operator-primary',
+  label: 'Operator primary',
+  provider: 'deterministic-mock',
+  model: 'operator-mock-model',
+  configured: true,
+  isDefault: true,
+  isActive: true,
+}
+
+const operatorProfileFixture = {
+  id: 'site-owner',
+  name: 'UI Check Owner',
+  role: 'OWNER',
+  modelChannelId: operatorModelChannelFixture.id,
+  modelChannel: operatorModelChannelFixture,
+}
+
+async function installOperatorApiFixture(page) {
+  await page.route('**/api/operator/**', async (route) => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname.replace(/^\/api\/operator/u, '')
+    let body
+
+    if (path === '/me') body = { operator: operatorProfileFixture }
+    else if (path === '/sessions') body = { sessions: [] }
+    else if (path === '/summary') {
+      body = {
+        sessions: 0,
+        messages: 0,
+        memories: 0,
+        usage: 0,
+        internalKnowledgeDocuments: 0,
+        lastInternalKnowledgeSync: null,
+        operator: operatorProfileFixture,
+        modelChannels: [operatorModelChannelFixture],
+      }
+    } else if (path === '/knowledge-documents') body = { documents: [], lastSyncRun: null }
+    else if (path === '/rag/status') body = { configured: true, syncConfigured: true, health: null, diagnostic: null }
+    else if (path === '/memories') body = { memories: [] }
+    else if (path === '/usage') body = { usage: [] }
+    else if (path === '/model-channels') {
+      body = { modelChannels: [operatorModelChannelFixture], selectedModelChannel: operatorModelChannelFixture }
+    } else if (path === '/chat' && request.method() === 'POST') {
+      body = {
+        answer: '已完成确定性站务规划；没有执行发布、部署或云平台写入。',
+        citations: [],
+        sessionId: 'operator-ui-session',
+        messageId: 'operator-ui-message',
+        meta: null,
+      }
+    } else {
+      body = { error: 'operator-ui-fixture-not-found' }
+    }
+
+    await route.fulfill({
+      status: body.error ? 404 : 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    })
+  })
+}
 
 const projectDetailVisualCases = projects
   .map((project) => {
@@ -356,84 +415,42 @@ async function checkStudioWorkspaceModes(browser, failures) {
   }
   await desktop.close()
 }
-async function checkAssistantAdminSections(browser, failures) {
-  const sections = ['overview', 'invites', 'members', 'knowledge', 'usage', 'safety']
-  const mobileWidths = [320, 390, 430]
+async function checkOperatorSettingsSections(browser, failures) {
+  const sections = ['总览', '知识', 'RAG', '记忆', '用量']
 
-  for (const width of mobileWidths) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } })
-    await gotoApp(page, '/assistant/admin')
-    const tabs = page.getByRole('tablist', { name: '内部助手管理分区' })
-    const picker = page.locator('.assistant-admin-section-picker')
-    const select = picker.locator('select')
+  for (const width of [320, 390, 430, 1440]) {
+    const page = await browser.newPage({ viewport: { width, height: width === 1440 ? 1000 : 900 } })
+    await installOperatorApiFixture(page)
+    await gotoApp(page, '/operator/settings')
+    const sectionNav = page.getByRole('navigation', { name: '站务设置分区' })
 
-    if (await tabs.isVisible().catch(() => false)) {
-      failures.push(`mobile-${width} /assistant/admin: desktop tabs should stay hidden`)
-    }
-    if (!(await picker.isVisible().catch(() => false))) {
-      failures.push(`mobile-${width} /assistant/admin: expected visible section selector`)
+    if (!(await sectionNav.isVisible().catch(() => false))) {
+      failures.push(`/operator/settings ${width}px: expected visible settings navigation`)
       await page.close()
       continue
     }
 
-    const selectBox = await select.boundingBox()
-    const optionValues = await select.locator('option').evaluateAll((options) => options.map((option) => option.value))
-    if (!selectBox || selectBox.height < 44 || JSON.stringify(optionValues) !== JSON.stringify(sections)) {
-      failures.push(`mobile-${width} /assistant/admin: section selector must expose six complete options and a 44px target`)
-    }
-
-    const tokenInput = page.getByLabel('Admin token')
-    const stateValue = `mobile-admin-state-${width}`
-    await tokenInput.fill(stateValue)
-
-    for (const section of sections) {
-      await select.selectOption(section)
-      const visiblePanels = page.locator('.assistant-admin-grid:visible')
-      const selectedPanelVisible = await page.locator(`#assistant-admin-panel-${section}`).isVisible().catch(() => false)
-      if ((await visiblePanels.count()) !== 1 || !selectedPanelVisible) {
-        failures.push(`mobile-${width} /assistant/admin: ${section} should be the only visible panel`)
+    for (const label of sections) {
+      const button = sectionNav.getByRole('button', { name: label, exact: true })
+      const bounds = await button.boundingBox()
+      if (!bounds || bounds.height < 42) {
+        failures.push(`/operator/settings ${width}px: ${label} should keep a stable touch target`)
+        continue
+      }
+      await button.click()
+      if ((await page.locator('.operator-settings-section:visible').count()) !== 1) {
+        failures.push(`/operator/settings ${width}px: ${label} should render exactly one active section`)
       }
     }
 
-    await select.selectOption('overview')
-    if ((await tokenInput.inputValue()) !== stateValue) {
-      failures.push(`mobile-${width} /assistant/admin: switching sections lost local form state`)
-    }
-
-    const pageMetrics = await page.evaluate(() => ({
-      height: document.documentElement.scrollHeight,
+    const metrics = await page.evaluate(() => ({
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-      heroBottom: document.querySelector('.assistant-admin-hero')?.getBoundingClientRect().bottom ?? 0,
-      pickerTop: document.querySelector('.assistant-admin-section-picker')?.getBoundingClientRect().top ?? 0,
-      panelTop: document.querySelector('#assistant-admin-panel-overview')?.getBoundingClientRect().top ?? 0,
+      tokenInputs: document.querySelectorAll('input[name*="token" i], input[id*="token" i]').length,
     }))
-    if (pageMetrics.height >= 3000) {
-      failures.push(`mobile-${width} /assistant/admin: focused overview is still unexpectedly tall at ${pageMetrics.height}px`)
-    }
-    if (pageMetrics.overflow) {
-      failures.push(`mobile-${width} /assistant/admin: section selector caused horizontal overflow`)
-    }
-    if (!(pageMetrics.heroBottom <= pageMetrics.pickerTop && pageMetrics.pickerTop < pageMetrics.panelTop)) {
-      failures.push(`mobile-${width} /assistant/admin: expected hero, selector, then active panel order`)
-    }
+    if (metrics.overflow) failures.push(`/operator/settings ${width}px: horizontal overflow detected`)
+    if (metrics.tokenInputs !== 0) failures.push(`/operator/settings ${width}px: browser UI must not expose reusable service-token inputs`)
     await page.close()
   }
-
-  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
-  await gotoApp(desktop, '/assistant/admin')
-  const desktopTabs = desktop.getByRole('tablist', { name: '内部助手管理分区' })
-  const desktopPickerVisible = await desktop.locator('.assistant-admin-section-picker').isVisible().catch(() => false)
-  if (!(await desktopTabs.isVisible()) || desktopPickerVisible) {
-    failures.push('desktop /assistant/admin: expected desktop tabs and hidden mobile selector')
-  }
-  for (const section of sections) {
-    await desktop.locator(`#assistant-admin-tab-${section}`).click()
-    const visiblePanels = desktop.locator('.assistant-admin-grid:visible')
-    if ((await visiblePanels.count()) !== 1 || !(await desktop.locator(`#assistant-admin-panel-${section}`).isVisible())) {
-      failures.push(`desktop /assistant/admin: ${section} should be the only visible panel`)
-    }
-  }
-  await desktop.close()
 }
 
 async function checkMobileDetailSurfaceCoordination(browser, failures) {
@@ -551,14 +568,12 @@ async function checkMobilePrimaryNavigation(browser, failures) {
     { href: '/projects', label: '项目' },
     { href: '/blog', label: '知识' },
     { href: '/status', label: '状态' },
-    { href: '/assistant', label: '助手' },
   ]
   const routeCases = [
     { path: '/', activeHref: '/' },
     { path: '/projects/biau-playlab', activeHref: '/projects' },
     { path: '/blog/legal-rag-review', activeHref: '/blog' },
     { path: '/status/legal-rag', activeHref: '/status' },
-    { path: '/assistant', activeHref: '/assistant' },
   ]
 
   for (const width of [320, 390, 430]) {
@@ -986,6 +1001,7 @@ for (const viewport of viewports) {
         }
       }, { keys: route.clearLocalStorageKeys ?? [], values: route.localStorageValues ?? {} })
     }
+    if (route.path.startsWith('/operator')) await installOperatorApiFixture(page)
 
     await gotoApp(page, route.path)
 
@@ -1041,80 +1057,25 @@ for (const viewport of viewports) {
       }
     }
 
-    if (route.path === '/assistant/admin') {
-      const refreshAllButton = page.getByRole('button', { name: '刷新全部状态' })
-      const refreshAllVisible = await refreshAllButton.isVisible().catch(() => false)
-      const refreshAllDisabled = await refreshAllButton.isDisabled().catch(() => false)
-      const tokenBoundaryVisible = await page.getByText('admin token 只保存在当前浏览器本地').isVisible().catch(() => false)
-
-      if (!refreshAllVisible) {
-        failures.push(`${viewport.name} ${route.path}: expected visible refresh-all action`)
-      }
-      if (!refreshAllDisabled) {
-        failures.push(`${viewport.name} ${route.path}: refresh-all action should be disabled without admin token`)
-      }
-      if (!tokenBoundaryVisible) {
-        failures.push(`${viewport.name} ${route.path}: expected local-only admin token boundary text`)
-      }
-
-      if (viewport.name === 'desktop') {
-        await page.getByRole('tab', { name: '知识' }).click()
-      } else {
-        await page.locator('.assistant-admin-section-picker select').selectOption('knowledge')
-      }
-      const knowledgeReadinessVisible = await page.getByLabel('内部知识同步路径').isVisible().catch(() => false)
-      const sourceTypeSelectVisible = await page
-        .locator('#assistant-admin-panel-knowledge label')
-        .filter({ hasText: '来源类型' })
-        .locator('select')
-        .isVisible()
-        .catch(() => false)
-      const runbookSourceVisible = await page
-        .locator('#assistant-admin-panel-knowledge .assistant-source-type-help')
-        .getByText('运行手册')
-        .isVisible()
-        .catch(() => false)
-      if (!knowledgeReadinessVisible) {
-        failures.push(`${viewport.name} ${route.path}: expected internal knowledge readiness path`)
-      }
-      if (!sourceTypeSelectVisible || !runbookSourceVisible) {
-        failures.push(`${viewport.name} ${route.path}: expected source type presets for internal knowledge`)
+    if (route.path === '/operator/settings') {
+      const sections = await page.getByRole('navigation', { name: '站务设置分区' }).getByRole('button').count()
+      const refreshVisible = await page.getByRole('button', { name: '刷新', exact: true }).isVisible().catch(() => false)
+      const statusText = await page.locator('.operator-settings-status').innerText().catch(() => '')
+      if (sections !== 5 || !refreshVisible || !statusText.includes('站务配置已同步')) {
+        failures.push(`${viewport.name} ${route.path}: expected five owner settings areas and a synchronized status`)
       }
     }
 
-    if (route.path === '/assistant') {
-      const openingText = await page.locator('.assistant-bubble.is-assistant p').first().innerText().catch(() => '')
-      const openingCitationCards = await page
-        .locator('.assistant-bubble.is-assistant')
-        .first()
-        .locator('.assistant-citation-card')
-        .count()
-      const runCards = await page.locator('.assistant-run-card').count()
-      const inspectorPanels = await page.locator('.assistant-inspector .assistant-panel').count()
-      const agentPanelVisible = await page.getByRole('heading', { name: 'LangGraph 运行状态' }).isVisible().catch(() => false)
-      const toolPanelVisible = await page.getByRole('heading', { name: '工具轨迹' }).isVisible().catch(() => false)
-      const guardrailPanelVisible = await page.getByRole('heading', { name: '安全检查' }).isVisible().catch(() => false)
-      const memoryPanelVisible = await page.getByRole('region', { name: '长期记忆' }).isVisible().catch(() => false)
-      const memoryToggleVisible = await page.getByText('显示已归档').isVisible().catch(() => false)
-      const memoryRefreshVisible = await page.getByRole('button', { name: '刷新长期记忆' }).isVisible().catch(() => false)
-
-      if (openingText.length > 52) {
-        failures.push(`${viewport.name} ${route.path}: opening message should stay concise, got ${openingText.length} chars`)
+    if (route.path === '/operator') {
+      const openingText = await page.locator('.operator-message.is-assistant p').first().innerText().catch(() => '')
+      const suggestions = await page.locator('.operator-suggestions button').count()
+      const publicAssistantCount = await page.locator('.public-assistant').count()
+      const ownerInputEnabled = await page.getByLabel('站务任务', { exact: true }).isEnabled().catch(() => false)
+      if (!openingText.includes('站务工作区已就绪') || suggestions !== 4 || publicAssistantCount !== 0 || !ownerInputEnabled) {
+        failures.push(`${viewport.name} ${route.path}: expected connected owner workspace, four task starters, and no public widget`)
       }
-      if (openingCitationCards !== 0) {
-        failures.push(`${viewport.name} ${route.path}: opening message should not render default citation cards`)
-      }
-      if (runCards < 3) {
-        failures.push(`${viewport.name} ${route.path}: expected assistant run status strip with at least 3 cards`)
-      }
-      if (inspectorPanels < 5 || !agentPanelVisible || !toolPanelVisible || !guardrailPanelVisible) {
-        failures.push(`${viewport.name} ${route.path}: expected productized Agent inspector panels`)
-      }
-      if (viewport.name === 'desktop' && (!memoryPanelVisible || !memoryToggleVisible || !memoryRefreshVisible)) {
-        failures.push(`${viewport.name} ${route.path}: expected durable memory management panel`)
-      }
-      if (viewport.name === 'mobile' && !(await page.locator('.assistant-mobile-workspace-button').isVisible())) {
-        failures.push(`${viewport.name} ${route.path}: expected mobile member workspace access`)
+      if (viewport.name === 'desktop' && !(await page.getByLabel('站务运行检查器').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: expected visible runtime inspector`)
       }
     }
 
@@ -1186,7 +1147,7 @@ for (const viewport of viewports) {
 }
 
 await checkStudioWorkspaceModes(browser, failures)
-await checkAssistantAdminSections(browser, failures)
+await checkOperatorSettingsSections(browser, failures)
 await checkMobileDetailSurfaceCoordination(browser, failures)
 await checkMobilePrimaryNavigation(browser, failures)
 await checkMobileProjectCatalog(browser, failures)
@@ -1576,125 +1537,58 @@ for (const width of [320, 390, 430]) {
   await mobileBlogPage.close()
 }
 
-const assistantDesktopPage = await browser.newPage({ viewport: viewports[0] })
-await gotoApp(assistantDesktopPage, '/assistant')
-if (await assistantDesktopPage.locator('.assistant-mobile-workspace-button').isVisible().catch(() => false)) {
-  failures.push('/assistant desktop workspace: mobile controls trigger should stay hidden')
+const operatorDesktopPage = await browser.newPage({ viewport: viewports[0] })
+await installOperatorApiFixture(operatorDesktopPage)
+await gotoApp(operatorDesktopPage, '/operator')
+if (await operatorDesktopPage.getByRole('button', { name: '打开站务会话' }).isVisible().catch(() => false)) {
+  failures.push('/operator desktop workspace: mobile drawer trigger should stay hidden')
 }
-if (!(await assistantDesktopPage.locator('.assistant-sidebar').isVisible().catch(() => false))) {
-  failures.push('/assistant desktop workspace: static sidebar should remain visible')
+if (!(await operatorDesktopPage.locator('.operator-sidebar').isVisible().catch(() => false))) {
+  failures.push('/operator desktop workspace: session sidebar should remain visible')
 }
-if (await assistantDesktopPage.locator('.assistant-sidebar').getAttribute('role')) {
-  failures.push('/assistant desktop workspace: static sidebar should not use modal dialog semantics')
+if (!(await operatorDesktopPage.getByLabel('站务运行检查器').isVisible().catch(() => false))) {
+  failures.push('/operator desktop workspace: runtime inspector should remain visible')
 }
-await assistantDesktopPage.close()
+await operatorDesktopPage.close()
 
 for (const width of [320, 390, 430]) {
-  const mobileAssistantPage = await browser.newPage({ viewport: { width, height: 900 } })
-  await gotoApp(mobileAssistantPage, '/assistant')
+  const mobileOperatorPage = await browser.newPage({ viewport: { width, height: 900 } })
+  await installOperatorApiFixture(mobileOperatorPage)
+  await gotoApp(mobileOperatorPage, '/operator')
 
-  const assistantMain = mobileAssistantPage.locator('.assistant-main')
-  const assistantSidebar = mobileAssistantPage.locator('#assistant-member-workspace')
-  const workspaceTrigger = mobileAssistantPage.getByRole('button', { name: /登录与会话|成员与会话/ })
-  const mainBounds = await assistantMain.boundingBox()
-  const triggerBounds = await workspaceTrigger.boundingBox()
-  if (!mainBounds || mainBounds.y >= 300) {
-    failures.push(`/assistant mobile workspace ${width}px: conversation should begin in the first viewport`)
-  }
+  const drawer = mobileOperatorPage.locator('.operator-sidebar')
+  const trigger = mobileOperatorPage.getByRole('button', { name: '打开站务会话' })
+  const triggerBounds = await trigger.boundingBox()
   if (!triggerBounds || triggerBounds.height < 44 || triggerBounds.x < 0 || triggerBounds.x + triggerBounds.width > width + 0.5) {
-    failures.push(`/assistant mobile workspace ${width}px: workspace trigger should be at least 44px high and stay bounded`)
+    failures.push(`/operator mobile workspace ${width}px: drawer trigger should keep a bounded 44px target`)
   }
-  if (await assistantSidebar.isVisible().catch(() => false)) {
-    failures.push(`/assistant mobile workspace ${width}px: member drawer should start closed`)
-  }
-  if ((await assistantSidebar.getAttribute('aria-hidden')) !== 'true') {
-    failures.push(`/assistant mobile workspace ${width}px: closed drawer should be hidden from assistive technology`)
+  if ((await drawer.getAttribute('class'))?.includes('is-open')) {
+    failures.push(`/operator mobile workspace ${width}px: session drawer should start closed`)
   }
 
-  await workspaceTrigger.click()
-  await assistantSidebar.waitFor({ state: 'visible' })
-  await mobileAssistantPage.waitForFunction(() => {
-    const drawer = document.querySelector('#assistant-member-workspace')
-    if (!(drawer instanceof HTMLElement)) return false
-    const transform = getComputedStyle(drawer).transform
-    if (transform === 'none') return true
-    return Math.abs(new DOMMatrixReadOnly(transform).m41) < 0.5
-  })
-  const drawerBounds = await assistantSidebar.boundingBox()
-  if (!(await assistantSidebar.isVisible()) || (await assistantSidebar.getAttribute('role')) !== 'dialog') {
-    failures.push(`/assistant mobile workspace ${width}px: trigger should open a visible dialog`)
+  await trigger.click()
+  await mobileOperatorPage.waitForTimeout(220)
+  const drawerBounds = await drawer.boundingBox()
+  if (!(await drawer.getAttribute('class'))?.includes('is-open') || !drawerBounds || drawerBounds.x < -1 || drawerBounds.x + drawerBounds.width > width + 1) {
+    failures.push(`/operator mobile workspace ${width}px: session drawer should open inside the viewport`)
   }
-  if ((await assistantSidebar.getAttribute('aria-modal')) !== 'true') {
-    failures.push(`/assistant mobile workspace ${width}px: drawer should expose modal semantics`)
-  }
-  if (!drawerBounds || drawerBounds.x < 0 || drawerBounds.x + drawerBounds.width > width + 0.5 || drawerBounds.height > 902) {
-    failures.push(`/assistant mobile workspace ${width}px: drawer should remain inside the viewport`)
-  }
-  for (const [selector, label] of [
-    ['.assistant-auth', '成员访问'],
-    ['.assistant-session-list', '会话历史'],
-    ['.assistant-memory-panel', '长期记忆'],
-  ]) {
-    if (!(await assistantSidebar.locator(selector).isVisible().catch(() => false))) {
-      failures.push(`/assistant mobile workspace ${width}px: drawer should retain ${label}`)
-    }
-  }
-  if (!(await assistantSidebar.getByRole('link', { name: /管理员入口/ }).isVisible().catch(() => false))) {
-    failures.push(`/assistant mobile workspace ${width}px: drawer should retain the admin entry`)
-  }
-  if ((await mobileAssistantPage.evaluate(() => document.documentElement.style.overflow)) !== 'hidden') {
-    failures.push(`/assistant mobile workspace ${width}px: opening the drawer should lock document scrolling`)
-  }
-  if ((await mobileAssistantPage.locator('.navigation-top').evaluate((item) => getComputedStyle(item).visibility)) !== 'hidden') {
-    failures.push(`/assistant mobile workspace ${width}px: global navigation should not overlap the modal drawer`)
-  }
-  const closeButton = assistantSidebar.getByRole('button', { name: '关闭成员工作区' })
-  await mobileAssistantPage.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === '关闭成员工作区')
-  if (!(await closeButton.evaluate((item) => item === document.activeElement))) {
-    failures.push(`/assistant mobile workspace ${width}px: opening the drawer should focus the close button`)
-  }
-  await mobileAssistantPage.keyboard.press('Shift+Tab')
-  if (!(await assistantSidebar.evaluate((item) => item.contains(document.activeElement)))) {
-    failures.push(`/assistant mobile workspace ${width}px: keyboard focus should remain trapped in the drawer`)
-  }
-  await mobileAssistantPage.keyboard.press('Escape')
-  await assistantSidebar.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => undefined)
-  if (await assistantSidebar.isVisible().catch(() => false)) {
-    failures.push(`/assistant mobile workspace ${width}px: Escape should close the drawer`)
-  }
-  if (!(await workspaceTrigger.evaluate((item) => item === document.activeElement))) {
-    failures.push(`/assistant mobile workspace ${width}px: closing should restore focus to the trigger`)
-  }
-  if ((await mobileAssistantPage.evaluate(() => document.documentElement.style.overflow)) !== '') {
-    failures.push(`/assistant mobile workspace ${width}px: closing should restore document scrolling`)
+  if (!(await mobileOperatorPage.locator('.operator-drawer-backdrop.is-open').isVisible().catch(() => false))) {
+    failures.push(`/operator mobile workspace ${width}px: open drawer should expose a backdrop`)
   }
 
-  await workspaceTrigger.click()
-  await mobileAssistantPage.waitForTimeout(40)
-  await mobileAssistantPage.locator('.assistant-mobile-backdrop').click({ position: { x: 6, y: 450 } })
-  await assistantSidebar.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => undefined)
-  if (await assistantSidebar.isVisible().catch(() => false)) {
-    failures.push(`/assistant mobile workspace ${width}px: backdrop click should close the drawer`)
+  await drawer.getByRole('button', { name: '关闭站务会话' }).click()
+  await mobileOperatorPage.waitForTimeout(220)
+  if ((await drawer.getAttribute('class'))?.includes('is-open')) {
+    failures.push(`/operator mobile workspace ${width}px: close button should dismiss the drawer`)
   }
-
-  await workspaceTrigger.click()
-  await mobileAssistantPage.waitForTimeout(180)
-  await closeButton.click()
-  await assistantSidebar.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => undefined)
-  if (await assistantSidebar.isVisible().catch(() => false)) {
-    failures.push(`/assistant mobile workspace ${width}px: close button should dismiss the drawer`)
-  }
-
-  const assistantOverflow = await mobileAssistantPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
-  if (assistantOverflow) {
-    failures.push(`/assistant mobile workspace ${width}px: page should not overflow horizontally`)
-  }
-  await mobileAssistantPage.close()
+  const operatorOverflow = await mobileOperatorPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
+  if (operatorOverflow) failures.push(`/operator mobile workspace ${width}px: page should not overflow horizontally`)
+  await mobileOperatorPage.close()
 }
 
 const navFocusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(navFocusPage, '/blog')
-const expectedNavFocusTargets = new Set(['brand', '首页', '项目', '博客', '助手', 'theme', 'language', 'primary'])
+const expectedNavFocusTargets = new Set(['brand', '首页', '项目', '博客', '状态', 'theme', 'language', 'primary'])
 const seenNavFocusTargets = new Map()
 for (let index = 0; index < 24; index += 1) {
   await navFocusPage.keyboard.press('Tab')
@@ -1857,20 +1751,22 @@ if (reducedFrameA !== reducedFrameB) {
   failures.push('/ home reduced motion: expected a stable flow canvas frame')
 }
 await reducedHarborPage.close()
-const assistantPage = await browser.newPage({ viewport: viewports[0] })
-await gotoApp(assistantPage, '/assistant')
-if (await assistantPage.locator('.public-assistant').count()) {
-  failures.push('/assistant: public assistant widget should be hidden on assistant routes')
+const operatorPage = await browser.newPage({ viewport: viewports[0] })
+await installOperatorApiFixture(operatorPage)
+await gotoApp(operatorPage, '/operator')
+if (await operatorPage.locator('.public-assistant').count()) {
+  failures.push('/operator: public assistant widget should be hidden on owner routes')
 }
-await assistantPage.locator('.assistant-suggestions button').first().click()
-await assistantPage.waitForTimeout(150)
-if ((await assistantPage.locator('.assistant-bubble.is-user').count()) < 1) {
-  failures.push('/assistant: expected suggestion click to append a user message')
+await operatorPage.locator('.operator-suggestions button').first().click()
+await operatorPage.getByRole('button', { name: '发送站务任务' }).click()
+await operatorPage.waitForTimeout(180)
+if ((await operatorPage.locator('.operator-message.is-user').count()) < 1) {
+  failures.push('/operator: expected a task starter to create a user message')
 }
-if ((await assistantPage.locator('.assistant-bubble.is-assistant').count()) < 2) {
-  failures.push('/assistant: expected suggestion click to append an assistant answer')
+if ((await operatorPage.locator('.operator-message.is-assistant').count()) < 1) {
+  failures.push('/operator: expected deterministic Operator response rendering')
 }
-await assistantPage.close()
+await operatorPage.close()
 
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(publicAssistantPage, '/blog')

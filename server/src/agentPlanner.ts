@@ -2,7 +2,7 @@ import { planInternalAgentTools } from './model.js'
 import { canUsePermission } from './agentGuardrails.js'
 import { hasExplicitMemoryWriteIntent, isMemoryQueryOnly } from './agentMemory.js'
 import { agentToolRegistry, listAgentToolMenu } from './agentTools.js'
-import type { InternalAgentPlan, InternalAgentRunInput } from './agentTypes.js'
+import type { OperatorAgentPlan, OperatorAgentRunInput } from './agentTypes.js'
 import type {
   AgentToolId,
   AssistantAnswerIntent,
@@ -12,12 +12,12 @@ import type {
 
 export const MAX_AGENT_TOOL_CALLS = 4
 
-export async function buildAgentPlan(input: InternalAgentRunInput): Promise<InternalAgentPlan> {
+export async function buildAgentPlan(input: OperatorAgentRunInput): Promise<OperatorAgentPlan> {
   const mockPlan = buildDeterministicAgentPlan(input.question)
   if (input.plannerMode === 'mock') return mockPlan
 
   const modelPlan = await planInternalAgentTools(input.question, listAgentToolMenu(), {
-    modelChannelId: input.member.modelChannelId,
+    modelChannelId: input.operator.modelChannelId,
   })
   if (!modelPlan.plan) {
     return {
@@ -33,7 +33,7 @@ export async function buildAgentPlan(input: InternalAgentRunInput): Promise<Inte
   }
 }
 
-export function buildDeterministicAgentPlan(question: string): InternalAgentPlan {
+export function buildDeterministicAgentPlan(question: string): OperatorAgentPlan {
   const normalized = question.trim().toLowerCase()
   const toolIds: AgentToolId[] = []
   const writing = includesAny(normalized, ['写', '生成', '草稿', '文章', '日报', '文案', '提纲', '总结', '改写', '润色'])

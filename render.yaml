@@ -30,7 +30,7 @@ services:
         value: "false"
 
   - type: web
-    name: biau-internal-assistant-api
+    name: biau-operator-api
     runtime: node
     plan: free
     buildCommand: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
@@ -39,14 +39,22 @@ services:
       - key: NODE_VERSION
         value: "22"
       - key: ASSISTANT_SERVICE_MODE
-        value: internal
+        value: operator
       - key: CORS_ORIGIN
         value: https://biau.playlab.eu.cc
       - key: DATABASE_URL
         sync: false
       - key: STUDIO_DATABASE_URL
         sync: false
-      - key: ADMIN_TOKEN
+      - key: OPERATOR_SERVICE_TOKEN
+        sync: false
+      - key: OPERATOR_OWNER_ID
+        value: site-owner
+      - key: OPERATOR_OWNER_EMAILS
+        sync: false
+      - key: OPERATOR_DISPLAY_NAME
+        value: Site Owner
+      - key: OPERATOR_MODEL_CHANNEL_ID
         sync: false
       - key: ASSISTANT_MODEL_BASE_URL
         sync: false
@@ -56,6 +64,8 @@ services:
         sync: false
       - key: ASSISTANT_MODEL_PROVIDER
         value: mimo-compatible
+      - key: ASSISTANT_MODEL_CHANNELS_JSON
+        sync: false
       - key: ASSISTANT_RAG_API_BASE_URL
         sync: false
       - key: ASSISTANT_RAG_API_KEY

@@ -1,15 +1,12 @@
-import { INTERNAL_ASSISTANT_API_BASE } from './assistantApi'
-
 function normalizeApiBase(value: string | undefined) {
   return value?.trim().replace(/\/+$/, '') ?? ''
 }
 
 export const STUDIO_API_BASE =
-  normalizeApiBase(import.meta.env.VITE_STUDIO_API_BASE_URL) || INTERNAL_ASSISTANT_API_BASE
+  normalizeApiBase(import.meta.env.VITE_STUDIO_API_BASE_URL) || normalizeApiBase(import.meta.env.VITE_CHAT_API_BASE_URL)
 
 export const STUDIO_API_ENV_NAMES = {
   studio: 'VITE_STUDIO_API_BASE_URL',
-  internal: 'VITE_INTERNAL_ASSISTANT_API_BASE_URL',
   legacy: 'VITE_CHAT_API_BASE_URL',
 } as const
 

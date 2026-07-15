@@ -28,9 +28,9 @@ function readHarborScene(): HarborScene {
 const ProjectDetailPage = lazy(() =>
   import('./pages/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })),
 )
-const AssistantPage = lazy(() => import('./pages/AssistantPage').then((module) => ({ default: module.AssistantPage })))
-const AssistantAdminPage = lazy(() =>
-  import('./pages/AssistantAdminPage').then((module) => ({ default: module.AssistantAdminPage })),
+const OperatorPage = lazy(() => import('./pages/OperatorPage').then((module) => ({ default: module.OperatorPage })))
+const OperatorSettingsPage = lazy(() =>
+  import('./pages/OperatorSettingsPage').then((module) => ({ default: module.OperatorSettingsPage })),
 )
 const SiteStatusPage = lazy(() =>
   import('./pages/SiteStatusPage').then((module) => ({ default: module.SiteStatusPage })),
@@ -52,7 +52,8 @@ function getPageClass(pathname: string) {
   if (pathname === '/') return 'page-home'
   if (pathname === '/projects') return 'page-tools page-subpage'
   if (pathname.startsWith('/projects/')) return 'page-detail page-project-detail page-subpage'
-  if (pathname === '/assistant' || pathname.startsWith('/assistant/')) return 'page-assistant page-subpage'
+  if (pathname === '/operator') return 'page-operator page-subpage'
+  if (pathname.startsWith('/operator/')) return 'page-operator-settings page-subpage'
   if (pathname === '/studio' || pathname.startsWith('/studio/')) return 'page-studio page-subpage'
   if (pathname === '/status') return 'page-status page-subpage'
   if (pathname.startsWith('/status/')) return 'page-status page-status-detail page-detail page-subpage'
@@ -78,7 +79,7 @@ function App() {
   }, [pathname])
 
   const pageClass = getPageClass(pathname)
-  const showPublicAssistant = !pathname.startsWith('/assistant') && !pathname.startsWith('/studio')
+  const showPublicAssistant = !pathname.startsWith('/operator') && !pathname.startsWith('/studio')
 
   return (
     <div className={`app ${pageClass}`}>
@@ -113,8 +114,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
-          <Route path="/assistant" element={<AssistantPage />} />
-          <Route path="/assistant/admin" element={<AssistantAdminPage />} />
+          <Route path="/operator" element={<OperatorPage />} />
+          <Route path="/operator/settings" element={<OperatorSettingsPage />} />
           <Route path="/studio/ai-daily/:issueId" element={<StudioAiDailyIssuePage />} />
           <Route path="/studio/*" element={<StudioPage />} />
           <Route path="/status" element={<SiteStatusPage />} />

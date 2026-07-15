@@ -11,7 +11,7 @@ server/
 │   ├── app.ts         # Express app, middleware, routes, error middleware
 │   ├── env.ts         # environment parsing and feature availability helpers
 │   ├── db.ts          # Prisma client singleton and disconnect helper
-│   ├── auth.ts        # invite/member token helpers and database requirement guard
+│   ├── auth.ts        # Operator service/identity auth and database requirement guard
 │   ├── crypto.ts      # token/hash helpers
 │   ├── knowledge.ts   # public knowledge loading and in-memory search
 │   ├── model.ts       # model-provider integration and fallback answer behavior

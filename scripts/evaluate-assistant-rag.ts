@@ -127,9 +127,9 @@ const evalCases: EvalCase[] = [
     question: '我明早醒来后应该先手动处理哪些事情？',
     expectedIntent: 'reliability-status',
     requiredCitationIds: ['site:status'],
-    requiredAnswerIncludes: ['刷新全部状态', '成员', 'Studio', 'Legal RAG', 'token', '模型渠道'],
+    requiredAnswerIncludes: ['BIAU Operator', 'Studio', 'Legal RAG', 'token', '模型渠道'],
     minCitationCount: 1,
-    description: '醒来后的人工队列问题应引用状态页，并优先说明内部助手、Studio 和受控 demo/release gate。',
+    description: '人工队列问题应引用状态页，并优先说明 BIAU Operator、Studio 和受控 demo/release gate。',
   },
   {
     id: 'blog-knowledge',

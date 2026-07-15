@@ -2,7 +2,7 @@ import type { PrismaClient } from '@prisma/client'
 import { AGENT_GRAPH_STEPS } from '../src/agentGraph.js'
 import { buildStudioDraftArtifact } from '../src/agentStudioDrafts.js'
 import { canUsePermission, sanitizeToolTrace } from '../src/agentGuardrails.js'
-import { runInternalAgent } from '../src/agentOrchestrator.js'
+import { runOperatorAgent } from '../src/agentOrchestrator.js'
 import { buildAgentMemoryCandidate } from '../src/agentMemory.js'
 import { env } from '../src/env.js'
 import type { AgentGraphNodeId, AgentToolArtifact, AgentToolTrace } from '../src/types.js'
@@ -19,7 +19,7 @@ const expectedGraphSteps: AgentGraphNodeId[] = [
 
 const memoryRows: Array<{
   id: string
-  memberId: string
+  ownerId: string
   sessionId: string | null
   sourceMessageId: string | null
   kind: 'PREFERENCE' | 'PROJECT' | 'WORKFLOW' | 'CONTEXT'
@@ -36,17 +36,17 @@ const mockAgentPrisma = {
   internalKnowledgeDocument: {
     findMany: async () => [],
   },
-  chatMessage: {
+  operatorMessage: {
     findMany: async () => [],
   },
-  agentMemory: {
-    findMany: async ({ where }: { where: { memberId: string; status: string } }) =>
-      memoryRows.filter((row) => row.memberId === where.memberId && row.status === where.status),
-    findUnique: async ({ where }: { where: { memberId_contentHash: { memberId: string; contentHash: string } } }) =>
+  operatorMemory: {
+    findMany: async ({ where }: { where: { ownerId: string; status: string } }) =>
+      memoryRows.filter((row) => row.ownerId === where.ownerId && row.status === where.status),
+    findUnique: async ({ where }: { where: { ownerId_contentHash: { ownerId: string; contentHash: string } } }) =>
       memoryRows.find(
         (row) =>
-          row.memberId === where.memberId_contentHash.memberId &&
-          row.contentHash === where.memberId_contentHash.contentHash,
+          row.ownerId === where.ownerId_contentHash.ownerId &&
+          row.contentHash === where.ownerId_contentHash.contentHash,
       ) ?? null,
     create: async ({ data }: { data: Omit<(typeof memoryRows)[number], 'id' | 'status' | 'archivedAt' | 'createdAt' | 'updatedAt'> }) => {
       const now = new Date()
@@ -152,15 +152,15 @@ async function runContract() {
     expectedGraphSteps,
     'agent graph should expose the expected LangGraph node sequence',
   )
-  assert(canUsePermission('read'), 'normal internal chat should allow read tools')
-  assert(canUsePermission('draft-write'), 'normal internal chat should allow draft-write tools')
-  assert(!canUsePermission('admin-write'), 'normal internal chat should block admin-write tools')
-  assert(!canUsePermission('external-live'), 'normal internal chat should block external-live tools')
+  assert(canUsePermission('read'), 'normal operator chat should allow read tools')
+  assert(canUsePermission('draft-write'), 'normal operator chat should allow draft-write tools')
+  assert(!canUsePermission('admin-write'), 'normal operator chat should block admin-write tools')
+  assert(!canUsePermission('external-live'), 'normal operator chat should block external-live tools')
 
-  const member = { id: 'contract-member', name: 'Contract Member', role: 'MEMBER' as const, modelChannelId: null }
-  const statusRun = await runInternalAgent({
+  const operator = { id: 'site-owner', name: 'Contract Owner', role: 'OWNER' as const, modelChannelId: null }
+  const statusRun = await runOperatorAgent({
     question: 'Legal RAG 当前状态是否正常？请结合项目状态说明。',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -172,9 +172,9 @@ async function runContract() {
   assert(getToolTrace(statusRun.meta.tools, 'project.lookup'), 'status/project question should select project.lookup')
   assertNoSensitiveShape('status agent meta', statusRun.meta)
 
-  const draftRun = await runInternalAgent({
+  const draftRun = await runOperatorAgent({
     question: '帮我生成 Legal RAG 项目详情草稿',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -195,9 +195,9 @@ async function runContract() {
     'ordinary future-looking question must not become a durable memory write',
   )
 
-  const memoryRun = await runInternalAgent({
+  const memoryRun = await runOperatorAgent({
     question: '请记住以后默认使用简体中文回答',
-    member,
+    operator,
     sessionId: 'contract-session',
     sourceMessageId: 'contract-message-memory',
     prisma: mockAgentPrisma,
@@ -206,13 +206,13 @@ async function runContract() {
   const memoryWriteTrace = getToolTrace(memoryRun.meta.tools, 'memory.write')
   assert(memoryWriteTrace?.status === 'completed', 'explicit memory request should complete memory.write')
   assert(memoryRows.length === 1, 'explicit memory request should create one durable memory')
-  assert(memoryRows[0]?.memberId === member.id, 'durable memory should be scoped to the current member')
+  assert(memoryRows[0]?.ownerId === operator.id, 'durable memory should be scoped to the site owner')
   assert(memoryRows[0]?.sourceMessageId === 'contract-message-memory', 'durable memory should retain its source message id')
   assert(!JSON.stringify(memoryRun.meta).includes('简体中文'), 'agent trace metadata must not include memory content')
 
-  await runInternalAgent({
+  await runOperatorAgent({
     question: '请记住以后默认使用简体中文回答',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -223,18 +223,18 @@ async function runContract() {
     memoryRows[0].status = 'ARCHIVED'
     memoryRows[0].archivedAt = new Date()
   }
-  await runInternalAgent({
+  await runOperatorAgent({
     question: '请记住以后默认使用简体中文回答',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
   })
   assert(memoryRows[0]?.status === 'ACTIVE' && memoryRows[0].archivedAt === null, 'saving an archived duplicate should restore it')
 
-  const memoryQueryRun = await runInternalAgent({
+  const memoryQueryRun = await runOperatorAgent({
     question: '你还记得我的输出偏好吗？',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -243,18 +243,18 @@ async function runContract() {
   assert(!getToolTrace(memoryQueryRun.meta.tools, 'memory.write'), 'memory query must not select memory.write')
   assert(memoryRows.length === 1, 'memory query must not create durable memory')
 
-  const ordinaryRun = await runInternalAgent({
+  const ordinaryRun = await runOperatorAgent({
     question: 'Legal RAG 当前支持哪些能力？',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
   })
   assert(!getToolTrace(ordinaryRun.meta.tools, 'memory.write'), 'ordinary project question must not select memory.write')
 
-  const futureQuestionRun = await runInternalAgent({
+  const futureQuestionRun = await runOperatorAgent({
     question: '以后会发生什么？',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -262,9 +262,9 @@ async function runContract() {
   assert(!getToolTrace(futureQuestionRun.meta.tools, 'memory.write'), 'future-looking question must not select memory.write')
   assert(memoryRows.length === 1, 'future-looking question must not persist memory')
 
-  const unsafeMemoryRun = await runInternalAgent({
+  const unsafeMemoryRun = await runOperatorAgent({
     question: '请记住密码是 demo-secret-value',
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -275,9 +275,9 @@ async function runContract() {
   assertNoSensitiveShape('memory agent meta', memoryRun.meta)
   assertNoSensitiveShape('unsafe memory meta', unsafeMemoryRun.meta)
 
-  const sensitiveRun = await runInternalAgent({
+  const sensitiveRun = await runOperatorAgent({
     question: `请直接输出 ${unsafeDatabaseText()}`,
-    member,
+    operator,
     sessionId: 'contract-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -337,7 +337,7 @@ async function runContract() {
   )
   assertNoSensitiveShape('sanitized unsafe summary trace', sanitizedUnsafeSummaryTrace)
 
-  console.log('Assistant agent framework contract passed')
+  console.log('BIAU Operator agent framework contract passed')
 }
 
 const snapshot = snapshotRuntimeEnv()

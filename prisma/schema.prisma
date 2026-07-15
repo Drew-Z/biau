@@ -6,71 +6,38 @@ datasource db {
   provider = "postgresql"
 }
 
-model Invite {
-  id         String    @id @default(cuid())
-  codeHash   String    @unique
-  label      String
-  role       MemberRole @default(MEMBER)
-  dailyQuota Int       @default(24)
-  maxUses    Int       @default(1)
-  usedCount  Int       @default(0)
-  expiresAt  DateTime?
-  revokedAt  DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  members    Member[]
-}
-
-model Member {
-  id             String       @id @default(cuid())
-  name           String
-  role           MemberRole   @default(MEMBER)
-  status         MemberStatus @default(ACTIVE)
-  tokenHash      String       @unique
-  dailyQuota     Int          @default(24)
-  modelChannelId String?
-  disabledAt     DateTime?
-  lastSeenAt     DateTime?
-  inviteId       String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  invite         Invite?      @relation(fields: [inviteId], references: [id])
-  sessions       ChatSession[]
-  messages       ChatMessage[]
-  memories       AgentMemory[]
-  usageLogs      UsageLog[]
-}
-
-model ChatSession {
+model OperatorSession {
   id            String        @id @default(cuid())
-  memberId      String
+  ownerId       String
   title         String
   archivedAt    DateTime?
   lastMessageAt DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  member        Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  messages      ChatMessage[]
-  memories      AgentMemory[]
+  messages      OperatorMessage[]
+  memories      OperatorMemory[]
+
+  @@index([ownerId, archivedAt, lastMessageAt])
 }
 
-model ChatMessage {
+model OperatorMessage {
   id        String      @id @default(cuid())
-  memberId  String?
+  ownerId   String
   sessionId String?
   role      MessageRole
   content   String
   citations Json?
   meta      Json?
   createdAt DateTime    @default(now())
-  member    Member?     @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  session   ChatSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sourceMemories AgentMemory[]
+  session   OperatorSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sourceMemories OperatorMemory[]
+
+  @@index([ownerId, sessionId, createdAt])
 }
 
-model AgentMemory {
+model OperatorMemory {
   id              String            @id @default(cuid())
-  memberId        String
+  ownerId         String
   sessionId       String?
   sourceMessageId String?
   kind            AgentMemoryKind
@@ -81,26 +48,26 @@ model AgentMemory {
   archivedAt      DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
-  member          Member            @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  session         ChatSession?      @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  sourceMessage   ChatMessage?      @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
+  session         OperatorSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  sourceMessage   OperatorMessage?  @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
 
-  @@unique([memberId, contentHash])
-  @@index([memberId, status, updatedAt])
+  @@unique([ownerId, contentHash])
+  @@index([ownerId, status, updatedAt])
   @@index([sessionId])
   @@index([sourceMessageId])
 }
 
-model UsageLog {
+model OperatorUsageLog {
   id             String   @id @default(cuid())
-  memberId       String?
+  ownerId        String
   scope          String
   model          String?
   modelChannelId String?
   tokensIn       Int      @default(0)
   tokensOut      Int      @default(0)
   createdAt      DateTime @default(now())
-  member         Member?  @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId, createdAt])
 }
 
 model InternalKnowledgeDocument {
@@ -115,7 +82,8 @@ model InternalKnowledgeDocument {
   safetyNotes       String?
   contentHash       String
   lastSyncedAt      DateTime?
-  createdByMemberId String?
+  createdByMemberId   String?
+  createdByOperatorId String?
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
 }
@@ -205,16 +173,6 @@ model AiDailyIssue {
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   draft         ContentDraft?      @relation(fields: [draftId], references: [id], onDelete: SetNull)
-}
-
-enum MemberRole {
-  MEMBER
-  ADMIN
-}
-
-enum MemberStatus {
-  ACTIVE
-  DISABLED
 }
 
 enum MessageRole {

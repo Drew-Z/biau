@@ -93,7 +93,7 @@ function inferMemoryKind(content: string): AgentMemoryKind {
 function buildMemoryTitle(kind: AgentMemoryKind, content: string) {
   const prefix =
     kind === 'PREFERENCE'
-      ? '成员偏好'
+      ? '站长偏好'
       : kind === 'PROJECT'
         ? '项目约束'
         : kind === 'WORKFLOW'

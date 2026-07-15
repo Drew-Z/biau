@@ -31,20 +31,16 @@ const files = {
 
 const ledgerNeedles = [
   '# Manual Gates Ledger',
-  '## Git / Repository Publishing',
-  '## Cloud And Deployment Platforms',
-  '## Databases And Production Migrations',
-  '## Model Providers And Live AI Tasks',
-  '## Internal Assistant / RAG / Studio',
-  '## AI Daily And Blog Publication',
-  '## Project Demo And Credentialed Checks',
-  '## APK / Mobile Release',
-  '## Observability And Analytics',
-  '## 当前人工队列摘要',
-  '不能用 ping、doctor live、测活 prompt',
+  '## BIAU 平台门禁',
+  '## Operator 安全边界',
+  '## Content Studio / AI Daily',
+  '## 关联项目门禁',
+  '## 访问分析与可观测性',
+  '## 当前人工队列',
+  '禁止 ping、doctor、空 prompt 和无意义测活',
   'hidden + review-needed',
-  '公开下载批准',
   'Plausible 或 Umami 二选一',
+  'Cloudflare Access',
 ]
 
 const ledgerLinks = [
@@ -55,13 +51,12 @@ const ledgerLinks = [
 ]
 
 const studioRunbookNeedles = [
-  '### 草稿审核路径',
-  '审核从草稿箱开始',
-  '公开文章预览',
-  '审核通过',
-  '创建导出记录',
-  'Publish Export 列表新增一条记录',
-  '不把 Studio token、数据库 URL、真实请求头、后台地址或模型渠道写入聊天或仓库',
+  '## 3. 验收 Operator draft-write',
+  '## 4. Studio 审核',
+  'hidden + review-needed',
+  '创建 Publish Export',
+  '最后人工检查 Git diff',
+  '不要把 Operator service token、Studio token、数据库 URL、模型 key、RAG token、Access 配置或私有地址写入聊天和仓库',
 ]
 
 interface LedgerCoverage {
@@ -72,27 +67,27 @@ interface LedgerCoverage {
 const statusProjectLedgerCoverage = {
   'blog-semi': {
     label: 'BIAU Port 主站',
-    needles: ['Cloudflare Pages 环境变量和 Functions 部署', '公开助手模型真实调用', 'Prometheus / Grafana / ARMS'],
+    needles: ['Cloudflare Access application 与 policy', 'Operator 真实模型验收', 'Prometheus / Grafana / ARMS'],
   },
   'legal-rag': {
     label: 'Legal RAG 法律机器人',
-    needles: ['Legal RAG 公开 demo 凭据', 'legal-rag:synthetic', '合同审查'],
+    needles: ['Legal RAG', 'credentialed synthetic', '合同审查'],
   },
   'ozon-erp': {
     label: 'Ozon ERP',
-    needles: ['ERP 生产注册开放策略', 'erp:synthetic'],
+    needles: ['ERP', '生产注册策略'],
   },
   xunqiu: {
     label: '寻球',
-    needles: ['Xunqiu 后端 / APK / 兼容 API', 'xunqiu:synthetic', 'APK gate 摘要'],
+    needles: ['Xunqiu', '正式 APK', 'SHA-256'],
   },
   'pet-gamer': {
     label: 'Pet / Gamer',
-    needles: ['Pet 展示页和 APK 下载', 'pet:synthetic', '正式 release 构建'],
+    needles: ['Pet', 'pet:synthetic', '正式 release'],
   },
   'biau-playlab': {
     label: 'BIAU Playlab / Game',
-    needles: ['BIAU Playlab / Game 试玩入口', 'playlab:synthetic', 'Web 试玩'],
+    needles: ['BIAU Playlab', 'playlab:synthetic', '公开入口'],
   },
 } satisfies Record<string, LedgerCoverage>
 

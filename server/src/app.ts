@@ -2,21 +2,19 @@ import cors from 'cors'
 import express from 'express'
 import {
   Prisma,
-  type AgentMemory,
   type InternalKnowledgeDocument,
   type InternalKnowledgeSyncRun,
-  type Invite,
-  type Member,
+  type OperatorMemory,
 } from '@prisma/client'
 import { env, hasDatabase } from './env.js'
 import { sha256 } from './crypto.js'
-import { issueMemberToken, readBearerMember, requireDatabase } from './auth.js'
+import { hasOperatorAuth, requireDatabase, requireOperator } from './auth.js'
 import { generateAnswer, hasConfiguredModelChannel, listSafeModelChannels, normalizeModelChannelId } from './model.js'
 import { createMetricsMiddleware, renderPrometheusMetrics } from './metrics.js'
 import { retrievePublicAssistantContext } from './ragClient.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import { createStudioRouter } from './studioRoutes.js'
-import { runInternalAgent } from './agentOrchestrator.js'
+import { runOperatorAgent } from './agentOrchestrator.js'
 import type { AssistantServiceMode, ChatPayload, ChatResponse, RagCollectionHealth, RagHealthResponse } from './types.js'
 
 type InternalKnowledgeStatusValue = 'DRAFT' | 'REVIEWED' | 'ACTIVE' | 'ARCHIVED'
@@ -55,8 +53,8 @@ export function createApp() {
     })
 
     if (serviceMode === 'all' || serviceMode === 'public') registerPublicAssistantRoutes(app)
-    if (serviceMode === 'all' || serviceMode === 'internal') registerInternalAssistantRoutes(app)
-    if (serviceMode === 'all' || serviceMode === 'internal') app.use('/studio/api', createStudioRouter())
+    if (serviceMode === 'all' || serviceMode === 'operator') registerOperatorRoutes(app)
+    if (serviceMode === 'all') app.use('/studio/api', createStudioRouter())
     if (serviceMode === 'all') app.use('/rag', createRagOrchestratorRouter({ requireAuth: false }))
   }
 
@@ -66,6 +64,18 @@ export function createApp() {
     const message = error instanceof Error ? error.message : 'unknown-error'
     if (name === 'DatabaseNotConfigured') {
       res.status(503).json({ error: message })
+      return
+    }
+    if (name === 'OperatorAuthNotConfigured') {
+      res.status(503).json({ error: message })
+      return
+    }
+    if (name === 'OperatorUnauthorized') {
+      res.status(401).json({ error: message })
+      return
+    }
+    if (name === 'OperatorForbidden') {
+      res.status(403).json({ error: message })
       return
     }
     console.error(error)
@@ -90,13 +100,14 @@ function buildAssistantHealth(serviceMode: AssistantServiceMode) {
   const modelConfigured = hasConfiguredModelChannel()
   return {
     ok: true,
-    service: serviceMode === 'public' ? 'biau-public-assistant-api' : serviceMode === 'internal' ? 'biau-internal-assistant-api' : 'biau-assistant-api',
+    service: serviceMode === 'public' ? 'biau-public-assistant-api' : serviceMode === 'operator' ? 'biau-operator-api' : 'biau-assistant-api',
     serviceMode,
     database: hasDatabase(),
     mode: modelConfigured ? 'model' : 'fallback',
     modelConfigured,
     model: defaultModelChannel?.configured ? defaultModelChannel.model : 'fallback',
     provider: defaultModelChannel?.configured ? defaultModelChannel.provider : 'local-public-knowledge',
+    ...(serviceMode === 'operator' || serviceMode === 'all' ? { operatorAuthConfigured: hasOperatorAuth() } : {}),
   }
 }
 
@@ -134,98 +145,33 @@ function registerPublicAssistantRoutes(app: express.Express) {
   })
 }
 
-function registerInternalAssistantRoutes(app: express.Express) {
-  app.get('/me', async (req, res, next) => {
+function registerOperatorRoutes(app: express.Express) {
+  app.get('/operator/me', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
-
-      const prisma = requireDatabase()
-      const updated = await prisma.member.update({
-        where: { id: member.id },
-        data: { lastSeenAt: new Date() },
-      })
-      res.json({ member: serializeMember(updated) })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.post('/auth/redeem-invite', async (req, res, next) => {
-    try {
-      const code = String(req.body?.code ?? '').trim()
-      const name = String(req.body?.name ?? '内部成员').trim().slice(0, 80)
-      if (!code) {
-        res.status(400).json({ error: 'missing-code' })
-        return
-      }
-
-      const prisma = requireDatabase()
-      const issued = issueMemberToken()
-      const member = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-        const invite = await tx.invite.findUnique({ where: { codeHash: sha256(code) } })
-        if (!invite || invite.revokedAt || invite.usedCount >= invite.maxUses || (invite.expiresAt && invite.expiresAt < new Date())) {
-          return null
-        }
-
-        const claimedInvite = await tx.invite.updateMany({
-          where: {
-            id: invite.id,
-            usedCount: { lt: invite.maxUses },
-          },
-          data: { usedCount: { increment: 1 } },
-        })
-        if (claimedInvite.count !== 1) return null
-
-        return tx.member.create({
-          data: {
-            name,
-            role: invite.role,
-            dailyQuota: invite.dailyQuota,
-            tokenHash: issued.tokenHash,
-            inviteId: invite.id,
-          },
-        })
-      })
-
-      if (!member) {
-        res.status(401).json({ error: 'invalid-invite' })
-        return
-      }
-
+      const operator = requireOperator(req)
       res.json({
-        token: issued.token,
-        member: serializeMember(member),
+        operator: {
+          id: operator.id,
+          name: operator.name,
+          role: operator.role,
+          modelChannelId: operator.modelChannelId,
+          modelChannel: getOperatorModelChannel(operator.modelChannelId),
+        },
       })
     } catch (error) {
       next(error)
     }
   })
 
-  app.get('/chat/internal/sessions', async (req, res, next) => {
+  app.get('/operator/sessions', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const prisma = requireDatabase()
       const includeArchived = req.query.includeArchived === 'true'
-      const sessions = await prisma.chatSession.findMany({
+      const sessions = await prisma.operatorSession.findMany({
         where: {
-          memberId: member.id,
+          ownerId: operator.id,
           ...(includeArchived ? {} : { archivedAt: null }),
         },
         orderBy: [{ lastMessageAt: 'desc' }, { updatedAt: 'desc' }],
@@ -243,23 +189,15 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.post('/chat/internal/sessions', async (req, res, next) => {
+  app.post('/operator/sessions', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const prisma = requireDatabase()
-      const title = readBoundedString(req.body?.title, 60) || '新的内部会话'
-      const session = await prisma.chatSession.create({
+      const title = readBoundedString(req.body?.title, 60) || '新的站务会话'
+      const session = await prisma.operatorSession.create({
         data: {
-          memberId: member.id,
+          ownerId: operator.id,
           title,
         },
         include: { messages: true },
@@ -270,21 +208,13 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.get('/chat/internal/sessions/:id/messages', async (req, res, next) => {
+  app.get('/operator/sessions/:id/messages', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const prisma = requireDatabase()
-      const session = await prisma.chatSession.findFirst({
-        where: { id: req.params.id, memberId: member.id },
+      const session = await prisma.operatorSession.findFirst({
+        where: { id: req.params.id, ownerId: operator.id },
         include: {
           messages: {
             orderBy: { createdAt: 'asc' },
@@ -305,20 +235,12 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.patch('/chat/internal/sessions/:id', async (req, res, next) => {
+  app.patch('/operator/sessions/:id', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const prisma = requireDatabase()
-      const session = await prisma.chatSession.findFirst({ where: { id: req.params.id, memberId: member.id } })
+      const session = await prisma.operatorSession.findFirst({ where: { id: req.params.id, ownerId: operator.id } })
       if (!session) {
         res.status(404).json({ error: 'session-not-found' })
         return
@@ -330,11 +252,11 @@ function registerInternalAssistantRoutes(app: express.Express) {
         return
       }
 
-      const data: Prisma.ChatSessionUpdateInput = {}
+      const data: Prisma.OperatorSessionUpdateInput = {}
       if (title) data.title = title
       if (typeof req.body?.archived === 'boolean') data.archivedAt = req.body.archived ? new Date() : null
 
-      const updated = await prisma.chatSession.update({
+      const updated = await prisma.operatorSession.update({
         where: { id: session.id },
         data,
         include: {
@@ -350,23 +272,15 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.get('/chat/internal/memories', async (req, res, next) => {
+  app.get('/operator/memories', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const prisma = requireDatabase()
       const includeArchived = req.query.includeArchived === 'true'
-      const memories = await prisma.agentMemory.findMany({
+      const memories = await prisma.operatorMemory.findMany({
         where: {
-          memberId: member.id,
+          ownerId: operator.id,
           ...(includeArchived ? {} : { status: 'ACTIVE' }),
         },
         orderBy: [{ status: 'asc' }, { updatedAt: 'desc' }],
@@ -378,25 +292,17 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.patch('/chat/internal/memories/:id', async (req, res, next) => {
+  app.patch('/operator/memories/:id', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
+      const operator = requireOperator(req)
       if (typeof req.body?.archived !== 'boolean') {
         res.status(400).json({ error: 'invalid-memory-action' })
         return
       }
 
       const prisma = requireDatabase()
-      const memory = await prisma.agentMemory.findFirst({
-        where: { id: req.params.id, memberId: member.id },
+      const memory = await prisma.operatorMemory.findFirst({
+        where: { id: req.params.id, ownerId: operator.id },
       })
       if (!memory) {
         res.status(404).json({ error: 'memory-not-found' })
@@ -404,7 +310,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
       }
 
       const archived = req.body.archived
-      const updated = await prisma.agentMemory.update({
+      const updated = await prisma.operatorMemory.update({
         where: { id: memory.id },
         data: {
           status: archived ? 'ARCHIVED' : 'ACTIVE',
@@ -417,17 +323,9 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.post('/chat/internal', async (req, res, next) => {
+  app.post('/operator/chat', async (req, res, next) => {
     try {
-      const member = await readBearerMember(req)
-      if (!member) {
-        res.status(401).json({ error: 'missing-or-invalid-token' })
-        return
-      }
-      if (!isActiveMember(member)) {
-        res.status(403).json({ error: 'member-disabled' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const { message, sessionId } = req.body as ChatPayload
       const question = message?.trim()
@@ -438,7 +336,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
 
       const prisma = requireDatabase()
       const now = new Date()
-      const session = sessionId ? await prisma.chatSession.findFirst({ where: { id: sessionId, memberId: member.id } }) : null
+      const session = sessionId ? await prisma.operatorSession.findFirst({ where: { id: sessionId, ownerId: operator.id } }) : null
       if (sessionId && !session) {
         res.status(404).json({ error: 'session-not-found' })
         return
@@ -446,35 +344,35 @@ function registerInternalAssistantRoutes(app: express.Express) {
 
       const activeSession =
         session ??
-        (await prisma.chatSession.create({
+        (await prisma.operatorSession.create({
           data: {
-            memberId: member.id,
+            ownerId: operator.id,
             title: question.slice(0, 36),
             lastMessageAt: now,
           },
         }))
 
-      const sourceMessage = await prisma.chatMessage.create({
+      const sourceMessage = await prisma.operatorMessage.create({
         data: {
-          memberId: member.id,
+          ownerId: operator.id,
           sessionId: activeSession.id,
           role: 'USER',
           content: question,
         },
       })
 
-      const agentResult = await runInternalAgent({
+      const agentResult = await runOperatorAgent({
         question,
-        member,
+        operator,
         sessionId: activeSession.id,
         sourceMessageId: sourceMessage.id,
         prisma,
       })
       const citations = agentResult.citations
       const answerMeta = buildAssistantAnswerMeta(agentResult.meta)
-      const reply = await prisma.chatMessage.create({
+      const reply = await prisma.operatorMessage.create({
         data: {
-          memberId: member.id,
+          ownerId: operator.id,
           sessionId: activeSession.id,
           role: 'ASSISTANT',
           content: agentResult.answer,
@@ -482,19 +380,15 @@ function registerInternalAssistantRoutes(app: express.Express) {
           meta: answerMeta as unknown as Prisma.InputJsonValue,
         },
       })
-      await prisma.usageLog.create({
+      await prisma.operatorUsageLog.create({
         data: {
-          memberId: member.id,
-          scope: 'internal-chat',
+          ownerId: operator.id,
+          scope: 'operator-chat',
           model: agentResult.meta.model,
           modelChannelId: agentResult.meta.modelChannel?.id ?? null,
         },
       })
-      await prisma.member.update({
-        where: { id: member.id },
-        data: { lastSeenAt: now },
-      })
-      await prisma.chatSession.update({
+      await prisma.operatorSession.update({
         where: { id: activeSession.id },
         data: { lastMessageAt: now },
       })
@@ -514,43 +408,27 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.get('/admin/summary', async (req, res, next) => {
+  app.get('/operator/summary', async (req, res, next) => {
     try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const prisma = requireDatabase()
-      const [members, inviteRows, messages, usage, disabledMembers, internalKnowledgeDocuments, lastInternalKnowledgeSync] = await Promise.all([
-        prisma.member.count(),
-        prisma.invite.findMany({
-          select: {
-            revokedAt: true,
-            expiresAt: true,
-            usedCount: true,
-            maxUses: true,
-          },
-        }),
-        prisma.chatMessage.count(),
-        prisma.usageLog.count(),
-        prisma.member.count({ where: { status: 'DISABLED' } }),
+      const [sessions, messages, memories, usage, internalKnowledgeDocuments, lastInternalKnowledgeSync] = await Promise.all([
+        prisma.operatorSession.count({ where: { ownerId: operator.id } }),
+        prisma.operatorMessage.count({ where: { ownerId: operator.id } }),
+        prisma.operatorMemory.count({ where: { ownerId: operator.id, status: 'ACTIVE' } }),
+        prisma.operatorUsageLog.count({ where: { ownerId: operator.id } }),
         prisma.internalKnowledgeDocument.count(),
         prisma.internalKnowledgeSyncRun.findFirst({ orderBy: { startedAt: 'desc' } }),
       ])
-      const inviteSummary = summarizeInvites(inviteRows)
       res.json({
-        members,
-        invites: inviteSummary.total,
-        openInvites: inviteSummary.open,
-        revokedInvites: inviteSummary.revoked,
-        expiredInvites: inviteSummary.expired,
-        exhaustedInvites: inviteSummary.exhausted,
+        sessions,
         messages,
+        memories,
         usage,
-        disabledMembers,
         internalKnowledgeDocuments,
         lastInternalKnowledgeSync: lastInternalKnowledgeSync ? serializeInternalKnowledgeSyncRun(lastInternalKnowledgeSync) : null,
+        operator: serializeOperator(operator),
         modelChannels: listSafeModelChannels(),
       })
     } catch (error) {
@@ -558,55 +436,45 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.get('/admin/rag/status', async (req, res) => {
-    if (!isAdminRequest(req.headers.authorization)) {
-      res.status(401).json({ error: 'missing-admin-token' })
-      return
-    }
-
-    res.json(await getAdminRagStatus())
-  })
-
-  app.post('/admin/rag/sync-public', async (req, res) => {
-    if (!isAdminRequest(req.headers.authorization)) {
-      res.status(401).json({ error: 'missing-admin-token' })
-      return
-    }
-
-    res.json({ sync: await syncPublicRagKnowledge() })
-  })
-
-  app.get('/admin/model-channels', async (req, res) => {
-    if (!isAdminRequest(req.headers.authorization)) {
-      res.status(401).json({ error: 'missing-admin-token' })
-      return
-    }
-
-    res.json({ modelChannels: listSafeModelChannels() })
-  })
-
-  app.get('/admin/usage', async (req, res, next) => {
+  app.get('/operator/rag/status', async (req, res, next) => {
     try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
+      requireOperator(req)
+      res.json(await getAdminRagStatus())
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.post('/operator/rag/sync-public', async (req, res, next) => {
+    try {
+      requireOperator(req)
+      res.json({ sync: await syncPublicRagKnowledge() })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.get('/operator/model-channels', async (req, res, next) => {
+    try {
+      const operator = requireOperator(req)
+      res.json({
+        modelChannels: listSafeModelChannels(),
+        selectedModelChannel: getOperatorModelChannel(operator.modelChannelId),
+      })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.get('/operator/usage', async (req, res, next) => {
+    try {
+      const operator = requireOperator(req)
 
       const prisma = requireDatabase()
-      const usage = await prisma.usageLog.findMany({
+      const usage = await prisma.operatorUsageLog.findMany({
+        where: { ownerId: operator.id },
         orderBy: { createdAt: 'desc' },
         take: 50,
-        include: {
-          member: {
-            select: {
-              id: true,
-              name: true,
-              role: true,
-              status: true,
-              modelChannelId: true,
-            },
-          },
-        },
       })
       res.json({ usage: usage.map(serializeUsageLog) })
     } catch (error) {
@@ -614,122 +482,9 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.get('/admin/members', async (req, res, next) => {
+  app.get('/operator/knowledge-documents', async (req, res, next) => {
     try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
-
-      const prisma = requireDatabase()
-      const members = await prisma.member.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 100,
-      })
-      res.json({ members: members.map(serializeMember), modelChannels: listSafeModelChannels() })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.patch('/admin/members/:id', async (req, res, next) => {
-    try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
-
-      const prisma = requireDatabase()
-      const member = await prisma.member.findUnique({ where: { id: req.params.id } })
-      if (!member) {
-        res.status(404).json({ error: 'member-not-found' })
-        return
-      }
-
-      const assignment = readModelChannelAssignment(req.body?.modelChannelId)
-      if (!assignment.ok) {
-        res.status(400).json({ error: 'unsupported-model-channel' })
-        return
-      }
-
-      const status = readMemberStatus(req.body?.status)
-      if (req.body?.status !== undefined && !status) {
-        res.status(400).json({ error: 'unsupported-member-status' })
-        return
-      }
-
-      const data: Prisma.MemberUpdateInput = {}
-      if (assignment.changed) data.modelChannelId = assignment.value
-      if (status) {
-        data.status = status
-        data.disabledAt = status === 'DISABLED' ? new Date() : null
-      }
-
-      const updated = await prisma.member.update({
-        where: { id: member.id },
-        data,
-      })
-      res.json({ member: serializeMember(updated), modelChannels: listSafeModelChannels() })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.get('/admin/invites', async (req, res, next) => {
-    try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
-
-      const prisma = requireDatabase()
-      const invites = await prisma.invite.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 100,
-      })
-      res.json({ invites: invites.map(serializeInvite) })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.patch('/admin/invites/:id', async (req, res, next) => {
-    try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
-
-      if (typeof req.body?.revoked !== 'boolean') {
-        res.status(400).json({ error: 'unsupported-invite-revocation' })
-        return
-      }
-
-      const prisma = requireDatabase()
-      const invite = await prisma.invite.findUnique({ where: { id: req.params.id } })
-      if (!invite) {
-        res.status(404).json({ error: 'invite-not-found' })
-        return
-      }
-
-      const updated = await prisma.invite.update({
-        where: { id: invite.id },
-        data: {
-          revokedAt: req.body.revoked ? new Date() : null,
-        },
-      })
-      res.json({ invite: serializeInvite(updated) })
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  app.get('/admin/knowledge-documents', async (req, res, next) => {
-    try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
+      requireOperator(req)
 
       const prisma = requireDatabase()
       const [documents, lastSyncRun] = await Promise.all([
@@ -748,12 +503,9 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.post('/admin/knowledge-documents', async (req, res, next) => {
+  app.post('/operator/knowledge-documents', async (req, res, next) => {
     try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
+      const operator = requireOperator(req)
 
       const payload = readInternalKnowledgePayload(req.body)
       if (!payload.title || !payload.body) {
@@ -780,6 +532,7 @@ function registerInternalAssistantRoutes(app: express.Express) {
           sourceType: payload.sourceType,
           safetyNotes: payload.safetyNotes,
           contentHash: hashInternalKnowledgeContent(payload),
+          createdByOperatorId: operator.id,
         },
       })
       res.json({ document: serializeInternalKnowledgeDocument(document) })
@@ -788,12 +541,9 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.patch('/admin/knowledge-documents/:id', async (req, res, next) => {
+  app.patch('/operator/knowledge-documents/:id', async (req, res, next) => {
     try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
+      requireOperator(req)
 
       const prisma = requireDatabase()
       const document = await prisma.internalKnowledgeDocument.findUnique({ where: { id: req.params.id } })
@@ -838,12 +588,9 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.post('/admin/knowledge/sync', async (req, res, next) => {
+  app.post('/operator/knowledge/sync', async (req, res, next) => {
     try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
+      requireOperator(req)
 
       const prisma = requireDatabase()
       const documents = await prisma.internalKnowledgeDocument.findMany({
@@ -905,111 +652,16 @@ function registerInternalAssistantRoutes(app: express.Express) {
     }
   })
 
-  app.post('/admin/invites', async (req, res, next) => {
-    try {
-      if (!isAdminRequest(req.headers.authorization)) {
-        res.status(401).json({ error: 'missing-admin-token' })
-        return
-      }
-
-      const code = String(req.body?.code ?? '').trim()
-      if (!code) {
-        res.status(400).json({ error: 'missing-code' })
-        return
-      }
-
-      const prisma = requireDatabase()
-      const label = String(req.body?.label ?? '内部邀请码').trim().slice(0, 80) || '内部邀请码'
-      const invite = await prisma.invite.create({
-        data: {
-          codeHash: sha256(code),
-          label,
-          role: req.body?.role === 'ADMIN' ? 'ADMIN' : 'MEMBER',
-          dailyQuota: readPositiveInteger(req.body?.dailyQuota, 24),
-          maxUses: readPositiveInteger(req.body?.maxUses, 1),
-        },
-      })
-      res.json({ invite: serializeInvite(invite) })
-    } catch (error) {
-      next(error)
-    }
-  })
 }
 
-function isAdminRequest(header: string | undefined) {
-  if (!env.adminToken || !header?.startsWith('Bearer ')) return false
-  return header.slice('Bearer '.length).trim() === env.adminToken
-}
-
-function isActiveMember(member: Pick<Member, 'status'>) {
-  return member.status !== 'DISABLED'
-}
-
-function serializeMember(
-  member: Pick<Member, 'id' | 'name' | 'role' | 'status' | 'dailyQuota' | 'modelChannelId' | 'disabledAt' | 'lastSeenAt' | 'createdAt'>,
-) {
+function serializeOperator(operator: ReturnType<typeof requireOperator>) {
   return {
-    id: member.id,
-    name: member.name,
-    role: member.role,
-    status: member.status,
-    dailyQuota: member.dailyQuota,
-    modelChannelId: member.modelChannelId ?? null,
-    modelChannel: getMemberModelChannel(member.modelChannelId),
-    disabledAt: member.disabledAt?.toISOString() ?? null,
-    lastSeenAt: member.lastSeenAt?.toISOString() ?? null,
-    createdAt: member.createdAt.toISOString(),
+    id: operator.id,
+    name: operator.name,
+    role: operator.role,
+    modelChannelId: operator.modelChannelId,
+    modelChannel: getOperatorModelChannel(operator.modelChannelId),
   }
-}
-
-function serializeInvite(invite: {
-  id: string
-  label: string
-  role: string
-  dailyQuota: number
-  maxUses: number
-  usedCount: number
-  expiresAt: Date | null
-  revokedAt: Date | null
-  createdAt: Date
-}) {
-  return {
-    id: invite.id,
-    label: invite.label,
-    role: invite.role,
-    dailyQuota: invite.dailyQuota,
-    maxUses: invite.maxUses,
-    usedCount: invite.usedCount,
-    status: getInviteStatus(invite),
-    expiresAt: invite.expiresAt?.toISOString() ?? null,
-    revokedAt: invite.revokedAt?.toISOString() ?? null,
-    createdAt: invite.createdAt.toISOString(),
-  }
-}
-
-function getInviteStatus(invite: Pick<Invite, 'revokedAt' | 'expiresAt' | 'usedCount' | 'maxUses'>) {
-  if (invite.revokedAt) return 'REVOKED'
-  if (invite.expiresAt && invite.expiresAt < new Date()) return 'EXPIRED'
-  if (invite.usedCount >= invite.maxUses) return 'EXHAUSTED'
-  return 'OPEN'
-}
-
-function summarizeInvites(invites: Array<Pick<Invite, 'revokedAt' | 'expiresAt' | 'usedCount' | 'maxUses'>>) {
-  const summary = {
-    total: invites.length,
-    open: 0,
-    revoked: 0,
-    expired: 0,
-    exhausted: 0,
-  }
-  for (const invite of invites) {
-    const status = getInviteStatus(invite)
-    if (status === 'OPEN') summary.open += 1
-    if (status === 'REVOKED') summary.revoked += 1
-    if (status === 'EXPIRED') summary.expired += 1
-    if (status === 'EXHAUSTED') summary.exhausted += 1
-  }
-  return summary
 }
 
 function serializeInternalKnowledgeDocument(
@@ -1066,11 +718,9 @@ function serializeInternalKnowledgeSyncRun(
 }
 
 function serializeUsageLog(
-  usage: Pick<Prisma.UsageLogGetPayload<{ include: { member: true } }>, 'id' | 'scope' | 'model' | 'modelChannelId' | 'tokensIn' | 'tokensOut' | 'createdAt'> & {
-    member: Pick<Member, 'id' | 'name' | 'role' | 'status' | 'modelChannelId'> | null
-  },
+  usage: Prisma.OperatorUsageLogGetPayload<Record<string, never>>,
 ) {
-  const modelChannel = getMemberModelChannel(usage.modelChannelId ?? usage.member?.modelChannelId ?? null)
+  const modelChannel = getOperatorModelChannel(usage.modelChannelId ?? env.operatorModelChannelId)
   return {
     id: usage.id,
     scope: usage.scope,
@@ -1080,16 +730,6 @@ function serializeUsageLog(
     tokensIn: usage.tokensIn,
     tokensOut: usage.tokensOut,
     createdAt: usage.createdAt.toISOString(),
-    member: usage.member
-      ? {
-          id: usage.member.id,
-          name: usage.member.name,
-          role: usage.member.role,
-          status: usage.member.status,
-          modelChannelId: usage.member.modelChannelId ?? null,
-          modelChannel: getMemberModelChannel(usage.member.modelChannelId),
-        }
-      : null,
   }
 }
 
@@ -1538,7 +1178,7 @@ function isPlainRecord(value: unknown): value is Record<string, unknown> {
 
 function serializeAgentMemory(
   memory: Pick<
-    AgentMemory,
+    OperatorMemory,
     'id' | 'sessionId' | 'kind' | 'title' | 'content' | 'status' | 'archivedAt' | 'createdAt' | 'updatedAt'
   >,
 ) {
@@ -1575,7 +1215,7 @@ function serializeChatSession(
     archivedAt: session.archivedAt?.toISOString() ?? null,
     updatedAt: updatedAt.toISOString(),
     createdAt: session.createdAt.toISOString(),
-    preview: lastMessage ? compactPreview(lastMessage.content) : '还没有消息，打开后可以开始新的内部协作。',
+    preview: lastMessage ? compactPreview(lastMessage.content) : '还没有消息，打开后可以开始新的站务任务。',
   }
 }
 
@@ -1899,7 +1539,7 @@ function stripUndefinedJson<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
-function getMemberModelChannel(modelChannelId: string | null | undefined) {
+function getOperatorModelChannel(modelChannelId: string | null | undefined) {
   const safeChannels = listSafeModelChannels()
   const normalized = normalizeModelChannelId(modelChannelId)
   if (!normalized) return safeChannels[0]
@@ -1914,26 +1554,6 @@ function getMemberModelChannel(modelChannelId: string | null | undefined) {
   }
 }
 
-function readModelChannelAssignment(value: unknown):
-  | { ok: true; changed: false; value?: never }
-  | { ok: true; changed: true; value: string | null }
-  | { ok: false; changed: false; value?: never } {
-  if (value === undefined) return { ok: true, changed: false }
-  if (value === null) return { ok: true, changed: true, value: null }
-  if (typeof value !== 'string') return { ok: false, changed: false }
-
-  const normalized = value.trim().toLowerCase()
-  if (!normalized) return { ok: true, changed: true, value: null }
-  const channel = listSafeModelChannels().find((item) => item.id === normalized && item.isActive)
-  if (!channel) return { ok: false, changed: false }
-  return { ok: true, changed: true, value: channel.isDefault ? null : channel.id }
-}
-
-function readMemberStatus(value: unknown) {
-  if (value === 'ACTIVE' || value === 'DISABLED') return value
-  return null
-}
-
 function readBoundedString(value: unknown, maxLength: number) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
 }
@@ -1941,10 +1561,4 @@ function readBoundedString(value: unknown, maxLength: number) {
 function compactPreview(value: string) {
   const normalized = value.replace(/\s+/g, ' ').trim()
   return normalized.length > 72 ? `${normalized.slice(0, 71)}…` : normalized
-}
-
-function readPositiveInteger(value: unknown, fallback: number) {
-  const parsed = Number(value)
-  if (!Number.isInteger(parsed) || parsed < 1) return fallback
-  return parsed
 }

@@ -375,7 +375,7 @@ export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promi
           chunkId: chunk.id,
           title: document.title,
           summary: document.summary || compactText(document.body, 180),
-          href: '/assistant/admin',
+          href: '/operator/settings',
           tags: document.tags ?? [],
           visibility: 'internal',
           sourceType: document.sourceType || 'manual',

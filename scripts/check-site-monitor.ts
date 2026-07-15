@@ -28,7 +28,6 @@ const coreRoutes: MonitorRoute[] = [
   pageRoute('home', '/'),
   pageRoute('projects', '/projects'),
   pageRoute('blog', '/blog'),
-  pageRoute('assistant', '/assistant', false),
   pageRoute('status', '/status'),
   ...staticRoutes,
   ...projectRoutes,

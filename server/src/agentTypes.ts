@@ -1,4 +1,5 @@
-import type { Member, PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client'
+import type { OperatorPrincipal } from './auth.js'
 import type {
   AgentPlannerMode,
   AgentRunMeta,
@@ -16,11 +17,11 @@ import type {
   RagChunkCitation,
 } from './types.js'
 
-export type InternalAgentMemberContext = Pick<Member, 'id' | 'name' | 'role' | 'modelChannelId'>
+export type OperatorAgentPrincipal = Pick<OperatorPrincipal, 'id' | 'name' | 'role' | 'modelChannelId'>
 
-export interface InternalAgentRunInput {
+export interface OperatorAgentRunInput {
   question: string
-  member: InternalAgentMemberContext
+  operator: OperatorAgentPrincipal
   sessionId: string
   sourceMessageId?: string
   prisma: PrismaClient
@@ -28,7 +29,7 @@ export interface InternalAgentRunInput {
   studioDraftMode?: 'auto' | 'plan-only'
 }
 
-export interface InternalAgentPlan {
+export interface OperatorAgentPlan {
   toolIds: AgentToolId[]
   intent: AssistantAnswerIntent
   grounding: AssistantGroundingMode
@@ -45,7 +46,7 @@ export interface AgentToolDefinition {
 
 export interface AgentToolContext {
   question: string
-  member: InternalAgentMemberContext
+  operator: OperatorAgentPrincipal
   sessionId: string
   sourceMessageId?: string
   prisma: PrismaClient
@@ -68,7 +69,7 @@ export interface AgentToolExecutionResult extends AgentToolPayload {
   trace: AgentToolTrace
 }
 
-export interface InternalAgentRunResult {
+export interface OperatorAgentRunResult {
   answer: string
   citations: Citation[]
   chunks: RagChunkCitation[]

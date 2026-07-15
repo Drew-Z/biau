@@ -12,7 +12,7 @@ These guidelines describe the assistant API and database layer that sit beside t
 | [Quality Guidelines](./quality-guidelines.md) | Backend validation commands, smoke test contract, API review checklist | Filled |
 | [Logging Guidelines](./logging-guidelines.md) | Current console logging conventions and redaction rules | Filled |
 | [Observability Guidelines](./observability-guidelines.md) | Metrics endpoint, Prometheus label safety, and rollout gates | Filled |
-| [Internal Assistant Agentic Workspace](./agentic-workspace.md) | Internal Agent runtime, typed tools, guardrails, trace/meta contract | Filled |
+| [BIAU Operator Agentic Workspace](./agentic-workspace.md) | Owner-only Agent runtime, typed tools, guardrails, trace/meta contract | Filled |
 | [Blog Draft Workflow](./blog-draft-workflow.md) | Blog draft script commands, model channel env contract, and validation rules | Filled |
 | [AI Daily Workflow](./ai-daily-workflow.md) | Offline AI Daily source packs, draft command contract, and review gates | Filled |
 
@@ -25,7 +25,7 @@ Before backend edits:
 - Read [Error Handling](./error-handling.md) before adding or changing routes.
 - Read [Logging Guidelines](./logging-guidelines.md) before adding logs.
 - Read [Observability Guidelines](./observability-guidelines.md) before adding metrics, monitoring endpoints, RUM, tracing, or alert hooks.
-- Read [Internal Assistant Agentic Workspace](./agentic-workspace.md) before changing `/chat/internal`, Agent tools, internal answer metadata, or `/assistant` diagnostics.
+- Read [BIAU Operator Agentic Workspace](./agentic-workspace.md) before changing `/operator/*`, Agent tools, Operator answer metadata, or `/operator` diagnostics.
 - Read [Quality Guidelines](./quality-guidelines.md) before declaring backend work complete.
 - Read [Blog Draft Workflow](./blog-draft-workflow.md) before changing `scripts/generate-blog-draft.mjs`, blog draft model channels, or blog draft env variables.
 - Read [AI Daily Workflow](./ai-daily-workflow.md) before changing `scripts/generate-ai-daily-draft.mjs`, AI Daily source packs, or AI Daily publication gates.

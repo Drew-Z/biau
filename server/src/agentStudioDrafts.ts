@@ -7,7 +7,7 @@ type AgentStudioDraftColumn = 'knowledge' | 'project-notes' | 'resources' | 'ai-
 
 interface AgentStudioDraftInput {
   question: string
-  memberId: string
+  operatorId: string
 }
 
 interface ProjectMatch {
@@ -89,7 +89,7 @@ export function buildAgentStudioDraft(input: AgentStudioDraftInput): AgentStudio
     slug,
     topic: topic.label,
     project,
-    memberId: input.memberId,
+    operatorId: input.operatorId,
   })
   if (containsSensitiveText(JSON.stringify(data))) {
     return {
@@ -151,7 +151,7 @@ function buildCreateData(input: {
   slug: string
   topic: string
   project: ProjectMatch | null
-  memberId: string
+  operatorId: string
 }): Prisma.ContentDraftCreateInput {
   const label = columnLabels[input.column]
   return {
@@ -167,8 +167,8 @@ function buildCreateData(input: {
     status: 'REVIEW_NEEDED',
     visibility: 'HIDDEN',
     aiAssistance: 'agentic-workspace',
-    createdBy: `assistant:${sanitizeMemberId(input.memberId)}`,
-    updatedBy: `assistant:${sanitizeMemberId(input.memberId)}`,
+    createdBy: `operator:${sanitizeOperatorId(input.operatorId)}`,
+    updatedBy: `operator:${sanitizeOperatorId(input.operatorId)}`,
   }
 }
 
@@ -466,8 +466,8 @@ function toBodyJson(blocks: StudioContentBlock[]): Prisma.InputJsonValue {
   return stripUndefinedJson({ blocks }) as unknown as Prisma.InputJsonValue
 }
 
-function sanitizeMemberId(value: string) {
-  return value.replace(/[^a-z0-9_-]+/giu, '').slice(0, 40) || 'member'
+function sanitizeOperatorId(value: string) {
+  return value.replace(/[^a-z0-9_-]+/giu, '').slice(0, 40) || 'owner'
 }
 
 function extractAsciiTerms(value: string) {

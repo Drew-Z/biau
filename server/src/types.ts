@@ -1,6 +1,6 @@
 export type AssistantVisibility = 'public' | 'internal'
 export type AssistantScope = 'public' | 'internal'
-export type AssistantServiceMode = 'all' | 'public' | 'internal' | 'rag' | 'studio'
+export type AssistantServiceMode = 'all' | 'public' | 'operator' | 'rag' | 'studio'
 export type AssistantAnswerIntent = 'site_qa' | 'creative' | 'planning' | 'general'
 export type AssistantGroundingMode = 'strict' | 'background' | 'none'
 

@@ -65,16 +65,16 @@ const toolDefinitions: AgentToolRuntimeDefinition[] = [
   },
   {
     id: 'memory.search',
-    label: 'Member Memory',
+    label: 'Operator Memory',
     permission: 'read',
-    description: '读取当前成员的 ACTIVE 长期记忆和当前会话低敏摘要，不能跨成员读取。',
+    description: '读取站长的 ACTIVE 长期记忆和当前会话低敏摘要。',
     execute: executeMemorySearch,
   },
   {
     id: 'memory.write',
     label: 'Memory Write',
     permission: 'draft-write',
-    description: '仅在成员明确要求记住时保存低敏偏好、项目约束、工作流或上下文。',
+    description: '仅在站长明确要求记住时保存低敏偏好、项目约束、工作流或上下文。',
     execute: executeMemoryWrite,
   },
   {
@@ -224,7 +224,7 @@ async function executeKnowledgeSearch(context: AgentToolContext): Promise<AgentT
       id: `internal-knowledge:${document.slug}`,
       title: document.title,
       summary: document.summary,
-      href: '/assistant/admin',
+      href: '/operator/settings',
       tags: readJsonStringArray(document.tags),
       visibility: 'internal',
     }))
@@ -241,7 +241,7 @@ async function executeKnowledgeSearch(context: AgentToolContext): Promise<AgentT
 async function executeStudioDraft(context: AgentToolContext): Promise<AgentToolPayload> {
   const plan = buildAgentStudioDraft({
     question: context.question,
-    memberId: context.member.id,
+    operatorId: context.operator.id,
   })
   const basePlan = {
     citations: [],
@@ -262,7 +262,7 @@ async function executeStudioDraft(context: AgentToolContext): Promise<AgentToolP
   if (plan.blockedReason === 'not-explicit-draft-request' || !plan.data) {
     return {
       ...basePlan,
-      summary: `${plan.draftKind} 仅生成计划：需要成员明确要求创建或生成草稿后才会写入 Studio。`,
+      summary: `${plan.draftKind} 仅生成计划：需要站长明确要求创建或生成草稿后才会写入 Studio。`,
     }
   }
 
@@ -328,17 +328,17 @@ async function executeStudioDraft(context: AgentToolContext): Promise<AgentToolP
 
 async function executeMemorySearch(context: AgentToolContext): Promise<AgentToolPayload> {
   const [memories, messages] = await Promise.all([
-    context.prisma.agentMemory.findMany({
+    context.prisma.operatorMemory.findMany({
       where: {
-        memberId: context.member.id,
+        ownerId: context.operator.id,
         status: 'ACTIVE',
       },
       orderBy: { updatedAt: 'desc' },
       take: 24,
     }),
-    context.prisma.chatMessage.findMany({
+    context.prisma.operatorMessage.findMany({
       where: {
-        memberId: context.member.id,
+        ownerId: context.operator.id,
         sessionId: context.sessionId,
       },
       orderBy: { createdAt: 'desc' },
@@ -359,7 +359,7 @@ async function executeMemorySearch(context: AgentToolContext): Promise<AgentTool
     summary:
       selectedMemories.length > 0 || snippets.length > 0
         ? `读取 ${selectedMemories.length} 条长期记忆和 ${snippets.length} 条会话摘要。`
-        : '当前成员暂无可用长期记忆或会话摘要。',
+        : '当前站长暂无可用长期记忆或会话摘要。',
     itemCount: selectedMemories.length + snippets.length,
   }
 }
@@ -383,10 +383,10 @@ async function executeMemoryWrite(context: AgentToolContext): Promise<AgentToolP
     }
   }
 
-  const existing = await context.prisma.agentMemory.findUnique({
+  const existing = await context.prisma.operatorMemory.findUnique({
     where: {
-      memberId_contentHash: {
-        memberId: context.member.id,
+      ownerId_contentHash: {
+        ownerId: context.operator.id,
         contentHash: candidate.contentHash,
       },
     },
@@ -394,7 +394,7 @@ async function executeMemoryWrite(context: AgentToolContext): Promise<AgentToolP
 
   if (existing) {
     if (existing.status === 'ARCHIVED') {
-      await context.prisma.agentMemory.update({
+      await context.prisma.operatorMemory.update({
         where: { id: existing.id },
         data: {
           status: 'ACTIVE',
@@ -408,9 +408,9 @@ async function executeMemoryWrite(context: AgentToolContext): Promise<AgentToolP
     return memoryWriteResult(candidate.kind, candidate.title, 'existing')
   }
 
-  await context.prisma.agentMemory.create({
+  await context.prisma.operatorMemory.create({
     data: {
-      memberId: context.member.id,
+      ownerId: context.operator.id,
       sessionId: context.sessionId,
       sourceMessageId: context.sourceMessageId,
       kind: candidate.kind,
@@ -427,7 +427,7 @@ function memoryWriteResult(kind: string, title: string, result: 'created' | 'exi
   return {
     citations: [],
     chunks: [],
-    contextBlocks: [`${action}长期记忆：${compactText(title, 80)}。成员可在长期记忆面板中查看或归档。`],
+    contextBlocks: [`${action}长期记忆：${compactText(title, 80)}。站长可在长期记忆面板中查看或归档。`],
     summary: `${action} 1 条 ${kind.toLowerCase()} 长期记忆。`,
     itemCount: 1,
   }
@@ -464,7 +464,7 @@ function executeDirectAnswer(): AgentToolPayload {
   return {
     citations: [],
     chunks: [],
-    contextBlocks: ['无需调用外部检索工具；可以由成员模型渠道直接回答。'],
+    contextBlocks: ['无需调用外部检索工具；可以由站务模型渠道直接回答。'],
     summary: '直接回答路径已选择。',
     itemCount: 0,
   }

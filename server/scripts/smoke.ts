@@ -4,7 +4,7 @@ import type { PrismaClient } from '@prisma/client'
 import { createApp } from '../src/app.js'
 import { env } from '../src/env.js'
 import { generateAnswer, planAssistantAnswer } from '../src/model.js'
-import { runInternalAgent } from '../src/agentOrchestrator.js'
+import { runOperatorAgent } from '../src/agentOrchestrator.js'
 import { sanitizeToolTrace } from '../src/agentGuardrails.js'
 import { buildAgentStudioDraft, buildStudioDraftArtifact } from '../src/agentStudioDrafts.js'
 
@@ -169,11 +169,29 @@ const originalModelEnv = snapshotModelEnv()
 const originalAdminToken = env.adminToken
 const originalStudioAdminToken = env.studioAdminToken
 const originalStudioDatabaseUrl = env.studioDatabaseUrl
+const originalOperatorAuth = {
+  serviceToken: env.operatorServiceToken,
+  ownerId: env.operatorOwnerId,
+  ownerEmails: [...env.operatorOwnerEmails],
+  displayName: env.operatorDisplayName,
+  modelChannelId: env.operatorModelChannelId,
+}
+env.operatorServiceToken = 'operator-service-smoke-token'
+env.operatorOwnerId = 'site-owner'
+env.operatorOwnerEmails = ['owner@example.invalid']
+env.operatorDisplayName = 'Smoke Owner'
+env.operatorModelChannelId = null
+const operatorHeaders = {
+  Authorization: 'Bearer operator-service-smoke-token',
+  'X-Biau-Operator-Id': 'site-owner',
+  'X-Biau-Operator-Email': 'owner@example.invalid',
+  'X-Biau-Operator-Name': 'Smoke Owner',
+}
 const mockAgentPrisma = {
   internalKnowledgeDocument: {
     findMany: async () => [],
   },
-  chatMessage: {
+  operatorMessage: {
     findMany: async () => [],
   },
 } as unknown as PrismaClient
@@ -196,9 +214,9 @@ try {
 
   forceNoModelProvider()
   forceNoRagOrchestrator()
-  const statusAgentRun = await runInternalAgent({
+  const statusAgentRun = await runOperatorAgent({
     question: 'Legal RAG 当前状态是否正常？',
-    member: { id: 'smoke-member', name: 'Smoke Member', role: 'MEMBER', modelChannelId: null },
+    operator: { id: 'site-owner', name: 'Smoke Owner', role: 'OWNER', modelChannelId: null },
     sessionId: 'smoke-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -210,12 +228,12 @@ try {
     !statusAgentRun.meta.tools.some((tool) => tool.id === 'project.lookup') ||
     statusAgentRun.meta.guardrails.sensitiveOutputBlocked
   ) {
-    throw new Error('internal agent mock planner should select safe status/project tools')
+    throw new Error('operator agent mock planner should select safe status/project tools')
   }
 
-  const draftAgentRun = await runInternalAgent({
+  const draftAgentRun = await runOperatorAgent({
     question: '帮我生成 Ozon ERP 项目详情草稿',
-    member: { id: 'smoke-member', name: 'Smoke Member', role: 'MEMBER', modelChannelId: null },
+    operator: { id: 'site-owner', name: 'Smoke Owner', role: 'OWNER', modelChannelId: null },
     sessionId: 'smoke-session',
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -225,12 +243,12 @@ try {
     !draftAgentRun.meta.tools.some((tool) => tool.id === 'studio.draft' && tool.permission === 'draft-write') ||
     draftAgentRun.meta.guardrails.blockedPermissions.length > 0
   ) {
-    throw new Error('internal agent should allow draft-write planning without publish/admin mutation')
+    throw new Error('operator agent should allow draft-write planning without publish/admin mutation')
   }
 
   const draftPlan = buildAgentStudioDraft({
     question: '帮我生成 Legal RAG 项目详情草稿',
-    memberId: 'smoke-member',
+    operatorId: 'site-owner',
   })
   if (
     !draftPlan.data ||
@@ -278,7 +296,7 @@ try {
 
   const sensitiveDraftPlan = buildAgentStudioDraft({
     question: '帮我生成包含后台密码的项目草稿',
-    memberId: 'smoke-member',
+    operatorId: 'site-owner',
   })
   if (sensitiveDraftPlan.blockedReason !== 'sensitive-content-detected' || sensitiveDraftPlan.data) {
     throw new Error('studio draft builder should block sensitive draft writes')
@@ -702,7 +720,7 @@ try {
         model: 'mimo-smoke-model',
       },
     ])
-    const channelAnswer = await generateAnswer('请写一句内部助手欢迎语', [], 'internal', {
+    const channelAnswer = await generateAnswer('请写一句泊岸站务欢迎语', [], 'internal', {
       intent: 'creative',
       grounding: 'none',
       modelChannelId: 'mimo',
@@ -735,7 +753,7 @@ try {
         isActive: false,
       },
     ])
-    const inactiveChannelAnswer = await generateAnswer('请写一句内部助手欢迎语', [], 'internal', {
+    const inactiveChannelAnswer = await generateAnswer('请写一句泊岸站务欢迎语', [], 'internal', {
       intent: 'creative',
       grounding: 'none',
       modelChannelId: 'mimo',
@@ -755,151 +773,137 @@ try {
     restoreModelEnv(originalModelEnv)
   }
 
-  const internalChat = await fetch(`${base}/chat/internal`, {
+  const operatorChat = await fetch(`${base}/operator/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: '内部助手' }),
+    body: JSON.stringify({ message: '站务任务' }),
   })
-  if (internalChat.status !== 401) {
-    throw new Error(`internal chat should require auth, got ${internalChat.status}`)
+  if (operatorChat.status !== 401) {
+    throw new Error(`operator chat should require service auth, got ${operatorChat.status}`)
   }
 
-  const internalSessions = await fetch(`${base}/chat/internal/sessions`)
-  if (internalSessions.status !== 401) {
-    throw new Error(`internal session list should require auth, got ${internalSessions.status}`)
+  const operatorSessions = await fetch(`${base}/operator/sessions`)
+  if (operatorSessions.status !== 401) {
+    throw new Error(`operator session list should require auth, got ${operatorSessions.status}`)
   }
 
-  const internalMemories = await fetch(`${base}/chat/internal/memories`)
-  if (internalMemories.status !== 401) {
-    throw new Error(`internal memory list should require auth, got ${internalMemories.status}`)
+  const operatorMemories = await fetch(`${base}/operator/memories`)
+  if (operatorMemories.status !== 401) {
+    throw new Error(`operator memory list should require auth, got ${operatorMemories.status}`)
   }
 
-  const internalMemoryPatch = await fetch(`${base}/chat/internal/memories/smoke-memory`, {
+  const operatorMemoryPatch = await fetch(`${base}/operator/memories/smoke-memory`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ archived: true }),
   })
-  if (internalMemoryPatch.status !== 401) {
-    throw new Error(`internal memory update should require auth, got ${internalMemoryPatch.status}`)
+  if (operatorMemoryPatch.status !== 401) {
+    throw new Error(`operator memory update should require auth, got ${operatorMemoryPatch.status}`)
   }
 
-  const adminInvites = await fetch(`${base}/admin/invites`)
-  if (adminInvites.status !== 401) {
-    throw new Error(`admin invite list should require admin token, got ${adminInvites.status}`)
-  }
-
-  const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
-  if (adminKnowledge.status !== 401) {
-    throw new Error(`admin knowledge list should require admin token, got ${adminKnowledge.status}`)
-  }
-
-  const adminUsage = await fetch(`${base}/admin/usage`)
-  if (adminUsage.status !== 401) {
-    throw new Error(`admin usage list should require admin token, got ${adminUsage.status}`)
+  for (const legacyPath of ['/chat/internal', '/auth/redeem-invite', '/admin/invites', '/admin/knowledge-documents', '/admin/usage']) {
+    const legacyResponse = await fetch(`${base}${legacyPath}`)
+    if (legacyResponse.status !== 404) throw new Error(`legacy route ${legacyPath} should be removed, got ${legacyResponse.status}`)
   }
 
   if (!process.env.DATABASE_URL?.trim()) {
-    const internalWithToken = await fetch(`${base}/chat/internal`, {
+    const operatorMe = await fetch(`${base}/operator/me`, { headers: operatorHeaders })
+    if (!operatorMe.ok) throw new Error(`operator identity should work without database, got ${operatorMe.status}`)
+
+    const operatorWithIdentity = await fetch(`${base}/operator/chat`, {
       method: 'POST',
       headers: {
-        Authorization: 'Bearer smoke-test-token',
+        ...operatorHeaders,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message: '内部助手' }),
+      body: JSON.stringify({ message: '站务任务' }),
     })
-    if (internalWithToken.status !== 503) {
-      throw new Error(`internal chat should report missing database when token is present, got ${internalWithToken.status}`)
+    if (operatorWithIdentity.status !== 503) {
+      throw new Error(`operator chat should report missing database, got ${operatorWithIdentity.status}`)
     }
 
-    const sessionsWithToken = await fetch(`${base}/chat/internal/sessions`, {
-      headers: { Authorization: 'Bearer smoke-test-token' },
+    const sessionsWithIdentity = await fetch(`${base}/operator/sessions`, {
+      headers: operatorHeaders,
     })
-    if (sessionsWithToken.status !== 503) {
-      throw new Error(`internal session list should report missing database when token is present, got ${sessionsWithToken.status}`)
+    if (sessionsWithIdentity.status !== 503) {
+      throw new Error(`operator session list should report missing database, got ${sessionsWithIdentity.status}`)
     }
 
-    const memoriesWithToken = await fetch(`${base}/chat/internal/memories`, {
-      headers: { Authorization: 'Bearer smoke-test-token' },
+    const memoriesWithIdentity = await fetch(`${base}/operator/memories`, {
+      headers: operatorHeaders,
     })
-    if (memoriesWithToken.status !== 503) {
-      throw new Error(`internal memory list should report missing database when token is present, got ${memoriesWithToken.status}`)
+    if (memoriesWithIdentity.status !== 503) {
+      throw new Error(`operator memory list should report missing database, got ${memoriesWithIdentity.status}`)
     }
 
-    env.adminToken = 'admin-smoke-token'
-    const invitesWithAdminToken = await fetch(`${base}/admin/invites`, {
-      headers: { Authorization: 'Bearer admin-smoke-token' },
+    const knowledgeWithIdentity = await fetch(`${base}/operator/knowledge-documents`, {
+      headers: operatorHeaders,
     })
-    if (invitesWithAdminToken.status !== 503) {
-      throw new Error(`admin invite list should report missing database when admin token is present, got ${invitesWithAdminToken.status}`)
-    }
-
-    const revokeInviteWithoutDb = await fetch(`${base}/admin/invites/smoke-invite-id`, {
-      method: 'PATCH',
-      headers: {
-        Authorization: 'Bearer admin-smoke-token',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ revoked: true }),
-    })
-    if (revokeInviteWithoutDb.status !== 503) {
-      throw new Error(`admin invite revoke should report missing database when admin token is present, got ${revokeInviteWithoutDb.status}`)
-    }
-
-    const knowledgeWithAdminToken = await fetch(`${base}/admin/knowledge-documents`, {
-      headers: { Authorization: 'Bearer admin-smoke-token' },
-    })
-    if (knowledgeWithAdminToken.status !== 503) {
-      throw new Error(`admin knowledge list should report missing database when admin token is present, got ${knowledgeWithAdminToken.status}`)
+    if (knowledgeWithIdentity.status !== 503) {
+      throw new Error(`operator knowledge list should report missing database, got ${knowledgeWithIdentity.status}`)
     }
 
     const knowledgeSyncWithoutDb = await fetch(`${base}/admin/knowledge/sync`, {
       method: 'POST',
-      headers: { Authorization: 'Bearer admin-smoke-token' },
+      headers: operatorHeaders,
     })
-    if (knowledgeSyncWithoutDb.status !== 503) {
-      throw new Error(`admin knowledge sync should report missing database when admin token is present, got ${knowledgeSyncWithoutDb.status}`)
+    if (knowledgeSyncWithoutDb.status !== 404) {
+      throw new Error(`legacy admin knowledge sync should be removed, got ${knowledgeSyncWithoutDb.status}`)
+    }
+
+    const operatorKnowledgeSyncWithoutDb = await fetch(`${base}/operator/knowledge/sync`, {
+      method: 'POST',
+      headers: operatorHeaders,
+    })
+    if (operatorKnowledgeSyncWithoutDb.status !== 503) {
+      throw new Error(`operator knowledge sync should report missing database, got ${operatorKnowledgeSyncWithoutDb.status}`)
     }
 
     env.assistantRagApiBaseUrl = ''
     env.ragSyncToken = ''
 
-    const ragStatusWithAdminToken = await fetch(`${base}/admin/rag/status`, {
-      headers: { Authorization: 'Bearer admin-smoke-token' },
+    const ragStatusWithIdentity = await fetch(`${base}/operator/rag/status`, {
+      headers: operatorHeaders,
     })
-    if (!ragStatusWithAdminToken.ok) {
-      throw new Error(`admin rag status should work without database, got ${ragStatusWithAdminToken.status}`)
+    if (!ragStatusWithIdentity.ok) {
+      throw new Error(`operator rag status should work without database, got ${ragStatusWithIdentity.status}`)
     }
-    const ragStatusPayload = (await ragStatusWithAdminToken.json()) as { configured?: boolean; syncConfigured?: boolean; health?: unknown }
+    const ragStatusPayload = (await ragStatusWithIdentity.json()) as { configured?: boolean; syncConfigured?: boolean; health?: unknown }
     if (ragStatusPayload.configured !== false || ragStatusPayload.syncConfigured !== false || ragStatusPayload.health !== null) {
       throw new Error('admin rag status without env should return low-sensitive unconfigured state')
     }
 
-    const ragPublicSyncWithAdminToken = await fetch(`${base}/admin/rag/sync-public`, {
+    const ragPublicSyncWithIdentity = await fetch(`${base}/operator/rag/sync-public`, {
       method: 'POST',
-      headers: { Authorization: 'Bearer admin-smoke-token' },
+      headers: operatorHeaders,
     })
-    if (!ragPublicSyncWithAdminToken.ok) {
-      throw new Error(`admin public rag sync should record skipped state without database, got ${ragPublicSyncWithAdminToken.status}`)
+    if (!ragPublicSyncWithIdentity.ok) {
+      throw new Error(`operator public rag sync should record skipped state without database, got ${ragPublicSyncWithIdentity.status}`)
     }
-    const ragPublicSyncPayload = (await ragPublicSyncWithAdminToken.json()) as { sync?: { accepted?: boolean; status?: string } }
+    const ragPublicSyncPayload = (await ragPublicSyncWithIdentity.json()) as { sync?: { accepted?: boolean; status?: string } }
     if (ragPublicSyncPayload.sync?.accepted !== false || ragPublicSyncPayload.sync.status !== 'SKIPPED') {
       throw new Error('admin public rag sync without env should return skipped state')
     }
 
-    const usageWithAdminToken = await fetch(`${base}/admin/usage`, {
-      headers: { Authorization: 'Bearer admin-smoke-token' },
+    const usageWithIdentity = await fetch(`${base}/operator/usage`, {
+      headers: operatorHeaders,
     })
-    if (usageWithAdminToken.status !== 503) {
-      throw new Error(`admin usage list should report missing database when admin token is present, got ${usageWithAdminToken.status}`)
+    if (usageWithIdentity.status !== 503) {
+      throw new Error(`operator usage list should report missing database, got ${usageWithIdentity.status}`)
     }
   }
 
-  console.log('Assistant API smoke passed')
+  console.log('Assistant API smoke passed with owner-only Operator routes')
 } finally {
   restoreModelEnv(originalModelEnv)
   env.adminToken = originalAdminToken
   env.studioAdminToken = originalStudioAdminToken
   env.studioDatabaseUrl = originalStudioDatabaseUrl
+  env.operatorServiceToken = originalOperatorAuth.serviceToken
+  env.operatorOwnerId = originalOperatorAuth.ownerId
+  env.operatorOwnerEmails = [...originalOperatorAuth.ownerEmails]
+  env.operatorDisplayName = originalOperatorAuth.displayName
+  env.operatorModelChannelId = originalOperatorAuth.modelChannelId
   server.close()
 }
 

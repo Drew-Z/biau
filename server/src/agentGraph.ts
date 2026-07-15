@@ -6,10 +6,10 @@ import { buildAgentPlan, validateAgentToolIds } from './agentPlanner.js'
 import type { PrismaClient } from '@prisma/client'
 import type {
   AgentToolExecutionResult,
-  InternalAgentMemberContext,
-  InternalAgentPlan,
-  InternalAgentRunInput,
-  InternalAgentRunResult,
+  OperatorAgentPlan,
+  OperatorAgentPrincipal,
+  OperatorAgentRunInput,
+  OperatorAgentRunResult,
 } from './agentTypes.js'
 import type {
   AgentGraphNodeId,
@@ -34,15 +34,15 @@ const policyBlockedAnswer = '这次回答触发了内部安全策略，我已经
 
 const AgentGraphAnnotation = Annotation.Root({
   question: Annotation<string>,
-  member: Annotation<InternalAgentMemberContext>,
+  operator: Annotation<OperatorAgentPrincipal>,
   sessionId: Annotation<string>,
   sourceMessageId: Annotation<string | undefined>,
   prisma: Annotation<PrismaClient>,
-  plannerMode: Annotation<InternalAgentRunInput['plannerMode'] | undefined>,
-  studioDraftMode: Annotation<InternalAgentRunInput['studioDraftMode'] | undefined>,
+  plannerMode: Annotation<OperatorAgentRunInput['plannerMode'] | undefined>,
+  studioDraftMode: Annotation<OperatorAgentRunInput['studioDraftMode'] | undefined>,
   startedAt: Annotation<number>,
   inputBlocked: Annotation<boolean>,
-  agentPlan: Annotation<InternalAgentPlan | undefined>,
+  agentPlan: Annotation<OperatorAgentPlan | undefined>,
   selectedToolIds: Annotation<AgentToolId[]>,
   toolResults: Annotation<AgentToolExecutionResult[]>,
   citations: Annotation<Citation[]>,
@@ -50,17 +50,17 @@ const AgentGraphAnnotation = Annotation.Root({
   contextBlocks: Annotation<string[]>,
   retrieval: Annotation<AssistantRetrievalMeta | undefined>,
   generated: Annotation<GeneratedAnswer | undefined>,
-  guardrails: Annotation<InternalAgentRunResult['meta']['guardrails'] | undefined>,
+  guardrails: Annotation<OperatorAgentRunResult['meta']['guardrails'] | undefined>,
   answer: Annotation<string | undefined>,
-  meta: Annotation<InternalAgentRunResult['meta'] | undefined>,
+  meta: Annotation<OperatorAgentRunResult['meta'] | undefined>,
 })
 
 type AgentGraphState = typeof AgentGraphAnnotation.State
 
-export async function runInternalAgentGraph(input: InternalAgentRunInput): Promise<InternalAgentRunResult> {
+export async function runOperatorAgentGraph(input: OperatorAgentRunInput): Promise<OperatorAgentRunResult> {
   const finalState = await compiledAgentGraph.invoke({
     question: input.question,
-    member: input.member,
+    operator: input.operator,
     sessionId: input.sessionId,
     sourceMessageId: input.sourceMessageId,
     prisma: input.prisma,
@@ -108,13 +108,13 @@ async function planNode(state: AgentGraphState) {
         grounding: 'none',
         planner: 'mock',
         fallbackReason: 'policy_blocked',
-      } satisfies InternalAgentPlan,
+      } satisfies OperatorAgentPlan,
     }
   }
   return {
     agentPlan: await buildAgentPlan({
       question: state.question,
-      member: state.member,
+      operator: state.operator,
       sessionId: state.sessionId,
       sourceMessageId: state.sourceMessageId,
       prisma: state.prisma,
@@ -146,7 +146,7 @@ async function executeToolsNode(state: AgentGraphState) {
   for (const toolId of state.selectedToolIds) {
     toolResults.push(await executeAgentTool(toolId, {
       question: state.question,
-      member: state.member,
+      operator: state.operator,
       sessionId: state.sessionId,
       sourceMessageId: state.sourceMessageId,
       prisma: state.prisma,
@@ -182,13 +182,13 @@ async function composeAnswerNode(state: AgentGraphState) {
     intent: 'general',
     grounding: 'none',
     planner: 'mock',
-  } satisfies InternalAgentPlan
+  } satisfies OperatorAgentPlan
   const generated = await generateAnswer(state.question, state.citations, 'internal', {
     chunks: state.chunks,
     contextBlocks: state.contextBlocks,
     intent: plan.intent,
     grounding: plan.grounding,
-    modelChannelId: state.member.modelChannelId,
+    modelChannelId: state.operator.modelChannelId,
   })
   let answer = generated.answer
   if (generated.mode === 'fallback' && state.contextBlocks.length > 0 && !containsSensitiveText(state.contextBlocks.join('\n'))) {
@@ -207,7 +207,7 @@ async function selfCheckNode(state: AgentGraphState) {
     intent: 'general',
     grounding: 'none',
     planner: 'mock',
-  } satisfies InternalAgentPlan
+  } satisfies OperatorAgentPlan
   let answer = state.answer ?? policyBlockedAnswer
   let guardrails = summarizeGuardrails({
     traces: state.toolResults.map((result) => result.trace),
@@ -246,7 +246,7 @@ async function persistTraceNode(state: AgentGraphState) {
     intent: 'general',
     grounding: 'none',
     planner: 'mock',
-  } satisfies InternalAgentPlan
+  } satisfies OperatorAgentPlan
   const generated = state.generated ?? buildFallbackGeneratedAnswer()
   const guardrails = state.guardrails ?? summarizeGuardrails({
     traces: [],
@@ -281,7 +281,7 @@ async function persistTraceNode(state: AgentGraphState) {
       tools: toolTraces,
       guardrails,
       fallbackReason: reason ?? plan.fallbackReason,
-    } satisfies InternalAgentRunResult['meta'],
+    } satisfies OperatorAgentRunResult['meta'],
   }
 }
 
@@ -303,7 +303,7 @@ const compiledAgentGraph = new StateGraph(AgentGraphAnnotation)
   .addEdge('persist_trace', END)
   .compile()
 
-function buildFailedAgentResult(state: AgentGraphState): InternalAgentRunResult {
+function buildFailedAgentResult(state: AgentGraphState): OperatorAgentRunResult {
   const fallback = buildFallbackGeneratedAnswer()
   const guardrails = state.guardrails ?? summarizeGuardrails({
     traces: [],
@@ -340,7 +340,7 @@ function buildFailedAgentResult(state: AgentGraphState): InternalAgentRunResult 
 
 function buildFallbackGeneratedAnswer(): GeneratedAnswer {
   return {
-    answer: '内部助手运行时没有生成可用结果，已安全降级。请稍后重试或缩小问题范围。',
+    answer: '泊岸站务运行时没有生成可用结果，已安全降级。请稍后重试或缩小问题范围。',
     mode: 'fallback',
     model: 'fallback',
     provider: 'local',
@@ -349,8 +349,8 @@ function buildFallbackGeneratedAnswer(): GeneratedAnswer {
 }
 
 function computeAgentStatus(
-  guardrails: InternalAgentRunResult['meta']['guardrails'],
-  toolTraces: InternalAgentRunResult['meta']['tools'],
+  guardrails: OperatorAgentRunResult['meta']['guardrails'],
+  toolTraces: OperatorAgentRunResult['meta']['tools'],
   answerMode: GeneratedAnswer['mode'],
 ): AgentRunStatus {
   if (guardrails.status === 'blocked') return 'guarded'

@@ -140,4 +140,4 @@ assert(summary.lastSyncMode === 'local-planned', 'summary should expose sanitize
 assert(summary.lastSyncAccepted === false, 'summary should expose accepted flag')
 assert(summary.lastSyncIssueCount === 0, 'summary should expose issue count')
 
-console.log('Assistant admin knowledge ops check passed')
+console.log('Operator knowledge ops check passed')

@@ -56,11 +56,11 @@ export function getStaticSeo(pathname: string): SeoMeta {
     }
   }
 
-  if (path === '/assistant') {
+  if (path === '/operator') {
     return {
-      title: '内部助手 | BIAU Port',
-      description: 'BIAU Port 内部助手工作台，用于组织公开内容问答、内部成员聊天与交付辅助。',
-      canonicalPath: '/assistant',
+      title: '泊岸站务 | BIAU Port',
+      description: 'BIAU Port 的 owner-only 站务工作区。',
+      canonicalPath: '/operator',
       type: 'website',
     }
   }
@@ -83,11 +83,11 @@ export function getStaticSeo(pathname: string): SeoMeta {
     }
   }
 
-  if (path === '/assistant/admin') {
+  if (path === '/operator/settings') {
     return {
-      title: '内部助手管理页 | BIAU Port',
-      description: 'BIAU Port 内部助手管理页，用于规划邀请码、成员额度、用量与导出能力。',
-      canonicalPath: '/assistant/admin',
+      title: '站务设置 | BIAU Port',
+      description: 'BIAU Operator 的知识、RAG、记忆与低敏运行诊断。',
+      canonicalPath: '/operator/settings',
       type: 'website',
     }
   }

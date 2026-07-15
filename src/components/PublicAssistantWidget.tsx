@@ -500,10 +500,7 @@ export function PublicAssistantWidget() {
             </button>
           </header>
 
-          <p className="public-assistant__hint">
-            只回答公开项目、文章与状态页。
-            <Link to="/assistant">内部入口</Link>
-          </p>
+          <p className="public-assistant__hint">只回答公开项目、文章与状态页。</p>
 
           {(messages.length > 0 || isLoading) && (
             <div className="public-assistant__messages" ref={scrollRef}>

@@ -124,7 +124,7 @@ GET /metrics -> text/plain; version=0.0.4; charset=utf-8
 不会记录：
 
 - IP、User-Agent、Cookie。
-- Authorization header、admin token、member token、invite code。
+- Authorization header、Operator service token、Studio admin token、Access JWT。
 - member id、session id、message id。
 - 用户提问正文。
 - 完整 URL query。

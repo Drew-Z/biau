@@ -116,7 +116,7 @@ npm.cmd run main-site:synthetic -- --base http://127.0.0.1:4176 --skip-assistant
 - `https://biau.playlab.eu.cc/`
 - `/projects`
 - `/blog`
-- `/assistant`
+- `/operator` 由 Cloudflare Access 保护，不纳入无凭据公共路由 synthetic；使用 Operator facade 与人工 owner 验收。
 - `/projects/legal-rag`
 - `/projects/ozon-erp`
 - `/projects/biau-playlab`

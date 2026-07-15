@@ -1,348 +1,125 @@
-# Internal Assistant Agentic Workspace Runtime
+# BIAU Operator Agentic Workspace Runtime
 
-## Scenario: Internal Assistant Agentic Workspace Runtime
-
-### 1. Scope / Trigger
-
-- Trigger: changing `POST /chat/internal`, `server/src/agent*.ts`, internal assistant answer metadata, tool selection, internal RAG/status/project/knowledge/Studio/memory tools, or `/assistant` answer diagnostics.
-- Goal: keep the internal assistant as an Agentic Workflow Runtime instead of regressing to hard-coded keyword routing or naive retrieve-then-generate RAG.
-
-### 2. Signatures
-
-- API: `POST /chat/internal`
-- Backend modules:
-  - `server/src/agentTypes.ts`
-  - `server/src/agentTools.ts`
-  - `server/src/agentGuardrails.ts`
-  - `server/src/agentOrchestrator.ts`
-- Runtime entry:
-  - `runInternalAgent({ question, member, sessionId, prisma, plannerMode? })`
-- Required typed tools:
-  - `rag.retrieve`
-  - `status.query`
-  - `project.lookup`
-  - `knowledge.search`
-  - `studio.draft`
-  - `memory.search`
-  - `memory.write`
-  - `answer.direct`
-
-### 3. Contracts
-
-- `/chat/internal` remains member-token protected and must resolve sessions by `{ id: sessionId, memberId: member.id }`.
-- The route must call `runInternalAgent()` for the main answer path; it must not directly call `planAssistantAnswer()` as the internal route-level planner.
-- `generateAnswer()` remains the model composer/fallback helper and may still use its local answer plan as a low-level default.
-- Normal chat permits only `read` and `draft-write` tools.
-- `draft-write` may create or plan review-required drafts only. `studio.draft` may create `ContentDraft` rows through `getStudioPrisma()` only when the user explicitly asks for draft-like work, and created drafts must stay `REVIEW_NEEDED`, `HIDDEN`, and `aiAssistance: "agentic-workspace"`. It must not publish public content, deploy, mutate admin/member/channel/invite settings, or run external live diagnostics.
-- `admin-write` and `external-live` tools are forbidden from normal chat unless a separate UI/action and review gate is implemented.
-- `ChatMessage.meta` may store only sanitized Agent summaries:
-  - `agent`
-  - `tools`
-  - `guardrails`
-  - `retrieval`
-  - `modelChannel`
-  - `citationCount`
-  - `intent`
-  - `grounding`
-  - `fallbackReason`
-- Tool traces may contain ids, labels, permission class, status, duration, counts, short summaries, and coarse error classes only.
-- Tool trace summaries that contain secret-like shapes must be replaced with a safe redaction message instead of being truncated and persisted.
-- Tool traces may include safe artifacts such as `{ kind: "studio-draft", id, slug, title, column, status: "review-needed", visibility: "hidden", reviewRequired: true, href: "/studio?draft=<id>" }`. Legacy persisted artifacts may keep `href: "/studio"`, but new created-draft artifacts should deep-link by draft id. Artifact links must stay same-site Studio routes and must not include draft body text, Prisma payloads, review checklist internals, admin tokens, database roles, API URLs, or bearer tokens.
-- Tool traces and metadata must not contain API keys, base URLs, database URLs, sync tokens, bearer tokens, invite codes, raw prompts, raw provider responses, raw retrieved document bodies, stack traces, or private dashboards.
-- Model-driven planning may be used for real internal chat when a member model channel is configured. Smoke/eval tests must use `plannerMode: "mock"` or local deterministic paths and must not probe real providers.
-- `memory.write` remains `draft-write` and may persist only an explicitly requested, low-sensitive member memory. The planner and tool executor must both apply the shared consent/candidate helper; normal questions and memory queries must never create memory rows.
-- `memory.search` may read only the current member's ACTIVE durable memories plus the current session's bounded message summary. Durable memory content must not be copied into tool traces or `ChatMessage.meta`.
-
-### 4. Validation & Error Matrix
-
-- Missing bearer token -> `401 { error: "missing-or-invalid-token" }`.
-- Disabled member -> `403 { error: "member-disabled" }`.
-- Missing database with bearer token -> `503 { error: "database-not-configured" }`.
-- Unknown or cross-member session -> `404 { error: "session-not-found" }`.
-- Model planner unavailable, invalid, or unconfigured -> deterministic mock planner, safe `agent.planner: "mock"`, no raw planner error.
-- Tool throws -> tool trace `status: "failed"` with `errorClass: "tool_error"`; route still returns a degraded answer when possible.
-- Forbidden permission -> tool trace `status: "blocked"` with `errorClass: "policy_blocked"`; normal chat must not perform the action.
-- Sensitive answer output -> guardrail blocks final text and returns a policy-safe message with `reason: "policy_blocked"`.
-- No citations for grounded factual answer -> `guardrails.citationSufficiency: "none"` and status may be `warned` or `degraded`; do not invent facts.
-
-### 5. Good/Base/Bad Cases
-
-- Good: status question selects `status.query` plus project/RAG tools, returns public status summaries and safe trace metadata.
-- Good: project draft request selects `studio.draft` with `permission: "draft-write"` and produces a review-required plan, not a publish action.
-- Good: internal knowledge search returns internal document titles/summaries as `visibility: "internal"` citations without raw private bodies.
-- Base: no configured model provider; tools still produce a concise degraded summary and the response records fallback metadata.
-- Base: older messages with no Agent metadata still serialize as `meta: null` and load in `/assistant`.
-- Bad: `/chat/internal` reintroduces route-level keyword branching and bypasses `runInternalAgent()`.
-- Bad: a tool trace stores raw RAG chunks, provider endpoint URLs, request bodies, stack traces, or environment variable values.
-- Bad: normal chat publishes a Studio draft, changes member model channels, creates invites, or runs a production model/API diagnostic.
-
-### 6. Tests Required
-
-- `npm.cmd run server:build` after changing Agent runtime modules or `ChatResponse.meta`.
-- `npm.cmd run assistant:agent-contract` after changing LangGraph steps, Agent tool permissions, guardrails, Studio draft artifacts, or trace sanitization.
-- `npm.cmd run assistant:agent-eval` after changing planner heuristics, tool routing, Agent tool outputs, local eval fixtures, Studio draft plan-only behavior, or internal knowledge/memory tool behavior.
-- `npm.cmd run server:smoke` must assert mock planner tool selection and protected internal chat behavior.
-- `npm.cmd run assistant:service-modes-smoke` must prove public/rag/studio modes do not expose internal Agent routes.
-- `npm.cmd run assistant:rag-smoke` after changing `rag.retrieve` or scoped retrieval behavior.
-- `npm.cmd run assistant:eval` after changing retrieval, citation, or grounding behavior.
-- `npm.cmd run lint` and `npm.cmd run build` after changing frontend normalizers or `/assistant`.
-- `npm.cmd run check:ui` after changing the Agent inspector UI.
-- Run `git diff --check` and a sensitive scan over changed files before commit.
-
-### 7. Wrong vs Correct
-
-#### Wrong
-
-```ts
-const plan = planAssistantAnswer(question, 'internal')
-const context = plan.useRetrieval ? await retrieveAssistantContext(question, 'internal') : null
-const generated = await generateAnswer(question, context?.citations ?? [], 'internal')
-```
-
-This makes the route own intent branching again and turns RAG into the main flow.
-
-#### Correct
-
-```ts
-const agentResult = await runInternalAgent({
-  question,
-  member,
-  sessionId: activeSession.id,
-  prisma,
-})
-```
-
-The route owns auth/session/persistence, while the Agent runtime owns planning, typed tools, guardrails, trace sanitization, and composition.
-
-#### Wrong
-
-```ts
-trace.raw = { requestBody, providerResponse, chunks }
-```
-
-This can persist prompts, private document text, provider payloads, or endpoints in `ChatMessage.meta`.
-
-#### Correct
-
-```ts
-trace = {
-  id: 'status.query',
-  permission: 'read',
-  status: 'completed',
-  summary: '状态页快照可用：online=5, degraded=0',
-  itemCount: 5,
-}
-```
-
-The trace is actionable for the UI and safe to persist.
-
-## Scenario: LangGraph Internal Agent Orchestration
+## Scenario: Owner-Only Operator Runtime
 
 ### 1. Scope / Trigger
 
-- Trigger: adding or changing `server/src/agentGraph.ts`, `server/src/agentPlanner.ts`, `server/src/agentOrchestrator.ts`, Agent graph node names, `AgentRunMeta.steps`, or `/assistant` graph diagnostics.
-- Goal: keep the internal assistant implemented as a formal LangGraph state graph while preserving the existing `runInternalAgent()` public contract and sanitized frontend metadata.
+- Trigger: changing `/operator/*`, `server/src/agent*.ts`, Operator prompts, tools, answer metadata, owner memory, private knowledge, Studio draft-write, `/operator`, or `/operator/settings`.
+- Goal: preserve a formal LangGraph Agent workspace with deterministic permissions, owner isolation, scoped retrieval, and review-gated writes.
 
 ### 2. Signatures
 
-- Dependency: `@langchain/langgraph`.
-- Runtime entry remains:
-
-```typescript
-runInternalAgent(input: InternalAgentRunInput): Promise<InternalAgentRunResult>
-```
-
-- Orchestration modules:
-  - `server/src/agentGraph.ts`: LangGraph state annotation, graph nodes, graph compilation, graph runner.
-  - `server/src/agentPlanner.ts`: model planner adapter, deterministic planner, tool-id validation.
-  - `server/src/agentOrchestrator.ts`: thin compatibility wrapper only.
-- Graph node ids:
-  - `input_guard`
-  - `plan`
-  - `validate_plan`
-  - `execute_tools`
-  - `compose_answer`
-  - `self_check`
-  - `persist_trace`
-- Response projection:
-  - `ChatResponse.meta.agent.steps: AgentWorkflowStepId[]`.
+- API: `POST /operator/chat`.
+- Runtime entry: `runOperatorAgent()`.
+- Principal: `OperatorPrincipal` with stable owner id, verified email/name, role `OWNER`, and optional server-selected model channel.
+- UI: `/operator` and `/operator/settings`.
+- Browser facade: `/api/operator/*`.
 
 ### 3. Contracts
 
-- `POST /chat/internal` must still call `runInternalAgent()` and must not know LangGraph node internals.
-- The compiled LangGraph graph must execute the main answer path; do not reintroduce a route-level keyword planner or a hand-rolled sequential orchestrator in `agentOrchestrator.ts`.
-- Graph nodes may call model planning and answer composition helpers, but tool execution must go through `executeAgentTool()`.
-- Graph state must not store API keys, model endpoints, database URLs, bearer tokens, invite codes, raw prompts, raw provider responses, raw private document bodies, stack traces, or private dashboards.
-- LangGraph node names cannot also be state channel names. If a node is named `plan`, the state channel must use a non-conflicting name such as `agentPlan`.
-- `meta.agent.steps` should expose graph node ids, not old sequential workflow labels.
-- Frontend decoders may keep legacy step compatibility for historical messages, but new backend responses should emit graph node ids.
+- Render requests require `Authorization: Bearer <OPERATOR_SERVICE_TOKEN>` plus sanitized owner identity headers injected by the trusted facade.
+- Browser-provided authorization or owner headers are never trusted or forwarded.
+- `OperatorSession`, `OperatorMessage`, `OperatorMemory`, and `OperatorUsageLog` queries always include `ownerId`.
+- The route calls `runOperatorAgent()`; route handlers must not recreate planner logic.
+- Normal runs permit only `read` and `draft-write` tools.
+- `studio.draft` creates only `hidden + review-needed` artifacts.
+- Publishing, deployment, Git mutation, cloud mutation, credential operations, arbitrary HTTP/shell/MCP, and live diagnostics are unavailable.
+- Tool traces and persisted metadata contain only sanitized summaries, duration, status, permission, citation counts, safe model channel fields, and safe artifact links.
 
-### 4. Validation & Error Matrix
+### 4. Error Matrix
 
-- LangGraph node name equals a state channel name -> runtime graph compile error before smoke tests complete.
-- Model planner unavailable, invalid, or unconfigured -> deterministic planner result, safe planner metadata, no raw provider diagnostics.
-- Forbidden tool permission -> `executeAgentTool()` returns a blocked trace; normal chat does not perform the action.
-- Tool failure -> graph continues when possible and returns a degraded answer with low-sensitive trace metadata.
-- Sensitive input or output -> graph returns policy-safe fallback text and `guardrails.status` becomes `blocked`.
-- Missing final answer/meta due to unexpected graph failure -> wrapper returns a safe fallback `InternalAgentRunResult`.
+- Missing/mismatched service token -> `401 operator-service-auth-required`.
+- Missing sanitized identity -> `403 operator-identity-required`.
+- Email outside owner allow-list -> `403 operator-identity-not-allowed`.
+- Missing database -> `503 database-not-configured` for persistence routes.
+- Cross-owner session/memory -> `404`, never leak existence.
+- Sensitive or forbidden action -> guarded Agent result with no write.
 
-### 5. Good/Base/Bad Cases
+### 5. Good/Base/Bad
 
-- Good: `agentOrchestrator.ts` imports `runInternalAgentGraph()` and exports only `runInternalAgent()`.
-- Good: `/assistant` shows `LangGraph.js`, graph status, planner type, and graph node labels from normalized metadata.
-- Good: deterministic smoke tests use `plannerMode: "mock"` and do not call live model providers.
-- Base: old persisted messages with legacy steps still normalize safely in the frontend.
-- Bad: graph node functions query project/status/RAG data directly instead of using the typed tool registry.
-- Bad: `ChatMessage.meta` stores LangGraph raw state, raw tool payloads, prompts, chunks, endpoints, stack traces, or provider responses.
+- Good: a content audit uses read tools and returns evidence plus a proposed implementation slice.
+- Good: an explicit draft request creates a Studio artifact with `reviewRequired=true`.
+- Base: no model provider; deterministic tools and fallback composition still return a concise degraded result.
+- Bad: an Operator route accepts an email from request JSON or browser-controlled headers.
+- Bad: a trace stores raw private documents, provider URLs, prompts, tokens, stack traces, or database values.
+- Bad: the Agent registers a publish/deploy/Git/cloud tool without a separate approval design.
 
-### 6. Tests Required
+## Scenario: LangGraph Orchestration
 
-- Run `npm.cmd run server:build` after changing graph modules or Agent types.
-- Run `npm.cmd run assistant:agent-contract` after changing graph node order, `runInternalAgent()`, tool trace fields, guardrails, or Studio draft artifacts.
-- Run `npm.cmd run assistant:agent-eval` after changing deterministic planner cases, tool-routing heuristics, local Agent fixtures, or productized Agent capabilities.
-- Run `npm.cmd run server:smoke` to prove `runInternalAgent()` and protected route behavior still work.
-- Run `npm.cmd run assistant:service-modes-smoke` after changing service route boundaries or imports.
-- Run `npm.cmd run assistant:meta-check` after changing `AgentRunMeta.steps`, tool trace fields, artifacts, or frontend normalizers.
-- Run `npm.cmd run assistant:rag-smoke` after changing `rag.retrieve` execution or retrieval metadata.
-- Run `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after changing `/assistant` diagnostics.
+### Contracts
 
-### 7. Wrong vs Correct
+- The compiled graph owns the main path: input guard -> plan -> validate -> execute tools -> compose -> self-check -> persist trace.
+- Graph nodes use the typed tool registry; they do not query project/status/RAG/Studio data directly.
+- Planner output is validated against tool ids, permission, step count, and argument schemas before execution.
+- Model planning is optional. Deterministic planning remains available for tests and fallback.
+- Grounding is task-dependent: `strict`, `background`, or `none`; retrieval is not forced for every prompt.
+- `AgentRunMeta.steps` uses stable node ids and sanitized summaries so frontend replay is deterministic.
 
-#### Wrong
+### Required Tests
 
-```typescript
-const GraphState = Annotation.Root({
-  plan: Annotation<InternalAgentPlan | undefined>,
-})
-
-new StateGraph(GraphState).addNode('plan', planNode)
+```powershell
+npm.cmd run assistant:agent-contract
+npm.cmd run assistant:agent-eval
+npm.cmd run assistant:meta-check
+npm.cmd run assistant:service-modes-smoke
+npm.cmd run server:smoke
 ```
 
-LangGraph rejects this because `plan` is both a state channel and a node name.
+Tests use mock planners/providers or local fallback. Do not send live model prompts.
 
-#### Correct
+## Scenario: Owner Durable Memory
 
-```typescript
-const GraphState = Annotation.Root({
-  agentPlan: Annotation<InternalAgentPlan | undefined>,
-})
+### Contracts
 
-new StateGraph(GraphState).addNode('plan', planNode)
+- Memory writes require explicit user intent; no silent preference extraction.
+- `OperatorMemory.ownerId` is always derived from the authenticated principal.
+- `contentHash` deduplicates one owner's memory; it is never returned to the browser.
+- Sensitive content, credentials, private endpoints, tokens, and raw provider payloads are rejected.
+- API serializers omit internal ownership/hash/source fields.
+- Archive/restore accepts only `{ archived: boolean }` and is owner-scoped.
+
+### Migration
+
+- Old records are migration sources only.
+- `operator:memory-migration:check` produces a redacted candidate report.
+- `operator:memory-migration:apply` accepts only user-approved record ids.
+- Ordinary chats, invites, members, model assignments, usage records, ambiguous records, and non-`ACTIVE` memory do not migrate.
+
+## Scenario: Scoped RAG And Qdrant Reconciliation
+
+### Contracts
+
+- Public assistant uses public key/scope; Operator uses private `internal` key/scope.
+- The `internal` scope name is a retrieval boundary, not a member-product contract.
+- Sync and retrieve responses expose low-sensitive counts/status only.
+- Point ids and source checksums must be deterministic so stale Qdrant points can be deleted after a successful replacement sync.
+- Cleanup never runs before replacement points are accepted.
+- Public retrieval must never return private-scope citations.
+
+### Required Tests
+
+```powershell
+npm.cmd run assistant:rag-smoke
+npm.cmd run assistant:rag-sync-local
+npm.cmd run assistant:eval
 ```
 
-The public graph node remains `plan`, while the internal state channel avoids the reserved name collision.
+## Verification
 
-## Scenario: Member Durable Memory
+After Operator cross-layer changes:
 
-### 1. Scope / Trigger
-
-- Trigger: changing `AgentMemory`, `/chat/internal/memories`, `server/src/agentMemory.ts`, `memory.search`, `memory.write`, memory planner heuristics, or `/assistant` memory management.
-- Goal: provide useful member-level memory without silent writes, cross-member access, sensitive persistence, or raw memory content in Agent traces.
-
-### 2. Signatures
-
-- Candidate owner: `buildAgentMemoryCandidate(question)` in `server/src/agentMemory.ts`.
-- Intent check: `hasExplicitMemoryWriteIntent(question)`.
-- Member API: `GET /chat/internal/memories?includeArchived=true` and `PATCH /chat/internal/memories/:id` with `{ archived: boolean }`.
-- Tool ids remain `memory.search` and `memory.write`.
-
-### 3. Contracts
-
-- A durable write requires an explicit future-facing save instruction such as `请记住...`; ordinary chat and query-only phrases such as `你还记得吗` cannot write.
-- Planner selection is not authorization. `memory.write` must rebuild and validate the candidate immediately before persistence.
-- Memory rows are scoped by `memberId`; route ownership checks use `{ id, memberId }` and cross-member ids return `memory-not-found`.
-- Duplicate normalized content for one member reuses the existing row; saving an archived duplicate restores it.
-- Sensitive-looking content, empty content, and overlong content do not create rows.
-- `memory.search` reads ACTIVE rows for the current member and bounded current-session summaries. It does not accept another member id from the model or browser.
-- Tool traces may expose kind, action class, and counts, but not content, content hash, source message text, member id, token, or database metadata.
-- Member API serializers omit `memberId`, `sourceMessageId`, and `contentHash`.
-- Member UI supports list, refresh, archive, and restore only. It must not add a direct create form that bypasses Agent consent checks.
-
-### 4. Validation & Error Matrix
-
-- Missing token -> `401 missing-or-invalid-token`.
-- Disabled member -> `403 member-disabled`.
-- Database missing -> `503 database-not-configured`.
-- Missing or cross-member memory -> `404 memory-not-found`.
-- Missing boolean archive action -> `400 invalid-memory-action`.
-- Sensitive memory request -> blocked `memory.write`, no row created.
-- Memory endpoint unavailable in an older deployment -> `/assistant` shows a low-sensitive degraded message and chat remains usable.
-
-### 5. Tests Required
-
-- `prisma:validate` and `prisma:generate` after schema changes.
-- `assistant:agent-contract` for explicit write, dedupe, restore, query-only, ordinary-chat, sensitive-write, and trace redaction.
-- `assistant:agent-eval` for deterministic no-live planner behavior.
-- `server:smoke` for auth and missing-database route boundaries.
-- `lint`, `build`, and `check:ui` for member memory normalization and responsive UI.
-- Production migration and cross-restart persistence remain a documented manual gate.
-
-## Scenario: Qdrant Stale Point Reconciliation
-
-### 1. Scope / Trigger
-
-- Trigger: changing `server/src/ragQdrantStore.ts`, `POST /rag/v1/sync`, `/admin/knowledge/sync`, `RagSyncResponse.diagnostics`, or Qdrant cleanup tests.
-- Goal: keep authoritative vector upsert separate from best-effort stale-point reconciliation, while preserving low-sensitive diagnostics across storage, API, persistence, and admin UI layers.
-
-### 2. Signatures
-
-- RAG API: `POST /rag/v1/sync` with public or internal scoped documents.
-- Qdrant cleanup adapter: `deleteStaleScopedPoints(collection, scope, source, currentChunkIds): Promise<QdrantCleanupResult>`.
-- Persisted admin record: `InternalKnowledgeSyncRun.diagnostic` JSON, serialized through `sanitizeInternalSyncDiagnostic()`.
-- Shared response: `RagSyncResponse.diagnostics.cleanup*` in `server/src/types.ts`.
-
-### 3. Contracts
-
-- Collection creation, embedding, and current-point upsert are authoritative. A failure in these steps returns `accepted=false` through the existing fatal provider diagnostic.
-- Stale-point scroll and delete are reconciliation. When upsert succeeds but reconciliation fails, return `accepted=true`, `cleanupStatus="warning"`, and a nonzero `cleanupIssueCount`.
-- Completed reconciliation returns `cleanupStatus="completed"`, `cleanupReason="ok"`, accurate scanned/stale/deleted counts, and zero cleanup issues.
-- Cleanup scrolls the dedicated collection without a provider-side payload filter and with vectors disabled. It must apply exact `scope + source` guards locally before treating any point as stale, so another source in the same collection cannot be deleted.
-- Scroll failure must stop before delete because the stale set is incomplete. Delete failure must preserve scanned/stale/deleted counts and leave unresolved point count visible through low-sensitive diagnostics.
-- Allowed cleanup fields are `cleanupStatus`, `cleanupReason`, `cleanupProviderStep`, `cleanupErrorKind`, `cleanupHttpStatus`, `cleanupTimeoutMs`, `cleanupScannedPointCount`, `cleanupStalePointCount`, `cleanupDeletedPointCount`, and `cleanupIssueCount`.
-- Diagnostics must not contain Qdrant URL, collection names, API keys, request headers, raw responses, point payloads, vectors, document bodies, or stack traces.
-- The internal sync run may persist only the sanitized diagnostic allowlist. No Prisma migration is required for additive JSON fields.
-
-### 4. Validation & Error Matrix
-
-- Collection/embedding/upsert failure -> `accepted=false`; retain existing fatal `providerStep`, `errorKind`, HTTP status, dimension, and timeout fields.
-- Scroll non-OK, timeout, or network failure -> `accepted=true`, `cleanupStatus="warning"`, `cleanupProviderStep="qdrant_scroll_points"`; do not issue delete requests. A non-upsert HTTP 400 is `qdrant_bad_request`, not a dimension mismatch.
-- Delete non-OK, timeout, or network failure -> `accepted=true`, `cleanupStatus="warning"`, `cleanupProviderStep="qdrant_delete_points"`; report zero or partial deleted count and unresolved cleanup issues.
-- No stale points -> completed cleanup with stale/deleted count zero.
-- Stale points deleted -> completed cleanup with stale count equal to deleted count.
-
-### 5. Good/Base/Bad Cases
-
-- Good: a two-page scroll collects all scoped points, deletes obsolete IDs in batches, and reports exact counts.
-- Good: an accepted internal sync with a cleanup warning is persisted and shown as usable current vectors plus an operator warning.
-- Base: older sync records without cleanup fields continue to normalize and render through existing generic diagnostics.
-- Bad: `.catch(() => 1)` converts every reconciliation exception into an anonymous issue count.
-- Bad: cleanup failure changes an already successful upsert to `accepted=false` or exposes provider configuration to the browser.
-
-### 6. Tests Required
-
-- `npm.cmd run server:build` for shared response and adapter type safety.
-- `npm.cmd run assistant:rag-smoke` must cover forced pagination, unfiltered scroll, local source isolation, no-stale success, stale deletion success, scroll failure without delete, delete failure with unresolved points, and diagnostic secret-shape rejection.
-- `npm.cmd run server:smoke` and `npm.cmd run assistant:service-modes-smoke` must preserve route/auth/service boundaries.
-- `npm.cmd run lint`, `npm.cmd run build`, and `npm.cmd run check:ui` after admin normalizer or warning-copy changes.
-- Before production acceptance, deploy both shared-code services and run exactly one user-approved internal sync; repeated live sync is not an automated health check.
-
-### 7. Wrong vs Correct
-
-#### Wrong
-
-```typescript
-const issueCount = await deleteStaleInternalPoints(currentIds).catch(() => 1)
+```powershell
+npm.cmd run operator:facade-smoke
+npm.cmd run operator:knowledge-check
+npm.cmd run prisma:validate
+npm.cmd run prisma:generate
+npm.cmd run server:build
+npm.cmd run server:smoke
+npm.cmd run assistant:service-modes-smoke
+npm.cmd run lint
+npm.cmd run build
+npm.cmd run check:ui
+git diff --check
 ```
 
-This loses the failed provider step, HTTP status, timeout class, and reconciliation counts.
-
-#### Correct
-
-```typescript
-const cleanup = await deleteStaleInternalPoints(currentIds)
-return qdrantSyncDiagnostics(true, 'internal', sourceName, checksum, documentCount, chunkCount, cleanup.issueCount, undefined, undefined, {
-  cleanup,
-})
-```
-
-The current vectors remain accepted, while cleanup diagnostics stay actionable and low-sensitive.
+Sensitive-scan changed files for real tokens, database URLs, model/vector endpoints, Access values, private content, and local absolute paths.

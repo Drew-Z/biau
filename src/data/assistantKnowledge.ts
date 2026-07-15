@@ -137,7 +137,7 @@ export const ASSISTANT_SEARCH_KEYWORDS = [
   '后续接入',
   '低敏证据',
   '刷新全部状态',
-  '成员模型渠道',
+  '站务模型通道',
   '合同审查',
   '合同',
   '法律',
@@ -200,8 +200,8 @@ export const ASSISTANT_SEARCH_ALIASES: AssistantSearchAliasGroup[] = [
     terms: ['legal rag', '登录门禁', '公开演示凭据', '受控演示', 'demo 凭据', '公开入口'],
   },
   {
-    triggers: ['状态', '状态页', '可靠性', '健康检查', '外链', '人工 gate', '人工队列', '手动处理', '下一步', '先做什么', '醒来', '明早', '复核', '刷新全部状态', '成员模型渠道', '后续接入', '低敏证据'],
-    terms: ['项目可靠性观察', '状态页', 'health', 'synthetic', '公开入口', '监控', '人工 gate', '人工队列', '刷新全部状态', '成员模型渠道', '后续接入', '低敏证据'],
+    triggers: ['状态', '状态页', '可靠性', '健康检查', '外链', '人工 gate', '人工队列', '手动处理', '下一步', '先做什么', '醒来', '明早', '复核', '刷新 RAG 状态', '站务模型通道', '后续接入', '低敏证据'],
+    terms: ['项目可靠性观察', '状态页', 'health', 'synthetic', '公开入口', '监控', '人工 gate', '人工队列', '刷新 RAG 状态', '站务模型通道', '后续接入', '低敏证据'],
   },
   {
     triggers: ['ai daily', 'ai 日报', '日报', '首发', 'publish export', 'hidden', 'review-needed', '人工审核', '静态导出'],
@@ -241,7 +241,7 @@ const INTENT_TERMS: Record<AssistantRetrievalIntent, string[]> = {
   'site-overview': ['站点', '网站', '当前网站', '泊岸', 'biau', '能做什么', '主要展示', '关于当前'],
   'project-experience': ['项目', '案例', '作品', '展示', '体验', '看什么'],
   'demo-access': ['演示', '入口', 'demo', '试用', '登录', '注册', '凭据', '密码', '试玩', '下载'],
-  'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '人工队列', '手动', '手动处理', '下一步', '先做什么', '醒来', '明早', '复核', '刷新全部状态', '成员模型渠道', '后续接入', '低敏证据'],
+  'reliability-status': ['状态', '可靠性', '健康检查', '监控', '外链', '是否正常', '可用性', '人工 gate', '人工队列', '手动', '手动处理', '下一步', '先做什么', '醒来', '明早', '复核', '刷新 RAG 状态', '站务模型通道', '后续接入', '低敏证据'],
   'technology-architecture': ['技术', '技术栈', '架构', '实现', 'react', 'vite', 'semi', 'typescript', 'express', 'prisma', 'pgvector'],
   'blog-knowledge': ['文章', '博客', '知识', '总结', '资源', '资源分享', '栏目', '手记'],
   'private-credential': ['后台密码', '管理员密码', 'api key', 'apikey', '模型 key', 'token', '密钥', '数据库 url', 'database url'],
@@ -784,7 +784,7 @@ function buildIntentAnswerBody(intent: AssistantRetrievalIntent, titleList: stri
     return '适合先看有公开入口或受控演示路径的项目；如果入口需要登录，就以页面显示的公开 demo 凭据和状态页说明为准。'
   }
   if (intent === 'reliability-status') {
-    return '醒来后的人工队列可以先在内部助手管理台刷新全部状态并复核成员和模型渠道，再审核 Studio 草稿，之后处理 Legal RAG、ERP、Xunqiu、Pet 等需要凭据或 release 证据的 gate；公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道密钥或签名材料。'
+    return '人工队列可以先完成 BIAU Operator 的 Cloudflare Access、Render 服务变量和 owner memory 选择性迁移，再用真实站务任务验收 Studio draft-write；之后处理 Legal RAG、ERP、Xunqiu、Pet 等需要凭据或 release 证据的 gate。公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道密钥或签名材料。'
   }
   if (intent === 'technology-architecture') {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'

@@ -14,7 +14,6 @@ const targets = [
   { label: 'home', path: '/', kind: 'page', critical: true },
   { label: 'projects', path: '/projects', kind: 'page', critical: true },
   { label: 'blog', path: '/blog', kind: 'page', critical: true },
-  { label: 'assistant', path: '/assistant', kind: 'page', critical: true },
   { label: 'status', path: '/status', kind: 'page', critical: true },
   { label: 'sitemap', path: '/sitemap.xml', kind: 'sitemap', critical: false },
   { label: 'robots', path: '/robots.txt', kind: 'robots', critical: false },

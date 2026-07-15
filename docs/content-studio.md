@@ -8,9 +8,9 @@
 
 - 公开站仍然读取已审核的静态内容产物。
 - `/studio` 是内部工作台页面，不直接公开未审核数据库草稿。
-- `/studio/api/*` 在本地 `ASSISTANT_SERVICE_MODE=all`、内部助手服务
-  `internal`、以及独立内容工作台服务 `studio` 中可用；公开助手和 RAG
-  Orchestrator 服务不挂载 Studio 路由。
+- `/studio/api/*` 只在本地 `ASSISTANT_SERVICE_MODE=all` 和独立内容工作台
+  服务 `studio` 中可用；公开助手、Operator 和 RAG Orchestrator 不挂载
+  Studio API 路由。Operator 的 `studio.draft` 直接写共享 Studio 数据库。
 - 第一版认证使用 `STUDIO_ADMIN_TOKEN`，未设置时回退到 `ADMIN_TOKEN`。
 - Studio 默认使用 `STUDIO_DATABASE_URL`；未设置时才回退到 `DATABASE_URL`。
 - 模型辅助默认不启用；AI 日报来源和草稿编辑都可以先人工录入。
@@ -39,7 +39,7 @@ npm.cmd run dev
 VITE_STUDIO_API_BASE_URL=http://localhost:8787
 ```
 
-如果不设置 `VITE_STUDIO_API_BASE_URL`，前端会回退到 `VITE_INTERNAL_ASSISTANT_API_BASE_URL`，再回退到 `VITE_CHAT_API_BASE_URL`。
+如果不设置 `VITE_STUDIO_API_BASE_URL`，前端会回退到 `VITE_CHAT_API_BASE_URL`。
 
 4. 打开：
 
@@ -107,7 +107,7 @@ npm.cmd run build
 ## 仍是人工 Gate 的事项
 
 - 生产环境真实 `DATABASE_URL`。
-- 生产环境真实 `STUDIO_DATABASE_URL`，以及它是否和内部助手的 `STUDIO_DATABASE_URL` 指向同一个内容库。
+- 生产环境真实 `STUDIO_DATABASE_URL`，以及它是否和 Operator 的 `STUDIO_DATABASE_URL` 指向同一个内容库。
 - Render/Supabase 等平台上的 migration 执行。
 - 生产 `STUDIO_ADMIN_TOKEN`。
 - 第一次真实模型辅助摘要/润色任务。
@@ -128,7 +128,7 @@ npm.cmd run build
 
 ## 独立部署推荐
 
-如果要把内部助手库和内容工作台库分开，推荐新建一个 Render Web Service：
+Operator 数据库和内容工作台数据库应分开维护，Studio 使用独立 Render Web Service：
 
 ```text
 ASSISTANT_SERVICE_MODE=studio

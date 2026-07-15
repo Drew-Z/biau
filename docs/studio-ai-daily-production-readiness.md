@@ -1,84 +1,48 @@
 # Studio / AI Daily 生产就绪记录
 
-这份记录用于收口内部助手、Content Studio 和 AI 日报之间的生产边界。它只记录公开安全的配置形状、验证命令和人工 gate，不包含真实 token、数据库 URL、模型渠道或后台地址。跨项目人工队列统一记录在 [`docs/manual-gates.md`](./manual-gates.md)。
+这份记录用于收口 BIAU Operator、Content Studio 与 AI Daily 的生产边界。真实 token、数据库 URL、模型渠道和后台地址只保存在平台环境变量中；当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准。
 
 ## 当前结论
 
-- 本地安全链路已经可用：`npm.cmd run studio:smoke` 会离线验证 Studio sample export、项目详情计划、状态页计划和 AI Daily 样例草稿。
-- AI Daily 的默认生产路径是 Studio-first：来源池 -> AI Daily issue -> hidden/review-needed 内容草稿 -> 人工审核 -> Publish Export -> 静态博客数据。
-- 内部助手可以创建 Studio 草稿，但只允许 `hidden + review-needed` 的 draft-write，不会审核、导出或发布。
-- AI Daily 自动化当前只应推进到草稿/审核态；每日自动抓取来源、模型摘要、自动发布都还是后续单独任务。
+- Studio-first 流程已建立：来源池 -> AI Daily issue -> `hidden + review-needed` 草稿 -> 人工审核 -> Publish Export -> 本地/CI 静态导出。
+- BIAU Operator 可以通过 `studio.draft` 创建待审核草稿，但不能审核、导出或发布。
+- Studio API 与 Operator 使用同一个 `STUDIO_DATABASE_URL`，Operator 自己的会话/记忆数据库仍使用独立 `DATABASE_URL`。
+- AI Daily 自动抓取、自动摘要和自动发布保持关闭，直到人工来源审核与导出流程稳定。
 
-## 最新低敏验收快照
+## 服务边界
 
-- 生产 `/studio` 已完成浏览器刷新验收：Studio token 可保存并连接，页面可以刷新数据库数据。
-- 生产 Studio API 直连验收通过：health、草稿、来源、AI Daily issue 和 publish export 列表均返回 `200`。
-- 最近低敏计数：草稿 `2`，来源 `3`，AI Daily issue `1`，publish export `0`。
-- 最近可靠性套件通过：`reliability:check` 结果为 8 passed、0 failed、1 skipped；新增通过项包含公开项目外链 synthetic，跳过项仍是 Legal RAG credentialed synthetic，因为缺少本地低权限 demo 环境变量。
-- 公开发布仍未自动发生：现有 AI Daily 草稿保持 `hidden + review-needed`，需要人工审核和导出 diff 审查后才能进入公开静态内容。
-- 草稿审核路径已写入 [`Internal RAG / Studio / AI Daily 验收手册`](./internal-rag-studio-ai-daily-runbook.md)：从 `/studio` 草稿箱选择草稿，检查编辑器和公开预览，通过后创建 Publish Export，再由本地或 CI 执行静态导出。
+| 服务 | 数据库 | 责任 |
+| --- | --- | --- |
+| `biau-operator-api` | `DATABASE_URL` | owner session、message、memory、usage、站务知识。 |
+| `biau-operator-api` | `STUDIO_DATABASE_URL` | 仅用于 `hidden + review-needed` draft-write。 |
+| `biau-content-studio-api` | `STUDIO_DATABASE_URL` | 草稿、来源、review、AI Daily issue 和 Publish Export。 |
 
-## 服务与数据库边界
+两个服务的 `STUDIO_DATABASE_URL` 必须指向同一个内容库；不要把 Studio 数据库填入 Operator 的 `DATABASE_URL`。
 
-| 服务 | 主要变量 | 应指向 | 说明 |
-|---|---|---|---|
-| `biau-internal-assistant-api` | `DATABASE_URL` | 内部助手数据库 | 成员、邀请码、会话、消息、用量和成员模型渠道。 |
-| `biau-internal-assistant-api` | `STUDIO_DATABASE_URL` | 内容工作台数据库 | 让内部助手把 draft-write 写入和 Studio API 相同的内容库。 |
-| `biau-content-studio-api` | `STUDIO_DATABASE_URL` | 内容工作台数据库 | 草稿、AI Daily issue、source item、review 和 publish export。 |
-| `biau-content-studio-api` | `DATABASE_URL` | 通常不需要 | 只作为本地/简单部署 fallback；生产分库时不要依赖它。 |
-
-生产分库时，最重要的规则是：
-
-- `biau-content-studio-api` 的 `STUDIO_DATABASE_URL` 和 `biau-internal-assistant-api` 的 `STUDIO_DATABASE_URL` 必须是同一个内容工作台数据库。
-- `biau-internal-assistant-api` 的 `DATABASE_URL` 不能填成 Studio 数据库，否则成员 token、邀请码和会话会走错库。
-- 前端只配置 `VITE_STUDIO_API_BASE_URL` 指向 Studio API 服务；真实数据库连接串、admin token 和模型渠道只放服务端环境变量。
-
-## 已验证的本地命令
+## 本地验证
 
 ```powershell
 npm.cmd run studio:smoke
+npm.cmd run studio:ai-daily-brief-check
+npm.cmd run operator:knowledge-check
+npm.cmd run assistant:agent-eval
 ```
 
-最近一次本地结果：通过。该命令不会调用模型、不会抓取外部 URL、不会要求生产数据库，也不会在 `content-drafts/` 留下 smoke 草稿。
-
-`studio:smoke` 覆盖：
-
-- `studio:export -- --sample --dry-run --allow-dirty`
-- `studio:project-detail-plan -- --sample legal-rag`
-- `studio:status-plan -- --sample legal-rag`
-- `ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.json --out <system-temp>/ai-daily-smoke.md --force`
+这些命令不调用真实模型，不需要生产数据库，也不会自动公开内容。
 
 ## 生产验收顺序
 
-1. Render 上确认 `biau-content-studio-api` 使用 `ASSISTANT_SERVICE_MODE=studio`。
-2. Render 上确认 `STUDIO_DATABASE_URL` 指向内容工作台数据库。
-3. Render 上确认 `STUDIO_ADMIN_TOKEN` 已设置，且不要写进前端变量。
-4. 若内部助手需要写 Studio 草稿，确认 `biau-internal-assistant-api` 的 `STUDIO_DATABASE_URL` 与 Studio API 相同。
-5. 执行生产 migration：`npm run prisma:migrate:studio`。
-6. 用浏览器打开 `/studio`，粘贴 Studio token，检查 `/studio/api/health` 能返回低敏状态。
-7. 创建一条公开安全 source item，再创建 AI Daily issue，并在 `/studio/ai-daily/:issueId` 转为内容草稿。
-8. 确认生成的草稿是 `hidden + review-needed + aiAssistance: none`。
-9. 按验收手册中的“草稿审核路径”检查正文、来源、预览和安全边界。
-10. 人工审核通过后再创建 Publish Export，并在本地或 CI 执行 `studio:export -- --run-checks`。
+1. `biau-content-studio-api` 使用 `ASSISTANT_SERVICE_MODE=studio` 并完成 `prisma:migrate:studio`。
+2. `biau-operator-api` 使用 `ASSISTANT_SERVICE_MODE=operator`，并将 `STUDIO_DATABASE_URL` 指向同一 Studio 内容库。
+3. 在 `/studio` 保存 Studio token，确认 health、草稿、来源、AI Daily 和 export 列表可读。
+4. 通过 `/operator` 提交一个真实、公开安全的草稿任务。
+5. 确认 Operator 返回 `/studio?draft=<id>` artifact，草稿状态为 `review-needed`、可见性为 `hidden`。
+6. 在 Studio 预览、修改和人工审核；通过后创建 Publish Export。
+7. 在本地或 CI 执行 `studio:export -- --run-checks`，审查 Git diff 后再提交。
 
-## 已完成的人工 gate
+## 发布边界
 
-- Studio production migration、服务重启和基础 token 登录验收已经完成。
-- 首次真实 AI Daily issue 已进入内容草稿链路，草稿保持 hidden/review-needed，不会自动公开。
-
-## 当前仍需人工 gate
-
-- Publish Export 生成后的公开内容 diff 审核和提交。
-- Legal RAG credentialed synthetic：需要低权限 demo 凭据和 `LEGAL_RAG_API_BASE_URL` 等本地/CI 环境变量。
-- ERP 插件与商品同步：需要脱敏 fixture 或低权限演示店铺。
-- Xunqiu 后端 synthetic：需要后端公开 base URL，并且 APK 发布 gate 仍需人工批准。
-- Pet APK 公开下载：需要正式 release 包、签名、SHA-256、扫描/回归证据、版本说明和回滚说明。
-
-AI Daily 自动来源采集、定时任务、模型摘要或模型润色属于可选后续项，不阻塞首次人工审核和 Publish Export。
-
-## 不应做的事
-
-- 不把 `STUDIO_ADMIN_TOKEN`、数据库 URL、模型中转站地址或真实请求头写入仓库。
-- 不让线上 Studio 服务直接写 Git 仓库。
-- 不把 issue 或 hidden draft 自动公开到博客列表、助手知识或 sitemap。
-- 不用模型 ping / doctor live 证明渠道可用；真实模型调用必须服务于一次明确内容任务。
+- 线上 Studio 不直接写 Git 仓库。
+- hidden draft、issue 和未审核 source 不进入公开博客、公开助手知识或 sitemap。
+- AI Daily 必须包含具体来源、发布日期、事实摘要和逐条影响判断，不能把来源主页或流程说明当日报正文。
+- 模型渠道只能用真实内容任务验收，禁止测活 prompt。

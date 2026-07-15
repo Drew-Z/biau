@@ -416,7 +416,7 @@
       "Refusal Policy",
       "RAG Eval Set"
     ],
-    "projectExamples": ["BIAU Port 公开助手", "内部助手", "RAG Orchestrator"],
+    "projectExamples": ["BIAU Port 公开助手", "BIAU Operator", "RAG Orchestrator"],
     "publicAngle": "解释为什么泊岸助手先选择 Agentic Hybrid RAG + scoped RAG Orchestrator + Qdrant，而不是一开始就引入重图数据库。",
     "evidenceSources": [
       "https://arxiv.org/html/2501.09136v4",
@@ -438,7 +438,7 @@
     "safeFacts": [
       "截至本轮 2026-07-04 smart-search 调研，前沿 RAG 更像多层控制系统，不是单次 top-k 检索。",
       "Agentic RAG、Adaptive-RAG、Self-RAG、CRAG、Contextual Retrieval、Qdrant hybrid queries 和 GraphRAG 都支持本文的分层判断。",
-      "当前泊岸助手代码已经包含公开/内部助手服务边界、RAG Orchestrator、Qdrant adapter、本地 fallback、grounding 路由、敏感信息拒答和确定性自检。",
+      "当前泊岸助手代码已经包含公开助手/BIAU Operator 服务边界、RAG Orchestrator、Qdrant adapter、本地 fallback、grounding 路由、敏感信息拒答和确定性自检。",
       "当前实现应描述为第一条生产切片，不应描述为完整最终形态。"
     ],
     "uncertainFacts": [

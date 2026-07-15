@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client'
 import { AGENT_GRAPH_STEPS } from '../src/agentGraph.js'
-import { runInternalAgent } from '../src/agentOrchestrator.js'
+import { runOperatorAgent } from '../src/agentOrchestrator.js'
 import { env } from '../src/env.js'
 import type { AgentGraphNodeId, AgentToolId, AgentToolTrace } from '../src/types.js'
 
@@ -51,7 +51,7 @@ const evalCases: AgentEvalCase[] = [
   },
   {
     id: 'planning-memory',
-    question: '内部助手下一步怎么做？请结合当前会话历史给我一个推进计划。',
+    question: '泊岸站务下一步怎么做？请结合当前会话历史给我一个推进计划。',
     expectedTools: ['knowledge.search', 'memory.search'],
     expectedIntent: 'planning',
     expectedGrounding: 'background',
@@ -75,7 +75,7 @@ const evalCases: AgentEvalCase[] = [
 
 const memoryRows: Array<{
   id: string
-  memberId: string
+  ownerId: string
   sessionId: string | null
   sourceMessageId: string | null
   kind: 'PREFERENCE' | 'PROJECT' | 'WORKFLOW' | 'CONTEXT'
@@ -106,12 +106,12 @@ const mockAgentPrisma = {
       },
     ],
   },
-  chatMessage: {
+  operatorMessage: {
     findMany: async () => [
       {
         id: 'message-1',
         role: 'USER',
-        content: '昨天已经确认普通成员只能 read 和 draft-write。',
+        content: '昨天已经确认站务运行只允许 read 和 draft-write。',
         createdAt: new Date(0),
       },
       {
@@ -122,12 +122,12 @@ const mockAgentPrisma = {
       },
     ],
   },
-  agentMemory: {
-    findMany: async ({ where }: { where: { memberId: string; status: string } }) =>
-      memoryRows.filter((row) => row.memberId === where.memberId && row.status === where.status),
-    findUnique: async ({ where }: { where: { memberId_contentHash: { memberId: string; contentHash: string } } }) =>
+  operatorMemory: {
+    findMany: async ({ where }: { where: { ownerId: string; status: string } }) =>
+      memoryRows.filter((row) => row.ownerId === where.ownerId && row.status === where.status),
+    findUnique: async ({ where }: { where: { ownerId_contentHash: { ownerId: string; contentHash: string } } }) =>
       memoryRows.find(
-        (row) => row.memberId === where.memberId_contentHash.memberId && row.contentHash === where.memberId_contentHash.contentHash,
+        (row) => row.ownerId === where.ownerId_contentHash.ownerId && row.contentHash === where.ownerId_contentHash.contentHash,
       ) ?? null,
     create: async ({ data }: { data: Omit<(typeof memoryRows)[number], 'id' | 'status' | 'archivedAt' | 'createdAt' | 'updatedAt'> }) => {
       const now = new Date()
@@ -225,10 +225,10 @@ function assertNoSensitiveShape(label: string, value: unknown) {
 
 async function runEvalCase(testCase: AgentEvalCase) {
   const memoryCountBefore = memoryRows.length
-  const member = { id: 'eval-member', name: 'Eval Member', role: 'MEMBER' as const, modelChannelId: null }
-  const result = await runInternalAgent({
+  const operator = { id: 'site-owner', name: 'Eval Owner', role: 'OWNER' as const, modelChannelId: null }
+  const result = await runOperatorAgent({
     question: testCase.question,
-    member,
+    operator,
     sessionId: `eval-${testCase.id}`,
     prisma: mockAgentPrisma,
     plannerMode: 'mock',
@@ -247,7 +247,7 @@ async function runEvalCase(testCase: AgentEvalCase) {
   }
   assert(
     result.meta.tools.every((tool) => tool.permission === 'read' || tool.permission === 'draft-write'),
-    `${testCase.id}: normal member chat must not use admin/live permissions`,
+    `${testCase.id}: normal operator chat must not use admin/live permissions`,
   )
 
   if (testCase.requireInternalCitation) {
@@ -282,7 +282,7 @@ async function runEvalWorkbench() {
   for (const testCase of evalCases) {
     await runEvalCase(testCase)
   }
-  console.log(`Internal assistant agent eval passed: ${evalCases.length} cases`)
+  console.log(`BIAU Operator agent eval passed: ${evalCases.length} cases`)
 }
 
 const snapshot = snapshotRuntimeEnv()

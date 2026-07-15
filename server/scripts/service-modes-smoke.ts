@@ -20,6 +20,11 @@ interface EnvSnapshot {
   qdrantApiKey: string
   qdrantPublicCollection: string
   qdrantInternalCollection: string
+  operatorServiceToken: string
+  operatorOwnerId: string
+  operatorOwnerEmails: string[]
+  operatorDisplayName: string
+  operatorModelChannelId: string | null
 }
 
 let nextServicePort = 9577
@@ -62,6 +67,11 @@ function snapshotEnv(): EnvSnapshot {
     qdrantApiKey: env.qdrantApiKey,
     qdrantPublicCollection: env.qdrantPublicCollection,
     qdrantInternalCollection: env.qdrantInternalCollection,
+    operatorServiceToken: env.operatorServiceToken,
+    operatorOwnerId: env.operatorOwnerId,
+    operatorOwnerEmails: [...env.operatorOwnerEmails],
+    operatorDisplayName: env.operatorDisplayName,
+    operatorModelChannelId: env.operatorModelChannelId,
   }
 }
 
@@ -82,6 +92,11 @@ function restoreEnv(snapshot: EnvSnapshot) {
   env.qdrantApiKey = snapshot.qdrantApiKey
   env.qdrantPublicCollection = snapshot.qdrantPublicCollection
   env.qdrantInternalCollection = snapshot.qdrantInternalCollection
+  env.operatorServiceToken = snapshot.operatorServiceToken
+  env.operatorOwnerId = snapshot.operatorOwnerId
+  env.operatorOwnerEmails = [...snapshot.operatorOwnerEmails]
+  env.operatorDisplayName = snapshot.operatorDisplayName
+  env.operatorModelChannelId = snapshot.operatorModelChannelId
 }
 
 async function withService(mode: AssistantServiceMode, run: (base: string) => Promise<void>) {
@@ -101,6 +116,11 @@ async function withService(mode: AssistantServiceMode, run: (base: string) => Pr
   env.qdrantApiKey = ''
   env.qdrantPublicCollection = 'biau_public_chunks'
   env.qdrantInternalCollection = 'biau_internal_chunks'
+  env.operatorServiceToken = 'operator-service-smoke-token'
+  env.operatorOwnerId = 'site-owner'
+  env.operatorOwnerEmails = ['owner@example.invalid']
+  env.operatorDisplayName = 'Smoke Owner'
+  env.operatorModelChannelId = null
 
   const port = await findAvailablePort(nextServicePort)
   nextServicePort = port + 20
@@ -130,6 +150,13 @@ async function postJson<T>(url: string, body: unknown, token?: string) {
   return { response, payload: (await response.json().catch(() => null)) as T | null }
 }
 
+const operatorHeaders = {
+  Authorization: 'Bearer operator-service-smoke-token',
+  'X-Biau-Operator-Id': 'site-owner',
+  'X-Biau-Operator-Email': 'owner@example.invalid',
+  'X-Biau-Operator-Name': 'Smoke Owner',
+}
+
 const snapshot = snapshotEnv()
 
 try {
@@ -140,70 +167,56 @@ try {
     const publicChat = await postJson<{ answer?: string }>(`${base}/chat/public`, { message: 'RAG 项目' })
     if (!publicChat.response.ok || !publicChat.payload?.answer) throw new Error('public mode should expose public chat')
 
-    const internalChat = await postJson(`${base}/chat/internal`, { message: '内部助手' })
-    if (internalChat.response.status !== 404) throw new Error(`public mode should not expose internal chat, got ${internalChat.response.status}`)
-
-    const internalSessions = await fetch(`${base}/chat/internal/sessions`)
-    if (internalSessions.status !== 404) {
-      throw new Error(`public mode should not expose internal sessions, got ${internalSessions.status}`)
-    }
-
-    const adminInvites = await fetch(`${base}/admin/invites`)
-    if (adminInvites.status !== 404) {
-      throw new Error(`public mode should not expose admin invite routes, got ${adminInvites.status}`)
-    }
-
-    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
-    if (adminKnowledge.status !== 404) {
-      throw new Error(`public mode should not expose admin knowledge routes, got ${adminKnowledge.status}`)
-    }
-
-    const adminUsage = await fetch(`${base}/admin/usage`)
-    if (adminUsage.status !== 404) {
-      throw new Error(`public mode should not expose admin usage routes, got ${adminUsage.status}`)
-    }
-
-    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
-    if (adminRagStatus.status !== 404) {
-      throw new Error(`public mode should not expose admin rag routes, got ${adminRagStatus.status}`)
-    }
+    const operatorMe = await fetch(`${base}/operator/me`, { headers: operatorHeaders })
+    if (operatorMe.status !== 404) throw new Error(`public mode should not expose operator routes, got ${operatorMe.status}`)
 
     const ragHealth = await fetch(`${base}/rag/health`)
     if (ragHealth.status !== 404) throw new Error(`public mode should not expose /rag, got ${ragHealth.status}`)
   })
 
-  await withService('internal', async (base) => {
+  await withService('operator', async (base) => {
     const health = await getJson<{ serviceMode?: string }>(`${base}/health`)
-    if (!health.response.ok || health.payload?.serviceMode !== 'internal') throw new Error('internal mode health is invalid')
+    if (!health.response.ok || health.payload?.serviceMode !== 'operator') throw new Error('operator mode health is invalid')
 
     const publicChat = await postJson(`${base}/chat/public`, { message: 'RAG 项目' })
-    if (publicChat.response.status !== 404) throw new Error(`internal mode should not expose public chat, got ${publicChat.response.status}`)
+    if (publicChat.response.status !== 404) throw new Error(`operator mode should not expose public chat, got ${publicChat.response.status}`)
 
-    const internalChat = await postJson(`${base}/chat/internal`, { message: '内部助手' })
-    if (internalChat.response.status !== 401) throw new Error(`internal mode should require auth, got ${internalChat.response.status}`)
+    const missingAuth = await postJson(`${base}/operator/chat`, { message: '站务任务' })
+    if (missingAuth.response.status !== 401) throw new Error(`operator mode should require service auth, got ${missingAuth.response.status}`)
 
-    const internalSessions = await fetch(`${base}/chat/internal/sessions`)
-    if (internalSessions.status !== 401) {
-      throw new Error(`internal mode should expose protected internal sessions, got ${internalSessions.status}`)
+    const missingIdentity = await fetch(`${base}/operator/me`, {
+      headers: { Authorization: 'Bearer operator-service-smoke-token' },
+    })
+    if (missingIdentity.status !== 403) {
+      throw new Error(`operator mode should require sanitized owner identity, got ${missingIdentity.status}`)
     }
 
-    const adminSummary = await fetch(`${base}/admin/summary`)
-    if (adminSummary.status !== 401) throw new Error(`internal mode should expose protected admin routes, got ${adminSummary.status}`)
+    const operatorMe = await fetch(`${base}/operator/me`, { headers: operatorHeaders })
+    if (!operatorMe.ok) throw new Error(`operator mode owner identity failed: ${operatorMe.status}`)
 
-    const adminInvites = await fetch(`${base}/admin/invites`)
-    if (adminInvites.status !== 401) throw new Error(`internal mode should expose protected admin invite routes, got ${adminInvites.status}`)
+    const operatorSessions = await fetch(`${base}/operator/sessions`, { headers: operatorHeaders })
+    if (operatorSessions.status !== 503) {
+      throw new Error(`operator sessions should report missing database, got ${operatorSessions.status}`)
+    }
 
-    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
-    if (adminKnowledge.status !== 401) throw new Error(`internal mode should expose protected admin knowledge routes, got ${adminKnowledge.status}`)
+    const legacyInternalChat = await postJson(`${base}/chat/internal`, { message: '旧内部助手' })
+    if (legacyInternalChat.response.status !== 404) {
+      throw new Error(`operator mode must not expose legacy internal chat, got ${legacyInternalChat.response.status}`)
+    }
 
-    const adminUsage = await fetch(`${base}/admin/usage`)
-    if (adminUsage.status !== 401) throw new Error(`internal mode should expose protected admin usage routes, got ${adminUsage.status}`)
+    const legacyInviteRedeem = await postJson(`${base}/auth/redeem-invite`, { code: 'legacy' })
+    if (legacyInviteRedeem.response.status !== 404) {
+      throw new Error(`operator mode must not expose invite redemption, got ${legacyInviteRedeem.response.status}`)
+    }
 
-    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
-    if (adminRagStatus.status !== 401) throw new Error(`internal mode should expose protected admin rag routes, got ${adminRagStatus.status}`)
+    const legacyAdmin = await fetch(`${base}/admin/invites`)
+    if (legacyAdmin.status !== 404) throw new Error(`operator mode must not expose legacy admin routes, got ${legacyAdmin.status}`)
 
     const ragHealth = await fetch(`${base}/rag/health`)
-    if (ragHealth.status !== 404) throw new Error(`internal mode should not expose /rag, got ${ragHealth.status}`)
+    if (ragHealth.status !== 404) throw new Error(`operator mode should not expose /rag, got ${ragHealth.status}`)
+
+    const studioHealth = await fetch(`${base}/studio/api/health`)
+    if (studioHealth.status !== 404) throw new Error(`operator mode should not expose Studio API routes, got ${studioHealth.status}`)
   })
 
   await withService('rag', async (base) => {
@@ -215,30 +228,8 @@ try {
     const publicChat = await postJson(`${base}/chat/public`, { message: 'RAG 项目' })
     if (publicChat.response.status !== 404) throw new Error(`rag mode should not expose chat, got ${publicChat.response.status}`)
 
-    const internalSessions = await fetch(`${base}/chat/internal/sessions`)
-    if (internalSessions.status !== 404) {
-      throw new Error(`rag mode should not expose internal sessions, got ${internalSessions.status}`)
-    }
-
-    const adminInvites = await fetch(`${base}/admin/invites`)
-    if (adminInvites.status !== 404) {
-      throw new Error(`rag mode should not expose admin invite routes, got ${adminInvites.status}`)
-    }
-
-    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
-    if (adminKnowledge.status !== 404) {
-      throw new Error(`rag mode should not expose admin knowledge routes, got ${adminKnowledge.status}`)
-    }
-
-    const adminUsage = await fetch(`${base}/admin/usage`)
-    if (adminUsage.status !== 404) {
-      throw new Error(`rag mode should not expose admin usage routes, got ${adminUsage.status}`)
-    }
-
-    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
-    if (adminRagStatus.status !== 404) {
-      throw new Error(`rag mode should not expose admin rag routes, got ${adminRagStatus.status}`)
-    }
+    const operatorMe = await fetch(`${base}/operator/me`, { headers: operatorHeaders })
+    if (operatorMe.status !== 404) throw new Error(`rag mode should not expose operator routes, got ${operatorMe.status}`)
 
     const unauthorizedRetrieve = await postJson(`${base}/v1/retrieve`, { query: 'RAG 项目', scope: 'public' })
     if (unauthorizedRetrieve.response.status !== 401) throw new Error(`rag mode should require retrieve key, got ${unauthorizedRetrieve.response.status}`)
@@ -282,33 +273,8 @@ try {
     const publicChat = await postJson(`${base}/chat/public`, { message: 'RAG 项目' })
     if (publicChat.response.status !== 404) throw new Error(`studio mode should not expose public chat, got ${publicChat.response.status}`)
 
-    const internalChat = await postJson(`${base}/chat/internal`, { message: '内部助手' })
-    if (internalChat.response.status !== 404) throw new Error(`studio mode should not expose internal chat, got ${internalChat.response.status}`)
-
-    const internalSessions = await fetch(`${base}/chat/internal/sessions`)
-    if (internalSessions.status !== 404) {
-      throw new Error(`studio mode should not expose internal sessions, got ${internalSessions.status}`)
-    }
-
-    const adminInvites = await fetch(`${base}/admin/invites`)
-    if (adminInvites.status !== 404) {
-      throw new Error(`studio mode should not expose admin invite routes, got ${adminInvites.status}`)
-    }
-
-    const adminKnowledge = await fetch(`${base}/admin/knowledge-documents`)
-    if (adminKnowledge.status !== 404) {
-      throw new Error(`studio mode should not expose admin knowledge routes, got ${adminKnowledge.status}`)
-    }
-
-    const adminUsage = await fetch(`${base}/admin/usage`)
-    if (adminUsage.status !== 404) {
-      throw new Error(`studio mode should not expose admin usage routes, got ${adminUsage.status}`)
-    }
-
-    const adminRagStatus = await fetch(`${base}/admin/rag/status`)
-    if (adminRagStatus.status !== 404) {
-      throw new Error(`studio mode should not expose admin rag routes, got ${adminRagStatus.status}`)
-    }
+    const operatorMe = await fetch(`${base}/operator/me`, { headers: operatorHeaders })
+    if (operatorMe.status !== 404) throw new Error(`studio mode should not expose operator routes, got ${operatorMe.status}`)
 
     const ragHealth = await fetch(`${base}/rag/health`)
     if (ragHealth.status !== 404) throw new Error(`studio mode should not expose /rag, got ${ragHealth.status}`)
@@ -326,7 +292,7 @@ try {
     }
   })
 
-  console.log('Assistant service mode smoke passed')
+  console.log('Assistant service mode smoke passed with owner-only Operator isolation')
 } finally {
   restoreEnv(snapshot)
 }

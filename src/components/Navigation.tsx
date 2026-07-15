@@ -1,4 +1,4 @@
-import { Activity, Bot, FolderKanban, Home, Library } from 'lucide-react'
+import { Activity, FolderKanban, Home, Library } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BiauPortMark } from './BiauPortMark'
@@ -39,7 +39,6 @@ const navItems: NavItem[] = [
     icon: Library,
   },
   { to: '/status', label: { en: 'STATUS', zh: '状态' }, icon: Activity },
-  { to: '/assistant', label: { en: 'ASSISTANT', zh: '助手' }, icon: Bot },
 ]
 
 const brandTitle: Record<SiteLanguage, string> = { zh: '泊岸', en: 'BIAU PORT' }

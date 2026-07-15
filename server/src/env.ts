@@ -28,6 +28,7 @@ const assistantRagApiKey = readFirstEnv('ASSISTANT_RAG_API_KEY')
 const assistantRagTimeoutMs = readPositiveInteger(process.env.ASSISTANT_RAG_TIMEOUT_MS, 3000)
 const assistantServiceMode = readServiceMode(process.env.ASSISTANT_SERVICE_MODE)
 const adminToken = process.env.ADMIN_TOKEN?.trim() ?? ''
+const operatorOwnerEmails = readCsv(process.env.OPERATOR_OWNER_EMAILS)
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
@@ -49,6 +50,11 @@ export const env = {
   openaiModel: process.env.OPENAI_MODEL?.trim() || assistantModelName,
   adminToken,
   studioAdminToken: process.env.STUDIO_ADMIN_TOKEN?.trim() || adminToken,
+  operatorServiceToken: process.env.OPERATOR_SERVICE_TOKEN?.trim() ?? '',
+  operatorOwnerId: process.env.OPERATOR_OWNER_ID?.trim() || 'site-owner',
+  operatorDisplayName: process.env.OPERATOR_DISPLAY_NAME?.trim() || '站长',
+  operatorOwnerEmails,
+  operatorModelChannelId: process.env.OPERATOR_MODEL_CHANNEL_ID?.trim().toLowerCase() || null,
   metricsEnabled: readBoolean(process.env.METRICS_ENABLED),
   ragStoreProvider: readFirstEnv('RAG_STORE_PROVIDER') || 'local',
   ragDatabaseUrl: readFirstEnv('RAG_DATABASE_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DB_URL'),
@@ -90,8 +96,12 @@ function readBoolean(value: string | undefined) {
 
 function readServiceMode(value: string | undefined): AssistantServiceMode {
   const normalized = value?.trim().toLowerCase()
-  if (normalized === 'public' || normalized === 'internal' || normalized === 'rag' || normalized === 'studio') return normalized
+  if (normalized === 'public' || normalized === 'operator' || normalized === 'rag' || normalized === 'studio') return normalized
   return 'all'
+}
+
+function readCsv(value: string | undefined) {
+  return Array.from(new Set((value ?? '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)))
 }
 
 function readPositiveInteger(value: string | undefined, fallback: number) {

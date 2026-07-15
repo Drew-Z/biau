@@ -11,15 +11,6 @@ import {
 import { getProjectAssistantSummary, getProjectAssistantTags, projects } from './portfolio'
 
 export type AssistantVisibility = 'public' | 'internal'
-export type AssistantMemberRole = 'MEMBER' | 'ADMIN'
-export type AssistantMemberStatus = 'ACTIVE' | 'DISABLED'
-
-export const ASSISTANT_STORAGE_KEYS = {
-  memberToken: 'biau-assistant-member-token',
-  member: 'biau-assistant-member',
-  sessionId: 'biau-assistant-session-id',
-  adminToken: 'biau-assistant-admin-token',
-} as const
 
 export interface AssistantKnowledgeItem {
   id: string
@@ -170,19 +161,6 @@ export interface AssistantSuggestion {
   prompt: string
 }
 
-export interface AssistantMemberProfile {
-  id: string
-  name: string
-  role: AssistantMemberRole
-  status?: AssistantMemberStatus
-  dailyQuota: number
-  modelChannelId?: string | null
-  modelChannel?: AssistantModelChannelSummary
-  disabledAt?: string | null
-  lastSeenAt?: string | null
-  createdAt?: string
-}
-
 export interface AssistantModelChannelSummary {
   id: string
   label: string
@@ -193,22 +171,8 @@ export interface AssistantModelChannelSummary {
   isActive: boolean
 }
 
-export type AssistantInviteStatus = 'OPEN' | 'EXHAUSTED' | 'EXPIRED' | 'REVOKED'
 export type AssistantInternalKnowledgeStatus = 'DRAFT' | 'REVIEWED' | 'ACTIVE' | 'ARCHIVED'
 export type AssistantInternalKnowledgeSyncStatus = 'STARTED' | 'COMPLETED' | 'FAILED' | 'SKIPPED'
-
-export interface AssistantInviteSummary {
-  id: string
-  label: string
-  role: AssistantMemberRole
-  dailyQuota: number
-  maxUses: number
-  usedCount: number
-  status: AssistantInviteStatus
-  expiresAt?: string | null
-  revokedAt?: string | null
-  createdAt?: string
-}
 
 export interface AssistantInternalKnowledgeDocument {
   id: string
@@ -302,14 +266,6 @@ export interface AssistantUsageSummary {
   tokensIn: number
   tokensOut: number
   createdAt: string
-  member?: {
-    id: string
-    name: string
-    role: AssistantMemberRole
-    status?: AssistantMemberStatus
-    modelChannelId?: string | null
-    modelChannel?: AssistantModelChannelSummary
-  } | null
 }
 
 export const publicAssistantSuggestions: AssistantSuggestion[] = [
@@ -332,24 +288,6 @@ export const publicAssistantSuggestions: AssistantSuggestion[] = [
     id: 'manual-gates',
     label: '人工 gate 怎么处理',
     prompt: '状态页里的人工 gate 和后续接入应该怎么处理？哪些信息不能公开？',
-  },
-]
-
-export const internalAssistantSuggestions: AssistantSuggestion[] = [
-  {
-    id: 'architecture',
-    label: '做架构梳理',
-    prompt: '根据当前站点公开内容，帮我整理一个新的 AI 应用项目展示页结构。',
-  },
-  {
-    id: 'content-plan',
-    label: '出内容提纲',
-    prompt: '基于现有博客内容，给我生成一篇关于多模型路由策略的文章提纲。',
-  },
-  {
-    id: 'delivery-check',
-    label: '交付检查',
-    prompt: '如果我要交付一个产品化内部 Agent 工作台，这个站里的哪些文章和项目说明最值得先读？',
   },
 ]
 
@@ -385,9 +323,9 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
     id: 'site:status',
     title: '项目可靠性观察',
     summary:
-      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。它会把人工 gate 和后续接入拆成公开安全的下一步，例如低权限 demo 凭据、脱敏 fixture、后端 synthetic base URL、APK release 审批、访问分析或观测平台选择。当前醒来后的推荐人工队列是：先在内部助手管理台点击“刷新全部状态”并复核成员列表、成员状态和成员模型渠道；再审核 Studio hidden / review-needed 草稿和 Publish Export；然后准备 Legal RAG 低权限 demo 凭据、ERP demo 账号或脱敏同步 fixture、Xunqiu / Pet 正式 release 证据；最后决定访问分析与工程观测平台。处理这些事项时应在平台控制台、本机环境或受控演示账号中填写真实值；公开站点和助手只记录低敏证据，例如成功状态、检查命令、HTTP 状态、计数、时间、错误类别，以及模型渠道的 channel id/label、provider、model、configured / active 状态。不要把 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名文件路径、真实后台地址或生产敏感指标写进文章、状态页、聊天或仓库。当前主站会记录 ERP bootstrap 注册策略、各站点可见品牌外壳/标题/favicon/归属提示对齐、Pet APK 继续关闭等公开安全事实。',
+      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。当前人工队列优先完成 BIAU Operator 的 Cloudflare Access、Render 服务变量、owner memory 选择性迁移和真实站务 draft-write 验收，再处理 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 证据。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。',
     href: '/status',
-    tags: ['状态页', '可靠性观察', '人工 gate', '低敏证据', '公开入口', 'health check', 'synthetic', '注册', '品牌统一', '刷新全部状态', '成员模型渠道'],
+    tags: ['状态页', '可靠性观察', '人工 gate', '低敏证据', '公开入口', 'health check', 'synthetic', 'Cloudflare Access', 'BIAU Operator', 'release gate'],
     visibility: 'public',
   },
   {
@@ -426,14 +364,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isAssistantVisibility(value: unknown): value is AssistantVisibility {
   return value === 'public' || value === 'internal'
-}
-
-function isAssistantMemberRole(value: unknown): value is AssistantMemberRole {
-  return value === 'MEMBER' || value === 'ADMIN'
-}
-
-function isAssistantMemberStatus(value: unknown): value is AssistantMemberStatus {
-  return value === 'ACTIVE' || value === 'DISABLED'
 }
 
 export function normalizeAssistantKnowledgeItem(value: unknown): AssistantKnowledgeItem | null {
@@ -809,42 +739,6 @@ function isAssistantMemoryStatus(value: unknown): value is AssistantMemoryStatus
   return value === 'ACTIVE' || value === 'ARCHIVED'
 }
 
-export function normalizeAssistantInvite(value: unknown): AssistantInviteSummary | null {
-  if (!isRecord(value)) return null
-  const { id, label, role, dailyQuota, maxUses, usedCount, status, expiresAt, revokedAt, createdAt } = value
-  if (
-    typeof id !== 'string' ||
-    typeof label !== 'string' ||
-    (role !== 'MEMBER' && role !== 'ADMIN') ||
-    typeof dailyQuota !== 'number' ||
-    typeof maxUses !== 'number' ||
-    typeof usedCount !== 'number' ||
-    (status !== 'OPEN' && status !== 'EXHAUSTED' && status !== 'EXPIRED' && status !== 'REVOKED')
-  ) {
-    return null
-  }
-
-  return {
-    id,
-    label,
-    role,
-    dailyQuota,
-    maxUses,
-    usedCount,
-    status,
-    expiresAt: typeof expiresAt === 'string' || expiresAt === null ? expiresAt : undefined,
-    revokedAt: typeof revokedAt === 'string' || revokedAt === null ? revokedAt : undefined,
-    createdAt: typeof createdAt === 'string' ? createdAt : undefined,
-  }
-}
-
-export function normalizeAssistantInvites(value: unknown): AssistantInviteSummary[] {
-  if (!Array.isArray(value)) return []
-  return value
-    .map((item) => normalizeAssistantInvite(item))
-    .filter((item): item is AssistantInviteSummary => item !== null)
-}
-
 export function normalizeAssistantInternalKnowledgeDocument(value: unknown): AssistantInternalKnowledgeDocument | null {
   if (!isRecord(value)) return null
   const {
@@ -1119,7 +1013,7 @@ function normalizeAssistantRagCollection(value: unknown): AssistantRagCollection
 
 export function normalizeAssistantUsageSummary(value: unknown): AssistantUsageSummary | null {
   if (!isRecord(value)) return null
-  const { id, scope, model, modelChannelId, modelChannel, tokensIn, tokensOut, createdAt, member } = value
+  const { id, scope, model, modelChannelId, modelChannel, tokensIn, tokensOut, createdAt } = value
   if (
     typeof id !== 'string' ||
     typeof scope !== 'string' ||
@@ -1140,7 +1034,6 @@ export function normalizeAssistantUsageSummary(value: unknown): AssistantUsageSu
     tokensIn,
     tokensOut,
     createdAt,
-    member: normalizeAssistantUsageMember(member),
   }
 }
 
@@ -1149,21 +1042,6 @@ export function normalizeAssistantUsageSummaries(value: unknown): AssistantUsage
   return value
     .map((item) => normalizeAssistantUsageSummary(item))
     .filter((item): item is AssistantUsageSummary => item !== null)
-}
-
-function normalizeAssistantUsageMember(value: unknown): AssistantUsageSummary['member'] {
-  if (value === null || value === undefined) return null
-  if (!isRecord(value)) return null
-  const { id, name, role, status, modelChannelId, modelChannel } = value
-  if (typeof id !== 'string' || typeof name !== 'string' || !isAssistantMemberRole(role)) return null
-  return {
-    id,
-    name,
-    role,
-    status: isAssistantMemberStatus(status) ? status : undefined,
-    modelChannelId: typeof modelChannelId === 'string' || modelChannelId === null ? modelChannelId : undefined,
-    modelChannel: normalizeAssistantModelChannel(modelChannel) ?? undefined,
-  }
 }
 
 function normalizeAssistantSyncDiagnostic(value: unknown): Record<string, string | number | boolean> | null {
@@ -1211,31 +1089,4 @@ export function normalizeAssistantModelChannels(value: unknown): AssistantModelC
   return value
     .map((item) => normalizeAssistantModelChannel(item))
     .filter((item): item is AssistantModelChannelSummary => item !== null)
-}
-
-export function normalizeAssistantMember(value: unknown): AssistantMemberProfile | null {
-  if (!isRecord(value)) return null
-  const { id, name, role, status, dailyQuota, modelChannelId, modelChannel, disabledAt, lastSeenAt, createdAt } = value
-  if (
-    typeof id !== 'string' ||
-    typeof name !== 'string' ||
-    !isAssistantMemberRole(role) ||
-    typeof dailyQuota !== 'number' ||
-    !Number.isFinite(dailyQuota)
-  ) {
-    return null
-  }
-
-  return {
-    id,
-    name,
-    role,
-    status: isAssistantMemberStatus(status) ? status : undefined,
-    dailyQuota,
-    modelChannelId: typeof modelChannelId === 'string' || modelChannelId === null ? modelChannelId : undefined,
-    modelChannel: normalizeAssistantModelChannel(modelChannel) ?? undefined,
-    disabledAt: typeof disabledAt === 'string' || disabledAt === null ? disabledAt : undefined,
-    lastSeenAt: typeof lastSeenAt === 'string' || lastSeenAt === null ? lastSeenAt : undefined,
-    createdAt: typeof createdAt === 'string' ? createdAt : undefined,
-  }
 }
