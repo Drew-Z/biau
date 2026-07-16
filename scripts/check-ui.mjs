@@ -1091,8 +1091,11 @@ for (const viewport of viewports) {
       const nextReviewLabel = await page.getByText('下一篇待审核').first().isVisible().catch(() => false)
       const hiddenReviewMetric = await page.getByText('Hidden 待审').isVisible().catch(() => false)
       const nextReviewButton = page.getByRole('button', { name: '打开下一篇待审核' })
+      const nextNeedsChangesButton = page.getByRole('button', { name: '打开下一篇待修改' })
       const nextReviewButtonVisible = await nextReviewButton.isVisible().catch(() => false)
       const nextReviewButtonDisabled = await nextReviewButton.isDisabled().catch(() => false)
+      const nextNeedsChangesButtonVisible = await nextNeedsChangesButton.isVisible().catch(() => false)
+      const nextNeedsChangesButtonDisabled = await nextNeedsChangesButton.isDisabled().catch(() => false)
 
       if (!reviewQueueSummary) {
         failures.push(`${viewport.name} ${route.path}: expected visible studio review queue summary`)
@@ -1100,22 +1103,31 @@ for (const viewport of viewports) {
       if (!nextReviewLabel || !hiddenReviewMetric) {
         failures.push(`${viewport.name} ${route.path}: expected review queue labels for next draft and hidden review-needed count`)
       }
-      if (!nextReviewButtonVisible) {
-        failures.push(`${viewport.name} ${route.path}: expected next review draft action`)
+      if (!nextReviewButtonVisible || !nextNeedsChangesButtonVisible) {
+        failures.push(`${viewport.name} ${route.path}: expected review and needs-changes draft actions`)
       }
-      if (!nextReviewButtonDisabled) {
-        failures.push(`${viewport.name} ${route.path}: next review draft action should be disabled before drafts load`)
+      if (!nextReviewButtonDisabled || !nextNeedsChangesButtonDisabled) {
+        failures.push(`${viewport.name} ${route.path}: review actions should be disabled before drafts load`)
       }
     }
 
     if (route.studioReviewFixture) {
       await page.getByText('UI Check 待审核草稿').first().waitFor({ state: 'visible', timeout: 10_000 })
       const hiddenReviewMetric = await page.locator('.studio-review-queue-metrics span').filter({ hasText: 'Hidden 待审' }).innerText()
+      const needsChangesMetric = await page.locator('.studio-review-queue-metrics span').filter({ hasText: '待修改' }).innerText()
       const nextReviewButton = page.getByRole('button', { name: '打开下一篇待审核' })
+      const nextNeedsChangesButton = page.getByRole('button', { name: '打开下一篇待修改' })
       const nextReviewButtonDisabled = await nextReviewButton.isDisabled().catch(() => true)
+      const nextNeedsChangesButtonDisabled = await nextNeedsChangesButton.isDisabled().catch(() => true)
 
       if (!hiddenReviewMetric.includes('1')) {
         failures.push(`${viewport.name} ${route.path}: expected one hidden review-needed draft, got "${hiddenReviewMetric}"`)
+      }
+      if (!needsChangesMetric.includes('1')) {
+        failures.push(`${viewport.name} ${route.path}: expected one needs-changes draft, got "${needsChangesMetric}"`)
+      }
+      if (nextNeedsChangesButtonDisabled) {
+        failures.push(`${viewport.name} ${route.path}: next needs-changes action should be enabled with fixture drafts`)
       }
       if (nextReviewButtonDisabled) {
         failures.push(`${viewport.name} ${route.path}: next review draft action should be enabled with fixture drafts`)
@@ -1141,6 +1153,15 @@ for (const viewport of viewports) {
           !editorLoadedDraft.includes('UI Check 待审核草稿')
         ) {
           failures.push(`${viewport.name} ${route.path}: next review action did not load the review-needed draft in the editor`)
+        }
+      }
+
+      if (!nextNeedsChangesButtonDisabled) {
+        await nextNeedsChangesButton.click()
+        const needsChangesTitle = await page.locator('.studio-review-current > strong').first().innerText().catch(() => '')
+        const resubmitVisible = await page.getByRole('button', { name: '重新提交审核' }).isVisible().catch(() => false)
+        if (!needsChangesTitle.includes('UI Check 待修改草稿') || !resubmitVisible) {
+          failures.push(`${viewport.name} ${route.path}: needs-changes action should load the draft and expose resubmission`)
         }
       }
     }
@@ -1594,9 +1615,20 @@ for (const width of [320, 390, 430]) {
   }
 
   await trigger.click()
-  await mobileOperatorPage.waitForTimeout(220)
-  const drawerBounds = await drawer.boundingBox()
-  if (!(await drawer.getAttribute('class'))?.includes('is-open') || !drawerBounds || drawerBounds.x < -1 || drawerBounds.x + drawerBounds.width > width + 1) {
+  const drawerEnteredViewport = await mobileOperatorPage
+    .waitForFunction(
+      (viewportWidth) => {
+        const drawerElement = document.querySelector('.operator-sidebar.is-open')
+        if (!(drawerElement instanceof HTMLElement)) return false
+        const bounds = drawerElement.getBoundingClientRect()
+        return bounds.x >= -1 && bounds.right <= viewportWidth + 1
+      },
+      width,
+      { timeout: 1_200 },
+    )
+    .then(() => true)
+    .catch(() => false)
+  if (!drawerEnteredViewport) {
     failures.push(`/operator mobile workspace ${width}px: session drawer should open inside the viewport`)
   }
   if (!(await mobileOperatorPage.locator('.operator-drawer-backdrop.is-open').isVisible().catch(() => false))) {

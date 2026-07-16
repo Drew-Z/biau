@@ -1095,7 +1095,9 @@
     position: fixed;
     z-index: 450;
     inset: 0 auto 0 0;
-    width: min(86vw, 330px);
+    width: min(330px, calc(100vw - 12px));
+    max-width: calc(100vw - 12px);
+    box-sizing: border-box;
     transform: translateX(-102%);
     transition: transform 180ms ease;
     box-shadow: 22px 0 60px rgba(0, 0, 0, 0.36);

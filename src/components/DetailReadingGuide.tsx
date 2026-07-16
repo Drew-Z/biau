@@ -104,7 +104,8 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
       if (!root) return
       const stickyOffset = window.innerWidth <= 720 ? 8 : 12
       const targetTop = window.scrollY + root.getBoundingClientRect().top - stickyOffset
-      window.scrollTo({ top: targetTop, behavior: reduceMotion ? 'auto' : 'smooth' })
+      const shouldAlignImmediately = reduceMotion || window.innerWidth <= 720
+      window.scrollTo({ top: targetTop, behavior: shouldAlignImmediately ? 'auto' : 'smooth' })
     })
     return () => window.cancelAnimationFrame(frame)
   }, [isOpen])

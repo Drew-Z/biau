@@ -59,6 +59,16 @@ VITE_STUDIO_API_BASE_URL=http://localhost:8787
 - 创建 AI 日报 issue 并关联来源 ID。
 - 后端会拦截明显的 key、token、数据库连接串等敏感内容。
 
+## 审核与退回修改
+
+1. 在审核摘要中先看“待修改”和“全部待审”计数。
+2. 点击“打开下一篇待修改”，在编辑器补齐事实、来源、知识点、可见性和安全边界。
+3. 先点击“保存草稿”，确认修改已写入 Studio 数据库。
+4. 点击“重新提交审核”；后端会新增 `pending` review，并让草稿继续保持 `review-needed`。
+5. 审核通过后才允许创建 Publish Export。退回修改、重新提交和审核通过都会保留 review 记录，不会直接公开内容。
+
+草稿的 `needs-changes` 是最新 review 状态，不是独立的 draft 状态；页面会把这类 `review-needed` 草稿显示为“待修改”。
+
 ## 发布导出
 
 公开站不让线上 Studio 服务直接写 Git 仓库。审核通过后，先在 `/studio`

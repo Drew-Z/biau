@@ -201,6 +201,28 @@ function createStudioUiCheckDrafts(): StudioDraft[] {
       status: 'approved',
       visibility: 'hidden',
     },
+    {
+      ...baseDraft,
+      id: 'ui-check-needs-changes',
+      slug: 'ui-check-needs-changes',
+      title: 'UI Check 待修改草稿',
+      column: 'knowledge',
+      status: 'review-needed',
+      visibility: 'hidden',
+      latestReview: {
+        id: 'ui-check-review-needs-changes',
+        draftId: 'ui-check-needs-changes',
+        status: 'needs-changes',
+        checklist: {
+          sourceChecked: true,
+          safetyChecked: true,
+          publicReady: false,
+        },
+        notes: '需要补充证据后重新提交审核。',
+        reviewedBy: 'ui-check',
+        reviewedAt: '2026-07-09T00:10:00.000Z',
+      },
+    },
   ]
 }
 
@@ -236,6 +258,14 @@ function readPublishExportStatus(checks: unknown) {
 }
 
 const reviewQueueStatuses = new Set<StudioDraft['status']>(['review-needed', 'approved', 'rejected'])
+
+function isNeedsChangesDraft(draft: StudioDraft) {
+  return draft.latestReview?.status === 'needs-changes'
+}
+
+function getDraftStatusLabel(draft: StudioDraft) {
+  return isNeedsChangesDraft(draft) ? '待修改' : studioDraftStatuses[draft.status]
+}
 
 interface PageReviewPlan {
   kind: string
@@ -384,13 +414,18 @@ export function StudioPage() {
     [drafts],
   )
   const nextReviewDraft = useMemo(
-    () => drafts.find((draft) => draft.status === 'review-needed') ?? drafts.find((draft) => reviewQueueStatuses.has(draft.status)) ?? null,
+    () => drafts.find((draft) => draft.status === 'review-needed' && !isNeedsChangesDraft(draft)) ?? null,
+    [drafts],
+  )
+  const nextNeedsChangesDraft = useMemo(
+    () => drafts.find((draft) => isNeedsChangesDraft(draft)) ?? null,
     [drafts],
   )
   const reviewMetrics = useMemo(
     () => ({
-      hiddenReviewNeeded: drafts.filter((draft) => draft.status === 'review-needed' && draft.visibility === 'hidden').length,
-      reviewNeeded: drafts.filter((draft) => draft.status === 'review-needed').length,
+      hiddenReviewNeeded: drafts.filter((draft) => draft.status === 'review-needed' && draft.visibility === 'hidden' && !isNeedsChangesDraft(draft)).length,
+      reviewNeeded: drafts.filter((draft) => draft.status === 'review-needed' && !isNeedsChangesDraft(draft)).length,
+      needsChanges: drafts.filter((draft) => isNeedsChangesDraft(draft)).length,
       approved: drafts.filter((draft) => draft.status === 'approved').length,
       rejected: drafts.filter((draft) => draft.status === 'rejected').length,
     }),
@@ -651,7 +686,7 @@ export function StudioPage() {
     }
   }
 
-  const reviewDraft = async (status: 'approved' | 'needs-changes' | 'rejected') => {
+  const reviewDraft = async (status: 'pending' | 'approved' | 'needs-changes' | 'rejected') => {
     if (!selectedDraft || !adminToken) return
     const result = await requestStudioApi(`/content-drafts/${selectedDraft.id}/reviews`, adminToken, {
       method: 'POST',
@@ -660,8 +695,10 @@ export function StudioPage() {
         reviewedBy: draftForm.editorName.trim(),
         notes:
           status === 'approved'
-            ? `通过 Studio 第一版审核。页面级审核：${pageReviewPlan.title}。`
-            : `需要继续编辑后再发布。页面级审核：${pageReviewPlan.title}。`,
+            ? `通过 Studio 审核。页面级审核：${pageReviewPlan.title}。`
+            : status === 'pending'
+              ? `草稿已修订，重新提交 Studio 审核。页面级审核：${pageReviewPlan.title}。`
+              : `需要继续编辑后再发布。页面级审核：${pageReviewPlan.title}。`,
         checklist: {
           sourceChecked: true,
           safetyChecked: true,
@@ -680,7 +717,7 @@ export function StudioPage() {
     if (nextDraft) {
       setDrafts((current) => [nextDraft, ...current.filter((draft) => draft.id !== nextDraft.id)])
       setSelectedDraftId(nextDraft.id)
-      setStatusText(`审核状态已更新：${studioDraftStatuses[nextDraft.status]}`)
+      setStatusText(`审核状态已更新：${getDraftStatusLabel(nextDraft)}`)
     }
   }
 
@@ -851,14 +888,14 @@ export function StudioPage() {
           <p className="assistant-panel__eyebrow">REVIEW FLOW</p>
           <h2>审核从草稿箱开始</h2>
           <p>
-            先在左侧点一篇草稿；内容会载入中间编辑器，公开效果在编辑器下方的预览区。确认正文、来源、可见性和安全边界都没问题后，再点审核通过。
+            先在左侧点一篇草稿；内容会载入中间编辑器，公开效果在编辑器下方的预览区。若看到“待修改”，先保存修订，再重新提交审核；只有确认正文、来源、可见性和安全边界都没问题后，才点审核通过。
           </p>
         </div>
         <ol className="studio-review-steps">
           <li>
             <span>1</span>
             <strong>点草稿</strong>
-            <em>左侧草稿箱选择要审核的文章。</em>
+            <em>左侧草稿箱选择要审核或继续修改的文章。</em>
           </li>
           <li>
             <span>2</span>
@@ -867,11 +904,16 @@ export function StudioPage() {
           </li>
           <li>
             <span>3</span>
-            <strong>通过审核</strong>
-            <em>确认无误后点审核通过。</em>
+            <strong>处理状态</strong>
+            <em>待修改先保存修订，再重新提交审核。</em>
           </li>
           <li>
             <span>4</span>
+            <strong>审核通过</strong>
+            <em>确认事实、来源和安全边界后再批准。</em>
+          </li>
+          <li>
+            <span>5</span>
             <strong>创建导出</strong>
             <em>通过后才能生成发布导出记录。</em>
           </li>
@@ -881,7 +923,7 @@ export function StudioPage() {
           <strong>{selectedDraft ? selectedDraft.title : drafts.length > 0 ? '请先从左侧草稿箱选择一篇草稿' : '暂无可审核草稿'}</strong>
           <p>
             {selectedDraft
-              ? `${studioDraftStatuses[selectedDraft.status]} · ${studioVisibilityLabels[draftForm.visibility]} · ${draftForm.slug || '未填写 slug'}`
+              ? `${getDraftStatusLabel(selectedDraft)} · ${studioVisibilityLabels[draftForm.visibility]} · ${draftForm.slug || '未填写 slug'}`
               : '选中草稿后，这里会显示审核状态和下一步动作。'}
           </p>
           <div className="studio-review-queue-brief" aria-label="Studio 待审核草稿摘要">
@@ -898,13 +940,17 @@ export function StudioPage() {
                 <em>可导出</em>
                 <strong>{reviewMetrics.approved}</strong>
               </span>
+              <span>
+                <em>待修改</em>
+                <strong>{reviewMetrics.needsChanges}</strong>
+              </span>
             </div>
             <p>
               <span>下一篇待审核</span>
               <strong>{nextReviewDraft ? nextReviewDraft.title : '暂无待审核草稿'}</strong>
               <em>
                 {nextReviewDraft
-                  ? `${studioDraftStatuses[nextReviewDraft.status]} · ${studioVisibilityLabels[nextReviewDraft.visibility]}`
+                  ? `${getDraftStatusLabel(nextReviewDraft)} · ${studioVisibilityLabels[nextReviewDraft.visibility]}`
                   : adminToken
                     ? '刷新数据后仍为空，就先创建或等待新的 review-needed 草稿。'
                     : '保存 Studio token 并刷新数据后，这里会显示下一篇。'}
@@ -914,6 +960,9 @@ export function StudioPage() {
           <div className="studio-review-current__actions">
             <button type="button" disabled={!nextReviewDraft} onClick={() => nextReviewDraft && selectDraft(nextReviewDraft)}>
               打开下一篇待审核
+            </button>
+            <button type="button" disabled={!nextNeedsChangesDraft} onClick={() => nextNeedsChangesDraft && selectDraft(nextNeedsChangesDraft)}>
+              打开下一篇待修改
             </button>
             <a href="#studio-draft-editor">编辑内容</a>
             <a href="#studio-draft-preview">查看预览</a>
@@ -992,7 +1041,7 @@ export function StudioPage() {
                 </span>
                 <span>{draft.slug}</span>
                 <em>
-                  {blogColumnMeta[draft.column as BlogColumn]?.titleZh ?? draft.column} · {studioDraftStatuses[draft.status]}
+                  {blogColumnMeta[draft.column as BlogColumn]?.titleZh ?? draft.column} · {getDraftStatusLabel(draft)}
                 </em>
               </button>
             ))}
@@ -1009,7 +1058,7 @@ export function StudioPage() {
               </div>
               {selectedDraft && (
                 <span className="studio-editor-statuses">
-                  <span className="studio-status-pill">{studioDraftStatuses[selectedDraft.status]}</span>
+                  <span className="studio-status-pill">{getDraftStatusLabel(selectedDraft)}</span>
                   {isAgenticWorkspaceDraft(selectedDraft) && <span className="studio-agentic-pill">Agentic Workspace</span>}
                 </span>
               )}
@@ -1215,8 +1264,13 @@ export function StudioPage() {
                   {isSavingDraft ? '保存中…' : selectedDraft ? '保存草稿' : '创建草稿'}
                 </button>
                 <button type="button" disabled={!selectedDraft} onClick={() => void reviewDraft('needs-changes')}>
-                  标记待修
+                  退回修改
                 </button>
+                {selectedDraft && isNeedsChangesDraft(selectedDraft) && (
+                  <button type="button" disabled={!adminToken} onClick={() => void reviewDraft('pending')}>
+                    重新提交审核
+                  </button>
+                )}
                 <button type="button" disabled={!selectedDraft} onClick={() => void reviewDraft('approved')}>
                   审核通过
                 </button>
@@ -1239,7 +1293,7 @@ export function StudioPage() {
               body={previewBody}
               knowledgePoints={previewKnowledgePoints}
               projectIds={previewProjectIds}
-              statusLabel={selectedDraft ? studioDraftStatuses[selectedDraft.status] : '未保存'}
+              statusLabel={selectedDraft ? getDraftStatusLabel(selectedDraft) : '未保存'}
               visibilityLabel={studioVisibilityLabels[draftForm.visibility]}
               aiAssistance={draftForm.aiAssistance}
             />
@@ -1455,6 +1509,10 @@ export function StudioPage() {
                 <strong>{reviewMetrics.approved}</strong>
               </div>
               <div>
+                <span>待修改</span>
+                <strong>{reviewMetrics.needsChanges}</strong>
+              </div>
+              <div>
                 <span>已拒绝</span>
                 <strong>{reviewMetrics.rejected}</strong>
               </div>
@@ -1470,7 +1528,7 @@ export function StudioPage() {
                   <strong>{draft.title}</strong>
                   <span>{draft.slug}</span>
                   <em>
-                    {studioDraftStatuses[draft.status]} · {blogColumnMeta[draft.column as BlogColumn]?.titleZh ?? draft.column}
+                    {getDraftStatusLabel(draft)} · {blogColumnMeta[draft.column as BlogColumn]?.titleZh ?? draft.column}
                   </em>
                 </button>
               ))}
@@ -1500,7 +1558,7 @@ export function StudioPage() {
             </div>
             {selectedDraft && (
               <p className="assistant-status-text">
-                当前草稿更新于 {formatDateTime(selectedDraft.updatedAt)}，状态为 {studioDraftStatuses[selectedDraft.status]}。
+                当前草稿更新于 {formatDateTime(selectedDraft.updatedAt)}，状态为 {getDraftStatusLabel(selectedDraft)}。
               </p>
             )}
             <div className="studio-publish-list">

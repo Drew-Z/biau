@@ -4772,7 +4772,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-8);
   list-style: none;
 }
@@ -4841,7 +4841,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-review-queue-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-6, 6px);
 }
 
@@ -5371,7 +5371,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-review-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-8);
   margin-bottom: var(--space-12, 12px);
 }
