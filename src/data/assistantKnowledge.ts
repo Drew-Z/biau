@@ -784,7 +784,7 @@ function buildIntentAnswerBody(intent: AssistantRetrievalIntent, titleList: stri
     return '适合先看有公开入口或受控演示路径的项目；如果入口需要登录，就以页面显示的公开 demo 凭据和状态页说明为准。'
   }
   if (intent === 'reliability-status') {
-    return '人工队列可以先完成 BIAU Operator 的 Cloudflare Access、Render 服务变量和 owner memory 选择性迁移，再用真实站务任务验收 Studio draft-write；之后处理 Legal RAG、ERP、Xunqiu、Pet 等需要凭据或 release 证据的 gate。公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道密钥或签名材料。'
+    return '当前人工队列优先处理 Studio 中被退回修改的 hidden 草稿，再审核证据完整的新版草稿并创建 Publish Export；之后处理 Legal RAG、ERP、Xunqiu、Pet 等需要凭据或 release 证据的 gate。Operator 的部署边界、owner memory 重启后持久化和首轮 Studio 审核已有低敏记录。公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道密钥或签名材料。'
   }
   if (intent === 'technology-architecture') {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'

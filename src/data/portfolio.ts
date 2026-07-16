@@ -968,7 +968,7 @@ export const projects: Project[] = [
           items: [
             '主站内容仍以静态 TypeScript 数据为主，不是多人 CMS；内容发布需要代码审查和构建验证。',
             '博客仍在持续筛选和重写，旧内容不会因为存在归档就自动公开。',
-            'BIAU Operator 的本地产品化能力已经具备 LangGraph runtime、typed tools、owner 会话/记忆、运行检查器、设置页和本地 eval；真实生产质量仍依赖 Cloudflare Access、Render 环境变量、选择性记忆迁移、生产 RAG sync 和真实站务任务验证。',
+            'BIAU Operator 的本地产品化能力已经具备 LangGraph runtime、typed tools、owner 会话/记忆、运行检查器、设置页和本地 eval；部署边界与重启后 memory 持久化已有低敏生产复核，当前公开发布仍由 Studio hidden + review-needed、人工审核和 Publish Export 门禁控制。',
             '项目页只展示公开安全事实；部署凭据、账号、生产数据、私有后台和未确认下载包不会放进公开站点。',
           ],
         },
@@ -995,7 +995,7 @@ export const projects: Project[] = [
       'Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。',
       '内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。',
       '验证链路包括 assistant:index、assistant:agent-contract、assistant:agent-eval、assistant:meta-check、operator:knowledge-check、operator:facade-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。',
-      '当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；BIAU Operator 的真实生产质量仍需要用户完成 Cloudflare Access、Render Operator 变量、数据库 migration、owner memory 选择性迁移和真实站务任务验证。',
+      '当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；BIAU Operator 已完成部署边界与重启后 memory 持久化复核，后续仍需完成 Studio 被退回草稿的修订、证据完整版本审核与 Publish Export。',
     ],
   },
   {

@@ -323,7 +323,7 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
     id: 'site:status',
     title: '项目可靠性观察',
     summary:
-      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。当前人工队列优先完成 BIAU Operator 的 Cloudflare Access、Render 服务变量、owner memory 选择性迁移和真实站务 draft-write 验收，再处理 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 证据。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。',
+      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。当前人工队列优先处理 Studio 中被退回修改的 hidden 草稿，再审核证据完整的新版草稿并创建 Publish Export；之后处理 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。Operator 的部署边界、owner memory 重启后持久化和首轮 Studio 审核已有低敏记录。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。',
     href: '/status',
     tags: ['状态页', '可靠性观察', '人工 gate', '低敏证据', '公开入口', 'health check', 'synthetic', 'Cloudflare Access', 'BIAU Operator', 'release gate'],
     visibility: 'public',

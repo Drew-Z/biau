@@ -203,7 +203,7 @@ export function hasEntryStatusAttention(summary: SiteStatusSummary) {
 }
 
 export function hasReliabilityStatusAttention(summary: ReliabilityStatusCounts) {
-  return summary.degraded > 0 || summary.offline > 0 || summary.unchecked > 0
+  return summary.degraded > 0 || summary.offline > 0 || summary.unchecked > 0 || summary.planned > 0
 }
 
 export function mergeSiteStatusPayload(payload: SiteStatusPayload | null): SiteStatusPayload {

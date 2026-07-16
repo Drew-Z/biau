@@ -1180,6 +1180,11 @@ const mergedStatusPayload = mergeSiteStatusPayload(rawStatusPayload)
 const expectedEntrySummary = mergedStatusPayload.summary
 const expectedReliabilitySummary = getReliabilityStatusSummary(mergedStatusPayload.reliabilityProjects)
 const expectedManualActionQueue = getStatusManualActionQueue(mergedStatusPayload.reliabilityProjects)
+const expectedReliabilityNeedsAttention =
+  expectedReliabilitySummary.degraded > 0 ||
+  expectedReliabilitySummary.offline > 0 ||
+  expectedReliabilitySummary.unchecked > 0 ||
+  expectedReliabilitySummary.planned > 0
 const entrySummaryCards = statusPage.locator('[data-status-scope="entry"]')
 const reliabilitySummaryCards = statusPage.locator('[data-status-scope="reliability"]')
 const manualActionCards = statusPage.locator('.status-manual-action')
@@ -1220,6 +1225,14 @@ if (reliabilityProjectManualMetaCells !== staticReliabilityProjects.length * 2) 
   failures.push(
     `/status reliability: expected ${staticReliabilityProjects.length * 2} manual gate summary cells, got ${reliabilityProjectManualMetaCells}`,
   )
+}
+const statusOverviewTitle = await statusPage.locator('#status-overview h2').innerText().catch(() => '')
+const statusPulseTone = await statusPage.locator('#status-overview .status-pulse').getAttribute('class').catch(() => '')
+if (expectedReliabilityNeedsAttention && !statusOverviewTitle.includes('部分能力仍待验证')) {
+  failures.push('/status overview: planned or incomplete reliability checks should be visible, got "' + statusOverviewTitle + '"')
+}
+if (expectedReliabilityNeedsAttention && !statusPulseTone.includes('degraded')) {
+  failures.push('/status overview: planned or incomplete reliability checks should use the attention pulse')
 }
 if ((await entrySummaryCards.count()) !== entrySummaryKeys.length) {
   failures.push(`/status summary: expected ${entrySummaryKeys.length} entry summary cards, got ${await entrySummaryCards.count()}`)
