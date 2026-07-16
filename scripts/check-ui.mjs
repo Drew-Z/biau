@@ -376,10 +376,17 @@ async function checkStudioWorkspaceModes(browser, failures) {
     }
 
     await page.evaluate(() => {
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
       document.documentElement.style.scrollBehavior = 'auto'
       window.scrollTo(0, 0)
     })
-    await page.waitForTimeout(250)
+    await page.waitForFunction(() => window.scrollY === 0, null, { timeout: 5000 })
+    await page.evaluate(
+      () =>
+        new Promise((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve))
+        }),
+    )
     const layoutOrder = await page.evaluate(() => {
       const token = document.querySelector('.studio-control-bar')?.getBoundingClientRect().top ?? 0
       const tabsTop = document.querySelector('.studio-workspace-tabs')?.getBoundingClientRect().top ?? 0
@@ -1295,6 +1302,13 @@ const legalMergedProject = mergedStatusPayload.reliabilityProjects?.find(
 )
 const expectedLegalFreshnessFacts =
   legalMergedProject?.checks.filter((check) => parseEvidenceFreshness(check.evidence)).length ?? 0
+if (expectedLegalFreshnessFacts > 0) {
+  await statusPage
+    .locator('.status-evidence-freshness')
+    .nth(expectedLegalFreshnessFacts - 1)
+    .waitFor({ state: 'visible', timeout: 10000 })
+    .catch(() => {})
+}
 const legalFreshnessFacts = await statusPage.locator('.status-evidence-freshness').count()
 const legalFreshnessBadges = await statusPage.locator('.status-freshness-badge').count()
 const legalGateItems = await statusPage.locator('.status-project__manual-list.is-gate li').count()

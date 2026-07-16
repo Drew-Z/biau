@@ -79,34 +79,26 @@
 
 - 主站公开路由、项目/博客详情、状态页、sitemap、robots 和显式外链已有本地/线上无凭据检查；检查不发送模型问题。
 - Qdrant public/private scoped knowledge 已有同步成功记录；真实 collection、key 和 embedding 配置未写入仓库。
-- Studio 已能保存 `hidden + review-needed` 草稿和审核记录；尚未把质量不足的草稿导出为公开文章。
+- BIAU Operator 的生产边界复核已完成；同一 member context 已在重启后成功刷新一条既有 durable memory。生产配置值和 memory 内容未写入仓库。
+- Studio 首轮生产审核已完成：两个 hidden 草稿均被标记为 `needs-changes`，当前没有创建 Publish Export，也没有把质量不足的草稿导出为公开文章。
+- Studio 已能保存 `hidden + review-needed` 草稿和审核记录；后续只需处理被拒草稿，再审核一份证据完整的新版草稿。
 - ERP、Legal RAG、Xunqiu、Pet 和 Playlab 均已有本地构建或 synthetic 基础，生产账号/发布批准仍按上表处理。
-- BIAU Operator 的 LangGraph、typed tools、owner session/memory schema、Cloudflare facade 和本地确定性测试已经进入代码收口；平台切换尚需下方步骤。
+- BIAU Operator 的 LangGraph、typed tools、owner session/memory schema、Cloudflare facade 和本地确定性测试已经进入代码收口；后续生产变更仍需按下方人工门禁执行。
 
 ## 当前人工队列
 
 按顺序处理，完成一项后只记录低敏结果：
 
-1. **部署 `biau-operator-api`**
-   - 将原私有助手 Render service 改名或新建为 `biau-operator-api`。
-   - 使用 `ASSISTANT_SERVICE_MODE=operator` 和 [部署说明](./deployment.md) 的 Build/Start Command。
-   - 配置 Operator、数据库、Studio、模型和 RAG server-only 变量。
+1. **处理首轮被拒绝的 Studio 草稿**
+   - 在 Studio 中打开两个状态为 `needs-changes` 的 hidden 草稿。
+   - 选择一个作为主稿，补齐可核验事实、来源、知识点、边界和配图/结构；另一个归档或明确保留为不发布稿。
+   - 先保存修改并重新提交审核，不要直接发布；完成后由 Codex 复核低敏状态，再进入新版审核和 Publish Export 门禁。
 
-2. **配置 Cloudflare Access 与 Operator Function**
-   - 创建 self-hosted application，保护 `/operator*` 和 `/api/operator/*`。
-   - 只允许 owner 邮箱。
-   - 在 Pages 设置 Function 私有变量，并重新部署。
+2. **审核证据完整的新版草稿并创建第一个 Publish Export**
+   - 仅在新版草稿完成事实、来源、结构和版权检查后执行。
+   - 记录审核结论、draft id 的脱敏摘要和 export 数量，不记录文章正文或生产凭据。
 
-3. **确认 owner memory 迁移记录**
-   - 先运行 check，审核脱敏 record ID。
-   - 只把明确属于站长且状态为 `ACTIVE` 的 ID 交给 apply。
-   - 不迁移普通聊天、邀请、成员、成员渠道或用量。
-
-4. **用一个真实站务任务验收**
-   - 例如“审查当前项目页内容缺口并创建一篇待审核 Studio 草稿”。
-   - 成功标准：Access 身份通过、Operator 返回工具轨迹、草稿为 `hidden + review-needed`、Studio 页面能看到同一 draft。
-
-5. **继续关联项目门禁**
+3. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。
 
 ## 延期项
