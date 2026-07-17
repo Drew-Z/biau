@@ -131,6 +131,41 @@ async function installOperatorApiFixture(page) {
   })
 }
 
+async function installOperatorSessionRaceFixture(page) {
+  const sessions = [
+    { id: 'operator-session-a', title: '延迟会话 A', preview: '较慢响应', updatedAt: '2026-07-17T00:00:00.000Z' },
+    { id: 'operator-session-b', title: '快速会话 B', preview: '最新选择', updatedAt: '2026-07-17T00:01:00.000Z' },
+  ]
+  await page.route('**/api/operator/**', async (route) => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname.replace(/^\/api\/operator/u, '')
+    let body
+
+    if (path === '/me') body = { operator: operatorProfileFixture }
+    else if (path === '/sessions') body = { sessions }
+    else if (path === '/sessions/operator-session-a/messages') {
+      await new Promise((resolve) => setTimeout(resolve, 350))
+      body = {
+        messages: [
+          { id: 'message-a', role: 'assistant', content: '延迟会话 A 的旧消息', timestamp: '2026-07-17T00:00:00.000Z' },
+        ],
+      }
+    } else if (path === '/sessions/operator-session-b/messages') {
+      await new Promise((resolve) => setTimeout(resolve, 20))
+      body = {
+        messages: [
+          { id: 'message-b', role: 'assistant', content: '快速会话 B 的当前消息', timestamp: '2026-07-17T00:01:00.000Z' },
+        ],
+      }
+    } else body = { error: 'operator-race-fixture-not-found' }
+
+    await route.fulfill({
+      status: body.error ? 404 : 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    })
+  })
+}
 const projectDetailVisualCases = projects
   .map((project) => {
     const sections = Object.values(project.detailContent ?? {}).flatMap((items) => items ?? [])
@@ -1609,6 +1644,21 @@ if (!(await operatorDesktopPage.getByLabel('站务运行检查器').isVisible().
   failures.push('/operator desktop workspace: runtime inspector should remain visible')
 }
 await operatorDesktopPage.close()
+
+const operatorRacePage = await browser.newPage({ viewport: viewports[0] })
+await installOperatorSessionRaceFixture(operatorRacePage)
+await gotoApp(operatorRacePage, '/operator')
+const fastSessionButton = operatorRacePage.locator('.operator-session').filter({ hasText: '快速会话 B' })
+await fastSessionButton.waitFor({ state: 'visible', timeout: 5_000 })
+await fastSessionButton.click()
+await operatorRacePage.getByText('快速会话 B 的当前消息', { exact: true }).waitFor({ state: 'visible', timeout: 2_000 })
+await operatorRacePage.waitForTimeout(450)
+const staleSessionVisible = await operatorRacePage.getByText('延迟会话 A 的旧消息', { exact: true }).isVisible().catch(() => false)
+const fastSessionActive = (await fastSessionButton.getAttribute('class'))?.includes('is-active') === true
+if (staleSessionVisible || !fastSessionActive) {
+  failures.push('/operator session ordering: a delayed previous session response must not replace the latest selected session')
+}
+await operatorRacePage.close()
 
 for (const width of [320, 390, 430]) {
   const mobileOperatorPage = await browser.newPage({ viewport: { width, height: 900 } })

@@ -58,6 +58,8 @@ export function OperatorPage() {
   const [isSending, setIsSending] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const messageEndRef = useRef<HTMLDivElement>(null)
+  const selectedSessionIdRef = useRef('')
+  const sessionLoadRequestRef = useRef(0)
 
   useEffect(() => {
     let cancelled = false
@@ -93,12 +95,14 @@ export function OperatorPage() {
     }
 
     async function loadSessionMessages(sessionId: string, alreadyCancelled: boolean) {
+      const requestId = ++sessionLoadRequestRef.current
       const result = await requestOperatorApi<unknown>(`/sessions/${encodeURIComponent(sessionId)}/messages`)
-      if (alreadyCancelled || cancelled) return
+      if (alreadyCancelled || cancelled || requestId !== sessionLoadRequestRef.current) return
       if (!result.ok) {
         setErrorText(explainOperatorError(result.status, result.errorCode))
         return
       }
+      selectedSessionIdRef.current = sessionId
       setSelectedSessionId(sessionId)
       const nextMessages = readOperatorMessages(result.data)
       setMessages(nextMessages.length > 0 ? nextMessages : [openingMessage()])
@@ -119,7 +123,7 @@ export function OperatorPage() {
     [messages],
   )
 
-  async function refreshSessions(preferredSessionId = selectedSessionId) {
+  async function refreshSessions(preferredSessionId = selectedSessionIdRef.current) {
     const result = await requestOperatorApi<unknown>('/sessions')
     if (!result.ok) {
       setErrorText(explainOperatorError(result.status, result.errorCode))
@@ -130,14 +134,17 @@ export function OperatorPage() {
     const targetId = nextSessions.some((session) => session.id === preferredSessionId)
       ? preferredSessionId
       : nextSessions[0]?.id ?? ''
-    if (targetId && targetId !== selectedSessionId) await selectSession(targetId)
+    if (targetId && targetId !== selectedSessionIdRef.current) await selectSession(targetId)
   }
 
   async function selectSession(sessionId: string) {
+    const requestId = ++sessionLoadRequestRef.current
     setIsSidebarOpen(false)
+    selectedSessionIdRef.current = sessionId
     setSelectedSessionId(sessionId)
     setIsLoading(true)
     const result = await requestOperatorApi<unknown>(`/sessions/${encodeURIComponent(sessionId)}/messages`)
+    if (requestId !== sessionLoadRequestRef.current || selectedSessionIdRef.current !== sessionId) return
     setIsLoading(false)
     if (!result.ok) {
       setErrorText(explainOperatorError(result.status, result.errorCode))
@@ -158,8 +165,11 @@ export function OperatorPage() {
       return
     }
     const sessionId = result.data.session.id
+    sessionLoadRequestRef.current += 1
+    selectedSessionIdRef.current = sessionId
     setSelectedSessionId(sessionId)
     setMessages([openingMessage()])
+    setIsLoading(false)
     setIsSidebarOpen(false)
     await refreshSessions(sessionId)
   }
@@ -174,8 +184,11 @@ export function OperatorPage() {
       setErrorText(explainOperatorError(result.status, result.errorCode))
       return
     }
+    sessionLoadRequestRef.current += 1
+    selectedSessionIdRef.current = ''
     setSelectedSessionId('')
     setMessages([openingMessage()])
+    setIsLoading(false)
     await refreshSessions('')
   }
 
@@ -195,39 +208,46 @@ export function OperatorPage() {
     setIsSending(true)
     setErrorText('')
 
+    const requestSessionId = selectedSessionIdRef.current
     const result = await requestOperatorApi<unknown>('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message: question, ...(selectedSessionId ? { sessionId: selectedSessionId } : {}) }),
+      body: JSON.stringify({ message: question, ...(requestSessionId ? { sessionId: requestSessionId } : {}) }),
     })
     setIsSending(false)
     const response = result.data ? readOperatorChatResponse(result.data) : null
+    const remainsOnRequestSession = selectedSessionIdRef.current === requestSessionId
     if (!result.ok || !response) {
-      setErrorText(explainOperatorError(result.status, result.errorCode))
-      setMessages((current) => [
-        ...current,
-        {
-          id: `operator-error-${Date.now()}`,
-          role: 'assistant',
-          content: '这次站务运行没有完成，未执行发布、部署或其他外部写操作。',
-          timestamp: new Date().toISOString(),
-        },
-      ])
+      if (remainsOnRequestSession) {
+        setErrorText(explainOperatorError(result.status, result.errorCode))
+        setMessages((current) => [
+          ...current,
+          {
+            id: `operator-error-${Date.now()}`,
+            role: 'assistant',
+            content: '这次站务运行没有完成，未执行发布、部署或其他外部写操作。',
+            timestamp: new Date().toISOString(),
+          },
+        ])
+      }
       return
     }
 
-    setSelectedSessionId(response.sessionId)
-    setMessages((current) => [
-      ...current,
-      {
-        id: response.messageId,
-        role: 'assistant',
-        content: response.answer,
-        citations: response.citations,
-        meta: response.meta,
-        timestamp: new Date().toISOString(),
-      },
-    ])
-    await refreshSessions(response.sessionId)
+    if (remainsOnRequestSession) {
+      selectedSessionIdRef.current = response.sessionId
+      setSelectedSessionId(response.sessionId)
+      setMessages((current) => [
+        ...current,
+        {
+          id: response.messageId,
+          role: 'assistant',
+          content: response.answer,
+          citations: response.citations,
+          meta: response.meta,
+          timestamp: new Date().toISOString(),
+        },
+      ])
+    }
+    await refreshSessions(remainsOnRequestSession ? response.sessionId : selectedSessionIdRef.current)
   }
 
   return (

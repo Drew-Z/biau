@@ -58,6 +58,8 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - `src/data/operator.ts` owns all Operator payload decoding and safe error messages.
 - Shared assistant metadata/knowledge decoders may be reused from `src/data/assistant.ts`; route components must not cast raw JSON.
 - Switching sessions replaces messages and derived meta together so diagnostics do not bleed across sessions.
+- Session/message requests use a monotonically increasing request id (or equivalent cancellation guard); only the latest selected session may update loading, error, messages, and derived meta.
+- A chat response that finishes after the owner switches sessions may refresh the session list, but it must not select the old session or append its answer to the current conversation.
 - Failed bootstrap leaves a clear reconnect/configuration message; it must not fall back to a fake owner identity.
 - Suggestions fill the composer; they do not auto-run a task without the user's send command.
 - Studio artifacts render only bounded safe fields and same-site `/studio?draft=<id>` links.
