@@ -3,7 +3,7 @@
   "name": "ai-daily-ingestion-evidence",
   "title": "AI Daily ingestion and evidence",
   "description": "Implement curated source ingestion, Brave discovery, safe extraction, Firecrawl/Tavily adapters, freshness, dedupe, and event selection.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": "feature",
   "scope": "backend",
   "package": null,

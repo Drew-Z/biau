@@ -2,14 +2,14 @@
 
 ## Ordered Work
 
-- [ ] Implement source registry contracts and adapters.
-- [ ] Implement due-source scheduling, overlap windows, health, and conditional requests.
-- [ ] Implement discovery query groups and Brave/Tavily/xAI adapters with mock fixtures.
-- [ ] Implement safe fetch and extraction adapters.
-- [ ] Implement evidence normalization and retention metadata.
-- [ ] Implement canonicalization, dedupe, grouping, ranking, and deterministic selection.
-- [ ] Implement ingestion leases, priorities, deadlines, continuation, and freshness metrics.
-- [ ] Expose internal repository/service APIs for later runner and Studio tasks.
+- [x] Implement source registry contracts and adapters.
+- [x] Implement due-source scheduling, overlap windows, health, and conditional requests.
+- [x] Implement discovery query groups and Brave/Tavily/xAI adapters with mock fixtures.
+- [x] Implement safe fetch and extraction adapters.
+- [x] Implement evidence normalization and retention metadata.
+- [x] Implement canonicalization, dedupe, grouping, ranking, and deterministic selection.
+- [x] Implement ingestion leases, priorities, deadlines, continuation, and freshness metrics.
+- [x] Expose internal repository/service APIs for later runner and Studio tasks.
 
 ## Completion Gate
 

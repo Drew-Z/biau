@@ -323,3 +323,95 @@ await completeAiDailyWorkItem(prisma, {
 ```
 
 The repository verifies the active token and expiry, records the attempt outcome, and changes work state in one transaction.
+
+## Scenario: AI Daily Ingestion And Evidence
+
+### 1. Scope / Trigger
+
+- Trigger: changing source feeds, discovery orchestration, original-page extraction, evidence storage, dedupe, grouping, ranking, selection, or ingestion freshness.
+- Goal: produce deterministic, selection-versioned evidence without allowing search snippets, social signals, unsafe URLs, or stale checkpoints to masquerade as publishable evidence.
+
+### 2. Signatures
+
+- Source registry API:
+  - `GET /studio/api/ai-daily/source-feeds?enabled=true|false`
+  - `POST /studio/api/ai-daily/source-feeds`
+  - `PATCH /studio/api/ai-daily/source-feeds/:id`
+- Source payload fields: `name`, `kind`, `url`, `locale`, `tier`, `topics`, `enabled`, `intervalMinutes`, `lookbackMinutes`, `officialDomain`.
+- Core modules:
+  - `server/src/aiDailyIngestion.ts`
+  - `server/src/aiDailySourceAdapters.ts`
+  - `server/src/aiDailySafeFetch.ts`
+  - `server/src/aiDailyIngestionRepository.ts`
+  - `server/src/aiDailyIngestionService.ts`
+- Fixture gates: `npm.cmd run ai-daily:{source,discovery,evidence,freshness,dedupe,ranking}-check`.
+- PostgreSQL gate: `AI_DAILY_DATABASE_CHECK=1 npm.cmd run ai-daily:repository-check` against a local database whose name ends in `_test`.
+
+### 3. Contracts
+
+- Tier 1/2/3 default cadence is `15/30/60` minutes with overlapping lookback `30/60/120` minutes. Explicit lookback must be at least the collection interval; omitted lookback derives a database-valid overlap.
+- Brave is the production primary discovery role, Tavily is the optional fallback, and X Search is signal-only. Primary failure remains not-ready; missing or failed fallback is visible as `reduced_redundancy`.
+- Search and social results are candidates only. They become selectable only after original-page evidence is fetched and marked `READY`; `leadOnly` candidates cannot be promoted.
+- Safe fetch rejects URL credentials, unsupported schemes, internal hostnames, and non-public IPv4/IPv6 addresses. DNS results are checked before a pinned request, every redirect target is revalidated, and redirect destinations are checked against robots before their page is fetched.
+- Direct fetch limits connect/read/total time, compressed bytes, decoded bytes, content type, redirects, and normalized evidence. Normalized text is at most `64 KiB`; citation excerpt is at most `1 KiB`; evidence expires after 30 days by default.
+- Evidence documents are immutable versions per candidate. `currentEvidenceId` points to the latest version; failed writes cannot advance the version because creation and projection share a transaction.
+- Dedupe order is canonical URL, content hash, title fingerprint, then lexical similarity. Event ranking stores named score components and stable tie-breaks. Selection may pass `targetEvents` only to satisfy minimum evidence diversity and never exceeds `maxEvents`.
+- Selection writes require an explicit `runId`; database truth must confirm every representative belongs to that run, is not lead-only, and has ready evidence. Repeating the same ordered selection must not increment `selectionVersion` or duplicate issue relations.
+- Source API responses expose public registry and low-sensitive health fields only. Do not persist provider credentials, endpoints, raw provider bodies, or arbitrary configuration JSON in source/evidence tables.
+
+### 4. Validation & Error Matrix
+
+- Invalid source payload/cadence/domain -> `400 invalid-ai-daily-source-feed` with bounded issue codes.
+- Empty or invalid patch -> `400 invalid-ai-daily-source-feed-patch`.
+- Missing feed -> `404 ai-daily-source-feed-not-found`.
+- Canonical feed identity conflict -> `409 duplicate-ai-daily-source-feed`.
+- Unsafe URL or private/DNS target -> `unsafe_url`.
+- Robots denial, including a redirect destination -> `robots_disallowed` before the page request.
+- Timeout/network/rate-limit/invalid provider response -> stable ingestion category; raw response and stack are not persisted.
+- Missing primary discovery -> not ready with `primary_unavailable`; missing or failed fallback -> `reduced_redundancy`.
+- Stale Tier 1/discovery checkpoints or missing selected fetch checkpoints -> explicit freshness gaps, never normal-ready.
+- Selection representative from another run or without ready evidence -> `ai-daily-selection-run-boundary-mismatch` / `ai-daily-selection-requires-ready-evidence`.
+
+### 5. Good / Base / Bad Cases
+
+- Good: a Tier 1 RSS item is collected with conditional headers, fetched from its authoritative page, stored as evidence version 1, ranked, and selected once; repeating the run reuses canonical source and issue relations.
+- Good: a redirect reaches another public origin, that origin's robots policy is checked before its article request, and a denial stops extraction.
+- Base: Brave succeeds below the coverage threshold while Tavily is missing; stable-source candidates remain, readiness reports reduced redundancy, and no provider is pinged merely to test configuration.
+- Bad: promote an X/Search snippet directly to `SourceItem`, persist a provider response in JSON, fetch a redirect before checking its robots policy, or update a selected representative without binding the run.
+
+### 6. Tests Required
+
+- Run all six fixture gates and assert deterministic candidates, fallback attempts, evidence limits, p95 freshness, duplicate reasons, score order, diversity, and selected event count.
+- Type-check the AI Daily scripts explicitly because `server:build` covers `server/src` but not every `server/scripts` entry.
+- Run `prisma:validate`, `prisma:generate`, and the full migration chain against a disposable PostgreSQL database.
+- The PostgreSQL check must assert source/candidate upsert idempotency, evidence version increments, cluster/selection persistence, identical selection idempotency, cross-run rejection, and authenticated Studio GET/POST/PATCH source routes.
+- Run `server:build`, `server:smoke`, `assistant:service-modes-smoke`, `studio:smoke`, `lint`, `build`, `git diff --check`, and a sensitive-value scan.
+- Automated gates must use mocks/fixtures and must not perform model, search, extraction-provider, or liveness-only calls.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+await applyAiDailyEvidenceSelection(prisma, {
+  issueId,
+  selected,
+  selectedBy: 'runner',
+})
+```
+
+This trusts in-memory representatives without proving that they belong to the active run.
+
+#### Correct
+
+```ts
+await applyAiDailyEvidenceSelection(prisma, {
+  runId,
+  issueId,
+  selected,
+  selectedBy: 'runner',
+  selectionReason: 'deterministic evidence gate',
+})
+```
+
+The repository binds selection to the run, verifies ready evidence in the database, and keeps repeated ordered selection idempotent.

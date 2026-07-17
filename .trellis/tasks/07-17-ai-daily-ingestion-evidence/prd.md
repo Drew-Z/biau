@@ -23,13 +23,13 @@ Build the real-time source, discovery, original-page evidence, deterministic ded
 
 ## Acceptance Criteria
 
-- [ ] Fixture sources produce deterministic candidates, evidence, duplicates, clusters, scores, and selected events.
-- [ ] Search/X results cannot become evidence without a fetched authoritative page.
-- [ ] Unsafe and private targets fail with stable sanitized categories.
-- [ ] Tier 1 publication-to-discovery fixtures meet the 30-minute p95 contract.
-- [ ] Stale collection/discovery checkpoints cause explicit gaps rather than normal success.
-- [ ] Missing Tavily is reported as reduced redundancy, while missing primary discovery is not production-ready.
-- [ ] Repeated runs create no duplicate canonical sources or selected issue relations.
+- [x] Fixture sources produce deterministic candidates, evidence, duplicates, clusters, scores, and selected events.
+- [x] Search/X results cannot become evidence without a fetched authoritative page.
+- [x] Unsafe and private targets fail with stable sanitized categories.
+- [x] Tier 1 publication-to-discovery fixtures meet the 30-minute p95 contract.
+- [x] Stale collection/discovery checkpoints cause explicit gaps rather than normal success.
+- [x] Missing Tavily is reported as reduced redundancy, while missing primary discovery is not production-ready.
+- [x] Repeated runs create no duplicate canonical sources or selected issue relations.
 
 ## Validation
 

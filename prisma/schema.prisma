@@ -212,25 +212,31 @@ model AiDailyIssue {
 }
 
 model AiDailySourceFeed {
-  id                  String                @id @default(cuid())
+  id                  String                    @id @default(cuid())
   name                String
   kind                AiDailySourceFeedKind
   url                 String
   canonicalKey        String
-  locale              String                @default("zh")
+  locale              String                    @default("zh")
   tier                String
   topicsJson          Json?
-  enabled             Boolean               @default(true)
-  intervalMinutes     Int                   @default(60)
+  enabled             Boolean                   @default(true)
+  intervalMinutes     Int                       @default(60)
+  lookbackMinutes     Int                       @default(120)
   officialDomain      String?
+  etag                String?
+  lastModified        String?
+  lastAttemptedAt     DateTime?
   lastCollectedAt     DateTime?
   lastSuccessfulAt    DateTime?
   nextCollectAt       DateTime?
-  consecutiveFailures Int                   @default(0)
+  consecutiveFailures Int                       @default(0)
+  healthStatus        AiDailySourceHealthStatus @default(UNKNOWN)
+  lastLagMs           Int?
   lastErrorCategory   String?
   lastErrorJson       Json?
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
   candidates          AiDailyCandidate[]
   workItems           AiDailyWorkItem[]
 
@@ -354,6 +360,9 @@ model AiDailyCandidate {
   runId                  String
   sourceFeedId           String?
   providerKind           String
+  providerRole           String                         @default("stable")
+  discoveryQueryGroup    String?
+  leadOnly               Boolean                        @default(false)
   sourceExternalId       String?
   observationKey         String                         @default("primary")
   observedAt             DateTime                       @default(now())
@@ -371,6 +380,10 @@ model AiDailyCandidate {
   contentHash            String?
   fetchStatus            AiDailyCandidateFetchStatus    @default(DISCOVERED)
   evidenceStatus         AiDailyCandidateEvidenceStatus @default(UNCHECKED)
+  fetchAttemptCount      Int                            @default(0)
+  lastErrorCategory      String?
+  evidenceVersion        Int                            @default(0)
+  currentEvidenceId      String?                        @unique
   fetchedAt              DateTime?
   evidenceExcerpt        String?
   evidenceExpiresAt      DateTime?
@@ -385,6 +398,8 @@ model AiDailyCandidate {
   run                    AiDailyRun                     @relation(fields: [runId], references: [id], onDelete: Cascade)
   sourceFeed             AiDailySourceFeed?             @relation(fields: [sourceFeedId], references: [id], onDelete: SetNull)
   sourceItem             SourceItem?                    @relation("AiDailyCandidatePromotedSource", fields: [sourceItemId], references: [id], onDelete: SetNull)
+  currentEvidence        AiDailyEvidenceDocument?       @relation("AiDailyCandidateCurrentEvidence", fields: [currentEvidenceId], references: [id], onDelete: SetNull)
+  evidenceDocuments      AiDailyEvidenceDocument[]      @relation("AiDailyCandidateEvidenceHistory")
   cluster                AiDailyCluster?                @relation("AiDailyClusterMembers", fields: [clusterId], references: [id], onDelete: SetNull)
   duplicateOf            AiDailyCandidate?              @relation("AiDailyCandidateDuplicates", fields: [duplicateOfCandidateId], references: [id], onDelete: SetNull)
   duplicates             AiDailyCandidate[]             @relation("AiDailyCandidateDuplicates")
@@ -394,10 +409,43 @@ model AiDailyCandidate {
   @@index([canonicalKey])
   @@index([runId, selectionState, scoreTotal])
   @@index([evidenceExpiresAt])
+  @@index([currentEvidenceId])
   @@index([sourceItemId])
   @@index([sourceFeedId])
   @@index([clusterId])
   @@index([duplicateOfCandidateId])
+}
+
+model AiDailyEvidenceDocument {
+  id                  String                          @id @default(cuid())
+  candidateId         String
+  version             Int
+  extractionMethod    AiDailyEvidenceExtractionMethod
+  originalUrl         String
+  canonicalUrl        String
+  title               String
+  publisher           String
+  author              String?
+  publishedAt         DateTime?
+  fetchedAt           DateTime
+  locale              String                          @default("zh")
+  contentType         String
+  contentHash         String
+  headingsJson        Json
+  normalizedText      String
+  excerpt             String
+  normalizedBytes     Int
+  status              AiDailyEvidenceDocumentStatus
+  errorCategory       String?
+  expiresAt           DateTime
+  createdAt           DateTime                        @default(now())
+  candidate           AiDailyCandidate                @relation("AiDailyCandidateEvidenceHistory", fields: [candidateId], references: [id], onDelete: Cascade)
+  currentForCandidate AiDailyCandidate?               @relation("AiDailyCandidateCurrentEvidence")
+
+  @@unique([candidateId, version])
+  @@index([candidateId, fetchedAt])
+  @@index([contentHash])
+  @@index([expiresAt])
 }
 
 model AiDailyCluster {
@@ -408,7 +456,10 @@ model AiDailyCluster {
   groupingReason            String
   topic                     String
   corroborationCount        Int                       @default(0)
+  scoreTotal                Float?
+  scoreJson                 Json?
   rank                      Int?
+  selectedAt                DateTime?
   editorState               AiDailyClusterEditorState @default(AUTO)
   editorReason              String?
   createdAt                 DateTime                  @default(now())
@@ -616,9 +667,19 @@ enum AiDailyProfile {
 
 enum AiDailySourceFeedKind {
   RSS
+  OFFICIAL_PAGE
+  GITHUB_RELEASES
+  HACKER_NEWS
   API
   SEARCH
   MANUAL
+}
+
+enum AiDailySourceHealthStatus {
+  UNKNOWN
+  HEALTHY
+  DEGRADED
+  FAILING
 }
 
 enum AiDailyRunTrigger {
@@ -705,6 +766,18 @@ enum AiDailyCandidateEvidenceStatus {
   READY
   THIN
   CONFLICTING
+  REJECTED
+}
+
+enum AiDailyEvidenceExtractionMethod {
+  DIRECT
+  FIRECRAWL
+  TAVILY
+}
+
+enum AiDailyEvidenceDocumentStatus {
+  READY
+  THIN
   REJECTED
 }
 

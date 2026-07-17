@@ -1,5 +1,5 @@
 import express from 'express'
-import { Prisma } from '@prisma/client'
+import { Prisma, type AiDailySourceFeed } from '@prisma/client'
 import { requireStudioDatabase } from './db.js'
 import { env, hasStudioDatabase } from './env.js'
 import { buildAiDailyIssueReadinessIssues } from './studioAiDailyReadiness.js'
@@ -9,6 +9,17 @@ import {
   replaceAiDailyIssueSelectionInTransaction,
   toAiDailyCitationSnapshotJson,
 } from './aiDailyRepository.js'
+import {
+  aiDailySourceFeedKinds,
+  aiDailySourceTiers,
+  type AiDailySourceFeedKindName,
+  type AiDailySourceTierName,
+} from './aiDailyIngestion.js'
+import {
+  listAiDailySourceFeeds,
+  updateAiDailySourceFeed,
+  upsertAiDailySourceFeed,
+} from './aiDailyIngestionRepository.js'
 import {
   evaluatePublishExportReadiness,
   evaluateStudioArchiveTransition,
@@ -553,6 +564,53 @@ export function createStudioRouter() {
     }
   })
 
+  router.get('/ai-daily/source-feeds', async (req, res, next) => {
+    try {
+      const enabled = readOptionalBooleanQuery(req.query.enabled)
+      if (enabled === 'invalid') {
+        res.status(400).json({ error: 'invalid-enabled-filter' })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const feeds = await listAiDailySourceFeeds(prisma, { enabled })
+      res.json({ feeds: feeds.map(toAiDailySourceFeedResponse) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/source-feeds', async (req, res, next) => {
+    try {
+      const input = readAiDailySourceFeedInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error, issues: input.issues })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const feed = await upsertAiDailySourceFeed(prisma, input.data)
+      res.status(201).json({ feed: toAiDailySourceFeedResponse(feed) })
+    } catch (error) {
+      if (handleAiDailySourceFeedWriteError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.patch('/ai-daily/source-feeds/:id', async (req, res, next) => {
+    try {
+      const input = readAiDailySourceFeedPatch(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error, issues: input.issues })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const feed = await updateAiDailySourceFeed(prisma, { id: req.params.id, patch: input.patch })
+      res.json({ feed: toAiDailySourceFeedResponse(feed) })
+    } catch (error) {
+      if (handleAiDailySourceFeedWriteError(res, error)) return
+      next(error)
+    }
+  })
+
   router.get('/ai-daily/issues', async (_req, res, next) => {
     try {
       const prisma = requireStudioDatabase()
@@ -803,6 +861,13 @@ function readStringArray(value: unknown): string[] {
   return value.map((item) => readString(item, 240)).filter(Boolean)
 }
 
+function readOptionalBooleanQuery(value: unknown): boolean | undefined | 'invalid' {
+  if (value === undefined) return undefined
+  if (value === 'true') return true
+  if (value === 'false') return false
+  return 'invalid'
+}
+
 function readBodyJson(value: unknown): Prisma.InputJsonValue {
   if (!isRecord(value) || !Array.isArray(value.blocks)) return { blocks: [] }
   return {
@@ -964,6 +1029,149 @@ function readSourceInput(value: unknown):
       riskFlagsJson: readStringArrayJson(value.riskFlags),
     },
   }
+}
+
+function readAiDailySourceFeedInput(value: unknown):
+  | {
+      data: Parameters<typeof upsertAiDailySourceFeed>[1]
+    }
+  | { error: string; issues: string[] } {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-source-feed', issues: ['payload-invalid'] }
+  if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected', issues: [] }
+  const kind = readAiDailySourceFeedKind(value.kind)
+  const tier = readAiDailySourceTier(value.tier)
+  const intervalMinutes = readOptionalInteger(value.intervalMinutes)
+  const lookbackMinutes = readOptionalInteger(value.lookbackMinutes)
+  const issues: string[] = []
+  if (!kind) issues.push('kind-invalid')
+  if (!tier) issues.push('tier-invalid')
+  if (intervalMinutes === 'invalid') issues.push('interval-minutes-invalid')
+  if (lookbackMinutes === 'invalid') issues.push('lookback-minutes-invalid')
+  if (typeof value.enabled !== 'undefined' && typeof value.enabled !== 'boolean') issues.push('enabled-invalid')
+  if (issues.length > 0 || !kind || !tier) return { error: 'invalid-ai-daily-source-feed', issues }
+  return {
+    data: {
+      name: readString(value.name, 160),
+      kind,
+      url: readString(value.url, 500),
+      locale: readString(value.locale, 20) || undefined,
+      tier,
+      topics: dedupeStrings(readStringArray(value.topics)).slice(0, 12),
+      enabled: typeof value.enabled === 'boolean' ? value.enabled : undefined,
+      intervalMinutes: intervalMinutes === 'invalid' ? undefined : intervalMinutes,
+      lookbackMinutes: lookbackMinutes === 'invalid' ? undefined : lookbackMinutes,
+      officialDomain: 'officialDomain' in value ? readString(value.officialDomain, 253) || null : undefined,
+    },
+  }
+}
+
+function readAiDailySourceFeedPatch(value: unknown):
+  | { patch: Partial<Parameters<typeof upsertAiDailySourceFeed>[1]> }
+  | { error: string; issues: string[] } {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-source-feed-patch', issues: ['payload-invalid'] }
+  if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected', issues: [] }
+  const allowed = new Set([
+    'name',
+    'kind',
+    'url',
+    'locale',
+    'tier',
+    'topics',
+    'enabled',
+    'intervalMinutes',
+    'lookbackMinutes',
+    'officialDomain',
+  ])
+  const present = Object.keys(value).filter((key) => allowed.has(key))
+  if (present.length === 0) return { error: 'invalid-ai-daily-source-feed-patch', issues: ['patch-empty'] }
+  const patch: Partial<Parameters<typeof upsertAiDailySourceFeed>[1]> = {}
+  const issues: string[] = []
+  if ('name' in value) patch.name = readString(value.name, 160)
+  if ('kind' in value) {
+    const kind = readAiDailySourceFeedKind(value.kind)
+    if (kind) patch.kind = kind
+    else issues.push('kind-invalid')
+  }
+  if ('url' in value) patch.url = readString(value.url, 500)
+  if ('locale' in value) patch.locale = readString(value.locale, 20)
+  if ('tier' in value) {
+    const tier = readAiDailySourceTier(value.tier)
+    if (tier) patch.tier = tier
+    else issues.push('tier-invalid')
+  }
+  if ('topics' in value) patch.topics = dedupeStrings(readStringArray(value.topics)).slice(0, 12)
+  if ('enabled' in value) {
+    if (typeof value.enabled === 'boolean') patch.enabled = value.enabled
+    else issues.push('enabled-invalid')
+  }
+  if ('intervalMinutes' in value) {
+    const intervalMinutes = readOptionalInteger(value.intervalMinutes)
+    if (intervalMinutes === 'invalid' || intervalMinutes === undefined) issues.push('interval-minutes-invalid')
+    else patch.intervalMinutes = intervalMinutes
+  }
+  if ('lookbackMinutes' in value) {
+    const lookbackMinutes = readOptionalInteger(value.lookbackMinutes)
+    if (lookbackMinutes === 'invalid' || lookbackMinutes === undefined) issues.push('lookback-minutes-invalid')
+    else patch.lookbackMinutes = lookbackMinutes
+  }
+  if ('officialDomain' in value) patch.officialDomain = readString(value.officialDomain, 253) || null
+  return issues.length > 0 ? { error: 'invalid-ai-daily-source-feed-patch', issues } : { patch }
+}
+
+function readAiDailySourceFeedKind(value: unknown): AiDailySourceFeedKindName | null {
+  const kind = readString(value, 40).toUpperCase() as AiDailySourceFeedKindName
+  return aiDailySourceFeedKinds.includes(kind) ? kind : null
+}
+
+function readAiDailySourceTier(value: unknown): AiDailySourceTierName | null {
+  const tier = readString(value, 40).toUpperCase() as AiDailySourceTierName
+  return aiDailySourceTiers.includes(tier) ? tier : null
+}
+
+function readOptionalInteger(value: unknown): number | undefined | 'invalid' {
+  if (value === undefined) return undefined
+  return typeof value === 'number' && Number.isInteger(value) ? value : 'invalid'
+}
+
+function toAiDailySourceFeedResponse(feed: AiDailySourceFeed) {
+  return {
+    id: feed.id,
+    name: feed.name,
+    kind: feed.kind,
+    url: feed.url,
+    locale: feed.locale,
+    tier: feed.tier,
+    topics: jsonStringArray(feed.topicsJson),
+    enabled: feed.enabled,
+    intervalMinutes: feed.intervalMinutes,
+    lookbackMinutes: feed.lookbackMinutes,
+    officialDomain: feed.officialDomain,
+    healthStatus: feed.healthStatus.toLowerCase(),
+    lastAttemptedAt: feed.lastAttemptedAt?.toISOString() ?? null,
+    lastSuccessfulAt: feed.lastSuccessfulAt?.toISOString() ?? null,
+    nextCollectAt: feed.nextCollectAt?.toISOString() ?? null,
+    consecutiveFailures: feed.consecutiveFailures,
+    lastLagMs: feed.lastLagMs,
+    lastErrorCategory: feed.lastErrorCategory,
+    updatedAt: feed.updatedAt.toISOString(),
+  }
+}
+
+function handleAiDailySourceFeedWriteError(res: express.Response, error: unknown) {
+  if (isErrorMessage(error, 'ai-daily-source-feed-not-found')) {
+    res.status(404).json({ error: 'ai-daily-source-feed-not-found' })
+    return true
+  }
+  if (isErrorMessage(error, 'invalid-ai-daily-source-feed')) {
+    const issues = error instanceof Error ? error.message.split(':')[1]?.split(',').filter(Boolean) ?? [] : []
+    res.status(400).json({ error: 'invalid-ai-daily-source-feed', issues })
+    return true
+  }
+  if (isPrismaError(error, 'P2002')) {
+    res.status(409).json({ error: 'duplicate-ai-daily-source-feed' })
+    return true
+  }
+  return false
 }
 
 function readAiDailyIssueInput(value: unknown):
