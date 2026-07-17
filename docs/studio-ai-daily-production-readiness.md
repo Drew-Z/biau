@@ -30,11 +30,11 @@ npm.cmd run assistant:agent-eval
 
 这些命令不调用真实模型，不需要生产数据库，也不会自动公开内容。
 
-## 已完成部署基线与后续内容验收
+## 既有部署基线与当前 schema 变更
 
 以下部署基线已经完成，不应作为每轮内容工作的前置 setup 重复执行：
 
-- `biau-content-studio-api` 使用 `ASSISTANT_SERVICE_MODE=studio`，Studio migration 与独立内容数据库边界已建立。
+- `biau-content-studio-api` 使用 `ASSISTANT_SERVICE_MODE=studio`，既有 Studio migration 与独立内容数据库边界已建立。
 - `biau-operator-api` 使用 `ASSISTANT_SERVICE_MODE=operator`，并通过共享 `STUDIO_DATABASE_URL` 写入同一内容库。
 - `/studio` 已能读取 health、草稿、来源、AI Daily 和 Publish Export；Operator artifact 能定位 `hidden + review-needed` 草稿。
 
@@ -44,6 +44,10 @@ npm.cmd run assistant:agent-eval
 2. 人工复核事实、来源、结构、版权与公开安全边界；通过后创建 Publish Export。
 3. 使用 Publish Export 卡片显示的本地命令执行 `studio:export -- --run-checks`。
 4. 审查 Git diff 和博客检查结果后再提交，不让线上 Studio 直接写仓库。
+
+仓库中的草稿版本绑定尚需一次生产 schema 部署：先备份 Studio 数据库并保留可回滚的上一 Render revision，再让 `biau-content-studio-api` 执行
+`20260717000000_publish_export_version_binding` migration。它会给 Publish Export
+增加可空的草稿版本与批准记录字段、新增记录更新时间字段，同时创建 `(draftId, draftUpdatedAt)` 唯一索引，并增加指向 `ContentReview` 的外键。部署时应预留短暂 DDL 窗口并在完成后检查 health 与草稿/审核列表。既有旧记录不会被猜测回填，继续导出时应在 Studio 中重新创建一条记录。
 
 当前人工顺序和低敏成功标准只在 [`docs/manual-gates.md`](./manual-gates.md) 维护。
 

@@ -130,11 +130,14 @@ export interface StudioPublishExportDraftSummary {
 export interface StudioPublishExport {
   id: string
   draftId: string
+  reviewId: string | null
+  draftUpdatedAt: string | null
   target: string
   exportedFiles: string[]
   checks: unknown
   exportedBy: string | null
   createdAt: string
+  updatedAt: string
   draft: StudioPublishExportDraftSummary | null
 }
 
@@ -382,11 +385,14 @@ export function normalizeStudioPublishExport(value: unknown): StudioPublishExpor
   return {
     id: value.id,
     draftId: value.draftId,
+    reviewId: readNullableString(value.reviewId),
+    draftUpdatedAt: readNullableString(value.draftUpdatedAt),
     target: readString(value.target),
     exportedFiles: readStringArray(value.exportedFiles),
     checks: value.checks,
     exportedBy: readNullableString(value.exportedBy),
     createdAt: readString(value.createdAt),
+    updatedAt: readString(value.updatedAt),
     draft: normalizePublishExportDraftSummary(value.draft),
   }
 }

@@ -5019,6 +5019,19 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   gap: var(--space-12, 12px);
 }
 
+.studio-form-fields {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-12, 12px);
+  border: 0;
+}
+
+.studio-form-fields:disabled {
+  opacity: 0.72;
+}
+
 .studio-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5402,6 +5415,13 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 
 .studio-actions {
   padding-top: var(--space-8);
+}
+
+.studio-actions > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6, 6px);
 }
 
 .studio-preview {

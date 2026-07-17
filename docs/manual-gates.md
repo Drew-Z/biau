@@ -36,7 +36,7 @@
 已完成的低敏平台基线：
 
 - Render 四服务边界（public/operator/studio/rag）已经由 `assistant:service-modes-smoke` 和部署契约覆盖。
-- Operator `DATABASE_URL` 与共享 Studio 内容库的边界已建立；现有 Studio / Operator migration 不再作为待执行 setup。
+- Operator `DATABASE_URL` 与共享 Studio 内容库的边界已建立；既有 Studio / Operator migration 不再作为重复 setup。新增 Publish Export 版本绑定 migration 仍按当前队列单独部署。
 - Owner durable memory 已通过重启后复核；旧成员制数据不会整体迁移。
 - Qdrant public/internal scope 同步已完成，embedding 维度和 stale-point cleanup 已有低敏结果。
 
@@ -86,7 +86,7 @@
 - Qdrant public/private scoped knowledge 已有同步成功记录；真实 collection、key 和 embedding 配置未写入仓库。
 - BIAU Operator 的生产边界复核已完成；同一 member context 已在重启后成功刷新一条既有 durable memory。生产配置值和 memory 内容未写入仓库。
 - Studio 首轮生产审核已完成：两个 hidden 草稿均被标记为 `needs-changes`，当前没有创建 Publish Export，也没有把质量不足的草稿导出为公开文章。
-- Studio 已能保存 `hidden + review-needed` 草稿和审核记录；后续只需处理被拒草稿，再审核一份证据完整的新版草稿。
+- 仓库代码已实现 Studio 草稿版本条件写入、真实修订后重提、归档只读，以及 Publish Export 与具体草稿版本/批准记录的绑定；生产是否生效仍取决于当前队列中的新增 migration 部署。
 - ERP、Legal RAG、Xunqiu、Pet 和 Playlab 均已有本地构建或 synthetic 基础，生产账号/发布批准仍按上表处理。
 - BIAU Operator 的 LangGraph、typed tools、owner session/memory schema、Cloudflare facade 和本地确定性测试已经进入代码收口；后续生产变更仍需按下方人工门禁执行。
 
@@ -94,16 +94,21 @@
 
 按顺序处理，完成一项后只记录低敏结果：
 
-1. **处理首轮被拒绝的 Studio 草稿**
+1. **部署 Studio Publish Export 版本绑定**
+   - 在 Render 手动部署最新 `biau-content-studio-api`；现有 Start Command 中的 `npm run prisma:migrate:studio` 会执行新增 migration。
+   - 预期 health 正常，草稿/来源/审核列表仍可刷新；不要粘贴数据库 URL 或 token。
+   - 部署后由 Codex 复核公开 health 与低敏 Studio 行为，旧 Publish Export 如缺少版本绑定则重新创建。
+
+2. **处理首轮被退回修改的 Studio 草稿**
    - 在 Studio 中打开两个状态为 `needs-changes` 的 hidden 草稿。
    - 选择一个作为主稿，补齐可核验事实、来源、知识点、边界和配图/结构；另一个归档或明确保留为不发布稿。
    - 先保存修改并重新提交审核，不要直接发布；完成后由 Codex 复核低敏状态，再进入新版审核和 Publish Export 门禁。
 
-2. **审核证据完整的新版草稿并创建第一个 Publish Export**
+3. **审核证据完整的新版草稿并创建第一个 Publish Export**
    - 仅在新版草稿完成事实、来源、结构和版权检查后执行。
    - 记录审核结论、draft id 的脱敏摘要和 export 数量，不记录文章正文或生产凭据。
 
-3. **继续关联项目门禁**
+4. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。
 
 ## 延期项

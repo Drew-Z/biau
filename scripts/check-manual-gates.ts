@@ -188,7 +188,10 @@ async function main() {
     ...scanSecrets(files.ledger.label, ledger),
     ...collectCompletedSetupRegressions(ledger),
     ...checkStatusProjectLedgerCoverage(ledger),
-    ...collectMissing(files.studioReadiness.label, studioReadiness, ['## 已完成部署基线与后续内容验收']),
+    ...collectMissing(files.studioReadiness.label, studioReadiness, [
+      '## 既有部署基线与当前 schema 变更',
+      '仓库中的草稿版本绑定尚需一次生产 schema 部署',
+    ]),
     ...(studioReadiness.includes('## 生产验收顺序') ? [`${files.studioReadiness.label} 仍维护过期的独立生产 setup 顺序。`] : []),
     ...collectMissing(files.contentStudio.label, contentStudio, ['## 平台边界与当前 Gate', './manual-gates.md']),
     ...(contentStudio.includes('## 仍是人工 Gate 的事项') ? [`${files.contentStudio.label} 仍维护过期的独立人工 Gate 列表。`] : []),

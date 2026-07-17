@@ -52,22 +52,24 @@ VITE_STUDIO_API_BASE_URL=http://localhost:8787
 ## 当前能力
 
 - 读取 Studio API health。
-- 创建、编辑和审核内容草稿。
+- 创建、编辑、提交审核、重新提交、批准和归档内容草稿。
 - 创建发布导出记录。
 - 把已审核草稿通过本地导出器写入公开静态博客数据。
 - 保存 AI 日报来源池条目。
 - 创建 AI 日报 issue 并关联来源 ID。
 - 后端会拦截明显的 key、token、数据库连接串等敏感内容。
 
-## 审核与退回修改
+## 草稿生命周期与审核
 
-1. 在审核摘要中先看“待修改”和“全部待审”计数。
-2. 点击“打开下一篇待修改”，在编辑器补齐事实、来源、知识点、可见性和安全边界。
-3. 先点击“保存草稿”，确认修改已写入 Studio 数据库。
-4. 点击“重新提交审核”；后端会新增 `pending` review，并让草稿继续保持 `review-needed`。
-5. 审核通过后才允许创建 Publish Export。退回修改、重新提交和审核通过都会保留 review 记录，不会直接公开内容。
+1. 新建草稿保存后状态为 `draft`，必须点击“提交审核”进入 `review-needed`，不能直接批准。
+2. 审核摘要会区分普通“待审核”和最新 review 为 `needs-changes` 的“待修改”。后端会验证草稿保存时间晚于退回时间；未保存真实修订时不能重新提交。
+3. 重新提交会新增 `pending` review；只有普通 `review-needed` 草稿才会启用“审核通过”。
+4. 编辑 `approved`、`published` 或 `rejected` 草稿会使旧终态结论失效，并在同一事务中重新进入 `review-needed + pending`；`rejected` 不提供绕过编辑的直接重提入口。
+5. `draft`、`review-needed`、`approved`、`rejected` 可以归档；归档后自动变为 `hidden + archived` 并只读。`published` 必须先完成公开撤回，不能直接归档。
+6. 审核通过后才允许创建 Publish Export。退回修改、重新提交、批准和归档都不会直接公开内容。
 
 草稿的 `needs-changes` 是最新 review 状态，不是独立的 draft 状态；页面会把这类 `review-needed` 草稿显示为“待修改”。
+编辑、审核、归档和创建导出记录都会提交浏览器当前看到的草稿 `updatedAt`；服务端以该版本执行条件写入。如果另一个窗口已保存较新版本，当前操作会提示刷新，而不是覆盖较新的结果。空补丁或只修改 `updatedBy` 不会触发状态迁移。
 
 ## 发布导出
 
@@ -91,7 +93,7 @@ src/data/blogCuration.ts
 
 默认会拒绝覆盖已有 slug；确认重写时加 `--force`。`--run-checks` 会在写文件后自动运行
 `blog:audit`、`blog:check`、`lint` 和 `build`，并在提供 `--publish-export-id`
-时回写导出文件列表和检查结果。不写文件的检查命令：
+时回写导出文件列表和检查结果。每条新 Publish Export 会绑定草稿 ID、草稿 `updatedAt` 和批准 review ID；导出器会在写文件前、写文件后和回写事务中核对三者。若最终回写因草稿并发变化或连接失败而未被 Studio 接受，导出器会恢复写入前文件，避免留下未绑定的旧版本内容。已经 `passed` 的记录会锁定，不能再次覆盖。不写文件的检查命令：
 
 ```powershell
 npm.cmd run studio:export -- --sample --dry-run
@@ -116,10 +118,11 @@ npm.cmd run build
 
 ## 平台边界与当前 Gate
 
-部署基线已经完成：Studio 使用独立内容数据库，Operator 通过同一个 `STUDIO_DATABASE_URL` 写入待审核草稿，数据库 migration 与服务边界不再作为当前 setup 待办。真实变量仍只保存在平台控制台，发生服务迁移、数据库切换或 schema 变化时才重新执行部署复核。
+既有部署基线已经完成：Studio 使用独立内容数据库，Operator 通过同一个 `STUDIO_DATABASE_URL` 写入待审核草稿，既有数据库 migration 与服务边界不再作为重复 setup 待办。仓库已经实现 Publish Export 版本绑定，但新增 `20260717000000_publish_export_version_binding` migration 尚待生产 Studio 服务部署；在它执行成功前，这项能力不能视为已在生产生效。真实变量仍只保存在平台控制台。
 
 当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准，当前 Content Studio gate 只有：
 
+- 首次使用版本绑定前，部署包含 `20260717000000_publish_export_version_binding` 的 Studio migration；旧 Publish Export 缺少版本绑定时应重新创建。
 - 使用生产 Studio token 修改或归档 `needs-changes` 草稿；token 不写入聊天或仓库。
 - 审核一份证据完整的新版草稿并创建 Publish Export。
 - 在本地或 CI 运行卡片中显示的 `studio:export` 命令，审核公开内容 diff 后再提交。

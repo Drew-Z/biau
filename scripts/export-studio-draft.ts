@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { blogColumnMeta, blogPosts, type BlogColumn, type BlogPostSummary } from '../src/data/blog'
@@ -11,6 +11,7 @@ import { evaluatePublishExportReadiness } from '../server/src/studioReviewPolicy
 import {
   normalizeStudioDraft,
   normalizeStudioDrafts,
+  normalizeStudioPublishExport,
   type StudioContentBlock,
   type StudioContentBody,
   type StudioDraft,
@@ -53,6 +54,9 @@ interface ContentSection {
 }
 
 interface ExportPlan {
+  draftId: string
+  reviewId: string
+  draftUpdatedAt: string
   post: BlogPost
   summary: BlogPostSummary
   curation: BlogCuration
@@ -178,12 +182,7 @@ async function readDraft(options: ExportOptions) {
 }
 
 async function fetchDraftFromStudio(draftRef: string) {
-  const base = normalizeApiBase(
-    process.env.STUDIO_EXPORT_API_BASE || process.env.VITE_STUDIO_API_BASE_URL || process.env.STUDIO_API_BASE,
-  )
-  const token = process.env.STUDIO_ADMIN_TOKEN || process.env.ADMIN_TOKEN
-  if (!base) throw new Error('缺少 STUDIO_EXPORT_API_BASE 或 VITE_STUDIO_API_BASE_URL')
-  if (!token) throw new Error('缺少 STUDIO_ADMIN_TOKEN 或 ADMIN_TOKEN')
+  const { base, token } = readStudioApiConfig()
 
   const response = await fetch(`${base}/studio/api/content-drafts`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -199,6 +198,36 @@ async function fetchDraftFromStudio(draftRef: string) {
 
 function normalizeApiBase(value: string | undefined) {
   return value?.trim().replace(/\/+$/u, '') ?? ''
+}
+
+function readStudioApiConfig() {
+  const base = normalizeApiBase(
+    process.env.STUDIO_EXPORT_API_BASE || process.env.VITE_STUDIO_API_BASE_URL || process.env.STUDIO_API_BASE,
+  )
+  const token = process.env.STUDIO_ADMIN_TOKEN || process.env.ADMIN_TOKEN
+  if (!base) throw new Error('缺少 STUDIO_EXPORT_API_BASE 或 VITE_STUDIO_API_BASE_URL')
+  if (!token) throw new Error('缺少 STUDIO_ADMIN_TOKEN 或 ADMIN_TOKEN')
+  return { base, token }
+}
+
+async function assertPublishExportMatchesDraft(draft: StudioDraft, publishExportId: string) {
+  const { base, token } = readStudioApiConfig()
+  const response = await fetch(`${base}/studio/api/publish-exports/${publishExportId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  const payload = (await response.json().catch(() => ({}))) as unknown
+  if (!response.ok) throw new Error(`PublishExport 读取失败：${response.status}`)
+  const publishExport = normalizeStudioPublishExport(isRecord(payload) ? payload.publishExport : null)
+  if (!publishExport) throw new Error('PublishExport 返回格式不完整')
+  if (publishExport.draftId !== draft.id) {
+    throw new Error('PublishExport 不属于当前草稿，请复制该草稿卡片中的完整导出命令')
+  }
+  if (!publishExport.reviewId || !publishExport.draftUpdatedAt) {
+    throw new Error('PublishExport 缺少草稿版本绑定，请在 Studio 中重新创建导出记录')
+  }
+  if (publishExport.reviewId !== draft.latestReview?.id || publishExport.draftUpdatedAt !== draft.updatedAt) {
+    throw new Error('PublishExport 对应的草稿或批准版本已经变化，请重新创建导出记录')
+  }
 }
 
 function assertStudioDraftExportReady(draft: StudioDraft) {
@@ -310,6 +339,9 @@ function buildExportPlan(draft: StudioDraft, options: ExportOptions): ExportPlan
   ]
 
   return {
+    draftId: draft.id,
+    reviewId: draft.latestReview?.id ?? '',
+    draftUpdatedAt: draft.updatedAt,
     post,
     summary,
     curation,
@@ -500,6 +532,38 @@ async function writePlan(plan: ExportPlan) {
   await Promise.all(Object.entries(plan.files).map(([filePath, content]) => writeFile(filePath, content, 'utf8')))
 }
 
+interface ExportFileSnapshot {
+  filePath: string
+  existed: boolean
+  content: string
+}
+
+async function capturePlanFiles(plan: ExportPlan): Promise<ExportFileSnapshot[]> {
+  return Promise.all(
+    Object.keys(plan.files).map(async (filePath) => {
+      const existed = existsSync(filePath)
+      return {
+        filePath,
+        existed,
+        content: existed ? await readFile(filePath, 'utf8') : '',
+      }
+    }),
+  )
+}
+
+async function restorePlanFiles(snapshots: ExportFileSnapshot[]) {
+  await Promise.all(
+    snapshots.map(async (snapshot) => {
+      if (!snapshot.existed) {
+        await rm(snapshot.filePath, { force: true })
+        return
+      }
+      await mkdir(dirname(snapshot.filePath), { recursive: true })
+      await writeFile(snapshot.filePath, snapshot.content, 'utf8')
+    }),
+  )
+}
+
 interface ExportChecks {
   status: 'local-export-written' | 'passed' | 'failed'
   exportedAt: string
@@ -509,11 +573,7 @@ interface ExportChecks {
 
 async function reportPublishExport(plan: ExportPlan, options: ExportOptions, checks: ExportChecks) {
   if (!options.publishExportId || options.dryRun) return
-  const base = normalizeApiBase(
-    process.env.STUDIO_EXPORT_API_BASE || process.env.VITE_STUDIO_API_BASE_URL || process.env.STUDIO_API_BASE,
-  )
-  const token = process.env.STUDIO_ADMIN_TOKEN || process.env.ADMIN_TOKEN
-  if (!base || !token) throw new Error('回写 PublishExport 需要 Studio API base 和 token')
+  const { base, token } = readStudioApiConfig()
 
   const response = await fetch(`${base}/studio/api/publish-exports/${options.publishExportId}`, {
     method: 'PATCH',
@@ -522,6 +582,9 @@ async function reportPublishExport(plan: ExportPlan, options: ExportOptions, che
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
+      draftId: plan.draftId,
+      reviewId: plan.reviewId,
+      draftUpdatedAt: plan.draftUpdatedAt,
       exportedFiles: plan.exportedFiles,
       checks,
       exportedBy: options.exportedBy || 'studio-export-script',
@@ -562,6 +625,7 @@ async function main() {
   const options = parseArgs(process.argv.slice(2))
   const draft = await readDraft(options)
   if (options.draftRef) assertStudioDraftExportReady(draft)
+  if (options.publishExportId) await assertPublishExportMatchesDraft(draft, options.publishExportId)
   if (draft.visibility !== 'featured') {
     console.warn(`提示：草稿当前 visibility=${draft.visibility}；本地公开导出会写入 featured curation。`)
   }
@@ -586,11 +650,27 @@ async function main() {
     if (refreshedDraft.id !== draft.id || refreshedDraft.updatedAt !== draft.updatedAt) {
       throw new Error('Studio 草稿在导出准备期间发生变化，请重新运行导出命令')
     }
+    if (options.publishExportId) await assertPublishExportMatchesDraft(refreshedDraft, options.publishExportId)
   }
 
-  await writePlan(plan)
-  const checks = options.runChecks ? runValidationChecks() : pendingValidationChecks()
-  await reportPublishExport(plan, options, checks)
+  const fileSnapshots = await capturePlanFiles(plan)
+  let checks: ExportChecks
+  try {
+    await writePlan(plan)
+    if (options.draftRef) {
+      const postWriteDraft = await fetchDraftFromStudio(options.draftRef)
+      assertStudioDraftExportReady(postWriteDraft)
+      if (postWriteDraft.id !== draft.id || postWriteDraft.updatedAt !== draft.updatedAt) {
+        throw new Error('Studio 草稿在文件写入期间发生变化，已恢复写入前文件')
+      }
+      if (options.publishExportId) await assertPublishExportMatchesDraft(postWriteDraft, options.publishExportId)
+    }
+    checks = options.runChecks ? runValidationChecks() : pendingValidationChecks()
+    await reportPublishExport(plan, options, checks)
+  } catch (error) {
+    await restorePlanFiles(fileSnapshots)
+    throw error
+  }
   console.log(JSON.stringify({
     exported: true,
     slug: plan.post.slug,

@@ -132,17 +132,24 @@ model ContentReview {
   reviewedBy    String?
   reviewedAt    DateTime            @default(now())
   draft         ContentDraft        @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  publishExports PublishExport[]
 }
 
 model PublishExport {
-  id                String       @id @default(cuid())
+  id                String         @id @default(cuid())
   draftId           String
+  reviewId          String?
+  draftUpdatedAt    DateTime?
   target            String
   exportedFilesJson Json
   checksJson        Json?
   exportedBy        String?
-  createdAt         DateTime     @default(now())
-  draft             ContentDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  draft             ContentDraft   @relation(fields: [draftId], references: [id], onDelete: Cascade)
+  review            ContentReview? @relation(fields: [reviewId], references: [id], onDelete: SetNull)
+
+  @@unique([draftId, draftUpdatedAt])
 }
 
 model SourceItem {

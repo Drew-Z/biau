@@ -13,13 +13,16 @@
 - [x] Make the Studio `needs-changes` queue operable: distinguish drafts awaiting edits, support resubmission, document the five-step review flow, and cover the mobile UI with deterministic checks.
 - [x] Harden Studio approval and Publish Export gates: require the complete review checklist, re-check the latest approved review before export, expose the runnable local export command, and remove completed platform setup from active documentation gates.
 - [x] Prevent stale Operator session and chat responses from replacing the latest selected conversation, with a delayed-response browser regression check.
-- [ ] Rewrite or archive the rejected Studio drafts, approve one evidence-complete revision, and create the first Publish Export.
+- [x] Complete the Studio draft lifecycle: explicit initial submission/resubmission, approval invalidation after terminal-state edits, archive/read-only behavior, browser-observed optimistic state guards, empty-patch rejection, and deterministic desktop/mobile UI coverage.
+- [x] Bind Publish Export execution to the exact draft version and approved review, deterministically select the latest review, serialize callbacks through the bound draft row, restore target files after rejected callbacks, and make a passed export immutable.
+- [ ] Deploy the Publish Export version-binding migration to the Studio service and verify low-sensitive health before processing the production drafts.
+- [ ] Rewrite or archive the `needs-changes` Studio drafts, approve one evidence-complete revision, and create the first Publish Export.
 - [ ] After each user-confirmed gate, verify low-sensitive evidence, update the ledger, commit/push, and present the next single gate.
 
 ## Validation Commands
 
 ```powershell
-npm.cmd run assistant:admin-check
+npm.cmd run operator:knowledge-check
 npm.cmd run server:build
 npm.cmd run server:smoke
 npm.cmd run check:ui

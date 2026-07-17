@@ -1148,6 +1148,10 @@ for (const viewport of viewports) {
 
     if (route.studioReviewFixture) {
       await page.getByText('UI Check 待审核草稿').first().waitFor({ state: 'visible', timeout: 10_000 })
+      const fixtureApiRequests = []
+      page.on('request', (request) => {
+        if (request.url().includes('/studio/api/')) fixtureApiRequests.push(request.url())
+      })
       const hiddenReviewMetric = await page.locator('.studio-review-queue-metrics span').filter({ hasText: 'Hidden 待审' }).innerText()
       const needsChangesMetric = await page.locator('.studio-review-queue-metrics span').filter({ hasText: '待修改' }).innerText()
       const nextReviewButton = page.getByRole('button', { name: '打开下一篇待审核' })
@@ -1194,11 +1198,87 @@ for (const viewport of viewports) {
       if (!nextNeedsChangesButtonDisabled) {
         await nextNeedsChangesButton.click()
         const needsChangesTitle = await page.locator('.studio-review-current > strong').first().innerText().catch(() => '')
-        const resubmitVisible = await page.getByRole('button', { name: '重新提交审核' }).isVisible().catch(() => false)
-        if (!needsChangesTitle.includes('UI Check 待修改草稿') || !resubmitVisible) {
-          failures.push(`${viewport.name} ${route.path}: needs-changes action should load the draft and expose resubmission`)
+        const editorPanel = page.locator('#studio-mobile-panel-editor')
+        const resubmitButton = editorPanel.getByRole('button', { name: '重新提交审核' })
+        const approveButton = editorPanel.getByRole('button', { name: '审核通过' })
+        const resubmitVisibleBeforeSave = await resubmitButton.isVisible().catch(() => false)
+        const approveDisabledBeforeResubmit = await approveButton.isDisabled().catch(() => false)
+        if (!needsChangesTitle.includes('UI Check 待修改草稿')) {
+          failures.push(`${viewport.name} ${route.path}: needs-changes action should load the draft`)
+        }
+        if (resubmitVisibleBeforeSave) {
+          failures.push(`${viewport.name} ${route.path}: needs-changes draft must be saved before resubmission`)
+        }
+        if (!approveDisabledBeforeResubmit) {
+          failures.push(`${viewport.name} ${route.path}: needs-changes draft must not allow approval before resubmission`)
+        }
+        const titleInput = editorPanel.locator('label').filter({ hasText: '标题' }).locator('input').first()
+        await titleInput.fill(`${await titleInput.inputValue()} 已修订`)
+        await editorPanel.getByRole('button', { name: '保存草稿' }).click()
+        const resubmitVisibleAfterSave = await resubmitButton.isVisible().catch(() => false)
+        if (!resubmitVisibleAfterSave) {
+          failures.push(`${viewport.name} ${route.path}: saved needs-changes draft should expose resubmission`)
+        } else {
+          await resubmitButton.click()
+          if (await approveButton.isDisabled().catch(() => true)) {
+            failures.push(`${viewport.name} ${route.path}: resubmitted draft should become eligible for approval`)
+          }
         }
       }
+
+      if (viewport.name === 'mobile') await page.getByRole('tab', { name: /^草稿箱/ }).click()
+      await page.locator('.studio-draft-item').filter({ hasText: 'UI Check 普通草稿' }).click()
+      const editorPanel = page.locator('#studio-mobile-panel-editor')
+      const submitButton = editorPanel.getByRole('button', { name: '提交审核' })
+      const approveDraftButton = editorPanel.getByRole('button', { name: '审核通过' })
+      if (!(await submitButton.isVisible().catch(() => false)) || !(await approveDraftButton.isDisabled().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: ordinary draft should require submission before approval`)
+      } else {
+        await submitButton.click()
+        if (await approveDraftButton.isDisabled().catch(() => true)) {
+          failures.push(`${viewport.name} ${route.path}: submitted draft should become eligible for approval`)
+        }
+      }
+
+      const archiveButton = editorPanel.getByRole('button', { name: '归档草稿' })
+      page.once('dialog', (dialog) => dialog.accept())
+      await archiveButton.click()
+      const archivedStatusVisible = await page.getByText('草稿已归档并设为暂不公开。').isVisible().catch(() => false)
+      const archivedTitleDisabled = await editorPanel
+        .locator('label')
+        .filter({ hasText: '标题' })
+        .locator('input')
+        .first()
+        .isDisabled()
+        .catch(() => false)
+      if (!archivedStatusVisible || !archivedTitleDisabled || !(await archiveButton.isDisabled().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: archived draft should become hidden, read-only, and non-archivable`)
+      }
+
+      if (viewport.name === 'mobile') await page.getByRole('tab', { name: /^草稿箱/ }).click()
+      await page.locator('.studio-draft-item').filter({ hasText: 'UI Check 已发布草稿' }).click()
+      const publishedArchiveDisabled = await editorPanel
+        .getByRole('button', { name: '归档草稿' })
+        .isDisabled()
+        .catch(() => false)
+      if (!publishedArchiveDisabled) {
+        failures.push(`${viewport.name} ${route.path}: published draft should require withdrawal before archive`)
+      }
+
+      if (viewport.name === 'mobile') await page.getByRole('tab', { name: /^草稿箱/ }).click()
+      await page.locator('.studio-draft-item').filter({ hasText: 'UI Check 已批准草稿' }).click()
+      const fixtureExportButton = editorPanel.getByRole('button', { name: '创建导出记录' })
+      await fixtureExportButton.click()
+      if (!(await page.getByText('已创建本地 UI 检查用发布导出记录。').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: fixture export should complete locally`)
+      }
+      if (!(await fixtureExportButton.isDisabled().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: current draft version must not create duplicate exports`)
+      }
+      if (fixtureApiRequests.length > 0) {
+        failures.push(`${viewport.name} ${route.path}: fixture actions must not call Studio API (${fixtureApiRequests.length})`)
+      }
+
       if (viewport.name === 'mobile') {
         await page.getByRole('tab', { name: /^辅助/ }).click()
       }

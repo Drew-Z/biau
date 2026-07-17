@@ -5,8 +5,14 @@ import { env, hasStudioDatabase } from './env.js'
 import { buildAiDailyIssueReadinessIssues } from './studioAiDailyReadiness.js'
 import {
   evaluatePublishExportReadiness,
+  evaluateStudioArchiveTransition,
+  evaluateStudioDraftEditTransition,
+  evaluateStudioDraftVersion,
+  evaluateStudioPublishReportTransition,
   evaluateStudioReviewTransition,
+  hasStudioDraftContentPatch,
   normalizeStudioPublishReport,
+  type StudioPublishReport,
 } from './studioReviewPolicy.js'
 
 const blogColumns = new Set(['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log'])
@@ -64,6 +70,10 @@ interface StudioAuthResult {
 }
 
 const reviewReadyAiDailyStatuses = new Set<StudioAiDailyStatus>(['REVIEW_NEEDED', 'APPROVED', 'PUBLISHED'])
+const latestReviewQuery = {
+  orderBy: [{ reviewedAt: 'desc' }, { id: 'desc' }],
+  take: 1,
+} satisfies Prisma.ContentReviewFindManyArgs
 
 export function createStudioRouter() {
   const router = express.Router()
@@ -94,7 +104,7 @@ export function createStudioRouter() {
       const drafts = await prisma.contentDraft.findMany({
         orderBy: { updatedAt: 'desc' },
         take: 60,
-        include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+        include: { reviews: latestReviewQuery },
       })
       res.json({ drafts: drafts.map(toDraftResponse) })
     } catch (error) {
@@ -113,7 +123,7 @@ export function createStudioRouter() {
       const prisma = requireStudioDatabase()
       const draft = await prisma.contentDraft.create({
         data: input.data,
-        include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+        include: { reviews: latestReviewQuery },
       })
       res.status(201).json({ draft: toDraftResponse(draft) })
     } catch (error) {
@@ -139,12 +149,47 @@ export function createStudioRouter() {
         res.status(400).json({ error: input.error })
         return
       }
-
-      const draft = await prisma.contentDraft.update({
-        where: { id: existing.id },
-        data: input.data,
-        include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+      if (!hasStudioDraftContentPatch(req.body)) {
+        res.status(400).json({ error: 'missing-draft-content-change' })
+        return
+      }
+      const version = evaluateStudioDraftVersion(existing.updatedAt.toISOString(), req.body?.expectedUpdatedAt)
+      if (!version.ok) {
+        res.status(version.error === 'invalid-draft-version' ? 400 : 409).json({ error: version.error })
+        return
+      }
+      const transition = evaluateStudioDraftEditTransition(existing.status)
+      if (!transition.ok) {
+        res.status(409).json({ error: transition.error })
+        return
+      }
+      const reviewedBy = readString(req.body?.updatedBy, 80)
+      const draft = await prisma.$transaction(async (tx) => {
+        const updated = await tx.contentDraft.updateMany({
+          where: { id: existing.id, status: existing.status, updatedAt: new Date(version.expectedUpdatedAt) },
+          data: { ...input.data, status: transition.nextDraftStatus },
+        })
+        if (updated.count !== 1) return null
+        if (transition.createPendingReview) {
+          await tx.contentReview.create({
+            data: {
+              draftId: existing.id,
+              status: 'PENDING',
+              checklistJson: { sourceChecked: false, safetyChecked: false, publicReady: false },
+              notes: 'Content changed after a terminal review; a new approval is required.',
+              reviewedBy,
+            },
+          })
+        }
+        return tx.contentDraft.findUnique({
+          where: { id: existing.id },
+          include: { reviews: latestReviewQuery },
+        })
       })
+      if (!draft) {
+        res.status(409).json({ error: 'draft-state-changed' })
+        return
+      }
       res.json({ draft: toDraftResponse(draft) })
     } catch (error) {
       if (isPrismaError(error, 'P2002')) {
@@ -154,7 +199,6 @@ export function createStudioRouter() {
       next(error)
     }
   })
-
   router.post('/content-drafts/:id/reviews', async (req, res, next) => {
     try {
       const reviewStatus = readReviewStatus(req.body?.status)
@@ -164,23 +208,44 @@ export function createStudioRouter() {
       }
 
       const prisma = requireStudioDatabase()
-      const existing = await prisma.contentDraft.findUnique({ where: { id: req.params.id } })
+      const existing = await prisma.contentDraft.findUnique({
+        where: { id: req.params.id },
+        include: { reviews: latestReviewQuery },
+      })
       if (!existing) {
         res.status(404).json({ error: 'draft-not-found' })
+        return
+      }
+
+      const version = evaluateStudioDraftVersion(existing.updatedAt.toISOString(), req.body?.expectedUpdatedAt)
+      if (!version.ok) {
+        res.status(version.error === 'invalid-draft-version' ? 400 : 409).json({ error: version.error })
         return
       }
 
       const checklistJson = readChecklistJson(req.body?.checklist)
       const notes = readString(req.body?.notes, 2000)
       const reviewedBy = readString(req.body?.reviewedBy, 80)
-      const transition = evaluateStudioReviewTransition(existing.status, reviewStatus, checklistJson)
+      const latestReview = existing.reviews[0]
+      const transition = evaluateStudioReviewTransition(
+        existing.status,
+        reviewStatus,
+        checklistJson,
+        latestReview?.status,
+        !latestReview || existing.updatedAt.getTime() > latestReview.reviewedAt.getTime(),
+      )
       if (!transition.ok) {
         res.status(409).json({ error: transition.error })
         return
       }
 
-      const [review, draft] = await prisma.$transaction([
-        prisma.contentReview.create({
+      const result = await prisma.$transaction(async (tx) => {
+        const updated = await tx.contentDraft.updateMany({
+          where: { id: existing.id, status: existing.status, updatedAt: new Date(version.expectedUpdatedAt) },
+          data: { status: transition.nextDraftStatus, updatedBy: reviewedBy || undefined },
+        })
+        if (updated.count !== 1) return null
+        const review = await tx.contentReview.create({
           data: {
             draftId: existing.id,
             status: reviewStatus,
@@ -188,29 +253,77 @@ export function createStudioRouter() {
             notes,
             reviewedBy,
           },
-        }),
-        prisma.contentDraft.update({
+        })
+        const draft = await tx.contentDraft.findUnique({
           where: { id: existing.id },
-          data: { status: transition.nextDraftStatus, updatedBy: reviewedBy || undefined },
-          include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
-        }),
-      ])
+          include: { reviews: latestReviewQuery },
+        })
+        return draft ? { review, draft } : null
+      })
+      if (!result) {
+        res.status(409).json({ error: 'draft-state-changed' })
+        return
+      }
 
-      res.status(201).json({ review: toReviewResponse(review), draft: toDraftResponse(draft) })
+      res.status(201).json({ review: toReviewResponse(result.review), draft: toDraftResponse(result.draft) })
     } catch (error) {
       next(error)
     }
   })
 
+  router.post('/content-drafts/:id/archive', async (req, res, next) => {
+    try {
+      const prisma = requireStudioDatabase()
+      const existing = await prisma.contentDraft.findUnique({ where: { id: req.params.id } })
+      if (!existing) {
+        res.status(404).json({ error: 'draft-not-found' })
+        return
+      }
+      const version = evaluateStudioDraftVersion(existing.updatedAt.toISOString(), req.body?.expectedUpdatedAt)
+      if (!version.ok) {
+        res.status(version.error === 'invalid-draft-version' ? 400 : 409).json({ error: version.error })
+        return
+      }
+      const transition = evaluateStudioArchiveTransition(existing.status)
+      if (!transition.ok) {
+        res.status(409).json({ error: transition.error })
+        return
+      }
+      const updatedBy = readString(req.body?.updatedBy, 80)
+      const draft = await prisma.$transaction(async (tx) => {
+        const updated = await tx.contentDraft.updateMany({
+          where: { id: existing.id, status: existing.status, updatedAt: new Date(version.expectedUpdatedAt) },
+          data: { status: 'ARCHIVED', visibility: 'HIDDEN', updatedBy: updatedBy || undefined },
+        })
+        if (updated.count !== 1) return null
+        return tx.contentDraft.findUnique({
+          where: { id: existing.id },
+          include: { reviews: latestReviewQuery },
+        })
+      })
+      if (!draft) {
+        res.status(409).json({ error: 'draft-state-changed' })
+        return
+      }
+      res.json({ draft: toDraftResponse(draft) })
+    } catch (error) {
+      next(error)
+    }
+  })
   router.post('/content-drafts/:id/publish-exports', async (req, res, next) => {
     try {
       const prisma = requireStudioDatabase()
       const existing = await prisma.contentDraft.findUnique({
         where: { id: req.params.id },
-        include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+        include: { reviews: latestReviewQuery },
       })
       if (!existing) {
         res.status(404).json({ error: 'draft-not-found' })
+        return
+      }
+      const version = evaluateStudioDraftVersion(existing.updatedAt.toISOString(), req.body?.expectedUpdatedAt)
+      if (!version.ok) {
+        res.status(version.error === 'invalid-draft-version' ? 400 : 409).json({ error: version.error })
         return
       }
       const latestReview = existing.reviews[0]
@@ -225,20 +338,37 @@ export function createStudioRouter() {
 
       const target = readString(req.body?.target, 80) || 'static-blog-data'
       const exportedBy = readString(req.body?.exportedBy, 80)
-      const publishExport = await prisma.publishExport.create({
-        data: {
-          draftId: existing.id,
-          target,
-          exportedBy,
-          exportedFilesJson: [],
-          checksJson: { status: 'pending-local-export' },
-        },
-        include: { draft: true },
+      const publishExport = await prisma.$transaction(async (tx) => {
+        const locked = await tx.contentDraft.updateMany({
+          where: { id: existing.id, status: existing.status, updatedAt: new Date(version.expectedUpdatedAt) },
+          data: { updatedAt: new Date(version.expectedUpdatedAt) },
+        })
+        if (locked.count !== 1) return null
+        return tx.publishExport.create({
+          data: {
+            draftId: existing.id,
+            reviewId: latestReview!.id,
+            draftUpdatedAt: existing.updatedAt,
+            target,
+            exportedBy,
+            exportedFilesJson: [],
+            checksJson: { status: 'pending-local-export' },
+          },
+          include: { draft: true },
+        })
       })
+      if (!publishExport) {
+        res.status(409).json({ error: 'draft-state-changed' })
+        return
+      }
       res.status(201).json({
         publishExport: toPublishExportResponse(publishExport),
       })
     } catch (error) {
+      if (isPrismaError(error, 'P2002')) {
+        res.status(409).json({ error: 'publish-export-already-exists' })
+        return
+      }
       next(error)
     }
   })
@@ -257,6 +387,23 @@ export function createStudioRouter() {
     }
   })
 
+  router.get('/publish-exports/:id', async (req, res, next) => {
+    try {
+      const prisma = requireStudioDatabase()
+      const publishExport = await prisma.publishExport.findUnique({
+        where: { id: req.params.id },
+        include: { draft: true },
+      })
+      if (!publishExport) {
+        res.status(404).json({ error: 'publish-export-not-found' })
+        return
+      }
+      res.json({ publishExport: toPublishExportResponse(publishExport) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
   router.patch('/publish-exports/:id', async (req, res, next) => {
     try {
       const input = readPublishExportPatch(req.body)
@@ -268,14 +415,38 @@ export function createStudioRouter() {
       const prisma = requireStudioDatabase()
       const existing = await prisma.publishExport.findUnique({
         where: { id: req.params.id },
-        include: { draft: { include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } } } },
+        include: { draft: { include: { reviews: latestReviewQuery } } },
       })
       if (!existing) {
         res.status(404).json({ error: 'publish-export-not-found' })
         return
       }
+      if (input.report.draftId !== existing.draftId) {
+        res.status(409).json({ error: 'publish-export-draft-mismatch' })
+        return
+      }
+      const boundReviewId = existing.reviewId
+      const boundDraftUpdatedAt = existing.draftUpdatedAt
+      if (!boundReviewId || !boundDraftUpdatedAt) {
+        res.status(409).json({ error: 'publish-export-version-missing' })
+        return
+      }
+      if (
+        input.report.reviewId !== boundReviewId ||
+        input.report.draftUpdatedAt !== boundDraftUpdatedAt.toISOString()
+      ) {
+        res.status(409).json({ error: 'publish-export-version-mismatch' })
+        return
+      }
 
       const latestReview = existing.draft.reviews[0]
+      if (
+        existing.draft.updatedAt.getTime() !== boundDraftUpdatedAt.getTime() ||
+        latestReview?.id !== boundReviewId
+      ) {
+        res.status(409).json({ error: 'publish-export-stale-draft' })
+        return
+      }
       const readiness = evaluatePublishExportReadiness(
         existing.draft.status,
         latestReview ? { status: latestReview.status, checklist: latestReview.checklistJson } : null,
@@ -285,12 +456,67 @@ export function createStudioRouter() {
         return
       }
 
-      const publishExport = await prisma.publishExport.update({
-        where: { id: existing.id },
-        data: input.data,
-        include: { draft: true },
+      const result = await prisma.$transaction(async (tx) => {
+        const locked = await tx.contentDraft.updateMany({
+          where: {
+            id: existing.draft.id,
+            status: existing.draft.status,
+            updatedAt: boundDraftUpdatedAt,
+          },
+          data: { updatedAt: boundDraftUpdatedAt },
+        })
+        if (locked.count !== 1) return { error: 'publish-export-stale-draft' as const }
+
+        const current = await tx.publishExport.findUnique({ where: { id: existing.id } })
+        if (!current) return { error: 'publish-export-not-found' as const }
+        if (current.draftId !== input.report.draftId) return { error: 'publish-export-draft-mismatch' as const }
+        if (!current.reviewId || !current.draftUpdatedAt) {
+          return { error: 'publish-export-version-missing' as const }
+        }
+        if (
+          current.reviewId !== input.report.reviewId ||
+          current.draftUpdatedAt.toISOString() !== input.report.draftUpdatedAt
+        ) {
+          return { error: 'publish-export-version-mismatch' as const }
+        }
+
+        const currentDraft = await tx.contentDraft.findUnique({
+          where: { id: current.draftId },
+          include: { reviews: latestReviewQuery },
+        })
+        if (
+          !currentDraft ||
+          currentDraft.updatedAt.getTime() !== current.draftUpdatedAt.getTime() ||
+          currentDraft.reviews[0]?.id !== current.reviewId
+        ) {
+          return { error: 'publish-export-stale-draft' as const }
+        }
+        const currentReadiness = evaluatePublishExportReadiness(
+          currentDraft.status,
+          currentDraft.reviews[0]
+            ? { status: currentDraft.reviews[0].status, checklist: currentDraft.reviews[0].checklistJson }
+            : null,
+        )
+        if (!currentReadiness.ok) return { error: currentReadiness.error }
+
+        const reportTransition = evaluateStudioPublishReportTransition(
+          current.checksJson,
+          input.report.checks.status,
+        )
+        if (!reportTransition.ok) return { error: reportTransition.error }
+
+        const publishExport = await tx.publishExport.update({
+          where: { id: current.id },
+          data: input.data,
+          include: { draft: true },
+        })
+        return { publishExport }
       })
-      res.json({ publishExport: toPublishExportResponse(publishExport) })
+      if ('error' in result) {
+        res.status(result.error === 'publish-export-not-found' ? 404 : 409).json({ error: result.error })
+        return
+      }
+      res.json({ publishExport: toPublishExportResponse(result.publishExport) })
     } catch (error) {
       next(error)
     }
@@ -446,14 +672,14 @@ export function createStudioRouter() {
       const linkedDraft = issue.draftId
         ? await prisma.contentDraft.findUnique({
             where: { id: issue.draftId },
-            include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+            include: { reviews: latestReviewQuery },
           })
         : null
       const existingSlugDraft = linkedDraft
         ? null
         : await prisma.contentDraft.findUnique({
             where: { slug },
-            include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+            include: { reviews: latestReviewQuery },
           })
 
       if (linkedDraft || existingSlugDraft) {
@@ -474,7 +700,7 @@ export function createStudioRouter() {
       const { finalIssue } = await prisma.$transaction(async (tx) => {
         const draft = await tx.contentDraft.create({
           data: draftData,
-          include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+          include: { reviews: latestReviewQuery },
         })
         const nextIssue = await tx.aiDailyIssue.update({
           where: { id: issue.id },
@@ -594,12 +820,12 @@ function readDraftInput(value: unknown):
 }
 
 function readDraftPatch(value: unknown):
-  | { data: Prisma.ContentDraftUpdateInput }
+  | { data: Prisma.ContentDraftUpdateManyMutationInput }
   | { error: string } {
   if (!isRecord(value)) return { error: 'invalid-draft-payload' }
   if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
 
-  const data: Prisma.ContentDraftUpdateInput = {}
+  const data: Prisma.ContentDraftUpdateManyMutationInput = {}
   if ('slug' in value) {
     const slug = readString(value.slug, 96)
     if (!isValidSlug(slug)) return { error: 'invalid-slug' }
@@ -751,12 +977,13 @@ function readAiDailyIssuePatch(value: unknown):
 }
 
 function readPublishExportPatch(value: unknown):
-  | { data: Prisma.PublishExportUpdateInput }
+  | { data: Prisma.PublishExportUpdateInput; report: StudioPublishReport }
   | { error: string } {
   if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
   const normalized = normalizeStudioPublishReport(value)
   if (!normalized.ok) return { error: normalized.error }
   return {
+    report: normalized.report,
     data: {
       exportedFilesJson: normalized.report.exportedFiles,
       checksJson: normalized.report.checks as unknown as Prisma.InputJsonValue,
@@ -823,7 +1050,7 @@ async function loadAiDailyIssueDetail(
     issue.draftId
       ? prisma.contentDraft.findUnique({
           where: { id: issue.draftId },
-          include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+          include: { reviews: latestReviewQuery },
         })
       : Promise.resolve(null),
   ])
@@ -964,11 +1191,14 @@ function toPublishExportResponse(
   return {
     id: publishExport.id,
     draftId: publishExport.draftId,
+    reviewId: publishExport.reviewId,
+    draftUpdatedAt: publishExport.draftUpdatedAt?.toISOString() ?? null,
     target: publishExport.target,
     exportedFiles: jsonStringArray(publishExport.exportedFilesJson),
     checks: publishExport.checksJson,
     exportedBy: publishExport.exportedBy,
     createdAt: publishExport.createdAt.toISOString(),
+    updatedAt: publishExport.updatedAt.toISOString(),
     draft: draft
       ? {
           id: draft.id,

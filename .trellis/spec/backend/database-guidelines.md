@@ -86,7 +86,14 @@ Do not migrate ordinary chats, invites, members, model assignments, usage, ambig
 - Review status: `approved | needs-changes | rejected | pending`.
 - Stable checklist booleans: `sourceChecked`, `safetyChecked`, `publicReady`.
 - Approving a draft requires all three checklist booleans to be `true`; route callers cannot approve with incomplete source, safety, or public-readiness evidence.
-- Review transitions are state-bound: `REVIEW_NEEDED` accepts review decisions, while `APPROVED` may only be revoked to `needs-changes` or `rejected`.
+- `DRAFT` enters review only through a new `PENDING` review. A `REJECTED` draft must be edited and saved; that edit invalidates the terminal result and creates the new `PENDING` review automatically.
+- A `REVIEW_NEEDED` draft whose latest review is `NEEDS_CHANGES` can be resubmitted only after the persisted draft `updatedAt` is later than that review's `reviewedAt`.
+- Review transitions are state-bound: ordinary `REVIEW_NEEDED` drafts accept review decisions, while `APPROVED` may only be revoked to `needs-changes` or `rejected`.
+- Editing an `APPROVED`, `PUBLISHED`, or `REJECTED` draft invalidates the terminal review result, returns the draft to `REVIEW_NEEDED`, and creates a new `PENDING` review in the same transaction.
+- `ARCHIVED` drafts are read-only. `DRAFT`, `REVIEW_NEEDED`, `APPROVED`, and `REJECTED` may be archived and become `HIDDEN`; `PUBLISHED` requires an explicit public-withdrawal flow before archive.
+- Draft edit, review, archive, and export-intent requests carry the browser's observed `expectedUpdatedAt`; the server compares it with the current row and uses that exact value in `id + status + updatedAt` conditional updates. A stale browser or concurrent request returns `draft-state-changed` instead of overwriting newer state.
+- Empty or audit-only draft patches do not count as content revisions and must not invalidate an approval or create a new review cycle.
+- Latest-review queries use `reviewedAt DESC, id DESC` so equal timestamps have a deterministic winner across list, review, and export paths.
 - Optional page metadata is bounded and normalized.
 - Unknown checklist keys are dropped.
 - Checklist JSON must not contain credentials, provider/database URLs, private dashboards, stack traces, or absolute paths.
@@ -95,6 +102,11 @@ Do not migrate ordinary chats, invites, members, model assignments, usage, ambig
 
 - Creating an export requires an `APPROVED` draft whose latest review is also `APPROVED` with all three checklist booleans set to `true`.
 - Re-check the latest review both when creating an export intent and when the local exporter reports its result; an older approval does not authorize export after a pending, needs-changes, or rejected review.
+- Every new Publish Export stores `draftId`, `draftUpdatedAt`, and the exact approved `reviewId`. The local exporter fetches the selected record before and after writing files and proves all three still match the current approved draft.
+- `draftId + draftUpdatedAt` is unique, so concurrent browsers cannot create duplicate export intents for one approved draft version.
+- Callback payloads repeat the bounded draft/review/version binding. Old records without that binding and callbacks for a later draft revision are rejected and must be replaced with a new Publish Export.
+- Publish Export callbacks are serialized through the bound draft row. `passed` is an immutable terminal result; failed and unfinished records may be retried.
+- The local exporter snapshots every target file before writing. If post-write version verification or the bound callback fails, it restores those files so an unaccepted export cannot remain in the working tree.
 - Production creates an export intent; it does not write Git files.
 - Local/CI reports repo-relative exported files and sanitized check results.
 - Export callbacks accept only bounded repo-relative file paths and structured local-export-written | passed | failed check evidence.

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Copy, FileStack, PencilLine, Wrench } from 'lucide-react'
+import { Archive, CheckCircle2, Copy, FileStack, PencilLine, Send, Undo2, Wrench } from 'lucide-react'
 import { StudioDraftPreview } from '../components/StudioDraftPreview'
 import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
 import { projects } from '../data/portfolio'
@@ -185,6 +185,15 @@ function createStudioUiCheckDrafts(): StudioDraft[] {
   return [
     {
       ...baseDraft,
+      id: 'ui-check-draft',
+      slug: 'ui-check-draft',
+      title: 'UI Check 普通草稿',
+      column: 'knowledge',
+      status: 'draft',
+      visibility: 'hidden',
+    },
+    {
+      ...baseDraft,
       id: 'ui-check-review-needed',
       slug: 'ui-check-review-needed',
       title: 'UI Check 待审核草稿',
@@ -223,27 +232,65 @@ function createStudioUiCheckDrafts(): StudioDraft[] {
         reviewedAt: '2026-07-09T00:10:00.000Z',
       },
     },
+    {
+      ...baseDraft,
+      id: 'ui-check-rejected',
+      slug: 'ui-check-rejected',
+      title: 'UI Check 已拒绝草稿',
+      column: 'knowledge',
+      status: 'rejected',
+      visibility: 'hidden',
+      latestReview: {
+        id: 'ui-check-review-rejected',
+        draftId: 'ui-check-rejected',
+        status: 'rejected',
+        checklist: {
+          sourceChecked: true,
+          safetyChecked: true,
+          publicReady: false,
+        },
+        notes: '本地 UI 检查用拒绝记录。',
+        reviewedBy: 'ui-check',
+        reviewedAt: '2026-07-09T00:12:00.000Z',
+      },
+    },
+    {
+      ...baseDraft,
+      id: 'ui-check-published',
+      slug: 'ui-check-published',
+      title: 'UI Check 已发布草稿',
+      column: 'build-log',
+      status: 'published',
+      visibility: 'featured',
+      publishedAt: '2026-07-09T00:15:00.000Z',
+    },
+    {
+      ...baseDraft,
+      id: 'ui-check-archived',
+      slug: 'ui-check-archived',
+      title: 'UI Check 已归档草稿',
+      column: 'knowledge',
+      status: 'archived',
+      visibility: 'hidden',
+      latestReview: {
+        id: 'ui-check-review-archived-needs-changes',
+        draftId: 'ui-check-archived',
+        status: 'needs-changes',
+        checklist: {
+          sourceChecked: true,
+          safetyChecked: true,
+          publicReady: false,
+        },
+        notes: '归档后旧审核记录只保留审计用途。',
+        reviewedBy: 'ui-check',
+        reviewedAt: '2026-07-09T00:16:00.000Z',
+      },
+    },
   ]
 }
 
 function createStudioUiCheckPublishExports(): StudioPublishExport[] {
-  return [
-    {
-      id: 'ui-check-export-01',
-      draftId: 'ui-check-approved',
-      target: 'static-blog-data',
-      exportedFiles: [],
-      checks: { status: 'pending-local-export' },
-      exportedBy: 'ui-check',
-      createdAt: '2026-07-09T00:20:00.000Z',
-      draft: {
-        id: 'ui-check-approved',
-        slug: 'ui-check-approved',
-        title: 'UI Check 已批准草稿',
-        status: 'approved',
-      },
-    },
-  ]
+  return []
 }
 
 function getDraftFromPayload(payload: unknown) {
@@ -293,7 +340,68 @@ function getPublishExportCommand(publishExport: StudioPublishExport) {
 const reviewQueueStatuses = new Set<StudioDraft['status']>(['review-needed', 'approved', 'rejected'])
 
 function isNeedsChangesDraft(draft: StudioDraft) {
-  return draft.latestReview?.status === 'needs-changes'
+  return draft.status === 'review-needed' && draft.latestReview?.status === 'needs-changes'
+}
+
+function hasSavedRevisionAfterLatestReview(draft: StudioDraft) {
+  if (!draft.latestReview) return false
+  const draftUpdatedAt = Date.parse(draft.updatedAt)
+  const reviewedAt = Date.parse(draft.latestReview.reviewedAt)
+  return Number.isFinite(draftUpdatedAt) && Number.isFinite(reviewedAt) && draftUpdatedAt > reviewedAt
+}
+
+function canSubmitStudioDraftForReview(draft: StudioDraft | null) {
+  return Boolean(draft && (draft.status === 'draft' || (isNeedsChangesDraft(draft) && hasSavedRevisionAfterLatestReview(draft))))
+}
+
+function canApproveStudioDraft(draft: StudioDraft | null) {
+  return Boolean(draft && draft.status === 'review-needed' && !isNeedsChangesDraft(draft))
+}
+
+function canRequestStudioChanges(draft: StudioDraft | null) {
+  return Boolean(
+    draft &&
+      ((draft.status === 'review-needed' && !isNeedsChangesDraft(draft)) || draft.status === 'approved'),
+  )
+}
+
+function canArchiveStudioDraft(draft: StudioDraft | null) {
+  return Boolean(
+    draft &&
+      (draft.status === 'draft' ||
+        draft.status === 'review-needed' ||
+        draft.status === 'approved' ||
+        draft.status === 'rejected'),
+  )
+}
+
+function getStudioReviewSubmissionLabel(draft: StudioDraft | null) {
+  return draft?.status === 'draft' ? '提交审核' : '重新提交审核'
+}
+
+function applyStudioUiCheckReview(draft: StudioDraft, status: 'pending' | 'approved' | 'needs-changes' | 'rejected') {
+  const reviewedAt = new Date(Date.parse(draft.updatedAt) + 60_000).toISOString()
+  const nextStatus: StudioDraft['status'] =
+    status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'review-needed'
+  return {
+    ...draft,
+    status: nextStatus,
+    updatedBy: 'ui-check',
+    updatedAt: reviewedAt,
+    latestReview: {
+      id: `ui-check-review-${draft.id}-${status}`,
+      draftId: draft.id,
+      status,
+      checklist: {
+        sourceChecked: true,
+        safetyChecked: true,
+        publicReady: status === 'approved',
+      },
+      notes: '本地 UI 检查生成的审核记录。',
+      reviewedBy: 'ui-check',
+      reviewedAt,
+    },
+  } satisfies StudioDraft
 }
 
 function getDraftStatusLabel(draft: StudioDraft) {
@@ -436,12 +544,24 @@ export function StudioPage() {
   const [statusText, setStatusText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSavingDraft, setIsSavingDraft] = useState(false)
+  const [isUpdatingDraftStatus, setIsUpdatingDraftStatus] = useState(false)
+  const [isCreatingPublishExport, setIsCreatingPublishExport] = useState(false)
   const [isSavingSource, setIsSavingSource] = useState(false)
   const [isSavingIssue, setIsSavingIssue] = useState(false)
 
   const selectedDraft = useMemo(
     () => drafts.find((draft) => draft.id === selectedDraftId) ?? null,
     [drafts, selectedDraftId],
+  )
+  const selectedDraftPublishExport = useMemo(
+    () =>
+      selectedDraft
+        ? publishExports.find(
+            (publishExport) =>
+              publishExport.draftId === selectedDraft.id && publishExport.draftUpdatedAt === selectedDraft.updatedAt,
+          ) ?? null
+        : null,
+    [publishExports, selectedDraft],
   )
   const reviewQueue = useMemo(
     () => drafts.filter((draft) => reviewQueueStatuses.has(draft.status)).slice(0, 6),
@@ -484,6 +604,7 @@ export function StudioPage() {
   const previewDate = selectedDraft?.publishedAt?.slice(0, 10) || selectedDraft?.updatedAt?.slice(0, 10) || today()
   const displayStatusText =
     statusText || (draftLinkTarget && !adminToken ? '请先保存 Studio token，保存后会自动定位助手创建的草稿。' : '')
+  const isDraftMutationPending = isSavingDraft || isUpdatingDraftStatus || isCreatingPublishExport
 
   const saveToken = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -616,6 +737,12 @@ export function StudioPage() {
     setStatusText(`正在编辑：${draft.title}`)
   }
 
+  const applyDraftResponse = (draft: StudioDraft) => {
+    setDrafts((current) => [draft, ...current.filter((item) => item.id !== draft.id)])
+    setSelectedDraftId(draft.id)
+    setDraftForm(draftToForm(draft))
+  }
+
   const newDraft = () => {
     setMobileWorkspaceView('editor')
     setSelectedDraftId('')
@@ -668,8 +795,13 @@ export function StudioPage() {
 
   const saveDraft = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (isDraftMutationPending) return
     if (!adminToken) {
       setStatusText('请先保存 Studio token。')
+      return
+    }
+    if (selectedDraft?.status === 'archived') {
+      setStatusText('已归档草稿为只读状态，不能继续保存。')
       return
     }
 
@@ -687,11 +819,60 @@ export function StudioPage() {
       aiAssistance: draftForm.aiAssistance.trim() || 'none',
       createdBy: draftForm.editorName.trim(),
       updatedBy: draftForm.editorName.trim(),
+      ...(selectedDraft ? { expectedUpdatedAt: selectedDraft.updatedAt } : {}),
     }
 
     setIsSavingDraft(true)
     setStatusText('')
     try {
+      if (useStudioUiCheckFixture) {
+        const baseline = Math.max(
+          selectedDraft ? Date.parse(selectedDraft.updatedAt) || 0 : 0,
+          selectedDraft?.latestReview ? Date.parse(selectedDraft.latestReview.reviewedAt) || 0 : 0,
+          Date.parse('2026-07-09T00:20:00.000Z'),
+        )
+        const updatedAt = new Date(baseline + 60_000).toISOString()
+        const reopensReview =
+          selectedDraft?.status === 'approved' ||
+          selectedDraft?.status === 'published' ||
+          selectedDraft?.status === 'rejected'
+        const pendingReview =
+          selectedDraft && reopensReview
+            ? {
+                id: `ui-check-review-${selectedDraft.id}-edit`,
+                draftId: selectedDraft.id,
+                status: 'pending' as const,
+                checklist: { sourceChecked: false, safetyChecked: false, publicReady: false },
+                notes: '本地 UI 检查：终态草稿编辑后重新进入审核。',
+                reviewedBy: 'ui-check',
+                reviewedAt: updatedAt,
+              }
+            : selectedDraft?.latestReview ?? null
+        const nextDraft = {
+          ...(selectedDraft ?? {
+            id: `ui-check-created-${drafts.length + 1}`,
+            createdAt: updatedAt,
+            publishedAt: null,
+            latestReview: null,
+          }),
+          ...payload,
+          status: reopensReview ? 'review-needed' : selectedDraft?.status ?? 'draft',
+          createdBy: selectedDraft?.createdBy ?? payload.createdBy,
+          updatedBy: payload.updatedBy,
+          updatedAt,
+          latestReview: pendingReview,
+        } satisfies StudioDraft
+        applyDraftResponse(nextDraft)
+        setStatusText(
+          reopensReview
+            ? '草稿已保存并重新进入审核；此前的批准或终态结论已失效。'
+            : selectedDraft
+              ? '草稿已保存。'
+              : '草稿已创建；下一步请提交审核。',
+        )
+        return
+      }
+
       const result = await requestStudioApi(
         selectedDraft ? `/content-drafts/${selectedDraft.id}` : '/content-drafts',
         adminToken,
@@ -709,10 +890,19 @@ export function StudioPage() {
         setStatusText('Studio API 返回的草稿格式不完整。')
         return
       }
-      setDrafts((current) => [nextDraft, ...current.filter((draft) => draft.id !== nextDraft.id)])
-      setSelectedDraftId(nextDraft.id)
-      setDraftForm(draftToForm(nextDraft))
-      setStatusText(selectedDraft ? '草稿已保存。' : '草稿已创建。')
+      applyDraftResponse(nextDraft)
+      const reopenedReview =
+        selectedDraft &&
+        (selectedDraft.status === 'approved' || selectedDraft.status === 'published' || selectedDraft.status === 'rejected') &&
+        nextDraft.status === 'review-needed' &&
+        nextDraft.latestReview?.status === 'pending'
+      setStatusText(
+        reopenedReview
+          ? '草稿已保存并重新进入审核；此前的批准或终态结论已失效。'
+          : selectedDraft
+            ? '草稿已保存。'
+            : '草稿已创建；下一步请提交审核。',
+      )
     } catch (error) {
       setStatusText(explainStudioClientException(error, '保存草稿'))
     } finally {
@@ -721,56 +911,184 @@ export function StudioPage() {
   }
 
   const reviewDraft = async (status: 'pending' | 'approved' | 'needs-changes' | 'rejected') => {
-    if (!selectedDraft || !adminToken) return
-    const result = await requestStudioApi(`/content-drafts/${selectedDraft.id}/reviews`, adminToken, {
-      method: 'POST',
-      body: JSON.stringify({
-        status,
-        reviewedBy: draftForm.editorName.trim(),
-        notes:
-          status === 'approved'
-            ? `通过 Studio 审核。页面级审核：${pageReviewPlan.title}。`
-            : status === 'pending'
-              ? `草稿已修订，重新提交 Studio 审核。页面级审核：${pageReviewPlan.title}。`
-              : `需要继续编辑后再发布。页面级审核：${pageReviewPlan.title}。`,
-        checklist: {
-          sourceChecked: true,
-          safetyChecked: true,
-          publicReady: status === 'approved',
-          pageKind: pageReviewPlan.kind,
-          pageExportTarget: pageReviewPlan.exportTarget,
-          pageChecks: pageReviewPlan.checks,
-        },
-      }),
-    })
-    if (!result.ok) {
-      setStatusText(explainStudioApiError(result.status, readStudioError(result.payload)))
+    if (!selectedDraft || !adminToken || isDraftMutationPending) return
+    const allowed =
+      status === 'pending'
+        ? canSubmitStudioDraftForReview(selectedDraft)
+        : status === 'approved'
+          ? canApproveStudioDraft(selectedDraft)
+          : canRequestStudioChanges(selectedDraft)
+    if (!allowed) {
+      setStatusText('当前草稿状态不能执行这项审核操作，请刷新后重新选择草稿。')
       return
     }
-    const nextDraft = getDraftFromPayload(result.payload)
-    if (nextDraft) {
-      setDrafts((current) => [nextDraft, ...current.filter((draft) => draft.id !== nextDraft.id)])
-      setSelectedDraftId(nextDraft.id)
+
+    setIsUpdatingDraftStatus(true)
+    setStatusText('')
+    try {
+      if (useStudioUiCheckFixture) {
+        const nextDraft = applyStudioUiCheckReview(selectedDraft, status)
+        applyDraftResponse(nextDraft)
+        setStatusText(`审核状态已更新：${getDraftStatusLabel(nextDraft)}`)
+        return
+      }
+
+      const result = await requestStudioApi(`/content-drafts/${selectedDraft.id}/reviews`, adminToken, {
+        method: 'POST',
+        body: JSON.stringify({
+          status,
+          expectedUpdatedAt: selectedDraft.updatedAt,
+          reviewedBy: draftForm.editorName.trim(),
+          notes:
+            status === 'approved'
+              ? `通过 Studio 审核。页面级审核：${pageReviewPlan.title}。`
+              : status === 'pending'
+                ? `${selectedDraft.status === 'draft' ? '草稿已提交' : '草稿已修订并重新提交'} Studio 审核。页面级审核：${pageReviewPlan.title}。`
+                : `需要继续编辑后再发布。页面级审核：${pageReviewPlan.title}。`,
+          checklist: {
+            sourceChecked: true,
+            safetyChecked: true,
+            publicReady: status === 'approved',
+            pageKind: pageReviewPlan.kind,
+            pageExportTarget: pageReviewPlan.exportTarget,
+            pageChecks: pageReviewPlan.checks,
+          },
+        }),
+      })
+      if (!result.ok) {
+        setStatusText(explainStudioApiError(result.status, readStudioError(result.payload)))
+        return
+      }
+      const nextDraft = getDraftFromPayload(result.payload)
+      if (!nextDraft) {
+        setStatusText('Studio API 返回的草稿格式不完整。')
+        return
+      }
+      applyDraftResponse(nextDraft)
       setStatusText(`审核状态已更新：${getDraftStatusLabel(nextDraft)}`)
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '更新审核状态'))
+    } finally {
+      setIsUpdatingDraftStatus(false)
+    }
+  }
+
+  const archiveDraft = async () => {
+    if (!selectedDraft || !adminToken || isDraftMutationPending) return
+    if (!canArchiveStudioDraft(selectedDraft)) {
+      setStatusText(
+        selectedDraft.status === 'published'
+          ? '已发布草稿需要先走公开撤回流程，不能直接归档。'
+          : '当前草稿状态不能归档。',
+      )
+      return
+    }
+    if (!window.confirm(`归档“${selectedDraft.title}”后，草稿会变为只读并移出审核队列。继续吗？`)) return
+
+    setIsUpdatingDraftStatus(true)
+    setStatusText('')
+    try {
+      if (useStudioUiCheckFixture) {
+        const nextDraft = {
+          ...selectedDraft,
+          status: 'archived',
+          visibility: 'hidden',
+          updatedBy: 'ui-check',
+          updatedAt: new Date(Date.parse(selectedDraft.updatedAt) + 60_000).toISOString(),
+        } satisfies StudioDraft
+        applyDraftResponse(nextDraft)
+        setStatusText('草稿已归档并设为暂不公开。')
+        return
+      }
+
+      const result = await requestStudioApi(`/content-drafts/${selectedDraft.id}/archive`, adminToken, {
+        method: 'POST',
+        body: JSON.stringify({
+          expectedUpdatedAt: selectedDraft.updatedAt,
+          updatedBy: draftForm.editorName.trim(),
+        }),
+      })
+      if (!result.ok) {
+        setStatusText(explainStudioApiError(result.status, readStudioError(result.payload)))
+        return
+      }
+      const nextDraft = getDraftFromPayload(result.payload)
+      if (!nextDraft) {
+        setStatusText('Studio API 返回的草稿格式不完整。')
+        return
+      }
+      applyDraftResponse(nextDraft)
+      setStatusText('草稿已归档并设为暂不公开。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '归档草稿'))
+    } finally {
+      setIsUpdatingDraftStatus(false)
     }
   }
 
   const createPublishExport = async () => {
-    if (!selectedDraft || !adminToken) return
-    const result = await requestStudioApi(`/content-drafts/${selectedDraft.id}/publish-exports`, adminToken, {
-      method: 'POST',
-      body: JSON.stringify({
-        target: 'static-blog-data',
-        exportedBy: draftForm.editorName.trim(),
-      }),
-    })
-    if (!result.ok) {
-      setStatusText(explainStudioApiError(result.status, readStudioError(result.payload)))
+    if (!selectedDraft || !adminToken || isDraftMutationPending) return
+    if (selectedDraft.status !== 'approved') {
+      setStatusText('草稿还没有通过审核，不能创建发布导出记录。')
       return
     }
-    const publishExport = getPublishExportFromPayload(result.payload)
-    if (publishExport) setPublishExports((current) => [publishExport, ...current.filter((item) => item.id !== publishExport.id)])
-    setStatusText('已创建发布导出记录；本地导出器写入公开数据后可回写文件列表和检查结果。')
+    if (selectedDraftPublishExport) {
+      setStatusText('当前草稿版本已经有 Publish Export，请使用现有记录。')
+      return
+    }
+
+    setIsCreatingPublishExport(true)
+    setStatusText('')
+    try {
+      if (useStudioUiCheckFixture) {
+        const createdAt = new Date(Date.parse(selectedDraft.updatedAt) + 60_000).toISOString()
+        const publishExport = {
+          id: `ui-check-export-${String(publishExports.length + 1).padStart(2, '0')}`,
+          draftId: selectedDraft.id,
+          reviewId: selectedDraft.latestReview?.id ?? null,
+          draftUpdatedAt: selectedDraft.updatedAt,
+          target: 'static-blog-data',
+          exportedFiles: [],
+          checks: { status: 'pending-local-export' },
+          exportedBy: 'ui-check',
+          createdAt,
+          updatedAt: createdAt,
+          draft: {
+            id: selectedDraft.id,
+            slug: selectedDraft.slug,
+            title: selectedDraft.title,
+            status: selectedDraft.status,
+          },
+        } satisfies StudioPublishExport
+        setPublishExports((current) => [publishExport, ...current])
+        setStatusText('已创建本地 UI 检查用发布导出记录。')
+        return
+      }
+
+      const result = await requestStudioApi(`/content-drafts/${selectedDraft.id}/publish-exports`, adminToken, {
+        method: 'POST',
+        body: JSON.stringify({
+          expectedUpdatedAt: selectedDraft.updatedAt,
+          target: 'static-blog-data',
+          exportedBy: draftForm.editorName.trim(),
+        }),
+      })
+      if (!result.ok) {
+        setStatusText(explainStudioApiError(result.status, readStudioError(result.payload)))
+        return
+      }
+      const publishExport = getPublishExportFromPayload(result.payload)
+      if (!publishExport) {
+        setStatusText('Studio API 返回的发布导出记录格式不完整。')
+        return
+      }
+      setPublishExports((current) => [publishExport, ...current.filter((item) => item.id !== publishExport.id)])
+      setStatusText('已创建发布导出记录；本地导出器写入公开数据后可回写文件列表和检查结果。')
+    } catch (error) {
+      setStatusText(explainStudioClientException(error, '创建发布导出记录'))
+    } finally {
+      setIsCreatingPublishExport(false)
+    }
   }
 
   const copyPublishExportCommand = async (publishExport: StudioPublishExport) => {
@@ -886,7 +1204,13 @@ export function StudioPage() {
     }
   }
 
-  const canExport = selectedDraft?.status === 'approved'
+  const canSubmitForReview = canSubmitStudioDraftForReview(selectedDraft)
+  const canApprove = canApproveStudioDraft(selectedDraft)
+  const canRequestChanges = canRequestStudioChanges(selectedDraft)
+  const canArchive = canArchiveStudioDraft(selectedDraft)
+  const canExport = selectedDraft?.status === 'approved' && !selectedDraftPublishExport
+  const isArchivedDraft = selectedDraft?.status === 'archived'
+  const reviewSubmissionLabel = getStudioReviewSubmissionLabel(selectedDraft)
 
   return (
     <main className="studio-page page-stack">
@@ -1011,10 +1335,30 @@ export function StudioPage() {
             </button>
             <a href="#studio-draft-editor">编辑内容</a>
             <a href="#studio-draft-preview">查看预览</a>
-            <button type="button" disabled={!selectedDraft || !adminToken} onClick={() => void reviewDraft('approved')}>
+            {canSubmitForReview && (
+              <button
+                type="button"
+                disabled={!adminToken || isDraftMutationPending}
+                onClick={() => void reviewDraft('pending')}
+              >
+                <Send size={14} aria-hidden />
+                {reviewSubmissionLabel}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={!canApprove || !adminToken || isDraftMutationPending}
+              onClick={() => void reviewDraft('approved')}
+            >
+              <CheckCircle2 size={14} aria-hidden />
               审核通过
             </button>
-            <button type="button" disabled={!canExport || !adminToken} onClick={() => void createPublishExport()}>
+            <button
+              type="button"
+              disabled={!canExport || !adminToken || isDraftMutationPending}
+              onClick={() => void createPublishExport()}
+              title={selectedDraftPublishExport ? '当前草稿版本已经有 Publish Export' : '为当前批准版本创建 Publish Export'}
+            >
               创建导出记录
             </button>
           </div>
@@ -1183,6 +1527,7 @@ export function StudioPage() {
             </div>
 
             <form className="studio-form" onSubmit={saveDraft}>
+              <fieldset className="studio-form-fields" disabled={isArchivedDraft}>
               <div className="studio-form-grid">
                 <label className="assistant-field">
                   <span>标题</span>
@@ -1304,24 +1649,75 @@ export function StudioPage() {
                 </label>
               </div>
 
+              </fieldset>
+
+              {isArchivedDraft && (
+                <p className="assistant-status-text">该草稿已归档并锁定为只读；如需继续创作，请新建草稿。</p>
+              )}
+              {selectedDraft &&
+                (selectedDraft.status === 'approved' ||
+                  selectedDraft.status === 'published' ||
+                  selectedDraft.status === 'rejected') && (
+                  <p className="assistant-status-text">
+                    保存这份草稿会使现有终态结论失效，并自动创建新的待审核记录。
+                  </p>
+                )}
+
               <div className="assistant-admin-actions studio-actions">
-                <button type="submit" disabled={isSavingDraft || !adminToken}>
+                <button type="submit" disabled={isDraftMutationPending || !adminToken || isArchivedDraft}>
                   {isSavingDraft ? '保存中…' : selectedDraft ? '保存草稿' : '创建草稿'}
                 </button>
-                <button type="button" disabled={!selectedDraft} onClick={() => void reviewDraft('needs-changes')}>
+                <button
+                  type="button"
+                  disabled={!canRequestChanges || !adminToken || isDraftMutationPending}
+                  onClick={() => void reviewDraft('needs-changes')}
+                >
+                  <Undo2 size={15} aria-hidden />
                   退回修改
                 </button>
-                {selectedDraft && isNeedsChangesDraft(selectedDraft) && (
-                  <button type="button" disabled={!adminToken} onClick={() => void reviewDraft('pending')}>
-                    重新提交审核
+                {canSubmitForReview && (
+                  <button
+                    type="button"
+                    disabled={!adminToken || isDraftMutationPending}
+                    onClick={() => void reviewDraft('pending')}
+                  >
+                    <Send size={15} aria-hidden />
+                    {reviewSubmissionLabel}
                   </button>
                 )}
-                <button type="button" disabled={!selectedDraft} onClick={() => void reviewDraft('approved')}>
+                <button
+                  type="button"
+                  disabled={!canApprove || !adminToken || isDraftMutationPending}
+                  onClick={() => void reviewDraft('approved')}
+                >
+                  <CheckCircle2 size={15} aria-hidden />
                   审核通过
                 </button>
-                <button type="button" disabled={!canExport} onClick={() => void createPublishExport()}>
+                <button
+                  type="button"
+                  disabled={!canExport || !adminToken || isDraftMutationPending}
+                  onClick={() => void createPublishExport()}
+                  title={selectedDraftPublishExport ? '当前草稿版本已经有 Publish Export' : '为当前批准版本创建 Publish Export'}
+                >
                   创建导出记录
                 </button>
+                {selectedDraft && (
+                  <button
+                    type="button"
+                    disabled={!canArchive || !adminToken || isDraftMutationPending}
+                    onClick={() => void archiveDraft()}
+                    title={
+                      selectedDraft.status === 'published'
+                        ? '已发布草稿必须先走公开撤回流程'
+                        : selectedDraft.status === 'archived'
+                          ? '草稿已经归档'
+                          : '归档草稿并移出审核队列'
+                    }
+                  >
+                    <Archive size={15} aria-hidden />
+                    归档草稿
+                  </button>
+                )}
               </div>
             </form>
           </section>
