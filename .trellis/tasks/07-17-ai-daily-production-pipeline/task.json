@@ -1,0 +1,42 @@
+{
+  "id": "ai-daily-production-pipeline",
+  "name": "ai-daily-production-pipeline",
+  "title": "AI Daily production pipeline",
+  "description": "Build BIAU's rolling approved AI flash feed and daily deep edition with real-time discovery, original evidence, high-quality generation, Studio review, and scheduled production runs.",
+  "status": "planning",
+  "dev_type": "feature",
+  "scope": "fullstack",
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-17-ai-daily-domain-foundation",
+    "07-17-ai-daily-ingestion-evidence",
+    "07-17-ai-daily-generation-runner",
+    "07-17-ai-daily-studio-editorial",
+    "07-17-ai-daily-public-feed",
+    "07-17-ai-daily-production-operations"
+  ],
+  "parent": null,
+  "relatedFiles": [
+    "prisma/schema.prisma",
+    "server/src/studioRoutes.ts",
+    "server/src/index.ts",
+    "scripts/generate-ai-daily-draft.mjs",
+    "src/pages/StudioAiDailyIssuePage.tsx",
+    "src/pages/StudioPage.tsx",
+    "docs/ai-daily-pipeline.md",
+    "docs/content-studio.md"
+  ],
+  "notes": "User approved the final architecture and six-child execution order on 2026-07-17. Planning is complete. Next action when the workflow enters implementation: start 07-17-ai-daily-domain-foundation and load trellis-before-dev.",
+  "meta": {}
+}

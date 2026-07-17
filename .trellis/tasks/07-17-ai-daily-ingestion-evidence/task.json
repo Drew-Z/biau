@@ -1,0 +1,30 @@
+{
+  "id": "ai-daily-ingestion-evidence",
+  "name": "ai-daily-ingestion-evidence",
+  "title": "AI Daily ingestion and evidence",
+  "description": "Implement curated source ingestion, Brave discovery, safe extraction, Firecrawl/Tavily adapters, freshness, dedupe, and event selection.",
+  "status": "planning",
+  "dev_type": "feature",
+  "scope": "backend",
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-ai-daily-production-pipeline",
+  "relatedFiles": [
+    "server/src",
+    "scripts",
+    "prisma/schema.prisma"
+  ],
+  "notes": "",
+  "meta": {}
+}

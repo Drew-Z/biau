@@ -1,0 +1,31 @@
+{
+  "id": "ai-daily-studio-editorial",
+  "name": "ai-daily-studio-editorial",
+  "title": "AI Daily Studio editorial workspace",
+  "description": "Implement Runs, Sources, Events, Flash Review, Edition, manual draft, correction, and revision workflows in Content Studio.",
+  "status": "planning",
+  "dev_type": "feature",
+  "scope": "fullstack",
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-ai-daily-production-pipeline",
+  "relatedFiles": [
+    "server/src/studioRoutes.ts",
+    "src/pages/StudioPage.tsx",
+    "src/pages/StudioAiDailyIssuePage.tsx",
+    "src/utils"
+  ],
+  "notes": "",
+  "meta": {}
+}

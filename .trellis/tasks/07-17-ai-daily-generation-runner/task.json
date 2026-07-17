@@ -1,0 +1,30 @@
+{
+  "id": "ai-daily-generation-runner",
+  "name": "ai-daily-generation-runner",
+  "title": "AI Daily generation and durable runner",
+  "description": "Implement evidence-bound extractor/composer/verifier roles, quality evaluation, durable jobs, leases, and freshness SLO enforcement.",
+  "status": "planning",
+  "dev_type": "feature",
+  "scope": "backend",
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-ai-daily-production-pipeline",
+  "relatedFiles": [
+    "server/src",
+    "scripts",
+    "package.json"
+  ],
+  "notes": "",
+  "meta": {}
+}

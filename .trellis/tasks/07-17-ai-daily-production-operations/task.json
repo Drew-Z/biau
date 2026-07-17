@@ -1,0 +1,31 @@
+{
+  "id": "ai-daily-production-operations",
+  "name": "ai-daily-production-operations",
+  "title": "AI Daily production operations",
+  "description": "Complete Render scheduling, configuration, metrics, source/model evaluation, live business acceptance, and rollback documentation.",
+  "status": "planning",
+  "dev_type": "feature",
+  "scope": "fullstack",
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-ai-daily-production-pipeline",
+  "relatedFiles": [
+    "docs/ai-daily-pipeline.md",
+    "docs/content-studio.md",
+    ".env.example",
+    "package.json"
+  ],
+  "notes": "",
+  "meta": {}
+}

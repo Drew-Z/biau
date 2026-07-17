@@ -1,0 +1,31 @@
+{
+  "id": "ai-daily-public-feed",
+  "name": "ai-daily-public-feed",
+  "title": "AI Daily public feed and deep edition",
+  "description": "Implement approved public flash projection API/UI, cache/security boundaries, and daily static publication consistency.",
+  "status": "planning",
+  "dev_type": "feature",
+  "scope": "fullstack",
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-ai-daily-production-pipeline",
+  "relatedFiles": [
+    "server/src",
+    "src/pages",
+    "src/components",
+    "scripts/export-studio-draft.ts"
+  ],
+  "notes": "",
+  "meta": {}
+}
