@@ -118,11 +118,10 @@ npm.cmd run build
 
 ## 平台边界与当前 Gate
 
-既有部署基线已经完成：Studio 使用独立内容数据库，Operator 通过同一个 `STUDIO_DATABASE_URL` 写入待审核草稿，既有数据库 migration 与服务边界不再作为重复 setup 待办。仓库已经实现 Publish Export 版本绑定，但新增 `20260717000000_publish_export_version_binding` migration 尚待生产 Studio 服务部署；在它执行成功前，这项能力不能视为已在生产生效。真实变量仍只保存在平台控制台。
+部署基线已经完成：Studio 使用独立内容数据库，Operator 通过同一个 `STUDIO_DATABASE_URL` 写入待审核草稿，`20260717000000_publish_export_version_binding` migration 已在生产 Studio 服务执行。受保护的 health、草稿、来源和 Publish Export 只读接口已通过低敏复核，版本绑定能力可以在生产使用。真实变量仍只保存在平台控制台。
 
 当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准，当前 Content Studio gate 只有：
 
-- 首次使用版本绑定前，部署包含 `20260717000000_publish_export_version_binding` 的 Studio migration；旧 Publish Export 缺少版本绑定时应重新创建。
 - 使用生产 Studio token 修改或归档 `needs-changes` 草稿；token 不写入聊天或仓库。
 - 审核一份证据完整的新版草稿并创建 Publish Export。
 - 在本地或 CI 运行卡片中显示的 `studio:export` 命令，审核公开内容 diff 后再提交。

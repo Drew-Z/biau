@@ -45,9 +45,8 @@ npm.cmd run assistant:agent-eval
 3. 使用 Publish Export 卡片显示的本地命令执行 `studio:export -- --run-checks`。
 4. 审查 Git diff 和博客检查结果后再提交，不让线上 Studio 直接写仓库。
 
-仓库中的草稿版本绑定尚需一次生产 schema 部署：先备份 Studio 数据库并保留可回滚的上一 Render revision，再让 `biau-content-studio-api` 执行
-`20260717000000_publish_export_version_binding` migration。它会给 Publish Export
-增加可空的草稿版本与批准记录字段、新增记录更新时间字段，同时创建 `(draftId, draftUpdatedAt)` 唯一索引，并增加指向 `ContentReview` 的外键。部署时应预留短暂 DDL 窗口并在完成后检查 health 与草稿/审核列表。既有旧记录不会被猜测回填，继续导出时应在 Studio 中重新创建一条记录。
+`20260717000000_publish_export_version_binding` migration 已在生产 Studio 服务执行。它给 Publish Export
+增加可空的草稿版本与批准记录字段、新增记录更新时间字段，同时创建 `(draftId, draftUpdatedAt)` 唯一索引，并增加指向 `ContentReview` 的外键。部署后，受保护的 health、草稿、来源和 Publish Export 只读接口均返回 `200`；Publish Export 查询成功使用新版 schema。既有旧记录不会被猜测回填，继续导出时应在 Studio 中重新创建一条记录。
 
 当前人工顺序和低敏成功标准只在 [`docs/manual-gates.md`](./manual-gates.md) 维护。
 

@@ -15,7 +15,7 @@
 - [x] Prevent stale Operator session and chat responses from replacing the latest selected conversation, with a delayed-response browser regression check.
 - [x] Complete the Studio draft lifecycle: explicit initial submission/resubmission, approval invalidation after terminal-state edits, archive/read-only behavior, browser-observed optimistic state guards, empty-patch rejection, and deterministic desktop/mobile UI coverage.
 - [x] Bind Publish Export execution to the exact draft version and approved review, deterministically select the latest review, serialize callbacks through the bound draft row, restore target files after rejected callbacks, and make a passed export immutable.
-- [ ] Deploy the Publish Export version-binding migration to the Studio service and verify low-sensitive health before processing the production drafts.
+- [x] Deploy the Publish Export version-binding migration to the Studio service and verify low-sensitive protected reads before processing the production drafts.
 - [ ] Rewrite or archive the `needs-changes` Studio drafts, approve one evidence-complete revision, and create the first Publish Export.
 - [ ] After each user-confirmed gate, verify low-sensitive evidence, update the ledger, commit/push, and present the next single gate.
 

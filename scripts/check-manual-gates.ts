@@ -190,7 +190,7 @@ async function main() {
     ...checkStatusProjectLedgerCoverage(ledger),
     ...collectMissing(files.studioReadiness.label, studioReadiness, [
       '## 既有部署基线与当前 schema 变更',
-      '仓库中的草稿版本绑定尚需一次生产 schema 部署',
+      '`20260717000000_publish_export_version_binding` migration 已在生产 Studio 服务执行',
     ]),
     ...(studioReadiness.includes('## 生产验收顺序') ? [`${files.studioReadiness.label} 仍维护过期的独立生产 setup 顺序。`] : []),
     ...collectMissing(files.contentStudio.label, contentStudio, ['## 平台边界与当前 Gate', './manual-gates.md']),
