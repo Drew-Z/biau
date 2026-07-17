@@ -40,6 +40,26 @@ export interface StudioContentBlock {
   caption?: string
   mermaid?: string
   sourceItemId?: string
+  citationSnapshot?: StudioCitationSnapshotV2
+}
+
+export interface StudioCitationSnapshotV2 {
+  version: 2
+  sourceItemId: string | null
+  evidenceId: string | null
+  title: string
+  publisher: string
+  originalUrl: string
+  canonicalUrl: string
+  publishedAt: string | null
+  retrievedAt: string
+  excerpt: string
+  locator?: {
+    heading?: string
+    startChar?: number
+    endChar?: number
+  }
+  contentHash?: string
 }
 
 export interface StudioContentBody {
@@ -239,7 +259,40 @@ export function normalizeStudioBody(value: unknown): StudioContentBody {
         caption: readString(block.caption) || undefined,
         mermaid: readString(block.mermaid) || undefined,
         sourceItemId: readString(block.sourceItemId) || undefined,
+        citationSnapshot: normalizeStudioCitationSnapshotV2(block.citationSnapshot),
       })),
+  }
+}
+
+function normalizeStudioCitationSnapshotV2(value: unknown): StudioCitationSnapshotV2 | undefined {
+  if (!isRecord(value) || value.version !== 2) return undefined
+  const title = readString(value.title)
+  const publisher = readString(value.publisher)
+  const originalUrl = readString(value.originalUrl)
+  const canonicalUrl = readString(value.canonicalUrl)
+  const retrievedAt = readString(value.retrievedAt)
+  const excerpt = readString(value.excerpt)
+  if (!title || !publisher || !originalUrl || !canonicalUrl || !retrievedAt || !excerpt) return undefined
+  const locator = isRecord(value.locator)
+    ? {
+        heading: readString(value.locator.heading) || undefined,
+        startChar: typeof value.locator.startChar === 'number' ? value.locator.startChar : undefined,
+        endChar: typeof value.locator.endChar === 'number' ? value.locator.endChar : undefined,
+      }
+    : undefined
+  return {
+    version: 2,
+    sourceItemId: readNullableString(value.sourceItemId),
+    evidenceId: readNullableString(value.evidenceId),
+    title,
+    publisher,
+    originalUrl,
+    canonicalUrl,
+    publishedAt: readNullableString(value.publishedAt),
+    retrievedAt,
+    excerpt,
+    ...(locator ? { locator } : {}),
+    ...(readString(value.contentHash) ? { contentHash: readString(value.contentHash) } : {}),
   }
 }
 

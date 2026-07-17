@@ -452,7 +452,14 @@ function blockToText(block: StudioContentBlock) {
     return block.src ? `图片：${label}（${block.src}）` : `图片：${label}`
   }
   if (block.type === 'flow') return block.mermaid ? `流程图草稿：\n${block.mermaid}` : ''
-  if (block.type === 'source-card') return `来源：${block.caption || block.sourceItemId || '未绑定来源'}`
+  if (block.type === 'source-card') {
+    const snapshot = block.citationSnapshot
+    if (snapshot?.version === 2) {
+      const publishedAt = snapshot.publishedAt ? ` · ${snapshot.publishedAt.slice(0, 10)}` : ''
+      return `来源：${snapshot.title} · ${snapshot.publisher}${publishedAt}\n链接：${snapshot.originalUrl}\n证据摘录：${snapshot.excerpt}`
+    }
+    return `来源：${block.caption || block.sourceItemId || '未绑定来源'}`
+  }
   return block.text ?? ''
 }
 

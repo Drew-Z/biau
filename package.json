@@ -41,6 +41,8 @@
     "studio:project-detail-plan": "tsx scripts/plan-project-detail-export.ts",
     "studio:status-plan": "tsx scripts/plan-status-detail-export.ts",
     "studio:ai-daily-brief-check": "tsx scripts/check-studio-ai-daily-brief.ts",
+    "studio:ai-daily-domain-check": "tsx server/scripts/ai-daily-domain-check.ts",
+    "studio:ai-daily-repository-check": "tsx server/scripts/ai-daily-repository-check.ts",
     "studio:review-policy-check": "tsx server/scripts/studio-review-policy-check.ts",
     "studio:smoke": "node scripts/check-studio-smoke.mjs",
     "blog:audit": "tsx scripts/audit-blog-catalog.ts",

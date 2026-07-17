@@ -244,3 +244,82 @@ npm.cmd run studio:smoke
 
 The wrapper writes the AI Daily sample draft to the system temp directory,
 verifies the safety markers, and cleans it up.
+
+## Scenario: AI Daily Production Domain Foundation
+
+### 1. Scope / Trigger
+
+- Trigger: changing production AI Daily storage, run/work orchestration, source selection, generated revisions, flash revisions, or citation snapshots.
+- Goal: preserve editorial auditability and deterministic retries while keeping legacy Studio issues readable during migration.
+
+### 2. Signatures
+
+- Shared domain contracts: `server/src/aiDailyDomain.ts`.
+- Database ownership and transaction helpers: `server/src/aiDailyRepository.ts`.
+- Deterministic fixtures: `server/src/aiDailyFixtures.ts`.
+- Domain gate: `npm.cmd run studio:ai-daily-domain-check`.
+
+### 3. Contracts
+
+- `AiDailyIssue.status` and `sourceIdsJson` are compatibility fields. Production workflow truth uses the separate editorial state and versioned `AiDailyIssueSource` rows.
+- Changed source selections must increment `selectionVersion`, preserve source order, and dual-write `sourceIdsJson` until the compatibility window closes; saving an identical ordered selection is idempotent.
+- Source reads prefer the current relational selection and fall back to ordered legacy JSON only when no current relation exists.
+- Canonical source promotion may update machine-owned identity/freshness fields, but must not overwrite manually edited title, publisher, tier, summary, tags, or risk flags.
+- Edition identity uses a strict real calendar date. Invalid legacy date strings remain repairable records with a null `editionDate`; migrations must not silently normalize them.
+- Work identity is independent of manual versus scheduled trigger. A claim requires a random lease token and expiry; completion must match both so an expired worker cannot overwrite a newer claim. A new worker may reclaim an expired lease only after closing the previous attempt as retryable failure.
+- Generated content and flash content are versioned records. Flash revision content is immutable, approval history is append-only, and approval supersedes the previous approved revision in the same transaction.
+- `EXPORTED` is not deployed-public truth. Public deployment remains explicit through `deployedPublicAt` or a later deployment projection.
+- Citation snapshot v2 stores the original URL, canonical URL, publisher, timestamps, and a bounded evidence excerpt inside the revision/draft so later source edits cannot rewrite publication evidence.
+- New domain tables are internal by default. Public selectors must opt in only after editorial approval and publication projection are implemented.
+
+### 4. Validation & Error Matrix
+
+- Invalid status transition -> reject with `invalid-ai-daily-transition` before writing.
+- Invalid or normalized-looking calendar date -> reject with `invalid-ai-daily-edition-date` / `invalid-date`.
+- Stale source selection version -> reject with `ai-daily-selection-version-conflict`.
+- Missing source IDs -> reject before relation writes.
+- Wrong lease token -> `lease-token-mismatch`; expired lease -> `lease-expired`.
+- Duplicate logical work -> return the existing `idempotencyKey` row rather than enqueueing another trigger-specific copy.
+- Citation snapshot with a private URL, malformed date, or evidence excerpt over 1 KiB -> reject as `invalid-citation-snapshot-v2`.
+
+### 5. Good/Base/Bad Cases
+
+- Good: a Studio brief save with unchanged source order preserves the current selection version, while an actual reorder creates a new ordered version and keeps the old rows for audit.
+- Good: a worker crash leaves an expired lease; the next worker closes the old attempt as `RETRYABLE_FAILED`, receives a new token, and a stale completion is rejected.
+- Base: a legacy issue has only `sourceIdsJson`; reads preserve its order until the first valid relational selection is written.
+- Bad: a retry key contains `manual` or `scheduled`, creating two logical copies of the same edition work.
+- Bad: generated/public content resolves citations by joining the latest mutable `SourceItem` instead of retaining citation snapshot v2.
+
+### 6. Tests Required
+
+- Run `npm.cmd run prisma:validate` and `npm.cmd run prisma:generate` after schema changes.
+- Run `npm.cmd run studio:ai-daily-domain-check`, `npm.cmd run studio:ai-daily-brief-check`, and `npm.cmd run studio:review-policy-check` after domain changes.
+- Run the full migration set against a disposable PostgreSQL database; migration changes also need a legacy-data fixture covering invalid dates, duplicate/missing source IDs, and preserved source order.
+- Run `studio:ai-daily-repository-check` only with `AI_DAILY_DATABASE_CHECK=1` and a local database whose name ends in `_test`; the script must refuse deployed or non-test databases.
+- Run `npm.cmd run server:build`, `npm.cmd run server:smoke`, `npm.cmd run assistant:service-modes-smoke`, `npm.cmd run lint`, and `npm.cmd run build` before commit.
+- Do not call search/model providers as a schema or domain health check.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+await prisma.aiDailyWorkItem.update({
+  where: { id: workItemId },
+  data: { status: 'SUCCEEDED' },
+})
+```
+
+This lets an expired worker overwrite a newer claim and drops attempt history.
+
+#### Correct
+
+```ts
+await completeAiDailyWorkItem(prisma, {
+  workItemId,
+  leaseToken,
+  result: 'succeeded',
+})
+```
+
+The repository verifies the active token and expiry, records the attempt outcome, and changes work state in one transaction.

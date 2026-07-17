@@ -3,6 +3,12 @@ import { Prisma } from '@prisma/client'
 import { requireStudioDatabase } from './db.js'
 import { env, hasStudioDatabase } from './env.js'
 import { buildAiDailyIssueReadinessIssues } from './studioAiDailyReadiness.js'
+import { normalizeAiDailyCitationSnapshotV2, parseAiDailyEditionDate } from './aiDailyDomain.js'
+import {
+  loadAiDailyIssueSources,
+  replaceAiDailyIssueSelectionInTransaction,
+  toAiDailyCitationSnapshotJson,
+} from './aiDailyRepository.js'
 import {
   evaluatePublishExportReadiness,
   evaluateStudioArchiveTransition,
@@ -565,9 +571,33 @@ export function createStudioRouter() {
         return
       }
       const prisma = requireStudioDatabase()
-      const issue = await prisma.aiDailyIssue.create({ data: input.data })
+      if (input.sourceIds.length > 0) {
+        const matchedSources = await prisma.sourceItem.count({ where: { id: { in: input.sourceIds } } })
+        if (matchedSources !== input.sourceIds.length) {
+          res.status(400).json({ error: 'invalid-source-ids' })
+          return
+        }
+      }
+      const issue = await prisma.$transaction(async (tx) => {
+        const created = await tx.aiDailyIssue.create({
+          data: { ...input.data, sourceIdsJson: [] },
+        })
+        if (input.sourceIds.length > 0) {
+          await replaceAiDailyIssueSelectionInTransaction(tx, {
+            issueId: created.id,
+            sourceIds: input.sourceIds,
+            selectedBy: 'studio',
+            selectionReason: 'initial Studio issue selection',
+          })
+        }
+        return tx.aiDailyIssue.findUniqueOrThrow({ where: { id: created.id } })
+      })
       res.status(201).json({ issue: toAiDailyIssueResponse(issue) })
     } catch (error) {
+      if (isErrorMessage(error, 'ai-daily-selection-version-conflict')) {
+        res.status(409).json({ error: 'ai-daily-selection-version-conflict' })
+        return
+      }
       if (isPrismaError(error, 'P2002')) {
         res.status(409).json({ error: 'duplicate-ai-daily-date' })
         return
@@ -626,13 +656,27 @@ export function createStudioRouter() {
         }
       }
 
-      const issue = await prisma.aiDailyIssue.update({
-        where: { id: existing.id },
-        data: input.data,
+      const issue = await prisma.$transaction(async (tx) => {
+        if (input.sourceIds) {
+          await replaceAiDailyIssueSelectionInTransaction(tx, {
+            issueId: existing.id,
+            sourceIds: input.sourceIds,
+            selectedBy: readString(req.body?.editorName, 80) || 'studio',
+            selectionReason: 'Studio issue source update',
+          })
+        }
+        return tx.aiDailyIssue.update({
+          where: { id: existing.id },
+          data: input.data,
+        })
       })
       const detail = await loadAiDailyIssueDetail(prisma, issue)
       res.json(detail)
     } catch (error) {
+      if (isErrorMessage(error, 'ai-daily-selection-version-conflict')) {
+        res.status(409).json({ error: 'ai-daily-selection-version-conflict' })
+        return
+      }
       if (isPrismaError(error, 'P2002')) {
         res.status(409).json({ error: 'duplicate-ai-daily-date' })
         return
@@ -655,8 +699,7 @@ export function createStudioRouter() {
         return
       }
 
-      const sourceIds = jsonStringArray(issue.sourceIdsJson)
-      const sources = await loadSourcesByIds(prisma, sourceIds)
+      const sources = (await loadAiDailyIssueSources(prisma, issue.id)).sources
       if (sources.length === 0) {
         res.status(409).json({ error: 'ai-daily-issue-needs-sources' })
         return
@@ -765,17 +808,23 @@ function readBodyJson(value: unknown): Prisma.InputJsonValue {
   return {
     blocks: value.blocks
       .filter(isRecord)
-      .map((block) => ({
-        type: readString(block.type, 40) || 'paragraph',
-        text: readString(block.text, 6000),
-        level: typeof block.level === 'number' ? block.level : undefined,
-        items: Array.isArray(block.items) ? block.items.map((item) => readString(item, 1000)).filter(Boolean) : undefined,
-        src: readString(block.src, 500) || undefined,
-        alt: readString(block.alt, 160) || undefined,
-        caption: readString(block.caption, 300) || undefined,
-        mermaid: readString(block.mermaid, 6000) || undefined,
-        sourceItemId: readString(block.sourceItemId, 120) || undefined,
-      })),
+      .map((block) => {
+        const citationSnapshot = normalizeAiDailyCitationSnapshotV2(block.citationSnapshot)
+        return {
+          type: readString(block.type, 40) || 'paragraph',
+          text: readString(block.text, 6000),
+          level: typeof block.level === 'number' ? block.level : undefined,
+          items: Array.isArray(block.items) ? block.items.map((item) => readString(item, 1000)).filter(Boolean) : undefined,
+          src: readString(block.src, 500) || undefined,
+          alt: readString(block.alt, 160) || undefined,
+          caption: readString(block.caption, 300) || undefined,
+          mermaid: readString(block.mermaid, 6000) || undefined,
+          sourceItemId: readString(block.sourceItemId, 120) || undefined,
+          citationSnapshot: citationSnapshot.ok
+            ? toAiDailyCitationSnapshotJson(citationSnapshot.snapshot)
+            : undefined,
+        }
+      }),
   }
 }
 
@@ -918,22 +967,25 @@ function readSourceInput(value: unknown):
 }
 
 function readAiDailyIssueInput(value: unknown):
-  | { data: Prisma.AiDailyIssueCreateInput }
+  | { data: Prisma.AiDailyIssueCreateInput; sourceIds: string[] }
   | { error: string } {
   if (!isRecord(value)) return { error: 'invalid-ai-daily-issue-payload' }
   if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
   const date = readString(value.date, 10)
   const title = readString(value.title, 180)
-  if (!/^\d{4}-\d{2}-\d{2}$/u.test(date)) return { error: 'invalid-date' }
+  const editionDate = parseAiDailyEditionDate(date)
+  if (!editionDate) return { error: 'invalid-date' }
   if (!title) return { error: 'missing-title' }
 
   return {
     data: {
       date,
       title,
-      sourceIdsJson: readStringArrayJson(value.sourceIds),
+      editionDate: editionDate.value,
+      sourceIdsJson: [],
       briefJson: isRecord(value.briefJson) ? (value.briefJson as Prisma.InputJsonValue) : undefined,
     },
+    sourceIds: dedupeStrings(readStringArray(value.sourceIds)).slice(0, 80),
   }
 }
 
@@ -949,8 +1001,10 @@ function readAiDailyIssuePatch(value: unknown):
   let targetStatus: StudioAiDailyStatus | undefined
   if ('date' in value) {
     const date = readString(value.date, 10)
-    if (!/^\d{4}-\d{2}-\d{2}$/u.test(date)) return { error: 'invalid-date' }
+    const editionDate = parseAiDailyEditionDate(date)
+    if (!editionDate) return { error: 'invalid-date' }
     data.date = date
+    data.editionDate = editionDate.value
   }
   if ('title' in value) {
     const title = readString(value.title, 180)
@@ -1044,9 +1098,8 @@ async function loadAiDailyIssueDetail(
   prisma: ReturnType<typeof requireStudioDatabase>,
   issue: Prisma.AiDailyIssueGetPayload<Record<string, never>>,
 ) {
-  const sourceIds = jsonStringArray(issue.sourceIdsJson)
   const [sources, draft] = await Promise.all([
-    loadSourcesByIds(prisma, sourceIds),
+    loadAiDailyIssueSources(prisma, issue.id).then((selection) => selection.sources),
     issue.draftId
       ? prisma.contentDraft.findUnique({
           where: { id: issue.draftId },
@@ -1126,6 +1179,19 @@ function buildAiDailyDraftBody(
         type: 'source-card',
         sourceItemId: source.id,
         caption: `${source.title} · ${source.sourceName}`,
+        citationSnapshot: {
+          version: 2,
+          sourceItemId: source.id,
+          evidenceId: null,
+          title: source.title,
+          publisher: source.sourceName,
+          originalUrl: source.url,
+          canonicalUrl: source.canonicalUrl || source.url,
+          publishedAt: source.publishedAt?.toISOString() ?? null,
+          retrievedAt: source.capturedAt.toISOString(),
+          excerpt: (source.rawExcerpt || source.summary || source.title).slice(0, 1024),
+          ...(source.contentHash ? { contentHash: source.contentHash } : {}),
+        },
       })),
       { type: 'heading', level: 2, text: '影响判断 / Why It Matters' },
       { type: 'list', items: sourceSignals },
@@ -1245,4 +1311,8 @@ function toAiDailyIssueResponse(issue: Prisma.AiDailyIssueGetPayload<Record<stri
 
 function isPrismaError(error: unknown, code: string) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === code
+}
+
+function isErrorMessage(error: unknown, message: string) {
+  return error instanceof Error && error.message === message
 }

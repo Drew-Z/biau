@@ -1,0 +1,31 @@
+{
+  "id": "ai-daily-domain-foundation",
+  "name": "ai-daily-domain-foundation",
+  "title": "AI Daily domain foundation",
+  "description": "Define production profiles, contracts, Prisma schema, migrations, state machines, and shared test fixtures for AI Daily.",
+  "status": "in_progress",
+  "dev_type": "feature",
+  "scope": "backend",
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-07-17",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "07-17-ai-daily-production-pipeline",
+  "relatedFiles": [
+    "prisma/schema.prisma",
+    "prisma/migrations",
+    "server/src",
+    "src/types"
+  ],
+  "notes": "Approved as the first implementation child on 2026-07-17. Start only after the parent workflow leaves planning and loads trellis-before-dev.",
+  "meta": {}
+}
