@@ -7,6 +7,7 @@ import { blogColumnMeta, blogPosts, type BlogColumn, type BlogPostSummary } from
 import { blogCuration, type BlogContentRole, type BlogCuration, type BlogVisibility } from '../src/data/blogCuration'
 import type { BlogPost } from '../src/data/blogShared'
 import { projects } from '../src/data/portfolio'
+import { evaluatePublishExportReadiness } from '../server/src/studioReviewPolicy.js'
 import {
   normalizeStudioDraft,
   normalizeStudioDrafts,
@@ -116,6 +117,9 @@ function parseArgs(argv: string[]): ExportOptions {
   if (sourceCount !== 1) {
     throw new Error('请且只请指定一种来源：--sample、--source <json> 或 --draft <id-or-slug>')
   }
+  if (options.publishExportId && !options.draftRef) {
+    throw new Error('--publish-export-id 只能和 Studio 远端草稿 --draft 一起使用')
+  }
   return options
 }
 
@@ -195,6 +199,22 @@ async function fetchDraftFromStudio(draftRef: string) {
 
 function normalizeApiBase(value: string | undefined) {
   return value?.trim().replace(/\/+$/u, '') ?? ''
+}
+
+function assertStudioDraftExportReady(draft: StudioDraft) {
+  const review = draft.latestReview
+  const readiness = evaluatePublishExportReadiness(
+    draft.status.toUpperCase(),
+    review ? { status: review.status.toUpperCase(), checklist: review.checklist } : null,
+  )
+  if (readiness.ok) return
+  if (readiness.error === 'draft-not-approved') {
+    throw new Error(`草稿状态是 ${draft.status}，只有 approved 草稿可以导出`)
+  }
+  if (readiness.error === 'publish-review-not-approved') {
+    throw new Error('草稿最新审核不是 approved，不能执行 Publish Export')
+  }
+  throw new Error('草稿最新审核清单不完整，不能执行 Publish Export')
 }
 
 function sampleDraft(): StudioDraft {
@@ -541,6 +561,7 @@ function pendingValidationChecks(): ExportChecks {
 async function main() {
   const options = parseArgs(process.argv.slice(2))
   const draft = await readDraft(options)
+  if (options.draftRef) assertStudioDraftExportReady(draft)
   if (draft.visibility !== 'featured') {
     console.warn(`提示：草稿当前 visibility=${draft.visibility}；本地公开导出会写入 featured curation。`)
   }
@@ -557,6 +578,14 @@ async function main() {
       exportedFiles: plan.exportedFiles,
     }, null, 2))
     return
+  }
+
+  if (options.draftRef) {
+    const refreshedDraft = await fetchDraftFromStudio(options.draftRef)
+    assertStudioDraftExportReady(refreshedDraft)
+    if (refreshedDraft.id !== draft.id || refreshedDraft.updatedAt !== draft.updatedAt) {
+      throw new Error('Studio 草稿在导出准备期间发生变化，请重新运行导出命令')
+    }
   }
 
   await writePlan(plan)

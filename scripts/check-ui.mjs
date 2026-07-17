@@ -1164,6 +1164,17 @@ for (const viewport of viewports) {
           failures.push(`${viewport.name} ${route.path}: needs-changes action should load the draft and expose resubmission`)
         }
       }
+      if (viewport.name === 'mobile') {
+        await page.getByRole('tab', { name: /^辅助/ }).click()
+      }
+      const exportCommand = page.getByText(
+        'npm.cmd run studio:export -- --draft ui-check-approved --publish-export-id ui-check-export-01 --run-checks',
+        { exact: true },
+      )
+      const exportCopyButton = page.getByRole('button', { name: /复制 UI Check 已批准草稿 的导出命令/u })
+      if (!(await exportCommand.isVisible().catch(() => false)) || !(await exportCopyButton.isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: publish export should expose the runnable command and copy action`)
+      }
     }
 
     if (logs.length > 0) {

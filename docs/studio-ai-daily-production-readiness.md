@@ -30,15 +30,22 @@ npm.cmd run assistant:agent-eval
 
 这些命令不调用真实模型，不需要生产数据库，也不会自动公开内容。
 
-## 生产验收顺序
+## 已完成部署基线与后续内容验收
 
-1. `biau-content-studio-api` 使用 `ASSISTANT_SERVICE_MODE=studio` 并完成 `prisma:migrate:studio`。
-2. `biau-operator-api` 使用 `ASSISTANT_SERVICE_MODE=operator`，并将 `STUDIO_DATABASE_URL` 指向同一 Studio 内容库。
-3. 在 `/studio` 保存 Studio token，确认 health、草稿、来源、AI Daily 和 export 列表可读。
-4. 通过 `/operator` 提交一个真实、公开安全的草稿任务。
-5. 确认 Operator 返回 `/studio?draft=<id>` artifact，草稿状态为 `review-needed`、可见性为 `hidden`。
-6. 在 Studio 预览、修改和人工审核；通过后创建 Publish Export。
-7. 在本地或 CI 执行 `studio:export -- --run-checks`，审查 Git diff 后再提交。
+以下部署基线已经完成，不应作为每轮内容工作的前置 setup 重复执行：
+
+- `biau-content-studio-api` 使用 `ASSISTANT_SERVICE_MODE=studio`，Studio migration 与独立内容数据库边界已建立。
+- `biau-operator-api` 使用 `ASSISTANT_SERVICE_MODE=operator`，并通过共享 `STUDIO_DATABASE_URL` 写入同一内容库。
+- `/studio` 已能读取 health、草稿、来源、AI Daily 和 Publish Export；Operator artifact 能定位 `hidden + review-needed` 草稿。
+
+后续每个真实内容周期只执行：
+
+1. 在 Studio 修改或归档 `needs-changes` 草稿，保存后重新提交审核。
+2. 人工复核事实、来源、结构、版权与公开安全边界；通过后创建 Publish Export。
+3. 使用 Publish Export 卡片显示的本地命令执行 `studio:export -- --run-checks`。
+4. 审查 Git diff 和博客检查结果后再提交，不让线上 Studio 直接写仓库。
+
+当前人工顺序和低敏成功标准只在 [`docs/manual-gates.md`](./manual-gates.md) 维护。
 
 ## 发布边界
 

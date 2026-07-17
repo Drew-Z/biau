@@ -85,15 +85,19 @@ Do not migrate ordinary chats, invites, members, model assignments, usage, ambig
 
 - Review status: `approved | needs-changes | rejected | pending`.
 - Stable checklist booleans: `sourceChecked`, `safetyChecked`, `publicReady`.
+- Approving a draft requires all three checklist booleans to be `true`; route callers cannot approve with incomplete source, safety, or public-readiness evidence.
+- Review transitions are state-bound: `REVIEW_NEEDED` accepts review decisions, while `APPROVED` may only be revoked to `needs-changes` or `rejected`.
 - Optional page metadata is bounded and normalized.
 - Unknown checklist keys are dropped.
 - Checklist JSON must not contain credentials, provider/database URLs, private dashboards, stack traces, or absolute paths.
 
 ## Publish Export Contract
 
-- Creating an export requires an approved draft.
+- Creating an export requires an `APPROVED` draft whose latest review is also `APPROVED` with all three checklist booleans set to `true`.
+- Re-check the latest review both when creating an export intent and when the local exporter reports its result; an older approval does not authorize export after a pending, needs-changes, or rejected review.
 - Production creates an export intent; it does not write Git files.
 - Local/CI reports repo-relative exported files and sanitized check results.
+- Export callbacks accept only bounded repo-relative file paths and structured local-export-written | passed | failed check evidence.
 - Reject absolute paths and `..` traversal.
 - Export result JSON must not include tokens, URLs with credentials, request bodies, or private stack traces.
 

@@ -50,7 +50,7 @@ export function explainStudioApiError(status: number, errorCode: string) {
   if (errorCode === 'studio-auth-not-configured') return '后端还没有配置 STUDIO_ADMIN_TOKEN 或 ADMIN_TOKEN。'
   if (status === 401 || errorCode === 'missing-studio-token') return 'Studio token 缺失或不匹配。'
   if (status === 503 || errorCode === 'database-not-configured') return '后端数据库尚未配置，内容工作台暂不能写入。'
-  if (status === 409 || errorCode === 'duplicate-slug') return 'slug 已存在，请换一个公开路径。'
+  if (errorCode === 'duplicate-slug') return 'slug 已存在，请换一个公开路径。'
   if (errorCode === 'duplicate-ai-daily-date') return '这一天的 AI 日报 issue 已经存在。'
   if (errorCode === 'sensitive-content-detected') return '内容里疑似包含密钥、连接串或 token，请先移除。'
   if (errorCode === 'invalid-slug') return 'slug 只能使用小写字母、数字和短横线。'
@@ -58,12 +58,19 @@ export function explainStudioApiError(status: number, errorCode: string) {
   if (errorCode === 'invalid-url') return '来源 URL 必须是公开 http(s) 链接。'
   if (errorCode === 'invalid-source-tier') return '请选择有效来源等级。'
   if (errorCode === 'draft-not-approved') return '草稿还没有通过审核，不能进入发布导出记录。'
+  if (errorCode === 'review-checklist-incomplete') return '审核清单还没有确认公开就绪，不能批准草稿。'
+  if (errorCode === 'invalid-review-transition') return '当前草稿状态不能执行这项审核操作，请刷新后重新选择草稿。'
+  if (errorCode === 'publish-review-not-approved') return '草稿的最新审核记录不是“已批准”，不能创建发布导出。'
+  if (errorCode === 'publish-review-checklist-incomplete') return '最新审核记录没有确认公开就绪，不能创建发布导出。'
+  if (errorCode === 'invalid-publish-export-checks') return 'Publish Export 回写的检查结果格式无效，请使用仓库内 studio:export 命令重新执行。'
+  if (errorCode === 'invalid-publish-export-files') return 'Publish Export 回写的文件列表无效，请使用仓库内 studio:export 命令重新执行。'
   if (errorCode === 'ai-daily-issue-not-found') return '没有找到这个 AI 日报 issue。'
   if (errorCode === 'invalid-ai-daily-status') return '请选择有效的 AI 日报状态。'
   if (errorCode === 'invalid-source-ids') return '来源列表里包含不存在的 source id。'
   if (errorCode === 'invalid-brief-json') return 'brief JSON 必须是对象，并且不能过大。'
   if (errorCode === 'ai-daily-issue-needs-sources') return '请先给这期 AI 日报选择至少一个来源。'
   if (errorCode === 'ai-daily-issue-not-ready') return '这期 AI 日报还没有满足审核入口，请先补齐 brief 和来源证据。'
+  if (status === 409) return `Studio 当前状态不允许这项操作${errorCode ? `（${errorCode}）` : ''}。`
   return `Studio API 返回 ${status}${errorCode ? ` / ${errorCode}` : ''}。`
 }
 

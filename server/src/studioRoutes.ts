@@ -3,6 +3,11 @@ import { Prisma } from '@prisma/client'
 import { requireStudioDatabase } from './db.js'
 import { env, hasStudioDatabase } from './env.js'
 import { buildAiDailyIssueReadinessIssues } from './studioAiDailyReadiness.js'
+import {
+  evaluatePublishExportReadiness,
+  evaluateStudioReviewTransition,
+  normalizeStudioPublishReport,
+} from './studioReviewPolicy.js'
 
 const blogColumns = new Set(['knowledge', 'project-notes', 'resources', 'ai-daily', 'build-log'])
 const sourceTiers = new Set([
@@ -168,7 +173,11 @@ export function createStudioRouter() {
       const checklistJson = readChecklistJson(req.body?.checklist)
       const notes = readString(req.body?.notes, 2000)
       const reviewedBy = readString(req.body?.reviewedBy, 80)
-      const nextDraftStatus = reviewStatus === 'APPROVED' ? 'APPROVED' : reviewStatus === 'REJECTED' ? 'REJECTED' : 'REVIEW_NEEDED'
+      const transition = evaluateStudioReviewTransition(existing.status, reviewStatus, checklistJson)
+      if (!transition.ok) {
+        res.status(409).json({ error: transition.error })
+        return
+      }
 
       const [review, draft] = await prisma.$transaction([
         prisma.contentReview.create({
@@ -182,7 +191,7 @@ export function createStudioRouter() {
         }),
         prisma.contentDraft.update({
           where: { id: existing.id },
-          data: { status: nextDraftStatus, updatedBy: reviewedBy || undefined },
+          data: { status: transition.nextDraftStatus, updatedBy: reviewedBy || undefined },
           include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
         }),
       ])
@@ -196,13 +205,21 @@ export function createStudioRouter() {
   router.post('/content-drafts/:id/publish-exports', async (req, res, next) => {
     try {
       const prisma = requireStudioDatabase()
-      const existing = await prisma.contentDraft.findUnique({ where: { id: req.params.id } })
+      const existing = await prisma.contentDraft.findUnique({
+        where: { id: req.params.id },
+        include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } },
+      })
       if (!existing) {
         res.status(404).json({ error: 'draft-not-found' })
         return
       }
-      if (existing.status !== 'APPROVED') {
-        res.status(409).json({ error: 'draft-not-approved' })
+      const latestReview = existing.reviews[0]
+      const readiness = evaluatePublishExportReadiness(
+        existing.status,
+        latestReview ? { status: latestReview.status, checklist: latestReview.checklistJson } : null,
+      )
+      if (!readiness.ok) {
+        res.status(409).json({ error: readiness.error })
         return
       }
 
@@ -249,9 +266,22 @@ export function createStudioRouter() {
       }
 
       const prisma = requireStudioDatabase()
-      const existing = await prisma.publishExport.findUnique({ where: { id: req.params.id } })
+      const existing = await prisma.publishExport.findUnique({
+        where: { id: req.params.id },
+        include: { draft: { include: { reviews: { orderBy: { reviewedAt: 'desc' }, take: 1 } } } },
+      })
       if (!existing) {
         res.status(404).json({ error: 'publish-export-not-found' })
+        return
+      }
+
+      const latestReview = existing.draft.reviews[0]
+      const readiness = evaluatePublishExportReadiness(
+        existing.draft.status,
+        latestReview ? { status: latestReview.status, checklist: latestReview.checklistJson } : null,
+      )
+      if (!readiness.ok) {
+        res.status(409).json({ error: readiness.error })
         return
       }
 
@@ -723,24 +753,17 @@ function readAiDailyIssuePatch(value: unknown):
 function readPublishExportPatch(value: unknown):
   | { data: Prisma.PublishExportUpdateInput }
   | { error: string } {
-  if (!isRecord(value)) return { error: 'invalid-publish-export-payload' }
   if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
-
-  const exportedFiles = readStringArray(value.exportedFiles)
-    .filter((file) => !file.includes('..') && !file.startsWith('/') && /^[./a-z0-9_-]+(?:\.[a-z0-9]+)?$/iu.test(file))
-    .slice(0, 20)
-  const checksJson = isRecord(value.checks)
-    ? (JSON.parse(JSON.stringify(value.checks)) as Prisma.InputJsonValue)
-    : { status: 'local-exported' }
+  const normalized = normalizeStudioPublishReport(value)
+  if (!normalized.ok) return { error: normalized.error }
   return {
     data: {
-      exportedFilesJson: exportedFiles,
-      checksJson,
-      exportedBy: readString(value.exportedBy, 80) || undefined,
+      exportedFilesJson: normalized.report.exportedFiles,
+      checksJson: normalized.report.checks as unknown as Prisma.InputJsonValue,
+      exportedBy: normalized.report.exportedBy,
     },
   }
 }
-
 function readOptionalDate(value: unknown) {
   const text = readString(value, 40)
   if (!text) return undefined

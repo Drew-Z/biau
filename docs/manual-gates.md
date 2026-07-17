@@ -23,17 +23,22 @@
 
 ## BIAU 平台门禁
 
-| Gate | 人工原因 | 安全证据 |
+四个 Render 服务、Operator / Studio 数据库边界、Owner memory 选择性迁移和 Qdrant scoped sync 已完成，不属于当前 setup 队列。以下事项只在配置变更、真实模型验收或内容发布时重新触发人工确认。
+
+| 条件式 Gate | 何时需要人工 | 安全证据 |
 | --- | --- | --- |
-| Cloudflare Access application 与 policy | 需要站点账号权限，并包含私有 team domain / audience / owner 邮箱 | 只记录 `/operator`、`/operator/*`、`/api/operator/*` 已受保护，以及非 owner 被拒绝 |
-| Operator Function 私有变量 | `OPERATOR_SERVICE_TOKEN`、Render URL 和 Access 配置不能提交 | `operator:facade-smoke` 本地通过；生产只记录 200/401/403/502/504 类别 |
-| Render 四服务边界 | 需要在控制台维护 public/operator/studio/rag 服务和变量 | `docs:deployment-check`、`assistant:service-modes-smoke`、四个低敏 `/health` 摘要 |
-| Operator 数据库迁移 | 生产连接串只能在 Render；迁移需要备份和回滚 revision | `prisma:migrate` 成功、`/operator/me` 低敏结果 |
-| Owner 长期记忆选择性迁移 | 只能迁移人工确认属于站长的 `ACTIVE` 记录 | `operator:memory-migration:check` 脱敏 ID 报告、批准 ID 数量、apply 成功数量 |
-| Studio 数据库迁移 | Operator draft-write 与 Studio 审核必须写同一内容库 | `prisma:migrate:studio`、同一 draft id 在 Studio 可见 |
-| Qdrant / embedding / reranker | URL、key、collection 和模型渠道为服务端私密配置 | `assistant:rag-smoke`、sync/retrieve 的 accepted/issue/维度摘要 |
-| Operator 真实模型验收 | 会消耗额度并涉及 provider 配置 | 用户批准的站务任务、低敏 model mode、引用和工具结果 |
-| Studio token | 编辑审核 token 不能写入浏览器构建或仓库 | 手工登录后草稿列表、审核状态和 export 数量摘要 |
+| Cloudflare Access application 与 policy | owner、team domain、audience 或路由策略发生变更时 | 只记录 `/operator`、`/operator/*`、`/api/operator/*` 的允许/拒绝结果 |
+| Operator Function / Render 私有变量 | 服务迁移、token 轮换或上游地址变更时 | `operator:facade-smoke` 与四服务低敏 `/health` 类别，不记录配置值 |
+| Operator 真实模型验收 | 用户批准一个具体站务任务时 | 只记录 model mode、引用、工具结果和错误类别，不做测活 |
+| Studio token 与首篇公开导出 | 审核草稿或复核公开 diff 时 | 草稿状态、review/export 数量和本地检查结果，不记录 token 或正文 |
+| 数据库 / Qdrant schema 变更 | 未来 migration 或 collection schema 变化时 | 备份、迁移命令、计数与回滚 revision；不重复已完成 bootstrap |
+
+已完成的低敏平台基线：
+
+- Render 四服务边界（public/operator/studio/rag）已经由 `assistant:service-modes-smoke` 和部署契约覆盖。
+- Operator `DATABASE_URL` 与共享 Studio 内容库的边界已建立；现有 Studio / Operator migration 不再作为待执行 setup。
+- Owner durable memory 已通过重启后复核；旧成员制数据不会整体迁移。
+- Qdrant public/internal scope 同步已完成，embedding 维度和 stale-point cleanup 已有低敏结果。
 
 ## Operator 安全边界
 

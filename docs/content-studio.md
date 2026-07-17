@@ -114,14 +114,16 @@ npm.cmd run lint
 npm.cmd run build
 ```
 
-## 仍是人工 Gate 的事项
+## 平台边界与当前 Gate
 
-- 生产环境真实 `DATABASE_URL`。
-- 生产环境真实 `STUDIO_DATABASE_URL`，以及它是否和 Operator 的 `STUDIO_DATABASE_URL` 指向同一个内容库。
-- Render/Supabase 等平台上的 migration 执行。
-- 生产 `STUDIO_ADMIN_TOKEN`。
-- 第一次真实模型辅助摘要/润色任务。
-- 将本地导出的公开内容 diff 审核后提交发布。
+部署基线已经完成：Studio 使用独立内容数据库，Operator 通过同一个 `STUDIO_DATABASE_URL` 写入待审核草稿，数据库 migration 与服务边界不再作为当前 setup 待办。真实变量仍只保存在平台控制台，发生服务迁移、数据库切换或 schema 变化时才重新执行部署复核。
+
+当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准，当前 Content Studio gate 只有：
+
+- 使用生产 Studio token 修改或归档 `needs-changes` 草稿；token 不写入聊天或仓库。
+- 审核一份证据完整的新版草稿并创建 Publish Export。
+- 在本地或 CI 运行卡片中显示的 `studio:export` 命令，审核公开内容 diff 后再提交。
+- 真实模型辅助只允许用于用户批准的具体内容任务，不进行测活。
 
 ## 验证
 

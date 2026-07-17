@@ -2,6 +2,8 @@
 
 本文描述当前最终部署边界。仓库中只记录变量名、职责和验证方法；真实 token、数据库 URL、模型地址、Cloudflare Access 配置值和私有域名只保存在对应平台。
 
+当前仍需人工执行的事项只在 [`docs/manual-gates.md`](./manual-gates.md) 维护；本文件中的迁移命令是部署与回滚参考，不自动代表当前待办。
+
 ## 最终拓扑
 
 同一仓库部署为静态前端加四个 Render Web Service：
@@ -163,16 +165,16 @@ RERANKER_MODEL=<可选>
 
 当前 Qdrant `internal` scope 表示 owner/private 站务知识的检索隔离层，不代表成员制产品。公开助手只能使用 public key/scope，Operator 使用 internal key/scope。
 
-## Owner 数据迁移
+## Owner 数据迁移与回滚记录（已完成）
 
-旧成员制数据不会整体迁入 Operator。只迁移用户明确确认属于站长、状态为 `ACTIVE` 的长期记忆：
+旧成员制数据没有整体迁入 Operator；已完成的选择性迁移只包含用户确认属于站长、状态为 `ACTIVE` 的长期记忆。以下命令保留用于审计和未来重新迁移，不是当前待执行 setup：
 
 ```powershell
 npm.cmd run operator:memory-migration:check
 npm.cmd run operator:memory-migration:apply -- --ids <approved-record-ids>
 ```
 
-先保存脱敏 check 报告并人工确认记录 ID，再运行 apply。普通聊天、邀请码、成员、成员模型分配、成员用量和不确定记录都不迁移。生产迁移完成前保留数据库备份与上一 Render revision。
+现有迁移已通过重启后 durable memory 复核。普通聊天、邀请码、成员、成员模型分配、成员用量和不确定记录都未迁移；未来只有出现新的人工批准记录时才重新运行 check/apply，并在操作前保留数据库备份与上一 Render revision。
 
 ## 本地开发
 

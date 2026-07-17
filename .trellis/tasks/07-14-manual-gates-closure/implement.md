@@ -11,6 +11,7 @@
 - [x] Audit the production Studio review queue, record `needs-changes` for both non-publishable drafts, and verify no Publish Export was created.
 - [x] Align `planned` reliability status with the public overview attention state, remove obsolete Operator setup steps from public assistant/project facts, and regenerate public knowledge snapshots.
 - [x] Make the Studio `needs-changes` queue operable: distinguish drafts awaiting edits, support resubmission, document the five-step review flow, and cover the mobile UI with deterministic checks.
+- [x] Harden Studio approval and Publish Export gates: require the complete review checklist, re-check the latest approved review before export, expose the runnable local export command, and remove completed platform setup from active documentation gates.
 - [ ] Rewrite or archive the rejected Studio drafts, approve one evidence-complete revision, and create the first Publish Export.
 - [ ] After each user-confirmed gate, verify low-sensitive evidence, update the ledger, commit/push, and present the next single gate.
 

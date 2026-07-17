@@ -27,6 +27,14 @@ const files = {
     label: 'docs/internal-rag-studio-ai-daily-runbook.md',
     path: resolve(repoRoot, 'docs/internal-rag-studio-ai-daily-runbook.md'),
   },
+  contentStudio: {
+    label: 'docs/content-studio.md',
+    path: resolve(repoRoot, 'docs/content-studio.md'),
+  },
+  deployment: {
+    label: 'docs/deployment.md',
+    path: resolve(repoRoot, 'docs/deployment.md'),
+  },
 }
 
 const ledgerNeedles = [
@@ -101,6 +109,21 @@ const secretPatterns = [
   { label: 'assignment-shaped password', pattern: /\bpassword\s*[:=]\s*[^\s`'"]{6,}/iu },
 ]
 
+function readMarkdownSection(text: string, heading: string) {
+  const start = text.indexOf(heading)
+  if (start === -1) return ''
+  const nextHeading = text.indexOf('\n## ', start + heading.length)
+  return nextHeading === -1 ? text.slice(start) : text.slice(start, nextHeading)
+}
+
+function collectCompletedSetupRegressions(ledger: string) {
+  const queue = readMarkdownSection(ledger, '## 当前人工队列')
+  const completedSetupTerms = ['Qdrant', 'Git push', 'Render 四服务', '数据库迁移', 'Owner 长期记忆选择性迁移']
+  return completedSetupTerms
+    .filter((term) => queue.includes(term))
+    .map((term) => `docs/manual-gates.md 当前人工队列重新包含已完成 setup：${term}`)
+}
+
 function collectMissing(label: string, text: string, needles: string[]) {
   const issues: string[] = []
   for (const needle of needles) {
@@ -149,24 +172,32 @@ function checkStatusProjectLedgerCoverage(ledger: string) {
 }
 
 async function main() {
-  const [ledger, observability, monitoring, studioReadiness, runbook] = await Promise.all([
+  const [ledger, observability, monitoring, studioReadiness, runbook, contentStudio, deployment] = await Promise.all([
     readFile(files.ledger.path, 'utf8'),
     readFile(files.observability.path, 'utf8'),
     readFile(files.monitoring.path, 'utf8'),
     readFile(files.studioReadiness.path, 'utf8'),
     readFile(files.runbook.path, 'utf8'),
+    readFile(files.contentStudio.path, 'utf8'),
+    readFile(files.deployment.path, 'utf8'),
   ])
 
   const issues = [
     ...collectMissing(files.ledger.label, ledger, ledgerNeedles),
     ...collectMissing(files.ledger.label, ledger, ledgerLinks),
     ...scanSecrets(files.ledger.label, ledger),
+    ...collectCompletedSetupRegressions(ledger),
     ...checkStatusProjectLedgerCoverage(ledger),
+    ...collectMissing(files.studioReadiness.label, studioReadiness, ['## 已完成部署基线与后续内容验收']),
+    ...(studioReadiness.includes('## 生产验收顺序') ? [`${files.studioReadiness.label} 仍维护过期的独立生产 setup 顺序。`] : []),
+    ...collectMissing(files.contentStudio.label, contentStudio, ['## 平台边界与当前 Gate', './manual-gates.md']),
+    ...(contentStudio.includes('## 仍是人工 Gate 的事项') ? [`${files.contentStudio.label} 仍维护过期的独立人工 Gate 列表。`] : []),
+    ...collectMissing(files.deployment.label, deployment, ['## Owner 数据迁移与回滚记录（已完成）']),
     ...collectMissing(files.runbook.label, runbook, studioRunbookNeedles),
     ...scanSecrets(files.runbook.label, runbook),
   ]
 
-  for (const file of [files.observability, files.monitoring, files.studioReadiness, files.runbook]) {
+  for (const file of [files.observability, files.monitoring, files.studioReadiness, files.runbook, files.contentStudio, files.deployment]) {
     const text =
       file === files.observability
         ? observability
@@ -174,7 +205,11 @@ async function main() {
           ? monitoring
           : file === files.studioReadiness
             ? studioReadiness
-            : runbook
+            : file === files.runbook
+              ? runbook
+              : file === files.contentStudio
+                ? contentStudio
+                : deployment
     if (!text.includes('manual-gates.md')) issues.push(`${file.label} 缺少 docs/manual-gates.md 导航。`)
   }
 

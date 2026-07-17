@@ -42,6 +42,10 @@ async function main() {
 
   const steps = [
     {
+      name: 'Studio review and publish policy',
+      args: ['run', 'studio:review-policy-check'],
+    },
+    {
       name: 'Studio export sample dry-run',
       args: ['run', 'studio:export', '--', '--sample', '--dry-run', '--allow-dirty'],
     },

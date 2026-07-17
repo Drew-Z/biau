@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { FileStack, PencilLine, Wrench } from 'lucide-react'
+import { Copy, FileStack, PencilLine, Wrench } from 'lucide-react'
 import { StudioDraftPreview } from '../components/StudioDraftPreview'
 import { blogColumnMeta, blogColumnOrder, type BlogColumn } from '../data/blog'
 import { projects } from '../data/portfolio'
@@ -226,6 +226,26 @@ function createStudioUiCheckDrafts(): StudioDraft[] {
   ]
 }
 
+function createStudioUiCheckPublishExports(): StudioPublishExport[] {
+  return [
+    {
+      id: 'ui-check-export-01',
+      draftId: 'ui-check-approved',
+      target: 'static-blog-data',
+      exportedFiles: [],
+      checks: { status: 'pending-local-export' },
+      exportedBy: 'ui-check',
+      createdAt: '2026-07-09T00:20:00.000Z',
+      draft: {
+        id: 'ui-check-approved',
+        slug: 'ui-check-approved',
+        title: 'UI Check 已批准草稿',
+        status: 'approved',
+      },
+    },
+  ]
+}
+
 function getDraftFromPayload(payload: unknown) {
   return isRecord(payload) ? normalizeStudioDraft(payload.draft) : null
 }
@@ -255,6 +275,19 @@ function readPublishExportStatus(checks: unknown) {
   if (status === 'passed') return '检查通过'
   if (status === 'failed') return '检查失败'
   return typeof status === 'string' && status ? status : '已记录检查'
+}
+
+function getPublishExportNextStep(checks: unknown) {
+  const status = isRecord(checks) ? checks.status : ''
+  if (status === 'local-export-written') return '下一步：检查 Git diff，并确认 blog:check、lint 和 build 结果。'
+  if (status === 'passed') return '下一步：复核公开内容差异后提交发布。'
+  if (status === 'failed') return '下一步：查看低敏检查摘要，修复后重新运行导出命令。'
+  return '下一步：在本地或 CI 运行导出命令；线上 Studio 不会直接写 Git。'
+}
+
+function getPublishExportCommand(publishExport: StudioPublishExport) {
+  const draftRef = publishExport.draft?.slug || publishExport.draftId
+  return `npm.cmd run studio:export -- --draft ${draftRef} --publish-export-id ${publishExport.id} --run-checks`
 }
 
 const reviewQueueStatuses = new Set<StudioDraft['status']>(['review-needed', 'approved', 'rejected'])
@@ -389,6 +422,7 @@ export function StudioPage() {
   const [sources, setSources] = useState<StudioSourceItem[]>([])
   const [issues, setIssues] = useState<StudioAiDailyIssue[]>([])
   const [publishExports, setPublishExports] = useState<StudioPublishExport[]>([])
+  const [copiedExportId, setCopiedExportId] = useState('')
   const [selectedDraftId, setSelectedDraftId] = useState('')
   const [mobileWorkspaceView, setMobileWorkspaceView] = useState<StudioMobileWorkspaceView>('editor')
   const [draftForm, setDraftForm] = useState<DraftFormState>(defaultDraftForm)
@@ -483,7 +517,7 @@ export function StudioPage() {
       setDrafts(createStudioUiCheckDrafts())
       setSources([])
       setIssues([])
-      setPublishExports([])
+      setPublishExports(createStudioUiCheckPublishExports())
       setSelectedDraftId('')
       setStatusText('Studio UI check fixture 已加载。')
       return
@@ -737,6 +771,17 @@ export function StudioPage() {
     const publishExport = getPublishExportFromPayload(result.payload)
     if (publishExport) setPublishExports((current) => [publishExport, ...current.filter((item) => item.id !== publishExport.id)])
     setStatusText('已创建发布导出记录；本地导出器写入公开数据后可回写文件列表和检查结果。')
+  }
+
+  const copyPublishExportCommand = async (publishExport: StudioPublishExport) => {
+    const command = getPublishExportCommand(publishExport)
+    try {
+      await window.navigator.clipboard.writeText(command)
+      setCopiedExportId(publishExport.id)
+      setStatusText('导出命令已复制；请在本地仓库或 CI 环境运行。')
+    } catch {
+      setStatusText('浏览器未允许复制。导出命令仍显示在 Publish Export 卡片中。')
+    }
   }
 
   const saveSource = async (event: FormEvent<HTMLFormElement>) => {
@@ -1562,18 +1607,34 @@ export function StudioPage() {
               </p>
             )}
             <div className="studio-publish-list">
-              {publishExports.slice(0, 5).map((publishExport) => (
-                <article key={publishExport.id} className="studio-publish-item">
-                  <div>
-                    <strong>{publishExport.draft?.title || publishExport.draftId}</strong>
-                    <span>
-                      {publishExport.draft?.slug || publishExport.target} · {readPublishExportStatus(publishExport.checks)}
-                    </span>
-                  </div>
-                  <span>{formatDateTime(publishExport.createdAt)}</span>
-                  {publishExport.exportedFiles.length > 0 && <em>{publishExport.exportedFiles.join('、')}</em>}
-                </article>
-              ))}
+              {publishExports.slice(0, 5).map((publishExport) => {
+                const command = getPublishExportCommand(publishExport)
+                return (
+                  <article key={publishExport.id} className="studio-publish-item">
+                    <div>
+                      <strong>{publishExport.draft?.title || publishExport.draftId}</strong>
+                      <span>
+                        {publishExport.draft?.slug || publishExport.target} · {readPublishExportStatus(publishExport.checks)}
+                      </span>
+                    </div>
+                    <span>{formatDateTime(publishExport.createdAt)}</span>
+                    <p className="studio-publish-next-step">{getPublishExportNextStep(publishExport.checks)}</p>
+                    <div className="studio-publish-command">
+                      <code>{command}</code>
+                      <button
+                        type="button"
+                        className={copiedExportId === publishExport.id ? 'is-copied' : undefined}
+                        onClick={() => void copyPublishExportCommand(publishExport)}
+                        aria-label={`${copiedExportId === publishExport.id ? '已复制' : '复制'} ${publishExport.draft?.title || publishExport.draftId} 的导出命令`}
+                        title={copiedExportId === publishExport.id ? '导出命令已复制' : '复制导出命令'}
+                      >
+                        <Copy size={15} aria-hidden />
+                      </button>
+                    </div>
+                    {publishExport.exportedFiles.length > 0 && <em>{publishExport.exportedFiles.join('、')}</em>}
+                  </article>
+                )
+              })}
               {publishExports.length === 0 && <p className="assistant-status-text">还没有发布导出记录。</p>}
             </div>
           </article>

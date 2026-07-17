@@ -5702,6 +5702,54 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   border-top: 1px solid var(--flow-ui-card-border);
 }
 
+.studio-publish-next-step {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.studio-publish-command {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  align-items: stretch;
+  gap: var(--space-8);
+}
+
+.studio-publish-command code {
+  min-width: 0;
+  padding: var(--space-8) var(--space-10, 10px);
+  overflow-wrap: anywhere;
+  color: color-mix(in oklch, var(--green) 76%, var(--ink));
+  background: color-mix(in oklch, var(--panel) 78%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.studio-publish-command button {
+  width: 38px;
+  min-height: 38px;
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+  background: color-mix(in oklch, var(--panel) 76%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.studio-publish-command button:hover,
+.studio-publish-command button:focus-visible,
+.studio-publish-command button.is-copied {
+  color: color-mix(in oklch, var(--green) 82%, var(--ink));
+  border-color: color-mix(in oklch, var(--green) 34%, var(--flow-ui-card-border));
+}
 .public-assistant {
   position: fixed;
   right: clamp(16px, 3vw, 32px);
