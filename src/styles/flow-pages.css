@@ -7496,12 +7496,13 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   contain: strict;
   transition: opacity 420ms var(--ease-smooth);
 }
-.flow-background[data-flow-ready='true'] { opacity: 1; }
-.app:has(.flow-background[data-flow-ready='true'])::before,
-.app:has(.flow-background[data-flow-ready='true'])::after,
-.app:has(.flow-background[data-flow-ready='true']) .gradient-bg,
-.app:has(.flow-background[data-flow-ready='true']) .harbor-environment,
-.app:has(.flow-background[data-flow-ready='true']) .muxing-flow-grain { display: none !important; animation: none !important; }
+.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) { opacity: 1; }
+.flow-background[data-flow-fallback='css'] { opacity: 0; }
+.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::before,
+.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::after,
+.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .gradient-bg,
+.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .harbor-environment,
+.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .muxing-flow-grain { display: none !important; animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .flow-background { transition: none; } }
 
 /* Mobile editorial rhythm: consolidate tools and move useful content into the first viewport. */

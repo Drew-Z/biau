@@ -1,4 +1,5 @@
 import { chromium } from 'playwright'
+import sharp from 'sharp'
 import {
   findReliabilityProjectForTarget,
   reliabilityProjects as staticReliabilityProjects,
@@ -17,6 +18,23 @@ import { publicAssistantSuggestions } from '../src/data/assistant.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
+
+async function measureLocatorFrameDelta(page, locator, intervalMs = 500) {
+  const readPixels = async () =>
+    sharp(await locator.screenshot())
+      .resize({ width: 240 })
+      .removeAlpha()
+      .raw()
+      .toBuffer()
+  const first = await readPixels()
+  await page.waitForTimeout(intervalMs)
+  const second = await readPixels()
+  let totalDelta = 0
+  for (let index = 0; index < first.length; index += 1) {
+    totalDelta += Math.abs(first[index] - second[index])
+  }
+  return totalDelta / first.length
+}
 
 const routes = [
   { path: '/', title: 'BIAU PORT', nav: '所有项目', canonical: '/' },
@@ -1942,15 +1960,120 @@ await reducedHarborPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
 await gotoApp(reducedHarborPage, '/')
-const reducedFlow = reducedHarborPage.locator('.flow-background[data-flow-ready="true"]')
+const reducedFlow = reducedHarborPage.locator('.flow-background')
 await reducedFlow.waitFor({ state: 'attached' })
-const reducedFrameA = await reducedFlow.evaluate((canvas) => canvas.toDataURL())
-await reducedHarborPage.waitForTimeout(500)
-const reducedFrameB = await reducedFlow.evaluate((canvas) => canvas.toDataURL())
-if (reducedFrameA !== reducedFrameB) {
-  failures.push('/ home reduced motion: expected a stable flow canvas frame')
+const reducedModeReady = await reducedHarborPage
+  .waitForFunction(() => {
+    const canvas = document.querySelector('.flow-background')
+    return canvas?.getAttribute('data-flow-ready') === 'true' || canvas?.getAttribute('data-flow-fallback') === 'css'
+  }, undefined, { timeout: 8_000 })
+  .then(() => true)
+  .catch(() => false)
+if (!reducedModeReady) {
+  failures.push('/ home reduced motion: flow background never reached canvas or CSS fallback mode')
+} else if ((await reducedFlow.getAttribute('data-flow-ready')) === 'true') {
+  const reducedFrameA = await reducedFlow.evaluate((canvas) => {
+    const blank = document.createElement('canvas')
+    blank.width = canvas.width
+    blank.height = canvas.height
+    const black = document.createElement('canvas')
+    black.width = canvas.width
+    black.height = canvas.height
+    const context = black.getContext('2d')
+    context?.fillRect(0, 0, black.width, black.height)
+    return { frame: canvas.toDataURL(), blank: blank.toDataURL(), black: black.toDataURL() }
+  })
+  await reducedHarborPage.waitForTimeout(500)
+  const reducedFrameB = await reducedFlow.evaluate((canvas) => canvas.toDataURL())
+  if (
+    reducedFrameA.frame !== reducedFrameB ||
+    reducedFrameA.frame.length < 100 ||
+    reducedFrameA.frame === reducedFrameA.blank ||
+    reducedFrameA.frame === reducedFrameA.black
+  ) {
+    failures.push('/ home reduced motion: expected a stable nonblank flow canvas frame')
+  }
+} else {
+  const fallbackState = await reducedFlow.evaluate((canvas) => {
+    const app = document.querySelector('.app')
+    const canvasStyle = getComputedStyle(canvas)
+    const appBefore = app ? getComputedStyle(app, '::before') : null
+    return {
+      canvasOpacity: Number.parseFloat(canvasStyle.opacity),
+      backgroundImage: appBefore?.backgroundImage ?? 'none',
+      backgroundOpacity: Number.parseFloat(appBefore?.opacity ?? '0'),
+    }
+  })
+  if (
+    fallbackState.canvasOpacity !== 0 ||
+    fallbackState.backgroundImage === 'none' ||
+    fallbackState.backgroundOpacity <= 0
+  ) {
+    failures.push('/ home reduced motion: expected a stable nonblank CSS fallback without WebGL2')
+  }
 }
 await reducedHarborPage.close()
+
+const motionSwitchPage = await browser.newPage({
+  viewport: viewports[0],
+  colorScheme: 'dark',
+  reducedMotion: 'no-preference',
+})
+await motionSwitchPage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(motionSwitchPage, '/')
+const motionSwitchFlow = motionSwitchPage.locator('.flow-background[data-flow-ready="true"]')
+await motionSwitchFlow.waitFor({ state: 'attached' })
+const animatedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
+if (animatedFrameDelta <= 0.15) {
+  failures.push('/ home runtime motion: normal preference should keep the worker canvas animated')
+}
+
+await motionSwitchPage.emulateMedia({ reducedMotion: 'reduce' })
+await motionSwitchPage.waitForTimeout(350)
+const runtimeReducedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
+if (runtimeReducedFrameDelta >= 0.05) {
+  failures.push('/ home runtime motion: switching to reduce should stop the worker canvas on one stable frame')
+}
+
+await motionSwitchFlow.evaluate((canvas) => {
+  canvas.setAttribute('data-flow-fallback', 'css')
+})
+await motionSwitchPage.waitForTimeout(60)
+const fallbackState = await motionSwitchFlow.evaluate((canvas) => {
+  const app = document.querySelector('.app')
+  const canvasStyle = getComputedStyle(canvas)
+  const appBefore = app ? getComputedStyle(app, '::before') : null
+  const appAfter = app ? getComputedStyle(app, '::after') : null
+  const result = {
+    canvasOpacity: Number.parseFloat(canvasStyle.opacity),
+    backgroundImage: appBefore?.backgroundImage ?? 'none',
+    backgroundOpacity: Number.parseFloat(appBefore?.opacity ?? '0'),
+    afterImage: appAfter?.backgroundImage ?? 'none',
+  }
+  canvas.removeAttribute('data-flow-fallback')
+  return result
+})
+if (
+  fallbackState.canvasOpacity !== 0 ||
+  fallbackState.backgroundImage === 'none' ||
+  fallbackState.backgroundOpacity <= 0 ||
+  fallbackState.afterImage === 'none'
+) {
+  failures.push('/ home runtime fallback: worker failure should reveal a stable reduced-motion CSS background')
+}
+
+await motionSwitchPage.emulateMedia({ reducedMotion: 'no-preference' })
+await motionSwitchPage.waitForTimeout(350)
+const resumedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
+if (resumedFrameDelta <= 0.15) {
+  failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')
+}
+await motionSwitchPage.close()
+
 const operatorPage = await browser.newPage({ viewport: viewports[0] })
 await installOperatorApiFixture(operatorPage)
 await gotoApp(operatorPage, '/operator')
