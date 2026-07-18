@@ -17,7 +17,7 @@ import {
   upsertAiDailySourceFeed,
 } from '../src/aiDailyIngestionRepository.js'
 
-const databaseUrl = process.env.DATABASE_URL ?? ''
+const databaseUrl = process.env.STUDIO_DATABASE_URL ?? ''
 const database = readDisposableDatabase(databaseUrl)
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
 

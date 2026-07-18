@@ -67,6 +67,14 @@ const routes = [
     expectedText: '请先保存 Studio token，保存后可以刷新这期 AI 日报 issue。',
     clearLocalStorageKeys: ['biau-studio-admin-token'],
   },
+  {
+    path: '/studio/ai-daily?ui-check=ai-daily-workspace',
+    title: 'AI Daily 工作区',
+    nav: '回主页',
+    canonical: '/studio/ai-daily',
+    localStorageValues: { 'biau-studio-admin-token': 'ui-check-token' },
+    aiDailyWorkspaceFixture: true,
+  },
   { path: '/operator', title: '新的站务任务', nav: '回主页', canonical: '/operator' },
   { path: '/operator/settings', title: '泊岸站务', nav: '回主页', canonical: '/operator/settings' },
   { path: '/assistant', title: '页面没有靠岸', nav: '回主页', canonical: '/assistant' },
@@ -1164,6 +1172,131 @@ for (const viewport of viewports) {
       }
     }
 
+    if (route.aiDailyWorkspaceFixture) {
+      const fixtureStatus = page.getByText('AI Daily workspace UI check fixture 已加载。').first()
+      await fixtureStatus.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {})
+      const tabs = page.getByRole('tab', { name: /Runs|Sources|Candidates \/ Events|Flash Review|Edition/u })
+      if ((await tabs.count()) !== 5) {
+        failures.push(`${viewport.name} ${route.path}: expected five AI Daily workspace tabs`)
+      }
+      const tabRelations = await tabs.evaluateAll((elements) =>
+        elements.map((element) => ({
+          id: element.id,
+          controls: element.getAttribute('aria-controls'),
+          selected: element.getAttribute('aria-selected'),
+        })),
+      )
+      for (const relation of tabRelations) {
+        if (!relation.id || !relation.controls) {
+          failures.push(`${viewport.name} ${route.path}: workspace tab is missing id or aria-controls`)
+          continue
+        }
+        const panel = page.locator(`#${relation.controls}`)
+        if ((await panel.count()) !== 1 || (await panel.getAttribute('role')) !== 'tabpanel') {
+          failures.push(`${viewport.name} ${route.path}: tab ${relation.id} does not control one tabpanel`)
+        }
+        if ((await panel.getAttribute('aria-labelledby')) !== relation.id) {
+          failures.push(`${viewport.name} ${route.path}: tabpanel ${relation.controls} is not labelled by ${relation.id}`)
+        }
+        if (relation.selected === 'true' && !(await panel.isVisible().catch(() => false))) {
+          failures.push(`${viewport.name} ${route.path}: selected tab ${relation.id} has no visible panel`)
+        }
+      }
+      if ((await page.getByRole('option', { name: /AI Daily 工作区 UI Check/u }).count()) !== 1) {
+        failures.push(`${viewport.name} ${route.path}: expected fixture Edition title`)
+      }
+      await page.getByRole('tab', { name: 'Candidates / Events' }).click()
+      if (!(await page.getByText('官方模型平台更新').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: expected candidate evidence card`)
+      }
+      if ((await page.getByRole('button', { name: '纳入' }).count()) < 1 || (await page.getByRole('button', { name: '请求证据' }).count()) < 1) {
+        failures.push(`${viewport.name} ${route.path}: candidates tab should expose editorial override actions`)
+      }
+      if (!(await page.getByText('事件聚类').isVisible().catch(() => false)) || (await page.getByRole('button', { name: '保存排序' }).count()) < 1) {
+        failures.push(`${viewport.name} ${route.path}: candidates tab should expose cluster ordering controls`)
+      }
+      const candidateCard = page.locator('.studio-ai-daily-item').filter({ hasText: '官方模型平台更新' }).first()
+      const includeButton = candidateCard.getByRole('button', { name: '纳入' })
+      if (await includeButton.isVisible().catch(() => false)) {
+        await includeButton.click()
+        if (!(await page.getByText(/Fixture 已执行：纳入候选/u).first().isVisible().catch(() => false))) {
+          failures.push(`${viewport.name} ${route.path}: fixture candidate include action should publish status`)
+        }
+      }
+      await page.getByRole('tab', { name: 'Sources' }).click()
+      if (!(await page.getByText('Official AI Platform RSS').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: sources tab should expose feed health`)
+      }
+      await page.getByRole('tab', { name: 'Flash Review' }).click()
+      if (!(await page.getByText('官方模型平台发布更新').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: flash tab should expose revision preview`)
+      }
+      if ((await page.getByRole('button', { name: /批准 Revision 1/u }).count()) < 1) {
+        failures.push(`${viewport.name} ${route.path}: flash tab should expose approve action`)
+      }
+      if ((await page.getByRole('button', { name: '暂挂 Flash' }).count()) < 1) {
+        failures.push(`${viewport.name} ${route.path}: flash tab should expose lifecycle hold action`)
+      }
+      if ((await page.getByRole('button', { name: '创建修正' }).count()) < 1) {
+        failures.push(`${viewport.name} ${route.path}: flash tab should expose correction action for approved revision`)
+      }
+      if ((await page.getByText('批准、暂挂、恢复和撤回都会写入审计记录').count()) !== 1) {
+        failures.push(`${viewport.name} ${route.path}: flash tab should explain write and immutable-correction behavior`)
+      }
+      await page.getByRole('tab', { name: 'Edition' }).click()
+      if (!(await page.getByText('打开草稿审核').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: edition tab should link to draft review`)
+      }
+      const editionRevisionCard = page.locator('.studio-ai-daily-revision-card').filter({ hasText: 'Revision 2' }).first()
+      if (!(await editionRevisionCard.isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: edition should expose an actionable pending revision`)
+      } else {
+        if ((await editionRevisionCard.getByRole('button', { name: '编辑修正' }).count()) !== 1) {
+          failures.push(`${viewport.name} ${route.path}: pending revision should expose correction action`)
+        }
+        if ((await editionRevisionCard.getByRole('button', { name: '重新验证' }).count()) !== 1) {
+          failures.push(`${viewport.name} ${route.path}: pending revision should expose revalidation action`)
+        }
+        if (!(await editionRevisionCard.getByText('丢弃理由').isVisible().catch(() => false))) {
+          failures.push(`${viewport.name} ${route.path}: discard reason field should be visible before destructive action`)
+        }
+        await editionRevisionCard.getByRole('button', { name: '编辑修正' }).click()
+        if (!(await page.getByRole('button', { name: '提交修正版' }).isVisible().catch(() => false))) {
+          failures.push(`${viewport.name} ${route.path}: correction form should open from pending revision`)
+        } else {
+          await page.getByRole('button', { name: '提交修正版' }).click()
+          await page.getByText(/Fixture 已执行：创建修正版/u).first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {})
+        }
+        const correctionCard = page.locator('.studio-ai-daily-revision-card').filter({ hasText: 'Revision 3' }).first()
+        if (!(await correctionCard.isVisible().catch(() => false))) {
+          failures.push(`${viewport.name} ${route.path}: correction should append a new revision instead of replacing its source`)
+        } else {
+          await correctionCard.getByRole('button', { name: '重新验证' }).click()
+          await page.getByText(/Fixture 已执行：重新验证/u).first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {})
+          if ((await correctionCard.getByRole('button', { name: '应用到草稿' }).count()) !== 1) {
+            failures.push(`${viewport.name} ${route.path}: valid revision should expose apply action after revalidation`)
+          } else {
+            await correctionCard.getByRole('button', { name: '应用到草稿' }).click()
+            await page.getByText(/Fixture 已执行：应用辅助草稿/u).first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {})
+          }
+        }
+        const sourceRevisionCard = page.locator('.studio-ai-daily-revision-card').filter({ hasText: 'Revision 2' }).first()
+        const discardReason = sourceRevisionCard.getByLabel('丢弃理由')
+        if (await discardReason.isVisible().catch(() => false)) {
+          await discardReason.fill('UI fixture discard audit')
+          page.once('dialog', (dialog) => dialog.accept())
+          await sourceRevisionCard.getByRole('button', { name: '丢弃' }).click()
+          await page.getByText(/Fixture 已执行：丢弃修订/u).first().waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {})
+        } else {
+          failures.push(`${viewport.name} ${route.path}: source revision should remain available for explicit discard`)
+        }
+        const editionOverflow = await collectStudioOverflow(page)
+        if (editionOverflow.length > 0 || await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) {
+          failures.push(`${viewport.name} ${route.path}: Edition mutations introduced visible overflow ${JSON.stringify(editionOverflow)}`)
+        }
+      }
+    }
+
     if (route.studioReviewFixture) {
       await page.getByText('UI Check 待审核草稿').first().waitFor({ state: 'visible', timeout: 10_000 })
       const fixtureApiRequests = []
@@ -2033,7 +2166,9 @@ if (animatedFrameDelta <= 0.15) {
 }
 
 await motionSwitchPage.emulateMedia({ reducedMotion: 'reduce' })
-await motionSwitchPage.waitForTimeout(350)
+// Chromium dispatches the media-query change asynchronously under the headless
+// compositor; allow the worker protocol and one stable frame to settle.
+await motionSwitchPage.waitForTimeout(1_000)
 const runtimeReducedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (runtimeReducedFrameDelta >= 0.05) {
   failures.push('/ home runtime motion: switching to reduce should stop the worker canvas on one stable frame')
@@ -2067,7 +2202,7 @@ if (
 }
 
 await motionSwitchPage.emulateMedia({ reducedMotion: 'no-preference' })
-await motionSwitchPage.waitForTimeout(350)
+await motionSwitchPage.waitForTimeout(1_000)
 const resumedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (resumedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')

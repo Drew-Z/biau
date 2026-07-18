@@ -3,7 +3,7 @@
   "name": "ai-daily-studio-editorial",
   "title": "AI Daily Studio editorial workspace",
   "description": "Implement Runs, Sources, Events, Flash Review, Edition, manual draft, correction, and revision workflows in Content Studio.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": "feature",
   "scope": "fullstack",
   "package": null,

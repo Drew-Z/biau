@@ -43,6 +43,9 @@ const StudioPage = lazy(() => import('./pages/StudioPage').then((module) => ({ d
 const StudioAiDailyIssuePage = lazy(() =>
   import('./pages/StudioAiDailyIssuePage').then((module) => ({ default: module.StudioAiDailyIssuePage })),
 )
+const StudioAiDailyWorkspacePage = lazy(() =>
+  import('./pages/StudioAiDailyWorkspacePage').then((module) => ({ default: module.StudioAiDailyWorkspacePage })),
+)
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 const PublicAssistantWidget = lazy(() =>
   import('./components/PublicAssistantWidget').then((module) => ({ default: module.PublicAssistantWidget })),
@@ -117,6 +120,7 @@ function App() {
           <Route path="/operator" element={<OperatorPage />} />
           <Route path="/operator/settings" element={<OperatorSettingsPage />} />
           <Route path="/studio/ai-daily/:issueId" element={<StudioAiDailyIssuePage />} />
+          <Route path="/studio/ai-daily" element={<StudioAiDailyWorkspacePage />} />
           <Route path="/studio/*" element={<StudioPage />} />
           <Route path="/status" element={<SiteStatusPage />} />
           <Route path="/status/:projectId" element={<SiteStatusDetailPage />} />

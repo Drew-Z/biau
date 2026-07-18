@@ -94,6 +94,11 @@ npm.cmd run check:ui
 - Draft/source/issue/review/export payloads are normalized before rendering.
 - Query `?draft=<id-or-slug>` selects a draft after authenticated data loads.
 - AI Daily source selection is an ordered, deduplicated id list derived from loaded source items.
+- `/studio/ai-daily` keeps `view` and `issueId` in the URL query; changing an Edition explicitly loads that issue rather than relying on callback identity changes.
+- AI Daily workspace responses always pass through `normalizeStudioAiDailyWorkspace`; a request sequence fence prevents an older response from replacing a newer selection.
+- Flash writes use the displayed `publicRevision` and revision number as optimistic tokens; after a successful mutation the workspace is refreshed before another action can reuse them. A `409` keeps the loaded data and asks the editor to refresh rather than guessing.
+- Edition writes use the displayed issue timestamp, revision number, and draft timestamp. Correction keeps one stable idempotency key across retries, appends a new revision, and closes its form only after success. Discard requires a visible reason that is sent to the audit path.
+- Local UI fixtures may simulate Candidate, Flash, and Edition transitions for deterministic checks, but production actions always go through the authenticated Studio API and never expose the token in status text.
 - Save/review/export actions update the canonical loaded record, then refresh dependent summaries.
 - Hidden/review-needed drafts never enter public blog state automatically.
 

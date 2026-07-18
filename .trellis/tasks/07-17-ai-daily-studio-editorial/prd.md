@@ -23,12 +23,12 @@ Provide a coherent Content Studio workspace for operating sources, runs, events,
 
 ## Acceptance Criteria
 
-- [ ] Editors can locate the current run, selected evidence, generated output, and required action without editing JSON.
-- [ ] Manual and assisted draft paths produce correct issue states and preserve evidence versions.
-- [ ] Flash approve/hold/correct/withdraw transitions are deterministic and audited.
-- [ ] Protected drafts and revisions reject stale optimistic writes.
-- [ ] Desktop and mobile views have no unintended overflow or clipped controls.
-- [ ] Public content is not exposed by authenticated editorial endpoints alone.
+- [x] Editors can locate the current run, selected evidence, generated output, and required action without editing JSON.
+- [x] Manual and assisted draft paths produce correct issue states and preserve evidence versions.
+- [x] Flash approve/hold/correct/withdraw transitions are deterministic and audited.
+- [x] Protected drafts and revisions reject stale optimistic writes.
+- [x] Desktop and mobile views have no unintended overflow or clipped controls.
+- [x] Public content is not exposed by authenticated editorial endpoints alone.
 
 ## Validation
 

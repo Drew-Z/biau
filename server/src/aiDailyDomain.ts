@@ -46,19 +46,31 @@ export type AiDailyWorkStatusName = (typeof aiDailyWorkStatuses)[number]
 export const aiDailyGeneratedApplyStates = ['PENDING', 'APPLIED', 'BLOCKED', 'DISCARDED'] as const
 export type AiDailyGeneratedApplyStateName = (typeof aiDailyGeneratedApplyStates)[number]
 
+export const aiDailyGeneratedValidationStates = ['VALID', 'NEEDS_EDITOR_REVIEW', 'REJECTED'] as const
+export type AiDailyGeneratedValidationStateName = (typeof aiDailyGeneratedValidationStates)[number]
+
 export const aiDailyFlashLifecycleStates = ['ACTIVE', 'HELD', 'WITHDRAWN'] as const
 export type AiDailyFlashLifecycleStateName = (typeof aiDailyFlashLifecycleStates)[number]
 
 export const aiDailyFlashRevisionStatuses = ['DRAFT', 'APPROVED', 'REJECTED', 'SUPERSEDED'] as const
 export type AiDailyFlashRevisionStatusName = (typeof aiDailyFlashRevisionStatuses)[number]
 
+export const aiDailyCandidateSelectionStates = ['CANDIDATE', 'SELECTED', 'REJECTED', 'DUPLICATE'] as const
+export type AiDailyCandidateSelectionStateName = (typeof aiDailyCandidateSelectionStates)[number]
+
+export const aiDailyClusterEditorStates = ['AUTO', 'PROPOSED', 'ACCEPTED', 'REJECTED'] as const
+export type AiDailyClusterEditorStateName = (typeof aiDailyClusterEditorStates)[number]
+
 export type AiDailyTransitionDomain =
   | 'run'
   | 'editorial'
   | 'work'
   | 'generated-apply'
+  | 'generated-validation'
   | 'flash-lifecycle'
   | 'flash-revision'
+  | 'candidate-selection'
+  | 'cluster-editorial'
 
 export type AiDailyTransitionResult<T extends string> =
   | { ok: true; current: T; next: T }
@@ -157,6 +169,15 @@ const generatedApplyTransitions: Record<AiDailyGeneratedApplyStateName, readonly
   DISCARDED: [],
 }
 
+const generatedValidationTransitions: Record<
+  AiDailyGeneratedValidationStateName,
+  readonly AiDailyGeneratedValidationStateName[]
+> = {
+  VALID: ['VALID', 'NEEDS_EDITOR_REVIEW', 'REJECTED'],
+  NEEDS_EDITOR_REVIEW: ['VALID', 'NEEDS_EDITOR_REVIEW', 'REJECTED'],
+  REJECTED: [],
+}
+
 const flashLifecycleTransitions: Record<AiDailyFlashLifecycleStateName, readonly AiDailyFlashLifecycleStateName[]> = {
   ACTIVE: ['HELD', 'WITHDRAWN'],
   HELD: ['ACTIVE', 'WITHDRAWN'],
@@ -168,6 +189,23 @@ const flashRevisionTransitions: Record<AiDailyFlashRevisionStatusName, readonly 
   APPROVED: ['SUPERSEDED'],
   REJECTED: [],
   SUPERSEDED: [],
+}
+
+const candidateSelectionTransitions: Record<
+  AiDailyCandidateSelectionStateName,
+  readonly AiDailyCandidateSelectionStateName[]
+> = {
+  CANDIDATE: ['SELECTED', 'REJECTED'],
+  SELECTED: ['CANDIDATE', 'REJECTED'],
+  REJECTED: ['CANDIDATE', 'SELECTED'],
+  DUPLICATE: [],
+}
+
+const clusterEditorTransitions: Record<AiDailyClusterEditorStateName, readonly AiDailyClusterEditorStateName[]> = {
+  AUTO: ['PROPOSED', 'ACCEPTED', 'REJECTED'],
+  PROPOSED: ['ACCEPTED', 'REJECTED'],
+  ACCEPTED: ['PROPOSED', 'REJECTED'],
+  REJECTED: ['PROPOSED', 'ACCEPTED'],
 }
 
 const profileRequirements: Record<AiDailyProfileName, readonly (keyof AiDailyConfigurationInput)[]> = {
@@ -231,6 +269,13 @@ export function evaluateAiDailyGeneratedApplyTransition(
   return evaluateTransition('generated-apply', generatedApplyTransitions, current, next)
 }
 
+export function evaluateAiDailyGeneratedValidationTransition(
+  current: AiDailyGeneratedValidationStateName,
+  next: AiDailyGeneratedValidationStateName,
+): AiDailyTransitionResult<AiDailyGeneratedValidationStateName> {
+  return evaluateTransition('generated-validation', generatedValidationTransitions, current, next)
+}
+
 export function evaluateAiDailyFlashLifecycleTransition(
   current: AiDailyFlashLifecycleStateName,
   next: AiDailyFlashLifecycleStateName,
@@ -243,6 +288,20 @@ export function evaluateAiDailyFlashRevisionTransition(
   next: AiDailyFlashRevisionStatusName,
 ): AiDailyTransitionResult<AiDailyFlashRevisionStatusName> {
   return evaluateTransition('flash-revision', flashRevisionTransitions, current, next)
+}
+
+export function evaluateAiDailyCandidateSelectionTransition(
+  current: AiDailyCandidateSelectionStateName,
+  next: AiDailyCandidateSelectionStateName,
+): AiDailyTransitionResult<AiDailyCandidateSelectionStateName> {
+  return evaluateTransition('candidate-selection', candidateSelectionTransitions, current, next)
+}
+
+export function evaluateAiDailyClusterEditorTransition(
+  current: AiDailyClusterEditorStateName,
+  next: AiDailyClusterEditorStateName,
+): AiDailyTransitionResult<AiDailyClusterEditorStateName> {
+  return evaluateTransition('cluster-editorial', clusterEditorTransitions, current, next)
 }
 
 export function evaluateAiDailyRunStageTransition(

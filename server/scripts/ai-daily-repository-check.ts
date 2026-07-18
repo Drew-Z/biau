@@ -6,16 +6,26 @@ import {
   approveAiDailyFlashRevision,
   claimAiDailyWorkItem,
   completeAiDailyWorkItem,
+  createAiDailyFlashCorrection,
   createAiDailyFlashRevision,
   createAiDailyGeneratedRevision,
   getOrCreateAiDailyEdition,
   loadAiDailyIssueSources,
+  rejectAiDailyFlashRevision,
   replaceAiDailyIssueSelection,
+  transitionAiDailyFlashLifecycle,
   upsertAiDailyCanonicalSource,
   upsertAiDailyWorkItem,
 } from '../src/aiDailyRepository.js'
+import {
+  applyAiDailyGeneratedRevision,
+  createAiDailyGeneratedCorrection,
+  discardAiDailyGeneratedRevision,
+  revalidateAiDailyGeneratedRevision,
+  type AiDailyEditableContent,
+} from '../src/aiDailyEditionRepository.js'
 
-const databaseUrl = process.env.DATABASE_URL ?? ''
+const databaseUrl = process.env.STUDIO_DATABASE_URL ?? ''
 const database = readDisposableDatabase(databaseUrl)
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
 
@@ -71,9 +81,26 @@ async function main() {
     originalUrl: canonicalSource.url,
     canonicalUrl: canonicalSource.canonicalUrl ?? canonicalSource.url,
   })
+  const claimId = `claim-${suffix}`
+  const editableContent: AiDailyEditableContent = {
+    title: 'Generated fixture',
+    subtitle: 'Repository edition lifecycle fixture',
+    introduction: { text: 'A bounded introduction backed by one fixture claim.', claimIds: [claimId] },
+    events: [
+      {
+        eventId: `event-${suffix}`,
+        title: 'Repository fixture event',
+        factSummary: { text: 'The fixture stores one source-backed fact.', claimIds: [claimId] },
+        whyItMatters: { text: 'The editor can correct and explicitly apply it.', claimIds: [claimId] },
+        uncertainty: 'low',
+        claimIds: [claimId],
+      },
+    ],
+    trends: [{ text: 'Immutable revisions preserve editorial history.', claimIds: [claimId] }],
+  }
   const generated = await createAiDailyGeneratedRevision(prisma, {
     issueId: issue.id,
-    contentJson: { title: 'Generated fixture' },
+    contentJson: { title: editableContent.title, composition: editableContent, claims: [{ claimId }] },
     sourceBindingsJson: { sourceIds: [canonicalSource.id] },
     citationSnapshots: [citation],
     promptVersion: 'fixture-v1',
@@ -87,6 +114,138 @@ async function main() {
   if (generated.revisionNumber !== 1 || generatedOwner.latestGeneratedRevisionId !== generated.id) {
     throw new Error('generated revision ownership should advance atomically')
   }
+
+  await expectFailure(
+    () =>
+      createAiDailyGeneratedCorrection(prisma, {
+        issueId: issue.id,
+        sourceRevisionId: generated.id,
+        expectedRevisionNumber: generated.revisionNumber,
+        expectedIssueUpdatedAt: new Date(0),
+        content: { ...editableContent, title: 'Stale correction fixture' },
+        actor: 'repository-check',
+        idempotencyKey: `stale-${suffix}`,
+      }),
+    'ai-daily-generated-issue-conflict',
+  )
+
+  const correctionKey = `edition-${suffix}`
+  const correctionInput = {
+    issueId: issue.id,
+    sourceRevisionId: generated.id,
+    expectedRevisionNumber: generated.revisionNumber,
+    expectedIssueUpdatedAt: generatedOwner.updatedAt,
+    content: { ...editableContent, title: 'Editor correction fixture' },
+    actor: 'repository-check',
+    reason: 'verify immutable correction and explicit apply',
+    idempotencyKey: correctionKey,
+  }
+  const correctionResult = await createAiDailyGeneratedCorrection(prisma, correctionInput)
+  const correctionRetry = await createAiDailyGeneratedCorrection(prisma, correctionInput)
+  if (
+    correctionResult.reused ||
+    !correctionRetry.reused ||
+    correctionRetry.revision.id !== correctionResult.revision.id ||
+    correctionResult.revision.sourceRevisionId !== generated.id
+  ) {
+    throw new Error('edition correction should append once and reuse the same revision after a lost response')
+  }
+  const sourceAfterCorrection = await prisma.aiDailyGeneratedRevision.findUnique({ where: { id: generated.id } })
+  if (!sourceAfterCorrection) throw new Error('edition correction must retain its source revision')
+
+  const issueBeforeRevalidation = await prisma.aiDailyIssue.findUniqueOrThrow({ where: { id: issue.id } })
+  const revalidated = await revalidateAiDailyGeneratedRevision(prisma, {
+    issueId: issue.id,
+    revisionId: correctionResult.revision.id,
+    expectedRevisionNumber: correctionResult.revision.revisionNumber,
+    expectedIssueUpdatedAt: issueBeforeRevalidation.updatedAt,
+    actor: 'repository-check',
+  })
+  if (revalidated.revision.validationStatus !== 'VALID' || revalidated.revision.applyState !== 'PENDING') {
+    throw new Error('deterministic edition revalidation should make the correction explicitly applicable')
+  }
+
+  const issueBeforeApply = await prisma.aiDailyIssue.findUniqueOrThrow({ where: { id: issue.id } })
+  const applied = await applyAiDailyGeneratedRevision(prisma, {
+    issueId: issue.id,
+    revisionId: correctionResult.revision.id,
+    expectedRevisionNumber: correctionResult.revision.revisionNumber,
+    expectedIssueUpdatedAt: issueBeforeApply.updatedAt,
+    actor: 'repository-check',
+  })
+  const pendingReview = await prisma.contentReview.findFirst({
+    where: { draftId: applied.draft.id },
+    orderBy: [{ reviewedAt: 'desc' }, { id: 'desc' }],
+  })
+  if (
+    applied.blocked ||
+    applied.revision.applyState !== 'APPLIED' ||
+    applied.draft.status !== 'REVIEW_NEEDED' ||
+    applied.draft.visibility !== 'HIDDEN' ||
+    pendingReview?.status !== 'PENDING'
+  ) {
+    throw new Error('applying a valid edition revision should create a hidden draft and restart review')
+  }
+  const issueAfterApply = await prisma.aiDailyIssue.findUniqueOrThrow({ where: { id: issue.id } })
+  if (!issueAfterApply.newEvidenceAvailable) {
+    throw new Error('applying a correction must not clear its still-pending source revision')
+  }
+  await discardAiDailyGeneratedRevision(prisma, {
+    issueId: issue.id,
+    revisionId: generated.id,
+    expectedRevisionNumber: generated.revisionNumber,
+    expectedIssueUpdatedAt: issueAfterApply.updatedAt,
+    actor: 'repository-check',
+    reason: 'source revision superseded by applied correction',
+  })
+  const issueAfterDiscard = await prisma.aiDailyIssue.findUniqueOrThrow({ where: { id: issue.id } })
+  if (issueAfterDiscard.newEvidenceAvailable) {
+    throw new Error('new evidence signal should clear only after no pending or blocked revisions remain')
+  }
+  await expectFailure(
+    () =>
+      createAiDailyGeneratedCorrection(prisma, {
+        issueId: issue.id,
+        sourceRevisionId: generated.id,
+        expectedRevisionNumber: generated.revisionNumber,
+        expectedIssueUpdatedAt: issueAfterDiscard.updatedAt,
+        content: { ...editableContent, title: 'Terminal source correction fixture' },
+        actor: 'repository-check',
+        idempotencyKey: `terminal-${suffix}`,
+      }),
+    'invalid-ai-daily-generated-apply-transition',
+  )
+
+  const archivedDraft = await prisma.contentDraft.update({
+    where: { id: applied.draft.id },
+    data: { status: 'ARCHIVED', visibility: 'ARCHIVE' },
+  })
+  const protectedRevision = await createAiDailyGeneratedRevision(prisma, {
+    issueId: issue.id,
+    contentJson: { title: editableContent.title, composition: editableContent, claims: [{ claimId }] },
+    sourceBindingsJson: { sourceIds: [canonicalSource.id] },
+    citationSnapshots: [citation],
+    promptVersion: 'fixture-v2',
+    schemaVersion: 'fixture-v1',
+    modelRole: 'fixture',
+    modelIdentifier: 'fixture-model',
+    validationStatus: 'VALID',
+    createdBy: 'repository-check',
+    observedDraftUpdatedAt: archivedDraft.updatedAt,
+  })
+  const issueBeforeProtectedApply = await prisma.aiDailyIssue.findUniqueOrThrow({ where: { id: issue.id } })
+  await expectFailure(
+    () =>
+      applyAiDailyGeneratedRevision(prisma, {
+        issueId: issue.id,
+        revisionId: protectedRevision.id,
+        expectedRevisionNumber: protectedRevision.revisionNumber,
+        expectedIssueUpdatedAt: issueBeforeProtectedApply.updatedAt,
+        expectedDraftUpdatedAt: archivedDraft.updatedAt,
+        actor: 'repository-check',
+      }),
+    'ai-daily-generated-revision-draft-protected',
+  )
 
   const work = await upsertAiDailyWorkItem(prisma, {
     editionDate: '2030-01-01',
@@ -163,6 +322,7 @@ async function main() {
     flashRevisionId: firstFlash.id,
     actor: 'repository-check',
     observedRevisionNumber: firstFlash.revisionNumber,
+    expectedPublicRevision: 0,
   })
   const secondFlash = await createAiDailyFlashRevision(prisma, {
     flashItemId: flashItem.id,
@@ -179,6 +339,7 @@ async function main() {
     flashRevisionId: secondFlash.id,
     actor: 'repository-check',
     observedRevisionNumber: secondFlash.revisionNumber,
+    expectedPublicRevision: 1,
   })
   const [firstFlashAfter, secondFlashAfter, flashAfter] = await Promise.all([
     prisma.aiDailyFlashRevision.findUniqueOrThrow({ where: { id: firstFlash.id } }),
@@ -193,6 +354,78 @@ async function main() {
   ) {
     throw new Error('flash approval should supersede and project in one transaction')
   }
+
+  const correction = await createAiDailyFlashCorrection(prisma, {
+    flashItemId: flashItem.id,
+    sourceRevisionId: secondFlash.id,
+    expectedPublicRevision: 2,
+    expectedRevisionSequence: 2,
+    title: 'Correction draft',
+    factSummary: 'Corrected fact summary without mutating the approved revision',
+    whyItMatters: 'The correction remains reviewable before publication',
+    actor: 'repository-check',
+  })
+  const correctionOwner = await prisma.aiDailyFlashItem.findUniqueOrThrow({ where: { id: flashItem.id } })
+  if (
+    correction.status !== 'DRAFT' ||
+    correction.revisionNumber !== 3 ||
+    correctionOwner.revisionSequence !== 3 ||
+    correctionOwner.currentApprovedRevisionId !== secondFlash.id
+  ) {
+    throw new Error('flash correction should create a new draft without replacing the approved revision')
+  }
+  await rejectAiDailyFlashRevision(prisma, {
+    flashRevisionId: correction.id,
+    actor: 'repository-check',
+    observedRevisionNumber: correction.revisionNumber,
+    expectedPublicRevision: 2,
+  })
+  await transitionAiDailyFlashLifecycle(prisma, {
+    flashItemId: flashItem.id,
+    next: 'HELD',
+    actor: 'repository-check',
+    expectedPublicRevision: 2,
+  })
+  await transitionAiDailyFlashLifecycle(prisma, {
+    flashItemId: flashItem.id,
+    next: 'ACTIVE',
+    actor: 'repository-check',
+    expectedPublicRevision: 3,
+  })
+  const withdrawn = await transitionAiDailyFlashLifecycle(prisma, {
+    flashItemId: flashItem.id,
+    next: 'WITHDRAWN',
+    actor: 'repository-check',
+    reason: 'repository lifecycle fixture complete',
+    expectedPublicRevision: 4,
+  })
+  if (withdrawn.lifecycleState !== 'WITHDRAWN' || withdrawn.publicRevision !== 5 || !withdrawn.withdrawnAt) {
+    throw new Error('flash withdrawal should advance public revision and record the withdrawal timestamp')
+  }
+  await expectFailure(
+    () =>
+      createAiDailyFlashRevision(prisma, {
+        flashItemId: flashItem.id,
+        selectionVersion: 1,
+        evidenceVersion: 0,
+        title: 'Invalid post-withdrawal draft',
+        factSummary: 'This draft must not be created',
+        whyItMatters: 'Withdrawn items are terminal',
+        citationSnapshots: [citation],
+        actor: 'repository-check',
+      }),
+    'ai-daily-flash-item-withdrawn',
+  )
+  await expectFailure(
+    () =>
+      transitionAiDailyFlashLifecycle(prisma, {
+        flashItemId: flashItem.id,
+        next: 'ACTIVE',
+        actor: 'repository-check',
+        expectedPublicRevision: 5,
+      }),
+    'invalid-ai-daily-transition',
+  )
 
   await expectFailure(
     () => prisma.aiDailyFlashRevision.update({ where: { id: secondFlash.id }, data: { title: 'Mutated title' } }),

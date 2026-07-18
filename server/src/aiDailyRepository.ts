@@ -13,6 +13,7 @@ import {
   createAiDailyCanonicalSourceIdentity,
   createAiDailyTitleFingerprint,
   evaluateAiDailyEditorialTransition,
+  evaluateAiDailyFlashLifecycleTransition,
   evaluateAiDailyFlashRevisionTransition,
   evaluateAiDailyLease,
   evaluateAiDailyRunStageTransition,
@@ -22,6 +23,7 @@ import {
   parseAiDailyEditionDate,
   type AiDailyCitationSnapshotV2,
   type AiDailyEditorialStateName,
+  type AiDailyFlashLifecycleStateName,
 } from './aiDailyDomain.js'
 import {
   aiDailyGenerationSchemaVersion,
@@ -128,6 +130,41 @@ export interface CreateAiDailyFlashRevisionInput {
   citationSnapshots: AiDailyCitationSnapshotV2[]
   editor?: string | null
   actor: string
+}
+
+export interface ApproveAiDailyFlashRevisionInput {
+  flashRevisionId: string
+  actor: string
+  reason?: string
+  observedRevisionNumber: number
+  expectedPublicRevision: number
+  now?: Date
+}
+
+export type RejectAiDailyFlashRevisionInput = ApproveAiDailyFlashRevisionInput
+
+export interface TransitionAiDailyFlashLifecycleInput {
+  flashItemId: string
+  next: 'HELD' | 'ACTIVE' | 'WITHDRAWN'
+  actor: string
+  reason?: string
+  expectedPublicRevision: number
+  now?: Date
+}
+
+export interface CreateAiDailyFlashCorrectionInput {
+  flashItemId: string
+  sourceRevisionId: string
+  expectedPublicRevision: number
+  expectedRevisionSequence: number
+  title: string
+  factSummary: string
+  whyItMatters: string
+  uncertainty?: string | null
+  editor?: string | null
+  actor: string
+  reason?: string
+  now?: Date
 }
 
 export async function upsertAiDailyCanonicalSource(
@@ -1026,6 +1063,8 @@ export async function createAiDailyFlashRevision(
   input: CreateAiDailyFlashRevisionInput,
 ) {
   return prisma.$transaction(async (tx) => {
+    const lockedItem = await lockAiDailyFlashItem(tx, input.flashItemId)
+    if (lockedItem.lifecycleState === 'WITHDRAWN') throw new Error('ai-daily-flash-item-withdrawn')
     const item = await tx.aiDailyFlashItem.update({
       where: { id: input.flashItemId },
       data: { revisionSequence: { increment: 1 } },
@@ -1060,52 +1099,117 @@ export async function createAiDailyFlashRevision(
   })
 }
 
+interface LockedAiDailyFlashItem {
+  id: string
+  lifecycleState: AiDailyFlashLifecycleStateName
+  currentApprovedRevisionId: string | null
+  revisionSequence: number
+  publicRevision: number
+}
+
+async function lockAiDailyFlashItem(tx: Prisma.TransactionClient, flashItemId: string) {
+  const [item] = await tx.$queryRaw<LockedAiDailyFlashItem[]>`
+    SELECT "id", "lifecycleState", "currentApprovedRevisionId", "revisionSequence", "publicRevision"
+    FROM "AiDailyFlashItem"
+    WHERE "id" = ${flashItemId}
+    FOR UPDATE
+  `
+  if (!item) throw new Error('ai-daily-flash-item-not-found')
+  return item
+}
+
+function assertAiDailyFlashPublicVersion(item: LockedAiDailyFlashItem, expectedPublicRevision: number) {
+  if (
+    !Number.isInteger(expectedPublicRevision) ||
+    expectedPublicRevision < 0 ||
+    item.publicRevision !== expectedPublicRevision
+  ) {
+    throw new Error('ai-daily-flash-item-conflict')
+  }
+}
+
+async function readAiDailyFlashRevisionNumber(tx: Prisma.TransactionClient, revisionId: string | null) {
+  if (!revisionId) return null
+  const revision = await tx.aiDailyFlashRevision.findUnique({
+    where: { id: revisionId },
+    select: { revisionNumber: true },
+  })
+  if (!revision) throw new Error('ai-daily-flash-item-conflict')
+  return revision.revisionNumber
+}
+
 export async function approveAiDailyFlashRevision(
   prisma: PrismaClient,
-  input: { flashRevisionId: string; actor: string; reason?: string; observedRevisionNumber?: number; now?: Date },
+  input: ApproveAiDailyFlashRevisionInput,
 ) {
   const now = input.now ?? new Date()
   return prisma.$transaction(async (tx) => {
+    const binding = await tx.aiDailyFlashRevision.findUnique({
+      where: { id: input.flashRevisionId },
+      select: { flashItemId: true },
+    })
+    if (!binding) throw new Error('ai-daily-flash-revision-not-found')
+    const item = await lockAiDailyFlashItem(tx, binding.flashItemId)
+    assertAiDailyFlashPublicVersion(item, input.expectedPublicRevision)
+    if (item.lifecycleState === 'WITHDRAWN') throw new Error('ai-daily-flash-item-withdrawn')
+
     const revision = await tx.aiDailyFlashRevision.findUnique({
       where: { id: input.flashRevisionId },
-      include: { flashItem: true },
     })
     if (!revision) throw new Error('ai-daily-flash-revision-not-found')
-    if (input.observedRevisionNumber !== undefined && input.observedRevisionNumber !== revision.revisionNumber) {
+    if (revision.flashItemId !== item.id) throw new Error('ai-daily-flash-revision-item-mismatch')
+    if (input.observedRevisionNumber !== revision.revisionNumber) {
       throw new Error('ai-daily-flash-revision-conflict')
     }
     const transition = evaluateAiDailyFlashRevisionTransition(revision.status, 'APPROVED')
     if (!transition.ok) throw new Error(transition.error)
 
-    const previousRevisionId = revision.flashItem.currentApprovedRevisionId
+    const previousRevisionId = item.currentApprovedRevisionId
     if (previousRevisionId) {
-      await tx.aiDailyFlashRevision.update({
+      const previousRevision = await tx.aiDailyFlashRevision.findUnique({
         where: { id: previousRevisionId },
+        select: { flashItemId: true, revisionNumber: true, status: true },
+      })
+      if (!previousRevision || previousRevision.flashItemId !== item.id) {
+        throw new Error('ai-daily-flash-item-conflict')
+      }
+      const previousTransition = evaluateAiDailyFlashRevisionTransition(previousRevision.status, 'SUPERSEDED')
+      if (!previousTransition.ok) throw new Error(previousTransition.error)
+      const superseded = await tx.aiDailyFlashRevision.updateMany({
+        where: { id: previousRevisionId, flashItemId: item.id, status: 'APPROVED' },
         data: { status: 'SUPERSEDED' },
       })
+      if (superseded.count !== 1) throw new Error('ai-daily-flash-item-conflict')
       await tx.aiDailyApprovalAction.create({
         data: {
-          flashItemId: revision.flashItemId,
+          flashItemId: item.id,
           flashRevisionId: previousRevisionId,
           action: 'SUPERSEDED',
           actor: input.actor,
           reason: input.reason,
+          observedRevisionNumber: previousRevision.revisionNumber,
         },
       })
     }
 
-    const approved = await tx.aiDailyFlashRevision.update({
-      where: { id: revision.id },
+    const approvedUpdate = await tx.aiDailyFlashRevision.updateMany({
+      where: {
+        id: revision.id,
+        flashItemId: item.id,
+        revisionNumber: input.observedRevisionNumber,
+        status: 'DRAFT',
+      },
       data: {
         status: 'APPROVED',
         approvedAt: now,
         supersededRevisionId: previousRevisionId,
       },
     })
+    if (approvedUpdate.count !== 1) throw new Error('ai-daily-flash-revision-conflict')
+    const approved = await tx.aiDailyFlashRevision.findUniqueOrThrow({ where: { id: revision.id } })
     await tx.aiDailyFlashItem.update({
-      where: { id: revision.flashItemId },
+      where: { id: item.id },
       data: {
-        lifecycleState: 'ACTIVE',
         currentApprovedRevisionId: approved.id,
         publicRevision: { increment: 1 },
         lastApprovedAt: now,
@@ -1115,7 +1219,7 @@ export async function approveAiDailyFlashRevision(
     })
     await tx.aiDailyApprovalAction.create({
       data: {
-        flashItemId: revision.flashItemId,
+        flashItemId: item.id,
         flashRevisionId: approved.id,
         action: 'APPROVED',
         actor: input.actor,
@@ -1124,6 +1228,145 @@ export async function approveAiDailyFlashRevision(
       },
     })
     return approved
+  })
+}
+
+export async function rejectAiDailyFlashRevision(
+  prisma: PrismaClient,
+  input: RejectAiDailyFlashRevisionInput,
+) {
+  return prisma.$transaction(async (tx) => {
+    const binding = await tx.aiDailyFlashRevision.findUnique({
+      where: { id: input.flashRevisionId },
+      select: { flashItemId: true },
+    })
+    if (!binding) throw new Error('ai-daily-flash-revision-not-found')
+    const item = await lockAiDailyFlashItem(tx, binding.flashItemId)
+    assertAiDailyFlashPublicVersion(item, input.expectedPublicRevision)
+    const revision = await tx.aiDailyFlashRevision.findUnique({ where: { id: input.flashRevisionId } })
+    if (!revision) throw new Error('ai-daily-flash-revision-not-found')
+    if (revision.flashItemId !== item.id) throw new Error('ai-daily-flash-revision-item-mismatch')
+    if (revision.revisionNumber !== input.observedRevisionNumber) {
+      throw new Error('ai-daily-flash-revision-conflict')
+    }
+    const transition = evaluateAiDailyFlashRevisionTransition(revision.status, 'REJECTED')
+    if (!transition.ok) throw new Error(transition.error)
+    const rejectedUpdate = await tx.aiDailyFlashRevision.updateMany({
+      where: {
+        id: revision.id,
+        flashItemId: item.id,
+        revisionNumber: input.observedRevisionNumber,
+        status: 'DRAFT',
+      },
+      data: { status: 'REJECTED' },
+    })
+    if (rejectedUpdate.count !== 1) throw new Error('ai-daily-flash-revision-conflict')
+    const rejected = await tx.aiDailyFlashRevision.findUniqueOrThrow({ where: { id: revision.id } })
+    await tx.aiDailyApprovalAction.create({
+      data: {
+        flashItemId: item.id,
+        flashRevisionId: rejected.id,
+        action: 'REJECTED',
+        actor: input.actor,
+        reason: input.reason,
+        observedRevisionNumber: rejected.revisionNumber,
+      },
+    })
+    return rejected
+  })
+}
+
+export async function transitionAiDailyFlashLifecycle(
+  prisma: PrismaClient,
+  input: TransitionAiDailyFlashLifecycleInput,
+) {
+  const now = input.now ?? new Date()
+  return prisma.$transaction(async (tx) => {
+    const item = await lockAiDailyFlashItem(tx, input.flashItemId)
+    assertAiDailyFlashPublicVersion(item, input.expectedPublicRevision)
+    const transition = evaluateAiDailyFlashLifecycleTransition(item.lifecycleState, input.next)
+    if (!transition.ok) throw new Error(transition.error)
+    const observedRevisionNumber = await readAiDailyFlashRevisionNumber(tx, item.currentApprovedRevisionId)
+    const updated = await tx.aiDailyFlashItem.update({
+      where: { id: item.id },
+      data: {
+        lifecycleState: input.next,
+        publicRevision: { increment: 1 },
+        withdrawnAt: input.next === 'WITHDRAWN' ? now : null,
+        projectionUpdatedAt: now,
+      },
+    })
+    await tx.aiDailyApprovalAction.create({
+      data: {
+        flashItemId: item.id,
+        flashRevisionId: item.currentApprovedRevisionId,
+        action: input.next === 'HELD' ? 'HELD' : input.next === 'ACTIVE' ? 'RELEASED' : 'WITHDRAWN',
+        actor: input.actor,
+        reason: input.reason,
+        observedRevisionNumber,
+      },
+    })
+    return updated
+  })
+}
+
+export async function createAiDailyFlashCorrection(
+  prisma: PrismaClient,
+  input: CreateAiDailyFlashCorrectionInput,
+) {
+  const now = input.now ?? new Date()
+  return prisma.$transaction(async (tx) => {
+    const item = await lockAiDailyFlashItem(tx, input.flashItemId)
+    assertAiDailyFlashPublicVersion(item, input.expectedPublicRevision)
+    if (item.revisionSequence !== input.expectedRevisionSequence) {
+      throw new Error('ai-daily-flash-item-conflict')
+    }
+    if (item.lifecycleState === 'WITHDRAWN') throw new Error('ai-daily-flash-item-withdrawn')
+    const sourceRevision = await tx.aiDailyFlashRevision.findUnique({ where: { id: input.sourceRevisionId } })
+    if (!sourceRevision) throw new Error('ai-daily-flash-revision-not-found')
+    if (sourceRevision.flashItemId !== item.id) throw new Error('ai-daily-flash-revision-item-mismatch')
+    if (sourceRevision.id !== item.currentApprovedRevisionId || sourceRevision.status !== 'APPROVED') {
+      throw new Error('ai-daily-flash-correction-source-not-current')
+    }
+
+    const revisionNumber = item.revisionSequence + 1
+    await tx.aiDailyFlashItem.update({
+      where: { id: item.id },
+      data: { revisionSequence: revisionNumber },
+    })
+    const revision = await tx.aiDailyFlashRevision.create({
+      data: {
+        flashItemId: item.id,
+        revisionNumber,
+        generatedRevisionId: sourceRevision.generatedRevisionId,
+        selectionVersion: sourceRevision.selectionVersion,
+        evidenceVersion: sourceRevision.evidenceVersion,
+        title: input.title,
+        factSummary: input.factSummary,
+        whyItMatters: input.whyItMatters,
+        uncertainty: input.uncertainty,
+        correctionState: 'correction-draft',
+        correctedAt: now,
+        citationSnapshotsJson:
+          sourceRevision.citationSnapshotsJson === null
+            ? Prisma.JsonNull
+            : (sourceRevision.citationSnapshotsJson as Prisma.InputJsonValue),
+        citationSchemaVersion: sourceRevision.citationSchemaVersion,
+        editor: input.editor,
+      },
+    })
+    await tx.aiDailyApprovalAction.create({
+      data: {
+        flashItemId: item.id,
+        flashRevisionId: revision.id,
+        action: 'SUBMITTED',
+        actor: input.actor,
+        reason: input.reason,
+        observedRevisionNumber: revision.revisionNumber,
+        metadataJson: { correction: true, sourceRevisionId: sourceRevision.id },
+      },
+    })
+    return revision
   })
 }
 

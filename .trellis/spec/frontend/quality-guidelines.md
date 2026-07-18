@@ -51,6 +51,7 @@ Also run feature-specific checks such as `analytics:check`, `project-details:che
 - Token inputs use password semantics and never echo values in status copy.
 - Draft, source, AI Daily, review, and export forms preserve local edits when switching focused sections.
 - Public preview is clearly separate from editable/internal metadata.
+- AI Daily workspace tabs expose standard `aria-controls` / `tabpanel` associations and remain within the viewport from 320px through desktop widths. Candidate, Flash, and Edition controls expose pending, conflict, validation, destructive-action reasons, and audit status; local fixtures exercise their deterministic write mirrors without contacting a deployed service.
 
 ## Mobile Navigation And Reading
 

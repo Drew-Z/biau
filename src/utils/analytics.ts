@@ -75,6 +75,9 @@ export function getAnalyticsRouteMetadata(pathname: string): AnalyticsRouteMetad
     return { routePattern: '/operator/settings', routeArea: 'operator-settings', routeDepth: segments.length }
   }
   if (first === 'operator') return { routePattern: '/operator', routeArea: 'operator', routeDepth: segments.length }
+  if (normalized === '/studio/ai-daily') {
+    return { routePattern: '/studio/ai-daily', routeArea: 'studio-ai-daily', routeDepth: segments.length }
+  }
   if (first === 'studio' && second === 'ai-daily') {
     return { routePattern: '/studio/ai-daily/:issueId', routeArea: 'studio-ai-daily', routeDepth: segments.length }
   }

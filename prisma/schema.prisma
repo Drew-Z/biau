@@ -277,6 +277,7 @@ model AiDailyRun {
   workAttempts          AiDailyWorkAttempt[]
   candidates            AiDailyCandidate[]
   clusters              AiDailyCluster[]
+  editorialOverrides    AiDailyEditorialOverride[]
 
   @@unique([editionDate, attemptNumber])
   @@index([editionDate, status])
@@ -419,6 +420,7 @@ model AiDailyCandidate {
   duplicateOf            AiDailyCandidate?              @relation("AiDailyCandidateDuplicates", fields: [duplicateOfCandidateId], references: [id], onDelete: SetNull)
   duplicates             AiDailyCandidate[]             @relation("AiDailyCandidateDuplicates")
   representedClusters    AiDailyCluster[]               @relation("AiDailyClusterRepresentative")
+  editorialOverrides     AiDailyEditorialOverride[]
 
   @@unique([runId, canonicalKey, observationKey])
   @@index([canonicalKey])
@@ -464,28 +466,51 @@ model AiDailyEvidenceDocument {
 }
 
 model AiDailyCluster {
-  id                        String                    @id @default(cuid())
+  id                        String                     @id @default(cuid())
   runId                     String
   stableIdentityKey         String
   representativeCandidateId String?
   groupingReason            String
   topic                     String
-  corroborationCount        Int                       @default(0)
+  corroborationCount        Int                        @default(0)
   scoreTotal                Float?
   scoreJson                 Json?
   rank                      Int?
   selectedAt                DateTime?
-  editorState               AiDailyClusterEditorState @default(AUTO)
+  editorState               AiDailyClusterEditorState  @default(AUTO)
   editorReason              String?
-  createdAt                 DateTime                  @default(now())
-  updatedAt                 DateTime                  @updatedAt
-  run                       AiDailyRun                @relation(fields: [runId], references: [id], onDelete: Cascade)
-  representativeCandidate   AiDailyCandidate?         @relation("AiDailyClusterRepresentative", fields: [representativeCandidateId], references: [id], onDelete: SetNull)
-  candidates                AiDailyCandidate[]        @relation("AiDailyClusterMembers")
+  createdAt                 DateTime                   @default(now())
+  updatedAt                 DateTime                   @updatedAt
+  run                       AiDailyRun                 @relation(fields: [runId], references: [id], onDelete: Cascade)
+  representativeCandidate   AiDailyCandidate?          @relation("AiDailyClusterRepresentative", fields: [representativeCandidateId], references: [id], onDelete: SetNull)
+  candidates                AiDailyCandidate[]         @relation("AiDailyClusterMembers")
+  editorialOverrides        AiDailyEditorialOverride[]
 
   @@unique([runId, stableIdentityKey])
   @@index([runId, rank])
   @@index([representativeCandidateId])
+}
+
+model AiDailyEditorialOverride {
+  id                String                         @id @default(cuid())
+  runId             String
+  candidateId       String?
+  clusterId         String?
+  action            AiDailyEditorialOverrideAction
+  actor             String
+  reason            String?
+  expectedUpdatedAt DateTime?
+  observedVersion   Int?
+  payloadJson       Json?
+  createdAt         DateTime                       @default(now())
+  run               AiDailyRun                     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  candidate         AiDailyCandidate?              @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  cluster           AiDailyCluster?                @relation(fields: [clusterId], references: [id], onDelete: SetNull)
+
+  @@index([runId, createdAt, id])
+  @@index([candidateId, createdAt])
+  @@index([clusterId, createdAt])
+  @@index([action, createdAt])
 }
 
 model AiDailyIssueSource {
@@ -522,6 +547,8 @@ model AiDailyGeneratedRevision {
   schemaVersion          String
   modelRole              String
   modelIdentifier        String
+  revisionKind           AiDailyGeneratedRevisionKind     @default(GENERATED)
+  sourceRevisionId       String?
   observedDraftUpdatedAt DateTime?
   projectionDraftId      String?
   applyState             AiDailyGeneratedApplyState       @default(PENDING)
@@ -530,12 +557,20 @@ model AiDailyGeneratedRevision {
   createdBy              String
   createdAt              DateTime                         @default(now())
   appliedAt              DateTime?
+  revalidatedAt          DateTime?
+  validatedBy            String?
+  discardedAt            DateTime?
+  discardedBy            String?
+  discardReason          String?
   issue                  AiDailyIssue                     @relation("AiDailyIssueGeneratedRevisions", fields: [issueId], references: [id], onDelete: Cascade)
   latestForIssue         AiDailyIssue?                    @relation("AiDailyIssueLatestGeneratedRevision")
+  sourceRevision         AiDailyGeneratedRevision?        @relation("AiDailyGeneratedRevisionCorrections", fields: [sourceRevisionId], references: [id], onDelete: SetNull)
+  corrections            AiDailyGeneratedRevision[]       @relation("AiDailyGeneratedRevisionCorrections")
   flashRevisions         AiDailyFlashRevision[]
 
   @@unique([issueId, revisionNumber])
   @@index([issueId, validationStatus, createdAt])
+  @@index([sourceRevisionId])
 }
 
 model AiDailyFlashItem {
@@ -812,10 +847,24 @@ enum AiDailyClusterEditorState {
   REJECTED
 }
 
+enum AiDailyEditorialOverrideAction {
+  INCLUDE
+  EXCLUDE
+  REORDER
+  MERGE
+  SPLIT
+  REQUEST_EVIDENCE
+}
+
 enum AiDailyGeneratedValidationStatus {
   VALID
   NEEDS_EDITOR_REVIEW
   REJECTED
+}
+
+enum AiDailyGeneratedRevisionKind {
+  GENERATED
+  EDITOR_CORRECTION
 }
 
 enum AiDailyGeneratedApplyState {

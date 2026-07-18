@@ -6,8 +6,12 @@ import { buildAiDailyIssueReadinessIssues } from './studioAiDailyReadiness.js'
 import { normalizeAiDailyCitationSnapshotV2, parseAiDailyEditionDate } from './aiDailyDomain.js'
 import {
   loadAiDailyIssueSources,
+  approveAiDailyFlashRevision,
+  createAiDailyFlashCorrection,
+  rejectAiDailyFlashRevision,
   replaceAiDailyIssueSelectionInTransaction,
   toAiDailyCitationSnapshotJson,
+  transitionAiDailyFlashLifecycle,
 } from './aiDailyRepository.js'
 import {
   aiDailySourceFeedKinds,
@@ -20,6 +24,15 @@ import {
   updateAiDailySourceFeed,
   upsertAiDailySourceFeed,
 } from './aiDailyIngestionRepository.js'
+import { loadAiDailyWorkspace } from './studioAiDailyWorkspace.js'
+import { applyAiDailyEditorialOverride } from './aiDailyEditorialOverrideRepository.js'
+import {
+  applyAiDailyGeneratedRevision,
+  createAiDailyGeneratedCorrection,
+  discardAiDailyGeneratedRevision,
+  readAiDailyEditableContent,
+  revalidateAiDailyGeneratedRevision,
+} from './aiDailyEditionRepository.js'
 import {
   evaluatePublishExportReadiness,
   evaluateStudioArchiveTransition,
@@ -79,6 +92,22 @@ type StudioDraftStatus = keyof typeof draftStatusToApi
 type StudioReviewStatus = keyof typeof reviewStatusToApi
 type StudioVisibility = keyof typeof visibilityToApi
 type StudioAiDailyStatus = keyof typeof aiDailyStatusToApi
+type StudioAiDailyEditorialOverrideAction =
+  | 'INCLUDE'
+  | 'EXCLUDE'
+  | 'REORDER'
+  | 'MERGE'
+  | 'SPLIT'
+  | 'REQUEST_EVIDENCE'
+
+const aiDailyEditorialOverrideActions = new Set<StudioAiDailyEditorialOverrideAction>([
+  'INCLUDE',
+  'EXCLUDE',
+  'REORDER',
+  'MERGE',
+  'SPLIT',
+  'REQUEST_EVIDENCE',
+])
 
 interface StudioAuthResult {
   ok: boolean
@@ -611,6 +640,206 @@ export function createStudioRouter() {
     }
   })
 
+  router.get('/ai-daily/workspace', async (req, res, next) => {
+    try {
+      const issueId = readString(req.query.issueId, 120) || undefined
+      const limit = readOptionalPositiveIntQuery(req.query.limit)
+      if (limit === 'invalid') {
+        res.status(400).json({ error: 'invalid-ai-daily-workspace-limit' })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      res.json(await loadAiDailyWorkspace(prisma, { issueId, limit }))
+    } catch (error) {
+      if (isErrorMessage(error, 'ai-daily-issue-not-found')) {
+        res.status(404).json({ error: 'ai-daily-issue-not-found' })
+        return
+      }
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/editorial-overrides', async (req, res, next) => {
+    try {
+      const input = readAiDailyEditorialOverrideInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const result = await applyAiDailyEditorialOverride(prisma, input.data)
+      res.status(201).json(toAiDailyEditorialOverrideMutationResponse(result))
+    } catch (error) {
+      if (handleAiDailyEditorialOverrideError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/issues/:id/generated-revisions/:revisionId/corrections', async (req, res, next) => {
+    try {
+      const input = readAiDailyGeneratedCorrectionInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const result = await createAiDailyGeneratedCorrection(prisma, {
+        issueId: readRouteParam(req.params.id),
+        sourceRevisionId: readRouteParam(req.params.revisionId),
+        ...input.data,
+      })
+      res.status(result.reused ? 200 : 201).json({ revision: toAiDailyGeneratedRevisionMutationResponse(result.revision), reused: result.reused })
+    } catch (error) {
+      if (handleAiDailyGeneratedRevisionWriteError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/issues/:id/generated-revisions/:revisionId/revalidate', async (req, res, next) => {
+    try {
+      const input = readAiDailyGeneratedRevisionActionInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const result = await revalidateAiDailyGeneratedRevision(prisma, {
+        issueId: readRouteParam(req.params.id),
+        revisionId: readRouteParam(req.params.revisionId),
+        expectedRevisionNumber: input.data.expectedRevisionNumber,
+        expectedIssueUpdatedAt: input.data.expectedIssueUpdatedAt,
+        actor: input.data.actor,
+      })
+      res.json({ revision: toAiDailyGeneratedRevisionMutationResponse(result.revision) })
+    } catch (error) {
+      if (handleAiDailyGeneratedRevisionWriteError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/issues/:id/generated-revisions/:revisionId/apply', async (req, res, next) => {
+    try {
+      const input = readAiDailyGeneratedRevisionActionInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const result = await applyAiDailyGeneratedRevision(prisma, {
+        issueId: readRouteParam(req.params.id),
+        revisionId: readRouteParam(req.params.revisionId),
+        expectedRevisionNumber: input.data.expectedRevisionNumber,
+        expectedIssueUpdatedAt: input.data.expectedIssueUpdatedAt,
+        expectedDraftUpdatedAt: input.data.expectedDraftUpdatedAt,
+        actor: input.data.actor,
+      })
+      if (result.blocked) {
+        res.status(409).json({ error: 'ai-daily-generated-revision-draft-conflict', revision: toAiDailyGeneratedRevisionMutationResponse(result.revision) })
+        return
+      }
+      res.json({ revision: toAiDailyGeneratedRevisionMutationResponse(result.revision), draftId: result.draft.id })
+    } catch (error) {
+      if (handleAiDailyGeneratedRevisionWriteError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/issues/:id/generated-revisions/:revisionId/discard', async (req, res, next) => {
+    try {
+      const input = readAiDailyGeneratedRevisionActionInput(req.body, { reasonRequired: true })
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const result = await discardAiDailyGeneratedRevision(prisma, {
+        issueId: readRouteParam(req.params.id),
+        revisionId: readRouteParam(req.params.revisionId),
+        expectedRevisionNumber: input.data.expectedRevisionNumber,
+        expectedIssueUpdatedAt: input.data.expectedIssueUpdatedAt,
+        actor: input.data.actor,
+        reason: input.data.reason,
+      })
+      res.json({ revision: toAiDailyGeneratedRevisionMutationResponse(result.revision) })
+    } catch (error) {
+      if (handleAiDailyGeneratedRevisionWriteError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/flash-revisions/:id/approve', async (req, res, next) => {
+    try {
+      const input = readAiDailyFlashRevisionActionInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const revision = await approveAiDailyFlashRevision(prisma, {
+        flashRevisionId: readRouteParam(req.params.id),
+        ...input.data,
+      })
+      const item = await prisma.aiDailyFlashItem.findUniqueOrThrow({ where: { id: revision.flashItemId } })
+      res.json({
+        flashRevision: toAiDailyFlashRevisionMutationResponse(revision),
+        flashItem: toAiDailyFlashItemMutationResponse(item),
+      })
+    } catch (error) {
+      if (handleAiDailyFlashWriteError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/flash-revisions/:id/reject', async (req, res, next) => {
+    try {
+      const input = readAiDailyFlashRevisionActionInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const revision = await rejectAiDailyFlashRevision(prisma, {
+        flashRevisionId: readRouteParam(req.params.id),
+        ...input.data,
+      })
+      const item = await prisma.aiDailyFlashItem.findUniqueOrThrow({ where: { id: revision.flashItemId } })
+      res.json({
+        flashRevision: toAiDailyFlashRevisionMutationResponse(revision),
+        flashItem: toAiDailyFlashItemMutationResponse(item),
+      })
+    } catch (error) {
+      if (handleAiDailyFlashWriteError(res, error)) return
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/flash-items/:id/hold', createAiDailyFlashLifecycleHandler('HELD'))
+  router.post('/ai-daily/flash-items/:id/release', createAiDailyFlashLifecycleHandler('ACTIVE'))
+  router.post('/ai-daily/flash-items/:id/withdraw', createAiDailyFlashLifecycleHandler('WITHDRAWN'))
+
+  router.post('/ai-daily/flash-items/:id/corrections', async (req, res, next) => {
+    try {
+      const input = readAiDailyFlashCorrectionInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const revision = await createAiDailyFlashCorrection(prisma, {
+        flashItemId: readRouteParam(req.params.id),
+        ...input.data,
+      })
+      const item = await prisma.aiDailyFlashItem.findUniqueOrThrow({ where: { id: revision.flashItemId } })
+      res.status(201).json({
+        flashRevision: toAiDailyFlashRevisionMutationResponse(revision),
+        flashItem: toAiDailyFlashItemMutationResponse(item),
+      })
+    } catch (error) {
+      if (handleAiDailyFlashWriteError(res, error)) return
+      next(error)
+    }
+  })
+
   router.get('/ai-daily/issues', async (_req, res, next) => {
     try {
       const prisma = requireStudioDatabase()
@@ -749,72 +978,79 @@ export function createStudioRouter() {
         res.status(400).json({ error: 'sensitive-content-detected' })
         return
       }
-
-      const prisma = requireStudioDatabase()
-      const issue = await prisma.aiDailyIssue.findUnique({ where: { id: req.params.id } })
-      if (!issue) {
-        res.status(404).json({ error: 'ai-daily-issue-not-found' })
+      const expectedIssueUpdatedAt = readRequiredDate(req.body?.expectedIssueUpdatedAt)
+      if (!expectedIssueUpdatedAt) {
+        res.status(400).json({ error: 'invalid-ai-daily-content-draft-action' })
         return
       }
-
-      const sources = (await loadAiDailyIssueSources(prisma, issue.id)).sources
-      if (sources.length === 0) {
-        res.status(409).json({ error: 'ai-daily-issue-needs-sources' })
-        return
-      }
-      const readinessIssues = buildAiDailyIssueReadinessIssues(issue.briefJson, sources)
-      if (readinessIssues.length > 0) {
-        res.status(409).json({ error: 'ai-daily-issue-not-ready', issues: readinessIssues })
-        return
-      }
-
       const editorName = readString(req.body?.editorName, 80) || 'studio'
-      const slug = slugFromIssueDate(issue.date)
-      const linkedDraft = issue.draftId
-        ? await prisma.contentDraft.findUnique({
-            where: { id: issue.draftId },
-            include: { reviews: latestReviewQuery },
-          })
-        : null
-      const existingSlugDraft = linkedDraft
-        ? null
-        : await prisma.contentDraft.findUnique({
-            where: { slug },
-            include: { reviews: latestReviewQuery },
-          })
-
-      if (linkedDraft || existingSlugDraft) {
-        const draft = linkedDraft ?? existingSlugDraft
-        if (!draft || draft.column !== 'ai-daily') {
-          res.status(409).json({ error: 'duplicate-slug' })
-          return
+      const prisma = requireStudioDatabase()
+      const issueId = readRouteParam(req.params.id)
+      const { finalIssue, created } = await prisma.$transaction(async (tx) => {
+        const [lockedIssue] = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id"
+          FROM "AiDailyIssue"
+          WHERE "id" = ${issueId}
+          FOR UPDATE
+        `
+        if (!lockedIssue) throw new Error('ai-daily-issue-not-found')
+        const issue = await tx.aiDailyIssue.findUnique({ where: { id: issueId } })
+        if (!issue) throw new Error('ai-daily-issue-not-found')
+        if (issue.updatedAt.getTime() !== expectedIssueUpdatedAt.getTime()) {
+          throw new Error('ai-daily-generated-issue-conflict')
         }
-        const updatedIssue = await prisma.aiDailyIssue.update({
-          where: { id: issue.id },
-          data: { draftId: draft.id, status: 'REVIEW_NEEDED' },
-        })
-        res.json(await loadAiDailyIssueDetail(prisma, updatedIssue))
-        return
-      }
-
-      const draftData = buildAiDailyDraftInput(issue, sources, editorName)
-      const { finalIssue } = await prisma.$transaction(async (tx) => {
+        const sources = (await loadAiDailyIssueSources(tx, issue.id)).sources
+        if (sources.length === 0) throw new Error('ai-daily-issue-needs-sources')
+        const readinessIssues = buildAiDailyIssueReadinessIssues(issue.briefJson, sources)
+        if (readinessIssues.length > 0) {
+          const error = new Error('ai-daily-issue-not-ready') as Error & { readinessIssues?: unknown }
+          error.readinessIssues = readinessIssues
+          throw error
+        }
+        const slug = slugFromIssueDate(issue.date)
+        const linkedDraft = issue.draftId ? await tx.contentDraft.findUnique({ where: { id: issue.draftId } }) : null
+        const existingSlugDraft = linkedDraft ? null : await tx.contentDraft.findUnique({ where: { slug } })
+        if (linkedDraft || existingSlugDraft) {
+          const draft = linkedDraft ?? existingSlugDraft
+          if (!draft || draft.column !== 'ai-daily') throw new Error('duplicate-slug')
+          const updatedIssue = await tx.aiDailyIssue.update({
+            where: { id: issue.id },
+            data: { draftId: draft.id, status: 'REVIEW_NEEDED', workflowState: 'REVIEW_NEEDED' },
+          })
+          return { finalIssue: updatedIssue, created: false }
+        }
+        const draftData = buildAiDailyDraftInput(issue, sources, editorName)
         const draft = await tx.contentDraft.create({
           data: draftData,
-          include: { reviews: latestReviewQuery },
         })
         const nextIssue = await tx.aiDailyIssue.update({
           where: { id: issue.id },
-          data: { draftId: draft.id, status: 'REVIEW_NEEDED' },
+          data: { draftId: draft.id, status: 'REVIEW_NEEDED', workflowState: 'REVIEW_NEEDED' },
         })
-        return { draft, finalIssue: nextIssue }
+        return { finalIssue: nextIssue, created: true }
       })
-      res.status(201).json(await loadAiDailyIssueDetail(prisma, finalIssue))
+      res.status(created ? 201 : 200).json(await loadAiDailyIssueDetail(prisma, finalIssue))
     } catch (error) {
+      if (isErrorMessage(error, 'ai-daily-issue-needs-sources')) {
+        res.status(409).json({ error: 'ai-daily-issue-needs-sources' })
+        return
+      }
+      if (isErrorMessage(error, 'ai-daily-issue-not-ready')) {
+        const readinessIssues = error instanceof Error && 'readinessIssues' in error
+          ? (error as Error & { readinessIssues?: unknown }).readinessIssues
+          : undefined
+        res.status(409).json({ error: 'ai-daily-issue-not-ready', ...(readinessIssues ? { issues: readinessIssues } : {}) })
+        return
+      }
+      if (isErrorMessage(error, 'duplicate-slug')) {
+        res.status(409).json({ error: 'duplicate-slug' })
+        return
+      }
       if (isPrismaError(error, 'P2002')) {
         res.status(409).json({ error: 'duplicate-slug' })
         return
       }
+      if (handleAiDailyGeneratedRevisionWriteError(res, error)) return
       next(error)
     }
   })
@@ -866,6 +1102,17 @@ function readOptionalBooleanQuery(value: unknown): boolean | undefined | 'invali
   if (value === 'true') return true
   if (value === 'false') return false
   return 'invalid'
+}
+
+function readOptionalPositiveIntQuery(value: unknown): number | undefined | 'invalid' {
+  if (value === undefined) return undefined
+  if (typeof value !== 'string' || !/^\d+$/u.test(value)) return 'invalid'
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 40 ? parsed : 'invalid'
+}
+
+function readRouteParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] ?? '' : value ?? ''
 }
 
 function readBodyJson(value: unknown): Prisma.InputJsonValue {
@@ -1172,6 +1419,599 @@ function handleAiDailySourceFeedWriteError(res: express.Response, error: unknown
     return true
   }
   return false
+}
+
+function readAiDailyEditorialOverrideInput(value: unknown):
+  | {
+      data: {
+        action: StudioAiDailyEditorialOverrideAction
+        runId: string
+        actor: string
+        reason?: string
+        expectedUpdatedAt: Date
+        candidateId?: string
+        clusterId?: string
+        secondaryClusterId?: string
+        secondaryExpectedUpdatedAt?: Date
+        orderedClusterIds?: string[]
+        splitCandidateIds?: string[]
+        splitStableIdentityKey?: string
+        observedEvidenceVersion?: number
+      }
+    }
+  | { error: string } {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-editorial-override' }
+  if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
+  const actionValue = readString(value.action, 40).toUpperCase() as StudioAiDailyEditorialOverrideAction
+  const runId = readString(value.runId, 120)
+  const actor = readString(value.actor, 80)
+  const reason = readString(value.reason, 1000)
+  const expectedUpdatedAt = readRequiredDate(value.expectedUpdatedAt)
+  const candidateId = readString(value.candidateId, 120)
+  const clusterId = readString(value.clusterId, 120)
+  const secondaryClusterId = readString(value.secondaryClusterId, 120)
+  const secondaryExpectedUpdatedAt = value.secondaryExpectedUpdatedAt === undefined
+    ? undefined
+    : readRequiredDate(value.secondaryExpectedUpdatedAt)
+  const observedEvidenceVersion = readOptionalNonNegativeInteger(value.observedEvidenceVersion)
+  const orderedClusterIds = readBoundedStringArray(value.orderedClusterIds, 40, 120)
+  const splitCandidateIds = readBoundedStringArray(value.splitCandidateIds, 40, 120)
+  const splitStableIdentityKey = readString(value.splitStableIdentityKey, 160)
+  if (
+    !aiDailyEditorialOverrideActions.has(actionValue) ||
+    !runId ||
+    !actor ||
+    !expectedUpdatedAt ||
+    secondaryExpectedUpdatedAt === null ||
+    observedEvidenceVersion === 'invalid'
+  ) {
+    return { error: 'invalid-ai-daily-editorial-override' }
+  }
+  if (['INCLUDE', 'EXCLUDE', 'REQUEST_EVIDENCE'].includes(actionValue) && !candidateId) {
+    return { error: 'invalid-ai-daily-editorial-override' }
+  }
+  if (actionValue === 'REORDER' && orderedClusterIds.length === 0) {
+    return { error: 'invalid-ai-daily-editorial-override' }
+  }
+  if (
+    actionValue === 'MERGE' &&
+    (!clusterId || !secondaryClusterId || !secondaryExpectedUpdatedAt)
+  ) {
+    return { error: 'invalid-ai-daily-editorial-override' }
+  }
+  if (
+    actionValue === 'SPLIT' &&
+    (!clusterId || splitCandidateIds.length === 0 || !/^[a-z0-9][a-z0-9:_-]{2,159}$/u.test(splitStableIdentityKey))
+  ) {
+    return { error: 'invalid-ai-daily-editorial-override' }
+  }
+  return {
+    data: {
+      action: actionValue,
+      runId,
+      actor,
+      reason: reason || undefined,
+      expectedUpdatedAt,
+      candidateId: candidateId || undefined,
+      clusterId: clusterId || undefined,
+      secondaryClusterId: secondaryClusterId || undefined,
+      secondaryExpectedUpdatedAt: secondaryExpectedUpdatedAt ?? undefined,
+      orderedClusterIds: orderedClusterIds.length > 0 ? orderedClusterIds : undefined,
+      splitCandidateIds: splitCandidateIds.length > 0 ? splitCandidateIds : undefined,
+      splitStableIdentityKey: splitStableIdentityKey || undefined,
+      observedEvidenceVersion: observedEvidenceVersion === undefined ? undefined : observedEvidenceVersion,
+    },
+  }
+}
+
+function readRequiredDate(value: unknown) {
+  const text = readString(value, 40)
+  if (!text) return null
+  const date = new Date(text)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function readOptionalNonNegativeInteger(value: unknown): number | undefined | 'invalid' {
+  if (value === undefined) return undefined
+  return readRequiredNonNegativeInteger(value) ?? 'invalid'
+}
+
+function readBoundedStringArray(value: unknown, limit: number, maxLength: number) {
+  if (!Array.isArray(value)) return []
+  return dedupeStrings(value.map((item) => readString(item, maxLength)).filter(Boolean)).slice(0, limit)
+}
+
+function readAiDailyGeneratedCorrectionInput(value: unknown):
+  | {
+      data: {
+        actor: string
+        reason?: string
+        expectedRevisionNumber: number
+        expectedIssueUpdatedAt: Date
+        idempotencyKey: string
+        content: NonNullable<ReturnType<typeof readAiDailyEditableContent>>
+      }
+    }
+  | { error: string } {
+  if (!isRecord(value) || hasSensitiveValue(value)) return { error: 'invalid-ai-daily-generated-correction' }
+  const actor = readString(value.actor, 80)
+  const reason = readString(value.reason, 1000)
+  const expectedRevisionNumber = readRequiredNonNegativeInteger(value.expectedRevisionNumber)
+  const expectedIssueUpdatedAt = readRequiredDate(value.expectedIssueUpdatedAt)
+  const idempotencyKey = readString(value.idempotencyKey, 120)
+  const content = readAiDailyEditableContent(value.content)
+  if (
+    !actor ||
+    expectedRevisionNumber === null ||
+    expectedRevisionNumber < 1 ||
+    !expectedIssueUpdatedAt ||
+    !/^[a-z0-9][a-z0-9:_-]{7,119}$/iu.test(idempotencyKey) ||
+    !content
+  ) {
+    return { error: 'invalid-ai-daily-generated-correction' }
+  }
+  return { data: { actor, reason: reason || undefined, expectedRevisionNumber, expectedIssueUpdatedAt, idempotencyKey, content } }
+}
+
+function readAiDailyGeneratedRevisionActionInput(
+  value: unknown,
+  options: { reasonRequired?: boolean } = {},
+):
+  | {
+      data: {
+        actor: string
+        reason?: string
+        expectedRevisionNumber: number
+        expectedIssueUpdatedAt: Date
+        expectedDraftUpdatedAt?: Date
+      }
+    }
+  | { error: string } {
+  if (!isRecord(value) || hasSensitiveValue(value)) return { error: 'invalid-ai-daily-generated-revision-action' }
+  const actor = readString(value.actor, 80)
+  const reason = readString(value.reason, 1000)
+  const expectedRevisionNumber = readRequiredNonNegativeInteger(value.expectedRevisionNumber)
+  const expectedIssueUpdatedAt = readRequiredDate(value.expectedIssueUpdatedAt)
+  const expectedDraftUpdatedAt = value.expectedDraftUpdatedAt === undefined
+    ? undefined
+    : readRequiredDate(value.expectedDraftUpdatedAt)
+  if (
+    !actor ||
+    expectedRevisionNumber === null ||
+    expectedRevisionNumber < 1 ||
+    !expectedIssueUpdatedAt ||
+    expectedDraftUpdatedAt === null ||
+    (options.reasonRequired && !reason)
+  ) {
+    return { error: 'invalid-ai-daily-generated-revision-action' }
+  }
+  return {
+    data: {
+      actor,
+      reason: reason || undefined,
+      expectedRevisionNumber,
+      expectedIssueUpdatedAt,
+      expectedDraftUpdatedAt: expectedDraftUpdatedAt ?? undefined,
+    },
+  }
+}
+
+function readRequiredNonNegativeInteger(value: unknown) {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null
+}
+
+function readAiDailyFlashRevisionActionInput(value: unknown):
+  | {
+      data: {
+        actor: string
+        reason?: string
+        observedRevisionNumber: number
+        expectedPublicRevision: number
+      }
+    }
+  | { error: string } {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-flash-action' }
+  if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
+  const actor = readString(value.actor, 80)
+  const reason = readString(value.reason, 1000)
+  const observedRevisionNumber = readRequiredNonNegativeInteger(value.observedRevisionNumber)
+  const expectedPublicRevision = readRequiredNonNegativeInteger(value.expectedPublicRevision)
+  if (!actor || observedRevisionNumber === null || observedRevisionNumber < 1 || expectedPublicRevision === null) {
+    return { error: 'invalid-ai-daily-flash-action' }
+  }
+  return {
+    data: {
+      actor,
+      reason: reason || undefined,
+      observedRevisionNumber,
+      expectedPublicRevision,
+    },
+  }
+}
+
+function readAiDailyFlashLifecycleInput(value: unknown):
+  | { data: { actor: string; reason?: string; expectedPublicRevision: number } }
+  | { error: string } {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-flash-lifecycle-action' }
+  if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
+  const actor = readString(value.actor, 80)
+  const reason = readString(value.reason, 1000)
+  const expectedPublicRevision = readRequiredNonNegativeInteger(value.expectedPublicRevision)
+  if (!actor || expectedPublicRevision === null) return { error: 'invalid-ai-daily-flash-lifecycle-action' }
+  return { data: { actor, reason: reason || undefined, expectedPublicRevision } }
+}
+
+function readAiDailyFlashCorrectionInput(value: unknown):
+  | {
+      data: {
+        sourceRevisionId: string
+        expectedPublicRevision: number
+        expectedRevisionSequence: number
+        title: string
+        factSummary: string
+        whyItMatters: string
+        uncertainty: string | null
+        editor: string | null
+        actor: string
+        reason?: string
+      }
+    }
+  | { error: string } {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-flash-correction' }
+  if (hasSensitiveValue(value)) return { error: 'sensitive-content-detected' }
+  const sourceRevisionId = readString(value.sourceRevisionId, 120)
+  const expectedPublicRevision = readRequiredNonNegativeInteger(value.expectedPublicRevision)
+  const expectedRevisionSequence = readRequiredNonNegativeInteger(value.expectedRevisionSequence)
+  const title = readString(value.title, 240)
+  const factSummary = readString(value.factSummary, 6000)
+  const whyItMatters = readString(value.whyItMatters, 6000)
+  const uncertainty = readString(value.uncertainty, 2000) || null
+  const editor = readString(value.editor, 80) || null
+  const actor = readString(value.actor, 80)
+  const reason = readString(value.reason, 1000)
+  if (
+    !sourceRevisionId ||
+    expectedPublicRevision === null ||
+    expectedRevisionSequence === null ||
+    !title ||
+    !factSummary ||
+    !whyItMatters ||
+    !actor
+  ) {
+    return { error: 'invalid-ai-daily-flash-correction' }
+  }
+  return {
+    data: {
+      sourceRevisionId,
+      expectedPublicRevision,
+      expectedRevisionSequence,
+      title,
+      factSummary,
+      whyItMatters,
+      uncertainty,
+      editor,
+      actor,
+      reason: reason || undefined,
+    },
+  }
+}
+
+function createAiDailyFlashLifecycleHandler(nextState: 'HELD' | 'ACTIVE' | 'WITHDRAWN') {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const input = readAiDailyFlashLifecycleInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const item = await transitionAiDailyFlashLifecycle(prisma, {
+        flashItemId: readRouteParam(req.params.id),
+        next: nextState,
+        ...input.data,
+      })
+      res.json({ flashItem: toAiDailyFlashItemMutationResponse(item) })
+    } catch (error) {
+      if (handleAiDailyFlashWriteError(res, error)) return
+      next(error)
+    }
+  }
+}
+
+function handleAiDailyFlashWriteError(res: express.Response, error: unknown) {
+  const notFoundErrors = ['ai-daily-flash-item-not-found', 'ai-daily-flash-revision-not-found']
+  if (notFoundErrors.some((message) => isErrorMessage(error, message)) || isPrismaError(error, 'P2025')) {
+    const code = isErrorMessage(error, 'ai-daily-flash-revision-not-found')
+      ? 'ai-daily-flash-revision-not-found'
+      : 'ai-daily-flash-item-not-found'
+    res.status(404).json({ error: code })
+    return true
+  }
+  const conflictErrors = [
+    'ai-daily-flash-item-conflict',
+    'ai-daily-flash-revision-conflict',
+    'ai-daily-flash-revision-item-mismatch',
+    'ai-daily-flash-correction-source-not-current',
+    'ai-daily-flash-item-withdrawn',
+    'invalid-ai-daily-transition',
+  ]
+  const conflict = conflictErrors.find((message) => isErrorMessage(error, message))
+  if (conflict) {
+    res.status(409).json({ error: conflict })
+    return true
+  }
+  if (isPrismaError(error, 'P2002')) {
+    res.status(409).json({ error: 'ai-daily-flash-item-conflict' })
+    return true
+  }
+  return false
+}
+
+function handleAiDailyEditorialOverrideError(res: express.Response, error: unknown) {
+  if (isErrorMessage(error, 'invalid-ai-daily-editorial-override')) {
+    res.status(400).json({ error: 'invalid-ai-daily-editorial-override' })
+    return true
+  }
+  const notFoundErrors = [
+    'ai-daily-run-not-found',
+    'ai-daily-candidate-not-found',
+    'ai-daily-cluster-not-found',
+  ]
+  const notFound = notFoundErrors.find((message) => isErrorMessage(error, message))
+  if (notFound) {
+    res.status(404).json({ error: notFound })
+    return true
+  }
+  const conflictErrors = [
+    'ai-daily-editorial-override-conflict',
+    'ai-daily-editorial-run-boundary-mismatch',
+    'ai-daily-candidate-evidence-not-ready',
+    'invalid-ai-daily-transition',
+  ]
+  const conflict = conflictErrors.find((message) => isErrorMessage(error, message))
+  if (conflict) {
+    res.status(409).json({ error: conflict })
+    return true
+  }
+  if (isPrismaError(error, 'P2002')) {
+    res.status(409).json({ error: 'ai-daily-editorial-override-conflict' })
+    return true
+  }
+  return false
+}
+
+function handleAiDailyGeneratedRevisionWriteError(res: express.Response, error: unknown) {
+  const notFoundErrors = ['ai-daily-issue-not-found', 'ai-daily-generated-revision-not-found']
+  const notFound = notFoundErrors.find((message) => isErrorMessage(error, message))
+  if (notFound) {
+    res.status(404).json({ error: notFound })
+    return true
+  }
+  const badRequestErrors = ['invalid-ai-daily-generated-correction', 'invalid-ai-daily-generated-revision-action', 'ai-daily-generated-revision-content-invalid']
+  const badRequest = badRequestErrors.find((message) => isErrorMessage(error, message))
+  if (badRequest) {
+    res.status(400).json({ error: badRequest })
+    return true
+  }
+  const conflictErrors = [
+    'ai-daily-generated-issue-conflict',
+    'ai-daily-generated-revision-conflict',
+    'ai-daily-generated-revision-stale-evidence',
+    'ai-daily-generated-revision-draft-conflict',
+    'ai-daily-generated-revision-draft-protected',
+    'ai-daily-generated-revision-not-valid',
+    'invalid-ai-daily-generated-apply-transition',
+    'invalid-ai-daily-transition',
+  ]
+  const conflict = conflictErrors.find((message) => isErrorMessage(error, message))
+  if (conflict) {
+    res.status(409).json({ error: conflict })
+    return true
+  }
+  if (isPrismaError(error, 'P2002')) {
+    res.status(409).json({ error: 'ai-daily-generated-revision-conflict' })
+    return true
+  }
+  return false
+}
+
+function toAiDailyEditorialOverrideMutationResponse(result: {
+  override: {
+    id: string
+    runId: string
+    candidateId: string | null
+    clusterId: string | null
+    action: string
+    actor: string
+    reason: string | null
+    expectedUpdatedAt: Date | null
+    observedVersion: number | null
+    createdAt: Date
+  }
+  candidate: {
+    id: string
+    selectionState: string
+    evidenceStatus: string
+    evidenceVersion: number
+    updatedAt: Date
+  } | null
+  cluster: {
+    id: string
+    stableIdentityKey: string
+    rank: number | null
+    editorState: string
+    editorReason: string | null
+    updatedAt: Date
+  } | null
+  secondaryCluster: {
+    id: string
+    stableIdentityKey: string
+    rank: number | null
+    editorState: string
+    editorReason: string | null
+    updatedAt: Date
+  } | null
+  workItem: {
+    id: string
+    kind: string
+    status: string
+    attemptCount: number
+    maxAttempts: number
+    updatedAt: Date
+  } | null
+  runUpdatedAt: Date
+}) {
+  return {
+    override: {
+      id: result.override.id,
+      runId: result.override.runId,
+      candidateId: result.override.candidateId,
+      clusterId: result.override.clusterId,
+      action: result.override.action.toLowerCase(),
+      actor: readString(result.override.actor, 80),
+      reason: readString(result.override.reason, 420) || null,
+      expectedUpdatedAt: result.override.expectedUpdatedAt?.toISOString() ?? null,
+      observedVersion: result.override.observedVersion,
+      createdAt: result.override.createdAt.toISOString(),
+    },
+    candidate: result.candidate
+      ? {
+          id: result.candidate.id,
+          selectionState: result.candidate.selectionState.toLowerCase(),
+          evidenceStatus: result.candidate.evidenceStatus.toLowerCase(),
+          evidenceVersion: result.candidate.evidenceVersion,
+          updatedAt: result.candidate.updatedAt.toISOString(),
+        }
+      : null,
+    cluster: result.cluster
+      ? {
+          id: result.cluster.id,
+          stableIdentityKey: readString(result.cluster.stableIdentityKey, 160),
+          rank: result.cluster.rank,
+          editorState: result.cluster.editorState.toLowerCase(),
+          editorReason: readString(result.cluster.editorReason, 420) || null,
+          updatedAt: result.cluster.updatedAt.toISOString(),
+        }
+      : null,
+    secondaryCluster: result.secondaryCluster
+      ? {
+          id: result.secondaryCluster.id,
+          stableIdentityKey: readString(result.secondaryCluster.stableIdentityKey, 160),
+          rank: result.secondaryCluster.rank,
+          editorState: result.secondaryCluster.editorState.toLowerCase(),
+          editorReason: readString(result.secondaryCluster.editorReason, 420) || null,
+          updatedAt: result.secondaryCluster.updatedAt.toISOString(),
+        }
+      : null,
+    workItem: result.workItem
+      ? {
+          id: result.workItem.id,
+          kind: result.workItem.kind.toLowerCase(),
+          status: result.workItem.status.toLowerCase(),
+          attemptCount: result.workItem.attemptCount,
+          maxAttempts: result.workItem.maxAttempts,
+          updatedAt: result.workItem.updatedAt.toISOString(),
+        }
+      : null,
+    runUpdatedAt: result.runUpdatedAt.toISOString(),
+  }
+}
+
+function toAiDailyGeneratedRevisionMutationResponse(revision: {
+  id: string
+  issueId: string
+  revisionNumber: number
+  revisionKind: string
+  sourceRevisionId: string | null
+  selectionVersion: number
+  evidenceVersion: number
+  applyState: string
+  validationStatus: string
+  validationFindingsJson: Prisma.JsonValue | null
+  projectionDraftId: string | null
+  createdBy: string
+  createdAt: Date
+  appliedAt: Date | null
+  revalidatedAt: Date | null
+  validatedBy: string | null
+  discardedAt: Date | null
+  discardedBy: string | null
+  discardReason: string | null
+}) {
+  const findings = Array.isArray(revision.validationFindingsJson)
+    ? revision.validationFindingsJson.slice(0, 40).flatMap((item) =>
+        isRecord(item)
+          ? [{ severity: readString(item.severity, 24), code: readString(item.code, 120) }]
+          : [],
+      )
+    : []
+  return {
+    id: revision.id,
+    issueId: revision.issueId,
+    revisionNumber: revision.revisionNumber,
+    revisionKind: revision.revisionKind.toLowerCase().replaceAll('_', '-'),
+    sourceRevisionId: revision.sourceRevisionId,
+    selectionVersion: revision.selectionVersion,
+    evidenceVersion: revision.evidenceVersion,
+    applyState: revision.applyState.toLowerCase().replaceAll('_', '-'),
+    validationStatus: revision.validationStatus.toLowerCase().replaceAll('_', '-'),
+    validationFindings: findings,
+    projectionDraftId: revision.projectionDraftId,
+    createdBy: readString(revision.createdBy, 80),
+    createdAt: revision.createdAt.toISOString(),
+    appliedAt: revision.appliedAt?.toISOString() ?? null,
+    revalidatedAt: revision.revalidatedAt?.toISOString() ?? null,
+    validatedBy: readString(revision.validatedBy, 80) || null,
+    discardedAt: revision.discardedAt?.toISOString() ?? null,
+    discardedBy: readString(revision.discardedBy, 80) || null,
+    discardReason: readString(revision.discardReason, 420) || null,
+  }
+}
+
+function toAiDailyFlashRevisionMutationResponse(revision: {
+  id: string
+  flashItemId: string
+  revisionNumber: number
+  status: string
+  correctionState: string
+  approvedAt: Date | null
+  correctedAt: Date | null
+  supersededRevisionId: string | null
+  createdAt: Date
+}) {
+  return {
+    id: revision.id,
+    flashItemId: revision.flashItemId,
+    revisionNumber: revision.revisionNumber,
+    status: revision.status.toLowerCase(),
+    correctionState: readString(revision.correctionState, 80),
+    approvedAt: revision.approvedAt?.toISOString() ?? null,
+    correctedAt: revision.correctedAt?.toISOString() ?? null,
+    supersededRevisionId: revision.supersededRevisionId,
+    createdAt: revision.createdAt.toISOString(),
+  }
+}
+
+function toAiDailyFlashItemMutationResponse(item: {
+  id: string
+  lifecycleState: string
+  currentApprovedRevisionId: string | null
+  revisionSequence: number
+  publicRevision: number
+  lastApprovedAt: Date | null
+  withdrawnAt: Date | null
+  projectionUpdatedAt: Date | null
+}) {
+  return {
+    id: item.id,
+    lifecycleState: item.lifecycleState.toLowerCase(),
+    currentApprovedRevisionId: item.currentApprovedRevisionId,
+    revisionSequence: item.revisionSequence,
+    publicRevision: item.publicRevision,
+    lastApprovedAt: item.lastApprovedAt?.toISOString() ?? null,
+    withdrawnAt: item.withdrawnAt?.toISOString() ?? null,
+    projectionUpdatedAt: item.projectionUpdatedAt?.toISOString() ?? null,
+  }
 }
 
 function readAiDailyIssueInput(value: unknown):

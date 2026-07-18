@@ -376,6 +376,9 @@ The repository verifies the active token and expiry, records the attempt outcome
   - `server/src/aiDailyIngestionService.ts`
 - Fixture gates: `npm.cmd run ai-daily:{source,discovery,evidence,freshness,dedupe,ranking}-check`.
 - PostgreSQL gate: `AI_DAILY_DATABASE_CHECK=1 npm.cmd run ai-daily:repository-check` against a local database whose name ends in `_test`.
+  The ingestion, generation, and Studio repository checks all read
+  `STUDIO_DATABASE_URL`; `DATABASE_URL` remains reserved for the Operator
+  workspace database.
 
 ### 3. Contracts
 
@@ -445,3 +448,131 @@ await applyAiDailyEvidenceSelection(prisma, {
 ```
 
 The repository binds selection to the run, verifies ready evidence in the database, and keeps repeated ordered selection idempotent.
+
+## Scenario: Content Studio AI Daily Workspace And Flash Review
+
+### 1. Scope / Trigger
+
+- Trigger: the Content Studio needs one bounded view of the current AI Daily
+  edition plus guarded Flash editorial actions.
+- Goal: let an authenticated editor inspect runs, source health, evidence,
+  Flash revisions, and edition review state, then approve/reject a draft,
+  hold/release/withdraw an item, or create an immutable correction draft.
+
+### 2. Signatures
+
+- `GET /studio/api/ai-daily/workspace?issueId=<id>&limit=<1-40>`
+- `POST /studio/api/ai-daily/flash-revisions/:id/approve`
+- `POST /studio/api/ai-daily/flash-revisions/:id/reject`
+- `POST /studio/api/ai-daily/flash-items/:id/hold`
+- `POST /studio/api/ai-daily/flash-items/:id/release`
+- `POST /studio/api/ai-daily/flash-items/:id/withdraw`
+- `POST /studio/api/ai-daily/flash-items/:id/corrections`
+- `POST /studio/api/ai-daily/issues/:id/content-draft`
+- `POST /studio/api/ai-daily/issues/:id/generated-revisions/:revisionId/corrections`
+- `POST /studio/api/ai-daily/issues/:id/generated-revisions/:revisionId/revalidate`
+- `POST /studio/api/ai-daily/issues/:id/generated-revisions/:revisionId/apply`
+- `POST /studio/api/ai-daily/issues/:id/generated-revisions/:revisionId/discard`
+- Route registration: `server/src/studioRoutes.ts`.
+- Projection and sanitization: `server/src/studioAiDailyWorkspace.ts`.
+- Deterministic checks:
+  - `npm.cmd run studio:ai-daily-workspace-check`
+  - `npm.cmd run studio:ai-daily-flash-check`
+
+### 3. Contracts
+
+- Every route requires the existing Studio bearer credential and Studio
+  database. The workspace `GET` remains read-only; Flash writes call repository
+  methods that use the shared domain transition guards.
+- The response is a bounded projection of issues, feeds, runs/events,
+  work-items, candidates/evidence/clusters, flash revisions/actions, and the
+  selected edition draft/review/generated-revision summaries.
+- Review checklists expose only `sourceChecked`, `safetyChecked`, and
+  `publicReady` booleans; unknown keys are dropped at the frontend decoder.
+- Candidate ordering puts nullable scores last, then uses deterministic
+  timestamp/id tie-breakers.
+- The frontend must decode the payload with
+  `normalizeStudioAiDailyWorkspace` before rendering. An issue switch may only
+  be applied by the newest request sequence.
+- The workspace does not return raw provider error bodies, raw database JSON,
+  citation snapshots, stack traces, credentials, or private URLs. Edition may
+  return a bounded editable content preview and bounded validation findings so
+  an authenticated editor can review it; provider bodies and unbounded source
+  payloads remain excluded.
+- Flash approval/rejection carries `observedRevisionNumber` and
+  `expectedPublicRevision`. Lifecycle actions carry `expectedPublicRevision`.
+  Correction additionally carries `sourceRevisionId` and
+  `expectedRevisionSequence`.
+- The repository locks the Flash item row before validating versions. Approval
+  atomically supersedes the previous approved revision, advances the public
+  revision, and appends audit records. A held item stays held after approval.
+- Withdrawal is terminal. New revisions, approval, correction, and release may
+  not revive a withdrawn item.
+- Correction clones the current approved revision's evidence snapshot into a
+  new `DRAFT`; approved revision content is never updated in place.
+- Mutation responses expose only bounded revision/item lifecycle metadata. The
+  client refreshes the workspace after a successful write before reusing a
+  concurrency token.
+- Every Edition mutation carries `expectedIssueUpdatedAt`; the repository locks
+  the issue row before comparing it. Manual draft creation uses the same
+  contract rather than an unguarded legacy update. Correction idempotency keys
+  are scoped by issue and source revision, and correction appends a new
+  revision instead of replacing its source. A correction may only use a
+  `PENDING` or `BLOCKED` source revision; applied and discarded revisions are
+  terminal and reject further corrections.
+- Revalidation is deterministic and provider-free. A valid revision can be
+  applied only after validation; application restarts Content Studio review and
+  never changes a `PUBLISHED` or `ARCHIVED` draft. `newEvidenceAvailable` is
+  derived from remaining pending/blocked revisions, so applying or discarding
+  an older revision cannot clear a newer revision's signal.
+- Citation snapshots are normalized again when projected into a ContentDraft;
+  invalid snapshots fail validation and are never copied into the draft body.
+
+### 4. Validation & Error Matrix
+
+- Missing Studio token -> `401 missing-studio-token`.
+- Missing Studio configuration/database -> the existing stable `503` error
+  contract.
+- Unknown issue id -> `404 ai-daily-issue-not-found`.
+- Invalid `limit` -> `400 invalid-ai-daily-workspace-limit`.
+- Invalid Flash payload -> stable `400 invalid-ai-daily-flash-*` error.
+- Missing Flash item/revision -> stable `404 ai-daily-flash-*-not-found`.
+- Stale version, item/revision mismatch, invalid transition, withdrawn item, or
+  stale correction source -> stable `409` error; Prisma/database text is not
+  returned.
+- Missing or malformed Edition action body -> stable
+  `400 invalid-ai-daily-generated-*`; manual draft uses
+  `400 invalid-ai-daily-content-draft-action`. A stale issue timestamp ->
+  `409 ai-daily-generated-issue-conflict`; applying over a changed draft ->
+  `409 ai-daily-generated-revision-draft-conflict`.
+- The local workspace check uses only in-process fixtures and never calls a
+  model, search provider, deployed service, or liveness endpoint.
+
+### 5. Good / Base / Bad Cases
+
+- Good: the editor opens the workspace, switches tabs or Edition ids, sees only
+  the latest response, and performs a Flash action using the displayed version
+  before the workspace refreshes.
+- Base: no token, empty data, or a degraded run produces a concise status or
+  empty state without fabricating editorial readiness.
+- Bad: React reimplements a server transition, a stale public revision silently
+  overwrites newer work, a withdrawn item is revived, an approved revision is
+  edited in place, or a response returns raw provider/database details.
+
+### 6. Tests Required
+
+- Run `npm.cmd run studio:ai-daily-workspace-check` and
+  `npm.cmd run studio:ai-daily-flash-check` after projection or transition
+  fixture changes.
+- Run `npm.cmd run check:ui`; the AI Daily fixture must exercise Edition
+  correction, revalidation, apply, discard, source-revision retention, and
+  desktop/mobile overflow.
+- With an explicitly enabled disposable local PostgreSQL `_test` database, run
+  `npm.cmd run studio:ai-daily-repository-check` for transaction coverage, and
+  run `npm.cmd run ai-daily:generation-repository-check` when the generation
+  runner changes. Do not point these checks at production or shared databases.
+- When asserting the latest `ContentReview`, order by `reviewedAt DESC, id DESC`;
+  `ContentReview` has no `createdAt` column, and equal timestamps need a stable
+  id tie-breaker.
+- Run `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`,
+  `npm.cmd run check:ui`, and `git diff --check` before commit.

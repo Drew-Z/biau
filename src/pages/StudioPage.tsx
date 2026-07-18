@@ -1748,6 +1748,9 @@ export function StudioPage() {
                 <p className="assistant-panel__eyebrow">AI DAILY</p>
                 <h2>创建日报 Issue</h2>
               </div>
+              <Link className="studio-inline-link" to="/studio/ai-daily">
+                打开运营工作区
+              </Link>
             </div>
             <form className="studio-form" onSubmit={saveIssue}>
               <div className="studio-form-grid">

@@ -101,6 +101,15 @@ export function getStaticSeo(pathname: string): SeoMeta {
     }
   }
 
+  if (path === '/studio/ai-daily') {
+    return {
+      title: 'AI Daily 工作区 | BIAU Port 内容工作台',
+      description: '在 BIAU Port 内容工作台中查看 AI Daily 的运行、来源、候选证据、闪报修订和 Edition 审核状态。',
+      canonicalPath: '/studio/ai-daily',
+      type: 'website',
+    }
+  }
+
   if (path.startsWith('/studio/ai-daily/')) {
     return {
       title: 'AI 日报详情 | BIAU Port 内容工作台',
