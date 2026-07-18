@@ -24,13 +24,13 @@ Turn selected evidence into high-quality Chinese flash and daily compositions th
 
 ## Acceptance Criteria
 
-- [ ] Extractor/composer/verifier mocks produce valid evidence-bound schemas.
-- [ ] Hard evidence failures cannot create a draft.
-- [ ] Non-critical findings create an immutable `NEEDS_EDITOR_REVIEW` revision.
-- [ ] Corrected revisions must pass deterministic validation before becoming `VALID`.
-- [ ] Quality report meets zero critical errors, 100% citation precision, >=98% coverage, >=85% minor-edit acceptance, and >=4/5 Chinese score.
-- [ ] Leases, deadlines, resume, retries, and same-date concurrency are deterministic.
-- [ ] Reruns never overwrite human-protected drafts or revisions.
+- [x] Extractor/composer/verifier mocks produce valid evidence-bound schemas.
+- [x] Hard evidence failures cannot create a draft.
+- [x] Non-critical findings create an immutable `NEEDS_EDITOR_REVIEW` revision.
+- [x] Corrected revisions must pass deterministic validation before becoming `VALID`.
+- [x] Quality report meets zero critical errors, 100% citation precision, >=98% coverage, >=85% minor-edit acceptance, and >=4/5 Chinese score.
+- [x] Leases, deadlines, resume, retries, and same-date concurrency are deterministic.
+- [x] Reruns never overwrite human-protected drafts or revisions.
 
 ## Validation
 

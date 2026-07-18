@@ -3,7 +3,7 @@
   "name": "ai-daily-generation-runner",
   "title": "AI Daily generation and durable runner",
   "description": "Implement evidence-bound extractor/composer/verifier roles, quality evaluation, durable jobs, leases, and freshness SLO enforcement.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": "feature",
   "scope": "backend",
   "package": null,
@@ -25,6 +25,6 @@
     "scripts",
     "package.json"
   ],
-  "notes": "",
+  "notes": "Fixture and disposable PostgreSQL quality gates passed; live provider acceptance remains in the production operations task.",
   "meta": {}
 }

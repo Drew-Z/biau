@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import {
   Prisma,
   type AiDailyGeneratedValidationStatus,
+  type AiDailyProfile,
   type AiDailyWorkAttemptOutcome,
   type AiDailyWorkKind,
   type AiDailyWorkStatus,
@@ -14,11 +15,20 @@ import {
   evaluateAiDailyEditorialTransition,
   evaluateAiDailyFlashRevisionTransition,
   evaluateAiDailyLease,
+  evaluateAiDailyRunStageTransition,
+  evaluateAiDailyRunTransition,
   evaluateAiDailyWorkTransition,
+  normalizeAiDailyCitationSnapshotV2,
   parseAiDailyEditionDate,
   type AiDailyCitationSnapshotV2,
   type AiDailyEditorialStateName,
 } from './aiDailyDomain.js'
+import {
+  aiDailyGenerationSchemaVersion,
+  createAiDailyGenerationPayloadHash,
+  type AiDailyGenerationEvidence,
+  type AiDailyGenerationResult,
+} from './aiDailyGeneration.js'
 
 type AiDailyReadClient = PrismaClient | Prisma.TransactionClient
 
@@ -46,6 +56,7 @@ export interface ReplaceAiDailyIssueSelectionInput {
 }
 
 export interface CreateAiDailyGeneratedRevisionInput {
+  generationKey?: string | null
   issueId: string
   contentJson: Prisma.InputJsonValue
   sourceBindingsJson: Prisma.InputJsonValue
@@ -58,6 +69,27 @@ export interface CreateAiDailyGeneratedRevisionInput {
   validationStatus: AiDailyGeneratedValidationStatus
   validationFindingsJson?: Prisma.InputJsonValue
   createdBy: string
+}
+
+export interface AiDailyGenerationCheckpointRecord {
+  stage: Prisma.AiDailyGenerationCheckpointCreateInput['stage']
+  payload: Prisma.JsonValue
+  payloadHash: string
+  schemaVersion: string
+  createdAt: Date
+}
+
+export interface PersistAiDailyGenerationOutcomeInput {
+  generationKey: string
+  runId: string
+  issueId: string
+  result: AiDailyGenerationResult
+  evidence: AiDailyGenerationEvidence[]
+  modelIdentifier: string
+  createdBy: string
+  workItemId?: string
+  leaseToken?: string
+  now?: Date
 }
 
 export interface UpsertAiDailyWorkItemInput {
@@ -184,6 +216,434 @@ export async function getOrCreateAiDailyEdition(
       title: input.title,
       sourceIdsJson: [],
     },
+  })
+}
+
+export async function createOrResumeAiDailyGenerationRun(
+  prisma: PrismaClient,
+  input: {
+    issueId: string
+    trigger: Prisma.AiDailyRunCreateInput['trigger']
+    profile: Prisma.AiDailyRunCreateInput['profile']
+    configVersion: string
+    now?: Date
+  },
+) {
+  const now = input.now ?? new Date()
+  return prisma.$transaction(async (tx) => {
+    const issue = await tx.aiDailyIssue.findUnique({
+      where: { id: input.issueId },
+      select: { id: true, date: true, editionDate: true },
+    })
+    if (!issue?.editionDate) throw new Error('ai-daily-issue-edition-date-required')
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`biau-ai-daily-generation:${issue.date}`}, 0))`
+
+    const active = await tx.aiDailyRun.findFirst({
+      where: {
+        editionDate: issue.editionDate,
+        status: { in: ['QUEUED', 'RUNNING'] },
+      },
+      orderBy: [{ attemptNumber: 'desc' }, { createdAt: 'desc' }],
+    })
+    if (active) {
+      if (active.issueId && active.issueId !== issue.id) throw new Error('ai-daily-generation-active-run-issue-mismatch')
+      if (active.issueId === null) {
+        const linked = await tx.aiDailyRun.update({ where: { id: active.id }, data: { issueId: issue.id } })
+        return { run: linked, created: false }
+      }
+      return { run: active, created: false }
+    }
+
+    const latest = await tx.aiDailyRun.aggregate({
+      where: { editionDate: issue.editionDate },
+      _max: { attemptNumber: true },
+    })
+    const run = await tx.aiDailyRun.create({
+      data: {
+        issueId: issue.id,
+        editionDate: issue.editionDate,
+        profile: input.profile,
+        trigger: input.trigger,
+        attemptNumber: (latest._max.attemptNumber ?? 0) + 1,
+        status: 'QUEUED',
+        configVersion: input.configVersion,
+        createdAt: now,
+      },
+    })
+    return { run, created: true }
+  })
+}
+
+export async function queueAiDailyGenerationWork(
+  prisma: PrismaClient,
+  input: {
+    issueId: string
+    trigger: Prisma.AiDailyRunCreateInput['trigger']
+    profile: Prisma.AiDailyRunCreateInput['profile']
+    configVersion: string
+    priority?: number
+    deadlineAt?: Date | null
+    now?: Date
+  },
+) {
+  const issue = await prisma.aiDailyIssue.findUnique({
+    where: { id: input.issueId },
+    select: { id: true, date: true, selectionVersion: true },
+  })
+  if (!issue) throw new Error('ai-daily-issue-not-found')
+  const resumed = await createOrResumeAiDailyGenerationRun(prisma, input)
+  const now = input.now ?? new Date()
+  const freshnessOrigin = resumed.run.lastFetchedAt ?? resumed.run.pipelineFreshnessAt ?? now
+  const freshnessTargetAt = new Date(freshnessOrigin.getTime() + 15 * 60_000)
+  const deadlineAt = input.deadlineAt && input.deadlineAt.getTime() < freshnessTargetAt.getTime()
+    ? input.deadlineAt
+    : freshnessTargetAt
+  const work = await upsertAiDailyWorkItem(prisma, {
+    editionDate: issue.date,
+    kind: 'EXTRACT_FACTS',
+    scope: `generation:${issue.id}:selection:${issue.selectionVersion}:run:${resumed.run.attemptNumber}`,
+    runId: resumed.run.id,
+    priority: input.priority ?? 100,
+    deadlineAt,
+    freshnessTargetAt,
+  })
+  return { ...resumed, work }
+}
+
+export async function saveAiDailyGenerationCheckpoint(
+  prisma: PrismaClient,
+  input: {
+    runId: string
+    stage: Prisma.AiDailyGenerationCheckpointCreateInput['stage']
+    payload: Prisma.InputJsonValue
+    schemaVersion?: string
+    workItemId?: string
+    leaseToken?: string
+    now?: Date
+  },
+) {
+  const payloadHash = createAiDailyGenerationPayloadHash(input.payload)
+  const schemaVersion = input.schemaVersion ?? aiDailyGenerationSchemaVersion
+  const now = input.now ?? new Date()
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`biau-ai-daily-generation-checkpoint:${input.runId}:${input.stage}`}, 0))`
+    await assertAiDailyGenerationLeaseInTransaction(tx, {
+      runId: input.runId,
+      workItemId: input.workItemId,
+      leaseToken: input.leaseToken,
+      now,
+    })
+    const existing = await tx.aiDailyGenerationCheckpoint.findUnique({
+      where: { runId_stage: { runId: input.runId, stage: input.stage } },
+    })
+    if (existing) {
+      if (existing.payloadHash !== payloadHash) throw new Error('ai-daily-checkpoint-conflict')
+      if (existing.schemaVersion !== schemaVersion) throw new Error('ai-daily-checkpoint-schema-version-conflict')
+      return existing
+    }
+    const checkpoint = await tx.aiDailyGenerationCheckpoint.create({
+      data: {
+        runId: input.runId,
+        stage: input.stage,
+        payloadJson: input.payload,
+        payloadHash,
+        schemaVersion,
+        createdAt: now,
+      },
+    })
+
+    const run = await tx.aiDailyRun.findUnique({ where: { id: input.runId }, select: { status: true, currentStage: true, startedAt: true } })
+    if (!run) throw new Error('ai-daily-run-not-found')
+    if (run.status === 'QUEUED') {
+      const transition = evaluateAiDailyRunTransition('QUEUED', 'RUNNING')
+      if (!transition.ok) throw new Error('invalid-ai-daily-run-transition')
+    } else if (run.status !== 'RUNNING') {
+      throw new Error('ai-daily-run-not-active')
+    }
+    const stageTransition = evaluateAiDailyRunStageTransition(run.currentStage, input.stage)
+    if (!stageTransition.ok) throw new Error(stageTransition.error)
+    const advanced = await tx.aiDailyRun.update({
+      where: { id: input.runId },
+      data: {
+        status: 'RUNNING',
+        startedAt: run.startedAt ?? now,
+        currentStage: input.stage,
+        eventSequence: { increment: 1 },
+      },
+      select: { eventSequence: true },
+    })
+    await tx.aiDailyRunEvent.create({
+      data: {
+        runId: input.runId,
+        sequence: advanced.eventSequence,
+        stage: input.stage,
+        kind: 'generation-checkpoint',
+        outcome: 'persisted',
+        metadataJson: { payloadHash, schemaVersion },
+        createdAt: now,
+      },
+    })
+    return checkpoint
+  })
+}
+
+export async function listAiDailyGenerationCheckpoints(prisma: PrismaClient, runId: string) {
+  return prisma.aiDailyGenerationCheckpoint.findMany({
+    where: { runId },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  })
+}
+
+export async function loadAiDailyGenerationEvidencePack(
+  prisma: AiDailyReadClient,
+  issueId: string,
+  now = new Date(),
+) {
+  const issue = await prisma.aiDailyIssue.findUnique({
+    where: { id: issueId },
+    select: { id: true, date: true, selectionVersion: true, selectedEvidenceVersion: true },
+  })
+  if (!issue) throw new Error('ai-daily-issue-not-found')
+  const relations = await prisma.aiDailyIssueSource.findMany({
+    where: { issueId, selectionVersion: issue.selectionVersion },
+    include: { sourceItem: true },
+    orderBy: { position: 'asc' },
+  })
+  const sourceIds = relations.map((relation) => relation.sourceItemId)
+  const candidates = sourceIds.length
+    ? await prisma.aiDailyCandidate.findMany({
+        where: { sourceItemId: { in: sourceIds }, selectionState: 'SELECTED' },
+        include: { currentEvidence: true },
+        orderBy: { updatedAt: 'desc' },
+      })
+    : []
+  const candidateBySource = new Map<string, (typeof candidates)[number]>()
+  for (const candidate of candidates) {
+    if (candidate.sourceItemId && !candidateBySource.has(candidate.sourceItemId)) candidateBySource.set(candidate.sourceItemId, candidate)
+  }
+  const evidence: AiDailyGenerationEvidence[] = []
+  const gaps: string[] = []
+  let evidenceVersion = issue.selectedEvidenceVersion
+  for (const relation of relations) {
+    const candidate = candidateBySource.get(relation.sourceItemId)
+    const currentEvidence = candidate?.currentEvidence
+    if (!candidate || !currentEvidence) {
+      gaps.push(`missing-evidence:${relation.sourceItemId}`)
+      continue
+    }
+    evidenceVersion = Math.max(evidenceVersion, currentEvidence.version)
+    if (currentEvidence.status !== 'READY') {
+      gaps.push(`evidence-not-ready:${currentEvidence.id}`)
+      continue
+    }
+    if (currentEvidence.expiresAt.getTime() <= now.getTime()) {
+      gaps.push(`evidence-expired:${currentEvidence.id}`)
+      continue
+    }
+    const sourceTier = normalizeSourceTier(candidate.sourceTier)
+    evidence.push({
+      evidenceId: currentEvidence.id,
+      candidateId: candidate.id,
+      sourceItemId: relation.sourceItemId,
+      title: currentEvidence.title || relation.sourceItem.title,
+      publisher: currentEvidence.publisher || relation.sourceItem.sourceName,
+      url: currentEvidence.originalUrl,
+      canonicalUrl: currentEvidence.canonicalUrl,
+      sourceKind: sourceTier === 'TIER_1' ? 'official' : sourceTier === 'TIER_2' ? 'primary_media' : 'secondary_media',
+      sourceTier,
+      publishedAt: currentEvidence.publishedAt?.toISOString() ?? relation.sourceItem.publishedAt?.toISOString() ?? null,
+      retrievedAt: currentEvidence.fetchedAt.toISOString(),
+      quote: currentEvidence.excerpt.slice(0, 1024),
+      locator: { heading: readFirstJsonString(currentEvidence.headingsJson), startChar: 0, endChar: currentEvidence.excerpt.length },
+      ...(currentEvidence.contentHash ? { contentHash: currentEvidence.contentHash } : {}),
+    })
+  }
+  if (evidence.length === 0 && relations.length > 0) gaps.push('evidence-pack-empty')
+  return { issueId: issue.id, date: issue.date, selectionVersion: issue.selectionVersion, evidenceVersion, evidence, gaps }
+}
+
+export async function persistAiDailyGenerationOutcome(
+  prisma: PrismaClient,
+  input: PersistAiDailyGenerationOutcomeInput,
+) {
+  const now = input.now ?? new Date()
+  return prisma.$transaction(async (tx) => {
+    await assertAiDailyGenerationLeaseInTransaction(tx, {
+      runId: input.runId,
+      workItemId: input.workItemId,
+      leaseToken: input.leaseToken,
+      now,
+    })
+    const run = await tx.aiDailyRun.findUnique({ where: { id: input.runId }, select: { issueId: true } })
+    if (!run || run.issueId !== input.issueId) throw new Error('ai-daily-generation-run-issue-mismatch')
+    const existing = await tx.aiDailyGeneratedRevision.findUnique({ where: { generationKey: input.generationKey } })
+    if (existing) {
+      return { revision: existing, reused: true, draftCreated: false, draftId: existing.projectionDraftId }
+    }
+
+    const issue = await tx.aiDailyIssue.findUnique({
+      where: { id: input.issueId },
+      include: { draft: true },
+    })
+    if (!issue) throw new Error('ai-daily-issue-not-found')
+    const snapshots = input.evidence.map(toGenerationCitationSnapshot)
+    const sourceBindings = {
+      claims: input.result.claims.map((claim) => ({ claimId: claim.claimId, evidenceIds: claim.evidenceIds })),
+    } as Prisma.InputJsonObject
+    const contentJson = {
+      title: input.result.composition?.title ?? issue.title,
+      subtitle: input.result.composition?.subtitle ?? '',
+      composition: input.result.composition,
+      claims: input.result.claims,
+      reviews: input.result.reviews,
+      blockReviews: input.result.blockReviews,
+    } as unknown as Prisma.InputJsonValue
+    const sequence = await tx.aiDailyIssue.update({
+      where: { id: input.issueId },
+      data: { generatedRevisionSequence: { increment: 1 } },
+      select: { generatedRevisionSequence: true },
+    })
+    const revision = await tx.aiDailyGeneratedRevision.create({
+      data: {
+        generationKey: input.generationKey,
+        issueId: input.issueId,
+        revisionNumber: sequence.generatedRevisionSequence,
+        selectionVersion: issue.selectionVersion,
+        evidenceVersion: issue.selectedEvidenceVersion,
+        contentJson,
+        sourceBindingsJson: sourceBindings,
+        citationSnapshotsJson: toAiDailyCitationSnapshotsJson(snapshots),
+        citationSchemaVersion: 2,
+        promptVersion: input.result.promptVersion,
+        schemaVersion: input.result.schemaVersion,
+        modelRole: 'extractor+composer+verifier',
+        modelIdentifier: input.modelIdentifier,
+        observedDraftUpdatedAt: issue.draft?.updatedAt ?? null,
+        projectionDraftId: issue.draftId,
+        applyState: input.result.status === 'REJECTED' ? 'DISCARDED' : 'PENDING',
+        validationStatus: input.result.status,
+        validationFindingsJson: input.result.findings as unknown as Prisma.InputJsonValue,
+        createdBy: input.createdBy,
+      },
+    })
+    await tx.aiDailyIssue.update({
+      where: { id: input.issueId },
+      data: { latestGeneratedRevisionId: revision.id },
+    })
+
+    if (input.result.status === 'REJECTED') {
+      await tx.aiDailyIssue.update({
+        where: { id: input.issueId },
+        data: { status: 'REJECTED', workflowState: 'REJECTED', newEvidenceAvailable: Boolean(issue.draftId) },
+      })
+      return { revision, reused: false, draftCreated: false, draftId: issue.draftId }
+    }
+
+    const targetEditorialState = input.result.status === 'VALID' || issue.draftId ? 'REVIEW_NEEDED' : 'EVIDENCE_READY'
+    await advanceAiDailyEditorialStateInTransaction(tx, input.issueId, issue.workflowState, targetEditorialState)
+    if (input.result.status === 'NEEDS_EDITOR_REVIEW') {
+      await tx.aiDailyGeneratedRevision.update({ where: { id: revision.id }, data: { applyState: 'PENDING' } })
+      await tx.aiDailyIssue.update({ where: { id: input.issueId }, data: { status: 'REVIEW_NEEDED', newEvidenceAvailable: Boolean(issue.draftId) } })
+      return { revision, reused: false, draftCreated: false, draftId: issue.draftId }
+    }
+
+    const slug = `ai-daily-${issue.date}`
+    const protectedDraft = issue.draft ?? (await tx.contentDraft.findUnique({ where: { slug } }))
+    if (protectedDraft) {
+      const blocked = await tx.aiDailyGeneratedRevision.update({
+        where: { id: revision.id },
+        data: { applyState: 'BLOCKED', projectionDraftId: protectedDraft.id },
+      })
+      await tx.aiDailyIssue.update({
+        where: { id: input.issueId },
+        data: { status: 'REVIEW_NEEDED', workflowState: 'REVIEW_NEEDED', draftId: protectedDraft.id, newEvidenceAvailable: true },
+      })
+      return { revision: blocked, reused: false, draftCreated: false, draftId: protectedDraft.id }
+    }
+
+    const draft = await tx.contentDraft.create({
+      data: buildGeneratedAiDailyDraftInput(issue, input.result, snapshots, input.createdBy),
+    })
+    await tx.contentReview.create({
+      data: {
+        draftId: draft.id,
+        status: 'PENDING',
+        checklistJson: { sourceChecked: false, safetyChecked: false, publicReady: false },
+        notes: 'Generated by evidence-bound AI Daily runner; editor review is required before export.',
+      },
+    })
+    const applied = await tx.aiDailyGeneratedRevision.update({
+      where: { id: revision.id },
+      data: { applyState: 'APPLIED', appliedAt: now, projectionDraftId: draft.id },
+    })
+    await tx.aiDailyIssue.update({
+      where: { id: input.issueId },
+      data: { status: 'REVIEW_NEEDED', workflowState: 'REVIEW_NEEDED', draftId: draft.id, newEvidenceAvailable: false },
+    })
+    return { revision: applied, reused: false, draftCreated: true, draftId: draft.id }
+  })
+}
+
+export async function completeAiDailyGenerationRun(
+  prisma: PrismaClient,
+  input: { runId: string; status: 'COMPLETED' | 'COMPLETED_WITH_GAPS' | 'FAILED'; errorCategory?: string; now?: Date },
+) {
+  const now = input.now ?? new Date()
+  return prisma.$transaction(async (tx) => {
+    const run = await tx.aiDailyRun.findUnique({
+      where: { id: input.runId },
+      select: { status: true, lastFetchedAt: true, pipelineFreshnessAt: true, startedAt: true, createdAt: true },
+    })
+    if (!run) throw new Error('ai-daily-run-not-found')
+    if (run.status !== input.status) {
+      const transition = evaluateAiDailyRunTransition(run.status, input.status)
+      if (!transition.ok) throw new Error(transition.error)
+    }
+    return tx.aiDailyRun.update({
+      where: { id: input.runId },
+      data: {
+        status: input.status,
+        finishedAt: now,
+        finalErrorCategory: input.errorCategory ?? null,
+        endToEndLagMs: boundedDurationMs(run.lastFetchedAt ?? run.pipelineFreshnessAt ?? run.startedAt ?? run.createdAt, now),
+      },
+    })
+  })
+}
+
+export async function recordAiDailyEvidenceGap(
+  prisma: PrismaClient,
+  input: {
+    issueId: string
+    gaps: string[]
+    runId?: string
+    workItemId?: string
+    leaseToken?: string
+    now?: Date
+  },
+) {
+  return prisma.$transaction(async (tx) => {
+    if (input.workItemId || input.leaseToken) {
+      if (!input.runId) throw new Error('ai-daily-generation-run-required')
+      await assertAiDailyGenerationLeaseInTransaction(tx, {
+        runId: input.runId,
+        workItemId: input.workItemId,
+        leaseToken: input.leaseToken,
+        now: input.now ?? new Date(),
+      })
+    }
+    const issue = await tx.aiDailyIssue.findUnique({ where: { id: input.issueId }, select: { workflowState: true } })
+    if (!issue) throw new Error('ai-daily-issue-not-found')
+    if (issue.workflowState !== 'NEEDS_MORE_EVIDENCE') {
+      await advanceAiDailyEditorialStateInTransaction(tx, input.issueId, issue.workflowState, 'NEEDS_MORE_EVIDENCE')
+    }
+    return tx.aiDailyIssue.update({
+      where: { id: input.issueId },
+      data: {
+        status: 'NEEDS_MORE_EVIDENCE',
+        newEvidenceAvailable: false,
+      },
+    })
   })
 }
 
@@ -315,6 +775,7 @@ export async function createAiDailyGeneratedRevision(
     })
     const revision = await tx.aiDailyGeneratedRevision.create({
       data: {
+        generationKey: input.generationKey,
         issueId: input.issueId,
         revisionNumber: issue.generatedRevisionSequence,
         selectionVersion: issue.selectionVersion,
@@ -370,7 +831,14 @@ export async function upsertAiDailyWorkItem(prisma: PrismaClient, input: UpsertA
 
 export async function claimAiDailyWorkItem(
   prisma: PrismaClient,
-  input: { leaseOwner: string; leaseDurationMs: number; now?: Date },
+  input: {
+    leaseOwner: string
+    leaseDurationMs: number
+    now?: Date
+    runId?: string
+    kinds?: AiDailyWorkKind[]
+    profiles?: AiDailyProfile[]
+  },
 ) {
   const now = input.now ?? new Date()
   const leaseExpiresAt = new Date(now.getTime() + input.leaseDurationMs)
@@ -379,6 +847,9 @@ export async function claimAiDailyWorkItem(
   return prisma.$transaction(async (tx) => {
     const candidate = await tx.aiDailyWorkItem.findFirst({
       where: {
+        ...(input.runId ? { runId: input.runId } : {}),
+        ...(input.kinds && input.kinds.length > 0 ? { kind: { in: input.kinds } } : {}),
+        ...(input.profiles && input.profiles.length > 0 ? { run: { profile: { in: input.profiles } } } : {}),
         OR: [
           { status: { in: ['PENDING', 'RETRY_WAIT'] }, availableAt: { lte: now } },
           { status: 'LEASED', leaseExpiresAt: { lte: now } },
@@ -654,6 +1125,154 @@ export async function approveAiDailyFlashRevision(
     })
     return approved
   })
+}
+
+async function assertAiDailyGenerationLeaseInTransaction(
+  tx: Prisma.TransactionClient,
+  input: {
+    runId: string
+    workItemId?: string
+    leaseToken?: string
+    now: Date
+  },
+) {
+  if (!input.workItemId && !input.leaseToken) return
+  if (!input.workItemId || !input.leaseToken) throw new Error('ai-daily-generation-lease-binding-incomplete')
+  const [workItem] = await tx.$queryRaw<Array<{
+    runId: string | null
+    status: string
+    leaseToken: string | null
+    leaseExpiresAt: Date | null
+  }>>`
+    SELECT "runId", "status", "leaseToken", "leaseExpiresAt"
+    FROM "AiDailyWorkItem"
+    WHERE "id" = ${input.workItemId}
+    FOR UPDATE
+  `
+  if (!workItem || workItem.runId !== input.runId || workItem.status !== 'LEASED') {
+    throw new Error('ai-daily-generation-work-item-invalid')
+  }
+  const lease = evaluateAiDailyLease({
+    currentLeaseToken: workItem.leaseToken,
+    currentLeaseExpiresAt: workItem.leaseExpiresAt,
+    providedLeaseToken: input.leaseToken,
+    now: input.now,
+  })
+  if (!lease.ok) throw new Error(lease.error)
+}
+
+function normalizeSourceTier(value: string): AiDailyGenerationEvidence['sourceTier'] {
+  const normalized = value.trim().toUpperCase()
+  return normalized === 'TIER_1' ? 'TIER_1' : normalized === 'TIER_2' ? 'TIER_2' : 'TIER_3'
+}
+
+function readFirstJsonString(value: Prisma.JsonValue) {
+  if (!Array.isArray(value)) return undefined
+  const first = value.find((item): item is string => typeof item === 'string' && item.trim().length > 0)
+  return first?.slice(0, 240)
+}
+
+function toGenerationCitationSnapshot(evidence: AiDailyGenerationEvidence): AiDailyCitationSnapshotV2 {
+  const result = normalizeAiDailyCitationSnapshotV2({
+    version: 2,
+    sourceItemId: evidence.sourceItemId,
+    evidenceId: evidence.evidenceId,
+    title: evidence.title,
+    publisher: evidence.publisher,
+    originalUrl: evidence.url,
+    canonicalUrl: evidence.canonicalUrl || evidence.url,
+    publishedAt: evidence.publishedAt,
+    retrievedAt: evidence.retrievedAt,
+    excerpt: evidence.quote.slice(0, 1024),
+    locator: evidence.locator,
+    contentHash: evidence.contentHash,
+  })
+  if (!result.ok) throw new Error('invalid-citation-snapshot-v2')
+  return result.snapshot
+}
+
+async function advanceAiDailyEditorialStateInTransaction(
+  tx: Prisma.TransactionClient,
+  issueId: string,
+  current: AiDailyEditorialStateName,
+  target: AiDailyEditorialStateName,
+) {
+  if (current === target) return
+  const paths: Record<AiDailyEditorialStateName, Partial<Record<AiDailyEditorialStateName, AiDailyEditorialStateName[]>>> = {
+    COLLECTING: { EVIDENCE_READY: ['EVIDENCE_READY'], NEEDS_MORE_EVIDENCE: ['NEEDS_MORE_EVIDENCE'], REVIEW_NEEDED: ['EVIDENCE_READY', 'REVIEW_NEEDED'], REJECTED: ['REJECTED'] },
+    EVIDENCE_READY: { REVIEW_NEEDED: ['REVIEW_NEEDED'], NEEDS_MORE_EVIDENCE: ['NEEDS_MORE_EVIDENCE'], REJECTED: ['REJECTED'] },
+    NEEDS_MORE_EVIDENCE: { EVIDENCE_READY: ['EVIDENCE_READY'], REVIEW_NEEDED: ['EVIDENCE_READY', 'REVIEW_NEEDED'], REJECTED: ['REJECTED'] },
+    REVIEW_NEEDED: { NEEDS_MORE_EVIDENCE: ['NEEDS_MORE_EVIDENCE'], REVIEW_NEEDED: [] },
+    EXPORTED: { NEEDS_MORE_EVIDENCE: ['REVIEW_NEEDED', 'NEEDS_MORE_EVIDENCE'], REVIEW_NEEDED: ['REVIEW_NEEDED'], REJECTED: ['REJECTED'] },
+    REJECTED: { COLLECTING: ['COLLECTING'], EVIDENCE_READY: ['COLLECTING', 'EVIDENCE_READY'], NEEDS_MORE_EVIDENCE: ['COLLECTING', 'NEEDS_MORE_EVIDENCE'], REVIEW_NEEDED: ['COLLECTING', 'EVIDENCE_READY', 'REVIEW_NEEDED'] },
+  }
+  const path = paths[current]?.[target]
+  if (!path) throw new Error('invalid-ai-daily-editorial-transition')
+  let state = current
+  for (const next of path) {
+    const transition = evaluateAiDailyEditorialTransition(state, next)
+    if (!transition.ok) throw new Error(transition.error)
+    await tx.aiDailyIssue.update({ where: { id: issueId }, data: { workflowState: next } })
+    state = next
+  }
+}
+
+function buildGeneratedAiDailyDraftInput(
+  issue: { id: string; date: string; title: string },
+  result: AiDailyGenerationResult,
+  snapshots: AiDailyCitationSnapshotV2[],
+  createdBy: string,
+): Prisma.ContentDraftCreateInput {
+  const composition = result.composition
+  const blocks: Prisma.InputJsonValue[] = [
+    { type: 'heading', level: 2, text: '今日摘要 / Daily Brief' },
+    { type: 'paragraph', text: composition?.introduction.text ?? '本期生成未形成可公开摘要。' },
+  ]
+  for (const event of composition?.events ?? []) {
+    blocks.push({ type: 'heading', level: 3, text: event.title })
+    blocks.push({ type: 'paragraph', text: event.factSummary.text, claimIds: event.factSummary.claimIds })
+    blocks.push({ type: 'paragraph', text: event.whyItMatters.text, claimIds: event.whyItMatters.claimIds })
+  }
+  if ((composition?.trends.length ?? 0) > 0) {
+    blocks.push({ type: 'heading', level: 2, text: '趋势观察 / Trends' })
+    blocks.push({ type: 'list', items: composition?.trends.map((trend) => trend.text) ?? [] })
+  }
+  blocks.push({ type: 'heading', level: 2, text: '来源 / Sources' })
+  for (const snapshot of snapshots) {
+    blocks.push({
+      type: 'source-card',
+      sourceItemId: snapshot.sourceItemId,
+      citationSnapshot: toAiDailyCitationSnapshotJson(snapshot),
+      caption: `${snapshot.title} · ${snapshot.publisher}`,
+    })
+  }
+  blocks.push({
+    type: 'heading',
+    level: 2,
+    text: '审核 Gate',
+  })
+  blocks.push({
+    type: 'list',
+    items: ['逐条复核 citation snapshot 与原文语境。', '完成 sourceChecked、safetyChecked、publicReady 后再导出。', `本期 issue id：${issue.id}`],
+  })
+  const title = composition?.title || issue.title
+  const subtitle = composition?.subtitle || '基于已抓取证据生成，等待编辑审核。'
+  return {
+    slug: `ai-daily-${issue.date}`,
+    title,
+    column: 'ai-daily',
+    tag: 'AI 日报',
+    detail: subtitle.slice(0, 600),
+    readTime: '6 min',
+    bodyJson: { blocks },
+    knowledgePoints: ['AI Daily', 'evidence-bound generation'],
+    projectIds: [],
+    status: 'REVIEW_NEEDED',
+    visibility: 'HIDDEN',
+    aiAssistance: 'ai-daily-generation-v1',
+    createdBy,
+    updatedBy: createdBy,
+  }
 }
 
 function workResultStatus(result: CompleteAiDailyWorkItemInput['result']): AiDailyWorkStatus {

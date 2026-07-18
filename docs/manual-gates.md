@@ -52,6 +52,7 @@
 
 | Gate | 人工原因 | 安全证据 |
 | --- | --- | --- |
+| Generation runner migration | 生产 Studio 数据库需要备份和可回滚 revision | 执行 `20260718010000_ai_daily_generation_runner` 后只记录 migration 名、成功状态和低敏计数 |
 | 首篇公开导出 | 公开数据文件必须审查 diff | `studio:export -- --run-checks`、博客检查和最终 Git diff |
 | AI Daily 真实来源 | 需要逐条确认日期、事实、版权和来源上下文 | source URL 数量、发布日期、审核结论，不复制长段原文 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
@@ -95,16 +96,21 @@
 
 按顺序处理，完成一项后只记录低敏结果：
 
-1. **处理首轮被退回修改的 Studio 草稿**
+1. **部署 AI Daily generation runner schema**
+   - 先备份 Studio 数据库并保留当前 Render revision。
+   - 在 `biau-content-studio-api` 执行包含 `20260718010000_ai_daily_generation_runner` 的 migration，再重新部署最新代码。
+   - 只复核 `/health`、migration 名、checkpoint/revision 表可查询和低敏计数；不要运行真实模型测活。
+
+2. **处理首轮被退回修改的 Studio 草稿**
    - 在 Studio 中打开两个状态为 `needs-changes` 的 hidden 草稿。
    - 选择一个作为主稿，补齐可核验事实、来源、知识点、边界和配图/结构；另一个归档或明确保留为不发布稿。
    - 先保存修改并重新提交审核，不要直接发布；完成后由 Codex 复核低敏状态，再进入新版审核和 Publish Export 门禁。
 
-2. **审核证据完整的新版草稿并创建第一个 Publish Export**
+3. **审核证据完整的新版草稿并创建第一个 Publish Export**
    - 仅在新版草稿完成事实、来源、结构和版权检查后执行。
    - 记录审核结论、draft id 的脱敏摘要和 export 数量，不记录文章正文或生产凭据。
 
-3. **继续关联项目门禁**
+4. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。
 
 ## 延期项

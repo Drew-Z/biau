@@ -50,6 +50,8 @@ npm.cmd run assistant:agent-eval
 
 当前人工顺序和低敏成功标准只在 [`docs/manual-gates.md`](./manual-gates.md) 维护。
 
+`20260718010000_ai_daily_generation_runner` 是当前待部署 migration。它新增不可变 generation checkpoint、generated revision 幂等键和原始 draft 投影绑定；必须先备份 Studio 数据库、保留可回滚 Render revision，再执行 migration 和服务部署。部署本身不授权真实模型调用或自动发布。
+
 ## 发布边界
 
 - 线上 Studio 不直接写 Git 仓库。

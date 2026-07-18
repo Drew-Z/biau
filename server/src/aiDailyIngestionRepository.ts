@@ -414,12 +414,22 @@ export async function applyAiDailyEvidenceSelection(
         data: { selectedAt, rank: index + 1 },
       })
     }
-    return replaceAiDailyIssueSelectionInTransaction(tx, {
+    const selection = await replaceAiDailyIssueSelectionInTransaction(tx, {
       issueId: input.issueId,
       sourceIds,
       selectedBy: input.selectedBy,
       selectionReason: input.selectionReason,
     })
+    const selectedEvidence = await tx.aiDailyCandidate.aggregate({
+      where: { id: { in: representativeIds }, runId: input.runId },
+      _max: { evidenceVersion: true },
+    })
+    const evidenceVersion = selectedEvidence._max.evidenceVersion ?? 0
+    await tx.aiDailyIssue.update({
+      where: { id: input.issueId },
+      data: { selectedEvidenceVersion: evidenceVersion },
+    })
+    return { ...selection, evidenceVersion }
   })
 }
 

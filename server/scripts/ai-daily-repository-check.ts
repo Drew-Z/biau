@@ -92,6 +92,7 @@ async function main() {
     editionDate: '2030-01-01',
     kind: 'COLLECT_FEED',
     scope: `feed:${suffix}`,
+    priority: 10_000,
   })
   const duplicateWork = await upsertAiDailyWorkItem(prisma, {
     editionDate: '2030-01-01',
@@ -104,12 +105,14 @@ async function main() {
     leaseOwner: 'worker-a',
     leaseDurationMs: 60_000,
     now: new Date('2030-01-01T00:00:00.000Z'),
+    kinds: ['COLLECT_FEED'],
   })
   if (!firstClaim) throw new Error('pending work should be claimable')
   const reclaimed = await claimAiDailyWorkItem(prisma, {
     leaseOwner: 'worker-b',
     leaseDurationMs: 60_000,
     now: new Date('2030-01-01T00:02:00.000Z'),
+    kinds: ['COLLECT_FEED'],
   })
   if (!reclaimed || reclaimed.leaseToken === firstClaim.leaseToken || reclaimed.attemptNumber !== 2) {
     throw new Error('expired work should be reclaimed with a new lease and attempt')

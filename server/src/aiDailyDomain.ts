@@ -123,7 +123,7 @@ export type AiDailyCitationSnapshotResult =
   | { ok: false; error: 'invalid-citation-snapshot-v2' }
 
 const runTransitions: Record<AiDailyRunStatusName, readonly AiDailyRunStatusName[]> = {
-  QUEUED: ['RUNNING', 'FAILED_CONFIG', 'CANCELLED'],
+  QUEUED: ['RUNNING', 'FAILED_CONFIG', 'FAILED', 'CANCELLED'],
   RUNNING: ['COMPLETED', 'COMPLETED_WITH_GAPS', 'FAILED', 'CANCELLED'],
   COMPLETED: [],
   COMPLETED_WITH_GAPS: [],

@@ -1,5 +1,35 @@
 # AI Daily Workflow Guidelines
 
+## Scenario: Evidence-bound generation runner
+
+### Durable stage contract
+
+The generation runner is evidence-bound and provider-neutral. Its durable stages are:
+
+```text
+EXTRACT_FACTS -> COMPOSE -> VERIFY -> VALIDATE -> DRAFT
+```
+
+Each stage has one immutable `AiDailyGenerationCheckpoint` per `runId + stage`. The checkpoint stores `payloadJson`, its SHA-256 `payloadHash`, and a schema version. A replay with the same hash is idempotent; a different payload for the same stage is a hard conflict. The checkpoint is written before `AiDailyRun.currentStage` advances.
+
+Checkpoint creation takes a PostgreSQL transaction advisory lock scoped to `runId + stage`. Only the transaction that creates the checkpoint may advance the run and append the corresponding low-sensitive `generation-checkpoint` event. Concurrent or later same-hash replays return the existing checkpoint without incrementing `eventSequence`; this exactly-once event behavior must be covered by the disposable PostgreSQL gate.
+
+The verifier receives both the risk-classified claims and every generated composition block, including titles, summaries, impact text, and trends. Claim reviews and composition-block reviews must each be unique and complete. A missing, duplicated, contradicted, or insufficient block review fails closed, so attaching a valid claim ID to unsupported prose cannot make a revision `VALID`.
+
+Generation work is claimed through the existing `AiDailyWorkItem` lease. Every new checkpoint write is bound to the current lease token and expiry. An expired worker cannot advance a run; the next attempt closes the old attempt as retryable failure and resumes from the last checkpoint. Same-date run creation takes a PostgreSQL advisory lock and merges scheduled/manual triggers into the same active run.
+
+### Revision and draft projection
+
+The deterministic gate owns publication eligibility. `VALID` may create the first `HIDDEN + REVIEW_NEEDED` ContentDraft and one pending review. `NEEDS_EDITOR_REVIEW` creates only an immutable generated revision. `REJECTED` creates no draft. A later valid revision never updates an existing draft; it is recorded as `BLOCKED` and sets `AiDailyIssue.newEvidenceAvailable`.
+
+Generated revisions use a unique generation key so a retry after projection cannot create a duplicate revision. Citation snapshot v2 data is copied from persisted evidence, not reconstructed from model output.
+
+Worker projection revalidates the active work-item lease inside the same transaction that creates or reuses a generated revision. The validation reads the work-item row with `SELECT ... FOR UPDATE`, so an expired-lease reclaim cannot pass between validation and projection writes. The disposable PostgreSQL gate must hold the issue row, prove the projection transaction has reached that barrier, and confirm reclaim remains blocked until the projection transaction releases the lease row. Each revision retains its exact `projectionDraftId`; a retry after projection but before the DRAFT checkpoint must return that original draft binding rather than the issue's later mutable draft pointer.
+
+### Command and provider boundary
+
+The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compose`, `ai-daily:resume`, and `ai-daily:editorial-tick` require an explicit `--fixture` until a separately approved business acceptance run configures real providers. No model or search liveness request is a valid health check.
+
 ## Scenario: Offline AI Daily Drafts
 
 ### 1. Scope / Trigger

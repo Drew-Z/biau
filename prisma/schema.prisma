@@ -246,36 +246,37 @@ model AiDailySourceFeed {
 }
 
 model AiDailyRun {
-  id                   String               @id @default(cuid())
-  issueId              String?
-  editionDate          DateTime             @db.Date
-  profile              AiDailyProfile
-  trigger              AiDailyRunTrigger
-  attemptNumber        Int
-  eventSequence        Int                  @default(0)
-  status               AiDailyRunStatus     @default(QUEUED)
-  currentStage         AiDailyRunStage?
-  configVersion        String
-  startedAt            DateTime?
-  finishedAt           DateTime?
-  newestPublishedAt    DateTime?
-  lastTier1CollectedAt DateTime?
-  lastCollectedAt      DateTime?
-  lastDiscoveredAt     DateTime?
-  lastFetchedAt        DateTime?
-  pipelineFreshnessAt  DateTime?
-  endToEndLagMs        Int?
-  countersJson         Json?
-  finalErrorCategory   String?
-  finalErrorJson       Json?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  issue                AiDailyIssue?        @relation(fields: [issueId], references: [id], onDelete: SetNull)
-  events               AiDailyRunEvent[]
-  workItems            AiDailyWorkItem[]
-  workAttempts         AiDailyWorkAttempt[]
-  candidates           AiDailyCandidate[]
-  clusters             AiDailyCluster[]
+  id                    String                        @id @default(cuid())
+  issueId               String?
+  editionDate           DateTime                      @db.Date
+  profile               AiDailyProfile
+  trigger               AiDailyRunTrigger
+  attemptNumber         Int
+  eventSequence         Int                           @default(0)
+  status                AiDailyRunStatus              @default(QUEUED)
+  currentStage          AiDailyRunStage?
+  configVersion         String
+  startedAt             DateTime?
+  finishedAt            DateTime?
+  newestPublishedAt     DateTime?
+  lastTier1CollectedAt  DateTime?
+  lastCollectedAt       DateTime?
+  lastDiscoveredAt      DateTime?
+  lastFetchedAt         DateTime?
+  pipelineFreshnessAt   DateTime?
+  endToEndLagMs         Int?
+  countersJson          Json?
+  finalErrorCategory    String?
+  finalErrorJson        Json?
+  createdAt             DateTime                      @default(now())
+  updatedAt             DateTime                      @updatedAt
+  issue                 AiDailyIssue?                 @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  events                AiDailyRunEvent[]
+  generationCheckpoints AiDailyGenerationCheckpoint[]
+  workItems             AiDailyWorkItem[]
+  workAttempts          AiDailyWorkAttempt[]
+  candidates            AiDailyCandidate[]
+  clusters              AiDailyCluster[]
 
   @@unique([editionDate, attemptNumber])
   @@index([editionDate, status])
@@ -299,6 +300,20 @@ model AiDailyRunEvent {
   run           AiDailyRun       @relation(fields: [runId], references: [id], onDelete: Cascade)
 
   @@unique([runId, sequence])
+  @@index([runId, createdAt])
+}
+
+model AiDailyGenerationCheckpoint {
+  id            String          @id @default(cuid())
+  runId         String
+  stage         AiDailyRunStage
+  payloadJson   Json
+  payloadHash   String
+  schemaVersion String
+  createdAt     DateTime        @default(now())
+  run           AiDailyRun      @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, stage])
   @@index([runId, createdAt])
 }
 
@@ -494,6 +509,7 @@ model AiDailyIssueSource {
 
 model AiDailyGeneratedRevision {
   id                     String                           @id @default(cuid())
+  generationKey          String?                          @unique
   issueId                String
   revisionNumber         Int
   selectionVersion       Int
@@ -507,6 +523,7 @@ model AiDailyGeneratedRevision {
   modelRole              String
   modelIdentifier        String
   observedDraftUpdatedAt DateTime?
+  projectionDraftId      String?
   applyState             AiDailyGeneratedApplyState       @default(PENDING)
   validationStatus       AiDailyGeneratedValidationStatus
   validationFindingsJson Json?
