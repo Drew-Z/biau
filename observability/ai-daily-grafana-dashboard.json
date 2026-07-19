@@ -273,12 +273,12 @@
       },
       "targets": [
         {
-          "expr": "(biau_ai_daily_latest_run_freshness_age_seconds / 60) and on() (biau_ai_daily_latest_run_freshness_available == 1)",
+          "expr": "(biau_ai_daily_latest_run_freshness_age_seconds / 60) and (biau_ai_daily_latest_run_freshness_available == 1)",
           "legendFormat": "pipeline freshness (min)",
           "refId": "A"
         },
         {
-          "expr": "(biau_ai_daily_latest_run_end_to_end_lag_seconds / 60) and on() (biau_ai_daily_latest_run_end_to_end_lag_available == 1)",
+          "expr": "(biau_ai_daily_latest_run_end_to_end_lag_seconds / 60) and (biau_ai_daily_latest_run_end_to_end_lag_available == 1)",
           "legendFormat": "end-to-end lag (min)",
           "refId": "B"
         }
@@ -385,7 +385,7 @@
           "refId": "A"
         },
         {
-          "expr": "(biau_ai_daily_public_flash_age_seconds / 60) and on() (biau_ai_daily_public_flash_available == 1)",
+          "expr": "(biau_ai_daily_public_flash_age_seconds / 60) and (biau_ai_daily_public_flash_available == 1)",
           "legendFormat": "public flash age (min)",
           "refId": "B"
         },

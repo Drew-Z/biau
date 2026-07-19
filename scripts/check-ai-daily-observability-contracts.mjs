@@ -69,12 +69,12 @@ async function main() {
     'sum by (health) (biau_ai_daily_sources_total)',
     'biau_ai_daily_work_items_ready_backlog',
     'biau_ai_daily_work_items_expired_leases',
-    '(biau_ai_daily_latest_run_freshness_age_seconds / 60) and on() (biau_ai_daily_latest_run_freshness_available == 1)',
-    '(biau_ai_daily_latest_run_end_to_end_lag_seconds / 60) and on() (biau_ai_daily_latest_run_end_to_end_lag_available == 1)',
+    '(biau_ai_daily_latest_run_freshness_age_seconds / 60) and (biau_ai_daily_latest_run_freshness_available == 1)',
+    '(biau_ai_daily_latest_run_end_to_end_lag_seconds / 60) and (biau_ai_daily_latest_run_end_to_end_lag_available == 1)',
     'sum by (provider_role) (biau_ai_daily_provider_role_events_total)',
     'sum by (status) (biau_ai_daily_issues_total)',
     'biau_ai_daily_public_flash_items_active',
-    '(biau_ai_daily_public_flash_age_seconds / 60) and on() (biau_ai_daily_public_flash_available == 1)',
+    '(biau_ai_daily_public_flash_age_seconds / 60) and (biau_ai_daily_public_flash_available == 1)',
     'sum by (kind) (biau_ai_daily_retention_due_total)',
   ]) {
     assert(dashboardExpressions.includes(expression), `dashboard should include ${expression}`)
