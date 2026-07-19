@@ -5,7 +5,7 @@
 - [x] Finalize environment-variable and secret inventory.
 - [x] Add Render build/start/schedule documentation for both Cron Jobs.
 - [x] Add production-readiness configuration command with no network calls.
-- [ ] Curate sources/query groups and run offline model evaluation. (versioned 30-source/10-query-group candidate pack, manifest contract, and three-role evaluation/approval contract completed; human source approval and real candidate-model evaluation remain)
+- [ ] Curate sources/query groups and run offline model evaluation. (30 sources and 10 query groups received a public-page pre-review on 2026-07-19: sources 16 approved / 9 hold / 5 rejected, query groups 4 approved / 3 hold / 3 rejected; all remain disabled pending human confirmation, and real candidate-model evaluation remains)
 - [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics and guarded retention dry-run completed; mutation and production alert routing remain)
 - [x] Run the full deterministic quality gate.
 - [ ] Obtain approval and run one real edition.
@@ -26,6 +26,7 @@
 - Retention now has a Studio-authenticated, bounded `retention-dry-run-v1` plan with fixed eligibility/block reasons and no mutation path. `ai-daily:retention-check` proves current evidence, public/current-approved Flash, revision history, and approval audit history remain protected.
 - `server/data/ai-daily-source-manifest.v1.json` now records 30 disabled source candidates and 10 disabled discovery query groups with rationale and per-item review state. `ai-daily:manifest-check` validates schema, public URL/domain rules, unique canonical identity, query budgets, and pending-review fail-closed behavior without network calls.
 - `ai-daily:model-evaluation-check` now validates the 40-case fixture contract for extractor/composer/verifier selection, recomputed case-set hashes, existing quality floors, deterministic ranking, independent failure-domain fallbacks, low-sensitive immutable records, and explicit human approval. It performs zero provider calls and does not close the real candidate-model evaluation gate.
+- `docs/ai-daily-source-review-2026-07-19.md` records the public-page source/query pre-review, extraction and attribution boundaries, core four-query recommendation, and the two remaining human decisions. No source, query group, or model was enabled by the review.
 - No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
 ## Known Follow-up

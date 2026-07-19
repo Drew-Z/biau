@@ -23,6 +23,13 @@ function expectIssue(result: ReturnType<typeof parseAiDailySourceManifest>, issu
   if (!result.ok) assert.ok(result.issues.includes(issue), `expected ${issue}; got ${result.issues.join(', ')}`)
 }
 
+function countReviewStatuses(items: Array<{ review: { status: string } }>) {
+  return items.reduce<Record<string, number>>((counts, item) => {
+    counts[item.review.status] = (counts[item.review.status] ?? 0) + 1
+    return counts
+  }, {})
+}
+
 const manifest = await loadAiDailySourceManifest()
 
 assert.equal(manifest.schemaVersion, aiDailySourceManifestSchemaVersion)
@@ -30,8 +37,14 @@ assert.equal(manifest.readiness, 'pending-human-review')
 assert.equal(manifest.review.status, 'candidate')
 assert.equal(manifest.sources.length, 30)
 assert.equal(manifest.queryGroups.length, 10)
-assert.ok(manifest.sources.every((source) => !source.enabled && source.review.status === 'candidate'))
-assert.ok(manifest.queryGroups.every((group) => !group.enabled && group.review.status === 'candidate'))
+assert.ok(manifest.sources.every((source) => !source.enabled))
+assert.ok(manifest.queryGroups.every((group) => !group.enabled))
+assert.ok(manifest.sources.some((source) => source.review.status === 'approved'))
+assert.ok(manifest.sources.some((source) => source.review.status === 'hold'))
+assert.ok(manifest.sources.some((source) => source.review.status === 'rejected'))
+assert.ok(manifest.queryGroups.some((group) => group.review.status === 'approved'))
+assert.ok(manifest.queryGroups.some((group) => group.review.status === 'hold'))
+assert.ok(manifest.queryGroups.some((group) => group.review.status === 'rejected'))
 assert.ok(manifest.sources.filter((source) => source.locale === 'zh').length >= 4)
 assert.ok(manifest.sources.filter((source) => source.tier === 'TIER_1').length >= 20)
 assert.ok(manifest.queryGroups.some((group) => group.locale === 'zh'))
@@ -42,11 +55,14 @@ assert.equal(new Set(manifest.sources.map((source) => source.id)).size, manifest
 assert.equal(new Set(manifest.sources.map((source) => source.canonicalUrl)).size, manifest.sources.length)
 assert.equal(new Set(manifest.queryGroups.map((group) => group.id)).size, manifest.queryGroups.length)
 
+const unapprovedSourceIndex = manifest.sources.findIndex((source) => source.review.status !== 'approved')
+assert.notEqual(unapprovedSourceIndex, -1)
+
 const enabledBeforeApproval = mutateManifest(manifest, (draft) => {
   const sources = draft.sources as Array<Record<string, unknown>>
-  sources[0].enabled = true
+  sources[unapprovedSourceIndex].enabled = true
 })
-expectIssue(enabledBeforeApproval, 'sources[0].enabled-requires-approved-review')
+expectIssue(enabledBeforeApproval, `sources[${unapprovedSourceIndex}].enabled-requires-approved-review`)
 expectIssue(enabledBeforeApproval, 'pending-manifest-has-enabled-source')
 
 const incrementalReview = mutateManifest(manifest, (draft) => {
@@ -57,6 +73,15 @@ const incrementalReview = mutateManifest(manifest, (draft) => {
   review.reviewedBy = 'editor'
 })
 assert.equal(incrementalReview.ok, true)
+
+const heldReview = mutateManifest(manifest, (draft) => {
+  const sources = draft.sources as Array<Record<string, unknown>>
+  const review = sources[0].review as Record<string, unknown>
+  review.status = 'hold'
+  review.reviewedAt = '2026-07-19T00:00:00.000Z'
+  review.reviewedBy = 'editor'
+})
+assert.equal(heldReview.ok, true)
 
 const duplicateUrl = mutateManifest(manifest, (draft) => {
   const sources = draft.sources as Array<Record<string, unknown>>
@@ -99,4 +124,29 @@ const unreviewedApproval = mutateManifest(manifest, (draft) => {
 })
 expectIssue(unreviewedApproval, 'review.reviewer-required')
 
-console.log(`AI Daily source manifest check passed (${manifest.sources.length} candidates, ${manifest.queryGroups.length} query groups, networkCalls=0)`)
+const reviewedSubsetApproval = mutateManifest(manifest, (draft) => {
+  draft.readiness = 'approved'
+  const review = draft.review as Record<string, unknown>
+  review.status = 'approved'
+  review.reviewedAt = '2026-07-19T00:00:00.000Z'
+  review.reviewedBy = 'editor'
+})
+assert.equal(reviewedSubsetApproval.ok, true)
+
+const incompleteSubsetApproval = mutateManifest(manifest, (draft) => {
+  draft.readiness = 'approved'
+  const review = draft.review as Record<string, unknown>
+  review.status = 'approved'
+  review.reviewedAt = '2026-07-19T00:00:00.000Z'
+  review.reviewedBy = 'editor'
+  const sources = draft.sources as Array<Record<string, unknown>>
+  sources[0].review = { status: 'candidate', reviewedAt: null, reviewedBy: null, notes: 'Awaiting review.' }
+})
+expectIssue(incompleteSubsetApproval, 'approved-sources-review-incomplete')
+
+const sourceReviewCounts = countReviewStatuses(manifest.sources)
+const queryReviewCounts = countReviewStatuses(manifest.queryGroups)
+
+console.log(
+  `AI Daily source manifest check passed (${manifest.sources.length} sources, ${manifest.queryGroups.length} query groups, sourceReviews=${JSON.stringify(sourceReviewCounts)}, queryReviews=${JSON.stringify(queryReviewCounts)}, networkCalls=0)`,
+)

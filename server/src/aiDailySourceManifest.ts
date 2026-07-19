@@ -10,7 +10,7 @@ import {
 } from './aiDailyIngestion.js'
 
 export const aiDailySourceManifestSchemaVersion = 'ai-daily-source-curation-v1'
-export const aiDailyManifestReviewStatuses = ['candidate', 'approved', 'rejected'] as const
+export const aiDailyManifestReviewStatuses = ['candidate', 'hold', 'approved', 'rejected'] as const
 export type AiDailyManifestReviewStatus = (typeof aiDailyManifestReviewStatuses)[number]
 export type AiDailyManifestReadiness = 'pending-human-review' | 'approved'
 
@@ -109,8 +109,14 @@ export function parseAiDailySourceManifest(value: unknown): AiDailySourceManifes
   }
   if (readiness === 'approved') {
     if (review?.status !== 'approved') issues.push('approved-manifest-review-status-invalid')
-    if (sources && sources.filter((source) => source.review.status === 'approved').length < 30) {
+    if (sources?.some((source) => source.review.status === 'candidate')) {
+      issues.push('approved-sources-review-incomplete')
+    }
+    if (sources && sources.filter((source) => source.review.status === 'approved').length < 12) {
       issues.push('approved-sources-count-too-small')
+    }
+    if (queryGroups?.some((group) => group.review.status === 'candidate')) {
+      issues.push('approved-query-groups-review-incomplete')
     }
     if (queryGroups && queryGroups.filter((group) => group.review.status === 'approved').length < 4) {
       issues.push('approved-query-groups-count-too-small')

@@ -55,7 +55,7 @@
 | --- | --- | --- |
 | Generation runner migration | 生产 Studio 数据库需要备份和可回滚 revision | 执行 `20260718010000_ai_daily_generation_runner` 后只记录 migration 名、成功状态和低敏计数 |
 | 首篇公开导出 | 公开数据文件必须审查 diff | `studio:export -- --run-checks`、博客检查和最终 Git diff |
-| AI Daily 真实来源与查询组 | `server/data/ai-daily-source-manifest.v1.json` 只是默认禁用的候选包，需要逐条确认日期、事实、版权、页面结构、来源上下文、查询成本和噪声风险 | `ai-daily:manifest-check`、批准/拒绝数量、审核时间和低敏结论，不复制长段原文 |
+| AI Daily 真实来源与查询组 | 2026-07-19 已完成公共页面预审并记录 `approved/hold/rejected` 建议；用户仍需确认首批核心集合、查询预算与版权边界，顶层 readiness 才能切换 | `ai-daily:manifest-check`、批准/暂缓/拒绝数量、审核时间和低敏结论，不复制长段原文 |
 | AI Daily 三角色模型评估与选型 | fixture contract 只能验证算法；真实候选必须用 BIAU-owned case set 分别评估 extractor/composer/verifier，并由人工确认 primary、独立 failure-domain fallback 和 5 个百分点边界 | 版本化候选/选择 record hash、case-set/prompt/schema version、聚合质量和延迟摘要、审核时间与低敏结论；不记录 key、endpoint、prompt 或原始输出 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
 | AI Daily 公开 Feed 上线 | 新增公开索引 migration、Cloudflare browser base 和 Studio CORS allowlist 需要平台配置 | 只记录 migration 名、公开 route HTTP 状态、ETag/CORS 类别和页面截图，不记录数据库 URL 或 token |

@@ -5,7 +5,7 @@
     "status": "candidate",
     "reviewedAt": null,
     "reviewedBy": null,
-    "notes": "Initial public candidate pack. Every source and query group remains disabled until the editorial review gate is completed."
+    "notes": "Public page pre-review completed on 2026-07-19. All entries remain disabled pending human confirmation of the core set, budgets, and copyright boundary."
   },
   "sources": [
     {
@@ -19,7 +19,7 @@
       "topics": ["models", "agents", "safety", "research"],
       "enabled": false,
       "officialDomain": "www.anthropic.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Verify page structure, rights, and collection cadence before enabling." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated article list and high AI signal; use HTML incremental collection and metadata plus short excerpts only." }
     },
     {
       "id": "google-ai-blog",
@@ -32,7 +32,7 @@
       "topics": ["models", "products", "agents", "research"],
       "enabled": false,
       "officialDomain": "blog.google",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Verify topic-page precision and publication timestamps." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "RSS is available but mixes Search, Workspace, Education, and other non-AI items; require secondary AI filtering." }
     },
     {
       "id": "deepmind-blog",
@@ -45,7 +45,7 @@
       "topics": ["research", "models", "science", "safety"],
       "enabled": false,
       "officialDomain": "deepmind.google",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm article-list extraction and long-form relevance thresholds." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated AI blog with stable RSS, dates, and high research/model signal; use RSS discovery and article-page summaries." }
     },
     {
       "id": "microsoft-ai-blog",
@@ -58,7 +58,7 @@
       "topics": ["enterprise-ai", "products", "agents", "partnerships"],
       "enabled": false,
       "officialDomain": "blogs.microsoft.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm company-news noise limits and canonical article URLs." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Topic page spans several Microsoft channels and the available feed is full-site noisy; require strict AI filtering." }
     },
     {
       "id": "aws-machine-learning-blog",
@@ -71,7 +71,7 @@
       "topics": ["cloud-ai", "infrastructure", "agents", "engineering"],
       "enabled": false,
       "officialDomain": "aws.amazon.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Review promotional density and product-release signal quality." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated list and RSS with strong AI signal; separate technical releases from tutorials, customer cases, and promotion." }
     },
     {
       "id": "google-cloud-ai-blog",
@@ -84,7 +84,7 @@
       "topics": ["cloud-ai", "models", "agents", "enterprise-ai"],
       "enabled": false,
       "officialDomain": "cloud.google.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm pagination and article publication metadata." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "AI list is usable but lacks a confirmed feed and has substantial product, ranking, and customer-marketing noise." }
     },
     {
       "id": "microsoft-research-blog",
@@ -97,7 +97,7 @@
       "topics": ["research", "models", "responsible-ai", "systems"],
       "enabled": false,
       "officialDomain": "www.microsoft.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm scope remains AI-relevant and not general research noise." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable recent-post list and RSS; high research quality, with explicit AI topic filtering for broader research posts." }
     },
     {
       "id": "hugging-face-blog",
@@ -110,7 +110,7 @@
       "topics": ["open-source", "models", "datasets", "developer-tools"],
       "enabled": false,
       "officialDomain": "huggingface.co",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm authored and community posts are distinguishable." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable RSS but mixes official, partner, and community authors; require author or organization allowlists and attribution labels." }
     },
     {
       "id": "nvidia-developer-blog",
@@ -123,7 +123,7 @@
       "topics": ["infrastructure", "inference", "training", "developer-tools"],
       "enabled": false,
       "officialDomain": "developer.nvidia.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm AI-category filtering and duplicate campaign handling." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated feed with strong inference and infrastructure signal; filter non-AI CUDA/graphics posts and label vendor claims." }
     },
     {
       "id": "apple-newsroom",
@@ -136,7 +136,7 @@
       "topics": ["product-ai", "edge-ai", "multimodal", "devices"],
       "enabled": false,
       "officialDomain": "www.apple.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Require AI-specific filtering because the page covers all Apple news." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "General Apple newsroom has low AI density; keep only as a future targeted Apple Intelligence supplement, not a daily source." }
     },
     {
       "id": "qualcomm-onq",
@@ -149,7 +149,7 @@
       "topics": ["edge-ai", "chips", "devices", "infrastructure"],
       "enabled": false,
       "officialDomain": "www.qualcomm.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm AI topic filtering and publication date extraction." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable tagged list and AI-filtered entry; use the AI tag and filter mobile, 5G, and pure product promotion noise." }
     },
     {
       "id": "adobe-ai-blog",
@@ -162,7 +162,7 @@
       "topics": ["generative-media", "products", "creative-tools", "models"],
       "enabled": false,
       "officialDomain": "blog.adobe.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Check category consistency and marketing-copy density." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "AI topic page is accessible but its complete list is dynamic and the guessed feed is unavailable; wait for stable CMS or sitemap evidence." }
     },
     {
       "id": "github-changelog",
@@ -175,7 +175,7 @@
       "topics": ["developer-tools", "copilot", "agents", "platforms"],
       "enabled": false,
       "officialDomain": "github.blog",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Apply Copilot and AI filters to avoid unrelated platform changes." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated list and RSS; restrict to Copilot/AI/model tags and preserve deprecation notices." }
     },
     {
       "id": "meta-engineering",
@@ -188,7 +188,7 @@
       "topics": ["ai-engineering", "infrastructure", "models", "systems"],
       "enabled": false,
       "officialDomain": "engineering.fb.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Require AI-category filtering and canonical author metadata." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable engineering feed and AI Research category; filter non-AI infrastructure and preserve author/category attribution." }
     },
     {
       "id": "bytedance-newsroom",
@@ -201,7 +201,7 @@
       "topics": ["china-ai", "products", "company-news", "models"],
       "enabled": false,
       "officialDomain": "www.bytedance.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Verify AI relevance and avoid general corporate updates." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "English newsroom is stale and lacks a current stable AI stream; rediscover a maintained official technical source first." }
     },
     {
       "id": "alibaba-group-news",
@@ -214,7 +214,7 @@
       "topics": ["china-ai", "enterprise-ai", "cloud-ai", "company-news"],
       "enabled": false,
       "officialDomain": "www.alibabagroup.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Require AI-specific filtering and cross-check technical claims." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Current AI announcements are discoverable, with canonical links moving to alizila.com; deduplicate and filter corporate PR." }
     },
     {
       "id": "zhipu-news",
@@ -227,7 +227,7 @@
       "topics": ["china-ai", "models", "agents", "products"],
       "enabled": false,
       "officialDomain": "www.zhipuai.cn",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Verify stable article URLs, dates, and public access behavior." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "The path resolves to a product page without stable article links or dates; require a public news archive or API before reconsidering." }
     },
     {
       "id": "mistral-news",
@@ -240,7 +240,7 @@
       "topics": ["models", "open-source", "api", "enterprise-ai"],
       "enabled": false,
       "officialDomain": "mistral.ai",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm release-category extraction and article dates." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated list exposes dated Product, Research, and Engineering articles; use HTML incremental collection because guessed RSS is unavailable." }
     },
     {
       "id": "cohere-blog",
@@ -253,7 +253,7 @@
       "topics": ["enterprise-ai", "rag", "models", "research"],
       "enabled": false,
       "officialDomain": "cohere.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Review product marketing versus technical evidence balance." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated AI blog list; use HTML collection, prioritize research/product/engineering, and filter partner or SEO content." }
     },
     {
       "id": "databricks-engineering",
@@ -266,7 +266,7 @@
       "topics": ["data-ai", "infrastructure", "training", "enterprise-ai"],
       "enabled": false,
       "officialDomain": "www.databricks.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Apply AI relevance filtering within the engineering category." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Engineering page is stable but mixed and often lacks dates; require AI-specific filtering and verified feed/category extraction." }
     },
     {
       "id": "snowflake-engineering",
@@ -279,7 +279,7 @@
       "topics": ["data-ai", "infrastructure", "enterprise-ai", "engineering"],
       "enabled": false,
       "officialDomain": "www.snowflake.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Apply AI relevance filtering and deduplicate product campaigns." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Page is reachable with AI signal but dates and feed support are weak; keep as supplementary until per-article date extraction is proven." }
     },
     {
       "id": "red-hat-ai-blog",
@@ -292,7 +292,7 @@
       "topics": ["open-source", "enterprise-ai", "cloud-ai", "infrastructure"],
       "enabled": false,
       "officialDomain": "www.redhat.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Check article dates and channel-page extraction stability." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated AI channel and RSS are available; filter edge topics and label product/ROI claims as vendor statements." }
     },
     {
       "id": "alibaba-cloud-ai-blog",
@@ -305,7 +305,7 @@
       "topics": ["china-ai", "cloud-ai", "enterprise-ai", "engineering"],
       "enabled": false,
       "officialDomain": "www.alibabacloud.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Review technical depth and duplicate campaign handling." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "URL redirects to a not-found page despite a 200 response; rediscover a current official AI category before use." }
     },
     {
       "id": "moonshot-platform-docs",
@@ -318,7 +318,7 @@
       "topics": ["china-ai", "models", "api", "developer-tools"],
       "enabled": false,
       "officialDomain": "platform.moonshot.cn",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Determine whether a stable changelog page is preferable to the docs index." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Docs and llms.txt are stable but this is a capability reference, not a dated news stream; use only for explicit change detection." }
     },
     {
       "id": "minimax-news",
@@ -331,7 +331,7 @@
       "topics": ["china-ai", "models", "multimodal", "products"],
       "enabled": false,
       "officialDomain": "www.minimaxi.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Verify stable article URLs, dates, and collection accessibility." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Official AI news exists but the index is client-rendered without a stable dated list; prove structured-data extraction before enabling." }
     },
     {
       "id": "modelscope-headlines",
@@ -344,7 +344,7 @@
       "topics": ["china-ai", "open-source", "models", "datasets"],
       "enabled": false,
       "officialDomain": "www.modelscope.cn",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Differentiate official platform news from community reposts." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Page shell exposes no repeatable titles, links, or dates; require a public API, SSR payload, or feed before reconsidering." }
     },
     {
       "id": "cncf-blog",
@@ -357,7 +357,7 @@
       "topics": ["cloud-native", "infrastructure", "open-source", "engineering"],
       "enabled": false,
       "officialDomain": "www.cncf.io",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Apply AI-workload and project-release topic filters." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated RSS and article metadata; filter AI/ML/agent/GPU topics and distinguish staff, project, member, and vendor posts." }
     },
     {
       "id": "kubernetes-blog",
@@ -370,7 +370,7 @@
       "topics": ["infrastructure", "cloud-native", "ai-workloads", "open-source"],
       "enabled": false,
       "officialDomain": "kubernetes.io",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Require AI-workload relevance filtering." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable list and feed with dates and attribution; filter AI workload topics and preserve the CC BY attribution boundary." }
     },
     {
       "id": "cmu-machine-learning-blog",
@@ -383,7 +383,7 @@
       "topics": ["research", "machine-learning", "education", "systems"],
       "enabled": false,
       "officialDomain": "blog.ml.cmu.edu",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm publishing activity and source attribution standards." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated research feed with high AI signal and low marketing noise; link papers/code and avoid expanding author claims." }
     },
     {
       "id": "mit-technology-review-ai",
@@ -396,7 +396,7 @@
       "topics": ["industry", "policy", "safety", "analysis"],
       "enabled": false,
       "officialDomain": "www.technologyreview.com",
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Treat as analysis and require first-party evidence for factual release claims." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated AI RSS has dates and strong analysis signal; exclude or label sponsored content and treat as analysis, not first-party release evidence." }
     }
   ],
   "queryGroups": [
@@ -405,140 +405,140 @@
       "label": "Frontier model releases",
       "rationale": "Find first-party launches, capability updates, and model deprecations across major labs.",
       "locale": "en",
-      "queries": ["new frontier AI model release official", "large language model capability update official", "AI model API deprecation official"],
+      "queries": ["AI model launch release notes API official", "foundation model capability pricing context window update", "AI model deprecation retirement API official"],
       "includeDomains": [],
-      "excludeDomains": ["pinterest.com", "quora.com"],
-      "budget": { "maxRequests": 3, "maxResults": 20, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 20 },
-      "minimumPrimaryResults": 5,
+      "excludeDomains": ["pinterest.com", "quora.com", "medium.com", "linkedin.com"],
+      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
+      "minimumPrimaryResults": 4,
       "includeSignal": true,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Approve query wording and provider cost before enabling." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core high-timeliness group; reduced threshold and noise exclusions; keep signal for release/deprecation gaps." }
     },
     {
       "id": "agent-platforms",
       "label": "Agent platforms and protocols",
       "rationale": "Track agent runtimes, tool protocols, orchestration frameworks, and production agent features.",
       "locale": "en",
-      "queries": ["AI agent framework release official", "agent protocol MCP update official", "production agent platform announcement"],
+      "queries": ["agent runtime SDK release notes official", "Model Context Protocol specification update official", "agent orchestration framework release GitHub"],
       "includeDomains": [],
-      "excludeDomains": ["pinterest.com", "quora.com"],
-      "budget": { "maxRequests": 3, "maxResults": 20, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 20 },
-      "minimumPrimaryResults": 5,
-      "includeSignal": true,
+      "excludeDomains": ["pinterest.com", "quora.com", "medium.com", "linkedin.com", "dev.to"],
+      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
+      "minimumPrimaryResults": 4,
+      "includeSignal": false,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Review overlap with developer-tools and model-release groups." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Useful after separating runtime/protocol from developer-tool overlap; keep disabled until boundary is confirmed." }
     },
     {
       "id": "open-source-ai",
       "label": "Open-source AI ecosystem",
       "rationale": "Find open-weight models, datasets, inference stacks, and important repository releases.",
       "locale": "en",
-      "queries": ["open weight AI model release", "open source inference framework release", "AI dataset release official"],
-      "includeDomains": ["github.com", "huggingface.co"],
-      "excludeDomains": [],
-      "budget": { "maxRequests": 3, "maxResults": 24, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 20 },
-      "minimumPrimaryResults": 6,
+      "queries": ["open weight model release model card", "open source inference runtime release notes", "AI dataset release dataset card benchmark"],
+      "includeDomains": [],
+      "excludeDomains": ["medium.com", "linkedin.com", "dev.to"],
+      "budget": { "maxRequests": 3, "maxResults": 21, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
+      "minimumPrimaryResults": 4,
       "includeSignal": true,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Confirm domain restriction does not hide project-owned release pages." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core open ecosystem group; removed hard domain restriction so project-owned release pages are not hidden." }
     },
     {
       "id": "ai-infrastructure",
       "label": "AI infrastructure and inference",
       "rationale": "Track chips, inference runtimes, serving systems, training infrastructure, and cloud-native changes.",
       "locale": "en",
-      "queries": ["AI inference infrastructure release", "GPU AI software platform update official", "LLM serving framework release"],
+      "queries": ["LLM inference runtime release notes", "GPU AI inference software SDK release official", "LLM serving framework release benchmark"],
       "includeDomains": [],
-      "excludeDomains": ["pinterest.com"],
-      "budget": { "maxRequests": 3, "maxResults": 20, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 20 },
-      "minimumPrimaryResults": 5,
-      "includeSignal": true,
+      "excludeDomains": ["pinterest.com", "medium.com", "linkedin.com", "tomshardware.com", "wccftech.com"],
+      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
+      "minimumPrimaryResults": 4,
+      "includeSignal": false,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Review hardware-news noise and require technical primary evidence." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core infrastructure group; narrowed queries and disabled signal to reduce hardware and vendor noise." }
     },
     {
       "id": "enterprise-ai",
       "label": "Enterprise AI platforms",
       "rationale": "Find meaningful enterprise platform, retrieval, security, and deployment changes.",
       "locale": "en",
-      "queries": ["enterprise AI platform release official", "enterprise RAG platform update", "AI governance product announcement official"],
+      "queries": ["enterprise AI platform generally available release notes", "RAG retrieval platform security deployment release notes", "enterprise AI audit governance feature GA official"],
       "includeDomains": [],
-      "excludeDomains": ["pinterest.com", "quora.com"],
-      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
-      "minimumPrimaryResults": 5,
+      "excludeDomains": ["pinterest.com", "quora.com", "medium.com", "linkedin.com", "g2.com", "capterra.com"],
+      "budget": { "maxRequests": 2, "maxResults": 12, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 12 },
+      "minimumPrimaryResults": 3,
       "includeSignal": false,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Tune against marketing-heavy results before approval." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Rebuilt toward GA/security/release evidence but remains disabled until a separate enterprise scope and noise review." }
     },
     {
       "id": "research-breakthroughs",
       "label": "AI research breakthroughs",
       "rationale": "Surface consequential research results while avoiding daily-paper volume overload.",
       "locale": "en",
-      "queries": ["AI research breakthrough official paper", "machine learning research result official blog", "AI safety research publication"],
+      "queries": ["site:arxiv.org AI benchmark state of the art code", "machine learning paper official project page dataset code", "AI evaluation research technical report official"],
       "includeDomains": [],
-      "excludeDomains": ["researchgate.net", "pinterest.com"],
-      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 18000, "maxRetries": 1, "maxCostUnits": 20 },
-      "minimumPrimaryResults": 5,
+      "excludeDomains": ["researchgate.net", "pinterest.com", "medium.com", "linkedin.com"],
+      "budget": { "maxRequests": 2, "maxResults": 12, "timeoutMs": 14000, "maxRetries": 1, "maxCostUnits": 14 },
+      "minimumPrimaryResults": 2,
       "includeSignal": false,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Define significance threshold and paper-to-primary-source policy." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Removed the subjective breakthrough threshold from the active set; needs a defined significance gate and likely split scope." }
     },
     {
       "id": "developer-ai-tools",
       "label": "AI developer tools",
       "rationale": "Track coding assistants, SDKs, evaluation tools, and developer workflow changes.",
       "locale": "en",
-      "queries": ["AI coding assistant release official", "AI developer SDK update official", "LLM evaluation tool release"],
-      "includeDomains": ["github.com"],
-      "excludeDomains": [],
-      "budget": { "maxRequests": 3, "maxResults": 20, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
-      "minimumPrimaryResults": 5,
-      "includeSignal": true,
+      "queries": ["AI coding assistant release notes official", "AI SDK API changelog official", "LLM evaluation framework release notes GitHub"],
+      "includeDomains": [],
+      "excludeDomains": ["medium.com", "linkedin.com", "dev.to"],
+      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 16 },
+      "minimumPrimaryResults": 4,
+      "includeSignal": false,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Review GitHub-only restriction and product-launch duplication." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Removed GitHub-only restriction and signal; keep disabled until SDK/tool overlap with agent-platforms is resolved." }
     },
     {
       "id": "china-ai-releases",
       "label": "China AI releases",
       "rationale": "Improve timeliness and coverage for Chinese model, platform, agent, and open-source releases.",
       "locale": "zh",
-      "queries": ["国产大模型 官方 发布", "AI 智能体 平台 官方 更新", "开源模型 官方 发布 中国"],
+      "queries": ["大模型 新版本 官方 发布 API", "智能体 平台 更新 发布 官方", "开源 大模型 发布 模型卡 GitHub Hugging Face"],
       "includeDomains": [],
-      "excludeDomains": ["zhihu.com", "baijiahao.baidu.com"],
-      "budget": { "maxRequests": 3, "maxResults": 24, "timeoutMs": 18000, "maxRetries": 1, "maxCostUnits": 20 },
-      "minimumPrimaryResults": 6,
+      "excludeDomains": ["zhihu.com", "baijiahao.baidu.com", "sohu.com", "163.com", "csdn.net"],
+      "budget": { "maxRequests": 3, "maxResults": 21, "timeoutMs": 18000, "maxRetries": 1, "maxCostUnits": 18 },
+      "minimumPrimaryResults": 4,
       "includeSignal": true,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Approve Chinese query vocabulary and excluded-domain policy." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core Chinese coverage group; tightened vocabulary and retained signal for fragmented first-party discovery." }
     },
     {
       "id": "ai-policy-safety",
       "label": "AI policy and safety",
       "rationale": "Track material safety research, regulatory changes, evaluations, and deployment governance.",
       "locale": "en",
-      "queries": ["AI safety evaluation official report", "AI regulation policy update official", "responsible AI governance announcement"],
+      "queries": ["AI regulation law guidance official government", "AI safety evaluation technical report official", "AI model risk standard official regulator"],
       "includeDomains": [],
-      "excludeDomains": ["pinterest.com", "quora.com"],
-      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 18000, "maxRetries": 1, "maxCostUnits": 18 },
-      "minimumPrimaryResults": 5,
+      "excludeDomains": ["pinterest.com", "quora.com", "medium.com", "linkedin.com"],
+      "budget": { "maxRequests": 3, "maxResults": 15, "timeoutMs": 18000, "maxRetries": 1, "maxCostUnits": 16 },
+      "minimumPrimaryResults": 3,
       "includeSignal": false,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Define jurisdiction scope and primary legal-source preference." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Jurisdiction and source policy remain undefined; do not enable until the group is split or scoped." }
     },
     {
       "id": "multimodal-edge-ai",
       "label": "Multimodal and edge AI",
       "rationale": "Track image, audio, video, robotics, device, and on-device model advances.",
       "locale": "en",
-      "queries": ["multimodal AI model release official", "on-device AI model announcement", "AI video audio generation model release"],
+      "queries": ["multimodal foundation model release official image audio video", "on-device edge AI model SDK release official", "robotics vision language action model release official"],
       "includeDomains": [],
-      "excludeDomains": ["pinterest.com"],
-      "budget": { "maxRequests": 3, "maxResults": 20, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 20 },
-      "minimumPrimaryResults": 5,
-      "includeSignal": true,
+      "excludeDomains": ["pinterest.com", "medium.com", "linkedin.com", "techradar.com"],
+      "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
+      "minimumPrimaryResults": 4,
+      "includeSignal": false,
       "enabled": false,
-      "review": { "status": "candidate", "reviewedAt": null, "reviewedBy": null, "notes": "Review overlap with frontier models and product announcements." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Queries now cover edge and robotics explicitly; keep disabled until overlap with frontier and product-news sources is measured." }
     }
   ]
 }
