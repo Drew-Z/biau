@@ -23,6 +23,8 @@
 
 ```powershell
 npm.cmd run ai-daily:production-readiness-check
+npm.cmd run ai-daily:operations-check
+npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 npm.cmd run studio:smoke
 npm.cmd run studio:ai-daily-brief-check
@@ -30,7 +32,9 @@ npm.cmd run operator:knowledge-check
 npm.cmd run assistant:agent-eval
 ```
 
-这些命令不调用真实模型，不需要生产数据库，也不会自动公开内容。`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks；只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
+这些命令不调用真实模型，不需要生产数据库，也不会自动公开内容。`ai-daily:operations-check` 使用纯内存 fixture 验证 diagnostics 和 metrics 安全契约；`ai-daily:retention-check` 验证默认 dry-run、发布/审核链保护和禁止 mutation 契约；`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks，只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
+
+Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/operations` 和 `GET /studio/api/ai-daily/retention/dry-run`。后者只生成候选与阻断原因，始终不执行 mutation。只有同时设置 `METRICS_ENABLED=true` 与 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时，Studio `/metrics` 才会追加 operations snapshot；默认仍为关闭。snapshot 查询失败只暴露 availability=0，不输出数据库或 provider 错误。生产 scrape、dashboard、alert routing 以及任何未来 retention mutation 仍需人工平台配置和独立批准。
 
 `ai-daily:production-readiness-check -- --strict` 只用于已经注入目标环境变量的离线 preflight。它不会读取或输出变量值，也不会代替 Render migration、Cron 启用、真实来源审核或真实业务版次验收。
 

@@ -6,7 +6,7 @@
 - [x] Add Render build/start/schedule documentation for both Cron Jobs.
 - [x] Add production-readiness configuration command with no network calls.
 - [ ] Curate sources/query groups and run offline model evaluation.
-- [ ] Configure metrics, diagnostics, retention, and alerts.
+- [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics and guarded retention dry-run completed; mutation and production alert routing remain)
 - [x] Run the full deterministic quality gate.
 - [ ] Obtain approval and run one real edition.
 - [ ] Review/approve selected flashes and the daily draft, export, deploy, and verify public behavior.
@@ -21,10 +21,14 @@
 - `ai-daily:contracts-check` runs the fixture/loopback contract suite; disposable PostgreSQL checks require explicit `--with-database` and `AI_DAILY_DATABASE_CHECK=1`.
 - The full production-preview UI gate passes after the flow worker gained a token-correlated reduced-motion acknowledgement instead of relying on fixed test delays.
 - Real provider selection, production Cron activation, source approval, live edition acceptance, and database deployment remain manual gates.
+- Studio now exposes a token-protected read-only AI Daily operations snapshot; Studio `/metrics` appends the same low-cardinality data when metrics are explicitly enabled.
+- Source health, run/stage state, work backlog/expired leases, bounded quality outcomes, public feed age, and retention-due counts are covered by `ai-daily:operations-check` without a database or network.
+- Retention now has a Studio-authenticated, bounded `retention-dry-run-v1` plan with fixed eligibility/block reasons and no mutation path. `ai-daily:retention-check` proves current evidence, public/current-approved Flash, revision history, and approval audit history remain protected.
+- No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
 ## Known Follow-up
 
-- `performance:check` still reports the existing global CSS bundle at `243408` bytes against the `240000` byte budget. This slice did not change CSS; obsolete global styles should be removed in a separate performance task rather than raising the budget here.
+- The frontend performance follow-up is now closed by the archived `07-19-frontend-css-budget-cleanup` task. Current production output passes at `236074 / 240000` CSS bytes and `354307 / 430000` JS bytes.
 
 ## Completion Gate
 

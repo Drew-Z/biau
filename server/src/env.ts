@@ -59,6 +59,7 @@ export const env = {
   operatorOwnerEmails,
   operatorModelChannelId: process.env.OPERATOR_MODEL_CHANNEL_ID?.trim().toLowerCase() || null,
   metricsEnabled: readBoolean(process.env.METRICS_ENABLED),
+  aiDailyOperationsMetricsEnabled: readBoolean(process.env.AI_DAILY_OPERATIONS_METRICS_ENABLED),
   aiDailyPublicCorsOrigins,
   aiDailyTimeZone: getAiDailyTimeZone(),
   aiDailyPublicFeedEnabled: readBooleanWithDefault(process.env.AI_DAILY_PUBLIC_FEED_ENABLED, false),

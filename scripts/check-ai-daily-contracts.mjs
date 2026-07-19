@@ -24,6 +24,8 @@ const deterministicChecks = [
   'ai-daily:quality-check',
   'ai-daily:runner-check',
   'ai-daily:public-feed-check',
+  'ai-daily:operations-check',
+  'ai-daily:retention-check',
 ]
 
 const databaseChecks = [

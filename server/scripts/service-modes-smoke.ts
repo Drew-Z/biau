@@ -310,6 +310,23 @@ try {
 
     const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
     if (publicFeed.status !== 503) throw new Error(`studio mode should mount AI Daily feed and report missing database, got ${publicFeed.status}`)
+
+    const retentionMissingToken = await fetch(`${base}/studio/api/ai-daily/retention/dry-run`)
+    if (retentionMissingToken.status !== 401) {
+      throw new Error(`studio retention dry-run should require admin token, got ${retentionMissingToken.status}`)
+    }
+    const retentionWithoutDb = await fetch(`${base}/studio/api/ai-daily/retention/dry-run`, {
+      headers: { Authorization: 'Bearer studio-smoke-token' },
+    })
+    if (retentionWithoutDb.status !== 503) {
+      throw new Error(`studio retention dry-run should report missing database, got ${retentionWithoutDb.status}`)
+    }
+    const retentionMutation = await fetch(`${base}/studio/api/ai-daily/retention/dry-run?mutate=true`, {
+      headers: { Authorization: 'Bearer studio-smoke-token' },
+    })
+    if (retentionMutation.status !== 400) {
+      throw new Error(`studio retention dry-run should reject mutation requests, got ${retentionMutation.status}`)
+    }
   })
 
   await withService(

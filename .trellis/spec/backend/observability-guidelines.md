@@ -28,6 +28,13 @@ Allowed metrics include:
 - process uptime.
 - HTTP request counters.
 - HTTP request duration histograms.
+- Studio-only AI Daily operational snapshots derived from persisted source health, run/work state, bounded event outcomes, public feed age, and retention-due counts.
+
+AI Daily metric labels are fixed enums only: `health`, `status`, `stage`, `outcome`, `provider_role`, `kind`, `code`, and `severity`. `provider_role` means bounded roles such as `primary` or `fallback`; it must never expose the configured provider, model, endpoint, source, run, issue, or work-item identity. Event outcome metrics use a bounded recent window, and failed-run alerts use the latest run rather than lifetime failure totals, so resolved incidents do not leave permanent alerts.
+
+The Studio JSON diagnostics route is `GET /studio/api/ai-daily/operations` and remains behind Studio authentication. `/metrics` may append the same snapshot only in `studio` / local `all` mode when both `METRICS_ENABLED=true` and `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` are explicitly set. Missing Studio database or collector failure must fail closed as `biau_ai_daily_operations_snapshot_up 0` without returning stack traces or provider/database error details.
+
+Retention metrics are observations, not deletion authorization. `GET /studio/api/ai-daily/retention/dry-run` is the only current cleanup-facing contract: it is Studio-authenticated, bounded to at most 200 candidates, returns stable eligibility/block reasons and reference counts, always reports `mutationsApplied=false`, and rejects any `mutate` query. A future cleanup command must require explicit mutation opt-in, use bounded batches and transactions, preserve audit evidence, and exclude current evidence, deployed/public issues, latest generated revisions, active/current-approved Flash state, and other publication/audit bindings.
 
 ## Prohibited Metrics Data
 
@@ -39,6 +46,7 @@ Never include these in metrics, logs, traces, tags, or labels:
 - Chat message text, assistant prompt text, model responses, citations as raw JSON, or uploaded document content.
 - Database URLs, model provider endpoints, provider names derived from private config, or cloud dashboard URLs.
 - Full URL query strings or dynamic path ids that can create high-cardinality labels.
+- Source URLs, provider/model identifiers, run/issue/work ids, titles, article text, or unbounded raw error categories.
 
 ## Rollout Rules
 
@@ -54,6 +62,7 @@ After changing metrics or observability code:
 
 ```powershell
 npm.cmd run server:build
+npm.cmd run ai-daily:operations-check
 npm.cmd run server:smoke
 $env:METRICS_ENABLED='true'; npm.cmd run server:smoke; Remove-Item Env:\METRICS_ENABLED
 npm.cmd run lint

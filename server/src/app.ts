@@ -9,8 +9,14 @@ import {
 import { env, hasDatabase } from './env.js'
 import { sha256 } from './crypto.js'
 import { hasOperatorAuth, requireDatabase, requireOperator } from './auth.js'
+import { getStudioPrisma } from './db.js'
 import { generateAnswer, hasConfiguredModelChannel, listSafeModelChannels, normalizeModelChannelId } from './model.js'
 import { createMetricsMiddleware, renderPrometheusMetrics } from './metrics.js'
+import {
+  loadAiDailyOperationsSnapshot,
+  renderAiDailyOperationsPrometheus,
+  toAiDailyOperationsDiagnostics,
+} from './aiDailyOperations.js'
 import { retrievePublicAssistantContext } from './ragClient.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import { createStudioRouter } from './studioRoutes.js'
@@ -36,13 +42,29 @@ export function createApp(options: { publicFeedEnabled?: boolean } = {}) {
   if (publicFeedEnabled && (serviceMode === 'studio' || serviceMode === 'all')) app.use(createAiDailyPublicRouter())
   app.use(cors({ origin: env.corsOrigin === '*' ? true : env.corsOrigin }))
 
-  app.get('/metrics', (_req, res) => {
+  app.get('/metrics', async (_req, res) => {
     if (!env.metricsEnabled) {
       res.status(404).json({ error: 'metrics-disabled' })
       return
     }
 
-    res.type('text/plain; version=0.0.4; charset=utf-8').send(renderPrometheusMetrics())
+    let aiDailyMetrics = ''
+    if (env.aiDailyOperationsMetricsEnabled && (serviceMode === 'studio' || serviceMode === 'all')) {
+      const studioPrisma = getStudioPrisma()
+      if (!studioPrisma) {
+        aiDailyMetrics = renderAiDailyOperationsPrometheus(null)
+      } else {
+        try {
+          const snapshot = await loadAiDailyOperationsSnapshot(studioPrisma)
+          aiDailyMetrics = renderAiDailyOperationsPrometheus(toAiDailyOperationsDiagnostics(snapshot))
+        } catch {
+          aiDailyMetrics = renderAiDailyOperationsPrometheus(null)
+        }
+      }
+    }
+
+    const metrics = aiDailyMetrics ? `${renderPrometheusMetrics()}${aiDailyMetrics}\n` : renderPrometheusMetrics()
+    res.type('text/plain; version=0.0.4; charset=utf-8').send(metrics)
   })
 
   if (serviceMode === 'rag') {

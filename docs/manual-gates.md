@@ -20,7 +20,7 @@
 - 模型验收只能使用用户批准的真实业务任务；禁止 ping、doctor、空 prompt 和无意义测活。
 - 完成记录只写低敏结论和可复跑命令，不记录配置值或私有内容。
 - 状态项目变化后运行 `npm.cmd run docs:manual-gates-check`，保证每个公开项目都有对应人工边界。
-- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check` 和 `npm.cmd run ai-daily:contracts-check`；这两个命令不替代生产 migration、Cron 启用或真实内容验收。
+- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代生产 migration、Cron 启用或真实内容验收。
 
 ## BIAU 平台门禁
 
@@ -58,6 +58,7 @@
 | AI Daily 真实来源 | 需要逐条确认日期、事实、版权和来源上下文 | source URL 数量、发布日期、审核结论，不复制长段原文 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
 | AI Daily 公开 Feed 上线 | 新增公开索引 migration、Cloudflare browser base 和 Studio CORS allowlist 需要平台配置 | 只记录 migration 名、公开 route HTTP 状态、ETag/CORS 类别和页面截图，不记录数据库 URL 或 token |
+| AI Daily retention mutation | 删除/归档会触及 evidence、公开投影和审核审计链 | 当前仅允许受保护 dry-run；未来必须先备份、审查候选、批准显式 mutate、分批事务执行并验证回滚 |
 | 资源分享 | 该栏目代表站长主观筛选 | 由用户撰写或逐条审核，不批量自动填充 |
 
 ## 关联项目门禁
@@ -80,7 +81,7 @@
 | --- | --- | --- |
 | Cloudflare Analytics / Search Console / Webmaster | 需要站点所有权 | 可独立启用，不阻塞产品功能 |
 | Plausible 或 Umami 二选一 | 需要隐私、托管和口径选择 | 不同时接两套访客统计 |
-| Prometheus / Grafana / ARMS | 需要 scrape、告警和平台账号 | `/metrics` 默认关闭，先保留 synthetic 与低敏 health |
+| Prometheus / Grafana / ARMS | 需要 scrape、告警和平台账号 | `/metrics` 默认关闭；Studio 已提供低敏 AI Daily snapshot，生产 scrape/dashboard/alert routing 仍需人工启用 |
 | Sentry / Faro / Langfuse | 可能收集错误、prompt、trace 和用户内容 | 明确采样、脱敏和保留周期后再接入 |
 
 ## 已完成的低敏事实
@@ -124,6 +125,7 @@
 ## 延期项
 
 - AI Daily 自动抓取和自动发布。
+- AI Daily retention mutation；当前已实现受保护的只读 dry-run 与候选阻断原因，但没有删除/归档路径。
 - Umami/Plausible、Prometheus/Grafana/ARMS、Sentry/Faro/Langfuse。
 - GitHub Social Preview 与额外运营素材。
 - Chatus 与 BIAU 的只读 MCP 集成；先完成 Chatus 自身产品化。

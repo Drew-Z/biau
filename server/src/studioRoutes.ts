@@ -25,6 +25,8 @@ import {
   upsertAiDailySourceFeed,
 } from './aiDailyIngestionRepository.js'
 import { loadAiDailyWorkspace } from './studioAiDailyWorkspace.js'
+import { loadAiDailyOperationsSnapshot, toAiDailyOperationsDiagnostics } from './aiDailyOperations.js'
+import { loadAiDailyRetentionDryRun, parseAiDailyRetentionDryRunLimit } from './aiDailyRetention.js'
 import { applyAiDailyEditorialOverride } from './aiDailyEditorialOverrideRepository.js'
 import {
   applyAiDailyGeneratedRevision,
@@ -604,6 +606,34 @@ export function createStudioRouter() {
       const feeds = await listAiDailySourceFeeds(prisma, { enabled })
       res.json({ feeds: feeds.map(toAiDailySourceFeedResponse) })
     } catch (error) {
+      next(error)
+    }
+  })
+
+  router.get('/ai-daily/operations', async (_req, res, next) => {
+    try {
+      const prisma = requireStudioDatabase()
+      const snapshot = await loadAiDailyOperationsSnapshot(prisma)
+      res.json(toAiDailyOperationsDiagnostics(snapshot))
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  router.get('/ai-daily/retention/dry-run', async (req, res, next) => {
+    try {
+      if (req.query.mutate !== undefined) {
+        res.status(400).json({ error: 'retention-mutation-not-supported' })
+        return
+      }
+      const limit = parseAiDailyRetentionDryRunLimit(req.query.limit)
+      const prisma = requireStudioDatabase()
+      res.json(await loadAiDailyRetentionDryRun(prisma, new Date(), limit))
+    } catch (error) {
+      if (isErrorMessage(error, 'invalid-ai-daily-retention-limit')) {
+        res.status(400).json({ error: 'invalid-ai-daily-retention-limit' })
+        return
+      }
       next(error)
     }
   })

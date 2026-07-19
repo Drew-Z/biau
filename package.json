@@ -59,6 +59,8 @@
     "ai-daily:runner-check": "tsx server/scripts/ai-daily-runner-check.ts",
     "ai-daily:generation-repository-check": "tsx server/scripts/ai-daily-generation-repository-check.ts",
     "ai-daily:public-feed-check": "tsx server/scripts/ai-daily-public-feed-check.ts",
+    "ai-daily:operations-check": "tsx server/scripts/ai-daily-operations-check.ts",
+    "ai-daily:retention-check": "tsx server/scripts/ai-daily-retention-check.ts",
     "ai-daily:contracts-check": "node scripts/check-ai-daily-contracts.mjs",
     "ai-daily:production-readiness-check": "node scripts/check-ai-daily-production-readiness.mjs",
     "ai-daily:ingest-tick": "tsx server/scripts/ai-daily-runner.ts ingest-tick",

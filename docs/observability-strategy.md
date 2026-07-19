@@ -89,7 +89,7 @@
 
 ## Assistant API 指标边界
 
-当前 assistant API 支持默认关闭的 `/metrics`：
+当前四个后端服务支持默认关闭的 `/metrics`：
 
 ```text
 METRICS_ENABLED=false
@@ -114,12 +114,30 @@ GET /metrics -> text/plain; version=0.0.4; charset=utf-8
 - `biau_assistant_api_http_requests_total`
 - `biau_assistant_api_http_request_duration_seconds`
 
+Studio 模式还会从内容数据库只读汇总 AI Daily 运维 snapshot：
+
+- `biau_ai_daily_operations_snapshot_up`
+- `biau_ai_daily_sources_enabled` / `biau_ai_daily_sources_total`
+- `biau_ai_daily_source_last_lag_seconds`
+- `biau_ai_daily_runs_total` / `biau_ai_daily_active_runs_total`
+- `biau_ai_daily_latest_run_end_to_end_lag_seconds` / `biau_ai_daily_latest_run_freshness_age_seconds`
+- `biau_ai_daily_work_items_total` / `biau_ai_daily_work_items_ready_backlog` / `biau_ai_daily_work_items_expired_leases`
+- `biau_ai_daily_run_events_total` / `biau_ai_daily_provider_role_events_total`
+- `biau_ai_daily_issues_total`
+- `biau_ai_daily_public_flash_items_active` / `biau_ai_daily_public_flash_age_seconds`
+- `biau_ai_daily_retention_due_total` / `biau_ai_daily_alerts_total`
+
+受 Studio token 保护的 `GET /studio/api/ai-daily/operations` 返回同一份低敏 JSON diagnostics。它不会返回 id、URL、标题、正文、provider 身份、错误原文或凭据；只有 `METRICS_ENABLED=true` 且 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时 `/metrics` 才追加 snapshot，查询失败只输出 `biau_ai_daily_operations_snapshot_up 0`。
+
+`GET /studio/api/ai-daily/retention/dry-run` 是独立的受保护维护视图，不属于 Prometheus 指标。它只返回有限候选的 opaque id、保留边界、固定 decision/reason、生命周期和引用计数，并明确声明 `mutationsApplied=false`。接口不接受 mutation，不能把 operations 的 retention count 当作删除授权。
+
 标签只允许：
 
 - `method`
 - `route`
 - `status_class`
 - histogram 的 `le`
+- AI Daily 固定枚举：`health`、`status`、`stage`、`outcome`、`provider_role`、`kind`、`code`、`severity`
 
 不会记录：
 
@@ -129,6 +147,7 @@ GET /metrics -> text/plain; version=0.0.4; charset=utf-8
 - 用户提问正文。
 - 完整 URL query。
 - 数据库连接串、模型 endpoint 或 provider key。
+- source URL、run/issue/work id、标题、正文、provider id 或错误原文。
 
 ## 人工 Gate
 

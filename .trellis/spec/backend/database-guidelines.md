@@ -81,6 +81,13 @@ Do not migrate ordinary chats, invites, members, model assignments, usage, ambig
 - Convert trusted bounded metadata to `Prisma.InputJsonValue` intentionally.
 - Never spread arbitrary request bodies into Prisma writes.
 
+### AI Daily Retention Dry-Run
+
+- `GET /studio/api/ai-daily/retention/dry-run` is read-only and must use the Studio Prisma client behind Studio authentication.
+- Query only bounded, expired windows (`expiresAt <= now` for evidence and `retentionUntil <= now` for Flash); fetch one overflow row per kind to report `truncated` without claiming a full scan.
+- The shared retention policy owns classification. Current evidence, current approved revisions, non-withdrawn Flash lifecycle, revision history, and approval audit history fail closed as blocked; no route may issue `deleteMany`, `updateMany`, or archive writes for this contract.
+- Response counts describe the returned candidate window. Opaque record ids may appear only in this authenticated maintenance response; never copy them into public status, metrics, logs, blog content, or generated knowledge.
+
 ## Content Studio Review Contract
 
 - Review status: `approved | needs-changes | rejected | pending`.

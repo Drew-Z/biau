@@ -57,10 +57,28 @@ VITE_AI_DAILY_API_BASE_URL=https://<studio-service>.onrender.com
 ```powershell
 npm.cmd run ai-daily:production-readiness-check
 npm.cmd run ai-daily:production-readiness-check -- --json
+npm.cmd run ai-daily:operations-check
+npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 ```
 
-`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。两者都只使用纯内存 fixture。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+
+## 生产运维诊断
+
+Studio token 持有者可以读取：
+
+```text
+GET /studio/api/ai-daily/operations
+```
+
+它从 Studio 数据库生成只读 snapshot，汇总来源健康、run/stage、work backlog、过期 lease、最近 24 小时质量拒绝、公开 Flash 年龄和待处理 retention 数量。响应只包含固定枚举、计数和时间，不包含 source URL、run/issue id、provider id、标题、正文、token、数据库 URL 或原始错误。失败告警仅依据最新一次 run，历史失败只保留为总量，不会让系统永久处于告警状态。
+
+当 Studio 服务显式设置 `METRICS_ENABLED=true` 和 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时，同一个 snapshot 会追加到 `/metrics`。AI Daily 指标覆盖 source health、run stage/status、latest run freshness/end-to-end lag、work backlog/lease、最近 24 小时 outcome/provider role、issue status、public feed age 和 retention due；只使用固定低基数 labels，例如 `health`、`status`、`stage`、`outcome`、`provider_role`、`kind`、`code` 和 `severity`。provider role 仅区分 primary/fallback 等角色，不输出渠道或模型身份。数据库未配置或 snapshot 查询失败时，只输出 `biau_ai_daily_operations_snapshot_up 0`，不会让 scrape 请求失败或泄露异常。
+
+Studio token 持有者还可以读取 `GET /studio/api/ai-daily/retention/dry-run?limit=100`。该接口使用 `retention-dry-run-v1` 策略生成只读计划：过期且不是 current evidence 的 evidence 可标记为 eligible；Flash 只有在已撤回、没有 current approved revision、没有 revision history、没有 approval audit 时才可标记为 eligible。其余记录会返回固定的 blocked reason，例如 `current-evidence`、`current-approved-revision`、`approval-audit-history`、`publication-lifecycle` 或 `revision-history`。结果始终带 `mode=dry-run` 与 `mutationsApplied=false`，默认返回 100 条、最多 200 条；汇总计数只描述本次返回窗口，`truncated=true` 表示还有更多到期记录未进入本次窗口。传入任何 `mutate` 参数都会被拒绝。
+
+当前没有删除或归档 mutation。未来 cleanup 必须另建显式 mutate 命令、事务保护、批量上限、并发/版本校验、审计记录和备份回滚；不得按 `createdAt` 粗暴删除 issue、revision、active Flash、当前 evidence 或有审核历史的记录。
 
 ## AI Daily issue brief 建议
 
