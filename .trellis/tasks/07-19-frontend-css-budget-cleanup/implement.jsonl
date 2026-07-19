@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend performance, flow background, and production-preview regression contracts"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Preserve the existing class-based UI and active background component boundary"}

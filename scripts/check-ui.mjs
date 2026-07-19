@@ -3822,6 +3822,7 @@ await publicFeedRefreshPage.close()
 const publicFeedStalePage = await browser.newPage({ viewport: { width: 390, height: 900 } })
 await installAiDailyPublicStaleFixture(publicFeedStalePage)
 await gotoApp(publicFeedStalePage, '/ai-daily')
+await publicFeedStalePage.getByText('投影需要关注').waitFor({ state: 'visible', timeout: 3_000 })
 if (!(await publicFeedStalePage.getByText('投影需要关注').isVisible().catch(() => false))) {
   failures.push('/ai-daily stale: expected visible stale projection notice')
 }

@@ -530,204 +530,8 @@
   opacity: 0.36;
 }
 
-.harbor-environment {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  opacity: 0;
-  contain: paint;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-.harbor-environment::before,
-.harbor-environment::after {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  display: block;
-  opacity: 0;
-  will-change: transform, opacity;
-}
-
-.harbor-environment::before {
-  inset: clamp(12px, 1.6vw, 24px);
-  border-radius: clamp(20px, 3vw, 42px);
-  padding: 1px;
-  background:
-    linear-gradient(112deg, transparent 0 18%, rgba(255, 211, 110, 0.58) 28%, rgba(84, 224, 192, 0.5) 38%, transparent 54%),
-    linear-gradient(292deg, transparent 4%, rgba(117, 172, 234, 0.46) 18%, rgba(234, 247, 255, 0.5) 26%, transparent 44%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  mix-blend-mode: screen;
-  transform: translate3d(-2%, 0, 0);
-  animation: harborEdgeTrace 18s var(--ease-in-out) infinite alternate;
-}
-
-.harbor-environment::after {
-  inset: -12vmax;
-  background:
-    radial-gradient(ellipse 26% 16% at 16% 28%, rgba(255, 255, 255, 0.18), transparent 74%),
-    radial-gradient(ellipse 36% 20% at 78% 18%, rgba(234, 247, 255, 0.14), transparent 76%),
-    radial-gradient(ellipse 42% 26% at 46% 76%, rgba(255, 211, 110, 0.1), transparent 76%);
-  filter: blur(24px);
-  mix-blend-mode: soft-light;
-  transform: translate3d(2%, -1%, 0) scale(1.04);
-  animation: harborVeilDrift 36s var(--ease-in-out) infinite alternate;
-}
-
-.app.page-home .harbor-environment,
-.app.page-tools .harbor-environment,
-.app.page-subpage .harbor-environment {
-  opacity: 1;
-}
-
-.app.page-home .harbor-environment::before,
-.app.page-tools .harbor-environment::before,
-.app.page-subpage .harbor-environment::before {
-  opacity: var(--harbor-edge-opacity);
-}
-
-.app.page-home .harbor-environment::after,
-.app.page-tools .harbor-environment::after,
-.app.page-subpage .harbor-environment::after {
-  opacity: calc(var(--harbor-mist-opacity) * 0.78);
-}
-
-.harbor-environment > span {
-  position: absolute;
-  inset: -10vmax;
-  display: block;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  will-change: transform, opacity;
-}
-
-.harbor-environment__beam {
-  background:
-    linear-gradient(
-      118deg,
-      transparent 0 18%,
-      rgba(117, 172, 234, 0.06) 28%,
-      rgba(234, 247, 255, 0.24) 38%,
-      rgba(84, 224, 192, 0.14) 46%,
-      transparent 62% 100%
-    ),
-    linear-gradient(
-      24deg,
-      transparent 0 46%,
-      rgba(255, 211, 110, 0.12) 55%,
-      rgba(170, 155, 230, 0.1) 63%,
-      transparent 78% 100%
-    );
-  filter: blur(18px) saturate(1.08);
-  mix-blend-mode: screen;
-  opacity: var(--harbor-beam-opacity);
-  transform: translate3d(-6%, 0, 0) rotate(-5deg) scale(1.04);
-  animation: harborDeepBeam 24s var(--ease-in-out) infinite alternate;
-}
-
-.harbor-environment__spectrum {
-  background:
-    radial-gradient(ellipse 44% 54% at 16% 14%, rgba(230, 232, 157, 0.38), transparent 66%),
-    radial-gradient(ellipse 52% 62% at 42% 28%, rgba(144, 191, 224, 0.46), transparent 68%),
-    radial-gradient(ellipse 54% 64% at 72% 46%, rgba(102, 126, 234, 0.4), transparent 70%),
-    radial-gradient(ellipse 46% 54% at 88% 76%, rgba(6, 180, 212, 0.32), transparent 70%);
-  filter: blur(38px) saturate(1.18);
-  mix-blend-mode: var(--harbor-spectrum-blend);
-  opacity: var(--harbor-spectrum-opacity);
-  transform: translate3d(1%, -4%, 0) scale(1.08);
-  animation: harborSpectrumSwim 34s var(--ease-in-out) infinite alternate;
-}
-
-.harbor-environment__mist {
-  background:
-    radial-gradient(ellipse 34% 18% at 12% 24%, rgba(255, 255, 255, 0.18), transparent 72%),
-    radial-gradient(ellipse 28% 20% at 68% 18%, rgba(234, 255, 242, 0.14), transparent 74%),
-    radial-gradient(ellipse 46% 26% at 42% 84%, rgba(255, 255, 255, 0.12), transparent 74%),
-    radial-gradient(ellipse 24% 16% at 86% 58%, rgba(255, 211, 110, 0.1), transparent 74%),
-    repeating-radial-gradient(
-      ellipse at 46% 54%,
-      rgba(255, 255, 255, 0.045) 0 2px,
-      transparent 2px 42px
-    );
-  filter: blur(28px) contrast(1.04);
-  mix-blend-mode: var(--harbor-mist-blend);
-  opacity: var(--harbor-mist-opacity);
-  transform: translate3d(3%, 0, 0) scale(1.1);
-  animation: harborLowMist 40s var(--ease-in-out) infinite alternate;
-}
-
-:root:not(.light-theme)[data-harbor-scene='stellar'] .harbor-environment__beam {
-  background:
-    linear-gradient(
-      108deg,
-      transparent 0 18%,
-      rgba(117, 172, 234, 0.08) 30%,
-      rgba(234, 247, 255, 0.36) 42%,
-      rgba(84, 224, 192, 0.22) 50%,
-      transparent 66% 100%
-    ),
-    linear-gradient(
-      26deg,
-      transparent 0 54%,
-      rgba(117, 172, 234, 0.14) 64%,
-      transparent 76% 100%
-    ),
-    linear-gradient(
-      116deg,
-      transparent 0 69%,
-      rgba(255, 211, 110, 0.15) 74%,
-      transparent 80% 100%
-    );
-  filter: blur(16px) saturate(1.18);
-}
-
-:root[data-harbor-scene='garden'] .harbor-environment__mist {
-  background:
-    radial-gradient(ellipse 44% 26% at 20% 20%, rgba(229, 255, 236, 0.36), transparent 72%),
-    radial-gradient(ellipse 38% 30% at 82% 24%, rgba(56, 112, 62, 0.22), transparent 76%),
-    radial-gradient(ellipse 62% 42% at 48% 82%, rgba(255, 255, 255, 0.22), transparent 76%),
-    repeating-radial-gradient(
-      ellipse at 50% 48%,
-      rgba(255, 255, 255, 0.065) 0 2px,
-      transparent 2px 34px
-    );
-  filter: blur(34px) saturate(1.08) contrast(1.04);
-}
-
-.muxing-flow-grain {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  background-image: radial-gradient(
-    circle,
-    #13213c33 0 var(--flow-grain-size, 1px),
-    transparent calc(var(--flow-grain-size, 1px) + 0.4px)
-  );
-  background-size: var(--flow-grain-density, 8px) var(--flow-grain-density, 8px);
-  mix-blend-mode: soft-light;
-  opacity: 0;
-}
-
-.app.page-home .muxing-flow-grain,
-.app.page-tools .muxing-flow-grain,
-.app.page-subpage .muxing-flow-grain {
-  opacity: var(--flow-grain-opacity);
-}
-
-/* The fixed gradient remains the base while the fluid, ribbon, and harbor layers
-   add scene-specific depth. Mobile rules below reduce their cost without hiding them. */
+/* App pseudo-elements remain the CSS fallback while the canvas owns ambient motion.
+   Legacy gradient rules below stay isolated for a later cleanup. */
 .app.page-home,
 .app.page-tools,
 .app.page-subpage {
@@ -741,10 +545,6 @@
 .app.page-home::after,
 .app.page-tools::after,
 .app.page-subpage::after {
-  display: block;
-}
-
-.harbor-environment {
   display: block;
 }
 
@@ -854,20 +654,14 @@ html.harbor-intro-active .app.page-home::before,
 html.harbor-intro-active .app.page-home::after,
 html.harbor-intro-active .app.page-home .gradient-bg,
 html.harbor-intro-active .app.page-home .gradient-bg::before,
-html.harbor-intro-active .app.page-home .gradient-bg::after,
-html.harbor-intro-active .app.page-home .harbor-environment,
-html.harbor-intro-active .app.page-home .harbor-environment::before,
-html.harbor-intro-active .app.page-home .harbor-environment::after,
-html.harbor-intro-active .app.page-home .harbor-environment > span {
+html.harbor-intro-active .app.page-home .gradient-bg::after {
   animation: none !important;
 }
 
 html.harbor-intro-active .app.page-home::before,
 html.harbor-intro-active .app.page-home::after,
 html.harbor-intro-active .app.page-home .gradient-bg::before,
-html.harbor-intro-active .app.page-home .gradient-bg::after,
-html.harbor-intro-active .app.page-home .harbor-environment,
-html.harbor-intro-active .app.page-home .muxing-flow-grain {
+html.harbor-intro-active .app.page-home .gradient-bg::after {
   opacity: 0 !important;
 }
 
@@ -6134,76 +5928,6 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   }
 }
 
-@keyframes harborDeepBeam {
-  0% {
-    opacity: calc(var(--harbor-beam-opacity) * 0.72);
-    transform: translate3d(-8%, -2%, 0) rotate(-5deg) scale(1.03);
-  }
-  48% {
-    opacity: var(--harbor-beam-opacity);
-    transform: translate3d(0%, 1%, 0) rotate(-1deg) scale(1.07);
-  }
-  100% {
-    opacity: calc(var(--harbor-beam-opacity) * 0.84);
-    transform: translate3d(7%, 3%, 0) rotate(3deg) scale(1.1);
-  }
-}
-
-@keyframes harborSpectrumSwim {
-  0% {
-    transform: translate3d(-2%, -4%, 0) scale(1.04) rotate(-2deg);
-  }
-  45% {
-    opacity: calc(var(--harbor-spectrum-opacity) * 1.18);
-  }
-  100% {
-    transform: translate3d(3%, 2%, 0) scale(1.12) rotate(2.5deg);
-  }
-}
-
-@keyframes harborLowMist {
-  0% {
-    transform: translate3d(5%, 2%, 0) scale(1.08) rotate(1deg);
-  }
-  50% {
-    opacity: calc(var(--harbor-mist-opacity) * 1.12);
-    transform: translate3d(-1%, 0, 0) scale(1.14) rotate(-0.6deg);
-  }
-  100% {
-    transform: translate3d(-6%, -3%, 0) scale(1.18) rotate(-2deg);
-  }
-}
-
-@keyframes harborEdgeTrace {
-  0% {
-    opacity: calc(var(--harbor-edge-opacity) * 0.68);
-    transform: translate3d(-2%, 0, 0) rotate(0deg);
-  }
-  42% {
-    opacity: var(--harbor-edge-opacity);
-    transform: translate3d(1%, -1%, 0) rotate(0.3deg);
-  }
-  100% {
-    opacity: calc(var(--harbor-edge-opacity) * 0.82);
-    transform: translate3d(2%, 1%, 0) rotate(-0.25deg);
-  }
-}
-
-@keyframes harborVeilDrift {
-  0% {
-    opacity: calc(var(--harbor-mist-opacity) * 0.54);
-    transform: translate3d(3%, -2%, 0) scale(1.04) rotate(1deg);
-  }
-  52% {
-    opacity: calc(var(--harbor-mist-opacity) * 0.88);
-    transform: translate3d(-1%, 2%, 0) scale(1.1) rotate(-0.6deg);
-  }
-  100% {
-    opacity: calc(var(--harbor-mist-opacity) * 0.66);
-    transform: translate3d(-4%, -1%, 0) scale(1.14) rotate(-1.4deg);
-  }
-}
-
 @media (max-width: 1180px) {
   .studio-page {
     width: min(calc(100% - 32px), var(--shell-max));
@@ -6489,28 +6213,6 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .app.page-tools::after,
   .app.page-subpage::after {
     inset: -15vmax;
-  }
-
-  .harbor-environment::before {
-    inset: 8px;
-    border-radius: 18px;
-  }
-
-  .harbor-environment::after,
-  .harbor-environment > span {
-    inset: -6vmax;
-  }
-
-  .harbor-environment__beam {
-    filter: blur(12px) saturate(1.04);
-  }
-
-  .harbor-environment__spectrum {
-    filter: blur(24px) saturate(1.08);
-  }
-
-  .harbor-environment__mist {
-    filter: blur(18px) contrast(1.02);
   }
 
   .app.page-home .hero-panel {
@@ -7455,10 +7157,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
   .app.page-tools .gradient-bg::after,
   .app.page-subpage .gradient-bg::after,
   .app.page-home .carousel-wrapper::before,
-  .app.page-home .carousel-wrapper::after,
-  .harbor-environment::before,
-  .harbor-environment::after,
-  .harbor-environment > span {
+  .app.page-home .carousel-wrapper::after {
     animation: none !important;
   }
 
@@ -7500,9 +7199,7 @@ html.harbor-intro-active .app.page-home .muxing-flow-grain {
 .flow-background[data-flow-fallback='css'] { opacity: 0; }
 .app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::before,
 .app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::after,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .gradient-bg,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .harbor-environment,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .muxing-flow-grain { display: none !important; animation: none !important; }
+.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .gradient-bg { display: none !important; animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .flow-background { transition: none; } }
 
 /* Mobile editorial rhythm: consolidate tools and move useful content into the first viewport. */
