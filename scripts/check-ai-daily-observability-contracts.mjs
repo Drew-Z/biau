@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parse as parseYaml } from 'yaml'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const categories = ['config', 'provider', 'evidence', 'quality', 'infrastructure', 'stale-content']
@@ -17,21 +18,6 @@ function assert(condition, message) {
   if (!condition) throw new Error(message)
 }
 
-function readAlertBlocks(text) {
-  const blocks = []
-  let current = null
-  for (const line of text.split(/\r?\n/u)) {
-    const match = line.match(/^\s+- alert:\s*([A-Za-z0-9_-]+)\s*$/u)
-    if (match) {
-      if (current) blocks.push(current)
-      current = { name: match[1], lines: [] }
-    }
-    if (current) current.lines.push(line)
-  }
-  if (current) blocks.push(current)
-  return blocks
-}
-
 async function main() {
   const [dashboardText, alertsText, packageText, suiteText] = await Promise.all([
     readFile(resolve(repoRoot, 'observability/ai-daily-grafana-dashboard.json'), 'utf8'),
@@ -40,6 +26,7 @@ async function main() {
     readFile(resolve(repoRoot, 'scripts/check-ai-daily-contracts.mjs'), 'utf8'),
   ])
   const dashboard = JSON.parse(dashboardText)
+  const alerts = parseYaml(alertsText)
   const packageJson = JSON.parse(packageText)
 
   assert(dashboard.uid === 'biau-ai-daily-operations', 'dashboard uid should remain stable')
@@ -49,16 +36,28 @@ async function main() {
   assert(packageJson.scripts?.['ai-daily:observability-contract-check'], 'package script should expose the observability contract check')
   assert(suiteText.includes("'ai-daily:observability-contract-check'"), 'the deterministic AI Daily suite should run the observability contract check')
 
-  const alertBlocks = readAlertBlocks(alertsText)
-  assert(alertBlocks.length === categories.length, `alert rules should contain exactly ${categories.length} rules`)
-  assert(new Set(alertBlocks.map((block) => block.name)).size === alertBlocks.length, 'alert names should be unique')
+  assert(Array.isArray(alerts?.groups) && alerts.groups.length === 1, 'alert rules should contain one production group')
+  const [alertGroup] = alerts.groups
+  assert(alertGroup?.name === 'biau-ai-daily-production', 'alert group name should remain stable')
+  assert(alertGroup?.interval === '1m', 'alert group interval should remain one minute')
+  const alertRules = Array.isArray(alertGroup?.rules) ? alertGroup.rules : []
+  assert(alertRules.length === categories.length + 1, `alert rules should contain six failure-category rules and one snapshot availability rule`)
+  assert(new Set(alertRules.map((rule) => rule?.alert)).size === alertRules.length, 'alert names should be unique')
+
+  const snapshotUnavailable = alertRules.find((rule) => rule?.alert === 'BiauAiDailyOperationsSnapshotUnavailable')
+  assert(snapshotUnavailable, 'alert rules should include the operations snapshot availability rule')
+  assert(snapshotUnavailable.expr === 'biau_ai_daily_operations_snapshot_up == 0 or absent(biau_ai_daily_operations_snapshot_up)', 'snapshot availability alert should fail closed when the collector reports unavailable or the series is missing')
+  assert(snapshotUnavailable.for === '5m', 'snapshot availability alert should use the infrastructure critical delay')
+  assert(snapshotUnavailable.labels?.category === 'infrastructure', 'snapshot availability alert should use the infrastructure category')
+  assert(snapshotUnavailable.labels?.severity === 'critical', 'snapshot availability alert should be critical')
 
   for (const category of categories) {
     assert(dashboardExpressions.includes(`max(biau_ai_daily_failure_signals{category="${category}"})`), `dashboard should include ${category}`)
-    const block = alertBlocks.find((candidate) => candidate.lines.some((line) => line.includes(`category: ${category}`)))
-    assert(block, `alert rules should include ${category}`)
-    assert(block.lines.some((line) => line.includes(`expr: biau_ai_daily_failure_signals{category="${category}"} > 0`)), `alert expression should bind ${category}`)
-    assert(block.lines.some((line) => line.includes(`severity: ${expectedSeverity[category]}`)), `alert rule should assign the expected ${category} severity`)
+    const rule = alertRules.find((candidate) => candidate?.expr === `biau_ai_daily_failure_signals{category="${category}"} > 0`)
+    assert(rule, `alert rules should include ${category}`)
+    assert(rule.labels?.category === category, `alert rule should label ${category}`)
+    assert(rule.labels?.severity === expectedSeverity[category], `alert rule should assign the expected ${category} severity`)
+    assert(typeof rule.annotations?.summary === 'string' && rule.annotations.summary.length > 0, `alert rule should describe ${category}`)
   }
 
   const publicSafeText = `${dashboardText}\n${alertsText}`.toLowerCase()

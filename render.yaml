@@ -124,6 +124,8 @@ services:
         sync: false
       - key: METRICS_ENABLED
         value: "false"
+      - key: AI_DAILY_OPERATIONS_METRICS_ENABLED
+        value: "false"
 
 # AI Daily Cron jobs intentionally remain outside this Blueprint until the
 # first live edition passes the human acceptance gate. When created manually,

@@ -2,6 +2,14 @@ groups:
   - name: biau-ai-daily-production
     interval: 1m
     rules:
+      - alert: BiauAiDailyOperationsSnapshotUnavailable
+        expr: biau_ai_daily_operations_snapshot_up == 0 or absent(biau_ai_daily_operations_snapshot_up)
+        for: 5m
+        labels:
+          category: infrastructure
+          severity: critical
+        annotations:
+          summary: AI Daily operations snapshot is unavailable or missing.
       - alert: BiauAiDailyConfigFailure
         expr: biau_ai_daily_failure_signals{category="config"} > 0
         for: 5m

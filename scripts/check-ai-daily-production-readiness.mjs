@@ -385,7 +385,7 @@ async function main() {
       'AI Daily dashboard and alert contract',
       observabilityContractOk,
       observabilityContractOk
-        ? 'Six fixed failure categories are covered by repository dashboard and alert assets'
+        ? 'Six fixed failure categories plus operations snapshot availability are covered by repository dashboard and alert assets'
         : 'AI Daily dashboard or alert contract failed; run npm.cmd run ai-daily:observability-contract-check for details',
     ),
   )
