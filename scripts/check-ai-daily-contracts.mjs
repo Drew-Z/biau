@@ -14,6 +14,7 @@ const deterministicChecks = [
   'studio:ai-daily-workspace-check',
   'studio:ai-daily-flash-check',
   'ai-daily:source-check',
+  'ai-daily:manifest-check',
   'ai-daily:discovery-check',
   'ai-daily:evidence-check',
   'ai-daily:freshness-check',

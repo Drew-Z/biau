@@ -5,7 +5,7 @@
 - [x] Finalize environment-variable and secret inventory.
 - [x] Add Render build/start/schedule documentation for both Cron Jobs.
 - [x] Add production-readiness configuration command with no network calls.
-- [ ] Curate sources/query groups and run offline model evaluation.
+- [ ] Curate sources/query groups and run offline model evaluation. (versioned 30-source/10-query-group candidate pack and offline manifest contract completed; human source approval and real candidate-model evaluation remain)
 - [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics and guarded retention dry-run completed; mutation and production alert routing remain)
 - [x] Run the full deterministic quality gate.
 - [ ] Obtain approval and run one real edition.
@@ -24,6 +24,7 @@
 - Studio now exposes a token-protected read-only AI Daily operations snapshot; Studio `/metrics` appends the same low-cardinality data when metrics are explicitly enabled.
 - Source health, run/stage state, work backlog/expired leases, bounded quality outcomes, public feed age, and retention-due counts are covered by `ai-daily:operations-check` without a database or network.
 - Retention now has a Studio-authenticated, bounded `retention-dry-run-v1` plan with fixed eligibility/block reasons and no mutation path. `ai-daily:retention-check` proves current evidence, public/current-approved Flash, revision history, and approval audit history remain protected.
+- `server/data/ai-daily-source-manifest.v1.json` now records 30 disabled source candidates and 10 disabled discovery query groups with rationale and per-item review state. `ai-daily:manifest-check` validates schema, public URL/domain rules, unique canonical identity, query budgets, and pending-review fail-closed behavior without network calls.
 - No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
 ## Known Follow-up

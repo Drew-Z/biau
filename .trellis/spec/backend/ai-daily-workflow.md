@@ -1,5 +1,21 @@
 # AI Daily Workflow Guidelines
 
+## Scenario: Versioned source and discovery curation
+
+### Contract
+
+- `server/data/ai-daily-source-manifest.v1.json` is the versioned editorial candidate registry. It contains source definitions plus discovery query groups, not collected articles and not production secrets.
+- Candidate manifests use `readiness: "pending-human-review"`; every entry remains `enabled: false` and `review.status: "candidate"` until a human verifies public access, dates, facts, copyright/quotation boundaries, page structure, tier, topics, query cost, and expected noise.
+- Each source is parsed through `normalizeAiDailySourceFeedDefinition`; manifest code must not duplicate canonical URL, locale, domain, cadence, or source-tier normalization rules.
+- Query groups store stable discovery inputs only: id, rationale, locale, queries, include/exclude domains, bounded provider budget, minimum primary results, signal policy, enabled flag, and review metadata. Edition windows are runtime inputs and must not be committed into the registry.
+- A passing manifest check proves repository shape only. It does not prove that a URL is currently reachable, a provider is configured, or a source is approved for production.
+
+### Required verification
+
+- Run `npm.cmd run ai-daily:manifest-check` after changing the manifest, parser, source-feed normalization, query budget, or review-state contract.
+- The check must use local files only and cover count bounds, duplicate ids/canonical URLs, public HTTPS, canonical locale/domain, TIER_1 domain matching, query budget bounds, include/exclude conflicts, reviewer requirements, and rejection of enabling pending candidates.
+- Keep the check inside `ai-daily:contracts-check` and the script-registration list used by `ai-daily:production-readiness-check`.
+
 ## Scenario: Public AI Daily Flash Feed
 
 ### HTTP and deployment boundary

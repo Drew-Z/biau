@@ -20,7 +20,7 @@
 - 模型验收只能使用用户批准的真实业务任务；禁止 ping、doctor、空 prompt 和无意义测活。
 - 完成记录只写低敏结论和可复跑命令，不记录配置值或私有内容。
 - 状态项目变化后运行 `npm.cmd run docs:manual-gates-check`，保证每个公开项目都有对应人工边界。
-- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代生产 migration、Cron 启用或真实内容验收。
+- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、生产 migration、Cron 启用或真实内容验收。
 
 ## BIAU 平台门禁
 
@@ -55,7 +55,7 @@
 | --- | --- | --- |
 | Generation runner migration | 生产 Studio 数据库需要备份和可回滚 revision | 执行 `20260718010000_ai_daily_generation_runner` 后只记录 migration 名、成功状态和低敏计数 |
 | 首篇公开导出 | 公开数据文件必须审查 diff | `studio:export -- --run-checks`、博客检查和最终 Git diff |
-| AI Daily 真实来源 | 需要逐条确认日期、事实、版权和来源上下文 | source URL 数量、发布日期、审核结论，不复制长段原文 |
+| AI Daily 真实来源与查询组 | `server/data/ai-daily-source-manifest.v1.json` 只是默认禁用的候选包，需要逐条确认日期、事实、版权、页面结构、来源上下文、查询成本和噪声风险 | `ai-daily:manifest-check`、批准/拒绝数量、审核时间和低敏结论，不复制长段原文 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
 | AI Daily 公开 Feed 上线 | 新增公开索引 migration、Cloudflare browser base 和 Studio CORS allowlist 需要平台配置 | 只记录 migration 名、公开 route HTTP 状态、ETag/CORS 类别和页面截图，不记录数据库 URL 或 token |
 | AI Daily retention mutation | 删除/归档会触及 evidence、公开投影和审核审计链 | 当前仅允许受保护 dry-run；未来必须先备份、审查候选、批准显式 mutate、分批事务执行并验证回滚 |

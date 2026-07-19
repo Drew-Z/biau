@@ -47,6 +47,7 @@
     "studio:ai-daily-flash-check": "tsx server/scripts/studio-ai-daily-flash-check.ts",
     "studio:ai-daily-repository-check": "tsx server/scripts/ai-daily-repository-check.ts",
     "ai-daily:source-check": "tsx server/scripts/ai-daily-source-check.ts",
+    "ai-daily:manifest-check": "tsx server/scripts/ai-daily-manifest-check.ts",
     "ai-daily:discovery-check": "tsx server/scripts/ai-daily-discovery-check.ts",
     "ai-daily:evidence-check": "tsx server/scripts/ai-daily-evidence-check.ts",
     "ai-daily:freshness-check": "tsx server/scripts/ai-daily-freshness-check.ts",

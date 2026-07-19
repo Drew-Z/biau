@@ -116,7 +116,7 @@ export function normalizeAiDailySourceFeedDefinition(value: {
     issues.push('url-invalid')
   }
 
-  const locale = normalizeLocale(value.locale ?? 'zh')
+  const locale = normalizeAiDailyLocale(value.locale ?? 'zh')
   if (!locale) issues.push('locale-invalid')
   const topics = normalizeStringList(value.topics ?? [], 12, 80)
   if (topics.length === 0) issues.push('topics-required')
@@ -127,7 +127,7 @@ export function normalizeAiDailySourceFeedDefinition(value: {
   const parsedLookbackMinutes = readBoundedInteger(value.lookbackMinutes, intervalMinutes, 2880)
   if (value.lookbackMinutes !== undefined && parsedLookbackMinutes === null) issues.push('lookback-minutes-invalid')
   const lookbackMinutes = parsedLookbackMinutes ?? Math.max(policy.lookbackMinutes, intervalMinutes)
-  const officialDomain = normalizeDomain(value.officialDomain ?? null)
+  const officialDomain = normalizeAiDailyDomain(value.officialDomain ?? null)
   if (value.officialDomain && !officialDomain) issues.push('official-domain-invalid')
   if (value.lastErrorCategory && !aiDailyIngestionErrorCategories.includes(value.lastErrorCategory)) {
     issues.push('last-error-category-invalid')
@@ -292,7 +292,7 @@ export function normalizeAiDailyCandidateLead(input: AiDailyCandidateLeadInput):
   if (!title) issues.push('title-required')
   const providerKind = boundedText(input.providerKind, 80)
   if (!providerKind) issues.push('provider-kind-required')
-  const locale = normalizeLocale(input.locale ?? 'zh')
+  const locale = normalizeAiDailyLocale(input.locale ?? 'zh')
   if (!locale) issues.push('locale-invalid')
   let canonicalUrl = ''
   let canonicalKey = ''
@@ -877,12 +877,12 @@ function evidenceRank(value: AiDailyEvidenceCandidate['evidenceStatus']) {
   return value === 'READY' ? 0 : value === 'THIN' ? 1 : value === 'CONFLICTING' ? 2 : 3
 }
 
-function normalizeLocale(value: string) {
+export function normalizeAiDailyLocale(value: string) {
   const locale = value.trim().replace(/_/gu, '-')
   return /^[a-z]{2,3}(?:-[A-Z]{2})?$/u.test(locale) ? locale : ''
 }
 
-function normalizeDomain(value: string | null) {
+export function normalizeAiDailyDomain(value: string | null) {
   if (!value) return null
   const domain = value.trim().toLowerCase().replace(/^https?:\/\//u, '').replace(/\/.*$/u, '')
   return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/u.test(domain) ? domain : null

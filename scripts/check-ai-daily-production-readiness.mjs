@@ -1,4 +1,5 @@
 import { access, readFile } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
 import { constants } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -96,6 +97,24 @@ function check(id, label, ok, detail, status = ok ? 'pass' : 'fail') {
   return { id, label, ok, status, detail }
 }
 
+function runManifestContract() {
+  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+  const result = process.platform === 'win32'
+    ? spawnSync('cmd.exe', ['/d', '/s', '/c', `${npmCommand} run ai-daily:manifest-check`], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        stdio: 'pipe',
+        timeout: 120_000,
+      })
+    : spawnSync(npmCommand, ['run', 'ai-daily:manifest-check'], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        stdio: 'pipe',
+        timeout: 120_000,
+      })
+  return result.status === 0 && !result.error && !result.signal
+}
+
 async function fileExists(relativePath) {
   try {
     await access(resolve(repoRoot, relativePath), constants.F_OK)
@@ -107,12 +126,13 @@ async function fileExists(relativePath) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const [packageText, envExample, renderYaml, pipelineDoc, runnerSource] = await Promise.all([
+  const [packageText, envExample, renderYaml, pipelineDoc, runnerSource, manifestText] = await Promise.all([
     readFile(resolve(repoRoot, 'package.json'), 'utf8'),
     readFile(resolve(repoRoot, '.env.example'), 'utf8'),
     readFile(resolve(repoRoot, 'render.yaml'), 'utf8'),
     readFile(resolve(repoRoot, 'docs/ai-daily-pipeline.md'), 'utf8'),
     readFile(resolve(repoRoot, 'server/scripts/ai-daily-runner.ts'), 'utf8'),
+    readFile(resolve(repoRoot, 'server/data/ai-daily-source-manifest.v1.json'), 'utf8'),
   ])
   const packageJson = JSON.parse(packageText)
   const scripts = packageJson.scripts ?? {}
@@ -125,6 +145,7 @@ async function main() {
     'ai-daily:compose',
     'ai-daily:resume',
     'ai-daily:contracts-check',
+    'ai-daily:manifest-check',
   ]
   const missingScripts = requiredScripts.filter((name) => typeof scripts[name] !== 'string')
   results.push(
@@ -133,6 +154,39 @@ async function main() {
       'Durable runner commands',
       missingScripts.length === 0,
       missingScripts.length === 0 ? `${requiredScripts.length} commands declared` : `missing ${missingScripts.join(', ')}`,
+    ),
+  )
+
+  let curationManifest = null
+  try {
+    curationManifest = JSON.parse(manifestText)
+  } catch {
+    curationManifest = null
+  }
+  const curationSources = Array.isArray(curationManifest?.sources) ? curationManifest.sources : []
+  const curationQueryGroups = Array.isArray(curationManifest?.queryGroups) ? curationManifest.queryGroups : []
+  const curationShapeOk =
+    curationManifest?.schemaVersion === 'ai-daily-source-curation-v1' &&
+    curationSources.length >= 30 &&
+    curationSources.length <= 80 &&
+    curationQueryGroups.length >= 4
+  const curationPendingSafe =
+    curationManifest?.readiness !== 'pending-human-review' ||
+    (curationSources.every((source) => source?.enabled === false) && curationQueryGroups.every((group) => group?.enabled === false))
+  const curationContractOk = runManifestContract()
+  const curationReady = curationShapeOk && curationPendingSafe && curationContractOk
+  const curationIsApproved = curationReady && curationManifest.readiness === 'approved'
+  results.push(
+    check(
+      'source-curation-manifest',
+      'Versioned source and query-group curation',
+      curationReady,
+      curationReady
+        ? `${curationSources.length} source candidates and ${curationQueryGroups.length} query groups recorded${curationIsApproved ? '' : '; manual review remains'}`
+        : curationContractOk
+          ? 'manifest is missing, malformed, outside the source-count bounds, or enables pending candidates'
+          : 'manifest contract check failed; run npm.cmd run ai-daily:manifest-check for details',
+      curationIsApproved ? 'pass' : curationReady ? 'manual-gate' : 'fail',
     ),
   )
 
