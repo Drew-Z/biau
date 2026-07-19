@@ -32,6 +32,8 @@ STUDIO_ADMIN_TOKEN=<owner token>
 CORS_ORIGIN=<main site origin without trailing slash>
 TRUST_PROXY=true
 AI_DAILY_PUBLIC_CORS_ORIGINS=<main site origin without trailing slash>
+AI_DAILY_TIME_ZONE=Asia/Shanghai
+AI_DAILY_PUBLIC_FEED_ENABLED=false
 AI_DAILY_PUBLIC_WINDOW_HOURS=72
 AI_DAILY_PUBLIC_STALE_MINUTES=180
 NODE_VERSION=22
@@ -47,6 +49,18 @@ VITE_AI_DAILY_API_BASE_URL=https://<studio-service>.onrender.com
 公开页面使用 `GET /public/ai-daily/feed` 和 `GET /public/ai-daily/events/:publicId`，不会发送 Studio token。Flash 被暂挂时不会进入 feed，被撤回或超出公开窗口时详情返回 `410`；静态 Edition 的 Publish Export 审核不受 Flash 批准影响。
 
 不要把真实数据库连接串、token、私有 RSS token、模型中转站地址或后台链接写进仓库。首次上线新增 Studio 模型时，需要确认生产 migration 已执行。
+
+## 生产就绪检查
+
+所有本地就绪检查都是离线的：只读取仓库配置和 fixture，不访问模型、搜索服务、生产数据库或 Render。默认模式会把必须由人工完成的平台配置标记为 `manual-gate`，不会把它们误报成失败：
+
+```powershell
+npm.cmd run ai-daily:production-readiness-check
+npm.cmd run ai-daily:production-readiness-check -- --json
+npm.cmd run ai-daily:contracts-check
+```
+
+`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
 
 ## AI Daily issue brief 建议
 
@@ -138,6 +152,17 @@ npm.cmd run ai-daily:compose -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:resume -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:editorial-tick -- --fixture
 ```
+
+## Render Cron 运行草案
+
+平台 Cron 使用 UTC 表达式，应用内部使用 `AI_DAILY_TIME_ZONE=Asia/Shanghai` 计算 edition date。每个 job 的执行 deadline 必须短于调度间隔，并依靠 durable work item、lease 和 checkpoint resume 处理重启：
+
+| Job | UTC schedule | command | deadline rule |
+| --- | --- | --- | --- |
+| Ingest Cron | `*/15 * * * *` | `npm run ai-daily:ingest-tick` | 小于 15 分钟 |
+| Editorial Cron | `0 * * * *` | `npm run ai-daily:editorial-tick`（当前仅保留命令契约） | 小于 60 分钟 |
+
+这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。当前 editorial runner 只有 fixture provider，未实现真实 provider 执行路径；没有 `--fixture` 会 fail closed，带 `--fixture` 也不允许作为生产 Cron。完成 provider 角色选择、来源审核和一次真实业务版次验收后，才可以另行实现并启用 production runner。回滚时先暂停两个 Cron，再把 `AI_DAILY_PUBLIC_FEED_ENABLED` 设为 `false`，保留 Studio 手动编辑和离线导出路径。
 
 未配置并获批生产 provider 时，`run`、`compose`、`resume` 和 `editorial-tick` 会 fail closed，不会发送测活请求。生产 provider 接入属于单独的 production operations gate。
 

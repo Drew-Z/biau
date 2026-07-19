@@ -2,6 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { disconnectPrisma, requireStudioDatabase } from '../src/db.js'
 import { buildAiDailyGenerationProvidersFixture } from '../src/aiDailyGenerationFixtures.js'
 import { executeAiDailyGenerationWork } from '../src/aiDailyGenerationRunner.js'
+import { env } from '../src/env.js'
+import { formatAiDailyApplicationDate } from '../src/aiDailyScheduling.js'
+import { aiDailyIngestionDeadlineWindowMs } from '../src/aiDailyIngestionService.js'
 import { listDueAiDailySourceFeeds } from '../src/aiDailyIngestionRepository.js'
 import {
   claimAiDailyWorkItem,
@@ -34,7 +37,7 @@ async function main() {
 async function runIngestTick(prisma: ReturnType<typeof requireStudioDatabase>) {
   const now = new Date()
   const feeds = await listDueAiDailySourceFeeds(prisma, now, 50)
-  const editionDate = now.toISOString().slice(0, 10)
+  const editionDate = formatAiDailyApplicationDate(now, env.aiDailyTimeZone)
   for (const feed of feeds) {
     await upsertAiDailyWorkItem(prisma, {
       editionDate,
@@ -43,7 +46,7 @@ async function runIngestTick(prisma: ReturnType<typeof requireStudioDatabase>) {
       sourceFeedId: feed.id,
       priority: feed.tier === 'TIER_1' ? 100 : 50,
       availableAt: now,
-      deadlineAt: new Date(now.getTime() + Math.max(15, feed.intervalMinutes) * 60_000),
+      deadlineAt: new Date(now.getTime() + aiDailyIngestionDeadlineWindowMs(feed.intervalMinutes)),
     })
   }
   console.log(`AI Daily ingest tick queued ${feeds.length} due source feed work item(s)`)

@@ -22,13 +22,17 @@
 ## 本地验证
 
 ```powershell
+npm.cmd run ai-daily:production-readiness-check
+npm.cmd run ai-daily:contracts-check
 npm.cmd run studio:smoke
 npm.cmd run studio:ai-daily-brief-check
 npm.cmd run operator:knowledge-check
 npm.cmd run assistant:agent-eval
 ```
 
-这些命令不调用真实模型，不需要生产数据库，也不会自动公开内容。
+这些命令不调用真实模型，不需要生产数据库，也不会自动公开内容。`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks；只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
+
+`ai-daily:production-readiness-check -- --strict` 只用于已经注入目标环境变量的离线 preflight。它不会读取或输出变量值，也不会代替 Render migration、Cron 启用、真实来源审核或真实业务版次验收。
 
 ## 既有部署基线与当前 schema 变更
 
@@ -52,9 +56,13 @@ npm.cmd run assistant:agent-eval
 
 `20260718010000_ai_daily_generation_runner` 是当前待部署 migration。它新增不可变 generation checkpoint、generated revision 幂等键和原始 draft 投影绑定；必须先备份 Studio 数据库、保留可回滚 Render revision，再执行 migration 和服务部署。部署本身不授权真实模型调用或自动发布。
 
+`AI_DAILY_PUBLIC_FEED_ENABLED` 默认和 Render blueprint 均为 `false`。只有公开 Feed migration、Studio CORS 和 Cloudflare browser base 全部完成并经过人工验收后，才在 Studio 服务显式改为 `true`。
+
 ## 发布边界
 
 - 线上 Studio 不直接写 Git 仓库。
 - hidden draft、issue 和未审核 source 不进入公开博客、公开助手知识或 sitemap。
 - AI Daily 必须包含具体来源、发布日期、事实摘要和逐条影响判断，不能把来源主页或流程说明当日报正文。
 - 模型渠道只能用真实内容任务验收，禁止测活 prompt。
+- Render Cron 的 UTC 调度草案和 Asia/Shanghai edition date 规则记录在 [`docs/ai-daily-pipeline.md`](./ai-daily-pipeline.md)；在 provider 与人工 gate 完成前保持 disabled。
+- 公开 Feed 回滚使用 `AI_DAILY_PUBLIC_FEED_ENABLED=false`；这只关闭公开投影路由，不删除 Studio 数据或历史审核记录。

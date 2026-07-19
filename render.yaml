@@ -94,6 +94,10 @@ services:
         value: "true"
       - key: AI_DAILY_PUBLIC_CORS_ORIGINS
         value: https://biau.playlab.eu.cc
+      - key: AI_DAILY_TIME_ZONE
+        value: Asia/Shanghai
+      - key: AI_DAILY_PUBLIC_FEED_ENABLED
+        value: "false"
       - key: AI_DAILY_PUBLIC_WINDOW_HOURS
         value: "72"
       - key: AI_DAILY_PUBLIC_STALE_MINUTES

@@ -20,6 +20,7 @@
 - 模型验收只能使用用户批准的真实业务任务；禁止 ping、doctor、空 prompt 和无意义测活。
 - 完成记录只写低敏结论和可复跑命令，不记录配置值或私有内容。
 - 状态项目变化后运行 `npm.cmd run docs:manual-gates-check`，保证每个公开项目都有对应人工边界。
+- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check` 和 `npm.cmd run ai-daily:contracts-check`；这两个命令不替代生产 migration、Cron 启用或真实内容验收。
 
 ## BIAU 平台门禁
 
@@ -104,7 +105,7 @@
 
 2. **上线 AI Daily 公开 Feed**
    - 在生产 Studio 数据库执行 `20260719020000_ai_daily_public_feed_index`，执行前保留备份和上一 Render revision。
-   - Studio 服务设置 `AI_DAILY_PUBLIC_CORS_ORIGINS=https://biau.playlab.eu.cc`，并部署当前代码。
+   - Studio 服务设置 `AI_DAILY_PUBLIC_CORS_ORIGINS=https://biau.playlab.eu.cc` 和 `AI_DAILY_PUBLIC_FEED_ENABLED=true`，并部署当前代码。
    - Cloudflare Pages 设置 `VITE_AI_DAILY_API_BASE_URL=<当前 Studio 服务 origin>` 后重新部署静态站。
    - 只用真实浏览页面和公开 GET 验收 `/ai-daily`、一个已批准事件详情、ETag `304`、撤回 `410` 和移动端；不要用模型测活。
 

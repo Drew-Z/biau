@@ -36,6 +36,14 @@ async function measureLocatorFrameDelta(page, locator, intervalMs = 500) {
   return totalDelta / first.length
 }
 
+async function waitForFlowMotion(page, expected, timeout = 8_000) {
+  await page.waitForFunction(
+    (value) => document.querySelector('.flow-background')?.getAttribute('data-flow-motion') === value,
+    expected,
+    { timeout },
+  )
+}
+
 const routes = [
   { path: '/', title: 'BIAU PORT', nav: '所有项目', canonical: '/' },
   { path: '/projects', title: '项目集', nav: '回主页', canonical: '/projects' },
@@ -1209,6 +1217,9 @@ for (const viewport of viewports) {
     if (route.aiDailyPublicFixture) await installAiDailyPublicFixture(page)
 
     await gotoApp(page, route.path)
+    if (route.aiDailyPublicFixture) {
+      await page.getByText('公开 Flash 标题').first().waitFor({ state: 'visible', timeout: 10_000 })
+    }
 
     const titleText = await page.locator('h1:visible, .hero-title-main:visible').first().innerText().catch(() => '')
     const navCount = await page.locator('.nav-all-tools').count()
@@ -2277,6 +2288,9 @@ const reducedModeReady = await reducedHarborPage
 if (!reducedModeReady) {
   failures.push('/ home reduced motion: flow background never reached canvas or CSS fallback mode')
 } else if ((await reducedFlow.getAttribute('data-flow-ready')) === 'true') {
+  await waitForFlowMotion(reducedHarborPage, 'reduced-settled').catch(() => {
+    failures.push('/ home reduced motion: flow worker did not acknowledge a settled frame')
+  })
   const reducedFrameA = await reducedFlow.evaluate((canvas) => {
     const blank = document.createElement('canvas')
     blank.width = canvas.width
@@ -2332,15 +2346,18 @@ await motionSwitchPage.addInitScript(() => {
 await gotoApp(motionSwitchPage, '/')
 const motionSwitchFlow = motionSwitchPage.locator('.flow-background[data-flow-ready="true"]')
 await motionSwitchFlow.waitFor({ state: 'attached' })
+await waitForFlowMotion(motionSwitchPage, 'running').catch(() => {
+  failures.push('/ home runtime motion: flow worker did not acknowledge running state')
+})
 const animatedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (animatedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: normal preference should keep the worker canvas animated')
 }
 
 await motionSwitchPage.emulateMedia({ reducedMotion: 'reduce' })
-// Chromium dispatches the media-query change asynchronously under the headless
-// compositor; allow the worker protocol and one stable frame to settle.
-await motionSwitchPage.waitForTimeout(1_000)
+await waitForFlowMotion(motionSwitchPage, 'reduced-settled').catch(() => {
+  failures.push('/ home runtime motion: flow worker did not acknowledge reduced-motion state')
+})
 const runtimeReducedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (runtimeReducedFrameDelta >= 0.05) {
   failures.push('/ home runtime motion: switching to reduce should stop the worker canvas on one stable frame')
@@ -2349,7 +2366,21 @@ if (runtimeReducedFrameDelta >= 0.05) {
 await motionSwitchFlow.evaluate((canvas) => {
   canvas.setAttribute('data-flow-fallback', 'css')
 })
-await motionSwitchPage.waitForTimeout(60)
+await motionSwitchPage.waitForFunction(() => {
+  const canvas = document.querySelector('.flow-background')
+  const app = document.querySelector('.app')
+  const canvasStyle = canvas ? getComputedStyle(canvas) : null
+  const appBefore = app ? getComputedStyle(app, '::before') : null
+  const appAfter = app ? getComputedStyle(app, '::after') : null
+  return (
+    canvasStyle?.opacity === '0' &&
+    appBefore?.backgroundImage !== 'none' &&
+    appBefore?.opacity !== '0' &&
+    appAfter?.backgroundImage !== 'none'
+  )
+}, undefined, { timeout: 2_000 }).catch(() => {
+  failures.push('/ home runtime fallback: CSS fallback styles did not settle')
+})
 const fallbackState = await motionSwitchFlow.evaluate((canvas) => {
   const app = document.querySelector('.app')
   const canvasStyle = getComputedStyle(canvas)
@@ -2374,7 +2405,9 @@ if (
 }
 
 await motionSwitchPage.emulateMedia({ reducedMotion: 'no-preference' })
-await motionSwitchPage.waitForTimeout(1_000)
+await waitForFlowMotion(motionSwitchPage, 'running').catch(() => {
+  failures.push('/ home runtime motion: flow worker did not acknowledge resumed state')
+})
 const resumedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (resumedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')

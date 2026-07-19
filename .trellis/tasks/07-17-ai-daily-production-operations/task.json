@@ -3,7 +3,7 @@
   "name": "ai-daily-production-operations",
   "title": "AI Daily production operations",
   "description": "Complete Render scheduling, configuration, metrics, source/model evaluation, live business acceptance, and rollback documentation.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": "feature",
   "scope": "fullstack",
   "package": null,
@@ -26,6 +26,6 @@
     ".env.example",
     "package.json"
   ],
-  "notes": "",
+  "notes": "Local slice complete: offline readiness and deterministic contract checks, fail-closed public feed flag, Asia/Shanghai edition date, bounded ingest deadlines, and deterministic reduced-motion UI verification. Production Cron/provider/source/live-edition gates remain manual; existing CSS budget debt is tracked separately.",
   "meta": {}
 }

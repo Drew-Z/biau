@@ -38,6 +38,10 @@ export interface AiDailyIngestionWorkPlanItem {
   }
 }
 
+export function aiDailyIngestionDeadlineWindowMs(intervalMinutes: number) {
+  return Math.max(60_000, Math.min(10 * 60_000, (intervalMinutes - 2) * 60_000))
+}
+
 export function buildAiDailyIngestionWorkPlan(input: {
   feeds: AiDailySourceFeedDefinition[]
   now: Date
@@ -46,7 +50,7 @@ export function buildAiDailyIngestionWorkPlan(input: {
     .map((feed) => ({ feed, window: buildAiDailyCollectionWindow(feed, input.now) }))
     .filter(({ feed, window }) => Boolean(feed.id && window.due))
     .map(({ feed, window }) => {
-      const deadlineWindowMs = Math.max(60_000, Math.min(10 * 60_000, (feed.intervalMinutes - 2) * 60_000))
+      const deadlineWindowMs = aiDailyIngestionDeadlineWindowMs(feed.intervalMinutes)
       return {
         kind: 'COLLECT_FEED' as const,
         sourceFeedId: feed.id as string,

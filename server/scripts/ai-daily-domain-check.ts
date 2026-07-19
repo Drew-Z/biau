@@ -21,6 +21,7 @@ import {
   buildAiDailyIssueFixture,
   buildAiDailySourceFixture,
 } from '../src/aiDailyFixtures.js'
+import { formatAiDailyApplicationDate } from '../src/aiDailyScheduling.js'
 
 function expectOk<T extends { ok: boolean }>(value: T, label: string): asserts value is T & { ok: true } {
   if (!value.ok) throw new Error(`${label} should pass: ${JSON.stringify(value)}`)
@@ -30,6 +31,13 @@ function expectError(value: { ok: boolean; error?: string }, error: string, labe
   if (value.ok || value.error !== error) {
     throw new Error(`${label} should return ${error}: ${JSON.stringify(value)}`)
   }
+}
+
+if (formatAiDailyApplicationDate(new Date('2026-07-18T16:30:00.000Z'), 'Asia/Shanghai') !== '2026-07-19') {
+  throw new Error('AI Daily application date should use Asia/Shanghai rather than UTC')
+}
+if (formatAiDailyApplicationDate(new Date('2026-07-18T16:30:00.000Z'), 'UTC') !== '2026-07-18') {
+  throw new Error('AI Daily UTC date fixture should remain stable')
 }
 
 function expectTransitionDomainError(

@@ -25,14 +25,15 @@ type SanitizedAgentToolArtifact = NonNullable<SanitizedAgentToolTrace['artifacts
 
 const ADMIN_RAG_SYNC_TIMEOUT_MS = 120000
 
-export function createApp() {
+export function createApp(options: { publicFeedEnabled?: boolean } = {}) {
   const app = express()
   const serviceMode = env.assistantServiceMode
+  const publicFeedEnabled = options.publicFeedEnabled ?? env.aiDailyPublicFeedEnabled
   app.set('trust proxy', env.trustProxy && (serviceMode === 'studio' || serviceMode === 'all') ? 1 : false)
   app.use(express.json({ limit: '1mb' }))
   if (env.metricsEnabled) app.use(createMetricsMiddleware())
 
-  if (serviceMode === 'studio' || serviceMode === 'all') app.use(createAiDailyPublicRouter())
+  if (publicFeedEnabled && (serviceMode === 'studio' || serviceMode === 'all')) app.use(createAiDailyPublicRouter())
   app.use(cors({ origin: env.corsOrigin === '*' ? true : env.corsOrigin }))
 
   app.get('/metrics', (_req, res) => {

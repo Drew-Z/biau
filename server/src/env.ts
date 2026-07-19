@@ -1,4 +1,5 @@
 import type { AssistantServiceMode } from './types.js'
+import { getAiDailyTimeZone } from './aiDailyScheduling.js'
 
 function readFirstEnv(...keys: string[]) {
   for (const key of keys) {
@@ -59,6 +60,8 @@ export const env = {
   operatorModelChannelId: process.env.OPERATOR_MODEL_CHANNEL_ID?.trim().toLowerCase() || null,
   metricsEnabled: readBoolean(process.env.METRICS_ENABLED),
   aiDailyPublicCorsOrigins,
+  aiDailyTimeZone: getAiDailyTimeZone(),
+  aiDailyPublicFeedEnabled: readBooleanWithDefault(process.env.AI_DAILY_PUBLIC_FEED_ENABLED, false),
   aiDailyPublicWindowHours: readPositiveInteger(process.env.AI_DAILY_PUBLIC_WINDOW_HOURS, 72),
   aiDailyPublicStaleMinutes: readPositiveInteger(process.env.AI_DAILY_PUBLIC_STALE_MINUTES, 180),
   aiDailyPublicRateLimit: readPositiveInteger(process.env.AI_DAILY_PUBLIC_RATE_LIMIT, 60),
@@ -99,6 +102,11 @@ export function hasModelProvider() {
 function readBoolean(value: string | undefined) {
   const normalized = value?.trim().toLowerCase()
   return normalized === 'true' || normalized === '1' || normalized === 'yes' || normalized === 'on'
+}
+
+function readBooleanWithDefault(value: string | undefined, fallback: boolean) {
+  if (!value?.trim()) return fallback
+  return readBoolean(value)
 }
 
 function readServiceMode(value: string | undefined): AssistantServiceMode {

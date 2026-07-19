@@ -10,7 +10,7 @@ import {
   aiDailyRssFixture,
   buildAiDailySourceFeedFixture,
 } from '../src/aiDailyIngestionFixtures.js'
-import { buildAiDailyIngestionWorkPlan } from '../src/aiDailyIngestionService.js'
+import { aiDailyIngestionDeadlineWindowMs, buildAiDailyIngestionWorkPlan } from '../src/aiDailyIngestionService.js'
 import { collectAiDailySourcePayload } from '../src/aiDailySourceAdapters.js'
 import { assert, assertDeepEqual, assertEqual } from './ai-daily-check-helpers.js'
 
@@ -96,6 +96,8 @@ assert(
   workPlan.every((item) => item.deadlineAt.getTime() < item.freshnessTargetAt.getTime()),
   'work deadlines must remain shorter than schedule intervals',
 )
+assertEqual(aiDailyIngestionDeadlineWindowMs(15), 10 * 60_000, '15-minute deadline window')
+assert(aiDailyIngestionDeadlineWindowMs(15) < 15 * 60_000, 'CLI deadline must remain shorter than a 15-minute interval')
 
 const failedHealth = projectAiDailySourceHealth(
   { intervalMinutes: 15, consecutiveFailures: 2, lastSuccessfulAt: tier1.lastSuccessfulAt },

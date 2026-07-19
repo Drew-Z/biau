@@ -25,6 +25,7 @@ interface EnvSnapshot {
   operatorOwnerEmails: string[]
   operatorDisplayName: string
   operatorModelChannelId: string | null
+  aiDailyPublicFeedEnabled: boolean
 }
 
 let nextServicePort = 9577
@@ -72,6 +73,7 @@ function snapshotEnv(): EnvSnapshot {
     operatorOwnerEmails: [...env.operatorOwnerEmails],
     operatorDisplayName: env.operatorDisplayName,
     operatorModelChannelId: env.operatorModelChannelId,
+    aiDailyPublicFeedEnabled: env.aiDailyPublicFeedEnabled,
   }
 }
 
@@ -97,9 +99,14 @@ function restoreEnv(snapshot: EnvSnapshot) {
   env.operatorOwnerEmails = [...snapshot.operatorOwnerEmails]
   env.operatorDisplayName = snapshot.operatorDisplayName
   env.operatorModelChannelId = snapshot.operatorModelChannelId
+  env.aiDailyPublicFeedEnabled = snapshot.aiDailyPublicFeedEnabled
 }
 
-async function withService(mode: AssistantServiceMode, run: (base: string) => Promise<void>) {
+async function withService(
+  mode: AssistantServiceMode,
+  run: (base: string) => Promise<void>,
+  options: { publicFeedEnabled?: boolean } = {},
+) {
   env.assistantServiceMode = mode
   env.assistantModelApiKey = ''
   env.assistantModelChannelsJson = ''
@@ -121,10 +128,11 @@ async function withService(mode: AssistantServiceMode, run: (base: string) => Pr
   env.operatorOwnerEmails = ['owner@example.invalid']
   env.operatorDisplayName = 'Smoke Owner'
   env.operatorModelChannelId = null
+  env.aiDailyPublicFeedEnabled = true
 
   const port = await findAvailablePort(nextServicePort)
   nextServicePort = port + 20
-  const app = createApp()
+  const app = createApp(options)
   const server = app.listen(port, '127.0.0.1')
   await new Promise<void>((resolve) => server.once('listening', () => resolve()))
   try {
@@ -303,6 +311,15 @@ try {
     const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
     if (publicFeed.status !== 503) throw new Error(`studio mode should mount AI Daily feed and report missing database, got ${publicFeed.status}`)
   })
+
+  await withService(
+    'studio',
+    async (base) => {
+      const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
+      if (publicFeed.status !== 404) throw new Error(`disabled public feed should return 404, got ${publicFeed.status}`)
+    },
+    { publicFeedEnabled: false },
+  )
 
   console.log('Assistant service mode smoke passed with owner-only Operator isolation')
 } finally {
