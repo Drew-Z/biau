@@ -3,7 +3,7 @@ function normalizeApiBase(value: string | undefined) {
 }
 
 export const AI_DAILY_PUBLIC_API_BASE =
-  normalizeApiBase(import.meta.env.VITE_AI_DAILY_API_BASE_URL) || normalizeApiBase(import.meta.env.VITE_STUDIO_API_BASE_URL)
+  normalizeApiBase(import.meta.env?.VITE_AI_DAILY_API_BASE_URL) || normalizeApiBase(import.meta.env?.VITE_STUDIO_API_BASE_URL)
 
 export const AI_DAILY_PUBLIC_API_ENV_NAMES = {
   public: 'VITE_AI_DAILY_API_BASE_URL',
@@ -123,7 +123,7 @@ async function requestAiDailyPublic<T>(
     if (!response.ok) {
       return { ok: false, status: response.status, payload: null, etag, notModified: false, error: readErrorCode(raw), aborted: false }
     }
-    const payload = decodePublicPayload(raw)
+    const payload = decodeAiDailyPublicPayload(raw)
     if (!payload) {
       return {
         ok: false,
@@ -144,7 +144,7 @@ async function requestAiDailyPublic<T>(
   }
 }
 
-function decodePublicPayload(value: unknown): AiDailyPublicFeedPayload | AiDailyPublicDetailPayload | null {
+export function decodeAiDailyPublicPayload(value: unknown): AiDailyPublicFeedPayload | AiDailyPublicDetailPayload | null {
   if (!isRecord(value)) return null
   if (isRecord(value.item)) {
     const item = decodeItem(value.item)
@@ -163,7 +163,8 @@ function decodeItem(value: unknown): AiDailyPublicItem | null {
   if (!isRecord(value)) return null
   const strings = ['publicId', 'title', 'factSummary', 'whyItMatters', 'approvedAt', 'updatedAt']
   if (strings.some((key) => typeof value[key] !== 'string' || !String(value[key]).trim())) return null
-  if (typeof value.revision !== 'number' || !Number.isInteger(value.revision)) return null
+  const revision = readPositiveInteger(value.revision)
+  if (revision === null) return null
   if (typeof value.corrected !== 'boolean' || (value.correctedAt !== null && typeof value.correctedAt !== 'string')) return null
   if (value.uncertainty !== null && typeof value.uncertainty !== 'string') return null
   if (!Array.isArray(value.citations)) return null
@@ -171,7 +172,7 @@ function decodeItem(value: unknown): AiDailyPublicItem | null {
   if (citations.some((citation) => citation === null)) return null
   return {
     publicId: String(value.publicId),
-    revision: value.revision,
+    revision,
     title: String(value.title),
     factSummary: String(value.factSummary),
     whyItMatters: String(value.whyItMatters),
@@ -192,6 +193,8 @@ function decodeCitation(value: unknown): AiDailyPublicCitation | null {
   if (!url) return null
   const originalUrl = value.originalUrl === undefined ? undefined : decodeSafePublicUrl(value.originalUrl)
   if (value.originalUrl !== undefined && !originalUrl) return null
+  const locator = decodeCitationLocator(value.locator)
+  if (value.locator !== undefined && locator === null) return null
   return {
     title: value.title.trim(),
     publisher: value.publisher.trim(),
@@ -199,7 +202,23 @@ function decodeCitation(value: unknown): AiDailyPublicCitation | null {
     ...(originalUrl ? { originalUrl } : {}),
     publishedAt: value.publishedAt as string | null,
     excerpt: value.excerpt,
-    ...(isRecord(value.locator) ? { locator: value.locator as AiDailyPublicCitation['locator'] } : {}),
+    ...(locator ? { locator } : {}),
+  }
+}
+
+function decodeCitationLocator(value: unknown): AiDailyPublicCitation['locator'] | null | undefined {
+  if (value === undefined) return undefined
+  if (!isRecord(value)) return null
+  if (value.heading !== undefined && typeof value.heading !== 'string') return null
+  const startChar = readOptionalNonNegativeInteger(value.startChar)
+  const endChar = readOptionalNonNegativeInteger(value.endChar)
+  if (startChar === null || endChar === null) return null
+  if (startChar !== undefined && endChar !== undefined && endChar < startChar) return null
+  const heading = typeof value.heading === 'string' ? value.heading.trim() : ''
+  return {
+    ...(heading ? { heading } : {}),
+    ...(startChar !== undefined ? { startChar } : {}),
+    ...(endChar !== undefined ? { endChar } : {}),
   }
 }
 
@@ -227,41 +246,45 @@ function decodeFeedMeta(value: Record<string, unknown>) {
   const freshness = decodeFreshness(value.freshness)
   const coverage = isRecord(value.editorialCoverage) ? value.editorialCoverage : null
   if (!freshness || !coverage || coverage.scope !== 'page') return null
-  if (
-    typeof coverage.itemCount !== 'number' ||
-    typeof coverage.citedItemCount !== 'number' ||
-    typeof coverage.citationCoverage !== 'number'
-  ) return null
+  const itemCount = readNonNegativeInteger(coverage.itemCount)
+  const citedItemCount = readNonNegativeInteger(coverage.citedItemCount)
+  const citationCoverage = readUnitInterval(coverage.citationCoverage)
+  if (itemCount === null || citedItemCount === null || citationCoverage === null || citedItemCount > itemCount) return null
   if (value.generatedAt !== null && typeof value.generatedAt !== 'string') return null
-  if (typeof value.windowHours !== 'number') return null
+  const windowHours = readPositiveInteger(value.windowHours)
+  if (windowHours === null) return null
   return {
     generatedAt: value.generatedAt as string | null,
-    windowHours: value.windowHours,
+    windowHours,
     freshness,
     editorialCoverage: {
       scope: 'page' as const,
-      itemCount: coverage.itemCount,
-      citedItemCount: coverage.citedItemCount,
-      citationCoverage: coverage.citationCoverage,
+      itemCount,
+      citedItemCount,
+      citationCoverage,
     },
   }
 }
 
 function decodeDetailMeta(value: unknown) {
-  if (!isRecord(value) || typeof value.generatedAt !== 'string' || typeof value.windowHours !== 'number') return null
+  if (!isRecord(value) || typeof value.generatedAt !== 'string') return null
+  const windowHours = readPositiveInteger(value.windowHours)
+  if (windowHours === null) return null
   const freshness = decodeFreshness(value.freshness)
-  return freshness ? { generatedAt: value.generatedAt, windowHours: value.windowHours, freshness } : null
+  return freshness ? { generatedAt: value.generatedAt, windowHours, freshness } : null
 }
 
 function decodeFreshness(value: unknown) {
   if (!isRecord(value) || !['fresh', 'stale', 'empty'].includes(String(value.status))) return null
-  if (typeof value.stale !== 'boolean' || typeof value.staleAfterMinutes !== 'number') return null
+  if (typeof value.stale !== 'boolean') return null
+  const staleAfterMinutes = readPositiveInteger(value.staleAfterMinutes)
+  if (staleAfterMinutes === null) return null
   if (value.latestApprovalAt !== null && typeof value.latestApprovalAt !== 'string') return null
   if (value.latestProjectionAt !== null && typeof value.latestProjectionAt !== 'string') return null
   return {
     status: value.status as 'fresh' | 'stale' | 'empty',
     stale: value.stale,
-    staleAfterMinutes: value.staleAfterMinutes,
+    staleAfterMinutes,
     latestApprovalAt: value.latestApprovalAt as string | null,
     latestProjectionAt: value.latestProjectionAt as string | null,
   }
@@ -277,4 +300,21 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isAbortError(value: unknown): value is Error {
   return value instanceof Error && value.name === 'AbortError'
+}
+
+function readPositiveInteger(value: unknown) {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 ? value : null
+}
+
+function readNonNegativeInteger(value: unknown) {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null
+}
+
+function readOptionalNonNegativeInteger(value: unknown) {
+  if (value === undefined) return undefined
+  return readNonNegativeInteger(value)
+}
+
+function readUnitInterval(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1 ? value : null
 }

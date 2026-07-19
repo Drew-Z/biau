@@ -68,6 +68,7 @@
     "ai-daily:rollback-check": "tsx server/scripts/ai-daily-rollback-check.ts",
     "ai-daily:runner-check": "tsx server/scripts/ai-daily-runner-check.ts",
     "ai-daily:generation-repository-check": "tsx server/scripts/ai-daily-generation-repository-check.ts",
+    "ai-daily:public-payload-check": "tsx scripts/check-ai-daily-public-payload.ts",
     "ai-daily:public-feed-check": "tsx server/scripts/ai-daily-public-feed-check.ts",
     "ai-daily:operations-check": "tsx server/scripts/ai-daily-operations-check.ts",
     "ai-daily:observability-contract-check": "node scripts/check-ai-daily-observability-contracts.mjs",
