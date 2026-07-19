@@ -90,6 +90,18 @@ services:
         value: studio
       - key: CORS_ORIGIN
         value: https://biau.playlab.eu.cc
+      - key: TRUST_PROXY
+        value: "true"
+      - key: AI_DAILY_PUBLIC_CORS_ORIGINS
+        value: https://biau.playlab.eu.cc
+      - key: AI_DAILY_PUBLIC_WINDOW_HOURS
+        value: "72"
+      - key: AI_DAILY_PUBLIC_STALE_MINUTES
+        value: "180"
+      - key: AI_DAILY_PUBLIC_RATE_LIMIT
+        value: "60"
+      - key: AI_DAILY_PUBLIC_RATE_WINDOW_MS
+        value: "60000"
       - key: STUDIO_DATABASE_URL
         sync: false
       - key: STUDIO_ADMIN_TOKEN

@@ -46,6 +46,10 @@ const StudioAiDailyIssuePage = lazy(() =>
 const StudioAiDailyWorkspacePage = lazy(() =>
   import('./pages/StudioAiDailyWorkspacePage').then((module) => ({ default: module.StudioAiDailyWorkspacePage })),
 )
+const AiDailyPublicPage = lazy(() => import('./pages/AiDailyPublicPage').then((module) => ({ default: module.AiDailyPublicPage })))
+const AiDailyPublicDetailPage = lazy(() =>
+  import('./pages/AiDailyPublicDetailPage').then((module) => ({ default: module.AiDailyPublicDetailPage })),
+)
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 const PublicAssistantWidget = lazy(() =>
   import('./components/PublicAssistantWidget').then((module) => ({ default: module.PublicAssistantWidget })),
@@ -62,6 +66,8 @@ function getPageClass(pathname: string) {
   if (pathname.startsWith('/status/')) return 'page-status page-status-detail page-detail page-subpage'
   if (pathname === '/blog') return 'page-letters page-blog page-subpage'
   if (pathname.startsWith('/blog/')) return 'page-detail page-blog-post page-subpage'
+  if (pathname === '/ai-daily') return 'page-letters page-ai-daily page-subpage'
+  if (pathname.startsWith('/ai-daily/')) return 'page-detail page-ai-daily-detail page-subpage'
   return 'page-not-found page-subpage'
 }
 
@@ -124,6 +130,8 @@ function App() {
           <Route path="/studio/*" element={<StudioPage />} />
           <Route path="/status" element={<SiteStatusPage />} />
           <Route path="/status/:projectId" element={<SiteStatusDetailPage />} />
+          <Route path="/ai-daily" element={<AiDailyPublicPage />} />
+          <Route path="/ai-daily/:publicId" element={<AiDailyPublicDetailPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="*" element={<NotFoundPage />} />

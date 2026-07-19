@@ -1,5 +1,26 @@
 # AI Daily Workflow Guidelines
 
+## Scenario: Public AI Daily Flash Feed
+
+### HTTP and deployment boundary
+
+- `GET /public/ai-daily/feed` and `GET /public/ai-daily/events/:publicId` are no-token public reads mounted only by the Studio service and local `all` mode. The public assistant, Operator, and RAG services must not mount these routes.
+- Production Studio sets an exact browser-origin allowlist, `TRUST_PROXY=true`, a bounded public window, stale threshold, rate limit, and rate window. `TRUST_PROXY` must not be enabled by the other Render services.
+- The router returns explicit CORS headers only for allowlisted origins, handles `OPTIONS`, emits bounded process-local `RateLimit-*` headers, and returns `429` plus `Retry-After` when the client-IP budget is exhausted.
+- Successful responses use public cache headers, deterministic ETags, and `304` for matching `If-None-Match` without returning a body.
+
+### Public projection contract
+
+- Feed rows must be `ACTIVE`, have a current `APPROVED` revision, fall inside the configured approval window, and remain inside retention. Ordering and pagination use the stable `(lastApprovedAt desc, publicId desc)` keyset; limits are integers from 1 through 40, defaulting to 20.
+- Detail reads return `404` for unknown, held, never-approved, or otherwise non-public ids. Withdrawn or retention-expired ids return `410` so clients can distinguish permanent removal from a missing draft.
+- DTOs are explicit public whitelists. They expose only the stable public id, revision, bounded editorial text, approval/correction timestamps, and sanitized citation snapshots. Prisma records, internal ids, lifecycle audit data, stack traces, tokens, and private fields never cross this boundary.
+- Citation URLs must parse as credential-free public HTTPS URLs. Local, private, metadata, LAN, malformed, and non-HTTPS targets are removed before serialization.
+- Feed metadata reports page-scoped citation coverage plus `fresh`, `stale`, or `empty` projection state. A stale projection remains readable and must be labeled rather than silently treated as fresh.
+
+### Required verification
+
+Run `npm.cmd run ai-daily:public-feed-check` after changing the projection, router, schema, service modes, cache/CORS/rate-limit behavior, or citation contract. The deterministic check must cover field whitelisting, URL safety, pagination, `304`, `404`, `410`, `429`, stale metadata, correction ETag changes, query budget, and route isolation without connecting to providers or production databases.
+
 ## Scenario: Evidence-bound generation runner
 
 ### Durable stage contract

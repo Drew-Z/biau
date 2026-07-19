@@ -172,6 +172,9 @@ try {
 
     const ragHealth = await fetch(`${base}/rag/health`)
     if (ragHealth.status !== 404) throw new Error(`public mode should not expose /rag, got ${ragHealth.status}`)
+
+    const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
+    if (publicFeed.status !== 404) throw new Error(`public mode should not expose AI Daily public feed, got ${publicFeed.status}`)
   })
 
   await withService('operator', async (base) => {
@@ -217,6 +220,9 @@ try {
 
     const studioHealth = await fetch(`${base}/studio/api/health`)
     if (studioHealth.status !== 404) throw new Error(`operator mode should not expose Studio API routes, got ${studioHealth.status}`)
+
+    const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
+    if (publicFeed.status !== 404) throw new Error(`operator mode should not expose AI Daily public feed, got ${publicFeed.status}`)
   })
 
   await withService('rag', async (base) => {
@@ -230,6 +236,9 @@ try {
 
     const operatorMe = await fetch(`${base}/operator/me`, { headers: operatorHeaders })
     if (operatorMe.status !== 404) throw new Error(`rag mode should not expose operator routes, got ${operatorMe.status}`)
+
+    const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
+    if (publicFeed.status !== 404) throw new Error(`rag mode should not expose AI Daily public feed, got ${publicFeed.status}`)
 
     const unauthorizedRetrieve = await postJson(`${base}/v1/retrieve`, { query: 'RAG 项目', scope: 'public' })
     if (unauthorizedRetrieve.response.status !== 401) throw new Error(`rag mode should require retrieve key, got ${unauthorizedRetrieve.response.status}`)
@@ -290,6 +299,9 @@ try {
     if (studioHealthPayload.service !== 'biau-content-studio-api' || studioHealthPayload.database !== false) {
       throw new Error('studio mode studio api health payload is invalid')
     }
+
+    const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
+    if (publicFeed.status !== 503) throw new Error(`studio mode should mount AI Daily feed and report missing database, got ${publicFeed.status}`)
   })
 
   console.log('Assistant service mode smoke passed with owner-only Operator isolation')

@@ -88,6 +88,16 @@ npm.cmd run check:ui
 - Missing model/API displays a concise fallback status; it does not expose provider details.
 - Public widget state is independent from Operator sessions and Studio tokens.
 
+## Scenario: Public AI Daily Feed State
+
+- Public Feed and detail responses pass through `src/utils/aiDailyPublicApi.ts`; route components do not cast `unknown` payloads or render unvalidated citation URLs.
+- Starting a new Feed/detail request aborts the previous request. Route change and unmount abort the active request, and an intentional `AbortError` never becomes a visible network failure.
+- A request sequence fence remains in place so a late response cannot overwrite a newer refresh, cursor page, or `publicId`.
+- Feed refresh sends the current ETag, treats `304` as success, clears any transient error, and preserves the last successful payload. Cursor append does not send the Feed ETag and appends only the returned page.
+- Transient refresh failure preserves the last successful payload and labels the failure. Visibility polling runs only while the document is visible and no more frequently than the configured 60-second interval.
+- Detail route changes reset payload and ETag for the new `publicId`. A detail `304` preserves the loaded item and clears any previous error; `404` and `410` remain distinct user-facing terminal states.
+- Loading, refreshing, stale, empty, error, correction, and pagination state must not discard readable approved content or create parallel requests.
+
 ## Scenario: Content Studio State
 
 - Studio token remains an explicit editor credential and may be stored only in the documented Studio browser key.

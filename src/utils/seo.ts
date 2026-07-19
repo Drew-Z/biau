@@ -16,9 +16,48 @@ export interface SeoMeta {
   image?: string
 }
 
+function setMeta(selector: string, createAttrs: Record<string, string>, content: string) {
+  let element = document.head.querySelector<HTMLMetaElement>(selector)
+  if (!element) {
+    element = document.createElement('meta')
+    Object.entries(createAttrs).forEach(([key, value]) => element?.setAttribute(key, value))
+    document.head.appendChild(element)
+  }
+  element.setAttribute('content', content)
+}
+
+function setCanonical(url: string) {
+  let element = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!element) {
+    element = document.createElement('link')
+    element.setAttribute('rel', 'canonical')
+    document.head.appendChild(element)
+  }
+  element.setAttribute('href', url)
+}
+
 export function absoluteUrl(path: string) {
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   return `${SITE_URL}${path.startsWith('/') ? path : `/${path}`}`
+}
+
+export function applySeo(meta: SeoMeta) {
+  const canonicalUrl = absoluteUrl(meta.canonicalPath)
+  const image = meta.image ?? DEFAULT_IMAGE
+
+  document.title = meta.title
+  setCanonical(canonicalUrl)
+  setMeta('meta[name="description"]', { name: 'description' }, meta.description)
+  setMeta('meta[property="og:site_name"]', { property: 'og:site_name' }, SITE_NAME)
+  setMeta('meta[property="og:title"]', { property: 'og:title' }, meta.title)
+  setMeta('meta[property="og:description"]', { property: 'og:description' }, meta.description)
+  setMeta('meta[property="og:type"]', { property: 'og:type' }, meta.type ?? 'website')
+  setMeta('meta[property="og:url"]', { property: 'og:url' }, canonicalUrl)
+  setMeta('meta[property="og:image"]', { property: 'og:image' }, image)
+  setMeta('meta[name="twitter:card"]', { name: 'twitter:card' }, 'summary_large_image')
+  setMeta('meta[name="twitter:title"]', { name: 'twitter:title' }, meta.title)
+  setMeta('meta[name="twitter:description"]', { name: 'twitter:description' }, meta.description)
+  setMeta('meta[name="twitter:image"]', { name: 'twitter:image' }, image)
 }
 
 export function normalizePath(pathname: string) {
@@ -53,6 +92,24 @@ export function getStaticSeo(pathname: string): SeoMeta {
       description: '阅读 BIAU Port 泊岸从真实项目中沉淀的 RAG、Agent、全栈开发、内容系统和发布验证文章。',
       canonicalPath: '/blog',
       type: 'website',
+    }
+  }
+
+  if (path === '/ai-daily') {
+    return {
+      title: 'AI 日报 | BIAU Port',
+      description: '浏览 BIAU Port 泊岸经过证据整理与人工批准的近期 AI 动态和公开来源。',
+      canonicalPath: '/ai-daily',
+      type: 'website',
+    }
+  }
+
+  if (path.startsWith('/ai-daily/')) {
+    return {
+      title: 'AI 日报快讯 | BIAU Port',
+      description: '查看一条经过公开审核的 AI 快讯、影响说明、不确定性和来源引用。',
+      canonicalPath: path,
+      type: 'article',
     }
   }
 

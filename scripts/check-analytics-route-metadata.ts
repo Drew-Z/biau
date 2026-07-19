@@ -44,6 +44,14 @@ const routeCases: RouteCase[] = [
     routeDepth: 2,
     forbidden: ['agentic-rag-frontier-2026', 'debug', 'true', '?'],
   },
+  { pathname: '/ai-daily', routePattern: '/ai-daily', routeArea: 'ai-daily-public', routeDepth: 1 },
+  {
+    pathname: '/ai-daily/flash-public-1?source=home#citation',
+    routePattern: '/ai-daily/:publicId',
+    routeArea: 'ai-daily-public-detail',
+    routeDepth: 2,
+    forbidden: ['flash-public-1', 'source', 'home', 'citation', '?', '#'],
+  },
   {
     pathname: 'https://example.com/projects/legal-rag?token=abc',
     routePattern: 'not-found',

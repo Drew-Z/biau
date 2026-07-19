@@ -51,7 +51,23 @@ const serviceContracts = [
   {
     name: 'biau-content-studio-api',
     mode: 'studio',
-    requiredEnv: ['STUDIO_DATABASE_URL', 'STUDIO_ADMIN_TOKEN'],
+    requiredEnv: [
+      'STUDIO_DATABASE_URL',
+      'STUDIO_ADMIN_TOKEN',
+      'TRUST_PROXY',
+      'AI_DAILY_PUBLIC_CORS_ORIGINS',
+      'AI_DAILY_PUBLIC_WINDOW_HOURS',
+      'AI_DAILY_PUBLIC_STALE_MINUTES',
+      'AI_DAILY_PUBLIC_RATE_LIMIT',
+      'AI_DAILY_PUBLIC_RATE_WINDOW_MS',
+    ],
+    expectedEnv: {
+      TRUST_PROXY: 'true',
+      AI_DAILY_PUBLIC_WINDOW_HOURS: '72',
+      AI_DAILY_PUBLIC_STALE_MINUTES: '180',
+      AI_DAILY_PUBLIC_RATE_LIMIT: '60',
+      AI_DAILY_PUBLIC_RATE_WINDOW_MS: '60000',
+    },
     requiredStart: 'npm run prisma:migrate:studio && npm run server:start',
   },
   {
@@ -98,6 +114,12 @@ function extractServiceBlock(renderText, serviceName) {
   return renderText.slice(start, next < 0 ? renderText.length : next)
 }
 
+function extractEnvValue(block, key) {
+  const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  const match = block.match(new RegExp(`- key: ${escapedKey}\\r?\\n\\s+value:\\s*["']?([^"'\\r\\n]+)["']?`, 'u'))
+  return match?.[1]?.trim() ?? null
+}
+
 function checkRenderBlueprint(renderText) {
   const issues = []
   const serviceCount = (renderText.match(/^\s{4}name: /gmu) ?? []).length
@@ -124,6 +146,16 @@ function checkRenderBlueprint(renderText) {
     for (const envKey of service.requiredEnv) {
       if (!block.includes(`key: ${envKey}`)) issues.push(`${service.name} 缺少 env：${envKey}`)
     }
+
+    for (const [envKey, expectedValue] of Object.entries(service.expectedEnv ?? {})) {
+      if (extractEnvValue(block, envKey) !== expectedValue) {
+        issues.push(`${service.name} 的 ${envKey} 应显式设置为 ${expectedValue}`)
+      }
+    }
+
+    if (service.mode !== 'studio' && block.includes('key: TRUST_PROXY')) {
+      issues.push(`${service.name} 不应设置 TRUST_PROXY；该代理信任配置仅属于 Studio public feed 服务。`)
+    }
   }
 
   return issues
@@ -145,6 +177,11 @@ async function main() {
       'public, operator, studio, and rag',
       'OPERATOR_SERVICE_TOKEN',
       'CF_ACCESS_TEAM_DOMAIN',
+      'TRUST_PROXY=false',
+      'AI_DAILY_PUBLIC_WINDOW_HOURS=72',
+      'AI_DAILY_PUBLIC_STALE_MINUTES=180',
+      'AI_DAILY_PUBLIC_RATE_LIMIT=60',
+      'AI_DAILY_PUBLIC_RATE_WINDOW_MS=60000',
     ]),
     ...collectMissing(files.deployment.label, deployment, [
       '四个 Render Web Service',
@@ -156,6 +193,8 @@ async function main() {
       'OPERATOR_SERVICE_TOKEN',
       'CF_ACCESS_TEAM_DOMAIN',
       'STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-operator-api 相同>',
+      'VITE_AI_DAILY_API_BASE_URL',
+      'AI_DAILY_PUBLIC_CORS_ORIGINS',
     ]),
     ...collectMissing(files.manualGates.label, manualGates, ['Render 四服务边界', 'public/operator/studio/rag', 'Cloudflare Access']),
     ...collectMissing(files.backendSpec.label, backendSpec, [

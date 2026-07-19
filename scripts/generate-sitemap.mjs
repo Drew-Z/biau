@@ -1,4 +1,5 @@
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
+import { XMLParser } from 'fast-xml-parser'
 import { getPublicBlogPosts } from '../src/data/blogCuration.ts'
 import { projects } from '../src/data/portfolio.ts'
 import { reliabilityProjects } from '../src/data/statusTargets.ts'
@@ -18,6 +19,22 @@ const projectIds = projects.map((project) => project.id)
 const statusProjectIds = reliabilityProjects.map((project) => project.id)
 const posts = getPublicBlogPosts()
 
+async function readExistingLastMods() {
+  try {
+    const source = await readFile('public/sitemap.xml', 'utf8')
+    const parsed = new XMLParser().parse(source)
+    const entries = parsed.urlset?.url
+    const urls = Array.isArray(entries) ? entries : entries ? [entries] : []
+    return new Map(
+      urls
+        .filter((entry) => typeof entry?.loc === 'string' && typeof entry?.lastmod === 'string')
+        .map((entry) => [entry.loc, entry.lastmod]),
+    )
+  } catch {
+    return new Map()
+  }
+}
+
 const staticRoutes = [
   { loc: '/pet-app-showcase/', priority: '0.7', changefreq: 'monthly' },
 ]
@@ -26,6 +43,7 @@ const routes = [
   { loc: '/', priority: '1.0', changefreq: 'weekly' },
   { loc: '/projects', priority: '0.9', changefreq: 'weekly' },
   { loc: '/blog', priority: '0.9', changefreq: 'weekly' },
+  { loc: '/ai-daily', priority: '0.8', changefreq: 'hourly' },
   { loc: '/status', priority: '0.6', changefreq: 'daily' },
   ...staticRoutes,
   ...projectIds.map((id) => ({ loc: `/projects/${id}`, priority: '0.8', changefreq: 'monthly' })),
@@ -33,11 +51,13 @@ const routes = [
   ...posts.map((post) => ({ loc: `/blog/${post.slug}`, priority: '0.7', changefreq: 'monthly', lastmod: post.date })),
 ]
 
+const existingLastMods = await readExistingLastMods()
+
 const urls = routes
   .map(
     (route) => `  <url>
     <loc>${escapeXml(`${siteUrl}${route.loc}`)}</loc>
-    <lastmod>${route.lastmod ?? today}</lastmod>
+    <lastmod>${route.lastmod ?? existingLastMods.get(`${siteUrl}${route.loc}`) ?? today}</lastmod>
     <changefreq>${route.changefreq}</changefreq>
     <priority>${route.priority}</priority>
   </url>`,

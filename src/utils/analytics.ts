@@ -21,6 +21,8 @@ type AnalyticsRouteArea =
   | 'status-detail'
   | 'blog'
   | 'blog-post'
+  | 'ai-daily-public'
+  | 'ai-daily-public-detail'
   | 'not-found'
 
 interface AnalyticsRouteMetadata {
@@ -90,6 +92,12 @@ export function getAnalyticsRouteMetadata(pathname: string): AnalyticsRouteMetad
   }
   if (first === 'blog' && segments.length === 1) return { routePattern: '/blog', routeArea: 'blog', routeDepth: 1 }
   if (first === 'blog') return { routePattern: '/blog/:slug', routeArea: 'blog-post', routeDepth: segments.length }
+  if (first === 'ai-daily' && segments.length === 1) {
+    return { routePattern: '/ai-daily', routeArea: 'ai-daily-public', routeDepth: 1 }
+  }
+  if (first === 'ai-daily') {
+    return { routePattern: '/ai-daily/:publicId', routeArea: 'ai-daily-public-detail', routeDepth: segments.length }
+  }
 
   return { routePattern: 'not-found', routeArea: 'not-found', routeDepth: segments.length }
 }

@@ -3,7 +3,7 @@
   "name": "ai-daily-public-feed",
   "title": "AI Daily public feed and deep edition",
   "description": "Implement approved public flash projection API/UI, cache/security boundaries, and daily static publication consistency.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": "feature",
   "scope": "fullstack",
   "package": null,

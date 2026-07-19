@@ -58,6 +58,7 @@
     "ai-daily:quality-check": "tsx server/scripts/ai-daily-quality-check.ts",
     "ai-daily:runner-check": "tsx server/scripts/ai-daily-runner-check.ts",
     "ai-daily:generation-repository-check": "tsx server/scripts/ai-daily-generation-repository-check.ts",
+    "ai-daily:public-feed-check": "tsx server/scripts/ai-daily-public-feed-check.ts",
     "ai-daily:ingest-tick": "tsx server/scripts/ai-daily-runner.ts ingest-tick",
     "ai-daily:editorial-tick": "tsx server/scripts/ai-daily-runner.ts editorial-tick",
     "ai-daily:run": "tsx server/scripts/ai-daily-runner.ts run",

@@ -8,12 +8,13 @@ const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 12_000
 const ROUTE_CHECK_ID = 'blog-semi-public-routes'
 const ASSISTANT_CHECK_ID = 'blog-semi-public-assistant'
-const coreSitemapRequiredPaths = ['/', '/projects', '/blog', '/status', '/pet-app-showcase/']
+const coreSitemapRequiredPaths = ['/', '/projects', '/blog', '/ai-daily', '/status', '/pet-app-showcase/']
 
 const targets = [
   { label: 'home', path: '/', kind: 'page', critical: true },
   { label: 'projects', path: '/projects', kind: 'page', critical: true },
   { label: 'blog', path: '/blog', kind: 'page', critical: true },
+  { label: 'ai-daily', path: '/ai-daily', kind: 'page', critical: true },
   { label: 'status', path: '/status', kind: 'page', critical: true },
   { label: 'sitemap', path: '/sitemap.xml', kind: 'sitemap', critical: false },
   { label: 'robots', path: '/robots.txt', kind: 'robots', critical: false },

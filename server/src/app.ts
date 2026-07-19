@@ -14,6 +14,7 @@ import { createMetricsMiddleware, renderPrometheusMetrics } from './metrics.js'
 import { retrievePublicAssistantContext } from './ragClient.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import { createStudioRouter } from './studioRoutes.js'
+import { createAiDailyPublicRouter } from './aiDailyPublicRoutes.js'
 import { runOperatorAgent } from './agentOrchestrator.js'
 import type { AssistantServiceMode, ChatPayload, ChatResponse, RagCollectionHealth, RagHealthResponse } from './types.js'
 
@@ -26,10 +27,13 @@ const ADMIN_RAG_SYNC_TIMEOUT_MS = 120000
 
 export function createApp() {
   const app = express()
-  app.use(cors({ origin: env.corsOrigin === '*' ? true : env.corsOrigin }))
+  const serviceMode = env.assistantServiceMode
+  app.set('trust proxy', env.trustProxy && (serviceMode === 'studio' || serviceMode === 'all') ? 1 : false)
   app.use(express.json({ limit: '1mb' }))
   if (env.metricsEnabled) app.use(createMetricsMiddleware())
-  const serviceMode = env.assistantServiceMode
+
+  if (serviceMode === 'studio' || serviceMode === 'all') app.use(createAiDailyPublicRouter())
+  app.use(cors({ origin: env.corsOrigin === '*' ? true : env.corsOrigin }))
 
   app.get('/metrics', (_req, res) => {
     if (!env.metricsEnabled) {

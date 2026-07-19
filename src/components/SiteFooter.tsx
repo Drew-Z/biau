@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 const footerLinks = [
   { label: '项目集', to: '/projects' },
   { label: '知识库', to: '/blog' },
+  { label: 'AI 日报', to: '/ai-daily' },
   { label: '状态页', to: '/status' },
 ]
 

@@ -29,6 +29,7 @@ const assistantRagTimeoutMs = readPositiveInteger(process.env.ASSISTANT_RAG_TIME
 const assistantServiceMode = readServiceMode(process.env.ASSISTANT_SERVICE_MODE)
 const adminToken = process.env.ADMIN_TOKEN?.trim() ?? ''
 const operatorOwnerEmails = readCsv(process.env.OPERATOR_OWNER_EMAILS)
+const aiDailyPublicCorsOrigins = readOriginCsv(process.env.AI_DAILY_PUBLIC_CORS_ORIGINS)
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
@@ -37,6 +38,7 @@ export const env = {
   databaseUrl: process.env.DATABASE_URL?.trim() ?? '',
   studioDatabaseUrl: process.env.STUDIO_DATABASE_URL?.trim() || process.env.DATABASE_URL?.trim() || '',
   corsOrigin: normalizeCorsOrigin(process.env.CORS_ORIGIN),
+  trustProxy: readBoolean(process.env.TRUST_PROXY),
   assistantModelApiKey,
   assistantModelBaseUrl,
   assistantModelName,
@@ -56,6 +58,11 @@ export const env = {
   operatorOwnerEmails,
   operatorModelChannelId: process.env.OPERATOR_MODEL_CHANNEL_ID?.trim().toLowerCase() || null,
   metricsEnabled: readBoolean(process.env.METRICS_ENABLED),
+  aiDailyPublicCorsOrigins,
+  aiDailyPublicWindowHours: readPositiveInteger(process.env.AI_DAILY_PUBLIC_WINDOW_HOURS, 72),
+  aiDailyPublicStaleMinutes: readPositiveInteger(process.env.AI_DAILY_PUBLIC_STALE_MINUTES, 180),
+  aiDailyPublicRateLimit: readPositiveInteger(process.env.AI_DAILY_PUBLIC_RATE_LIMIT, 60),
+  aiDailyPublicRateWindowMs: readPositiveInteger(process.env.AI_DAILY_PUBLIC_RATE_WINDOW_MS, 60000),
   ragStoreProvider: readFirstEnv('RAG_STORE_PROVIDER') || 'local',
   ragDatabaseUrl: readFirstEnv('RAG_DATABASE_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DB_URL'),
   supabaseUrl: readFirstEnv('SUPABASE_URL'),
@@ -102,6 +109,17 @@ function readServiceMode(value: string | undefined): AssistantServiceMode {
 
 function readCsv(value: string | undefined) {
   return Array.from(new Set((value ?? '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)))
+}
+
+function readOriginCsv(value: string | undefined) {
+  return Array.from(
+    new Set(
+      (value ?? '')
+        .split(',')
+        .map((item) => item.trim().replace(/\/+$/u, ''))
+        .filter((item) => /^https?:\/\/[^\s/]+(?::\d+)?$/iu.test(item)),
+    ),
+  )
 }
 
 function readPositiveInteger(value: string | undefined, fallback: number) {

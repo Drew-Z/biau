@@ -13,6 +13,14 @@ git diff --check
 
 Also run feature-specific checks such as `analytics:check`, `project-details:check`, `blog:check`, `status:contract`, or `operator:facade-smoke` when their contracts change.
 
+For the public AI Daily Feed or detail route, also run:
+
+```powershell
+npm.cmd run ai-daily:public-feed-check
+npm.cmd run analytics:check
+npm.cmd run docs:deployment-check
+```
+
 ## Review Priorities
 
 1. Broken routes, hidden content leaks, or credential exposure.
@@ -79,6 +87,9 @@ Also run feature-specific checks such as `analytics:check`, `project-details:che
 - External links expose external affordance and safe target/rel behavior.
 - Internal links preserve SPA navigation.
 - Project details include useful screenshots/diagrams inside the article flow, not only one hero image.
+- `/ai-daily` and `/ai-daily/:publicId` expose approved public projections only. At 320px through desktop they must keep loading, error, empty, stale, correction, pagination, facts, uncertainty, and citations vertically readable without overflow.
+- AI Daily refresh and pagination controls expose pending/disabled state, do not create overlapping requests, preserve the last successful payload on transient failure, and do not flicker when an ETag refresh returns `304`.
+- Public citation links are decoded as credential-free HTTPS URLs and render with external affordance plus `target="_blank" rel="noreferrer"`.
 
 ## SEO And Analytics
 
@@ -86,6 +97,7 @@ Also run feature-specific checks such as `analytics:check`, `project-details:che
 - Private Operator routes may have metadata but are excluded from public sitemap/navigation.
 - Analytics events use normalized route patterns/areas/depth; never send query/hash/dynamic ids/tokens.
 - Root static HTML retains a meaningful SEO shell before hydration.
+- AI Daily detail metadata upgrades from the route fallback to the approved event title and fact summary after the payload loads, while keeping the stable public canonical path.
 
 ## Accessibility
 
@@ -120,4 +132,5 @@ Also run feature-specific checks such as `analytics:check`, `project-details:che
 - Mobile public navigation and detail reading.
 - Studio focused modes and review entry.
 - Background animation/reduced-motion frames.
+- AI Daily Feed/detail happy paths, stale/error/empty states, cursor pagination, `304` recovery, rapid route changes, safe citations, and reduced-motion loading indicators.
 - SEO metadata, overflow, focus, and external/internal link behavior.

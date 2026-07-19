@@ -23,13 +23,13 @@ Publish approved flash revisions through a safe near-real-time public surface wh
 
 ## Acceptance Criteria
 
-- [ ] Approval reaches the public API within p95 <=2 minutes under fixture timing.
-- [ ] Correction changes the ETag and stable public representation; old revisions are not separately public.
-- [ ] Withdrawal is removed immediately and detail returns `410`.
-- [ ] CDN/cache, CORS, rate-limit, auth isolation, pagination, and query-budget fixtures pass.
-- [ ] API-success-but-stale content is visibly labeled.
-- [ ] Mobile and desktop feed layouts have no unintended overflow.
-- [ ] Hidden/unreviewed content remains absent from public build and assistant surfaces.
+- [x] Approval reaches the public API within p95 <=2 minutes under fixture timing.
+- [x] Correction changes the ETag and stable public representation; old revisions are not separately public.
+- [x] Withdrawal is removed immediately and detail returns `410`.
+- [x] CDN/cache, CORS, rate-limit, auth isolation, pagination, and query-budget fixtures pass.
+- [x] API-success-but-stale content is visibly labeled.
+- [x] Mobile and desktop feed layouts have no unintended overflow.
+- [x] Hidden/unreviewed content remains absent from public build and assistant surfaces.
 
 ## Validation
 

@@ -56,6 +56,7 @@
 | 首篇公开导出 | 公开数据文件必须审查 diff | `studio:export -- --run-checks`、博客检查和最终 Git diff |
 | AI Daily 真实来源 | 需要逐条确认日期、事实、版权和来源上下文 | source URL 数量、发布日期、审核结论，不复制长段原文 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
+| AI Daily 公开 Feed 上线 | 新增公开索引 migration、Cloudflare browser base 和 Studio CORS allowlist 需要平台配置 | 只记录 migration 名、公开 route HTTP 状态、ETag/CORS 类别和页面截图，不记录数据库 URL 或 token |
 | 资源分享 | 该栏目代表站长主观筛选 | 由用户撰写或逐条审核，不批量自动填充 |
 
 ## 关联项目门禁
@@ -101,16 +102,22 @@
    - 在 `biau-content-studio-api` 执行包含 `20260718010000_ai_daily_generation_runner` 的 migration，再重新部署最新代码。
    - 只复核 `/health`、migration 名、checkpoint/revision 表可查询和低敏计数；不要运行真实模型测活。
 
-2. **处理首轮被退回修改的 Studio 草稿**
+2. **上线 AI Daily 公开 Feed**
+   - 在生产 Studio 数据库执行 `20260719020000_ai_daily_public_feed_index`，执行前保留备份和上一 Render revision。
+   - Studio 服务设置 `AI_DAILY_PUBLIC_CORS_ORIGINS=https://biau.playlab.eu.cc`，并部署当前代码。
+   - Cloudflare Pages 设置 `VITE_AI_DAILY_API_BASE_URL=<当前 Studio 服务 origin>` 后重新部署静态站。
+   - 只用真实浏览页面和公开 GET 验收 `/ai-daily`、一个已批准事件详情、ETag `304`、撤回 `410` 和移动端；不要用模型测活。
+
+3. **处理首轮被退回修改的 Studio 草稿**
    - 在 Studio 中打开两个状态为 `needs-changes` 的 hidden 草稿。
    - 选择一个作为主稿，补齐可核验事实、来源、知识点、边界和配图/结构；另一个归档或明确保留为不发布稿。
    - 先保存修改并重新提交审核，不要直接发布；完成后由 Codex 复核低敏状态，再进入新版审核和 Publish Export 门禁。
 
-3. **审核证据完整的新版草稿并创建第一个 Publish Export**
+4. **审核证据完整的新版草稿并创建第一个 Publish Export**
    - 仅在新版草稿完成事实、来源、结构和版权检查后执行。
    - 记录审核结论、draft id 的脱敏摘要和 export 数量，不记录文章正文或生产凭据。
 
-4. **继续关联项目门禁**
+5. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。
 
 ## 延期项

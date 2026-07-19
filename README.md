@@ -180,6 +180,7 @@ Common frontend variables:
 | --- | --- |
 | `VITE_CHAT_API_BASE_URL` | Public assistant API base, often `/api` for Cloudflare Pages Functions. |
 | `VITE_STUDIO_API_BASE_URL` | Content Studio API origin. |
+| `VITE_AI_DAILY_API_BASE_URL` | Public AI Daily feed origin; no browser token is sent. |
 | `VITE_ANALYTICS_PROVIDER` | Optional `umami`, `plausible`, or `debug`. Default is off. |
 
 Common server variables:
@@ -188,6 +189,7 @@ Common server variables:
 | --- | --- |
 | `ASSISTANT_SERVICE_MODE` | `public`, `operator`, `studio`, `rag`, or local `all`. |
 | `CORS_ORIGIN` | Browser origin allowed by Express services. |
+| `AI_DAILY_PUBLIC_*` | Public AI Daily CORS allowlist, time window, stale threshold, and process-local rate limit. |
 | `DATABASE_URL` | BIAU Operator owner workspace database. |
 | `STUDIO_DATABASE_URL` | Content Studio database. |
 | `ADMIN_TOKEN` / `STUDIO_ADMIN_TOKEN` | Server-side admin tokens. |

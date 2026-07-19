@@ -40,6 +40,16 @@ const routes = [
   { path: '/', title: 'BIAU PORT', nav: '所有项目', canonical: '/' },
   { path: '/projects', title: '项目集', nav: '回主页', canonical: '/projects' },
   { path: '/blog', title: '知识库', nav: '回主页', canonical: '/blog' },
+  { path: '/ai-daily', title: 'AI 日报', nav: '回主页', canonical: '/ai-daily', aiDailyPublicFixture: true },
+  {
+    path: '/ai-daily/flash-public-1',
+    title: '公开 Flash 标题',
+    nav: '回主页',
+    canonical: '/ai-daily/flash-public-1',
+    seoTitle: '公开 Flash 标题 | BIAU Port AI 日报',
+    seoDescription: '这是 UI 检查使用的证据绑定事实摘要。',
+    aiDailyPublicFixture: true,
+  },
   { path: '/status', title: '项目可靠性观察', nav: '回主页', canonical: '/status' },
   { path: '/status/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/status/legal-rag' },
   { path: '/studio', title: '内容工作台', nav: '回主页', canonical: '/studio' },
@@ -190,6 +200,132 @@ async function installOperatorSessionRaceFixture(page) {
       contentType: 'application/json',
       body: JSON.stringify(body),
     })
+  })
+}
+
+async function installAiDailyPublicFixture(page) {
+  const item = createAiDailyPublicFixtureItem()
+  const { feed, detail } = createAiDailyPublicPayloads(item)
+  await page.route('**/public/ai-daily/feed*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', headers: { ETag: '"ui-check-feed"' }, body: JSON.stringify(feed) }),
+  )
+  await page.route('**/public/ai-daily/events/flash-public-1*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', headers: { ETag: '"ui-check-detail"' }, body: JSON.stringify(detail) }),
+  )
+}
+
+function createAiDailyPublicFixtureItem(overrides = {}) {
+  return {
+    publicId: 'flash-public-1',
+    revision: 2,
+    title: '公开 Flash 标题',
+    factSummary: '这是 UI 检查使用的证据绑定事实摘要。',
+    whyItMatters: '这条快讯用于确认公开阅读层的布局与来源边界。',
+    uncertainty: '后续信息仍需继续观察。',
+    approvedAt: '2026-07-19T10:00:00.000Z',
+    updatedAt: '2026-07-19T10:00:00.000Z',
+    corrected: true,
+    correctedAt: '2026-07-19T11:00:00.000Z',
+    citations: [
+      {
+        title: '公开来源标题',
+        publisher: 'Example AI Lab',
+        url: 'https://example.com/ai-daily/ui-check',
+        publishedAt: '2026-07-19T09:00:00.000Z',
+        excerpt: '公开来源摘要，用来检查引用卡片的换行和外链安全属性。',
+      },
+    ],
+    ...overrides,
+  }
+}
+
+function createAiDailyPublicPayloads(item, freshnessOverrides = {}) {
+  const freshness = {
+    status: 'fresh',
+    stale: false,
+    staleAfterMinutes: 180,
+    latestApprovalAt: item.approvedAt,
+    latestProjectionAt: item.updatedAt,
+    ...freshnessOverrides,
+  }
+  const feed = {
+    items: [item],
+    nextCursor: null,
+    meta: {
+      generatedAt: item.updatedAt,
+      windowHours: 72,
+      freshness,
+      editorialCoverage: { scope: 'page', itemCount: 1, citedItemCount: 1, citationCoverage: 1 },
+    },
+  }
+  const detail = { item, meta: { generatedAt: item.updatedAt, windowHours: 72, freshness } }
+  return { feed, detail }
+}
+
+async function installAiDailyPublicRefreshFixture(page) {
+  const { feed } = createAiDailyPublicPayloads(createAiDailyPublicFixtureItem())
+  let requestCount = 0
+  await page.route('**/public/ai-daily/feed*', async (route) => {
+    requestCount += 1
+    if (requestCount === 1) {
+      await route.fulfill({ status: 200, contentType: 'application/json', headers: { ETag: '"refresh-v1"' }, body: JSON.stringify(feed) })
+      return
+    }
+    if (requestCount === 2) {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'fixture-transient-failure' }) })
+      return
+    }
+    await route.fulfill({ status: 304, headers: { ETag: '"refresh-v1"' } })
+  })
+}
+
+async function installAiDailyPublicStaleFixture(page) {
+  const { feed } = createAiDailyPublicPayloads(createAiDailyPublicFixtureItem(), { status: 'stale', stale: true })
+  await page.route('**/public/ai-daily/feed*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', headers: { ETag: '"stale-v1"' }, body: JSON.stringify(feed) }),
+  )
+}
+
+async function installAiDailyPublicInvalidCitationFixture(page) {
+  const item = createAiDailyPublicFixtureItem({
+    publicId: 'invalid-citation',
+    title: '不安全引用快讯',
+    citations: [
+      {
+        title: '不安全来源',
+        publisher: 'Unsafe fixture',
+        url: 'javascript:document.body.dataset.compromised="true"',
+        publishedAt: '2026-07-19T09:00:00.000Z',
+        excerpt: '这个引用必须在 API 解码边界被拒绝。',
+      },
+    ],
+  })
+  const { detail } = createAiDailyPublicPayloads(item)
+  await page.route('**/public/ai-daily/events/invalid-citation*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(detail) }),
+  )
+}
+
+async function installAiDailyPublicRaceFixture(page) {
+  await page.route('**/public/ai-daily/events/*', async (route) => {
+    const publicId = new URL(route.request().url()).pathname.split('/').pop() ?? ''
+    const slow = publicId === 'slow-event'
+    const item = createAiDailyPublicFixtureItem({
+      publicId,
+      title: slow ? '延迟旧快讯' : '快速当前快讯',
+      factSummary: slow ? '这条旧响应不应覆盖新路由。' : '这条快速响应属于当前路由。',
+    })
+    const { detail } = createAiDailyPublicPayloads(item)
+    if (slow) await new Promise((resolve) => setTimeout(resolve, 450))
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(detail) }).catch(() => {})
+  })
+}
+
+async function installAiDailyPublicDelayedFeedFixture(page) {
+  const { feed } = createAiDailyPublicPayloads(createAiDailyPublicFixtureItem())
+  await page.route('**/public/ai-daily/feed*', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 450))
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(feed) }).catch(() => {})
   })
 }
 const projectDetailVisualCases = projects
@@ -1070,6 +1206,7 @@ for (const viewport of viewports) {
       }, { keys: route.clearLocalStorageKeys ?? [], values: route.localStorageValues ?? {} })
     }
     if (route.path.startsWith('/operator')) await installOperatorApiFixture(page)
+    if (route.aiDailyPublicFixture) await installAiDailyPublicFixture(page)
 
     await gotoApp(page, route.path)
 
@@ -1118,6 +1255,17 @@ for (const viewport of viewports) {
       failures.push(`${viewport.name} ${route.path}: missing useful og:title`)
     }
 
+    if (viewport.name === 'desktop' && route.seoTitle) {
+      const documentTitle = await page.title()
+      if (documentTitle !== route.seoTitle || ogTitle !== route.seoTitle) {
+        failures.push(`${viewport.name} ${route.path}: expected dynamic SEO title "${route.seoTitle}"`)
+      }
+    }
+
+    if (viewport.name === 'desktop' && route.seoDescription && description !== route.seoDescription) {
+      failures.push(`${viewport.name} ${route.path}: expected dynamic SEO description from approved fact summary`)
+    }
+
     if (route.expectedText) {
       const expectedTextVisible = await page.getByText(route.expectedText).first().isVisible().catch(() => false)
       if (!expectedTextVisible) {
@@ -1144,6 +1292,30 @@ for (const viewport of viewports) {
       }
       if (viewport.name === 'desktop' && !(await page.getByLabel('站务运行检查器').isVisible().catch(() => false))) {
         failures.push(`${viewport.name} ${route.path}: expected visible runtime inspector`)
+      }
+    }
+
+    if (route.path === '/ai-daily') {
+      if (!(await page.getByText('公开 Flash 标题').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: expected public Flash fixture card`)
+      }
+      if (!(await page.getByText('公开投影正常').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: expected freshness status`)
+      }
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) {
+        failures.push(`${viewport.name} ${route.path}: public feed caused horizontal overflow`)
+      }
+    }
+
+    if (route.path === '/ai-daily/flash-public-1') {
+      if (!(await page.getByText('公开来源标题').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: expected citation source`)
+      }
+      if (!(await page.getByText('已修正').isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: expected correction marker`)
+      }
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) {
+        failures.push(`${viewport.name} ${route.path}: public detail caused horizontal overflow`)
       }
     }
 
@@ -3593,6 +3765,82 @@ for (const width of [320, 390, 430]) {
     await mobileDetailPage.close()
   }
 }
+
+const publicFeedRefreshPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+await installAiDailyPublicRefreshFixture(publicFeedRefreshPage)
+await gotoApp(publicFeedRefreshPage, '/ai-daily')
+await publicFeedRefreshPage.getByText('公开 Flash 标题').waitFor({ state: 'visible' })
+await publicFeedRefreshPage.getByRole('button', { name: '刷新 AI 日报' }).click()
+await publicFeedRefreshPage.getByRole('alert').waitFor({ state: 'visible' })
+if (!(await publicFeedRefreshPage.getByText('公开 Flash 标题').isVisible().catch(() => false))) {
+  failures.push('/ai-daily refresh: transient failure should retain the last successful payload')
+}
+await publicFeedRefreshPage.getByRole('button', { name: '重试' }).click()
+const refreshErrorCleared = await publicFeedRefreshPage
+  .getByRole('alert')
+  .waitFor({ state: 'detached', timeout: 3_000 })
+  .then(() => true)
+  .catch(() => false)
+if (!refreshErrorCleared) {
+  failures.push('/ai-daily refresh: a successful 304 should clear the previous error')
+}
+await publicFeedRefreshPage.close()
+
+const publicFeedStalePage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+await installAiDailyPublicStaleFixture(publicFeedStalePage)
+await gotoApp(publicFeedStalePage, '/ai-daily')
+if (!(await publicFeedStalePage.getByText('投影需要关注').isVisible().catch(() => false))) {
+  failures.push('/ai-daily stale: expected visible stale projection notice')
+}
+await publicFeedStalePage.close()
+
+const invalidCitationPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+await installAiDailyPublicInvalidCitationFixture(invalidCitationPage)
+await gotoApp(invalidCitationPage, '/ai-daily/invalid-citation')
+await invalidCitationPage.getByText('无法打开这条快讯').waitFor({ state: 'visible' })
+if ((await invalidCitationPage.locator('a[href^="javascript:"]').count()) !== 0) {
+  failures.push('/ai-daily invalid citation: unsafe javascript URL should never reach an anchor')
+}
+if (await invalidCitationPage.evaluate(() => document.body.dataset.compromised === 'true')) {
+  failures.push('/ai-daily invalid citation: unsafe citation URL should not execute')
+}
+await invalidCitationPage.close()
+
+const publicDetailRacePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+await installAiDailyPublicRaceFixture(publicDetailRacePage)
+await gotoApp(publicDetailRacePage, '/ai-daily/slow-event')
+await publicDetailRacePage.evaluate(() => {
+  window.history.pushState({}, '', '/ai-daily/fast-event')
+  window.dispatchEvent(new PopStateEvent('popstate'))
+})
+await publicDetailRacePage.getByText('快速当前快讯').waitFor({ state: 'visible' })
+await publicDetailRacePage.waitForTimeout(550)
+if (!(await publicDetailRacePage.getByText('快速当前快讯').isVisible().catch(() => false)) || await publicDetailRacePage.getByText('延迟旧快讯').count()) {
+  failures.push('/ai-daily detail race: a late response from the old publicId should not replace the current route')
+}
+await publicDetailRacePage.close()
+
+const publicFeedReducedMotionPage = await browser.newPage({
+  viewport: { width: 390, height: 900 },
+  reducedMotion: 'reduce',
+})
+await installAiDailyPublicDelayedFeedFixture(publicFeedReducedMotionPage)
+await gotoApp(publicFeedReducedMotionPage, '/ai-daily')
+await publicFeedReducedMotionPage.locator('.loading-bar').waitFor({ state: 'visible' })
+const reducedMotionState = await publicFeedReducedMotionPage.evaluate(() => {
+  const dot = document.querySelector('.ai-daily-public-status-dot')
+  const bar = document.querySelector('.loading-bar')
+  const after = bar ? getComputedStyle(bar, '::after') : null
+  return {
+    dotAnimation: dot ? getComputedStyle(dot).animationName : 'missing',
+    barAnimation: after?.animationName ?? 'missing',
+    barTransform: after?.transform ?? 'missing',
+  }
+})
+if (reducedMotionState.dotAnimation !== 'none' || reducedMotionState.barAnimation !== 'none' || reducedMotionState.barTransform !== 'none') {
+  failures.push('/ai-daily reduced motion: loading indicators should remain static when motion is reduced')
+}
+await publicFeedReducedMotionPage.close()
 
 await browser.close()
 

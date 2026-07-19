@@ -2,7 +2,7 @@
 
 AI 日报 / AI Daily 是独立栏目，用来记录短周期 AI 模型、工具、开发平台和工程实践变化。当前推荐路径已经从单个离线草稿脚本升级为 **Studio-first 内部编辑流程**：先维护来源池和单期 issue，再由证据绑定 generation runner 生成不可变 revision 和隐藏的待审核博客草稿，最后通过静态导出进入公开站。
 
-公开站仍然只读取已审核、已导出的 Git-tracked 内容；数据库里的 AI Daily issue 和草稿不会直接公开。
+公开站有两条相互独立的发布路径：近期 Flash 只读取数据库中 `ACTIVE + current APPROVED` 的公开投影；耐久版日报仍只读取已审核、已导出的 Git-tracked 内容。数据库里的 AI Daily issue、草稿、证据正文和审核记录都不会直接公开。
 
 生产就绪状态、服务分库边界和人工验收顺序见 [`docs/studio-ai-daily-production-readiness.md`](./studio-ai-daily-production-readiness.md)。
 
@@ -30,6 +30,10 @@ ASSISTANT_SERVICE_MODE=studio
 STUDIO_DATABASE_URL=<studio postgres connection string>
 STUDIO_ADMIN_TOKEN=<owner token>
 CORS_ORIGIN=<main site origin without trailing slash>
+TRUST_PROXY=true
+AI_DAILY_PUBLIC_CORS_ORIGINS=<main site origin without trailing slash>
+AI_DAILY_PUBLIC_WINDOW_HOURS=72
+AI_DAILY_PUBLIC_STALE_MINUTES=180
 NODE_VERSION=22
 ```
 
@@ -37,7 +41,10 @@ NODE_VERSION=22
 
 ```text
 VITE_STUDIO_API_BASE_URL=https://<studio-service>.onrender.com
+VITE_AI_DAILY_API_BASE_URL=https://<studio-service>.onrender.com
 ```
+
+公开页面使用 `GET /public/ai-daily/feed` 和 `GET /public/ai-daily/events/:publicId`，不会发送 Studio token。Flash 被暂挂时不会进入 feed，被撤回或超出公开窗口时详情返回 `410`；静态 Edition 的 Publish Export 审核不受 Flash 批准影响。
 
 不要把真实数据库连接串、token、私有 RSS token、模型中转站地址或后台链接写进仓库。首次上线新增 Studio 模型时，需要确认生产 migration 已执行。
 
