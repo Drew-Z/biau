@@ -3,7 +3,7 @@
   "name": "frontend-css-budget-cleanup",
   "title": "Restore frontend CSS budget",
   "description": "Remove confirmed obsolete global styles and restore the existing 240000-byte CSS budget without raising it or changing visible behavior.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": "performance",
   "scope": "frontend",
   "package": null,
@@ -11,7 +11,7 @@
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-07-19",
-  "completedAt": null,
+  "completedAt": "2026-07-19",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
@@ -25,6 +25,6 @@
     "scripts/check-build-performance.mjs",
     ".trellis/spec/frontend/quality-guidelines.md"
   ],
-  "notes": "Implemented conservative harbor/grain cleanup: main CSS is 236074/240000 bytes and full verify passes. Gradient and assistant cleanup remain out of scope. Pending isolated commit, push, and archive.",
+  "notes": "Implemented conservative harbor/grain cleanup: main CSS is 236074/240000 bytes and full verify passes. Gradient and assistant cleanup remain out of scope. Work commit 52f7682 was pushed; ready to archive.",
   "meta": {}
 }

@@ -7,7 +7,7 @@
 - [x] Search for remaining references and confirm active fallback selectors remain.
 - [x] Build and run the existing CSS budget gate.
 - [x] Run full production-preview UI regression, lint, and diff checks.
-- [ ] Commit and push the isolated cleanup.
+- [x] Commit and push the isolated cleanup (`52f7682`).
 
 ## Result
 
