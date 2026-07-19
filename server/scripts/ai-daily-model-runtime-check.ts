@@ -1,13 +1,22 @@
 import { createServer } from 'node:http'
-import { readFile } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   approveAiDailyModelEvaluationProposal,
   createAiDailyModelArtifactHash,
   createAiDailyModelEvaluationProposal,
+  type AiDailyModelApprovalBundle,
   validateAiDailyModelApprovalBundle,
 } from '../src/aiDailyModelArtifacts.js'
 import { createAiDailyOpenAiCompatibleProvider } from '../src/aiDailyModelProvider.js'
-import { buildAiDailyProductionProviders, defaultAiDailyModelApprovalFile } from '../src/aiDailyModelProduction.js'
+import {
+  buildAiDailyProductionProviders,
+  defaultAiDailyModelApprovalFile,
+  loadAiDailyModelApprovalBundle,
+} from '../src/aiDailyModelProduction.js'
 import { resolveAiDailyRunnerGenerationMode } from '../src/aiDailyRunnerMode.js'
 import {
   normalizeAiDailyModelRuntimeConfig,
@@ -23,6 +32,7 @@ import { assert, assertDeepEqual, assertEqual } from './ai-daily-check-helpers.j
 
 const observedBodies: Array<Record<string, unknown>> = []
 const observedPaths: string[] = []
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const server = createServer((request, response) => {
   const chunks: Buffer[] = []
   request.on('data', (chunk) => chunks.push(Buffer.from(chunk)))
@@ -145,6 +155,7 @@ try {
     () => validateAiDailyModelApprovalBundle({ ...bundle, selection: { selectionId: bundle.selection.selectionId } }),
     'malformed approval bundle should fail closed',
   )
+  await validateCustomApprovalBundleFile(bundle, runtime)
 
   const invalid = normalizeAiDailyModelRuntimeConfig({ schemaVersion: 'wrong', channels: [], candidates: [] })
   assert(!invalid.ok, 'invalid runtime config should fail closed')
@@ -183,21 +194,142 @@ async function expectFailure(action: () => Promise<unknown>, expectedMessage: st
 }
 
 async function validateConfiguredApprovalBundleFile() {
-  let raw: string
   try {
-    raw = await readFile(defaultAiDailyModelApprovalFile, 'utf8')
+    await loadAiDailyModelApprovalBundle(defaultAiDailyModelApprovalFile)
+    return 'valid'
   } catch (error) {
     if (isMissingFileError(error)) return 'absent'
+    if (error instanceof Error && error.message === 'ai-daily-model-approval-bundle-missing') return 'absent'
     throw error
   }
-  let parsed: unknown
+}
+
+async function validateCustomApprovalBundleFile(
+  bundle: AiDailyModelApprovalBundle,
+  runtime: AiDailyModelRuntimeConfig,
+) {
+  const directory = await mkdtemp(path.join(tmpdir(), 'biau-ai-daily-approval-'))
+  const filePath = path.join(directory, 'approval.json')
   try {
-    parsed = JSON.parse(raw)
-  } catch {
-    throw new Error('invalid-ai-daily-model-approval-bundle-json')
+    await writeFile(filePath, `${JSON.stringify(bundle)}\n`, 'utf8')
+    const loaded = await loadAiDailyModelApprovalBundle(filePath, bundle.bundleHash)
+    assertEqual(loaded.bundleHash, bundle.bundleHash, 'custom approval bundle path')
+    await expectFailure(
+      () => loadAiDailyModelApprovalBundle(filePath, '0'.repeat(64)),
+      'ai-daily-model-approval-bundle-drift',
+    )
+    const runnerRuntime = {
+      ...runtime,
+      channels: runtime.channels.map((channel, index) => ({
+        ...channel,
+        baseUrl: `https://relay-${index + 1}.example.invalid/v1`,
+      })),
+    }
+    assertApprovalDeliveryCheck({ runtime: runnerRuntime, filePath, bundleHash: bundle.bundleHash })
+    assertLiveRunnerConfigFailure({
+      runtime: runnerRuntime,
+      filePath: '',
+      bundleHash: bundle.bundleHash,
+      expectedMessage: 'ai-daily-model-approval-file-not-configured',
+    })
+    assertLiveRunnerConfigFailure({
+      runtime: runnerRuntime,
+      filePath: 'server/data/ai-daily-model-approval.v1.json',
+      bundleHash: bundle.bundleHash,
+      expectedMessage: 'ai-daily-model-approval-file-path-invalid',
+    })
+    assertLiveRunnerConfigFailure({
+      runtime: runnerRuntime,
+      filePath,
+      bundleHash: '',
+      expectedMessage: 'ai-daily-model-approval-bundle-hash-not-configured',
+    })
+    assertLiveRunnerConfigFailure({
+      runtime: runnerRuntime,
+      filePath,
+      bundleHash: '0'.repeat(64),
+      expectedMessage: 'ai-daily-model-approval-bundle-drift',
+    })
+    await writeFile(filePath, '{', 'utf8')
+    await expectFailure(
+      () => loadAiDailyModelApprovalBundle(filePath, bundle.bundleHash),
+      'invalid-ai-daily-model-approval-bundle-json',
+    )
+    await writeFile(filePath, `${JSON.stringify({ ...bundle, bundleHash: '0'.repeat(64) })}\n`, 'utf8')
+    await expectFailure(
+      () => loadAiDailyModelApprovalBundle(filePath, bundle.bundleHash),
+      'invalid-ai-daily-model-approval-bundle-hash',
+    )
+  } finally {
+    await rm(directory, { recursive: true, force: true })
   }
-  validateAiDailyModelApprovalBundle(parsed)
-  return 'valid'
+}
+
+function assertApprovalDeliveryCheck(input: {
+  runtime: AiDailyModelRuntimeConfig
+  filePath: string
+  bundleHash: string
+}) {
+  const env = {
+    ...process.env,
+    AI_DAILY_MODEL_RUNTIME_JSON: JSON.stringify(input.runtime),
+    AI_DAILY_MODEL_APPROVAL_FILE: input.filePath,
+    AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH: input.bundleHash,
+  }
+  const result = process.platform === 'win32'
+    ? spawnSync('cmd.exe', ['/d', '/s', '/c', 'npm.cmd run ai-daily:model-approval-check'], {
+        cwd: repoRoot,
+        env,
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+    : spawnSync('npm', ['run', 'ai-daily:model-approval-check'], {
+        cwd: repoRoot,
+        env,
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+  const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`
+  assert(result.status === 0, 'configured approval delivery check should pass')
+  assert(output.includes('"networkCalls": 0'), 'approval delivery check must declare zero network calls')
+  assert(output.includes(input.bundleHash), 'approval delivery check should report the approved bundle hash')
+  assert(!output.includes('test-key-'), 'approval delivery check must not expose runtime credentials')
+  assert(!output.includes('example.invalid'), 'approval delivery check must not expose runtime endpoints')
+}
+
+function assertLiveRunnerConfigFailure(input: {
+  runtime: AiDailyModelRuntimeConfig
+  filePath: string
+  bundleHash: string
+  expectedMessage: string
+}) {
+  const command = 'npm.cmd run ai-daily:editorial-tick -- --live'
+  const env = {
+    ...process.env,
+    NODE_ENV: 'test',
+    ASSISTANT_SERVICE_MODE: 'studio',
+    STUDIO_DATABASE_URL: 'postgresql://fixture:fixture@127.0.0.1:1/fixture',
+    AI_DAILY_PRODUCTION_GENERATION_ENABLED: 'true',
+    AI_DAILY_MODEL_RUNTIME_JSON: JSON.stringify(input.runtime),
+    AI_DAILY_MODEL_APPROVAL_FILE: input.filePath,
+    AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH: input.bundleHash,
+  }
+  const result = process.platform === 'win32'
+    ? spawnSync('cmd.exe', ['/d', '/s', '/c', command], {
+        cwd: repoRoot,
+        env,
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+    : spawnSync('npm', ['run', 'ai-daily:editorial-tick', '--', '--live'], {
+        cwd: repoRoot,
+        env,
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+  const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`
+  assert(result.status !== 0, `live runner should reject ${input.expectedMessage}`)
+  assert(output.includes(input.expectedMessage), `live runner should fail before claiming work: ${input.expectedMessage}`)
 }
 
 function isMissingFileError(error: unknown): error is NodeJS.ErrnoException {

@@ -59,6 +59,7 @@
     "ai-daily:quality-check": "tsx server/scripts/ai-daily-quality-check.ts",
     "ai-daily:model-evaluation-check": "tsx server/scripts/ai-daily-model-evaluation-check.ts",
     "ai-daily:model-runtime-check": "tsx server/scripts/ai-daily-model-runtime-check.ts",
+    "ai-daily:model-approval-check": "tsx server/scripts/ai-daily-model-approval-check.ts",
     "ai-daily:model-evaluate": "tsx server/scripts/ai-daily-model-evaluate.ts",
     "ai-daily:model-approve": "tsx server/scripts/ai-daily-model-approve.ts",
     "ai-daily:runner-check": "tsx server/scripts/ai-daily-runner-check.ts",

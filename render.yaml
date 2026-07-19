@@ -108,6 +108,10 @@ services:
         value: "60000"
       - key: AI_DAILY_MODEL_RUNTIME_JSON
         sync: false
+      - key: AI_DAILY_MODEL_APPROVAL_FILE
+        value: /etc/secrets/ai-daily-model-approval.v1.json
+      - key: AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH
+        sync: false
       - key: AI_DAILY_BUSINESS_EVALUATION_ENABLED
         value: "false"
       - key: AI_DAILY_MODEL_EVALUATION_APPROVAL_ID
@@ -120,6 +124,11 @@ services:
         sync: false
       - key: METRICS_ENABLED
         value: "false"
+
+# AI Daily Cron jobs intentionally remain outside this Blueprint until the
+# first live edition passes the human acceptance gate. When created manually,
+# the Editorial Cron must receive its own copy of the approved Secret File plus
+# the same runtime/path/hash variables; Render does not inherit them from Studio.
 
   - type: web
     name: biau-rag-orchestrator

@@ -12,7 +12,10 @@ import {
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url))
 export const defaultAiDailyModelApprovalFile = path.resolve(moduleDirectory, '../data/ai-daily-model-approval.v1.json')
 
-export async function loadAiDailyModelApprovalBundle(filePath = defaultAiDailyModelApprovalFile) {
+export async function loadAiDailyModelApprovalBundle(
+  filePath = defaultAiDailyModelApprovalFile,
+  expectedBundleHash = '',
+) {
   let raw: string
   try {
     raw = await readFile(filePath, 'utf8')
@@ -25,7 +28,11 @@ export async function loadAiDailyModelApprovalBundle(filePath = defaultAiDailyMo
   } catch {
     throw new Error('invalid-ai-daily-model-approval-bundle-json')
   }
-  return validateAiDailyModelApprovalBundle(parsed)
+  const bundle = validateAiDailyModelApprovalBundle(parsed)
+  if (expectedBundleHash && bundle.bundleHash !== expectedBundleHash) {
+    throw new Error('ai-daily-model-approval-bundle-drift')
+  }
+  return bundle
 }
 
 export function buildAiDailyProductionProviders(input: {

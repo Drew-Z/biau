@@ -1,10 +1,11 @@
 import { access, readFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { constants } from 'node:fs'
-import { dirname, resolve } from 'node:path'
+import { dirname, isAbsolute, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const renderApprovalFilePath = '/etc/secrets/ai-daily-model-approval.v1.json'
 
 function hasValue(value) {
   return typeof value === 'string' && value.trim().length > 0
@@ -85,6 +86,16 @@ function invalidProductionKeys(source) {
   if (!/^(?:true|false|1|0|yes|no|on|off)$/iu.test(source.AI_DAILY_PUBLIC_FEED_ENABLED?.trim() || '')) {
     invalid.push('AI_DAILY_PUBLIC_FEED_ENABLED')
   }
+  for (const key of ['AI_DAILY_BUSINESS_EVALUATION_ENABLED', 'AI_DAILY_PRODUCTION_GENERATION_ENABLED']) {
+    if (!/^(?:true|false|1|0|yes|no|on|off)$/iu.test(source[key]?.trim() || '')) invalid.push(key)
+  }
+  if (!isAbsolute(source.AI_DAILY_MODEL_APPROVAL_FILE?.trim() || '')) invalid.push('AI_DAILY_MODEL_APPROVAL_FILE')
+  if (!/^[a-f0-9]{64}$/u.test(source.AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH?.trim() || '')) {
+    invalid.push('AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH')
+  }
+  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{2,119}$/u.test(source.AI_DAILY_MODEL_EVALUATION_APPROVAL_ID?.trim() || '')) {
+    invalid.push('AI_DAILY_MODEL_EVALUATION_APPROVAL_ID')
+  }
   if (!/^(?:true|1|yes|on)$/iu.test(source.TRUST_PROXY?.trim() || '')) invalid.push('TRUST_PROXY')
   return invalid
 }
@@ -148,6 +159,7 @@ async function main() {
     'ai-daily:manifest-check',
     'ai-daily:model-evaluation-check',
     'ai-daily:model-runtime-check',
+    'ai-daily:model-approval-check',
     'ai-daily:model-evaluate',
     'ai-daily:model-approve',
     'ai-daily:observability-contract-check',
@@ -202,18 +214,43 @@ async function main() {
   const modelEvaluationContractOk =
     runOfflineContract('ai-daily:model-evaluation-check') &&
     runOfflineContract('ai-daily:model-runtime-check')
-  const modelApprovalBundlePresent = await fileExists('server/data/ai-daily-model-approval.v1.json')
   results.push(
     check(
       'model-evaluation-contract',
       'Offline three-role model evaluation contract',
       modelEvaluationContractOk,
       modelEvaluationContractOk
-        ? modelApprovalBundlePresent
-          ? 'Three-role runtime contract passed and a reviewed approval bundle is present'
-          : 'Runtime contract passed with loopback only; real candidate evaluation and human approval remain gated'
+        ? 'Three-role evaluation, tamper detection, explicit bundle hash, and runtime drift contracts passed with loopback fixtures'
         : 'model evaluation contract failed; run npm.cmd run ai-daily:model-evaluation-check for details',
-      modelEvaluationContractOk && modelApprovalBundlePresent ? 'pass' : modelEvaluationContractOk ? 'manual-gate' : 'fail',
+    ),
+  )
+
+  const modelDeliveryKeys = [
+    'AI_DAILY_MODEL_RUNTIME_JSON',
+    'AI_DAILY_MODEL_APPROVAL_FILE',
+    'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
+  ]
+  const configuredModelDeliveryKeys = modelDeliveryKeys.filter((key) => hasValue(process.env[key]))
+  const modelDeliveryConfigured = configuredModelDeliveryKeys.length === modelDeliveryKeys.length
+  const modelDeliveryValid = modelDeliveryConfigured && runOfflineContract('ai-daily:model-approval-check')
+  const modelDeliveryStatus = configuredModelDeliveryKeys.length === 0
+    ? 'manual-gate'
+    : modelDeliveryValid
+      ? 'pass'
+      : 'fail'
+  results.push(
+    check(
+      'model-approval-delivery',
+      'Production approval bundle delivery',
+      modelDeliveryValid,
+      modelDeliveryValid
+        ? 'Configured approval file, expected bundle hash, and runtime channel identities agree; no provider call was made'
+        : configuredModelDeliveryKeys.length === 0
+          ? 'manual gate: create and upload the approved Render Secret File, then configure its path and bundle hash'
+          : modelDeliveryConfigured
+            ? 'configured approval delivery is invalid; run npm.cmd run ai-daily:model-approval-check for the stable failure category'
+            : `partial approval delivery configuration; missing ${modelDeliveryKeys.filter((key) => !configuredModelDeliveryKeys.includes(key)).join(', ')}`,
+      modelDeliveryStatus,
     ),
   )
 
@@ -226,6 +263,8 @@ async function main() {
     'AI_DAILY_PUBLIC_RATE_WINDOW_MS',
     'AI_DAILY_PUBLIC_FEED_ENABLED',
     'AI_DAILY_MODEL_RUNTIME_JSON',
+    'AI_DAILY_MODEL_APPROVAL_FILE',
+    'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
     'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
     'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
     'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
@@ -248,6 +287,8 @@ async function main() {
     'AI_DAILY_TIME_ZONE',
     'AI_DAILY_PUBLIC_FEED_ENABLED',
     'AI_DAILY_MODEL_RUNTIME_JSON',
+    'AI_DAILY_MODEL_APPROVAL_FILE',
+    'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
     'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
     'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
     'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
@@ -258,6 +299,9 @@ async function main() {
     studioEnv.get('ASSISTANT_SERVICE_MODE') === 'studio' &&
     studioEnv.get('AI_DAILY_TIME_ZONE') === 'Asia/Shanghai' &&
     studioEnv.get('AI_DAILY_PUBLIC_FEED_ENABLED') === 'false' &&
+    studioEnv.get('AI_DAILY_MODEL_APPROVAL_FILE') === renderApprovalFilePath &&
+    studioEnv.get('AI_DAILY_BUSINESS_EVALUATION_ENABLED') === 'false' &&
+    studioEnv.get('AI_DAILY_PRODUCTION_GENERATION_ENABLED') === 'false' &&
     missingRenderKeys.length === 0
   results.push(
     check(
@@ -283,7 +327,9 @@ async function main() {
   const cronDocumented =
     pipelineDoc.includes('| Ingest Cron | `*/15 * * * *` |') &&
     pipelineDoc.includes('| Editorial Cron | `0 * * * *` |') &&
-    pipelineDoc.includes('deadline 必须短于调度间隔')
+    pipelineDoc.includes('deadline 必须短于调度间隔') &&
+    pipelineDoc.includes('AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json') &&
+    pipelineDoc.includes('只在 Studio 上传文件不能让 Editorial Cron 读取它')
   results.push(
     check(
       'cron-runbook',
@@ -357,6 +403,12 @@ async function main() {
     'AI_DAILY_PUBLIC_CORS_ORIGINS',
     'AI_DAILY_TIME_ZONE',
     'AI_DAILY_PUBLIC_FEED_ENABLED',
+    'AI_DAILY_MODEL_RUNTIME_JSON',
+    'AI_DAILY_MODEL_APPROVAL_FILE',
+    'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
+    'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
+    'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
+    'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
     'TRUST_PROXY',
   ]
   const configuredKeys = productionKeys.filter((key) => hasValue(process.env[key]))

@@ -198,6 +198,72 @@ Only path incompatibility permits endpoint fallback; execution failures remain s
 - Keep both checks inside `ai-daily:contracts-check`; `ai-daily:production-readiness-check` must also execute the observability asset check without network calls.
 - Run `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and a sensitive-value scan before commit.
 
+## Scenario: Production model approval bundle delivery
+
+### 1. Scope / Trigger
+
+- Trigger: changing the AI Daily production model runtime, approval artifact, Render Secret File wiring, live runner configuration, or production-readiness checks.
+- Goal: bind every live generation process to one human-approved, tamper-evident model selection without committing the artifact or calling a provider during readiness checks.
+
+### 2. Signatures
+
+- `AI_DAILY_MODEL_RUNTIME_JSON=<server-only runtime JSON>`
+- `AI_DAILY_MODEL_APPROVAL_FILE=<absolute path>`
+- `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<64 lowercase hex canonical bundleHash>`
+- `npm.cmd run ai-daily:model-approval-check` validates delivery and prints `networkCalls: 0`.
+- `npm.cmd run ai-daily:editorial-tick -- --live` and other live runner commands require the same three values before claiming `PRODUCTION` work.
+
+### 3. Contracts
+
+- Render uses `/etc/secrets/ai-daily-model-approval.v1.json`; local validation may use another absolute path.
+- The file must pass schema, candidate-record, selection-record, approval-status, and canonical `bundleHash` validation. The environment hash must equal that canonical hash so an older but internally valid file is rejected.
+- Runtime candidate ids, roles, provider aliases, failure-domain aliases, and model identifiers must match the approved records. Base URLs and keys remain server-only and never enter the bundle or checker output.
+- Render Secret Files and environment variables are service-scoped. Studio and every Editorial Cron that executes `--live` each receive their own copy of the same file/runtime/hash. Ingest Cron never receives model credentials or the approval bundle.
+- The production bundle is generated locally, reviewed by a human, Git-ignored, and uploaded through Render. `render.yaml` intentionally omits Cron services until the first live edition passes its manual gate.
+
+### 4. Validation & Error Matrix
+
+- Missing file setting -> `ai-daily-model-approval-file-not-configured` before database work.
+- Relative file setting -> `ai-daily-model-approval-file-path-invalid`.
+- Missing or malformed expected hash -> `ai-daily-model-approval-bundle-hash-not-configured`.
+- Missing file on disk -> `ai-daily-model-approval-bundle-missing`.
+- Invalid JSON -> `invalid-ai-daily-model-approval-bundle-json`.
+- Invalid schema, selection, or canonical hash -> the corresponding stable `invalid-ai-daily-model-approval-*` error.
+- Canonical hash differs from the configured expected hash -> `ai-daily-model-approval-bundle-drift`.
+- Approved provider/failure-domain/model identity differs from runtime -> `ai-daily-<role>-runtime-channel-drift`.
+- No delivery values in production readiness -> `manual-gate`; partial or configured-invalid delivery -> `fail`.
+
+### 5. Good / Base / Bad Cases
+
+- Good: Studio and Editorial Cron each mount the same reviewed file, use the same expected hash, and pass `ai-daily:model-approval-check` without exposing endpoint/key data.
+- Base: a fresh clone has no real bundle; deterministic checks pass, while production readiness reports the remaining human gate.
+- Bad: only Studio receives the Secret File while Editorial Cron inherits nothing and fails on its first scheduled run.
+- Bad: a previous valid bundle remains mounted after the expected hash changes, or a relative repository path is used in production.
+
+### 6. Tests Required
+
+- `npm.cmd run ai-daily:model-runtime-check` must cover an absolute temporary file, valid checker output, missing file configuration, relative path rejection, missing hash, stale hash, malformed JSON, tampered hash, and runtime identity drift without external calls.
+- `npm.cmd run ai-daily:production-readiness-check -- --json` must report `networkCalls: 0`, preserve an unconfigured delivery as `manual-gate`, and fail configured-invalid delivery.
+- `npm.cmd run docs:deployment-check` must bind `render.yaml`, `.env.example`, deployment docs, manual gates, and this code-spec to the same path/hash/service-boundary contract.
+- Run `npm.cmd run ai-daily:contracts-check`, `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and a sensitive scan before commit.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```text
+AI_DAILY_MODEL_APPROVAL_FILE=server/data/ai-daily-model-approval.v1.json
+# Secret File uploaded only to Studio; Editorial Cron is assumed to inherit it.
+```
+
+#### Correct
+
+```text
+AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json
+AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved 64-character bundleHash>
+# Upload the same reviewed file separately to Studio and Editorial Cron.
+```
+
 ## Scenario: Offline AI Daily Drafts
 
 ### 1. Scope / Trigger

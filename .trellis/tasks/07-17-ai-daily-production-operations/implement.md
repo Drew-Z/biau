@@ -29,6 +29,7 @@
 - `ai-daily:model-evaluation-check` now validates the 40-case fixture contract for extractor/composer/verifier selection, recomputed case-set hashes, existing quality floors, deterministic ranking, independent failure-domain fallbacks, low-sensitive immutable records, and explicit human approval. It performs zero provider calls and does not close the real candidate-model evaluation gate.
 - `docs/ai-daily-source-review-2026-07-19.md` records the public-page source/query pre-review, owner confirmation, extraction and attribution boundaries, and the remaining real-model/edition gates. No model was called by the approval transition.
 - The production model slice now has a server-only runtime config, an OpenAI-compatible structured provider without `temperature`, serial three-role business evaluation, tamper-evident proposal/approval artifacts, runtime channel drift checks, and mutually exclusive `--fixture`/`--live` runner profiles. All deterministic checks use loopback or fixture providers and make zero external calls.
+- Production approval delivery now uses an explicit Render Secret File contract: Studio and every future Editorial Cron that executes live work each point `AI_DAILY_MODEL_APPROVAL_FILE` at `/etc/secrets/ai-daily-model-approval.v1.json`, bind the same human-approved canonical hash through `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`, and validate file integrity plus runtime identity with `ai-daily:model-approval-check` before live work. The real per-service file upload and hash value remain a human gate; Ingest Cron receives no model credentials.
 - No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
 ## Known Follow-up
@@ -37,7 +38,7 @@
 
 ## Production Slice Status
 
-- Implemented: runtime channel parsing, provider adapter, serial business evaluator, approval artifacts, production provider binding, runner profile isolation, readiness reporting, and deployment/manual-gate documentation.
+- Implemented: runtime channel parsing, provider adapter, serial business evaluator, approval artifacts, production provider binding, runner profile isolation, Secret File/hash delivery contract, readiness reporting, and deployment/manual-gate documentation.
 - Still manual: execute the approved real business evaluation, review the proposal, create the approval bundle, run one real edition, review/export/deploy it, and only then enable Cron/public feed.
 - Guardrail: no automated health check or deploy hook invokes a model; no fixture result can be promoted to production approval.
 

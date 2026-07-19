@@ -84,7 +84,7 @@ npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
 npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluation.local.json --reviewed-by site-owner --notes "Measured selection approved for one controlled edition."
 ```
 
-批准 bundle 仍不能单独开启生产：首个版次还必须显式使用 `--live`、设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，并完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何 runtime provider/failure-domain/model 漂移都会 fail closed。
+批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。部署后运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次还必须显式使用 `--live`、设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，并完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
 
 ## 发布边界
 

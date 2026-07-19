@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import path from 'node:path'
 import { disconnectPrisma, requireStudioDatabase } from '../src/db.js'
 import { buildAiDailyGenerationProvidersFixture } from '../src/aiDailyGenerationFixtures.js'
 import type { AiDailyGenerationProviders } from '../src/aiDailyGeneration.js'
@@ -121,7 +122,17 @@ async function resolveGenerationExecution(): Promise<GenerationExecution> {
   }
   const runtime = readAiDailyModelRuntimeConfig()
   if (!runtime.ok) throw new Error(`invalid-ai-daily-model-runtime:${runtime.issues.join(',')}`)
-  const bundle = await loadAiDailyModelApprovalBundle(env.aiDailyModelApprovalFile || undefined)
+  if (!env.aiDailyModelApprovalFile) throw new Error('ai-daily-model-approval-file-not-configured')
+  if (!path.isAbsolute(env.aiDailyModelApprovalFile)) {
+    throw new Error('ai-daily-model-approval-file-path-invalid')
+  }
+  if (!/^[a-f0-9]{64}$/u.test(env.aiDailyModelApprovalBundleHash)) {
+    throw new Error('ai-daily-model-approval-bundle-hash-not-configured')
+  }
+  const bundle = await loadAiDailyModelApprovalBundle(
+    env.aiDailyModelApprovalFile,
+    env.aiDailyModelApprovalBundleHash,
+  )
   return {
     profile: 'PRODUCTION',
     providers: buildAiDailyProductionProviders({ runtime: runtime.config, bundle }),

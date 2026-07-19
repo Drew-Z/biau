@@ -15,6 +15,7 @@ dist-ssr
 output
 *.local
 *.local.*
+server/data/ai-daily-model-approval.v1.json
 
 # Editor directories and files
 .vscode/*

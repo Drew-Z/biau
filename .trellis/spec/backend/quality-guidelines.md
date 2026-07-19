@@ -75,6 +75,8 @@ Render final shape is one repository deployed as four Web Services:
 
 Production split-database deployments must set `STUDIO_DATABASE_URL` on both `biau-content-studio-api` and `biau-operator-api` so `studio.draft` and Studio review use one content database. Operator `DATABASE_URL` remains a separate owner-workspace database.
 
+AI Daily production deployments must mount the human-approved model bundle as the Render Secret File `/etc/secrets/ai-daily-model-approval.v1.json`, set `AI_DAILY_MODEL_APPROVAL_FILE` to that exact path, and set `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH` to the bundle's canonical `bundleHash`. The runner must reject a missing, malformed, stale, tampered, or runtime-drifted bundle before claiming `PRODUCTION` work.
+
 `biau-operator-api` also needs `RAG_SYNC_TOKEN` when reviewed/active station knowledge is synchronized. The browser must never receive it.
 
 `docs:deployment-check` owns consistency between `render.yaml`, `.env.example`, deployment docs, manual gates, and this spec.

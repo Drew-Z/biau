@@ -108,8 +108,11 @@
 2. **完成三角色业务评估并批准 selection bundle**
    - 来源预审已完成：16 个来源与 4 个核心查询组启用，hold/rejected 项关闭；只有来源包变更时才重新触发来源 gate。
    - 使用同一 BIAU-owned case set 分别评估 extractor、composer 和 verifier 候选；这是一项用户批准的真实业务任务，不运行 ping、doctor 或空 prompt。评估命令必须同时满足 `--execute`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=true` 和匹配的 `--approval-id`。
-   - 审核聚合指标、failure-domain alias、primary/fallback 和 record hash；选择记录先保持 `pending`，确认后用 `ai-daily:model-approve` 生成 bundle。bundle 未批准或 runtime channel 漂移时，production runner 必须拒绝启动。
-   - 评估完成后只记录低敏摘要；不要提交本地 proposal、真实 endpoint、key、prompt、原始输出或模型响应。
+    - 审核聚合指标、failure-domain alias、primary/fallback 和 record hash；选择记录先保持 `pending`，确认后用 `ai-daily:model-approve` 生成 bundle。bundle 未批准或 runtime channel 漂移时，production runner 必须拒绝启动。
+    - 评估完成后只记录低敏摘要；不要提交本地 proposal、真实 endpoint、key、prompt、原始输出或模型响应。
+    - 将批准命令输出的 `server/data/ai-daily-model-approval.v1.json` 上传到 Render Studio 服务的 Secret Files，文件名必须是 `ai-daily-model-approval.v1.json`；设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。
+    - 选择 Save, rebuild, and deploy 后运行 `npm.cmd run ai-daily:model-approval-check`（只读检查，`networkCalls=0`）；文件、期望 hash 或 runtime identity 任一不匹配都必须先修复，不能打开 production generation。
+    - 首个真实版次验收完成后创建 Editorial Cron 时，必须在该 Cron 服务内再次设置相同 runtime/file/hash，并单独上传同一 Secret File；Render 不会从 Studio 服务继承文件或环境变量。Ingest Cron 不配置模型渠道或审批 bundle。
 
 3. **上线 AI Daily 公开 Feed**
    - 在生产 Studio 数据库执行 `20260719020000_ai_daily_public_feed_index`，执行前保留备份和上一 Render revision。

@@ -49,6 +49,8 @@ AI_DAILY_PUBLIC_FEED_ENABLED=false
 AI_DAILY_PUBLIC_WINDOW_HOURS=72
 AI_DAILY_PUBLIC_STALE_MINUTES=180
 AI_DAILY_MODEL_RUNTIME_JSON=<server-only channel and candidate mapping>
+AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json
+AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved bundleHash>
 AI_DAILY_BUSINESS_EVALUATION_ENABLED=false
 AI_DAILY_MODEL_EVALUATION_APPROVAL_ID=<one approved evaluation run id>
 AI_DAILY_PRODUCTION_GENERATION_ENABLED=false
@@ -220,13 +222,21 @@ npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
 
 评估按候选顺序串行执行，每个角色使用 30 个版本化 BIAU-owned 合成业务案例，覆盖官方发布、多来源、数字、更正、中文来源和低证据场景。请求不设置 `temperature`，不会并发轰击同一中转。默认只写入被 Git 忽略的 `server/data/ai-daily-model-evaluation.local.json`；内容只有 case score、聚合质量、延迟、调用计数和 hash，不保存 prompt、输入正文、原始输出、endpoint、key 或错误响应。
 
-人工确认 proposal 后再执行审批命令；该命令不调用模型，只把 selection 与审核结论写成可审查、可提交的 bundle：
+人工确认 proposal 后再执行审批命令；该命令不调用模型，只把 selection 与审核结论写成可审查、用于受控部署交付但不提交仓库的 bundle：
 
 ```powershell
 npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluation.local.json --reviewed-by site-owner --notes "Measured selection approved for one controlled edition."
 ```
 
-审批输出为 `server/data/ai-daily-model-approval.v1.json`。生产 runner 会重新校验 candidate record、selection record、bundle hash，以及 runtime channel 的 provider/failure-domain/model 是否漂移；任何不一致都会 fail closed。
+审批命令默认输出到本地 `server/data/ai-daily-model-approval.v1.json`（该文件被 Git 忽略）。生产部署不依赖仓库中的默认文件：先把它上传为 Render Studio 服务的 Secret File `ai-daily-model-approval.v1.json`，并设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json` 与命令输出的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`；后续创建 Editorial Cron 时必须在该服务重复上传。生产 runner 会重新校验 candidate record、selection record、bundle hash、期望 hash，以及 runtime channel 的 provider/failure-domain/model 是否漂移；任何不一致都会 fail closed。
+
+部署前可在已配置同一份 server-only runtime 和审批文件的环境中运行离线检查：
+
+```powershell
+npm.cmd run ai-daily:model-approval-check
+```
+
+该命令只读本地文件和配置，输出 `networkCalls: 0`，不会调用模型或搜索服务。`ai-daily:production-readiness-check` 在没有这三项配置时报告人工门禁，在配置不完整或校验失败时报告结构性失败。
 
 ## Render Cron 运行草案
 
@@ -237,7 +247,9 @@ npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluat
 | Ingest Cron | `*/15 * * * *` | `npm run ai-daily:ingest-tick` | 小于 15 分钟 |
 | Editorial Cron | `0 * * * *` | `npm run ai-daily:editorial-tick -- --live` | 小于 60 分钟 |
 
-这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。editorial runner 已实现 production provider 路径，但默认关闭：`--fixture` 只选择 FIXTURE work，`--live` 只选择 PRODUCTION work，两者互斥；live 还要求 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`、完整 runtime config 和已批准 bundle。完成模型评估与一次真实业务版次验收前，必须保持开关为 `false` 且不要创建 Cron。回滚时先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 `AI_DAILY_PUBLIC_FEED_ENABLED` 都设为 `false`，保留 Studio 手动编辑和离线导出路径。
+Render 的环境变量和 Secret File 按服务隔离。Ingest Cron 不调用模型，因此不需要审批 bundle；Editorial Cron 必须单独配置与 Studio 相同的 `AI_DAILY_MODEL_RUNTIME_JSON`、`AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`、`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH` 和 `AI_DAILY_PRODUCTION_GENERATION_ENABLED`，并在该 Cron 自己的 **Environment → Secret Files** 上传同一份 `ai-daily-model-approval.v1.json`。只在 Studio 上传文件不能让 Editorial Cron 读取它。
+
+这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。`render.yaml` 故意不创建 Cron，避免 Blueprint 同步绕过人工门禁；通过首个真实版次验收后，再由站点所有者在 Render 控制台创建并启用。editorial runner 已实现 production provider 路径，但默认关闭：`--fixture` 只选择 FIXTURE work，`--live` 只选择 PRODUCTION work，两者互斥；live 还要求 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`、完整 runtime config 和已批准 bundle。完成模型评估与一次真实业务版次验收前，必须保持开关为 `false` 且不要创建 Cron。回滚时先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 `AI_DAILY_PUBLIC_FEED_ENABLED` 都设为 `false`，保留 Studio 手动编辑和离线导出路径。
 
 未配置并获批生产 provider 时，`run`、`compose`、`resume` 和 `editorial-tick` 会 fail closed，不会发送测活请求。首个真实版次使用 `npm.cmd run ai-daily:run -- --date <edition-date> --live` 人工执行；通过 Studio 审核后才考虑 Cron。
 
