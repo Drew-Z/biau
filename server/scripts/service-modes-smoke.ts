@@ -311,6 +311,17 @@ try {
     const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
     if (publicFeed.status !== 503) throw new Error(`studio mode should mount AI Daily feed and report missing database, got ${publicFeed.status}`)
 
+    const operationsMissingToken = await fetch(`${base}/studio/api/ai-daily/operations`)
+    if (operationsMissingToken.status !== 401) {
+      throw new Error(`studio AI Daily operations should require admin token, got ${operationsMissingToken.status}`)
+    }
+    const operationsWithoutDb = await fetch(`${base}/studio/api/ai-daily/operations`, {
+      headers: { Authorization: 'Bearer studio-smoke-token' },
+    })
+    if (operationsWithoutDb.status !== 503) {
+      throw new Error(`studio AI Daily operations should report missing database, got ${operationsWithoutDb.status}`)
+    }
+
     const retentionMissingToken = await fetch(`${base}/studio/api/ai-daily/retention/dry-run`)
     if (retentionMissingToken.status !== 401) {
       throw new Error(`studio retention dry-run should require admin token, got ${retentionMissingToken.status}`)
