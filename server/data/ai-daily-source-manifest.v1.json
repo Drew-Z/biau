@@ -1,11 +1,11 @@
 {
   "schemaVersion": "ai-daily-source-curation-v1",
-  "readiness": "pending-human-review",
+  "readiness": "approved",
   "review": {
-    "status": "candidate",
-    "reviewedAt": null,
-    "reviewedBy": null,
-    "notes": "Public page pre-review completed on 2026-07-19. All entries remain disabled pending human confirmation of the core set, budgets, and copyright boundary."
+    "status": "approved",
+    "reviewedAt": "2026-07-19T13:45:00.000Z",
+    "reviewedBy": "site-owner-confirmed",
+    "notes": "Site owner confirmed the 16 approved sources, four core query groups, bounded budget, and attribution boundary on 2026-07-19."
   },
   "sources": [
     {
@@ -17,7 +17,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["models", "agents", "safety", "research"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "www.anthropic.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated article list and high AI signal; use HTML incremental collection and metadata plus short excerpts only." }
     },
@@ -43,7 +43,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["research", "models", "science", "safety"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "deepmind.google",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated AI blog with stable RSS, dates, and high research/model signal; use RSS discovery and article-page summaries." }
     },
@@ -69,7 +69,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["cloud-ai", "infrastructure", "agents", "engineering"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "aws.amazon.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated list and RSS with strong AI signal; separate technical releases from tutorials, customer cases, and promotion." }
     },
@@ -95,7 +95,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["research", "models", "responsible-ai", "systems"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "www.microsoft.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable recent-post list and RSS; high research quality, with explicit AI topic filtering for broader research posts." }
     },
@@ -121,7 +121,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["infrastructure", "inference", "training", "developer-tools"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "developer.nvidia.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated feed with strong inference and infrastructure signal; filter non-AI CUDA/graphics posts and label vendor claims." }
     },
@@ -147,7 +147,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["edge-ai", "chips", "devices", "infrastructure"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "www.qualcomm.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable tagged list and AI-filtered entry; use the AI tag and filter mobile, 5G, and pure product promotion noise." }
     },
@@ -173,7 +173,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["developer-tools", "copilot", "agents", "platforms"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "github.blog",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated list and RSS; restrict to Copilot/AI/model tags and preserve deprecation notices." }
     },
@@ -186,7 +186,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["ai-engineering", "infrastructure", "models", "systems"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "engineering.fb.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable engineering feed and AI Research category; filter non-AI infrastructure and preserve author/category attribution." }
     },
@@ -212,7 +212,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["china-ai", "enterprise-ai", "cloud-ai", "company-news"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "www.alibabagroup.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Current AI announcements are discoverable, with canonical links moving to alizila.com; deduplicate and filter corporate PR." }
     },
@@ -238,7 +238,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["models", "open-source", "api", "enterprise-ai"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "mistral.ai",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated list exposes dated Product, Research, and Engineering articles; use HTML incremental collection because guessed RSS is unavailable." }
     },
@@ -251,7 +251,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["enterprise-ai", "rag", "models", "research"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "cohere.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated AI blog list; use HTML collection, prioritize research/product/engineering, and filter partner or SEO content." }
     },
@@ -290,7 +290,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["open-source", "enterprise-ai", "cloud-ai", "infrastructure"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "www.redhat.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated AI channel and RSS are available; filter edge topics and label product/ROI claims as vendor statements." }
     },
@@ -355,7 +355,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["cloud-native", "infrastructure", "open-source", "engineering"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "www.cncf.io",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated RSS and article metadata; filter AI/ML/agent/GPU topics and distinguish staff, project, member, and vendor posts." }
     },
@@ -368,7 +368,7 @@
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["infrastructure", "cloud-native", "ai-workloads", "open-source"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "kubernetes.io",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable list and feed with dates and attribution; filter AI workload topics and preserve the CC BY attribution boundary." }
     },
@@ -381,7 +381,7 @@
       "locale": "en",
       "tier": "TIER_2",
       "topics": ["research", "machine-learning", "education", "systems"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "blog.ml.cmu.edu",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable dated research feed with high AI signal and low marketing noise; link papers/code and avoid expanding author claims." }
     },
@@ -394,7 +394,7 @@
       "locale": "en",
       "tier": "TIER_2",
       "topics": ["industry", "policy", "safety", "analysis"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "www.technologyreview.com",
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Dedicated AI RSS has dates and strong analysis signal; exclude or label sponsored content and treat as analysis, not first-party release evidence." }
     }
@@ -411,7 +411,7 @@
       "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
       "minimumPrimaryResults": 4,
       "includeSignal": true,
-      "enabled": false,
+      "enabled": true,
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core high-timeliness group; reduced threshold and noise exclusions; keep signal for release/deprecation gaps." }
     },
     {
@@ -439,7 +439,7 @@
       "budget": { "maxRequests": 3, "maxResults": 21, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
       "minimumPrimaryResults": 4,
       "includeSignal": true,
-      "enabled": false,
+      "enabled": true,
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core open ecosystem group; removed hard domain restriction so project-owned release pages are not hidden." }
     },
     {
@@ -453,7 +453,7 @@
       "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
       "minimumPrimaryResults": 4,
       "includeSignal": false,
-      "enabled": false,
+      "enabled": true,
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core infrastructure group; narrowed queries and disabled signal to reduce hardware and vendor noise." }
     },
     {
@@ -509,7 +509,7 @@
       "budget": { "maxRequests": 3, "maxResults": 21, "timeoutMs": 18000, "maxRetries": 1, "maxCostUnits": 18 },
       "minimumPrimaryResults": 4,
       "includeSignal": true,
-      "enabled": false,
+      "enabled": true,
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Core Chinese coverage group; tightened vocabulary and retained signal for fragmented first-party discovery." }
     },
     {

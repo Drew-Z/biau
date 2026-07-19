@@ -177,13 +177,17 @@ async function main() {
   const curationContractOk = runOfflineContract('ai-daily:manifest-check')
   const curationReady = curationShapeOk && curationPendingSafe && curationContractOk
   const curationIsApproved = curationReady && curationManifest.readiness === 'approved'
+  const enabledSourceCount = curationSources.filter((source) => source?.enabled === true).length
+  const enabledQueryGroupCount = curationQueryGroups.filter((group) => group?.enabled === true).length
   results.push(
     check(
       'source-curation-manifest',
       'Versioned source and query-group curation',
       curationReady,
       curationReady
-        ? `${curationSources.length} source candidates and ${curationQueryGroups.length} query groups recorded${curationIsApproved ? '' : '; manual review remains'}`
+        ? curationIsApproved
+          ? `${enabledSourceCount}/${curationSources.length} approved sources and ${enabledQueryGroupCount}/${curationQueryGroups.length} approved query groups enabled`
+          : `${curationSources.length} source candidates and ${curationQueryGroups.length} query groups recorded; manual review remains`
         : curationContractOk
           ? 'manifest is missing, malformed, outside the source-count bounds, or enables pending candidates'
           : 'manifest contract check failed; run npm.cmd run ai-daily:manifest-check for details',

@@ -2,13 +2,14 @@
 
 审核日期：2026-07-19
 
-这份记录是生产来源门禁的低敏预审，不是内容转载许可，也不是生产启用批准。审核使用公共页面、公开 RSS/Atom 和必要的 HTTPS 元数据核对页面可访问性、日期、列表稳定性、AI 信号、营销噪声和归属边界；没有运行 provider doctor、模型 ping、空 prompt 或模型测试任务。
+这份记录是生产来源门禁的低敏预审与确认记录，不是内容转载许可，也不替代真实版次验收。审核使用公共页面、公开 RSS/Atom 和必要的 HTTPS 元数据核对页面可访问性、日期、列表稳定性、AI 信号、营销噪声和归属边界；没有运行 provider doctor、模型 ping、空 prompt 或模型测试任务。
 
-清单仍保持：
+清单当前状态：
 
-- `readiness: pending-human-review`
-- 所有来源和查询组 `enabled: false`
-- 只有用户确认核心集合、预算和引用边界后，才允许进入真实版次验收
+- `readiness: approved`
+- 16 个 approved 来源和 4 个核心查询组 `enabled: true`
+- 9 个 hold 来源、5 个 rejected 来源和其余查询组 `enabled: false`
+- 真实版次仍需独立的 provider、模型角色和编辑审核门禁
 
 ## 结论摘要
 
@@ -96,11 +97,12 @@
 - 社区、合作伙伴、Member Post、赞助内容和独立分析必须保留来源类型，不包装成官方技术结论。
 - 重要发布事实优先由第一方来源证明；MIT Technology Review 等分析源用于背景和影响判断。
 
-## 剩余人工门禁
+## 已确认与剩余门禁
 
-用户只需确认两项：
+站点所有者已确认上述 16 个 approved 来源、四个核心查询组、`12/78/72` 预算上限和引用边界；清单已切换到 approved。hold/rejected 项继续禁用。
 
-1. 是否接受上述 16 个 approved 来源作为首批来源候选，并保持 9 个 hold、5 个 rejected 不启用。
-2. 是否接受四个核心查询组及 12/78/72 的总预算上限。
+剩余门禁是独立的真实业务验收：
 
-确认后再单独切换顶层 readiness 和 approved 条目的 enabled 状态；契约要求所有条目完成审核、至少 12 个来源和 4 个查询组获批，hold/rejected 项继续禁用。在此之前不得运行真实采集版次或三角色模型评估。
+1. 为 extractor、composer、verifier 分别选择候选渠道，并使用 BIAU-owned case set 执行真实业务评估。
+2. 由人工确认 primary、不同 failure-domain 的 fallback 和质量边界。
+3. 在模型评估通过后，才运行一个真实 AI Daily 版次，审核 Flash、日报草稿、导出和公开投影。

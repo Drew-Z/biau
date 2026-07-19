@@ -5,7 +5,7 @@
 - [x] Finalize environment-variable and secret inventory.
 - [x] Add Render build/start/schedule documentation for both Cron Jobs.
 - [x] Add production-readiness configuration command with no network calls.
-- [ ] Curate sources/query groups and run offline model evaluation. (30 sources and 10 query groups received a public-page pre-review on 2026-07-19: sources 16 approved / 9 hold / 5 rejected, query groups 4 approved / 3 hold / 3 rejected; all remain disabled pending human confirmation, and real candidate-model evaluation remains)
+- [ ] Curate sources/query groups and run offline model evaluation. (site owner confirmed the 2026-07-19 pre-review: 16 approved sources and 4 core query groups are enabled, 9 hold and 5 rejected sources plus 6 non-core query groups remain disabled; real candidate-model evaluation remains)
 - [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics and guarded retention dry-run completed; mutation and production alert routing remain)
 - [x] Run the full deterministic quality gate.
 - [ ] Obtain approval and run one real edition.
@@ -20,13 +20,13 @@
 - `ai-daily:production-readiness-check` reports repository readiness and manual gates without network calls.
 - `ai-daily:contracts-check` runs the fixture/loopback contract suite; disposable PostgreSQL checks require explicit `--with-database` and `AI_DAILY_DATABASE_CHECK=1`.
 - The full production-preview UI gate passes after the flow worker gained a token-correlated reduced-motion acknowledgement instead of relying on fixed test delays.
-- Real provider selection, production Cron activation, source approval, live edition acceptance, and database deployment remain manual gates.
+- Real provider selection, production Cron activation, live edition acceptance, and database deployment remain manual gates; source/query curation is now approved with a bounded enabled subset.
 - Studio now exposes a token-protected read-only AI Daily operations snapshot; Studio `/metrics` appends the same low-cardinality data when metrics are explicitly enabled.
 - Source health, run/stage state, work backlog/expired leases, bounded quality outcomes, public feed age, and retention-due counts are covered by `ai-daily:operations-check` without a database or network.
 - Retention now has a Studio-authenticated, bounded `retention-dry-run-v1` plan with fixed eligibility/block reasons and no mutation path. `ai-daily:retention-check` proves current evidence, public/current-approved Flash, revision history, and approval audit history remain protected.
-- `server/data/ai-daily-source-manifest.v1.json` now records 30 disabled source candidates and 10 disabled discovery query groups with rationale and per-item review state. `ai-daily:manifest-check` validates schema, public URL/domain rules, unique canonical identity, query budgets, and pending-review fail-closed behavior without network calls.
+- `server/data/ai-daily-source-manifest.v1.json` now records 30 reviewed sources and 10 reviewed discovery query groups, with 16/4 approved entries enabled and hold/rejected entries disabled. `ai-daily:manifest-check` validates schema, public URL/domain rules, unique canonical identity, query budgets, review thresholds, and enabled/review consistency without network calls.
 - `ai-daily:model-evaluation-check` now validates the 40-case fixture contract for extractor/composer/verifier selection, recomputed case-set hashes, existing quality floors, deterministic ranking, independent failure-domain fallbacks, low-sensitive immutable records, and explicit human approval. It performs zero provider calls and does not close the real candidate-model evaluation gate.
-- `docs/ai-daily-source-review-2026-07-19.md` records the public-page source/query pre-review, extraction and attribution boundaries, core four-query recommendation, and the two remaining human decisions. No source, query group, or model was enabled by the review.
+- `docs/ai-daily-source-review-2026-07-19.md` records the public-page source/query pre-review, owner confirmation, extraction and attribution boundaries, and the remaining real-model/edition gates. No model was called by the approval transition.
 - No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
 ## Known Follow-up

@@ -9,7 +9,7 @@
 - Top-level `readiness: "approved"` requires every source and query group to have a resolved non-candidate review, at least 12 approved sources, and at least 4 approved query groups. Held and rejected entries remain disabled; an enabled entry must always be individually approved.
 - Each source is parsed through `normalizeAiDailySourceFeedDefinition`; manifest code must not duplicate canonical URL, locale, domain, cadence, or source-tier normalization rules.
 - Query groups store stable discovery inputs only: id, rationale, locale, queries, include/exclude domains, bounded provider budget, minimum primary results, signal policy, enabled flag, and review metadata. Edition windows are runtime inputs and must not be committed into the registry.
-- A passing manifest check proves repository shape only. It does not prove that a URL is currently reachable, a provider is configured, or a source is approved for production.
+- A passing manifest check proves repository shape and recorded review metadata only. It does not prove that a URL is currently reachable, a provider is configured, or that a real edition can be published.
 
 ### Required verification
 

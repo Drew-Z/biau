@@ -33,12 +33,16 @@ function countReviewStatuses(items: Array<{ review: { status: string } }>) {
 const manifest = await loadAiDailySourceManifest()
 
 assert.equal(manifest.schemaVersion, aiDailySourceManifestSchemaVersion)
-assert.equal(manifest.readiness, 'pending-human-review')
-assert.equal(manifest.review.status, 'candidate')
+assert.equal(manifest.readiness, 'approved')
+assert.equal(manifest.review.status, 'approved')
+assert.ok(manifest.review.reviewedAt)
+assert.ok(manifest.review.reviewedBy)
 assert.equal(manifest.sources.length, 30)
 assert.equal(manifest.queryGroups.length, 10)
-assert.ok(manifest.sources.every((source) => !source.enabled))
-assert.ok(manifest.queryGroups.every((group) => !group.enabled))
+assert.equal(manifest.sources.filter((source) => source.enabled).length, 16)
+assert.equal(manifest.queryGroups.filter((group) => group.enabled).length, 4)
+assert.ok(manifest.sources.every((source) => source.enabled === (source.review.status === 'approved')))
+assert.ok(manifest.queryGroups.every((group) => group.enabled === (group.review.status === 'approved')))
 assert.ok(manifest.sources.some((source) => source.review.status === 'approved'))
 assert.ok(manifest.sources.some((source) => source.review.status === 'hold'))
 assert.ok(manifest.sources.some((source) => source.review.status === 'rejected'))
@@ -58,12 +62,21 @@ assert.equal(new Set(manifest.queryGroups.map((group) => group.id)).size, manife
 const unapprovedSourceIndex = manifest.sources.findIndex((source) => source.review.status !== 'approved')
 assert.notEqual(unapprovedSourceIndex, -1)
 
-const enabledBeforeApproval = mutateManifest(manifest, (draft) => {
+const enabledWithoutApproval = mutateManifest(manifest, (draft) => {
   const sources = draft.sources as Array<Record<string, unknown>>
   sources[unapprovedSourceIndex].enabled = true
 })
-expectIssue(enabledBeforeApproval, `sources[${unapprovedSourceIndex}].enabled-requires-approved-review`)
-expectIssue(enabledBeforeApproval, 'pending-manifest-has-enabled-source')
+expectIssue(enabledWithoutApproval, `sources[${unapprovedSourceIndex}].enabled-requires-approved-review`)
+
+const pendingManifestWithEnabledEntries = mutateManifest(manifest, (draft) => {
+  draft.readiness = 'pending-human-review'
+  const review = draft.review as Record<string, unknown>
+  review.status = 'candidate'
+  review.reviewedAt = null
+  review.reviewedBy = null
+})
+expectIssue(pendingManifestWithEnabledEntries, 'pending-manifest-has-enabled-source')
+expectIssue(pendingManifestWithEnabledEntries, 'pending-manifest-has-enabled-query-group')
 
 const incrementalReview = mutateManifest(manifest, (draft) => {
   const sources = draft.sources as Array<Record<string, unknown>>
@@ -76,6 +89,7 @@ assert.equal(incrementalReview.ok, true)
 
 const heldReview = mutateManifest(manifest, (draft) => {
   const sources = draft.sources as Array<Record<string, unknown>>
+  sources[0].enabled = false
   const review = sources[0].review as Record<string, unknown>
   review.status = 'hold'
   review.reviewedAt = '2026-07-19T00:00:00.000Z'
@@ -121,6 +135,8 @@ const unreviewedApproval = mutateManifest(manifest, (draft) => {
   draft.readiness = 'approved'
   const review = draft.review as Record<string, unknown>
   review.status = 'approved'
+  review.reviewedAt = null
+  review.reviewedBy = null
 })
 expectIssue(unreviewedApproval, 'review.reviewer-required')
 
@@ -148,5 +164,5 @@ const sourceReviewCounts = countReviewStatuses(manifest.sources)
 const queryReviewCounts = countReviewStatuses(manifest.queryGroups)
 
 console.log(
-  `AI Daily source manifest check passed (${manifest.sources.length} sources, ${manifest.queryGroups.length} query groups, sourceReviews=${JSON.stringify(sourceReviewCounts)}, queryReviews=${JSON.stringify(queryReviewCounts)}, networkCalls=0)`,
+  `AI Daily source manifest check passed (${manifest.sources.length} sources, ${manifest.queryGroups.length} query groups, enabledSources=${manifest.sources.filter((source) => source.enabled).length}, enabledQueries=${manifest.queryGroups.filter((group) => group.enabled).length}, sourceReviews=${JSON.stringify(sourceReviewCounts)}, queryReviews=${JSON.stringify(queryReviewCounts)}, networkCalls=0)`,
 )
