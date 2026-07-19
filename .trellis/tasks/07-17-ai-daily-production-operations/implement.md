@@ -33,6 +33,7 @@
 - Business execution evidence now binds `resultSetHash` to the canonical SHA-256 of the complete measured case array; a format-valid stale or substituted hash is rejected with `business-result-set-hash-mismatch`, with a regression test covering post-hash case tampering. No real model was called by this change.
 - Golden descriptor versions now carry a normalized full-case content fingerprint, so scenario/outcome/score drift invalidates old proposals even without a manual version bump. Extractor, composer, and verifier also inject and assert every declared negative-tag challenge before a business case can be recorded. Deterministic checks cover both contracts with zero provider calls.
 - Production approval delivery now uses an explicit Render Secret File contract: Studio and every future Editorial Cron that executes live work each point `AI_DAILY_MODEL_APPROVAL_FILE` at `/etc/secrets/ai-daily-model-approval.v1.json`, bind the same human-approved canonical hash through `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`, and validate file integrity plus runtime identity with `ai-daily:model-approval-check` before live work. The real per-service file upload and hash value remain a human gate; Ingest Cron receives no model credentials.
+- The first-edition acceptance manifest contract now binds the approved proposal/bundle, `PRODUCTION` issue/run/date, Studio review and draft version, Publish Export checks, five deployment observations, and rollback readiness. `ai-daily:acceptance-check` covers hash tampering, fixture rejection, cross-stage mismatches, failed export/deployment, sensitive fields, and old schema with zero provider calls; `ai-daily:acceptance` provides `init`, `check`, and `seal` for the Git-ignored local record. Production readiness reports the contract as pass and the real sealed record as a separate manual gate.
 - No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
 ## Known Follow-up
@@ -41,8 +42,8 @@
 
 ## Production Slice Status
 
-- Implemented: runtime channel parsing, provider adapter, serial business evaluator, approval artifacts, production provider binding, runner profile isolation, Secret File/hash delivery contract, readiness reporting, and deployment/manual-gate documentation.
-- Still manual: execute the approved real business evaluation, review the proposal, create the approval bundle, run one real edition, review/export/deploy it, and only then enable Cron/public feed.
+- Implemented: runtime channel parsing, provider adapter, serial business evaluator, approval artifacts, production provider binding, runner profile isolation, Secret File/hash delivery contract, acceptance manifest/CLI and tamper contract, readiness reporting, and deployment/manual-gate documentation.
+- Still manual: execute the approved real business evaluation, review the proposal, create the approval bundle, run one real edition, fill and seal the acceptance manifest after Studio review/export/deployment observation, and only then enable Cron/public feed.
 - Guardrail: no automated health check or deploy hook invokes a model; no fixture result can be promoted to production approval.
 
 ## Completion Gate

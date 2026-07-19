@@ -11,6 +11,13 @@
 
 Configuration readiness is offline and never calls providers. The only live acceptance is a user-approved real edition that produces useful editorial output.
 
+## Acceptance Manifest
+
+- `ai-daily-acceptance-v1` is a low-sensitive, Git-ignored evidence index that binds the approved proposal/bundle, one `PRODUCTION` issue/run/date, matching Studio review and draft version, Publish Export checks, and post-deploy observations.
+- The manifest does not replace the database, Studio audit trail, or human decision. It stores hashes, bounded identifiers, statuses, dates, repository paths, and check results only; prompts, source text, article content, raw model output, endpoints, credentials, and raw errors are forbidden.
+- `init` creates the local skeleton, `check` reports missing/failed gates, and `seal` writes a canonical record hash only when the artifact pair and all five gates pass. Candidate, issue, run, draft, review, export, and deployment mismatches fail closed.
+- The deterministic acceptance contract uses business-shaped fixtures only for schema/tamper coverage. It never promotes a fixture result or calls a provider, search service, database, or deployed endpoint.
+
 ## Model Evaluation Contract
 
 - Extractor, composer, and verifier candidates are scored independently on one versioned BIAU-owned case set, prompt version, generation schema version, and quality profile.

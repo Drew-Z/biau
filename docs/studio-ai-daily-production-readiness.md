@@ -26,6 +26,7 @@
 npm.cmd run ai-daily:production-readiness-check
 npm.cmd run ai-daily:model-evaluation-check
 npm.cmd run ai-daily:model-runtime-check
+npm.cmd run ai-daily:acceptance-check
 npm.cmd run ai-daily:runner-check
 npm.cmd run ai-daily:operations-check
 npm.cmd run ai-daily:observability-contract-check

@@ -76,13 +76,43 @@ VITE_AI_DAILY_API_BASE_URL=https://<studio-service>.onrender.com
 npm.cmd run ai-daily:production-readiness-check
 npm.cmd run ai-daily:production-readiness-check -- --json
 npm.cmd run ai-daily:manifest-check
+npm.cmd run ai-daily:model-evaluation-check
 npm.cmd run ai-daily:model-runtime-check
+npm.cmd run ai-daily:acceptance-check
 npm.cmd run ai-daily:operations-check
 npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 ```
 
-`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:model-runtime-check` 只使用 loopback HTTP 验证运行时配置、无 temperature 的结构化请求、审批 bundle 防篡改以及 `--fixture/--live` 门禁，不调用外部 provider；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:model-runtime-check` 只使用 loopback HTTP 验证运行时配置、无 temperature 的结构化请求、审批 bundle 防篡改以及 `--fixture/--live` 门禁，不调用外部 provider；`ai-daily:acceptance-check` 验证首版验收 manifest 的跨阶段绑定、敏感字段禁入和篡改拒绝；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+
+## 首版生产验收记录
+
+真实三角色 selection bundle 获批后，先创建一份 Git-ignored 的本地验收 manifest：
+
+```powershell
+npm.cmd run ai-daily:acceptance -- init --acceptance-id <acceptance-id> --edition-date YYYY-MM-DD
+npm.cmd run ai-daily:acceptance -- check
+```
+
+默认读取 `server/data/ai-daily-model-evaluation.local.json`、`server/data/ai-daily-model-approval.v1.json`，写入 `server/data/ai-daily-acceptance.local.json`。该文件只允许保存以下低敏证据：
+
+- proposal、selection 和 bundle hash，以及审核人别名和批准时间；
+- 首个 `PRODUCTION` edition 的 `issueId`、`runId`、日期、完成状态；
+- 同一 issue/run/date 下的 Studio draft/review id、草稿版本时间和三个审核勾选；
+- Publish Export id、绑定的 draft/review/version、仓库相对输出路径和命令退出码；
+- `publicFeed`、`detailPage`、`etag304`、`withdrawn410`、`mobile` 五项部署观察，以及 rollback readiness。
+
+不要写入 prompt、来源正文、文章正文、原始模型输出、模型端点、key/token、数据库 URL、私有后台地址或原始错误。manifest 不主动读取生产数据库，也不访问 Render、搜索服务或模型；值来自用户完成真实业务流程后的低敏记录。
+
+全部 gate 通过后再 seal：
+
+```powershell
+npm.cmd run ai-daily:acceptance -- seal
+npm.cmd run ai-daily:acceptance -- check --require-sealed
+```
+
+`seal` 会在重新验证 proposal/bundle、candidate/selection、edition/issue/run、Studio draft/review 版本、Publish Export 和部署观察后生成 canonical `recordHash`。缺少真实记录时 production readiness 显示 `manual-gate`；已有 manifest 若 schema、hash 或跨阶段绑定被篡改则显示 `fail`。fixture contract 通过不能替代真实首版验收。
 
 ## 生产运维诊断
 

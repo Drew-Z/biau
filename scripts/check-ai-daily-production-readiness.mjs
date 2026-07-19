@@ -109,21 +109,27 @@ function check(id, label, ok, detail, status = ok ? 'pass' : 'fail') {
 }
 
 function runOfflineContract(script) {
-  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
-  const result = process.platform === 'win32'
-    ? spawnSync('cmd.exe', ['/d', '/s', '/c', `${npmCommand} run ${script}`], {
-        cwd: repoRoot,
-        encoding: 'utf8',
-        stdio: 'pipe',
-        timeout: 120_000,
-      })
-    : spawnSync(npmCommand, ['run', script], {
-        cwd: repoRoot,
-        encoding: 'utf8',
-        stdio: 'pipe',
-        timeout: 120_000,
-      })
+  const result = runOfflineCommand(script)
   return result.status === 0 && !result.error && !result.signal
+}
+
+function runOfflineCommand(script, scriptArgs = []) {
+  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
+  const npmArgs = ['--silent', 'run', script, ...(scriptArgs.length > 0 ? ['--', ...scriptArgs] : [])]
+  const result = process.platform === 'win32'
+    ? spawnSync('cmd.exe', ['/d', '/s', '/c', [npmCommand, ...npmArgs].join(' ')], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        stdio: 'pipe',
+        timeout: 120_000,
+      })
+    : spawnSync(npmCommand, npmArgs, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: 'pipe',
+        timeout: 120_000,
+      })
+  return result
 }
 
 async function fileExists(relativePath) {
@@ -132,6 +138,18 @@ async function fileExists(relativePath) {
     return true
   } catch {
     return false
+  }
+}
+
+function parseJsonOutput(value) {
+  const text = String(value || '').trim()
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start < 0 || end < start) return null
+  try {
+    return JSON.parse(text.slice(start, end + 1))
+  } catch {
+    return null
   }
 }
 
@@ -162,6 +180,8 @@ async function main() {
     'ai-daily:model-approval-check',
     'ai-daily:model-evaluate',
     'ai-daily:model-approve',
+    'ai-daily:acceptance',
+    'ai-daily:acceptance-check',
     'ai-daily:observability-contract-check',
   ]
   const missingScripts = requiredScripts.filter((name) => typeof scripts[name] !== 'string')
@@ -222,6 +242,52 @@ async function main() {
       modelEvaluationContractOk
         ? 'Golden case-set, category/negative-slice floors, three-role evaluation, tamper detection, explicit bundle hash, and runtime drift contracts passed with local/loopback fixtures'
         : 'model evaluation contract failed; run npm.cmd run ai-daily:model-evaluation-check for details',
+    ),
+  )
+
+  const acceptanceContractOk = runOfflineContract('ai-daily:acceptance-check')
+  results.push(
+    check(
+      'acceptance-manifest-contract',
+      'Offline acceptance manifest contract',
+      acceptanceContractOk,
+      acceptanceContractOk
+        ? 'Proposal, approval bundle, production edition, Studio review, export, deployment, and tamper bindings pass with zero provider calls'
+        : 'Acceptance manifest contract failed; run npm.cmd run ai-daily:acceptance-check for details',
+    ),
+  )
+
+  const acceptanceRecordPath = 'server/data/ai-daily-acceptance.local.json'
+  const acceptanceRecordExists = await fileExists(acceptanceRecordPath)
+  const acceptanceRecordCommand = acceptanceRecordExists
+    ? runOfflineCommand('ai-daily:acceptance', ['check', '--require-sealed'])
+    : null
+  const acceptanceRecordPayload = acceptanceRecordCommand ? parseJsonOutput(acceptanceRecordCommand.stdout) : null
+  const acceptanceReady = acceptanceRecordCommand?.status === 0 && acceptanceRecordPayload?.ok === true
+  const acceptanceManualIssues = new Set([
+    'acceptance-artifacts-required',
+    'acceptance-artifact-pair-required',
+    'acceptance-artifact-pair-incomplete',
+    'live-edition-required',
+    'studio-review-required',
+    'publish-export-required',
+    'deployment-observation-required',
+    'acceptance-record-hash-required',
+    'acceptance-not-ready',
+  ])
+  const acceptanceIssues = Array.isArray(acceptanceRecordPayload?.issues) ? acceptanceRecordPayload.issues : []
+  const acceptanceRecordInvalid = acceptanceRecordExists && (!acceptanceRecordPayload || acceptanceIssues.some((issue) => !acceptanceManualIssues.has(issue)))
+  results.push(
+    check(
+      'first-edition-acceptance-record',
+      'First production edition acceptance record',
+      acceptanceReady,
+      acceptanceReady
+        ? 'Sealed acceptance manifest verifies the approved artifacts and all five post-generation gates'
+        : acceptanceRecordInvalid
+          ? 'Acceptance manifest exists but is invalid or tampered; run npm.cmd run ai-daily:acceptance -- check for details'
+          : 'manual gate: complete the approved live edition, Studio review/export, deployment observation, and seal the local acceptance manifest',
+      acceptanceReady ? 'pass' : acceptanceRecordInvalid ? 'fail' : 'manual-gate',
     ),
   )
 
