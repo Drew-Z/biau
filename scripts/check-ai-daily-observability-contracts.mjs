@@ -18,6 +18,15 @@ function assert(condition, message) {
   if (!condition) throw new Error(message)
 }
 
+function panelsOverlap(left, right) {
+  return !(
+    left.x + left.w <= right.x ||
+    right.x + right.w <= left.x ||
+    left.y + left.h <= right.y ||
+    right.y + right.h <= left.y
+  )
+}
+
 async function main() {
   const [dashboardText, alertsText, packageText, suiteText] = await Promise.all([
     readFile(resolve(repoRoot, 'observability/ai-daily-grafana-dashboard.json'), 'utf8'),
@@ -30,9 +39,46 @@ async function main() {
   const packageJson = JSON.parse(packageText)
 
   assert(dashboard.uid === 'biau-ai-daily-operations', 'dashboard uid should remain stable')
-  assert(Array.isArray(dashboard.panels) && dashboard.panels.length >= 7, 'dashboard should contain the overview and six category panels')
+  assert(Array.isArray(dashboard.panels) && dashboard.panels.length >= 13, 'dashboard should contain the overview, six category panels, and six operational panels')
+  assert(new Set(dashboard.panels.map((panel) => panel?.id)).size === dashboard.panels.length, 'dashboard panel ids should be unique')
+  assert(new Set(dashboard.panels.map((panel) => panel?.title)).size === dashboard.panels.length, 'dashboard panel titles should be unique')
+  for (const panel of dashboard.panels) {
+    assert(Number.isInteger(panel?.id) && panel.id > 0, 'dashboard panel ids should be positive integers')
+    assert(typeof panel?.title === 'string' && panel.title.length > 0, `dashboard panel ${panel?.id ?? 'unknown'} should have a title`)
+    assert(panel?.datasource?.type === 'prometheus' && panel.datasource.uid === '${DS_PROMETHEUS}', `dashboard panel ${panel.id} should use the Prometheus input`)
+    const grid = panel?.gridPos
+    assert(grid && [grid.x, grid.y, grid.w, grid.h].every(Number.isInteger), `dashboard panel ${panel.id} should have an integer grid position`)
+    assert(grid.x >= 0 && grid.y >= 0 && grid.w > 0 && grid.h > 0 && grid.x + grid.w <= 24, `dashboard panel ${panel.id} should remain inside the 24-column grid`)
+    assert(Array.isArray(panel.targets) && panel.targets.length > 0, `dashboard panel ${panel.id} should have targets`)
+    assert(new Set(panel.targets.map((target) => target?.refId)).size === panel.targets.length, `dashboard panel ${panel.id} target refIds should be unique`)
+    for (const target of panel.targets) {
+      assert(typeof target?.expr === 'string' && target.expr.trim().length > 0, `dashboard panel ${panel.id} targets should have PromQL`)
+      assert(typeof target?.refId === 'string' && /^[A-Z]$/u.test(target.refId), `dashboard panel ${panel.id} targets should have bounded refIds`)
+    }
+  }
+  for (let leftIndex = 0; leftIndex < dashboard.panels.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < dashboard.panels.length; rightIndex += 1) {
+      const left = dashboard.panels[leftIndex]
+      const right = dashboard.panels[rightIndex]
+      assert(!panelsOverlap(left.gridPos, right.gridPos), `dashboard panels ${left.id} and ${right.id} should not overlap`)
+    }
+  }
   const dashboardExpressions = dashboard.panels.flatMap((panel) => (Array.isArray(panel.targets) ? panel.targets.map((target) => target?.expr) : []))
   assert(dashboardExpressions.includes('sum by (category) (biau_ai_daily_failure_signals)'), 'dashboard should include the grouped category overview')
+  for (const expression of [
+    'sum by (health) (biau_ai_daily_sources_total)',
+    'biau_ai_daily_work_items_ready_backlog',
+    'biau_ai_daily_work_items_expired_leases',
+    '(biau_ai_daily_latest_run_freshness_age_seconds / 60) and on() (biau_ai_daily_latest_run_freshness_available == 1)',
+    '(biau_ai_daily_latest_run_end_to_end_lag_seconds / 60) and on() (biau_ai_daily_latest_run_end_to_end_lag_available == 1)',
+    'sum by (provider_role) (biau_ai_daily_provider_role_events_total)',
+    'sum by (status) (biau_ai_daily_issues_total)',
+    'biau_ai_daily_public_flash_items_active',
+    '(biau_ai_daily_public_flash_age_seconds / 60) and on() (biau_ai_daily_public_flash_available == 1)',
+    'sum by (kind) (biau_ai_daily_retention_due_total)',
+  ]) {
+    assert(dashboardExpressions.includes(expression), `dashboard should include ${expression}`)
+  }
   assert(packageJson.scripts?.['ai-daily:observability-contract-check'], 'package script should expose the observability contract check')
   assert(suiteText.includes("'ai-daily:observability-contract-check'"), 'the deterministic AI Daily suite should run the observability contract check')
 

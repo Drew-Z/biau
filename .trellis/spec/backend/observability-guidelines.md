@@ -36,6 +36,8 @@ The Studio JSON diagnostics route is `GET /studio/api/ai-daily/operations` and r
 
 `biau_ai_daily_failure_signals{category="..."}` is a gauge over current and recent low-sensitive signals, not a monotonic incident counter. One operational incident may leave a source, run, work-item, and event signal, so dashboards and alerts use `> 0` and do not present the sum as a unique incident count. Unknown persisted error strings are ignored rather than becoming labels. Repository-owned Grafana and Prometheus templates live under `observability/`; importing them into a production platform and configuring notification routing remain human gates.
 
+Nullable latest-run freshness, latest-run end-to-end lag, and public-feed age remain numeric gauges for compatibility but each must expose a separate `*_available` gauge. Repository dashboards must filter the numeric series with `available == 1`; a numeric zero alone is not proof that a checkpoint or public item exists.
+
 Retention metrics are observations, not deletion authorization. `GET /studio/api/ai-daily/retention/dry-run` is the only current cleanup-facing contract: it is Studio-authenticated, bounded to at most 200 candidates, returns stable eligibility/block reasons and reference counts, always reports `mutationsApplied=false`, and rejects any `mutate` query. A future cleanup command must require explicit mutation opt-in, use bounded batches and transactions, preserve audit evidence, and exclude current evidence, deployed/public issues, latest generated revisions, active/current-approved Flash state, and other publication/audit bindings.
 
 ## Prohibited Metrics Data

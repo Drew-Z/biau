@@ -64,6 +64,11 @@ const degraded = toAiDailyOperationsDiagnostics({
     staleAfterMs: 10_800_000,
     byCategory: { config: 1, provider: 2, evidence: 3, quality: 4, infrastructure: 5, 'stale-content': 1 },
   },
+  publicFeed: {
+    activeApproved: 2,
+    latestApprovedAt: '2026-07-19T07:59:00.000Z',
+    ageMs: 60_000,
+  },
   retention: { expiredEvidence: 4, expiredFlashItems: 1 },
 })
 assertEqual(degraded.status, 'degraded', 'operational alerts should degrade the snapshot')
@@ -80,7 +85,9 @@ for (const expected of [
   'biau_ai_daily_sources_total{health="failing"} 1',
   'biau_ai_daily_active_runs_total{stage="compose"} 1',
   'biau_ai_daily_latest_run_end_to_end_lag_seconds 120.000',
+  'biau_ai_daily_latest_run_end_to_end_lag_available 1',
   'biau_ai_daily_latest_run_freshness_age_seconds 0.000',
+  'biau_ai_daily_latest_run_freshness_available 1',
   'biau_ai_daily_issues_total{status="review_needed"} 0',
   'biau_ai_daily_work_items_expired_leases 1',
   'biau_ai_daily_run_events_total{outcome="quality-rejected"} 2',
@@ -91,6 +98,8 @@ for (const expected of [
   'biau_ai_daily_failure_signals{category="quality"} 4',
   'biau_ai_daily_failure_signals{category="infrastructure"} 5',
   'biau_ai_daily_failure_signals{category="stale-content"} 1',
+  'biau_ai_daily_public_flash_age_seconds 60.000',
+  'biau_ai_daily_public_flash_available 1',
   'biau_ai_daily_retention_due_total{kind="evidence"} 4',
   'biau_ai_daily_alerts_total{code="lease-expired",severity="critical"} 1',
 ]) {
@@ -109,6 +118,15 @@ for (const forbidden of [
   'sk-',
 ]) {
   assert(!metrics.toLowerCase().includes(forbidden), `operations metrics must not include ${forbidden}`)
+}
+
+const emptyMetrics = renderAiDailyOperationsPrometheus(healthy)
+for (const expected of [
+  'biau_ai_daily_latest_run_end_to_end_lag_available 0',
+  'biau_ai_daily_latest_run_freshness_available 0',
+  'biau_ai_daily_public_flash_available 0',
+]) {
+  assert(emptyMetrics.includes(expected), `empty operations metrics should include ${expected}`)
 }
 
 const unavailable = renderAiDailyOperationsPrometheus(null)

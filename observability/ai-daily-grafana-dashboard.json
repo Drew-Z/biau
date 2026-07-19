@@ -173,6 +173,230 @@
       ],
       "title": "Stale content",
       "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (health) (biau_ai_daily_sources_total)",
+          "legendFormat": "{{health}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Source health",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "biau_ai_daily_work_items_ready_backlog",
+          "legendFormat": "ready backlog",
+          "refId": "A"
+        },
+        {
+          "expr": "biau_ai_daily_work_items_expired_leases",
+          "legendFormat": "expired leases",
+          "refId": "B"
+        }
+      ],
+      "title": "Work queue",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "(biau_ai_daily_latest_run_freshness_age_seconds / 60) and on() (biau_ai_daily_latest_run_freshness_available == 1)",
+          "legendFormat": "pipeline freshness (min)",
+          "refId": "A"
+        },
+        {
+          "expr": "(biau_ai_daily_latest_run_end_to_end_lag_seconds / 60) and on() (biau_ai_daily_latest_run_end_to_end_lag_available == 1)",
+          "legendFormat": "end-to-end lag (min)",
+          "refId": "B"
+        }
+      ],
+      "title": "Run freshness",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (provider_role) (biau_ai_daily_provider_role_events_total)",
+          "legendFormat": "{{provider_role}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Provider role events (24h)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 27
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (status) (biau_ai_daily_issues_total)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Issue lifecycle",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "biau_ai_daily_public_flash_items_active",
+          "legendFormat": "active public flashes",
+          "refId": "A"
+        },
+        {
+          "expr": "(biau_ai_daily_public_flash_age_seconds / 60) and on() (biau_ai_daily_public_flash_available == 1)",
+          "legendFormat": "public flash age (min)",
+          "refId": "B"
+        },
+        {
+          "expr": "sum by (kind) (biau_ai_daily_retention_due_total)",
+          "legendFormat": "retention due: {{kind}}",
+          "refId": "C"
+        }
+      ],
+      "title": "Public content and retention",
+      "type": "timeseries"
     }
   ],
   "refresh": "1m",

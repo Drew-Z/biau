@@ -440,6 +440,10 @@ export function renderAiDailyOperationsPrometheus(input: AiDailyOperationsDiagno
     ].join('\n')
   }
 
+  const latestRunFreshnessAgeMs = ageFromIso(input.capturedAt, input.runs.latest.pipelineFreshnessAt)
+  const latestRunFreshnessAvailable = latestRunFreshnessAgeMs === null ? 0 : 1
+  const latestRunLagAvailable = input.runs.latest.endToEndLagMs === null ? 0 : 1
+  const publicFlashAvailable = input.publicFeed.ageMs === null ? 0 : 1
   const lines = [
     '# HELP biau_ai_daily_operations_snapshot_up Whether the AI Daily operations snapshot was available.',
     '# TYPE biau_ai_daily_operations_snapshot_up gauge',
@@ -468,9 +472,15 @@ export function renderAiDailyOperationsPrometheus(input: AiDailyOperationsDiagno
     '# HELP biau_ai_daily_latest_run_end_to_end_lag_seconds End-to-end lag reported by the latest AI Daily run.',
     '# TYPE biau_ai_daily_latest_run_end_to_end_lag_seconds gauge',
     `biau_ai_daily_latest_run_end_to_end_lag_seconds ${seconds(input.runs.latest.endToEndLagMs).toFixed(3)}`,
+    '# HELP biau_ai_daily_latest_run_end_to_end_lag_available Whether the latest run end-to-end lag is available.',
+    '# TYPE biau_ai_daily_latest_run_end_to_end_lag_available gauge',
+    `biau_ai_daily_latest_run_end_to_end_lag_available ${latestRunLagAvailable}`,
     '# HELP biau_ai_daily_latest_run_freshness_age_seconds Age of the latest run freshness checkpoint.',
     '# TYPE biau_ai_daily_latest_run_freshness_age_seconds gauge',
-    `biau_ai_daily_latest_run_freshness_age_seconds ${seconds(ageFromIso(input.capturedAt, input.runs.latest.pipelineFreshnessAt)).toFixed(3)}`,
+    `biau_ai_daily_latest_run_freshness_age_seconds ${seconds(latestRunFreshnessAgeMs).toFixed(3)}`,
+    '# HELP biau_ai_daily_latest_run_freshness_available Whether the latest run freshness checkpoint is available.',
+    '# TYPE biau_ai_daily_latest_run_freshness_available gauge',
+    `biau_ai_daily_latest_run_freshness_available ${latestRunFreshnessAvailable}`,
     '# HELP biau_ai_daily_issues_total Number of AI Daily issues by bounded lifecycle status.',
     '# TYPE biau_ai_daily_issues_total gauge',
   )
@@ -510,6 +520,9 @@ export function renderAiDailyOperationsPrometheus(input: AiDailyOperationsDiagno
     '# HELP biau_ai_daily_public_flash_age_seconds Age of the latest approved flash item.',
     '# TYPE biau_ai_daily_public_flash_age_seconds gauge',
     `biau_ai_daily_public_flash_age_seconds ${seconds(input.publicFeed.ageMs).toFixed(3)}`,
+    '# HELP biau_ai_daily_public_flash_available Whether a latest approved public flash timestamp is available.',
+    '# TYPE biau_ai_daily_public_flash_available gauge',
+    `biau_ai_daily_public_flash_available ${publicFlashAvailable}`,
      '# HELP biau_ai_daily_retention_due_total Records past their retention boundary and requiring review.',
     '# TYPE biau_ai_daily_retention_due_total gauge',
     `biau_ai_daily_retention_due_total${labels({ kind: 'evidence' })} ${input.retention.expiredEvidence}`,
