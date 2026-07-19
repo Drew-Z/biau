@@ -1512,7 +1512,7 @@ function buildGeneratedAiDailyDraftInput(
     projectIds: [],
     status: 'REVIEW_NEEDED',
     visibility: 'HIDDEN',
-    aiAssistance: 'ai-daily-generation-v1',
+    aiAssistance: aiDailyGenerationSchemaVersion,
     createdBy,
     updatedBy: createdBy,
   }

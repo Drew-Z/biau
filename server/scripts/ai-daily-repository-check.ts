@@ -182,9 +182,10 @@ async function main() {
     applied.revision.applyState !== 'APPLIED' ||
     applied.draft.status !== 'REVIEW_NEEDED' ||
     applied.draft.visibility !== 'HIDDEN' ||
+    applied.draft.aiAssistance !== 'draft-assisted' ||
     pendingReview?.status !== 'PENDING'
   ) {
-    throw new Error('applying a valid edition revision should create a hidden draft and restart review')
+    throw new Error('applying a valid edition revision should create a draft-assisted hidden draft and restart review')
   }
   const issueAfterApply = await prisma.aiDailyIssue.findUniqueOrThrow({ where: { id: issue.id } })
   if (!issueAfterApply.newEvidenceAvailable) {

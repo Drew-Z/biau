@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { createRejectedAiDailyGeneration } from '../src/aiDailyGeneration.js'
+import { aiDailyGenerationSchemaVersion, createRejectedAiDailyGeneration } from '../src/aiDailyGeneration.js'
 import { buildAiDailyGenerationProvidersFixture } from '../src/aiDailyGenerationFixtures.js'
 import {
   AiDailyGenerationRunnerInterruptedError,
@@ -229,9 +229,10 @@ async function main() {
     persistedIssue?.workflowState !== 'REVIEW_NEEDED' ||
     persistedIssue.status !== 'REVIEW_NEEDED' ||
     persistedIssue.draft?.visibility !== 'HIDDEN' ||
-    persistedIssue.draft.status !== 'REVIEW_NEEDED'
+    persistedIssue.draft.status !== 'REVIEW_NEEDED' ||
+    persistedIssue.draft.aiAssistance !== aiDailyGenerationSchemaVersion
   ) {
-    throw new Error('valid generation must create the first hidden review-needed draft')
+    throw new Error('valid generation must create the first hidden review-needed draft with current generation provenance')
   }
   const reviewCount = persistedIssue.draftId
     ? await prisma.contentReview.count({ where: { draftId: persistedIssue.draftId, status: 'PENDING' } })
