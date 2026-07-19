@@ -32,6 +32,8 @@ for (const definition of definitions) {
   })
   cases.push({
     id: definition.id,
+    category: definition.category,
+    negativeTags: [...definition.negativeTags],
     criticalFactualErrors: validation.findings.filter((finding) => finding.severity === 'critical').length,
     ...validation.metrics,
     editorOutcome: definition.editorOutcome,
@@ -45,5 +47,9 @@ assertEqual(report.citationPrecision, 1, 'citation precision')
 assert(report.citationCoverage >= 0.98, 'citation coverage')
 assert(report.minorEditAcceptance >= 0.85, 'minor-edit acceptance')
 assert(report.averageChineseEditorialScore >= 4, 'Chinese editorial score')
+assert(report.categorySlices.every((slice) => slice.caseCount >= 4), 'category slice coverage')
+assert(report.negativeSlices.every((slice) => slice.caseCount >= 3), 'negative slice coverage')
+assert(report.negativeSlices.every((slice) => slice.minorEditAcceptance >= 0.8), 'negative slice acceptance')
+assert(report.negativeSlices.every((slice) => slice.citationPrecision === 1), 'negative slice citation precision')
 
-console.log(`AI Daily quality check passed with ${report.caseCount} evidence-labeled cases`)
+console.log(`AI Daily quality check passed with ${report.caseCount} evidence-labeled cases and ${report.negativeSlices.length} negative slices`)

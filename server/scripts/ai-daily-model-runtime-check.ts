@@ -27,7 +27,16 @@ import {
   createAiDailyEvaluationCaseSetHash,
   type AiDailyModelEvaluationCandidateInput,
 } from '../src/aiDailyModelEvaluation.js'
-import { aiDailyGenerationPromptVersion, aiDailyGenerationSchemaVersion, type AiDailyGenerationRole } from '../src/aiDailyGeneration.js'
+import {
+  aiDailyModelEvaluationCaseSetId,
+  buildAiDailyModelEvaluationCaseDescriptors,
+} from '../src/aiDailyModelEvaluationCaseSet.js'
+import {
+  aiDailyGenerationPromptVersion,
+  aiDailyGenerationSchemaVersion,
+  type AiDailyGenerationRole,
+  type AiDailyQualityCaseResult,
+} from '../src/aiDailyGeneration.js'
 import { assert, assertDeepEqual, assertEqual } from './ai-daily-check-helpers.js'
 
 const observedBodies: Array<Record<string, unknown>> = []
@@ -364,13 +373,11 @@ function buildCandidateInput(runtime: AiDailyModelRuntimeConfig, candidateId: st
   const candidate = runtime.candidates.find((item) => item.candidateId === candidateId)
   const channel = runtime.channels.find((item) => item.id === candidate?.channelId)
   if (!candidate || !channel) throw new Error('runtime-candidate-missing')
-  const descriptors = Array.from({ length: 30 }, (_, index) => ({
-    id: `${candidate.role}-case-${String(index + 1).padStart(2, '0')}`,
-    category: `${candidate.role}:contract`,
-    version: 'business-v1',
-  }))
+  const descriptors = buildAiDailyModelEvaluationCaseDescriptors(candidate.role as AiDailyGenerationRole)
   const cases = descriptors.map((descriptor, index) => ({
     id: descriptor.id,
+    category: descriptor.category.slice(`${candidate.role}:`.length) as AiDailyQualityCaseResult['category'],
+    negativeTags: [...descriptor.negativeTags],
     criticalFactualErrors: 0,
     citedVerifiableClaims: 5,
     verifiableClaims: 5,
@@ -386,7 +393,7 @@ function buildCandidateInput(runtime: AiDailyModelRuntimeConfig, candidateId: st
     providerRef: channel.providerRef,
     failureDomainRef: channel.failureDomainRef,
     modelIdentifier: channel.modelIdentifier,
-    caseSetId: `ai-daily-${candidate.role}-business-v1`,
+    caseSetId: aiDailyModelEvaluationCaseSetId(candidate.role as AiDailyGenerationRole),
     caseSetHash: createAiDailyEvaluationCaseSetHash(descriptors),
     caseDescriptors: descriptors,
     promptVersion: aiDailyGenerationPromptVersion,

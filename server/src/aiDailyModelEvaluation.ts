@@ -1,19 +1,31 @@
 import { createHash } from 'node:crypto'
 import {
   aiDailyGenerationRoles,
+  createAiDailyGenerationPayloadHash,
   evaluateAiDailyQualityReport,
   type AiDailyGenerationRole,
   type AiDailyQualityCaseResult,
   type AiDailyQualityReport,
 } from './aiDailyGeneration.js'
+import {
+  buildAiDailyModelEvaluationCaseDescriptors,
+  aiDailyModelEvaluationCaseSetId,
+} from './aiDailyModelEvaluationCaseSet.js'
+import {
+  aiDailyQualityContract,
+  isAiDailyQualityCategory,
+  isAiDailyQualityNegativeTag,
+  type AiDailyQualityNegativeTag,
+} from './aiDailyQualityContract.js'
 
-export const aiDailyModelEvaluationSchemaVersion = 'ai-daily-model-evaluation-v1'
+export const aiDailyModelEvaluationSchemaVersion = 'ai-daily-model-evaluation-v2'
 export const aiDailyModelEvaluationProfiles = ['fixture-contract', 'business-evaluation'] as const
 export type AiDailyModelEvaluationProfile = (typeof aiDailyModelEvaluationProfiles)[number]
 
 export interface AiDailyEvaluationCaseDescriptor {
   id: string
   category: string
+  negativeTags: AiDailyQualityNegativeTag[]
   version: string
 }
 
@@ -149,11 +161,23 @@ export function evaluateAiDailyModelCandidate(
   const measuredCaseIds = validateQualityCases(input.cases, issues)
   const descriptorCaseIds = normalizedDescriptors?.map((item) => item.id) ?? []
   if (descriptorCaseIds.join('\n') !== measuredCaseIds.join('\n')) issues.push('case-set-membership-mismatch')
+  if (normalizedDescriptors) validateCaseMetadata(input.role, normalizedDescriptors, input.cases, issues)
   if (normalizedDescriptors && input.caseSetHash !== sha256(stableJson(normalizedDescriptors))) {
     issues.push('case-set-hash-mismatch')
   }
+  if (input.profile === 'business-evaluation' && normalizedDescriptors) {
+    const expectedDescriptors = buildAiDailyModelEvaluationCaseDescriptors(input.role)
+    if (input.caseSetId !== aiDailyModelEvaluationCaseSetId(input.role)) issues.push('business-case-set-id-mismatch')
+    if (stableJson(normalizedDescriptors) !== stableJson(expectedDescriptors)) issues.push('business-case-set-contract-mismatch')
+  }
   const performance = validatePerformance(input.performance, issues)
-  const executionEvidence = validateExecutionEvidence(input.executionEvidence, input.profile, measuredCaseIds.length, issues)
+  const executionEvidence = validateExecutionEvidence(
+    input.executionEvidence,
+    input.profile,
+    measuredCaseIds.length,
+    input.cases,
+    issues,
+  )
   if (!candidateId || !providerRef || !failureDomainRef || !modelIdentifier || !caseSetId || !promptVersion || !generationSchemaVersion || !performance || !executionEvidence || issues.length > 0) {
     return invalidCandidate(issues)
   }
@@ -337,6 +361,7 @@ function validateQualityCases(cases: AiDailyQualityCaseResult[], issues: string[
     issues.push('cases-array-required')
     return []
   }
+  if (cases.length > aiDailyQualityContract.maximumCaseCount) issues.push('cases-count-above-maximum')
   const caseIds: string[] = []
   for (const [index, item] of cases.entries()) {
     const path = `cases[${index}]`
@@ -346,6 +371,9 @@ function validateQualityCases(cases: AiDailyQualityCaseResult[], issues: string[
     }
     const id = readSlug(item.id, `${path}.id`, issues)
     if (id) caseIds.push(id)
+    if (!isAiDailyQualityCategory(item.category)) issues.push(`${path}.category-invalid`)
+    const negativeTags = validateNegativeTags(item.negativeTags, `${path}.negative-tags`, issues)
+    if (negativeTags.length === 0) issues.push(`${path}.negative-tags-required`)
     if (!isIntegerBetween(item.criticalFactualErrors, 0, 1_000_000)) issues.push(`${path}.critical-factual-errors-invalid`)
     if (!isIntegerBetween(item.citedVerifiableClaims, 0, 1_000_000)) issues.push(`${path}.cited-verifiable-claims-invalid`)
     if (!isIntegerBetween(item.verifiableClaims, 0, 1_000_000)) issues.push(`${path}.verifiable-claims-invalid`)
@@ -392,11 +420,15 @@ function readCaseDescriptors(values: readonly AiDailyEvaluationCaseDescriptor[],
 }
 
 function normalizeCaseDescriptors(values: readonly AiDailyEvaluationCaseDescriptor[]) {
+  if (!Array.isArray(values) || values.length > aiDailyQualityContract.maximumCaseCount) {
+    throw new Error('ai-daily-evaluation-case-descriptor-count-invalid')
+  }
   const normalized = values.map((item) => {
     if (!item || typeof item !== 'object') throw new Error('case-descriptor-object-required')
     return {
       id: requireSlug(item.id, 'case-id'),
       category: requireText(item.category, 'case-category', 120),
+      negativeTags: requireNegativeTags(item.negativeTags, 'case-negative-tags'),
       version: requireText(item.version, 'case-version', 80),
     }
   }).sort((left, right) => compareText(left.id, right.id))
@@ -406,10 +438,51 @@ function normalizeCaseDescriptors(values: readonly AiDailyEvaluationCaseDescript
   return normalized
 }
 
+function validateCaseMetadata(
+  role: AiDailyGenerationRole,
+  descriptors: Array<{ id: string; category: string; negativeTags: AiDailyQualityNegativeTag[]; version: string }>,
+  cases: AiDailyQualityCaseResult[],
+  issues: string[],
+) {
+  const casesById = new Map(cases.map((item) => [item.id, item]))
+  for (const descriptor of descriptors) {
+    const measured = casesById.get(descriptor.id)
+    if (!measured) continue
+    const expectedCategory = `${role}:${measured.category}`
+    if (descriptor.category !== expectedCategory && descriptor.category !== measured.category) {
+      issues.push(`case-category-mismatch:${descriptor.id}`)
+    }
+    if (descriptor.negativeTags.join('\n') !== measured.negativeTags.join('\n')) {
+      issues.push(`case-negative-tags-mismatch:${descriptor.id}`)
+    }
+  }
+}
+
+function validateNegativeTags(value: unknown, path: string, issues: string[]): AiDailyQualityNegativeTag[] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 8 || !value.every(isAiDailyQualityNegativeTag)) {
+    issues.push(`${path}-invalid`)
+    return []
+  }
+  const normalized = [...new Set(value)].sort(compareText)
+  if (normalized.length !== value.length) issues.push(`${path}-duplicate`)
+  if (normalized.join('\n') !== value.join('\n')) issues.push(`${path}-not-canonical`)
+  return normalized
+}
+
+function requireNegativeTags(value: unknown, path: string): AiDailyQualityNegativeTag[] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 8 || !value.every(isAiDailyQualityNegativeTag)) {
+    throw new Error(`invalid-ai-daily-evaluation-${path}`)
+  }
+  const normalized = [...new Set(value)].sort(compareText)
+  if (normalized.length !== value.length) throw new Error(`invalid-ai-daily-evaluation-${path}-duplicate`)
+  return normalized
+}
+
 function validateExecutionEvidence(
   value: AiDailyModelEvaluationExecutionEvidence,
   profile: AiDailyModelEvaluationProfile,
   caseCount: number,
+  cases: readonly AiDailyQualityCaseResult[],
   issues: string[],
 ) {
   if (!value || typeof value !== 'object') {
@@ -427,6 +500,13 @@ function validateExecutionEvidence(
   if (profile === 'business-evaluation' && value.modelCallCount < 1) issues.push('business-model-call-evidence-required')
   if (profile === 'fixture-contract' && value.resultSetHash !== null) issues.push('fixture-result-set-hash-not-allowed')
   if (profile === 'business-evaluation' && !isHash(value.resultSetHash)) issues.push('business-result-set-hash-required')
+  if (
+    profile === 'business-evaluation' &&
+    isHash(value.resultSetHash) &&
+    value.resultSetHash !== createAiDailyGenerationPayloadHash(cases)
+  ) {
+    issues.push('business-result-set-hash-mismatch')
+  }
   if (!evaluationRunId || !evaluatorVersion || issues.some((issue) => issue.startsWith('execution-') || issue.startsWith('profile-execution-') || issue.startsWith('fixture-') || issue.startsWith('business-'))) {
     return null
   }

@@ -220,7 +220,7 @@ async function main() {
       'Offline three-role model evaluation contract',
       modelEvaluationContractOk,
       modelEvaluationContractOk
-        ? 'Three-role evaluation, tamper detection, explicit bundle hash, and runtime drift contracts passed with loopback fixtures'
+        ? 'Golden case-set, category/negative-slice floors, three-role evaluation, tamper detection, explicit bundle hash, and runtime drift contracts passed with local/loopback fixtures'
         : 'model evaluation contract failed; run npm.cmd run ai-daily:model-evaluation-check for details',
     ),
   )

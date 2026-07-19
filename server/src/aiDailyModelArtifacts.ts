@@ -9,8 +9,8 @@ import {
   type AiDailyModelEvaluationSelectionRecord,
 } from './aiDailyModelEvaluation.js'
 
-export const aiDailyModelEvaluationProposalSchemaVersion = 'ai-daily-model-evaluation-proposal-v1'
-export const aiDailyModelApprovalBundleSchemaVersion = 'ai-daily-model-approval-bundle-v1'
+export const aiDailyModelEvaluationProposalSchemaVersion = 'ai-daily-model-evaluation-proposal-v2'
+export const aiDailyModelApprovalBundleSchemaVersion = 'ai-daily-model-approval-bundle-v2'
 
 export interface AiDailyModelEvaluationProposal {
   schemaVersion: typeof aiDailyModelEvaluationProposalSchemaVersion

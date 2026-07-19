@@ -14,7 +14,9 @@ Configuration readiness is offline and never calls providers. The only live acce
 ## Model Evaluation Contract
 
 - Extractor, composer, and verifier candidates are scored independently on one versioned BIAU-owned case set, prompt version, generation schema version, and quality profile.
-- Candidate records bind case descriptors to a recomputed SHA-256 hash and retain only low-sensitive model/channel aliases, execution metadata, aggregate quality, latency, and usage summaries.
+- The repository-owned golden set has 30 cases across six categories and eight fixed negative tags. Its normalized scenario/outcome/score payload contributes a content fingerprint to every role descriptor version. Business records must exactly match those role-local descriptors; category and negative-tag slice floors block approval even when the global average passes.
+- Extractor, composer, and verifier each receive role-specific challenge inputs for every declared negative tag. The evaluator fails before recording a case when the exercised tag set drifts from the golden contract.
+- Candidate records bind case descriptors to a recomputed SHA-256 hash and, for business evaluations, bind `executionEvidence.resultSetHash` to the canonical SHA-256 of the complete measured case array. They retain only low-sensitive model/channel aliases, execution metadata, aggregate quality, latency, and usage summaries.
 - Primary ordering is acceptance, Chinese editorial score, citation coverage, citation precision, p95 latency, then stable candidate id.
 - A fallback must pass every absolute quality floor, remain within five percentage points of the primary acceptance rate, and use a different failure-domain alias.
 - Fixture records validate the contract only and cannot be production-approved. Business records require explicit execution evidence, remain pending after selection, and require human approval.

@@ -8,6 +8,7 @@ import {
   verifyAiDailyComposition,
   type AiDailyAtomicClaim,
   type AiDailyComposition,
+  type AiDailyGenerationEvidence,
   type AiDailyGenerationProviders,
   type AiDailyGenerationRole,
   type AiDailyQualityCaseResult,
@@ -23,11 +24,17 @@ import {
   type AiDailyEvaluationCaseDescriptor,
   type AiDailyModelEvaluationCandidateInput,
 } from './aiDailyModelEvaluation.js'
+import { aiDailyModelEvaluationCaseSetId } from './aiDailyModelEvaluationCaseSet.js'
 import { createAiDailyOpenAiCompatibleProvider } from './aiDailyModelProvider.js'
 import type { AiDailyModelRuntimeChannel, AiDailyModelRuntimeCandidate } from './aiDailyModelRuntime.js'
+import {
+  aiDailyVerifierBlockNegativeTags,
+  aiDailyVerifierClaimNegativeTags,
+  type AiDailyQualityNegativeTag,
+} from './aiDailyQualityContract.js'
 
-export const aiDailyBusinessEvaluatorVersion = 'ai-daily-business-evaluator-v1'
-const caseVersion = 'business-v1'
+export const aiDailyBusinessEvaluatorVersion = 'ai-daily-business-evaluator-v3'
+const caseVersion = 'business-v2'
 
 export async function evaluateAiDailyBusinessCandidate(input: {
   candidate: AiDailyModelRuntimeCandidate
@@ -49,10 +56,18 @@ export async function evaluateAiDailyBusinessCandidate(input: {
   let modelCallCount = 0
   for (const [index, definition] of definitions.entries()) {
     const startedAt = Date.now()
-    const measured = await evaluateRoleCase(input.candidate.role, provider, definition, index)
+    const measured = await evaluateRoleCase(input.candidate.role, provider, definition)
+    if (stableTagList(measured.exercisedNegativeTags) !== stableTagList(definition.negativeTags)) {
+      throw new Error(`ai-daily-business-evaluation-negative-tags-not-exercised:${definition.id}`)
+    }
     latencies.push(Date.now() - startedAt)
     modelCallCount += measured.callCount
-    cases.push({ ...measured.result, id: descriptors[index].id })
+    cases.push({
+      ...measured.result,
+      id: descriptors[index].id,
+      category: definition.category,
+      negativeTags: [...definition.negativeTags],
+    })
     input.onProgress?.({
       candidateId: input.candidate.candidateId,
       role: input.candidate.role,
@@ -68,7 +83,7 @@ export async function evaluateAiDailyBusinessCandidate(input: {
     providerRef: input.channel.providerRef,
     failureDomainRef: input.channel.failureDomainRef,
     modelIdentifier: input.channel.modelIdentifier,
-    caseSetId: `ai-daily-${input.candidate.role}-business-v1`,
+    caseSetId: aiDailyModelEvaluationCaseSetId(input.candidate.role),
     caseSetHash: createAiDailyEvaluationCaseSetHash(descriptors),
     caseDescriptors: descriptors,
     promptVersion: aiDailyGenerationPromptVersion,
@@ -97,7 +112,8 @@ function createCaseDescriptors(role: AiDailyGenerationRole, definitions: AiDaily
   return definitions.map((definition) => ({
     id: `${role}-${definition.id}`,
     category: `${role}:${definition.category}`,
-    version: caseVersion,
+    negativeTags: [...definition.negativeTags],
+    version: definition.version || caseVersion,
   }))
 }
 
@@ -105,19 +121,19 @@ async function evaluateRoleCase(
   role: AiDailyGenerationRole,
   provider: AiDailyStructuredGenerationProvider,
   definition: AiDailyQualityFixtureDefinition,
-  index: number,
 ) {
   if (role === 'extractor') return evaluateExtractorCase(provider, definition)
   if (role === 'composer') return evaluateComposerCase(provider, definition)
-  return evaluateVerifierCase(provider, definition, index)
+  return evaluateVerifierCase(provider, definition)
 }
 
 async function evaluateExtractorCase(provider: AiDailyStructuredGenerationProvider, definition: AiDailyQualityFixtureDefinition) {
+  const scenario = createAiDailyExtractorEvaluationScenario(definition)
   const providers = replaceProvider('extractor', provider)
-  const output = await extractAiDailyFacts({ evidence: definition.evidence, providers })
+  const output = await extractAiDailyFacts({ evidence: scenario.evidence, providers })
   const callCount = output.attempts.reduce((sum, attempt) => sum + attempt.calls, 0)
-  if (!output.ok) return { callCount, result: failedCase() }
-  const evidenceById = new Map(definition.evidence.map((item) => [item.evidenceId, item]))
+  if (!output.ok) return { callCount, result: failedCase(), exercisedNegativeTags: scenario.exercisedNegativeTags }
+  const evidenceById = new Map(scenario.evidence.map((item) => [item.evidenceId, item]))
   const citedEvidenceIds = new Set<string>()
   let citationBindings = 0
   let validCitationBindings = 0
@@ -135,13 +151,14 @@ async function evaluateExtractorCase(provider: AiDailyStructuredGenerationProvid
     }
   }
   const chineseEditorialScore = scoreChineseText(output.claims.map((claim) => claim.text).join('\n'))
-  const coverage = citedEvidenceIds.size / Math.max(1, definition.evidence.length)
+  const coverage = citedEvidenceIds.size / Math.max(1, scenario.evidence.length)
   return {
     callCount,
+    exercisedNegativeTags: scenario.exercisedNegativeTags,
     result: qualityCase({
       criticalFactualErrors,
       citedVerifiableClaims: citedEvidenceIds.size,
-      verifiableClaims: definition.evidence.length,
+      verifiableClaims: scenario.evidence.length,
       validCitationBindings,
       citationBindings,
       chineseEditorialScore,
@@ -152,12 +169,14 @@ async function evaluateExtractorCase(provider: AiDailyStructuredGenerationProvid
 
 async function evaluateComposerCase(provider: AiDailyStructuredGenerationProvider, definition: AiDailyQualityFixtureDefinition) {
   const fixtureProviders = buildAiDailyGenerationProvidersFixture()
-  const extracted = await extractAiDailyFacts({ evidence: definition.evidence, providers: fixtureProviders })
+  const evidenceScenario = createAiDailyExtractorEvaluationScenario(definition)
+  const extracted = await extractAiDailyFacts({ evidence: evidenceScenario.evidence, providers: fixtureProviders })
   if (!extracted.ok) throw new Error('ai-daily-business-evaluation-fixture-extractor-failed')
-  const output = await composeAiDailyFacts({ claims: extracted.claims, providers: replaceProvider('composer', provider) })
+  const scenario = createAiDailyComposerEvaluationScenario(extracted.claims, definition)
+  const output = await composeAiDailyFacts({ claims: scenario.claims, providers: replaceProvider('composer', provider) })
   const callCount = output.attempts.reduce((sum, attempt) => sum + attempt.calls, 0)
-  if (!output.ok) return { callCount, result: failedCase() }
-  const knownClaims = new Set(extracted.claims.map((claim) => claim.claimId))
+  if (!output.ok) return { callCount, result: failedCase(), exercisedNegativeTags: scenario.exercisedNegativeTags }
+  const knownClaims = new Set(scenario.claims.map((claim) => claim.claimId))
   const blocks = collectAiDailyCompositionReviewTargets(output.composition)
   const usedClaims = new Set(blocks.flatMap((block) => block.claimIds))
   const citationBindings = blocks.reduce((sum, block) => sum + block.claimIds.length, 0)
@@ -166,16 +185,17 @@ async function evaluateComposerCase(provider: AiDailyStructuredGenerationProvide
     0,
   )
   const compositionText = blocks.map((block) => block.text).join('\n')
-  let criticalFactualErrors = invalidNumberBindings(blocks, extracted.claims)
+  let criticalFactualErrors = invalidNumberBindings(blocks, scenario.claims)
   if (/https?:\/\//iu.test(compositionText)) criticalFactualErrors += 1
   const chineseEditorialScore = scoreChineseText(compositionText)
-  const coverage = usedClaims.size / Math.max(1, extracted.claims.length)
+  const coverage = usedClaims.size / Math.max(1, scenario.claims.length)
   return {
     callCount,
+    exercisedNegativeTags: scenario.exercisedNegativeTags,
     result: qualityCase({
       criticalFactualErrors,
       citedVerifiableClaims: usedClaims.size,
-      verifiableClaims: extracted.claims.length,
+      verifiableClaims: scenario.claims.length,
       validCitationBindings,
       citationBindings,
       chineseEditorialScore,
@@ -187,22 +207,22 @@ async function evaluateComposerCase(provider: AiDailyStructuredGenerationProvide
 async function evaluateVerifierCase(
   provider: AiDailyStructuredGenerationProvider,
   definition: AiDailyQualityFixtureDefinition,
-  index: number,
 ) {
   const fixtureProviders = buildAiDailyGenerationProvidersFixture()
-  const extracted = await extractAiDailyFacts({ evidence: definition.evidence, providers: fixtureProviders })
+  const evidenceScenario = createAiDailyExtractorEvaluationScenario(definition)
+  const extracted = await extractAiDailyFacts({ evidence: evidenceScenario.evidence, providers: fixtureProviders })
   if (!extracted.ok) throw new Error('ai-daily-business-evaluation-fixture-extractor-failed')
   const composed = await composeAiDailyFacts({ claims: extracted.claims, providers: fixtureProviders })
   if (!composed.ok) throw new Error('ai-daily-business-evaluation-fixture-composer-failed')
-  const scenario = createVerifierScenario(extracted.claims, composed.composition, index)
+  const scenario = createAiDailyVerifierEvaluationScenario(extracted.claims, composed.composition, definition)
   const output = await verifyAiDailyComposition({
-    evidence: definition.evidence,
+    evidence: evidenceScenario.evidence,
     claims: scenario.claims,
     composition: scenario.composition,
     providers: replaceProvider('verifier', provider),
   })
   const callCount = output.attempts.reduce((sum, attempt) => sum + attempt.calls, 0)
-  if (!output.ok) return { callCount, result: failedCase() }
+  if (!output.ok) return { callCount, result: failedCase(), exercisedNegativeTags: scenario.exercisedNegativeTags }
   const expectedClaimIds = new Set(scenario.expectedNonEntailedClaimIds)
   const expectedBlockIds = new Set(scenario.expectedNonEntailedBlockIds)
   let correct = 0
@@ -236,6 +256,7 @@ async function evaluateVerifierCase(
   const chineseEditorialScore = coverage >= 0.99 ? 5 : coverage >= 0.95 ? 4.5 : coverage >= 0.85 ? 4 : 3
   return {
     callCount,
+    exercisedNegativeTags: scenario.exercisedNegativeTags,
     result: qualityCase({
       criticalFactualErrors,
       citedVerifiableClaims: correct,
@@ -255,20 +276,149 @@ function replaceProvider(role: AiDailyGenerationRole, provider: AiDailyStructure
   return { ...providers, verifier: { ...providers.verifier, primary: provider, fallbacks: [] } }
 }
 
-function createVerifierScenario(claims: AiDailyAtomicClaim[], composition: AiDailyComposition, index: number) {
+export function createAiDailyExtractorEvaluationScenario(definition: AiDailyQualityFixtureDefinition) {
+  const evidence = definition.evidence.map((item) => ({ ...item, locator: { ...item.locator } }))
+  const exercisedNegativeTags: AiDailyQualityNegativeTag[] = []
+  for (const [index, tag] of definition.negativeTags.entries()) {
+    const targetIndex = index % evidence.length
+    const target = evidence[targetIndex]
+    if (!target) continue
+    evidence[targetIndex] = applyExtractorChallenge(target, tag, index)
+    exercisedNegativeTags.push(tag)
+  }
+  return { evidence, exercisedNegativeTags }
+}
+
+export function createAiDailyComposerEvaluationScenario(
+  claims: AiDailyAtomicClaim[],
+  definition: AiDailyQualityFixtureDefinition,
+) {
+  const nextClaims = cloneClaims(claims)
+  const exercisedNegativeTags: AiDailyQualityNegativeTag[] = []
+  for (const [index, tag] of definition.negativeTags.entries()) {
+    const target = nextClaims[index % nextClaims.length]
+    if (!target) continue
+    applyComposerChallenge(target, tag, index)
+    exercisedNegativeTags.push(tag)
+  }
+  return { claims: nextClaims, exercisedNegativeTags }
+}
+
+function applyExtractorChallenge(
+  evidence: AiDailyGenerationEvidence,
+  tag: AiDailyQualityNegativeTag,
+  index: number,
+): AiDailyGenerationEvidence {
+  const challenge = extractorChallengeText(tag, index)
+  if (tag === 'low-evidence-restraint') {
+    return {
+      ...evidence,
+      sourceTier: 'TIER_3',
+      sourceKind: 'secondary_media',
+      quote: `${challenge}${evidence.quote}`,
+    }
+  }
+  return { ...evidence, quote: `${challenge}${evidence.quote}` }
+}
+
+function extractorChallengeText(tag: AiDailyQualityNegativeTag, index: number) {
+  if (tag === 'citation-source-match') return '来源归属边界：本条只归属于当前发布者，不能改写为其他来源声明。'
+  if (tag === 'correction-boundary') return '更正边界：此前关于全面上线的表述已撤回，当前仅限受控测试。'
+  if (tag === 'date-entity-alignment') return `日期实体边界：本条只适用于项目 ${index + 1} 在 2026 年 7 月 18 日的状态。`
+  if (tag === 'duplicate-attribution') return '归因边界：这是一条单一来源观察，不代表多个独立来源一致。'
+  if (tag === 'low-evidence-restraint') return '证据等级边界：该线索未经官方确认，只能作为有限背景观察。'
+  if (tag === 'numeric-integrity') return `数字边界：公开记录为 ${81 + index} 分，不支持额外增幅或替代数值。`
+  if (tag === 'scope-inflation') return `范围边界：观察仅覆盖 ${index + 1} 个受控样本，不能外推到所有用户。`
+  return '事实边界：证据未涉及定价、全面可用性或自主替代人工。'
+}
+
+function applyComposerChallenge(claim: AiDailyAtomicClaim, tag: AiDailyQualityNegativeTag, index: number) {
+  if (tag === 'citation-source-match') claim.text = `来源归属必须保持不变。${claim.text}`
+  else if (tag === 'correction-boundary') claim.text = `更正后的受控范围优先于旧说法。${claim.text}`
+  else if (tag === 'date-entity-alignment') claim.text = `${claim.text} 该记录仅对应项目 ${index + 1} 与 2026 年 7 月 18 日。`
+  else if (tag === 'duplicate-attribution') claim.text = `这是单一来源观察，不代表多源一致。${claim.text}`
+  else if (tag === 'numeric-integrity') claim.text = `${claim.text} 经核验的限定值为 ${81 + index} 分。`
+  else if (tag === 'low-evidence-restraint') {
+    claim.text = `有限证据，仅可保留不确定性。${claim.text}`
+    claim.directSupport = false
+    claim.uncertainty = 'high'
+  } else if (tag === 'scope-inflation') {
+    claim.text = `结论仅限受控样本，不可外推所有用户。${claim.text}`
+    claim.uncertainty = 'high'
+  } else {
+    claim.text = `证据未支持定价、全面可用性或替代人工。${claim.text}`
+    claim.directSupport = false
+    claim.uncertainty = 'high'
+  }
+}
+
+export function createAiDailyVerifierEvaluationScenario(
+  claims: AiDailyAtomicClaim[],
+  composition: AiDailyComposition,
+  definition: AiDailyQualityFixtureDefinition,
+) {
   const nextClaims = claims.map((claim) => ({ ...claim, evidenceIds: [...claim.evidenceIds], conflictingEvidenceIds: [...claim.conflictingEvidenceIds] }))
   const nextComposition = cloneComposition(composition)
   const expectedNonEntailedClaimIds: string[] = []
   const expectedNonEntailedBlockIds: string[] = []
-  if (index % 3 === 1 && nextClaims[0]) {
-    nextClaims[0].text = `${nextClaims[0].text} 未经证据支持的性能提升为 999%。`
-    expectedNonEntailedClaimIds.push(nextClaims[0].claimId)
+  const exercisedNegativeTags: AiDailyQualityNegativeTag[] = []
+  let claimIndex = 0
+  let blockIndex = 0
+  for (const tag of definition.negativeTags) {
+    if (aiDailyVerifierClaimNegativeTags.includes(tag)) {
+      const claim = nextClaims[claimIndex]
+      if (!claim) continue
+      mutateVerifierClaim(nextClaims, claimIndex, tag)
+      expectedNonEntailedClaimIds.push(claim.claimId)
+      exercisedNegativeTags.push(tag)
+      claimIndex += 1
+      continue
+    }
+    if (aiDailyVerifierBlockNegativeTags.includes(tag)) {
+      const event = nextComposition.events[blockIndex]
+      if (!event) continue
+      event.factSummary.text = `${event.factSummary.text}${verifierBlockSuffix(tag)}`
+      expectedNonEntailedBlockIds.push(`event:${event.eventId}:fact-summary`)
+      exercisedNegativeTags.push(tag)
+      blockIndex += 1
+    }
   }
-  if (index % 3 === 2 && nextComposition.events[0]) {
-    nextComposition.events[0].factSummary.text = `${nextComposition.events[0].factSummary.text} 该系统已经完全取代所有人工审核。`
-    expectedNonEntailedBlockIds.push(`event:${nextComposition.events[0].eventId}:fact-summary`)
+  return {
+    claims: nextClaims,
+    composition: nextComposition,
+    expectedNonEntailedClaimIds,
+    expectedNonEntailedBlockIds,
+    exercisedNegativeTags,
   }
-  return { claims: nextClaims, composition: nextComposition, expectedNonEntailedClaimIds, expectedNonEntailedBlockIds }
+}
+
+function mutateVerifierClaim(claims: AiDailyAtomicClaim[], index: number, tag: AiDailyQualityNegativeTag) {
+  const claim = claims[index]
+  if (!claim) return
+  if (tag === 'citation-source-match') {
+    const alternate = claims[(index + 1) % claims.length]
+    if (alternate && alternate.claimId !== claim.claimId) claim.evidenceIds = [...alternate.evidenceIds]
+    return
+  }
+  if (tag === 'correction-boundary') {
+    claim.text = `${claim.text} 此前更正已经撤回。`
+    return
+  }
+  if (tag === 'date-entity-alignment') {
+    claim.text = `${claim.text} 该更新发生于 2035 年 12 月 31 日。`
+    return
+  }
+  if (tag === 'numeric-integrity') {
+    claim.text = `${claim.text} 未经证据支持的性能提升为 999%。`
+    return
+  }
+  claim.text = `${claim.text} 该系统已经实现完全自主运行。`
+}
+
+function verifierBlockSuffix(tag: AiDailyQualityNegativeTag) {
+  if (tag === 'duplicate-attribution') return ' 所有独立来源均完全一致。'
+  if (tag === 'low-evidence-restraint') return ' 该能力已经正式全面上线。'
+  return ' 该系统已经完全取代所有人工审核。'
 }
 
 function cloneComposition(value: AiDailyComposition): AiDailyComposition {
@@ -284,6 +434,14 @@ function cloneComposition(value: AiDailyComposition): AiDailyComposition {
     })),
     trends: value.trends.map((trend) => ({ text: trend.text, claimIds: [...trend.claimIds] })),
   }
+}
+
+function cloneClaims(claims: AiDailyAtomicClaim[]) {
+  return claims.map((claim) => ({
+    ...claim,
+    evidenceIds: [...claim.evidenceIds],
+    conflictingEvidenceIds: [...claim.conflictingEvidenceIds],
+  }))
 }
 
 function invalidNumberBindings(blocks: Array<{ text: string; claimIds: string[] }>, claims: AiDailyAtomicClaim[]) {
@@ -330,7 +488,7 @@ function qualityCase(input: {
   citationBindings: number
   chineseEditorialScore: number
   coverage: number
-}): Omit<AiDailyQualityCaseResult, 'id'> {
+}): Omit<AiDailyQualityCaseResult, 'id' | 'category' | 'negativeTags'> {
   const precision = input.citationBindings === 0 ? 0 : input.validCitationBindings / input.citationBindings
   const editorOutcome = input.criticalFactualErrors > 0 || precision < 1
     ? 'rejected'
@@ -350,7 +508,7 @@ function qualityCase(input: {
   }
 }
 
-function failedCase(): Omit<AiDailyQualityCaseResult, 'id'> {
+function failedCase(): Omit<AiDailyQualityCaseResult, 'id' | 'category' | 'negativeTags'> {
   return {
     criticalFactualErrors: 1,
     citedVerifiableClaims: 0,
@@ -365,4 +523,8 @@ function failedCase(): Omit<AiDailyQualityCaseResult, 'id'> {
 function percentile(sorted: number[], ratio: number) {
   if (sorted.length === 0) return 0
   return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * ratio) - 1))] ?? 0
+}
+
+function stableTagList(tags: readonly AiDailyQualityNegativeTag[]) {
+  return [...tags].sort().join('\n')
 }

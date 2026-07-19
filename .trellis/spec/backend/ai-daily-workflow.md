@@ -89,18 +89,21 @@ The live provider boundary is OpenAI-compatible chat completion with a structure
 - Human approval command: `npm.cmd run ai-daily:model-approve -- --input <proposal.local.json> --reviewed-by <safe-id> --notes <safe-note>`.
 - Production edition command: `npm.cmd run ai-daily:run -- --date <YYYY-MM-DD> --live`.
 
-Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failureDomainRef`, `modelIdentifier`, `caseSetId`, `caseSetHash`, `caseDescriptors`, `promptVersion`, `generationSchemaVersion`, `evaluatedAt`, aggregate case results, performance, and execution evidence.
+Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failureDomainRef`, `modelIdentifier`, `caseSetId`, `caseSetHash`, `caseDescriptors`, `promptVersion`, `generationSchemaVersion`, `evaluatedAt`, category/negative-tag-labeled case results, performance, and execution evidence.
 
 ### 3. Contracts
 
+- `server/data/ai-daily-model-evaluation-cases.v1.json` is the versioned BIAU-owned golden case set. `server/src/aiDailyModelEvaluationCaseSet.ts` validates its 30 cases, six required categories, eight required negative tags, stable ids, and minimum slice coverage before an evaluation can start. The normalized complete case payload (including scenario, expected editor outcome, and expected editorial score) contributes a SHA-256 fingerprint to the role descriptor version, so changing business expectations invalidates old evaluations even if a maintainer forgets to bump the handwritten case version.
 - `server/src/aiDailyModelEvaluation.ts` owns the versioned candidate, selection, and approval record contract for extractor, composer, and verifier.
 - `server/src/aiDailyModelRuntime.ts` owns server-only channel/candidate configuration parsing and safe summaries; `server/src/aiDailyModelProvider.ts` owns the OpenAI-compatible structured provider adapter; `server/src/aiDailyModelProduction.ts` binds an approved selection bundle to runtime channels.
-- Every candidate must use the same role-local case-set id/hash, prompt version, generation schema version, and evaluation profile. The candidate input includes case descriptors; the module recomputes their SHA-256 hash and rejects self-reported hash or membership drift.
-- Candidate quality reuses `evaluateAiDailyQualityReport()`. A primary is ordered by acceptance, Chinese editorial score, citation coverage, citation precision, p95 latency, and stable candidate id.
+- Every candidate must use the same role-local case-set id/hash, prompt version, generation schema version, and evaluation profile. Case descriptors bind id, role/category, sorted negative tags, and the content-bound case contract version; measured results must carry the same category/tag labels. Business-evaluation descriptors must exactly match the repository golden case set. Extractor, composer, and verifier each receive role-specific challenge inputs for every declared negative tag; the evaluator aborts before recording a case if the exercised tag set differs from the case contract.
+- Candidate quality reuses `evaluateAiDailyQualityReport()`. Besides global floors, every category needs at least four cases and every required negative slice needs at least three cases, zero critical factual errors, 100% citation precision, at least 90% citation coverage, and at least 80% minor-edit acceptance. A weak slice cannot be hidden by stronger global averages.
+- A primary is ordered by acceptance, Chinese editorial score, citation coverage, citation precision, p95 latency, and stable candidate id.
 - A fallback must independently pass every absolute quality floor, remain within 500 basis points of the primary acceptance rate, and use a different low-sensitive failure-domain alias. Multiple aliases for one outage domain must not be reported as full redundancy.
 - `fixture-contract` execution evidence requires zero model calls and no result-set hash. It validates selection behavior only and makes every role approval-ineligible.
-- `business-evaluation` execution evidence requires a recorded evaluation run id, evaluator version, completed case count, non-zero model-call count, and result-set hash. Selection still writes `approval.status=pending`; only explicit human review may produce an approved record.
+- `business-evaluation` execution evidence requires a recorded evaluation run id, evaluator version, completed case count, non-zero model-call count, and a result-set hash that exactly equals the canonical SHA-256 of the complete measured `cases` array. A format-valid but stale or substituted hash is invalid. Selection still writes `approval.status=pending`; only explicit human review may produce an approved record.
 - Candidate records retain low-sensitive aliases, versions, hashes, aggregate quality, latency, and usage summaries only. The selection stores a stable `candidateSetHash` over candidate id + record hash pairs so approval remains bound to the measured record set. Do not store prompts, source text, raw outputs, endpoints, credentials, provider bodies, or raw errors.
+- Evaluation, proposal, and approval records use v2 schemas for the golden-set/slice contract. The stable Render mount filename may still contain `v1`; schema validation, not the transport filename, decides compatibility. Old proposals/bundles must be regenerated and cannot be relabeled.
 - `AI_DAILY_MODEL_RUNTIME_JSON` is server-only. Channel URLs must use HTTPS in production and reject URL credentials, query strings, and fragments; local loopback HTTP is allowed only by explicit deterministic-test configuration. Each role must have a candidate, while the real evaluator additionally requires 2-3 candidates and at least two failure domains per role.
 - The OpenAI-compatible adapter deliberately omits `temperature`. It accepts an exact `/chat/completions` endpoint, a `/v1` base, or a provider base that can be resolved through the two known paths. Only `404` or `405` proves a guessed path is incompatible and permits trying the alternate path. Timeout, network, authentication, rate-limit, invalid response, and `5xx` failures stop immediately so one business task is not submitted twice and the original failure category is preserved.
 - Real evaluation is serial and requires all three gates: `--execute`, `AI_DAILY_BUSINESS_EVALUATION_ENABLED=true`, and a command `--approval-id` equal to `AI_DAILY_MODEL_EVALUATION_APPROVAL_ID`. The default proposal path contains `.local.` and is Git-ignored.
@@ -108,7 +111,8 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 
 ### 4. Validation & Error Matrix
 
-- Invalid descriptor, duplicate case id, case membership drift, or self-reported hash mismatch -> invalid candidate with a stable issue code.
+- Invalid descriptor, duplicate case id, case membership/category/tag drift, non-canonical measured tags, business golden-set drift, or self-reported/result-set hash mismatch -> invalid candidate with a stable issue code (`business-result-set-hash-mismatch` for a business result set that is not bound to its complete measured cases).
+- Missing category/negative-slice coverage or a negative slice below its quality floor -> candidate remains a valid measured record but `eligible=false` with a stable slice rejection code.
 - `profile` and execution mode mismatch -> `profile-execution-mode-mismatch`.
 - Fixture evidence with model calls or a result-set hash -> `fixture-model-calls-not-allowed` / `fixture-result-set-hash-not-allowed`.
 - Business evidence without a model call or result-set hash -> `business-model-call-evidence-required` / `business-result-set-hash-required`.
@@ -126,7 +130,8 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 
 - Good: each role uses the same versioned case set and records an independent primary and fallback that both pass all quality floors.
 - Base: a role has one eligible primary but no independent fallback; selection remains visible as `reduced_redundancy` and requires human judgment.
-- Bad: copy fixture metrics, change only `profile` to `business-evaluation`, and approve; execution-mode validation must reject it.
+- Bad: copy fixture metrics, change only `profile` to `business-evaluation`, and approve; execution-mode and golden-case-set validation must reject it.
+- Bad: let 37 of 40 cases pass while three `scope-inflation` cases fail, then approve from the 92.5% global acceptance. The negative-slice floor must keep the candidate ineligible.
 - Bad: register two candidate ids backed by the same relay failure domain and report them as full redundancy.
 - Good: a base URL without `/v1` returns `404` for the first known path and succeeds on the second; exactly two loopback requests are observed.
 - Base: an approved bundle is present but the runtime model identifier changed; live execution fails closed and requires a new measured approval.
@@ -134,7 +139,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 
 ### 6. Tests Required
 
-- Run `npm.cmd run ai-daily:model-evaluation-check` after changing quality thresholds, role selection, fallback rules, case-set hashing, evaluation records, or approval state.
+- Run `npm.cmd run ai-daily:model-evaluation-check` after changing the golden case-set asset, category/negative-tag taxonomy, slice thresholds, role selection, fallback rules, case-set hashing, evaluation records, or approval state. The check must prove that scenario/outcome/score changes alter the golden contract version, all three roles exercise every declared negative tag, and a globally passing candidate with a weak negative slice remains ineligible.
 - Run `npm.cmd run ai-daily:model-runtime-check` after changing runtime channel parsing, structured request compatibility, approval bundle validation, or runner mode gates. Assert URL credentials/query/hash rejection, no `temperature`, `404/405` compatibility fallback, no duplicate request after `5xx`, artifact tamper rejection, runtime drift rejection, and `externalProviderCalls=0`. Run the real evaluator only with the explicit `--execute` and approval-id gates; it is a business task, not a health check.
 - Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.
 - A passing fixture contract is a repository check, not a production model approval. Real candidate execution and human primary/fallback approval remain manual gates.

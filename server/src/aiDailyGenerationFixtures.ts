@@ -9,6 +9,11 @@ import {
   type AiDailyStructuredGenerationRequest,
   type AiDailyVerifierOutput,
 } from './aiDailyGeneration.js'
+import {
+  createAiDailyModelEvaluationCaseContractVersion,
+  loadAiDailyModelEvaluationCaseSet,
+} from './aiDailyModelEvaluationCaseSet.js'
+import type { AiDailyQualityCategory, AiDailyQualityNegativeTag } from './aiDailyQualityContract.js'
 
 export function buildAiDailyGenerationEvidenceFixture(count = 10, caseId = 'base'): AiDailyGenerationEvidence[] {
   const topics = ['模型发布', '智能体工具', '开源基础设施', '安全评测', '推理平台']
@@ -253,32 +258,28 @@ function fixtureVerify(
 
 export interface AiDailyQualityFixtureDefinition {
   id: string
-  category: 'official-release' | 'multi-source' | 'numeric' | 'correction' | 'chinese-source' | 'low-evidence'
+  category: AiDailyQualityCategory
+  negativeTags: AiDailyQualityNegativeTag[]
+  scenario: string
+  version: string
   evidence: AiDailyGenerationEvidence[]
   editorOutcome: 'accepted' | 'minor-edit' | 'major-edit' | 'rejected'
   chineseEditorialScore: number
 }
 
 export function buildAiDailyQualityFixtureDefinitions(): AiDailyQualityFixtureDefinition[] {
-  const categories: AiDailyQualityFixtureDefinition['category'][] = [
-    'official-release',
-    'multi-source',
-    'numeric',
-    'correction',
-    'chinese-source',
-    'low-evidence',
-  ]
-  return Array.from({ length: 30 }, (_, index) => {
-    const id = `quality-${String(index + 1).padStart(2, '0')}`
-    const category = categories[index % categories.length] ?? 'official-release'
-    return {
-      id,
-      category,
-      evidence: buildQualityEvidenceFixture(category, id),
-      editorOutcome: index < 22 ? 'accepted' : index < 27 ? 'minor-edit' : 'major-edit',
-      chineseEditorialScore: index < 24 ? 4.5 : 4.1,
-    }
-  })
+  const caseSet = loadAiDailyModelEvaluationCaseSet()
+  const contractVersion = createAiDailyModelEvaluationCaseContractVersion(caseSet)
+  return caseSet.cases.map((item) => ({
+    id: item.id,
+    category: item.category,
+    negativeTags: [...item.negativeTags],
+    scenario: item.scenario,
+    version: contractVersion,
+    evidence: buildQualityEvidenceFixture(item.category, item.id),
+    editorOutcome: item.editorOutcome,
+    chineseEditorialScore: item.chineseEditorialScore,
+  }))
 }
 
 function buildQualityEvidenceFixture(

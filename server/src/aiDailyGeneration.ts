@@ -1,4 +1,11 @@
 import { createHash } from 'node:crypto'
+import {
+  aiDailyQualityCategories,
+  aiDailyQualityContract,
+  aiDailyQualityNegativeTags,
+  type AiDailyQualityCategory,
+  type AiDailyQualityNegativeTag,
+} from './aiDailyQualityContract.js'
 
 export const aiDailyGenerationRoles = ['extractor', 'composer', 'verifier'] as const
 export type AiDailyGenerationRole = (typeof aiDailyGenerationRoles)[number]
@@ -708,6 +715,8 @@ export function validateAiDailyComposition(input: {
 
 export interface AiDailyQualityCaseResult {
   id: string
+  category: AiDailyQualityCategory
+  negativeTags: AiDailyQualityNegativeTag[]
   criticalFactualErrors: number
   citedVerifiableClaims: number
   verifiableClaims: number
@@ -717,18 +726,76 @@ export interface AiDailyQualityCaseResult {
   chineseEditorialScore: number
 }
 
-export interface AiDailyQualityReport {
+interface AiDailyQualityMetrics {
   caseCount: number
   criticalFactualErrors: number
   citationPrecision: number
   citationCoverage: number
   minorEditAcceptance: number
   averageChineseEditorialScore: number
+}
+
+export interface AiDailyQualitySliceReport extends AiDailyQualityMetrics {
+  key: string
+}
+
+export interface AiDailyQualityReport extends AiDailyQualityMetrics {
+  categorySlices: AiDailyQualitySliceReport[]
+  negativeSlices: AiDailyQualitySliceReport[]
   passed: boolean
   gaps: string[]
 }
 
 export function evaluateAiDailyQualityReport(cases: AiDailyQualityCaseResult[]): AiDailyQualityReport {
+  const metrics = summarizeAiDailyQualityMetrics(cases)
+  const categorySlices = aiDailyQualityCategories.map((category) => summarizeAiDailyQualitySlice(
+    category,
+    cases.filter((item) => item.category === category),
+  ))
+  const negativeSlices = aiDailyQualityNegativeTags.map((tag) => summarizeAiDailyQualitySlice(
+    tag,
+    cases.filter((item) => item.negativeTags.includes(tag)),
+  ))
+  const gaps: string[] = []
+  if (metrics.caseCount < aiDailyQualityContract.minimumCaseCount) gaps.push('minimum-quality-cases-not-met')
+  if (metrics.criticalFactualErrors !== 0) gaps.push('critical-factual-errors-present')
+  if (metrics.citationPrecision < 1) gaps.push('citation-precision-below-floor')
+  if (metrics.citationCoverage < 0.98) gaps.push('citation-coverage-below-floor')
+  if (metrics.minorEditAcceptance < 0.85) gaps.push('minor-edit-acceptance-below-floor')
+  if (metrics.averageChineseEditorialScore < 4) gaps.push('chinese-editorial-score-below-floor')
+  for (const slice of categorySlices) {
+    if (slice.caseCount < aiDailyQualityContract.minimumCategoryCaseCount) {
+      gaps.push(`category-case-count-below-floor:${slice.key}`)
+    }
+  }
+  for (const slice of negativeSlices) {
+    if (slice.caseCount < aiDailyQualityContract.minimumNegativeSliceCaseCount) {
+      gaps.push(`negative-slice-case-count-below-floor:${slice.key}`)
+      continue
+    }
+    if (slice.criticalFactualErrors !== 0) gaps.push(`negative-slice-critical-errors:${slice.key}`)
+    if (slice.citationPrecision < 1) gaps.push(`negative-slice-citation-precision-below-floor:${slice.key}`)
+    if (slice.citationCoverage < aiDailyQualityContract.minimumNegativeSliceCitationCoverage) {
+      gaps.push(`negative-slice-citation-coverage-below-floor:${slice.key}`)
+    }
+    if (slice.minorEditAcceptance < aiDailyQualityContract.minimumNegativeSliceAcceptance) {
+      gaps.push(`negative-slice-acceptance-below-floor:${slice.key}`)
+    }
+  }
+  return {
+    ...metrics,
+    categorySlices,
+    negativeSlices,
+    passed: gaps.length === 0,
+    gaps,
+  }
+}
+
+function summarizeAiDailyQualitySlice(key: string, cases: AiDailyQualityCaseResult[]): AiDailyQualitySliceReport {
+  return { key, ...summarizeAiDailyQualityMetrics(cases) }
+}
+
+function summarizeAiDailyQualityMetrics(cases: AiDailyQualityCaseResult[]): AiDailyQualityMetrics {
   const criticalFactualErrors = cases.reduce((sum, item) => sum + item.criticalFactualErrors, 0)
   const validCitationBindings = cases.reduce((sum, item) => sum + item.validCitationBindings, 0)
   const citationBindings = cases.reduce((sum, item) => sum + item.citationBindings, 0)
@@ -741,13 +808,6 @@ export function evaluateAiDailyQualityReport(cases: AiDailyQualityCaseResult[]):
   const averageChineseEditorialScore = cases.length === 0
     ? 0
     : cases.reduce((sum, item) => sum + item.chineseEditorialScore, 0) / cases.length
-  const gaps: string[] = []
-  if (cases.length < 30) gaps.push('minimum-quality-cases-not-met')
-  if (criticalFactualErrors !== 0) gaps.push('critical-factual-errors-present')
-  if (citationPrecision < 1) gaps.push('citation-precision-below-floor')
-  if (citationCoverage < 0.98) gaps.push('citation-coverage-below-floor')
-  if (minorEditAcceptance < 0.85) gaps.push('minor-edit-acceptance-below-floor')
-  if (averageChineseEditorialScore < 4) gaps.push('chinese-editorial-score-below-floor')
   return {
     caseCount: cases.length,
     criticalFactualErrors,
@@ -755,8 +815,6 @@ export function evaluateAiDailyQualityReport(cases: AiDailyQualityCaseResult[]):
     citationCoverage,
     minorEditAcceptance,
     averageChineseEditorialScore,
-    passed: gaps.length === 0,
-    gaps,
   }
 }
 

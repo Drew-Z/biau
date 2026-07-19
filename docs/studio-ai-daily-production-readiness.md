@@ -78,13 +78,15 @@ $env:AI_DAILY_BUSINESS_EVALUATION_ENABLED = 'true'
 npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
 ```
 
-评估输出默认写入被忽略的 `server/data/ai-daily-model-evaluation.local.json`。人工审阅 case 质量、中文编辑质量、citation coverage/precision、延迟、fallback 故障域和 hash 后，再运行不调用模型的审批命令：
+评估输出默认写入被忽略的 `server/data/ai-daily-model-evaluation.local.json`。人工审阅 case 质量、中文编辑质量、全局与 8 个负例切片的 citation coverage/precision 和可接受率、延迟、fallback 故障域和 hash 后，再运行不调用模型的审批命令。任何负例切片未达到最低线时都不应批准：
 
 ```powershell
 npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluation.local.json --reviewed-by site-owner --notes "Measured selection approved for one controlled edition."
 ```
 
 批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。部署后运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次还必须显式使用 `--live`、设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，并完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
+
+评估与审批 artifact 当前使用 v2 schema。Render 的 Secret File 名称仍保持 `ai-daily-model-approval.v1.json` 以维持稳定挂载路径；若曾生成过旧 proposal/bundle，必须重新评估和审批，禁止直接改 JSON 版本号或沿用旧 hash。
 
 ## 发布边界
 
