@@ -67,6 +67,80 @@ Worker projection revalidates the active work-item lease inside the same transac
 
 The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compose`, `ai-daily:resume`, and `ai-daily:editorial-tick` require an explicit `--fixture` until a separately approved business acceptance run configures real providers. No model or search liveness request is a valid health check.
 
+## Scenario: Offline model evaluation and role selection
+
+### 1. Scope / Trigger
+
+- Trigger: changing AI Daily quality thresholds, evaluation case sets, extractor/composer/verifier candidate records, primary/fallback selection, or production model approval.
+- Goal: make model selection evidence-based and tamper-evident without turning fixture checks into model liveness calls or production approval.
+
+### 2. Signatures
+
+- `createAiDailyEvaluationCaseSetHash(caseDescriptors)` -> stable SHA-256 hash.
+- `evaluateAiDailyModelCandidate(input)` -> validated immutable candidate record or `invalid-ai-daily-model-evaluation-candidate`.
+- `selectAiDailyModelEvaluation({ selectionId, generatedAt, candidates })` -> three-role pending selection record.
+- `approveAiDailyModelEvaluation(selection, review)` -> approved record or `ai-daily-model-evaluation-approval-rejected`.
+- Deterministic command: `npm.cmd run ai-daily:model-evaluation-check`.
+
+Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failureDomainRef`, `modelIdentifier`, `caseSetId`, `caseSetHash`, `caseDescriptors`, `promptVersion`, `generationSchemaVersion`, `evaluatedAt`, aggregate case results, performance, and execution evidence.
+
+### 3. Contracts
+
+- `server/src/aiDailyModelEvaluation.ts` owns the versioned candidate, selection, and approval record contract for extractor, composer, and verifier.
+- Every candidate must use the same role-local case-set id/hash, prompt version, generation schema version, and evaluation profile. The candidate input includes case descriptors; the module recomputes their SHA-256 hash and rejects self-reported hash or membership drift.
+- Candidate quality reuses `evaluateAiDailyQualityReport()`. A primary is ordered by acceptance, Chinese editorial score, citation coverage, citation precision, p95 latency, and stable candidate id.
+- A fallback must independently pass every absolute quality floor, remain within 500 basis points of the primary acceptance rate, and use a different low-sensitive failure-domain alias. Multiple aliases for one outage domain must not be reported as full redundancy.
+- `fixture-contract` execution evidence requires zero model calls and no result-set hash. It validates selection behavior only and makes every role approval-ineligible.
+- `business-evaluation` execution evidence requires a recorded evaluation run id, evaluator version, completed case count, non-zero model-call count, and result-set hash. Selection still writes `approval.status=pending`; only explicit human review may produce an approved record.
+- Candidate records retain low-sensitive aliases, versions, hashes, aggregate quality, latency, and usage summaries only. The selection stores a stable `candidateSetHash` over candidate id + record hash pairs so approval remains bound to the measured record set. Do not store prompts, source text, raw outputs, endpoints, credentials, provider bodies, or raw errors.
+
+### 4. Validation & Error Matrix
+
+- Invalid descriptor, duplicate case id, case membership drift, or self-reported hash mismatch -> invalid candidate with a stable issue code.
+- `profile` and execution mode mismatch -> `profile-execution-mode-mismatch`.
+- Fixture evidence with model calls or a result-set hash -> `fixture-model-calls-not-allowed` / `fixture-result-set-hash-not-allowed`.
+- Business evidence without a model call or result-set hash -> `business-model-call-evidence-required` / `business-result-set-hash-required`.
+- Tampered candidate or selection record hash -> reject before selection/approval.
+- No eligible primary -> role `blockingGaps` contains `no-eligible-primary`.
+- Same failure-domain fallback -> exclude it from `fallbackCandidateIds`; report reduced redundancy and `fallback-shares-primary-failure-domain` when no independent fallback remains.
+- Fixture selection approval -> `ai-daily-model-evaluation-approval-rejected` with `fixture-selection-cannot-be-approved`.
+- Sensitive review metadata -> approval rejected with a `*-sensitive` issue.
+
+### 5. Good / Base / Bad Cases
+
+- Good: each role uses the same versioned case set and records an independent primary and fallback that both pass all quality floors.
+- Base: a role has one eligible primary but no independent fallback; selection remains visible as `reduced_redundancy` and requires human judgment.
+- Bad: copy fixture metrics, change only `profile` to `business-evaluation`, and approve; execution-mode validation must reject it.
+- Bad: register two candidate ids backed by the same relay failure domain and report them as full redundancy.
+
+### 6. Tests Required
+
+- Run `npm.cmd run ai-daily:model-evaluation-check` after changing quality thresholds, role selection, fallback rules, case-set hashing, evaluation records, or approval state.
+- Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.
+- A passing fixture contract is a repository check, not a production model approval. Real candidate execution and human primary/fallback approval remain manual gates.
+- Also run `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and a sensitive-value scan before commit.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+const fallback = candidates.find((candidate) => candidate.candidateId !== primary.candidateId)
+```
+
+This can select a failed-quality candidate or another alias in the same outage domain.
+
+#### Correct
+
+```ts
+const fallback = eligibleCandidates.find((candidate) =>
+  primary.acceptanceBasisPoints - candidate.acceptanceBasisPoints <= 500 &&
+  candidate.failureDomainRef !== primary.failureDomainRef,
+)
+```
+
+The fallback passes the shared absolute quality floor, stays within the measured acceptance boundary, and is independent of the primary failure domain.
+
 ## Scenario: Offline AI Daily Drafts
 
 ### 1. Scope / Trigger

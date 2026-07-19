@@ -75,7 +75,7 @@ npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 ```
 
-`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。这些检查都只使用仓库资产或纯内存 fixture。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。这些检查都只使用仓库资产或纯内存 fixture。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
 
 ## 生产运维诊断
 
@@ -184,6 +184,25 @@ npm.cmd run ai-daily:resume -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:editorial-tick -- --fixture
 ```
 
+## 离线模型评估与角色选型
+
+AI Daily 不按公开榜单直接指定一个“最佳模型”。extractor、composer 和 verifier 分角色使用同一版 BIAU-owned case set、prompt version、generation schema version 与质量口径进行离线评估，各角色可以选择不同的 primary 与 ordered fallback。
+
+```powershell
+npm.cmd run ai-daily:model-evaluation-check
+```
+
+这个命令只验证评估和批准 contract，不调用 provider。当前 fixture 使用 40 个案例验证以下规则：
+
+- case descriptor 的 id、category 和 version 会生成稳定 hash；候选自报 hash 与真实 case set 不一致时直接拒绝；
+- 候选必须通过现有绝对质量线，包括零关键事实错误、100% citation precision、至少 98% citation coverage、至少 85% 可接受率和至少 4/5 中文编辑评分；
+- primary 依次按可接受率、中文评分、citation coverage、citation precision、p95 latency 和稳定 candidate id 排序；
+- fallback 必须独立通过全部质量线、与 primary 的可接受率相差不超过 5 个百分点，并使用不同的低敏 failure-domain alias；同一中转或故障域不能被标记为完整冗余；
+- `fixture-contract` 记录永远不能进入生产批准；`business-evaluation` 还必须带已完成案例数、非零模型调用计数、评估运行 id、evaluator version 和结果集 hash；
+- 候选记录只保留低敏标识、版本、hash、聚合质量指标、延迟和 token 用量摘要；选择记录用稳定 `candidateSetHash` 绑定当时参与选型的候选记录集合。两者都不保存 prompt、原始输出、正文、endpoint、凭据或错误原文。
+
+fixture contract 通过只说明仓库算法和门禁有效，不说明任何真实模型已经评估或获批。真实候选必须在用户批准的业务评估任务中运行，生成三角色选择记录后仍保持 `approval.status=pending`，由人工确认 primary/fallback 和故障域后才能批准。
+
 ## Render Cron 运行草案
 
 平台 Cron 使用 UTC 表达式，应用内部使用 `AI_DAILY_TIME_ZONE=Asia/Shanghai` 计算 edition date。每个 job 的执行 deadline 必须短于调度间隔，并依靠 durable work item、lease 和 checkpoint resume 处理重启：
@@ -207,7 +226,7 @@ model channel: none
 
 如果后续需要模型辅助摘要、初稿或润色，必须先有一次明确的内容任务批准。不要为了“测活”调用模型，也不要运行 provider ping。
 
-私有模型配置仍使用博客模型向导：
+博客草稿的私有模型配置仍使用博客模型向导；它不等于 AI Daily 的三角色生产选型，也不能替代上面的评估记录：
 
 ```powershell
 npm.cmd run blog:model -- setup
@@ -215,7 +234,7 @@ npm.cmd run blog:model -- status --all --format markdown
 npm.cmd run blog:model -- doctor --all --format markdown
 ```
 
-默认 `doctor` 是离线配置检查，不发送模型请求，也不应明文回显 API key。只有在用户明确批准具体内容任务时，才可以运行 `doctor --live`、`blog:draft -- --generate`，或未来的 AI Daily 模型摘要命令。
+默认 `doctor` 是离线配置检查，不发送模型请求，也不应明文回显 API key。只有在用户明确批准具体内容任务时，才可以运行 `doctor --live` 或 `blog:draft -- --generate`。AI Daily 真实模型评估必须走独立的三角色业务评估与人工批准门禁，不能用博客向导的配置状态代替。
 
 ## 发布导出
 

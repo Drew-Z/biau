@@ -57,6 +57,7 @@
     "ai-daily:provider-check": "tsx server/scripts/ai-daily-provider-check.ts",
     "ai-daily:composition-check": "tsx server/scripts/ai-daily-composition-check.ts",
     "ai-daily:quality-check": "tsx server/scripts/ai-daily-quality-check.ts",
+    "ai-daily:model-evaluation-check": "tsx server/scripts/ai-daily-model-evaluation-check.ts",
     "ai-daily:runner-check": "tsx server/scripts/ai-daily-runner-check.ts",
     "ai-daily:generation-repository-check": "tsx server/scripts/ai-daily-generation-repository-check.ts",
     "ai-daily:public-feed-check": "tsx server/scripts/ai-daily-public-feed-check.ts",

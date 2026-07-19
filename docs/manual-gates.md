@@ -20,7 +20,7 @@
 - 模型验收只能使用用户批准的真实业务任务；禁止 ping、doctor、空 prompt 和无意义测活。
 - 完成记录只写低敏结论和可复跑命令，不记录配置值或私有内容。
 - 状态项目变化后运行 `npm.cmd run docs:manual-gates-check`，保证每个公开项目都有对应人工边界。
-- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、生产 migration、Cron 启用或真实内容验收。
+- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:model-evaluation-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、真实模型评估与选型、生产 migration、Cron 启用或真实内容验收。
 
 ## BIAU 平台门禁
 
@@ -56,6 +56,7 @@
 | Generation runner migration | 生产 Studio 数据库需要备份和可回滚 revision | 执行 `20260718010000_ai_daily_generation_runner` 后只记录 migration 名、成功状态和低敏计数 |
 | 首篇公开导出 | 公开数据文件必须审查 diff | `studio:export -- --run-checks`、博客检查和最终 Git diff |
 | AI Daily 真实来源与查询组 | `server/data/ai-daily-source-manifest.v1.json` 只是默认禁用的候选包，需要逐条确认日期、事实、版权、页面结构、来源上下文、查询成本和噪声风险 | `ai-daily:manifest-check`、批准/拒绝数量、审核时间和低敏结论，不复制长段原文 |
+| AI Daily 三角色模型评估与选型 | fixture contract 只能验证算法；真实候选必须用 BIAU-owned case set 分别评估 extractor/composer/verifier，并由人工确认 primary、独立 failure-domain fallback 和 5 个百分点边界 | 版本化候选/选择 record hash、case-set/prompt/schema version、聚合质量和延迟摘要、审核时间与低敏结论；不记录 key、endpoint、prompt 或原始输出 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
 | AI Daily 公开 Feed 上线 | 新增公开索引 migration、Cloudflare browser base 和 Studio CORS allowlist 需要平台配置 | 只记录 migration 名、公开 route HTTP 状态、ETag/CORS 类别和页面截图，不记录数据库 URL 或 token |
 | AI Daily retention mutation | 删除/归档会触及 evidence、公开投影和审核审计链 | 当前仅允许受保护 dry-run；未来必须先备份、审查候选、批准显式 mutate、分批事务执行并验证回滚 |
@@ -104,22 +105,27 @@
    - 在 `biau-content-studio-api` 执行包含 `20260718010000_ai_daily_generation_runner` 的 migration，再重新部署最新代码。
    - 只复核 `/health`、migration 名、checkpoint/revision 表可查询和低敏计数；不要运行真实模型测活。
 
-2. **上线 AI Daily 公开 Feed**
+2. **批准 AI Daily 来源并完成三角色业务评估**
+   - 逐条审核来源 manifest 与 query groups；未批准条目继续保持 disabled。
+   - 使用同一 BIAU-owned case set 分别评估 extractor、composer 和 verifier 候选；这是一项用户批准的真实业务任务，不运行 ping、doctor 或空 prompt。
+   - 审核聚合指标、failure-domain alias、primary/fallback 和 record hash；选择记录先保持 pending，明确批准后才可接入 production provider。
+
+3. **上线 AI Daily 公开 Feed**
    - 在生产 Studio 数据库执行 `20260719020000_ai_daily_public_feed_index`，执行前保留备份和上一 Render revision。
    - Studio 服务设置 `AI_DAILY_PUBLIC_CORS_ORIGINS=https://biau.playlab.eu.cc` 和 `AI_DAILY_PUBLIC_FEED_ENABLED=true`，并部署当前代码。
    - Cloudflare Pages 设置 `VITE_AI_DAILY_API_BASE_URL=<当前 Studio 服务 origin>` 后重新部署静态站。
    - 只用真实浏览页面和公开 GET 验收 `/ai-daily`、一个已批准事件详情、ETag `304`、撤回 `410` 和移动端；不要用模型测活。
 
-3. **处理首轮被退回修改的 Studio 草稿**
+4. **处理首轮被退回修改的 Studio 草稿**
    - 在 Studio 中打开两个状态为 `needs-changes` 的 hidden 草稿。
    - 选择一个作为主稿，补齐可核验事实、来源、知识点、边界和配图/结构；另一个归档或明确保留为不发布稿。
    - 先保存修改并重新提交审核，不要直接发布；完成后由 Codex 复核低敏状态，再进入新版审核和 Publish Export 门禁。
 
-4. **审核证据完整的新版草稿并创建第一个 Publish Export**
+5. **审核证据完整的新版草稿并创建第一个 Publish Export**
    - 仅在新版草稿完成事实、来源、结构和版权检查后执行。
    - 记录审核结论、draft id 的脱敏摘要和 export 数量，不记录文章正文或生产凭据。
 
-5. **继续关联项目门禁**
+6. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。
 
 ## 延期项

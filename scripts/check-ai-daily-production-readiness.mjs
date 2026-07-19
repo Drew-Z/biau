@@ -97,16 +97,16 @@ function check(id, label, ok, detail, status = ok ? 'pass' : 'fail') {
   return { id, label, ok, status, detail }
 }
 
-function runManifestContract() {
+function runOfflineContract(script) {
   const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
   const result = process.platform === 'win32'
-    ? spawnSync('cmd.exe', ['/d', '/s', '/c', `${npmCommand} run ai-daily:manifest-check`], {
+    ? spawnSync('cmd.exe', ['/d', '/s', '/c', `${npmCommand} run ${script}`], {
         cwd: repoRoot,
         encoding: 'utf8',
         stdio: 'pipe',
         timeout: 120_000,
       })
-    : spawnSync(npmCommand, ['run', 'ai-daily:manifest-check'], {
+    : spawnSync(npmCommand, ['run', script], {
         cwd: repoRoot,
         encoding: 'utf8',
         stdio: 'pipe',
@@ -146,6 +146,7 @@ async function main() {
     'ai-daily:resume',
     'ai-daily:contracts-check',
     'ai-daily:manifest-check',
+    'ai-daily:model-evaluation-check',
   ]
   const missingScripts = requiredScripts.filter((name) => typeof scripts[name] !== 'string')
   results.push(
@@ -173,7 +174,7 @@ async function main() {
   const curationPendingSafe =
     curationManifest?.readiness !== 'pending-human-review' ||
     (curationSources.every((source) => source?.enabled === false) && curationQueryGroups.every((group) => group?.enabled === false))
-  const curationContractOk = runManifestContract()
+  const curationContractOk = runOfflineContract('ai-daily:manifest-check')
   const curationReady = curationShapeOk && curationPendingSafe && curationContractOk
   const curationIsApproved = curationReady && curationManifest.readiness === 'approved'
   results.push(
@@ -187,6 +188,19 @@ async function main() {
           ? 'manifest is missing, malformed, outside the source-count bounds, or enables pending candidates'
           : 'manifest contract check failed; run npm.cmd run ai-daily:manifest-check for details',
       curationIsApproved ? 'pass' : curationReady ? 'manual-gate' : 'fail',
+    ),
+  )
+
+  const modelEvaluationContractOk = runOfflineContract('ai-daily:model-evaluation-check')
+  results.push(
+    check(
+      'model-evaluation-contract',
+      'Offline three-role model evaluation contract',
+      modelEvaluationContractOk,
+      modelEvaluationContractOk
+        ? 'Fixture contract passed with zero provider calls; real candidate evaluation and human approval remain gated'
+        : 'model evaluation contract failed; run npm.cmd run ai-daily:model-evaluation-check for details',
+      modelEvaluationContractOk ? 'manual-gate' : 'fail',
     ),
   )
 
