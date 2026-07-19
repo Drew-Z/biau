@@ -1,15 +1,19 @@
-import { randomUUID } from 'node:crypto'
-import { access, mkdir, readFile, realpath, rename, rm, writeFile } from 'node:fs/promises'
-import { basename, dirname, isAbsolute, relative, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import {
   aiDailyAcceptanceManifestDefaultPath,
   createAiDailyAcceptanceManifest,
   evaluateAiDailyAcceptanceManifest,
   sealAiDailyAcceptanceManifest,
 } from '../src/aiDailyAcceptance.js'
+import { aiDailyRollbackEvidenceDefaultPath } from '../src/aiDailyRollback.js'
+import {
+  assertLocalOutput,
+  displayRepositoryPath,
+  fileExists,
+  readJsonFile,
+  resolveRepositoryPath,
+  writeJsonFile,
+} from './local-evidence-file.js'
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const defaultProposalPath = 'server/data/ai-daily-model-evaluation.local.json'
 const defaultBundlePath = 'server/data/ai-daily-model-approval.v1.json'
 
@@ -17,19 +21,19 @@ type Command = 'init' | 'check' | 'seal'
 
 const allowedOptions: Record<Command, ReadonlySet<string>> = {
   init: new Set(['acceptance-id', 'edition-date', 'created-at', 'proposal', 'bundle', 'out']),
-  check: new Set(['manifest', 'proposal', 'bundle', 'require-sealed']),
-  seal: new Set(['manifest', 'proposal', 'bundle', 'out']),
+  check: new Set(['manifest', 'proposal', 'bundle', 'rollback', 'require-sealed']),
+  seal: new Set(['manifest', 'proposal', 'bundle', 'rollback', 'out']),
 }
 
 async function main() {
   const { command, options } = parseArgs(process.argv.slice(2))
   if (command === 'init') {
-    const proposalPath = await optionPath(options, 'proposal', defaultProposalPath)
-    const bundlePath = await optionPath(options, 'bundle', defaultBundlePath)
-    const outPath = await optionPath(options, 'out', aiDailyAcceptanceManifestDefaultPath)
-    assertLocalOutput(outPath)
-    const proposal = await readJson(proposalPath)
-    const bundle = await readJson(bundlePath)
+    const proposalPath = await resolveRepositoryPath(options, 'proposal', defaultProposalPath)
+    const bundlePath = await resolveRepositoryPath(options, 'bundle', defaultBundlePath)
+    const outPath = await resolveRepositoryPath(options, 'out', aiDailyAcceptanceManifestDefaultPath)
+    assertLocalOutput(outPath, 'acceptance-output-must-be-local-file')
+    const proposal = await readJsonFile(proposalPath)
+    const bundle = await readJsonFile(bundlePath)
     const manifest = createAiDailyAcceptanceManifest({
       acceptanceId: requiredOption(options, 'acceptance-id'),
       editionDate: requiredOption(options, 'edition-date'),
@@ -37,34 +41,37 @@ async function main() {
       proposal,
       bundle,
     })
-    await writeJson(outPath, manifest)
-    print({ command, output: displayPath(outPath), acceptanceId: manifest.acceptanceId, editionDate: manifest.editionDate, sealed: false })
+    await writeJsonFile(outPath, manifest)
+    print({ command, output: displayRepositoryPath(outPath), acceptanceId: manifest.acceptanceId, editionDate: manifest.editionDate, sealed: false })
     return
   }
 
-  const manifestPath = await optionPath(options, 'manifest', aiDailyAcceptanceManifestDefaultPath)
-  const manifest = await readJson(manifestPath)
-  const proposalPath = await optionPath(options, 'proposal', defaultProposalPath)
-  const bundlePath = await optionPath(options, 'bundle', defaultBundlePath)
+  const manifestPath = await resolveRepositoryPath(options, 'manifest', aiDailyAcceptanceManifestDefaultPath)
+  const manifest = await readJsonFile(manifestPath)
+  const proposalPath = await resolveRepositoryPath(options, 'proposal', defaultProposalPath)
+  const bundlePath = await resolveRepositoryPath(options, 'bundle', defaultBundlePath)
+  const rollbackPath = await resolveRepositoryPath(options, 'rollback', aiDailyRollbackEvidenceDefaultPath)
   const artifactPair = await readOptionalArtifactPair(options, proposalPath, bundlePath, command === 'check')
+  const rollbackEvidence = await fileExists(rollbackPath) ? await readJsonFile(rollbackPath) : undefined
 
   if (command === 'check') {
     const result = evaluateAiDailyAcceptanceManifest({
       manifest,
       proposal: artifactPair.proposal,
       bundle: artifactPair.bundle,
+      rollbackEvidence,
       requireArtifacts: true,
       requireSealed: options.has('require-sealed'),
     })
     if (!result.ok) {
-      print({ command, manifest: displayPath(manifestPath), ok: false, issues: result.issues })
+      print({ command, manifest: displayRepositoryPath(manifestPath), ok: false, issues: result.issues })
       process.exitCode = 1
       return
     }
     const issues = [...new Set([...result.issues, ...artifactPair.issues])]
     print({
       command,
-      manifest: displayPath(manifestPath),
+      manifest: displayRepositoryPath(manifestPath),
       ok: issues.length === 0 && result.readyToSeal,
       readyToSeal: result.readyToSeal,
       sealed: result.sealed,
@@ -79,16 +86,18 @@ async function main() {
   if (artifactPair.issues.length > 0 || artifactPair.proposal === undefined || artifactPair.bundle === undefined) {
     throw new Error(artifactPair.issues[0] ?? 'acceptance-artifacts-required')
   }
+  if (rollbackEvidence === undefined) throw new Error('acceptance-rollback-evidence-required')
 
   const sealed = sealAiDailyAcceptanceManifest({
     manifest,
     proposal: artifactPair.proposal,
     bundle: artifactPair.bundle,
+    rollbackEvidence,
   })
-  const outPath = await optionPath(options, 'out', manifestPath)
-  assertLocalOutput(outPath)
-  await writeJson(outPath, sealed)
-  print({ command, output: displayPath(outPath), sealed: true, recordHash: sealed.recordHash })
+  const outPath = await resolveRepositoryPath(options, 'out', manifestPath)
+  assertLocalOutput(outPath, 'acceptance-output-must-be-local-file')
+  await writeJsonFile(outPath, sealed)
+  print({ command, output: displayRepositoryPath(outPath), sealed: true, recordHash: sealed.recordHash })
 }
 
 function parseArgs(argv: string[]) {
@@ -132,36 +141,6 @@ function requiredOption(options: Map<string, string>, name: string) {
   return value
 }
 
-async function optionPath(options: Map<string, string>, name: string, fallback: string) {
-  const path = resolve(repoRoot, options.get(name) ?? fallback)
-  const repoRelativePath = relative(repoRoot, path)
-  if (repoRelativePath.startsWith('..') || isAbsolute(repoRelativePath)) throw new Error(`path-outside-repository:${name}`)
-  await assertRealPathInsideRepository(path, name)
-  return path
-}
-
-async function assertRealPathInsideRepository(path: string, label: string) {
-  let current = path
-  const repositoryRealPath = await realpath(repoRoot)
-  while (true) {
-    try {
-      const currentRealPath = await realpath(current)
-      const realRelativePath = relative(repositoryRealPath, currentRealPath)
-      if (realRelativePath.startsWith('..') || isAbsolute(realRelativePath)) throw new Error(`path-outside-repository:${label}`)
-      return
-    } catch (error) {
-      if (!isMissingPathError(error)) throw error
-      const parent = dirname(current)
-      if (parent === current) throw new Error(`path-outside-repository:${label}`, { cause: error })
-      current = parent
-    }
-  }
-}
-
-function isMissingPathError(error: unknown) {
-  return error instanceof Error && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT'
-}
-
 async function readOptionalArtifactPair(
   options: Map<string, string>,
   proposalPath: string,
@@ -181,43 +160,7 @@ async function readOptionalArtifactPair(
     if (allowIncomplete) return { proposal: undefined, bundle: undefined, issues: ['acceptance-artifact-pair-incomplete'] }
     throw new Error('acceptance-artifact-pair-incomplete')
   }
-  return { proposal: await readJson(proposalPath), bundle: await readJson(bundlePath), issues: [] }
-}
-
-async function readJson(path: string) {
-  try {
-    return JSON.parse(await readFile(path, 'utf8')) as unknown
-  } catch (error) {
-    throw new Error(`read-json-failed:${displayPath(path)}:${error instanceof Error ? error.message : String(error)}`, { cause: error })
-  }
-}
-
-async function writeJson(path: string, value: unknown) {
-  await mkdir(dirname(path), { recursive: true })
-  const temporaryPath = `${path}.${process.pid}.${randomUUID()}.tmp`
-  try {
-    await writeFile(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
-    await rename(temporaryPath, path)
-  } finally {
-    await rm(temporaryPath, { force: true })
-  }
-}
-
-async function fileExists(path: string) {
-  try {
-    await access(path)
-    return true
-  } catch {
-    return false
-  }
-}
-
-function assertLocalOutput(path: string) {
-  if (!basename(path).includes('.local.')) throw new Error('acceptance-output-must-be-local-file')
-}
-
-function displayPath(path: string) {
-  return relative(repoRoot, path).replaceAll('\\', '/') || '.'
+  return { proposal: await readJsonFile(proposalPath), bundle: await readJsonFile(bundlePath), issues: [] }
 }
 
 function print(value: unknown) {

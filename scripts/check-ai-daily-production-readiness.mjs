@@ -182,6 +182,8 @@ async function main() {
     'ai-daily:model-approve',
     'ai-daily:acceptance',
     'ai-daily:acceptance-check',
+    'ai-daily:rollback',
+    'ai-daily:rollback-check',
     'ai-daily:observability-contract-check',
   ]
   const missingScripts = requiredScripts.filter((name) => typeof scripts[name] !== 'string')
@@ -257,13 +259,53 @@ async function main() {
     ),
   )
 
+  const rollbackContractOk = runOfflineContract('ai-daily:rollback-check')
+  results.push(
+    check(
+      'rollback-evidence-contract',
+      'Offline rollback evidence contract',
+      rollbackContractOk,
+      rollbackContractOk
+        ? 'Rollback schema, completion, binding, sealing, tamper detection, and CLI contracts passed with zero provider calls'
+        : 'Rollback evidence contract failed; run npm.cmd run ai-daily:rollback-check for details',
+    ),
+  )
+
+  const rollbackRecordPath = 'server/data/ai-daily-rollback-evidence.local.json'
+  const rollbackRecordExists = await fileExists(rollbackRecordPath)
+  const rollbackRecordCommand = rollbackRecordExists
+    ? runOfflineCommand('ai-daily:rollback', ['check', '--require-sealed'])
+    : null
+  const rollbackRecordPayload = rollbackRecordCommand ? parseJsonOutput(rollbackRecordCommand.stdout) : null
+  const rollbackRecordReady =
+    rollbackRecordCommand?.status === 0 &&
+    rollbackRecordPayload?.ok === true &&
+    rollbackRecordPayload?.sealed === true
+  const rollbackRecordInvalid = rollbackRecordExists && !rollbackRecordReady
+  results.push(
+    check(
+      'rollback-evidence-record',
+      'Production rollback evidence record',
+      rollbackRecordReady,
+      rollbackRecordReady
+        ? 'Sealed rollback evidence records the bound non-destructive rollback checks; no platform call was made'
+        : rollbackRecordInvalid
+          ? 'Rollback evidence exists but is malformed, incomplete, unsealed, or tampered; run npm.cmd run ai-daily:rollback -- check --require-sealed for details'
+          : 'manual gate: complete and seal the local rollback evidence record',
+      rollbackRecordReady ? 'pass' : rollbackRecordInvalid ? 'fail' : 'manual-gate',
+    ),
+  )
+
   const acceptanceRecordPath = 'server/data/ai-daily-acceptance.local.json'
   const acceptanceRecordExists = await fileExists(acceptanceRecordPath)
   const acceptanceRecordCommand = acceptanceRecordExists
     ? runOfflineCommand('ai-daily:acceptance', ['check', '--require-sealed'])
     : null
   const acceptanceRecordPayload = acceptanceRecordCommand ? parseJsonOutput(acceptanceRecordCommand.stdout) : null
-  const acceptanceReady = acceptanceRecordCommand?.status === 0 && acceptanceRecordPayload?.ok === true
+  const acceptanceReady =
+    acceptanceRecordCommand?.status === 0 &&
+    acceptanceRecordPayload?.ok === true &&
+    acceptanceRecordPayload?.sealed === true
   const acceptanceManualIssues = new Set([
     'acceptance-artifacts-required',
     'acceptance-artifact-pair-required',
@@ -272,6 +314,9 @@ async function main() {
     'studio-review-required',
     'publish-export-required',
     'deployment-observation-required',
+    'acceptance-rollback-evidence-required',
+    'acceptance-rollback-binding-required',
+    'acceptance-rollback-evidence-reference-required',
     'acceptance-record-hash-required',
     'acceptance-not-ready',
   ])
@@ -283,7 +328,7 @@ async function main() {
       'First production edition acceptance record',
       acceptanceReady,
       acceptanceReady
-        ? 'Sealed acceptance manifest verifies the approved artifacts and all five post-generation gates'
+        ? 'Sealed acceptance manifest verifies the approved artifacts and all six post-generation gates, including rollback evidence'
         : acceptanceRecordInvalid
           ? 'Acceptance manifest exists but is invalid or tampered; run npm.cmd run ai-daily:acceptance -- check for details'
           : 'manual gate: complete the approved live edition, Studio review/export, deployment observation, and seal the local acceptance manifest',

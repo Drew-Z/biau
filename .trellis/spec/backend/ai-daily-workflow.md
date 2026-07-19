@@ -273,23 +273,23 @@ AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved 64-character bundleHash>
 
 ### Contract
 
-- `server/src/aiDailyAcceptance.ts` defines the low-sensitive `ai-daily-acceptance-v1` manifest. It is an evidence index, not a replacement for human review or a production database record.
-- The manifest binds one approved evaluation proposal and bundle to one `PRODUCTION` edition: `editionDate`, live `issueId`/`runId`/status, matching Studio issue/run/date and approved draft/review, matching Publish Export draft/review/version/check results, and five deployment observations (`publicFeed`, `detailPage`, `etag304`, `withdrawn410`, `mobile`) plus explicit rollback readiness.
+- `server/src/aiDailyAcceptance.ts` defines the low-sensitive `ai-daily-acceptance-v2` manifest. It is an evidence index, not a replacement for human review or a production database record.
+- The manifest binds one approved evaluation proposal and bundle to one `PRODUCTION` edition: `editionDate`, live `issueId`/`runId`/status, matching Studio issue/run/date and approved draft/review, matching Publish Export draft/review/version/check results, five deployment observations (`publicFeed`, `detailPage`, `etag304`, `withdrawn410`, `mobile`), and a sealed rollback-evidence reference (`evidenceId`, `recordHash`, `status=passed`).
 - The manifest stores only identifiers, dates, statuses, low-sensitive command names/repository paths, hashes, and bounded check results. It must not contain prompts, source text, article body, raw model output, endpoint URLs, credentials, tokens, database URLs, or raw error responses.
 - Proposal and bundle hashes, selection id, candidate records, and selection record are revalidated together. A fixture profile, mismatched candidate set, changed edition/run/draft version, failed export, incomplete deployment observation, old schema, or record-hash drift fails closed.
-- `sealAiDailyAcceptanceManifest` writes the canonical record hash only after all gates pass and the proposal/bundle pair has been verified. A sealed hash does not make a fixture or an unreviewed edition production-approved.
+- `sealAiDailyAcceptanceManifest` writes the canonical record hash only after all six gates pass and the proposal/bundle pair plus sealed rollback evidence have been verified. The hash provides deterministic integrity, not platform attestation, operator authentication, or proof that a rollback action ran; human review remains the trust boundary. A sealed hash does not make a fixture or an unreviewed edition production-approved.
 
 ### Commands and verification
 
-- `npm.cmd run ai-daily:acceptance -- init --acceptance-id <id> --edition-date YYYY-MM-DD` creates the Git-ignored local skeleton from the validated proposal and approval bundle.
-- After the user records the live edition, Studio review, Publish Export, and deployment observations, `npm.cmd run ai-daily:acceptance -- check --require-sealed` verifies the pair and all gates; `npm.cmd run ai-daily:acceptance -- seal` writes the final local record.
+- `npm.cmd run ai-daily:rollback -- init --evidence-id <id> --recorded-by <alias> --acceptance-id <acceptance-id> --edition-date YYYY-MM-DD --issue-id <issue-id> --run-id <run-id> --reason acceptance-drill` creates the Git-ignored rollback skeleton. After the human fills its bounded preconditions/actions/preservation fields, run `ai-daily:rollback -- check`, `seal`, and `check --require-sealed`.
+- `npm.cmd run ai-daily:acceptance -- init --acceptance-id <id> --edition-date YYYY-MM-DD` creates the Git-ignored local skeleton from the validated proposal and approval bundle. After the user records the live edition, Studio review, Publish Export, deployment observations, and the rollback reference, first run `ai-daily:acceptance -- check --rollback server/data/ai-daily-rollback-evidence.local.json`, then `seal --rollback server/data/ai-daily-rollback-evidence.local.json`, and finally `check --rollback server/data/ai-daily-rollback-evidence.local.json --require-sealed` to verify the final record and all six gates.
 - `npm.cmd run ai-daily:acceptance-check` is a deterministic fixture/tamper regression. It must remain inside `ai-daily:contracts-check` and the production-readiness script-registration list, and it must report zero provider/network calls.
-- A fresh clone without the local manifest, approval bundle, or real edition remains a `manual-gate`; an existing malformed or tampered record is a repository failure. Local acceptance checks never call a model, search provider, production database, or deployed service.
+- A fresh clone without the local manifest, approval bundle, rollback evidence, or real edition remains a `manual-gate`; an existing malformed or tampered record is a repository failure. Missing rollback evidence is the only rollback-specific manual gate; malformed, unsealed, tampered, sensitive, or mismatched evidence fails closed. Local acceptance/rollback checks never call a model, search provider, production database, or deployed service.
 
 ### Required verification
 
 - Run `npm.cmd run ai-daily:acceptance-check`, `npm.cmd run ai-daily:contracts-check`, and `npm.cmd run ai-daily:production-readiness-check` after changing the manifest, gate bindings, CLI, or readiness contract.
-- Before parent-task completion, record the sealed manifest result together with the real model approval, first live edition, Studio review/export, public deployment checks, and rollback decision. Do not archive the task from fixture results alone.
+- Before parent-task completion, record the sealed acceptance and rollback-evidence results together with the real model approval, first live edition, Studio review/export, and public deployment checks. Do not archive the task from fixture results alone.
 
 ## Scenario: Offline AI Daily Drafts
 

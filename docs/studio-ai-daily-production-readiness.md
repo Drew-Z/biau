@@ -27,6 +27,7 @@ npm.cmd run ai-daily:production-readiness-check
 npm.cmd run ai-daily:model-evaluation-check
 npm.cmd run ai-daily:model-runtime-check
 npm.cmd run ai-daily:acceptance-check
+npm.cmd run ai-daily:rollback-check
 npm.cmd run ai-daily:runner-check
 npm.cmd run ai-daily:operations-check
 npm.cmd run ai-daily:observability-contract-check
@@ -98,3 +99,4 @@ npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluat
 - Render Cron 的 UTC 调度草案和 Asia/Shanghai edition date 规则记录在 [`docs/ai-daily-pipeline.md`](./ai-daily-pipeline.md)；在 provider 与人工 gate 完成前保持 disabled。
 - 公开 Feed 回滚使用 `AI_DAILY_PUBLIC_FEED_ENABLED=false`；这只关闭公开投影路由，不删除 Studio 数据或历史审核记录。
 - production generation 回滚先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`；公开 Feed 若已启用，再把 `AI_DAILY_PUBLIC_FEED_ENABLED=false`。保留 Studio 手动编辑、审核和离线导出路径，不删除数据库历史。
+- rollback 操作的低敏证据保存在 Git-ignored `server/data/ai-daily-rollback-evidence.local.json`。先运行 `npm.cmd run ai-daily:rollback -- check --require-sealed`，再将其 `evidenceId`、`recordHash` 和 `status=passed` 写入 acceptance v2；rollback evidence 缺失是 `manual-gate`，畸形、篡改、未封存或四元绑定不一致则是 `fail`。本地命令不会访问 Render、Cloudflare、数据库或模型。

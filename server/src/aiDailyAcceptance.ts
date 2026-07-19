@@ -5,8 +5,12 @@ import {
   type AiDailyModelApprovalBundle,
   type AiDailyModelEvaluationProposal,
 } from './aiDailyModelArtifacts.js'
+import {
+  evaluateAiDailyRollbackEvidenceManifest,
+  type AiDailyRollbackAcceptanceBinding,
+} from './aiDailyRollback.js'
 
-export const aiDailyAcceptanceManifestSchemaVersion = 'ai-daily-acceptance-v1'
+export const aiDailyAcceptanceManifestSchemaVersion = 'ai-daily-acceptance-v2'
 export const aiDailyAcceptanceManifestDefaultPath = 'server/data/ai-daily-acceptance.local.json'
 
 const acceptanceProfiles = ['PRODUCTION', 'FIXTURE', 'DEGRADED'] as const
@@ -72,7 +76,11 @@ export interface AiDailyAcceptanceDeploymentObservation {
   observedBy: Nullable<string>
   observedAt: Nullable<string>
   checks: Record<(typeof deploymentChecks)[number], CheckStatus>
-  rollbackReady: boolean | null
+  rollbackEvidence: {
+    evidenceId: string
+    recordHash: string
+    status: 'passed'
+  } | null
 }
 
 export interface AiDailyAcceptanceManifest {
@@ -94,6 +102,7 @@ export interface AiDailyAcceptanceGateReport {
   studio: 'passed' | 'missing' | 'failed'
   publishExport: 'passed' | 'missing' | 'failed'
   deployment: 'passed' | 'missing' | 'failed'
+  rollback: 'verified' | 'missing' | 'failed'
 }
 
 export type AiDailyAcceptanceEvaluationResult =
@@ -160,7 +169,7 @@ export function createAiDailyAcceptanceManifest(input: {
       observedBy: null,
       observedAt: null,
       checks: emptyDeploymentChecks(),
-      rollbackReady: null,
+      rollbackEvidence: null,
     },
     recordHash: null,
   }
@@ -170,6 +179,7 @@ export function normalizeAiDailyAcceptanceManifest(value: unknown): AiDailyAccep
   if (!isRecord(value) || value.schemaVersion !== aiDailyAcceptanceManifestSchemaVersion) {
     throw new Error('invalid-ai-daily-acceptance-manifest-schema')
   }
+  assertExactKeys(value, ['schemaVersion', 'acceptanceId', 'editionDate', 'createdAt', 'evaluation', 'liveEdition', 'studio', 'publishExport', 'deployment', 'recordHash'], 'manifest')
   const evaluation = normalizeEvaluation(value.evaluation)
   const liveEdition = normalizeLiveEdition(value.liveEdition)
   const studio = normalizeStudio(value.studio)
@@ -193,6 +203,7 @@ export function evaluateAiDailyAcceptanceManifest(input: {
   manifest: unknown
   proposal?: unknown
   bundle?: unknown
+  rollbackEvidence?: unknown
   requireArtifacts?: boolean
   requireSealed?: boolean
 }): AiDailyAcceptanceEvaluationResult {
@@ -224,18 +235,21 @@ export function evaluateAiDailyAcceptanceManifest(input: {
     issues.push('acceptance-artifacts-required')
   }
 
+  const rollback = evaluateRollbackEvidence(manifest, input.rollbackEvidence, issues)
+
   const gates: AiDailyAcceptanceGateReport = {
     evaluation: evidenceVerified ? 'verified' : artifactsRequired ? 'missing' : 'recorded',
     liveEdition: evaluateLiveEdition(manifest, issues),
     studio: evaluateStudioReview(manifest, issues),
     publishExport: evaluatePublishExport(manifest, issues),
     deployment: evaluateDeployment(manifest, issues),
+    rollback: rollback.gate,
   }
   const expectedRecordHash = createAiDailyAcceptanceRecordHash(manifest)
   const recordHashPresent = manifest.recordHash !== null
   const recordHashValid = recordHashPresent && manifest.recordHash === expectedRecordHash
   if (recordHashPresent && !recordHashValid) issues.push('acceptance-record-hash-mismatch')
-  const readyToSeal = issues.length === 0 && gates.evaluation === 'verified' && Object.values(gates).every((gate) => gate === 'passed' || gate === 'verified')
+  const readyToSeal = issues.length === 0 && evidenceVerified && rollback.verified && Object.values(gates).every((gate) => gate === 'passed' || gate === 'verified')
   const sealed = recordHashPresent && recordHashValid && readyToSeal
   if (input.requireSealed && !sealed) issues.push(recordHashPresent ? 'acceptance-not-ready' : 'acceptance-record-hash-required')
   return {
@@ -253,11 +267,13 @@ export function sealAiDailyAcceptanceManifest(input: {
   manifest: unknown
   proposal: unknown
   bundle: unknown
+  rollbackEvidence: unknown
 }): AiDailyAcceptanceManifest {
   const result = evaluateAiDailyAcceptanceManifest({
     manifest: input.manifest,
     proposal: input.proposal,
     bundle: input.bundle,
+    rollbackEvidence: input.rollbackEvidence,
     requireArtifacts: true,
   })
   if (!result.ok) throw new Error(`${result.error}:${result.issues.join(',')}`)
@@ -369,9 +385,60 @@ function evaluatePublishExport(manifest: AiDailyAcceptanceManifest, issues: stri
   return passed ? 'passed' as const : 'failed' as const
 }
 
+function evaluateRollbackEvidence(
+  manifest: AiDailyAcceptanceManifest,
+  rollbackEvidence: unknown,
+  issues: string[],
+): { gate: AiDailyAcceptanceGateReport['rollback']; verified: boolean } {
+  if (rollbackEvidence === undefined) {
+    issues.push('acceptance-rollback-evidence-required')
+    return { gate: 'missing', verified: false }
+  }
+  if (!manifest.liveEdition.issueId || !manifest.liveEdition.runId) {
+    issues.push('acceptance-rollback-binding-required')
+    return { gate: 'failed', verified: false }
+  }
+  const expectedBinding: AiDailyRollbackAcceptanceBinding = {
+    acceptanceId: manifest.acceptanceId,
+    editionDate: manifest.editionDate,
+    issueId: manifest.liveEdition.issueId,
+    runId: manifest.liveEdition.runId,
+  }
+  const result = evaluateAiDailyRollbackEvidenceManifest({
+    manifest: rollbackEvidence,
+    expectedBinding,
+    requireSealed: true,
+  })
+  if (!result.ok) {
+    issues.push('acceptance-rollback-evidence-invalid')
+    return { gate: 'failed', verified: false }
+  }
+  if (result.issues.includes('rollback-acceptance-binding-mismatch')) {
+    issues.push('acceptance-rollback-evidence-binding-mismatch')
+  }
+  if (!result.sealed) issues.push('acceptance-rollback-evidence-not-sealed')
+  const reference = manifest.deployment.rollbackEvidence
+  if (!reference) {
+    issues.push('acceptance-rollback-evidence-reference-required')
+    return { gate: result.sealed ? 'missing' : 'failed', verified: false }
+  }
+  if (
+    reference.evidenceId !== result.manifest.evidenceId ||
+    reference.recordHash !== result.manifest.recordHash ||
+    reference.status !== 'passed'
+  ) {
+    issues.push('acceptance-rollback-evidence-reference-mismatch')
+  }
+  const verified = result.sealed && result.issues.length === 0 &&
+    reference.evidenceId === result.manifest.evidenceId &&
+    reference.recordHash === result.manifest.recordHash &&
+    reference.status === 'passed'
+  return { gate: verified ? 'verified' : 'failed', verified }
+}
+
 function evaluateDeployment(manifest: AiDailyAcceptanceManifest, issues: string[]) {
   const value = manifest.deployment
-  if (!value.observedBy || !value.observedAt || value.rollbackReady !== true) {
+  if (!value.observedBy || !value.observedAt) {
     issues.push('deployment-observation-required')
     return 'missing' as const
   }
@@ -382,6 +449,7 @@ function evaluateDeployment(manifest: AiDailyAcceptanceManifest, issues: string[
 
 function normalizeEvaluation(value: unknown): AiDailyAcceptanceEvaluationEvidence {
   if (!isRecord(value)) throw new Error('acceptance-evaluation-required')
+  assertExactKeys(value, ['proposalHash', 'proposalSelectionRecordHash', 'bundleHash', 'approvedSelectionRecordHash', 'selectionId', 'reviewedBy', 'approvedAt'], 'evaluation')
   return {
     proposalHash: readHash(value.proposalHash, 'proposal-hash'),
     proposalSelectionRecordHash: readHash(value.proposalSelectionRecordHash, 'proposal-selection-record-hash'),
@@ -395,6 +463,7 @@ function normalizeEvaluation(value: unknown): AiDailyAcceptanceEvaluationEvidenc
 
 function normalizeLiveEdition(value: unknown): AiDailyAcceptanceLiveEdition {
   if (!isRecord(value)) throw new Error('acceptance-live-edition-required')
+  assertExactKeys(value, ['issueId', 'runId', 'editionDate', 'profile', 'status', 'completedAt'], 'live-edition')
   return {
     issueId: readNullableIdentifier(value.issueId, 'live-issue-id'),
     runId: readNullableIdentifier(value.runId, 'live-run-id'),
@@ -407,11 +476,13 @@ function normalizeLiveEdition(value: unknown): AiDailyAcceptanceLiveEdition {
 
 function normalizeStudio(value: unknown): AiDailyAcceptanceStudioReview {
   if (!isRecord(value)) throw new Error('acceptance-studio-review-required')
+  assertExactKeys(value, ['issueId', 'runId', 'editionDate', 'draftId', 'draftUpdatedAt', 'reviewId', 'draftStatus', 'reviewStatus', 'checklist'], 'studio')
   let checklist: AiDailyAcceptanceStudioReview['checklist'] = null
   if (value.checklist !== null) {
     if (!isRecord(value.checklist) || typeof value.checklist.sourceChecked !== 'boolean' || typeof value.checklist.safetyChecked !== 'boolean' || typeof value.checklist.publicReady !== 'boolean') {
       throw new Error('acceptance-studio-checklist-invalid')
     }
+    assertExactKeys(value.checklist, ['sourceChecked', 'safetyChecked', 'publicReady'], 'studio-checklist')
     checklist = {
       sourceChecked: value.checklist.sourceChecked,
       safetyChecked: value.checklist.safetyChecked,
@@ -433,14 +504,17 @@ function normalizeStudio(value: unknown): AiDailyAcceptanceStudioReview {
 
 function normalizePublishExport(value: unknown): AiDailyAcceptancePublishExport {
   if (!isRecord(value)) throw new Error('acceptance-publish-export-required')
+  assertExactKeys(value, ['publishExportId', 'draftId', 'reviewId', 'draftUpdatedAt', 'target', 'exportedFiles', 'checks'], 'publish-export')
   const exportedFiles = readStringArray(value.exportedFiles, 20)
   if (exportedFiles.some((file) => !isSafeRepoPath(file))) throw new Error('acceptance-exported-file-invalid')
   let checks: AiDailyAcceptancePublishExport['checks'] = null
   if (value.checks !== null) {
     if (!isRecord(value.checks)) throw new Error('acceptance-export-checks-invalid')
+    assertExactKeys(value.checks, ['status', 'exportedAt', 'results'], 'export-checks')
     const results = Array.isArray(value.checks.results)
       ? value.checks.results.map((item) => {
           if (!isRecord(item) || typeof item.command !== 'string' || item.command.length === 0 || item.command.length > 160) throw new Error('acceptance-export-result-invalid')
+          assertExactKeys(item, ['command', 'exitCode'], 'export-result')
           return { command: readLowSensitivityText(item.command, 'export-command', 160), exitCode: readExitCode(item.exitCode) }
         })
       : []
@@ -463,13 +537,25 @@ function normalizePublishExport(value: unknown): AiDailyAcceptancePublishExport 
 
 function normalizeDeployment(value: unknown): AiDailyAcceptanceDeploymentObservation {
   if (!isRecord(value) || !isRecord(value.checks)) throw new Error('acceptance-deployment-required')
+  assertExactKeys(value, ['observedBy', 'observedAt', 'checks', 'rollbackEvidence'], 'deployment')
+  assertExactKeys(value.checks, deploymentChecks, 'deployment-checks')
   const checks = {} as AiDailyAcceptanceDeploymentObservation['checks']
   for (const key of deploymentChecks) checks[key] = readEnum(value.checks[key], ['passed', 'failed', 'pending'] as const, `deployment-${key}`)
+  let rollbackEvidence: AiDailyAcceptanceDeploymentObservation['rollbackEvidence'] = null
+  if (value.rollbackEvidence !== null) {
+    if (!isRecord(value.rollbackEvidence)) throw new Error('acceptance-rollback-evidence-reference-invalid')
+    assertExactKeys(value.rollbackEvidence, ['evidenceId', 'recordHash', 'status'], 'rollback-evidence-reference')
+    rollbackEvidence = {
+      evidenceId: readIdentifier(value.rollbackEvidence.evidenceId, 'rollback-evidence-id'),
+      recordHash: readHash(value.rollbackEvidence.recordHash, 'rollback-evidence-record-hash'),
+      status: readEnum(value.rollbackEvidence.status, ['passed'] as const, 'rollback-evidence-status'),
+    }
+  }
   return {
     observedBy: readNullableActor(value.observedBy, 'observed-by'),
     observedAt: value.observedAt === null ? null : readIsoDate(value.observedAt, 'observed-at'),
     checks,
-    rollbackReady: value.rollbackReady === null ? null : readBoolean(value.rollbackReady, 'rollback-ready'),
+    rollbackEvidence,
   }
 }
 
@@ -541,11 +627,6 @@ function readNullableEnum<T extends readonly string[]>(value: unknown, allowed: 
   return value === null ? null : readEnum(value, allowed, label)
 }
 
-function readBoolean(value: unknown, label: string) {
-  if (typeof value !== 'boolean') throw new Error(`acceptance-${label}-invalid`)
-  return value
-}
-
 function readExitCode(value: unknown) {
   if (value === null) return null
   if (typeof value !== 'number' || !Number.isInteger(value) || value < -1 || value > 255) {
@@ -563,6 +644,12 @@ function readStringArray(value: unknown, maxLength: number) {
 
 function isSafeRepoPath(value: string) {
   return !value.includes('..') && !value.startsWith('/') && !/^[A-Za-z]:[\\/]/u.test(value) && /^[./A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/u.test(value)
+}
+
+function assertExactKeys(value: Record<string, unknown>, allowed: readonly string[], label: string) {
+  const allowedSet = new Set(allowed)
+  if (Object.keys(value).some((key) => !allowedSet.has(key))) throw new Error(`acceptance-${label}-unknown-field`)
+  if (allowed.some((key) => !(key in value))) throw new Error(`acceptance-${label}-missing-field`)
 }
 
 function unique(values: string[]) {

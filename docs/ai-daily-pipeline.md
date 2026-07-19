@@ -79,20 +79,42 @@ npm.cmd run ai-daily:manifest-check
 npm.cmd run ai-daily:model-evaluation-check
 npm.cmd run ai-daily:model-runtime-check
 npm.cmd run ai-daily:acceptance-check
+npm.cmd run ai-daily:rollback-check
 npm.cmd run ai-daily:operations-check
 npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 ```
 
-`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:model-runtime-check` 只使用 loopback HTTP 验证运行时配置、无 temperature 的结构化请求、审批 bundle 防篡改以及 `--fixture/--live` 门禁，不调用外部 provider；`ai-daily:acceptance-check` 验证首版验收 manifest 的跨阶段绑定、敏感字段禁入和篡改拒绝；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:model-runtime-check` 只使用 loopback HTTP 验证运行时配置、无 temperature 的结构化请求、审批 bundle 防篡改以及 `--fixture/--live` 门禁，不调用外部 provider；`ai-daily:acceptance-check` 验证首版验收 manifest 的跨阶段绑定、六个门禁、敏感字段禁入和篡改拒绝；`ai-daily:rollback-check` 验证独立 rollback evidence 的结构、绑定、封存和 CLI 往返；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
 
 ## 首版生产验收记录
 
-真实三角色 selection bundle 获批后，先创建一份 Git-ignored 的本地验收 manifest：
+真实三角色 selection bundle 获批并确定首个 live issue/run 后，先创建一份 Git-ignored 的 rollback evidence，再创建和填写验收 manifest。rollback evidence 必须先于 acceptance seal 完成，因为 acceptance v2 的第六个门禁会校验它的封存 hash 和四元绑定（acceptance、edition、issue、run）：
+
+```powershell
+npm.cmd run ai-daily:rollback -- init `
+  --evidence-id <evidence-id> `
+  --recorded-by <reviewer-alias> `
+  --acceptance-id <acceptance-id> `
+  --edition-date YYYY-MM-DD `
+  --issue-id <issue-id> `
+  --run-id <run-id> `
+  --reason acceptance-drill
+```
+
+人工填写该文件中的数据库备份、上一 Render revision、migration 名、两个 Cron/两个 feature flag 状态、Studio/离线工作流保留状态和 `decision.status`。不要填写 URL、凭据、备份路径、原始错误或内容正文。填写后依次执行：
+
+```powershell
+npm.cmd run ai-daily:rollback -- check
+npm.cmd run ai-daily:rollback -- seal
+npm.cmd run ai-daily:rollback -- check --require-sealed
+```
+
+然后创建验收 manifest：
 
 ```powershell
 npm.cmd run ai-daily:acceptance -- init --acceptance-id <acceptance-id> --edition-date YYYY-MM-DD
-npm.cmd run ai-daily:acceptance -- check
+npm.cmd run ai-daily:acceptance -- check --rollback server/data/ai-daily-rollback-evidence.local.json
 ```
 
 默认读取 `server/data/ai-daily-model-evaluation.local.json`、`server/data/ai-daily-model-approval.v1.json`，写入 `server/data/ai-daily-acceptance.local.json`。该文件只允许保存以下低敏证据：
@@ -101,18 +123,18 @@ npm.cmd run ai-daily:acceptance -- check
 - 首个 `PRODUCTION` edition 的 `issueId`、`runId`、日期、完成状态；
 - 同一 issue/run/date 下的 Studio draft/review id、草稿版本时间和三个审核勾选；
 - Publish Export id、绑定的 draft/review/version、仓库相对输出路径和命令退出码；
-- `publicFeed`、`detailPage`、`etag304`、`withdrawn410`、`mobile` 五项部署观察，以及 rollback readiness。
+- `publicFeed`、`detailPage`、`etag304`、`withdrawn410`、`mobile` 五项部署观察，以及 sealed rollback evidence 的 `evidenceId`、`recordHash`、`status=passed` 引用。
 
 不要写入 prompt、来源正文、文章正文、原始模型输出、模型端点、key/token、数据库 URL、私有后台地址或原始错误。manifest 不主动读取生产数据库，也不访问 Render、搜索服务或模型；值来自用户完成真实业务流程后的低敏记录。
 
-全部 gate 通过后再 seal：
+六个 gate 全部通过后再 seal：
 
 ```powershell
-npm.cmd run ai-daily:acceptance -- seal
-npm.cmd run ai-daily:acceptance -- check --require-sealed
+npm.cmd run ai-daily:acceptance -- seal --rollback server/data/ai-daily-rollback-evidence.local.json
+npm.cmd run ai-daily:acceptance -- check --rollback server/data/ai-daily-rollback-evidence.local.json --require-sealed
 ```
 
-`seal` 会在重新验证 proposal/bundle、candidate/selection、edition/issue/run、Studio draft/review 版本、Publish Export 和部署观察后生成 canonical `recordHash`。缺少真实记录时 production readiness 显示 `manual-gate`；已有 manifest 若 schema、hash 或跨阶段绑定被篡改则显示 `fail`。fixture contract 通过不能替代真实首版验收。
+`seal` 会在重新验证 proposal/bundle、candidate/selection、edition/issue/run、Studio draft/review 版本、Publish Export、五项部署观察和 sealed rollback evidence 后生成 canonical `recordHash`。该 hash 只提供确定性完整性和后续漂移检测，不是平台签名或自动执行证明；人工观察和审核人身份仍是信任边界。缺少真实记录或 rollback evidence 时 production readiness 显示 `manual-gate`；已有 manifest/evidence 若 schema、hash 或跨阶段绑定被篡改则显示 `fail`。fixture contract 通过不能替代真实首版验收。
 
 ## 生产运维诊断
 

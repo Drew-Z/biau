@@ -64,6 +64,8 @@
     "ai-daily:model-approve": "tsx server/scripts/ai-daily-model-approve.ts",
     "ai-daily:acceptance": "tsx server/scripts/ai-daily-acceptance.ts",
     "ai-daily:acceptance-check": "tsx server/scripts/ai-daily-acceptance-check.ts",
+    "ai-daily:rollback": "tsx server/scripts/ai-daily-rollback.ts",
+    "ai-daily:rollback-check": "tsx server/scripts/ai-daily-rollback-check.ts",
     "ai-daily:runner-check": "tsx server/scripts/ai-daily-runner-check.ts",
     "ai-daily:generation-repository-check": "tsx server/scripts/ai-daily-generation-repository-check.ts",
     "ai-daily:public-feed-check": "tsx server/scripts/ai-daily-public-feed-check.ts",

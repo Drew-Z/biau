@@ -20,7 +20,7 @@
 - 模型验收只能使用用户批准的真实业务任务；禁止 ping、doctor、空 prompt 和无意义测活。
 - 完成记录只写低敏结论和可复跑命令，不记录配置值或私有内容。
 - 状态项目变化后运行 `npm.cmd run docs:manual-gates-check`，保证每个公开项目都有对应人工边界。
-- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:model-evaluation-check`、`npm.cmd run ai-daily:model-runtime-check`、`npm.cmd run ai-daily:acceptance-check`、`npm.cmd run ai-daily:runner-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:observability-contract-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、真实模型评估与选型、生产 migration、Cron 启用或真实内容验收。
+- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:model-evaluation-check`、`npm.cmd run ai-daily:model-runtime-check`、`npm.cmd run ai-daily:acceptance-check`、`npm.cmd run ai-daily:rollback-check`、`npm.cmd run ai-daily:runner-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:observability-contract-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、真实模型评估与选型、生产 migration、Cron 启用或真实内容验收。
 
 ## BIAU 平台门禁
 
@@ -57,7 +57,7 @@
 | 首篇公开导出 | 公开数据文件必须审查 diff | `studio:export -- --run-checks`、博客检查和最终 Git diff |
 | AI Daily 真实来源与查询组 | 2026-07-19 已完成公共页面预审和站点所有者确认；16 个来源与 4 个核心查询组启用，hold/rejected 项关闭。来源包变更时重新触发此 gate | `ai-daily:manifest-check`、启用/批准/暂缓/拒绝数量、审核时间和低敏结论，不复制长段原文 |
 | AI Daily 三角色模型评估与选型 | 运行时 provider path、fixture contract 和 fail-closed bundle 校验已实现；真实候选仍必须用 BIAU-owned case set 分别评估 extractor/composer/verifier，并由人工确认 primary、独立 failure-domain fallback 和 5 个百分点边界 | `model-runtime-check`、版本化候选/选择/bundle hash、case-set/prompt/schema version、聚合质量和延迟摘要、审核时间与低敏结论；不记录 key、endpoint、prompt 或原始输出 |
-| AI Daily 首版生产验收 | 真实 edition、Studio 审核、Publish Export、公开部署和 rollback readiness 必须由人完成并确认是同一 issue/run/draft version | Git-ignored `ai-daily-acceptance.local.json` 的 sealed/hash 结果和 `ai-daily:acceptance -- check --require-sealed` 摘要；不记录正文、URL、凭据或原始模型输出 |
+| AI Daily 首版生产验收 | 真实 edition、Studio 审核、Publish Export、公开部署和 rollback evidence 必须由人完成并确认是同一 issue/run/draft version | Git-ignored `ai-daily-rollback-evidence.local.json` 与 `ai-daily-acceptance.local.json` 的 sealed/hash 结果、四元绑定和 `ai-daily:* -- check --require-sealed` 摘要；不记录正文、URL、凭据或原始模型输出 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
 | AI Daily 公开 Feed 上线 | 新增公开索引 migration、Cloudflare browser base 和 Studio CORS allowlist 需要平台配置 | 只记录 migration 名、公开 route HTTP 状态、ETag/CORS 类别和页面截图，不记录数据库 URL 或 token |
 | AI Daily retention mutation | 删除/归档会触及 evidence、公开投影和审核审计链 | 当前仅允许受保护 dry-run；未来必须先备份、审查候选、批准显式 mutate、分批事务执行并验证回滚 |
@@ -133,7 +133,7 @@
    - 在生产 Studio 数据库执行 `20260719020000_ai_daily_public_feed_index`，执行前保留备份和上一 Render revision。
    - Studio 服务设置生产 CORS allowlist 与 `AI_DAILY_PUBLIC_FEED_ENABLED=true`，Cloudflare Pages 设置当前 Studio public base 后重新部署；具体值只留在平台，不写入仓库或 manifest。
    - 用真实浏览页面和公开 GET 验收 `/ai-daily`、一个已批准事件详情、ETag `304`、撤回 `410` 和移动端，并确认暂停两个 Cron/关闭 generation 与 public feed 的 rollback 路径可执行。
-   - 将五项观察记为 `passed`、设置 `rollbackReady=true`，运行 `npm.cmd run ai-daily:acceptance -- seal` 和 `npm.cmd run ai-daily:acceptance -- check --require-sealed`。只有这一步通过后，首版验收 gate 才关闭。
+    - 先按 [`docs/ai-daily-pipeline.md`](./ai-daily-pipeline.md) 创建、填写并封存 `ai-daily-rollback-evidence-v1`，运行 `npm.cmd run ai-daily:rollback -- check --require-sealed`；再将五项观察记为 `passed`，把 evidence id/hash/status 引用写入 acceptance manifest，运行 `npm.cmd run ai-daily:acceptance -- seal --rollback server/data/ai-daily-rollback-evidence.local.json` 和 `npm.cmd run ai-daily:acceptance -- check --rollback server/data/ai-daily-rollback-evidence.local.json --require-sealed`。只有六个 gate 全部通过后，首版验收 gate 才关闭。
 
 7. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。

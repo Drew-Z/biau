@@ -16,6 +16,11 @@ import {
   type AiDailyAcceptanceManifest,
 } from '../src/aiDailyAcceptance.js'
 import {
+  createAiDailyRollbackEvidenceManifest,
+  sealAiDailyRollbackEvidenceManifest,
+  type AiDailyRollbackEvidenceManifest,
+} from '../src/aiDailyRollback.js'
+import {
   buildAiDailyModelEvaluationCaseDescriptors,
   aiDailyModelEvaluationCaseSetId,
 } from '../src/aiDailyModelEvaluationCaseSet.js'
@@ -29,7 +34,11 @@ import { createAiDailyGenerationPayloadHash, type AiDailyQualityCaseResult } fro
 const editionDate = '2026-07-20'
 const evaluationGeneratedAt = '2026-07-20T01:00:00.000Z'
 const reviewAt = '2026-07-20T02:00:00.000Z'
+const issueId = 'issue-2026-07-20'
+const runId = 'run-2026-07-20-1'
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+
+type SealedRollbackEvidence = AiDailyRollbackEvidenceManifest & { recordHash: string }
 
 const candidates = buildCandidates()
 const proposal = createAiDailyModelEvaluationProposal({
@@ -45,6 +54,7 @@ const bundle = approveAiDailyModelEvaluationProposal({
     notes: 'Offline acceptance contract fixture only.',
   },
 })
+const rollbackEvidence = createSealedRollbackEvidence('acceptance-fixture-v1')
 
 const initialManifest = createAiDailyAcceptanceManifest({
   acceptanceId: 'acceptance-fixture-v1',
@@ -53,27 +63,29 @@ const initialManifest = createAiDailyAcceptanceManifest({
   bundle,
   createdAt: '2026-07-20T02:05:00.000Z',
 })
-const initialResult = evaluate({ manifest: initialManifest, proposal, bundle })
+const initialResult = evaluate({ manifest: initialManifest, proposal, bundle, rollbackEvidence: undefined })
 assert.equal(initialResult.evidenceVerified, true)
 assert.equal(initialResult.readyToSeal, false)
 assert.ok(initialResult.issues.includes('live-edition-required'))
+assert.ok(initialResult.issues.includes('acceptance-rollback-evidence-required'))
+assert.equal(initialResult.gates.rollback, 'missing')
 
-const completeManifest = complete(initialManifest)
+const completeManifest = complete(initialManifest, rollbackEvidence)
 const completeResult = evaluate({ manifest: completeManifest, proposal, bundle })
 assert.equal(completeResult.issues.length, 0, completeResult.issues.join(', '))
 assert.equal(completeResult.readyToSeal, true)
 assert.equal(completeResult.sealed, false)
 
-const sealedManifest = sealAiDailyAcceptanceManifest({ manifest: completeManifest, proposal, bundle })
+const sealedManifest = sealAiDailyAcceptanceManifest({ manifest: completeManifest, proposal, bundle, rollbackEvidence })
 assert.ok(sealedManifest.recordHash)
 const sealedResult = evaluate({ manifest: sealedManifest, proposal, bundle, requireSealed: true })
 assert.equal(sealedResult.issues.length, 0, sealedResult.issues.join(', '))
 assert.equal(sealedResult.sealed, true)
 
-const unverifiedSealed = evaluateAiDailyAcceptanceManifest({ manifest: sealedManifest })
+const unverifiedSealed = evaluateAiDailyAcceptanceManifest({ manifest: sealedManifest, rollbackEvidence })
 assert.equal(unverifiedSealed.ok, true)
 if (unverifiedSealed.ok) assert.equal(unverifiedSealed.sealed, false)
-const unverifiedRequireSealed = evaluateAiDailyAcceptanceManifest({ manifest: sealedManifest, requireSealed: true })
+const unverifiedRequireSealed = evaluateAiDailyAcceptanceManifest({ manifest: sealedManifest, rollbackEvidence, requireSealed: true })
 assert.equal(unverifiedRequireSealed.ok, true)
 if (unverifiedRequireSealed.ok) {
   assert.equal(unverifiedRequireSealed.sealed, false)
@@ -89,6 +101,7 @@ const rehashedEvidenceResult = evaluateAiDailyAcceptanceManifest({
   manifest: { ...rehashedEvidence, recordHash: createAiDailyAcceptanceRecordHash(rehashedEvidence) },
   proposal,
   bundle,
+  rollbackEvidence,
   requireSealed: true,
 })
 assert.equal(rehashedEvidenceResult.ok, true)
@@ -106,6 +119,7 @@ const rehashedGateResult = evaluateAiDailyAcceptanceManifest({
   manifest: { ...rehashedGate, recordHash: createAiDailyAcceptanceRecordHash(rehashedGate) },
   proposal,
   bundle,
+  rollbackEvidence,
   requireSealed: true,
 })
 assert.equal(rehashedGateResult.ok, true)
@@ -133,6 +147,20 @@ const fixtureRun = evaluate({
 })
 assert.ok(fixtureRun.issues.includes('live-edition-profile-not-production'))
 
+const incompleteLiveRun = evaluate({
+  manifest: { ...completeManifest, liveEdition: { ...completeManifest.liveEdition, status: 'FAILED' } },
+  proposal,
+  bundle,
+})
+assert.ok(incompleteLiveRun.issues.includes('live-edition-not-completed'))
+
+const issueMismatch = evaluate({
+  manifest: { ...completeManifest, studio: { ...completeManifest.studio, issueId: 'different-issue' } },
+  proposal,
+  bundle,
+})
+assert.ok(issueMismatch.issues.includes('studio-issue-mismatch'))
+
 const runMismatch = evaluate({
   manifest: { ...completeManifest, studio: { ...completeManifest.studio, runId: 'different-run' } },
   proposal,
@@ -147,12 +175,35 @@ const dateMismatch = evaluate({
 })
 assert.ok(dateMismatch.issues.includes('studio-edition-date-mismatch'))
 
+const incompleteChecklist = evaluate({
+  manifest: {
+    ...completeManifest,
+    studio: {
+      ...completeManifest.studio,
+      checklist: { ...completeManifest.studio.checklist!, safetyChecked: false },
+    },
+  },
+  proposal,
+  bundle,
+})
+assert.ok(incompleteChecklist.issues.includes('studio-review-checklist-incomplete'))
+
 const draftVersionMismatch = evaluate({
   manifest: { ...completeManifest, publishExport: { ...completeManifest.publishExport, draftUpdatedAt: '2026-07-20T03:00:00.000Z' } },
   proposal,
   bundle,
 })
 assert.ok(draftVersionMismatch.issues.includes('publish-export-version-mismatch'))
+
+const exportDraftMismatch = evaluate({
+  manifest: {
+    ...completeManifest,
+    publishExport: { ...completeManifest.publishExport, draftId: 'different-draft' },
+  },
+  proposal,
+  bundle,
+})
+assert.ok(exportDraftMismatch.issues.includes('publish-export-draft-mismatch'))
 
 const exportFailure = evaluate({
   manifest: {
@@ -177,6 +228,85 @@ const incompleteDeployment = evaluate({
   bundle,
 })
 assert.ok(incompleteDeployment.issues.includes('deployment-observation-incomplete'))
+
+const missingDeploymentObserver = evaluate({
+  manifest: {
+    ...completeManifest,
+    deployment: { ...completeManifest.deployment, observedBy: null },
+  },
+  proposal,
+  bundle,
+})
+assert.ok(missingDeploymentObserver.issues.includes('deployment-observation-required'))
+
+const missingRollbackEvidence = evaluate({
+  manifest: completeManifest,
+  proposal,
+  bundle,
+  rollbackEvidence: undefined,
+})
+assert.ok(missingRollbackEvidence.issues.includes('acceptance-rollback-evidence-required'))
+assert.equal(missingRollbackEvidence.gates.rollback, 'missing')
+
+const missingRollbackReference = evaluate({
+  manifest: {
+    ...completeManifest,
+    deployment: { ...completeManifest.deployment, rollbackEvidence: null },
+  },
+  proposal,
+  bundle,
+})
+assert.ok(missingRollbackReference.issues.includes('acceptance-rollback-evidence-reference-required'))
+assert.equal(missingRollbackReference.gates.rollback, 'missing')
+
+const mismatchedRollbackEvidence = createSealedRollbackEvidence('acceptance-other')
+const rollbackBindingMismatch = evaluate({
+  manifest: completeManifest,
+  proposal,
+  bundle,
+  rollbackEvidence: mismatchedRollbackEvidence,
+})
+assert.ok(rollbackBindingMismatch.issues.includes('acceptance-rollback-evidence-binding-mismatch'))
+assert.equal(rollbackBindingMismatch.gates.rollback, 'failed')
+
+const tamperedRollbackEvidence = {
+  ...rollbackEvidence,
+  actions: { ...rollbackEvidence.actions, publicFeedDisabled: 'failed' as const },
+}
+const rollbackTamper = evaluate({
+  manifest: completeManifest,
+  proposal,
+  bundle,
+  rollbackEvidence: tamperedRollbackEvidence,
+})
+assert.ok(rollbackTamper.issues.includes('acceptance-rollback-evidence-not-sealed'))
+assert.equal(rollbackTamper.gates.rollback, 'failed')
+
+const rollbackReferenceMismatch = evaluate({
+  manifest: {
+    ...completeManifest,
+    deployment: {
+      ...completeManifest.deployment,
+      rollbackEvidence: {
+        ...completeManifest.deployment.rollbackEvidence!,
+        recordHash: '0'.repeat(64),
+      },
+    },
+  },
+  proposal,
+  bundle,
+})
+assert.ok(rollbackReferenceMismatch.issues.includes('acceptance-rollback-evidence-reference-mismatch'))
+assert.equal(rollbackReferenceMismatch.gates.rollback, 'failed')
+
+const malformedRollbackEvidence = evaluate({
+  manifest: completeManifest,
+  proposal,
+  bundle,
+  rollbackEvidence: { ...rollbackEvidence, endpoint: 'not-allowed' },
+})
+assert.ok(malformedRollbackEvidence.issues.includes('acceptance-rollback-evidence-invalid'))
+assert.equal(malformedRollbackEvidence.gates.rollback, 'failed')
 
 const tamperedProposal = evaluate({
   manifest: completeManifest,
@@ -254,7 +384,7 @@ assert.equal(impossibleDate.ok, false)
 if (!impossibleDate.ok) assert.ok(impossibleDate.issues.includes('acceptance-edition-date-invalid'))
 
 const oldSchema = evaluateAiDailyAcceptanceManifest({
-  manifest: { ...completeManifest, schemaVersion: 'ai-daily-acceptance-v0' },
+  manifest: { ...completeManifest, schemaVersion: 'ai-daily-acceptance-v1' },
   proposal,
   bundle,
 })
@@ -263,29 +393,32 @@ if (!oldSchema.ok) assert.equal(oldSchema.error, 'invalid-ai-daily-acceptance-ma
 
 await runCliRoundTrip()
 
-console.log('AI Daily acceptance contract passed (providerCalls=0, gates=5, tamperCases=12, cliRoundTrip=1)')
+console.log('AI Daily acceptance contract passed (networkCalls=0, providerCalls=0, gates=6, rollbackCases=6, cliRoundTrip=1)')
 
 function evaluate(input: Parameters<typeof evaluateAiDailyAcceptanceManifest>[0]) {
-  const result = evaluateAiDailyAcceptanceManifest({ ...input, requireArtifacts: true })
+  const result = evaluateAiDailyAcceptanceManifest({ rollbackEvidence, ...input, requireArtifacts: true })
   assert.equal(result.ok, true, result.ok ? undefined : result.issues.join(', '))
   if (!result.ok) throw new Error(result.issues.join(', '))
   return result
 }
 
-function complete(manifest: AiDailyAcceptanceManifest): AiDailyAcceptanceManifest {
+function complete(
+  manifest: AiDailyAcceptanceManifest,
+  evidence = createSealedRollbackEvidence(manifest.acceptanceId, manifest.editionDate),
+): AiDailyAcceptanceManifest {
   return {
     ...manifest,
     liveEdition: {
-      issueId: 'issue-2026-07-20',
-      runId: 'run-2026-07-20-1',
+      issueId,
+      runId,
       editionDate,
       profile: 'PRODUCTION',
       status: 'COMPLETED',
       completedAt: '2026-07-20T03:00:00.000Z',
     },
     studio: {
-      issueId: 'issue-2026-07-20',
-      runId: 'run-2026-07-20-1',
+      issueId,
+      runId,
       editionDate,
       draftId: 'draft-2026-07-20',
       draftUpdatedAt: '2026-07-20T04:00:00.000Z',
@@ -307,9 +440,55 @@ function complete(manifest: AiDailyAcceptanceManifest): AiDailyAcceptanceManifes
       observedBy: 'offline-observer',
       observedAt: '2026-07-20T05:00:00.000Z',
       checks: { publicFeed: 'passed', detailPage: 'passed', etag304: 'passed', withdrawn410: 'passed', mobile: 'passed' },
-      rollbackReady: true,
+      rollbackEvidence: {
+        evidenceId: evidence.evidenceId,
+        recordHash: evidence.recordHash,
+        status: 'passed',
+      },
     },
   }
+}
+
+function createSealedRollbackEvidence(
+  acceptanceId: string,
+  boundEditionDate = editionDate,
+): SealedRollbackEvidence {
+  const acceptanceBinding = { acceptanceId, editionDate: boundEditionDate, issueId, runId }
+  const initial = createAiDailyRollbackEvidenceManifest({
+    evidenceId: `rollback-${acceptanceId}`,
+    recordedBy: 'offline-observer',
+    recordedAt: '2026-07-20T04:45:00.000Z',
+    acceptanceBinding,
+    reason: 'acceptance-drill',
+  })
+  const completed: AiDailyRollbackEvidenceManifest = {
+    ...initial,
+    preconditions: {
+      databaseBackupRecorded: true,
+      previousRenderRevisionRecorded: true,
+      migrationNames: [
+        '20260718010000_ai_daily_generation_runner',
+        '20260719020000_ai_daily_public_feed_index',
+      ],
+    },
+    actions: {
+      ingestCronPaused: 'passed',
+      editorialCronPaused: 'passed',
+      productionGenerationDisabled: 'passed',
+      publicFeedDisabled: 'passed',
+    },
+    preservation: {
+      studioManualEditingAvailable: 'passed',
+      studioReviewAvailable: 'passed',
+      offlineExportAvailable: 'passed',
+      databaseHistoryPreserved: 'passed',
+      destructiveMutationPerformed: false,
+    },
+    decision: { ...initial.decision, status: 'passed' },
+  }
+  const sealed = sealAiDailyRollbackEvidenceManifest({ manifest: completed, expectedBinding: acceptanceBinding })
+  if (!sealed.recordHash) throw new Error('rollback-fixture-record-hash-required')
+  return sealed as SealedRollbackEvidence
 }
 
 function buildCandidates(suffix = 'base'): AiDailyModelEvaluationCandidateInput[] {
@@ -383,6 +562,7 @@ async function runCliRoundTrip() {
     const proposalPath = resolve(directory, 'proposal.local.json')
     const bundlePath = resolve(directory, 'bundle.local.json')
     const manifestPath = resolve(directory, 'acceptance.local.json')
+    const rollbackPath = resolve(directory, 'rollback.local.json')
     await writeFile(proposalPath, `${JSON.stringify(proposal, null, 2)}\n`, 'utf8')
     await writeFile(bundlePath, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8')
 
@@ -395,13 +575,29 @@ async function runCliRoundTrip() {
       '--out', repoRelative(manifestPath),
     ])
     const initialized = JSON.parse(await readFile(manifestPath, 'utf8')) as AiDailyAcceptanceManifest
-    await writeFile(manifestPath, `${JSON.stringify(complete(initialized), null, 2)}\n`, 'utf8')
+    const cliRollbackEvidence = createSealedRollbackEvidence(initialized.acceptanceId, initialized.editionDate)
+    await writeFile(rollbackPath, `${JSON.stringify(cliRollbackEvidence, null, 2)}\n`, 'utf8')
+    await writeFile(manifestPath, `${JSON.stringify(complete(initialized, cliRollbackEvidence), null, 2)}\n`, 'utf8')
+
+    runCliJsonFailure([
+      'check',
+      '--manifest', repoRelative(manifestPath),
+      '--proposal', repoRelative(proposalPath),
+      '--rollback', repoRelative(rollbackPath),
+    ], 'acceptance-artifact-pair-required')
+    runCliFailure([
+      'seal',
+      '--manifest', repoRelative(manifestPath),
+      '--proposal', repoRelative(proposalPath),
+      '--rollback', repoRelative(rollbackPath),
+    ], 'acceptance-artifact-pair-required')
 
     const check = runCli([
       'check',
       '--manifest', repoRelative(manifestPath),
       '--proposal', repoRelative(proposalPath),
       '--bundle', repoRelative(bundlePath),
+      '--rollback', repoRelative(rollbackPath),
     ])
     assert.equal(check.readyToSeal, true)
     assert.equal(check.sealed, false)
@@ -411,18 +607,21 @@ async function runCliRoundTrip() {
       '--manifest', repoRelative(manifestPath),
       '--proposal', repoRelative(proposalPath),
       '--bundle', repoRelative(bundlePath),
+      '--rollback', repoRelative(rollbackPath),
     ])
     runCli([
       'seal',
       '--manifest', repoRelative(manifestPath),
       '--proposal', repoRelative(proposalPath),
       '--bundle', repoRelative(bundlePath),
+      '--rollback', repoRelative(rollbackPath),
     ])
     const sealed = runCli([
       'check',
       '--manifest', repoRelative(manifestPath),
       '--proposal', repoRelative(proposalPath),
       '--bundle', repoRelative(bundlePath),
+      '--rollback', repoRelative(rollbackPath),
       '--require-sealed',
     ])
     assert.equal(sealed.sealed, true)
@@ -453,6 +652,13 @@ function runCliFailure(args: string[], expected: string) {
   const result = spawnCli(args)
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'))
+}
+
+function runCliJsonFailure(args: string[], expectedIssue: string) {
+  const result = spawnCli(args)
+  assert.notEqual(result.status, 0)
+  const payload = JSON.parse(result.stdout) as { issues?: unknown }
+  assert.ok(Array.isArray(payload.issues) && payload.issues.includes(expectedIssue), result.stdout)
 }
 
 function spawnCli(args: string[]) {
