@@ -24,6 +24,9 @@ const assistantModelBaseUrl = normalizeBaseUrl(readFirstEnv('ASSISTANT_MODEL_BAS
 const assistantModelName = readFirstEnv('ASSISTANT_MODEL_NAME', 'OPENAI_MODEL') || 'gpt-4.1-mini'
 const assistantModelProvider = readFirstEnv('ASSISTANT_MODEL_PROVIDER', 'OPENAI_PROVIDER') || 'openai-compatible'
 const assistantModelChannelsJson = readFirstEnv('ASSISTANT_MODEL_CHANNELS_JSON')
+const aiDailyModelRuntimeJson = readFirstEnv('AI_DAILY_MODEL_RUNTIME_JSON')
+const aiDailyModelApprovalFile = readFirstEnv('AI_DAILY_MODEL_APPROVAL_FILE')
+const aiDailyModelEvaluationApprovalId = readFirstEnv('AI_DAILY_MODEL_EVALUATION_APPROVAL_ID')
 const assistantRagApiBaseUrl = readFirstEnv('ASSISTANT_RAG_API_BASE_URL')
 const assistantRagApiKey = readFirstEnv('ASSISTANT_RAG_API_KEY')
 const assistantRagTimeoutMs = readPositiveInteger(process.env.ASSISTANT_RAG_TIMEOUT_MS, 3000)
@@ -45,6 +48,9 @@ export const env = {
   assistantModelName,
   assistantModelProvider,
   assistantModelChannelsJson,
+  aiDailyModelRuntimeJson,
+  aiDailyModelApprovalFile,
+  aiDailyModelEvaluationApprovalId,
   assistantRagApiBaseUrl,
   assistantRagApiKey,
   assistantRagTimeoutMs,
@@ -67,6 +73,8 @@ export const env = {
   aiDailyPublicStaleMinutes: readPositiveInteger(process.env.AI_DAILY_PUBLIC_STALE_MINUTES, 180),
   aiDailyPublicRateLimit: readPositiveInteger(process.env.AI_DAILY_PUBLIC_RATE_LIMIT, 60),
   aiDailyPublicRateWindowMs: readPositiveInteger(process.env.AI_DAILY_PUBLIC_RATE_WINDOW_MS, 60000),
+  aiDailyBusinessEvaluationEnabled: readBoolean(process.env.AI_DAILY_BUSINESS_EVALUATION_ENABLED),
+  aiDailyProductionGenerationEnabled: readBoolean(process.env.AI_DAILY_PRODUCTION_GENERATION_ENABLED),
   ragStoreProvider: readFirstEnv('RAG_STORE_PROVIDER') || 'local',
   ragDatabaseUrl: readFirstEnv('RAG_DATABASE_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DB_URL'),
   supabaseUrl: readFirstEnv('SUPABASE_URL'),

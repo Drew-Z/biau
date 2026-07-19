@@ -139,9 +139,16 @@ AI_DAILY_PUBLIC_WINDOW_HOURS=72
 AI_DAILY_PUBLIC_STALE_MINUTES=180
 AI_DAILY_PUBLIC_RATE_LIMIT=60
 AI_DAILY_PUBLIC_RATE_WINDOW_MS=60000
+AI_DAILY_MODEL_RUNTIME_JSON=<server-only channel and candidate mapping>
+AI_DAILY_BUSINESS_EVALUATION_ENABLED=false
+AI_DAILY_MODEL_EVALUATION_APPROVAL_ID=<matching approved evaluation run id>
+AI_DAILY_PRODUCTION_GENERATION_ENABLED=false
+AI_DAILY_MODEL_APPROVAL_FILE=<optional server-side bundle path; empty uses the default>
 ```
 
 Studio 模式挂载 `/health`、受保护的 `/studio/api/*`，以及独立无鉴权但有 CORS、限流和字段白名单的 `/public/ai-daily/*`。它不挂载聊天、Operator 或 RAG 路由。
+
+`AI_DAILY_MODEL_RUNTIME_JSON` 只放在 Render 的 server-only environment 中。`channels` 保存私有 provider base、key、model 和 failure-domain alias，`candidates` 将 extractor/composer/verifier 映射到 channel；不要把真实 JSON 写入 Git、浏览器变量、日志或截图。生产默认保持 `AI_DAILY_BUSINESS_EVALUATION_ENABLED=false` 和 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`。真实评估必须由用户批准的业务任务显式运行，审批 bundle 通过 hash 和 runtime 漂移校验后，首个版次仍需使用 `--live` 人工验收；Cron 不能作为模型测活或自动批准入口。
 
 ### 4. RAG Orchestrator
 

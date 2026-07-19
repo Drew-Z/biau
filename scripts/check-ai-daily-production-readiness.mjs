@@ -147,6 +147,9 @@ async function main() {
     'ai-daily:contracts-check',
     'ai-daily:manifest-check',
     'ai-daily:model-evaluation-check',
+    'ai-daily:model-runtime-check',
+    'ai-daily:model-evaluate',
+    'ai-daily:model-approve',
   ]
   const missingScripts = requiredScripts.filter((name) => typeof scripts[name] !== 'string')
   results.push(
@@ -195,16 +198,21 @@ async function main() {
     ),
   )
 
-  const modelEvaluationContractOk = runOfflineContract('ai-daily:model-evaluation-check')
+  const modelEvaluationContractOk =
+    runOfflineContract('ai-daily:model-evaluation-check') &&
+    runOfflineContract('ai-daily:model-runtime-check')
+  const modelApprovalBundlePresent = await fileExists('server/data/ai-daily-model-approval.v1.json')
   results.push(
     check(
       'model-evaluation-contract',
       'Offline three-role model evaluation contract',
       modelEvaluationContractOk,
       modelEvaluationContractOk
-        ? 'Fixture contract passed with zero provider calls; real candidate evaluation and human approval remain gated'
+        ? modelApprovalBundlePresent
+          ? 'Three-role runtime contract passed and a reviewed approval bundle is present'
+          : 'Runtime contract passed with loopback only; real candidate evaluation and human approval remain gated'
         : 'model evaluation contract failed; run npm.cmd run ai-daily:model-evaluation-check for details',
-      modelEvaluationContractOk ? 'manual-gate' : 'fail',
+      modelEvaluationContractOk && modelApprovalBundlePresent ? 'pass' : modelEvaluationContractOk ? 'manual-gate' : 'fail',
     ),
   )
 
@@ -216,6 +224,10 @@ async function main() {
     'AI_DAILY_PUBLIC_RATE_LIMIT',
     'AI_DAILY_PUBLIC_RATE_WINDOW_MS',
     'AI_DAILY_PUBLIC_FEED_ENABLED',
+    'AI_DAILY_MODEL_RUNTIME_JSON',
+    'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
+    'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
+    'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
   ]
   const missingEnvKeys = requiredEnvKeys.filter((key) => !new RegExp(`^${key}=`, 'mu').test(envExample))
   results.push(
@@ -229,7 +241,16 @@ async function main() {
 
   const studioService = extractRenderServiceBlock(renderYaml, 'biau-content-studio-api')
   const studioEnv = parseRenderEnvValues(studioService)
-  const requiredRenderKeys = ['AI_DAILY_PUBLIC_CORS_ORIGINS', 'STUDIO_DATABASE_URL', 'AI_DAILY_TIME_ZONE', 'AI_DAILY_PUBLIC_FEED_ENABLED']
+  const requiredRenderKeys = [
+    'AI_DAILY_PUBLIC_CORS_ORIGINS',
+    'STUDIO_DATABASE_URL',
+    'AI_DAILY_TIME_ZONE',
+    'AI_DAILY_PUBLIC_FEED_ENABLED',
+    'AI_DAILY_MODEL_RUNTIME_JSON',
+    'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
+    'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
+    'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
+  ]
   const missingRenderKeys = requiredRenderKeys.filter((key) => !studioService.includes(`- key: ${key}`))
   const renderContractOk =
     studioService.length > 0 &&
@@ -270,13 +291,18 @@ async function main() {
     ),
   )
 
-  const liveEditorialProviderImplemented = !runnerSource.includes('ai-daily-production-provider-not-configured')
+  const liveEditorialProviderImplemented =
+    runnerSource.includes("process.argv.includes('--live')") &&
+    runnerSource.includes('buildAiDailyProductionProviders') &&
+    runnerSource.includes("profile: 'PRODUCTION'")
   results.push(
     check(
       'editorial-provider-gate',
       'Production editorial provider path',
       liveEditorialProviderImplemented,
-      liveEditorialProviderImplemented ? 'Production provider path is implemented' : 'manual gate: runner remains fixture-only and must not be enabled as a production Cron',
+      liveEditorialProviderImplemented
+        ? 'Production provider path is implemented and remains fail-closed behind --live, approval bundle, and environment enablement'
+        : 'manual gate: production provider path is missing',
       liveEditorialProviderImplemented ? 'pass' : 'manual-gate',
     ),
   )
@@ -300,7 +326,7 @@ async function main() {
 
   const rollbackDocumented =
     pipelineDoc.includes('暂停两个 Cron') &&
-    pipelineDoc.includes('`AI_DAILY_PUBLIC_FEED_ENABLED` 设为 `false`') &&
+    /AI_DAILY_PUBLIC_FEED_ENABLED[^\n]{0,80}(?:false|关闭)/u.test(pipelineDoc) &&
     pipelineDoc.includes('保留 Studio 手动编辑和离线导出路径')
   results.push(
     check(

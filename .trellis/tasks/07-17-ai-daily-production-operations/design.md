@@ -19,6 +19,13 @@ Configuration readiness is offline and never calls providers. The only live acce
 - A fallback must pass every absolute quality floor, remain within five percentage points of the primary acceptance rate, and use a different failure-domain alias.
 - Fixture records validate the contract only and cannot be production-approved. Business records require explicit execution evidence, remain pending after selection, and require human approval.
 
+## Runtime Provider And Live Execution
+
+- `AI_DAILY_MODEL_RUNTIME_JSON` is a server-only channel/candidate map. Channels own credentials and failure-domain aliases; candidates bind extractor/composer/verifier ids to channels.
+- The provider adapter uses OpenAI-compatible structured chat completion, omits `temperature`, bounds runtime inputs, and exposes only stable error categories. Endpoint compatibility fallback is allowed only after `404/405`; network, timeout, authentication, rate-limit, invalid-response, and `5xx` failures do not resubmit the same model task to another guessed path.
+- Real evaluation is serial and requires `--execute`, an enabled environment gate, and a matching approval id. It writes a Git-ignored proposal that retains aggregate scores/hashes but no prompt, source text, raw output, endpoint, or credential.
+- Human approval creates a tamper-evident bundle. Live execution revalidates bundle hashes and runtime provider/failure-domain/model identity, then claims only `PRODUCTION` work. Fixture execution claims only `FIXTURE` work.
+
 ## Rollback
 
 Disable both Cron Jobs and the public feed feature flag. Preserve database history and keep manual Studio/offline draft workflows available.

@@ -20,7 +20,7 @@
 - 模型验收只能使用用户批准的真实业务任务；禁止 ping、doctor、空 prompt 和无意义测活。
 - 完成记录只写低敏结论和可复跑命令，不记录配置值或私有内容。
 - 状态项目变化后运行 `npm.cmd run docs:manual-gates-check`，保证每个公开项目都有对应人工边界。
-- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:model-evaluation-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、真实模型评估与选型、生产 migration、Cron 启用或真实内容验收。
+- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:model-evaluation-check`、`npm.cmd run ai-daily:model-runtime-check`、`npm.cmd run ai-daily:runner-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、真实模型评估与选型、生产 migration、Cron 启用或真实内容验收。
 
 ## BIAU 平台门禁
 
@@ -56,7 +56,7 @@
 | Generation runner migration | 生产 Studio 数据库需要备份和可回滚 revision | 执行 `20260718010000_ai_daily_generation_runner` 后只记录 migration 名、成功状态和低敏计数 |
 | 首篇公开导出 | 公开数据文件必须审查 diff | `studio:export -- --run-checks`、博客检查和最终 Git diff |
 | AI Daily 真实来源与查询组 | 2026-07-19 已完成公共页面预审和站点所有者确认；16 个来源与 4 个核心查询组启用，hold/rejected 项关闭。来源包变更时重新触发此 gate | `ai-daily:manifest-check`、启用/批准/暂缓/拒绝数量、审核时间和低敏结论，不复制长段原文 |
-| AI Daily 三角色模型评估与选型 | fixture contract 只能验证算法；真实候选必须用 BIAU-owned case set 分别评估 extractor/composer/verifier，并由人工确认 primary、独立 failure-domain fallback 和 5 个百分点边界 | 版本化候选/选择 record hash、case-set/prompt/schema version、聚合质量和延迟摘要、审核时间与低敏结论；不记录 key、endpoint、prompt 或原始输出 |
+| AI Daily 三角色模型评估与选型 | 运行时 provider path、fixture contract 和 fail-closed bundle 校验已实现；真实候选仍必须用 BIAU-owned case set 分别评估 extractor/composer/verifier，并由人工确认 primary、独立 failure-domain fallback 和 5 个百分点边界 | `model-runtime-check`、版本化候选/选择/bundle hash、case-set/prompt/schema version、聚合质量和延迟摘要、审核时间与低敏结论；不记录 key、endpoint、prompt 或原始输出 |
 | AI Daily 自动化 | 自动抓取和发布存在事实与版权风险 | 默认保持关闭；人工流程稳定后再选择调度器 |
 | AI Daily 公开 Feed 上线 | 新增公开索引 migration、Cloudflare browser base 和 Studio CORS allowlist 需要平台配置 | 只记录 migration 名、公开 route HTTP 状态、ETag/CORS 类别和页面截图，不记录数据库 URL 或 token |
 | AI Daily retention mutation | 删除/归档会触及 evidence、公开投影和审核审计链 | 当前仅允许受保护 dry-run；未来必须先备份、审查候选、批准显式 mutate、分批事务执行并验证回滚 |
@@ -105,10 +105,11 @@
    - 在 `biau-content-studio-api` 执行包含 `20260718010000_ai_daily_generation_runner` 的 migration，再重新部署最新代码。
    - 只复核 `/health`、migration 名、checkpoint/revision 表可查询和低敏计数；不要运行真实模型测活。
 
-2. **批准 AI Daily 来源并完成三角色业务评估**
-   - 逐条审核来源 manifest 与 query groups；未批准条目继续保持 disabled。
-   - 使用同一 BIAU-owned case set 分别评估 extractor、composer 和 verifier 候选；这是一项用户批准的真实业务任务，不运行 ping、doctor 或空 prompt。
-   - 审核聚合指标、failure-domain alias、primary/fallback 和 record hash；选择记录先保持 pending，明确批准后才可接入 production provider。
+2. **完成三角色业务评估并批准 selection bundle**
+   - 来源预审已完成：16 个来源与 4 个核心查询组启用，hold/rejected 项关闭；只有来源包变更时才重新触发来源 gate。
+   - 使用同一 BIAU-owned case set 分别评估 extractor、composer 和 verifier 候选；这是一项用户批准的真实业务任务，不运行 ping、doctor 或空 prompt。评估命令必须同时满足 `--execute`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=true` 和匹配的 `--approval-id`。
+   - 审核聚合指标、failure-domain alias、primary/fallback 和 record hash；选择记录先保持 `pending`，确认后用 `ai-daily:model-approve` 生成 bundle。bundle 未批准或 runtime channel 漂移时，production runner 必须拒绝启动。
+   - 评估完成后只记录低敏摘要；不要提交本地 proposal、真实 endpoint、key、prompt、原始输出或模型响应。
 
 3. **上线 AI Daily 公开 Feed**
    - 在生产 Studio 数据库执行 `20260719020000_ai_daily_public_feed_index`，执行前保留备份和上一 Render revision。
@@ -127,6 +128,17 @@
 
 6. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。
+
+## AI Daily 运行时人工门禁
+
+以下实现已经在仓库中完成，但故意保持关闭，等待站点所有者针对具体候选模型任务作出单独批准：
+
+- `ai-daily:model-runtime-check` 只使用 loopback provider，证明结构化请求不携带 `temperature`、响应解析、超时分类、bundle 防篡改和 `--fixture/--live` 互斥；它不验证外部模型可用性。
+- `ai-daily:model-evaluate -- --execute` 会串行运行 30 个合成业务案例/候选，属于真实模型业务任务，不得由部署 hook、health check 或 Cron 自动触发。
+- `ai-daily:model-approve` 不调用模型，只在人工审阅 proposal 后生成批准 bundle。
+- `ai-daily:run -- --date <YYYY-MM-DD> --live` 是首个真实版次的人工入口；只有 production 开关、runtime config 和批准 bundle 同时有效时才会领取 `PRODUCTION` work。
+
+在真实版次通过 Studio 审核、导出和公开部署验收前，Render 上的 `AI_DAILY_BUSINESS_EVALUATION_ENABLED`、`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和两个 Cron 都保持关闭。
 
 ## 延期项
 

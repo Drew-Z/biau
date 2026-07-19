@@ -48,6 +48,10 @@ AI_DAILY_TIME_ZONE=Asia/Shanghai
 AI_DAILY_PUBLIC_FEED_ENABLED=false
 AI_DAILY_PUBLIC_WINDOW_HOURS=72
 AI_DAILY_PUBLIC_STALE_MINUTES=180
+AI_DAILY_MODEL_RUNTIME_JSON=<server-only channel and candidate mapping>
+AI_DAILY_BUSINESS_EVALUATION_ENABLED=false
+AI_DAILY_MODEL_EVALUATION_APPROVAL_ID=<one approved evaluation run id>
+AI_DAILY_PRODUCTION_GENERATION_ENABLED=false
 NODE_VERSION=22
 ```
 
@@ -70,12 +74,13 @@ VITE_AI_DAILY_API_BASE_URL=https://<studio-service>.onrender.com
 npm.cmd run ai-daily:production-readiness-check
 npm.cmd run ai-daily:production-readiness-check -- --json
 npm.cmd run ai-daily:manifest-check
+npm.cmd run ai-daily:model-runtime-check
 npm.cmd run ai-daily:operations-check
 npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 ```
 
-`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。这些检查都只使用仓库资产或纯内存 fixture。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:model-runtime-check` 只使用 loopback HTTP 验证运行时配置、无 temperature 的结构化请求、审批 bundle 防篡改以及 `--fixture/--live` 门禁，不调用外部 provider；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
 
 ## 生产运维诊断
 
@@ -184,7 +189,7 @@ npm.cmd run ai-daily:resume -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:editorial-tick -- --fixture
 ```
 
-## 离线模型评估与角色选型
+## 三角色模型评估与角色选型
 
 AI Daily 不按公开榜单直接指定一个“最佳模型”。extractor、composer 和 verifier 分角色使用同一版 BIAU-owned case set、prompt version、generation schema version 与质量口径进行离线评估，各角色可以选择不同的 primary 与 ordered fallback。
 
@@ -203,6 +208,24 @@ npm.cmd run ai-daily:model-evaluation-check
 
 fixture contract 通过只说明仓库算法和门禁有效，不说明任何真实模型已经评估或获批。真实候选必须在用户批准的业务评估任务中运行，生成三角色选择记录后仍保持 `approval.status=pending`，由人工确认 primary/fallback 和故障域后才能批准。
 
+运行时使用一个 server-only JSON：`channels` 保存模型、私有 base URL、API key、provider alias 与 failure-domain alias，`candidates` 只把候选 id 和角色映射到 channel。每个角色必须配置 2-3 个候选，并至少覆盖两个独立 failure domain；同一个 channel 可以参与多个角色，不需要准备六套密钥。真实值只放 Render secret 或忽略的本地环境文件。
+
+真实业务评估不会由健康检查或部署自动触发。它必须同时满足 `--execute`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=true`，以及命令中的 `--approval-id` 与 `AI_DAILY_MODEL_EVALUATION_APPROVAL_ID` 完全相同：
+
+```powershell
+npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
+```
+
+评估按候选顺序串行执行，每个角色使用 30 个版本化 BIAU-owned 合成业务案例，覆盖官方发布、多来源、数字、更正、中文来源和低证据场景。请求不设置 `temperature`，不会并发轰击同一中转。默认只写入被 Git 忽略的 `server/data/ai-daily-model-evaluation.local.json`；内容只有 case score、聚合质量、延迟、调用计数和 hash，不保存 prompt、输入正文、原始输出、endpoint、key 或错误响应。
+
+人工确认 proposal 后再执行审批命令；该命令不调用模型，只把 selection 与审核结论写成可审查、可提交的 bundle：
+
+```powershell
+npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluation.local.json --reviewed-by site-owner --notes "Measured selection approved for one controlled edition."
+```
+
+审批输出为 `server/data/ai-daily-model-approval.v1.json`。生产 runner 会重新校验 candidate record、selection record、bundle hash，以及 runtime channel 的 provider/failure-domain/model 是否漂移；任何不一致都会 fail closed。
+
 ## Render Cron 运行草案
 
 平台 Cron 使用 UTC 表达式，应用内部使用 `AI_DAILY_TIME_ZONE=Asia/Shanghai` 计算 edition date。每个 job 的执行 deadline 必须短于调度间隔，并依靠 durable work item、lease 和 checkpoint resume 处理重启：
@@ -210,11 +233,11 @@ fixture contract 通过只说明仓库算法和门禁有效，不说明任何真
 | Job | UTC schedule | command | deadline rule |
 | --- | --- | --- | --- |
 | Ingest Cron | `*/15 * * * *` | `npm run ai-daily:ingest-tick` | 小于 15 分钟 |
-| Editorial Cron | `0 * * * *` | `npm run ai-daily:editorial-tick`（当前仅保留命令契约） | 小于 60 分钟 |
+| Editorial Cron | `0 * * * *` | `npm run ai-daily:editorial-tick -- --live` | 小于 60 分钟 |
 
-这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。当前 editorial runner 只有 fixture provider，未实现真实 provider 执行路径；没有 `--fixture` 会 fail closed，带 `--fixture` 也不允许作为生产 Cron。完成 provider 角色选择、来源审核和一次真实业务版次验收后，才可以另行实现并启用 production runner。回滚时先暂停两个 Cron，再把 `AI_DAILY_PUBLIC_FEED_ENABLED` 设为 `false`，保留 Studio 手动编辑和离线导出路径。
+这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。editorial runner 已实现 production provider 路径，但默认关闭：`--fixture` 只选择 FIXTURE work，`--live` 只选择 PRODUCTION work，两者互斥；live 还要求 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`、完整 runtime config 和已批准 bundle。完成模型评估与一次真实业务版次验收前，必须保持开关为 `false` 且不要创建 Cron。回滚时先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 `AI_DAILY_PUBLIC_FEED_ENABLED` 都设为 `false`，保留 Studio 手动编辑和离线导出路径。
 
-未配置并获批生产 provider 时，`run`、`compose`、`resume` 和 `editorial-tick` 会 fail closed，不会发送测活请求。生产 provider 接入属于单独的 production operations gate。
+未配置并获批生产 provider 时，`run`、`compose`、`resume` 和 `editorial-tick` 会 fail closed，不会发送测活请求。首个真实版次使用 `npm.cmd run ai-daily:run -- --date <edition-date> --live` 人工执行；通过 Studio 审核后才考虑 Cron。
 
 ## 模型边界
 

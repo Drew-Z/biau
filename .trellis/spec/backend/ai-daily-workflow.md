@@ -66,13 +66,15 @@ Worker projection revalidates the active work-item lease inside the same transac
 
 ### Command and provider boundary
 
-The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compose`, `ai-daily:resume`, and `ai-daily:editorial-tick` require an explicit `--fixture` until a separately approved business acceptance run configures real providers. No model or search liveness request is a valid health check.
+The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compose`, `ai-daily:resume`, and `ai-daily:editorial-tick` require an explicit mutually-exclusive `--fixture` or `--live` mode. `--fixture` selects `FIXTURE` work and never calls an external provider. `--live` additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`, a server-only runtime candidate config, and a validated approved model-selection bundle; missing or drifting configuration fails closed. No model or search liveness request is a valid health check.
+
+The live provider boundary is OpenAI-compatible chat completion with a structured JSON response. The request deliberately omits optional sampling fields such as `temperature` because relay compatibility is not guaranteed. Runtime channels carry private base URLs and keys only in deployment environment; candidate records and approval bundles retain provider/failure-domain aliases, model identifiers, aggregate quality, latency, usage summaries, and hashes, never endpoints, credentials, prompts, source text, raw outputs, or raw provider errors.
 
 ## Scenario: Offline model evaluation and role selection
 
 ### 1. Scope / Trigger
 
-- Trigger: changing AI Daily quality thresholds, evaluation case sets, extractor/composer/verifier candidate records, primary/fallback selection, or production model approval.
+- Trigger: changing AI Daily quality thresholds, evaluation case sets, extractor/composer/verifier candidate records, runtime model channels, provider compatibility, primary/fallback selection, production model approval, or live runner mode.
 - Goal: make model selection evidence-based and tamper-evident without turning fixture checks into model liveness calls or production approval.
 
 ### 2. Signatures
@@ -82,18 +84,27 @@ The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compo
 - `selectAiDailyModelEvaluation({ selectionId, generatedAt, candidates })` -> three-role pending selection record.
 - `approveAiDailyModelEvaluation(selection, review)` -> approved record or `ai-daily-model-evaluation-approval-rejected`.
 - Deterministic command: `npm.cmd run ai-daily:model-evaluation-check`.
+- Runtime contract command: `npm.cmd run ai-daily:model-runtime-check` (loopback only, zero external calls).
+- Real business command: `npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>`.
+- Human approval command: `npm.cmd run ai-daily:model-approve -- --input <proposal.local.json> --reviewed-by <safe-id> --notes <safe-note>`.
+- Production edition command: `npm.cmd run ai-daily:run -- --date <YYYY-MM-DD> --live`.
 
 Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failureDomainRef`, `modelIdentifier`, `caseSetId`, `caseSetHash`, `caseDescriptors`, `promptVersion`, `generationSchemaVersion`, `evaluatedAt`, aggregate case results, performance, and execution evidence.
 
 ### 3. Contracts
 
 - `server/src/aiDailyModelEvaluation.ts` owns the versioned candidate, selection, and approval record contract for extractor, composer, and verifier.
+- `server/src/aiDailyModelRuntime.ts` owns server-only channel/candidate configuration parsing and safe summaries; `server/src/aiDailyModelProvider.ts` owns the OpenAI-compatible structured provider adapter; `server/src/aiDailyModelProduction.ts` binds an approved selection bundle to runtime channels.
 - Every candidate must use the same role-local case-set id/hash, prompt version, generation schema version, and evaluation profile. The candidate input includes case descriptors; the module recomputes their SHA-256 hash and rejects self-reported hash or membership drift.
 - Candidate quality reuses `evaluateAiDailyQualityReport()`. A primary is ordered by acceptance, Chinese editorial score, citation coverage, citation precision, p95 latency, and stable candidate id.
 - A fallback must independently pass every absolute quality floor, remain within 500 basis points of the primary acceptance rate, and use a different low-sensitive failure-domain alias. Multiple aliases for one outage domain must not be reported as full redundancy.
 - `fixture-contract` execution evidence requires zero model calls and no result-set hash. It validates selection behavior only and makes every role approval-ineligible.
 - `business-evaluation` execution evidence requires a recorded evaluation run id, evaluator version, completed case count, non-zero model-call count, and result-set hash. Selection still writes `approval.status=pending`; only explicit human review may produce an approved record.
 - Candidate records retain low-sensitive aliases, versions, hashes, aggregate quality, latency, and usage summaries only. The selection stores a stable `candidateSetHash` over candidate id + record hash pairs so approval remains bound to the measured record set. Do not store prompts, source text, raw outputs, endpoints, credentials, provider bodies, or raw errors.
+- `AI_DAILY_MODEL_RUNTIME_JSON` is server-only. Channel URLs must use HTTPS in production and reject URL credentials, query strings, and fragments; local loopback HTTP is allowed only by explicit deterministic-test configuration. Each role must have a candidate, while the real evaluator additionally requires 2-3 candidates and at least two failure domains per role.
+- The OpenAI-compatible adapter deliberately omits `temperature`. It accepts an exact `/chat/completions` endpoint, a `/v1` base, or a provider base that can be resolved through the two known paths. Only `404` or `405` proves a guessed path is incompatible and permits trying the alternate path. Timeout, network, authentication, rate-limit, invalid response, and `5xx` failures stop immediately so one business task is not submitted twice and the original failure category is preserved.
+- Real evaluation is serial and requires all three gates: `--execute`, `AI_DAILY_BUSINESS_EVALUATION_ENABLED=true`, and a command `--approval-id` equal to `AI_DAILY_MODEL_EVALUATION_APPROVAL_ID`. The default proposal path contains `.local.` and is Git-ignored.
+- Production binding revalidates candidate, role, provider alias, failure-domain alias, model identifier, candidate/selection/bundle hashes, and approval status against the current runtime. `--fixture` claims only `FIXTURE` work; `--live` claims only `PRODUCTION` work and additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`.
 
 ### 4. Validation & Error Matrix
 
@@ -106,6 +117,10 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Same failure-domain fallback -> exclude it from `fallbackCandidateIds`; report reduced redundancy and `fallback-shares-primary-failure-domain` when no independent fallback remains.
 - Fixture selection approval -> `ai-daily-model-evaluation-approval-rejected` with `fixture-selection-cannot-be-approved`.
 - Sensitive review metadata -> approval rejected with a `*-sensitive` issue.
+- Missing/malformed runtime JSON, role candidate gap, duplicate id, unsafe URL, or missing key/model -> `invalid-ai-daily-model-runtime:<stable issues>` before any provider call.
+- Provider `404`/`405` on a guessed path -> try the alternate known completion path; provider `5xx`, timeout, network error, or any other HTTP failure -> stop with one low-sensitive `ai-daily-provider-*` category and do not retry a different guessed path.
+- Missing or tampered proposal/bundle fields or hashes -> stable invalid artifact error; runtime provider/failure-domain/model drift -> `ai-daily-<role>-runtime-channel-drift`.
+- No explicit runner mode, both modes, disabled production, or missing approved bundle -> fail before claiming generation work.
 
 ### 5. Good / Base / Bad Cases
 
@@ -113,10 +128,14 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Base: a role has one eligible primary but no independent fallback; selection remains visible as `reduced_redundancy` and requires human judgment.
 - Bad: copy fixture metrics, change only `profile` to `business-evaluation`, and approve; execution-mode validation must reject it.
 - Bad: register two candidate ids backed by the same relay failure domain and report them as full redundancy.
+- Good: a base URL without `/v1` returns `404` for the first known path and succeeds on the second; exactly two loopback requests are observed.
+- Base: an approved bundle is present but the runtime model identifier changed; live execution fails closed and requires a new measured approval.
+- Bad: after a `503` from the first guessed endpoint, submit the same prompt to a second guessed endpoint and finally report its `404`, hiding the original provider outage.
 
 ### 6. Tests Required
 
 - Run `npm.cmd run ai-daily:model-evaluation-check` after changing quality thresholds, role selection, fallback rules, case-set hashing, evaluation records, or approval state.
+- Run `npm.cmd run ai-daily:model-runtime-check` after changing runtime channel parsing, structured request compatibility, approval bundle validation, or runner mode gates. Assert URL credentials/query/hash rejection, no `temperature`, `404/405` compatibility fallback, no duplicate request after `5xx`, artifact tamper rejection, runtime drift rejection, and `externalProviderCalls=0`. Run the real evaluator only with the explicit `--execute` and approval-id gates; it is a business task, not a health check.
 - Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.
 - A passing fixture contract is a repository check, not a production model approval. Real candidate execution and human primary/fallback approval remain manual gates.
 - Also run `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and a sensitive-value scan before commit.
@@ -141,6 +160,25 @@ const fallback = eligibleCandidates.find((candidate) =>
 ```
 
 The fallback passes the shared absolute quality floor, stays within the measured acceptance boundary, and is independent of the primary failure domain.
+
+#### Wrong
+
+```ts
+if (failure === 'network' || failure === 'upstream-5xx') {
+  continue // try another guessed URL with the same model task
+}
+```
+
+This can duplicate a real generation request and replace the useful original failure with a later path error.
+
+#### Correct
+
+```ts
+if (failure === 'http-404' || failure === 'http-405') continue
+throw new Error(failure)
+```
+
+Only path incompatibility permits endpoint fallback; execution failures remain single-attempt and keep their original low-sensitive category.
 
 ## Scenario: Offline AI Daily Drafts
 

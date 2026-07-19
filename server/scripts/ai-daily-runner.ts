@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto'
 import { disconnectPrisma, requireStudioDatabase } from '../src/db.js'
 import { buildAiDailyGenerationProvidersFixture } from '../src/aiDailyGenerationFixtures.js'
+import type { AiDailyGenerationProviders } from '../src/aiDailyGeneration.js'
 import { executeAiDailyGenerationWork } from '../src/aiDailyGenerationRunner.js'
+import { buildAiDailyProductionProviders, loadAiDailyModelApprovalBundle } from '../src/aiDailyModelProduction.js'
+import { readAiDailyModelRuntimeConfig } from '../src/aiDailyModelRuntime.js'
+import { resolveAiDailyRunnerGenerationMode } from '../src/aiDailyRunnerMode.js'
 import { env } from '../src/env.js'
 import { formatAiDailyApplicationDate } from '../src/aiDailyScheduling.js'
 import { aiDailyIngestionDeadlineWindowMs } from '../src/aiDailyIngestionService.js'
@@ -14,6 +18,7 @@ import {
 
 const command = process.argv[2]
 const fixtureMode = process.argv.includes('--fixture')
+const liveMode = process.argv.includes('--live')
 const workerId = `ai-daily-cli-${randomUUID().slice(0, 8)}`
 
 async function main() {
@@ -22,15 +27,13 @@ async function main() {
     case 'ingest-tick':
       return runIngestTick(prisma)
     case 'editorial-tick':
-      requireFixtureMode()
-      return runEditorialTick(prisma)
+      return runEditorialTick(prisma, await resolveGenerationExecution())
     case 'run':
     case 'compose':
     case 'resume':
-      requireFixtureMode()
-      return runIssueCommand(prisma, command)
+      return runIssueCommand(prisma, command, await resolveGenerationExecution())
     default:
-      throw new Error('usage: ai-daily-runner <ingest-tick|editorial-tick|run|compose|resume> [--issue <id>|--date YYYY-MM-DD] [--fixture]')
+      throw new Error('usage: ai-daily-runner <ingest-tick|editorial-tick|run|compose|resume> [--issue <id>|--date YYYY-MM-DD] [--fixture|--live]')
   }
 }
 
@@ -52,13 +55,17 @@ async function runIngestTick(prisma: ReturnType<typeof requireStudioDatabase>) {
   console.log(`AI Daily ingest tick queued ${feeds.length} due source feed work item(s)`)
 }
 
-async function runEditorialTick(prisma: ReturnType<typeof requireStudioDatabase>, runId?: string) {
+async function runEditorialTick(
+  prisma: ReturnType<typeof requireStudioDatabase>,
+  execution: GenerationExecution,
+  runId?: string,
+) {
   const claimed = await claimAiDailyWorkItem(prisma, {
     leaseOwner: workerId,
     leaseDurationMs: 20 * 60_000,
     runId,
     kinds: ['EXTRACT_FACTS'],
-    profiles: ['FIXTURE'],
+    profiles: [execution.profile],
   })
   if (!claimed) {
     console.log('AI Daily editorial tick found no generation work')
@@ -68,9 +75,9 @@ async function runEditorialTick(prisma: ReturnType<typeof requireStudioDatabase>
     prisma,
     workItemId: claimed.workItem.id,
     leaseToken: claimed.leaseToken,
-    providers: buildAiDailyGenerationProvidersFixture(),
+    providers: execution.providers,
     workerId,
-    modelIdentifier: 'fixture-provider-suite',
+    modelIdentifier: execution.modelIdentifier,
   })
   console.log(`AI Daily editorial tick completed with ${result.outcome}`)
   return result
@@ -79,6 +86,7 @@ async function runEditorialTick(prisma: ReturnType<typeof requireStudioDatabase>
 async function runIssueCommand(
   prisma: ReturnType<typeof requireStudioDatabase>,
   triggerCommand: 'run' | 'compose' | 'resume',
+  execution: GenerationExecution,
 ) {
   const issueId = readArg('--issue')
   const date = readArg('--date')
@@ -91,16 +99,42 @@ async function runIssueCommand(
   const queued = await queueAiDailyGenerationWork(prisma, {
     issueId: issue.id,
     trigger: triggerCommand === 'resume' ? 'RETRY' : 'MANUAL',
-    profile: 'FIXTURE',
-    configVersion: 'ai-daily-generation-runner-v1',
+    profile: execution.profile,
+    configVersion: execution.configVersion,
   })
-  return runEditorialTick(prisma, queued.run.id)
+  return runEditorialTick(prisma, execution, queued.run.id)
 }
 
-function requireFixtureMode() {
-  if (!fixtureMode) {
-    throw new Error('ai-daily-production-provider-not-configured; pass --fixture only for deterministic development fixtures')
+async function resolveGenerationExecution(): Promise<GenerationExecution> {
+  const mode = resolveAiDailyRunnerGenerationMode({
+    fixture: fixtureMode,
+    live: liveMode,
+    productionEnabled: env.aiDailyProductionGenerationEnabled,
+  })
+  if (mode === 'fixture') {
+    return {
+      profile: 'FIXTURE',
+      providers: buildAiDailyGenerationProvidersFixture(),
+      configVersion: 'ai-daily-generation-runner-fixture-v1',
+      modelIdentifier: 'fixture-provider-suite',
+    }
   }
+  const runtime = readAiDailyModelRuntimeConfig()
+  if (!runtime.ok) throw new Error(`invalid-ai-daily-model-runtime:${runtime.issues.join(',')}`)
+  const bundle = await loadAiDailyModelApprovalBundle(env.aiDailyModelApprovalFile || undefined)
+  return {
+    profile: 'PRODUCTION',
+    providers: buildAiDailyProductionProviders({ runtime: runtime.config, bundle }),
+    configVersion: `ai-daily-generation-runner-${bundle.bundleHash.slice(0, 12)}`,
+    modelIdentifier: `approved-selection/${bundle.selection.recordHash.slice(0, 12)}`,
+  }
+}
+
+interface GenerationExecution {
+  profile: 'FIXTURE' | 'PRODUCTION'
+  providers: AiDailyGenerationProviders
+  configVersion: string
+  modelIdentifier: string
 }
 
 function readArg(name: string) {

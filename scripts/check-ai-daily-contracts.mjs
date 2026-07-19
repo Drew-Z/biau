@@ -24,6 +24,7 @@ const deterministicChecks = [
   'ai-daily:composition-check',
   'ai-daily:quality-check',
   'ai-daily:model-evaluation-check',
+  'ai-daily:model-runtime-check',
   'ai-daily:runner-check',
   'ai-daily:public-feed-check',
   'ai-daily:operations-check',
