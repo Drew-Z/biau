@@ -6,6 +6,7 @@ const workStatuses = ['PENDING', 'LEASED', 'RETRY_WAIT', 'SUCCEEDED', 'FAILED', 
 const sourceHealthStatuses = ['UNKNOWN', 'HEALTHY', 'DEGRADED', 'FAILING'] as const
 const eventOutcomes = ['persisted', 'succeeded', 'failed', 'schema-rejected', 'quality-rejected', 'other'] as const
 const providerRoles = ['primary', 'fallback', 'stable', 'signal', 'manual', 'other'] as const
+export const aiDailyFailureCategories = ['config', 'provider', 'evidence', 'quality', 'infrastructure', 'stale-content'] as const
 const issueStatuses = [
   'SOURCE_COLLECTED',
   'EXTRACTED',
@@ -24,7 +25,11 @@ type WorkStatus = (typeof workStatuses)[number]
 type SourceHealthStatus = (typeof sourceHealthStatuses)[number]
 type EventOutcome = (typeof eventOutcomes)[number]
 type ProviderRole = (typeof providerRoles)[number]
+export type AiDailyFailureCategory = (typeof aiDailyFailureCategories)[number]
 type IssueStatus = (typeof issueStatuses)[number]
+
+const failureObservationWindowHours = 24
+const defaultPublicStaleMinutes = 180
 
 export interface AiDailyOperationsSnapshot {
   capturedAt: string
@@ -52,6 +57,11 @@ export interface AiDailyOperationsSnapshot {
     byOutcome: Record<EventOutcome, number>
     byProviderRole: Record<ProviderRole, number>
   }
+  failures: {
+    observationWindowHours: number
+    staleAfterMs: number
+    byCategory: Record<AiDailyFailureCategory, number>
+  }
   issues: {
     byStatus: Record<IssueStatus, number>
   }
@@ -67,7 +77,14 @@ export interface AiDailyOperationsSnapshot {
 }
 
 export interface AiDailyOperationsAlert {
-  code: 'source-failing' | 'lease-expired' | 'work-backlog' | 'run-failed' | 'quality-rejected' | 'retention-due'
+  code:
+    | 'source-failing'
+    | 'lease-expired'
+    | 'work-backlog'
+    | 'run-failed'
+    | 'quality-rejected'
+    | 'retention-due'
+    | `failure-${AiDailyFailureCategory}`
   severity: 'warning' | 'critical'
   count: number
 }
@@ -125,23 +142,86 @@ function safeProviderRole(value: unknown): ProviderRole {
   return (providerRoles as readonly string[]).includes(value) ? (value as ProviderRole) : 'other'
 }
 
+function normalizedFailureCode(value: unknown) {
+  return typeof value === 'string' ? value.trim().toLowerCase().replaceAll('_', '-') : ''
+}
+
+export function classifyAiDailyFailureCategory(value: unknown): AiDailyFailureCategory | null {
+  const code = normalizedFailureCode(value)
+  if (!code) return null
+  if (code === 'freshness-stale' || code.includes('stale-content')) return 'stale-content'
+  if (code === 'provider-quality-below-floor' || code.includes('schema') || code.includes('quality')) return 'quality'
+  if (
+    code === 'unsafe-url' ||
+    code === 'robots-disallowed' ||
+    code === 'render-required' ||
+    code === 'fetch-empty' ||
+    code === 'evidence-rejected' ||
+    code === 'evidence-pack-empty' ||
+    code.includes('needs-more-evidence')
+  ) return 'evidence'
+  if (
+    code === 'timeout' ||
+    code === 'network-error' ||
+    code === 'deadline-exceeded' ||
+    code === 'checkpoint-error' ||
+    code === 'lease-error' ||
+    code === 'lease-expired' ||
+    code === 'max-attempts-exhausted' ||
+    code === 'generation-runner-error' ||
+    code === 'ai-daily-provider-timeout' ||
+    code === 'ai-daily-provider-network-error'
+  ) return 'infrastructure'
+  if (code === 'config-error' || code === 'failed-config' || code.includes('not-configured') || code.includes('config-missing')) return 'config'
+  if (
+    code === 'auth-error' ||
+    code === 'rate-limited' ||
+    code === 'invalid-response' ||
+    code === 'provider-error' ||
+    code.startsWith('ai-daily-provider-')
+  ) return 'provider'
+  return null
+}
+
+function addFailureSignals(
+  target: Record<AiDailyFailureCategory, number>,
+  rawCategory: unknown,
+  count: number,
+  fallback: AiDailyFailureCategory | null = null,
+) {
+  const category = classifyAiDailyFailureCategory(rawCategory) ?? fallback
+  if (category) target[category] = boundedCount(target[category] + boundedCount(count))
+}
+
+function failureSeverity(category: AiDailyFailureCategory): AiDailyOperationsAlert['severity'] {
+  return category === 'config' || category === 'provider' || category === 'infrastructure' ? 'critical' : 'warning'
+}
+
 function iso(value: Date | null | undefined) {
   return value instanceof Date && Number.isFinite(value.getTime()) ? value.toISOString() : null
 }
 
-export async function loadAiDailyOperationsSnapshot(prisma: PrismaClient, now = new Date()): Promise<AiDailyOperationsSnapshot> {
-  const eventWindowStart = new Date(now.getTime() - 24 * 60 * 60 * 1_000)
+export async function loadAiDailyOperationsSnapshot(
+  prisma: PrismaClient,
+  now = new Date(),
+  publicStaleMinutes = defaultPublicStaleMinutes,
+): Promise<AiDailyOperationsSnapshot> {
+  const eventWindowStart = new Date(now.getTime() - failureObservationWindowHours * 60 * 60 * 1_000)
+  const staleAfterMs = boundedCount(publicStaleMinutes) * 60 * 1_000 || defaultPublicStaleMinutes * 60 * 1_000
   const [
     enabledSources,
     sourceHealthGroups,
+    sourceErrorGroups,
     sourceLag,
     runStatusGroups,
+    recentRunFailureGroups,
     activeStageGroups,
     latestRun,
     workStatusGroups,
+    recentWorkFailureGroups,
     readyBacklog,
     expiredLeases,
-    eventOutcomeGroups,
+    eventOutcomeErrorGroups,
     eventRoleGroups,
     issueStatusGroups,
     activeApproved,
@@ -151,17 +231,39 @@ export async function loadAiDailyOperationsSnapshot(prisma: PrismaClient, now = 
   ] = await Promise.all([
     prisma.aiDailySourceFeed.count({ where: { enabled: true } }),
     prisma.aiDailySourceFeed.groupBy({ by: ['healthStatus'], where: { enabled: true }, _count: { _all: true } }),
+    prisma.aiDailySourceFeed.groupBy({
+      by: ['lastErrorCategory'],
+      where: {
+        enabled: true,
+        lastErrorCategory: { not: null },
+        OR: [
+          { lastAttemptedAt: { gte: eventWindowStart } },
+          { healthStatus: { in: ['DEGRADED', 'FAILING'] } },
+        ],
+      },
+      _count: { _all: true },
+    }),
     prisma.aiDailySourceFeed.aggregate({ where: { enabled: true }, _max: { lastLagMs: true } }),
     prisma.aiDailyRun.groupBy({ by: ['status'], _count: { _all: true } }),
+    prisma.aiDailyRun.groupBy({
+      by: ['status', 'finalErrorCategory'],
+      where: { status: { in: ['FAILED_CONFIG', 'FAILED'] }, updatedAt: { gte: eventWindowStart } },
+      _count: { _all: true },
+    }),
     prisma.aiDailyRun.groupBy({ by: ['currentStage'], where: { status: 'RUNNING', currentStage: { not: null } }, _count: { _all: true } }),
     prisma.aiDailyRun.findFirst({
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       select: { status: true, currentStage: true, endToEndLagMs: true, pipelineFreshnessAt: true },
     }),
     prisma.aiDailyWorkItem.groupBy({ by: ['status'], _count: { _all: true } }),
+    prisma.aiDailyWorkItem.groupBy({
+      by: ['status', 'lastErrorCategory'],
+      where: { status: { in: ['RETRY_WAIT', 'FAILED'] }, updatedAt: { gte: eventWindowStart } },
+      _count: { _all: true },
+    }),
     prisma.aiDailyWorkItem.count({ where: { status: { in: ['PENDING', 'RETRY_WAIT'] }, availableAt: { lte: now } } }),
     prisma.aiDailyWorkItem.count({ where: { status: 'LEASED', leaseExpiresAt: { lte: now } } }),
-    prisma.aiDailyRunEvent.groupBy({ by: ['outcome'], where: { createdAt: { gte: eventWindowStart } }, _count: { _all: true } }),
+    prisma.aiDailyRunEvent.groupBy({ by: ['outcome', 'errorCategory'], where: { createdAt: { gte: eventWindowStart } }, _count: { _all: true } }),
     prisma.aiDailyRunEvent.groupBy({ by: ['providerRole'], where: { createdAt: { gte: eventWindowStart } }, _count: { _all: true } }),
     prisma.aiDailyIssue.groupBy({ by: ['status'], _count: { _all: true } }),
     prisma.aiDailyFlashItem.count({
@@ -209,7 +311,7 @@ export async function loadAiDailyOperationsSnapshot(prisma: PrismaClient, now = 
   }
 
   const byOutcome = emptyMap(eventOutcomes)
-  for (const group of eventOutcomeGroups) byOutcome[safeEventOutcome(group.outcome)] += readGroupCount(group)
+  for (const group of eventOutcomeErrorGroups) byOutcome[safeEventOutcome(group.outcome)] += readGroupCount(group)
 
   const byProviderRole = emptyMap(providerRoles)
   for (const group of eventRoleGroups) byProviderRole[safeProviderRole(group.providerRole)] += readGroupCount(group)
@@ -223,6 +325,26 @@ export async function loadAiDailyOperationsSnapshot(prisma: PrismaClient, now = 
   const latestApprovedAt = iso(latestApproved?.lastApprovedAt)
   const latestApprovedMs = latestApproved?.lastApprovedAt?.getTime()
   const ageMs = Number.isFinite(latestApprovedMs) ? Math.max(0, now.getTime() - (latestApprovedMs as number)) : null
+  const latestRunFreshnessAgeMs = latestRun?.pipelineFreshnessAt instanceof Date
+    ? Math.max(0, now.getTime() - latestRun.pipelineFreshnessAt.getTime())
+    : null
+  const byFailureCategory = emptyMap(aiDailyFailureCategories)
+  for (const group of sourceErrorGroups) addFailureSignals(byFailureCategory, group.lastErrorCategory, readGroupCount(group))
+  for (const group of recentRunFailureGroups) {
+    const count = readGroupCount(group)
+    if (group.status === 'FAILED_CONFIG') byFailureCategory.config = boundedCount(byFailureCategory.config + count)
+    else addFailureSignals(byFailureCategory, group.finalErrorCategory, count, 'infrastructure')
+  }
+  for (const group of recentWorkFailureGroups) addFailureSignals(byFailureCategory, group.lastErrorCategory, readGroupCount(group), 'infrastructure')
+  for (const group of eventOutcomeErrorGroups) {
+    const count = readGroupCount(group)
+    const fallback = group.outcome === 'quality-rejected' || group.outcome === 'schema-rejected' ? 'quality' : null
+    addFailureSignals(byFailureCategory, group.errorCategory, count, fallback)
+  }
+  byFailureCategory.evidence = boundedCount(byFailureCategory.evidence + byIssueStatus.NEEDS_MORE_EVIDENCE)
+  byFailureCategory.infrastructure = boundedCount(byFailureCategory.infrastructure + boundedCount(expiredLeases))
+  if (ageMs !== null && ageMs > staleAfterMs) byFailureCategory['stale-content'] += 1
+  if (latestRunFreshnessAgeMs !== null && latestRunFreshnessAgeMs > staleAfterMs) byFailureCategory['stale-content'] += 1
 
   return {
     capturedAt: now.toISOString(),
@@ -243,6 +365,7 @@ export async function loadAiDailyOperationsSnapshot(prisma: PrismaClient, now = 
       expiredLeases: boundedCount(expiredLeases),
     },
     events: { byOutcome, byProviderRole },
+    failures: { observationWindowHours: failureObservationWindowHours, staleAfterMs, byCategory: byFailureCategory },
     issues: { byStatus: byIssueStatus },
     publicFeed: { activeApproved: boundedCount(activeApproved), latestApprovedAt, ageMs },
     retention: { expiredEvidence: boundedCount(expiredEvidence), expiredFlashItems: boundedCount(expiredFlashItems) },
@@ -261,6 +384,10 @@ export function toAiDailyOperationsDiagnostics(snapshot: AiDailyOperationsSnapsh
   if (qualityRejected > 0) alerts.push({ code: 'quality-rejected', severity: 'warning', count: qualityRejected })
   const retentionDue = snapshot.retention.expiredEvidence + snapshot.retention.expiredFlashItems
   if (retentionDue > 0) alerts.push({ code: 'retention-due', severity: 'warning', count: retentionDue })
+  for (const category of aiDailyFailureCategories) {
+    const count = snapshot.failures.byCategory[category]
+    if (count > 0) alerts.push({ code: `failure-${category}`, severity: failureSeverity(category), count })
+  }
   return { ...snapshot, status: alerts.some((alert) => alert.severity === 'critical') ? 'degraded' : alerts.length > 0 ? 'degraded' : 'healthy', alerts }
 }
 
@@ -271,6 +398,11 @@ export function emptyAiDailyOperationsSnapshot(now = new Date()): AiDailyOperati
     runs: { byStatus: emptyMap(runStatuses), activeByStage: emptyMap(runStages), latest: { status: null, stage: null, endToEndLagMs: null, pipelineFreshnessAt: null } },
     workItems: { byStatus: emptyMap(workStatuses), readyBacklog: 0, expiredLeases: 0 },
     events: { byOutcome: emptyMap(eventOutcomes), byProviderRole: emptyMap(providerRoles) },
+    failures: {
+      observationWindowHours: failureObservationWindowHours,
+      staleAfterMs: defaultPublicStaleMinutes * 60 * 1_000,
+      byCategory: emptyMap(aiDailyFailureCategories),
+    },
     issues: { byStatus: emptyMap(issueStatuses) },
     publicFeed: { activeApproved: 0, latestApprovedAt: null, ageMs: null },
     retention: { expiredEvidence: 0, expiredFlashItems: 0 },
@@ -364,6 +496,13 @@ export function renderAiDailyOperationsPrometheus(input: AiDailyOperationsDiagno
     '# TYPE biau_ai_daily_provider_role_events_total gauge',
   )
   for (const role of providerRoles) lines.push(`biau_ai_daily_provider_role_events_total${labels({ provider_role: role })} ${input.events.byProviderRole[role]}`)
+  lines.push(
+    '# HELP biau_ai_daily_failure_signals Current and recent low-sensitive AI Daily failure signals by fixed category.',
+    '# TYPE biau_ai_daily_failure_signals gauge',
+  )
+  for (const category of aiDailyFailureCategories) {
+    lines.push(`biau_ai_daily_failure_signals${labels({ category })} ${input.failures.byCategory[category]}`)
+  }
   lines.push(
     '# HELP biau_ai_daily_public_flash_items_active Currently public-approved flash items inside retention.',
     '# TYPE biau_ai_daily_public_flash_items_active gauge',

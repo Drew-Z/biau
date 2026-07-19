@@ -90,9 +90,11 @@ Studio token 持有者可以读取：
 GET /studio/api/ai-daily/operations
 ```
 
-它从 Studio 数据库生成只读 snapshot，汇总来源健康、run/stage、work backlog、过期 lease、最近 24 小时质量拒绝、公开 Flash 年龄和待处理 retention 数量。响应只包含固定枚举、计数和时间，不包含 source URL、run/issue id、provider id、标题、正文、token、数据库 URL 或原始错误。失败告警仅依据最新一次 run，历史失败只保留为总量，不会让系统永久处于告警状态。
+它从 Studio 数据库生成只读 snapshot，汇总来源健康、run/stage、work backlog、过期 lease、最近 24 小时质量拒绝、公开 Flash 年龄和待处理 retention 数量。响应还把最近 24 小时或仍处于 `DEGRADED` / `FAILING` 的来源错误、最近 24 小时 run/work/event 错误、证据缺口、过期 lease 和新鲜度超限归一化为 `config`、`provider`、`evidence`、`quality`、`infrastructure`、`stale-content` 六类固定故障信号。响应只包含固定枚举、计数和时间，不包含 source URL、run/issue id、provider id、标题、正文、token、数据库 URL 或原始错误。
 
-当 Studio 服务显式设置 `METRICS_ENABLED=true` 和 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时，同一个 snapshot 会追加到 `/metrics`。AI Daily 指标覆盖 source health、run stage/status、latest run freshness/end-to-end lag、work backlog/lease、最近 24 小时 outcome/provider role、issue status、public feed age 和 retention due；只使用固定低基数 labels，例如 `health`、`status`、`stage`、`outcome`、`provider_role`、`kind`、`code` 和 `severity`。provider role 仅区分 primary/fallback 等角色，不输出渠道或模型身份。数据库未配置或 snapshot 查询失败时，只输出 `biau_ai_daily_operations_snapshot_up 0`，不会让 scrape 请求失败或泄露异常。
+当 Studio 服务显式设置 `METRICS_ENABLED=true` 和 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时，同一个 snapshot 会追加到 `/metrics`。AI Daily 指标覆盖 source health、run stage/status、latest run freshness/end-to-end lag、work backlog/lease、最近 24 小时 outcome/provider role、issue status、public feed age、retention due 和 `biau_ai_daily_failure_signals{category="..."}`；只使用固定低基数 labels，例如 `health`、`status`、`stage`、`outcome`、`provider_role`、`kind`、`category`、`code` 和 `severity`。故障信号不是唯一事故数，同一事故可能在 source/run/work/event 多处留下信号；看板和告警只按 `> 0` 判断类别是否活跃。provider role 仅区分 primary/fallback 等角色，不输出渠道或模型身份。数据库未配置或 snapshot 查询失败时，只输出 `biau_ai_daily_operations_snapshot_up 0`，不会让 scrape 请求失败或泄露异常。
+
+仓库提供 `observability/ai-daily-grafana-dashboard.json` 和 `observability/ai-daily-prometheus-alerts.yml`，并由 `npm.cmd run ai-daily:observability-contract-check` 离线验证六类 panel/rule、固定 severity、套件注册和敏感字段禁入。模板不包含真实 datasource、scrape URL 或通知目标；导入生产 Grafana/Prometheus/ARMS 和配置通知路由仍需人工完成。
 
 Studio token 持有者还可以读取 `GET /studio/api/ai-daily/retention/dry-run?limit=100`。该接口使用 `retention-dry-run-v1` 策略生成只读计划：过期且不是 current evidence 的 evidence 可标记为 eligible；Flash 只有在已撤回、没有 current approved revision、没有 revision history、没有 approval audit 时才可标记为 eligible。其余记录会返回固定的 blocked reason，例如 `current-evidence`、`current-approved-revision`、`approval-audit-history`、`publication-lifecycle` 或 `revision-history`。结果始终带 `mode=dry-run` 与 `mutationsApplied=false`，默认返回 100 条、最多 200 条；汇总计数只描述本次返回窗口，`truncated=true` 表示还有更多到期记录未进入本次窗口。传入任何 `mutate` 参数都会被拒绝。
 

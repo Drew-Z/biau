@@ -123,11 +123,14 @@ Studio 模式还会从内容数据库只读汇总 AI Daily 运维 snapshot：
 - `biau_ai_daily_latest_run_end_to_end_lag_seconds` / `biau_ai_daily_latest_run_freshness_age_seconds`
 - `biau_ai_daily_work_items_total` / `biau_ai_daily_work_items_ready_backlog` / `biau_ai_daily_work_items_expired_leases`
 - `biau_ai_daily_run_events_total` / `biau_ai_daily_provider_role_events_total`
+- `biau_ai_daily_failure_signals{category="config|provider|evidence|quality|infrastructure|stale-content"}`
 - `biau_ai_daily_issues_total`
 - `biau_ai_daily_public_flash_items_active` / `biau_ai_daily_public_flash_age_seconds`
 - `biau_ai_daily_retention_due_total` / `biau_ai_daily_alerts_total`
 
 受 Studio token 保护的 `GET /studio/api/ai-daily/operations` 返回同一份低敏 JSON diagnostics。它不会返回 id、URL、标题、正文、provider 身份、错误原文或凭据；只有 `METRICS_ENABLED=true` 且 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时 `/metrics` 才追加 snapshot，查询失败只输出 `biau_ai_daily_operations_snapshot_up 0`。
+
+AI Daily failure signal 是当前状态与最近 24 小时持久化信号的低敏投影，不是唯一事故数。仓库中的 `observability/ai-daily-grafana-dashboard.json` 和 `observability/ai-daily-prometheus-alerts.yml` 可作为导入模板，`npm.cmd run ai-daily:observability-contract-check` 会离线检查六类故障、severity 和敏感字段边界；真实 datasource、scrape 与通知渠道仍由平台人工配置。
 
 `GET /studio/api/ai-daily/retention/dry-run` 是独立的受保护维护视图，不属于 Prometheus 指标。它只返回有限候选的 opaque id、保留边界、固定 decision/reason、生命周期和引用计数，并明确声明 `mutationsApplied=false`。接口不接受 mutation，不能把 operations 的 retention count 当作删除授权。
 
@@ -137,7 +140,7 @@ Studio 模式还会从内容数据库只读汇总 AI Daily 运维 snapshot：
 - `route`
 - `status_class`
 - histogram 的 `le`
-- AI Daily 固定枚举：`health`、`status`、`stage`、`outcome`、`provider_role`、`kind`、`code`、`severity`
+- AI Daily 固定枚举：`health`、`status`、`stage`、`outcome`、`provider_role`、`kind`、`category`、`code`、`severity`
 
 不会记录：
 

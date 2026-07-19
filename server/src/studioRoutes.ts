@@ -613,7 +613,7 @@ export function createStudioRouter() {
   router.get('/ai-daily/operations', async (_req, res, next) => {
     try {
       const prisma = requireStudioDatabase()
-      const snapshot = await loadAiDailyOperationsSnapshot(prisma)
+      const snapshot = await loadAiDailyOperationsSnapshot(prisma, new Date(), env.aiDailyPublicStaleMinutes)
       res.json(toAiDailyOperationsDiagnostics(snapshot))
     } catch (error) {
       next(error)

@@ -150,6 +150,7 @@ async function main() {
     'ai-daily:model-runtime-check',
     'ai-daily:model-evaluate',
     'ai-daily:model-approve',
+    'ai-daily:observability-contract-check',
   ]
   const missingScripts = requiredScripts.filter((name) => typeof scripts[name] !== 'string')
   results.push(
@@ -264,6 +265,18 @@ async function main() {
       'Studio deployment contract',
       renderContractOk,
       renderContractOk ? 'Studio service is explicit and public feed is fail-closed by default' : `missing or invalid ${missingRenderKeys.join(', ') || 'Studio service values'}`,
+    ),
+  )
+
+  const observabilityContractOk = runOfflineContract('ai-daily:observability-contract-check')
+  results.push(
+    check(
+      'operations-observability-contract',
+      'AI Daily dashboard and alert contract',
+      observabilityContractOk,
+      observabilityContractOk
+        ? 'Six fixed failure categories are covered by repository dashboard and alert assets'
+        : 'AI Daily dashboard or alert contract failed; run npm.cmd run ai-daily:observability-contract-check for details',
     ),
   )
 

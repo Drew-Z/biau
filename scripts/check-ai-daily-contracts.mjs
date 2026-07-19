@@ -28,6 +28,7 @@ const deterministicChecks = [
   'ai-daily:runner-check',
   'ai-daily:public-feed-check',
   'ai-daily:operations-check',
+  'ai-daily:observability-contract-check',
   'ai-daily:retention-check',
 ]
 

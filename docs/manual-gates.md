@@ -20,7 +20,7 @@
 - 模型验收只能使用用户批准的真实业务任务；禁止 ping、doctor、空 prompt 和无意义测活。
 - 完成记录只写低敏结论和可复跑命令，不记录配置值或私有内容。
 - 状态项目变化后运行 `npm.cmd run docs:manual-gates-check`，保证每个公开项目都有对应人工边界。
-- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:model-evaluation-check`、`npm.cmd run ai-daily:model-runtime-check`、`npm.cmd run ai-daily:runner-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、真实模型评估与选型、生产 migration、Cron 启用或真实内容验收。
+- AI Daily 本地就绪检查使用 `npm.cmd run ai-daily:production-readiness-check`、`npm.cmd run ai-daily:manifest-check`、`npm.cmd run ai-daily:model-evaluation-check`、`npm.cmd run ai-daily:model-runtime-check`、`npm.cmd run ai-daily:runner-check`、`npm.cmd run ai-daily:operations-check`、`npm.cmd run ai-daily:observability-contract-check`、`npm.cmd run ai-daily:retention-check` 和 `npm.cmd run ai-daily:contracts-check`；这些命令不替代来源批准、真实模型评估与选型、生产 migration、Cron 启用或真实内容验收。
 
 ## BIAU 平台门禁
 
@@ -82,7 +82,7 @@
 | --- | --- | --- |
 | Cloudflare Analytics / Search Console / Webmaster | 需要站点所有权 | 可独立启用，不阻塞产品功能 |
 | Plausible 或 Umami 二选一 | 需要隐私、托管和口径选择 | 不同时接两套访客统计 |
-| Prometheus / Grafana / ARMS | 需要 scrape、告警和平台账号 | `/metrics` 默认关闭；Studio 已提供低敏 AI Daily snapshot，生产 scrape/dashboard/alert routing 仍需人工启用 |
+| Prometheus / Grafana / ARMS | 需要 scrape、告警和平台账号 | `/metrics` 默认关闭；Studio 已提供低敏 AI Daily snapshot，仓库已提供六类故障 dashboard/alert 模板，生产 scrape、导入、权限和通知 routing 仍需人工启用 |
 | Sentry / Faro / Langfuse | 可能收集错误、prompt、trace 和用户内容 | 明确采样、脱敏和保留周期后再接入 |
 
 ## 已完成的低敏事实

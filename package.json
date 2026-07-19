@@ -65,6 +65,7 @@
     "ai-daily:generation-repository-check": "tsx server/scripts/ai-daily-generation-repository-check.ts",
     "ai-daily:public-feed-check": "tsx server/scripts/ai-daily-public-feed-check.ts",
     "ai-daily:operations-check": "tsx server/scripts/ai-daily-operations-check.ts",
+    "ai-daily:observability-contract-check": "node scripts/check-ai-daily-observability-contracts.mjs",
     "ai-daily:retention-check": "tsx server/scripts/ai-daily-retention-check.ts",
     "ai-daily:contracts-check": "node scripts/check-ai-daily-contracts.mjs",
     "ai-daily:production-readiness-check": "node scripts/check-ai-daily-production-readiness.mjs",

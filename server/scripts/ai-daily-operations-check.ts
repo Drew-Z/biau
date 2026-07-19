@@ -1,4 +1,6 @@
 import {
+  aiDailyFailureCategories,
+  classifyAiDailyFailureCategory,
   emptyAiDailyOperationsSnapshot,
   renderAiDailyOperationsPrometheus,
   toAiDailyOperationsDiagnostics,
@@ -9,6 +11,18 @@ const now = new Date('2026-07-19T08:00:00.000Z')
 const healthy = toAiDailyOperationsDiagnostics(emptyAiDailyOperationsSnapshot(now))
 assertEqual(healthy.status, 'healthy', 'empty operations snapshot should remain healthy')
 assertEqual(healthy.alerts.length, 0, 'empty operations snapshot should have no alerts')
+assertEqual(aiDailyFailureCategories.join(','), 'config,provider,evidence,quality,infrastructure,stale-content', 'failure categories should remain stable')
+for (const [raw, expected] of [
+  ['config_error', 'config'],
+  ['ai-daily-provider-http-429', 'provider'],
+  ['evidence_rejected', 'evidence'],
+  ['schema_invalid', 'quality'],
+  ['ai-daily-provider-timeout', 'infrastructure'],
+  ['freshness_stale', 'stale-content'],
+] as const) {
+  assertEqual(classifyAiDailyFailureCategory(raw), expected, `${raw} should map to ${expected}`)
+}
+assertEqual(classifyAiDailyFailureCategory('private-provider-name'), null, 'unknown dynamic categories should not become labels')
 
 const degraded = toAiDailyOperationsDiagnostics({
   ...emptyAiDailyOperationsSnapshot(now),
@@ -45,11 +59,19 @@ const degraded = toAiDailyOperationsDiagnostics({
     byOutcome: { persisted: 2, succeeded: 4, failed: 1, 'schema-rejected': 1, 'quality-rejected': 2, other: 0 },
     byProviderRole: { primary: 5, fallback: 2, stable: 1, signal: 0, manual: 0, other: 0 },
   },
+  failures: {
+    observationWindowHours: 24,
+    staleAfterMs: 10_800_000,
+    byCategory: { config: 1, provider: 2, evidence: 3, quality: 4, infrastructure: 5, 'stale-content': 1 },
+  },
   retention: { expiredEvidence: 4, expiredFlashItems: 1 },
 })
 assertEqual(degraded.status, 'degraded', 'operational alerts should degrade the snapshot')
 for (const code of ['source-failing', 'lease-expired', 'work-backlog', 'run-failed', 'quality-rejected', 'retention-due']) {
   assert(degraded.alerts.some((alert) => alert.code === code), `operations diagnostics should include ${code}`)
+}
+for (const category of aiDailyFailureCategories) {
+  assert(degraded.alerts.some((alert) => alert.code === `failure-${category}`), `operations diagnostics should include failure-${category}`)
 }
 
 const metrics = renderAiDailyOperationsPrometheus(degraded)
@@ -63,6 +85,12 @@ for (const expected of [
   'biau_ai_daily_work_items_expired_leases 1',
   'biau_ai_daily_run_events_total{outcome="quality-rejected"} 2',
   'biau_ai_daily_provider_role_events_total{provider_role="fallback"} 2',
+  'biau_ai_daily_failure_signals{category="config"} 1',
+  'biau_ai_daily_failure_signals{category="provider"} 2',
+  'biau_ai_daily_failure_signals{category="evidence"} 3',
+  'biau_ai_daily_failure_signals{category="quality"} 4',
+  'biau_ai_daily_failure_signals{category="infrastructure"} 5',
+  'biau_ai_daily_failure_signals{category="stale-content"} 1',
   'biau_ai_daily_retention_due_total{kind="evidence"} 4',
   'biau_ai_daily_alerts_total{code="lease-expired",severity="critical"} 1',
 ]) {

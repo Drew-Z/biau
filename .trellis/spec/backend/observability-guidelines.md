@@ -30,9 +30,11 @@ Allowed metrics include:
 - HTTP request duration histograms.
 - Studio-only AI Daily operational snapshots derived from persisted source health, run/work state, bounded event outcomes, public feed age, and retention-due counts.
 
-AI Daily metric labels are fixed enums only: `health`, `status`, `stage`, `outcome`, `provider_role`, `kind`, `code`, and `severity`. `provider_role` means bounded roles such as `primary` or `fallback`; it must never expose the configured provider, model, endpoint, source, run, issue, or work-item identity. Event outcome metrics use a bounded recent window, and failed-run alerts use the latest run rather than lifetime failure totals, so resolved incidents do not leave permanent alerts.
+AI Daily metric labels are fixed enums only: `health`, `status`, `stage`, `outcome`, `provider_role`, `kind`, `category`, `code`, and `severity`. `provider_role` means bounded roles such as `primary` or `fallback`; it must never expose the configured provider, model, endpoint, source, run, issue, or work-item identity. Failure `category` is restricted to `config`, `provider`, `evidence`, `quality`, `infrastructure`, and `stale-content`. Event outcome metrics use a bounded recent window, and failed-run alerts use the latest run rather than lifetime failure totals, so resolved incidents do not leave permanent alerts.
 
 The Studio JSON diagnostics route is `GET /studio/api/ai-daily/operations` and remains behind Studio authentication. `/metrics` may append the same snapshot only in `studio` / local `all` mode when both `METRICS_ENABLED=true` and `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` are explicitly set. Missing Studio database or collector failure must fail closed as `biau_ai_daily_operations_snapshot_up 0` without returning stack traces or provider/database error details.
+
+`biau_ai_daily_failure_signals{category="..."}` is a gauge over current and recent low-sensitive signals, not a monotonic incident counter. One operational incident may leave a source, run, work-item, and event signal, so dashboards and alerts use `> 0` and do not present the sum as a unique incident count. Unknown persisted error strings are ignored rather than becoming labels. Repository-owned Grafana and Prometheus templates live under `observability/`; importing them into a production platform and configuring notification routing remain human gates.
 
 Retention metrics are observations, not deletion authorization. `GET /studio/api/ai-daily/retention/dry-run` is the only current cleanup-facing contract: it is Studio-authenticated, bounded to at most 200 candidates, returns stable eligibility/block reasons and reference counts, always reports `mutationsApplied=false`, and rejects any `mutate` query. A future cleanup command must require explicit mutation opt-in, use bounded batches and transactions, preserve audit evidence, and exclude current evidence, deployed/public issues, latest generated revisions, active/current-approved Flash state, and other publication/audit bindings.
 
@@ -63,6 +65,7 @@ After changing metrics or observability code:
 ```powershell
 npm.cmd run server:build
 npm.cmd run ai-daily:operations-check
+npm.cmd run ai-daily:observability-contract-check
 npm.cmd run server:smoke
 $env:METRICS_ENABLED='true'; npm.cmd run server:smoke; Remove-Item Env:\METRICS_ENABLED
 npm.cmd run lint

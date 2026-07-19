@@ -6,7 +6,7 @@
 - [x] Add Render build/start/schedule documentation for both Cron Jobs.
 - [x] Add production-readiness configuration command with no network calls.
 - [ ] Curate sources/query groups and run offline model evaluation. (site owner confirmed the 2026-07-19 pre-review: 16 approved sources and 4 core query groups are enabled, 9 hold and 5 rejected sources plus 6 non-core query groups remain disabled; source curation is complete, while the separately gated real candidate-model evaluation remains)
-- [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics and guarded retention dry-run completed; mutation and production alert routing remain)
+- [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics, six-category failure projection, repository Grafana/Prometheus assets, offline contract checks, and guarded retention dry-run completed; retention mutation plus production scrape/import/notification routing remain)
 - [x] Run the full deterministic quality gate.
 - [ ] Obtain approval and run one real edition.
 - [ ] Review/approve selected flashes and the daily draft, export, deploy, and verify public behavior.
@@ -23,6 +23,7 @@
 - Real provider selection, production Cron activation, live edition acceptance, and database deployment remain manual gates; source/query curation is now approved with a bounded enabled subset.
 - Studio now exposes a token-protected read-only AI Daily operations snapshot; Studio `/metrics` appends the same low-cardinality data when metrics are explicitly enabled.
 - Source health, run/stage state, work backlog/expired leases, bounded quality outcomes, public feed age, and retention-due counts are covered by `ai-daily:operations-check` without a database or network.
+- Operations now projects fixed `config` / `provider` / `evidence` / `quality` / `infrastructure` / `stale-content` signals, exposes the low-cardinality `biau_ai_daily_failure_signals` gauge, and includes repository-owned Grafana dashboard and Prometheus alert templates validated by `ai-daily:observability-contract-check` with no network calls.
 - Retention now has a Studio-authenticated, bounded `retention-dry-run-v1` plan with fixed eligibility/block reasons and no mutation path. `ai-daily:retention-check` proves current evidence, public/current-approved Flash, revision history, and approval audit history remain protected.
 - `server/data/ai-daily-source-manifest.v1.json` now records 30 reviewed sources and 10 reviewed discovery query groups, with 16/4 approved entries enabled and hold/rejected entries disabled. `ai-daily:manifest-check` validates schema, public URL/domain rules, unique canonical identity, query budgets, review thresholds, and enabled/review consistency without network calls.
 - `ai-daily:model-evaluation-check` now validates the 40-case fixture contract for extractor/composer/verifier selection, recomputed case-set hashes, existing quality floors, deterministic ranking, independent failure-domain fallbacks, low-sensitive immutable records, and explicit human approval. It performs zero provider calls and does not close the real candidate-model evaluation gate.

@@ -1,0 +1,52 @@
+groups:
+  - name: biau-ai-daily-production
+    interval: 1m
+    rules:
+      - alert: BiauAiDailyConfigFailure
+        expr: biau_ai_daily_failure_signals{category="config"} > 0
+        for: 5m
+        labels:
+          category: config
+          severity: critical
+        annotations:
+          summary: AI Daily configuration failure signals are active.
+      - alert: BiauAiDailyProviderFailure
+        expr: biau_ai_daily_failure_signals{category="provider"} > 0
+        for: 5m
+        labels:
+          category: provider
+          severity: critical
+        annotations:
+          summary: AI Daily provider failure signals are active.
+      - alert: BiauAiDailyEvidenceFailure
+        expr: biau_ai_daily_failure_signals{category="evidence"} > 0
+        for: 10m
+        labels:
+          category: evidence
+          severity: warning
+        annotations:
+          summary: AI Daily evidence failure signals need review.
+      - alert: BiauAiDailyQualityFailure
+        expr: biau_ai_daily_failure_signals{category="quality"} > 0
+        for: 10m
+        labels:
+          category: quality
+          severity: warning
+        annotations:
+          summary: AI Daily quality failure signals need review.
+      - alert: BiauAiDailyInfrastructureFailure
+        expr: biau_ai_daily_failure_signals{category="infrastructure"} > 0
+        for: 5m
+        labels:
+          category: infrastructure
+          severity: critical
+        annotations:
+          summary: AI Daily infrastructure failure signals are active.
+      - alert: BiauAiDailyStaleContent
+        expr: biau_ai_daily_failure_signals{category="stale-content"} > 0
+        for: 15m
+        labels:
+          category: stale-content
+          severity: warning
+        annotations:
+          summary: AI Daily public or pipeline content is stale.

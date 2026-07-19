@@ -28,6 +28,7 @@ npm.cmd run ai-daily:model-evaluation-check
 npm.cmd run ai-daily:model-runtime-check
 npm.cmd run ai-daily:runner-check
 npm.cmd run ai-daily:operations-check
+npm.cmd run ai-daily:observability-contract-check
 npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 npm.cmd run studio:smoke
@@ -36,9 +37,9 @@ npm.cmd run operator:knowledge-check
 npm.cmd run assistant:agent-eval
 ```
 
-这些命令不调用外部模型，不需要生产数据库，也不会自动公开内容。`ai-daily:model-evaluation-check` 只证明 case-set hash、三角色排序、质量线、独立 fallback、低敏记录和人工批准状态机有效；`ai-daily:model-runtime-check` 使用 loopback HTTP 验证 provider 请求/解析、超时和 bundle 漂移门禁；两者都不能把 fixture 变成生产批准。`ai-daily:operations-check` 使用纯内存 fixture 验证 diagnostics 和 metrics 安全契约；`ai-daily:retention-check` 验证默认 dry-run、发布/审核链保护和禁止 mutation 契约；`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks，只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
+这些命令不调用外部模型，不需要生产数据库，也不会自动公开内容。`ai-daily:model-evaluation-check` 只证明 case-set hash、三角色排序、质量线、独立 fallback、低敏记录和人工批准状态机有效；`ai-daily:model-runtime-check` 使用 loopback HTTP 验证 provider 请求/解析、超时和 bundle 漂移门禁；两者都不能把 fixture 变成生产批准。`ai-daily:operations-check` 使用纯内存 fixture 验证 diagnostics、六类故障投影和 metrics 安全契约；`ai-daily:observability-contract-check` 验证仓库内 Grafana dashboard 与 Prometheus alert 模板；`ai-daily:retention-check` 验证默认 dry-run、发布/审核链保护和禁止 mutation 契约；`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks，只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
 
-Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/operations` 和 `GET /studio/api/ai-daily/retention/dry-run`。后者只生成候选与阻断原因，始终不执行 mutation。只有同时设置 `METRICS_ENABLED=true` 与 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时，Studio `/metrics` 才会追加 operations snapshot；默认仍为关闭。snapshot 查询失败只暴露 availability=0，不输出数据库或 provider 错误。生产 scrape、dashboard、alert routing 以及任何未来 retention mutation 仍需人工平台配置和独立批准。
+Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/operations` 和 `GET /studio/api/ai-daily/retention/dry-run`。后者只生成候选与阻断原因，始终不执行 mutation。只有同时设置 `METRICS_ENABLED=true` 与 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时，Studio `/metrics` 才会追加 operations snapshot；默认仍为关闭。snapshot 查询失败只暴露 availability=0，不输出数据库或 provider 错误。仓库已提供六类故障 dashboard/alert 模板，但生产 scrape、Grafana/ARMS 导入、通知 routing 以及任何未来 retention mutation 仍需人工平台配置和独立批准。
 
 `ai-daily:production-readiness-check -- --strict` 只用于已经注入目标环境变量的离线 preflight。它不会读取或输出变量值，也不会代替 Render migration、Cron 启用、真实来源审核、真实三角色模型评估/批准或真实业务版次验收。普通模式会把缺少真实评估/批准 bundle 显示为 `manual-gate`，而不是把 loopback contract 误报为生产就绪。
 

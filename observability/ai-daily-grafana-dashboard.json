@@ -1,0 +1,195 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "min": 0
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum by (category) (biau_ai_daily_failure_signals)",
+          "legendFormat": "{{category}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Failure signals by category",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "max(biau_ai_daily_failure_signals{category=\"config\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Config",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 4,
+        "y": 8
+      },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "max(biau_ai_daily_failure_signals{category=\"provider\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Provider",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 8
+      },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "max(biau_ai_daily_failure_signals{category=\"evidence\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Evidence",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 8
+      },
+      "id": 5,
+      "targets": [
+        {
+          "expr": "max(biau_ai_daily_failure_signals{category=\"quality\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Quality",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 8
+      },
+      "id": 6,
+      "targets": [
+        {
+          "expr": "max(biau_ai_daily_failure_signals{category=\"infrastructure\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Infrastructure",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 20,
+        "y": 8
+      },
+      "id": 7,
+      "targets": [
+        {
+          "expr": "max(biau_ai_daily_failure_signals{category=\"stale-content\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "Stale content",
+      "type": "stat"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 41,
+  "tags": [
+    "biau",
+    "ai-daily",
+    "production"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "title": "BIAU AI Daily Production Operations",
+  "uid": "biau-ai-daily-operations",
+  "version": 1
+}

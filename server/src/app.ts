@@ -55,7 +55,7 @@ export function createApp(options: { publicFeedEnabled?: boolean } = {}) {
         aiDailyMetrics = renderAiDailyOperationsPrometheus(null)
       } else {
         try {
-          const snapshot = await loadAiDailyOperationsSnapshot(studioPrisma)
+          const snapshot = await loadAiDailyOperationsSnapshot(studioPrisma, new Date(), env.aiDailyPublicStaleMinutes)
           aiDailyMetrics = renderAiDailyOperationsPrometheus(toAiDailyOperationsDiagnostics(snapshot))
         } catch {
           aiDailyMetrics = renderAiDailyOperationsPrometheus(null)
