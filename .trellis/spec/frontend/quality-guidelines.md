@@ -76,9 +76,20 @@ npm.cmd run docs:deployment-check
 - Avoid continuous React state updates from animation frames.
 - Canvas owns its render loop and disposes resources/listeners on unmount.
 - Worker resize, palette, and motion messages must not create parallel render timers. Runtime `prefers-reduced-motion` changes must use a token-correlated acknowledgement exposed as DOM state, stop on one static frame, and resume one render loop when animation is allowed again; UI checks wait for that acknowledgement instead of an arbitrary delay. Runtime or message failures must hide the stale canvas and reveal the explicit CSS fallback state.
+- Reduced-motion synchronization must not trust one retained `MediaQueryList` change event as the only source of truth. Read the current query value when synchronizing, retain a low-frequency fallback poll that only acts on value changes, and send the resolved value to the worker. A late worker acknowledgement is accepted only when its token is current or its reduced/running tuple still matches the current page state; stale contradictory acknowledgements are ignored.
+- Pixel stability checks run against the production preview worker path. After the DOM acknowledgement, wait for two browser animation frames so the compositor can present the acknowledged canvas frame, then compare pixels; do not replace this with a fixed sleep or a looser motion threshold.
 - Route changes must not repeatedly restart expensive initialization or cause project/blog page flicker.
 - Intro completion must land on the stable navigation logo position and not block first interaction indefinitely.
 - Visual checks compare desktop/mobile framing, exercise both runtime motion-preference directions, and confirm either a nonblank canvas or the explicit CSS fallback state.
+
+### Reduced-Motion Validation Matrix
+
+- Normal -> reduce: `data-flow-motion` becomes `reduced-settled`, one nonblank static frame remains, and measured frame delta stays below the static threshold.
+- Reduce -> normal: `data-flow-motion` becomes `running` and the canvas resumes measurable motion with one render loop.
+- Hidden/intro-active: state becomes `paused`; later motion acknowledgements may not overwrite a newer incompatible state.
+- Worker/runtime failure: state becomes `css-fallback`, the canvas becomes invisible, and the CSS background remains nonblank.
+- Wrong: rely only on `media.addEventListener('change', sync)` or accept every late acknowledgement.
+- Correct: resolve the current media query during synchronization, use the bounded fallback poll, and validate acknowledgement token or current-state equivalence.
 
 ## Public Content
 

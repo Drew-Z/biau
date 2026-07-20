@@ -20,6 +20,7 @@
 - `ai-daily:production-readiness-check` reports repository readiness and manual gates without network calls.
 - `ai-daily:contracts-check` runs the fixture/loopback contract suite; disposable PostgreSQL checks require explicit `--with-database` and `AI_DAILY_DATABASE_CHECK=1`.
 - The full production-preview UI gate passes after the flow worker gained a token-correlated reduced-motion acknowledgement instead of relying on fixed test delays.
+- Runtime reduced-motion synchronization now also re-reads the current media query through a change-only fallback poll, accepts only current/equivalent worker acknowledgements, and lets the compositor present two frames after acknowledgement before pixel stability sampling. This closes the production-preview race without weakening the static-frame threshold.
 - Real provider selection, production Cron activation, live edition acceptance, and database deployment remain manual gates; source/query curation is now approved with a bounded enabled subset.
 - Studio now exposes a token-protected read-only AI Daily operations snapshot; Studio `/metrics` appends the same low-cardinality data when metrics are explicitly enabled.
 - Source health, run/stage state, work backlog/expired leases, bounded quality outcomes, public feed age, and retention-due counts are covered by `ai-daily:operations-check` without a database or network.

@@ -31,6 +31,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     let currentMotionState: FlowMotionState = 'pending'
 
     const media = matchMedia(REDUCED)
+    const readReducedMotion = () => matchMedia(REDUCED).matches
+    let reducedMotion = readReducedMotion()
     const palette = () => {
       const value = document.documentElement.dataset.harborScene
       const current = value === 'garden' || value === 'stellar' || value === 'dusk' ? value : initialScene.current
@@ -78,7 +80,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         renderer.resize(initialSize.width, initialSize.height, initialSize.dpr)
         const draw = (now: number) => {
           if (stopped) return
-          const reduced = media.matches
+          const reduced = reducedMotion
           const running = canRun()
           if (running && (reduced ? last === 0 : now - last >= 1000 / 30)) {
             renderer?.draw(reduced ? 0 : now / 1000, palette())
@@ -106,13 +108,13 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         worker.postMessage({ type: 'palette', palette: palette(), motionToken: token })
         worker.postMessage({
           type: 'motion',
-          reducedMotion: media.matches,
+          reducedMotion,
           running: canRun(),
           motionToken: token,
         })
       } else if (renderer) {
         renderer.resize(currentSize.width, currentSize.height, currentSize.dpr)
-        if (media.matches) {
+        if (reducedMotion) {
           last = 0
           renderer.draw(0, palette())
           markReady()
@@ -130,7 +132,9 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
           if (data.type === 'frame') {
             markReady()
           } else if (data.type === 'motion-settled') {
-            if (data.motionToken !== motionToken) return
+            const isCurrentRequest = data.motionToken === motionToken
+            const matchesCurrentState = data.reducedMotion === reducedMotion && data.running === canRun()
+            if (!isCurrentRequest && !matchesCurrentState) return
             markMotion(data.reducedMotion ? 'reduced-settled' : data.running ? 'running' : 'paused')
           } else if (data.type === 'error') {
             activateCssFallback(data.message)
@@ -152,7 +156,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
             canvas: offscreen,
             ...initialSize,
             palette: palette(),
-            reducedMotion: media.matches,
+            reducedMotion,
             running: canRun(),
             motionToken: token,
           },
@@ -172,7 +176,17 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-harbor-scene'] })
     addEventListener('resize', sync)
     document.addEventListener('visibilitychange', sync)
-    media.addEventListener('change', sync)
+    const handleMotionChange = () => {
+      reducedMotion = readReducedMotion()
+      sync()
+      if (worker) return
+      markMotion(reducedMotion ? 'reduced-settled' : canRun() ? 'running' : 'paused')
+    }
+    const motionPoll = window.setInterval(() => {
+      const nextReducedMotion = readReducedMotion()
+      if (nextReducedMotion !== reducedMotion) handleMotionChange()
+    }, 250)
+    media.addEventListener('change', handleMotionChange)
 
     return () => {
       stopped = true
@@ -183,7 +197,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
       observer.disconnect()
       removeEventListener('resize', sync)
       document.removeEventListener('visibilitychange', sync)
-      media.removeEventListener('change', sync)
+      media.removeEventListener('change', handleMotionChange)
+      window.clearInterval(motionPoll)
     }
   }, [])
 

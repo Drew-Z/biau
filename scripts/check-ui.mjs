@@ -42,6 +42,9 @@ async function waitForFlowMotion(page, expected, timeout = 8_000) {
     expected,
     { timeout },
   )
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  )
 }
 
 const routes = [
