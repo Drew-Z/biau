@@ -554,6 +554,73 @@ async function checkStudioWorkspaceModes(browser, failures) {
       failures.push(`mobile-${width} /studio: Edit should be the only default workspace mode`)
     }
 
+    const workspaceModes = [
+      { id: 'drafts', tab: draftsTab, panel: draftsPanel },
+      { id: 'editor', tab: editorTab, panel: editorPanel },
+      { id: 'support', tab: supportTab, panel: supportPanel },
+    ]
+
+    for (const mode of workspaceModes) {
+      const tabId = `studio-mobile-tab-${mode.id}`
+      const panelId = `studio-mobile-panel-${mode.id}`
+      if (
+        (await mode.tab.getAttribute('id')) !== tabId ||
+        (await mode.tab.getAttribute('aria-controls')) !== panelId ||
+        (await mode.panel.getAttribute('aria-labelledby')) !== tabId
+      ) {
+        failures.push(`mobile-${width} /studio: ${mode.id} tab/panel association is incomplete`)
+      }
+    }
+
+    const verifyKeyboardMode = async (expectedId, action) => {
+      const expectedTabId = `studio-mobile-tab-${expectedId}`
+      await page
+        .waitForFunction(
+          (tabId) =>
+            document.activeElement?.id === tabId &&
+            document.getElementById(tabId)?.getAttribute('aria-selected') === 'true',
+          expectedTabId,
+          { timeout: 2_000 },
+        )
+        .catch(() => {})
+
+      const states = await Promise.all(
+        workspaceModes.map(async (mode) => ({
+          id: mode.id,
+          selected: await mode.tab.getAttribute('aria-selected'),
+          tabIndex: await mode.tab.getAttribute('tabindex'),
+          visible: await mode.panel.isVisible(),
+        })),
+      )
+      const focusedId = await page.evaluate(() => document.activeElement?.id ?? '')
+      const valid = states.every((state) =>
+        state.id === expectedId
+          ? state.selected === 'true' && state.tabIndex === '0' && state.visible
+          : state.selected === 'false' && state.tabIndex === '-1' && !state.visible,
+      )
+      if (!valid || focusedId !== expectedTabId) {
+        failures.push(
+          `mobile-${width} /studio: ${action} did not activate and focus ${expectedId} (${JSON.stringify({ focusedId, states })})`,
+        )
+      }
+    }
+
+    await editorTab.focus()
+    await editorTab.press('ArrowRight')
+    await verifyKeyboardMode('support', 'ArrowRight')
+    await supportTab.press('ArrowDown')
+    await verifyKeyboardMode('drafts', 'ArrowDown wrap')
+    await draftsTab.press('ArrowLeft')
+    await verifyKeyboardMode('support', 'ArrowLeft wrap')
+    await supportTab.press('ArrowUp')
+    await verifyKeyboardMode('editor', 'ArrowUp')
+    await editorTab.press('Home')
+    await verifyKeyboardMode('drafts', 'Home')
+    await draftsTab.press('End')
+    await verifyKeyboardMode('support', 'End')
+    await supportTab.press('ArrowLeft')
+    await verifyKeyboardMode('editor', 'ArrowLeft')
+
     const titleInput = editorPanel.locator('label').filter({ hasText: '标题' }).locator('input').first()
     const titleValue = `移动模式状态保留 ${width}`
     await titleInput.fill(titleValue)

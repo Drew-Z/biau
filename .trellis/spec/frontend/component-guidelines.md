@@ -139,10 +139,17 @@ When a desktop authoring workspace contains several persistent columns, mobile
 may expose them as explicit task modes instead of one long stack. Reuse the
 existing column DOM and state, keep the primary mode selected by default, and
 show exactly one mode panel below the control. Mode buttons need stable tab/panel
-relationships, selected state, Lucide icons, and at least 44px targets. Actions
-that select or create the primary record should return to its editor mode.
-Authentication controls stay before the mode switch; guidance can follow the
-focused workspace. Desktop hides the switch and keeps every column visible.
+relationships, selected state, Lucide icons, and at least 44px targets. Implement
+the complete tab keyboard model: only the selected tab has `tabIndex={0}`;
+ArrowLeft/ArrowUp and ArrowRight/ArrowDown wrap through the stable mode order;
+Home/End jump to the first/last mode; selection moves focus to the destination
+tab. Panels use `aria-labelledby` to reference their tab. Actions that select or
+create the primary record should return to its editor mode. Authentication
+controls stay before the mode switch; guidance can follow the focused workspace.
+Desktop hides the switch and keeps every column visible, so do not add semantic
+`hidden` attributes when desktop must render all panels simultaneously. UI checks
+must exercise focus, selected state, roving tabindex, panel visibility, and both
+tab/panel id relationships at 320, 390, and 430px.
 
 ### Mobile Administrative Sections
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Archive, CheckCircle2, Copy, FileStack, PencilLine, Send, Undo2, Wrench } from 'lucide-react'
 import { StudioDraftPreview } from '../components/StudioDraftPreview'
@@ -47,6 +47,8 @@ import {
 } from '../utils/studioApi'
 
 type StudioMobileWorkspaceView = 'drafts' | 'editor' | 'support'
+
+const studioMobileWorkspaceViews: StudioMobileWorkspaceView[] = ['drafts', 'editor', 'support']
 
 interface DraftFormState {
   title: string
@@ -730,6 +732,23 @@ export function StudioPage() {
     setResourceTemplateForm((current) => ({ ...current, [field]: value }))
   }
 
+  const handleMobileWorkspaceTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+    event.preventDefault()
+    const offset =
+      event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+        ? -1
+        : event.key === 'Home'
+          ? -index
+          : event.key === 'End'
+            ? studioMobileWorkspaceViews.length - 1 - index
+            : 1
+    const nextIndex = (index + offset + studioMobileWorkspaceViews.length) % studioMobileWorkspaceViews.length
+    const nextView = studioMobileWorkspaceViews[nextIndex]
+    setMobileWorkspaceView(nextView)
+    window.requestAnimationFrame(() => document.getElementById(`studio-mobile-tab-${nextView}`)?.focus())
+  }
+
   const selectDraft = (draft: StudioDraft) => {
     setMobileWorkspaceView('editor')
     setSelectedDraftId(draft.id)
@@ -1372,7 +1391,9 @@ export function StudioPage() {
           role="tab"
           aria-selected={mobileWorkspaceView === 'drafts'}
           aria-controls="studio-mobile-panel-drafts"
+          tabIndex={mobileWorkspaceView === 'drafts' ? 0 : -1}
           onClick={() => setMobileWorkspaceView('drafts')}
+          onKeyDown={(event) => handleMobileWorkspaceTabKeyDown(event, 0)}
         >
           <FileStack size={17} aria-hidden />
           <span>草稿箱</span>
@@ -1384,7 +1405,9 @@ export function StudioPage() {
           role="tab"
           aria-selected={mobileWorkspaceView === 'editor'}
           aria-controls="studio-mobile-panel-editor"
+          tabIndex={mobileWorkspaceView === 'editor' ? 0 : -1}
           onClick={() => setMobileWorkspaceView('editor')}
+          onKeyDown={(event) => handleMobileWorkspaceTabKeyDown(event, 1)}
         >
           <PencilLine size={17} aria-hidden />
           <span>编辑</span>
@@ -1396,7 +1419,9 @@ export function StudioPage() {
           role="tab"
           aria-selected={mobileWorkspaceView === 'support'}
           aria-controls="studio-mobile-panel-support"
+          tabIndex={mobileWorkspaceView === 'support' ? 0 : -1}
           onClick={() => setMobileWorkspaceView('support')}
+          onKeyDown={(event) => handleMobileWorkspaceTabKeyDown(event, 2)}
         >
           <Wrench size={17} aria-hidden />
           <span>辅助</span>
@@ -1405,7 +1430,12 @@ export function StudioPage() {
       </nav>
 
       <section className="studio-grid" data-mobile-view={mobileWorkspaceView}>
-        <aside id="studio-mobile-panel-drafts" className="studio-card studio-list-panel" role="tabpanel" aria-label="草稿箱">
+        <aside
+          id="studio-mobile-panel-drafts"
+          className="studio-card studio-list-panel"
+          role="tabpanel"
+          aria-labelledby="studio-mobile-tab-drafts"
+        >
           <div className="studio-card__header">
             <div>
               <p className="assistant-panel__eyebrow">DRAFTS</p>
@@ -1438,7 +1468,12 @@ export function StudioPage() {
           </div>
         </aside>
 
-        <section id="studio-mobile-panel-editor" className="studio-editor-stack" role="tabpanel" aria-label="草稿编辑">
+        <section
+          id="studio-mobile-panel-editor"
+          className="studio-editor-stack"
+          role="tabpanel"
+          aria-labelledby="studio-mobile-tab-editor"
+        >
           <section id="studio-draft-editor" className="studio-card studio-editor">
             <div className="studio-card__header">
               <div>
@@ -1741,7 +1776,12 @@ export function StudioPage() {
           </div>
         </section>
 
-        <aside id="studio-mobile-panel-support" className="studio-side-stack" role="tabpanel" aria-label="Studio 辅助工具">
+        <aside
+          id="studio-mobile-panel-support"
+          className="studio-side-stack"
+          role="tabpanel"
+          aria-labelledby="studio-mobile-tab-support"
+        >
           <article className="studio-card studio-ai-daily-card">
             <div className="studio-card__header">
               <div>
