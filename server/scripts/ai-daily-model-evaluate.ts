@@ -5,11 +5,12 @@ import { evaluateAiDailyBusinessCandidate } from '../src/aiDailyModelBusinessEva
 import {
   readAiDailyModelRuntimeConfig,
   resolveAiDailyRuntimeCandidate,
-  type AiDailyModelRuntimeConfig,
+  validateAiDailyModelEvaluationPool,
 } from '../src/aiDailyModelRuntime.js'
 import { env } from '../src/env.js'
 
 const execute = process.argv.includes('--execute')
+const allowReducedRedundancy = process.argv.includes('--allow-reduced-redundancy')
 const approvalId = readArg('--approval-id')
 const outputPath = path.resolve(readArg('--out') || 'server/data/ai-daily-model-evaluation.local.json')
 
@@ -24,7 +25,10 @@ async function main() {
   }
   const runtimeResult = readAiDailyModelRuntimeConfig(undefined, { allowLocalBaseUrl: env.nodeEnv !== 'production' })
   if (!runtimeResult.ok) throw new Error(`invalid-ai-daily-model-runtime:${runtimeResult.issues.join(',')}`)
-  assertIndependentCandidatePool(runtimeResult.config)
+  const pool = validateAiDailyModelEvaluationPool(runtimeResult.config, { allowReducedRedundancy })
+  if (pool.reducedRedundancyRoles.length > 0) {
+    console.warn(`AI Daily evaluation uses reduced redundancy for: ${pool.reducedRedundancyRoles.join(', ')}. Models share a provider failure domain; this is comparison, not failover.`)
+  }
 
   const evaluatedAt = new Date().toISOString()
   const candidateInputs = []
@@ -54,6 +58,7 @@ async function main() {
     output: outputPath,
     proposalHash: proposal.proposalHash,
     approvalEligible: proposal.selection.approvalEligible,
+    reducedRedundancyOptIn: allowReducedRedundancy,
     roles: proposal.selection.roles.map((role) => ({
       role: role.role,
       primaryCandidateId: role.primaryCandidateId,
@@ -63,20 +68,6 @@ async function main() {
       warnings: role.warnings,
     })),
   }, null, 2))
-}
-
-function assertIndependentCandidatePool(config: AiDailyModelRuntimeConfig) {
-  for (const role of ['extractor', 'composer', 'verifier'] as const) {
-    const candidates = config.candidates.filter((candidate) => candidate.role === role)
-    if (candidates.length < 2 || candidates.length > 3) {
-      throw new Error(`ai-daily-${role}-candidate-count-must-be-2-or-3`)
-    }
-    const failureDomains = new Set(candidates.map((candidate) => {
-      const resolved = resolveAiDailyRuntimeCandidate(config, candidate.candidateId)
-      return resolved?.channel.failureDomainRef ?? ''
-    }))
-    if (failureDomains.size < 2) throw new Error(`ai-daily-${role}-independent-failure-domain-required`)
-  }
 }
 
 async function writeJsonAtomic(filePath: string, value: unknown) {

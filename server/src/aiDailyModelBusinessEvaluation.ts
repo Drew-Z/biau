@@ -25,7 +25,7 @@ import {
   type AiDailyModelEvaluationCandidateInput,
 } from './aiDailyModelEvaluation.js'
 import { aiDailyModelEvaluationCaseSetId } from './aiDailyModelEvaluationCaseSet.js'
-import { createAiDailyOpenAiCompatibleProvider } from './aiDailyModelProvider.js'
+import { createAiDailyResponsesProvider } from './aiDailyModelProvider.js'
 import type { AiDailyModelRuntimeChannel, AiDailyModelRuntimeCandidate } from './aiDailyModelRuntime.js'
 import {
   aiDailyVerifierBlockNegativeTags,
@@ -45,7 +45,7 @@ export async function evaluateAiDailyBusinessCandidate(input: {
 }): Promise<AiDailyModelEvaluationCandidateInput> {
   const definitions = buildAiDailyQualityFixtureDefinitions()
   const descriptors = createCaseDescriptors(input.candidate.role, definitions)
-  const provider = createAiDailyOpenAiCompatibleProvider({
+  const provider = createAiDailyResponsesProvider({
     candidate: input.candidate,
     channel: input.channel,
     slot: 'primary',

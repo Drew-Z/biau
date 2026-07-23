@@ -11,7 +11,7 @@ import {
   type AiDailyModelApprovalBundle,
   validateAiDailyModelApprovalBundle,
 } from '../src/aiDailyModelArtifacts.js'
-import { createAiDailyOpenAiCompatibleProvider } from '../src/aiDailyModelProvider.js'
+import { createAiDailyResponsesProvider } from '../src/aiDailyModelProvider.js'
 import {
   buildAiDailyProductionProviders,
   defaultAiDailyModelApprovalFile,
@@ -21,6 +21,7 @@ import { resolveAiDailyRunnerGenerationMode } from '../src/aiDailyRunnerMode.js'
 import {
   normalizeAiDailyModelRuntimeConfig,
   summarizeAiDailyModelRuntime,
+  validateAiDailyModelEvaluationPool,
   type AiDailyModelRuntimeConfig,
 } from '../src/aiDailyModelRuntime.js'
 import {
@@ -50,18 +51,24 @@ const server = createServer((request, response) => {
     const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>
     observedBodies.push(body)
     observedPaths.push(requestPath)
-    if (requestPath === '/compat/chat/completions') {
+    if (requestPath === '/compat/responses') {
       response.writeHead(404, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ error: 'not-found' }))
       return
     }
-    if (requestPath === '/upstream/chat/completions') {
+    if (requestPath === '/upstream/responses') {
       response.writeHead(503, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ error: 'upstream-unavailable' }))
       return
     }
     response.writeHead(200, { 'Content-Type': 'application/json' })
-    response.end(JSON.stringify({ choices: [{ message: { content: '```json\n{"claims":[]}\n```' } }] }))
+    response.end(JSON.stringify({
+      output: [{
+        type: 'message',
+        role: 'assistant',
+        content: [{ type: 'output_text', text: '```json\n{"claims":[]}\n```' }],
+      }],
+    }))
   })
 })
 
@@ -74,12 +81,22 @@ try {
   assertEqual(summary.channelCount, 2, 'runtime channel count')
   assertDeepEqual(summary.roles, { extractor: 2, composer: 2, verifier: 2 }, 'runtime role counts')
   assertEqual(summary.failureDomains.length, 2, 'independent failure domains')
+  const reducedRuntime = {
+    ...runtime,
+    channels: runtime.channels.map((channel) => ({ ...channel, failureDomainRef: 'shared-provider-domain' })),
+  }
+  assertThrows(
+    () => validateAiDailyModelEvaluationPool(reducedRuntime),
+    'same-provider model comparison must require explicit reduced-redundancy opt-in',
+  )
+  const reducedPool = validateAiDailyModelEvaluationPool(reducedRuntime, { allowReducedRedundancy: true })
+  assertDeepEqual(reducedPool.reducedRedundancyRoles, ['extractor', 'composer', 'verifier'], 'reduced redundancy role report')
   assertEqual(resolveAiDailyRunnerGenerationMode({ fixture: true, live: false, productionEnabled: false }), 'fixture', 'fixture runner mode')
   assertEqual(resolveAiDailyRunnerGenerationMode({ fixture: false, live: true, productionEnabled: true }), 'live', 'live runner mode')
   assertThrows(() => resolveAiDailyRunnerGenerationMode({ fixture: false, live: true, productionEnabled: false }), 'disabled live mode')
   assertThrows(() => resolveAiDailyRunnerGenerationMode({ fixture: true, live: true, productionEnabled: true }), 'conflicting runner mode')
 
-  const provider = createAiDailyOpenAiCompatibleProvider({
+  const provider = createAiDailyResponsesProvider({
     candidate: runtime.candidates[0],
     channel: runtime.channels[0],
     slot: 'primary',
@@ -88,9 +105,11 @@ try {
   assertDeepEqual(output, { claims: [] }, 'provider fenced json parsing')
   assertEqual(observedBodies.length, 1, 'provider request count')
   assert(!Object.hasOwn(observedBodies[0], 'temperature'), 'provider request must omit temperature')
+  assert(Array.isArray(observedBodies[0].input), 'provider request must use Responses input')
+  assert(!Object.hasOwn(observedBodies[0], 'messages'), 'provider request must not use Chat Completions messages')
 
   const baseUrl = runtime.channels[0].baseUrl
-  const compatibilityProvider = createAiDailyOpenAiCompatibleProvider({
+  const compatibilityProvider = createAiDailyResponsesProvider({
     candidate: runtime.candidates[0],
     channel: { ...runtime.channels[0], baseUrl: `${baseUrl}/compat` },
     slot: 'primary',
@@ -103,11 +122,11 @@ try {
   assertDeepEqual(compatibilityOutput, { claims: [] }, 'provider 404 endpoint compatibility fallback')
   assertDeepEqual(
     observedPaths.slice(-2),
-    ['/compat/chat/completions', '/compat/v1/chat/completions'],
+    ['/compat/responses', '/compat/v1/responses'],
     'provider compatibility endpoint order',
   )
 
-  const upstreamProvider = createAiDailyOpenAiCompatibleProvider({
+  const upstreamProvider = createAiDailyResponsesProvider({
     candidate: runtime.candidates[0],
     channel: { ...runtime.channels[0], baseUrl: `${baseUrl}/upstream` },
     slot: 'primary',
@@ -119,7 +138,7 @@ try {
   )
   assertDeepEqual(
     observedPaths.slice(beforeUpstream),
-    ['/upstream/chat/completions'],
+    ['/upstream/responses'],
     'upstream failure must not duplicate the model task on another guessed endpoint',
   )
 
@@ -168,6 +187,11 @@ try {
 
   const invalid = normalizeAiDailyModelRuntimeConfig({ schemaVersion: 'wrong', channels: [], candidates: [] })
   assert(!invalid.ok, 'invalid runtime config should fail closed')
+  const unsupportedProtocolInput = runtimeInput(`http://127.0.0.1:${address.port}`)
+  unsupportedProtocolInput.channels[0].protocol = 'chat-completions'
+  const unsupportedProtocol = normalizeAiDailyModelRuntimeConfig(unsupportedProtocolInput, { allowLocalBaseUrl: true })
+  assert(!unsupportedProtocol.ok, 'Chat Completions runtime protocol must be rejected')
+  if (!unsupportedProtocol.ok) assert(unsupportedProtocol.issues.includes('channels[0].protocol-invalid'), 'protocol rejection should be explicit')
   for (const unsafeBaseUrl of [
     `http://user:password@127.0.0.1:${address.port}`,
     `http://127.0.0.1:${address.port}?api_key=secret`,
@@ -353,10 +377,10 @@ function buildRuntime(baseUrl: string): AiDailyModelRuntimeConfig {
 
 function runtimeInput(baseUrl: string) {
   return {
-    schemaVersion: 'ai-daily-model-runtime-v1',
+    schemaVersion: 'ai-daily-model-runtime-v2',
     channels: [
-      { id: 'relay-a', providerRef: 'provider-a', failureDomainRef: 'failure-a', baseUrl, apiKey: 'test-key-a', modelIdentifier: 'test/model-a' },
-      { id: 'relay-b', providerRef: 'provider-b', failureDomainRef: 'failure-b', baseUrl, apiKey: 'test-key-b', modelIdentifier: 'test/model-b' },
+      { id: 'relay-a', providerRef: 'provider-a', failureDomainRef: 'failure-a', protocol: 'responses', baseUrl, apiKey: 'test-key-a', modelIdentifier: 'test/model-a' },
+      { id: 'relay-b', providerRef: 'provider-b', failureDomainRef: 'failure-b', protocol: 'responses', baseUrl, apiKey: 'test-key-b', modelIdentifier: 'test/model-b' },
     ],
     candidates: [
       { candidateId: 'extractor-a', role: 'extractor', channelId: 'relay-a' },

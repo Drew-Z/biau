@@ -1,12 +1,14 @@
 import { env } from './env.js'
 import { aiDailyGenerationRoles, type AiDailyGenerationRole } from './aiDailyGeneration.js'
 
-export const aiDailyModelRuntimeSchemaVersion = 'ai-daily-model-runtime-v1'
+export const aiDailyModelRuntimeSchemaVersion = 'ai-daily-model-runtime-v2'
+export const aiDailyModelProtocol = 'responses' as const
 
 export interface AiDailyModelRuntimeChannel {
   id: string
   providerRef: string
   failureDomainRef: string
+  protocol: typeof aiDailyModelProtocol
   baseUrl: string
   apiKey: string
   modelIdentifier: string
@@ -35,6 +37,50 @@ export interface AiDailyModelRuntimeSummary {
   configuredChannelCount: number
   roles: Record<AiDailyGenerationRole, number>
   failureDomains: string[]
+}
+
+export interface AiDailyModelEvaluationPoolSummary {
+  roles: Record<AiDailyGenerationRole, {
+    candidateCount: number
+    failureDomainCount: number
+    reducedRedundancy: boolean
+  }>
+  reducedRedundancyRoles: AiDailyGenerationRole[]
+}
+
+/**
+ * Validate the candidate count before a real evaluation starts. A provider
+ * catalog may expose many model ids, but shared failure domains are not
+ * independent failover. Reduced-redundancy comparison is therefore an
+ * explicit opt-in for the evaluation command.
+ */
+export function validateAiDailyModelEvaluationPool(
+  config: AiDailyModelRuntimeConfig,
+  options: { allowReducedRedundancy?: boolean } = {},
+): AiDailyModelEvaluationPoolSummary {
+  const roles = Object.fromEntries(aiDailyGenerationRoles.map((role) => {
+    const candidates = config.candidates.filter((candidate) => candidate.role === role)
+    if (candidates.length < 2 || candidates.length > 3) {
+      throw new Error(`ai-daily-${role}-candidate-count-must-be-2-or-3`)
+    }
+    const failureDomains = new Set(candidates.map((candidate) => {
+      const resolved = resolveAiDailyRuntimeCandidate(config, candidate.candidateId)
+      return resolved?.channel.failureDomainRef ?? ''
+    }))
+    const reducedRedundancy = failureDomains.size < 2
+    if (reducedRedundancy && options.allowReducedRedundancy !== true) {
+      throw new Error(`ai-daily-${role}-independent-failure-domain-required`)
+    }
+    return [role, {
+      candidateCount: candidates.length,
+      failureDomainCount: failureDomains.size,
+      reducedRedundancy,
+    }]
+  })) as AiDailyModelEvaluationPoolSummary['roles']
+  return {
+    roles,
+    reducedRedundancyRoles: aiDailyGenerationRoles.filter((role) => roles[role].reducedRedundancy),
+  }
 }
 
 export function readAiDailyModelRuntimeConfig(
@@ -77,6 +123,7 @@ export function normalizeAiDailyModelRuntimeConfig(
     const id = readSlug(raw.id)
     const providerRef = readSlug(raw.providerRef)
     const failureDomainRef = readSlug(raw.failureDomainRef)
+    const protocol = raw.protocol === aiDailyModelProtocol ? aiDailyModelProtocol : null
     const baseUrl = readUrl(raw.baseUrl, options.allowLocalBaseUrl === true)
     const apiKey = readBoundedString(raw.apiKey, 800)
     const modelIdentifier = readModelIdentifier(raw.modelIdentifier ?? raw.model)
@@ -84,13 +131,14 @@ export function normalizeAiDailyModelRuntimeConfig(
     if (!id) issues.push(`channels[${index}].id-invalid`)
     if (!providerRef) issues.push(`channels[${index}].provider-ref-invalid`)
     if (!failureDomainRef) issues.push(`channels[${index}].failure-domain-ref-invalid`)
+    if (!protocol) issues.push(`channels[${index}].protocol-invalid`)
     if (!baseUrl) issues.push(`channels[${index}].base-url-invalid`)
     if (!apiKey) issues.push(`channels[${index}].api-key-required`)
     if (!modelIdentifier) issues.push(`channels[${index}].model-identifier-invalid`)
     if (id && channelIds.has(id)) issues.push(`channels[${index}].id-duplicate`)
     if (id) channelIds.add(id)
-    if (id && providerRef && failureDomainRef && baseUrl && apiKey && modelIdentifier && !channels.some((item) => item.id === id)) {
-      channels.push({ id, providerRef, failureDomainRef, baseUrl, apiKey, modelIdentifier, timeoutMs })
+    if (id && providerRef && failureDomainRef && protocol && baseUrl && apiKey && modelIdentifier && !channels.some((item) => item.id === id)) {
+      channels.push({ id, providerRef, failureDomainRef, protocol, baseUrl, apiKey, modelIdentifier, timeoutMs })
     }
   }
 

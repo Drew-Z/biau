@@ -7,7 +7,7 @@ import type {
 } from './aiDailyGeneration.js'
 import type { AiDailyModelRuntimeChannel, AiDailyModelRuntimeCandidate } from './aiDailyModelRuntime.js'
 
-export function createAiDailyOpenAiCompatibleProvider(input: {
+export function createAiDailyResponsesProvider(input: {
   candidate: AiDailyModelRuntimeCandidate
   channel: AiDailyModelRuntimeChannel
   slot: AiDailyGenerationSlot
@@ -27,7 +27,7 @@ export function buildAiDailyProvidersFromCandidates(input: {
 }): AiDailyGenerationProviders {
   const byRole = new Map<AiDailyGenerationRole, Array<AiDailyStructuredGenerationProvider>>()
   for (const item of input.candidates) {
-    const provider = createAiDailyOpenAiCompatibleProvider(item)
+    const provider = createAiDailyResponsesProvider(item)
     const providers = byRole.get(item.candidate.role) ?? []
     providers.push(provider)
     byRole.set(item.candidate.role, providers)
@@ -61,23 +61,29 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
     : ''
   const body = {
     model: channel.modelIdentifier,
-    messages: [
-      { role: 'system', content: buildSystemPrompt(request.role, request.schemaVersion) },
+    input: [
+      {
+        role: 'system',
+        content: [{ type: 'input_text', text: buildSystemPrompt(request.role, request.schemaVersion) }],
+      },
       {
         role: 'user',
-        content: [
-          `任务角色：${request.role}`,
-          `生成契约版本：${request.schemaVersion}`,
-          '输入数据如下。只根据输入完成任务，不要编造来源、URL、凭据或未提供的事实。',
-          payload,
-          repairInstruction,
-        ].filter(Boolean).join('\n\n'),
+        content: [{
+          type: 'input_text',
+          text: [
+            `任务角色：${request.role}`,
+            `生成契约版本：${request.schemaVersion}`,
+            '输入数据如下。只根据输入完成任务，不要编造来源、URL、凭据或未提供的事实。',
+            payload,
+            repairInstruction,
+          ].filter(Boolean).join('\n\n'),
+        }],
       },
     ],
   }
 
   let lastFailure = 'ai-daily-provider-request-failed'
-  for (const endpoint of completionEndpoints(channel.baseUrl)) {
+  for (const endpoint of responsesEndpoints(channel.baseUrl)) {
     const abort = new AbortController()
     const timeout = setTimeout(() => abort.abort(), channel.timeoutMs)
     try {
@@ -128,26 +134,31 @@ function buildSystemPrompt(role: AiDailyGenerationRole, schemaVersion: string) {
   return [...common, '输出 reviews 和 blockReviews；必须逐项覆盖输入要求的 claim 与正文 block，verdict 只能是 entailed、contradicted、insufficient、unverifiable。'].join('\n')
 }
 
-function completionEndpoints(baseUrl: string) {
+function responsesEndpoints(baseUrl: string) {
   const normalized = baseUrl.replace(/\/+$/u, '')
-  if (normalized.endsWith('/chat/completions')) return [normalized]
-  if (normalized.endsWith('/v1')) return [`${normalized}/chat/completions`]
-  return [...new Set([`${normalized}/chat/completions`, `${normalized}/v1/chat/completions`])]
+  if (normalized.endsWith('/responses')) return [normalized]
+  if (normalized.endsWith('/v1')) return [`${normalized}/responses`]
+  return [...new Set([`${normalized}/responses`, `${normalized}/v1/responses`])]
 }
 
 function readResponseContent(value: unknown) {
-  if (!isRecord(value) || !Array.isArray(value.choices)) return ''
-  const message = isRecord(value.choices[0]) && isRecord(value.choices[0].message) ? value.choices[0].message : null
-  if (!message) return ''
-  if (typeof message.content === 'string') return message.content.trim()
-  if (Array.isArray(message.content)) {
-    return message.content
-      .filter(isRecord)
-      .map((item) => typeof item.text === 'string' ? item.text : '')
-      .join('')
-      .trim()
-  }
-  return ''
+  if (!isRecord(value)) return ''
+  if (typeof value.output_text === 'string' && value.output_text.trim()) return value.output_text.trim()
+  if (!Array.isArray(value.output)) return ''
+  return value.output
+    .filter(isRecord)
+    .filter((item) => item.type === 'message' && item.role === 'assistant' && Array.isArray(item.content))
+    .flatMap((item) => item.content as unknown[])
+    .filter(isRecord)
+    .filter((item) => item.type === 'output_text')
+    .map((item) => readOutputText(item.text))
+    .join('')
+    .trim()
+}
+
+function readOutputText(value: unknown) {
+  if (typeof value === 'string') return value
+  return isRecord(value) && typeof value.value === 'string' ? value.value : ''
 }
 
 function parseJsonContent(content: string) {

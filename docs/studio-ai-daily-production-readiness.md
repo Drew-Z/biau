@@ -8,7 +8,8 @@
 - BIAU Operator 可以通过 `studio.draft` 创建待审核草稿，但不能审核、导出或发布。
 - Studio API 与 Operator 使用同一个 `STUDIO_DATABASE_URL`，Operator 自己的会话/记忆数据库仍使用独立 `DATABASE_URL`。
 - AI Daily 自动抓取、自动摘要和自动发布保持关闭，直到真实模型评估、首个版次和导出流程验收完成。
-- 三角色模型评估 contract、server-only OpenAI-compatible provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；当前仍没有真实候选评估或人工批准记录。
+- 三角色模型评估 contract、server-only Responses provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；当前仍没有真实候选评估或人工批准记录。单一渠道的多模型可先做质量对照，但会保持 `reduced_redundancy`，不能替代独立 provider。
+- 当前静态选型建议：`qwen3.7-max-t` 负责 extractor/verifier，`grok-4.5` 负责 composer；这是基于渠道目录名称和角色职责的初始配置，不等同于质量评测或可用性测活。
 
 ## 服务边界
 
@@ -65,13 +66,13 @@ Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/ope
 
 当前人工顺序和低敏成功标准只在 [`docs/manual-gates.md`](./manual-gates.md) 维护。
 
-`20260718010000_ai_daily_generation_runner` 是当前待部署 migration。它新增不可变 generation checkpoint、generated revision 幂等键和原始 draft 投影绑定；必须先备份 Studio 数据库、保留可回滚 Render revision，再执行 migration 和服务部署。部署本身不授权真实模型调用或自动发布。
+`20260718010000_ai_daily_generation_runner` 与后续 AI Daily schema migrations 已在 2026-07-23 的 Studio 部署中执行；部署记录、保留的 Render revision 和 `/health=200` 证据见当前 Trellis implementation log。它们新增不可变 generation checkpoint、generated revision 幂等键和原始 draft 投影绑定；部署本身不授权真实模型调用或自动发布。
 
-`AI_DAILY_PUBLIC_FEED_ENABLED` 默认和 Render blueprint 均为 `false`。只有公开 Feed migration、Studio CORS 和 Cloudflare browser base 全部完成并经过人工验收后，才在 Studio 服务显式改为 `true`。
+`AI_DAILY_PUBLIC_FEED_ENABLED` 默认和 Render blueprint 均为 `false`。公开 Feed migration 已部署；仍需完成 Studio CORS、Cloudflare browser base 和首版人工验收后，才在 Studio 服务显式改为 `true`。
 
 ## 三角色生产模型门禁
 
-Studio 服务只从 `AI_DAILY_MODEL_RUNTIME_JSON` 读取 server-only channel/candidate 映射；它不会把 API key、base URL 或原始模型输出写入 proposal、bundle、日志或公开 API。每个角色至少配置两个候选并覆盖两个 failure domain，模型评估命令按候选串行执行，避免把一次真实业务任务变成高并发测活。
+Studio 服务只从 `AI_DAILY_MODEL_RUNTIME_JSON` 读取 `ai-daily-model-runtime-v2` server-only channel/candidate 映射；所有 channel 必须声明 `protocol: "responses"`，三个角色统一使用 Responses API，不再请求 Chat Completions。它不会把 API key、base URL 或原始模型输出写入 proposal、bundle、日志或公开 API。每个角色至少配置两个候选并覆盖两个 failure domain，模型评估命令按候选串行执行，避免把一次真实业务任务变成高并发测活。
 
 真实业务评估必须由用户明确批准，并同时满足：
 

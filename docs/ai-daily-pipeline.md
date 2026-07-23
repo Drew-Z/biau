@@ -266,7 +266,7 @@ npm.cmd run ai-daily:model-evaluation-check
 
 fixture contract 通过只说明仓库算法和门禁有效，不说明任何真实模型已经评估或获批。真实候选必须在用户批准的业务评估任务中运行，生成三角色选择记录后仍保持 `approval.status=pending`，由人工确认 primary/fallback 和故障域后才能批准。
 
-运行时使用一个 server-only JSON：`channels` 保存模型、私有 base URL、API key、provider alias 与 failure-domain alias，`candidates` 只把候选 id 和角色映射到 channel。每个角色必须配置 2-3 个候选，并至少覆盖两个独立 failure domain；同一个 channel 可以参与多个角色，不需要准备六套密钥。真实值只放 Render secret 或忽略的本地环境文件。
+运行时使用 `ai-daily-model-runtime-v2` server-only JSON：`channels` 保存模型、私有 base URL、API key、provider alias、failure-domain alias，并强制声明 `protocol: "responses"`；`candidates` 只把候选 id 和角色映射到 channel。每个角色必须配置 2-3 个候选，并至少覆盖两个独立 failure domain 才能形成完整冗余；同一渠道暴露的多个模型可以用于质量对照，但共享一个故障域，不能写成故障转移。对这种对照评测必须显式追加 `--allow-reduced-redundancy`，结果会保留 `reduced_redundancy` 标记。真实值只放 Render secret 或忽略的本地环境文件。
 
 真实业务评估不会由健康检查或部署自动触发。它必须同时满足 `--execute`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=true`，以及命令中的 `--approval-id` 与 `AI_DAILY_MODEL_EVALUATION_APPROVAL_ID` 完全相同：
 
@@ -274,7 +274,15 @@ fixture contract 通过只说明仓库算法和门禁有效，不说明任何真
 npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
 ```
 
-评估按候选顺序串行执行，每个角色使用同一份版本化 BIAU-owned golden case set，覆盖官方发布、多来源、数字、更正、中文来源和低证据场景，以及 citation/source 错配、更正反转、日期实体错位、重复归因、低证据越界、数字篡改、范围膨胀和无依据断言。请求不设置 `temperature`，不会并发轰击同一中转。默认只写入被 Git 忽略的 `server/data/ai-daily-model-evaluation.local.json`；内容只有 case score、固定切片聚合、延迟、调用计数和 hash，不保存 prompt、输入正文、原始输出、endpoint、key 或错误响应。
+如果本轮只使用同一渠道目录中的多个模型（例如 `grok-4.5` 与 `qwen3.7-max-t`）做真实质量对照，需要明确承认共享故障域：
+
+```powershell
+npm.cmd run ai-daily:model-evaluate -- --execute --allow-reduced-redundancy --approval-id <approved-run-id>
+```
+
+这不会伪造独立 fallback；proposal 会显示 `reduced_redundancy`，正式生产完整冗余仍需第二个独立 provider/failure domain。
+
+评估按候选顺序串行执行，每个角色使用同一份版本化 BIAU-owned golden case set，覆盖官方发布、多来源、数字、更正、中文来源和低证据场景，以及 citation/source 错配、更正反转、日期实体错位、重复归因、低证据越界、数字篡改、范围膨胀和无依据断言。三个角色统一使用 Responses API `input`/`output_text` contract，不再请求 Chat Completions；请求不设置 `temperature`，不会并发轰击同一中转。默认只写入被 Git 忽略的 `server/data/ai-daily-model-evaluation.local.json`；内容只有 case score、固定切片聚合、延迟、调用计数和 hash，不保存 prompt、输入正文、原始输出、endpoint、key 或错误响应。
 
 人工确认 proposal 后再执行审批命令；该命令不调用模型，只把 selection 与审核结论写成可审查、用于受控部署交付但不提交仓库的 bundle：
 
@@ -284,7 +292,7 @@ npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluat
 
 审批命令默认输出到本地 `server/data/ai-daily-model-approval.v1.json`（该文件被 Git 忽略）。生产部署不依赖仓库中的默认文件：先把它上传为 Render Studio 服务的 Secret File `ai-daily-model-approval.v1.json`，并设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json` 与命令输出的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`；后续创建 Editorial Cron 时必须在该服务重复上传。生产 runner 会重新校验 candidate record、selection record、bundle hash、期望 hash，以及 runtime channel 的 provider/failure-domain/model 是否漂移；任何不一致都会 fail closed。
 
-当前 evaluation/proposal/approval 的内部 schema 已升级到 v2；Secret File 文件名和挂载路径继续保持稳定，但任何由旧 evaluator 生成的本地 proposal 或 bundle 都必须删除后重新执行真实业务评估与人工审批，不能原地复用或手工改版本号。
+当前 runtime 与 evaluation/proposal/approval 的内部 schema 均已升级到 v2；Secret File 文件名和挂载路径继续保持稳定，但任何由旧 runtime/evaluator 生成的本地 proposal 或 bundle 都必须删除后重新执行真实业务评估与人工审批，不能原地复用或手工改版本号。
 
 部署前可在已配置同一份 server-only runtime 和审批文件的环境中运行离线检查：
 
