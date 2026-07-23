@@ -94,6 +94,7 @@
 - Studio 首轮生产审核已完成：两个 hidden 草稿均被标记为 `needs-changes`，当前没有创建 Publish Export，也没有把质量不足的草稿导出为公开文章。
 - Studio 已实现并启用草稿版本条件写入、真实修订后重提、归档只读，以及 Publish Export 与具体草稿版本/批准记录的绑定。
 - `20260717000000_publish_export_version_binding` 已在生产 Studio 服务执行；受保护的 health、草稿、来源和 Publish Export 只读接口均返回 `200`，新版 schema 查询成功。验收只记录状态与计数，不记录 token、正文或记录 ID。
+- AI Daily schema 部署门禁已于 2026-07-23 完成：Supabase Free 项目不提供平台备份，站点所有者基于开发期、无不可替代日报数据和新增式 migration 明确接受跳过逻辑备份；Render 旧 revision `76c23cd` 已保留为应用回滚点，`3466eac7` 成功应用至 `20260719020000_ai_daily_public_feed_index`，公开 `/health` 返回 `200` 且数据库与鉴权均 ready。过程中未调用模型。
 - ERP、Legal RAG、Xunqiu、Pet 和 Playlab 均已有本地构建或 synthetic 基础，生产账号/发布批准仍按上表处理。
 - BIAU Operator 的 LangGraph、typed tools、owner session/memory schema、Cloudflare facade 和本地确定性测试已经进入代码收口；后续生产变更仍需按下方人工门禁执行。
 
@@ -101,12 +102,7 @@
 
 按顺序处理，完成一项后只记录低敏结果：
 
-1. **部署 AI Daily generation runner schema**
-   - 先备份 Studio 数据库并保留当前 Render revision。
-   - 在 `biau-content-studio-api` 执行包含 `20260718010000_ai_daily_generation_runner` 的 migration，再重新部署最新代码。
-   - 只复核 `/health`、migration 名、checkpoint/revision 表可查询和低敏计数；不要运行真实模型测活。
-
-2. **完成三角色业务评估并批准 selection bundle**
+1. **完成三角色业务评估并批准 selection bundle**
    - 来源预审已完成：16 个来源与 4 个核心查询组启用，hold/rejected 项关闭；只有来源包变更时才重新触发来源 gate。
    - 使用同一 BIAU-owned case set 分别评估 extractor、composer 和 verifier 候选；这是一项用户批准的真实业务任务，不运行 ping、doctor 或空 prompt。评估命令必须同时满足 `--execute`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=true` 和匹配的 `--approval-id`。
     - 审核聚合指标、failure-domain alias、primary/fallback 和 record hash；选择记录先保持 `pending`，确认后用 `ai-daily:model-approve` 生成 bundle。bundle 未批准或 runtime channel 漂移时，production runner 必须拒绝启动。
@@ -115,27 +111,27 @@
     - 选择 Save, rebuild, and deploy 后运行 `npm.cmd run ai-daily:model-approval-check`（只读检查，`networkCalls=0`）；文件、期望 hash 或 runtime identity 任一不匹配都必须先修复，不能打开 production generation。
     - 首个真实版次验收完成后创建 Editorial Cron 时，必须在该 Cron 服务内再次设置相同 runtime/file/hash，并单独上传同一 Secret File；Render 不会从 Studio 服务继承文件或环境变量。Ingest Cron 不配置模型渠道或审批 bundle。
 
-3. **运行首个真实版次并初始化验收 manifest**
+2. **运行首个真实版次并初始化验收 manifest**
    - 只在 production generation、runtime config 和已批准 bundle 同时有效时，运行 `ai-daily:run -- --date <YYYY-MM-DD> --live`；它是用户批准的真实内容任务，不是测活。
    - 版次完成后运行 `npm.cmd run ai-daily:acceptance -- init --acceptance-id <id> --edition-date YYYY-MM-DD`，再把同一 `issueId`、`runId` 和 `editionDate` 写入本地 manifest。
    - 此时 `check` 仍应显示 Studio、Publish Export 和 deployment gate 缺失；不要提前 seal，也不要把 fixture 结果复制成 production 记录。
 
-4. **处理首轮被退回修改的 Studio 草稿**
+3. **处理首轮被退回修改的 Studio 草稿**
    - 在 Studio 中打开两个状态为 `needs-changes` 的 hidden 草稿。
    - 选择一个作为主稿，补齐可核验事实、来源、知识点、边界和配图/结构；另一个归档或明确保留为不发布稿。
    - 先保存修改并重新提交审核，不要直接发布；完成后由 Codex 复核低敏状态，再进入新版审核和 Publish Export 门禁。
 
-5. **审核证据完整的新版草稿并创建第一个 Publish Export**
+4. **审核证据完整的新版草稿并创建第一个 Publish Export**
    - 仅在新版草稿完成事实、来源、结构和版权检查后执行。
    - 把同一 issue/run/date、draft id、review id、draft version、三个审核勾选和 Publish Export 检查结果写入本地验收 manifest；不记录文章正文或生产凭据。
 
-6. **上线公开 Feed、完成部署观察并 seal**
-   - 在生产 Studio 数据库执行 `20260719020000_ai_daily_public_feed_index`，执行前保留备份和上一 Render revision。
+5. **上线公开 Feed、完成部署观察并 seal**
+   - `20260719020000_ai_daily_public_feed_index` 已随 `3466eac7` 在生产 Studio 数据库成功应用；启用 Feed 前只需记录当时的 Live Render revision，不要重复执行 migration。
    - Studio 服务设置生产 CORS allowlist 与 `AI_DAILY_PUBLIC_FEED_ENABLED=true`，Cloudflare Pages 设置当前 Studio public base 后重新部署；具体值只留在平台，不写入仓库或 manifest。
    - 用真实浏览页面和公开 GET 验收 `/ai-daily`、一个已批准事件详情、ETag `304`、撤回 `410` 和移动端，并确认暂停两个 Cron/关闭 generation 与 public feed 的 rollback 路径可执行。
     - 先按 [`docs/ai-daily-pipeline.md`](./ai-daily-pipeline.md) 创建、填写并封存 `ai-daily-rollback-evidence-v1`，运行 `npm.cmd run ai-daily:rollback -- check --require-sealed`；再将五项观察记为 `passed`，把 evidence id/hash/status 引用写入 acceptance manifest，运行 `npm.cmd run ai-daily:acceptance -- seal --rollback server/data/ai-daily-rollback-evidence.local.json` 和 `npm.cmd run ai-daily:acceptance -- check --rollback server/data/ai-daily-rollback-evidence.local.json --require-sealed`。只有六个 gate 全部通过后，首版验收 gate 才关闭。
 
-7. **继续关联项目门禁**
+6. **继续关联项目门禁**
    - Legal RAG demo、ERP 注册、Xunqiu/Pet release 按上表逐项处理。
 
 ## AI Daily 运行时人工门禁
