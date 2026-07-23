@@ -5,6 +5,41 @@ import { inspectAiDailyProductionReadiness } from './aiDailyStudioProduction.js'
 
 type StudioPrisma = ReturnType<typeof requireStudioDatabase>
 
+const aiDailyWorkspaceRunInclude = {
+  events: { orderBy: [{ createdAt: 'desc' }, { sequence: 'desc' }], take: 40 },
+  workItems: {
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    take: 30,
+    include: { sourceFeed: { select: { id: true, name: true } } },
+  },
+  candidates: {
+    orderBy: [{ scoreTotal: { sort: 'desc', nulls: 'last' } }, { updatedAt: 'desc' }, { id: 'desc' }],
+    take: 80,
+    include: {
+      currentEvidence: {
+        select: {
+          id: true,
+          version: true,
+          status: true,
+          excerpt: true,
+          fetchedAt: true,
+          expiresAt: true,
+          originalUrl: true,
+          canonicalUrl: true,
+          title: true,
+          publisher: true,
+        },
+      },
+    },
+  },
+  clusters: {
+    orderBy: [{ rank: 'asc' }, { updatedAt: 'desc' }],
+    take: 40,
+    include: { candidates: { select: { id: true }, take: 80, orderBy: { id: 'asc' } } },
+  },
+  editorialOverrides: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 80 },
+} satisfies Prisma.AiDailyRunInclude
+
 export interface AiDailyWorkspaceOptions {
   issueId?: string
   limit?: number
@@ -202,7 +237,7 @@ function toRunResponse(run: {
     updatedAt: Date
     candidates: Array<{ id: string }>
   }>
-  overrides: Array<{
+  editorialOverrides: Array<{
     id: string
     runId: string
     candidateId: string | null
@@ -312,7 +347,7 @@ function toRunResponse(run: {
       updatedAt: cluster.updatedAt.toISOString(),
       candidateIds: cluster.candidates.map((candidate) => candidate.id).slice(0, 80),
     })),
-    overrides: run.overrides.map((override) => ({
+    overrides: run.editorialOverrides.map((override) => ({
       id: override.id,
       runId: override.runId,
       candidateId: override.candidateId,
@@ -554,40 +589,7 @@ export async function loadAiDailyWorkspace(prisma: StudioPrisma, options: AiDail
       where: issue ? { issueId: issue.id } : undefined,
       orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit,
-      include: {
-        events: { orderBy: [{ createdAt: 'desc' }, { sequence: 'desc' }], take: 40 },
-        workItems: {
-          orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
-          take: 30,
-          include: { sourceFeed: { select: { id: true, name: true } } },
-        },
-        candidates: {
-          orderBy: [{ scoreTotal: { sort: 'desc', nulls: 'last' } }, { updatedAt: 'desc' }, { id: 'desc' }],
-          take: 80,
-          include: {
-            currentEvidence: {
-              select: {
-                id: true,
-                version: true,
-                status: true,
-                excerpt: true,
-                fetchedAt: true,
-                expiresAt: true,
-                originalUrl: true,
-                canonicalUrl: true,
-                title: true,
-                publisher: true,
-              },
-            },
-          },
-        },
-        clusters: {
-          orderBy: [{ rank: 'asc' }, { updatedAt: 'desc' }],
-          take: 40,
-          include: { candidates: { select: { id: true }, take: 80, orderBy: { id: 'asc' } } },
-        },
-        overrides: { orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 80 },
-      },
+      include: aiDailyWorkspaceRunInclude,
     }),
     prisma.aiDailyFlashItem.findMany({
       orderBy: [{ projectionUpdatedAt: 'desc' }, { createdAt: 'desc' }, { id: 'desc' }],
