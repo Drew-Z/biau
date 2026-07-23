@@ -51,6 +51,8 @@ type StudioEdition = NonNullable<StudioAiDailyWorkspace['edition']>
 
 type StudioEditionRevision = StudioEdition['generatedRevisions'][number]
 
+const AI_DAILY_LIVE_RUN_CONFIRMATION = 'RUN_APPROVED_PRODUCTION_EDITION'
+
 interface EditorialOverrideRequest {
   kind: EditorialOverrideKind
   runId: string
@@ -308,6 +310,11 @@ function createWorkspaceUiFixturePayload() {
         approvalActions: [{ id: 'ui-check-approved-action', action: 'approved', actor: 'ui-check', reason: null, observedRevisionNumber: 2, createdAt: '2026-07-19T03:28:00.000Z' }],
       },
     ],
+    productionGeneration: {
+      status: 'ready',
+      enabled: true,
+      issue: null,
+    },
     edition: {
       issue,
       draft: { id: issue.draftId ?? '', slug: 'ai-daily-2026-07-19', title: issue.title, status: 'review-needed', visibility: 'hidden', updatedAt: issue.updatedAt, latestReview: { status: 'pending', reviewedBy: 'ui-check', reviewedAt: issue.updatedAt, checklist: { sourceChecked: true, safetyChecked: true, publicReady: false }, notes: '等待最终公开就绪确认。' } },
@@ -816,11 +823,17 @@ export function StudioAiDailyWorkspacePage() {
   const [editorialMutationStatus, setEditorialMutationStatus] = useState('')
   const [editionMutationKey, setEditionMutationKey] = useState('')
   const [editionMutationStatus, setEditionMutationStatus] = useState('')
+  const [liveRunPanelOpen, setLiveRunPanelOpen] = useState(false)
+  const [liveRunConfirmed, setLiveRunConfirmed] = useState(false)
+  const [liveRunActor, setLiveRunActor] = useState('站长')
+  const [liveRunPending, setLiveRunPending] = useState(false)
+  const [liveRunStatus, setLiveRunStatus] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const requestSequence = useRef(0)
   const flashMutationSequence = useRef(0)
   const editorialMutationSequence = useRef(0)
   const editionMutationSequence = useRef(0)
+  const liveRunSequence = useRef(0)
   const selectedIssueIdRef = useRef(selectedIssueId)
 
   const selectedIssue = workspace?.selectedIssue ?? null
@@ -831,7 +844,7 @@ export function StudioAiDailyWorkspacePage() {
   )
 
   const loadWorkspace = useCallback(
-    async (token: string, issueId = '') => {
+    async (token: string, issueId = '', announce = true) => {
       const requestId = requestSequence.current + 1
       requestSequence.current = requestId
       setIsLoading(true)
@@ -863,7 +876,7 @@ export function StudioAiDailyWorkspacePage() {
         setStatusText('请先保存 Studio token。')
         return
       }
-      setStatusText('')
+      if (announce) setStatusText('')
       try {
         const query = issueId ? `?issueId=${encodeURIComponent(issueId)}` : ''
         const result = await requestStudioApi(`/ai-daily/workspace${query}`, token)
@@ -888,7 +901,7 @@ export function StudioAiDailyWorkspacePage() {
             return current
           }, { replace: true })
         }
-        setStatusText(`已刷新审核工作区 · ${formatDateTime(nextWorkspace.generatedAt)}`)
+        if (announce) setStatusText(`已刷新审核工作区 · ${formatDateTime(nextWorkspace.generatedAt)}`)
       } catch (error) {
         if (requestSequence.current !== requestId) return
         setStatusText(explainStudioClientException(error, '加载 AI Daily 工作区'))
@@ -905,6 +918,15 @@ export function StudioAiDailyWorkspacePage() {
     return () => window.clearTimeout(handle)
   }, [adminToken, loadWorkspace])
 
+  useEffect(() => {
+    if (!adminToken || useUiCheckFixture || !run || !['queued', 'running'].includes(run.status)) return
+    const handle = window.setTimeout(
+      () => void loadWorkspace(adminToken, selectedIssueIdRef.current, false),
+      4_000,
+    )
+    return () => window.clearTimeout(handle)
+  }, [adminToken, loadWorkspace, run, useUiCheckFixture])
+
   const saveToken = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const token = draftToken.trim()
@@ -918,10 +940,14 @@ export function StudioAiDailyWorkspacePage() {
       flashMutationSequence.current += 1
       editorialMutationSequence.current += 1
       editionMutationSequence.current += 1
+      liveRunSequence.current += 1
       setIsLoading(false)
       setFlashMutationKey('')
       setEditorialMutationKey('')
       setEditionMutationKey('')
+      setLiveRunPending(false)
+      setLiveRunPanelOpen(false)
+      setLiveRunConfirmed(false)
       window.localStorage.removeItem(STUDIO_STORAGE_KEYS.adminToken)
       setWorkspace(null)
       setStatusText('Studio token 已清除。')
@@ -962,11 +988,15 @@ export function StudioAiDailyWorkspacePage() {
     flashMutationSequence.current += 1
     editorialMutationSequence.current += 1
     editionMutationSequence.current += 1
+    liveRunSequence.current += 1
     selectedIssueIdRef.current = ''
     setIsLoading(false)
     setFlashMutationKey('')
     setEditorialMutationKey('')
     setEditionMutationKey('')
+    setLiveRunPending(false)
+    setLiveRunPanelOpen(false)
+    setLiveRunConfirmed(false)
     setDraftToken('')
     setAdminToken('')
     setWorkspace(null)
@@ -1224,6 +1254,70 @@ export function StudioAiDailyWorkspacePage() {
     [adminToken, loadWorkspace, useUiCheckFixture, workspace],
   )
 
+  const triggerLiveRun = useCallback(async () => {
+    const issue = workspace?.selectedIssue
+    const actor = liveRunActor.trim()
+    if (!issue || !actor || !liveRunConfirmed || liveRunPending) return
+    const mutationId = liveRunSequence.current + 1
+    liveRunSequence.current = mutationId
+    setLiveRunPending(true)
+    setLiveRunStatus('')
+    try {
+      if (useUiCheckFixture) {
+        setLiveRunStatus('Fixture 已模拟真实版次入队；没有调用任何模型。')
+        setStatusText('Fixture 已模拟真实版次入队；没有调用任何模型。')
+        setActiveTab('runs')
+        setSearchParams((current) => {
+          current.set('view', 'runs')
+          return current
+        }, { replace: true })
+        setLiveRunPanelOpen(false)
+        setLiveRunConfirmed(false)
+        return
+      }
+      if (!adminToken) {
+        setLiveRunStatus('请先保存 Studio token。')
+        return
+      }
+      const result = await requestStudioApi(
+        `/ai-daily/issues/${encodeURIComponent(issue.id)}/live-run`,
+        adminToken,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            actor,
+            expectedIssueUpdatedAt: issue.updatedAt,
+            confirmation: AI_DAILY_LIVE_RUN_CONFIRMATION,
+          }),
+        },
+      )
+      if (liveRunSequence.current !== mutationId) return
+      if (!result.ok) {
+        const message = explainStudioApiError(result.status, readStudioError(result.payload))
+        setLiveRunStatus(message)
+        setStatusText(message)
+        return
+      }
+      setLiveRunStatus('真实版次已进入持久化队列，页面会自动刷新运行状态。')
+      setStatusText('真实版次已进入持久化队列，页面会自动刷新运行状态。')
+      setActiveTab('runs')
+      setSearchParams((current) => {
+        current.set('view', 'runs')
+        return current
+      }, { replace: true })
+      setLiveRunPanelOpen(false)
+      setLiveRunConfirmed(false)
+      await loadWorkspace(adminToken, issue.id, false)
+    } catch (error) {
+      if (liveRunSequence.current !== mutationId) return
+      const message = explainStudioClientException(error, '运行真实 AI Daily 版次')
+      setLiveRunStatus(message)
+      setStatusText(message)
+    } finally {
+      if (liveRunSequence.current === mutationId) setLiveRunPending(false)
+    }
+  }, [adminToken, liveRunActor, liveRunConfirmed, liveRunPending, loadWorkspace, setSearchParams, useUiCheckFixture, workspace])
+
   return (
     <main className="page-stack studio-page studio-ai-daily-workspace-page">
       <header className="page-hero">
@@ -1282,13 +1376,63 @@ export function StudioAiDailyWorkspacePage() {
                 ))}
               </select>
             </label>
-            <div className="studio-ai-daily-summary" aria-label="AI Daily summary">
-              <span><strong>{workspace.runs.length}</strong> runs</span>
-              <span><strong>{workspace.sourceFeeds.length}</strong> feeds</span>
-              <span><strong>{candidateCount(run)}</strong> candidates</span>
-              <span><strong>{workspace.flashItems.length}</strong> flash items</span>
+            <div className="studio-ai-daily-toolbar-actions">
+              <div className="studio-ai-daily-summary" aria-label="AI Daily summary">
+                <span><strong>{workspace.runs.length}</strong> runs</span>
+                <span><strong>{workspace.sourceFeeds.length}</strong> feeds</span>
+                <span><strong>{candidateCount(run)}</strong> candidates</span>
+                <span><strong>{workspace.flashItems.length}</strong> flash items</span>
+              </div>
+              <div className="studio-ai-daily-live-run-action">
+                <span className={`studio-status-pill ${workspace.productionGeneration.status === 'ready' ? 'is-success' : workspace.productionGeneration.status === 'misconfigured' ? 'is-danger' : 'is-muted'}`}>
+                  {workspace.productionGeneration.status === 'ready'
+                    ? '生产执行已就绪'
+                    : workspace.productionGeneration.status === 'disabled'
+                      ? '生产生成未启用'
+                      : '生产配置未通过'}
+                </span>
+                <button
+                  type="button"
+                  className="studio-primary-button"
+                  disabled={!(adminToken || useUiCheckFixture) || !selectedIssue || workspace.productionGeneration.status !== 'ready' || liveRunPending}
+                  onClick={() => setLiveRunPanelOpen((current) => !current)}
+                  aria-expanded={liveRunPanelOpen}
+                  aria-controls="studio-ai-daily-live-run-panel"
+                >
+                  <CirclePlay size={16} aria-hidden="true" />
+                  运行真实版次
+                </button>
+              </div>
             </div>
           </section>
+
+          {liveRunPanelOpen && selectedIssue && (
+            <section id="studio-ai-daily-live-run-panel" className="studio-ai-daily-live-run-panel" aria-labelledby="studio-ai-daily-live-run-title">
+              <div>
+                <span className="section-subtitle">PRODUCTION EDITION / EXPLICIT CONFIRMATION</span>
+                <h2 id="studio-ai-daily-live-run-title">运行 {selectedIssue.date} 的真实版次</h2>
+                <p>将使用已批准的 extractor、composer 和 verifier 配置。任务先写入持久化队列，失败或服务重启后从已有 checkpoint 恢复。</p>
+              </div>
+              <label className="assistant-field">
+                <span>操作人</span>
+                <input value={liveRunActor} maxLength={80} onChange={(event) => setLiveRunActor(event.target.value)} autoComplete="name" />
+              </label>
+              <label className="studio-ai-daily-live-run-confirmation">
+                <input type="checkbox" checked={liveRunConfirmed} onChange={(event) => setLiveRunConfirmed(event.target.checked)} />
+                <span>我确认本次操作会调用已批准的生产模型，并生成需要人工审核的真实内容。</span>
+              </label>
+              <div className="studio-ai-daily-edition-actions">
+                <button type="button" className="studio-primary-button" disabled={!liveRunConfirmed || !liveRunActor.trim() || liveRunPending} onClick={() => void triggerLiveRun()}>
+                  <CirclePlay size={16} aria-hidden="true" />
+                  {liveRunPending ? '正在入队' : '确认并入队'}
+                </button>
+                <button type="button" className="studio-secondary-button" disabled={liveRunPending} onClick={() => { setLiveRunPanelOpen(false); setLiveRunConfirmed(false) }}>
+                  取消
+                </button>
+              </div>
+              {liveRunStatus && <p className="assistant-status-text" role="status" aria-live="polite">{liveRunStatus}</p>}
+            </section>
+          )}
 
           <nav className="studio-ai-daily-tabs" aria-label="AI Daily 工作区视图" role="tablist">
              {tabs.map(({ id, label, icon: Icon }, index) => (

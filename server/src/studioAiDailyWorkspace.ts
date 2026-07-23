@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { requireStudioDatabase } from './db.js'
 import { summarizeAiDailyEditableContent } from './aiDailyEditionRepository.js'
+import { inspectAiDailyProductionReadiness } from './aiDailyStudioProduction.js'
 
 type StudioPrisma = ReturnType<typeof requireStudioDatabase>
 
@@ -540,7 +541,7 @@ export async function loadAiDailyWorkspace(prisma: StudioPrisma, options: AiDail
     : await prisma.aiDailyIssue.findFirst({ orderBy: [{ date: 'desc' }, { id: 'desc' }] })
   if (options.issueId && !issue) throw new Error('ai-daily-issue-not-found')
 
-  const [issues, feeds, runs, flashItems, generatedRevisions, draft] = await Promise.all([
+  const [issues, feeds, runs, flashItems, generatedRevisions, draft, productionGeneration] = await Promise.all([
     prisma.aiDailyIssue.findMany({
       orderBy: [{ date: 'desc' }, { id: 'desc' }],
       take: 40,
@@ -609,6 +610,7 @@ export async function loadAiDailyWorkspace(prisma: StudioPrisma, options: AiDail
           include: { reviews: { orderBy: [{ reviewedAt: 'desc' }, { id: 'desc' }], take: 1 } },
         })
       : Promise.resolve(null),
+    inspectAiDailyProductionReadiness(),
   ])
 
   return {
@@ -618,6 +620,7 @@ export async function loadAiDailyWorkspace(prisma: StudioPrisma, options: AiDail
     sourceFeeds: feeds.map(toFeedResponse),
     runs: runs.map(toRunResponse),
     flashItems: flashItems.map(toFlashResponse),
+    productionGeneration,
     edition: issue
       ? {
           issue: toIssueSummary(issue),

@@ -10,6 +10,7 @@
 - AI Daily 自动抓取、自动摘要和自动发布保持关闭，直到首个版次和导出流程验收完成。
 - 三角色模型评估 contract、手动静态选型 contract、server-only OpenAI-compatible Responses provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；两条路径都不会在 readiness 或部署检查中调用模型。
 - 当前推荐先使用手动静态选型：`qwen3.7-max-t` 负责 extractor/verifier，`grok-4.5` 负责 composer。该映射只表达角色分工，不宣称模型质量得分、可用性或独立故障转移；bundle 会明确标记 `manual-static-selection` 与 `reduced_redundancy`。
+- 2026-07-24 已完成静态 selection bundle、runtime JSON、Studio Secret File、文件路径和 bundle hash 的配置与部署。当前下一门禁是通过 Studio 显式确认并运行首个真实版次，不再重复模型选型配置。
 
 ## 服务边界
 
@@ -109,7 +110,7 @@ npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
 npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluation.local.json --reviewed-by site-owner --notes "Measured selection approved for one controlled edition."
 ```
 
-批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。部署后运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次还必须显式使用 `--live`、设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，并完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
+批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。部署后运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次执行窗口还必须暂时设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，再在 Studio AI Daily 工作区选择 Edition、展开“运行真实版次”并完成二次确认；受保护 API 返回 `202` 后由持久化 worker 执行。`--live` CLI 保留为受控 Job Runner 的等价运维入口。run 到达终态后恢复关闭 production generation，并继续完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
 
 评估 proposal/bundle 使用 v2 schema，手动静态 proposal/bundle 使用独立 v1 schema；验收 manifest 使用 `ai-daily-acceptance-v3`，其中 `selectionBasis` 明确区分两条路径。Render 的 Secret File 名称仍保持 `ai-daily-model-approval.v1.json` 以维持稳定挂载路径；若曾生成过旧 proposal/bundle，必须重新生成和审批，禁止直接改 JSON 版本号或沿用旧 hash。
 

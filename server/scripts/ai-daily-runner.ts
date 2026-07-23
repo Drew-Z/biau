@@ -1,11 +1,11 @@
 import { randomUUID } from 'node:crypto'
-import path from 'node:path'
 import { disconnectPrisma, requireStudioDatabase } from '../src/db.js'
-import { buildAiDailyGenerationProvidersFixture } from '../src/aiDailyGenerationFixtures.js'
-import type { AiDailyGenerationProviders } from '../src/aiDailyGeneration.js'
+import {
+  createAiDailyFixtureGenerationExecution,
+  resolveAiDailyProductionGenerationExecution,
+  type AiDailyGenerationExecution,
+} from '../src/aiDailyGenerationExecution.js'
 import { executeAiDailyGenerationWork } from '../src/aiDailyGenerationRunner.js'
-import { buildAiDailyProductionProviders, loadAiDailyModelApprovalBundle } from '../src/aiDailyModelProduction.js'
-import { readAiDailyModelRuntimeConfig } from '../src/aiDailyModelRuntime.js'
 import { resolveAiDailyRunnerGenerationMode } from '../src/aiDailyRunnerMode.js'
 import { env } from '../src/env.js'
 import { formatAiDailyApplicationDate } from '../src/aiDailyScheduling.js'
@@ -113,40 +113,12 @@ async function resolveGenerationExecution(): Promise<GenerationExecution> {
     productionEnabled: env.aiDailyProductionGenerationEnabled,
   })
   if (mode === 'fixture') {
-    return {
-      profile: 'FIXTURE',
-      providers: buildAiDailyGenerationProvidersFixture(),
-      configVersion: 'ai-daily-generation-runner-fixture-v1',
-      modelIdentifier: 'fixture-provider-suite',
-    }
+    return createAiDailyFixtureGenerationExecution()
   }
-  const runtime = readAiDailyModelRuntimeConfig()
-  if (!runtime.ok) throw new Error(`invalid-ai-daily-model-runtime:${runtime.issues.join(',')}`)
-  if (!env.aiDailyModelApprovalFile) throw new Error('ai-daily-model-approval-file-not-configured')
-  if (!path.isAbsolute(env.aiDailyModelApprovalFile)) {
-    throw new Error('ai-daily-model-approval-file-path-invalid')
-  }
-  if (!/^[a-f0-9]{64}$/u.test(env.aiDailyModelApprovalBundleHash)) {
-    throw new Error('ai-daily-model-approval-bundle-hash-not-configured')
-  }
-  const bundle = await loadAiDailyModelApprovalBundle(
-    env.aiDailyModelApprovalFile,
-    env.aiDailyModelApprovalBundleHash,
-  )
-  return {
-    profile: 'PRODUCTION',
-    providers: buildAiDailyProductionProviders({ runtime: runtime.config, bundle }),
-    configVersion: `ai-daily-generation-runner-${bundle.bundleHash.slice(0, 12)}`,
-    modelIdentifier: `approved-selection/${bundle.selection.recordHash.slice(0, 12)}`,
-  }
+  return resolveAiDailyProductionGenerationExecution()
 }
 
-interface GenerationExecution {
-  profile: 'FIXTURE' | 'PRODUCTION'
-  providers: AiDailyGenerationProviders
-  configVersion: string
-  modelIdentifier: string
-}
+type GenerationExecution = AiDailyGenerationExecution
 
 function readArg(name: string) {
   const index = process.argv.indexOf(name)

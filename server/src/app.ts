@@ -21,6 +21,7 @@ import { retrievePublicAssistantContext } from './ragClient.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import { createStudioRouter } from './studioRoutes.js'
 import { createAiDailyPublicRouter } from './aiDailyPublicRoutes.js'
+import { startAiDailyStudioProductionWorker } from './aiDailyStudioProduction.js'
 import { runOperatorAgent } from './agentOrchestrator.js'
 import type { AssistantServiceMode, ChatPayload, ChatResponse, RagCollectionHealth, RagHealthResponse } from './types.js'
 
@@ -83,6 +84,11 @@ export function createApp(options: { publicFeedEnabled?: boolean } = {}) {
     if (serviceMode === 'all' || serviceMode === 'operator') registerOperatorRoutes(app)
     if (serviceMode === 'all') app.use('/studio/api', createStudioRouter())
     if (serviceMode === 'all') app.use('/rag', createRagOrchestratorRouter({ requireAuth: false }))
+  }
+
+  if (env.aiDailyProductionGenerationEnabled && (serviceMode === 'studio' || serviceMode === 'all')) {
+    const studioPrisma = getStudioPrisma()
+    if (studioPrisma) startAiDailyStudioProductionWorker(studioPrisma)
   }
 
   app.use((error: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -284,6 +284,8 @@ export async function createOrResumeAiDailyGenerationRun(
     })
     if (active) {
       if (active.issueId && active.issueId !== issue.id) throw new Error('ai-daily-generation-active-run-issue-mismatch')
+      if (active.profile !== input.profile) throw new Error('ai-daily-generation-active-run-profile-mismatch')
+      if (active.configVersion !== input.configVersion) throw new Error('ai-daily-generation-active-run-config-mismatch')
       if (active.issueId === null) {
         const linked = await tx.aiDailyRun.update({ where: { id: active.id }, data: { issueId: issue.id } })
         return { run: linked, created: false }

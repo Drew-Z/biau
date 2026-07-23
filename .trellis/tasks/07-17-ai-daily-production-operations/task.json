@@ -26,6 +26,6 @@
     ".env.example",
     "package.json"
   ],
-  "notes": "Repository slice complete: sources are approved, Responses-only runtime and zero-call manual static selection are implemented, deterministic contracts pass, and AI Daily migrations are deployed. Static proposal/bundle delivery, first live edition, Studio review/export, deployment observations, Cron/public-feed activation, observability routing, retention mutation, and sealed rollback/acceptance evidence remain manual gates.",
+  "notes": "Repository slice complete: sources are approved, Responses-only runtime and zero-call manual static selection are implemented, deterministic contracts pass, AI Daily migrations are deployed, and the approved runtime/Secret File/hash bundle has been delivered to Studio. The first live edition, Studio review/export, deployment observations, Cron/public-feed activation, observability routing, retention mutation, and sealed rollback/acceptance evidence remain manual gates.",
   "meta": {}
 }

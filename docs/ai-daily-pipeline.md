@@ -312,9 +312,9 @@ npm.cmd run ai-daily:model-approval-check
 
 Render 的环境变量和 Secret File 按服务隔离。Ingest Cron 不调用模型，因此不需要审批 bundle；Editorial Cron 必须单独配置与 Studio 相同的 `AI_DAILY_MODEL_RUNTIME_JSON`、`AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`、`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH` 和 `AI_DAILY_PRODUCTION_GENERATION_ENABLED`，并在该 Cron 自己的 **Environment → Secret Files** 上传同一份 `ai-daily-model-approval.v1.json`。只在 Studio 上传文件不能让 Editorial Cron 读取它。
 
-这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。`render.yaml` 故意不创建 Cron，避免 Blueprint 同步绕过人工门禁；通过首个真实版次验收后，再由站点所有者在 Render 控制台创建并启用。editorial runner 已实现 production provider 路径，但默认关闭：`--fixture` 只选择 FIXTURE work，`--live` 只选择 PRODUCTION work，两者互斥；live 还要求 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`、完整 runtime config 和已批准 bundle。完成模型选型批准与一次真实业务版次验收前，必须保持开关为 `false` 且不要创建 Cron。回滚时先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 `AI_DAILY_PUBLIC_FEED_ENABLED` 都设为 `false`，保留 Studio 手动编辑和离线导出路径。
+这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。`render.yaml` 故意不创建 Cron，避免 Blueprint 同步绕过人工门禁；通过首个真实版次验收后，再由站点所有者在 Render 控制台创建并启用。editorial runner 已实现 production provider 路径，但默认关闭：fixture CLI 只选择 FIXTURE work，Studio 真实版次入口和 `--live` CLI 只选择 PRODUCTION work；生产执行还要求 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`、完整 runtime config 和已批准 bundle。首个真实业务版次只在明确确认的执行窗口短时打开开关，不创建 Cron；run 到达终态后恢复关闭。回滚时先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 `AI_DAILY_PUBLIC_FEED_ENABLED` 都设为 `false`，保留 Studio 手动编辑和离线导出路径。
 
-未配置并获批生产 provider 时，`run`、`compose`、`resume` 和 `editorial-tick` 会 fail closed，不会发送测活请求。首个真实版次使用 `npm.cmd run ai-daily:run -- --date <edition-date> --live` 人工执行；通过 Studio 审核后才考虑 Cron。
+未配置并获批生产 provider 时，Studio 真实版次入口以及 `run`、`compose`、`resume`、`editorial-tick` 都会 fail closed，不会发送测活请求。首个真实版次优先在 Studio AI Daily 工作区二次确认后入队；没有 Studio UI 的受控 Job Runner 才使用 `npm.cmd run ai-daily:run -- --date <edition-date> --live`。Studio worker 轮询持久化 `PRODUCTION` work，使用 lease 防并发，并从已有 checkpoint 恢复进程中断；通过人工审核后才考虑 Cron。
 
 ## 模型边界
 

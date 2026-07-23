@@ -146,6 +146,24 @@ async function main() {
     configVersion: 'generation-repository-check-v1',
   })
   if (duplicateQueue.work.id !== queued.work.id) throw new Error('generation work identity must ignore trigger source')
+  await expectFailure(
+    () => queueAiDailyGenerationWork(prisma, {
+      issueId: issue.id,
+      trigger: 'MANUAL',
+      profile: 'PRODUCTION',
+      configVersion: 'generation-repository-check-v1',
+    }),
+    'ai-daily-generation-active-run-profile-mismatch',
+  )
+  await expectFailure(
+    () => queueAiDailyGenerationWork(prisma, {
+      issueId: issue.id,
+      trigger: 'MANUAL',
+      profile: 'FIXTURE',
+      configVersion: 'generation-repository-check-drifted',
+    }),
+    'ai-daily-generation-active-run-config-mismatch',
+  )
 
   const claimed = await claimAiDailyWorkItem(prisma, {
     leaseOwner: 'generation-repository-check',

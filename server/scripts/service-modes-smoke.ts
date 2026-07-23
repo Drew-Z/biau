@@ -26,6 +26,7 @@ interface EnvSnapshot {
   operatorDisplayName: string
   operatorModelChannelId: string | null
   aiDailyPublicFeedEnabled: boolean
+  aiDailyProductionGenerationEnabled: boolean
 }
 
 let nextServicePort = 9577
@@ -74,6 +75,7 @@ function snapshotEnv(): EnvSnapshot {
     operatorDisplayName: env.operatorDisplayName,
     operatorModelChannelId: env.operatorModelChannelId,
     aiDailyPublicFeedEnabled: env.aiDailyPublicFeedEnabled,
+    aiDailyProductionGenerationEnabled: env.aiDailyProductionGenerationEnabled,
   }
 }
 
@@ -100,6 +102,7 @@ function restoreEnv(snapshot: EnvSnapshot) {
   env.operatorDisplayName = snapshot.operatorDisplayName
   env.operatorModelChannelId = snapshot.operatorModelChannelId
   env.aiDailyPublicFeedEnabled = snapshot.aiDailyPublicFeedEnabled
+  env.aiDailyProductionGenerationEnabled = snapshot.aiDailyProductionGenerationEnabled
 }
 
 async function withService(
@@ -129,6 +132,7 @@ async function withService(
   env.operatorDisplayName = 'Smoke Owner'
   env.operatorModelChannelId = null
   env.aiDailyPublicFeedEnabled = true
+  env.aiDailyProductionGenerationEnabled = false
 
   const port = await findAvailablePort(nextServicePort)
   nextServicePort = port + 20
@@ -337,6 +341,38 @@ try {
     })
     if (retentionMutation.status !== 400) {
       throw new Error(`studio retention dry-run should reject mutation requests, got ${retentionMutation.status}`)
+    }
+
+    const liveRunMissingToken = await postJson(
+      `${base}/studio/api/ai-daily/issues/issue-smoke/live-run`,
+      {
+        actor: 'smoke-editor',
+        expectedIssueUpdatedAt: '2026-07-24T00:00:00.000Z',
+        confirmation: 'RUN_APPROVED_PRODUCTION_EDITION',
+      },
+    )
+    if (liveRunMissingToken.response.status !== 401) {
+      throw new Error(`studio live run should require admin token, got ${liveRunMissingToken.response.status}`)
+    }
+    const invalidLiveRun = await postJson(
+      `${base}/studio/api/ai-daily/issues/issue-smoke/live-run`,
+      { actor: 'smoke-editor', expectedIssueUpdatedAt: '2026-07-24T00:00:00.000Z', confirmation: 'NO' },
+      'studio-smoke-token',
+    )
+    if (invalidLiveRun.response.status !== 400) {
+      throw new Error(`studio live run should require explicit confirmation, got ${invalidLiveRun.response.status}`)
+    }
+    const liveRunWithoutDb = await postJson(
+      `${base}/studio/api/ai-daily/issues/issue-smoke/live-run`,
+      {
+        actor: 'smoke-editor',
+        expectedIssueUpdatedAt: '2026-07-24T00:00:00.000Z',
+        confirmation: 'RUN_APPROVED_PRODUCTION_EDITION',
+      },
+      'studio-smoke-token',
+    )
+    if (liveRunWithoutDb.response.status !== 503) {
+      throw new Error(`studio live run should report unavailable persistence, got ${liveRunWithoutDb.response.status}`)
     }
   })
 

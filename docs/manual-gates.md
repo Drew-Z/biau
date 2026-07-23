@@ -102,18 +102,20 @@
 
 按顺序处理，完成一项后只记录低敏结果：
 
-1. **确认三角色选型并批准 selection bundle**
+1. **已完成：确认三角色选型并批准 selection bundle**
+   - 2026-07-24 已完成 runtime JSON、批准 bundle Secret File、文件路径和 bundle hash 的 Studio 配置与部署。以下静态命令只在未来重新选型或 runtime identity 变化时重跑；当前人工流程从第 2 项继续。
    - 来源预审已完成：16 个来源与 4 个核心查询组启用，hold/rejected 项关闭；只有来源包变更时才重新触发来源 gate。
    - 推荐先走零模型调用的静态路径：按职责选择 `qwen3.7-max-t` 对应 candidate 作为 extractor/verifier、`grok-4.5` 对应 candidate 作为 composer，运行 `ai-daily:model-select`，检查输出的 role、model identifier 和 `reduced_redundancy`，再运行 `ai-daily:model-select-approve`。两个命令都要求显式 `--acknowledge-reduced-redundancy`。
    - 只有需要质量对照或独立 fallback 时，才另行批准 `ai-daily:model-evaluate -- --execute` 真实业务任务；不运行 ping、doctor 或空 prompt。实测路径必须满足 `AI_DAILY_BUSINESS_EVALUATION_ENABLED=true` 和匹配的 `--approval-id`，并且串行执行。
    - 审核静态角色映射或实测聚合指标、failure-domain alias 和 record hash；bundle 未批准或 runtime channel 漂移时，production runner 必须拒绝启动。
    - 只记录低敏摘要；不要提交本地 proposal、真实 endpoint、key、prompt、原始输出或模型响应。
-    - 将批准命令输出的 `server/data/ai-daily-model-approval.v1.json` 上传到 Render Studio 服务的 Secret Files，文件名必须是 `ai-daily-model-approval.v1.json`；设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。
-    - 选择 Save, rebuild, and deploy 后运行 `npm.cmd run ai-daily:model-approval-check`（只读检查，`selectionBasis` 和 `networkCalls=0`）；文件、期望 hash 或 runtime identity 任一不匹配都必须先修复，不能打开 production generation。
+    - 未来重新选型时，将批准命令输出的 `server/data/ai-daily-model-approval.v1.json` 上传到 Render Studio 服务的 Secret Files，文件名必须是 `ai-daily-model-approval.v1.json`；设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。
+    - 未来重新选型并选择 Save, rebuild, and deploy 后运行 `npm.cmd run ai-daily:model-approval-check`（只读检查，`selectionBasis` 和 `networkCalls=0`）；文件、期望 hash 或 runtime identity 任一不匹配都必须先修复，不能打开 production generation。
     - 首个真实版次验收完成后创建 Editorial Cron 时，必须在该 Cron 服务内再次设置相同 runtime/file/hash，并单独上传同一 Secret File；Render 不会从 Studio 服务继承文件或环境变量。Ingest Cron 不配置模型渠道或审批 bundle。
 
 2. **运行首个真实版次并初始化验收 manifest**
-   - 只在 production generation、runtime config 和已批准 bundle 同时有效时，运行 `ai-daily:run -- --date <YYYY-MM-DD> --live`；它是用户批准的真实内容任务，不是测活。
+   - 暂时把 Studio 的 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 设为 `true` 并重新部署；保持 business evaluation、两个 Cron 和 public feed 关闭。在 Studio 的 AI Daily 工作区选择具备至少 3 条有效证据且包含 Tier 1 来源的 Edition，点击“运行真实版次”，填写操作人并完成二次确认。API 返回 `202` 后由持久化 worker 执行，页面会自动刷新 `QUEUED/RUNNING/COMPLETED` 状态；它是用户批准的真实内容任务，不是测活。
+   - 等待 run 到达终态后把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 恢复为 `false` 并重新部署。没有 Studio UI 的受控 Job Runner 环境可使用等价运维入口 `ai-daily:run -- --date <YYYY-MM-DD> --live`，不要临时改 Web Service Start Command。
    - 版次完成后运行 `npm.cmd run ai-daily:acceptance -- init --acceptance-id <id> --edition-date YYYY-MM-DD`，再把同一 `issueId`、`runId` 和 `editionDate` 写入本地 manifest。
    - 此时 `check` 仍应显示 Studio、Publish Export 和 deployment gate 缺失；不要提前 seal，也不要把 fixture 结果复制成 production 记录。
 
@@ -143,10 +145,10 @@
 - `ai-daily:model-select` 与 `ai-daily:model-select-approve` 只读取 runtime candidate 映射，生成并批准 `manual-static-selection` bundle，始终报告零模型调用；二者都要求显式承认 reduced redundancy。
 - `ai-daily:model-evaluate -- --execute` 是可选的真实质量对照路径，会串行运行业务案例/候选，不得由部署 hook、health check 或 Cron 自动触发。
 - `ai-daily:model-approve` 不调用模型，只在人工审阅实测 proposal 后生成批准 bundle。
-- `ai-daily:run -- --date <YYYY-MM-DD> --live` 是首个真实版次的人工入口；只有 production 开关、runtime config 和批准 bundle 同时有效时才会领取 `PRODUCTION` work。
+- Studio `POST /studio/api/ai-daily/issues/:id/live-run` 是首个真实版次的产品入口；它要求 admin token、Edition 版本、证据门禁和固定确认串，返回 `202` 后才由后台 worker 领取 `PRODUCTION` work。CLI `ai-daily:run -- --date <YYYY-MM-DD> --live` 是共享同一执行服务的运维入口。
 - `ai-daily:acceptance` 不调用模型或生产服务；它只创建、检查和 seal 本地低敏证据索引。缺少真实 edition/review/export/deployment 时必须保持未 seal。
 
-在真实版次通过 Studio 审核、导出和公开部署验收前，Render 上的 `AI_DAILY_BUSINESS_EVALUATION_ENABLED`、`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和两个 Cron 都保持关闭。
+在真实版次通过 Studio 审核、导出和公开部署验收前，Render 上的 `AI_DAILY_BUSINESS_EVALUATION_ENABLED`、两个 Cron 和 public feed 都保持关闭；`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 只在用户明确确认的真实版次执行窗口短时开启，run 到达终态后恢复关闭。
 
 ## 延期项
 

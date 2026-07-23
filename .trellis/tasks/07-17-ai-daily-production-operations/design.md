@@ -11,6 +11,8 @@
 
 Configuration readiness is offline and never calls providers. The only live acceptance is a user-approved real edition that produces useful editorial output.
 
+The first live edition is queued from the authenticated Studio workspace after an exact second confirmation. The API validates the current Edition version, evidence floor, production flag, runtime, and approval bundle before returning `202`. A process-local poller consumes only durable `PRODUCTION` work through database leases and checkpoints, so a Render restart does not turn the HTTP request into the job lifetime. The CLI remains an operations adapter over the same execution resolver, not a separate implementation.
+
 ## Acceptance Manifest
 
 - `ai-daily-acceptance-v3` is a low-sensitive, Git-ignored evidence index that records `selectionBasis` and binds the approved proposal/bundle, one `PRODUCTION` issue/run/date, matching Studio review and draft version, Publish Export checks, post-deploy observations, and a sealed rollback-evidence reference.

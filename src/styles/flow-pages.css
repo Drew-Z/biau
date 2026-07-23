@@ -7551,10 +7551,20 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 
 .studio-ai-daily-hero-actions { justify-content: flex-end; }
 .studio-ai-daily-toolbar { justify-content: space-between; align-items: end; }
+.studio-ai-daily-toolbar-actions { min-width: 0; display: grid; justify-items: end; gap: var(--space-8, 8px); }
 .studio-ai-daily-summary { justify-content: flex-end; color: var(--muted); font: 700 12px/1.4 var(--font-mono); }
 .studio-ai-daily-summary span { white-space: nowrap; }
 .studio-ai-daily-summary strong { color: var(--ink); font-size: 17px; }
 .studio-ai-daily-issue-picker { min-width: min(100%, 420px); }
+.studio-ai-daily-live-run-action { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-8, 8px); flex-wrap: wrap; }
+.studio-ai-daily-live-run-panel { min-width: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr); gap: var(--space-14, 14px); align-items: end; padding: var(--space-16, 16px); border: 1px solid color-mix(in oklch, var(--amber) 42%, var(--flow-ui-card-border)); border-radius: var(--radius-md); background: color-mix(in oklch, var(--amber) 5%, var(--panel)); }
+.studio-ai-daily-live-run-panel > div:first-child { min-width: 0; align-self: start; }
+.studio-ai-daily-live-run-panel h2 { margin: 4px 0 0; color: var(--ink); font-size: 18px; overflow-wrap: anywhere; }
+.studio-ai-daily-live-run-panel p { margin: 7px 0 0; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+.studio-ai-daily-live-run-confirmation { grid-column: 1 / -1; min-width: 0; display: flex; align-items: flex-start; gap: var(--space-8, 8px); color: var(--ink); font-size: 13px; line-height: 1.55; cursor: pointer; }
+.studio-ai-daily-live-run-confirmation input { flex: 0 0 auto; margin-top: 3px; }
+.studio-ai-daily-live-run-panel .studio-ai-daily-edition-actions,
+.studio-ai-daily-live-run-panel .assistant-status-text { grid-column: 1 / -1; }
 
 .studio-ai-daily-tabs {
   padding: var(--space-6, 6px);
@@ -7728,6 +7738,9 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   .studio-ai-daily-workspace-page { width: min(calc(100% - 24px), var(--shell-max)); gap: var(--space-16, 16px); }
   .studio-ai-daily-hero-actions { justify-content: flex-start; }
   .studio-ai-daily-toolbar { align-items: stretch; flex-direction: column; }
+  .studio-ai-daily-toolbar-actions { justify-items: stretch; }
+  .studio-ai-daily-live-run-action { justify-content: flex-start; }
+  .studio-ai-daily-live-run-panel { grid-template-columns: 1fr; align-items: stretch; }
   .studio-ai-daily-summary { justify-content: flex-start; }
   .studio-ai-daily-grid, .studio-ai-daily-two-column { grid-template-columns: 1fr; }
   .studio-ai-daily-editorial-fields { grid-template-columns: 1fr; }

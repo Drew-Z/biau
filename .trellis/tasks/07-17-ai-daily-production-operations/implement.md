@@ -8,7 +8,8 @@
 - [x] Curate sources/query groups and implement the approved initial model-selection path. (site owner confirmed the 2026-07-19 source pre-review; the 2026-07-23 model decision uses a zero-call static mapping with explicit reduced redundancy, while measured evaluation remains optional rather than a production prerequisite)
 - [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics, six-category failure projection, repository Grafana/Prometheus assets, offline contract checks, and guarded retention dry-run completed; retention mutation plus production scrape/import/notification routing remain)
 - [x] Run the full deterministic quality gate.
-- [ ] Obtain approval and run one real edition.
+- [x] Approve and deliver the manual static-selection bundle.
+- [ ] Run one explicitly confirmed real edition.
 - [ ] Review/approve selected flashes and the daily draft, export, deploy, and verify public behavior.
 - [ ] Record final runbook, manual gates, and rollback.
 
@@ -21,7 +22,7 @@
 - `ai-daily:contracts-check` runs the fixture/loopback contract suite; disposable PostgreSQL checks require explicit `--with-database` and `AI_DAILY_DATABASE_CHECK=1`.
 - The full production-preview UI gate passes after the flow worker gained a token-correlated reduced-motion acknowledgement instead of relying on fixed test delays.
 - Runtime reduced-motion synchronization now also re-reads the current media query through a change-only fallback poll, accepts only current/equivalent worker acknowledgements, and lets the compositor present two frames after acknowledgement before pixel stability sampling. This closes the production-preview race without weakening the static-frame threshold.
-- Real provider selection, production Cron activation, and live edition acceptance remain manual gates; source/query curation is approved with a bounded enabled subset, and the Studio database deployment gate is complete.
+- Manual static provider selection and bundle delivery are complete. Production Cron activation and live edition acceptance remain manual gates; source/query curation is approved with a bounded enabled subset, and the Studio database deployment gate is complete.
 - Studio now exposes a token-protected read-only AI Daily operations snapshot; Studio `/metrics` appends the same low-cardinality data when metrics are explicitly enabled.
 - Source health, run/stage state, work backlog/expired leases, bounded quality outcomes, public feed age, and retention-due counts are covered by `ai-daily:operations-check` without a database or network.
 - Operations now projects fixed `config` / `provider` / `evidence` / `quality` / `infrastructure` / `stale-content` signals, exposes the low-cardinality `biau_ai_daily_failure_signals` gauge, and includes repository-owned Grafana dashboard and Prometheus alert templates validated by `ai-daily:observability-contract-check` with no network calls.
@@ -43,6 +44,7 @@
 - On 2026-07-23 the site owner accepted skipping a logical backup because the Supabase Free project had no platform backup, contained no judged-irreplaceable AI Daily data, and the pending migrations were additive. Render revision `76c23cd` was retained as the application rollback point; `3466eac7` then applied the AI Daily schema chain through `20260719020000_ai_daily_public_feed_index`, and the public Studio `/health` returned `200` with database and auth readiness true. No model was called.
 - On 2026-07-23 a user-approved same-provider comparison was started, then stopped at `extractor-grok45 20/30` when the owner clarified that catalog-name selection was sufficient and exhaustive multi-model availability testing was not wanted. No proposal, approval bundle, or persisted evaluation result was produced. The static initial role mapping is `qwen3.7-max-t` for extractor/verifier and `grok-4.5` for composer; the remaining catalog models stay unconfigured and uncalled.
 - Static selection now has its own pending proposal and approved bundle schemas plus `ai-daily:model-select` / `ai-daily:model-select-approve` CLIs. Both commands require explicit reduced-redundancy acknowledgement, call no provider, retain no endpoint/key/prompt/output/metrics, and bind exactly one runtime candidate to each role. Production loading, delivery checks, runtime drift validation, and acceptance v3 accept either this manual path or the optional measured-evaluation path and expose `selectionBasis` truthfully.
+- Studio now exposes an authenticated, explicit-confirmation live-run action. It validates the Edition version and evidence floor, reuses the CLI production execution resolver, queues durable `PRODUCTION` work, returns `202`, and wakes a lease-fenced polling worker. The workspace projects only `ready` / `disabled` / `misconfigured` readiness and auto-refreshes active runs; no channel secret, endpoint, raw provider response, or health prompt crosses the browser boundary.
 - No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
 ## Known Follow-up
@@ -52,7 +54,7 @@
 ## Production Slice Status
 
 - Implemented: runtime channel parsing, Responses provider adapter, optional serial business evaluator, manual static-selection and measured approval artifacts, production provider binding, runner profile isolation, Secret File/hash delivery contract, acceptance manifest/CLI and tamper contract, readiness reporting, and deployment/manual-gate documentation.
-- Still manual: create and review the static selection proposal, create/upload its approval bundle, run one real edition, fill and seal the acceptance manifest after Studio review/export/deployment observation, and only then enable Cron/public feed. Measured evaluation is optional and only runs when a future quality-comparison or independent-fallback decision requires it.
+- Still manual: temporarily enable production generation, run one explicitly confirmed real Edition from Studio, restore the generation flag after the run reaches a terminal state, fill and seal the acceptance manifest after Studio review/export/deployment observation, and only then enable Cron/public feed. The static selection proposal, approved bundle, runtime JSON, Secret File, hash, and Studio deployment are complete. Measured evaluation is optional and only runs when a future quality-comparison or independent-fallback decision requires it.
 - Guardrail: no automated health check or deploy hook invokes a model; no fixture result can be promoted to production approval.
 
 ## Completion Gate

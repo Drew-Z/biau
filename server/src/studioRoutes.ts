@@ -25,6 +25,11 @@ import {
   upsertAiDailySourceFeed,
 } from './aiDailyIngestionRepository.js'
 import { loadAiDailyWorkspace } from './studioAiDailyWorkspace.js'
+import {
+  AiDailyStudioProductionError,
+  aiDailyLiveRunConfirmation,
+  queueAiDailyStudioProductionRun,
+} from './aiDailyStudioProduction.js'
 import { loadAiDailyOperationsSnapshot, toAiDailyOperationsDiagnostics } from './aiDailyOperations.js'
 import { loadAiDailyRetentionDryRun, parseAiDailyRetentionDryRunLimit } from './aiDailyRetention.js'
 import { applyAiDailyEditorialOverride } from './aiDailyEditorialOverrideRepository.js'
@@ -689,6 +694,35 @@ export function createStudioRouter() {
     }
   })
 
+  router.post('/ai-daily/issues/:id/live-run', async (req, res, next) => {
+    try {
+      const input = readAiDailyLiveRunInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const result = await queueAiDailyStudioProductionRun(prisma, {
+        issueId: readRouteParam(req.params.id),
+        ...input.data,
+      })
+      res.status(202).json({ accepted: true, ...result })
+    } catch (error) {
+      if (error instanceof AiDailyStudioProductionError) {
+        const status = error.code === 'ai-daily-production-generation-disabled' || error.code === 'ai-daily-production-configuration-invalid'
+          ? 503
+          : 409
+        res.status(status).json({ error: error.code, ...error.details })
+        return
+      }
+      if (isErrorMessage(error, 'ai-daily-issue-not-found')) {
+        res.status(404).json({ error: 'ai-daily-issue-not-found' })
+        return
+      }
+      next(error)
+    }
+  })
+
   router.post('/ai-daily/editorial-overrides', async (req, res, next) => {
     try {
       const input = readAiDailyEditorialOverrideInput(req.body)
@@ -1102,6 +1136,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function readString(value: unknown, maxLength: number) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : ''
+}
+
+function readAiDailyLiveRunInput(value: unknown) {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-live-run' as const }
+  const actor = readString(value.actor, 80)
+  const expectedIssueUpdatedAt = readRequiredDate(value.expectedIssueUpdatedAt)
+  if (
+    !actor ||
+    !expectedIssueUpdatedAt ||
+    value.confirmation !== aiDailyLiveRunConfirmation
+  ) {
+    return { error: 'invalid-ai-daily-live-run' as const }
+  }
+  return { data: { actor, expectedIssueUpdatedAt } }
 }
 
 function isValidSlug(value: string) {

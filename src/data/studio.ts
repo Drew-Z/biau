@@ -379,6 +379,11 @@ export interface StudioAiDailyWorkspace {
   sourceFeeds: StudioAiDailyWorkspaceFeed[]
   runs: StudioAiDailyWorkspaceRun[]
   flashItems: StudioAiDailyWorkspaceFlash[]
+  productionGeneration: {
+    status: 'disabled' | 'misconfigured' | 'ready'
+    enabled: boolean
+    issue: string | null
+  }
   edition: {
     issue: StudioAiDailyWorkspaceIssue
     draft: {
@@ -1039,6 +1044,7 @@ export function normalizeStudioAiDailyWorkspace(value: unknown): StudioAiDailyWo
   const flashItems = Array.isArray(value.flashItems)
     ? value.flashItems.map(normalizeWorkspaceFlash).filter((item): item is StudioAiDailyWorkspaceFlash => item !== null)
     : []
+  const productionGeneration = normalizeWorkspaceProductionGeneration(value.productionGeneration)
   let edition: StudioAiDailyWorkspace['edition'] = null
   if (isRecord(value.edition)) {
     const editionIssue = normalizeWorkspaceIssue(value.edition.issue)
@@ -1089,7 +1095,22 @@ export function normalizeStudioAiDailyWorkspace(value: unknown): StudioAiDailyWo
     sourceFeeds,
     runs,
     flashItems,
+    productionGeneration,
     edition,
+  }
+}
+
+function normalizeWorkspaceProductionGeneration(value: unknown): StudioAiDailyWorkspace['productionGeneration'] {
+  if (!isRecord(value)) {
+    return { status: 'misconfigured', enabled: false, issue: 'production-readiness-unavailable' }
+  }
+  const status = value.status === 'ready' || value.status === 'disabled' || value.status === 'misconfigured'
+    ? value.status
+    : 'misconfigured'
+  return {
+    status,
+    enabled: value.enabled === true,
+    issue: readNullableString(value.issue),
   }
 }
 
