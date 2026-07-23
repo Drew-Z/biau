@@ -52,7 +52,7 @@ AI_DAILY_MODEL_RUNTIME_JSON=<server-only channel and candidate mapping>
 AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json
 AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved bundleHash>
 AI_DAILY_BUSINESS_EVALUATION_ENABLED=false
-AI_DAILY_MODEL_EVALUATION_APPROVAL_ID=<one approved evaluation run id>
+AI_DAILY_MODEL_EVALUATION_APPROVAL_ID=<only required for optional measured evaluation>
 AI_DAILY_PRODUCTION_GENERATION_ENABLED=false
 NODE_VERSION=22
 ```
@@ -85,11 +85,11 @@ npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 ```
 
-`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证 extractor/composer/verifier 三角色的离线评估记录、排序、独立 fallback、hash 和人工批准边界；`ai-daily:model-runtime-check` 只使用 loopback HTTP 验证运行时配置、无 temperature 的结构化请求、审批 bundle 防篡改以及 `--fixture/--live` 门禁，不调用外部 provider；`ai-daily:acceptance-check` 验证首版验收 manifest 的跨阶段绑定、六个门禁、敏感字段禁入和篡改拒绝；`ai-daily:rollback-check` 验证独立 rollback evidence 的结构、绑定、封存和 CLI 往返；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
+`ai-daily:manifest-check` 验证候选来源/查询组资产及人工审核 fail-closed 边界；`ai-daily:model-evaluation-check` 验证可选实测评估的排序、质量线、独立 fallback、hash 和人工批准边界；`ai-daily:model-runtime-check` 使用 loopback HTTP 验证运行时配置、手动静态选型、显式 reduced-redundancy 确认、无 temperature 的结构化请求、两类审批 bundle 防篡改以及 `--fixture/--live` 门禁，不调用外部 provider；`ai-daily:acceptance-check` 验证两类选型路径、首版验收 manifest 的跨阶段绑定、六个门禁、敏感字段禁入和篡改拒绝；`ai-daily:rollback-check` 验证独立 rollback evidence 的结构、绑定、封存和 CLI 往返；`ai-daily:operations-check` 验证专项 diagnostics、低基数 Prometheus 指标、snapshot unavailable 降级和敏感字段禁入规则；`ai-daily:retention-check` 验证 retention dry-run 的候选分类、保护原因、稳定排序、限制和禁止 mutation 契约。`--strict` 只适合在已注入目标部署环境变量的本地/CI preflight 中使用；它仍然不会发出网络请求。需要 disposable 本地 PostgreSQL 时，另外设置 `AI_DAILY_DATABASE_CHECK=1` 后运行 `npm.cmd run ai-daily:contracts-check -- --with-database`，不要指向生产或共享数据库。
 
 ## 首版生产验收记录
 
-真实三角色 selection bundle 获批并确定首个 live issue/run 后，先创建一份 Git-ignored 的 rollback evidence，再创建和填写验收 manifest。rollback evidence 必须先于 acceptance seal 完成，因为 acceptance v2 的第六个门禁会校验它的封存 hash 和四元绑定（acceptance、edition、issue、run）：
+真实三角色 selection bundle 获批并确定首个 live issue/run 后，先创建一份 Git-ignored 的 rollback evidence，再创建和填写验收 manifest。rollback evidence 必须先于 acceptance seal 完成，因为 acceptance v3 的第六个门禁会校验它的封存 hash 和四元绑定（acceptance、edition、issue、run）：
 
 ```powershell
 npm.cmd run ai-daily:rollback -- init `
@@ -117,9 +117,9 @@ npm.cmd run ai-daily:acceptance -- init --acceptance-id <acceptance-id> --editio
 npm.cmd run ai-daily:acceptance -- check --rollback server/data/ai-daily-rollback-evidence.local.json
 ```
 
-默认读取 `server/data/ai-daily-model-evaluation.local.json`、`server/data/ai-daily-model-approval.v1.json`，写入 `server/data/ai-daily-acceptance.local.json`。该文件只允许保存以下低敏证据：
+默认读取 `server/data/ai-daily-model-selection.local.json`、`server/data/ai-daily-model-approval.v1.json`，写入 `server/data/ai-daily-acceptance.local.json`。若使用可选实测评估路径，则通过 `--proposal server/data/ai-daily-model-evaluation.local.json` 显式指定 proposal。该文件只允许保存以下低敏证据：
 
-- proposal、selection 和 bundle hash，以及审核人别名和批准时间；
+- `selectionBasis`、proposal、selection 和 bundle hash，以及审核人别名和批准时间；
 - 首个 `PRODUCTION` edition 的 `issueId`、`runId`、日期、完成状态；
 - 同一 issue/run/date 下的 Studio draft/review id、草稿版本时间和三个审核勾选；
 - Publish Export id、绑定的 draft/review/version、仓库相对输出路径和命令退出码；
@@ -245,62 +245,61 @@ npm.cmd run ai-daily:resume -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:editorial-tick -- --fixture
 ```
 
-## 三角色模型评估与角色选型
+## 三角色模型选型与可选评估
 
-AI Daily 不按公开榜单直接指定一个“最佳模型”。extractor、composer 和 verifier 分角色使用同一版 BIAU-owned case set、prompt version、generation schema version 与质量口径进行离线评估，各角色可以选择不同的 primary 与 ordered fallback。
+运行时使用 `ai-daily-model-runtime-v2` server-only JSON：`channels` 保存模型、私有 base URL、API key、provider alias、failure-domain alias，并强制声明 `protocol: "responses"`；`candidates` 只把候选 id 和 extractor/composer/verifier 角色映射到 channel。真实值只放 Render secret 或忽略的本地环境文件。
+
+### 推荐路径：静态选型，首版做真实质量验收
+
+当前不需要遍历渠道目录或对每个模型执行 30 个案例。按模型职责选择三个 runtime candidate，先生成 pending proposal，再由站点所有者批准：
 
 ```powershell
-npm.cmd run ai-daily:model-evaluation-check
+npm.cmd run ai-daily:model-select -- --selection-id ai-daily-initial-static `
+  --extractor <extractor-candidate-id> `
+  --composer <composer-candidate-id> `
+  --verifier <verifier-candidate-id> `
+  --acknowledge-reduced-redundancy
+
+npm.cmd run ai-daily:model-select-approve -- `
+  --input server/data/ai-daily-model-selection.local.json `
+  --reviewed-by site-owner `
+  --notes "Static role mapping approved for first-edition Studio review." `
+  --acknowledge-reduced-redundancy
 ```
 
-这个命令只验证评估和批准 contract，不调用 provider。仓库另有版本化资产 `server/data/ai-daily-model-evaluation-cases.v1.json`，它固定 30 个 BIAU-owned 真实评估案例、6 个业务类别和 8 个负例切片；当前 fixture 使用 40 个扩展案例验证以下规则：
+两个命令都输出 `modelCalls: 0`。proposal/bundle 只保存 candidate id、role、provider/failure-domain alias、model identifier、批准状态和 canonical hash；不保存 endpoint、key、prompt、原始输出、质量分或延迟。每个角色只有一个 primary，因此 artifact 必须保持 `manual-static-selection`、`reduced_redundancy` 和空 fallback，不能把同一中转的多个模型描述成独立容灾。
 
-- case descriptor 的 id、role/category、排序后的 `negativeTags` 和 content-bound version 会生成稳定 hash；content-bound version 还包含完整规范化案例内容的 SHA-256 指纹，因此修改 `scenario`、预期编辑结果或评分也会让旧评估失效。候选自报 hash、结果 category/tag 或业务 golden case set 不一致时直接拒绝。业务评估的 `resultSetHash` 还必须绑定完整测量 `cases` 数组的规范化 SHA-256，不能只提供任意格式合法的 64 位字符串；
-- extractor、composer、verifier 都会按每个案例声明的负例标签注入角色对应的挑战输入；若实际注入标签集合与 golden contract 不一致，评估会在写入案例结果前失败，不能只在结果聚合时补贴标签；
-- 候选必须通过现有绝对质量线，包括零关键事实错误、100% citation precision、至少 98% citation coverage、至少 85% 可接受率和至少 4/5 中文编辑评分；
-- 每个类别至少有 4 个案例，每个必需负例切片至少有 3 个案例；任一负例切片出现关键事实错误、citation precision 低于 100%、coverage 低于 90% 或可接受率低于 80%，候选都不能进入审批，即使全局总分仍然通过；
-- primary 依次按可接受率、中文评分、citation coverage、citation precision、p95 latency 和稳定 candidate id 排序；
-- fallback 必须独立通过全部质量线、与 primary 的可接受率相差不超过 5 个百分点，并使用不同的低敏 failure-domain alias；同一中转或故障域不能被标记为完整冗余；
-- `fixture-contract` 记录永远不能进入生产批准；`business-evaluation` 还必须带已完成案例数、非零模型调用计数、评估运行 id、evaluator version 和结果集 hash；
-- 候选记录只保留低敏标识、版本、hash、聚合质量指标、延迟和 token 用量摘要；选择记录用稳定 `candidateSetHash` 绑定当时参与选型的候选记录集合。两者都不保存 prompt、原始输出、正文、endpoint、凭据或错误原文。
+当前建议把 `qwen3.7-max-t` 对应的 candidate 用于 extractor/verifier，把 `grok-4.5` 对应的 candidate 用于 composer。这里依据的是模型名称和角色职责，不是可用性测活或质量排名。真正的质量 gate 是一份完整 AI Daily 真实版次：进入 Studio 后人工核验事实、来源、引用、中文表达和公开安全，再决定批准、退回或更换模型。
 
-fixture contract 通过只说明仓库算法和门禁有效，不说明任何真实模型已经评估或获批。真实候选必须在用户批准的业务评估任务中运行，生成三角色选择记录后仍保持 `approval.status=pending`，由人工确认 primary/fallback 和故障域后才能批准。
+### 可选路径：需要对照或独立 fallback 时再实测
 
-运行时使用 `ai-daily-model-runtime-v2` server-only JSON：`channels` 保存模型、私有 base URL、API key、provider alias、failure-domain alias，并强制声明 `protocol: "responses"`；`candidates` 只把候选 id 和角色映射到 channel。每个角色必须配置 2-3 个候选，并至少覆盖两个独立 failure domain 才能形成完整冗余；同一渠道暴露的多个模型可以用于质量对照，但共享一个故障域，不能写成故障转移。对这种对照评测必须显式追加 `--allow-reduced-redundancy`，结果会保留 `reduced_redundancy` 标记。真实值只放 Render secret 或忽略的本地环境文件。
-
-真实业务评估不会由健康检查或部署自动触发。它必须同时满足 `--execute`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=true`，以及命令中的 `--approval-id` 与 `AI_DAILY_MODEL_EVALUATION_APPROVAL_ID` 完全相同：
+仓库保留完整的 BIAU-owned 评估框架。`npm.cmd run ai-daily:model-evaluation-check` 只验证 30 个 golden cases、6 个业务类别、8 个负例切片、质量线、排序、hash、人工批准和独立 failure-domain fallback contract，不调用 provider。只有明确需要模型对照或建立独立 fallback 时，才运行真实业务评估：
 
 ```powershell
+$env:AI_DAILY_BUSINESS_EVALUATION_ENABLED = 'true'
+$env:AI_DAILY_MODEL_EVALUATION_APPROVAL_ID = '<approved-run-id>'
 npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
 ```
 
-如果本轮只使用同一渠道目录中的多个模型（例如 `grok-4.5` 与 `qwen3.7-max-t`）做真实质量对照，需要明确承认共享故障域：
-
-```powershell
-npm.cmd run ai-daily:model-evaluate -- --execute --allow-reduced-redundancy --approval-id <approved-run-id>
-```
-
-这不会伪造独立 fallback；proposal 会显示 `reduced_redundancy`，正式生产完整冗余仍需第二个独立 provider/failure domain。
-
-评估按候选顺序串行执行，每个角色使用同一份版本化 BIAU-owned golden case set，覆盖官方发布、多来源、数字、更正、中文来源和低证据场景，以及 citation/source 错配、更正反转、日期实体错位、重复归因、低证据越界、数字篡改、范围膨胀和无依据断言。三个角色统一使用 Responses API `input`/`output_text` contract，不再请求 Chat Completions；请求不设置 `temperature`，不会并发轰击同一中转。默认只写入被 Git 忽略的 `server/data/ai-daily-model-evaluation.local.json`；内容只有 case score、固定切片聚合、延迟、调用计数和 hash，不保存 prompt、输入正文、原始输出、endpoint、key 或错误响应。
-
-人工确认 proposal 后再执行审批命令；该命令不调用模型，只把 selection 与审核结论写成可审查、用于受控部署交付但不提交仓库的 bundle：
+真实评估每个角色要求 2-3 个候选并串行执行。完整冗余要求不同 failure domain；同一渠道的多模型对照必须追加 `--allow-reduced-redundancy`，仍不得生成独立 fallback。评估结果默认写入 `server/data/ai-daily-model-evaluation.local.json`，人工检查全局与负例切片的 citation coverage/precision、可接受率、中文评分、延迟和结果 hash 后，再运行：
 
 ```powershell
 npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluation.local.json --reviewed-by site-owner --notes "Measured selection approved for one controlled edition."
 ```
 
-审批命令默认输出到本地 `server/data/ai-daily-model-approval.v1.json`（该文件被 Git 忽略）。生产部署不依赖仓库中的默认文件：先把它上传为 Render Studio 服务的 Secret File `ai-daily-model-approval.v1.json`，并设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json` 与命令输出的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`；后续创建 Editorial Cron 时必须在该服务重复上传。生产 runner 会重新校验 candidate record、selection record、bundle hash、期望 hash，以及 runtime channel 的 provider/failure-domain/model 是否漂移；任何不一致都会 fail closed。
+`AI_DAILY_MODEL_EVALUATION_APPROVAL_ID` 只属于该可选实测路径；使用静态选型时保持为空即可。健康检查、部署 hook 和 Cron 都不能触发真实评估。
 
-当前 runtime 与 evaluation/proposal/approval 的内部 schema 均已升级到 v2；Secret File 文件名和挂载路径继续保持稳定，但任何由旧 runtime/evaluator 生成的本地 proposal 或 bundle 都必须删除后重新执行真实业务评估与人工审批，不能原地复用或手工改版本号。
+两条审批路径都默认输出本地 `server/data/ai-daily-model-approval.v1.json`（Git 忽略）。生产部署先把它上传为 Render Studio 的 Secret File `ai-daily-model-approval.v1.json`，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json` 与输出的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`；后续创建 Editorial Cron 时必须在该服务重复上传。生产 runner 会重新校验 selection/bundle hash，以及 runtime candidate、role、provider、failure domain 和 model identifier；任何不一致都会 fail closed。
 
-部署前可在已配置同一份 server-only runtime 和审批文件的环境中运行离线检查：
+评估 artifact 使用 v2 schema，静态选型 artifact 使用独立 v1 schema，首版验收使用 `ai-daily-acceptance-v3` 并记录 `selectionBasis`。Secret File 文件名和挂载路径保持稳定，但旧本地 proposal/bundle 不能手工改版本号或沿用旧 hash。
+
+部署前可在已配置同一份 server-only runtime 和审批文件的环境中运行：
 
 ```powershell
 npm.cmd run ai-daily:model-approval-check
 ```
 
-该命令只读本地文件和配置，输出 `networkCalls: 0`，不会调用模型或搜索服务。`ai-daily:production-readiness-check` 在没有这三项配置时报告人工门禁，在配置不完整或校验失败时报告结构性失败。
+该命令只读本地文件和配置，输出 `selectionBasis` 与 `networkCalls: 0`，不会调用模型或搜索服务。`ai-daily:production-readiness-check` 在没有 runtime/file/hash 时报告人工门禁，在配置不完整或校验失败时报告结构性失败。
 
 ## Render Cron 运行草案
 
@@ -313,7 +312,7 @@ npm.cmd run ai-daily:model-approval-check
 
 Render 的环境变量和 Secret File 按服务隔离。Ingest Cron 不调用模型，因此不需要审批 bundle；Editorial Cron 必须单独配置与 Studio 相同的 `AI_DAILY_MODEL_RUNTIME_JSON`、`AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`、`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH` 和 `AI_DAILY_PRODUCTION_GENERATION_ENABLED`，并在该 Cron 自己的 **Environment → Secret Files** 上传同一份 `ai-daily-model-approval.v1.json`。只在 Studio 上传文件不能让 Editorial Cron 读取它。
 
-这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。`render.yaml` 故意不创建 Cron，避免 Blueprint 同步绕过人工门禁；通过首个真实版次验收后，再由站点所有者在 Render 控制台创建并启用。editorial runner 已实现 production provider 路径，但默认关闭：`--fixture` 只选择 FIXTURE work，`--live` 只选择 PRODUCTION work，两者互斥；live 还要求 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`、完整 runtime config 和已批准 bundle。完成模型评估与一次真实业务版次验收前，必须保持开关为 `false` 且不要创建 Cron。回滚时先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 `AI_DAILY_PUBLIC_FEED_ENABLED` 都设为 `false`，保留 Studio 手动编辑和离线导出路径。
+这是启用前的 Render 配置草案，不代表当前已经启用生产自动化。`render.yaml` 故意不创建 Cron，避免 Blueprint 同步绕过人工门禁；通过首个真实版次验收后，再由站点所有者在 Render 控制台创建并启用。editorial runner 已实现 production provider 路径，但默认关闭：`--fixture` 只选择 FIXTURE work，`--live` 只选择 PRODUCTION work，两者互斥；live 还要求 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`、完整 runtime config 和已批准 bundle。完成模型选型批准与一次真实业务版次验收前，必须保持开关为 `false` 且不要创建 Cron。回滚时先暂停两个 Cron，再把 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 `AI_DAILY_PUBLIC_FEED_ENABLED` 都设为 `false`，保留 Studio 手动编辑和离线导出路径。
 
 未配置并获批生产 provider 时，`run`、`compose`、`resume` 和 `editorial-tick` 会 fail closed，不会发送测活请求。首个真实版次使用 `npm.cmd run ai-daily:run -- --date <edition-date> --live` 人工执行；通过 Studio 审核后才考虑 Cron。
 
@@ -327,7 +326,7 @@ model channel: none
 
 如果后续需要模型辅助摘要、初稿或润色，必须先有一次明确的内容任务批准。不要为了“测活”调用模型，也不要运行 provider ping。
 
-博客草稿的私有模型配置仍使用博客模型向导；它不等于 AI Daily 的三角色生产选型，也不能替代上面的评估记录：
+博客草稿的私有模型配置仍使用博客模型向导；它不等于 AI Daily 的三角色生产选型，也不能替代上面的静态选型或可选评估记录：
 
 ```powershell
 npm.cmd run blog:model -- setup
@@ -335,7 +334,7 @@ npm.cmd run blog:model -- status --all --format markdown
 npm.cmd run blog:model -- doctor --all --format markdown
 ```
 
-默认 `doctor` 是离线配置检查，不发送模型请求，也不应明文回显 API key。只有在用户明确批准具体内容任务时，才可以运行 `doctor --live` 或 `blog:draft -- --generate`。AI Daily 真实模型评估必须走独立的三角色业务评估与人工批准门禁，不能用博客向导的配置状态代替。
+默认 `doctor` 是离线配置检查，不发送模型请求，也不应明文回显 API key。只有在用户明确批准具体内容任务时，才可以运行 `doctor --live` 或 `blog:draft -- --generate`。AI Daily 必须走独立的三角色静态选型/可选业务评估与人工批准门禁，不能用博客向导的配置状态代替。
 
 ## 发布导出
 
@@ -373,4 +372,4 @@ npm.cmd run build
 
 `studio:ai-daily-brief-check` 会验证 issue brief 的默认模板、完整样例、错误 JSON、不完整对象和格式化行为。`studio:smoke` 是默认的无 live 检查入口：它会把 AI Daily 样例草稿写入系统临时目录并自动清理，不会在 `content-drafts/` 留下 smoke 副本，也不会调用模型或抓取网页。
 
-是否每日自动抓取来源、是否自动创建 issue、是否接入真实模型生成，都属于后续单独任务和人工 gate。
+自动抓取、issue 创建和真实模型生成路径已经实现，但生产启用仍是人工 gate：先批准静态 selection bundle 并完成首个真实版次验收，再决定是否打开两个 Cron、production generation 和 public feed。

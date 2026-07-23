@@ -1,16 +1,18 @@
 import {
   createAiDailyModelArtifactHash,
-  validateAiDailyModelApprovalBundle,
-  validateAiDailyModelEvaluationProposal,
-  type AiDailyModelApprovalBundle,
-  type AiDailyModelEvaluationProposal,
+  getAiDailyModelApprovalBasis,
+  getAiDailyModelProposalBasis,
+  validateAiDailyModelApprovalArtifact,
+  validateAiDailyModelProposal,
+  type AiDailyModelApprovalArtifact,
+  type AiDailyModelProposal,
 } from './aiDailyModelArtifacts.js'
 import {
   evaluateAiDailyRollbackEvidenceManifest,
   type AiDailyRollbackAcceptanceBinding,
 } from './aiDailyRollback.js'
 
-export const aiDailyAcceptanceManifestSchemaVersion = 'ai-daily-acceptance-v2'
+export const aiDailyAcceptanceManifestSchemaVersion = 'ai-daily-acceptance-v3'
 export const aiDailyAcceptanceManifestDefaultPath = 'server/data/ai-daily-acceptance.local.json'
 
 const acceptanceProfiles = ['PRODUCTION', 'FIXTURE', 'DEGRADED'] as const
@@ -24,6 +26,7 @@ type Nullable<T> = T | null
 type CheckStatus = 'passed' | 'failed' | 'pending'
 
 export interface AiDailyAcceptanceEvaluationEvidence {
+  selectionBasis: 'measured-evaluation' | 'manual-static-selection'
   proposalHash: string
   proposalSelectionRecordHash: string
   bundleHash: string
@@ -124,8 +127,8 @@ export function createAiDailyAcceptanceManifest(input: {
   bundle: unknown
   createdAt?: string
 }): AiDailyAcceptanceManifest {
-  const proposal = validateAiDailyModelEvaluationProposal(input.proposal)
-  const bundle = validateAiDailyModelApprovalBundle(input.bundle)
+  const proposal = validateAiDailyModelProposal(input.proposal)
+  const bundle = validateAiDailyModelApprovalArtifact(input.bundle)
   const issues = compareEvaluationArtifacts(proposal, bundle)
   if (issues.length > 0) throw new Error(`invalid-ai-daily-acceptance-artifacts:${issues.join(',')}`)
   const acceptanceId = readIdentifier(input.acceptanceId, 'acceptance-id')
@@ -222,8 +225,8 @@ export function evaluateAiDailyAcceptanceManifest(input: {
       issues.push('acceptance-artifact-pair-required')
     } else {
       try {
-        const proposal = validateAiDailyModelEvaluationProposal(input.proposal)
-        const bundle = validateAiDailyModelApprovalBundle(input.bundle)
+        const proposal = validateAiDailyModelProposal(input.proposal)
+        const bundle = validateAiDailyModelApprovalArtifact(input.bundle)
         issues.push(...compareEvaluationArtifacts(proposal, bundle))
         issues.push(...compareManifestEvaluation(manifest.evaluation, proposal, bundle))
         evidenceVerified = issues.length === 0
@@ -287,10 +290,11 @@ export function createAiDailyAcceptanceRecordHash(manifest: AiDailyAcceptanceMan
 }
 
 function evaluationFromArtifacts(
-  proposal: AiDailyModelEvaluationProposal,
-  bundle: AiDailyModelApprovalBundle,
+  proposal: AiDailyModelProposal,
+  bundle: AiDailyModelApprovalArtifact,
 ): AiDailyAcceptanceEvaluationEvidence {
   return {
+    selectionBasis: getAiDailyModelProposalBasis(proposal),
     proposalHash: proposal.proposalHash,
     proposalSelectionRecordHash: proposal.selection.recordHash,
     bundleHash: bundle.bundleHash,
@@ -301,10 +305,17 @@ function evaluationFromArtifacts(
   }
 }
 
-function compareEvaluationArtifacts(proposal: AiDailyModelEvaluationProposal, bundle: AiDailyModelApprovalBundle) {
+function compareEvaluationArtifacts(proposal: AiDailyModelProposal, bundle: AiDailyModelApprovalArtifact) {
   const issues: string[] = []
+  if (getAiDailyModelProposalBasis(proposal) !== getAiDailyModelApprovalBasis(bundle)) {
+    issues.push('acceptance-selection-basis-mismatch')
+  }
   if (proposal.selection.selectionId !== bundle.selection.selectionId) issues.push('acceptance-selection-id-mismatch')
-  if (createAiDailyModelArtifactHash(proposal.candidateRecords) !== createAiDailyModelArtifactHash(bundle.candidateRecords)) {
+  if (
+    'candidateRecords' in proposal &&
+    'candidateRecords' in bundle &&
+    createAiDailyModelArtifactHash(proposal.candidateRecords) !== createAiDailyModelArtifactHash(bundle.candidateRecords)
+  ) {
     issues.push('acceptance-candidate-records-mismatch')
   }
   if (selectionBaseHash(proposal.selection) !== selectionBaseHash(bundle.selection)) issues.push('acceptance-selection-mismatch')
@@ -313,8 +324,8 @@ function compareEvaluationArtifacts(proposal: AiDailyModelEvaluationProposal, bu
 
 function compareManifestEvaluation(
   evaluation: AiDailyAcceptanceEvaluationEvidence,
-  proposal: AiDailyModelEvaluationProposal,
-  bundle: AiDailyModelApprovalBundle,
+  proposal: AiDailyModelProposal,
+  bundle: AiDailyModelApprovalArtifact,
 ) {
   const expected = evaluationFromArtifacts(proposal, bundle)
   return createAiDailyModelArtifactHash(evaluation) === createAiDailyModelArtifactHash(expected)
@@ -449,8 +460,9 @@ function evaluateDeployment(manifest: AiDailyAcceptanceManifest, issues: string[
 
 function normalizeEvaluation(value: unknown): AiDailyAcceptanceEvaluationEvidence {
   if (!isRecord(value)) throw new Error('acceptance-evaluation-required')
-  assertExactKeys(value, ['proposalHash', 'proposalSelectionRecordHash', 'bundleHash', 'approvedSelectionRecordHash', 'selectionId', 'reviewedBy', 'approvedAt'], 'evaluation')
+  assertExactKeys(value, ['selectionBasis', 'proposalHash', 'proposalSelectionRecordHash', 'bundleHash', 'approvedSelectionRecordHash', 'selectionId', 'reviewedBy', 'approvedAt'], 'evaluation')
   return {
+    selectionBasis: readEnum(value.selectionBasis, ['measured-evaluation', 'manual-static-selection'] as const, 'selection-basis'),
     proposalHash: readHash(value.proposalHash, 'proposal-hash'),
     proposalSelectionRecordHash: readHash(value.proposalSelectionRecordHash, 'proposal-selection-record-hash'),
     bundleHash: readHash(value.bundleHash, 'bundle-hash'),

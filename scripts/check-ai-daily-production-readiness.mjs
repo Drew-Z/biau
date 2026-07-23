@@ -93,7 +93,9 @@ function invalidProductionKeys(source) {
   if (!/^[a-f0-9]{64}$/u.test(source.AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH?.trim() || '')) {
     invalid.push('AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH')
   }
-  if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{2,119}$/u.test(source.AI_DAILY_MODEL_EVALUATION_APPROVAL_ID?.trim() || '')) {
+  const evaluationApprovalId = source.AI_DAILY_MODEL_EVALUATION_APPROVAL_ID?.trim() || ''
+  const businessEvaluationEnabled = /^(?:true|1|yes|on)$/iu.test(source.AI_DAILY_BUSINESS_EVALUATION_ENABLED?.trim() || '')
+  if ((businessEvaluationEnabled || evaluationApprovalId) && !/^[A-Za-z0-9][A-Za-z0-9._:-]{2,119}$/u.test(evaluationApprovalId)) {
     invalid.push('AI_DAILY_MODEL_EVALUATION_APPROVAL_ID')
   }
   if (!/^(?:true|1|yes|on)$/iu.test(source.TRUST_PROXY?.trim() || '')) invalid.push('TRUST_PROXY')
@@ -180,6 +182,8 @@ async function main() {
     'ai-daily:model-approval-check',
     'ai-daily:model-evaluate',
     'ai-daily:model-approve',
+    'ai-daily:model-select',
+    'ai-daily:model-select-approve',
     'ai-daily:acceptance',
     'ai-daily:acceptance-check',
     'ai-daily:rollback',
@@ -238,12 +242,12 @@ async function main() {
     runOfflineContract('ai-daily:model-runtime-check')
   results.push(
     check(
-      'model-evaluation-contract',
-      'Offline three-role model evaluation contract',
+      'model-selection-contract',
+      'Offline three-role model selection contract',
       modelEvaluationContractOk,
       modelEvaluationContractOk
-        ? 'Golden case-set, category/negative-slice floors, three-role evaluation, tamper detection, explicit bundle hash, and runtime drift contracts passed with local/loopback fixtures'
-        : 'model evaluation contract failed; run npm.cmd run ai-daily:model-evaluation-check for details',
+        ? 'Measured evaluation and acknowledged manual static selection both pass tamper detection, explicit bundle hash, runtime drift, and zero-external-call contracts'
+        : 'model selection contract failed; run npm.cmd run ai-daily:model-evaluation-check and npm.cmd run ai-daily:model-runtime-check for details',
     ),
   )
 
@@ -254,7 +258,7 @@ async function main() {
       'Offline acceptance manifest contract',
       acceptanceContractOk,
       acceptanceContractOk
-        ? 'Proposal, approval bundle, production edition, Studio review, export, deployment, and tamper bindings pass with zero provider calls'
+        ? 'Measured or manual proposal, approval bundle, production edition, Studio review, export, deployment, and tamper bindings pass with zero provider calls'
         : 'Acceptance manifest contract failed; run npm.cmd run ai-daily:acceptance-check for details',
     ),
   )
@@ -401,7 +405,6 @@ async function main() {
     'AI_DAILY_MODEL_APPROVAL_FILE',
     'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
     'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
-    'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
     'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
   ]
   const missingRenderKeys = requiredRenderKeys.filter((key) => !studioService.includes(`- key: ${key}`))
@@ -517,13 +520,16 @@ async function main() {
     'AI_DAILY_MODEL_RUNTIME_JSON',
     'AI_DAILY_MODEL_APPROVAL_FILE',
     'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
-    'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
     'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
     'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
     'TRUST_PROXY',
   ]
-  const configuredKeys = productionKeys.filter((key) => hasValue(process.env[key]))
-  const missingProductionKeys = productionKeys.filter((key) => !hasValue(process.env[key]))
+  const conditionalProductionKeys = /^(?:true|1|yes|on)$/iu.test(process.env.AI_DAILY_BUSINESS_EVALUATION_ENABLED?.trim() || '')
+    ? ['AI_DAILY_MODEL_EVALUATION_APPROVAL_ID']
+    : []
+  const effectiveProductionKeys = [...productionKeys, ...conditionalProductionKeys]
+  const configuredKeys = effectiveProductionKeys.filter((key) => hasValue(process.env[key]))
+  const missingProductionKeys = effectiveProductionKeys.filter((key) => !hasValue(process.env[key]))
   const invalidConfiguredKeys = invalidProductionKeys(process.env).filter((key) => !missingProductionKeys.includes(key))
   const environmentReady = missingProductionKeys.length === 0 && invalidConfiguredKeys.length === 0
   results.push(
@@ -532,8 +538,8 @@ async function main() {
       'Current process environment',
       environmentReady,
       environmentReady
-        ? `${configuredKeys.length}/${productionKeys.length} production keys are configured`
-        : `${configuredKeys.length}/${productionKeys.length} production keys configured; missing ${missingProductionKeys.join(', ') || 'none'}; invalid ${invalidConfiguredKeys.join(', ') || 'none'}`,
+        ? `${configuredKeys.length}/${effectiveProductionKeys.length} production keys are configured`
+        : `${configuredKeys.length}/${effectiveProductionKeys.length} production keys configured; missing ${missingProductionKeys.join(', ') || 'none'}; invalid ${invalidConfiguredKeys.join(', ') || 'none'}`,
       environmentReady ? 'pass' : 'manual-gate',
     ),
   )

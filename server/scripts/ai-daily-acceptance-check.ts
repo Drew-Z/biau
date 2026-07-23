@@ -5,8 +5,10 @@ import { tmpdir } from 'node:os'
 import { dirname, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  approveAiDailyModelManualSelectionProposal,
   approveAiDailyModelEvaluationProposal,
   createAiDailyModelEvaluationProposal,
+  createAiDailyModelManualSelectionProposal,
 } from '../src/aiDailyModelArtifacts.js'
 import {
   createAiDailyAcceptanceManifest,
@@ -30,6 +32,7 @@ import {
   type AiDailyModelEvaluationCandidateInput,
 } from '../src/aiDailyModelEvaluation.js'
 import { createAiDailyGenerationPayloadHash, type AiDailyQualityCaseResult } from '../src/aiDailyGeneration.js'
+import { normalizeAiDailyModelRuntimeConfig } from '../src/aiDailyModelRuntime.js'
 
 const editionDate = '2026-07-20'
 const evaluationGeneratedAt = '2026-07-20T01:00:00.000Z'
@@ -53,6 +56,56 @@ const bundle = approveAiDailyModelEvaluationProposal({
     reviewedBy: 'offline-editor',
     notes: 'Offline acceptance contract fixture only.',
   },
+})
+const manualRuntimeResult = normalizeAiDailyModelRuntimeConfig({
+  schemaVersion: 'ai-daily-model-runtime-v2',
+  channels: [
+    {
+      id: 'shared-relay',
+      providerRef: 'shared-provider',
+      failureDomainRef: 'shared-provider-domain',
+      protocol: 'responses',
+      baseUrl: 'https://relay.example.invalid/v1',
+      apiKey: 'test-key-manual-selection',
+      modelIdentifier: 'test/qwen3.7-max-t',
+    },
+    {
+      id: 'shared-relay-composer',
+      providerRef: 'shared-provider',
+      failureDomainRef: 'shared-provider-domain',
+      protocol: 'responses',
+      baseUrl: 'https://relay.example.invalid/v1',
+      apiKey: 'test-key-manual-selection',
+      modelIdentifier: 'test/grok-4.5',
+    },
+  ],
+  candidates: [
+    { candidateId: 'manual-extractor', role: 'extractor', channelId: 'shared-relay' },
+    { candidateId: 'manual-composer', role: 'composer', channelId: 'shared-relay-composer' },
+    { candidateId: 'manual-verifier', role: 'verifier', channelId: 'shared-relay' },
+  ],
+})
+assert.equal(manualRuntimeResult.ok, true)
+if (!manualRuntimeResult.ok) throw new Error(manualRuntimeResult.issues.join(','))
+const manualProposal = createAiDailyModelManualSelectionProposal({
+  selectionId: 'acceptance-manual-static',
+  generatedAt: evaluationGeneratedAt,
+  runtime: manualRuntimeResult.config,
+  candidateIds: {
+    extractor: 'manual-extractor',
+    composer: 'manual-composer',
+    verifier: 'manual-verifier',
+  },
+  acknowledgeReducedRedundancy: true,
+})
+const manualBundle = approveAiDailyModelManualSelectionProposal({
+  proposal: manualProposal,
+  review: {
+    reviewedAt: reviewAt,
+    reviewedBy: 'offline-editor',
+    notes: 'Static role mapping approved for first-edition Studio review.',
+  },
+  acknowledgeReducedRedundancy: true,
 })
 const rollbackEvidence = createSealedRollbackEvidence('acceptance-fixture-v1')
 
@@ -81,6 +134,45 @@ assert.ok(sealedManifest.recordHash)
 const sealedResult = evaluate({ manifest: sealedManifest, proposal, bundle, requireSealed: true })
 assert.equal(sealedResult.issues.length, 0, sealedResult.issues.join(', '))
 assert.equal(sealedResult.sealed, true)
+
+const manualRollbackEvidence = createSealedRollbackEvidence('acceptance-manual-static')
+const manualInitialManifest = createAiDailyAcceptanceManifest({
+  acceptanceId: 'acceptance-manual-static',
+  editionDate,
+  proposal: manualProposal,
+  bundle: manualBundle,
+  createdAt: '2026-07-20T02:05:00.000Z',
+})
+assert.equal(manualInitialManifest.evaluation.selectionBasis, 'manual-static-selection')
+const manualCompleteManifest = complete(manualInitialManifest, manualRollbackEvidence)
+const manualSealedManifest = sealAiDailyAcceptanceManifest({
+  manifest: manualCompleteManifest,
+  proposal: manualProposal,
+  bundle: manualBundle,
+  rollbackEvidence: manualRollbackEvidence,
+})
+const manualSealedResult = evaluateAiDailyAcceptanceManifest({
+  manifest: manualSealedManifest,
+  proposal: manualProposal,
+  bundle: manualBundle,
+  rollbackEvidence: manualRollbackEvidence,
+  requireArtifacts: true,
+  requireSealed: true,
+})
+assert.equal(manualSealedResult.ok, true)
+if (manualSealedResult.ok) {
+  assert.equal(manualSealedResult.sealed, true)
+  assert.equal(manualSealedResult.issues.length, 0, manualSealedResult.issues.join(', '))
+}
+const mixedArtifactBasis = evaluateAiDailyAcceptanceManifest({
+  manifest: completeManifest,
+  proposal,
+  bundle: manualBundle,
+  rollbackEvidence,
+  requireArtifacts: true,
+})
+assert.equal(mixedArtifactBasis.ok, true)
+if (mixedArtifactBasis.ok) assert.ok(mixedArtifactBasis.issues.includes('acceptance-selection-basis-mismatch'))
 
 const unverifiedSealed = evaluateAiDailyAcceptanceManifest({ manifest: sealedManifest, rollbackEvidence })
 assert.equal(unverifiedSealed.ok, true)
@@ -384,7 +476,7 @@ assert.equal(impossibleDate.ok, false)
 if (!impossibleDate.ok) assert.ok(impossibleDate.issues.includes('acceptance-edition-date-invalid'))
 
 const oldSchema = evaluateAiDailyAcceptanceManifest({
-  manifest: { ...completeManifest, schemaVersion: 'ai-daily-acceptance-v1' },
+  manifest: { ...completeManifest, schemaVersion: 'ai-daily-acceptance-v2' },
   proposal,
   bundle,
 })
@@ -393,7 +485,7 @@ if (!oldSchema.ok) assert.equal(oldSchema.error, 'invalid-ai-daily-acceptance-ma
 
 await runCliRoundTrip()
 
-console.log('AI Daily acceptance contract passed (networkCalls=0, providerCalls=0, gates=6, rollbackCases=6, cliRoundTrip=1)')
+console.log('AI Daily acceptance contract passed (networkCalls=0, providerCalls=0, selectionPaths=2, gates=6, rollbackCases=6, cliRoundTrip=1)')
 
 function evaluate(input: Parameters<typeof evaluateAiDailyAcceptanceManifest>[0]) {
   const result = evaluateAiDailyAcceptanceManifest({ rollbackEvidence, ...input, requireArtifacts: true })

@@ -141,19 +141,19 @@ AI_DAILY_PUBLIC_RATE_LIMIT=60
 AI_DAILY_PUBLIC_RATE_WINDOW_MS=60000
 AI_DAILY_MODEL_RUNTIME_JSON=<server-only channel and candidate mapping>
 AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json
-AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<ai-daily:model-approve 输出的 bundleHash>
+AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<ai-daily:model-select-approve 或 model-approve 输出的 bundleHash>
 AI_DAILY_BUSINESS_EVALUATION_ENABLED=false
-AI_DAILY_MODEL_EVALUATION_APPROVAL_ID=<matching approved evaluation run id>
+AI_DAILY_MODEL_EVALUATION_APPROVAL_ID=<only for optional measured evaluation>
 AI_DAILY_PRODUCTION_GENERATION_ENABLED=false
 ```
 
 Studio 模式挂载 `/health`、受保护的 `/studio/api/*`，以及独立无鉴权但有 CORS、限流和字段白名单的 `/public/ai-daily/*`。它不挂载聊天、Operator 或 RAG 路由。
 
-`AI_DAILY_MODEL_RUNTIME_JSON` 只放在 Render 的 server-only environment 中，必须使用 `ai-daily-model-runtime-v2`。`channels` 保存私有 provider base、key、model 和 failure-domain alias，并统一声明 `protocol: "responses"`；`candidates` 将 extractor/composer/verifier 映射到 channel。AI Daily 不再使用 Chat Completions。不要把真实 JSON 写入 Git、浏览器变量、日志或截图。审批 bundle 不依赖仓库构建产物：在 Studio 服务的 Render **Environment → Secret Files** 上传文件名 `ai-daily-model-approval.v1.json`，Render 运行时路径固定为 `/etc/secrets/ai-daily-model-approval.v1.json`，再把审批命令输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。Render Blueprint 只能声明固定路径和变量，Render Secret File 内容仍需在控制台人工上传或轮换。生产 runner 会同时校验文件 schema/hash、期望 bundle hash 和 runtime provider/failure-domain/model；任何缺失、篡改或旧 bundle 都会 fail closed。生产默认保持 `AI_DAILY_BUSINESS_EVALUATION_ENABLED=false` 和 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`。真实评估必须由用户批准的业务任务显式运行，首个版次仍需使用 `--live` 人工验收；Cron 不能作为模型测活或自动批准入口。
+`AI_DAILY_MODEL_RUNTIME_JSON` 只放在 Render 的 server-only environment 中，必须使用 `ai-daily-model-runtime-v2`。`channels` 保存私有 provider base、key、model 和 failure-domain alias，并统一声明 `protocol: "responses"`；`candidates` 将 extractor/composer/verifier 映射到 channel。AI Daily 不再使用 Chat Completions。默认推荐用 `ai-daily:model-select` 选择三个静态角色候选；它可以每个角色只有一个 candidate，并在批准 bundle 中明确 `manual-static-selection` 与 `reduced_redundancy`。只有需要质量对照或独立 fallback 时，才配置每角色 2-3 个候选并运行可选的真实评估。不要把真实 JSON 写入 Git、浏览器变量、日志或截图。审批 bundle 不依赖仓库构建产物：在 Studio 服务的 Render **Environment → Secret Files** 上传文件名 `ai-daily-model-approval.v1.json`，Render 运行时路径固定为 `/etc/secrets/ai-daily-model-approval.v1.json`，再把审批命令输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。Render Blueprint 只能声明固定路径和变量，Render Secret File 内容仍需在控制台人工上传或轮换。生产 runner 会同时校验文件 schema/hash、期望 bundle hash 和 runtime candidate/role/provider/failure-domain/model；任何缺失、篡改或漂移都会 fail closed。生产默认保持 `AI_DAILY_BUSINESS_EVALUATION_ENABLED=false` 和 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`。真实版次仍需使用 `--live` 人工验收；Cron 不能作为模型测活或自动批准入口。
 
 Secret Files 不会在 Render 服务之间自动共享。首个版次验收通过后创建 **Editorial Cron** 时，必须在该 Cron 上重复设置 `AI_DAILY_MODEL_RUNTIME_JSON`、`AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`、`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`、`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 Studio 数据库变量，并单独上传同一份 Secret File。Ingest Cron 不运行模型，不应配置模型 runtime、key 或审批 bundle。仓库的 `render.yaml` 故意不声明两个 Cron，防止 Blueprint 同步在人工门禁完成前直接启用定时任务。
 
-审批 bundle 轮换顺序：先在本地完成人工审核并运行 `ai-daily:model-approve`，记录新的 `bundleHash`；再分别向所有会执行 live runner 的服务上传同名 Secret File，更新相同的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`，最后选择 **Save, rebuild, and deploy**。回滚时恢复上一份已批准文件和 hash，或关闭 production generation；不要把 bundle JSON 粘贴进环境变量，也不要把真实 bundle 提交到 Git。
+审批 bundle 轮换顺序：先在本地完成人工审核并运行 `ai-daily:model-select-approve`（静态路径）或 `ai-daily:model-approve`（实测路径），记录新的 `bundleHash`；再分别向所有会执行 live runner 的服务上传同名 Secret File，更新相同的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`，最后选择 **Save, rebuild, and deploy**。回滚时恢复上一份已批准文件和 hash，或关闭 production generation；不要把 bundle JSON 粘贴进环境变量，也不要把真实 bundle 提交到 Git。
 
 Studio 运维指标默认关闭，Render Blueprint 显式设置 `METRICS_ENABLED=false` 和 `AI_DAILY_OPERATIONS_METRICS_ENABLED=false`。仓库提供 `observability/ai-daily-grafana-dashboard.json` 和 `observability/ai-daily-prometheus-alerts.yml`，覆盖 `config`、`provider`、`evidence`、`quality`、`infrastructure`、`stale-content` 六类固定故障，并在 `biau_ai_daily_operations_snapshot_up` 为 `0` 或时间序列缺失持续 5 分钟时触发独立 critical 告警；先运行 `npm.cmd run ai-daily:observability-contract-check`，再由平台管理员人工配置 `METRICS_ENABLED=true`、`AI_DAILY_OPERATIONS_METRICS_ENABLED=true`、Prometheus scrape、Grafana 导入和通知 routing。模板不包含真实 datasource、凭据或告警目标。
 

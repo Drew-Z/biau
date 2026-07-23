@@ -1,21 +1,26 @@
 import { createServer } from 'node:http'
 import { spawnSync } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
+  approveAiDailyModelManualSelectionProposal,
   approveAiDailyModelEvaluationProposal,
   createAiDailyModelArtifactHash,
   createAiDailyModelEvaluationProposal,
-  type AiDailyModelApprovalBundle,
+  createAiDailyModelManualSelectionProposal,
+  type AiDailyModelApprovalArtifact,
+  validateAiDailyModelApprovalArtifact,
   validateAiDailyModelApprovalBundle,
+  validateAiDailyModelManualSelectionProposal,
 } from '../src/aiDailyModelArtifacts.js'
 import { createAiDailyResponsesProvider } from '../src/aiDailyModelProvider.js'
 import {
   buildAiDailyProductionProviders,
   defaultAiDailyModelApprovalFile,
   loadAiDailyModelApprovalBundle,
+  summarizeAiDailyModelApprovalBundle,
 } from '../src/aiDailyModelProduction.js'
 import { resolveAiDailyRunnerGenerationMode } from '../src/aiDailyRunnerMode.js'
 import {
@@ -164,6 +169,78 @@ try {
   assertEqual(providers.composer.primary.id, 'composer-a', 'approved composer primary')
   assertEqual(providers.verifier.fallbacks?.[0]?.id, 'verifier-b', 'approved verifier fallback')
 
+  assertThrows(
+    () => createAiDailyModelManualSelectionProposal({
+      selectionId: 'manual-selection-check',
+      generatedAt: '2026-07-23T15:00:00.000Z',
+      runtime: reducedRuntime,
+      candidateIds: { extractor: 'extractor-a', composer: 'composer-a', verifier: 'verifier-a' },
+      acknowledgeReducedRedundancy: false,
+    }),
+    'manual selection must require reduced-redundancy acknowledgement',
+  )
+  const manualProposal = createAiDailyModelManualSelectionProposal({
+    selectionId: 'manual-selection-check',
+    generatedAt: '2026-07-23T15:00:00.000Z',
+    runtime: reducedRuntime,
+    candidateIds: { extractor: 'extractor-a', composer: 'composer-a', verifier: 'verifier-a' },
+    acknowledgeReducedRedundancy: true,
+  })
+  assertEqual(
+    validateAiDailyModelManualSelectionProposal(manualProposal).proposalHash,
+    manualProposal.proposalHash,
+    'manual proposal validation',
+  )
+  assertThrows(
+    () => approveAiDailyModelManualSelectionProposal({
+      proposal: manualProposal,
+      review: {
+        reviewedAt: '2026-07-23T15:10:00.000Z',
+        reviewedBy: 'site-owner-check',
+        notes: 'Approve static role mapping for first-edition business review.',
+      },
+      acknowledgeReducedRedundancy: false,
+    }),
+    'manual approval must repeat the reduced-redundancy acknowledgement',
+  )
+  const manualBundle = approveAiDailyModelManualSelectionProposal({
+    proposal: manualProposal,
+    review: {
+      reviewedAt: '2026-07-23T15:10:00.000Z',
+      reviewedBy: 'site-owner-check',
+      notes: 'Approve static role mapping for first-edition business review.',
+    },
+    acknowledgeReducedRedundancy: true,
+  })
+  assertEqual(validateAiDailyModelApprovalArtifact(manualBundle).bundleHash, manualBundle.bundleHash, 'manual bundle validation')
+  const manualProviders = buildAiDailyProductionProviders({ runtime: reducedRuntime, bundle: manualBundle })
+  assertEqual(manualProviders.extractor.primary.id, 'extractor-a', 'manual extractor primary')
+  assertEqual(manualProviders.extractor.fallbacks?.length, 0, 'manual extractor has no independent fallback')
+  assertEqual(manualProviders.composer.primary.id, 'composer-a', 'manual composer primary')
+  assertEqual(manualProviders.verifier.primary.id, 'verifier-a', 'manual verifier primary')
+  const manualSummary = summarizeAiDailyModelApprovalBundle(manualBundle)
+  assertEqual(manualSummary.selectionBasis, 'manual-static-selection', 'manual selection basis')
+  assert(manualSummary.roles.every((role) => role.redundancy === 'reduced_redundancy'), 'manual roles must disclose reduced redundancy')
+  assert(manualSummary.roles.every((role) => role.fallbackCandidateIds.length === 0), 'manual roles must not claim fallback')
+  const serializedManualArtifacts = JSON.stringify({ manualProposal, manualBundle })
+  for (const deniedKey of ['"endpoint"', '"baseUrl"', '"apiKey"', '"prompt"', '"rawOutput"', '"qualityScore"', '"metrics"']) {
+    assert(!serializedManualArtifacts.includes(deniedKey), `manual artifacts must not contain ${deniedKey}`)
+  }
+  assertThrows(
+    () => validateAiDailyModelManualSelectionProposal({ ...manualProposal, endpoint: 'not-allowed' }),
+    'manual proposal must reject unknown fields',
+  )
+  const manualDriftedRuntime = {
+    ...reducedRuntime,
+    channels: reducedRuntime.channels.map((channel, index) => index === 0
+      ? { ...channel, modelIdentifier: 'test/model-drifted' }
+      : channel),
+  }
+  assertThrows(
+    () => buildAiDailyProductionProviders({ runtime: manualDriftedRuntime, bundle: manualBundle }),
+    'manual selection runtime channel drift',
+  )
+
   const driftedRuntime = {
     ...runtime,
     channels: runtime.channels.map((channel, index) => index === 0 ? { ...channel, providerRef: 'provider-drifted' } : channel),
@@ -184,6 +261,8 @@ try {
     'malformed approval bundle should fail closed',
   )
   await validateCustomApprovalBundleFile(bundle, runtime)
+  await validateCustomApprovalBundleFile(manualBundle, reducedRuntime)
+  await validateManualSelectionCli(reducedRuntime)
 
   const invalid = normalizeAiDailyModelRuntimeConfig({ schemaVersion: 'wrong', channels: [], candidates: [] })
   assert(!invalid.ok, 'invalid runtime config should fail closed')
@@ -238,7 +317,7 @@ async function validateConfiguredApprovalBundleFile() {
 }
 
 async function validateCustomApprovalBundleFile(
-  bundle: AiDailyModelApprovalBundle,
+  bundle: AiDailyModelApprovalArtifact,
   runtime: AiDailyModelRuntimeConfig,
 ) {
   const directory = await mkdtemp(path.join(tmpdir(), 'biau-ai-daily-approval-'))
@@ -291,10 +370,74 @@ async function validateCustomApprovalBundleFile(
     await writeFile(filePath, `${JSON.stringify({ ...bundle, bundleHash: '0'.repeat(64) })}\n`, 'utf8')
     await expectFailure(
       () => loadAiDailyModelApprovalBundle(filePath, bundle.bundleHash),
-      'invalid-ai-daily-model-approval-bundle-hash',
+      bundle.schemaVersion === 'ai-daily-model-approval-bundle-v2'
+        ? 'invalid-ai-daily-model-approval-bundle-hash'
+        : 'invalid-ai-daily-model-manual-selection-bundle-hash',
     )
   } finally {
     await rm(directory, { recursive: true, force: true })
+  }
+}
+
+async function validateManualSelectionCli(runtime: AiDailyModelRuntimeConfig) {
+  const directory = await mkdtemp(path.join(tmpdir(), 'biau-ai-daily-selection-'))
+  const proposalPath = path.join(directory, 'selection.local.json')
+  const bundlePath = path.join(directory, 'approval.local.json')
+  const commandEnv = {
+    ...process.env,
+    NODE_ENV: 'test',
+    AI_DAILY_MODEL_RUNTIME_JSON: JSON.stringify(runtime),
+  }
+  try {
+    const selected = spawnNpmScript('ai-daily:model-select', [
+      '--selection-id', 'manual-selection-cli-check',
+      '--extractor', 'extractor-a',
+      '--composer', 'composer-a',
+      '--verifier', 'verifier-a',
+      '--acknowledge-reduced-redundancy',
+      '--out', proposalPath,
+    ], commandEnv)
+    assert(selected.status === 0, 'manual selection CLI should create a pending proposal')
+    assert(selected.stdout.includes('"modelCalls": 0'), 'manual selection CLI must report zero model calls')
+    assert(!selected.stdout.includes('test-key-'), 'manual selection CLI must not expose runtime credentials')
+    assert(!selected.stdout.includes(runtime.channels[0].baseUrl), 'manual selection CLI must not expose runtime endpoints')
+
+    const approved = spawnNpmScript('ai-daily:model-select-approve', [
+      '--input', proposalPath,
+      '--reviewed-by', 'site-owner-check',
+      '--notes', 'static-mapping-approved-for-first-edition-review',
+      '--acknowledge-reduced-redundancy',
+      '--out', bundlePath,
+    ], commandEnv)
+    assert(approved.status === 0, 'manual selection approval CLI should create a bundle')
+    assert(approved.stdout.includes('"modelCalls": 0'), 'manual selection approval CLI must report zero model calls')
+    assert(!approved.stdout.includes('test-key-'), 'manual approval CLI must not expose runtime credentials')
+    const loaded = validateAiDailyModelApprovalArtifact(JSON.parse(await readFile(bundlePath, 'utf8')))
+    assertEqual(summarizeAiDailyModelApprovalBundle(loaded).selectionBasis, 'manual-static-selection', 'manual CLI artifact basis')
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
+function spawnNpmScript(script: string, args: string[], env: NodeJS.ProcessEnv) {
+  const npmArgs = ['--silent', 'run', script, '--', ...args]
+  const result = process.platform === 'win32'
+    ? spawnSync('cmd.exe', ['/d', '/s', '/c', ['npm.cmd', ...npmArgs].join(' ')], {
+        cwd: repoRoot,
+        env,
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+    : spawnSync('npm', npmArgs, {
+        cwd: repoRoot,
+        env,
+        encoding: 'utf8',
+        timeout: 30_000,
+      })
+  return {
+    status: result.status,
+    stdout: String(result.stdout ?? ''),
+    stderr: String(result.stderr ?? ''),
   }
 }
 

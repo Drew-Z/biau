@@ -29,6 +29,7 @@ async function main() {
   console.log(JSON.stringify({
     ok: true,
     networkCalls: 0,
+    selectionBasis: bundleSummary.selectionBasis,
     bundleHash: bundleSummary.bundleHash,
     selectionRecordHash: bundleSummary.selectionRecordHash,
     approvedAt: bundleSummary.approvedAt,

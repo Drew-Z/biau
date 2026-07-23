@@ -14,7 +14,7 @@ import {
   writeJsonFile,
 } from './local-evidence-file.js'
 
-const defaultProposalPath = 'server/data/ai-daily-model-evaluation.local.json'
+const defaultProposalPath = 'server/data/ai-daily-model-selection.local.json'
 const defaultBundlePath = 'server/data/ai-daily-model-approval.v1.json'
 
 type Command = 'init' | 'check' | 'seal'
@@ -42,7 +42,14 @@ async function main() {
       bundle,
     })
     await writeJsonFile(outPath, manifest)
-    print({ command, output: displayRepositoryPath(outPath), acceptanceId: manifest.acceptanceId, editionDate: manifest.editionDate, sealed: false })
+    print({
+      command,
+      output: displayRepositoryPath(outPath),
+      acceptanceId: manifest.acceptanceId,
+      editionDate: manifest.editionDate,
+      selectionBasis: manifest.evaluation.selectionBasis,
+      sealed: false,
+    })
     return
   }
 

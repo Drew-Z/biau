@@ -66,16 +66,16 @@ Worker projection revalidates the active work-item lease inside the same transac
 
 ### Command and provider boundary
 
-The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compose`, `ai-daily:resume`, and `ai-daily:editorial-tick` require an explicit mutually-exclusive `--fixture` or `--live` mode. `--fixture` selects `FIXTURE` work and never calls an external provider. `--live` additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`, a server-only runtime candidate config, and a validated approved model-selection bundle; missing or drifting configuration fails closed. No model or search liveness request is a valid health check.
+The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compose`, `ai-daily:resume`, and `ai-daily:editorial-tick` require an explicit mutually-exclusive `--fixture` or `--live` mode. `--fixture` selects `FIXTURE` work and never calls an external provider. `--live` additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`, a server-only runtime candidate config, and a validated approved model-selection bundle from either the manual static-selection path or the optional measured-evaluation path; missing or drifting configuration fails closed. No model or search liveness request is a valid health check.
 
 The live provider boundary is the OpenAI-compatible Responses API with a structured JSON response. Every runtime channel uses `protocol: "responses"`; Chat Completions is not an AI Daily fallback. The request deliberately omits optional sampling fields such as `temperature` because relay compatibility is not guaranteed. Runtime channels carry private base URLs and keys only in deployment environment; candidate records and approval bundles retain provider/failure-domain aliases, model identifiers, aggregate quality, latency, usage summaries, and hashes, never endpoints, credentials, prompts, source text, raw outputs, or raw provider errors.
 
-## Scenario: Offline model evaluation and role selection
+## Scenario: Manual static role selection and optional model evaluation
 
 ### 1. Scope / Trigger
 
-- Trigger: changing AI Daily quality thresholds, evaluation case sets, extractor/composer/verifier candidate records, runtime model channels, provider compatibility, primary/fallback selection, production model approval, or live runner mode.
-- Goal: make model selection evidence-based and tamper-evident without turning fixture checks into model liveness calls or production approval.
+- Trigger: changing extractor/composer/verifier static role mappings, AI Daily quality thresholds, evaluation case sets, runtime model channels, provider compatibility, primary/fallback selection, production model approval, or live runner mode.
+- Goal: support a truthful zero-call static mapping for the initial edition, retain measured evaluation when it adds value, and keep both approval paths tamper-evident without turning fixture checks into model liveness calls.
 
 ### 2. Signatures
 
@@ -87,6 +87,8 @@ The live provider boundary is the OpenAI-compatible Responses API with a structu
 - Runtime contract command: `npm.cmd run ai-daily:model-runtime-check` (loopback only, zero external calls).
 - Real business command: `npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>`.
 - Human approval command: `npm.cmd run ai-daily:model-approve -- --input <proposal.local.json> --reviewed-by <safe-id> --notes <safe-note>`.
+- Manual selection command: `npm.cmd run ai-daily:model-select -- --selection-id <id> --extractor <candidate-id> --composer <candidate-id> --verifier <candidate-id> --acknowledge-reduced-redundancy`.
+- Manual approval command: `npm.cmd run ai-daily:model-select-approve -- --input <selection.local.json> --reviewed-by <safe-id> --notes <safe-note> --acknowledge-reduced-redundancy`.
 - Production edition command: `npm.cmd run ai-daily:run -- --date <YYYY-MM-DD> --live`.
 
 Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failureDomainRef`, `modelIdentifier`, `caseSetId`, `caseSetHash`, `caseDescriptors`, `promptVersion`, `generationSchemaVersion`, `evaluatedAt`, category/negative-tag-labeled case results, performance, and execution evidence.
@@ -104,10 +106,11 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - `business-evaluation` execution evidence requires a recorded evaluation run id, evaluator version, completed case count, non-zero model-call count, and a result-set hash that exactly equals the canonical SHA-256 of the complete measured `cases` array. A format-valid but stale or substituted hash is invalid. Selection still writes `approval.status=pending`; only explicit human review may produce an approved record.
 - Candidate records retain low-sensitive aliases, versions, hashes, aggregate quality, latency, and usage summaries only. The selection stores a stable `candidateSetHash` over candidate id + record hash pairs so approval remains bound to the measured record set. Do not store prompts, source text, raw outputs, endpoints, credentials, provider bodies, or raw errors.
 - Evaluation, proposal, and approval records use v2 schemas for the golden-set/slice contract. The stable Render mount filename may still contain `v1`; schema validation, not the transport filename, decides compatibility. Old proposals/bundles must be regenerated and cannot be relabeled.
-- `AI_DAILY_MODEL_RUNTIME_JSON` is server-only and uses schema `ai-daily-model-runtime-v2`. Every channel must declare `protocol: "responses"`; any other or missing protocol fails before a provider call. Channel URLs must use HTTPS in production and reject URL credentials, query strings, and fragments; local loopback HTTP is allowed only by explicit deterministic-test configuration. Each role must have a candidate, while the real evaluator additionally requires 2-3 candidates. Full-redundancy evaluation requires at least two failure domains per role; same-provider multi-model comparison is allowed only with the explicit `--allow-reduced-redundancy` flag and remains visibly `reduced_redundancy`.
+- Manual static-selection proposals/bundles use dedicated v1 schemas. They contain exactly one candidate per role plus low-sensitive provider/failure-domain/model identity, fixed `manual-static-selection` semantics, explicit `reduced_redundancy`, approval state, and canonical hashes. They contain no candidate metrics, quality scores, fallback claim, endpoint, credential, prompt, input, output, or raw error. Proposal creation and approval both require an explicit reduced-redundancy acknowledgement.
+- `AI_DAILY_MODEL_RUNTIME_JSON` is server-only and uses schema `ai-daily-model-runtime-v2`. Every channel must declare `protocol: "responses"`; any other or missing protocol fails before a provider call. Channel URLs must use HTTPS in production and reject URL credentials, query strings, and fragments; local loopback HTTP is allowed only by explicit deterministic-test configuration. The static path requires one candidate per role. The optional real evaluator requires 2-3 candidates per role; full-redundancy evaluation requires at least two failure domains per role, while same-provider multi-model comparison is allowed only with the explicit `--allow-reduced-redundancy` flag and remains visibly `reduced_redundancy`.
 - The Responses adapter deliberately omits `temperature`. It accepts an exact `/responses` endpoint, a `/v1` base, or a provider base that can be resolved through the two known Responses paths. Only `404` or `405` proves a guessed path is incompatible and permits trying the alternate path. Timeout, network, authentication, rate-limit, invalid response, and `5xx` failures stop immediately so one business task is not submitted twice and the original failure category is preserved.
 - Real evaluation is serial and requires all three gates: `--execute`, `AI_DAILY_BUSINESS_EVALUATION_ENABLED=true`, and a command `--approval-id` equal to `AI_DAILY_MODEL_EVALUATION_APPROVAL_ID`. The default proposal path contains `.local.` and is Git-ignored.
-- Production binding revalidates candidate, role, provider alias, failure-domain alias, model identifier, candidate/selection/bundle hashes, and approval status against the current runtime. `--fixture` claims only `FIXTURE` work; `--live` claims only `PRODUCTION` work and additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`.
+- Production binding accepts either approved artifact family. It revalidates candidate, role, provider alias, failure-domain alias, model identifier, selection/bundle hashes, and approval status against the current runtime; measured artifacts additionally revalidate candidate records. `--fixture` claims only `FIXTURE` work; `--live` claims only `PRODUCTION` work and additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`.
 
 ### 4. Validation & Error Matrix
 
@@ -125,25 +128,27 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Missing/malformed runtime JSON, role candidate gap, duplicate id, unsafe URL, or missing key/model -> `invalid-ai-daily-model-runtime:<stable issues>` before any provider call.
 - Provider `404`/`405` on a guessed path -> try the alternate known Responses path; provider `5xx`, timeout, network error, or any other HTTP failure -> stop with one low-sensitive `ai-daily-provider-*` category and do not retry a different guessed path.
 - Missing or tampered proposal/bundle fields or hashes -> stable invalid artifact error; runtime provider/failure-domain/model drift -> `ai-daily-<role>-runtime-channel-drift`.
+- Manual selection without either explicit acknowledgement -> `ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required`; unknown artifact fields, role-order drift, fake metrics, or a mismatched candidate role fail closed.
 - No explicit runner mode, both modes, disabled production, or missing approved bundle -> fail before claiming generation work.
 
 ### 5. Good / Base / Bad Cases
 
 - Good: each role uses the same versioned case set and records an independent primary and fallback that both pass all quality floors.
+- Good: the initial edition uses one explicitly acknowledged manual candidate per role, claims no fallback or measured score, then relies on Studio review and the sealed first-edition acceptance manifest for real quality acceptance.
 - Base: a role has one eligible primary but no independent fallback; selection remains visible as `reduced_redundancy` and requires human judgment.
 - Bad: copy fixture metrics, change only `profile` to `business-evaluation`, and approve; execution-mode and golden-case-set validation must reject it.
 - Bad: let 37 of 40 cases pass while three `scope-inflation` cases fail, then approve from the 92.5% global acceptance. The negative-slice floor must keep the candidate ineligible.
 - Bad: register two candidate ids backed by the same relay failure domain and report them as full redundancy.
 - Good: a base URL without `/v1` returns `404` for the first known path and succeeds on the second; exactly two loopback requests are observed.
-- Base: an approved bundle is present but the runtime model identifier changed; live execution fails closed and requires a new measured approval.
+- Base: an approved bundle is present but the runtime model identifier changed; live execution fails closed and requires a new approved model-selection artifact from either supported path.
 - Bad: after a `503` from the first guessed endpoint, submit the same prompt to a second guessed endpoint and finally report its `404`, hiding the original provider outage.
 
 ### 6. Tests Required
 
 - Run `npm.cmd run ai-daily:model-evaluation-check` after changing the golden case-set asset, category/negative-tag taxonomy, slice thresholds, role selection, fallback rules, case-set hashing, evaluation records, or approval state. The check must prove that scenario/outcome/score changes alter the golden contract version, all three roles exercise every declared negative tag, and a globally passing candidate with a weak negative slice remains ineligible.
-- Run `npm.cmd run ai-daily:model-runtime-check` after changing runtime channel parsing, structured request compatibility, approval bundle validation, or runner mode gates. Assert runtime v2 rejects non-Responses protocols, requests use Responses `input` rather than Chat Completions `messages`, URL credentials/query/hash rejection, no `temperature`, `404/405` compatibility fallback, no duplicate request after `5xx`, same-provider pool opt-in, artifact tamper rejection, runtime drift rejection, and `externalProviderCalls=0`. Run the real evaluator only with the explicit `--execute` and approval-id gates; it is a business task, not a health check.
+- Run `npm.cmd run ai-daily:model-runtime-check` after changing runtime channel parsing, structured request compatibility, either approval artifact family, or runner mode gates. Assert runtime v2 rejects non-Responses protocols, requests use Responses `input` rather than Chat Completions `messages`, URL credentials/query/hash rejection, no `temperature`, `404/405` compatibility fallback, no duplicate request after `5xx`, same-provider pool opt-in, both manual CLI acknowledgements, zero-call manual CLI round-trip, artifact tamper rejection, runtime drift rejection, and `externalProviderCalls=0`. Run the real evaluator only with the explicit `--execute` and approval-id gates; it is an optional business task, not a health check.
 - Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.
-- A passing fixture contract is a repository check, not a production model approval. Real candidate execution and human primary/fallback approval remain manual gates.
+- A passing fixture contract is a repository check, not a production model approval. The static mapping still requires human approval and first-edition Studio review; optional measured candidates still require explicit real execution and human primary/fallback approval.
 - Also run `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and a sensitive-value scan before commit.
 
 ### 7. Wrong vs Correct
@@ -222,8 +227,8 @@ Only path incompatibility permits endpoint fallback; execution failures remain s
 ### 3. Contracts
 
 - Render uses `/etc/secrets/ai-daily-model-approval.v1.json`; local validation may use another absolute path.
-- The file must pass schema, candidate-record, selection-record, approval-status, and canonical `bundleHash` validation. The environment hash must equal that canonical hash so an older but internally valid file is rejected.
-- Runtime candidate ids, roles, provider aliases, failure-domain aliases, and model identifiers must match the approved records. Base URLs and keys remain server-only and never enter the bundle or checker output.
+- The file must pass one supported artifact schema: measured evaluation bundle v2 or manual static-selection bundle v1. Both validate selection record, approval status, and canonical `bundleHash`; measured bundles additionally validate candidate records. The environment hash must equal that canonical hash so an older but internally valid file is rejected.
+- Runtime candidate ids, roles, provider aliases, failure-domain aliases, and model identifiers must match the approved records. Base URLs and keys remain server-only and never enter the bundle or checker output. Checker output includes `selectionBasis` so a manual mapping cannot be mistaken for measured quality evidence.
 - Render Secret Files and environment variables are service-scoped. Studio and every Editorial Cron that executes `--live` each receive their own copy of the same file/runtime/hash. Ingest Cron never receives model credentials or the approval bundle.
 - The production bundle is generated locally, reviewed by a human, Git-ignored, and uploaded through Render. `render.yaml` intentionally omits Cron services until the first live edition passes its manual gate.
 
@@ -274,10 +279,10 @@ AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved 64-character bundleHash>
 
 ### Contract
 
-- `server/src/aiDailyAcceptance.ts` defines the low-sensitive `ai-daily-acceptance-v2` manifest. It is an evidence index, not a replacement for human review or a production database record.
-- The manifest binds one approved evaluation proposal and bundle to one `PRODUCTION` edition: `editionDate`, live `issueId`/`runId`/status, matching Studio issue/run/date and approved draft/review, matching Publish Export draft/review/version/check results, five deployment observations (`publicFeed`, `detailPage`, `etag304`, `withdrawn410`, `mobile`), and a sealed rollback-evidence reference (`evidenceId`, `recordHash`, `status=passed`).
+- `server/src/aiDailyAcceptance.ts` defines the low-sensitive `ai-daily-acceptance-v3` manifest. It is an evidence index, not a replacement for human review or a production database record.
+- The manifest binds one approved proposal/bundle pair from either selection path to one `PRODUCTION` edition: `selectionBasis`, `editionDate`, live `issueId`/`runId`/status, matching Studio issue/run/date and approved draft/review, matching Publish Export draft/review/version/check results, five deployment observations (`publicFeed`, `detailPage`, `etag304`, `withdrawn410`, `mobile`), and a sealed rollback-evidence reference (`evidenceId`, `recordHash`, `status=passed`).
 - The manifest stores only identifiers, dates, statuses, low-sensitive command names/repository paths, hashes, and bounded check results. It must not contain prompts, source text, article body, raw model output, endpoint URLs, credentials, tokens, database URLs, or raw error responses.
-- Proposal and bundle hashes, selection id, candidate records, and selection record are revalidated together. A fixture profile, mismatched candidate set, changed edition/run/draft version, failed export, incomplete deployment observation, old schema, or record-hash drift fails closed.
+- Proposal and bundle hashes, selection basis/id, and selection record are revalidated together; measured artifacts additionally bind candidate records. A mixed selection basis, fixture profile, mismatched candidate set, changed edition/run/draft version, failed export, incomplete deployment observation, old schema, or record-hash drift fails closed.
 - `sealAiDailyAcceptanceManifest` writes the canonical record hash only after all six gates pass and the proposal/bundle pair plus sealed rollback evidence have been verified. The hash provides deterministic integrity, not platform attestation, operator authentication, or proof that a rollback action ran; human review remains the trust boundary. A sealed hash does not make a fixture or an unreviewed edition production-approved.
 
 ### Commands and verification
@@ -290,7 +295,7 @@ AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved 64-character bundleHash>
 ### Required verification
 
 - Run `npm.cmd run ai-daily:acceptance-check`, `npm.cmd run ai-daily:contracts-check`, and `npm.cmd run ai-daily:production-readiness-check` after changing the manifest, gate bindings, CLI, or readiness contract.
-- Before parent-task completion, record the sealed acceptance and rollback-evidence results together with the real model approval, first live edition, Studio review/export, and public deployment checks. Do not archive the task from fixture results alone.
+- Before parent-task completion, record the sealed acceptance and rollback-evidence results together with the approved model-selection artifact (manual static or measured), first live edition, Studio review/export, and public deployment checks. Do not archive the task from fixture results alone.
 
 ## Scenario: Offline AI Daily Drafts
 

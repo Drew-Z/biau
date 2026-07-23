@@ -26,6 +26,6 @@
     ".env.example",
     "package.json"
   ],
-  "notes": "Local slice complete: offline readiness and deterministic contract checks, fail-closed public feed flag, Asia/Shanghai edition date, bounded ingest deadlines, and deterministic reduced-motion UI verification. Production Cron/provider/source/live-edition gates remain manual; existing CSS budget debt is tracked separately.",
+  "notes": "Repository slice complete: sources are approved, Responses-only runtime and zero-call manual static selection are implemented, deterministic contracts pass, and AI Daily migrations are deployed. Static proposal/bundle delivery, first live edition, Studio review/export, deployment observations, Cron/public-feed activation, observability routing, retention mutation, and sealed rollback/acceptance evidence remain manual gates.",
   "meta": {}
 }

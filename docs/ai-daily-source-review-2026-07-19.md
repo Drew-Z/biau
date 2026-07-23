@@ -101,8 +101,8 @@
 
 站点所有者已确认上述 16 个 approved 来源、四个核心查询组、`12/78/72` 预算上限和引用边界；清单已切换到 approved。hold/rejected 项继续禁用。
 
-剩余门禁是独立的真实业务验收：
+剩余门禁是独立的模型选择与真实业务验收：
 
-1. 为 extractor、composer、verifier 分别选择候选渠道，并使用 BIAU-owned case set 执行真实业务评估。
-2. 由人工确认 primary、不同 failure-domain 的 fallback 和质量边界。
-3. 在模型评估通过后，才运行一个真实 AI Daily 版次，审核 Flash、日报草稿、导出和公开投影。
+1. 默认通过零调用静态路径为 extractor、composer、verifier 选择一个候选，并由人工确认 `manual-static-selection`、`reduced_redundancy` 和无 fallback；只有需要质量对照或独立冗余时才执行 BIAU-owned case set 实测评估。
+2. 审核并批准对应 selection bundle。静态路径不宣称质量分数或故障转移；实测路径才审核 primary、独立 failure-domain fallback 和质量边界。
+3. bundle 批准并完成运行时绑定后，运行一个真实 AI Daily 版次，审核 Flash、日报草稿、导出和公开投影。

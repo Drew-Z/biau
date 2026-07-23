@@ -2,7 +2,14 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AiDailyGenerationProviders, AiDailyGenerationRole } from './aiDailyGeneration.js'
-import { validateAiDailyModelApprovalBundle, type AiDailyModelApprovalBundle } from './aiDailyModelArtifacts.js'
+import {
+  aiDailyModelApprovalBundleSchemaVersion,
+  getAiDailyModelApprovalBasis,
+  validateAiDailyModelApprovalArtifact,
+  type AiDailyModelApprovalArtifact,
+  type AiDailyModelApprovalBundle,
+  type AiDailyModelManualSelectionBundle,
+} from './aiDailyModelArtifacts.js'
 import { buildAiDailyProvidersFromCandidates } from './aiDailyModelProvider.js'
 import {
   resolveAiDailyRuntimeCandidate,
@@ -28,7 +35,7 @@ export async function loadAiDailyModelApprovalBundle(
   } catch {
     throw new Error('invalid-ai-daily-model-approval-bundle-json')
   }
-  const bundle = validateAiDailyModelApprovalBundle(parsed)
+  const bundle = validateAiDailyModelApprovalArtifact(parsed)
   if (expectedBundleHash && bundle.bundleHash !== expectedBundleHash) {
     throw new Error('ai-daily-model-approval-bundle-drift')
   }
@@ -37,28 +44,79 @@ export async function loadAiDailyModelApprovalBundle(
 
 export function buildAiDailyProductionProviders(input: {
   runtime: AiDailyModelRuntimeConfig
-  bundle: AiDailyModelApprovalBundle
+  bundle: AiDailyModelApprovalArtifact
 }): AiDailyGenerationProviders {
-  const records = new Map(input.bundle.candidateRecords.map((record) => [record.candidateId, record]))
+  if (input.bundle.schemaVersion !== aiDailyModelApprovalBundleSchemaVersion) {
+    return buildManualSelectionProviders(input.runtime, input.bundle)
+  }
+  return buildMeasuredEvaluationProviders(input.runtime, input.bundle)
+}
+
+function buildMeasuredEvaluationProviders(
+  runtime: AiDailyModelRuntimeConfig,
+  bundle: AiDailyModelApprovalBundle,
+): AiDailyGenerationProviders {
+  const records = new Map(bundle.candidateRecords.map((record) => [record.candidateId, record]))
   const candidates: Array<{
     candidate: ReturnType<typeof requireRuntimeCandidate>['candidate']
     channel: ReturnType<typeof requireRuntimeCandidate>['channel']
     slot: 'primary' | 'fallback'
     qualityScore: number
   }> = []
-  for (const roleSelection of input.bundle.selection.roles) {
+  for (const roleSelection of bundle.selection.roles) {
     const role = roleSelection.role
     if (!roleSelection.primaryCandidateId) throw new Error(`ai-daily-${role}-approved-primary-missing`)
-    candidates.push(resolveApprovedCandidate(input.runtime, records, role, roleSelection.primaryCandidateId, 'primary'))
+    candidates.push(resolveApprovedCandidate(runtime, records, role, roleSelection.primaryCandidateId, 'primary'))
     for (const candidateId of roleSelection.fallbackCandidateIds) {
-      candidates.push(resolveApprovedCandidate(input.runtime, records, role, candidateId, 'fallback'))
+      candidates.push(resolveApprovedCandidate(runtime, records, role, candidateId, 'fallback'))
     }
   }
   return buildAiDailyProvidersFromCandidates({ candidates })
 }
 
-export function summarizeAiDailyModelApprovalBundle(bundle: AiDailyModelApprovalBundle) {
+function buildManualSelectionProviders(
+  runtime: AiDailyModelRuntimeConfig,
+  bundle: AiDailyModelManualSelectionBundle,
+): AiDailyGenerationProviders {
+  const candidates = bundle.selection.roles.map((roleSelection) => {
+    const runtimeCandidate = requireRuntimeCandidate(runtime, roleSelection.candidateId)
+    if (runtimeCandidate.candidate.role !== roleSelection.role) {
+      throw new Error(`ai-daily-${roleSelection.role}-approved-candidate-mismatch`)
+    }
+    if (
+      roleSelection.providerRef !== runtimeCandidate.channel.providerRef ||
+      roleSelection.failureDomainRef !== runtimeCandidate.channel.failureDomainRef ||
+      roleSelection.modelIdentifier !== runtimeCandidate.channel.modelIdentifier
+    ) {
+      throw new Error(`ai-daily-${roleSelection.role}-runtime-channel-drift`)
+    }
+    return {
+      ...runtimeCandidate,
+      slot: 'primary' as const,
+      qualityScore: 100,
+    }
+  })
+  return buildAiDailyProvidersFromCandidates({ candidates })
+}
+
+export function summarizeAiDailyModelApprovalBundle(bundle: AiDailyModelApprovalArtifact) {
+  if (bundle.schemaVersion !== aiDailyModelApprovalBundleSchemaVersion) {
+    return {
+      selectionBasis: getAiDailyModelApprovalBasis(bundle),
+      bundleHash: bundle.bundleHash,
+      selectionId: bundle.selection.selectionId,
+      selectionRecordHash: bundle.selection.recordHash,
+      approvedAt: bundle.selection.approval.reviewedAt,
+      roles: bundle.selection.roles.map((role) => ({
+        role: role.role,
+        primaryCandidateId: role.candidateId,
+        fallbackCandidateIds: [] as string[],
+        redundancy: role.redundancy,
+      })),
+    }
+  }
   return {
+    selectionBasis: getAiDailyModelApprovalBasis(bundle),
     bundleHash: bundle.bundleHash,
     selectionId: bundle.selection.selectionId,
     selectionRecordHash: bundle.selection.recordHash,
