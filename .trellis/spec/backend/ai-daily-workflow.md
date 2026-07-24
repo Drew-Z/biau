@@ -638,6 +638,7 @@ The repository verifies the active token and expiry, records the attempt outcome
   - `GET /studio/api/ai-daily/source-feeds?enabled=true|false`
   - `POST /studio/api/ai-daily/source-feeds`
   - `PATCH /studio/api/ai-daily/source-feeds/:id`
+  - `POST /studio/api/ai-daily/ingestion/refresh`
 - Source payload fields: `name`, `kind`, `url`, `locale`, `tier`, `topics`, `enabled`, `intervalMinutes`, `lookbackMinutes`, `officialDomain`.
 - Core modules:
   - `server/src/aiDailyIngestion.ts`
@@ -645,6 +646,9 @@ The repository verifies the active token and expiry, records the attempt outcome
   - `server/src/aiDailySafeFetch.ts`
   - `server/src/aiDailyIngestionRepository.ts`
   - `server/src/aiDailyIngestionService.ts`
+  - `server/src/aiDailyIngestionRunner.ts`
+  - `server/src/aiDailySourceManifestRepository.ts`
+  - `server/src/aiDailyStudioIngestion.ts`
 - Fixture gates: `npm.cmd run ai-daily:{source,discovery,evidence,freshness,dedupe,ranking}-check`.
 - PostgreSQL gate: `AI_DAILY_DATABASE_CHECK=1 npm.cmd run ai-daily:repository-check` against a local database whose name ends in `_test`.
   The ingestion, generation, and Studio repository checks all read
@@ -659,6 +663,9 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Safe fetch rejects URL credentials, unsupported schemes, internal hostnames, and non-public IPv4/IPv6 addresses. DNS results are checked before a pinned request, every redirect target is revalidated, and redirect destinations are checked against robots before their page is fetched.
 - Direct fetch limits connect/read/total time, compressed bytes, decoded bytes, content type, redirects, and normalized evidence. Normalized text is at most `64 KiB`; citation excerpt is at most `1 KiB`; evidence expires after 30 days by default.
 - Evidence documents are immutable versions per candidate. `currentEvidenceId` points to the latest version; failed writes cannot advance the version because creation and projection share a transaction.
+- Manifest synchronization is idempotent and owns editorial source configuration only. It must preserve learned `ETag` and `Last-Modified` validators; a refresh must not reset them. A successful source fetch records bounded validators and the next due time, while `304` reuses the existing validator state without creating candidate evidence.
+- `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by an interval-minus-two-minute deadline, and resumed after a process restart. The worker never calls a model or search provider. Each feed fetches at most four normalized candidates per tick, prioritizing date-bearing entries and using a stable canonical-key tie-break; undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
+- `POST /studio/api/ai-daily/ingestion/refresh` requires the existing Studio bearer token, synchronizes the approved manifest, queues due feeds, returns `202`, and wakes the worker. It does not perform a long network fetch inside the HTTP request.
 - Dedupe order is canonical URL, content hash, title fingerprint, then lexical similarity. Event ranking stores named score components and stable tie-breaks. Selection may pass `targetEvents` only to satisfy minimum evidence diversity and never exceeds `maxEvents`.
 - Selection writes require an explicit `runId`; database truth must confirm every representative belongs to that run, is not lead-only, and has ready evidence. Repeating the same ordered selection must not increment `selectionVersion` or duplicate issue relations.
 - Source API responses expose public registry and low-sensitive health fields only. Do not persist provider credentials, endpoints, raw provider bodies, or arbitrary configuration JSON in source/evidence tables.
@@ -679,6 +686,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 ### 5. Good / Base / Bad Cases
 
 - Good: a Tier 1 RSS item is collected with conditional headers, fetched from its authoritative page, stored as evidence version 1, ranked, and selected once; repeating the run reuses canonical source and issue relations.
+- Good: refreshing the manifest after a prior fetch keeps the feed's validators, so the next tick sends `If-None-Match` / `If-Modified-Since`; a `304` updates freshness without discarding the stored validators.
 - Good: a redirect reaches another public origin, that origin's robots policy is checked before its article request, and a denial stops extraction.
 - Base: Brave succeeds below the coverage threshold while Tavily is missing; stable-source candidates remain, readiness reports reduced redundancy, and no provider is pinged merely to test configuration.
 - Bad: promote an X/Search snippet directly to `SourceItem`, persist a provider response in JSON, fetch a redirect before checking its robots policy, or update a selected representative without binding the run.
@@ -686,6 +694,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 ### 6. Tests Required
 
 - Run all six fixture gates and assert deterministic candidates, fallback attempts, evidence limits, p95 freshness, duplicate reasons, score order, diversity, and selected event count.
+- Run `npm.cmd run ai-daily:evidence-check` to cover conditional headers and `304`; keep a regression fixture for JSON source payloads, relative URLs, undated lead handling, and the bounded date-prioritized candidate budget.
 - Type-check the AI Daily scripts explicitly because `server:build` covers `server/src` but not every `server/scripts` entry.
 - Run `prisma:validate`, `prisma:generate`, and the full migration chain against a disposable PostgreSQL database.
 - The PostgreSQL check must assert source/candidate upsert idempotency, evidence version increments, cluster/selection persistence, identical selection idempotency, cross-run rejection, and authenticated Studio GET/POST/PATCH source routes.

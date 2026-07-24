@@ -43,8 +43,11 @@ export async function upsertAiDailySourceFeed(
       intervalMinutes: feed.intervalMinutes,
       lookbackMinutes: feed.lookbackMinutes,
       officialDomain: feed.officialDomain,
-      etag: feed.etag,
-      lastModified: feed.lastModified,
+      // A manifest upsert changes editorial configuration, not learned HTTP
+      // validators. Keep existing validators when the incoming definition has
+      // no value; collection outcomes are the only path that replaces them.
+      etag: feed.etag ?? undefined,
+      lastModified: feed.lastModified ?? undefined,
     },
     create: {
       name: feed.name,

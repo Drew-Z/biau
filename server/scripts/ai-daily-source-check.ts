@@ -69,10 +69,33 @@ const hackerNewsFeed = buildAiDailySourceFeedFixture({
 })
 const hackerNews = collectAiDailySourcePayload({
   feed: hackerNewsFeed,
-  payload: [{ id: 42, title: 'Agent release discussion', url: 'https://example.com/agent', created_at: '2026-07-17T23:50:00Z' }],
+  payload: JSON.stringify([{ id: 42, title: 'Agent release discussion', url: 'https://example.com/agent', created_at: '2026-07-17T23:50:00Z' }]),
   window: buildAiDailyCollectionWindow(hackerNewsFeed, aiDailyFixtureNow),
 })
 assertEqual(hackerNews[0]?.leadOnly, true, 'Hacker News remains lead-only')
+
+const apiFeed = buildAiDailySourceFeedFixture({
+  id: 'feed-api',
+  name: 'AI release API',
+  kind: 'API',
+  url: 'https://example.com/api/releases',
+  tier: 'TIER_2',
+  officialDomain: 'example.com',
+})
+const apiCandidates = collectAiDailySourcePayload({
+  feed: apiFeed,
+  payload: JSON.stringify({ items: [{ id: 'api-1', title: 'Structured API release', url: '/releases/api-1', published_at: '2026-07-17T23:45:00Z' }] }),
+  window: buildAiDailyCollectionWindow(apiFeed, aiDailyFixtureNow),
+})
+assertEqual(apiCandidates.length, 1, 'JSON API payload parsing')
+assertEqual(apiCandidates[0]?.originalUrl, 'https://example.com/releases/api-1', 'JSON API relative URL')
+
+const undatedOfficial = collectAiDailySourcePayload({
+  feed: officialFeed,
+  payload: '<html><main><article><a href="/news/undated">Older item</a></article></main></html>',
+  window: buildAiDailyCollectionWindow(officialFeed, aiDailyFixtureNow),
+})
+assertEqual(undatedOfficial[0]?.leadOnly, true, 'undated listing item must remain lead-only')
 
 const manualFeed = buildAiDailySourceFeedFixture({
   id: 'feed-manual',

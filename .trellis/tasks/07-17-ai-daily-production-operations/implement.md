@@ -48,6 +48,14 @@
 - The first online read-only verification of commit `18818c8d` found that the workspace Prisma query still used the obsolete relation alias `overrides` while the schema exposes `editorialOverrides`. Health, auth, issue detail, operations, drafts, and export endpoints remained `200`, while only the workspace returned a sanitized `500`. The query now uses `editorialOverrides`, maps it back to the stable DTO field `overrides`, and is guarded by `satisfies Prisma.AiDailyRunInclude` after a fresh `prisma generate`.
 - No delete/archive path was added. Explicit mutation design, production alert routing, backups, and rollback validation remain follow-up work.
 
+## Latest Runtime Hardening
+
+- Re-ran the post-review deterministic gates after the ingestion runner changes: evidence, Studio workspace, service-mode smoke, full AI Daily contracts, server build, lint, production build, UI check (19 routes x 2 viewports), performance budget, and `git diff --check` all pass. No model, search, extraction provider, or liveness request was made.
+- Manifest synchronization now preserves learned `ETag` and `Last-Modified` validators instead of resetting them on every refresh. Conditional requests therefore remain effective across manual refreshes and process restarts.
+- Ingestion candidate selection is bounded to four normalized candidates per feed and prioritizes date-bearing entries with a stable canonical-key tie-break before spending evidence-fetch budget on undated leads.
+- The generic ingestion drain now finalizes every run id it touched, not only the last run in a batch; the legacy single `finalization` field remains for callers that process one run.
+- The remaining production gates are intentionally human-controlled: run one confirmed real edition, review and export it, observe deployment/public behavior, seal rollback/acceptance evidence, then decide on Cron/public-feed activation. No readiness check can claim those actions happened.
+
 ## Known Follow-up
 
 - The frontend performance follow-up is now closed by the archived `07-19-frontend-css-budget-cleanup` task. Current production output passes at `236074 / 240000` CSS bytes and `354307 / 430000` JS bytes.

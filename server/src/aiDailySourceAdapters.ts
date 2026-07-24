@@ -1,6 +1,7 @@
 import { load } from 'cheerio'
 import { XMLParser } from 'fast-xml-parser'
 import {
+  AiDailyAdapterError,
   type AiDailyCandidateLeadInput,
   type AiDailyCollectionWindow,
   type AiDailySourceFeedDefinition,
@@ -19,7 +20,8 @@ export function collectAiDailySourcePayload(input: {
   payload: unknown
   window: AiDailyCollectionWindow
 }): AiDailyCandidateLeadInput[] {
-  const { feed, payload, window } = input
+  const { feed, window } = input
+  const payload = parseStructuredSourcePayload(feed.kind, input.payload)
   switch (feed.kind) {
     case 'RSS':
       return parseSyndicationPayload(feed, payload, window, 'rss')
@@ -79,7 +81,10 @@ function parseSyndicationPayload(
       locale: feed.locale,
       sourceTier: feed.tier,
       topics: feed.topics,
-      leadOnly: feed.tier === 'TIER_3',
+      // A missing publication date cannot prove that an item belongs to this
+      // edition. Keep it for evidence inspection, but never promote it until
+      // a stronger source supplies a date.
+      leadOnly: feed.tier === 'TIER_3' || !publishedAt,
       snippet: readText(entry.description ?? entry.summary ?? entry.content) || null,
     })
   })
@@ -122,7 +127,9 @@ function parseOfficialPagePayload(
       locale: feed.locale,
       sourceTier: feed.tier,
       topics: feed.topics,
-      leadOnly: false,
+      // Listing pages often omit dates for older links. Such links remain
+      // visible as candidates but are not eligible for daily selection.
+      leadOnly: !publishedAt,
       snippet: normalizeText($(element).closest('article').find('p').first().text()) || null,
     })
   })
@@ -189,7 +196,7 @@ function parseGenericApiPayload(
       locale: feed.locale,
       sourceTier: feed.tier,
       topics: feed.topics,
-      leadOnly: feed.tier === 'TIER_3',
+      leadOnly: feed.tier === 'TIER_3' || !publishedAt,
       snippet: readText(item.summary ?? item.description) || null,
     })
   })
@@ -222,6 +229,16 @@ function parseManualPayload(
       snippet: readText(record.summary) || null,
     },
   ]
+}
+
+function parseStructuredSourcePayload(kind: AiDailySourceFeedDefinition['kind'], payload: unknown) {
+  if (kind !== 'API' && kind !== 'HACKER_NEWS') return payload
+  if (typeof payload !== 'string') return payload
+  try {
+    return JSON.parse(payload) as unknown
+  } catch {
+    throw new AiDailyAdapterError('invalid_response')
+  }
 }
 
 function readSyndicationLink(value: unknown) {

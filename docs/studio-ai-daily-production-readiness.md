@@ -9,6 +9,7 @@
 - Studio API 与 Operator 使用同一个 `STUDIO_DATABASE_URL`，Operator 自己的会话/记忆数据库仍使用独立 `DATABASE_URL`。
 - AI Daily 自动抓取、自动摘要和自动发布保持关闭，直到首个版次和导出流程验收完成。
 - 三角色模型评估 contract、手动静态选型 contract、server-only OpenAI-compatible Responses provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；两条路径都不会在 readiness 或部署检查中调用模型。
+- 来源采集已经接入同一套 Studio 持久化 worker：版本化 manifest 幂等同步、到期 feed 排队、公开来源安全抓取、条件请求和证据选择都由数据库 work item/lease 驱动；它只访问公开来源，不调用模型或搜索 provider。工作区的“同步并刷新证据”调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，服务重启后会恢复未完成的采集任务。
 - 当前推荐先使用手动静态选型：`qwen3.7-max-t` 负责 extractor/verifier，`grok-4.5` 负责 composer。该映射只表达角色分工，不宣称模型质量得分、可用性或独立故障转移；bundle 会明确标记 `manual-static-selection` 与 `reduced_redundancy`。
 - 2026-07-24 已完成静态 selection bundle、runtime JSON、Studio Secret File、文件路径和 bundle hash 的配置与部署。当前下一门禁是通过 Studio 显式确认并运行首个真实版次，不再重复模型选型配置。
 
@@ -70,6 +71,10 @@ Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/ope
 `20260718010000_ai_daily_generation_runner` 与后续 AI Daily schema migrations 已在 2026-07-23 的 Studio 部署中执行；部署记录、保留的 Render revision 和 `/health=200` 证据见当前 Trellis implementation log。它们新增不可变 generation checkpoint、generated revision 幂等键和原始 draft 投影绑定；部署本身不授权真实模型调用或自动发布。
 
 `AI_DAILY_PUBLIC_FEED_ENABLED` 默认和 Render blueprint 均为 `false`。公开 Feed migration 已部署；仍需完成 Studio CORS、Cloudflare browser base 和首版人工验收后，才在 Studio 服务显式改为 `true`。
+
+### 来源采集运维边界
+
+`npm.cmd run ai-daily:ingest-tick` 会同步 manifest、创建/恢复当天 degraded ingestion run，并消费到期来源 work；它不是模型健康检查，也不会向任何模型、搜索 provider 或中转站发请求。每个 feed 的正文候选预算固定为 4 条，日期明确的候选优先，无日期 lead 仍可留存供人工检查但不会被证据选择提升。来源响应的 `ETag` 与 `Last-Modified` 会跨 manifest 刷新保留，并在下一轮作为条件请求头发送。Studio worker 每 30 秒检查一次已排队 work；请求失败、超时或 robots/URL 拒绝只记录稳定错误分类并遵守 lease/deadline，不把原始响应写入日志。
 
 ## 三角色生产模型门禁
 

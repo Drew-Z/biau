@@ -3,6 +3,7 @@ import { env } from './env.js'
 import { disconnectPrisma } from './db.js'
 import { closeRagPostgresPool } from './ragPostgresStore.js'
 import { stopAiDailyStudioProductionWorker } from './aiDailyStudioProduction.js'
+import { stopAiDailyStudioIngestionWorker } from './aiDailyStudioIngestion.js'
 
 const app = createApp()
 const server = app.listen(env.port, () => {
@@ -12,6 +13,7 @@ const server = app.listen(env.port, () => {
 async function shutdown() {
   server.close()
   stopAiDailyStudioProductionWorker()
+  stopAiDailyStudioIngestionWorker()
   await closeRagPostgresPool()
   await disconnectPrisma()
 }

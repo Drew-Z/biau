@@ -828,6 +828,8 @@ export function StudioAiDailyWorkspacePage() {
   const [liveRunActor, setLiveRunActor] = useState('站长')
   const [liveRunPending, setLiveRunPending] = useState(false)
   const [liveRunStatus, setLiveRunStatus] = useState('')
+  const [ingestionPending, setIngestionPending] = useState(false)
+  const [ingestionStatus, setIngestionStatus] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const requestSequence = useRef(0)
   const flashMutationSequence = useRef(0)
@@ -1318,6 +1320,36 @@ export function StudioAiDailyWorkspacePage() {
     }
   }, [adminToken, liveRunActor, liveRunConfirmed, liveRunPending, loadWorkspace, setSearchParams, useUiCheckFixture, workspace])
 
+  const refreshIngestion = useCallback(async () => {
+    if (ingestionPending) return
+    if (useUiCheckFixture) {
+      setIngestionStatus('Fixture 已跳过真实来源采集；没有访问网络。')
+      return
+    }
+    if (!adminToken) {
+      setIngestionStatus('请先保存 Studio token。')
+      return
+    }
+    setIngestionPending(true)
+    setIngestionStatus('正在同步已审核来源并排队采集任务…')
+    try {
+      const result = await requestStudioApi('/ai-daily/ingestion/refresh', adminToken, { method: 'POST', body: '{}' })
+      if (!result.ok) {
+        setIngestionStatus(explainStudioApiError(result.status, readStudioError(result.payload)))
+        return
+      }
+      const queued = typeof result.payload === 'object' && result.payload !== null && 'queuedFeeds' in result.payload
+        ? Number(result.payload.queuedFeeds)
+        : 0
+      setIngestionStatus(`已同步来源并排队 ${Number.isFinite(queued) ? queued : 0} 个采集任务；页面会持续刷新证据。`)
+      await loadWorkspace(adminToken, selectedIssueIdRef.current, false)
+    } catch (error) {
+      setIngestionStatus(explainStudioClientException(error, '刷新 AI Daily 来源证据'))
+    } finally {
+      setIngestionPending(false)
+    }
+  }, [adminToken, ingestionPending, loadWorkspace, useUiCheckFixture])
+
   return (
     <main className="page-stack studio-page studio-ai-daily-workspace-page">
       <header className="page-hero">
@@ -1402,8 +1434,18 @@ export function StudioAiDailyWorkspacePage() {
                   <CirclePlay size={16} aria-hidden="true" />
                   运行真实版次
                 </button>
+                <button
+                  type="button"
+                  className="studio-secondary-button"
+                  disabled={!(adminToken || useUiCheckFixture) || ingestionPending}
+                  onClick={() => void refreshIngestion()}
+                >
+                  <RefreshCw size={16} aria-hidden="true" />
+                  {ingestionPending ? '正在刷新证据' : '同步并刷新证据'}
+                </button>
               </div>
             </div>
+            {ingestionStatus && <p className="assistant-status-text" role="status" aria-live="polite">{ingestionStatus}</p>}
           </section>
 
           {liveRunPanelOpen && selectedIssue && (

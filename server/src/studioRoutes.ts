@@ -30,6 +30,8 @@ import {
   aiDailyLiveRunConfirmation,
   queueAiDailyStudioProductionRun,
 } from './aiDailyStudioProduction.js'
+import { wakeAiDailyStudioIngestionWorker } from './aiDailyStudioIngestion.js'
+import { queueAiDailyIngestionRefresh } from './aiDailyIngestionRunner.js'
 import { loadAiDailyOperationsSnapshot, toAiDailyOperationsDiagnostics } from './aiDailyOperations.js'
 import { loadAiDailyRetentionDryRun, parseAiDailyRetentionDryRunLimit } from './aiDailyRetention.js'
 import { applyAiDailyEditorialOverride } from './aiDailyEditorialOverrideRepository.js'
@@ -610,6 +612,20 @@ export function createStudioRouter() {
       const prisma = requireStudioDatabase()
       const feeds = await listAiDailySourceFeeds(prisma, { enabled })
       res.json({ feeds: feeds.map(toAiDailySourceFeedResponse) })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  router.post('/ai-daily/ingestion/refresh', async (_req, res, next) => {
+    try {
+      const prisma = requireStudioDatabase()
+      const result = await queueAiDailyIngestionRefresh(prisma, {
+        timeZone: env.aiDailyTimeZone,
+        trigger: 'MANUAL',
+      })
+      wakeAiDailyStudioIngestionWorker(prisma)
+      res.status(202).json({ accepted: true, ...result })
     } catch (error) {
       next(error)
     }

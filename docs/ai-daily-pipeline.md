@@ -235,7 +235,7 @@ npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.js
 生成阶段不仅验证 claim 与 evidence 的绑定，还会把标题、导语、事件标题、事实摘要、影响说明和趋势段逐块交给独立 verifier。缺失或重复审查、正文与 claim 不一致、过期 worker 尝试写 revision，以及投影后崩溃导致的重放偏移都会 fail closed。revision/draft 投影会在同一事务中锁住对应 work item，避免 lease 校验后被另一 worker reclaim 的并发穿透。正常一期仍将 extractor 批次、composer 和 verifier 控制在约 4-7 次角色调用内。
 
 ```powershell
-# 只登记到期来源采集 work，不调用模型
+# 同步已审核来源、排队并消费到期来源采集 work；会访问公开来源，但不调用模型
 npm.cmd run ai-daily:ingest-tick
 
 # 开发/回归 fixture；显式 --fixture 才允许 mock provider
@@ -244,6 +244,8 @@ npm.cmd run ai-daily:compose -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:resume -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:editorial-tick -- --fixture
 ```
+
+`ai-daily:ingest-tick` 现在是一次完整的采集 tick：它幂等同步版本化来源清单，创建或恢复当天的 degraded ingestion run，排队到期来源并通过数据库 lease 串行消费。Studio 服务也会启动同一个持久化 ingestion worker；服务重启后会从未完成的 work item 继续。Studio 工作区的“同步并刷新证据”按钮调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，只负责排队和唤醒 worker。来源响应会保存 `ETag` / `Last-Modified`，下一轮使用条件请求；正文抓取、robots、URL 安全、证据状态和选择门禁仍在服务端执行。任何采集失败只记录低敏分类，不会触发模型或搜索 provider。
 
 ## 三角色模型选型与可选评估
 

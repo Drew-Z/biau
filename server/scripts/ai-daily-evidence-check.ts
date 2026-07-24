@@ -2,6 +2,7 @@ import {
   AiDailyFetchError,
   type AiDailyHttpResponse,
   fetchAiDailyEvidence,
+  fetchAiDailySourcePayload,
   isPublicAddress,
   resolveAiDailyPublicHost,
   validateAiDailyTargetUrl,
@@ -35,6 +36,37 @@ assertEqual(direct.status, 'READY', 'direct evidence readiness')
 assert(direct.normalizedBytes <= 64 * 1024, 'evidence normalized body limit')
 assert(Buffer.byteLength(direct.excerpt) <= 1024, 'citation excerpt limit')
 assertEqual(direct.headings[1], 'API availability', 'structured heading extraction')
+
+let sourceRequestHeaders: Record<string, string> = {}
+const sourcePayload = await fetchAiDailySourcePayload({
+  url: 'https://example.com/news',
+  conditionalHeaders: { 'If-None-Match': '"source-v1"', 'If-Modified-Since': 'Fri, 24 Jul 2026 00:00:00 GMT' },
+  resolveHost: async () => [{ address: '93.184.216.34', family: 4 }],
+  robots: { async allowed() { return true } },
+  transport: {
+    async request(input) {
+      sourceRequestHeaders = input.headers
+      return {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8', etag: '"source-v2"' },
+        body: Buffer.from('<html><main><article><a href="/release">AI release</a></article></main></html>'),
+      }
+    },
+  },
+})
+assertEqual(sourceRequestHeaders['If-None-Match'], '"source-v1"', 'source conditional ETag header')
+assertEqual(sourceRequestHeaders['If-Modified-Since'], 'Fri, 24 Jul 2026 00:00:00 GMT', 'source conditional modified header')
+assertEqual(sourcePayload.etag, '"source-v2"', 'source response ETag')
+assertEqual(sourcePayload.notModified, false, 'source payload response state')
+assert(sourcePayload.text.includes('AI release'), 'source payload body')
+
+const notModifiedPayload = await fetchAiDailySourcePayload({
+  url: 'https://example.com/news',
+  ...buildAiDailyHttpFixture({ responses: [{ status: 304, headers: { etag: '"source-v2"' }, body: '' }] }),
+  robots: { async allowed() { return true } },
+})
+assertEqual(notModifiedPayload.notModified, true, 'source 304 response state')
+assertEqual(notModifiedPayload.text, '', 'source 304 response body')
 
 const redirectFixture = buildAiDailyHttpFixture({
   responses: [{ status: 302, headers: { location: 'http://127.0.0.1/private' }, body: '' }],

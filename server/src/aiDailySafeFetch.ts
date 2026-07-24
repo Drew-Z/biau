@@ -78,6 +78,15 @@ export interface AiDailyEvidenceDocumentInput {
   expiresAt: Date
 }
 
+export interface AiDailySourcePayload {
+  finalUrl: string
+  contentType: string
+  text: string
+  etag: string | null
+  lastModified: string | null
+  notModified: boolean
+}
+
 export interface AiDailySafeFetchOptions {
   userAgent: string
   maxRedirects: number
@@ -187,6 +196,59 @@ export async function fetchAiDailyEvidence(input: {
   }
 
   throw new AiDailyFetchError(input.preferRendered ? 'render_required' : 'fetch_empty')
+}
+
+export async function fetchAiDailySourcePayload(input: {
+  url: string
+  conditionalHeaders?: Record<string, string>
+  resolveHost?: (hostname: string) => Promise<AiDailyResolvedAddress[]>
+  transport?: AiDailyHttpTransport
+  robots?: AiDailyRobotsChecker
+  options?: Partial<AiDailySafeFetchOptions>
+}): Promise<AiDailySourcePayload> {
+  const options = { ...defaultAiDailySafeFetchOptions, ...input.options }
+  const resolveHost = input.resolveHost ?? resolveAiDailyPublicHost
+  const transport = input.transport ?? nodeAiDailyHttpTransport
+  const robots = input.robots ?? createAiDailyRobotsChecker({ resolveHost, transport, options })
+  const url = validateAiDailyTargetUrl(input.url)
+  if (!(await robots.allowed(url, options.userAgent))) throw new AiDailyFetchError('robots_disallowed')
+
+  const result = await requestAiDailyUrl({
+    url,
+    resolveHost,
+    transport,
+    options,
+    headers: input.conditionalHeaders,
+    redirectAllowed: (target) => robots.allowed(target, options.userAgent),
+  })
+  const etag = boundedResponseHeader(result.response.headers.etag)
+  const lastModified = boundedResponseHeader(result.response.headers['last-modified'])
+  if (result.response.status === 304) {
+    return {
+      finalUrl: result.url.toString(),
+      contentType: '',
+      text: '',
+      etag,
+      lastModified,
+      notModified: true,
+    }
+  }
+  if (result.response.status < 200 || result.response.status >= 300) {
+    throw new AiDailyFetchError('invalid_response')
+  }
+  const contentType = normalizeContentType(result.response.headers['content-type'])
+  if (!isAllowedEvidenceContentType(contentType)) throw new AiDailyFetchError('invalid_response')
+  const body = decodeAiDailyBody(result.response, options.maxDecodedBytes)
+  const text = body.toString(readCharset(result.response.headers['content-type']))
+  if (!text.trim()) throw new AiDailyFetchError('fetch_empty')
+  return {
+    finalUrl: result.url.toString(),
+    contentType,
+    text,
+    etag,
+    lastModified,
+    notModified: false,
+  }
 }
 
 export async function resolveAiDailyPublicHost(hostname: string): Promise<AiDailyResolvedAddress[]> {
@@ -340,6 +402,7 @@ async function requestAiDailyUrl(input: {
   resolveHost: (hostname: string) => Promise<AiDailyResolvedAddress[]>
   transport: AiDailyHttpTransport
   options: AiDailySafeFetchOptions
+  headers?: Record<string, string>
   redirectAllowed?: (url: URL) => Promise<boolean>
 }) {
   let current = input.url
@@ -358,12 +421,14 @@ async function requestAiDailyUrl(input: {
         Accept: 'text/html,application/xhtml+xml,application/xml,text/xml,text/plain,application/json;q=0.9,*/*;q=0.1',
         'Accept-Encoding': 'gzip, deflate, br',
         'User-Agent': input.options.userAgent,
+        ...sanitizeConditionalHeaders(input.headers),
       },
       connectTimeoutMs: input.options.connectTimeoutMs,
       readTimeoutMs: input.options.readTimeoutMs,
       totalTimeoutMs: input.options.totalTimeoutMs,
       maxCompressedBytes: input.options.maxCompressedBytes,
     })
+    if (response.status === 304) return { url: current, response }
     if (response.status >= 300 && response.status < 400) {
       const location = response.headers.location
       if (!location || redirect === input.options.maxRedirects) throw new AiDailyFetchError('invalid_response')
@@ -373,6 +438,21 @@ async function requestAiDailyUrl(input: {
     return { url: current, response }
   }
   throw new AiDailyFetchError('invalid_response')
+}
+
+function sanitizeConditionalHeaders(value: Record<string, string> | undefined) {
+  if (!value) return {}
+  const headers: Record<string, string> = {}
+  const etag = boundedResponseHeader(value['If-None-Match'] ?? value['if-none-match'])
+  const lastModified = boundedResponseHeader(value['If-Modified-Since'] ?? value['if-modified-since'])
+  if (etag) headers['If-None-Match'] = etag
+  if (lastModified) headers['If-Modified-Since'] = lastModified
+  return headers
+}
+
+function boundedResponseHeader(value: string | undefined) {
+  const normalized = value?.trim() ?? ''
+  return normalized && normalized.length <= 240 ? normalized : null
 }
 
 function extractAiDailyEvidenceFromResponse(input: {

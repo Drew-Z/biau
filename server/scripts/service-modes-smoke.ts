@@ -312,6 +312,19 @@ try {
       throw new Error('studio mode studio api health payload is invalid')
     }
 
+    const ingestionMissingToken = await postJson(`${base}/studio/api/ai-daily/ingestion/refresh`, {})
+    if (ingestionMissingToken.response.status !== 401) {
+      throw new Error(`studio ingestion refresh should require admin token, got ${ingestionMissingToken.response.status}`)
+    }
+    const ingestionWithoutDb = await postJson(
+      `${base}/studio/api/ai-daily/ingestion/refresh`,
+      {},
+      'studio-smoke-token',
+    )
+    if (ingestionWithoutDb.response.status !== 503) {
+      throw new Error(`studio ingestion refresh should report missing persistence, got ${ingestionWithoutDb.response.status}`)
+    }
+
     const publicFeed = await fetch(`${base}/public/ai-daily/feed`)
     if (publicFeed.status !== 503) throw new Error(`studio mode should mount AI Daily feed and report missing database, got ${publicFeed.status}`)
 

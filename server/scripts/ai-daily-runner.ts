@@ -8,13 +8,13 @@ import {
 import { executeAiDailyGenerationWork } from '../src/aiDailyGenerationRunner.js'
 import { resolveAiDailyRunnerGenerationMode } from '../src/aiDailyRunnerMode.js'
 import { env } from '../src/env.js'
-import { formatAiDailyApplicationDate } from '../src/aiDailyScheduling.js'
-import { aiDailyIngestionDeadlineWindowMs } from '../src/aiDailyIngestionService.js'
-import { listDueAiDailySourceFeeds } from '../src/aiDailyIngestionRepository.js'
+import {
+  drainAiDailyIngestionWork,
+  queueAiDailyIngestionRefresh,
+} from '../src/aiDailyIngestionRunner.js'
 import {
   claimAiDailyWorkItem,
   queueAiDailyGenerationWork,
-  upsertAiDailyWorkItem,
 } from '../src/aiDailyRepository.js'
 
 const command = process.argv[2]
@@ -39,21 +39,18 @@ async function main() {
 }
 
 async function runIngestTick(prisma: ReturnType<typeof requireStudioDatabase>) {
-  const now = new Date()
-  const feeds = await listDueAiDailySourceFeeds(prisma, now, 50)
-  const editionDate = formatAiDailyApplicationDate(now, env.aiDailyTimeZone)
-  for (const feed of feeds) {
-    await upsertAiDailyWorkItem(prisma, {
-      editionDate,
-      kind: 'COLLECT_FEED',
-      scope: `source-feed:${feed.id}`,
-      sourceFeedId: feed.id,
-      priority: feed.tier === 'TIER_1' ? 100 : 50,
-      availableAt: now,
-      deadlineAt: new Date(now.getTime() + aiDailyIngestionDeadlineWindowMs(feed.intervalMinutes)),
-    })
-  }
-  console.log(`AI Daily ingest tick queued ${feeds.length} due source feed work item(s)`)
+  const queued = await queueAiDailyIngestionRefresh(prisma, {
+    timeZone: env.aiDailyTimeZone,
+    trigger: 'SCHEDULED',
+  })
+  const completed = await drainAiDailyIngestionWork(prisma, {
+    runId: queued.runId,
+    limit: 50,
+    workerId,
+  })
+  console.log(
+    `AI Daily ingest tick queued ${queued.queuedFeeds} feed(s), processed ${completed.processed}, succeeded ${completed.succeeded}, failed ${completed.failed}`,
+  )
 }
 
 async function runEditorialTick(
