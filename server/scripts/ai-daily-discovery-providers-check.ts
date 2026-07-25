@@ -11,6 +11,9 @@ import { assert, assertDeepEqual, assertEqual } from './ai-daily-check-helpers.j
 const request = (queryGroup: string): AiDailyDiscoveryRequest => ({
   queryGroup,
   queries: ['AI model release official API', 'foundation model capability update', 'AI model deprecation official'],
+  providerQueries: {
+    theNewsApi: ['(AI | LLM) + (launch | release)', '(OpenAI | Anthropic) + (model | API | update)'],
+  },
   windowStart: new Date('2026-07-24T00:00:00.000Z'),
   windowEnd: new Date('2026-07-25T12:00:00.000Z'),
   locale: queryGroup === 'china-ai-releases' ? 'zh' : 'en',
@@ -53,6 +56,8 @@ const theNewsCandidates = await theNews.discover(request('frontier-model-release
 assertEqual(theNewsUrls.length, 2, 'The News API uses the bounded request budget across distinct queries')
 assert(theNewsUrls.every((url) => new URL(url).pathname === '/v1/news/all'), 'The News API uses the full article search endpoint')
 assertEqual(new Set(theNewsUrls.map((url) => new URL(url).searchParams.get('search'))).size, 2, 'The News API rotates without repeating a query')
+assert(theNewsUrls.every((url) => new URL(url).searchParams.get('search')?.includes('|')), 'The News API uses its explicit provider query DSL')
+assert(theNewsUrls.every((url) => !request('frontier-model-releases').queries.includes(new URL(url).searchParams.get('search') ?? '')), 'The News API does not reuse provider-neutral prose as provider DSL')
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('api_token') === secretToken), 'The News API requests inject the token server-side')
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('limit') === '3'), 'The News API keeps each request result set bounded')
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('language') === 'en'), 'English discovery remains English-only')

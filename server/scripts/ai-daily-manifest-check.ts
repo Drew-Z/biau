@@ -42,6 +42,7 @@ assert.equal(manifest.queryGroups.length, 10)
 assert.equal(manifest.sources.filter((source) => source.enabled).length, 16)
 assert.ok(manifest.sources.filter((source) => source.enabled && (source.kind === 'RSS' || source.kind === 'GITHUB_RELEASES')).length >= 11)
 assert.equal(manifest.queryGroups.filter((group) => group.enabled).length, 4)
+assert.ok(manifest.queryGroups.filter((group) => group.enabled).every((group) => (group.providerQueries?.theNewsApi.length ?? 0) >= 2))
 assert.ok(manifest.sources.every((source) => source.enabled === (source.review.status === 'approved')))
 assert.ok(manifest.queryGroups.every((group) => group.enabled === (group.review.status === 'approved')))
 assert.ok(manifest.sources.some((source) => source.review.status === 'approved'))
@@ -124,6 +125,13 @@ const impossiblePrimaryTarget = mutateManifest(manifest, (draft) => {
   queryGroups[0].minimumPrimaryResults = 30
 })
 expectIssue(impossiblePrimaryTarget, 'queryGroups[0].minimum-primary-results-too-large')
+
+const missingEnabledProviderQueries = mutateManifest(manifest, (draft) => {
+  const queryGroups = draft.queryGroups as Array<Record<string, unknown>>
+  const enabledIndex = queryGroups.findIndex((group) => group.enabled === true)
+  queryGroups[enabledIndex].providerQueries = undefined
+})
+expectIssue(missingEnabledProviderQueries, 'queryGroups[0].providerQueries.theNewsApi-required-for-enabled-group')
 
 const conflictingDomains = mutateManifest(manifest, (draft) => {
   const queryGroups = draft.queryGroups as Array<Record<string, unknown>>

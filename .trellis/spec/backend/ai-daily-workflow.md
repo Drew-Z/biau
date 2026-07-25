@@ -8,13 +8,13 @@
 - Candidate manifests use `readiness: "pending-human-review"`; every entry remains `enabled: false` until a human approves production use. A public-page pre-review may move an entry from `candidate` to `hold`, `approved`, or `rejected`, but that recommendation does not change top-level readiness or enable collection.
 - Top-level `readiness: "approved"` requires every source and query group to have a resolved non-candidate review, at least 12 approved sources, and at least 4 approved query groups. Held and rejected entries remain disabled; an enabled entry must always be individually approved.
 - Each source is parsed through `normalizeAiDailySourceFeedDefinition`; manifest code must not duplicate canonical URL, locale, domain, cadence, or source-tier normalization rules.
-- Query groups store stable discovery inputs only: id, rationale, locale, queries, include/exclude domains, bounded provider budget, minimum primary results, signal policy, enabled flag, and review metadata. Edition windows are runtime inputs and must not be committed into the registry.
+- Query groups store stable discovery inputs only: id, rationale, locale, provider-neutral `queries`, provider-specific `providerQueries`, include/exclude domains, bounded provider budget, minimum primary results, signal policy, enabled flag, and review metadata. Enabled groups must provide at least two bounded The News API queries using that provider's explicit Boolean DSL; GDELT and signal adapters continue to consume provider-neutral queries. Edition windows are runtime inputs and must not be committed into the registry.
 - A passing manifest check proves repository shape and recorded review metadata only. It does not prove that a URL is currently reachable, a provider is configured, or that a real edition can be published.
 
 ### Required verification
 
 - Run `npm.cmd run ai-daily:manifest-check` after changing the manifest, parser, source-feed normalization, query budget, or review-state contract.
-- The check must use local files only and cover count bounds, duplicate ids/canonical URLs, public HTTPS, canonical locale/domain, TIER_1 domain matching, query budget bounds, include/exclude conflicts, reviewer requirements for `hold`/`approved`/`rejected`, and rejection of enabling pending candidates.
+- The check must use local files only and cover count bounds, duplicate ids/canonical URLs, public HTTPS, canonical locale/domain, TIER_1 domain matching, provider-query presence for enabled groups, query budget bounds, include/exclude conflicts, reviewer requirements for `hold`/`approved`/`rejected`, and rejection of enabling pending candidates.
 - Keep the check inside `ai-daily:contracts-check` and the script-registration list used by `ai-daily:production-readiness-check`.
 
 ## Scenario: Public AI Daily Flash Feed
@@ -659,7 +659,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 ### 3. Contracts
 
 - Tier 1/2/3 default cadence is `15/30/60` minutes while every tier uses a 36-hour editorial lookback. Polling cadence and candidate window are independent: explicit lookback must be at least the collection interval, and omitted lookback derives the larger of the tier window and interval.
-- Official RSS/Atom feeds are the highest-authority path. The News API is an optional bounded primary and GDELT DOC is its fallback; when The News API is disabled or lacks a usable token, GDELT becomes the no-key primary. Hacker News Algolia and HotDaily are signal-only. Primary failure remains visible; missing or failed fallback is `reduced_redundancy`. The News API uses `/v1/news/all`, the provider's full live/historical article-search endpoint, consumes at most `budget.maxRequests` distinct rotating queries, requests at most three results per query, merges by observation identity, and caps the merged result at `budget.maxResults`; Chinese query groups request `zh,en` coverage. It omits `categories`, because that provider field classifies the publishing source rather than the individual article and would suppress relevant AI reporting from general or business sources; curated AI queries plus original-page evidence and ranking remain the relevance boundary. GDELT `startdatetime` / `enddatetime` use its required UTC `YYYYMMDDHHMMSS` form without ISO separators or suffixes.
+- Official RSS/Atom feeds are the highest-authority path. The News API is an optional bounded primary and GDELT DOC is its fallback; when The News API is disabled or lacks a usable token, GDELT becomes the no-key primary. Hacker News Algolia and HotDaily are signal-only. Primary failure remains visible; missing or failed fallback is `reduced_redundancy`. The News API uses `/v1/news/all`, the provider's full live/historical article-search endpoint, consumes at most `budget.maxRequests` distinct rotating `providerQueries.theNewsApi` expressions, requests at most three results per query, merges by observation identity, and caps the merged result at `budget.maxResults`; Chinese query groups request `zh,en` coverage. Its explicit `+` / `|` / parenthesized Boolean DSL is kept separate from provider-neutral query prose. It omits `categories`, because that provider field classifies the publishing source rather than the individual article and would suppress relevant AI reporting from general or business sources; curated AI queries plus original-page evidence and ranking remain the relevance boundary. GDELT `startdatetime` / `enddatetime` use its required UTC `YYYYMMDDHHMMSS` form without ISO separators or suffixes.
 - AI Daily has no Tavily runtime dependency. HotDaily is public/no-key and may be disabled with `AI_DAILY_HOTDAILY_ENABLED=false`. Its adapter keeps only the original title, URL, and community source identity, routes AI-relevant titles into one query group, and discards generated summaries, reasons, scores, value lights, and trend conclusions. HN, HotDaily, and GDELT candidates remain `leadOnly` until original-page evidence is ready.
 - Search and social results are candidates only. They become selectable only after original-page evidence is fetched and marked `READY`; `leadOnly` candidates cannot be promoted.
 - Safe fetch rejects URL credentials, unsupported schemes, internal hostnames, and non-public IPv4/IPv6 addresses. DNS results are checked before a pinned request, every redirect target is revalidated, and redirect destinations are checked against robots before their page is fetched.
@@ -668,7 +668,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 - The SSRF-safe Node transport pins DNS results through the `lookup` option. Because modern Node may call that callback with `options.all=true`, the pinned lookup must return an array of `{ address, family }` records in that branch and a scalar address/family pair otherwise. Returning a scalar for the array contract causes `ERR_INVALID_IP_ADDRESS` before any public source request and is projected only as `network_error`.
 - Evidence documents are immutable versions per candidate. `currentEvidenceId` points to the latest version; failed writes cannot advance the version because creation and projection share a transaction.
 - Manifest synchronization is idempotent and owns editorial source configuration only. It must preserve learned `ETag` and `Last-Modified` validators; a refresh must not reset them. A successful source fetch records bounded validators and the next due time, while `304` reuses the existing validator state without creating candidate evidence.
-- `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by a deadline, and resumed after a process restart. Each tick queues due `COLLECT_FEED` work plus one idempotent `DISCOVER` item per enabled query group, six-hour time bucket, and ingestion config version; finalization waits for both kinds. A config-version bump permits one bounded replay in the current bucket after acquisition semantics change, while repeated refreshes on the same version remain idempotent. A discovery item receives a 45-minute deadline: long enough to run after due official feeds and fetch bounded original pages, but still far shorter than its six-hour schedule interval. Discovery may call The News API, GDELT, HN Algolia, and HotDaily but never calls a model. Each feed fetches at most four normalized candidates and each discovery group fetches at most twelve. Discovery selection first reserves one candidate per contributing provider, then fills the remaining budget by date-bearing/lead-only priority and stable canonical key; a large GDELT response therefore cannot silently crowd HN or HotDaily out of the original-page evidence budget. Undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
+- `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by a deadline, and resumed after a process restart. Each tick queues due `COLLECT_FEED` work plus one idempotent `DISCOVER` item per enabled query group, six-hour time bucket, and ingestion config version; finalization waits for both kinds. If a refresh queues neither kind, the runner finalizes that empty run immediately instead of leaving an unclaimable permanent `RUNNING` record. A config-version bump permits one bounded replay in the current bucket after acquisition semantics change, while repeated refreshes on the same version remain idempotent. A discovery item receives a 45-minute deadline: long enough to run after due official feeds and fetch bounded original pages, but still far shorter than its six-hour schedule interval. Discovery may call The News API, GDELT, HN Algolia, and HotDaily but never calls a model. Each feed fetches at most four normalized candidates and each discovery group fetches at most twelve. Discovery selection first reserves one candidate per contributing provider, then fills the remaining budget by date-bearing/lead-only priority and stable canonical key; a large GDELT response therefore cannot silently crowd HN or HotDaily out of the original-page evidence budget. Undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
 - `POST /studio/api/ai-daily/ingestion/refresh` requires the existing Studio bearer token, synchronizes the approved manifest, queues due feeds, returns `202`, and wakes the worker. It does not perform a long network fetch inside the HTTP request.
 - Dedupe order is canonical URL, content hash, title fingerprint, then lexical similarity. Event ranking stores named score components and stable tie-breaks. Selection may pass `targetEvents` only to satisfy minimum evidence diversity and never exceeds `maxEvents`.
 - Tier 1 discovery P95 measures only Tier 1 candidates whose `publishedAt` is on or after the current run's `startedAt`. Candidates pulled from the 36-hour editorial lookback remain eligible for evidence and ranking, but they do not repeatedly fail the current run's live-discovery SLO; collection checkpoint age and end-to-end lag continue to expose stale history separately.
@@ -686,6 +686,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Timeout/network/rate-limit/invalid provider response -> stable ingestion category; raw response and stack are not persisted.
 - A Node lookup callback contract mismatch -> `network_error`; the deterministic evidence gate must exercise both `all=true` and scalar lookup forms so this does not present as a mass source outage.
 - Missing primary discovery -> not ready with `primary_unavailable`; missing or failed fallback -> `reduced_redundancy`; an individual signal failure is reported with its adapter id and stable error category without suppressing other signals.
+- Enabled query group without two bounded `providerQueries.theNewsApi` entries -> manifest rejection before runtime synchronization.
 - Stale Tier 1/discovery checkpoints or missing selected fetch checkpoints -> explicit freshness gaps, never normal-ready.
 - Selection representative from another run or without ready evidence -> `ai-daily-selection-run-boundary-mismatch` / `ai-daily-selection-requires-ready-evidence`.
 
@@ -694,13 +695,15 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Good: a Tier 1 RSS item is collected with conditional headers, fetched from its authoritative page, stored as evidence version 1, ranked, and selected once; repeating the run reuses canonical source and issue relations.
 - Good: refreshing the manifest after a prior fetch keeps the feed's validators, so the next tick sends `If-None-Match` / `If-Modified-Since`; a `304` updates freshness without discarding the stored validators.
 - Good: a redirect reaches another public origin, that origin's robots policy is checked before its article request, and a denial stops extraction.
+- Good: The News API receives explicit Boolean provider queries while GDELT and HN receive the provider-neutral query list from the same curated group.
 - Base: The News API is disabled, so GDELT acts as the no-key primary while HN/HotDaily contribute lead-only signals; stable-source candidates remain and no provider is pinged merely to test configuration.
+- Base: a repeated same-version refresh has no due work and is immediately finalized with explicit evidence gaps rather than remaining active forever.
 - Bad: send `categories=tech,science` to The News API and silently exclude AI articles whose publishing source is categorized as general or business before BIAU can inspect the original evidence.
 - Bad: promote a GDELT/HN/HotDaily snippet directly to `SourceItem`, persist a provider response or HotDaily-generated summary in JSON, fetch a redirect before checking its robots policy, or update a selected representative without binding the run.
 
 ### 6. Tests Required
 
-- Run all seven fixture gates and assert deterministic candidates, bounded multi-query discovery, The News API date/language parameters with no source-level `categories` filter, token non-leakage, multi-signal order, HotDaily generated-field rejection, fallback attempts, evidence limits, current-run-only p95 freshness, duplicate reasons, score order, diversity, and selected event count.
+- Run all seven fixture gates and assert deterministic candidates, bounded multi-query discovery, The News API provider-DSL/date/language parameters with no source-level `categories` filter, provider-neutral fallback queries, token non-leakage, multi-signal order, HotDaily generated-field rejection, fallback attempts, evidence limits, current-run-only p95 freshness, duplicate reasons, score order, diversity, and selected event count.
 - Run `npm.cmd run ai-daily:evidence-check` to cover conditional headers, `304`, and bounded JSON-LD publication-date extraction; keep regression fixtures for JSON source payloads, relative URLs, undated/out-of-window lead handling, and the bounded date-prioritized candidate budget.
 - `ai-daily:evidence-check` must also assert the pinned lookup callback returns an address array for `options.all=true` and a scalar address/family pair for the legacy branch; a local real-source smoke may be used for diagnosis, but is not part of deterministic CI.
 - Type-check the AI Daily scripts explicitly because `server:build` covers `server/src` but not every `server/scripts` entry.
@@ -776,18 +779,21 @@ return {
 
 The ingestion runner fetches the original URL separately; only a dated `READY` evidence document may clear `leadOnly`.
 
-#### Wrong: filter The News API by source category
+#### Wrong: reuse provider-neutral prose and filter by source category
 
 ```ts
+url.searchParams.set('search', group.queries[0]!)
 url.searchParams.set('categories', 'tech,science')
 ```
 
-This provider field classifies the source, so it can remove relevant AI reporting before BIAU's own evidence and relevance checks run.
+The long prose does not express The News API's Boolean intent, while `categories` classifies the source and can remove relevant AI reporting before BIAU's own evidence and relevance checks run.
 
 #### Correct: keep topic relevance in BIAU's evidence path
 
 ```ts
-url.searchParams.set('search', curatedQuery)
+const query = group.providerQueries?.theNewsApi[0]
+if (!query) throw new Error('invalid-ai-daily-source-manifest')
+url.searchParams.set('search', query)
 url.searchParams.set('search_fields', 'title,description,keywords')
 url.searchParams.set('published_after', formatIsoSeconds(windowStart))
 url.searchParams.set('published_before', formatIsoSeconds(windowEnd))

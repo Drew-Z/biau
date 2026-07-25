@@ -71,7 +71,7 @@ export function createTheNewsApiDiscoveryAdapter(input: {
       if (!token) throw new AiDailyAdapterError('config_error')
       const candidates: AiDailyCandidateLeadInput[] = []
       const seen = new Set<string>()
-      for (const query of selectBoundedRotatingQueries(request)) {
+      for (const query of selectBoundedRotatingQueries(request, request.budget.maxRequests, request.providerQueries?.theNewsApi)) {
         if (candidates.length >= request.budget.maxResults) break
         const url = new URL(theNewsApiEndpoint)
         url.searchParams.set('api_token', token)
@@ -311,8 +311,13 @@ function selectRotatingQuery(request: AiDailyDiscoveryRequest) {
   return selectBoundedRotatingQueries(request, 1)[0] ?? request.queryGroup
 }
 
-function selectBoundedRotatingQueries(request: AiDailyDiscoveryRequest, limit = request.budget.maxRequests) {
-  const queries = [...new Set(request.queries.map((query) => query.trim()).filter(Boolean))]
+function selectBoundedRotatingQueries(
+  request: AiDailyDiscoveryRequest,
+  limit = request.budget.maxRequests,
+  providerQueries?: string[],
+) {
+  const querySource = providerQueries?.length ? providerQueries : request.queries
+  const queries = [...new Set(querySource.map((query) => query.trim()).filter(Boolean))]
   if (queries.length === 0) queries.push(request.queryGroup)
   const start = Math.abs(hashText(request.queryGroup) + Math.floor(request.windowEnd.getTime() / (6 * 60 * 60_000))) % queries.length
   const boundedCount = Math.max(0, Math.min(limit, request.budget.maxRequests, queries.length))

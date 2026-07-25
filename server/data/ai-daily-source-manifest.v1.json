@@ -406,6 +406,13 @@
       "rationale": "Find first-party launches, capability updates, and model deprecations across major labs.",
       "locale": "en",
       "queries": ["AI model launch release notes API official", "foundation model capability pricing context window update", "AI model deprecation retirement API official"],
+      "providerQueries": {
+        "theNewsApi": [
+          "(AI | LLM | \"foundation model\") + (launch | release | update | deprecation)",
+          "(OpenAI | Anthropic | Claude | Gemini | Grok) + (model | API | release | update)",
+          "(\"AI model\" | \"language model\") + (pricing | capability | context | retirement)"
+        ]
+      },
       "includeDomains": [],
       "excludeDomains": ["pinterest.com", "quora.com", "medium.com", "linkedin.com"],
       "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
@@ -434,6 +441,13 @@
       "rationale": "Find open-weight models, datasets, inference stacks, and important repository releases.",
       "locale": "en",
       "queries": ["open weight model release model card", "open source inference runtime release notes", "AI dataset release dataset card benchmark"],
+      "providerQueries": {
+        "theNewsApi": [
+          "(\"open source AI\" | \"open weight model\") + (release | launch | \"model card\")",
+          "(Llama | Mistral | Qwen | HuggingFace) + (release | model | inference | dataset)",
+          "(\"AI dataset\" | \"inference runtime\") + (release | benchmark | \"model card\")"
+        ]
+      },
       "includeDomains": [],
       "excludeDomains": ["medium.com", "linkedin.com", "dev.to"],
       "budget": { "maxRequests": 3, "maxResults": 21, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
@@ -448,6 +462,13 @@
       "rationale": "Track chips, inference runtimes, serving systems, training infrastructure, and cloud-native changes.",
       "locale": "en",
       "queries": ["LLM inference runtime release notes", "GPU AI inference software SDK release official", "LLM serving framework release benchmark"],
+      "providerQueries": {
+        "theNewsApi": [
+          "(AI | LLM) + (inference | serving | GPU | training) + (release | launch | update)",
+          "(\"inference runtime\" | \"serving framework\") + (release | benchmark | SDK)",
+          "(NVIDIA | AMD | CUDA | TPU) + (AI | LLM) + (SDK | inference | release)"
+        ]
+      },
       "includeDomains": [],
       "excludeDomains": ["pinterest.com", "medium.com", "linkedin.com", "tomshardware.com", "wccftech.com"],
       "budget": { "maxRequests": 3, "maxResults": 18, "timeoutMs": 15000, "maxRetries": 1, "maxCostUnits": 18 },
@@ -504,6 +525,13 @@
       "rationale": "Improve timeliness and coverage for Chinese model, platform, agent, and open-source releases.",
       "locale": "zh",
       "queries": ["大模型 新版本 官方 发布 API", "智能体 平台 更新 发布 官方", "开源 大模型 发布 模型卡 GitHub Hugging Face"],
+      "providerQueries": {
+        "theNewsApi": [
+          "(Qwen | DeepSeek | Kimi | GLM | Zhipu) + (release | launch | update | \"open source\")",
+          "(通义 | 千问 | 智谱 | 月之暗面 | 大模型) + (发布 | 更新 | 开源 | API)",
+          "(Alibaba | Baidu | Tencent | ByteDance) + (AI | model | agent) + (release | update)"
+        ]
+      },
       "includeDomains": [],
       "excludeDomains": ["zhihu.com", "baijiahao.baidu.com", "sohu.com", "163.com", "csdn.net"],
       "budget": { "maxRequests": 3, "maxResults": 21, "timeoutMs": 18000, "maxRetries": 1, "maxCostUnits": 18 },

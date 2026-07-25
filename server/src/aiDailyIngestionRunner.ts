@@ -50,7 +50,7 @@ import { syncAiDailySourceManifest } from './aiDailySourceManifestRepository.js'
 import { loadAiDailySourceManifest, type AiDailyCuratedQueryGroup } from './aiDailySourceManifest.js'
 import { env } from './env.js'
 
-export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v4'
+export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v5'
 
 const ingestionLeaseMs = 12 * 60_000
 const ingestionRetryDelayMs = 5 * 60_000
@@ -150,6 +150,9 @@ export async function queueAiDailyIngestionRefresh(
       discoveryDiagnostics: discoveryRuntime.diagnostics,
     },
   })
+  if (dueFeeds.length === 0 && queuedDiscoveries === 0) {
+    await finalizeAiDailyIngestionRunIfIdle(prisma, run.id)
+  }
   return {
     issueId: issue.id,
     editionDate,
@@ -531,6 +534,7 @@ function buildDiscoveryRequest(group: AiDailyCuratedQueryGroup, cursor: ReturnTy
   return {
     queryGroup: group.id,
     queries: group.queries,
+    providerQueries: group.providerQueries,
     windowStart: cursor.windowStart,
     windowEnd: cursor.windowEnd,
     locale: group.locale,

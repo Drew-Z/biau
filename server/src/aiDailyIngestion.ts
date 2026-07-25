@@ -356,6 +356,9 @@ export interface AiDailyProviderBudget {
 export interface AiDailyDiscoveryRequest {
   queryGroup: string
   queries: string[]
+  providerQueries?: {
+    theNewsApi?: string[]
+  }
   windowStart: Date
   windowEnd: Date
   locale: string

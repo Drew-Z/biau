@@ -47,12 +47,17 @@ export interface AiDailyManifestBudget {
   maxCostUnits: number
 }
 
+export interface AiDailyCuratedProviderQueries {
+  theNewsApi: string[]
+}
+
 export interface AiDailyCuratedQueryGroup {
   id: string
   label: string
   rationale: string
   locale: string
   queries: string[]
+  providerQueries?: AiDailyCuratedProviderQueries
   includeDomains: string[]
   excludeDomains: string[]
   budget: AiDailyManifestBudget
@@ -218,6 +223,7 @@ function parseQueryGroups(value: unknown, issues: string[]) {
     const rationale = readText(group.rationale, `${path}.rationale`, 500, issues)
     const locale = readText(group.locale, `${path}.locale`, 20, issues)
     const queries = readTextList(group.queries, `${path}.queries`, 2, 8, 160, issues)
+    const providerQueries = parseProviderQueries(group.providerQueries, `${path}.providerQueries`, issues)
     const includeDomains = readDomainList(group.includeDomains, `${path}.includeDomains`, issues)
     const excludeDomains = readDomainList(group.excludeDomains, `${path}.excludeDomains`, issues)
     const budget = parseBudget(group.budget, `${path}.budget`, issues)
@@ -225,7 +231,7 @@ function parseQueryGroups(value: unknown, issues: string[]) {
     const includeSignal = readBoolean(group.includeSignal, `${path}.includeSignal`, issues)
     const enabled = readBoolean(group.enabled, `${path}.enabled`, issues)
     const review = parseReview(group.review, `${path}.review`, issues)
-    if (!id || !label || !rationale || !locale || !queries || !includeDomains || !excludeDomains || !budget || minimumPrimaryResults === null || includeSignal === null || enabled === null || !review) return
+    if (!id || !label || !rationale || !locale || !queries || providerQueries === null || !includeDomains || !excludeDomains || !budget || minimumPrimaryResults === null || includeSignal === null || enabled === null || !review) return
     if (ids.has(id)) issues.push(`${path}.id-duplicate`)
     ids.add(id)
     if (enabled && review.status !== 'approved') issues.push(`${path}.enabled-requires-approved-review`)
@@ -233,9 +239,35 @@ function parseQueryGroups(value: unknown, issues: string[]) {
     const excluded = new Set(excludeDomains)
     if (includeDomains.some((domain) => excluded.has(domain))) issues.push(`${path}.domain-in-include-and-exclude`)
     if (minimumPrimaryResults > budget.maxResults) issues.push(`${path}.minimum-primary-results-too-large`)
-    groups.push({ id, label, rationale, locale, queries, includeDomains, excludeDomains, budget, minimumPrimaryResults, includeSignal, enabled, review })
+    if (enabled && !providerQueries) issues.push(`${path}.providerQueries.theNewsApi-required-for-enabled-group`)
+    groups.push({
+      id,
+      label,
+      rationale,
+      locale,
+      queries,
+      ...(providerQueries ? { providerQueries } : {}),
+      includeDomains,
+      excludeDomains,
+      budget,
+      minimumPrimaryResults,
+      includeSignal,
+      enabled,
+      review,
+    })
   })
   return groups
+}
+
+function parseProviderQueries(value: unknown, path: string, issues: string[]): AiDailyCuratedProviderQueries | null | undefined {
+  if (value === undefined) return undefined
+  const record = asRecord(value)
+  if (!record) {
+    issues.push(`${path}-object-required`)
+    return null
+  }
+  const theNewsApi = readTextList(record.theNewsApi, `${path}.theNewsApi`, 2, 8, 240, issues)
+  return theNewsApi ? { theNewsApi } : null
 }
 
 function parseBudget(value: unknown, path: string, issues: string[]): AiDailyManifestBudget | null {
