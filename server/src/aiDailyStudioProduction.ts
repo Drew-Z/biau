@@ -77,16 +77,6 @@ export async function queueAiDailyStudioProductionRun(
     throw new AiDailyStudioProductionError('ai-daily-issue-version-conflict')
   }
 
-  const latestIngestionRun = await prisma.aiDailyRun.findFirst({
-    where: { issueId: issue.id, profile: 'DEGRADED' },
-    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-    select: { status: true, configVersion: true },
-  })
-  const ingestionIssues = summarizeAiDailyIngestionReadinessIssues(latestIngestionRun)
-  if (ingestionIssues.length > 0) {
-    throw new AiDailyStudioProductionError('ai-daily-generation-evidence-not-ready', { issues: ingestionIssues })
-  }
-
   let execution
   try {
     execution = await resolveAiDailyProductionGenerationExecution()
@@ -97,9 +87,14 @@ export async function queueAiDailyStudioProductionRun(
   }
 
   const evidencePack = await loadAiDailyGenerationEvidencePack(prisma, issue.id)
-  const evidenceIssues = summarizeEvidenceReadinessIssues(evidencePack)
+  const evidenceIssues = [
+    ...summarizeAiDailySelectionAuthorizationIssues(evidencePack),
+    ...summarizeEvidenceReadinessIssues(evidencePack),
+  ]
   if (evidenceIssues.length > 0) {
-    throw new AiDailyStudioProductionError('ai-daily-generation-evidence-not-ready', { issues: evidenceIssues })
+    throw new AiDailyStudioProductionError('ai-daily-generation-evidence-not-ready', {
+      issues: [...new Set(evidenceIssues)],
+    })
   }
 
   const queued = await queueAiDailyGenerationWork(prisma, {
@@ -129,13 +124,36 @@ export async function queueAiDailyStudioProductionRun(
   }
 }
 
-export function summarizeAiDailyIngestionReadinessIssues(
-  run: { status: string; configVersion: string } | null,
+export function summarizeAiDailySelectionAuthorizationIssues(
+  pack: {
+    issueId: string
+    evidence: readonly unknown[]
+    selectionAuthorities: Array<{
+      runId: string
+      issueId: string | null
+      profile: string
+      status: string
+      configVersion: string
+    }>
+  },
 ) {
-  if (!run) return ['latest-ingestion-run-missing']
   const issues: string[] = []
-  if (run.configVersion !== aiDailyIngestionConfigVersion) issues.push('latest-ingestion-config-stale')
-  if (run.status !== 'COMPLETED') issues.push('latest-ingestion-run-not-ready')
+  if (pack.selectionAuthorities.length !== pack.evidence.length) issues.push('selection-ingestion-authority-missing')
+  const runIds = new Set(pack.selectionAuthorities.map((authority) => authority.runId))
+  if (runIds.size > 1) issues.push('selection-ingestion-authority-mixed')
+  if (
+    pack.selectionAuthorities.some(
+      (authority) => authority.issueId !== pack.issueId || authority.profile !== 'DEGRADED',
+    )
+  ) {
+    issues.push('selection-ingestion-authority-invalid')
+  }
+  if (pack.selectionAuthorities.some((authority) => authority.configVersion !== aiDailyIngestionConfigVersion)) {
+    issues.push('selection-ingestion-config-stale')
+  }
+  if (pack.selectionAuthorities.some((authority) => authority.status !== 'COMPLETED')) {
+    issues.push('selection-ingestion-run-not-ready')
+  }
   return issues
 }
 

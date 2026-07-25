@@ -79,6 +79,15 @@
 
 ## Known Follow-up
 
+## 2026-07-26 Production Cohort Repair
+
+- Production refresh `cms0qb5t2000145b6c06pl80z` used `ai-daily-ingestion-runner-v6`, processed 14 due Tier 1 feeds, and completed with gaps. Thirteen feeds succeeded; Alibaba Group News remained `evidence_rejected`. Six retained candidates were historical or not relevant to the current AI/cloud-native edition, so the run selected zero events and correctly reported the event/domain/Tier 1 minimum gaps. No model was called.
+- The preceding same-Edition V6 run `cms0pq5bl000145e3mkxbiu78` already contained four discovery groups and 24 candidates, but the next refresh could not enqueue them again because discovery work is idempotent inside its six-hour bucket. The former run-local finalizer therefore evaluated discovery and due official feeds separately even though both belonged to the same Edition and ranking contract.
+- The repair treats at most 48 non-failed `DEGRADED` runs and 480 candidates with the same `issueId + aiDailyIngestionConfigVersion` as one bounded evidence cohort. It merges the earliest start and latest freshness checkpoints, reranks the combined candidates, allows an earlier cohort representative, and rebinds that representative to the current decision run's persisted cluster.
+- Generation authorization now follows the actual persisted selection authority. All selected evidence must resolve to one current-config, completed, same-Edition `DEGRADED` decision run; a later empty maintenance run cannot invalidate a valid selection, and a current maintenance run cannot launder an older-config selection.
+- Deterministic server build, Studio production, ranking, 26-contract aggregate, lint, Vite build, Prisma validation, and diff checks passed before commit. The database-backed repository assertion remains intentionally unrun because no disposable PostgreSQL database ending in `_test` is configured; it must never be pointed at production Supabase.
+- A post-deployment read-only check confirmed the Studio and dedicated database are healthy, production generation remains disabled, and the Edition is still `needs-more-evidence` on the pre-repair deployment. The production cohort behavior therefore still requires one deployment of this commit followed by one bounded ingestion refresh; no model or generation action is authorized by that refresh.
+
 - The frontend performance follow-up is now closed by the archived `07-19-frontend-css-budget-cleanup` task. Current production output passes at `236074 / 240000` CSS bytes and `354307 / 430000` JS bytes.
 
 ## Production Slice Status

@@ -1,39 +1,95 @@
-import { aiDailyIngestionConfigVersion } from '../src/aiDailyIngestionRunner.js'
-import { summarizeAiDailyIngestionReadinessIssues } from '../src/aiDailyStudioProduction.js'
+import {
+  aiDailyIngestionConfigVersion,
+  summarizeAiDailyIngestionCohort,
+} from '../src/aiDailyIngestionRunner.js'
+import { summarizeAiDailySelectionAuthorizationIssues } from '../src/aiDailyStudioProduction.js'
 import { assert, assertEqual } from './ai-daily-check-helpers.js'
 
+const issueId = 'issue-fixture'
+const evidence = [{ sourceTier: 'TIER_1' }, { sourceTier: 'TIER_2' }]
+const authority = (overrides: Partial<{
+  runId: string
+  issueId: string | null
+  profile: string
+  status: string
+  configVersion: string
+}> = {}) => ({
+  runId: 'selection-run',
+  issueId,
+  profile: 'DEGRADED',
+  status: 'COMPLETED',
+  configVersion: aiDailyIngestionConfigVersion,
+  ...overrides,
+})
+
 assertEqual(
-  summarizeAiDailyIngestionReadinessIssues({
-    status: 'COMPLETED',
-    configVersion: aiDailyIngestionConfigVersion,
+  summarizeAiDailySelectionAuthorizationIssues({
+    issueId,
+    evidence,
+    selectionAuthorities: [authority(), authority()],
   }).length,
   0,
-  'current completed ingestion run is production eligible',
+  'one current completed selection run authorizes production evidence',
 )
 
-const missing = summarizeAiDailyIngestionReadinessIssues(null)
-assertEqual(missing.length, 1, 'missing ingestion run has one stable issue')
-assert(missing.includes('latest-ingestion-run-missing'), 'missing ingestion run is rejected')
+const missing = summarizeAiDailySelectionAuthorizationIssues({ issueId, evidence, selectionAuthorities: [] })
+assert(missing.includes('selection-ingestion-authority-missing'), 'missing selection authority is rejected')
 
-const stale = summarizeAiDailyIngestionReadinessIssues({
-  status: 'COMPLETED',
-  configVersion: 'ai-daily-ingestion-runner-v5',
+const stale = summarizeAiDailySelectionAuthorizationIssues({
+  issueId,
+  evidence,
+  selectionAuthorities: [authority({ configVersion: 'ai-daily-ingestion-runner-v5' }), authority()],
 })
-assertEqual(stale.length, 1, 'stale completed ingestion run has one stable issue')
-assert(stale.includes('latest-ingestion-config-stale'), 'stale ingestion config is rejected')
+assert(stale.includes('selection-ingestion-config-stale'), 'stale selection config is rejected')
 
-for (const status of ['QUEUED', 'RUNNING', 'COMPLETED_WITH_GAPS', 'FAILED']) {
-  const issues = summarizeAiDailyIngestionReadinessIssues({ status, configVersion: aiDailyIngestionConfigVersion })
-  assert(
-    issues.includes('latest-ingestion-run-not-ready'),
-    `${status.toLowerCase()} ingestion run cannot authorize production generation`,
-  )
-}
-
-const staleAndIncomplete = summarizeAiDailyIngestionReadinessIssues({
-  status: 'COMPLETED_WITH_GAPS',
-  configVersion: 'ai-daily-ingestion-runner-v5',
+const incomplete = summarizeAiDailySelectionAuthorizationIssues({
+  issueId,
+  evidence,
+  selectionAuthorities: [authority({ status: 'COMPLETED_WITH_GAPS' }), authority()],
 })
-assertEqual(staleAndIncomplete.length, 2, 'stale incomplete ingestion reports both stable issues')
+assert(incomplete.includes('selection-ingestion-run-not-ready'), 'incomplete selection run is rejected')
+
+const mixed = summarizeAiDailySelectionAuthorizationIssues({
+  issueId,
+  evidence,
+  selectionAuthorities: [authority(), authority({ runId: 'other-selection-run' })],
+})
+assert(mixed.includes('selection-ingestion-authority-mixed'), 'mixed selection decision runs are rejected')
+
+const invalid = summarizeAiDailySelectionAuthorizationIssues({
+  issueId,
+  evidence,
+  selectionAuthorities: [authority({ issueId: 'other-issue' }), authority({ profile: 'FIXTURE' })],
+})
+assert(invalid.includes('selection-ingestion-authority-invalid'), 'cross-issue or non-ingestion authority is rejected')
+
+const cohort = summarizeAiDailyIngestionCohort([
+  {
+    startedAt: new Date('2026-07-25T18:30:00.000Z'),
+    lastTier1CollectedAt: null,
+    lastCollectedAt: new Date('2026-07-25T18:31:00.000Z'),
+    lastDiscoveredAt: new Date('2026-07-25T18:32:00.000Z'),
+    lastFetchedAt: new Date('2026-07-25T18:33:00.000Z'),
+  },
+  {
+    startedAt: new Date('2026-07-25T18:50:00.000Z'),
+    lastTier1CollectedAt: new Date('2026-07-25T18:55:00.000Z'),
+    lastCollectedAt: new Date('2026-07-25T18:55:00.000Z'),
+    lastDiscoveredAt: null,
+    lastFetchedAt: new Date('2026-07-25T18:56:00.000Z'),
+  },
+])
+assertEqual(cohort.startedAt?.toISOString(), '2026-07-25T18:30:00.000Z', 'cohort keeps earliest run start')
+assertEqual(
+  cohort.lastTier1CollectedAt?.toISOString(),
+  '2026-07-25T18:55:00.000Z',
+  'feed-only run contributes the latest tier 1 checkpoint',
+)
+assertEqual(
+  cohort.lastDiscoveredAt?.toISOString(),
+  '2026-07-25T18:32:00.000Z',
+  'discovery-only run contributes the latest discovery checkpoint',
+)
+assertEqual(cohort.lastFetchedAt?.toISOString(), '2026-07-25T18:56:00.000Z', 'cohort keeps latest evidence fetch')
 
 console.log('AI Daily Studio production gate check passed')

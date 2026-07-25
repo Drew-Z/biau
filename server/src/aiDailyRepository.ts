@@ -451,8 +451,21 @@ export async function loadAiDailyGenerationEvidencePack(
   const sourceIds = relations.map((relation) => relation.sourceItemId)
   const candidates = sourceIds.length
     ? await prisma.aiDailyCandidate.findMany({
-        where: { sourceItemId: { in: sourceIds }, selectionState: 'SELECTED' },
-        include: { currentEvidence: true },
+        where: {
+          sourceItemId: { in: sourceIds },
+          selectionState: 'SELECTED',
+          run: { issueId },
+        },
+        include: {
+          currentEvidence: true,
+          cluster: {
+            include: {
+              run: {
+                select: { id: true, issueId: true, profile: true, status: true, configVersion: true },
+              },
+            },
+          },
+        },
         orderBy: { updatedAt: 'desc' },
       })
     : []
@@ -461,6 +474,13 @@ export async function loadAiDailyGenerationEvidencePack(
     if (candidate.sourceItemId && !candidateBySource.has(candidate.sourceItemId)) candidateBySource.set(candidate.sourceItemId, candidate)
   }
   const evidence: AiDailyGenerationEvidence[] = []
+  const selectionAuthorities: Array<{
+    runId: string
+    issueId: string | null
+    profile: string
+    status: string
+    configVersion: string
+  }> = []
   const gaps: string[] = []
   let evidenceVersion = issue.selectedEvidenceVersion
   for (const relation of relations) {
@@ -469,6 +489,15 @@ export async function loadAiDailyGenerationEvidencePack(
     if (!candidate || !currentEvidence) {
       gaps.push(`missing-evidence:${relation.sourceItemId}`)
       continue
+    }
+    if (candidate.cluster?.run) {
+      selectionAuthorities.push({
+        runId: candidate.cluster.run.id,
+        issueId: candidate.cluster.run.issueId,
+        profile: candidate.cluster.run.profile,
+        status: candidate.cluster.run.status,
+        configVersion: candidate.cluster.run.configVersion,
+      })
     }
     evidenceVersion = Math.max(evidenceVersion, currentEvidence.version)
     if (currentEvidence.status !== 'READY') {
@@ -498,7 +527,15 @@ export async function loadAiDailyGenerationEvidencePack(
     })
   }
   if (evidence.length === 0 && relations.length > 0) gaps.push('evidence-pack-empty')
-  return { issueId: issue.id, date: issue.date, selectionVersion: issue.selectionVersion, evidenceVersion, evidence, gaps }
+  return {
+    issueId: issue.id,
+    date: issue.date,
+    selectionVersion: issue.selectionVersion,
+    evidenceVersion,
+    evidence,
+    selectionAuthorities,
+    gaps,
+  }
 }
 
 export async function persistAiDailyGenerationOutcome(

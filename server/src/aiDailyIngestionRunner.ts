@@ -60,6 +60,8 @@ const ingestionRetryDelayMs = 5 * 60_000
 // per-feed request budget.
 const maxCandidatesPerFeed = 4
 const maxCandidatesPerDiscovery = 12
+const maxIngestionCohortRuns = 48
+const maxIngestionCohortCandidates = 480
 const discoveryWindowMs = 36 * 60 * 60_000
 const discoveryScheduleBucketMs = 6 * 60 * 60_000
 export const aiDailyDiscoveryDeadlineMs = 45 * 60_000
@@ -558,27 +560,51 @@ async function finalizeAiDailyIngestionRunIfIdle(prisma: PrismaClient, runId: st
     where: { id: runId },
     include: {
       issue: { select: { id: true, workflowState: true, selectionVersion: true, draftId: true } },
-      candidates: { include: { currentEvidence: true, sourceFeed: true } },
     },
   })
   if (!run || !run.issueId || !run.issue) return { status: 'missing-run' as const, remaining: 0 }
   if (!['QUEUED', 'RUNNING'].includes(run.status)) return { status: 'already-terminal' as const, remaining: 0 }
 
-  const candidates = run.candidates
+  const cohortRuns = await prisma.aiDailyRun.findMany({
+    where: {
+      issueId: run.issueId,
+      profile: 'DEGRADED',
+      configVersion: aiDailyIngestionConfigVersion,
+      status: { in: ['QUEUED', 'RUNNING', 'COMPLETED', 'COMPLETED_WITH_GAPS'] },
+    },
+    select: {
+      id: true,
+      startedAt: true,
+      lastTier1CollectedAt: true,
+      lastCollectedAt: true,
+      lastDiscoveredAt: true,
+      lastFetchedAt: true,
+    },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    take: maxIngestionCohortRuns,
+  })
+  const cohort = summarizeAiDailyIngestionCohort(cohortRuns)
+  const cohortCandidates = await prisma.aiDailyCandidate.findMany({
+    where: { runId: { in: cohortRuns.map((item) => item.id) } },
+    include: { currentEvidence: true, sourceFeed: true },
+    orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+    take: maxIngestionCohortCandidates,
+  })
+  const candidates = cohortCandidates
     .map(toAiDailyEvidenceCandidate)
     .filter((candidate): candidate is AiDailyEvidenceCandidate => candidate !== null)
-  const fetchedAt = run.candidates
+  const fetchedAt = cohortCandidates
     .map((candidate) => candidate.currentEvidence?.fetchedAt ?? null)
     .filter((value): value is Date => value !== null)
   const newestPublishedAt = newestDate(candidates.map((candidate) => candidate.publishedAt))
   const freshness = {
     now: new Date(),
-    lastTier1CollectedAt: run.lastTier1CollectedAt,
-    lastDiscoveredAt: run.lastDiscoveredAt,
-    lastFetchedAt: run.lastFetchedAt,
+    lastTier1CollectedAt: cohort.lastTier1CollectedAt,
+    lastDiscoveredAt: cohort.lastDiscoveredAt,
+    lastFetchedAt: cohort.lastFetchedAt,
     newestPublishedAt,
     selectedEvidenceFetchedAt: fetchedAt,
-    tier1DiscoveryLagsMs: calculateAiDailyTier1DiscoveryLags(candidates, run.startedAt),
+    tier1DiscoveryLagsMs: calculateAiDailyTier1DiscoveryLags(candidates, cohort.startedAt),
   }
   const qualified = prepareAiDailyEvidenceSelection({ candidates, freshness })
   await persistAiDailyDedupe(prisma, { runId, candidates: qualified.deduped })
@@ -587,10 +613,10 @@ async function finalizeAiDailyIngestionRunIfIdle(prisma: PrismaClient, runId: st
     runId,
     checkpoints: {
       newestPublishedAt,
-      lastTier1CollectedAt: run.lastTier1CollectedAt,
-      lastCollectedAt: run.lastCollectedAt,
-      lastDiscoveredAt: run.lastDiscoveredAt,
-      lastFetchedAt: run.lastFetchedAt,
+      lastTier1CollectedAt: cohort.lastTier1CollectedAt,
+      lastCollectedAt: cohort.lastCollectedAt,
+      lastDiscoveredAt: cohort.lastDiscoveredAt,
+      lastFetchedAt: cohort.lastFetchedAt,
     },
     freshness: qualified.freshness,
   })
@@ -599,6 +625,7 @@ async function finalizeAiDailyIngestionRunIfIdle(prisma: PrismaClient, runId: st
     const selection = await applyAiDailyEvidenceSelection(prisma, {
       runId,
       issueId: run.issueId,
+      configVersion: aiDailyIngestionConfigVersion,
       selected: qualified.selected,
       selectedBy: 'ai-daily-ingestion-runner',
       selectionReason: 'deterministic source authority, freshness, diversity, and evidence readiness gate',
@@ -638,6 +665,24 @@ async function finalizeAiDailyIngestionRunIfIdle(prisma: PrismaClient, runId: st
     errorCategory: 'evidence_not_ready',
   })
   return { status: 'completed-with-gaps' as const, selected: qualified.selected.length, gaps: qualified.gaps }
+}
+
+export function summarizeAiDailyIngestionCohort(
+  runs: Array<{
+    startedAt: Date | null
+    lastTier1CollectedAt: Date | null
+    lastCollectedAt: Date | null
+    lastDiscoveredAt: Date | null
+    lastFetchedAt: Date | null
+  }>,
+) {
+  return {
+    startedAt: oldestDate(runs.map((run) => run.startedAt)),
+    lastTier1CollectedAt: newestDate(runs.map((run) => run.lastTier1CollectedAt)),
+    lastCollectedAt: newestDate(runs.map((run) => run.lastCollectedAt)),
+    lastDiscoveredAt: newestDate(runs.map((run) => run.lastDiscoveredAt)),
+    lastFetchedAt: newestDate(runs.map((run) => run.lastFetchedAt)),
+  }
 }
 
 async function createOrResumeAiDailyIngestionRun(
@@ -769,6 +814,15 @@ function newestDate(values: Array<Date | null | undefined>) {
     if (!value || Number.isNaN(value.getTime())) return latest
     return !latest || value.getTime() > latest.getTime() ? value : latest
   }, null)
+}
+
+function oldestDate(values: Array<Date | null | undefined>) {
+  let oldest: Date | null = null
+  for (const value of values) {
+    if (!value || Number.isNaN(value.getTime())) continue
+    if (!oldest || value.getTime() < oldest.getTime()) oldest = value
+  }
+  return oldest
 }
 
 function classifyAiDailyIngestionError(error: unknown): AiDailyIngestionErrorCategory {

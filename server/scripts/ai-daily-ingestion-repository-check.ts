@@ -92,7 +92,7 @@ async function main() {
     data: {
       issueId: issue.id,
       editionDate,
-      profile: 'FIXTURE',
+      profile: 'DEGRADED',
       trigger: 'MANUAL',
       attemptNumber: 1,
       status: 'RUNNING',
@@ -185,6 +185,7 @@ async function main() {
   const firstSelection = await applyAiDailyEvidenceSelection(prisma, {
     runId: run.id,
     issueId: issue.id,
+    configVersion: 'ingestion-repository-check-v1',
     selected: qualified.selected,
     selectedBy: 'ingestion-repository-check',
     selectionReason: 'deterministic fixture selection',
@@ -192,6 +193,7 @@ async function main() {
   const repeatedSelection = await applyAiDailyEvidenceSelection(prisma, {
     runId: run.id,
     issueId: issue.id,
+    configVersion: 'ingestion-repository-check-v1',
     selected: qualified.selected,
     selectedBy: 'ingestion-repository-check',
     selectionReason: 'deterministic fixture selection',
@@ -204,6 +206,41 @@ async function main() {
   })
   if (selectedRelationCount !== qualified.selected.length) {
     throw new Error('selected issue relation count does not match deterministic selection')
+  }
+
+  const cohortRun = await prisma.aiDailyRun.create({
+    data: {
+      issueId: issue.id,
+      editionDate,
+      profile: 'DEGRADED',
+      trigger: 'MANUAL',
+      attemptNumber: 2,
+      status: 'RUNNING',
+      currentStage: 'RANK',
+      configVersion: 'ingestion-repository-check-v1',
+    },
+  })
+  await persistAiDailyClusters(prisma, { runId: cohortRun.id, clusters: qualified.ranked })
+  const cohortSelection = await applyAiDailyEvidenceSelection(prisma, {
+    runId: cohortRun.id,
+    issueId: issue.id,
+    configVersion: 'ingestion-repository-check-v1',
+    selected: qualified.selected,
+    selectedBy: 'ingestion-repository-check',
+    selectionReason: 'same-edition same-config cohort selection',
+  })
+  if (cohortSelection.changed || cohortSelection.selectionVersion !== firstSelection.selectionVersion) {
+    throw new Error('same-source cohort selection must refresh authority without duplicating issue relations')
+  }
+  const cohortAuthorityCount = await prisma.aiDailyCandidate.count({
+    where: {
+      id: { in: qualified.selected.map((cluster) => cluster.representative.id) },
+      cluster: { runId: cohortRun.id },
+      selectionState: 'SELECTED',
+    },
+  })
+  if (cohortAuthorityCount !== qualified.selected.length) {
+    throw new Error('cohort selection must bind every representative to the current decision run')
   }
 
   const foreignRun = await prisma.aiDailyRun.create({
@@ -220,6 +257,7 @@ async function main() {
       applyAiDailyEvidenceSelection(prisma, {
         runId: foreignRun.id,
         issueId: issue.id,
+        configVersion: 'ingestion-repository-check-v1',
         selected: qualified.selected,
         selectedBy: 'ingestion-repository-check',
         selectionReason: 'cross-run rejection fixture',

@@ -381,6 +381,7 @@ export async function applyAiDailyEvidenceSelection(
   input: {
     runId: string
     issueId: string
+    configVersion: string
     selected: AiDailyRankedCluster[]
     selectedBy: string
     selectionReason: string
@@ -389,11 +390,26 @@ export async function applyAiDailyEvidenceSelection(
 ) {
   const selectedAt = input.selectedAt ?? new Date()
   return prisma.$transaction(async (tx) => {
+    const selectionRun = await tx.aiDailyRun.findFirst({
+      where: {
+        id: input.runId,
+        issueId: input.issueId,
+        profile: 'DEGRADED',
+        configVersion: input.configVersion,
+        status: { in: ['QUEUED', 'RUNNING'] },
+      },
+      select: { id: true },
+    })
+    if (!selectionRun) throw new Error('ai-daily-selection-run-boundary-mismatch')
     const representativeIds = input.selected.map((cluster) => cluster.representative.id)
     const eligibleRepresentatives = await tx.aiDailyCandidate.count({
       where: {
         id: { in: representativeIds },
-        runId: input.runId,
+        run: {
+          issueId: input.issueId,
+          profile: 'DEGRADED',
+          configVersion: input.configVersion,
+        },
         leadOnly: false,
         evidenceStatus: 'READY',
       },
@@ -408,6 +424,13 @@ export async function applyAiDailyEvidenceSelection(
         throw new Error('ai-daily-selection-requires-ready-evidence')
       }
       const representative = cluster.representative
+      const persistedCluster = await tx.aiDailyCluster.findUnique({
+        where: { runId_stableIdentityKey: { runId: input.runId, stableIdentityKey: cluster.stableIdentityKey } },
+        select: { id: true, representativeCandidateId: true },
+      })
+      if (!persistedCluster || persistedCluster.representativeCandidateId !== representative.id) {
+        throw new Error('ai-daily-selection-run-boundary-mismatch')
+      }
       const source = await upsertAiDailyCanonicalSource(tx, {
         title: representative.title,
         url: representative.originalUrl,
@@ -424,16 +447,19 @@ export async function applyAiDailyEvidenceSelection(
       })
       sourceIds.push(source.id)
       const candidateUpdate = await tx.aiDailyCandidate.updateMany({
-        where: { id: representative.id, runId: input.runId },
-        data: { sourceItemId: source.id, selectionState: 'SELECTED' },
+        where: {
+          id: representative.id,
+          run: {
+            issueId: input.issueId,
+            profile: 'DEGRADED',
+            configVersion: input.configVersion,
+          },
+        },
+        data: { sourceItemId: source.id, selectionState: 'SELECTED', clusterId: persistedCluster.id },
       })
       if (candidateUpdate.count !== 1) throw new Error('ai-daily-selection-run-boundary-mismatch')
       await tx.aiDailyCluster.updateMany({
-        where: {
-          runId: input.runId,
-          stableIdentityKey: cluster.stableIdentityKey,
-          representativeCandidateId: representative.id,
-        },
+        where: { id: persistedCluster.id, representativeCandidateId: representative.id },
         data: { selectedAt, rank: index + 1 },
       })
     }
@@ -444,7 +470,14 @@ export async function applyAiDailyEvidenceSelection(
       selectionReason: input.selectionReason,
     })
     const selectedEvidence = await tx.aiDailyCandidate.aggregate({
-      where: { id: { in: representativeIds }, runId: input.runId },
+      where: {
+        id: { in: representativeIds },
+        run: {
+          issueId: input.issueId,
+          profile: 'DEGRADED',
+          configVersion: input.configVersion,
+        },
+      },
       _max: { evidenceVersion: true },
     })
     const evidenceVersion = selectedEvidence._max.evidenceVersion ?? 0

@@ -76,39 +76,43 @@ The live provider boundary is the OpenAI-compatible Responses API with a structu
 
 ### 1. Scope / Trigger
 
-- Trigger: a new ingestion contract or ranking version is deployed after an older run has already populated an Edition selection.
-- Goal: retained historical evidence remains auditable, but it cannot authorize a new production generation when the latest ingestion run is stale, active, failed, or completed with gaps.
+- Trigger: due-feed and six-hour discovery idempotency place evidence for one Edition into different ingestion runs, or a new ranking version follows an older selected Edition.
+- Goal: same-version incremental runs form one bounded evidence cohort, while generation is authorized by the run that made the active selection rather than whichever incremental run happened most recently.
 
 ### 2. Signatures
 
 - Product entry: `POST /studio/api/ai-daily/issues/:id/live-run`.
-- Authorization helper: `summarizeAiDailyIngestionReadinessIssues(run)` in `server/src/aiDailyStudioProduction.ts`.
-- Database read: latest `AiDailyRun` for the Edition with `profile=DEGRADED`, ordered by `createdAt DESC, id DESC`.
+- Cohort helper: `summarizeAiDailyIngestionCohort(runs)` in `server/src/aiDailyIngestionRunner.ts`.
+- Authorization helper: `summarizeAiDailySelectionAuthorizationIssues(pack)` in `server/src/aiDailyStudioProduction.ts`.
+- Database read: at most 48 recent `DEGRADED` runs and 480 candidates for the same `issueId + aiDailyIngestionConfigVersion`.
 
 ### 3. Contracts
 
-- The latest ingestion run must use the exported `aiDailyIngestionConfigVersion` and have status `COMPLETED` before selected evidence can authorize a production generation run.
-- `QUEUED`, `RUNNING`, `COMPLETED_WITH_GAPS`, and `FAILED` all fail closed. An older successful run does not override a newer non-ready run.
-- A failed refresh does not delete or rewrite historical selections. The generation boundary, rather than destructive cleanup, prevents those selections from being mistaken for current authorization.
+- Finalization re-ranks candidate evidence across the bounded same-Edition, same-config cohort. Feed-only runs contribute Tier 1 collection checkpoints; discovery-only runs contribute broad-discovery checkpoints. Older config versions and failed runs are excluded.
+- Selection remains an atomic decision owned by the current run. A representative may originate in an earlier cohort run, but it is rebound to the current persisted cluster before the Edition selection is updated.
+- `loadAiDailyGenerationEvidencePack` scopes selected candidates to the Edition and projects the selected cluster's run as low-sensitive authorization metadata. Every active evidence relation must point to one `DEGRADED`, current-config, `COMPLETED` selection run.
+- A later incremental run that finds no new event does not invalidate a valid current selection. Conversely, an older V5 selection cannot be authorized merely because a newer V6 maintenance run completed.
 - The route returns only the existing stable `ai-daily-generation-evidence-not-ready` error plus bounded reason codes; run ids, provider payloads, endpoints, credentials, and raw database errors remain private.
 
 ### 4. Validation & Error Matrix
 
-- No ingestion run -> `409 ai-daily-generation-evidence-not-ready` with `latest-ingestion-run-missing`.
-- Latest run uses an older config -> the same error with `latest-ingestion-config-stale`.
-- Latest run is not `COMPLETED` -> the same error with `latest-ingestion-run-not-ready`.
-- A stale and non-ready run reports both stable reasons.
-- Current completed ingestion still proceeds to the existing selected-evidence count, completeness, Tier 1, issue-version, production flag, and runtime-approval checks.
+- Missing authority for any selected evidence -> `409 ai-daily-generation-evidence-not-ready` with `selection-ingestion-authority-missing`.
+- Multiple selection decision runs -> the same error with `selection-ingestion-authority-mixed`.
+- Cross-Edition or non-`DEGRADED` authority -> the same error with `selection-ingestion-authority-invalid`.
+- Older config -> the same error with `selection-ingestion-config-stale`.
+- Selection decision run not `COMPLETED` -> the same error with `selection-ingestion-run-not-ready`.
+- Valid authority still proceeds to selected-evidence count, completeness, Tier 1, issue-version, production flag, and runtime-approval checks.
 
 ### 5. Good / Base / Bad Cases
 
-- Good: the latest current-version ingestion completes without gaps, then a human-confirmed live run may proceed to the existing evidence checks.
-- Base: no current ingestion exists, so the Studio action remains blocked without mutating the Edition.
-- Bad: a V5 selection remains on the Edition, a V6 refresh completes with gaps, and the live-run action reuses the V5 selection. The latest-run gate must reject this case.
+- Good: one V6 run contributes discovery, a later V6 run contributes Tier 1 feeds, and current finalization ranks the combined cohort and records one selection authority.
+- Base: a maintenance run completes with no new event after a valid selection; the prior completed selection authority remains valid until evidence expiry or replacement.
+- Bad: a V5 selection remains on the Edition and a V6 maintenance run completes. The V6 run must not launder the V5 selection into current authorization.
 
 ### 6. Tests Required
 
-- Run `npm.cmd run ai-daily:studio-production-check` for missing, stale, active, completed-with-gaps, failed, and current-completed fixtures.
+- Run `npm.cmd run ai-daily:studio-production-check` for cohort checkpoint merge plus missing, mixed, invalid, stale, incomplete, and current authorization fixtures.
+- With an explicitly configured disposable `_test` PostgreSQL database, run `npm.cmd run ai-daily:repository-check` to prove a representative from an earlier same-config run can be selected by the current run, while a foreign run remains rejected.
 - Keep the check in `ai-daily:contracts-check` and in the production-readiness command inventory.
 - The check is deterministic and must not access a provider, search service, deployed endpoint, or database.
 
@@ -117,25 +121,24 @@ The live provider boundary is the OpenAI-compatible Responses API with a structu
 #### Wrong
 
 ```ts
-const evidencePack = await loadAiDailyGenerationEvidencePack(prisma, issue.id)
-if (evidencePack.gaps.length === 0) await queueAiDailyGenerationWork(...)
+const latest = await prisma.aiDailyRun.findFirst({
+  where: { issueId: issue.id, profile: 'DEGRADED' },
+})
+if (latest?.status === 'COMPLETED') await queueAiDailyGenerationWork(...)
 ```
 
-This can reuse an older selection after a newer ranking version has already failed closed.
+This lets an unrelated incremental run authorize evidence it never selected.
 
 #### Correct
 
 ```ts
-const latest = await prisma.aiDailyRun.findFirst({
-  where: { issueId: issue.id, profile: 'DEGRADED' },
-  orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-})
-if (summarizeAiDailyIngestionReadinessIssues(latest).length > 0) {
+const pack = await loadAiDailyGenerationEvidencePack(prisma, issue.id)
+if (summarizeAiDailySelectionAuthorizationIssues(pack).length > 0) {
   throw new AiDailyStudioProductionError('ai-daily-generation-evidence-not-ready')
 }
 ```
 
-The current ingestion contract authorizes generation before retained evidence is considered.
+The persisted selection decision authorizes its exact evidence independently of later maintenance runs.
 
 ## Scenario: Manual static role selection and optional model evaluation
 
@@ -734,11 +737,11 @@ The repository verifies the active token and expiry, records the attempt outcome
 - The SSRF-safe Node transport pins DNS results through the `lookup` option. Because modern Node may call that callback with `options.all=true`, the pinned lookup must return an array of `{ address, family }` records in that branch and a scalar address/family pair otherwise. Returning a scalar for the array contract causes `ERR_INVALID_IP_ADDRESS` before any public source request and is projected only as `network_error`.
 - Evidence documents are immutable versions per candidate. `currentEvidenceId` points to the latest version; failed writes cannot advance the version because creation and projection share a transaction.
 - Manifest synchronization is idempotent and owns editorial source configuration only. It must preserve learned `ETag` and `Last-Modified` validators; a refresh must not reset them. A successful source fetch records bounded validators and the next due time, while `304` reuses the existing validator state without creating candidate evidence.
-- `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by a deadline, and resumed after a process restart. Each tick queues due `COLLECT_FEED` work plus one idempotent `DISCOVER` item per enabled query group, six-hour time bucket, and ingestion config version; finalization waits for both kinds. If a refresh queues neither kind, the runner finalizes that empty run immediately instead of leaving an unclaimable permanent `RUNNING` record. A config-version bump permits one bounded replay in the current bucket after acquisition semantics change, while repeated refreshes on the same version remain idempotent. A discovery item receives a 45-minute deadline: long enough to run after due official feeds and fetch bounded original pages, but still far shorter than its six-hour schedule interval. Discovery may call The News API, GDELT, HN Algolia, and HotDaily but never calls a model. Each feed fetches at most four normalized candidates and each discovery group fetches at most twelve. Discovery selection first reserves one candidate per contributing provider, then fills the remaining budget by date-bearing/lead-only priority and stable canonical key; a large GDELT response therefore cannot silently crowd HN or HotDaily out of the original-page evidence budget. Undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
+- `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by a deadline, and resumed after a process restart. Each tick queues due `COLLECT_FEED` work plus one idempotent `DISCOVER` item per enabled query group, six-hour time bucket, and ingestion config version; finalization waits for both kinds. If a refresh queues neither kind, the runner finalizes that empty run immediately instead of leaving an unclaimable permanent `RUNNING` record. A config-version bump permits one bounded replay in the current bucket after acquisition semantics change, while repeated refreshes on the same version remain idempotent. Because feed cadence and discovery idempotency may split one Edition across multiple runs, finalization ranks a bounded cohort of at most 48 non-failed `DEGRADED` runs and 480 candidates sharing the exact `issueId + ingestion config version`; older config versions and failed runs are excluded. A discovery item receives a 45-minute deadline: long enough to run after due official feeds and fetch bounded original pages, but still far shorter than its six-hour schedule interval. Discovery may call The News API, GDELT, HN Algolia, and HotDaily but never calls a model. Each feed fetches at most four normalized candidates and each discovery group fetches at most twelve. Discovery selection first reserves one candidate per contributing provider, then fills the remaining budget by date-bearing/lead-only priority and stable canonical key; a large GDELT response therefore cannot silently crowd HN or HotDaily out of the original-page evidence budget. Undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
 - `POST /studio/api/ai-daily/ingestion/refresh` requires the existing Studio bearer token, synchronizes the approved manifest, queues due feeds, returns `202`, and wakes the worker. It does not perform a long network fetch inside the HTTP request.
 - Dedupe order is canonical URL, content hash, title fingerprint, then lexical similarity. Event ranking stores named score components and stable tie-breaks. Selection may pass `targetEvents` only to satisfy minimum evidence diversity and never exceeds `maxEvents`.
-- Tier 1 discovery P95 measures only Tier 1 candidates whose `publishedAt` is on or after the current run's `startedAt`. Candidates pulled from the 36-hour editorial lookback remain eligible for evidence and ranking, but they do not repeatedly fail the current run's live-discovery SLO; collection checkpoint age and end-to-end lag continue to expose stale history separately.
-- Selection writes require an explicit `runId`; database truth must confirm every representative belongs to that run, is not lead-only, and has ready evidence. Repeating the same ordered selection must not increment `selectionVersion` or duplicate issue relations.
+- Tier 1 discovery P95 measures only Tier 1 candidates whose `publishedAt` is on or after the cohort's earliest `startedAt`. Feed and discovery freshness checkpoints use the newest non-null value in that same cohort. Candidates pulled from the 36-hour editorial lookback remain eligible for evidence and ranking, but they do not repeatedly fail the live-discovery SLO; collection checkpoint age and end-to-end lag continue to expose stale history separately.
+- Selection writes require an explicit decision `runId` and `configVersion`; database truth must confirm every representative belongs to the same Edition/config cohort, is not lead-only, and has ready evidence. A representative from an earlier cohort run is rebound to the decision run's persisted cluster before the active Edition selection is written. Repeating the same ordered selection must not increment `selectionVersion` or duplicate issue relations.
 - Source API responses expose public registry and low-sensitive health fields only. Do not persist provider credentials, endpoints, raw provider bodies, or arbitrary configuration JSON in source/evidence tables.
 
 ### 4. Validation & Error Matrix
@@ -754,11 +757,11 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Missing primary discovery -> not ready with `primary_unavailable`; missing or failed fallback -> `reduced_redundancy`; an individual signal failure is reported with its adapter id and stable error category without suppressing other signals.
 - Enabled query group without two bounded `providerQueries.theNewsApi` entries -> manifest rejection before runtime synchronization.
 - Stale Tier 1/discovery checkpoints or missing selected fetch checkpoints -> explicit freshness gaps, never normal-ready.
-- Selection representative from another run or without ready evidence -> `ai-daily-selection-run-boundary-mismatch` / `ai-daily-selection-requires-ready-evidence`.
+- Selection representative outside the decision run's Edition/config cohort or without ready evidence -> `ai-daily-selection-run-boundary-mismatch` / `ai-daily-selection-requires-ready-evidence`.
 
 ### 5. Good / Base / Bad Cases
 
-- Good: a Tier 1 RSS item is collected with conditional headers, fetched from its authoritative page, stored as evidence version 1, ranked, and selected once; repeating the run reuses canonical source and issue relations.
+- Good: a Tier 1 RSS item is collected with conditional headers in one run, discovery contributes current signals in another same-config run, and finalization ranks their combined bounded cohort into one decision-run selection; repeating the decision reuses canonical source and issue relations.
 - Good: refreshing the manifest after a prior fetch keeps the feed's validators, so the next tick sends `If-None-Match` / `If-Modified-Since`; a `304` updates freshness without discarding the stored validators.
 - Good: a redirect reaches another public origin, that origin's robots policy is checked before its article request, and a denial stops extraction.
 - Good: The News API receives explicit Boolean provider queries while GDELT and HN receive the provider-neutral query list from the same curated group.
@@ -775,7 +778,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 - `ai-daily:evidence-check` must also assert the pinned lookup callback returns an address array for `options.all=true` and a scalar address/family pair for the legacy branch; a local real-source smoke may be used for diagnosis, but is not part of deterministic CI.
 - Type-check the AI Daily scripts explicitly because `server:build` covers `server/src` but not every `server/scripts` entry.
 - Run `prisma:validate`, `prisma:generate`, and the full migration chain against a disposable PostgreSQL database.
-- The PostgreSQL check must assert source/candidate upsert idempotency, evidence version increments, cluster/selection persistence, identical selection idempotency, cross-run rejection, and authenticated Studio GET/POST/PATCH source routes.
+- The PostgreSQL check must assert source/candidate upsert idempotency, evidence version increments, cluster/selection persistence, identical selection idempotency, same-Edition/same-config cross-run selection, foreign-cohort rejection, and authenticated Studio GET/POST/PATCH source routes.
 - Run `server:build`, `server:smoke`, `assistant:service-modes-smoke`, `studio:smoke`, `lint`, `build`, `git diff --check`, and a sensitive-value scan.
 - Automated gates must use mocks/fixtures and must not perform model, search, extraction-provider, or liveness-only calls.
 
@@ -799,13 +802,14 @@ This trusts in-memory representatives without proving that they belong to the ac
 await applyAiDailyEvidenceSelection(prisma, {
   runId,
   issueId,
+  configVersion,
   selected,
   selectedBy: 'runner',
   selectionReason: 'deterministic evidence gate',
 })
 ```
 
-The repository binds selection to the run, verifies ready evidence in the database, and keeps repeated ordered selection idempotent.
+The repository verifies that selection belongs to the bounded Edition/config cohort, binds the decision to `runId`, verifies ready evidence in the database, and keeps repeated ordered selection idempotent.
 
 #### Wrong: pinned lookup ignores Node's array form
 
