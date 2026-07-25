@@ -51,6 +51,7 @@ const theNews = createTheNewsApiDiscoveryAdapter({
 })
 const theNewsCandidates = await theNews.discover(request('frontier-model-releases'))
 assertEqual(theNewsUrls.length, 2, 'The News API uses the bounded request budget across distinct queries')
+assert(theNewsUrls.every((url) => new URL(url).pathname === '/v1/news/all'), 'The News API uses the full article search endpoint')
 assertEqual(new Set(theNewsUrls.map((url) => new URL(url).searchParams.get('search'))).size, 2, 'The News API rotates without repeating a query')
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('api_token') === secretToken), 'The News API requests inject the token server-side')
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('limit') === '3'), 'The News API keeps each request result set bounded')

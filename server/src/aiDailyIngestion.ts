@@ -778,6 +778,18 @@ export interface AiDailyFreshnessResult {
   }
 }
 
+export function isAiDailyPublicationInsideWindow(
+  publishedAt: Date | null,
+  window: { windowStart: Date; windowEnd: Date },
+) {
+  if (!publishedAt) return false
+  const publishedAtMs = publishedAt.getTime()
+  const windowStartMs = window.windowStart.getTime()
+  const windowEndMs = window.windowEnd.getTime()
+  if ([publishedAtMs, windowStartMs, windowEndMs].some(Number.isNaN) || windowStartMs > windowEndMs) return false
+  return publishedAtMs >= windowStartMs && publishedAtMs <= windowEndMs
+}
+
 export function calculateAiDailyTier1DiscoveryLags(
   candidates: Pick<AiDailyCandidateLead, 'sourceTier' | 'publishedAt' | 'observedAt'>[],
   runStartedAt: Date | null,

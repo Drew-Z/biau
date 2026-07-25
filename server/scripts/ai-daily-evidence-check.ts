@@ -57,6 +57,25 @@ assert(direct.normalizedBytes <= 64 * 1024, 'evidence normalized body limit')
 assert(Buffer.byteLength(direct.excerpt) <= 1024, 'citation excerpt limit')
 assertEqual(direct.headings[1], 'API availability', 'structured heading extraction')
 
+const jsonLdPublishedAt = '2026-07-17T22:45:00.000Z'
+const jsonLdEvidence = await fetchAiDailyEvidence({
+  url: 'https://example.com/json-ld-release',
+  now: aiDailyFixtureNow,
+  locale: 'en-US',
+  ...buildAiDailyHttpFixture({
+    responses: [{
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
+      body: `<html><head><title>JSON-LD AI release</title><script type="application/ld+json">${JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        datePublished: jsonLdPublishedAt,
+      })}</script></head><body><article><h1>JSON-LD AI release</h1><p>${'Evidence-backed AI model release details. '.repeat(12)}</p></article></body></html>`,
+    }],
+  }),
+})
+assertEqual(jsonLdEvidence.publishedAt?.toISOString(), jsonLdPublishedAt, 'JSON-LD publication date extraction')
+
 let sourceRequestHeaders: Record<string, string> = {}
 const sourcePayload = await fetchAiDailySourcePayload({
   url: 'https://example.com/news',

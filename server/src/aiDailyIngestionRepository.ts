@@ -240,7 +240,7 @@ export async function upsertAiDailyCandidate(
 
 export async function createAiDailyEvidenceDocument(
   prisma: PrismaClient,
-  input: { candidateId: string; evidence: AiDailyEvidenceDocumentInput },
+  input: { candidateId: string; evidence: AiDailyEvidenceDocumentInput; promoteLead: boolean },
 ) {
   return prisma.$transaction(async (tx) => {
     const candidate = await tx.aiDailyCandidate.update({
@@ -283,7 +283,7 @@ export async function createAiDailyEvidenceDocument(
         evidenceExpiresAt: input.evidence.expiresAt,
         lastErrorCategory: null,
         ...(input.evidence.status === 'READY' && input.evidence.publishedAt
-          ? { publishedAt: input.evidence.publishedAt, leadOnly: false }
+          ? { publishedAt: input.evidence.publishedAt, leadOnly: !input.promoteLead }
           : {}),
       },
     })

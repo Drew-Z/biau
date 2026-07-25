@@ -94,6 +94,7 @@ async function main() {
     })
     await createAiDailyEvidenceDocument(prisma, {
       candidateId: candidate.id,
+      promoteLead: true,
       evidence: {
         extractionMethod: 'DIRECT',
         originalUrl: source.url,

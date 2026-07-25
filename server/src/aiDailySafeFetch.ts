@@ -508,6 +508,7 @@ function extractHtmlEvidence(input: {
 }) {
   const $ = load(input.text)
   const scriptCount = $('script').length
+  const jsonLdPublishedAt = readJsonLdPublishedDate($)
   $('script, style, noscript, svg, template, nav, footer').remove()
   const main = $('article').first().length
     ? $('article').first()
@@ -531,8 +532,9 @@ function extractHtmlEvidence(input: {
   const publishedAt = readPublishedDate(
     readMeta($, 'property', 'article:published_time') ||
       readMeta($, 'name', 'date') ||
+      normalizeEvidenceText($('meta[itemprop="datePublished"]').first().attr('content') ?? '') ||
       $('time[datetime]').first().attr('datetime'),
-  )
+  ) ?? jsonLdPublishedAt
   const headings = $('h1, h2, h3')
     .map((_index, element) => normalizeEvidenceText($(element).text()))
     .get()
@@ -703,6 +705,41 @@ function readPublishedDate(value: unknown) {
   if (typeof value !== 'string' || value.length > 80) return null
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? null : date
+}
+
+function readJsonLdPublishedDate($: ReturnType<typeof load>) {
+  let publishedAt: Date | null = null
+  $('script[type="application/ld+json"]').slice(0, 20).each((_index, element) => {
+    if (publishedAt) return false
+    const raw = ($(element).html() ?? '').trim()
+    if (!raw || raw.length > 256 * 1024) return
+    try {
+      publishedAt = findJsonLdPublishedDate(JSON.parse(raw) as unknown, 0, { remaining: 200 })
+    } catch {
+      // Malformed optional metadata must not invalidate otherwise usable evidence.
+    }
+  })
+  return publishedAt
+}
+
+function findJsonLdPublishedDate(value: unknown, depth: number, budget: { remaining: number }): Date | null {
+  if (depth > 6 || budget.remaining <= 0 || value === null || typeof value !== 'object') return null
+  budget.remaining -= 1
+  if (Array.isArray(value)) {
+    for (const entry of value.slice(0, 50)) {
+      const found = findJsonLdPublishedDate(entry, depth + 1, budget)
+      if (found) return found
+    }
+    return null
+  }
+  const record = value as Record<string, unknown>
+  const direct = readPublishedDate(record.datePublished)
+  if (direct) return direct
+  for (const entry of Object.values(record).slice(0, 50)) {
+    const found = findJsonLdPublishedDate(entry, depth + 1, budget)
+    if (found) return found
+  }
+  return null
 }
 
 function normalizeLocale(value: string) {

@@ -1,4 +1,8 @@
-import { calculateAiDailyTier1DiscoveryLags, evaluateAiDailyFreshness } from '../src/aiDailyIngestion.js'
+import {
+  calculateAiDailyTier1DiscoveryLags,
+  evaluateAiDailyFreshness,
+  isAiDailyPublicationInsideWindow,
+} from '../src/aiDailyIngestion.js'
 import { aiDailyFixtureNow } from '../src/aiDailyIngestionFixtures.js'
 import { assert, assertEqual } from './ai-daily-check-helpers.js'
 
@@ -54,5 +58,19 @@ const tier1DiscoveryLags = calculateAiDailyTier1DiscoveryLags([
 assertEqual(tier1DiscoveryLags.length, 1, 'tier 1 p95 ignores historical lookback and non-tier-1 candidates')
 assertEqual(tier1DiscoveryLags[0], 15 * 60_000, 'tier 1 p95 measures only current-run publication discovery lag')
 assertEqual(calculateAiDailyTier1DiscoveryLags([], null).length, 0, 'missing run checkpoint cannot reuse historical lag')
+assert(
+  isAiDailyPublicationInsideWindow(new Date('2026-07-17T23:45:00.000Z'), {
+    windowStart: new Date('2026-07-17T12:00:00.000Z'),
+    windowEnd: aiDailyFixtureNow,
+  }),
+  'evidence publication inside the edition window can promote a lead',
+)
+assert(
+  !isAiDailyPublicationInsideWindow(new Date('2026-07-10T23:45:00.000Z'), {
+    windowStart: new Date('2026-07-17T12:00:00.000Z'),
+    windowEnd: aiDailyFixtureNow,
+  }),
+  'historical evidence outside the edition window must remain lead-only',
+)
 
 console.log('AI Daily freshness check passed')

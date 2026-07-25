@@ -5,6 +5,7 @@ import {
   AiDailyAdapterError,
   buildAiDailyCollectionWindow,
   calculateAiDailyTier1DiscoveryLags,
+  isAiDailyPublicationInsideWindow,
   normalizeAiDailyCandidateLead,
   runAiDailyDiscovery,
   type AiDailyCandidateLead,
@@ -49,7 +50,7 @@ import { syncAiDailySourceManifest } from './aiDailySourceManifestRepository.js'
 import { loadAiDailySourceManifest, type AiDailyCuratedQueryGroup } from './aiDailySourceManifest.js'
 import { env } from './env.js'
 
-export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v2'
+export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v3'
 
 const ingestionLeaseMs = 12 * 60_000
 const ingestionRetryDelayMs = 5 * 60_000
@@ -122,7 +123,7 @@ export async function queueAiDailyIngestionRefresh(
     const item = await upsertAiDailyWorkItem(prisma, {
       editionDate,
       kind: 'DISCOVER',
-      scope: `query-group:${group.id}:window:${discoveryBucket}`,
+      scope: `query-group:${group.id}:window:${discoveryBucket}:config:${aiDailyIngestionConfigVersion}`,
       runId: run.id,
       priority: 60,
       availableAt: now,
@@ -264,6 +265,7 @@ async function executeAiDailyCollectionWork(
       candidates: normalizedCandidates,
       now,
       deadlineAt: workItem.deadlineAt,
+      publicationWindow: { windowStart: window.windowStart, windowEnd: window.windowEnd },
     })
 
     assertIngestionDeadline(workItem.deadlineAt, new Date())
@@ -394,6 +396,7 @@ async function executeAiDailyDiscoveryWork(
       candidates,
       now,
       deadlineAt: workItem.deadlineAt,
+      publicationWindow: { windowStart: request.windowStart, windowEnd: request.windowEnd },
     })
     await prisma.aiDailyRun.update({
       where: { id: workItem.runId },
@@ -471,6 +474,7 @@ async function fetchAndPersistAiDailyCandidates(
     candidates: AiDailyCandidateLead[]
     now: Date
     deadlineAt: Date | null
+    publicationWindow: { windowStart: Date; windowEnd: Date }
   },
 ) {
   let readyEvidence = 0
@@ -490,7 +494,11 @@ async function fetchAndPersistAiDailyCandidates(
         now: input.now,
         locale: candidate.locale,
       })
-      await createAiDailyEvidenceDocument(prisma, { candidateId: row.id, evidence })
+      await createAiDailyEvidenceDocument(prisma, {
+        candidateId: row.id,
+        evidence,
+        promoteLead: isAiDailyPublicationInsideWindow(evidence.publishedAt, input.publicationWindow),
+      })
       if (evidence.status === 'READY') readyEvidence += 1
       else thinEvidence += 1
     } catch (error) {

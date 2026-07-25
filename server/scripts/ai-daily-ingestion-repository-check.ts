@@ -117,6 +117,7 @@ async function main() {
     if (row.id !== repeated.id) throw new Error('candidate upsert must be idempotent')
     const evidence = await createAiDailyEvidenceDocument(prisma, {
       candidateId: row.id,
+      promoteLead: true,
       evidence: {
         extractionMethod: 'DIRECT',
         originalUrl: fixture.originalUrl,
@@ -139,6 +140,7 @@ async function main() {
     })
     const secondEvidence = await createAiDailyEvidenceDocument(prisma, {
       candidateId: row.id,
+      promoteLead: true,
       evidence: {
         extractionMethod: 'DIRECT',
         originalUrl: fixture.originalUrl,

@@ -6,7 +6,7 @@ import {
 } from './aiDailyIngestion.js'
 import { AiDailyFetchError, fetchAiDailySourcePayload } from './aiDailySafeFetch.js'
 
-const theNewsApiEndpoint = 'https://api.thenewsapi.com/v1/news/top'
+const theNewsApiEndpoint = 'https://api.thenewsapi.com/v1/news/all'
 const gdeltEndpoint = 'https://api.gdeltproject.org/api/v2/doc/doc'
 const hackerNewsAlgoliaEndpoint = 'https://hn.algolia.com/api/v1/search_by_date'
 const hotDailyEndpoint = 'https://api.hotdaily.top/v1/digests/today'
