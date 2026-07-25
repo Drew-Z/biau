@@ -48,6 +48,49 @@ const rankedWithLead = rankAiDailyClusters(groupAiDailyCandidates(deduplicateAiD
 const selectedWithLead = selectAiDailyClusters(rankedWithLead)
 assert(!selectedWithLead.selected.some((cluster) => cluster.representative.id === leadOnly.id), 'lead-only signal exclusion')
 
+const topicTaggedNoise = {
+  ...buildAiDailyEvidenceCandidateFixture({
+    index: 21,
+    tier: 'TIER_1',
+    topic: 'ai-infrastructure',
+    title: 'OpenTelemetry has graduated now what',
+  }),
+  evidenceText: 'The observability project describes its governance, contributor community, and graduation milestones.'.repeat(12),
+}
+const kimiRaceNoise = {
+  ...buildAiDailyEvidenceCandidateFixture({
+    index: 22,
+    tier: 'TIER_1',
+    topic: 'china-ai-releases',
+    title: 'Kimi Antonelli risks grid drop after qualifying investigation',
+  }),
+  evidenceText: 'The Formula One driver faces a possible grid penalty after the stewards opened an investigation.'.repeat(12),
+}
+const mentalHealthNoise = {
+  ...buildAiDailyEvidenceCandidateFixture({
+    index: 23,
+    tier: 'TIER_1',
+    topic: 'ai-infrastructure',
+    title: 'AI for mental health relies on careful human support',
+  }),
+  evidenceText: 'The opinion column discusses therapy, wellbeing, clinical care, and responsible human support.'.repeat(12),
+}
+const dailySubstringNoise = {
+  ...buildAiDailyEvidenceCandidateFixture({
+    index: 24,
+    tier: 'TIER_1',
+    topic: 'frontier-model-releases',
+    title: 'Daily release calendar for technology conferences',
+  }),
+  evidenceText: 'The calendar lists conference dates, venues, speakers, and registration deadlines.'.repeat(12),
+}
+const rankedNoise = rankAiDailyClusters(
+  groupAiDailyCandidates(deduplicateAiDailyCandidates([topicTaggedNoise, kimiRaceNoise, mentalHealthNoise, dailySubstringNoise])),
+  { now: aiDailyFixtureNow },
+)
+assert(rankedNoise.every((cluster) => cluster.score.aiRelevance === 0), 'topic labels and substring collisions cannot manufacture AI relevance')
+assertEqual(selectAiDailyClusters(rankedNoise).selected.length, 0, 'irrelevant high-authority candidates fail the explicit AI relevance floor')
+
 const tieLeft = buildAiDailyEvidenceCandidateFixture({ index: 30, domain: 'a.example.com', title: 'Alpha agent runtime release', tier: 'TIER_1' })
 const tieRight = {
   ...buildAiDailyEvidenceCandidateFixture({ index: 31, domain: 'b.example.com', title: 'Beta agent runtime release', tier: 'TIER_1' }),

@@ -677,6 +677,7 @@ export function rankAiDailyClusters(
 
 export interface AiDailySelectionPolicy {
   minScore: number
+  minAiRelevance: number
   targetEvents: number
   minEvents: number
   maxEvents: number
@@ -688,6 +689,7 @@ export interface AiDailySelectionPolicy {
 
 export const defaultAiDailySelectionPolicy: AiDailySelectionPolicy = {
   minScore: 55,
+  minAiRelevance: 8,
   targetEvents: 8,
   minEvents: 5,
   maxEvents: 10,
@@ -727,6 +729,7 @@ export function selectAiDailyClusters(
       break
     }
     if (cluster.scoreTotal < policy.minScore) continue
+    if (cluster.score.aiRelevance < policy.minAiRelevance) continue
     if (cluster.representative.leadOnly || cluster.representative.evidenceStatus !== 'READY') continue
     const domain = cluster.representative.publisherDomain
     const domainCount = domains.get(domain) ?? 0
@@ -864,9 +867,94 @@ function recencyScore(publishedAt: Date | null, now: Date) {
 }
 
 function aiRelevanceScore(candidate: AiDailyEvidenceCandidate) {
-  const combined = `${candidate.title} ${candidate.topics.join(' ')} ${candidate.evidenceText.slice(0, 1000)}`.toLowerCase()
-  const signals = ['ai', 'llm', 'model', 'agent', 'rag', 'inference', 'embedding', '人工智能', '模型', '智能体']
-  return clamp(signals.filter((signal) => combined.includes(signal)).length * 4, 4, 20)
+  const titleSignals = countAiSignals(candidate.title)
+  const snippetSignals = countAiSignals(candidate.snippet ?? '')
+  const evidenceSignals = countAiSignals(candidate.evidenceText.slice(0, 2000))
+  const combined = `${candidate.title} ${candidate.snippet ?? ''} ${candidate.evidenceText.slice(0, 2000)}`
+  if (titleSignals + snippetSignals + evidenceSignals === 0 || !matchesTopicIntent(candidate.topics, combined)) return 0
+  return clamp(
+    Math.min(12, titleSignals * 6) + Math.min(6, snippetSignals * 3) + Math.min(8, evidenceSignals * 2),
+    0,
+    20,
+  )
+}
+
+const aiIdentityTerms = [
+  'ai',
+  'llm',
+  'llms',
+  'rag',
+  'model',
+  'models',
+  'agent',
+  'agents',
+  'inference',
+  'embedding',
+  'embeddings',
+  'transformer',
+  'transformers',
+  'openai',
+  'anthropic',
+  'claude',
+  'gemini',
+  'grok',
+  'qwen',
+  'deepseek',
+  'glm',
+  'zhipu',
+  'kimi',
+  'moonshot',
+  'llama',
+  'mistral',
+  'huggingface',
+  'langchain',
+  'qdrant',
+  '人工智能',
+  '大模型',
+  '语言模型',
+  '智能体',
+  '通义',
+  '千问',
+  '智谱',
+  '月之暗面',
+] as const
+
+const frontierChangeTerms = [
+  'release', 'released', 'releases', 'launch', 'launched', 'launches', 'update', 'updated', 'updates',
+  'deprecation', 'deprecated', 'retirement', 'pricing', 'capability', 'capabilities', 'api', 'system card',
+] as const
+const openSourceTerms = [
+  'open source', 'open-source', 'open weight', 'open-weight', 'model card', 'github', 'hugging face', 'huggingface',
+  'llama', 'mistral', 'qwen', '开源', '模型卡',
+] as const
+const infrastructureTerms = [
+  'inference', 'serving', 'runtime', 'gpu', 'cuda', 'tpu', 'accelerator', 'training', 'data center',
+  'datacenter', 'nvidia', 'amd', 'cerebras', 'infrastructure', '推理', '训练', '算力', '基础设施',
+] as const
+const chinaChangeTerms = [
+  ...frontierChangeTerms,
+  '发布', '更新', '开源', '上线', '推出', '接口',
+] as const
+
+function countAiSignals(value: string) {
+  const normalized = value.normalize('NFKC').toLowerCase()
+  const tokens = tokenize(normalized)
+  return aiIdentityTerms.reduce((count, term) => count + (matchesTerm(normalized, tokens, term) ? 1 : 0), 0)
+}
+
+function matchesTopicIntent(topics: string[], value: string) {
+  const normalized = value.normalize('NFKC').toLowerCase()
+  const tokens = tokenize(normalized)
+  const matchesAny = (terms: readonly string[]) => terms.some((term) => matchesTerm(normalized, tokens, term))
+  if (topics.includes('frontier-model-releases')) return matchesAny(frontierChangeTerms)
+  if (topics.includes('open-source-ai')) return matchesAny(openSourceTerms)
+  if (topics.includes('ai-infrastructure')) return matchesAny(infrastructureTerms)
+  if (topics.includes('china-ai-releases')) return matchesAny(chinaChangeTerms)
+  return true
+}
+
+function matchesTerm(normalized: string, tokens: Set<string>, term: string) {
+  return /[^a-z0-9]/u.test(term) ? normalized.includes(term) : tokens.has(term)
 }
 
 function informationDensityScore(candidate: AiDailyEvidenceCandidate) {
