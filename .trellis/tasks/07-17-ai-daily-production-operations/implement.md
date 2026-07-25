@@ -50,6 +50,15 @@
 
 ## Latest Runtime Hardening
 
+- Studio run events now expose a low-sensitive discovery/evidence diagnostic
+  summary instead of dropping all persisted context or returning raw
+  `metadataJson`. The summary is allowlisted to fixed provider ids/slots/
+  outcomes, bounded counts, stable gaps, and stable error categories; unknown
+  providers become `unknown-provider`, and endpoint/token/raw-response fields
+  are regression-tested as absent. The Runs and Candidates views render these
+  diagnostics responsively, so an existing completed run can distinguish zero
+  results, provider failure, and evidence gaps after deployment without another
+  provider or model call.
 - Re-ran the post-review deterministic gates after the ingestion runner changes: evidence, Studio workspace, service-mode smoke, full AI Daily contracts, server build, lint, production build, UI check (19 routes x 2 viewports), performance budget, and `git diff --check` all pass. No model, search, extraction provider, or liveness request was made.
 - Manifest synchronization now preserves learned `ETag` and `Last-Modified` validators instead of resetting them on every refresh. Conditional requests therefore remain effective across manual refreshes and process restarts.
 - Ingestion candidate selection is bounded to four normalized candidates per feed and prioritizes date-bearing entries with a stable canonical-key tie-break before spending evidence-fetch budget on undated leads.

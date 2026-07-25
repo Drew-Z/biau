@@ -168,6 +168,27 @@ export interface StudioAiDailyWorkspaceRunEvent {
   errorCategory: string | null
   durationMs: number | null
   createdAt: string
+  diagnostics: StudioAiDailyWorkspaceRunEventDiagnostics | null
+}
+
+export interface StudioAiDailyWorkspaceRunEventDiagnostics {
+  queryGroupId: string | null
+  redundancy: string | null
+  counts: {
+    candidates: number | null
+    readyEvidence: number | null
+    thinEvidence: number | null
+    fetchFailures: number | null
+    selected: number | null
+  }
+  gaps: string[]
+  attempts: Array<{
+    providerId: string
+    slot: 'primary' | 'fallback' | 'signal'
+    outcome: 'succeeded' | 'failed' | 'skipped'
+    candidateCount: number
+    errorCategory: string | null
+  }>
 }
 
 export interface StudioAiDailyWorkspaceCandidate {
@@ -495,6 +516,52 @@ function readStringArray(value: unknown) {
     : []
 }
 
+function readCount(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : null
+}
+
+function normalizeWorkspaceRunEventDiagnostics(value: unknown): StudioAiDailyWorkspaceRunEventDiagnostics | null {
+  if (!isRecord(value) || Array.isArray(value)) return null
+  const counts = isRecord(value.counts) && !Array.isArray(value.counts)
+    ? {
+        candidates: readCount(value.counts.candidates),
+        readyEvidence: readCount(value.counts.readyEvidence),
+        thinEvidence: readCount(value.counts.thinEvidence),
+        fetchFailures: readCount(value.counts.fetchFailures),
+        selected: readCount(value.counts.selected),
+      }
+    : { candidates: null, readyEvidence: null, thinEvidence: null, fetchFailures: null, selected: null }
+  const attempts = Array.isArray(value.attempts)
+    ? value.attempts
+        .filter((attempt): attempt is Record<string, unknown> => isRecord(attempt) && !Array.isArray(attempt))
+        .map((attempt) => {
+          const slot = attempt.slot === 'primary' || attempt.slot === 'fallback' || attempt.slot === 'signal' ? attempt.slot : null
+          const outcome = attempt.outcome === 'succeeded' || attempt.outcome === 'failed' || attempt.outcome === 'skipped' ? attempt.outcome : null
+          const providerId = readString(attempt.providerId)
+          if (!providerId || !slot || !outcome) return null
+          return {
+            providerId,
+            slot,
+            outcome,
+            candidateCount: readCount(attempt.candidateCount) ?? 0,
+            errorCategory: readNullableString(attempt.errorCategory),
+          }
+        })
+        .filter((attempt): attempt is StudioAiDailyWorkspaceRunEventDiagnostics['attempts'][number] => attempt !== null)
+        .slice(0, 12)
+    : []
+  const gaps = readStringArray(value.gaps).slice(0, 12)
+  const hasCounts = Object.values(counts).some((entry) => entry !== null)
+  if (!readNullableString(value.queryGroupId) && !readNullableString(value.redundancy) && !hasCounts && gaps.length === 0 && attempts.length === 0) return null
+  return {
+    queryGroupId: readNullableString(value.queryGroupId),
+    redundancy: readNullableString(value.redundancy),
+    counts,
+    gaps,
+    attempts,
+  }
+}
+
 function isDraftStatus(value: unknown): value is StudioDraftStatus {
   return (
     value === 'draft' ||
@@ -754,6 +821,7 @@ function normalizeWorkspaceRunEvent(value: unknown): StudioAiDailyWorkspaceRunEv
     errorCategory: readNullableString(value.errorCategory),
     durationMs: readNullableNumber(value.durationMs),
     createdAt: readString(value.createdAt),
+    diagnostics: normalizeWorkspaceRunEventDiagnostics(value.diagnostics),
   }
 }
 

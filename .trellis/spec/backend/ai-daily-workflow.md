@@ -823,6 +823,17 @@ The ingestion runner fetches the original URL separately; only a dated `READY` e
   return a bounded editable content preview and bounded validation findings so
   an authenticated editor can review it; provider bodies and unbounded source
   payloads remain excluded.
+- Run-event `metadataJson` remains an internal persistence field. The workspace
+  may expose only a nullable `diagnostics` summary containing bounded
+  `queryGroupId`, fixed `redundancy`, nullable counts (`candidates`,
+  `readyEvidence`, `thinEvidence`, `fetchFailures`, `selected`), stable
+  code-only `gaps`, and at most twelve provider attempts. Attempts expose only
+  a fixed provider id, `primary|fallback|signal`, `succeeded|failed|skipped`,
+  candidate count, and stable error category. Current provider ids are
+  `the-news-api`, `gdelt-doc`, `hacker-news-algolia`, and
+  `hotdaily-public-api`; an unregistered id becomes `unknown-provider`.
+  Endpoint, token, raw response, request, header, and arbitrary metadata fields
+  must never cross the API boundary.
 - Flash approval/rejection carries `observedRevisionNumber` and
   `expectedPublicRevision`. Lifecycle actions carry `expectedPublicRevision`.
   Correction additionally carries `sourceRevisionId` and
@@ -859,6 +870,10 @@ The ingestion runner fetches the original URL separately; only a dated `READY` e
   contract.
 - Unknown issue id -> `404 ai-daily-issue-not-found`.
 - Invalid `limit` -> `400 invalid-ai-daily-workspace-limit`.
+- Missing/malformed event metadata -> `diagnostics: null`; invalid attempt
+  entries are dropped, an unknown non-empty provider id becomes
+  `unknown-provider`, counts are clamped to non-negative bounded integers, and
+  non-code gap strings are dropped.
 - Invalid Flash payload -> stable `400 invalid-ai-daily-flash-*` error.
 - Missing Flash item/revision -> stable `404 ai-daily-flash-*-not-found`.
 - Stale version, item/revision mismatch, invalid transition, withdrawn item, or
@@ -879,15 +894,23 @@ The ingestion runner fetches the original URL separately; only a dated `READY` e
   before the workspace refreshes.
 - Base: no token, empty data, or a degraded run produces a concise status or
   empty state without fabricating editorial readiness.
+- Good: a completed discovery event shows whether The News API, GDELT, HN, and
+  HotDaily succeeded, failed, or returned zero candidates, plus evidence/fetch
+  counts and stable gaps, without exposing the request URL or credential.
 - Bad: React reimplements a server transition, a stale public revision silently
   overwrites newer work, a withdrawn item is revived, an approved revision is
-  edited in place, or a response returns raw provider/database details.
+  edited in place, reads `metadataJson` directly, or returns raw
+  provider/database details.
 
 ### 6. Tests Required
 
 - Run `npm.cmd run studio:ai-daily-workspace-check` and
   `npm.cmd run studio:ai-daily-flash-check` after projection or transition
   fixture changes.
+- The workspace check must assert that discovery/evidence counts, attempts, and
+  stable gaps survive both the backend projection and frontend decoder while
+  endpoint, token value, authorization, raw response, and unknown fields are
+  absent from the serialized diagnostics.
 - Run `npm.cmd run check:ui`; the AI Daily fixture must exercise Edition
   correction, revalidation, apply, discard, source-revision retention, and
   desktop/mobile overflow.
@@ -900,3 +923,27 @@ The ingestion runner fetches the original URL separately; only a dated `READY` e
   id tie-breaker.
 - Run `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`,
   `npm.cmd run check:ui`, and `git diff --check` before commit.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```typescript
+events: run.events.map((event) => ({
+  ...event,
+  diagnostics: event.metadataJson,
+}))
+```
+
+#### Correct
+
+```typescript
+events: run.events.map((event) => ({
+  id: event.id,
+  outcome: event.outcome,
+  diagnostics: summarizeAiDailyRunEventDiagnostics(event.metadataJson),
+}))
+```
+
+The projection helper owns the allowlist. React consumes the normalized DTO and
+must not reinterpret persisted JSON.

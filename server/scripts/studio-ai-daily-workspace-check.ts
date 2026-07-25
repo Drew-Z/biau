@@ -1,4 +1,5 @@
 import { normalizeStudioAiDailyWorkspace } from '../../src/data/studio.js'
+import { summarizeAiDailyRunEventDiagnostics } from '../src/studioAiDailyWorkspace.js'
 
 const issueFixture = {
   id: 'issue-1',
@@ -80,6 +81,17 @@ const fixture = {
           errorCategory: null,
           durationMs: 12,
           createdAt: '2026-07-19T07:30:00.000Z',
+          diagnostics: {
+            queryGroupId: 'model-platform-release',
+            redundancy: 'reduced_redundancy',
+            counts: { candidates: 4, readyEvidence: 2, thinEvidence: 1, fetchFailures: 1, selected: null },
+            gaps: ['fallback-invalid_response'],
+            attempts: [
+              { providerId: 'the-news-api', slot: 'primary', outcome: 'succeeded', candidateCount: 3, errorCategory: null },
+              { providerId: 'gdelt-doc', slot: 'fallback', outcome: 'failed', candidateCount: 0, errorCategory: 'invalid_response' },
+            ],
+            rawResponse: 'drop-me',
+          },
         },
       ],
       workItems: [],
@@ -214,6 +226,15 @@ const workspace = normalizeStudioAiDailyWorkspace(fixture)
 if (!workspace) throw new Error('workspace fixture should normalize')
 if (workspace.selectedIssue?.selectionVersion !== 2) throw new Error('issue versions should be preserved')
 if (workspace.runs[0]?.events[0]?.stage !== 'DRAFT') throw new Error('run event stage should be preserved')
+const eventDiagnostics = workspace.runs[0]?.events[0]?.diagnostics
+if (
+  eventDiagnostics?.queryGroupId !== 'model-platform-release' ||
+  eventDiagnostics.counts.readyEvidence !== 2 ||
+  eventDiagnostics.attempts[0]?.providerId !== 'the-news-api'
+) {
+  throw new Error('run event diagnostics should preserve the bounded discovery summary')
+}
+if ('rawResponse' in eventDiagnostics) throw new Error('unknown run event diagnostic fields must be dropped')
 if (workspace.runs[0]?.candidates[0]?.clusterId !== 'cluster-1') {
   throw new Error('candidate cluster membership should normalize')
 }
@@ -260,6 +281,37 @@ if (
   discardedRevision.discardReason !== 'deterministic-revalidation-rejected'
 ) {
   throw new Error('discarded revision lifecycle should normalize')
+}
+
+const projectedDiagnostics = summarizeAiDailyRunEventDiagnostics({
+  queryGroupId: 'model-platform-release',
+  candidates: 7,
+  readyEvidence: 3,
+  thinEvidence: 1,
+  fetchFailures: 2,
+  selected: 0,
+  redundancy: 'reduced_redundancy',
+  gaps: ['fallback-invalid_response'],
+  discoveryDiagnostics: ['the-news-api-token-missing'],
+  attempts: [
+    { providerId: 'the-news-api', slot: 'primary', outcome: 'succeeded', candidateCount: 3, errorCategory: null, endpoint: 'https://private.example' },
+    { providerId: 'private-provider', slot: 'signal', outcome: 'failed', candidateCount: 0, errorCategory: 'network_error', token: 'secret-value' },
+    { providerId: 'gdelt-doc', slot: 'fallback', outcome: 'failed', candidateCount: 0, errorCategory: 'invalid_response' },
+  ],
+  apiToken: 'secret-value',
+  rawResponse: { authorization: 'Bearer secret-value' },
+})
+if (
+  projectedDiagnostics?.attempts[0]?.providerId !== 'the-news-api' ||
+  projectedDiagnostics.attempts[1]?.providerId !== 'unknown-provider' ||
+  projectedDiagnostics.counts.candidates !== 7 ||
+  projectedDiagnostics.gaps.length !== 2
+) {
+  throw new Error('backend run event diagnostics projection should preserve only bounded operational fields')
+}
+const serializedDiagnostics = JSON.stringify(projectedDiagnostics)
+for (const forbidden of ['private.example', 'secret-value', 'authorization', 'apiToken', 'rawResponse', 'endpoint']) {
+  if (serializedDiagnostics.includes(forbidden)) throw new Error(`run event diagnostics leaked forbidden field: ${forbidden}`)
 }
 
 console.log('Studio AI Daily workspace check passed')

@@ -7702,6 +7702,8 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .studio-ai-daily-event-list strong { font: 800 11px/1.2 var(--font-mono); }
 .studio-ai-daily-event-list small { flex-basis: 100%; color: var(--rose); overflow-wrap: anywhere; }
 .studio-ai-daily-event-list--large { max-height: 520px; overflow: auto; }
+.studio-ai-daily-diagnostics { flex-basis: 100%; min-width: 0; display: grid; gap: 6px; padding: 7px; border: 1px solid color-mix(in oklch, var(--flow-ui-card-border) 74%, transparent); border-radius: var(--radius-sm); background: color-mix(in oklch, var(--panel-strong) 42%, transparent); }
+.studio-ai-daily-diagnostics__gaps span { color: var(--rose); }
 
 .studio-ai-daily-item-list,
 .studio-ai-daily-revision-list { min-width: 0; display: grid; gap: var(--space-10, 10px); }

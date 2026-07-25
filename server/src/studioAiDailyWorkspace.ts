@@ -67,6 +67,11 @@ function jsonStringArray(value: Prisma.JsonValue | null | undefined, maxItems = 
     .slice(0, maxItems)
 }
 
+function safeDiagnosticCodes(value: Prisma.JsonValue | null | undefined, maxItems = 12) {
+  return jsonStringArray(value, maxItems, 120)
+    .filter((code) => /^[a-z0-9][a-z0-9._:-]*$/iu.test(code))
+}
+
 function countJsonItems(value: Prisma.JsonValue | null | undefined) {
   return Array.isArray(value) ? value.length : 0
 }
@@ -78,6 +83,85 @@ function summarizeCounters(value: Prisma.JsonValue | null | undefined) {
       .filter(([key, entryValue]) => /^[a-z0-9][a-z0-9_-]{0,47}$/iu.test(key) && typeof entryValue === 'number' && Number.isFinite(entryValue))
       .slice(0, 24),
   )
+}
+
+function readJsonRecord(value: Prisma.JsonValue | null | undefined) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, Prisma.JsonValue>) : null
+}
+
+function boundedCount(value: unknown, max = 1_000_000) {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(max, Math.trunc(value))) : null
+}
+
+const safeDiscoveryProviderIds = new Set([
+  'the-news-api',
+  'gdelt-doc',
+  'hacker-news-algolia',
+  'hotdaily-public-api',
+])
+
+function safeDiscoveryProviderId(value: unknown) {
+  const providerId = boundedString(value, 80)
+  return safeDiscoveryProviderIds.has(providerId) ? providerId : providerId ? 'unknown-provider' : null
+}
+
+function safeDiscoverySlot(value: unknown) {
+  return value === 'primary' || value === 'fallback' || value === 'signal' ? value : null
+}
+
+function safeDiscoveryOutcome(value: unknown) {
+  return value === 'succeeded' || value === 'failed' || value === 'skipped' ? value : null
+}
+
+function safeDiscoveryRedundancy(value: unknown) {
+  return value === 'full' || value === 'reduced_redundancy' || value === 'primary_unavailable' ? value : null
+}
+
+export function summarizeAiDailyRunEventDiagnostics(value: Prisma.JsonValue | null | undefined) {
+  const record = readJsonRecord(value)
+  if (!record) return null
+  const queryGroupId = boundedString(record.queryGroupId, 96) || null
+  const redundancy = safeDiscoveryRedundancy(record.redundancy)
+  const counts = {
+    candidates: boundedCount(record.candidates),
+    readyEvidence: boundedCount(record.readyEvidence),
+    thinEvidence: boundedCount(record.thinEvidence),
+    fetchFailures: boundedCount(record.fetchFailures),
+    selected: boundedCount(record.selected),
+  }
+  const gaps = [
+    ...safeDiagnosticCodes(record.gaps, 12),
+    ...safeDiagnosticCodes(record.discoveryDiagnostics, 8),
+  ].filter((code, index, codes) => codes.indexOf(code) === index).slice(0, 12)
+  const attempts = Array.isArray(record.attempts)
+    ? record.attempts
+        .flatMap((attempt) => {
+          const attemptRecord = readJsonRecord(attempt as Prisma.JsonValue)
+          if (!attemptRecord) return []
+          const providerId = safeDiscoveryProviderId(attemptRecord.providerId)
+          const slot = safeDiscoverySlot(attemptRecord.slot)
+          const outcome = safeDiscoveryOutcome(attemptRecord.outcome)
+          if (!providerId || !slot || !outcome) return []
+          return [{
+            providerId,
+            slot,
+            outcome,
+            candidateCount: boundedCount(attemptRecord.candidateCount) ?? 0,
+            errorCategory: safeErrorCategory(attemptRecord.errorCategory),
+          }]
+        })
+        .slice(0, 12)
+    : []
+
+  const hasCounts = Object.values(counts).some((entry) => entry !== null)
+  if (!queryGroupId && !redundancy && !hasCounts && gaps.length === 0 && attempts.length === 0) return null
+  return {
+    queryGroupId,
+    redundancy,
+    counts,
+    gaps,
+    attempts,
+  }
 }
 
 function summarizeReviewChecklist(value: Prisma.JsonValue) {
@@ -175,6 +259,7 @@ function toRunResponse(run: {
     errorCategory: string | null
     durationMs: number | null
     createdAt: Date
+    metadataJson: Prisma.JsonValue | null
   }>
   workItems: Array<{
     id: string
@@ -283,6 +368,7 @@ function toRunResponse(run: {
       errorCategory: safeErrorCategory(event.errorCategory),
       durationMs: event.durationMs,
       createdAt: event.createdAt.toISOString(),
+      diagnostics: summarizeAiDailyRunEventDiagnostics(event.metadataJson),
     })),
     workItems: run.workItems.map((item) => ({
       id: item.id,

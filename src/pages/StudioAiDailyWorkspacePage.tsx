@@ -253,9 +253,31 @@ function createWorkspaceUiFixturePayload() {
     createdAt: '2026-07-19T03:00:00.000Z',
     updatedAt: '2026-07-19T03:30:00.000Z',
     events: [
-      { id: 'ui-event-3', sequence: 3, stage: 'draft', kind: 'generation-completed', outcome: 'success', providerRole: 'composer', attemptNumber: 1, errorCategory: null, durationMs: 1600, createdAt: '2026-07-19T03:30:00.000Z' },
-      { id: 'ui-event-2', sequence: 2, stage: 'fetch', kind: 'source-gap', outcome: 'degraded', providerRole: 'optional-social', attemptNumber: 1, errorCategory: 'optional-social-signal-unavailable', durationMs: 800, createdAt: '2026-07-19T03:12:00.000Z' },
-      { id: 'ui-event-1', sequence: 1, stage: 'collect', kind: 'run-started', outcome: 'success', providerRole: null, attemptNumber: 1, errorCategory: null, durationMs: null, createdAt: '2026-07-19T03:00:00.000Z' },
+      { id: 'ui-event-3', sequence: 3, stage: 'draft', kind: 'generation-completed', outcome: 'success', providerRole: 'composer', attemptNumber: 1, errorCategory: null, durationMs: 1600, createdAt: '2026-07-19T03:30:00.000Z', diagnostics: null },
+      {
+        id: 'ui-event-2',
+        sequence: 2,
+        stage: 'fetch',
+        kind: 'discovery-completed',
+        outcome: 'completed-with-gaps',
+        providerRole: 'optional-social',
+        attemptNumber: 1,
+        errorCategory: 'optional-social-signal-unavailable',
+        durationMs: 800,
+        createdAt: '2026-07-19T03:12:00.000Z',
+        diagnostics: {
+          queryGroupId: 'model-platform-release',
+          redundancy: 'reduced_redundancy',
+          counts: { candidates: 8, readyEvidence: 1, thinEvidence: 2, fetchFailures: 1, selected: null },
+          gaps: ['signal-hotdaily-public-api-timeout', 'fallback-invalid_response'],
+          attempts: [
+            { providerId: 'the-news-api', slot: 'primary', outcome: 'succeeded', candidateCount: 3, errorCategory: null },
+            { providerId: 'gdelt-doc', slot: 'fallback', outcome: 'failed', candidateCount: 0, errorCategory: 'invalid_response' },
+            { providerId: 'hotdaily-public-api', slot: 'signal', outcome: 'succeeded', candidateCount: 5, errorCategory: null },
+          ],
+        },
+      },
+      { id: 'ui-event-1', sequence: 1, stage: 'collect', kind: 'run-started', outcome: 'success', providerRole: null, attemptNumber: 1, errorCategory: null, durationMs: null, createdAt: '2026-07-19T03:00:00.000Z', diagnostics: null },
     ],
     workItems: [],
     candidates: [candidate],
@@ -1558,7 +1580,13 @@ function RunsView({ workspace }: { workspace: StudioAiDailyWorkspace }) {
           </dl>
           {run.finalErrorCategory && <p className="studio-ai-daily-error"><AlertTriangle size={15} aria-hidden="true" />{run.finalErrorCategory}</p>}
           <div className="studio-ai-daily-event-list">
-            {run.events.slice(0, 6).map((event) => <div key={event.id}><span>{event.sequence} · {formatStatus(event.kind)}</span><strong className={statusClass(event.outcome)}>{formatStatus(event.outcome)}</strong></div>)}
+            {run.events.slice(0, 6).map((event) => (
+              <div key={event.id}>
+                <span>{event.sequence} · {formatStatus(event.kind)}</span>
+                <strong className={statusClass(event.outcome)}>{formatStatus(event.outcome)}</strong>
+                <RunEventDiagnostics event={event} />
+              </div>
+            ))}
           </div>
         </article>
       ))}
@@ -1637,7 +1665,16 @@ function CandidatesView({
           <ClusterBoard key={`${run.id}:${run.updatedAt}`} run={run} actor={actor.trim()} reason={reason.trim()} pendingKey={pendingKey} onMutate={onMutate} />
           <section className="studio-card">
             <div className="studio-card__header"><div><span className="section-subtitle">EVENTS</span><h2>运行事件</h2></div><Activity size={18} aria-hidden="true" /></div>
-            <div className="studio-ai-daily-event-list studio-ai-daily-event-list--large">{run.events.map((event) => <div key={event.id}><span>{formatDateTime(event.createdAt)} · {formatStatus(event.stage || 'pipeline')}</span><strong className={statusClass(event.outcome)}>{formatStatus(event.outcome)}</strong>{event.errorCategory && <small>{event.errorCategory}</small>}</div>)}</div>
+            <div className="studio-ai-daily-event-list studio-ai-daily-event-list--large">
+              {run.events.map((event) => (
+                <div key={event.id}>
+                  <span>{formatDateTime(event.createdAt)} · {formatStatus(event.stage || 'pipeline')}</span>
+                  <strong className={statusClass(event.outcome)}>{formatStatus(event.outcome)}</strong>
+                  {event.errorCategory && <small>{event.errorCategory}</small>}
+                  <RunEventDiagnostics event={event} />
+                </div>
+              ))}
+            </div>
           </section>
           {run.overrides.length > 0 && (
             <section className="studio-card">
@@ -1648,6 +1685,42 @@ function CandidatesView({
         </div>
       </section>
     </>
+  )
+}
+
+function RunEventDiagnostics({ event }: { event: StudioAiDailyWorkspaceRun['events'][number] }) {
+  const diagnostics = event.diagnostics
+  if (!diagnostics) return null
+  const counts = [
+    ['候选', diagnostics.counts.candidates],
+    ['Ready', diagnostics.counts.readyEvidence],
+    ['Thin', diagnostics.counts.thinEvidence],
+    ['回源失败', diagnostics.counts.fetchFailures],
+    ['已选', diagnostics.counts.selected],
+  ].filter((entry): entry is [string, number] => typeof entry[1] === 'number')
+  return (
+    <div className="studio-ai-daily-diagnostics">
+      <div className="studio-ai-daily-findings">
+        {diagnostics.queryGroupId && <span>query: {diagnostics.queryGroupId}</span>}
+        {diagnostics.redundancy && <span>redundancy: {formatStatus(diagnostics.redundancy)}</span>}
+        {counts.map(([label, value]) => <span key={label}>{label}: {value}</span>)}
+      </div>
+      {diagnostics.attempts.length > 0 && (
+        <div className="studio-ai-daily-findings" aria-label="Discovery provider attempts">
+          {diagnostics.attempts.map((attempt) => (
+            <span className={statusClass(attempt.outcome)} key={`${event.id}:${attempt.providerId}:${attempt.slot}`}>
+              {attempt.slot} · {attempt.providerId}: {formatStatus(attempt.outcome)} / {attempt.candidateCount}
+              {attempt.errorCategory ? ` / ${attempt.errorCategory}` : ''}
+            </span>
+          ))}
+        </div>
+      )}
+      {diagnostics.gaps.length > 0 && (
+        <div className="studio-ai-daily-findings studio-ai-daily-diagnostics__gaps">
+          {diagnostics.gaps.map((gap) => <span key={gap}>{gap}</span>)}
+        </div>
+      )}
+    </div>
   )
 }
 
