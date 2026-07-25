@@ -1,6 +1,7 @@
 import {
   AiDailyFetchError,
   type AiDailyHttpResponse,
+  createAiDailyPinnedLookup,
   fetchAiDailyEvidence,
   fetchAiDailySourcePayload,
   isPublicAddress,
@@ -21,6 +22,25 @@ assert(!isPublicAddress('::1'), 'loopback IPv6 should be rejected')
 await expectFailure(() => resolveAiDailyPublicHost('127.0.0.1'), 'unsafe_url', 'private literal resolution')
 await expectFailure(() => validateAiDailyTargetUrl('http://user:pass@example.com/private'), 'unsafe_url', 'URL credentials')
 await expectFailure(() => validateAiDailyTargetUrl('http://metadata.internal/latest'), 'unsafe_url', 'internal hostname')
+
+const pinnedLookup = createAiDailyPinnedLookup({ address: '93.184.216.34', family: 4 })
+await new Promise<void>((resolve, reject) => {
+  pinnedLookup('example.com', { all: true }, (error, addresses) => {
+    if (error) return reject(error)
+    assert(Array.isArray(addresses), 'Node all-address lookup must receive an address array')
+    assertEqual(addresses[0]?.address, '93.184.216.34', 'pinned all-address lookup value')
+    assertEqual(addresses[0]?.family, 4, 'pinned all-address lookup family')
+    resolve()
+  })
+})
+await new Promise<void>((resolve, reject) => {
+  pinnedLookup('example.com', { all: false }, (error, address, family) => {
+    if (error) return reject(error)
+    assertEqual(address, '93.184.216.34', 'pinned single-address lookup value')
+    assertEqual(family, 4, 'pinned single-address lookup family')
+    resolve()
+  })
+})
 
 const directFixture = buildAiDailyHttpFixture({
   responses: [{ status: 200, headers: { 'content-type': 'text/html; charset=utf-8' }, body: aiDailyEvidenceHtmlFixture }],

@@ -1,7 +1,7 @@
 import { lookup as dnsLookup } from 'node:dns/promises'
 import { request as httpRequest, type ClientRequest } from 'node:http'
 import { request as httpsRequest } from 'node:https'
-import { isIP } from 'node:net'
+import { isIP, type LookupFunction } from 'node:net'
 import { brotliDecompressSync, gunzipSync, inflateSync } from 'node:zlib'
 import { load } from 'cheerio'
 import ipaddr from 'ipaddr.js'
@@ -314,9 +314,7 @@ export const nodeAiDailyHttpTransport: AiDailyHttpTransport = {
         {
           method: 'GET',
           headers: input.headers,
-          lookup: (_hostname, _options, callback) => {
-            callback(null, input.address.address, input.address.family)
-          },
+          lookup: createAiDailyPinnedLookup(input.address),
         },
         (response) => {
           const chunks: Buffer[] = []
@@ -356,6 +354,16 @@ export const nodeAiDailyHttpTransport: AiDailyHttpTransport = {
       request.end()
     })
   },
+}
+
+export function createAiDailyPinnedLookup(address: AiDailyResolvedAddress): LookupFunction {
+  return (_hostname, options, callback) => {
+    if (options.all) {
+      callback(null, [{ address: address.address, family: address.family }])
+      return
+    }
+    callback(null, address.address, address.family)
+  }
 }
 
 export function createAiDailyRobotsChecker(input: {

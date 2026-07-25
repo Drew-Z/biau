@@ -662,6 +662,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Search and social results are candidates only. They become selectable only after original-page evidence is fetched and marked `READY`; `leadOnly` candidates cannot be promoted.
 - Safe fetch rejects URL credentials, unsupported schemes, internal hostnames, and non-public IPv4/IPv6 addresses. DNS results are checked before a pinned request, every redirect target is revalidated, and redirect destinations are checked against robots before their page is fetched.
 - Direct fetch limits connect/read/total time, compressed bytes, decoded bytes, content type, redirects, and normalized evidence. Normalized text is at most `64 KiB`; citation excerpt is at most `1 KiB`; evidence expires after 30 days by default.
+- The SSRF-safe Node transport pins DNS results through the `lookup` option. Because modern Node may call that callback with `options.all=true`, the pinned lookup must return an array of `{ address, family }` records in that branch and a scalar address/family pair otherwise. Returning a scalar for the array contract causes `ERR_INVALID_IP_ADDRESS` before any public source request and is projected only as `network_error`.
 - Evidence documents are immutable versions per candidate. `currentEvidenceId` points to the latest version; failed writes cannot advance the version because creation and projection share a transaction.
 - Manifest synchronization is idempotent and owns editorial source configuration only. It must preserve learned `ETag` and `Last-Modified` validators; a refresh must not reset them. A successful source fetch records bounded validators and the next due time, while `304` reuses the existing validator state without creating candidate evidence.
 - `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by an interval-minus-two-minute deadline, and resumed after a process restart. The worker never calls a model or search provider. Each feed fetches at most four normalized candidates per tick, prioritizing date-bearing entries and using a stable canonical-key tie-break; undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
@@ -679,6 +680,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Unsafe URL or private/DNS target -> `unsafe_url`.
 - Robots denial, including a redirect destination -> `robots_disallowed` before the page request.
 - Timeout/network/rate-limit/invalid provider response -> stable ingestion category; raw response and stack are not persisted.
+- A Node lookup callback contract mismatch -> `network_error`; the deterministic evidence gate must exercise both `all=true` and scalar lookup forms so this does not present as a mass source outage.
 - Missing primary discovery -> not ready with `primary_unavailable`; missing or failed fallback -> `reduced_redundancy`.
 - Stale Tier 1/discovery checkpoints or missing selected fetch checkpoints -> explicit freshness gaps, never normal-ready.
 - Selection representative from another run or without ready evidence -> `ai-daily-selection-run-boundary-mismatch` / `ai-daily-selection-requires-ready-evidence`.
@@ -695,6 +697,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 
 - Run all six fixture gates and assert deterministic candidates, fallback attempts, evidence limits, p95 freshness, duplicate reasons, score order, diversity, and selected event count.
 - Run `npm.cmd run ai-daily:evidence-check` to cover conditional headers and `304`; keep a regression fixture for JSON source payloads, relative URLs, undated lead handling, and the bounded date-prioritized candidate budget.
+- `ai-daily:evidence-check` must also assert the pinned lookup callback returns an address array for `options.all=true` and a scalar address/family pair for the legacy branch; a local real-source smoke may be used for diagnosis, but is not part of deterministic CI.
 - Type-check the AI Daily scripts explicitly because `server:build` covers `server/src` but not every `server/scripts` entry.
 - Run `prisma:validate`, `prisma:generate`, and the full migration chain against a disposable PostgreSQL database.
 - The PostgreSQL check must assert source/candidate upsert idempotency, evidence version increments, cluster/selection persistence, identical selection idempotency, cross-run rejection, and authenticated Studio GET/POST/PATCH source routes.
@@ -728,6 +731,23 @@ await applyAiDailyEvidenceSelection(prisma, {
 ```
 
 The repository binds selection to the run, verifies ready evidence in the database, and keeps repeated ordered selection idempotent.
+
+#### Wrong: pinned lookup ignores Node's array form
+
+```ts
+lookup: (_hostname, _options, callback) => callback(null, address.address, address.family)
+```
+
+When Node enables `options.all`, this produces `ERR_INVALID_IP_ADDRESS` and every feed is reported as a generic `network_error`.
+
+#### Correct: honor both lookup callback forms
+
+```ts
+lookup: (_hostname, options, callback) => {
+  if (options.all) callback(null, [{ address: address.address, family: address.family }])
+  else callback(null, address.address, address.family)
+}
+```
 
 ## Scenario: Content Studio AI Daily Workspace And Flash Review
 

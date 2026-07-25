@@ -76,6 +76,8 @@ Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/ope
 
 `npm.cmd run ai-daily:ingest-tick` 会同步 manifest、创建/恢复当天 degraded ingestion run，并消费到期来源 work；它不是模型健康检查，也不会向任何模型、搜索 provider 或中转站发请求。每个 feed 的正文候选预算固定为 4 条，日期明确的候选优先，无日期 lead 仍可留存供人工检查但不会被证据选择提升。来源响应的 `ETag` 与 `Last-Modified` 会跨 manifest 刷新保留，并在下一轮作为条件请求头发送。Studio worker 每 30 秒检查一次已排队 work；请求失败、超时或 robots/URL 拒绝只记录稳定错误分类并遵守 lease/deadline，不把原始响应写入日志。
 
+如果工作区显示多个 feed 在几秒内统一为 `network_error` 且候选数为 0，优先检查服务运行时的安全 DNS transport，而不是逐个更换来源。Node 的自定义 `lookup` 在 `options.all=true` 时必须返回地址数组；若仍返回单个地址，Node 会在建立连接前抛出 `ERR_INVALID_IP_ADDRESS`，所有来源都会被统一归类为 `network_error`。修复后应先运行 `npm.cmd run ai-daily:evidence-check`，再部署 Studio，重新点击“同步并刷新证据”；不要用模型请求或 provider ping 作为诊断手段。
+
 ## 三角色生产模型门禁
 
 Studio 服务只从 `AI_DAILY_MODEL_RUNTIME_JSON` 读取 `ai-daily-model-runtime-v2` server-only channel/candidate 映射；所有 channel 必须声明 `protocol: "responses"`，三个角色统一使用 Responses API，不再请求 Chat Completions。它不会把 API key、base URL 或原始模型输出写入 proposal、bundle、日志或公开 API。当前推荐的静态路径每个角色只绑定一个候选，显式承认没有独立 fallback；需要完整冗余时再配置每角色 2-3 个候选并执行可选的串行实测评估。

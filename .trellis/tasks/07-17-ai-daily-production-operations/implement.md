@@ -55,6 +55,7 @@
 - Ingestion candidate selection is bounded to four normalized candidates per feed and prioritizes date-bearing entries with a stable canonical-key tie-break before spending evidence-fetch budget on undated leads.
 - The generic ingestion drain now finalizes every run id it touched, not only the last run in a batch; the legacy single `finalization` field remains for callers that process one run.
 - The remaining production gates are intentionally human-controlled: run one confirmed real edition, review and export it, observe deployment/public behavior, seal rollback/acceptance evidence, then decide on Cron/public-feed activation. No readiness check can claim those actions happened.
+- The first production ingestion attempt on 2026-07-25 synchronized all 30 feeds and queued the expected 16 enabled feeds, but every source failed immediately with `network_error` and zero candidates. A local real-source reproduction exposed the low-level cause: Node 22/24 invokes custom socket lookup with `options.all=true`, while the pinned SSRF-safe transport returned the legacy scalar callback form, producing `ERR_INVALID_IP_ADDRESS: undefined` before the HTTP request. `createAiDailyPinnedLookup()` now supports both callback contracts; the deterministic evidence check covers both branches, and the same approved Anthropic source fetch succeeds locally after the fix. No model or search provider was called.
 
 ## Known Follow-up
 
