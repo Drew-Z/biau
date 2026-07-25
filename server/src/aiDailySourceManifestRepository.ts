@@ -1,6 +1,6 @@
 import type { PrismaClient } from '@prisma/client'
 import { loadAiDailySourceManifest } from './aiDailySourceManifest.js'
-import { upsertAiDailySourceFeed } from './aiDailyIngestionRepository.js'
+import { updateAiDailySourceFeed, upsertAiDailySourceFeed } from './aiDailyIngestionRepository.js'
 
 export async function syncAiDailySourceManifest(prisma: PrismaClient) {
   const manifest = await loadAiDailySourceManifest()
@@ -9,11 +9,26 @@ export async function syncAiDailySourceManifest(prisma: PrismaClient) {
   const feeds = []
 
   for (const source of manifest.sources) {
-    const existing = await prisma.aiDailySourceFeed.findUnique({
-      where: { kind_canonicalKey: { kind: source.kind, canonicalKey: source.canonicalKey } },
-      select: { id: true, etag: true, lastModified: true },
-    })
-    const feed = await upsertAiDailySourceFeed(prisma, {
+    const [byIdentity, byManifestId, byName] = await Promise.all([
+      prisma.aiDailySourceFeed.findUnique({
+        where: { kind_canonicalKey: { kind: source.kind, canonicalKey: source.canonicalKey } },
+        select: { id: true, etag: true, lastModified: true },
+      }),
+      prisma.aiDailySourceFeed.findUnique({
+        where: { id: source.id },
+        select: { id: true, etag: true, lastModified: true },
+      }),
+      prisma.aiDailySourceFeed.findMany({
+        where: { name: source.name },
+        select: { id: true, etag: true, lastModified: true },
+        take: 2,
+      }),
+    ])
+    if (byIdentity && byManifestId && byIdentity.id !== byManifestId.id) {
+      throw new Error(`ai-daily-manifest-source-identity-conflict:${source.id}`)
+    }
+    const existing = byIdentity ?? byManifestId ?? (byName.length === 1 ? byName[0] : null)
+    const definition = {
       id: source.id,
       name: source.name,
       kind: source.kind,
@@ -25,12 +40,10 @@ export async function syncAiDailySourceManifest(prisma: PrismaClient) {
       intervalMinutes: source.intervalMinutes,
       lookbackMinutes: source.lookbackMinutes,
       officialDomain: source.officialDomain,
-      // Manifest sync owns editorial configuration only. Preserve transport
-      // validators learned from previous fetches so conditional requests keep
-      // working across every refresh and service restart.
-      etag: existing?.etag ?? null,
-      lastModified: existing?.lastModified ?? null,
-    })
+    } as const
+    const feed = existing
+      ? await updateAiDailySourceFeed(prisma, { id: existing.id, patch: definition })
+      : await upsertAiDailySourceFeed(prisma, definition)
     if (existing) updated += 1
     else created += 1
     feeds.push(feed)
@@ -46,5 +59,6 @@ export async function syncAiDailySourceManifest(prisma: PrismaClient) {
     created,
     updated,
     feeds,
+    queryGroups: manifest.queryGroups.filter((group) => group.enabled),
   }
 }

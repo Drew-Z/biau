@@ -105,13 +105,34 @@ function parseOfficialPagePayload(
   const results: AiDailyCandidateLeadInput[] = []
   const seen = new Set<string>()
   $('article a[href], main a[href], [role="main"] a[href], a[rel="bookmark"][href]').each((index, element) => {
-    const href = $(element).attr('href') ?? ''
+    const anchor = $(element)
+    const href = anchor.attr('href') ?? ''
     const originalUrl = resolvePublicUrl(href, feed.canonicalUrl)
     if (!originalUrl || seen.has(originalUrl) || !matchesOfficialDomain(originalUrl, feed)) return
-    const title = normalizeText($(element).attr('title') || $(element).text())
-    if (!title || title.length > 300) return
-    const timeValue = $(element).closest('article').find('time[datetime]').first().attr('datetime')
-    const publishedAt = readDate(timeValue)
+    const container = anchor
+      .closest('article, li, [class*="card" i], [class*="post" i], [class*="news" i], [class*="item" i]')
+      .first()
+    const context = container.length > 0 ? container : anchor
+    const title = normalizeText(
+      anchor.attr('aria-label') ||
+      anchor.attr('title') ||
+      anchor.find('h1, h2, h3, h4, [class*="title" i]').first().text() ||
+      context.find('h1, h2, h3, h4, [class*="title" i]').first().text() ||
+      anchor.text(),
+    )
+    if (!isEditorialLink(title, originalUrl, feed) || title.length > 300) return
+    const timeValue =
+      context.find('time[datetime]').first().attr('datetime') ||
+      context.find('[itemprop="datePublished"][datetime]').first().attr('datetime') ||
+      context.find('meta[itemprop="datePublished"][content]').first().attr('content') ||
+      context.find('[data-published-at]').first().attr('data-published-at') ||
+      context.find('[data-date]').first().attr('data-date')
+    const visibleDateText = context
+      .find('time, p, span, [class*="date" i], [class*="time" i]')
+      .map((_nodeIndex, node) => $(node).text())
+      .get()
+      .join(' ')
+    const publishedAt = readDate(timeValue) ?? readDateFromText(visibleDateText || context.text())
     if (!insideWindow(publishedAt, window)) return
     seen.add(originalUrl)
     results.push({
@@ -130,10 +151,51 @@ function parseOfficialPagePayload(
       // Listing pages often omit dates for older links. Such links remain
       // visible as candidates but are not eligible for daily selection.
       leadOnly: !publishedAt,
-      snippet: normalizeText($(element).closest('article').find('p').first().text()) || null,
+      snippet: normalizeText(context.find('p').first().text()) || null,
     })
   })
   return results
+}
+
+function isEditorialLink(title: string, originalUrl: string, feed: AiDailySourceFeedDefinition) {
+  if (!title || /^\d+$/u.test(title)) return false
+  const normalized = title.normalize('NFKC').toLowerCase().replace(/[←→<>]/gu, ' ').replace(/\s+/gu, ' ').trim()
+  if (
+    /^(?:older|newer|previous|next)(?: posts?)?$/u.test(normalized) ||
+    /^(?:read|learn|view|show|load|see) more$/u.test(normalized) ||
+    /^(?:technology|research|company|product|products|news|blog|all posts?)$/u.test(normalized) ||
+    /^go to .+ profile$/u.test(normalized)
+  ) {
+    return false
+  }
+  try {
+    const url = new URL(originalUrl)
+    const feedUrl = new URL(feed.canonicalUrl)
+    const path = url.pathname.replace(/\/+$/u, '') || '/'
+    const feedPath = feedUrl.pathname.replace(/\/+$/u, '') || '/'
+    if (url.hostname === feedUrl.hostname && path === feedPath) return false
+    if (/\/(?:author|authors|people|profile|researchers?|tags?|topics?|categories|search|page)(?:\/|$)/iu.test(path)) return false
+  } catch {
+    return false
+  }
+  return true
+}
+
+function readDateFromText(value: string) {
+  const text = normalizeText(value).slice(0, 800)
+  const patterns = [
+    /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2},\s+\d{4}\b/iu,
+    /\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b/u,
+    /\b\d{4}年\d{1,2}月\d{1,2}日\b/u,
+  ]
+  for (const pattern of patterns) {
+    const match = text.match(pattern)?.[0]
+    if (!match) continue
+    const normalized = match.replace(/年/u, '-').replace(/月/u, '-').replace(/日/u, '')
+    const date = readDate(normalized)
+    if (date) return date
+  }
+  return null
 }
 
 function parseHackerNewsPayload(

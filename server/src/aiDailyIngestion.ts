@@ -44,9 +44,12 @@ export interface AiDailyTierPolicy {
 }
 
 export const aiDailyTierPolicies: Record<AiDailySourceTierName, AiDailyTierPolicy> = {
-  TIER_1: { intervalMinutes: 15, lookbackMinutes: 30, authorityScore: 25 },
-  TIER_2: { intervalMinutes: 30, lookbackMinutes: 60, authorityScore: 16 },
-  TIER_3: { intervalMinutes: 60, lookbackMinutes: 120, authorityScore: 8 },
+  // Polling cadence and editorial lookback serve different purposes. Sources
+  // can be checked frequently while every edition still considers the last
+  // 36 hours, including overnight and cross-time-zone announcements.
+  TIER_1: { intervalMinutes: 15, lookbackMinutes: 2160, authorityScore: 25 },
+  TIER_2: { intervalMinutes: 30, lookbackMinutes: 2160, authorityScore: 16 },
+  TIER_3: { intervalMinutes: 60, lookbackMinutes: 2160, authorityScore: 8 },
 }
 
 export interface AiDailySourceFeedDefinition {
@@ -398,6 +401,7 @@ export async function runAiDailyDiscovery(input: {
   primary?: AiDailyDiscoveryAdapter | null
   fallback?: AiDailyDiscoveryAdapter | null
   signal?: AiDailyDiscoveryAdapter | null
+  signals?: AiDailyDiscoveryAdapter[]
   minimumPrimaryResults?: number
   includeSignal?: boolean
 }): Promise<AiDailyDiscoveryResult> {
@@ -432,10 +436,15 @@ export async function runAiDailyDiscovery(input: {
     }
   }
 
-  if (input.includeSignal && input.signal?.slot === 'signal') {
-    const signal = await callDiscoveryAdapter(input.signal, input.request, attempts)
-    combined = [...combined, ...signal.candidates.map((candidate) => ({ ...candidate, leadOnly: true }))]
-    if (!signal.ok) gaps.push(`signal-${signal.errorCategory ?? 'invalid_response'}`)
+  const signals = [input.signal, ...(input.signals ?? [])]
+    .filter((adapter): adapter is AiDailyDiscoveryAdapter => adapter?.slot === 'signal')
+    .filter((adapter, index, adapters) => adapters.findIndex((entry) => entry.id === adapter.id) === index)
+  if (input.includeSignal) {
+    for (const adapter of signals) {
+      const signal = await callDiscoveryAdapter(adapter, input.request, attempts)
+      combined = [...combined, ...signal.candidates.map((candidate) => ({ ...candidate, leadOnly: true }))]
+      if (!signal.ok) gaps.push(`signal-${adapter.id}-${signal.errorCategory ?? 'invalid_response'}`)
+    }
   }
 
   const candidates = dedupeCandidateLeads(combined)

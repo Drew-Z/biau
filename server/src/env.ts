@@ -28,6 +28,7 @@ const aiDailyModelRuntimeJson = readFirstEnv('AI_DAILY_MODEL_RUNTIME_JSON')
 const aiDailyModelApprovalFile = readFirstEnv('AI_DAILY_MODEL_APPROVAL_FILE')
 const aiDailyModelApprovalBundleHash = readFirstEnv('AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH')
 const aiDailyModelEvaluationApprovalId = readFirstEnv('AI_DAILY_MODEL_EVALUATION_APPROVAL_ID')
+const aiDailyTheNewsApiToken = readFirstEnv('AI_DAILY_THE_NEWS_API_TOKEN')
 const assistantRagApiBaseUrl = readFirstEnv('ASSISTANT_RAG_API_BASE_URL')
 const assistantRagApiKey = readFirstEnv('ASSISTANT_RAG_API_KEY')
 const assistantRagTimeoutMs = readPositiveInteger(process.env.ASSISTANT_RAG_TIMEOUT_MS, 3000)
@@ -53,6 +54,9 @@ export const env = {
   aiDailyModelApprovalFile,
   aiDailyModelApprovalBundleHash,
   aiDailyModelEvaluationApprovalId,
+  aiDailyTheNewsApiEnabled: readBoolean(process.env.AI_DAILY_THE_NEWS_API_ENABLED),
+  aiDailyTheNewsApiToken,
+  aiDailyHotDailyEnabled: readBooleanWithDefault(process.env.AI_DAILY_HOTDAILY_ENABLED, true),
   assistantRagApiBaseUrl,
   assistantRagApiKey,
   assistantRagTimeoutMs,

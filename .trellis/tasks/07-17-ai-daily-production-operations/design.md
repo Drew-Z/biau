@@ -7,6 +7,8 @@
 - Existing Studio service: authenticated editorial UI plus isolated public projection routes.
 - Existing PostgreSQL: authoritative jobs, evidence, editorial, and projection state.
 
+Broad discovery is provider-separated from model generation. Official RSS/Atom feeds remain the highest-authority path. Optional The News API is the bounded primary with GDELT DOC as fallback; when it is disabled, GDELT becomes the no-key primary. HN Algolia and HotDaily are signal-only. HotDaily contributes original title, URL, and community identity only; generated summaries/value judgments are discarded. Every aggregator or community result is fetched from its original page before it can become selectable evidence.
+
 ## Acceptance Method
 
 Configuration readiness is offline and never calls providers. The only live acceptance is a user-approved real edition that produces useful editorial output.

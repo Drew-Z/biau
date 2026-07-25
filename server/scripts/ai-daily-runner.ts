@@ -49,7 +49,7 @@ async function runIngestTick(prisma: ReturnType<typeof requireStudioDatabase>) {
     workerId,
   })
   console.log(
-    `AI Daily ingest tick queued ${queued.queuedFeeds} feed(s), processed ${completed.processed}, succeeded ${completed.succeeded}, failed ${completed.failed}`,
+    `AI Daily ingest tick queued ${queued.queuedFeeds} feed(s) and ${queued.queuedDiscoveries} discovery group(s), processed ${completed.processed}, succeeded ${completed.succeeded}, failed ${completed.failed}`,
   )
 }
 

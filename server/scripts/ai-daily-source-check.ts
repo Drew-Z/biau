@@ -16,10 +16,10 @@ import { assert, assertDeepEqual, assertEqual } from './ai-daily-check-helpers.j
 
 const tier1 = buildAiDailySourceFeedFixture()
 assertEqual(tier1.intervalMinutes, 15, 'tier 1 cadence')
-assertEqual(tier1.lookbackMinutes, 30, 'tier 1 overlap lookback')
+assertEqual(tier1.lookbackMinutes, 2160, 'tier 1 editorial lookback')
 const window = buildAiDailyCollectionWindow(tier1, aiDailyFixtureNow)
 assert(window.due, 'due tier 1 feed should produce work')
-assertEqual(window.windowStart.toISOString(), '2026-07-17T23:15:00.000Z', 'overlap window start')
+assertEqual(window.windowStart.toISOString(), '2026-07-16T11:45:00.000Z', '36-hour overlap window start')
 assertDeepEqual(
   window.conditionalHeaders,
   { 'If-None-Match': '"fixture-etag"', 'If-Modified-Since': 'Fri, 17 Jul 2026 23:45:00 GMT' },
@@ -58,6 +58,19 @@ const official = collectAiDailySourcePayload({
 })
 assertEqual(official.length, 1, 'official page adapter')
 assertEqual(official[0]?.originalUrl, 'https://www.anthropic.com/news/context-systems', 'official relative URL')
+
+const officialCards = collectAiDailySourcePayload({
+  feed: officialFeed,
+  payload: `<!doctype html><main>
+    <a href="/news">Blog</a>
+    <a href="/page/2">2</a>
+    <article><h2><a href="/news/visible-date">Visible date release</a></h2><p>July 17, 2026</p></article>
+    <article><h2><a href="/news/too-old">Old dated release</a></h2><p>July 15, 2026</p></article>
+  </main>`,
+  window: buildAiDailyCollectionWindow(officialFeed, aiDailyFixtureNow),
+})
+assertEqual(officialCards.length, 1, 'official cards filter navigation, numeric pagination, and stale entries')
+assert(officialCards[0]?.publishedAt instanceof Date, 'visible card date extraction')
 
 const hackerNewsFeed = buildAiDailySourceFeedFixture({
   id: 'feed-hn',
@@ -158,6 +171,6 @@ const derivedLookback = normalizeAiDailySourceFeedDefinition({
   intervalMinutes: 120,
 })
 assert(derivedLookback.ok, 'omitted lookback should derive a valid overlap')
-assertEqual(derivedLookback.feed.lookbackMinutes, 120, 'derived lookback covers custom cadence')
+assertEqual(derivedLookback.feed.lookbackMinutes, 2160, 'derived lookback keeps the editorial window')
 
 console.log('AI Daily source check passed')

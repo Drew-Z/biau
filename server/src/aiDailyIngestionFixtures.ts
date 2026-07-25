@@ -36,7 +36,7 @@ export function buildAiDailySourceFeedFixture(
 export const aiDailyRssFixture = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel><title>OpenAI News</title>
 <item><guid>release-1</guid><title>OpenAI releases a new reasoning model</title><link>https://openai.com/index/new-reasoning-model/?utm_source=rss</link><pubDate>Fri, 17 Jul 2026 23:50:00 GMT</pubDate><description>Model release notes and API details.</description></item>
-<item><guid>old-release</guid><title>Old release outside lookback</title><link>https://openai.com/index/old-release</link><pubDate>Fri, 17 Jul 2026 20:00:00 GMT</pubDate></item>
+<item><guid>old-release</guid><title>Old release outside lookback</title><link>https://openai.com/index/old-release</link><pubDate>Wed, 15 Jul 2026 20:00:00 GMT</pubDate></item>
 </channel></rss>`
 
 export const aiDailyAtomFixture = `<?xml version="1.0" encoding="UTF-8"?>

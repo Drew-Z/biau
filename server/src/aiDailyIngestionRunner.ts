@@ -5,10 +5,13 @@ import {
   AiDailyAdapterError,
   buildAiDailyCollectionWindow,
   normalizeAiDailyCandidateLead,
+  runAiDailyDiscovery,
+  type AiDailyCandidateLead,
   type AiDailyEvidenceCandidate,
   type AiDailyIngestionErrorCategory,
   type AiDailySourceFeedDefinition,
 } from './aiDailyIngestion.js'
+import { createAiDailyDiscoveryRuntime, type AiDailyDiscoveryRuntime } from './aiDailyDiscoveryProviders.js'
 import {
   applyAiDailyEvidenceSelection,
   createAiDailyEvidenceDocument,
@@ -42,8 +45,10 @@ import {
   upsertAiDailyWorkItem,
 } from './aiDailyRepository.js'
 import { syncAiDailySourceManifest } from './aiDailySourceManifestRepository.js'
+import { loadAiDailySourceManifest, type AiDailyCuratedQueryGroup } from './aiDailySourceManifest.js'
+import { env } from './env.js'
 
-export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v1'
+export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v2'
 
 const ingestionLeaseMs = 12 * 60_000
 const ingestionRetryDelayMs = 5 * 60_000
@@ -52,6 +57,10 @@ const ingestionRetryDelayMs = 5 * 60_000
 // undated leads remain available for inspection but must not consume the whole
 // per-feed request budget.
 const maxCandidatesPerFeed = 4
+const maxCandidatesPerDiscovery = 12
+const discoveryWindowMs = 36 * 60 * 60_000
+const discoveryScheduleBucketMs = 6 * 60 * 60_000
+export const aiDailyDiscoveryDeadlineMs = 45 * 60_000
 
 class AiDailyIngestionDeadlineError extends AiDailyAdapterError {
   constructor() {
@@ -81,6 +90,11 @@ export async function queueAiDailyIngestionRefresh(
     trigger: input.trigger ?? 'MANUAL',
     now,
   })
+  const discoveryRuntime = createAiDailyDiscoveryRuntime({
+    theNewsApiEnabled: env.aiDailyTheNewsApiEnabled,
+    theNewsApiToken: env.aiDailyTheNewsApiToken,
+    hotDailyEnabled: env.aiDailyHotDailyEnabled,
+  })
   const dueFeeds = await listDueAiDailySourceFeeds(prisma, now, 50)
   for (const row of dueFeeds) {
     const feed = toAiDailySourceFeedDefinition(row)
@@ -101,6 +115,26 @@ export async function queueAiDailyIngestionRefresh(
       },
     })
   }
+  let queuedDiscoveries = 0
+  const discoveryBucket = Math.floor(now.getTime() / discoveryScheduleBucketMs)
+  for (const group of manifest.queryGroups) {
+    const item = await upsertAiDailyWorkItem(prisma, {
+      editionDate,
+      kind: 'DISCOVER',
+      scope: `query-group:${group.id}:window:${discoveryBucket}`,
+      runId: run.id,
+      priority: 60,
+      availableAt: now,
+      deadlineAt: new Date(now.getTime() + aiDailyDiscoveryDeadlineMs),
+      freshnessTargetAt: new Date(now.getTime() + discoveryScheduleBucketMs),
+      continuationCursorJson: {
+        queryGroupId: group.id,
+        windowStart: new Date(now.getTime() - discoveryWindowMs).toISOString(),
+        windowEnd: now.toISOString(),
+      },
+    })
+    if (item.runId === run.id && item.status === 'PENDING') queuedDiscoveries += 1
+  }
   await appendAiDailyRunEvent(prisma, {
     runId: run.id,
     stage: 'COLLECT',
@@ -108,8 +142,10 @@ export async function queueAiDailyIngestionRefresh(
     outcome: 'accepted',
     metadataJson: {
       dueFeeds: dueFeeds.length,
+      queuedDiscoveries,
       manifestSources: manifest.sourceCount,
       enabledSources: manifest.enabledSourceCount,
+      discoveryDiagnostics: discoveryRuntime.diagnostics,
     },
   })
   return {
@@ -117,6 +153,7 @@ export async function queueAiDailyIngestionRefresh(
     editionDate,
     runId: run.id,
     queuedFeeds: dueFeeds.length,
+    queuedDiscoveries,
     manifest: {
       schemaVersion: manifest.schemaVersion,
       sources: manifest.sourceCount,
@@ -137,22 +174,34 @@ export async function drainAiDailyIngestionWork(
   let succeeded = 0
   let failed = 0
   const runIds = new Set<string>()
+  const discoveryRuntime = createAiDailyDiscoveryRuntime({
+    theNewsApiEnabled: env.aiDailyTheNewsApiEnabled,
+    theNewsApiToken: env.aiDailyTheNewsApiToken,
+    hotDailyEnabled: env.aiDailyHotDailyEnabled,
+  })
 
   for (; processed < limit; processed += 1) {
     const claimed = await claimAiDailyWorkItem(prisma, {
       leaseOwner: workerId,
       leaseDurationMs: ingestionLeaseMs,
       runId: input.runId,
-      kinds: ['COLLECT_FEED'],
+      kinds: ['COLLECT_FEED', 'DISCOVER'],
       profiles: ['DEGRADED'],
     })
     if (!claimed) break
     if (claimed.workItem.runId) runIds.add(claimed.workItem.runId)
-    const result = await executeAiDailyCollectionWork(prisma, {
-      workItemId: claimed.workItem.id,
-      leaseToken: claimed.leaseToken,
-      workerId,
-    })
+    const result = claimed.workItem.kind === 'DISCOVER'
+      ? await executeAiDailyDiscoveryWork(prisma, {
+          workItemId: claimed.workItem.id,
+          leaseToken: claimed.leaseToken,
+          workerId,
+          runtime: discoveryRuntime,
+        })
+      : await executeAiDailyCollectionWork(prisma, {
+          workItemId: claimed.workItem.id,
+          leaseToken: claimed.leaseToken,
+          workerId,
+        })
     if (result === 'succeeded') succeeded += 1
     else failed += 1
   }
@@ -207,35 +256,14 @@ async function executeAiDailyCollectionWork(
           .sort(compareCandidateFetchPriority)
           .slice(0, maxCandidatesPerFeed)
 
-    let readyEvidence = 0
-    let thinEvidence = 0
-    let fetchFailures = 0
-    for (const candidate of normalizedCandidates) {
-      assertIngestionDeadline(workItem.deadlineAt, new Date())
-      const row = await upsertAiDailyCandidate(prisma, {
-        runId: workItem.runId,
-        sourceFeedId: feed.id,
-        candidate,
-      })
-      try {
-        const evidence = await fetchAiDailyEvidence({
-          url: candidate.originalUrl,
-          now,
-          locale: candidate.locale,
-        })
-        await createAiDailyEvidenceDocument(prisma, { candidateId: row.id, evidence })
-        if (evidence.status === 'READY') readyEvidence += 1
-        else thinEvidence += 1
-      } catch (error) {
-        fetchFailures += 1
-        const category = classifyAiDailyIngestionError(error)
-        await recordAiDailyCandidateFetchFailure(prisma, {
-          candidateId: row.id,
-          category,
-          blocked: category === 'unsafe_url' || category === 'robots_disallowed',
-        })
-      }
-    }
+    const { readyEvidence, thinEvidence, fetchFailures } = await fetchAndPersistAiDailyCandidates(prisma, {
+      runId: workItem.runId,
+      sourceFeedId: workItem.sourceFeedId,
+      discoveryQueryGroup: null,
+      candidates: normalizedCandidates,
+      now,
+      deadlineAt: workItem.deadlineAt,
+    })
 
     assertIngestionDeadline(workItem.deadlineAt, new Date())
 
@@ -313,13 +341,203 @@ async function executeAiDailyCollectionWork(
   }
 }
 
+async function executeAiDailyDiscoveryWork(
+  prisma: PrismaClient,
+  input: {
+    workItemId: string
+    leaseToken: string
+    workerId: string
+    runtime: AiDailyDiscoveryRuntime
+  },
+) {
+  const workItem = await prisma.aiDailyWorkItem.findUnique({ where: { id: input.workItemId } })
+  if (!workItem?.runId) {
+    await completeAiDailyWorkItem(prisma, {
+      workItemId: input.workItemId,
+      leaseToken: input.leaseToken,
+      result: 'failed',
+      errorCategory: 'schema_invalid',
+    })
+    return 'failed' as const
+  }
+
+  const now = new Date()
+  try {
+    assertIngestionDeadline(workItem.deadlineAt, now)
+    const manifest = await loadAiDailySourceManifest()
+    const cursor = readDiscoveryCursor(workItem.continuationCursorJson)
+    const group = manifest.queryGroups.find((entry) => entry.enabled && entry.id === cursor.queryGroupId)
+    if (!group) throw new AiDailyAdapterError('schema_invalid')
+    const request = buildDiscoveryRequest(group, cursor)
+    const discovery = await runAiDailyDiscovery({
+      request,
+      primary: input.runtime.primary,
+      fallback: input.runtime.fallback,
+      signals: input.runtime.signals,
+      minimumPrimaryResults: group.minimumPrimaryResults,
+      includeSignal: group.includeSignal,
+    })
+    if (
+      discovery.candidates.length === 0 &&
+      discovery.attempts.length > 0 &&
+      discovery.attempts.every((attempt) => attempt.outcome === 'failed')
+    ) {
+      throw new AiDailyAdapterError(discovery.attempts[0]?.errorCategory ?? 'invalid_response')
+    }
+
+    const candidates = selectAiDailyDiscoveryCandidates(discovery.candidates, maxCandidatesPerDiscovery)
+    const { readyEvidence, thinEvidence, fetchFailures } = await fetchAndPersistAiDailyCandidates(prisma, {
+      runId: workItem.runId,
+      sourceFeedId: null,
+      discoveryQueryGroup: group.id,
+      candidates,
+      now,
+      deadlineAt: workItem.deadlineAt,
+    })
+    await prisma.aiDailyRun.update({
+      where: { id: workItem.runId },
+      data: {
+        lastDiscoveredAt: now,
+        ...(readyEvidence + thinEvidence > 0 ? { lastFetchedAt: now } : {}),
+      },
+    })
+    const hasGaps = discovery.gaps.length > 0 || fetchFailures > 0 || input.runtime.diagnostics.length > 0
+    await appendAiDailyRunEvent(prisma, {
+      runId: workItem.runId,
+      stage: readyEvidence + thinEvidence > 0 ? 'FETCH' : 'DISCOVER',
+      kind: 'discovery-completed',
+      outcome: hasGaps ? 'completed-with-gaps' : 'succeeded',
+      metadataJson: {
+        queryGroupId: group.id,
+        candidates: candidates.length,
+        readyEvidence,
+        thinEvidence,
+        fetchFailures,
+        redundancy: discovery.redundancy,
+        gaps: [...discovery.gaps, ...input.runtime.diagnostics].slice(0, 12),
+        attempts: discovery.attempts.map((attempt) => ({
+          providerId: attempt.providerId,
+          slot: attempt.slot,
+          outcome: attempt.outcome,
+          candidateCount: attempt.candidateCount,
+          errorCategory: attempt.errorCategory,
+        })),
+      },
+    })
+    await completeAiDailyWorkItem(prisma, {
+      workItemId: workItem.id,
+      leaseToken: input.leaseToken,
+      result: 'succeeded',
+      metadataJson: {
+        worker: 'studio-ingestion',
+        queryGroupId: group.id,
+        candidates: candidates.length,
+        readyEvidence,
+        thinEvidence,
+        fetchFailures,
+      },
+    })
+    return 'succeeded' as const
+  } catch (error) {
+    const category = classifyAiDailyIngestionError(error)
+    await appendAiDailyRunEvent(prisma, {
+      runId: workItem.runId,
+      stage: 'DISCOVER',
+      kind: 'discovery-completed',
+      outcome: 'failed',
+      errorCategory: category,
+      metadataJson: {},
+    })
+    const retryable = !(error instanceof AiDailyIngestionDeadlineError) && isRetryableIngestionCategory(category)
+    await completeAiDailyWorkItem(prisma, {
+      workItemId: workItem.id,
+      leaseToken: input.leaseToken,
+      result: retryable ? 'retryable-failed' : 'failed',
+      retryAt: retryable ? new Date(now.getTime() + ingestionRetryDelayMs) : undefined,
+      errorCategory: category,
+      metadataJson: { worker: 'studio-ingestion' },
+    })
+    return 'failed' as const
+  }
+}
+
+async function fetchAndPersistAiDailyCandidates(
+  prisma: PrismaClient,
+  input: {
+    runId: string
+    sourceFeedId: string | null
+    discoveryQueryGroup: string | null
+    candidates: AiDailyCandidateLead[]
+    now: Date
+    deadlineAt: Date | null
+  },
+) {
+  let readyEvidence = 0
+  let thinEvidence = 0
+  let fetchFailures = 0
+  for (const candidate of input.candidates) {
+    assertIngestionDeadline(input.deadlineAt, new Date())
+    const row = await upsertAiDailyCandidate(prisma, {
+      runId: input.runId,
+      sourceFeedId: input.sourceFeedId,
+      discoveryQueryGroup: input.discoveryQueryGroup,
+      candidate,
+    })
+    try {
+      const evidence = await fetchAiDailyEvidence({
+        url: candidate.originalUrl,
+        now: input.now,
+        locale: candidate.locale,
+      })
+      await createAiDailyEvidenceDocument(prisma, { candidateId: row.id, evidence })
+      if (evidence.status === 'READY') readyEvidence += 1
+      else thinEvidence += 1
+    } catch (error) {
+      fetchFailures += 1
+      const category = classifyAiDailyIngestionError(error)
+      await recordAiDailyCandidateFetchFailure(prisma, {
+        candidateId: row.id,
+        category,
+        blocked: category === 'unsafe_url' || category === 'robots_disallowed',
+      })
+    }
+  }
+  return { readyEvidence, thinEvidence, fetchFailures }
+}
+
+function readDiscoveryCursor(value: Prisma.JsonValue | null) {
+  const record = typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Prisma.JsonObject
+    : {}
+  const queryGroupId = typeof record.queryGroupId === 'string' ? record.queryGroupId : ''
+  const windowStart = typeof record.windowStart === 'string' ? new Date(record.windowStart) : new Date(Number.NaN)
+  const windowEnd = typeof record.windowEnd === 'string' ? new Date(record.windowEnd) : new Date(Number.NaN)
+  if (!queryGroupId || Number.isNaN(windowStart.getTime()) || Number.isNaN(windowEnd.getTime()) || windowStart >= windowEnd) {
+    throw new AiDailyAdapterError('schema_invalid')
+  }
+  return { queryGroupId, windowStart, windowEnd }
+}
+
+function buildDiscoveryRequest(group: AiDailyCuratedQueryGroup, cursor: ReturnType<typeof readDiscoveryCursor>) {
+  return {
+    queryGroup: group.id,
+    queries: group.queries,
+    windowStart: cursor.windowStart,
+    windowEnd: cursor.windowEnd,
+    locale: group.locale,
+    includeDomains: group.includeDomains,
+    excludeDomains: group.excludeDomains,
+    budget: group.budget,
+  }
+}
+
 function assertIngestionDeadline(deadlineAt: Date | null, now: Date) {
   if (deadlineAt && deadlineAt.getTime() <= now.getTime()) throw new AiDailyIngestionDeadlineError()
 }
 
 async function finalizeAiDailyIngestionRunIfIdle(prisma: PrismaClient, runId: string) {
   const remaining = await prisma.aiDailyWorkItem.count({
-    where: { runId, kind: 'COLLECT_FEED', status: { in: ['PENDING', 'LEASED', 'RETRY_WAIT'] } },
+    where: { runId, kind: { in: ['COLLECT_FEED', 'DISCOVER'] }, status: { in: ['PENDING', 'LEASED', 'RETRY_WAIT'] } },
   })
   if (remaining > 0) return { status: 'waiting' as const, remaining }
 
@@ -508,7 +726,11 @@ function toAiDailyEvidenceCandidate(
     publishedAt: row.publishedAt,
     locale: row.locale,
     sourceTier,
-    topics: readJsonStrings(row.sourceFeed?.topicsJson),
+    topics: row.sourceFeed
+      ? readJsonStrings(row.sourceFeed.topicsJson)
+      : row.discoveryQueryGroup
+        ? [row.discoveryQueryGroup]
+        : [],
     leadOnly: row.leadOnly,
     snippet: row.evidenceExcerpt,
     fetchStatus: 'FETCHED',
@@ -558,4 +780,27 @@ function compareCandidateFetchPriority(
   const rightPublishedAt = right.publishedAt?.getTime() ?? Number.NEGATIVE_INFINITY
   if (leftPublishedAt !== rightPublishedAt) return rightPublishedAt - leftPublishedAt
   return left.canonicalKey < right.canonicalKey ? -1 : left.canonicalKey > right.canonicalKey ? 1 : 0
+}
+
+export function selectAiDailyDiscoveryCandidates(candidates: AiDailyCandidateLead[], limit: number) {
+  const boundedLimit = Math.max(0, Math.floor(limit))
+  if (boundedLimit === 0) return []
+  const ordered = [...candidates].sort(compareCandidateFetchPriority)
+  const selected: AiDailyCandidateLead[] = []
+  const selectedIds = new Set<string>()
+  const representedProviders = new Set<string>()
+
+  for (const candidate of ordered) {
+    if (representedProviders.has(candidate.providerKind)) continue
+    selected.push(candidate)
+    selectedIds.add(candidate.id)
+    representedProviders.add(candidate.providerKind)
+    if (selected.length >= boundedLimit) return selected
+  }
+  for (const candidate of ordered) {
+    if (selectedIds.has(candidate.id)) continue
+    selected.push(candidate)
+    if (selected.length >= boundedLimit) break
+  }
+  return selected
 }

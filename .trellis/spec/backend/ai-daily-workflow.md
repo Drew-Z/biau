@@ -642,6 +642,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Source payload fields: `name`, `kind`, `url`, `locale`, `tier`, `topics`, `enabled`, `intervalMinutes`, `lookbackMinutes`, `officialDomain`.
 - Core modules:
   - `server/src/aiDailyIngestion.ts`
+  - `server/src/aiDailyDiscoveryProviders.ts`
   - `server/src/aiDailySourceAdapters.ts`
   - `server/src/aiDailySafeFetch.ts`
   - `server/src/aiDailyIngestionRepository.ts`
@@ -649,7 +650,7 @@ The repository verifies the active token and expiry, records the attempt outcome
   - `server/src/aiDailyIngestionRunner.ts`
   - `server/src/aiDailySourceManifestRepository.ts`
   - `server/src/aiDailyStudioIngestion.ts`
-- Fixture gates: `npm.cmd run ai-daily:{source,discovery,evidence,freshness,dedupe,ranking}-check`.
+- Fixture gates: `npm.cmd run ai-daily:{source,discovery,discovery-provider,evidence,freshness,dedupe,ranking}-check`.
 - PostgreSQL gate: `AI_DAILY_DATABASE_CHECK=1 npm.cmd run ai-daily:repository-check` against a local database whose name ends in `_test`.
   The ingestion, generation, and Studio repository checks all read
   `STUDIO_DATABASE_URL`; `DATABASE_URL` remains reserved for the Operator
@@ -657,15 +658,16 @@ The repository verifies the active token and expiry, records the attempt outcome
 
 ### 3. Contracts
 
-- Tier 1/2/3 default cadence is `15/30/60` minutes with overlapping lookback `30/60/120` minutes. Explicit lookback must be at least the collection interval; omitted lookback derives a database-valid overlap.
-- Brave is the production primary discovery role, Tavily is the optional fallback, and X Search is signal-only. Primary failure remains not-ready; missing or failed fallback is visible as `reduced_redundancy`.
+- Tier 1/2/3 default cadence is `15/30/60` minutes while every tier uses a 36-hour editorial lookback. Polling cadence and candidate window are independent: explicit lookback must be at least the collection interval, and omitted lookback derives the larger of the tier window and interval.
+- Official RSS/Atom feeds are the highest-authority path. The News API is an optional bounded primary and GDELT DOC is its fallback; when The News API is disabled or lacks a usable token, GDELT becomes the no-key primary. Hacker News Algolia and HotDaily are signal-only. Primary failure remains visible; missing or failed fallback is `reduced_redundancy`.
+- AI Daily has no Tavily runtime dependency. HotDaily is public/no-key and may be disabled with `AI_DAILY_HOTDAILY_ENABLED=false`. Its adapter keeps only the original title, URL, and community source identity, routes AI-relevant titles into one query group, and discards generated summaries, reasons, scores, value lights, and trend conclusions. HN, HotDaily, and GDELT candidates remain `leadOnly` until original-page evidence is ready.
 - Search and social results are candidates only. They become selectable only after original-page evidence is fetched and marked `READY`; `leadOnly` candidates cannot be promoted.
 - Safe fetch rejects URL credentials, unsupported schemes, internal hostnames, and non-public IPv4/IPv6 addresses. DNS results are checked before a pinned request, every redirect target is revalidated, and redirect destinations are checked against robots before their page is fetched.
 - Direct fetch limits connect/read/total time, compressed bytes, decoded bytes, content type, redirects, and normalized evidence. Normalized text is at most `64 KiB`; citation excerpt is at most `1 KiB`; evidence expires after 30 days by default.
 - The SSRF-safe Node transport pins DNS results through the `lookup` option. Because modern Node may call that callback with `options.all=true`, the pinned lookup must return an array of `{ address, family }` records in that branch and a scalar address/family pair otherwise. Returning a scalar for the array contract causes `ERR_INVALID_IP_ADDRESS` before any public source request and is projected only as `network_error`.
 - Evidence documents are immutable versions per candidate. `currentEvidenceId` points to the latest version; failed writes cannot advance the version because creation and projection share a transaction.
 - Manifest synchronization is idempotent and owns editorial source configuration only. It must preserve learned `ETag` and `Last-Modified` validators; a refresh must not reset them. A successful source fetch records bounded validators and the next due time, while `304` reuses the existing validator state without creating candidate evidence.
-- `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by an interval-minus-two-minute deadline, and resumed after a process restart. The worker never calls a model or search provider. Each feed fetches at most four normalized candidates per tick, prioritizing date-bearing entries and using a stable canonical-key tie-break; undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
+- `ai-daily:ingest-tick` and the Studio ingestion worker share the same database-backed runner. Work is claimed with the existing lease token, bounded by a deadline, and resumed after a process restart. Each tick queues due `COLLECT_FEED` work plus one idempotent `DISCOVER` item per enabled query group and six-hour time bucket; finalization waits for both kinds. A discovery item receives a 45-minute deadline: long enough to run after due official feeds and fetch bounded original pages, but still far shorter than its six-hour schedule interval. Discovery may call The News API, GDELT, HN Algolia, and HotDaily but never calls a model. Each feed fetches at most four normalized candidates and each discovery group fetches at most twelve. Discovery selection first reserves one candidate per contributing provider, then fills the remaining budget by date-bearing/lead-only priority and stable canonical key; a large GDELT response therefore cannot silently crowd HN or HotDaily out of the original-page evidence budget. Undated `leadOnly` candidates may remain for inspection but cannot satisfy selection.
 - `POST /studio/api/ai-daily/ingestion/refresh` requires the existing Studio bearer token, synchronizes the approved manifest, queues due feeds, returns `202`, and wakes the worker. It does not perform a long network fetch inside the HTTP request.
 - Dedupe order is canonical URL, content hash, title fingerprint, then lexical similarity. Event ranking stores named score components and stable tie-breaks. Selection may pass `targetEvents` only to satisfy minimum evidence diversity and never exceeds `maxEvents`.
 - Selection writes require an explicit `runId`; database truth must confirm every representative belongs to that run, is not lead-only, and has ready evidence. Repeating the same ordered selection must not increment `selectionVersion` or duplicate issue relations.
@@ -681,7 +683,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Robots denial, including a redirect destination -> `robots_disallowed` before the page request.
 - Timeout/network/rate-limit/invalid provider response -> stable ingestion category; raw response and stack are not persisted.
 - A Node lookup callback contract mismatch -> `network_error`; the deterministic evidence gate must exercise both `all=true` and scalar lookup forms so this does not present as a mass source outage.
-- Missing primary discovery -> not ready with `primary_unavailable`; missing or failed fallback -> `reduced_redundancy`.
+- Missing primary discovery -> not ready with `primary_unavailable`; missing or failed fallback -> `reduced_redundancy`; an individual signal failure is reported with its adapter id and stable error category without suppressing other signals.
 - Stale Tier 1/discovery checkpoints or missing selected fetch checkpoints -> explicit freshness gaps, never normal-ready.
 - Selection representative from another run or without ready evidence -> `ai-daily-selection-run-boundary-mismatch` / `ai-daily-selection-requires-ready-evidence`.
 
@@ -690,12 +692,12 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Good: a Tier 1 RSS item is collected with conditional headers, fetched from its authoritative page, stored as evidence version 1, ranked, and selected once; repeating the run reuses canonical source and issue relations.
 - Good: refreshing the manifest after a prior fetch keeps the feed's validators, so the next tick sends `If-None-Match` / `If-Modified-Since`; a `304` updates freshness without discarding the stored validators.
 - Good: a redirect reaches another public origin, that origin's robots policy is checked before its article request, and a denial stops extraction.
-- Base: Brave succeeds below the coverage threshold while Tavily is missing; stable-source candidates remain, readiness reports reduced redundancy, and no provider is pinged merely to test configuration.
-- Bad: promote an X/Search snippet directly to `SourceItem`, persist a provider response in JSON, fetch a redirect before checking its robots policy, or update a selected representative without binding the run.
+- Base: The News API is disabled, so GDELT acts as the no-key primary while HN/HotDaily contribute lead-only signals; stable-source candidates remain and no provider is pinged merely to test configuration.
+- Bad: promote a GDELT/HN/HotDaily snippet directly to `SourceItem`, persist a provider response or HotDaily-generated summary in JSON, fetch a redirect before checking its robots policy, or update a selected representative without binding the run.
 
 ### 6. Tests Required
 
-- Run all six fixture gates and assert deterministic candidates, fallback attempts, evidence limits, p95 freshness, duplicate reasons, score order, diversity, and selected event count.
+- Run all seven fixture gates and assert deterministic candidates, multi-signal order, token non-leakage, HotDaily generated-field rejection, fallback attempts, evidence limits, p95 freshness, duplicate reasons, score order, diversity, and selected event count.
 - Run `npm.cmd run ai-daily:evidence-check` to cover conditional headers and `304`; keep a regression fixture for JSON source payloads, relative URLs, undated lead handling, and the bounded date-prioritized candidate budget.
 - `ai-daily:evidence-check` must also assert the pinned lookup callback returns an address array for `options.all=true` and a scalar address/family pair for the legacy branch; a local real-source smoke may be used for diagnosis, but is not part of deterministic CI.
 - Type-check the AI Daily scripts explicitly because `server:build` covers `server/src` but not every `server/scripts` entry.
@@ -748,6 +750,28 @@ lookup: (_hostname, options, callback) => {
   else callback(null, address.address, address.family)
 }
 ```
+
+#### Wrong: treat HotDaily generation as evidence
+
+```ts
+return { title: item.title, originalUrl: item.url, snippet: item.summaryZh, leadOnly: false }
+```
+
+This imports another system's generated summary and value judgment into the evidence path.
+
+#### Correct: keep only a community lead
+
+```ts
+return {
+  title: item.title,
+  originalUrl: item.url,
+  sourceExternalId: `${item.source}:${item.externalId}`,
+  snippet: null,
+  leadOnly: true,
+}
+```
+
+The ingestion runner fetches the original URL separately; only a dated `READY` evidence document may clear `leadOnly`.
 
 ## Scenario: Content Studio AI Daily Workspace And Flash Review
 

@@ -1338,10 +1338,12 @@ export function StudioAiDailyWorkspacePage() {
         setIngestionStatus(explainStudioApiError(result.status, readStudioError(result.payload)))
         return
       }
-      const queued = typeof result.payload === 'object' && result.payload !== null && 'queuedFeeds' in result.payload
-        ? Number(result.payload.queuedFeeds)
-        : 0
-      setIngestionStatus(`已同步来源并排队 ${Number.isFinite(queued) ? queued : 0} 个采集任务；页面会持续刷新证据。`)
+      const payload = typeof result.payload === 'object' && result.payload !== null ? result.payload : null
+      const queuedFeeds = payload && 'queuedFeeds' in payload ? Number(payload.queuedFeeds) : 0
+      const queuedDiscoveries = payload && 'queuedDiscoveries' in payload ? Number(payload.queuedDiscoveries) : 0
+      setIngestionStatus(
+        `已同步来源并排队 ${Number.isFinite(queuedFeeds) ? queuedFeeds : 0} 个来源任务、${Number.isFinite(queuedDiscoveries) ? queuedDiscoveries : 0} 个发现任务；页面会持续刷新证据。`,
+      )
       await loadWorkspace(adminToken, selectedIssueIdRef.current, false)
     } catch (error) {
       setIngestionStatus(explainStudioClientException(error, '刷新 AI Daily 来源证据'))

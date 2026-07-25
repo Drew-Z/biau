@@ -16,6 +16,7 @@ const deterministicChecks = [
   'ai-daily:source-check',
   'ai-daily:manifest-check',
   'ai-daily:discovery-check',
+  'ai-daily:discovery-provider-check',
   'ai-daily:evidence-check',
   'ai-daily:freshness-check',
   'ai-daily:dedupe-check',

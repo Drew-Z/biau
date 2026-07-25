@@ -16,7 +16,7 @@ Configure, observe, and accept the completed AI Daily system in production throu
 ## Requirements
 
 - Document and configure separate Render ingest and editorial Cron Jobs with UTC schedules and `Asia/Shanghai` application time.
-- Configure Studio database, Brave, Firecrawl, optional Tavily fallback, optional xAI signal, generation role slots, public origins, cache, rate-limit, and public-feed variables without committing secrets.
+- Configure Studio database, optional The News API, no-key GDELT/HN/HotDaily discovery, generation role slots, public origins, cache, rate-limit, and public-feed variables without committing secrets.
 - Curate and approve the initial 30-80 sources and discovery query groups.
 - Approve an explicit extractor/composer/verifier role mapping. The default path is a zero-call manual static selection with no independent fallback; an optional measured evaluation may be used when quality comparison or independent redundancy is actually needed.
 - Add metrics for stage/outcome, freshness, lag, backlog, leases, source health, fallback, quality rejection, and feed age.

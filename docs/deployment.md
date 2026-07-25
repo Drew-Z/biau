@@ -139,6 +139,9 @@ AI_DAILY_PUBLIC_WINDOW_HOURS=72
 AI_DAILY_PUBLIC_STALE_MINUTES=180
 AI_DAILY_PUBLIC_RATE_LIMIT=60
 AI_DAILY_PUBLIC_RATE_WINDOW_MS=60000
+AI_DAILY_THE_NEWS_API_ENABLED=false
+AI_DAILY_THE_NEWS_API_TOKEN=<仅启用 The News API 时填写>
+AI_DAILY_HOTDAILY_ENABLED=true
 AI_DAILY_MODEL_RUNTIME_JSON=<server-only channel and candidate mapping>
 AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json
 AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<ai-daily:model-select-approve 或 model-approve 输出的 bundleHash>
@@ -149,9 +152,11 @@ AI_DAILY_PRODUCTION_GENERATION_ENABLED=false
 
 Studio 模式挂载 `/health`、受保护的 `/studio/api/*`，以及独立无鉴权但有 CORS、限流和字段白名单的 `/public/ai-daily/*`。它不挂载聊天、Operator 或 RAG 路由。
 
+AI Daily 的发现层不依赖 Tavily。未启用 The News API 时，GDELT DOC 作为无密钥 primary；启用并配置 `AI_DAILY_THE_NEWS_API_TOKEN` 后，The News API 成为 primary，GDELT 作为低结果量或失败时的 fallback。Hacker News Algolia 与 HotDaily 是 `leadOnly` 信号源；HotDaily 默认开启且不需要 token，可用 `AI_DAILY_HOTDAILY_ENABLED=false` 独立关闭。系统只保留 HotDaily 的原文标题、原文 URL 和 HN/Lobsters 等社区标识，不导入其 AI 摘要、价值评分或趋势结论。所有聚合/社区线索都必须重新抓取原始网页，取得可验证日期与正文并形成 `READY` evidence 后才可能进入日报。The News API token 只放在 Studio 以及未来 Ingest Cron 的 server-only environment，不放在前端、Editorial Cron、日志或数据库；查询参数中的 token 也不会进入候选或诊断数据。
+
 `AI_DAILY_MODEL_RUNTIME_JSON` 只放在 Render 的 server-only environment 中，必须使用 `ai-daily-model-runtime-v2`。`channels` 保存私有 provider base、key、model 和 failure-domain alias，并统一声明 `protocol: "responses"`；`candidates` 将 extractor/composer/verifier 映射到 channel。AI Daily 不再使用 Chat Completions。默认推荐用 `ai-daily:model-select` 选择三个静态角色候选；它可以每个角色只有一个 candidate，并在批准 bundle 中明确 `manual-static-selection` 与 `reduced_redundancy`。只有需要质量对照或独立 fallback 时，才配置每角色 2-3 个候选并运行可选的真实评估。不要把真实 JSON 写入 Git、浏览器变量、日志或截图。审批 bundle 不依赖仓库构建产物：在 Studio 服务的 Render **Environment → Secret Files** 上传文件名 `ai-daily-model-approval.v1.json`，Render 运行时路径固定为 `/etc/secrets/ai-daily-model-approval.v1.json`，再把审批命令输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。Render Blueprint 只能声明固定路径和变量，Render Secret File 内容仍需在控制台人工上传或轮换。生产 runner 会同时校验文件 schema/hash、期望 bundle hash 和 runtime candidate/role/provider/failure-domain/model；任何缺失、篡改或漂移都会 fail closed。生产默认保持 `AI_DAILY_BUSINESS_EVALUATION_ENABLED=false` 和 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`。首个真实版次优先在 Studio 的 AI Daily 工作区选择 Edition，展开“运行真实版次”，完成二次确认后入队；`ai-daily:run -- --date <date> --live` 仅保留为有 Shell/Job Runner 环境的运维入口。两条入口共享同一审批校验、持久化 work item、lease 和 checkpoint，Cron 不能作为模型测活或自动批准入口。
 
-Secret Files 不会在 Render 服务之间自动共享。首个版次验收通过后创建 **Editorial Cron** 时，必须在该 Cron 上重复设置 `AI_DAILY_MODEL_RUNTIME_JSON`、`AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`、`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`、`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 Studio 数据库变量，并单独上传同一份 Secret File。Ingest Cron 不运行模型，不应配置模型 runtime、key 或审批 bundle。仓库的 `render.yaml` 故意不声明两个 Cron，防止 Blueprint 同步在人工门禁完成前直接启用定时任务。
+Secret Files 不会在 Render 服务之间自动共享。首个版次验收通过后创建 **Editorial Cron** 时，必须在该 Cron 上重复设置 `AI_DAILY_MODEL_RUNTIME_JSON`、`AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`、`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`、`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 和 Studio 数据库变量，并单独上传同一份 Secret File。Ingest Cron 不运行模型，不应配置模型 runtime、key 或审批 bundle；如果启用 The News API，它需要单独配置 `AI_DAILY_THE_NEWS_API_ENABLED=true` 和对应 token，HotDaily/GDELT/HN 不需要凭据。仓库的 `render.yaml` 故意不声明两个 Cron，防止 Blueprint 同步在人工门禁完成前直接启用定时任务。
 
 审批 bundle 轮换顺序：先在本地完成人工审核并运行 `ai-daily:model-select-approve`（静态路径）或 `ai-daily:model-approve`（实测路径），记录新的 `bundleHash`；再分别向所有会执行 live runner 的服务上传同名 Secret File，更新相同的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`，最后选择 **Save, rebuild, and deploy**。回滚时恢复上一份已批准文件和 hash，或关闭 production generation；不要把 bundle JSON 粘贴进环境变量，也不要把真实 bundle 提交到 Git。
 

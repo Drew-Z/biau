@@ -50,6 +50,7 @@ export async function upsertAiDailySourceFeed(
       lastModified: feed.lastModified ?? undefined,
     },
     create: {
+      ...(feed.id ? { id: feed.id } : {}),
       name: feed.name,
       kind: feed.kind,
       url: feed.url,
@@ -125,6 +126,7 @@ export async function updateAiDailySourceFeed(
   })
   if (!normalized.ok) throw new Error(`${normalized.error}:${normalized.issues.join(',')}`)
   const feed = normalized.feed
+  const identityChanged = existing.kind !== feed.kind || existing.canonicalKey !== feed.canonicalKey
   return prisma.aiDailySourceFeed.update({
     where: { id: existing.id },
     data: {
@@ -139,6 +141,21 @@ export async function updateAiDailySourceFeed(
       intervalMinutes: feed.intervalMinutes,
       lookbackMinutes: feed.lookbackMinutes,
       officialDomain: feed.officialDomain,
+      ...(identityChanged
+        ? {
+            etag: null,
+            lastModified: null,
+            lastAttemptedAt: null,
+            lastCollectedAt: null,
+            lastSuccessfulAt: null,
+            nextCollectAt: null,
+            consecutiveFailures: 0,
+            healthStatus: 'UNKNOWN' as const,
+            lastLagMs: null,
+            lastErrorCategory: null,
+            lastErrorJson: Prisma.DbNull,
+          }
+        : {}),
     },
   })
 }
@@ -265,6 +282,9 @@ export async function createAiDailyEvidenceDocument(
         evidenceExcerpt: input.evidence.excerpt,
         evidenceExpiresAt: input.evidence.expiresAt,
         lastErrorCategory: null,
+        ...(input.evidence.status === 'READY' && input.evidence.publishedAt
+          ? { publishedAt: input.evidence.publishedAt, leadOnly: false }
+          : {}),
       },
     })
     return evidence

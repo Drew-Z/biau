@@ -25,6 +25,8 @@ AI 日报 / AI Daily 是独立栏目，用来记录短周期 AI 模型、工具�
 
 版本化来源清单位于 `server/data/ai-daily-source-manifest.v1.json`。当前包含 30 个来源和 10 个 discovery query groups，覆盖官方模型/平台、开源生态、AI 基础设施、研究、企业 AI、中国 AI、政策安全和多模态/端侧方向。2026-07-19 已完成公共页面预审和站点所有者确认：顶层 `readiness=approved`，16 个 approved 来源与 4 个核心查询组已启用，9 个 hold 来源、5 个 rejected 来源和其余 6 个查询组保持关闭。审查摘要见 [`docs/ai-daily-source-review-2026-07-19.md`](./ai-daily-source-review-2026-07-19.md)。
 
+生产发现链路使用“官方订阅源 + 多个低耦合发现信号”：优先消费官方 RSS/Atom；未启用 The News API 时由 GDELT DOC 提供无密钥 broad discovery，启用后由 The News API primary + GDELT fallback；Hacker News Algolia 与 HotDaily 仅提供社区线索。HotDaily 公共 API 不需要 token，系统只读取原文标题、URL 和社区来源，并丢弃其 `summaryZh`、`reason`、价值灯号等生成字段。The News API、GDELT、HN 和 HotDaily 的结果都不是事实证据；runner 会回到原始网页重新提取日期和正文，只有 `READY` evidence 能进入选择。该链路不使用 Tavily，也不会占用本地 smart-search 的 Tavily 配额。
+
 离线校验命令：
 
 ```powershell
@@ -48,6 +50,9 @@ AI_DAILY_TIME_ZONE=Asia/Shanghai
 AI_DAILY_PUBLIC_FEED_ENABLED=false
 AI_DAILY_PUBLIC_WINDOW_HOURS=72
 AI_DAILY_PUBLIC_STALE_MINUTES=180
+AI_DAILY_THE_NEWS_API_ENABLED=false
+AI_DAILY_THE_NEWS_API_TOKEN=<only when enabled>
+AI_DAILY_HOTDAILY_ENABLED=true
 AI_DAILY_MODEL_RUNTIME_JSON=<server-only channel and candidate mapping>
 AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json
 AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved bundleHash>
@@ -235,7 +240,7 @@ npm.cmd run ai-daily:draft -- --source content-drafts/ai-daily/sample-sources.js
 生成阶段不仅验证 claim 与 evidence 的绑定，还会把标题、导语、事件标题、事实摘要、影响说明和趋势段逐块交给独立 verifier。缺失或重复审查、正文与 claim 不一致、过期 worker 尝试写 revision，以及投影后崩溃导致的重放偏移都会 fail closed。revision/draft 投影会在同一事务中锁住对应 work item，避免 lease 校验后被另一 worker reclaim 的并发穿透。正常一期仍将 extractor 批次、composer 和 verifier 控制在约 4-7 次角色调用内。
 
 ```powershell
-# 同步已审核来源、排队并消费到期来源采集 work；会访问公开来源，但不调用模型
+# 同步已审核来源、排队并消费到期来源与 discovery work；会访问公开网页/API，但不调用模型
 npm.cmd run ai-daily:ingest-tick
 
 # 开发/回归 fixture；显式 --fixture 才允许 mock provider
@@ -245,7 +250,7 @@ npm.cmd run ai-daily:resume -- --issue <issue-id> --fixture
 npm.cmd run ai-daily:editorial-tick -- --fixture
 ```
 
-`ai-daily:ingest-tick` 现在是一次完整的采集 tick：它幂等同步版本化来源清单，创建或恢复当天的 degraded ingestion run，排队到期来源并通过数据库 lease 串行消费。Studio 服务也会启动同一个持久化 ingestion worker；服务重启后会从未完成的 work item 继续。Studio 工作区的“同步并刷新证据”按钮调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，只负责排队和唤醒 worker。来源响应会保存 `ETag` / `Last-Modified`，下一轮使用条件请求；正文抓取、robots、URL 安全、证据状态和选择门禁仍在服务端执行。任何采集失败只记录低敏分类，不会触发模型或搜索 provider。
+`ai-daily:ingest-tick` 现在是一次完整的采集 tick：它幂等同步版本化来源清单，创建或恢复当天的 degraded ingestion run，同时排队到期来源和每 6 小时一个时间桶的启用 discovery query groups，并通过数据库 lease 串行消费。Studio 服务也会启动同一个持久化 ingestion worker；服务重启后会从未完成的 work item 继续。Studio 工作区的“同步并刷新证据”按钮调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，只负责排队和唤醒 worker。来源响应会保存 `ETag` / `Last-Modified`，下一轮使用条件请求；正文抓取、robots、URL 安全、证据状态和选择门禁仍在服务端执行。采集可以调用 The News API、GDELT、HN Algolia 和 HotDaily，但不调用模型；任何失败只记录 provider id、角色和稳定低敏错误分类，不保存请求 URL、token、原始响应或生成摘要。
 
 ## 三角色模型选型与可选评估
 
