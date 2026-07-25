@@ -659,7 +659,7 @@ The repository verifies the active token and expiry, records the attempt outcome
 ### 3. Contracts
 
 - Tier 1/2/3 default cadence is `15/30/60` minutes while every tier uses a 36-hour editorial lookback. Polling cadence and candidate window are independent: explicit lookback must be at least the collection interval, and omitted lookback derives the larger of the tier window and interval.
-- Official RSS/Atom feeds are the highest-authority path. The News API is an optional bounded primary and GDELT DOC is its fallback; when The News API is disabled or lacks a usable token, GDELT becomes the no-key primary. Hacker News Algolia and HotDaily are signal-only. Primary failure remains visible; missing or failed fallback is `reduced_redundancy`. The News API uses `/v1/news/all`, the provider's full live/historical article-search endpoint, consumes at most `budget.maxRequests` distinct rotating queries, requests at most three results per query, merges by observation identity, and caps the merged result at `budget.maxResults`; Chinese query groups request `zh,en` coverage. GDELT `startdatetime` / `enddatetime` use its required UTC `YYYYMMDDHHMMSS` form without ISO separators or suffixes.
+- Official RSS/Atom feeds are the highest-authority path. The News API is an optional bounded primary and GDELT DOC is its fallback; when The News API is disabled or lacks a usable token, GDELT becomes the no-key primary. Hacker News Algolia and HotDaily are signal-only. Primary failure remains visible; missing or failed fallback is `reduced_redundancy`. The News API uses `/v1/news/all`, the provider's full live/historical article-search endpoint, consumes at most `budget.maxRequests` distinct rotating queries, requests at most three results per query, merges by observation identity, and caps the merged result at `budget.maxResults`; Chinese query groups request `zh,en` coverage. It omits `categories`, because that provider field classifies the publishing source rather than the individual article and would suppress relevant AI reporting from general or business sources; curated AI queries plus original-page evidence and ranking remain the relevance boundary. GDELT `startdatetime` / `enddatetime` use its required UTC `YYYYMMDDHHMMSS` form without ISO separators or suffixes.
 - AI Daily has no Tavily runtime dependency. HotDaily is public/no-key and may be disabled with `AI_DAILY_HOTDAILY_ENABLED=false`. Its adapter keeps only the original title, URL, and community source identity, routes AI-relevant titles into one query group, and discards generated summaries, reasons, scores, value lights, and trend conclusions. HN, HotDaily, and GDELT candidates remain `leadOnly` until original-page evidence is ready.
 - Search and social results are candidates only. They become selectable only after original-page evidence is fetched and marked `READY`; `leadOnly` candidates cannot be promoted.
 - Safe fetch rejects URL credentials, unsupported schemes, internal hostnames, and non-public IPv4/IPv6 addresses. DNS results are checked before a pinned request, every redirect target is revalidated, and redirect destinations are checked against robots before their page is fetched.
@@ -695,11 +695,12 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Good: refreshing the manifest after a prior fetch keeps the feed's validators, so the next tick sends `If-None-Match` / `If-Modified-Since`; a `304` updates freshness without discarding the stored validators.
 - Good: a redirect reaches another public origin, that origin's robots policy is checked before its article request, and a denial stops extraction.
 - Base: The News API is disabled, so GDELT acts as the no-key primary while HN/HotDaily contribute lead-only signals; stable-source candidates remain and no provider is pinged merely to test configuration.
+- Bad: send `categories=tech,science` to The News API and silently exclude AI articles whose publishing source is categorized as general or business before BIAU can inspect the original evidence.
 - Bad: promote a GDELT/HN/HotDaily snippet directly to `SourceItem`, persist a provider response or HotDaily-generated summary in JSON, fetch a redirect before checking its robots policy, or update a selected representative without binding the run.
 
 ### 6. Tests Required
 
-- Run all seven fixture gates and assert deterministic candidates, bounded multi-query discovery, provider date/language parameters, token non-leakage, multi-signal order, HotDaily generated-field rejection, fallback attempts, evidence limits, current-run-only p95 freshness, duplicate reasons, score order, diversity, and selected event count.
+- Run all seven fixture gates and assert deterministic candidates, bounded multi-query discovery, The News API date/language parameters with no source-level `categories` filter, token non-leakage, multi-signal order, HotDaily generated-field rejection, fallback attempts, evidence limits, current-run-only p95 freshness, duplicate reasons, score order, diversity, and selected event count.
 - Run `npm.cmd run ai-daily:evidence-check` to cover conditional headers, `304`, and bounded JSON-LD publication-date extraction; keep regression fixtures for JSON source payloads, relative URLs, undated/out-of-window lead handling, and the bounded date-prioritized candidate budget.
 - `ai-daily:evidence-check` must also assert the pinned lookup callback returns an address array for `options.all=true` and a scalar address/family pair for the legacy branch; a local real-source smoke may be used for diagnosis, but is not part of deterministic CI.
 - Type-check the AI Daily scripts explicitly because `server:build` covers `server/src` but not every `server/scripts` entry.
@@ -774,6 +775,25 @@ return {
 ```
 
 The ingestion runner fetches the original URL separately; only a dated `READY` evidence document may clear `leadOnly`.
+
+#### Wrong: filter The News API by source category
+
+```ts
+url.searchParams.set('categories', 'tech,science')
+```
+
+This provider field classifies the source, so it can remove relevant AI reporting before BIAU's own evidence and relevance checks run.
+
+#### Correct: keep topic relevance in BIAU's evidence path
+
+```ts
+url.searchParams.set('search', curatedQuery)
+url.searchParams.set('search_fields', 'title,description,keywords')
+url.searchParams.set('published_after', formatIsoSeconds(windowStart))
+url.searchParams.set('published_before', formatIsoSeconds(windowEnd))
+```
+
+The adapter keeps the bounded curated query and publication window, then original-page evidence, ranking, and selection enforce the editorial quality floor.
 
 ## Scenario: Content Studio AI Daily Workspace And Flash Review
 

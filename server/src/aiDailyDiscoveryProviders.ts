@@ -77,7 +77,9 @@ export function createTheNewsApiDiscoveryAdapter(input: {
         url.searchParams.set('api_token', token)
         url.searchParams.set('search', query)
         url.searchParams.set('search_fields', 'title,description,keywords')
-        url.searchParams.set('categories', 'tech,science')
+        // The News API categories classify sources rather than individual
+        // articles. AI reporting also appears on general and business sources,
+        // so topic queries and the downstream evidence gate own relevance.
         url.searchParams.set('language', request.locale.toLowerCase().startsWith('zh') ? 'zh,en' : 'en')
         url.searchParams.set('published_after', formatIsoSeconds(request.windowStart))
         url.searchParams.set('published_before', formatIsoSeconds(request.windowEnd))

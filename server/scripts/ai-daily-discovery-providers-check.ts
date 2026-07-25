@@ -56,6 +56,7 @@ assertEqual(new Set(theNewsUrls.map((url) => new URL(url).searchParams.get('sear
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('api_token') === secretToken), 'The News API requests inject the token server-side')
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('limit') === '3'), 'The News API keeps each request result set bounded')
 assert(theNewsUrls.every((url) => new URL(url).searchParams.get('language') === 'en'), 'English discovery remains English-only')
+assert(theNewsUrls.every((url) => !new URL(url).searchParams.has('categories')), 'The News API does not exclude AI articles by source-level category')
 assertEqual(theNewsCandidates.length, 2, 'The News API merges and deduplicates multi-query candidates')
 assertEqual(theNewsCandidates[0]?.leadOnly, false, 'dated The News API result can advance after original-page evidence')
 assert(!JSON.stringify(theNewsCandidates).includes(secretToken), 'The News API token must not enter candidate data')
