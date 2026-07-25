@@ -69,24 +69,35 @@ export function createTheNewsApiDiscoveryAdapter(input: {
     slot: input.slot ?? 'primary',
     async discover(request) {
       if (!token) throw new AiDailyAdapterError('config_error')
-      const query = selectRotatingQuery(request)
-      const url = new URL(theNewsApiEndpoint)
-      url.searchParams.set('api_token', token)
-      url.searchParams.set('search', query)
-      url.searchParams.set('search_fields', 'title,description,keywords')
-      url.searchParams.set('categories', 'tech,science')
-      url.searchParams.set('language', request.locale.toLowerCase().startsWith('zh') ? 'zh' : 'en')
-      url.searchParams.set('published_after', formatIsoSeconds(request.windowStart))
-      url.searchParams.set('published_before', formatIsoSeconds(request.windowEnd))
-      url.searchParams.set('sort', 'published_at')
-      url.searchParams.set('limit', '3')
-      if (request.includeDomains.length > 0) url.searchParams.set('domains', request.includeDomains.join(','))
-      if (request.excludeDomains.length > 0) url.searchParams.set('exclude_domains', request.excludeDomains.join(','))
+      const candidates: AiDailyCandidateLeadInput[] = []
+      const seen = new Set<string>()
+      for (const query of selectBoundedRotatingQueries(request)) {
+        if (candidates.length >= request.budget.maxResults) break
+        const url = new URL(theNewsApiEndpoint)
+        url.searchParams.set('api_token', token)
+        url.searchParams.set('search', query)
+        url.searchParams.set('search_fields', 'title,description,keywords')
+        url.searchParams.set('categories', 'tech,science')
+        url.searchParams.set('language', request.locale.toLowerCase().startsWith('zh') ? 'zh,en' : 'en')
+        url.searchParams.set('published_after', formatIsoSeconds(request.windowStart))
+        url.searchParams.set('published_before', formatIsoSeconds(request.windowEnd))
+        url.searchParams.set('sort', 'published_at')
+        url.searchParams.set('limit', String(Math.max(1, Math.min(3, request.budget.maxResults - candidates.length))))
+        if (request.includeDomains.length > 0) url.searchParams.set('domains', request.includeDomains.join(','))
+        if (request.excludeDomains.length > 0) url.searchParams.set('exclude_domains', request.excludeDomains.join(','))
 
-      const payload = asRecord(await fetchPayload({ url: url.toString(), timeoutMs: request.budget.timeoutMs }))
-      return asArray(payload.data)
-        .map((value) => toTheNewsApiCandidate(value, request))
-        .filter((candidate): candidate is AiDailyCandidateLeadInput => candidate !== null)
+        const payload = asRecord(await fetchPayload({ url: url.toString(), timeoutMs: request.budget.timeoutMs }))
+        for (const value of asArray(payload.data)) {
+          const candidate = toTheNewsApiCandidate(value, request)
+          if (!candidate) continue
+          const dedupeKey = candidate.observationKey || candidate.originalUrl
+          if (seen.has(dedupeKey)) continue
+          seen.add(dedupeKey)
+          candidates.push(candidate)
+          if (candidates.length >= request.budget.maxResults) break
+        }
+      }
+      return candidates
     },
   }
 }
@@ -295,8 +306,15 @@ const hotDailyChinaTitlePattern = /(?:\bqwen\b|\bdeepseek\b|\bkimi\b|\bmoonshot\
 const hotDailyOpenSourceTitlePattern = /(?:\bopen[ -](?:source|weight)\b|\bhugging face\b|\bllama\b|\bmistral\b|开源\s*(?:ai|模型|大模型))/iu
 
 function selectRotatingQuery(request: AiDailyDiscoveryRequest) {
-  const index = Math.abs(hashText(request.queryGroup) + Math.floor(request.windowEnd.getTime() / (6 * 60 * 60_000)))
-  return request.queries[index % request.queries.length] ?? request.queries[0] ?? request.queryGroup
+  return selectBoundedRotatingQueries(request, 1)[0] ?? request.queryGroup
+}
+
+function selectBoundedRotatingQueries(request: AiDailyDiscoveryRequest, limit = request.budget.maxRequests) {
+  const queries = [...new Set(request.queries.map((query) => query.trim()).filter(Boolean))]
+  if (queries.length === 0) queries.push(request.queryGroup)
+  const start = Math.abs(hashText(request.queryGroup) + Math.floor(request.windowEnd.getTime() / (6 * 60 * 60_000))) % queries.length
+  const boundedCount = Math.max(0, Math.min(limit, request.budget.maxRequests, queries.length))
+  return Array.from({ length: boundedCount }, (_, offset) => queries[(start + offset) % queries.length]!)
 }
 
 function domainAllowed(value: string, request: AiDailyDiscoveryRequest) {
@@ -331,7 +349,7 @@ function formatIsoSeconds(value: Date) {
 }
 
 function formatGdeltDate(value: Date) {
-  return value.toISOString().replace(/[-:]/gu, '').replace(/\.\d{3}Z$/u, 'Z')
+  return value.toISOString().replace(/[-:T]/gu, '').slice(0, 14)
 }
 
 function hashText(value: string) {

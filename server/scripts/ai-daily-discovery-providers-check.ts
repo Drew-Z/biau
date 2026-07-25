@@ -10,7 +10,7 @@ import { assert, assertDeepEqual, assertEqual } from './ai-daily-check-helpers.j
 
 const request = (queryGroup: string): AiDailyDiscoveryRequest => ({
   queryGroup,
-  queries: ['AI model release official API'],
+  queries: ['AI model release official API', 'foundation model capability update', 'AI model deprecation official'],
   windowStart: new Date('2026-07-24T00:00:00.000Z'),
   windowEnd: new Date('2026-07-25T12:00:00.000Z'),
   locale: queryGroup === 'china-ai-releases' ? 'zh' : 'en',
@@ -20,41 +20,72 @@ const request = (queryGroup: string): AiDailyDiscoveryRequest => ({
 })
 
 const secretToken = 'fixture-token-that-must-not-leak'
-let theNewsUrl = ''
+const theNewsUrls: string[] = []
 const theNews = createTheNewsApiDiscoveryAdapter({
   token: secretToken,
   fetchPayload: async ({ url }) => {
-    theNewsUrl = url
+    theNewsUrls.push(url)
     return {
-      data: [{
-        uuid: 'news-1',
-        title: 'A new AI model API launches',
-        url: 'https://publisher.example.com/model-launch',
-        source: 'Publisher',
-        language: 'en',
-        published_at: '2026-07-25T08:00:00Z',
-        description: 'Aggregator description used only as lead metadata.',
-      }],
+      data: [
+        {
+          uuid: 'news-1',
+          title: 'A new AI model API launches',
+          url: 'https://publisher.example.com/model-launch',
+          source: 'Publisher',
+          language: 'en',
+          published_at: '2026-07-25T08:00:00Z',
+          description: 'Aggregator description used only as lead metadata.',
+        },
+        ...(theNewsUrls.length === 2 ? [{
+          uuid: 'news-2',
+          title: 'A second AI model API launches',
+          url: 'https://publisher.example.com/model-launch-2',
+          source: 'Publisher',
+          language: 'en',
+          published_at: '2026-07-25T09:00:00Z',
+          description: 'A second bounded lead.',
+        }] : []),
+      ],
     }
   },
 })
 const theNewsCandidates = await theNews.discover(request('frontier-model-releases'))
-assert(new URL(theNewsUrl).searchParams.get('api_token') === secretToken, 'The News API request injects its token server-side')
-assertEqual(theNewsCandidates.length, 1, 'The News API candidate projection')
+assertEqual(theNewsUrls.length, 2, 'The News API uses the bounded request budget across distinct queries')
+assertEqual(new Set(theNewsUrls.map((url) => new URL(url).searchParams.get('search'))).size, 2, 'The News API rotates without repeating a query')
+assert(theNewsUrls.every((url) => new URL(url).searchParams.get('api_token') === secretToken), 'The News API requests inject the token server-side')
+assert(theNewsUrls.every((url) => new URL(url).searchParams.get('limit') === '3'), 'The News API keeps each request result set bounded')
+assert(theNewsUrls.every((url) => new URL(url).searchParams.get('language') === 'en'), 'English discovery remains English-only')
+assertEqual(theNewsCandidates.length, 2, 'The News API merges and deduplicates multi-query candidates')
 assertEqual(theNewsCandidates[0]?.leadOnly, false, 'dated The News API result can advance after original-page evidence')
 assert(!JSON.stringify(theNewsCandidates).includes(secretToken), 'The News API token must not enter candidate data')
 
+const chinaNewsUrls: string[] = []
+await createTheNewsApiDiscoveryAdapter({
+  token: secretToken,
+  fetchPayload: async ({ url }) => {
+    chinaNewsUrls.push(url)
+    return { data: [] }
+  },
+}).discover(request('china-ai-releases'))
+assert(chinaNewsUrls.every((url) => new URL(url).searchParams.get('language') === 'zh,en'), 'Chinese discovery includes Chinese and English reporting')
+
+let gdeltUrl = ''
 const gdelt = createGdeltDiscoveryAdapter({
-  fetchPayload: async () => ({
-    articles: [{
-      title: 'AI infrastructure release',
-      url: 'https://research.example.com/infrastructure',
-      domain: 'research.example.com',
-      seendate: '20260725T070000Z',
-    }],
-  }),
+  fetchPayload: async ({ url }) => {
+    gdeltUrl = url
+    return {
+      articles: [{
+        title: 'AI infrastructure release',
+        url: 'https://research.example.com/infrastructure',
+        domain: 'research.example.com',
+        seendate: '20260725T070000Z',
+      }],
+    }
+  },
 })
 const gdeltCandidates = await gdelt.discover(request('ai-infrastructure'))
+assertEqual(new URL(gdeltUrl).searchParams.get('startdatetime'), '20260724000000', 'GDELT start date uses YYYYMMDDHHMMSS')
+assertEqual(new URL(gdeltUrl).searchParams.get('enddatetime'), '20260725120000', 'GDELT end date uses YYYYMMDDHHMMSS')
 assertEqual(gdeltCandidates[0]?.leadOnly, true, 'GDELT remains a lead until the original page is fetched')
 assertEqual(gdeltCandidates[0]?.snippet, null, 'GDELT snippets are not imported as evidence')
 

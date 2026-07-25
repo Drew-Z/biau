@@ -4,6 +4,7 @@ import { formatAiDailyApplicationDate } from './aiDailyScheduling.js'
 import {
   AiDailyAdapterError,
   buildAiDailyCollectionWindow,
+  calculateAiDailyTier1DiscoveryLags,
   normalizeAiDailyCandidateLead,
   runAiDailyDiscovery,
   type AiDailyCandidateLead,
@@ -565,9 +566,7 @@ async function finalizeAiDailyIngestionRunIfIdle(prisma: PrismaClient, runId: st
     lastFetchedAt: run.lastFetchedAt,
     newestPublishedAt,
     selectedEvidenceFetchedAt: fetchedAt,
-    tier1DiscoveryLagsMs: candidates
-      .filter((candidate) => candidate.sourceTier === 'TIER_1' && candidate.publishedAt)
-      .map((candidate) => Math.max(0, candidate.observedAt.getTime() - (candidate.publishedAt?.getTime() ?? candidate.observedAt.getTime()))),
+    tier1DiscoveryLagsMs: calculateAiDailyTier1DiscoveryLags(candidates, run.startedAt),
   }
   const qualified = prepareAiDailyEvidenceSelection({ candidates, freshness })
   await persistAiDailyDedupe(prisma, { runId, candidates: qualified.deduped })

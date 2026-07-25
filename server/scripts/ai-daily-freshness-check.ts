@@ -1,4 +1,4 @@
-import { evaluateAiDailyFreshness } from '../src/aiDailyIngestion.js'
+import { calculateAiDailyTier1DiscoveryLags, evaluateAiDailyFreshness } from '../src/aiDailyIngestion.js'
 import { aiDailyFixtureNow } from '../src/aiDailyIngestionFixtures.js'
 import { assert, assertEqual } from './ai-daily-check-helpers.js'
 
@@ -32,5 +32,27 @@ for (const gap of [
   assert(stale.gaps.includes(gap), `stale checkpoint should expose ${gap}`)
 }
 assert(!stale.ready, 'stale checkpoints must map to a gap outcome')
+
+const currentRunStartedAt = new Date('2026-07-17T23:30:00.000Z')
+const tier1DiscoveryLags = calculateAiDailyTier1DiscoveryLags([
+  {
+    sourceTier: 'TIER_1',
+    publishedAt: new Date('2026-07-17T20:00:00.000Z'),
+    observedAt: new Date('2026-07-17T23:50:00.000Z'),
+  },
+  {
+    sourceTier: 'TIER_1',
+    publishedAt: new Date('2026-07-17T23:35:00.000Z'),
+    observedAt: new Date('2026-07-17T23:50:00.000Z'),
+  },
+  {
+    sourceTier: 'TIER_2',
+    publishedAt: new Date('2026-07-17T23:40:00.000Z'),
+    observedAt: new Date('2026-07-17T23:50:00.000Z'),
+  },
+], currentRunStartedAt)
+assertEqual(tier1DiscoveryLags.length, 1, 'tier 1 p95 ignores historical lookback and non-tier-1 candidates')
+assertEqual(tier1DiscoveryLags[0], 15 * 60_000, 'tier 1 p95 measures only current-run publication discovery lag')
+assertEqual(calculateAiDailyTier1DiscoveryLags([], null).length, 0, 'missing run checkpoint cannot reuse historical lag')
 
 console.log('AI Daily freshness check passed')

@@ -50,6 +50,8 @@
 
 ## Latest Runtime Hardening
 
+- The first completed production run showed two acquisition defects rather than a model-quality failure: GDELT dates used an ISO-derived form that its DOC API rejects, and The News API spent only one request regardless of the curated query budget. GDELT now emits `YYYYMMDDHHMMSS`; The News API rotates through at most `maxRequests` distinct queries, merges/deduplicates bounded results, and uses `zh,en` for Chinese coverage. Deterministic fixtures assert the exact request shape without a provider call.
+- Tier 1 discovery P95 no longer treats every article in the 36-hour editorial lookback as a newly published item. Only Tier 1 candidates published on or after the durable run `startedAt` enter the current-run P95; historical evidence remains visible through collection age, evidence freshness, and end-to-end lag. The freshness fixture covers the separation.
 - Studio run events now expose a low-sensitive discovery/evidence diagnostic
   summary instead of dropping all persisted context or returning raw
   `metadataJson`. The summary is allowlisted to fixed provider ids/slots/

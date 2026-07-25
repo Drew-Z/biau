@@ -778,6 +778,22 @@ export interface AiDailyFreshnessResult {
   }
 }
 
+export function calculateAiDailyTier1DiscoveryLags(
+  candidates: Pick<AiDailyCandidateLead, 'sourceTier' | 'publishedAt' | 'observedAt'>[],
+  runStartedAt: Date | null,
+) {
+  const runStartedAtMs = runStartedAt?.getTime()
+  if (runStartedAtMs === undefined || Number.isNaN(runStartedAtMs)) return []
+  return candidates
+    .filter((candidate) => (
+      candidate.sourceTier === 'TIER_1'
+      && candidate.publishedAt !== null
+      && !Number.isNaN(candidate.publishedAt.getTime())
+      && candidate.publishedAt.getTime() >= runStartedAtMs
+    ))
+    .map((candidate) => Math.max(0, candidate.observedAt.getTime() - candidate.publishedAt!.getTime()))
+}
+
 export function evaluateAiDailyFreshness(input: AiDailyFreshnessInput): AiDailyFreshnessResult {
   const tier1CollectionAgeMs = ageMs(input.lastTier1CollectedAt, input.now)
   const discoveryAgeMs = ageMs(input.lastDiscoveredAt, input.now)
