@@ -176,6 +176,7 @@ async function main() {
     'ai-daily:compose',
     'ai-daily:resume',
     'ai-daily:contracts-check',
+    'ai-daily:studio-production-check',
     'ai-daily:manifest-check',
     'ai-daily:model-evaluation-check',
     'ai-daily:model-runtime-check',

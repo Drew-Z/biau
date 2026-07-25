@@ -12,6 +12,7 @@ import {
   loadAiDailyGenerationEvidencePack,
   queueAiDailyGenerationWork,
 } from './aiDailyRepository.js'
+import { aiDailyIngestionConfigVersion } from './aiDailyIngestionRunner.js'
 import { env } from './env.js'
 
 export const aiDailyLiveRunConfirmation = 'RUN_APPROVED_PRODUCTION_EDITION'
@@ -76,6 +77,16 @@ export async function queueAiDailyStudioProductionRun(
     throw new AiDailyStudioProductionError('ai-daily-issue-version-conflict')
   }
 
+  const latestIngestionRun = await prisma.aiDailyRun.findFirst({
+    where: { issueId: issue.id, profile: 'DEGRADED' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    select: { status: true, configVersion: true },
+  })
+  const ingestionIssues = summarizeAiDailyIngestionReadinessIssues(latestIngestionRun)
+  if (ingestionIssues.length > 0) {
+    throw new AiDailyStudioProductionError('ai-daily-generation-evidence-not-ready', { issues: ingestionIssues })
+  }
+
   let execution
   try {
     execution = await resolveAiDailyProductionGenerationExecution()
@@ -116,6 +127,16 @@ export async function queueAiDailyStudioProductionRun(
     created: queued.created,
     status: queued.work.status.toLowerCase().replaceAll('_', '-'),
   }
+}
+
+export function summarizeAiDailyIngestionReadinessIssues(
+  run: { status: string; configVersion: string } | null,
+) {
+  if (!run) return ['latest-ingestion-run-missing']
+  const issues: string[] = []
+  if (run.configVersion !== aiDailyIngestionConfigVersion) issues.push('latest-ingestion-config-stale')
+  if (run.status !== 'COMPLETED') issues.push('latest-ingestion-run-not-ready')
+  return issues
 }
 
 function summarizeEvidenceReadinessIssues(

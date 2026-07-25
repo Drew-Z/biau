@@ -72,6 +72,71 @@ The authenticated Studio product entry is `POST /studio/api/ai-daily/issues/:id/
 
 The live provider boundary is the OpenAI-compatible Responses API with a structured JSON response. Every runtime channel uses `protocol: "responses"`; Chat Completions is not an AI Daily fallback. The request deliberately omits optional sampling fields such as `temperature` because relay compatibility is not guaranteed. Runtime channels carry private base URLs and keys only in deployment environment; candidate records and approval bundles retain provider/failure-domain aliases, model identifiers, aggregate quality, latency, usage summaries, and hashes, never endpoints, credentials, prompts, source text, raw outputs, or raw provider errors.
 
+## Scenario: Studio live-run ingestion authorization
+
+### 1. Scope / Trigger
+
+- Trigger: a new ingestion contract or ranking version is deployed after an older run has already populated an Edition selection.
+- Goal: retained historical evidence remains auditable, but it cannot authorize a new production generation when the latest ingestion run is stale, active, failed, or completed with gaps.
+
+### 2. Signatures
+
+- Product entry: `POST /studio/api/ai-daily/issues/:id/live-run`.
+- Authorization helper: `summarizeAiDailyIngestionReadinessIssues(run)` in `server/src/aiDailyStudioProduction.ts`.
+- Database read: latest `AiDailyRun` for the Edition with `profile=DEGRADED`, ordered by `createdAt DESC, id DESC`.
+
+### 3. Contracts
+
+- The latest ingestion run must use the exported `aiDailyIngestionConfigVersion` and have status `COMPLETED` before selected evidence can authorize a production generation run.
+- `QUEUED`, `RUNNING`, `COMPLETED_WITH_GAPS`, and `FAILED` all fail closed. An older successful run does not override a newer non-ready run.
+- A failed refresh does not delete or rewrite historical selections. The generation boundary, rather than destructive cleanup, prevents those selections from being mistaken for current authorization.
+- The route returns only the existing stable `ai-daily-generation-evidence-not-ready` error plus bounded reason codes; run ids, provider payloads, endpoints, credentials, and raw database errors remain private.
+
+### 4. Validation & Error Matrix
+
+- No ingestion run -> `409 ai-daily-generation-evidence-not-ready` with `latest-ingestion-run-missing`.
+- Latest run uses an older config -> the same error with `latest-ingestion-config-stale`.
+- Latest run is not `COMPLETED` -> the same error with `latest-ingestion-run-not-ready`.
+- A stale and non-ready run reports both stable reasons.
+- Current completed ingestion still proceeds to the existing selected-evidence count, completeness, Tier 1, issue-version, production flag, and runtime-approval checks.
+
+### 5. Good / Base / Bad Cases
+
+- Good: the latest current-version ingestion completes without gaps, then a human-confirmed live run may proceed to the existing evidence checks.
+- Base: no current ingestion exists, so the Studio action remains blocked without mutating the Edition.
+- Bad: a V5 selection remains on the Edition, a V6 refresh completes with gaps, and the live-run action reuses the V5 selection. The latest-run gate must reject this case.
+
+### 6. Tests Required
+
+- Run `npm.cmd run ai-daily:studio-production-check` for missing, stale, active, completed-with-gaps, failed, and current-completed fixtures.
+- Keep the check in `ai-daily:contracts-check` and in the production-readiness command inventory.
+- The check is deterministic and must not access a provider, search service, deployed endpoint, or database.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+const evidencePack = await loadAiDailyGenerationEvidencePack(prisma, issue.id)
+if (evidencePack.gaps.length === 0) await queueAiDailyGenerationWork(...)
+```
+
+This can reuse an older selection after a newer ranking version has already failed closed.
+
+#### Correct
+
+```ts
+const latest = await prisma.aiDailyRun.findFirst({
+  where: { issueId: issue.id, profile: 'DEGRADED' },
+  orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+})
+if (summarizeAiDailyIngestionReadinessIssues(latest).length > 0) {
+  throw new AiDailyStudioProductionError('ai-daily-generation-evidence-not-ready')
+}
+```
+
+The current ingestion contract authorizes generation before retained evidence is considered.
+
 ## Scenario: Manual static role selection and optional model evaluation
 
 ### 1. Scope / Trigger
