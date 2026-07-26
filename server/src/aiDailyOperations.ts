@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client'
+import type { Prisma, PrismaClient } from '@prisma/client'
 
 const runStatuses = ['QUEUED', 'RUNNING', 'COMPLETED', 'COMPLETED_WITH_GAPS', 'FAILED_CONFIG', 'FAILED', 'CANCELLED'] as const
 const runStages = ['COLLECT', 'DISCOVER', 'FETCH', 'DEDUPE', 'GROUP', 'RANK', 'PROMOTE', 'EXTRACT_FACTS', 'COMPOSE', 'VERIFY', 'VALIDATE', 'DRAFT'] as const
@@ -7,6 +7,10 @@ const sourceHealthStatuses = ['UNKNOWN', 'HEALTHY', 'DEGRADED', 'FAILING'] as co
 const eventOutcomes = ['persisted', 'succeeded', 'failed', 'schema-rejected', 'quality-rejected', 'other'] as const
 const providerRoles = ['primary', 'fallback', 'stable', 'signal', 'manual', 'other'] as const
 export const aiDailyFailureCategories = ['config', 'provider', 'evidence', 'quality', 'infrastructure', 'stale-content'] as const
+export const aiDailyOperationsLatestRunOrderBy = [
+  { createdAt: 'desc' },
+  { id: 'desc' },
+] satisfies Prisma.AiDailyRunOrderByWithRelationInput[]
 const issueStatuses = [
   'SOURCE_COLLECTED',
   'EXTRACTED',
@@ -252,7 +256,7 @@ export async function loadAiDailyOperationsSnapshot(
     }),
     prisma.aiDailyRun.groupBy({ by: ['currentStage'], where: { status: 'RUNNING', currentStage: { not: null } }, _count: { _all: true } }),
     prisma.aiDailyRun.findFirst({
-      orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+      orderBy: aiDailyOperationsLatestRunOrderBy,
       select: { status: true, currentStage: true, endToEndLagMs: true, pipelineFreshnessAt: true },
     }),
     prisma.aiDailyWorkItem.groupBy({ by: ['status'], _count: { _all: true } }),

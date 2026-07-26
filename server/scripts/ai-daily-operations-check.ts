@@ -1,5 +1,6 @@
 import {
   aiDailyFailureCategories,
+  aiDailyOperationsLatestRunOrderBy,
   classifyAiDailyFailureCategory,
   emptyAiDailyOperationsSnapshot,
   renderAiDailyOperationsPrometheus,
@@ -12,6 +13,11 @@ const healthy = toAiDailyOperationsDiagnostics(emptyAiDailyOperationsSnapshot(no
 assertEqual(healthy.status, 'healthy', 'empty operations snapshot should remain healthy')
 assertEqual(healthy.alerts.length, 0, 'empty operations snapshot should have no alerts')
 assertEqual(aiDailyFailureCategories.join(','), 'config,provider,evidence,quality,infrastructure,stale-content', 'failure categories should remain stable')
+assertEqual(
+  JSON.stringify(aiDailyOperationsLatestRunOrderBy),
+  JSON.stringify([{ createdAt: 'desc' }, { id: 'desc' }]),
+  'latest run should follow immutable creation order instead of mutable audit order',
+)
 for (const [raw, expected] of [
   ['config_error', 'config'],
   ['ai-daily-provider-http-429', 'provider'],

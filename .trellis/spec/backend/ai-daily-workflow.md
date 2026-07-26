@@ -268,6 +268,7 @@ Only path incompatibility permits endpoint fallback; execution failures remain s
 ### Contract
 
 - `GET /studio/api/ai-daily/operations` and the optional Studio `/metrics` snapshot expose exactly six fixed failure categories: `config`, `provider`, `evidence`, `quality`, `infrastructure`, and `stale-content`.
+- The latest-run projection is defined by immutable creation order (`createdAt DESC, id DESC`). Reconciliation, audit, or historical repair updates must not promote an older run into latest-run freshness, lag, status, or alert metrics.
 - The category projection combines recent enabled-source errors (or source errors whose feed remains `DEGRADED` / `FAILING`), recent failed/retry work and failed runs, recent run events, active `NEEDS_MORE_EVIDENCE` issues, expired leases, and configured freshness-threshold breaches. Run/work/event history is bounded to 24 hours; a recovered source with only an old error is not an active category signal.
 - `FAILED_CONFIG` is always classified as `config`. Known provider/auth/rate-limit/invalid-response signals map to `provider`; evidence safety/fetch/review gaps map to `evidence`; schema/quality rejections map to `quality`; timeout/network/deadline/checkpoint/lease/runner failures map to `infrastructure`; explicit or derived freshness breaches map to `stale-content`.
 - Category counts are low-sensitive signal counts, not unique incidents. A single failure can leave more than one persisted signal. Unknown dynamic error strings are ignored and never become a Prometheus label.
