@@ -11,7 +11,6 @@ import type {
 import type { AssistantModelChannelSummary, PublicAssistantClaim, PublicAssistantRoute, PublicAssistantStatus } from './types.js'
 
 const PUBLIC_PLANNER_TIMEOUT_MS = 4_000
-const PUBLIC_ANSWER_TIMEOUT_MS = 7_000
 
 export function createPublicAssistantModel(): PublicAssistantModel {
   return {
@@ -68,7 +67,7 @@ export async function generatePublicAssistantDraft(input: {
   }))
   const result = await requestResponsesText({
     channel,
-    timeoutMs: Math.min(PUBLIC_ANSWER_TIMEOUT_MS, env.publicAssistantRequestTimeoutMs),
+    timeoutMs: Math.min(env.publicAssistantAnswerTimeoutMs, env.publicAssistantRequestTimeoutMs),
     signal: input.request.signal,
     system: [
       '你是 BIAU Port（泊岸）的公开网站研究助手。',

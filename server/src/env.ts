@@ -63,6 +63,7 @@ export const env = {
   aiDailyHotDailyEnabled: readBooleanWithDefault(process.env.AI_DAILY_HOTDAILY_ENABLED, true),
   assistantModelProtocol: readAssistantModelProtocol(process.env.ASSISTANT_MODEL_PROTOCOL),
   publicAssistantRequestTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS, 25000, 5000, 45000),
+  publicAssistantAnswerTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS, 20000, 5000, 30000),
   publicAssistantRateLimit: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_LIMIT, 20, 1, 120),
   publicAssistantRateWindowMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_WINDOW_MS, 60000, 10000, 3600000),
   publicAssistantRetentionDays: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RETENTION_DAYS, 30, 1, 30),

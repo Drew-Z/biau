@@ -35,6 +35,8 @@ services:
         value: "3000"
       - key: PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS
         value: "45000"
+      - key: PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS
+        value: "20000"
       - key: PUBLIC_ASSISTANT_RATE_LIMIT
         value: "20"
       - key: PUBLIC_ASSISTANT_RATE_WINDOW_MS
