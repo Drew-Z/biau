@@ -99,6 +99,31 @@
     "visibility": "public"
   },
   {
+    "id": "project:chatus",
+    "title": "Chatus｜邀请制私人 AI 工作台",
+    "summary": "部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、长期记忆、能力授权与可恢复流。 Chatus 是部署在 Cloudflare Workers 上的邀请制私人 AI 工作台，只提供受控网页体验，不对外分发公开 OpenAI-compatible API。 前端使用 React 19、TypeScript 和 PWA 能力；运行时使用 Cloudflare Worker、KV、Agents SDK 与 SQLite Durable Objects。 成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。 多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。 长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。 公开入口是 https://chatus.ciallobill.qzz.io；入口可达不代表访客拥有成员账号、访问码或完整能力。 主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。",
+    "href": "/projects/chatus",
+    "tags": [
+      "ai",
+      "AI 应用",
+      "main",
+      "重点展示",
+      "Cloudflare Agent / 多模型路由 / 会话与记忆 / 安全发布",
+      "React 19",
+      "TypeScript",
+      "Cloudflare Workers",
+      "Agents SDK",
+      "Durable Objects",
+      "KV",
+      "PWA",
+      "邀请制入口",
+      "会话级 Agent",
+      "首输出前回退",
+      "显式长期记忆"
+    ],
+    "visibility": "public"
+  },
+  {
     "id": "project:pet-workspace",
     "title": "AI 桌宠社区与生成管线",
     "summary": "仍在推进中的 AI 桌宠工程工作区，围绕 Android 桌宠社区、Community API、生成服务、人审发布、质量门禁和 App 安全契约组织。 AI 桌宠项目是进行中的多模块工程工作区，核心包括 Android 桌宠社区 App、Node Community API、Admin Review、Pet Generator 适配层、FastAPI 风格生成规则服务、可信 Worker、QA 门禁和人工审核发布链路。 Android 侧覆盖桌宠 shell、默认桌宠资产、桌面悬浮服务、生成 UI 状态、Community API client、pet.zip 导入请求构造和社区交互，不直接调用生成内核或 Agent。 Community API 是 App 唯一后端入口，包含 health、SLA、metrics、feed、community-home、approved pets、package download descriptor、wallet、check-in、submissions、import drafts、bundle validation、admin review 和 fantasy-pet proxy 等能力。 生成规则服务负责 app-safe job 创建、轮询、artifact 索引、不透明 downloadId、人工 review decision、package plan、pet.zip 构建、worker readiness 和内部 GA/Codex/QA 证据；机器证据不能替代人工视觉 accept。 质量证据包括 Node workspace tests、Android 单元测试、Community API routes/server/store/rate-limit/metrics/SLA/logging/postgres 测试、pet package contract 测试、追踪矩阵、结构化日志、Prometheus metrics 和 SLA 文档。 私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。 项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待正式签名包，debug 构建只作为内部验证信号，不提供占位下载。 Pet 项目详情页正文已经穿插 Android 首页、孵化桌宠和社区页截图，说明这些是公开展示当前工作面的证据；正式 APK 下载仍必须等待 release 构建、签名、SHA-256、版本说明、回归和人工批准。 最近一次 APK 发布门禁审计只找到 debug APK，没有 release APK/AAB 候选；公开下载继续关闭，后续需要正式构建、签名策略、校验摘要、版本说明、回归证据和人工确认。 当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。",
@@ -169,6 +194,31 @@
       "项目详情页",
       "内容审计",
       "公开端点检查"
+    ],
+    "visibility": "public"
+  },
+  {
+    "id": "project:anchor-learning",
+    "title": "Anchor Learning｜来源可溯源的 AI 学习代理",
+    "summary": "Flutter 本地优先学习助手，以结构化切分、精确 locator、引用核验和答案校验把文档转成可追溯练习；官网提供无后端、无实时 AI 的双语浏览器 Demo。 Anchor Learning (锚学) 是基于 Flutter、Riverpod 和 sqflite 的本地优先学习助手，核心设计原则是可溯源性优先与生成后验证。 支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 结构化切分并生成精确 locator 与 content hash。 题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。 Agent 学习模式支持长会话、检查点恢复、混合检索（BM25 + 语义）、苏格拉底式引导和编程练习生成。 核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。 已部署双语官网 https://anchor.playlab.eu.cc 与静态浏览器 Demo https://anchor.playlab.eu.cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。 浏览器 Demo 会在 `anchor.locale` 保存中英文偏好，在 `anchor.demo.progress.v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。 开源仓库是 https://github.com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。",
+    "href": "/projects/anchor-learning",
+    "tags": [
+      "ai",
+      "AI 应用",
+      "main",
+      "重点展示",
+      "Flutter 客户端 / 可溯源生成 / 本地优先 / 双语 Web Demo",
+      "Flutter",
+      "Dart",
+      "Riverpod",
+      "sqflite",
+      "Dio",
+      "Agent Runtime",
+      "Static Web Demo",
+      "精确来源定位",
+      "引用与答案双验",
+      "本地优先",
+      "浏览器引导 Demo"
     ],
     "visibility": "public"
   },

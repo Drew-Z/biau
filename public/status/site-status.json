@@ -1,10 +1,10 @@
 {
-  "checkedAt": "2026-07-26T11:03:39.530Z",
+  "checkedAt": "2026-07-26T20:26:13.527Z",
   "base": "https://biau.playlab.eu.cc",
   "ok": true,
   "summary": {
-    "total": 5,
-    "online": 4,
+    "total": 7,
+    "online": 6,
     "degraded": 1,
     "offline": 0,
     "unchecked": 0
@@ -22,9 +22,45 @@
       "note": "工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1008,
-      "checkedAt": "2026-07-26T11:03:39.541Z",
+      "durationMs": 784,
+      "checkedAt": "2026-07-26T20:26:13.535Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
+      "issueKind": "none",
+      "issues": []
+    },
+    {
+      "id": "chatus-entry",
+      "projectId": "chatus",
+      "projectTitle": "Chatus 私人 AI 工作台",
+      "label": "Chatus 邀请制工作台",
+      "url": "https://chatus.ciallobill.qzz.io",
+      "kind": "workbench",
+      "expectation": "login-gated",
+      "description": "私人 AI 工作台的登录与受限访客入口。",
+      "note": "入口可达只代表工作台登录面可访问，不代表成员账号、访问材料或完整 Agent 能力已向公众开放。",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 1415,
+      "checkedAt": "2026-07-26T20:26:14.320Z",
+      "finalUrl": "https://chatus.ciallobill.qzz.io/react-chat/",
+      "issueKind": "none",
+      "issues": []
+    },
+    {
+      "id": "anchor-learning-entry",
+      "projectId": "anchor-learning",
+      "projectTitle": "Anchor Learning 锚学",
+      "label": "Anchor Learning 浏览器 Demo",
+      "url": "https://anchor.playlab.eu.cc/app/",
+      "kind": "showcase",
+      "expectation": "static-site",
+      "description": "来源可溯源学习助手的双语官网与内置数据浏览器 Demo。",
+      "note": "L0 状态只代表浏览器 Demo 入口可达；3 套内置数据的答题与来源交互由独立 Playwright 验收记录支持，不代表 Flutter 导入、云同步或实时 AI 已在网页端开放。",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 700,
+      "checkedAt": "2026-07-26T20:26:15.735Z",
+      "finalUrl": "https://anchor.playlab.eu.cc/app/",
       "issueKind": "none",
       "issues": []
     },
@@ -40,8 +76,8 @@
       "note": "展示页已接入 BIAU Port / 泊岸标题与 favicon；入口可达代表展示页和截图可访问，正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 890,
-      "checkedAt": "2026-07-26T11:03:40.549Z",
+      "durationMs": 656,
+      "checkedAt": "2026-07-26T20:26:16.435Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issueKind": "none",
       "issues": []
@@ -58,8 +94,8 @@
       "note": "代码侧支持生产普通注册默认开放，但当前线上状态以 bootstrap synthetic 为准；登录页主品牌和后台侧栏已接入 BIAU Port / 泊岸外壳。",
       "status": "degraded",
       "httpStatus": 403,
-      "durationMs": 3956,
-      "checkedAt": "2026-07-26T11:03:41.439Z",
+      "durationMs": 1910,
+      "checkedAt": "2026-07-26T20:26:17.091Z",
       "finalUrl": "https://www.hidencloud.com/",
       "issueKind": "http_status",
       "issues": [
@@ -78,8 +114,8 @@
       "note": "游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 2023,
-      "checkedAt": "2026-07-26T11:03:45.396Z",
+      "durationMs": 478,
+      "checkedAt": "2026-07-26T20:26:19.001Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issueKind": "none",
       "issues": []
@@ -96,8 +132,8 @@
       "note": "展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；未批准阶段 APK 已撤下，公开下载等待正式 release 证据。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1106,
-      "checkedAt": "2026-07-26T11:03:47.419Z",
+      "durationMs": 655,
+      "checkedAt": "2026-07-26T20:26:19.479Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issueKind": "none",
       "issues": []
@@ -116,7 +152,7 @@
           "label": "核心公开路由",
           "status": "degraded",
           "description": "首页、项目集、博客、公开助手、站点地图和 robots 的 HTML/SEO 检查。",
-          "evidence": "最近一次 synthetic 检查：7/7 public routes returned expected responses；证据时间：2026-07-09T02:23:53.198Z；证据新鲜度：已过期（17 天前）。`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。",
+          "evidence": "最近一次 synthetic 检查：7/7 public routes returned expected responses；证据时间：2026-07-09T02:23:53.198Z；证据新鲜度：已过期（18 天前）。`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。",
           "cadence": "发布前或每日定时",
           "ownerHint": "主站脚本"
         },
@@ -126,7 +162,7 @@
           "label": "公开项目按钮与资料链接",
           "status": "degraded",
           "description": "检查首页项目卡片、项目详情按钮、正文资料来源链接和公开文档入口是否仍可访问。",
-          "evidence": "最近一次 synthetic 检查：34/34 public project links returned expected responses；证据时间：2026-07-09T02:23:53.547Z；证据新鲜度：已过期（17 天前）。`npm.cmd run public-links:check -- --write-status public/status/public-links-synthetic.json` 会生成低敏外链快照；快照只记录通过数量、失败数量和错误类别，不保存具体 URL。",
+          "evidence": "最近一次 synthetic 检查：34/34 public project links returned expected responses；证据时间：2026-07-09T02:23:53.547Z；证据新鲜度：已过期（18 天前）。`npm.cmd run public-links:check -- --write-status public/status/public-links-synthetic.json` 会生成低敏外链快照；快照只记录通过数量、失败数量和错误类别，不保存具体 URL。",
           "cadence": "外链或项目详情更新后",
           "ownerHint": "主站链接巡检"
         },
@@ -136,7 +172,7 @@
           "label": "公开助手 health / live chat gate",
           "status": "unchecked",
           "description": "默认只验证同域 `/api/health` 是否返回低敏 JSON；只有显式 opt-in 后才向 `/api/chat/public` 发送公开项目问题。",
-          "evidence": "最近一次 synthetic 检查：Assistant health returned valid JSON; live chat validation skipped by policy；证据时间：2026-07-09T02:23:53.198Z；证据新鲜度：已过期（17 天前）。`main-site:synthetic` 默认不会触发 live chat，避免无意模型测活；使用 `--assistant-chat` 或 `MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT=1` 后才检查 answer、citation 与 model/fallback 状态。",
+          "evidence": "最近一次 synthetic 检查：Assistant health returned valid JSON; live chat validation skipped by policy；证据时间：2026-07-09T02:23:53.198Z；证据新鲜度：已过期（18 天前）。`main-site:synthetic` 默认不会触发 live chat，避免无意模型测活；使用 `--assistant-chat` 或 `MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT=1` 后才检查 answer、citation 与 model/fallback 状态。",
           "cadence": "health 发布前或每日；live chat 仅在模型配置变更且获得批准后",
           "ownerHint": "assistant API"
         },
@@ -183,7 +219,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1008 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 784 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -238,6 +274,120 @@
         "线上工作台标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸；后续状态检查继续只验证公开安全能力。",
         "准备可回收低权限 demo 凭据后，通过 `LEGAL_RAG_SYNTHETIC_EMAIL` / `LEGAL_RAG_SYNTHETIC_PASSWORD` 重新运行 credentialed `legal-rag:synthetic`，确认问答、合同审查和质量面板是否为 online。",
         "如后续接入 Prometheus、Grafana 或 LLM tracing，只公开低敏聚合状态，不公开模型渠道、后台链接或真实用户数据。"
+      ]
+    },
+    {
+      "id": "chatus",
+      "title": "Chatus 私人 AI 工作台",
+      "category": "ai-workbench",
+      "summary": "Chatus 的公开可靠性边界是邀请制入口、session 隔离、会话状态和发布门禁，不公开成员或 provider 运营数据。",
+      "checks": [
+        {
+          "id": "chatus-entry",
+          "layer": "entry",
+          "label": "邀请制工作台入口",
+          "status": "online",
+          "description": "检查 Chatus 根入口是否响应并进入登录或受限访客工作区。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1415 ms。由 L0 入口检测自动合并；入口可达不代表成员账号或完整能力公开。",
+          "cadence": "每次生成状态页",
+          "ownerHint": "公开入口",
+          "relatedTargetId": "chatus-entry"
+        },
+        {
+          "id": "chatus-session-boundary",
+          "layer": "synthetic",
+          "label": "Session 与受限访客边界",
+          "status": "planned",
+          "description": "使用专用测试身份验证成员 session、访客能力收窄和撤销后的旧会话行为。",
+          "evidence": "主站不保存或运行访问材料；credentialed 检查只能留在 Chatus 自身的受控发布流程。",
+          "cadence": "鉴权或 guest 策略变更后",
+          "ownerHint": "Chatus CI"
+        },
+        {
+          "id": "chatus-stream-recovery",
+          "layer": "synthetic",
+          "label": "可恢复流与首输出前回退",
+          "status": "planned",
+          "description": "验证空流、畸形事件流、候选忙和首个可见输出后的禁止回退语义。",
+          "evidence": "仓库测试覆盖 provider 协调、流协议、工具输出和回退边界；主站不主动触发模型请求。",
+          "cadence": "流协议或 provider router 变更后",
+          "ownerHint": "Chatus protocol tests"
+        },
+        {
+          "id": "chatus-release-gate",
+          "layer": "observability",
+          "label": "精确版本发布门禁",
+          "status": "planned",
+          "description": "生产发布先完成前端、测试、类型检查和部署 dry-run，再按精确提交版本执行低敏 smoke。",
+          "evidence": "生产变更由 Chatus 独立 CI 所有；主站只展示公开入口与低敏技术边界。",
+          "cadence": "每次生产发布",
+          "ownerHint": "Chatus deploy workflow"
+        }
+      ],
+      "gates": [
+        "不得把真实访问码、成员身份、provider 配置、托管密钥或运营指标复制到主站状态数据。",
+        "不得用主动 completion 测活代替真实任务脱敏遥测；模型调用只在 Chatus 自身获得批准的测试边界内发生。"
+      ],
+      "nextActions": [
+        "持续检查邀请制入口的 HTTP 可达性与登录页面渲染。",
+        "鉴权、访客策略或流协议变更后，在 Chatus 独立 CI 中运行 credentialed synthetic，不在主站保存凭据。"
+      ]
+    },
+    {
+      "id": "anchor-learning",
+      "title": "Anchor Learning 锚学",
+      "category": "ai-workbench",
+      "summary": "Anchor 的公开可靠性重点是静态官网、双语偏好、内置数据答题、来源证据和零外部 Demo 请求。",
+      "checks": [
+        {
+          "id": "anchor-learning-entry",
+          "layer": "entry",
+          "label": "浏览器 Demo HTTP 入口",
+          "status": "online",
+          "description": "检查公开 `/app/` URL 是否返回可接受的 HTTP 响应。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 700 ms。由 L0 入口检测自动合并；它不验证官网内容、规范化重定向、答题交互或完整 Flutter 产品。",
+          "cadence": "每次生成状态页",
+          "ownerHint": "公开入口",
+          "relatedTargetId": "anchor-learning-entry"
+        },
+        {
+          "id": "anchor-learning-demo-flow",
+          "layer": "synthetic",
+          "label": "12 题浏览器学习流程",
+          "status": "online",
+          "description": "验证三套数据、单选/多选/判断、解释、locator、来源摘录、导师提示、进度恢复与重置。",
+          "evidence": "2026-07-27 生产 Playwright 在桌面、平板和手机视口完成 8 项流程与视觉检查。",
+          "cadence": "每次 Web 发布",
+          "ownerHint": "Anchor Playwright"
+        },
+        {
+          "id": "anchor-learning-no-external-requests",
+          "layer": "synthetic",
+          "label": "Demo 零外部数据请求",
+          "status": "online",
+          "description": "浏览器答题流程不得访问后端、上传服务、分析服务或 AI provider。",
+          "evidence": "生产浏览器检查按目标 origin 捕获所有请求；Pages 响应使用 `no-transform` 阻止边缘分析脚本注入。",
+          "cadence": "每次 Web 发布或 Cloudflare 配置变更后",
+          "ownerHint": "Anchor request audit"
+        },
+        {
+          "id": "anchor-learning-flutter-release",
+          "layer": "observability",
+          "label": "Flutter Private Alpha 发布证据",
+          "status": "planned",
+          "description": "Android Private Alpha 需要独立验证安装、升级、备份恢复、数据库迁移和正式构建。",
+          "evidence": "浏览器 Demo 的通过结果不能替代 Flutter 客户端发布门禁。",
+          "cadence": "每次 Android Alpha 发布",
+          "ownerHint": "Anchor mobile release"
+        }
+      ],
+      "gates": [
+        "浏览器 Demo 只能宣称打包数据与静态交互，不宣称实时 AI、文件导入、云同步或 Flutter Web parity。",
+        "任何真实模型验收都需要单独批准，当前主站和 Demo 回归不得发起 provider 调用。"
+      ],
+      "nextActions": [
+        "把生产 `/`、`/app/`、`/app/index.html` 和无外部请求检查保持在发布回归中。",
+        "Flutter 客户端按 Android Private Alpha 清单继续补齐安装、升级和本地数据迁移证据。"
       ]
     },
     {
@@ -319,7 +469,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和阶段包入口是否响应，并确认标题/favicon 归属泊岸展示体系。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1106 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 655 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -377,7 +527,7 @@
           "label": "App 展示页",
           "status": "degraded",
           "description": "检查 Pet App 静态展示页、截图和当前工作说明是否可访问。",
-          "evidence": "最近一次 synthetic 检查：Pet App showcase page and 4/4 screenshots returned expected responses；证据时间：2026-07-09T02:23:53.694Z；证据新鲜度：已过期（17 天前）。展示页已补 BIAU Port / 泊岸标题与 favicon；未确认公开签名包前不放真实下载。",
+          "evidence": "最近一次 synthetic 检查：Pet App showcase page and 4/4 screenshots returned expected responses；证据时间：2026-07-09T02:23:53.694Z；证据新鲜度：已过期（18 天前）。展示页已补 BIAU Port / 泊岸标题与 favicon；未确认公开签名包前不放真实下载。",
           "cadence": "展示页更新后",
           "ownerHint": "Pet showcase",
           "relatedTargetId": "pet-workspace-entry"
@@ -388,7 +538,7 @@
           "label": "APK 发布 gate",
           "status": "unchecked",
           "description": "检查正式 release 构建、签名、校验摘要、下载链接、回滚说明和隐私说明后再公开。",
-          "evidence": "最近一次 synthetic 检查：Only debug APK artifacts were found locally; public download remains gated.；证据时间：2026-07-09T02:23:53.694Z；证据新鲜度：已过期（17 天前）；formal public APK release is not approved; signing, checksum, scan/regression evidence, rollback note, and human approval are required。最近一次门禁审计由 pet synthetic 的 `apkGate` 记录；当前只发现 debug APK 时仍不公开下载，也不声明 APK 已发布。",
+          "evidence": "最近一次 synthetic 检查：Only debug APK artifacts were found locally; public download remains gated.；证据时间：2026-07-09T02:23:53.694Z；证据新鲜度：已过期（18 天前）；formal public APK release is not approved; signing, checksum, scan/regression evidence, rollback note, and human approval are required。最近一次门禁审计由 pet synthetic 的 `apkGate` 记录；当前只发现 debug APK 时仍不公开下载，也不声明 APK 已发布。",
           "cadence": "发布候选生成后",
           "ownerHint": "Release checklist"
         },
@@ -424,7 +574,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应，并确认 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属已同步。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2023 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 478 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"
@@ -435,7 +585,7 @@
           "label": "Web 试玩资源",
           "status": "degraded",
           "description": "检查每个公开试玩项目的 HTML、WASM/PCK 或导出资源是否可加载。",
-          "evidence": "最近一次 synthetic 检查：3/3 public pages, 6/6 playable pages, 36/36 discovered resources responded；证据时间：2026-07-09T02:23:54.344Z；证据新鲜度：已过期（17 天前）。`npm.cmd run playlab:synthetic` 会检查公开入口、游戏列表、First Tetris 详情页、公开试玩 index 和从 HTML 发现的 Godot Web 资源响应；缺少新发布批准时不会把未验证构建包装成已上线。",
+          "evidence": "最近一次 synthetic 检查：3/3 public pages, 6/6 playable pages, 36/36 discovered resources responded；证据时间：2026-07-09T02:23:54.344Z；证据新鲜度：已过期（18 天前）。`npm.cmd run playlab:synthetic` 会检查公开入口、游戏列表、First Tetris 详情页、公开试玩 index 和从 HTML 发现的 Godot Web 资源响应；缺少新发布批准时不会把未验证构建包装成已上线。",
           "cadence": "游戏导出后",
           "ownerHint": "Playlab static check"
         },
@@ -445,7 +595,7 @@
           "label": "移动端提示",
           "status": "degraded",
           "description": "检查移动端访问时是否清楚提示试玩限制、控制方式或推荐设备。",
-          "evidence": "最近一次 synthetic 检查：Found 5/5 mobile/control hint terms in public Playlab pages；证据时间：2026-07-09T02:23:54.344Z；证据新鲜度：已过期（17 天前）。`playlab:synthetic` 会从公开 Playlab 页面中检查移动、触屏、触控、多端和键盘等低风险提示文案。",
+          "evidence": "最近一次 synthetic 检查：Found 5/5 mobile/control hint terms in public Playlab pages；证据时间：2026-07-09T02:23:54.344Z；证据新鲜度：已过期（18 天前）。`playlab:synthetic` 会从公开 Playlab 页面中检查移动、触屏、触控、多端和键盘等低风险提示文案。",
           "cadence": "UI 改动后",
           "ownerHint": "UI regression"
         }

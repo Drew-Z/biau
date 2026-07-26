@@ -2899,6 +2899,12 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   z-index: 1;
 }
 
+.detail-hero-figure {
+  display: grid;
+  gap: var(--space-8);
+  margin: 0;
+}
+
 .detail-hero-image {
   display: block;
   overflow: hidden;
@@ -4013,6 +4019,13 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .studio-publish-list {
   display: grid;
   gap: var(--space-12, 12px);
+}
+
+.detail-hero-caption {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 .studio-form-fields {

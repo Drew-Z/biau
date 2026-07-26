@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Chatus Cloudflare Agent architecture</title>
+  <desc id="desc">The browser workspace connects to a Cloudflare Worker, per-member and per-conversation Durable Objects, shared KV configuration, and a coordinated provider pool.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f5f8f6}.shell{fill:#fff;stroke:#d5dfda;stroke-width:2}.green{fill:#e8f4ef;stroke:#89c9b2;stroke-width:2}.blue{fill:#edf5ff;stroke:#a9c8ef;stroke-width:2}.amber{fill:#fff6e8;stroke:#edc789;stroke-width:2}.rose{fill:#fff0f1;stroke:#e7b2b7;stroke-width:2}.title{fill:#17251f;font:700 42px Inter,"Microsoft YaHei",sans-serif}.sub{fill:#596a62;font:400 20px Inter,"Microsoft YaHei",sans-serif}.label{fill:#1c2c25;font:700 22px Inter,"Microsoft YaHei",sans-serif}.body{fill:#52645b;font:400 17px Inter,"Microsoft YaHei",sans-serif}.small{fill:#65766e;font:400 15px Inter,"Microsoft YaHei",sans-serif}.arrow{stroke:#7e9b8e;stroke-width:4;fill:none;stroke-linecap:round;stroke-linejoin:round}.dash{stroke:#a5b8af;stroke-width:3;fill:none;stroke-dasharray:8 9}.pill{fill:#fff;stroke:#cbd8d1;stroke-width:1.5}.pilltext{fill:#294239;font:600 15px Inter,"Microsoft YaHei",sans-serif}
+    </style>
+    <marker id="head" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#7e9b8e"/></marker>
+  </defs>
+  <rect class="bg" width="1440" height="810"/>
+  <rect x="64" y="52" width="1312" height="704" rx="24" class="shell"/>
+  <text x="108" y="116" class="title">Chatus: member-scoped Agent workspace</text>
+  <text x="108" y="154" class="sub">A private web surface separates session access, durable conversation state, and provider coordination.</text>
+
+  <rect x="106" y="238" width="230" height="170" rx="18" class="green"/>
+  <text x="136" y="284" class="label">Browser / PWA</text>
+  <text x="136" y="326" class="body">React workspace</text>
+  <text x="136" y="356" class="body">HTTPS + WebSocket</text>
+  <text x="136" y="386" class="body">Invite / guest session</text>
+
+  <path d="M336 323 H430" class="arrow" marker-end="url(#head)"/>
+  <rect x="430" y="218" width="260" height="210" rx="18" class="blue"/>
+  <text x="462" y="264" class="label">Cloudflare Worker</text>
+  <text x="462" y="306" class="body">Route + session guard</text>
+  <text x="462" y="336" class="body">Agent / API projection</text>
+  <text x="462" y="366" class="body">Request ID + redaction</text>
+  <rect x="462" y="388" width="94" height="28" rx="14" class="pill"/><text x="481" y="408" class="pilltext">Static assets</text>
+  <rect x="566" y="388" width="92" height="28" rx="14" class="pill"/><text x="589" y="408" class="pilltext">HTTP API</text>
+
+  <path d="M690 274 H778" class="arrow" marker-end="url(#head)"/>
+  <rect x="778" y="196" width="270" height="160" rx="18" class="green"/>
+  <text x="810" y="242" class="label">Member root state</text>
+  <text x="810" y="282" class="body">One root Agent per member</text>
+  <text x="810" y="312" class="body">Session index + memory</text>
+  <text x="810" y="338" class="small">Durable Object + SQLite</text>
+
+  <path d="M690 370 H778" class="arrow" marker-end="url(#head)"/>
+  <rect x="778" y="386" width="270" height="160" rx="18" class="amber"/>
+  <text x="810" y="432" class="label">Conversation Agent</text>
+  <text x="810" y="472" class="body">One Agent per conversation</text>
+  <text x="810" y="502" class="body">Messages + resumable stream</text>
+  <text x="810" y="528" class="small">Approval and branch state</text>
+
+  <path d="M1048 466 H1126" class="arrow" marker-end="url(#head)"/>
+  <rect x="1126" y="352" width="200" height="228" rx="18" class="rose"/>
+  <text x="1152" y="398" class="label">Provider pool</text>
+  <text x="1152" y="438" class="body">Priority routing</text>
+  <text x="1152" y="468" class="body">Concurrency lease</text>
+  <text x="1152" y="498" class="body">Pre-output fallback</text>
+  <text x="1152" y="528" class="body">Protocol adapters</text>
+  <text x="1152" y="558" class="small">No provider details are public</text>
+
+  <path d="M913 356 V386" class="arrow" marker-end="url(#head)"/>
+  <path d="M560 428 V584 H913 V546" class="dash"/>
+  <rect x="430" y="584" width="618" height="88" rx="18" class="shell"/>
+  <text x="462" y="620" class="label">Shared configuration boundary</text>
+  <text x="462" y="652" class="body">KV stores access policy and encrypted managed secrets; public pages expose neither values nor operational detail.</text>
+
+  <rect x="108" y="690" width="1218" height="42" rx="14" fill="#eef3f0" stroke="#d5dfda"/>
+  <text x="140" y="717" class="small">Public evidence uses synthetic fixtures. The live entry is invitation-only and does not distribute a public API proxy.</text>
+</svg>

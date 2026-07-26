@@ -10,6 +10,7 @@ export interface HeroProject {
   description: string
   poetry: string
   action: string
+  actionLabel?: string
   accent: CardAccent
   detailLink: string
   externalLink?: string
@@ -45,6 +46,27 @@ export const heroContent = {
       accent: 'signal',
       detailLink: '/projects/legal-rag',
       externalLink: 'https://legal-rag-web.onrender.com',
+    },
+    {
+      id: 'chatus',
+      title: 'Chatus 私人 AI 工作台',
+      description: '邀请制成员空间，以会话 Agent、长期记忆和多模型协调支撑持续工作',
+      poetry: '《让每段上下文都有停泊之处》',
+      action: 'INVITE',
+      actionLabel: '打开 Chatus 邀请制工作台',
+      accent: 'signal',
+      detailLink: '/projects/chatus',
+      externalLink: 'https://chatus.ciallobill.qzz.io',
+    },
+    {
+      id: 'anchor-learning',
+      title: 'Anchor Learning 锚学',
+      description: '把技术文档变成有来源、可校验、可继续的练习路径',
+      poetry: '《把答案重新系回原文》',
+      action: 'DEMO',
+      accent: 'preview',
+      detailLink: '/projects/anchor-learning',
+      externalLink: 'https://anchor.playlab.eu.cc/app/',
     },
     {
       id: 'pet-workspace',

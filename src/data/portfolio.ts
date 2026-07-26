@@ -56,6 +56,8 @@ export interface Project {
   status: ProjectStatus
   role: string
   image?: string
+  imageAlt?: string
+  imageCaption?: string
   stack: string[]
   highlights: string[]
   detailLink?: ProjectLink
@@ -302,6 +304,137 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: 'chatus',
+    title: 'Chatus｜邀请制私人 AI 工作台',
+    summary: '部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、长期记忆、能力授权与可恢复流。',
+    category: 'ai',
+    status: 'main',
+    role: 'Cloudflare Agent / 多模型路由 / 会话与记忆 / 安全发布',
+    image: '/images/projects/showcase/chatus-cover.png',
+    imageAlt: 'Chatus 私人 AI 工作台的合成桌面端会话界面',
+    imageCaption: '封面使用确定性合成会话数据，展示邀请制工作区的消息、附件和工具布局，不包含真实成员、线路或运营信息。',
+    stack: ['React 19', 'TypeScript', 'Cloudflare Workers', 'Agents SDK', 'Durable Objects', 'KV', 'PWA'],
+    highlights: ['邀请制入口', '会话级 Agent', '首输出前回退', '显式长期记忆'],
+    links: [externalLink('邀请制工作台', 'https://chatus.ciallobill.qzz.io')],
+    detailContent: {
+      overview: [
+        {
+          title: '把私人 AI 对话做成可持续工作的成员工作台',
+          body:
+            'Chatus 面向受信任成员提供网页工作区，而不是公开聊天 SaaS 或 OpenAI-compatible API 中转。成员可以创建和检索会话、使用多模型能力、维护显式长期记忆，并在允许的能力边界内调用工具；公开入口只展示登录或受限访客边界，不公开访问材料、服务商配置、成员数据和运营信息。',
+          visual: {
+            id: 'chatus-workspace-runtime',
+            type: 'screenshot',
+            title: '多轮工作区视觉测试',
+            description: '合成测试会话覆盖 Markdown、表格、代码块、附件、思考区与消息操作，用于验证复杂内容仍保持可读。',
+            image: '/images/projects/showcase/chatus-workspace.png',
+            alt: 'Chatus 合成会话工作区桌面端界面截图',
+            caption: '截图来自视觉测试夹具，用户、会话正文、附件名和线路名均为合成数据，不包含真实成员、模型凭据或运营记录。',
+            sourceLabel: '打开邀请制入口',
+            sourceUrl: 'https://chatus.ciallobill.qzz.io',
+          },
+        },
+        {
+          title: '公开入口不等于公开能力',
+          body:
+            '工作台入口可以公开访问，但成员能力仍受 session、配额和授权约束。受限访客入口即使开启，也只获得固定、收窄的模型能力，不继承成员的自带密钥、Skills、MCP、长期记忆、反馈、导出或上传能力；主站因此只提供“邀请制工作台”入口，不提供账号、访问码或绕过登录的演示说明。',
+        },
+      ],
+      workflow: [
+        {
+          title: '成员与会话分层',
+          items: [
+            '浏览器先建立成员或受限访客 session，再通过 Agent/WebSocket 通道进入工作区。',
+            '成员级根状态管理会话索引、长期记忆和清理状态；会话级 Agent 独立管理消息、流恢复、审批与分支关系。',
+            '编辑、重发、重新生成、继续生成和手动分支保留来源关系，并在多设备间同步。',
+            '能力在投影和执行时都会重新校验，撤销权限后旧会话不能继续调用被收回的工具。',
+          ],
+        },
+        {
+          title: '多模型路由与首输出前回退',
+          items: [
+            '逻辑模型映射到按优先级排列的 provider offering，候选忙时可以跳过，全部忙时才统一等待。',
+            '并发协调支持 exclusive、bounded 和 unlimited 三种模式，避免把供应方限额分散在单个请求里处理。',
+            '回退只允许发生在首个可见输出之前；一旦文本、推理或工具结果已对用户可见，就不会拼接另一条线路的输出。',
+            '空流、畸形事件流或只有终止标记的响应被视为协议失败，并由统一错误语义处理。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: 'Worker、Durable Objects 与 KV 的职责边界',
+          body:
+            'Cloudflare Worker 负责静态资源、路由、session guard、API 投影和请求编号；成员级 Durable Object 保存根状态，会话级 Agent 保存消息与可恢复流，独立协调边界负责 provider 并发租约。共享策略与加密后的托管凭据位于 KV，页面和读取 API 不回显明文。',
+          visual: {
+            id: 'chatus-agent-architecture',
+            type: 'architecture',
+            title: '成员级 Agent 与会话状态架构',
+            description: '展示浏览器、Worker、成员根状态、会话 Agent、共享配置和 provider 协调之间的职责划分。',
+            image: '/images/projects/showcase/chatus-architecture.png',
+            alt: 'Chatus Cloudflare Agent 与 Durable Objects 架构图',
+            caption: '结构图只描述公开可讨论的运行时边界，不包含真实服务商身份、endpoint、凭据、成员数据或生产配置值。',
+          },
+        },
+        {
+          title: '显式记忆而非隐形画像',
+          body:
+            '长期记忆是成员可查看、编辑和清空的文本模型，并与滚动会话摘要配合使用。这个设计让成员知道哪些偏好可能影响后续回答，也避免为了“看起来智能”而引入不可解释的隐式向量画像。',
+        },
+      ],
+      quality: [
+        {
+          title: '视觉、协议与部署门禁',
+          items: [
+            '前端检查覆盖桌面、边界宽度、手机和触控视口，验证工作区、受限访客和管理能力在不同尺寸下不溢出。',
+            '服务端测试覆盖路由、会话、provider 并发、流协议、工具审批、MCP、托管密钥、配额和部署配置。',
+            '生产发布只通过受控 CI 执行，先完成前端检查、测试、类型检查和部署 dry-run，再部署并按精确版本做 smoke。',
+            '可靠性数据只来自真实任务的脱敏遥测，不用主动 completion 请求伪造服务商健康度。',
+          ],
+          visual: {
+            id: 'chatus-memory-runtime',
+            type: 'screenshot',
+            title: '可见、可编辑的长期记忆',
+            description: '长期记忆抽屉让成员直接查看和维护稳定偏好，避免把用户画像隐藏在不可审查的后台流程里。',
+            image: '/images/projects/showcase/chatus-memory.png',
+            alt: 'Chatus 长期记忆编辑抽屉桌面端截图',
+            caption: '截图使用空白视觉测试账号和示例占位文案，展示记忆的可见与可编辑边界，不包含真实成员偏好。',
+            sourceLabel: '打开邀请制入口',
+            sourceUrl: 'https://chatus.ciallobill.qzz.io',
+          },
+        },
+      ],
+      limitations: [
+        {
+          title: '当前公开边界',
+          items: [
+            'Chatus 是邀请制工作台，入口可达不代表访客拥有成员账号或完整能力。',
+            '产品不对外分发公开 OpenAI-compatible API，也不在主站暴露私有源码地址、访问码、成员、服务商或运营数据。',
+            '受限访客能力是否开启由生产策略决定；主站不会把未确认的访客能力描述成可直接试用。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '持续演进方向',
+          items: [
+            '继续收紧成员能力授权、撤销后的会话一致性和多设备冲突处理。',
+            '扩充可恢复流、工具审批和 provider 协调的故障注入覆盖。',
+            '在不暴露用户正文和供应方身份的前提下完善低敏可靠性观测。',
+          ],
+        },
+      ],
+    },
+    assistantContext: [
+      'Chatus 是部署在 Cloudflare Workers 上的邀请制私人 AI 工作台，只提供受控网页体验，不对外分发公开 OpenAI-compatible API。',
+      '前端使用 React 19、TypeScript 和 PWA 能力；运行时使用 Cloudflare Worker、KV、Agents SDK 与 SQLite Durable Objects。',
+      '成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。',
+      '多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。',
+      '长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。',
+      '公开入口是 https://chatus.ciallobill.qzz.io；入口可达不代表访客拥有成员账号、访问码或完整能力。',
+      '主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。',
+    ],
+  },
+  {
     id: 'pet-workspace',
     title: 'AI 桌宠社区与生成管线',
     summary: '仍在推进中的 AI 桌宠工程工作区，围绕 Android 桌宠社区、Community API、生成服务、人审发布、质量门禁和 App 安全契约组织。',
@@ -313,7 +446,7 @@ export const projects: Project[] = [
     highlights: ['桌宠孵化', '社区审核', '不透明下载 ID', '人审发布'],
     links: [
       externalLink('App 展示页', '/pet-app-showcase/'),
-      externalLink('展示页源码', 'https://github.com/Drew-Z/gamer/tree/cursor-windows-migration/pet-app-showcase-site'),
+      externalLink('展示页源码', 'https://github.com/Drew-Z/gamer/tree/main/pet-app-showcase-site'),
       internalLink('生成管线文章', '/blog/pet-workspace-pipeline'),
     ],
     detailContent: {
@@ -854,29 +987,42 @@ export const projects: Project[] = [
   {
     id: 'anchor-learning',
     title: 'Anchor Learning｜来源可溯源的 AI 学习代理',
-    summary: '基于 Flutter 的本地优先 AI 学习系统，支持项目文档导入、语义切分、知识点提取、题目生成、Citation Verification、Question Validator 双重防幻觉和 Agent 长会话学习。',
+    summary: 'Flutter 本地优先学习助手，以结构化切分、精确 locator、引用核验和答案校验把文档转成可追溯练习；官网提供无后端、无实时 AI 的双语浏览器 Demo。',
     category: 'ai',
     status: 'main',
-    role: 'Flutter 客户端 / Agent 驱动 / 防幻觉机制 / 本地优先',
+    role: 'Flutter 客户端 / 可溯源生成 / 本地优先 / 双语 Web Demo',
     image: '/images/projects/showcase/anchor-learning-cover.png',
-    stack: ['Flutter', 'Drift', 'Dart', 'AI Agent', 'Citation Verification', 'Question Validator'],
-    highlights: ['来源可溯源', '防幻觉双验', '本地优先', 'Agent 长会话'],
+    imageAlt: 'Anchor Learning 双语浏览器 Demo 的可追溯答题界面',
+    imageCaption: '封面来自公开静态 Demo，使用内置教学数据展示答题、解释和来源证据，不代表完整 Flutter 客户端。',
+    stack: ['Flutter', 'Dart', 'Riverpod', 'sqflite', 'Dio', 'Agent Runtime', 'Static Web Demo'],
+    highlights: ['精确来源定位', '引用与答案双验', '本地优先', '浏览器引导 Demo'],
     links: [
       externalLink('官网', 'https://anchor.playlab.eu.cc'),
-      externalLink('GitHub', 'https://github.com/ciallo-bill/duoduo'),
-      internalLink('架构概览', '/blog/anchor-learning-architecture'),
+      externalLink('浏览器 Demo', 'https://anchor.playlab.eu.cc/app/'),
+      externalLink('GitHub', 'https://github.com/Drew-Z/anchor'),
     ],
     detailContent: {
       overview: [
         {
           title: '来源可溯源的 AI 学习代理系统',
           body:
-            'Anchor Learning (锚学) 不是简单的 AI 问答工具，而是围绕"每个知识点、每道题目都能追溯到源文档具体位置"设计的学习系统。通过 Citation Verification 和 Question Validator 双重验证机制，确保 AI 生成内容始终基于真实文档，不产生幻觉答案。',
+            'Anchor Learning (锚学) 不是简单的 AI 问答工具，而是围绕“知识点、练习题和解释都能追溯到源文档位置”设计的学习系统。生成链路要求保留 chunk ID、locator 和引用内容，再通过 Citation Verification 与 Question Validator 检查引用是否存在、证据是否支持答案；校验是降低幻觉的工程门禁，不承诺生成内容绝对不会出错。',
+          visual: {
+            id: 'anchor-demo-runtime',
+            type: 'screenshot',
+            title: '浏览器内的可追溯答题体验',
+            description: '静态 Demo 使用内置 Git 教学数据展示答题、解释、source evidence、进度和数据集切换。',
+            image: '/images/projects/showcase/anchor-demo-desktop.png',
+            alt: 'Anchor Learning 浏览器 Demo 桌面端答题界面截图',
+            caption: 'Demo 全程使用仓库内置教学数据，不上传文件、不访问后端，也不调用 AI provider；它展示证据交互而非完整 Flutter 功能。',
+            sourceLabel: '打开浏览器 Demo',
+            sourceUrl: 'https://anchor.playlab.eu.cc/app/',
+          },
         },
         {
           title: '本地优先，隐私保护',
           body:
-            '所有学习数据本地存储在 Drift SQLite 数据库，可选云同步。用户的学习记录、导入的项目文档、生成的题目和学习会话完全受控，不会被强制上传到云端。',
+            'Flutter 客户端通过 sqflite 和 repository 层保存来源、切分片段、题目、学习记录与检查点。Private Alpha 以 Android 和本地数据为主要支持边界；浏览器 Demo 则完全使用打包数据与 localStorage 进度，不上传用户文件。',
         },
       ],
       workflow: [
@@ -897,6 +1043,15 @@ export const projects: Project[] = [
             'Layer 3: Question Validator - 二次核验生成的答案是否与源文档一致，检查逻辑一致性。',
             '题目生成经过 KnowledgeExtractionTask → ConceptPrerequisiteTask → QuestionGenerationTask → CitationVerificationTask → QuestionValidator 完整流程。',
           ],
+          visual: {
+            id: 'anchor-traceability-flow',
+            type: 'data-flow',
+            title: '从源文档到可追溯练习的数据流',
+            description: '结构化切分先建立 locator，再由生成任务产出候选练习，引用核验与答案校验通过后才进入学习运行时。',
+            image: '/images/projects/showcase/anchor-learning-flow.png',
+            alt: 'Anchor Learning 文档切分、生成、校验与学习流程图',
+            caption: '流程图区分源文档、生成任务、两道验证门禁与本地学习状态；浏览器 Demo 只实现其中可公开演示的练习交互。',
+          },
         },
         {
           title: 'Agent 学习模式',
@@ -910,9 +1065,9 @@ export const projects: Project[] = [
       ],
       architecture: [
         {
-          title: 'Flutter + Drift 本地优先架构',
+          title: 'Flutter + sqflite 本地优先架构',
           body:
-            '使用 Flutter 构建跨平台客户端，Drift 作为本地 SQLite ORM。数据模型包括 Source (文档)、SourceChunk (切分片段)、KnowledgePoint (知识点)、Question (题目)、LearningSession (学习会话) 和 AgentCheckpoint (检查点)。',
+            '客户端使用 Flutter、Riverpod 与 sqflite repository 组织本地状态和 SQLite 持久化。领域对象覆盖来源文档、切分片段、知识点、题目、学习会话和 Agent 检查点；Private Alpha 当前以 Android 为受支持发布目标，不把尚未验收的平台写成正式能力。',
         },
         {
           title: 'AI 服务层设计',
@@ -933,11 +1088,22 @@ export const projects: Project[] = [
             'Question Validator 检查答案与 citedChunks 的一致性。',
             'Agent 回答必须基于检索到的知识库内容，不能凭空生成。',
           ],
+          visual: {
+            id: 'anchor-demo-evidence-tablet',
+            type: 'screenshot',
+            title: '平板端解释与来源证据',
+            description: '响应式 Demo 在平板宽度下继续同屏展示答案反馈、解释、locator 与来源摘录。',
+            image: '/images/projects/showcase/anchor-demo-tablet.png',
+            alt: 'Anchor Learning 平板端来源证据与解释界面截图',
+            caption: '截图中的 locator 指向内置 Git 教学样例，不是本机路径或私有仓库；页面状态由版本化 localStorage 进度恢复。',
+            sourceLabel: '打开浏览器 Demo',
+            sourceUrl: 'https://anchor.playlab.eu.cc/app/',
+          },
         },
         {
           title: '数据完整性',
           items: [
-            'Drift 数据库提供类型安全的数据访问。',
+            'sqflite repository 层集中管理本地 SQLite 数据访问。',
             'Content Hash 确保文档变更可检测。',
             'AgentCheckpoint 持久化学习状态，支持会话恢复。',
           ],
@@ -947,10 +1113,10 @@ export const projects: Project[] = [
         {
           title: '当前边界',
           items: [
-            '需要用户自行配置 AI 模型 API（如 OpenAI、Claude 等）。',
-            '大型项目导入和题目生成可能耗时较长。',
-            '移动端 UI 和交互体验仍在持续优化中。',
-            '云同步功能为可选特性，当前以本地存储为主。',
+            'Flutter 客户端的 AI 生成能力需要用户自行配置兼容服务，模型输出仍需引用与答案校验，不把 provider 成功等同于内容可信。',
+            '当前发布证据以 Android Private Alpha 为主，iOS、桌面和 Flutter Web 不属于已支持发布面。',
+            '官网 `/app/` 是使用 3 套内置数据、12 道题目的静态引导 Demo，不包含导入、登录、云同步、真实模型或完整 Flutter 应用。',
+            '大型项目导入、语义切分和题目生成可能耗时，仍需要进度反馈、取消和增量恢复策略。',
           ],
         },
       ],
@@ -958,23 +1124,24 @@ export const projects: Project[] = [
         {
           title: '后续优化方向',
           items: [
-            '优化移动端 UI 和学习体验。',
-            '增强 Agent 学习模式的引导能力。',
-            '补充更多题型和学习模式。',
-            '完善云同步和多设备协同。',
-            '增加学习数据分析和进度可视化。',
+            '继续完成 Android Private Alpha 的安装、升级、备份、恢复和发布证据。',
+            '增强 Agent 学习模式的引导、检查点恢复和失败可解释性。',
+            '补充更多题型、学习模式与真实文档导入的正确性评测。',
+            '在明确数据迁移与冲突策略后再扩展云同步和多设备协同。',
+            '保持静态 Demo 与 Flutter 产品边界一致，新增公开能力时同步更新无外部请求测试。',
           ],
         },
       ],
     },
     assistantContext: [
-      'Anchor Learning (锚学) 是基于 Flutter 的本地优先 AI 学习代理系统，核心设计原则是可溯源性优先和防幻觉机制。',
-      '支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 语义切分，生成精确 locator（如 README.md:## 架构设计）。',
-      '题目生成经过 Citation Verification 和 Question Validator 双重验证，确保 AI 生成内容基于真实文档，不产生幻觉。',
+      'Anchor Learning (锚学) 是基于 Flutter、Riverpod 和 sqflite 的本地优先学习助手，核心设计原则是可溯源性优先与生成后验证。',
+      '支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 结构化切分并生成精确 locator 与 content hash。',
+      '题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。',
       'Agent 学习模式支持长会话、检查点恢复、混合检索（BM25 + 语义）、苏格拉底式引导和编程练习生成。',
-      '技术栈：Flutter + Drift (SQLite ORM)，数据本地存储，可选云同步，隐私优先。',
       '核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。',
-      '已部署官网 https://anchor.playlab.eu.cc，开源仓库 https://github.com/ciallo-bill/duoduo。',
+      '已部署双语官网 https://anchor.playlab.eu.cc 与静态浏览器 Demo https://anchor.playlab.eu.cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。',
+      '浏览器 Demo 会在 `anchor.locale` 保存中英文偏好，在 `anchor.demo.progress.v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。',
+      '开源仓库是 https://github.com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。',
     ],
   },
   {

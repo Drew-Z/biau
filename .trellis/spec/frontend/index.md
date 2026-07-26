@@ -11,6 +11,7 @@ These guidelines describe the actual React/Vite/custom CSS frontend in this repo
 | [Hook Guidelines](./hook-guidelines.md) | Custom hook patterns, browser API guards, effect cleanup | Filled |
 | [State Management](./state-management.md) | Local state, route-derived state, persistent UI state, static data | Filled |
 | [Quality Guidelines](./quality-guidelines.md) | Lint/build gates, UI rules, public data safety | Filled |
+| [Project Showcase Integration](./project-showcase-integration.md) | Cross-layer project, evidence, status, assistant, and generated-artifact contract | Filled |
 | [Type Safety](./type-safety.md) | Type organization, literal unions, runtime checks | Filled |
 
 ## Pre-Development Checklist
@@ -23,6 +24,7 @@ Before frontend edits:
 - Read [Hook Guidelines](./hook-guidelines.md) before adding or editing `src/hooks/*`.
 - Read [Type Safety](./type-safety.md) before changing `src/data/*`, API payloads, or unions/records.
 - Read [Quality Guidelines](./quality-guidelines.md) before declaring the work complete.
+- Read [Project Showcase Integration](./project-showcase-integration.md) when adding a project, external demo, status target, technical dossier, or assistant knowledge.
 
 ## Local Rules Imported
 

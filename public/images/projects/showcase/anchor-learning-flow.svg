@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="810" viewBox="0 0 1440 810" role="img" aria-labelledby="title desc">
+  <title id="title">Anchor Learning traceability and validation flow</title>
+  <desc id="desc">Documents become located chunks, knowledge and questions, then pass citation and answer validation before local-first practice and checkpointed learning.</desc>
+  <defs>
+    <style>
+      .bg{fill:#f5f8f6}.shell{fill:#fff;stroke:#d6dfda;stroke-width:2}.mint{fill:#e7f7ef;stroke:#8acbab;stroke-width:2}.blue{fill:#edf4ff;stroke:#a9c4ea;stroke-width:2}.yellow{fill:#fff8df;stroke:#e8cd75;stroke-width:2}.pink{fill:#fff0f1;stroke:#e2aeb2;stroke-width:2}.title{fill:#10221a;font:700 42px Inter,"Microsoft YaHei",sans-serif}.sub{fill:#596a62;font:400 20px Inter,"Microsoft YaHei",sans-serif}.label{fill:#152a21;font:700 21px Inter,"Microsoft YaHei",sans-serif}.body{fill:#52645b;font:400 16px Inter,"Microsoft YaHei",sans-serif}.small{fill:#697970;font:400 14px Inter,"Microsoft YaHei",sans-serif}.arrow{stroke:#78988a;stroke-width:4;fill:none;stroke-linecap:round}.guard{stroke:#d0a63d;stroke-width:4;fill:none;stroke-linecap:round}.pill{fill:#fff;stroke:#c9d5cf;stroke-width:1.5}.pilltext{fill:#294239;font:600 14px Inter,"Microsoft YaHei",sans-serif}
+    </style>
+    <marker id="head" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#78988a"/></marker>
+    <marker id="guardhead" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#d0a63d"/></marker>
+  </defs>
+  <rect class="bg" width="1440" height="810"/>
+  <rect x="64" y="54" width="1312" height="700" rx="24" class="shell"/>
+  <text x="108" y="118" class="title">Anchor Learning: traceable practice pipeline</text>
+  <text x="108" y="156" class="sub">Every generated exercise keeps a route back to bundled or imported source material.</text>
+
+  <rect x="102" y="244" width="208" height="170" rx="18" class="blue"/>
+  <text x="132" y="288" class="label">Source documents</text>
+  <text x="132" y="328" class="body">Markdown / code</text>
+  <text x="132" y="358" class="body">Content hash</text>
+  <text x="132" y="388" class="body">Incremental import</text>
+  <path d="M310 329 H372" class="arrow" marker-end="url(#head)"/>
+
+  <rect x="372" y="224" width="230" height="210" rx="18" class="mint"/>
+  <text x="402" y="268" class="label">SemanticChunker</text>
+  <text x="402" y="308" class="body">Structure-aware chunks</text>
+  <text x="402" y="338" class="body">Stable chunk ID</text>
+  <text x="402" y="368" class="body">Precise locator</text>
+  <rect x="402" y="390" width="166" height="28" rx="14" class="pill"/><text x="420" y="410" class="pilltext">file.md#section</text>
+  <path d="M602 329 H664" class="arrow" marker-end="url(#head)"/>
+
+  <rect x="664" y="224" width="230" height="210" rx="18" class="blue"/>
+  <text x="694" y="268" class="label">Generation tasks</text>
+  <text x="694" y="308" class="body">Knowledge extraction</text>
+  <text x="694" y="338" class="body">Prerequisite mapping</text>
+  <text x="694" y="368" class="body">Question generation</text>
+  <text x="694" y="398" class="small">Task boundaries stay testable</text>
+  <path d="M894 329 H956" class="guard" marker-end="url(#guardhead)"/>
+
+  <rect x="956" y="204" width="268" height="250" rx="18" class="yellow"/>
+  <text x="986" y="250" class="label">Validation gates</text>
+  <text x="986" y="294" class="body">1. Citation Verification</text>
+  <text x="1008" y="322" class="small">Does the cited chunk exist?</text>
+  <text x="986" y="362" class="body">2. Question Validator</text>
+  <text x="1008" y="390" class="small">Does evidence support the answer?</text>
+  <text x="986" y="428" class="small">Failure stays reviewable, not silently trusted.</text>
+
+  <path d="M1090 454 V528" class="arrow" marker-end="url(#head)"/>
+  <rect x="826" y="528" width="398" height="138" rx="18" class="mint"/>
+  <text x="858" y="572" class="label">Local-first learning runtime</text>
+  <text x="858" y="610" class="body">sqflite repositories + learning progress</text>
+  <text x="858" y="640" class="body">Hybrid search + Agent checkpoint recovery</text>
+
+  <path d="M826 598 H734" class="arrow" marker-end="url(#head)"/>
+  <rect x="372" y="528" width="362" height="138" rx="18" class="pink"/>
+  <text x="404" y="572" class="label">Human-visible evidence</text>
+  <text x="404" y="610" class="body">Answer, explanation, locator, excerpt</text>
+  <text x="404" y="640" class="body">Learner can inspect and reset progress</text>
+
+  <rect x="108" y="692" width="1216" height="40" rx="14" fill="#eef3f0" stroke="#d6dfda"/>
+  <text x="140" y="718" class="small">The browser demo uses bundled fixtures only; it demonstrates the evidence loop, not full Flutter, upload, cloud sync, or live AI.</text>
+</svg>

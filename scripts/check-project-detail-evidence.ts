@@ -24,6 +24,7 @@ const MIN_VISUAL_CAPTION_CHARS = 30
 const MIN_ASSET_WIDTH = 320
 const MIN_ASSET_HEIGHT = 240
 const MIN_ASSET_AREA = 120_000
+const COVER_EVIDENCE_PROJECT_IDS = new Set(['chatus', 'anchor-learning'])
 const REQUIRED_DETAIL_GROUPS: ProjectDetailContentKey[] = [
   'overview',
   'workflow',
@@ -120,6 +121,16 @@ function checkProjectShell(project: Project) {
   for (const item of project.assistantContext ?? []) checkPublicText(project.id, 'assistantContext item', item)
 
   checkAsset(project.id, 'hero image', project.image)
+  checkPublicText(project.id, 'hero image alt', project.imageAlt)
+  checkPublicText(project.id, 'hero image caption', project.imageCaption)
+  if (COVER_EVIDENCE_PROJECT_IDS.has(project.id)) {
+    if (!project.imageAlt?.trim() || project.imageAlt.trim().length < MIN_VISUAL_ALT_CHARS) {
+      fail(project.id, 'hero image needs visitor-readable alt text')
+    }
+    if (!project.imageCaption?.trim() || project.imageCaption.trim().length < MIN_VISUAL_CAPTION_CHARS) {
+      fail(project.id, 'hero image needs a public-safe caption')
+    }
+  }
   for (const link of project.links) checkLink(project.id, link, 'project')
   if (project.detailLink) checkLink(project.id, project.detailLink, 'detailLink')
 }

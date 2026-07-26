@@ -121,19 +121,22 @@ export function ProjectDetailPage() {
       </header>
 
       {project.image && (
-        <a
-          href={project.image}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="detail-hero-image"
-          aria-label={`打开 ${project.title} 项目截图原图`}
-        >
-          <ResponsiveImage src={project.image} alt={project.title} loading="eager" />
-          <span className="detail-hero-image-action" aria-hidden="true">
-            <LinkIcon size={16} aria-hidden />
-            <span>打开原图</span>
-          </span>
-        </a>
+        <figure className="detail-hero-figure">
+          <a
+            href={project.image}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="detail-hero-image"
+            aria-label={`打开 ${project.title} 项目截图原图`}
+          >
+            <ResponsiveImage src={project.image} alt={project.imageAlt ?? project.title} loading="eager" />
+            <span className="detail-hero-image-action" aria-hidden="true">
+              <LinkIcon size={16} aria-hidden />
+              <span>打开原图</span>
+            </span>
+          </a>
+          {project.imageCaption && <figcaption className="detail-hero-caption">{project.imageCaption}</figcaption>}
+        </figure>
       )}
 
       <DetailReadingGuide items={readingItems} />

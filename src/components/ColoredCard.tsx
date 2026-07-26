@@ -44,7 +44,7 @@ export function ColoredCard({ project, index, projectCount, loopCopy = false, on
         <button
           className="carousel-action"
           type="button"
-          aria-label={`打开外部项目页面：${project.title}`}
+          aria-label={project.actionLabel ?? `打开外部项目页面：${project.title}`}
           onClick={(event) => {
             event.stopPropagation()
             onActionClick()
