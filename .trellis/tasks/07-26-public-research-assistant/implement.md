@@ -80,6 +80,15 @@ No validation command may ping, diagnose, catalog-probe, or otherwise test a liv
 - Cloudflare/Public, Studio, and public-only RAG health endpoints returned HTTP 200 after retirement. The RAG public collection remained ready with 27 documents and 53 chunks.
 - Remaining retirement gates are limited to deleting the suspended Render Operator service and the obsolete internal Qdrant collection. Supabase Data API grants/RLS hardening is tracked separately because it changes database access policy rather than retired data.
 
+## Supabase server-only access hardening acceptance (2026-07-26)
+
+- Confirmed the repository has no browser Supabase client and the recent Supabase API log window contained infrastructure health traffic rather than application `/rest/v1` data access.
+- Added reviewed `preflight/apply/verify` scripts under `scripts/operations/postgres/data-api-hardening/`, with database fingerprints, an exact 25-table allowlist, an explicit confirmation phrase, owner/BYPASSRLS guards, default-ACL checks, and protected row-count verification.
+- Proved the flow against an isolated PostgreSQL 17 restore with Supabase-equivalent roles and grants before running the approved production transaction.
+- Enabled RLS on all 25 remaining application tables, revoked public schema/table/sequence/function access from `anon` and `authenticated`, retained `service_role` schema usage, and removed unsafe `postgres` default privileges for future public objects.
+- Fixed the `search_path` of both AI Daily audit trigger functions and revoked their public execution. Supabase security advisors now report only the intentional INFO state that server-only RLS tables have no Data API policies; no security WARN or critical RLS-disabled advisory remains.
+- Public, Studio, and RAG health endpoints returned HTTP 200 after the change. Public Assistant and Studio persisted row counts remained unchanged.
+
 ## Review and rollback points
 
 - Keep the existing public response fields additive until the new widget is deployed; remove legacy fields only in the final cleanup.

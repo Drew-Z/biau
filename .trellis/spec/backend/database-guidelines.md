@@ -27,6 +27,17 @@ When a managed pooler requires Prisma 7 / libpq compatibility, configure the pro
 - AI Daily issues.
 - Publish Export records.
 
+### Supabase server-only boundary
+
+The current Supabase `public` schema is not a browser Data API. All application access goes through server-side Prisma using the database owner.
+
+- Every reviewed application table has RLS enabled with no public policy; this is an intentional default-deny state.
+- `anon` and `authenticated` have no public schema, table, sequence, or function privileges.
+- `service_role` retains schema usage and bypasses RLS, but frontend bundles must never receive its key.
+- The `postgres` default ACL must not grant future public tables, sequences, or functions to Data API roles or `PUBLIC` function execution.
+- Reintroducing REST, GraphQL, Realtime, Edge Function, browser, or mobile access requires a separate access design with explicit object grants and least-privilege policies.
+- Production checks use the reviewed scripts under `scripts/operations/postgres/data-api-hardening/`; do not mix access-policy changes into data-retirement SQL.
+
 ## Studio Boundary
 
 - `ASSISTANT_SERVICE_MODE=studio` mounts only `/health` and `/studio/api/*`.

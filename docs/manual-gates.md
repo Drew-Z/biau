@@ -58,9 +58,15 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 ## Supabase Data API 权限加固
 
-生产检查确认剩余 25 张 `public` 表未启用 RLS，且 `anon` / `authenticated` 当前拥有完整表权限。当前仓库未使用浏览器端 Supabase client，应用通过服务端 Prisma 直连数据库；因此优先评估撤销 Data API 角色权限和默认权限，而不是无 policy 地批量启用 RLS。
+生产权限加固已于 2026-07-26 完成。仓库未使用浏览器端 Supabase client，应用通过服务端 Prisma 直连数据库；最近 API 日志也没有站点 `/rest/v1` 数据访问。
 
-这是独立的高优先级人工批准项。执行前必须确认没有仓库外的 Data API consumer；不得把权限变更混入 Operator 退役 SQL，也不得直接启用 RLS 后让现有访问静默失败。
+- 剩余 25 张 `public` 表已全部启用 RLS。
+- `anon` / `authenticated` 已失去 public schema、table、sequence 与 function 权限。
+- `postgres` 创建未来 public 对象时不再自动授予 Data API 权限。
+- 两个 AI Daily 审计触发器函数已固定 `search_path` 并撤销公开执行。
+- Public、Studio 与 RAG 健康检查通过，受保护数据计数未变化。
+
+当前无 RLS policy 是服务器专用数据库的有意默认拒绝状态。未来如果引入 Supabase REST、GraphQL、Realtime、Edge Function 或浏览器/mobile client，必须先新建独立 Trellis 任务，按最小权限恢复 schema/object grant 并设计逐表 RLS policy；不得直接恢复 Supabase 的全表默认授权。完整 runbook 位于 `scripts/operations/postgres/data-api-hardening/README.md`。
 
 ## Content Studio / AI Daily
 
