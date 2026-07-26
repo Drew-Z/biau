@@ -11,7 +11,7 @@
 - [x] Write the eight technical-dossier files and at least 120 interview Q&A entries.
 - [x] Add the documentation contract check and run the complete validation matrix.
 - [x] Commit and push Anchor.
-- [ ] Commit and push the main site.
+- [x] Commit and push the main site.
 
 ## Validation
 
@@ -52,7 +52,7 @@ Recorded on 2026-07-27 against Anchor commit `3df49e00fac37bef169631b4c2f986f26d
 
 Final main-site validation on 2026-07-27:
 
-- `docs:project-notes-check`: passed with 120 Q&A groups and 42 evidence rows.
+- `docs:project-notes-check`: passed with 120 Q&A groups and 44 evidence rows.
 - `project-details:check`: passed for 14 projects; Chatus and Anchor each include three in-body visuals.
 - `assistant:kg-check`: passed with 29 documents, 58 chunks, 157 entities, and 220 relations.
 - `status:contract`: passed for 8 reliability projects, 7 external targets, and 33 reliability checks.

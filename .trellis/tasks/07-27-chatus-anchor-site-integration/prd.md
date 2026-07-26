@@ -23,15 +23,15 @@ Integrate Chatus and Anchor into the BIAU Port home and project catalog, replace
 
 ## Acceptance Criteria
 
-- [ ] `D:/workspace4Cursor/learn/anchor` is the active clean checkout and stale `cd duoduo` / obsolete repository links are corrected.
-- [ ] Anchor `/`, `/app/`, and `/app/index.html` return the intended distinct pages in local and production checks.
-- [ ] Both Anchor surfaces switch completely between Chinese and English, persist the choice, update document metadata, and remain keyboard accessible.
-- [ ] Every demo dataset can be selected and completed; answers, explanations, citations, progress, tutor hints, reset, and recovery work without external data calls.
-- [ ] Chatus and Anchor appear on the home page and project catalog with accurate links, boundaries, SEO, status metadata, and assistant knowledge.
-- [ ] Both project detail records pass the image and narrative evidence gate with sanitized PNG/WebP assets.
-- [ ] `docs/project-notes/` contains the required eight documents, all required sections, evidence labels, and at least 120 Q&A items.
-- [ ] Anchor browser checks pass at desktop, tablet, and mobile viewports; main-site docs, assistant, project, sitemap, status, link, lint, build, and UI gates pass.
-- [ ] Anchor is deployed and smoke-tested before the main-site external link is released.
+- [x] `D:/workspace4Cursor/learn/anchor` is the active clean checkout and stale `cd duoduo` / obsolete repository links are corrected.
+- [x] Anchor `/`, `/app/`, and `/app/index.html` return the intended distinct pages in local and production checks.
+- [x] Both Anchor surfaces switch completely between Chinese and English, persist the choice, update document metadata, and remain keyboard accessible.
+- [x] Every demo dataset can be selected and completed; answers, explanations, citations, progress, tutor hints, reset, and recovery work without external data calls.
+- [x] Chatus and Anchor appear on the home page and project catalog with accurate links, boundaries, SEO, status metadata, and assistant knowledge.
+- [x] Both project detail records pass the image and narrative evidence gate with sanitized PNG/WebP assets.
+- [x] `docs/project-notes/` contains the required eight documents, all required sections, evidence labels, and at least 120 Q&A items.
+- [x] Anchor browser checks pass at desktop, tablet, and mobile viewports; main-site docs, assistant, project, sitemap, status, link, lint, build, and UI gates pass.
+- [x] Anchor is deployed and smoke-tested before the main-site external link is released.
 
 ## Out of Scope
 

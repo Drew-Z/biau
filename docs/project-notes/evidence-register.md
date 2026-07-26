@@ -21,7 +21,7 @@ Every row identifies a repository label, immutable commit where practical, repos
 | E-CHATUS-006 | source-verified | chatus | 6b01ce00be169a479d5fd52add913a4a035aaa51 | README.md | Capability policy | Per-member Skills and tools are rechecked during projection and execution. |
 | E-CHATUS-007 | source-verified | chatus | 6b01ce00be169a479d5fd52add913a4a035aaa51 | README.md | Managed secrets and observability | Encryption, no plaintext echo, request IDs, redaction, and real-task telemetry boundary. |
 | E-CHATUS-008 | source-verified | chatus | 6b01ce00be169a479d5fd52add913a4a035aaa51 | package.json | Verification scripts | Frontend, test, typecheck, browser, and deployment verification entrypoints. |
-| E-CHATUS-009 | production-observed | blog-semi | working-tree | .trellis/tasks/07-27-chatus-anchor-site-integration/implement.md | Production Validation Record | On 2026-07-27 the public entry followed to `/react-chat/` and returned HTTP 200; no credentialed feature acceptance was performed. |
+| E-CHATUS-009 | production-observed | blog-semi | 22dde3a68bba02a0f9aab5d8966db2f7cdd5c0a7 | .trellis/tasks/07-27-chatus-anchor-site-integration/implement.md | Production Validation Record | On 2026-07-27 the public entry followed to `/react-chat/` and returned HTTP 200; no credentialed feature acceptance was performed. |
 
 ## Anchor Evidence
 
@@ -34,7 +34,7 @@ Every row identifies a repository label, immutable commit where practical, repos
 | E-ANCHOR-005 | source-verified | anchor | 3df49e00fac37bef169631b4c2f986f26df8ab4d | test | Test inventory | Service, database, Agent, privacy, evaluation, UI, and Private Alpha tests exist; not a fresh all-green claim. |
 | E-ANCHOR-006 | source-verified | anchor | 3df49e00fac37bef169631b4c2f986f26df8ab4d | web/landing/app/scripts/data.js | Demo datasets | Three bilingual datasets, twelve questions, citations, explanations, and scripted tutor content. |
 | E-ANCHOR-007 | source-verified | anchor | 3df49e00fac37bef169631b4c2f986f26df8ab4d | web/landing/app/scripts/app.js | Demo state contract | Locale, versioned progress, normalization, answer flow, source display, and reset. |
-| E-ANCHOR-008 | production-observed | blog-semi | working-tree | .trellis/tasks/07-27-chatus-anchor-site-integration/implement.md | Production Validation Record | On 2026-07-27 twelve production Playwright checks passed across desktop, tablet, and mobile; direct HTTP and deployed-asset hash checks recorded the canonical route behavior and current web parity. |
+| E-ANCHOR-008 | production-observed | blog-semi | 22dde3a68bba02a0f9aab5d8966db2f7cdd5c0a7 | .trellis/tasks/07-27-chatus-anchor-site-integration/implement.md | Production Validation Record | On 2026-07-27 twelve production Playwright checks passed across desktop, tablet, and mobile; direct HTTP and deployed-asset hash checks recorded the canonical route behavior and current web parity. |
 | E-ANCHOR-009 | source-verified | anchor | 3df49e00fac37bef169631b4c2f986f26df8ab4d | docs/private-alpha-release-checklist.md | Release boundary | Android is the Private Alpha target; other platforms are not release-supported. |
 | E-ANCHOR-010 | documented-design | anchor | 3df49e00fac37bef169631b4c2f986f26df8ab4d | docs/architecture/SYSTEM_OVERVIEW.md | Future platform direction | Cross-platform and synchronization direction is design context, not current release proof. |
 | E-ANCHOR-011 | source-verified | anchor | 3df49e00fac37bef169631b4c2f986f26df8ab4d | .github/workflows/ci.yml | Android Private Alpha and Web CI | One dependency-compatible Flutter toolchain runs format, analysis, tests, and Android release build; a separate Web job runs unit and twelve browser cases; unsupported iOS build is not claimed. |
@@ -73,10 +73,10 @@ Every row identifies a repository label, immutable commit where practical, repos
 
 | ID | Label | Repository | Commit | Path | Symbol/Section | Observation/Boundary |
 | --- | --- | --- | --- | --- | --- | --- |
-| E-CROSS-001 | source-verified | blog-semi | working-tree | docs/project-notes/cross-project-patterns.md | Shared Boundaries | Derived from E-CHATUS-002, E-ANCHOR-003, E-PA-002, and E-AID-003; compares public projections without claiming shared implementation. |
-| E-CROSS-002 | source-verified | blog-semi | working-tree | docs/project-notes/cross-project-patterns.md | Evidence-Bound Design | Derived from E-CHATUS-004, E-ANCHOR-003, E-PA-003, and E-AID-004; contrasts session, chunk, claim, and editorial boundaries. |
-| E-CROSS-003 | source-verified | blog-semi | working-tree | docs/project-notes/cross-project-patterns.md | Deterministic Checks | Derived from E-CHATUS-008, E-ANCHOR-005, E-PA-008, and E-AID-010; separates fixture checks from approved live calls. |
-| E-CROSS-004 | source-verified | blog-semi | working-tree | docs/project-notes/cross-project-patterns.md | Failure And Recovery | Derived from E-CHATUS-004, E-ANCHOR-007, E-PA-002, and E-AID-002; contrasts four independently verified recovery contracts. |
+| E-CROSS-001 | source-verified | blog-semi | 22dde3a68bba02a0f9aab5d8966db2f7cdd5c0a7 | docs/project-notes/cross-project-patterns.md | Shared Boundaries | Derived from E-CHATUS-002, E-ANCHOR-003, E-PA-002, and E-AID-003; compares public projections without claiming shared implementation. |
+| E-CROSS-002 | source-verified | blog-semi | 22dde3a68bba02a0f9aab5d8966db2f7cdd5c0a7 | docs/project-notes/cross-project-patterns.md | Evidence-Bound Design | Derived from E-CHATUS-004, E-ANCHOR-003, E-PA-003, and E-AID-004; contrasts session, chunk, claim, and editorial boundaries. |
+| E-CROSS-003 | source-verified | blog-semi | 22dde3a68bba02a0f9aab5d8966db2f7cdd5c0a7 | docs/project-notes/cross-project-patterns.md | Deterministic Checks | Derived from E-CHATUS-008, E-ANCHOR-005, E-PA-008, and E-AID-010; separates fixture checks from approved live calls. |
+| E-CROSS-004 | source-verified | blog-semi | 22dde3a68bba02a0f9aab5d8966db2f7cdd5c0a7 | docs/project-notes/cross-project-patterns.md | Failure And Recovery | Derived from E-CHATUS-004, E-ANCHOR-007, E-PA-002, and E-AID-002; contrasts four independently verified recovery contracts. |
 
 ## Production Observation Boundary
 

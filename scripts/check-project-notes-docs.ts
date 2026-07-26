@@ -125,6 +125,9 @@ async function main() {
     if (evidenceIds.has(id)) issues.push(`evidence-register.md: duplicate evidence ID ${id}`)
     evidenceIds.add(id)
     if (!allowedLabels.has(label)) issues.push(`evidence-register.md: unsupported label ${label}`)
+    if (label === 'production-observed' && commit === 'working-tree') {
+      issues.push(`evidence-register.md: ${id} production observation requires an immutable commit`)
+    }
 
     const repositoryRoot = repositoryRoots.get(repository)
     if (!repositoryRoot) {
