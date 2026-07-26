@@ -1,6 +1,6 @@
 # AI Daily 来源与查询组预审
 
-初次审核日期：2026-07-19；补充审核日期：2026-07-26
+初次审核日期：2026-07-19；补充审核日期：2026-07-26、2026-07-27
 
 这份记录是生产来源门禁的低敏预审与确认记录，不是内容转载许可，也不替代真实版次验收。审核使用公共页面、公开 RSS/Atom 和必要的 HTTPS 元数据核对页面可访问性、日期、列表稳定性、AI 信号、营销噪声和归属边界；没有运行 provider doctor、模型 ping、空 prompt 或模型测试任务。
 
@@ -8,14 +8,14 @@
 
 - `readiness: approved`
 - 18 个 approved 来源和 4 个核心查询组 `enabled: true`
-- 7 个 hold 来源、6 个 rejected 来源和其余查询组 `enabled: false`
+- 9 个 hold 来源、6 个 rejected 来源和其余查询组 `enabled: false`
 - 真实版次仍需独立的 provider、模型角色和编辑审核门禁
 
 ## 结论摘要
 
 | 类型 | Approved | Hold | Rejected |
 | --- | ---: | ---: | ---: |
-| 来源 | 18 | 7 | 6 |
+| 来源 | 18 | 9 | 6 |
 | 查询组 | 4 | 3 | 3 |
 
 ## 来源结论
@@ -47,8 +47,10 @@
 
 | 来源 | 原因 | 重新审核条件 |
 | --- | --- | --- |
-| Google Cloud AI/ML Blog | 无确认可用 feed，排名与客户营销内容较多 | 验证结构化列表和逐篇日期 |
-| Hugging Face Blog | 官方、合作伙伴、机构和社区作者混合 | 建立作者/组织白名单与来源标签 |
+| Google Cloud AI/ML Blog | 已验证 Google-owned 分类 RSS，但客户案例和营销内容仍较多 | 站点所有者确认启用并继续使用 relevance/营销过滤 |
+| IBM Research Blog | 已验证官方 RSS、日期、分类和原文链接，但同时覆盖 quantum/cryptography | 站点所有者确认启用并保留 AI relevance 过滤 |
+| Hugging Face Blog | 已验证官方 RSS，但官方、合作伙伴、机构和社区作者混合 | 建立作者/组织白名单与来源标签 |
+| Apple Machine Learning Research | 已验证专用官方 RSS、日期和原文链接 | 站点所有者确认启用并保留研究显著性/论文去重门禁 |
 | Adobe AI Blog | 完整列表依赖动态 CaaS，未发现稳定 feed | 找到稳定 CMS、站点地图或 feed |
 | Databricks Engineering | 工程分类混源，部分列表项缺日期 | 验证 AI 子类和日期提取 |
 | Snowflake Engineering | 无稳定 feed，列表日期不足 | 证明分页和逐篇日期增量可用 |
@@ -100,7 +102,7 @@
 
 ## 已确认与剩余门禁
 
-站点所有者已确认上述来源扩展、四个核心查询组、`12/78/72` 预算上限和引用边界；OpenAI News 与 Google AI Blog 已通过补充审核并启用，Hugging Face 与其余 hold/rejected 项继续禁用。
+站点所有者已确认 2026-07-26 及以前的来源扩展、四个核心查询组、`12/78/72` 预算上限和引用边界；OpenAI News 与 Google AI Blog 已启用。2026-07-27 新登记的 Apple Machine Learning Research、Google Cloud AI/ML 和 IBM Research 仍是 disabled hold，等待逐项确认；Hugging Face 与其余 hold/rejected 项继续禁用。
 
 ## 2026-07-26 补充来源核验
 
@@ -115,6 +117,19 @@
 | Alibaba Group / Alizila RSS | `200` / RSS | 通过；稳定日期与原文链接，替换原集团 HTML 入口以避免 evidence rejection |
 
 新增或变更来源不会绕过 Edition 的 Tier 1、时效、独立域名和证据完整性门禁；下一次刷新需要在 Studio 部署新 manifest 后重新观察。
+
+## 2026-07-27 补充来源核验
+
+本次核验发生在 `2026-07-27` 新版次的受限采集仍只缺 `minimum-tier1-sources-not-met` 之后。核验直接读取公开 RSS，不执行 provider doctor、模型 ping、空 prompt 或生成任务。三个待批准候选都已登记为 disabled hold，因此不会在未经站点所有者确认时进入生产采集。
+
+| 来源 | HTTP / 内容证据 | 决定 |
+| --- | --- | --- |
+| Apple Machine Learning Research | `200` / XML；10 个带日期的第一方研究条目 | 新增为 hold；等待批准 |
+| Google Cloud AI/ML | `200` / XML；20 个带日期条目并链接到 `cloud.google.com` 原文 | 更新为 RSS hold；等待批准并保留营销过滤 |
+| IBM Research | `200` / RSS；20 个带日期条目和 AI 分类，同时混有 quantum/cryptography | 新增为 hold；等待批准并保留 AI relevance 过滤 |
+| Hugging Face Blog | `200` / RSS；日期稳定但作者类型混合 | 切换到真实 RSS 入口，继续 hold，等待 author/org allowlist |
+
+这些来源最近的条目均已超出当前版次的 36 小时窗口，所以即使立即批准也不能合理地解锁本期日报。批准的价值是扩大后续版次捕获新鲜第一方证据的覆盖面，而不是补造当前证据。
 
 剩余门禁是独立的模型选择与真实业务验收：
 

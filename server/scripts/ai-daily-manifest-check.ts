@@ -37,7 +37,7 @@ assert.equal(manifest.readiness, 'approved')
 assert.equal(manifest.review.status, 'approved')
 assert.ok(manifest.review.reviewedAt)
 assert.ok(manifest.review.reviewedBy)
-assert.equal(manifest.sources.length, 31)
+assert.equal(manifest.sources.length, 33)
 assert.equal(manifest.queryGroups.length, 10)
 assert.equal(manifest.sources.filter((source) => source.enabled).length, 18)
 assert.ok(manifest.sources.filter((source) => source.enabled && (source.kind === 'RSS' || source.kind === 'GITHUB_RELEASES')).length >= 11)
@@ -60,6 +60,20 @@ assert.ok(manifest.sources.every((source) => source.url.startsWith('https://')))
 assert.equal(new Set(manifest.sources.map((source) => source.id)).size, manifest.sources.length)
 assert.equal(new Set(manifest.sources.map((source) => source.canonicalUrl)).size, manifest.sources.length)
 assert.equal(new Set(manifest.queryGroups.map((group) => group.id)).size, manifest.queryGroups.length)
+
+for (const expected of [
+  { id: 'google-cloud-ai-blog', url: 'https://cloudblog.withgoogle.com/products/ai-machine-learning/rss/', status: 'hold' },
+  { id: 'ibm-research-blog', url: 'https://research.ibm.com/rss', status: 'hold' },
+  { id: 'hugging-face-blog', url: 'https://huggingface.co/blog/feed.xml', status: 'hold' },
+  { id: 'apple-machine-learning-research', url: 'https://machinelearning.apple.com/rss.xml', status: 'hold' },
+] as const) {
+  const source = manifest.sources.find((item) => item.id === expected.id)
+  assert.ok(source, `${expected.id} should remain in the reviewed source registry`)
+  assert.equal(source.kind, 'RSS')
+  assert.equal(source.url, expected.url)
+  assert.equal(source.enabled, false)
+  assert.equal(source.review.status, expected.status)
+}
 
 const unapprovedSourceIndex = manifest.sources.findIndex((source) => source.review.status !== 'approved')
 assert.notEqual(unapprovedSourceIndex, -1)

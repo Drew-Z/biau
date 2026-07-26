@@ -5,7 +5,7 @@
     "status": "approved",
     "reviewedAt": "2026-07-19T13:45:00.000Z",
     "reviewedBy": "site-owner-confirmed",
-    "notes": "Site owner confirmed the original 16 approved sources on 2026-07-19 and approved the 2026-07-26 OpenAI/Google AI source expansion, four core query groups, bounded budget, and attribution boundary."
+    "notes": "Site owner confirmed the original 16 approved sources on 2026-07-19 and approved the 2026-07-26 OpenAI/Google AI source expansion, four core query groups, bounded budget, and attribution boundary. The 2026-07-27 audit registered three verified RSS candidates as disabled hold entries pending explicit site-owner approval."
   },
   "sources": [
     {
@@ -90,14 +90,14 @@
       "id": "google-cloud-ai-blog",
       "name": "Google Cloud AI and ML Blog",
       "rationale": "First-party Vertex AI, cloud model, agent, and enterprise AI updates.",
-      "kind": "OFFICIAL_PAGE",
-      "url": "https://cloud.google.com/blog/products/ai-machine-learning",
+      "kind": "RSS",
+      "url": "https://cloudblog.withgoogle.com/products/ai-machine-learning/rss/",
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["cloud-ai", "models", "agents", "enterprise-ai"],
       "enabled": false,
-      "officialDomain": "cloud.google.com",
-      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "AI list is usable but lacks a confirmed feed and has substantial product, ranking, and customer-marketing noise." }
+      "officialDomain": "cloudblog.withgoogle.com",
+      "review": { "status": "hold", "reviewedAt": "2026-07-26T16:15:00.000Z", "reviewedBy": "codex-source-audit-2026-07-27", "notes": "Google-owned category RSS returned 200 with 20 dated entries and stable cloud.google.com article links. Keep disabled pending explicit site-owner approval; shared relevance and corporate-marketing filters remain required." }
     },
     {
       "id": "microsoft-research-blog",
@@ -113,17 +113,30 @@
       "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable recent-post list and RSS; high research quality, with explicit AI topic filtering for broader research posts." }
     },
     {
+      "id": "ibm-research-blog",
+      "name": "IBM Research Blog",
+      "rationale": "First-party AI research, evaluation, systems, and release explanations with explicit topic metadata.",
+      "kind": "RSS",
+      "url": "https://research.ibm.com/rss",
+      "locale": "en",
+      "tier": "TIER_1",
+      "topics": ["research", "models", "evaluation", "systems"],
+      "enabled": false,
+      "officialDomain": "research.ibm.com",
+      "review": { "status": "hold", "reviewedAt": "2026-07-26T16:15:00.000Z", "reviewedBy": "codex-source-audit-2026-07-27", "notes": "Official RSS returned 200 with 20 dated entries, first-party article links, and AI category metadata. Keep disabled pending explicit site-owner approval and retain the shared AI relevance filter because the feed also covers quantum and cryptography." }
+    },
+    {
       "id": "hugging-face-blog",
       "name": "Hugging Face Blog",
       "rationale": "Core first-party source for open models, datasets, libraries, and community tooling.",
-      "kind": "OFFICIAL_PAGE",
-      "url": "https://huggingface.co/blog",
+      "kind": "RSS",
+      "url": "https://huggingface.co/blog/feed.xml",
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["open-source", "models", "datasets", "developer-tools"],
       "enabled": false,
       "officialDomain": "huggingface.co",
-      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Stable RSS but mixes official, partner, and community authors; require author or organization allowlists and attribution labels." }
+      "review": { "status": "hold", "reviewedAt": "2026-07-26T16:15:00.000Z", "reviewedBy": "codex-source-audit-2026-07-27", "notes": "Official RSS returned 200 with dated entries, but it mixes official, partner, and community authors. Keep disabled until the ingestion contract supports author or organization allowlists and attribution labels." }
     },
     {
       "id": "nvidia-developer-blog",
@@ -150,6 +163,19 @@
       "enabled": false,
       "officialDomain": "www.apple.com",
       "review": { "status": "rejected", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "General Apple newsroom has low AI density; keep only as a future targeted Apple Intelligence supplement, not a daily source." }
+    },
+    {
+      "id": "apple-machine-learning-research",
+      "name": "Apple Machine Learning Research",
+      "rationale": "First-party machine-learning, agents, multimodal, and on-device research publications.",
+      "kind": "RSS",
+      "url": "https://machinelearning.apple.com/rss.xml",
+      "locale": "en",
+      "tier": "TIER_1",
+      "topics": ["research", "agents", "multimodal", "edge-ai"],
+      "enabled": false,
+      "officialDomain": "machinelearning.apple.com",
+      "review": { "status": "hold", "reviewedAt": "2026-07-26T16:15:00.000Z", "reviewedBy": "codex-source-audit-2026-07-27", "notes": "Dedicated official RSS returned 200 with ten dated research entries and stable first-party links. Keep disabled pending explicit site-owner approval; research significance and duplicate-paper filters remain required." }
     },
     {
       "id": "qualcomm-onq",
