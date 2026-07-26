@@ -193,7 +193,15 @@ function buildEvidenceFallback(
 }
 
 function forcedPlan(route: 'site' | 'web', question: string): PublicAssistantPlan {
-  return { route, queries: [question], requiresFreshness: route === 'web', planner: 'fallback' }
+  return { route, queries: [buildForcedResearchQuery(question)], requiresFreshness: route === 'web', planner: 'fallback' }
+}
+
+function buildForcedResearchQuery(question: string) {
+  const normalized = boundedText(question, 180)
+  const primaryClause = normalized.split(/[？?]/u)[0]?.trim() || normalized
+  const withoutTimeFiller = primaryClause.replace(/^(?:截至目前|截至现在|目前|现在)[，,、:：\s]*/u, '')
+  const withoutSearchFiller = withoutTimeFiller.replace(/^(?:请|麻烦)?(?:帮我)?(?:搜索|查询|查找|检索|查一下)[，,、:：\s]*/u, '')
+  return withoutSearchFiller || primaryClause || normalized
 }
 
 function readRoute(value: unknown): PublicAssistantRoute | null {

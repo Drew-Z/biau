@@ -103,6 +103,13 @@ try {
     planner: 'model',
   })
 
+  const forcedWebPlan = await planPublicAssistantRequest({
+    question: '截至目前，Agentic RAG 相比传统 RAG 有哪些关键改进？请引用公开网页。',
+    mode: 'web',
+    history: [],
+  })
+  assert.deepEqual(forcedWebPlan.queries, ['Agentic RAG 相比传统 RAG 有哪些关键改进'])
+
   const evidence: PublicAssistantEvidence = {
     id: 'site-1',
     source: 'site',
@@ -129,6 +136,7 @@ try {
   assert.deepEqual(observedPaths, ['/responses', '/v1/responses', '/responses', '/v1/responses'])
   assert.equal(observedBodies.length, 4)
   assert.equal((observedBodies[1] as { model?: string }).model, 'fixture-responses-model')
+  assert.equal(observedBodies.every((body) => (body as { stream?: boolean }).stream === false), true)
   console.log('Public assistant Responses model adapter contract passed.')
 } finally {
   Object.assign(env, original)

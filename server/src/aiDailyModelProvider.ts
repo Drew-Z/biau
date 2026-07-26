@@ -62,6 +62,7 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
     : ''
   const body = {
     model: channel.modelIdentifier,
+    stream: false,
     input: [
       {
         role: 'system',

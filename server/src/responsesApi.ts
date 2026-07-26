@@ -97,6 +97,7 @@ async function requestEndpoint(input: {
       },
       body: JSON.stringify({
         model: input.channel.model,
+        stream: false,
         input: [
           { role: 'system', content: [{ type: 'input_text', text: input.system }] },
           { role: 'user', content: [{ type: 'input_text', text: input.user }] },
