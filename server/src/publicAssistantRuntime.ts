@@ -17,6 +17,20 @@ export interface PublicAssistantRequest {
   pageContext?: PublicAssistantPageContext
   history: PublicAssistantHistoryTurn[]
   signal?: AbortSignal
+  onProgress?: (progress: PublicAssistantProgress) => void
+}
+
+export type PublicAssistantProgressStage =
+  | 'planning'
+  | 'researching'
+  | 'evaluating'
+  | 'refining'
+  | 'answering'
+  | 'verifying'
+  | 'saving'
+
+export interface PublicAssistantProgress {
+  stage: PublicAssistantProgressStage
 }
 
 export interface PublicAssistantPlan {

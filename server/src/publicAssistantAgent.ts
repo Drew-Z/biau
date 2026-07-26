@@ -92,6 +92,7 @@ export function normalizePublicAssistantPayload(payload: ChatPayload): PublicAss
 }
 
 async function inputGuardNode(state: PublicAssistantState) {
+  emitProgress(state.request, 'planning')
   return { inputBlocked: isCredentialSeekingRequest(state.request.question) }
 }
 
@@ -110,6 +111,7 @@ function routeAfterPlan(state: PublicAssistantState) {
 }
 
 async function researchNode(state: PublicAssistantState) {
+  emitProgress(state.request, 'researching')
   const plan = state.agentPlan ?? fallbackPlan(state.request)
   const queries = plan.queries.length > 0 ? plan.queries : [state.request.question]
   const sitePromise = plan.route === 'site' || plan.route === 'combined'
@@ -127,6 +129,7 @@ async function researchNode(state: PublicAssistantState) {
 }
 
 async function gradeEvidenceNode(state: PublicAssistantState) {
+  emitProgress(state.request, 'evaluating')
   const plan = state.agentPlan ?? fallbackPlan(state.request)
   const siteCount = state.evidence.filter((item) => item.source === 'site').length
   const webCount = state.evidence.filter((item) => item.source === 'web').length
@@ -144,6 +147,7 @@ function routeAfterGrade(state: PublicAssistantState) {
 }
 
 async function rewriteNode(state: PublicAssistantState) {
+  emitProgress(state.request, 'refining')
   const plan = state.agentPlan ?? fallbackPlan(state.request)
   const pageHint = state.request.pageContext?.title || state.request.pageContext?.path || ''
   const recovery = boundedText(`${state.request.question} ${pageHint} authoritative source current facts`, 180)
@@ -159,6 +163,7 @@ async function rewriteNode(state: PublicAssistantState) {
 }
 
 async function generateNode(state: PublicAssistantState) {
+  emitProgress(state.request, 'answering')
   const plan = state.agentPlan ?? fallbackPlan(state.request)
   return {
     draft: await state.dependencies.model.answer({
@@ -170,6 +175,7 @@ async function generateNode(state: PublicAssistantState) {
 }
 
 async function verifyNode(state: PublicAssistantState) {
+  emitProgress(state.request, 'verifying')
   const plan = state.agentPlan ?? fallbackPlan(state.request)
   const verificationPassed = verifyDraft(state.draft, plan, state.evidence)
   return {
@@ -494,6 +500,14 @@ function readRerankerMode(retrieval: AssistantRetrievalMeta | undefined) {
 
 function boundedText(value: unknown, maxLength: number) {
   return typeof value === 'string' ? value.replace(/\s+/gu, ' ').trim().slice(0, maxLength) : ''
+}
+
+function emitProgress(request: PublicAssistantRequest, stage: Parameters<NonNullable<PublicAssistantRequest['onProgress']>>[0]['stage']) {
+  try {
+    request.onProgress?.({ stage })
+  } catch {
+    // Transport progress must never affect the authoritative graph run.
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

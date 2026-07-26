@@ -37,7 +37,7 @@ PUBLIC_ASSISTANT_API_BASE_URL=<biau-public-assistant-api 的 Render base URL>
 PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=55000
 ```
 
-`functions/api/chat/public.ts` 和 feedback Function 只做同源薄代理。它们不会接触模型、搜索、embedding 或 Qdrant key，也不会转发浏览器提供的 `Authorization` 或 Cookie。
+`functions/api/chat/public.ts`、`functions/api/chat/public/stream.ts` 和 feedback Function 只做同源薄代理。流式 Function 不解析模型内容，只透传 Render 已校验的公共进度和最终结果；这些 Function 都不会接触模型、搜索、embedding 或 Qdrant key，也不会转发浏览器提供的 `Authorization` 或 Cookie。
 生产环境的薄代理预算必须大于 Render 侧 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS`，为持久化和网络回程保留余量；当前推荐分别为 55 秒和 45 秒。
 
 ### Operator Function 私有变量

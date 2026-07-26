@@ -12,6 +12,7 @@
 - [x] Replace the public chat API and make Cloudflare Functions a thin proxy; preserve explicit browser-local degradation.
 - [x] Rework the widget for scope selection, multi-turn context, progress, precise citations, suggestions, retry/copy/feedback, accessibility, and mobile layouts.
 - [x] Add publication-triggered versioned public knowledge sync and retain manual recovery sync.
+- [x] Add provider Responses streaming, Express SSE progress/result transport, Cloudflare byte-stream forwarding, browser decoding, explicit unsupported-route fallback, and deterministic cross-layer fixtures.
 - [ ] Run local and approved deployed acceptance, then remove Operator/internal RAG pages, routes, tools, tables, service configuration, scripts, and stale documentation.
 - [ ] Update backend/frontend specs, deployment/runbook/manual gates, commit, push `main`, and archive the Trellis task. (Specs and deployment contract updated; commit/deployed acceptance/retirement/archive remain.)
 
@@ -51,6 +52,12 @@ No validation command may ping, diagnose, catalog-probe, or otherwise test a liv
 - Forced-web query cleanup removed temporal/request boilerplate, so Tavily now discovers Agentic RAG sources instead of pages about the Chinese phrase “截止 / 截至”.
 - MiMo synchronous Responses generation still exceeds the current 20-second answer budget and truthfully degrades with `provider_error`; no further live model calls were sent after confirming the repeated boundary.
 - Operator/internal-RAG retirement remains gated because a model-generated `answered` or evidence-bounded `partial` response has not yet passed deployed acceptance.
+
+## Streaming local acceptance (2026-07-26)
+
+- Standard Responses SSE, relay chat-shaped SSE, idle-timeout activity reset, provider-error cancellation, bounded browser decoding, explicit legacy-route fallback, Express progress/result events, and Cloudflare byte-stream forwarding pass deterministic fixtures.
+- `server:build`, all public assistant model/agent/API/persistence/rate-limit/web/sync/hybrid/service-mode checks, `server:smoke`, `cf-assistant:smoke`, `lint`, `build`, deployment docs, performance budgets, and the 19-route two-viewport UI suite pass without live provider calls.
+- Next gate: deploy Render and Cloudflare, use the already approved Agentic RAG research question once, and require a verified `answered` or evidence-bounded `partial` terminal result before Operator/internal-RAG retirement.
 
 ## Review and rollback points
 

@@ -18,6 +18,7 @@ import {
   toAiDailyOperationsDiagnostics,
 } from './aiDailyOperations.js'
 import { normalizePublicAssistantPayload, runPublicAssistantAgent } from './publicAssistantAgent.js'
+import type { PublicAssistantProgress, PublicAssistantRequest } from './publicAssistantRuntime.js'
 import {
   loadPublicAssistantInsights,
   normalizePublicAssistantFeedback,
@@ -40,6 +41,7 @@ type SanitizedAgentToolTrace = NonNullable<NonNullable<ChatResponse['meta']>['to
 type SanitizedAgentToolArtifact = NonNullable<SanitizedAgentToolTrace['artifacts']>[number]
 
 const ADMIN_RAG_SYNC_TIMEOUT_MS = 120000
+const PUBLIC_ASSISTANT_SSE_HEARTBEAT_MS = 8_000
 
 export function createApp(options: { publicFeedEnabled?: boolean } = {}) {
   const app = express()
@@ -160,36 +162,74 @@ function buildAssistantHealth(serviceMode: AssistantServiceMode) {
 function registerPublicAssistantRoutes(app: express.Express) {
   app.post('/chat/public', async (req, res, next) => {
     try {
-      const request = normalizePublicAssistantPayload(req.body as ChatPayload)
-      if (!request) {
-        res.status(400).json({ error: 'missing-message' })
-        return
-      }
-      const rateLimit = consumePublicAssistantRateLimit(`chat:${req.ip ?? 'unknown'}`)
-      if (!rateLimit.allowed) {
-        res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds))
-        res.status(429).json({ error: 'public-assistant-rate-limited' })
-        return
-      }
+      const request = acceptPublicAssistantRequest(req, res)
+      if (!request) return
       const abort = new AbortController()
       const timeout = setTimeout(() => abort.abort(), env.publicAssistantRequestTimeoutMs)
-      const onClose = () => abort.abort()
+      const onClose = () => {
+        if (!res.writableEnded) abort.abort()
+      }
       res.once('close', onClose)
-      let response: ChatResponse
       try {
-        response = await runPublicAssistantAgent({ ...request, signal: abort.signal })
+        const response = await runAndPersistPublicAssistant(request, abort.signal)
+        res.json(response)
       } finally {
         clearTimeout(timeout)
         res.off('close', onClose)
       }
-      const persisted = await persistPublicAssistantTurn(request, response).catch(() => null)
-      if (persisted) {
-        response.sessionId = persisted.sessionId
-        response.messageId = persisted.turnId
-      }
-      res.json(toPublicAssistantHttpResponse(response))
     } catch (error) {
       next(error)
+    }
+  })
+
+  app.post('/chat/public/stream', async (req, res) => {
+    const request = acceptPublicAssistantRequest(req, res)
+    if (!request) return
+
+    const abort = new AbortController()
+    let deadlineExceeded = false
+    const timeout = setTimeout(() => {
+      deadlineExceeded = true
+      abort.abort()
+    }, env.publicAssistantRequestTimeoutMs)
+    const onDisconnect = () => {
+      if (!res.writableEnded) abort.abort()
+    }
+    req.once('aborted', onDisconnect)
+    res.once('close', onDisconnect)
+    res.status(200)
+    res.set({
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-store',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+      'X-Content-Type-Options': 'nosniff',
+    })
+    res.flushHeaders()
+    writePublicAssistantSse(res, 'ready', { version: 1 })
+    const heartbeat = setInterval(() => {
+      if (!res.writableEnded && !res.destroyed) res.write(': heartbeat\n\n')
+    }, PUBLIC_ASSISTANT_SSE_HEARTBEAT_MS)
+
+    try {
+      const response = await runAndPersistPublicAssistant(request, abort.signal, (progress) => {
+        writePublicAssistantSse(res, 'progress', progress)
+      })
+      writePublicAssistantSse(res, 'result', response)
+      writePublicAssistantSse(res, 'done', { ok: true })
+      res.end()
+    } catch {
+      if (!res.writableEnded && !res.destroyed) {
+        writePublicAssistantSse(res, 'error', {
+          code: deadlineExceeded ? 'public-assistant-stream-timeout' : 'public-assistant-stream-failed',
+        })
+        res.end()
+      }
+    } finally {
+      clearInterval(heartbeat)
+      clearTimeout(timeout)
+      req.off('aborted', onDisconnect)
+      res.off('close', onDisconnect)
     }
   })
 
@@ -242,6 +282,42 @@ function registerPublicAssistantRoutes(app: express.Express) {
       next(error)
     }
   })
+}
+
+function acceptPublicAssistantRequest(req: express.Request, res: express.Response) {
+  const request = normalizePublicAssistantPayload(req.body as ChatPayload)
+  if (!request) {
+    res.status(400).json({ error: 'missing-message' })
+    return null
+  }
+  const rateLimit = consumePublicAssistantRateLimit(`chat:${req.ip ?? 'unknown'}`)
+  if (!rateLimit.allowed) {
+    res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds))
+    res.status(429).json({ error: 'public-assistant-rate-limited' })
+    return null
+  }
+  return request
+}
+
+async function runAndPersistPublicAssistant(
+  request: PublicAssistantRequest,
+  signal: AbortSignal,
+  onProgress?: (progress: PublicAssistantProgress) => void,
+) {
+  const agentRequest = { ...request, signal, onProgress }
+  const response = await runPublicAssistantAgent(agentRequest)
+  onProgress?.({ stage: 'saving' })
+  const persisted = await persistPublicAssistantTurn(request, response).catch(() => null)
+  if (persisted) {
+    response.sessionId = persisted.sessionId
+    response.messageId = persisted.turnId
+  }
+  return toPublicAssistantHttpResponse(response)
+}
+
+function writePublicAssistantSse(res: express.Response, event: string, payload: unknown) {
+  if (res.writableEnded || res.destroyed) return
+  res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
 }
 
 function toPublicAssistantHttpResponse(response: ChatResponse) {

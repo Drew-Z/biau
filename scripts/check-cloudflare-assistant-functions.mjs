@@ -2,6 +2,7 @@ import { createServer as createHttpServer } from 'node:http'
 import { createServer as createTcpServer } from 'node:net'
 import { onRequestPost as publicChat } from '../functions/api/chat/public.ts'
 import { onRequestPost as publicFeedback } from '../functions/api/chat/public/feedback.ts'
+import { onRequestPost as publicChatStream } from '../functions/api/chat/public/stream.ts'
 import { onRequestGet as health } from '../functions/api/health.ts'
 
 function findAvailablePort(startPort) {
@@ -92,6 +93,27 @@ function startMockPublicAssistant(port, observed) {
       return
     }
 
+    if (request.method === 'POST' && request.url === '/chat/public/stream') {
+      const payload = JSON.parse(body)
+      response.writeHead(200, {
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      })
+      response.write('event: ready\ndata: {"version":1}\n\n')
+      response.write('event: progress\ndata: {"stage":"researching"}\n\n')
+      response.end(`event: result\ndata: ${JSON.stringify({
+        answer: '流式研究回答。',
+        status: 'answered',
+        claims: [],
+        citations: [],
+        suggestions: [],
+        sessionId: payload.sessionId,
+        messageId: 'turn-stream-1234',
+        meta: { mode: 'model', citationCount: 0 },
+      })}\n\nevent: done\ndata: {"ok":true}\n\n`)
+      return
+    }
+
     if (request.method === 'POST' && request.url === '/chat/public/feedback') {
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ ok: true }))
@@ -117,6 +139,12 @@ const missingConfig = await publicChat({
   env: {},
 })
 if (missingConfig.status !== 503) throw new Error('Cloudflare proxy must fail closed when upstream is not configured')
+
+const missingStreamConfig = await publicChatStream({
+  request: makeRequest('/api/chat/public/stream', { message: 'hello' }),
+  env: {},
+})
+if (missingStreamConfig.status !== 503) throw new Error('Cloudflare stream proxy must fail closed when upstream is not configured')
 
 const port = await findAvailablePort(9277)
 const observed = []
@@ -167,6 +195,33 @@ try {
   }
   if (chatObservation?.authorization || chatObservation?.cookie) {
     throw new Error('Cloudflare chat proxy must not forward browser credentials')
+  }
+
+  const streamResponse = await publicChatStream({
+    request: makeRequest('/api/chat/public/stream', {
+      message: '请以流式连接研究公开网页',
+      mode: 'web',
+      sessionId: 'public-session-1234',
+      history: [],
+      pageContext: { path: '/blog', title: '博客', description: '公开文章' },
+    }, {
+      Authorization: 'Bearer browser-secret-must-not-forward',
+      Cookie: 'session=browser-secret-must-not-forward',
+    }),
+    env,
+  })
+  const streamText = await streamResponse.text()
+  if (
+    !streamResponse.ok ||
+    !streamResponse.headers.get('Content-Type')?.includes('text/event-stream') ||
+    !streamText.includes('event: progress') ||
+    !streamText.includes('turn-stream-1234')
+  ) {
+    throw new Error('Cloudflare stream proxy did not preserve the upstream SSE contract')
+  }
+  const streamObservation = observed.find((entry) => entry.url === '/chat/public/stream')
+  if (streamObservation?.authorization || streamObservation?.cookie) {
+    throw new Error('Cloudflare stream proxy must not forward browser credentials')
   }
 
   const feedbackResponse = await publicFeedback({

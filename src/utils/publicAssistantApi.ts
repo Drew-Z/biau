@@ -1,6 +1,14 @@
 export type PublicAssistantMode = 'auto' | 'site' | 'web'
 export type PublicAssistantStatus = 'answered' | 'partial' | 'uncertain' | 'degraded' | 'blocked'
 export type PublicAssistantRoute = 'direct' | 'site' | 'web' | 'combined'
+export type PublicAssistantProgressStage =
+  | 'planning'
+  | 'researching'
+  | 'evaluating'
+  | 'refining'
+  | 'answering'
+  | 'verifying'
+  | 'saving'
 export type PublicAssistantFeedbackReason =
   | 'helpful'
   | 'clear'
@@ -63,7 +71,17 @@ export interface PublicAssistantHistoryTurn {
   content: string
 }
 
-export async function requestPublicAssistant(input: {
+export class PublicAssistantTransportError extends Error {
+  readonly canFallbackToJson: boolean
+
+  constructor(message: string, canFallbackToJson = false) {
+    super(message)
+    this.name = 'PublicAssistantTransportError'
+    this.canFallbackToJson = canFallbackToJson
+  }
+}
+
+interface PublicAssistantRequestInput {
   apiBase: string
   message: string
   mode: PublicAssistantMode
@@ -71,28 +89,149 @@ export async function requestPublicAssistant(input: {
   history: PublicAssistantHistoryTurn[]
   pageContext: { path: string; title: string; description: string }
   signal?: AbortSignal
-}) {
+}
+
+export async function requestPublicAssistant(input: PublicAssistantRequestInput) {
   const response = await fetch(`${input.apiBase}/chat/public`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      message: input.message,
-      mode: input.mode,
-      sessionId: input.sessionId,
-      history: input.history.slice(-6),
-      pageContext: input.pageContext,
-    }),
+    body: JSON.stringify(toPublicAssistantRequestBody(input)),
     signal: input.signal,
   })
   if (!response.ok) {
-    const error = new Error(response.status === 429 ? 'public-assistant-rate-limited' : 'public-chat-request-failed')
-    error.name = 'PublicAssistantRequestError'
-    throw error
+    throw responseError(response)
   }
   const payload = await response.json().catch(() => null)
   const answer = normalizePublicAssistantAnswer(payload)
   if (!answer) throw new Error('public-chat-invalid-response')
   return answer
+}
+
+export async function requestPublicAssistantStream(
+  input: PublicAssistantRequestInput & { onProgress?: (stage: PublicAssistantProgressStage) => void },
+) {
+  const response = await fetch(`${input.apiBase}/chat/public/stream`, {
+    method: 'POST',
+    headers: {
+      Accept: 'text/event-stream',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(toPublicAssistantRequestBody(input)),
+    signal: input.signal,
+  })
+  if (!response.ok) {
+    throw responseError(response, [404, 405, 501].includes(response.status))
+  }
+  const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
+  if (!contentType.includes('text/event-stream') || !response.body) {
+    throw new PublicAssistantTransportError('public-assistant-stream-unsupported', true)
+  }
+  return readPublicAssistantEventStream(response.body, input.onProgress)
+}
+
+const MAX_PUBLIC_ASSISTANT_STREAM_BYTES = 512_000
+
+export async function readPublicAssistantEventStream(
+  body: ReadableStream<Uint8Array>,
+  onProgress?: (stage: PublicAssistantProgressStage) => void,
+) {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let bytesRead = 0
+  let result: PublicAssistantAnswer | null = null
+  let terminalError = ''
+
+  const consumeFrame = (frame: string) => {
+    const lines = frame.split(/\r?\n/u)
+    const event = lines.find((line) => line.startsWith('event:'))?.slice(6).trim() ?? 'message'
+    const data = lines
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.slice(5).trimStart())
+      .join('\n')
+      .trim()
+    if (!data) return
+    let payload: unknown
+    try {
+      payload = JSON.parse(data) as unknown
+    } catch {
+      if (event === 'result' || event === 'error') terminalError = 'public-assistant-stream-invalid-event'
+      return
+    }
+    if (event === 'progress') {
+      const stage = normalizeProgressStage(payload)
+      if (stage) {
+        try {
+          onProgress?.(stage)
+        } catch {
+          // UI progress is observational and cannot invalidate a completed answer.
+        }
+      }
+      return
+    }
+    if (event === 'result') {
+      result = normalizePublicAssistantAnswer(payload)
+      if (!result) terminalError = 'public-assistant-stream-invalid-result'
+      return
+    }
+    if (event === 'error') {
+      terminalError = isRecord(payload) ? readString(payload.code, 80) : ''
+      terminalError ||= 'public-assistant-stream-failed'
+    }
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      bytesRead += value.byteLength
+      if (bytesRead > MAX_PUBLIC_ASSISTANT_STREAM_BYTES) {
+        await reader.cancel('public-assistant-stream-too-large').catch(() => undefined)
+        throw new PublicAssistantTransportError('public-assistant-stream-too-large')
+      }
+      buffer += decoder.decode(value, { stream: true })
+      const frames = buffer.split(/\r?\n\r?\n/u)
+      buffer = frames.pop() ?? ''
+      frames.forEach(consumeFrame)
+    }
+    buffer += decoder.decode()
+    if (buffer.trim()) consumeFrame(buffer)
+  } finally {
+    reader.releaseLock()
+  }
+  if (terminalError) throw new PublicAssistantTransportError(terminalError)
+  if (!result) throw new PublicAssistantTransportError('public-assistant-stream-incomplete')
+  return result
+}
+
+function toPublicAssistantRequestBody(input: PublicAssistantRequestInput) {
+  return {
+    message: input.message,
+    mode: input.mode,
+    sessionId: input.sessionId,
+    history: input.history.slice(-6),
+    pageContext: input.pageContext,
+  }
+}
+
+function responseError(response: Response, canFallbackToJson = false) {
+  return new PublicAssistantTransportError(
+    response.status === 429 ? 'public-assistant-rate-limited' : 'public-chat-request-failed',
+    canFallbackToJson,
+  )
+}
+
+function normalizeProgressStage(value: unknown): PublicAssistantProgressStage | null {
+  if (!isRecord(value)) return null
+  return value.stage === 'planning' ||
+    value.stage === 'researching' ||
+    value.stage === 'evaluating' ||
+    value.stage === 'refining' ||
+    value.stage === 'answering' ||
+    value.stage === 'verifying' ||
+    value.stage === 'saving'
+    ? value.stage
+    : null
 }
 
 export async function submitPublicAssistantFeedback(input: {

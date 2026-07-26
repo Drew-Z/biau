@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import {
   normalizePublicAssistantAnswer,
+  PublicAssistantTransportError,
+  readPublicAssistantEventStream,
+  requestPublicAssistantStream,
   submitPublicAssistantFeedback,
 } from '../src/utils/publicAssistantApi'
 
@@ -102,8 +105,66 @@ assert.equal(bounded.citations.length, 8)
 assert.equal(bounded.claims.length, 12)
 assert.equal(bounded.claims[0]?.citationIds.length, 4)
 
+const progress: string[] = []
+const streamed = await readPublicAssistantEventStream(new Response([
+  'event: ready',
+  'data: {"version":1}',
+  '',
+  'event: progress',
+  'data: {"stage":"researching"}',
+  '',
+  ': heartbeat',
+  '',
+  'event: progress',
+  'data: {"stage":"verifying"}',
+  '',
+  'event: result',
+  `data: ${JSON.stringify(validPayload)}`,
+  '',
+  'event: done',
+  'data: {"ok":true}',
+  '',
+].join('\n')).body!, (stage) => progress.push(stage))
+assert.equal(streamed.answer, '第一段。\n\n第二段。')
+assert.deepEqual(progress, ['researching', 'verifying'])
+
+await assert.rejects(
+  readPublicAssistantEventStream(new Response([
+    'event: error',
+    'data: {"code":"public-assistant-stream-timeout"}',
+    '',
+  ].join('\n')).body!),
+  /public-assistant-stream-timeout/u,
+)
+
 const originalFetch = globalThis.fetch
 let feedbackBody: Record<string, unknown> | null = null
+const requestInput = {
+  apiBase: 'https://assistant.example.com',
+  message: '研究公开资料',
+  mode: 'web' as const,
+  sessionId: 'public-session-1234',
+  history: [],
+  pageContext: { path: '/blog', title: '博客', description: '公开文章' },
+}
+globalThis.fetch = (async () => new Response('{"error":"not-found"}', {
+  status: 404,
+  headers: { 'Content-Type': 'application/json' },
+})) as typeof fetch
+await assert.rejects(requestPublicAssistantStream(requestInput), (error: unknown) => (
+  error instanceof PublicAssistantTransportError && error.canFallbackToJson
+))
+
+globalThis.fetch = (async () => new Response('{"error":"rate-limited"}', {
+  status: 429,
+  headers: { 'Content-Type': 'application/json' },
+})) as typeof fetch
+await assert.rejects(requestPublicAssistantStream(requestInput), (error: unknown) => (
+  error instanceof PublicAssistantTransportError &&
+  error.message === 'public-assistant-rate-limited' &&
+  !error.canFallbackToJson
+))
+
 globalThis.fetch = (async (_input: URL | RequestInfo, init?: RequestInit) => {
   feedbackBody = JSON.parse(String(init?.body)) as Record<string, unknown>
   return new Response('{}', { status: 200 })

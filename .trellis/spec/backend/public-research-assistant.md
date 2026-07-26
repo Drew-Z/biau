@@ -5,7 +5,7 @@
 - The public assistant is anonymous, read-only, and available without member or owner authentication.
 - It may answer from BIAU public knowledge, fetched public-web evidence, or both.
 - One configured Responses API model owns planning and answer generation. Retrieval, embedding, search, and reranking are tools rather than extra generation-model routes.
-- Model requests always use the non-streaming Responses input contract with `stream: false`. The shared response decoder prefers standard `output_text` / assistant `output_text` items and may accept a relay's chat-shaped `choices[0].message.content` success payload without changing the request protocol or endpoint selection.
+- Planner requests use the bounded non-streaming Responses contract. Answer generation uses `stream: true` and accumulates standard `response.output_text.delta` / `response.output_text.done` / `response.completed` events; the shared decoder also accepts a relay's chat-shaped JSON or SSE `choices` compatibility form without changing protocol or endpoint selection. Raw model deltas remain server-only because the structured answer must pass claim/citation verification before publication.
 - Public responses never expose provider names, model IDs, endpoints, prompts, graph traces, internal diagnostics, or private/internal citations.
 
 ## Agent Runtime
@@ -14,7 +14,7 @@
 - The LangGraph flow is `input_guard -> plan -> research? -> grade_evidence -> rewrite? -> generate -> verify_claims -> rewrite? -> finalize`.
 - `auto`, `site`, and `web` are explicit request modes. Combined site/web research runs concurrently.
 - Research recovery is bounded to one retry. Model calls, query counts, page fetches, retained evidence, input size, output size, and elapsed time are all bounded.
-- `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` bounds synchronous answer generation independently and must not exceed the total `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` budget.
+- `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
 - A deterministic plan is allowed only when structured planning fails. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.
 
 ## Evidence And Web Research
@@ -74,6 +74,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 ## Public API And Persistence
 
 - `POST /chat/public` accepts a bounded question, anonymous session ID, mode, page context, and recent history.
+- `POST /chat/public/stream` accepts the same payload and returns versioned SSE events: `ready`, public-safe `progress`, heartbeat comments, one verified `result`, or one stable `error`. Its `result` data uses the same allowlisted projection as the JSON route.
 - `POST /chat/public/feedback` records bounded `up` or `down` feedback for one anonymous turn.
 - The HTTP response is projected through an allowlist. Stable product fields include answer state, claims, citations, suggestions, session/turn IDs, and low-sensitive counters.
 - Rate limiting uses the request IP in process memory but never persists an IP address. Buckets are bounded and a client-provided session ID cannot bypass chat or feedback limits.
@@ -84,7 +85,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 
 - Public knowledge sync writes a versioned Qdrant collection, validates the replacement, and then switches the configured alias.
 - Commit/checksum readiness gates prevent a stale deploy from activating newer knowledge.
-- Cloudflare Functions are thin same-origin proxies. Model, search, RAG, embedding, reranker, sync, and database credentials remain on server services.
+- Cloudflare Functions are thin same-origin proxies. The stream Function forwards the bounded event body without buffering, preserves cancellation, and keeps its timeout active until the upstream body closes. Model, search, RAG, embedding, reranker, sync, and database credentials remain on server services.
 - Do not delete Operator/internal-RAG code, tables, or the Render service until deployed public chat, feedback, and public sync acceptance pass.
 
 ## Required Checks

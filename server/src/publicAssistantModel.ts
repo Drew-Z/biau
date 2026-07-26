@@ -69,6 +69,7 @@ export async function generatePublicAssistantDraft(input: {
     channel,
     timeoutMs: Math.min(env.publicAssistantAnswerTimeoutMs, env.publicAssistantRequestTimeoutMs),
     signal: input.request.signal,
+    stream: true,
     system: [
       '你是 BIAU Port（泊岸）的公开网站研究助手。',
       '只返回 JSON：{"answer":"...","status":"answered|partial|uncertain","claims":[{"id":"c1","text":"...","citationIds":["evidence-id"]}],"suggestions":["..."]}。',

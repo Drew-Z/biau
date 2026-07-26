@@ -18,6 +18,7 @@ export async function requestResponsesText(input: {
   user: string
   timeoutMs: number
   signal?: AbortSignal
+  stream?: boolean
 }): Promise<ResponsesApiResult> {
   if (!input.channel.apiKey || !input.channel.baseUrl || !input.channel.model) {
     return { content: null, failure: 'not_configured' }
@@ -28,9 +29,8 @@ export async function requestResponsesText(input: {
   for (const [index, endpoint] of endpoints.entries()) {
     const attempt = await requestEndpoint({ ...input, endpoint })
     diagnostic = { ...attempt.diagnostic, attemptedEndpoints: index + 1 }
-    if (attempt.response?.ok) {
-      const json = await attempt.response.json().catch(() => null)
-      const content = readResponsesContent(json)
+    if (attempt.ok) {
+      const content = attempt.content.trim()
       if (!content) {
         return {
           content: null,
@@ -44,7 +44,7 @@ export async function requestResponsesText(input: {
       }
       return { content, diagnostic }
     }
-    if (!attempt.response || ![404, 405].includes(attempt.response.status)) break
+    if (!attempt.httpStatus || ![404, 405].includes(attempt.httpStatus)) break
   }
   return { content: null, failure: 'provider_error', diagnostic }
 }
@@ -79,25 +79,33 @@ async function requestEndpoint(input: {
   user: string
   timeoutMs: number
   signal?: AbortSignal
+  stream?: boolean
 }) {
   const abort = new AbortController()
   let diagnosticKind: ProviderDiagnosticKind = 'network_error'
   const onAbort = () => abort.abort()
   input.signal?.addEventListener('abort', onAbort, { once: true })
-  const timeout = setTimeout(() => {
-    diagnosticKind = 'timeout'
-    abort.abort()
-  }, input.timeoutMs)
+  if (input.signal?.aborted) abort.abort()
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  const armTimeout = () => {
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => {
+      diagnosticKind = 'timeout'
+      abort.abort()
+    }, input.timeoutMs)
+  }
+  armTimeout()
   try {
     const response = await fetch(input.endpoint, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${input.channel.apiKey}`,
         'Content-Type': 'application/json',
+        Accept: input.stream ? 'text/event-stream, application/json' : 'application/json',
       },
       body: JSON.stringify({
         model: input.channel.model,
-        stream: false,
+        stream: input.stream === true,
         input: [
           { role: 'system', content: [{ type: 'input_text', text: input.system }] },
           { role: 'user', content: [{ type: 'input_text', text: input.user }] },
@@ -105,8 +113,28 @@ async function requestEndpoint(input: {
       }),
       signal: abort.signal,
     })
+    if (!response.ok) {
+      await response.body?.cancel().catch(() => undefined)
+      return {
+        ok: false,
+        content: '',
+        httpStatus: response.status,
+        diagnostic: {
+          kind: 'http_status' as const,
+          httpStatus: response.status,
+          attemptedEndpoints: 0,
+          timeoutMs: input.timeoutMs,
+        },
+      }
+    }
+    const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
+    const content = input.stream && contentType.includes('text/event-stream')
+      ? await readResponsesStreamContent(response.body, armTimeout)
+      : readResponsesContent(await response.json().catch(() => null))
     return {
-      response,
+      ok: true,
+      content,
+      httpStatus: response.status,
       diagnostic: {
         kind: 'http_status' as const,
         httpStatus: response.status,
@@ -116,7 +144,9 @@ async function requestEndpoint(input: {
     }
   } catch {
     return {
-      response: null,
+      ok: false,
+      content: '',
+      httpStatus: null,
       diagnostic: {
         kind: diagnosticKind,
         attemptedEndpoints: 0,
@@ -124,9 +154,98 @@ async function requestEndpoint(input: {
       },
     }
   } finally {
-    clearTimeout(timeout)
+    if (timeout) clearTimeout(timeout)
     input.signal?.removeEventListener('abort', onAbort)
   }
+}
+
+const MAX_RESPONSES_STREAM_BYTES = 512_000
+
+export async function readResponsesStreamContent(
+  body: ReadableStream<Uint8Array> | null,
+  onActivity: () => void = () => undefined,
+) {
+  if (!body) return ''
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  const fragments = new Map<string, string>()
+  let completed = ''
+  let buffer = ''
+  let bytesRead = 0
+
+  const consumeFrame = (frame: string) => {
+    const lines = frame.split(/\r?\n/u)
+    const eventName = lines.find((line) => line.startsWith('event:'))?.slice(6).trim() ?? ''
+    const data = lines
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.slice(5).trimStart())
+      .join('\n')
+      .trim()
+    if (!data || data === '[DONE]') return
+    let payload: unknown
+    try {
+      payload = JSON.parse(data) as unknown
+    } catch {
+      return
+    }
+    if (!isRecord(payload)) return
+    const type = typeof payload.type === 'string' ? payload.type : eventName
+    const key = streamFragmentKey(payload)
+    if (type === 'response.output_text.delta') {
+      const delta = readTextValue(payload.delta)
+      if (delta) fragments.set(key, `${fragments.get(key) ?? ''}${delta}`)
+      return
+    }
+    if (type === 'response.output_text.done') {
+      const text = readTextValue(payload.text)
+      if (text) fragments.set(key, text)
+      return
+    }
+    if (type === 'response.completed' && isRecord(payload.response)) {
+      completed = readResponsesContent(payload.response) || completed
+      return
+    }
+    if (type === 'error' || type === 'response.failed' || type === 'response.error') {
+      throw new Error('responses-stream-provider-error')
+    }
+
+    const firstChoice = Array.isArray(payload.choices) ? payload.choices.find(isRecord) : null
+    const delta = firstChoice && isRecord(firstChoice.delta) ? readMessageDelta(firstChoice.delta.content) : ''
+    if (delta) {
+      fragments.set('relay-choice', `${fragments.get('relay-choice') ?? ''}${delta}`)
+      return
+    }
+    completed = readResponsesContent(payload) || completed
+  }
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      bytesRead += value.byteLength
+      if (bytesRead > MAX_RESPONSES_STREAM_BYTES) throw new Error('responses-stream-too-large')
+      onActivity()
+      buffer += decoder.decode(value, { stream: true })
+      const frames = buffer.split(/\r?\n\r?\n/u)
+      buffer = frames.pop() ?? ''
+      frames.forEach(consumeFrame)
+    }
+    buffer += decoder.decode()
+    if (buffer.trim()) consumeFrame(buffer)
+  } catch (error) {
+    await reader.cancel('responses-stream-decoder-stopped').catch(() => undefined)
+    throw error
+  } finally {
+    reader.releaseLock()
+  }
+  return (completed || [...fragments.values()].join('')).trim()
+}
+
+function streamFragmentKey(value: Record<string, unknown>) {
+  const outputIndex = typeof value.output_index === 'number' ? value.output_index : 0
+  const contentIndex = typeof value.content_index === 'number' ? value.content_index : 0
+  const itemId = typeof value.item_id === 'string' ? value.item_id : 'message'
+  return `${outputIndex}:${contentIndex}:${itemId}`
 }
 
 export function readResponsesContent(value: unknown) {
@@ -159,6 +278,16 @@ function readMessageContent(value: unknown) {
     .map((item) => readTextValue(item.text))
     .join('')
     .trim()
+}
+
+function readMessageDelta(value: unknown) {
+  if (typeof value === 'string') return value
+  if (!Array.isArray(value)) return ''
+  return value
+    .filter(isRecord)
+    .filter((item) => item.type === 'text' || item.type === 'output_text')
+    .map((item) => readTextValue(item.text))
+    .join('')
 }
 
 function readTextValue(value: unknown) {

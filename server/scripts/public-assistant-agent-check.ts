@@ -59,6 +59,7 @@ function request(mode: PublicAssistantMode = 'auto') {
 }
 
 async function combinedRouteCheck() {
+  const progress: string[] = []
   const dependencies: PublicAssistantAgentDependencies = {
     model: modelFor({ route: 'combined', queries: ['biau implementation', 'current research'], requiresFreshness: true, planner: 'model' }),
     async retrieveSite() {
@@ -79,13 +80,14 @@ async function combinedRouteCheck() {
       return { evidence: [evidence('web-1', 'web')], available: true }
     },
   }
-  const response = await runPublicAssistantAgent(request(), dependencies)
+  const response = await runPublicAssistantAgent({ ...request(), onProgress: ({ stage }) => progress.push(stage) }, dependencies)
   assert.equal(response.status, 'answered')
   assert.equal(response.citations.length, 2)
   assert.equal(response.meta?.research?.route, 'combined')
   assert.equal(response.meta?.research?.siteEvidenceCount, 1)
   assert.equal(response.meta?.research?.webEvidenceCount, 1)
   assert.equal(response.meta?.research?.retryCount, 0)
+  assert.deepEqual(progress, ['planning', 'researching', 'evaluating', 'answering', 'verifying'])
 }
 
 async function boundedRetryCheck() {

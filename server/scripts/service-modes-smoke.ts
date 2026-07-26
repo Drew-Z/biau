@@ -179,6 +179,21 @@ try {
     const publicChat = await postJson<{ answer?: string }>(`${base}/chat/public`, { message: 'RAG 项目' })
     if (!publicChat.response.ok || !publicChat.payload?.answer) throw new Error('public mode should expose public chat')
 
+    const publicStream = await fetch(`${base}/chat/public/stream`, {
+      method: 'POST',
+      headers: { Accept: 'text/event-stream', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'RAG 项目', mode: 'site' }),
+    })
+    const publicStreamText = await publicStream.text()
+    if (
+      !publicStream.ok ||
+      !publicStream.headers.get('Content-Type')?.includes('text/event-stream') ||
+      !publicStreamText.includes('event: progress') ||
+      !publicStreamText.includes('event: result')
+    ) {
+      throw new Error('public mode should expose the public assistant SSE transport')
+    }
+
     const operatorMe = await fetch(`${base}/operator/me`, { headers: operatorHeaders })
     if (operatorMe.status !== 404) throw new Error(`public mode should not expose operator routes, got ${operatorMe.status}`)
 
@@ -195,6 +210,9 @@ try {
 
     const publicChat = await postJson(`${base}/chat/public`, { message: 'RAG 项目' })
     if (publicChat.response.status !== 404) throw new Error(`operator mode should not expose public chat, got ${publicChat.response.status}`)
+
+    const publicStream = await postJson(`${base}/chat/public/stream`, { message: 'RAG 项目' })
+    if (publicStream.response.status !== 404) throw new Error(`operator mode should not expose public stream, got ${publicStream.response.status}`)
 
     const missingAuth = await postJson(`${base}/operator/chat`, { message: '站务任务' })
     if (missingAuth.response.status !== 401) throw new Error(`operator mode should require service auth, got ${missingAuth.response.status}`)

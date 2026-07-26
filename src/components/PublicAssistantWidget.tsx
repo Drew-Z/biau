@@ -4,6 +4,7 @@ import {
   Copy,
   ExternalLink,
   Globe2,
+  LoaderCircle,
   RefreshCw,
   Send,
   ThumbsDown,
@@ -28,12 +29,15 @@ import {
 } from '../utils/mobileSurface'
 import {
   requestPublicAssistant,
+  requestPublicAssistantStream,
+  PublicAssistantTransportError,
   submitPublicAssistantFeedback,
   type PublicAssistantAnswer,
   type PublicAssistantCitation,
   type PublicAssistantClaim,
   type PublicAssistantHistoryTurn,
   type PublicAssistantMode,
+  type PublicAssistantProgressStage,
   type PublicAssistantStatus,
 } from '../utils/publicAssistantApi'
 
@@ -159,9 +163,10 @@ async function requestPublicAnswer(input: {
   history: PublicAssistantHistoryTurn[]
   preferredApiBase: string | null
   signal: AbortSignal
+  onProgress: (stage: PublicAssistantProgressStage) => void
 }) {
   const apiBase = getAssistantApiBase(input.preferredApiBase)
-  const answer = await requestPublicAssistant({
+  const request = {
     apiBase,
     message: input.question,
     mode: input.mode,
@@ -173,7 +178,14 @@ async function requestPublicAnswer(input: {
       description: document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content ?? '',
     },
     signal: input.signal,
-  })
+  }
+  let answer: PublicAssistantAnswer
+  try {
+    answer = await requestPublicAssistantStream({ ...request, onProgress: input.onProgress })
+  } catch (error) {
+    if (!(error instanceof PublicAssistantTransportError) || !error.canFallbackToJson) throw error
+    answer = await requestPublicAssistant(request)
+  }
   return { answer, apiBase }
 }
 
@@ -198,7 +210,14 @@ function formatAnswerMeta(message: WidgetMessage) {
   return labels.join(' · ')
 }
 
-function getLoadingLabel(mode: PublicAssistantMode) {
+function getLoadingLabel(mode: PublicAssistantMode, stage: PublicAssistantProgressStage | null) {
+  if (stage === 'planning') return '正在判断问题需要哪些公开资料…'
+  if (stage === 'researching') return mode === 'site' ? '正在检索本站公开资料…' : '正在搜索并读取公开来源…'
+  if (stage === 'evaluating') return '正在筛选可引用的证据…'
+  if (stage === 'refining') return '证据还不够，正在调整检索…'
+  if (stage === 'answering') return '正在基于证据组织回答…'
+  if (stage === 'verifying') return '正在核对结论与引用…'
+  if (stage === 'saving') return '正在保存本次匿名记录…'
   if (mode === 'site') return '正在检索本站公开资料…'
   if (mode === 'web') return '正在搜索并核验公开网页…'
   return '正在判断问题并组织研究…'
@@ -215,6 +234,7 @@ export function PublicAssistantWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [footerVisible, setFooterVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [progressStage, setProgressStage] = useState<PublicAssistantProgressStage | null>(null)
   const [input, setInput] = useState('')
   const [mode, setMode] = useState<PublicAssistantMode>('auto')
   const [messages, setMessages] = useState<WidgetMessage[]>([])
@@ -343,6 +363,7 @@ export function PublicAssistantWidget() {
     setMessages((current) => [...current, userMessage])
     setInput('')
     setIsLoading(true)
+    setProgressStage('planning')
     const controller = new AbortController()
     activeRequestRef.current = controller
 
@@ -356,6 +377,9 @@ export function PublicAssistantWidget() {
         history,
         preferredApiBase: apiBase,
         signal: controller.signal,
+        onProgress: (stage) => {
+          if (activeRequestRef.current === controller) setProgressStage(stage)
+        },
       })
       result = remote.answer
       resolvedApiBase = remote.apiBase
@@ -368,6 +392,7 @@ export function PublicAssistantWidget() {
     } finally {
       if (activeRequestRef.current === controller) {
         activeRequestRef.current = null
+        setProgressStage(null)
         setIsLoading(false)
       }
     }
@@ -600,7 +625,12 @@ export function PublicAssistantWidget() {
               </article>
             ))}
 
-            {isLoading && <div className="public-assistant__loading">{getLoadingLabel(mode)}</div>}
+            {isLoading && (
+              <div className="public-assistant__loading" role="status">
+                <LoaderCircle className="is-spinning" size={15} aria-hidden />
+                <span>{getLoadingLabel(mode, progressStage)}</span>
+              </div>
+            )}
           </div>
 
           <div className="public-assistant__suggestions" aria-label="建议提问">

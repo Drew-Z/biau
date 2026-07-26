@@ -3,7 +3,7 @@ import { createServer } from 'node:http'
 import { env } from '../src/env.js'
 import { generatePublicAssistantDraft, planPublicAssistantRequest } from '../src/publicAssistantModel.js'
 import type { PublicAssistantEvidence, PublicAssistantRequest } from '../src/publicAssistantRuntime.js'
-import { readResponsesContent } from '../src/responsesApi.js'
+import { readResponsesContent, readResponsesStreamContent } from '../src/responsesApi.js'
 
 const original = {
   assistantModelApiKey: env.assistantModelApiKey,
@@ -13,6 +13,7 @@ const original = {
   assistantModelChannelsJson: env.assistantModelChannelsJson,
   assistantModelProtocol: env.assistantModelProtocol,
   publicAssistantRequestTimeoutMs: env.publicAssistantRequestTimeoutMs,
+  publicAssistantAnswerTimeoutMs: env.publicAssistantAnswerTimeoutMs,
   openaiApiKey: env.openaiApiKey,
   openaiBaseUrl: env.openaiBaseUrl,
   openaiModel: env.openaiModel,
@@ -29,6 +30,24 @@ assert.equal(readResponsesContent({ choices: [{ message: { content: 'chat-shaped
 assert.equal(readResponsesContent({
   choices: [{ message: { content: [{ type: 'text', text: { value: 'chat-array compatibility' } }] } }],
 }), 'chat-array compatibility')
+assert.equal(await readResponsesStreamContent(new Response([
+  'event: response.output_text.delta',
+  'data: {"type":"response.output_text.delta","output_index":0,"content_index":0,"delta":"streamed "}',
+  '',
+  'event: response.output_text.done',
+  'data: {"type":"response.output_text.done","output_index":0,"content_index":0,"text":"streamed response"}',
+  '',
+  'data: [DONE]',
+  '',
+].join('\n')).body), 'streamed response')
+assert.equal(await readResponsesStreamContent(new Response([
+  'data: {"choices":[{"delta":{"content":"relay "}}]}',
+  '',
+  'data: {"choices":[{"delta":{"content":"stream"}}]}',
+  '',
+  'data: [DONE]',
+  '',
+].join('\n')).body), 'relay stream')
 const server = createServer((request, response) => {
   if (request.method !== 'POST' || request.headers.authorization !== 'Bearer fixture-key') {
     response.writeHead(404, { 'Content-Type': 'application/json' })
@@ -49,28 +68,29 @@ const server = createServer((request, response) => {
     }
 
     const system = body.input?.[0]?.content?.[0]?.text ?? ''
-    response.writeHead(200, { 'Content-Type': 'application/json' })
+    const streaming = (body as { stream?: boolean }).stream === true
+    response.writeHead(200, { 'Content-Type': streaming ? 'text/event-stream' : 'application/json' })
     if (system.includes('只读规划器')) {
       response.end(JSON.stringify({
         output_text: JSON.stringify({ route: 'site', queries: ['Legal RAG'], requiresFreshness: false }),
       }))
       return
     }
-    response.end(JSON.stringify({
-      output: [{
-        type: 'message',
-        role: 'assistant',
-        content: [{
-          type: 'output_text',
-          text: JSON.stringify({
-            answer: 'Legal RAG 提供公开项目说明。',
-            status: 'answered',
-            claims: [{ id: 'c1', text: '该项目有公开说明。', citationIds: ['site-1', 'unknown'] }],
-            suggestions: ['查看项目详情'],
-          }),
-        }],
-      }],
-    }))
+    const answer = JSON.stringify({
+      answer: 'Legal RAG 提供公开项目说明。',
+      status: 'answered',
+      claims: [{ id: 'c1', text: '该项目有公开说明。', citationIds: ['site-1', 'unknown'] }],
+      suggestions: ['查看项目详情'],
+    })
+    const first = answer.slice(0, Math.ceil(answer.length / 2))
+    const second = answer.slice(first.length)
+    response.write(`event: response.output_text.delta\ndata: ${JSON.stringify({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: first })}\n\n`)
+    setTimeout(() => {
+      response.write(`event: response.output_text.delta\ndata: ${JSON.stringify({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: second })}\n\n`)
+    }, 80)
+    setTimeout(() => {
+      response.end(`event: response.completed\ndata: ${JSON.stringify({ type: 'response.completed', response: { output_text: answer } })}\n\n`)
+    }, 160)
   })
 })
 
@@ -86,6 +106,7 @@ try {
   env.assistantModelChannelsJson = ''
   env.assistantModelProtocol = 'responses'
   env.publicAssistantRequestTimeoutMs = 5000
+  env.publicAssistantAnswerTimeoutMs = 120
   env.openaiApiKey = ''
   env.openaiBaseUrl = ''
   env.openaiModel = ''
@@ -136,7 +157,7 @@ try {
   assert.deepEqual(observedPaths, ['/responses', '/v1/responses', '/responses', '/v1/responses'])
   assert.equal(observedBodies.length, 4)
   assert.equal((observedBodies[1] as { model?: string }).model, 'fixture-responses-model')
-  assert.equal(observedBodies.every((body) => (body as { stream?: boolean }).stream === false), true)
+  assert.deepEqual(observedBodies.map((body) => (body as { stream?: boolean }).stream), [false, false, true, true])
   console.log('Public assistant Responses model adapter contract passed.')
 } finally {
   Object.assign(env, original)

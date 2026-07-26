@@ -86,6 +86,7 @@ npm.cmd run check:ui
 - Initial open state contains no default transcript/citation dump.
 - Public suggestions and messages use sanitized public knowledge.
 - Missing model/API displays a concise fallback status; it does not expose provider details.
+- The widget prefers the same-origin SSE route, derives one bounded progress label from validated event stages, and renders only the terminal verified result. It falls back to the JSON route only when the stream endpoint is explicitly unsupported; rate limits and transport/provider failures never replay the question.
 - Public widget state is independent from Operator sessions and Studio tokens.
 
 ## Scenario: Public AI Daily Feed State

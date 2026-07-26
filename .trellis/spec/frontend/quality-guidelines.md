@@ -107,6 +107,7 @@ npm.cmd run docs:deployment-check
 - The floating widget offers `auto`, `site`, and `web` modes, bounded multi-turn context, current-page context, progress, claim-linked citations, suggestions, retry/copy, and thumbs feedback.
 - Initial copy describes capability without claiming a provider is connected before a request runs.
 - Each turn selects one API base. A `429` response is terminal for that attempt and must not be replayed against another candidate URL.
+- The browser prefers `/chat/public/stream`, validates the SSE event and terminal result contracts in one shared decoder, and may retry `/chat/public` only for an explicit `404`, `405`, `501`, or non-SSE legacy endpoint response. An incomplete, malformed, timed-out, rate-limited, or failed stream is terminal for that attempt.
 - Public result copy distinguishes model answer, partial/uncertain evidence, blocked input, unavailable web research, and browser-local degraded fallback without exposing internal diagnostics.
 - At mobile widths the panel and trigger occupy stable grid rows, remain inside the viewport, and do not block page navigation or reading controls.
 - Suggested prompts are bounded; UI checks validate the rendered starter contract rather than requiring hidden overflow items.

@@ -5,6 +5,7 @@ export interface AssistantEnv {
 
 const MAX_REQUEST_BYTES = 32_000
 const MAX_RESPONSE_BYTES = 256_000
+const MAX_STREAM_RESPONSE_BYTES = 512_000
 
 export function jsonResponse(payload: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(payload), {
@@ -18,6 +19,19 @@ export function jsonResponse(payload: unknown, init?: ResponseInit) {
 }
 
 export async function proxyAssistantRequest(request: Request, env: AssistantEnv, upstreamPath: string) {
+  return proxyAssistant(request, env, upstreamPath, 'json')
+}
+
+export async function proxyAssistantStreamRequest(request: Request, env: AssistantEnv, upstreamPath: string) {
+  return proxyAssistant(request, env, upstreamPath, 'stream')
+}
+
+async function proxyAssistant(
+  request: Request,
+  env: AssistantEnv,
+  upstreamPath: string,
+  responseMode: 'json' | 'stream',
+) {
   const upstreamUrl = buildUpstreamUrl(env.PUBLIC_ASSISTANT_API_BASE_URL, upstreamPath)
   if (!upstreamUrl) {
     return jsonResponse({ error: 'public-assistant-upstream-not-configured' }, { status: 503 })
@@ -39,17 +53,35 @@ export async function proxyAssistantRequest(request: Request, env: AssistantEnv,
   const controller = new AbortController()
   const timeoutMs = readBoundedInteger(env.PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS, 55_000, 5_000, 60_000)
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  let streamHandedOff = false
+  const cleanup = () => clearTimeout(timeout)
   try {
     const response = await fetch(upstreamUrl, {
       method,
       headers: {
-        Accept: 'application/json',
+        Accept: responseMode === 'stream' ? 'text/event-stream' : 'application/json',
         ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
       body,
       signal: controller.signal,
     })
     const responseContentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
+    if (responseMode === 'stream' && response.ok) {
+      if (!responseContentType.includes('text/event-stream') || !response.body) {
+        await response.body?.cancel().catch(() => undefined)
+        return jsonResponse({ error: 'public-assistant-upstream-invalid-response' }, { status: 502 })
+      }
+      streamHandedOff = true
+      return new Response(createBoundedProxyStream(response.body, controller, cleanup), {
+        status: response.status,
+        headers: {
+          'Content-Type': 'text/event-stream; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store',
+          'X-Accel-Buffering': 'no',
+          'X-Content-Type-Options': 'nosniff',
+        },
+      })
+    }
     if (!responseContentType.includes('application/json')) {
       return jsonResponse({ error: 'public-assistant-upstream-invalid-response' }, { status: 502 })
     }
@@ -71,8 +103,52 @@ export async function proxyAssistantRequest(request: Request, env: AssistantEnv,
     }
     return jsonResponse({ error: 'public-assistant-upstream-unreachable' }, { status: 502 })
   } finally {
-    clearTimeout(timeout)
+    if (!streamHandedOff) cleanup()
   }
+}
+
+function createBoundedProxyStream(
+  source: ReadableStream<Uint8Array>,
+  upstreamAbort: AbortController,
+  cleanup: () => void,
+) {
+  const reader = source.getReader()
+  let bytesRead = 0
+  let closed = false
+  const finish = () => {
+    if (closed) return
+    closed = true
+    cleanup()
+  }
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { done, value } = await reader.read()
+        if (done) {
+          finish()
+          controller.close()
+          return
+        }
+        bytesRead += value.byteLength
+        if (bytesRead > MAX_STREAM_RESPONSE_BYTES) {
+          upstreamAbort.abort()
+          await reader.cancel('public-assistant-upstream-response-too-large').catch(() => undefined)
+          finish()
+          controller.error(new Error('public-assistant-upstream-response-too-large'))
+          return
+        }
+        controller.enqueue(value)
+      } catch (error) {
+        finish()
+        controller.error(error)
+      }
+    },
+    async cancel(reason) {
+      upstreamAbort.abort()
+      await reader.cancel(reason).catch(() => undefined)
+      finish()
+    },
+  })
 }
 
 function buildUpstreamUrl(rawBaseUrl: string | undefined, upstreamPath: string) {

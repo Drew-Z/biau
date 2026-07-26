@@ -5616,6 +5616,23 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   font-size: 11px;
 }
 
+.public-assistant__loading {
+  min-height: 36px;
+  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 8px;
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklch, var(--panel-strong) 48%, transparent);
+}
+
+.public-assistant__loading svg {
+  flex: 0 0 auto;
+  color: color-mix(in oklch, var(--green) 76%, var(--ink));
+}
+
 .public-assistant__suggestions {
   min-width: 0;
   max-height: 76px;
