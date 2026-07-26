@@ -15,6 +15,13 @@ Configuration readiness is offline and never calls providers. The only live acce
 
 The first live edition is queued from the authenticated Studio workspace after an exact second confirmation. The API validates the current Edition version, evidence floor, production flag, runtime, and approval bundle before returning `202`. A process-local poller consumes only durable `PRODUCTION` work through database leases and checkpoints, so a Render restart does not turn the HTTP request into the job lifetime. The CLI remains an operations adapter over the same execution resolver, not a separate implementation.
 
+## Evidence Selection Policy
+
+- Official feeds remain the highest-authority evidence and continue to win ranking tie-breaks, but an Edition does not require a fixed number of fresh vendor posts. Daily publication must not stop merely because vendors did not publish that day.
+- Edition readiness requires at least five score-qualified, original-page `READY` events across at least three independent publisher domains. Community/search signals remain ineligible until their original pages are fetched, dated inside the Edition window, and promoted to ready evidence.
+- Generation preserves the source-role boundary already carried by the evidence pack: `official`, `primary_media`, and `secondary_media`. Release, date, price, API, and availability claims require `official` evidence; cross-event trend blocks require evidence from at least two independent domains.
+- The News API, GDELT, Hacker News, and HotDaily own broad recall. Curated official RSS/Atom feeds improve authority and fact verification, but source expansion is not a substitute for ranking and claim-level evidence validation.
+
 ## Acceptance Manifest
 
 - `ai-daily-acceptance-v3` is a low-sensitive, Git-ignored evidence index that records `selectionBasis` and binds the approved proposal/bundle, one `PRODUCTION` issue/run/date, matching Studio review and draft version, Publish Export checks, post-deploy observations, and a sealed rollback-evidence reference.

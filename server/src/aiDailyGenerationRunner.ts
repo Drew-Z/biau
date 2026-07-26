@@ -9,6 +9,7 @@ import {
   normalizeCompositionOutput,
   normalizeFactExtractionOutput,
   normalizeVerifierOutput,
+  summarizeAiDailyGenerationEvidenceReadinessIssues,
   verifyAiDailyComposition,
   type AiDailyAtomicClaim,
   type AiDailyClaimReview,
@@ -328,9 +329,7 @@ export async function executeAiDailyGenerationWork(input: {
 
   try {
     const pack = await loadAiDailyGenerationEvidencePack(input.prisma, run.issueId, now())
-    const minimumGaps = [...pack.gaps]
-    if (pack.evidence.length < 3) minimumGaps.push('minimum-selected-evidence-not-met')
-    if (!pack.evidence.some((item) => item.sourceTier === 'TIER_1')) minimumGaps.push('tier1-evidence-missing')
+    const minimumGaps = summarizeAiDailyGenerationEvidenceReadinessIssues(pack)
     if (workItem.freshnessTargetAt && workItem.freshnessTargetAt.getTime() <= now().getTime()) {
       minimumGaps.push('review-ready-freshness-target-missed')
     }

@@ -6,6 +6,7 @@ import {
   type AiDailyProductionConfigurationIssue,
 } from './aiDailyGenerationExecution.js'
 import { executeAiDailyGenerationWork } from './aiDailyGenerationRunner.js'
+import { summarizeAiDailyGenerationEvidenceReadinessIssues } from './aiDailyGeneration.js'
 import {
   appendAiDailyRunEvent,
   claimAiDailyWorkItem,
@@ -89,7 +90,7 @@ export async function queueAiDailyStudioProductionRun(
   const evidencePack = await loadAiDailyGenerationEvidencePack(prisma, issue.id)
   const evidenceIssues = [
     ...summarizeAiDailySelectionAuthorizationIssues(evidencePack),
-    ...summarizeEvidenceReadinessIssues(evidencePack),
+    ...summarizeAiDailyGenerationEvidenceReadinessIssues(evidencePack),
   ]
   if (evidenceIssues.length > 0) {
     throw new AiDailyStudioProductionError('ai-daily-generation-evidence-not-ready', {
@@ -155,16 +156,6 @@ export function summarizeAiDailySelectionAuthorizationIssues(
     issues.push('selection-ingestion-run-not-ready')
   }
   return issues
-}
-
-function summarizeEvidenceReadinessIssues(
-  pack: Awaited<ReturnType<typeof loadAiDailyGenerationEvidencePack>>,
-) {
-  const issues: string[] = []
-  if (pack.gaps.length > 0) issues.push('selected-evidence-incomplete')
-  if (pack.evidence.length < 3) issues.push('minimum-selected-evidence-not-met')
-  if (!pack.evidence.some((item) => item.sourceTier === 'TIER_1')) issues.push('tier1-evidence-missing')
-  return [...new Set(issues)]
 }
 
 interface ProductionWorkerState {

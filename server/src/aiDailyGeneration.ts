@@ -41,6 +41,16 @@ export interface AiDailyGenerationEvidence {
   contentHash?: string
 }
 
+export function summarizeAiDailyGenerationEvidenceReadinessIssues(input: {
+  evidence: readonly AiDailyGenerationEvidence[]
+  gaps: readonly string[]
+}) {
+  const issues: string[] = []
+  if (input.gaps.length > 0) issues.push('selected-evidence-incomplete')
+  if (input.evidence.length < 3) issues.push('minimum-selected-evidence-not-met')
+  return issues
+}
+
 export interface AiDailyAtomicClaim {
   claimId: string
   text: string
@@ -686,8 +696,8 @@ export function validateAiDailyComposition(input: {
     }
     if (claim.evidenceIds.length === 0) findings.push({ severity: 'critical', code: 'factual-claim-uncited', claimId })
     if (claim.conflictingEvidenceIds.length > 0) findings.push({ severity: 'review', code: 'claim-evidence-conflict', claimId })
-    if (requiresTier1Evidence(claim) && !claim.evidenceIds.some((id) => evidenceById.get(id)?.sourceTier === 'TIER_1')) {
-      findings.push({ severity: 'critical', code: 'tier1-evidence-required', claimId })
+    if (requiresOfficialEvidence(claim) && !claim.evidenceIds.some((id) => evidenceById.get(id)?.sourceKind === 'official')) {
+      findings.push({ severity: 'critical', code: 'official-evidence-required', claimId })
     }
     if (requiredReviewClaimIds.has(claimId)) {
       const review = reviewsByClaimId.get(claimId)
@@ -703,6 +713,22 @@ export function validateAiDailyComposition(input: {
       if (review?.supportingEvidenceIds.some((id) => !claim.evidenceIds.includes(id))) {
         findings.push({ severity: 'critical', code: 'verifier-introduced-evidence', claimId })
       }
+    }
+  }
+  for (const [index, trend] of input.composition.trends.entries()) {
+    const evidenceDomains = new Set(
+      trend.claimIds
+        .flatMap((claimId) => claimsById.get(claimId)?.evidenceIds ?? [])
+        .map((evidenceId) => evidenceById.get(evidenceId)?.canonicalUrl ?? '')
+        .map(readPublicHostname)
+        .filter(Boolean),
+    )
+    if (evidenceDomains.size < 2) {
+      findings.push({
+        severity: 'critical',
+        code: 'trend-independent-sources-required',
+        blockId: `composition:trend:${index + 1}`,
+      })
     }
   }
   const critical = findings.some((finding) => finding.severity === 'critical')
@@ -993,7 +1019,7 @@ export function collectAiDailyCompositionReviewTargets(
   ]
 }
 
-function requiresTier1Evidence(claim: AiDailyAtomicClaim) {
+function requiresOfficialEvidence(claim: AiDailyAtomicClaim) {
   return ['release', 'price', 'date'].includes(claim.claimType) || /(官方|official|API|价格|price|可用|available|availability)/iu.test(claim.text)
 }
 
@@ -1032,6 +1058,17 @@ function isPublicHttpUrl(value: string) {
     return (url.protocol === 'http:' || url.protocol === 'https:') && !url.username && !url.password
   } catch {
     return false
+  }
+}
+
+function readPublicHostname(value: string) {
+  try {
+    const url = new URL(value)
+    return (url.protocol === 'http:' || url.protocol === 'https:') && !url.username && !url.password
+      ? url.hostname.toLowerCase()
+      : ''
+  } catch {
+    return ''
   }
 }
 

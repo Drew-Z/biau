@@ -52,4 +52,62 @@ assert(report.negativeSlices.every((slice) => slice.caseCount >= 3), 'negative s
 assert(report.negativeSlices.every((slice) => slice.minorEditAcceptance >= 0.8), 'negative slice acceptance')
 assert(report.negativeSlices.every((slice) => slice.citationPrecision === 1), 'negative slice citation precision')
 
+const trendDefinition = definitions[0]
+assert(trendDefinition, 'trend corroboration fixture required')
+const trendResult = await runAiDailyGeneration({
+  evidence: trendDefinition.evidence,
+  providers: buildAiDailyGenerationProvidersFixture(),
+})
+assert(trendResult.composition, 'trend corroboration composition required')
+const trendClaimId = trendResult.composition.trends[0]?.claimIds[0]
+assert(trendClaimId, 'trend corroboration claim required')
+const singleSourceTrendComposition = {
+  ...trendResult.composition,
+  trends: [{ text: '单一来源不足以支撑跨事件趋势判断。', claimIds: [trendClaimId] }],
+}
+const trendEvidenceById = new Map(trendDefinition.evidence.map((item) => [item.evidenceId, item]))
+const singleSourceTrendValidation = validateAiDailyComposition({
+  evidence: trendDefinition.evidence,
+  claims: trendResult.claims,
+  composition: singleSourceTrendComposition,
+  reviews: trendResult.reviews,
+  blockReviews: trendResult.blockReviews.map((review) => review.blockId === 'composition:trend:1'
+    ? { ...review, supportingClaimIds: [trendClaimId] }
+    : review),
+  requiredReviewClaimIds: new Set(classifyAiDailyRiskClaims(
+    trendResult.claims,
+    trendEvidenceById,
+    singleSourceTrendComposition,
+  )),
+})
+assert(
+  singleSourceTrendValidation.findings.some((finding) => finding.code === 'trend-independent-sources-required'),
+  'trend blocks require evidence from at least two independent domains',
+)
+
+const releaseClaim = trendResult.claims.find((claim) => claim.claimType === 'release')
+assert(releaseClaim, 'official evidence fixture requires a release claim')
+const claimedOfficialEvidence = trendDefinition.evidence.map((item) => releaseClaim.evidenceIds.includes(item.evidenceId)
+  ? { ...item, sourceKind: 'primary_media' as const }
+  : item)
+const claimedOfficialEvidenceById = new Map(claimedOfficialEvidence.map((item) => [item.evidenceId, item]))
+const officialRoleValidation = validateAiDailyComposition({
+  evidence: claimedOfficialEvidence,
+  claims: trendResult.claims,
+  composition: trendResult.composition,
+  reviews: trendResult.reviews,
+  blockReviews: trendResult.blockReviews,
+  requiredReviewClaimIds: new Set(classifyAiDailyRiskClaims(
+    trendResult.claims,
+    claimedOfficialEvidenceById,
+    trendResult.composition,
+  )),
+})
+assert(
+  officialRoleValidation.findings.some((finding) => (
+    finding.code === 'official-evidence-required' && finding.claimId === releaseClaim.claimId
+  )),
+  'a tier label cannot replace the official source role for high-risk claims',
+)
+
 console.log(`AI Daily quality check passed with ${report.caseCount} evidence-labeled cases and ${report.negativeSlices.length} negative slices`)

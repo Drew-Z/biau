@@ -2,11 +2,18 @@ import {
   aiDailyIngestionConfigVersion,
   summarizeAiDailyIngestionCohort,
 } from '../src/aiDailyIngestionRunner.js'
+import { summarizeAiDailyGenerationEvidenceReadinessIssues } from '../src/aiDailyGeneration.js'
+import { buildAiDailyGenerationEvidenceFixture } from '../src/aiDailyGenerationFixtures.js'
 import { summarizeAiDailySelectionAuthorizationIssues } from '../src/aiDailyStudioProduction.js'
 import { assert, assertEqual } from './ai-daily-check-helpers.js'
 
 const issueId = 'issue-fixture'
 const evidence = [{ sourceTier: 'TIER_1' }, { sourceTier: 'TIER_2' }]
+const editorialEvidence = buildAiDailyGenerationEvidenceFixture(3, 'editorial-ready').map((item) => ({
+  ...item,
+  sourceKind: 'primary_media' as const,
+  sourceTier: 'TIER_2' as const,
+}))
 const authority = (overrides: Partial<{
   runId: string
   issueId: string | null
@@ -30,6 +37,22 @@ assertEqual(
   }).length,
   0,
   'one current completed selection run authorizes production evidence',
+)
+
+assertEqual(
+  summarizeAiDailyGenerationEvidenceReadinessIssues({ evidence: editorialEvidence, gaps: [] }).length,
+  0,
+  'three ready editorial evidence records pass the edition-wide readiness floor without an official-source quota',
+)
+assert(
+  summarizeAiDailyGenerationEvidenceReadinessIssues({ evidence: editorialEvidence.slice(0, 2), gaps: [] })
+    .includes('minimum-selected-evidence-not-met'),
+  'fewer than three selected evidence records remain blocked',
+)
+assert(
+  summarizeAiDailyGenerationEvidenceReadinessIssues({ evidence: editorialEvidence, gaps: ['evidence-expired'] })
+    .includes('selected-evidence-incomplete'),
+  'repository evidence gaps remain blocking',
 )
 
 const missing = summarizeAiDailySelectionAuthorizationIssues({ issueId, evidence, selectionAuthorities: [] })

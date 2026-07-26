@@ -364,14 +364,16 @@ Selection operates on one representative per event cluster after unsafe, unfetch
 
 ```text
 minScore: 55 / 100
+minAiRelevance: 8 / 20
 targetEvents: 8
 minEvents: 5
 maxEvents: 10
 maxEventsPerDomain: 2
 maxEventsPerTopic: 3
 minDistinctDomains: 3
-minTier1Sources: 2
 ```
+
+Official sources retain the highest authority score and representative priority, but the Edition has no fixed official-source quota. This prevents a quiet vendor-news day from blocking a well-supported media edition. Search, aggregator, and community leads remain ineligible until BIAU fetches a dated original page with `READY` evidence.
 
 Stable ordering:
 
@@ -381,9 +383,9 @@ Stable ordering:
 4. publication time descending, missing last;
 5. canonical URL ascending.
 
-The selector applies caps and stops at the target unless more events are needed for minimum evidence diversity. It never exceeds `maxEvents`.
+The selector applies caps and stops at the target unless more events are needed for minimum domain diversity. It never exceeds `maxEvents`.
 
-Failure of `minEvents`, `minDistinctDomains`, `minTier1Sources`, or freshness gates ends as `COMPLETED_WITH_GAPS` and makes the issue `NEEDS_MORE_EVIDENCE`.
+Failure of `minEvents`, `minDistinctDomains`, or freshness gates ends as `COMPLETED_WITH_GAPS` and makes the issue `NEEDS_MORE_EVIDENCE`.
 
 Editor overrides store a reason and increment the selection version. Composition binds to one explicit selection version.
 
@@ -460,7 +462,8 @@ Reject:
 
 - unknown or unfetched source IDs;
 - factual sentences without evidence IDs;
-- official/price/API/availability wording without appropriate Tier 1 evidence;
+- official/release/date/price/API/availability wording without `official` evidence;
+- cross-event trend blocks backed by fewer than two independent publisher domains;
 - generated URLs;
 - duplicate signals;
 - contradicted or insufficient high-risk claims;
@@ -804,10 +807,11 @@ freshness_stale
 Default deployment:
 
 ```text
-Discovery primary: Brave Search API
-Evidence extraction: safe direct HTTP, then Firecrawl
-Recommended search/extract fallback: Tavily
-Early social radar: xAI X Search only when intentionally configured
+Discovery primary: The News API when configured; otherwise GDELT DOC
+Discovery fallback: GDELT DOC when The News API is enabled
+Community signals: Hacker News Algolia and HotDaily public API
+First-party evidence: curated official RSS/Atom feeds
+Evidence extraction: SSRF-safe direct HTTP against every original article
 Generation: evaluated extractor + strong composer + independent verifier slots
 Database: existing Studio PostgreSQL
 Scheduler: separate ingest and editorial Render Cron Jobs
@@ -815,4 +819,4 @@ Public real-time surface: approved feed projection on existing Studio API
 Daily archive: existing static Publish Export
 ```
 
-This is the selected BIAU architecture. Provider-neutral interfaces protect maintainability; they do not reduce the production requirement for search, generation, and fresh evidence.
+This is the selected BIAU architecture. It has no Tavily runtime dependency. Provider-neutral interfaces protect maintainability; they do not reduce the production requirement for broad discovery, original-page evidence, generation, and editorial review.

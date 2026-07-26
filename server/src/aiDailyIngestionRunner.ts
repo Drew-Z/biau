@@ -50,7 +50,7 @@ import { syncAiDailySourceManifest } from './aiDailySourceManifestRepository.js'
 import { loadAiDailySourceManifest, type AiDailyCuratedQueryGroup } from './aiDailySourceManifest.js'
 import { env } from './env.js'
 
-export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v6'
+export const aiDailyIngestionConfigVersion = 'ai-daily-ingestion-runner-v7'
 
 const ingestionLeaseMs = 12 * 60_000
 const ingestionRetryDelayMs = 5 * 60_000

@@ -684,7 +684,6 @@ export interface AiDailySelectionPolicy {
   maxEventsPerDomain: number
   maxEventsPerTopic: number
   minDistinctDomains: number
-  minTier1Sources: number
 }
 
 export const defaultAiDailySelectionPolicy: AiDailySelectionPolicy = {
@@ -696,7 +695,6 @@ export const defaultAiDailySelectionPolicy: AiDailySelectionPolicy = {
   maxEventsPerDomain: 2,
   maxEventsPerTopic: 3,
   minDistinctDomains: 3,
-  minTier1Sources: 2,
 }
 
 export interface AiDailySelectionResult {
@@ -723,8 +721,7 @@ export function selectAiDailyClusters(
     if (
       selected.length >= policy.targetEvents &&
       selected.length >= policy.minEvents &&
-      domains.size >= policy.minDistinctDomains &&
-      tier1Sources >= policy.minTier1Sources
+      domains.size >= policy.minDistinctDomains
     ) {
       break
     }
@@ -744,7 +741,6 @@ export function selectAiDailyClusters(
   const gaps: string[] = []
   if (selected.length < policy.minEvents) gaps.push('minimum-events-not-met')
   if (domains.size < policy.minDistinctDomains) gaps.push('minimum-distinct-domains-not-met')
-  if (tier1Sources < policy.minTier1Sources) gaps.push('minimum-tier1-sources-not-met')
   return {
     selected,
     ready: gaps.length === 0,

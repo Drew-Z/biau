@@ -29,7 +29,7 @@ const qualified = prepareAiDailyEvidenceSelection({
 assert(qualified.ready, `qualified fixture should pass: ${qualified.gaps.join(',')}`)
 assertEqual(qualified.selected.length, defaultAiDailySelectionPolicy.targetEvents, 'target event count')
 assert(new Set(qualified.selected.map((cluster) => cluster.representative.publisherDomain)).size >= 3, 'domain diversity')
-assert(qualified.selected.filter((cluster) => cluster.representative.sourceTier === 'TIER_1').length >= 2, 'tier 1 diversity')
+assertEqual(qualified.selected[0]?.representative.sourceTier, 'TIER_1', 'official evidence remains preferred by authority score')
 
 const domainCounts = new Map<string, number>()
 const topicCounts = new Map<string, number>()
@@ -106,13 +106,34 @@ assertEqual(tied[0]?.representative.canonicalUrl, tieLeft.canonicalUrl, 'stable 
 const insufficient = selectAiDailyClusters(qualified.ranked.slice(0, 2))
 assert(!insufficient.ready && insufficient.gaps.includes('minimum-events-not-met'), 'insufficient evidence gap')
 
+const editorialOnlyTitles = [
+  'AI reasoning API adds bounded tool controls',
+  'Open source language model publishes new weights',
+  'Agent workflow tracing benchmark compares runtimes',
+  'GPU inference platform reports lower serving latency',
+  'Multimodal evaluation dataset expands safety coverage',
+  'Vector database update improves hybrid retrieval',
+]
+const editorialOnlyCandidates = editorialOnlyTitles.map((title, offset) => buildAiDailyEvidenceCandidateFixture({
+  index: 40 + offset,
+  domain: `editorial${offset + 1}.example.com`,
+  tier: 'TIER_2',
+  title,
+}))
+const editorialOnly = selectAiDailyClusters(rankAiDailyClusters(
+  groupAiDailyCandidates(deduplicateAiDailyCandidates(editorialOnlyCandidates)),
+  { now: aiDailyFixtureNow },
+))
+assert(editorialOnly.ready, `ready original-page editorial evidence should not depend on a fixed official-source quota: ${editorialOnly.gaps.join(',')}`)
+assertEqual(editorialOnly.counts.tier1Sources, 0, 'editorial-only fixture has no official source')
+assert(editorialOnly.selected.length >= defaultAiDailySelectionPolicy.minEvents, 'editorial-only fixture satisfies the event floor')
+
 const diversityExtension = selectAiDailyClusters(qualified.ranked, {
   ...defaultAiDailySelectionPolicy,
   targetEvents: 2,
   minEvents: 2,
   maxEvents: 4,
   minDistinctDomains: 3,
-  minTier1Sources: 2,
 })
 assertEqual(diversityExtension.selected.length, 3, 'selection may extend beyond target for minimum diversity')
 assert(diversityExtension.ready, `diversity extension should satisfy the policy: ${diversityExtension.gaps.join(',')}`)
