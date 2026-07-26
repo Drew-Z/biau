@@ -33,12 +33,13 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - 用户批准的真实研究问题已得到模型回答、原网页证据和合法 citation 映射。
 - 匿名 session/turn、feedback、公开 RAG sync 与 public alias 已完成验收。
 - Cloudflare 生产环境已收缩为站点、Public proxy 与 Studio browser base 所需变量。
+- Operator PostgreSQL 生产退役已完成：备份恢复演练、preflight、allowlist apply、verify 和 Public/Studio/RAG 健康检查均通过。
 
-这些证据允许退休旧 Operator/internal-RAG 产品面，但不等于允许自动删除生产数据。
+这些证据已完成旧 Operator 数据面的受控退役；Render 旧服务与 external internal Qdrant collection 仍是独立删除门禁。
 
 ## Operator PostgreSQL 退役
 
-这是当前最高优先级人工 gate。它必须在 public-only 代码部署通过后执行。
+生产 PostgreSQL 退役已于 2026-07-26 完成。以下步骤保留为可审计 runbook：
 
 1. 确认旧 Operator writer 已停止，并保留可恢复数据库备份与上一 Render revision。
 2. 从数据库控制台记录 database name 和 database user，不把连接串写入仓库。
@@ -49,6 +50,17 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 7. internal Qdrant collection 作为独立 gate，在 public alias 稳定且备份/回滚信息保留后再删除。
 
 破坏性 SQL 不在 `prisma/migrations/` 中，不会随 Render 重启自动执行；脚本不使用 `CASCADE`，也不会触碰 `PublicAssistant*`、Studio 或 AI Daily 表。
+
+当前仅剩：
+
+- 删除已暂停的 legacy Render Operator 服务。
+- 确认 public alias 保持稳定后，删除旧 internal Qdrant collection。
+
+## Supabase Data API 权限加固
+
+生产检查确认剩余 25 张 `public` 表未启用 RLS，且 `anon` / `authenticated` 当前拥有完整表权限。当前仓库未使用浏览器端 Supabase client，应用通过服务端 Prisma 直连数据库；因此优先评估撤销 Data API 角色权限和默认权限，而不是无 policy 地批量启用 RLS。
+
+这是独立的高优先级人工批准项。执行前必须确认没有仓库外的 Data API consumer；不得把权限变更混入 Operator 退役 SQL，也不得直接启用 RLS 后让现有访问静默失败。
 
 ## Content Studio / AI Daily
 

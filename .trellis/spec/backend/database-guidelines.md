@@ -48,6 +48,8 @@ DATABASE_URL=<anonymous public assistant database>
 
 Operator/member/private-chat/internal-knowledge tables are absent from the current Prisma schema. Their final PostgreSQL deletion uses the reviewed scripts under `scripts/operations/postgres/operator-retirement/`, outside automatic Prisma migrations. The flow requires database fingerprint checks, a restorable backup, explicit confirmation, no `CASCADE`, and post-delete verification of all public-assistant tables.
 
+Catalog guards that detect enum use outside a retirement allowlist must filter `pg_class.relkind` to real relations (`r`, `p`, `v`, `m`, `f`, `c`). Index relations mirror indexed column types in `pg_attribute`; counting `relkind = i` as an external enum consumer produces a false dependency and blocks a valid retirement. The destructive statement must still omit `CASCADE` so unmodelled dependencies fail the transaction closed.
+
 ## Query Patterns
 
 - Use explicit `select`/serializers for browser responses.

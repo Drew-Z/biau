@@ -115,6 +115,7 @@ BEGIN
   JOIN pg_namespace type_ns ON type_ns.oid = t.typnamespace
   WHERE table_ns.nspname = current_schema()
     AND type_ns.nspname = current_schema()
+    AND c.relkind = ANY (ARRAY['r', 'p', 'v', 'm', 'f', 'c']::"char"[])
     AND t.typname = ANY (ARRAY[
       'AgentMemoryKind', 'AgentMemoryStatus',
       'InternalKnowledgeStatus', 'InternalKnowledgeSyncStatus',

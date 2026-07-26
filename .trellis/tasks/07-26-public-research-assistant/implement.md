@@ -71,6 +71,15 @@ No validation command may ping, diagnose, catalog-probe, or otherwise test a liv
 - Prisma format/validate/generate, all public assistant contracts, public-only RAG/service-mode smoke, server/Cloudflare/Studio/AI Daily checks, docs checks, lint, build, performance budget, UI checks, and `git diff --check` pass without live provider calls.
 - Remaining manual gates: deploy the public-only revision, run Operator PostgreSQL preflight/apply/verify against the confirmed former Operator database, observe Public/Studio/RAG, then delete the Render Operator service and internal Qdrant collection separately.
 
+## R10 production PostgreSQL retirement acceptance (2026-07-26)
+
+- Created a custom-format backup of the target `public` schema and proved it by restoring into an isolated PostgreSQL 17 database; protected Public Assistant and Studio row counts matched production before retirement.
+- Corrected the enum dependency guard to inspect real relation kinds instead of treating target-table indexes as external enum consumers. Production preflight then passed with zero active non-self connections and zero cross-boundary foreign keys.
+- Executed the explicitly approved allowlisted transaction: all 12 retired Operator/member/private-chat/internal-knowledge tables and 7 dedicated enums were removed without `CASCADE`.
+- Production `verify.sql` passed. Public Assistant persistence remained `8` sessions, `8` turns, `1` feedback record, and `2` aggregates; Studio retained `2` hidden drafts and AI Daily retained its existing empty issue state.
+- Cloudflare/Public, Studio, and public-only RAG health endpoints returned HTTP 200 after retirement. The RAG public collection remained ready with 27 documents and 53 chunks.
+- Remaining retirement gates are limited to deleting the suspended Render Operator service and the obsolete internal Qdrant collection. Supabase Data API grants/RLS hardening is tracked separately because it changes database access policy rather than retired data.
+
 ## Review and rollback points
 
 - Keep the existing public response fields additive until the new widget is deployed; remove legacy fields only in the final cleanup.
