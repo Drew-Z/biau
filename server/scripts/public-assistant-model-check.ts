@@ -3,6 +3,7 @@ import { createServer } from 'node:http'
 import { env } from '../src/env.js'
 import { generatePublicAssistantDraft, planPublicAssistantRequest } from '../src/publicAssistantModel.js'
 import type { PublicAssistantEvidence, PublicAssistantRequest } from '../src/publicAssistantRuntime.js'
+import { readResponsesContent } from '../src/responsesApi.js'
 
 const original = {
   assistantModelApiKey: env.assistantModelApiKey,
@@ -19,6 +20,15 @@ const original = {
 
 const observedPaths: string[] = []
 const observedBodies: unknown[] = []
+
+assert.equal(readResponsesContent({ output_text: 'top-level' }), 'top-level')
+assert.equal(readResponsesContent({
+  output: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: { value: 'responses-message' } }] }],
+}), 'responses-message')
+assert.equal(readResponsesContent({ choices: [{ message: { content: 'chat-shaped compatibility' } }] }), 'chat-shaped compatibility')
+assert.equal(readResponsesContent({
+  choices: [{ message: { content: [{ type: 'text', text: { value: 'chat-array compatibility' } }] } }],
+}), 'chat-array compatibility')
 const server = createServer((request, response) => {
   if (request.method !== 'POST' || request.headers.authorization !== 'Bearer fixture-key') {
     response.writeHead(404, { 'Content-Type': 'application/json' })

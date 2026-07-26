@@ -6,6 +6,7 @@ import type {
   AiDailyStructuredGenerationRequest,
 } from './aiDailyGeneration.js'
 import type { AiDailyModelRuntimeChannel, AiDailyModelRuntimeCandidate } from './aiDailyModelRuntime.js'
+import { readResponsesContent } from './responsesApi.js'
 
 export function createAiDailyResponsesProvider(input: {
   candidate: AiDailyModelRuntimeCandidate
@@ -102,7 +103,7 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
         throw new Error(lastFailure)
       }
       const json = await response.json().catch(() => null)
-      const content = readResponseContent(json)
+      const content = readResponsesContent(json)
       if (!content) throw new Error('ai-daily-provider-empty-response')
       return parseJsonContent(content)
     } catch (error) {
@@ -139,26 +140,6 @@ function responsesEndpoints(baseUrl: string) {
   if (normalized.endsWith('/responses')) return [normalized]
   if (normalized.endsWith('/v1')) return [`${normalized}/responses`]
   return [...new Set([`${normalized}/responses`, `${normalized}/v1/responses`])]
-}
-
-function readResponseContent(value: unknown) {
-  if (!isRecord(value)) return ''
-  if (typeof value.output_text === 'string' && value.output_text.trim()) return value.output_text.trim()
-  if (!Array.isArray(value.output)) return ''
-  return value.output
-    .filter(isRecord)
-    .filter((item) => item.type === 'message' && item.role === 'assistant' && Array.isArray(item.content))
-    .flatMap((item) => item.content as unknown[])
-    .filter(isRecord)
-    .filter((item) => item.type === 'output_text')
-    .map((item) => readOutputText(item.text))
-    .join('')
-    .trim()
-}
-
-function readOutputText(value: unknown) {
-  if (typeof value === 'string') return value
-  return isRecord(value) && typeof value.value === 'string' ? value.value : ''
 }
 
 function parseJsonContent(content: string) {
@@ -209,8 +190,4 @@ function findBalancedJson(value: string) {
     }
   }
   return ''
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }

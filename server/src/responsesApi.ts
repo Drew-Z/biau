@@ -128,19 +128,41 @@ async function requestEndpoint(input: {
   }
 }
 
-function readResponsesContent(value: unknown) {
+export function readResponsesContent(value: unknown) {
   if (!isRecord(value)) return ''
   if (typeof value.output_text === 'string' && value.output_text.trim()) return value.output_text.trim()
-  if (!Array.isArray(value.output)) return ''
-  return value.output
+  const responsesContent = Array.isArray(value.output)
+    ? value.output
+      .filter(isRecord)
+      .filter((item) => item.type === 'message' && item.role === 'assistant' && Array.isArray(item.content))
+      .flatMap((item) => item.content as unknown[])
+      .filter(isRecord)
+      .filter((item) => item.type === 'output_text')
+      .map((item) => readTextValue(item.text))
+      .join('')
+      .trim()
+    : ''
+  if (responsesContent) return responsesContent
+
+  const firstChoice = Array.isArray(value.choices) ? value.choices.find(isRecord) : null
+  const message = firstChoice && isRecord(firstChoice.message) ? firstChoice.message : null
+  return message ? readMessageContent(message.content) : ''
+}
+
+function readMessageContent(value: unknown) {
+  if (typeof value === 'string') return value.trim()
+  if (!Array.isArray(value)) return ''
+  return value
     .filter(isRecord)
-    .filter((item) => item.type === 'message' && item.role === 'assistant' && Array.isArray(item.content))
-    .flatMap((item) => item.content as unknown[])
-    .filter(isRecord)
-    .filter((item) => item.type === 'output_text')
-    .map((item) => typeof item.text === 'string' ? item.text : isRecord(item.text) && typeof item.text.value === 'string' ? item.text.value : '')
+    .filter((item) => item.type === 'text' || item.type === 'output_text')
+    .map((item) => readTextValue(item.text))
     .join('')
     .trim()
+}
+
+function readTextValue(value: unknown) {
+  if (typeof value === 'string') return value
+  return isRecord(value) && typeof value.value === 'string' ? value.value : ''
 }
 
 function findBalancedJson(value: string) {

@@ -5,6 +5,7 @@
 - The public assistant is anonymous, read-only, and available without member or owner authentication.
 - It may answer from BIAU public knowledge, fetched public-web evidence, or both.
 - One configured Responses API model owns planning and answer generation. Retrieval, embedding, search, and reranking are tools rather than extra generation-model routes.
+- Model requests always use the Responses input contract. The shared response decoder prefers standard `output_text` / assistant `output_text` items and may accept a relay's chat-shaped `choices[0].message.content` success payload without changing the request protocol or endpoint selection.
 - Public responses never expose provider names, model IDs, endpoints, prompts, graph traces, internal diagnostics, or private/internal citations.
 
 ## Agent Runtime
