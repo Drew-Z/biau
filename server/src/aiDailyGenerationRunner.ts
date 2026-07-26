@@ -3,6 +3,7 @@ import {
   composeAiDailyFacts,
   collectAiDailyCompositionReviewTargets,
   createAiDailyGenerationPayloadHash,
+  isAiDailyGenerationProviderErrorCategory,
   createRejectedAiDailyGeneration,
   extractAiDailyFacts,
   finalizeAiDailyGeneration,
@@ -537,7 +538,8 @@ function readAttempts(value: unknown): AiDailyGenerationProviderAttempt[] {
       !['extractor', 'composer', 'verifier'].includes(String(record.role)) ||
       !['primary', 'fallback'].includes(String(record.slot)) ||
       !['succeeded', 'failed', 'schema-rejected', 'quality-rejected'].includes(String(record.outcome)) ||
-      typeof record.calls !== 'number'
+      typeof record.calls !== 'number' ||
+      !(record.errorCategory === null || isAiDailyGenerationProviderErrorCategory(record.errorCategory))
     ) {
       throw new Error('ai-daily-checkpoint-schema-invalid')
     }

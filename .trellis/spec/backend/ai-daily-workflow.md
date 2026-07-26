@@ -72,6 +72,67 @@ The authenticated Studio product entry is `POST /studio/api/ai-daily/issues/:id/
 
 The live provider boundary is the OpenAI-compatible Responses API with a structured JSON response. Every runtime channel uses `protocol: "responses"`; Chat Completions is not an AI Daily fallback. The request deliberately omits optional sampling fields such as `temperature` because relay compatibility is not guaranteed. Runtime channels carry private base URLs and keys only in deployment environment; candidate records and approval bundles retain provider/failure-domain aliases, model identifiers, aggregate quality, latency, usage summaries, and hashes, never endpoints, credentials, prompts, source text, raw outputs, or raw provider errors.
 
+## Scenario: Bounded generation provider failure persistence
+
+### 1. Scope / Trigger
+
+- Trigger: a live extractor, composer, or verifier request fails and its attempt must survive a durable checkpoint without retaining raw provider data.
+- Goal: preserve enough information to distinguish configuration and transport failures while keeping checkpoint and observability labels fixed and low-sensitive.
+
+### 2. Signatures
+
+- `classifyAiDailyGenerationProviderError(error: unknown): AiDailyGenerationProviderErrorCategory` owns provider exception projection.
+- `isAiDailyGenerationProviderErrorCategory(value: unknown)` owns checkpoint restoration validation.
+- `AiDailyGenerationProviderAttempt.errorCategory` is either `null` or one of `provider_error`, `provider_request_invalid`, `provider_auth`, `provider_rate_limited`, `provider_endpoint_unsupported`, `provider_upstream_error`, `provider_timeout`, `provider_network_error`, `provider_empty_response`, `provider_invalid_json`, `provider_payload_too_large`, `schema_invalid`, and `provider_quality_below_floor`.
+
+### 3. Contracts
+
+- Failed provider calls store only the fixed category. Checkpoints and diagnostics never retain the endpoint, response body, credential, raw exception, prompt, or model output.
+- Schema and quality rejections keep their existing `schema_invalid` and `provider_quality_below_floor` categories; provider transport classification must not relabel them.
+- The classifier accepts only exact adapter-owned error messages or bounded HTTP status patterns. Unknown messages collapse to `provider_error` instead of becoming dynamic labels.
+- Checkpoint restoration rejects an unknown or non-string category with `ai-daily-checkpoint-schema-invalid`; it must not silently coerce old or injected values.
+- Classification changes no request body, endpoint fallback rule, retry count, or provider selection behavior.
+
+### 4. Validation & Error Matrix
+
+- Payload bound failure -> `provider_payload_too_large`.
+- Abort timeout -> `provider_timeout`; transport failure -> `provider_network_error`.
+- Empty content -> `provider_empty_response`; unparseable structured JSON -> `provider_invalid_json`.
+- Provider `401`/`403` -> `provider_auth`; `429` -> `provider_rate_limited`; `404`/`405` -> `provider_endpoint_unsupported`.
+- Other provider `4xx` -> `provider_request_invalid`; normalized `5xx` -> `provider_upstream_error`.
+- Unknown exception/message -> `provider_error`.
+- Unknown restored category -> `ai-daily-checkpoint-schema-invalid` before any provider call.
+
+### 5. Good / Base / Bad Cases
+
+- Good: a `429` extractor failure persists as `provider_rate_limited`, exposes no response body, and the run remains resumable/auditable.
+- Base: an unrecognized relay failure persists as `provider_error`; operators know the boundary failed without receiving an unsafe dynamic string.
+- Bad: persist `error.message`, a URL, or a provider response as `errorCategory`, or accept an arbitrary category during checkpoint replay.
+
+### 6. Tests Required
+
+- `npm.cmd run ai-daily:provider-check` covers every adapter-owned category plus generic fallback without a network call.
+- `npm.cmd run ai-daily:runner-check` injects an unknown checkpoint category and requires `ai-daily-checkpoint-schema-invalid`.
+- Keep both checks in `npm.cmd run ai-daily:contracts-check`; run `server:build`, `lint`, `build`, `git diff --check`, and the sensitive-value scan before commit.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+attempt.errorCategory = error instanceof Error ? error.message : String(error)
+```
+
+This persists unbounded provider text and can leak endpoints or bodies into durable data and metrics.
+
+#### Correct
+
+```ts
+attempt.errorCategory = classifyAiDailyGenerationProviderError(error)
+```
+
+The shared classifier preserves one fixed low-sensitive category, and the checkpoint decoder validates the same source-of-truth list.
+
 ## Scenario: Studio live-run ingestion authorization
 
 ### 1. Scope / Trigger

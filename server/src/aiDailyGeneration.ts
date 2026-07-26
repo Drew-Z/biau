@@ -11,6 +11,29 @@ export const aiDailyGenerationRoles = ['extractor', 'composer', 'verifier'] as c
 export type AiDailyGenerationRole = (typeof aiDailyGenerationRoles)[number]
 export type AiDailyGenerationSlot = 'primary' | 'fallback'
 
+export const aiDailyGenerationProviderErrorCategories = [
+  'provider_error',
+  'provider_request_invalid',
+  'provider_auth',
+  'provider_rate_limited',
+  'provider_endpoint_unsupported',
+  'provider_upstream_error',
+  'provider_timeout',
+  'provider_network_error',
+  'provider_empty_response',
+  'provider_invalid_json',
+  'provider_payload_too_large',
+  'schema_invalid',
+  'provider_quality_below_floor',
+] as const
+export type AiDailyGenerationProviderErrorCategory = (typeof aiDailyGenerationProviderErrorCategories)[number]
+
+export function isAiDailyGenerationProviderErrorCategory(
+  value: unknown,
+): value is AiDailyGenerationProviderErrorCategory {
+  return aiDailyGenerationProviderErrorCategories.some((category) => category === value)
+}
+
 export const aiDailyClaimTypes = [
   'announcement',
   'release',
@@ -147,7 +170,7 @@ export interface AiDailyGenerationProviderAttempt {
   slot: AiDailyGenerationSlot
   outcome: 'succeeded' | 'failed' | 'schema-rejected' | 'quality-rejected'
   calls: number
-  errorCategory: 'provider_error' | 'schema_invalid' | 'provider_quality_below_floor' | null
+  errorCategory: AiDailyGenerationProviderErrorCategory | null
 }
 
 export interface AiDailyGenerationFinding {
@@ -892,11 +915,33 @@ async function runGenerationRole<T>(input: {
         return { ok: true, value: repairedValidation.value, attempts }
       }
       attempts.push({ providerId: boundedIdentifier(provider.id, 80) || input.role, role: input.role, slot: provider.slot, outcome: 'schema-rejected', calls, errorCategory: 'schema_invalid' })
-    } catch {
-      attempts.push({ providerId: boundedIdentifier(provider.id, 80) || input.role, role: input.role, slot: provider.slot, outcome: 'failed', calls: Math.max(1, calls), errorCategory: 'provider_error' })
+    } catch (error) {
+      attempts.push({
+        providerId: boundedIdentifier(provider.id, 80) || input.role,
+        role: input.role,
+        slot: provider.slot,
+        outcome: 'failed',
+        calls: Math.max(1, calls),
+        errorCategory: classifyAiDailyGenerationProviderError(error),
+      })
     }
   }
   return { ok: false, attempts }
+}
+
+export function classifyAiDailyGenerationProviderError(error: unknown): AiDailyGenerationProviderErrorCategory {
+  const message = error instanceof Error ? error.message : ''
+  if (message === 'ai-daily-provider-payload-too-large') return 'provider_payload_too_large'
+  if (message === 'ai-daily-provider-timeout') return 'provider_timeout'
+  if (message === 'ai-daily-provider-network-error') return 'provider_network_error'
+  if (message === 'ai-daily-provider-empty-response') return 'provider_empty_response'
+  if (message === 'ai-daily-provider-json-invalid') return 'provider_invalid_json'
+  if (message === 'ai-daily-provider-upstream-error') return 'provider_upstream_error'
+  if (/^ai-daily-provider-http-(?:401|403)$/u.test(message)) return 'provider_auth'
+  if (message === 'ai-daily-provider-http-429') return 'provider_rate_limited'
+  if (/^ai-daily-provider-http-(?:404|405)$/u.test(message)) return 'provider_endpoint_unsupported'
+  if (/^ai-daily-provider-http-4\d\d$/u.test(message)) return 'provider_request_invalid'
+  return 'provider_error'
 }
 
 function normalizeGenerationEvidence(evidence: AiDailyGenerationEvidence[]) {

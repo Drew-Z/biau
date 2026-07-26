@@ -128,6 +128,39 @@ async function main() {
   expectEqual(resumed.executedStages.join(','), 'VERIFY,VALIDATE,DRAFT', 'resume remaining stages')
   expectEqual(resumed.result.callCount, happy.result.callCount, 'resume should preserve prior provider attempts')
 
+  const invalidCategoryStore = new FixtureRunnerStore()
+  await expectInterruption(
+    () =>
+      runAiDailyGenerationWorkflow({
+        runId: 'run-invalid-error-category',
+        evidence,
+        providers,
+        store: invalidCategoryStore,
+        stopAfterStage: 'EXTRACT_FACTS',
+      }),
+    'EXTRACT_FACTS',
+  )
+  const invalidCategoryCheckpoint = invalidCategoryStore.checkpoints
+    .get('run-invalid-error-category')
+    ?.get('EXTRACT_FACTS')
+  if (!invalidCategoryCheckpoint) throw new Error('missing invalid error category fixture checkpoint')
+  const invalidCategoryPayload = structuredClone(invalidCategoryCheckpoint.payload) as {
+    attempts: Array<{ errorCategory: unknown }>
+  }
+  if (!invalidCategoryPayload.attempts[0]) throw new Error('missing invalid error category fixture attempt')
+  invalidCategoryPayload.attempts[0].errorCategory = 'provider_unbounded_dynamic_error'
+  invalidCategoryCheckpoint.payload = invalidCategoryPayload
+  await expectFailure(
+    () =>
+      runAiDailyGenerationWorkflow({
+        runId: 'run-invalid-error-category',
+        evidence,
+        providers,
+        store: invalidCategoryStore,
+      }),
+    'ai-daily-checkpoint-schema-invalid',
+  )
+
   const reviewStore = new FixtureRunnerStore()
   const review = await runAiDailyGenerationWorkflow({
     runId: 'run-review',

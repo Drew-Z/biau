@@ -1,4 +1,7 @@
-import { runAiDailyGeneration } from '../src/aiDailyGeneration.js'
+import {
+  classifyAiDailyGenerationProviderError,
+  runAiDailyGeneration,
+} from '../src/aiDailyGeneration.js'
 import {
   buildAiDailyGenerationEvidenceFixture,
   buildAiDailyGenerationProvidersFixture,
@@ -55,5 +58,16 @@ assertEqual(
   '2,1',
   'repair failure must count both primary calls before fallback',
 )
+
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-http-400')), 'provider_request_invalid', 'HTTP 400 classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-http-401')), 'provider_auth', 'HTTP auth classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-http-404')), 'provider_endpoint_unsupported', 'endpoint classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-http-429')), 'provider_rate_limited', 'rate-limit classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-upstream-error')), 'provider_upstream_error', 'upstream classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-timeout')), 'provider_timeout', 'timeout classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-network-error')), 'provider_network_error', 'network classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-empty-response')), 'provider_empty_response', 'empty response classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-json-invalid')), 'provider_invalid_json', 'invalid JSON classification')
+assertEqual(classifyAiDailyGenerationProviderError(new Error('unknown-provider-error')), 'provider_error', 'unknown provider classification')
 
 console.log('AI Daily provider check passed')
