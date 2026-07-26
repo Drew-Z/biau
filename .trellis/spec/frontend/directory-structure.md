@@ -21,7 +21,7 @@ Public browser assets and screenshots live under `public/`, especially `/images/
 
 ## Route Ownership
 
-Route wiring belongs in `src/App.tsx`. Current routes include `/`, `/projects`, `/projects/:id`, `/blog`, `/blog/:slug`, `/status`, `/operator`, `/operator/settings`, and `/studio/*`. Large or less common pages are lazy-loaded, including private Operator and Studio surfaces.
+Route wiring belongs in `src/App.tsx`. Current routes include `/`, `/projects`, `/projects/:id`, `/blog`, `/blog/:slug`, `/status`, and `/studio/*`. Large or less common pages are lazy-loaded, including Studio surfaces.
 
 Route-level rendering belongs in `src/pages/*Page.tsx`. Shared display primitives belong in `src/components/`, for example `ProjectCard`, `ResponsiveImage`, `Navigation`, `SeoManager`, and `PublicAssistantWidget`.
 
@@ -37,7 +37,7 @@ Global styles are regular CSS files imported from `src/App.tsx` and `src/main.ts
 
 ## Naming
 
-- React component files use PascalCase, for example `ProjectCard.tsx` and `AssistantAdminPage.tsx`.
+- React component files use PascalCase, for example `ProjectCard.tsx` and `StudioPage.tsx`.
 - Hooks use `use*.ts`, for example `src/hooks/useTheme.ts`.
 - Data and utility modules use lower camel case, for example `portfolio.ts`, `siteLinks.ts`, and `seo.ts`.
 - Page components end with `Page`.

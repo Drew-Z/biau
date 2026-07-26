@@ -35,9 +35,9 @@ const validPayload = {
       evidenceStatus: 'partial',
     },
     {
-      id: 'internal-1',
+      id: 'private-1',
       title: '内部资料',
-      href: '/operator',
+      href: '/private',
       visibility: 'internal',
     },
     {

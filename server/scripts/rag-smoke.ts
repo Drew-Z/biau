@@ -2,7 +2,7 @@ import { createServer as createHttpServer, type IncomingMessage, type ServerResp
 import { createServer as createTcpServer } from 'node:net'
 import { createApp } from '../src/app.js'
 import { env } from '../src/env.js'
-import type { RagHealthResponse, RagRetrieveResponse, RagSyncResponse } from '../src/types.js'
+import type { RagHealthResponse, RagRetrieveResponse } from '../src/types.js'
 
 interface RagEnvSnapshot {
   ragStoreProvider: string
@@ -10,11 +10,13 @@ interface RagEnvSnapshot {
   qdrantApiKey: string
   qdrantPublicCollection: string
   qdrantPublicAlias: string
-  qdrantInternalCollection: string
   embeddingBaseUrl: string
   embeddingApiKey: string
   embeddingModel: string
   embeddingDimension: number
+  rerankerBaseUrl: string
+  rerankerApiKey: string
+  rerankerModel: string
 }
 
 interface MockQdrantPoint {
@@ -24,49 +26,13 @@ interface MockQdrantPoint {
 }
 
 interface MockQdrantOptions {
-  pageSize?: number
-  scrollFailureStatus?: number
-  deleteFailureStatus?: number
   hybridQueryFailureStatus?: 400 | 404
 }
 
 interface MockQdrantMetrics {
-  scrollRequests: number
-  filteredScrollRequests: number
-  deleteRequests: number
   queryCollections: string[]
+  hybridQueries: Record<string, unknown>[]
 }
-
-const SAFE_SYNC_DIAGNOSTIC_KEYS = new Set<keyof NonNullable<RagSyncResponse['diagnostics']>>([
-  'mode',
-  'scope',
-  'reason',
-  'accepted',
-  'sourceName',
-  'sourceChecksum',
-  'documentCount',
-  'chunkCount',
-  'entityCount',
-  'relationCount',
-  'issueCount',
-  'httpStatus',
-  'expectedDimension',
-  'actualDimension',
-  'providerStep',
-  'errorKind',
-  'attemptedEndpoints',
-  'timeoutMs',
-  'cleanupStatus',
-  'cleanupReason',
-  'cleanupProviderStep',
-  'cleanupErrorKind',
-  'cleanupHttpStatus',
-  'cleanupTimeoutMs',
-  'cleanupScannedPointCount',
-  'cleanupStalePointCount',
-  'cleanupDeletedPointCount',
-  'cleanupIssueCount',
-])
 
 function findAvailablePort(startPort: number) {
   return new Promise<number>((resolve, reject) => {
@@ -92,20 +58,6 @@ function hasCitation(response: RagRetrieveResponse, id: string) {
   return response.citations.some((citation) => citation.id === id)
 }
 
-function assertLowSensitiveSyncDiagnostics(payload: RagSyncResponse, label: string, forbiddenValues: string[]) {
-  const diagnostics = payload.diagnostics
-  if (!diagnostics) throw new Error(`${label} should include diagnostics`)
-  for (const key of Object.keys(diagnostics)) {
-    if (!SAFE_SYNC_DIAGNOSTIC_KEYS.has(key as keyof NonNullable<RagSyncResponse['diagnostics']>)) {
-      throw new Error(`${label} exposed unexpected diagnostic field: ${key}`)
-    }
-  }
-  const serialized = JSON.stringify(diagnostics)
-  for (const value of forbiddenValues.filter(Boolean)) {
-    if (serialized.includes(value)) throw new Error(`${label} exposed a private provider or document value`)
-  }
-}
-
 async function postJson<T>(url: string, body: unknown) {
   const response = await fetch(url, {
     method: 'POST',
@@ -122,11 +74,13 @@ function snapshotRagEnv(): RagEnvSnapshot {
     qdrantApiKey: env.qdrantApiKey,
     qdrantPublicCollection: env.qdrantPublicCollection,
     qdrantPublicAlias: env.qdrantPublicAlias,
-    qdrantInternalCollection: env.qdrantInternalCollection,
     embeddingBaseUrl: env.embeddingBaseUrl,
     embeddingApiKey: env.embeddingApiKey,
     embeddingModel: env.embeddingModel,
     embeddingDimension: env.embeddingDimension,
+    rerankerBaseUrl: env.rerankerBaseUrl,
+    rerankerApiKey: env.rerankerApiKey,
+    rerankerModel: env.rerankerModel,
   }
 }
 
@@ -136,20 +90,20 @@ function restoreRagEnv(snapshot: RagEnvSnapshot) {
   env.qdrantApiKey = snapshot.qdrantApiKey
   env.qdrantPublicCollection = snapshot.qdrantPublicCollection
   env.qdrantPublicAlias = snapshot.qdrantPublicAlias
-  env.qdrantInternalCollection = snapshot.qdrantInternalCollection
   env.embeddingBaseUrl = snapshot.embeddingBaseUrl
   env.embeddingApiKey = snapshot.embeddingApiKey
   env.embeddingModel = snapshot.embeddingModel
   env.embeddingDimension = snapshot.embeddingDimension
+  env.rerankerBaseUrl = snapshot.rerankerBaseUrl
+  env.rerankerApiKey = snapshot.rerankerApiKey
+  env.rerankerModel = snapshot.rerankerModel
 }
 
 async function startMockQdrant(options: MockQdrantOptions = {}) {
   const collections = new Map<string, Map<string | number, MockQdrantPoint>>()
   const metrics: MockQdrantMetrics = {
-    scrollRequests: 0,
-    filteredScrollRequests: 0,
-    deleteRequests: 0,
     queryCollections: [],
+    hybridQueries: [],
   }
   const port = await findAvailablePort(9477)
   const server = createHttpServer(async (req, res) => {
@@ -208,51 +162,6 @@ async function handleMockQdrantRequest(
     return
   }
 
-  if (req.method === 'POST' && action === 'scroll') {
-    metrics.scrollRequests += 1
-    if (isRecord(body) && body.filter !== undefined) metrics.filteredScrollRequests += 1
-    if (options.scrollFailureStatus) {
-      sendJson(res, options.scrollFailureStatus, { error: 'mock-scroll-failure' })
-      return
-    }
-    const filter = isRecord(body) && isRecord(body.filter) && Array.isArray(body.filter.must) ? body.filter.must : []
-    const expected = new Map<string, unknown>()
-    for (const condition of filter) {
-      if (!isRecord(condition) || typeof condition.key !== 'string' || !isRecord(condition.match)) continue
-      expected.set(condition.key, condition.match.value)
-    }
-    const filtered = Array.from(points.values())
-      .filter((point) => {
-        if (!point.payload) return expected.size === 0
-        return Array.from(expected.entries()).every(([key, value]) => point.payload?.[key] === value)
-      })
-      .sort((left, right) => String(left.id).localeCompare(String(right.id)))
-    const requestedOffset = isRecord(body) ? body.offset : undefined
-    const startIndex = requestedOffset === undefined || requestedOffset === null
-      ? 0
-      : Math.max(0, filtered.findIndex((point) => point.id === requestedOffset) + 1)
-    const requestedLimit = isRecord(body) && typeof body.limit === 'number' ? body.limit : 256
-    const pageSize = Math.max(1, Math.min(requestedLimit, options.pageSize ?? requestedLimit))
-    const page = filtered.slice(startIndex, startIndex + pageSize)
-    const nextPageOffset = startIndex + page.length < filtered.length ? page.at(-1)?.id ?? null : null
-    sendJson(res, 200, { result: { points: page, next_page_offset: nextPageOffset } })
-    return
-  }
-
-  if (req.method === 'POST' && action === 'delete') {
-    metrics.deleteRequests += 1
-    if (options.deleteFailureStatus) {
-      sendJson(res, options.deleteFailureStatus, { error: 'mock-delete-failure' })
-      return
-    }
-    const ids = isRecord(body) && Array.isArray(body.points) ? body.points : []
-    for (const id of ids) {
-      if (typeof id === 'string' || typeof id === 'number') points.delete(id)
-    }
-    sendJson(res, 200, { result: { status: 'ok' } })
-    return
-  }
-
   if (
     req.method === 'POST' &&
     action === 'query' &&
@@ -267,6 +176,7 @@ async function handleMockQdrantRequest(
 
   if (req.method === 'POST' && (action === 'search' || action === 'query')) {
     metrics.queryCollections.push(collection)
+    if (action === 'query' && isRecord(body)) metrics.hybridQueries.push(body)
     sendJson(res, 200, {
       result: Array.from(points.values()).map((point, index) => ({
         id: point.id,
@@ -378,173 +288,100 @@ try {
   const { response: missingQueryResponse } = await postJson<{ error?: string }>(`${base}/rag/v1/retrieve`, { scope: 'public' })
   if (missingQueryResponse.status !== 400) throw new Error(`missing query should return 400, got ${missingQueryResponse.status}`)
 
-  const { response: unsupportedScopeResponse } = await postJson<{ error?: string }>(`${base}/rag/v1/retrieve`, {
+  const { response: unsupportedScopeResponse, payload: unsupportedScopePayload } = await postJson<{ error?: string }>(`${base}/rag/v1/retrieve`, {
     query: 'Legal RAG',
-    scope: 'private',
-  })
-  if (unsupportedScopeResponse.status !== 400) {
-    throw new Error(`unsupported scope should return 400, got ${unsupportedScopeResponse.status}`)
-  }
-
-  const { response: syncResponse, payload: syncPayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {})
-  if (!syncResponse.ok) throw new Error(`rag sync failed: ${syncResponse.status}`)
-  if (syncPayload.mode !== 'local-readonly' || syncPayload.accepted !== false || syncPayload.health.service !== 'biau-rag-orchestrator') {
-    throw new Error('rag sync payload is invalid')
-  }
-
-  const { response: internalSyncResponse, payload: internalSyncPayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {
     scope: 'internal',
-    documents: [
-      {
-        id: 'internal-doc-smoke',
-        title: 'Internal smoke document',
-        body: '内部知识同步 smoke 文档。\n\n第二段用于验证 chunk 计数。',
-      },
-    ],
   })
-  if (!internalSyncResponse.ok) throw new Error(`rag internal sync failed: ${internalSyncResponse.status}`)
-  if (
-    internalSyncPayload.mode !== 'local-readonly' ||
-    internalSyncPayload.accepted !== false ||
-    internalSyncPayload.diagnostics?.sourceName !== 'internal-knowledge-documents' ||
-    internalSyncPayload.diagnostics.documentCount !== 1 ||
-    internalSyncPayload.diagnostics.chunkCount !== 2
-  ) {
-    throw new Error('rag internal sync payload should stay local-readonly with low-sensitive diagnostics')
+  if (unsupportedScopeResponse.status !== 400 || unsupportedScopePayload.error !== 'unsupported-scope') {
+    throw new Error(`retired internal RAG scope should return unsupported-scope 400, got ${unsupportedScopeResponse.status}`)
+  }
+
+  const legacySyncResponse = await fetch(`${base}/rag/v1/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+  })
+  if (legacySyncResponse.status !== 404) {
+    throw new Error(`legacy RAG sync route should return 404, got ${legacySyncResponse.status}`)
   }
 
   const ragEnvSnapshot = snapshotRagEnv()
-  const mockQdrant = await startMockQdrant({ pageSize: 1 })
+  const mockQdrant = await startMockQdrant()
   try {
     env.ragStoreProvider = 'qdrant'
     env.qdrantUrl = mockQdrant.baseUrl
     env.qdrantApiKey = 'qdrant-smoke-key'
     env.qdrantPublicCollection = 'biau_public_chunks_smoke'
     env.qdrantPublicAlias = 'biau_public_chunks_smoke'
-    env.qdrantInternalCollection = 'biau_internal_chunks_smoke'
     env.embeddingBaseUrl = ''
     env.embeddingApiKey = ''
     env.embeddingModel = 'deterministic-local'
     env.embeddingDimension = 48
+    env.rerankerBaseUrl = ''
+    env.rerankerApiKey = ''
+    env.rerankerModel = ''
 
-    const { response: qdrantSyncResponse, payload: qdrantSyncPayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {
-      scope: 'internal',
-      documents: [
-        {
-          id: 'internal-doc-smoke',
-          title: 'Internal smoke document',
-          summary: 'Internal scope only.',
-          body: 'Internal smoke document body for Qdrant sync.\n\nSecond paragraph verifies chunk creation.',
-          tags: ['internal-smoke'],
-          status: 'REVIEWED',
-          sourceType: 'manual',
-          updatedAt: '2026-07-06T00:00:00.000Z',
-        },
-      ],
-    })
-    if (!qdrantSyncResponse.ok) throw new Error(`rag qdrant internal sync failed: ${qdrantSyncResponse.status}`)
-    if (
-      qdrantSyncPayload.mode !== 'qdrant' ||
-      qdrantSyncPayload.scope !== 'internal' ||
-      qdrantSyncPayload.accepted !== true ||
-      qdrantSyncPayload.diagnostics?.sourceName !== 'internal-knowledge-documents' ||
-      qdrantSyncPayload.diagnostics.documentCount !== 1 ||
-      qdrantSyncPayload.diagnostics.chunkCount !== 2 ||
-      qdrantSyncPayload.diagnostics.cleanupStatus !== 'completed' ||
-      qdrantSyncPayload.diagnostics.cleanupIssueCount !== 0 ||
-      qdrantSyncPayload.diagnostics.cleanupScannedPointCount !== 2 ||
-      mockQdrant.metrics.scrollRequests < 2 ||
-      mockQdrant.metrics.filteredScrollRequests !== 0
-    ) {
-      throw new Error('rag qdrant internal sync payload is invalid')
-    }
-    assertLowSensitiveSyncDiagnostics(qdrantSyncPayload, 'qdrant sync diagnostics', [
-      env.qdrantUrl,
-      env.qdrantApiKey,
-      env.qdrantInternalCollection,
-      env.qdrantPublicCollection,
-      'Internal smoke document body',
-    ])
-
-    const internalPoints = mockQdrant.collections.get(env.qdrantInternalCollection)
-    const stalePointId = '00000000-0000-4000-8000-000000000001'
-    const unrelatedPointId = '00000000-0000-4000-8000-000000000002'
-    internalPoints?.set(unrelatedPointId, {
-      id: unrelatedPointId,
+    const publicPoints = getMockCollection(mockQdrant.collections, env.qdrantPublicAlias)
+    publicPoints.set('weak-public-point', {
+      id: 'weak-public-point',
       vector: new Array(env.embeddingDimension).fill(0),
       payload: {
-        scope: 'internal',
-        source: 'another-internal-source',
-        documentId: 'unrelated-document',
-        chunkId: 'unrelated-stale-chunk',
+        scope: 'public',
+        source: 'public-knowledge-v2',
+        visibility: 'public',
+        documentId: 'weak-public-document',
+        chunkId: 'weak-public-chunk',
+        title: 'General project summary',
+        summary: 'A weaker public candidate.',
+        href: '/projects',
+        section: 'Overview',
+        text: 'A general overview without the requested retrieval details.',
+        sourceType: 'project',
+        contentHash: 'weak-public-content-hash',
       },
     })
-    internalPoints?.set(stalePointId, {
-      id: stalePointId,
+    publicPoints.set('strong-public-point', {
+      id: 'strong-public-point',
       vector: new Array(env.embeddingDimension).fill(0),
       payload: {
-        scope: 'internal',
-        source: 'internal-knowledge-documents',
-        documentId: 'stale-document',
-        chunkId: 'stale-chunk',
+        scope: 'public',
+        source: 'public-knowledge-v2',
+        visibility: 'public',
+        documentId: 'strong-public-document',
+        chunkId: 'strong-public-chunk',
+        title: 'Hybrid retrieval with citations',
+        summary: 'Dense sparse RRF retrieval with deterministic reranking.',
+        href: '/projects/legal-rag',
+        section: 'Hybrid retrieval',
+        text: 'Hybrid retrieval with citations combines dense sparse RRF and deterministic reranking.',
+        sourceType: 'project',
+        contentHash: 'strong-public-content-hash',
       },
     })
-    const { payload: cleanupSyncPayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {
-      scope: 'internal',
-      documents: [
-        {
-          id: 'internal-doc-smoke',
-          title: 'Internal smoke document',
-          summary: 'Internal scope only.',
-          body: 'Internal smoke document body for Qdrant sync.\n\nSecond paragraph verifies chunk creation.',
-          tags: ['internal-smoke'],
-          status: 'REVIEWED',
-          sourceType: 'manual',
-          updatedAt: '2026-07-06T00:00:00.000Z',
-        },
-      ],
-    })
-    if (
-      cleanupSyncPayload.accepted !== true ||
-      cleanupSyncPayload.diagnostics?.cleanupStatus !== 'completed' ||
-      cleanupSyncPayload.diagnostics.cleanupStalePointCount !== 1 ||
-      cleanupSyncPayload.diagnostics.cleanupDeletedPointCount !== 1 ||
-      cleanupSyncPayload.diagnostics.cleanupIssueCount !== 0 ||
-      internalPoints?.has(stalePointId) ||
-      !internalPoints?.has(unrelatedPointId)
-    ) {
-      throw new Error('rag qdrant stale cleanup should delete obsolete internal points')
-    }
-    assertLowSensitiveSyncDiagnostics(cleanupSyncPayload, 'qdrant cleanup diagnostics', [
-      env.qdrantUrl,
-      env.qdrantApiKey,
-      env.qdrantInternalCollection,
-      env.qdrantPublicCollection,
-      'Internal smoke document body',
-    ])
-
-    const { response: qdrantRetrieveResponse, payload: qdrantRetrievePayload } = await postJson<RagRetrieveResponse>(`${base}/rag/v1/retrieve`, {
-      query: 'Internal smoke document',
-      scope: 'internal',
-      limit: 2,
-    })
-    if (!qdrantRetrieveResponse.ok) throw new Error(`rag qdrant internal retrieve failed: ${qdrantRetrieveResponse.status}`)
-    if (
-      qdrantRetrievePayload.meta.store !== 'qdrant' ||
-      qdrantRetrievePayload.meta.retrievalMode !== 'qdrant-dense-sparse-rrf' ||
-      !qdrantRetrievePayload.citations.some((citation) => citation.id === 'internal-doc-smoke' && citation.visibility === 'internal')
-    ) {
-      throw new Error('rag qdrant internal retrieve should return internal citation')
-    }
 
     const { response: publicRetrieveResponse, payload: publicRetrievePayload } = await postJson<RagRetrieveResponse>(`${base}/rag/v1/retrieve`, {
-      query: 'Internal smoke document',
+      query: 'hybrid retrieval with citations',
       scope: 'public',
       limit: 2,
     })
-    if (!publicRetrieveResponse.ok) throw new Error(`rag qdrant public retrieve failed: ${publicRetrieveResponse.status}`)
-    if (publicRetrievePayload.citations.some((citation) => citation.visibility === 'internal')) {
-      throw new Error('rag qdrant public retrieve must not return internal citations')
+    const hybridQuery = mockQdrant.metrics.hybridQueries[0]
+    const prefetch = hybridQuery && Array.isArray(hybridQuery.prefetch) ? hybridQuery.prefetch : []
+    if (
+      !publicRetrieveResponse.ok ||
+      publicRetrievePayload.meta.store !== 'qdrant' ||
+      publicRetrievePayload.meta.retrievalMode !== 'qdrant-dense-sparse-rrf' ||
+      publicRetrievePayload.meta.reranked !== true ||
+      publicRetrievePayload.meta.rerankerMode !== 'deterministic' ||
+      publicRetrievePayload.citations[0]?.id !== 'strong-public-document' ||
+      publicRetrievePayload.citations.some((citation) => citation.visibility !== 'public') ||
+      publicRetrievePayload.chunks.some((chunk) => chunk.reason !== 'dense-sparse-rrf-rerank') ||
+      prefetch.length !== 2 ||
+      !isRecord(prefetch[0]) || prefetch[0].using !== 'dense' ||
+      !isRecord(prefetch[1]) || prefetch[1].using !== 'lexical' ||
+      !isRecord(hybridQuery?.query) || hybridQuery.query.fusion !== 'rrf' ||
+      mockQdrant.metrics.queryCollections.some((collection) => collection !== env.qdrantPublicAlias)
+    ) {
+      throw new Error('public Qdrant retrieval should prove dense+sparse RRF and deterministic reranking')
     }
 
     for (const hybridFailureStatus of [400, 404] as const) {
@@ -610,92 +447,6 @@ try {
       }
     }
 
-    const scrollFailureQdrant = await startMockQdrant({ scrollFailureStatus: 400 })
-    try {
-      env.qdrantUrl = scrollFailureQdrant.baseUrl
-      const { payload: scrollFailurePayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {
-        scope: 'internal',
-        documents: [
-          {
-            id: 'internal-scroll-warning',
-            title: 'Internal scroll warning',
-            body: 'Internal document used to verify cleanup scroll diagnostics.',
-            status: 'REVIEWED',
-            sourceType: 'manual',
-          },
-        ],
-      })
-      if (
-        scrollFailurePayload.accepted !== true ||
-        scrollFailurePayload.diagnostics?.cleanupStatus !== 'warning' ||
-        scrollFailurePayload.diagnostics.cleanupReason !== 'qdrant_bad_request' ||
-        scrollFailurePayload.diagnostics.cleanupProviderStep !== 'qdrant_scroll_points' ||
-        scrollFailurePayload.diagnostics.cleanupHttpStatus !== 400 ||
-        scrollFailurePayload.diagnostics.cleanupIssueCount !== 1 ||
-        scrollFailureQdrant.metrics.deleteRequests !== 0
-      ) {
-        throw new Error('rag qdrant scroll cleanup failure should preserve low-sensitive warning diagnostics')
-      }
-      assertLowSensitiveSyncDiagnostics(scrollFailurePayload, 'qdrant scroll warning diagnostics', [
-        env.qdrantUrl,
-        env.qdrantApiKey,
-        env.qdrantInternalCollection,
-        env.qdrantPublicCollection,
-        'Internal document used to verify cleanup scroll diagnostics.',
-      ])
-    } finally {
-      await scrollFailureQdrant.close()
-    }
-
-    const deleteFailureQdrant = await startMockQdrant({ deleteFailureStatus: 503 })
-    try {
-      env.qdrantUrl = deleteFailureQdrant.baseUrl
-      const deleteFailurePoints = getMockCollection(deleteFailureQdrant.collections, env.qdrantInternalCollection)
-      deleteFailurePoints.set(stalePointId, {
-        id: stalePointId,
-        vector: new Array(env.embeddingDimension).fill(0),
-        payload: {
-          scope: 'internal',
-          source: 'internal-knowledge-documents',
-          documentId: 'stale-document',
-          chunkId: 'stale-chunk',
-        },
-      })
-      const { payload: deleteFailurePayload } = await postJson<RagSyncResponse>(`${base}/rag/v1/sync`, {
-        scope: 'internal',
-        documents: [
-          {
-            id: 'internal-delete-warning',
-            title: 'Internal delete warning',
-            body: 'Internal document used to verify cleanup delete diagnostics.',
-            status: 'REVIEWED',
-            sourceType: 'manual',
-          },
-        ],
-      })
-      if (
-        deleteFailurePayload.accepted !== true ||
-        deleteFailurePayload.diagnostics?.cleanupStatus !== 'warning' ||
-        deleteFailurePayload.diagnostics.cleanupProviderStep !== 'qdrant_delete_points' ||
-        deleteFailurePayload.diagnostics.cleanupHttpStatus !== 503 ||
-        deleteFailurePayload.diagnostics.cleanupStalePointCount !== 1 ||
-        deleteFailurePayload.diagnostics.cleanupDeletedPointCount !== 0 ||
-        deleteFailurePayload.diagnostics.cleanupIssueCount !== 1 ||
-        deleteFailureQdrant.metrics.deleteRequests !== 1 ||
-        !deleteFailurePoints.has(stalePointId)
-      ) {
-        throw new Error('rag qdrant delete cleanup failure should preserve low-sensitive warning diagnostics')
-      }
-      assertLowSensitiveSyncDiagnostics(deleteFailurePayload, 'qdrant delete warning diagnostics', [
-        env.qdrantUrl,
-        env.qdrantApiKey,
-        env.qdrantInternalCollection,
-        env.qdrantPublicCollection,
-        'Internal document used to verify cleanup delete diagnostics.',
-      ])
-    } finally {
-      await deleteFailureQdrant.close()
-    }
   } finally {
     restoreRagEnv(ragEnvSnapshot)
     await mockQdrant.close()

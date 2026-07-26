@@ -2,6 +2,8 @@
 
 This file tracks the multi-repository README and deployment packaging work for the BIAU Port ecosystem. It records evidence from source files and local validation, not stale README claims.
 
+> Historical note: entries dated 2026-07-09 through 2026-07-10 describe the then-current four-service Operator architecture. The live repository moved to the public assistant + Studio + public-only RAG three-service architecture on 2026-07-26. Preserve the older rows as audit history; use `README.md` and `docs/deployment.md` for the current topology.
+
 ## Status Table
 
 | Repository | Status | Current Slice | Verification | Manual Gates |

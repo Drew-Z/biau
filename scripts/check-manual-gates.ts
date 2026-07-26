@@ -23,10 +23,6 @@ const files = {
     label: 'docs/studio-ai-daily-production-readiness.md',
     path: resolve(repoRoot, 'docs/studio-ai-daily-production-readiness.md'),
   },
-  runbook: {
-    label: 'docs/internal-rag-studio-ai-daily-runbook.md',
-    path: resolve(repoRoot, 'docs/internal-rag-studio-ai-daily-runbook.md'),
-  },
   contentStudio: {
     label: 'docs/content-studio.md',
     path: resolve(repoRoot, 'docs/content-studio.md'),
@@ -39,16 +35,15 @@ const files = {
 
 const ledgerNeedles = [
   '# Manual Gates Ledger',
-  '## BIAU 平台门禁',
-  '## Operator 安全边界',
+  '## BIAU 平台状态',
+  '## Operator PostgreSQL 退役',
   '## Content Studio / AI Daily',
   '## 关联项目门禁',
-  '## 访问分析与可观测性',
-  '## 当前人工队列',
-  '禁止 ping、doctor、空 prompt 和无意义测活',
-  'hidden + review-needed',
-  'Plausible 或 Umami 二选一',
-  'Cloudflare Access',
+  '## 可观测性门禁',
+  '## AI Daily 当前人工队列',
+  '禁止 ping、doctor、空 prompt、catalog probe 和无意义测活',
+  'needs-changes',
+  'Plausible 或 Umami',
 ]
 
 const ledgerLinks = [
@@ -56,15 +51,6 @@ const ledgerLinks = [
   './site-monitoring.md',
   './studio-ai-daily-production-readiness.md',
   './deployment.md',
-]
-
-const studioRunbookNeedles = [
-  '## 3. 验收 Operator draft-write',
-  '## 4. Studio 审核',
-  'hidden + review-needed',
-  '创建 Publish Export',
-  '最后人工检查 Git diff',
-  '不要把 Operator service token、Studio token、数据库 URL、模型 key、RAG token、Access 配置或私有地址写入聊天和仓库',
 ]
 
 interface LedgerCoverage {
@@ -75,7 +61,7 @@ interface LedgerCoverage {
 const statusProjectLedgerCoverage = {
   'blog-semi': {
     label: 'BIAU Port 主站',
-    needles: ['Cloudflare Access application 与 policy', 'Operator 真实模型验收', 'Prometheus / Grafana / ARMS'],
+    needles: ['Operator PostgreSQL 退役', '最后人工删除 Render Operator 服务', 'Prometheus / Grafana / ARMS'],
   },
   'legal-rag': {
     label: 'Legal RAG 法律机器人',
@@ -117,8 +103,8 @@ function readMarkdownSection(text: string, heading: string) {
 }
 
 function collectCompletedSetupRegressions(ledger: string) {
-  const queue = readMarkdownSection(ledger, '## 当前人工队列')
-  const completedSetupTerms = ['Qdrant', 'Git push', 'Render 四服务', '数据库迁移', 'Owner 长期记忆选择性迁移']
+  const queue = readMarkdownSection(ledger, '## AI Daily 当前人工队列')
+  const completedSetupTerms = ['Git push', 'Render 四服务', 'Owner 长期记忆选择性迁移']
   return completedSetupTerms
     .filter((term) => queue.includes(term))
     .map((term) => `docs/manual-gates.md 当前人工队列重新包含已完成 setup：${term}`)
@@ -172,12 +158,11 @@ function checkStatusProjectLedgerCoverage(ledger: string) {
 }
 
 async function main() {
-  const [ledger, observability, monitoring, studioReadiness, runbook, contentStudio, deployment] = await Promise.all([
+  const [ledger, observability, monitoring, studioReadiness, contentStudio, deployment] = await Promise.all([
     readFile(files.ledger.path, 'utf8'),
     readFile(files.observability.path, 'utf8'),
     readFile(files.monitoring.path, 'utf8'),
     readFile(files.studioReadiness.path, 'utf8'),
-    readFile(files.runbook.path, 'utf8'),
     readFile(files.contentStudio.path, 'utf8'),
     readFile(files.deployment.path, 'utf8'),
   ])
@@ -195,12 +180,10 @@ async function main() {
     ...(studioReadiness.includes('## 生产验收顺序') ? [`${files.studioReadiness.label} 仍维护过期的独立生产 setup 顺序。`] : []),
     ...collectMissing(files.contentStudio.label, contentStudio, ['## 平台边界与当前 Gate', './manual-gates.md']),
     ...(contentStudio.includes('## 仍是人工 Gate 的事项') ? [`${files.contentStudio.label} 仍维护过期的独立人工 Gate 列表。`] : []),
-    ...collectMissing(files.deployment.label, deployment, ['## Owner 数据迁移与回滚记录（已完成）']),
-    ...collectMissing(files.runbook.label, runbook, studioRunbookNeedles),
-    ...scanSecrets(files.runbook.label, runbook),
+    ...collectMissing(files.deployment.label, deployment, ['## 迁移和发布顺序', 'operator-retirement/preflight.sql']),
   ]
 
-  for (const file of [files.observability, files.monitoring, files.studioReadiness, files.runbook, files.contentStudio, files.deployment]) {
+  for (const file of [files.observability, files.monitoring, files.studioReadiness, files.contentStudio, files.deployment]) {
     const text =
       file === files.observability
         ? observability
@@ -208,11 +191,9 @@ async function main() {
           ? monitoring
           : file === files.studioReadiness
             ? studioReadiness
-            : file === files.runbook
-              ? runbook
-              : file === files.contentStudio
-                ? contentStudio
-                : deployment
+            : file === files.contentStudio
+              ? contentStudio
+              : deployment
     if (!text.includes('manual-gates.md')) issues.push(`${file.label} 缺少 docs/manual-gates.md 导航。`)
   }
 

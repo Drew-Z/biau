@@ -13,8 +13,6 @@ type AnalyticsRouteArea =
   | 'home'
   | 'projects'
   | 'project-detail'
-  | 'operator'
-  | 'operator-settings'
   | 'studio'
   | 'studio-ai-daily'
   | 'status'
@@ -73,10 +71,6 @@ export function getAnalyticsRouteMetadata(pathname: string): AnalyticsRouteMetad
   if (first === 'projects') {
     return { routePattern: '/projects/:id', routeArea: 'project-detail', routeDepth: segments.length }
   }
-  if (first === 'operator' && second === 'settings') {
-    return { routePattern: '/operator/settings', routeArea: 'operator-settings', routeDepth: segments.length }
-  }
-  if (first === 'operator') return { routePattern: '/operator', routeArea: 'operator', routeDepth: segments.length }
   if (normalized === '/studio/ai-daily') {
     return { routePattern: '/studio/ai-daily', routeArea: 'studio-ai-daily', routeDepth: segments.length }
   }

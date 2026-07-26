@@ -6,99 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model OperatorSession {
-  id            String            @id @default(cuid())
-  ownerId       String
-  title         String
-  archivedAt    DateTime?
-  lastMessageAt DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  messages      OperatorMessage[]
-  memories      OperatorMemory[]
-
-  @@index([ownerId, archivedAt, lastMessageAt])
-}
-
-model OperatorMessage {
-  id             String           @id @default(cuid())
-  ownerId        String
-  sessionId      String?
-  role           MessageRole
-  content        String
-  citations      Json?
-  meta           Json?
-  createdAt      DateTime         @default(now())
-  session        OperatorSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sourceMemories OperatorMemory[]
-
-  @@index([ownerId, sessionId, createdAt])
-}
-
-model OperatorMemory {
-  id              String            @id @default(cuid())
-  ownerId         String
-  sessionId       String?
-  sourceMessageId String?
-  kind            AgentMemoryKind
-  title           String
-  content         String
-  contentHash     String
-  status          AgentMemoryStatus @default(ACTIVE)
-  archivedAt      DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  session         OperatorSession?  @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  sourceMessage   OperatorMessage?  @relation(fields: [sourceMessageId], references: [id], onDelete: SetNull)
-
-  @@unique([ownerId, contentHash])
-  @@index([ownerId, status, updatedAt])
-  @@index([sessionId])
-  @@index([sourceMessageId])
-}
-
-model OperatorUsageLog {
-  id             String   @id @default(cuid())
-  ownerId        String
-  scope          String
-  model          String?
-  modelChannelId String?
-  tokensIn       Int      @default(0)
-  tokensOut      Int      @default(0)
-  createdAt      DateTime @default(now())
-
-  @@index([ownerId, createdAt])
-}
-
-model InternalKnowledgeDocument {
-  id                  String                  @id @default(cuid())
-  slug                String                  @unique
-  title               String
-  summary             String
-  body                String
-  tags                Json?
-  status              InternalKnowledgeStatus @default(DRAFT)
-  sourceType          String                  @default("manual")
-  safetyNotes         String?
-  contentHash         String
-  lastSyncedAt        DateTime?
-  createdByMemberId   String?
-  createdByOperatorId String?
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
-}
-
-model InternalKnowledgeSyncRun {
-  id            String                      @id @default(cuid())
-  status        InternalKnowledgeSyncStatus @default(STARTED)
-  documentCount Int                         @default(0)
-  chunkCount    Int                         @default(0)
-  issueCount    Int                         @default(0)
-  startedAt     DateTime                    @default(now())
-  finishedAt    DateTime?
-  diagnostic    Json?
-}
-
 model PublicAssistantSession {
   id           String                    @id
   createdAt    DateTime                  @default(now())
@@ -719,38 +626,6 @@ model AiDailyApprovalAction {
 
   @@index([flashItemId, createdAt, id])
   @@index([flashRevisionId, createdAt])
-}
-
-enum MessageRole {
-  USER
-  ASSISTANT
-  SYSTEM
-}
-
-enum AgentMemoryKind {
-  PREFERENCE
-  PROJECT
-  WORKFLOW
-  CONTEXT
-}
-
-enum AgentMemoryStatus {
-  ACTIVE
-  ARCHIVED
-}
-
-enum InternalKnowledgeStatus {
-  DRAFT
-  REVIEWED
-  ACTIVE
-  ARCHIVED
-}
-
-enum InternalKnowledgeSyncStatus {
-  STARTED
-  COMPLETED
-  FAILED
-  SKIPPED
 }
 
 enum ContentDraftStatus {

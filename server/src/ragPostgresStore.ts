@@ -96,7 +96,7 @@ export async function retrievePostgresRagContext(
     return buildEmptyResponse(localSignal.intent, 'private-credential')
   }
 
-  const visibility: AssistantScope[] = payload.scope === 'public' ? ['public'] : ['public', 'internal']
+  const visibility: AssistantScope[] = ['public']
   const terms = uniqueTerms([payload.query, ...localSignal.terms]).slice(0, 16)
   const patterns = terms.map((term) => `%${escapeLike(term)}%`)
   const candidateLimit = Math.max(8, limit * 6)

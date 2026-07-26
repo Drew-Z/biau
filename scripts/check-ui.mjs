@@ -8,6 +8,7 @@ import {
 import {
   getReliabilityStatusSummary,
   getStatusManualActionQueue,
+  hasEntryStatusAttention,
   mergeSiteStatusPayload,
   parseEvidenceFreshness,
 } from '../src/data/siteStatusView.ts'
@@ -96,8 +97,6 @@ const routes = [
     localStorageValues: { 'biau-studio-admin-token': 'ui-check-token' },
     aiDailyWorkspaceFixture: true,
   },
-  { path: '/operator', title: '新的站务任务', nav: '回主页', canonical: '/operator' },
-  { path: '/operator/settings', title: '泊岸站务', nav: '回主页', canonical: '/operator/settings' },
   { path: '/assistant', title: '页面没有靠岸', nav: '回主页', canonical: '/assistant' },
   { path: '/assistant/admin', title: '页面没有靠岸', nav: '回主页', canonical: '/assistant/admin' },
   { path: '/projects/legal-rag', title: 'Legal RAG', nav: '回主页', canonical: '/projects/legal-rag' },
@@ -114,105 +113,6 @@ const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },
   { name: 'mobile', width: 390, height: 900 },
 ]
-
-const operatorModelChannelFixture = {
-  id: 'operator-primary',
-  label: 'Operator primary',
-  provider: 'deterministic-mock',
-  model: 'operator-mock-model',
-  configured: true,
-  isDefault: true,
-  isActive: true,
-}
-
-const operatorProfileFixture = {
-  id: 'site-owner',
-  name: 'UI Check Owner',
-  role: 'OWNER',
-  modelChannelId: operatorModelChannelFixture.id,
-  modelChannel: operatorModelChannelFixture,
-}
-
-async function installOperatorApiFixture(page) {
-  await page.route('**/api/operator/**', async (route) => {
-    const request = route.request()
-    const path = new URL(request.url()).pathname.replace(/^\/api\/operator/u, '')
-    let body
-
-    if (path === '/me') body = { operator: operatorProfileFixture }
-    else if (path === '/sessions') body = { sessions: [] }
-    else if (path === '/summary') {
-      body = {
-        sessions: 0,
-        messages: 0,
-        memories: 0,
-        usage: 0,
-        internalKnowledgeDocuments: 0,
-        lastInternalKnowledgeSync: null,
-        operator: operatorProfileFixture,
-        modelChannels: [operatorModelChannelFixture],
-      }
-    } else if (path === '/knowledge-documents') body = { documents: [], lastSyncRun: null }
-    else if (path === '/rag/status') body = { configured: true, syncConfigured: true, health: null, diagnostic: null }
-    else if (path === '/memories') body = { memories: [] }
-    else if (path === '/usage') body = { usage: [] }
-    else if (path === '/model-channels') {
-      body = { modelChannels: [operatorModelChannelFixture], selectedModelChannel: operatorModelChannelFixture }
-    } else if (path === '/chat' && request.method() === 'POST') {
-      body = {
-        answer: '已完成确定性站务规划；没有执行发布、部署或云平台写入。',
-        citations: [],
-        sessionId: 'operator-ui-session',
-        messageId: 'operator-ui-message',
-        meta: null,
-      }
-    } else {
-      body = { error: 'operator-ui-fixture-not-found' }
-    }
-
-    await route.fulfill({
-      status: body.error ? 404 : 200,
-      contentType: 'application/json',
-      body: JSON.stringify(body),
-    })
-  })
-}
-
-async function installOperatorSessionRaceFixture(page) {
-  const sessions = [
-    { id: 'operator-session-a', title: '延迟会话 A', preview: '较慢响应', updatedAt: '2026-07-17T00:00:00.000Z' },
-    { id: 'operator-session-b', title: '快速会话 B', preview: '最新选择', updatedAt: '2026-07-17T00:01:00.000Z' },
-  ]
-  await page.route('**/api/operator/**', async (route) => {
-    const request = route.request()
-    const path = new URL(request.url()).pathname.replace(/^\/api\/operator/u, '')
-    let body
-
-    if (path === '/me') body = { operator: operatorProfileFixture }
-    else if (path === '/sessions') body = { sessions }
-    else if (path === '/sessions/operator-session-a/messages') {
-      await new Promise((resolve) => setTimeout(resolve, 350))
-      body = {
-        messages: [
-          { id: 'message-a', role: 'assistant', content: '延迟会话 A 的旧消息', timestamp: '2026-07-17T00:00:00.000Z' },
-        ],
-      }
-    } else if (path === '/sessions/operator-session-b/messages') {
-      await new Promise((resolve) => setTimeout(resolve, 20))
-      body = {
-        messages: [
-          { id: 'message-b', role: 'assistant', content: '快速会话 B 的当前消息', timestamp: '2026-07-17T00:01:00.000Z' },
-        ],
-      }
-    } else body = { error: 'operator-race-fixture-not-found' }
-
-    await route.fulfill({
-      status: body.error ? 404 : 200,
-      contentType: 'application/json',
-      body: JSON.stringify(body),
-    })
-  })
-}
 
 async function installAiDailyPublicFixture(page) {
   const item = createAiDailyPublicFixtureItem()
@@ -697,44 +597,6 @@ async function checkStudioWorkspaceModes(browser, failures) {
   }
   await desktop.close()
 }
-async function checkOperatorSettingsSections(browser, failures) {
-  const sections = ['总览', '知识', 'RAG', '记忆', '用量']
-
-  for (const width of [320, 390, 430, 1440]) {
-    const page = await browser.newPage({ viewport: { width, height: width === 1440 ? 1000 : 900 } })
-    await installOperatorApiFixture(page)
-    await gotoApp(page, '/operator/settings')
-    const sectionNav = page.getByRole('navigation', { name: '站务设置分区' })
-
-    if (!(await sectionNav.isVisible().catch(() => false))) {
-      failures.push(`/operator/settings ${width}px: expected visible settings navigation`)
-      await page.close()
-      continue
-    }
-
-    for (const label of sections) {
-      const button = sectionNav.getByRole('button', { name: label, exact: true })
-      const bounds = await button.boundingBox()
-      if (!bounds || bounds.height < 42) {
-        failures.push(`/operator/settings ${width}px: ${label} should keep a stable touch target`)
-        continue
-      }
-      await button.click()
-      if ((await page.locator('.operator-settings-section:visible').count()) !== 1) {
-        failures.push(`/operator/settings ${width}px: ${label} should render exactly one active section`)
-      }
-    }
-
-    const metrics = await page.evaluate(() => ({
-      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-      tokenInputs: document.querySelectorAll('input[name*="token" i], input[id*="token" i]').length,
-    }))
-    if (metrics.overflow) failures.push(`/operator/settings ${width}px: horizontal overflow detected`)
-    if (metrics.tokenInputs !== 0) failures.push(`/operator/settings ${width}px: browser UI must not expose reusable service-token inputs`)
-    await page.close()
-  }
-}
-
 async function checkMobileDetailSurfaceCoordination(browser, failures) {
   const mobileWidths = [320, 390, 430]
 
@@ -1283,7 +1145,6 @@ for (const viewport of viewports) {
         }
       }, { keys: route.clearLocalStorageKeys ?? [], values: route.localStorageValues ?? {} })
     }
-    if (route.path.startsWith('/operator')) await installOperatorApiFixture(page)
     if (route.aiDailyPublicFixture) await installAiDailyPublicFixture(page)
 
     await gotoApp(page, route.path)
@@ -1351,28 +1212,6 @@ for (const viewport of viewports) {
       const expectedTextVisible = await page.getByText(route.expectedText).first().isVisible().catch(() => false)
       if (!expectedTextVisible) {
         failures.push(`${viewport.name} ${route.path}: expected visible text "${route.expectedText}"`)
-      }
-    }
-
-    if (route.path === '/operator/settings') {
-      const sections = await page.getByRole('navigation', { name: '站务设置分区' }).getByRole('button').count()
-      const refreshVisible = await page.getByRole('button', { name: '刷新', exact: true }).isVisible().catch(() => false)
-      const statusText = await page.locator('.operator-settings-status').innerText().catch(() => '')
-      if (sections !== 5 || !refreshVisible || !statusText.includes('站务配置已同步')) {
-        failures.push(`${viewport.name} ${route.path}: expected five owner settings areas and a synchronized status`)
-      }
-    }
-
-    if (route.path === '/operator') {
-      const openingText = await page.locator('.operator-message.is-assistant p').first().innerText().catch(() => '')
-      const suggestions = await page.locator('.operator-suggestions button').count()
-      const publicAssistantCount = await page.locator('.public-assistant').count()
-      const ownerInputEnabled = await page.getByLabel('站务任务', { exact: true }).isEnabled().catch(() => false)
-      if (!openingText.includes('站务工作区已就绪') || suggestions !== 4 || publicAssistantCount !== 0 || !ownerInputEnabled) {
-        failures.push(`${viewport.name} ${route.path}: expected connected owner workspace, four task starters, and no public widget`)
-      }
-      if (viewport.name === 'desktop' && !(await page.getByLabel('站务运行检查器').isVisible().catch(() => false))) {
-        failures.push(`${viewport.name} ${route.path}: expected visible runtime inspector`)
       }
     }
 
@@ -1705,7 +1544,6 @@ for (const viewport of viewports) {
 }
 
 await checkStudioWorkspaceModes(browser, failures)
-await checkOperatorSettingsSections(browser, failures)
 await checkMobileDetailSurfaceCoordination(browser, failures)
 await checkMobilePrimaryNavigation(browser, failures)
 await checkMobileProjectCatalog(browser, failures)
@@ -1731,6 +1569,7 @@ const mergedStatusPayload = mergeSiteStatusPayload(rawStatusPayload)
 const expectedEntrySummary = mergedStatusPayload.summary
 const expectedReliabilitySummary = getReliabilityStatusSummary(mergedStatusPayload.reliabilityProjects)
 const expectedManualActionQueue = getStatusManualActionQueue(mergedStatusPayload.reliabilityProjects)
+const expectedEntryNeedsAttention = hasEntryStatusAttention(expectedEntrySummary)
 const expectedReliabilityNeedsAttention =
   expectedReliabilitySummary.degraded > 0 ||
   expectedReliabilitySummary.offline > 0 ||
@@ -1779,11 +1618,16 @@ if (reliabilityProjectManualMetaCells !== staticReliabilityProjects.length * 2) 
 }
 const statusOverviewTitle = await statusPage.locator('#status-overview h2').innerText().catch(() => '')
 const statusPulseTone = await statusPage.locator('#status-overview .status-pulse').getAttribute('class').catch(() => '')
-if (expectedReliabilityNeedsAttention && !statusOverviewTitle.includes('部分能力仍待验证')) {
-  failures.push('/status overview: planned or incomplete reliability checks should be visible, got "' + statusOverviewTitle + '"')
+const expectedStatusOverviewTitle = expectedEntryNeedsAttention
+  ? '部分入口需要关注'
+  : expectedReliabilityNeedsAttention
+    ? '部分能力仍待验证'
+    : '入口与关键能力稳定'
+if (!statusOverviewTitle.includes(expectedStatusOverviewTitle)) {
+  failures.push(`/status overview: expected "${expectedStatusOverviewTitle}", got "${statusOverviewTitle}"`)
 }
-if (expectedReliabilityNeedsAttention && !statusPulseTone.includes('degraded')) {
-  failures.push('/status overview: planned or incomplete reliability checks should use the attention pulse')
+if ((expectedEntryNeedsAttention || expectedReliabilityNeedsAttention) && !statusPulseTone.includes('degraded')) {
+  failures.push('/status overview: entry or reliability attention should use the attention pulse')
 }
 if ((await entrySummaryCards.count()) !== entrySummaryKeys.length) {
   failures.push(`/status summary: expected ${entrySummaryKeys.length} entry summary cards, got ${await entrySummaryCards.count()}`)
@@ -2115,81 +1959,6 @@ for (const width of [320, 390, 430]) {
   await mobileBlogPage.close()
 }
 
-const operatorDesktopPage = await browser.newPage({ viewport: viewports[0] })
-await installOperatorApiFixture(operatorDesktopPage)
-await gotoApp(operatorDesktopPage, '/operator')
-if (await operatorDesktopPage.getByRole('button', { name: '打开站务会话' }).isVisible().catch(() => false)) {
-  failures.push('/operator desktop workspace: mobile drawer trigger should stay hidden')
-}
-if (!(await operatorDesktopPage.locator('.operator-sidebar').isVisible().catch(() => false))) {
-  failures.push('/operator desktop workspace: session sidebar should remain visible')
-}
-if (!(await operatorDesktopPage.getByLabel('站务运行检查器').isVisible().catch(() => false))) {
-  failures.push('/operator desktop workspace: runtime inspector should remain visible')
-}
-await operatorDesktopPage.close()
-
-const operatorRacePage = await browser.newPage({ viewport: viewports[0] })
-await installOperatorSessionRaceFixture(operatorRacePage)
-await gotoApp(operatorRacePage, '/operator')
-const fastSessionButton = operatorRacePage.locator('.operator-session').filter({ hasText: '快速会话 B' })
-await fastSessionButton.waitFor({ state: 'visible', timeout: 5_000 })
-await fastSessionButton.click()
-await operatorRacePage.getByText('快速会话 B 的当前消息', { exact: true }).waitFor({ state: 'visible', timeout: 2_000 })
-await operatorRacePage.waitForTimeout(450)
-const staleSessionVisible = await operatorRacePage.getByText('延迟会话 A 的旧消息', { exact: true }).isVisible().catch(() => false)
-const fastSessionActive = (await fastSessionButton.getAttribute('class'))?.includes('is-active') === true
-if (staleSessionVisible || !fastSessionActive) {
-  failures.push('/operator session ordering: a delayed previous session response must not replace the latest selected session')
-}
-await operatorRacePage.close()
-
-for (const width of [320, 390, 430]) {
-  const mobileOperatorPage = await browser.newPage({ viewport: { width, height: 900 } })
-  await installOperatorApiFixture(mobileOperatorPage)
-  await gotoApp(mobileOperatorPage, '/operator')
-
-  const drawer = mobileOperatorPage.locator('.operator-sidebar')
-  const trigger = mobileOperatorPage.getByRole('button', { name: '打开站务会话' })
-  const triggerBounds = await trigger.boundingBox()
-  if (!triggerBounds || triggerBounds.height < 44 || triggerBounds.x < 0 || triggerBounds.x + triggerBounds.width > width + 0.5) {
-    failures.push(`/operator mobile workspace ${width}px: drawer trigger should keep a bounded 44px target`)
-  }
-  if ((await drawer.getAttribute('class'))?.includes('is-open')) {
-    failures.push(`/operator mobile workspace ${width}px: session drawer should start closed`)
-  }
-
-  await trigger.click()
-  const drawerEnteredViewport = await mobileOperatorPage
-    .waitForFunction(
-      (viewportWidth) => {
-        const drawerElement = document.querySelector('.operator-sidebar.is-open')
-        if (!(drawerElement instanceof HTMLElement)) return false
-        const bounds = drawerElement.getBoundingClientRect()
-        return bounds.x >= -1 && bounds.right <= viewportWidth + 1
-      },
-      width,
-      { timeout: 1_200 },
-    )
-    .then(() => true)
-    .catch(() => false)
-  if (!drawerEnteredViewport) {
-    failures.push(`/operator mobile workspace ${width}px: session drawer should open inside the viewport`)
-  }
-  if (!(await mobileOperatorPage.locator('.operator-drawer-backdrop.is-open').isVisible().catch(() => false))) {
-    failures.push(`/operator mobile workspace ${width}px: open drawer should expose a backdrop`)
-  }
-
-  await drawer.getByRole('button', { name: '关闭站务会话' }).click()
-  await mobileOperatorPage.waitForTimeout(220)
-  if ((await drawer.getAttribute('class'))?.includes('is-open')) {
-    failures.push(`/operator mobile workspace ${width}px: close button should dismiss the drawer`)
-  }
-  const operatorOverflow = await mobileOperatorPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
-  if (operatorOverflow) failures.push(`/operator mobile workspace ${width}px: page should not overflow horizontally`)
-  await mobileOperatorPage.close()
-}
-
 const navFocusPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(navFocusPage, '/blog')
 const expectedNavFocusTargets = new Set(['brand', '首页', '项目', '博客', '状态', 'theme', 'language', 'primary'])
@@ -2483,23 +2252,6 @@ if (resumedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')
 }
 await motionSwitchPage.close()
-
-const operatorPage = await browser.newPage({ viewport: viewports[0] })
-await installOperatorApiFixture(operatorPage)
-await gotoApp(operatorPage, '/operator')
-if (await operatorPage.locator('.public-assistant').count()) {
-  failures.push('/operator: public assistant widget should be hidden on owner routes')
-}
-await operatorPage.locator('.operator-suggestions button').first().click()
-await operatorPage.getByRole('button', { name: '发送站务任务' }).click()
-await operatorPage.waitForTimeout(180)
-if ((await operatorPage.locator('.operator-message.is-user').count()) < 1) {
-  failures.push('/operator: expected a task starter to create a user message')
-}
-if ((await operatorPage.locator('.operator-message.is-assistant').count()) < 1) {
-  failures.push('/operator: expected deterministic Operator response rendering')
-}
-await operatorPage.close()
 
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
 await gotoApp(publicAssistantPage, '/blog')

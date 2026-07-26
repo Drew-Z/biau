@@ -1,12 +1,11 @@
 # Studio / AI Daily 生产就绪记录
 
-这份记录用于收口 BIAU Operator、Content Studio 与 AI Daily 的生产边界。真实 token、数据库 URL、模型渠道和后台地址只保存在平台环境变量中；当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准。
+这份记录用于收口 Content Studio 与 AI Daily 的生产边界。真实 token、数据库 URL、模型渠道和后台地址只保存在平台环境变量中；当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准。
 
 ## 当前结论
 
 - Studio-first 流程已建立：来源池 -> AI Daily issue -> `hidden + review-needed` 草稿 -> 人工审核 -> Publish Export -> 本地/CI 静态导出。
-- BIAU Operator 可以通过 `studio.draft` 创建待审核草稿，但不能审核、导出或发布。
-- Studio API 与 Operator 使用同一个 `STUDIO_DATABASE_URL`，Operator 自己的会话/记忆数据库仍使用独立 `DATABASE_URL`。
+- Studio 使用独立 `STUDIO_DATABASE_URL`，与公开助手匿名会话数据库分离。
 - AI Daily 自动抓取、自动摘要和自动发布保持关闭，直到首个版次和导出流程验收完成。
 - 三角色模型评估 contract、手动静态选型 contract、server-only OpenAI-compatible Responses provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；两条路径都不会在 readiness 或部署检查中调用模型。
 - 来源采集已经接入同一套 Studio 持久化 worker：版本化 manifest 幂等同步、到期 feed 排队、公开来源安全抓取、条件请求和证据选择都由数据库 work item/lease 驱动；它只访问公开来源，不调用模型或搜索 provider。工作区的“同步并刷新证据”调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，服务重启后会恢复未完成的采集任务。
@@ -17,11 +16,9 @@
 
 | 服务 | 数据库 | 责任 |
 | --- | --- | --- |
-| `biau-operator-api` | `DATABASE_URL` | owner session、message、memory、usage、站务知识。 |
-| `biau-operator-api` | `STUDIO_DATABASE_URL` | 仅用于 `hidden + review-needed` draft-write。 |
 | `biau-content-studio-api` | `STUDIO_DATABASE_URL` | 草稿、来源、review、AI Daily issue 和 Publish Export。 |
 
-两个服务的 `STUDIO_DATABASE_URL` 必须指向同一个内容库；不要把 Studio 数据库填入 Operator 的 `DATABASE_URL`。
+不要把 Studio 数据库填入公开助手的 `DATABASE_URL`。
 
 ## 本地验证
 
@@ -38,8 +35,6 @@ npm.cmd run ai-daily:retention-check
 npm.cmd run ai-daily:contracts-check
 npm.cmd run studio:smoke
 npm.cmd run studio:ai-daily-brief-check
-npm.cmd run operator:knowledge-check
-npm.cmd run assistant:agent-eval
 ```
 
 这些命令不调用外部模型，不需要生产数据库，也不会自动公开内容。`ai-daily:model-evaluation-check` 证明可选的 case-set hash、三角色排序、质量线、独立 fallback、低敏记录和人工批准状态机有效；`ai-daily:model-runtime-check` 还验证手动静态选型、显式 reduced-redundancy 确认、CLI 往返、provider 请求/解析、超时和 bundle 漂移门禁；两者都不能把 fixture 变成生产批准。`ai-daily:operations-check` 使用纯内存 fixture 验证 diagnostics、六类故障投影和 metrics 安全契约；`ai-daily:observability-contract-check` 验证仓库内 Grafana dashboard 与 Prometheus alert 模板；`ai-daily:retention-check` 验证默认 dry-run、发布/审核链保护和禁止 mutation 契约；`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks，只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
@@ -53,8 +48,7 @@ Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/ope
 以下部署基线已经完成，不应作为每轮内容工作的前置 setup 重复执行：
 
 - `biau-content-studio-api` 使用 `ASSISTANT_SERVICE_MODE=studio`，既有 Studio migration 与独立内容数据库边界已建立。
-- `biau-operator-api` 使用 `ASSISTANT_SERVICE_MODE=operator`，并通过共享 `STUDIO_DATABASE_URL` 写入同一内容库。
-- `/studio` 已能读取 health、草稿、来源、AI Daily 和 Publish Export；Operator artifact 能定位 `hidden + review-needed` 草稿。
+- `/studio` 已能读取 health、草稿、来源、AI Daily 和 Publish Export。
 
 后续每个真实内容周期只执行：
 

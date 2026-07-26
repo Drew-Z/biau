@@ -147,7 +147,7 @@ AI Daily failure signal 是当前状态与最近 24 小时持久化信号的低�
 不会记录：
 
 - IP、User-Agent、Cookie。
-- Authorization header、Operator service token、Studio admin token、Access JWT。
+- Authorization header、Studio admin token、同步 token 与 provider credential。
 - member id、session id、message id。
 - 用户提问正文。
 - 完整 URL query。

@@ -13,7 +13,7 @@ create table if not exists rag_documents (
   summary text not null,
   href text not null,
   tags text[] not null default '{}',
-  visibility text not null default 'public' check (visibility in ('public', 'internal')),
+  visibility text not null default 'public' check (visibility = 'public'),
   metadata jsonb not null default '{}'::jsonb,
   content_hash text not null,
   updated_at timestamptz not null default now()

@@ -1,8 +1,6 @@
-export type AssistantVisibility = 'public' | 'internal'
-export type AssistantScope = 'public' | 'internal'
-export type AssistantServiceMode = 'all' | 'public' | 'operator' | 'rag' | 'studio'
-export type AssistantAnswerIntent = 'site_qa' | 'creative' | 'planning' | 'general'
-export type AssistantGroundingMode = 'strict' | 'background' | 'none'
+export type AssistantVisibility = 'public'
+export type AssistantScope = 'public'
+export type AssistantServiceMode = 'all' | 'public' | 'rag' | 'studio'
 export type PublicAssistantMode = 'auto' | 'site' | 'web'
 export type PublicAssistantRoute = 'direct' | 'site' | 'web' | 'combined'
 export type PublicAssistantStatus = 'answered' | 'partial' | 'uncertain' | 'degraded' | 'blocked'
@@ -81,28 +79,6 @@ export type ChatFallbackReason =
   | 'policy_blocked'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
 export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
-export type AgentGraphNodeId =
-  | 'input_guard'
-  | 'plan'
-  | 'validate_plan'
-  | 'execute_tools'
-  | 'compose_answer'
-  | 'self_check'
-  | 'persist_trace'
-export type AgentWorkflowStepId = AgentGraphNodeId
-export type AgentPlannerMode = 'model' | 'mock' | 'fallback'
-export type AgentRunStatus = 'completed' | 'guarded' | 'degraded' | 'failed'
-export type AgentToolPermission = 'read' | 'draft-write' | 'admin-write' | 'external-live'
-export type AgentToolStatus = 'selected' | 'skipped' | 'completed' | 'failed' | 'blocked'
-export type AgentToolId =
-  | 'rag.retrieve'
-  | 'status.query'
-  | 'project.lookup'
-  | 'knowledge.search'
-  | 'studio.draft'
-  | 'memory.search'
-  | 'memory.write'
-  | 'answer.direct'
 
 export interface ProviderDiagnostic {
   kind: ProviderDiagnosticKind
@@ -143,51 +119,6 @@ export interface AssistantRetrievalMeta {
   diagnostic?: RagAdapterDiagnostic
 }
 
-export interface AgentToolTrace {
-  id: AgentToolId
-  label: string
-  permission: AgentToolPermission
-  status: AgentToolStatus
-  durationMs: number
-  summary: string
-  citationCount?: number
-  itemCount?: number
-  errorClass?: 'tool_error' | 'policy_blocked' | 'not_configured'
-  artifacts?: AgentToolArtifact[]
-}
-
-export interface AgentStudioDraftArtifact {
-  kind: 'studio-draft'
-  id: string
-  slug: string
-  title: string
-  column: string
-  status: 'review-needed'
-  visibility: 'hidden'
-  reviewRequired: true
-  href: '/studio' | `/studio?draft=${string}`
-}
-
-export type AgentToolArtifact = AgentStudioDraftArtifact
-
-export interface AgentGuardrailSummary {
-  status: 'passed' | 'warned' | 'blocked'
-  allowedPermissions: AgentToolPermission[]
-  blockedPermissions: AgentToolPermission[]
-  citationSufficiency: 'enough' | 'weak' | 'none'
-  sensitiveOutputBlocked: boolean
-  issues: string[]
-}
-
-export interface AgentRunMeta {
-  mode: 'agentic-workspace'
-  planner: AgentPlannerMode
-  status: AgentRunStatus
-  steps: AgentWorkflowStepId[]
-  toolCount: number
-  durationMs: number
-}
-
 export interface ChatResponse {
   answer: string
   citations: Citation[]
@@ -203,12 +134,7 @@ export interface ChatResponse {
     diagnostic?: ProviderDiagnostic
     modelChannel?: AssistantModelChannelSummary
     retrieval?: AssistantRetrievalMeta
-    intent?: AssistantAnswerIntent
-    grounding?: AssistantGroundingMode
-    agent?: AgentRunMeta
-    tools?: AgentToolTrace[]
-    guardrails?: AgentGuardrailSummary
-    fallbackReason?: ChatFallbackReason | 'tool_error' | 'policy_blocked'
+    fallbackReason?: ChatFallbackReason
     research?: PublicAssistantResearchMeta
   }
   sessionId?: string
@@ -235,7 +161,6 @@ export interface RagHealthResponse {
   publicSourceChecksum?: string
   collections?: {
     public?: RagCollectionHealth
-    internal?: RagCollectionHealth
   }
 }
 
@@ -251,23 +176,6 @@ export interface RagRetrievePayload {
   scope?: AssistantScope
   limit?: number
   locale?: string
-}
-
-export interface RagSyncDocument {
-  id: string
-  slug?: string
-  title: string
-  summary?: string
-  body: string
-  tags?: string[]
-  status?: string
-  sourceType?: string
-  updatedAt?: string
-}
-
-export interface RagSyncPayload {
-  scope?: AssistantScope
-  documents?: RagSyncDocument[]
 }
 
 export interface RagChunkCitation {

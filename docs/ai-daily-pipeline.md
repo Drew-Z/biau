@@ -37,7 +37,7 @@ npm.cmd run ai-daily:manifest-check
 
 ## Studio 后端配置
 
-Studio 推荐使用独立数据库，方便和 Operator owner 数据分开维护：
+Studio 使用独立数据库，与公开助手匿名会话数据分开维护：
 
 ```text
 ASSISTANT_SERVICE_MODE=studio

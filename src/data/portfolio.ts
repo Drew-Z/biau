@@ -913,9 +913,9 @@ export const projects: Project[] = [
         {
           title: '助手与内容联动',
           items: [
-            '公开助手从 `src/data/portfolio.ts` 和公开博客 curation 生成本地知识，未配置后端时仍可回答站点公开内容。',
-            '泊岸站务已经切换为 owner-only LangGraph Agent Workspace：Cloudflare Access 保护 `/operator`，服务端保存站长会话、长期记忆、工具轨迹和低敏用量，浏览器不再使用邀请码、成员 token 或管理员 token。',
-            '`/operator/settings` 统一展示站务知识、RAG、长期记忆、模型通道和低敏运行状态；公开发布、部署、Git 与云平台写入不属于正常 Agent 权限。',
+            '公开助手从 `src/data/portfolio.ts` 和公开博客 curation 生成版本化知识；未配置后端时仍提供明确标注的本地公开知识 fallback。',
+            '主路径使用 public-only LangGraph，在 direct、site、web 和 combined 路由之间自适应选择，执行证据分级、一次有界恢复、答案生成与 claim/citation 校验。',
+            '网页搜索只用于发现线索，引用必须来自 SSRF-safe 抓取并保留的公开原网页；助手没有登录、长期记忆、私有知识或写入工具。',
             '项目详情和助手知识共用 `getProjectAssistantSummary` 与 `getProjectAssistantTags`，减少页面文案和助手答案互相漂移。',
           ],
         },
@@ -924,12 +924,12 @@ export const projects: Project[] = [
         {
           title: '前端路由与数据组织',
           body:
-            '前端使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标。`App.tsx` 管理首页、项目集、项目详情、博客、公开助手、`/operator`、`/operator/settings` 和 Studio 路由；项目、博客、助手建议和公开知识都放在 `src/data/`，页面组件只消费已整理好的 typed data。',
+            '前端使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标。`App.tsx` 管理首页、项目集、项目详情、博客、公开助手和 Studio 路由；项目、博客、助手建议和公开知识都放在 `src/data/`，页面组件只消费已整理好的 typed data。',
         },
         {
           title: '助手后端与公开知识生成',
           body:
-            '仓库包含 Express/TypeScript 多服务后端：公开助手、owner-only BIAU Operator、Content Studio 和 RAG Orchestrator。Operator 主路径由 `runOperatorAgent()` 进入 LangGraph compiled graph，节点覆盖 input guard、plan、validate、execute tools、compose answer、self-check 和 persist trace；工具注册表包含站点/项目/内容/布局/状态检查、scoped RAG、站务知识、长期记忆、Studio 草稿和 direct answer。`scripts/generate-assistant-knowledge.ts` 会把公开项目和精选博客生成到 `server/data/public-knowledge.json`，让公开 fallback 与后端知识源保持同一份事实。',
+            '仓库包含三个 Express/TypeScript 服务边界：公开研究助手、Content Studio 和 public-only RAG Orchestrator。`runPublicAssistantAgent()` 进入带条件边的 LangGraph，覆盖输入保护、规划、站内/网页研究、证据分级、有界恢复、生成、claim/citation 校验和最终公开投影。`scripts/generate-assistant-knowledge.ts` 把公开项目和精选博客生成到版本化知识索引，让浏览器 fallback、RAG sync 与公开答案使用同一份事实。',
         },
         {
           title: '内容与 SEO 管线',
@@ -951,9 +951,9 @@ export const projects: Project[] = [
           title: '自动化验证',
           items: [
             '`npm.cmd run assistant:index` 生成公开助手知识。',
-            '`npm.cmd run assistant:agent-contract` 验证 LangGraph 节点、工具权限、Studio artifact 和敏感形态不会漂移。',
-            '`npm.cmd run assistant:agent-eval` 在 no-live 模式下覆盖状态/项目、内部知识、Studio draft plan-only 和会话记忆用例。',
-            '`npm.cmd run assistant:meta-check`、`operator:knowledge-check` 和 `operator:facade-smoke` 守住回答 meta、站务知识摘要、Access facade 和低敏诊断。',
+            '`assistant:public-agent-check`、`assistant:public-model-check`、`assistant:public-api-check` 和 `assistant:public-web-check` 验证 LangGraph、Responses、公开投影、证据安全与失败降级。',
+            '`assistant:hybrid-contract`、`assistant:rag-smoke` 和 `assistant:public-sync-check` 守住 dense+sparse RRF、真实 reranker/fallback 元数据、public alias 与版本化同步。',
+            '`assistant:public-persistence-check` 和 `assistant:public-rate-limit-check` 验证匿名 30 天保留、低敏聚合与不能被 session ID 绕过的限流。',
             '`npm.cmd run sitemap:generate` 更新公开 sitemap。',
             '`npm.cmd run blog:check` 检查公开博客内容边界。',
             '`npm.cmd run lint` 和 `npm.cmd run build` 覆盖 ESLint、TypeScript 和 Vite 构建。',
@@ -968,7 +968,7 @@ export const projects: Project[] = [
           items: [
             '主站内容仍以静态 TypeScript 数据为主，不是多人 CMS；内容发布需要代码审查和构建验证。',
             '博客仍在持续筛选和重写，旧内容不会因为存在归档就自动公开。',
-            'BIAU Operator 的本地产品化能力已经具备 LangGraph runtime、typed tools、owner 会话/记忆、运行检查器、设置页和本地 eval；部署边界与重启后 memory 持久化已有低敏生产复核，当前公开发布仍由 Studio hidden + review-needed、人工审核和 Publish Export 门禁控制。',
+            '公开助手只读取 BIAU 公开知识与允许抓取的公开网页，不提供成员账号、私有知识、长期记忆或写入型工具；内容发布仍由 Studio 人工审核和 Publish Export 门禁控制。',
             '项目页只展示公开安全事实；部署凭据、账号、生产数据、私有后台和未确认下载包不会放进公开站点。',
           ],
         },
@@ -979,23 +979,23 @@ export const projects: Project[] = [
           items: [
             '继续补齐各项目的案例页细节，让实现、架构、验证、边界和后续版本方向都能从仓库证据追溯。',
             '把博客内容生成流水线继续沉淀为 review-only 证据包、模型辅助草稿、人工审核和公开发布的稳定流程。',
-            '继续增强公开助手和 BIAU Operator 的项目事实覆盖，用 reviewed/active 站务知识、RAG sync 低敏诊断和本地 eval case 驱动后续迭代。',
+            '继续增强公开助手的项目事实覆盖、网页证据质量、citation 精度和 coverage-gap 反馈，用 public sync 低敏诊断和确定性 eval case 驱动后续迭代。',
             '完善图片、移动端布局、链接审计、UI 回归和部署记录，让主站更接近长期维护的产品展示系统。',
           ],
         },
       ],
     },
     assistantContext: [
-      'BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开助手、owner-only 泊岸站务和内容 Studio。',
+      'BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开研究助手和内容 Studio。',
       '项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。',
-      '仓库包含公开助手、BIAU Operator、Content Studio 和 RAG Orchestrator 四种 Express/TypeScript 服务模式；Operator 使用独立 owner 数据库，Studio 使用独立内容数据库，前端未配置公开 API 时仍可使用公开知识 fallback。',
-      '泊岸站务已经产品化为 owner-only LangGraph Agent Workspace：`runOperatorAgent()` 进入 compiled graph，typed tools 覆盖站点、项目、内容、布局、状态、scoped RAG、站务知识、Studio 草稿、长期记忆和 direct answer，只允许 read 与 draft-write。',
-      '`/operator` 提供会话、引用、工具轨迹和 Studio artifact，`/operator/settings` 提供知识、RAG、记忆、用量和低敏模型通道状态；Cloudflare Access 与同源 facade 取代浏览器 token、邀请码和成员管理。',
-      '公开助手方向已经从本地知识 fallback 推进到 Agentic Hybrid RAG groundwork：server 侧包含 RAG Orchestrator、embedding client、PostgreSQL/pgvector store、Qdrant store 和 sync/smoke 脚本。',
+      '仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。',
+      '公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。',
+      '公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only Qdrant 证据。',
+      'RAG Orchestrator 使用 Qdrant public alias、dense+sparse RRF、可选 provider reranker 与确定性 fallback，并通过版本化 public sync 切换 collection。',
       'Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。',
       '内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。',
-      '验证链路包括 assistant:index、assistant:agent-contract、assistant:agent-eval、assistant:meta-check、operator:knowledge-check、operator:facade-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。',
-      '当前边界是静态数据驱动、人工审核发布、公开安全事实展示和生产配置 gate；BIAU Operator 已完成部署边界与重启后 memory 持久化复核，后续仍需完成 Studio 被退回草稿的修订、证据完整版本审核与 Publish Export。',
+      '验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。',
+      '当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；后续仍需完成旧 Operator-only 数据的受审退役、Studio 被退回草稿修订、证据完整版本审核与 Publish Export。',
     ],
   },
   {

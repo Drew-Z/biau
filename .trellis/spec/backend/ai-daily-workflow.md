@@ -21,7 +21,7 @@
 
 ### HTTP and deployment boundary
 
-- `GET /public/ai-daily/feed` and `GET /public/ai-daily/events/:publicId` are no-token public reads mounted only by the Studio service and local `all` mode. The public assistant, Operator, and RAG services must not mount these routes.
+- `GET /public/ai-daily/feed` and `GET /public/ai-daily/events/:publicId` are no-token public reads mounted only by the Studio service and local `all` mode. The public assistant and RAG services must not mount these routes.
 - Production Studio sets an exact browser-origin allowlist, `TRUST_PROXY=true`, a bounded public window, stale threshold, rate limit, and rate window. `TRUST_PROXY` must not be enabled by the other Render services.
 - The router returns explicit CORS headers only for allowlisted origins, handles `OPTIONS`, emits bounded process-local `RateLimit-*` headers, and returns `429` plus `Retry-After` when the client-IP budget is exhausted.
 - Successful responses use public cache headers, deterministic ETags, and `304` for matching `If-None-Match` without returning a body.
@@ -721,8 +721,8 @@ The repository verifies the active token and expiry, records the attempt outcome
 - Fixture gates: `npm.cmd run ai-daily:{source,discovery,discovery-provider,evidence,freshness,dedupe,ranking}-check`.
 - PostgreSQL gate: `AI_DAILY_DATABASE_CHECK=1 npm.cmd run ai-daily:repository-check` against a local database whose name ends in `_test`.
   The ingestion, generation, and Studio repository checks all read
-  `STUDIO_DATABASE_URL`; `DATABASE_URL` remains reserved for the Operator
-  workspace database.
+  `STUDIO_DATABASE_URL`; `DATABASE_URL` remains reserved for anonymous public
+  assistant persistence.
 
 ### 3. Contracts
 

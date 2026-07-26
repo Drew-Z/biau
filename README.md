@@ -1,6 +1,6 @@
 # BIAU Port / 泊岸
 
-AI applications, project case studies, content studio, and agentic assistant workspace for the BIAU Port ecosystem.
+AI applications, project case studies, content studio, and a public research assistant for the BIAU Port ecosystem.
 
 简体中文文档：[README.zh-CN.md](README.zh-CN.md)
 
@@ -11,7 +11,7 @@ AI applications, project case studies, content studio, and agentic assistant wor
 ![LangGraph](https://img.shields.io/badge/LangGraph-agentic%20workspace-1c7ed6)
 ![Prisma](https://img.shields.io/badge/Prisma-7-2d3748)
 
-BIAU Port / 泊岸 is a React + Vite + TypeScript product site that organizes AI products, business systems, mobile apps, interactive experiences, technical articles, public assistant answers, an owner-only site Operator, Studio drafts, and reliability status into one public-safe showcase.
+BIAU Port / 泊岸 is a React + Vite + TypeScript product site that organizes AI products, business systems, mobile apps, interactive experiences, technical articles, a public research assistant, Studio drafts, and reliability status into one public-safe showcase.
 
 Live site:
 
@@ -54,8 +54,6 @@ Use the live site or a local dev server for the current route state:
 | Blog | `/blog` |
 | Status | `/status` |
 | Public assistant widget | Public site routes |
-| BIAU Operator | `/operator` |
-| Operator settings | `/operator/settings` |
 | Content Studio | `/studio` |
 | Pet app showcase | `/pet-app-showcase/` |
 
@@ -65,8 +63,7 @@ Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/s
 
 - Presents project case-study pages for Legal RAG, Ozon ERP, Pet workspace, Xunqiu, BIAU Playlab, and related apps.
 - Publishes curated blog content, knowledge notes, project notes, resources, and AI Daily drafts after review.
-- Provides a public assistant that answers from public site knowledge and can optionally call an OpenAI-compatible model from the server side.
-- Provides an owner-only BIAU Operator that uses LangGraph for scoped RAG, site/project/content/layout inspection, durable memory, and review-gated Studio draft creation.
+- Provides a public LangGraph research assistant that adaptively combines BIAU knowledge and verified public-web evidence with claim-level citations.
 - Provides a Content Studio for draft editing, AI Daily issue management, source items, reviews, and publish export records.
 - Tracks public link health, synthetic checks, project reliability status, manual gates, and low-sensitive observability boundaries.
 
@@ -76,11 +73,10 @@ Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/s
 - Public project catalog with filters, detail pages, screenshots, workflow visuals, architecture notes, quality evidence, limitations, and roadmap sections.
 - Public assistant knowledge generation with docs, chunks, entities, relations, deterministic local eval, and public-only citation boundaries.
 - Cloudflare Pages Functions for same-domain public assistant endpoints.
-- Express assistant backend with service modes: `public`, `operator`, `studio`, `rag`, and local `all`.
-- Owner-only LangGraph BIAU Operator with typed tools and `read` / `draft-write` permission boundaries.
-- Server-only Operator model channel selection with optional fallback channel configuration.
-- RAG Orchestrator boundary with Qdrant-ready public/internal collections, scoped retrieval keys, sync token, embedding adapter, and optional reranker adapter.
-- Prisma/PostgreSQL persistence for owner sessions, messages, durable memory, usage logs, private operator knowledge, Studio drafts, AI Daily issues, source items, reviews, and publish exports.
+- Express backend with `public`, `studio`, `rag`, and local `all` service modes.
+- One server-only Responses generation model with bounded planning, research, evidence grading, recovery, generation, and verification.
+- Public-only RAG Orchestrator with a versioned Qdrant alias, dense+sparse RRF, sync token, embedding adapter, and optional reranker adapter.
+- Prisma/PostgreSQL persistence for bounded anonymous assistant sessions/turns/feedback plus Studio drafts, AI Daily issues, source items, reviews, and publish exports.
 - Studio-first AI Daily flow: source pool -> issue -> hidden/review-needed draft -> review -> publish export -> static content diff.
 - Default-off analytics adapter for Plausible, Umami, or local debug events.
 - Default-off Prometheus `/metrics` endpoint for assistant services.
@@ -92,34 +88,27 @@ Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/s
 flowchart TB
   Browser["Browser\nReact + custom CSS"] --> Pages["Cloudflare Pages\nstatic site + Functions"]
   Pages --> PublicAPI["Public assistant API\nASSISTANT_SERVICE_MODE=public"]
-  Browser --> Access["Cloudflare Access\n/operator + facade"]
   Browser --> StudioAPI["Content Studio API\nASSISTANT_SERVICE_MODE=studio"]
   PublicAPI --> RAG["RAG Orchestrator\nASSISTANT_SERVICE_MODE=rag"]
-  Access --> OperatorAPI["BIAU Operator API\nASSISTANT_SERVICE_MODE=operator"]
-  OperatorAPI --> RAG
-  OperatorAPI --> LangGraph["LangGraph Agent Workspace\nplan / tools / compose / self-check"]
-  OperatorAPI --> AppDB["Operator PostgreSQL\nowner sessions / memory / usage / knowledge"]
-  OperatorAPI --> StudioDB
+  PublicAPI --> LangGraph["Public-only LangGraph\nplan / research / grade / verify"]
+  PublicAPI --> AppDB["Public assistant PostgreSQL\nanonymous turns / feedback / aggregates"]
   StudioAPI --> StudioDB["Studio PostgreSQL\ndrafts / sources / AI Daily / exports"]
-  RAG --> Qdrant["Qdrant collections\npublic + internal chunks"]
+  RAG --> Qdrant["Qdrant public alias\ndense + sparse chunks"]
   RAG --> Embedding["Embedding provider\nserver-only"]
   PublicAPI --> Model["OpenAI-compatible model\nserver-only"]
-  InternalAPI --> Model
 ```
 
-Recommended production shape uses four independent Render Web Services from the same repository:
+Recommended production shape uses three independent Render Web Services from the same repository:
 
 | Service | Mode | Owns |
 | --- | --- | --- |
 | `biau-public-assistant-api` | `public` | Public chat API and public-only retrieval. |
-| `biau-operator-api` | `operator` | Owner sessions, durable memory, LangGraph tools, private knowledge, review-gated Studio draft-write. |
 | `biau-content-studio-api` | `studio` | Drafts, reviews, source items, AI Daily issues, publish exports. |
-| `biau-rag-orchestrator` | `rag` | Scoped retrieval, sync, Qdrant/vector store, embedding, optional rerank. |
+| `biau-rag-orchestrator` | `rag` | Public-only retrieval, versioned sync, Qdrant/vector store, embedding, optional rerank. |
 
 Detailed docs:
 
 - [Deployment](docs/deployment.md)
-- [BIAU Operator Agent Workspace](docs/internal-assistant-agent-workspace.md)
 - [Content Studio](docs/content-studio.md)
 - [AI Daily Pipeline](docs/ai-daily-pipeline.md)
 - [Site Monitoring](docs/site-monitoring.md)
@@ -187,19 +176,17 @@ Common server variables:
 
 | Variable | Purpose |
 | --- | --- |
-| `ASSISTANT_SERVICE_MODE` | `public`, `operator`, `studio`, `rag`, or local `all`. |
+| `ASSISTANT_SERVICE_MODE` | `public`, `studio`, `rag`, or local `all`. |
 | `CORS_ORIGIN` | Browser origin allowed by Express services. |
 | `AI_DAILY_PUBLIC_*` | Public AI Daily CORS allowlist, time window, stale threshold, and process-local rate limit. |
-| `DATABASE_URL` | BIAU Operator owner workspace database. |
+| `DATABASE_URL` | Anonymous public assistant session/turn/feedback database. |
 | `STUDIO_DATABASE_URL` | Content Studio database. |
 | `ADMIN_TOKEN` / `STUDIO_ADMIN_TOKEN` | Server-side admin tokens. |
 | `ASSISTANT_MODEL_*` | Server-side OpenAI-compatible model channel. |
-| `ASSISTANT_MODEL_CHANNELS_JSON` | Optional server-only Operator fallback channels. |
-| `OPERATOR_*` / `CF_ACCESS_*` | Owner identity, facade service credential, Render target, and Cloudflare Access contract. |
 | `ASSISTANT_RAG_API_BASE_URL` / `ASSISTANT_RAG_API_KEY` | Server-side RAG Orchestrator access from assistant APIs. |
 | `RAG_STORE_PROVIDER` | `qdrant`, `supabase`, or local fallback behavior. |
 | `QDRANT_*` | Server-side Qdrant configuration. |
-| `RAG_PUBLIC_API_KEY` / `RAG_INTERNAL_API_KEY` / `RAG_SYNC_TOKEN` | Scoped RAG access and sync tokens. |
+| `RAG_PUBLIC_API_KEY` / `RAG_SYNC_TOKEN` | Public retrieval and publication-sync credentials. |
 | `EMBEDDING_*` / `RERANKER_*` | Server-side embedding and optional rerank providers. |
 | `METRICS_ENABLED` | Enables low-sensitive Prometheus metrics when set to `true`. |
 
@@ -274,18 +261,18 @@ Cloudflare Pages Functions can serve same-domain public assistant endpoints unde
 
 ### Render Services
 
-The repository includes `render.yaml` as a Blueprint reference for the four assistant services. All secret-bearing variables use `sync: false` and must be filled in the Render dashboard.
+The repository includes `render.yaml` as a Blueprint reference for the three services. All secret-bearing variables use `sync: false` and must be filled in the Render dashboard.
 
 Typical commands:
 
 ```bash
-# public / rag
+# public
+npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
+npm run prisma:migrate && npm run server:start
+
+# rag
 npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
 npm run server:start
-
-# internal
-npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
-npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start
 
 # studio
 npm ci && npm run prisma:generate && npm run server:build
@@ -298,7 +285,7 @@ See [docs/deployment.md](docs/deployment.md) for service-specific environment va
 
 ```text
 src/
-  pages/          Public routes, project details, BIAU Operator, Studio UI
+  pages/          Public routes, project details, and Studio UI
   components/     Shared React UI components
   data/           Public project/blog/assistant/status data contracts
   utils/          SEO, analytics, visual and browser helpers
@@ -355,19 +342,18 @@ npm run verify
 ## Security
 
 - Treat everything committed to this repository as public.
-- Do not commit `.env`, `.env.local`, keys, database URLs, model base URLs, API keys, bearer tokens, Access assertions, service/admin tokens, signing paths, or private dashboards.
+- Do not commit `.env`, `.env.local`, keys, database URLs, model base URLs, API keys, bearer tokens, service/admin tokens, signing paths, or private dashboards.
 - Do not put model, RAG, database, Qdrant, Studio, or admin credentials in `VITE_*`.
 - Public assistant answers must be grounded in public citations and must refuse or fall back when context is insufficient.
-- BIAU Operator allows only `read` and `draft-write`; it must not publish content, mutate cloud settings, write Git state, deploy services, or run external live diagnostics.
-- Studio drafts created by agents must stay `hidden + review-needed` until a human reviews and exports them.
+- Public assistant tools are anonymous, read-only, public-evidence-only, and cannot publish content or mutate project/cloud state.
+- Studio drafts stay `hidden + review-needed` until a human reviews and exports them.
 - Debug APKs or unapproved release artifacts must not be linked as official public downloads.
 
 ## Roadmap
 
 - Finish open-source packaging for all related repositories with consistent README, setup, deployment, testing, and security sections.
 - Improve project detail pages with richer screenshots, architecture diagrams, workflow visuals, and public-safe evidence.
-- Continue polishing public assistant quality with scoped retrieval, citations, self-check, and production RAG Orchestrator sync.
-- Expand BIAU Operator with reviewed site tools, better traces, and stronger human review workflows.
+- Continue polishing public assistant retrieval, verified web evidence, citations, self-check, and production RAG sync.
 - Add first-class scheduled reliability checks and artifact-based status publishing.
 - Decide and document a production analytics/observability stack: Cloudflare + Search Console + Plausible/Umami first, Prometheus/Grafana/OpenTelemetry/LLM observability later when justified.
 

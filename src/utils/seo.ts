@@ -113,15 +113,6 @@ export function getStaticSeo(pathname: string): SeoMeta {
     }
   }
 
-  if (path === '/operator') {
-    return {
-      title: '泊岸站务 | BIAU Port',
-      description: 'BIAU Port 的 owner-only 站务工作区。',
-      canonicalPath: '/operator',
-      type: 'website',
-    }
-  }
-
   if (path === '/status') {
     return {
       title: '站点入口状态 | BIAU Port',
@@ -136,15 +127,6 @@ export function getStaticSeo(pathname: string): SeoMeta {
       title: '项目可靠性详情 | BIAU Port',
       description: '查看 BIAU Port 泊岸项目可靠性观察中的单个项目检查项、人工 gate 和后续接入方向。',
       canonicalPath: path,
-      type: 'website',
-    }
-  }
-
-  if (path === '/operator/settings') {
-    return {
-      title: '站务设置 | BIAU Port',
-      description: 'BIAU Operator 的知识、RAG、记忆与低敏运行诊断。',
-      canonicalPath: '/operator/settings',
       type: 'website',
     }
   }

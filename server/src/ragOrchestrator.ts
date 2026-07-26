@@ -6,11 +6,10 @@ import {
   getQdrantRagHealth,
   isQdrantRagStoreSelected,
   retrieveQdrantRagContext,
-  syncQdrantInternalRagStore,
   syncQdrantRagStore,
 } from './ragQdrantStore.js'
 import { env } from './env.js'
-import type { RagHealthResponse, RagRetrievePayload, RagRetrieveResponse, RagSyncPayload, RagSyncResponse } from './types.js'
+import type { RagHealthResponse, RagRetrievePayload, RagRetrieveResponse, RagSyncResponse } from './types.js'
 
 const SERVICE_NAME = 'biau-rag-orchestrator'
 const localVectorStore = createLocalVectorStore()
@@ -86,15 +85,7 @@ export async function retrieveRagContext(
   }
 }
 
-export async function syncRagStore(payload: RagSyncPayload = {}): Promise<RagSyncResponse> {
-  if (payload.scope === 'internal') {
-    if (isQdrantRagStoreSelected()) {
-      const syncResult = await syncQdrantInternalRagStore(payload)
-      if (syncResult) return syncResult
-    }
-    return syncInternalRagPayload(payload)
-  }
-
+export async function syncRagStore(): Promise<RagSyncResponse> {
   if (isQdrantRagStoreSelected()) {
     const syncResult = await syncQdrantRagStore()
     if (syncResult) return syncResult
@@ -112,35 +103,6 @@ export async function syncRagStore(payload: RagSyncPayload = {}): Promise<RagSyn
     accepted: false,
     health: await getRagOrchestratorHealth(),
   }
-}
-
-async function syncInternalRagPayload(payload: RagSyncPayload): Promise<RagSyncResponse> {
-  const documents = Array.isArray(payload.documents) ? payload.documents : []
-  return {
-    ok: true,
-    mode: 'local-readonly',
-    scope: 'internal',
-    accepted: false,
-    health: await getRagOrchestratorHealth(),
-    diagnostics: {
-      sourceName: 'internal-knowledge-documents',
-      documentCount: documents.length,
-      chunkCount: countSyncPayloadChunks(documents),
-      issueCount: 0,
-    },
-  }
-}
-
-function countSyncPayloadChunks(documents: NonNullable<RagSyncPayload['documents']>) {
-  return documents.reduce((total, document) => {
-    const body = typeof document.body === 'string' ? document.body : ''
-    const paragraphs = body
-      .split(/\n{2,}/)
-      .map((item) => item.trim())
-      .filter(Boolean)
-    if (paragraphs.length === 0) return total
-    return total + paragraphs.reduce((chunkTotal, paragraph) => chunkTotal + Math.max(1, Math.ceil(paragraph.length / 1200)), 0)
-  }, 0)
 }
 
 function normalizeRetrieveLimit(value: number | undefined) {

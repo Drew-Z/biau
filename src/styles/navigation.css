@@ -1012,10 +1012,6 @@
     white-space: nowrap;
   }
 
-  html.assistant-mobile-drawer-open .mobile-tabbar {
-    visibility: hidden;
-    pointer-events: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

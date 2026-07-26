@@ -18,8 +18,6 @@ const routeCases: RouteCase[] = [
     routeDepth: 2,
     forbidden: ['legal-rag', 'token', 'abc', 'private', '?', '#'],
   },
-  { pathname: '/operator', routePattern: '/operator', routeArea: 'operator', routeDepth: 1 },
-  { pathname: '/operator/settings', routePattern: '/operator/settings', routeArea: 'operator-settings', routeDepth: 2 },
   { pathname: '/studio', routePattern: '/studio/*', routeArea: 'studio', routeDepth: 1 },
   {
     pathname: '/studio/ai-daily/cmrc3qokb00033lhrr6o0cq0x?token=abc',

@@ -4,7 +4,7 @@
 
 The backend uses Prisma 7 with PostgreSQL and `@prisma/adapter-pg`. Clients are created lazily in `server/src/db.ts`.
 
-- `getPrisma()` / `requireDatabase()` own BIAU Operator persistence.
+- `getPrisma()` owns bounded anonymous public-assistant persistence.
 - `getStudioPrisma()` / `requireStudioDatabase()` own Content Studio persistence.
 - Do not instantiate Prisma clients in route handlers.
 - Real connection strings stay in deployment environment variables.
@@ -13,16 +13,12 @@ When a managed pooler requires Prisma 7 / libpq compatibility, configure the pro
 
 ## Schema Ownership
 
-### Operator Database (`DATABASE_URL`)
+### Public assistant database (`DATABASE_URL`)
 
-- `OperatorSession`
-- `OperatorMessage`
-- `OperatorMemory`
-- `OperatorUsageLog`
-- `InternalKnowledgeDocument`
-- `InternalKnowledgeSyncRun`
-
-The `InternalKnowledge*` model name is retained as a private RAG scope/storage term; it does not reintroduce a member product.
+- `PublicAssistantSession`
+- `PublicAssistantTurn`
+- `PublicAssistantFeedback`
+- `PublicAssistantDailyAggregate`
 
 ### Studio Database (`STUDIO_DATABASE_URL`)
 
@@ -31,51 +27,29 @@ The `InternalKnowledge*` model name is retained as a private RAG scope/storage t
 - AI Daily issues.
 - Publish Export records.
 
-### Legacy Migration Sources
-
-Old invite/member/session/message/memory/usage tables may remain temporarily for rollback and selective migration. Final Operator runtime must not create new invite/member records or depend on member tokens.
-
-## Owner Scoping
-
-- Every Operator session/message/memory/usage query includes `ownerId` derived from `OperatorPrincipal`.
-- Never accept `ownerId` from request JSON.
-- Cross-owner lookups return `404`.
-- `OperatorMemory` uses `@@unique([ownerId, contentHash])` for per-owner deduplication.
-- Serializers omit `ownerId`, `contentHash`, source message ids, hashes, and raw JSON internals.
-
 ## Studio Boundary
 
-- Operator `studio.draft` writes through the Studio client/database, not the Operator client.
-- `biau-operator-api` and `biau-content-studio-api` use the same `STUDIO_DATABASE_URL`.
-- Operator `DATABASE_URL` remains separate.
-- `ASSISTANT_SERVICE_MODE=operator` does not mount `/studio/api/*`.
 - `ASSISTANT_SERVICE_MODE=studio` mounts only `/health` and `/studio/api/*`.
 - Local `all` may mount Studio routes for development.
+- `STUDIO_DATABASE_URL` is independent from the public assistant `DATABASE_URL`.
+- Studio and AI Daily tables are never part of public-assistant data retirement.
 
 Correct deployment shape:
 
 ```text
-biau-operator-api
-DATABASE_URL=<operator workspace database>
-STUDIO_DATABASE_URL=<shared content studio database>
-
 biau-content-studio-api
-STUDIO_DATABASE_URL=<same shared content studio database>
+STUDIO_DATABASE_URL=<content studio database>
+
+biau-public-assistant-api
+DATABASE_URL=<anonymous public assistant database>
 ```
 
-## Owner Memory Migration
+## Retired private data
 
-1. Run `npm.cmd run operator:memory-migration:check` against the intended private database.
-2. Review only redacted record ids, owner candidates, status, timestamps, and counts.
-3. Approve exact ids that are clearly the site owner's `ACTIVE` long-term memory.
-4. Run apply with only those ids.
-5. Verify count, deduplication, archive/restore, and persistence after service restart.
-
-Do not migrate ordinary chats, invites, members, model assignments, usage, ambiguous records, sensitive memory, or non-active records.
+Operator/member/private-chat/internal-knowledge tables are absent from the current Prisma schema. Their final PostgreSQL deletion uses the reviewed scripts under `scripts/operations/postgres/operator-retirement/`, outside automatic Prisma migrations. The flow requires database fingerprint checks, a restorable backup, explicit confirmation, no `CASCADE`, and post-delete verification of all public-assistant tables.
 
 ## Query Patterns
 
-- Use `findFirst({ where: { id, ownerId } })` for owner-scoped resource lookup.
 - Use explicit `select`/serializers for browser responses.
 - Use `Promise.all` only for independent queries.
 - Convert trusted bounded metadata to `Prisma.InputJsonValue` intentionally.
@@ -122,9 +96,8 @@ Do not migrate ordinary chats, invites, members, model assignments, usage, ambig
 
 ## Secrets And Tokens
 
-- Never persist plaintext service/admin tokens, Access assertions, API keys, database URLs, provider endpoints, or private request headers.
-- Hash only when a retained legacy migration field requires it; final Operator authentication is not a browser token database.
-- `STUDIO_ADMIN_TOKEN`, `OPERATOR_SERVICE_TOKEN`, `RAG_SYNC_TOKEN`, and provider keys remain platform-only.
+- Never persist plaintext service/admin tokens, API keys, database URLs, provider endpoints, or private request headers.
+- `STUDIO_ADMIN_TOKEN`, `RAG_SYNC_TOKEN`, and provider keys remain platform-only.
 
 ## Migrations
 
@@ -135,7 +108,7 @@ npm.cmd run prisma:migrate
 npm.cmd run prisma:migrate:studio
 ```
 
-Production migration requires a database backup and available previous Render revision. Do not run destructive cleanup until Operator owner flow and selected memory migration are accepted.
+Production migration requires a database backup and available previous Render revision. Destructive Operator retirement is never added to `prisma/migrations/`; it follows the independent reviewed manual flow.
 
 ## Tests Required
 
@@ -145,18 +118,15 @@ npm.cmd run prisma:generate
 npm.cmd run server:build
 npm.cmd run server:smoke
 npm.cmd run assistant:service-modes-smoke
-npm.cmd run operator:memory-migration:check
 npm.cmd run lint
 npm.cmd run build
 git diff --check
 ```
 
-Production-only checks record low-sensitive outcomes. Do not expose real ids, memory text, connection strings, or tokens.
+Production-only checks record low-sensitive outcomes. Do not expose real ids, prompts, connection strings, or tokens.
 
 ## Avoid
 
-- Writing Studio rows through the Operator Prisma client.
-- Mounting Studio API routes in Operator mode.
-- Querying owner records by id without `ownerId`.
-- Deleting legacy migration sources before backup and accepted migration.
+- Adding destructive Operator cleanup to the automatic Prisma migration path.
+- Running retirement SQL against `STUDIO_DATABASE_URL`.
 - Putting server database/token values in `VITE_*`.

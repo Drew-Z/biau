@@ -11,7 +11,6 @@ server/
 │   ├── app.ts         # Express app, middleware, routes, error middleware
 │   ├── env.ts         # environment parsing and feature availability helpers
 │   ├── db.ts          # Prisma client singleton and disconnect helper
-│   ├── auth.ts        # Operator service/identity auth and database requirement guard
 │   ├── crypto.ts      # token/hash helpers
 │   ├── knowledge.ts   # public knowledge loading and in-memory search
 │   ├── model.ts       # model-provider integration and fallback answer behavior
@@ -24,7 +23,7 @@ server/
 │   ├── ragRoutes.ts   # RAG Orchestrator HTTP router mounted under /rag
 │   └── types.ts       # API/data payload types
 ├── scripts/
-│   ├── smoke.ts       # local smoke test for health/public/internal auth behavior
+│   ├── smoke.ts       # local smoke test for public, Studio, and RAG boundaries
 │   ├── rag-smoke.ts   # local/mock RAG Orchestrator HTTP contract smoke
 │   └── rag-sync-local.ts # public knowledge V2 sync plan / validation
 ├── sql/
@@ -39,7 +38,7 @@ prisma/
 
 ## Module Boundaries
 
-Keep route registration, middleware, and response shaping in `server/src/app.ts`. Move reusable concerns into narrow modules: environment in `env.ts`, database access setup in `db.ts`, auth/token lookup in `auth.ts`, model calls in `model.ts`, and knowledge search in `knowledge.ts`.
+Keep route registration, middleware, and response shaping in `server/src/app.ts`. Move reusable concerns into narrow modules: environment in `env.ts`, database access setup in `db.ts`, model calls in `model.ts`, and knowledge search in `knowledge.ts`.
 
 RAG Orchestrator code should stay split between `ragAdapters.ts` for deterministic local vector helpers, `ragEmbeddings.ts` for shared embedding-provider integration, `ragClient.ts` for the main-site adapter / external HTTP fallback logic, `ragOrchestrator.ts` for provider selection and retrieval contract shaping, store-specific modules such as `ragQdrantStore.ts` / `ragPostgresStore.ts`, and `ragRoutes.ts` for HTTP validation. The current in-repo mock router is mounted under `/rag` so it does not replace the assistant API's root `/health`; standalone Orchestrator mode mounts the same router at its root.
 
@@ -59,7 +58,7 @@ This relative path is intentional. It works when running source with `tsx` from 
 
 ## Feature Availability
 
-Backend features must tolerate missing optional services. `env.ts` exposes `hasDatabase()` and `hasModelProvider()`. Routes that require persistence call `requireDatabase()` from `auth.ts`; public chat can run with the local knowledge fallback and model fallback.
+Backend features must tolerate missing optional services. `env.ts` exposes feature-availability helpers, while `db.ts` owns the lazy public and Studio Prisma clients. Public chat can run with local knowledge and explicit model/persistence degradation.
 
 ## Naming and Imports
 

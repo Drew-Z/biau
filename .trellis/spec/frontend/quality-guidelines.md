@@ -11,7 +11,7 @@ npm.cmd run check:ui
 git diff --check
 ```
 
-Also run feature-specific checks such as `analytics:check`, `project-details:check`, `blog:check`, `status:contract`, or `operator:facade-smoke` when their contracts change.
+Also run feature-specific checks such as `analytics:check`, `project-details:check`, `blog:check`, or `status:contract` when their contracts change.
 
 For the public AI Daily Feed or detail route, also run:
 
@@ -39,18 +39,6 @@ npm.cmd run docs:deployment-check
 - Stable tools, boards, tab bars, counters, and media use explicit responsive dimensions.
 - Letter spacing is `0`; do not scale font size directly with viewport width.
 - Preserve a multi-color but restrained palette; do not regress to a one-note dark-blue/purple/beige theme.
-
-## BIAU Operator
-
-- `/operator` opens as a work surface, not a long explanatory landing page.
-- Opening copy is concise and contains no default citation dump.
-- Desktop shows session sidebar, conversation, and runtime inspector.
-- Mobile shows conversation first and uses a bounded drawer for sessions.
-- `/operator/settings` provides five complete areas: overview, knowledge, RAG, memory, usage.
-- Settings expose safe model/channel/configured state only; no browser token form exists.
-- The public assistant widget is hidden on all Operator routes.
-- Operator is absent from public navigation and unauthenticated public synthetic.
-- Old private routes render NotFound; do not add redirects for compatibility.
 
 ## Content Studio
 
@@ -115,7 +103,6 @@ npm.cmd run docs:deployment-check
 ## SEO And Analytics
 
 - Every public route has useful title, description, canonical, and Open Graph metadata.
-- Private Operator routes may have metadata but are excluded from public sitemap/navigation.
 - Analytics events use normalized route patterns/areas/depth; never send query/hash/dynamic ids/tokens.
 - Root static HTML retains a meaningful SEO shell before hydration.
 - AI Daily detail metadata upgrades from the route fallback to the approved event title and fact summary after the payload loads, while keeping the stable public canonical path.
@@ -147,8 +134,7 @@ npm.cmd run docs:deployment-check
 `check:ui` should cover:
 
 - Main public routes at desktop/mobile widths.
-- Operator workspace/settings with deterministic API fixtures.
-- Old private routes as NotFound.
+- Retired assistant/private routes as NotFound.
 - Public assistant concise/fallback behavior.
 - Public assistant scope controls, mobile panel/trigger layout, citations, feedback, and rate-limit behavior.
 - Mobile public navigation and detail reading.

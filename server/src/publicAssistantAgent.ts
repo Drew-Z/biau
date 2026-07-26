@@ -284,12 +284,11 @@ async function retrieveSiteEvidence(queries: string[]): Promise<SiteResearchResu
     const citations = new Map(context.citations.map((citation) => [citation.id, citation]))
     for (const chunk of context.chunks) {
       const citation = citations.get(chunk.documentId)
-      if (!citation || citation.visibility === 'internal') continue
+      if (!citation) continue
       evidence.push(siteChunkEvidence(citation, chunk))
     }
     if (context.chunks.length === 0) {
       for (const citation of context.citations) {
-        if (citation.visibility === 'internal') continue
         evidence.push(siteCitationEvidence(citation))
       }
     }

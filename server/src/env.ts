@@ -23,7 +23,6 @@ const assistantModelApiKey = readFirstEnv('ASSISTANT_MODEL_API_KEY', 'OPENAI_API
 const assistantModelBaseUrl = normalizeBaseUrl(readFirstEnv('ASSISTANT_MODEL_BASE_URL', 'OPENAI_BASE_URL'))
 const assistantModelName = readFirstEnv('ASSISTANT_MODEL_NAME', 'OPENAI_MODEL') || 'gpt-4.1-mini'
 const assistantModelProvider = readFirstEnv('ASSISTANT_MODEL_PROVIDER', 'OPENAI_PROVIDER') || 'openai-compatible'
-const assistantModelChannelsJson = readFirstEnv('ASSISTANT_MODEL_CHANNELS_JSON')
 const aiDailyModelRuntimeJson = readFirstEnv('AI_DAILY_MODEL_RUNTIME_JSON')
 const aiDailyModelApprovalFile = readFirstEnv('AI_DAILY_MODEL_APPROVAL_FILE')
 const aiDailyModelApprovalBundleHash = readFirstEnv('AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH')
@@ -37,7 +36,6 @@ const assistantRagApiKey = readFirstEnv('ASSISTANT_RAG_API_KEY')
 const assistantRagTimeoutMs = readPositiveInteger(process.env.ASSISTANT_RAG_TIMEOUT_MS, 3000)
 const assistantServiceMode = readServiceMode(process.env.ASSISTANT_SERVICE_MODE)
 const adminToken = process.env.ADMIN_TOKEN?.trim() ?? ''
-const operatorOwnerEmails = readCsv(process.env.OPERATOR_OWNER_EMAILS)
 const aiDailyPublicCorsOrigins = readOriginCsv(process.env.AI_DAILY_PUBLIC_CORS_ORIGINS)
 
 export const env = {
@@ -53,7 +51,6 @@ export const env = {
   assistantModelBaseUrl,
   assistantModelName,
   assistantModelProvider,
-  assistantModelChannelsJson,
   aiDailyModelRuntimeJson,
   aiDailyModelApprovalFile,
   aiDailyModelApprovalBundleHash,
@@ -82,11 +79,6 @@ export const env = {
   openaiModel: process.env.OPENAI_MODEL?.trim() || assistantModelName,
   adminToken,
   studioAdminToken: process.env.STUDIO_ADMIN_TOKEN?.trim() || adminToken,
-  operatorServiceToken: process.env.OPERATOR_SERVICE_TOKEN?.trim() ?? '',
-  operatorOwnerId: process.env.OPERATOR_OWNER_ID?.trim() || 'site-owner',
-  operatorDisplayName: process.env.OPERATOR_DISPLAY_NAME?.trim() || '站长',
-  operatorOwnerEmails,
-  operatorModelChannelId: process.env.OPERATOR_MODEL_CHANNEL_ID?.trim().toLowerCase() || null,
   metricsEnabled: readBoolean(process.env.METRICS_ENABLED),
   aiDailyOperationsMetricsEnabled: readBoolean(process.env.AI_DAILY_OPERATIONS_METRICS_ENABLED),
   aiDailyPublicCorsOrigins,
@@ -103,13 +95,11 @@ export const env = {
   supabaseUrl: readFirstEnv('SUPABASE_URL'),
   supabaseServiceRoleKey: readFirstEnv('SUPABASE_SERVICE_ROLE_KEY'),
   ragPublicApiKey: readFirstEnv('RAG_PUBLIC_API_KEY'),
-  ragInternalApiKey: readFirstEnv('RAG_INTERNAL_API_KEY'),
   ragSyncToken: readFirstEnv('RAG_SYNC_TOKEN'),
   qdrantUrl: normalizeOptionalBaseUrl(readFirstEnv('QDRANT_URL')),
   qdrantApiKey: readFirstEnv('QDRANT_API_KEY'),
   qdrantPublicCollection: readFirstEnv('QDRANT_PUBLIC_COLLECTION') || 'biau_public_chunks',
   qdrantPublicAlias: readFirstEnv('QDRANT_PUBLIC_ALIAS') || 'biau_public_chunks_active',
-  qdrantInternalCollection: readFirstEnv('QDRANT_INTERNAL_COLLECTION') || 'biau_internal_chunks',
   embeddingBaseUrl: normalizeOptionalBaseUrl(readFirstEnv('EMBEDDING_BASE_URL')),
   embeddingApiKey: readFirstEnv('EMBEDDING_API_KEY'),
   embeddingModel: readFirstEnv('EMBEDDING_MODEL') || 'deterministic-local',
@@ -145,16 +135,12 @@ function readBooleanWithDefault(value: string | undefined, fallback: boolean) {
 
 function readServiceMode(value: string | undefined): AssistantServiceMode {
   const normalized = value?.trim().toLowerCase()
-  if (normalized === 'public' || normalized === 'operator' || normalized === 'rag' || normalized === 'studio') return normalized
+  if (normalized === 'public' || normalized === 'rag' || normalized === 'studio') return normalized
   return 'all'
 }
 
 function readAssistantModelProtocol(value: string | undefined): 'responses' | 'chat-completions' {
   return value?.trim().toLowerCase() === 'chat-completions' ? 'chat-completions' : 'responses'
-}
-
-function readCsv(value: string | undefined) {
-  return Array.from(new Set((value ?? '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)))
 }
 
 function readOriginCsv(value: string | undefined) {

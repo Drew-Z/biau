@@ -70,21 +70,6 @@ const serviceContracts = [
     requiredHealth: '/health',
   },
   {
-    name: 'biau-operator-api',
-    mode: 'operator',
-    requiredEnv: [
-      'DATABASE_URL',
-      'STUDIO_DATABASE_URL',
-      'OPERATOR_SERVICE_TOKEN',
-      'OPERATOR_OWNER_ID',
-      'OPERATOR_OWNER_EMAILS',
-      'ASSISTANT_RAG_API_BASE_URL',
-      'ASSISTANT_RAG_API_KEY',
-      'RAG_SYNC_TOKEN',
-    ],
-    requiredStart: 'npm run prisma:migrate && npm run prisma:migrate:studio && npm run server:start',
-  },
-  {
     name: 'biau-content-studio-api',
     mode: 'studio',
     requiredEnv: [
@@ -122,21 +107,27 @@ const serviceContracts = [
   {
     name: 'biau-rag-orchestrator',
     mode: 'rag',
-    requiredEnv: ['QDRANT_URL', 'QDRANT_API_KEY', 'QDRANT_PUBLIC_ALIAS', 'RAG_PUBLIC_API_KEY', 'RAG_INTERNAL_API_KEY', 'RAG_SYNC_TOKEN', 'EMBEDDING_BASE_URL', 'EMBEDDING_API_KEY'],
+    requiredEnv: ['QDRANT_URL', 'QDRANT_API_KEY', 'QDRANT_PUBLIC_COLLECTION', 'QDRANT_PUBLIC_ALIAS', 'RAG_PUBLIC_API_KEY', 'RAG_SYNC_TOKEN', 'EMBEDDING_BASE_URL', 'EMBEDDING_API_KEY'],
     requiredHealth: '/health',
   },
 ]
 
 const stalePhrases = [
-  'three Web Services',
-  'three service',
-  '三服务边界',
-  '三个 Render Web Service',
+  'four Web Services',
+  'four-service',
+  '四服务边界',
+  '四个 Render Web Service',
   'public, internal, and rag',
   'public, internal, studio, and rag',
   'public/internal/studio/rag',
+  'public, operator, studio, and rag',
+  'public/operator/studio/rag',
   'biau-internal-assistant-api',
   'ASSISTANT_SERVICE_MODE=internal',
+  'ASSISTANT_SERVICE_MODE=operator',
+  'RAG_INTERNAL_API_KEY',
+  'QDRANT_INTERNAL_COLLECTION',
+  'CF_ACCESS_TEAM_DOMAIN',
 ]
 
 function collectMissing(label, text, needles) {
@@ -175,6 +166,10 @@ function checkRenderBlueprint(renderText) {
   const serviceCount = (renderText.match(/^\s{4}name: /gmu) ?? []).length
   if (serviceCount !== serviceContracts.length) {
     issues.push(`${files.render.label} 应包含 ${serviceContracts.length} 个 Render web service，当前解析到 ${serviceCount} 个。`)
+  }
+
+  for (const retired of ['biau-operator-api', 'ASSISTANT_SERVICE_MODE\n        value: operator', 'RAG_INTERNAL_API_KEY', 'QDRANT_INTERNAL_COLLECTION']) {
+    if (renderText.includes(retired)) issues.push(`${files.render.label} 仍包含已退休部署项：${retired}`)
   }
 
   for (const service of serviceContracts) {
@@ -226,10 +221,8 @@ async function main() {
   const issues = [
     ...checkRenderBlueprint(render),
     ...collectMissing(files.envExample.label, envExample, [
-      'four Web Services',
-      'public, operator, studio, and rag',
-      'OPERATOR_SERVICE_TOKEN',
-      'CF_ACCESS_TEAM_DOMAIN',
+      'three Web Services',
+      'public, studio, and rag',
       'TRUST_PROXY=false',
       'PUBLIC_ASSISTANT_API_BASE_URL=',
       'PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=55000',
@@ -248,15 +241,15 @@ async function main() {
       'AI_DAILY_OPERATIONS_METRICS_ENABLED=false',
     ]),
     ...collectMissing(files.deployment.label, deployment, [
-      '四个 Render Web Service',
-      'biau-operator-api',
+      '三个 Render Web Service',
+      'biau-public-assistant-api',
       'biau-content-studio-api',
-      'ASSISTANT_SERVICE_MODE=operator',
+      'biau-rag-orchestrator',
+      'ASSISTANT_SERVICE_MODE=public',
       'ASSISTANT_SERVICE_MODE=studio',
+      'ASSISTANT_SERVICE_MODE=rag',
       'npm run prisma:migrate:studio && npm run server:start',
-      'OPERATOR_SERVICE_TOKEN',
-      'CF_ACCESS_TEAM_DOMAIN',
-      'STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-operator-api 相同>',
+      'STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL>',
       'VITE_AI_DAILY_API_BASE_URL',
       'PUBLIC_ASSISTANT_API_BASE_URL',
       'PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=55000',
@@ -275,21 +268,23 @@ async function main() {
       'Render Secret File',
       'Editorial Cron',
       'Secret Files 不会在 Render 服务之间自动共享',
+      'scripts/operations/postgres/operator-retirement/preflight.sql',
+      '最后人工删除 Render Operator 服务',
     ]),
     ...collectMissing(files.manualGates.label, manualGates, [
-      'Render 四服务边界',
-      'public/operator/studio/rag',
-      'Cloudflare Access',
+      'Render 三服务边界',
+      'public/studio/rag',
+      'Operator PostgreSQL 退役',
       '/etc/secrets/ai-daily-model-approval.v1.json',
       'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
     ]),
     ...collectMissing(files.backendSpec.label, backendSpec, [
-      'Render final shape is one repository deployed as four Web Services',
-      '`ASSISTANT_SERVICE_MODE=operator`',
+      'Render final shape is one repository deployed as three Web Services',
+      '`ASSISTANT_SERVICE_MODE=public`',
       '`ASSISTANT_SERVICE_MODE=studio`',
+      '`ASSISTANT_SERVICE_MODE=rag`',
       'Studio API mode',
-      'Production split-database deployments must set `STUDIO_DATABASE_URL`',
-      '`biau-operator-api` also needs `RAG_SYNC_TOKEN`',
+      '`RAG_SYNC_TOKEN` authorizes versioned public knowledge sync',
       '`AI_DAILY_MODEL_APPROVAL_FILE`',
       '`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`',
     ]),
@@ -306,7 +301,7 @@ async function main() {
     return
   }
 
-  console.log('部署契约检查通过：Render Blueprint、环境示例、部署文档和 code-spec 的四服务边界保持一致。')
+  console.log('部署契约检查通过：Render Blueprint、环境示例、部署文档和 code-spec 的三服务 public-only 边界保持一致。')
 }
 
 main().catch((error) => {

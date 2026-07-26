@@ -2,7 +2,7 @@
 
 中文文档 | [English README](README.md)
 
-BIAU Port / 泊岸是一个基于 React、Vite、TypeScript、自定义设计令牌和 Lucide 图标的产品官网，用来集中展示 AI 应用、业务系统、移动端应用、互动体验、技术内容、公开助手、owner-only 泊岸站务、内容 Studio 和可靠性状态。
+BIAU Port / 泊岸是一个基于 React、Vite、TypeScript、自定义设计令牌和 Lucide 图标的产品官网，用来集中展示 AI 应用、业务系统、移动端应用、互动体验、技术内容、公开研究助手、内容 Studio 和可靠性状态。
 
 ## 预览
 
@@ -17,8 +17,7 @@ BIAU Port / 泊岸是一个基于 React、Vite、TypeScript、自定义设计令
 ## 功能概览
 
 - 项目案例页：展示 Legal RAG、Ozon ERP、Pet、Xunqiu、BIAU Playlab 等项目的实现、架构、截图、流程、质量证据和后续路线。
-- 公开助手：基于公开站点知识回答问题，可选接入服务端 OpenAI-compatible 模型。
-- 泊岸站务：owner-only LangGraph Agent Workspace，支持 scoped RAG、项目/状态/内容/布局检查、长期记忆和受限 Studio 草稿写入。
+- 公开助手：使用 public-only LangGraph，自适应组合站内知识与经过安全抓取的公开网页证据，并返回 claim-level citation。
 - Content Studio：管理博客草稿、AI 日报 issue、来源材料、审核和发布导出。
 - AI Daily：从来源池生成日报草稿，经过人工审核后发布。
 - 可靠性状态：记录公开链接、synthetic 检查、项目状态、人工门禁和低敏可观测性边界。
@@ -29,20 +28,16 @@ BIAU Port / 泊岸是一个基于 React、Vite、TypeScript、自定义设计令
 flowchart TB
   Browser["浏览器\nReact + 自定义 CSS"] --> Pages["Cloudflare Pages\n静态站点 + Functions"]
   Pages --> PublicAPI["公开助手 API\nASSISTANT_SERVICE_MODE=public"]
-  Browser --> Access["Cloudflare Access\n/operator + facade"]
-  Access --> OperatorAPI["BIAU Operator API\nASSISTANT_SERVICE_MODE=operator"]
   Browser --> StudioAPI["Content Studio API\nASSISTANT_SERVICE_MODE=studio"]
   PublicAPI --> RAG["RAG Orchestrator\nASSISTANT_SERVICE_MODE=rag"]
-  OperatorAPI --> RAG
-  OperatorAPI --> StudioDB["Studio PostgreSQL\nhidden + review-needed drafts"]
-  OperatorAPI --> Agent["LangGraph Agent Workspace"]
-  OperatorAPI --> AppDB["Operator 数据库"]
+  PublicAPI --> Agent["Public-only LangGraph\n规划 / 研究 / 分级 / 校验"]
+  PublicAPI --> AppDB["公开助手数据库\n匿名 turn / feedback / aggregate"]
   StudioAPI --> StudioDB["Studio 数据库"]
-  RAG --> Vector["Qdrant / 向量集合"]
+  RAG --> Vector["Qdrant public alias\ndense + sparse"]
   RAG --> Embedding["Embedding Provider"]
 ```
 
-推荐生产形态是同一仓库拆成四个 Render Web Service：公开助手、BIAU Operator、Studio API、RAG Orchestrator。静态前端与 Operator facade 部署在 Cloudflare Pages，私有站务入口由 Cloudflare Access 保护。
+推荐生产形态是同一仓库拆成三个 Render Web Service：公开助手、Studio API、public-only RAG Orchestrator。静态前端与公开助手同源 proxy 部署在 Cloudflare Pages。
 
 ## 快速开始
 
@@ -91,7 +86,6 @@ http://localhost:8787
 - `ASSISTANT_RAG_API_KEY`
 - `QDRANT_*`
 - `RAG_PUBLIC_API_KEY`
-- `RAG_INTERNAL_API_KEY`
 - `RAG_SYNC_TOKEN`
 - `EMBEDDING_*`
 
@@ -147,7 +141,6 @@ NODE_VERSION=22
 更多说明：
 
 - [部署文档](docs/deployment.md)
-- [BIAU Operator Agent Workspace](docs/internal-assistant-agent-workspace.md)
 - [Content Studio](docs/content-studio.md)
 - [AI Daily Pipeline](docs/ai-daily-pipeline.md)
 - [人工门禁总账](docs/manual-gates.md)
@@ -155,10 +148,10 @@ NODE_VERSION=22
 ## 安全边界
 
 - 仓库内容默认视为公开。
-- 不提交 `.env`、API key、数据库 URL、模型地址、token、邀请码、签名文件、私有仪表盘或生产日志。
+- 不提交 `.env`、API key、数据库 URL、模型地址、token、签名文件、私有仪表盘或生产日志。
 - 公开助手只能基于公开引用回答，证据不足时应拒答或降级。
-- BIAU Operator 只允许 `read` 和 `draft-write`，不能直接发布内容、修改云平台、执行 Git 写入或部署服务。
-- Studio 中由 Agent 创建的内容必须保持 `hidden + review-needed`，经过人工审核后才能发布。
+- 公开助手匿名、只读且没有私有知识、长期记忆或写入工具，不能发布内容或修改项目/云平台状态。
+- Studio 内容必须保持 `hidden + review-needed`，经过人工审核后才能发布。
 
 ## 许可证
 

@@ -1,7 +1,7 @@
 import express from 'express'
 import { env } from './env.js'
 import { getRagOrchestratorHealth, retrieveRagContext, syncRagStore } from './ragOrchestrator.js'
-import type { AssistantScope, RagRetrievePayload, RagSyncPayload } from './types.js'
+import type { RagRetrievePayload } from './types.js'
 
 interface RagOrchestratorRouterOptions {
   requireAuth: boolean
@@ -27,31 +27,15 @@ export function createRagOrchestratorRouter(options: RagOrchestratorRouterOption
     }
 
     const scope = payload.scope ?? 'public'
-    if (!isAssistantScope(scope)) {
+    if (scope !== 'public') {
       res.status(400).json({ error: 'unsupported-scope' })
       return
     }
 
-    if (!authorizeRetrieve(req.headers.authorization, scope, options.requireAuth, res)) return
+    if (!authorizeRetrieve(req.headers.authorization, options.requireAuth, res)) return
 
     try {
       res.json(await retrieveRagContext({ ...payload, query, scope }))
-    } catch (error) {
-      next(error)
-    }
-  })
-
-  router.post('/v1/sync', async (req, res, next) => {
-    if (!authorizeSync(req.headers.authorization, options.requireAuth, res)) return
-
-    const payload = req.body as RagSyncPayload
-    if (payload?.scope !== undefined && !isAssistantScope(payload.scope)) {
-      res.status(400).json({ error: 'unsupported-scope' })
-      return
-    }
-
-    try {
-      res.json(await syncRagStore(payload))
     } catch (error) {
       next(error)
     }
@@ -65,7 +49,7 @@ export function createRagOrchestratorRouter(options: RagOrchestratorRouterOption
     }
 
     try {
-      res.json(await syncRagStore({ scope: 'public' }))
+      res.json(await syncRagStore())
     } catch (error) {
       next(error)
     }
@@ -74,9 +58,9 @@ export function createRagOrchestratorRouter(options: RagOrchestratorRouterOption
   return router
 }
 
-function authorizeRetrieve(header: string | undefined, scope: AssistantScope, requireAuth: boolean, res: express.Response) {
+function authorizeRetrieve(header: string | undefined, requireAuth: boolean, res: express.Response) {
   if (!requireAuth) return true
-  const expectedKey = scope === 'public' ? env.ragPublicApiKey : env.ragInternalApiKey
+  const expectedKey = env.ragPublicApiKey
   if (!expectedKey) {
     res.status(503).json({ error: 'rag-auth-not-configured' })
     return false
@@ -104,10 +88,6 @@ function authorizeSync(header: string | undefined, requireAuth: boolean, res: ex
 function readBearerToken(header: string | undefined) {
   if (!header?.startsWith('Bearer ')) return ''
   return header.slice('Bearer '.length).trim()
-}
-
-function isAssistantScope(value: unknown): value is AssistantScope {
-  return value === 'public' || value === 'internal'
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

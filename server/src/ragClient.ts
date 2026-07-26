@@ -1,7 +1,6 @@
 import { env } from './env.js'
 import { retrieveKnowledge } from './knowledge.js'
 import type {
-  AssistantScope,
   AssistantRetrievalMeta,
   Citation,
   RagAdapterDiagnostic,
@@ -22,10 +21,6 @@ interface RagAttempt {
 }
 
 export async function retrievePublicAssistantContext(query: string, limit = 4): Promise<PublicAssistantContext> {
-  return retrieveAssistantContext(query, 'public', limit)
-}
-
-export async function retrieveAssistantContext(query: string, scope: AssistantScope, limit = 4): Promise<PublicAssistantContext> {
   const endpoints = getRagRetrieveEndpoints(env.assistantRagApiBaseUrl)
   if (endpoints.length === 0) return retrieveLocalContext(query, limit, 'not_configured')
 
@@ -35,7 +30,7 @@ export async function retrieveAssistantContext(query: string, scope: AssistantSc
     attemptedEndpoints += 1
     const attempt = await requestRagRetrieve(endpoint, {
       query,
-      scope,
+      scope: 'public',
       limit,
       locale: 'zh-CN',
     })
@@ -191,6 +186,7 @@ function readRagRetrieveResponse(value: unknown): RagRetrieveResponse | null {
 
 function readCitation(value: unknown): Citation | null {
   if (!isRecord(value)) return null
+  if (value.visibility !== undefined && value.visibility !== 'public') return null
   if (typeof value.id !== 'string' || typeof value.title !== 'string' || typeof value.summary !== 'string' || typeof value.href !== 'string') {
     return null
   }
@@ -200,7 +196,7 @@ function readCitation(value: unknown): Citation | null {
     summary: value.summary,
     href: value.href,
     tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is string => typeof tag === 'string') : [],
-    visibility: value.visibility === 'internal' ? 'internal' : 'public',
+    visibility: 'public',
   }
 }
 

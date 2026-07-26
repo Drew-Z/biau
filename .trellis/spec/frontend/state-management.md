@@ -20,7 +20,6 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
 - Use React Router params/location as the source of truth for project/blog/status/Studio detail routes.
 - Do not duplicate the active route in component state.
 - SEO and analytics consume normalized route patterns, never full query strings or dynamic private ids.
-- `/operator` and `/operator/settings` are private owner routes; old private routes resolve to NotFound without redirects.
 
 ## Typed Public Data
 
@@ -28,66 +27,17 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
 - Blog catalog/curation: `src/data/blog.ts` and `src/data/blog-posts/*`.
 - Status targets/view projection: `src/data/statusTargets.ts` and `src/data/siteStatusView.ts`.
 - Public assistant knowledge: `src/data/assistant.ts` and generated server indexes.
-- BIAU Operator browser contract: `src/data/operator.ts`.
 
 Pages consume typed projections. If two consumers derive the same summary/tags/status, keep one shared projection helper.
 
-## Scenario: BIAU Operator Browser State
-
-### State
-
-`/operator` owns:
-
-- `operator` profile returned by `/api/operator/me`.
-- Session previews and selected session id.
-- Normalized messages and latest answer meta.
-- Composer input and send/loading/error state.
-- Mobile session drawer open state.
-
-`/operator/settings` owns:
-
-- Active settings section: overview, knowledge, RAG, memory, usage.
-- One normalized settings snapshot.
-- Local knowledge editor form state.
-- Save/sync/loading/error state.
-
-### Contracts
-
-- Browser requests always use same-origin `/api/operator/*` and `credentials: same-origin`.
-- No member token, invite code, admin token, Render service token, owner email, or Access JWT is stored in local/session storage.
-- `src/data/operator.ts` owns all Operator payload decoding and safe error messages.
-- Shared assistant metadata/knowledge decoders may be reused from `src/data/assistant.ts`; route components must not cast raw JSON.
-- Switching sessions replaces messages and derived meta together so diagnostics do not bleed across sessions.
-- Session/message requests use a monotonically increasing request id (or equivalent cancellation guard); only the latest selected session may update loading, error, messages, and derived meta.
-- A chat response that finishes after the owner switches sessions may refresh the session list, but it must not select the old session or append its answer to the current conversation.
-- Failed bootstrap leaves a clear reconnect/configuration message; it must not fall back to a fake owner identity.
-- Suggestions fill the composer; they do not auto-run a task without the user's send command.
-- Studio artifacts render only bounded safe fields and same-site `/studio?draft=<id>` links.
-
-### Mobile Drawer
-
-- Desktop sidebar is static.
-- Mobile drawer starts closed, opens from a 44px icon button, stays inside the viewport, has a backdrop and explicit close action, and does not cause horizontal overflow.
-- Drawer state is UI-only and resets naturally on navigation/unmount.
-
-### Validation
-
-```powershell
-npm.cmd run operator:facade-smoke
-npm.cmd run assistant:meta-check
-npm.cmd run lint
-npm.cmd run build
-npm.cmd run check:ui
-```
-
 ## Scenario: Public Assistant State
 
-- The public widget is available on public routes and hidden on `/operator*` and `/studio*`.
+- The public widget is available on public routes and hidden on `/studio*`.
 - Initial open state contains no default transcript/citation dump.
 - Public suggestions and messages use sanitized public knowledge.
 - Missing model/API displays a concise fallback status; it does not expose provider details.
 - The widget prefers the same-origin SSE route, derives one bounded progress label from validated event stages, and renders only the terminal verified result. It falls back to the JSON route only when the stream endpoint is explicitly unsupported; rate limits and transport/provider failures never replay the question.
-- Public widget state is independent from Operator sessions and Studio tokens.
+- Public widget state is independent from Studio tokens and internal editing state.
 
 ## Scenario: Public AI Daily Feed State
 

@@ -11,8 +11,6 @@ import type {
   RagHealthResponse,
   RagRetrievePayload,
   RagRetrieveResponse,
-  RagSyncDocument,
-  RagSyncPayload,
   RagSyncResponse,
 } from './types.js'
 
@@ -24,7 +22,7 @@ interface QdrantScoredPoint {
 
 interface QdrantPayload {
   scope: AssistantScope
-  source: 'public-knowledge-v2' | 'internal-knowledge-documents'
+  source: 'public-knowledge-v2'
   documentId: string
   chunkId: string
   title: string
@@ -63,7 +61,6 @@ const SERVICE_NAME = 'biau-rag-orchestrator'
 const QDRANT_STORE_NAME = 'qdrant'
 const DEFAULT_QDRANT_DIMENSION = 4096
 const QDRANT_BATCH_SIZE = 32
-const INTERNAL_CHUNK_TARGET_LENGTH = 1200
 const QDRANT_DISTANCE = 'Cosine'
 const QDRANT_TIMEOUT_MS = 15000
 const QDRANT_DENSE_VECTOR = 'dense'
@@ -115,11 +112,8 @@ export function isQdrantRagStoreConfigured() {
 export async function getQdrantRagHealth(): Promise<RagHealthResponse> {
   if (!isQdrantRagStoreConfigured()) return emptyQdrantHealth()
 
-  const [publicCount, internalCount] = await Promise.all([
-    getCollectionPointCount(env.qdrantPublicAlias).catch(() => getCollectionPointCount(env.qdrantPublicCollection).catch(() => 0)),
-    env.qdrantInternalCollection ? getCollectionPointCount(env.qdrantInternalCollection).catch(() => 0) : Promise.resolve(0),
-  ])
-  const chunkCount = publicCount + internalCount
+  const publicCount = await getCollectionPointCount(env.qdrantPublicAlias).catch(() => getCollectionPointCount(env.qdrantPublicCollection).catch(() => 0))
+  const chunkCount = publicCount
 
   return {
     ok: true,
@@ -136,7 +130,6 @@ export async function getQdrantRagHealth(): Promise<RagHealthResponse> {
     relationCount: publicKnowledgeV2?.relations.length ?? 0,
     collections: {
       public: buildCollectionHealth(env.qdrantPublicAlias, 'public', publicCount),
-      ...(env.qdrantInternalCollection ? { internal: buildCollectionHealth(env.qdrantInternalCollection, 'internal', internalCount) } : {}),
     },
   }
 }
@@ -159,10 +152,7 @@ export async function retrieveQdrantRagContext(
   const sparseCorpus = publicKnowledgeV2 ? buildPublicKnowledgeSparseCorpus(publicKnowledgeV2.knowledge_chunks) : null
   const sparse = sparseCorpus ? buildRagSparseVector(payload.query, sparseCorpus) : { indices: [], values: [] }
   const publicPoints = await queryPublicCollection(embedding.vector, sparse, queryLimit).catch(() => [])
-  const internalPoints = payload.scope === 'internal' && env.qdrantInternalCollection
-    ? await queryCollection(env.qdrantInternalCollection, embedding.vector, queryLimit).catch(() => [])
-    : []
-  const merged = mergeCandidates([...publicPoints, ...internalPoints])
+  const merged = mergeCandidates(publicPoints)
   const reranked = await rerankRagCandidates(payload.query, merged.map((candidate) => ({
     id: candidate.chunk.id,
     text: [candidate.citation.title, candidate.chunk.section, candidate.chunk.text].join('\n'),
@@ -344,146 +334,6 @@ export function getPublicKnowledgeSourceChecksum() {
   return publicKnowledgeV2 ? hashJson(publicKnowledgeV2) : ''
 }
 
-export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promise<RagSyncResponse | null> {
-  if (!isQdrantRagStoreConfigured() || !env.qdrantInternalCollection) return null
-
-  const documents = normalizeInternalSyncDocuments(payload.documents)
-  const chunks = documents.flatMap(chunkInternalDocument)
-  const sourceChecksum = hashJson({
-    scope: 'internal',
-    documents: documents.map((document) => ({
-      id: document.id,
-      slug: document.slug,
-      title: document.title,
-      status: document.status,
-      sourceType: document.sourceType,
-      updatedAt: document.updatedAt,
-      bodyHash: hashJson(document.body),
-    })),
-  })
-
-  if (documents.length === 0 || chunks.length === 0) {
-    return qdrantSyncDiagnostics(false, 'internal', 'internal-knowledge-documents', sourceChecksum, documents.length, chunks.length, 0)
-  }
-
-  try {
-    await ensureQdrantCollection(env.qdrantInternalCollection)
-    if (!isExternalEmbeddingConfigured()) {
-      const localEmbedding = await embedText('dimension check').catch(() => null)
-      if (!localEmbedding || localEmbedding.dimensions !== expectedEmbeddingDimensions()) {
-        return qdrantSyncDiagnostics(
-          false,
-          'internal',
-          'internal-knowledge-documents',
-          sourceChecksum,
-          documents.length,
-          chunks.length,
-          1,
-          'embedding_dimension_mismatch',
-          undefined,
-          {
-            expectedDimension: expectedEmbeddingDimensions(),
-            actualDimension: localEmbedding?.dimensions,
-          },
-        )
-      }
-    }
-
-    const documentById = new Map(documents.map((document) => [document.id, document]))
-    const syncInputs = chunks
-      .map((chunk) => {
-        const document = documentById.get(chunk.documentId)
-        if (!document) return null
-        return {
-          chunk,
-          document,
-          embeddingText: [document.title, chunk.section, chunk.text, ...(document.tags ?? [])].join('\n'),
-        }
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null)
-    const embeddings = await embedTexts(
-      syncInputs.map((input) => input.embeddingText),
-      { expectedDimensions: expectedEmbeddingDimensions() },
-    )
-    const points = []
-    for (const [index, input] of syncInputs.entries()) {
-      const embedding = embeddings[index]
-      const { chunk, document } = input
-      points.push({
-        id: toQdrantPointId(chunk.id),
-        vector: embedding.vector,
-        payload: {
-          scope: 'internal',
-          source: 'internal-knowledge-documents',
-          documentId: document.id,
-          chunkId: chunk.id,
-          title: document.title,
-          summary: document.summary || compactText(document.body, 180),
-          href: '/operator/settings',
-          tags: document.tags ?? [],
-          visibility: 'internal',
-          sourceType: document.sourceType || 'manual',
-          section: chunk.section,
-          text: chunk.text,
-          contentHash: hashJson({
-            documentId: document.id,
-            updatedAt: document.updatedAt,
-            bodyHash: hashJson(document.body),
-            chunkIndex: chunk.index,
-            textHash: hashJson(chunk.text),
-          }),
-        } satisfies QdrantPayload,
-      })
-    }
-
-    for (let index = 0; index < points.length; index += QDRANT_BATCH_SIZE) {
-      await requestQdrantJson(
-        `/collections/${encodeURIComponent(env.qdrantInternalCollection)}/points?wait=true`,
-        'PUT',
-        {
-          points: points.slice(index, index + QDRANT_BATCH_SIZE),
-        },
-        'qdrant_upsert_points',
-      )
-    }
-
-    const cleanup = await deleteStaleInternalPoints(new Set(chunks.map((chunk) => chunk.id)))
-    return qdrantSyncDiagnostics(
-      true,
-      'internal',
-      'internal-knowledge-documents',
-      sourceChecksum,
-      documents.length,
-      points.length,
-      cleanup.issueCount,
-      undefined,
-      undefined,
-      { cleanup },
-    )
-  } catch (error) {
-    const providerError = normalizeQdrantError(error)
-    return qdrantSyncDiagnostics(
-      false,
-      'internal',
-      'internal-knowledge-documents',
-      sourceChecksum,
-      documents.length,
-      chunks.length,
-      1,
-      providerError.reason,
-      providerError.httpStatus,
-      {
-        expectedDimension: providerError.expectedDimension,
-        actualDimension: providerError.actualDimension,
-        providerStep: providerError.providerStep,
-        errorKind: providerError.errorKind,
-        attemptedEndpoints: providerError.attemptedEndpoints,
-        timeoutMs: providerError.timeoutMs,
-      },
-    )
-  }
-}
-
 async function queryCollection(collection: string, vector: number[], limit: number) {
   const searchPayload = {
     vector,
@@ -524,39 +374,6 @@ async function getCollectionPointCount(collection: string) {
   const result = isRecord(payload) && isRecord(payload.result) ? payload.result : null
   const count = result?.count
   return typeof count === 'number' && Number.isFinite(count) ? count : 0
-}
-
-async function ensureQdrantCollection(collection: string) {
-  const countResponse = await requestQdrantRaw(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true }, 'qdrant_count_collection')
-  if (countResponse.ok) return
-  if (countResponse.status !== 404) {
-    throw new QdrantProviderError(reasonForQdrantStatus(countResponse.status, 'qdrant_count_collection'), countResponse.status, {
-      providerStep: 'qdrant_count_collection',
-      errorKind: 'http_status',
-    })
-  }
-
-  const createResponse = await requestQdrantRaw(
-    `/collections/${encodeURIComponent(collection)}?wait=true`,
-    'PUT',
-    {
-      vectors: {
-        size: expectedEmbeddingDimensions(),
-        distance: QDRANT_DISTANCE,
-      },
-    },
-    'qdrant_create_collection',
-  )
-  if (!createResponse.ok) {
-    throw new QdrantProviderError(
-      createResponse.status === 400 ? 'qdrant_dimension_mismatch' : reasonForQdrantStatus(createResponse.status),
-      createResponse.status,
-      {
-        providerStep: 'qdrant_create_collection',
-        errorKind: 'http_status',
-      },
-    )
-  }
 }
 
 async function ensureQdrantHybridCollection(collection: string) {
@@ -604,104 +421,6 @@ async function switchPublicCollectionAlias(collection: string) {
   if (aliasResponse.ok) actions.push({ delete_alias: { alias_name: env.qdrantPublicAlias } })
   actions.push({ create_alias: { collection_name: collection, alias_name: env.qdrantPublicAlias } })
   await requestQdrantJson('/collections/aliases?wait=true', 'POST', { actions }, 'qdrant_switch_public_alias')
-}
-
-async function deleteStaleInternalPoints(currentChunkIds: Set<string>) {
-  return deleteStaleScopedPoints(env.qdrantInternalCollection, 'internal', 'internal-knowledge-documents', currentChunkIds)
-}
-
-async function deleteStaleScopedPoints(
-  collection: string,
-  scope: AssistantScope,
-  source: QdrantPayload['source'],
-  currentChunkIds: Set<string>,
-): Promise<QdrantCleanupResult> {
-  let offset: unknown
-  let scannedPointCount = 0
-  const stalePointIds: Array<string | number> = []
-  try {
-    do {
-      const payload: Record<string, unknown> = {
-        limit: 256,
-        with_payload: true,
-        with_vector: false,
-      }
-      if (offset !== undefined && offset !== null) payload.offset = offset
-      const response = await requestQdrantJson(
-        `/collections/${encodeURIComponent(collection)}/points/scroll`,
-        'POST',
-        payload,
-        'qdrant_scroll_points',
-      )
-      const result = isRecord(response) && isRecord(response.result) ? response.result : null
-      const points = Array.isArray(result?.points) ? result.points : []
-      scannedPointCount += points.length
-      for (const point of points) {
-        if (!isRecord(point)) continue
-        const payloadValue = isRecord(point.payload) ? point.payload : {}
-        if (payloadValue.scope !== scope || payloadValue.source !== source) continue
-        const chunkId = typeof payloadValue.chunkId === 'string' ? payloadValue.chunkId : ''
-        if (chunkId && !currentChunkIds.has(chunkId) && (typeof point.id === 'string' || typeof point.id === 'number')) {
-          stalePointIds.push(point.id)
-        }
-      }
-      offset = result?.next_page_offset
-    } while (offset !== undefined && offset !== null)
-  } catch (error) {
-    return cleanupWarning(error, scannedPointCount, stalePointIds.length, 0, 1)
-  }
-
-  let deletedPointCount = 0
-  for (let index = 0; index < stalePointIds.length; index += QDRANT_BATCH_SIZE) {
-    const ids = stalePointIds.slice(index, index + QDRANT_BATCH_SIZE)
-    try {
-      await requestQdrantJson(
-        `/collections/${encodeURIComponent(collection)}/points/delete?wait=true`,
-        'POST',
-        { points: ids },
-        'qdrant_delete_points',
-      )
-      deletedPointCount += ids.length
-    } catch (error) {
-      return cleanupWarning(
-        error,
-        scannedPointCount,
-        stalePointIds.length,
-        deletedPointCount,
-        Math.max(1, stalePointIds.length - deletedPointCount),
-      )
-    }
-  }
-  return {
-    status: 'completed',
-    reason: 'ok',
-    scannedPointCount,
-    stalePointCount: stalePointIds.length,
-    deletedPointCount,
-    issueCount: 0,
-  }
-}
-
-function cleanupWarning(
-  error: unknown,
-  scannedPointCount: number,
-  stalePointCount: number,
-  deletedPointCount: number,
-  issueCount: number,
-): QdrantCleanupResult {
-  const providerError = normalizeQdrantError(error)
-  return {
-    status: 'warning',
-    reason: providerError.reason,
-    ...(providerError.providerStep ? { providerStep: providerError.providerStep } : {}),
-    ...(providerError.errorKind ? { errorKind: providerError.errorKind } : {}),
-    ...(typeof providerError.httpStatus === 'number' ? { httpStatus: providerError.httpStatus } : {}),
-    ...(typeof providerError.timeoutMs === 'number' ? { timeoutMs: providerError.timeoutMs } : {}),
-    scannedPointCount,
-    stalePointCount,
-    deletedPointCount,
-    issueCount,
-  }
 }
 
 async function requestQdrantJson(path: string, method: 'GET' | 'POST' | 'PUT', body?: unknown, providerStep = 'qdrant_request') {
@@ -858,10 +577,7 @@ function readScoredPoint(value: unknown): QdrantScoredPoint | null {
 
 function readQdrantPayload(value: unknown): QdrantPayload | null {
   if (!isRecord(value)) return null
-  const scope = value.scope === 'internal' ? 'internal' : value.scope === 'public' ? 'public' : null
-  const visibility = value.visibility === 'internal' ? 'internal' : value.visibility === 'public' ? 'public' : null
-  const source = value.source === 'internal-knowledge-documents' ? 'internal-knowledge-documents' : 'public-knowledge-v2'
-  if (!scope || !visibility) return null
+  if (value.scope !== 'public' || value.visibility !== 'public' || value.source !== 'public-knowledge-v2') return null
   const documentId = readString(value.documentId)
   const chunkId = readString(value.chunkId)
   const title = readString(value.title)
@@ -873,15 +589,15 @@ function readQdrantPayload(value: unknown): QdrantPayload | null {
   const contentHash = readString(value.contentHash)
   if (!documentId || !chunkId || !title || !summary || !href || !section || !text || !sourceType || !contentHash) return null
   return {
-    scope,
-    source,
+    scope: 'public',
+    source: 'public-knowledge-v2',
     documentId,
     chunkId,
     title,
     summary,
     href,
     tags: readStringArray(value.tags),
-    visibility,
+    visibility: 'public',
     sourceType,
     projectId: readString(value.projectId) || undefined,
     section,
@@ -915,7 +631,7 @@ function qdrantSyncDiagnostics(
     mode: 'qdrant',
     scope,
     accepted,
-    health: accepted ? emptyQdrantHealthWithCounts(documentCount, chunkCount, scope) : emptyQdrantHealth(),
+    health: accepted ? emptyQdrantHealthWithCounts(documentCount, chunkCount) : emptyQdrantHealth(),
     diagnostics: {
       sourceName,
       sourceChecksum,
@@ -957,9 +673,7 @@ function emptyQdrantHealth(): RagHealthResponse {
   return emptyQdrantHealthWithCounts(0, 0)
 }
 
-function emptyQdrantHealthWithCounts(documentCount: number, chunkCount: number, scope: AssistantScope = 'public'): RagHealthResponse {
-  const publicCount = scope === 'public' ? chunkCount : 0
-  const internalCount = scope === 'internal' ? chunkCount : 0
+function emptyQdrantHealthWithCounts(documentCount: number, chunkCount: number): RagHealthResponse {
   return {
     ok: true,
     service: SERVICE_NAME,
@@ -974,8 +688,7 @@ function emptyQdrantHealthWithCounts(documentCount: number, chunkCount: number, 
     entityCount: publicKnowledgeV2?.entities.length ?? 0,
     relationCount: publicKnowledgeV2?.relations.length ?? 0,
     collections: {
-      public: buildCollectionHealth(env.qdrantPublicAlias || 'biau_public_chunks_active', 'public', publicCount),
-      ...(env.qdrantInternalCollection ? { internal: buildCollectionHealth(env.qdrantInternalCollection, 'internal', internalCount) } : {}),
+      public: buildCollectionHealth(env.qdrantPublicAlias || 'biau_public_chunks_active', 'public', chunkCount),
     },
   }
 }
@@ -1066,102 +779,6 @@ function toQdrantPointId(id: string) {
 
 function hashJson(value: unknown) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex')
-}
-
-interface InternalSyncChunk {
-  id: string
-  documentId: string
-  section: string
-  text: string
-  index: number
-}
-
-function normalizeInternalSyncDocuments(value: RagSyncPayload['documents']): RagSyncDocument[] {
-  if (!Array.isArray(value)) return []
-  return value
-    .map((document) => ({
-      id: compactIdentifier(document.id),
-      slug: compactIdentifier(document.slug ?? ''),
-      title: compactText(document.title, 140),
-      summary: compactText(document.summary ?? '', 280),
-      body: compactBody(document.body, 24000),
-      tags: normalizeTags(document.tags),
-      status: compactText(document.status ?? '', 40),
-      sourceType: compactText(document.sourceType ?? 'manual', 60),
-      updatedAt: compactText(document.updatedAt ?? '', 80),
-    }))
-    .filter((document) => document.id && document.title && document.body)
-}
-
-function chunkInternalDocument(document: RagSyncDocument): InternalSyncChunk[] {
-  const paragraphs = document.body
-    .split(/\n{2,}/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-  const chunks: InternalSyncChunk[] = []
-  const sourceParts = paragraphs.length > 0 ? paragraphs : [document.body.trim()].filter(Boolean)
-
-  for (const part of sourceParts) {
-    for (const text of splitLongText(part, INTERNAL_CHUNK_TARGET_LENGTH)) {
-      const index = chunks.length
-      chunks.push({
-        id: `internal:${document.id}:chunk:${index + 1}`,
-        documentId: document.id,
-        section: document.title,
-        text,
-        index,
-      })
-    }
-  }
-
-  return chunks
-}
-
-function splitLongText(value: string, maxLength: number) {
-  const text = value.trim()
-  if (!text) return []
-  const chunks: string[] = []
-  for (let index = 0; index < text.length; index += maxLength) {
-    chunks.push(text.slice(index, index + maxLength).trim())
-  }
-  return chunks.filter(Boolean)
-}
-
-function normalizeTags(value: unknown) {
-  if (!Array.isArray(value)) return []
-  return Array.from(
-    new Set(
-      value
-        .filter((item): item is string => typeof item === 'string')
-        .map((item) => compactText(item, 40))
-        .filter(Boolean),
-    ),
-  ).slice(0, 12)
-}
-
-function compactIdentifier(value: unknown) {
-  if (typeof value !== 'string') return ''
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9:_-]+/g, '-')
-    .replace(/-+/g, '-')
-    .slice(0, 160)
-}
-
-function compactText(value: unknown, maxLength: number) {
-  if (typeof value !== 'string') return ''
-  return value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
-}
-
-function compactBody(value: unknown, maxLength: number) {
-  if (typeof value !== 'string') return ''
-  return value
-    .replace(/\r\n/g, '\n')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-    .slice(0, maxLength)
 }
 
 function readString(value: unknown) {

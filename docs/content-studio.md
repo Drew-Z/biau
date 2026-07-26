@@ -9,8 +9,7 @@
 - 公开站仍然读取已审核的静态内容产物。
 - `/studio` 是内部工作台页面，不直接公开未审核数据库草稿。
 - `/studio/api/*` 只在本地 `ASSISTANT_SERVICE_MODE=all` 和独立内容工作台
-  服务 `studio` 中可用；公开助手、Operator 和 RAG Orchestrator 不挂载
-  Studio API 路由。Operator 的 `studio.draft` 直接写共享 Studio 数据库。
+  服务 `studio` 中可用；公开助手和 RAG Orchestrator 不挂载 Studio API 路由。
 - 第一版认证使用 `STUDIO_ADMIN_TOKEN`，未设置时回退到 `ADMIN_TOKEN`。
 - Studio 默认使用 `STUDIO_DATABASE_URL`；未设置时才回退到 `DATABASE_URL`。
 - 模型辅助默认不启用；AI 日报来源和草稿编辑都可以先人工录入。
@@ -118,7 +117,7 @@ npm.cmd run build
 
 ## 平台边界与当前 Gate
 
-部署基线已经完成：Studio 使用独立内容数据库，Operator 通过同一个 `STUDIO_DATABASE_URL` 写入待审核草稿，`20260717000000_publish_export_version_binding` migration 已在生产 Studio 服务执行。受保护的 health、草稿、来源和 Publish Export 只读接口已通过低敏复核，版本绑定能力可以在生产使用。真实变量仍只保存在平台控制台。
+部署基线已经完成：Studio 使用独立内容数据库，`20260717000000_publish_export_version_binding` migration 已在生产 Studio 服务执行。受保护的 health、草稿、来源和 Publish Export 只读接口已通过低敏复核，版本绑定能力可以在生产使用。真实变量仍只保存在平台控制台。
 
 当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准，当前 Content Studio gate 只有：
 
@@ -142,7 +141,7 @@ npm.cmd run build
 
 ## 独立部署推荐
 
-Operator 数据库和内容工作台数据库应分开维护，Studio 使用独立 Render Web Service：
+公开助手数据库和内容工作台数据库应分开维护，Studio 使用独立 Render Web Service：
 
 ```text
 ASSISTANT_SERVICE_MODE=studio
