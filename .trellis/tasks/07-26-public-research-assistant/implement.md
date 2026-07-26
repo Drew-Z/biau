@@ -44,6 +44,14 @@ No validation command may ping, diagnose, catalog-probe, or otherwise test a liv
 - No live model, search, embedding, Qdrant, or reranker request was sent.
 - Next gate: deploy the public service migration, RAG service, and Cloudflare thin proxy; then run one user-approved real research question plus feedback and sync acceptance. Operator/internal-RAG retirement remains blocked on that deployed acceptance by design.
 
+## Deployed acceptance (2026-07-26)
+
+- Cloudflare Pages production now carries the server-only `PUBLIC_ASSISTANT_API_BASE_URL` and a 55-second proxy budget; same-origin health and chat requests reach the public Render service.
+- The approved web-research question returns HTTP 200, persists anonymous session/turn data, accepts feedback, fetches public HTTPS evidence, and keeps claim/citation IDs consistent.
+- Forced-web query cleanup removed temporal/request boilerplate, so Tavily now discovers Agentic RAG sources instead of pages about the Chinese phrase “截止 / 截至”.
+- MiMo synchronous Responses generation still exceeds the current 20-second answer budget and truthfully degrades with `provider_error`; no further live model calls were sent after confirming the repeated boundary.
+- Operator/internal-RAG retirement remains gated because a model-generated `answered` or evidence-bounded `partial` response has not yet passed deployed acceptance.
+
 ## Review and rollback points
 
 - Keep the existing public response fields additive until the new widget is deployed; remove legacy fields only in the final cleanup.
