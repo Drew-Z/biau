@@ -35,7 +35,7 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - Cloudflare 生产环境已收缩为站点、Public proxy 与 Studio browser base 所需变量。
 - Operator PostgreSQL 生产退役已完成：备份恢复演练、preflight、allowlist apply、verify 和 Public/Studio/RAG 健康检查均通过。
 
-这些证据已完成旧 Operator 数据面的受控退役；Render 旧服务与 external internal Qdrant collection 仍是独立删除门禁。
+这些证据已完成旧 Operator 数据面的受控退役；随后已分别删除 legacy Render Operator 服务与 external internal Qdrant collection，当前不再存在 Operator/internal-RAG 删除门禁。
 
 ## Operator PostgreSQL 退役
 
@@ -46,15 +46,15 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 3. 运行 `scripts/operations/postgres/operator-retirement/preflight.sql`，核对 12 个目标表、7 个 enum、public protection tables、row count、跨边界 FK 与活跃连接。
 4. 只有在目标数据库指纹与 allowlist 均人工确认后，才以确认串运行 `apply.sql`。
 5. 立即运行 `verify.sql`、public persistence、Studio 与 RAG smoke。
-6. 观察通过后，最后人工删除 Render Operator 服务。
-7. internal Qdrant collection 作为独立 gate，在 public alias 稳定且备份/回滚信息保留后再删除。
+6. 观察通过后，最后人工删除 Render Operator 服务（已完成）。
+7. public alias 稳定且备份/回滚信息保留后，已通过独立 gate 删除 internal Qdrant collection。
 
 破坏性 SQL 不在 `prisma/migrations/` 中，不会随 Render 重启自动执行；脚本不使用 `CASCADE`，也不会触碰 `PublicAssistant*`、Studio 或 AI Daily 表。
 
-当前仅剩：
+退役收尾已完成：
 
-- 删除已暂停的 legacy Render Operator 服务。
-- 确认 public alias 保持稳定后，删除旧 internal Qdrant collection。
+- 已删除暂停的 legacy Render Operator 服务。
+- 已在确认 public alias 稳定后删除旧 internal Qdrant collection，并清理 RAG 服务的废弃 internal collection/API-key 变量。
 
 ## Supabase Data API 权限加固
 

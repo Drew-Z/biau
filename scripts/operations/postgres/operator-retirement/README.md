@@ -44,3 +44,6 @@ retired enum is still used outside the target set. They never use `CASCADE`.
 
 After SQL verification, delete the external internal-RAG collection and Render
 Operator service only through their separate manual gates.
+
+For the 2026-07-26 production retirement, both deletion gates completed after
+the public-only services and Qdrant public alias passed observation.

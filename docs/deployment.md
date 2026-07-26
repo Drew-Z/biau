@@ -206,6 +206,8 @@ npm run assistant:public-sync-check
 
 ## 迁移和发布顺序
 
+以下顺序记录 2026-07-26 已完成的 public-only 发布与 Operator/internal-RAG 退役流程：
+
 1. 备份公开助手数据库与 Studio 数据库，保留可回滚的 Render revision。
 2. 部署并验证 `biau-rag-orchestrator` public-only 代码与 public alias。
 3. 部署 `biau-public-assistant-api`，运行 Prisma public persistence migrations。
@@ -213,7 +215,7 @@ npm run assistant:public-sync-check
 5. 部署 Cloudflare Pages，完成同源 SSE、feedback、public sync 和持久化验收。
 6. 停止旧 Operator writer，运行 `scripts/operations/postgres/operator-retirement/preflight.sql`。
 7. 只有在备份可恢复、数据库指纹和 allowlist 均经人工确认后，才运行 `apply.sql` 与 `verify.sql`。
-8. 通过 public persistence、Studio 和 RAG smoke 后，最后人工删除 Render Operator 服务。
+8. 通过 public persistence、Studio 和 RAG smoke 后，最后人工删除 Render Operator 服务（已完成）。
 9. 在独立观察窗口后，人工删除旧 internal Qdrant collection 与平台侧废弃变量。
 
 破坏性 Operator SQL 不得放入 `prisma/migrations/`，因为 Render 启动会自动执行 Prisma migrations。完整操作见 `scripts/operations/postgres/operator-retirement/README.md`。
@@ -252,4 +254,4 @@ npm run build
 - SQL 退役前：回滚应用 revision 和 Qdrant public alias 即可。
 - SQL 退役后：停止写入，把已验证的备份恢复到新数据库，再切换数据库 URL 与上一应用 revision；重新跑旧 migration 只能恢复空表结构，不能恢复数据。
 - Studio/AI Daily 数据库从不进入 Operator 退役 allowlist。
-- 保留备份、前一 revision 和旧 internal collection，直到观察窗口结束。
+- 观察窗口结束前保留备份、前一 revision 和旧 internal collection；窗口通过并删除旧 collection 后，继续按既定保留策略保存数据库备份与 revision 回滚证据。

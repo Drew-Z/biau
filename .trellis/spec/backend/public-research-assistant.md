@@ -86,7 +86,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - Public knowledge sync writes a versioned Qdrant collection, validates the replacement, and then switches the configured alias.
 - Commit/checksum readiness gates prevent a stale deploy from activating newer knowledge.
 - Cloudflare Functions are thin same-origin proxies. The stream Function forwards the bounded event body without buffering, preserves cancellation, and keeps its timeout active until the upstream body closes. Model, search, RAG, embedding, reranker, sync, and database credentials remain on server services.
-- Deployed public chat, feedback, persistence, and public sync acceptance passed before the Operator/internal-RAG retirement began. Runtime code and configuration are public-only; PostgreSQL and external Qdrant deletion remain explicit manual gates with backups.
+- Deployed public chat, feedback, persistence, and public sync acceptance passed before the Operator/internal-RAG retirement began. Runtime code and configuration are public-only; PostgreSQL retirement, legacy Render Operator service deletion, and obsolete internal-Qdrant collection deletion completed through separate backed-up manual gates.
 
 ## Required Checks
 

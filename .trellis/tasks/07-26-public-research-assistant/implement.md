@@ -13,8 +13,8 @@
 - [x] Rework the widget for scope selection, multi-turn context, progress, precise citations, suggestions, retry/copy/feedback, accessibility, and mobile layouts.
 - [x] Add publication-triggered versioned public knowledge sync and retain manual recovery sync.
 - [x] Add provider Responses streaming, Express SSE progress/result transport, Cloudflare byte-stream forwarding, browser decoding, explicit unsupported-route fallback, and deterministic cross-layer fixtures.
-- [ ] Run local and approved deployed acceptance, then remove Operator/internal RAG pages, routes, tools, tables, service configuration, scripts, and stale documentation. (Code, schema, configuration, docs, and reviewed retirement SQL are complete; production SQL, Render service, and internal Qdrant deletion remain manual gates.)
-- [ ] Update backend/frontend specs, deployment/runbook/manual gates, commit, push `main`, and archive the Trellis task. (Specs, deployment contract, and local validation are complete; archive waits for the production retirement gates.)
+- [x] Run local and approved deployed acceptance, then remove Operator/internal RAG pages, routes, tools, tables, service configuration, scripts, and stale documentation. (Code, schema, production PostgreSQL retirement, legacy Render service deletion, obsolete internal Qdrant collection deletion, and platform-variable cleanup are complete.)
+- [x] Update backend/frontend specs, deployment/runbook/manual gates, commit, push `main`, and archive the Trellis task.
 
 ## Validation
 
@@ -54,7 +54,7 @@ No validation command may ping, diagnose, catalog-probe, or otherwise test a liv
 - The request persists its anonymous session/turn data, accepts feedback, fetches allowed public HTTPS evidence, and completes in about 22 seconds without exposing raw provider JSON or model deltas.
 - Forced-web query cleanup removed temporal/request boilerplate, so Tavily now discovers Agentic RAG sources instead of pages about the Chinese phrase “截止 / 截至”.
 - Public knowledge sync, Cloudflare byte-stream forwarding, the configured model, search, public RAG, and persistence paths all passed the approved business-flow acceptance. No liveness-only or catalog-probe request was sent.
-- The replacement acceptance gate is therefore satisfied and R10 Operator/internal-RAG retirement may proceed. The Render Operator service and external internal Qdrant collection remain manual deletion gates until the public-only code and destructive migration are deployed and verified.
+- At this acceptance checkpoint, the replacement gate was satisfied and R10 Operator/internal-RAG retirement could proceed. The Render Operator service and external internal Qdrant collection remained manual deletion gates until the public-only code and destructive migration were deployed and verified; both gates completed later in the retirement flow.
 
 ## Streaming local acceptance (2026-07-26)
 
@@ -69,7 +69,7 @@ No validation command may ping, diagnose, catalog-probe, or otherwise test a liv
 - Added reviewed PostgreSQL preflight/apply/verify scripts outside `prisma/migrations/`. They require database/user fingerprints and an explicit confirmation phrase, use a 12-table/7-enum allowlist, reject cross-boundary dependencies, protect `PublicAssistant*`, and never use `CASCADE`.
 - Removed dead Operator workspace CSS while preserving Studio's shared form/status classes and all public-assistant styles. The final UI suite passes for 17 current routes across desktop and mobile viewports.
 - Prisma format/validate/generate, all public assistant contracts, public-only RAG/service-mode smoke, server/Cloudflare/Studio/AI Daily checks, docs checks, lint, build, performance budget, UI checks, and `git diff --check` pass without live provider calls.
-- Remaining manual gates: deploy the public-only revision, run Operator PostgreSQL preflight/apply/verify against the confirmed former Operator database, observe Public/Studio/RAG, then delete the Render Operator service and internal Qdrant collection separately.
+- At this checkpoint, the remaining manual gates were deployment of the public-only revision, Operator PostgreSQL preflight/apply/verify, Public/Studio/RAG observation, and separate deletion of the Render Operator service and internal Qdrant collection. All subsequently completed.
 
 ## R10 production PostgreSQL retirement acceptance (2026-07-26)
 
@@ -78,7 +78,7 @@ No validation command may ping, diagnose, catalog-probe, or otherwise test a liv
 - Executed the explicitly approved allowlisted transaction: all 12 retired Operator/member/private-chat/internal-knowledge tables and 7 dedicated enums were removed without `CASCADE`.
 - Production `verify.sql` passed. Public Assistant persistence remained `8` sessions, `8` turns, `1` feedback record, and `2` aggregates; Studio retained `2` hidden drafts and AI Daily retained its existing empty issue state.
 - Cloudflare/Public, Studio, and public-only RAG health endpoints returned HTTP 200 after retirement. The RAG public collection remained ready with 27 documents and 53 chunks.
-- Remaining retirement gates are limited to deleting the suspended Render Operator service and the obsolete internal Qdrant collection. Supabase Data API grants/RLS hardening is tracked separately because it changes database access policy rather than retired data.
+- The suspended Render Operator service and obsolete internal Qdrant collection were deleted after public-only observation passed. The RAG service's retired internal collection/API-key variables were removed, while its public alias remained on the accepted collection with 27 documents and 53 chunks. No Operator/internal-RAG retirement gate remains. Supabase Data API grants/RLS hardening was tracked separately because it changed database access policy rather than retired data.
 
 ## Supabase server-only access hardening acceptance (2026-07-26)
 
