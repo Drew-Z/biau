@@ -37,7 +37,7 @@ export async function proxyAssistantRequest(request: Request, env: AssistantEnv,
   }
 
   const controller = new AbortController()
-  const timeoutMs = readBoundedInteger(env.PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS, 30_000, 5_000, 35_000)
+  const timeoutMs = readBoundedInteger(env.PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS, 55_000, 5_000, 60_000)
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const response = await fetch(upstreamUrl, {

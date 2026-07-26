@@ -34,10 +34,11 @@ Operator 浏览器地址固定为同源 `/api/operator/*`，不需要 `VITE_OPER
 
 ```text
 PUBLIC_ASSISTANT_API_BASE_URL=<biau-public-assistant-api 的 Render base URL>
-PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=30000
+PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=55000
 ```
 
 `functions/api/chat/public.ts` 和 feedback Function 只做同源薄代理。它们不会接触模型、搜索、embedding 或 Qdrant key，也不会转发浏览器提供的 `Authorization` 或 Cookie。
+生产环境的薄代理预算必须大于 Render 侧 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS`，为持久化和网络回程保留余量；当前推荐分别为 55 秒和 45 秒。
 
 ### Operator Function 私有变量
 
@@ -90,7 +91,7 @@ ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_RAG_API_BASE_URL=<RAG Orchestrator base>
 ASSISTANT_RAG_API_KEY=<RAG_PUBLIC_API_KEY 对应值>
 ASSISTANT_RAG_TIMEOUT_MS=3000
-PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS=25000
+PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS=45000
 PUBLIC_ASSISTANT_RATE_LIMIT=20
 PUBLIC_ASSISTANT_RATE_WINDOW_MS=60000
 PUBLIC_ASSISTANT_RETENTION_DAYS=30
