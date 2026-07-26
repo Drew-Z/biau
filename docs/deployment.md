@@ -95,13 +95,15 @@ PUBLIC_ASSISTANT_RATE_LIMIT=20
 PUBLIC_ASSISTANT_RATE_WINDOW_MS=60000
 PUBLIC_ASSISTANT_RETENTION_DAYS=30
 PUBLIC_ASSISTANT_OPERATIONS_TOKEN=<低敏聚合 insights 的随机 server-only token>
-PUBLIC_WEB_SEARCH_PROVIDER=exa
-PUBLIC_WEB_SEARCH_BASE_URL=<Exa API base>
-PUBLIC_WEB_SEARCH_API_KEY=<Exa server-only key>
+PUBLIC_WEB_SEARCH_PROVIDER=brave
+PUBLIC_WEB_SEARCH_BASE_URL=https://api.search.brave.com/res/v1/web
+PUBLIC_WEB_SEARCH_API_KEY=<Brave Search API server-only token>
 PUBLIC_WEB_SEARCH_TIMEOUT_MS=8000
 PUBLIC_WEB_SEARCH_MAX_RESULTS=5
 PUBLIC_WEB_FETCH_MAX_PAGES=3
 ```
+
+`brave` 是默认纯搜索适配器：搜索只返回发现线索，服务端仍会抓取允许访问的原始 HTTPS 页面，再生成可核验引用。Brave Search 当前每月自动赠送少量 credits，适合低流量个人站；公开接口仍需保留现有限流，避免额度被匿名请求快速耗尽。已有 Exa 配置可以继续使用：将 provider 改为 `exa`，base URL 与 key 换回对应的服务端值即可。不要用 provider ping、catalog 或测活 prompt 验收，部署后只使用用户批准的真实研究问题检查完整业务链路。
 
 公开助手使用独立数据库保存匿名会话、反馈和低敏聚合数据；原始 turn 最多保留 30 天。它不需要 Operator 数据库，也不保存 IP、Cookie、凭据或抓取全文。模型、站内 RAG 或网页研究部分不可用时会明确降级，不把降级结果伪装成完整回答。
 

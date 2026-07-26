@@ -32,7 +32,7 @@ The Express public service is authoritative. Cloudflare Functions become a thin 
 
 - Qdrant stores one public collection with named dense and sparse vectors. Sync creates a versioned replacement collection, validates counts/dimensions, then changes the configured alias; the previous collection is the rollback target.
 - Dense and sparse candidates are fused with reciprocal-rank fusion before a bounded reranker call. Provider reranker errors degrade to a deterministic lexical/vector rerank and expose `rerankerMode: fallback`.
-- `PublicWebSearchProvider` initially implements Exa Search API. It returns normalized discovery leads only. `PublicPageFetcher` resolves and pins public IPs, revalidates every redirect, enforces MIME/body/time limits, applies robots policy, canonicalizes URLs, and extracts title, dates, headings, and bounded main text with Cheerio.
+- `PublicWebSearchProvider` dispatches to Brave Search API by default and retains Exa as an optional adapter. Both return the same normalized discovery-lead contract only. `PublicPageFetcher` resolves and pins public IPs, revalidates every redirect, enforces MIME/body/time limits, applies robots policy, canonicalizes URLs, and extracts title, dates, headings, and bounded main text with Cheerio.
 - Web content is wrapped as untrusted evidence. Instructions, tool requests, credential prompts, and embedded scripts/styles are discarded and never concatenated into a system message.
 
 ## Model and evidence contracts
@@ -52,7 +52,7 @@ The Express public service is authoritative. Cloudflare Functions become a thin 
 ## Migration, rollout, and rollback
 
 1. Add public persistence and graph behind the existing `/chat/public` contract, deploy with Operator unchanged, and validate site/direct/degraded behavior.
-2. Enable search only after server-side Exa configuration. Run a real user-approved research question rather than a provider liveness test.
+2. Enable search only after server-side Brave or Exa configuration. Run a real user-approved research question rather than a provider liveness test.
 3. Sync a new hybrid Qdrant collection and switch the alias after count/dimension/query fixtures pass; retain the old collection alias target for rollback.
 4. Deploy the new widget and feedback flow. Observe errors, latency, citation validity, and fallback distribution.
 5. Remove Operator/internal-RAG code and deploy the destructive table migration only after the public replacement is accepted. Delete the Render Operator service manually last.
@@ -61,6 +61,6 @@ Rollback before step 5 restores the previous public service revision and Qdrant 
 
 ## Trade-offs
 
-- Exa is chosen as the first production search adapter for semantic research quality and a stable API. The interface remains replaceable, but no unreliable scraping of public search result pages is used as a hidden fallback.
+- Brave Search is the default production adapter because its independent index, recurring entry-level credits, and raw URL/snippet contract fit a low-traffic public assistant. Exa remains optional for semantic discovery. No unreliable scraping of public search result pages or generative research model is used as a hidden search fallback.
 - Qdrant hybrid plus reranking addresses the current retrieval gap without the operational cost of Neo4j/GraphRAG for 27 documents and roughly 56 chunks.
 - Anonymous 30-day retention enables Kapa/GitBook-style coverage analysis while avoiding accounts, profiles, IP retention, and permanent raw-conversation storage.

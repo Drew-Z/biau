@@ -6,6 +6,7 @@
 - [x] Implement the public-only LangGraph with conditional routing, public tool registry, evidence grading, one recovery loop, cancellation, and public-safe metadata.
 - [x] Upgrade Qdrant public sync/retrieval to versioned dense+sparse hybrid, RRF, real optional reranking, and truthful health/diagnostics.
 - [x] Add Exa discovery plus SSRF-safe original-page fetching, extraction, canonicalization, prompt-injection isolation, and deterministic fixtures.
+- [x] Add Brave Search as the default pure-search adapter, retain Exa as optional, and synchronize deterministic fixtures plus deployment contracts.
 - [x] Add anonymous session/turn/feedback/aggregate persistence, 30-day retention, coverage-gap projection, rate limiting, and low-sensitive metrics.
 - [x] Replace the public chat API and make Cloudflare Functions a thin proxy; preserve explicit browser-local degradation.
 - [x] Rework the widget for scope selection, multi-turn context, progress, precise citations, suggestions, retry/copy/feedback, accessibility, and mobile layouts.

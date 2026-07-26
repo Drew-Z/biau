@@ -44,9 +44,9 @@ services:
       - key: PUBLIC_ASSISTANT_OPERATIONS_TOKEN
         sync: false
       - key: PUBLIC_WEB_SEARCH_PROVIDER
-        value: exa
+        value: brave
       - key: PUBLIC_WEB_SEARCH_BASE_URL
-        sync: false
+        value: https://api.search.brave.com/res/v1/web
       - key: PUBLIC_WEB_SEARCH_API_KEY
         sync: false
       - key: PUBLIC_WEB_SEARCH_TIMEOUT_MS

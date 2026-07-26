@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { AiDailyFetchError, type AiDailyEvidenceDocumentInput } from '../src/aiDailySafeFetch.js'
 import {
+  isPublicWebSearchConfigured,
   researchPublicWeb,
   type PublicWebResearchConfig,
 } from '../src/publicWebResearch.js'
@@ -101,6 +102,48 @@ assert.match(result.evidence[0]?.text ?? '', /Original page marker/u)
 assert.equal(result.evidence[0]?.citation.evidenceStatus, 'verified')
 assert.equal(result.evidence[1]?.citation.evidenceStatus, 'partial')
 assert.equal(result.diagnostic, undefined)
+
+const braveConfig: PublicWebResearchConfig = {
+  ...config,
+  provider: 'brave',
+  baseUrl: 'https://api.search.brave.example/res/v1/web/',
+}
+let braveSearchRequest: { url: string; init?: RequestInit } | null = null
+const braveResult = await researchPublicWeb(['latest public research assistant'], undefined, {
+  config: braveConfig,
+  now: () => now,
+  searchFetch: async (input, init) => {
+    braveSearchRequest = { url: String(input), init }
+    return new Response(JSON.stringify({
+      web: {
+        results: [
+          { title: 'Brave discovery', url: 'https://brave-result.example.com/article', page_age: '2026-07-25' },
+          { title: 'Unsafe result', url: 'https://localhost/private' },
+        ],
+      },
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  },
+  fetchEvidence: async (input) => makeEvidence({
+    originalUrl: input.url,
+    canonicalUrl: input.url,
+    title: 'Fetched Brave result',
+    text: 'Brave original page evidence '.repeat(30),
+  }),
+})
+
+const braveRequestUrl = new URL(braveSearchRequest?.url ?? 'https://invalid.example')
+assert.equal(braveRequestUrl.origin + braveRequestUrl.pathname, 'https://api.search.brave.example/res/v1/web/search')
+assert.equal(braveRequestUrl.searchParams.get('q'), 'latest public research assistant')
+assert.equal(braveRequestUrl.searchParams.get('count'), '8')
+assert.equal(braveRequestUrl.searchParams.get('safesearch'), 'moderate')
+assert.equal(braveRequestUrl.searchParams.get('text_decorations'), 'false')
+assert.equal(braveSearchRequest?.init?.method, 'GET')
+assert.equal((braveSearchRequest?.init?.headers as Record<string, string>)['X-Subscription-Token'], 'fixture-key')
+assert.equal(braveResult.evidence.length, 1)
+assert.equal(braveResult.evidence[0]?.title, 'Fetched Brave result')
+assert.equal(braveResult.diagnostic, undefined)
+assert.equal(isPublicWebSearchConfigured(braveConfig), true)
+assert.equal(isPublicWebSearchConfigured({ ...config, provider: 'unsupported' }), false)
 
 let unsafeFetchCount = 0
 const unsafe = await researchPublicWeb(['unsafe'], undefined, {

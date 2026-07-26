@@ -31,8 +31,10 @@ export interface PublicWebResearchDependencies {
   now?: () => Date
 }
 
+const supportedSearchProviders = new Set(['brave', 'exa'])
+
 export function isPublicWebSearchConfigured(config = getPublicWebResearchConfig()) {
-  return config.provider === 'exa' && Boolean(config.baseUrl && config.apiKey)
+  return supportedSearchProviders.has(config.provider) && Boolean(config.baseUrl && config.apiKey)
 }
 
 export async function researchPublicWeb(
@@ -47,7 +49,7 @@ export async function researchPublicWeb(
   if (!isPublicWebSearchConfigured(config)) return { evidence: [], available: false, diagnostic: 'not_configured' }
   if (signal?.aborted) return { evidence: [], available: true, diagnostic: 'aborted' }
   const searchResults = await Promise.all(
-    queries.slice(0, 3).map((query) => searchExa(query, config, searchFetch, signal)),
+    queries.slice(0, 3).map((query) => searchProvider(query, config, searchFetch, signal)),
   )
   const leads = searchResults.flatMap((result) => result.leads)
   if (leads.length === 0) {
@@ -120,13 +122,47 @@ export async function researchPublicWeb(
   }
 }
 
-async function searchExa(
+async function searchProvider(
   query: string,
   config: PublicWebResearchConfig,
   searchFetch: typeof fetch,
   signal?: AbortSignal,
 ): Promise<{ leads: PublicWebLead[]; diagnostic?: PublicWebResearchResult['diagnostic'] }> {
-  const endpoint = config.baseUrl.endsWith('/search') ? config.baseUrl : `${config.baseUrl}/search`
+  const endpoint = searchEndpoint(config.baseUrl)
+  if (config.provider === 'brave') {
+    const url = new URL(endpoint)
+    url.searchParams.set('q', query.slice(0, 300))
+    url.searchParams.set('count', String(config.maxResults))
+    url.searchParams.set('safesearch', 'moderate')
+    url.searchParams.set('spellcheck', 'true')
+    url.searchParams.set('text_decorations', 'false')
+    return requestSearchLeads(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'X-Subscription-Token': config.apiKey,
+      },
+    }, normalizeBraveResults, config, searchFetch, signal)
+  }
+
+  return requestSearchLeads(endpoint, {
+    method: 'POST',
+    headers: {
+      'x-api-key': config.apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: query.slice(0, 300), type: 'auto', numResults: config.maxResults }),
+  }, normalizeExaResults, config, searchFetch, signal)
+}
+
+async function requestSearchLeads(
+  endpoint: string | URL,
+  init: RequestInit,
+  normalize: (value: unknown) => PublicWebLead[],
+  config: PublicWebResearchConfig,
+  searchFetch: typeof fetch,
+  signal?: AbortSignal,
+): Promise<{ leads: PublicWebLead[]; diagnostic?: PublicWebResearchResult['diagnostic'] }> {
   const abort = new AbortController()
   let timedOut = false
   let externallyAborted = false
@@ -141,17 +177,12 @@ async function searchExa(
   }, Math.min(config.timeoutMs, 7_000))
   try {
     const response = await searchFetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'x-api-key': config.apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query: query.slice(0, 300), type: 'auto', numResults: config.maxResults }),
+      ...init,
       signal: abort.signal,
     })
     if (!response.ok) return { leads: [], diagnostic: 'http_status' }
     const payload = await response.json().catch(() => null)
-    const leads = normalizeExaResults(payload)
+    const leads = normalize(payload)
     return leads.length > 0 ? { leads } : { leads: [], diagnostic: 'invalid_response' }
   } catch {
     return { leads: [], diagnostic: timedOut ? 'timeout' : externallyAborted ? 'aborted' : 'network_error' }
@@ -159,6 +190,10 @@ async function searchExa(
     clearTimeout(timeout)
     signal?.removeEventListener('abort', onAbort)
   }
+}
+
+function searchEndpoint(baseUrl: string) {
+  return baseUrl.endsWith('/search') ? baseUrl : `${baseUrl.replace(/\/+$/u, '')}/search`
 }
 
 function normalizeExaResults(value: unknown): PublicWebLead[] {
@@ -169,6 +204,17 @@ function normalizeExaResults(value: unknown): PublicWebLead[] {
     if (!url) return null
     const title = compact(item.title, 240) || new URL(url).hostname
     return { title, url, publishedAt: readIsoDate(item.publishedDate) }
+  }).filter((item): item is PublicWebLead => item !== null)
+}
+
+function normalizeBraveResults(value: unknown): PublicWebLead[] {
+  if (!isRecord(value) || !isRecord(value.web) || !Array.isArray(value.web.results)) return []
+  return value.web.results.map((item) => {
+    if (!isRecord(item)) return null
+    const url = readPublicHttpsUrl(item.url)
+    if (!url) return null
+    const title = compact(item.title, 240) || new URL(url).hostname
+    return { title, url, publishedAt: readIsoDate(item.page_age) ?? readIsoDate(item.age) }
   }).filter((item): item is PublicWebLead => item !== null)
 }
 
