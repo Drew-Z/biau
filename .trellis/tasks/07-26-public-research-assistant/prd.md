@@ -40,7 +40,7 @@ Replace the current one-shot public RAG widget with the only remaining BIAU assi
 
 ### R5. Public-web research
 
-- The default production search adapter is Brave Search API, selected through server-only configuration; Exa remains an optional compatible provider. Both adapters return discovery leads only. Lack of a search configuration degrades `auto` to site/direct behavior and returns an explicit unavailable state for forced `web` mode.
+- The default production search adapter is Tavily Basic Search, selected through server-only configuration; Brave Search and Exa remain optional compatible providers. Every adapter returns discovery leads only. Lack of a search configuration degrades `auto` to site/direct behavior and returns an explicit unavailable state for forced `web` mode.
 - Search results are discovery leads. The agent fetches a bounded number of original public pages and extracts evidence before citing them.
 - Fetching rejects credentials in URLs, private/local/link-local/metadata addresses, redirects to blocked destinations, unsupported content, excessive bodies, and slow endpoints. Remote page text is untrusted evidence and cannot issue instructions to the agent.
 

@@ -31,7 +31,7 @@ export interface PublicWebResearchDependencies {
   now?: () => Date
 }
 
-const supportedSearchProviders = new Set(['brave', 'exa'])
+const supportedSearchProviders = new Set(['brave', 'exa', 'tavily'])
 
 export function isPublicWebSearchConfigured(config = getPublicWebResearchConfig()) {
   return supportedSearchProviders.has(config.provider) && Boolean(config.baseUrl && config.apiKey)
@@ -129,6 +129,25 @@ async function searchProvider(
   signal?: AbortSignal,
 ): Promise<{ leads: PublicWebLead[]; diagnostic?: PublicWebResearchResult['diagnostic'] }> {
   const endpoint = searchEndpoint(config.baseUrl)
+  if (config.provider === 'tavily') {
+    return requestSearchLeads(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: query.slice(0, 300),
+        search_depth: 'basic',
+        max_results: config.maxResults,
+        auto_parameters: false,
+        include_answer: false,
+        include_raw_content: false,
+        include_images: false,
+      }),
+    }, normalizeTavilyResults, config, searchFetch, signal)
+  }
+
   if (config.provider === 'brave') {
     const url = new URL(endpoint)
     url.searchParams.set('q', query.slice(0, 300))
@@ -197,13 +216,22 @@ function searchEndpoint(baseUrl: string) {
 }
 
 function normalizeExaResults(value: unknown): PublicWebLead[] {
+  return normalizeFlatResults(value, ['publishedDate'])
+}
+
+function normalizeTavilyResults(value: unknown): PublicWebLead[] {
+  return normalizeFlatResults(value, ['published_date', 'publishedDate'])
+}
+
+function normalizeFlatResults(value: unknown, dateKeys: string[]): PublicWebLead[] {
   if (!isRecord(value) || !Array.isArray(value.results)) return []
   return value.results.map((item) => {
     if (!isRecord(item)) return null
     const url = readPublicHttpsUrl(item.url)
     if (!url) return null
     const title = compact(item.title, 240) || new URL(url).hostname
-    return { title, url, publishedAt: readIsoDate(item.publishedDate) }
+    const publishedAt = dateKeys.map((key) => readIsoDate(item[key])).find((date) => date !== null) ?? null
+    return { title, url, publishedAt }
   }).filter((item): item is PublicWebLead => item !== null)
 }
 

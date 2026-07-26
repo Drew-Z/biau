@@ -44,9 +44,9 @@ services:
       - key: PUBLIC_ASSISTANT_OPERATIONS_TOKEN
         sync: false
       - key: PUBLIC_WEB_SEARCH_PROVIDER
-        value: brave
+        value: tavily
       - key: PUBLIC_WEB_SEARCH_BASE_URL
-        value: https://api.search.brave.com/res/v1/web
+        value: https://api.tavily.com
       - key: PUBLIC_WEB_SEARCH_API_KEY
         sync: false
       - key: PUBLIC_WEB_SEARCH_TIMEOUT_MS

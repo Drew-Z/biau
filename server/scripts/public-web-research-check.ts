@@ -145,6 +145,52 @@ assert.equal(braveResult.diagnostic, undefined)
 assert.equal(isPublicWebSearchConfigured(braveConfig), true)
 assert.equal(isPublicWebSearchConfigured({ ...config, provider: 'unsupported' }), false)
 
+const tavilyConfig: PublicWebResearchConfig = {
+  ...config,
+  provider: 'tavily',
+  baseUrl: 'https://api.tavily.example/',
+}
+let tavilySearchRequest: { url: string; init?: RequestInit } | null = null
+const tavilyResult = await researchPublicWeb(['recent RAG developments'], undefined, {
+  config: tavilyConfig,
+  now: () => now,
+  searchFetch: async (input, init) => {
+    tavilySearchRequest = { url: String(input), init }
+    return new Response(JSON.stringify({
+      results: [
+        {
+          title: 'Tavily discovery',
+          url: 'https://tavily-result.example.com/research',
+          content: 'Search result snippet is discovery-only.',
+          score: 0.91,
+        },
+      ],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  },
+  fetchEvidence: async (input) => makeEvidence({
+    originalUrl: input.url,
+    canonicalUrl: input.url,
+    title: 'Fetched Tavily result',
+    text: 'Tavily original page evidence '.repeat(30),
+  }),
+})
+
+assert.equal(tavilySearchRequest?.url, 'https://api.tavily.example/search')
+assert.equal(tavilySearchRequest?.init?.method, 'POST')
+assert.equal((tavilySearchRequest?.init?.headers as Record<string, string>).Authorization, 'Bearer fixture-key')
+const tavilyBody = JSON.parse(String(tavilySearchRequest?.init?.body)) as Record<string, unknown>
+assert.equal(tavilyBody.query, 'recent RAG developments')
+assert.equal(tavilyBody.search_depth, 'basic')
+assert.equal(tavilyBody.max_results, 8)
+assert.equal(tavilyBody.auto_parameters, false)
+assert.equal(tavilyBody.include_answer, false)
+assert.equal(tavilyBody.include_raw_content, false)
+assert.equal(tavilyBody.include_images, false)
+assert.equal(tavilyResult.evidence.length, 1)
+assert.equal(tavilyResult.evidence[0]?.title, 'Fetched Tavily result')
+assert.equal(tavilyResult.diagnostic, undefined)
+assert.equal(isPublicWebSearchConfigured(tavilyConfig), true)
+
 let unsafeFetchCount = 0
 const unsafe = await researchPublicWeb(['unsafe'], undefined, {
   config,

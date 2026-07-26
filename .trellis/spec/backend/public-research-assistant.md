@@ -20,10 +20,54 @@
 - Site retrieval uses public-only Qdrant evidence. Dense and sparse candidates are fused with RRF before optional provider reranking.
 - If hybrid Qdrant query is unsupported or rejected, dense fallback must query the configured active public alias, never the base collection name.
 - Reranker absence or failure must be reported internally as deterministic fallback; do not claim provider reranking.
-- Brave Search is the default pure-search discovery adapter; Exa remains optional. Both produce normalized leads only, and neither replaces the single configured generation model.
+- Tavily Basic Search is the default pure-search discovery adapter; auto parameters, generated answers, raw content, and images remain disabled. Brave Search and Exa remain optional. Every adapter produces normalized leads only and never replaces the single configured generation model.
 - Web search results are discovery leads. Only successfully fetched, SSRF-safe original HTTPS pages may become citations.
 - Reject credential-bearing URLs, private/local/link-local/metadata addresses, blocked redirects, unsupported content, oversized bodies, and timeouts.
 - Remote page text is untrusted evidence. It cannot issue tool, policy, prompt, or credential instructions.
+
+### Scenario: Public web search provider adapter
+
+#### 1. Scope / Trigger
+
+- Applies when adding, changing, or selecting `PUBLIC_WEB_SEARCH_PROVIDER` for the anonymous public assistant.
+
+#### 2. Signatures
+
+- `researchPublicWeb(queries, signal?, dependencies?) -> PublicWebResearchResult` owns provider dispatch and original-page evidence fetching.
+- `PublicWebResearchConfig` carries `provider`, `baseUrl`, `apiKey`, `timeoutMs`, `maxResults`, and `maxPages`.
+
+#### 3. Contracts
+
+- Supported provider values are `tavily`, `brave`, and `exa`; the deployment default is `tavily`.
+- Tavily sends `POST <base>/search` with Bearer auth, `search_depth=basic`, `auto_parameters=false`, and all generated-answer/raw-content/image options disabled.
+- Brave sends `GET <base>/search` with `X-Subscription-Token`; Exa sends `POST <base>/search` with `x-api-key`.
+- Adapters normalize only public HTTPS `title`, `url`, and optional publication time. Search snippets are not retained as citation evidence.
+- Provider URL, key, raw payload, and diagnostics remain server-only. Citations are created only after the shared SSRF-safe original-page fetch succeeds.
+
+#### 4. Validation & Error Matrix
+
+- Missing key/base or unsupported provider -> `available=false`, `diagnostic=not_configured`, no search request.
+- Caller cancellation -> `diagnostic=aborted`; provider timeout -> `timeout`; transport failure -> `network_error`.
+- Non-2xx response -> `http_status`; malformed/empty/unsafe-only results -> `invalid_response`.
+- Valid leads whose original pages cannot be retained -> `evidence_unavailable`.
+
+#### 5. Good / Base / Bad Cases
+
+- Good: Tavily returns public leads and fetched original pages become verified or partial web evidence.
+- Base: search is unconfigured and `auto` can degrade to site/direct behavior.
+- Bad: a provider returns localhost, credential-bearing, HTTP-only, or private-address URLs; none may reach the page fetcher.
+
+#### 6. Tests Required
+
+- `npm.cmd run assistant:public-web-check` must assert each provider endpoint, method, auth header, bounded query/result count, normalization, and unsafe URL rejection using fixtures only.
+- `npm.cmd run docs:deployment-check` must keep `render.yaml`, `.env.example`, and deployment documentation on the same default provider/base URL.
+- No deterministic check may call a live search or model provider.
+
+#### 7. Wrong vs Correct
+
+Wrong: use Tavily `answer` or `raw_content` directly as a citation, enable `auto_parameters`, or expose its token to Vite/browser code.
+
+Correct: request Basic Search leads with generated content disabled, then fetch and verify the original public page through the shared evidence pipeline.
 
 ## Public API And Persistence
 
