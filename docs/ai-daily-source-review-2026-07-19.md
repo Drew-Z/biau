@@ -34,7 +34,7 @@
 | Qualcomm OnQ | https://www.qualcomm.com/news/onq?tags=AI | 使用 AI 标签；过滤 5G、移动和纯产品宣传 |
 | GitHub Changelog | https://github.blog/changelog/ | 限定 Copilot、AI、model 与退役公告 |
 | Meta Engineering | https://engineering.fb.com/category/ai-research/ | 保留作者和分类；过滤非 AI 工程内容 |
-| Alibaba Group News | https://www.alibabagroup.com/en/news | 允许官方 canonical 跳转到 Alizila；按 URL 去重 |
+| Alibaba Group News | https://www.alizila.com/feed/ | Alibaba-owned RSS；保留 AI relevance、原文证据与企业 PR 归因边界 |
 | Mistral AI News | https://mistral.ai/news/ | HTML 增量；优先 Product、Research、Engineering |
 | Cohere Blog | https://cohere.com/blog | 过滤合作 PR、办公动态、商品和泛 SEO 内容 |
 | Red Hat AI Blog | https://www.redhat.com/en/blog/channel/artificial-intelligence | RSS 优先；产品和 ROI 数字明确归因 Red Hat |
@@ -112,6 +112,7 @@
 | Google AI RSS | `200` / XML | 通过；分类入口仍需共享 AI relevance 与原文证据过滤 |
 | Hugging Face Blog RSS | `200` / RSS | 保持 hold；作者和合作伙伴内容混杂，尚未建立 allowlist |
 | Microsoft AI feed | archived/suspended 页面 | 改为 rejected，等待官方替代 feed |
+| Alibaba Group / Alizila RSS | `200` / RSS | 通过；稳定日期与原文链接，替换原集团 HTML 入口以避免 evidence rejection |
 
 新增或变更来源不会绕过 Edition 的 Tier 1、时效、独立域名和证据完整性门禁；下一次刷新需要在 Studio 部署新 manifest 后重新观察。
 

@@ -219,15 +219,15 @@
     {
       "id": "alibaba-group-news",
       "name": "Alibaba Group News",
-      "rationale": "First-party company, model, cloud, and business AI announcements.",
-      "kind": "OFFICIAL_PAGE",
-      "url": "https://www.alibabagroup.com/en/news",
+      "rationale": "First-party Alibaba Group company, model, cloud, and business AI announcements via its Alizila newsroom.",
+      "kind": "RSS",
+      "url": "https://www.alizila.com/feed/",
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["china-ai", "enterprise-ai", "cloud-ai", "company-news"],
       "enabled": true,
-      "officialDomain": "www.alibabagroup.com",
-      "review": { "status": "approved", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Current AI announcements are discoverable, with canonical links moving to alizila.com; deduplicate and filter corporate PR." }
+      "officialDomain": "www.alizila.com",
+      "review": { "status": "approved", "reviewedAt": "2026-07-26T15:20:00.000Z", "reviewedBy": "codex-source-audit-2026-07-26", "notes": "Alibaba-owned Alizila RSS returned 200 with stable dated original links, including recent multimodal, agent-native, and Qwen coverage; retain AI relevance, evidence, attribution, and corporate-PR filters." }
     },
     {
       "id": "zhipu-news",
