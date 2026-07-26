@@ -852,6 +852,132 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: 'anchor-learning',
+    title: 'Anchor Learning｜来源可溯源的 AI 学习代理',
+    summary: '基于 Flutter 的本地优先 AI 学习系统，支持项目文档导入、语义切分、知识点提取、题目生成、Citation Verification、Question Validator 双重防幻觉和 Agent 长会话学习。',
+    category: 'ai',
+    status: 'main',
+    role: 'Flutter 客户端 / Agent 驱动 / 防幻觉机制 / 本地优先',
+    image: '/images/projects/showcase/anchor-learning-cover.png',
+    stack: ['Flutter', 'Drift', 'Dart', 'AI Agent', 'Citation Verification', 'Question Validator'],
+    highlights: ['来源可溯源', '防幻觉双验', '本地优先', 'Agent 长会话'],
+    links: [
+      externalLink('官网', 'https://anchor.playlab.eu.cc'),
+      externalLink('GitHub', 'https://github.com/ciallo-bill/duoduo'),
+      internalLink('架构概览', '/blog/anchor-learning-architecture'),
+    ],
+    detailContent: {
+      overview: [
+        {
+          title: '来源可溯源的 AI 学习代理系统',
+          body:
+            'Anchor Learning (锚学) 不是简单的 AI 问答工具，而是围绕"每个知识点、每道题目都能追溯到源文档具体位置"设计的学习系统。通过 Citation Verification 和 Question Validator 双重验证机制，确保 AI 生成内容始终基于真实文档，不产生幻觉答案。',
+        },
+        {
+          title: '本地优先，隐私保护',
+          body:
+            '所有学习数据本地存储在 Drift SQLite 数据库，可选云同步。用户的学习记录、导入的项目文档、生成的题目和学习会话完全受控，不会被强制上传到云端。',
+        },
+      ],
+      workflow: [
+        {
+          title: '文档导入与语义切分',
+          items: [
+            '支持导入本地项目或文件夹，自动检测 Markdown、代码文件等类型。',
+            'SemanticChunker 按 Markdown 标题层级、代码文件结构进行语义切分，保持段落完整性。',
+            '每个 Chunk 生成精确 locator，如 `README.md:## 架构设计` 或 `main.dart:45-67`。',
+            'Content Hash 用于检测文档更新，支持增量导入。',
+          ],
+        },
+        {
+          title: '题目生成与防幻觉三层防线',
+          items: [
+            'Layer 1: Semantic Chunker 保持源文档结构完整，不切断段落中间。',
+            'Layer 2: Citation Verification - AI 必须引用具体 chunk ID，验证引用内容是否支持结论。',
+            'Layer 3: Question Validator - 二次核验生成的答案是否与源文档一致，检查逻辑一致性。',
+            '题目生成经过 KnowledgeExtractionTask → ConceptPrerequisiteTask → QuestionGenerationTask → CitationVerificationTask → QuestionValidator 完整流程。',
+          ],
+        },
+        {
+          title: 'Agent 学习模式',
+          items: [
+            'LearningAgentRuntime 支持长会话学习，可通过 AgentCheckpoint 恢复中断的学习进度。',
+            'HybridKnowledgeSearchService 混合 BM25 关键词检索和语义检索，提供精准的知识回答。',
+            'InterviewerService 提供苏格拉底式面试引导，帮助理解复杂项目代码。',
+            '支持生成编程练习 (ProgrammingExercise)，提供代码实践机会。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: 'Flutter + Drift 本地优先架构',
+          body:
+            '使用 Flutter 构建跨平台客户端，Drift 作为本地 SQLite ORM。数据模型包括 Source (文档)、SourceChunk (切分片段)、KnowledgePoint (知识点)、Question (题目)、LearningSession (学习会话) 和 AgentCheckpoint (检查点)。',
+        },
+        {
+          title: 'AI 服务层设计',
+          body:
+            'AI 服务层通过 Task 模式组织：KnowledgeExtractionTask、ConceptPrerequisiteTask、QuestionGenerationTask、CitationVerificationTask、QuestionValidator、KnowledgeAnswerTask、AnswerEvaluationTask 等。每个 Task 职责单一，可独立测试和优化。',
+        },
+        {
+          title: '防幻觉机制',
+          body:
+            'Citation Verification 确保 AI 引用真实存在的 chunk；Question Validator 二次核验生成答案与源文档的一致性；Semantic Chunker 保证源文档结构完整。三层防线确保学习内容可信。',
+        },
+      ],
+      quality: [
+        {
+          title: '可溯源性验证',
+          items: [
+            '每个知识点和题目都记录 citedChunks，可追溯到源文档。',
+            'Question Validator 检查答案与 citedChunks 的一致性。',
+            'Agent 回答必须基于检索到的知识库内容，不能凭空生成。',
+          ],
+        },
+        {
+          title: '数据完整性',
+          items: [
+            'Drift 数据库提供类型安全的数据访问。',
+            'Content Hash 确保文档变更可检测。',
+            'AgentCheckpoint 持久化学习状态，支持会话恢复。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '需要用户自行配置 AI 模型 API（如 OpenAI、Claude 等）。',
+            '大型项目导入和题目生成可能耗时较长。',
+            '移动端 UI 和交互体验仍在持续优化中。',
+            '云同步功能为可选特性，当前以本地存储为主。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '优化移动端 UI 和学习体验。',
+            '增强 Agent 学习模式的引导能力。',
+            '补充更多题型和学习模式。',
+            '完善云同步和多设备协同。',
+            '增加学习数据分析和进度可视化。',
+          ],
+        },
+      ],
+    },
+    assistantContext: [
+      'Anchor Learning (锚学) 是基于 Flutter 的本地优先 AI 学习代理系统，核心设计原则是可溯源性优先和防幻觉机制。',
+      '支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 语义切分，生成精确 locator（如 README.md:## 架构设计）。',
+      '题目生成经过 Citation Verification 和 Question Validator 双重验证，确保 AI 生成内容基于真实文档，不产生幻觉。',
+      'Agent 学习模式支持长会话、检查点恢复、混合检索（BM25 + 语义）、苏格拉底式引导和编程练习生成。',
+      '技术栈：Flutter + Drift (SQLite ORM)，数据本地存储，可选云同步，隐私优先。',
+      '核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。',
+      '已部署官网 https://anchor.playlab.eu.cc，开源仓库 https://github.com/ciallo-bill/duoduo。',
+    ],
+  },
+  {
     id: 'blog-semi',
     title: 'BIAU Port 内容与助手平台｜当前主站',
     summary: '当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。',
