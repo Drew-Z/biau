@@ -57,6 +57,20 @@ export function createRagOrchestratorRouter(options: RagOrchestratorRouterOption
     }
   })
 
+  router.post('/v1/sync/public', async (req, res, next) => {
+    if (!authorizeSync(req.headers.authorization, options.requireAuth, res)) return
+    if (isRecord(req.body) && Object.keys(req.body).length > 0) {
+      res.status(400).json({ error: 'public-sync-payload-not-allowed' })
+      return
+    }
+
+    try {
+      res.json(await syncRagStore({ scope: 'public' }))
+    } catch (error) {
+      next(error)
+    }
+  })
+
   return router
 }
 
@@ -94,4 +108,8 @@ function readBearerToken(header: string | undefined) {
 
 function isAssistantScope(value: unknown): value is AssistantScope {
   return value === 'public' || value === 'internal'
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }

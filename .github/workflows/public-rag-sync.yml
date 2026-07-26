@@ -1,0 +1,45 @@
+name: Public RAG sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/data/assistant.ts'
+      - 'src/data/assistantKnowledge.ts'
+      - 'src/data/blog.ts'
+      - 'src/data/blogContent.ts'
+      - 'src/data/blogCuration.ts'
+      - 'src/data/blog-posts/**'
+      - 'src/data/portfolio.ts'
+      - 'src/data/statusTargets.ts'
+      - 'scripts/generate-assistant-knowledge.ts'
+      - 'server/data/public-knowledge.json'
+      - 'server/data/public-knowledge-v2.json'
+      - 'server/src/ragQdrantStore.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-rag-sync-main
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PUBLIC_RAG_API_BASE_URL: ${{ secrets.PUBLIC_RAG_API_BASE_URL }}
+      RAG_SYNC_TOKEN: ${{ secrets.RAG_SYNC_TOKEN }}
+      EXPECTED_GIT_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run assistant:index
+      - run: npm run assistant:kg-check
+      - run: npm run assistant:public-sync

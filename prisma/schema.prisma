@@ -99,6 +99,82 @@ model InternalKnowledgeSyncRun {
   diagnostic    Json?
 }
 
+model PublicAssistantSession {
+  id           String                    @id
+  createdAt    DateTime                  @default(now())
+  lastActiveAt DateTime                  @default(now())
+  expiresAt    DateTime
+  turns        PublicAssistantTurn[]
+  feedback     PublicAssistantFeedback[]
+
+  @@index([expiresAt])
+  @@index([lastActiveAt])
+}
+
+model PublicAssistantTurn {
+  id                  String                        @id @default(cuid())
+  sessionId           String
+  aggregateId         String
+  question            String
+  answer              String
+  mode                String
+  route               String
+  status              String
+  citationIdsJson     Json
+  metricsJson         Json?
+  questionFingerprint String
+  topicFingerprint    String
+  topicTerms          String
+  createdAt           DateTime                      @default(now())
+  expiresAt           DateTime
+  session             PublicAssistantSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  aggregate           PublicAssistantDailyAggregate @relation(fields: [aggregateId], references: [id], onDelete: Restrict)
+  feedback            PublicAssistantFeedback?
+
+  @@index([sessionId, createdAt])
+  @@index([status, createdAt])
+  @@index([topicFingerprint, createdAt])
+  @@index([expiresAt])
+}
+
+model PublicAssistantFeedback {
+  id        String                 @id @default(cuid())
+  sessionId String
+  turnId    String                 @unique
+  rating    String
+  reason    String?
+  comment   String?
+  createdAt DateTime               @default(now())
+  updatedAt DateTime               @updatedAt
+  session   PublicAssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  turn      PublicAssistantTurn    @relation(fields: [turnId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@index([rating, createdAt])
+}
+
+model PublicAssistantDailyAggregate {
+  id                String                @id @default(cuid())
+  date              DateTime              @db.Date
+  topicFingerprint  String
+  topicTerms        String
+  route             String
+  status            String
+  totalCount        Int                   @default(0)
+  positiveCount     Int                   @default(0)
+  negativeCount     Int                   @default(0)
+  siteEvidenceTotal Int                   @default(0)
+  webEvidenceTotal  Int                   @default(0)
+  latencyTotalMs    BigInt                @default(0)
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  turns             PublicAssistantTurn[]
+
+  @@unique([date, topicFingerprint, route, status])
+  @@index([date, status])
+  @@index([negativeCount, totalCount])
+}
+
 model ContentDraft {
   id              String             @id @default(cuid())
   slug            String             @unique

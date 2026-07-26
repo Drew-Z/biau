@@ -70,6 +70,7 @@ export async function retrieveAssistantContext(query: string, scope: AssistantSc
         fallbackReason: parsed.meta.fallbackReason,
         expandedEntityCount: parsed.meta.expandedEntityCount,
         modelCalls: parsed.meta.modelCalls,
+        rerankerMode: parsed.meta.rerankerMode,
       },
     }
   }
@@ -98,6 +99,7 @@ function retrieveLocalContext(
       fallbackReason: fallbackReason ?? inferLocalFallbackReason(retrieval.sufficiency, retrieval.intent),
       expandedEntityCount: retrieval.expandedEntityIds.length,
       modelCalls: 0,
+      rerankerMode: 'deterministic',
       diagnostic,
     },
   }
@@ -176,6 +178,7 @@ function readRagRetrieveResponse(value: unknown): RagRetrieveResponse | null {
       store: typeof value.meta.store === 'string' ? value.meta.store : 'local',
       candidateCount: readNumber(value.meta.candidateCount, citations.length),
       reranked: value.meta.reranked === true,
+      rerankerMode: readRerankerMode(value.meta.rerankerMode),
       sufficient: value.meta.sufficient === true,
       sufficiency,
       fallbackReason: readRagFallbackReason(value.meta.fallbackReason),
@@ -228,6 +231,10 @@ function readSufficiency(value: unknown) {
 
 function readRagFallbackReason(value: unknown) {
   return value === 'private-credential' || value === 'no_public_context' ? value : null
+}
+
+function readRerankerMode(value: unknown) {
+  return value === 'provider' || value === 'deterministic' || value === 'none' ? value : 'none'
 }
 
 function readNumber(value: unknown, fallback: number) {

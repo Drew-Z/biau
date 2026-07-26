@@ -266,8 +266,29 @@ try {
     const internalRetrieve = await postJson(`${base}/v1/retrieve`, { query: 'RAG 项目', scope: 'internal' }, 'internal-rag-smoke-key')
     if (!internalRetrieve.response.ok) throw new Error(`rag mode internal retrieve failed: ${internalRetrieve.response.status}`)
 
-    const sync = await postJson(`${base}/v1/sync`, {}, 'sync-rag-smoke-token')
-    if (!sync.response.ok) throw new Error(`rag mode sync failed: ${sync.response.status}`)
+    const unauthorizedSync = await postJson(`${base}/v1/sync/public`, {})
+    if (unauthorizedSync.response.status !== 401) {
+      throw new Error(`rag mode should require the public sync token, got ${unauthorizedSync.response.status}`)
+    }
+
+    const forbiddenPublicPayload = await postJson(
+      `${base}/v1/sync/public`,
+      { scope: 'internal', documents: [{ id: 'private', title: 'Private', body: 'Private' }] },
+      'sync-rag-smoke-token',
+    )
+    if (forbiddenPublicPayload.response.status !== 400) {
+      throw new Error(`public sync must reject caller-supplied scope/documents, got ${forbiddenPublicPayload.response.status}`)
+    }
+
+    const sync = await postJson(`${base}/v1/sync/public`, {}, 'sync-rag-smoke-token')
+    if (!sync.response.ok) throw new Error(`rag mode public sync failed: ${sync.response.status}`)
+
+    env.ragSyncToken = ''
+    const unconfiguredSync = await postJson(`${base}/v1/sync/public`, {}, 'sync-rag-smoke-token')
+    env.ragSyncToken = 'sync-rag-smoke-token'
+    if (unconfiguredSync.response.status !== 503) {
+      throw new Error(`rag mode should fail closed without a sync token, got ${unconfiguredSync.response.status}`)
+    }
 
     env.ragStoreProvider = 'qdrant'
     const qdrantHealth = await getJson<{ store?: string; vectorReady?: boolean }>(`${base}/health`)

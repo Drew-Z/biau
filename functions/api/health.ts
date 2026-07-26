@@ -1,9 +1,10 @@
-import { getModelStatus, jsonResponse, type AssistantEnv } from '../_shared/assistant'
+import { proxyAssistantRequest, type AssistantEnv } from '../_shared/assistant'
 
 interface PagesContext {
+  request: Request
   env: AssistantEnv
 }
 
-export function onRequestGet({ env }: PagesContext) {
-  return jsonResponse(getModelStatus(env))
+export function onRequestGet({ request, env }: PagesContext) {
+  return proxyAssistantRequest(request, env, '/health')
 }

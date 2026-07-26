@@ -9,6 +9,14 @@ npm.cmd run prisma:validate
 npm.cmd run prisma:generate
 npm.cmd run server:build
 npm.cmd run server:smoke
+npm.cmd run assistant:public-agent-check
+npm.cmd run assistant:public-model-check
+npm.cmd run assistant:public-api-check
+npm.cmd run assistant:public-persistence-check
+npm.cmd run assistant:public-rate-limit-check
+npm.cmd run assistant:public-web-check
+npm.cmd run assistant:public-sync-check
+npm.cmd run assistant:hybrid-contract
 npm.cmd run assistant:agent-contract
 npm.cmd run assistant:agent-eval
 npm.cmd run assistant:service-modes-smoke
@@ -83,9 +91,12 @@ AI Daily production deployments must mount the human-approved model bundle as th
 
 ## Public Assistant
 
-- Public answers use public-safe knowledge/citations only.
-- Missing model/RAG returns an explicit fallback, not fabricated facts.
-- Provider diagnostics expose only safe error categories such as timeout, HTTP status class, unreachable, empty response, or self-check failure.
+- `runPublicAssistantAgent()` owns the authoritative server answer path and uses real conditional LangGraph edges.
+- Public answers use retained public-safe site/web evidence and claim-level citations only.
+- Missing model/RAG/search returns an explicit fallback, unavailable, partial, or uncertain result rather than fabricated facts.
+- The HTTP projection exposes product states and bounded counters, not model/provider/channel/retrieval diagnostics.
+- Client session IDs cannot bypass the IP-scoped chat/feedback limiter; in-memory buckets remain bounded.
+- Hybrid Qdrant 400/404/405 fallback stays on `QDRANT_PUBLIC_ALIAS`, with a poison-base-collection fixture proving the target.
 - Public routes remain usable without a database.
 - Public synthetic may exercise route/health/fallback behavior but must not send model prompts unless the user approves a real task.
 

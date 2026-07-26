@@ -29,6 +29,9 @@ const aiDailyModelApprovalFile = readFirstEnv('AI_DAILY_MODEL_APPROVAL_FILE')
 const aiDailyModelApprovalBundleHash = readFirstEnv('AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH')
 const aiDailyModelEvaluationApprovalId = readFirstEnv('AI_DAILY_MODEL_EVALUATION_APPROVAL_ID')
 const aiDailyTheNewsApiToken = readFirstEnv('AI_DAILY_THE_NEWS_API_TOKEN')
+const publicWebSearchProvider = readFirstEnv('PUBLIC_WEB_SEARCH_PROVIDER').toLowerCase()
+const publicWebSearchBaseUrl = normalizeOptionalBaseUrl(readFirstEnv('PUBLIC_WEB_SEARCH_BASE_URL'))
+const publicWebSearchApiKey = readFirstEnv('PUBLIC_WEB_SEARCH_API_KEY')
 const assistantRagApiBaseUrl = readFirstEnv('ASSISTANT_RAG_API_BASE_URL')
 const assistantRagApiKey = readFirstEnv('ASSISTANT_RAG_API_KEY')
 const assistantRagTimeoutMs = readPositiveInteger(process.env.ASSISTANT_RAG_TIMEOUT_MS, 3000)
@@ -39,6 +42,7 @@ const aiDailyPublicCorsOrigins = readOriginCsv(process.env.AI_DAILY_PUBLIC_CORS_
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  renderGitCommit: readFirstEnv('RENDER_GIT_COMMIT'),
   port: Number(process.env.PORT ?? 8787),
   assistantServiceMode,
   databaseUrl: process.env.DATABASE_URL?.trim() ?? '',
@@ -57,6 +61,18 @@ export const env = {
   aiDailyTheNewsApiEnabled: readBoolean(process.env.AI_DAILY_THE_NEWS_API_ENABLED),
   aiDailyTheNewsApiToken,
   aiDailyHotDailyEnabled: readBooleanWithDefault(process.env.AI_DAILY_HOTDAILY_ENABLED, true),
+  assistantModelProtocol: readAssistantModelProtocol(process.env.ASSISTANT_MODEL_PROTOCOL),
+  publicAssistantRequestTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS, 25000, 5000, 45000),
+  publicAssistantRateLimit: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_LIMIT, 20, 1, 120),
+  publicAssistantRateWindowMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_WINDOW_MS, 60000, 10000, 3600000),
+  publicAssistantRetentionDays: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RETENTION_DAYS, 30, 1, 30),
+  publicAssistantOperationsToken: readFirstEnv('PUBLIC_ASSISTANT_OPERATIONS_TOKEN'),
+  publicWebSearchProvider,
+  publicWebSearchBaseUrl,
+  publicWebSearchApiKey,
+  publicWebSearchTimeoutMs: readBoundedInteger(process.env.PUBLIC_WEB_SEARCH_TIMEOUT_MS, 8000, 2000, 15000),
+  publicWebSearchMaxResults: readBoundedInteger(process.env.PUBLIC_WEB_SEARCH_MAX_RESULTS, 5, 1, 8),
+  publicWebFetchMaxPages: readBoundedInteger(process.env.PUBLIC_WEB_FETCH_MAX_PAGES, 3, 1, 4),
   assistantRagApiBaseUrl,
   assistantRagApiKey,
   assistantRagTimeoutMs,
@@ -91,6 +107,7 @@ export const env = {
   qdrantUrl: normalizeOptionalBaseUrl(readFirstEnv('QDRANT_URL')),
   qdrantApiKey: readFirstEnv('QDRANT_API_KEY'),
   qdrantPublicCollection: readFirstEnv('QDRANT_PUBLIC_COLLECTION') || 'biau_public_chunks',
+  qdrantPublicAlias: readFirstEnv('QDRANT_PUBLIC_ALIAS') || 'biau_public_chunks_active',
   qdrantInternalCollection: readFirstEnv('QDRANT_INTERNAL_COLLECTION') || 'biau_internal_chunks',
   embeddingBaseUrl: normalizeOptionalBaseUrl(readFirstEnv('EMBEDDING_BASE_URL')),
   embeddingApiKey: readFirstEnv('EMBEDDING_API_KEY'),
@@ -100,6 +117,7 @@ export const env = {
   rerankerBaseUrl: normalizeOptionalBaseUrl(readFirstEnv('RERANKER_BASE_URL')),
   rerankerApiKey: readFirstEnv('RERANKER_API_KEY'),
   rerankerModel: readFirstEnv('RERANKER_MODEL'),
+  rerankerTimeoutMs: readBoundedInteger(process.env.RERANKER_TIMEOUT_MS, 10000, 2000, 20000),
 }
 
 export function hasDatabase() {
@@ -130,6 +148,10 @@ function readServiceMode(value: string | undefined): AssistantServiceMode {
   return 'all'
 }
 
+function readAssistantModelProtocol(value: string | undefined): 'responses' | 'chat-completions' {
+  return value?.trim().toLowerCase() === 'chat-completions' ? 'chat-completions' : 'responses'
+}
+
 function readCsv(value: string | undefined) {
   return Array.from(new Set((value ?? '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)))
 }
@@ -149,6 +171,12 @@ function readPositiveInteger(value: string | undefined, fallback: number) {
   const parsed = Number(value)
   if (!Number.isInteger(parsed) || parsed < 1) return fallback
   return parsed
+}
+
+function readBoundedInteger(value: string | undefined, fallback: number, minimum: number, maximum: number) {
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed)) return fallback
+  return Math.min(maximum, Math.max(minimum, parsed))
 }
 
 function normalizeOptionalBaseUrl(value: string) {

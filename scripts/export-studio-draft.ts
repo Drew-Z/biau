@@ -16,6 +16,11 @@ import {
   type StudioContentBody,
   type StudioDraft,
 } from '../src/data/studio'
+import {
+  assistantKnowledgeRelativePaths,
+  buildStudioExportedFiles,
+  exportValidationCommands,
+} from './studio-export-contract.js'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const blogDataPath = resolve(repoRoot, 'src/data/blog.ts')
@@ -23,14 +28,6 @@ const blogContentPath = resolve(repoRoot, 'src/data/blogContent.ts')
 const blogCurationPath = resolve(repoRoot, 'src/data/blogCuration.ts')
 const blogPostsDir = resolve(repoRoot, 'src/data/blog-posts')
 const publicBlogVisibility: BlogVisibility = 'featured'
-const exportValidationCommands = [
-  'blog:audit',
-  'blog:check',
-  'blog:knowledge-check',
-  'blog:project-notes-check',
-  'lint',
-  'build',
-] as const
 
 interface ExportOptions {
   draftRef?: string
@@ -331,12 +328,12 @@ function buildExportPlan(draft: StudioDraft, options: ExportOptions): ExportPlan
     [slug]: curation,
   }
   const postPath = resolve(blogPostsDir, `${slug}.ts`)
-  const exportedFiles = [
+  const exportedFiles = buildStudioExportedFiles([
     relativeRepoPath(postPath),
     relativeRepoPath(blogDataPath),
     relativeRepoPath(blogContentPath),
     relativeRepoPath(blogCurationPath),
-  ]
+  ], options.runChecks)
 
   return {
     draftId: draft.id,
@@ -526,7 +523,7 @@ async function assertCanWrite(plan: ExportPlan, options: ExportOptions) {
     throw new Error(`slug 已存在：${plan.post.slug}。如确认覆盖，请加 --force`)
   }
   if (!options.allowDirty) {
-    const status = execFileSync('git', ['status', '--porcelain', '--', ...Object.keys(plan.files).map(relativeRepoPath)], {
+    const status = execFileSync('git', ['status', '--porcelain', '--', ...managedExportPaths(plan, options).map(relativeRepoPath)], {
       cwd: repoRoot,
       encoding: 'utf8',
     }).trim()
@@ -545,9 +542,9 @@ interface ExportFileSnapshot {
   content: string
 }
 
-async function capturePlanFiles(plan: ExportPlan): Promise<ExportFileSnapshot[]> {
+async function capturePlanFiles(plan: ExportPlan, options: ExportOptions): Promise<ExportFileSnapshot[]> {
   return Promise.all(
-    Object.keys(plan.files).map(async (filePath) => {
+    managedExportPaths(plan, options).map(async (filePath) => {
       const existed = existsSync(filePath)
       return {
         filePath,
@@ -556,6 +553,13 @@ async function capturePlanFiles(plan: ExportPlan): Promise<ExportFileSnapshot[]>
       }
     }),
   )
+}
+
+function managedExportPaths(plan: ExportPlan, options: ExportOptions) {
+  return [
+    ...Object.keys(plan.files),
+    ...(options.runChecks ? assistantKnowledgeRelativePaths.map((filePath) => resolve(repoRoot, filePath)) : []),
+  ]
 }
 
 async function restorePlanFiles(snapshots: ExportFileSnapshot[]) {
@@ -660,7 +664,7 @@ async function main() {
     if (options.publishExportId) await assertPublishExportMatchesDraft(refreshedDraft, options.publishExportId)
   }
 
-  const fileSnapshots = await capturePlanFiles(plan)
+  const fileSnapshots = await capturePlanFiles(plan, options)
   let checks: ExportChecks
   try {
     await writePlan(plan)

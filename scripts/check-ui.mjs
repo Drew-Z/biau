@@ -2511,18 +2511,19 @@ if ((await publicAssistantPage.locator('.public-assistant__message').count()) !=
   failures.push('/blog public assistant: expected initial panel to open without default chat bubbles')
 }
 const publicAssistantStatus = await publicAssistantPage.locator('.public-assistant__status').innerText().catch(() => '')
-if (!publicAssistantStatus.includes('未连接模型')) {
-  failures.push(`/blog public assistant: expected local mode to say model is not connected, got "${publicAssistantStatus}"`)
+if (!publicAssistantStatus.includes('可检索本站与公开网页')) {
+  failures.push(`/blog public assistant: expected ready state to advertise site and public-web research, got "${publicAssistantStatus}"`)
 }
 if ((await publicAssistantPage.locator('.public-assistant__citation').count()) !== 0) {
   failures.push('/blog public assistant: expected initial panel to stay concise without citation cards')
 }
-const manualGateSuggestion = publicAssistantSuggestions.find((suggestion) => suggestion.id === 'manual-gates')
+const expectedInitialSuggestions = publicAssistantSuggestions.slice(0, 3)
+const visibleSuggestionLabels = await publicAssistantPage.locator('.public-assistant__suggestion').allInnerTexts()
 if (
-  manualGateSuggestion &&
-  !(await publicAssistantPage.getByRole('button', { name: manualGateSuggestion.label }).isVisible().catch(() => false))
+  visibleSuggestionLabels.length !== expectedInitialSuggestions.length ||
+  expectedInitialSuggestions.some((suggestion, index) => visibleSuggestionLabels[index]?.trim() !== suggestion.label)
 ) {
-  failures.push('/blog public assistant: expected manual gate suggestion to stay visible')
+  failures.push(`/blog public assistant: expected the first three default research suggestions, got "${visibleSuggestionLabels.join(' | ')}"`)
 }
 await publicAssistantPage.locator('.public-assistant__suggestion').first().click()
 await publicAssistantPage.waitForTimeout(150)

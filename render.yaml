@@ -4,7 +4,8 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
-    startCommand: npm run server:start
+    startCommand: npm run prisma:migrate && npm run server:start
+    healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -12,6 +13,10 @@ services:
         value: public
       - key: CORS_ORIGIN
         value: https://biau.playlab.eu.cc
+      - key: DATABASE_URL
+        sync: false
+      - key: TRUST_PROXY
+        value: "true"
       - key: ASSISTANT_MODEL_BASE_URL
         sync: false
       - key: ASSISTANT_MODEL_API_KEY
@@ -20,12 +25,36 @@ services:
         sync: false
       - key: ASSISTANT_MODEL_PROVIDER
         value: mimo-compatible
+      - key: ASSISTANT_MODEL_PROTOCOL
+        value: responses
       - key: ASSISTANT_RAG_API_BASE_URL
         sync: false
       - key: ASSISTANT_RAG_API_KEY
         sync: false
       - key: ASSISTANT_RAG_TIMEOUT_MS
         value: "3000"
+      - key: PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS
+        value: "25000"
+      - key: PUBLIC_ASSISTANT_RATE_LIMIT
+        value: "20"
+      - key: PUBLIC_ASSISTANT_RATE_WINDOW_MS
+        value: "60000"
+      - key: PUBLIC_ASSISTANT_RETENTION_DAYS
+        value: "30"
+      - key: PUBLIC_ASSISTANT_OPERATIONS_TOKEN
+        sync: false
+      - key: PUBLIC_WEB_SEARCH_PROVIDER
+        value: exa
+      - key: PUBLIC_WEB_SEARCH_BASE_URL
+        sync: false
+      - key: PUBLIC_WEB_SEARCH_API_KEY
+        sync: false
+      - key: PUBLIC_WEB_SEARCH_TIMEOUT_MS
+        value: "8000"
+      - key: PUBLIC_WEB_SEARCH_MAX_RESULTS
+        value: "5"
+      - key: PUBLIC_WEB_FETCH_MAX_PAGES
+        value: "3"
       - key: METRICS_ENABLED
         value: "false"
 
@@ -140,6 +169,7 @@ services:
     plan: free
     buildCommand: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
     startCommand: npm run server:start
+    healthCheckPath: /health
     envVars:
       - key: NODE_VERSION
         value: "22"
@@ -153,6 +183,8 @@ services:
         sync: false
       - key: QDRANT_PUBLIC_COLLECTION
         value: biau_public_chunks
+      - key: QDRANT_PUBLIC_ALIAS
+        value: biau_public_chunks_active
       - key: QDRANT_INTERNAL_COLLECTION
         value: biau_internal_chunks
       - key: RAG_DATABASE_URL
@@ -179,5 +211,7 @@ services:
         sync: false
       - key: RERANKER_MODEL
         sync: false
+      - key: RERANKER_TIMEOUT_MS
+        value: "10000"
       - key: METRICS_ENABLED
         value: "false"

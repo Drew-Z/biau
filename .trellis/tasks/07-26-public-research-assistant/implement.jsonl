@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/public-research-assistant.md","reason":"Authoritative public Agentic RAG, web evidence, persistence, sync, and deployment contracts."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Backend API safety, service-mode, diagnostics, and deterministic validation requirements."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Public widget mobile, rate-limit, citation, fallback, accessibility, and UI validation requirements."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"The feature spans browser, Cloudflare proxy, Express runtime, RAG service, and persistence."}

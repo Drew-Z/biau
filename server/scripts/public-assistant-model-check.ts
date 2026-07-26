@@ -1,0 +1,126 @@
+import assert from 'node:assert/strict'
+import { createServer } from 'node:http'
+import { env } from '../src/env.js'
+import { generatePublicAssistantDraft, planPublicAssistantRequest } from '../src/publicAssistantModel.js'
+import type { PublicAssistantEvidence, PublicAssistantRequest } from '../src/publicAssistantRuntime.js'
+
+const original = {
+  assistantModelApiKey: env.assistantModelApiKey,
+  assistantModelBaseUrl: env.assistantModelBaseUrl,
+  assistantModelName: env.assistantModelName,
+  assistantModelProvider: env.assistantModelProvider,
+  assistantModelChannelsJson: env.assistantModelChannelsJson,
+  assistantModelProtocol: env.assistantModelProtocol,
+  publicAssistantRequestTimeoutMs: env.publicAssistantRequestTimeoutMs,
+  openaiApiKey: env.openaiApiKey,
+  openaiBaseUrl: env.openaiBaseUrl,
+  openaiModel: env.openaiModel,
+}
+
+const observedPaths: string[] = []
+const observedBodies: unknown[] = []
+const server = createServer((request, response) => {
+  if (request.method !== 'POST' || request.headers.authorization !== 'Bearer fixture-key') {
+    response.writeHead(404, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify({ error: 'not-found' }))
+    return
+  }
+
+  const chunks: Buffer[] = []
+  request.on('data', (chunk: Buffer) => chunks.push(chunk))
+  request.on('end', () => {
+    observedPaths.push(request.url ?? '')
+    const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as { input?: Array<{ content?: Array<{ text?: string }> }> }
+    observedBodies.push(body)
+    if (request.url === '/responses') {
+      response.writeHead(404, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ error: 'compat-miss' }))
+      return
+    }
+
+    const system = body.input?.[0]?.content?.[0]?.text ?? ''
+    response.writeHead(200, { 'Content-Type': 'application/json' })
+    if (system.includes('只读规划器')) {
+      response.end(JSON.stringify({
+        output_text: JSON.stringify({ route: 'site', queries: ['Legal RAG'], requiresFreshness: false }),
+      }))
+      return
+    }
+    response.end(JSON.stringify({
+      output: [{
+        type: 'message',
+        role: 'assistant',
+        content: [{
+          type: 'output_text',
+          text: JSON.stringify({
+            answer: 'Legal RAG 提供公开项目说明。',
+            status: 'answered',
+            claims: [{ id: 'c1', text: '该项目有公开说明。', citationIds: ['site-1', 'unknown'] }],
+            suggestions: ['查看项目详情'],
+          }),
+        }],
+      }],
+    }))
+  })
+})
+
+try {
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  if (!address || typeof address === 'string') throw new Error('fixture server did not expose a port')
+
+  env.assistantModelApiKey = 'fixture-key'
+  env.assistantModelBaseUrl = `http://127.0.0.1:${address.port}`
+  env.assistantModelName = 'fixture-responses-model'
+  env.assistantModelProvider = 'fixture-provider'
+  env.assistantModelChannelsJson = ''
+  env.assistantModelProtocol = 'responses'
+  env.publicAssistantRequestTimeoutMs = 5000
+  env.openaiApiKey = ''
+  env.openaiBaseUrl = ''
+  env.openaiModel = ''
+
+  const request: PublicAssistantRequest = {
+    question: 'Legal RAG 有哪些公开能力？',
+    mode: 'auto',
+    history: [],
+  }
+  const plan = await planPublicAssistantRequest(request)
+  assert.deepEqual(plan, {
+    route: 'site',
+    queries: ['Legal RAG'],
+    requiresFreshness: false,
+    planner: 'model',
+  })
+
+  const evidence: PublicAssistantEvidence = {
+    id: 'site-1',
+    source: 'site',
+    title: 'Legal RAG',
+    canonicalUrl: '/projects/legal-rag',
+    section: 'overview',
+    excerpt: '公开项目说明',
+    text: '公开项目说明',
+    publishedAt: null,
+    score: 0.9,
+    evidenceStatus: 'verified',
+  }
+  const draft = await generatePublicAssistantDraft({ request, plan, evidence: [evidence] })
+  assert.equal(draft.answer, 'Legal RAG 提供公开项目说明。')
+  assert.equal(draft.status, 'answered')
+  assert.deepEqual(draft.claims[0]?.citationIds, ['site-1'])
+  assert.deepEqual(draft.suggestions, ['查看项目详情'])
+  assert.equal(draft.model, 'fixture-responses-model')
+  assert.equal(draft.provider, 'fixture-provider')
+  assert.equal(draft.modelChannel?.configured, true)
+  assert.equal(JSON.stringify(draft.modelChannel).includes('fixture-key'), false)
+  assert.equal(JSON.stringify(draft.modelChannel).includes(`127.0.0.1:${address.port}`), false)
+
+  assert.deepEqual(observedPaths, ['/responses', '/v1/responses', '/responses', '/v1/responses'])
+  assert.equal(observedBodies.length, 4)
+  assert.equal((observedBodies[1] as { model?: string }).model, 'fixture-responses-model')
+  console.log('Public assistant Responses model adapter contract passed.')
+} finally {
+  Object.assign(env, original)
+  await new Promise<void>((resolve) => server.close(() => resolve()))
+}

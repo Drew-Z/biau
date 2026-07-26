@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto'
 import { env } from './env.js'
 import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
 import { embedText, embedTexts, EmbeddingDimensionMismatchError, EmbeddingProviderError, isExternalEmbeddingConfigured } from './ragEmbeddings.js'
+import { isExternalRerankerConfigured, rerankRagCandidates } from './ragReranker.js'
+import { buildPublicKnowledgeSparseCorpus, buildRagSparseVector, type RagSparseVector } from './ragSparse.js'
 import type {
   AssistantScope,
   Citation,
@@ -35,6 +37,8 @@ interface QdrantPayload {
   section: string
   text: string
   contentHash: string
+  syncVersion?: string
+  syncedAt?: string
 }
 
 interface QdrantCandidate {
@@ -62,6 +66,8 @@ const QDRANT_BATCH_SIZE = 32
 const INTERNAL_CHUNK_TARGET_LENGTH = 1200
 const QDRANT_DISTANCE = 'Cosine'
 const QDRANT_TIMEOUT_MS = 15000
+const QDRANT_DENSE_VECTOR = 'dense'
+const QDRANT_SPARSE_VECTOR = 'lexical'
 
 class QdrantProviderError extends Error {
   readonly reason: string
@@ -110,7 +116,7 @@ export async function getQdrantRagHealth(): Promise<RagHealthResponse> {
   if (!isQdrantRagStoreConfigured()) return emptyQdrantHealth()
 
   const [publicCount, internalCount] = await Promise.all([
-    getCollectionPointCount(env.qdrantPublicCollection).catch(() => 0),
+    getCollectionPointCount(env.qdrantPublicAlias).catch(() => getCollectionPointCount(env.qdrantPublicCollection).catch(() => 0)),
     env.qdrantInternalCollection ? getCollectionPointCount(env.qdrantInternalCollection).catch(() => 0) : Promise.resolve(0),
   ])
   const chunkCount = publicCount + internalCount
@@ -121,14 +127,15 @@ export async function getQdrantRagHealth(): Promise<RagHealthResponse> {
     store: QDRANT_STORE_NAME,
     vectorReady: chunkCount > 0,
     keywordReady: (publicKnowledgeV2?.knowledge_chunks.length ?? 0) > 0,
-    rerankerReady: true,
+    rerankerReady: isExternalRerankerConfigured(),
+    rerankerMode: isExternalRerankerConfigured() ? 'provider' : 'deterministic',
     lastSyncAt: null,
     documentCount: publicCount > 0 ? publicKnowledgeV2?.public_documents.length ?? 0 : 0,
     chunkCount,
     entityCount: publicKnowledgeV2?.entities.length ?? 0,
     relationCount: publicKnowledgeV2?.relations.length ?? 0,
     collections: {
-      public: buildCollectionHealth(env.qdrantPublicCollection, 'public', publicCount),
+      public: buildCollectionHealth(env.qdrantPublicAlias, 'public', publicCount),
       ...(env.qdrantInternalCollection ? { internal: buildCollectionHealth(env.qdrantInternalCollection, 'internal', internalCount) } : {}),
     },
   }
@@ -148,12 +155,20 @@ export async function retrieveQdrantRagContext(
   const embedding = await embedText(payload.query, { expectedDimensions: expectedEmbeddingDimensions() }).catch(() => null)
   if (!embedding) return null
 
-  const collections = payload.scope === 'public' ? [env.qdrantPublicCollection] : [env.qdrantPublicCollection, env.qdrantInternalCollection].filter(Boolean)
   const queryLimit = Math.max(8, limit * 6)
-  const points = (
-    await Promise.all(collections.map((collection) => queryCollection(collection, embedding.vector, queryLimit).catch(() => [])))
-  ).flat()
-  const candidates = mergeCandidates(points)
+  const sparseCorpus = publicKnowledgeV2 ? buildPublicKnowledgeSparseCorpus(publicKnowledgeV2.knowledge_chunks) : null
+  const sparse = sparseCorpus ? buildRagSparseVector(payload.query, sparseCorpus) : { indices: [], values: [] }
+  const publicPoints = await queryPublicCollection(embedding.vector, sparse, queryLimit).catch(() => [])
+  const internalPoints = payload.scope === 'internal' && env.qdrantInternalCollection
+    ? await queryCollection(env.qdrantInternalCollection, embedding.vector, queryLimit).catch(() => [])
+    : []
+  const merged = mergeCandidates([...publicPoints, ...internalPoints])
+  const reranked = await rerankRagCandidates(payload.query, merged.map((candidate) => ({
+    id: candidate.chunk.id,
+    text: [candidate.citation.title, candidate.chunk.section, candidate.chunk.text].join('\n'),
+    score: candidate.chunk.score,
+  })))
+  const candidates = applyRerankOrder(merged, reranked.candidates)
   if (candidates.length === 0) return null
 
   const citations = buildCitations(candidates, limit)
@@ -169,10 +184,11 @@ export async function retrieveQdrantRagContext(
     citations,
     chunks,
     meta: {
-      retrievalMode: 'agentic-hybrid-qdrant',
+      retrievalMode: 'qdrant-dense-sparse-rrf',
       store: QDRANT_STORE_NAME,
       candidateCount: candidates.length,
-      reranked: true,
+      reranked: candidates.length > 1,
+      rerankerMode: reranked.mode,
       sufficient: sufficiency === 'enough',
       sufficiency,
       fallbackReason: null,
@@ -188,7 +204,10 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
   if (!publicKnowledgeV2) return qdrantSyncDiagnostics(false, 'public', 'server/data/public-knowledge-v2.json', '', 0, 0, 1)
 
   try {
-    await ensureQdrantCollection(env.qdrantPublicCollection)
+    const sourceChecksum = getPublicKnowledgeSourceChecksum()
+    const syncVersion = sourceChecksum.slice(0, 12)
+    const versionedCollection = buildVersionedCollectionName(env.qdrantPublicCollection, syncVersion)
+    await ensureQdrantHybridCollection(versionedCollection)
     if (!isExternalEmbeddingConfigured()) {
       const localEmbedding = await embedText('dimension check').catch(() => null)
       if (!localEmbedding || localEmbedding.dimensions !== expectedEmbeddingDimensions()) {
@@ -222,6 +241,7 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
         }
       })
       .filter((item): item is NonNullable<typeof item> => item !== null)
+    const sparseCorpus = buildPublicKnowledgeSparseCorpus(publicKnowledgeV2.knowledge_chunks)
     const embeddings = await embedTexts(
       syncInputs.map((input) => input.embeddingText),
       { expectedDimensions: expectedEmbeddingDimensions() },
@@ -232,7 +252,10 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       const { chunk, document } = input
       points.push({
         id: toQdrantPointId(chunk.id),
-        vector: embedding.vector,
+        vector: {
+          [QDRANT_DENSE_VECTOR]: embedding.vector,
+          [QDRANT_SPARSE_VECTOR]: buildRagSparseVector(input.embeddingText, sparseCorpus),
+        },
         payload: {
           scope: 'public',
           source: 'public-knowledge-v2',
@@ -248,13 +271,15 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
           section: chunk.section,
           text: chunk.text,
           contentHash: hashJson({ document, chunk }),
+          syncVersion,
+          syncedAt: new Date().toISOString(),
         } satisfies QdrantPayload,
       })
     }
 
     for (let index = 0; index < points.length; index += QDRANT_BATCH_SIZE) {
       await requestQdrantJson(
-        `/collections/${encodeURIComponent(env.qdrantPublicCollection)}/points?wait=true`,
+        `/collections/${encodeURIComponent(versionedCollection)}/points?wait=true`,
         'PUT',
         {
           points: points.slice(index, index + QDRANT_BATCH_SIZE),
@@ -263,12 +288,27 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       )
     }
 
-    const cleanup = await deleteStalePublicPoints(new Set(publicKnowledgeV2.knowledge_chunks.map((chunk) => chunk.id)))
+    const acceptedPointCount = await getCollectionPointCount(versionedCollection)
+    if (acceptedPointCount !== points.length) {
+      throw new QdrantProviderError('qdrant_sync_count_mismatch', undefined, {
+        providerStep: 'qdrant_validate_versioned_collection',
+        errorKind: 'invalid_response',
+      })
+    }
+    await switchPublicCollectionAlias(versionedCollection)
+    const cleanup: QdrantCleanupResult = {
+      status: 'completed',
+      reason: 'versioned-collection-retained-for-rollback',
+      scannedPointCount: acceptedPointCount,
+      stalePointCount: 0,
+      deletedPointCount: 0,
+      issueCount: 0,
+    }
     return qdrantSyncDiagnostics(
       true,
       'public',
       'server/data/public-knowledge-v2.json',
-      hashJson(publicKnowledgeV2),
+      sourceChecksum,
       publicKnowledgeV2.public_documents.length,
       points.length,
       cleanup.issueCount,
@@ -298,6 +338,10 @@ export async function syncQdrantRagStore(): Promise<RagSyncResponse | null> {
       },
     )
   }
+}
+
+export function getPublicKnowledgeSourceChecksum() {
+  return publicKnowledgeV2 ? hashJson(publicKnowledgeV2) : ''
 }
 
 export async function syncQdrantInternalRagStore(payload: RagSyncPayload): Promise<RagSyncResponse | null> {
@@ -461,6 +505,20 @@ async function queryCollection(collection: string, vector: number[], limit: numb
   return readScoredPoints(await queryResponse.json().catch(() => null))
 }
 
+async function queryPublicCollection(vector: number[], sparse: RagSparseVector, limit: number) {
+  if (sparse.indices.length > 0) {
+    const hybridResponse = await requestQdrantRaw(
+      `/collections/${encodeURIComponent(env.qdrantPublicAlias)}/points/query`,
+      'POST',
+      buildQdrantHybridQueryPayload(vector, sparse, limit),
+      'qdrant_hybrid_query',
+    )
+    if (hybridResponse.ok) return readScoredPoints(await hybridResponse.json().catch(() => null))
+    if (![400, 404, 405].includes(hybridResponse.status)) return []
+  }
+  return queryCollection(env.qdrantPublicAlias, vector, limit)
+}
+
 async function getCollectionPointCount(collection: string) {
   const payload = await requestQdrantJson(`/collections/${encodeURIComponent(collection)}/points/count`, 'POST', { exact: true }, 'qdrant_count_points')
   const result = isRecord(payload) && isRecord(payload.result) ? payload.result : null
@@ -501,8 +559,51 @@ async function ensureQdrantCollection(collection: string) {
   }
 }
 
-async function deleteStalePublicPoints(currentChunkIds: Set<string>) {
-  return deleteStaleScopedPoints(env.qdrantPublicCollection, 'public', 'public-knowledge-v2', currentChunkIds)
+async function ensureQdrantHybridCollection(collection: string) {
+  const countResponse = await requestQdrantRaw(
+    `/collections/${encodeURIComponent(collection)}/points/count`,
+    'POST',
+    { exact: true },
+    'qdrant_count_hybrid_collection',
+  )
+  if (countResponse.ok) return
+  if (countResponse.status !== 404) {
+    throw new QdrantProviderError(reasonForQdrantStatus(countResponse.status, 'qdrant_count_hybrid_collection'), countResponse.status, {
+      providerStep: 'qdrant_count_hybrid_collection',
+      errorKind: 'http_status',
+    })
+  }
+  const createResponse = await requestQdrantRaw(
+    `/collections/${encodeURIComponent(collection)}?wait=true`,
+    'PUT',
+    buildQdrantHybridCollectionConfig(expectedEmbeddingDimensions()),
+    'qdrant_create_hybrid_collection',
+  )
+  if (!createResponse.ok) {
+    throw new QdrantProviderError(reasonForQdrantStatus(createResponse.status, 'qdrant_create_hybrid_collection'), createResponse.status, {
+      providerStep: 'qdrant_create_hybrid_collection',
+      errorKind: 'http_status',
+    })
+  }
+}
+
+async function switchPublicCollectionAlias(collection: string) {
+  const aliasResponse = await requestQdrantRaw(
+    `/aliases/${encodeURIComponent(env.qdrantPublicAlias)}`,
+    'GET',
+    undefined,
+    'qdrant_read_public_alias',
+  )
+  if (!aliasResponse.ok && aliasResponse.status !== 404) {
+    throw new QdrantProviderError(reasonForQdrantStatus(aliasResponse.status, 'qdrant_read_public_alias'), aliasResponse.status, {
+      providerStep: 'qdrant_read_public_alias',
+      errorKind: 'http_status',
+    })
+  }
+  const actions: Array<Record<string, unknown>> = []
+  if (aliasResponse.ok) actions.push({ delete_alias: { alias_name: env.qdrantPublicAlias } })
+  actions.push({ create_alias: { collection_name: collection, alias_name: env.qdrantPublicAlias } })
+  await requestQdrantJson('/collections/aliases?wait=true', 'POST', { actions }, 'qdrant_switch_public_alias')
 }
 
 async function deleteStaleInternalPoints(currentChunkIds: Set<string>) {
@@ -702,6 +803,25 @@ function mergeCandidates(points: QdrantScoredPoint[]) {
   return Array.from(byChunk.values()).sort((a, b) => b.chunk.score - a.chunk.score || a.chunk.id.localeCompare(b.chunk.id, 'zh-CN'))
 }
 
+function applyRerankOrder(
+  candidates: QdrantCandidate[],
+  reranked: Array<{ id: string; score: number }>,
+) {
+  const byId = new Map(candidates.map((candidate) => [candidate.chunk.id, candidate]))
+  const ordered: QdrantCandidate[] = []
+  for (const item of reranked) {
+    const candidate = byId.get(item.id)
+    if (!candidate) continue
+    ordered.push({
+      ...candidate,
+      chunk: { ...candidate.chunk, score: normalizeScore(item.score), reason: 'dense-sparse-rrf-rerank' },
+    })
+    byId.delete(item.id)
+  }
+  ordered.push(...byId.values())
+  return ordered
+}
+
 function buildCitations(candidates: QdrantCandidate[], limit: number) {
   const citations: Citation[] = []
   const seen = new Set<string>()
@@ -846,14 +966,15 @@ function emptyQdrantHealthWithCounts(documentCount: number, chunkCount: number, 
     store: QDRANT_STORE_NAME,
     vectorReady: chunkCount > 0,
     keywordReady: (publicKnowledgeV2?.knowledge_chunks.length ?? 0) > 0,
-    rerankerReady: true,
+    rerankerReady: isExternalRerankerConfigured(),
+    rerankerMode: isExternalRerankerConfigured() ? 'provider' : 'deterministic',
     lastSyncAt: null,
     documentCount,
     chunkCount,
     entityCount: publicKnowledgeV2?.entities.length ?? 0,
     relationCount: publicKnowledgeV2?.relations.length ?? 0,
     collections: {
-      public: buildCollectionHealth(env.qdrantPublicCollection || 'biau_public_chunks', 'public', publicCount),
+      public: buildCollectionHealth(env.qdrantPublicAlias || 'biau_public_chunks_active', 'public', publicCount),
       ...(env.qdrantInternalCollection ? { internal: buildCollectionHealth(env.qdrantInternalCollection, 'internal', internalCount) } : {}),
     },
   }
@@ -875,10 +996,11 @@ function buildEmptyResponse(intent: string, fallbackReason: 'private-credential'
     citations: [],
     chunks: [],
     meta: {
-      retrievalMode: 'agentic-hybrid-qdrant',
+      retrievalMode: 'qdrant-dense-sparse-rrf',
       store: QDRANT_STORE_NAME,
       candidateCount: 0,
-      reranked: true,
+      reranked: false,
+      rerankerMode: 'none',
       sufficient: false,
       sufficiency: 'none',
       fallbackReason,
@@ -891,6 +1013,38 @@ function buildEmptyResponse(intent: string, fallbackReason: 'private-credential'
 
 function expectedEmbeddingDimensions() {
   return env.embeddingDimension > 0 ? env.embeddingDimension : DEFAULT_QDRANT_DIMENSION
+}
+
+function buildVersionedCollectionName(base: string, version: string) {
+  const normalized = base.replace(/[^a-zA-Z0-9_-]/gu, '_').slice(0, 40) || 'biau_public_chunks'
+  return `${normalized}_v_${version}`
+}
+
+export function buildQdrantHybridQueryPayload(vector: number[], sparse: RagSparseVector, limit: number) {
+  return {
+    prefetch: [
+      { query: vector, using: QDRANT_DENSE_VECTOR, limit },
+      { query: sparse, using: QDRANT_SPARSE_VECTOR, limit },
+    ],
+    query: { fusion: 'rrf' },
+    limit,
+    with_payload: true,
+    with_vector: false,
+  }
+}
+
+export function buildQdrantHybridCollectionConfig(dimension: number) {
+  return {
+    vectors: {
+      [QDRANT_DENSE_VECTOR]: {
+        size: dimension,
+        distance: QDRANT_DISTANCE,
+      },
+    },
+    sparse_vectors: {
+      [QDRANT_SPARSE_VECTOR]: {},
+    },
+  }
 }
 
 function normalizeRetrieveLimit(value: number | undefined) {

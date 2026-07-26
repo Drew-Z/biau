@@ -1,4 +1,4 @@
-import { handlePublicChat, type AssistantEnv } from '../../_shared/assistant'
+import { proxyAssistantRequest, type AssistantEnv } from '../../_shared/assistant'
 
 interface PagesContext {
   request: Request
@@ -6,5 +6,5 @@ interface PagesContext {
 }
 
 export function onRequestPost({ request, env }: PagesContext) {
-  return handlePublicChat(request, env)
+  return proxyAssistantRequest(request, env, '/chat/public')
 }

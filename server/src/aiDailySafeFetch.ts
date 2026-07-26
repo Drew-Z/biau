@@ -25,6 +25,7 @@ export interface AiDailyHttpRequest {
   readTimeoutMs: number
   totalTimeoutMs: number
   maxCompressedBytes: number
+  signal?: AbortSignal
 }
 
 export interface AiDailyHttpResponse {
@@ -135,11 +136,12 @@ export async function fetchAiDailyEvidence(input: {
   firecrawl?: AiDailyExternalExtractor | null
   tavily?: AiDailyExternalExtractor | null
   options?: Partial<AiDailySafeFetchOptions>
+  signal?: AbortSignal
 }): Promise<AiDailyEvidenceDocumentInput> {
   const options = { ...defaultAiDailySafeFetchOptions, ...input.options }
   const resolveHost = input.resolveHost ?? resolveAiDailyPublicHost
   const transport = input.transport ?? nodeAiDailyHttpTransport
-  const robots = input.robots ?? createAiDailyRobotsChecker({ resolveHost, transport, options })
+  const robots = input.robots ?? createAiDailyRobotsChecker({ resolveHost, transport, options, signal: input.signal })
   const url = validateAiDailyTargetUrl(input.url)
   if (!(await robots.allowed(url, options.userAgent))) throw new AiDailyFetchError('robots_disallowed')
 
@@ -150,6 +152,7 @@ export async function fetchAiDailyEvidence(input: {
         resolveHost,
         transport,
         options,
+        signal: input.signal,
         redirectAllowed: (target) => robots.allowed(target, options.userAgent),
       })
       return extractAiDailyEvidenceFromResponse({
@@ -205,11 +208,12 @@ export async function fetchAiDailySourcePayload(input: {
   transport?: AiDailyHttpTransport
   robots?: AiDailyRobotsChecker
   options?: Partial<AiDailySafeFetchOptions>
+  signal?: AbortSignal
 }): Promise<AiDailySourcePayload> {
   const options = { ...defaultAiDailySafeFetchOptions, ...input.options }
   const resolveHost = input.resolveHost ?? resolveAiDailyPublicHost
   const transport = input.transport ?? nodeAiDailyHttpTransport
-  const robots = input.robots ?? createAiDailyRobotsChecker({ resolveHost, transport, options })
+  const robots = input.robots ?? createAiDailyRobotsChecker({ resolveHost, transport, options, signal: input.signal })
   const url = validateAiDailyTargetUrl(input.url)
   if (!(await robots.allowed(url, options.userAgent))) throw new AiDailyFetchError('robots_disallowed')
 
@@ -218,6 +222,7 @@ export async function fetchAiDailySourcePayload(input: {
     resolveHost,
     transport,
     options,
+    signal: input.signal,
     headers: input.conditionalHeaders,
     redirectAllowed: (target) => robots.allowed(target, options.userAgent),
   })
@@ -302,8 +307,18 @@ export function isPublicAddress(value: string) {
 export const nodeAiDailyHttpTransport: AiDailyHttpTransport = {
   request(input) {
     return new Promise((resolve, reject) => {
+      if (input.signal?.aborted) {
+        reject(new AiDailyFetchError('network_error'))
+        return
+      }
       const requestFn = input.url.protocol === 'https:' ? httpsRequest : httpRequest
       let request: ClientRequest | null = null
+      const onAbort = () => request?.destroy(new AiDailyFetchError('network_error'))
+      input.signal?.addEventListener('abort', onAbort, { once: true })
+      const cleanup = () => {
+        clearTimeout(totalTimer)
+        input.signal?.removeEventListener('abort', onAbort)
+      }
       const totalTimer = setTimeout(() => {
         const error = new AiDailyFetchError('timeout')
         request?.destroy(error)
@@ -329,7 +344,7 @@ export const nodeAiDailyHttpTransport: AiDailyHttpTransport = {
             chunks.push(buffer)
           })
           response.on('end', () => {
-            clearTimeout(totalTimer)
+            cleanup()
             resolve({
               status: response.statusCode ?? 0,
               headers: normalizeHeaders(response.headers),
@@ -348,7 +363,7 @@ export const nodeAiDailyHttpTransport: AiDailyHttpTransport = {
         socket.once('error', clear)
       })
       request.on('error', (error) => {
-        clearTimeout(totalTimer)
+        cleanup()
         reject(error instanceof AiDailyFetchError ? error : new AiDailyFetchError('network_error'))
       })
       request.end()
@@ -370,6 +385,7 @@ export function createAiDailyRobotsChecker(input: {
   resolveHost: (hostname: string) => Promise<AiDailyResolvedAddress[]>
   transport: AiDailyHttpTransport
   options?: Partial<AiDailySafeFetchOptions>
+  signal?: AbortSignal
 }): AiDailyRobotsChecker {
   const options = { ...defaultAiDailySafeFetchOptions, ...input.options }
   const cache = new Map<string, AiDailyRobotsParser | null>()
@@ -385,6 +401,7 @@ export function createAiDailyRobotsChecker(input: {
             resolveHost: input.resolveHost,
             transport: input.transport,
             options: { ...options, maxCompressedBytes: 256 * 1024, maxDecodedBytes: 256 * 1024 },
+            signal: input.signal,
           })
           if (result.response.status === 404) {
             parser = null
@@ -412,14 +429,17 @@ async function requestAiDailyUrl(input: {
   options: AiDailySafeFetchOptions
   headers?: Record<string, string>
   redirectAllowed?: (url: URL) => Promise<boolean>
+  signal?: AbortSignal
 }) {
   let current = input.url
   for (let redirect = 0; redirect <= input.options.maxRedirects; redirect += 1) {
+    if (input.signal?.aborted) throw new AiDailyFetchError('network_error')
     validateAiDailyTargetUrl(current.toString())
     if (redirect > 0 && input.redirectAllowed && !(await input.redirectAllowed(current))) {
       throw new AiDailyFetchError('robots_disallowed')
     }
     const addresses = await input.resolveHost(current.hostname)
+    if (input.signal?.aborted) throw new AiDailyFetchError('network_error')
     const address = addresses[0]
     if (!address) throw new AiDailyFetchError('network_error')
     const response = await input.transport.request({
@@ -435,6 +455,7 @@ async function requestAiDailyUrl(input: {
       readTimeoutMs: input.options.readTimeoutMs,
       totalTimeoutMs: input.options.totalTimeoutMs,
       maxCompressedBytes: input.options.maxCompressedBytes,
+      signal: input.signal,
     })
     if (response.status === 304) return { url: current, response }
     if (response.status >= 300 && response.status < 400) {

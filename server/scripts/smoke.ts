@@ -28,16 +28,10 @@ function findAvailablePort(startPort: number) {
   })
 }
 
-function hasCitation(citations: unknown[], id: string) {
+function hasCitationHref(citations: unknown[], href: string) {
   return citations.some((citation) => {
-    return typeof citation === 'object' && citation !== null && 'id' in citation && citation.id === id
+    return typeof citation === 'object' && citation !== null && 'href' in citation && citation.href === href
   })
-}
-
-function countProjectCitations(citations: unknown[]) {
-  return citations.filter((citation) => {
-    return typeof citation === 'object' && citation !== null && 'id' in citation && typeof citation.id === 'string' && citation.id.startsWith('project:')
-  }).length
 }
 
 function snapshotModelEnv() {
@@ -99,59 +93,6 @@ function startMockModelServer(port: number, acceptedPath = '/chat/completions', 
             },
           },
         ],
-      }),
-    )
-  })
-
-  return new Promise<ReturnType<typeof createHttpServer>>((resolve) => {
-    server.listen(port, '127.0.0.1', () => resolve(server))
-  })
-}
-
-function startMockRagServer(port: number) {
-  const server = createHttpServer((req, res) => {
-    if (req.method !== 'POST' || req.url !== '/v1/retrieve' || req.headers.authorization !== 'Bearer smoke-rag-key') {
-      res.writeHead(404, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'not-found' }))
-      return
-    }
-
-    res.writeHead(200, { 'Content-Type': 'application/json' })
-    res.end(
-      JSON.stringify({
-        intent: 'demo-access',
-        citations: [
-          {
-            id: 'project:pet-workspace',
-            title: 'Pet AI Workspace',
-            summary: '公开安全的 mock RAG 结果，用于验证主站 RAG adapter 会采用 Orchestrator citation。',
-            href: '/projects/pet-workspace',
-            tags: ['pet', 'rag-smoke'],
-            visibility: 'public',
-          },
-        ],
-        chunks: [
-          {
-            id: 'chunk:mock-rag:pet',
-            documentId: 'project:pet-workspace',
-            text: 'Pet 展示页和 APK gate 是公开助手需要解释的项目状态之一。',
-            section: 'mock-rag',
-            score: 0.92,
-            reason: 'mock-vector+keyword',
-          },
-        ],
-        meta: {
-          retrievalMode: 'hybrid',
-          store: 'mock',
-          candidateCount: 1,
-          reranked: true,
-          sufficient: true,
-          sufficiency: 'enough',
-          fallbackReason: null,
-          citationCount: 1,
-          expandedEntityCount: 0,
-          modelCalls: 0,
-        },
       }),
     )
   })
@@ -368,64 +309,41 @@ try {
   const publicChat = await fetch(`${base}/chat/public`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: 'RAG 项目' }),
+    body: JSON.stringify({ message: 'Legal RAG 项目有哪些公开能力？', mode: 'site' }),
   })
   if (!publicChat.ok) throw new Error(`public chat failed: ${publicChat.status}`)
   const publicPayload = (await publicChat.json()) as {
     answer?: string
-    citations?: unknown[]
-    meta?: { mode?: string; model?: string; provider?: string; reason?: string; citationCount?: number }
+    status?: string
+    claims?: Array<{ citationIds?: string[] }>
+    citations?: Array<{ id?: string; href?: string }>
+    meta?: {
+      mode?: string
+      reason?: string
+      citationCount?: number
+      research?: { route?: string; status?: string; siteEvidenceCount?: number; webEvidenceCount?: number }
+    }
   }
-  if (!publicPayload.answer || !Array.isArray(publicPayload.citations)) {
-    throw new Error('public chat returned invalid payload')
-  }
-  if (!hasCitation(publicPayload.citations, 'project:legal-rag')) {
-    throw new Error('public chat did not cite Legal RAG for RAG project query')
-  }
+  const citationIds = new Set(publicPayload.citations?.map((citation) => citation.id).filter((id): id is string => Boolean(id)) ?? [])
+  const publicMetaKeys = Object.keys(publicPayload.meta ?? {})
   if (
+    !publicPayload.answer ||
+    publicPayload.status !== 'degraded' ||
+    !Array.isArray(publicPayload.claims) ||
+    publicPayload.claims.length === 0 ||
+    !Array.isArray(publicPayload.citations) ||
+    !hasCitationHref(publicPayload.citations, '/projects/legal-rag') ||
+    publicPayload.claims.some((claim) => !claim.citationIds?.every((id) => citationIds.has(id))) ||
     publicPayload.meta?.mode !== 'fallback' ||
-    publicPayload.meta.model !== 'fallback' ||
-    publicPayload.meta.provider !== 'local-public-knowledge' ||
     publicPayload.meta.reason !== 'not_configured' ||
-    publicPayload.meta.citationCount !== publicPayload.citations.length
+    publicPayload.meta.citationCount !== publicPayload.citations.length ||
+    publicPayload.meta.research?.route !== 'site' ||
+    publicPayload.meta.research.status !== 'degraded' ||
+    (publicPayload.meta.research.siteEvidenceCount ?? 0) < 1 ||
+    publicPayload.meta.research.webEvidenceCount !== 0 ||
+    ['model', 'provider', 'diagnostic', 'modelChannel', 'retrieval'].some((key) => publicMetaKeys.includes(key))
   ) {
-    throw new Error('public chat fallback meta is invalid')
-  }
-
-  const siteOverviewChat = await fetch(`${base}/chat/public`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: '我想问一下关于当前网站的问题' }),
-  })
-  if (!siteOverviewChat.ok) throw new Error(`site overview public chat failed: ${siteOverviewChat.status}`)
-  const siteOverviewPayload = (await siteOverviewChat.json()) as {
-    answer?: string
-    citations?: unknown[]
-    meta?: { mode?: string; model?: string; provider?: string; reason?: string; citationCount?: number }
-  }
-  if (
-    !siteOverviewPayload.answer ||
-    !Array.isArray(siteOverviewPayload.citations) ||
-    !hasCitation(siteOverviewPayload.citations, 'site:intro') ||
-    siteOverviewPayload.meta?.mode !== 'fallback' ||
-    siteOverviewPayload.meta.reason !== 'not_configured' ||
-    siteOverviewPayload.meta.citationCount !== siteOverviewPayload.citations.length
-  ) {
-    throw new Error('public chat should answer current-site questions from site intro knowledge')
-  }
-
-  const techChat = await fetch(`${base}/chat/public`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: '哪些项目用了 React / Vite / TypeScript？' }),
-  })
-  if (!techChat.ok) throw new Error(`tech public chat failed: ${techChat.status}`)
-  const techPayload = (await techChat.json()) as {
-    answer?: string
-    citations?: unknown[]
-  }
-  if (!techPayload.answer || !Array.isArray(techPayload.citations) || !hasCitation(techPayload.citations, 'project:blog-semi')) {
-    throw new Error('public chat should cite BIAU Port for React / Vite / TypeScript query')
+    throw new Error('public chat should return the current Agentic site fallback contract')
   }
 
   const privateCredentialChat = await fetch(`${base}/chat/public`, {
@@ -437,262 +355,21 @@ try {
   const privateCredentialPayload = (await privateCredentialChat.json()) as {
     answer?: string
     citations?: unknown[]
-    meta?: { mode?: string; reason?: string; citationCount?: number }
+    status?: string
+    meta?: { mode?: string; reason?: string; citationCount?: number; research?: { route?: string; status?: string } }
   }
   if (
-    !privateCredentialPayload.answer?.includes('不能提供') ||
+    !privateCredentialPayload.answer?.includes('不能帮助') ||
     !Array.isArray(privateCredentialPayload.citations) ||
     privateCredentialPayload.citations.length !== 0 ||
+    privateCredentialPayload.status !== 'blocked' ||
     privateCredentialPayload.meta?.mode !== 'fallback' ||
-    privateCredentialPayload.meta.reason !== 'no_public_context' ||
-    privateCredentialPayload.meta.citationCount !== 0
+    privateCredentialPayload.meta.reason !== 'policy_blocked' ||
+    privateCredentialPayload.meta.citationCount !== 0 ||
+    privateCredentialPayload.meta.research?.route !== 'direct' ||
+    privateCredentialPayload.meta.research.status !== 'blocked'
   ) {
     throw new Error('public chat should refuse private credential requests without citations')
-  }
-
-  const demoChat = await fetch(`${base}/chat/public`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: '哪些项目可以演示？每个项目适合看什么？' }),
-  })
-  if (!demoChat.ok) throw new Error(`demo public chat failed: ${demoChat.status}`)
-  const demoPayload = (await demoChat.json()) as {
-    answer?: string
-    citations?: unknown[]
-  }
-  if (!demoPayload.answer || !Array.isArray(demoPayload.citations) || countProjectCitations(demoPayload.citations) < 2) {
-    throw new Error('public chat should return multiple project citations for demo-ready query')
-  }
-
-  const mockRagPort = await findAvailablePort(9477)
-  const mockRagServer = await startMockRagServer(mockRagPort)
-  try {
-    env.assistantRagApiBaseUrl = `http://127.0.0.1:${mockRagPort}`
-    env.assistantRagApiKey = 'smoke-rag-key'
-    env.assistantRagTimeoutMs = 1000
-    const ragChat = await fetch(`${base}/chat/public`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'Pet 展示页现在是什么情况？' }),
-    })
-    if (!ragChat.ok) throw new Error(`orchestrated rag chat failed: ${ragChat.status}`)
-    const ragPayload = (await ragChat.json()) as {
-      answer?: string
-      citations?: unknown[]
-      meta?: {
-        mode?: string
-        reason?: string
-        retrieval?: { source?: string; retrievalMode?: string; store?: string; citationCount?: number; modelCalls?: number }
-      }
-    }
-    if (
-      !ragPayload.answer ||
-      !Array.isArray(ragPayload.citations) ||
-      !hasCitation(ragPayload.citations, 'project:pet-workspace') ||
-      ragPayload.meta?.mode !== 'fallback' ||
-      ragPayload.meta.reason !== 'not_configured' ||
-      ragPayload.meta.retrieval?.source !== 'orchestrator' ||
-      ragPayload.meta.retrieval.retrievalMode !== 'hybrid' ||
-      ragPayload.meta.retrieval.store !== 'mock' ||
-      ragPayload.meta.retrieval.modelCalls !== 0
-    ) {
-      throw new Error('public chat should use configured RAG orchestrator context before model generation')
-    }
-  } finally {
-    await new Promise<void>((resolve) => mockRagServer.close(() => resolve()))
-    forceNoRagOrchestrator()
-  }
-
-  env.assistantRagApiBaseUrl = 'http://127.0.0.1:9'
-  env.assistantRagApiKey = 'smoke-rag-key'
-  env.assistantRagTimeoutMs = 1000
-  const ragFailureChat = await fetch(`${base}/chat/public`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: 'RAG 项目' }),
-  })
-  if (!ragFailureChat.ok) throw new Error(`rag failure fallback chat failed: ${ragFailureChat.status}`)
-  const ragFailurePayload = (await ragFailureChat.json()) as {
-    answer?: string
-    citations?: unknown[]
-    meta?: {
-      retrieval?: { source?: string; fallbackReason?: string; diagnostic?: { kind?: string; attemptedEndpoints?: number; timeoutMs?: number } }
-    }
-  }
-  if (
-    !ragFailurePayload.answer ||
-    !Array.isArray(ragFailurePayload.citations) ||
-    !hasCitation(ragFailurePayload.citations, 'project:legal-rag') ||
-    ragFailurePayload.meta?.retrieval?.source !== 'local' ||
-    ragFailurePayload.meta.retrieval.fallbackReason !== 'network_error' ||
-    ragFailurePayload.meta.retrieval.diagnostic?.kind !== 'network_error' ||
-    ragFailurePayload.meta.retrieval.diagnostic.attemptedEndpoints !== 1 ||
-    ragFailurePayload.meta.retrieval.diagnostic.timeoutMs !== 1000
-  ) {
-    throw new Error('public chat should fall back to local RAG when external orchestrator is unavailable')
-  }
-  forceNoRagOrchestrator()
-
-  try {
-    const mockModelPort = await findAvailablePort(9077)
-    const mockModelServer = await startMockModelServer(mockModelPort)
-    try {
-      env.assistantModelApiKey = 'smoke-model-key'
-      env.assistantModelBaseUrl = `http://127.0.0.1:${mockModelPort}`
-      env.assistantModelName = 'glm-smoke-model'
-      env.assistantModelProvider = 'glm-compatible'
-      env.openaiApiKey = ''
-      env.openaiBaseUrl = ''
-      env.openaiModel = ''
-      const modelChat = await fetch(`${base}/chat/public`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'RAG 项目' }),
-      })
-      if (!modelChat.ok) throw new Error(`model chat failed: ${modelChat.status}`)
-      const modelPayload = (await modelChat.json()) as {
-        answer?: string
-        citations?: unknown[]
-        meta?: { mode?: string; model?: string; provider?: string; reason?: string; citationCount?: number }
-      }
-      if (
-        !modelPayload.answer?.includes('模型增强回答') ||
-        !Array.isArray(modelPayload.citations) ||
-        modelPayload.meta?.mode !== 'model' ||
-        modelPayload.meta.model !== 'glm-smoke-model' ||
-        modelPayload.meta.provider !== 'glm-compatible' ||
-        modelPayload.meta.citationCount !== modelPayload.citations.length
-      ) {
-        throw new Error('public chat did not use configured OpenAI-compatible model provider')
-      }
-    } finally {
-      await new Promise<void>((resolve) => mockModelServer.close(() => resolve()))
-      restoreModelEnv(originalModelEnv)
-    }
-
-    const mockRootModelPort = await findAvailablePort(9177)
-    const mockRootModelServer = await startMockModelServer(
-      mockRootModelPort,
-      '/v1/chat/completions',
-      '模型增强回答：Root base URL 已通过 /v1/chat/completions 兼容。',
-    )
-    try {
-      env.assistantModelApiKey = 'smoke-model-key'
-      env.assistantModelBaseUrl = `http://127.0.0.1:${mockRootModelPort}`
-      env.assistantModelName = 'glm-root-smoke-model'
-      env.assistantModelProvider = 'glm-compatible'
-      env.openaiApiKey = ''
-      env.openaiBaseUrl = ''
-      env.openaiModel = ''
-      const rootModelChat = await fetch(`${base}/chat/public`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'RAG 项目' }),
-      })
-      if (!rootModelChat.ok) throw new Error(`root model chat failed: ${rootModelChat.status}`)
-      const rootModelPayload = (await rootModelChat.json()) as {
-        answer?: string
-        citations?: unknown[]
-        meta?: { mode?: string; model?: string; provider?: string; reason?: string; citationCount?: number }
-      }
-      if (
-        !rootModelPayload.answer?.includes('Root base URL') ||
-        !Array.isArray(rootModelPayload.citations) ||
-        rootModelPayload.meta?.mode !== 'model' ||
-        rootModelPayload.meta.model !== 'glm-root-smoke-model' ||
-        rootModelPayload.meta.provider !== 'glm-compatible'
-      ) {
-        throw new Error('public chat did not normalize root model base URL to /v1 chat completions')
-      }
-    } finally {
-      await new Promise<void>((resolve) => mockRootModelServer.close(() => resolve()))
-      restoreModelEnv(originalModelEnv)
-    }
-
-    const mockUnsafeModelPort = await findAvailablePort(9277)
-    const mockUnsafeModelServer = await startMockModelServer(
-      mockUnsafeModelPort,
-      '/chat/completions',
-      '来源：/projects/legal-rag 这里是一个不应该直接展示给访客的路径式回答。',
-    )
-    try {
-      env.assistantModelApiKey = 'smoke-model-key'
-      env.assistantModelBaseUrl = `http://127.0.0.1:${mockUnsafeModelPort}`
-      env.assistantModelName = 'glm-self-check-smoke-model'
-      env.assistantModelProvider = 'glm-compatible'
-      env.openaiApiKey = ''
-      env.openaiBaseUrl = ''
-      env.openaiModel = ''
-      forceNoRagOrchestrator()
-      const unsafeModelChat = await fetch(`${base}/chat/public`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: 'RAG 项目' }),
-      })
-      if (!unsafeModelChat.ok) throw new Error(`unsafe model chat failed: ${unsafeModelChat.status}`)
-      const unsafeModelPayload = (await unsafeModelChat.json()) as {
-        answer?: string
-        citations?: unknown[]
-        meta?: { mode?: string; reason?: string; model?: string; provider?: string }
-      }
-      if (
-        !unsafeModelPayload.answer ||
-        unsafeModelPayload.answer.includes('/projects/legal-rag') ||
-        unsafeModelPayload.answer.includes('来源：') ||
-        !Array.isArray(unsafeModelPayload.citations) ||
-        unsafeModelPayload.meta?.mode !== 'fallback' ||
-        unsafeModelPayload.meta.reason !== 'self_check_failed' ||
-        unsafeModelPayload.meta.model !== 'glm-self-check-smoke-model' ||
-        unsafeModelPayload.meta.provider !== 'glm-compatible'
-      ) {
-        throw new Error('public chat should fall back when model answer fails deterministic self-check')
-      }
-    } finally {
-      await new Promise<void>((resolve) => mockUnsafeModelServer.close(() => resolve()))
-      restoreModelEnv(originalModelEnv)
-    }
-
-    env.assistantModelApiKey = 'smoke-test-key'
-    env.assistantModelBaseUrl = base
-    env.assistantModelName = 'smoke-test-model'
-    env.assistantModelProvider = 'smoke-test-provider'
-    env.openaiApiKey = ''
-    env.openaiBaseUrl = base
-    env.openaiModel = 'legacy-smoke-test-model'
-    const providerFailureChat = await fetch(`${base}/chat/public`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'RAG 项目' }),
-    })
-    if (!providerFailureChat.ok) throw new Error(`provider fallback chat failed: ${providerFailureChat.status}`)
-    const providerFailurePayload = (await providerFailureChat.json()) as {
-      answer?: string
-      citations?: unknown[]
-      meta?: {
-        mode?: string
-        model?: string
-        provider?: string
-        reason?: string
-        citationCount?: number
-        diagnostic?: { kind?: string; httpStatus?: number; attemptedEndpoints?: number; timeoutMs?: number }
-      }
-    }
-    if (
-      !providerFailurePayload.answer ||
-      !Array.isArray(providerFailurePayload.citations) ||
-      providerFailurePayload.meta?.mode !== 'fallback' ||
-      providerFailurePayload.meta.model !== 'smoke-test-model' ||
-      providerFailurePayload.meta.provider !== 'smoke-test-provider' ||
-      providerFailurePayload.meta.reason !== 'provider_error' ||
-      providerFailurePayload.meta.diagnostic?.kind !== 'http_status' ||
-      providerFailurePayload.meta.diagnostic.httpStatus !== 404 ||
-      providerFailurePayload.meta.diagnostic.attemptedEndpoints !== 2 ||
-      providerFailurePayload.meta.diagnostic.timeoutMs !== 20000
-    ) {
-      throw new Error('provider failure did not fall back to public knowledge')
-    }
-  } finally {
-    restoreModelEnv(originalModelEnv)
   }
 
   const mockMemberChannelPort = await findAvailablePort(9377)

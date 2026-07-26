@@ -31,7 +31,40 @@ const serviceContracts = [
   {
     name: 'biau-public-assistant-api',
     mode: 'public',
-    requiredEnv: ['ASSISTANT_MODEL_BASE_URL', 'ASSISTANT_MODEL_API_KEY', 'ASSISTANT_RAG_API_BASE_URL', 'ASSISTANT_RAG_API_KEY'],
+    requiredEnv: [
+      'DATABASE_URL',
+      'TRUST_PROXY',
+      'ASSISTANT_MODEL_BASE_URL',
+      'ASSISTANT_MODEL_API_KEY',
+      'ASSISTANT_MODEL_PROTOCOL',
+      'ASSISTANT_RAG_API_BASE_URL',
+      'ASSISTANT_RAG_API_KEY',
+      'PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS',
+      'PUBLIC_ASSISTANT_RATE_LIMIT',
+      'PUBLIC_ASSISTANT_RATE_WINDOW_MS',
+      'PUBLIC_ASSISTANT_RETENTION_DAYS',
+      'PUBLIC_ASSISTANT_OPERATIONS_TOKEN',
+      'PUBLIC_WEB_SEARCH_PROVIDER',
+      'PUBLIC_WEB_SEARCH_BASE_URL',
+      'PUBLIC_WEB_SEARCH_API_KEY',
+      'PUBLIC_WEB_SEARCH_TIMEOUT_MS',
+      'PUBLIC_WEB_SEARCH_MAX_RESULTS',
+      'PUBLIC_WEB_FETCH_MAX_PAGES',
+    ],
+    expectedEnv: {
+      TRUST_PROXY: 'true',
+      ASSISTANT_MODEL_PROTOCOL: 'responses',
+      PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS: '25000',
+      PUBLIC_ASSISTANT_RATE_LIMIT: '20',
+      PUBLIC_ASSISTANT_RATE_WINDOW_MS: '60000',
+      PUBLIC_ASSISTANT_RETENTION_DAYS: '30',
+      PUBLIC_WEB_SEARCH_PROVIDER: 'exa',
+      PUBLIC_WEB_SEARCH_TIMEOUT_MS: '8000',
+      PUBLIC_WEB_SEARCH_MAX_RESULTS: '5',
+      PUBLIC_WEB_FETCH_MAX_PAGES: '3',
+    },
+    requiredStart: 'npm run prisma:migrate && npm run server:start',
+    requiredHealth: '/health',
   },
   {
     name: 'biau-operator-api',
@@ -86,7 +119,8 @@ const serviceContracts = [
   {
     name: 'biau-rag-orchestrator',
     mode: 'rag',
-    requiredEnv: ['QDRANT_URL', 'QDRANT_API_KEY', 'RAG_PUBLIC_API_KEY', 'RAG_INTERNAL_API_KEY', 'RAG_SYNC_TOKEN', 'EMBEDDING_BASE_URL', 'EMBEDDING_API_KEY'],
+    requiredEnv: ['QDRANT_URL', 'QDRANT_API_KEY', 'QDRANT_PUBLIC_ALIAS', 'RAG_PUBLIC_API_KEY', 'RAG_INTERNAL_API_KEY', 'RAG_SYNC_TOKEN', 'EMBEDDING_BASE_URL', 'EMBEDDING_API_KEY'],
+    requiredHealth: '/health',
   },
 ]
 
@@ -155,6 +189,9 @@ function checkRenderBlueprint(renderText) {
     if (service.requiredStart && !block.includes(`startCommand: ${service.requiredStart}`)) {
       issues.push(`${service.name} 的 Start Command 应为：${service.requiredStart}`)
     }
+    if (service.requiredHealth && !block.includes(`healthCheckPath: ${service.requiredHealth}`)) {
+      issues.push(`${service.name} 的 Health Check Path 应为：${service.requiredHealth}`)
+    }
 
     for (const envKey of service.requiredEnv) {
       if (!block.includes(`key: ${envKey}`)) issues.push(`${service.name} 缺少 env：${envKey}`)
@@ -166,8 +203,8 @@ function checkRenderBlueprint(renderText) {
       }
     }
 
-    if (service.mode !== 'studio' && block.includes('key: TRUST_PROXY')) {
-      issues.push(`${service.name} 不应设置 TRUST_PROXY；该代理信任配置仅属于 Studio public feed 服务。`)
+    if (!['public', 'studio'].includes(service.mode) && block.includes('key: TRUST_PROXY')) {
+      issues.push(`${service.name} 不应设置 TRUST_PROXY；该代理信任配置只属于接收公开代理流量的服务。`)
     }
   }
 
@@ -191,6 +228,11 @@ async function main() {
       'OPERATOR_SERVICE_TOKEN',
       'CF_ACCESS_TEAM_DOMAIN',
       'TRUST_PROXY=false',
+      'PUBLIC_ASSISTANT_API_BASE_URL=',
+      'PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=30000',
+      'PUBLIC_ASSISTANT_RETENTION_DAYS=30',
+      'PUBLIC_WEB_SEARCH_PROVIDER=exa',
+      'QDRANT_PUBLIC_ALIAS=biau_public_chunks_active',
       'AI_DAILY_PUBLIC_WINDOW_HOURS=72',
       'AI_DAILY_PUBLIC_STALE_MINUTES=180',
       'AI_DAILY_PUBLIC_RATE_LIMIT=60',
@@ -211,6 +253,14 @@ async function main() {
       'CF_ACCESS_TEAM_DOMAIN',
       'STUDIO_DATABASE_URL=<内容工作台 Studio 数据库 URL，需与 biau-operator-api 相同>',
       'VITE_AI_DAILY_API_BASE_URL',
+      'PUBLIC_ASSISTANT_API_BASE_URL',
+      'PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=30000',
+      'DATABASE_URL=<公开助手匿名 session、turn、feedback 和 aggregate 数据库 URL>',
+      'PUBLIC_ASSISTANT_RETENTION_DAYS=30',
+      'PUBLIC_WEB_SEARCH_PROVIDER=exa',
+      'QDRANT_PUBLIC_ALIAS=biau_public_chunks_active',
+      'PUBLIC_RAG_API_BASE_URL',
+      'public-rag-sync.yml',
       'AI_DAILY_PUBLIC_CORS_ORIGINS',
       'AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json',
       'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<ai-daily:model-select-approve 或 model-approve 输出的 bundleHash>',

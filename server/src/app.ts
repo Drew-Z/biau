@@ -7,17 +7,25 @@ import {
   type OperatorMemory,
 } from '@prisma/client'
 import { env, hasDatabase } from './env.js'
-import { sha256 } from './crypto.js'
+import { safeEqualHash, sha256 } from './crypto.js'
 import { hasOperatorAuth, requireDatabase, requireOperator } from './auth.js'
-import { getStudioPrisma } from './db.js'
-import { generateAnswer, hasConfiguredModelChannel, listSafeModelChannels, normalizeModelChannelId } from './model.js'
+import { getPrisma, getStudioPrisma } from './db.js'
+import { hasConfiguredModelChannel, listSafeModelChannels, normalizeModelChannelId } from './model.js'
 import { createMetricsMiddleware, renderPrometheusMetrics } from './metrics.js'
 import {
   loadAiDailyOperationsSnapshot,
   renderAiDailyOperationsPrometheus,
   toAiDailyOperationsDiagnostics,
 } from './aiDailyOperations.js'
-import { retrievePublicAssistantContext } from './ragClient.js'
+import { normalizePublicAssistantPayload, runPublicAssistantAgent } from './publicAssistantAgent.js'
+import {
+  loadPublicAssistantInsights,
+  normalizePublicAssistantFeedback,
+  persistPublicAssistantTurn,
+  savePublicAssistantFeedback,
+} from './publicAssistantPersistence.js'
+import { consumePublicAssistantRateLimit } from './publicAssistantRateLimit.js'
+import { isPublicWebSearchConfigured } from './publicWebResearch.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
 import { createStudioRouter } from './studioRoutes.js'
 import { createAiDailyPublicRouter } from './aiDailyPublicRoutes.js'
@@ -37,7 +45,7 @@ export function createApp(options: { publicFeedEnabled?: boolean } = {}) {
   const app = express()
   const serviceMode = env.assistantServiceMode
   const publicFeedEnabled = options.publicFeedEnabled ?? env.aiDailyPublicFeedEnabled
-  app.set('trust proxy', env.trustProxy && (serviceMode === 'studio' || serviceMode === 'all') ? 1 : false)
+  app.set('trust proxy', env.trustProxy ? 1 : false)
   app.use(express.json({ limit: '1mb' }))
   if (env.metricsEnabled) app.use(createMetricsMiddleware())
 
@@ -144,6 +152,7 @@ function buildAssistantHealth(serviceMode: AssistantServiceMode) {
     modelConfigured,
     model: defaultModelChannel?.configured ? defaultModelChannel.model : 'fallback',
     provider: defaultModelChannel?.configured ? defaultModelChannel.provider : 'local-public-knowledge',
+    ...(serviceMode === 'public' || serviceMode === 'all' ? { webSearchConfigured: isPublicWebSearchConfigured() } : {}),
     ...(serviceMode === 'operator' || serviceMode === 'all' ? { operatorAuthConfigured: hasOperatorAuth() } : {}),
   }
 }
@@ -151,35 +160,111 @@ function buildAssistantHealth(serviceMode: AssistantServiceMode) {
 function registerPublicAssistantRoutes(app: express.Express) {
   app.post('/chat/public', async (req, res, next) => {
     try {
-      const { message } = req.body as ChatPayload
-      const question = message?.trim()
-      if (!question) {
+      const request = normalizePublicAssistantPayload(req.body as ChatPayload)
+      if (!request) {
         res.status(400).json({ error: 'missing-message' })
         return
       }
-
-      const context = await retrievePublicAssistantContext(question)
-      const citations = context.citations
-      const generated = await generateAnswer(question, citations, 'public', { chunks: context.chunks })
-      const response: ChatResponse = {
-        answer: generated.answer,
-        citations,
-        meta: {
-          mode: generated.mode,
-          model: generated.model,
-          provider: generated.provider,
-          reason: generated.reason,
-          diagnostic: generated.diagnostic,
-          modelChannel: generated.modelChannel,
-          citationCount: citations.length,
-          retrieval: context.retrieval,
-        },
+      const rateLimit = consumePublicAssistantRateLimit(`chat:${req.ip ?? 'unknown'}`)
+      if (!rateLimit.allowed) {
+        res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds))
+        res.status(429).json({ error: 'public-assistant-rate-limited' })
+        return
       }
-      res.json(response)
+      const abort = new AbortController()
+      const timeout = setTimeout(() => abort.abort(), env.publicAssistantRequestTimeoutMs)
+      const onClose = () => abort.abort()
+      res.once('close', onClose)
+      let response: ChatResponse
+      try {
+        response = await runPublicAssistantAgent({ ...request, signal: abort.signal })
+      } finally {
+        clearTimeout(timeout)
+        res.off('close', onClose)
+      }
+      const persisted = await persistPublicAssistantTurn(request, response).catch(() => null)
+      if (persisted) {
+        response.sessionId = persisted.sessionId
+        response.messageId = persisted.turnId
+      }
+      res.json(toPublicAssistantHttpResponse(response))
     } catch (error) {
       next(error)
     }
   })
+
+  app.post('/chat/public/feedback', async (req, res, next) => {
+    try {
+      const input = normalizePublicAssistantFeedback(req.body)
+      if (!input) {
+        res.status(400).json({ error: 'invalid-public-assistant-feedback' })
+        return
+      }
+      const rateLimit = consumePublicAssistantRateLimit(`feedback:${req.ip ?? 'unknown'}`)
+      if (!rateLimit.allowed) {
+        res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds))
+        res.status(429).json({ error: 'public-assistant-rate-limited' })
+        return
+      }
+      const result = await savePublicAssistantFeedback(input)
+      if (result.status === 'database-not-configured') {
+        res.status(503).json({ error: result.status })
+        return
+      }
+      if (result.status === 'turn-not-found') {
+        res.status(404).json({ error: result.status })
+        return
+      }
+      res.json({ ok: true })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.get('/operations/public-assistant/insights', async (req, res, next) => {
+    try {
+      if (!env.publicAssistantOperationsToken) {
+        res.status(404).json({ error: 'not-found' })
+        return
+      }
+      const token = readBearerToken(req.headers.authorization)
+      if (!token || !safeEqualHash(sha256(token), sha256(env.publicAssistantOperationsToken))) {
+        res.status(401).json({ error: 'public-assistant-operations-auth-required' })
+        return
+      }
+      const insights = await loadPublicAssistantInsights(getPrisma())
+      if (!insights) {
+        res.status(503).json({ error: 'database-not-configured' })
+        return
+      }
+      res.json(insights)
+    } catch (error) {
+      next(error)
+    }
+  })
+}
+
+function toPublicAssistantHttpResponse(response: ChatResponse) {
+  return {
+    answer: response.answer,
+    status: response.status,
+    claims: response.claims ?? [],
+    citations: response.citations,
+    suggestions: response.suggestions ?? [],
+    ...(response.sessionId ? { sessionId: response.sessionId } : {}),
+    ...(response.messageId ? { messageId: response.messageId } : {}),
+    meta: {
+      mode: response.meta?.mode ?? 'fallback',
+      reason: response.meta?.reason,
+      citationCount: response.citations.length,
+      research: response.meta?.research,
+    },
+  }
+}
+
+function readBearerToken(value: string | undefined) {
+  const match = value?.match(/^Bearer\s+(.+)$/iu)
+  return match?.[1]?.trim() ?? ''
 }
 
 function registerOperatorRoutes(app: express.Express) {
@@ -938,13 +1023,13 @@ async function syncPublicRagKnowledge() {
   }
 
   try {
-    const response = await fetch(`${env.assistantRagApiBaseUrl.replace(/\/+$/, '')}/v1/sync`, {
+    const response = await fetch(`${env.assistantRagApiBaseUrl.replace(/\/+$/, '')}/v1/sync/public`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${env.ragSyncToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ scope: 'public' }),
+      body: JSON.stringify({}),
       signal: AbortSignal.timeout(ADMIN_RAG_SYNC_TIMEOUT_MS),
     })
     const payload = (await response.json().catch(() => ({}))) as unknown

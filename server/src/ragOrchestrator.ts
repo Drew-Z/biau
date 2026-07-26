@@ -2,32 +2,44 @@ import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
 import { createLocalVectorStore, rerankChunksWithVector } from './ragAdapters.js'
 import { getPostgresRagHealth, isPostgresRagStoreConfigured, retrievePostgresRagContext, syncPostgresRagStore } from './ragPostgresStore.js'
 import {
+  getPublicKnowledgeSourceChecksum,
   getQdrantRagHealth,
   isQdrantRagStoreSelected,
   retrieveQdrantRagContext,
   syncQdrantInternalRagStore,
   syncQdrantRagStore,
 } from './ragQdrantStore.js'
+import { env } from './env.js'
 import type { RagHealthResponse, RagRetrievePayload, RagRetrieveResponse, RagSyncPayload, RagSyncResponse } from './types.js'
 
 const SERVICE_NAME = 'biau-rag-orchestrator'
 const localVectorStore = createLocalVectorStore()
 
 export async function getRagOrchestratorHealth(): Promise<RagHealthResponse> {
-  if (isQdrantRagStoreSelected()) return getQdrantRagHealth()
-  if (isPostgresRagStoreConfigured()) return getPostgresRagHealth()
+  let health: RagHealthResponse
+  if (isQdrantRagStoreSelected()) {
+    health = await getQdrantRagHealth()
+  } else if (isPostgresRagStoreConfigured()) {
+    health = await getPostgresRagHealth()
+  } else {
+    health = {
+      ok: true,
+      service: SERVICE_NAME,
+      store: 'local',
+      vectorReady: (publicKnowledgeV2?.knowledge_chunks.length ?? 0) > 0,
+      keywordReady: true,
+      rerankerReady: true,
+      lastSyncAt: null,
+      documentCount: publicKnowledgeV2?.public_documents.length ?? 0,
+      chunkCount: publicKnowledgeV2?.knowledge_chunks.length ?? 0,
+      entityCount: publicKnowledgeV2?.entities.length ?? 0,
+      relationCount: publicKnowledgeV2?.relations.length ?? 0,
+    }
+  }
   return {
-    ok: true,
-    service: SERVICE_NAME,
-    store: 'local',
-    vectorReady: (publicKnowledgeV2?.knowledge_chunks.length ?? 0) > 0,
-    keywordReady: true,
-    rerankerReady: true,
-    lastSyncAt: null,
-    documentCount: publicKnowledgeV2?.public_documents.length ?? 0,
-    chunkCount: publicKnowledgeV2?.knowledge_chunks.length ?? 0,
-    entityCount: publicKnowledgeV2?.entities.length ?? 0,
-    relationCount: publicKnowledgeV2?.relations.length ?? 0,
+    ...health,
+    buildCommit: env.renderGitCommit || null,
+    publicSourceChecksum: getPublicKnowledgeSourceChecksum(),
   }
 }
 

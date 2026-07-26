@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { Send, X } from 'lucide-react'
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Globe2,
+  RefreshCw,
+  Send,
+  ThumbsDown,
+  ThumbsUp,
+  X,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import {
   publicAssistantSuggestions,
   buildPublicKnowledgeFallbackAnswer,
-  normalizeAssistantCitations,
   searchPublicKnowledge,
   type AssistantKnowledgeItem,
 } from '../data/assistant'
@@ -17,256 +26,189 @@ import {
   MOBILE_SURFACE_OPEN_EVENT,
   type MobileSurfaceOpenDetail,
 } from '../utils/mobileSurface'
+import {
+  requestPublicAssistant,
+  submitPublicAssistantFeedback,
+  type PublicAssistantAnswer,
+  type PublicAssistantCitation,
+  type PublicAssistantClaim,
+  type PublicAssistantHistoryTurn,
+  type PublicAssistantMode,
+  type PublicAssistantStatus,
+} from '../utils/publicAssistantApi'
 
 interface WidgetMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
-  citations?: AssistantKnowledgeItem[]
-  meta?: AssistantAnswerMeta
+  citations?: PublicAssistantCitation[]
+  claims?: PublicAssistantClaim[]
+  status?: PublicAssistantStatus
+  meta?: PublicAssistantAnswer['meta']
+  suggestions?: string[]
+  sessionId?: string
+  turnId?: string
+  prompt?: string
+  requestMode?: PublicAssistantMode
+  feedback?: 'up' | 'down'
+  feedbackPending?: boolean
+  feedbackError?: boolean
 }
 
-interface AssistantAnswerMeta {
-  mode: 'model' | 'fallback'
-  model: string
-  provider?: string
-  reason?: AssistantFallbackReason
-  diagnostic?: ProviderDiagnostic
-  citationCount: number
-}
-
-type AssistantFallbackReason =
-  | 'not_configured'
-  | 'provider_error'
-  | 'empty_response'
-  | 'no_public_context'
-  | 'self_check_failed'
-  | 'request_error'
-type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
-type AssistantServiceState = 'api-ready' | 'local' | 'model' | 'fallback' | 'error'
-
-interface ProviderDiagnostic {
-  kind: ProviderDiagnosticKind
-  httpStatus?: number
-  attemptedEndpoints: number
-  timeoutMs: number
-}
+type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
 
 const CONFIGURED_API_BASE = PUBLIC_ASSISTANT_API_BASE
 const MAX_MESSAGE_LENGTH = 500
-const MAX_MODEL_ANSWER_LENGTH = 420
-const MAX_FALLBACK_ANSWER_LENGTH = 360
+const MAX_FALLBACK_ANSWER_LENGTH = 520
+const SESSION_STORAGE_KEY = 'biau-public-assistant-session-v1'
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+const MODE_OPTIONS: Array<{ value: PublicAssistantMode; label: string }> = [
+  { value: 'auto', label: '自动' },
+  { value: 'site', label: '本站' },
+  { value: 'web', label: '全网' },
+]
+
+const STATUS_LABELS: Record<PublicAssistantStatus, string> = {
+  answered: '已回答',
+  partial: '部分证据',
+  uncertain: '证据不足',
+  degraded: '降级回答',
+  blocked: '已安全拦截',
 }
 
-interface PublicAnswerResult {
-  content: string
-  citations: AssistantKnowledgeItem[]
-  meta: AssistantAnswerMeta
+const ROUTE_LABELS = {
+  direct: '直接回答',
+  site: '本站检索',
+  web: '网页研究',
+  combined: '综合研究',
+} as const
+
+function createAnonymousSessionId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return `public-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
 }
 
-interface PublicAnswerAttempt extends PublicAnswerResult {
-  apiBase: string | null
+function getAnonymousSessionId() {
+  const fallback = createAnonymousSessionId()
+  if (typeof window === 'undefined') return fallback
+  try {
+    const stored = window.localStorage.getItem(SESSION_STORAGE_KEY)?.trim()
+    if (stored && /^[a-zA-Z0-9_-]{12,80}$/u.test(stored)) return stored
+    window.localStorage.setItem(SESSION_STORAGE_KEY, fallback)
+  } catch {
+    // Storage may be disabled; the in-memory identifier still keeps this visit coherent.
+  }
+  return fallback
 }
 
-function isAssistantFallbackReason(value: unknown): value is AssistantFallbackReason {
-  return (
-    value === 'not_configured' ||
-    value === 'provider_error' ||
-    value === 'empty_response' ||
-    value === 'no_public_context' ||
-    value === 'self_check_failed'
-  )
+function persistAnonymousSessionId(sessionId: string) {
+  if (typeof window === 'undefined' || !/^[a-zA-Z0-9_-]{12,80}$/u.test(sessionId)) return
+  try {
+    window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId)
+  } catch {
+    // A storage failure must not block anonymous chat.
+  }
 }
 
-function isProviderDiagnosticKind(value: unknown): value is ProviderDiagnosticKind {
-  return value === 'timeout' || value === 'network_error' || value === 'http_status' || value === 'empty_response'
+function getAssistantApiBase(preferredApiBase?: string | null) {
+  return preferredApiBase || CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE
 }
 
-function readProviderDiagnostic(value: unknown): ProviderDiagnostic | undefined {
-  if (!isRecord(value) || !isProviderDiagnosticKind(value.kind)) return undefined
-  const attemptedEndpoints =
-    typeof value.attemptedEndpoints === 'number' && Number.isFinite(value.attemptedEndpoints)
-      ? Math.max(0, Math.floor(value.attemptedEndpoints))
-      : 0
-  const timeoutMs =
-    typeof value.timeoutMs === 'number' && Number.isFinite(value.timeoutMs) ? Math.max(0, Math.floor(value.timeoutMs)) : 0
-  const httpStatus =
-    typeof value.httpStatus === 'number' && Number.isFinite(value.httpStatus) ? Math.floor(value.httpStatus) : undefined
+function toPublicCitation(item: AssistantKnowledgeItem): PublicAssistantCitation {
   return {
-    kind: value.kind,
-    httpStatus,
-    attemptedEndpoints,
-    timeoutMs,
+    id: item.id,
+    title: item.title,
+    summary: item.summary,
+    href: item.href,
+    source: 'site',
+    section: '站内公开资料',
+    excerpt: item.summary,
+    publishedAt: null,
+    evidenceStatus: 'partial',
   }
 }
 
-function formatProviderDiagnostic(diagnostic?: ProviderDiagnostic) {
-  if (!diagnostic) return ''
-  if (diagnostic.kind === 'timeout') return `模型超时 ${Math.round(diagnostic.timeoutMs / 1000)}s`
-  if (diagnostic.kind === 'network_error') return '模型端点不可达'
-  if (diagnostic.kind === 'empty_response') return '模型空响应'
-  if (diagnostic.kind === 'http_status') return diagnostic.httpStatus ? `模型 HTTP ${diagnostic.httpStatus}` : '模型 HTTP 异常'
-  return ''
-}
-
-function compactAnswerContent(content: string, maxLength: number) {
-  const normalized = sanitizeAssistantAnswer(content)
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-  if (normalized.length <= maxLength) return normalized
-  return `${normalized.slice(0, maxLength - 1).trim()}…`
-}
-
-function sanitizeAssistantAnswer(content: string) {
-  const lines: string[] = []
-  for (const rawLine of content.split('\n')) {
-    const trimmed = rawLine.trim()
-    if (/^(#{1,6}\s*)?想进一步了解[？?]?/.test(trimmed)) break
-    if (/^(来源|资料编号|参考资料)[:：]/.test(trimmed)) continue
-    const plain = trimmed
-      .replace(/^#{1,6}\s*/, '')
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/__([^_]+)__/g, '$1')
-      .replace(/`([^`]+)`/g, '$1')
-      .replace(/^\s*[-*]\s+/, '• ')
-      .replace(/^\s*\d+[.)]\s+/, '')
-      .trim()
-    if (plain) lines.push(plain)
-  }
-  return lines.join('\n')
-}
-
-function buildLocalKnowledgeAnswer(question: string, citations: AssistantKnowledgeItem[], reason?: AssistantFallbackReason) {
-  return buildPublicKnowledgeFallbackAnswer(question, citations, { reason, maxLength: MAX_FALLBACK_ANSWER_LENGTH })
-}
-
-function getAssistantApiCandidates(preferredApiBase?: string | null) {
-  return Array.from(
-    new Set([preferredApiBase, CONFIGURED_API_BASE, SAME_ORIGIN_ASSISTANT_API_BASE].filter((item): item is string => Boolean(item))),
-  )
-}
-
-async function requestPublicAnswer(question: string, apiBase: string | null): Promise<PublicAnswerResult> {
-  if (!apiBase) {
-    const citations = searchPublicKnowledge(question)
-    return {
-      content: buildLocalKnowledgeAnswer(question, citations),
-      citations,
-      meta: {
-        mode: 'fallback' as const,
-        model: 'local-public-knowledge',
-        provider: 'browser-local',
-        reason: 'not_configured',
-        citationCount: citations.length,
-      },
-    }
-  }
-
-  const response = await fetch(`${apiBase}/chat/public`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: question }),
-  })
-
-  if (!response.ok) {
-    throw new Error('public-chat-request-failed')
-  }
-
-  const payload = (await response.json()) as unknown
-  const answer = isRecord(payload) && typeof payload.answer === 'string' ? payload.answer.trim() : ''
-  const citations = isRecord(payload) ? normalizeAssistantCitations(payload.citations) : []
-  const rawMeta = isRecord(payload) && isRecord(payload.meta) ? payload.meta : undefined
-  const mode: AssistantAnswerMeta['mode'] = rawMeta?.mode === 'model' ? 'model' : 'fallback'
-  const model = typeof rawMeta?.model === 'string' && rawMeta.model.trim() ? rawMeta.model.trim() : mode
-  const provider = typeof rawMeta?.provider === 'string' && rawMeta.provider.trim() ? rawMeta.provider.trim() : undefined
-  const reason = isAssistantFallbackReason(rawMeta?.reason) ? rawMeta.reason : undefined
-  const diagnostic = readProviderDiagnostic(rawMeta?.diagnostic)
-  const citationCount = typeof rawMeta?.citationCount === 'number' ? rawMeta.citationCount : citations.length
-
-  const fallbackContent = buildLocalKnowledgeAnswer(question, citations, reason)
-  const displayContent =
-    mode === 'model'
-      ? compactAnswerContent(
-          answer || '公开助手暂时没有返回内容。你可以稍后重试，或者先去项目页和知识库查看详细资料。',
-          MAX_MODEL_ANSWER_LENGTH,
-        )
-      : fallbackContent
-
+function buildLocalAnswer(question: string, mode: PublicAssistantMode, reason: string): PublicAssistantAnswer {
+  const localCitations = searchPublicKnowledge(question)
+  const citations = localCitations.map(toPublicCitation)
+  const notice =
+    mode === 'web'
+      ? '全网研究服务暂时不可用。下面仅提供站内公开资料的降级结果。\n\n'
+      : '研究服务暂时不可用。下面提供站内公开资料的降级结果。\n\n'
   return {
-    content: displayContent,
+    answer: `${notice}${buildPublicKnowledgeFallbackAnswer(question, localCitations, {
+      reason: 'request_error',
+      maxLength: MAX_FALLBACK_ANSWER_LENGTH,
+    })}`,
+    status: 'degraded',
+    claims: [],
     citations,
+    suggestions: [],
     meta: {
-      mode,
-      model,
-      provider,
+      mode: 'fallback',
       reason,
-      diagnostic,
-      citationCount,
+      citationCount: citations.length,
     },
   }
 }
 
-async function requestPublicAnswerWithFallback(question: string, preferredApiBase: string | null): Promise<PublicAnswerAttempt> {
-  const candidates = getAssistantApiCandidates(preferredApiBase)
-  if (candidates.length === 0) {
-    return {
-      ...(await requestPublicAnswer(question, null)),
-      apiBase: null,
-    }
-  }
-
-  let lastError: unknown
-  for (const candidate of candidates) {
-    try {
-      return {
-        ...(await requestPublicAnswer(question, candidate)),
-        apiBase: candidate,
-      }
-    } catch (error) {
-      lastError = error
-    }
-  }
-
-  throw lastError instanceof Error ? lastError : new Error('public-chat-request-failed')
-}
-
-function getFallbackLabel(reason?: AssistantFallbackReason) {
-  if (reason === 'provider_error') return '模型通道失败，已回退'
-  if (reason === 'empty_response') return '模型无内容，已回退'
-  if (reason === 'self_check_failed') return '回答自检未过，已回退'
-  if (reason === 'no_public_context') return '未命中公开资料'
-  if (reason === 'request_error') return '站内 API 暂不可用'
-  return '站点知识兜底'
-}
-
-function formatAnswerMeta(meta?: AssistantAnswerMeta) {
-  if (!meta) return ''
-  const modeLabel = meta.mode === 'model' ? '模型增强' : getFallbackLabel(meta.reason)
-  const diagnosticLabel = formatProviderDiagnostic(meta.diagnostic)
-  const citationLabel = meta.citationCount > 0 ? `${meta.citationCount} 条来源` : '暂无来源'
-  return [modeLabel, diagnosticLabel, citationLabel].filter(Boolean).join(' · ')
+async function requestPublicAnswer(input: {
+  question: string
+  mode: PublicAssistantMode
+  sessionId: string
+  history: PublicAssistantHistoryTurn[]
+  preferredApiBase: string | null
+  signal: AbortSignal
+}) {
+  const apiBase = getAssistantApiBase(input.preferredApiBase)
+  const answer = await requestPublicAssistant({
+    apiBase,
+    message: input.question,
+    mode: input.mode,
+    sessionId: input.sessionId,
+    history: input.history,
+    pageContext: {
+      path: window.location.pathname,
+      title: document.title,
+      description: document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content ?? '',
+    },
+    signal: input.signal,
+  })
+  return { answer, apiBase }
 }
 
 function getServiceStatus(state: AssistantServiceState) {
-  if (state === 'model') return { className: 'is-model', label: '模型增强在线' }
-  if (state === 'error') return { className: 'is-error', label: 'API 未接入，未连接模型' }
-  if (state === 'fallback') return { className: 'is-fallback', label: 'API 在线，未接模型' }
-  if (state === 'api-ready') return { className: 'is-ready', label: '检查模型状态' }
-  return { className: 'is-local', label: '未连接模型，本地知识' }
+  if (state === 'online') return { className: 'is-model', label: '研究助手已响应' }
+  if (state === 'degraded') return { className: 'is-fallback', label: '正在使用站内兜底' }
+  if (state === 'error') return { className: 'is-error', label: '研究服务暂不可用' }
+  return { className: 'is-ready', label: '可检索本站与公开网页' }
 }
 
-function getServiceStateAfterAnswer(
-  current: AssistantServiceState,
-  meta: AssistantAnswerMeta,
-  hasApiBase: boolean,
-): AssistantServiceState {
-  if (meta.mode === 'model') return 'model'
-  if (current === 'model' && meta.reason !== 'not_configured') return 'model'
-  return hasApiBase ? 'fallback' : 'local'
+function formatAnswerMeta(message: WidgetMessage) {
+  if (!message.status || !message.meta) return ''
+  const labels = [STATUS_LABELS[message.status]]
+  const research = message.meta.research
+  if (research) {
+    labels.push(ROUTE_LABELS[research.route])
+    if (research.evidenceCount > 0) labels.push(`${research.evidenceCount} 条证据`)
+    if (research.durationMs > 0) labels.push(`${(research.durationMs / 1_000).toFixed(1)} 秒`)
+  } else if (message.meta.citationCount > 0) {
+    labels.push(`${message.meta.citationCount} 条站内来源`)
+  }
+  return labels.join(' · ')
+}
+
+function getLoadingLabel(mode: PublicAssistantMode) {
+  if (mode === 'site') return '正在检索本站公开资料…'
+  if (mode === 'web') return '正在搜索并核验公开网页…'
+  return '正在判断问题并组织研究…'
+}
+
+function buildHistory(messages: WidgetMessage[]): PublicAssistantHistoryTurn[] {
+  return messages
+    .filter((message) => message.content.trim().length > 0)
+    .map((message) => ({ role: message.role, content: message.content.slice(0, 800) }))
+    .slice(-6)
 }
 
 export function PublicAssistantWidget() {
@@ -274,13 +216,18 @@ export function PublicAssistantWidget() {
   const [footerVisible, setFooterVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [input, setInput] = useState('')
+  const [mode, setMode] = useState<PublicAssistantMode>('auto')
   const [messages, setMessages] = useState<WidgetMessage[]>([])
-  const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || null)
-  const [serviceState, setServiceState] = useState<AssistantServiceState>(CONFIGURED_API_BASE ? 'api-ready' : 'local')
+  const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE)
+  const [sessionId, setSessionId] = useState(getAnonymousSessionId)
+  const [serviceState, setServiceState] = useState<AssistantServiceState>('ready')
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const collisionOffsetRef = useRef(0)
   const messageSeq = useRef(0)
+  const activeRequestRef = useRef<AbortController | null>(null)
+  const copyTimerRef = useRef<number | null>(null)
   const serviceStatus = getServiceStatus(serviceState)
 
   const createMessageId = (role: WidgetMessage['role']) => {
@@ -291,7 +238,12 @@ export function PublicAssistantWidget() {
   useEffect(() => {
     if (!scrollRef.current) return
     scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-  }, [messages, isOpen])
+  }, [messages, isOpen, isLoading])
+
+  useEffect(() => () => {
+    activeRequestRef.current?.abort()
+    if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
+  }, [])
 
   useEffect(() => {
     const handleSurfaceOpen = (event: Event) => {
@@ -356,119 +308,133 @@ export function PublicAssistantWidget() {
   useEffect(() => {
     const footer = document.querySelector('.site-footer')
     if (!footer || typeof IntersectionObserver === 'undefined') return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setFooterVisible(entry.isIntersecting),
-      { threshold: 0.08 },
-    )
+    const observer = new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting), { threshold: 0.08 })
     observer.observe(footer)
     return () => observer.disconnect()
   }, [])
-
-  useEffect(() => {
-    if (!isOpen) return
-    let cancelled = false
-    const candidateApiBases = getAssistantApiCandidates(CONFIGURED_API_BASE)
-
-    async function refreshServiceHealth() {
-      for (const candidateApiBase of candidateApiBases) {
-        try {
-          const response = await fetch(`${candidateApiBase}/health`)
-          if (!response.ok) throw new Error('assistant-health-failed')
-          const payload = (await response.json()) as unknown
-          const model = isRecord(payload) && typeof payload.model === 'string' ? payload.model.trim() : ''
-          const mode = isRecord(payload) && typeof payload.mode === 'string' ? payload.mode.trim() : ''
-          const modelConfigured = isRecord(payload) && payload.modelConfigured === true
-          if (!cancelled) {
-            setApiBase(candidateApiBase)
-            setServiceState(mode === 'model' || modelConfigured || (model && model !== 'fallback') ? 'model' : 'fallback')
-          }
-          return
-        } catch {
-          // Try the next public-safe assistant API candidate.
-        }
-      }
-
-      if (!cancelled) {
-        setApiBase(CONFIGURED_API_BASE || null)
-        setServiceState(CONFIGURED_API_BASE ? 'error' : 'local')
-      }
-    }
-
-    void refreshServiceHealth()
-    return () => {
-      cancelled = true
-    }
-  }, [isOpen])
 
   const toggleWidget = () => {
     if (!isOpen) {
       announceMobileSurfaceOpen('public-assistant')
       rootRef.current?.style.setProperty('--public-assistant-collision-offset', '0px')
       collisionOffsetRef.current = 0
-      trackAnalyticsEvent('public_assistant_open', {
-        source: 'floating-widget',
-      })
+      trackAnalyticsEvent('public_assistant_open', { source: 'floating-widget' })
     }
     setIsOpen(!isOpen)
   }
 
-  const submitQuestion = async (question: string) => {
-    const trimmed = question.trim()
+  const submitQuestion = async (question: string, requestedMode: PublicAssistantMode = mode) => {
+    const trimmed = question.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
     if (!trimmed || isLoading) return
 
     trackAnalyticsEvent('public_assistant_question', {
       source: 'floating-widget',
-      questionLength: Math.min(trimmed.length, MAX_MESSAGE_LENGTH),
+      mode: requestedMode,
+      questionLength: trimmed.length,
     })
 
+    const history = buildHistory(messages)
     const userMessage: WidgetMessage = {
       id: createMessageId('user'),
       role: 'user',
-      content: trimmed.slice(0, MAX_MESSAGE_LENGTH),
+      content: trimmed,
+      requestMode: requestedMode,
     }
-
     setMessages((current) => [...current, userMessage])
     setInput('')
     setIsLoading(true)
+    const controller = new AbortController()
+    activeRequestRef.current = controller
 
+    let result: PublicAssistantAnswer
+    let resolvedApiBase = apiBase
     try {
-      const result = await requestPublicAnswerWithFallback(trimmed, apiBase)
-      setApiBase(result.apiBase)
-      setServiceState((current) => getServiceStateAfterAnswer(current, result.meta, Boolean(result.apiBase)))
-      setMessages((current) => [
-        ...current,
-        {
-          id: createMessageId('assistant'),
-          role: 'assistant',
-          content: result.content,
-          citations: result.citations,
-          meta: result.meta,
-        },
-      ])
-    } catch {
-      const citations = searchPublicKnowledge(trimmed)
-      setServiceState('error')
-      setMessages((current) => [
-        ...current,
-        {
-          id: createMessageId('assistant'),
-          role: 'assistant',
-          content: buildLocalKnowledgeAnswer(trimmed, citations, 'request_error'),
-          citations,
-          meta: {
-            mode: 'fallback',
-            model: 'local-public-knowledge',
-            provider: 'browser-local',
-            reason: 'request_error',
-            citationCount: citations.length,
-          },
-        },
-      ])
+      const remote = await requestPublicAnswer({
+        question: trimmed,
+        mode: requestedMode,
+        sessionId,
+        history,
+        preferredApiBase: apiBase,
+        signal: controller.signal,
+      })
+      result = remote.answer
+      resolvedApiBase = remote.apiBase
+      setApiBase(remote.apiBase)
+      setServiceState(result.status === 'degraded' ? 'degraded' : 'online')
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      result = buildLocalAnswer(trimmed, requestedMode, error instanceof Error ? error.message : 'request_error')
+      setServiceState(getAssistantApiBase(apiBase) ? 'error' : 'degraded')
     } finally {
-      setIsLoading(false)
+      if (activeRequestRef.current === controller) {
+        activeRequestRef.current = null
+        setIsLoading(false)
+      }
+    }
+
+    const resolvedSessionId = result.sessionId ?? sessionId
+    if (result.sessionId && result.sessionId !== sessionId) {
+      setSessionId(result.sessionId)
+      persistAnonymousSessionId(result.sessionId)
+    }
+    setMessages((current) => [
+      ...current,
+      {
+        id: createMessageId('assistant'),
+        role: 'assistant',
+        content: result.answer,
+        citations: result.citations,
+        claims: result.claims,
+        status: result.status,
+        meta: result.meta,
+        suggestions: result.suggestions,
+        sessionId: result.turnId ? resolvedSessionId : undefined,
+        turnId: result.turnId,
+        prompt: trimmed,
+        requestMode: requestedMode,
+      },
+    ])
+    if (resolvedApiBase) setApiBase(resolvedApiBase)
+  }
+
+  const copyAnswer = async (message: WidgetMessage) => {
+    if (!navigator.clipboard) return
+    try {
+      await navigator.clipboard.writeText(message.content)
+      setCopiedMessageId(message.id)
+      if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
+      copyTimerRef.current = window.setTimeout(() => setCopiedMessageId(null), 1_800)
+    } catch {
+      setCopiedMessageId(null)
     }
   }
+
+  const sendFeedback = async (message: WidgetMessage, rating: 'up' | 'down') => {
+    if (!apiBase || !message.sessionId || !message.turnId || message.feedbackPending) return
+    setMessages((current) => current.map((item) => item.id === message.id
+      ? { ...item, feedbackPending: true, feedbackError: false }
+      : item))
+    try {
+      await submitPublicAssistantFeedback({
+        apiBase,
+        sessionId: message.sessionId,
+        turnId: message.turnId,
+        rating,
+        reason: rating === 'up' ? 'helpful' : 'other',
+      })
+      setMessages((current) => current.map((item) => item.id === message.id
+        ? { ...item, feedback: rating, feedbackPending: false, feedbackError: false }
+        : item))
+    } catch {
+      setMessages((current) => current.map((item) => item.id === message.id
+        ? { ...item, feedbackPending: false, feedbackError: true }
+        : item))
+    }
+  }
+
+  const latestSuggestions = [...messages]
+    .reverse()
+    .find((message) => message.role === 'assistant' && message.suggestions?.length)?.suggestions
 
   return (
     <div ref={rootRef} className={`public-assistant ${isOpen ? 'is-open' : ''} ${footerVisible ? 'is-footer-visible' : ''}`}>
@@ -479,64 +445,172 @@ export function PublicAssistantWidget() {
         aria-controls="public-assistant-panel"
         onClick={toggleWidget}
       >
-        <span className="public-assistant__trigger-mark" aria-hidden="true">
-          B
-        </span>
-        <span className="public-assistant__trigger-text">泊岸公开助手</span>
+        <span className="public-assistant__trigger-mark" aria-hidden="true">B</span>
+        <span className="public-assistant__trigger-text">泊岸研究助手</span>
       </button>
 
       {isOpen && (
-        <section className="public-assistant__panel" id="public-assistant-panel" aria-label="公开助手">
+        <section className="public-assistant__panel" id="public-assistant-panel" aria-label="泊岸研究助手">
           <header className="public-assistant__header">
             <div>
-              <p className="public-assistant__eyebrow">PUBLIC KNOWLEDGE</p>
-              <h2>泊岸公开助手</h2>
-              <span className={`public-assistant__status ${serviceStatus.className}`}>
-                {serviceStatus.label}
-              </span>
+              <p className="public-assistant__eyebrow">PUBLIC RESEARCH</p>
+              <h2>泊岸研究助手</h2>
+              <span className={`public-assistant__status ${serviceStatus.className}`}>{serviceStatus.label}</span>
             </div>
-            <button type="button" className="public-assistant__close" onClick={() => setIsOpen(false)} aria-label="关闭公开助手">
+            <button type="button" className="public-assistant__close" onClick={() => setIsOpen(false)} aria-label="关闭研究助手">
               <X size={18} aria-hidden />
             </button>
           </header>
 
-          <p className="public-assistant__hint">只回答公开项目、文章与状态页。</p>
+          <p className="public-assistant__hint">问本站内容，也可以研究公开网页。</p>
 
-          {(messages.length > 0 || isLoading) && (
-            <div className="public-assistant__messages" ref={scrollRef}>
-              {messages.map((message) => (
-                <article key={message.id} className={`public-assistant__message is-${message.role}`}>
-                  <p>{message.content}</p>
-                  {message.role === 'assistant' && message.meta && (
-                    <small className="public-assistant__meta">{formatAnswerMeta(message.meta)}</small>
-                  )}
-                  {message.citations && message.citations.length > 0 && (
-                    <div className="public-assistant__citations">
-                      {message.citations.slice(0, 3).map((item) => (
-                        <Link key={item.id} to={item.href} className="public-assistant__citation" aria-label={`查看来源：${item.title}`}>
-                          <strong>{item.title}</strong>
-                          <span>打开来源</span>
-                        </Link>
-                      ))}
+          <div className="public-assistant__modes" aria-label="检索范围">
+            {MODE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={mode === option.value ? 'is-active' : ''}
+                aria-pressed={mode === option.value}
+                disabled={isLoading}
+                onClick={() => setMode(option.value)}
+              >
+                {option.value === 'web' && <Globe2 size={14} aria-hidden />}
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="public-assistant__messages" ref={scrollRef} aria-live="polite">
+            {messages.length === 0 && !isLoading && (
+              <div className="public-assistant__empty">
+                <strong>从一个具体问题开始</strong>
+                <span>助手会选择直接回答、本站检索或公开网页研究。</span>
+              </div>
+            )}
+
+            {messages.map((message) => (
+              <article key={message.id} className={`public-assistant__message is-${message.role}`}>
+                <p>{message.content}</p>
+                {message.role === 'assistant' && (
+                  <>
+                    {message.meta && <small className="public-assistant__meta">{formatAnswerMeta(message)}</small>}
+
+                    {message.claims && message.claims.length > 0 && (
+                      <details className="public-assistant__claims">
+                        <summary>查看证据对应（{message.claims.length}）</summary>
+                        <ol>
+                          {message.claims.map((claim) => (
+                            <li key={claim.id}>
+                              <span>{claim.text}</span>
+                              {claim.citationIds.length > 0 && <small>{claim.citationIds.join(' · ')}</small>}
+                            </li>
+                          ))}
+                        </ol>
+                      </details>
+                    )}
+
+                    {message.citations && message.citations.length > 0 && (
+                      <div className="public-assistant__citations" aria-label="回答来源">
+                        {message.citations.map((citation, index) => {
+                          const content = (
+                            <>
+                              <span className="public-assistant__citation-kicker">
+                                {citation.source === 'web' ? '外部网页' : '本站资料'} · {citation.id || `来源 ${index + 1}`}
+                              </span>
+                              <strong>{citation.title}</strong>
+                              <span>{citation.excerpt || citation.summary}</span>
+                              {citation.source === 'web' && <ExternalLink size={13} aria-hidden />}
+                            </>
+                          )
+                          return citation.source === 'web' ? (
+                            <a
+                              key={citation.id}
+                              href={citation.href}
+                              className="public-assistant__citation"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={`在新窗口打开来源：${citation.title}`}
+                            >
+                              {content}
+                            </a>
+                          ) : (
+                            <Link
+                              key={citation.id}
+                              to={citation.href}
+                              className="public-assistant__citation"
+                              aria-label={`查看站内来源：${citation.title}`}
+                            >
+                              {content}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div className="public-assistant__message-actions" aria-label="回答操作">
+                      <button
+                        type="button"
+                        onClick={() => void copyAnswer(message)}
+                        aria-label={copiedMessageId === message.id ? '已复制回答' : '复制回答'}
+                        title={copiedMessageId === message.id ? '已复制' : '复制回答'}
+                      >
+                        {copiedMessageId === message.id ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
+                      </button>
+                      {message.prompt && message.requestMode && (
+                        <button
+                          type="button"
+                          onClick={() => void submitQuestion(message.prompt ?? '', message.requestMode)}
+                          disabled={isLoading}
+                          aria-label="重新生成回答"
+                          title="重新生成"
+                        >
+                          <RefreshCw size={15} aria-hidden />
+                        </button>
+                      )}
+                      {message.sessionId && message.turnId && (
+                        <>
+                          <button
+                            type="button"
+                            className={message.feedback === 'up' ? 'is-active' : ''}
+                            onClick={() => void sendFeedback(message, 'up')}
+                            disabled={message.feedbackPending}
+                            aria-label="这个回答有帮助"
+                            aria-pressed={message.feedback === 'up'}
+                            title="有帮助"
+                          >
+                            <ThumbsUp size={15} aria-hidden />
+                          </button>
+                          <button
+                            type="button"
+                            className={message.feedback === 'down' ? 'is-active' : ''}
+                            onClick={() => void sendFeedback(message, 'down')}
+                            disabled={message.feedbackPending}
+                            aria-label="这个回答需要改进"
+                            aria-pressed={message.feedback === 'down'}
+                            title="需要改进"
+                          >
+                            <ThumbsDown size={15} aria-hidden />
+                          </button>
+                        </>
+                      )}
+                      {message.feedbackError && <span role="status">反馈未提交</span>}
                     </div>
-                  )}
-                </article>
-              ))}
+                  </>
+                )}
+              </article>
+            ))}
 
-              {isLoading && (
-                <div className="public-assistant__loading" aria-live="polite">
-                  正在检索公开资料…
-                </div>
-              )}
-            </div>
-          )}
+            {isLoading && <div className="public-assistant__loading">{getLoadingLabel(mode)}</div>}
+          </div>
 
           <div className="public-assistant__suggestions" aria-label="建议提问">
-            {publicAssistantSuggestions.map((suggestion) => (
+            {(latestSuggestions?.map((suggestion) => ({ id: suggestion, label: suggestion, prompt: suggestion }))
+              ?? publicAssistantSuggestions).slice(0, 3).map((suggestion) => (
               <button
                 key={suggestion.id}
                 type="button"
                 className="public-assistant__suggestion"
+                disabled={isLoading}
                 onClick={() => void submitQuestion(suggestion.prompt)}
               >
                 {suggestion.label}
@@ -551,18 +625,22 @@ export function PublicAssistantWidget() {
               void submitQuestion(input)
             }}
           >
-            <label className="sr-only" htmlFor="public-assistant-input">
-              向公开助手提问
-            </label>
-            <input
+            <label className="sr-only" htmlFor="public-assistant-input">向研究助手提问</label>
+            <textarea
               id="public-assistant-input"
-              type="text"
+              rows={2}
               maxLength={MAX_MESSAGE_LENGTH}
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="问项目、演示入口或技术方向"
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault()
+                  void submitQuestion(input)
+                }
+              }}
+              placeholder="输入一个需要回答或研究的问题"
             />
-            <button type="submit" disabled={isLoading || input.trim().length === 0}>
+            <button type="submit" disabled={isLoading || input.trim().length === 0} aria-label="发送问题">
               <Send size={16} aria-hidden />
               <span>发送</span>
             </button>

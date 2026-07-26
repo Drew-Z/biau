@@ -30,6 +30,15 @@ VITE_ANALYTICS_PROVIDER=<可选：umami | plausible | debug>
 
 Operator 浏览器地址固定为同源 `/api/operator/*`，不需要 `VITE_OPERATOR_*`。不要把任何 token 写进 `VITE_*`。
 
+### Public Assistant Function 私有变量
+
+```text
+PUBLIC_ASSISTANT_API_BASE_URL=<biau-public-assistant-api 的 Render base URL>
+PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=30000
+```
+
+`functions/api/chat/public.ts` 和 feedback Function 只做同源薄代理。它们不会接触模型、搜索、embedding 或 Qdrant key，也不会转发浏览器提供的 `Authorization` 或 Cookie。
+
 ### Operator Function 私有变量
 
 ```text
@@ -65,22 +74,36 @@ METRICS_ENABLED=false
 
 ```text
 Build Command: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
-Start Command: npm run server:start
+Start Command: npm run prisma:migrate && npm run server:start
 ```
 
 ```text
 ASSISTANT_SERVICE_MODE=public
 CORS_ORIGIN=<站点公开 origin>
+DATABASE_URL=<公开助手匿名 session、turn、feedback 和 aggregate 数据库 URL>
+TRUST_PROXY=true
 ASSISTANT_MODEL_BASE_URL=<server-only OpenAI-compatible base>
 ASSISTANT_MODEL_API_KEY=<server-only key>
 ASSISTANT_MODEL_NAME=<model id>
 ASSISTANT_MODEL_PROVIDER=<safe provider label>
+ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_RAG_API_BASE_URL=<RAG Orchestrator base>
 ASSISTANT_RAG_API_KEY=<RAG_PUBLIC_API_KEY 对应值>
 ASSISTANT_RAG_TIMEOUT_MS=3000
+PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS=25000
+PUBLIC_ASSISTANT_RATE_LIMIT=20
+PUBLIC_ASSISTANT_RATE_WINDOW_MS=60000
+PUBLIC_ASSISTANT_RETENTION_DAYS=30
+PUBLIC_ASSISTANT_OPERATIONS_TOKEN=<低敏聚合 insights 的随机 server-only token>
+PUBLIC_WEB_SEARCH_PROVIDER=exa
+PUBLIC_WEB_SEARCH_BASE_URL=<Exa API base>
+PUBLIC_WEB_SEARCH_API_KEY=<Exa server-only key>
+PUBLIC_WEB_SEARCH_TIMEOUT_MS=8000
+PUBLIC_WEB_SEARCH_MAX_RESULTS=5
+PUBLIC_WEB_FETCH_MAX_PAGES=3
 ```
 
-公开助手无模型或 RAG 不可用时保留公开知识 fallback，不需要 Operator 数据库。
+公开助手使用独立数据库保存匿名会话、反馈和低敏聚合数据；原始 turn 最多保留 30 天。它不需要 Operator 数据库，也不保存 IP、Cookie、凭据或抓取全文。模型、站内 RAG 或网页研究部分不可用时会明确降级，不把降级结果伪装成完整回答。
 
 ### 2. BIAU Operator
 
@@ -169,6 +192,7 @@ Studio 运维指标默认关闭，Render Blueprint 显式设置 `METRICS_ENABLED
 ```text
 Build Command: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
 Start Command: npm run server:start
+Health Check Path: /health
 ```
 
 ```text
@@ -177,6 +201,7 @@ RAG_STORE_PROVIDER=qdrant
 QDRANT_URL=<Qdrant URL>
 QDRANT_API_KEY=<Qdrant key>
 QDRANT_PUBLIC_COLLECTION=biau_public_chunks
+QDRANT_PUBLIC_ALIAS=biau_public_chunks_active
 QDRANT_INTERNAL_COLLECTION=biau_internal_chunks
 RAG_PUBLIC_API_KEY=<公开助手 retrieve key>
 RAG_INTERNAL_API_KEY=<Operator retrieve key>
@@ -189,9 +214,19 @@ EMBEDDING_TIMEOUT_MS=20000
 RERANKER_BASE_URL=<可选>
 RERANKER_API_KEY=<可选>
 RERANKER_MODEL=<可选>
+RERANKER_TIMEOUT_MS=10000
 ```
 
 当前 Qdrant `internal` scope 表示 owner/private 站务知识的检索隔离层，不代表成员制产品。公开助手只能使用 public key/scope，Operator 使用 internal key/scope。
+
+公开知识同步由 `.github/workflows/public-rag-sync.yml` 在 `main` 的知识源发生变化时触发。GitHub Actions 需要两个 repository secrets：
+
+```text
+PUBLIC_RAG_API_BASE_URL=<biau-rag-orchestrator 的 Render base URL>
+RAG_SYNC_TOKEN=<与 RAG 服务相同的同步 token>
+```
+
+workflow 会先重新生成并校验知识索引，再等待 RAG `/health` 返回的 `buildCommit` 与当前 Git SHA 一致、`publicSourceChecksum` 与当前索引一致，之后才调用受 token 保护的 `POST /v1/sync/public`。同步失败时 workflow 失败，但 Qdrant 旧 alias 保持可用；可从 GitHub Actions 手动运行 `workflow_dispatch` 重试。`RENDER_GIT_COMMIT` 由 Render 自动提供，不需要人工配置。
 
 ## Owner 数据迁移与回滚记录（已完成）
 
@@ -227,7 +262,15 @@ npm.cmd run operator:facade-smoke
 npm.cmd run operator:knowledge-check
 npm.cmd run assistant:agent-contract
 npm.cmd run assistant:agent-eval
+npm.cmd run assistant:public-agent-check
+npm.cmd run assistant:public-api-check
+npm.cmd run assistant:public-persistence-check
+npm.cmd run assistant:public-web-check
+npm.cmd run assistant:public-sync-check
+npm.cmd run assistant:hybrid-contract
 npm.cmd run assistant:service-modes-smoke
+npm.cmd run cf-assistant:smoke
+npm.cmd run studio:export-contract-check
 npm.cmd run server:smoke
 npm.cmd run docs:deployment-check
 npm.cmd run lint

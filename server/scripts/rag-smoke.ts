@@ -9,6 +9,7 @@ interface RagEnvSnapshot {
   qdrantUrl: string
   qdrantApiKey: string
   qdrantPublicCollection: string
+  qdrantPublicAlias: string
   qdrantInternalCollection: string
   embeddingBaseUrl: string
   embeddingApiKey: string
@@ -26,12 +27,14 @@ interface MockQdrantOptions {
   pageSize?: number
   scrollFailureStatus?: number
   deleteFailureStatus?: number
+  hybridQueryFailureStatus?: 400 | 404
 }
 
 interface MockQdrantMetrics {
   scrollRequests: number
   filteredScrollRequests: number
   deleteRequests: number
+  queryCollections: string[]
 }
 
 const SAFE_SYNC_DIAGNOSTIC_KEYS = new Set<keyof NonNullable<RagSyncResponse['diagnostics']>>([
@@ -118,6 +121,7 @@ function snapshotRagEnv(): RagEnvSnapshot {
     qdrantUrl: env.qdrantUrl,
     qdrantApiKey: env.qdrantApiKey,
     qdrantPublicCollection: env.qdrantPublicCollection,
+    qdrantPublicAlias: env.qdrantPublicAlias,
     qdrantInternalCollection: env.qdrantInternalCollection,
     embeddingBaseUrl: env.embeddingBaseUrl,
     embeddingApiKey: env.embeddingApiKey,
@@ -131,6 +135,7 @@ function restoreRagEnv(snapshot: RagEnvSnapshot) {
   env.qdrantUrl = snapshot.qdrantUrl
   env.qdrantApiKey = snapshot.qdrantApiKey
   env.qdrantPublicCollection = snapshot.qdrantPublicCollection
+  env.qdrantPublicAlias = snapshot.qdrantPublicAlias
   env.qdrantInternalCollection = snapshot.qdrantInternalCollection
   env.embeddingBaseUrl = snapshot.embeddingBaseUrl
   env.embeddingApiKey = snapshot.embeddingApiKey
@@ -140,7 +145,12 @@ function restoreRagEnv(snapshot: RagEnvSnapshot) {
 
 async function startMockQdrant(options: MockQdrantOptions = {}) {
   const collections = new Map<string, Map<string | number, MockQdrantPoint>>()
-  const metrics: MockQdrantMetrics = { scrollRequests: 0, filteredScrollRequests: 0, deleteRequests: 0 }
+  const metrics: MockQdrantMetrics = {
+    scrollRequests: 0,
+    filteredScrollRequests: 0,
+    deleteRequests: 0,
+    queryCollections: [],
+  }
   const port = await findAvailablePort(9477)
   const server = createHttpServer(async (req, res) => {
     try {
@@ -243,7 +253,20 @@ async function handleMockQdrantRequest(
     return
   }
 
+  if (
+    req.method === 'POST' &&
+    action === 'query' &&
+    isRecord(body) &&
+    Array.isArray(body.prefetch) &&
+    options.hybridQueryFailureStatus
+  ) {
+    metrics.queryCollections.push(collection)
+    sendJson(res, options.hybridQueryFailureStatus, { error: 'mock-hybrid-query-failure' })
+    return
+  }
+
   if (req.method === 'POST' && (action === 'search' || action === 'query')) {
+    metrics.queryCollections.push(collection)
     sendJson(res, 200, {
       result: Array.from(points.values()).map((point, index) => ({
         id: point.id,
@@ -397,6 +420,7 @@ try {
     env.qdrantUrl = mockQdrant.baseUrl
     env.qdrantApiKey = 'qdrant-smoke-key'
     env.qdrantPublicCollection = 'biau_public_chunks_smoke'
+    env.qdrantPublicAlias = 'biau_public_chunks_smoke'
     env.qdrantInternalCollection = 'biau_internal_chunks_smoke'
     env.embeddingBaseUrl = ''
     env.embeddingApiKey = ''
@@ -507,7 +531,7 @@ try {
     if (!qdrantRetrieveResponse.ok) throw new Error(`rag qdrant internal retrieve failed: ${qdrantRetrieveResponse.status}`)
     if (
       qdrantRetrievePayload.meta.store !== 'qdrant' ||
-      qdrantRetrievePayload.meta.retrievalMode !== 'agentic-hybrid-qdrant' ||
+      qdrantRetrievePayload.meta.retrievalMode !== 'qdrant-dense-sparse-rrf' ||
       !qdrantRetrievePayload.citations.some((citation) => citation.id === 'internal-doc-smoke' && citation.visibility === 'internal')
     ) {
       throw new Error('rag qdrant internal retrieve should return internal citation')
@@ -521,6 +545,69 @@ try {
     if (!publicRetrieveResponse.ok) throw new Error(`rag qdrant public retrieve failed: ${publicRetrieveResponse.status}`)
     if (publicRetrievePayload.citations.some((citation) => citation.visibility === 'internal')) {
       throw new Error('rag qdrant public retrieve must not return internal citations')
+    }
+
+    for (const hybridFailureStatus of [400, 404] as const) {
+      const hybridFailureQdrant = await startMockQdrant({ hybridQueryFailureStatus: hybridFailureStatus })
+      try {
+        env.qdrantUrl = hybridFailureQdrant.baseUrl
+        env.qdrantPublicCollection = 'biau_public_chunks_base_fixture'
+        env.qdrantPublicAlias = 'biau_public_chunks_active_fixture'
+        const activeAliasPoints = getMockCollection(hybridFailureQdrant.collections, env.qdrantPublicAlias)
+        const baseCollectionPoints = getMockCollection(hybridFailureQdrant.collections, env.qdrantPublicCollection)
+        activeAliasPoints.set('active-alias-point', {
+          id: 'active-alias-point',
+          vector: new Array(env.embeddingDimension).fill(0),
+          payload: {
+            scope: 'public',
+            source: 'public-knowledge-v2',
+            visibility: 'public',
+            documentId: 'active-alias-document',
+            chunkId: 'active-alias-chunk',
+            title: 'Active alias document',
+            summary: 'Public evidence stored behind the active alias.',
+            href: '/projects/legal-rag',
+            section: 'Alias fallback',
+            text: 'Legal RAG public evidence from the active Qdrant alias.',
+            sourceType: 'project',
+            contentHash: 'active-alias-content-hash',
+          },
+        })
+        baseCollectionPoints.set('base-collection-point', {
+          id: 'base-collection-point',
+          vector: new Array(env.embeddingDimension).fill(0),
+          payload: {
+            scope: 'public',
+            source: 'public-knowledge-v2',
+            visibility: 'public',
+            documentId: 'base-collection-document',
+            chunkId: 'base-collection-chunk',
+            title: 'Base collection poison document',
+            summary: 'This document must never be returned by alias fallback.',
+            href: '/projects',
+            section: 'Incorrect fallback target',
+            text: 'A poison fixture stored only in the base collection.',
+            sourceType: 'project',
+            contentHash: 'base-collection-content-hash',
+          },
+        })
+
+        const { response: hybridFailureResponse, payload: hybridFailurePayload } = await postJson<RagRetrieveResponse>(
+          `${base}/rag/v1/retrieve`,
+          { query: 'Legal RAG', scope: 'public', limit: 2 },
+        )
+        if (
+          !hybridFailureResponse.ok ||
+          !hasCitation(hybridFailurePayload, 'active-alias-document') ||
+          hasCitation(hybridFailurePayload, 'base-collection-document') ||
+          hybridFailureQdrant.metrics.queryCollections.length !== 2 ||
+          hybridFailureQdrant.metrics.queryCollections.some((collection) => collection !== env.qdrantPublicAlias)
+        ) {
+          throw new Error(`qdrant hybrid ${hybridFailureStatus} fallback must stay on the active alias`)
+        }
+      } finally {
+        await hybridFailureQdrant.close()
+      }
     }
 
     const scrollFailureQdrant = await startMockQdrant({ scrollFailureStatus: 400 })

@@ -3,6 +3,10 @@ export type AssistantScope = 'public' | 'internal'
 export type AssistantServiceMode = 'all' | 'public' | 'operator' | 'rag' | 'studio'
 export type AssistantAnswerIntent = 'site_qa' | 'creative' | 'planning' | 'general'
 export type AssistantGroundingMode = 'strict' | 'background' | 'none'
+export type PublicAssistantMode = 'auto' | 'site' | 'web'
+export type PublicAssistantRoute = 'direct' | 'site' | 'web' | 'combined'
+export type PublicAssistantStatus = 'answered' | 'partial' | 'uncertain' | 'degraded' | 'blocked'
+export type PublicAssistantEvidenceSource = 'site' | 'web'
 
 export interface KnowledgeItem {
   id: string
@@ -20,11 +24,50 @@ export interface Citation {
   href: string
   tags?: string[]
   visibility?: AssistantVisibility
+  source?: PublicAssistantEvidenceSource
+  canonicalUrl?: string
+  section?: string
+  excerpt?: string
+  publishedAt?: string | null
+  evidenceStatus?: 'verified' | 'partial'
 }
 
 export interface ChatPayload {
   message?: string
   sessionId?: string
+  mode?: PublicAssistantMode
+  pageContext?: PublicAssistantPageContext
+  history?: PublicAssistantHistoryTurn[]
+}
+
+export interface PublicAssistantPageContext {
+  path: string
+  title?: string
+  description?: string
+}
+
+export interface PublicAssistantHistoryTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface PublicAssistantClaim {
+  id: string
+  text: string
+  citationIds: string[]
+}
+
+export interface PublicAssistantResearchMeta {
+  requestedMode: PublicAssistantMode
+  route: PublicAssistantRoute
+  status: PublicAssistantStatus
+  evidenceCount: number
+  siteEvidenceCount: number
+  webEvidenceCount: number
+  retryCount: number
+  searchAvailable: boolean
+  rerankerMode?: 'provider' | 'deterministic' | 'none'
+  durationMs: number
 }
 
 export type ChatAnswerMode = 'model' | 'fallback'
@@ -96,6 +139,7 @@ export interface AssistantRetrievalMeta {
   fallbackReason?: RagAdapterDiagnosticKind | 'private-credential' | 'no_public_context' | null
   expandedEntityCount?: number
   modelCalls?: number
+  rerankerMode?: 'provider' | 'deterministic' | 'none'
   diagnostic?: RagAdapterDiagnostic
 }
 
@@ -147,6 +191,9 @@ export interface AgentRunMeta {
 export interface ChatResponse {
   answer: string
   citations: Citation[]
+  status?: PublicAssistantStatus
+  claims?: PublicAssistantClaim[]
+  suggestions?: string[]
   meta?: {
     mode: ChatAnswerMode
     model: string
@@ -162,6 +209,7 @@ export interface ChatResponse {
     tools?: AgentToolTrace[]
     guardrails?: AgentGuardrailSummary
     fallbackReason?: ChatFallbackReason | 'tool_error' | 'policy_blocked'
+    research?: PublicAssistantResearchMeta
   }
   sessionId?: string
   messageId?: string
@@ -177,11 +225,14 @@ export interface RagHealthResponse {
   vectorReady: boolean
   keywordReady: boolean
   rerankerReady: boolean
+  rerankerMode?: 'provider' | 'deterministic' | 'none'
   lastSyncAt: string | null
   documentCount: number
   chunkCount: number
   entityCount: number
   relationCount: number
+  buildCommit?: string | null
+  publicSourceChecksum?: string
   collections?: {
     public?: RagCollectionHealth
     internal?: RagCollectionHealth
@@ -236,7 +287,8 @@ export interface RagRetrieveResponse {
     retrievalMode: RagRetrievalMode
     store: RagStoreProvider
     candidateCount: number
-    reranked: boolean
+      reranked: boolean
+      rerankerMode?: 'provider' | 'deterministic' | 'none'
     sufficient: boolean
     sufficiency: 'enough' | 'weak' | 'none'
     fallbackReason: 'private-credential' | 'no_public_context' | null

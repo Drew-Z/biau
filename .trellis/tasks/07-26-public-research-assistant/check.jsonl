@@ -1,0 +1,4 @@
+{"file":".trellis/spec/backend/public-research-assistant.md","reason":"Check public-only boundaries, graph budgets, evidence verification, safe projection, and deployment gates."}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"Run the full deterministic backend and cross-service quality matrix."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Check mobile/desktop widget behavior, accessibility, citations, fallback, and performance."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Verify request, evidence, error, and secret flow across every service boundary."}
