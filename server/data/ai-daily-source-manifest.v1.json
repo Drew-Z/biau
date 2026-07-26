@@ -5,9 +5,22 @@
     "status": "approved",
     "reviewedAt": "2026-07-19T13:45:00.000Z",
     "reviewedBy": "site-owner-confirmed",
-    "notes": "Site owner confirmed the 16 approved sources, four core query groups, bounded budget, and attribution boundary on 2026-07-19."
+    "notes": "Site owner confirmed the original 16 approved sources on 2026-07-19 and approved the 2026-07-26 OpenAI/Google AI source expansion, four core query groups, bounded budget, and attribution boundary."
   },
   "sources": [
+    {
+      "id": "openai-news",
+      "name": "OpenAI News",
+      "rationale": "First-party model, product, research, safety, and platform announcements.",
+      "kind": "RSS",
+      "url": "https://openai.com/news/rss.xml",
+      "locale": "en",
+      "tier": "TIER_1",
+      "topics": ["models", "products", "agents", "research", "safety"],
+      "enabled": true,
+      "officialDomain": "openai.com",
+      "review": { "status": "approved", "reviewedAt": "2026-07-26T14:51:36.146Z", "reviewedBy": "codex-source-audit-2026-07-26", "notes": "Official dated RSS with stable original-page links and strong AI signal; retain short metadata/excerpts only and apply the shared AI relevance and evidence gates." }
+    },
     {
       "id": "anthropic-news",
       "name": "Anthropic News",
@@ -25,14 +38,14 @@
       "id": "google-ai-blog",
       "name": "Google AI Blog",
       "rationale": "First-party Google AI product and company announcements.",
-      "kind": "OFFICIAL_PAGE",
-      "url": "https://blog.google/technology/ai/",
+      "kind": "RSS",
+      "url": "https://blog.google/technology/ai/rss/",
       "locale": "en",
       "tier": "TIER_1",
       "topics": ["models", "products", "agents", "research"],
-      "enabled": false,
+      "enabled": true,
       "officialDomain": "blog.google",
-      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "RSS is available but mixes Search, Workspace, Education, and other non-AI items; require secondary AI filtering." }
+      "review": { "status": "approved", "reviewedAt": "2026-07-26T14:51:36.146Z", "reviewedBy": "codex-source-audit-2026-07-26", "notes": "Dedicated AI category RSS is reachable and dated; adjacent Google product items remain possible, so the shared AI relevance, original-page evidence, and attribution gates remain mandatory." }
     },
     {
       "id": "deepmind-blog",
@@ -58,7 +71,7 @@
       "topics": ["enterprise-ai", "products", "agents", "partnerships"],
       "enabled": false,
       "officialDomain": "blogs.microsoft.com",
-      "review": { "status": "hold", "reviewedAt": "2026-07-19T04:00:00.000Z", "reviewedBy": "codex-source-audit-2026-07-19", "notes": "Topic page spans several Microsoft channels and the available feed is full-site noisy; require strict AI filtering." }
+      "review": { "status": "rejected", "reviewedAt": "2026-07-26T14:51:36.146Z", "reviewedBy": "codex-source-audit-2026-07-26", "notes": "The legacy AI feed currently returns an archived or suspended WordPress page rather than a stable article stream; keep disabled until Microsoft publishes a verifiable replacement feed." }
     },
     {
       "id": "aws-machine-learning-blog",

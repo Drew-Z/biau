@@ -1,21 +1,21 @@
 # AI Daily 来源与查询组预审
 
-审核日期：2026-07-19
+初次审核日期：2026-07-19；补充审核日期：2026-07-26
 
 这份记录是生产来源门禁的低敏预审与确认记录，不是内容转载许可，也不替代真实版次验收。审核使用公共页面、公开 RSS/Atom 和必要的 HTTPS 元数据核对页面可访问性、日期、列表稳定性、AI 信号、营销噪声和归属边界；没有运行 provider doctor、模型 ping、空 prompt 或模型测试任务。
 
 清单当前状态：
 
 - `readiness: approved`
-- 16 个 approved 来源和 4 个核心查询组 `enabled: true`
-- 9 个 hold 来源、5 个 rejected 来源和其余查询组 `enabled: false`
+- 18 个 approved 来源和 4 个核心查询组 `enabled: true`
+- 7 个 hold 来源、6 个 rejected 来源和其余查询组 `enabled: false`
 - 真实版次仍需独立的 provider、模型角色和编辑审核门禁
 
 ## 结论摘要
 
 | 类型 | Approved | Hold | Rejected |
 | --- | ---: | ---: | ---: |
-| 来源 | 16 | 9 | 5 |
+| 来源 | 18 | 7 | 6 |
 | 查询组 | 4 | 3 | 3 |
 
 ## 来源结论
@@ -24,7 +24,9 @@
 
 | 来源 | 证据入口 | 使用边界 |
 | --- | --- | --- |
+| OpenAI News | https://openai.com/news/rss.xml | 官方 RSS；保留标题、日期、短摘要和原文链接，明确归因发布方 |
 | Anthropic News | https://www.anthropic.com/news | HTML 增量；保留标题、日期、短摘要和原文链接 |
+| Google AI Blog | https://blog.google/technology/ai/rss/ | 分类 RSS；继续使用 AI relevance、原文证据和归因门禁过滤邻近产品内容 |
 | Google DeepMind Blog | https://deepmind.google/discover/blog/ | RSS 优先；过滤少量合作与机构动态 |
 | AWS Artificial Intelligence Blog | https://aws.amazon.com/blogs/machine-learning/ | 区分发布、教程、客户案例和产品推广 |
 | Microsoft Research Blog | https://www.microsoft.com/en-us/research/blog/ | 只收明确 AI/ML/agent/AI for science 内容 |
@@ -45,8 +47,6 @@
 
 | 来源 | 原因 | 重新审核条件 |
 | --- | --- | --- |
-| Google AI Blog | RSS 混入 Search、Workspace、Education 等内容 | 完成二次 AI 分类与文章日期核对 |
-| Microsoft AI Blog | 专题跨多个 Microsoft 频道，全站 feed 噪声高 | 建立专题 HTML 抓取和官方域名白名单 |
 | Google Cloud AI/ML Blog | 无确认可用 feed，排名与客户营销内容较多 | 验证结构化列表和逐篇日期 |
 | Hugging Face Blog | 官方、合作伙伴、机构和社区作者混合 | 建立作者/组织白名单与来源标签 |
 | Adobe AI Blog | 完整列表依赖动态 CaaS，未发现稳定 feed | 找到稳定 CMS、站点地图或 feed |
@@ -64,6 +64,7 @@
 | Zhipu AI News | 路径返回产品首页，缺少稳定文章链接与日期 |
 | Alibaba Cloud AI Blog | 给定地址重定向到伪 200 的 not-found 页面 |
 | ModelScope Headlines | 页面壳没有可重复抽取的标题、链接和日期 |
+| Microsoft AI Blog | 旧 feed 返回 archived/suspended 页面，当前没有稳定文章流 |
 
 ## 查询组结论
 
@@ -99,7 +100,20 @@
 
 ## 已确认与剩余门禁
 
-站点所有者已确认上述 16 个 approved 来源、四个核心查询组、`12/78/72` 预算上限和引用边界；清单已切换到 approved。hold/rejected 项继续禁用。
+站点所有者已确认上述来源扩展、四个核心查询组、`12/78/72` 预算上限和引用边界；OpenAI News 与 Google AI Blog 已通过补充审核并启用，Hugging Face 与其余 hold/rejected 项继续禁用。
+
+## 2026-07-26 补充来源核验
+
+本次补充核验只检查公开 XML 入口、日期字段、原文域名和内容归属，不执行 provider doctor、模型 ping 或生成任务：
+
+| 来源 | HTTP / 内容类型 | 结果 |
+| --- | --- | --- |
+| OpenAI News RSS | `200` / XML | 通过；官方域名、日期字段和原文链接稳定 |
+| Google AI RSS | `200` / XML | 通过；分类入口仍需共享 AI relevance 与原文证据过滤 |
+| Hugging Face Blog RSS | `200` / RSS | 保持 hold；作者和合作伙伴内容混杂，尚未建立 allowlist |
+| Microsoft AI feed | archived/suspended 页面 | 改为 rejected，等待官方替代 feed |
+
+新增或变更来源不会绕过 Edition 的 Tier 1、时效、独立域名和证据完整性门禁；下一次刷新需要在 Studio 部署新 manifest 后重新观察。
 
 剩余门禁是独立的模型选择与真实业务验收：
 

@@ -23,7 +23,7 @@ AI 日报 / AI Daily 是独立栏目，用来记录短周期 AI 模型、工具�
 
 ## 来源与查询组策展清单
 
-版本化来源清单位于 `server/data/ai-daily-source-manifest.v1.json`。当前包含 30 个来源和 10 个 discovery query groups，覆盖官方模型/平台、开源生态、AI 基础设施、研究、企业 AI、中国 AI、政策安全和多模态/端侧方向。2026-07-19 已完成公共页面预审和站点所有者确认：顶层 `readiness=approved`，16 个 approved 来源与 4 个核心查询组已启用，9 个 hold 来源、5 个 rejected 来源和其余 6 个查询组保持关闭。审查摘要见 [`docs/ai-daily-source-review-2026-07-19.md`](./ai-daily-source-review-2026-07-19.md)。
+版本化来源清单位于 `server/data/ai-daily-source-manifest.v1.json`。当前包含 31 个来源和 10 个 discovery query groups，覆盖官方模型/平台、开源生态、AI 基础设施、研究、企业 AI、中国 AI、政策安全和多模态/端侧方向。2026-07-19 完成初次公共页面预审后，2026-07-26 又通过了 OpenAI News 与 Google AI RSS 的补充审核：顶层 `readiness=approved`，18 个 approved 来源与 4 个核心查询组已启用，7 个 hold 来源、6 个 rejected 来源和其余 6 个查询组保持关闭。审查摘要见 [`docs/ai-daily-source-review-2026-07-19.md`](./ai-daily-source-review-2026-07-19.md)。
 
 生产发现链路使用“官方订阅源 + 多个低耦合发现信号”：优先消费官方 RSS/Atom；未启用 The News API 时由 GDELT DOC 提供无密钥 broad discovery，启用后由 The News API primary + GDELT fallback；Hacker News Algolia 与 HotDaily 仅提供社区线索。HotDaily 公共 API 不需要 token，系统只读取原文标题、URL 和社区来源，并丢弃其 `summaryZh`、`reason`、价值灯号等生成字段。The News API、GDELT、HN 和 HotDaily 的结果都不是事实证据；runner 会回到原始网页重新提取日期和正文，只有 `READY` evidence 能进入选择。该链路不使用 Tavily，也不会占用本地 smart-search 的 Tavily 配额。
 
