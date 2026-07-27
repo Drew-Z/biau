@@ -19,7 +19,6 @@ workspace/
 
 # Task directory runtime files
 .plan-log
-tasks/archive/
 
 # Atomic update temp files
 *.tmp
