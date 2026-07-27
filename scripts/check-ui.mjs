@@ -659,7 +659,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
       failures.push(`mobile-${width} project detail: opening assistant should close reading outline`)
     }
 
-    await assistantTrigger.click()
+    await page.getByRole('button', { name: '关闭研究助手' }).click()
     await assistantTrigger.click()
     await page.waitForTimeout(250)
     await page.evaluate(() => {
@@ -2254,6 +2254,87 @@ if (resumedFrameDelta <= 0.15) {
 await motionSwitchPage.close()
 
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
+await publicAssistantPage.route('**/api/health', async (route) => {
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+  })
+})
+await publicAssistantPage.route('**/api/chat/public/sessions', async (route) => {
+  const body = route.request().postDataJSON()
+  const sessionId = body.sessionIds?.[0] ?? 'public-ui-session-1234'
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      sessions: [{
+        id: sessionId,
+        title: '公开助手历史验收',
+        turnCount: 1,
+        createdAt: '2026-07-27T08:00:00.000Z',
+        lastActiveAt: '2026-07-27T08:01:00.000Z',
+        expiresAt: '2026-08-26T08:00:00.000Z',
+      }],
+    }),
+  })
+})
+await publicAssistantPage.route('**/api/chat/public/session', async (route) => {
+  const body = route.request().postDataJSON()
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      session: {
+        id: body.sessionId,
+        title: '公开助手历史验收',
+        turnCount: 1,
+        createdAt: '2026-07-27T08:00:00.000Z',
+        lastActiveAt: '2026-07-27T08:01:00.000Z',
+        expiresAt: '2026-08-26T08:00:00.000Z',
+      },
+      turns: [{
+        id: 'turn-ui-history-1',
+        question: '历史问题',
+        answer: '这是一条从服务端恢复的历史回答。',
+        mode: 'site',
+        route: 'site',
+        status: 'answered',
+        claims: [],
+        citations: [{
+          id: 'site-ui-history',
+          title: '历史来源',
+          summary: '公开历史来源',
+          href: '/blog',
+          source: 'site',
+          section: '知识库',
+          excerpt: '公开历史来源',
+          publishedAt: null,
+          evidenceStatus: 'verified',
+        }],
+        suggestions: [],
+        meta: {
+          mode: 'model',
+          citationCount: 1,
+          research: {
+            requestedMode: 'site',
+            route: 'site',
+            status: 'answered',
+            evidenceCount: 1,
+            siteEvidenceCount: 1,
+            webEvidenceCount: 0,
+            retryCount: 0,
+            searchAvailable: true,
+            durationMs: 100,
+          },
+        },
+        createdAt: '2026-07-27T08:01:00.000Z',
+        feedback: null,
+      }],
+      truncated: false,
+    }),
+  })
+})
 await gotoApp(publicAssistantPage, '/blog')
 await publicAssistantPage.locator('.public-assistant__trigger').click()
 if (!(await publicAssistantPage.locator('.public-assistant__panel').isVisible())) {
@@ -2269,6 +2350,69 @@ if (!publicAssistantStatus.includes('可检索本站与公开网页')) {
 if ((await publicAssistantPage.locator('.public-assistant__citation').count()) !== 0) {
   failures.push('/blog public assistant: expected initial panel to stay concise without citation cards')
 }
+if (
+  (await publicAssistantPage.getByRole('button', { name: '查看历史会话' }).count()) !== 1 ||
+  (await publicAssistantPage.getByRole('button', { name: '新建会话' }).count()) < 1 ||
+  (await publicAssistantPage.getByRole('button', { name: '进入全屏' }).count()) !== 1
+) {
+  failures.push('/blog public assistant: expected history, new-session, and fullscreen commands')
+}
+await publicAssistantPage.getByRole('button', { name: '查看历史会话' }).click()
+await publicAssistantPage.locator('.public-assistant__history-open').waitFor({ state: 'visible' })
+const historyDialog = publicAssistantPage.getByRole('dialog', { name: '历史会话' })
+await publicAssistantPage.waitForFunction(() => {
+  const history = document.querySelector('.public-assistant__history')
+  return history instanceof HTMLElement && history.contains(document.activeElement)
+})
+if (!(await historyDialog.evaluate((element) => element.contains(document.activeElement)))) {
+  failures.push('/blog public assistant: history drawer should receive focus when it opens')
+}
+await publicAssistantPage.keyboard.press('Escape')
+await publicAssistantPage.waitForFunction(() => {
+  const history = document.querySelector('.public-assistant__history')
+  const trigger = document.querySelector('[aria-label="查看历史会话"]')
+  return !history && trigger === document.activeElement
+})
+if (
+  (await historyDialog.isVisible().catch(() => false)) ||
+  !(await publicAssistantPage.locator('.public-assistant__panel').isVisible()) ||
+  !(await publicAssistantPage.getByRole('button', { name: '查看历史会话' }).evaluate((element) => element === document.activeElement))
+) {
+  failures.push('/blog public assistant: Escape should close only the history drawer and restore its trigger')
+}
+await publicAssistantPage.getByRole('button', { name: '查看历史会话' }).click()
+await publicAssistantPage.locator('.public-assistant__history-open').waitFor({ state: 'visible' })
+await publicAssistantPage.locator('.public-assistant__history-open').click()
+await publicAssistantPage.waitForFunction(() => document.querySelectorAll('.public-assistant__message').length === 2)
+if ((await publicAssistantPage.locator('.public-assistant__message').count()) !== 2) {
+  failures.push('/blog public assistant: expected server history to restore one user/assistant turn')
+}
+if ((await publicAssistantPage.locator('.public-assistant__citation').count()) !== 1) {
+  failures.push('/blog public assistant: expected restored rich citation snapshot')
+}
+await publicAssistantPage.getByRole('button', { name: '新建会话' }).first().click()
+if ((await publicAssistantPage.locator('.public-assistant__message').count()) !== 0) {
+  failures.push('/blog public assistant: new conversation should clear the current transcript')
+}
+const sessionRegistryAfterReset = await publicAssistantPage.evaluate(() => {
+  const raw = window.localStorage.getItem('biau-public-assistant-sessions-v2')
+  return raw ? JSON.parse(raw) : null
+})
+if (
+  !sessionRegistryAfterReset ||
+  typeof sessionRegistryAfterReset.currentSessionId !== 'string' ||
+  sessionRegistryAfterReset.currentSessionId.length < 24
+) {
+  failures.push('/blog public assistant: new conversation should persist a fresh high-entropy session capability')
+}
+await publicAssistantPage.getByRole('button', { name: '进入全屏' }).click()
+if (!(await publicAssistantPage.locator('.public-assistant').evaluate((element) => element.classList.contains('is-fullscreen')))) {
+  failures.push('/blog public assistant: expected desktop fullscreen command to expand the surface')
+}
+if ((await publicAssistantPage.evaluate(() => getComputedStyle(document.body).overflow)) !== 'hidden') {
+  failures.push('/blog public assistant: desktop fullscreen should lock document scrolling')
+}
+await publicAssistantPage.getByRole('button', { name: '退出全屏' }).click()
 const expectedInitialSuggestions = publicAssistantSuggestions.slice(0, 3)
 const visibleSuggestionLabels = await publicAssistantPage.locator('.public-assistant__suggestion').allInnerTexts()
 if (
@@ -2285,11 +2429,83 @@ if ((await publicAssistantPage.locator('.public-assistant__message.is-user').cou
 if ((await publicAssistantPage.locator('.public-assistant__citation').count()) < 1) {
   failures.push('/blog public assistant: expected cited local knowledge')
 }
-await publicAssistantPage.locator('.public-assistant__close').click()
+const assistantLayout = await publicAssistantPage.evaluate(() => {
+  const messages = document.querySelector('.public-assistant__messages')
+  const composer = document.querySelector('.public-assistant__composer')
+  if (!(messages instanceof HTMLElement) || !(composer instanceof HTMLElement)) return null
+  const messagesRect = messages.getBoundingClientRect()
+  const composerRect = composer.getBoundingClientRect()
+  return {
+    overflowY: getComputedStyle(messages).overflowY,
+    messagesBottom: messagesRect.bottom,
+    composerTop: composerRect.top,
+  }
+})
+if (!assistantLayout || assistantLayout.overflowY !== 'auto' || assistantLayout.messagesBottom > assistantLayout.composerTop + 1) {
+  failures.push('/blog public assistant: message region must scroll without overlapping the composer')
+}
+await publicAssistantPage.getByRole('button', { name: '关闭研究助手' }).click()
 if (await publicAssistantPage.locator('.public-assistant__panel').isVisible().catch(() => false)) {
   failures.push('/blog public assistant: expected panel to close')
 }
 await publicAssistantPage.close()
+
+for (const width of [320, 390, 430]) {
+  const mobileAssistantPage = await browser.newPage({ viewport: { width, height: 900 } })
+  await mobileAssistantPage.route('**/api/health', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+    })
+  })
+  await gotoApp(mobileAssistantPage, '/blog')
+  await mobileAssistantPage.locator('.public-assistant__trigger').click()
+  await mobileAssistantPage.locator('.public-assistant.is-fullscreen .public-assistant__panel').waitFor({ state: 'visible' })
+  await mobileAssistantPage.setViewportSize({ width, height: 640 })
+  await mobileAssistantPage.waitForFunction(() => {
+    const root = document.querySelector('.public-assistant')
+    return root instanceof HTMLElement && root.style.getPropertyValue('--public-assistant-viewport-height') === '640px'
+  })
+  const mobileAssistantLayout = await mobileAssistantPage.evaluate(() => {
+    const root = document.querySelector('.public-assistant')
+    const panel = document.querySelector('.public-assistant__panel')
+    const messages = document.querySelector('.public-assistant__messages')
+    const composer = document.querySelector('.public-assistant__composer')
+    if (!(root instanceof HTMLElement) || !(panel instanceof HTMLElement) || !(messages instanceof HTMLElement) || !(composer instanceof HTMLElement)) return null
+    const panelRect = panel.getBoundingClientRect()
+    const messagesRect = messages.getBoundingClientRect()
+    const composerRect = composer.getBoundingClientRect()
+    return {
+      fullscreen: root.classList.contains('is-fullscreen'),
+      panelLeft: panelRect.left,
+      panelRight: panelRect.right,
+      panelTop: panelRect.top,
+      panelBottom: panelRect.bottom,
+      messagesBottom: messagesRect.bottom,
+      composerTop: composerRect.top,
+      overflowY: getComputedStyle(messages).overflowY,
+      bodyOverflow: getComputedStyle(document.body).overflow,
+    }
+  })
+  if (
+    !mobileAssistantLayout?.fullscreen ||
+    mobileAssistantLayout.panelLeft < -1 ||
+    mobileAssistantLayout.panelRight > width + 1 ||
+    mobileAssistantLayout.panelTop < -1 ||
+    mobileAssistantLayout.panelBottom > 641 ||
+    mobileAssistantLayout.messagesBottom > mobileAssistantLayout.composerTop + 1 ||
+    mobileAssistantLayout.overflowY !== 'auto' ||
+    mobileAssistantLayout.bodyOverflow !== 'hidden'
+  ) {
+    failures.push(`/blog public assistant ${width}px: expected viewport-safe mobile fullscreen with an isolated message scroller`)
+  }
+  await mobileAssistantPage.keyboard.press('Escape')
+  if (await mobileAssistantPage.locator('.public-assistant__panel').isVisible().catch(() => false)) {
+    failures.push(`/blog public assistant ${width}px: Escape should close the fullscreen dialog`)
+  }
+  await mobileAssistantPage.close()
+}
 
 for (const path of ['/projects', '/blog']) {
   const routeFlashPage = await browser.newPage({ viewport: viewports[0] })

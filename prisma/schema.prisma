@@ -29,6 +29,7 @@ model PublicAssistantTurn {
   status              String
   citationIdsJson     Json
   metricsJson         Json?
+  displaySnapshotJson Json?
   questionFingerprint String
   topicFingerprint    String
   topicTerms          String

@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
 import type { PrismaClient } from '@prisma/client'
 import {
+  deletePublicAssistantSession,
   loadPublicAssistantInsights,
+  loadPublicAssistantSession,
+  loadPublicAssistantSessions,
   normalizePublicAssistantFeedback,
+  normalizePublicAssistantSessionAccess,
+  normalizePublicAssistantSessionList,
   persistPublicAssistantTurn,
   runPublicAssistantRetention,
   savePublicAssistantFeedback,
@@ -95,6 +100,13 @@ const secretAggregate = persistSecret.captured.aggregateUpsert as { create: Reco
 assert.equal(secretTurn.data.question, '[blocked]')
 assert.equal(secretTurn.data.answer, '[blocked]')
 assert.equal(secretTurn.data.topicTerms, 'blocked')
+assert.deepEqual(secretTurn.data.displaySnapshotJson, {
+  version: 1,
+  claims: [],
+  citations: [],
+  suggestions: [],
+  meta: { mode: 'fallback', citationCount: 0 },
+})
 assert.equal(secretAggregate.create.topicTerms, 'blocked')
 assert.equal(String(secretTurn.data.questionFingerprint).includes(secretSentinel), false)
 
@@ -170,6 +182,118 @@ const unchangedFeedback = createFeedbackFake('down')
 assert.deepEqual(await savePublicAssistantFeedback(normalizedDown, unchangedFeedback.prisma, fixedNow), { status: 'saved' })
 assert.equal((unchangedFeedback.captured.aggregateUpdates as unknown[]).length, 0)
 
+assert.deepEqual(normalizePublicAssistantSessionList({
+  sessionIds: ['public-session-1234', 'invalid id', 'public-session-1234', 'public-session-5678'],
+}), { sessionIds: ['public-session-1234', 'public-session-5678'] })
+assert.equal(normalizePublicAssistantSessionList({ sessionIds: 'not-an-array' }), null)
+assert.deepEqual(normalizePublicAssistantSessionAccess({ sessionId: 'public-session-1234' }), { sessionId: 'public-session-1234' })
+assert.equal(normalizePublicAssistantSessionAccess({ sessionId: '../private' }), null)
+
+const historyCapture: Record<string, unknown> = {}
+const historyPrisma = {
+  publicAssistantSession: {
+    findMany: async (args: unknown) => {
+      historyCapture.findMany = args
+      return [{
+        id: 'public-session-1234',
+        createdAt: fixedNow,
+        lastActiveAt: fixedNow,
+        expiresAt: new Date(fixedNow.getTime() + 86_400_000),
+        turns: [{ question: '第一条问题' }],
+        _count: { turns: 2 },
+      }]
+    },
+    findFirst: async (args: unknown) => {
+      historyCapture.findFirst = args
+      return {
+        id: 'public-session-1234',
+        createdAt: fixedNow,
+        lastActiveAt: fixedNow,
+        expiresAt: new Date(fixedNow.getTime() + 86_400_000),
+        turns: [
+          {
+            id: 'turn-2',
+            question: '第二条问题',
+            answer: '第二条回答',
+            mode: 'web',
+            route: 'web',
+            status: 'partial',
+            citationIdsJson: ['web-1'],
+            metricsJson: { evidenceCount: 1, webEvidenceCount: 1, durationMs: 200 },
+            displaySnapshotJson: {
+              version: 1,
+              claims: [{ id: 'claim-1', text: '结论', citationIds: ['web-1'] }],
+              citations: [{
+                id: 'web-1',
+                title: '公开网页',
+                summary: '摘要',
+                href: 'https://example.com/source',
+                source: 'web',
+                section: '正文',
+                excerpt: '公开证据',
+                publishedAt: null,
+                evidenceStatus: 'verified',
+              }],
+              suggestions: ['继续研究'],
+              meta: {
+                mode: 'model',
+                citationCount: 1,
+                research: {
+                  requestedMode: 'web',
+                  route: 'web',
+                  status: 'partial',
+                  evidenceCount: 1,
+                  siteEvidenceCount: 0,
+                  webEvidenceCount: 1,
+                  retryCount: 0,
+                  searchAvailable: true,
+                  durationMs: 200,
+                },
+              },
+            },
+            createdAt: new Date(fixedNow.getTime() + 1_000),
+            feedback: { rating: 'up' },
+          },
+          {
+            id: 'turn-1',
+            question: '第一条问题',
+            answer: '旧记录回答',
+            mode: 'auto',
+            route: 'direct',
+            status: 'answered',
+            citationIdsJson: ['site-legacy'],
+            metricsJson: { evidenceCount: 1, siteEvidenceCount: 1, durationMs: 100 },
+            displaySnapshotJson: null,
+            createdAt: fixedNow,
+            feedback: null,
+          },
+        ],
+      }
+    },
+    deleteMany: async (args: unknown) => {
+      historyCapture.deleteMany = args
+      return { count: 1 }
+    },
+  },
+} as unknown as PrismaClient
+
+const sessionSummaries = await loadPublicAssistantSessions(['public-session-1234'], historyPrisma, fixedNow)
+assert.ok(sessionSummaries)
+assert.equal(sessionSummaries[0]?.title, '第一条问题')
+assert.equal(sessionSummaries[0]?.turnCount, 2)
+
+const sessionHistory = await loadPublicAssistantSession('public-session-1234', historyPrisma, fixedNow)
+assert.equal(sessionHistory.status, 'loaded')
+if (sessionHistory.status === 'loaded') {
+  assert.equal(sessionHistory.turns[0]?.answer, '旧记录回答')
+  assert.equal(sessionHistory.turns[0]?.citations.length, 0, 'legacy rows must degrade without inventing citations')
+  assert.equal(sessionHistory.turns[1]?.citations[0]?.href, 'https://example.com/source')
+  assert.equal(sessionHistory.turns[1]?.feedback, 'up')
+}
+
+assert.deepEqual(await deletePublicAssistantSession('public-session-1234', historyPrisma, fixedNow), { status: 'deleted' })
+assert.ok(historyCapture.deleteMany)
+
 const retentionCapture: unknown[] = []
 const retentionPrisma = {
   publicAssistantTurn: { deleteMany: (args: unknown) => Promise.resolve(retentionCapture.push(args)) },
@@ -220,5 +344,8 @@ assert.equal('sessionId' in insightsSelect, false)
 assert.equal(await persistPublicAssistantTurn(makeRequest('hello'), makeResponse('answer'), null, fixedNow), null)
 assert.deepEqual(await savePublicAssistantFeedback(normalizedDown, null, fixedNow), { status: 'database-not-configured' })
 assert.equal(await loadPublicAssistantInsights(null), null)
+assert.equal(await loadPublicAssistantSessions(['public-session-1234'], null, fixedNow), null)
+assert.deepEqual(await loadPublicAssistantSession('public-session-1234', null, fixedNow), { status: 'database-not-configured' })
+assert.deepEqual(await deletePublicAssistantSession('public-session-1234', null, fixedNow), { status: 'database-not-configured' })
 
 console.log('Public assistant persistence and retention contracts passed.')

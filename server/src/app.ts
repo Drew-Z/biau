@@ -13,11 +13,17 @@ import {
 import { normalizePublicAssistantPayload, runPublicAssistantAgent } from './publicAssistantAgent.js'
 import type { PublicAssistantProgress, PublicAssistantRequest } from './publicAssistantRuntime.js'
 import {
+  deletePublicAssistantSession,
   loadPublicAssistantInsights,
+  loadPublicAssistantSession,
+  loadPublicAssistantSessions,
   normalizePublicAssistantFeedback,
+  normalizePublicAssistantSessionAccess,
+  normalizePublicAssistantSessionList,
   persistPublicAssistantTurn,
   savePublicAssistantFeedback,
 } from './publicAssistantPersistence.js'
+import { toPublicAssistantHttpResponse } from './publicAssistantProjection.js'
 import { consumePublicAssistantRateLimit } from './publicAssistantRateLimit.js'
 import { isPublicWebSearchConfigured } from './publicWebResearch.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
@@ -25,7 +31,7 @@ import { createStudioRouter } from './studioRoutes.js'
 import { createAiDailyPublicRouter } from './aiDailyPublicRoutes.js'
 import { startAiDailyStudioProductionWorker } from './aiDailyStudioProduction.js'
 import { startAiDailyStudioIngestionWorker } from './aiDailyStudioIngestion.js'
-import type { AssistantServiceMode, ChatPayload, ChatResponse } from './types.js'
+import type { AssistantServiceMode, ChatPayload } from './types.js'
 
 const PUBLIC_ASSISTANT_SSE_HEARTBEAT_MS = 8_000
 
@@ -233,6 +239,74 @@ function registerPublicAssistantRoutes(app: express.Express) {
     }
   })
 
+  app.post('/chat/public/sessions', async (req, res, next) => {
+    try {
+      res.setHeader('Cache-Control', 'no-store')
+      const input = normalizePublicAssistantSessionList(req.body)
+      if (!input) {
+        res.status(400).json({ error: 'invalid-public-assistant-session-list' })
+        return
+      }
+      if (!acceptPublicAssistantHistoryRequest(req, res)) return
+      const sessions = await loadPublicAssistantSessions(input.sessionIds)
+      if (!sessions) {
+        res.status(503).json({ error: 'database-not-configured' })
+        return
+      }
+      res.json({ sessions })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.post('/chat/public/session', async (req, res, next) => {
+    try {
+      res.setHeader('Cache-Control', 'no-store')
+      const input = normalizePublicAssistantSessionAccess(req.body)
+      if (!input) {
+        res.status(400).json({ error: 'invalid-public-assistant-session' })
+        return
+      }
+      if (!acceptPublicAssistantHistoryRequest(req, res)) return
+      const result = await loadPublicAssistantSession(input.sessionId)
+      if (result.status === 'database-not-configured') {
+        res.status(503).json({ error: result.status })
+        return
+      }
+      if (result.status === 'session-not-found') {
+        res.status(404).json({ error: result.status })
+        return
+      }
+      res.json({ session: result.session, turns: result.turns, truncated: result.truncated })
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.delete('/chat/public/session', async (req, res, next) => {
+    try {
+      res.setHeader('Cache-Control', 'no-store')
+      const input = normalizePublicAssistantSessionAccess(req.body)
+      if (!input) {
+        res.status(400).json({ error: 'invalid-public-assistant-session' })
+        return
+      }
+      if (!acceptPublicAssistantHistoryRequest(req, res)) return
+      const result = await deletePublicAssistantSession(input.sessionId)
+      if (result.status === 'database-not-configured') {
+        res.status(503).json({ error: result.status })
+        return
+      }
+      if (result.status === 'session-not-found') {
+        res.status(404).json({ error: result.status })
+        return
+      }
+      res.json({ ok: true })
+    } catch (error) {
+      next(error)
+    }
+  })
+
   app.get('/operations/public-assistant/insights', async (req, res, next) => {
     try {
       if (!env.publicAssistantOperationsToken) {
@@ -271,6 +345,14 @@ function acceptPublicAssistantRequest(req: express.Request, res: express.Respons
   return request
 }
 
+function acceptPublicAssistantHistoryRequest(req: express.Request, res: express.Response) {
+  const rateLimit = consumePublicAssistantRateLimit(`history:${req.ip ?? 'unknown'}`)
+  if (rateLimit.allowed) return true
+  res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds))
+  res.status(429).json({ error: 'public-assistant-rate-limited' })
+  return false
+}
+
 async function runAndPersistPublicAssistant(
   request: PublicAssistantRequest,
   signal: AbortSignal,
@@ -290,24 +372,6 @@ async function runAndPersistPublicAssistant(
 function writePublicAssistantSse(res: express.Response, event: string, payload: unknown) {
   if (res.writableEnded || res.destroyed) return
   res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
-}
-
-function toPublicAssistantHttpResponse(response: ChatResponse) {
-  return {
-    answer: response.answer,
-    status: response.status,
-    claims: response.claims ?? [],
-    citations: response.citations,
-    suggestions: response.suggestions ?? [],
-    ...(response.sessionId ? { sessionId: response.sessionId } : {}),
-    ...(response.messageId ? { messageId: response.messageId } : {}),
-    meta: {
-      mode: response.meta?.mode ?? 'fallback',
-      reason: response.meta?.reason,
-      citationCount: response.citations.length,
-      research: response.meta?.research,
-    },
-  }
 }
 
 function readBearerToken(value: string | undefined) {

@@ -81,6 +81,66 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - Persist only bounded anonymous session/turn/feedback data for 30 days. Long-lived aggregates store topic fingerprints and counters rather than raw questions or answers.
 - Database absence degrades persistence without making the public route unusable.
 
+## Scenario: Anonymous History And Product Surface
+
+### 1. Scope / Trigger
+
+- Applies whenever public-assistant session history, display restoration, fullscreen behavior, or the same-origin history proxy changes.
+- A public session ID is a bearer capability, not an account identity. The browser may ask only about capabilities it already holds; the service must never expose a global anonymous-session index.
+
+### 2. Signatures
+
+- `POST /chat/public/sessions` with `{ sessionIds: string[] }` returns `{ sessions: PublicAssistantSessionSummary[] }` ordered by recent activity.
+- `POST /chat/public/session` with `{ sessionId: string }` returns `{ session, turns, truncated }` in chronological display order.
+- `DELETE /chat/public/session` with `{ sessionId: string }` returns `{ ok: true }`.
+- `PublicAssistantTurn.displaySnapshotJson Json?` stores the nullable, versioned public display projection. Session deletion cascades turns and feedback; aggregate rows are independent.
+- Cloudflare exposes matching same-origin routes at `/api/chat/public/sessions` and `/api/chat/public/session` without changing the upstream HTTP method.
+
+### 3. Contracts
+
+- The browser keeps a versioned, deduplicated registry of at most 24 session IDs. New capabilities use `crypto.randomUUID()` or at least 128 bits from `crypto.getRandomValues()`; weak timestamp or `Math.random()` fallbacks are forbidden.
+- Capabilities are accepted only in bounded JSON bodies, never in path segments or query strings. The list operation intersects at most 24 submitted IDs with unexpired rows; unknown and expired IDs are silently omitted.
+- Session reads return at most 100 unexpired turns and set `truncated=true` when older retained turns are omitted.
+- Snapshot version 1 contains only allowlisted claims, public citations, bounded suggestions, and low-sensitive metadata. Serialization and hydration both re-run the public allowlist. Unknown versions or invalid shapes degrade to normalized question/answer text; stored JSON is never returned directly.
+- Secret-shaped or blocked turns store an empty safe snapshot. Provider/model identity, endpoints, prompts, credentials, raw diagnostics, raw errors, and internal citations are forbidden snapshot fields.
+- Raw sessions, turns, and feedback use the configured 30-day retention period. Deletion and expiry do not delete, decrement, or rewrite `PublicAssistantDailyAggregate`.
+- Every history response uses `Cache-Control: no-store`. History requests have an IP rate-limit bucket independent of chat and feedback.
+- The Cloudflare proxy constructs a fresh request-header allowlist containing only `Accept` and, when applicable, `Content-Type`. Browser `Authorization`, `Cookie`, forwarding headers, and arbitrary client headers are never forwarded.
+- Desktop opens compact and may toggle fullscreen. Mobile opens fullscreen. Only fullscreen is the outer modal; it locks document scrolling, restores launcher focus on close, and tracks `visualViewport` height so the soft keyboard cannot cover the composer.
+- The history drawer is a modal layer within the assistant shell. Focus moves into it, Tab remains inside it, and Escape closes the drawer before a later Escape can close the assistant.
+- Only the message region scrolls. Automatic following is allowed only while the visitor remains near the bottom; otherwise a return-to-latest action appears.
+- Starting a new conversation aborts chat and history work, creates a fresh capability, clears hydrated/transient state, and ignores any completion whose controller or captured session no longer matches the active conversation.
+
+### 4. Validation & Error Matrix
+
+- Empty, malformed, oversized, or over-count session input -> stable validation error; no database query using unbounded caller data.
+- Unknown/expired ID in session list -> omit it without revealing whether it ever existed.
+- Unknown/expired single read or delete -> HTTP 404 with stable `session-not-found`.
+- Persistence unavailable -> HTTP 503 with stable `database-not-configured`; chat may still use its documented fallback, but history must not invent persistence.
+- Invalid or unsupported display snapshot -> return safe text-only history, not raw JSON and not a 500 response.
+- Proxy timeout, unreachable upstream, invalid content type, or oversized body -> stable low-sensitive public error; never include upstream URL or raw upstream body.
+- `429` -> preserve the bounded `Retry-After` value for actionable UI copy.
+
+### 5. Good / Base / Bad Cases
+
+- Good: the browser submits two owned capabilities, restores a cited turn after refresh, creates a new conversation, and deletes one session without changing aggregate counters.
+- Base: an older turn has no display snapshot; the visitor sees readable question/answer text and can continue the session.
+- Bad: a caller submits guessed IDs, a stored snapshot contains an internal citation, or the browser supplies an authorization header; no guessed record, internal field, browser credential, or raw diagnostic reaches the response or upstream service.
+
+### 6. Tests Required
+
+- Persistence checks assert submitted-ID intersection, expiry, 100-turn truncation, snapshot allowlisting, legacy fallback, cascade deletion, and aggregate preservation.
+- API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
+- Cloudflare checks assert method/body preservation, request/response limits, no-store, `Retry-After`, and removal of browser authorization and cookies.
+- UI checks assert rich restoration after an awaited history response, fresh high-entropy capability creation, request/session race isolation, drawer focus and Escape ordering, desktop scroll lock, and 320/390/430 viewport-safe message/composer layout.
+- All checks use local fixtures only and must not call a live model, search, embedding, reranker, or vector database provider.
+
+### 7. Wrong vs Correct
+
+Wrong: expose `GET /sessions`, place a session ID in the URL, generate a capability with time plus `Math.random()`, trust stored snapshot JSON, forward browser headers, or let the history overlay share the outer dialog's full focus order.
+
+Correct: intersect bounded browser-held capabilities in a JSON body, require cryptographic randomness, hydrate through the public projection, construct proxy headers from an allowlist, and give each visible modal layer its own focus and Escape boundary.
+
 ## Sync And Deployment
 
 - Public knowledge sync writes a versioned Qdrant collection, validates the replacement, and then switches the configured alias.

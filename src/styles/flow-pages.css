@@ -4793,6 +4793,24 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   z-index: 130;
 }
 
+.public-assistant.is-open .public-assistant__trigger {
+  display: none;
+}
+
+.public-assistant.is-fullscreen {
+  top: var(--public-assistant-viewport-offset-top, 0);
+  right: 0;
+  bottom: auto;
+  left: 0;
+  width: 100vw;
+  height: var(--public-assistant-viewport-height, 100dvh);
+  display: grid;
+  place-items: stretch center;
+  background: color-mix(in oklch, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
 .public-assistant__trigger {
   order: 2;
   min-height: 48px;
@@ -4843,6 +4861,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 
 .public-assistant__panel {
   order: 1;
+  position: relative;
   width: min(440px, calc(100vw - 32px));
   height: min(680px, calc(100dvh - 104px));
   max-height: calc(100dvh - 104px);
@@ -4851,6 +4870,25 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
   gap: var(--space-10, 10px);
   overflow: hidden;
+}
+
+.public-assistant.is-fullscreen .public-assistant__panel {
+  width: min(1080px, 100vw);
+  height: 100%;
+  max-height: none;
+  padding: clamp(14px, 2vw, 24px);
+  border-block: 0;
+  border-radius: 0;
+  box-shadow: 0 0 72px rgb(var(--flow-ui-shadow-rgb) / 0.2);
+}
+
+.public-assistant.is-fullscreen .public-assistant__hint,
+.public-assistant.is-fullscreen .public-assistant__modes,
+.public-assistant.is-fullscreen .public-assistant__messages,
+.public-assistant.is-fullscreen .public-assistant__suggestions,
+.public-assistant.is-fullscreen .public-assistant__composer {
+  width: min(760px, 100%);
+  justify-self: center;
 }
 
 .public-assistant__header {
@@ -4863,6 +4901,43 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 
 .public-assistant__header > div {
   min-width: 0;
+}
+
+.public-assistant__title {
+  min-width: 0;
+}
+
+.public-assistant__header-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.public-assistant__header-actions button,
+.public-assistant__history header button,
+.public-assistant__history-delete {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: var(--muted);
+  background: color-mix(in oklch, var(--panel-strong) 52%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.public-assistant__header-actions button:hover,
+.public-assistant__history header button:hover,
+.public-assistant__history-delete:hover {
+  color: var(--ink);
+  border-color: var(--flow-ui-border-strong);
 }
 
 .public-assistant__header h2 {
@@ -4918,7 +4993,13 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   min-height: 0;
   max-height: none;
   padding: 2px 4px 2px 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-10, 10px);
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-padding-block: var(--space-12, 12px);
   scrollbar-gutter: stable;
 }
 
@@ -4965,12 +5046,206 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   background: color-mix(in oklch, var(--blue) 15%, var(--panel-strong));
 }
 
+.public-assistant__notice {
+  min-width: 0;
+  padding: var(--space-10, 10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-10, 10px);
+  color: color-mix(in oklch, var(--rose) 68%, var(--ink));
+  background: color-mix(in oklch, var(--rose) 8%, var(--panel-strong));
+  border: 1px solid color-mix(in oklch, var(--rose) 24%, var(--flow-ui-card-border));
+  border-radius: var(--radius-sm);
+}
+
+.public-assistant__notice > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.public-assistant__notice strong,
+.public-assistant__notice span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.public-assistant__notice strong {
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.public-assistant__notice span {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.public-assistant__notice button,
+.public-assistant__latest {
+  min-height: 34px;
+  padding: 0 var(--space-10, 10px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel) 86%, transparent);
+  border: 1px solid var(--flow-ui-border-strong);
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.public-assistant__latest {
+  position: sticky;
+  bottom: 4px;
+  z-index: 2;
+  justify-self: center;
+  box-shadow: var(--shadow);
+}
+
 .public-assistant__composer {
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-8);
   align-items: end;
+  padding-top: 2px;
+  background: color-mix(in oklch, var(--panel) 92%, transparent);
+}
+
+.public-assistant__history-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  padding: 0;
+  background: rgb(var(--flow-ui-shadow-rgb) / 0.28);
+  border: 0;
+  cursor: pointer;
+}
+
+.public-assistant__history {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 6;
+  width: min(340px, 100%);
+  min-width: 0;
+  padding: var(--space-16);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: var(--space-12, 12px);
+  overflow: hidden;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel) 96%, var(--bg));
+  border-right: 1px solid var(--flow-ui-border-strong);
+  box-shadow: 18px 0 44px rgb(var(--flow-ui-shadow-rgb) / 0.18);
+}
+
+.public-assistant__history > header {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-12, 12px);
+}
+
+.public-assistant__history h3 {
+  margin: 2px 0 0;
+  font-size: 1rem;
+}
+
+.public-assistant__history-new {
+  min-height: 42px;
+  padding: 0 var(--space-12, 12px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
+  color: var(--ink);
+  background: color-mix(in oklch, var(--green) 10%, var(--panel-strong));
+  border: 1px solid color-mix(in oklch, var(--green) 25%, var(--flow-ui-card-border));
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.public-assistant__history-list {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.public-assistant__history-list article {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.public-assistant__history-list article.is-current {
+  background: color-mix(in oklch, var(--blue) 9%, transparent);
+  border-color: color-mix(in oklch, var(--blue) 20%, var(--flow-ui-card-border));
+}
+
+.public-assistant__history-open {
+  min-width: 0;
+  padding: var(--space-10, 10px);
+  display: grid;
+  gap: 3px;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.public-assistant__history-open strong,
+.public-assistant__history-open span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-assistant__history-open strong {
+  font-size: 12px;
+}
+
+.public-assistant__history-open span,
+.public-assistant__history-state span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.public-assistant__history-state {
+  min-height: 160px;
+  padding: var(--space-16);
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.public-assistant__history-state button {
+  min-height: 36px;
+  margin-top: 4px;
+  padding: 0 var(--space-10, 10px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
 }
 
 .public-assistant__citations {
@@ -5189,12 +5464,16 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .studio-source-card__footer button:focus-visible,
 .public-assistant__trigger:focus-visible,
 .public-assistant__close:focus-visible,
+.public-assistant__header-actions button:focus-visible,
+.public-assistant__history button:focus-visible,
 .public-assistant__modes button:focus-visible,
 .public-assistant__message-actions button:focus-visible,
 .public-assistant__claims summary:focus-visible,
 .public-assistant__suggestion:focus-visible,
 .public-assistant__composer textarea:focus-visible,
 .public-assistant__composer button:focus-visible,
+.public-assistant__notice button:focus-visible,
+.public-assistant__latest:focus-visible,
 .public-assistant__citation:focus-visible {
   outline: 2px solid color-mix(in oklch, var(--amber) 82%, white);
   outline-offset: 3px;
@@ -6398,6 +6677,48 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     height: calc(100svh - var(--mobile-tabbar-clearance, 72px) - 40px);
     max-height: calc(100svh - var(--mobile-tabbar-clearance, 72px) - 40px);
     padding: var(--space-12, 12px);
+  }
+
+  .public-assistant.is-fullscreen .public-assistant__panel {
+    width: 100vw;
+    height: 100%;
+    padding:
+      max(var(--space-12, 12px), env(safe-area-inset-top))
+      max(var(--space-12, 12px), env(safe-area-inset-right))
+      max(var(--space-12, 12px), env(safe-area-inset-bottom))
+      max(var(--space-12, 12px), env(safe-area-inset-left));
+    border: 0;
+  }
+
+  .public-assistant__fullscreen-toggle {
+    display: none !important;
+  }
+
+  .public-assistant__history {
+    width: 100%;
+    padding:
+      max(var(--space-12, 12px), env(safe-area-inset-top))
+      max(var(--space-12, 12px), env(safe-area-inset-right))
+      max(var(--space-12, 12px), env(safe-area-inset-bottom))
+      max(var(--space-12, 12px), env(safe-area-inset-left));
+    border-right: 0;
+  }
+
+  .public-assistant__header-actions button,
+  .public-assistant__history header button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .public-assistant__notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .public-assistant__notice button {
+    min-height: 44px;
   }
 
   .public-assistant__message-actions button,

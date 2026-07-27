@@ -2,6 +2,11 @@ import { createServer as createHttpServer } from 'node:http'
 import { createServer as createTcpServer } from 'node:net'
 import { onRequestPost as publicChat } from '../functions/api/chat/public.ts'
 import { onRequestPost as publicFeedback } from '../functions/api/chat/public/feedback.ts'
+import {
+  onRequestDelete as deletePublicSession,
+  onRequestPost as publicSession,
+} from '../functions/api/chat/public/session.ts'
+import { onRequestPost as publicSessions } from '../functions/api/chat/public/sessions.ts'
 import { onRequestPost as publicChatStream } from '../functions/api/chat/public/stream.ts'
 import { onRequestGet as health } from '../functions/api/health.ts'
 
@@ -120,15 +125,53 @@ function startMockPublicAssistant(port, observed) {
       return
     }
 
+    if (request.method === 'POST' && request.url === '/chat/public/sessions') {
+      response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      response.end(JSON.stringify({
+        sessions: [{
+          id: 'public-session-1234',
+          title: '公开会话',
+          turnCount: 1,
+          createdAt: '2026-07-27T08:00:00.000Z',
+          lastActiveAt: '2026-07-27T08:01:00.000Z',
+          expiresAt: '2026-08-26T08:00:00.000Z',
+        }],
+      }))
+      return
+    }
+
+    if (request.method === 'POST' && request.url === '/chat/public/session') {
+      response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      response.end(JSON.stringify({
+        session: {
+          id: 'public-session-1234',
+          title: '公开会话',
+          turnCount: 1,
+          createdAt: '2026-07-27T08:00:00.000Z',
+          lastActiveAt: '2026-07-27T08:01:00.000Z',
+          expiresAt: '2026-08-26T08:00:00.000Z',
+        },
+        turns: [],
+        truncated: false,
+      }))
+      return
+    }
+
+    if (request.method === 'DELETE' && request.url === '/chat/public/session') {
+      response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      response.end(JSON.stringify({ ok: true }))
+      return
+    }
+
     response.writeHead(404, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify({ error: 'not-found' }))
   })
   return new Promise((resolve) => server.listen(port, '127.0.0.1', () => resolve(server)))
 }
 
-function makeRequest(path, payload, headers = {}) {
+function makeRequest(path, payload, headers = {}, method = 'POST') {
   return new Request(`https://biau.example${path}`, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(payload),
   })
@@ -236,6 +279,45 @@ try {
   const feedbackPayload = await feedbackResponse.json()
   if (!feedbackResponse.ok || feedbackPayload.ok !== true) {
     throw new Error('Cloudflare feedback proxy did not preserve the upstream response')
+  }
+
+  const sessionHeaders = {
+    Authorization: 'Bearer browser-secret-must-not-forward',
+    Cookie: 'session=browser-secret-must-not-forward',
+  }
+  const sessionsResponse = await publicSessions({
+    request: makeRequest('/api/chat/public/sessions', { sessionIds: ['public-session-1234'] }, sessionHeaders),
+    env,
+  })
+  const sessionsPayload = await sessionsResponse.json()
+  if (!sessionsResponse.ok || sessionsPayload.sessions?.[0]?.title !== '公开会话') {
+    throw new Error('Cloudflare session-list proxy did not preserve the upstream response')
+  }
+
+  const sessionResponse = await publicSession({
+    request: makeRequest('/api/chat/public/session', { sessionId: 'public-session-1234' }, sessionHeaders),
+    env,
+  })
+  const sessionPayload = await sessionResponse.json()
+  if (!sessionResponse.ok || sessionPayload.session?.id !== 'public-session-1234') {
+    throw new Error('Cloudflare session proxy did not preserve the upstream response')
+  }
+
+  const deleteResponse = await deletePublicSession({
+    request: makeRequest('/api/chat/public/session', { sessionId: 'public-session-1234' }, sessionHeaders, 'DELETE'),
+    env,
+  })
+  const deletePayload = await deleteResponse.json()
+  if (!deleteResponse.ok || deletePayload.ok !== true) {
+    throw new Error('Cloudflare session-delete proxy did not preserve the upstream response')
+  }
+
+  const historyObservations = observed.filter((entry) => entry.url === '/chat/public/session' || entry.url === '/chat/public/sessions')
+  if (historyObservations.length !== 3 || historyObservations.some((entry) => entry.authorization || entry.cookie)) {
+    throw new Error('Cloudflare history proxies must not forward browser credentials')
+  }
+  if (sessionsResponse.headers.get('Cache-Control') !== 'no-store' || sessionResponse.headers.get('Cache-Control') !== 'no-store') {
+    throw new Error('Cloudflare history proxies must remain non-cacheable')
   }
 
   const limitedResponse = await publicChat({

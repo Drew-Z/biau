@@ -5,6 +5,7 @@ import type { AssistantServiceMode, RagRetrieveResponse } from '../src/types.js'
 
 interface EnvSnapshot {
   assistantServiceMode: AssistantServiceMode
+  databaseUrl: string
   assistantModelApiKey: string
   assistantRagApiBaseUrl: string
   assistantRagApiKey: string
@@ -46,6 +47,7 @@ function findAvailablePort(startPort: number) {
 function snapshotEnv(): EnvSnapshot {
   return {
     assistantServiceMode: env.assistantServiceMode,
+    databaseUrl: env.databaseUrl,
     assistantModelApiKey: env.assistantModelApiKey,
     assistantRagApiBaseUrl: env.assistantRagApiBaseUrl,
     assistantRagApiKey: env.assistantRagApiKey,
@@ -65,6 +67,7 @@ function snapshotEnv(): EnvSnapshot {
 
 function restoreEnv(snapshot: EnvSnapshot) {
   env.assistantServiceMode = snapshot.assistantServiceMode
+  env.databaseUrl = snapshot.databaseUrl
   env.assistantModelApiKey = snapshot.assistantModelApiKey
   env.assistantRagApiBaseUrl = snapshot.assistantRagApiBaseUrl
   env.assistantRagApiKey = snapshot.assistantRagApiKey
@@ -87,6 +90,7 @@ async function withService(
   options: { publicFeedEnabled?: boolean } = {},
 ) {
   env.assistantServiceMode = mode
+  env.databaseUrl = ''
   env.assistantModelApiKey = ''
   env.openaiApiKey = ''
   env.assistantRagApiBaseUrl = ''
@@ -155,6 +159,11 @@ try {
       throw new Error('public mode should expose the public assistant SSE transport')
     }
 
+    const publicHistory = await postJson(`${base}/chat/public/sessions`, { sessionIds: ['public-session-1234'] })
+    if (publicHistory.response.status !== 503) {
+      throw new Error(`public mode should expose history and report missing persistence, got ${publicHistory.response.status}`)
+    }
+
     const operatorMe = await fetch(`${base}/operator/me`)
     if (operatorMe.status !== 404) throw new Error(`public mode should not expose operator routes, got ${operatorMe.status}`)
 
@@ -173,6 +182,9 @@ try {
 
     const publicChat = await postJson(`${base}/chat/public`, { message: 'RAG 项目' })
     if (publicChat.response.status !== 404) throw new Error(`rag mode should not expose chat, got ${publicChat.response.status}`)
+
+    const publicHistory = await postJson(`${base}/chat/public/sessions`, { sessionIds: ['public-session-1234'] })
+    if (publicHistory.response.status !== 404) throw new Error(`rag mode should not expose public history, got ${publicHistory.response.status}`)
 
     const operatorMe = await fetch(`${base}/operator/me`)
     if (operatorMe.status !== 404) throw new Error(`rag mode should not expose operator routes, got ${operatorMe.status}`)
@@ -243,6 +255,9 @@ try {
 
     const publicChat = await postJson(`${base}/chat/public`, { message: 'RAG 项目' })
     if (publicChat.response.status !== 404) throw new Error(`studio mode should not expose public chat, got ${publicChat.response.status}`)
+
+    const publicHistory = await postJson(`${base}/chat/public/sessions`, { sessionIds: ['public-session-1234'] })
+    if (publicHistory.response.status !== 404) throw new Error(`studio mode should not expose public history, got ${publicHistory.response.status}`)
 
     const operatorMe = await fetch(`${base}/operator/me`)
     if (operatorMe.status !== 404) throw new Error(`studio mode should not expose operator routes, got ${operatorMe.status}`)

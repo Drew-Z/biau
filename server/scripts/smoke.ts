@@ -33,6 +33,7 @@ function isMetricsEnabled() {
 
 const snapshot = {
   assistantServiceMode: env.assistantServiceMode,
+  databaseUrl: env.databaseUrl,
   assistantModelApiKey: env.assistantModelApiKey,
   openaiApiKey: env.openaiApiKey,
   assistantRagApiBaseUrl: env.assistantRagApiBaseUrl,
@@ -44,6 +45,7 @@ const snapshot = {
 }
 
 env.assistantServiceMode = 'all'
+env.databaseUrl = ''
 env.assistantModelApiKey = ''
 env.openaiApiKey = ''
 env.assistantRagApiBaseUrl = ''
@@ -172,6 +174,22 @@ try {
     throw new Error('public chat should refuse private credential requests without citations')
   }
 
+  const invalidHistory = await fetch(`${base}/chat/public/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionIds: 'not-an-array' }),
+  })
+  if (invalidHistory.status !== 400) throw new Error(`invalid public history should return 400, got ${invalidHistory.status}`)
+
+  const historyWithoutDatabase = await fetch(`${base}/chat/public/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionIds: ['public-session-1234'] }),
+  })
+  if (historyWithoutDatabase.status !== 503) {
+    throw new Error(`public history should report missing persistence, got ${historyWithoutDatabase.status}`)
+  }
+
   const retiredPaths = [
     '/operator',
     '/operator/settings',
@@ -209,6 +227,7 @@ try {
   console.log('Assistant API smoke passed with public-only assistant and isolated Studio/RAG surfaces')
 } finally {
   env.assistantServiceMode = snapshot.assistantServiceMode
+  env.databaseUrl = snapshot.databaseUrl
   env.assistantModelApiKey = snapshot.assistantModelApiKey
   env.openaiApiKey = snapshot.openaiApiKey
   env.assistantRagApiBaseUrl = snapshot.assistantRagApiBaseUrl

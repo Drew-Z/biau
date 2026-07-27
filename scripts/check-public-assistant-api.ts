@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict'
 import {
+  deletePublicAssistantSession,
   normalizePublicAssistantAnswer,
+  normalizePublicAssistantSessionHistory,
   PublicAssistantTransportError,
   readPublicAssistantEventStream,
+  requestPublicAssistantHealth,
+  requestPublicAssistantSession,
+  requestPublicAssistantSessions,
   requestPublicAssistantStream,
   submitPublicAssistantFeedback,
 } from '../src/utils/publicAssistantApi'
@@ -157,13 +162,78 @@ await assert.rejects(requestPublicAssistantStream(requestInput), (error: unknown
 
 globalThis.fetch = (async () => new Response('{"error":"rate-limited"}', {
   status: 429,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 'Content-Type': 'application/json', 'Retry-After': '17' },
 })) as typeof fetch
 await assert.rejects(requestPublicAssistantStream(requestInput), (error: unknown) => (
   error instanceof PublicAssistantTransportError &&
   error.message === 'public-assistant-rate-limited' &&
+  error.retryAfterSeconds === 17 &&
   !error.canFallbackToJson
 ))
+
+const historyPayload = {
+  session: {
+    id: 'public-session-1234',
+    title: '研究公开资料',
+    turnCount: 1,
+    createdAt: '2026-07-27T08:00:00.000Z',
+    lastActiveAt: '2026-07-27T08:01:00.000Z',
+    expiresAt: '2026-08-26T08:00:00.000Z',
+  },
+  turns: [{
+    ...validPayload,
+    id: 'turn-1234',
+    question: '研究公开资料',
+    mode: 'web',
+    route: 'combined',
+    createdAt: '2026-07-27T08:01:00.000Z',
+    feedback: 'up',
+  }],
+  truncated: false,
+}
+const normalizedHistory = normalizePublicAssistantSessionHistory(historyPayload)
+assert.ok(normalizedHistory)
+assert.equal(normalizedHistory.turns[0]?.question, '研究公开资料')
+assert.equal(normalizedHistory.turns[0]?.citations.length, 2)
+assert.equal(normalizedHistory.turns[0]?.feedback, 'up')
+
+globalThis.fetch = (async (input: URL | RequestInfo) => {
+  const url = String(input)
+  if (url.endsWith('/health')) {
+    return new Response(JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  if (url.endsWith('/chat/public/sessions')) {
+    return new Response(JSON.stringify({ sessions: [historyPayload.session] }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  return new Response(JSON.stringify(historyPayload), { headers: { 'Content-Type': 'application/json' } })
+}) as typeof fetch
+const health = await requestPublicAssistantHealth('https://assistant.example.com')
+assert.equal(health.modelConfigured, true)
+const sessions = await requestPublicAssistantSessions({
+  apiBase: 'https://assistant.example.com',
+  sessionIds: ['public-session-1234'],
+})
+assert.equal(sessions[0]?.title, '研究公开资料')
+const restored = await requestPublicAssistantSession({
+  apiBase: 'https://assistant.example.com',
+  sessionId: 'public-session-1234',
+})
+assert.equal(restored.turns[0]?.answer, '第一段。\n\n第二段。')
+
+let deleteMethod = ''
+let deleteBody: Record<string, unknown> | null = null
+globalThis.fetch = (async (_input: URL | RequestInfo, init?: RequestInit) => {
+  deleteMethod = init?.method ?? ''
+  deleteBody = JSON.parse(String(init?.body)) as Record<string, unknown>
+  return new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+}) as typeof fetch
+await deletePublicAssistantSession({ apiBase: 'https://assistant.example.com', sessionId: 'public-session-1234' })
+assert.equal(deleteMethod, 'DELETE')
+assert.equal(deleteBody.sessionId, 'public-session-1234')
 
 globalThis.fetch = (async (_input: URL | RequestInfo, init?: RequestInit) => {
   feedbackBody = JSON.parse(String(init?.body)) as Record<string, unknown>
