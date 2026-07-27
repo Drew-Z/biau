@@ -13,6 +13,7 @@ import {
 } from '../src/utils/publicAssistantApi'
 
 const validPayload = {
+  requestId: '11111111-1111-4111-8111-111111111111',
   answer: '第一段。\n\n第二段。',
   status: 'answered',
   claims: [
@@ -86,6 +87,7 @@ assert.deepEqual(normalized.citations.map((citation) => citation.id), ['site-1',
 assert.deepEqual(normalized.claims[0]?.citationIds, ['site-1'], 'claims may only retain public citation ids')
 assert.deepEqual(normalized.suggestions, ['继续了解', '比较一下', '给出步骤'])
 assert.equal(normalized.turnId, 'turn-1234')
+assert.equal(normalized.requestId, validPayload.requestId)
 assert.equal(normalized.meta.research?.route, 'combined')
 
 assert.equal(normalizePublicAssistantAnswer({ ...validPayload, status: 'unknown' }), null)
@@ -136,16 +138,20 @@ assert.deepEqual(progress, ['researching', 'verifying'])
 await assert.rejects(
   readPublicAssistantEventStream(new Response([
     'event: error',
-    'data: {"code":"public-assistant-stream-timeout"}',
+    `data: {"code":"public-assistant-request-processing","requestId":"${validPayload.requestId}","retryAfterSeconds":3}`,
     '',
   ].join('\n')).body!),
-  /public-assistant-stream-timeout/u,
+  (error) => error instanceof PublicAssistantTransportError
+    && error.code === 'public-assistant-request-processing'
+    && error.requestId === validPayload.requestId
+    && error.retryAfterSeconds === 3,
 )
 
 const originalFetch = globalThis.fetch
 let feedbackBody: Record<string, unknown> | null = null
 const requestInput = {
   apiBase: 'https://assistant.example.com',
+  requestId: validPayload.requestId,
   message: '研究公开资料',
   mode: 'web' as const,
   sessionId: 'public-session-1234',
@@ -160,14 +166,19 @@ await assert.rejects(requestPublicAssistantStream(requestInput), (error: unknown
   error instanceof PublicAssistantTransportError && error.canFallbackToJson
 ))
 
-globalThis.fetch = (async () => new Response('{"error":"rate-limited"}', {
-  status: 429,
+globalThis.fetch = (async () => new Response(JSON.stringify({
+  error: 'public-assistant-request-processing',
+  requestId: validPayload.requestId,
+  retryAfterSeconds: 17,
+}), {
+  status: 409,
   headers: { 'Content-Type': 'application/json', 'Retry-After': '17' },
 })) as typeof fetch
 await assert.rejects(requestPublicAssistantStream(requestInput), (error: unknown) => (
   error instanceof PublicAssistantTransportError &&
-  error.message === 'public-assistant-rate-limited' &&
+  error.message === 'public-assistant-request-processing' &&
   error.retryAfterSeconds === 17 &&
+  error.requestId === validPayload.requestId &&
   !error.canFallbackToJson
 ))
 

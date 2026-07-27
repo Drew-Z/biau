@@ -35,6 +35,7 @@ import {
   type MobileSurfaceOpenDetail,
 } from '../utils/mobileSurface'
 import {
+  cancelPublicAssistantGeneration,
   deletePublicAssistantSession,
   requestPublicAssistant,
   requestPublicAssistantHealth,
@@ -56,6 +57,7 @@ import {
 } from '../utils/publicAssistantApi'
 import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
 import {
+  createPublicAssistantRequestId,
   createPublicAssistantSessionId,
   forgetPublicAssistantSession,
   hasPersistedPublicAssistantSessionRegistry,
@@ -81,6 +83,7 @@ interface WidgetMessage {
   feedback?: 'up' | 'down'
   feedbackPending?: boolean
   feedbackError?: boolean
+  requestId?: string
 }
 
 type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
@@ -92,6 +95,16 @@ interface AssistantIssue {
   mode?: PublicAssistantMode
   retryAfterSeconds?: number | null
   retryAvailableAt?: number | null
+  requestId?: string
+  sessionId?: string
+  history?: PublicAssistantHistoryTurn[]
+  pageContext?: PublicAssistantPageContext
+}
+
+interface PublicAssistantPageContext {
+  path: string
+  title: string
+  description: string
 }
 
 interface ActiveChatRequest {
@@ -99,6 +112,9 @@ interface ActiveChatRequest {
   prompt: string
   mode: PublicAssistantMode
   sessionId: string
+  requestId: string
+  history: PublicAssistantHistoryTurn[]
+  pageContext: PublicAssistantPageContext
 }
 
 type NegativeFeedbackReason = Extract<
@@ -182,10 +198,12 @@ function buildLocalAnswer(question: string, mode: PublicAssistantMode, reason: s
 }
 
 async function requestPublicAnswer(input: {
+  requestId: string
   question: string
   mode: PublicAssistantMode
   sessionId: string
   history: PublicAssistantHistoryTurn[]
+  pageContext: PublicAssistantPageContext
   preferredApiBase: string | null
   signal: AbortSignal
   onProgress: (stage: PublicAssistantProgressStage) => void
@@ -193,15 +211,12 @@ async function requestPublicAnswer(input: {
   const apiBase = getAssistantApiBase(input.preferredApiBase)
   const request = {
     apiBase,
+    requestId: input.requestId,
     message: input.question,
     mode: input.mode,
     sessionId: input.sessionId,
     history: input.history,
-    pageContext: {
-      path: window.location.pathname,
-      title: document.title,
-      description: document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content ?? '',
-    },
+    pageContext: input.pageContext,
     signal: input.signal,
   }
   let answer: PublicAssistantAnswer
@@ -211,7 +226,18 @@ async function requestPublicAnswer(input: {
     if (!(error instanceof PublicAssistantTransportError) || !error.canFallbackToJson) throw error
     answer = await requestPublicAssistant(request)
   }
+  if (answer.requestId !== input.requestId) {
+    throw new PublicAssistantTransportError('public-assistant-invalid-response', { requestId: input.requestId })
+  }
   return { answer, apiBase }
+}
+
+function readPublicAssistantPageContext(): PublicAssistantPageContext {
+  return {
+    path: window.location.pathname,
+    title: document.title,
+    description: document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content ?? '',
+  }
 }
 
 function getServiceStatus(state: AssistantServiceState) {
@@ -255,7 +281,18 @@ function buildHistory(messages: WidgetMessage[]): PublicAssistantHistoryTurn[] {
     .slice(-6)
 }
 
-function toAssistantIssue(error: unknown, scope: AssistantIssue['scope'], prompt?: string, mode?: PublicAssistantMode): AssistantIssue {
+function toAssistantIssue(
+  error: unknown,
+  scope: AssistantIssue['scope'],
+  prompt?: string,
+  mode?: PublicAssistantMode,
+  requestContext?: {
+    requestId: string
+    sessionId: string
+    history: PublicAssistantHistoryTurn[]
+    pageContext: PublicAssistantPageContext
+  },
+): AssistantIssue {
   const transport = error instanceof PublicAssistantTransportError ? error : null
   const retryAfterSeconds = transport?.retryAfterSeconds ?? null
   return {
@@ -267,6 +304,7 @@ function toAssistantIssue(error: unknown, scope: AssistantIssue['scope'], prompt
     retryAvailableAt: retryAfterSeconds && retryAfterSeconds > 0
       ? Date.now() + retryAfterSeconds * 1_000
       : null,
+    ...(requestContext ?? {}),
   }
 }
 
@@ -776,7 +814,15 @@ export function PublicAssistantWidget() {
   }
 
   const stopActiveChat = () => {
-    activeRequestRef.current?.controller.abort()
+    const active = activeRequestRef.current
+    if (active && apiBase) {
+      void cancelPublicAssistantGeneration({
+        apiBase: getAssistantApiBase(apiBase),
+        requestId: active.requestId,
+        sessionId: active.sessionId,
+      }).catch(() => undefined)
+    }
+    active?.controller.abort()
     activeRequestRef.current = null
     setIsLoading(false)
     setProgressStage(null)
@@ -785,6 +831,13 @@ export function PublicAssistantWidget() {
   const cancelActiveChat = () => {
     const active = activeRequestRef.current
     if (!active) return
+    if (apiBase) {
+      void cancelPublicAssistantGeneration({
+        apiBase: getAssistantApiBase(apiBase),
+        requestId: active.requestId,
+        sessionId: active.sessionId,
+      }).catch(() => undefined)
+    }
     active.controller.abort()
     activeRequestRef.current = null
     setIsLoading(false)
@@ -794,6 +847,10 @@ export function PublicAssistantWidget() {
       scope: 'chat',
       prompt: active.prompt,
       mode: active.mode,
+      requestId: active.requestId,
+      sessionId: active.sessionId,
+      history: active.history,
+      pageContext: active.pageContext,
     })
   }
 
@@ -978,7 +1035,14 @@ export function PublicAssistantWidget() {
   const submitQuestion = async (
     question: string,
     requestedMode: PublicAssistantMode = mode,
-    options: { reusePendingQuestion?: boolean } = {},
+    options: {
+      reusePendingQuestion?: boolean
+      requestId?: string
+      sessionId?: string
+      history?: PublicAssistantHistoryTurn[]
+      pageContext?: PublicAssistantPageContext
+      replaceFallbackRequestId?: string
+    } = {},
   ) => {
     const trimmed = question.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
     if (!trimmed || isLoading || activeRequestRef.current || !isConversationReady) return
@@ -989,11 +1053,12 @@ export function PublicAssistantWidget() {
       questionLength: trimmed.length,
     })
 
-    const requestSessionId = sessionIdRef.current
-    const reusablePendingQuestion = options.reusePendingQuestion === true &&
-      messages.at(-1)?.role === 'user' &&
-      messages.at(-1)?.content === trimmed
-    const history = buildHistory(reusablePendingQuestion ? messages.slice(0, -1) : messages)
+    const requestId = options.requestId ?? createPublicAssistantRequestId()
+    const requestSessionId = options.sessionId ?? sessionIdRef.current
+    if (requestSessionId !== sessionIdRef.current) return
+    const reusablePendingQuestion = options.reusePendingQuestion === true
+    const history = options.history ?? buildHistory(reusablePendingQuestion ? messages.slice(0, -1) : messages)
+    const pageContext = options.pageContext ?? readPublicAssistantPageContext()
     const userMessage: WidgetMessage = {
       id: createMessageId('user'),
       role: 'user',
@@ -1004,21 +1069,38 @@ export function PublicAssistantWidget() {
     setHasNewContent(false)
     setIssue(null)
     setFeedbackMenuMessageId(null)
+    if (options.replaceFallbackRequestId) {
+      setMessages((current) => current.filter((message) => !(
+        message.role === 'assistant'
+        && message.requestId === options.replaceFallbackRequestId
+        && message.meta?.mode === 'fallback'
+      )))
+    }
     if (!reusablePendingQuestion) setMessages((current) => [...current, userMessage])
     setInput('')
     setIsLoading(true)
     setProgressStage('planning')
     const controller = new AbortController()
-    activeRequestRef.current = { controller, prompt: trimmed, mode: requestedMode, sessionId: requestSessionId }
+    activeRequestRef.current = {
+      controller,
+      prompt: trimmed,
+      mode: requestedMode,
+      sessionId: requestSessionId,
+      requestId,
+      history,
+      pageContext,
+    }
 
     let result: PublicAssistantAnswer
     let resolvedApiBase = apiBase
     try {
       const remote = await requestPublicAnswer({
+        requestId,
         question: trimmed,
         mode: requestedMode,
         sessionId: requestSessionId,
         history,
+        pageContext,
         preferredApiBase: apiBase,
         signal: controller.signal,
         onProgress: (stage) => {
@@ -1034,8 +1116,13 @@ export function PublicAssistantWidget() {
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
-      const nextIssue = toAssistantIssue(error, 'chat', trimmed, requestedMode)
-      result = buildLocalAnswer(trimmed, requestedMode, nextIssue.code)
+      const nextIssue = toAssistantIssue(error, 'chat', trimmed, requestedMode, {
+        requestId,
+        sessionId: requestSessionId,
+        history,
+        pageContext,
+      })
+      result = { ...buildLocalAnswer(trimmed, requestedMode, nextIssue.code), requestId }
       setIssue(nextIssue)
       setServiceState(getAssistantApiBase(apiBase) ? 'error' : 'degraded')
     } finally {
@@ -1064,6 +1151,7 @@ export function PublicAssistantWidget() {
         turnId: result.turnId,
         prompt: trimmed,
         requestMode: requestedMode,
+        requestId,
       },
     ])
     if (resolvedApiBase) setApiBase(resolvedApiBase)
@@ -1074,9 +1162,16 @@ export function PublicAssistantWidget() {
     if (issue.scope === 'chat' && issue.prompt) {
       const prompt = issue.prompt
       const requestedMode = issue.mode ?? mode
-      const reusePendingQuestion = issue.code === 'public-assistant-request-cancelled'
+      const cancelled = issue.code === 'public-assistant-request-cancelled'
       setIssue(null)
-      void submitQuestion(prompt, requestedMode, { reusePendingQuestion })
+      void submitQuestion(prompt, requestedMode, {
+        reusePendingQuestion: true,
+        ...(cancelled || !issue.requestId ? {} : { requestId: issue.requestId }),
+        ...(issue.sessionId ? { sessionId: issue.sessionId } : {}),
+        ...(issue.history ? { history: issue.history } : {}),
+        ...(issue.pageContext ? { pageContext: issue.pageContext } : {}),
+        ...(!cancelled && issue.requestId ? { replaceFallbackRequestId: issue.requestId } : {}),
+      })
       return
     }
     if (issue.scope === 'history') {

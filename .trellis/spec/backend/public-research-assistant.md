@@ -73,11 +73,14 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 
 ## Public API And Persistence
 
-- `POST /chat/public` accepts a bounded question, anonymous session ID, mode, page context, and recent history.
-- `POST /chat/public/stream` accepts the same payload and returns versioned SSE events: `ready`, public-safe `progress`, heartbeat comments, one verified `result`, or one stable `error`. Its `result` data uses the same allowlisted projection as the JSON route.
+- `POST /chat/public` accepts a required UUID `requestId`, bounded question, anonymous session ID, mode, page context, and recent history.
+- `POST /chat/public/stream` accepts the same payload and returns versioned SSE events: `ready`, public-safe `progress`, heartbeat comments, one verified `result`, or one stable `error`. Its `result` data uses the same allowlisted projection as the JSON route, including the request ID.
+- JSON and SSE share one execution coordinator. It claims `PublicAssistantRequest` before Agent execution, replays an allowlist-decoded completed response, rejects same-ID/different-payload conflicts, and completes the turn/aggregate/request in one fenced transaction.
+- Active duplicates return `public-assistant-request-processing` with bounded `Retry-After`. Completed duplicates do not rerun planning, retrieval, generation, persistence, or aggregate updates.
+- `POST /chat/public/cancel` binds the request ID to its anonymous session and marks processing/retryable work cancelled. A late executor cannot persist after cancellation.
 - `POST /chat/public/feedback` records bounded `up` or `down` feedback for one anonymous turn.
 - The HTTP response is projected through an allowlist. Stable product fields include answer state, claims, citations, suggestions, session/turn IDs, and low-sensitive counters.
-- Client disconnect and explicit request cancellation propagate through the Responses adapter as aborts rather than provider failures. The runner checks the signal before execution and again before persistence; an aborted turn must not emit or persist a fallback response.
+- Client disconnect propagates as a retryable abort; explicit visitor cancellation also calls the cancellation endpoint. The runner checks the signal before execution and again before fenced completion; an aborted or cancelled turn must not emit or persist a fallback response.
 - Rate limiting uses the request IP in process memory but never persists an IP address. Buckets are bounded and a client-provided session ID cannot bypass chat or feedback limits.
 - Persist only bounded anonymous session/turn/feedback data for 30 days. Long-lived aggregates store topic fingerprints and counters rather than raw questions or answers.
 - Database absence degrades persistence without making the public route unusable.
@@ -111,7 +114,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - The history drawer is a modal layer within the assistant shell. Focus moves into it, Tab remains inside it, and Escape closes the drawer before a later Escape can close the assistant.
 - Only the message region scrolls. Automatic following is allowed only while the visitor remains near the bottom; otherwise a return-to-latest action appears.
 - First open restores an already persisted current capability before the composer can submit a follow-up. `session-not-found` replaces the expired current capability with a fresh one; transient failure remains explicitly retryable. Starting a new conversation aborts chat and history work, creates a fresh capability, clears hydrated/transient state, and ignores any completion whose controller or captured session no longer matches the active conversation.
-- Stable transport errors retain the original prompt/mode or retryable surface state for an explicit visitor retry. Browser offline state and a bounded `Retry-After` deadline gate chat, health/history-list, and initial-restore retry controls; network restoration or deadline expiry updates availability only and never automatically spends another request. Synchronous duplicate activation of an enabled retry control still starts at most one request.
+- Stable transport errors retain the original prompt, mode, session, normalized history, and request ID for an explicit visitor retry. The local fallback display is never added to the retried payload. Visitor cancellation retains the question but creates a new request ID. Browser offline state and a bounded `Retry-After` deadline gate chat, health/history-list, and initial-restore retry controls; network restoration or deadline expiry updates availability only and never automatically spends another request. Synchronous duplicate activation of an enabled retry control still starts at most one request.
 - Claim citation controls may target only citation IDs present in the same allowlisted display snapshot. Internal citation navigation closes the assistant/fullscreen shell without deleting the local capability registry.
 
 ### 4. Validation & Error Matrix
@@ -132,9 +135,9 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 
 ### 6. Tests Required
 
-- Persistence checks assert submitted-ID intersection, expiry, 100-turn truncation, snapshot allowlisting, legacy fallback, cascade deletion, and aggregate preservation.
+- Persistence checks assert submitted-ID intersection, expiry, 100-turn truncation, snapshot allowlisting, legacy fallback, request retention, canonical hashing, claim conflict, lease takeover/fencing, completed replay, cascade deletion, and aggregate preservation.
 - Agent/model checks assert external abort propagation and that an aborted response cannot reach persistence. API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
-- Cloudflare checks assert method/body preservation, request/response limits, no-store, `Retry-After`, and removal of browser authorization and cookies.
+- Cloudflare checks assert method/body/request-ID preservation, cancellation routing, request/response limits, no-store, `Retry-After`, and removal of browser authorization and cookies.
 - UI checks assert automatic rich restoration before follow-up, restored history in the next request, explicit truncation, expiry self-healing, transient retry, offline-to-online retry gating without automatic replay, wall-clock `Retry-After` expiry, claim-to-source focus, internal-navigation closure, fresh high-entropy capability creation, request/session race isolation, drawer focus and Escape ordering, desktop scroll lock, mobile no-autofocus, and 320/390/430 viewport-safe message/composer layout.
 - All checks use local fixtures only and must not call a live model, search, embedding, reranker, or vector database provider.
 

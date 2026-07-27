@@ -80,12 +80,14 @@ export async function runPublicAssistantAgent(
 }
 
 export function normalizePublicAssistantPayload(payload: ChatPayload): PublicAssistantRequest | null {
+  const requestId = readRequestId(payload.requestId)
   const question = boundedText(payload.message, 500)
-  if (!question) return null
+  if (!requestId || !question) return null
   return {
+    requestId,
     question,
     mode: readMode(payload.mode),
-    sessionId: readSessionId(payload.sessionId),
+    sessionId: readSessionId(payload.sessionId) || `request-${requestId}`,
     pageContext: normalizePageContext(payload.pageContext),
     history: normalizeHistory(payload.history),
   }
@@ -471,6 +473,14 @@ function readSessionId(value: unknown) {
   if (typeof value !== 'string') return undefined
   const normalized = value.trim()
   return /^[a-zA-Z0-9_-]{12,80}$/u.test(normalized) ? normalized : undefined
+}
+
+function readRequestId(value: unknown) {
+  if (typeof value !== 'string') return ''
+  const normalized = value.trim().toLowerCase()
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(normalized)
+    ? normalized
+    : ''
 }
 
 function isCredentialSeekingRequest(value: string) {

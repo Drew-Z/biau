@@ -16,6 +16,7 @@ When a managed pooler requires Prisma 7 / libpq compatibility, configure the pro
 ### Public assistant database (`DATABASE_URL`)
 
 - `PublicAssistantSession`
+- `PublicAssistantRequest`
 - `PublicAssistantTurn`
 - `PublicAssistantFeedback`
 - `PublicAssistantDailyAggregate`
@@ -67,6 +68,16 @@ Catalog guards that detect enum use outside a retirement allowlist must filter `
 - Use `Promise.all` only for independent queries.
 - Convert trusted bounded metadata to `Prisma.InputJsonValue` intentionally.
 - Never spread arbitrary request bodies into Prisma writes.
+
+### Public assistant generation idempotency
+
+- `PublicAssistantRequest.requestId` is the authoritative generation identity. The browser creates one UUID per visitor generation intent; transport retries reuse it, while deliberate regeneration or retry after visitor cancellation creates a new UUID.
+- PostgreSQL owns `processing | completed | retryable_failed | failed | cancelled`. Claim the row before Agent execution; do not use an in-memory map as a cross-instance coordination claim.
+- A processing claim carries an opaque lease token and bounded expiry. Completion must lock the request row and verify request ID, canonical request hash, processing state, lease token, and an unexpired lease before creating a turn or incrementing aggregates.
+- Turn creation, daily aggregate increment, allowlisted response snapshot, and request completion share one transaction. A stale lease must exit before any turn or aggregate write.
+- Completed duplicates replay only an allowlist-decoded `responseJson`; the request hash, lease token, provider details, raw errors, and database state never enter browser responses.
+- Same ID with a different normalized payload is a stable conflict. Expired processing and `retryable_failed` may be reclaimed with a new lease; `failed` and `cancelled` are terminal.
+- Session deletion and retention remove request rows. `turnId` is a nullable foreign key with `ON DELETE SET NULL`; a cached completed response remains independently bounded by request retention.
 
 ### AI Daily Retention Dry-Run
 

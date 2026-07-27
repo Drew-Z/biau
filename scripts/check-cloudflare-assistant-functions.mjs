@@ -1,6 +1,7 @@
 import { createServer as createHttpServer } from 'node:http'
 import { createServer as createTcpServer } from 'node:net'
 import { onRequestPost as publicChat } from '../functions/api/chat/public.ts'
+import { onRequestPost as cancelPublicChat } from '../functions/api/chat/public/cancel.ts'
 import { onRequestPost as publicFeedback } from '../functions/api/chat/public/feedback.ts'
 import {
   onRequestDelete as deletePublicSession,
@@ -63,6 +64,7 @@ function startMockPublicAssistant(port, observed) {
       }
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({
+        requestId: payload.requestId,
         answer: '这是由权威公开助手服务返回的研究回答。',
         status: 'answered',
         claims: [{ id: 'claim-1', text: '已验证。', citationIds: ['site-1'] }],
@@ -107,6 +109,7 @@ function startMockPublicAssistant(port, observed) {
       response.write('event: ready\ndata: {"version":1}\n\n')
       response.write('event: progress\ndata: {"stage":"researching"}\n\n')
       response.end(`event: result\ndata: ${JSON.stringify({
+        requestId: payload.requestId,
         answer: '流式研究回答。',
         status: 'answered',
         claims: [],
@@ -116,6 +119,13 @@ function startMockPublicAssistant(port, observed) {
         messageId: 'turn-stream-1234',
         meta: { mode: 'model', citationCount: 0 },
       })}\n\nevent: done\ndata: {"ok":true}\n\n`)
+      return
+    }
+
+    if (request.method === 'POST' && request.url === '/chat/public/cancel') {
+      const payload = JSON.parse(body)
+      response.writeHead(200, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ ok: true, requestId: payload.requestId, status: 'cancelled' }))
       return
     }
 
@@ -195,6 +205,7 @@ const upstream = await startMockPublicAssistant(port, observed)
 const env = { PUBLIC_ASSISTANT_API_BASE_URL: `http://127.0.0.1:${port}` }
 
 try {
+  const requestId = '11111111-1111-4111-8111-111111111111'
   const healthResponse = await health({
     request: new Request('https://biau.example/api/health'),
     env,
@@ -206,6 +217,7 @@ try {
 
   const chatResponse = await publicChat({
     request: makeRequest('/api/chat/public', {
+      requestId,
       message: '请研究本站与公开网页',
       mode: 'auto',
       sessionId: 'public-session-1234',
@@ -231,6 +243,7 @@ try {
   const forwardedChat = JSON.parse(chatObservation?.body ?? '{}')
   if (
     forwardedChat.mode !== 'auto' ||
+    forwardedChat.requestId !== requestId ||
     forwardedChat.history?.[0]?.content !== '上一轮问题' ||
     forwardedChat.pageContext?.path !== '/projects'
   ) {
@@ -242,6 +255,7 @@ try {
 
   const streamResponse = await publicChatStream({
     request: makeRequest('/api/chat/public/stream', {
+      requestId,
       message: '请以流式连接研究公开网页',
       mode: 'web',
       sessionId: 'public-session-1234',
@@ -263,8 +277,18 @@ try {
     throw new Error('Cloudflare stream proxy did not preserve the upstream SSE contract')
   }
   const streamObservation = observed.find((entry) => entry.url === '/chat/public/stream')
-  if (streamObservation?.authorization || streamObservation?.cookie) {
+  const forwardedStream = JSON.parse(streamObservation?.body ?? '{}')
+  if (streamObservation?.authorization || streamObservation?.cookie || forwardedStream.requestId !== requestId) {
     throw new Error('Cloudflare stream proxy must not forward browser credentials')
+  }
+
+  const cancelResponse = await cancelPublicChat({
+    request: makeRequest('/api/chat/public/cancel', { requestId, sessionId: 'public-session-1234' }),
+    env,
+  })
+  const cancelPayload = await cancelResponse.json()
+  if (!cancelResponse.ok || cancelPayload.status !== 'cancelled' || cancelPayload.requestId !== requestId) {
+    throw new Error('Cloudflare cancel proxy did not preserve the idempotent request contract')
   }
 
   const feedbackResponse = await publicFeedback({

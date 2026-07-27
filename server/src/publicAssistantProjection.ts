@@ -31,16 +31,70 @@ export interface PublicAssistantDisplaySnapshot {
 }
 
 export function toPublicAssistantHttpResponse(response: ChatResponse) {
+  const requestId = normalizeRequestId(response.requestId)
+  const sessionId = normalizeIdentifier(response.sessionId)
+  const messageId = normalizeIdentifier(response.messageId)
+  const answer = normalizeMultiline(response.answer, 4_000)
+  if (containsSecretShape(answer)) return buildBlockedHttpResponse({ requestId, sessionId, messageId })
   const snapshot = buildPublicAssistantDisplaySnapshot(response)
   return {
-    answer: normalizeMultiline(response.answer, 4_000),
+    ...(requestId ? { requestId } : {}),
+    answer,
     status: normalizeStatus(response.status) ?? 'degraded',
     claims: snapshot.claims,
     citations: snapshot.citations,
     suggestions: snapshot.suggestions,
-    ...(normalizeIdentifier(response.sessionId) ? { sessionId: normalizeIdentifier(response.sessionId) } : {}),
-    ...(normalizeIdentifier(response.messageId) ? { messageId: normalizeIdentifier(response.messageId) } : {}),
+    ...(sessionId ? { sessionId } : {}),
+    ...(messageId ? { messageId } : {}),
     meta: snapshot.meta,
+  }
+}
+
+export function readPublicAssistantHttpResponse(value: unknown) {
+  if (!isRecord(value)) return null
+  const answer = normalizeMultiline(value.answer, 4_000)
+  const status = normalizeStatus(value.status)
+  const requestId = normalizeRequestId(value.requestId)
+  if (!answer || !status || !requestId) return null
+  const sessionId = normalizeIdentifier(value.sessionId)
+  const messageId = normalizeIdentifier(value.messageId)
+  if (containsSecretShape(answer)) return buildBlockedHttpResponse({ requestId, sessionId, messageId })
+  const snapshot = readPublicAssistantDisplaySnapshot({
+    version: 1,
+    claims: value.claims,
+    citations: value.citations,
+    suggestions: value.suggestions,
+    meta: value.meta,
+  })
+  if (!snapshot) return null
+  return {
+    requestId,
+    answer,
+    status,
+    claims: snapshot.claims,
+    citations: snapshot.citations,
+    suggestions: snapshot.suggestions,
+    ...(sessionId ? { sessionId } : {}),
+    ...(messageId ? { messageId } : {}),
+    meta: snapshot.meta,
+  }
+}
+
+function buildBlockedHttpResponse(input: { requestId: string; sessionId: string; messageId: string }) {
+  return {
+    ...(input.requestId ? { requestId: input.requestId } : {}),
+    answer: '检测到回答中可能包含敏感信息，本次内容已安全拦截。',
+    status: 'blocked' as const,
+    claims: [],
+    citations: [],
+    suggestions: [],
+    ...(input.sessionId ? { sessionId: input.sessionId } : {}),
+    ...(input.messageId ? { messageId: input.messageId } : {}),
+    meta: {
+      mode: 'fallback' as const,
+      reason: 'sensitive-content-blocked',
+      citationCount: 0,
+    },
   }
 }
 
@@ -187,6 +241,14 @@ function normalizeIdentifier(value: unknown) {
   if (typeof value !== 'string') return ''
   const normalized = value.trim()
   return /^[a-zA-Z0-9:_-]{1,100}$/u.test(normalized) ? normalized : ''
+}
+
+function normalizeRequestId(value: unknown) {
+  if (typeof value !== 'string') return ''
+  const normalized = value.trim().toLowerCase()
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(normalized)
+    ? normalized
+    : ''
 }
 
 function normalizeIsoDate(value: unknown) {

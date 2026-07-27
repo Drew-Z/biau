@@ -10,9 +10,9 @@ import {
   renderAiDailyOperationsPrometheus,
   toAiDailyOperationsDiagnostics,
 } from './aiDailyOperations.js'
-import { normalizePublicAssistantPayload, runPublicAssistantAgent } from './publicAssistantAgent.js'
-import type { PublicAssistantProgress, PublicAssistantRequest } from './publicAssistantRuntime.js'
+import { normalizePublicAssistantPayload } from './publicAssistantAgent.js'
 import {
+  cancelPublicAssistantRequest,
   deletePublicAssistantSession,
   loadPublicAssistantInsights,
   loadPublicAssistantSession,
@@ -20,10 +20,12 @@ import {
   normalizePublicAssistantFeedback,
   normalizePublicAssistantSessionAccess,
   normalizePublicAssistantSessionList,
-  persistPublicAssistantTurn,
   savePublicAssistantFeedback,
 } from './publicAssistantPersistence.js'
-import { toPublicAssistantHttpResponse } from './publicAssistantProjection.js'
+import {
+  executePublicAssistantRequest,
+  PublicAssistantExecutionError,
+} from './publicAssistantExecution.js'
 import { consumePublicAssistantRateLimit } from './publicAssistantRateLimit.js'
 import { isPublicWebSearchConfigured } from './publicWebResearch.js'
 import { createRagOrchestratorRouter } from './ragRoutes.js'
@@ -143,14 +145,22 @@ function registerPublicAssistantRoutes(app: express.Express) {
       const request = acceptPublicAssistantRequest(req, res)
       if (!request) return
       const abort = new AbortController()
-      const timeout = setTimeout(() => abort.abort(), env.publicAssistantRequestTimeoutMs)
+      let deadlineExceeded = false
+      const timeout = setTimeout(() => {
+        deadlineExceeded = true
+        abort.abort()
+      }, env.publicAssistantRequestTimeoutMs)
       const onClose = () => {
         if (!res.writableEnded) abort.abort()
       }
       res.once('close', onClose)
       try {
-        const response = await runAndPersistPublicAssistant(request, abort.signal)
+        const response = await executePublicAssistantRequest(request, { signal: abort.signal })
         res.json(response)
+      } catch (error) {
+        if (!res.writableEnded && !res.destroyed) {
+          sendPublicAssistantExecutionError(res, error, request.requestId, deadlineExceeded)
+        }
       } finally {
         clearTimeout(timeout)
         res.off('close', onClose)
@@ -175,39 +185,82 @@ function registerPublicAssistantRoutes(app: express.Express) {
     }
     req.once('aborted', onDisconnect)
     res.once('close', onDisconnect)
-    res.status(200)
-    res.set({
-      'Content-Type': 'text/event-stream; charset=utf-8',
-      'Cache-Control': 'no-cache, no-store',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no',
-      'X-Content-Type-Options': 'nosniff',
-    })
-    res.flushHeaders()
-    writePublicAssistantSse(res, 'ready', { version: 1 })
-    const heartbeat = setInterval(() => {
-      if (!res.writableEnded && !res.destroyed) res.write(': heartbeat\n\n')
-    }, PUBLIC_ASSISTANT_SSE_HEARTBEAT_MS)
+    let heartbeat: ReturnType<typeof setInterval> | null = null
+    const startStream = () => {
+      if (res.headersSent) return
+      res.status(200)
+      res.set({
+        'Content-Type': 'text/event-stream; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no',
+        'X-Content-Type-Options': 'nosniff',
+      })
+      res.flushHeaders()
+      writePublicAssistantSse(res, 'ready', { version: 1, requestId: request.requestId })
+      heartbeat = setInterval(() => {
+        if (!res.writableEnded && !res.destroyed) res.write(': heartbeat\n\n')
+      }, PUBLIC_ASSISTANT_SSE_HEARTBEAT_MS)
+    }
 
     try {
-      const response = await runAndPersistPublicAssistant(request, abort.signal, (progress) => {
-        writePublicAssistantSse(res, 'progress', progress)
+      const response = await executePublicAssistantRequest(request, {
+        signal: abort.signal,
+        onExecutionStart: startStream,
+        onProgress: (progress) => {
+          writePublicAssistantSse(res, 'progress', progress)
+        },
       })
+      startStream()
       writePublicAssistantSse(res, 'result', response)
-      writePublicAssistantSse(res, 'done', { ok: true })
+      writePublicAssistantSse(res, 'done', { ok: true, requestId: request.requestId })
       res.end()
-    } catch {
+    } catch (error) {
       if (!res.writableEnded && !res.destroyed) {
-        writePublicAssistantSse(res, 'error', {
-          code: deadlineExceeded ? 'public-assistant-stream-timeout' : 'public-assistant-stream-failed',
-        })
-        res.end()
+        if (!res.headersSent) {
+          sendPublicAssistantExecutionError(res, error, request.requestId, deadlineExceeded)
+        } else {
+          const executionError = error instanceof PublicAssistantExecutionError ? error : null
+          writePublicAssistantSse(res, 'error', {
+            code: deadlineExceeded
+              ? 'public-assistant-stream-timeout'
+              : executionError?.code ?? 'public-assistant-stream-failed',
+            requestId: request.requestId,
+            ...(executionError?.retryAfterSeconds === null || executionError?.retryAfterSeconds === undefined
+              ? {}
+              : { retryAfterSeconds: executionError.retryAfterSeconds }),
+          })
+          res.end()
+        }
       }
     } finally {
-      clearInterval(heartbeat)
+      if (heartbeat) clearInterval(heartbeat)
       clearTimeout(timeout)
       req.off('aborted', onDisconnect)
       res.off('close', onDisconnect)
+    }
+  })
+
+  app.post('/chat/public/cancel', async (req, res, next) => {
+    try {
+      const input = normalizePublicAssistantCancellation(req.body)
+      if (!input) {
+        res.status(400).json({ error: 'invalid-public-assistant-cancellation' })
+        return
+      }
+      if (!acceptPublicAssistantHistoryRequest(req, res)) return
+      const result = await cancelPublicAssistantRequest(input.requestId, input.sessionId)
+      if (result.status === 'database-not-configured') {
+        res.status(503).json({ error: result.status, requestId: input.requestId })
+        return
+      }
+      if (result.status === 'request-not-found') {
+        res.status(404).json({ error: result.status, requestId: input.requestId })
+        return
+      }
+      res.json({ ok: true, requestId: input.requestId, status: result.status })
+    } catch (error) {
+      next(error)
     }
   })
 
@@ -353,43 +406,38 @@ function acceptPublicAssistantHistoryRequest(req: express.Request, res: express.
   return false
 }
 
-type PublicAssistantRunResponse = Awaited<ReturnType<typeof runPublicAssistantAgent>>
-
-interface PublicAssistantRunDependencies {
-  runAgent: (request: PublicAssistantRequest) => Promise<PublicAssistantRunResponse>
-  persistTurn: (
-    request: PublicAssistantRequest,
-    response: PublicAssistantRunResponse,
-  ) => ReturnType<typeof persistPublicAssistantTurn>
-}
-
-const defaultPublicAssistantRunDependencies: PublicAssistantRunDependencies = {
-  runAgent: runPublicAssistantAgent,
-  persistTurn: persistPublicAssistantTurn,
-}
-
-export async function runAndPersistPublicAssistant(
-  request: PublicAssistantRequest,
-  signal: AbortSignal,
-  onProgress?: (progress: PublicAssistantProgress) => void,
-  dependencies: PublicAssistantRunDependencies = defaultPublicAssistantRunDependencies,
-) {
-  signal.throwIfAborted()
-  const agentRequest = { ...request, signal, onProgress }
-  const response = await dependencies.runAgent(agentRequest)
-  signal.throwIfAborted()
-  onProgress?.({ stage: 'saving' })
-  const persisted = await dependencies.persistTurn(request, response).catch(() => null)
-  if (persisted) {
-    response.sessionId = persisted.sessionId
-    response.messageId = persisted.turnId
-  }
-  return toPublicAssistantHttpResponse(response)
-}
-
 function writePublicAssistantSse(res: express.Response, event: string, payload: unknown) {
   if (res.writableEnded || res.destroyed) return
   res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
+}
+
+function normalizePublicAssistantCancellation(value: unknown) {
+  if (typeof value !== 'object' || value === null) return null
+  const requestId = 'requestId' in value && typeof value.requestId === 'string' ? value.requestId.trim().toLowerCase() : ''
+  const sessionId = 'sessionId' in value && typeof value.sessionId === 'string' ? value.sessionId.trim() : ''
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(requestId)) return null
+  if (!/^[a-zA-Z0-9_-]{12,80}$/u.test(sessionId)) return null
+  return { requestId, sessionId }
+}
+
+function sendPublicAssistantExecutionError(
+  res: express.Response,
+  error: unknown,
+  requestId: string,
+  deadlineExceeded: boolean,
+) {
+  const executionError = error instanceof PublicAssistantExecutionError ? error : null
+  const status = deadlineExceeded ? 504 : executionError?.status ?? 503
+  const code = deadlineExceeded ? 'public-assistant-request-timeout' : executionError?.code ?? 'public-assistant-generation-failed'
+  const retryAfterSeconds = executionError?.retryAfterSeconds
+  if (retryAfterSeconds !== null && retryAfterSeconds !== undefined) {
+    res.setHeader('Retry-After', String(retryAfterSeconds))
+  }
+  res.status(status).json({
+    error: code,
+    requestId,
+    ...(retryAfterSeconds === null || retryAfterSeconds === undefined ? {} : { retryAfterSeconds }),
+  })
 }
 
 function readBearerToken(value: string | undefined) {

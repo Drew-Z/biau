@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
-import type { PrismaClient } from '@prisma/client'
+import { Prisma, type PrismaClient } from '@prisma/client'
 import {
+  buildPublicAssistantRequestHash,
+  claimPublicAssistantRequest,
+  completePublicAssistantRequest,
   deletePublicAssistantSession,
   loadPublicAssistantInsights,
   loadPublicAssistantSession,
@@ -18,7 +21,13 @@ import type { ChatResponse } from '../src/types.js'
 const fixedNow = new Date('2026-07-26T08:00:00.000Z')
 
 function makeRequest(question: string): PublicAssistantRequest {
-  return { question, mode: 'auto', sessionId: 'public-session-1234', history: [] }
+  return {
+    requestId: '11111111-1111-4111-8111-111111111111',
+    question,
+    mode: 'auto',
+    sessionId: 'public-session-1234',
+    history: [],
+  }
 }
 
 function makeResponse(answer: string, status: ChatResponse['status'] = 'answered'): ChatResponse {
@@ -74,6 +83,12 @@ function createPersistFake() {
         return { count: 0 }
       },
     },
+    publicAssistantRequest: {
+      deleteMany: async (args: unknown) => {
+        captured.requestDelete = args
+        return { count: 0 }
+      },
+    },
   }
   const prisma = {
     ...tx,
@@ -112,6 +127,7 @@ assert.equal(String(secretTurn.data.questionFingerprint).includes(secretSentinel
 
 const expiresAt = secretTurn.data.expiresAt as Date
 assert.ok(expiresAt.getTime() > fixedNow.getTime(), 'raw turn must receive a future expiry')
+assert.deepEqual(persistSecret.captured.requestDelete, { where: { expiresAt: { lte: fixedNow } } })
 assert.deepEqual(persistSecret.captured.turnDelete, { where: { expiresAt: { lte: fixedNow } } })
 assert.deepEqual(persistSecret.captured.sessionDelete, { where: { expiresAt: { lte: fixedNow } } })
 
@@ -190,7 +206,7 @@ assert.deepEqual(normalizePublicAssistantSessionAccess({ sessionId: 'public-sess
 assert.equal(normalizePublicAssistantSessionAccess({ sessionId: '../private' }), null)
 
 const historyCapture: Record<string, unknown> = {}
-const historyPrisma = {
+const historyTx = {
   publicAssistantSession: {
     findMany: async (args: unknown) => {
       historyCapture.findMany = args
@@ -275,6 +291,16 @@ const historyPrisma = {
       return { count: 1 }
     },
   },
+  publicAssistantRequest: {
+    deleteMany: async (args: unknown) => {
+      historyCapture.requestDeleteMany = args
+      return { count: 1 }
+    },
+  },
+}
+const historyPrisma = {
+  ...historyTx,
+  $transaction: async (callback: (client: typeof historyTx) => Promise<unknown>) => callback(historyTx),
 } as unknown as PrismaClient
 
 const sessionSummaries = await loadPublicAssistantSessions(['public-session-1234'], historyPrisma, fixedNow)
@@ -293,15 +319,215 @@ if (sessionHistory.status === 'loaded') {
 
 assert.deepEqual(await deletePublicAssistantSession('public-session-1234', historyPrisma, fixedNow), { status: 'deleted' })
 assert.ok(historyCapture.deleteMany)
+assert.deepEqual(historyCapture.requestDeleteMany, { where: { sessionId: 'public-session-1234' } })
 
 const retentionCapture: unknown[] = []
 const retentionPrisma = {
+  publicAssistantRequest: { deleteMany: (args: unknown) => Promise.resolve(retentionCapture.push(args)) },
   publicAssistantTurn: { deleteMany: (args: unknown) => Promise.resolve(retentionCapture.push(args)) },
   publicAssistantSession: { deleteMany: (args: unknown) => Promise.resolve(retentionCapture.push(args)) },
   $transaction: (operations: Promise<unknown>[]) => Promise.all(operations),
 } as unknown as PrismaClient
 await runPublicAssistantRetention(retentionPrisma, fixedNow)
-assert.equal(retentionCapture.length, 2)
+assert.equal(retentionCapture.length, 3)
+
+const canonicalRequest = makeRequest('  canonical question  ')
+assert.equal(
+  buildPublicAssistantRequestHash(canonicalRequest),
+  buildPublicAssistantRequestHash({
+    ...canonicalRequest,
+    requestId: '22222222-2222-4222-8222-222222222222',
+  }),
+  'requestId must not change the canonical payload hash',
+)
+assert.notEqual(
+  buildPublicAssistantRequestHash(canonicalRequest),
+  buildPublicAssistantRequestHash({ ...canonicalRequest, question: 'different question' }),
+)
+
+interface RequestStateRow {
+  requestId: string
+  sessionId: string
+  requestHash: string
+  status: string
+  attempt: number
+  leaseToken: string
+  leaseExpiresAt: Date
+  responseJson: Prisma.JsonValue | null
+  errorCode: string | null
+  turnId: string | null
+  expiresAt: Date
+}
+
+function createRequestStateFake(initial: RequestStateRow | null = null) {
+  let row = initial
+  let turnCreates = 0
+  let lastTurnData: Record<string, unknown> | null = null
+  const requestDelegate = {
+    create: async (args: { data: RequestStateRow }) => {
+      if (row) {
+        throw new Prisma.PrismaClientKnownRequestError('unique request id', {
+          code: 'P2002',
+          clientVersion: '7.8.0',
+        })
+      }
+      row = {
+        ...args.data,
+        attempt: args.data.attempt ?? 1,
+        responseJson: args.data.responseJson ?? null,
+        errorCode: args.data.errorCode ?? null,
+        turnId: args.data.turnId ?? null,
+      }
+      return { requestId: row.requestId }
+    },
+    update: async (args: { data: Record<string, unknown> }) => {
+      assert.ok(row)
+      const increment = typeof args.data.attempt === 'object' && args.data.attempt !== null && 'increment' in args.data.attempt
+        ? Number(args.data.attempt.increment)
+        : null
+      row = {
+        ...row,
+        ...args.data,
+        ...(increment === null ? {} : { attempt: row.attempt + increment }),
+      } as RequestStateRow
+      return row
+    },
+    updateMany: async (args: { where: Record<string, unknown>; data: Record<string, unknown> }) => {
+      if (!row) return { count: 0 }
+      const leaseMatches = !args.where.leaseToken || args.where.leaseToken === row.leaseToken
+      const statusMatches = !args.where.status || args.where.status === row.status
+      const leaseExpiry = args.where.leaseExpiresAt as { gt?: Date } | undefined
+      const expiryMatches = !leaseExpiry?.gt || row.leaseExpiresAt.getTime() > leaseExpiry.gt.getTime()
+      if (!leaseMatches || !statusMatches || !expiryMatches) return { count: 0 }
+      row = { ...row, ...args.data } as RequestStateRow
+      return { count: 1 }
+    },
+    deleteMany: async () => ({ count: 0 }),
+  }
+  const tx = {
+    $queryRaw: async () => row ? [{ ...row }] : [],
+    publicAssistantRequest: requestDelegate,
+    publicAssistantSession: { upsert: async () => ({ id: canonicalRequest.sessionId }) },
+    publicAssistantDailyAggregate: { upsert: async () => ({ id: 'aggregate-idempotent' }) },
+    publicAssistantTurn: {
+      create: async (args: { data: Record<string, unknown> }) => {
+        turnCreates += 1
+        lastTurnData = args.data
+        return { id: `turn-${turnCreates}` }
+      },
+    },
+  }
+  const prisma = {
+    ...tx,
+    $transaction: async (input: ((client: typeof tx) => Promise<unknown>) | Promise<unknown>[]) => (
+      typeof input === 'function' ? input(tx) : Promise.all(input)
+    ),
+  } as unknown as PrismaClient
+  return {
+    prisma,
+    get row() {
+      return row
+    },
+    get turnCreates() {
+      return turnCreates
+    },
+    get lastTurnData() {
+      return lastTurnData
+    },
+  }
+}
+
+const claimFake = createRequestStateFake()
+const firstClaim = await claimPublicAssistantRequest(canonicalRequest, claimFake.prisma, fixedNow)
+assert.equal(firstClaim.status, 'acquired')
+assert.equal(claimFake.row?.attempt, 1)
+const duplicateClaim = await claimPublicAssistantRequest(canonicalRequest, claimFake.prisma, new Date(fixedNow.getTime() + 1_000))
+assert.equal(duplicateClaim.status, 'processing')
+const conflictingClaim = await claimPublicAssistantRequest(
+  { ...canonicalRequest, question: 'different question' },
+  claimFake.prisma,
+  new Date(fixedNow.getTime() + 1_000),
+)
+assert.equal(conflictingClaim.status, 'conflict')
+
+assert.ok(claimFake.row)
+claimFake.row.leaseExpiresAt = new Date(fixedNow.getTime() - 1)
+const takeoverClaim = await claimPublicAssistantRequest(canonicalRequest, claimFake.prisma, fixedNow)
+assert.equal(takeoverClaim.status, 'acquired')
+assert.equal(claimFake.row?.attempt, 2)
+if (takeoverClaim.status !== 'acquired') throw new Error('expected acquired takeover')
+
+const expiredCompletionFake = createRequestStateFake({
+  ...claimFake.row!,
+  status: 'processing',
+  leaseToken: takeoverClaim.lease.leaseToken,
+  leaseExpiresAt: new Date(fixedNow.getTime() - 1),
+})
+assert.deepEqual(
+  await completePublicAssistantRequest(canonicalRequest, makeResponse('late answer'), takeoverClaim.lease, expiredCompletionFake.prisma, fixedNow),
+  { status: 'stale' },
+)
+assert.equal(expiredCompletionFake.turnCreates, 0)
+
+const validCompletionFake = createRequestStateFake({
+  ...claimFake.row!,
+  status: 'processing',
+  leaseToken: takeoverClaim.lease.leaseToken,
+  leaseExpiresAt: new Date(fixedNow.getTime() + 60_000),
+})
+const completedRequest = await completePublicAssistantRequest(
+  canonicalRequest,
+  makeResponse('persisted exactly once'),
+  takeoverClaim.lease,
+  validCompletionFake.prisma,
+  fixedNow,
+)
+assert.equal(completedRequest.status, 'completed')
+assert.equal(validCompletionFake.turnCreates, 1)
+assert.equal(validCompletionFake.row?.status, 'completed')
+assert.equal(validCompletionFake.row?.turnId, 'turn-1')
+const replayClaim = await claimPublicAssistantRequest(canonicalRequest, validCompletionFake.prisma, fixedNow)
+assert.equal(replayClaim.status, 'completed')
+assert.equal(validCompletionFake.turnCreates, 1)
+
+const sensitiveCompletionFake = createRequestStateFake({
+  ...claimFake.row!,
+  status: 'processing',
+  leaseToken: takeoverClaim.lease.leaseToken,
+  leaseExpiresAt: new Date(fixedNow.getTime() + 60_000),
+})
+const sensitiveCompletion = await completePublicAssistantRequest(
+  canonicalRequest,
+  makeResponse('postgresql://user:password@db.example/internal'),
+  takeoverClaim.lease,
+  sensitiveCompletionFake.prisma,
+  fixedNow,
+)
+assert.equal(sensitiveCompletion.status, 'completed')
+if (sensitiveCompletion.status !== 'completed') throw new Error('expected sensitive completion')
+assert.equal(sensitiveCompletion.response.status, 'blocked')
+assert.equal(sensitiveCompletion.response.answer.includes('postgresql://'), false)
+assert.equal(sensitiveCompletionFake.lastTurnData?.answer, '[blocked]')
+assert.equal(JSON.stringify(sensitiveCompletionFake.row?.responseJson).includes('postgresql://'), false)
+
+const legacyUnsafeCacheFake = createRequestStateFake({
+  ...sensitiveCompletionFake.row!,
+  status: 'completed',
+  responseJson: {
+    requestId: canonicalRequest.requestId,
+    answer: 'Bearer abcdefghijklmnopqrstuvwxyz',
+    status: 'answered',
+    claims: [],
+    citations: [],
+    suggestions: [],
+    meta: { mode: 'model', citationCount: 0 },
+  },
+})
+const sanitizedReplay = await claimPublicAssistantRequest(canonicalRequest, legacyUnsafeCacheFake.prisma, fixedNow)
+assert.equal(sanitizedReplay.status, 'completed')
+if (sanitizedReplay.status !== 'completed') throw new Error('expected completed replay')
+assert.equal(sanitizedReplay.response.status, 'blocked')
+assert.equal(sanitizedReplay.response.answer.includes('Bearer'), false)
 
 const insightsSelect: Record<string, unknown> = {}
 const insightsPrisma = {

@@ -11,9 +11,10 @@ import type {
 } from './types.js'
 
 export interface PublicAssistantRequest {
+  requestId: string
   question: string
   mode: PublicAssistantMode
-  sessionId?: string
+  sessionId: string
   pageContext?: PublicAssistantPageContext
   history: PublicAssistantHistoryTurn[]
   signal?: AbortSignal

@@ -56,6 +56,7 @@ export interface PublicAssistantAnswerMeta {
 }
 
 export interface PublicAssistantAnswer {
+  requestId?: string
   answer: string
   status: PublicAssistantStatus
   claims: PublicAssistantClaim[]
@@ -107,19 +108,27 @@ export class PublicAssistantTransportError extends Error {
   readonly canFallbackToJson: boolean
   readonly status: number | null
   readonly retryAfterSeconds: number | null
+  readonly requestId: string | null
 
-  constructor(code: string, options: { canFallbackToJson?: boolean; status?: number; retryAfterSeconds?: number } = {}) {
+  constructor(code: string, options: {
+    canFallbackToJson?: boolean
+    status?: number
+    retryAfterSeconds?: number
+    requestId?: string
+  } = {}) {
     super(code)
     this.name = 'PublicAssistantTransportError'
     this.code = code
     this.canFallbackToJson = options.canFallbackToJson ?? false
     this.status = options.status ?? null
     this.retryAfterSeconds = options.retryAfterSeconds ?? null
+    this.requestId = options.requestId ?? null
   }
 }
 
 interface PublicAssistantRequestInput {
   apiBase: string
+  requestId: string
   message: string
   mode: PublicAssistantMode
   sessionId: string
@@ -177,7 +186,9 @@ export async function readPublicAssistantEventStream(
   let buffer = ''
   let bytesRead = 0
   let result: PublicAssistantAnswer | null = null
-  let terminalError = ''
+  const terminalState: {
+    error: { code: string; requestId?: string; retryAfterSeconds?: number } | null
+  } = { error: null }
 
   const consumeFrame = (frame: string) => {
     const lines = frame.split(/\r?\n/u)
@@ -192,7 +203,7 @@ export async function readPublicAssistantEventStream(
     try {
       payload = JSON.parse(data) as unknown
     } catch {
-      if (event === 'result' || event === 'error') terminalError = 'public-assistant-stream-invalid-event'
+      if (event === 'result' || event === 'error') terminalState.error = { code: 'public-assistant-stream-invalid-event' }
       return
     }
     if (event === 'progress') {
@@ -208,12 +219,18 @@ export async function readPublicAssistantEventStream(
     }
     if (event === 'result') {
       result = normalizePublicAssistantAnswer(payload)
-      if (!result) terminalError = 'public-assistant-stream-invalid-result'
+      if (!result) terminalState.error = { code: 'public-assistant-stream-invalid-result' }
       return
     }
     if (event === 'error') {
-      terminalError = isRecord(payload) ? readString(payload.code, 80) : ''
-      terminalError ||= 'public-assistant-stream-failed'
+      const code = isRecord(payload) ? readString(payload.code, 80) : ''
+      const requestId = isRecord(payload) ? readRequestId(payload.requestId) : ''
+      const retryAfterSeconds = isRecord(payload) ? readBoundedRetryDelay(payload.retryAfterSeconds) : null
+      terminalState.error = {
+        code: code || 'public-assistant-stream-failed',
+        ...(requestId ? { requestId } : {}),
+        ...(retryAfterSeconds === null ? {} : { retryAfterSeconds }),
+      }
     }
   }
 
@@ -236,13 +253,19 @@ export async function readPublicAssistantEventStream(
   } finally {
     reader.releaseLock()
   }
-  if (terminalError) throw new PublicAssistantTransportError(terminalError)
+  if (terminalState.error) {
+    throw new PublicAssistantTransportError(terminalState.error.code, {
+      ...(terminalState.error.requestId ? { requestId: terminalState.error.requestId } : {}),
+      ...(terminalState.error.retryAfterSeconds === undefined ? {} : { retryAfterSeconds: terminalState.error.retryAfterSeconds }),
+    })
+  }
   if (!result) throw new PublicAssistantTransportError('public-assistant-stream-incomplete')
   return result
 }
 
 function toPublicAssistantRequestBody(input: PublicAssistantRequestInput) {
   return {
+    requestId: input.requestId,
     message: input.message,
     mode: input.mode,
     sessionId: input.sessionId,
@@ -256,12 +279,14 @@ async function responseError(response: Response, canFallbackToJson = false) {
   const upstreamCode = isRecord(payload) ? readString(payload.error, 100) : ''
   const code = [429, 502, 503, 504].includes(response.status) ? statusErrorCode(response.status) : (upstreamCode || statusErrorCode(response.status))
   const retryAfterSeconds = readRetryAfter(response.headers.get('Retry-After'))
+  const requestId = isRecord(payload) ? readRequestId(payload.requestId) : ''
   return new PublicAssistantTransportError(
     code,
     {
       canFallbackToJson,
       status: response.status,
       ...(retryAfterSeconds === null ? {} : { retryAfterSeconds }),
+      ...(requestId ? { requestId } : {}),
     },
   )
 }
@@ -312,6 +337,28 @@ export async function requestPublicAssistantHealth(apiBase: string, signal?: Abo
     modelConfigured: payload.modelConfigured === true,
     webSearchConfigured: payload.webSearchConfigured === true,
   } satisfies PublicAssistantHealth
+}
+
+export async function cancelPublicAssistantGeneration(input: {
+  apiBase: string
+  requestId: string
+  sessionId: string
+}) {
+  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requestId: input.requestId, sessionId: input.sessionId }),
+    keepalive: true,
+  })
+  if (!response.ok && response.status !== 404) throw await responseError(response)
+}
+
+function readRequestId(value: unknown) {
+  if (typeof value !== 'string') return ''
+  const normalized = value.trim().toLowerCase()
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(normalized)
+    ? normalized
+    : ''
 }
 
 export async function requestPublicAssistantSessions(input: {
@@ -381,6 +428,7 @@ export function normalizePublicAssistantAnswer(value: unknown): PublicAssistantA
   const rawMeta = isRecord(value.meta) ? value.meta : {}
   const research = normalizeResearchMeta(rawMeta.research)
   return {
+    requestId: readRequestId(value.requestId) || undefined,
     answer,
     status,
     claims,
@@ -582,6 +630,12 @@ function readRetryAfter(value: string | null) {
   if (!value) return null
   const seconds = Number.parseInt(value, 10)
   return Number.isFinite(seconds) ? Math.max(0, Math.min(3_600, seconds)) : null
+}
+
+function readBoundedRetryDelay(value: unknown) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.max(0, Math.min(3_600, Math.trunc(value)))
+    : null
 }
 
 function unique<T>(value: T, index: number, values: T[]) {

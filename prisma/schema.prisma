@@ -18,6 +18,27 @@ model PublicAssistantSession {
   @@index([lastActiveAt])
 }
 
+model PublicAssistantRequest {
+  requestId      String                       @id
+  sessionId      String
+  requestHash    String
+  status         PublicAssistantRequestStatus
+  attempt        Int                          @default(1)
+  leaseToken     String
+  leaseExpiresAt DateTime
+  turnId         String?                      @unique
+  responseJson   Json?
+  errorCode      String?
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+  expiresAt      DateTime
+  turn           PublicAssistantTurn?         @relation(fields: [turnId], references: [id], onDelete: SetNull)
+
+  @@index([status, leaseExpiresAt])
+  @@index([sessionId, createdAt])
+  @@index([expiresAt])
+}
+
 model PublicAssistantTurn {
   id                  String                        @id @default(cuid())
   sessionId           String
@@ -38,11 +59,20 @@ model PublicAssistantTurn {
   session             PublicAssistantSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   aggregate           PublicAssistantDailyAggregate @relation(fields: [aggregateId], references: [id], onDelete: Restrict)
   feedback            PublicAssistantFeedback?
+  request             PublicAssistantRequest?
 
   @@index([sessionId, createdAt])
   @@index([status, createdAt])
   @@index([topicFingerprint, createdAt])
   @@index([expiresAt])
+}
+
+enum PublicAssistantRequestStatus {
+  processing
+  completed
+  retryable_failed
+  failed
+  cancelled
 }
 
 model PublicAssistantFeedback {

@@ -31,6 +31,7 @@ export interface Citation {
 }
 
 export interface ChatPayload {
+  requestId?: string
   message?: string
   sessionId?: string
   mode?: PublicAssistantMode
@@ -120,6 +121,7 @@ export interface AssistantRetrievalMeta {
 }
 
 export interface ChatResponse {
+  requestId?: string
   answer: string
   citations: Citation[]
   status?: PublicAssistantStatus

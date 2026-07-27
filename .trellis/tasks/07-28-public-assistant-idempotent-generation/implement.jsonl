@@ -1,0 +1,7 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": "prisma/schema.prisma", "reason": "Add durable request claim and fencing state."}
+{"file": "server/src/publicAssistantPersistence.ts", "reason": "Own claim, replay, failure, retention, and atomic completion."}
+{"file": "server/src/app.ts", "reason": "Share idempotent coordination across JSON and SSE routes."}
+{"file": "server/src/publicAssistantAgent.ts", "reason": "Normalize requestId and canonical request input."}
+{"file": "src/utils/publicAssistantApi.ts", "reason": "Carry validated requestId through browser transport."}
+{"file": "src/components/PublicAssistantWidget.tsx", "reason": "Retain requestId across explicit transport retry."}

@@ -5,12 +5,31 @@ import { env } from './env.js'
 import { getPrisma } from './db.js'
 import type { PublicAssistantRequest } from './publicAssistantRuntime.js'
 import type { ChatResponse } from './types.js'
-import { buildPublicAssistantDisplaySnapshot, readPublicAssistantDisplaySnapshot } from './publicAssistantProjection.js'
+import {
+  buildPublicAssistantDisplaySnapshot,
+  readPublicAssistantDisplaySnapshot,
+  readPublicAssistantHttpResponse,
+  toPublicAssistantHttpResponse,
+} from './publicAssistantProjection.js'
 
 const FEEDBACK_REASONS = new Set(['helpful', 'clear', 'good-sources', 'incorrect', 'unclear', 'missing-sources', 'outdated', 'other'])
 const MAX_SESSION_HISTORY_IDS = 24
 const MAX_SESSION_TURNS = 100
+const REQUEST_LEASE_BUFFER_MS = 5_000
 let lastRetentionAt = 0
+
+export interface PublicAssistantRequestLease {
+  requestId: string
+  leaseToken: string
+}
+
+export type PublicAssistantRequestClaim =
+  | { status: 'database-not-configured' }
+  | { status: 'acquired'; lease: PublicAssistantRequestLease }
+  | { status: 'completed'; response: NonNullable<ReturnType<typeof readPublicAssistantHttpResponse>> }
+  | { status: 'processing'; retryAfterSeconds: number }
+  | { status: 'conflict' }
+  | { status: 'terminal'; errorCode: string }
 
 export async function persistPublicAssistantTurn(
   request: PublicAssistantRequest,
@@ -20,7 +39,235 @@ export async function persistPublicAssistantTurn(
 ) {
   if (!prisma) return null
   const expiresAt = new Date(now.getTime() + env.publicAssistantRetentionDays * 86_400_000)
-  const sessionId = request.sessionId || randomUUID()
+  const result = await prisma.$transaction((tx) => writePublicAssistantTurn(tx, request, response, now, expiresAt))
+
+  await maybeRunPublicAssistantRetention(prisma, now).catch(() => undefined)
+  return result
+}
+
+export function buildPublicAssistantRequestHash(request: PublicAssistantRequest) {
+  return sha256(JSON.stringify({
+    sessionId: request.sessionId,
+    question: request.question,
+    mode: request.mode,
+    history: request.history.map((turn) => ({ role: turn.role, content: turn.content })),
+    pageContext: request.pageContext
+      ? {
+          path: request.pageContext.path,
+          title: request.pageContext.title ?? '',
+          description: request.pageContext.description ?? '',
+        }
+      : null,
+  }))
+}
+
+export async function claimPublicAssistantRequest(
+  request: PublicAssistantRequest,
+  prisma: PrismaClient | null = getPrisma(),
+  now = new Date(),
+): Promise<PublicAssistantRequestClaim> {
+  if (!prisma) return { status: 'database-not-configured' }
+  const requestHash = buildPublicAssistantRequestHash(request)
+  const leaseToken = randomUUID()
+  const leaseExpiresAt = new Date(now.getTime() + requestLeaseMs())
+  const expiresAt = new Date(now.getTime() + env.publicAssistantRetentionDays * 86_400_000)
+
+  try {
+    await prisma.publicAssistantRequest.create({
+      data: {
+        requestId: request.requestId,
+        sessionId: request.sessionId,
+        requestHash,
+        status: 'processing',
+        leaseToken,
+        leaseExpiresAt,
+        expiresAt,
+      },
+      select: { requestId: true },
+    })
+    return { status: 'acquired', lease: { requestId: request.requestId, leaseToken } }
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== 'P2002') throw error
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<Array<{
+      requestId: string
+      requestHash: string
+      status: string
+      leaseToken: string
+      leaseExpiresAt: Date
+      responseJson: Prisma.JsonValue | null
+      errorCode: string | null
+    }>>(Prisma.sql`
+      SELECT "requestId", "requestHash", "status", "leaseToken", "leaseExpiresAt", "responseJson", "errorCode"
+      FROM "PublicAssistantRequest"
+      WHERE "requestId" = ${request.requestId}
+      FOR UPDATE
+    `)
+    const existing = rows[0]
+    if (!existing) return { status: 'processing', retryAfterSeconds: 1 } as const
+    if (existing.requestHash !== requestHash) return { status: 'conflict' } as const
+    if (existing.status === 'completed') {
+      const response = readPublicAssistantHttpResponse(existing.responseJson)
+      if (response) return { status: 'completed', response } as const
+      await tx.publicAssistantRequest.update({
+        where: { requestId: request.requestId },
+        data: { status: 'failed', errorCode: 'public-assistant-invalid-cached-response' },
+      })
+      return { status: 'terminal', errorCode: 'public-assistant-invalid-cached-response' } as const
+    }
+    if (existing.status === 'processing' && existing.leaseExpiresAt.getTime() > now.getTime()) {
+      return {
+        status: 'processing',
+        retryAfterSeconds: Math.max(1, Math.ceil((existing.leaseExpiresAt.getTime() - now.getTime()) / 1_000)),
+      } as const
+    }
+    if (existing.status === 'failed' || existing.status === 'cancelled') {
+      return {
+        status: 'terminal',
+        errorCode: existing.errorCode || (existing.status === 'cancelled'
+          ? 'public-assistant-request-cancelled'
+          : 'public-assistant-request-failed'),
+      } as const
+    }
+    if (existing.status !== 'retryable_failed' && existing.status !== 'processing') {
+      return { status: 'terminal', errorCode: 'public-assistant-invalid-request-state' } as const
+    }
+
+    await tx.publicAssistantRequest.update({
+      where: { requestId: request.requestId },
+      data: {
+        status: 'processing',
+        attempt: { increment: 1 },
+        leaseToken,
+        leaseExpiresAt,
+        expiresAt,
+        errorCode: null,
+      },
+    })
+    return { status: 'acquired', lease: { requestId: request.requestId, leaseToken } } as const
+  })
+}
+
+export async function completePublicAssistantRequest(
+  request: PublicAssistantRequest,
+  response: ChatResponse,
+  lease: PublicAssistantRequestLease,
+  prisma: PrismaClient | null = getPrisma(),
+  now = new Date(),
+) {
+  if (!prisma) return { status: 'database-not-configured' as const }
+  if (request.requestId !== lease.requestId) return { status: 'stale' as const }
+  const expiresAt = new Date(now.getTime() + env.publicAssistantRetentionDays * 86_400_000)
+  const requestHash = buildPublicAssistantRequestHash(request)
+  const completed = await prisma.$transaction(async (tx) => {
+    const rows = await tx.$queryRaw<Array<{
+      requestId: string
+      requestHash: string
+      status: string
+      leaseToken: string
+      leaseExpiresAt: Date
+    }>>(Prisma.sql`
+      SELECT "requestId", "requestHash", "status", "leaseToken", "leaseExpiresAt"
+      FROM "PublicAssistantRequest"
+      WHERE "requestId" = ${lease.requestId}
+      FOR UPDATE
+    `)
+    const locked = rows[0]
+    if (
+      !locked
+      || locked.requestHash !== requestHash
+      || locked.status !== 'processing'
+      || locked.leaseToken !== lease.leaseToken
+      || locked.leaseExpiresAt.getTime() <= now.getTime()
+    ) {
+      return { status: 'stale' as const }
+    }
+
+    const persisted = await writePublicAssistantTurn(tx, request, response, now, expiresAt)
+    const publicResponse = toPublicAssistantHttpResponse({
+      ...response,
+      requestId: request.requestId,
+      sessionId: persisted.sessionId,
+      messageId: persisted.turnId,
+    })
+    await tx.publicAssistantRequest.update({
+      where: { requestId: lease.requestId },
+      data: {
+        status: 'completed',
+        turnId: persisted.turnId,
+        responseJson: toPrismaJson(publicResponse),
+        errorCode: null,
+        leaseExpiresAt: now,
+        expiresAt,
+      },
+    })
+    return { status: 'completed' as const, response: publicResponse }
+  })
+  await maybeRunPublicAssistantRetention(prisma, now).catch(() => undefined)
+  return completed
+}
+
+export async function markPublicAssistantRequestFailed(
+  lease: PublicAssistantRequestLease,
+  input: { status: 'retryable_failed' | 'failed' | 'cancelled'; errorCode: string },
+  prisma: PrismaClient | null = getPrisma(),
+  now = new Date(),
+) {
+  if (!prisma) return false
+  const updated = await prisma.publicAssistantRequest.updateMany({
+    where: {
+      requestId: lease.requestId,
+      leaseToken: lease.leaseToken,
+      status: 'processing',
+      leaseExpiresAt: { gt: now },
+    },
+    data: {
+      status: input.status,
+      errorCode: input.errorCode.slice(0, 100),
+      leaseExpiresAt: now,
+    },
+  })
+  return updated.count > 0
+}
+
+export async function cancelPublicAssistantRequest(
+  requestId: string,
+  sessionId: string,
+  prisma: PrismaClient | null = getPrisma(),
+  now = new Date(),
+) {
+  if (!prisma) return { status: 'database-not-configured' as const }
+  const updated = await prisma.publicAssistantRequest.updateMany({
+    where: {
+      requestId,
+      sessionId,
+      status: { in: ['processing', 'retryable_failed'] },
+    },
+    data: {
+      status: 'cancelled',
+      errorCode: 'public-assistant-request-cancelled',
+      leaseExpiresAt: now,
+    },
+  })
+  if (updated.count > 0) return { status: 'cancelled' as const }
+  const existing = await prisma.publicAssistantRequest.findUnique({
+    where: { requestId },
+    select: { sessionId: true, status: true },
+  })
+  if (!existing || existing.sessionId !== sessionId) return { status: 'request-not-found' as const }
+  return { status: existing.status as 'completed' | 'failed' | 'cancelled' }
+}
+
+async function writePublicAssistantTurn(
+  tx: Prisma.TransactionClient,
+  request: PublicAssistantRequest,
+  response: ChatResponse,
+  now: Date,
+  expiresAt: Date,
+) {
+  const sessionId = request.sessionId
   const route = response.meta?.research?.route ?? 'direct'
   const status = response.status ?? 'degraded'
   const date = shanghaiDate(now)
@@ -36,70 +283,65 @@ export async function persistPublicAssistantTurn(
     ? { version: 1, claims: [], citations: [], suggestions: [], meta: { mode: 'fallback', citationCount: 0 } }
     : buildPublicAssistantDisplaySnapshot(response)
 
-  const result = await prisma.$transaction(async (tx) => {
-    await tx.publicAssistantSession.upsert({
-      where: { id: sessionId },
-      create: { id: sessionId, lastActiveAt: now, expiresAt },
-      update: { lastActiveAt: now, expiresAt },
-    })
-    const aggregate = await tx.publicAssistantDailyAggregate.upsert({
-      where: {
-        date_topicFingerprint_route_status: {
-          date,
-          topicFingerprint: topic.fingerprint,
-          route,
-          status,
-        },
-      },
-      create: {
+  await tx.publicAssistantSession.upsert({
+    where: { id: sessionId },
+    create: { id: sessionId, lastActiveAt: now, expiresAt },
+    update: { lastActiveAt: now, expiresAt },
+  })
+  const aggregate = await tx.publicAssistantDailyAggregate.upsert({
+    where: {
+      date_topicFingerprint_route_status: {
         date,
         topicFingerprint: topic.fingerprint,
-        topicTerms: topic.terms,
         route,
         status,
-        totalCount: 1,
-        siteEvidenceTotal: siteEvidenceCount,
-        webEvidenceTotal: webEvidenceCount,
-        latencyTotalMs: BigInt(durationMs),
       },
-      update: {
-        totalCount: { increment: 1 },
-        siteEvidenceTotal: { increment: siteEvidenceCount },
-        webEvidenceTotal: { increment: webEvidenceCount },
-        latencyTotalMs: { increment: BigInt(durationMs) },
-      },
-    })
-    const turn = await tx.publicAssistantTurn.create({
-      data: {
-        sessionId,
-        aggregateId: aggregate.id,
-        question,
-        answer,
-        mode: request.mode,
-        route,
-        status,
-        citationIdsJson: citationIds as Prisma.InputJsonValue,
-        metricsJson: {
-          evidenceCount: response.meta?.research?.evidenceCount ?? 0,
-          siteEvidenceCount,
-          webEvidenceCount,
-          retryCount: response.meta?.research?.retryCount ?? 0,
-          durationMs,
-          searchAvailable: response.meta?.research?.searchAvailable ?? false,
-        } satisfies Prisma.InputJsonValue,
-        displaySnapshotJson: displaySnapshot as Prisma.InputJsonValue,
-        questionFingerprint: sha256(blocked ? 'blocked' : request.question.trim().toLowerCase()),
-        topicFingerprint: topic.fingerprint,
-        topicTerms: topic.terms,
-        expiresAt,
-      },
-      select: { id: true },
-    })
-    return { sessionId, turnId: turn.id }
+    },
+    create: {
+      date,
+      topicFingerprint: topic.fingerprint,
+      topicTerms: topic.terms,
+      route,
+      status,
+      totalCount: 1,
+      siteEvidenceTotal: siteEvidenceCount,
+      webEvidenceTotal: webEvidenceCount,
+      latencyTotalMs: BigInt(durationMs),
+    },
+    update: {
+      totalCount: { increment: 1 },
+      siteEvidenceTotal: { increment: siteEvidenceCount },
+      webEvidenceTotal: { increment: webEvidenceCount },
+      latencyTotalMs: { increment: BigInt(durationMs) },
+    },
   })
-
-  await maybeRunPublicAssistantRetention(prisma, now).catch(() => undefined)
-  return result
+  const turn = await tx.publicAssistantTurn.create({
+    data: {
+      sessionId,
+      aggregateId: aggregate.id,
+      question,
+      answer,
+      mode: request.mode,
+      route,
+      status,
+      citationIdsJson: citationIds as Prisma.InputJsonValue,
+      metricsJson: {
+        evidenceCount: response.meta?.research?.evidenceCount ?? 0,
+        siteEvidenceCount,
+        webEvidenceCount,
+        retryCount: response.meta?.research?.retryCount ?? 0,
+        durationMs,
+        searchAvailable: response.meta?.research?.searchAvailable ?? false,
+      } satisfies Prisma.InputJsonValue,
+      displaySnapshotJson: displaySnapshot as Prisma.InputJsonValue,
+      questionFingerprint: sha256(blocked ? 'blocked' : request.question.trim().toLowerCase()),
+      topicFingerprint: topic.fingerprint,
+      topicTerms: topic.terms,
+      expiresAt,
+    },
+    select: { id: true },
+  })
+  return { sessionId, turnId: turn.id }
 }
 
 export function normalizePublicAssistantSessionList(value: unknown) {
@@ -226,8 +468,14 @@ export async function deletePublicAssistantSession(
   now = new Date(),
 ) {
   if (!prisma) return { status: 'database-not-configured' as const }
-  const deleted = await prisma.publicAssistantSession.deleteMany({
-    where: { id: sessionId, expiresAt: { gt: now } },
+  const deleted = await prisma.$transaction(async (tx) => {
+    const session = await tx.publicAssistantSession.deleteMany({
+      where: { id: sessionId, expiresAt: { gt: now } },
+    })
+    if (session.count > 0) {
+      await tx.publicAssistantRequest.deleteMany({ where: { sessionId } })
+    }
+    return session
   })
   return deleted.count > 0 ? { status: 'deleted' as const } : { status: 'session-not-found' as const }
 }
@@ -349,9 +597,18 @@ async function maybeRunPublicAssistantRetention(prisma: PrismaClient, now: Date)
 
 export async function runPublicAssistantRetention(prisma: PrismaClient, now = new Date()) {
   await prisma.$transaction([
+    prisma.publicAssistantRequest.deleteMany({ where: { expiresAt: { lte: now } } }),
     prisma.publicAssistantTurn.deleteMany({ where: { expiresAt: { lte: now } } }),
     prisma.publicAssistantSession.deleteMany({ where: { expiresAt: { lte: now } } }),
   ])
+}
+
+function toPrismaJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue
+}
+
+function requestLeaseMs() {
+  return Math.max(15_000, env.publicAssistantRequestTimeoutMs + REQUEST_LEASE_BUFFER_MS)
 }
 
 function buildBlockedTopic() {

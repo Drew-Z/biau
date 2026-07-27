@@ -1,0 +1,5 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": "server/scripts/public-assistant-persistence-check.ts", "reason": "Verify concurrency, replay, lease fencing, and retention locally."}
+{"file": "scripts/check-public-assistant-api.ts", "reason": "Verify browser/server requestId and stable error contracts."}
+{"file": "scripts/check-ui.mjs", "reason": "Verify retry requestId reuse and new-generation identity without external calls."}
+{"file": ".trellis/spec/backend/public-research-assistant.md", "reason": "Keep public assistant persistence and error contracts synchronized."}

@@ -2280,6 +2280,7 @@ const publicAssistantMarkdownAnswer = [
   '<button onclick="window.__unsafeMarkdown = true">不应成为按钮</button>',
 ].join('\n')
 const publicAssistantAnswerFixture = {
+  requestId: '11111111-1111-4111-8111-111111111111',
   answer: publicAssistantMarkdownAnswer,
   status: 'answered',
   claims: [{ id: 'claim-ui-1', text: '结构化回答已通过 fixture 核验。', citationIds: ['web-ui-1'] }],
@@ -2348,11 +2349,12 @@ await publicAssistantPage.route('**/api/health', async (route) => {
   })
 })
 await publicAssistantPage.route('**/api/chat/public/stream', async (route) => {
-  publicAssistantRequestBodies.push(route.request().postDataJSON())
+  const requestBody = route.request().postDataJSON()
+  publicAssistantRequestBodies.push(requestBody)
   await route.fulfill({
     status: 200,
     contentType: 'text/event-stream',
-    body: toPublicAssistantSse(publicAssistantAnswerFixture),
+    body: toPublicAssistantSse({ ...publicAssistantAnswerFixture, requestId: requestBody.requestId }),
   })
 })
 await publicAssistantPage.route('**/api/chat/public/feedback', async (route) => {
@@ -2488,6 +2490,7 @@ await publicAssistantPage.getByRole('button', { name: '发送问题' }).click()
 await publicAssistantPage.waitForFunction(() => document.querySelectorAll('.public-assistant__message.is-assistant').length === 2)
 if (
   publicAssistantRequestBodies.length !== 1 ||
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(publicAssistantRequestBodies[0]?.requestId ?? '') ||
   publicAssistantRequestBodies[0]?.history?.length !== 2 ||
   publicAssistantRequestBodies[0]?.history?.[0]?.content !== '历史问题'
 ) {
@@ -2842,6 +2845,7 @@ if (
 await restoreRacePage.close()
 
 let offlineChatRequestCount = 0
+const offlineChatRequestBodies = []
 let offlineHistoryRequestCount = 0
 const offlineRecoveryPage = await browser.newPage({ viewport: viewports[0] })
 await offlineRecoveryPage.addInitScript(() => {
@@ -2858,6 +2862,8 @@ await offlineRecoveryPage.route('**/api/health', (route) => route.fulfill({
 }))
 await offlineRecoveryPage.route('**/api/chat/public/stream', async (route) => {
   offlineChatRequestCount += 1
+  const requestBody = route.request().postDataJSON()
+  offlineChatRequestBodies.push(requestBody)
   if (offlineChatRequestCount === 1) {
     await route.abort('internetdisconnected')
     return
@@ -2867,6 +2873,7 @@ await offlineRecoveryPage.route('**/api/chat/public/stream', async (route) => {
     contentType: 'text/event-stream',
     body: toPublicAssistantSse({
       ...publicAssistantAnswerFixture,
+      requestId: requestBody.requestId,
       answer: '## 网络恢复成功\n\n这次请求由用户明确重试后发起。',
       messageId: 'turn-ui-offline-retry-1',
     }),
@@ -2913,7 +2920,11 @@ await offlineChatRetryButton.evaluate((button) => {
   button.click()
 })
 await offlineRecoveryPage.getByText('网络恢复成功', { exact: true }).waitFor({ state: 'visible' })
-if (offlineChatRequestCount !== offlineChatCountBeforeRecovery + 1) {
+if (
+  offlineChatRequestCount !== offlineChatCountBeforeRecovery + 1 ||
+  offlineChatRequestBodies[0]?.requestId !== offlineChatRequestBodies[1]?.requestId ||
+  JSON.stringify(offlineChatRequestBodies[0]) !== JSON.stringify(offlineChatRequestBodies[1])
+) {
   failures.push('/blog public assistant recovery: explicit chat retry should issue exactly one request after reconnecting')
 }
 
@@ -2948,6 +2959,7 @@ if (offlineHistoryRequestCount !== offlineHistoryCountBeforeRecovery + 1) {
 await offlineRecoveryPage.close()
 
 let rateLimitedChatRequestCount = 0
+const rateLimitedChatRequestBodies = []
 const rateLimitRecoveryPage = await browser.newPage({ viewport: viewports[0] })
 await rateLimitRecoveryPage.route('**/api/health', (route) => route.fulfill({
   status: 200,
@@ -2956,12 +2968,22 @@ await rateLimitRecoveryPage.route('**/api/health', (route) => route.fulfill({
 }))
 await rateLimitRecoveryPage.route('**/api/chat/public/stream', async (route) => {
   rateLimitedChatRequestCount += 1
+  const requestBody = route.request().postDataJSON()
+  rateLimitedChatRequestBodies.push(requestBody)
   if (rateLimitedChatRequestCount === 1) {
     await route.fulfill({
-      status: 429,
-      contentType: 'application/json',
-      headers: { 'Retry-After': '2' },
-      body: JSON.stringify({ error: 'public-assistant-rate-limited' }),
+      status: 200,
+      contentType: 'text/event-stream',
+      body: [
+        'event: error',
+        `data: ${JSON.stringify({
+          code: 'public-assistant-rate-limited',
+          requestId: requestBody.requestId,
+          retryAfterSeconds: 2,
+        })}`,
+        '',
+        '',
+      ].join('\n'),
     })
     return
   }
@@ -2970,6 +2992,7 @@ await rateLimitRecoveryPage.route('**/api/chat/public/stream', async (route) => 
     contentType: 'text/event-stream',
     body: toPublicAssistantSse({
       ...publicAssistantAnswerFixture,
+      requestId: requestBody.requestId,
       answer: '## 限流恢复成功\n\n倒计时结束后由用户明确重试。',
       messageId: 'turn-ui-rate-limit-retry-1',
     }),
@@ -2996,7 +3019,11 @@ await rateLimitRetryButton.evaluate((button) => {
   button.click()
 })
 await rateLimitRecoveryPage.getByText('限流恢复成功', { exact: true }).waitFor({ state: 'visible' })
-if (rateLimitedChatRequestCount !== 2) {
+if (
+  rateLimitedChatRequestCount !== 2 ||
+  rateLimitedChatRequestBodies[0]?.requestId !== rateLimitedChatRequestBodies[1]?.requestId ||
+  JSON.stringify(rateLimitedChatRequestBodies[0]) !== JSON.stringify(rateLimitedChatRequestBodies[1])
+) {
   failures.push('/blog public assistant recovery: rate-limit retry should issue one request after the deadline')
 }
 await rateLimitRecoveryPage.close()
@@ -3015,6 +3042,7 @@ await cancellationPage.addInitScript(() => {
 })
 let cancellationRequestCount = 0
 const cancellationRequestBodies = []
+const cancellationBodies = []
 await cancellationPage.route('**/api/health', async (route) => {
   await route.fulfill({
     status: 200,
@@ -3024,7 +3052,8 @@ await cancellationPage.route('**/api/health', async (route) => {
 })
 await cancellationPage.route('**/api/chat/public/stream', async (route) => {
   cancellationRequestCount += 1
-  cancellationRequestBodies.push(route.request().postDataJSON())
+  const requestBody = route.request().postDataJSON()
+  cancellationRequestBodies.push(requestBody)
   if (cancellationRequestCount === 1) {
     await new Promise((resolve) => setTimeout(resolve, 650))
   }
@@ -3033,10 +3062,19 @@ await cancellationPage.route('**/api/chat/public/stream', async (route) => {
     contentType: 'text/event-stream',
     body: toPublicAssistantSse({
       ...publicAssistantAnswerFixture,
+      requestId: requestBody.requestId,
       answer: '## 重试成功\n\n停止后的同一问题只保留一次。',
       messageId: 'turn-ui-cancel-retry-1',
     }),
   }).catch(() => undefined)
+})
+await cancellationPage.route('**/api/chat/public/cancel', async (route) => {
+  cancellationBodies.push(route.request().postDataJSON())
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ok: true, status: 'cancelled' }),
+  })
 })
 await gotoApp(cancellationPage, '/blog')
 await cancellationPage.locator('.public-assistant__trigger').click()
@@ -3067,6 +3105,8 @@ await cancellationPage.getByRole('button', { name: '重试' }).click()
 await cancellationPage.locator('.public-assistant__message.is-assistant').waitFor({ state: 'visible' })
 if (
   cancellationRequestCount !== 2 ||
+  cancellationRequestBodies[0]?.requestId === cancellationRequestBodies[1]?.requestId ||
+  cancellationBodies[0]?.requestId !== cancellationRequestBodies[0]?.requestId ||
   cancellationRequestBodies[1]?.history?.length !== 0 ||
   (await cancellationPage.locator('.public-assistant__message.is-user').count()) !== 1 ||
   (await cancellationPage.locator('.public-assistant__message.is-assistant').count()) !== 1
@@ -3085,10 +3125,11 @@ for (const width of [320, 390, 430]) {
     })
   })
   await mobileAssistantPage.route('**/api/chat/public/stream', async (route) => {
+    const requestBody = route.request().postDataJSON()
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
-      body: toPublicAssistantSse(publicAssistantAnswerFixture),
+      body: toPublicAssistantSse({ ...publicAssistantAnswerFixture, requestId: requestBody.requestId }),
     })
   })
   await gotoApp(mobileAssistantPage, '/blog')
