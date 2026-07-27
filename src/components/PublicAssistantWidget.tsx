@@ -50,6 +50,7 @@ import {
   type PublicAssistantHistoryTurn,
   type PublicAssistantMode,
   type PublicAssistantProgressStage,
+  type PublicAssistantSessionHistory,
   type PublicAssistantSessionSummary,
   type PublicAssistantStatus,
 } from '../utils/publicAssistantApi'
@@ -57,6 +58,7 @@ import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
 import {
   createPublicAssistantSessionId,
   forgetPublicAssistantSession,
+  hasPersistedPublicAssistantSessionRegistry,
   persistPublicAssistantSessionRegistry,
   readPublicAssistantSessionRegistry,
   rememberPublicAssistantSession,
@@ -288,7 +290,42 @@ function formatSessionDate(value: string) {
   return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(parsed)
 }
 
+function restoreSessionMessages(history: PublicAssistantSessionHistory): WidgetMessage[] {
+  return history.turns.flatMap<WidgetMessage>((turn) => [
+    {
+      id: `history-${turn.id}-user`,
+      role: 'user',
+      content: turn.question,
+      requestMode: turn.mode,
+    },
+    {
+      id: `history-${turn.id}-assistant`,
+      role: 'assistant',
+      content: turn.answer,
+      citations: turn.citations,
+      claims: turn.claims,
+      status: turn.status,
+      meta: turn.meta,
+      suggestions: turn.suggestions,
+      sessionId: history.session.id,
+      turnId: turn.id,
+      prompt: turn.question,
+      requestMode: turn.mode,
+      feedback: turn.feedback ?? undefined,
+    },
+  ])
+}
+
+function citationKey(messageId: string, citationId: string) {
+  return `${messageId}:${citationId}`
+}
+
+function citationElementId(messageId: string, index: number) {
+  return `public-assistant-citation-${messageId}-${index + 1}`
+}
+
 export function PublicAssistantWidget() {
+  const [shouldRestoreInitialSession] = useState(hasPersistedPublicAssistantSessionRegistry)
   const [sessionRegistry, setSessionRegistry] = useState<PublicAssistantSessionRegistry>(readPublicAssistantSessionRegistry)
   const [isOpen, setIsOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -309,6 +346,14 @@ export function PublicAssistantWidget() {
   const [healthRetryNonce, setHealthRetryNonce] = useState(0)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [feedbackMenuMessageId, setFeedbackMenuMessageId] = useState<string | null>(null)
+  const [feedbackFocusRequest, setFeedbackFocusRequest] = useState<{ messageId: string; sequence: number } | null>(null)
+  const [initialRestoreState, setInitialRestoreState] = useState<'loading' | 'ready' | 'error'>(
+    shouldRestoreInitialSession ? 'loading' : 'ready',
+  )
+  const [initialRestoreIssue, setInitialRestoreIssue] = useState<AssistantIssue | null>(null)
+  const [restoreRetryNonce, setRestoreRetryNonce] = useState(0)
+  const [historyTruncated, setHistoryTruncated] = useState(false)
+  const [highlightedCitationKey, setHighlightedCitationKey] = useState<string | null>(null)
   const sessionId = sessionRegistry.currentSessionId
   const rootRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
@@ -324,11 +369,19 @@ export function PublicAssistantWidget() {
   const shouldFollowOutputRef = useRef(true)
   const activeRequestRef = useRef<ActiveChatRequest | null>(null)
   const historyRequestRef = useRef<AbortController | null>(null)
+  const initialRestoreRequestRef = useRef<AbortController | null>(null)
+  const initialRestoreTargetRef = useRef<string | null>(shouldRestoreInitialSession ? sessionRegistry.currentSessionId : null)
   const healthRequestRef = useRef<AbortController | null>(null)
   const copyTimerRef = useRef<number | null>(null)
+  const citationHighlightTimerRef = useRef<number | null>(null)
+  const citationRefs = useRef(new Map<string, HTMLAnchorElement>())
   const feedbackTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const serviceStatus = getServiceStatus(serviceState)
   const issueCopy = issue ? getAssistantIssueCopy(issue) : null
+  const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue) : null
+  const isRestoringSession = initialRestoreState === 'loading'
+  const isConversationReady = initialRestoreState === 'ready'
+  const isAssistantBusy = isLoading || isRestoringSession
 
   const createMessageId = (role: WidgetMessage['role']) => {
     messageSeq.current += 1
@@ -349,6 +402,47 @@ export function PublicAssistantWidget() {
     setHasNewContent(false)
   }
 
+  const focusComposer = () => {
+    if (isMobileSurfaceViewport()) return
+    window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
+  }
+
+  const closeFeedbackMenuAndRestoreFocus = (messageId: string) => {
+    setFeedbackMenuMessageId(null)
+    setFeedbackFocusRequest((current) => ({ messageId, sequence: (current?.sequence ?? 0) + 1 }))
+  }
+
+  const stopInitialRestore = () => {
+    initialRestoreTargetRef.current = null
+    initialRestoreRequestRef.current?.abort()
+    initialRestoreRequestRef.current = null
+  }
+
+  const prepareInternalCitationNavigation = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    setFeedbackMenuMessageId(null)
+    setIsHistoryOpen(false)
+    setIsFullscreen(false)
+    setIsOpen(false)
+  }
+
+  const focusCitation = (message: WidgetMessage, citationId: string) => {
+    const key = citationKey(message.id, citationId)
+    const citation = citationRefs.current.get(key)
+    if (!citation) return
+    if (citationHighlightTimerRef.current !== null) window.clearTimeout(citationHighlightTimerRef.current)
+    setHighlightedCitationKey(key)
+    citation.focus({ preventScroll: true })
+    citation.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'nearest',
+    })
+    citationHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedCitationKey((current) => current === key ? null : current)
+      citationHighlightTimerRef.current = null
+    }, 1_600)
+  }
+
   useEffect(() => {
     const container = scrollRef.current
     if (!container) return
@@ -366,9 +460,16 @@ export function PublicAssistantWidget() {
   useEffect(() => () => {
     activeRequestRef.current?.controller.abort()
     historyRequestRef.current?.abort()
+    initialRestoreRequestRef.current?.abort()
     healthRequestRef.current?.abort()
     if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
+    if (citationHighlightTimerRef.current !== null) window.clearTimeout(citationHighlightTimerRef.current)
   }, [])
+
+  useEffect(() => {
+    if (!feedbackFocusRequest) return
+    feedbackTriggerRefs.current.get(feedbackFocusRequest.messageId)?.focus({ preventScroll: true })
+  }, [feedbackFocusRequest])
 
   useEffect(() => {
     if (!isOpen) return
@@ -382,10 +483,55 @@ export function PublicAssistantWidget() {
   }, [isOpen])
 
   useEffect(() => {
+    if (!isOpen || !isConversationReady) return
+    focusComposer()
+  }, [isConversationReady, isOpen])
+
+  useEffect(() => {
     if (!isOpen) return
-    const frame = window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
-    return () => window.cancelAnimationFrame(frame)
-  }, [isOpen])
+    const targetSessionId = initialRestoreTargetRef.current
+    if (!targetSessionId) return
+    initialRestoreTargetRef.current = null
+    const restoreApiBase = getAssistantApiBase(apiBase)
+
+    const controller = new AbortController()
+    initialRestoreRequestRef.current?.abort()
+    initialRestoreRequestRef.current = controller
+
+    void requestPublicAssistantSession({ apiBase: restoreApiBase, sessionId: targetSessionId, signal: controller.signal })
+      .then((history) => {
+        if (initialRestoreRequestRef.current !== controller || sessionIdRef.current !== targetSessionId) return
+        shouldFollowOutputRef.current = true
+        setMessages(restoreSessionMessages(history))
+        setMode(history.turns.at(-1)?.mode ?? 'auto')
+        setHistoryTruncated(history.truncated)
+        setHasNewContent(false)
+        setInitialRestoreState('ready')
+        setInitialRestoreIssue(null)
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === 'AbortError') return
+        if (initialRestoreRequestRef.current !== controller || sessionIdRef.current !== targetSessionId) return
+        const nextIssue = toAssistantIssue(error, 'history')
+        if (nextIssue.code === 'session-not-found') {
+          const withoutExpired = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
+          const nextRegistry = sessionRegistry.sessionIds.some((id) => id !== targetSessionId)
+            ? rememberPublicAssistantSession(withoutExpired, createPublicAssistantSessionId())
+            : withoutExpired
+          commitSessionRegistry(nextRegistry)
+          setMessages([])
+          setHistoryTruncated(false)
+          setInitialRestoreState('ready')
+          setInitialRestoreIssue(null)
+          return
+        }
+        setInitialRestoreState('error')
+        setInitialRestoreIssue(nextIssue)
+      })
+      .finally(() => {
+        if (initialRestoreRequestRef.current === controller) initialRestoreRequestRef.current = null
+      })
+  }, [apiBase, isOpen, restoreRetryNonce, sessionRegistry])
 
   useEffect(() => {
     if (!isOpen) return
@@ -394,8 +540,7 @@ export function PublicAssistantWidget() {
       event.preventDefault()
       if (feedbackMenuMessageId) {
         const messageId = feedbackMenuMessageId
-        setFeedbackMenuMessageId(null)
-        window.requestAnimationFrame(() => feedbackTriggerRefs.current.get(messageId)?.focus({ preventScroll: true }))
+        closeFeedbackMenuAndRestoreFocus(messageId)
         return
       }
       if (isHistoryOpen) {
@@ -589,6 +734,7 @@ export function PublicAssistantWidget() {
 
   const startNewConversation = () => {
     stopActiveChat()
+    stopInitialRestore()
     historyRequestRef.current?.abort()
     historyRequestRef.current = null
     const nextSessionId = createPublicAssistantSessionId()
@@ -599,9 +745,20 @@ export function PublicAssistantWidget() {
     setIssue(null)
     setHasNewContent(false)
     setFeedbackMenuMessageId(null)
+    setInitialRestoreState('ready')
+    setInitialRestoreIssue(null)
+    setHistoryTruncated(false)
     setIsHistoryOpen(false)
     setHistoryLoadingId(null)
-    window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
+    focusComposer()
+  }
+
+  const retryInitialRestore = () => {
+    stopInitialRestore()
+    initialRestoreTargetRef.current = sessionIdRef.current
+    setInitialRestoreState('loading')
+    setInitialRestoreIssue(null)
+    setRestoreRetryNonce((value) => value + 1)
   }
 
   const refreshHistory = async () => {
@@ -648,6 +805,7 @@ export function PublicAssistantWidget() {
   const openHistorySession = async (targetSessionId: string) => {
     if (!apiBase || historyLoadingId) return
     stopActiveChat()
+    stopInitialRestore()
     const controller = new AbortController()
     historyRequestRef.current?.abort()
     historyRequestRef.current = controller
@@ -655,39 +813,21 @@ export function PublicAssistantWidget() {
     try {
       const history = await requestPublicAssistantSession({ apiBase, sessionId: targetSessionId, signal: controller.signal })
       if (historyRequestRef.current !== controller) return
-      const restored = history.turns.flatMap<WidgetMessage>((turn) => [
-        {
-          id: `history-${turn.id}-user`,
-          role: 'user',
-          content: turn.question,
-          requestMode: turn.mode,
-        },
-        {
-          id: `history-${turn.id}-assistant`,
-          role: 'assistant',
-          content: turn.answer,
-          citations: turn.citations,
-          claims: turn.claims,
-          status: turn.status,
-          meta: turn.meta,
-          suggestions: turn.suggestions,
-          sessionId: targetSessionId,
-          turnId: turn.id,
-          prompt: turn.question,
-          requestMode: turn.mode,
-          feedback: turn.feedback ?? undefined,
-        },
-      ])
+      const restored = restoreSessionMessages(history)
       commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, targetSessionId))
       shouldFollowOutputRef.current = true
       setMessages(restored)
       setMode(history.turns.at(-1)?.mode ?? 'auto')
+      setInitialRestoreState('ready')
+      setInitialRestoreIssue(null)
+      setHistoryTruncated(history.truncated)
       setIssue(null)
       setHasNewContent(false)
       setIsHistoryOpen(false)
-      window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
+      focusComposer()
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
+      if (historyRequestRef.current !== controller) return
       const nextIssue = toAssistantIssue(error, 'history')
       setIssue(nextIssue)
       if (nextIssue.code === 'session-not-found') {
@@ -696,8 +836,10 @@ export function PublicAssistantWidget() {
         setHistorySessions((current) => current.filter((session) => session.id !== targetSessionId))
       }
     } finally {
-      if (historyRequestRef.current === controller) historyRequestRef.current = null
-      setHistoryLoadingId(null)
+      if (historyRequestRef.current === controller) {
+        historyRequestRef.current = null
+        setHistoryLoadingId(null)
+      }
     }
   }
 
@@ -712,20 +854,27 @@ export function PublicAssistantWidget() {
       if (historyRequestRef.current !== controller) return
       let nextRegistry = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
       if (targetSessionId === sessionIdRef.current) {
+        stopInitialRestore()
         nextRegistry = rememberPublicAssistantSession(nextRegistry, createPublicAssistantSessionId())
         shouldFollowOutputRef.current = true
         setMessages([])
         setInput('')
+        setInitialRestoreState('ready')
+        setInitialRestoreIssue(null)
+        setHistoryTruncated(false)
       }
       commitSessionRegistry(nextRegistry)
       setHistorySessions((current) => current.filter((session) => session.id !== targetSessionId))
       setIssue(null)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
+      if (historyRequestRef.current !== controller) return
       setIssue(toAssistantIssue(error, 'history'))
     } finally {
-      if (historyRequestRef.current === controller) historyRequestRef.current = null
-      setHistoryLoadingId(null)
+      if (historyRequestRef.current === controller) {
+        historyRequestRef.current = null
+        setHistoryLoadingId(null)
+      }
     }
   }
 
@@ -761,7 +910,7 @@ export function PublicAssistantWidget() {
     options: { reusePendingQuestion?: boolean } = {},
   ) => {
     const trimmed = question.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
-    if (!trimmed || isLoading) return
+    if (!trimmed || isLoading || !isConversationReady) return
 
     trackAnalyticsEvent('public_assistant_question', {
       source: 'floating-widget',
@@ -901,16 +1050,17 @@ export function PublicAssistantWidget() {
       setMessages((current) => current.map((item) => item.id === message.id
         ? { ...item, feedback: rating, feedbackPending: false, feedbackError: false }
         : item))
-      setFeedbackMenuMessageId((current) => current === message.id ? null : current)
       if (rating === 'down') {
-        window.requestAnimationFrame(() => feedbackTriggerRefs.current.get(message.id)?.focus({ preventScroll: true }))
+        closeFeedbackMenuAndRestoreFocus(message.id)
+      } else {
+        setFeedbackMenuMessageId((current) => current === message.id ? null : current)
       }
     } catch {
       setMessages((current) => current.map((item) => item.id === message.id
         ? { ...item, feedbackPending: false, feedbackError: true }
         : item))
       if (rating === 'down') {
-        window.requestAnimationFrame(() => feedbackTriggerRefs.current.get(message.id)?.focus({ preventScroll: true }))
+        setFeedbackFocusRequest((current) => ({ messageId: message.id, sequence: (current?.sequence ?? 0) + 1 }))
       }
     }
   }
@@ -1065,7 +1215,7 @@ export function PublicAssistantWidget() {
                 type="button"
                 className={mode === option.value ? 'is-active' : ''}
                 aria-pressed={mode === option.value}
-                disabled={isLoading}
+                disabled={isAssistantBusy}
                 onClick={() => setMode(option.value)}
               >
                 {option.value === 'web' && <Globe2 size={14} aria-hidden />}
@@ -1079,14 +1229,47 @@ export function PublicAssistantWidget() {
             ref={scrollRef}
             role="log"
             aria-label="对话记录"
-            aria-busy={isLoading}
+            aria-busy={isAssistantBusy}
             aria-live="off"
             onScroll={handleMessagesScroll}
           >
-            {messages.length === 0 && !isLoading && (
+            {messages.length === 0 && isConversationReady && !isLoading && (
               <div className="public-assistant__empty">
                 <strong>从一个具体问题开始</strong>
                 <span>助手会选择直接回答、本站检索或公开网页研究。</span>
+              </div>
+            )}
+
+            {isRestoringSession && (
+              <div className="public-assistant__loading" role="status">
+                <LoaderCircle className="is-spinning" size={15} aria-hidden />
+                <span>正在恢复当前匿名会话…</span>
+              </div>
+            )}
+
+            {initialRestoreState === 'error' && (
+              <div className="public-assistant__notice public-assistant__notice--restore" role="status">
+                <div>
+                  <strong>{initialRestoreIssueCopy?.title ?? '当前会话暂时无法恢复'}</strong>
+                  <span>{initialRestoreIssueCopy?.detail ?? '可以重试恢复，或新建一条空白会话。'}</span>
+                </div>
+                <div className="public-assistant__notice-actions">
+                  <button type="button" onClick={retryInitialRestore}>
+                    <RefreshCw size={15} aria-hidden />
+                    <span>重试恢复</span>
+                  </button>
+                  <button type="button" onClick={startNewConversation}>
+                    <MessageSquarePlus size={15} aria-hidden />
+                    <span>新建会话</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {historyTruncated && (
+              <div className="public-assistant__continuity-note" role="status">
+                <History size={14} aria-hidden />
+                <span>已恢复最近一段对话，较早内容未载入。</span>
               </div>
             )}
 
@@ -1103,12 +1286,34 @@ export function PublicAssistantWidget() {
                       <details className="public-assistant__claims">
                         <summary>查看证据对应（{message.claims.length}）</summary>
                         <ol>
-                          {message.claims.map((claim) => (
-                            <li key={claim.id}>
-                              <span>{claim.text}</span>
-                              {claim.citationIds.length > 0 && <small>{claim.citationIds.join(' · ')}</small>}
-                            </li>
-                          ))}
+                          {message.claims.map((claim) => {
+                            const linkedCitations = claim.citationIds
+                              .map((citationId) => ({
+                                citationId,
+                                index: message.citations?.findIndex((citation) => citation.id === citationId) ?? -1,
+                              }))
+                              .filter((entry) => entry.index >= 0)
+                            return (
+                              <li key={claim.id}>
+                                <span>{claim.text}</span>
+                                {linkedCitations.length > 0 && (
+                                  <div className="public-assistant__claim-sources" aria-label="这条结论的来源">
+                                    {linkedCitations.map((entry) => (
+                                      <button
+                                        key={entry.citationId}
+                                        type="button"
+                                        aria-controls={citationElementId(message.id, entry.index)}
+                                        aria-label={`定位来源：${message.citations?.[entry.index]?.title ?? entry.citationId}`}
+                                        onClick={() => focusCitation(message, entry.citationId)}
+                                      >
+                                        {entry.citationId}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </li>
+                            )
+                          })}
                         </ol>
                       </details>
                     )}
@@ -1116,6 +1321,13 @@ export function PublicAssistantWidget() {
                     {message.citations && message.citations.length > 0 && (
                       <div className="public-assistant__citations" aria-label="回答来源">
                         {message.citations.map((citation, index) => {
+                          const key = citationKey(message.id, citation.id)
+                          const elementId = citationElementId(message.id, index)
+                          const className = `public-assistant__citation ${highlightedCitationKey === key ? 'is-highlighted' : ''}`
+                          const registerCitation = (element: HTMLAnchorElement | null) => {
+                            if (element) citationRefs.current.set(key, element)
+                            else citationRefs.current.delete(key)
+                          }
                           const content = (
                             <>
                               <span className="public-assistant__citation-kicker">
@@ -1129,8 +1341,10 @@ export function PublicAssistantWidget() {
                           return citation.source === 'web' ? (
                             <a
                               key={citation.id}
+                              id={elementId}
+                              ref={registerCitation}
                               href={citation.href}
-                              className="public-assistant__citation"
+                              className={className}
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label={`在新窗口打开来源：${citation.title}`}
@@ -1140,8 +1354,11 @@ export function PublicAssistantWidget() {
                           ) : (
                             <Link
                               key={citation.id}
+                              id={elementId}
+                              ref={registerCitation}
                               to={citation.href}
-                              className="public-assistant__citation"
+                              className={className}
+                              onClick={prepareInternalCitationNavigation}
                               aria-label={`查看站内来源：${citation.title}`}
                             >
                               {content}
@@ -1264,8 +1481,10 @@ export function PublicAssistantWidget() {
           </div>
 
           <span className="sr-only" aria-live="polite">
-            {isLoading
-              ? '正在生成回答'
+            {isRestoringSession
+              ? '正在恢复当前会话'
+              : isLoading
+                ? '正在生成回答'
               : issue?.code === 'public-assistant-request-cancelled'
                 ? '已停止生成'
                 : messages.at(-1)?.role === 'assistant' ? '回答已完成' : ''}
@@ -1278,7 +1497,7 @@ export function PublicAssistantWidget() {
                 key={suggestion.id}
                 type="button"
                 className="public-assistant__suggestion"
-                disabled={isLoading}
+                disabled={isAssistantBusy || !isConversationReady}
                 onClick={() => void submitQuestion(suggestion.prompt)}
               >
                 {suggestion.label}
@@ -1299,6 +1518,7 @@ export function PublicAssistantWidget() {
               id="public-assistant-input"
               rows={2}
               maxLength={MAX_MESSAGE_LENGTH}
+              disabled={!isConversationReady}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
@@ -1315,7 +1535,7 @@ export function PublicAssistantWidget() {
                 <span>停止</span>
               </button>
             ) : (
-              <button type="submit" disabled={input.trim().length === 0} aria-label="发送问题">
+              <button type="submit" disabled={!isConversationReady || input.trim().length === 0} aria-label="发送问题">
                 <Send size={16} aria-hidden />
                 <span>发送</span>
               </button>

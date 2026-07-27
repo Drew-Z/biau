@@ -5233,6 +5233,37 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   gap: 2px;
 }
 
+.public-assistant__notice--restore {
+  color: color-mix(in oklch, var(--amber) 72%, var(--ink));
+  background: color-mix(in oklch, var(--amber) 9%, var(--panel-strong));
+  border-color: color-mix(in oklch, var(--amber) 26%, var(--flow-ui-card-border));
+}
+
+.public-assistant__notice > .public-assistant__notice-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.public-assistant__continuity-note {
+  min-width: 0;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: color-mix(in oklch, var(--amber) 72%, var(--ink));
+  background: color-mix(in oklch, var(--amber) 7%, transparent);
+  border: 1px solid color-mix(in oklch, var(--amber) 20%, var(--flow-ui-card-border));
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.public-assistant__continuity-note svg {
+  flex: 0 0 auto;
+}
+
 .public-assistant__notice strong,
 .public-assistant__notice span {
   min-width: 0;
@@ -5437,6 +5468,16 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   border-bottom: 1px solid var(--flow-ui-card-border);
   border-radius: 0;
   box-shadow: none;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.public-assistant__citation.is-highlighted {
+  background: color-mix(in oklch, var(--amber) 12%, var(--panel-strong));
+  border-color: color-mix(in oklch, var(--amber) 48%, var(--flow-ui-card-border));
+  box-shadow: inset 3px 0 0 color-mix(in oklch, var(--amber) 82%, var(--ink));
 }
 
 .public-assistant__citation strong {
@@ -5489,8 +5530,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 }
 
 .public-assistant__claims li,
-.public-assistant__claims li span,
-.public-assistant__claims li small {
+.public-assistant__claims li span {
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -5501,12 +5541,25 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   line-height: 1.55;
 }
 
-.public-assistant__claims li small {
+.public-assistant__claim-sources {
   margin-top: 2px;
-  display: block;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.public-assistant__claim-sources button {
+  min-width: 0;
+  min-height: 28px;
+  padding: 2px 7px;
   color: color-mix(in oklch, var(--amber) 78%, var(--ink));
+  background: color-mix(in oklch, var(--amber) 7%, transparent);
+  border: 1px solid color-mix(in oklch, var(--amber) 18%, var(--flow-ui-card-border));
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: 10px;
+  overflow-wrap: anywhere;
+  cursor: pointer;
 }
 
 .public-assistant__message-actions {
@@ -5646,6 +5699,11 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   text-overflow: clip;
 }
 
+.public-assistant__composer textarea:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
 .public-assistant__close {
   width: 38px;
   min-width: 38px;
@@ -5689,6 +5747,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant-markdown__code-block pre:focus-visible,
 .public-assistant-markdown__table-scroll:focus-visible,
 .public-assistant__claims summary:focus-visible,
+.public-assistant__claim-sources button:focus-visible,
 .public-assistant__suggestion:focus-visible,
 .public-assistant__composer textarea:focus-visible,
 .public-assistant__composer button:focus-visible,
@@ -6941,6 +7000,15 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     min-height: 44px;
   }
 
+  .public-assistant__notice > .public-assistant__notice-actions {
+    justify-content: stretch;
+    flex-wrap: wrap;
+  }
+
+  .public-assistant__notice-actions button {
+    flex: 1 1 120px;
+  }
+
   .public-assistant__message-actions button,
   .public-assistant__modes button {
     min-height: 44px;
@@ -6953,6 +7021,10 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   }
 
   .public-assistant__feedback-reasons button {
+    min-height: 44px;
+  }
+
+  .public-assistant__claim-sources button {
     min-height: 44px;
   }
 

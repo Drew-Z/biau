@@ -18,6 +18,18 @@ export function createPublicAssistantSessionId() {
   throw new Error('secure-random-unavailable')
 }
 
+export function hasPersistedPublicAssistantSessionRegistry() {
+  if (typeof window === 'undefined') return false
+  try {
+    return Boolean(
+      window.localStorage.getItem(SESSION_REGISTRY_STORAGE_KEY) ||
+      window.localStorage.getItem(CURRENT_SESSION_STORAGE_KEY),
+    )
+  } catch {
+    return false
+  }
+}
+
 export function readPublicAssistantSessionRegistry(): PublicAssistantSessionRegistry {
   const fresh = createPublicAssistantSessionId()
   if (typeof window === 'undefined') return { version: 2, currentSessionId: fresh, sessionIds: [fresh] }

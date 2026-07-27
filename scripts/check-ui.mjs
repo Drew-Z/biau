@@ -2323,8 +2323,14 @@ const toPublicAssistantSse = (answer) => [
   '',
 ].join('\n')
 const feedbackPayloads = []
+const publicAssistantRequestBodies = []
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
 await publicAssistantPage.addInitScript(() => {
+  window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+    version: 2,
+    currentSessionId: 'public-ui-session-1234',
+    sessionIds: ['public-ui-session-1234'],
+  }))
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
     value: {
@@ -2342,6 +2348,7 @@ await publicAssistantPage.route('**/api/health', async (route) => {
   })
 })
 await publicAssistantPage.route('**/api/chat/public/stream', async (route) => {
+  publicAssistantRequestBodies.push(route.request().postDataJSON())
   await route.fulfill({
     status: 200,
     contentType: 'text/event-stream',
@@ -2396,7 +2403,7 @@ await publicAssistantPage.route('**/api/chat/public/session', async (route) => {
         mode: 'site',
         route: 'site',
         status: 'answered',
-        claims: [],
+        claims: [{ id: 'claim-ui-history-1', text: '历史回答由站内公开资料支持。', citationIds: ['site-ui-history'] }],
         citations: [{
           id: 'site-ui-history',
           title: '历史来源',
@@ -2427,24 +2434,33 @@ await publicAssistantPage.route('**/api/chat/public/session', async (route) => {
         createdAt: '2026-07-27T08:01:00.000Z',
         feedback: null,
       }],
-      truncated: false,
+      truncated: true,
     }),
   })
 })
 await gotoApp(publicAssistantPage, '/blog')
 await publicAssistantPage.locator('.public-assistant__trigger').click()
+await publicAssistantPage.waitForFunction(() => document.querySelectorAll('.public-assistant__message').length === 2)
+const restoredDesktopFocus = await publicAssistantPage.waitForFunction(() => {
+  const input = document.querySelector('#public-assistant-input')
+  return input instanceof HTMLTextAreaElement && input === document.activeElement
+}, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
 if (!(await publicAssistantPage.locator('.public-assistant__panel').isVisible())) {
   failures.push('/blog public assistant: expected panel to open')
 }
-if ((await publicAssistantPage.locator('.public-assistant__message').count()) !== 0) {
-  failures.push('/blog public assistant: expected initial panel to open without default chat bubbles')
+if ((await publicAssistantPage.locator('.public-assistant__message').count()) !== 2) {
+  failures.push('/blog public assistant: expected the active anonymous session to restore on first open')
 }
 const publicAssistantStatus = await publicAssistantPage.locator('.public-assistant__status').innerText().catch(() => '')
 if (!publicAssistantStatus.includes('可检索本站与公开网页')) {
   failures.push(`/blog public assistant: expected ready state to advertise site and public-web research, got "${publicAssistantStatus}"`)
 }
-if ((await publicAssistantPage.locator('.public-assistant__citation').count()) !== 0) {
-  failures.push('/blog public assistant: expected initial panel to stay concise without citation cards')
+if (
+  (await publicAssistantPage.locator('.public-assistant__citation').count()) !== 1 ||
+  !(await publicAssistantPage.getByText('已恢复最近一段对话，较早内容未载入。').isVisible()) ||
+  !restoredDesktopFocus
+) {
+  failures.push('/blog public assistant: restored history should expose its source, truncation notice, and desktop composer focus')
 }
 if (
   (await publicAssistantPage.getByRole('button', { name: '查看历史会话' }).count()) !== 1 ||
@@ -2452,6 +2468,30 @@ if (
   (await publicAssistantPage.getByRole('button', { name: '进入全屏' }).count()) !== 1
 ) {
   failures.push('/blog public assistant: expected history, new-session, and fullscreen commands')
+}
+await publicAssistantPage.locator('.public-assistant__claims summary').click()
+await publicAssistantPage.getByRole('button', { name: '定位来源：历史来源' }).click()
+const restoredCitation = publicAssistantPage.getByRole('link', { name: '查看站内来源：历史来源' })
+if (
+  !(await restoredCitation.evaluate((element) => element === document.activeElement)) ||
+  !(await restoredCitation.evaluate((element) => element.classList.contains('is-highlighted')))
+) {
+  failures.push('/blog public assistant: claim citation control should focus and highlight the matching source card')
+}
+await restoredCitation.click()
+if (await publicAssistantPage.locator('.public-assistant__panel').isVisible().catch(() => false)) {
+  failures.push('/blog public assistant: internal citation navigation should close the assistant surface')
+}
+await publicAssistantPage.locator('.public-assistant__trigger').click()
+await publicAssistantPage.locator('#public-assistant-input').fill('基于刚才的历史继续说明')
+await publicAssistantPage.getByRole('button', { name: '发送问题' }).click()
+await publicAssistantPage.waitForFunction(() => document.querySelectorAll('.public-assistant__message.is-assistant').length === 2)
+if (
+  publicAssistantRequestBodies.length !== 1 ||
+  publicAssistantRequestBodies[0]?.history?.length !== 2 ||
+  publicAssistantRequestBodies[0]?.history?.[0]?.content !== '历史问题'
+) {
+  failures.push('/blog public assistant: the first follow-up should include the restored conversation history')
 }
 await publicAssistantPage.getByRole('button', { name: '查看历史会话' }).click()
 await publicAssistantPage.locator('.public-assistant__history-open').waitFor({ state: 'visible' })
@@ -2643,6 +2683,149 @@ if (await publicAssistantPage.locator('.public-assistant__panel').isVisible().ca
 }
 await publicAssistantPage.close()
 
+const expiredSessionPage = await browser.newPage({ viewport: viewports[0] })
+await expiredSessionPage.addInitScript(() => {
+  window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+    version: 2,
+    currentSessionId: 'public-ui-expired-session',
+    sessionIds: ['public-ui-expired-session'],
+  }))
+})
+await expiredSessionPage.route('**/api/health', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+}))
+await expiredSessionPage.route('**/api/chat/public/session', (route) => route.fulfill({
+  status: 404,
+  contentType: 'application/json',
+  body: JSON.stringify({ error: 'session-not-found' }),
+}))
+await gotoApp(expiredSessionPage, '/blog')
+await expiredSessionPage.locator('.public-assistant__trigger').click()
+await expiredSessionPage.waitForFunction(() => {
+  const input = document.querySelector('#public-assistant-input')
+  return input instanceof HTMLTextAreaElement && !input.disabled
+})
+const expiredReplacementRegistry = await expiredSessionPage.evaluate(() => {
+  const raw = window.localStorage.getItem('biau-public-assistant-sessions-v2')
+  return raw ? JSON.parse(raw) : null
+})
+if (
+  !expiredReplacementRegistry ||
+  expiredReplacementRegistry.currentSessionId === 'public-ui-expired-session' ||
+  expiredReplacementRegistry.sessionIds?.length !== 1 ||
+  (await expiredSessionPage.locator('.public-assistant__message').count()) !== 0
+) {
+  failures.push('/blog public assistant continuity: an expired current session should self-heal into a fresh empty conversation')
+}
+await expiredSessionPage.close()
+
+let restoreAttemptCount = 0
+const restoreRetryPage = await browser.newPage({ viewport: viewports[0] })
+await restoreRetryPage.addInitScript(() => {
+  window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+    version: 2,
+    currentSessionId: 'public-ui-retry-session',
+    sessionIds: ['public-ui-retry-session'],
+  }))
+})
+await restoreRetryPage.route('**/api/health', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+}))
+await restoreRetryPage.route('**/api/chat/public/session', async (route) => {
+  restoreAttemptCount += 1
+  if (restoreAttemptCount === 1) {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'public-assistant-service-unavailable' }),
+    })
+    return
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      session: {
+        id: 'public-ui-retry-session',
+        title: '恢复重试验收',
+        turnCount: 0,
+        createdAt: '2026-07-28T00:00:00.000Z',
+        lastActiveAt: '2026-07-28T00:00:00.000Z',
+        expiresAt: '2026-08-27T00:00:00.000Z',
+      },
+      turns: [],
+      truncated: false,
+    }),
+  })
+})
+await gotoApp(restoreRetryPage, '/blog')
+await restoreRetryPage.locator('.public-assistant__trigger').click()
+await restoreRetryPage.getByRole('button', { name: '重试恢复' }).waitFor({ state: 'visible' })
+await restoreRetryPage.getByRole('button', { name: '重试恢复' }).click()
+await restoreRetryPage.waitForFunction(() => {
+  const input = document.querySelector('#public-assistant-input')
+  return input instanceof HTMLTextAreaElement && !input.disabled
+})
+if (restoreAttemptCount !== 2 || await restoreRetryPage.getByRole('button', { name: '重试恢复' }).isVisible().catch(() => false)) {
+  failures.push('/blog public assistant continuity: failed initial restore should remain retryable without starting a duplicate session')
+}
+await restoreRetryPage.close()
+
+const restoreRacePage = await browser.newPage({ viewport: viewports[0] })
+await restoreRacePage.addInitScript(() => {
+  window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+    version: 2,
+    currentSessionId: 'public-ui-race-session',
+    sessionIds: ['public-ui-race-session'],
+  }))
+  const nativeFetch = window.fetch.bind(window)
+  window.fetch = (input, init = {}) => {
+    if (String(input).includes('/api/chat/public/session')) {
+      const detachedInit = { ...init }
+      delete detachedInit.signal
+      return nativeFetch(input, detachedInit)
+    }
+    return nativeFetch(input, init)
+  }
+})
+await restoreRacePage.route('**/api/health', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+}))
+await restoreRacePage.route('**/api/chat/public/session', async (route) => {
+  await new Promise((resolve) => setTimeout(resolve, 250))
+  await route.fulfill({
+    status: 404,
+    contentType: 'application/json',
+    body: JSON.stringify({ error: 'session-not-found' }),
+  })
+})
+await gotoApp(restoreRacePage, '/blog')
+await restoreRacePage.locator('.public-assistant__trigger').click()
+await restoreRacePage.getByRole('button', { name: '新建会话' }).first().click()
+const raceRegistryAfterReset = await restoreRacePage.evaluate(() => {
+  const raw = window.localStorage.getItem('biau-public-assistant-sessions-v2')
+  return raw ? JSON.parse(raw) : null
+})
+await restoreRacePage.waitForTimeout(450)
+const raceRegistryAfterLateFailure = await restoreRacePage.evaluate(() => {
+  const raw = window.localStorage.getItem('biau-public-assistant-sessions-v2')
+  return raw ? JSON.parse(raw) : null
+})
+if (
+  !raceRegistryAfterReset ||
+  raceRegistryAfterLateFailure?.currentSessionId !== raceRegistryAfterReset.currentSessionId ||
+  await restoreRacePage.getByRole('button', { name: '重试恢复' }).isVisible().catch(() => false)
+) {
+  failures.push('/blog public assistant continuity: a late restore failure must not overwrite a newly created conversation')
+}
+await restoreRacePage.close()
+
 const cancellationPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
 await cancellationPage.addInitScript(() => {
   const nativeFetch = window.fetch.bind(window)
@@ -2736,6 +2919,9 @@ for (const width of [320, 390, 430]) {
   await gotoApp(mobileAssistantPage, '/blog')
   await mobileAssistantPage.locator('.public-assistant__trigger').click()
   await mobileAssistantPage.locator('.public-assistant.is-fullscreen .public-assistant__panel').waitFor({ state: 'visible' })
+  if (await mobileAssistantPage.locator('#public-assistant-input').evaluate((element) => element === document.activeElement)) {
+    failures.push(`/blog public assistant ${width}px: first open should not focus the composer or summon the soft keyboard`)
+  }
   await mobileAssistantPage.setViewportSize({ width, height: 640 })
   await mobileAssistantPage.waitForFunction(() => {
     const root = document.querySelector('.public-assistant')
