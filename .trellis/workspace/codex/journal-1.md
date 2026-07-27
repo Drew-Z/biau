@@ -71,3 +71,36 @@ Added safe structured Markdown rendering, explicit generation cancellation, retr
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Public assistant conversation continuity
+
+**Date**: 2026-07-28
+**Task**: Public assistant conversation continuity
+**Branch**: `codex/public-assistant-productization`
+
+### Summary
+
+Restored persisted conversations before follow-up, added truncation and retry states, connected claims to verified citations, closed fullscreen for internal navigation, prevented mobile autofocus, and fenced late history completions.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `86058ba0` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
