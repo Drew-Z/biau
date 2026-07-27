@@ -97,7 +97,14 @@ npm.cmd run docs:deployment-check
 - Each turn selects one API base. A `429` response is terminal for that attempt and must not be replayed against another candidate URL.
 - The browser prefers `/chat/public/stream`, validates the SSE event and terminal result contracts in one shared decoder, and may retry `/chat/public` only for an explicit `404`, `405`, `501`, or non-SSE legacy endpoint response. An incomplete, malformed, timed-out, rate-limited, or failed stream is terminal for that attempt.
 - Public result copy distinguishes model answer, partial/uncertain evidence, blocked input, unavailable web research, and browser-local degraded fallback without exposing internal diagnostics.
-- At mobile widths the panel and trigger occupy stable grid rows, remain inside the viewport, and do not block page navigation or reading controls.
+- Assistant answers may render bounded Markdown paragraphs, headings, lists, emphasis, blockquotes, tables, inline code, and fenced code. Raw HTML parsing, HTML blocks, automatic bare-URL links, model-authored links/images, and form controls remain disabled; verified citation cards are the only clickable evidence surface.
+- Code blocks expose an accessible copy command and bounded horizontal scrolling. Tables own their horizontal scroller. Neither may widen the message, dialog, or document at 320, 390, or 430px.
+- The active send command becomes an explicit stop command. Visitor-initiated stop aborts transport end to end, retains exactly one pending question, prevents late, persisted, or local-fallback answers, and exposes retry. New conversation, history restore, and unmount use a silent abort and never leak a cancellation notice.
+- Positive feedback submits `helpful`; negative feedback requires one bounded reason (`incorrect`, `unclear`, `missing-sources`, `outdated`, or `other`) without free text. Only one message selector opens at a time; Escape closes it and restores the owning control; submission failure keeps the selector available for retry.
+- The conversation is a labeled `role="log"` with `aria-busy` tied to the active request. Progress repaints are not separate live announcements; start, completion, and cancellation use one concise status channel.
+- Desktop opens compact and supports full-screen mode. Mobile opens full-screen, follows `visualViewport` for soft-keyboard height/offset, accounts for safe areas, locks background scrolling for the modal lifetime, and keeps the message region as the only conversation scroller.
+- History opens as the top interaction layer, receives focus, traps Tab within its own controls, closes before the assistant on Escape, and restores the history trigger. Starting a new conversation or restoring history ignores late completions captured for another controller/session.
+- At mobile widths the panel and trigger occupy stable grid rows, remain inside the viewport, do not block page navigation or reading controls, and expose 44px action/copy/feedback touch targets.
 - Suggested prompts are bounded; UI checks validate the rendered starter contract rather than requiring hidden overflow items.
 
 ## SEO And Analytics
@@ -135,8 +142,8 @@ npm.cmd run docs:deployment-check
 
 - Main public routes at desktop/mobile widths.
 - Retired assistant/private routes as NotFound.
-- Public assistant concise/fallback behavior.
-- Public assistant scope controls, mobile panel/trigger layout, citations, feedback, and rate-limit behavior.
+- Public assistant concise/fallback behavior, safe structured Markdown, code copy, stop/late-response isolation, cancellation retry, and exact structured-feedback payloads.
+- Public assistant scope controls, history/full-screen focus behavior, mobile panel/trigger/soft-keyboard layout, 320/390/430 containment, verified citations, feedback, and rate-limit behavior.
 - Mobile public navigation and detail reading.
 - Studio focused modes and review entry.
 - Background animation/reduced-motion frames.

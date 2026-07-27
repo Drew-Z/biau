@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { runAndPersistPublicAssistant } from '../src/app.js'
 import { normalizePublicAssistantPayload, runPublicAssistantAgent, type PublicAssistantAgentDependencies } from '../src/publicAssistantAgent.js'
 import type { PublicAssistantEvidence, PublicAssistantModel, PublicAssistantPlan } from '../src/publicAssistantRuntime.js'
 import type { PublicAssistantMode } from '../src/types.js'
@@ -190,11 +191,31 @@ function payloadBoundaryCheck() {
   assert.equal(normalizePublicAssistantPayload({ message: '   ' }), null)
 }
 
+async function cancelledTurnIsNotPersistedCheck() {
+  const abort = new AbortController()
+  let persistCalls = 0
+  await assert.rejects(
+    runAndPersistPublicAssistant(request(), abort.signal, undefined, {
+      async runAgent() {
+        abort.abort()
+        return { answer: 'This response must not be persisted.', citations: [] }
+      },
+      async persistTurn() {
+        persistCalls += 1
+        return { sessionId: 'cancelled-session', turnId: 'cancelled-turn' }
+      },
+    }),
+    (error) => error instanceof DOMException && error.name === 'AbortError',
+  )
+  assert.equal(persistCalls, 0)
+}
+
 await combinedRouteCheck()
 await boundedRetryCheck()
 await unavailableForcedWebCheck()
 await invalidCitationCheck()
 await credentialGuardCheck()
+await cancelledTurnIsNotPersistedCheck()
 payloadBoundaryCheck()
 
 console.log('Public assistant agent contract passed')

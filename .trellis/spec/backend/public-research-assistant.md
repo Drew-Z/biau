@@ -77,6 +77,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - `POST /chat/public/stream` accepts the same payload and returns versioned SSE events: `ready`, public-safe `progress`, heartbeat comments, one verified `result`, or one stable `error`. Its `result` data uses the same allowlisted projection as the JSON route.
 - `POST /chat/public/feedback` records bounded `up` or `down` feedback for one anonymous turn.
 - The HTTP response is projected through an allowlist. Stable product fields include answer state, claims, citations, suggestions, session/turn IDs, and low-sensitive counters.
+- Client disconnect and explicit request cancellation propagate through the Responses adapter as aborts rather than provider failures. The runner checks the signal before execution and again before persistence; an aborted turn must not emit or persist a fallback response.
 - Rate limiting uses the request IP in process memory but never persists an IP address. Buckets are bounded and a client-provided session ID cannot bypass chat or feedback limits.
 - Persist only bounded anonymous session/turn/feedback data for 30 days. Long-lived aggregates store topic fingerprints and counters rather than raw questions or answers.
 - Database absence degrades persistence without making the public route unusable.
@@ -130,7 +131,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 ### 6. Tests Required
 
 - Persistence checks assert submitted-ID intersection, expiry, 100-turn truncation, snapshot allowlisting, legacy fallback, cascade deletion, and aggregate preservation.
-- API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
+- Agent/model checks assert external abort propagation and that an aborted response cannot reach persistence. API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
 - Cloudflare checks assert method/body preservation, request/response limits, no-store, `Retry-After`, and removal of browser authorization and cookies.
 - UI checks assert rich restoration after an awaited history response, fresh high-entropy capability creation, request/session race isolation, drawer focus and Escape ordering, desktop scroll lock, and 320/390/430 viewport-safe message/composer layout.
 - All checks use local fixtures only and must not call a live model, search, embedding, reranker, or vector database provider.

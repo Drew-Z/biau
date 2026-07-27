@@ -158,6 +158,18 @@ try {
   assert.equal(observedBodies.length, 4)
   assert.equal((observedBodies[1] as { model?: string }).model, 'fixture-responses-model')
   assert.deepEqual(observedBodies.map((body) => (body as { stream?: boolean }).stream), [false, false, true, true])
+
+  const cancelled = new AbortController()
+  const cancelledDraft = generatePublicAssistantDraft({
+    request: { ...request, signal: cancelled.signal },
+    plan,
+    evidence: [evidence],
+  })
+  setTimeout(() => cancelled.abort(), 30)
+  await assert.rejects(
+    cancelledDraft,
+    (error) => error instanceof DOMException && error.name === 'AbortError',
+  )
   console.log('Public assistant Responses model adapter contract passed.')
 } finally {
   Object.assign(env, original)

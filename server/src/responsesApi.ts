@@ -143,6 +143,7 @@ async function requestEndpoint(input: {
       },
     }
   } catch {
+    input.signal?.throwIfAborted()
     return {
       ok: false,
       content: '',

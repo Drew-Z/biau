@@ -353,15 +353,33 @@ function acceptPublicAssistantHistoryRequest(req: express.Request, res: express.
   return false
 }
 
-async function runAndPersistPublicAssistant(
+type PublicAssistantRunResponse = Awaited<ReturnType<typeof runPublicAssistantAgent>>
+
+interface PublicAssistantRunDependencies {
+  runAgent: (request: PublicAssistantRequest) => Promise<PublicAssistantRunResponse>
+  persistTurn: (
+    request: PublicAssistantRequest,
+    response: PublicAssistantRunResponse,
+  ) => ReturnType<typeof persistPublicAssistantTurn>
+}
+
+const defaultPublicAssistantRunDependencies: PublicAssistantRunDependencies = {
+  runAgent: runPublicAssistantAgent,
+  persistTurn: persistPublicAssistantTurn,
+}
+
+export async function runAndPersistPublicAssistant(
   request: PublicAssistantRequest,
   signal: AbortSignal,
   onProgress?: (progress: PublicAssistantProgress) => void,
+  dependencies: PublicAssistantRunDependencies = defaultPublicAssistantRunDependencies,
 ) {
+  signal.throwIfAborted()
   const agentRequest = { ...request, signal, onProgress }
-  const response = await runPublicAssistantAgent(agentRequest)
+  const response = await dependencies.runAgent(agentRequest)
+  signal.throwIfAborted()
   onProgress?.({ stage: 'saving' })
-  const persisted = await persistPublicAssistantTurn(request, response).catch(() => null)
+  const persisted = await dependencies.persistTurn(request, response).catch(() => null)
   if (persisted) {
     response.sessionId = persisted.sessionId
     response.messageId = persisted.turnId

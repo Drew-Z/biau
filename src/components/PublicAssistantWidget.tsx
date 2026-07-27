@@ -12,6 +12,7 @@ import {
   Minimize2,
   RefreshCw,
   Send,
+  Square,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -45,12 +46,14 @@ import {
   type PublicAssistantAnswer,
   type PublicAssistantCitation,
   type PublicAssistantClaim,
+  type PublicAssistantFeedbackReason,
   type PublicAssistantHistoryTurn,
   type PublicAssistantMode,
   type PublicAssistantProgressStage,
   type PublicAssistantSessionSummary,
   type PublicAssistantStatus,
 } from '../utils/publicAssistantApi'
+import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
 import {
   createPublicAssistantSessionId,
   forgetPublicAssistantSession,
@@ -88,6 +91,18 @@ interface AssistantIssue {
   retryAfterSeconds?: number | null
 }
 
+interface ActiveChatRequest {
+  controller: AbortController
+  prompt: string
+  mode: PublicAssistantMode
+  sessionId: string
+}
+
+type NegativeFeedbackReason = Extract<
+  PublicAssistantFeedbackReason,
+  'incorrect' | 'unclear' | 'missing-sources' | 'outdated' | 'other'
+>
+
 const CONFIGURED_API_BASE = PUBLIC_ASSISTANT_API_BASE
 const MAX_MESSAGE_LENGTH = 500
 const MAX_FALLBACK_ANSWER_LENGTH = 520
@@ -96,6 +111,14 @@ const MODE_OPTIONS: Array<{ value: PublicAssistantMode; label: string }> = [
   { value: 'auto', label: '自动' },
   { value: 'site', label: '本站' },
   { value: 'web', label: '全网' },
+]
+
+const NEGATIVE_FEEDBACK_REASONS: Array<{ value: NegativeFeedbackReason; label: string }> = [
+  { value: 'incorrect', label: '内容不准确' },
+  { value: 'unclear', label: '表达不清楚' },
+  { value: 'missing-sources', label: '缺少来源' },
+  { value: 'outdated', label: '信息已过时' },
+  { value: 'other', label: '其他问题' },
 ]
 
 const STATUS_LABELS: Record<PublicAssistantStatus, string> = {
@@ -251,6 +274,7 @@ function getAssistantIssueCopy(issue: AssistantIssue) {
     return { title: '暂时无法连接研究服务', detail: '可能正在冷启动或网络不可达，可以稍后重试。' }
   }
   if (issue.code === 'session-not-found') return { title: '会话已过期', detail: '这条匿名历史已被清理，可以新建会话继续。' }
+  if (issue.code === 'public-assistant-request-cancelled') return { title: '已停止生成', detail: '问题仍保留在当前会话中，可以重新发起。' }
   if (issue.code === 'database-not-configured' || issue.code === 'public-assistant-service-unavailable') {
     return { title: '历史服务暂不可用', detail: '当前仍可提问，但暂时无法读取或保存历史。' }
   }
@@ -284,6 +308,7 @@ export function PublicAssistantWidget() {
   const [hasNewContent, setHasNewContent] = useState(false)
   const [healthRetryNonce, setHealthRetryNonce] = useState(0)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
+  const [feedbackMenuMessageId, setFeedbackMenuMessageId] = useState<string | null>(null)
   const sessionId = sessionRegistry.currentSessionId
   const rootRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
@@ -297,10 +322,11 @@ export function PublicAssistantWidget() {
   const messageSeq = useRef(0)
   const sessionIdRef = useRef(sessionId)
   const shouldFollowOutputRef = useRef(true)
-  const activeRequestRef = useRef<AbortController | null>(null)
+  const activeRequestRef = useRef<ActiveChatRequest | null>(null)
   const historyRequestRef = useRef<AbortController | null>(null)
   const healthRequestRef = useRef<AbortController | null>(null)
   const copyTimerRef = useRef<number | null>(null)
+  const feedbackTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const serviceStatus = getServiceStatus(serviceState)
   const issueCopy = issue ? getAssistantIssueCopy(issue) : null
 
@@ -338,7 +364,7 @@ export function PublicAssistantWidget() {
   }, [messages, isOpen, isLoading])
 
   useEffect(() => () => {
-    activeRequestRef.current?.abort()
+    activeRequestRef.current?.controller.abort()
     historyRequestRef.current?.abort()
     healthRequestRef.current?.abort()
     if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
@@ -366,6 +392,12 @@ export function PublicAssistantWidget() {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       event.preventDefault()
+      if (feedbackMenuMessageId) {
+        const messageId = feedbackMenuMessageId
+        setFeedbackMenuMessageId(null)
+        window.requestAnimationFrame(() => feedbackTriggerRefs.current.get(messageId)?.focus({ preventScroll: true }))
+        return
+      }
       if (isHistoryOpen) {
         setIsHistoryOpen(false)
         window.requestAnimationFrame(() => historyTriggerRef.current?.focus({ preventScroll: true }))
@@ -376,7 +408,7 @@ export function PublicAssistantWidget() {
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [isHistoryOpen, isOpen])
+  }, [feedbackMenuMessageId, isHistoryOpen, isOpen])
 
   useEffect(() => {
     if (!isOpen || !isHistoryOpen) return
@@ -514,6 +546,7 @@ export function PublicAssistantWidget() {
   }, [])
 
   const closeWidget = () => {
+    setFeedbackMenuMessageId(null)
     setIsHistoryOpen(false)
     setIsOpen(false)
     window.requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
@@ -533,10 +566,25 @@ export function PublicAssistantWidget() {
   }
 
   const stopActiveChat = () => {
-    activeRequestRef.current?.abort()
+    activeRequestRef.current?.controller.abort()
     activeRequestRef.current = null
     setIsLoading(false)
     setProgressStage(null)
+  }
+
+  const cancelActiveChat = () => {
+    const active = activeRequestRef.current
+    if (!active) return
+    active.controller.abort()
+    activeRequestRef.current = null
+    setIsLoading(false)
+    setProgressStage(null)
+    setIssue({
+      code: 'public-assistant-request-cancelled',
+      scope: 'chat',
+      prompt: active.prompt,
+      mode: active.mode,
+    })
   }
 
   const startNewConversation = () => {
@@ -550,6 +598,7 @@ export function PublicAssistantWidget() {
     setInput('')
     setIssue(null)
     setHasNewContent(false)
+    setFeedbackMenuMessageId(null)
     setIsHistoryOpen(false)
     setHistoryLoadingId(null)
     window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
@@ -586,6 +635,7 @@ export function PublicAssistantWidget() {
   }
 
   const openHistory = () => {
+    setFeedbackMenuMessageId(null)
     setIsHistoryOpen(true)
     void refreshHistory()
   }
@@ -705,7 +755,11 @@ export function PublicAssistantWidget() {
     if (nearBottom) setHasNewContent(false)
   }
 
-  const submitQuestion = async (question: string, requestedMode: PublicAssistantMode = mode) => {
+  const submitQuestion = async (
+    question: string,
+    requestedMode: PublicAssistantMode = mode,
+    options: { reusePendingQuestion?: boolean } = {},
+  ) => {
     const trimmed = question.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
     if (!trimmed || isLoading) return
 
@@ -716,7 +770,10 @@ export function PublicAssistantWidget() {
     })
 
     const requestSessionId = sessionIdRef.current
-    const history = buildHistory(messages)
+    const reusablePendingQuestion = options.reusePendingQuestion === true &&
+      messages.at(-1)?.role === 'user' &&
+      messages.at(-1)?.content === trimmed
+    const history = buildHistory(reusablePendingQuestion ? messages.slice(0, -1) : messages)
     const userMessage: WidgetMessage = {
       id: createMessageId('user'),
       role: 'user',
@@ -726,12 +783,13 @@ export function PublicAssistantWidget() {
     shouldFollowOutputRef.current = true
     setHasNewContent(false)
     setIssue(null)
-    setMessages((current) => [...current, userMessage])
+    setFeedbackMenuMessageId(null)
+    if (!reusablePendingQuestion) setMessages((current) => [...current, userMessage])
     setInput('')
     setIsLoading(true)
     setProgressStage('planning')
     const controller = new AbortController()
-    activeRequestRef.current = controller
+    activeRequestRef.current = { controller, prompt: trimmed, mode: requestedMode, sessionId: requestSessionId }
 
     let result: PublicAssistantAnswer
     let resolvedApiBase = apiBase
@@ -744,9 +802,10 @@ export function PublicAssistantWidget() {
         preferredApiBase: apiBase,
         signal: controller.signal,
         onProgress: (stage) => {
-          if (activeRequestRef.current === controller) setProgressStage(stage)
+          if (activeRequestRef.current?.controller === controller) setProgressStage(stage)
         },
       })
+      if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
       result = remote.answer
       resolvedApiBase = remote.apiBase
       setApiBase(remote.apiBase)
@@ -754,12 +813,13 @@ export function PublicAssistantWidget() {
       setIssue(null)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
+      if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
       const nextIssue = toAssistantIssue(error, 'chat', trimmed, requestedMode)
       result = buildLocalAnswer(trimmed, requestedMode, nextIssue.code)
       setIssue(nextIssue)
       setServiceState(getAssistantApiBase(apiBase) ? 'error' : 'degraded')
     } finally {
-      if (activeRequestRef.current === controller) {
+      if (activeRequestRef.current?.controller === controller) {
         activeRequestRef.current = null
         setProgressStage(null)
         setIsLoading(false)
@@ -794,8 +854,9 @@ export function PublicAssistantWidget() {
     if (issue.scope === 'chat' && issue.prompt) {
       const prompt = issue.prompt
       const requestedMode = issue.mode ?? mode
+      const reusePendingQuestion = issue.code === 'public-assistant-request-cancelled'
       setIssue(null)
-      void submitQuestion(prompt, requestedMode)
+      void submitQuestion(prompt, requestedMode, { reusePendingQuestion })
       return
     }
     if (issue.scope === 'history') {
@@ -820,7 +881,11 @@ export function PublicAssistantWidget() {
     }
   }
 
-  const sendFeedback = async (message: WidgetMessage, rating: 'up' | 'down') => {
+  const sendFeedback = async (
+    message: WidgetMessage,
+    rating: 'up' | 'down',
+    reason: PublicAssistantFeedbackReason,
+  ) => {
     if (!apiBase || !message.sessionId || !message.turnId || message.feedbackPending) return
     setMessages((current) => current.map((item) => item.id === message.id
       ? { ...item, feedbackPending: true, feedbackError: false }
@@ -831,15 +896,22 @@ export function PublicAssistantWidget() {
         sessionId: message.sessionId,
         turnId: message.turnId,
         rating,
-        reason: rating === 'up' ? 'helpful' : 'other',
+        reason,
       })
       setMessages((current) => current.map((item) => item.id === message.id
         ? { ...item, feedback: rating, feedbackPending: false, feedbackError: false }
         : item))
+      setFeedbackMenuMessageId((current) => current === message.id ? null : current)
+      if (rating === 'down') {
+        window.requestAnimationFrame(() => feedbackTriggerRefs.current.get(message.id)?.focus({ preventScroll: true }))
+      }
     } catch {
       setMessages((current) => current.map((item) => item.id === message.id
         ? { ...item, feedbackPending: false, feedbackError: true }
         : item))
+      if (rating === 'down') {
+        window.requestAnimationFrame(() => feedbackTriggerRefs.current.get(message.id)?.focus({ preventScroll: true }))
+      }
     }
   }
 
@@ -1002,7 +1074,15 @@ export function PublicAssistantWidget() {
             ))}
           </div>
 
-          <div className="public-assistant__messages" ref={scrollRef} onScroll={handleMessagesScroll}>
+          <div
+            className="public-assistant__messages"
+            ref={scrollRef}
+            role="log"
+            aria-label="对话记录"
+            aria-busy={isLoading}
+            aria-live="off"
+            onScroll={handleMessagesScroll}
+          >
             {messages.length === 0 && !isLoading && (
               <div className="public-assistant__empty">
                 <strong>从一个具体问题开始</strong>
@@ -1012,7 +1092,9 @@ export function PublicAssistantWidget() {
 
             {messages.map((message) => (
               <article key={message.id} className={`public-assistant__message is-${message.role}`}>
-                <p>{message.content}</p>
+                {message.role === 'assistant'
+                  ? <PublicAssistantMessageContent content={message.content} />
+                  : <p>{message.content}</p>}
                 {message.role === 'assistant' && (
                   <>
                     {message.meta && <small className="public-assistant__meta">{formatAnswerMeta(message)}</small>}
@@ -1094,7 +1176,10 @@ export function PublicAssistantWidget() {
                           <button
                             type="button"
                             className={message.feedback === 'up' ? 'is-active' : ''}
-                            onClick={() => void sendFeedback(message, 'up')}
+                            onClick={() => {
+                              setFeedbackMenuMessageId(null)
+                              void sendFeedback(message, 'up', 'helpful')
+                            }}
                             disabled={message.feedbackPending}
                             aria-label="这个回答有帮助"
                             aria-pressed={message.feedback === 'up'}
@@ -1105,10 +1190,16 @@ export function PublicAssistantWidget() {
                           <button
                             type="button"
                             className={message.feedback === 'down' ? 'is-active' : ''}
-                            onClick={() => void sendFeedback(message, 'down')}
+                            ref={(element) => {
+                              if (element) feedbackTriggerRefs.current.set(message.id, element)
+                              else feedbackTriggerRefs.current.delete(message.id)
+                            }}
+                            onClick={() => setFeedbackMenuMessageId((current) => current === message.id ? null : message.id)}
                             disabled={message.feedbackPending}
                             aria-label="这个回答需要改进"
                             aria-pressed={message.feedback === 'down'}
+                            aria-expanded={feedbackMenuMessageId === message.id}
+                            aria-controls={`public-assistant-feedback-${message.id}`}
                             title="需要改进"
                           >
                             <ThumbsDown size={15} aria-hidden />
@@ -1117,13 +1208,35 @@ export function PublicAssistantWidget() {
                       )}
                       {message.feedbackError && <span role="status">反馈未提交</span>}
                     </div>
+                    {feedbackMenuMessageId === message.id && (
+                      <div
+                        className="public-assistant__feedback-reasons"
+                        id={`public-assistant-feedback-${message.id}`}
+                        role="group"
+                        aria-label="选择需要改进的原因"
+                      >
+                        <span>哪里需要改进？</span>
+                        <div>
+                          {NEGATIVE_FEEDBACK_REASONS.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              disabled={message.feedbackPending}
+                              onClick={() => void sendFeedback(message, 'down', option.value)}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </article>
             ))}
 
             {isLoading && (
-              <div className="public-assistant__loading" role="status">
+              <div className="public-assistant__loading">
                 <LoaderCircle className="is-spinning" size={15} aria-hidden />
                 <span>{getLoadingLabel(mode, progressStage)}</span>
               </div>
@@ -1148,10 +1261,15 @@ export function PublicAssistantWidget() {
                 <span>回到最新</span>
               </button>
             )}
-            <span className="sr-only" aria-live="polite">
-              {isLoading ? getLoadingLabel(mode, progressStage) : messages.at(-1)?.role === 'assistant' ? '回答已完成' : ''}
-            </span>
           </div>
+
+          <span className="sr-only" aria-live="polite">
+            {isLoading
+              ? '正在生成回答'
+              : issue?.code === 'public-assistant-request-cancelled'
+                ? '已停止生成'
+                : messages.at(-1)?.role === 'assistant' ? '回答已完成' : ''}
+          </span>
 
           <div className="public-assistant__suggestions" aria-label="建议提问">
             {(latestSuggestions?.map((suggestion) => ({ id: suggestion, label: suggestion, prompt: suggestion }))
@@ -1191,10 +1309,17 @@ export function PublicAssistantWidget() {
               }}
               placeholder="输入一个需要回答或研究的问题"
             />
-            <button type="submit" disabled={isLoading || input.trim().length === 0} aria-label="发送问题">
-              <Send size={16} aria-hidden />
-              <span>发送</span>
-            </button>
+            {isLoading ? (
+              <button type="button" className="is-stop" onClick={cancelActiveChat} aria-label="停止生成">
+                <Square size={15} fill="currentColor" aria-hidden />
+                <span>停止</span>
+              </button>
+            ) : (
+              <button type="submit" disabled={input.trim().length === 0} aria-label="发送问题">
+                <Send size={16} aria-hidden />
+                <span>发送</span>
+              </button>
+            )}
           </form>
         </section>
       )}

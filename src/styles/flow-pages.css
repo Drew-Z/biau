@@ -5040,6 +5040,174 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   white-space: pre-wrap;
 }
 
+.public-assistant-markdown {
+  min-width: 0;
+  color: color-mix(in oklch, var(--ink) 90%, var(--muted));
+  font-size: inherit;
+  line-height: 1.68;
+  overflow-wrap: anywhere;
+}
+
+.public-assistant-markdown > :first-child {
+  margin-top: 0;
+}
+
+.public-assistant-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.public-assistant-markdown p,
+.public-assistant-markdown ul,
+.public-assistant-markdown ol,
+.public-assistant-markdown blockquote,
+.public-assistant-markdown__table-scroll,
+.public-assistant-markdown__code-block {
+  min-width: 0;
+  margin: 0 0 var(--space-10, 10px);
+}
+
+.public-assistant-markdown p {
+  white-space: normal;
+}
+
+.public-assistant-markdown h1,
+.public-assistant-markdown h2,
+.public-assistant-markdown h3,
+.public-assistant-markdown h4,
+.public-assistant-markdown h5,
+.public-assistant-markdown h6 {
+  min-width: 0;
+  margin: var(--space-16) 0 var(--space-8);
+  color: var(--ink);
+  font-size: 0.92rem;
+  line-height: 1.42;
+  overflow-wrap: anywhere;
+}
+
+.public-assistant-markdown h1,
+.public-assistant-markdown h2 {
+  font-size: 1rem;
+}
+
+.public-assistant-markdown ul,
+.public-assistant-markdown ol {
+  padding-left: 1.35rem;
+}
+
+.public-assistant-markdown li + li {
+  margin-top: 4px;
+}
+
+.public-assistant-markdown blockquote {
+  padding-left: var(--space-10, 10px);
+  color: var(--muted);
+  border-left: 2px solid color-mix(in oklch, var(--amber) 52%, var(--flow-ui-card-border));
+}
+
+.public-assistant-markdown blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.public-assistant-markdown :not(pre) > code {
+  padding: 0.12em 0.34em;
+  color: color-mix(in oklch, var(--green) 72%, var(--ink));
+  background: color-mix(in oklch, var(--panel-strong) 76%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  overflow-wrap: anywhere;
+}
+
+.public-assistant-markdown__code-block {
+  max-width: 100%;
+  overflow: hidden;
+  background: color-mix(in oklch, var(--panel-strong) 76%, var(--bg));
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+}
+
+.public-assistant-markdown__code-header {
+  min-height: 34px;
+  padding: 0 var(--space-8) 0 var(--space-10, 10px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
+  color: var(--muted);
+  border-bottom: 1px solid var(--flow-ui-card-border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.public-assistant-markdown__code-header button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.public-assistant-markdown__code-header button:hover {
+  color: var(--ink);
+  border-color: var(--flow-ui-card-border);
+}
+
+.public-assistant-markdown__code-block pre {
+  max-width: 100%;
+  margin: 0;
+  padding: var(--space-12, 12px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  color: var(--ink);
+  font: 11px/1.62 var(--font-mono);
+  tab-size: 2;
+}
+
+.public-assistant-markdown__code-block pre code {
+  white-space: pre;
+}
+
+.public-assistant-markdown__table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+}
+
+.public-assistant-markdown table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.public-assistant-markdown th,
+.public-assistant-markdown td {
+  max-width: 280px;
+  padding: var(--space-8) var(--space-10, 10px);
+  text-align: left;
+  vertical-align: top;
+  border-right: 1px solid var(--flow-ui-card-border);
+  border-bottom: 1px solid var(--flow-ui-card-border);
+  overflow-wrap: anywhere;
+}
+
+.public-assistant-markdown th:last-child,
+.public-assistant-markdown td:last-child {
+  border-right: 0;
+}
+
+.public-assistant-markdown tr:last-child td {
+  border-bottom: 0;
+}
+
 .public-assistant__message.is-user {
   width: min(86%, 320px);
   align-self: flex-end;
@@ -5382,6 +5550,49 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   font-size: 11px;
 }
 
+.public-assistant__feedback-reasons {
+  min-width: 0;
+  margin-top: var(--space-8);
+  padding-top: var(--space-8);
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid var(--flow-ui-card-border);
+}
+
+.public-assistant__feedback-reasons > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.public-assistant__feedback-reasons > div {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.public-assistant__feedback-reasons button {
+  min-height: 32px;
+  padding: 0 var(--space-8);
+  color: var(--muted);
+  background: color-mix(in oklch, var(--panel-strong) 54%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.public-assistant__feedback-reasons button:hover {
+  color: var(--ink);
+  border-color: color-mix(in oklch, var(--green) 28%, var(--flow-ui-card-border));
+}
+
+.public-assistant__feedback-reasons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .public-assistant__loading {
   min-height: 36px;
   padding: 8px 10px;
@@ -5453,6 +5664,11 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   white-space: nowrap;
 }
 
+.public-assistant__composer button.is-stop {
+  color: color-mix(in oklch, var(--rose) 72%, var(--ink));
+  border-color: color-mix(in oklch, var(--rose) 24%, var(--flow-ui-card-border));
+}
+
 .assistant-field input:focus-visible,
 .assistant-field select:focus-visible,
 .assistant-admin-form button:focus-visible,
@@ -5468,6 +5684,10 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__history button:focus-visible,
 .public-assistant__modes button:focus-visible,
 .public-assistant__message-actions button:focus-visible,
+.public-assistant__feedback-reasons button:focus-visible,
+.public-assistant-markdown__code-header button:focus-visible,
+.public-assistant-markdown__code-block pre:focus-visible,
+.public-assistant-markdown__table-scroll:focus-visible,
 .public-assistant__claims summary:focus-visible,
 .public-assistant__suggestion:focus-visible,
 .public-assistant__composer textarea:focus-visible,
@@ -6730,6 +6950,21 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     width: 44px;
     height: 44px;
     min-width: 44px;
+  }
+
+  .public-assistant__feedback-reasons button {
+    min-height: 44px;
+  }
+
+  .public-assistant-markdown__code-header {
+    min-height: 44px;
+  }
+
+  .public-assistant-markdown__code-header button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .public-assistant__suggestion {

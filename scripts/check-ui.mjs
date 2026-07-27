@@ -2253,12 +2253,108 @@ if (resumedFrameDelta <= 0.15) {
 }
 await motionSwitchPage.close()
 
+const publicAssistantLongToken = `harbor-${'x'.repeat(180)}`
+const publicAssistantCodeFixture = `const harbor = '${'biau-port-'.repeat(18)}'`
+const publicAssistantMarkdownAnswer = [
+  '## 已核验要点',
+  '',
+  '- **结构化重点**',
+  '- *补充说明*与 \`inline-code\`',
+  '',
+  '> 这是一段证据说明。',
+  '',
+  '| 范围 | 状态 | 证据 | 说明 | 边界 |',
+  '| --- | --- | --- | --- | --- |',
+  `| 本站 | 已核验 | ${publicAssistantLongToken} | 公开资料 | 只读 |`,
+  '',
+  '~~~ts',
+  publicAssistantCodeFixture,
+  '~~~',
+  '',
+  '[正文链接不可点击](https://example.com/untrusted)',
+  '',
+  '![远程图片不可加载](https://example.com/untrusted.png)',
+  '',
+  'https://example.com/bare-url',
+  '',
+  '<button onclick="window.__unsafeMarkdown = true">不应成为按钮</button>',
+].join('\n')
+const publicAssistantAnswerFixture = {
+  answer: publicAssistantMarkdownAnswer,
+  status: 'answered',
+  claims: [{ id: 'claim-ui-1', text: '结构化回答已通过 fixture 核验。', citationIds: ['web-ui-1'] }],
+  citations: [{
+    id: 'web-ui-1',
+    title: '公开来源',
+    summary: '用于验证独立的可信引用卡片。',
+    href: 'https://example.com/evidence',
+    source: 'web',
+    section: '公开网页',
+    excerpt: '用于验证独立的可信引用卡片。',
+    publishedAt: '2026-07-28T00:00:00.000Z',
+    evidenceStatus: 'verified',
+  }],
+  suggestions: ['继续核对实现边界'],
+  sessionId: 'public-ui-session-1234',
+  messageId: 'turn-ui-markdown-1',
+  meta: {
+    mode: 'model',
+    citationCount: 1,
+    research: {
+      requestedMode: 'auto',
+      route: 'combined',
+      status: 'answered',
+      evidenceCount: 1,
+      siteEvidenceCount: 0,
+      webEvidenceCount: 1,
+      retryCount: 0,
+      searchAvailable: true,
+      durationMs: 120,
+    },
+  },
+}
+const toPublicAssistantSse = (answer) => [
+  'event: progress',
+  'data: {"stage":"answering"}',
+  '',
+  'event: result',
+  'data: ' + JSON.stringify(answer),
+  '',
+  '',
+].join('\n')
+const feedbackPayloads = []
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
+await publicAssistantPage.addInitScript(() => {
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: {
+      writeText: async (value) => {
+        window.__publicAssistantCopiedCode = value
+      },
+    },
+  })
+})
 await publicAssistantPage.route('**/api/health', async (route) => {
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
     body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+  })
+})
+await publicAssistantPage.route('**/api/chat/public/stream', async (route) => {
+  await route.fulfill({
+    status: 200,
+    contentType: 'text/event-stream',
+    body: toPublicAssistantSse(publicAssistantAnswerFixture),
+  })
+})
+await publicAssistantPage.route('**/api/chat/public/feedback', async (route) => {
+  feedbackPayloads.push(route.request().postDataJSON())
+  const shouldFail = feedbackPayloads.length === 2
+  await route.fulfill({
+    status: shouldFail ? 503 : 200,
+    contentType: 'application/json',
+    body: JSON.stringify(shouldFail ? { error: 'fixture-feedback-failure' } : { ok: true }),
   })
 })
 await publicAssistantPage.route('**/api/chat/public/sessions', async (route) => {
@@ -2422,12 +2518,109 @@ if (
   failures.push(`/blog public assistant: expected the first three default research suggestions, got "${visibleSuggestionLabels.join(' | ')}"`)
 }
 await publicAssistantPage.locator('.public-assistant__suggestion').first().click()
-await publicAssistantPage.waitForTimeout(150)
+await publicAssistantPage.locator('.public-assistant__message.is-assistant').waitFor({ state: 'visible' })
 if ((await publicAssistantPage.locator('.public-assistant__message.is-user').count()) < 1) {
   failures.push('/blog public assistant: expected suggestion click to append a user message')
 }
 if ((await publicAssistantPage.locator('.public-assistant__citation').count()) < 1) {
-  failures.push('/blog public assistant: expected cited local knowledge')
+  failures.push('/blog public assistant: expected a separately verified citation card')
+}
+const markdownSurface = publicAssistantPage.locator('.public-assistant-markdown')
+if (
+  (await markdownSurface.locator('h2').count()) !== 1 ||
+  (await markdownSurface.locator('ul').count()) !== 1 ||
+  (await markdownSurface.locator('strong').count()) < 1 ||
+  (await markdownSurface.locator('em').count()) < 1 ||
+  (await markdownSurface.locator('code').count()) < 2 ||
+  (await markdownSurface.locator('blockquote').count()) !== 1 ||
+  (await markdownSurface.locator('table').count()) !== 1 ||
+  (await markdownSurface.locator('pre code').count()) !== 1
+) {
+  failures.push('/blog public assistant: expected headings, lists, blockquotes, tables, and fenced code to render semantically')
+}
+const markdownText = await markdownSurface.innerText()
+if (markdownText.includes('## ') || markdownText.includes('**') || markdownText.includes('~~~')) {
+  failures.push('/blog public assistant: structured answer should not expose Markdown control punctuation')
+}
+if (
+  (await markdownSurface.locator('a').count()) !== 0 ||
+  (await markdownSurface.locator('img').count()) !== 0 ||
+  (await markdownSurface.locator('input, iframe, script, style, form').count()) !== 0 ||
+  (await markdownSurface.locator('button').count()) !== 1
+) {
+  failures.push('/blog public assistant: model-authored links, images, HTML, and controls must not become interactive DOM')
+}
+await markdownSurface.getByRole('button', { name: '复制代码' }).click()
+const copiedAssistantCode = await publicAssistantPage.evaluate(() => window.__publicAssistantCopiedCode ?? '')
+if (copiedAssistantCode !== publicAssistantCodeFixture) {
+  failures.push('/blog public assistant: code copy should write only the fenced code content')
+}
+const assistantLog = publicAssistantPage.getByRole('log', { name: '对话记录' })
+if (
+  (await assistantLog.getAttribute('aria-live')) !== 'off' ||
+  (await assistantLog.getAttribute('aria-busy')) !== 'false' ||
+  (await assistantLog.locator('[aria-live]').count()) !== 0 ||
+  (await publicAssistantPage.locator('.public-assistant__panel > [aria-live="polite"]').count()) !== 1
+) {
+  failures.push('/blog public assistant: the message log should expose busy semantics while leaving one concise live channel outside the log')
+}
+const negativeFeedbackTrigger = publicAssistantPage.getByRole('button', { name: '这个回答需要改进' })
+await negativeFeedbackTrigger.click()
+await publicAssistantPage.getByRole('group', { name: '选择需要改进的原因' }).waitFor({ state: 'visible' })
+await publicAssistantPage.keyboard.press('Escape')
+if (
+  await publicAssistantPage.getByRole('group', { name: '选择需要改进的原因' }).isVisible().catch(() => false) ||
+  !(await negativeFeedbackTrigger.evaluate((element) => element === document.activeElement))
+) {
+  failures.push('/blog public assistant: Escape should close the feedback reason selector and restore its trigger')
+}
+await negativeFeedbackTrigger.click()
+const feedbackResponse = publicAssistantPage.waitForResponse((response) => response.url().includes('/api/chat/public/feedback'))
+await publicAssistantPage.getByRole('button', { name: '缺少来源' }).click()
+await feedbackResponse
+if (
+  feedbackPayloads.length !== 1 ||
+  feedbackPayloads[0]?.rating !== 'down' ||
+  feedbackPayloads[0]?.reason !== 'missing-sources' ||
+  feedbackPayloads[0]?.sessionId !== 'public-ui-session-1234' ||
+  feedbackPayloads[0]?.turnId !== 'turn-ui-markdown-1' ||
+  feedbackPayloads[0]?.comment !== undefined
+) {
+  failures.push('/blog public assistant: negative feedback should submit the exact bounded reason without free text')
+}
+await publicAssistantPage.waitForFunction(() => {
+  const trigger = document.querySelector('[aria-label="这个回答需要改进"]')
+  const selector = document.querySelector('[aria-label="选择需要改进的原因"]')
+  return !selector && trigger === document.activeElement
+})
+await negativeFeedbackTrigger.click()
+const failedFeedbackResponse = publicAssistantPage.waitForResponse((response) => response.url().includes('/api/chat/public/feedback'))
+await publicAssistantPage.getByRole('button', { name: '信息已过时' }).click()
+await failedFeedbackResponse
+const failedFeedbackSettled = await publicAssistantPage.waitForFunction(() => {
+  const selector = document.querySelector('[aria-label="选择需要改进的原因"]')
+  const trigger = document.querySelector('[aria-label="这个回答需要改进"]')
+  const failed = [...document.querySelectorAll('[role="status"]')]
+    .some((element) => element.textContent?.trim() === '反馈未提交')
+  return Boolean(selector) && failed && trigger === document.activeElement
+}, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+if (!failedFeedbackSettled) {
+  failures.push('/blog public assistant: failed feedback should keep the reason selector visible and restore its trigger for retry')
+}
+const retriedFeedbackResponse = publicAssistantPage.waitForResponse((response) => response.url().includes('/api/chat/public/feedback'))
+await publicAssistantPage.getByRole('button', { name: '信息已过时' }).click()
+await retriedFeedbackResponse
+await publicAssistantPage.waitForFunction(() => {
+  const trigger = document.querySelector('[aria-label="这个回答需要改进"]')
+  const selector = document.querySelector('[aria-label="选择需要改进的原因"]')
+  return !selector && trigger === document.activeElement
+})
+if (
+  feedbackPayloads.length !== 3 ||
+  feedbackPayloads[1]?.reason !== 'outdated' ||
+  feedbackPayloads[2]?.reason !== 'outdated'
+) {
+  failures.push('/blog public assistant: failed structured feedback should retry the same bounded reason')
 }
 const assistantLayout = await publicAssistantPage.evaluate(() => {
   const messages = document.querySelector('.public-assistant__messages')
@@ -2450,6 +2643,80 @@ if (await publicAssistantPage.locator('.public-assistant__panel').isVisible().ca
 }
 await publicAssistantPage.close()
 
+const cancellationPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+await cancellationPage.addInitScript(() => {
+  const nativeFetch = window.fetch.bind(window)
+  window.fetch = (input, init = {}) => {
+    if (String(input).includes('/api/chat/public/stream')) {
+      const nextInit = { ...init }
+      delete nextInit.signal
+      return nativeFetch(input, nextInit)
+    }
+    return nativeFetch(input, init)
+  }
+})
+let cancellationRequestCount = 0
+const cancellationRequestBodies = []
+await cancellationPage.route('**/api/health', async (route) => {
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+  })
+})
+await cancellationPage.route('**/api/chat/public/stream', async (route) => {
+  cancellationRequestCount += 1
+  cancellationRequestBodies.push(route.request().postDataJSON())
+  if (cancellationRequestCount === 1) {
+    await new Promise((resolve) => setTimeout(resolve, 650))
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'text/event-stream',
+    body: toPublicAssistantSse({
+      ...publicAssistantAnswerFixture,
+      answer: '## 重试成功\n\n停止后的同一问题只保留一次。',
+      messageId: 'turn-ui-cancel-retry-1',
+    }),
+  }).catch(() => undefined)
+})
+await gotoApp(cancellationPage, '/blog')
+await cancellationPage.locator('.public-assistant__trigger').click()
+await cancellationPage.locator('#public-assistant-input').fill('请验证停止与重试')
+await cancellationPage.getByRole('button', { name: '发送问题' }).click()
+await cancellationPage.getByRole('button', { name: '停止生成' }).waitFor({ state: 'visible' })
+const stopButtonBox = await cancellationPage.getByRole('button', { name: '停止生成' }).boundingBox()
+if (
+  !stopButtonBox ||
+  stopButtonBox.width < 44 ||
+  stopButtonBox.height < 44 ||
+  (await cancellationPage.getByRole('log', { name: '对话记录' }).getAttribute('aria-busy')) !== 'true'
+) {
+  failures.push('/blog public assistant cancellation: active mobile request should expose a 44px stop command and busy log')
+}
+await cancellationPage.getByRole('button', { name: '停止生成' }).click()
+await cancellationPage.locator('.public-assistant__notice strong').getByText('已停止生成', { exact: true }).waitFor({ state: 'visible' })
+await cancellationPage.waitForTimeout(800)
+if (
+  (await cancellationPage.locator('.public-assistant__message.is-user').count()) !== 1 ||
+  (await cancellationPage.locator('.public-assistant__message.is-assistant').count()) !== 0 ||
+  (await cancellationPage.getByRole('log', { name: '对话记录' }).getAttribute('aria-busy')) !== 'false' ||
+  (await cancellationPage.locator('.public-assistant__messages').innerText()).includes('站内公开资料的降级结果')
+) {
+  failures.push('/blog public assistant cancellation: stop must retain one question without a late or local fallback answer')
+}
+await cancellationPage.getByRole('button', { name: '重试' }).click()
+await cancellationPage.locator('.public-assistant__message.is-assistant').waitFor({ state: 'visible' })
+if (
+  cancellationRequestCount !== 2 ||
+  cancellationRequestBodies[1]?.history?.length !== 0 ||
+  (await cancellationPage.locator('.public-assistant__message.is-user').count()) !== 1 ||
+  (await cancellationPage.locator('.public-assistant__message.is-assistant').count()) !== 1
+) {
+  failures.push('/blog public assistant cancellation: retry should reuse the pending question and exclude it from prior history')
+}
+await cancellationPage.close()
+
 for (const width of [320, 390, 430]) {
   const mobileAssistantPage = await browser.newPage({ viewport: { width, height: 900 } })
   await mobileAssistantPage.route('**/api/health', async (route) => {
@@ -2457,6 +2724,13 @@ for (const width of [320, 390, 430]) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+    })
+  })
+  await mobileAssistantPage.route('**/api/chat/public/stream', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/event-stream',
+      body: toPublicAssistantSse(publicAssistantAnswerFixture),
     })
   })
   await gotoApp(mobileAssistantPage, '/blog')
@@ -2467,6 +2741,8 @@ for (const width of [320, 390, 430]) {
     const root = document.querySelector('.public-assistant')
     return root instanceof HTMLElement && root.style.getPropertyValue('--public-assistant-viewport-height') === '640px'
   })
+  await mobileAssistantPage.locator('.public-assistant__suggestion').first().click()
+  await mobileAssistantPage.locator('.public-assistant__message.is-assistant').waitFor({ state: 'visible' })
   const mobileAssistantLayout = await mobileAssistantPage.evaluate(() => {
     const root = document.querySelector('.public-assistant')
     const panel = document.querySelector('.public-assistant__panel')
@@ -2499,6 +2775,70 @@ for (const width of [320, 390, 430]) {
     mobileAssistantLayout.bodyOverflow !== 'hidden'
   ) {
     failures.push(`/blog public assistant ${width}px: expected viewport-safe mobile fullscreen with an isolated message scroller`)
+  }
+  const mobileMarkdownLayout = await mobileAssistantPage.evaluate(() => {
+    const message = document.querySelector('.public-assistant__message.is-assistant')
+    const codeBlock = document.querySelector('.public-assistant-markdown__code-block')
+    const codeScroll = document.querySelector('.public-assistant-markdown__code-block pre')
+    const tableScroll = document.querySelector('.public-assistant-markdown__table-scroll')
+    const copyButton = document.querySelector('.public-assistant-markdown__code-header button')
+    if (
+      !(message instanceof HTMLElement) ||
+      !(codeBlock instanceof HTMLElement) ||
+      !(codeScroll instanceof HTMLElement) ||
+      !(tableScroll instanceof HTMLElement) ||
+      !(copyButton instanceof HTMLElement)
+    ) return null
+    const messageRect = message.getBoundingClientRect()
+    const codeRect = codeBlock.getBoundingClientRect()
+    const tableRect = tableScroll.getBoundingClientRect()
+    const copyRect = copyButton.getBoundingClientRect()
+    return {
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      messageOverflow: message.scrollWidth - message.clientWidth,
+      codeInside: codeRect.left >= messageRect.left - 1 && codeRect.right <= messageRect.right + 1,
+      tableInside: tableRect.left >= messageRect.left - 1 && tableRect.right <= messageRect.right + 1,
+      copyWidth: copyRect.width,
+      copyHeight: copyRect.height,
+      codeOwnsOverflow: codeScroll.scrollWidth > codeScroll.clientWidth,
+      tableOwnsOverflow: tableScroll.scrollWidth > tableScroll.clientWidth,
+      modelLinkCount: message.querySelectorAll('.public-assistant-markdown a').length,
+      modelImageCount: message.querySelectorAll('.public-assistant-markdown img').length,
+    }
+  })
+  if (
+    !mobileMarkdownLayout ||
+    mobileMarkdownLayout.documentOverflow > 1 ||
+    mobileMarkdownLayout.messageOverflow > 1 ||
+    !mobileMarkdownLayout.codeInside ||
+    !mobileMarkdownLayout.tableInside ||
+    !mobileMarkdownLayout.codeOwnsOverflow ||
+    !mobileMarkdownLayout.tableOwnsOverflow ||
+    mobileMarkdownLayout.copyWidth < 44 ||
+    mobileMarkdownLayout.copyHeight < 44 ||
+    mobileMarkdownLayout.modelLinkCount !== 0 ||
+    mobileMarkdownLayout.modelImageCount !== 0
+  ) {
+    failures.push('/blog public assistant ' + width + 'px: structured answers should stay contained with a 44px copy target and no model-authored navigation')
+  }
+  const mobileFeedbackTrigger = mobileAssistantPage.getByRole('button', { name: '这个回答需要改进' })
+  const mobileFeedbackTriggerBox = await mobileFeedbackTrigger.boundingBox()
+  await mobileFeedbackTrigger.click()
+  const mobileFeedbackReason = mobileAssistantPage.getByRole('button', { name: '内容不准确' })
+  const mobileFeedbackReasonBox = await mobileFeedbackReason.boundingBox()
+  if (
+    !mobileFeedbackTriggerBox ||
+    mobileFeedbackTriggerBox.width < 44 ||
+    mobileFeedbackTriggerBox.height < 44 ||
+    !mobileFeedbackReasonBox ||
+    mobileFeedbackReasonBox.width < 44 ||
+    mobileFeedbackReasonBox.height < 44
+  ) {
+    failures.push('/blog public assistant ' + width + 'px: feedback reasons should expose a 44px mobile touch target')
+  }
+  await mobileAssistantPage.keyboard.press('Escape')
+  if (!(await mobileFeedbackTrigger.evaluate((element) => element === document.activeElement))) {
+    failures.push('/blog public assistant ' + width + 'px: closing feedback reasons should restore the owning control')
   }
   await mobileAssistantPage.keyboard.press('Escape')
   if (await mobileAssistantPage.locator('.public-assistant__panel').isVisible().catch(() => false)) {
