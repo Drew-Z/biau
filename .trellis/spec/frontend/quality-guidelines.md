@@ -104,6 +104,7 @@ npm.cmd run docs:deployment-check
 - The conversation is a labeled `role="log"` with `aria-busy` tied to active restore or answer work. Progress repaints are not separate live announcements; restore, start, completion, and cancellation use one concise status channel.
 - Desktop opens compact and supports full-screen mode. Mobile opens full-screen, follows `visualViewport` for soft-keyboard height/offset, accounts for safe areas, locks background scrolling for the modal lifetime, and keeps the message region as the only conversation scroller.
 - A persisted current capability restores automatically on first open before follow-up submission is enabled. Expired history self-heals into a fresh conversation; transient restore failure stays retryable; `truncated=true` is visible. Starting a new conversation or restoring another session ignores late completions captured for another controller/session.
+- Chat, health/history, and initial-restore failures share one retry gate. Browser offline state disables retry; an `online` event updates the retained issue without replaying it. A bounded `Retry-After` value becomes an absolute wall-clock deadline, and visible countdown state is recalculated from that deadline so background-tab timer throttling cannot shorten or extend the server delay.
 - History opens as the top interaction layer, receives focus, traps Tab within its own controls, closes before the assistant on Escape, and restores the history trigger. Claim citation controls focus and highlight only their matching verified citation card. Internal citation navigation closes the assistant/fullscreen shell while retaining the restorable conversation.
 - Mobile first-open does not focus the composer or summon the soft keyboard. Desktop focuses the composer after initial restoration settles.
 - At mobile widths the panel and trigger occupy stable grid rows, remain inside the viewport, do not block page navigation or reading controls, and expose 44px action/copy/feedback touch targets.
@@ -145,7 +146,7 @@ npm.cmd run docs:deployment-check
 - Main public routes at desktop/mobile widths.
 - Retired assistant/private routes as NotFound.
 - Public assistant concise/fallback behavior, safe structured Markdown, code copy, stop/late-response isolation, cancellation retry, and exact structured-feedback payloads.
-- Public assistant scope controls, automatic continuity/expiry/retry/truncation, claim-to-source focus, internal navigation closure, history/full-screen focus behavior, mobile panel/trigger/soft-keyboard layout, 320/390/430 containment, verified citations, feedback, and rate-limit behavior.
+- Public assistant scope controls, automatic continuity/expiry/retry/truncation, offline-to-online recovery without automatic replay, wall-clock `Retry-After` countdowns, claim-to-source focus, internal navigation closure, history/full-screen focus behavior, mobile panel/trigger/soft-keyboard layout, 320/390/430 containment, verified citations, feedback, and rate-limit behavior.
 - Mobile public navigation and detail reading.
 - Studio focused modes and review entry.
 - Background animation/reduced-motion frames.

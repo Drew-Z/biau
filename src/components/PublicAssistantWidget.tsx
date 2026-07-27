@@ -91,6 +91,7 @@ interface AssistantIssue {
   prompt?: string
   mode?: PublicAssistantMode
   retryAfterSeconds?: number | null
+  retryAvailableAt?: number | null
 }
 
 interface ActiveChatRequest {
@@ -256,22 +257,47 @@ function buildHistory(messages: WidgetMessage[]): PublicAssistantHistoryTurn[] {
 
 function toAssistantIssue(error: unknown, scope: AssistantIssue['scope'], prompt?: string, mode?: PublicAssistantMode): AssistantIssue {
   const transport = error instanceof PublicAssistantTransportError ? error : null
+  const retryAfterSeconds = transport?.retryAfterSeconds ?? null
   return {
     code: transport?.code ?? 'public-chat-request-failed',
     scope,
     prompt,
     mode,
-    retryAfterSeconds: transport?.retryAfterSeconds,
+    retryAfterSeconds,
+    retryAvailableAt: retryAfterSeconds && retryAfterSeconds > 0
+      ? Date.now() + retryAfterSeconds * 1_000
+      : null,
   }
 }
 
-function getAssistantIssueCopy(issue: AssistantIssue) {
+function refreshAssistantIssueCountdown(issue: AssistantIssue | null, now: number) {
+  if (!issue?.retryAvailableAt) return issue
+  const retryAfterSeconds = Math.max(0, Math.ceil((issue.retryAvailableAt - now) / 1_000))
+  return retryAfterSeconds === issue.retryAfterSeconds ? issue : { ...issue, retryAfterSeconds }
+}
+
+function isAssistantIssueRetryBlocked(issue: AssistantIssue | null, isOnline: boolean) {
+  return !isOnline || Boolean(issue?.retryAfterSeconds && issue.retryAfterSeconds > 0)
+}
+
+function getAssistantRetryLabel(issue: AssistantIssue | null, fallback = '重试') {
+  return issue?.retryAfterSeconds && issue.retryAfterSeconds > 0
+    ? `${issue.retryAfterSeconds} 秒后`
+    : fallback
+}
+
+function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean) {
+  if (!isOnline) return { title: '设备当前离线', detail: '网络恢复后可以继续本次操作。' }
+  if (issue.code === 'public-assistant-offline') {
+    return { title: '网络已恢复', detail: '问题仍然保留，可以立即重试。' }
+  }
   if (issue.code === 'public-assistant-rate-limited') {
-    const wait = issue.retryAfterSeconds && issue.retryAfterSeconds > 0 ? `约 ${issue.retryAfterSeconds} 秒后` : '稍后'
-    return { title: '请求较多', detail: `请${wait}重试。` }
+    const detail = issue.retryAfterSeconds && issue.retryAfterSeconds > 0
+      ? `可在 ${issue.retryAfterSeconds} 秒后重试。`
+      : '等待时间已结束，可以重试。'
+    return { title: '请求较多', detail }
   }
   if (issue.code.includes('timeout')) return { title: '本次研究超时', detail: '服务没有在限定时间内完成，可以直接重试。' }
-  if (issue.code === 'public-assistant-offline') return { title: '设备当前离线', detail: '网络恢复后可以继续本次问题。' }
   if (issue.code.includes('unreachable') || issue.code === 'public-assistant-endpoint-unreachable') {
     return { title: '暂时无法连接研究服务', detail: '可能正在冷启动或网络不可达，可以稍后重试。' }
   }
@@ -342,6 +368,7 @@ export function PublicAssistantWidget() {
   const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE)
   const [serviceState, setServiceState] = useState<AssistantServiceState>('ready')
   const [issue, setIssue] = useState<AssistantIssue | null>(null)
+  const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine)
   const [hasNewContent, setHasNewContent] = useState(false)
   const [healthRetryNonce, setHealthRetryNonce] = useState(0)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
@@ -377,8 +404,10 @@ export function PublicAssistantWidget() {
   const citationRefs = useRef(new Map<string, HTMLAnchorElement>())
   const feedbackTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const serviceStatus = getServiceStatus(serviceState)
-  const issueCopy = issue ? getAssistantIssueCopy(issue) : null
-  const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue) : null
+  const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline) : null
+  const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline) : null
+  const issueRetryBlocked = isAssistantIssueRetryBlocked(issue, isOnline)
+  const initialRestoreRetryBlocked = isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
   const isAssistantBusy = isLoading || isRestoringSession
@@ -465,6 +494,42 @@ export function PublicAssistantWidget() {
     if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
     if (citationHighlightTimerRef.current !== null) window.clearTimeout(citationHighlightTimerRef.current)
   }, [])
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  useEffect(() => {
+    const deadlines = [issue?.retryAvailableAt, initialRestoreIssue?.retryAvailableAt]
+      .filter((deadline): deadline is number => typeof deadline === 'number')
+    if (deadlines.length === 0) return
+
+    let interval: number | null = null
+    const refreshCountdowns = () => {
+      const now = Date.now()
+      setIssue((current) => refreshAssistantIssueCountdown(current, now))
+      setInitialRestoreIssue((current) => refreshAssistantIssueCountdown(current, now))
+      if (interval !== null && deadlines.every((deadline) => deadline <= now)) {
+        window.clearInterval(interval)
+        interval = null
+      }
+    }
+
+    refreshCountdowns()
+    if (deadlines.some((deadline) => deadline > Date.now())) {
+      interval = window.setInterval(refreshCountdowns, 500)
+    }
+    return () => {
+      if (interval !== null) window.clearInterval(interval)
+    }
+  }, [initialRestoreIssue?.retryAvailableAt, issue?.retryAvailableAt])
 
   useEffect(() => {
     if (!feedbackFocusRequest) return
@@ -754,6 +819,7 @@ export function PublicAssistantWidget() {
   }
 
   const retryInitialRestore = () => {
+    if (initialRestoreRetryBlocked || initialRestoreTargetRef.current || initialRestoreRequestRef.current) return
     stopInitialRestore()
     initialRestoreTargetRef.current = sessionIdRef.current
     setInitialRestoreState('loading')
@@ -762,12 +828,12 @@ export function PublicAssistantWidget() {
   }
 
   const refreshHistory = async () => {
+    if (historyRequestRef.current) return
     if (!apiBase) {
       setHistoryState('error')
       setIssue({ code: 'public-assistant-service-unavailable', scope: 'history' })
       return
     }
-    historyRequestRef.current?.abort()
     const controller = new AbortController()
     historyRequestRef.current = controller
     setHistoryState('loading')
@@ -789,6 +855,11 @@ export function PublicAssistantWidget() {
     } finally {
       if (historyRequestRef.current === controller) historyRequestRef.current = null
     }
+  }
+
+  const retryHistory = () => {
+    if (issueRetryBlocked || historyRequestRef.current) return
+    void refreshHistory()
   }
 
   const openHistory = () => {
@@ -910,7 +981,7 @@ export function PublicAssistantWidget() {
     options: { reusePendingQuestion?: boolean } = {},
   ) => {
     const trimmed = question.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
-    if (!trimmed || isLoading || !isConversationReady) return
+    if (!trimmed || isLoading || activeRequestRef.current || !isConversationReady) return
 
     trackAnalyticsEvent('public_assistant_question', {
       source: 'floating-widget',
@@ -999,7 +1070,7 @@ export function PublicAssistantWidget() {
   }
 
   const retryIssue = () => {
-    if (!issue) return
+    if (!issue || issueRetryBlocked) return
     if (issue.scope === 'chat' && issue.prompt) {
       const prompt = issue.prompt
       const requestedMode = issue.mode ?? mode
@@ -1164,9 +1235,9 @@ export function PublicAssistantWidget() {
                     <div className="public-assistant__history-state" role="status">
                       <strong>{issueCopy?.title ?? '历史暂不可用'}</strong>
                       <span>{issueCopy?.detail ?? '稍后可以重试。'}</span>
-                      <button type="button" onClick={() => void refreshHistory()}>
+                      <button type="button" onClick={retryHistory} disabled={issueRetryBlocked}>
                         <RefreshCw size={15} aria-hidden />
-                        <span>重试</span>
+                        <span>{getAssistantRetryLabel(issue)}</span>
                       </button>
                     </div>
                   )}
@@ -1254,9 +1325,9 @@ export function PublicAssistantWidget() {
                   <span>{initialRestoreIssueCopy?.detail ?? '可以重试恢复，或新建一条空白会话。'}</span>
                 </div>
                 <div className="public-assistant__notice-actions">
-                  <button type="button" onClick={retryInitialRestore}>
+                  <button type="button" onClick={retryInitialRestore} disabled={initialRestoreRetryBlocked}>
                     <RefreshCw size={15} aria-hidden />
-                    <span>重试恢复</span>
+                    <span>{getAssistantRetryLabel(initialRestoreIssue, '重试恢复')}</span>
                   </button>
                   <button type="button" onClick={startNewConversation}>
                     <MessageSquarePlus size={15} aria-hidden />
@@ -1465,9 +1536,9 @@ export function PublicAssistantWidget() {
                   <strong>{issueCopy?.title}</strong>
                   <span>{issueCopy?.detail}</span>
                 </div>
-                <button type="button" onClick={retryIssue} disabled={isLoading}>
+                <button type="button" onClick={retryIssue} disabled={isLoading || issueRetryBlocked}>
                   <RefreshCw size={15} aria-hidden />
-                  <span>重试</span>
+                  <span>{getAssistantRetryLabel(issue)}</span>
                 </button>
               </div>
             )}

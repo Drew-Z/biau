@@ -111,6 +111,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - The history drawer is a modal layer within the assistant shell. Focus moves into it, Tab remains inside it, and Escape closes the drawer before a later Escape can close the assistant.
 - Only the message region scrolls. Automatic following is allowed only while the visitor remains near the bottom; otherwise a return-to-latest action appears.
 - First open restores an already persisted current capability before the composer can submit a follow-up. `session-not-found` replaces the expired current capability with a fresh one; transient failure remains explicitly retryable. Starting a new conversation aborts chat and history work, creates a fresh capability, clears hydrated/transient state, and ignores any completion whose controller or captured session no longer matches the active conversation.
+- Stable transport errors retain the original prompt/mode or retryable surface state for an explicit visitor retry. Browser offline state and a bounded `Retry-After` deadline gate chat, health/history-list, and initial-restore retry controls; network restoration or deadline expiry updates availability only and never automatically spends another request. Synchronous duplicate activation of an enabled retry control still starts at most one request.
 - Claim citation controls may target only citation IDs present in the same allowlisted display snapshot. Internal citation navigation closes the assistant/fullscreen shell without deleting the local capability registry.
 
 ### 4. Validation & Error Matrix
@@ -134,7 +135,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - Persistence checks assert submitted-ID intersection, expiry, 100-turn truncation, snapshot allowlisting, legacy fallback, cascade deletion, and aggregate preservation.
 - Agent/model checks assert external abort propagation and that an aborted response cannot reach persistence. API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
 - Cloudflare checks assert method/body preservation, request/response limits, no-store, `Retry-After`, and removal of browser authorization and cookies.
-- UI checks assert automatic rich restoration before follow-up, restored history in the next request, explicit truncation, expiry self-healing, transient retry, claim-to-source focus, internal-navigation closure, fresh high-entropy capability creation, request/session race isolation, drawer focus and Escape ordering, desktop scroll lock, mobile no-autofocus, and 320/390/430 viewport-safe message/composer layout.
+- UI checks assert automatic rich restoration before follow-up, restored history in the next request, explicit truncation, expiry self-healing, transient retry, offline-to-online retry gating without automatic replay, wall-clock `Retry-After` expiry, claim-to-source focus, internal-navigation closure, fresh high-entropy capability creation, request/session race isolation, drawer focus and Escape ordering, desktop scroll lock, mobile no-autofocus, and 320/390/430 viewport-safe message/composer layout.
 - All checks use local fixtures only and must not call a live model, search, embedding, reranker, or vector database provider.
 
 ### 7. Wrong vs Correct

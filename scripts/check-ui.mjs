@@ -2739,9 +2739,10 @@ await restoreRetryPage.route('**/api/chat/public/session', async (route) => {
   restoreAttemptCount += 1
   if (restoreAttemptCount === 1) {
     await route.fulfill({
-      status: 503,
+      status: 429,
       contentType: 'application/json',
-      body: JSON.stringify({ error: 'public-assistant-service-unavailable' }),
+      headers: { 'Retry-After': '1' },
+      body: JSON.stringify({ error: 'public-assistant-rate-limited' }),
     })
     return
   }
@@ -2764,8 +2765,22 @@ await restoreRetryPage.route('**/api/chat/public/session', async (route) => {
 })
 await gotoApp(restoreRetryPage, '/blog')
 await restoreRetryPage.locator('.public-assistant__trigger').click()
-await restoreRetryPage.getByRole('button', { name: '重试恢复' }).waitFor({ state: 'visible' })
-await restoreRetryPage.getByRole('button', { name: '重试恢复' }).click()
+const restoreRetryButton = restoreRetryPage.locator('.public-assistant__notice--restore button').first()
+await restoreRetryPage.getByText('请求较多', { exact: true }).waitFor({ state: 'visible' })
+if (!(await restoreRetryButton.isDisabled()) || restoreAttemptCount !== 1) {
+  failures.push('/blog public assistant recovery: initial restore retry should respect Retry-After without replaying automatically')
+}
+await restoreRetryPage.waitForFunction(() => {
+  const button = document.querySelector('.public-assistant__notice--restore button')
+  return button instanceof HTMLButtonElement && !button.disabled && button.textContent?.includes('重试恢复')
+}, undefined, { timeout: 3_000 })
+if (restoreAttemptCount !== 1) {
+  failures.push('/blog public assistant recovery: Retry-After expiry must not automatically restore the session')
+}
+await restoreRetryButton.evaluate((button) => {
+  button.click()
+  button.click()
+})
 await restoreRetryPage.waitForFunction(() => {
   const input = document.querySelector('#public-assistant-input')
   return input instanceof HTMLTextAreaElement && !input.disabled
@@ -2825,6 +2840,166 @@ if (
   failures.push('/blog public assistant continuity: a late restore failure must not overwrite a newly created conversation')
 }
 await restoreRacePage.close()
+
+let offlineChatRequestCount = 0
+let offlineHistoryRequestCount = 0
+const offlineRecoveryPage = await browser.newPage({ viewport: viewports[0] })
+await offlineRecoveryPage.addInitScript(() => {
+  window.__publicAssistantUiOnline = true
+  Object.defineProperty(navigator, 'onLine', {
+    configurable: true,
+    get: () => window.__publicAssistantUiOnline,
+  })
+})
+await offlineRecoveryPage.route('**/api/health', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+}))
+await offlineRecoveryPage.route('**/api/chat/public/stream', async (route) => {
+  offlineChatRequestCount += 1
+  if (offlineChatRequestCount === 1) {
+    await route.abort('internetdisconnected')
+    return
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'text/event-stream',
+    body: toPublicAssistantSse({
+      ...publicAssistantAnswerFixture,
+      answer: '## 网络恢复成功\n\n这次请求由用户明确重试后发起。',
+      messageId: 'turn-ui-offline-retry-1',
+    }),
+  })
+})
+await offlineRecoveryPage.route('**/api/chat/public/sessions', async (route) => {
+  offlineHistoryRequestCount += 1
+  if (offlineHistoryRequestCount === 1) {
+    await route.abort('internetdisconnected')
+    return
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ sessions: [] }),
+  })
+})
+await gotoApp(offlineRecoveryPage, '/blog')
+await offlineRecoveryPage.locator('.public-assistant__trigger').click()
+await offlineRecoveryPage.getByText('可检索本站与公开网页', { exact: true }).waitFor({ state: 'visible' })
+await offlineRecoveryPage.evaluate(() => {
+  window.__publicAssistantUiOnline = false
+  window.dispatchEvent(new Event('offline'))
+})
+await offlineRecoveryPage.locator('#public-assistant-input').fill('请验证离线恢复不会自动请求')
+await offlineRecoveryPage.getByRole('button', { name: '发送问题' }).click()
+await offlineRecoveryPage.getByText('设备当前离线', { exact: true }).waitFor({ state: 'visible' })
+const offlineChatRetryButton = offlineRecoveryPage.locator('.public-assistant__notice button').first()
+const offlineChatCountBeforeRecovery = offlineChatRequestCount
+if (!(await offlineChatRetryButton.isDisabled())) {
+  failures.push('/blog public assistant recovery: chat retry should stay disabled while the browser is offline')
+}
+await offlineRecoveryPage.evaluate(() => {
+  window.__publicAssistantUiOnline = true
+  window.dispatchEvent(new Event('online'))
+})
+await offlineRecoveryPage.getByText('网络已恢复', { exact: true }).waitFor({ state: 'visible' })
+await offlineRecoveryPage.waitForTimeout(250)
+if (offlineChatRequestCount !== offlineChatCountBeforeRecovery || await offlineChatRetryButton.isDisabled()) {
+  failures.push('/blog public assistant recovery: reconnecting should enable chat retry without replaying the retained prompt')
+}
+await offlineChatRetryButton.evaluate((button) => {
+  button.click()
+  button.click()
+})
+await offlineRecoveryPage.getByText('网络恢复成功', { exact: true }).waitFor({ state: 'visible' })
+if (offlineChatRequestCount !== offlineChatCountBeforeRecovery + 1) {
+  failures.push('/blog public assistant recovery: explicit chat retry should issue exactly one request after reconnecting')
+}
+
+await offlineRecoveryPage.evaluate(() => {
+  window.__publicAssistantUiOnline = false
+  window.dispatchEvent(new Event('offline'))
+})
+await offlineRecoveryPage.getByRole('button', { name: '查看历史会话' }).click()
+await offlineRecoveryPage.getByRole('dialog', { name: '历史会话' }).getByText('设备当前离线', { exact: true }).waitFor({ state: 'visible' })
+const offlineHistoryRetryButton = offlineRecoveryPage.getByRole('dialog', { name: '历史会话' }).locator('.public-assistant__history-state button')
+const offlineHistoryCountBeforeRecovery = offlineHistoryRequestCount
+if (!(await offlineHistoryRetryButton.isDisabled())) {
+  failures.push('/blog public assistant recovery: history retry should stay disabled while the browser is offline')
+}
+await offlineRecoveryPage.evaluate(() => {
+  window.__publicAssistantUiOnline = true
+  window.dispatchEvent(new Event('online'))
+})
+await offlineRecoveryPage.getByRole('dialog', { name: '历史会话' }).getByText('网络已恢复', { exact: true }).waitFor({ state: 'visible' })
+await offlineRecoveryPage.waitForTimeout(250)
+if (offlineHistoryRequestCount !== offlineHistoryCountBeforeRecovery || await offlineHistoryRetryButton.isDisabled()) {
+  failures.push('/blog public assistant recovery: reconnecting should enable history retry without refreshing automatically')
+}
+await offlineHistoryRetryButton.evaluate((button) => {
+  button.click()
+  button.click()
+})
+await offlineRecoveryPage.getByText('还没有可恢复的会话', { exact: true }).waitFor({ state: 'visible' })
+if (offlineHistoryRequestCount !== offlineHistoryCountBeforeRecovery + 1) {
+  failures.push('/blog public assistant recovery: explicit history retry should issue exactly one request after reconnecting')
+}
+await offlineRecoveryPage.close()
+
+let rateLimitedChatRequestCount = 0
+const rateLimitRecoveryPage = await browser.newPage({ viewport: viewports[0] })
+await rateLimitRecoveryPage.route('**/api/health', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+}))
+await rateLimitRecoveryPage.route('**/api/chat/public/stream', async (route) => {
+  rateLimitedChatRequestCount += 1
+  if (rateLimitedChatRequestCount === 1) {
+    await route.fulfill({
+      status: 429,
+      contentType: 'application/json',
+      headers: { 'Retry-After': '2' },
+      body: JSON.stringify({ error: 'public-assistant-rate-limited' }),
+    })
+    return
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'text/event-stream',
+    body: toPublicAssistantSse({
+      ...publicAssistantAnswerFixture,
+      answer: '## 限流恢复成功\n\n倒计时结束后由用户明确重试。',
+      messageId: 'turn-ui-rate-limit-retry-1',
+    }),
+  })
+})
+await gotoApp(rateLimitRecoveryPage, '/blog')
+await rateLimitRecoveryPage.locator('.public-assistant__trigger').click()
+await rateLimitRecoveryPage.locator('#public-assistant-input').fill('请验证 Retry-After 倒计时')
+await rateLimitRecoveryPage.getByRole('button', { name: '发送问题' }).click()
+await rateLimitRecoveryPage.getByText('请求较多', { exact: true }).waitFor({ state: 'visible' })
+const rateLimitRetryButton = rateLimitRecoveryPage.locator('.public-assistant__notice button').first()
+if (!(await rateLimitRetryButton.isDisabled()) || rateLimitedChatRequestCount !== 1) {
+  failures.push('/blog public assistant recovery: a rate-limited chat should expose a disabled countdown retry')
+}
+await rateLimitRecoveryPage.waitForFunction(() => {
+  const button = document.querySelector('.public-assistant__notice button')
+  return button instanceof HTMLButtonElement && !button.disabled && button.textContent?.trim() === '重试'
+}, undefined, { timeout: 4_000 })
+if (rateLimitedChatRequestCount !== 1) {
+  failures.push('/blog public assistant recovery: Retry-After expiry must not replay the chat request automatically')
+}
+await rateLimitRetryButton.evaluate((button) => {
+  button.click()
+  button.click()
+})
+await rateLimitRecoveryPage.getByText('限流恢复成功', { exact: true }).waitFor({ state: 'visible' })
+if (rateLimitedChatRequestCount !== 2) {
+  failures.push('/blog public assistant recovery: rate-limit retry should issue one request after the deadline')
+}
+await rateLimitRecoveryPage.close()
 
 const cancellationPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
 await cancellationPage.addInitScript(() => {
