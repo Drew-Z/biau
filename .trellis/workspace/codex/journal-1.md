@@ -104,3 +104,36 @@ Restored persisted conversations before follow-up, added truncation and retry st
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Public assistant recovery controls
+
+**Date**: 2026-07-28
+**Task**: Public assistant recovery controls
+**Branch**: `codex/public-assistant-productization`
+
+### Summary
+
+Added offline-aware retry gating, wall-clock Retry-After countdowns, duplicate activation guards, and deterministic local UI fixtures.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2ca0545f` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

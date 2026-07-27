@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 3
+- **Total Sessions**: 4
 - **Last Active**: 2026-07-28
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~106 | Active |
+| `journal-1.md` | ~139 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 4 | 2026-07-28 | Public assistant recovery controls | `2ca0545f` | `codex/public-assistant-productization` |
 | 3 | 2026-07-28 | Public assistant conversation continuity | `86058ba0` | `codex/public-assistant-productization` |
 | 2 | 2026-07-28 | Public assistant answer experience | `78945504` | `codex/public-assistant-productization` |
 | 1 | 2026-07-28 | Public assistant productization | `825bc5d5` | `codex/public-assistant-productization` |
