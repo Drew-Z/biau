@@ -174,3 +174,43 @@ Added PostgreSQL-backed generation claims, lease fencing, cached replay, explici
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: Public assistant immutable answer revisions
+
+**Date**: 2026-07-28
+**Task**: Public assistant immutable answer revisions
+**Branch**: `codex/public-assistant-productization`
+
+### Summary
+
+Implemented immutable answer revisions, branch-aware continuation and recovery, revision-scoped citations and feedback, responsive UI controls, deterministic migration/API/UI fixtures, and synchronized backend/frontend specifications.
+
+### Main Changes
+
+- Added immutable answer revisions, saved branches, authoritative branch history, and exactly-once regeneration semantics.
+- Added revision-scoped citations and feedback, bounded-history disclosures, branch turn counts, recovery controls, and responsive revision navigation.
+- Added PostgreSQL migration, ownership and immutability triggers, Cloudflare branch proxy, deterministic fixtures, and synchronized code specifications.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `929959a2` | feat(assistant): add immutable answer branches |
+| `c9bc576d` | test(assistant): cover revision and branch recovery |
+| `f75c4567` | docs(assistant): record revision branch contracts |
+
+### Testing
+
+- [OK] Prisma validate, lint, frontend build, and server build.
+- [OK] Public Agent, model, API, persistence, rate-limit, conversation, Web research, sync, hybrid retrieval, RAG, service-mode, server, and Cloudflare fixture checks.
+- [OK] UI check for 17 routes across desktop/mobile viewports, performance budget, and `git diff --check`.
+- [INFO] The loopback PostgreSQL migration fixture was not rerun in this continuation because `PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL` was unset; its earlier task run had already passed.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
