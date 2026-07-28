@@ -19,6 +19,20 @@ export type PublicAssistantFeedbackReason =
   | 'outdated'
   | 'other'
 
+export type PublicAssistantGenerationIntent =
+  | { kind: 'new-turn'; branchId: string | null; parentRevisionId: string | null }
+  | { kind: 'answer-revision'; branchId: string; turnId: string; baseRevisionId: string }
+
+export interface PublicAssistantConversationIdentity {
+  branchId: string
+  branchOrdinal: number
+  turnId: string
+  revisionId: string
+  revisionNo: number
+  basedOnRevisionId: string | null
+  activated: boolean
+}
+
 export interface PublicAssistantCitation {
   id: string
   title: string
@@ -56,7 +70,9 @@ export interface PublicAssistantAnswerMeta {
 }
 
 export interface PublicAssistantAnswer {
+  contractVersion: 1 | 2
   requestId?: string
+  replayed?: boolean
   answer: string
   status: PublicAssistantStatus
   claims: PublicAssistantClaim[]
@@ -64,30 +80,63 @@ export interface PublicAssistantAnswer {
   suggestions: string[]
   sessionId?: string
   turnId?: string
+  conversation?: PublicAssistantConversationIdentity
   meta: PublicAssistantAnswerMeta
 }
 
 export interface PublicAssistantSessionSummary {
   id: string
+  activeBranchId?: string
   title: string
   turnCount: number
+  hasEarlierTurns?: boolean
   createdAt: string
   lastActiveAt: string
   expiresAt: string
 }
 
-export interface PublicAssistantSessionTurn extends PublicAssistantAnswer {
+export interface PublicAssistantAnswerRevision {
   id: string
-  question: string
-  mode: PublicAssistantMode
+  revisionNo: number
+  basedOnRevisionId: string | null
+  answer: string
+  status: PublicAssistantStatus
+  claims: PublicAssistantClaim[]
+  citations: PublicAssistantCitation[]
+  suggestions: string[]
   route: PublicAssistantRoute
+  meta: PublicAssistantAnswerMeta
   createdAt: string
   feedback: 'up' | 'down' | null
 }
 
+export interface PublicAssistantSessionTurn {
+  id: string
+  question: string
+  mode: PublicAssistantMode
+  parentRevisionId: string | null
+  selectedRevisionId: string
+  revisions: PublicAssistantAnswerRevision[]
+  createdAt: string
+}
+
+export interface PublicAssistantBranchSummary {
+  id: string
+  ordinal: number
+  headRevisionId: string
+  preview: string
+  turnCount: number
+  hasEarlierTurns: boolean
+  lastActiveAt: string
+}
+
 export interface PublicAssistantSessionHistory {
-  session: PublicAssistantSessionSummary
+  session: PublicAssistantSessionSummary & { activeBranchId: string }
+  branches: PublicAssistantBranchSummary[]
   turns: PublicAssistantSessionTurn[]
+  hasEarlierTurns: boolean
+  revisionsTruncated: boolean
+  branchesTruncated: boolean
   truncated: boolean
 }
 
@@ -126,12 +175,13 @@ export class PublicAssistantTransportError extends Error {
   }
 }
 
-interface PublicAssistantRequestInput {
+export interface PublicAssistantRequestInput {
   apiBase: string
   requestId: string
   message: string
   mode: PublicAssistantMode
   sessionId: string
+  intent: PublicAssistantGenerationIntent
   history: PublicAssistantHistoryTurn[]
   pageContext: { path: string; title: string; description: string }
   signal?: AbortSignal
@@ -265,11 +315,13 @@ export async function readPublicAssistantEventStream(
 
 function toPublicAssistantRequestBody(input: PublicAssistantRequestInput) {
   return {
+    contractVersion: 2,
     requestId: input.requestId,
     message: input.message,
     mode: input.mode,
     sessionId: input.sessionId,
-    history: input.history.slice(-6),
+    intent: input.intent,
+    history: input.history.slice(-12),
     pageContext: input.pageContext,
   }
 }
@@ -307,7 +359,7 @@ function normalizeProgressStage(value: unknown): PublicAssistantProgressStage | 
 export async function submitPublicAssistantFeedback(input: {
   apiBase: string
   sessionId: string
-  turnId: string
+  revisionId: string
   rating: 'up' | 'down'
   reason?: PublicAssistantFeedbackReason
   comment?: string
@@ -317,7 +369,7 @@ export async function submitPublicAssistantFeedback(input: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       sessionId: input.sessionId,
-      turnId: input.turnId,
+      revisionId: input.revisionId,
       rating: input.rating,
       reason: input.reason,
       comment: input.comment?.replace(/\s+/gu, ' ').trim().slice(0, 240),
@@ -401,6 +453,34 @@ export async function requestPublicAssistantSession(input: {
   return history
 }
 
+export async function requestPublicAssistantBranch(input: {
+  apiBase: string
+  sessionId: string
+  action: 'select'
+  branchId: string
+  signal?: AbortSignal
+} | {
+  apiBase: string
+  sessionId: string
+  action: 'continue-from-revision'
+  revisionId: string
+  signal?: AbortSignal
+}) {
+  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/branch`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input.action === 'select'
+      ? { sessionId: input.sessionId, action: input.action, branchId: input.branchId }
+      : { sessionId: input.sessionId, action: input.action, revisionId: input.revisionId }),
+    signal: input.signal,
+  })
+  if (!response.ok) throw await responseError(response)
+  const payload = await response.json().catch(() => null)
+  const history = normalizePublicAssistantSessionHistory(payload)
+  if (!history) throw new PublicAssistantTransportError('public-assistant-invalid-response')
+  return history
+}
+
 export async function deletePublicAssistantSession(input: {
   apiBase: string
   sessionId: string
@@ -427,15 +507,21 @@ export function normalizePublicAssistantAnswer(value: unknown): PublicAssistantA
     : []
   const rawMeta = isRecord(value.meta) ? value.meta : {}
   const research = normalizeResearchMeta(rawMeta.research)
+  const conversation = normalizeConversationIdentity(value.conversation)
+  const contractVersion = value.contractVersion === 2 ? 2 : 1
+  if (contractVersion === 2 && !conversation) return null
   return {
+    contractVersion,
     requestId: readRequestId(value.requestId) || undefined,
+    ...(value.replayed === true ? { replayed: true } : {}),
     answer,
     status,
     claims,
     citations,
     suggestions,
     sessionId: readIdentifier(value.sessionId),
-    turnId: readIdentifier(value.messageId),
+    turnId: conversation?.turnId ?? readIdentifier(value.messageId),
+    ...(conversation ? { conversation } : {}),
     meta: {
       mode: rawMeta.mode === 'model' ? 'model' : 'fallback',
       reason: readString(rawMeta.reason, 80) || undefined,
@@ -448,12 +534,26 @@ export function normalizePublicAssistantAnswer(value: unknown): PublicAssistantA
 export function normalizePublicAssistantSessionHistory(value: unknown): PublicAssistantSessionHistory | null {
   if (!isRecord(value)) return null
   const session = normalizePublicAssistantSessionSummary(value.session)
-  if (!session || !Array.isArray(value.turns)) return null
+  if (!session?.activeBranchId || !Array.isArray(value.turns) || !Array.isArray(value.branches)) return null
   const turns = value.turns
     .map((turn) => normalizePublicAssistantSessionTurn(turn))
-    .filter((turn): turn is PublicAssistantSessionTurn => turn !== null)
-    .slice(0, 100)
-  return { session, turns, truncated: value.truncated === true }
+  if (turns.some((turn) => turn === null) || turns.length > 100) return null
+  const normalizedTurns = turns as PublicAssistantSessionTurn[]
+  if (new Set(normalizedTurns.map((turn) => turn.id)).size !== normalizedTurns.length) return null
+  const branches = value.branches.map((branch) => normalizePublicAssistantBranchSummary(branch))
+  if (branches.some((branch) => branch === null) || branches.length > 24) return null
+  const normalizedBranches = branches as PublicAssistantBranchSummary[]
+  if (new Set(normalizedBranches.map((branch) => branch.id)).size !== normalizedBranches.length) return null
+  if (!normalizedBranches.some((branch) => branch.id === session.activeBranchId)) return null
+  return {
+    session: { ...session, activeBranchId: session.activeBranchId },
+    branches: normalizedBranches,
+    turns: normalizedTurns,
+    hasEarlierTurns: value.hasEarlierTurns === true,
+    revisionsTruncated: value.revisionsTruncated === true,
+    branchesTruncated: value.branchesTruncated === true,
+    truncated: value.truncated === true,
+  }
 }
 
 function normalizePublicAssistantSessionSummary(value: unknown): PublicAssistantSessionSummary | null {
@@ -466,8 +566,10 @@ function normalizePublicAssistantSessionSummary(value: unknown): PublicAssistant
   if (!id || !title || !createdAt || !lastActiveAt || !expiresAt) return null
   return {
     id,
+    activeBranchId: readIdentifier(value.activeBranchId),
     title,
     turnCount: readFiniteNumber(value.turnCount, 0),
+    hasEarlierTurns: value.hasEarlierTurns === true,
     createdAt,
     lastActiveAt,
     expiresAt,
@@ -479,16 +581,90 @@ function normalizePublicAssistantSessionTurn(value: unknown): PublicAssistantSes
   const id = readIdentifier(value.id)
   const question = readMultilineString(value.question, 500)
   const createdAt = readIsoDate(value.createdAt)
-  const answer = normalizePublicAssistantAnswer(value)
-  if (!id || !question || !createdAt || !answer) return null
+  const parentRevisionId = value.parentRevisionId === null ? null : (readIdentifier(value.parentRevisionId) ?? null)
+  const selectedRevisionId = readIdentifier(value.selectedRevisionId)
+  if (!id || !question || !createdAt || !selectedRevisionId || !Array.isArray(value.revisions)) return null
+  if (value.parentRevisionId !== null && !parentRevisionId) return null
+  const revisions = value.revisions.map((revision) => normalizePublicAssistantAnswerRevision(revision))
+  if (revisions.some((revision) => revision === null) || revisions.length === 0 || revisions.length > 8) return null
+  const normalizedRevisions = revisions as PublicAssistantAnswerRevision[]
+  if (new Set(normalizedRevisions.map((revision) => revision.id)).size !== normalizedRevisions.length) return null
+  if (new Set(normalizedRevisions.map((revision) => revision.revisionNo)).size !== normalizedRevisions.length) return null
+  if (!normalizedRevisions.some((revision) => revision.id === selectedRevisionId)) return null
   return {
-    ...answer,
     id,
     question,
     mode: readMode(value.mode),
-    route: readRoute(value.route) ?? answer.meta.research?.route ?? 'direct',
+    parentRevisionId,
+    selectedRevisionId,
+    revisions: normalizedRevisions,
+    createdAt,
+  }
+}
+
+function normalizePublicAssistantAnswerRevision(value: unknown): PublicAssistantAnswerRevision | null {
+  if (!isRecord(value)) return null
+  const id = readIdentifier(value.id)
+  const revisionNo = readPositiveCount(value.revisionNo)
+  const basedOnRevisionId = value.basedOnRevisionId === null ? null : (readIdentifier(value.basedOnRevisionId) ?? null)
+  const answer = normalizePublicAssistantAnswer(value)
+  const route = readRoute(value.route) ?? answer?.meta.research?.route ?? null
+  const createdAt = readIsoDate(value.createdAt)
+  if (!id || !revisionNo || !answer || !route || !createdAt) return null
+  if (value.basedOnRevisionId !== null && !basedOnRevisionId) return null
+  return {
+    id,
+    revisionNo,
+    basedOnRevisionId,
+    answer: answer.answer,
+    status: answer.status,
+    claims: answer.claims,
+    citations: answer.citations,
+    suggestions: answer.suggestions,
+    route,
+    meta: answer.meta,
     createdAt,
     feedback: value.feedback === 'up' || value.feedback === 'down' ? value.feedback : null,
+  }
+}
+
+function normalizePublicAssistantBranchSummary(value: unknown): PublicAssistantBranchSummary | null {
+  if (!isRecord(value)) return null
+  const id = readIdentifier(value.id)
+  const ordinal = readPositiveCount(value.ordinal)
+  const headRevisionId = readIdentifier(value.headRevisionId)
+  const preview = readString(value.preview, 64)
+  const lastActiveAt = readIsoDate(value.lastActiveAt)
+  if (!id || !ordinal || !headRevisionId || !preview || !lastActiveAt) return null
+  return {
+    id,
+    ordinal,
+    headRevisionId,
+    preview,
+    turnCount: readFiniteNumber(value.turnCount, 0),
+    hasEarlierTurns: value.hasEarlierTurns === true,
+    lastActiveAt,
+  }
+}
+
+function normalizeConversationIdentity(value: unknown): PublicAssistantConversationIdentity | null {
+  if (!isRecord(value)) return null
+  const branchId = readIdentifier(value.branchId)
+  const turnId = readIdentifier(value.turnId)
+  const revisionId = readIdentifier(value.revisionId)
+  const branchOrdinal = readPositiveCount(value.branchOrdinal)
+  const revisionNo = readPositiveCount(value.revisionNo)
+  const basedOnRevisionId = value.basedOnRevisionId === null ? null : (readIdentifier(value.basedOnRevisionId) ?? null)
+  if (!branchId || !turnId || !revisionId || !branchOrdinal || !revisionNo) return null
+  if (value.basedOnRevisionId !== null && !basedOnRevisionId) return null
+  return {
+    branchId,
+    branchOrdinal,
+    turnId,
+    revisionId,
+    revisionNo,
+    basedOnRevisionId,
+    activated: value.activated !== false,
   }
 }
 
@@ -605,6 +781,11 @@ function readMultilineString(value: unknown, maxLength: number) {
 
 function readFiniteNumber(value: unknown, fallback: number) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : fallback
+}
+
+function readPositiveCount(value: unknown) {
+  const count = readFiniteNumber(value, 0)
+  return count > 0 ? count : null
 }
 
 async function fetchPublicAssistant(input: RequestInfo | URL, init: RequestInit) {

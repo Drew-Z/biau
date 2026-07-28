@@ -34,8 +34,9 @@ export function toPublicAssistantHttpResponse(response: ChatResponse) {
   const requestId = normalizeRequestId(response.requestId)
   const sessionId = normalizeIdentifier(response.sessionId)
   const messageId = normalizeIdentifier(response.messageId)
+  const conversation = normalizeConversationIdentity(response.conversation)
   const answer = normalizeMultiline(response.answer, 4_000)
-  if (containsSecretShape(answer)) return buildBlockedHttpResponse({ requestId, sessionId, messageId })
+  if (containsSecretShape(answer)) return buildBlockedHttpResponse({ requestId, sessionId, messageId, conversation })
   const snapshot = buildPublicAssistantDisplaySnapshot(response)
   return {
     ...(requestId ? { requestId } : {}),
@@ -46,6 +47,7 @@ export function toPublicAssistantHttpResponse(response: ChatResponse) {
     suggestions: snapshot.suggestions,
     ...(sessionId ? { sessionId } : {}),
     ...(messageId ? { messageId } : {}),
+    ...(conversation ? { contractVersion: 2 as const, conversation } : {}),
     meta: snapshot.meta,
   }
 }
@@ -58,7 +60,8 @@ export function readPublicAssistantHttpResponse(value: unknown) {
   if (!answer || !status || !requestId) return null
   const sessionId = normalizeIdentifier(value.sessionId)
   const messageId = normalizeIdentifier(value.messageId)
-  if (containsSecretShape(answer)) return buildBlockedHttpResponse({ requestId, sessionId, messageId })
+  const conversation = normalizeConversationIdentity(value.conversation)
+  if (containsSecretShape(answer)) return buildBlockedHttpResponse({ requestId, sessionId, messageId, conversation })
   const snapshot = readPublicAssistantDisplaySnapshot({
     version: 1,
     claims: value.claims,
@@ -76,11 +79,17 @@ export function readPublicAssistantHttpResponse(value: unknown) {
     suggestions: snapshot.suggestions,
     ...(sessionId ? { sessionId } : {}),
     ...(messageId ? { messageId } : {}),
+    ...(conversation ? { contractVersion: 2 as const, conversation } : {}),
     meta: snapshot.meta,
   }
 }
 
-function buildBlockedHttpResponse(input: { requestId: string; sessionId: string; messageId: string }) {
+function buildBlockedHttpResponse(input: {
+  requestId: string
+  sessionId: string
+  messageId: string
+  conversation?: ChatResponse['conversation'] | null
+}) {
   return {
     ...(input.requestId ? { requestId: input.requestId } : {}),
     answer: '检测到回答中可能包含敏感信息，本次内容已安全拦截。',
@@ -90,11 +99,33 @@ function buildBlockedHttpResponse(input: { requestId: string; sessionId: string;
     suggestions: [],
     ...(input.sessionId ? { sessionId: input.sessionId } : {}),
     ...(input.messageId ? { messageId: input.messageId } : {}),
+    ...(input.conversation ? { contractVersion: 2 as const, conversation: input.conversation } : {}),
     meta: {
       mode: 'fallback' as const,
       reason: 'sensitive-content-blocked',
       citationCount: 0,
     },
+  }
+}
+
+function normalizeConversationIdentity(value: unknown): ChatResponse['conversation'] | null {
+  if (!isRecord(value)) return null
+  const branchId = normalizeIdentifier(value.branchId)
+  const turnId = normalizeIdentifier(value.turnId)
+  const revisionId = normalizeIdentifier(value.revisionId)
+  const basedOnRevisionId = value.basedOnRevisionId === null ? null : normalizeIdentifier(value.basedOnRevisionId)
+  const branchOrdinal = normalizePositiveCount(value.branchOrdinal)
+  const revisionNo = normalizePositiveCount(value.revisionNo)
+  if (!branchId || !turnId || !revisionId || !branchOrdinal || !revisionNo) return null
+  if (value.basedOnRevisionId !== null && !basedOnRevisionId) return null
+  return {
+    branchId,
+    branchOrdinal,
+    turnId,
+    revisionId,
+    revisionNo,
+    basedOnRevisionId,
+    activated: value.activated !== false,
   }
 }
 
@@ -274,6 +305,11 @@ function normalizeMultiline(value: unknown, maxLength: number) {
 
 function normalizeCount(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0
+}
+
+function normalizePositiveCount(value: unknown) {
+  const count = normalizeCount(value)
+  return count > 0 ? count : 0
 }
 
 function containsSecretShape(value: string) {

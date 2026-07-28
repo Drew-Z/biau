@@ -18,7 +18,7 @@ Required order:
 4. Run `apply.sql` only after explicit approval.
 5. Run `verify.sql`, then check Public, Studio, and RAG health endpoints.
 
-The scripts use an exact 25-table allowlist and fail when the `public` schema
+The scripts use an exact reviewed allowlist (currently 28 tables) and fail when the `public` schema
 contains a missing or unexpected application table. They do not modify data or
 create permissive RLS policies.
 

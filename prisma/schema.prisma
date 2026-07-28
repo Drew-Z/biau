@@ -7,63 +7,127 @@ datasource db {
 }
 
 model PublicAssistantSession {
-  id           String                    @id
-  createdAt    DateTime                  @default(now())
-  lastActiveAt DateTime                  @default(now())
-  expiresAt    DateTime
-  turns        PublicAssistantTurn[]
-  feedback     PublicAssistantFeedback[]
+  id                     String                    @id
+  activeBranchId         String?                   @unique
+  branchSelectionVersion Int                       @default(0)
+  createdAt              DateTime                  @default(now())
+  lastActiveAt           DateTime                  @default(now())
+  expiresAt              DateTime
+  activeBranch           PublicAssistantBranch?    @relation("PublicAssistantActiveBranch", fields: [activeBranchId], references: [id], onDelete: SetNull)
+  branches               PublicAssistantBranch[]   @relation("PublicAssistantSessionBranches")
+  turns                  PublicAssistantTurn[]
+  feedback               PublicAssistantFeedback[]
 
   @@index([expiresAt])
   @@index([lastActiveAt])
 }
 
 model PublicAssistantRequest {
-  requestId      String                       @id
-  sessionId      String
-  requestHash    String
-  status         PublicAssistantRequestStatus
-  attempt        Int                          @default(1)
-  leaseToken     String
-  leaseExpiresAt DateTime
-  turnId         String?                      @unique
-  responseJson   Json?
-  errorCode      String?
-  createdAt      DateTime                     @default(now())
-  updatedAt      DateTime                     @updatedAt
-  expiresAt      DateTime
-  turn           PublicAssistantTurn?         @relation(fields: [turnId], references: [id], onDelete: SetNull)
+  requestId                     String                          @id
+  sessionId                     String
+  requestHash                   String
+  intent                        PublicAssistantGenerationIntent @default(new_turn)
+  status                        PublicAssistantRequestStatus
+  attempt                       Int                             @default(1)
+  leaseToken                    String
+  leaseExpiresAt                DateTime
+  claimedBranchSelectionVersion Int                             @default(0)
+  turnId                        String?
+  revisionId                    String?                         @unique
+  branchId                      String?
+  parentRevisionId              String?
+  baseRevisionId                String?
+  responseJson                  Json?
+  errorCode                     String?
+  createdAt                     DateTime                        @default(now())
+  updatedAt                     DateTime                        @updatedAt
+  expiresAt                     DateTime
+  turn                          PublicAssistantTurn?            @relation(fields: [turnId], references: [id], onDelete: SetNull)
+  revision                      PublicAssistantAnswerRevision?  @relation("PublicAssistantRequestRevision", fields: [revisionId], references: [id], onDelete: SetNull)
+  branch                        PublicAssistantBranch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  parentRevision                PublicAssistantAnswerRevision?  @relation("PublicAssistantRequestParentRevision", fields: [parentRevisionId], references: [id], onDelete: SetNull)
+  baseRevision                  PublicAssistantAnswerRevision?  @relation("PublicAssistantRequestBaseRevision", fields: [baseRevisionId], references: [id], onDelete: SetNull)
 
   @@index([status, leaseExpiresAt])
   @@index([sessionId, createdAt])
+  @@index([turnId, createdAt])
+  @@index([branchId, createdAt])
   @@index([expiresAt])
 }
 
 model PublicAssistantTurn {
-  id                  String                        @id @default(cuid())
+  id                  String                          @id @default(cuid())
   sessionId           String
-  aggregateId         String
+  parentRevisionId    String?
   question            String
-  answer              String
   mode                String
+  questionFingerprint String
+  topicFingerprint    String
+  topicTerms          String
+  createdAt           DateTime                        @default(now())
+  expiresAt           DateTime
+  session             PublicAssistantSession          @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  parentRevision      PublicAssistantAnswerRevision?  @relation("PublicAssistantTurnParentRevision", fields: [parentRevisionId], references: [id], onDelete: SetNull)
+  revisions           PublicAssistantAnswerRevision[] @relation("PublicAssistantTurnRevisions")
+  requests            PublicAssistantRequest[]
+
+  @@index([sessionId, createdAt])
+  @@index([topicFingerprint, createdAt])
+  @@index([parentRevisionId])
+  @@index([expiresAt])
+}
+
+model PublicAssistantAnswerRevision {
+  id                  String                          @id @default(cuid())
+  turnId              String
+  aggregateId         String
+  revisionNo          Int
+  basedOnRevisionId   String?
+  answer              String
   route               String
   status              String
   citationIdsJson     Json
   metricsJson         Json?
   displaySnapshotJson Json?
-  questionFingerprint String
-  topicFingerprint    String
-  topicTerms          String
-  createdAt           DateTime                      @default(now())
+  createdAt           DateTime                        @default(now())
   expiresAt           DateTime
-  session             PublicAssistantSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  aggregate           PublicAssistantDailyAggregate @relation(fields: [aggregateId], references: [id], onDelete: Restrict)
+  turn                PublicAssistantTurn             @relation("PublicAssistantTurnRevisions", fields: [turnId], references: [id], onDelete: Cascade)
+  aggregate           PublicAssistantDailyAggregate   @relation(fields: [aggregateId], references: [id], onDelete: Restrict)
+  basedOnRevision     PublicAssistantAnswerRevision?  @relation("PublicAssistantRevisionLineage", fields: [basedOnRevisionId], references: [id], onDelete: SetNull)
+  derivedRevisions    PublicAssistantAnswerRevision[] @relation("PublicAssistantRevisionLineage")
+  childTurns          PublicAssistantTurn[]           @relation("PublicAssistantTurnParentRevision")
+  request             PublicAssistantRequest?         @relation("PublicAssistantRequestRevision")
+  parentRequestClaims PublicAssistantRequest[]        @relation("PublicAssistantRequestParentRevision")
+  baseRequestClaims   PublicAssistantRequest[]        @relation("PublicAssistantRequestBaseRevision")
+  headBranches        PublicAssistantBranch[]         @relation("PublicAssistantBranchHead")
+  forkedBranches      PublicAssistantBranch[]         @relation("PublicAssistantBranchOrigin")
   feedback            PublicAssistantFeedback?
-  request             PublicAssistantRequest?
 
-  @@index([sessionId, createdAt])
+  @@unique([turnId, revisionNo])
+  @@index([turnId, createdAt])
+  @@index([basedOnRevisionId])
   @@index([status, createdAt])
-  @@index([topicFingerprint, createdAt])
+  @@index([expiresAt])
+}
+
+model PublicAssistantBranch {
+  id                   String                         @id @default(cuid())
+  sessionId            String
+  ordinal              Int
+  headRevisionId       String?
+  forkedFromRevisionId String?
+  createdAt            DateTime                       @default(now())
+  lastActiveAt         DateTime                       @default(now())
+  expiresAt            DateTime
+  session              PublicAssistantSession         @relation("PublicAssistantSessionBranches", fields: [sessionId], references: [id], onDelete: Cascade)
+  activeForSession     PublicAssistantSession?        @relation("PublicAssistantActiveBranch")
+  headRevision         PublicAssistantAnswerRevision? @relation("PublicAssistantBranchHead", fields: [headRevisionId], references: [id], onDelete: SetNull)
+  forkedFromRevision   PublicAssistantAnswerRevision? @relation("PublicAssistantBranchOrigin", fields: [forkedFromRevisionId], references: [id], onDelete: SetNull)
+  requests             PublicAssistantRequest[]
+
+  @@unique([sessionId, ordinal])
+  @@index([sessionId, lastActiveAt])
+  @@index([headRevisionId])
   @@index([expiresAt])
 }
 
@@ -75,38 +139,43 @@ enum PublicAssistantRequestStatus {
   cancelled
 }
 
+enum PublicAssistantGenerationIntent {
+  new_turn
+  answer_revision
+}
+
 model PublicAssistantFeedback {
-  id        String                 @id @default(cuid())
-  sessionId String
-  turnId    String                 @unique
-  rating    String
-  reason    String?
-  comment   String?
-  createdAt DateTime               @default(now())
-  updatedAt DateTime               @updatedAt
-  session   PublicAssistantSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  turn      PublicAssistantTurn    @relation(fields: [turnId], references: [id], onDelete: Cascade)
+  id         String                        @id @default(cuid())
+  sessionId  String
+  revisionId String                        @unique
+  rating     String
+  reason     String?
+  comment    String?
+  createdAt  DateTime                      @default(now())
+  updatedAt  DateTime                      @updatedAt
+  session    PublicAssistantSession        @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  revision   PublicAssistantAnswerRevision @relation(fields: [revisionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, createdAt])
   @@index([rating, createdAt])
 }
 
 model PublicAssistantDailyAggregate {
-  id                String                @id @default(cuid())
-  date              DateTime              @db.Date
+  id                String                          @id @default(cuid())
+  date              DateTime                        @db.Date
   topicFingerprint  String
   topicTerms        String
   route             String
   status            String
-  totalCount        Int                   @default(0)
-  positiveCount     Int                   @default(0)
-  negativeCount     Int                   @default(0)
-  siteEvidenceTotal Int                   @default(0)
-  webEvidenceTotal  Int                   @default(0)
-  latencyTotalMs    BigInt                @default(0)
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  turns             PublicAssistantTurn[]
+  totalCount        Int                             @default(0)
+  positiveCount     Int                             @default(0)
+  negativeCount     Int                             @default(0)
+  siteEvidenceTotal Int                             @default(0)
+  webEvidenceTotal  Int                             @default(0)
+  latencyTotalMs    BigInt                          @default(0)
+  createdAt         DateTime                        @default(now())
+  updatedAt         DateTime                        @updatedAt
+  revisions         PublicAssistantAnswerRevision[]
 
   @@unique([date, topicFingerprint, route, status])
   @@index([date, status])

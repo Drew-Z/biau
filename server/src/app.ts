@@ -3,7 +3,7 @@ import express from 'express'
 import { env, hasDatabase } from './env.js'
 import { safeEqualHash, sha256 } from './crypto.js'
 import { getPrisma, getStudioPrisma } from './db.js'
-import { hasConfiguredModelChannel, listSafeModelChannels } from './model.js'
+import { hasConfiguredModelChannel } from './model.js'
 import { createMetricsMiddleware, renderPrometheusMetrics } from './metrics.js'
 import {
   loadAiDailyOperationsSnapshot,
@@ -17,10 +17,12 @@ import {
   loadPublicAssistantInsights,
   loadPublicAssistantSession,
   loadPublicAssistantSessions,
+  normalizePublicAssistantBranchAction,
   normalizePublicAssistantFeedback,
   normalizePublicAssistantSessionAccess,
   normalizePublicAssistantSessionList,
   savePublicAssistantFeedback,
+  selectPublicAssistantBranch,
 } from './publicAssistantPersistence.js'
 import {
   executePublicAssistantRequest,
@@ -124,7 +126,6 @@ function buildStudioHealth() {
 }
 
 function buildAssistantHealth(serviceMode: AssistantServiceMode) {
-  const defaultModelChannel = listSafeModelChannels()[0]
   const modelConfigured = hasConfiguredModelChannel()
   return {
     ok: true,
@@ -133,8 +134,6 @@ function buildAssistantHealth(serviceMode: AssistantServiceMode) {
     database: hasDatabase(),
     mode: modelConfigured ? 'model' : 'fallback',
     modelConfigured,
-    model: defaultModelChannel?.configured ? defaultModelChannel.model : 'fallback',
-    provider: defaultModelChannel?.configured ? defaultModelChannel.provider : 'local-public-knowledge',
     ...(serviceMode === 'public' || serviceMode === 'all' ? { webSearchConfigured: isPublicWebSearchConfigured() } : {}),
   }
 }
@@ -282,7 +281,7 @@ function registerPublicAssistantRoutes(app: express.Express) {
         res.status(503).json({ error: result.status })
         return
       }
-      if (result.status === 'turn-not-found') {
+      if (result.status === 'revision-not-found') {
         res.status(404).json({ error: result.status })
         return
       }
@@ -330,7 +329,56 @@ function registerPublicAssistantRoutes(app: express.Express) {
         res.status(404).json({ error: result.status })
         return
       }
-      res.json({ session: result.session, turns: result.turns, truncated: result.truncated })
+      if (result.status === 'history-invalid') {
+        res.status(409).json({ error: 'public-assistant-history-invalid' })
+        return
+      }
+      res.json(toPublicAssistantHistoryResponse(result))
+    } catch (error) {
+      next(error)
+    }
+  })
+
+  app.post('/chat/public/branch', async (req, res, next) => {
+    try {
+      res.setHeader('Cache-Control', 'no-store')
+      const input = normalizePublicAssistantBranchAction(req.body)
+      if (!input) {
+        res.status(400).json({ error: 'invalid-public-assistant-branch-action' })
+        return
+      }
+      if (!acceptPublicAssistantHistoryRequest(req, res)) return
+      const selected = await selectPublicAssistantBranch(input)
+      if (selected.status === 'database-not-configured') {
+        res.status(503).json({ error: selected.status })
+        return
+      }
+      if (
+        selected.status === 'session-not-found'
+        || selected.status === 'branch-not-found'
+        || selected.status === 'revision-not-found'
+      ) {
+        res.status(404).json({ error: selected.status })
+        return
+      }
+      if (selected.status === 'branch-limit') {
+        res.status(409).json({ error: 'public-assistant-branch-limit' })
+        return
+      }
+      const history = await loadPublicAssistantSession(input.sessionId)
+      if (history.status === 'database-not-configured') {
+        res.status(503).json({ error: history.status })
+        return
+      }
+      if (history.status === 'session-not-found') {
+        res.status(404).json({ error: history.status })
+        return
+      }
+      if (history.status === 'history-invalid') {
+        res.status(409).json({ error: 'public-assistant-history-invalid' })
+        return
+      }
+      res.json(toPublicAssistantHistoryResponse(history))
     } catch (error) {
       next(error)
     }
@@ -409,6 +457,20 @@ function acceptPublicAssistantHistoryRequest(req: express.Request, res: express.
 function writePublicAssistantSse(res: express.Response, event: string, payload: unknown) {
   if (res.writableEnded || res.destroyed) return
   res.write(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
+}
+
+function toPublicAssistantHistoryResponse(
+  result: Extract<Awaited<ReturnType<typeof loadPublicAssistantSession>>, { status: 'loaded' }>,
+) {
+  return {
+    session: result.session,
+    branches: result.branches,
+    turns: result.turns,
+    hasEarlierTurns: result.hasEarlierTurns,
+    revisionsTruncated: result.revisionsTruncated,
+    branchesTruncated: result.branchesTruncated,
+    truncated: result.truncated,
+  }
 }
 
 function normalizePublicAssistantCancellation(value: unknown) {

@@ -71,7 +71,7 @@ export async function executePublicAssistantRequest(
   options.signal.throwIfAborted()
   const claim = await dependencies.claimRequest(request)
 
-  if (claim.status === 'completed') return claim.response
+  if (claim.status === 'completed') return { ...claim.response, replayed: true as const }
   if (claim.status === 'conflict') {
     throw new PublicAssistantExecutionError('idempotency-key-reused', {
       status: 409,
@@ -91,9 +91,16 @@ export async function executePublicAssistantRequest(
       requestId: request.requestId,
     })
   }
+  if (claim.status === 'rejected') {
+    throw new PublicAssistantExecutionError(claim.errorCode, {
+      status: claim.httpStatus,
+      requestId: request.requestId,
+    })
+  }
 
   options.onExecutionStart?.()
-  const agentRequest = { ...request, signal: options.signal, onProgress: options.onProgress }
+  const authoritativeRequest = claim.status === 'acquired' ? claim.request : request
+  const agentRequest = { ...authoritativeRequest, signal: options.signal, onProgress: options.onProgress }
 
   if (claim.status === 'database-not-configured') {
     const response = await dependencies.runAgent(agentRequest)
@@ -111,8 +118,14 @@ export async function executePublicAssistantRequest(
     const response = await dependencies.runAgent(agentRequest)
     options.signal.throwIfAborted()
     options.onProgress?.({ stage: 'saving' })
-    const completed = await dependencies.completeRequest(request, response, claim.lease)
+    const completed = await dependencies.completeRequest(authoritativeRequest, response, claim.lease)
     if (completed.status === 'completed') return completed.response
+    if (completed.status === 'rejected') {
+      throw new PublicAssistantExecutionError(completed.errorCode, {
+        status: completed.httpStatus,
+        requestId: request.requestId,
+      })
+    }
     throw new PublicAssistantExecutionError('public-assistant-request-lease-lost', {
       status: 409,
       requestId: request.requestId,
@@ -120,8 +133,9 @@ export async function executePublicAssistantRequest(
     })
   } catch (error) {
     const aborted = isAbortError(error) || options.signal.aborted
+    const terminal = error instanceof PublicAssistantExecutionError && error.status >= 400 && error.status < 500
     await dependencies.markFailed(claim.lease, {
-      status: 'retryable_failed',
+      status: terminal ? 'failed' : 'retryable_failed',
       errorCode: aborted ? 'public-assistant-request-aborted' : 'public-assistant-generation-failed',
     }).catch(() => false)
     if (aborted) throw error

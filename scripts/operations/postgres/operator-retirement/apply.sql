@@ -68,7 +68,8 @@ BEGIN
   SELECT count(*)
   INTO missing_public
   FROM unnest(ARRAY[
-    'PublicAssistantSession', 'PublicAssistantTurn',
+    'PublicAssistantSession', 'PublicAssistantRequest', 'PublicAssistantTurn',
+    'PublicAssistantAnswerRevision', 'PublicAssistantBranch',
     'PublicAssistantFeedback', 'PublicAssistantDailyAggregate'
   ]) AS protected(name)
   WHERE to_regclass(format('%I.%I', current_schema(), name)) IS NULL;
@@ -146,7 +147,10 @@ DROP TYPE
 DO $$
 BEGIN
   IF to_regclass(format('%I.%I', current_schema(), 'PublicAssistantSession')) IS NULL
+     OR to_regclass(format('%I.%I', current_schema(), 'PublicAssistantRequest')) IS NULL
      OR to_regclass(format('%I.%I', current_schema(), 'PublicAssistantTurn')) IS NULL
+     OR to_regclass(format('%I.%I', current_schema(), 'PublicAssistantAnswerRevision')) IS NULL
+     OR to_regclass(format('%I.%I', current_schema(), 'PublicAssistantBranch')) IS NULL
      OR to_regclass(format('%I.%I', current_schema(), 'PublicAssistantFeedback')) IS NULL
      OR to_regclass(format('%I.%I', current_schema(), 'PublicAssistantDailyAggregate')) IS NULL THEN
     RAISE EXCEPTION 'Public assistant protection tables changed during retirement';

@@ -39,13 +39,15 @@ DECLARE
     'AiDailyFlashItem', 'AiDailyFlashRevision', 'AiDailyApprovalAction',
     'AiDailyEvidenceDocument', 'AiDailyGenerationCheckpoint',
     'AiDailyEditorialOverride',
-    'PublicAssistantSession', 'PublicAssistantTurn',
+    'PublicAssistantSession', 'PublicAssistantRequest', 'PublicAssistantTurn',
+    'PublicAssistantAnswerRevision', 'PublicAssistantBranch',
     'PublicAssistantFeedback', 'PublicAssistantDailyAggregate'
   ];
   actual_tables text[];
   missing_tables text[];
   unexpected_tables text[];
   non_owner_tables text[];
+  invalid_public_assistant_triggers text[];
 BEGIN
   SELECT array_agg(c.relname ORDER BY c.relname)
   INTO actual_tables
@@ -81,6 +83,37 @@ BEGIN
 
   IF non_owner_tables IS NOT NULL THEN
     RAISE EXCEPTION 'Current database user does not own reviewed tables: %', non_owner_tables;
+  END IF;
+
+  WITH expected(table_name, trigger_name, function_name) AS (
+    VALUES
+      ('PublicAssistantAnswerRevision', 'PublicAssistantAnswerRevision_immutable', 'public_assistant_reject_revision_update'),
+      ('PublicAssistantSession', 'PublicAssistantSession_graph_ownership', 'public_assistant_validate_graph_ownership'),
+      ('PublicAssistantBranch', 'PublicAssistantBranch_graph_ownership', 'public_assistant_validate_graph_ownership'),
+      ('PublicAssistantTurn', 'PublicAssistantTurn_graph_ownership', 'public_assistant_validate_graph_ownership'),
+      ('PublicAssistantAnswerRevision', 'PublicAssistantAnswerRevision_graph_ownership', 'public_assistant_validate_graph_ownership'),
+      ('PublicAssistantRequest', 'PublicAssistantRequest_graph_ownership', 'public_assistant_validate_graph_ownership'),
+      ('PublicAssistantFeedback', 'PublicAssistantFeedback_graph_ownership', 'public_assistant_validate_graph_ownership')
+  )
+  SELECT array_agg(format('%s.%s', expected.table_name, expected.trigger_name) ORDER BY expected.table_name, expected.trigger_name)
+  INTO invalid_public_assistant_triggers
+  FROM expected
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM pg_trigger trg
+    JOIN pg_class tbl ON tbl.oid = trg.tgrelid
+    JOIN pg_namespace ns ON ns.oid = tbl.relnamespace
+    JOIN pg_proc proc ON proc.oid = trg.tgfoid
+    WHERE ns.nspname = current_schema()
+      AND tbl.relname = expected.table_name
+      AND trg.tgname = expected.trigger_name
+      AND proc.proname = expected.function_name
+      AND NOT trg.tgisinternal
+      AND trg.tgenabled <> 'D'
+  );
+
+  IF invalid_public_assistant_triggers IS NOT NULL THEN
+    RAISE EXCEPTION 'Public assistant protection triggers are missing, disabled, or misbound: %', invalid_public_assistant_triggers;
   END IF;
 
   IF NOT (SELECT rolbypassrls FROM pg_roles WHERE rolname = current_user) THEN

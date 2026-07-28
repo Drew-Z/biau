@@ -68,7 +68,8 @@ BEGIN
   SELECT array_agg(name ORDER BY name)
   INTO missing_public_tables
   FROM unnest(ARRAY[
-    'PublicAssistantSession', 'PublicAssistantTurn',
+    'PublicAssistantSession', 'PublicAssistantRequest', 'PublicAssistantTurn',
+    'PublicAssistantAnswerRevision', 'PublicAssistantBranch',
     'PublicAssistantFeedback', 'PublicAssistantDailyAggregate'
   ]) AS protected(name)
   WHERE to_regclass(format('%I.%I', current_schema(), name)) IS NULL;
@@ -85,7 +86,8 @@ SELECT format(
   name
 )
 FROM unnest(ARRAY[
-  'PublicAssistantSession', 'PublicAssistantTurn',
+  'PublicAssistantSession', 'PublicAssistantRequest', 'PublicAssistantTurn',
+  'PublicAssistantAnswerRevision', 'PublicAssistantBranch',
   'PublicAssistantFeedback', 'PublicAssistantDailyAggregate'
 ]) AS protected(name)
 \gexec

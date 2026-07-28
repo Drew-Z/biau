@@ -4867,7 +4867,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   max-height: calc(100dvh - 104px);
   padding: var(--space-16);
   display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
   gap: var(--space-10, 10px);
   overflow: hidden;
 }
@@ -4883,6 +4883,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 }
 
 .public-assistant.is-fullscreen .public-assistant__hint,
+.public-assistant.is-fullscreen .public-assistant__branch-picker,
 .public-assistant.is-fullscreen .public-assistant__modes,
 .public-assistant.is-fullscreen .public-assistant__messages,
 .public-assistant.is-fullscreen .public-assistant__suggestions,
@@ -5038,6 +5039,50 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   line-height: 1.68;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.public-assistant__branch-picker {
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 var(--space-10, 10px);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--muted);
+  background: color-mix(in oklch, var(--panel-strong) 48%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+}
+
+.public-assistant__branch-picker select {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 28px 0 0;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  font: 700 12px/1.2 var(--font-ui);
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.public-assistant__branch-picker select:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.public-assistant__branch-disclosure {
+  grid-column: 1 / -1;
+  padding: 0 0 var(--space-8, 8px) 23px;
+  display: grid;
+  gap: 2px;
+  color: color-mix(in oklch, var(--amber) 76%, var(--ink));
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .public-assistant-markdown {
@@ -5499,6 +5544,28 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   line-height: 1.4;
 }
 
+.public-assistant__citation .public-assistant__citation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.public-assistant__citation-meta > * {
+  min-width: 0;
+}
+
+.public-assistant__citation-meta .is-verified {
+  color: color-mix(in oklch, var(--green) 76%, var(--ink));
+}
+
+.public-assistant__citation-meta .is-partial {
+  color: color-mix(in oklch, var(--amber) 78%, var(--ink));
+}
+
 .public-assistant__citation > svg {
   position: absolute;
   top: 11px;
@@ -5601,6 +5668,69 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__message-actions > span {
   color: color-mix(in oklch, var(--rose) 72%, var(--ink));
   font-size: 11px;
+}
+
+.public-assistant__revision-toolbar {
+  min-width: 0;
+  margin-top: var(--space-10, 10px);
+  padding-top: var(--space-8);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  border-top: 1px solid var(--flow-ui-card-border);
+}
+
+.public-assistant__revision-nav {
+  width: 104px;
+  min-width: 104px;
+  height: 32px;
+  display: grid;
+  grid-template-columns: 32px 40px 32px;
+  align-items: center;
+}
+
+.public-assistant__revision-nav span {
+  color: var(--muted);
+  font: 700 11px/1 var(--font-mono);
+  text-align: center;
+}
+
+.public-assistant__revision-toolbar button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.public-assistant__revision-nav button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+
+.public-assistant__continue-version {
+  max-width: 100%;
+  padding: 0 var(--space-10, 10px);
+  font: 700 11px/1 var(--font-ui);
+}
+
+.public-assistant__revision-toolbar button:hover {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--green) 10%, var(--panel-strong));
+  border-color: color-mix(in oklch, var(--green) 24%, var(--flow-ui-card-border));
+}
+
+.public-assistant__revision-toolbar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .public-assistant__feedback-reasons {
@@ -5740,7 +5870,9 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__close:focus-visible,
 .public-assistant__header-actions button:focus-visible,
 .public-assistant__history button:focus-visible,
+.public-assistant__branch-picker select:focus-visible,
 .public-assistant__modes button:focus-visible,
+.public-assistant__revision-toolbar button:focus-visible,
 .public-assistant__message-actions button:focus-visible,
 .public-assistant__feedback-reasons button:focus-visible,
 .public-assistant-markdown__code-header button:focus-visible,
@@ -7010,6 +7142,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   }
 
   .public-assistant__message-actions button,
+  .public-assistant__revision-toolbar button,
   .public-assistant__modes button {
     min-height: 44px;
   }
@@ -7018,6 +7151,27 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     width: 44px;
     height: 44px;
     min-width: 44px;
+  }
+
+  .public-assistant__revision-nav {
+    width: 128px;
+    min-width: 128px;
+    height: 44px;
+    grid-template-columns: 44px 40px 44px;
+  }
+
+  .public-assistant__revision-nav button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .public-assistant__continue-version {
+    min-height: 44px;
+  }
+
+  .public-assistant__branch-picker,
+  .public-assistant__branch-picker select {
+    min-height: 44px;
   }
 
   .public-assistant__feedback-reasons button {

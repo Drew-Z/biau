@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph'
 import { env } from './env.js'
 import { createPublicAssistantModel } from './publicAssistantModel.js'
@@ -80,16 +80,20 @@ export async function runPublicAssistantAgent(
 }
 
 export function normalizePublicAssistantPayload(payload: ChatPayload): PublicAssistantRequest | null {
-  const requestId = readRequestId(payload.requestId)
   const question = boundedText(payload.message, 500)
-  if (!requestId || !question) return null
+  const contractVersion = payload.contractVersion === 2 ? 2 : 1
+  const requestId = readRequestId(payload.requestId) || (contractVersion === 1 ? randomUUID() : '')
+  const intent = normalizeGenerationIntent(payload.intent, contractVersion)
+  if (!requestId || !question || !intent) return null
   return {
+    contractVersion,
     requestId,
     question,
     mode: readMode(payload.mode),
     sessionId: readSessionId(payload.sessionId) || `request-${requestId}`,
     pageContext: normalizePageContext(payload.pageContext),
     history: normalizeHistory(payload.history),
+    intent,
   }
 }
 
@@ -481,6 +485,34 @@ function readRequestId(value: unknown) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u.test(normalized)
     ? normalized
     : ''
+}
+
+function normalizeGenerationIntent(value: unknown, contractVersion: 1 | 2) {
+  if (contractVersion === 1) {
+    return { kind: 'new-turn', branchId: null, parentRevisionId: null } as const
+  }
+  if (!isRecord(value)) return null
+  if (value.kind === 'new-turn') {
+    const branchId = readConversationIdentifier(value.branchId)
+    const parentRevisionId = readConversationIdentifier(value.parentRevisionId)
+    if (Boolean(branchId) !== Boolean(parentRevisionId)) return null
+    return { kind: 'new-turn', branchId: branchId || null, parentRevisionId: parentRevisionId || null } as const
+  }
+  if (value.kind === 'answer-revision') {
+    const branchId = readConversationIdentifier(value.branchId)
+    const turnId = readConversationIdentifier(value.turnId)
+    const baseRevisionId = readConversationIdentifier(value.baseRevisionId)
+    return branchId && turnId && baseRevisionId
+      ? { kind: 'answer-revision', branchId, turnId, baseRevisionId } as const
+      : null
+  }
+  return null
+}
+
+function readConversationIdentifier(value: unknown) {
+  if (typeof value !== 'string') return ''
+  const normalized = value.trim()
+  return /^[a-zA-Z0-9:_-]{1,100}$/u.test(normalized) ? normalized : ''
 }
 
 function isCredentialSeekingRequest(value: string) {

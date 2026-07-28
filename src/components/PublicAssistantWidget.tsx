@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import {
   ArrowDown,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Copy,
   ExternalLink,
   Globe2,
+  GitBranch,
   History,
   LoaderCircle,
   Maximize2,
@@ -38,6 +41,7 @@ import {
   cancelPublicAssistantGeneration,
   deletePublicAssistantSession,
   requestPublicAssistant,
+  requestPublicAssistantBranch,
   requestPublicAssistantHealth,
   requestPublicAssistantSession,
   requestPublicAssistantSessions,
@@ -48,6 +52,7 @@ import {
   type PublicAssistantCitation,
   type PublicAssistantClaim,
   type PublicAssistantFeedbackReason,
+  type PublicAssistantGenerationIntent,
   type PublicAssistantHistoryTurn,
   type PublicAssistantMode,
   type PublicAssistantProgressStage,
@@ -55,6 +60,20 @@ import {
   type PublicAssistantSessionSummary,
   type PublicAssistantStatus,
 } from '../utils/publicAssistantApi'
+import {
+  activePublicAssistantGenerationIntent,
+  appendPendingPublicAssistantTurn,
+  buildPublicAssistantConversationHistory,
+  createEmptyPublicAssistantConversation,
+  hydratePublicAssistantConversation,
+  mergePublicAssistantAnswer,
+  removeLocalPublicAssistantAnswer,
+  retargetPendingPublicAssistantTurn,
+  selectedPublicAssistantRevision,
+  selectViewedPublicAssistantRevision,
+  updatePublicAssistantRevisionFeedback,
+  type PublicAssistantConversationState,
+} from '../utils/publicAssistantConversation'
 import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
 import {
   createPublicAssistantRequestId,
@@ -78,6 +97,10 @@ interface WidgetMessage {
   suggestions?: string[]
   sessionId?: string
   turnId?: string
+  revisionId?: string
+  revisionNo?: number
+  revisionCount?: number
+  isActiveRevision?: boolean
   prompt?: string
   requestMode?: PublicAssistantMode
   feedback?: 'up' | 'down'
@@ -88,9 +111,13 @@ interface WidgetMessage {
 
 type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
 
+type PublicAssistantBranchAction =
+  | { action: 'select'; branchId: string }
+  | { action: 'continue-from-revision'; revisionId: string }
+
 interface AssistantIssue {
   code: string
-  scope: 'chat' | 'health' | 'history'
+  scope: 'chat' | 'health' | 'history' | 'branch'
   prompt?: string
   mode?: PublicAssistantMode
   retryAfterSeconds?: number | null
@@ -99,6 +126,8 @@ interface AssistantIssue {
   sessionId?: string
   history?: PublicAssistantHistoryTurn[]
   pageContext?: PublicAssistantPageContext
+  intent?: PublicAssistantGenerationIntent
+  branchAction?: PublicAssistantBranchAction
 }
 
 interface PublicAssistantPageContext {
@@ -115,6 +144,7 @@ interface ActiveChatRequest {
   requestId: string
   history: PublicAssistantHistoryTurn[]
   pageContext: PublicAssistantPageContext
+  intent: PublicAssistantGenerationIntent
 }
 
 type NegativeFeedbackReason = Extract<
@@ -181,6 +211,7 @@ function buildLocalAnswer(question: string, mode: PublicAssistantMode, reason: s
       ? '全网研究服务暂时不可用。下面仅提供站内公开资料的降级结果。\n\n'
       : '研究服务暂时不可用。下面提供站内公开资料的降级结果。\n\n'
   return {
+    contractVersion: 1,
     answer: `${notice}${buildPublicKnowledgeFallbackAnswer(question, localCitations, {
       reason: 'request_error',
       maxLength: MAX_FALLBACK_ANSWER_LENGTH,
@@ -203,6 +234,7 @@ async function requestPublicAnswer(input: {
   mode: PublicAssistantMode
   sessionId: string
   history: PublicAssistantHistoryTurn[]
+  intent: PublicAssistantGenerationIntent
   pageContext: PublicAssistantPageContext
   preferredApiBase: string | null
   signal: AbortSignal
@@ -215,6 +247,7 @@ async function requestPublicAnswer(input: {
     message: input.question,
     mode: input.mode,
     sessionId: input.sessionId,
+    intent: input.intent,
     history: input.history,
     pageContext: input.pageContext,
     signal: input.signal,
@@ -274,13 +307,6 @@ function getLoadingLabel(mode: PublicAssistantMode, stage: PublicAssistantProgre
   return '正在判断问题并组织研究…'
 }
 
-function buildHistory(messages: WidgetMessage[]): PublicAssistantHistoryTurn[] {
-  return messages
-    .filter((message) => message.content.trim().length > 0)
-    .map((message) => ({ role: message.role, content: message.content.slice(0, 800) }))
-    .slice(-6)
-}
-
 function toAssistantIssue(
   error: unknown,
   scope: AssistantIssue['scope'],
@@ -291,6 +317,7 @@ function toAssistantIssue(
     sessionId: string
     history: PublicAssistantHistoryTurn[]
     pageContext: PublicAssistantPageContext
+    intent: PublicAssistantGenerationIntent
   },
 ): AssistantIssue {
   const transport = error instanceof PublicAssistantTransportError ? error : null
@@ -335,12 +362,21 @@ function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean) {
       : '等待时间已结束，可以重试。'
     return { title: '请求较多', detail }
   }
+  if (issue.scope === 'branch') {
+    return { title: '分支操作未完成', detail: '当前对话路径没有改变，可以重试本次操作。' }
+  }
+  if (issue.intent?.kind === 'answer-revision') {
+    return { title: '重新生成未完成', detail: '当前回答版本已保留，可以重试本次生成。' }
+  }
   if (issue.code.includes('timeout')) return { title: '本次研究超时', detail: '服务没有在限定时间内完成，可以直接重试。' }
   if (issue.code.includes('unreachable') || issue.code === 'public-assistant-endpoint-unreachable') {
     return { title: '暂时无法连接研究服务', detail: '可能正在冷启动或网络不可达，可以稍后重试。' }
   }
   if (issue.code === 'session-not-found') return { title: '会话已过期', detail: '这条匿名历史已被清理，可以新建会话继续。' }
   if (issue.code === 'public-assistant-request-cancelled') return { title: '已停止生成', detail: '问题仍保留在当前会话中，可以重新发起。' }
+  if (issue.code === 'public-assistant-history-refresh-required') {
+    return { title: '会话状态需要刷新', detail: '回答已经收到。刷新完成前不会发送下一问，以免进入错误的会话分支。' }
+  }
   if (issue.code === 'database-not-configured' || issue.code === 'public-assistant-service-unavailable') {
     return { title: '历史服务暂不可用', detail: '当前仍可提问，但暂时无法读取或保存历史。' }
   }
@@ -354,30 +390,50 @@ function formatSessionDate(value: string) {
   return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(parsed)
 }
 
-function restoreSessionMessages(history: PublicAssistantSessionHistory): WidgetMessage[] {
-  return history.turns.flatMap<WidgetMessage>((turn) => [
-    {
-      id: `history-${turn.id}-user`,
+function formatCitationDate(value: string | null) {
+  if (!value) return ''
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ''
+  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed)
+}
+
+function projectConversationMessages(
+  conversation: PublicAssistantConversationState,
+  sessionId: string,
+): WidgetMessage[] {
+  return conversation.turns.flatMap<WidgetMessage>((turn) => {
+    const revision = selectedPublicAssistantRevision(turn)
+    const user: WidgetMessage = {
+      id: `${turn.id}-user`,
       role: 'user',
       content: turn.question,
       requestMode: turn.mode,
-    },
-    {
-      id: `history-${turn.id}-assistant`,
+      requestId: turn.requestId,
+    }
+    if (!revision) return [user]
+    return [user, {
+      id: `${turn.id}-${revision.id}`,
       role: 'assistant',
-      content: turn.answer,
-      citations: turn.citations,
-      claims: turn.claims,
-      status: turn.status,
-      meta: turn.meta,
-      suggestions: turn.suggestions,
-      sessionId: history.session.id,
-      turnId: turn.id,
+      content: revision.answer,
+      citations: revision.citations,
+      claims: revision.claims,
+      status: revision.status,
+      meta: revision.meta,
+      suggestions: revision.suggestions,
+      sessionId: revision.persisted ? sessionId : undefined,
+      turnId: turn.persisted ? turn.id : undefined,
+      revisionId: revision.persisted ? revision.id : undefined,
+      revisionNo: revision.revisionNo,
+      revisionCount: turn.revisions.length,
+      isActiveRevision: revision.id === turn.activeRevisionId,
       prompt: turn.question,
       requestMode: turn.mode,
-      feedback: turn.feedback ?? undefined,
-    },
-  ])
+      feedback: revision.feedback ?? undefined,
+      feedbackPending: revision.feedbackPending,
+      feedbackError: revision.feedbackError,
+      requestId: revision.requestId,
+    }]
+  })
 }
 
 function citationKey(messageId: string, citationId: string) {
@@ -402,7 +458,8 @@ export function PublicAssistantWidget() {
   const [progressStage, setProgressStage] = useState<PublicAssistantProgressStage | null>(null)
   const [input, setInput] = useState('')
   const [mode, setMode] = useState<PublicAssistantMode>('auto')
-  const [messages, setMessages] = useState<WidgetMessage[]>([])
+  const [conversation, setConversation] = useState<PublicAssistantConversationState>(createEmptyPublicAssistantConversation)
+  const [branchActionPending, setBranchActionPending] = useState(false)
   const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE)
   const [serviceState, setServiceState] = useState<AssistantServiceState>('ready')
   const [issue, setIssue] = useState<AssistantIssue | null>(null)
@@ -420,19 +477,22 @@ export function PublicAssistantWidget() {
   const [historyTruncated, setHistoryTruncated] = useState(false)
   const [highlightedCitationKey, setHighlightedCitationKey] = useState<string | null>(null)
   const sessionId = sessionRegistry.currentSessionId
+  const messages = projectConversationMessages(conversation, sessionId)
   const rootRef = useRef<HTMLDivElement | null>(null)
   const triggerRef = useRef<HTMLButtonElement | null>(null)
   const panelRef = useRef<HTMLElement | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const historyTriggerRef = useRef<HTMLButtonElement | null>(null)
   const historyPanelRef = useRef<HTMLElement | null>(null)
   const historyCloseRef = useRef<HTMLButtonElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const collisionOffsetRef = useRef(0)
-  const messageSeq = useRef(0)
   const sessionIdRef = useRef(sessionId)
   const shouldFollowOutputRef = useRef(true)
   const activeRequestRef = useRef<ActiveChatRequest | null>(null)
+  const branchActionPendingRef = useRef(false)
+  const branchActionRequestRef = useRef<AbortController | null>(null)
   const historyRequestRef = useRef<AbortController | null>(null)
   const initialRestoreRequestRef = useRef<AbortController | null>(null)
   const initialRestoreTargetRef = useRef<string | null>(shouldRestoreInitialSession ? sessionRegistry.currentSessionId : null)
@@ -448,12 +508,7 @@ export function PublicAssistantWidget() {
   const initialRestoreRetryBlocked = isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
-  const isAssistantBusy = isLoading || isRestoringSession
-
-  const createMessageId = (role: WidgetMessage['role']) => {
-    messageSeq.current += 1
-    return `public-${role}-${messageSeq.current}`
-  }
+  const isAssistantBusy = isLoading || isRestoringSession || branchActionPending
 
   const commitSessionRegistry = (next: PublicAssistantSessionRegistry) => {
     sessionIdRef.current = next.currentSessionId
@@ -483,6 +538,13 @@ export function PublicAssistantWidget() {
     initialRestoreTargetRef.current = null
     initialRestoreRequestRef.current?.abort()
     initialRestoreRequestRef.current = null
+  }
+
+  const stopBranchAction = () => {
+    branchActionRequestRef.current?.abort()
+    branchActionRequestRef.current = null
+    branchActionPendingRef.current = false
+    setBranchActionPending(false)
   }
 
   const prepareInternalCitationNavigation = (event: React.MouseEvent<HTMLAnchorElement>) => {
@@ -526,6 +588,7 @@ export function PublicAssistantWidget() {
 
   useEffect(() => () => {
     activeRequestRef.current?.controller.abort()
+    branchActionRequestRef.current?.abort()
     historyRequestRef.current?.abort()
     initialRestoreRequestRef.current?.abort()
     healthRequestRef.current?.abort()
@@ -591,6 +654,12 @@ export function PublicAssistantWidget() {
   }, [isConversationReady, isOpen])
 
   useEffect(() => {
+    if (!isOpen || !isFullscreen || !isMobileSurfaceViewport()) return
+    const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus({ preventScroll: true }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [isFullscreen, isOpen])
+
+  useEffect(() => {
     if (!isOpen) return
     const targetSessionId = initialRestoreTargetRef.current
     if (!targetSessionId) return
@@ -605,7 +674,7 @@ export function PublicAssistantWidget() {
       .then((history) => {
         if (initialRestoreRequestRef.current !== controller || sessionIdRef.current !== targetSessionId) return
         shouldFollowOutputRef.current = true
-        setMessages(restoreSessionMessages(history))
+        setConversation(hydratePublicAssistantConversation(history))
         setMode(history.turns.at(-1)?.mode ?? 'auto')
         setHistoryTruncated(history.truncated)
         setHasNewContent(false)
@@ -622,7 +691,7 @@ export function PublicAssistantWidget() {
             ? rememberPublicAssistantSession(withoutExpired, createPublicAssistantSessionId())
             : withoutExpired
           commitSessionRegistry(nextRegistry)
-          setMessages([])
+          setConversation(createEmptyPublicAssistantConversation())
           setHistoryTruncated(false)
           setInitialRestoreState('ready')
           setInitialRestoreIssue(null)
@@ -714,7 +783,9 @@ export function PublicAssistantWidget() {
         if (error instanceof DOMException && error.name === 'AbortError') return
         if (healthRequestRef.current !== controller) return
         setServiceState('error')
-        setIssue(toAssistantIssue(error, 'health'))
+        setIssue((current) => current && current.scope !== 'health'
+          ? current
+          : toAssistantIssue(error, 'health'))
       })
       .finally(() => {
         if (healthRequestRef.current === controller) healthRequestRef.current = null
@@ -851,18 +922,20 @@ export function PublicAssistantWidget() {
       sessionId: active.sessionId,
       history: active.history,
       pageContext: active.pageContext,
+      intent: active.intent,
     })
   }
 
   const startNewConversation = () => {
     stopActiveChat()
+    stopBranchAction()
     stopInitialRestore()
     historyRequestRef.current?.abort()
     historyRequestRef.current = null
     const nextSessionId = createPublicAssistantSessionId()
     commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, nextSessionId))
     shouldFollowOutputRef.current = true
-    setMessages([])
+    setConversation(createEmptyPublicAssistantConversation())
     setInput('')
     setIssue(null)
     setHasNewContent(false)
@@ -933,6 +1006,7 @@ export function PublicAssistantWidget() {
   const openHistorySession = async (targetSessionId: string) => {
     if (!apiBase || historyLoadingId) return
     stopActiveChat()
+    stopBranchAction()
     stopInitialRestore()
     const controller = new AbortController()
     historyRequestRef.current?.abort()
@@ -941,10 +1015,9 @@ export function PublicAssistantWidget() {
     try {
       const history = await requestPublicAssistantSession({ apiBase, sessionId: targetSessionId, signal: controller.signal })
       if (historyRequestRef.current !== controller) return
-      const restored = restoreSessionMessages(history)
       commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, targetSessionId))
       shouldFollowOutputRef.current = true
-      setMessages(restored)
+      setConversation(hydratePublicAssistantConversation(history))
       setMode(history.turns.at(-1)?.mode ?? 'auto')
       setInitialRestoreState('ready')
       setInitialRestoreIssue(null)
@@ -973,6 +1046,7 @@ export function PublicAssistantWidget() {
 
   const removeHistorySession = async (targetSessionId: string) => {
     if (!apiBase || !window.confirm('删除这条匿名会话及其原始记录？')) return
+    if (targetSessionId === sessionIdRef.current) stopBranchAction()
     const controller = new AbortController()
     historyRequestRef.current?.abort()
     historyRequestRef.current = controller
@@ -985,7 +1059,7 @@ export function PublicAssistantWidget() {
         stopInitialRestore()
         nextRegistry = rememberPublicAssistantSession(nextRegistry, createPublicAssistantSessionId())
         shouldFollowOutputRef.current = true
-        setMessages([])
+        setConversation(createEmptyPublicAssistantConversation())
         setInput('')
         setInitialRestoreState('ready')
         setInitialRestoreIssue(null)
@@ -1042,6 +1116,8 @@ export function PublicAssistantWidget() {
       history?: PublicAssistantHistoryTurn[]
       pageContext?: PublicAssistantPageContext
       replaceFallbackRequestId?: string
+      previousRequestId?: string
+      intent?: PublicAssistantGenerationIntent
     } = {},
   ) => {
     const trimmed = question.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
@@ -1057,26 +1133,28 @@ export function PublicAssistantWidget() {
     const requestSessionId = options.sessionId ?? sessionIdRef.current
     if (requestSessionId !== sessionIdRef.current) return
     const reusablePendingQuestion = options.reusePendingQuestion === true
-    const history = options.history ?? buildHistory(reusablePendingQuestion ? messages.slice(0, -1) : messages)
+    const intent = options.intent ?? activePublicAssistantGenerationIntent(conversation)
+    const historyState = intent.kind === 'answer-revision'
+      ? { ...conversation, turns: conversation.turns.slice(0, conversation.turns.findIndex((turn) => turn.id === intent.turnId)) }
+      : conversation
+    const history = options.history ?? buildPublicAssistantConversationHistory(historyState)
     const pageContext = options.pageContext ?? readPublicAssistantPageContext()
-    const userMessage: WidgetMessage = {
-      id: createMessageId('user'),
-      role: 'user',
-      content: trimmed,
-      requestMode: requestedMode,
-    }
     shouldFollowOutputRef.current = true
     setHasNewContent(false)
     setIssue(null)
     setFeedbackMenuMessageId(null)
     if (options.replaceFallbackRequestId) {
-      setMessages((current) => current.filter((message) => !(
-        message.role === 'assistant'
-        && message.requestId === options.replaceFallbackRequestId
-        && message.meta?.mode === 'fallback'
-      )))
+      setConversation((current) => removeLocalPublicAssistantAnswer(current, options.replaceFallbackRequestId!))
     }
-    if (!reusablePendingQuestion) setMessages((current) => [...current, userMessage])
+    if (!reusablePendingQuestion) {
+      setConversation((current) => appendPendingPublicAssistantTurn(current, {
+        requestId,
+        question: trimmed,
+        mode: requestedMode,
+      }))
+    } else if (options.previousRequestId) {
+      setConversation((current) => retargetPendingPublicAssistantTurn(current, options.previousRequestId!, requestId))
+    }
     setInput('')
     setIsLoading(true)
     setProgressStage('planning')
@@ -1089,9 +1167,12 @@ export function PublicAssistantWidget() {
       requestId,
       history,
       pageContext,
+      intent,
     }
 
     let result: PublicAssistantAnswer
+    let authoritativeHistory: PublicAssistantSessionHistory | null = null
+    let authoritativeHistoryIssue: AssistantIssue | null = null
     let resolvedApiBase = apiBase
     try {
       const remote = await requestPublicAnswer({
@@ -1100,6 +1181,7 @@ export function PublicAssistantWidget() {
         mode: requestedMode,
         sessionId: requestSessionId,
         history,
+        intent,
         pageContext,
         preferredApiBase: apiBase,
         signal: controller.signal,
@@ -1113,6 +1195,26 @@ export function PublicAssistantWidget() {
       setApiBase(remote.apiBase)
       setServiceState(result.status === 'degraded' ? 'degraded' : 'online')
       setIssue(null)
+      if (
+        result.sessionId &&
+        result.conversation &&
+        (result.replayed || result.conversation.activated === false)
+      ) {
+        try {
+          authoritativeHistory = await requestPublicAssistantSession({
+            apiBase: remote.apiBase,
+            sessionId: result.sessionId,
+            signal: controller.signal,
+          })
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') throw error
+          authoritativeHistoryIssue = {
+            ...toAssistantIssue(error, 'history'),
+            code: 'public-assistant-history-refresh-required',
+          }
+        }
+        if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
@@ -1121,6 +1223,7 @@ export function PublicAssistantWidget() {
         sessionId: requestSessionId,
         history,
         pageContext,
+        intent,
       })
       result = { ...buildLocalAnswer(trimmed, requestedMode, nextIssue.code), requestId }
       setIssue(nextIssue)
@@ -1134,42 +1237,53 @@ export function PublicAssistantWidget() {
     }
 
     if (sessionIdRef.current !== requestSessionId) return
-    const resolvedSessionId = result.sessionId ?? requestSessionId
     if (result.sessionId) commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, result.sessionId))
-    setMessages((current) => [
-      ...current,
-      {
-        id: createMessageId('assistant'),
-        role: 'assistant',
-        content: result.answer,
-        citations: result.citations,
-        claims: result.claims,
-        status: result.status,
-        meta: result.meta,
-        suggestions: result.suggestions,
-        sessionId: result.turnId ? resolvedSessionId : undefined,
-        turnId: result.turnId,
-        prompt: trimmed,
-        requestMode: requestedMode,
+    if (authoritativeHistory) {
+      setConversation(hydratePublicAssistantConversation(authoritativeHistory))
+      setMode(authoritativeHistory.turns.at(-1)?.mode ?? requestedMode)
+      setHistoryTruncated(authoritativeHistory.hasEarlierTurns)
+    } else if (!authoritativeHistoryIssue) {
+      setConversation((current) => mergePublicAssistantAnswer(current, {
+        answer: result,
         requestId,
-      },
-    ])
+        question: trimmed,
+        mode: requestedMode,
+        intent,
+      }))
+    }
+    if (authoritativeHistoryIssue) {
+      setInitialRestoreState('error')
+      setInitialRestoreIssue(authoritativeHistoryIssue)
+    }
     if (resolvedApiBase) setApiBase(resolvedApiBase)
   }
 
   const retryIssue = () => {
     if (!issue || issueRetryBlocked) return
+    if (issue.scope === 'branch' && issue.branchAction) {
+      const action = issue.branchAction
+      if (issue.sessionId && issue.sessionId !== sessionIdRef.current) {
+        setIssue(null)
+        return
+      }
+      setIssue(null)
+      void runBranchAction(action)
+      return
+    }
     if (issue.scope === 'chat' && issue.prompt) {
       const prompt = issue.prompt
       const requestedMode = issue.mode ?? mode
       const cancelled = issue.code === 'public-assistant-request-cancelled'
+      const retryRequestId = cancelled ? createPublicAssistantRequestId() : issue.requestId
       setIssue(null)
       void submitQuestion(prompt, requestedMode, {
         reusePendingQuestion: true,
-        ...(cancelled || !issue.requestId ? {} : { requestId: issue.requestId }),
+        ...(retryRequestId ? { requestId: retryRequestId } : {}),
+        ...(cancelled && issue.requestId ? { previousRequestId: issue.requestId } : {}),
         ...(issue.sessionId ? { sessionId: issue.sessionId } : {}),
         ...(issue.history ? { history: issue.history } : {}),
         ...(issue.pageContext ? { pageContext: issue.pageContext } : {}),
+        ...(issue.intent ? { intent: issue.intent } : {}),
         ...(!cancelled && issue.requestId ? { replaceFallbackRequestId: issue.requestId } : {}),
       })
       return
@@ -1201,32 +1315,104 @@ export function PublicAssistantWidget() {
     rating: 'up' | 'down',
     reason: PublicAssistantFeedbackReason,
   ) => {
-    if (!apiBase || !message.sessionId || !message.turnId || message.feedbackPending) return
-    setMessages((current) => current.map((item) => item.id === message.id
-      ? { ...item, feedbackPending: true, feedbackError: false }
-      : item))
+    if (!apiBase || !message.sessionId || !message.revisionId || message.feedbackPending) return
+    setConversation((current) => updatePublicAssistantRevisionFeedback(current, message.revisionId!, {
+      feedback: message.feedback ?? null,
+      feedbackPending: true,
+      feedbackError: false,
+    }))
     try {
       await submitPublicAssistantFeedback({
         apiBase,
         sessionId: message.sessionId,
-        turnId: message.turnId,
+        revisionId: message.revisionId,
         rating,
         reason,
       })
-      setMessages((current) => current.map((item) => item.id === message.id
-        ? { ...item, feedback: rating, feedbackPending: false, feedbackError: false }
-        : item))
+      setConversation((current) => updatePublicAssistantRevisionFeedback(current, message.revisionId!, {
+        feedback: rating,
+        feedbackPending: false,
+        feedbackError: false,
+      }))
       if (rating === 'down') {
         closeFeedbackMenuAndRestoreFocus(message.id)
       } else {
         setFeedbackMenuMessageId((current) => current === message.id ? null : current)
       }
     } catch {
-      setMessages((current) => current.map((item) => item.id === message.id
-        ? { ...item, feedbackPending: false, feedbackError: true }
-        : item))
+      setConversation((current) => updatePublicAssistantRevisionFeedback(current, message.revisionId!, {
+        feedback: message.feedback ?? null,
+        feedbackPending: false,
+        feedbackError: true,
+      }))
       if (rating === 'down') {
         setFeedbackFocusRequest((current) => ({ messageId: message.id, sequence: (current?.sequence ?? 0) + 1 }))
+      }
+    }
+  }
+
+  const navigateRevision = (message: WidgetMessage, direction: -1 | 1) => {
+    if (!message.turnId || !message.revisionId) return
+    const turn = conversation.turns.find((item) => item.id === message.turnId)
+    if (!turn) return
+    const currentIndex = turn.revisions.findIndex((revision) => revision.id === message.revisionId)
+    const next = turn.revisions[currentIndex + direction]
+    if (!next) return
+    setFeedbackMenuMessageId(null)
+    setConversation((current) => selectViewedPublicAssistantRevision(current, turn.id, next.id))
+  }
+
+  const regenerateAnswer = (message: WidgetMessage) => {
+    if (!message.turnId || !message.revisionId || !message.prompt || !message.requestMode || !conversation.activeBranchId) return
+    void submitQuestion(message.prompt, message.requestMode, {
+      reusePendingQuestion: true,
+      intent: {
+        kind: 'answer-revision',
+        branchId: conversation.activeBranchId,
+        turnId: message.turnId,
+        baseRevisionId: message.revisionId,
+      },
+    })
+  }
+
+  const applyAuthoritativeHistory = (history: PublicAssistantSessionHistory) => {
+    shouldFollowOutputRef.current = true
+    setConversation(hydratePublicAssistantConversation(history))
+    setMode(history.turns.at(-1)?.mode ?? 'auto')
+    setHistoryTruncated(history.hasEarlierTurns)
+    setHasNewContent(false)
+  }
+
+  const runBranchAction = async (action: PublicAssistantBranchAction) => {
+    if (!apiBase || branchActionPendingRef.current || isLoading) return
+    const controller = new AbortController()
+    const requestSessionId = sessionIdRef.current
+    branchActionPendingRef.current = true
+    branchActionRequestRef.current = controller
+    setBranchActionPending(true)
+    try {
+      const history = await requestPublicAssistantBranch({
+        apiBase,
+        sessionId: requestSessionId,
+        signal: controller.signal,
+        ...action,
+      })
+      if (branchActionRequestRef.current !== controller || sessionIdRef.current !== requestSessionId) return
+      applyAuthoritativeHistory(history)
+      setIssue((current) => current?.scope === 'branch' ? null : current)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      if (branchActionRequestRef.current !== controller || sessionIdRef.current !== requestSessionId) return
+      setIssue({
+        ...toAssistantIssue(error, 'branch'),
+        sessionId: requestSessionId,
+        branchAction: action,
+      })
+    } finally {
+      if (branchActionRequestRef.current === controller) {
+        branchActionRequestRef.current = null
+        branchActionPendingRef.current = false
+        setBranchActionPending(false)
       }
     }
   }
@@ -1284,7 +1470,7 @@ export function PublicAssistantWidget() {
               >
                 {isFullscreen ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
               </button>
-              <button type="button" onClick={closeWidget} aria-label="关闭研究助手" title="关闭">
+              <button ref={closeButtonRef} type="button" onClick={closeWidget} aria-label="关闭研究助手" title="关闭">
                 <X size={18} aria-hidden />
               </button>
             </div>
@@ -1373,6 +1559,30 @@ export function PublicAssistantWidget() {
           )}
 
           <p className="public-assistant__hint">问本站内容，也可以研究公开网页。</p>
+
+          {conversation.branches.length > 0 && conversation.activeBranchId && (
+            <label className="public-assistant__branch-picker">
+              <GitBranch size={15} aria-hidden />
+              <span className="sr-only">当前会话分支</span>
+              <select
+                value={conversation.activeBranchId}
+                disabled={isAssistantBusy || branchActionPending}
+                onChange={(event) => void runBranchAction({ action: 'select', branchId: event.target.value })}
+              >
+                {conversation.branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    分支 {branch.ordinal} · {branch.turnCount}{branch.hasEarlierTurns ? '+' : ''} 轮 · {branch.preview}
+                  </option>
+                ))}
+              </select>
+              {(conversation.branchesTruncated || conversation.revisionsTruncated) && (
+                <span className="public-assistant__branch-disclosure" role="note">
+                  {conversation.branchesTruncated && <span>较早分支未显示。</span>}
+                  {conversation.revisionsTruncated && <span>部分问题的较早回答版本未显示，版本计数仅针对当前载入内容。</span>}
+                </span>
+              )}
+            </label>
+          )}
 
           <div className="public-assistant__modes" role="group" aria-label="检索范围">
             {MODE_OPTIONS.map((option) => (
@@ -1494,12 +1704,20 @@ export function PublicAssistantWidget() {
                             if (element) citationRefs.current.set(key, element)
                             else citationRefs.current.delete(key)
                           }
+                          const publishedLabel = formatCitationDate(citation.publishedAt)
                           const content = (
                             <>
                               <span className="public-assistant__citation-kicker">
                                 {citation.source === 'web' ? '外部网页' : '本站资料'} · {citation.id || `来源 ${index + 1}`}
                               </span>
                               <strong>{citation.title}</strong>
+                              <span className="public-assistant__citation-meta">
+                                <span>{citation.section}</span>
+                                {publishedLabel && <time dateTime={citation.publishedAt ?? undefined}>{publishedLabel}</time>}
+                                <span className={`is-${citation.evidenceStatus}`}>
+                                  {citation.evidenceStatus === 'verified' ? '已核验' : '部分证据'}
+                                </span>
+                              </span>
                               <span>{citation.excerpt || citation.summary}</span>
                               {citation.source === 'web' && <ExternalLink size={13} aria-hidden />}
                             </>
@@ -1534,6 +1752,46 @@ export function PublicAssistantWidget() {
                       </div>
                     )}
 
+                    {message.revisionId && message.revisionNo && message.revisionCount && (
+                      <div className="public-assistant__revision-toolbar" aria-label="回答版本">
+                        <div className="public-assistant__revision-nav">
+                          <button
+                            type="button"
+                            onClick={() => navigateRevision(message, -1)}
+                            disabled={message.revisionNo <= 1 || isAssistantBusy}
+                            aria-label="查看上一版回答"
+                            title="上一版"
+                          >
+                            <ChevronLeft size={15} aria-hidden />
+                          </button>
+                          <span>{message.revisionNo} / {message.revisionCount}</span>
+                          <button
+                            type="button"
+                            onClick={() => navigateRevision(message, 1)}
+                            disabled={message.revisionNo >= message.revisionCount || isAssistantBusy}
+                            aria-label="查看下一版回答"
+                            title="下一版"
+                          >
+                            <ChevronRight size={15} aria-hidden />
+                          </button>
+                        </div>
+                        {!message.isActiveRevision && (
+                          <button
+                            type="button"
+                            className="public-assistant__continue-version"
+                            onClick={() => void runBranchAction({
+                              action: 'continue-from-revision',
+                              revisionId: message.revisionId!,
+                            })}
+                            disabled={isAssistantBusy || branchActionPending}
+                          >
+                            <GitBranch size={14} aria-hidden />
+                            <span>从此版本继续</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     <div className="public-assistant__message-actions" aria-label="回答操作">
                       <button
                         type="button"
@@ -1543,10 +1801,10 @@ export function PublicAssistantWidget() {
                       >
                         {copiedMessageId === message.id ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
                       </button>
-                      {message.prompt && message.requestMode && (
+                      {message.prompt && message.requestMode && message.revisionId && (
                         <button
                           type="button"
-                          onClick={() => void submitQuestion(message.prompt ?? '', message.requestMode)}
+                          onClick={() => regenerateAnswer(message)}
                           disabled={isLoading}
                           aria-label="重新生成回答"
                           title="重新生成"
@@ -1631,9 +1889,9 @@ export function PublicAssistantWidget() {
                   <strong>{issueCopy?.title}</strong>
                   <span>{issueCopy?.detail}</span>
                 </div>
-                <button type="button" onClick={retryIssue} disabled={isLoading || issueRetryBlocked}>
+                <button type="button" onClick={retryIssue} disabled={isAssistantBusy || issueRetryBlocked}>
                   <RefreshCw size={15} aria-hidden />
-                  <span>{getAssistantRetryLabel(issue)}</span>
+                  <span>{getAssistantRetryLabel(issue, issue.scope === 'branch' ? '重试本次操作' : '重试')}</span>
                 </button>
               </div>
             )}

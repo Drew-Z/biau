@@ -5,6 +5,30 @@ export type PublicAssistantMode = 'auto' | 'site' | 'web'
 export type PublicAssistantRoute = 'direct' | 'site' | 'web' | 'combined'
 export type PublicAssistantStatus = 'answered' | 'partial' | 'uncertain' | 'degraded' | 'blocked'
 export type PublicAssistantEvidenceSource = 'site' | 'web'
+export type PublicAssistantContractVersion = 1 | 2
+
+export type PublicAssistantGenerationIntent =
+  | {
+      kind: 'new-turn'
+      branchId: string | null
+      parentRevisionId: string | null
+    }
+  | {
+      kind: 'answer-revision'
+      branchId: string
+      turnId: string
+      baseRevisionId: string
+    }
+
+export interface PublicAssistantConversationIdentity {
+  branchId: string
+  branchOrdinal: number
+  turnId: string
+  revisionId: string
+  revisionNo: number
+  basedOnRevisionId: string | null
+  activated: boolean
+}
 
 export interface KnowledgeItem {
   id: string
@@ -31,12 +55,14 @@ export interface Citation {
 }
 
 export interface ChatPayload {
+  contractVersion?: number
   requestId?: string
   message?: string
   sessionId?: string
   mode?: PublicAssistantMode
   pageContext?: PublicAssistantPageContext
   history?: PublicAssistantHistoryTurn[]
+  intent?: PublicAssistantGenerationIntent
 }
 
 export interface PublicAssistantPageContext {
@@ -121,6 +147,7 @@ export interface AssistantRetrievalMeta {
 }
 
 export interface ChatResponse {
+  contractVersion?: 2
   requestId?: string
   answer: string
   citations: Citation[]
@@ -141,6 +168,7 @@ export interface ChatResponse {
   }
   sessionId?: string
   messageId?: string
+  conversation?: PublicAssistantConversationIdentity
 }
 
 export type RagStoreProvider = string

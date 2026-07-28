@@ -56,7 +56,8 @@ DECLARE
     'AiDailyFlashItem', 'AiDailyFlashRevision', 'AiDailyApprovalAction',
     'AiDailyEvidenceDocument', 'AiDailyGenerationCheckpoint',
     'AiDailyEditorialOverride',
-    'PublicAssistantSession', 'PublicAssistantTurn',
+    'PublicAssistantSession', 'PublicAssistantRequest', 'PublicAssistantTurn',
+    'PublicAssistantAnswerRevision', 'PublicAssistantBranch',
     'PublicAssistantFeedback', 'PublicAssistantDailyAggregate'
   ];
   actual_tables text[];
@@ -99,13 +100,20 @@ ALTER TABLE "AiDailyEvidenceDocument" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "AiDailyGenerationCheckpoint" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "AiDailyEditorialOverride" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "PublicAssistantSession" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PublicAssistantRequest" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "PublicAssistantTurn" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PublicAssistantAnswerRevision" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PublicAssistantBranch" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "PublicAssistantFeedback" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "PublicAssistantDailyAggregate" ENABLE ROW LEVEL SECURITY;
 
 ALTER FUNCTION "protect_ai_daily_flash_revision_content"()
   SET search_path = pg_catalog, public;
 ALTER FUNCTION "protect_ai_daily_approval_history"()
+  SET search_path = pg_catalog, public;
+ALTER FUNCTION "public_assistant_reject_revision_update"()
+  SET search_path = pg_catalog, public;
+ALTER FUNCTION "public_assistant_validate_graph_ownership"()
   SET search_path = pg_catalog, public;
 
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon, authenticated;

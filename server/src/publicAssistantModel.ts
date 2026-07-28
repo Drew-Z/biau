@@ -83,7 +83,7 @@ export async function generatePublicAssistantDraft(input: {
       question: input.request.question,
       route: input.plan.route,
       page: input.request.pageContext ? normalizePageContext(input.request.pageContext) : null,
-      history: input.request.history.slice(-6),
+      history: input.request.history.slice(-12),
       evidence: evidencePayload,
     }),
   })

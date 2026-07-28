@@ -3,6 +3,8 @@ import type {
   Citation,
   ProviderDiagnostic,
   PublicAssistantClaim,
+  PublicAssistantContractVersion,
+  PublicAssistantGenerationIntent,
   PublicAssistantHistoryTurn,
   PublicAssistantMode,
   PublicAssistantPageContext,
@@ -11,12 +13,14 @@ import type {
 } from './types.js'
 
 export interface PublicAssistantRequest {
+  contractVersion: PublicAssistantContractVersion
   requestId: string
   question: string
   mode: PublicAssistantMode
   sessionId: string
   pageContext?: PublicAssistantPageContext
   history: PublicAssistantHistoryTurn[]
+  intent: PublicAssistantGenerationIntent
   signal?: AbortSignal
   onProgress?: (progress: PublicAssistantProgress) => void
 }
