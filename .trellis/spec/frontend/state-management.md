@@ -38,6 +38,14 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Missing model/API displays a concise fallback status; it does not expose provider details.
 - The widget prefers the same-origin SSE route, derives one bounded progress label from validated event stages, and renders only the terminal verified result. It falls back to the JSON route only when the stream endpoint is explicitly unsupported; rate limits and transport/provider failures never replay the question.
 - Public widget state is independent from Studio tokens and internal editing state.
+- The conversation source of truth is typed logical Turns with immutable Revision snapshots, bounded Branch summaries, and one `activeBranchId`; do not rebuild it as a flat user/assistant message array.
+- Pure projection/reducer helpers live outside the widget. Previewing a Revision changes only that Turn's viewed selection, while regeneration merges a new Revision without appending the same user question again.
+- A local degraded answer may complete a pending new Turn, but it never becomes a synthetic Revision for a failed answer-regeneration intent. Keep the persisted active/viewed Revision and its navigation unchanged until a remote regeneration succeeds.
+- Successful restore, Branch selection, and continue-from-revision replace the visible path atomically from the normalized server history. The browser never constructs persisted ancestry by joining local messages.
+- Failed Branch selection and continue actions keep the current path, surface a retryable issue in the main conversation, and retain the exact bounded action for explicit retry. A synchronous pending fence prevents double-clicks from sending the action twice; only the authoritative success response hydrates a new path.
+- Background health failures never replace a visible user-action issue carrying chat or Branch retry identity. Successful Branch completion clears only the Branch issue it owns, so late independent requests cannot erase another operation's recovery state.
+- A completed replay triggers an authoritative Session-history refresh before the visible path changes. Older controllers, Session captures, frozen replay metadata, or failed history fetches must not move the current Branch head backward.
+- A version-2 completion with `activated: false` belongs to a saved non-active Branch and must not enter the visible Turn list or prompt history. Fetch authoritative Session history just as for replay; if that refresh fails, keep the existing path, show a recovery notice, and disable follow-up until restore succeeds or the visitor starts a new conversation.
 
 ## Scenario: Public AI Daily Feed State
 

@@ -18,6 +18,8 @@ When a managed pooler requires Prisma 7 / libpq compatibility, configure the pro
 - `PublicAssistantSession`
 - `PublicAssistantRequest`
 - `PublicAssistantTurn`
+- `PublicAssistantAnswerRevision`
+- `PublicAssistantBranch`
 - `PublicAssistantFeedback`
 - `PublicAssistantDailyAggregate`
 
@@ -69,15 +71,54 @@ Catalog guards that detect enum use outside a retirement allowlist must filter `
 - Convert trusted bounded metadata to `Prisma.InputJsonValue` intentionally.
 - Never spread arbitrary request bodies into Prisma writes.
 
-### Public assistant generation idempotency
+### Scenario: Public assistant immutable conversation graph
 
-- `PublicAssistantRequest.requestId` is the authoritative generation identity. The browser creates one UUID per visitor generation intent; transport retries reuse it, while deliberate regeneration or retry after visitor cancellation creates a new UUID.
-- PostgreSQL owns `processing | completed | retryable_failed | failed | cancelled`. Claim the row before Agent execution; do not use an in-memory map as a cross-instance coordination claim.
-- A processing claim carries an opaque lease token and bounded expiry. Completion must lock the request row and verify request ID, canonical request hash, processing state, lease token, and an unexpired lease before creating a turn or incrementing aggregates.
-- Turn creation, daily aggregate increment, allowlisted response snapshot, and request completion share one transaction. A stale lease must exit before any turn or aggregate write.
-- Completed duplicates replay only an allowlist-decoded `responseJson`; the request hash, lease token, provider details, raw errors, and database state never enter browser responses.
-- Same ID with a different normalized payload is a stable conflict. Expired processing and `retryable_failed` may be reclaimed with a new lease; `failed` and `cancelled` are terminal.
-- Session deletion and retention remove request rows. `turnId` is a nullable foreign key with `ON DELETE SET NULL`; a cached completed response remains independently bounded by request retention.
+#### 1. Scope / Trigger
+
+- Applies to public generation idempotency, answer regeneration, branch selection, session history, feedback, retention, and any migration touching the anonymous conversation graph.
+
+#### 2. Signatures
+
+- `PublicAssistantRequest` is one generation intent and owns its canonical hash, lease fence, target identities, completed `responseJson`, and unique `revisionId`.
+- `PublicAssistantTurn` is one logical question and stores its exact `parentRevisionId` context anchor.
+- `PublicAssistantAnswerRevision` is one immutable generated answer with its display snapshot, lineage, status, route, metrics, aggregate binding, and revision ordinal.
+- `PublicAssistantBranch` is a mutable per-session pointer to one selected head revision. `PublicAssistantSession.activeBranchId` and `branchSelectionVersion` persist explicit visitor selection.
+
+#### 3. Contracts
+
+- The browser creates one UUID per visitor generation intent. Transport retries reuse it; deliberate regeneration or retry after cancellation creates a new UUID. The canonical request hash includes the normalized intent kind and every branch, turn, parent, and base revision identity.
+- PostgreSQL owns `processing | completed | retryable_failed | failed | cancelled`. A processing claim carries an opaque lease token and bounded expiry; completion locks the request row and verifies the canonical hash, state, lease token, and expiry before writing the graph.
+- Turn, Revision, Branch/head changes, aggregate increment, and completed Request projection commit in one fenced transaction. A stale, cancelled, or superseded lease exits before any graph or aggregate write.
+- A committed Revision is append-only. The database update-rejection trigger and same-session graph-ownership triggers fail closed for Session, Branch, Turn, Revision, Request, and Feedback edges.
+- Explicit branch selection increments `branchSelectionVersion`. A generation may auto-activate only when the captured version is still current; a late valid completion remains saved without stealing a newer visitor selection.
+- Completed duplicate replay decodes only that Request's frozen, versioned `responseJson`. It never rebuilds an answer from the current branch head or mutable session state. Session display history is separately reconstructed from the selected Branch head through immutable parent-revision links.
+- Session deletion and retention remove Requests and whole expired Session trees. Normal lifecycle code never updates or independently deletes a committed Revision; aggregate rows remain independent.
+
+#### 4. Validation & Error Matrix
+
+- Same request ID with a different normalized intent -> stable idempotency conflict.
+- Unknown or cross-session branch/turn/revision capability -> stable not-found response without ownership disclosure.
+- Expired lease, cancellation, or fenced completion -> no Turn, Revision, Branch, Feedback, or aggregate write.
+- Revision/branch bound reached -> stable conflict; do not evict a reachable Revision to make room.
+- Corrupt or cross-session ancestry -> fail closed; never flatten sibling branches into history.
+
+#### 5. Good / Base / Bad Cases
+
+- Good: regeneration creates a sibling Revision and saved Branch, then refresh restores the selected path while the original completed Request still replays its own Revision.
+- Base: PostgreSQL is not configured, so chat may return a documented ephemeral answer while history, branch, and persisted feedback operations return `database-not-configured`.
+- Bad: overwrite a Revision, trust client history as persisted ancestry, or use the active Branch to rebuild an older completed response.
+
+#### 6. Tests Required
+
+- `assistant:public-persistence-check` must assert request hashing, leases, first-turn atomicity, regeneration lineage, concurrent forks, branch-selection fencing, revision-scoped feedback, replay independence, retention, deletion, and cross-session rejection.
+- `assistant:public-migration-check` must run only against loopback PostgreSQL and prove empty-schema migration, legacy parity, Revision UPDATE rejection, graph-ownership triggers, and whole-session deletion.
+- Operational SQL fixtures must prove the exact table allowlist, RLS, function `search_path`, and all public-assistant trigger bindings without connecting to production.
+
+#### 7. Wrong vs Correct
+
+Wrong: store a second answer by mutating or duplicating a flat Turn, then infer replay identity from the current active Branch.
+
+Correct: append one immutable Revision for the existing Turn, bind the completed Request to it, save its Branch, and hydrate current history independently from the authoritative selected path.
 
 ### AI Daily Retention Dry-Run
 

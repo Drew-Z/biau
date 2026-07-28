@@ -113,6 +113,20 @@ focus containment and restoration, document scroll locking, safe-area padding,
 and no overlap from global navigation. Runtime evidence may move after the core
 interaction on mobile, but it must remain available.
 
+### Public Assistant Revision And Branch Controls
+
+Keep previous/next Revision commands in the answer action row as fixed-size Lucide icon buttons with accessible names, tooltips, and a stable `n / total` counter. Previewing a sibling Revision changes only the displayed answer snapshot; it does not silently activate a Branch.
+
+When a visitor previews a non-active Revision, expose a clear `Continue from this version` command. Existing Branch selection is a separate bounded menu/control, and both operations hydrate the authoritative path returned by the service rather than assembling ancestry in the component.
+
+Branch options include their loaded logical-turn count. When the bounded history projection reports omitted Branches or answer Revisions, keep that limitation adjacent to the Branch control and state that Revision counts cover only currently loaded content; do not present a truncated `n / total` value as the complete history.
+
+Citation cards expose the allowlisted provenance snapshot as a compact metadata row: source section, publication date when present, and the explicit `verified` or `partial` evidence state. Missing dates stay absent, and partial evidence must not inherit verified styling or copy.
+
+At mobile widths, Revision commands, continue, and Branch selection provide at least 44px touch targets, wrap without widening the message, and remain inside the assistant panel at 320, 390, and 430px. Do not introduce a horizontal rail, swipe-only version navigation, or gesture-only Branch activation. Fullscreen and history layers keep their existing Escape, focus containment/restoration, and single conversation-scroller contracts.
+
+On mobile first-open, move focus from the hidden trigger into a stable non-input command inside the modal without focusing the composer or summoning the soft keyboard. Closing by button or Escape restores the owning trigger. Desktop restoration continues to focus the composer.
+
 ### Mobile Primary Navigation
 
 When the site has a small, stable set of high-frequency route families, mobile

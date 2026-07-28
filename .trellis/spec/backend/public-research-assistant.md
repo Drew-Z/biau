@@ -73,13 +73,14 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 
 ## Public API And Persistence
 
-- `POST /chat/public` accepts a required UUID `requestId`, bounded question, anonymous session ID, mode, page context, and recent history.
+- Version-2 `POST /chat/public` accepts a required UUID `requestId`, bounded question, anonymous session ID, mode, page context, recent history, and a discriminated `new-turn | answer-revision` intent with bounded branch/turn/revision identities. A bounded legacy body is accepted only as a rollout-compatible new-turn request.
 - `POST /chat/public/stream` accepts the same payload and returns versioned SSE events: `ready`, public-safe `progress`, heartbeat comments, one verified `result`, or one stable `error`. Its `result` data uses the same allowlisted projection as the JSON route, including the request ID.
-- JSON and SSE share one execution coordinator. It claims `PublicAssistantRequest` before Agent execution, replays an allowlist-decoded completed response, rejects same-ID/different-payload conflicts, and completes the turn/aggregate/request in one fenced transaction.
+- JSON and SSE share one execution coordinator. It claims `PublicAssistantRequest` before Agent execution, replays that Request's allowlist-decoded Revision-bound response, rejects same-ID/different-intent conflicts, and completes the Turn/Revision/Branch/aggregate/Request graph in one fenced transaction.
 - Active duplicates return `public-assistant-request-processing` with bounded `Retry-After`. Completed duplicates do not rerun planning, retrieval, generation, persistence, or aggregate updates.
 - `POST /chat/public/cancel` binds the request ID to its anonymous session and marks processing/retryable work cancelled. A late executor cannot persist after cancellation.
-- `POST /chat/public/feedback` records bounded `up` or `down` feedback for one anonymous turn.
-- The HTTP response is projected through an allowlist. Stable product fields include answer state, claims, citations, suggestions, session/turn IDs, and low-sensitive counters.
+- `POST /chat/public/feedback` records bounded `up` or `down` feedback for one owned immutable Revision.
+- `POST /chat/public/branch` either selects an owned saved Branch or continues from an owned Revision and returns the authoritative normalized Session history projection.
+- The version-2 HTTP response is projected through an allowlist. Stable product fields include answer state, claims, citations, suggestions, opaque branch/turn/revision identity, and low-sensitive counters. A legacy response without identity may render ephemerally but must not invent Revision capability.
 - Client disconnect propagates as a retryable abort; explicit visitor cancellation also calls the cancellation endpoint. The runner checks the signal before execution and again before fenced completion; an aborted or cancelled turn must not emit or persist a fallback response.
 - Rate limiting uses the request IP in process memory but never persists an IP address. Buckets are bounded and a client-provided session ID cannot bypass chat or feedback limits.
 - Persist only bounded anonymous session/turn/feedback data for 30 days. Long-lived aggregates store topic fingerprints and counters rather than raw questions or answers.
@@ -95,16 +96,18 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 ### 2. Signatures
 
 - `POST /chat/public/sessions` with `{ sessionIds: string[] }` returns `{ sessions: PublicAssistantSessionSummary[] }` ordered by recent activity.
-- `POST /chat/public/session` with `{ sessionId: string }` returns `{ session, turns, truncated }` in chronological display order.
+- `POST /chat/public/session` with `{ sessionId: string }` returns the active Branch path in chronological order, retained Revision snapshots for each Turn, bounded Branch summaries, and explicit turn/revision/branch truncation flags.
+- `POST /chat/public/branch` accepts either `{ sessionId, action: 'select', branchId }` or `{ sessionId, action: 'continue-from-revision', revisionId }` and returns the same authoritative history projection.
 - `DELETE /chat/public/session` with `{ sessionId: string }` returns `{ ok: true }`.
-- `PublicAssistantTurn.displaySnapshotJson Json?` stores the nullable, versioned public display projection. Session deletion cascades turns and feedback; aggregate rows are independent.
-- Cloudflare exposes matching same-origin routes at `/api/chat/public/sessions` and `/api/chat/public/session` without changing the upstream HTTP method.
+- `PublicAssistantAnswerRevision.displaySnapshotJson Json?` stores the nullable, versioned public display projection. Session deletion cascades Branches, Turns, Revisions, and Feedback; aggregate rows are independent.
+- Cloudflare exposes matching same-origin routes at `/api/chat/public/sessions`, `/api/chat/public/session`, and `/api/chat/public/branch` without changing the upstream HTTP method.
 
 ### 3. Contracts
 
 - The browser keeps a versioned, deduplicated registry of at most 24 session IDs. New capabilities use `crypto.randomUUID()` or at least 128 bits from `crypto.getRandomValues()`; weak timestamp or `Math.random()` fallbacks are forbidden.
 - Capabilities are accepted only in bounded JSON bodies, never in path segments or query strings. The list operation intersects at most 24 submitted IDs with unexpired rows; unknown and expired IDs are silently omitted.
-- Session reads return at most 100 unexpired turns and set `truncated=true` when older retained turns are omitted.
+- Session history walks backward from the active Branch head through each Turn's `parentRevisionId`, retains at most the latest 100 ancestors, then returns them chronologically. It returns at most 8 Revisions per Turn and 24 Branch summaries with explicit `hasEarlierTurns`, `revisionsTruncated`, and `branchesTruncated` flags. Agent prompt history independently uses only the latest 6 selected ancestors.
+- Each returned Turn carries one logical question, its real parent Revision identity, `selectedRevisionId`, and retained immutable Revision snapshots. Sibling revisions and hidden Branch Turns never enter the selected path or Agent history.
 - Snapshot version 1 contains only allowlisted claims, public citations, bounded suggestions, and low-sensitive metadata. Serialization and hydration both re-run the public allowlist. Unknown versions or invalid shapes degrade to normalized question/answer text; stored JSON is never returned directly.
 - Secret-shaped or blocked turns store an empty safe snapshot. Provider/model identity, endpoints, prompts, credentials, raw diagnostics, raw errors, and internal citations are forbidden snapshot fields.
 - Raw sessions, turns, and feedback use the configured 30-day retention period. Deletion and expiry do not delete, decrement, or rewrite `PublicAssistantDailyAggregate`.
@@ -114,6 +117,8 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - The history drawer is a modal layer within the assistant shell. Focus moves into it, Tab remains inside it, and Escape closes the drawer before a later Escape can close the assistant.
 - Only the message region scrolls. Automatic following is allowed only while the visitor remains near the bottom; otherwise a return-to-latest action appears.
 - First open restores an already persisted current capability before the composer can submit a follow-up. `session-not-found` replaces the expired current capability with a fresh one; transient failure remains explicitly retryable. Starting a new conversation aborts chat and history work, creates a fresh capability, clears hydrated/transient state, and ignores any completion whose controller or captured session no longer matches the active conversation.
+- Branch selection and continue-from-revision increment the persisted selection version and atomically replace the browser path with the returned authoritative history. A late completion may save its Branch but cannot steal a newer explicit selection.
+- Completed request replay remains bound to the frozen Revision response even after Branch selection changes. The browser refreshes authoritative Session history after replay instead of treating cached Branch-head identity as current mutable state.
 - Stable transport errors retain the original prompt, mode, session, normalized history, and request ID for an explicit visitor retry. The local fallback display is never added to the retried payload. Visitor cancellation retains the question but creates a new request ID. Browser offline state and a bounded `Retry-After` deadline gate chat, health/history-list, and initial-restore retry controls; network restoration or deadline expiry updates availability only and never automatically spends another request. Synchronous duplicate activation of an enabled retry control still starts at most one request.
 - Claim citation controls may target only citation IDs present in the same allowlisted display snapshot. Internal citation navigation closes the assistant/fullscreen shell without deleting the local capability registry.
 
@@ -122,6 +127,9 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - Empty, malformed, oversized, or over-count session input -> stable validation error; no database query using unbounded caller data.
 - Unknown/expired ID in session list -> omit it without revealing whether it ever existed.
 - Unknown/expired single read or delete -> HTTP 404 with stable `session-not-found`.
+- Unknown or cross-session Branch/Turn/Revision capability -> stable not-found response without confirming foreign ownership.
+- Invalid branch action or generation intent -> `400 invalid-public-assistant-request`; branch/revision bound -> stable `409` conflict.
+- Corrupt ancestry -> stable `409 public-assistant-history-invalid`, never partial raw rows.
 - Persistence unavailable -> HTTP 503 with stable `database-not-configured`; chat may still use its documented fallback, but history must not invent persistence.
 - Invalid or unsupported display snapshot -> return safe text-only history, not raw JSON and not a 500 response.
 - Proxy timeout, unreachable upstream, invalid content type, or oversized body -> stable low-sensitive public error; never include upstream URL or raw upstream body.
@@ -129,23 +137,24 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 
 ### 5. Good / Base / Bad Cases
 
-- Good: the browser submits two owned capabilities, restores a cited turn after refresh, creates a new conversation, and deletes one session without changing aggregate counters.
-- Base: an older turn has no display snapshot; the visitor sees readable question/answer text and can continue the session.
-- Bad: a caller submits guessed IDs, a stored snapshot contains an internal citation, or the browser supplies an authorization header; no guessed record, internal field, browser credential, or raw diagnostic reaches the response or upstream service.
+- Good: the browser restores one selected Branch, previews sibling Revisions without changing it, explicitly continues from an older Revision, and refreshes into the same saved path.
+- Base: an older Revision has no display snapshot; the visitor sees readable question/answer text while the server preserves opaque ancestry and truncation state.
+- Bad: a caller submits guessed IDs, flattens sibling Branches into Agent history, trusts stored snapshot JSON, or uses current Branch state to rebuild an older completed replay.
 
 ### 6. Tests Required
 
-- Persistence checks assert submitted-ID intersection, expiry, 100-turn truncation, snapshot allowlisting, legacy fallback, request retention, canonical hashing, claim conflict, lease takeover/fencing, completed replay, cascade deletion, and aggregate preservation.
+- Persistence checks assert submitted-ID intersection, expiry, bounded ancestor/revision/branch truncation, snapshot allowlisting, legacy fallback, intent-aware canonical hashing, lease takeover/fencing, immutable Revision numbering and lineage, concurrent Branch forks, explicit-selection fencing, Revision feedback, replay independence, cascade deletion, and aggregate preservation.
+- Migration checks assert legacy field parity, completed-cache version-2 backfill, Revision UPDATE rejection, same-session graph ownership, operational allowlists, and whole-session deletion against loopback PostgreSQL only.
 - Agent/model checks assert external abort propagation and that an aborted response cannot reach persistence. API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
 - Cloudflare checks assert method/body/request-ID preservation, cancellation routing, request/response limits, no-store, `Retry-After`, and removal of browser authorization and cookies.
-- UI checks assert automatic rich restoration before follow-up, restored history in the next request, explicit truncation, expiry self-healing, transient retry, offline-to-online retry gating without automatic replay, wall-clock `Retry-After` expiry, claim-to-source focus, internal-navigation closure, fresh high-entropy capability creation, request/session race isolation, drawer focus and Escape ordering, desktop scroll lock, mobile no-autofocus, and 320/390/430 viewport-safe message/composer layout.
+- UI checks assert automatic rich restoration before follow-up, Revision switching without duplicate questions, revision-scoped content/feedback, Branch select/continue authoritative hydration, replay isolation, explicit truncation, expiry self-healing, transient retry, offline-to-online retry gating without automatic replay, wall-clock `Retry-After` expiry, claim-to-source focus, request/session race isolation, drawer/fullscreen focus ordering, desktop scroll lock, mobile no-autofocus, 44px Revision/Branch controls, and 320/390/430 containment.
 - All checks use local fixtures only and must not call a live model, search, embedding, reranker, or vector database provider.
 
 ### 7. Wrong vs Correct
 
-Wrong: expose `GET /sessions`, place a session ID in the URL, generate a capability with time plus `Math.random()`, trust stored snapshot JSON, forward browser headers, or let the history overlay share the outer dialog's full focus order.
+Wrong: expose `GET /sessions`, place a capability in the URL, generate it with time plus `Math.random()`, trust stored snapshot JSON, flatten all Revisions into prompt history, infer current history from a replay response, or forward browser headers.
 
-Correct: intersect bounded browser-held capabilities in a JSON body, require cryptographic randomness, hydrate through the public projection, construct proxy headers from an allowlist, and give each visible modal layer its own focus and Escape boundary.
+Correct: intersect bounded browser-held capabilities in a JSON body, require cryptographic randomness, rebuild history from the selected Branch ancestry, replay the Request-bound Revision independently, hydrate through the public projection, and give each visible modal layer its own focus and Escape boundary.
 
 ## Sync And Deployment
 

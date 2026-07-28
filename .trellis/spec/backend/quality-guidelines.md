@@ -34,6 +34,7 @@ No deterministic check may send a real model liveness prompt.
 - Return stable JSON error codes; do not return stack traces or provider bodies.
 - Bound arrays, strings, result counts, timeouts, and payload sizes.
 - Normalize unknown JSON through shared serializers/decoders.
+- Reconstruct persisted public conversation history from the owned selected Branch and immutable Revision graph; never trust caller-supplied history as database authority or return stored JSON directly.
 - Never return hashes, credentials, endpoints, raw prompts, private documents, request headers, or database details.
 - Optional providers must degrade without breaking public health or deterministic tests.
 
@@ -77,9 +78,13 @@ AI Daily production deployments must mount the human-approved model bundle as th
 - Public answers use retained public-safe site/web evidence and claim-level citations only.
 - Missing model/RAG/search returns an explicit fallback, unavailable, partial, or uncertain result rather than fabricated facts.
 - The HTTP projection exposes product states and bounded counters, not model/provider/channel/retrieval diagnostics.
+- Public `/health` exposes only service/readiness capabilities and never includes exact model or provider identity. Detailed diagnostics remain behind the operations-token boundary.
 - Client session IDs cannot bypass the IP-scoped chat/feedback limiter; in-memory buckets remain bounded.
 - Hybrid Qdrant 400/404/405 fallback stays on `QDRANT_PUBLIC_ALIAS`, with a poison-base-collection fixture proving the target.
 - Public routes remain usable without a database.
+- Committed answers live only in immutable `PublicAssistantAnswerRevision` rows. Turn is the logical question, Branch is the saved-path pointer, and Revision-scoped Feedback must never fall back to flat Turn answer ownership.
+- Completed request replay decodes the Request's frozen Revision projection and remains independent from later active-Branch changes. Selected Session history is separately reconstructed from the active Branch ancestry.
+- `assistant:public-persistence-check` and the loopback-only migration fixture must prove intent hashing, lease fencing, concurrent forks, selection-version fencing, graph ownership, Revision UPDATE rejection, replay independence, and whole-session lifecycle behavior.
 - Public synthetic may exercise route/health/fallback behavior but must not send model prompts unless the user approves a real task.
 
 ## Content Studio

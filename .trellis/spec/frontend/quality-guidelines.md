@@ -97,6 +97,9 @@ npm.cmd run docs:deployment-check
 - Each turn selects one API base. A `429` response is terminal for that attempt and must not be replayed against another candidate URL.
 - The browser prefers `/chat/public/stream`, validates the SSE event and terminal result contracts in one shared decoder, and may retry `/chat/public` only for an explicit `404`, `405`, `501`, or non-SSE legacy endpoint response. An incomplete, malformed, timed-out, rate-limited, or failed stream is terminal for that attempt.
 - Every new generation intent creates a secure UUID request ID. Stream-to-JSON compatibility fallback and explicit retry of a stable transport failure reuse the same ID and the same normalized session/history payload; deliberate regeneration and retry after visitor cancellation create a new ID.
+- A completed request replay remains bound to its original immutable Revision even after Branch selection changes. The browser reloads authoritative Session history after replay and must not treat frozen replay metadata as the current Branch head.
+- A completion marked `activated: false` never enters the current visible path or next prompt history. The browser hydrates authoritative history; failure leaves the conversation readable but follow-up disabled until recovery.
+- A failed answer-regeneration request keeps the current persisted Revision, `n / total` navigation, citations, feedback, and regenerate command. Browser-local fallback content is not inserted as a new Revision; an explicit successful retry is the only path that appends one.
 - Public result copy distinguishes model answer, partial/uncertain evidence, blocked input, unavailable web research, and browser-local degraded fallback without exposing internal diagnostics.
 - Assistant answers may render bounded Markdown paragraphs, headings, lists, emphasis, blockquotes, tables, inline code, and fenced code. Raw HTML parsing, HTML blocks, automatic bare-URL links, model-authored links/images, and form controls remain disabled; verified citation cards are the only clickable evidence surface.
 - Code blocks expose an accessible copy command and bounded horizontal scrolling. Tables own their horizontal scroller. Neither may widen the message, dialog, or document at 320, 390, or 430px.
@@ -105,10 +108,17 @@ npm.cmd run docs:deployment-check
 - The conversation is a labeled `role="log"` with `aria-busy` tied to active restore or answer work. Progress repaints are not separate live announcements; restore, start, completion, and cancellation use one concise status channel.
 - Desktop opens compact and supports full-screen mode. Mobile opens full-screen, follows `visualViewport` for soft-keyboard height/offset, accounts for safe areas, locks background scrolling for the modal lifetime, and keeps the message region as the only conversation scroller.
 - A persisted current capability restores automatically on first open before follow-up submission is enabled. Expired history self-heals into a fresh conversation; transient restore failure stays retryable; `truncated=true` is visible. Starting a new conversation or restoring another session ignores late completions captured for another controller/session.
+- Restore, Branch select, and continue-from-revision atomically replace the visible reducer path from normalized server history. Regeneration appends one Revision to the existing logical question and never duplicates that user question.
+- Branch-operation failures render in the main conversation, preserve the active path, and retry the captured action exactly once per explicit command. React state alone is not a sufficient same-tick duplicate-submit fence.
+- Background health completion cannot overwrite or clear a chat/Branch issue with exact retry identity; scope-aware state updates own only their corresponding issue.
 - Chat, health/history, and initial-restore failures share one retry gate. Browser offline state disables retry; an `online` event updates the retained issue without replaying it. A bounded `Retry-After` value becomes an absolute wall-clock deadline, and visible countdown state is recalculated from that deadline so background-tab timer throttling cannot shorten or extend the server delay.
 - History opens as the top interaction layer, receives focus, traps Tab within its own controls, closes before the assistant on Escape, and restores the history trigger. Claim citation controls focus and highlight only their matching verified citation card. Internal citation navigation closes the assistant/fullscreen shell while retaining the restorable conversation.
-- Mobile first-open does not focus the composer or summon the soft keyboard. Desktop focuses the composer after initial restoration settles.
+- Mobile first-open moves focus into the modal dialog on a stable non-input command without summoning the soft keyboard. Desktop focuses the composer after initial restoration settles; close and Escape restore the owning trigger.
 - At mobile widths the panel and trigger occupy stable grid rows, remain inside the viewport, do not block page navigation or reading controls, and expose 44px action/copy/feedback touch targets.
+- Revision arrows, their stable count, `Continue from this version`, and the Branch menu remain contained and keyboard accessible; mobile actions are at least 44px and do not create a horizontal rail or document overflow.
+- Bounded Branch and Revision projections disclose omitted history beside the Branch menu. Branch options show loaded turn counts, and a truncated Revision counter is explicitly described as counting only loaded versions.
+- Citation cards preserve Revision-specific provenance by showing the allowlisted source section, optional publication date, and explicit verified/partial evidence state without creating model-authored links.
+- UI fixtures exercise rejected Branch operations, exact-action retry, same-tick retry de-duplication, failed regeneration with intact Revision controls, and successful retry without a duplicate question.
 - Suggested prompts are bounded; UI checks validate the rendered starter contract rather than requiring hidden overflow items.
 
 ## SEO And Analytics
@@ -146,8 +156,8 @@ npm.cmd run docs:deployment-check
 
 - Main public routes at desktop/mobile widths.
 - Retired assistant/private routes as NotFound.
-- Public assistant concise/fallback behavior, safe structured Markdown, code copy, stop/late-response isolation, cancellation retry, and exact structured-feedback payloads.
-- Public assistant scope controls, automatic continuity/expiry/retry/truncation, offline-to-online recovery without automatic replay, wall-clock `Retry-After` countdowns, claim-to-source focus, internal navigation closure, history/full-screen focus behavior, mobile panel/trigger/soft-keyboard layout, 320/390/430 containment, verified citations, feedback, and rate-limit behavior.
+- Public assistant concise/fallback behavior, safe structured Markdown, code copy, stop/late-response isolation, cancellation retry, immutable regeneration without duplicate questions, Revision-scoped citations/feedback, and exact structured-feedback payloads.
+- Public assistant scope controls, authoritative Branch history/selection/continue hydration, completed-replay isolation, automatic continuity/expiry/retry/truncation disclosure, Branch turn counts, Revision count scope, citation provenance metadata, offline-to-online recovery without automatic replay, wall-clock `Retry-After` countdowns, claim-to-source focus, internal navigation closure, history/full-screen focus behavior, mobile panel/trigger/soft-keyboard layout, 44px Revision/Branch controls, 320/390/430 containment, verified citations, feedback, and rate-limit behavior.
 - Mobile public navigation and detail reading.
 - Studio focused modes and review entry.
 - Background animation/reduced-motion frames.
