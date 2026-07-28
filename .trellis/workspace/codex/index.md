@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
-- **Last Active**: 2026-07-28
+- **Total Sessions**: 7
+- **Last Active**: 2026-07-29
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~211 | Active |
+| `journal-1.md` | ~249 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-07-29 | Public assistant production rollout | `8f8b7ccb` | `codex/public-assistant-productization` |
 | 6 | 2026-07-28 | Public assistant immutable answer revisions | `929959a2`, `c9bc576d`, `f75c4567` | `codex/public-assistant-productization` |
 | 5 | 2026-07-28 | Public assistant idempotent generation | `4d1249d8` | `codex/public-assistant-productization` |
 | 4 | 2026-07-28 | Public assistant recovery controls | `2ca0545f` | `codex/public-assistant-productization` |

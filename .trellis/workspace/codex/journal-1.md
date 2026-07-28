@@ -214,3 +214,36 @@ Implemented immutable answer revisions, branch-aware continuation and recovery, 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Public assistant production rollout
+
+**Date**: 2026-07-29
+**Task**: Public assistant production rollout
+**Branch**: `codex/public-assistant-productization`
+
+### Summary
+
+Released immutable public-assistant revisions to Cloudflare and Render, verified migration parity and production UI without provider calls, cleaned approved test data, and recorded Supabase advisor follow-ups.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8f8b7ccb` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
