@@ -114,11 +114,20 @@ try {
   const publicChat = await fetch(`${base}/chat/public`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: 'Legal RAG 项目有哪些公开能力？', mode: 'site' }),
+    body: JSON.stringify({
+      contractVersion: 2,
+      requestId: '11111111-1111-4111-8111-111111111111',
+      message: 'Legal RAG 项目有哪些公开能力？',
+      mode: 'site',
+      sessionId: 'public-session-1234',
+      intent: { kind: 'new-turn', branchId: null, parentRevisionId: null },
+    }),
   })
   if (!publicChat.ok) throw new Error(`public chat failed: ${publicChat.status}`)
   const publicPayload = (await publicChat.json()) as {
     answer?: string
+    contractVersion?: number
+    conversation?: unknown
     status?: string
     claims?: Array<{ citationIds?: string[] }>
     citations?: Array<{ id?: string; href?: string }>
@@ -139,6 +148,8 @@ try {
     !hasCitationHref(publicPayload.citations, '/projects/legal-rag') ||
     publicPayload.claims.some((claim) => !claim.citationIds?.every((id) => citationIds.has(id))) ||
     publicPayload.meta?.mode !== 'fallback' ||
+    publicPayload.contractVersion === 2 ||
+    publicPayload.conversation !== undefined ||
     publicPayload.meta.reason !== 'not_configured' ||
     publicPayload.meta.citationCount !== publicPayload.citations.length ||
     publicPayload.meta.research?.route !== 'site' ||
@@ -146,7 +157,7 @@ try {
     (publicPayload.meta.research.siteEvidenceCount ?? 0) < 1 ||
     publicPayload.meta.research.webEvidenceCount !== 0
   ) {
-    throw new Error('public chat should return the Agentic site fallback contract')
+    throw new Error('version-2 chat without persistence should return an ephemeral fallback without invented revision identity')
   }
 
   const privateCredentialChat = await fetch(`${base}/chat/public`, {
@@ -171,7 +182,7 @@ try {
     privatePayload.meta.citationCount !== 0 ||
     privatePayload.meta.research?.route !== 'direct'
   ) {
-    throw new Error('public chat should refuse private credential requests without citations')
+    throw new Error('legacy browser chat should remain accepted and refuse private credential requests without citations')
   }
 
   const invalidHistory = await fetch(`${base}/chat/public/sessions`, {

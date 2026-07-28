@@ -5,6 +5,7 @@ import {
   normalizePublicAssistantSessionHistory,
   PublicAssistantTransportError,
   readPublicAssistantEventStream,
+  requestPublicAssistantBranch,
   requestPublicAssistantHealth,
   requestPublicAssistantSession,
   requestPublicAssistantSessions,
@@ -13,6 +14,7 @@ import {
 } from '../src/utils/publicAssistantApi'
 
 const validPayload = {
+  contractVersion: 2,
   requestId: '11111111-1111-4111-8111-111111111111',
   answer: '第一段。\n\n第二段。',
   status: 'answered',
@@ -62,6 +64,15 @@ const validPayload = {
   suggestions: ['继续了解', '继续了解', '比较一下', '给出步骤'],
   sessionId: 'public-session-1234',
   messageId: 'turn-1234',
+  conversation: {
+    branchId: 'branch-1234',
+    branchOrdinal: 1,
+    turnId: 'turn-1234',
+    revisionId: 'revision-1234',
+    revisionNo: 1,
+    basedOnRevisionId: null,
+    activated: true,
+  },
   meta: {
     mode: 'model',
     citationCount: 2,
@@ -87,11 +98,22 @@ assert.deepEqual(normalized.citations.map((citation) => citation.id), ['site-1',
 assert.deepEqual(normalized.claims[0]?.citationIds, ['site-1'], 'claims may only retain public citation ids')
 assert.deepEqual(normalized.suggestions, ['继续了解', '比较一下', '给出步骤'])
 assert.equal(normalized.turnId, 'turn-1234')
+assert.equal(normalized.conversation?.revisionId, 'revision-1234')
 assert.equal(normalized.requestId, validPayload.requestId)
 assert.equal(normalized.meta.research?.route, 'combined')
+assert.equal(normalizePublicAssistantAnswer({ ...validPayload, replayed: true })?.replayed, true)
+assert.equal(normalizePublicAssistantAnswer({ ...validPayload, replayed: false })?.replayed, undefined)
 
 assert.equal(normalizePublicAssistantAnswer({ ...validPayload, status: 'unknown' }), null)
 assert.equal(normalizePublicAssistantAnswer({ ...validPayload, answer: '   ' }), null)
+assert.equal(normalizePublicAssistantAnswer({ ...validPayload, conversation: null }), null)
+const legacyNormalized = normalizePublicAssistantAnswer({
+  ...validPayload,
+  contractVersion: undefined,
+  conversation: undefined,
+})
+assert.equal(legacyNormalized?.contractVersion, 1, 'old server answers remain displayable without revision controls')
+assert.equal(legacyNormalized?.conversation, undefined)
 
 const bounded = normalizePublicAssistantAnswer({
   ...validPayload,
@@ -155,6 +177,7 @@ const requestInput = {
   message: '研究公开资料',
   mode: 'web' as const,
   sessionId: 'public-session-1234',
+  intent: { kind: 'new-turn' as const, branchId: null, parentRevisionId: null },
   history: [],
   pageContext: { path: '/blog', title: '博客', description: '公开文章' },
 }
@@ -185,28 +208,57 @@ await assert.rejects(requestPublicAssistantStream(requestInput), (error: unknown
 const historyPayload = {
   session: {
     id: 'public-session-1234',
+    activeBranchId: 'branch-1234',
     title: '研究公开资料',
     turnCount: 1,
     createdAt: '2026-07-27T08:00:00.000Z',
     lastActiveAt: '2026-07-27T08:01:00.000Z',
     expiresAt: '2026-08-26T08:00:00.000Z',
+    hasEarlierTurns: false,
   },
+  branches: [{
+    id: 'branch-1234',
+    ordinal: 1,
+    headRevisionId: 'revision-1234',
+    preview: '研究公开资料',
+    turnCount: 1,
+    hasEarlierTurns: false,
+    lastActiveAt: '2026-07-27T08:01:00.000Z',
+  }],
   turns: [{
-    ...validPayload,
     id: 'turn-1234',
     question: '研究公开资料',
     mode: 'web',
-    route: 'combined',
+    parentRevisionId: null,
+    selectedRevisionId: 'revision-1234',
+    revisions: [{
+      ...validPayload,
+      contractVersion: undefined,
+      conversation: undefined,
+      id: 'revision-1234',
+      revisionNo: 1,
+      basedOnRevisionId: null,
+      route: 'combined',
+      createdAt: '2026-07-27T08:01:00.000Z',
+      feedback: 'up',
+    }],
     createdAt: '2026-07-27T08:01:00.000Z',
-    feedback: 'up',
   }],
+  hasEarlierTurns: false,
+  revisionsTruncated: false,
+  branchesTruncated: false,
   truncated: false,
 }
 const normalizedHistory = normalizePublicAssistantSessionHistory(historyPayload)
 assert.ok(normalizedHistory)
 assert.equal(normalizedHistory.turns[0]?.question, '研究公开资料')
-assert.equal(normalizedHistory.turns[0]?.citations.length, 2)
-assert.equal(normalizedHistory.turns[0]?.feedback, 'up')
+assert.equal(normalizedHistory.turns[0]?.revisions[0]?.citations.length, 2)
+assert.equal(normalizedHistory.turns[0]?.revisions[0]?.feedback, 'up')
+assert.equal(normalizedHistory.branches[0]?.id, 'branch-1234')
+assert.equal(normalizePublicAssistantSessionHistory({
+  ...historyPayload,
+  turns: [{ ...historyPayload.turns[0], selectedRevisionId: 'missing-revision' }],
+}), null, 'history must reject a selected revision that is not present')
 
 globalThis.fetch = (async (input: URL | RequestInfo) => {
   const url = String(input)
@@ -233,7 +285,14 @@ const restored = await requestPublicAssistantSession({
   apiBase: 'https://assistant.example.com',
   sessionId: 'public-session-1234',
 })
-assert.equal(restored.turns[0]?.answer, '第一段。\n\n第二段。')
+assert.equal(restored.turns[0]?.revisions[0]?.answer, '第一段。\n\n第二段。')
+const branchHistory = await requestPublicAssistantBranch({
+  apiBase: 'https://assistant.example.com',
+  sessionId: 'public-session-1234',
+  action: 'select',
+  branchId: 'branch-1234',
+})
+assert.equal(branchHistory.session.activeBranchId, 'branch-1234')
 
 let deleteMethod = ''
 let deleteBody: Record<string, unknown> | null = null
@@ -255,7 +314,7 @@ try {
   await submitPublicAssistantFeedback({
     apiBase: 'https://assistant.example.com',
     sessionId: 'public-session-1234',
-    turnId: 'turn-1234',
+    revisionId: 'revision-1234',
     rating: 'down',
     reason: 'missing-sources',
     comment: `  ${'需要 更多 来源 '.repeat(40)}  `,
@@ -267,6 +326,7 @@ try {
 assert.ok(feedbackBody)
 assert.equal('apiBase' in feedbackBody, false, 'transport-only API base must not enter the feedback payload')
 assert.equal(feedbackBody.rating, 'down')
+assert.equal(feedbackBody.revisionId, 'revision-1234')
 assert.equal(feedbackBody.reason, 'missing-sources')
 assert.equal(typeof feedbackBody.comment, 'string')
 assert.ok(String(feedbackBody.comment).length <= 240)

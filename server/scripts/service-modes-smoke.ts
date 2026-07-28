@@ -3,6 +3,12 @@ import { createApp } from '../src/app.js'
 import { env } from '../src/env.js'
 import type { AssistantServiceMode, RagRetrieveResponse } from '../src/types.js'
 
+interface PublicFallbackResponse {
+  answer?: string
+  contractVersion?: number
+  conversation?: unknown
+}
+
 interface EnvSnapshot {
   assistantServiceMode: AssistantServiceMode
   databaseUrl: string
@@ -134,27 +140,74 @@ async function postJson<T>(url: string, body: unknown, token?: string) {
   return { response, payload: (await response.json().catch(() => null)) as T | null }
 }
 
+function readSseResult(body: string): PublicFallbackResponse | null {
+  const lines = body.split(/\r?\n/u)
+  for (let index = 0; index < lines.length; index += 1) {
+    if (lines[index] !== 'event: result') continue
+    const data = lines[index + 1]
+    if (!data?.startsWith('data: ')) return null
+    try {
+      return JSON.parse(data.slice(6)) as PublicFallbackResponse
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
 const snapshot = snapshotEnv()
 
 try {
   await withService('public', async (base) => {
-    const health = await getJson<{ serviceMode?: string }>(`${base}/health`)
-    if (!health.response.ok || health.payload?.serviceMode !== 'public') throw new Error('public mode health is invalid')
+    const health = await getJson<Record<string, unknown>>(`${base}/health`)
+    if (
+      !health.response.ok ||
+      health.payload?.serviceMode !== 'public' ||
+      health.payload.modelConfigured !== false ||
+      Object.hasOwn(health.payload, 'model') ||
+      Object.hasOwn(health.payload, 'provider')
+    ) {
+      throw new Error('public mode health must expose readiness without model or provider identity')
+    }
 
-    const publicChat = await postJson<{ answer?: string }>(`${base}/chat/public`, { message: 'RAG 项目' })
-    if (!publicChat.response.ok || !publicChat.payload?.answer) throw new Error('public mode should expose public chat')
+    const publicChat = await postJson<PublicFallbackResponse>(`${base}/chat/public`, {
+      contractVersion: 2,
+      requestId: '11111111-1111-4111-8111-111111111111',
+      message: 'RAG 项目',
+      sessionId: 'public-session-1234',
+      intent: { kind: 'new-turn', branchId: null, parentRevisionId: null },
+    })
+    if (
+      !publicChat.response.ok ||
+      !publicChat.payload?.answer ||
+      publicChat.payload.contractVersion === 2 ||
+      publicChat.payload.conversation !== undefined
+    ) {
+      throw new Error('public mode should expose database-free chat without inventing persisted revision identity')
+    }
 
     const publicStream = await fetch(`${base}/chat/public/stream`, {
       method: 'POST',
       headers: { Accept: 'text/event-stream', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: 'RAG 项目', mode: 'site' }),
+      body: JSON.stringify({
+        contractVersion: 2,
+        requestId: '22222222-2222-4222-8222-222222222222',
+        message: 'RAG 项目',
+        mode: 'site',
+        sessionId: 'public-session-1234',
+        intent: { kind: 'new-turn', branchId: null, parentRevisionId: null },
+      }),
     })
     const publicStreamText = await publicStream.text()
+    const publicStreamResult = readSseResult(publicStreamText)
     if (
       !publicStream.ok ||
       !publicStream.headers.get('Content-Type')?.includes('text/event-stream') ||
       !publicStreamText.includes('event: progress') ||
-      !publicStreamText.includes('event: result')
+      !publicStreamText.includes('event: result') ||
+      !publicStreamResult?.answer ||
+      publicStreamResult.contractVersion === 2 ||
+      publicStreamResult.conversation !== undefined
     ) {
       throw new Error('public mode should expose the public assistant SSE transport')
     }
@@ -162,6 +215,14 @@ try {
     const publicHistory = await postJson(`${base}/chat/public/sessions`, { sessionIds: ['public-session-1234'] })
     if (publicHistory.response.status !== 503) {
       throw new Error(`public mode should expose history and report missing persistence, got ${publicHistory.response.status}`)
+    }
+    const publicBranch = await postJson(`${base}/chat/public/branch`, {
+      sessionId: 'public-session-1234',
+      action: 'select',
+      branchId: 'branch-1234',
+    })
+    if (publicBranch.response.status !== 503) {
+      throw new Error(`public mode should expose branch actions and report missing persistence, got ${publicBranch.response.status}`)
     }
 
     const operatorMe = await fetch(`${base}/operator/me`)
@@ -185,6 +246,12 @@ try {
 
     const publicHistory = await postJson(`${base}/chat/public/sessions`, { sessionIds: ['public-session-1234'] })
     if (publicHistory.response.status !== 404) throw new Error(`rag mode should not expose public history, got ${publicHistory.response.status}`)
+    const publicBranch = await postJson(`${base}/chat/public/branch`, {
+      sessionId: 'public-session-1234',
+      action: 'select',
+      branchId: 'branch-1234',
+    })
+    if (publicBranch.response.status !== 404) throw new Error(`rag mode should not expose public branch actions, got ${publicBranch.response.status}`)
 
     const operatorMe = await fetch(`${base}/operator/me`)
     if (operatorMe.status !== 404) throw new Error(`rag mode should not expose operator routes, got ${operatorMe.status}`)
@@ -258,6 +325,12 @@ try {
 
     const publicHistory = await postJson(`${base}/chat/public/sessions`, { sessionIds: ['public-session-1234'] })
     if (publicHistory.response.status !== 404) throw new Error(`studio mode should not expose public history, got ${publicHistory.response.status}`)
+    const publicBranch = await postJson(`${base}/chat/public/branch`, {
+      sessionId: 'public-session-1234',
+      action: 'select',
+      branchId: 'branch-1234',
+    })
+    if (publicBranch.response.status !== 404) throw new Error(`studio mode should not expose public branch actions, got ${publicBranch.response.status}`)
 
     const operatorMe = await fetch(`${base}/operator/me`)
     if (operatorMe.status !== 404) throw new Error(`studio mode should not expose operator routes, got ${operatorMe.status}`)

@@ -2280,6 +2280,7 @@ const publicAssistantMarkdownAnswer = [
   '<button onclick="window.__unsafeMarkdown = true">不应成为按钮</button>',
 ].join('\n')
 const publicAssistantAnswerFixture = {
+  contractVersion: 2,
   requestId: '11111111-1111-4111-8111-111111111111',
   answer: publicAssistantMarkdownAnswer,
   status: 'answered',
@@ -2298,6 +2299,15 @@ const publicAssistantAnswerFixture = {
   suggestions: ['继续核对实现边界'],
   sessionId: 'public-ui-session-1234',
   messageId: 'turn-ui-markdown-1',
+  conversation: {
+    branchId: 'branch-ui-generated-1',
+    branchOrdinal: 1,
+    turnId: 'turn-ui-markdown-1',
+    revisionId: 'revision-ui-markdown-1',
+    revisionNo: 1,
+    basedOnRevisionId: null,
+    activated: true,
+  },
   meta: {
     mode: 'model',
     citationCount: 1,
@@ -2313,6 +2323,108 @@ const publicAssistantAnswerFixture = {
       durationMs: 120,
     },
   },
+}
+const createPublicAssistantGenerationFixture = (requestBody) => {
+  const revisionIntent = requestBody.intent?.kind === 'answer-revision'
+  const turnId = revisionIntent ? requestBody.intent.turnId : 'turn-ui-markdown-1'
+  const revisionNo = revisionIntent ? 2 : 1
+  return {
+    ...publicAssistantAnswerFixture,
+    requestId: requestBody.requestId,
+    messageId: turnId,
+    conversation: {
+      branchId: revisionIntent ? 'branch-ui-generated-2' : (requestBody.intent?.branchId ?? 'branch-ui-generated-1'),
+      branchOrdinal: revisionIntent ? 2 : 1,
+      turnId,
+      revisionId: revisionIntent ? 'revision-ui-markdown-2' : 'revision-ui-markdown-1',
+      revisionNo,
+      basedOnRevisionId: revisionIntent ? requestBody.intent.baseRevisionId : null,
+      activated: true,
+    },
+  }
+}
+const createPublicAssistantHistoryFixture = ({
+  sessionId = 'public-ui-session-1234',
+  activeBranchId = 'branch-ui-history-1',
+  selectedRevisionId = 'revision-ui-history-1',
+  revisions,
+  branches,
+  hasEarlierTurns = true,
+  revisionsTruncated = false,
+  branchesTruncated = false,
+} = {}) => {
+  const historyRevisions = revisions ?? [{
+    id: 'revision-ui-history-1',
+    revisionNo: 1,
+    basedOnRevisionId: null,
+    answer: '这是一条从服务端恢复的历史回答。',
+    status: 'answered',
+    claims: [{ id: 'claim-ui-history-1', text: '历史回答由站内公开资料支持。', citationIds: ['site-ui-history'] }],
+    citations: [{
+      id: 'site-ui-history',
+      title: '历史来源',
+      summary: '公开历史来源',
+      href: '/blog',
+      source: 'site',
+      section: '知识库',
+      excerpt: '公开历史来源',
+      publishedAt: null,
+      evidenceStatus: 'verified',
+    }],
+    suggestions: [],
+    route: 'site',
+    meta: {
+      mode: 'model',
+      citationCount: 1,
+      research: {
+        requestedMode: 'site',
+        route: 'site',
+        status: 'answered',
+        evidenceCount: 1,
+        siteEvidenceCount: 1,
+        webEvidenceCount: 0,
+        retryCount: 0,
+        searchAvailable: true,
+        durationMs: 100,
+      },
+    },
+    createdAt: '2026-07-27T08:01:00.000Z',
+    feedback: null,
+  }]
+  return {
+    session: {
+      id: sessionId,
+      activeBranchId,
+      title: '公开助手历史验收',
+      turnCount: 1,
+      hasEarlierTurns,
+      createdAt: '2026-07-27T08:00:00.000Z',
+      lastActiveAt: '2026-07-27T08:01:00.000Z',
+      expiresAt: '2026-08-26T08:00:00.000Z',
+    },
+    branches: branches ?? [{
+      id: activeBranchId,
+      ordinal: 1,
+      headRevisionId: selectedRevisionId,
+      preview: '历史问题',
+      turnCount: 1,
+      hasEarlierTurns,
+      lastActiveAt: '2026-07-27T08:01:00.000Z',
+    }],
+    turns: [{
+      id: 'turn-ui-history-1',
+      question: '历史问题',
+      mode: 'site',
+      parentRevisionId: null,
+      selectedRevisionId,
+      revisions: historyRevisions,
+      createdAt: '2026-07-27T08:01:00.000Z',
+    }],
+    hasEarlierTurns,
+    revisionsTruncated,
+    branchesTruncated,
+    truncated: hasEarlierTurns,
+  }
 }
 const toPublicAssistantSse = (answer) => [
   'event: progress',
@@ -2354,7 +2466,7 @@ await publicAssistantPage.route('**/api/chat/public/stream', async (route) => {
   await route.fulfill({
     status: 200,
     contentType: 'text/event-stream',
-    body: toPublicAssistantSse({ ...publicAssistantAnswerFixture, requestId: requestBody.requestId }),
+    body: toPublicAssistantSse(createPublicAssistantGenerationFixture(requestBody)),
   })
 })
 await publicAssistantPage.route('**/api/chat/public/feedback', async (route) => {
@@ -2389,55 +2501,7 @@ await publicAssistantPage.route('**/api/chat/public/session', async (route) => {
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
-    body: JSON.stringify({
-      session: {
-        id: body.sessionId,
-        title: '公开助手历史验收',
-        turnCount: 1,
-        createdAt: '2026-07-27T08:00:00.000Z',
-        lastActiveAt: '2026-07-27T08:01:00.000Z',
-        expiresAt: '2026-08-26T08:00:00.000Z',
-      },
-      turns: [{
-        id: 'turn-ui-history-1',
-        question: '历史问题',
-        answer: '这是一条从服务端恢复的历史回答。',
-        mode: 'site',
-        route: 'site',
-        status: 'answered',
-        claims: [{ id: 'claim-ui-history-1', text: '历史回答由站内公开资料支持。', citationIds: ['site-ui-history'] }],
-        citations: [{
-          id: 'site-ui-history',
-          title: '历史来源',
-          summary: '公开历史来源',
-          href: '/blog',
-          source: 'site',
-          section: '知识库',
-          excerpt: '公开历史来源',
-          publishedAt: null,
-          evidenceStatus: 'verified',
-        }],
-        suggestions: [],
-        meta: {
-          mode: 'model',
-          citationCount: 1,
-          research: {
-            requestedMode: 'site',
-            route: 'site',
-            status: 'answered',
-            evidenceCount: 1,
-            siteEvidenceCount: 1,
-            webEvidenceCount: 0,
-            retryCount: 0,
-            searchAvailable: true,
-            durationMs: 100,
-          },
-        },
-        createdAt: '2026-07-27T08:01:00.000Z',
-        feedback: null,
-      }],
-      truncated: true,
-    }),
+    body: JSON.stringify(createPublicAssistantHistoryFixture({ sessionId: body.sessionId })),
   })
 })
 await gotoApp(publicAssistantPage, '/blog')
@@ -2568,6 +2632,10 @@ if ((await publicAssistantPage.locator('.public-assistant__message.is-user').cou
 if ((await publicAssistantPage.locator('.public-assistant__citation').count()) < 1) {
   failures.push('/blog public assistant: expected a separately verified citation card')
 }
+const citationMeta = await publicAssistantPage.locator('.public-assistant__citation-meta').last().innerText().catch(() => '')
+if (!citationMeta.includes('公开网页') || !citationMeta.includes('2026') || !citationMeta.includes('已核验')) {
+  failures.push(`/blog public assistant: citation provenance should expose section, publication date, and evidence status, got "${citationMeta}"`)
+}
 const markdownSurface = publicAssistantPage.locator('.public-assistant-markdown')
 if (
   (await markdownSurface.locator('h2').count()) !== 1 ||
@@ -2626,7 +2694,8 @@ if (
   feedbackPayloads[0]?.rating !== 'down' ||
   feedbackPayloads[0]?.reason !== 'missing-sources' ||
   feedbackPayloads[0]?.sessionId !== 'public-ui-session-1234' ||
-  feedbackPayloads[0]?.turnId !== 'turn-ui-markdown-1' ||
+  feedbackPayloads[0]?.revisionId !== 'revision-ui-markdown-1' ||
+  feedbackPayloads[0]?.turnId !== undefined ||
   feedbackPayloads[0]?.comment !== undefined
 ) {
   failures.push('/blog public assistant: negative feedback should submit the exact bounded reason without free text')
@@ -2684,7 +2753,384 @@ await publicAssistantPage.getByRole('button', { name: '关闭研究助手' }).cl
 if (await publicAssistantPage.locator('.public-assistant__panel').isVisible().catch(() => false)) {
   failures.push('/blog public assistant: expected panel to close')
 }
+const desktopTriggerFocusRestored = await publicAssistantPage.waitForFunction(() => {
+  const trigger = document.querySelector('.public-assistant__trigger')
+  return trigger === document.activeElement
+}, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+if (!desktopTriggerFocusRestored) {
+  failures.push('/blog public assistant: closing the dialog should restore the trigger focus')
+}
 await publicAssistantPage.close()
+
+const revisionOne = {
+  id: 'revision-ui-choice-1',
+  revisionNo: 1,
+  basedOnRevisionId: null,
+  answer: '第一版回答：保留原始结论。',
+  status: 'answered',
+  claims: [],
+  citations: [],
+  suggestions: ['继续第一版'],
+  route: 'site',
+  meta: { mode: 'model', citationCount: 0 },
+  createdAt: '2026-07-27T08:01:00.000Z',
+  feedback: 'up',
+}
+const revisionTwo = {
+  ...revisionOne,
+  id: 'revision-ui-choice-2',
+  revisionNo: 2,
+  basedOnRevisionId: 'revision-ui-choice-1',
+  answer: '第二版回答：补充了新的公开证据。',
+  suggestions: ['继续第二版'],
+  feedback: null,
+  createdAt: '2026-07-27T08:02:00.000Z',
+}
+const revisionBranches = [{
+  id: 'branch-ui-choice-1',
+  ordinal: 1,
+  headRevisionId: 'revision-ui-choice-2',
+  preview: '第二版路径',
+  turnCount: 1,
+  hasEarlierTurns: false,
+  lastActiveAt: '2026-07-27T08:02:00.000Z',
+}, {
+  id: 'branch-ui-choice-2',
+  ordinal: 2,
+  headRevisionId: 'revision-ui-choice-1',
+  preview: '第一版路径',
+  turnCount: 1,
+  hasEarlierTurns: false,
+  lastActiveAt: '2026-07-27T08:01:00.000Z',
+}]
+const revisionHistory = (activeBranchId, selectedRevisionId) => createPublicAssistantHistoryFixture({
+  sessionId: 'public-ui-revision-session',
+  activeBranchId,
+  selectedRevisionId,
+  revisions: [revisionOne, revisionTwo],
+  branches: revisionBranches,
+  hasEarlierTurns: false,
+  revisionsTruncated: true,
+  branchesTruncated: true,
+})
+const revisionBranchBodies = []
+const revisionGenerationBodies = []
+let resolveRevisionHealthRoute
+const revisionHealthRoutePromise = new Promise((resolve) => {
+  resolveRevisionHealthRoute = resolve
+})
+const revisionPage = await browser.newPage({ viewport: viewports[0] })
+await revisionPage.addInitScript(() => {
+  window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+    version: 2,
+    currentSessionId: 'public-ui-revision-session',
+    sessionIds: ['public-ui-revision-session'],
+  }))
+})
+await revisionPage.route('**/api/health', (route) => resolveRevisionHealthRoute(route))
+await revisionPage.route('**/api/chat/public/session', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify(revisionHistory('branch-ui-choice-1', 'revision-ui-choice-2')),
+}))
+await revisionPage.route('**/api/chat/public/branch', async (route) => {
+  const body = route.request().postDataJSON()
+  revisionBranchBodies.push(body)
+  if (revisionBranchBodies.length === 1) {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'public-assistant-service-unavailable' }),
+    })
+    return
+  }
+  if (revisionBranchBodies.length === 3) {
+    await route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'public-assistant-branch-limit' }),
+    })
+    return
+  }
+  const useFirstRevision = body.action === 'continue-from-revision' || body.branchId === 'branch-ui-choice-2'
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(revisionHistory(
+      useFirstRevision ? 'branch-ui-choice-2' : 'branch-ui-choice-1',
+      useFirstRevision ? 'revision-ui-choice-1' : 'revision-ui-choice-2',
+    )),
+  })
+})
+await revisionPage.route('**/api/chat/public/stream', async (route) => {
+  const body = route.request().postDataJSON()
+  revisionGenerationBodies.push(body)
+  if (revisionGenerationBodies.length === 1) {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'public-assistant-service-unavailable' }),
+    })
+    return
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'text/event-stream',
+    body: toPublicAssistantSse({
+      ...publicAssistantAnswerFixture,
+      requestId: body.requestId,
+      answer: '第三版回答：在同一个问题下生成。',
+      sessionId: 'public-ui-revision-session',
+      messageId: 'turn-ui-history-1',
+      conversation: {
+        branchId: 'branch-ui-choice-3',
+        branchOrdinal: 3,
+        turnId: 'turn-ui-history-1',
+        revisionId: 'revision-ui-choice-3',
+        revisionNo: 3,
+        basedOnRevisionId: body.intent?.baseRevisionId ?? null,
+        activated: true,
+      },
+    }),
+  })
+})
+await gotoApp(revisionPage, '/blog')
+await revisionPage.locator('.public-assistant__trigger').click()
+await revisionPage.getByText('第二版回答：补充了新的公开证据。', { exact: true }).waitFor({ state: 'visible' })
+const revisionCounter = revisionPage.locator('.public-assistant__revision-nav span')
+if ((await revisionCounter.innerText()).trim() !== '2 / 2') {
+  failures.push('/blog public assistant revisions: restored active answer should show revision 2 / 2')
+}
+const revisionDisclosure = await revisionPage.locator('.public-assistant__branch-disclosure').innerText().catch(() => '')
+const activeBranchLabel = await revisionPage.locator('.public-assistant__branch-picker option:checked').innerText().catch(() => '')
+if (
+  !revisionDisclosure.includes('较早分支未显示') ||
+  !revisionDisclosure.includes('版本计数仅针对当前载入内容') ||
+  !activeBranchLabel.includes('1 轮')
+) {
+  failures.push('/blog public assistant revisions: bounded branch and revision history should disclose omitted data and show the loaded branch turn count')
+}
+if (await revisionPage.getByRole('button', { name: '从此版本继续' }).count() !== 0) {
+  failures.push('/blog public assistant revisions: the active revision should not offer a redundant continue action')
+}
+await revisionPage.getByRole('button', { name: '查看上一版回答' }).click()
+if (
+  !(await revisionPage.getByText('第一版回答：保留原始结论。', { exact: true }).isVisible()) ||
+  (await revisionCounter.innerText()).trim() !== '1 / 2' ||
+  (await revisionPage.locator('.public-assistant__message.is-user').count()) !== 1
+) {
+  failures.push('/blog public assistant revisions: previewing an older revision should change one answer without duplicating its question')
+}
+await revisionPage.getByRole('button', { name: '从此版本继续' }).click()
+await revisionPage.getByText('分支操作未完成', { exact: true }).waitFor({ state: 'visible' })
+const delayedRevisionHealthRoute = await revisionHealthRoutePromise
+const delayedRevisionHealthResponse = revisionPage.waitForResponse((response) => response.url().includes('/api/health'))
+await delayedRevisionHealthRoute.fulfill({
+  status: 503,
+  contentType: 'application/json',
+  body: JSON.stringify({ error: 'public-assistant-endpoint-unreachable' }),
+})
+await delayedRevisionHealthResponse
+if (
+  revisionBranchBodies.length !== 1 ||
+  revisionBranchBodies[0]?.action !== 'continue-from-revision' ||
+  revisionBranchBodies[0]?.revisionId !== 'revision-ui-choice-1' ||
+  await revisionPage.locator('.public-assistant__branch-picker select').inputValue() !== 'branch-ui-choice-1'
+) {
+  failures.push('/blog public assistant revisions: a failed continue action should stay visible through a late health failure and preserve the active branch')
+}
+await revisionPage.getByRole('button', { name: '重试本次操作' }).evaluate((button) => {
+  if (!(button instanceof HTMLButtonElement)) return
+  button.click()
+  button.click()
+})
+await revisionPage.waitForFunction(() => {
+  const select = document.querySelector('.public-assistant__branch-picker select')
+  return select instanceof HTMLSelectElement && select.value === 'branch-ui-choice-2'
+})
+if (
+  revisionBranchBodies.length !== 2 ||
+  revisionBranchBodies[1]?.action !== revisionBranchBodies[0]?.action ||
+  revisionBranchBodies[1]?.revisionId !== revisionBranchBodies[0]?.revisionId ||
+  await revisionPage.locator('.public-assistant__branch-picker select').inputValue() !== 'branch-ui-choice-2'
+) {
+  failures.push('/blog public assistant revisions: continue retry should submit exactly once and hydrate the authoritative branch')
+}
+await revisionPage.locator('.public-assistant__branch-picker select').selectOption('branch-ui-choice-1')
+await revisionPage.getByText('分支操作未完成', { exact: true }).waitFor({ state: 'visible' })
+if (
+  revisionBranchBodies.length !== 3 ||
+  revisionBranchBodies[2]?.action !== 'select' ||
+  revisionBranchBodies[2]?.branchId !== 'branch-ui-choice-1' ||
+  await revisionPage.locator('.public-assistant__branch-picker select').inputValue() !== 'branch-ui-choice-2'
+) {
+  failures.push('/blog public assistant revisions: a rejected branch selection should preserve the authoritative branch')
+}
+await revisionPage.getByRole('button', { name: '重试本次操作' }).click()
+await revisionPage.getByText('第二版回答：补充了新的公开证据。', { exact: true }).waitFor({ state: 'visible' })
+if (
+  revisionBranchBodies.length !== 4 ||
+  revisionBranchBodies[3]?.action !== revisionBranchBodies[2]?.action ||
+  revisionBranchBodies[3]?.branchId !== revisionBranchBodies[2]?.branchId ||
+  await revisionPage.locator('.public-assistant__branch-picker select').inputValue() !== 'branch-ui-choice-1'
+) {
+  failures.push('/blog public assistant revisions: branch selection retry should replay the exact action and hydrate its path')
+}
+await revisionPage.getByRole('button', { name: '查看上一版回答' }).click()
+const revisionUserCountBeforeRegeneration = await revisionPage.locator('.public-assistant__message.is-user').count()
+await revisionPage.getByRole('button', { name: '重新生成回答' }).click()
+await revisionPage.getByText('重新生成未完成', { exact: true }).waitFor({ state: 'visible' })
+if (
+  revisionGenerationBodies.length !== 1 ||
+  !(await revisionPage.getByText('第一版回答：保留原始结论。', { exact: true }).isVisible()) ||
+  (await revisionCounter.innerText()).trim() !== '1 / 2' ||
+  (await revisionPage.locator('.public-assistant__message.is-user').count()) !== revisionUserCountBeforeRegeneration ||
+  (await revisionPage.getByRole('button', { name: '重新生成回答' }).count()) !== 1
+) {
+  failures.push('/blog public assistant revisions: regeneration failure should preserve the persisted revision and its controls')
+}
+await revisionPage.locator('.public-assistant__notice button').click()
+await revisionPage.getByText('第三版回答：在同一个问题下生成。', { exact: true }).waitFor({ state: 'visible' })
+if (
+  revisionGenerationBodies.length !== 2 ||
+  revisionGenerationBodies[1]?.requestId !== revisionGenerationBodies[0]?.requestId ||
+  revisionGenerationBodies[1]?.contractVersion !== 2 ||
+  revisionGenerationBodies[1]?.intent?.kind !== 'answer-revision' ||
+  revisionGenerationBodies[1]?.intent?.turnId !== 'turn-ui-history-1' ||
+  revisionGenerationBodies[1]?.intent?.baseRevisionId !== 'revision-ui-choice-1' ||
+  (await revisionPage.locator('.public-assistant__message.is-user').count()) !== revisionUserCountBeforeRegeneration ||
+  (await revisionCounter.innerText()).trim() !== '3 / 3'
+) {
+  failures.push('/blog public assistant revisions: regeneration retry should append one immutable revision without another user question')
+}
+await revisionPage.getByRole('button', { name: '进入全屏' }).click()
+const fullscreenFocusables = revisionPage.locator('.public-assistant__panel button:not([disabled]), .public-assistant__panel a[href], .public-assistant__panel textarea:not([disabled]), .public-assistant__panel select:not([disabled]), .public-assistant__panel [tabindex]:not([tabindex="-1"])')
+const fullscreenFocusableCount = await fullscreenFocusables.count()
+if (fullscreenFocusableCount > 1) {
+  await fullscreenFocusables.last().focus()
+  await revisionPage.keyboard.press('Tab')
+  const wrappedForward = await fullscreenFocusables.first().evaluate((element) => element === document.activeElement)
+  await fullscreenFocusables.first().focus()
+  await revisionPage.keyboard.press('Shift+Tab')
+  const wrappedBackward = await fullscreenFocusables.last().evaluate((element) => element === document.activeElement)
+  if (!wrappedForward || !wrappedBackward) {
+    failures.push('/blog public assistant revisions: fullscreen focus should wrap in both directions')
+  }
+}
+await revisionPage.close()
+
+const replayRevisionOne = {
+  ...revisionOne,
+  id: 'revision-ui-replay-1',
+  answer: '回放前的活动回答。',
+  feedback: null,
+}
+const replayRevisionTwo = {
+  ...revisionTwo,
+  id: 'revision-ui-replay-2',
+  basedOnRevisionId: 'revision-ui-replay-1',
+  answer: '已经完成但需要刷新路径的回放回答。',
+}
+const replayBranches = [{
+  id: 'branch-ui-replay-1',
+  ordinal: 1,
+  headRevisionId: 'revision-ui-replay-1',
+  preview: '原活动路径',
+  turnCount: 1,
+  hasEarlierTurns: false,
+  lastActiveAt: '2026-07-27T08:01:00.000Z',
+}, {
+  id: 'branch-ui-replay-2',
+  ordinal: 2,
+  headRevisionId: 'revision-ui-replay-2',
+  preview: '回放后的权威路径',
+  turnCount: 1,
+  hasEarlierTurns: false,
+  lastActiveAt: '2026-07-27T08:02:00.000Z',
+}]
+const replayHistory = (authoritative = false) => createPublicAssistantHistoryFixture({
+  sessionId: 'public-ui-replay-session',
+  activeBranchId: authoritative ? 'branch-ui-replay-2' : 'branch-ui-replay-1',
+  selectedRevisionId: authoritative ? 'revision-ui-replay-2' : 'revision-ui-replay-1',
+  revisions: authoritative ? [replayRevisionOne, replayRevisionTwo] : [replayRevisionOne],
+  branches: authoritative ? replayBranches : replayBranches.slice(0, 1),
+  hasEarlierTurns: false,
+})
+let replayHistoryRequests = 0
+const replayRecoveryPage = await browser.newPage({ viewport: viewports[0] })
+await replayRecoveryPage.addInitScript(() => {
+  window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+    version: 2,
+    currentSessionId: 'public-ui-replay-session',
+    sessionIds: ['public-ui-replay-session'],
+  }))
+})
+await replayRecoveryPage.route('**/api/health', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+}))
+await replayRecoveryPage.route('**/api/chat/public/session', async (route) => {
+  replayHistoryRequests += 1
+  if (replayHistoryRequests === 2) {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'public-assistant-endpoint-unreachable' }),
+    })
+    return
+  }
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(replayHistory(replayHistoryRequests >= 3)),
+  })
+})
+await replayRecoveryPage.route('**/api/chat/public/stream', async (route) => {
+  const body = route.request().postDataJSON()
+  await route.fulfill({
+    status: 200,
+    contentType: 'text/event-stream',
+    body: toPublicAssistantSse({
+      ...publicAssistantAnswerFixture,
+      requestId: body.requestId,
+      answer: replayRevisionTwo.answer,
+      sessionId: 'public-ui-replay-session',
+      messageId: 'turn-ui-history-1',
+      conversation: {
+        branchId: 'branch-ui-replay-2',
+        branchOrdinal: 2,
+        turnId: 'turn-ui-history-1',
+        revisionId: 'revision-ui-replay-2',
+        revisionNo: 2,
+        basedOnRevisionId: 'revision-ui-replay-1',
+        activated: false,
+      },
+    }),
+  })
+})
+await gotoApp(replayRecoveryPage, '/blog')
+await replayRecoveryPage.locator('.public-assistant__trigger').click()
+await replayRecoveryPage.getByText(replayRevisionOne.answer, { exact: true }).waitFor({ state: 'visible' })
+await replayRecoveryPage.getByRole('button', { name: '重新生成回答' }).click()
+await replayRecoveryPage.getByText('会话状态需要刷新', { exact: true }).waitFor({ state: 'visible' })
+if (
+  replayHistoryRequests !== 2 ||
+  !(await replayRecoveryPage.locator('#public-assistant-input').isDisabled()) ||
+  (await replayRecoveryPage.locator('.public-assistant__message.is-user').count()) !== 1
+) {
+  failures.push('/blog public assistant branch fence: a late non-activated completion must pause follow-up without entering the selected path')
+}
+await replayRecoveryPage.getByRole('button', { name: '重试恢复' }).click()
+await replayRecoveryPage.getByText(replayRevisionTwo.answer, { exact: true }).waitFor({ state: 'visible' })
+if (
+  replayHistoryRequests !== 3 ||
+  await replayRecoveryPage.locator('#public-assistant-input').isDisabled() ||
+  await replayRecoveryPage.locator('.public-assistant__branch-picker select').inputValue() !== 'branch-ui-replay-2'
+) {
+  failures.push('/blog public assistant branch fence: successful retry must hydrate the authoritative branch before follow-up resumes')
+}
+await replayRecoveryPage.close()
 
 const expiredSessionPage = await browser.newPage({ viewport: viewports[0] })
 await expiredSessionPage.addInitScript(() => {
@@ -2752,18 +3198,12 @@ await restoreRetryPage.route('**/api/chat/public/session', async (route) => {
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
-    body: JSON.stringify({
-      session: {
-        id: 'public-ui-retry-session',
-        title: '恢复重试验收',
-        turnCount: 0,
-        createdAt: '2026-07-28T00:00:00.000Z',
-        lastActiveAt: '2026-07-28T00:00:00.000Z',
-        expiresAt: '2026-08-27T00:00:00.000Z',
-      },
-      turns: [],
-      truncated: false,
-    }),
+    body: JSON.stringify(createPublicAssistantHistoryFixture({
+      sessionId: 'public-ui-retry-session',
+      activeBranchId: 'branch-ui-retry-1',
+      selectedRevisionId: 'revision-ui-history-1',
+      hasEarlierTurns: false,
+    })),
   })
 })
 await gotoApp(restoreRetryPage, '/blog')
@@ -3117,6 +3557,7 @@ await cancellationPage.close()
 
 for (const width of [320, 390, 430]) {
   const mobileAssistantPage = await browser.newPage({ viewport: { width, height: 900 } })
+  const mobileGenerationBodies = []
   await mobileAssistantPage.route('**/api/health', async (route) => {
     await route.fulfill({
       status: 200,
@@ -3126,17 +3567,23 @@ for (const width of [320, 390, 430]) {
   })
   await mobileAssistantPage.route('**/api/chat/public/stream', async (route) => {
     const requestBody = route.request().postDataJSON()
+    mobileGenerationBodies.push(requestBody)
     await route.fulfill({
       status: 200,
       contentType: 'text/event-stream',
-      body: toPublicAssistantSse({ ...publicAssistantAnswerFixture, requestId: requestBody.requestId }),
+      body: toPublicAssistantSse(createPublicAssistantGenerationFixture(requestBody)),
     })
   })
   await gotoApp(mobileAssistantPage, '/blog')
   await mobileAssistantPage.locator('.public-assistant__trigger').click()
   await mobileAssistantPage.locator('.public-assistant.is-fullscreen .public-assistant__panel').waitFor({ state: 'visible' })
-  if (await mobileAssistantPage.locator('#public-assistant-input').evaluate((element) => element === document.activeElement)) {
-    failures.push(`/blog public assistant ${width}px: first open should not focus the composer or summon the soft keyboard`)
+  const mobileInitialFocusReady = await mobileAssistantPage.waitForFunction(() => {
+    const dialog = document.querySelector('.public-assistant__panel')
+    const close = document.querySelector('[aria-label="关闭研究助手"]')
+    return dialog instanceof HTMLElement && close === document.activeElement && dialog.contains(document.activeElement)
+  }, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+  if (!mobileInitialFocusReady) {
+    failures.push(`/blog public assistant ${width}px: first open should focus a stable dialog control without summoning the soft keyboard`)
   }
   await mobileAssistantPage.setViewportSize({ width, height: 640 })
   await mobileAssistantPage.waitForFunction(() => {
@@ -3145,6 +3592,17 @@ for (const width of [320, 390, 430]) {
   })
   await mobileAssistantPage.locator('.public-assistant__suggestion').first().click()
   await mobileAssistantPage.locator('.public-assistant__message.is-assistant').waitFor({ state: 'visible' })
+  const mobileUserCount = await mobileAssistantPage.locator('.public-assistant__message.is-user').count()
+  await mobileAssistantPage.getByRole('button', { name: '重新生成回答' }).click()
+  await mobileAssistantPage.waitForFunction(() => document.querySelector('.public-assistant__revision-nav span')?.textContent?.trim() === '2 / 2')
+  if (
+    mobileGenerationBodies[1]?.intent?.kind !== 'answer-revision' ||
+    (await mobileAssistantPage.locator('.public-assistant__message.is-user').count()) !== mobileUserCount
+  ) {
+    failures.push(`/blog public assistant ${width}px: regeneration should retain one user question and use answer-revision intent`)
+  }
+  await mobileAssistantPage.getByRole('button', { name: '查看上一版回答' }).click()
+  await mobileAssistantPage.getByRole('button', { name: '从此版本继续' }).waitFor({ state: 'visible' })
   const mobileAssistantLayout = await mobileAssistantPage.evaluate(() => {
     const root = document.querySelector('.public-assistant')
     const panel = document.querySelector('.public-assistant__panel')
@@ -3184,17 +3642,32 @@ for (const width of [320, 390, 430]) {
     const codeScroll = document.querySelector('.public-assistant-markdown__code-block pre')
     const tableScroll = document.querySelector('.public-assistant-markdown__table-scroll')
     const copyButton = document.querySelector('.public-assistant-markdown__code-header button')
+    const panel = document.querySelector('.public-assistant__panel')
+    const branchPicker = document.querySelector('.public-assistant__branch-picker')
+    const branchSelect = document.querySelector('.public-assistant__branch-picker select')
+    const revisionToolbar = document.querySelector('.public-assistant__revision-toolbar')
+    const revisionNav = document.querySelector('.public-assistant__revision-nav')
+    const continueButton = document.querySelector('.public-assistant__continue-version')
     if (
       !(message instanceof HTMLElement) ||
       !(codeBlock instanceof HTMLElement) ||
       !(codeScroll instanceof HTMLElement) ||
       !(tableScroll instanceof HTMLElement) ||
-      !(copyButton instanceof HTMLElement)
+      !(copyButton instanceof HTMLElement) ||
+      !(panel instanceof HTMLElement) ||
+      !(branchPicker instanceof HTMLElement) ||
+      !(branchSelect instanceof HTMLElement) ||
+      !(revisionToolbar instanceof HTMLElement) ||
+      !(revisionNav instanceof HTMLElement) ||
+      !(continueButton instanceof HTMLElement)
     ) return null
     const messageRect = message.getBoundingClientRect()
     const codeRect = codeBlock.getBoundingClientRect()
     const tableRect = tableScroll.getBoundingClientRect()
     const copyRect = copyButton.getBoundingClientRect()
+    const panelRect = panel.getBoundingClientRect()
+    const controls = [branchPicker, branchSelect, revisionToolbar, revisionNav, continueButton]
+      .map((element) => element.getBoundingClientRect())
     return {
       documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       messageOverflow: message.scrollWidth - message.clientWidth,
@@ -3206,6 +3679,11 @@ for (const width of [320, 390, 430]) {
       tableOwnsOverflow: tableScroll.scrollWidth > tableScroll.clientWidth,
       modelLinkCount: message.querySelectorAll('.public-assistant-markdown a').length,
       modelImageCount: message.querySelectorAll('.public-assistant-markdown img').length,
+      revisionControlsInside: controls.every((rect) => rect.left >= panelRect.left - 1 && rect.right <= panelRect.right + 1),
+      revisionToolbarOverflow: revisionToolbar.scrollWidth - revisionToolbar.clientWidth,
+      branchSelectHeight: branchSelect.getBoundingClientRect().height,
+      continueHeight: continueButton.getBoundingClientRect().height,
+      revisionButtonMinHeight: Math.min(...[...revisionNav.querySelectorAll('button')].map((button) => button.getBoundingClientRect().height)),
     }
   })
   if (
@@ -3219,9 +3697,14 @@ for (const width of [320, 390, 430]) {
     mobileMarkdownLayout.copyWidth < 44 ||
     mobileMarkdownLayout.copyHeight < 44 ||
     mobileMarkdownLayout.modelLinkCount !== 0 ||
-    mobileMarkdownLayout.modelImageCount !== 0
+    mobileMarkdownLayout.modelImageCount !== 0 ||
+    !mobileMarkdownLayout.revisionControlsInside ||
+    mobileMarkdownLayout.revisionToolbarOverflow > 1 ||
+    mobileMarkdownLayout.branchSelectHeight < 44 ||
+    mobileMarkdownLayout.continueHeight < 44 ||
+    mobileMarkdownLayout.revisionButtonMinHeight < 44
   ) {
-    failures.push('/blog public assistant ' + width + 'px: structured answers should stay contained with a 44px copy target and no model-authored navigation')
+    failures.push('/blog public assistant ' + width + 'px: structured answers and revision controls should remain contained with 44px touch targets')
   }
   const mobileFeedbackTrigger = mobileAssistantPage.getByRole('button', { name: '这个回答需要改进' })
   const mobileFeedbackTriggerBox = await mobileFeedbackTrigger.boundingBox()
@@ -3243,8 +3726,13 @@ for (const width of [320, 390, 430]) {
     failures.push('/blog public assistant ' + width + 'px: closing feedback reasons should restore the owning control')
   }
   await mobileAssistantPage.keyboard.press('Escape')
-  if (await mobileAssistantPage.locator('.public-assistant__panel').isVisible().catch(() => false)) {
-    failures.push(`/blog public assistant ${width}px: Escape should close the fullscreen dialog`)
+  const mobileTriggerFocusRestored = await mobileAssistantPage.waitForFunction(() => {
+    const panel = document.querySelector('.public-assistant__panel')
+    const trigger = document.querySelector('.public-assistant__trigger')
+    return !panel && trigger === document.activeElement
+  }, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+  if (!mobileTriggerFocusRestored) {
+    failures.push(`/blog public assistant ${width}px: Escape should close the fullscreen dialog and restore its trigger`)
   }
   await mobileAssistantPage.close()
 }
