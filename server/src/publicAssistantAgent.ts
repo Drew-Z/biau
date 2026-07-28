@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph'
 import { env } from './env.js'
-import { createPublicAssistantModel } from './publicAssistantModel.js'
+import { createPublicAssistantModel, shouldUseDirectPublicAssistantRoute } from './publicAssistantModel.js'
 import type {
   PublicAssistantDraft,
   PublicAssistantEvidence,
@@ -104,6 +104,11 @@ async function inputGuardNode(state: PublicAssistantState) {
 
 async function planNode(state: PublicAssistantState) {
   if (state.inputBlocked) {
+    return {
+      agentPlan: { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' } satisfies PublicAssistantPlan,
+    }
+  }
+  if (shouldUseDirectPublicAssistantRoute(state.request)) {
     return {
       agentPlan: { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' } satisfies PublicAssistantPlan,
     }

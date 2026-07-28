@@ -11,6 +11,16 @@ import type {
 import type { AssistantModelChannelSummary, PublicAssistantClaim, PublicAssistantRoute, PublicAssistantStatus } from './types.js'
 
 const PUBLIC_PLANNER_TIMEOUT_MS = 4_000
+const DIRECT_GREETING_PATTERN = /^(?:你好|您好|嗨|hi|hello|谢谢|感谢)(?:你|您)?[\s，,。.!！?？]*$/iu
+const DIRECT_POLITE_PREFIX = '(?:(?:请(?:你)?|麻烦(?:你)?|能否|可以)\\s*)?(?:(?:帮|给)(?:我)?\\s*)?'
+const DIRECT_CREATIVE_TASK_PATTERN = new RegExp(
+  `^${DIRECT_POLITE_PREFIX}(?:写|生成|创作|编写|作)\\s*(?:一|两|三|几)?(?:首|篇|段|个)?\\s*(?:(?:七言|五言|现代|古风|自由体|中文|英文)\\s*)?(?:古诗|诗词|诗歌|诗|故事|短篇故事|对联|文案|标题|口号|段子|脚本)(?:$|[\\s，,。.!！:：])`,
+  'iu',
+)
+const DIRECT_TRANSFORMATION_TASK_PATTERN = new RegExp(
+  `^${DIRECT_POLITE_PREFIX}(?:(?:把|将)\\s*)?(?:(?:下面|以下|这段|这句|这篇|这份)\\s*)?(?:(?:内容|文字|文本|句子|文章)\\s*)?(?:改写|润色|翻译|续写|缩写|扩写|校对|调整语气|整理格式)(?:$|[\\s：:,，。.!！]|这|以|下|成|为|我|中|英)`,
+  'iu',
+)
 
 export function createPublicAssistantModel(): PublicAssistantModel {
   return {
@@ -22,6 +32,7 @@ export function createPublicAssistantModel(): PublicAssistantModel {
 export async function planPublicAssistantRequest(request: PublicAssistantRequest): Promise<PublicAssistantPlan> {
   if (request.mode === 'site') return forcedPlan('site', request.question)
   if (request.mode === 'web') return forcedPlan('web', request.question)
+  if (shouldUseDirectPublicAssistantRoute(request)) return directPlan()
 
   const channel = resolveModelChannel()
   if (!isResponsesChannelConfigured(channel)) return buildFallbackPlan(request)
@@ -146,10 +157,28 @@ function normalizeClaim(value: unknown, index: number, allowedEvidence: Set<stri
 function buildFallbackPlan(request: PublicAssistantRequest): PublicAssistantPlan {
   const normalized = request.question.toLowerCase()
   const siteRelated = /biau|泊岸|本站|这个网站|项目页|博客|状态页|playlab|legal|erp|pet|xunqiu|寻球/u.test(normalized)
-  const conversational = /^(你好|您好|hi|hello|谢谢|帮我(改写|润色|翻译)|写一(首|段|个))/iu.test(request.question.trim())
   const current = /最新|今天|现在|近期|实时|新闻|发布|价格|版本|比较|对比|是什么|为什么|怎么/u.test(normalized)
-  const route: PublicAssistantRoute = conversational ? 'direct' : siteRelated && current ? 'combined' : siteRelated ? 'site' : 'web'
+  const route: PublicAssistantRoute = shouldUseDirectPublicAssistantRoute(request)
+    ? 'direct'
+    : siteRelated && current
+      ? 'combined'
+      : siteRelated
+        ? 'site'
+        : 'web'
   return { route, queries: route === 'direct' ? [] : [request.question], requiresFreshness: current, planner: 'fallback' }
+}
+
+export function shouldUseDirectPublicAssistantRoute(request: Pick<PublicAssistantRequest, 'mode' | 'question'>) {
+  if (request.mode !== 'auto') return false
+  const question = request.question.replace(/\s+/gu, ' ').trim()
+  if (!question) return false
+  return DIRECT_GREETING_PATTERN.test(question)
+    || DIRECT_CREATIVE_TASK_PATTERN.test(question)
+    || DIRECT_TRANSFORMATION_TASK_PATTERN.test(question)
+}
+
+function directPlan(): PublicAssistantPlan {
+  return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
 }
 
 function buildEvidenceFallback(

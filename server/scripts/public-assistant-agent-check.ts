@@ -218,6 +218,88 @@ function payloadBoundaryCheck() {
   assert.equal(normalizePublicAssistantPayload({ contractVersion: 2, message: 'missing request id' }), null)
 }
 
+async function directCreativeRouteCheck() {
+  let plannerCalls = 0
+  let answerCalls = 0
+  let researchCalls = 0
+  const progress: string[] = []
+  const dependencies: PublicAssistantAgentDependencies = {
+    model: {
+      async plan() {
+        plannerCalls += 1
+        return { route: 'combined', queries: ['irrelevant research'], requiresFreshness: false, planner: 'model' }
+      },
+      async answer(input) {
+        answerCalls += 1
+        assert.equal(input.plan.route, 'direct')
+        assert.deepEqual(input.evidence, [])
+        return {
+          answer: '孤帆泊晚岸，灯火照归舟。',
+          status: 'answered',
+          claims: [],
+          suggestions: ['再写一首七言绝句'],
+          model: 'fixture-model',
+          provider: 'fixture-provider',
+        }
+      },
+    },
+    async retrieveSite() {
+      researchCalls += 1
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      researchCalls += 1
+      return { evidence: [], available: true }
+    },
+  }
+  const response = await runPublicAssistantAgent({
+    ...request(),
+    question: '请生成一首古诗',
+    onProgress: ({ stage }) => progress.push(stage),
+  }, dependencies)
+  assert.equal(plannerCalls, 0)
+  assert.equal(answerCalls, 1)
+  assert.equal(researchCalls, 0)
+  assert.equal(response.answer, '孤帆泊晚岸，灯火照归舟。')
+  assert.equal(response.status, 'answered')
+  assert.equal(response.claims?.length, 0)
+  assert.equal(response.citations.length, 0)
+  assert.equal(response.meta?.research?.route, 'direct')
+  assert.deepEqual(progress, ['planning', 'answering', 'verifying'])
+}
+
+async function explicitResearchModeOverridesDirectTaskCheck() {
+  let plannerCalls = 0
+  let webCalls = 0
+  const dependencies: PublicAssistantAgentDependencies = {
+    model: {
+      async plan() {
+        plannerCalls += 1
+        return { route: 'web', queries: ['古诗 公开资料'], requiresFreshness: false, planner: 'fallback' }
+      },
+      async answer(input) {
+        return modelFor(input.plan).answer(input)
+      },
+    },
+    async retrieveSite() {
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      webCalls += 1
+      return { evidence: [evidence('web-explicit', 'web')], available: true }
+    },
+  }
+  const response = await runPublicAssistantAgent({
+    ...request('web'),
+    question: '请生成一首古诗',
+  }, dependencies)
+  assert.equal(plannerCalls, 1)
+  assert.equal(webCalls, 1)
+  assert.equal(response.status, 'answered')
+  assert.equal(response.meta?.research?.route, 'web')
+  assert.equal(response.citations.length, 1)
+}
+
 async function cancelledTurnIsNotPersistedCheck() {
   const abort = new AbortController()
   let completionCalls = 0
@@ -368,6 +450,8 @@ async function idempotentExecutionCheck() {
 }
 
 await combinedRouteCheck()
+await directCreativeRouteCheck()
+await explicitResearchModeOverridesDirectTaskCheck()
 await boundedRetryCheck()
 await unavailableForcedWebCheck()
 await invalidCitationCheck()

@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { env } from '../src/env.js'
-import { generatePublicAssistantDraft, planPublicAssistantRequest } from '../src/publicAssistantModel.js'
+import {
+  generatePublicAssistantDraft,
+  planPublicAssistantRequest,
+  shouldUseDirectPublicAssistantRoute,
+} from '../src/publicAssistantModel.js'
 import type { PublicAssistantEvidence, PublicAssistantRequest } from '../src/publicAssistantRuntime.js'
 import { readResponsesContent, readResponsesStreamContent } from '../src/responsesApi.js'
 
@@ -165,6 +169,23 @@ try {
     plan,
     evidence: [evidence],
   })
+
+  const directPlan = await planPublicAssistantRequest({
+    ...request,
+    question: '请生成一首古诗',
+    mode: 'auto',
+  })
+  assert.deepEqual(directPlan, {
+    route: 'direct',
+    queries: [],
+    requiresFreshness: false,
+    planner: 'fallback',
+  })
+  assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '请帮我润色这段文字' }), true)
+  assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '请翻译以下内容' }), true)
+  assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '你好' }), true)
+  assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: 'OpenAI 最近发布了什么？' }), false)
+  assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'web', question: '请生成一首古诗' }), false)
   setTimeout(() => cancelled.abort(), 30)
   await assert.rejects(
     cancelledDraft,
