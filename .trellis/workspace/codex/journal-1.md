@@ -247,3 +247,36 @@ Released immutable public-assistant revisions to Cloudflare and Render, verified
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: Public assistant direct creative routing
+
+**Date**: 2026-07-29
+**Task**: Public assistant direct creative routing
+**Branch**: `codex/public-assistant-productization`
+
+### Summary
+
+Fixed the public assistant so high-confidence creative and text-transformation requests use the direct model route in auto mode instead of failing the research citation gate; explicit site/web modes remain unchanged.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cd3b8c96` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
