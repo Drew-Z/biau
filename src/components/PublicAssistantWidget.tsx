@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Copy,
   ExternalLink,
-  Globe2,
   GitBranch,
   History,
   LoaderCircle,
@@ -16,6 +15,7 @@ import {
   Pencil,
   RefreshCw,
   Send,
+  SlidersHorizontal,
   Square,
   ThumbsDown,
   ThumbsUp,
@@ -165,9 +165,9 @@ function normalizePublicAssistantQuestion(value: string) {
 }
 
 const MODE_OPTIONS: Array<{ value: PublicAssistantMode; label: string }> = [
-  { value: 'auto', label: '自动' },
-  { value: 'site', label: '本站' },
-  { value: 'web', label: '全网' },
+  { value: 'auto', label: '自动选择' },
+  { value: 'site', label: '仅本站' },
+  { value: 'web', label: '仅公开网页' },
 ]
 
 const NEGATIVE_FEEDBACK_REASONS: Array<{ value: NegativeFeedbackReason; label: string }> = [
@@ -1660,21 +1660,23 @@ export function PublicAssistantWidget() {
             </label>
           )}
 
-          <div className="public-assistant__modes" role="group" aria-label="检索范围">
-            {MODE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={mode === option.value ? 'is-active' : ''}
-                aria-pressed={mode === option.value}
-                disabled={isAssistantBusy}
-                onClick={() => setMode(option.value)}
-              >
-                {option.value === 'web' && <Globe2 size={14} aria-hidden />}
-                {option.label}
-              </button>
-            ))}
-          </div>
+          <label className="public-assistant__modes">
+            <SlidersHorizontal size={15} aria-hidden />
+            <span>资料范围</span>
+            <select
+              aria-label="资料范围"
+              value={mode}
+              disabled={isAssistantBusy}
+              onChange={(event) => {
+                const nextMode = MODE_OPTIONS.find((option) => option.value === event.target.value)?.value
+                if (nextMode) setMode(nextMode)
+              }}
+            >
+              {MODE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
 
           <div
             className="public-assistant__messages"

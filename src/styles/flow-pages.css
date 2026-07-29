@@ -4884,7 +4884,6 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 
 .public-assistant.is-fullscreen .public-assistant__hint,
 .public-assistant.is-fullscreen .public-assistant__branch-picker,
-.public-assistant.is-fullscreen .public-assistant__modes,
 .public-assistant.is-fullscreen .public-assistant__messages,
 .public-assistant.is-fullscreen .public-assistant__suggestions,
 .public-assistant.is-fullscreen .public-assistant__composer {
@@ -4953,38 +4952,37 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 
 .public-assistant__modes {
   min-width: 0;
-  padding: 3px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 3px;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 36px;
+  padding: 0 var(--space-8, 8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
   background: color-mix(in oklch, var(--panel-strong) 52%, transparent);
   border: 1px solid var(--flow-ui-card-border);
   border-radius: var(--radius-md);
 }
 
-.public-assistant__modes button {
+.public-assistant__modes span {
+  font: 800 12px/1 var(--font-ui);
+  white-space: nowrap;
+}
+
+.public-assistant__modes select {
   min-width: 0;
-  min-height: 36px;
-  padding: 0 var(--space-8);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  color: var(--muted);
+  max-width: 170px;
+  min-height: 32px;
+  padding: 0 22px 0 2px;
+  color: var(--ink);
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: calc(var(--radius-md) - 3px);
+  border: 0;
   font: 800 12px/1 var(--font-ui);
   cursor: pointer;
 }
 
-.public-assistant__modes button.is-active {
-  color: var(--ink);
-  background: color-mix(in oklch, var(--green) 12%, var(--panel));
-  border-color: color-mix(in oklch, var(--green) 26%, var(--flow-ui-card-border));
-}
-
-.public-assistant__modes button:disabled {
+.public-assistant__modes select:disabled {
   cursor: not-allowed;
   opacity: 0.58;
 }
@@ -5971,7 +5969,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__header-actions button:focus-visible,
 .public-assistant__history button:focus-visible,
 .public-assistant__branch-picker select:focus-visible,
-.public-assistant__modes button:focus-visible,
+.public-assistant__modes select:focus-visible,
 .public-assistant__revision-toolbar button:focus-visible,
 .public-assistant__message-actions button:focus-visible,
 .public-assistant__user-message-actions button:focus-visible,
@@ -7248,7 +7246,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   .public-assistant__user-message-actions button,
   .public-assistant__question-editor-actions button,
   .public-assistant__revision-toolbar button,
-  .public-assistant__modes button {
+  .public-assistant__modes select {
     min-height: 44px;
   }
 

@@ -13,7 +13,7 @@
 - `runPublicAssistantAgent()` is the authoritative answer path for `POST /chat/public`.
 - The LangGraph flow is `input_guard -> plan -> research? -> grade_evidence -> rewrite? -> generate -> verify_claims -> rewrite? -> finalize`.
 - In `auto` mode, high-confidence greetings, creative-writing commands, and text transformations use the deterministic `direct` route before planner inference. Direct answers do not require evidence or citations; explicit `site` and `web` modes remain authoritative and keep the research/evidence gates.
-- `auto`, `site`, and `web` are explicit request modes. Combined site/web research runs concurrently.
+- `auto` is the default product mode. The compact scope selector exposes `site` and `web` only as explicit user overrides when automatic tool selection is unsuitable; they must not return as equal-weight primary navigation. Combined site/web research runs concurrently.
 - Research recovery is bounded to one retry. Model calls, query counts, page fetches, retained evidence, input size, output size, and elapsed time are all bounded.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
 - A deterministic plan is allowed only when structured planning fails. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.

@@ -2647,7 +2647,7 @@ if ((await editQuestionButton.count()) !== 1) {
 
   await editQuestionButton.click()
   await publicAssistantPage.getByRole('textbox', { name: '编辑问题内容' }).fill('修改后的历史问题')
-  await publicAssistantPage.getByRole('button', { name: '全网' }).click()
+  await publicAssistantPage.getByLabel('资料范围').selectOption('web')
   await publicAssistantPage.getByRole('button', { name: '发送修改' }).click()
   await publicAssistantPage.waitForFunction(() => {
     const user = document.querySelector('.public-assistant__message.is-user p')
