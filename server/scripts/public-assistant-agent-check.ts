@@ -4,6 +4,7 @@ import {
   PublicAssistantExecutionError,
   type PublicAssistantExecutionDependencies,
 } from '../src/publicAssistantExecution.js'
+import { env } from '../src/env.js'
 import { normalizePublicAssistantPayload, runPublicAssistantAgent, type PublicAssistantAgentDependencies } from '../src/publicAssistantAgent.js'
 import type { PublicAssistantEvidence, PublicAssistantModel, PublicAssistantPlan } from '../src/publicAssistantRuntime.js'
 import type { PublicAssistantMode } from '../src/types.js'
@@ -120,6 +121,173 @@ async function boundedRetryCheck() {
   assert.equal(webCalls, 2)
   assert.equal(response.status, 'answered')
   assert.equal(response.meta?.research?.retryCount, 1)
+}
+
+async function modelRecoveryCheck() {
+  let calls = 0
+  const delays: number[] = []
+  const progress: string[] = []
+  const dependencies: PublicAssistantAgentDependencies = {
+    model: {
+      async plan() {
+        return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+      },
+      async answer() {
+        calls += 1
+        if (calls < 3) {
+          return {
+            answer: '暂时不可用',
+            status: 'degraded',
+            claims: [],
+            suggestions: [],
+            model: 'fixture-model',
+            provider: 'fixture-provider',
+            failure: 'provider_error',
+            diagnostic: { kind: 'timeout', attemptedEndpoints: 1, timeoutMs: 100 },
+            attempts: [{ attempt: 1, durationMs: 100, failureClass: 'timeout' }],
+          }
+        }
+        return {
+          answer: '第三次尝试成功。',
+          status: 'answered',
+          claims: [],
+          suggestions: [],
+          model: 'fixture-model',
+          provider: 'fixture-provider',
+          attempts: [{ attempt: 1, durationMs: 80, firstActivityMs: 20 }],
+        }
+      },
+    },
+    async retrieveSite() {
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      return { evidence: [], available: true }
+    },
+    async sleep(delayMs) {
+      delays.push(delayMs)
+    },
+  }
+  const response = await runPublicAssistantAgent({
+    ...request(),
+    question: '你好',
+    onProgress: ({ stage }) => progress.push(stage),
+  }, dependencies)
+  assert.equal(calls, 3)
+  assert.deepEqual(delays, [200, 400])
+  assert.equal(response.status, 'answered')
+  assert.deepEqual(response.meta?.recovery, { state: 'recovered', attempts: 3 })
+  assert.deepEqual(progress, ['planning', 'answering', 'recovering', 'recovering', 'verifying'])
+}
+
+async function permanentModelFailureDoesNotRetryCheck() {
+  let calls = 0
+  const dependencies: PublicAssistantAgentDependencies = {
+    model: {
+      async plan() {
+        return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+      },
+      async answer() {
+        calls += 1
+        return {
+          answer: '模型拒绝了请求。',
+          status: 'degraded',
+          claims: [],
+          suggestions: [],
+          model: 'fixture-model',
+          provider: 'fixture-provider',
+          failure: 'provider_error',
+          diagnostic: { kind: 'http_status', httpStatus: 400, attemptedEndpoints: 1, timeoutMs: 100 },
+          attempts: [{ attempt: 1, durationMs: 10, failureClass: 'upstream' }],
+        }
+      },
+    },
+    async retrieveSite() {
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      return { evidence: [], available: true }
+    },
+  }
+  const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
+  assert.equal(calls, 1)
+  assert.deepEqual(response.meta?.recovery, { state: 'degraded', attempts: 1, failureClass: 'upstream' })
+}
+
+async function insufficientModelBudgetDoesNotRetryCheck() {
+  let calls = 0
+  let clock = 0
+  const dependencies: PublicAssistantAgentDependencies = {
+    now: () => clock,
+    model: {
+      async plan() {
+        return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+      },
+      async answer() {
+        calls += 1
+        clock = env.publicAssistantRequestTimeoutMs
+        return {
+          answer: '本次调用超时。',
+          status: 'degraded',
+          claims: [],
+          suggestions: [],
+          model: 'fixture-model',
+          provider: 'fixture-provider',
+          failure: 'provider_error',
+          diagnostic: { kind: 'timeout', attemptedEndpoints: 1, timeoutMs: 100 },
+          attempts: [{ attempt: 1, durationMs: 100, failureClass: 'timeout' }],
+        }
+      },
+    },
+    async retrieveSite() {
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      return { evidence: [], available: true }
+    },
+  }
+  const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
+  assert.equal(calls, 1)
+  assert.deepEqual(response.meta?.recovery, { state: 'degraded', attempts: 1, failureClass: 'timeout' })
+}
+
+async function modelRetryBackoffIsAbortableCheck() {
+  const abort = new AbortController()
+  let calls = 0
+  await assert.rejects(runPublicAssistantAgent({
+    ...request(),
+    question: '你好',
+    signal: abort.signal,
+    onProgress: ({ stage }) => {
+      if (stage === 'recovering') abort.abort()
+    },
+  }, {
+    model: {
+      async plan() {
+        return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+      },
+      async answer() {
+        calls += 1
+        return {
+          answer: '本次调用超时。',
+          status: 'degraded',
+          claims: [],
+          suggestions: [],
+          model: 'fixture-model',
+          provider: 'fixture-provider',
+          failure: 'provider_error',
+          diagnostic: { kind: 'timeout', attemptedEndpoints: 1, timeoutMs: 100 },
+        }
+      },
+    },
+    async retrieveSite() {
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      return { evidence: [], available: true }
+    },
+  }), (error) => error instanceof DOMException && error.name === 'AbortError')
+  assert.equal(calls, 1)
 }
 
 async function unavailableForcedWebCheck() {
@@ -453,6 +621,10 @@ await combinedRouteCheck()
 await directCreativeRouteCheck()
 await explicitResearchModeOverridesDirectTaskCheck()
 await boundedRetryCheck()
+await modelRecoveryCheck()
+await permanentModelFailureDoesNotRetryCheck()
+await insufficientModelBudgetDoesNotRetryCheck()
+await modelRetryBackoffIsAbortableCheck()
 await unavailableForcedWebCheck()
 await invalidCitationCheck()
 await credentialGuardCheck()

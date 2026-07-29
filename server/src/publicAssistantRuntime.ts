@@ -33,6 +33,7 @@ export type PublicAssistantProgressStage =
   | 'evaluating'
   | 'refining'
   | 'answering'
+  | 'recovering'
   | 'verifying'
   | 'saving'
 
@@ -89,5 +90,6 @@ export interface PublicAssistantModel {
     request: PublicAssistantRequest
     plan: PublicAssistantPlan
     evidence: PublicAssistantEvidence[]
+    timeoutMs?: number
   }): Promise<PublicAssistantDraft>
 }

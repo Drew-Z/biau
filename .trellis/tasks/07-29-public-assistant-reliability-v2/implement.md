@@ -22,22 +22,22 @@ Rollback point: contract-only commit with no behavior change.
 
 ### 2. Implement The Direct Request Profile
 
-- [ ] Split direct and evidence-bound request builders.
-- [ ] Remove research/evidence instructions and empty evidence payload from direct.
-- [ ] Add a bounded direct max-output setting to `env.ts`, `.env.example`,
+- [x] Split direct and evidence-bound request builders.
+- [x] Remove research/evidence instructions and empty evidence payload from direct.
+- [x] Add a bounded direct max-output setting to `env.ts`, `.env.example`,
       `render.yaml`, and deployment contract checks.
-- [ ] Preserve empty direct claims, sensitive-output blocking, bounded history,
+- [x] Preserve empty direct claims, sensitive-output blocking, bounded history,
       and existing route selection.
 
 Rollback point: direct-profile commit.
 
 ### 3. Implement Budget-Aware Recovery
 
-- [ ] Add the bounded attempt runner and retry classifier.
-- [ ] Derive per-attempt allowance from the remaining absolute request budget.
-- [ ] Make backoff and active provider calls abortable.
-- [ ] Emit `recovering` without replaying or persisting an intermediate fallback.
-- [ ] Carry attempts/recovered/failure class to final internal metadata.
+- [x] Add the bounded attempt runner and retry classifier.
+- [x] Derive per-attempt allowance from the remaining absolute request budget.
+- [x] Make backoff and active provider calls abortable.
+- [x] Emit `recovering` without replaying or persisting an intermediate fallback.
+- [x] Carry attempts/recovered/failure class to final internal metadata.
 - [ ] Reconcile useful ideas from the external draft only through reviewed diffs;
       never overwrite that worktree.
 
@@ -45,12 +45,12 @@ Rollback point: retry commit independent from UI.
 
 ### 4. Add Optional Structured Outputs
 
-- [ ] Add `off|json-schema` server configuration and validation.
-- [ ] Add provider-neutral request options to the Responses adapter.
-- [ ] Define bounded planner and answer schemas in server code.
-- [ ] Cover success, unsupported schema, malformed stream, relay compatibility,
+- [x] Add `off|json-schema` server configuration and validation.
+- [x] Add provider-neutral request options to the Responses adapter.
+- [x] Define bounded planner and answer schemas in server code.
+- [x] Cover success, unsupported schema, malformed stream, relay compatibility,
       empty output, oversized output, and cancellation with loopback fixtures.
-- [ ] Keep production setting off until the manual capability gate is completed.
+- [x] Keep production setting off until the manual capability gate is completed.
 
 Rollback point: capability remains off through environment.
 

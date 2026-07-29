@@ -59,8 +59,10 @@ export const env = {
   aiDailyTheNewsApiToken,
   aiDailyHotDailyEnabled: readBooleanWithDefault(process.env.AI_DAILY_HOTDAILY_ENABLED, true),
   assistantModelProtocol: readAssistantModelProtocol(process.env.ASSISTANT_MODEL_PROTOCOL),
+  assistantModelStructuredOutputsMode: readStructuredOutputsMode(process.env.ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE),
   publicAssistantRequestTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS, 25000, 5000, 45000),
   publicAssistantAnswerTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS, 20000, 5000, 30000),
+  publicAssistantDirectMaxOutputTokens: readBoundedInteger(process.env.PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS, 800, 128, 2048),
   publicAssistantRateLimit: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_LIMIT, 20, 1, 120),
   publicAssistantRateWindowMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_WINDOW_MS, 60000, 10000, 3600000),
   publicAssistantRetentionDays: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RETENTION_DAYS, 30, 1, 30),
@@ -141,6 +143,10 @@ function readServiceMode(value: string | undefined): AssistantServiceMode {
 
 function readAssistantModelProtocol(value: string | undefined): 'responses' | 'chat-completions' {
   return value?.trim().toLowerCase() === 'chat-completions' ? 'chat-completions' : 'responses'
+}
+
+function readStructuredOutputsMode(value: string | undefined): 'off' | 'json-schema' {
+  return value?.trim().toLowerCase() === 'json-schema' ? 'json-schema' : 'off'
 }
 
 function readOriginCsv(value: string | undefined) {

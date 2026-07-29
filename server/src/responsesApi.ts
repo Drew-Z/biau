@@ -1,4 +1,4 @@
-import type { ProviderDiagnostic, ProviderDiagnosticKind } from './types.js'
+import type { ProviderDiagnostic, ProviderDiagnosticKind, PublicAssistantRecoveryFailureClass } from './types.js'
 
 export interface ResponsesApiChannel {
   apiKey: string
@@ -10,6 +10,15 @@ export interface ResponsesApiResult {
   content: string | null
   diagnostic?: ProviderDiagnostic
   failure?: 'not_configured' | 'provider_error' | 'empty_response' | 'invalid_response'
+  failureClass?: PublicAssistantRecoveryFailureClass
+  durationMs: number
+  firstActivityMs?: number
+}
+
+export interface ResponsesJsonSchema {
+  name: string
+  schema: Record<string, unknown>
+  strict?: boolean
 }
 
 export async function requestResponsesText(input: {
@@ -19,22 +28,42 @@ export async function requestResponsesText(input: {
   timeoutMs: number
   signal?: AbortSignal
   stream?: boolean
+  maxOutputTokens?: number
+  jsonSchema?: ResponsesJsonSchema
 }): Promise<ResponsesApiResult> {
+  const startedAt = Date.now()
   if (!input.channel.apiKey || !input.channel.baseUrl || !input.channel.model) {
-    return { content: null, failure: 'not_configured' }
+    return { content: null, failure: 'not_configured', failureClass: 'not_configured', durationMs: 0 }
   }
 
   const endpoints = responsesEndpoints(input.channel.baseUrl)
   let diagnostic: ProviderDiagnostic | undefined
+  let firstActivityMs: number | undefined
   for (const [index, endpoint] of endpoints.entries()) {
     const attempt = await requestEndpoint({ ...input, endpoint })
+    firstActivityMs ??= attempt.firstActivityMs === undefined
+      ? undefined
+      : Math.max(0, Date.now() - startedAt - attempt.durationMs + attempt.firstActivityMs)
     diagnostic = { ...attempt.diagnostic, attemptedEndpoints: index + 1 }
+    if (attempt.invalidResponse) {
+      return {
+        content: null,
+        failure: 'invalid_response',
+        failureClass: 'invalid',
+        durationMs: Math.max(0, Date.now() - startedAt),
+        ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
+        diagnostic,
+      }
+    }
     if (attempt.ok) {
       const content = attempt.content.trim()
       if (!content) {
         return {
           content: null,
           failure: 'empty_response',
+          failureClass: 'empty',
+          durationMs: Math.max(0, Date.now() - startedAt),
+          ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
           diagnostic: {
             kind: 'empty_response',
             attemptedEndpoints: index + 1,
@@ -42,11 +71,33 @@ export async function requestResponsesText(input: {
           },
         }
       }
-      return { content, diagnostic }
+      if (content.length > MAX_RESPONSES_TEXT_CHARS) {
+        return {
+          content: null,
+          failure: 'invalid_response',
+          failureClass: 'invalid',
+          durationMs: Math.max(0, Date.now() - startedAt),
+          ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
+          diagnostic,
+        }
+      }
+      return {
+        content,
+        diagnostic,
+        durationMs: Math.max(0, Date.now() - startedAt),
+        ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
+      }
     }
     if (!attempt.httpStatus || ![404, 405].includes(attempt.httpStatus)) break
   }
-  return { content: null, failure: 'provider_error', diagnostic }
+  return {
+    content: null,
+    failure: 'provider_error',
+    failureClass: providerFailureClass(diagnostic),
+    durationMs: Math.max(0, Date.now() - startedAt),
+    ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
+    diagnostic,
+  }
 }
 
 export function parseStructuredResponse(value: string): unknown | null {
@@ -80,9 +131,14 @@ async function requestEndpoint(input: {
   timeoutMs: number
   signal?: AbortSignal
   stream?: boolean
+  maxOutputTokens?: number
+  jsonSchema?: ResponsesJsonSchema
 }) {
+  const startedAt = Date.now()
+  let firstActivityMs: number | undefined
   const abort = new AbortController()
   let diagnosticKind: ProviderDiagnosticKind = 'network_error'
+  let responseStatus: number | undefined
   const onAbort = () => abort.abort()
   input.signal?.addEventListener('abort', onAbort, { once: true })
   if (input.signal?.aborted) abort.abort()
@@ -106,6 +162,17 @@ async function requestEndpoint(input: {
       body: JSON.stringify({
         model: input.channel.model,
         stream: input.stream === true,
+        ...(input.maxOutputTokens ? { max_output_tokens: input.maxOutputTokens } : {}),
+        ...(input.jsonSchema ? {
+          text: {
+            format: {
+              type: 'json_schema',
+              name: input.jsonSchema.name,
+              strict: input.jsonSchema.strict !== false,
+              schema: input.jsonSchema.schema,
+            },
+          },
+        } : {}),
         input: [
           { role: 'system', content: [{ type: 'input_text', text: input.system }] },
           { role: 'user', content: [{ type: 'input_text', text: input.user }] },
@@ -113,6 +180,8 @@ async function requestEndpoint(input: {
       }),
       signal: abort.signal,
     })
+    firstActivityMs = Math.max(0, Date.now() - startedAt)
+    responseStatus = response.status
     if (!response.ok) {
       await response.body?.cancel().catch(() => undefined)
       return {
@@ -125,11 +194,17 @@ async function requestEndpoint(input: {
           attemptedEndpoints: 0,
           timeoutMs: input.timeoutMs,
         },
+        durationMs: Math.max(0, Date.now() - startedAt),
+        firstActivityMs,
+        invalidResponse: false,
       }
     }
     const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
     const content = input.stream && contentType.includes('text/event-stream')
-      ? await readResponsesStreamContent(response.body, armTimeout)
+      ? await readResponsesStreamContent(response.body, () => {
+        firstActivityMs ??= Math.max(0, Date.now() - startedAt)
+        armTimeout()
+      })
       : readResponsesContent(await response.json().catch(() => null))
     return {
       ok: true,
@@ -141,18 +216,31 @@ async function requestEndpoint(input: {
         attemptedEndpoints: 0,
         timeoutMs: input.timeoutMs,
       },
+      durationMs: Math.max(0, Date.now() - startedAt),
+      firstActivityMs,
+      invalidResponse: false,
     }
-  } catch {
+  } catch (error) {
     input.signal?.throwIfAborted()
+    const invalidResponse = error instanceof Error && error.message === 'responses-stream-too-large'
+    const kind = diagnosticKind === 'timeout'
+      ? 'timeout'
+      : responseStatus
+        ? 'http_status'
+        : 'network_error'
     return {
       ok: false,
       content: '',
-      httpStatus: null,
+      httpStatus: responseStatus ?? null,
       diagnostic: {
-        kind: diagnosticKind,
+        kind,
+        ...(kind === 'http_status' ? { httpStatus: responseStatus } : {}),
         attemptedEndpoints: 0,
         timeoutMs: input.timeoutMs,
       },
+      durationMs: Math.max(0, Date.now() - startedAt),
+      ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
+      invalidResponse,
     }
   } finally {
     if (timeout) clearTimeout(timeout)
@@ -161,6 +249,13 @@ async function requestEndpoint(input: {
 }
 
 const MAX_RESPONSES_STREAM_BYTES = 512_000
+const MAX_RESPONSES_TEXT_CHARS = 64_000
+
+function providerFailureClass(diagnostic: ProviderDiagnostic | undefined): PublicAssistantRecoveryFailureClass {
+  if (diagnostic?.kind === 'timeout') return 'timeout'
+  if (diagnostic?.kind === 'network_error') return 'network'
+  return 'upstream'
+}
 
 export async function readResponsesStreamContent(
   body: ReadableStream<Uint8Array> | null,

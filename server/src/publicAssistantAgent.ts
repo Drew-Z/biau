@@ -5,6 +5,7 @@ import { createPublicAssistantModel, shouldUseDirectPublicAssistantRoute } from 
 import type {
   PublicAssistantDraft,
   PublicAssistantEvidence,
+  PublicAssistantModelAttemptTiming,
   PublicAssistantModel,
   PublicAssistantPlan,
   PublicAssistantRequest,
@@ -31,6 +32,8 @@ export interface PublicAssistantAgentDependencies {
   model: PublicAssistantModel
   retrieveSite(queries: string[]): Promise<SiteResearchResult>
   researchWeb(queries: string[], signal?: AbortSignal): Promise<PublicWebResearchResult>
+  now?(): number
+  sleep?(delayMs: number, signal?: AbortSignal): Promise<void>
 }
 
 const PublicAssistantAnnotation = Annotation.Root({
@@ -64,7 +67,7 @@ export async function runPublicAssistantAgent(
   const finalState = await compiledPublicAssistantGraph.invoke({
     request,
     dependencies,
-    startedAt: Date.now(),
+    startedAt: dependencies.now?.() ?? Date.now(),
     inputBlocked: false,
     agentPlan: undefined,
     evidence: [],
@@ -176,13 +179,136 @@ async function rewriteNode(state: PublicAssistantState) {
 async function generateNode(state: PublicAssistantState) {
   emitProgress(state.request, 'answering')
   const plan = state.agentPlan ?? fallbackPlan(state.request)
-  return {
-    draft: await state.dependencies.model.answer({
+  const attempts: PublicAssistantModelAttemptTiming[] = []
+  let draft: PublicAssistantDraft | undefined
+  for (let attempt = 1 as 1 | 2 | 3; attempt <= 3; attempt = (attempt + 1) as 1 | 2 | 3) {
+    state.request.signal?.throwIfAborted()
+    if (attempt > 1) {
+      emitProgress(state.request, 'recovering')
+      await sleepBeforeRetry(state, attempt as 2 | 3)
+      if (!hasAttemptBudget(state)) break
+    }
+    const attemptStartedAt = now(state)
+    const nextDraft = await state.dependencies.model.answer({
       request: state.request,
       plan,
       evidence: state.evidence,
-    }),
+      timeoutMs: remainingAttemptTimeoutMs(state),
+    })
+    const reported = nextDraft.attempts?.[0]
+    const timing: PublicAssistantModelAttemptTiming = {
+      attempt,
+      durationMs: reported?.durationMs ?? Math.max(0, now(state) - attemptStartedAt),
+      ...(reported?.firstActivityMs === undefined ? {} : { firstActivityMs: reported.firstActivityMs }),
+      ...(reported?.failureClass ? { failureClass: reported.failureClass } : {}),
+    }
+    attempts.push(timing)
+    draft = { ...nextDraft, attempts: [...attempts] }
+    if (!isRetryableModelDraft(nextDraft) || attempt === 3 || !hasRetryBudget(state, attempt)) break
   }
+  if (!draft) {
+    draft = buildBudgetExhaustedDraft(state, plan)
+  }
+  const finalAttempts = Math.max(1, Math.min(3, draft.attempts?.length ?? 1)) as 1 | 2 | 3
+  const failureClass = modelFailureClass(draft)
+  return {
+    draft: {
+      ...draft,
+      recovery: draft.failure
+        ? { state: 'degraded', attempts: finalAttempts, ...(failureClass ? { failureClass } : {}) }
+        : finalAttempts > 1
+          ? { state: 'recovered', attempts: finalAttempts }
+          : { state: 'none', attempts: 1 },
+    },
+  }
+}
+
+function isRetryableModelDraft(draft: PublicAssistantDraft) {
+  if (draft.failure === 'empty_response' || draft.failure === 'invalid_response') return true
+  if (draft.failure !== 'provider_error') return false
+  if (draft.diagnostic?.kind === 'http_status') {
+    const status = draft.diagnostic.httpStatus ?? 0
+    return (status > 0 && status < 400) || status === 408 || status === 425 || status === 429 || status >= 500
+  }
+  return draft.diagnostic?.kind === 'timeout' || draft.diagnostic?.kind === 'network_error' || !draft.diagnostic
+}
+
+function hasRetryBudget(state: PublicAssistantState, attempt: 1 | 2 | 3) {
+  if (attempt >= 3) return false
+  const delayMs = retryDelayMs(attempt + 1 as 2 | 3)
+  return remainingBudgetMs(state) - delayMs >= minimumAttemptBudgetMs()
+}
+
+function hasAttemptBudget(state: PublicAssistantState) {
+  return remainingBudgetMs(state) >= minimumAttemptBudgetMs()
+}
+
+function remainingAttemptTimeoutMs(state: PublicAssistantState) {
+  return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingBudgetMs(state)))
+}
+
+function minimumAttemptBudgetMs() {
+  return Math.min(5_000, env.publicAssistantAnswerTimeoutMs)
+}
+
+function remainingBudgetMs(state: PublicAssistantState) {
+  return Math.max(0, state.startedAt + env.publicAssistantRequestTimeoutMs - now(state))
+}
+
+function now(state: PublicAssistantState) {
+  return state.dependencies.now?.() ?? Date.now()
+}
+
+async function sleepBeforeRetry(state: PublicAssistantState, attempt: 2 | 3) {
+  const delayMs = retryDelayMs(attempt)
+  if (state.dependencies.sleep) return state.dependencies.sleep(delayMs, state.request.signal)
+  await abortableDelay(delayMs, state.request.signal)
+}
+
+function retryDelayMs(attempt: 2 | 3) {
+  return attempt === 2 ? 200 : 400
+}
+
+function abortableDelay(delayMs: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    signal?.throwIfAborted()
+    const timeout = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort)
+      resolve()
+    }, delayMs)
+    const onAbort = () => {
+      clearTimeout(timeout)
+      reject(signal?.reason instanceof Error ? signal.reason : new DOMException('Aborted', 'AbortError'))
+    }
+    signal?.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
+function buildBudgetExhaustedDraft(state: PublicAssistantState, plan: PublicAssistantPlan): PublicAssistantDraft {
+  return {
+    answer: plan.route === 'direct'
+      ? '当前模型暂时无法完成这次回答，请稍后重试。'
+      : '回答服务在本次时限内未能完成，我不会补造结论。请稍后重试。',
+    status: 'degraded',
+    claims: [],
+    suggestions: [],
+    model: 'fallback',
+    provider: 'local',
+    failure: 'provider_error',
+    attempts: [{ attempt: 1, durationMs: Math.max(0, now(state) - state.startedAt), failureClass: 'timeout' }],
+  }
+}
+
+function modelFailureClass(draft: PublicAssistantDraft) {
+  const reported = draft.attempts?.at(-1)?.failureClass
+  if (reported && reported !== 'cancelled' && reported !== 'policy') return reported
+  if (draft.failure === 'not_configured') return 'not_configured' as const
+  if (draft.failure === 'empty_response') return 'empty' as const
+  if (draft.failure === 'invalid_response') return 'invalid' as const
+  if (draft.diagnostic?.kind === 'timeout') return 'timeout' as const
+  if (draft.diagnostic?.kind === 'network_error') return 'network' as const
+  if (draft.failure === 'provider_error') return 'upstream' as const
+  return undefined
 }
 
 async function verifyNode(state: PublicAssistantState) {
@@ -252,6 +378,7 @@ async function finalizeNode(state: PublicAssistantState) {
           rerankerMode: readRerankerMode(state.retrieval),
           durationMs,
         },
+        ...(draft.recovery ? { recovery: draft.recovery } : {}),
       },
       ...(state.request.sessionId ? { sessionId: state.request.sessionId } : {}),
     } satisfies ChatResponse,
@@ -382,6 +509,8 @@ function buildUncertainDraft(state: PublicAssistantState): PublicAssistantDraft 
     modelChannel: draft?.modelChannel,
     diagnostic: draft?.diagnostic,
     failure: draft?.failure ?? 'invalid_response',
+    attempts: draft?.attempts,
+    recovery: draft?.recovery,
   }
 }
 
