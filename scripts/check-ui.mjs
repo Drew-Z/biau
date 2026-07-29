@@ -2311,6 +2311,10 @@ const publicAssistantAnswerFixture = {
   meta: {
     mode: 'model',
     citationCount: 1,
+    recovery: {
+      state: 'recovered',
+      attempts: 2,
+    },
     research: {
       requestedMode: 'auto',
       route: 'combined',
@@ -2701,6 +2705,9 @@ if (
   publicAssistantRequestBodies[0]?.history?.[0]?.content !== '历史问题'
 ) {
   failures.push('/blog public assistant: the first follow-up should include the restored conversation history')
+}
+if (!(await publicAssistantPage.getByText(/已自动恢复（2 次尝试）/u).last().isVisible().catch(() => false))) {
+  failures.push('/blog public assistant recovery: recovered answers should expose the bounded attempt count')
 }
 await publicAssistantPage.getByRole('button', { name: '查看历史会话' }).click()
 await publicAssistantPage.locator('.public-assistant__history-open').waitFor({ state: 'visible' })

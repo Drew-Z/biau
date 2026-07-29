@@ -193,6 +193,15 @@ const ROUTE_LABELS = {
   combined: '综合研究',
 } as const
 
+const RECOVERY_FAILURE_LABELS = {
+  not_configured: '回答模型尚未配置',
+  timeout: '回答超时',
+  network: '回答网络异常',
+  upstream: '上游回答服务异常',
+  empty: '上游未返回内容',
+  invalid: '回答格式未通过校验',
+} as const
+
 function getAssistantApiBase(preferredApiBase?: string | null) {
   return preferredApiBase || CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE
 }
@@ -292,12 +301,17 @@ function formatAnswerMeta(message: WidgetMessage) {
   if (!message.status || !message.meta) return ''
   const labels = [STATUS_LABELS[message.status]]
   const research = message.meta.research
+  const recovery = message.meta.recovery
   if (research) {
     labels.push(ROUTE_LABELS[research.route])
     if (research.evidenceCount > 0) labels.push(`${research.evidenceCount} 条证据`)
     if (research.durationMs > 0) labels.push(`${(research.durationMs / 1_000).toFixed(1)} 秒`)
   } else if (message.meta.citationCount > 0) {
     labels.push(`${message.meta.citationCount} 条站内来源`)
+  }
+  if (recovery?.state === 'recovered') labels.push(`已自动恢复（${recovery.attempts} 次尝试）`)
+  if (recovery?.state === 'degraded' && recovery.failureClass) {
+    labels.push(`${RECOVERY_FAILURE_LABELS[recovery.failureClass]}（${recovery.attempts} 次尝试）`)
   }
   return labels.join(' · ')
 }
@@ -308,6 +322,7 @@ function getLoadingLabel(mode: PublicAssistantMode, stage: PublicAssistantProgre
   if (stage === 'evaluating') return '正在筛选可引用的证据…'
   if (stage === 'refining') return '证据还不够，正在调整检索…'
   if (stage === 'answering') return '正在基于证据组织回答…'
+  if (stage === 'recovering') return '回答服务波动，正在重新尝试…'
   if (stage === 'verifying') return '正在核对结论与引用…'
   if (stage === 'saving') return '正在保存本次匿名记录…'
   if (mode === 'site') return '正在检索本站公开资料…'
@@ -462,6 +477,7 @@ export function PublicAssistantWidget() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [footerVisible, setFooterVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [waitingSeconds, setWaitingSeconds] = useState(0)
   const [historyState, setHistoryState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [historySessions, setHistorySessions] = useState<PublicAssistantSessionSummary[]>([])
   const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null)
@@ -509,6 +525,15 @@ export function PublicAssistantWidget() {
   const historyRequestRef = useRef<AbortController | null>(null)
   const initialRestoreRequestRef = useRef<AbortController | null>(null)
   const initialRestoreTargetRef = useRef<string | null>(shouldRestoreInitialSession ? sessionRegistry.currentSessionId : null)
+
+  useEffect(() => {
+    if (!isLoading) return
+    const startedAt = Date.now()
+    const interval = window.setInterval(() => {
+      setWaitingSeconds(Math.floor((Date.now() - startedAt) / 1_000))
+    }, 1_000)
+    return () => window.clearInterval(interval)
+  }, [isLoading])
   const healthRequestRef = useRef<AbortController | null>(null)
   const copyTimerRef = useRef<number | null>(null)
   const citationHighlightTimerRef = useRef<number | null>(null)
@@ -1205,6 +1230,7 @@ export function PublicAssistantWidget() {
       setConversation((current) => retargetPendingPublicAssistantTurn(current, options.previousRequestId!, requestId))
     }
     setInput('')
+    setWaitingSeconds(0)
     setIsLoading(true)
     setProgressStage('planning')
     const controller = new AbortController()
@@ -2026,6 +2052,9 @@ export function PublicAssistantWidget() {
               <div className="public-assistant__loading">
                 <LoaderCircle className="is-spinning" size={15} aria-hidden />
                 <span>{getLoadingLabel(mode, progressStage)}</span>
+                {waitingSeconds >= 8 && (
+                  <span className="public-assistant__loading-elapsed" aria-hidden>{waitingSeconds} 秒</span>
+                )}
               </div>
             )}
 

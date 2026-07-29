@@ -19,6 +19,7 @@ export type PublicAssistantProgressStage =
   | 'evaluating'
   | 'refining'
   | 'answering'
+  | 'recovering'
   | 'verifying'
   | 'saving'
 export type PublicAssistantFeedbackReason =
@@ -363,6 +364,7 @@ function normalizeProgressStage(value: unknown): PublicAssistantProgressStage | 
     value.stage === 'evaluating' ||
     value.stage === 'refining' ||
     value.stage === 'answering' ||
+    value.stage === 'recovering' ||
     value.stage === 'verifying' ||
     value.stage === 'saving'
     ? value.stage

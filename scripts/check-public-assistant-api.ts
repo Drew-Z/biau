@@ -168,6 +168,9 @@ const streamed = await readPublicAssistantEventStream(new Response([
   'event: progress',
   'data: {"stage":"verifying"}',
   '',
+  'event: progress',
+  'data: {"stage":"recovering"}',
+  '',
   'event: result',
   `data: ${JSON.stringify(validPayload)}`,
   '',
@@ -176,7 +179,7 @@ const streamed = await readPublicAssistantEventStream(new Response([
   '',
 ].join('\n')).body!, (stage) => progress.push(stage))
 assert.equal(streamed.answer, '第一段。\n\n第二段。')
-assert.deepEqual(progress, ['researching', 'verifying'])
+assert.deepEqual(progress, ['researching', 'verifying', 'recovering'])
 
 await assert.rejects(
   readPublicAssistantEventStream(new Response([

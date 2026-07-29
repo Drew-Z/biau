@@ -5891,6 +5891,12 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   color: color-mix(in oklch, var(--green) 76%, var(--ink));
 }
 
+.public-assistant__loading-elapsed {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .public-assistant__suggestions {
   min-width: 0;
   max-height: 76px;

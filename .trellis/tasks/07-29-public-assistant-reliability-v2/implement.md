@@ -56,11 +56,11 @@ Rollback point: capability remains off through environment.
 
 ### 5. Finish Recovery UX
 
-- [ ] Normalize and render safe recovered/degraded metadata.
-- [ ] Add `recovering` progress copy and optional non-announced elapsed timer.
-- [ ] Keep stop, retry, edit/resend, branch/revision, feedback, fullscreen,
+- [x] Normalize and render safe recovered/degraded metadata.
+- [x] Add `recovering` progress copy and optional non-announced elapsed timer.
+- [x] Keep stop, retry, edit/resend, branch/revision, feedback, fullscreen,
       history, focus, and mobile behavior intact.
-- [ ] Add desktop and 320/390/430 UI fixtures on a dedicated local port.
+- [x] Add desktop and 320/390/430 UI fixtures on a dedicated local port.
 
 Rollback point: UI commit; backend optional fields remain compatible.
 
