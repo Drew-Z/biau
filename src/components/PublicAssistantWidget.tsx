@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ArrowDown,
   Check,
@@ -13,6 +13,7 @@ import {
   Maximize2,
   MessageSquarePlus,
   Minimize2,
+  Pencil,
   RefreshCw,
   Send,
   Square,
@@ -64,6 +65,7 @@ import {
   activePublicAssistantGenerationIntent,
   appendPendingPublicAssistantTurn,
   buildPublicAssistantConversationHistory,
+  createPublicAssistantQuestionEditRequest,
   createEmptyPublicAssistantConversation,
   hydratePublicAssistantConversation,
   mergePublicAssistantAnswer,
@@ -127,6 +129,7 @@ interface AssistantIssue {
   history?: PublicAssistantHistoryTurn[]
   pageContext?: PublicAssistantPageContext
   intent?: PublicAssistantGenerationIntent
+  forceAuthoritativeHistory?: boolean
   branchAction?: PublicAssistantBranchAction
 }
 
@@ -145,6 +148,7 @@ interface ActiveChatRequest {
   history: PublicAssistantHistoryTurn[]
   pageContext: PublicAssistantPageContext
   intent: PublicAssistantGenerationIntent
+  forceAuthoritativeHistory: boolean
 }
 
 type NegativeFeedbackReason = Extract<
@@ -155,6 +159,10 @@ type NegativeFeedbackReason = Extract<
 const CONFIGURED_API_BASE = PUBLIC_ASSISTANT_API_BASE
 const MAX_MESSAGE_LENGTH = 500
 const MAX_FALLBACK_ANSWER_LENGTH = 520
+
+function normalizePublicAssistantQuestion(value: string) {
+  return value.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
+}
 
 const MODE_OPTIONS: Array<{ value: PublicAssistantMode; label: string }> = [
   { value: 'auto', label: '自动' },
@@ -318,6 +326,7 @@ function toAssistantIssue(
     history: PublicAssistantHistoryTurn[]
     pageContext: PublicAssistantPageContext
     intent: PublicAssistantGenerationIntent
+    forceAuthoritativeHistory?: boolean
   },
 ): AssistantIssue {
   const transport = error instanceof PublicAssistantTransportError ? error : null
@@ -407,6 +416,7 @@ function projectConversationMessages(
       id: `${turn.id}-user`,
       role: 'user',
       content: turn.question,
+      turnId: turn.persisted ? turn.id : undefined,
       requestMode: turn.mode,
       requestId: turn.requestId,
     }
@@ -457,6 +467,8 @@ export function PublicAssistantWidget() {
   const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null)
   const [progressStage, setProgressStage] = useState<PublicAssistantProgressStage | null>(null)
   const [input, setInput] = useState('')
+  const [editingTurnId, setEditingTurnId] = useState<string | null>(null)
+  const [editingQuestion, setEditingQuestion] = useState('')
   const [mode, setMode] = useState<PublicAssistantMode>('auto')
   const [conversation, setConversation] = useState<PublicAssistantConversationState>(createEmptyPublicAssistantConversation)
   const [branchActionPending, setBranchActionPending] = useState(false)
@@ -486,6 +498,7 @@ export function PublicAssistantWidget() {
   const historyPanelRef = useRef<HTMLElement | null>(null)
   const historyCloseRef = useRef<HTMLButtonElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const collisionOffsetRef = useRef(0)
   const sessionIdRef = useRef(sessionId)
@@ -501,6 +514,7 @@ export function PublicAssistantWidget() {
   const citationHighlightTimerRef = useRef<number | null>(null)
   const citationRefs = useRef(new Map<string, HTMLAnchorElement>())
   const feedbackTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
+  const editTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const serviceStatus = getServiceStatus(serviceState)
   const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline) : null
   const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline) : null
@@ -509,6 +523,7 @@ export function PublicAssistantWidget() {
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
   const isAssistantBusy = isLoading || isRestoringSession || branchActionPending
+  const isQuestionEditing = editingTurnId !== null
 
   const commitSessionRegistry = (next: PublicAssistantSessionRegistry) => {
     sessionIdRef.current = next.currentSessionId
@@ -534,6 +549,15 @@ export function PublicAssistantWidget() {
     setFeedbackFocusRequest((current) => ({ messageId, sequence: (current?.sequence ?? 0) + 1 }))
   }
 
+  const closeQuestionEditor = useCallback((restoreFocus = false) => {
+    const turnId = editingTurnId
+    setEditingTurnId(null)
+    setEditingQuestion('')
+    if (restoreFocus && turnId) {
+      window.requestAnimationFrame(() => editTriggerRefs.current.get(turnId)?.focus({ preventScroll: true }))
+    }
+  }, [editingTurnId])
+
   const stopInitialRestore = () => {
     initialRestoreTargetRef.current = null
     initialRestoreRequestRef.current?.abort()
@@ -549,6 +573,7 @@ export function PublicAssistantWidget() {
 
   const prepareInternalCitationNavigation = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    closeQuestionEditor()
     setFeedbackMenuMessageId(null)
     setIsHistoryOpen(false)
     setIsFullscreen(false)
@@ -638,6 +663,16 @@ export function PublicAssistantWidget() {
   }, [feedbackFocusRequest])
 
   useEffect(() => {
+    if (!editingTurnId) return
+    const frame = window.requestAnimationFrame(() => {
+      const textarea = editTextareaRef.current
+      textarea?.focus({ preventScroll: true })
+      textarea?.setSelectionRange(textarea.value.length, textarea.value.length)
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [editingTurnId])
+
+  useEffect(() => {
     if (!isOpen) return
     const media = window.matchMedia('(max-width: 768px)')
     const syncFullscreen = () => {
@@ -710,6 +745,10 @@ export function PublicAssistantWidget() {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return
       event.preventDefault()
+      if (editingTurnId) {
+        closeQuestionEditor(true)
+        return
+      }
       if (feedbackMenuMessageId) {
         const messageId = feedbackMenuMessageId
         closeFeedbackMenuAndRestoreFocus(messageId)
@@ -725,7 +764,7 @@ export function PublicAssistantWidget() {
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [feedbackMenuMessageId, isHistoryOpen, isOpen])
+  }, [closeQuestionEditor, editingTurnId, feedbackMenuMessageId, isHistoryOpen, isOpen])
 
   useEffect(() => {
     if (!isOpen || !isHistoryOpen) return
@@ -797,6 +836,8 @@ export function PublicAssistantWidget() {
     const handleSurfaceOpen = (event: Event) => {
       const detail = (event as CustomEvent<MobileSurfaceOpenDetail>).detail
       if (isMobileSurfaceViewport() && detail?.surface === 'detail-reading-guide') {
+        setEditingTurnId(null)
+        setEditingQuestion('')
         setIsHistoryOpen(false)
         setIsOpen(false)
       }
@@ -865,6 +906,7 @@ export function PublicAssistantWidget() {
   }, [])
 
   const closeWidget = () => {
+    closeQuestionEditor()
     setFeedbackMenuMessageId(null)
     setIsHistoryOpen(false)
     setIsOpen(false)
@@ -923,6 +965,7 @@ export function PublicAssistantWidget() {
       history: active.history,
       pageContext: active.pageContext,
       intent: active.intent,
+      forceAuthoritativeHistory: active.forceAuthoritativeHistory,
     })
   }
 
@@ -936,6 +979,7 @@ export function PublicAssistantWidget() {
     commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, nextSessionId))
     shouldFollowOutputRef.current = true
     setConversation(createEmptyPublicAssistantConversation())
+    closeQuestionEditor()
     setInput('')
     setIssue(null)
     setHasNewContent(false)
@@ -993,6 +1037,7 @@ export function PublicAssistantWidget() {
   }
 
   const openHistory = () => {
+    closeQuestionEditor()
     setFeedbackMenuMessageId(null)
     setIsHistoryOpen(true)
     void refreshHistory()
@@ -1008,6 +1053,7 @@ export function PublicAssistantWidget() {
     stopActiveChat()
     stopBranchAction()
     stopInitialRestore()
+    closeQuestionEditor()
     const controller = new AbortController()
     historyRequestRef.current?.abort()
     historyRequestRef.current = controller
@@ -1118,9 +1164,10 @@ export function PublicAssistantWidget() {
       replaceFallbackRequestId?: string
       previousRequestId?: string
       intent?: PublicAssistantGenerationIntent
+      forceAuthoritativeHistory?: boolean
     } = {},
   ) => {
-    const trimmed = question.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
+    const trimmed = normalizePublicAssistantQuestion(question)
     if (!trimmed || isLoading || activeRequestRef.current || !isConversationReady) return
 
     trackAnalyticsEvent('public_assistant_question', {
@@ -1134,6 +1181,7 @@ export function PublicAssistantWidget() {
     if (requestSessionId !== sessionIdRef.current) return
     const reusablePendingQuestion = options.reusePendingQuestion === true
     const intent = options.intent ?? activePublicAssistantGenerationIntent(conversation)
+    const forceAuthoritativeHistory = options.forceAuthoritativeHistory === true
     const historyState = intent.kind === 'answer-revision'
       ? { ...conversation, turns: conversation.turns.slice(0, conversation.turns.findIndex((turn) => turn.id === intent.turnId)) }
       : conversation
@@ -1151,6 +1199,7 @@ export function PublicAssistantWidget() {
         requestId,
         question: trimmed,
         mode: requestedMode,
+        ...(intent.kind === 'new-turn' ? { parentRevisionId: intent.parentRevisionId } : {}),
       }))
     } else if (options.previousRequestId) {
       setConversation((current) => retargetPendingPublicAssistantTurn(current, options.previousRequestId!, requestId))
@@ -1168,6 +1217,7 @@ export function PublicAssistantWidget() {
       history,
       pageContext,
       intent,
+      forceAuthoritativeHistory,
     }
 
     let result: PublicAssistantAnswer
@@ -1198,7 +1248,7 @@ export function PublicAssistantWidget() {
       if (
         result.sessionId &&
         result.conversation &&
-        (result.replayed || result.conversation.activated === false)
+        (forceAuthoritativeHistory || result.replayed || result.conversation.activated === false)
       ) {
         try {
           authoritativeHistory = await requestPublicAssistantSession({
@@ -1224,6 +1274,7 @@ export function PublicAssistantWidget() {
         history,
         pageContext,
         intent,
+        forceAuthoritativeHistory,
       })
       result = { ...buildLocalAnswer(trimmed, requestedMode, nextIssue.code), requestId }
       setIssue(nextIssue)
@@ -1259,7 +1310,7 @@ export function PublicAssistantWidget() {
   }
 
   const retryIssue = () => {
-    if (!issue || issueRetryBlocked) return
+    if (!issue || issueRetryBlocked || isQuestionEditing) return
     if (issue.scope === 'branch' && issue.branchAction) {
       const action = issue.branchAction
       if (issue.sessionId && issue.sessionId !== sessionIdRef.current) {
@@ -1284,6 +1335,7 @@ export function PublicAssistantWidget() {
         ...(issue.history ? { history: issue.history } : {}),
         ...(issue.pageContext ? { pageContext: issue.pageContext } : {}),
         ...(issue.intent ? { intent: issue.intent } : {}),
+        ...(issue.forceAuthoritativeHistory ? { forceAuthoritativeHistory: true } : {}),
         ...(!cancelled && issue.requestId ? { replaceFallbackRequestId: issue.requestId } : {}),
       })
       return
@@ -1375,6 +1427,30 @@ export function PublicAssistantWidget() {
     })
   }
 
+  const startEditingQuestion = (message: WidgetMessage) => {
+    if (!message.turnId || !isConversationReady || isAssistantBusy || isQuestionEditing) return
+    const request = createPublicAssistantQuestionEditRequest(conversation, message.turnId)
+    if (!request) return
+    setFeedbackMenuMessageId(null)
+    setMode(request.mode)
+    setEditingTurnId(message.turnId)
+    setEditingQuestion(request.question)
+  }
+
+  const resendEditedQuestion = () => {
+    if (!editingTurnId || !isConversationReady || isAssistantBusy || activeRequestRef.current) return
+    const request = createPublicAssistantQuestionEditRequest(conversation, editingTurnId)
+    if (!request) return
+    const nextQuestion = normalizePublicAssistantQuestion(editingQuestion)
+    if (!nextQuestion || nextQuestion === normalizePublicAssistantQuestion(request.question)) return
+    closeQuestionEditor()
+    void submitQuestion(nextQuestion, mode, {
+      history: request.history,
+      intent: request.intent,
+      forceAuthoritativeHistory: true,
+    })
+  }
+
   const applyAuthoritativeHistory = (history: PublicAssistantSessionHistory) => {
     shouldFollowOutputRef.current = true
     setConversation(hydratePublicAssistantConversation(history))
@@ -1384,7 +1460,7 @@ export function PublicAssistantWidget() {
   }
 
   const runBranchAction = async (action: PublicAssistantBranchAction) => {
-    if (!apiBase || branchActionPendingRef.current || isLoading) return
+    if (!apiBase || branchActionPendingRef.current || isLoading || isQuestionEditing) return
     const controller = new AbortController()
     const requestSessionId = sessionIdRef.current
     branchActionPendingRef.current = true
@@ -1566,7 +1642,7 @@ export function PublicAssistantWidget() {
               <span className="sr-only">当前会话分支</span>
               <select
                 value={conversation.activeBranchId}
-                disabled={isAssistantBusy || branchActionPending}
+                disabled={isAssistantBusy || branchActionPending || isQuestionEditing}
                 onChange={(event) => void runBranchAction({ action: 'select', branchId: event.target.value })}
               >
                 {conversation.branches.map((branch) => (
@@ -1650,10 +1726,78 @@ export function PublicAssistantWidget() {
             )}
 
             {messages.map((message) => (
-              <article key={message.id} className={`public-assistant__message is-${message.role}`}>
+              <article
+                key={message.id}
+                className={`public-assistant__message is-${message.role} ${editingTurnId === message.turnId ? 'is-editing' : ''}`}
+              >
                 {message.role === 'assistant'
                   ? <PublicAssistantMessageContent content={message.content} />
-                  : <p>{message.content}</p>}
+                  : editingTurnId === message.turnId
+                    ? (
+                        <form
+                          className="public-assistant__question-editor"
+                          onSubmit={(event) => {
+                            event.preventDefault()
+                            resendEditedQuestion()
+                          }}
+                        >
+                          <label className="sr-only" htmlFor={`public-assistant-edit-${message.turnId}`}>编辑问题内容</label>
+                          <textarea
+                            ref={editTextareaRef}
+                            id={`public-assistant-edit-${message.turnId}`}
+                            rows={3}
+                            maxLength={MAX_MESSAGE_LENGTH}
+                            value={editingQuestion}
+                            onChange={(event) => setEditingQuestion(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                                event.preventDefault()
+                                resendEditedQuestion()
+                              }
+                            }}
+                          />
+                          <div className="public-assistant__question-editor-actions">
+                            <button type="button" onClick={() => closeQuestionEditor(true)}>
+                              <X size={15} aria-hidden />
+                              <span>取消</span>
+                            </button>
+                            <button
+                              type="submit"
+                              className="is-primary"
+                              disabled={
+                                isAssistantBusy ||
+                                normalizePublicAssistantQuestion(editingQuestion).length === 0 ||
+                                normalizePublicAssistantQuestion(editingQuestion) === normalizePublicAssistantQuestion(message.content)
+                              }
+                            >
+                              <Send size={15} aria-hidden />
+                              <span>发送修改</span>
+                            </button>
+                          </div>
+                        </form>
+                      )
+                    : (
+                        <>
+                          <p>{message.content}</p>
+                          {message.turnId && (
+                            <div className="public-assistant__user-message-actions" aria-label="问题操作">
+                              <button
+                                ref={(element) => {
+                                  if (element) editTriggerRefs.current.set(message.turnId!, element)
+                                  else editTriggerRefs.current.delete(message.turnId!)
+                                }}
+                                type="button"
+                                onClick={() => startEditingQuestion(message)}
+                                disabled={isAssistantBusy || isQuestionEditing}
+                                aria-label="编辑问题"
+                                title="编辑并从此处创建新分支"
+                              >
+                                <Pencil size={15} aria-hidden />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
                 {message.role === 'assistant' && (
                   <>
                     {message.meta && <small className="public-assistant__meta">{formatAnswerMeta(message)}</small>}
@@ -1758,7 +1902,7 @@ export function PublicAssistantWidget() {
                           <button
                             type="button"
                             onClick={() => navigateRevision(message, -1)}
-                            disabled={message.revisionNo <= 1 || isAssistantBusy}
+                            disabled={message.revisionNo <= 1 || isAssistantBusy || isQuestionEditing}
                             aria-label="查看上一版回答"
                             title="上一版"
                           >
@@ -1768,7 +1912,7 @@ export function PublicAssistantWidget() {
                           <button
                             type="button"
                             onClick={() => navigateRevision(message, 1)}
-                            disabled={message.revisionNo >= message.revisionCount || isAssistantBusy}
+                            disabled={message.revisionNo >= message.revisionCount || isAssistantBusy || isQuestionEditing}
                             aria-label="查看下一版回答"
                             title="下一版"
                           >
@@ -1783,7 +1927,7 @@ export function PublicAssistantWidget() {
                               action: 'continue-from-revision',
                               revisionId: message.revisionId!,
                             })}
-                            disabled={isAssistantBusy || branchActionPending}
+                            disabled={isAssistantBusy || branchActionPending || isQuestionEditing}
                           >
                             <GitBranch size={14} aria-hidden />
                             <span>从此版本继续</span>
@@ -1805,7 +1949,7 @@ export function PublicAssistantWidget() {
                         <button
                           type="button"
                           onClick={() => regenerateAnswer(message)}
-                          disabled={isLoading}
+                          disabled={isLoading || isQuestionEditing}
                           aria-label="重新生成回答"
                           title="重新生成"
                         >
@@ -1889,7 +2033,7 @@ export function PublicAssistantWidget() {
                   <strong>{issueCopy?.title}</strong>
                   <span>{issueCopy?.detail}</span>
                 </div>
-                <button type="button" onClick={retryIssue} disabled={isAssistantBusy || issueRetryBlocked}>
+                <button type="button" onClick={retryIssue} disabled={isAssistantBusy || isQuestionEditing || issueRetryBlocked}>
                   <RefreshCw size={15} aria-hidden />
                   <span>{getAssistantRetryLabel(issue, issue.scope === 'branch' ? '重试本次操作' : '重试')}</span>
                 </button>
@@ -1921,7 +2065,7 @@ export function PublicAssistantWidget() {
                 key={suggestion.id}
                 type="button"
                 className="public-assistant__suggestion"
-                disabled={isAssistantBusy || !isConversationReady}
+                disabled={isAssistantBusy || isQuestionEditing || !isConversationReady}
                 onClick={() => void submitQuestion(suggestion.prompt)}
               >
                 {suggestion.label}
@@ -1942,7 +2086,7 @@ export function PublicAssistantWidget() {
               id="public-assistant-input"
               rows={2}
               maxLength={MAX_MESSAGE_LENGTH}
-              disabled={!isConversationReady}
+              disabled={!isConversationReady || isQuestionEditing}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
@@ -1959,7 +2103,7 @@ export function PublicAssistantWidget() {
                 <span>停止</span>
               </button>
             ) : (
-              <button type="submit" disabled={!isConversationReady || input.trim().length === 0} aria-label="发送问题">
+              <button type="submit" disabled={!isConversationReady || isQuestionEditing || input.trim().length === 0} aria-label="发送问题">
                 <Send size={16} aria-hidden />
                 <span>发送</span>
               </button>

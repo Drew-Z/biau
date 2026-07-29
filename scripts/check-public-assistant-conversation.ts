@@ -3,6 +3,7 @@ import {
   activePublicAssistantGenerationIntent,
   appendPendingPublicAssistantTurn,
   buildPublicAssistantConversationHistory,
+  createPublicAssistantQuestionEditRequest,
   hydratePublicAssistantConversation,
   mergePublicAssistantAnswer,
   selectedPublicAssistantRevision,
@@ -178,6 +179,33 @@ const completed = mergePublicAssistantAnswer(pending, {
 assert.equal(completed.turns[1].id, 'turn-2')
 assert.equal(completed.turns[1].parentRevisionId, 'revision-3')
 assert.equal(completed.branches.find((branch) => branch.id === 'branch-2')?.headRevisionId, 'revision-4')
+
+const rootEditRequest = createPublicAssistantQuestionEditRequest(completed, 'turn-1')
+assert.deepEqual(rootEditRequest?.intent, {
+  kind: 'new-turn',
+  branchId: null,
+  parentRevisionId: null,
+})
+assert.deepEqual(rootEditRequest?.history, [], 'editing the root question must not send descendants as prompt history')
+
+const laterEditRequest = createPublicAssistantQuestionEditRequest(completed, 'turn-2')
+assert.deepEqual(laterEditRequest?.intent, {
+  kind: 'new-turn',
+  branchId: 'branch-2',
+  parentRevisionId: 'revision-3',
+})
+assert.deepEqual(laterEditRequest?.history.map((item) => item.content), [
+  '第一个问题',
+  '第三个不可变版本',
+], 'editing a later question must send only the active ancestor path')
+
+const rootEditPending = appendPendingPublicAssistantTurn(completed, {
+  requestId: '55555555-5555-4555-8555-555555555555',
+  question: '修改后的第一个问题',
+  mode: 'web',
+  parentRevisionId: null,
+})
+assert.equal(rootEditPending.turns.at(-1)?.parentRevisionId, null, 'an explicit root edit parent must not fall back to the active head')
 
 const fencedCompletion = mergePublicAssistantAnswer(pending, {
   answer: {

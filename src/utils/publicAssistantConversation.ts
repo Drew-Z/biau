@@ -33,6 +33,13 @@ export interface PublicAssistantConversationState {
   branchesTruncated: boolean
 }
 
+export interface PublicAssistantQuestionEditRequest {
+  question: string
+  mode: PublicAssistantMode
+  history: PublicAssistantHistoryTurn[]
+  intent: Extract<PublicAssistantGenerationIntent, { kind: 'new-turn' }>
+}
+
 export function createEmptyPublicAssistantConversation(): PublicAssistantConversationState {
   return {
     turns: [],
@@ -67,7 +74,12 @@ export function hydratePublicAssistantConversation(history: PublicAssistantSessi
 
 export function appendPendingPublicAssistantTurn(
   state: PublicAssistantConversationState,
-  input: { requestId: string; question: string; mode: PublicAssistantMode },
+  input: {
+    requestId: string
+    question: string
+    mode: PublicAssistantMode
+    parentRevisionId?: string | null
+  },
 ): PublicAssistantConversationState {
   if (state.turns.some((turn) => turn.requestId === input.requestId)) return state
   return {
@@ -76,7 +88,9 @@ export function appendPendingPublicAssistantTurn(
       id: `pending-turn-${input.requestId}`,
       question: input.question,
       mode: input.mode,
-      parentRevisionId: activeHeadRevisionId(state),
+      parentRevisionId: input.parentRevisionId === undefined
+        ? activeHeadRevisionId(state)
+        : input.parentRevisionId,
       activeRevisionId: null,
       viewedRevisionId: null,
       revisions: [],
@@ -84,6 +98,35 @@ export function appendPendingPublicAssistantTurn(
       createdAt: new Date().toISOString(),
       persisted: false,
     }],
+  }
+}
+
+export function createPublicAssistantQuestionEditRequest(
+  state: PublicAssistantConversationState,
+  turnId: string,
+): PublicAssistantQuestionEditRequest | null {
+  const targetIndex = state.turns.findIndex((turn) => turn.id === turnId)
+  if (targetIndex < 0) return null
+  const target = state.turns[targetIndex]
+  if (!target.persisted) return null
+
+  if (target.parentRevisionId && !state.activeBranchId) return null
+  const intent: PublicAssistantQuestionEditRequest['intent'] = target.parentRevisionId
+    ? {
+        kind: 'new-turn',
+        branchId: state.activeBranchId!,
+        parentRevisionId: target.parentRevisionId,
+      }
+    : { kind: 'new-turn', branchId: null, parentRevisionId: null }
+
+  return {
+    question: target.question,
+    mode: target.mode,
+    history: buildPublicAssistantConversationHistory({
+      ...state,
+      turns: state.turns.slice(0, targetIndex),
+    }),
+    intent,
   }
 }
 

@@ -123,6 +123,8 @@ Branch options include their loaded logical-turn count. When the bounded history
 
 Citation cards expose the allowlisted provenance snapshot as a compact metadata row: source section, publication date when present, and the explicit `verified` or `partial` evidence state. Missing dates stay absent, and partial evidence must not inherit verified styling or copy.
 
+Persisted visitor questions expose one Lucide edit command. Editing replaces that user bubble with a labelled inline textarea plus cancel and resend controls; unchanged or blank values remain disabled. `Escape` cancels editing before it closes feedback, history, or the assistant dialog, and focus returns to the owning edit command. While editing, the main composer and Branch/Revision mutations are disabled, but the visitor may choose the research mode used by the new Branch.
+
 At mobile widths, Revision commands, continue, and Branch selection provide at least 44px touch targets, wrap without widening the message, and remain inside the assistant panel at 320, 390, and 430px. Do not introduce a horizontal rail, swipe-only version navigation, or gesture-only Branch activation. Fullscreen and history layers keep their existing Escape, focus containment/restoration, and single conversation-scroller contracts.
 
 On mobile first-open, move focus from the hidden trigger into a stable non-input command inside the modal without focusing the composer or summoning the soft keyboard. Closing by button or Escape restores the owning trigger. Desktop restoration continues to focus the composer.

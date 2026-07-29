@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Public assistant revision/branch controls, mobile sizing, and accessible component conventions."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Immutable Turn/Revision/Branch source-of-truth and authoritative Session hydration rules."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Opaque identifiers and discriminated generation intent contracts."}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"Trace edit intent from UI projection through API persistence and authoritative hydration."}

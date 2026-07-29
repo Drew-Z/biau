@@ -2349,6 +2349,7 @@ const createPublicAssistantHistoryFixture = ({
   selectedRevisionId = 'revision-ui-history-1',
   revisions,
   branches,
+  turns,
   hasEarlierTurns = true,
   revisionsTruncated = false,
   branchesTruncated = false,
@@ -2391,12 +2392,21 @@ const createPublicAssistantHistoryFixture = ({
     createdAt: '2026-07-27T08:01:00.000Z',
     feedback: null,
   }]
+  const historyTurns = turns ?? [{
+    id: 'turn-ui-history-1',
+    question: '历史问题',
+    mode: 'site',
+    parentRevisionId: null,
+    selectedRevisionId,
+    revisions: historyRevisions,
+    createdAt: '2026-07-27T08:01:00.000Z',
+  }]
   return {
     session: {
       id: sessionId,
       activeBranchId,
       title: '公开助手历史验收',
-      turnCount: 1,
+      turnCount: historyTurns.length,
       hasEarlierTurns,
       createdAt: '2026-07-27T08:00:00.000Z',
       lastActiveAt: '2026-07-27T08:01:00.000Z',
@@ -2411,15 +2421,7 @@ const createPublicAssistantHistoryFixture = ({
       hasEarlierTurns,
       lastActiveAt: '2026-07-27T08:01:00.000Z',
     }],
-    turns: [{
-      id: 'turn-ui-history-1',
-      question: '历史问题',
-      mode: 'site',
-      parentRevisionId: null,
-      selectedRevisionId,
-      revisions: historyRevisions,
-      createdAt: '2026-07-27T08:01:00.000Z',
-    }],
+    turns: historyTurns,
     hasEarlierTurns,
     revisionsTruncated,
     branchesTruncated,
@@ -2437,6 +2439,57 @@ const toPublicAssistantSse = (answer) => [
 ].join('\n')
 const feedbackPayloads = []
 const publicAssistantRequestBodies = []
+const originalPublicAssistantHistoryFixture = createPublicAssistantHistoryFixture()
+const editedPublicAssistantRevision = {
+  ...originalPublicAssistantHistoryFixture.turns[0].revisions[0],
+  id: 'revision-ui-edited-1',
+  answer: '这是修改问题后由新分支返回的回答。',
+  meta: {
+    ...originalPublicAssistantHistoryFixture.turns[0].revisions[0].meta,
+    research: {
+      ...originalPublicAssistantHistoryFixture.turns[0].revisions[0].meta.research,
+      requestedMode: 'web',
+      route: 'web',
+      webEvidenceCount: 1,
+      siteEvidenceCount: 0,
+    },
+  },
+}
+const editedPublicAssistantHistoryFixture = createPublicAssistantHistoryFixture({
+  activeBranchId: 'branch-ui-edited-2',
+  selectedRevisionId: editedPublicAssistantRevision.id,
+  branches: [
+    originalPublicAssistantHistoryFixture.branches[0],
+    {
+      id: 'branch-ui-edited-2',
+      ordinal: 2,
+      headRevisionId: editedPublicAssistantRevision.id,
+      preview: '修改后的历史问题',
+      turnCount: 1,
+      hasEarlierTurns: false,
+      lastActiveAt: '2026-07-29T09:00:00.000Z',
+    },
+  ],
+  turns: [{
+    id: 'turn-ui-edited-1',
+    question: '修改后的历史问题',
+    mode: 'web',
+    parentRevisionId: null,
+    selectedRevisionId: editedPublicAssistantRevision.id,
+    revisions: [editedPublicAssistantRevision],
+    createdAt: '2026-07-29T09:00:00.000Z',
+  }],
+  hasEarlierTurns: false,
+})
+const originalPublicAssistantHistoryWithBranchesFixture = {
+  ...originalPublicAssistantHistoryFixture,
+  session: {
+    ...originalPublicAssistantHistoryFixture.session,
+    activeBranchId: 'branch-ui-history-1',
+  },
+  branches: editedPublicAssistantHistoryFixture.branches,
+}
+let activePublicAssistantHistoryFixture = originalPublicAssistantHistoryFixture
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
 await publicAssistantPage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
@@ -2463,10 +2516,25 @@ await publicAssistantPage.route('**/api/health', async (route) => {
 await publicAssistantPage.route('**/api/chat/public/stream', async (route) => {
   const requestBody = route.request().postDataJSON()
   publicAssistantRequestBodies.push(requestBody)
+  const answer = createPublicAssistantGenerationFixture(requestBody)
+  if (requestBody.message === '修改后的历史问题') {
+    answer.messageId = 'turn-ui-edited-1'
+    answer.turnId = 'turn-ui-edited-1'
+    answer.conversation = {
+      branchId: 'branch-ui-edited-2',
+      branchOrdinal: 2,
+      turnId: 'turn-ui-edited-1',
+      revisionId: editedPublicAssistantRevision.id,
+      revisionNo: 1,
+      basedOnRevisionId: null,
+      activated: true,
+    }
+    activePublicAssistantHistoryFixture = editedPublicAssistantHistoryFixture
+  }
   await route.fulfill({
     status: 200,
     contentType: 'text/event-stream',
-    body: toPublicAssistantSse(createPublicAssistantGenerationFixture(requestBody)),
+    body: toPublicAssistantSse(answer),
   })
 })
 await publicAssistantPage.route('**/api/chat/public/feedback', async (route) => {
@@ -2497,11 +2565,22 @@ await publicAssistantPage.route('**/api/chat/public/sessions', async (route) => 
   })
 })
 await publicAssistantPage.route('**/api/chat/public/session', async (route) => {
-  const body = route.request().postDataJSON()
+  route.request().postDataJSON()
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
-    body: JSON.stringify(createPublicAssistantHistoryFixture({ sessionId: body.sessionId })),
+    body: JSON.stringify(activePublicAssistantHistoryFixture),
+  })
+})
+await publicAssistantPage.route('**/api/chat/public/branch', async (route) => {
+  const body = route.request().postDataJSON()
+  activePublicAssistantHistoryFixture = body.branchId === 'branch-ui-edited-2'
+    ? editedPublicAssistantHistoryFixture
+    : originalPublicAssistantHistoryWithBranchesFixture
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(activePublicAssistantHistoryFixture),
   })
 })
 await gotoApp(publicAssistantPage, '/blog')
@@ -2534,6 +2613,69 @@ if (
   (await publicAssistantPage.getByRole('button', { name: '进入全屏' }).count()) !== 1
 ) {
   failures.push('/blog public assistant: expected history, new-session, and fullscreen commands')
+}
+const editQuestionButton = publicAssistantPage.getByRole('button', { name: '编辑问题' })
+if ((await editQuestionButton.count()) !== 1) {
+  failures.push('/blog public assistant edit: expected one edit command on the persisted visitor question')
+} else {
+  const requestsBeforeCancel = publicAssistantRequestBodies.length
+  await editQuestionButton.click()
+  const questionEditor = publicAssistantPage.getByRole('textbox', { name: '编辑问题内容' })
+  const editorFocused = await publicAssistantPage.waitForFunction(() => {
+    const editor = document.querySelector('.public-assistant__question-editor textarea')
+    return editor === document.activeElement
+  }, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+  if (
+    (await questionEditor.inputValue()) !== '历史问题' ||
+    !editorFocused ||
+    !(await publicAssistantPage.getByRole('button', { name: '发送修改' }).isDisabled())
+  ) {
+    failures.push('/blog public assistant edit: inline editor should focus the full original question and reject an unchanged resend')
+  }
+  await publicAssistantPage.getByRole('button', { name: '取消' }).click()
+  const cancelFocusRestored = await publicAssistantPage.waitForFunction(() => {
+    const trigger = document.querySelector('[aria-label="编辑问题"]')
+    return trigger === document.activeElement
+  }, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+  if (
+    publicAssistantRequestBodies.length !== requestsBeforeCancel ||
+    !(await publicAssistantPage.getByText('历史问题', { exact: true }).isVisible()) ||
+    !cancelFocusRestored
+  ) {
+    failures.push('/blog public assistant edit: cancel should restore the original question and trigger focus without a request')
+  }
+
+  await editQuestionButton.click()
+  await publicAssistantPage.getByRole('textbox', { name: '编辑问题内容' }).fill('修改后的历史问题')
+  await publicAssistantPage.getByRole('button', { name: '全网' }).click()
+  await publicAssistantPage.getByRole('button', { name: '发送修改' }).click()
+  await publicAssistantPage.waitForFunction(() => {
+    const user = document.querySelector('.public-assistant__message.is-user p')
+    const branches = document.querySelectorAll('.public-assistant__branch-picker option')
+    return user?.textContent === '修改后的历史问题' && branches.length === 2
+  })
+  const editRequest = publicAssistantRequestBodies.at(-1)
+  if (
+    editRequest?.message !== '修改后的历史问题' ||
+    editRequest?.mode !== 'web' ||
+    editRequest?.history?.length !== 0 ||
+    editRequest?.intent?.kind !== 'new-turn' ||
+    editRequest?.intent?.branchId !== null ||
+    editRequest?.intent?.parentRevisionId !== null ||
+    (await publicAssistantPage.getByText('历史问题', { exact: true }).count()) !== 0
+  ) {
+    failures.push('/blog public assistant edit: root resend should create a clean new Branch and hydrate only its authoritative path')
+  }
+  const branchPicker = publicAssistantPage.locator('.public-assistant__branch-picker select')
+  await branchPicker.selectOption('branch-ui-history-1')
+  await publicAssistantPage.waitForFunction(() => document.querySelector('.public-assistant__message.is-user p')?.textContent === '历史问题')
+  if (
+    !(await publicAssistantPage.getByText('历史问题', { exact: true }).isVisible()) ||
+    (await branchPicker.locator('option').count()) !== 2
+  ) {
+    failures.push('/blog public assistant edit: the original Branch should remain selectable after editing')
+  }
+  publicAssistantRequestBodies.length = 0
 }
 await publicAssistantPage.locator('.public-assistant__claims summary').click()
 await publicAssistantPage.getByRole('button', { name: '定位来源：历史来源' }).click()
@@ -3600,6 +3742,67 @@ for (const width of [320, 390, 430]) {
     (await mobileAssistantPage.locator('.public-assistant__message.is-user').count()) !== mobileUserCount
   ) {
     failures.push(`/blog public assistant ${width}px: regeneration should retain one user question and use answer-revision intent`)
+  }
+  const mobileEditButton = mobileAssistantPage.getByRole('button', { name: '编辑问题' })
+  const mobileEditButtonBox = await mobileEditButton.boundingBox()
+  await mobileEditButton.click()
+  const mobileEditorFocused = await mobileAssistantPage.waitForFunction(() => {
+    const editor = document.querySelector('.public-assistant__question-editor textarea')
+    return editor === document.activeElement
+  }, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+  const mobileEditLayout = await mobileAssistantPage.evaluate(() => {
+    const panel = document.querySelector('.public-assistant__panel')
+    const message = document.querySelector('.public-assistant__message.is-user.is-editing')
+    const editor = document.querySelector('.public-assistant__question-editor')
+    const textarea = document.querySelector('.public-assistant__question-editor textarea')
+    const buttons = [...document.querySelectorAll('.public-assistant__question-editor-actions button')]
+    if (
+      !(panel instanceof HTMLElement) ||
+      !(message instanceof HTMLElement) ||
+      !(editor instanceof HTMLElement) ||
+      !(textarea instanceof HTMLElement) ||
+      buttons.some((button) => !(button instanceof HTMLElement))
+    ) return null
+    const panelRect = panel.getBoundingClientRect()
+    const messageRect = message.getBoundingClientRect()
+    const editorRect = editor.getBoundingClientRect()
+    const textareaRect = textarea.getBoundingClientRect()
+    return {
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      messageOverflow: message.scrollWidth - message.clientWidth,
+      editorInside: editorRect.left >= messageRect.left - 1 && editorRect.right <= messageRect.right + 1,
+      textareaInside: textareaRect.left >= messageRect.left - 1 && textareaRect.right <= messageRect.right + 1,
+      messageInsidePanel: messageRect.left >= panelRect.left - 1 && messageRect.right <= panelRect.right + 1,
+      minButtonHeight: Math.min(...buttons.map((button) => button.getBoundingClientRect().height)),
+      composerDisabled: document.querySelector('#public-assistant-input')?.hasAttribute('disabled') ?? false,
+    }
+  })
+  if (
+    !mobileEditButtonBox ||
+    mobileEditButtonBox.width < 44 ||
+    mobileEditButtonBox.height < 44 ||
+    !mobileEditorFocused ||
+    !mobileEditLayout ||
+    mobileEditLayout.documentOverflow > 1 ||
+    mobileEditLayout.messageOverflow > 1 ||
+    !mobileEditLayout.editorInside ||
+    !mobileEditLayout.textareaInside ||
+    !mobileEditLayout.messageInsidePanel ||
+    mobileEditLayout.minButtonHeight < 44 ||
+    !mobileEditLayout.composerDisabled
+  ) {
+    failures.push(`/blog public assistant ${width}px: inline question editing should stay contained with 44px controls and one active composer`)
+  }
+  await mobileAssistantPage.keyboard.press('Escape')
+  const mobileEditFocusRestored = await mobileAssistantPage.waitForFunction(() => {
+    const trigger = document.querySelector('[aria-label="编辑问题"]')
+    return trigger === document.activeElement
+  }, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+  if (
+    !mobileEditFocusRestored ||
+    !(await mobileAssistantPage.locator('.public-assistant__panel').isVisible())
+  ) {
+    failures.push(`/blog public assistant ${width}px: Escape should cancel question editing before closing the dialog`)
   }
   await mobileAssistantPage.getByRole('button', { name: '查看上一版回答' }).click()
   await mobileAssistantPage.getByRole('button', { name: '从此版本继续' }).waitFor({ state: 'visible' })

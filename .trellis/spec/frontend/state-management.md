@@ -46,6 +46,8 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Background health failures never replace a visible user-action issue carrying chat or Branch retry identity. Successful Branch completion clears only the Branch issue it owns, so late independent requests cannot erase another operation's recovery state.
 - A completed replay triggers an authoritative Session-history refresh before the visible path changes. Older controllers, Session captures, frozen replay metadata, or failed history fetches must not move the current Branch head backward.
 - A version-2 completion with `activated: false` belongs to a saved non-active Branch and must not enter the visible Turn list or prompt history. Fetch authoritative Session history just as for replay; if that refresh fails, keep the existing path, show a recovery notice, and disable follow-up until restore succeeds or the visitor starts a new conversation.
+- Editing a persisted visitor question is an immutable Branch fork, never an in-place Turn mutation or `answer-revision`. Build a `new-turn` intent from the edited Turn's parent: the root uses `{ branchId: null, parentRevisionId: null }`; a later Turn uses the current `activeBranchId` plus that Turn's original `parentRevisionId`. Prompt history contains only Turns before the edited Turn.
+- An edit-and-resend completion always refreshes authoritative Session history before replacing the visible path, even when the new Branch was activated normally. The pending projection may display progress, but it must not assemble or retain old descendants as persisted ancestry. Preserve the force-refresh flag across cancellation and explicit retry.
 
 ## Scenario: Public AI Daily Feed State
 

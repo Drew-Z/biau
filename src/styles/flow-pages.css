@@ -5259,6 +5259,106 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   background: color-mix(in oklch, var(--blue) 15%, var(--panel-strong));
 }
 
+.public-assistant__message.is-user.is-editing {
+  width: min(100%, 420px);
+}
+
+.public-assistant__user-message-actions {
+  min-width: 0;
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.public-assistant__user-message-actions button {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: color-mix(in oklch, var(--muted) 82%, var(--ink));
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.public-assistant__user-message-actions button:hover {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--blue) 10%, var(--panel-strong));
+  border-color: color-mix(in oklch, var(--blue) 24%, var(--flow-ui-card-border));
+}
+
+.public-assistant__user-message-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.public-assistant__question-editor {
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  gap: var(--space-8);
+}
+
+.public-assistant__question-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 88px;
+  max-height: 180px;
+  padding: var(--space-10, 10px) var(--space-12, 12px);
+  resize: vertical;
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel) 92%, transparent);
+  border: 1px solid color-mix(in oklch, var(--blue) 28%, var(--flow-ui-border-strong));
+  border-radius: var(--radius-sm);
+  font: inherit;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.public-assistant__question-editor-actions {
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.public-assistant__question-editor-actions button {
+  min-height: 34px;
+  padding: 0 var(--space-10, 10px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--muted);
+  background: color-mix(in oklch, var(--panel-strong) 64%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+  font: 700 11px/1 var(--font-ui);
+  cursor: pointer;
+}
+
+.public-assistant__question-editor-actions button.is-primary {
+  color: color-mix(in oklch, var(--blue) 78%, var(--ink));
+  border-color: color-mix(in oklch, var(--blue) 28%, var(--flow-ui-card-border));
+}
+
+.public-assistant__question-editor-actions button:hover:not(:disabled) {
+  color: var(--ink);
+  background: color-mix(in oklch, var(--blue) 10%, var(--panel-strong));
+}
+
+.public-assistant__question-editor-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .public-assistant__notice {
   min-width: 0;
   padding: var(--space-10, 10px);
@@ -5874,6 +5974,9 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__modes button:focus-visible,
 .public-assistant__revision-toolbar button:focus-visible,
 .public-assistant__message-actions button:focus-visible,
+.public-assistant__user-message-actions button:focus-visible,
+.public-assistant__question-editor textarea:focus-visible,
+.public-assistant__question-editor-actions button:focus-visible,
 .public-assistant__feedback-reasons button:focus-visible,
 .public-assistant-markdown__code-header button:focus-visible,
 .public-assistant-markdown__code-block pre:focus-visible,
@@ -7142,6 +7245,8 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   }
 
   .public-assistant__message-actions button,
+  .public-assistant__user-message-actions button,
+  .public-assistant__question-editor-actions button,
   .public-assistant__revision-toolbar button,
   .public-assistant__modes button {
     min-height: 44px;
@@ -7151,6 +7256,16 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     width: 44px;
     height: 44px;
     min-width: 44px;
+  }
+
+  .public-assistant__user-message-actions button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+  }
+
+  .public-assistant__question-editor-actions button {
+    flex: 1 1 96px;
   }
 
   .public-assistant__revision-nav {

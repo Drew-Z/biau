@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Required public assistant UI, accessibility, mobile containment, and no-live-provider regression coverage."}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Verify authoritative Session replacement and immutable Branch behavior."}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Verify explicit opaque Turn and Revision metadata without display-id parsing."}
