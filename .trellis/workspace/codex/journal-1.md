@@ -280,3 +280,36 @@ Fixed the public assistant so high-confidence creative and text-transformation r
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: Public assistant editable question branching
+
+**Date**: 2026-07-29
+**Task**: Public assistant editable question branching
+**Branch**: `codex/public-assistant-productization`
+
+### Summary
+
+Added Codex-style inline editing and resend for persisted visitor questions, immutable Branch forking from the edited Turn parent, authoritative Session hydration, old-Branch restoration, and desktop/mobile regression coverage.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `54370cd6` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
