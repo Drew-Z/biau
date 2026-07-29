@@ -8,6 +8,8 @@ import type {
   PublicAssistantHistoryTurn,
   PublicAssistantMode,
   PublicAssistantPageContext,
+  PublicAssistantRecoveryFailureClass,
+  PublicAssistantRecoveryMeta,
   PublicAssistantRoute,
   PublicAssistantStatus,
 } from './types.js'
@@ -33,6 +35,15 @@ export type PublicAssistantProgressStage =
   | 'answering'
   | 'verifying'
   | 'saving'
+
+export type PublicAssistantModelFailureClass = PublicAssistantRecoveryFailureClass | 'cancelled' | 'policy'
+
+export interface PublicAssistantModelAttemptTiming {
+  attempt: 1 | 2 | 3
+  durationMs: number
+  firstActivityMs?: number
+  failureClass?: PublicAssistantModelFailureClass
+}
 
 export interface PublicAssistantProgress {
   stage: PublicAssistantProgressStage
@@ -68,6 +79,8 @@ export interface PublicAssistantDraft {
   modelChannel?: AssistantModelChannelSummary
   diagnostic?: ProviderDiagnostic
   failure?: 'not_configured' | 'provider_error' | 'empty_response' | 'invalid_response'
+  recovery?: PublicAssistantRecoveryMeta
+  attempts?: PublicAssistantModelAttemptTiming[]
 }
 
 export interface PublicAssistantModel {

@@ -158,6 +158,10 @@ function makeResponse(answer: string, status: ChatResponse['status'] = 'answered
       mode: 'model',
       model: 'configured-model',
       citationCount: 1,
+      recovery: {
+        state: 'recovered',
+        attempts: 2,
+      },
       research: {
         requestedMode: 'auto',
         route: 'combined',
@@ -724,6 +728,21 @@ assert.equal(history.branches.length, 3)
 assert.equal(history.turns[0].revisions.length, 1)
 assert.equal(history.turns[1].revisions.length, 2)
 assert.equal(history.turns[1].selectedRevisionId, completedA.response.conversation?.revisionId)
+assert.deepEqual(history.turns[0].revisions[0].meta.recovery, { state: 'recovered', attempts: 2 })
+
+const oldSnapshotRevision = generationFake.state.revisions.get(rootIdentity.revisionId)!
+const oldSnapshot = oldSnapshotRevision.displaySnapshotJson as Prisma.JsonObject
+const legacySnapshotMeta: Prisma.JsonObject = { ...(oldSnapshot.meta as Prisma.JsonObject) }
+delete legacySnapshotMeta.recovery
+oldSnapshotRevision.displaySnapshotJson = {
+  ...oldSnapshot,
+  meta: legacySnapshotMeta,
+} as Prisma.InputJsonObject
+const historyWithOldSnapshot = await loadPublicAssistantSession(canonicalRequest.sessionId, generationFake.prisma, fixedNow)
+assert.equal(historyWithOldSnapshot.status, 'loaded')
+if (historyWithOldSnapshot.status === 'loaded') {
+  assert.equal(historyWithOldSnapshot.turns[0].revisions[0].meta.recovery, undefined)
+}
 
 const crossSession = makeRequest('cross session', {
   requestId: '55555555-5555-4555-8555-555555555555',

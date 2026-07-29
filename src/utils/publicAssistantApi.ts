@@ -1,6 +1,18 @@
 export type PublicAssistantMode = 'auto' | 'site' | 'web'
 export type PublicAssistantStatus = 'answered' | 'partial' | 'uncertain' | 'degraded' | 'blocked'
 export type PublicAssistantRoute = 'direct' | 'site' | 'web' | 'combined'
+export type PublicAssistantRecoveryFailureClass =
+  | 'not_configured'
+  | 'timeout'
+  | 'network'
+  | 'upstream'
+  | 'empty'
+  | 'invalid'
+export interface PublicAssistantRecoveryMeta {
+  state: 'none' | 'recovered' | 'degraded'
+  attempts: 1 | 2 | 3
+  failureClass?: PublicAssistantRecoveryFailureClass
+}
 export type PublicAssistantProgressStage =
   | 'planning'
   | 'researching'
@@ -67,6 +79,7 @@ export interface PublicAssistantAnswerMeta {
     rerankerMode?: 'provider' | 'deterministic' | 'none'
     durationMs: number
   }
+  recovery?: PublicAssistantRecoveryMeta
 }
 
 export interface PublicAssistantAnswer {
@@ -507,6 +520,7 @@ export function normalizePublicAssistantAnswer(value: unknown): PublicAssistantA
     : []
   const rawMeta = isRecord(value.meta) ? value.meta : {}
   const research = normalizeResearchMeta(rawMeta.research)
+  const recovery = normalizeRecoveryMeta(rawMeta.recovery)
   const conversation = normalizeConversationIdentity(value.conversation)
   const contractVersion = value.contractVersion === 2 ? 2 : 1
   if (contractVersion === 2 && !conversation) return null
@@ -527,6 +541,7 @@ export function normalizePublicAssistantAnswer(value: unknown): PublicAssistantA
       reason: readString(rawMeta.reason, 80) || undefined,
       citationCount: readFiniteNumber(rawMeta.citationCount, citations.length),
       research,
+      recovery,
     },
   }
 }
@@ -727,6 +742,25 @@ function normalizeResearchMeta(value: unknown): PublicAssistantAnswerMeta['resea
       : undefined,
     durationMs: readFiniteNumber(value.durationMs, 0),
   }
+}
+
+function normalizeRecoveryMeta(value: unknown): PublicAssistantRecoveryMeta | undefined {
+  if (!isRecord(value)) return undefined
+  const attempts = value.attempts === 2 || value.attempts === 3 ? value.attempts : 1
+  const failureClass = readRecoveryFailureClass(value.failureClass)
+  if (value.state === 'none' && attempts === 1) return { state: 'none', attempts }
+  if (value.state === 'recovered' && attempts >= 2) return { state: 'recovered', attempts }
+  if (value.state === 'degraded') {
+    return { state: 'degraded', attempts, ...(failureClass ? { failureClass } : {}) }
+  }
+  return undefined
+}
+
+function readRecoveryFailureClass(value: unknown): PublicAssistantRecoveryFailureClass | undefined {
+  return value === 'not_configured' || value === 'timeout' || value === 'network' || value === 'upstream' ||
+    value === 'empty' || value === 'invalid'
+    ? value
+    : undefined
 }
 
 function readCitationHref(value: unknown, source: 'site' | 'web') {

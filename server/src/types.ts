@@ -6,6 +6,20 @@ export type PublicAssistantRoute = 'direct' | 'site' | 'web' | 'combined'
 export type PublicAssistantStatus = 'answered' | 'partial' | 'uncertain' | 'degraded' | 'blocked'
 export type PublicAssistantEvidenceSource = 'site' | 'web'
 export type PublicAssistantContractVersion = 1 | 2
+export type PublicAssistantRecoveryState = 'none' | 'recovered' | 'degraded'
+export type PublicAssistantRecoveryFailureClass =
+  | 'not_configured'
+  | 'timeout'
+  | 'network'
+  | 'upstream'
+  | 'empty'
+  | 'invalid'
+
+export interface PublicAssistantRecoveryMeta {
+  state: PublicAssistantRecoveryState
+  attempts: 1 | 2 | 3
+  failureClass?: PublicAssistantRecoveryFailureClass
+}
 
 export type PublicAssistantGenerationIntent =
   | {
@@ -165,6 +179,7 @@ export interface ChatResponse {
     retrieval?: AssistantRetrievalMeta
     fallbackReason?: ChatFallbackReason
     research?: PublicAssistantResearchMeta
+    recovery?: PublicAssistantRecoveryMeta
   }
   sessionId?: string
   messageId?: string

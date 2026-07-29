@@ -2,6 +2,7 @@ import type {
   ChatResponse,
   PublicAssistantClaim,
   PublicAssistantMode,
+  PublicAssistantRecoveryMeta,
   PublicAssistantResearchMeta,
   PublicAssistantRoute,
   PublicAssistantStatus,
@@ -27,6 +28,7 @@ export interface PublicAssistantDisplaySnapshot {
     reason?: string
     citationCount: number
     research?: PublicAssistantResearchMeta
+    recovery?: PublicAssistantRecoveryMeta
   }
 }
 
@@ -134,6 +136,7 @@ export function buildPublicAssistantDisplaySnapshot(response: ChatResponse): Pub
   const claims = normalizeClaims(response.claims, new Set(citations.map((citation) => citation.id)))
   const suggestions = normalizeSuggestions(response.suggestions)
   const research = normalizeResearch(response.meta?.research)
+  const recovery = normalizeRecovery(response.meta?.recovery)
   const reason = normalizeText(response.meta?.reason, 80)
   return {
     version: 1,
@@ -145,6 +148,7 @@ export function buildPublicAssistantDisplaySnapshot(response: ChatResponse): Pub
       ...(reason ? { reason } : {}),
       citationCount: citations.length,
       ...(research ? { research } : {}),
+      ...(recovery ? { recovery } : {}),
     },
   }
 }
@@ -155,6 +159,7 @@ export function readPublicAssistantDisplaySnapshot(value: unknown): PublicAssist
   const claims = normalizeClaims(value.claims, new Set(citations.map((citation) => citation.id)))
   const suggestions = normalizeSuggestions(value.suggestions)
   const research = normalizeResearch(value.meta.research)
+  const recovery = normalizeRecovery(value.meta.recovery)
   const reason = normalizeText(value.meta.reason, 80)
   return {
     version: 1,
@@ -166,6 +171,7 @@ export function readPublicAssistantDisplaySnapshot(value: unknown): PublicAssist
       ...(reason ? { reason } : {}),
       citationCount: citations.length,
       ...(research ? { research } : {}),
+      ...(recovery ? { recovery } : {}),
     },
   }
 }
@@ -243,6 +249,33 @@ function normalizeResearch(value: unknown): PublicAssistantResearchMeta | undefi
     ...(rerankerMode ? { rerankerMode } : {}),
     durationMs: normalizeCount(value.durationMs),
   }
+}
+
+function normalizeRecovery(value: unknown): PublicAssistantRecoveryMeta | undefined {
+  if (!isRecord(value)) return undefined
+  const attempts = normalizeRecoveryAttempts(value.attempts)
+  const failureClass = normalizeRecoveryFailureClass(value.failureClass)
+  if (value.state === 'none' && attempts === 1) return { state: 'none', attempts }
+  if (value.state === 'recovered' && attempts >= 2) return { state: 'recovered', attempts }
+  if (value.state === 'degraded') {
+    return {
+      state: 'degraded',
+      attempts,
+      ...(failureClass ? { failureClass } : {}),
+    }
+  }
+  return undefined
+}
+
+function normalizeRecoveryAttempts(value: unknown): 1 | 2 | 3 {
+  return value === 2 || value === 3 ? value : 1
+}
+
+function normalizeRecoveryFailureClass(value: unknown): PublicAssistantRecoveryMeta['failureClass'] {
+  return value === 'not_configured' || value === 'timeout' || value === 'network' || value === 'upstream' ||
+    value === 'empty' || value === 'invalid'
+    ? value
+    : undefined
 }
 
 function normalizeCitationHref(value: unknown, source: 'site' | 'web') {

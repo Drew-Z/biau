@@ -76,6 +76,10 @@ const validPayload = {
   meta: {
     mode: 'model',
     citationCount: 2,
+    recovery: {
+      state: 'recovered',
+      attempts: 2,
+    },
     research: {
       requestedMode: 'web',
       route: 'combined',
@@ -101,6 +105,7 @@ assert.equal(normalized.turnId, 'turn-1234')
 assert.equal(normalized.conversation?.revisionId, 'revision-1234')
 assert.equal(normalized.requestId, validPayload.requestId)
 assert.equal(normalized.meta.research?.route, 'combined')
+assert.deepEqual(normalized.meta.recovery, { state: 'recovered', attempts: 2 })
 assert.equal(normalizePublicAssistantAnswer({ ...validPayload, replayed: true })?.replayed, true)
 assert.equal(normalizePublicAssistantAnswer({ ...validPayload, replayed: false })?.replayed, undefined)
 
@@ -114,6 +119,22 @@ const legacyNormalized = normalizePublicAssistantAnswer({
 })
 assert.equal(legacyNormalized?.contractVersion, 1, 'old server answers remain displayable without revision controls')
 assert.equal(legacyNormalized?.conversation, undefined)
+assert.deepEqual(legacyNormalized?.meta.recovery, { state: 'recovered', attempts: 2 })
+
+const oldSnapshotNormalized = normalizePublicAssistantAnswer({
+  ...validPayload,
+  meta: { ...validPayload.meta, recovery: undefined },
+})
+assert.equal(oldSnapshotNormalized?.meta.recovery, undefined, 'older answers remain valid without recovery metadata')
+
+const invalidRecoveryNormalized = normalizePublicAssistantAnswer({
+  ...validPayload,
+  meta: {
+    ...validPayload.meta,
+    recovery: { state: 'recovered', attempts: 1, failureClass: 'http_status' },
+  },
+})
+assert.equal(invalidRecoveryNormalized?.meta.recovery, undefined, 'invalid recovery metadata is dropped at the browser boundary')
 
 const bounded = normalizePublicAssistantAnswer({
   ...validPayload,
@@ -254,6 +275,7 @@ assert.ok(normalizedHistory)
 assert.equal(normalizedHistory.turns[0]?.question, '研究公开资料')
 assert.equal(normalizedHistory.turns[0]?.revisions[0]?.citations.length, 2)
 assert.equal(normalizedHistory.turns[0]?.revisions[0]?.feedback, 'up')
+assert.deepEqual(normalizedHistory.turns[0]?.revisions[0]?.meta.recovery, { state: 'recovered', attempts: 2 })
 assert.equal(normalizedHistory.branches[0]?.id, 'branch-1234')
 assert.equal(normalizePublicAssistantSessionHistory({
   ...historyPayload,
