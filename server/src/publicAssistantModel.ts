@@ -42,7 +42,7 @@ export async function planPublicAssistantRequest(request: PublicAssistantRequest
     }),
   })
   const plan = normalizePlan(parseStructuredResponse(result.content ?? ''), request.question)
-  return plan ?? buildFallbackPlan(request)
+  return plan ? applyDirectRouteGuard(plan, request.question) : buildFallbackPlan(request)
 }
 
 export async function generatePublicAssistantDraft(input: {
@@ -146,10 +146,26 @@ function normalizeClaim(value: unknown, index: number, allowedEvidence: Set<stri
 function buildFallbackPlan(request: PublicAssistantRequest): PublicAssistantPlan {
   const normalized = request.question.toLowerCase()
   const siteRelated = /biau|泊岸|本站|这个网站|项目页|博客|状态页|playlab|legal|erp|pet|xunqiu|寻球/u.test(normalized)
-  const conversational = /^(你好|您好|hi|hello|谢谢|帮我(改写|润色|翻译)|写一(首|段|个))/iu.test(request.question.trim())
+  const conversational = /^(你好|您好|hi|hello|谢谢)/iu.test(request.question.trim()) || isDirectCreativeRequest(request.question)
   const current = /最新|今天|现在|近期|实时|新闻|发布|价格|版本|比较|对比|是什么|为什么|怎么/u.test(normalized)
   const route: PublicAssistantRoute = conversational ? 'direct' : siteRelated && current ? 'combined' : siteRelated ? 'site' : 'web'
   return { route, queries: route === 'direct' ? [] : [request.question], requiresFreshness: current, planner: 'fallback' }
+}
+
+function applyDirectRouteGuard(plan: PublicAssistantPlan, question: string): PublicAssistantPlan {
+  if (!isDirectCreativeRequest(question)) return plan
+  return { ...plan, route: 'direct', queries: [], requiresFreshness: false }
+}
+
+function isDirectCreativeRequest(question: string) {
+  const normalized = question.trim()
+  const explicitlyRequiresEvidence = /搜索|查找|查询|检索|联网|全网|网页|引用|来源|证据|资料|调研|研究|最新|今天|现在|近期|实时|新闻|发布|价格|版本|数据|比较|对比|是什么|为什么|怎么|如何|多少|哪个|哪些|谁/iu.test(normalized)
+  if (explicitlyRequiresEvidence) return false
+
+  const withoutPreamble = normalized.replace(/^(?:(?:请|麻烦)(?:你)?\s*)?(?:(?:帮|给|为)我\s*)?/u, '')
+  if (/^(?:改写|润色|翻译|续写)/u.test(withoutPreamble)) return true
+  if (/^(?:生成|创作|写|作)(?:一|这|下面|以下)?(?:首|段|篇|个|则|份|封|句)?\s*(?:古诗|诗词|诗歌|诗|歌词|故事|小说|散文|文案|标语|口号|标题|邮件|段落|脚本|对联|摘要|大纲)/u.test(withoutPreamble)) return true
+  return /^(?:please\s+)?(?:write|rewrite|translate|polish|compose|draft)\b/iu.test(withoutPreamble)
 }
 
 function buildEvidenceFallback(

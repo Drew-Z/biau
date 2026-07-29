@@ -68,11 +68,14 @@ const server = createServer((request, response) => {
     }
 
     const system = body.input?.[0]?.content?.[0]?.text ?? ''
+    const user = body.input?.[1]?.content?.[0]?.text ?? ''
     const streaming = (body as { stream?: boolean }).stream === true
     response.writeHead(200, { 'Content-Type': streaming ? 'text/event-stream' : 'application/json' })
     if (system.includes('只读规划器')) {
       response.end(JSON.stringify({
-        output_text: JSON.stringify({ route: 'site', queries: ['Legal RAG'], requiresFreshness: false }),
+        output_text: user.includes('生成一首古诗词')
+          ? JSON.stringify({ route: 'web', queries: ['古诗词'], requiresFreshness: true })
+          : JSON.stringify({ route: 'site', queries: ['Legal RAG'], requiresFreshness: false }),
       }))
       return
     }
@@ -124,6 +127,18 @@ try {
     planner: 'model',
   })
 
+  const creativePlan = await planPublicAssistantRequest({
+    question: '生成一首古诗词',
+    mode: 'auto',
+    history: [],
+  })
+  assert.deepEqual(creativePlan, {
+    route: 'direct',
+    queries: [],
+    requiresFreshness: false,
+    planner: 'model',
+  })
+
   const forcedWebPlan = await planPublicAssistantRequest({
     question: '截至目前，Agentic RAG 相比传统 RAG 有哪些关键改进？请引用公开网页。',
     mode: 'web',
@@ -154,10 +169,10 @@ try {
   assert.equal(JSON.stringify(draft.modelChannel).includes('fixture-key'), false)
   assert.equal(JSON.stringify(draft.modelChannel).includes(`127.0.0.1:${address.port}`), false)
 
-  assert.deepEqual(observedPaths, ['/responses', '/v1/responses', '/responses', '/v1/responses'])
-  assert.equal(observedBodies.length, 4)
+  assert.deepEqual(observedPaths, ['/responses', '/v1/responses', '/responses', '/v1/responses', '/responses', '/v1/responses'])
+  assert.equal(observedBodies.length, 6)
   assert.equal((observedBodies[1] as { model?: string }).model, 'fixture-responses-model')
-  assert.deepEqual(observedBodies.map((body) => (body as { stream?: boolean }).stream), [false, false, true, true])
+  assert.deepEqual(observedBodies.map((body) => (body as { stream?: boolean }).stream), [false, false, false, false, true, true])
   console.log('Public assistant Responses model adapter contract passed.')
 } finally {
   Object.assign(env, original)

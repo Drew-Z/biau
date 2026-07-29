@@ -15,7 +15,7 @@
 - `auto`, `site`, and `web` are explicit request modes. Combined site/web research runs concurrently.
 - Research recovery is bounded to one retry. Model calls, query counts, page fetches, retained evidence, input size, output size, and elapsed time are all bounded.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
-- A deterministic plan is allowed only when structured planning fails. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.
+- A deterministic plan is allowed only when structured planning fails. The only post-plan exception is a narrow `auto`-mode guard for explicit creative or text-transformation requests that do not ask for search, freshness, comparison, citations, research, or other factual evidence; it may correct the route to `direct` but must not override explicit `site` / `web` modes. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.
 
 ## Evidence And Web Research
 
