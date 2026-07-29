@@ -66,10 +66,10 @@ Rollback point: UI commit; backend optional fields remain compatible.
 
 ### 6. Add Model-Path Metrics
 
-- [ ] Extend generic HTTP duration buckets through 45 seconds.
-- [ ] Add low-cardinality run/attempt/first-activity metrics.
-- [ ] Add fixture-only metrics checks and a changed-file sensitive scan.
-- [ ] Keep `METRICS_ENABLED=false` in Blueprint and examples.
+- [x] Extend generic HTTP duration buckets through 45 seconds.
+- [x] Add low-cardinality run/attempt/first-activity metrics.
+- [x] Add fixture-only metrics checks and a changed-file sensitive scan.
+- [x] Keep `METRICS_ENABLED=false` in Blueprint and examples.
 - [ ] Update observability docs/spec with allowed labels and manual scrape gate.
 
 Rollback point: metrics are default-off and isolated from answer behavior.

@@ -21,6 +21,16 @@ export interface ResponsesJsonSchema {
   strict?: boolean
 }
 
+interface ResponsesEndpointResult {
+  ok: boolean
+  content: string
+  httpStatus: number | null
+  diagnostic: ProviderDiagnostic
+  durationMs: number
+  firstActivityMs?: number
+  invalidResponse: boolean
+}
+
 export async function requestResponsesText(input: {
   channel: ResponsesApiChannel
   system: string
@@ -133,7 +143,7 @@ async function requestEndpoint(input: {
   stream?: boolean
   maxOutputTokens?: number
   jsonSchema?: ResponsesJsonSchema
-}) {
+}): Promise<ResponsesEndpointResult> {
   const startedAt = Date.now()
   let firstActivityMs: number | undefined
   const abort = new AbortController()
@@ -223,7 +233,8 @@ async function requestEndpoint(input: {
   } catch (error) {
     input.signal?.throwIfAborted()
     const invalidResponse = error instanceof Error && error.message === 'responses-stream-too-large'
-    const kind = diagnosticKind === 'timeout'
+    const observedDiagnosticKind = readDiagnosticKind()
+    const kind: ProviderDiagnosticKind = observedDiagnosticKind === 'timeout'
       ? 'timeout'
       : responseStatus
         ? 'http_status'
@@ -245,6 +256,10 @@ async function requestEndpoint(input: {
   } finally {
     if (timeout) clearTimeout(timeout)
     input.signal?.removeEventListener('abort', onAbort)
+  }
+
+  function readDiagnosticKind(): ProviderDiagnosticKind {
+    return diagnosticKind
   }
 }
 

@@ -9,6 +9,7 @@
     "assistant:kg-check": "tsx scripts/check-assistant-knowledge-v2.ts",
     "assistant:public-agent-check": "tsx server/scripts/public-assistant-agent-check.ts",
     "assistant:public-model-check": "tsx server/scripts/public-assistant-model-check.ts",
+    "assistant:public-metrics-check": "tsx server/scripts/public-assistant-metrics-check.ts",
     "assistant:public-api-check": "tsx scripts/check-public-assistant-api.ts",
     "assistant:public-conversation-check": "tsx scripts/check-public-assistant-conversation.ts",
     "assistant:public-persistence-check": "tsx server/scripts/public-assistant-persistence-check.ts",

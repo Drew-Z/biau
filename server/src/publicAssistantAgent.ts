@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph'
 import { env } from './env.js'
+import { recordPublicAssistantModelAttempt, recordPublicAssistantRun } from './metrics.js'
 import { createPublicAssistantModel, shouldUseDirectPublicAssistantRoute } from './publicAssistantModel.js'
 import type {
   PublicAssistantDraft,
@@ -79,7 +80,9 @@ export async function runPublicAssistantAgent(
     verificationPassed: false,
     response: undefined,
   })
-  return finalState.response ?? buildFailedResponse(finalState)
+  const response = finalState.response ?? buildFailedResponse(finalState)
+  recordPublicAssistantRun(response.meta?.research?.route ?? finalState.agentPlan?.route ?? 'direct', response.status ?? 'degraded')
+  return response
 }
 
 export function normalizePublicAssistantPayload(payload: ChatPayload): PublicAssistantRequest | null {
@@ -189,19 +192,38 @@ async function generateNode(state: PublicAssistantState) {
       if (!hasAttemptBudget(state)) break
     }
     const attemptStartedAt = now(state)
-    const nextDraft = await state.dependencies.model.answer({
-      request: state.request,
-      plan,
-      evidence: state.evidence,
-      timeoutMs: remainingAttemptTimeoutMs(state),
-    })
+    let nextDraft: PublicAssistantDraft
+    try {
+      nextDraft = await state.dependencies.model.answer({
+        request: state.request,
+        plan,
+        evidence: state.evidence,
+        timeoutMs: remainingAttemptTimeoutMs(state),
+      })
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        recordPublicAssistantModelAttempt({
+          outcome: 'cancelled',
+          durationMs: Math.max(0, now(state) - attemptStartedAt),
+        })
+      }
+      throw error
+    }
     const reported = nextDraft.attempts?.[0]
+    const failureClass = modelFailureClass(nextDraft)
+    const timingFailureClass = reported?.failureClass ?? failureClass
     const timing: PublicAssistantModelAttemptTiming = {
       attempt,
       durationMs: reported?.durationMs ?? Math.max(0, now(state) - attemptStartedAt),
       ...(reported?.firstActivityMs === undefined ? {} : { firstActivityMs: reported.firstActivityMs }),
-      ...(reported?.failureClass ? { failureClass: reported.failureClass } : {}),
+      ...(timingFailureClass ? { failureClass: timingFailureClass } : {}),
     }
+    recordPublicAssistantModelAttempt({
+      outcome: nextDraft.failure ? 'failure' : 'success',
+      ...(failureClass ? { failureClass } : {}),
+      durationMs: timing.durationMs,
+      ...(timing.firstActivityMs === undefined ? {} : { firstActivityMs: timing.firstActivityMs }),
+    })
     attempts.push(timing)
     draft = { ...nextDraft, attempts: [...attempts] }
     if (!isRetryableModelDraft(nextDraft) || attempt === 3 || !hasRetryBudget(state, attempt)) break
