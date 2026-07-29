@@ -76,6 +76,7 @@ import {
   updatePublicAssistantRevisionFeedback,
   type PublicAssistantConversationState,
 } from '../utils/publicAssistantConversation'
+import { formatPublicAssistantRecoveryLabel } from '../utils/publicAssistantPresentation'
 import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
 import {
   createPublicAssistantRequestId,
@@ -193,15 +194,6 @@ const ROUTE_LABELS = {
   combined: '综合研究',
 } as const
 
-const RECOVERY_FAILURE_LABELS = {
-  not_configured: '回答模型尚未配置',
-  timeout: '回答超时',
-  network: '回答网络异常',
-  upstream: '上游回答服务异常',
-  empty: '上游未返回内容',
-  invalid: '回答格式未通过校验',
-} as const
-
 function getAssistantApiBase(preferredApiBase?: string | null) {
   return preferredApiBase || CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE
 }
@@ -309,10 +301,8 @@ function formatAnswerMeta(message: WidgetMessage) {
   } else if (message.meta.citationCount > 0) {
     labels.push(`${message.meta.citationCount} 条站内来源`)
   }
-  if (recovery?.state === 'recovered') labels.push(`已自动恢复（${recovery.attempts} 次尝试）`)
-  if (recovery?.state === 'degraded' && recovery.failureClass) {
-    labels.push(`${RECOVERY_FAILURE_LABELS[recovery.failureClass]}（${recovery.attempts} 次尝试）`)
-  }
+  const recoveryLabel = formatPublicAssistantRecoveryLabel(recovery)
+  if (recoveryLabel) labels.push(recoveryLabel)
   return labels.join(' · ')
 }
 

@@ -9,6 +9,7 @@ import type {
 } from '../src/publicAssistantRuntime.js'
 import { toPublicAssistantHttpResponse } from '../src/publicAssistantProjection.js'
 import type { PublicAssistantMode, PublicAssistantRecoveryFailureClass, PublicAssistantRoute } from '../src/types.js'
+import { formatPublicAssistantRecoveryLabel } from '../../src/utils/publicAssistantPresentation.js'
 
 const baseRequest: PublicAssistantRequest = {
   contractVersion: 2,
@@ -197,6 +198,44 @@ for (const fixture of failureCases) {
   assert(!serialized.includes('private-fixture-provider'))
   assert(!serialized.includes('httpStatus'))
   assert(!serialized.includes('timeoutMs'))
+}
+
+const recoveryLabelCases = [
+  {
+    name: 'first-attempt success stays quiet',
+    recovery: { state: 'none', attempts: 1 } as const,
+    expected: '',
+  },
+  {
+    name: 'second-attempt recovery',
+    recovery: { state: 'recovered', attempts: 2 } as const,
+    expected: '已自动恢复（2 次尝试）',
+  },
+  {
+    name: 'third-attempt recovery',
+    recovery: { state: 'recovered', attempts: 3 } as const,
+    expected: '已自动恢复（3 次尝试）',
+  },
+  ...failureCases.map((fixture) => ({
+    name: `${fixture.name} degradation`,
+    recovery: {
+      state: 'degraded' as const,
+      attempts: fixture.expectedAttempts,
+      failureClass: fixture.failureClass,
+    },
+    expected: `${({
+      not_configured: '回答模型尚未配置',
+      timeout: '回答超时',
+      network: '回答网络异常',
+      upstream: '上游回答服务异常',
+      empty: '上游未返回内容',
+      invalid: '回答格式未通过校验',
+    } satisfies Record<PublicAssistantRecoveryFailureClass, string>)[fixture.failureClass]}（${fixture.expectedAttempts} 次尝试）`,
+  })),
+]
+
+for (const fixture of recoveryLabelCases) {
+  assert.equal(formatPublicAssistantRecoveryLabel(fixture.recovery), fixture.expected, fixture.name)
 }
 
 let injectionAnswerCalls = 0
