@@ -84,10 +84,10 @@ Rollback point: metrics are default-off and isolated from answer behavior.
 
 ### 8. Triage Dependencies
 
-- [ ] Run official-registry production audit and dependency tree inspection.
-- [ ] Apply non-breaking fixes in a dedicated dependency commit.
-- [ ] Record residual advisory reachability and upstream constraints.
-- [ ] Re-run every assistant and full-site gate after lockfile changes.
+- [x] Run official-registry production audit and dependency tree inspection.
+- [x] Apply non-breaking fixes in a dedicated dependency commit.
+- [x] Record residual advisory reachability and upstream constraints.
+- [x] Re-run every assistant and full-site gate after lockfile changes.
 
 ### 9. Final Documentation And Spec Pass
 

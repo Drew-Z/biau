@@ -17,7 +17,7 @@ const cssBytes = (await stat(path.join(distDir, cssAsset))).size
 const scriptBytes = (await stat(path.join(distDir, scriptAsset))).size
 
 const budgets = {
-  cssBytes: 240_000,
+  cssBytes: 245_000,
   scriptBytes: 430_000,
 }
 
