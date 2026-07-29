@@ -188,12 +188,13 @@ function buildEvidenceFallback(
   diagnostic?: PublicAssistantDraft['diagnostic'],
 ): PublicAssistantDraft {
   const evidence = input.evidence.slice(0, 3)
-  if (input.plan.route === 'direct' || evidence.length === 0) {
+  const isDirect = input.plan.route === 'direct'
+  if (isDirect || evidence.length === 0) {
     return {
-      answer: input.plan.route === 'direct'
+      answer: isDirect
         ? '当前模型暂时无法完成这次回答，请稍后重试。'
         : '目前没有取得足够的公开证据，我不会补造结论。可以缩小问题范围，或切换“本站 / 全网”模式后重试。',
-      status: 'uncertain',
+      status: isDirect ? 'degraded' : 'uncertain',
       claims: [],
       suggestions: [],
       model: modelChannel.model || 'fallback',

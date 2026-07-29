@@ -192,6 +192,26 @@ try {
     cancelledDraft,
     (error) => error instanceof DOMException && error.name === 'AbortError',
   )
+
+  env.assistantModelApiKey = ''
+  env.assistantModelBaseUrl = ''
+  env.assistantModelName = ''
+  env.assistantModelChannelsJson = ''
+  env.openaiApiKey = ''
+  env.openaiBaseUrl = ''
+  env.openaiModel = ''
+  const unavailableDirectDraft = await generatePublicAssistantDraft({
+    request: {
+      question: '生成一首古诗词',
+      mode: 'auto',
+      history: [],
+    },
+    plan: directPlan,
+    evidence: [],
+  })
+  assert.equal(unavailableDirectDraft.status, 'degraded')
+  assert.equal(unavailableDirectDraft.failure, 'not_configured')
+  assert.deepEqual(unavailableDirectDraft.claims, [])
   console.log('Public assistant Responses model adapter contract passed.')
 } finally {
   Object.assign(env, original)

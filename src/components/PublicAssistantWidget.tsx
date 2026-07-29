@@ -283,7 +283,7 @@ function readPublicAssistantPageContext(): PublicAssistantPageContext {
 
 function getServiceStatus(state: AssistantServiceState) {
   if (state === 'online') return { className: 'is-model', label: '研究助手已响应' }
-  if (state === 'degraded') return { className: 'is-fallback', label: '正在使用站内兜底' }
+  if (state === 'degraded') return { className: 'is-fallback', label: '回答服务已降级' }
   if (state === 'error') return { className: 'is-error', label: '研究服务暂不可用' }
   return { className: 'is-ready', label: '可检索本站与公开网页' }
 }
