@@ -99,14 +99,18 @@ Rollback point: metrics are default-off and isolated from answer behavior.
 
 ### 10. Rollout And Acceptance
 
-- [ ] Push reviewed commits to `main` in rollback-friendly order.
-- [ ] Deploy only `biau-public-assistant-api` on Render.
-- [ ] Allow the static Cloudflare site to build the matching frontend commit.
-- [ ] Verify API `/health` and current static assistant chunk without a model call.
+- [x] Push reviewed commits to `main` in rollback-friendly order.
+- [x] Deploy only `biau-public-assistant-api` on Render.
+- [x] Allow the static Cloudflare site to build the matching frontend commit.
+- [x] Verify API `/health` and current static assistant chunk without a model call.
 - [ ] Run exactly one approved business request, inspect only public-safe metadata,
       and delete its temporary session.
-- [ ] Record deployment IDs, commit, health, outcome, duration, and remaining
-      manual gates without recording provider identity or content.
+- [ ] Record the approved business-request outcome and duration, then close the
+      remaining manual gates without recording provider identity or content.
+
+Low-sensitivity deployment and health evidence is recorded in
+`research/rollout.md`. The final business-request row remains intentionally open
+because no live model call is permitted without explicit approval.
 
 ## Required Validation
 
