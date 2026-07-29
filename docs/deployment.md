@@ -80,6 +80,7 @@ ASSISTANT_MODEL_API_KEY=<server-only key>
 ASSISTANT_MODEL_NAME=<single generation model>
 ASSISTANT_MODEL_PROVIDER=<safe provider label>
 ASSISTANT_MODEL_PROTOCOL=responses
+ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
 
 ASSISTANT_RAG_API_BASE_URL=<RAG Render URL>
 ASSISTANT_RAG_API_KEY=<与 RAG_PUBLIC_API_KEY 相同>
@@ -87,6 +88,7 @@ ASSISTANT_RAG_TIMEOUT_MS=3000
 
 PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS=45000
 PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS=20000
+PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS=800
 PUBLIC_ASSISTANT_RATE_LIMIT=20
 PUBLIC_ASSISTANT_RATE_WINDOW_MS=60000
 PUBLIC_ASSISTANT_RETENTION_DAYS=30
@@ -102,6 +104,10 @@ METRICS_ENABLED=false
 ```
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
+
+`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 Responses relay 支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。一次公开请求最多包含三次生成尝试，所有尝试与 200/400ms 可取消退避共享 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` 的绝对截止时间，不会为每次尝试重置 45 秒预算。
+
+`METRICS_ENABLED=false` 时 `/metrics` 不采集也不暴露。生产 scrape 目标、鉴权和告警接收方仍是人工 gate；`/health` 始终与指标开关独立。
 
 ## Render: Content Studio and AI Daily
 
@@ -228,6 +234,8 @@ npm run prisma:generate
 npm run assistant:index
 npm run assistant:public-agent-check
 npm run assistant:public-model-check
+npm run assistant:public-metrics-check
+npm run assistant:public-quality-check
 npm run assistant:public-api-check
 npm run assistant:public-persistence-check
 npm run assistant:public-rate-limit-check
@@ -248,6 +256,8 @@ npm run build
 ```
 
 上述 deterministic checks 不得访问真实模型、搜索、embedding、reranker 或向量数据库供应商。
+
+公开助手可靠性版本发布时只部署 `biau-public-assistant-api` 与匹配提交的 Cloudflare 静态站，不重启 Content Studio 或 RAG Orchestrator。先请求 `/health`，这一动作不得调用模型；随后最多执行一条用户明确批准的真实业务问题，检查公开安全元数据并删除该临时匿名会话。结构化输出与生产 Prometheus scrape 仍分别受上述人工 gate 约束。
 
 ## 回滚
 

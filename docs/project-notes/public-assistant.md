@@ -28,18 +28,22 @@ Site research uses public-only Qdrant data with dense and sparse retrieval fused
 - `src/utils/publicAssistantApi.ts` validates JSON and SSE events and filters public citation URLs before rendering.
 - `functions/_shared/assistant.ts` implements the same-origin Cloudflare proxy bounds for request size, response size, timeout, cancellation, and stream forwarding.
 - `server/src/publicAssistantAgent.ts` compiles the LangGraph nodes and conditional edges.
+- `server/src/publicAssistantModel.ts` owns the separate concise direct and evidence-bound generation profiles.
+- `server/src/responsesApi.ts` owns provider-neutral Responses JSON/SSE/chat-relay decoding, output bounds, timing, cancellation, and optional JSON Schema emission.
+- `server/src/publicAssistantProjection.ts` is the only internal-to-public recovery/diagnostic projection boundary.
 - `server/src/publicAssistantPersistence.ts` owns optional anonymous session, turn, feedback, retention, and aggregation persistence.
+- `server/src/metrics.ts` owns default-off, low-cardinality HTTP and public-assistant model-path metrics.
 
 [source-verified] Evidence: E-PA-002, E-PA-004, E-PA-005, E-PA-006.
 
 ## Core Data Flow
 
 1. `input_guard` blocks or normalizes unsafe input.
-2. `plan` selects site, web, or combined research.
+2. Deterministic direct intent uses a concise no-evidence request profile; other requests enter `plan` for site, web, or combined research.
 3. `research` runs selected evidence channels and retains a bounded set.
 4. `grade_evidence` measures support and gaps.
 5. `rewrite` may retry research once.
-6. `generate` creates a draft answer and claims.
+6. `generate` creates a draft answer and claims through one initial model attempt and at most two budget-aware retries inside a shared absolute deadline.
 7. `verify_claims` links claims to acceptable citations.
 8. A final rewrite may downgrade unsupported language.
 9. `finalize` emits the public allowlisted result.
@@ -50,7 +54,7 @@ Site research uses public-only Qdrant data with dense and sparse retrieval fused
 
 The browser prefers SSE but does not blindly replay failed streams. JSON fallback is limited to explicit legacy or unsupported-stream statuses; malformed, incomplete, timed-out, rate-limited, or failed streams are terminal for that attempt. Cancellation propagates through the same-origin proxy. [source-verified] Evidence: E-PA-004, E-PA-005.
 
-Evidence retry is bounded to one cycle. If support remains insufficient, the graph returns partial or uncertain language instead of fabricating certainty. Database absence does not block answering; it only removes optional persistence. [source-verified] Evidence: E-PA-002, E-PA-006.
+Evidence/query rewrite is bounded to one cycle and remains separate from generation recovery. Generation retries only transient or repairable failures, uses abortable 200/400ms backoff, and never resets the absolute request deadline. Public metadata exposes only `none`, `recovered`, or `degraded`, an attempt count from one to three, and a fixed safe failure class. If support remains insufficient, the graph returns partial or uncertain language instead of fabricating certainty. Database absence does not block answering; it only removes optional persistence. [source-verified] Evidence: E-PA-002, E-PA-006.
 
 ## Trade-Offs
 
@@ -73,7 +77,7 @@ Evidence retry is bounded to one cycle. If support remains insufficient, the gra
 
 ## Verification
 
-The check matrix covers graph routing, public payloads, web fetch safety, hybrid retrieval, API/SSE behavior, persistence, rate limits, Cloudflare proxy behavior, knowledge generation, Qdrant sync, service modes, and UI flows. Fixture checks establish contract behavior; live checks require explicit environment and approval. [source-verified] Evidence: E-PA-005, E-PA-008.
+The check matrix covers direct/site/web/combined routing, follow-up and edit/resend, graph and public payload contracts, all six safe degradation classes, bounded recovery, cancellation, prompt injection, secret seeking, citation integrity, Branch/Revision continuity, old snapshot hydration, Responses JSON/SSE/chat-relay/schema behavior, metrics, web fetch safety, hybrid retrieval, persistence, rate limits, Cloudflare proxy behavior, knowledge generation, Qdrant sync, service modes, and UI flows. Fixtures never resolve a real provider endpoint; live acceptance requires one explicit approved business question after deployment. [source-verified] Evidence: E-PA-005, E-PA-008.
 
 ## Delivery Status
 

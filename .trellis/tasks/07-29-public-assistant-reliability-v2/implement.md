@@ -16,7 +16,7 @@
 - [x] Extend public HTTP projection, display snapshot normalization, browser
       decoder, and conversation hydration fixtures.
 - [x] Prove older snapshots remain valid before changing generation behavior.
-- [ ] Update backend/frontend type-safety and public-assistant specs.
+- [x] Update backend/frontend type-safety and public-assistant specs.
 
 Rollback point: contract-only commit with no behavior change.
 
@@ -70,17 +70,17 @@ Rollback point: UI commit; backend optional fields remain compatible.
 - [x] Add low-cardinality run/attempt/first-activity metrics.
 - [x] Add fixture-only metrics checks and a changed-file sensitive scan.
 - [x] Keep `METRICS_ENABLED=false` in Blueprint and examples.
-- [ ] Update observability docs/spec with allowed labels and manual scrape gate.
+- [x] Update observability docs/spec with allowed labels and manual scrape gate.
 
 Rollback point: metrics are default-off and isolated from answer behavior.
 
 ### 7. Add The Quality Evaluation Matrix
 
-- [ ] Add table-driven direct/site/web/combined and failure fixtures.
-- [ ] Cover injection, secret seeking, cancellation, recovery, citation integrity,
+- [x] Add table-driven direct/site/web/combined and failure fixtures.
+- [x] Cover injection, secret seeking, cancellation, recovery, citation integrity,
       edit/resend, follow-up history, branch/revision, and old snapshot hydration.
-- [ ] Ensure no deterministic test can resolve a real provider endpoint.
-- [ ] Document the single-question production acceptance procedure.
+- [x] Ensure no deterministic test can resolve a real provider endpoint.
+- [x] Document the single-question production acceptance procedure.
 
 ### 8. Triage Dependencies
 
@@ -91,11 +91,11 @@ Rollback point: metrics are default-off and isolated from answer behavior.
 
 ### 9. Final Documentation And Spec Pass
 
-- [ ] Update `docs/deployment.md`, `docs/observability-strategy.md`, and the public
+- [x] Update `docs/deployment.md`, `docs/observability-strategy.md`, and the public
       assistant engineering dossier.
-- [ ] Update backend public-assistant, observability, logging, quality, and
+- [x] Update backend public-assistant, observability, logging, quality, and
       frontend component/type-safety contracts.
-- [ ] Run deployment/doc consistency checks and PRD convergence review.
+- [x] Run deployment/doc consistency checks and PRD convergence review.
 
 ### 10. Rollout And Acceptance
 
@@ -167,4 +167,4 @@ Do not add a live model call to any command above.
 - [x] Design defines ownership, contracts, compatibility, operations, and rollback.
 - [x] Implementation is sliced into independent rollback units.
 - [x] No repository-answerable product question remains open.
-- [ ] User approves starting implementation.
+- [x] User approves starting implementation.

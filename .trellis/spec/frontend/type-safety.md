@@ -32,6 +32,8 @@ There is no runtime validation library in the frontend. Do not add one unless th
 - Generation intent, Branch action, history projection, and Revision result are discriminated unions. Branch, Turn, Revision, Request, and Session identifiers remain opaque strings rather than client-derived structures.
 - JSON answers, terminal SSE results, Session history, and Branch responses pass through shared normalizers/decoders before components or reducers consume them. Components do not cast `unknown` payload fields.
 - A logical conversation Turn explicitly carries its `selectedRevisionId` and `revisions[]`. Each Revision keeps answer, citations, claims, suggestions, metadata, feedback, and recovery identity in one coherent snapshot; do not split these into parallel arrays that can drift.
+- Recovery identity is optional typed metadata: `state: none | recovered | degraded`, `attempts: 1 | 2 | 3`, and an optional safe `failureClass`. Missing fields remain valid for older snapshots; unknown states, attempts, or failure classes are discarded at the decoder boundary.
+- Components format normalized recovery values only. They must not cast or reinterpret raw API or stored snapshot fields.
 - A legacy response without conversation identity may render as an ephemeral answer, but the decoder must not fabricate Branch, Turn, or Revision capabilities.
 
 ## Avoid

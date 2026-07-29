@@ -11,6 +11,8 @@ npm.cmd run server:build
 npm.cmd run server:smoke
 npm.cmd run assistant:public-agent-check
 npm.cmd run assistant:public-model-check
+npm.cmd run assistant:public-metrics-check
+npm.cmd run assistant:public-quality-check
 npm.cmd run assistant:public-api-check
 npm.cmd run assistant:public-persistence-check
 npm.cmd run assistant:public-rate-limit-check
@@ -78,6 +80,8 @@ AI Daily production deployments must mount the human-approved model bundle as th
 - Public answers use retained public-safe site/web evidence and claim-level citations only.
 - Missing model/RAG/search returns an explicit fallback, unavailable, partial, or uncertain result rather than fabricated facts.
 - The HTTP projection exposes product states and bounded counters, not model/provider/channel/retrieval diagnostics.
+- Direct and evidence-bound request profiles, optional JSON Schema output, Responses JSON/SSE/chat-relay decoding, absolute-deadline retries, abortable backoff, safe recovery projection, and old snapshot compatibility require fixture coverage.
+- The table-driven quality matrix covers every route, all six public failure classes, recovery, cancellation, injection, secret seeking, citation integrity, follow-up/edit-resend, Branch/Revision continuity, and older snapshot hydration. Fixture checks must not resolve or call a configured provider endpoint.
 - Public `/health` exposes only service/readiness capabilities and never includes exact model or provider identity. Detailed diagnostics remain behind the operations-token boundary.
 - Client session IDs cannot bypass the IP-scoped chat/feedback limiter; in-memory buckets remain bounded.
 - Hybrid Qdrant 400/404/405 fallback stays on `QDRANT_PUBLIC_ALIAS`, with a poison-base-collection fixture proving the target.
@@ -107,6 +111,7 @@ AI Daily production deployments must mount the human-approved model bundle as th
 - Logs use low-cardinality event names and safe categories.
 - Do not log authorization headers, prompts, fetched page bodies, model responses, or database URLs.
 - `/metrics` is default-off and must not use user/project/query text as labels.
+- Public-assistant metrics use fixed route/outcome/failure enums, extended HTTP latency buckets, bounded attempt timing, and a sensitive-field scan. They never label provider/model/endpoint, exact external status, IDs, citations, questions, or raw errors.
 
 ## Sensitive Scan
 

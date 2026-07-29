@@ -6,15 +6,16 @@
 - It may answer from BIAU public knowledge, fetched public-web evidence, or both.
 - One configured Responses API model owns planning and answer generation. Retrieval, embedding, search, and reranking are tools rather than extra generation-model routes.
 - Planner requests use the bounded non-streaming Responses contract. Answer generation uses `stream: true` and accumulates standard `response.output_text.delta` / `response.output_text.done` / `response.completed` events; the shared decoder also accepts a relay's chat-shaped JSON or SSE `choices` compatibility form without changing protocol or endpoint selection. Raw model deltas remain server-only because the structured answer must pass claim/citation verification before publication.
+- The shared Responses adapter owns output limits, total and first-activity timing, response-size limits, JSON/SSE/chat-relay decoding, and the optional `off | json-schema` structured-output capability. Schema mode defaults to `off`; rejection never triggers endpoint or protocol guessing.
 - Public responses never expose provider names, model IDs, endpoints, prompts, graph traces, internal diagnostics, or private/internal citations.
 
 ## Agent Runtime
 
 - `runPublicAssistantAgent()` is the authoritative answer path for `POST /chat/public`.
 - The LangGraph flow is `input_guard -> plan -> research? -> grade_evidence -> rewrite? -> generate -> verify_claims -> rewrite? -> finalize`.
-- In `auto` mode, high-confidence greetings, creative-writing commands, and text transformations use the deterministic `direct` route before planner inference. Direct answers do not require evidence or citations; explicit `site` and `web` modes remain authoritative and keep the research/evidence gates.
+- In `auto` mode, high-confidence greetings, creative-writing commands, and text transformations use the deterministic `direct` route before planner inference. Direct answers use a dedicated concise request profile with bounded recent history and `PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS`; the request contains no evidence/citation instructions or empty evidence payload, and direct claims remain empty. Explicit `site` and `web` modes remain authoritative and keep the research/evidence gates.
 - `auto` is the default product mode. The compact scope selector exposes `site` and `web` only as explicit user overrides when automatic tool selection is unsuitable; they must not return as equal-weight primary navigation. Combined site/web research runs concurrently.
-- Research recovery is bounded to one retry. Model calls, query counts, page fetches, retained evidence, input size, output size, and elapsed time are all bounded.
+- Evidence/query rewrite recovery is bounded to one retry. Generation uses one initial model attempt and at most two retries for transient or repairable failures. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; cancellation stops active work and all future attempts.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
 - A deterministic plan is allowed only when structured planning fails. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.
 
@@ -82,6 +83,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - `POST /chat/public/feedback` records bounded `up` or `down` feedback for one owned immutable Revision.
 - `POST /chat/public/branch` either selects an owned saved Branch or continues from an owned Revision and returns the authoritative normalized Session history projection.
 - The version-2 HTTP response is projected through an allowlist. Stable product fields include answer state, claims, citations, suggestions, opaque branch/turn/revision identity, and low-sensitive counters. A legacy response without identity may render ephemerally but must not invent Revision capability.
+- The optional public recovery projection is `{ state: 'none' | 'recovered' | 'degraded', attempts: 1 | 2 | 3, failureClass?: 'not_configured' | 'timeout' | 'network' | 'upstream' | 'empty' | 'invalid' }`. `publicAssistantProjection.ts` is the sole internal-to-public mapping boundary; provider identity, endpoint, exact status, and raw diagnostics remain internal.
 - Client disconnect propagates as a retryable abort; explicit visitor cancellation also calls the cancellation endpoint. The runner checks the signal before execution and again before fenced completion; an aborted or cancelled turn must not emit or persist a fallback response.
 - Rate limiting uses the request IP in process memory but never persists an IP address. Buckets are bounded and a client-provided session ID cannot bypass chat or feedback limits.
 - Persist only bounded anonymous session/turn/feedback data for 30 days. Long-lived aggregates store topic fingerprints and counters rather than raw questions or answers.
@@ -109,7 +111,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - Capabilities are accepted only in bounded JSON bodies, never in path segments or query strings. The list operation intersects at most 24 submitted IDs with unexpired rows; unknown and expired IDs are silently omitted.
 - Session history walks backward from the active Branch head through each Turn's `parentRevisionId`, retains at most the latest 100 ancestors, then returns them chronologically. It returns at most 8 Revisions per Turn and 24 Branch summaries with explicit `hasEarlierTurns`, `revisionsTruncated`, and `branchesTruncated` flags. Agent prompt history independently uses only the latest 6 selected ancestors.
 - Each returned Turn carries one logical question, its real parent Revision identity, `selectedRevisionId`, and retained immutable Revision snapshots. Sibling revisions and hidden Branch Turns never enter the selected path or Agent history.
-- Snapshot version 1 contains only allowlisted claims, public citations, bounded suggestions, and low-sensitive metadata. Serialization and hydration both re-run the public allowlist. Unknown versions or invalid shapes degrade to normalized question/answer text; stored JSON is never returned directly.
+- Snapshot version 1 contains only allowlisted claims, public citations, bounded suggestions, and low-sensitive metadata. Recovery metadata is an optional additive field, so older version-1 snapshots without it remain readable. Serialization and hydration both re-run the public allowlist; invalid recovery values are discarded, and unknown versions or invalid shapes degrade to normalized question/answer text. Stored JSON is never returned directly.
 - Secret-shaped or blocked turns store an empty safe snapshot. Provider/model identity, endpoints, prompts, credentials, raw diagnostics, raw errors, and internal citations are forbidden snapshot fields.
 - Raw sessions, turns, and feedback use the configured 30-day retention period. Deletion and expiry do not delete, decrement, or rewrite `PublicAssistantDailyAggregate`.
 - Every history response uses `Cache-Control: no-store`. History requests have an IP rate-limit bucket independent of chat and feedback.
@@ -146,10 +148,11 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 
 - Persistence checks assert submitted-ID intersection, expiry, bounded ancestor/revision/branch truncation, snapshot allowlisting, legacy fallback, intent-aware canonical hashing, lease takeover/fencing, immutable Revision numbering and lineage, concurrent Branch forks, explicit-selection fencing, Revision feedback, replay independence, cascade deletion, and aggregate preservation.
 - Migration checks assert legacy field parity, completed-cache version-2 backfill, Revision UPDATE rejection, same-session graph ownership, operational allowlists, and whole-session deletion against loopback PostgreSQL only.
-- Agent/model checks assert external abort propagation and that an aborted response cannot reach persistence. API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
+- Agent/model checks assert direct/research request profiles, absolute-deadline attempts, abortable provider work/backoff, Responses JSON/SSE/chat-relay decoding, optional schema success/rejection, external abort propagation, and that an aborted response cannot reach persistence. API and rate-limit checks assert methods, bounded schemas, `404`/`503` stable errors, no-store headers, and an independent bounded history bucket.
 - Cloudflare checks assert method/body/request-ID preservation, cancellation routing, request/response limits, no-store, `Retry-After`, and removal of browser authorization and cookies.
 - UI checks assert automatic rich restoration before follow-up, Revision switching without duplicate questions, revision-scoped content/feedback, Branch select/continue authoritative hydration, replay isolation, explicit truncation, expiry self-healing, transient retry, offline-to-online retry gating without automatic replay, wall-clock `Retry-After` expiry, claim-to-source focus, request/session race isolation, drawer/fullscreen focus ordering, desktop scroll lock, mobile no-autofocus, 44px Revision/Branch controls, and 320/390/430 containment.
 - All checks use local fixtures only and must not call a live model, search, embedding, reranker, or vector database provider.
+- The table-driven public quality matrix covers `direct`, `site`, `web`, and `combined`, all six public failure classes, recovery, cancellation, injection, secret seeking, citation integrity, follow-up/edit-resend continuity, and older snapshot hydration.
 
 ### 7. Wrong vs Correct
 
@@ -169,6 +172,8 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 ```powershell
 npm.cmd run assistant:public-agent-check
 npm.cmd run assistant:public-model-check
+npm.cmd run assistant:public-metrics-check
+npm.cmd run assistant:public-quality-check
 npm.cmd run assistant:public-api-check
 npm.cmd run assistant:public-persistence-check
 npm.cmd run assistant:public-rate-limit-check

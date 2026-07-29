@@ -20,6 +20,8 @@ Log operational lifecycle events and unexpected failures:
 
 If adding background jobs or deployment scripts, log start/end/failure at a level suitable for local debugging and deployment logs.
 
+If a public-assistant recovery event must be logged, allow only a fixed event name, safe failure class, bounded attempt count, and coarse duration bucket. Do not make every attempt a default per-request log.
+
 ## What Not to Log
 
 This is a public-site project with explicit data-safety rules. Never log:
@@ -28,6 +30,7 @@ This is a public-site project with explicit data-safety rules. Never log:
 - Real database URLs, internal hosts, SSH hosts, private IPs, or connection strings.
 - Full request bodies for chat, admin, invite, auth, or future upload endpoints.
 - Raw customer/company names or exact sensitive business metrics.
+- Public-assistant questions, session/request identifiers, provider/model/endpoint identity, exact upstream status, raw response bodies, or raw exception text from recovery attempts.
 
 ## Error Logging
 

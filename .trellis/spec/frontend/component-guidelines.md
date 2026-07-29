@@ -129,6 +129,8 @@ At mobile widths, Revision commands, continue, and Branch selection provide at l
 
 On mobile first-open, move focus from the hidden trigger into a stable non-input command inside the modal without focusing the composer or summoning the soft keyboard. Closing by button or Escape restores the owning trigger. Desktop restoration continues to focus the composer.
 
+Recovery presentation consumes normalized metadata only. Use fixed copy for recovered attempts and the bounded safe failure-class union; do not define raw-payload casts or provider error mappings inside the component. The `recovering` repaint and elapsed-time label reuse the existing status region without adding repeated live announcements. Reserve stable space so recovery copy cannot move the composer, widen a message, or overflow at 320, 390, or 430px.
+
 ### Mobile Primary Navigation
 
 When the site has a small, stable set of high-frequency route families, mobile

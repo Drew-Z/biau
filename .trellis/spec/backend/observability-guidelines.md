@@ -28,7 +28,12 @@ Allowed metrics include:
 - process uptime.
 - HTTP request counters.
 - HTTP request duration histograms.
+- public-assistant run counters by fixed `route` and terminal `outcome`.
+- public-assistant model-attempt counters by fixed `outcome` and safe `failure_class`.
+- public-assistant model-attempt duration and time-to-first-activity histograms.
 - Studio-only AI Daily operational snapshots derived from persisted source health, run/work state, bounded event outcomes, public feed age, and retention-due counts.
+
+Public-assistant metric names are `biau_public_assistant_runs_total`, `biau_public_assistant_model_attempts_total`, `biau_public_assistant_model_attempt_duration_seconds`, and `biau_public_assistant_model_first_activity_seconds`. Their labels are validated fixed enums; `failure_class` is limited to `none`, `not_configured`, `timeout`, `network`, `upstream`, `empty`, and `invalid`. Generic HTTP duration buckets include 15, 20, 30, and 45 seconds. Attempt metrics and terminal-run metrics are recorded separately, and instrumentation failure must never change an answer.
 
 AI Daily metric labels are fixed enums only: `health`, `status`, `stage`, `outcome`, `provider_role`, `kind`, `category`, `code`, and `severity`. `provider_role` means bounded roles such as `primary` or `fallback`; it must never expose the configured provider, model, endpoint, source, run, issue, or work-item identity. Failure `category` is restricted to `config`, `provider`, `evidence`, `quality`, `infrastructure`, and `stale-content`. Event outcome metrics use a bounded recent window, and failed-run alerts use the latest run rather than lifetime failure totals, so resolved incidents do not leave permanent alerts.
 
@@ -66,6 +71,7 @@ After changing metrics or observability code:
 
 ```powershell
 npm.cmd run server:build
+npm.cmd run assistant:public-metrics-check
 npm.cmd run ai-daily:operations-check
 npm.cmd run ai-daily:observability-contract-check
 npm.cmd run server:smoke
@@ -75,6 +81,8 @@ npm.cmd run build
 ```
 
 Also run a sensitive scan on changed files and manually inspect hits that mention token, key, bearer, database URL, private IP, or connection strings.
+
+The public-assistant metrics fixture must assert metric names, extended buckets, fixed label values, default-off behavior, and absence of question/session/request/citation/provider/model/endpoint/raw-error data. Production scrape enablement remains an explicit human gate and is independent from `/health`.
 
 ## Scenario: Public Synthetic Status Reports
 

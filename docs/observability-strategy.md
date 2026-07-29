@@ -114,6 +114,15 @@ GET /metrics -> text/plain; version=0.0.4; charset=utf-8
 - `biau_assistant_api_http_requests_total`
 - `biau_assistant_api_http_request_duration_seconds`
 
+Public assistant 模式还提供默认关闭、固定枚举标签的模型路径指标：
+
+- `biau_public_assistant_runs_total{route,outcome}`
+- `biau_public_assistant_model_attempts_total{outcome,failure_class}`
+- `biau_public_assistant_model_attempt_duration_seconds`
+- `biau_public_assistant_model_first_activity_seconds`
+
+通用 HTTP duration histogram 增加 15、20、30、45 秒 buckets，以覆盖公开助手的完整请求预算。每次模型尝试与最终 run 分开记录；指标记录失败不得改变回答路径。
+
 Studio 模式还会从内容数据库只读汇总 AI Daily 运维 snapshot：
 
 - `biau_ai_daily_operations_snapshot_up`
@@ -143,6 +152,7 @@ AI Daily failure signal 是当前状态与最近 24 小时持久化信号的低�
 - `status_class`
 - histogram 的 `le`
 - AI Daily 固定枚举：`health`、`status`、`stage`、`outcome`、`provider_role`、`kind`、`category`、`code`、`severity`
+- 公开助手固定枚举：`route`、`outcome`、`failure_class`；其中 failure class 仅允许 `none`、`not_configured`、`timeout`、`network`、`upstream`、`empty`、`invalid`
 
 不会记录：
 
@@ -153,6 +163,7 @@ AI Daily failure signal 是当前状态与最近 24 小时持久化信号的低�
 - 完整 URL query。
 - 数据库连接串、模型 endpoint 或 provider key。
 - source URL、run/issue/work id、标题、正文、provider id 或错误原文。
+- 公开助手 request/session/revision id、问题、引用、provider/model/endpoint、精确上游状态或异常原文。
 
 ## 人工 Gate
 
