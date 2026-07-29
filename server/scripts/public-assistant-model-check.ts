@@ -172,7 +172,7 @@ try {
 
   const directPlan = await planPublicAssistantRequest({
     ...request,
-    question: '请生成一首古诗',
+    question: '生成一首古诗词',
     mode: 'auto',
   })
   assert.deepEqual(directPlan, {
@@ -182,6 +182,7 @@ try {
     planner: 'fallback',
   })
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '请帮我润色这段文字' }), true)
+  assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '生成一首古诗词' }), true)
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '请翻译以下内容' }), true)
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '你好' }), true)
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: 'OpenAI 最近发布了什么？' }), false)
