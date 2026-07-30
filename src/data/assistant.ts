@@ -1,6 +1,7 @@
 import {
   getAssistantBlogPosts,
   getBlogAssistantTags,
+  getPublicBlogPostSummary,
 } from './blogCuration'
 import {
   buildPublicKnowledgeFallbackAnswer,
@@ -49,6 +50,66 @@ export const publicAssistantSuggestions: AssistantSuggestion[] = [
     prompt: '状态页里的人工 gate 和后续接入应该怎么处理？哪些信息不能公开？',
   },
 ]
+
+export function getPublicAssistantSuggestions(pathname: string): AssistantSuggestion[] {
+  const path = pathname.replace(/\/+$/u, '') || '/'
+  if (path === '/projects') {
+    return createSuggestions('projects', [
+      ['哪些项目适合现在体验', '按公开可用性和能力类型，推荐我现在最值得体验的项目。'],
+      ['按技术方向比较项目', '按 AI、业务系统、移动端和互动体验比较当前项目，并说明各自亮点。'],
+      ['给我一条浏览路线', '为第一次访问 BIAU Port 的人安排一条项目浏览路线。'],
+    ])
+  }
+  if (path.startsWith('/projects/')) {
+    const id = decodeURIComponent(path.slice('/projects/'.length))
+    const project = projects.find((item) => item.id === id)
+    if (!project) return publicAssistantSuggestions.slice(0, 3)
+    return createSuggestions(`project-${id}`, [
+      ['这个项目解决什么问题', `${project.title} 解决什么问题，适合谁使用？`],
+      ['解释技术栈与取舍', `解释 ${project.title} 的技术栈、架构和主要取舍。`],
+      ['从哪里开始体验', `${project.title} 目前有哪些公开入口、演示能力和可核验信息？`],
+    ])
+  }
+  if (path === '/blog') {
+    return createSuggestions('blog', [
+      ['按主题推荐文章', '根据当前博客内容，按主题推荐几篇值得先读的文章。'],
+      ['文章和项目怎么关联', '说明博客文章与项目实践之间的关系，并给出阅读顺序。'],
+      ['最近适合补什么知识', '根据现有知识栏目，推荐一个适合继续了解的技术主题。'],
+    ])
+  }
+  if (path.startsWith('/blog/')) {
+    const slug = decodeURIComponent(path.slice('/blog/'.length))
+    const post = getPublicBlogPostSummary(slug)
+    if (!post) return publicAssistantSuggestions.slice(0, 3)
+    return createSuggestions(`blog-${slug}`, [
+      ['总结核心结论', `总结《${post.title}》的核心结论和关键知识点。`],
+      ['解释相关概念', `解释《${post.title}》涉及的核心技术概念，并补充必要背景。`],
+      ['整理实践步骤', `把《${post.title}》中的方法整理成可以执行的步骤和检查清单。`],
+    ])
+  }
+  if (path === '/status' || path.startsWith('/status/')) {
+    return createSuggestions('status', [
+      ['哪些服务现在可用', '根据状态页说明哪些公开服务可用、降级或仍需人工处理。'],
+      ['状态如何被核验', '解释状态页使用了哪些健康检查、合成检查和低敏证据。'],
+      ['哪些事项仍需人工处理', '整理当前仍需人工处理的发布、凭据或生产验证事项。'],
+    ])
+  }
+  if (path === '/ai-daily' || path.startsWith('/ai-daily/')) {
+    return createSuggestions('ai-daily', [
+      ['总结本期 AI 动态', '总结当前 AI 日报页面最重要的动态和影响。'],
+      ['区分事实与判断', '区分当前 AI 日报中的已核验事实、编辑判断和仍需关注的变化。'],
+      ['给出延伸阅读路线', '根据当前 AI 日报内容给出一条延伸阅读和验证路线。'],
+    ])
+  }
+  return publicAssistantSuggestions.slice(0, 3)
+}
+
+function createSuggestions(
+  prefix: string,
+  values: Array<[label: string, prompt: string]>,
+): AssistantSuggestion[] {
+  return values.map(([label, prompt], index) => ({ id: `${prefix}-${index + 1}`, label, prompt }))
+}
 
 const projectKnowledge: AssistantKnowledgeItem[] = projects.map((project) => ({
   id: `project:${project.id}`,

@@ -129,6 +129,20 @@ model path, so the task remains open for an infrastructure decision.
 Rollback point: revert the widget warm-up commit; no backend or persistence
 contract changes are required.
 
+### 12. Complete The Eight Free-Tier UX Improvements
+
+- [x] Add the lightweight launcher, shared lazy loader, intent preload, global
+      warm-up coordinator, TTL, closed-panel continuation, and trigger states.
+- [x] Add bounded per-Session drafts and normalized read-only history snapshots
+      in `sessionStorage`, including expiry and authoritative replacement rules.
+- [x] Add route-aware starter prompts, advanced scope selection, distinct phase
+      copy, and mobile evidence disclosure.
+- [x] Cover hover/focus/first-scroll, no keep-alive, close/reopen, storage privacy,
+      TTL, Session isolation, snapshot read-only mode, server replacement, and
+      desktop/320/390/430 layout in deterministic fixtures.
+- [x] Update frontend specs, run full assistant/UI/performance gates, commit, and
+      push static-site changes without a live model call.
+
 ## Required Validation
 
 ```powershell

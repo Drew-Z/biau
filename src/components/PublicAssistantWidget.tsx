@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import {
   ArrowDown,
   Check,
@@ -22,9 +22,9 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import {
-  publicAssistantSuggestions,
+  getPublicAssistantSuggestions,
   buildPublicKnowledgeFallbackAnswer,
   searchPublicKnowledge,
   type AssistantKnowledgeItem,
@@ -34,7 +34,6 @@ import { trackAnalyticsEvent } from '../utils/analytics'
 import {
   announceMobileSurfaceOpen,
   isMobileSurfaceViewport,
-  MOBILE_SURFACE_LAYOUT_EVENT,
   MOBILE_SURFACE_OPEN_EVENT,
   type MobileSurfaceOpenDetail,
 } from '../utils/mobileSurface'
@@ -43,7 +42,6 @@ import {
   deletePublicAssistantSession,
   requestPublicAssistant,
   requestPublicAssistantBranch,
-  requestPublicAssistantHealth,
   requestPublicAssistantSession,
   requestPublicAssistantSessions,
   requestPublicAssistantStream,
@@ -77,6 +75,7 @@ import {
   type PublicAssistantConversationState,
 } from '../utils/publicAssistantConversation'
 import { formatPublicAssistantRecoveryLabel } from '../utils/publicAssistantPresentation'
+import { usePublicAssistantCollision } from '../hooks/usePublicAssistantCollision'
 import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
 import {
   createPublicAssistantRequestId,
@@ -88,6 +87,21 @@ import {
   rememberPublicAssistantSession,
   type PublicAssistantSessionRegistry,
 } from '../utils/publicAssistantSessionRegistry'
+import {
+  clearPublicAssistantDraft,
+  clearPublicAssistantHistorySnapshot,
+  clearPublicAssistantSessionBrowserState,
+  readPublicAssistantDraft,
+  readPublicAssistantHistorySnapshot,
+  writePublicAssistantDraft,
+  writePublicAssistantHistorySnapshot,
+} from '../utils/publicAssistantBrowserState'
+import {
+  getPublicAssistantWarmupServerSnapshot,
+  getPublicAssistantWarmupSnapshot,
+  startPublicAssistantWarmup,
+  subscribePublicAssistantWarmup,
+} from '../utils/publicAssistantWarmup'
 
 interface WidgetMessage {
   id: string
@@ -113,8 +127,6 @@ interface WidgetMessage {
 }
 
 type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
-type AssistantWarmupState = 'idle' | 'warming' | 'ready' | 'error'
-
 type PublicAssistantBranchAction =
   | { action: 'select'; branchId: string }
   | { action: 'continue-from-revision'; revisionId: string }
@@ -161,26 +173,6 @@ type NegativeFeedbackReason = Extract<
 const CONFIGURED_API_BASE = PUBLIC_ASSISTANT_API_BASE
 const MAX_MESSAGE_LENGTH = 500
 const MAX_FALLBACK_ANSWER_LENGTH = 520
-const PUBLIC_ASSISTANT_WARMUP_RETRY_DELAY_MS = 800
-
-function waitForAssistantWarmupRetry(signal: AbortSignal) {
-  return new Promise<void>((resolve, reject) => {
-    if (signal.aborted) {
-      reject(new DOMException('Aborted', 'AbortError'))
-      return
-    }
-    const timeout = window.setTimeout(() => {
-      signal.removeEventListener('abort', handleAbort)
-      resolve()
-    }, PUBLIC_ASSISTANT_WARMUP_RETRY_DELAY_MS)
-    const handleAbort = () => {
-      window.clearTimeout(timeout)
-      signal.removeEventListener('abort', handleAbort)
-      reject(new DOMException('Aborted', 'AbortError'))
-    }
-    signal.addEventListener('abort', handleAbort, { once: true })
-  })
-}
 
 function normalizePublicAssistantQuestion(value: string) {
   return value.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
@@ -487,10 +479,20 @@ function citationElementId(messageId: string, index: number) {
   return `public-assistant-citation-${messageId}-${index + 1}`
 }
 
-export function PublicAssistantWidget() {
+interface PublicAssistantWidgetProps {
+  initiallyOpen?: boolean
+  onInitialOpenHandled?: () => void
+}
+
+export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHandled }: PublicAssistantWidgetProps) {
+  const { pathname } = useLocation()
   const [shouldRestoreInitialSession] = useState(hasPersistedPublicAssistantSessionRegistry)
   const [sessionRegistry, setSessionRegistry] = useState<PublicAssistantSessionRegistry>(readPublicAssistantSessionRegistry)
-  const [isOpen, setIsOpen] = useState(false)
+  const initialDraft = readPublicAssistantDraft(sessionRegistry.currentSessionId)
+  const initialSnapshot = shouldRestoreInitialSession
+    ? readPublicAssistantHistorySnapshot(sessionRegistry.currentSessionId)
+    : null
+  const [isOpen, setIsOpen] = useState(initiallyOpen)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
   const [footerVisible, setFooterVisible] = useState(false)
@@ -500,20 +502,25 @@ export function PublicAssistantWidget() {
   const [historySessions, setHistorySessions] = useState<PublicAssistantSessionSummary[]>([])
   const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null)
   const [progressStage, setProgressStage] = useState<PublicAssistantProgressStage | null>(null)
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState(initialDraft?.input ?? '')
   const [editingTurnId, setEditingTurnId] = useState<string | null>(null)
   const [editingQuestion, setEditingQuestion] = useState('')
-  const [mode, setMode] = useState<PublicAssistantMode>('auto')
-  const [conversation, setConversation] = useState<PublicAssistantConversationState>(createEmptyPublicAssistantConversation)
+  const [mode, setMode] = useState<PublicAssistantMode>(initialDraft?.mode ?? 'auto')
+  const [conversation, setConversation] = useState<PublicAssistantConversationState>(
+    initialSnapshot ? hydratePublicAssistantConversation(initialSnapshot.history) : createEmptyPublicAssistantConversation,
+  )
+  const [isSnapshotVisible, setIsSnapshotVisible] = useState(Boolean(initialSnapshot))
   const [branchActionPending, setBranchActionPending] = useState(false)
   const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE)
   const [serviceState, setServiceState] = useState<AssistantServiceState>('ready')
-  const [warmupState, setWarmupState] = useState<AssistantWarmupState>('idle')
-  const [warmupIssue, setWarmupIssue] = useState<AssistantIssue | null>(null)
+  const warmup = useSyncExternalStore(
+    subscribePublicAssistantWarmup,
+    getPublicAssistantWarmupSnapshot,
+    getPublicAssistantWarmupServerSnapshot,
+  )
   const [issue, setIssue] = useState<AssistantIssue | null>(null)
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine)
   const [hasNewContent, setHasNewContent] = useState(false)
-  const [healthRetryNonce, setHealthRetryNonce] = useState(0)
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null)
   const [feedbackMenuMessageId, setFeedbackMenuMessageId] = useState<string | null>(null)
   const [feedbackFocusRequest, setFeedbackFocusRequest] = useState<{ messageId: string; sequence: number } | null>(null)
@@ -524,6 +531,7 @@ export function PublicAssistantWidget() {
   const [restoreRetryNonce, setRestoreRetryNonce] = useState(0)
   const [historyTruncated, setHistoryTruncated] = useState(false)
   const [highlightedCitationKey, setHighlightedCitationKey] = useState<string | null>(null)
+  const [expandedEvidenceIds, setExpandedEvidenceIds] = useState<Set<string>>(() => new Set())
   const sessionId = sessionRegistry.currentSessionId
   const messages = projectConversationMessages(conversation, sessionId)
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -536,7 +544,6 @@ export function PublicAssistantWidget() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
-  const collisionOffsetRef = useRef(0)
   const sessionIdRef = useRef(sessionId)
   const shouldFollowOutputRef = useRef(true)
   const activeRequestRef = useRef<ActiveChatRequest | null>(null)
@@ -554,17 +561,18 @@ export function PublicAssistantWidget() {
     }, 1_000)
     return () => window.clearInterval(interval)
   }, [isLoading])
-  const healthRequestRef = useRef<AbortController | null>(null)
   const copyTimerRef = useRef<number | null>(null)
   const citationHighlightTimerRef = useRef<number | null>(null)
   const citationRefs = useRef(new Map<string, HTMLAnchorElement>())
   const feedbackTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const editTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
-  const serviceStatus = warmupState === 'warming'
+  const clearAssistantCollision = usePublicAssistantCollision(rootRef, isOpen)
+  const serviceStatus = warmup.state === 'warming'
     ? { className: 'is-warming', label: '助手服务准备中' }
-    : warmupState === 'error'
+    : warmup.state === 'error'
       ? { className: 'is-error', label: '助手服务等待重试' }
       : getServiceStatus(serviceState)
+  const warmupIssue = warmup.issueCode ? { code: warmup.issueCode, scope: 'health' as const } : null
   const warmupIssueCopy = warmupIssue ? getAssistantIssueCopy(warmupIssue, isOnline) : null
   const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline) : null
   const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline) : null
@@ -572,9 +580,32 @@ export function PublicAssistantWidget() {
   const initialRestoreRetryBlocked = isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
-  const isWarmupReady = warmupState === 'ready'
+  const isWarmupReady = warmup.state === 'ready'
   const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || !isWarmupReady
   const isQuestionEditing = editingTurnId !== null
+  const launcherLabel = warmup.state === 'warming'
+    ? '助手准备中'
+    : warmup.state === 'ready'
+      ? '助手已就绪'
+      : warmup.state === 'error'
+        ? '助手等待重试'
+        : '泊岸研究助手'
+
+  const loadSessionBrowserState = (targetSessionId: string, fallbackMode: PublicAssistantMode = 'auto') => {
+    const draft = readPublicAssistantDraft(targetSessionId)
+    setInput(draft?.input ?? '')
+    setMode(draft?.mode ?? fallbackMode)
+  }
+
+  const acceptAuthoritativeHistory = (history: PublicAssistantSessionHistory) => {
+    shouldFollowOutputRef.current = true
+    setConversation(hydratePublicAssistantConversation(history))
+    loadSessionBrowserState(history.session.id, history.turns.at(-1)?.mode ?? 'auto')
+    setHistoryTruncated(history.hasEarlierTurns)
+    setHasNewContent(false)
+    setIsSnapshotVisible(false)
+    writePublicAssistantHistorySnapshot(history)
+  }
 
   const commitSessionRegistry = (next: PublicAssistantSessionRegistry) => {
     sessionIdRef.current = next.currentSessionId
@@ -607,7 +638,7 @@ export function PublicAssistantWidget() {
     if (restoreFocus && turnId) {
       window.requestAnimationFrame(() => editTriggerRefs.current.get(turnId)?.focus({ preventScroll: true }))
     }
-  }, [editingTurnId])
+  }, [editingTurnId, setEditingQuestion, setEditingTurnId])
 
   const stopInitialRestore = () => {
     initialRestoreTargetRef.current = null
@@ -635,6 +666,9 @@ export function PublicAssistantWidget() {
     const key = citationKey(message.id, citationId)
     const citation = citationRefs.current.get(key)
     if (!citation) return
+    const evidence = citation.closest<HTMLDetailsElement>('.public-assistant__evidence')
+    if (evidence) evidence.open = true
+    setExpandedEvidenceIds((current) => current.has(message.id) ? current : new Set(current).add(message.id))
     if (citationHighlightTimerRef.current !== null) window.clearTimeout(citationHighlightTimerRef.current)
     setHighlightedCitationKey(key)
     citation.focus({ preventScroll: true })
@@ -666,11 +700,22 @@ export function PublicAssistantWidget() {
     activeRequestRef.current?.controller.abort()
     branchActionRequestRef.current?.abort()
     historyRequestRef.current?.abort()
-    initialRestoreRequestRef.current?.abort()
-    healthRequestRef.current?.abort()
+    const initialRestoreRequest = initialRestoreRequestRef.current
+    initialRestoreRequest?.abort()
+    if (initialRestoreRequestRef.current === initialRestoreRequest) initialRestoreRequestRef.current = null
     if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
     if (citationHighlightTimerRef.current !== null) window.clearTimeout(citationHighlightTimerRef.current)
   }, [])
+
+  useEffect(() => {
+    if (!initiallyOpen) return
+    void startPublicAssistantWarmup()
+    onInitialOpenHandled?.()
+  }, [initiallyOpen, onInitialOpenHandled])
+
+  useEffect(() => {
+    writePublicAssistantDraft(sessionId, input, mode)
+  }, [input, mode, sessionId])
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
@@ -748,47 +793,69 @@ export function PublicAssistantWidget() {
   useEffect(() => {
     if (!isOpen || !isWarmupReady) return
     const targetSessionId = initialRestoreTargetRef.current
-    if (!targetSessionId) return
-    initialRestoreTargetRef.current = null
+    if (!targetSessionId || initialRestoreRequestRef.current) return
     const restoreApiBase = getAssistantApiBase(apiBase)
+    let controller: AbortController | null = null
+    const startTimer = window.setTimeout(() => {
+      if (
+        initialRestoreTargetRef.current !== targetSessionId ||
+        initialRestoreRequestRef.current
+      ) return
 
-    const controller = new AbortController()
-    initialRestoreRequestRef.current?.abort()
-    initialRestoreRequestRef.current = controller
+      controller = new AbortController()
+      initialRestoreRequestRef.current = controller
 
-    void requestPublicAssistantSession({ apiBase: restoreApiBase, sessionId: targetSessionId, signal: controller.signal })
-      .then((history) => {
-        if (initialRestoreRequestRef.current !== controller || sessionIdRef.current !== targetSessionId) return
-        shouldFollowOutputRef.current = true
-        setConversation(hydratePublicAssistantConversation(history))
-        setMode(history.turns.at(-1)?.mode ?? 'auto')
-        setHistoryTruncated(history.truncated)
-        setHasNewContent(false)
-        setInitialRestoreState('ready')
-        setInitialRestoreIssue(null)
-      })
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-        if (initialRestoreRequestRef.current !== controller || sessionIdRef.current !== targetSessionId) return
-        const nextIssue = toAssistantIssue(error, 'history')
-        if (nextIssue.code === 'session-not-found') {
-          const withoutExpired = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
-          const nextRegistry = sessionRegistry.sessionIds.some((id) => id !== targetSessionId)
-            ? rememberPublicAssistantSession(withoutExpired, createPublicAssistantSessionId())
-            : withoutExpired
-          commitSessionRegistry(nextRegistry)
-          setConversation(createEmptyPublicAssistantConversation())
-          setHistoryTruncated(false)
+      void requestPublicAssistantSession({ apiBase: restoreApiBase, sessionId: targetSessionId, signal: controller.signal })
+        .then((history) => {
+          if (initialRestoreRequestRef.current !== controller || sessionIdRef.current !== targetSessionId) return
+          initialRestoreTargetRef.current = null
+          shouldFollowOutputRef.current = true
+          setConversation(hydratePublicAssistantConversation(history))
+          const draft = readPublicAssistantDraft(history.session.id)
+          setInput(draft?.input ?? '')
+          setMode(draft?.mode ?? history.turns.at(-1)?.mode ?? 'auto')
+          setHistoryTruncated(history.hasEarlierTurns)
+          setHasNewContent(false)
+          setIsSnapshotVisible(false)
+          writePublicAssistantHistorySnapshot(history)
           setInitialRestoreState('ready')
           setInitialRestoreIssue(null)
-          return
-        }
-        setInitialRestoreState('error')
-        setInitialRestoreIssue(nextIssue)
-      })
-      .finally(() => {
-        if (initialRestoreRequestRef.current === controller) initialRestoreRequestRef.current = null
-      })
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === 'AbortError') return
+          if (initialRestoreRequestRef.current !== controller || sessionIdRef.current !== targetSessionId) return
+          initialRestoreTargetRef.current = null
+          const nextIssue = toAssistantIssue(error, 'history')
+          if (nextIssue.code === 'session-not-found') {
+            clearPublicAssistantSessionBrowserState(targetSessionId)
+            const withoutExpired = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
+            const nextRegistry = sessionRegistry.sessionIds.some((id) => id !== targetSessionId)
+              ? rememberPublicAssistantSession(withoutExpired, createPublicAssistantSessionId())
+              : withoutExpired
+            commitSessionRegistry(nextRegistry)
+            loadSessionBrowserState(nextRegistry.currentSessionId)
+            setConversation(createEmptyPublicAssistantConversation())
+            setIsSnapshotVisible(false)
+            setHistoryTruncated(false)
+            setInitialRestoreState('ready')
+            setInitialRestoreIssue(null)
+            return
+          }
+          setInitialRestoreState('error')
+          setInitialRestoreIssue(nextIssue)
+        })
+        .finally(() => {
+          if (initialRestoreRequestRef.current === controller) initialRestoreRequestRef.current = null
+        })
+    }, 0)
+
+    return () => {
+      window.clearTimeout(startTimer)
+      if (controller && initialRestoreRequestRef.current === controller) {
+        controller.abort()
+        initialRestoreRequestRef.current = null
+      }
+    }
   }, [apiBase, isOpen, isWarmupReady, restoreRetryNonce, sessionRegistry])
 
   useEffect(() => {
@@ -859,48 +926,6 @@ export function PublicAssistantWidget() {
   }, [isFullscreen, isOpen])
 
   useEffect(() => {
-    if (!isOpen) return
-    healthRequestRef.current?.abort()
-    const controller = new AbortController()
-    healthRequestRef.current = controller
-    const warmupApiBase = getAssistantApiBase(apiBase)
-
-    void (async () => {
-      let finalError: unknown = new PublicAssistantTransportError('public-assistant-endpoint-unreachable')
-      for (let attempt = 1; attempt <= 2; attempt += 1) {
-        try {
-          await requestPublicAssistantHealth(warmupApiBase, controller.signal)
-          if (healthRequestRef.current !== controller) return
-          setServiceState((current) => current === 'online' ? current : 'ready')
-          setWarmupState('ready')
-          setWarmupIssue(null)
-          return
-        } catch (error) {
-          if (error instanceof DOMException && error.name === 'AbortError') return
-          if (healthRequestRef.current !== controller) return
-          finalError = error
-          if (attempt === 1) {
-            try {
-              await waitForAssistantWarmupRetry(controller.signal)
-            } catch (delayError) {
-              if (delayError instanceof DOMException && delayError.name === 'AbortError') return
-              finalError = delayError
-              break
-            }
-          }
-        }
-      }
-      if (healthRequestRef.current !== controller) return
-      setServiceState('error')
-      setWarmupState('error')
-      setWarmupIssue(toAssistantIssue(finalError, 'health'))
-    })().finally(() => {
-      if (healthRequestRef.current === controller) healthRequestRef.current = null
-    })
-    return () => controller.abort()
-  }, [apiBase, healthRetryNonce, isOpen])
-
-  useEffect(() => {
     const handleSurfaceOpen = (event: Event) => {
       const detail = (event as CustomEvent<MobileSurfaceOpenDetail>).detail
       if (isMobileSurfaceViewport() && detail?.surface === 'detail-reading-guide') {
@@ -913,57 +938,6 @@ export function PublicAssistantWidget() {
     window.addEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
     return () => window.removeEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
   }, [])
-
-  useEffect(() => {
-    let frame = 0
-
-    const applyOffset = (nextOffset: number) => {
-      const normalizedOffset = Math.max(0, Math.ceil(nextOffset))
-      collisionOffsetRef.current = normalizedOffset
-      rootRef.current?.style.setProperty('--public-assistant-collision-offset', `${normalizedOffset}px`)
-      if (rootRef.current) rootRef.current.dataset.collisionOffset = String(normalizedOffset)
-    }
-
-    const measureCollision = () => {
-      frame = 0
-      const root = rootRef.current
-      const trigger = root?.querySelector<HTMLElement>('.public-assistant__trigger')
-      const guide = document.querySelector<HTMLElement>('.detail-reading-guide__toggle')
-      const isMobileDetail = window.matchMedia('(max-width: 720px)').matches && Boolean(document.querySelector('.app.page-detail'))
-      if (!root || !trigger || !guide || !isMobileDetail || isOpen) {
-        applyOffset(0)
-        return
-      }
-
-      const triggerRect = trigger.getBoundingClientRect()
-      const guideRect = guide.getBoundingClientRect()
-      const transform = window.getComputedStyle(root).transform
-      const translateY = transform === 'none' ? 0 : new DOMMatrixReadOnly(transform).m42
-      const baseTop = triggerRect.top - translateY
-      const baseBottom = triggerRect.bottom - translateY
-      const overlapsHorizontally = triggerRect.left < guideRect.right && triggerRect.right > guideRect.left
-      const overlapsVertically = baseTop < guideRect.bottom && baseBottom > guideRect.top
-      applyOffset(overlapsHorizontally && overlapsVertically ? baseBottom - guideRect.top + 8 : 0)
-    }
-
-    const scheduleMeasure = () => {
-      if (frame !== 0) return
-      frame = window.requestAnimationFrame(measureCollision)
-    }
-
-    scheduleMeasure()
-    window.addEventListener('scroll', scheduleMeasure, { passive: true })
-    window.addEventListener('resize', scheduleMeasure)
-    window.addEventListener('load', scheduleMeasure)
-    window.addEventListener(MOBILE_SURFACE_LAYOUT_EVENT, scheduleMeasure)
-    return () => {
-      window.removeEventListener('scroll', scheduleMeasure)
-      window.removeEventListener('resize', scheduleMeasure)
-      window.removeEventListener('load', scheduleMeasure)
-      window.removeEventListener(MOBILE_SURFACE_LAYOUT_EVENT, scheduleMeasure)
-      if (frame !== 0) window.cancelAnimationFrame(frame)
-    }
-  }, [isOpen])
 
   useEffect(() => {
     const footer = document.querySelector('.site-footer')
@@ -987,20 +961,16 @@ export function PublicAssistantWidget() {
       return
     }
     announceMobileSurfaceOpen('public-assistant')
-    rootRef.current?.style.setProperty('--public-assistant-collision-offset', '0px')
-    collisionOffsetRef.current = 0
+    clearAssistantCollision()
     setIsFullscreen(isMobileSurfaceViewport())
-    setWarmupState('warming')
-    setWarmupIssue(null)
+    void startPublicAssistantWarmup()
     setIsOpen(true)
     trackAnalyticsEvent('public_assistant_open', { source: 'floating-widget' })
   }
 
   const retryWarmup = () => {
-    if (!isOnline || healthRequestRef.current) return
-    setWarmupState('warming')
-    setWarmupIssue(null)
-    setHealthRetryNonce((value) => value + 1)
+    if (!isOnline) return
+    void startPublicAssistantWarmup()
   }
 
   const stopActiveChat = () => {
@@ -1052,12 +1022,16 @@ export function PublicAssistantWidget() {
     stopInitialRestore()
     historyRequestRef.current?.abort()
     historyRequestRef.current = null
+    const previousSessionId = sessionIdRef.current
+    clearPublicAssistantSessionBrowserState(previousSessionId)
     const nextSessionId = createPublicAssistantSessionId()
     commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, nextSessionId))
     shouldFollowOutputRef.current = true
     setConversation(createEmptyPublicAssistantConversation())
     closeQuestionEditor()
     setInput('')
+    setMode('auto')
+    setIsSnapshotVisible(false)
     setIssue(null)
     setHasNewContent(false)
     setFeedbackMenuMessageId(null)
@@ -1139,9 +1113,7 @@ export function PublicAssistantWidget() {
       const history = await requestPublicAssistantSession({ apiBase, sessionId: targetSessionId, signal: controller.signal })
       if (historyRequestRef.current !== controller) return
       commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, targetSessionId))
-      shouldFollowOutputRef.current = true
-      setConversation(hydratePublicAssistantConversation(history))
-      setMode(history.turns.at(-1)?.mode ?? 'auto')
+      acceptAuthoritativeHistory(history)
       setInitialRestoreState('ready')
       setInitialRestoreIssue(null)
       setHistoryTruncated(history.truncated)
@@ -1155,6 +1127,7 @@ export function PublicAssistantWidget() {
       const nextIssue = toAssistantIssue(error, 'history')
       setIssue(nextIssue)
       if (nextIssue.code === 'session-not-found') {
+        clearPublicAssistantSessionBrowserState(targetSessionId)
         const nextRegistry = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
         commitSessionRegistry(nextRegistry)
         setHistorySessions((current) => current.filter((session) => session.id !== targetSessionId))
@@ -1177,6 +1150,7 @@ export function PublicAssistantWidget() {
     try {
       await deletePublicAssistantSession({ apiBase, sessionId: targetSessionId, signal: controller.signal })
       if (historyRequestRef.current !== controller) return
+      clearPublicAssistantSessionBrowserState(targetSessionId)
       let nextRegistry = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
       if (targetSessionId === sessionIdRef.current) {
         stopInitialRestore()
@@ -1184,6 +1158,8 @@ export function PublicAssistantWidget() {
         shouldFollowOutputRef.current = true
         setConversation(createEmptyPublicAssistantConversation())
         setInput('')
+        setMode('auto')
+        setIsSnapshotVisible(false)
         setInitialRestoreState('ready')
         setInitialRestoreIssue(null)
         setHistoryTruncated(false)
@@ -1257,6 +1233,7 @@ export function PublicAssistantWidget() {
     const requestSessionId = options.sessionId ?? sessionIdRef.current
     if (requestSessionId !== sessionIdRef.current) return
     const reusablePendingQuestion = options.reusePendingQuestion === true
+    const submittedDraft = input === question ? input : null
     const intent = options.intent ?? activePublicAssistantGenerationIntent(conversation)
     const forceAuthoritativeHistory = options.forceAuthoritativeHistory === true
     const historyState = intent.kind === 'answer-revision'
@@ -1281,7 +1258,6 @@ export function PublicAssistantWidget() {
     } else if (options.previousRequestId) {
       setConversation((current) => retargetPendingPublicAssistantTurn(current, options.previousRequestId!, requestId))
     }
-    setInput('')
     setWaitingSeconds(0)
     setIsLoading(true)
     setProgressStage('planning')
@@ -1299,6 +1275,7 @@ export function PublicAssistantWidget() {
     }
 
     let result: PublicAssistantAnswer
+    let requestSucceeded = false
     let authoritativeHistory: PublicAssistantSessionHistory | null = null
     let authoritativeHistoryIssue: AssistantIssue | null = null
     let resolvedApiBase = apiBase
@@ -1319,6 +1296,7 @@ export function PublicAssistantWidget() {
       })
       if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
       result = remote.answer
+      requestSucceeded = true
       resolvedApiBase = remote.apiBase
       setApiBase(remote.apiBase)
       setServiceState(result.status === 'degraded' ? 'degraded' : 'online')
@@ -1366,11 +1344,13 @@ export function PublicAssistantWidget() {
     }
 
     if (sessionIdRef.current !== requestSessionId) return
+    if (requestSucceeded && submittedDraft !== null) {
+      clearPublicAssistantDraft(requestSessionId, submittedDraft)
+      setInput((current) => current === submittedDraft ? '' : current)
+    }
     if (result.sessionId) commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, result.sessionId))
     if (authoritativeHistory) {
-      setConversation(hydratePublicAssistantConversation(authoritativeHistory))
-      setMode(authoritativeHistory.turns.at(-1)?.mode ?? requestedMode)
-      setHistoryTruncated(authoritativeHistory.hasEarlierTurns)
+      acceptAuthoritativeHistory(authoritativeHistory)
     } else if (!authoritativeHistoryIssue) {
       setConversation((current) => mergePublicAssistantAnswer(current, {
         answer: result,
@@ -1379,6 +1359,7 @@ export function PublicAssistantWidget() {
         mode: requestedMode,
         intent,
       }))
+      clearPublicAssistantHistorySnapshot(requestSessionId)
     }
     if (authoritativeHistoryIssue) {
       setInitialRestoreState('error')
@@ -1425,7 +1406,7 @@ export function PublicAssistantWidget() {
       return
     }
     setIssue(null)
-    setHealthRetryNonce((value) => value + 1)
+    retryWarmup()
   }
 
   const copyAnswer = async (message: WidgetMessage) => {
@@ -1445,7 +1426,7 @@ export function PublicAssistantWidget() {
     rating: 'up' | 'down',
     reason: PublicAssistantFeedbackReason,
   ) => {
-    if (!apiBase || !isWarmupReady || !message.sessionId || !message.revisionId || message.feedbackPending) return
+    if (!apiBase || !isWarmupReady || !isConversationReady || isSnapshotVisible || !message.sessionId || !message.revisionId || message.feedbackPending) return
     setConversation((current) => updatePublicAssistantRevisionFeedback(current, message.revisionId!, {
       feedback: message.feedback ?? null,
       feedbackPending: true,
@@ -1529,16 +1510,8 @@ export function PublicAssistantWidget() {
     })
   }
 
-  const applyAuthoritativeHistory = (history: PublicAssistantSessionHistory) => {
-    shouldFollowOutputRef.current = true
-    setConversation(hydratePublicAssistantConversation(history))
-    setMode(history.turns.at(-1)?.mode ?? 'auto')
-    setHistoryTruncated(history.hasEarlierTurns)
-    setHasNewContent(false)
-  }
-
   const runBranchAction = async (action: PublicAssistantBranchAction) => {
-    if (!apiBase || !isWarmupReady || branchActionPendingRef.current || isLoading || isQuestionEditing) return
+    if (!apiBase || !isWarmupReady || !isConversationReady || isSnapshotVisible || branchActionPendingRef.current || isLoading || isQuestionEditing) return
     const controller = new AbortController()
     const requestSessionId = sessionIdRef.current
     branchActionPendingRef.current = true
@@ -1552,7 +1525,7 @@ export function PublicAssistantWidget() {
         ...action,
       })
       if (branchActionRequestRef.current !== controller || sessionIdRef.current !== requestSessionId) return
-      applyAuthoritativeHistory(history)
+      acceptAuthoritativeHistory(history)
       setIssue((current) => current?.scope === 'branch' ? null : current)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
@@ -1574,6 +1547,7 @@ export function PublicAssistantWidget() {
   const latestSuggestions = [...messages]
     .reverse()
     .find((message) => message.role === 'assistant' && message.suggestions?.length)?.suggestions
+  const routeSuggestions = getPublicAssistantSuggestions(pathname)
 
   return (
     <div
@@ -1583,13 +1557,16 @@ export function PublicAssistantWidget() {
       <button
         ref={triggerRef}
         type="button"
-        className="public-assistant__trigger"
+        className={`public-assistant__trigger is-${warmup.state}`}
         aria-expanded={isOpen}
         aria-controls="public-assistant-panel"
+        aria-label={launcherLabel}
         onClick={toggleWidget}
       >
-        <span className="public-assistant__trigger-mark" aria-hidden="true">B</span>
-        <span className="public-assistant__trigger-text">泊岸研究助手</span>
+        <span className="public-assistant__trigger-mark" aria-hidden="true">
+          {warmup.state === 'warming' ? <LoaderCircle className="is-spinning" size={15} /> : 'B'}
+        </span>
+        <span className="public-assistant__trigger-text">{launcherLabel}</span>
       </button>
 
       {isOpen && (
@@ -1727,7 +1704,7 @@ export function PublicAssistantWidget() {
               <span className="sr-only">当前会话分支</span>
               <select
                 value={conversation.activeBranchId}
-                disabled={isAssistantBusy || branchActionPending || isQuestionEditing}
+                disabled={!isConversationReady || isSnapshotVisible || isAssistantBusy || branchActionPending || isQuestionEditing}
                 onChange={(event) => void runBranchAction({ action: 'select', branchId: event.target.value })}
               >
                 {conversation.branches.map((branch) => (
@@ -1745,23 +1722,29 @@ export function PublicAssistantWidget() {
             </label>
           )}
 
-          <label className="public-assistant__modes">
-            <SlidersHorizontal size={15} aria-hidden />
-            <span>资料范围</span>
-            <select
-              aria-label="资料范围"
-              value={mode}
-              disabled={isAssistantBusy}
-              onChange={(event) => {
-                const nextMode = MODE_OPTIONS.find((option) => option.value === event.target.value)?.value
-                if (nextMode) setMode(nextMode)
-              }}
-            >
-              {MODE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
+          <details className="public-assistant__modes">
+            <summary>
+              <SlidersHorizontal size={15} aria-hidden />
+              <span>高级设置</span>
+              <small>{MODE_OPTIONS.find((option) => option.value === mode)?.label ?? '自动选择'}</small>
+            </summary>
+            <label>
+              <span>资料范围</span>
+              <select
+                aria-label="资料范围"
+                value={mode}
+                disabled={isAssistantBusy}
+                onChange={(event) => {
+                  const nextMode = MODE_OPTIONS.find((option) => option.value === event.target.value)?.value
+                  if (nextMode) setMode(nextMode)
+                }}
+              >
+                {MODE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          </details>
 
           <div
             className="public-assistant__messages"
@@ -1779,7 +1762,7 @@ export function PublicAssistantWidget() {
               </div>
             )}
 
-            {warmupState === 'warming' && (
+            {warmup.state === 'warming' && (
               <div className="public-assistant__notice public-assistant__notice--warmup" data-assistant-warmup="warming">
                 <LoaderCircle className="is-spinning" size={16} aria-hidden />
                 <div>
@@ -1789,7 +1772,7 @@ export function PublicAssistantWidget() {
               </div>
             )}
 
-            {warmupState === 'error' && warmupIssue && (
+            {warmup.state === 'error' && warmupIssue && (
               <div className="public-assistant__notice public-assistant__notice--warmup" data-assistant-warmup="error">
                 <div>
                   <strong>{warmupIssueCopy?.title ?? '助手服务暂未就绪'}</strong>
@@ -1810,6 +1793,13 @@ export function PublicAssistantWidget() {
               <div className="public-assistant__loading" role="status">
                 <LoaderCircle className="is-spinning" size={15} aria-hidden />
                 <span>正在恢复当前匿名会话…</span>
+              </div>
+            )}
+
+            {isSnapshotVisible && (
+              <div className="public-assistant__continuity-note public-assistant__continuity-note--snapshot" role="status">
+                <History size={14} aria-hidden />
+                <span>正在显示此浏览器保存的只读快照，恢复服务端会话后才能继续操作。</span>
               </div>
             )}
 
@@ -1914,7 +1904,22 @@ export function PublicAssistantWidget() {
                       )}
                 {message.role === 'assistant' && (
                   <>
-                    {message.meta && <small className="public-assistant__meta">{formatAnswerMeta(message)}</small>}
+                    {((message.meta && formatAnswerMeta(message)) || (message.claims?.length ?? 0) > 0 || (message.citations?.length ?? 0) > 0) && (
+                      <details
+                        className="public-assistant__evidence"
+                        open={!isMobileSurfaceViewport() || expandedEvidenceIds.has(message.id)}
+                        onToggle={(event) => {
+                          const open = event.currentTarget.open
+                          setExpandedEvidenceIds((current) => {
+                            const next = new Set(current)
+                            if (open) next.add(message.id)
+                            else next.delete(message.id)
+                            return next
+                          })
+                        }}
+                      >
+                        <summary>来源与回答信息（{message.citations?.length ?? 0}）</summary>
+                        {message.meta && <small className="public-assistant__meta">{formatAnswerMeta(message)}</small>}
 
                     {message.claims && message.claims.length > 0 && (
                       <details className="public-assistant__claims">
@@ -2009,6 +2014,8 @@ export function PublicAssistantWidget() {
                         })}
                       </div>
                     )}
+                      </details>
+                    )}
 
                     {message.revisionId && message.revisionNo && message.revisionCount && (
                       <div className="public-assistant__revision-toolbar" aria-label="回答版本">
@@ -2041,7 +2048,7 @@ export function PublicAssistantWidget() {
                               action: 'continue-from-revision',
                               revisionId: message.revisionId!,
                             })}
-                            disabled={isAssistantBusy || branchActionPending || isQuestionEditing}
+                            disabled={!isConversationReady || isSnapshotVisible || isAssistantBusy || branchActionPending || isQuestionEditing}
                           >
                             <GitBranch size={14} aria-hidden />
                             <span>从此版本继续</span>
@@ -2063,7 +2070,7 @@ export function PublicAssistantWidget() {
                         <button
                           type="button"
                           onClick={() => regenerateAnswer(message)}
-                          disabled={isAssistantBusy || isQuestionEditing}
+                          disabled={!isConversationReady || isSnapshotVisible || isAssistantBusy || isQuestionEditing}
                           aria-label="重新生成回答"
                           title="重新生成"
                         >
@@ -2079,7 +2086,7 @@ export function PublicAssistantWidget() {
                               setFeedbackMenuMessageId(null)
                               void sendFeedback(message, 'up', 'helpful')
                             }}
-                            disabled={message.feedbackPending || !isWarmupReady}
+                            disabled={message.feedbackPending || !isWarmupReady || !isConversationReady || isSnapshotVisible}
                             aria-label="这个回答有帮助"
                             aria-pressed={message.feedback === 'up'}
                             title="有帮助"
@@ -2094,7 +2101,7 @@ export function PublicAssistantWidget() {
                               else feedbackTriggerRefs.current.delete(message.id)
                             }}
                             onClick={() => setFeedbackMenuMessageId((current) => current === message.id ? null : message.id)}
-                            disabled={message.feedbackPending || !isWarmupReady}
+                            disabled={message.feedbackPending || !isWarmupReady || !isConversationReady || isSnapshotVisible}
                             aria-label="这个回答需要改进"
                             aria-pressed={message.feedback === 'down'}
                             aria-expanded={feedbackMenuMessageId === message.id}
@@ -2120,7 +2127,7 @@ export function PublicAssistantWidget() {
                             <button
                               key={option.value}
                               type="button"
-                              disabled={message.feedbackPending || !isWarmupReady}
+                              disabled={message.feedbackPending || !isWarmupReady || !isConversationReady || isSnapshotVisible}
                               onClick={() => void sendFeedback(message, 'down', option.value)}
                             >
                               {option.label}
@@ -2166,9 +2173,9 @@ export function PublicAssistantWidget() {
           </div>
 
           <span className="sr-only" aria-live="polite">
-            {warmupState === 'warming'
+            {warmup.state === 'warming'
               ? '助手服务正在准备，输入内容会保留'
-              : warmupState === 'error'
+              : warmup.state === 'error'
                 ? '助手服务暂未就绪，可以重新准备'
                 : isRestoringSession
                   ? '正在恢复当前会话'
@@ -2181,7 +2188,7 @@ export function PublicAssistantWidget() {
 
           <div className="public-assistant__suggestions" aria-label="建议提问">
             {(latestSuggestions?.map((suggestion) => ({ id: suggestion, label: suggestion, prompt: suggestion }))
-              ?? publicAssistantSuggestions).slice(0, 3).map((suggestion) => (
+              ?? routeSuggestions).slice(0, 3).map((suggestion) => (
               <button
                 key={suggestion.id}
                 type="button"
@@ -2219,7 +2226,15 @@ export function PublicAssistantWidget() {
               placeholder="输入一个需要回答或研究的问题"
             />
             {isLoading ? (
-              <button type="button" className="is-stop" onClick={cancelActiveChat} aria-label="停止生成">
+              <button
+                type="button"
+                className="is-stop"
+                onClick={(event) => {
+                  event.preventDefault()
+                  cancelActiveChat()
+                }}
+                aria-label="停止生成"
+              >
                 <Square size={15} fill="currentColor" aria-hidden />
                 <span>停止</span>
               </button>

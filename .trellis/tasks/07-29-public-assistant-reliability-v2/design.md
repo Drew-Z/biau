@@ -187,7 +187,37 @@ This design accepts Render Free idle sleep instead of creating artificial
 keep-alive traffic. The first visitor pays a visible preparation interval, but
 their draft and conversation identity remain stable.
 
-## 11. Rollback
+## 11. Final Free-Tier Experience Architecture
+
+`App` owns a synchronous lightweight launcher and a shared dynamic-import loader.
+The launcher preloads the assistant chunk and calls one module-level warm-up
+coordinator on pointer intent, keyboard focus, first mobile scroll, or click.
+The coordinator owns `idle | warming | ready | error`, one in-flight promise, one
+abort controller, one automatic retry, and a 12-minute `sessionStorage` readiness
+TTL. It has no interval. Closing the widget does not affect it; `pagehide` aborts
+in-flight work.
+
+The full widget mounts only after activation and subscribes to the coordinator
+through `useSyncExternalStore`. Its first mount opens the workspace; later close
+and reopen use the existing internal trigger while retaining coordinator state.
+
+Browser persistence uses a dedicated frontend module:
+
+- draft: version, Session id, mode, bounded input, updated timestamp, two-hour TTL;
+- history snapshot: version, Session id, captured timestamp, bounded expiry, and
+  a normalized `PublicAssistantSessionHistory`, with a maximum 15-minute TTL.
+
+Only normalized server history may be snapshotted. Snapshot hydration is marked
+read-only and never becomes prompt history or generation intent. Server success
+replaces UI and snapshot as one unit. Session 404 deletes registry, draft, and
+snapshot. Network failure may leave the snapshot visible with mutations gated.
+
+Route-aware starter prompts are a pure projection from `pathname`; unknown ids
+fall back to generic prompts. `auto` remains default. Site/web forcing moves
+behind an advanced disclosure. On mobile, answer evidence is collapsed by
+default; desktop keeps it immediately inspectable.
+
+## 12. Rollback
 
 Use independent commits for contracts, generation/retry, UI, metrics, and
 dependencies. Rollback can disable schema mode and metrics without a code deploy.

@@ -15,7 +15,8 @@ import {
 import { catalogProjects, projects } from '../src/data/portfolio.ts'
 import { heroContent } from '../src/data/hero.ts'
 import { blogColumnMeta, blogColumnOrder, getBlogEmptyState } from '../src/data/blog.ts'
-import { publicAssistantSuggestions } from '../src/data/assistant.ts'
+import { getPublicAssistantSuggestions } from '../src/data/assistant.ts'
+import { normalizePublicAssistantSessionHistory } from '../src/utils/publicAssistantApi.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
@@ -2444,6 +2445,9 @@ const toPublicAssistantSse = (answer) => [
 const feedbackPayloads = []
 const publicAssistantRequestBodies = []
 const originalPublicAssistantHistoryFixture = createPublicAssistantHistoryFixture()
+if (!normalizePublicAssistantSessionHistory(originalPublicAssistantHistoryFixture)) {
+  throw new Error('public assistant history fixture no longer satisfies the production normalizer')
+}
 const editedPublicAssistantRevision = {
   ...originalPublicAssistantHistoryFixture.turns[0].revisions[0],
   id: 'revision-ui-edited-1',
@@ -2761,6 +2765,7 @@ if ((await editQuestionButton.count()) !== 1) {
 
   await editQuestionButton.click()
   await publicAssistantPage.getByRole('textbox', { name: '编辑问题内容' }).fill('修改后的历史问题')
+  await publicAssistantPage.locator('.public-assistant__modes > summary').click()
   await publicAssistantPage.getByLabel('资料范围').selectOption('web')
   await publicAssistantPage.getByRole('button', { name: '发送修改' }).click()
   await publicAssistantPage.waitForFunction(() => {
@@ -2875,7 +2880,7 @@ if ((await publicAssistantPage.evaluate(() => getComputedStyle(document.body).ov
   failures.push('/blog public assistant: desktop fullscreen should lock document scrolling')
 }
 await publicAssistantPage.getByRole('button', { name: '退出全屏' }).click()
-const expectedInitialSuggestions = publicAssistantSuggestions.slice(0, 3)
+const expectedInitialSuggestions = getPublicAssistantSuggestions('/blog').slice(0, 3)
 const visibleSuggestionLabels = await publicAssistantPage.locator('.public-assistant__suggestion').allInnerTexts()
 if (
   visibleSuggestionLabels.length !== expectedInitialSuggestions.length ||

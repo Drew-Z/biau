@@ -13,6 +13,7 @@
     "assistant:public-quality-check": "tsx server/scripts/public-assistant-quality-check.ts",
     "assistant:public-api-check": "tsx scripts/check-public-assistant-api.ts",
     "assistant:public-conversation-check": "tsx scripts/check-public-assistant-conversation.ts",
+    "assistant:public-browser-state-check": "tsx scripts/check-public-assistant-browser-state.ts",
     "assistant:public-persistence-check": "tsx server/scripts/public-assistant-persistence-check.ts",
     "assistant:public-migration-check": "node scripts/check-public-assistant-revision-migration.mjs",
     "assistant:public-rate-limit-check": "tsx server/scripts/public-assistant-rate-limit-check.ts",

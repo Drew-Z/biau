@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/site-footer.css'
@@ -8,10 +8,19 @@ import { Navigation } from './components/Navigation'
 import { SeoManager } from './components/SeoManager'
 import { HarborIntro } from './components/HarborIntro'
 import { SiteFooter } from './components/SiteFooter'
+import { PublicAssistantLauncher } from './components/PublicAssistantLauncher'
 import { BlogPage } from './pages/BlogPage'
 import { HomePage } from './pages/HomePage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { trackRouteView } from './utils/analytics'
+import { loadPublicAssistantWidget } from './utils/publicAssistantLoader'
+import {
+  abortPublicAssistantWarmup,
+  getPublicAssistantWarmupServerSnapshot,
+  getPublicAssistantWarmupSnapshot,
+  startPublicAssistantWarmup,
+  subscribePublicAssistantWarmup,
+} from './utils/publicAssistantWarmup'
 
 type SiteLanguage = 'zh' | 'en'
 type HarborScene = 'dusk' | 'garden' | 'stellar'
@@ -47,9 +56,7 @@ const AiDailyPublicDetailPage = lazy(() =>
   import('./pages/AiDailyPublicDetailPage').then((module) => ({ default: module.AiDailyPublicDetailPage })),
 )
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
-const PublicAssistantWidget = lazy(() =>
-  import('./components/PublicAssistantWidget').then((module) => ({ default: module.PublicAssistantWidget })),
-)
+const PublicAssistantWidget = lazy(loadPublicAssistantWidget)
 
 function getPageClass(pathname: string) {
   if (pathname === '/') return 'page-home'
@@ -68,8 +75,16 @@ function getPageClass(pathname: string) {
 function App() {
   const [language, setLanguage] = useState<SiteLanguage>('zh')
   const [harborScene, setHarborScene] = useState<HarborScene>(readHarborScene)
+  const [assistantMounted, setAssistantMounted] = useState(false)
+  const [assistantInitiallyOpen, setAssistantInitiallyOpen] = useState(false)
+  const [assistantFooterVisible, setAssistantFooterVisible] = useState(false)
   const { mode: themeMode, cycleMode: cycleThemeMode } = useTheme()
   const { pathname } = useLocation()
+  const assistantWarmup = useSyncExternalStore(
+    subscribePublicAssistantWarmup,
+    getPublicAssistantWarmupSnapshot,
+    getPublicAssistantWarmupServerSnapshot,
+  )
 
   useLayoutEffect(() => {
     const root = document.documentElement
@@ -80,6 +95,28 @@ function App() {
   useEffect(() => {
     trackRouteView(pathname)
   }, [pathname])
+
+  useEffect(() => {
+    if (pathname.startsWith('/studio')) return
+    const media = window.matchMedia('(max-width: 768px)')
+    const handleFirstScroll = () => {
+      if (!media.matches) return
+      void loadPublicAssistantWidget()
+      void startPublicAssistantWarmup()
+    }
+    window.addEventListener('scroll', handleFirstScroll, { passive: true, once: true })
+    return () => window.removeEventListener('scroll', handleFirstScroll)
+  }, [pathname])
+
+  useEffect(() => {
+    const footer = document.querySelector('.site-footer')
+    if (!footer || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(([entry]) => setAssistantFooterVisible(entry.isIntersecting), { threshold: 0.08 })
+    observer.observe(footer)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => () => abortPublicAssistantWarmup(), [])
 
   const pageClass = getPageClass(pathname)
   const showPublicAssistant = !pathname.startsWith('/studio')
@@ -100,9 +137,39 @@ function App() {
         }
         onToggleLanguage={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
       />
-      {showPublicAssistant && (
-        <Suspense fallback={null}>
-          <PublicAssistantWidget />
+      {showPublicAssistant && !assistantMounted && (
+        <PublicAssistantLauncher
+          warmup={assistantWarmup}
+          footerVisible={assistantFooterVisible}
+          onIntent={() => {
+            void loadPublicAssistantWidget()
+            void startPublicAssistantWarmup()
+          }}
+          onOpen={() => {
+            setAssistantInitiallyOpen(true)
+            setAssistantMounted(true)
+          }}
+        />
+      )}
+      {showPublicAssistant && assistantMounted && (
+        <Suspense
+          fallback={(
+            <PublicAssistantLauncher
+              warmup={assistantWarmup}
+              footerVisible={assistantFooterVisible}
+              onIntent={() => {
+                void loadPublicAssistantWidget()
+                void startPublicAssistantWarmup()
+              }}
+              onOpen={() => undefined}
+              opening
+            />
+          )}
+        >
+          <PublicAssistantWidget
+            initiallyOpen={assistantInitiallyOpen}
+            onInitialOpenHandled={() => setAssistantInitiallyOpen(false)}
+          />
         </Suspense>
       )}
 

@@ -140,6 +140,15 @@ history loading. Persisted-session restore starts only after warm-up reaches
 `ready`. Never auto-replay a chat question or describe a warm-up 504 as a model
 failure. The final error exposes an explicit health retry and no keep-alive job.
 
+The synchronous launcher remains mounted as a stable placeholder while the
+lazy workspace chunk is opening. This prevents a trigger/read-guide collision
+window on mobile and preserves the measured collision offset. Initial session
+restore should be scheduled after the current effect turn and should consume
+its target only after success or a handled non-abort failure; an effect cleanup
+that only cancels an in-flight request must not discard the target. This keeps
+React Strict Mode effect replay from leaving the workspace stuck in a restore
+loading state or issuing duplicate restore requests.
+
 ### Mobile Primary Navigation
 
 When the site has a small, stable set of high-frequency route families, mobile

@@ -172,6 +172,29 @@ provider identity, prompts, user content, credentials, or private infrastructure
 - Never automatically replay a chat request, create a Revision, or consume model
   budget as part of warm-up. Do not add cron or third-party keep-alive traffic.
 
+### R12. Complete The Free-Tier Interaction Experience
+
+- Move the lightweight launcher outside the lazy assistant chunk. Hover, keyboard
+  focus, and the first mobile scroll must preload the chunk and start at most one
+  TTL-bounded service warm-up without mounting the full workspace.
+- Warm-up must outlive closing the panel and expose preparing, ready, and retry
+  states on the launcher. Page unload may abort it; panel close may not.
+- Persist one bounded composer draft per anonymous Session in `sessionStorage`.
+  Route changes and reloads restore it; successful send, new Session, deletion,
+  and expiry clear it. Drafts never leave the browser before explicit send.
+- Keep `auto` as the ordinary research mode and move site/web forcing into an
+  explicit advanced control.
+- Use route-derived starter questions for project, blog, status, AI Daily, and
+  generic pages while preserving model-generated follow-up suggestions.
+- Present startup, restore, research, verification, and ready phases distinctly,
+  including compact launcher state when the panel is closed.
+- Keep answer text primary. On mobile, collapse citations and technical metadata
+  behind an accessible evidence disclosure while retaining claim navigation.
+- Persist a short-lived, normalized, read-only Session-history snapshot in
+  `sessionStorage`. It may render while the service restores or temporarily
+  fails, but cannot enable generation, Branch, Revision, edit, or feedback
+  mutations. A successful server history response replaces the snapshot whole.
+
 ## Acceptance Criteria
 
 - [ ] A direct fixture uses the concise direct request contract and never includes
@@ -194,6 +217,14 @@ provider identity, prompts, user content, credentials, or private infrastructure
       exactly two health requests and zero chat requests while warming, preserves
       an editable draft, enables send only after readiness, and starts persisted
       history restore only after the successful health response.
+- [ ] Launcher fixtures prove lazy chunk preload plus one TTL-bounded warm-up on
+      hover/focus/first mobile scroll, continued preparation after panel close,
+      ready-state reopen, and no interval/keep-alive traffic.
+- [ ] Draft and snapshot fixtures prove TTL, Session isolation, privacy-safe
+      storage, successful-send cleanup, server-authoritative replacement, and
+      read-only degraded rendering.
+- [ ] Route-aware suggestions, advanced scope selection, stage copy, and mobile
+      evidence disclosure pass desktop and 320/390/430 containment checks.
 - [ ] Compatible dependency fixes are applied, or residual advisories have a
       written reachability/fix rationale. No forced major downgrade is used.
 - [ ] `assistant:public-agent-check`, `assistant:public-model-check`,

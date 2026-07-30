@@ -97,6 +97,8 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Touch gestures have one owner; page vertical scroll must not compete with nested horizontal/vertical gesture state.
 - Mobile primary navigation contains only public sections: home, projects, blog/knowledge, status.
 - Detail reading guides, public assistant, and bottom navigation coordinate offsets without overlapping final content.
+- The public assistant launcher remains mounted through lazy chunk suspense; opening state is represented by a disabled warming trigger rather than a null fallback.
+- Initial assistant history restore targets are retained across abort-only effect cleanup and consumed only after a successful or handled response, so Strict Mode replay cannot lose the restore capability.
 - Reduced-motion state keeps a stable background frame while normal mode may animate.
 
 ## Avoid
