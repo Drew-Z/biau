@@ -113,6 +113,7 @@ interface WidgetMessage {
 }
 
 type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
+type AssistantWarmupState = 'idle' | 'warming' | 'ready' | 'error'
 
 type PublicAssistantBranchAction =
   | { action: 'select'; branchId: string }
@@ -160,6 +161,26 @@ type NegativeFeedbackReason = Extract<
 const CONFIGURED_API_BASE = PUBLIC_ASSISTANT_API_BASE
 const MAX_MESSAGE_LENGTH = 500
 const MAX_FALLBACK_ANSWER_LENGTH = 520
+const PUBLIC_ASSISTANT_WARMUP_RETRY_DELAY_MS = 800
+
+function waitForAssistantWarmupRetry(signal: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'))
+      return
+    }
+    const timeout = window.setTimeout(() => {
+      signal.removeEventListener('abort', handleAbort)
+      resolve()
+    }, PUBLIC_ASSISTANT_WARMUP_RETRY_DELAY_MS)
+    const handleAbort = () => {
+      window.clearTimeout(timeout)
+      signal.removeEventListener('abort', handleAbort)
+      reject(new DOMException('Aborted', 'AbortError'))
+    }
+    signal.addEventListener('abort', handleAbort, { once: true })
+  })
+}
 
 function normalizePublicAssistantQuestion(value: string) {
   return value.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
@@ -382,6 +403,13 @@ function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean) {
   if (issue.intent?.kind === 'answer-revision') {
     return { title: '重新生成未完成', detail: '当前回答版本已保留，可以重试本次生成。' }
   }
+  if (issue.scope === 'health' && (
+    issue.code.includes('timeout') ||
+    issue.code.includes('unreachable') ||
+    issue.code === 'public-assistant-service-unavailable'
+  )) {
+    return { title: '助手服务仍在启动', detail: '输入内容已经保留，可以稍后重新准备服务。' }
+  }
   if (issue.code.includes('timeout')) return { title: '本次研究超时', detail: '服务没有在限定时间内完成，可以直接重试。' }
   if (issue.code.includes('unreachable') || issue.code === 'public-assistant-endpoint-unreachable') {
     return { title: '暂时无法连接研究服务', detail: '可能正在冷启动或网络不可达，可以稍后重试。' }
@@ -480,6 +508,8 @@ export function PublicAssistantWidget() {
   const [branchActionPending, setBranchActionPending] = useState(false)
   const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE)
   const [serviceState, setServiceState] = useState<AssistantServiceState>('ready')
+  const [warmupState, setWarmupState] = useState<AssistantWarmupState>('idle')
+  const [warmupIssue, setWarmupIssue] = useState<AssistantIssue | null>(null)
   const [issue, setIssue] = useState<AssistantIssue | null>(null)
   const [isOnline, setIsOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine)
   const [hasNewContent, setHasNewContent] = useState(false)
@@ -530,14 +560,20 @@ export function PublicAssistantWidget() {
   const citationRefs = useRef(new Map<string, HTMLAnchorElement>())
   const feedbackTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const editTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
-  const serviceStatus = getServiceStatus(serviceState)
+  const serviceStatus = warmupState === 'warming'
+    ? { className: 'is-warming', label: '助手服务准备中' }
+    : warmupState === 'error'
+      ? { className: 'is-error', label: '助手服务等待重试' }
+      : getServiceStatus(serviceState)
+  const warmupIssueCopy = warmupIssue ? getAssistantIssueCopy(warmupIssue, isOnline) : null
   const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline) : null
   const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline) : null
   const issueRetryBlocked = isAssistantIssueRetryBlocked(issue, isOnline)
   const initialRestoreRetryBlocked = isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
-  const isAssistantBusy = isLoading || isRestoringSession || branchActionPending
+  const isWarmupReady = warmupState === 'ready'
+  const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || !isWarmupReady
   const isQuestionEditing = editingTurnId !== null
 
   const commitSessionRegistry = (next: PublicAssistantSessionRegistry) => {
@@ -710,7 +746,7 @@ export function PublicAssistantWidget() {
   }, [isFullscreen, isOpen])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || !isWarmupReady) return
     const targetSessionId = initialRestoreTargetRef.current
     if (!targetSessionId) return
     initialRestoreTargetRef.current = null
@@ -753,7 +789,7 @@ export function PublicAssistantWidget() {
       .finally(() => {
         if (initialRestoreRequestRef.current === controller) initialRestoreRequestRef.current = null
       })
-  }, [apiBase, isOpen, restoreRetryNonce, sessionRegistry])
+  }, [apiBase, isOpen, isWarmupReady, restoreRetryNonce, sessionRegistry])
 
   useEffect(() => {
     if (!isOpen) return
@@ -823,27 +859,44 @@ export function PublicAssistantWidget() {
   }, [isFullscreen, isOpen])
 
   useEffect(() => {
-    if (!isOpen || !apiBase) return
+    if (!isOpen) return
     healthRequestRef.current?.abort()
     const controller = new AbortController()
     healthRequestRef.current = controller
-    void requestPublicAssistantHealth(apiBase, controller.signal)
-      .then(() => {
-        if (healthRequestRef.current !== controller) return
-        setServiceState((current) => current === 'online' ? current : 'ready')
-        setIssue((current) => current?.scope === 'health' ? null : current)
-      })
-      .catch((error) => {
-        if (error instanceof DOMException && error.name === 'AbortError') return
-        if (healthRequestRef.current !== controller) return
-        setServiceState('error')
-        setIssue((current) => current && current.scope !== 'health'
-          ? current
-          : toAssistantIssue(error, 'health'))
-      })
-      .finally(() => {
-        if (healthRequestRef.current === controller) healthRequestRef.current = null
-      })
+    const warmupApiBase = getAssistantApiBase(apiBase)
+
+    void (async () => {
+      let finalError: unknown = new PublicAssistantTransportError('public-assistant-endpoint-unreachable')
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          await requestPublicAssistantHealth(warmupApiBase, controller.signal)
+          if (healthRequestRef.current !== controller) return
+          setServiceState((current) => current === 'online' ? current : 'ready')
+          setWarmupState('ready')
+          setWarmupIssue(null)
+          return
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return
+          if (healthRequestRef.current !== controller) return
+          finalError = error
+          if (attempt === 1) {
+            try {
+              await waitForAssistantWarmupRetry(controller.signal)
+            } catch (delayError) {
+              if (delayError instanceof DOMException && delayError.name === 'AbortError') return
+              finalError = delayError
+              break
+            }
+          }
+        }
+      }
+      if (healthRequestRef.current !== controller) return
+      setServiceState('error')
+      setWarmupState('error')
+      setWarmupIssue(toAssistantIssue(finalError, 'health'))
+    })().finally(() => {
+      if (healthRequestRef.current === controller) healthRequestRef.current = null
+    })
     return () => controller.abort()
   }, [apiBase, healthRetryNonce, isOpen])
 
@@ -937,8 +990,17 @@ export function PublicAssistantWidget() {
     rootRef.current?.style.setProperty('--public-assistant-collision-offset', '0px')
     collisionOffsetRef.current = 0
     setIsFullscreen(isMobileSurfaceViewport())
+    setWarmupState('warming')
+    setWarmupIssue(null)
     setIsOpen(true)
     trackAnalyticsEvent('public_assistant_open', { source: 'floating-widget' })
+  }
+
+  const retryWarmup = () => {
+    if (!isOnline || healthRequestRef.current) return
+    setWarmupState('warming')
+    setWarmupIssue(null)
+    setHealthRetryNonce((value) => value + 1)
   }
 
   const stopActiveChat = () => {
@@ -1017,7 +1079,7 @@ export function PublicAssistantWidget() {
   }
 
   const refreshHistory = async () => {
-    if (historyRequestRef.current) return
+    if (historyRequestRef.current || !isWarmupReady) return
     if (!apiBase) {
       setHistoryState('error')
       setIssue({ code: 'public-assistant-service-unavailable', scope: 'history' })
@@ -1183,7 +1245,7 @@ export function PublicAssistantWidget() {
     } = {},
   ) => {
     const trimmed = normalizePublicAssistantQuestion(question)
-    if (!trimmed || isLoading || activeRequestRef.current || !isConversationReady) return
+    if (!trimmed || isLoading || activeRequestRef.current || !isConversationReady || !isWarmupReady) return
 
     trackAnalyticsEvent('public_assistant_question', {
       source: 'floating-widget',
@@ -1383,7 +1445,7 @@ export function PublicAssistantWidget() {
     rating: 'up' | 'down',
     reason: PublicAssistantFeedbackReason,
   ) => {
-    if (!apiBase || !message.sessionId || !message.revisionId || message.feedbackPending) return
+    if (!apiBase || !isWarmupReady || !message.sessionId || !message.revisionId || message.feedbackPending) return
     setConversation((current) => updatePublicAssistantRevisionFeedback(current, message.revisionId!, {
       feedback: message.feedback ?? null,
       feedbackPending: true,
@@ -1454,7 +1516,7 @@ export function PublicAssistantWidget() {
   }
 
   const resendEditedQuestion = () => {
-    if (!editingTurnId || !isConversationReady || isAssistantBusy || activeRequestRef.current) return
+    if (!editingTurnId || !isConversationReady || !isWarmupReady || isAssistantBusy || activeRequestRef.current) return
     const request = createPublicAssistantQuestionEditRequest(conversation, editingTurnId)
     if (!request) return
     const nextQuestion = normalizePublicAssistantQuestion(editingQuestion)
@@ -1476,7 +1538,7 @@ export function PublicAssistantWidget() {
   }
 
   const runBranchAction = async (action: PublicAssistantBranchAction) => {
-    if (!apiBase || branchActionPendingRef.current || isLoading || isQuestionEditing) return
+    if (!apiBase || !isWarmupReady || branchActionPendingRef.current || isLoading || isQuestionEditing) return
     const controller = new AbortController()
     const requestSessionId = sessionIdRef.current
     branchActionPendingRef.current = true
@@ -1547,7 +1609,14 @@ export function PublicAssistantWidget() {
               <span className={`public-assistant__status ${serviceStatus.className}`}>{serviceStatus.label}</span>
             </div>
             <div className="public-assistant__header-actions" aria-label="会话操作">
-              <button ref={historyTriggerRef} type="button" onClick={openHistory} aria-label="查看历史会话" title="历史会话">
+              <button
+                ref={historyTriggerRef}
+                type="button"
+                onClick={openHistory}
+                disabled={!isWarmupReady}
+                aria-label="查看历史会话"
+                title="历史会话"
+              >
                 <History size={18} aria-hidden />
               </button>
               <button type="button" onClick={startNewConversation} aria-label="新建会话" title="新建会话">
@@ -1703,14 +1772,41 @@ export function PublicAssistantWidget() {
             aria-live="off"
             onScroll={handleMessagesScroll}
           >
-            {messages.length === 0 && isConversationReady && !isLoading && (
+            {messages.length === 0 && isConversationReady && isWarmupReady && !isLoading && (
               <div className="public-assistant__empty">
                 <strong>从一个具体问题开始</strong>
                 <span>助手会选择直接回答、本站检索或公开网页研究。</span>
               </div>
             )}
 
-            {isRestoringSession && (
+            {warmupState === 'warming' && (
+              <div className="public-assistant__notice public-assistant__notice--warmup" data-assistant-warmup="warming">
+                <LoaderCircle className="is-spinning" size={16} aria-hidden />
+                <div>
+                  <strong>助手服务正在准备</strong>
+                  <span>输入内容会保留，服务就绪后即可发送。</span>
+                </div>
+              </div>
+            )}
+
+            {warmupState === 'error' && warmupIssue && (
+              <div className="public-assistant__notice public-assistant__notice--warmup" data-assistant-warmup="error">
+                <div>
+                  <strong>{warmupIssueCopy?.title ?? '助手服务暂未就绪'}</strong>
+                  <span>{warmupIssueCopy?.detail ?? '输入内容已经保留，可以稍后重新准备服务。'}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={retryWarmup}
+                  disabled={!isOnline}
+                >
+                  <RefreshCw size={15} aria-hidden />
+                  <span>重新准备</span>
+                </button>
+              </div>
+            )}
+
+            {isRestoringSession && isWarmupReady && (
               <div className="public-assistant__loading" role="status">
                 <LoaderCircle className="is-spinning" size={15} aria-hidden />
                 <span>正在恢复当前匿名会话…</span>
@@ -1967,7 +2063,7 @@ export function PublicAssistantWidget() {
                         <button
                           type="button"
                           onClick={() => regenerateAnswer(message)}
-                          disabled={isLoading || isQuestionEditing}
+                          disabled={isAssistantBusy || isQuestionEditing}
                           aria-label="重新生成回答"
                           title="重新生成"
                         >
@@ -1983,7 +2079,7 @@ export function PublicAssistantWidget() {
                               setFeedbackMenuMessageId(null)
                               void sendFeedback(message, 'up', 'helpful')
                             }}
-                            disabled={message.feedbackPending}
+                            disabled={message.feedbackPending || !isWarmupReady}
                             aria-label="这个回答有帮助"
                             aria-pressed={message.feedback === 'up'}
                             title="有帮助"
@@ -1998,7 +2094,7 @@ export function PublicAssistantWidget() {
                               else feedbackTriggerRefs.current.delete(message.id)
                             }}
                             onClick={() => setFeedbackMenuMessageId((current) => current === message.id ? null : message.id)}
-                            disabled={message.feedbackPending}
+                            disabled={message.feedbackPending || !isWarmupReady}
                             aria-label="这个回答需要改进"
                             aria-pressed={message.feedback === 'down'}
                             aria-expanded={feedbackMenuMessageId === message.id}
@@ -2024,7 +2120,7 @@ export function PublicAssistantWidget() {
                             <button
                               key={option.value}
                               type="button"
-                              disabled={message.feedbackPending}
+                              disabled={message.feedbackPending || !isWarmupReady}
                               onClick={() => void sendFeedback(message, 'down', option.value)}
                             >
                               {option.label}
@@ -2070,8 +2166,12 @@ export function PublicAssistantWidget() {
           </div>
 
           <span className="sr-only" aria-live="polite">
-            {isRestoringSession
-              ? '正在恢复当前会话'
+            {warmupState === 'warming'
+              ? '助手服务正在准备，输入内容会保留'
+              : warmupState === 'error'
+                ? '助手服务暂未就绪，可以重新准备'
+                : isRestoringSession
+                  ? '正在恢复当前会话'
               : isLoading
                 ? '正在生成回答'
               : issue?.code === 'public-assistant-request-cancelled'
@@ -2107,7 +2207,7 @@ export function PublicAssistantWidget() {
               id="public-assistant-input"
               rows={2}
               maxLength={MAX_MESSAGE_LENGTH}
-              disabled={!isConversationReady || isQuestionEditing}
+              disabled={isQuestionEditing || (isWarmupReady && !isConversationReady)}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
@@ -2124,7 +2224,11 @@ export function PublicAssistantWidget() {
                 <span>停止</span>
               </button>
             ) : (
-              <button type="submit" disabled={!isConversationReady || isQuestionEditing || input.trim().length === 0} aria-label="发送问题">
+              <button
+                type="submit"
+                disabled={!isWarmupReady || !isConversationReady || isQuestionEditing || input.trim().length === 0}
+                aria-label="发送问题"
+              >
                 <Send size={16} aria-hidden />
                 <span>发送</span>
               </button>

@@ -42,6 +42,15 @@ same-origin Cloudflare health returned `200` in `0.97 s`.
 
 This result does not prove a model failure. It proves that a sleeping free API
 instance can consume the `55 s` edge proxy budget before the answer path starts.
-The remaining gate is an infrastructure choice: move the public API to an
-always-on instance, or explicitly accept cold-start warm-up as part of the
-product behavior before authorizing a replacement business acceptance request.
+The product now explicitly accepts the free-instance constraint through a
+browser warm-up state machine. First open sends only `/health`, retries that
+side-effect-free request once, preserves an editable draft, delays persisted
+history restore until readiness, and never auto-replays a chat request. A final
+warm-up failure remains an explicit visitor retry. Deterministic desktop and
+320/390/430 fixtures cover 504 -> 200 request ordering and containment without a
+model call.
+
+A replacement live business acceptance request was not run because it requires
+separate explicit approval. The free-instance behavior is therefore locally
+verified and rollout-ready, while the live model path remains governed by that
+manual acceptance boundary.

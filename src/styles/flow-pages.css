@@ -3437,6 +3437,11 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   border-color: color-mix(in oklch, var(--blue) 24%, var(--flow-ui-card-border));
 }
 
+.public-assistant__status.is-warming {
+  color: color-mix(in oklch, var(--amber) 78%, var(--ink));
+  border-color: color-mix(in oklch, var(--amber) 30%, var(--flow-ui-card-border));
+}
+
 .public-assistant__status.is-fallback {
   color: color-mix(in oklch, var(--amber) 78%, var(--ink));
 }
@@ -5889,6 +5894,17 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__loading svg {
   flex: 0 0 auto;
   color: color-mix(in oklch, var(--green) 76%, var(--ink));
+}
+
+.public-assistant__notice--warmup {
+  color: color-mix(in oklch, var(--amber) 72%, var(--ink));
+  background: color-mix(in oklch, var(--amber) 9%, var(--panel-strong));
+  border-color: color-mix(in oklch, var(--amber) 26%, var(--flow-ui-card-border));
+}
+
+.public-assistant__notice--warmup > svg {
+  flex: 0 0 auto;
+  color: color-mix(in oklch, var(--amber) 78%, var(--ink));
 }
 
 .public-assistant__loading-elapsed {

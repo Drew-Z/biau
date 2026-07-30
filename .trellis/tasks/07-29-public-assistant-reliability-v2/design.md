@@ -165,7 +165,29 @@ affected feature, and upstream fix availability.
 - Metrics remain default off.
 - Current environment variables continue to work.
 
-## 10. Rollback
+## 10. Free-Instance Warm-Up State Machine
+
+The browser widget owns a separate `idle | warming | ready | error` warm-up
+state. It is intentionally separate from answer service state so first-open
+history effects cannot infer readiness from a presentational status label.
+
+On open, one `AbortController` owns the complete warm-up lifecycle. The widget
+requests `/health`; on failure it waits for one bounded, abortable delay and
+requests `/health` once more. Success transitions to `ready`; the second failure
+transitions to `error` and exposes the existing explicit health retry command.
+Closing or unmounting aborts both the request and any pending delay.
+
+The composer textarea remains editable in `warming` and `error`, but all
+generation entry points check `warmupState === 'ready'`. Persisted-session
+restore also waits for `ready`, retaining its target capability until then. No
+question is queued or replayed automatically. A 504 health failure is rendered
+as a service-starting condition and does not make a claim about model health.
+
+This design accepts Render Free idle sleep instead of creating artificial
+keep-alive traffic. The first visitor pays a visible preparation interval, but
+their draft and conversation identity remain stable.
+
+## 11. Rollback
 
 Use independent commits for contracts, generation/retry, UI, metrics, and
 dependencies. Rollback can disable schema mode and metrics without a code deploy.

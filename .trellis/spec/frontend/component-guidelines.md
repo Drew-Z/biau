@@ -131,6 +131,15 @@ On mobile first-open, move focus from the hidden trigger into a stable non-input
 
 Recovery presentation consumes normalized metadata only. Use fixed copy for recovered attempts and the bounded safe failure-class union; do not define raw-payload casts or provider error mappings inside the component. The `recovering` repaint and elapsed-time label reuse the existing status region without adding repeated live announcements. Reserve stable space so recovery copy cannot move the composer, widen a message, or overflow at 320, 390, or 430px.
 
+Free-instance warm-up uses a separate `idle | warming | ready | error` state
+from answer-service presentation. Opening the widget runs only `/health`; a
+failed health request may retry once through the same abortable lifecycle.
+While warming, keep the main textarea editable and its draft stable, but disable
+send, suggestions, regeneration, feedback mutations, Branch mutations, and
+history loading. Persisted-session restore starts only after warm-up reaches
+`ready`. Never auto-replay a chat question or describe a warm-up 504 as a model
+failure. The final error exposes an explicit health retry and no keep-alive job.
+
 ### Mobile Primary Navigation
 
 When the site has a small, stable set of high-frequency route families, mobile

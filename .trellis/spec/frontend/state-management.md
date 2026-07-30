@@ -37,6 +37,10 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Public suggestions and messages use sanitized public knowledge.
 - Missing model/API displays a concise fallback status; it does not expose provider details.
 - The widget prefers the same-origin SSE route, derives one bounded progress label from validated event stages including `recovering`, and renders only the terminal verified result. It falls back to the JSON route only when the stream endpoint is explicitly unsupported; rate limits and transport/provider failures never replay the question.
+- Service warm-up is independent from conversation restore and answer state:
+  `idle | warming | ready | error`. The initial persisted-session capability is
+  retained while warming and consumed only after `ready`; composer draft state is
+  never coupled to warm-up or restore completion.
 - Public widget state is independent from Studio tokens and internal editing state.
 - The conversation source of truth is typed logical Turns with immutable Revision snapshots, bounded Branch summaries, and one `activeBranchId`; do not rebuild it as a flat user/assistant message array.
 - Pure projection/reducer helpers live outside the widget. Previewing a Revision changes only that Turn's viewed selection, while regeneration merges a new Revision without appending the same user question again.

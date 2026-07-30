@@ -2493,6 +2493,116 @@ const originalPublicAssistantHistoryWithBranchesFixture = {
   },
   branches: editedPublicAssistantHistoryFixture.branches,
 }
+
+for (const width of [1440, 320, 390, 430]) {
+  const warmupPage = await browser.newPage({ viewport: { width, height: width >= 1000 ? 900 : 780 } })
+  let healthRequests = 0
+  let chatRequests = 0
+  let sessionRequests = 0
+  let secondHealthCompletedAt = 0
+  let firstSessionRequestedAt = 0
+  const warmupDraft = `冷启动草稿 ${width}`
+  await warmupPage.addInitScript(() => {
+    window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+      version: 2,
+      currentSessionId: 'public-ui-session-1234',
+      sessionIds: ['public-ui-session-1234'],
+    }))
+  })
+  await warmupPage.route('**/api/health', async (route) => {
+    healthRequests += 1
+    if (healthRequests === 1) {
+      await route.fulfill({
+        status: 504,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'fixture-cold-start' }),
+      })
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 350))
+    secondHealthCompletedAt = Date.now()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+    })
+  })
+  await warmupPage.route('**/api/chat/public/session', async (route) => {
+    sessionRequests += 1
+    firstSessionRequestedAt ||= Date.now()
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(originalPublicAssistantHistoryFixture),
+    })
+  })
+  await warmupPage.route('**/api/chat/public/stream', async (route) => {
+    chatRequests += 1
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'fixture-chat-must-not-run' }),
+    })
+  })
+
+  await gotoApp(warmupPage, '/blog')
+  await warmupPage.locator('.public-assistant__trigger').click()
+  const warmupNotice = warmupPage.locator('[data-assistant-warmup="warming"]')
+  await warmupNotice.waitFor({ state: 'visible' })
+  const warmupInput = warmupPage.locator('#public-assistant-input')
+  await warmupInput.fill(warmupDraft)
+  const warmupLayout = await warmupPage.evaluate(() => {
+    const panel = document.querySelector('.public-assistant__panel')
+    const notice = document.querySelector('[data-assistant-warmup="warming"]')
+    const composer = document.querySelector('.public-assistant__composer')
+    const input = document.querySelector('#public-assistant-input')
+    const send = document.querySelector('.public-assistant__composer button[type="submit"]')
+    return {
+      inputEnabled: input instanceof HTMLTextAreaElement && !input.disabled,
+      sendDisabled: send instanceof HTMLButtonElement && send.disabled,
+      panelContained: panel instanceof HTMLElement && panel.scrollWidth <= panel.clientWidth + 1,
+      noticeContained: notice instanceof HTMLElement && notice.scrollWidth <= notice.clientWidth + 1,
+      composerContained: composer instanceof HTMLElement && composer.scrollWidth <= composer.clientWidth + 1,
+      copy: notice?.textContent ?? '',
+    }
+  })
+  if (
+    !warmupLayout.inputEnabled ||
+    !warmupLayout.sendDisabled ||
+    !warmupLayout.panelContained ||
+    !warmupLayout.noticeContained ||
+    !warmupLayout.composerContained ||
+    !warmupLayout.copy.includes('输入内容会保留') ||
+    sessionRequests !== 0 ||
+    chatRequests !== 0
+  ) {
+    failures.push(`/blog public assistant warm-up ${width}px: warming must preserve an editable draft, gate requests, and remain contained`)
+  }
+
+  await warmupPage.waitForFunction(() => document.querySelectorAll('.public-assistant__message').length === 2)
+  const warmupReady = await warmupPage.evaluate(() => {
+    const input = document.querySelector('#public-assistant-input')
+    const send = document.querySelector('.public-assistant__composer button[type="submit"]')
+    return {
+      draft: input instanceof HTMLTextAreaElement ? input.value : '',
+      inputEnabled: input instanceof HTMLTextAreaElement && !input.disabled,
+      sendEnabled: send instanceof HTMLButtonElement && !send.disabled,
+    }
+  })
+  if (
+    healthRequests !== 2 ||
+    sessionRequests !== 1 ||
+    chatRequests !== 0 ||
+    firstSessionRequestedAt < secondHealthCompletedAt ||
+    warmupReady.draft !== warmupDraft ||
+    !warmupReady.inputEnabled ||
+    !warmupReady.sendEnabled
+  ) {
+    failures.push(`/blog public assistant warm-up ${width}px: expected exactly one health retry, ordered restore, preserved draft, and ready send`)
+  }
+  await warmupPage.close()
+}
+
 let activePublicAssistantHistoryFixture = originalPublicAssistantHistoryFixture
 const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
 await publicAssistantPage.addInitScript(() => {
@@ -2964,10 +3074,6 @@ const revisionHistory = (activeBranchId, selectedRevisionId) => createPublicAssi
 })
 const revisionBranchBodies = []
 const revisionGenerationBodies = []
-let resolveRevisionHealthRoute
-const revisionHealthRoutePromise = new Promise((resolve) => {
-  resolveRevisionHealthRoute = resolve
-})
 const revisionPage = await browser.newPage({ viewport: viewports[0] })
 await revisionPage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
@@ -2976,7 +3082,11 @@ await revisionPage.addInitScript(() => {
     sessionIds: ['public-ui-revision-session'],
   }))
 })
-await revisionPage.route('**/api/health', (route) => resolveRevisionHealthRoute(route))
+await revisionPage.route('**/api/health', (route) => route.fulfill({
+  status: 200,
+  contentType: 'application/json',
+  body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+}))
 await revisionPage.route('**/api/chat/public/session', (route) => route.fulfill({
   status: 200,
   contentType: 'application/json',
@@ -3072,21 +3182,13 @@ if (
 }
 await revisionPage.getByRole('button', { name: '从此版本继续' }).click()
 await revisionPage.getByText('分支操作未完成', { exact: true }).waitFor({ state: 'visible' })
-const delayedRevisionHealthRoute = await revisionHealthRoutePromise
-const delayedRevisionHealthResponse = revisionPage.waitForResponse((response) => response.url().includes('/api/health'))
-await delayedRevisionHealthRoute.fulfill({
-  status: 503,
-  contentType: 'application/json',
-  body: JSON.stringify({ error: 'public-assistant-endpoint-unreachable' }),
-})
-await delayedRevisionHealthResponse
 if (
   revisionBranchBodies.length !== 1 ||
   revisionBranchBodies[0]?.action !== 'continue-from-revision' ||
   revisionBranchBodies[0]?.revisionId !== 'revision-ui-choice-1' ||
   await revisionPage.locator('.public-assistant__branch-picker select').inputValue() !== 'branch-ui-choice-1'
 ) {
-  failures.push('/blog public assistant revisions: a failed continue action should stay visible through a late health failure and preserve the active branch')
+  failures.push('/blog public assistant revisions: a failed continue action should remain retryable and preserve the active branch after warm-up')
 }
 await revisionPage.getByRole('button', { name: '重试本次操作' }).evaluate((button) => {
   if (!(button instanceof HTMLButtonElement)) return
@@ -3302,8 +3404,10 @@ await expiredSessionPage.route('**/api/chat/public/session', (route) => route.fu
 await gotoApp(expiredSessionPage, '/blog')
 await expiredSessionPage.locator('.public-assistant__trigger').click()
 await expiredSessionPage.waitForFunction(() => {
-  const input = document.querySelector('#public-assistant-input')
-  return input instanceof HTMLTextAreaElement && !input.disabled
+  const raw = window.localStorage.getItem('biau-public-assistant-sessions-v2')
+  if (!raw) return false
+  const registry = JSON.parse(raw)
+  return registry.currentSessionId !== 'public-ui-expired-session'
 })
 const expiredReplacementRegistry = await expiredSessionPage.evaluate(() => {
   const raw = window.localStorage.getItem('biau-public-assistant-sessions-v2')

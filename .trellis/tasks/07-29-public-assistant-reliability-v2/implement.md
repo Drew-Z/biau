@@ -113,6 +113,22 @@ Low-sensitivity deployment, health, and business-request evidence is recorded in
 retried. It exposed a free-instance cold-start gate rather than verifying the
 model path, so the task remains open for an infrastructure decision.
 
+### 11. Free-Instance Cold-Start UX
+
+- [x] Add an independent warm-up state and an abortable, one-retry `/health`
+      lifecycle on assistant open.
+- [x] Gate chat mutations and persisted-session restore on warm-up readiness while
+      keeping the main composer editable and preserving its draft.
+- [x] Map warm-up 504 to service-starting copy without claiming a model failure,
+      and keep final recovery explicit rather than replaying chat automatically.
+- [x] Add deterministic desktop and 320/390/430 UI coverage for 504 -> 200,
+      request ordering, draft preservation, send gating, and containment.
+- [x] Update frontend component/state/quality specs and rerun the public assistant,
+      lint, build, and UI gates without a live model call.
+
+Rollback point: revert the widget warm-up commit; no backend or persistence
+contract changes are required.
+
 ## Required Validation
 
 ```powershell

@@ -156,6 +156,22 @@ provider identity, prompts, user content, credentials, or private infrastructure
   or code-rendering support only if measurements show a meaningful first-open
   improvement and UI checks remain complete.
 
+### R11. Make Free-Instance Cold Starts Explicit And Safe
+
+- Opening the assistant must start a side-effect-free `/health` warm-up before
+  any chat generation or persisted-session restore request is sent.
+- A failed warm-up may automatically retry `/health` exactly once. The retry
+  wait and both health requests must share one abortable lifecycle.
+- While warming, keep the composer editable and preserve its draft, but disable
+  send, suggested questions, regeneration, and other generation mutations.
+- Persisted-session restore must wait until warm-up is ready so a cold instance
+  does not receive competing health and history requests.
+- A final warm-up failure must present a public-safe retry action. A 504 during
+  warm-up means the assistant service is still starting, not that the model is
+  unavailable.
+- Never automatically replay a chat request, create a Revision, or consume model
+  budget as part of warm-up. Do not add cron or third-party keep-alive traffic.
+
 ## Acceptance Criteria
 
 - [ ] A direct fixture uses the concise direct request contract and never includes
@@ -174,6 +190,10 @@ provider identity, prompts, user content, credentials, or private infrastructure
 - [ ] Metrics include extended latency buckets and bounded public-assistant model
       outcomes; a sensitive-field scan finds no user/provider/credential labels.
 - [ ] The curated evaluation set covers every route and failure boundary in R8.
+- [ ] A cold-start UI fixture returns 504 then 200 from `/health`, observes
+      exactly two health requests and zero chat requests while warming, preserves
+      an editable draft, enables send only after readiness, and starts persisted
+      history restore only after the successful health response.
 - [ ] Compatible dependency fixes are applied, or residual advisories have a
       written reachability/fix rationale. No forced major downgrade is used.
 - [ ] `assistant:public-agent-check`, `assistant:public-model-check`,
