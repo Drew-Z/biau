@@ -103,14 +103,15 @@ Rollback point: metrics are default-off and isolated from answer behavior.
 - [x] Deploy only `biau-public-assistant-api` on Render.
 - [x] Allow the static Cloudflare site to build the matching frontend commit.
 - [x] Verify API `/health` and current static assistant chunk without a model call.
-- [ ] Run exactly one approved business request, inspect only public-safe metadata,
+- [x] Run exactly one approved business request, inspect only public-safe metadata,
       and delete its temporary session.
-- [ ] Record the approved business-request outcome and duration, then close the
+- [x] Record the approved business-request outcome and duration, then close the
       remaining manual gates without recording provider identity or content.
 
-Low-sensitivity deployment and health evidence is recorded in
-`research/rollout.md`. The final business-request row remains intentionally open
-because no live model call is permitted without explicit approval.
+Low-sensitivity deployment, health, and business-request evidence is recorded in
+`research/rollout.md`. The approved request was executed once and was not
+retried. It exposed a free-instance cold-start gate rather than verifying the
+model path, so the task remains open for an infrastructure decision.
 
 ## Required Validation
 

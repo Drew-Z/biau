@@ -28,7 +28,20 @@ runtime. Studio and RAG Orchestrator were not deployed or restarted.
 
 ## Remaining Manual Gate
 
-No live business request was sent. A single real acceptance question requires
-explicit user approval. After that request, record only the terminal public
-status, bounded recovery metadata, and total duration, then delete the temporary
-anonymous session.
+One explicitly approved business request was sent on 2026-07-30 through the
+same-origin JSON route. It returned HTTP `504` after `57,838 ms`, before a public
+answer or recovery projection was available. The subsequent session deletion
+returned `404`, confirming that no temporary anonymous session remained.
+
+The request was not retried. Render evidence for the same interval shows the
+free service instance starting and reaching its listening state near the end of
+the Cloudflare proxy budget. The service configuration remained on the `free`
+runtime plan with automatic deploy disabled; no new deploy caused the restart.
+After the instance was warm, direct Render health returned `200` in `1.37 s` and
+same-origin Cloudflare health returned `200` in `0.97 s`.
+
+This result does not prove a model failure. It proves that a sleeping free API
+instance can consume the `55 s` edge proxy budget before the answer path starts.
+The remaining gate is an infrastructure choice: move the public API to an
+always-on instance, or explicitly accept cold-start warm-up as part of the
+product behavior before authorizing a replacement business acceptance request.
