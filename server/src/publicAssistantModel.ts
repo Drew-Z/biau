@@ -75,11 +75,14 @@ export function createPublicAssistantModel(): PublicAssistantModel {
   }
   return {
     plan(request) {
-      return planPublicAssistantRequest(request, channelsFor(request)[0])
+      return planPublicAssistantRequest(request, channelsFor(request)[0] ?? unavailableModelChannel())
     },
     async answer(input) {
       const channels = channelsFor(input.request)
-      const channel = channels[Math.min(input.attempt - 1, channels.length - 1)] ?? resolveModelChannel()
+      const channel = channels[Math.min(input.attempt - 1, channels.length - 1)]
+      if (!channel) {
+        return generatePublicAssistantDraft(input, unavailableModelChannel())
+      }
       const draft = await generatePublicAssistantDraft(input, channel)
       const timing = draft.attempts?.[0]
       recordModelChannelOutcome(channel, {
@@ -385,6 +388,20 @@ function readStatus(value: unknown): Exclude<PublicAssistantStatus, 'degraded' |
 
 function isResponsesChannelConfigured(channel: { apiKey: string; baseUrl: string; model: string }) {
   return env.assistantModelProtocol === 'responses' && Boolean(channel.apiKey && channel.baseUrl && channel.model)
+}
+
+function unavailableModelChannel(): AssistantModelChannelConfig {
+  return {
+    id: 'unavailable',
+    label: '暂不可用模型通道',
+    apiKey: '',
+    baseUrl: '',
+    model: '',
+    provider: 'local',
+    configured: false,
+    isDefault: false,
+    isActive: false,
+  }
 }
 
 function toSafeChannel(channel: {

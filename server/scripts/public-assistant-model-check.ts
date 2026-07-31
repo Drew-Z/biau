@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { env } from '../src/env.js'
 import {
+  createPublicAssistantModel,
   generatePublicAssistantDraft,
   planPublicAssistantRequest,
   shouldUseDirectPublicAssistantRoute,
@@ -299,11 +300,55 @@ try {
   ], 'an open primary circuit should be omitted while healthy fallbacks exist')
   recordModelChannelOutcome(initialOrder[1], { ok: true, at: 2_000, firstActivityMs: 80 })
   assert.equal(resolveAdaptiveModelChannels(2_100)[0]?.model, 'fixture-fallback-a')
-  assert.deepEqual(resolveAdaptiveModelChannels(100_000).map((channel) => channel.model), [
+  const halfOpenOrder = resolveAdaptiveModelChannels(100_000)
+  assert.deepEqual(halfOpenOrder.map((channel) => channel.model), [
     'fixture-responses-model',
     'fixture-fallback-a',
     'fixture-fallback-b',
-  ], 'cooldown expiry should restore the configured quality order for a real half-open request')
+  ], 'cooldown expiry should grant one real request a half-open recovery attempt')
+  assert.deepEqual(resolveAdaptiveModelChannels(100_001).map((channel) => channel.model), [
+    'fixture-fallback-a',
+    'fixture-fallback-b',
+  ], 'concurrent requests should keep using known healthy channels during a half-open lease')
+  recordModelChannelOutcome(halfOpenOrder[0], { ok: true, at: 100_002, firstActivityMs: 320 })
+  assert.equal(
+    resolveAdaptiveModelChannels(100_003)[0]?.model,
+    'fixture-fallback-a',
+    'one recovery success should not erase the stable fallback reputation',
+  )
+  assert.equal(
+    resolveAdaptiveModelChannels(8 * 30 * 60_000 + 100_003)[0]?.model,
+    'fixture-responses-model',
+    'stale reputation should decay back to the configured quality order',
+  )
+  resetAdaptiveModelChannelRouting()
+  const allChannels = resolveModelChannels()
+  const allOpenAt = Date.now()
+  allChannels.forEach((channel, index) => {
+    recordModelChannelOutcome(channel, {
+      ok: false,
+      at: allOpenAt + index,
+      failure: 'provider_error',
+      diagnosticKind: 'http_status',
+      httpStatus: 503,
+    })
+  })
+  assert.deepEqual(
+    resolveAdaptiveModelChannels(allOpenAt + 100),
+    [],
+    'all channels in cooldown should fail fast instead of retrying a known-bad provider',
+  )
+  const allOpenRequest = { ...request, question: '请生成一首关于海岸的短诗' }
+  const allOpenModel = createPublicAssistantModel()
+  const allOpenDraft = await allOpenModel.answer({
+    request: allOpenRequest,
+    plan: directPlan,
+    evidence: [],
+    attempt: 1,
+  })
+  assert.equal(allOpenDraft.failure, 'not_configured')
+  assert.equal(allOpenDraft.status, 'degraded')
+  assert.equal(allOpenDraft.attempts?.[0]?.durationMs, 0)
   assert.equal(observedBodies.length, routingProbeCount, 'adaptive ranking must not issue provider probes')
   resetAdaptiveModelChannelRouting()
 

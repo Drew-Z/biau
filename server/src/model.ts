@@ -3,6 +3,12 @@ import type { AssistantModelChannelSummary, ProviderDiagnosticKind } from './typ
 
 const DEFAULT_MODEL_CHANNEL_ID = 'default'
 const FALLBACK_MODEL_CHANNEL_PREFIX = 'fallback'
+const MODEL_CHANNEL_REPUTATION_HALF_LIFE_MS = 30 * 60_000
+const MODEL_CHANNEL_REPUTATION_LIMIT = 8
+const MODEL_CHANNEL_FAILURE_WEIGHT = 1.75
+const MODEL_CHANNEL_SCORE_TIE = 0.05
+const MODEL_CHANNEL_LATENCY_TIE_MS = 100
+const MODEL_CHANNEL_HALF_OPEN_LEASE_MS = 60_000
 
 export interface AssistantModelChannelConfig extends AssistantModelChannelSummary {
   apiKey: string
@@ -23,7 +29,11 @@ interface AssistantModelChannelHealth {
   consecutiveFailures: number
   openUntil: number
   lastSuccessAt: number
+  lastOutcomeAt: number
   firstActivityEwmaMs: number | null
+  successEvidence: number
+  failureEvidence: number
+  halfOpenLeaseUntil: number
 }
 
 const modelChannelHealth = new Map<string, AssistantModelChannelHealth>()
@@ -64,22 +74,31 @@ export function resolveModelChannels(): AssistantModelChannelConfig[] {
 
 export function resolveAdaptiveModelChannels(at = Date.now()): AssistantModelChannelConfig[] {
   const channels = resolveModelChannels()
-  const ranked = channels.map((channel, priority) => ({
+  const entries = channels.map((channel, priority) => ({
     channel,
     priority,
     health: modelChannelHealth.get(modelChannelKey(channel)),
-  })).sort((left, right) => {
-    const leftOpen = (left.health?.openUntil ?? 0) > at
-    const rightOpen = (right.health?.openUntil ?? 0) > at
-    if (leftOpen !== rightOpen) return leftOpen ? 1 : -1
-    if (leftOpen && rightOpen) {
+  }))
+  const closed = entries
+    .filter((entry) => (entry.health?.openUntil ?? 0) === 0)
+    .sort((left, right) => compareModelChannelReputation(left, right, at))
+  const recoveryCandidate = entries
+    .filter((entry) => {
+      const openUntil = entry.health?.openUntil ?? 0
+      const leaseUntil = entry.health?.halfOpenLeaseUntil ?? 0
+      return openUntil > 0 && openUntil <= at && leaseUntil <= at
+    })
+    .sort((left, right) => {
       const recoveryOrder = (left.health?.openUntil ?? 0) - (right.health?.openUntil ?? 0)
-      if (recoveryOrder !== 0) return recoveryOrder
-    }
-    return left.priority - right.priority
-  })
-  const available = ranked.filter((entry) => (entry.health?.openUntil ?? 0) <= at)
-  return (available.length > 0 ? available : ranked.slice(0, 1)).map((entry) => entry.channel)
+      return recoveryOrder || left.priority - right.priority
+    })[0]
+
+  if (recoveryCandidate?.health) {
+    recoveryCandidate.health.halfOpenLeaseUntil = at + MODEL_CHANNEL_HALF_OPEN_LEASE_MS
+    return [recoveryCandidate.channel, ...closed.map((entry) => entry.channel)]
+  }
+  if (closed.length > 0) return closed.map((entry) => entry.channel)
+  return []
 }
 
 export function recordModelChannelOutcome(
@@ -92,19 +111,28 @@ export function recordModelChannelOutcome(
     consecutiveFailures: 0,
     openUntil: 0,
     lastSuccessAt: 0,
+    lastOutcomeAt: at,
     firstActivityEwmaMs: null,
+    successEvidence: 0,
+    failureEvidence: 0,
+    halfOpenLeaseUntil: 0,
   }
+  const evidence = decayModelChannelEvidence(current, at)
   if (outcome.ok) {
     const firstActivityMs = outcome.firstActivityMs
     modelChannelHealth.set(key, {
       consecutiveFailures: 0,
       openUntil: 0,
       lastSuccessAt: at,
+      lastOutcomeAt: at,
       firstActivityEwmaMs: firstActivityMs === undefined
         ? current.firstActivityEwmaMs
         : current.firstActivityEwmaMs === null
           ? firstActivityMs
           : Math.round(current.firstActivityEwmaMs * 0.7 + firstActivityMs * 0.3),
+      successEvidence: Math.min(MODEL_CHANNEL_REPUTATION_LIMIT, evidence.success + 1),
+      failureEvidence: evidence.failure,
+      halfOpenLeaseUntil: 0,
     })
     return
   }
@@ -115,6 +143,10 @@ export function recordModelChannelOutcome(
     ...current,
     consecutiveFailures,
     openUntil: cooldownMs > 0 ? Math.max(current.openUntil, at + cooldownMs) : current.openUntil,
+    lastOutcomeAt: at,
+    successEvidence: evidence.success,
+    failureEvidence: Math.min(MODEL_CHANNEL_REPUTATION_LIMIT, evidence.failure + 1),
+    halfOpenLeaseUntil: 0,
   })
 }
 
@@ -173,6 +205,47 @@ function hasCompleteFallbackConfiguration() {
 
 function modelChannelKey(channel: AssistantModelChannelConfig) {
   return [channel.id, channel.provider, channel.baseUrl, channel.model].join('\u0000')
+}
+
+function compareModelChannelReputation(
+  left: { priority: number; health?: AssistantModelChannelHealth },
+  right: { priority: number; health?: AssistantModelChannelHealth },
+  at: number,
+) {
+  const scoreDifference = modelChannelReputationScore(right.health, at) - modelChannelReputationScore(left.health, at)
+  if (Math.abs(scoreDifference) >= MODEL_CHANNEL_SCORE_TIE) return scoreDifference
+
+  const leftLatency = left.health?.firstActivityEwmaMs
+  const rightLatency = right.health?.firstActivityEwmaMs
+  const leftEvidenceMass = modelChannelEvidenceMass(left.health, at)
+  const rightEvidenceMass = modelChannelEvidenceMass(right.health, at)
+  if (leftEvidenceMass >= 0.5 && rightEvidenceMass >= 0.5
+    && leftLatency !== null && leftLatency !== undefined && rightLatency !== null && rightLatency !== undefined) {
+    const latencyDifference = leftLatency - rightLatency
+    if (Math.abs(latencyDifference) >= MODEL_CHANNEL_LATENCY_TIE_MS) return latencyDifference
+  }
+  return left.priority - right.priority
+}
+
+function modelChannelReputationScore(health: AssistantModelChannelHealth | undefined, at: number) {
+  if (!health) return 0
+  const evidence = decayModelChannelEvidence(health, at)
+  return evidence.success - evidence.failure * MODEL_CHANNEL_FAILURE_WEIGHT
+}
+
+function modelChannelEvidenceMass(health: AssistantModelChannelHealth | undefined, at: number) {
+  if (!health) return 0
+  const evidence = decayModelChannelEvidence(health, at)
+  return evidence.success + evidence.failure
+}
+
+function decayModelChannelEvidence(health: AssistantModelChannelHealth, at: number) {
+  const elapsedMs = Math.max(0, at - health.lastOutcomeAt)
+  const decay = Math.pow(0.5, elapsedMs / MODEL_CHANNEL_REPUTATION_HALF_LIFE_MS)
+  return {
+    success: health.successEvidence * decay,
+    failure: health.failureEvidence * decay,
+  }
 }
 
 function channelCooldownMs(outcome: AssistantModelChannelOutcome, consecutiveFailures: number) {
