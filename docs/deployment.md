@@ -20,7 +20,7 @@ Cloudflare Pages 承载静态站和同源 Functions。浏览器只访问同源 `
 Browser
   -> Cloudflare Pages / Functions
        -> biau-public-assistant-api
-            -> single Responses model
+            -> bounded primary + fallback Responses generation chain
             -> Tavily discovery + safe original-page fetch
             -> biau-rag-orchestrator -> Qdrant public alias
             -> public assistant PostgreSQL
@@ -81,6 +81,10 @@ ASSISTANT_MODEL_NAME=<single generation model>
 ASSISTANT_MODEL_PROVIDER=<safe provider label>
 ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
+ASSISTANT_MODEL_FALLBACK_BASE_URL=<optional fallback Responses /v1 base URL>
+ASSISTANT_MODEL_FALLBACK_API_KEY=<optional server-only fallback key>
+ASSISTANT_MODEL_FALLBACK_MODELS=<optional ordered model-a,model-b list>
+ASSISTANT_MODEL_FALLBACK_PROVIDER=fallback-responses
 
 ASSISTANT_RAG_API_BASE_URL=<RAG Render URL>
 ASSISTANT_RAG_API_KEY=<与 RAG_PUBLIC_API_KEY 相同>
@@ -105,7 +109,11 @@ METRICS_ENABLED=false
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 
-`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 Responses relay 支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。一次公开请求最多包含三次生成尝试，所有尝试与 200/400ms 可取消退避共享 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` 的绝对截止时间，不会为每次尝试重置 45 秒预算。
+`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 Responses relay 支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
+
+公开助手保留现有 `ASSISTANT_MODEL_*` 作为主通道。四个 `ASSISTANT_MODEL_FALLBACK_*` 变量必须完整填写才会启用备用链；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。Planner 只使用主通道，失败后使用确定性 Planner；最终回答的第 1 次尝试使用主通道，第 2/3 次才使用备用模型。多个备用模型属于同一供应商故障域：备用渠道出现认证或网络故障时不会继续轮询同域模型，模型级 404/405、429/5xx、空响应或无效响应才允许前进。
+
+一次公开请求最多包含三次生成尝试，所有通道、尝试与 200/400ms 可取消退避共享 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` 的绝对截止时间，不会为每次尝试或切换通道重置 45 秒预算。启用独立备用链时，运行时会为后续尝试保留最低执行窗口；未配置备用链时保留原有单通道重试行为。`/health` 只检查是否至少存在一套完整配置，不调用模型，也不返回通道数量、顺序、provider、model 或 endpoint。
 
 `METRICS_ENABLED=false` 时 `/metrics` 不采集也不暴露。生产 scrape 目标、鉴权和告警接收方仍是人工 gate；`/health` 始终与指标开关独立。
 

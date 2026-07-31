@@ -37,6 +37,15 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 这些证据已完成旧 Operator 数据面的受控退役；随后已分别删除 legacy Render Operator 服务与 external internal Qdrant collection，当前不再存在 Operator/internal-RAG 删除门禁。
 
+## Public assistant fallback rollout
+
+仓库支持一个主 Responses 通道和一个最多包含两个模型的备用供应商。平台启用仍需人工完成：
+
+- 在 `biau-public-assistant-api` 填写四个 `ASSISTANT_MODEL_FALLBACK_*` 变量并重新部署；真实值不得进入 Git。
+- 不执行模型目录查询、ping、doctor、空 prompt 或逐模型测活。
+- 部署后先确认 `/health` 只返回低敏配置就绪状态，再由用户批准一条真实业务问题完成端到端验收。
+- 若结果异常，删除四个备用变量即可回到原有主通道重试行为，无需数据库回滚。
+
 ## Operator PostgreSQL 退役
 
 生产 PostgreSQL 退役已于 2026-07-26 完成。以下步骤保留为可审计 runbook：

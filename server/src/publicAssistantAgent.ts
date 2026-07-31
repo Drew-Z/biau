@@ -8,6 +8,7 @@ import type {
   PublicAssistantEvidence,
   PublicAssistantModelAttemptTiming,
   PublicAssistantModel,
+  PublicAssistantModelRetryRelation,
   PublicAssistantPlan,
   PublicAssistantRequest,
 } from './publicAssistantRuntime.js'
@@ -198,7 +199,8 @@ async function generateNode(state: PublicAssistantState) {
         request: state.request,
         plan,
         evidence: state.evidence,
-        timeoutMs: remainingAttemptTimeoutMs(state),
+        attempt,
+        timeoutMs: remainingAttemptTimeoutMs(state, attempt),
       })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -226,7 +228,8 @@ async function generateNode(state: PublicAssistantState) {
     })
     attempts.push(timing)
     draft = { ...nextDraft, attempts: [...attempts] }
-    if (!isRetryableModelDraft(nextDraft) || attempt === 3 || !hasRetryBudget(state, attempt)) break
+    const nextRelation = state.dependencies.model.nextAttemptRelation?.(attempt) ?? 'same-channel'
+    if (!isRetryableModelDraft(nextDraft, nextRelation) || attempt === 3 || !hasRetryBudget(state, attempt)) break
   }
   if (!draft) {
     draft = buildBudgetExhaustedDraft(state, plan)
@@ -245,14 +248,24 @@ async function generateNode(state: PublicAssistantState) {
   }
 }
 
-function isRetryableModelDraft(draft: PublicAssistantDraft) {
+function isRetryableModelDraft(draft: PublicAssistantDraft, relation: PublicAssistantModelRetryRelation | null) {
+  if (!relation) return false
+  const reportedFailure = draft.attempts?.at(-1)?.failureClass
+  if (reportedFailure === 'cancelled' || reportedFailure === 'policy') return false
+  if (draft.failure === 'not_configured') return relation === 'independent'
   if (draft.failure === 'empty_response' || draft.failure === 'invalid_response') return true
   if (draft.failure !== 'provider_error') return false
   if (draft.diagnostic?.kind === 'http_status') {
     const status = draft.diagnostic.httpStatus ?? 0
+    if (status === 400 || status === 409 || status === 413 || status === 422) return false
+    if (status === 401 || status === 403) return relation === 'independent'
+    if (status === 404 || status === 405) return relation !== 'same-channel'
     return (status > 0 && status < 400) || status === 408 || status === 425 || status === 429 || status >= 500
   }
-  return draft.diagnostic?.kind === 'timeout' || draft.diagnostic?.kind === 'network_error' || !draft.diagnostic
+  if (draft.diagnostic?.kind === 'timeout' || draft.diagnostic?.kind === 'network_error') {
+    return relation !== 'same-failure-domain'
+  }
+  return !draft.diagnostic
 }
 
 function hasRetryBudget(state: PublicAssistantState, attempt: 1 | 2 | 3) {
@@ -265,8 +278,15 @@ function hasAttemptBudget(state: PublicAssistantState) {
   return remainingBudgetMs(state) >= minimumAttemptBudgetMs()
 }
 
-function remainingAttemptTimeoutMs(state: PublicAssistantState) {
-  return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingBudgetMs(state)))
+function remainingAttemptTimeoutMs(state: PublicAssistantState, attempt: 1 | 2 | 3) {
+  const remainingMs = remainingBudgetMs(state)
+  if (!state.dependencies.model.hasIndependentFallback?.()) {
+    return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs))
+  }
+  const futureAttempts = 3 - attempt
+  const futureAttemptBudgetMs = futureAttempts * minimumAttemptBudgetMs()
+  const futureBackoffMs = attempt === 1 ? retryDelayMs(2) + retryDelayMs(3) : attempt === 2 ? retryDelayMs(3) : 0
+  return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs - futureAttemptBudgetMs - futureBackoffMs))
 }
 
 function minimumAttemptBudgetMs() {

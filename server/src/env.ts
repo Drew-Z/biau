@@ -23,6 +23,10 @@ const assistantModelApiKey = readFirstEnv('ASSISTANT_MODEL_API_KEY', 'OPENAI_API
 const assistantModelBaseUrl = normalizeBaseUrl(readFirstEnv('ASSISTANT_MODEL_BASE_URL', 'OPENAI_BASE_URL'))
 const assistantModelName = readFirstEnv('ASSISTANT_MODEL_NAME', 'OPENAI_MODEL') || 'gpt-4.1-mini'
 const assistantModelProvider = readFirstEnv('ASSISTANT_MODEL_PROVIDER', 'OPENAI_PROVIDER') || 'openai-compatible'
+const assistantModelFallbackBaseUrl = normalizeOptionalBaseUrl(readFirstEnv('ASSISTANT_MODEL_FALLBACK_BASE_URL'))
+const assistantModelFallbackApiKey = readFirstEnv('ASSISTANT_MODEL_FALLBACK_API_KEY')
+const assistantModelFallbackModels = readBoundedCsv(process.env.ASSISTANT_MODEL_FALLBACK_MODELS, 2, 160)
+const assistantModelFallbackProvider = readFirstEnv('ASSISTANT_MODEL_FALLBACK_PROVIDER') || 'fallback-responses'
 const aiDailyModelRuntimeJson = readFirstEnv('AI_DAILY_MODEL_RUNTIME_JSON')
 const aiDailyModelApprovalFile = readFirstEnv('AI_DAILY_MODEL_APPROVAL_FILE')
 const aiDailyModelApprovalBundleHash = readFirstEnv('AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH')
@@ -51,6 +55,10 @@ export const env = {
   assistantModelBaseUrl,
   assistantModelName,
   assistantModelProvider,
+  assistantModelFallbackBaseUrl,
+  assistantModelFallbackApiKey,
+  assistantModelFallbackModels,
+  assistantModelFallbackProvider,
   aiDailyModelRuntimeJson,
   aiDailyModelApprovalFile,
   aiDailyModelApprovalBundleHash,
@@ -158,6 +166,17 @@ function readOriginCsv(value: string | undefined) {
         .filter((item) => /^https?:\/\/[^\s/]+(?::\d+)?$/iu.test(item)),
     ),
   )
+}
+
+function readBoundedCsv(value: string | undefined, maximumItems: number, maximumItemLength: number) {
+  return Array.from(
+    new Set(
+      (value ?? '')
+        .split(',')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0 && item.length <= maximumItemLength),
+    ),
+  ).slice(0, maximumItems)
 }
 
 function readPositiveInteger(value: string | undefined, fallback: number) {

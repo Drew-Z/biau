@@ -6,6 +6,12 @@ import {
   planPublicAssistantRequest,
   shouldUseDirectPublicAssistantRoute,
 } from '../src/publicAssistantModel.js'
+import {
+  hasConfiguredModelChannel,
+  nextModelChannelRelation,
+  resolveModelChannelForAttempt,
+  resolveModelChannels,
+} from '../src/model.js'
 import type { PublicAssistantEvidence, PublicAssistantRequest } from '../src/publicAssistantRuntime.js'
 import { readResponsesContent, readResponsesStreamContent, requestResponsesText } from '../src/responsesApi.js'
 
@@ -14,7 +20,10 @@ const original = {
   assistantModelBaseUrl: env.assistantModelBaseUrl,
   assistantModelName: env.assistantModelName,
   assistantModelProvider: env.assistantModelProvider,
-  assistantModelChannelsJson: env.assistantModelChannelsJson,
+  assistantModelFallbackBaseUrl: env.assistantModelFallbackBaseUrl,
+  assistantModelFallbackApiKey: env.assistantModelFallbackApiKey,
+  assistantModelFallbackModels: env.assistantModelFallbackModels,
+  assistantModelFallbackProvider: env.assistantModelFallbackProvider,
   assistantModelProtocol: env.assistantModelProtocol,
   assistantModelStructuredOutputsMode: env.assistantModelStructuredOutputsMode,
   publicAssistantRequestTimeoutMs: env.publicAssistantRequestTimeoutMs,
@@ -27,6 +36,7 @@ const original = {
 
 const observedPaths: string[] = []
 const observedBodies: unknown[] = []
+const observedAuthorizations: string[] = []
 
 assert.equal(readResponsesContent({ output_text: 'top-level' }), 'top-level')
 assert.equal(readResponsesContent({
@@ -60,7 +70,8 @@ await assert.rejects(readResponsesStreamContent(new Response([
   '',
 ].join('\n')).body), /responses-stream-provider-error/u)
 const server = createServer((request, response) => {
-  if (request.method !== 'POST' || request.headers.authorization !== 'Bearer fixture-key') {
+  const authorization = request.headers.authorization ?? ''
+  if (request.method !== 'POST' || (authorization !== 'Bearer fixture-key' && authorization !== 'Bearer fallback-key')) {
     response.writeHead(404, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify({ error: 'not-found' }))
     return
@@ -70,6 +81,7 @@ const server = createServer((request, response) => {
   request.on('data', (chunk: Buffer) => chunks.push(chunk))
   request.on('end', () => {
     observedPaths.push(request.url ?? '')
+    observedAuthorizations.push(authorization)
     const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as { input?: Array<{ content?: Array<{ text?: string }> }> }
     observedBodies.push(body)
     if (request.url === '/responses') {
@@ -137,7 +149,10 @@ try {
   env.assistantModelBaseUrl = `http://127.0.0.1:${address.port}`
   env.assistantModelName = 'fixture-responses-model'
   env.assistantModelProvider = 'fixture-provider'
-  env.assistantModelChannelsJson = ''
+  env.assistantModelFallbackBaseUrl = ''
+  env.assistantModelFallbackApiKey = ''
+  env.assistantModelFallbackModels = []
+  env.assistantModelFallbackProvider = 'fallback-responses'
   env.assistantModelProtocol = 'responses'
   env.assistantModelStructuredOutputsMode = 'off'
   env.publicAssistantRequestTimeoutMs = 5000
@@ -179,7 +194,7 @@ try {
     score: 0.9,
     evidenceStatus: 'verified',
   }
-  const draft = await generatePublicAssistantDraft({ request, plan, evidence: [evidence] })
+  const draft = await generatePublicAssistantDraft({ request, plan, evidence: [evidence], attempt: 1 })
   assert.equal(draft.answer, 'Legal RAG 提供公开项目说明。')
   assert.equal(draft.status, 'answered')
   assert.deepEqual(draft.claims[0]?.citationIds, ['site-1'])
@@ -216,6 +231,7 @@ try {
     request: { ...request, question: '请生成一首乡愁的诗句' },
     plan: directPlan,
     evidence: [],
+    attempt: 1,
   })
   assert.equal(directDraft.answer, '孤帆泊晚岸，灯火照归舟。')
   assert.deepEqual(directDraft.claims, [])
@@ -236,6 +252,7 @@ try {
     request: { ...request, question: '请生成一首乡愁的诗句' },
     plan: directPlan,
     evidence: [],
+    attempt: 1,
   })
   const schemaBody = observedBodies.at(-1) as {
     text?: { format?: { type?: string; name?: string; strict?: boolean; schema?: unknown } }
@@ -245,6 +262,32 @@ try {
   assert.equal(schemaBody.text?.format?.strict, true)
   assert.ok(schemaBody.text?.format?.schema)
   env.assistantModelStructuredOutputsMode = 'off'
+
+  env.assistantModelFallbackBaseUrl = `http://127.0.0.1:${address.port}`
+  env.assistantModelFallbackApiKey = 'fallback-key'
+  env.assistantModelFallbackModels = ['fixture-fallback-a', 'fixture-fallback-b']
+  env.assistantModelFallbackProvider = 'fixture-fallback-provider'
+  assert.equal(resolveModelChannels().length, 3)
+  assert.equal(resolveModelChannelForAttempt(1).model, 'fixture-responses-model')
+  assert.equal(resolveModelChannelForAttempt(2).model, 'fixture-fallback-a')
+  assert.equal(resolveModelChannelForAttempt(3).model, 'fixture-fallback-b')
+  assert.equal(nextModelChannelRelation(1), 'independent')
+  assert.equal(nextModelChannelRelation(2), 'same-failure-domain')
+  assert.equal(nextModelChannelRelation(3), null)
+
+  const fallbackDraft = await generatePublicAssistantDraft({
+    request: { ...request, question: '请生成一首乡愁的诗句' },
+    plan: directPlan,
+    evidence: [],
+    attempt: 2,
+  })
+  assert.equal(fallbackDraft.model, 'fixture-fallback-a')
+  assert.equal(fallbackDraft.provider, 'fixture-fallback-provider')
+  assert.equal(fallbackDraft.attempts?.[0]?.attempt, 2)
+  assert.equal(observedAuthorizations.at(-1), 'Bearer fallback-key')
+  assert.equal((observedBodies.at(-1) as { model?: string }).model, 'fixture-fallback-a')
+  assert.equal(JSON.stringify(fallbackDraft.modelChannel).includes('fallback-key'), false)
+  assert.equal(JSON.stringify(fallbackDraft.modelChannel).includes(`127.0.0.1:${address.port}`), false)
 
   const fixtureChannel = {
     apiKey: 'fixture-key',
@@ -283,6 +326,7 @@ try {
     request: { ...request, signal: cancelled.signal },
     plan,
     evidence: [evidence],
+    attempt: 1,
   })
   setTimeout(() => cancelled.abort(), 30)
   await assert.rejects(
@@ -293,10 +337,22 @@ try {
   env.assistantModelApiKey = ''
   env.assistantModelBaseUrl = ''
   env.assistantModelName = ''
-  env.assistantModelChannelsJson = ''
   env.openaiApiKey = ''
   env.openaiBaseUrl = ''
   env.openaiModel = ''
+  assert.equal(hasConfiguredModelChannel(), true, 'a complete fallback keeps configuration readiness true')
+  const fallbackOnlyDraft = await generatePublicAssistantDraft({
+    request: { ...request, question: '请生成一首乡愁的诗句' },
+    plan: directPlan,
+    evidence: [],
+    attempt: 2,
+  })
+  assert.equal(fallbackOnlyDraft.failure, undefined)
+  assert.equal(fallbackOnlyDraft.model, 'fixture-fallback-a')
+
+  env.assistantModelFallbackBaseUrl = ''
+  assert.equal(resolveModelChannels().length, 1, 'incomplete fallback configuration is ignored')
+  assert.equal(hasConfiguredModelChannel(), false)
   const unavailableDirectDraft = await generatePublicAssistantDraft({
     request: {
       question: '生成一首古诗词',
@@ -305,6 +361,7 @@ try {
     },
     plan: directPlan,
     evidence: [],
+    attempt: 1,
   })
   assert.equal(unavailableDirectDraft.status, 'degraded')
   assert.equal(unavailableDirectDraft.failure, 'not_configured')

@@ -180,6 +180,184 @@ async function modelRecoveryCheck() {
   assert.deepEqual(progress, ['planning', 'answering', 'recovering', 'recovering', 'verifying'])
 }
 
+async function independentFallbackRecoveryCheck() {
+  const originalRequestTimeoutMs = env.publicAssistantRequestTimeoutMs
+  const originalAnswerTimeoutMs = env.publicAssistantAnswerTimeoutMs
+  const attempts: number[] = []
+  const timeouts: number[] = []
+  const delays: number[] = []
+  let clock = 0
+  env.publicAssistantRequestTimeoutMs = 25_000
+  env.publicAssistantAnswerTimeoutMs = 20_000
+  try {
+    const dependencies: PublicAssistantAgentDependencies = {
+      now: () => clock,
+      model: {
+        async plan() {
+          return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+        },
+        hasIndependentFallback() {
+          return true
+        },
+        nextAttemptRelation(attempt) {
+          return attempt === 1 ? 'independent' : attempt === 2 ? 'same-failure-domain' : null
+        },
+        async answer(input) {
+          attempts.push(input.attempt)
+          timeouts.push(input.timeoutMs ?? 0)
+          if (input.attempt === 1) {
+            return {
+              answer: '主通道认证失败。',
+              status: 'degraded',
+              claims: [],
+              suggestions: [],
+              model: 'primary-fixture',
+              provider: 'primary-fixture',
+              failure: 'provider_error',
+              diagnostic: { kind: 'http_status', httpStatus: 401, attemptedEndpoints: 1, timeoutMs: input.timeoutMs ?? 0 },
+              attempts: [{ attempt: 1, durationMs: 10, failureClass: 'upstream' }],
+            }
+          }
+          return {
+            answer: '备用通道已恢复回答。',
+            status: 'answered',
+            claims: [],
+            suggestions: [],
+            model: 'fallback-fixture',
+            provider: 'fallback-fixture',
+            attempts: [{ attempt: input.attempt, durationMs: 20, firstActivityMs: 5 }],
+          }
+        },
+      },
+      async retrieveSite() {
+        return { evidence: [] }
+      },
+      async researchWeb() {
+        return { evidence: [], available: true }
+      },
+      async sleep(delayMs) {
+        delays.push(delayMs)
+        clock += delayMs
+      },
+    }
+    const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
+    assert.deepEqual(attempts, [1, 2])
+    assert.deepEqual(delays, [200])
+    assert.deepEqual(timeouts, [14_400, 19_400], 'fallback attempts receive reserved time inside the 25s deadline')
+    assert.deepEqual(response.meta?.recovery, { state: 'recovered', attempts: 2 })
+  } finally {
+    env.publicAssistantRequestTimeoutMs = originalRequestTimeoutMs
+    env.publicAssistantAnswerTimeoutMs = originalAnswerTimeoutMs
+  }
+}
+
+async function sameFailureDomainNetworkStopsCheck() {
+  const attempts: number[] = []
+  const dependencies: PublicAssistantAgentDependencies = {
+    model: {
+      async plan() {
+        return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+      },
+      hasIndependentFallback() {
+        return true
+      },
+      nextAttemptRelation(attempt) {
+        return attempt === 1 ? 'independent' : attempt === 2 ? 'same-failure-domain' : null
+      },
+      async answer(input) {
+        attempts.push(input.attempt)
+        const networkFailure = input.attempt === 2
+        return {
+          answer: '模型暂时不可用。',
+          status: 'degraded',
+          claims: [],
+          suggestions: [],
+          model: networkFailure ? 'fallback-a' : 'primary',
+          provider: networkFailure ? 'fallback-provider' : 'primary-provider',
+          failure: 'provider_error',
+          diagnostic: networkFailure
+            ? { kind: 'network_error', attemptedEndpoints: 1, timeoutMs: 100 }
+            : { kind: 'http_status', httpStatus: 503, attemptedEndpoints: 1, timeoutMs: 100 },
+          attempts: [{
+            attempt: input.attempt,
+            durationMs: 10,
+            failureClass: networkFailure ? 'network' : 'upstream',
+          }],
+        }
+      },
+    },
+    async retrieveSite() {
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      return { evidence: [], available: true }
+    },
+    async sleep() {
+      return undefined
+    },
+  }
+  const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
+  assert.deepEqual(attempts, [1, 2], 'same-provider network failure must not fan out across models')
+  assert.deepEqual(response.meta?.recovery, { state: 'degraded', attempts: 2, failureClass: 'network' })
+}
+
+async function sameFailureDomainModelFailureAdvancesCheck() {
+  const attempts: number[] = []
+  const dependencies: PublicAssistantAgentDependencies = {
+    model: {
+      async plan() {
+        return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+      },
+      hasIndependentFallback() {
+        return true
+      },
+      nextAttemptRelation(attempt) {
+        return attempt === 1 ? 'independent' : attempt === 2 ? 'same-failure-domain' : null
+      },
+      async answer(input) {
+        attempts.push(input.attempt)
+        if (input.attempt === 3) {
+          return {
+            answer: '第二个备用模型完成回答。',
+            status: 'answered',
+            claims: [],
+            suggestions: [],
+            model: 'fallback-b',
+            provider: 'fallback-provider',
+          }
+        }
+        return {
+          answer: '模型暂时不可用。',
+          status: 'degraded',
+          claims: [],
+          suggestions: [],
+          model: input.attempt === 1 ? 'primary' : 'fallback-a',
+          provider: input.attempt === 1 ? 'primary-provider' : 'fallback-provider',
+          failure: 'provider_error',
+          diagnostic: {
+            kind: 'http_status',
+            httpStatus: input.attempt === 1 ? 503 : 404,
+            attemptedEndpoints: 1,
+            timeoutMs: 100,
+          },
+        }
+      },
+    },
+    async retrieveSite() {
+      return { evidence: [] }
+    },
+    async researchWeb() {
+      return { evidence: [], available: true }
+    },
+    async sleep() {
+      return undefined
+    },
+  }
+  const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
+  assert.deepEqual(attempts, [1, 2, 3])
+  assert.deepEqual(response.meta?.recovery, { state: 'recovered', attempts: 3 })
+}
+
 async function permanentModelFailureDoesNotRetryCheck() {
   let calls = 0
   const dependencies: PublicAssistantAgentDependencies = {
@@ -622,6 +800,9 @@ await directCreativeRouteCheck()
 await explicitResearchModeOverridesDirectTaskCheck()
 await boundedRetryCheck()
 await modelRecoveryCheck()
+await independentFallbackRecoveryCheck()
+await sameFailureDomainNetworkStopsCheck()
+await sameFailureDomainModelFailureAdvancesCheck()
 await permanentModelFailureDoesNotRetryCheck()
 await insufficientModelBudgetDoesNotRetryCheck()
 await modelRetryBackoffIsAbortableCheck()

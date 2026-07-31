@@ -84,12 +84,17 @@ export interface PublicAssistantDraft {
   attempts?: PublicAssistantModelAttemptTiming[]
 }
 
+export type PublicAssistantModelRetryRelation = 'independent' | 'same-failure-domain' | 'same-channel'
+
 export interface PublicAssistantModel {
   plan(request: PublicAssistantRequest): Promise<PublicAssistantPlan>
   answer(input: {
     request: PublicAssistantRequest
     plan: PublicAssistantPlan
     evidence: PublicAssistantEvidence[]
+    attempt: 1 | 2 | 3
     timeoutMs?: number
   }): Promise<PublicAssistantDraft>
+  nextAttemptRelation?(attempt: 1 | 2 | 3): PublicAssistantModelRetryRelation | null
+  hasIndependentFallback?(): boolean
 }

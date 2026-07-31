@@ -29,6 +29,14 @@ services:
         value: responses
       - key: ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE
         value: "off"
+      - key: ASSISTANT_MODEL_FALLBACK_BASE_URL
+        sync: false
+      - key: ASSISTANT_MODEL_FALLBACK_API_KEY
+        sync: false
+      - key: ASSISTANT_MODEL_FALLBACK_MODELS
+        sync: false
+      - key: ASSISTANT_MODEL_FALLBACK_PROVIDER
+        value: fallback-responses
       - key: ASSISTANT_RAG_API_BASE_URL
         sync: false
       - key: ASSISTANT_RAG_API_KEY

@@ -4,10 +4,11 @@
 
 - The public assistant is anonymous, read-only, and available without member or owner authentication.
 - It may answer from BIAU public knowledge, fetched public-web evidence, or both.
-- One configured Responses API model owns planning and answer generation. Retrieval, embedding, search, and reranking are tools rather than extra generation-model routes.
+- One primary Responses API channel owns planning. Final answer generation may use one bounded server-only fallback provider with at most two ordered model names. Retrieval, embedding, search, and reranking are tools rather than generation-model routes.
 - Planner requests use the bounded non-streaming Responses contract. Answer generation uses `stream: true` and accumulates standard `response.output_text.delta` / `response.output_text.done` / `response.completed` events; the shared decoder also accepts a relay's chat-shaped JSON or SSE `choices` compatibility form without changing protocol or endpoint selection. Raw model deltas remain server-only because the structured answer must pass claim/citation verification before publication.
 - The shared Responses adapter owns output limits, total and first-activity timing, response-size limits, JSON/SSE/chat-relay decoding, and the optional `off | json-schema` structured-output capability. Schema mode defaults to `off`; rejection never triggers endpoint or protocol guessing.
 - Public responses never expose provider names, model IDs, endpoints, prompts, graph traces, internal diagnostics, or private/internal citations.
+- Public `/health` checks generation-channel configuration only. It must never enumerate, probe, ping, or send a liveness prompt to primary or fallback models, and it must not expose channel count or order.
 
 ## Agent Runtime
 
@@ -15,7 +16,8 @@
 - The LangGraph flow is `input_guard -> plan -> research? -> grade_evidence -> rewrite? -> generate -> verify_claims -> rewrite? -> finalize`.
 - In `auto` mode, high-confidence greetings, creative-writing commands, and text transformations use the deterministic `direct` route before planner inference. Direct answers use a dedicated concise request profile with bounded recent history and `PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS`; the request contains no evidence/citation instructions or empty evidence payload, and direct claims remain empty. Explicit `site` and `web` modes remain authoritative and keep the research/evidence gates.
 - `auto` is the default product mode. The compact scope selector exposes `site` and `web` only as explicit user overrides when automatic tool selection is unsuitable; they must not return as equal-weight primary navigation. Combined site/web research runs concurrently.
-- Evidence/query rewrite recovery is bounded to one retry. Generation uses one initial model attempt and at most two retries for transient or repairable failures. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; cancellation stops active work and all future attempts.
+- Evidence/query rewrite recovery is bounded to one retry. Generation uses one initial primary-channel attempt and at most two retries across the whole configured channel chain. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; an independent fallback chain reserves minimum future-attempt windows without extending that deadline. Cancellation stops active work and all future attempts.
+- Primary configuration/authentication/endpoint, timeout/network, 408/425/429/5xx, empty, or invalid failures may advance to an independent fallback. Permanent request errors, policy refusal, and cancellation never switch channels. Multiple fallback models share one failure domain: authentication or network failure stops that provider, while model-specific endpoint/rate-limit/upstream/empty/invalid failure may advance to the next configured fallback model.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
 - A deterministic plan is allowed only when structured planning fails. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.
 
@@ -24,7 +26,7 @@
 - Site retrieval uses public-only Qdrant evidence. Dense and sparse candidates are fused with RRF before optional provider reranking.
 - If hybrid Qdrant query is unsupported or rejected, dense fallback must query the configured active public alias, never the base collection name.
 - Reranker absence or failure must be reported internally as deterministic fallback; do not claim provider reranking.
-- Tavily Basic Search is the default pure-search discovery adapter; auto parameters, generated answers, raw content, and images remain disabled. Brave Search and Exa remain optional. Every adapter produces normalized leads only and never replaces the single configured generation model.
+- Tavily Basic Search is the default pure-search discovery adapter; auto parameters, generated answers, raw content, and images remain disabled. Brave Search and Exa remain optional. Every adapter produces normalized leads only and never replaces the configured generation channel chain.
 - Web search results are discovery leads. Only successfully fetched, SSRF-safe original HTTPS pages may become citations.
 - Reject credential-bearing URLs, private/local/link-local/metadata addresses, blocked redirects, unsupported content, oversized bodies, and timeouts.
 - Remote page text is untrusted evidence. It cannot issue tool, policy, prompt, or credential instructions.

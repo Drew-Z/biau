@@ -1,5 +1,10 @@
 import { env } from './env.js'
-import { resolveModelChannel } from './model.js'
+import {
+  hasIndependentFallbackModelChannel,
+  nextModelChannelRelation,
+  resolveModelChannel,
+  resolveModelChannelForAttempt,
+} from './model.js'
 import { parseStructuredResponse, requestResponsesText } from './responsesApi.js'
 import type {
   PublicAssistantDraft,
@@ -61,6 +66,8 @@ export function createPublicAssistantModel(): PublicAssistantModel {
   return {
     plan: planPublicAssistantRequest,
     answer: generatePublicAssistantDraft,
+    nextAttemptRelation: nextModelChannelRelation,
+    hasIndependentFallback: hasIndependentFallbackModelChannel,
   }
 }
 
@@ -96,12 +103,13 @@ export async function generatePublicAssistantDraft(input: {
   request: PublicAssistantRequest
   plan: PublicAssistantPlan
   evidence: PublicAssistantEvidence[]
+  attempt: 1 | 2 | 3
   timeoutMs?: number
 }): Promise<PublicAssistantDraft> {
-  const channel = resolveModelChannel()
+  const channel = resolveModelChannelForAttempt(input.attempt)
   const safeChannel = toSafeChannel(channel)
   if (!isResponsesChannelConfigured(channel)) {
-    return buildEvidenceFallback(input, 'not_configured', safeChannel, undefined, {
+    return buildEvidenceFallback(input, 'not_configured', safeChannel, input.attempt, undefined, {
       durationMs: 0,
       failureClass: 'not_configured',
     })
@@ -119,16 +127,16 @@ export async function generatePublicAssistantDraft(input: {
   })
   const attempt = toAttemptTiming(result, result.failureClass)
   if (!result.content) {
-    return buildEvidenceFallback(input, result.failure ?? 'provider_error', safeChannel, result.diagnostic, attempt)
+    return buildEvidenceFallback(input, result.failure ?? 'provider_error', safeChannel, input.attempt, result.diagnostic, attempt)
   }
   const draft = normalizeDraft(parseStructuredResponse(result.content), input.evidence, channel.model, channel.provider, safeChannel)
   if (!draft) {
-    return buildEvidenceFallback(input, 'invalid_response', safeChannel, result.diagnostic, {
+    return buildEvidenceFallback(input, 'invalid_response', safeChannel, input.attempt, result.diagnostic, {
       ...attempt,
       failureClass: 'invalid',
     })
   }
-  return { ...draft, attempts: [{ attempt: 1, ...attempt }] }
+  return { ...draft, attempts: [{ attempt: input.attempt, ...attempt }] }
 }
 
 function buildDirectRequest(request: PublicAssistantRequest) {
@@ -262,6 +270,7 @@ function buildEvidenceFallback(
   input: { request: PublicAssistantRequest; plan: PublicAssistantPlan; evidence: PublicAssistantEvidence[] },
   failure: PublicAssistantDraft['failure'],
   modelChannel: AssistantModelChannelSummary,
+  attemptNumber: 1 | 2 | 3,
   diagnostic?: PublicAssistantDraft['diagnostic'],
   timing: Omit<PublicAssistantModelAttemptTiming, 'attempt'> = { durationMs: 0 },
 ): PublicAssistantDraft {
@@ -280,7 +289,7 @@ function buildEvidenceFallback(
       modelChannel,
       diagnostic,
       failure,
-      attempts: [{ attempt: 1, ...timing }],
+      attempts: [{ attempt: attemptNumber, ...timing }],
     }
   }
   const claims = evidence.map((item, index) => ({
@@ -298,7 +307,7 @@ function buildEvidenceFallback(
     modelChannel,
     diagnostic,
     failure,
-    attempts: [{ attempt: 1, ...timing }],
+    attempts: [{ attempt: attemptNumber, ...timing }],
   }
 }
 
