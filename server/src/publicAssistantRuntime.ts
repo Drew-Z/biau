@@ -95,6 +95,6 @@ export interface PublicAssistantModel {
     attempt: 1 | 2 | 3
     timeoutMs?: number
   }): Promise<PublicAssistantDraft>
-  nextAttemptRelation?(attempt: 1 | 2 | 3): PublicAssistantModelRetryRelation | null
-  hasIndependentFallback?(): boolean
+  nextAttemptRelation?(attempt: 1 | 2 | 3, request?: PublicAssistantRequest): PublicAssistantModelRetryRelation | null
+  hasIndependentFallback?(request?: PublicAssistantRequest): boolean
 }

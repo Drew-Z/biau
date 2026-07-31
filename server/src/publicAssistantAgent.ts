@@ -228,7 +228,7 @@ async function generateNode(state: PublicAssistantState) {
     })
     attempts.push(timing)
     draft = { ...nextDraft, attempts: [...attempts] }
-    const nextRelation = state.dependencies.model.nextAttemptRelation?.(attempt) ?? 'same-channel'
+    const nextRelation = state.dependencies.model.nextAttemptRelation?.(attempt, state.request) ?? 'same-channel'
     if (!isRetryableModelDraft(nextDraft, nextRelation) || attempt === 3 || !hasRetryBudget(state, attempt)) break
   }
   if (!draft) {
@@ -257,7 +257,8 @@ function isRetryableModelDraft(draft: PublicAssistantDraft, relation: PublicAssi
   if (draft.failure !== 'provider_error') return false
   if (draft.diagnostic?.kind === 'http_status') {
     const status = draft.diagnostic.httpStatus ?? 0
-    if (status === 400 || status === 409 || status === 413 || status === 422) return false
+    if (status === 400 || status === 422) return relation === 'same-failure-domain'
+    if (status === 409 || status === 413) return false
     if (status === 401 || status === 403) return relation === 'independent'
     if (status === 404 || status === 405) return relation !== 'same-channel'
     return (status > 0 && status < 400) || status === 408 || status === 425 || status === 429 || status >= 500
@@ -280,7 +281,7 @@ function hasAttemptBudget(state: PublicAssistantState) {
 
 function remainingAttemptTimeoutMs(state: PublicAssistantState, attempt: 1 | 2 | 3) {
   const remainingMs = remainingBudgetMs(state)
-  if (!state.dependencies.model.hasIndependentFallback?.()) {
+  if (!state.dependencies.model.hasIndependentFallback?.(state.request)) {
     return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs))
   }
   const futureAttempts = 3 - attempt

@@ -117,6 +117,8 @@ interaction on mobile, but it must remain available.
 
 Keep previous/next Revision commands in the answer action row as fixed-size Lucide icon buttons with accessible names, tooltips, and a stable `n / total` counter. Previewing a sibling Revision changes only the displayed answer snapshot; it does not silently activate a Branch.
 
+The public assistant fullscreen surface uses one centered content column, with only the message region owning vertical scrolling and the composer remaining in the panel grid. History is a modal layer inside that panel: its backdrop and drawer use an opaque surface and an isolated stacking context so the underlying transcript cannot bleed through. Native scope and branch selects must set explicit theme-aware `select`/`option` colors; browser defaults must not produce a white popup with light text.
+
 When a visitor previews a non-active Revision, expose a clear `Continue from this version` command. Existing Branch selection is a separate bounded menu/control, and both operations hydrate the authoritative path returned by the service rather than assembling ancestry in the component.
 
 Branch options include their loaded logical-turn count. When the bounded history projection reports omitted Branches or answer Revisions, keep that limitation adjacent to the Branch control and state that Revision counts cover only currently loaded content; do not present a truncated `n / total` value as the complete history.

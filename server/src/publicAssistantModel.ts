@@ -1,9 +1,11 @@
 import { env } from './env.js'
 import {
-  hasIndependentFallbackModelChannel,
-  nextModelChannelRelation,
+  modelChannelRelation,
+  recordModelChannelOutcome,
   resolveModelChannel,
+  resolveAdaptiveModelChannels,
   resolveModelChannelForAttempt,
+  type AssistantModelChannelConfig,
 } from './model.js'
 import { parseStructuredResponse, requestResponsesText } from './responsesApi.js'
 import type {
@@ -63,20 +65,54 @@ const DIRECT_TRANSFORMATION_TASK_PATTERN = new RegExp(
 )
 
 export function createPublicAssistantModel(): PublicAssistantModel {
+  const requestChannels = new WeakMap<PublicAssistantRequest, AssistantModelChannelConfig[]>()
+  const channelsFor = (request: PublicAssistantRequest) => {
+    const existing = requestChannels.get(request)
+    if (existing) return existing
+    const resolved = resolveAdaptiveModelChannels()
+    requestChannels.set(request, resolved)
+    return resolved
+  }
   return {
-    plan: planPublicAssistantRequest,
-    answer: generatePublicAssistantDraft,
-    nextAttemptRelation: nextModelChannelRelation,
-    hasIndependentFallback: hasIndependentFallbackModelChannel,
+    plan(request) {
+      return planPublicAssistantRequest(request, channelsFor(request)[0])
+    },
+    async answer(input) {
+      const channels = channelsFor(input.request)
+      const channel = channels[Math.min(input.attempt - 1, channels.length - 1)] ?? resolveModelChannel()
+      const draft = await generatePublicAssistantDraft(input, channel)
+      const timing = draft.attempts?.[0]
+      recordModelChannelOutcome(channel, {
+        ok: !draft.failure,
+        durationMs: timing?.durationMs,
+        firstActivityMs: timing?.firstActivityMs,
+        failure: draft.failure,
+        diagnosticKind: draft.diagnostic?.kind,
+        httpStatus: draft.diagnostic?.httpStatus,
+      })
+      return draft
+    },
+    nextAttemptRelation(attempt, request) {
+      if (!request || attempt === 3) return attempt === 3 ? null : 'same-channel'
+      const channels = channelsFor(request)
+      const current = channels[Math.min(attempt - 1, channels.length - 1)]
+      const next = channels[Math.min(attempt, channels.length - 1)]
+      return current && next ? modelChannelRelation(current, next) : null
+    },
+    hasIndependentFallback(request) {
+      return request ? channelsFor(request).length > 1 : resolveAdaptiveModelChannels().length > 1
+    },
   }
 }
 
-export async function planPublicAssistantRequest(request: PublicAssistantRequest): Promise<PublicAssistantPlan> {
+export async function planPublicAssistantRequest(
+  request: PublicAssistantRequest,
+  channel = resolveModelChannel(),
+): Promise<PublicAssistantPlan> {
   if (request.mode === 'site') return forcedPlan('site', request.question)
   if (request.mode === 'web') return forcedPlan('web', request.question)
   if (shouldUseDirectPublicAssistantRoute(request)) return directPlan()
 
-  const channel = resolveModelChannel()
   if (!isResponsesChannelConfigured(channel)) return buildFallbackPlan(request)
   const result = await requestResponsesText({
     channel,
@@ -105,8 +141,7 @@ export async function generatePublicAssistantDraft(input: {
   evidence: PublicAssistantEvidence[]
   attempt: 1 | 2 | 3
   timeoutMs?: number
-}): Promise<PublicAssistantDraft> {
-  const channel = resolveModelChannelForAttempt(input.attempt)
+}, channel = resolveModelChannelForAttempt(input.attempt)): Promise<PublicAssistantDraft> {
   const safeChannel = toSafeChannel(channel)
   if (!isResponsesChannelConfigured(channel)) {
     return buildEvidenceFallback(input, 'not_configured', safeChannel, input.attempt, undefined, {

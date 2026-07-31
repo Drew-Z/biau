@@ -302,60 +302,62 @@ async function sameFailureDomainNetworkStopsCheck() {
 }
 
 async function sameFailureDomainModelFailureAdvancesCheck() {
-  const attempts: number[] = []
-  const dependencies: PublicAssistantAgentDependencies = {
-    model: {
-      async plan() {
-        return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
-      },
-      hasIndependentFallback() {
-        return true
-      },
-      nextAttemptRelation(attempt) {
-        return attempt === 1 ? 'independent' : attempt === 2 ? 'same-failure-domain' : null
-      },
-      async answer(input) {
-        attempts.push(input.attempt)
-        if (input.attempt === 3) {
+  for (const fallbackStatus of [400, 422]) {
+    const attempts: number[] = []
+    const dependencies: PublicAssistantAgentDependencies = {
+      model: {
+        async plan() {
+          return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+        },
+        hasIndependentFallback() {
+          return true
+        },
+        nextAttemptRelation(attempt) {
+          return attempt === 1 ? 'independent' : attempt === 2 ? 'same-failure-domain' : null
+        },
+        async answer(input) {
+          attempts.push(input.attempt)
+          if (input.attempt === 3) {
+            return {
+              answer: '第二个备用模型完成回答。',
+              status: 'answered',
+              claims: [],
+              suggestions: [],
+              model: 'fallback-b',
+              provider: 'fallback-provider',
+            }
+          }
           return {
-            answer: '第二个备用模型完成回答。',
-            status: 'answered',
+            answer: '模型暂时不可用。',
+            status: 'degraded',
             claims: [],
             suggestions: [],
-            model: 'fallback-b',
-            provider: 'fallback-provider',
+            model: input.attempt === 1 ? 'primary' : 'fallback-a',
+            provider: input.attempt === 1 ? 'primary-provider' : 'fallback-provider',
+            failure: 'provider_error',
+            diagnostic: {
+              kind: 'http_status',
+              httpStatus: input.attempt === 1 ? 503 : fallbackStatus,
+              attemptedEndpoints: 1,
+              timeoutMs: 100,
+            },
           }
-        }
-        return {
-          answer: '模型暂时不可用。',
-          status: 'degraded',
-          claims: [],
-          suggestions: [],
-          model: input.attempt === 1 ? 'primary' : 'fallback-a',
-          provider: input.attempt === 1 ? 'primary-provider' : 'fallback-provider',
-          failure: 'provider_error',
-          diagnostic: {
-            kind: 'http_status',
-            httpStatus: input.attempt === 1 ? 503 : 404,
-            attemptedEndpoints: 1,
-            timeoutMs: 100,
-          },
-        }
+        },
       },
-    },
-    async retrieveSite() {
-      return { evidence: [] }
-    },
-    async researchWeb() {
-      return { evidence: [], available: true }
-    },
-    async sleep() {
-      return undefined
-    },
+      async retrieveSite() {
+        return { evidence: [] }
+      },
+      async researchWeb() {
+        return { evidence: [], available: true }
+      },
+      async sleep() {
+        return undefined
+      },
+    }
+    const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
+    assert.deepEqual(attempts, [1, 2, 3], `same-provider ${fallbackStatus} should advance to the next configured model`)
+    assert.deepEqual(response.meta?.recovery, { state: 'recovered', attempts: 3 })
   }
-  const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
-  assert.deepEqual(attempts, [1, 2, 3])
-  assert.deepEqual(response.meta?.recovery, { state: 'recovered', attempts: 3 })
 }
 
 async function permanentModelFailureDoesNotRetryCheck() {

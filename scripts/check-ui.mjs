@@ -2767,6 +2767,27 @@ if ((await editQuestionButton.count()) !== 1) {
   await publicAssistantPage.getByRole('textbox', { name: '编辑问题内容' }).fill('修改后的历史问题')
   await publicAssistantPage.locator('.public-assistant__modes > summary').click()
   await publicAssistantPage.getByLabel('资料范围').selectOption('web')
+  const scopeSelectorAppearance = await publicAssistantPage.evaluate(() => {
+    const select = document.querySelector('.public-assistant__modes select')
+    const option = select?.querySelector('option')
+    if (!(select instanceof HTMLSelectElement) || !(option instanceof HTMLOptionElement)) return null
+    const selectStyle = getComputedStyle(select)
+    const optionStyle = getComputedStyle(option)
+    return {
+      colorScheme: selectStyle.colorScheme,
+      optionColor: optionStyle.color,
+      optionBackground: optionStyle.backgroundColor,
+    }
+  })
+  if (
+    !scopeSelectorAppearance ||
+    !/dark|light/u.test(scopeSelectorAppearance.colorScheme) ||
+    scopeSelectorAppearance.optionBackground === 'rgba(0, 0, 0, 0)' ||
+    scopeSelectorAppearance.optionBackground === 'transparent' ||
+    scopeSelectorAppearance.optionColor === scopeSelectorAppearance.optionBackground
+  ) {
+    failures.push('/blog public assistant edit: native scope options should use an explicit readable theme surface')
+  }
   await publicAssistantPage.getByRole('button', { name: '发送修改' }).click()
   await publicAssistantPage.waitForFunction(() => {
     const user = document.querySelector('.public-assistant__message.is-user p')
@@ -2834,6 +2855,34 @@ await publicAssistantPage.waitForFunction(() => {
 if (!(await historyDialog.evaluate((element) => element.contains(document.activeElement)))) {
   failures.push('/blog public assistant: history drawer should receive focus when it opens')
 }
+const historyLayerAppearance = await publicAssistantPage.evaluate(() => {
+  const panel = document.querySelector('.public-assistant__panel')
+  const backdrop = document.querySelector('.public-assistant__history-backdrop')
+  const history = document.querySelector('.public-assistant__history')
+  if (!(panel instanceof HTMLElement) || !(backdrop instanceof HTMLElement) || !(history instanceof HTMLElement)) return null
+  const panelRect = panel.getBoundingClientRect()
+  const historyRect = history.getBoundingClientRect()
+  const historyStyle = getComputedStyle(history)
+  const colorParts = historyStyle.backgroundColor.match(/[\d.]+/gu)?.map(Number) ?? []
+  return {
+    backgroundAlpha: colorParts.length === 4 ? colorParts[3] : 1,
+    backdropZ: Number.parseInt(getComputedStyle(backdrop).zIndex, 10),
+    historyZ: Number.parseInt(historyStyle.zIndex, 10),
+    isolation: historyStyle.isolation,
+    containment: historyStyle.contain,
+    insidePanel: historyRect.left >= panelRect.left - 1 && historyRect.right <= panelRect.right + 1,
+  }
+})
+if (
+  !historyLayerAppearance ||
+  historyLayerAppearance.backgroundAlpha < 0.999 ||
+  historyLayerAppearance.historyZ <= historyLayerAppearance.backdropZ ||
+  historyLayerAppearance.isolation !== 'isolate' ||
+  !historyLayerAppearance.containment.includes('paint') ||
+  !historyLayerAppearance.insidePanel
+) {
+  failures.push('/blog public assistant: history drawer should be an opaque isolated layer above its backdrop')
+}
 await publicAssistantPage.keyboard.press('Escape')
 await publicAssistantPage.waitForFunction(() => {
   const history = document.querySelector('.public-assistant__history')
@@ -2878,6 +2927,47 @@ if (!(await publicAssistantPage.locator('.public-assistant').evaluate((element) 
 }
 if ((await publicAssistantPage.evaluate(() => getComputedStyle(document.body).overflow)) !== 'hidden') {
   failures.push('/blog public assistant: desktop fullscreen should lock document scrolling')
+}
+const desktopFullscreenLayout = await publicAssistantPage.evaluate(() => {
+  const panel = document.querySelector('.public-assistant__panel')
+  const messages = document.querySelector('.public-assistant__messages')
+  const suggestions = document.querySelector('.public-assistant__suggestions')
+  const composer = document.querySelector('.public-assistant__composer')
+  const content = [
+    document.querySelector('.public-assistant__header'),
+    document.querySelector('.public-assistant__hint'),
+    document.querySelector('.public-assistant__modes'),
+    messages,
+    suggestions,
+    composer,
+  ]
+  if (!(panel instanceof HTMLElement) || !(messages instanceof HTMLElement) || !(suggestions instanceof HTMLElement) || !(composer instanceof HTMLElement) || content.some((item) => !(item instanceof HTMLElement))) return null
+  const panelRect = panel.getBoundingClientRect()
+  const rects = content.map((item) => item.getBoundingClientRect())
+  const messagesRect = messages.getBoundingClientRect()
+  const suggestionsRect = suggestions.getBoundingClientRect()
+  const composerRect = composer.getBoundingClientRect()
+  return {
+    panelWidth: panelRect.width,
+    contentWidths: rects.map((rect) => rect.width),
+    contentLefts: rects.map((rect) => rect.left),
+    messagesBottom: messagesRect.bottom,
+    suggestionsTop: suggestionsRect.top,
+    composerBottom: composerRect.bottom,
+    panelBottom: panelRect.bottom,
+    messagesOverflowY: getComputedStyle(messages).overflowY,
+  }
+})
+if (
+  !desktopFullscreenLayout ||
+  Math.max(...desktopFullscreenLayout.contentWidths) > 902 ||
+  Math.max(...desktopFullscreenLayout.contentLefts) - Math.min(...desktopFullscreenLayout.contentLefts) > 2 ||
+  desktopFullscreenLayout.panelWidth - Math.max(...desktopFullscreenLayout.contentWidths) < 100 ||
+  desktopFullscreenLayout.messagesBottom > desktopFullscreenLayout.suggestionsTop + 1 ||
+  desktopFullscreenLayout.composerBottom > desktopFullscreenLayout.panelBottom + 1 ||
+  desktopFullscreenLayout.messagesOverflowY !== 'auto'
+) {
+  failures.push('/blog public assistant: desktop fullscreen should keep one centered content column and one isolated message scroller')
 }
 await publicAssistantPage.getByRole('button', { name: '退出全屏' }).click()
 const expectedInitialSuggestions = getPublicAssistantSuggestions('/blog').slice(0, 3)

@@ -4874,13 +4874,20 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   max-height: calc(100dvh - 104px);
   padding: var(--space-16);
   display: grid;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
   gap: var(--space-10, 10px);
   overflow: hidden;
+  isolation: isolate;
+}
+
+.public-assistant__panel:has(.public-assistant__branch-picker) {
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
 }
 
 .public-assistant.is-fullscreen .public-assistant__panel {
-  width: min(1080px, 100vw);
+  --public-assistant-content-width: min(900px, 100%);
+  width: min(1180px, 100vw);
   height: 100%;
   max-height: none;
   padding: clamp(14px, 2vw, 24px);
@@ -4889,12 +4896,14 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   box-shadow: 0 0 72px rgb(var(--flow-ui-shadow-rgb) / 0.2);
 }
 
+.public-assistant.is-fullscreen .public-assistant__header,
 .public-assistant.is-fullscreen .public-assistant__hint,
 .public-assistant.is-fullscreen .public-assistant__branch-picker,
+.public-assistant.is-fullscreen .public-assistant__modes,
 .public-assistant.is-fullscreen .public-assistant__messages,
 .public-assistant.is-fullscreen .public-assistant__suggestions,
 .public-assistant.is-fullscreen .public-assistant__composer {
-  width: min(760px, 100%);
+  width: var(--public-assistant-content-width);
   justify-self: center;
 }
 
@@ -5008,10 +5017,22 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   min-height: 32px;
   padding: 0 22px 0 2px;
   color: var(--ink);
-  background: transparent;
+  background: color-mix(in oklch, var(--panel-strong) 72%, transparent);
   border: 0;
   font: 800 12px/1 var(--font-ui);
   cursor: pointer;
+  color-scheme: dark;
+}
+
+.public-assistant__modes option,
+.public-assistant__branch-picker option {
+  color: var(--ink);
+  background: rgb(var(--flow-ui-card-rgb, 22 27 48));
+}
+
+:root.light-theme .public-assistant__modes select,
+:root.light-theme .public-assistant__branch-picker select {
+  color-scheme: light;
 }
 
 .public-assistant__modes select:disabled {
@@ -5096,6 +5117,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   font: 700 12px/1.2 var(--font-ui);
   text-overflow: ellipsis;
   cursor: pointer;
+  color-scheme: dark;
 }
 
 .public-assistant__branch-picker select:disabled {
@@ -5285,12 +5307,20 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 
 .public-assistant__message.is-user {
   width: min(86%, 320px);
-  align-self: flex-end;
+  justify-self: end;
   background: color-mix(in oklch, var(--blue) 15%, var(--panel-strong));
 }
 
 .public-assistant__message.is-user.is-editing {
   width: min(100%, 420px);
+}
+
+.public-assistant.is-fullscreen .public-assistant__message.is-user {
+  width: min(72%, 560px);
+}
+
+.public-assistant.is-fullscreen .public-assistant__message.is-user.is-editing {
+  width: min(100%, 720px);
 }
 
 .public-assistant__user-message-actions {
@@ -5329,8 +5359,10 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__question-editor {
   min-width: 0;
   width: 100%;
+  max-width: 100%;
   display: grid;
   gap: var(--space-8);
+  overflow: hidden;
 }
 
 .public-assistant__question-editor textarea {
@@ -5503,6 +5535,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   background: rgb(var(--flow-ui-shadow-rgb) / 0.28);
   border: 0;
   cursor: pointer;
+  isolation: isolate;
 }
 
 .public-assistant__history {
@@ -5517,9 +5550,11 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   gap: var(--space-12, 12px);
   overflow: hidden;
   color: var(--ink);
-  background: color-mix(in oklch, var(--panel) 96%, var(--bg));
+  background: rgb(var(--flow-ui-panel-rgb, 18 22 40));
   border-right: 1px solid var(--flow-ui-border-strong);
   box-shadow: 18px 0 44px rgb(var(--flow-ui-shadow-rgb) / 0.18);
+  isolation: isolate;
+  contain: layout paint;
 }
 
 .public-assistant__history > header {
@@ -7294,6 +7329,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   }
 
   .public-assistant.is-fullscreen .public-assistant__panel {
+    --public-assistant-content-width: 100%;
     width: 100vw;
     height: 100%;
     padding:
@@ -7366,6 +7402,11 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 
   .public-assistant__question-editor-actions button {
     flex: 1 1 96px;
+  }
+
+  .public-assistant.is-fullscreen .public-assistant__message.is-user,
+  .public-assistant.is-fullscreen .public-assistant__message.is-user.is-editing {
+    width: min(100%, 520px);
   }
 
   .public-assistant__revision-nav {

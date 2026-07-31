@@ -9,6 +9,9 @@ import {
 import {
   hasConfiguredModelChannel,
   nextModelChannelRelation,
+  recordModelChannelOutcome,
+  resetAdaptiveModelChannelRouting,
+  resolveAdaptiveModelChannels,
   resolveModelChannelForAttempt,
   resolveModelChannels,
 } from '../src/model.js'
@@ -274,6 +277,35 @@ try {
   assert.equal(nextModelChannelRelation(1), 'independent')
   assert.equal(nextModelChannelRelation(2), 'same-failure-domain')
   assert.equal(nextModelChannelRelation(3), null)
+
+  resetAdaptiveModelChannelRouting()
+  const routingProbeCount = observedBodies.length
+  const initialOrder = resolveAdaptiveModelChannels(1_000)
+  assert.deepEqual(initialOrder.map((channel) => channel.model), [
+    'fixture-responses-model',
+    'fixture-fallback-a',
+    'fixture-fallback-b',
+  ])
+  recordModelChannelOutcome(initialOrder[0], {
+    ok: false,
+    at: 1_000,
+    failure: 'provider_error',
+    diagnosticKind: 'http_status',
+    httpStatus: 503,
+  })
+  assert.deepEqual(resolveAdaptiveModelChannels(2_000).map((channel) => channel.model), [
+    'fixture-fallback-a',
+    'fixture-fallback-b',
+  ], 'an open primary circuit should be omitted while healthy fallbacks exist')
+  recordModelChannelOutcome(initialOrder[1], { ok: true, at: 2_000, firstActivityMs: 80 })
+  assert.equal(resolveAdaptiveModelChannels(2_100)[0]?.model, 'fixture-fallback-a')
+  assert.deepEqual(resolveAdaptiveModelChannels(100_000).map((channel) => channel.model), [
+    'fixture-responses-model',
+    'fixture-fallback-a',
+    'fixture-fallback-b',
+  ], 'cooldown expiry should restore the configured quality order for a real half-open request')
+  assert.equal(observedBodies.length, routingProbeCount, 'adaptive ranking must not issue provider probes')
+  resetAdaptiveModelChannelRouting()
 
   const fallbackDraft = await generatePublicAssistantDraft({
     request: { ...request, question: '请生成一首乡愁的诗句' },
