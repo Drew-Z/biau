@@ -9,6 +9,8 @@ export type PublicAssistantOperationalFailureClass =
   | 'access_denied'
   | 'rate_limited'
   | 'model_unavailable'
+  | 'request_rejected'
+  | 'provider_unavailable'
 
 export type PublicAssistantRecoveryDurationBucket =
   | 'under_1s'
@@ -58,6 +60,8 @@ export function classifyOperationalFailure(
   if (status === 401 || status === 403) return 'access_denied'
   if (status === 429) return 'rate_limited'
   if (status === 404 || status === 405) return 'model_unavailable'
+  if (status === 400 || status === 409 || status === 422) return 'request_rejected'
+  if (status >= 500 && status <= 599) return 'provider_unavailable'
   return 'upstream'
 }
 

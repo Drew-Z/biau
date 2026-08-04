@@ -76,7 +76,9 @@ assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 401, 
 assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 403, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'access_denied')
 assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 429, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'rate_limited')
 assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 404, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'model_unavailable')
-assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 503, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'upstream')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 400, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'request_rejected')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 503, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'provider_unavailable')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 418, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'upstream')
 const safeRecoveryRecord = buildPublicAssistantRecoveryLogRecord({
   recovery: { state: 'degraded', attempts: 1, failureClass: 'upstream' },
   diagnostic: { kind: 'http_status', httpStatus: 403, attemptedEndpoints: 1, timeoutMs: 1_000 },

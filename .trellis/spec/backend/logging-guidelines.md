@@ -33,10 +33,12 @@ If a public-assistant recovery event must be logged, allow only a fixed event na
 - `state` is only `recovered` or `degraded`.
 - `attempts` is bounded to `1`, `2`, or `3`.
 - `duration_bucket` is one of `under_1s`, `1s_to_5s`, `5s_to_15s`, `15s_to_30s`, or `30s_or_more`; exact latency is forbidden.
-- `failure_class` may use the public recovery classes plus `access_denied`, `rate_limited`, and `model_unavailable`.
+- `failure_class` may use the public recovery classes plus `access_denied`, `rate_limited`, `model_unavailable`, `request_rejected`, and `provider_unavailable`.
 - `access_denied` means the upstream rejected the configured credential or deployment origin. Check the server-side credential pairing and provider egress policy without logging either value.
 - `rate_limited` means the provider rejected the real request because of quota or rate policy. The application may continue only according to the bounded retry contract.
 - `model_unavailable` means the selected Responses endpoint/model route was not available. Confirm the configured model ID against an approved catalog read; do not probe models with prompts.
+- `request_rejected` means a bounded `400`, `409`, or `422` response rejected the request contract; inspect the approved provider protocol and payload shape without logging either.
+- `provider_unavailable` means the relay/provider returned a `5xx` response; use platform status and provider dashboards before considering a retry.
 - `upstream` intentionally groups all remaining HTTP/provider failures. Diagnose it with provider-side dashboards or an approved real task, never by widening production logs.
 
 The mapper may inspect exact status in memory, but the record must never contain that status. Successful one-attempt requests and blocked/cancelled requests do not emit this recovery event.
