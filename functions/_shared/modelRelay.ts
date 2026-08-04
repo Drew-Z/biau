@@ -12,6 +12,13 @@ interface ModelRelayDependencies {
   cancelTimeout?(handle: ReturnType<typeof setTimeout>): void
 }
 
+type RelayFailure =
+  | 'provider_rejected'
+  | 'upstream_unreachable'
+  | 'invalid_response'
+  | 'response_too_large'
+  | 'timeout'
+
 const MAX_REQUEST_BYTES = 64_000
 const MAX_RESPONSE_BYTES = 512_000
 const MAX_ALLOWED_MODELS = 3
@@ -71,6 +78,7 @@ export async function relayResponsesRequest(
       return relayJson(
         { error: 'model-relay-upstream-rejected' },
         upstream.status >= 400 && upstream.status <= 599 ? upstream.status : 502,
+        'provider_rejected',
       )
     }
 
@@ -83,20 +91,22 @@ export async function relayResponsesRequest(
     }
     if (!contentType.includes('application/json')) {
       await upstream.body?.cancel().catch(() => undefined)
-      return relayJson({ error: 'model-relay-upstream-invalid-response' }, 502)
+      return relayJson({ error: 'model-relay-upstream-invalid-response' }, 502, 'invalid_response')
     }
     const responseBody = await readBoundedBody(upstream.body, MAX_RESPONSE_BYTES)
-    if (!responseBody.ok) return relayJson({ error: 'model-relay-upstream-response-too-large' }, 502)
+    if (!responseBody.ok) {
+      return relayJson({ error: 'model-relay-upstream-response-too-large' }, 502, 'response_too_large')
+    }
     return new Response(responseBody.text, {
       status: upstream.status,
       headers: relayHeaders('application/json; charset=utf-8'),
     })
   } catch (error) {
-    if (timedOut) return relayJson({ error: 'model-relay-upstream-timeout' }, 504)
+    if (timedOut) return relayJson({ error: 'model-relay-upstream-timeout' }, 504, 'timeout')
     if (request.signal.aborted || (error instanceof DOMException && error.name === 'AbortError')) {
       return relayJson({ error: 'model-relay-request-cancelled' }, 499)
     }
-    return relayJson({ error: 'model-relay-upstream-unreachable' }, 502)
+    return relayJson({ error: 'model-relay-upstream-unreachable' }, 502, 'upstream_unreachable')
   } finally {
     if (!streamHandedOff) cleanup()
   }
@@ -245,19 +255,20 @@ async function readBoundedBody(body: ReadableStream<Uint8Array> | null, maximumB
   return { ok: true as const, text: new TextDecoder().decode(merged) }
 }
 
-function relayJson(payload: unknown, status: number) {
+function relayJson(payload: unknown, status: number, relayFailure?: RelayFailure) {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: relayHeaders('application/json; charset=utf-8'),
+    headers: relayHeaders('application/json; charset=utf-8', 'no-store', relayFailure),
   })
 }
 
-function relayHeaders(contentType: string, cacheControl = 'no-store') {
+function relayHeaders(contentType: string, cacheControl = 'no-store', relayFailure?: RelayFailure) {
   return {
     'Content-Type': contentType,
     'Cache-Control': cacheControl,
     'X-Content-Type-Options': 'nosniff',
     'X-Accel-Buffering': 'no',
+    ...(relayFailure ? { 'X-BIAU-Relay-Failure': relayFailure } : {}),
   }
 }
 

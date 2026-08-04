@@ -79,6 +79,7 @@ const upstreamRejected = await relayResponsesRequest(request(payload()), relayEn
   },
 })
 assertStatus(upstreamRejected, 403, 'upstream status must reach the trusted Render caller')
+assertHeader(upstreamRejected, 'provider_rejected', 'upstream rejection classification')
 const rejectedText = await upstreamRejected.text()
 if (rejectedText.includes('private provider body') || !rejectedText.includes('model-relay-upstream-rejected')) {
   throw new Error('relay must redact upstream error bodies')
@@ -90,6 +91,7 @@ const invalidContent = await relayResponsesRequest(request(payload()), relayEnv,
   },
 })
 assertStatus(invalidContent, 502, 'invalid upstream content type')
+assertHeader(invalidContent, 'invalid_response', 'invalid upstream content classification')
 
 const tooLarge = await relayResponsesRequest(request(payload()), relayEnv, {
   async fetch() {
@@ -100,6 +102,15 @@ const tooLarge = await relayResponsesRequest(request(payload()), relayEnv, {
   },
 })
 assertStatus(tooLarge, 502, 'oversized upstream JSON response')
+assertHeader(tooLarge, 'response_too_large', 'oversized upstream response classification')
+
+const unreachable = await relayResponsesRequest(request(payload()), relayEnv, {
+  async fetch() {
+    throw new TypeError('fixture-network-error')
+  },
+})
+assertStatus(unreachable, 502, 'unreachable upstream')
+assertHeader(unreachable, 'upstream_unreachable', 'unreachable upstream classification')
 
 let upstreamCancelled = false
 const sseResponse = await relayResponsesRequest(request(payload({ stream: true })), relayEnv, {
@@ -133,9 +144,15 @@ const timeoutResponse = await relayResponsesRequest(request(payload()), { ...rel
   },
 })
 assertStatus(timeoutResponse, 504, 'relay timeout')
+assertHeader(timeoutResponse, 'timeout', 'relay timeout classification')
 
 console.log('Cloudflare fixed-upstream model relay contracts passed.')
 
 function assertStatus(response, expected, label) {
   if (response.status !== expected) throw new Error(`${label}: expected ${expected}, received ${response.status}`)
+}
+
+function assertHeader(response, expected, label) {
+  const observed = response.headers.get('X-BIAU-Relay-Failure')
+  if (observed !== expected) throw new Error(`${label}: expected ${expected}, received ${observed}`)
 }

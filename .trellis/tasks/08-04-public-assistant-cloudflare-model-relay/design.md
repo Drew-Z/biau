@@ -33,7 +33,7 @@ Render uses the relay as both primary and fallback base URL, uses the shared tok
 3. Compare the bearer token to the configured shared token using SHA-256 digests and a constant-work byte loop.
 4. Parse an object body and require an allowlisted `model`; preserve the bounded body without accepting any caller-supplied URL.
 5. Build exactly one endpoint from the configured fixed base and issue an upstream POST with a fresh header allowlist.
-6. For non-2xx responses, cancel the upstream body and return only a stable JSON error with the same status.
+6. For non-2xx responses, cancel the upstream body and return only a stable JSON error with the same status plus a fixed-enum relay failure header.
 7. For successful SSE, wrap and stream the body with byte, cancellation, and timeout bounds.
 8. For successful JSON, read only within the byte limit and return the body with no-store headers.
 

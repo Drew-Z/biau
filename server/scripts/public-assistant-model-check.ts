@@ -79,6 +79,27 @@ assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 404, 
 assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 400, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'request_rejected')
 assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 503, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'provider_unavailable')
 assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 418, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'upstream')
+assert.equal(classifyOperationalFailure({
+  kind: 'http_status',
+  httpStatus: 502,
+  relayFailure: 'upstream_unreachable',
+  attemptedEndpoints: 1,
+  timeoutMs: 1_000,
+}), 'relay_unreachable')
+assert.equal(classifyOperationalFailure({
+  kind: 'http_status',
+  httpStatus: 502,
+  relayFailure: 'invalid_response',
+  attemptedEndpoints: 1,
+  timeoutMs: 1_000,
+}), 'relay_invalid_response')
+assert.equal(classifyOperationalFailure({
+  kind: 'http_status',
+  httpStatus: 502,
+  relayFailure: 'response_too_large',
+  attemptedEndpoints: 1,
+  timeoutMs: 1_000,
+}), 'relay_response_too_large')
 const safeRecoveryRecord = buildPublicAssistantRecoveryLogRecord({
   recovery: { state: 'degraded', attempts: 1, failureClass: 'upstream' },
   diagnostic: { kind: 'http_status', httpStatus: 403, attemptedEndpoints: 1, timeoutMs: 1_000 },
@@ -138,6 +159,14 @@ const server = createServer((request, response) => {
     if (user.includes('fixture-oversized')) {
       response.writeHead(200, { 'Content-Type': 'application/json' })
       response.end(JSON.stringify({ output_text: 'x'.repeat(65_000) }))
+      return
+    }
+    if (user.includes('fixture-relay-unreachable')) {
+      response.writeHead(502, {
+        'Content-Type': 'application/json',
+        'X-BIAU-Relay-Failure': 'upstream_unreachable',
+      })
+      response.end(JSON.stringify({ error: 'redacted-relay-error' }))
       return
     }
     const streaming = (body as { stream?: boolean }).stream === true
@@ -414,6 +443,14 @@ try {
   assert.equal(unsupportedSchema.failure, 'provider_error')
   assert.equal(unsupportedSchema.failureClass, 'upstream')
   assert.equal(unsupportedSchema.diagnostic?.attemptedEndpoints, 1, 'schema rejection must not switch protocols')
+  const relayUnreachable = await requestResponsesText({
+    channel: fixtureChannel,
+    system: 'fixture',
+    user: 'fixture-relay-unreachable',
+    timeoutMs: 1_000,
+  })
+  assert.equal(relayUnreachable.diagnostic?.relayFailure, 'upstream_unreachable')
+  assert.equal(classifyOperationalFailure(relayUnreachable.diagnostic), 'relay_unreachable')
   const emptyResult = await requestResponsesText({
     channel: fixtureChannel,
     system: 'fixture',

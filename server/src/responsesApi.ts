@@ -1,4 +1,9 @@
-import type { ProviderDiagnostic, ProviderDiagnosticKind, PublicAssistantRecoveryFailureClass } from './types.js'
+import type {
+  ProviderDiagnostic,
+  ProviderDiagnosticKind,
+  ProviderRelayFailureKind,
+  PublicAssistantRecoveryFailureClass,
+} from './types.js'
 
 export interface ResponsesApiChannel {
   apiKey: string
@@ -193,6 +198,7 @@ async function requestEndpoint(input: {
     firstActivityMs = Math.max(0, Date.now() - startedAt)
     responseStatus = response.status
     if (!response.ok) {
+      const relayFailure = readRelayFailure(response.headers.get('X-BIAU-Relay-Failure'))
       await response.body?.cancel().catch(() => undefined)
       return {
         ok: false,
@@ -201,6 +207,7 @@ async function requestEndpoint(input: {
         diagnostic: {
           kind: 'http_status' as const,
           httpStatus: response.status,
+          ...(relayFailure ? { relayFailure } : {}),
           attemptedEndpoints: 0,
           timeoutMs: input.timeoutMs,
         },
@@ -261,6 +268,19 @@ async function requestEndpoint(input: {
   function readDiagnosticKind(): ProviderDiagnosticKind {
     return diagnosticKind
   }
+}
+
+const RELAY_FAILURES = new Set<ProviderRelayFailureKind>([
+  'provider_rejected',
+  'upstream_unreachable',
+  'invalid_response',
+  'response_too_large',
+  'timeout',
+])
+
+function readRelayFailure(value: string | null): ProviderRelayFailureKind | undefined {
+  const normalized = value?.trim().toLowerCase() as ProviderRelayFailureKind | undefined
+  return normalized && RELAY_FAILURES.has(normalized) ? normalized : undefined
 }
 
 const MAX_RESPONSES_STREAM_BYTES = 512_000

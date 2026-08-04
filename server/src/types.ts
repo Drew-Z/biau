@@ -119,11 +119,18 @@ export type ChatFallbackReason =
   | 'tool_error'
   | 'policy_blocked'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
+export type ProviderRelayFailureKind =
+  | 'provider_rejected'
+  | 'upstream_unreachable'
+  | 'invalid_response'
+  | 'response_too_large'
+  | 'timeout'
 export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
 
 export interface ProviderDiagnostic {
   kind: ProviderDiagnosticKind
   httpStatus?: number
+  relayFailure?: ProviderRelayFailureKind
   attemptedEndpoints: number
   timeoutMs: number
 }

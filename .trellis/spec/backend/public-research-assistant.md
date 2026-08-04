@@ -212,7 +212,7 @@ npm.cmd run cf-model-relay:check
 - Accepted top-level body fields are `model`, `stream`, `max_output_tokens`, `text`, and `input`; `model` must be in the bounded allowlist.
 - Upstream headers are rebuilt from scratch with only bearer auth, JSON content type, and JSON/SSE accept negotiation.
 - Request bodies are at most 64 KB; JSON and SSE responses are at most 512 KB; the timeout is bounded to 55 seconds.
-- Upstream non-2xx bodies are cancelled and replaced with `model-relay-upstream-rejected`; only the status crosses back to trusted Render diagnostics.
+- Upstream non-2xx bodies are cancelled and replaced with `model-relay-upstream-rejected`; only the status and a fixed-enum `X-BIAU-Relay-Failure` category cross back to trusted Render diagnostics.
 
 ### 4. Validation & Error Matrix
 

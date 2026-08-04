@@ -11,6 +11,9 @@ export type PublicAssistantOperationalFailureClass =
   | 'model_unavailable'
   | 'request_rejected'
   | 'provider_unavailable'
+  | 'relay_unreachable'
+  | 'relay_invalid_response'
+  | 'relay_response_too_large'
 
 export type PublicAssistantRecoveryDurationBucket =
   | 'under_1s'
@@ -53,6 +56,10 @@ export function classifyOperationalFailure(
   diagnostic?: ProviderDiagnostic,
   fallback: PublicAssistantRecoveryFailureClass = 'upstream',
 ): PublicAssistantOperationalFailureClass {
+  if (diagnostic?.relayFailure === 'upstream_unreachable') return 'relay_unreachable'
+  if (diagnostic?.relayFailure === 'invalid_response') return 'relay_invalid_response'
+  if (diagnostic?.relayFailure === 'response_too_large') return 'relay_response_too_large'
+  if (diagnostic?.relayFailure === 'timeout') return 'timeout'
   if (diagnostic?.kind === 'timeout') return 'timeout'
   if (diagnostic?.kind === 'network_error') return 'network'
   if (diagnostic?.kind !== 'http_status') return fallback
