@@ -169,7 +169,7 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 
 - Public knowledge sync writes a versioned Qdrant collection, validates the replacement, and then switches the configured alias.
 - Commit/checksum readiness gates prevent a stale deploy from activating newer knowledge.
-- Cloudflare Functions are thin same-origin proxies. The stream Function forwards the bounded event body without buffering, preserves cancellation, and keeps its timeout active until the upstream body closes. Model, search, RAG, embedding, reranker, sync, and database credentials remain on server services.
+- Cloudflare Functions expose the thin same-origin browser proxy plus one authenticated fixed-upstream Responses egress relay. The chat stream Function and model relay both forward bounded SSE without buffering, preserve cancellation, and keep their timeout active until the upstream body closes. Model credentials may live in the relay secret bindings; search, RAG, embedding, reranker, sync, and database credentials remain on their owning server services.
 - Deployed public chat, feedback, persistence, and public sync acceptance passed before the Operator/internal-RAG retirement began. Runtime code and configuration are public-only; PostgreSQL retirement, legacy Render Operator service deletion, and obsolete internal-Qdrant collection deletion completed through separate backed-up manual gates.
 
 ## Required Checks
@@ -189,6 +189,56 @@ npm.cmd run assistant:rag-smoke
 npm.cmd run assistant:service-modes-smoke
 npm.cmd run server:smoke
 npm.cmd run cf-assistant:smoke
+npm.cmd run cf-model-relay:check
 ```
+
+## Scenario: Cloudflare fixed-upstream Responses relay
+
+### 1. Scope / Trigger
+
+- Use this boundary only when an approved model channel works for an approved local business task but rejects the Render production egress.
+- Render remains the public Agentic RAG authority; the relay replaces only the network exit used by planner/final Responses calls.
+
+### 2. Signatures
+
+- `relayResponsesRequest(request, env, dependencies?) -> Promise<Response>`
+- Pages route: `POST /api/model-relay/responses`
+- Cloudflare bindings: `MODEL_RELAY_SHARED_TOKEN`, `MODEL_RELAY_UPSTREAM_BASE_URL`, `MODEL_RELAY_UPSTREAM_API_KEY`, `MODEL_RELAY_ALLOWED_MODELS`, and optional `MODEL_RELAY_TIMEOUT_MS`.
+
+### 3. Contracts
+
+- The caller presents `Authorization: Bearer <MODEL_RELAY_SHARED_TOKEN>`; the configured token must contain at least 32 characters, and comparison hashes both values and uses a constant-work byte loop.
+- The relay constructs exactly one HTTPS `/responses` endpoint from the configured base. No request field or header can select an endpoint.
+- Accepted top-level body fields are `model`, `stream`, `max_output_tokens`, `text`, and `input`; `model` must be in the bounded allowlist.
+- Upstream headers are rebuilt from scratch with only bearer auth, JSON content type, and JSON/SSE accept negotiation.
+- Request bodies are at most 64 KB; JSON and SSE responses are at most 512 KB; the timeout is bounded to 55 seconds.
+- Upstream non-2xx bodies are cancelled and replaced with `model-relay-upstream-rejected`; only the status crosses back to trusted Render diagnostics.
+
+### 4. Validation & Error Matrix
+
+- Missing configuration -> `503 model-relay-not-configured`, no fetch.
+- Missing/invalid bearer -> `401 model-relay-unauthorized`, no fetch.
+- Non-JSON -> `415 model-relay-json-required`; oversized -> `413 model-relay-request-too-large`.
+- Malformed body, unknown fields, or unapproved model -> `400 model-relay-invalid-request`, no fetch.
+- Timeout -> `504 model-relay-upstream-timeout`; transport/invalid content -> stable `502`.
+- Caller cancellation -> request abort propagates upstream; no retry is created by the relay.
+
+### 5. Good / Base / Bad Cases
+
+- Good: Render sends an approved streaming Responses request, Cloudflare forwards one fixed request, and verified JSON/SSE returns under the shared deadline.
+- Base: bindings are absent during code-first rollout, so the route fails closed while the existing direct Render channel remains untouched.
+- Bad: a browser, leaked cookie, arbitrary endpoint field, unknown model, or oversized body reaches upstream; fixture tests must prove each is rejected.
+
+### 6. Tests Required
+
+- `npm.cmd run cf-model-relay:check` uses injected fetch fixtures and never resolves or calls a live model URL.
+- Assert config/auth/input failures make zero fetch calls, exact fixed endpoint/header reconstruction, JSON/SSE success, error-body redaction, size limits, timeout, and stream cancellation.
+- Run `cf-assistant:smoke`, public model/agent checks, `docs:deployment-check`, `lint`, and `build` before deployment.
+
+### 7. Wrong vs Correct
+
+Wrong: expose a generic authenticated proxy, accept caller-provided URLs/models, reuse browser headers, return provider error text, buffer SSE, or put the upstream key in a `VITE_*` variable.
+
+Correct: one secret-authenticated route, one fixed HTTPS Responses upstream, a three-model allowlist, fresh headers, bounded streaming, redacted errors, and Render-owned Agent/RAG behavior.
 
 These checks use local fixtures only. They must not probe a live model, search, embedding, Qdrant, or reranker provider. External acceptance uses one user-approved business question after deployment.

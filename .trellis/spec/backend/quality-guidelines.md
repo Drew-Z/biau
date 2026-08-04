@@ -90,6 +90,7 @@ AI Daily production deployments must mount the human-approved model bundle as th
 - Completed request replay decodes the Request's frozen Revision projection and remains independent from later active-Branch changes. Selected Session history is separately reconstructed from the active Branch ancestry.
 - `assistant:public-persistence-check` and the loopback-only migration fixture must prove intent hashing, lease fencing, concurrent forks, selection-version fencing, graph ownership, Revision UPDATE rejection, replay independence, and whole-session lifecycle behavior.
 - Public synthetic may exercise route/health/fallback behavior but must not send model prompts unless the user approves a real task.
+- `cf-model-relay:check` asserts timing-safe server auth, fixed HTTPS upstream construction, approved-model allowlisting, unknown-field rejection, fresh upstream headers, JSON/SSE bounds, cancellation, timeout, and raw upstream-error redaction without a live provider call.
 
 ## Content Studio
 

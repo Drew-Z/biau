@@ -37,14 +37,15 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 这些证据已完成旧 Operator 数据面的受控退役；随后已分别删除 legacy Render Operator 服务与 external internal Qdrant collection，当前不再存在 Operator/internal-RAG 删除门禁。
 
-## Public assistant fallback rollout
+## Public assistant Cloudflare model relay rollout
 
-仓库支持一个主 Responses 通道和一个最多包含两个模型的备用供应商。平台启用仍需人工完成：
+第一套 Responses 渠道在本地获批真实任务中可用，但生产 Render 出口被分类为 `access_denied`，且 secret-safe 配对核验确认不是 URL/key 误配。平台启用按以下门禁执行：
 
-- 在 `biau-public-assistant-api` 填写四个 `ASSISTANT_MODEL_FALLBACK_*` 变量并重新部署；真实值不得进入 Git。
-- 不执行模型目录查询、ping、doctor、空 prompt 或逐模型测活。
-- 部署后先确认 `/health` 只返回低敏配置就绪状态，再由用户批准一条真实业务问题完成端到端验收。
-- 若结果异常，删除四个备用变量即可回到原有主通道重试行为，无需数据库回滚。
+- Cloudflare production 设置 `MODEL_RELAY_SHARED_TOKEN`（至少 32 字符随机值）、`MODEL_RELAY_UPSTREAM_BASE_URL`、`MODEL_RELAY_UPSTREAM_API_KEY` 三项 Secret，并设置模型白名单与 timeout 服务端变量。
+- 先部署 Cloudflare Pages，确认未授权 relay 请求返回稳定 `401`，且不发送模型请求。
+- Render public service 的主/备用 base 指向 `/api/model-relay`，主/备用 key 使用同一 relay shared token，模型顺序保持 `grok-4.5`、`grok-4.20-0309`、`grok-chat-fast`。
+- 不执行 ping、doctor、空 prompt 或逐模型测活；只使用用户已批准的真实诗歌问题进行一次端到端验收，并删除临时会话。
+- 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 
 ## Operator PostgreSQL 退役
 

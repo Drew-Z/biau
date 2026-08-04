@@ -21,6 +21,7 @@ Browser
   -> Cloudflare Pages / Functions
        -> biau-public-assistant-api
             -> bounded primary + fallback Responses generation chain
+                 -> authenticated fixed-upstream Cloudflare model relay
             -> Tavily discovery + safe original-page fetch
             -> biau-rag-orchestrator -> Qdrant public alias
             -> public assistant PostgreSQL
@@ -38,9 +39,17 @@ PUBLIC_ASSISTANT_API_BASE_URL=<公开助手 Render URL>
 PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=55000
 VITE_STUDIO_API_BASE_URL=<Studio Render URL>
 VITE_AI_DAILY_API_BASE_URL=<Studio Render URL>
+
+MODEL_RELAY_SHARED_TOKEN=<Cloudflare 与 Render 共享的至少 32 字符随机 server-only token>
+MODEL_RELAY_UPSTREAM_BASE_URL=<获批第一套渠道的 Responses base URL>
+MODEL_RELAY_UPSTREAM_API_KEY=<获批第一套渠道的 server-only key>
+MODEL_RELAY_ALLOWED_MODELS=grok-4.5,grok-4.20-0309,grok-chat-fast
+MODEL_RELAY_TIMEOUT_MS=50000
 ```
 
-`PUBLIC_ASSISTANT_API_BASE_URL` 和 proxy timeout 是 Functions 的服务端变量，不会进入 Vite bundle。不要创建 `VITE_*` 模型、搜索、RAG、数据库或 Token 变量。
+`PUBLIC_ASSISTANT_API_BASE_URL`、proxy timeout 和 `MODEL_RELAY_*` 都是 Functions 的服务端变量，不会进入 Vite bundle。URL、上游 key 与共享 token 使用 Cloudflare Secret 类型；模型白名单与 timeout 可以使用普通服务端变量。不要创建 `VITE_*` 模型、搜索、RAG、数据库或 Token 变量。
+
+`POST /api/model-relay/responses` 只接受共享 bearer token、JSON Responses 请求和上述三项模型。它不会接收浏览器 Cookie、任意上游 URL、任意模型或未知顶层字段；非 2xx 上游正文会被丢弃，仅保留状态供 Render 映射为低敏故障类别。SSE 直接流式转发并保留取消传播、总时限和 512 KB 响应上限。
 
 发布后验证：
 
@@ -75,16 +84,16 @@ CORS_ORIGIN=https://biau.playlab.eu.cc
 TRUST_PROXY=true
 DATABASE_URL=<公开助手匿名 session、turn、feedback 和 aggregate 数据库 URL>
 
-ASSISTANT_MODEL_BASE_URL=<Responses-compatible /v1 base URL>
-ASSISTANT_MODEL_API_KEY=<server-only key>
-ASSISTANT_MODEL_NAME=<single generation model>
-ASSISTANT_MODEL_PROVIDER=<safe provider label>
+ASSISTANT_MODEL_BASE_URL=https://biau.playlab.eu.cc/api/model-relay
+ASSISTANT_MODEL_API_KEY=<与 MODEL_RELAY_SHARED_TOKEN 相同>
+ASSISTANT_MODEL_NAME=grok-4.5
+ASSISTANT_MODEL_PROVIDER=cloudflare-model-relay
 ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
-ASSISTANT_MODEL_FALLBACK_BASE_URL=<optional fallback Responses /v1 base URL>
-ASSISTANT_MODEL_FALLBACK_API_KEY=<optional server-only fallback key>
-ASSISTANT_MODEL_FALLBACK_MODELS=<optional ordered model-a,model-b list>
-ASSISTANT_MODEL_FALLBACK_PROVIDER=fallback-responses
+ASSISTANT_MODEL_FALLBACK_BASE_URL=https://biau.playlab.eu.cc/api/model-relay
+ASSISTANT_MODEL_FALLBACK_API_KEY=<与 MODEL_RELAY_SHARED_TOKEN 相同>
+ASSISTANT_MODEL_FALLBACK_MODELS=grok-4.20-0309,grok-chat-fast
+ASSISTANT_MODEL_FALLBACK_PROVIDER=cloudflare-model-relay
 
 ASSISTANT_RAG_API_BASE_URL=<RAG Render URL>
 ASSISTANT_RAG_API_KEY=<与 RAG_PUBLIC_API_KEY 相同>
@@ -111,7 +120,7 @@ METRICS_ENABLED=false
 
 `ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 Responses relay 支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
 
-公开助手保留现有 `ASSISTANT_MODEL_*` 作为主通道。四个 `ASSISTANT_MODEL_FALLBACK_*` 变量必须完整填写才会启用备用链；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。Planner 只使用主通道，失败后使用确定性 Planner；最终回答的第 1 次尝试使用主通道，第 2/3 次才使用备用模型。多个备用模型属于同一供应商故障域：备用渠道出现认证或网络故障时不会继续轮询同域模型，模型级 404/405、429/5xx、空响应或无效响应才允许前进。
+公开助手保留现有 `ASSISTANT_MODEL_*` 作为主通道。四个 `ASSISTANT_MODEL_FALLBACK_*` 变量必须完整填写才会启用备用链；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。Planner 只使用主通道，失败后使用确定性 Planner；最终回答的第 1 次尝试使用主通道，第 2/3 次才使用备用模型。主模型与两个备用模型通过同一个 Cloudflare relay 访问同一供应商故障域：认证、relay 网络或固定上游失败时不会盲目轮询同域模型，模型级 404/405、429/5xx、空响应或无效响应才允许前进。
 
 一次公开请求最多包含三次生成尝试，所有通道、尝试与 200/400ms 可取消退避共享 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` 的绝对截止时间，不会为每次尝试或切换通道重置 45 秒预算。启用独立备用链时，运行时会为后续尝试保留最低执行窗口；未配置备用链时保留原有单通道重试行为。`/health` 只检查是否至少存在一套完整配置，不调用模型，也不返回通道数量、顺序、provider、model 或 endpoint。
 
@@ -255,6 +264,7 @@ npm run assistant:service-modes-smoke
 npm run server:build
 npm run server:smoke
 npm run cf-assistant:smoke
+npm run cf-model-relay:check
 npm run studio:smoke
 npm run ai-daily:contracts-check
 npm run ai-daily:production-readiness-check
@@ -265,11 +275,12 @@ npm run build
 
 上述 deterministic checks 不得访问真实模型、搜索、embedding、reranker 或向量数据库供应商。
 
-公开助手可靠性版本发布时只部署 `biau-public-assistant-api` 与匹配提交的 Cloudflare 静态站，不重启 Content Studio 或 RAG Orchestrator。先请求 `/health`，这一动作不得调用模型；随后最多执行一条用户明确批准的真实业务问题，检查公开安全元数据并删除该临时匿名会话。结构化输出与生产 Prometheus scrape 仍分别受上述人工 gate 约束。
+公开助手可靠性版本发布时只部署 `biau-public-assistant-api` 与匹配提交的 Cloudflare 静态站，不重启 Content Studio 或 RAG Orchestrator。模型中继必须先部署 Cloudflare 代码和 secrets，再把 Render base/key 切到 relay；反向顺序会产生可避免的短时 404/401。先请求 `/health`，这一动作不得调用模型；随后最多执行一条用户明确批准的真实业务问题，检查公开安全元数据并删除该临时匿名会话。结构化输出与生产 Prometheus scrape 仍分别受上述人工 gate 约束。
 
 ## 回滚
 
 - SQL 退役前：回滚应用 revision 和 Qdrant public alias 即可。
 - SQL 退役后：停止写入，把已验证的备份恢复到新数据库，再切换数据库 URL 与上一应用 revision；重新跑旧 migration 只能恢复空表结构，不能恢复数据。
 - Studio/AI Daily 数据库从不进入 Operator 退役 allowlist。
+- 模型中继无需数据库回滚；恢复 Render 上一组 model base/key/provider 并回滚 Cloudflare Pages deployment 即可。
 - 观察窗口结束前保留备份、前一 revision 和旧 internal collection；窗口通过并删除旧 collection 后，继续按既定保留策略保存数据库备份与 revision 回滚证据。

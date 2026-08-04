@@ -30,6 +30,7 @@
     "server:start": "node server/dist/index.js",
     "server:smoke": "tsx server/scripts/smoke.ts",
     "cf-assistant:smoke": "tsx scripts/check-cloudflare-assistant-functions.mjs",
+    "cf-model-relay:check": "tsx scripts/check-cloudflare-model-relay.mjs",
     "prisma:format": "prisma format",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate",

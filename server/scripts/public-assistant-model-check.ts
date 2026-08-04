@@ -254,6 +254,10 @@ try {
   })
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '请帮我润色这段文字' }), true)
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '请生成一首乡愁的诗句' }), true)
+  assert.equal(shouldUseDirectPublicAssistantRoute({
+    mode: 'auto',
+    question: '请以泊岸为主题写一首七言绝句。只输出诗题和四句诗，不要解释。',
+  }), true)
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '请翻译以下内容' }), true)
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: '你好' }), true)
   assert.equal(shouldUseDirectPublicAssistantRoute({ mode: 'auto', question: 'OpenAI 最近发布了什么？' }), false)

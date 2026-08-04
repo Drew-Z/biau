@@ -55,8 +55,9 @@ const ANSWER_JSON_SCHEMA: Record<string, unknown> = {
 }
 const DIRECT_GREETING_PATTERN = /^(?:你好|您好|嗨|hi|hello|谢谢|感谢)(?:你|您)?[\s，,。.!！?？]*$/iu
 const DIRECT_POLITE_PREFIX = '(?:(?:请(?:你)?|麻烦(?:你)?|能否|可以)\\s*)?(?:(?:帮|给)(?:我)?\\s*)?'
+const DIRECT_CREATIVE_TOPIC_PREFIX = '(?:(?:以|围绕)\\s*[^，,。.!！?？:：]{1,32}?(?:为主题|为题|为题材|为中心)\\s*)?'
 const DIRECT_CREATIVE_TASK_PATTERN = new RegExp(
-  `^${DIRECT_POLITE_PREFIX}(?:写|生成|创作|编写|作)\\s*(?:一|两|三|几)?(?:首|篇|段|个)?\\s*(?:(?:七言|五言|现代|古风|自由体|中文|英文)\\s*)?(?:[^，,。.!！?？:：]{0,24})?(?:古诗词|古诗|诗词|诗歌|诗句|小诗|诗|故事|短篇故事|对联|文案|标题|口号|段子|脚本)(?:$|[\\s，,。.!！:：])`,
+  `^${DIRECT_POLITE_PREFIX}${DIRECT_CREATIVE_TOPIC_PREFIX}(?:写|生成|创作|编写|作)\\s*(?:一|两|三|几)?(?:首|篇|段|个)?\\s*(?:(?:七言|五言|现代|古风|自由体|中文|英文)\\s*)?(?:[^，,。.!！?？:：]{0,24})?(?:绝句|律诗|词牌|古诗词|古诗|诗词|诗歌|诗句|小诗|诗|故事|短篇故事|对联|文案|标题|口号|段子|脚本)(?:$|[\\s，,。.!！:：])`,
   'iu',
 )
 const DIRECT_TRANSFORMATION_TASK_PATTERN = new RegExp(
