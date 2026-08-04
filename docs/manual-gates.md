@@ -46,6 +46,7 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - Render public service 的主/备用 base 指向 `/api/model-relay`，主/备用 key 使用同一 relay shared token，模型顺序保持 `grok-4.5`、`grok-4.20-0309`、`grok-chat-fast`。
 - 不执行 ping、doctor、空 prompt 或逐模型测活；只使用用户已批准的真实诗歌问题进行一次端到端验收，并删除临时会话。
 - 2026-08-04 已完成 Cloudflare/Render 配置与部署；无认证 relay 检查返回预期 `401`，但唯一获批真实请求仍以 `degraded/fallback` 结束并已删除会话。Render 将其归为通用 `upstream`，已排除 access denial、rate limit 与 endpoint/model route unavailable。不得自动重试；下一次真实请求需重新获得批准，并在带 `request_rejected` / `provider_unavailable` 分类的新 revision 上执行。
+- 新分类 revision `69042d4a` 已在 Render 进入 `live`，Render/Cloudflare health 与 relay `401` 边界检查均通过；该部署之后尚未发送模型请求。
 - 若必须追溯本次历史请求的精确边缘状态，需要为本机 Cloudflare token 增加只读 Workers Observability 或 Zone Analytics 权限；当前 token 可部署 Pages，但无权读取这两类历史数据。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 

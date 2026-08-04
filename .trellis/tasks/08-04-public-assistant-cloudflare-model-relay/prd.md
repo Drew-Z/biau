@@ -31,3 +31,4 @@ Route approved Responses model requests through an authenticated fixed-upstream 
 - The `learn` project remains read-only and supplies only the already-approved private upstream pair during secret configuration.
 - Production revision `507a9a5a` is live on Cloudflare Pages and Render. The unauthenticated relay boundary returned the expected `401` without contacting a model.
 - The single approved poem request on 2026-08-04 ended `degraded/fallback` after three bounded attempts and its temporary session was deleted. Render classified the result as generic `upstream`; the final acceptance criterion remains open and no automatic retry is allowed.
+- Diagnostic revision `69042d4a` is live on Render with `request_rejected` / `provider_unavailable` log classification. Render and Cloudflare health pass, the redacted health reports the model channel configured, and the unauthenticated relay boundary still returns `401`; no second model request was made.
