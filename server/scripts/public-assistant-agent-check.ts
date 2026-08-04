@@ -302,7 +302,7 @@ async function sameFailureDomainNetworkStopsCheck() {
 }
 
 async function sameFailureDomainModelFailureAdvancesCheck() {
-  for (const fallbackStatus of [400, 422]) {
+  for (const fallbackStatus of [400, 404, 405, 422, 429, 503]) {
     const attempts: number[] = []
     const dependencies: PublicAssistantAgentDependencies = {
       model: {

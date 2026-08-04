@@ -3,6 +3,7 @@ import { Annotation, END, START, StateGraph } from '@langchain/langgraph'
 import { env } from './env.js'
 import { recordPublicAssistantModelAttempt, recordPublicAssistantRun } from './metrics.js'
 import { createPublicAssistantModel, shouldUseDirectPublicAssistantRoute } from './publicAssistantModel.js'
+import { logPublicAssistantRecovery } from './publicAssistantRecoveryLog.js'
 import type {
   PublicAssistantDraft,
   PublicAssistantEvidence,
@@ -83,6 +84,16 @@ export async function runPublicAssistantAgent(
   })
   const response = finalState.response ?? buildFailedResponse(finalState)
   recordPublicAssistantRun(response.meta?.research?.route ?? finalState.agentPlan?.route ?? 'direct', response.status ?? 'degraded')
+  const recovery = finalState.draft?.recovery ?? response.meta?.recovery
+  const failedAttempt = finalState.draft?.attempts?.findLast((attempt) => attempt.failureClass)
+  logPublicAssistantRecovery({
+    recovery,
+    diagnostic: finalState.draft?.diagnostic,
+    failureClass: failedAttempt?.failureClass === 'cancelled' || failedAttempt?.failureClass === 'policy'
+      ? undefined
+      : failedAttempt?.failureClass,
+    durationMs: Math.max(0, (dependencies.now?.() ?? Date.now()) - finalState.startedAt),
+  })
   return response
 }
 

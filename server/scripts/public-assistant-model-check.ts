@@ -17,6 +17,10 @@ import {
   resolveModelChannels,
 } from '../src/model.js'
 import type { PublicAssistantEvidence, PublicAssistantRequest } from '../src/publicAssistantRuntime.js'
+import {
+  buildPublicAssistantRecoveryLogRecord,
+  classifyOperationalFailure,
+} from '../src/publicAssistantRecoveryLog.js'
 import { readResponsesContent, readResponsesStreamContent, requestResponsesText } from '../src/responsesApi.js'
 
 const original = {
@@ -68,6 +72,29 @@ assert.equal(await readResponsesStreamContent(new Response([
   'data: [DONE]',
   '',
 ].join('\n')).body), 'relay stream')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 401, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'access_denied')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 403, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'access_denied')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 429, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'rate_limited')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 404, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'model_unavailable')
+assert.equal(classifyOperationalFailure({ kind: 'http_status', httpStatus: 503, attemptedEndpoints: 1, timeoutMs: 1_000 }), 'upstream')
+const safeRecoveryRecord = buildPublicAssistantRecoveryLogRecord({
+  recovery: { state: 'degraded', attempts: 1, failureClass: 'upstream' },
+  diagnostic: { kind: 'http_status', httpStatus: 403, attemptedEndpoints: 1, timeoutMs: 1_000 },
+  failureClass: 'upstream',
+  durationMs: 2_700,
+})
+assert.deepEqual(safeRecoveryRecord, {
+  event: 'public-assistant-recovery',
+  state: 'degraded',
+  failure_class: 'access_denied',
+  attempts: 1,
+  duration_bucket: '1s_to_5s',
+})
+assert.doesNotMatch(JSON.stringify(safeRecoveryRecord), /httpStatus|model|provider|endpoint|question|request|session/iu)
+assert.equal(buildPublicAssistantRecoveryLogRecord({
+  recovery: { state: 'none', attempts: 1 },
+  durationMs: 20,
+}), null)
 await assert.rejects(readResponsesStreamContent(new Response([
   'event: response.failed',
   'data: {"type":"response.failed"}',
