@@ -1501,7 +1501,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     const request = createPublicAssistantQuestionEditRequest(conversation, editingTurnId)
     if (!request) return
     const nextQuestion = normalizePublicAssistantQuestion(editingQuestion)
-    if (!nextQuestion || nextQuestion === normalizePublicAssistantQuestion(request.question)) return
+    if (!nextQuestion) return
     closeQuestionEditor()
     void submitQuestion(nextQuestion, mode, {
       history: request.history,
@@ -1870,12 +1870,15 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                               className="is-primary"
                               disabled={
                                 isAssistantBusy ||
-                                normalizePublicAssistantQuestion(editingQuestion).length === 0 ||
-                                normalizePublicAssistantQuestion(editingQuestion) === normalizePublicAssistantQuestion(message.content)
+                                normalizePublicAssistantQuestion(editingQuestion).length === 0
                               }
                             >
                               <Send size={15} aria-hidden />
-                              <span>发送修改</span>
+                              <span>
+                                {normalizePublicAssistantQuestion(editingQuestion) === normalizePublicAssistantQuestion(message.content)
+                                  ? '重新发送'
+                                  : '发送修改'}
+                              </span>
                             </button>
                           </div>
                         </form>

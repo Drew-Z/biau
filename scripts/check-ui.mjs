@@ -2746,9 +2746,9 @@ if ((await editQuestionButton.count()) !== 1) {
   if (
     (await questionEditor.inputValue()) !== '历史问题' ||
     !editorFocused ||
-    !(await publicAssistantPage.getByRole('button', { name: '发送修改' }).isDisabled())
+    (await publicAssistantPage.getByRole('button', { name: '重新发送' }).isDisabled())
   ) {
-    failures.push('/blog public assistant edit: inline editor should focus the full original question and reject an unchanged resend')
+    failures.push('/blog public assistant edit: inline editor should focus the full original question and allow an unchanged resend')
   }
   await publicAssistantPage.getByRole('button', { name: '取消' }).click()
   const cancelFocusRestored = await publicAssistantPage.waitForFunction(() => {
