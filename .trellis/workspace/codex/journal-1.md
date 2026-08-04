@@ -313,3 +313,37 @@ Added Codex-style inline editing and resend for persisted visitor questions, imm
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: Public assistant Render egress diagnosis
+
+**Date**: 2026-08-04
+**Task**: Public assistant Render egress diagnosis
+**Branch**: `codex/public-assistant-main-integration`
+
+### Summary
+
+Added safe recovery logging, verified bounded same-channel model fallback, deployed the public API, and confirmed the approved first-channel pairing is rejected specifically from Render egress.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ba85d450` | (see git log) |
+| `9b74afdf` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

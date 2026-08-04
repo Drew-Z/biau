@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 9
-- **Last Active**: 2026-07-29
+- **Total Sessions**: 10
+- **Last Active**: 2026-08-04
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~315 | Active |
+| `journal-1.md` | ~349 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-08-04 | Public assistant Render egress diagnosis | `ba85d450`, `9b74afdf` | `codex/public-assistant-main-integration` |
 | 9 | 2026-07-29 | Public assistant editable question branching | `54370cd6` | `codex/public-assistant-productization` |
 | 8 | 2026-07-29 | Public assistant direct creative routing | `cd3b8c96` | `codex/public-assistant-productization` |
 | 7 | 2026-07-29 | Public assistant production rollout | `8f8b7ccb` | `codex/public-assistant-productization` |
