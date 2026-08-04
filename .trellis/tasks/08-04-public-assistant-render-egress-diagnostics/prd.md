@@ -20,9 +20,10 @@ Classify production generation recovery failures safely and preserve bounded sam
 - [x] Public JSON/SSE response and persisted snapshot contracts remain unchanged and do not gain internal diagnostics.
 - [x] `assistant:public-model-check`, `assistant:public-agent-check`, `server:build`, `lint`, and `build` pass.
 - [x] Deployment documentation/spec records how to interpret `access_denied`, `rate_limited`, `model_unavailable`, and generic `upstream` without exposing sensitive details.
-- [ ] After deployment, one approved real request identifies whether Render egress is denied, rate limited, model unavailable, or failing generically.
+- [x] After deployment, one approved real request identifies whether Render egress is denied, rate limited, model unavailable, or failing generically.
 
 ## Notes
 
 - Scope is limited to the public assistant backend and deterministic checks.
 - Do not modify the `learn` project or print its private channel configuration.
+- Production acceptance classified the Render request as `access_denied`; a secret-safe read-only comparison confirmed that Render uses the approved first-channel URL/key pairing for primary and fallback models.
