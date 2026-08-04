@@ -16,11 +16,11 @@ Remove the unavailable Mimo primary channel from production configuration and le
 
 ## Acceptance Criteria
 
-- [ ] Render configuration contains no Mimo model/provider reference and keeps a complete primary plus fallback chain.
-- [ ] The deployed public service health endpoint remains redacted and returns HTTP 200 without a model request.
-- [ ] An unchanged edit exposes an enabled `重新发送` command.
-- [ ] A changed edit exposes an enabled `发送修改` command.
-- [ ] Deterministic public assistant checks, server build, lint, production build, and diff checks pass.
+- [x] Render configuration contains no Mimo model/provider reference and keeps a complete primary plus fallback chain.
+- [x] The deployed public service health endpoint remains redacted and returns HTTP 200 without a model request.
+- [x] An unchanged edit exposes an enabled `重新发送` command.
+- [x] A changed edit exposes an enabled `发送修改` command.
+- [x] Deterministic public assistant checks, server build, lint, production build, and diff checks pass.
 
 ## Notes
 
