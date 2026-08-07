@@ -43,13 +43,15 @@ VITE_AI_DAILY_API_BASE_URL=<Studio Render URL>
 MODEL_RELAY_SHARED_TOKEN=<Cloudflare 与 Render 共享的至少 32 字符随机 server-only token>
 MODEL_RELAY_UPSTREAM_BASE_URL=<获批第一套渠道的 Responses base URL>
 MODEL_RELAY_UPSTREAM_API_KEY=<获批第一套渠道的 server-only key>
+MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL=<grok-channel.local.env 的 URL1 对应的 Responses base URL>
+MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY=<grok-channel.local.env 的 KEY1 对应的 server-only key>
 MODEL_RELAY_ALLOWED_MODELS=grok-4.5,grok-4.20-0309,grok-chat-fast
 MODEL_RELAY_TIMEOUT_MS=50000
 ```
 
 `PUBLIC_ASSISTANT_API_BASE_URL`、proxy timeout 和 `MODEL_RELAY_*` 都是 Functions 的服务端变量，不会进入 Vite bundle。URL、上游 key 与共享 token 使用 Cloudflare Secret 类型；模型白名单与 timeout 可以使用普通服务端变量。不要创建 `VITE_*` 模型、搜索、RAG、数据库或 Token 变量。
 
-`POST /api/model-relay/responses` 只接受共享 bearer token、JSON Responses 请求和上述三项模型。它不会接收浏览器 Cookie、任意上游 URL、任意模型或未知顶层字段；非 2xx 上游正文会被丢弃，仅保留状态供 Render 映射为低敏故障类别。SSE 直接流式转发并保留取消传播、总时限和 512 KB 响应上限。
+`POST /api/model-relay/responses` 和 `POST /api/model-relay/fallback/responses` 只接受共享 bearer token、JSON Responses 请求和上述模型。两个路由分别固定到主/备用上游，不接收浏览器 Cookie、任意上游 URL、任意模型或未知顶层字段；非 2xx 上游正文会被丢弃，仅保留固定枚举供 Render 映射为低敏故障类别。SSE 直接流式转发并保留取消传播、总时限和 512 KB 响应上限。
 
 发布后验证：
 
@@ -92,8 +94,8 @@ ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
 ASSISTANT_MODEL_FALLBACK_BASE_URL=https://biau.playlab.eu.cc/api/model-relay
 ASSISTANT_MODEL_FALLBACK_API_KEY=<与 MODEL_RELAY_SHARED_TOKEN 相同>
-ASSISTANT_MODEL_FALLBACK_MODELS=grok-4.20-0309,grok-chat-fast
-ASSISTANT_MODEL_FALLBACK_PROVIDER=cloudflare-model-relay
+ASSISTANT_MODEL_FALLBACK_MODELS=grok-4.5
+ASSISTANT_MODEL_FALLBACK_PROVIDER=grok-channel-relay
 
 ASSISTANT_RAG_API_BASE_URL=<RAG Render URL>
 ASSISTANT_RAG_API_KEY=<与 RAG_PUBLIC_API_KEY 相同>
@@ -120,7 +122,7 @@ METRICS_ENABLED=false
 
 `ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 Responses relay 支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
 
-公开助手保留现有 `ASSISTANT_MODEL_*` 作为主通道。四个 `ASSISTANT_MODEL_FALLBACK_*` 变量必须完整填写才会启用备用链；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。Planner 只使用主通道，失败后使用确定性 Planner；最终回答的第 1 次尝试使用主通道，第 2/3 次才使用备用模型。主模型与两个备用模型通过同一个 Cloudflare relay 访问同一供应商故障域：认证、relay 网络或固定上游失败时不会盲目轮询同域模型，模型级 404/405、429/5xx、空响应或无效响应才允许前进。
+公开助手保留现有 `ASSISTANT_MODEL_*` 作为主通道。四个 `ASSISTANT_MODEL_FALLBACK_*` 变量必须完整填写才会启用备用链；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。Planner 只使用主通道，失败后使用确定性 Planner；最终回答的第 1 次尝试使用主通道，第 2/3 次才使用备用模型。主通道和备用通道通过两个独立的同源 Cloudflare relay 路由访问各自固定上游：主路由是 `/api/model-relay`，备用路由是 `/api/model-relay/fallback`。这样认证、网络、固定上游和供应商 5xx 故障不会被错误地视为同一故障域。
 
 一次公开请求最多包含三次生成尝试，所有通道、尝试与 200/400ms 可取消退避共享 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` 的绝对截止时间，不会为每次尝试或切换通道重置 45 秒预算。启用独立备用链时，运行时会为后续尝试保留最低执行窗口；未配置备用链时保留原有单通道重试行为。`/health` 只检查是否至少存在一套完整配置，不调用模型，也不返回通道数量、顺序、provider、model 或 endpoint。
 

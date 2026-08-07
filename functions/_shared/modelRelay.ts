@@ -2,6 +2,8 @@ export interface ModelRelayEnv {
   MODEL_RELAY_SHARED_TOKEN?: string
   MODEL_RELAY_UPSTREAM_BASE_URL?: string
   MODEL_RELAY_UPSTREAM_API_KEY?: string
+  MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL?: string
+  MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY?: string
   MODEL_RELAY_ALLOWED_MODELS?: string
   MODEL_RELAY_TIMEOUT_MS?: string
 }
@@ -19,6 +21,8 @@ type RelayFailure =
   | 'response_too_large'
   | 'timeout'
 
+export type ModelRelayChannel = 'primary' | 'fallback'
+
 const MAX_REQUEST_BYTES = 64_000
 const MAX_RESPONSE_BYTES = 512_000
 const MAX_ALLOWED_MODELS = 3
@@ -30,8 +34,9 @@ export async function relayResponsesRequest(
   request: Request,
   env: ModelRelayEnv,
   dependencies: ModelRelayDependencies = { fetch },
+  channel: ModelRelayChannel = 'primary',
 ) {
-  const config = resolveRelayConfig(env)
+  const config = resolveRelayConfig(env, channel)
   if (!config) return relayJson({ error: 'model-relay-not-configured' }, 503)
   if (!await authorized(request.headers.get('Authorization'), config.sharedToken)) {
     return relayJson({ error: 'model-relay-unauthorized' }, 401)
@@ -112,10 +117,14 @@ export async function relayResponsesRequest(
   }
 }
 
-function resolveRelayConfig(env: ModelRelayEnv) {
+function resolveRelayConfig(env: ModelRelayEnv, channel: ModelRelayChannel) {
   const sharedToken = env.MODEL_RELAY_SHARED_TOKEN?.trim() ?? ''
-  const upstreamApiKey = env.MODEL_RELAY_UPSTREAM_API_KEY?.trim() ?? ''
-  const endpoint = responsesEndpoint(env.MODEL_RELAY_UPSTREAM_BASE_URL)
+  const upstreamApiKey = (channel === 'fallback'
+    ? env.MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY
+    : env.MODEL_RELAY_UPSTREAM_API_KEY)?.trim() ?? ''
+  const endpoint = responsesEndpoint(channel === 'fallback'
+    ? env.MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL
+    : env.MODEL_RELAY_UPSTREAM_BASE_URL)
   const allowedModels = parseAllowedModels(env.MODEL_RELAY_ALLOWED_MODELS)
   if (sharedToken.length < MIN_SHARED_TOKEN_LENGTH || !upstreamApiKey || !endpoint || allowedModels.size === 0) return null
   return {

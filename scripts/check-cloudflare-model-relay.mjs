@@ -1,10 +1,13 @@
 import { onRequestPost as relayResponses } from '../functions/api/model-relay/responses.ts'
+import { onRequestPost as fallbackRelayResponses } from '../functions/api/model-relay/fallback/responses.ts'
 import { relayResponsesRequest } from '../functions/_shared/modelRelay.ts'
 
 const relayEnv = {
   MODEL_RELAY_SHARED_TOKEN: 'fixture-relay-token-with-32-characters',
   MODEL_RELAY_UPSTREAM_BASE_URL: 'https://provider.example/v1',
   MODEL_RELAY_UPSTREAM_API_KEY: 'fixture-upstream-key',
+  MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL: 'https://fallback.example/v1',
+  MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY: 'fixture-fallback-key',
   MODEL_RELAY_ALLOWED_MODELS: 'fixture-primary,fixture-fallback-a,fixture-fallback-b',
   MODEL_RELAY_TIMEOUT_MS: '50',
 }
@@ -69,6 +72,26 @@ const observedHeaders = new Headers(observed?.init?.headers)
 if (observedHeaders.get('Authorization') !== 'Bearer fixture-upstream-key') throw new Error('relay must generate upstream authorization')
 if (observedHeaders.get('Cookie') || observedHeaders.get('X-Forwarded-For')) throw new Error('relay must strip caller credentials and forwarding headers')
 if (JSON.parse(String(observed?.init?.body)).model !== 'fixture-primary') throw new Error('relay must preserve the approved model request')
+
+let fallbackObserved
+const fallbackResponse = await fallbackRelayResponses({
+  request: request(payload()),
+  env: { ...relayEnv, MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL: undefined, MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY: undefined },
+})
+assertStatus(fallbackResponse, 503, 'fallback relay must fail closed when its upstream is unavailable')
+const fallbackJson = await relayResponsesRequest(request(payload()), relayEnv, {
+  async fetch(url, init) {
+    fallbackObserved = { url: String(url), init }
+    return new Response(JSON.stringify({ output_text: 'fallback fixture answer' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  },
+}, 'fallback')
+assertStatus(fallbackJson, 200, 'fallback relay JSON success')
+if (fallbackObserved?.url !== 'https://fallback.example/v1/responses') throw new Error('fallback relay must use its own fixed Responses endpoint')
+const fallbackHeaders = new Headers(fallbackObserved?.init?.headers)
+if (fallbackHeaders.get('Authorization') !== 'Bearer fixture-fallback-key') throw new Error('fallback relay must use its own upstream authorization')
 
 const upstreamRejected = await relayResponsesRequest(request(payload()), relayEnv, {
   async fetch() {

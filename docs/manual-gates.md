@@ -39,15 +39,15 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 ## Public assistant Cloudflare model relay rollout
 
-第一套 Responses 渠道在本地获批真实任务中可用，但生产 Render 出口被分类为 `access_denied`，且 secret-safe 配对核验确认不是 URL/key 误配。平台启用按以下门禁执行：
+第一套 Responses 渠道已通过固定上游 Cloudflare relay 接入生产 Render。当前代码与 relay 边界已验收，但生产供应商渠道仍返回可重试 `5xx`；平台启用按以下门禁执行：
 
 - Cloudflare production 设置 `MODEL_RELAY_SHARED_TOKEN`（至少 32 字符随机值）、`MODEL_RELAY_UPSTREAM_BASE_URL`、`MODEL_RELAY_UPSTREAM_API_KEY` 三项 Secret，并设置模型白名单与 timeout 服务端变量。
 - 先部署 Cloudflare Pages，确认未授权 relay 请求返回稳定 `401`，且不发送模型请求。
-- Render public service 的主/备用 base 指向 `/api/model-relay`，主/备用 key 使用同一 relay shared token，模型顺序保持 `grok-4.5`、`grok-4.20-0309`、`grok-chat-fast`。
+- Render public service 的主 base 指向 `/api/model-relay`，备用 base 指向 `/api/model-relay/fallback`；两者使用同一 relay shared token，备用模型为 `grok-4.5`。
 - 不执行 ping、doctor、空 prompt 或逐模型测活；只使用用户已批准的真实诗歌问题进行一次端到端验收，并删除临时会话。
-- 2026-08-04 已完成 Cloudflare/Render 配置与部署；无认证 relay 检查返回预期 `401`，但唯一获批真实请求仍以 `degraded/fallback` 结束并已删除会话。Render 将其归为通用 `upstream`，已排除 access denial、rate limit 与 endpoint/model route unavailable。不得自动重试；下一次真实请求需重新获得批准，并在带 `request_rejected` / `provider_unavailable` 分类的新 revision 上执行。
-- 新分类 revision `69042d4a` 已在 Render 进入 `live`，Render/Cloudflare health 与 relay `401` 边界检查均通过；该部署之后尚未发送模型请求。
-- 若必须追溯本次历史请求的精确边缘状态，需要为本机 Cloudflare token 增加只读 Workers Observability 或 Zone Analytics 权限；当前 token 可部署 Pages，但无权读取这两类历史数据。
+- 2026-08-04 relay 诊断 revision `87210661` 已在 Cloudflare Pages 与 Render 进入生产；确定性检查、Render/Cloudflare health 与无认证 relay `401` 边界均通过。
+- 用户批准的热启动后真实诗歌请求返回 HTTP `200`，但三次有界尝试后仍为 `degraded/fallback`；临时会话已删除。低敏 Render 恢复事件为 `provider_unavailable`，已排除 relay 网络不可达、响应协议异常和响应体超限。
+- 最终 model-answer 验收仍未通过。不得自动重试或逐模型测活；应先在供应商控制台处理渠道 `5xx`，任何后续真实请求都需重新批准。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 
 ## Operator PostgreSQL 退役

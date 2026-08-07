@@ -36,7 +36,7 @@ services:
       - key: ASSISTANT_MODEL_FALLBACK_MODELS
         sync: false
       - key: ASSISTANT_MODEL_FALLBACK_PROVIDER
-        value: cloudflare-model-relay
+        value: grok-channel-relay
       - key: ASSISTANT_RAG_API_BASE_URL
         sync: false
       - key: ASSISTANT_RAG_API_KEY

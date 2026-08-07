@@ -169,7 +169,7 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 
 - Public knowledge sync writes a versioned Qdrant collection, validates the replacement, and then switches the configured alias.
 - Commit/checksum readiness gates prevent a stale deploy from activating newer knowledge.
-- Cloudflare Functions expose the thin same-origin browser proxy plus one authenticated fixed-upstream Responses egress relay. The chat stream Function and model relay both forward bounded SSE without buffering, preserve cancellation, and keep their timeout active until the upstream body closes. Model credentials may live in the relay secret bindings; search, RAG, embedding, reranker, sync, and database credentials remain on their owning server services.
+- Cloudflare Functions expose the thin same-origin browser proxy plus two authenticated fixed-upstream Responses egress relay routes: primary and fallback. The chat stream Function and both model relay routes forward bounded SSE without buffering, preserve cancellation, and keep their timeout active until the upstream body closes. Model credentials may live in the relay secret bindings; search, RAG, embedding, reranker, sync, and database credentials remain on their owning server services.
 - Deployed public chat, feedback, persistence, and public sync acceptance passed before the Operator/internal-RAG retirement began. Runtime code and configuration are public-only; PostgreSQL retirement, legacy Render Operator service deletion, and obsolete internal-Qdrant collection deletion completed through separate backed-up manual gates.
 
 ## Required Checks
@@ -201,9 +201,9 @@ npm.cmd run cf-model-relay:check
 
 ### 2. Signatures
 
-- `relayResponsesRequest(request, env, dependencies?) -> Promise<Response>`
-- Pages route: `POST /api/model-relay/responses`
-- Cloudflare bindings: `MODEL_RELAY_SHARED_TOKEN`, `MODEL_RELAY_UPSTREAM_BASE_URL`, `MODEL_RELAY_UPSTREAM_API_KEY`, `MODEL_RELAY_ALLOWED_MODELS`, and optional `MODEL_RELAY_TIMEOUT_MS`.
+- `relayResponsesRequest(request, env, dependencies?, channel?) -> Promise<Response>` where `channel` is `primary | fallback`.
+- Pages routes: `POST /api/model-relay/responses` and `POST /api/model-relay/fallback/responses`
+- Cloudflare bindings: `MODEL_RELAY_SHARED_TOKEN`, primary/fallback `MODEL_RELAY_*_UPSTREAM_BASE_URL` and `MODEL_RELAY_*_UPSTREAM_API_KEY`, `MODEL_RELAY_ALLOWED_MODELS`, and optional `MODEL_RELAY_TIMEOUT_MS`.
 
 ### 3. Contracts
 
