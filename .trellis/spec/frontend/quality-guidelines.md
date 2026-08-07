@@ -124,6 +124,7 @@ npm.cmd run docs:deployment-check
 - Citation cards preserve Revision-specific provenance by showing the allowlisted source section, optional publication date, and explicit verified/partial evidence state without creating model-authored links.
 - UI fixtures exercise rejected Branch operations, exact-action retry, same-tick retry de-duplication, failed regeneration with intact Revision controls, and successful retry without a duplicate question.
 - Suggested prompts are bounded; UI checks validate the rendered starter contract rather than requiring hidden overflow items.
+- One-image UI fixtures cover selection, compressed preview, remove/focus restoration, request forwarding, retry continuity, privacy across refresh, and compact/fullscreen/mobile containment. No browser fixture calls a live model.
 
 ## SEO And Analytics
 

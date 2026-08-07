@@ -27,6 +27,7 @@ const assistantModelFallbackBaseUrl = normalizeOptionalBaseUrl(readFirstEnv('ASS
 const assistantModelFallbackApiKey = readFirstEnv('ASSISTANT_MODEL_FALLBACK_API_KEY')
 const assistantModelFallbackModels = readBoundedCsv(process.env.ASSISTANT_MODEL_FALLBACK_MODELS, 2, 160)
 const assistantModelFallbackProvider = readFirstEnv('ASSISTANT_MODEL_FALLBACK_PROVIDER') || 'fallback-responses'
+const assistantVisionModel = readFirstEnv('ASSISTANT_VISION_MODEL')
 const aiDailyModelRuntimeJson = readFirstEnv('AI_DAILY_MODEL_RUNTIME_JSON')
 const aiDailyModelApprovalFile = readFirstEnv('AI_DAILY_MODEL_APPROVAL_FILE')
 const aiDailyModelApprovalBundleHash = readFirstEnv('AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH')
@@ -59,6 +60,7 @@ export const env = {
   assistantModelFallbackApiKey,
   assistantModelFallbackModels,
   assistantModelFallbackProvider,
+  assistantVisionModel,
   aiDailyModelRuntimeJson,
   aiDailyModelApprovalFile,
   aiDailyModelApprovalBundleHash,
@@ -70,6 +72,7 @@ export const env = {
   assistantModelStructuredOutputsMode: readStructuredOutputsMode(process.env.ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE),
   publicAssistantRequestTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS, 25000, 5000, 45000),
   publicAssistantAnswerTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS, 20000, 5000, 30000),
+  publicAssistantVisionTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_VISION_TIMEOUT_MS, 12000, 3000, 20000),
   publicAssistantDirectMaxOutputTokens: readBoundedInteger(process.env.PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS, 800, 128, 2048),
   publicAssistantRateLimit: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_LIMIT, 20, 1, 120),
   publicAssistantRateWindowMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_WINDOW_MS, 60000, 10000, 3600000),

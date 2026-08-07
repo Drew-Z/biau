@@ -133,6 +133,8 @@ On mobile first-open, move focus from the hidden trigger into a stable non-input
 
 Recovery presentation consumes normalized metadata only. Use fixed copy for recovered attempts and the bounded safe failure-class union; do not define raw-payload casts or provider error mappings inside the component. The `recovering` repaint and elapsed-time label reuse the existing status region without adding repeated live announcements. Reserve stable space so recovery copy cannot move the composer, widen a message, or overflow at 320, 390, or 430px.
 
+The public assistant composer may accept one JPEG, PNG, or WebP image. Use one Lucide image command, an explicit removable preview, and browser-side resize/compression before submission. The image stays only in the active in-memory request and must not enter local history snapshots. Retry/edit-resend may reuse the current in-memory attachment, while refresh intentionally discards it. Keep preview text and controls contained at 320, 390, 430, compact desktop, and fullscreen widths.
+
 Free-instance warm-up uses a separate `idle | warming | ready | error` state
 from answer-service presentation. Opening the widget runs only `/health`; a
 failed health request may retry once through the same abortable lifecycle.

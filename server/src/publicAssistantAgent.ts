@@ -3,6 +3,11 @@ import { Annotation, END, START, StateGraph } from '@langchain/langgraph'
 import { env } from './env.js'
 import { recordPublicAssistantModelAttempt, recordPublicAssistantRun } from './metrics.js'
 import { createPublicAssistantModel, shouldUseDirectPublicAssistantRoute } from './publicAssistantModel.js'
+import {
+  normalizePublicAssistantImageAttachment,
+  understandPublicAssistantImage,
+  type PublicAssistantImageToolResult,
+} from './publicAssistantImage.js'
 import { logPublicAssistantRecovery } from './publicAssistantRecoveryLog.js'
 import type {
   PublicAssistantDraft,
@@ -35,6 +40,7 @@ export interface PublicAssistantAgentDependencies {
   model: PublicAssistantModel
   retrieveSite(queries: string[]): Promise<SiteResearchResult>
   researchWeb(queries: string[], signal?: AbortSignal): Promise<PublicWebResearchResult>
+  understandImage?(input: Parameters<typeof understandPublicAssistantImage>[0]): Promise<PublicAssistantImageToolResult>
   now?(): number
   sleep?(delayMs: number, signal?: AbortSignal): Promise<void>
 }
@@ -44,6 +50,7 @@ const PublicAssistantAnnotation = Annotation.Root({
   dependencies: Annotation<PublicAssistantAgentDependencies>,
   startedAt: Annotation<number>,
   inputBlocked: Annotation<boolean>,
+  imageFailed: Annotation<boolean>,
   agentPlan: Annotation<PublicAssistantPlan | undefined>,
   evidence: Annotation<PublicAssistantEvidence[]>,
   retrieval: Annotation<AssistantRetrievalMeta | undefined>,
@@ -61,6 +68,7 @@ const defaultDependencies: PublicAssistantAgentDependencies = {
   model: createPublicAssistantModel(),
   retrieveSite: retrieveSiteEvidence,
   researchWeb: researchPublicWeb,
+  understandImage: understandPublicAssistantImage,
 }
 
 export async function runPublicAssistantAgent(
@@ -72,6 +80,7 @@ export async function runPublicAssistantAgent(
     dependencies,
     startedAt: dependencies.now?.() ?? Date.now(),
     inputBlocked: false,
+    imageFailed: false,
     agentPlan: undefined,
     evidence: [],
     retrieval: undefined,
@@ -102,7 +111,10 @@ export function normalizePublicAssistantPayload(payload: ChatPayload): PublicAss
   const contractVersion = payload.contractVersion === 2 ? 2 : 1
   const requestId = readRequestId(payload.requestId) || (contractVersion === 1 ? randomUUID() : '')
   const intent = normalizeGenerationIntent(payload.intent, contractVersion)
-  if (!requestId || !question || !intent) return null
+  const attachment = payload.attachment === undefined
+    ? undefined
+    : normalizePublicAssistantImageAttachment(payload.attachment)
+  if (!requestId || !question || !intent || (payload.attachment !== undefined && !attachment)) return null
   return {
     contractVersion,
     requestId,
@@ -112,12 +124,49 @@ export function normalizePublicAssistantPayload(payload: ChatPayload): PublicAss
     pageContext: normalizePageContext(payload.pageContext),
     history: normalizeHistory(payload.history),
     intent,
+    ...(attachment ? { attachment } : {}),
   }
 }
 
 async function inputGuardNode(state: PublicAssistantState) {
   emitProgress(state.request, 'planning')
   return { inputBlocked: isCredentialSeekingRequest(state.request.question) }
+}
+
+function routeAfterInputGuard(state: PublicAssistantState) {
+  if (state.inputBlocked) return 'finalize'
+  return state.request.attachment ? 'understand_image' : 'plan'
+}
+
+async function understandImageNode(state: PublicAssistantState) {
+  const attachment = state.request.attachment
+  if (!attachment) return { imageFailed: false }
+  emitProgress(state.request, 'understanding_image')
+  const remainingMs = Math.max(1_000, env.publicAssistantRequestTimeoutMs - (now(state) - state.startedAt) - 5_000)
+  const result = state.dependencies.understandImage
+    ? await state.dependencies.understandImage({
+        attachment,
+        question: state.request.question,
+        timeoutMs: Math.min(env.publicAssistantVisionTimeoutMs, remainingMs),
+        signal: state.request.signal,
+      })
+    : { status: 'unavailable' as const, failure: 'not_configured' as const }
+  if (result.status === 'ready') {
+    return {
+      request: { ...state.request, imageObservation: result.observation },
+      imageFailed: false,
+    }
+  }
+  return {
+    imageFailed: true,
+    agentPlan: { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' } satisfies PublicAssistantPlan,
+    draft: buildImageUnavailableDraft(result),
+    verificationPassed: true,
+  }
+}
+
+function routeAfterImage(state: PublicAssistantState) {
+  return state.imageFailed ? 'finalize' : 'plan'
 }
 
 async function planNode(state: PublicAssistantState) {
@@ -388,6 +437,34 @@ function routeAfterVerify(state: PublicAssistantState) {
   return state.shouldRetry ? 'rewrite' : 'finalize'
 }
 
+function buildImageUnavailableDraft(
+  result: Extract<PublicAssistantImageToolResult, { status: 'unavailable' }>,
+): PublicAssistantDraft {
+  const failureClass = result.failure === 'not_configured'
+    ? 'not_configured'
+    : result.failure === 'empty_response'
+      ? 'empty'
+      : result.failure === 'invalid_response'
+        ? 'invalid'
+        : result.diagnostic?.kind === 'timeout'
+          ? 'timeout'
+          : result.diagnostic?.kind === 'network_error'
+            ? 'network'
+            : 'upstream'
+  return {
+    answer: '这张图片暂时没有解析成功。为了避免看图猜测，我没有继续生成结论；可以保留问题并稍后重试，或移除图片后改用文字描述。',
+    status: 'degraded',
+    claims: [],
+    suggestions: [],
+    model: 'vision-tool',
+    provider: 'local',
+    failure: result.failure,
+    ...(result.diagnostic ? { diagnostic: result.diagnostic } : {}),
+    attempts: [{ attempt: 1, durationMs: 0, failureClass }],
+    recovery: { state: 'degraded', attempts: 1, failureClass },
+  }
+}
+
 async function finalizeNode(state: PublicAssistantState) {
   if (state.inputBlocked) {
     return { response: buildBlockedResponse(state) }
@@ -441,6 +518,7 @@ async function finalizeNode(state: PublicAssistantState) {
 
 const compiledPublicAssistantGraph = new StateGraph(PublicAssistantAnnotation)
   .addNode('input_guard', inputGuardNode)
+  .addNode('understand_image', understandImageNode)
   .addNode('plan', planNode)
   .addNode('research', researchNode)
   .addNode('grade_evidence', gradeEvidenceNode)
@@ -449,7 +527,15 @@ const compiledPublicAssistantGraph = new StateGraph(PublicAssistantAnnotation)
   .addNode('verify_claims', verifyNode)
   .addNode('finalize', finalizeNode)
   .addEdge(START, 'input_guard')
-  .addEdge('input_guard', 'plan')
+  .addConditionalEdges('input_guard', routeAfterInputGuard, {
+    understand_image: 'understand_image',
+    plan: 'plan',
+    finalize: 'finalize',
+  })
+  .addConditionalEdges('understand_image', routeAfterImage, {
+    plan: 'plan',
+    finalize: 'finalize',
+  })
   .addConditionalEdges('plan', routeAfterPlan, {
     research: 'research',
     generate: 'generate',

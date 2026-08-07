@@ -14,6 +14,7 @@ export interface PublicAssistantRecoveryMeta {
   failureClass?: PublicAssistantRecoveryFailureClass
 }
 export type PublicAssistantProgressStage =
+  | 'understanding_image'
   | 'planning'
   | 'researching'
   | 'evaluating'
@@ -166,6 +167,13 @@ export interface PublicAssistantHistoryTurn {
   content: string
 }
 
+export interface PublicAssistantImageAttachment {
+  kind: 'image'
+  name: string
+  mimeType: 'image/jpeg' | 'image/png' | 'image/webp'
+  dataUrl: string
+}
+
 export class PublicAssistantTransportError extends Error {
   readonly code: string
   readonly canFallbackToJson: boolean
@@ -198,6 +206,7 @@ export interface PublicAssistantRequestInput {
   intent: PublicAssistantGenerationIntent
   history: PublicAssistantHistoryTurn[]
   pageContext: { path: string; title: string; description: string }
+  attachment?: PublicAssistantImageAttachment
   signal?: AbortSignal
 }
 
@@ -337,6 +346,7 @@ function toPublicAssistantRequestBody(input: PublicAssistantRequestInput) {
     intent: input.intent,
     history: input.history.slice(-12),
     pageContext: input.pageContext,
+    ...(input.attachment ? { attachment: input.attachment } : {}),
   }
 }
 
@@ -360,6 +370,7 @@ async function responseError(response: Response, canFallbackToJson = false) {
 function normalizeProgressStage(value: unknown): PublicAssistantProgressStage | null {
   if (!isRecord(value)) return null
   return value.stage === 'planning' ||
+    value.stage === 'understanding_image' ||
     value.stage === 'researching' ||
     value.stage === 'evaluating' ||
     value.stage === 'refining' ||

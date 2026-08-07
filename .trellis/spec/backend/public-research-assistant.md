@@ -18,6 +18,7 @@
 - `auto` is the default product mode. The compact scope selector exposes `site` and `web` only as explicit user overrides when automatic tool selection is unsuitable; they must not return as equal-weight primary navigation. Combined site/web research runs concurrently.
 - Evidence/query rewrite recovery is bounded to one retry. Generation uses one initial primary-channel attempt and at most two retries across the whole configured channel chain. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; an independent fallback chain reserves minimum future-attempt windows without extending that deadline. Cancellation stops active work and all future attempts.
 - Generation channel order is passively adaptive per service process: the configured quality order is the cold-start baseline, while real answer attempts build bounded, time-decayed success/failure reputation and first-activity latency. A recently stable channel stays preferred instead of yielding immediately to a repeatedly failing higher-priority channel. Failures still open a bounded in-memory circuit; cooldown expiry grants one real request a half-open lease while concurrent requests continue through known healthy channels. The request freezes its channel order at start so concurrent outcomes cannot reshuffle an active attempt chain. Opening the assistant, `/health`, and ranking functions never call a model or enumerate a provider catalog. Process restarts clear this ephemeral health state, and stale reputation decays back toward configured quality order.
+- The production cold-start order is `grok-4.5`, `gemini-3.1-pro-preview`, then `gpt-4.1`. The latter two share one independent fallback failure domain; total generation attempts remain capped at three.
 - When every configured channel is open or already leased for recovery, routing returns no provider candidate and the agent emits its bounded degraded response immediately. It does not deliberately call a channel that is still inside its cooldown.
 - Primary configuration/authentication/endpoint, timeout/network, 408/425/429/5xx, empty, or invalid failures may advance to an independent fallback. Permanent request errors, policy refusal, and cancellation never switch channels. Multiple fallback models share one failure domain: authentication or network failure stops that provider, while model-specific endpoint/rate-limit/upstream/empty/invalid failure may advance to the next configured fallback model.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
@@ -91,7 +92,54 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - Client disconnect propagates as a retryable abort; explicit visitor cancellation also calls the cancellation endpoint. The runner checks the signal before execution and again before fenced completion; an aborted or cancelled turn must not emit or persist a fallback response.
 - Rate limiting uses the request IP in process memory but never persists an IP address. Buckets are bounded and a client-provided session ID cannot bypass chat or feedback limits.
 - Persist only bounded anonymous session/turn/feedback data for 30 days. Long-lived aggregates store topic fingerprints and counters rather than raw questions or answers.
+- A request may carry one JPEG, PNG, or WebP attachment. The browser resizes/compresses it, while the server revalidates data URL, Base64, decoded bytes, and file signature with a 256 KB decoded limit. Original image bytes are request-scoped only; persistence and idempotency retain only the normalized attachment digest, kind, and MIME type.
+- The LangGraph `understand_image` node calls `ASSISTANT_VISION_MODEL=gpt-4.1` through an already configured fallback channel and treats the bounded result as untrusted observation. Image text cannot select tools or change policy. Vision failure is explicit and does not let a text-only path guess unseen content.
+- The in-process typed vision tool is authoritative. MCP may wrap this boundary for future cross-product reuse, but the public service must not add an MCP self-network hop solely to call its own tool.
 - Database absence degrades persistence without making the public route unusable.
+
+## Scenario: Public Multimodal Input And Vision Tool
+
+### 1. Scope / Trigger
+
+- Applies whenever anonymous chat accepts image data, the Responses adapter emits `input_image`, or the LangGraph image-understanding node changes.
+
+### 2. Signatures
+
+- `ChatPayload.attachment?: { kind: 'image'; name?: string; mimeType: 'image/jpeg' | 'image/png' | 'image/webp'; dataUrl: string }`.
+- `normalizePublicAssistantImageAttachment(value) -> PublicAssistantImageAttachment | null` adds canonical Base64, SHA-256 `digest`, and `byteLength`.
+- `understandPublicAssistantImage({ attachment, question, timeoutMs?, signal? }) -> PublicAssistantImageToolResult` uses the configured fallback vision channel.
+
+### 3. Contracts
+
+- The browser accepts one image up to 8 MB, resizes its longest edge to at most 1280 px, and emits at most 256 KB after WebP/JPEG encoding. The server independently enforces the decoded 256 KB limit and file signature.
+- The request hash includes only `{ kind, mimeType, digest }`; original bytes, data URL, filename, and visual observation are not persisted or restored from history.
+- `ASSISTANT_VISION_MODEL` must resolve to a configured non-primary fallback model. `PUBLIC_ASSISTANT_VISION_TIMEOUT_MS` is bounded to 3-20 seconds and remains inside the absolute assistant request deadline.
+- The vision observation is bounded to 4000 characters and labeled as untrusted evidence in planner and answer prompts. It cannot select tools, alter policy, or become a public citation by itself.
+
+### 4. Validation & Error Matrix
+
+- Unsupported MIME, malformed/non-canonical Base64, MIME mismatch, bad magic bytes, empty image, or decoded size overflow -> `400 invalid-public-assistant-image`, no provider call.
+- Proxy or Express body overflow -> `413 public-assistant-request-too-large`.
+- Missing configured vision channel, timeout, provider rejection, empty output, or invalid output -> explicit degraded image response; do not continue through a text-only guess path.
+- Caller abort -> abort the vision request and prevent later generation or persistence.
+
+### 5. Good / Base / Bad Cases
+
+- Good: a compressed screenshot is validated, observed through `gpt-4.1`, then the untrusted observation enters the existing plan/research/generate/verify graph.
+- Base: a text-only request omits `attachment` entirely and retains its legacy request hash and behavior.
+- Bad: persist the data URL, trust instructions rendered inside an image, call an arbitrary image endpoint, or let a text-only fallback claim it saw the image.
+
+### 6. Tests Required
+
+- Image checks assert MIME/signature/size validation, canonicalization, digest-only hashing, legacy no-image hash compatibility, bounded Responses `input_image`, cancellation, timeout, injection isolation, and no model continuation after vision failure.
+- Cloudflare checks assert streaming bounded reads, a 512 KB chat/relay request ceiling, retained 32 KB non-chat ceilings, fixed upstream routing, and the three-model allowlist.
+- UI checks assert preview/remove, actual encoded Blob MIME, retry/cancel preservation, session-switch clearing, no localStorage image persistence, 44px controls, and compact/fullscreen 320/390/430 containment.
+
+### 7. Wrong vs Correct
+
+Wrong: add an MCP self-call and assume that protocol alone gives a text model vision, or send an unchecked browser data URL directly to a provider.
+
+Correct: keep one typed in-process vision tool, bind it to an approved fallback vision model, validate and bound the image at every hop, then pass only an untrusted observation into the Agent graph. Add an MCP facade later only when another process needs the same tool.
 
 ## Scenario: Anonymous History And Product Surface
 
@@ -176,6 +224,7 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 
 ```powershell
 npm.cmd run assistant:public-agent-check
+npm.cmd run assistant:public-image-check
 npm.cmd run assistant:public-model-check
 npm.cmd run assistant:public-metrics-check
 npm.cmd run assistant:public-quality-check
@@ -211,7 +260,7 @@ npm.cmd run cf-model-relay:check
 - The relay constructs exactly one HTTPS `/responses` endpoint from the configured base. No request field or header can select an endpoint.
 - Accepted top-level body fields are `model`, `stream`, `max_output_tokens`, `text`, and `input`; `model` must be in the bounded allowlist.
 - Upstream headers are rebuilt from scratch with only bearer auth, JSON content type, and JSON/SSE accept negotiation.
-- Request bodies are at most 64 KB; JSON and SSE responses are at most 512 KB; the timeout is bounded to 55 seconds.
+- Chat generation and relay request bodies are at most 512 KB so one compressed image can pass end to end; non-generation assistant routes remain at 32 KB. JSON and SSE responses are at most 512 KB; the timeout is bounded to 55 seconds.
 - Upstream non-2xx bodies are cancelled and replaced with `model-relay-upstream-rejected`; only the status and a fixed-enum `X-BIAU-Relay-Failure` category cross back to trusted Render diagnostics.
 
 ### 4. Validation & Error Matrix

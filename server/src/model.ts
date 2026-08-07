@@ -72,6 +72,15 @@ export function resolveModelChannels(): AssistantModelChannelConfig[] {
   return [primary, ...fallbackChannels]
 }
 
+export function resolveVisionModelChannel(): AssistantModelChannelConfig | null {
+  if (!env.assistantVisionModel) return null
+  return resolveModelChannels().find((channel) => (
+    !channel.isDefault
+    && channel.model === env.assistantVisionModel
+    && channel.configured
+  )) ?? null
+}
+
 export function resolveAdaptiveModelChannels(at = Date.now()): AssistantModelChannelConfig[] {
   const channels = resolveModelChannels()
   const entries = channels.map((channel, priority) => ({

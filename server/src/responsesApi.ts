@@ -26,6 +26,10 @@ export interface ResponsesJsonSchema {
   strict?: boolean
 }
 
+export type ResponsesUserContentPart =
+  | { type: 'input_text'; text: string }
+  | { type: 'input_image'; image_url: string; detail?: 'auto' | 'low' | 'high' }
+
 interface ResponsesEndpointResult {
   ok: boolean
   content: string
@@ -45,6 +49,7 @@ export async function requestResponsesText(input: {
   stream?: boolean
   maxOutputTokens?: number
   jsonSchema?: ResponsesJsonSchema
+  userContent?: ResponsesUserContentPart[]
 }): Promise<ResponsesApiResult> {
   const startedAt = Date.now()
   if (!input.channel.apiKey || !input.channel.baseUrl || !input.channel.model) {
@@ -148,6 +153,7 @@ async function requestEndpoint(input: {
   stream?: boolean
   maxOutputTokens?: number
   jsonSchema?: ResponsesJsonSchema
+  userContent?: ResponsesUserContentPart[]
 }): Promise<ResponsesEndpointResult> {
   const startedAt = Date.now()
   let firstActivityMs: number | undefined
@@ -190,7 +196,7 @@ async function requestEndpoint(input: {
         } : {}),
         input: [
           { role: 'system', content: [{ type: 'input_text', text: input.system }] },
-          { role: 'user', content: [{ type: 'input_text', text: input.user }] },
+          { role: 'user', content: input.userContent ?? [{ type: 'input_text', text: input.user }] },
         ],
       }),
       signal: abort.signal,

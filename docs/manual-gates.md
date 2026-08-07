@@ -43,12 +43,19 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 - Cloudflare production 设置 `MODEL_RELAY_SHARED_TOKEN`（至少 32 字符随机值）、`MODEL_RELAY_UPSTREAM_BASE_URL`、`MODEL_RELAY_UPSTREAM_API_KEY` 三项 Secret，并设置模型白名单与 timeout 服务端变量。
 - 先部署 Cloudflare Pages，确认未授权 relay 请求返回稳定 `401`，且不发送模型请求。
-- Render public service 的主 base 指向 `/api/model-relay`，备用 base 指向 `/api/model-relay/fallback`；两者使用同一 relay shared token，备用模型为 `grok-4.5`。
+- Render public service 的主 base 指向 `/api/model-relay`，备用 base 指向 `/api/model-relay/fallback`；两者使用同一 relay shared token。冷启动顺序为 `grok-4.5`、`gemini-3.1-pro-preview`、`gpt-4.1`，图片工具固定使用备用渠道中的 `gpt-4.1`。
 - 不执行 ping、doctor、空 prompt 或逐模型测活；只使用用户已批准的真实诗歌问题进行一次端到端验收，并删除临时会话。
 - 2026-08-04 relay 诊断 revision `87210661` 已在 Cloudflare Pages 与 Render 进入生产；确定性检查、Render/Cloudflare health 与无认证 relay `401` 边界均通过。
 - 用户批准的热启动后真实诗歌请求返回 HTTP `200`，但三次有界尝试后仍为 `degraded/fallback`；临时会话已删除。低敏 Render 恢复事件为 `provider_unavailable`，已排除 relay 网络不可达、响应协议异常和响应体超限。
 - 最终 model-answer 验收仍未通过。不得自动重试或逐模型测活；应先在供应商控制台处理渠道 `5xx`，任何后续真实请求都需重新批准。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
+
+### Multimodal routing rollout
+
+- [ ] Cloudflare fallback upstream Secret 已切换到获批独立备用渠道，`MODEL_RELAY_ALLOWED_MODELS` 已设置为三模型白名单；不要把 URL 或 key 写入仓库和截图。
+- [ ] Render public service 已设置 `ASSISTANT_MODEL_FALLBACK_MODELS=gemini-3.1-pro-preview,gpt-4.1`、`ASSISTANT_VISION_MODEL=gpt-4.1` 和 `PUBLIC_ASSISTANT_VISION_TIMEOUT_MS=12000`。
+- [ ] Cloudflare Pages 与 Render 已部署同一 commit；`/health` 和未授权 relay `401` 通过，且未发送模型请求。
+- [ ] 只有再次获得用户明确批准，才用一条真实图片业务问题做端到端验收；不执行模型测活、逐模型探测或自动重试验收。
 
 ## Operator PostgreSQL 退役
 

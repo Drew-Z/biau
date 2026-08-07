@@ -1,3 +1,5 @@
+import { readBoundedTextBody } from './boundedBody'
+
 export interface ModelRelayEnv {
   MODEL_RELAY_SHARED_TOKEN?: string
   MODEL_RELAY_UPSTREAM_BASE_URL?: string
@@ -23,7 +25,7 @@ type RelayFailure =
 
 export type ModelRelayChannel = 'primary' | 'fallback'
 
-const MAX_REQUEST_BYTES = 64_000
+const MAX_REQUEST_BYTES = 512_000
 const MAX_RESPONSE_BYTES = 512_000
 const MAX_ALLOWED_MODELS = 3
 const MAX_MODEL_LENGTH = 160
@@ -45,7 +47,7 @@ export async function relayResponsesRequest(
     return relayJson({ error: 'model-relay-json-required' }, 415)
   }
 
-  const requestBody = await readBoundedBody(request.body, MAX_REQUEST_BYTES)
+  const requestBody = await readBoundedTextBody(request.body, MAX_REQUEST_BYTES)
   if (!requestBody.ok) return relayJson({ error: 'model-relay-request-too-large' }, 413)
   const payload = parseRelayPayload(requestBody.text, config.allowedModels)
   if (!payload) return relayJson({ error: 'model-relay-invalid-request' }, 400)
@@ -98,7 +100,7 @@ export async function relayResponsesRequest(
       await upstream.body?.cancel().catch(() => undefined)
       return relayJson({ error: 'model-relay-upstream-invalid-response' }, 502, 'invalid_response')
     }
-    const responseBody = await readBoundedBody(upstream.body, MAX_RESPONSE_BYTES)
+    const responseBody = await readBoundedTextBody(upstream.body, MAX_RESPONSE_BYTES)
     if (!responseBody.ok) {
       return relayJson({ error: 'model-relay-upstream-response-too-large' }, 502, 'response_too_large')
     }
@@ -238,30 +240,6 @@ function createBoundedRelayStream(
       finish()
     },
   })
-}
-
-async function readBoundedBody(body: ReadableStream<Uint8Array> | null, maximumBytes: number) {
-  if (!body) return { ok: true as const, text: '' }
-  const reader = body.getReader()
-  const chunks: Uint8Array[] = []
-  let bytesRead = 0
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    bytesRead += value.byteLength
-    if (bytesRead > maximumBytes) {
-      await reader.cancel('bounded-body-too-large').catch(() => undefined)
-      return { ok: false as const }
-    }
-    chunks.push(value)
-  }
-  const merged = new Uint8Array(bytesRead)
-  let offset = 0
-  for (const chunk of chunks) {
-    merged.set(chunk, offset)
-    offset += chunk.byteLength
-  }
-  return { ok: true as const, text: new TextDecoder().decode(merged) }
 }
 
 function relayJson(payload: unknown, status: number, relayFailure?: RelayFailure) {

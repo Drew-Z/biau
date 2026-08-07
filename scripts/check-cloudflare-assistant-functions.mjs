@@ -347,6 +347,43 @@ try {
     throw new Error('Cloudflare chat proxy must not forward browser credentials')
   }
 
+  const boundedImageDataUrl = `data:image/webp;base64,${'A'.repeat(340_000)}`
+  const imageChatResponse = await publicChat({
+    request: makeRequest('/api/chat/public', {
+      contractVersion: 2,
+      requestId: '22222222-2222-4222-8222-222222222222',
+      message: '请描述这张图片',
+      mode: 'auto',
+      sessionId: 'public-session-image-1234',
+      intent: { kind: 'new-turn', branchId: null, parentRevisionId: null },
+      history: [],
+      attachment: { kind: 'image', name: 'fixture.webp', mimeType: 'image/webp', dataUrl: boundedImageDataUrl },
+    }),
+    env,
+  })
+  if (!imageChatResponse.ok) throw new Error('Cloudflare chat proxy must accept one bounded image request')
+  const imageObservation = observed.find((entry) => entry.body.includes('public-session-image-1234'))
+  const forwardedImageChat = JSON.parse(imageObservation?.body ?? '{}')
+  if (forwardedImageChat.attachment?.dataUrl !== boundedImageDataUrl) {
+    throw new Error('Cloudflare chat proxy must preserve the bounded image attachment')
+  }
+
+  const oversizedHistoryResponse = await publicSessions({
+    request: makeRequest('/api/chat/public/sessions', { sessionIds: ['public-session-1234'], padding: 'x'.repeat(40_000) }),
+    env,
+  })
+  if (oversizedHistoryResponse.status !== 413) {
+    throw new Error('Cloudflare non-generation routes must retain the narrow request limit')
+  }
+
+  const oversizedChatResponse = await publicChat({
+    request: makeRequest('/api/chat/public', { message: 'x'.repeat(520_000), mode: 'auto' }),
+    env,
+  })
+  if (oversizedChatResponse.status !== 413) {
+    throw new Error('Cloudflare generation routes must reject requests above the multimodal limit')
+  }
+
   const streamResponse = await publicChatStream({
     request: makeRequest('/api/chat/public/stream', {
       contractVersion: 2,
@@ -357,6 +394,7 @@ try {
       intent: { kind: 'new-turn', branchId: null, parentRevisionId: null },
       history: [],
       pageContext: { path: '/blog', title: '博客', description: '公开文章' },
+      attachment: { kind: 'image', name: 'stream-fixture.webp', mimeType: 'image/webp', dataUrl: boundedImageDataUrl },
     }, {
       Authorization: 'Bearer browser-secret-must-not-forward',
       Cookie: 'session=browser-secret-must-not-forward',
@@ -380,7 +418,8 @@ try {
     streamObservation?.cookie ||
     forwardedStream.requestId !== requestId ||
     forwardedStream.contractVersion !== 2 ||
-    forwardedStream.intent?.kind !== 'new-turn'
+    forwardedStream.intent?.kind !== 'new-turn' ||
+    forwardedStream.attachment?.dataUrl !== boundedImageDataUrl
   ) {
     throw new Error('Cloudflare stream proxy must not forward browser credentials')
   }

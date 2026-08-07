@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { type ChangeEvent, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import {
   ArrowDown,
   Check,
@@ -8,6 +8,7 @@ import {
   ExternalLink,
   GitBranch,
   History,
+  ImagePlus,
   LoaderCircle,
   Maximize2,
   MessageSquarePlus,
@@ -53,6 +54,7 @@ import {
   type PublicAssistantFeedbackReason,
   type PublicAssistantGenerationIntent,
   type PublicAssistantHistoryTurn,
+  type PublicAssistantImageAttachment,
   type PublicAssistantMode,
   type PublicAssistantProgressStage,
   type PublicAssistantSessionHistory,
@@ -102,6 +104,7 @@ import {
   startPublicAssistantWarmup,
   subscribePublicAssistantWarmup,
 } from '../utils/publicAssistantWarmup'
+import { preparePublicAssistantImage, PublicAssistantImageError } from '../utils/publicAssistantImage'
 
 interface WidgetMessage {
   id: string
@@ -145,6 +148,7 @@ interface AssistantIssue {
   intent?: PublicAssistantGenerationIntent
   forceAuthoritativeHistory?: boolean
   branchAction?: PublicAssistantBranchAction
+  attachment?: PublicAssistantImageAttachment
 }
 
 interface PublicAssistantPageContext {
@@ -163,6 +167,7 @@ interface ActiveChatRequest {
   pageContext: PublicAssistantPageContext
   intent: PublicAssistantGenerationIntent
   forceAuthoritativeHistory: boolean
+  attachment?: PublicAssistantImageAttachment
 }
 
 type NegativeFeedbackReason = Extract<
@@ -250,6 +255,22 @@ function buildLocalAnswer(question: string, mode: PublicAssistantMode, reason: s
   }
 }
 
+function buildLocalImageFallbackAnswer(reason: string): PublicAssistantAnswer {
+  return {
+    contractVersion: 1,
+    answer: '图片理解服务暂时不可用。为了避免对图片内容进行猜测，我没有生成替代结论；图片和问题仍保留在当前输入中，可以稍后重试。',
+    status: 'degraded',
+    claims: [],
+    citations: [],
+    suggestions: [],
+    meta: {
+      mode: 'fallback',
+      reason,
+      citationCount: 0,
+    },
+  }
+}
+
 async function requestPublicAnswer(input: {
   requestId: string
   question: string
@@ -261,6 +282,7 @@ async function requestPublicAnswer(input: {
   preferredApiBase: string | null
   signal: AbortSignal
   onProgress: (stage: PublicAssistantProgressStage) => void
+  attachment?: PublicAssistantImageAttachment
 }) {
   const apiBase = getAssistantApiBase(input.preferredApiBase)
   const request = {
@@ -273,6 +295,7 @@ async function requestPublicAnswer(input: {
     history: input.history,
     pageContext: input.pageContext,
     signal: input.signal,
+    ...(input.attachment ? { attachment: input.attachment } : {}),
   }
   let answer: PublicAssistantAnswer
   try {
@@ -320,6 +343,7 @@ function formatAnswerMeta(message: WidgetMessage) {
 }
 
 function getLoadingLabel(mode: PublicAssistantMode, stage: PublicAssistantProgressStage | null) {
+  if (stage === 'understanding_image') return '正在读取图片中的可见内容…'
   if (stage === 'planning') return '正在判断问题需要哪些公开资料…'
   if (stage === 'researching') return mode === 'site' ? '正在检索本站公开资料…' : '正在搜索并读取公开来源…'
   if (stage === 'evaluating') return '正在筛选可引用的证据…'
@@ -345,6 +369,7 @@ function toAssistantIssue(
     pageContext: PublicAssistantPageContext
     intent: PublicAssistantGenerationIntent
     forceAuthoritativeHistory?: boolean
+    attachment?: PublicAssistantImageAttachment
   },
 ): AssistantIssue {
   const transport = error instanceof PublicAssistantTransportError ? error : null
@@ -408,6 +433,9 @@ function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean) {
   }
   if (issue.code === 'session-not-found') return { title: '会话已过期', detail: '这条匿名历史已被清理，可以新建会话继续。' }
   if (issue.code === 'public-assistant-request-cancelled') return { title: '已停止生成', detail: '问题仍保留在当前会话中，可以重新发起。' }
+  if (issue.code === 'invalid-public-assistant-image' || issue.code === 'public-assistant-request-too-large') {
+    return { title: '图片无法发送', detail: '请重新选择一张较小的 JPEG、PNG 或 WebP 图片。' }
+  }
   if (issue.code === 'public-assistant-history-refresh-required') {
     return { title: '会话状态需要刷新', detail: '回答已经收到。刷新完成前不会发送下一问，以免进入错误的会话分支。' }
   }
@@ -503,6 +531,9 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const [historyLoadingId, setHistoryLoadingId] = useState<string | null>(null)
   const [progressStage, setProgressStage] = useState<PublicAssistantProgressStage | null>(null)
   const [input, setInput] = useState(initialDraft?.input ?? '')
+  const [imageAttachment, setImageAttachment] = useState<PublicAssistantImageAttachment | null>(null)
+  const [imageIssue, setImageIssue] = useState<string | null>(null)
+  const [isImageProcessing, setIsImageProcessing] = useState(false)
   const [editingTurnId, setEditingTurnId] = useState<string | null>(null)
   const [editingQuestion, setEditingQuestion] = useState('')
   const [mode, setMode] = useState<PublicAssistantMode>(initialDraft?.mode ?? 'auto')
@@ -542,6 +573,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const historyPanelRef = useRef<HTMLElement | null>(null)
   const historyCloseRef = useRef<HTMLButtonElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const imageInputRef = useRef<HTMLInputElement | null>(null)
+  const imageAttachButtonRef = useRef<HTMLButtonElement | null>(null)
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const sessionIdRef = useRef(sessionId)
@@ -581,7 +614,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
   const isWarmupReady = warmup.state === 'ready'
-  const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || !isWarmupReady
+  const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || isImageProcessing || !isWarmupReady
   const isQuestionEditing = editingTurnId !== null
   const launcherLabel = warmup.state === 'warming'
     ? '助手准备中'
@@ -595,6 +628,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     const draft = readPublicAssistantDraft(targetSessionId)
     setInput(draft?.input ?? '')
     setMode(draft?.mode ?? fallbackMode)
+    setImageAttachment(null)
+    setImageIssue(null)
   }
 
   const acceptAuthoritativeHistory = (history: PublicAssistantSessionHistory) => {
@@ -1013,6 +1048,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       pageContext: active.pageContext,
       intent: active.intent,
       forceAuthoritativeHistory: active.forceAuthoritativeHistory,
+      ...(active.attachment ? { attachment: active.attachment } : {}),
     })
   }
 
@@ -1030,6 +1066,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     setConversation(createEmptyPublicAssistantConversation())
     closeQuestionEditor()
     setInput('')
+    setImageAttachment(null)
+    setImageIssue(null)
     setMode('auto')
     setIsSnapshotVisible(false)
     setIssue(null)
@@ -1158,6 +1196,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         shouldFollowOutputRef.current = true
         setConversation(createEmptyPublicAssistantConversation())
         setInput('')
+        setImageAttachment(null)
+        setImageIssue(null)
         setMode('auto')
         setIsSnapshotVisible(false)
         setInitialRestoreState('ready')
@@ -1205,6 +1245,38 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     if (nearBottom) setHasNewContent(false)
   }
 
+  const handleImageSelection = async (event: ChangeEvent<HTMLInputElement>) => {
+    const fileInput = event.currentTarget
+    const file = fileInput.files?.[0]
+    if (!file || isLoading) return
+    setIsImageProcessing(true)
+    setImageIssue(null)
+    try {
+      const prepared = await preparePublicAssistantImage(file)
+      setImageAttachment(prepared)
+      setIssue((current) => current?.scope === 'chat' ? null : current)
+    } catch (error) {
+      const code = error instanceof PublicAssistantImageError ? error.code : 'decode-failed'
+      setImageIssue(code === 'unsupported'
+        ? '仅支持 JPEG、PNG 或 WebP 图片。'
+        : code === 'source-too-large'
+          ? '原图超过 8 MB，请选择更小的图片。'
+          : code === 'output-too-large'
+            ? '图片压缩后仍然过大，请裁剪后重试。'
+            : '图片无法读取，请换一张图片重试。')
+    } finally {
+      fileInput.value = ''
+      setIsImageProcessing(false)
+    }
+  }
+
+  const removeImageAttachment = () => {
+    setImageAttachment(null)
+    setImageIssue(null)
+    setIssue((current) => current?.scope === 'chat' && current.attachment ? null : current)
+    window.requestAnimationFrame(() => imageAttachButtonRef.current?.focus({ preventScroll: true }))
+  }
+
   const submitQuestion = async (
     question: string,
     requestedMode: PublicAssistantMode = mode,
@@ -1218,6 +1290,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       previousRequestId?: string
       intent?: PublicAssistantGenerationIntent
       forceAuthoritativeHistory?: boolean
+      attachment?: PublicAssistantImageAttachment
     } = {},
   ) => {
     const trimmed = normalizePublicAssistantQuestion(question)
@@ -1241,6 +1314,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       : conversation
     const history = options.history ?? buildPublicAssistantConversationHistory(historyState)
     const pageContext = options.pageContext ?? readPublicAssistantPageContext()
+    const attachment = options.attachment ?? imageAttachment ?? undefined
     shouldFollowOutputRef.current = true
     setHasNewContent(false)
     setIssue(null)
@@ -1272,6 +1346,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       pageContext,
       intent,
       forceAuthoritativeHistory,
+      ...(attachment ? { attachment } : {}),
     }
 
     let result: PublicAssistantAnswer
@@ -1293,6 +1368,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         onProgress: (stage) => {
           if (activeRequestRef.current?.controller === controller) setProgressStage(stage)
         },
+        ...(attachment ? { attachment } : {}),
       })
       if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
       result = remote.answer
@@ -1331,8 +1407,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         pageContext,
         intent,
         forceAuthoritativeHistory,
+        ...(attachment ? { attachment } : {}),
       })
-      result = { ...buildLocalAnswer(trimmed, requestedMode, nextIssue.code), requestId }
+      result = {
+        ...(attachment ? buildLocalImageFallbackAnswer(nextIssue.code) : buildLocalAnswer(trimmed, requestedMode, nextIssue.code)),
+        requestId,
+      }
       setIssue(nextIssue)
       setServiceState(getAssistantApiBase(apiBase) ? 'error' : 'degraded')
     } finally {
@@ -1347,6 +1427,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     if (requestSucceeded && submittedDraft !== null) {
       clearPublicAssistantDraft(requestSessionId, submittedDraft)
       setInput((current) => current === submittedDraft ? '' : current)
+      if (attachment && imageAttachment?.dataUrl === attachment.dataUrl) setImageAttachment(null)
     }
     if (result.sessionId) commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, result.sessionId))
     if (authoritativeHistory) {
@@ -1395,6 +1476,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         ...(issue.pageContext ? { pageContext: issue.pageContext } : {}),
         ...(issue.intent ? { intent: issue.intent } : {}),
         ...(issue.forceAuthoritativeHistory ? { forceAuthoritativeHistory: true } : {}),
+        ...(issue.attachment ? { attachment: issue.attachment } : {}),
         ...(!cancelled && issue.requestId ? { replaceFallbackRequestId: issue.requestId } : {}),
       })
       return
@@ -2211,6 +2293,37 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
               void submitQuestion(input)
             }}
           >
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              onChange={handleImageSelection}
+            />
+            {imageAttachment && (
+              <div className="public-assistant__image-preview">
+                <img src={imageAttachment.dataUrl} alt="待发送图片预览" />
+                <div>
+                  <strong>{imageAttachment.name}</strong>
+                  <span>仅用于本次回答，不写入历史</span>
+                </div>
+                <button type="button" onClick={removeImageAttachment} aria-label="移除图片" title="移除图片">
+                  <X size={15} aria-hidden />
+                </button>
+              </div>
+            )}
+            {imageIssue && <p className="public-assistant__image-issue" role="alert">{imageIssue}</p>}
+            <button
+              ref={imageAttachButtonRef}
+              type="button"
+              className="is-attach"
+              disabled={isAssistantBusy || isQuestionEditing || !isConversationReady}
+              onClick={() => imageInputRef.current?.click()}
+              aria-label={imageAttachment ? '更换图片' : '添加图片'}
+              title={imageAttachment ? '更换图片' : '添加图片'}
+            >
+              {isImageProcessing ? <LoaderCircle className="spin" size={17} aria-hidden /> : <ImagePlus size={17} aria-hidden />}
+            </button>
             <label className="sr-only" htmlFor="public-assistant-input">向研究助手提问</label>
             <textarea
               ref={inputRef}
@@ -2244,7 +2357,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             ) : (
               <button
                 type="submit"
-                disabled={!isWarmupReady || !isConversationReady || isQuestionEditing || input.trim().length === 0}
+                disabled={!isWarmupReady || !isConversationReady || isQuestionEditing || isImageProcessing || input.trim().length === 0}
                 aria-label="发送问题"
               >
                 <Send size={16} aria-hidden />

@@ -18,7 +18,9 @@
   "commit": null,
   "pr_url": null,
   "subtasks": [],
-  "children": [],
+  "children": [
+    "08-07-08-07-public-assistant-multimodal-routing"
+  ],
   "parent": null,
   "relatedFiles": [],
   "notes": "",

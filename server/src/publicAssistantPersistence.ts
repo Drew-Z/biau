@@ -100,6 +100,9 @@ export function buildPublicAssistantRequestHash(request: PublicAssistantRequest)
     contractVersion: request.contractVersion,
     sessionId: request.sessionId,
     question: request.question,
+    ...(request.attachment ? {
+      attachment: { kind: request.attachment.kind, mimeType: request.attachment.mimeType, digest: request.attachment.digest },
+    } : {}),
     mode: request.mode,
     history: request.history.map((turn) => ({ role: turn.role, content: turn.content })),
     pageContext: request.pageContext

@@ -52,7 +52,7 @@ assertStatus(await relayResponsesRequest(request(payload(), 'wrong-token'), rela
 assertStatus(await relayResponsesRequest(request(payload(), 'fixture-relay-token-with-32-characters', 'text/plain'), relayEnv, { fetch: noFetch }), 415, 'non-JSON relay request')
 assertStatus(await relayResponsesRequest(request(payload({ model: 'unknown-model' })), relayEnv, { fetch: noFetch }), 400, 'unknown relay model')
 assertStatus(await relayResponsesRequest(request(payload({ endpoint: 'https://attacker.example' })), relayEnv, { fetch: noFetch }), 400, 'caller-controlled endpoint')
-assertStatus(await relayResponsesRequest(request('{"model":"fixture-primary","stream":false,"input":[' + '"x",'.repeat(70_000) + ']}'), relayEnv, { fetch: noFetch }), 413, 'oversized relay request')
+assertStatus(await relayResponsesRequest(request('{"model":"fixture-primary","stream":false,"input":[' + '"x",'.repeat(520_000) + ']}'), relayEnv, { fetch: noFetch }), 413, 'oversized relay request')
 if (fetchCalls !== 0) throw new Error('invalid relay requests must not reach upstream fetch')
 
 let observed
@@ -72,6 +72,32 @@ const observedHeaders = new Headers(observed?.init?.headers)
 if (observedHeaders.get('Authorization') !== 'Bearer fixture-upstream-key') throw new Error('relay must generate upstream authorization')
 if (observedHeaders.get('Cookie') || observedHeaders.get('X-Forwarded-For')) throw new Error('relay must strip caller credentials and forwarding headers')
 if (JSON.parse(String(observed?.init?.body)).model !== 'fixture-primary') throw new Error('relay must preserve the approved model request')
+
+let multimodalObserved
+const multimodalPayload = payload({
+  model: 'fixture-fallback-b',
+  input: [{
+    role: 'user',
+    content: [
+      { type: 'input_text', text: 'describe the fixture image' },
+      { type: 'input_image', image_url: `data:image/webp;base64,${'A'.repeat(340_000)}`, detail: 'auto' },
+    ],
+  }],
+})
+const multimodalResponse = await relayResponsesRequest(request(multimodalPayload), relayEnv, {
+  async fetch(url, init) {
+    multimodalObserved = { url: String(url), init }
+    return new Response(JSON.stringify({ output_text: 'bounded image observation' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  },
+}, 'fallback')
+assertStatus(multimodalResponse, 200, 'bounded multimodal relay request')
+const forwardedMultimodal = JSON.parse(String(multimodalObserved?.init?.body))
+if (forwardedMultimodal.input?.[0]?.content?.[1]?.image_url !== multimodalPayload.input[0].content[1].image_url) {
+  throw new Error('relay must preserve one bounded approved image input')
+}
 
 let fallbackObserved
 const fallbackResponse = await fallbackRelayResponses({

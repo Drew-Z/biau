@@ -347,3 +347,36 @@ Added safe recovery logging, verified bounded same-channel model fallback, deplo
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: Public assistant multimodal model routing
+
+**Date**: 2026-08-08
+**Task**: Public assistant multimodal model routing
+**Branch**: `codex/public-assistant-main-integration`
+
+### Summary
+
+Ranked the approved 59-model catalog without model probes, configured a bounded three-attempt generation chain, and added one-image understanding through a fallback vision model inside the public LangGraph.
+
+### Main Changes
+
+- Cold-start order is `grok-4.5`, `gemini-3.1-pro-preview`, then `gpt-4.1`; passive business-request outcomes may reorder later frozen request chains.
+- Added browser compression/preview/removal, strict server image validation, digest-only idempotency, bounded Cloudflare forwarding, and an untrusted vision-observation node.
+- Kept the vision boundary as an in-process typed tool. MCP remains a future cross-process facade because it does not itself add image capability.
+
+### Testing
+
+- [OK] Public image/model/agent/API/persistence/rate-limit/quality/browser-state/conversation/metrics/web/sync fixtures.
+- [OK] Cloudflare assistant and model-relay fixtures, deployment contract, hybrid RAG, RAG smoke, service modes, and server smoke.
+- [OK] TypeScript server build, ESLint, production build, and UI checks for 17 routes across desktop/mobile viewports.
+- [SKIP] Revision migration integration check requires a dedicated `PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL`; this task has no database schema change and did not reuse production storage.
+
+### Status
+
+[WIP] Code and deterministic validation complete; Cloudflare/Render deployment and non-model production boundaries remain.
+
+### Next Steps
+
+- Commit and push the isolated branch, deploy matching Cloudflare/Render configuration, then verify `/health` and unauthenticated relay `401` without invoking a model.
+- Run a real image question only after separate explicit user approval.

@@ -6,6 +6,7 @@ import type {
   PublicAssistantContractVersion,
   PublicAssistantGenerationIntent,
   PublicAssistantHistoryTurn,
+  PublicAssistantImageAttachment,
   PublicAssistantMode,
   PublicAssistantPageContext,
   PublicAssistantRecoveryFailureClass,
@@ -23,11 +24,14 @@ export interface PublicAssistantRequest {
   pageContext?: PublicAssistantPageContext
   history: PublicAssistantHistoryTurn[]
   intent: PublicAssistantGenerationIntent
+  attachment?: PublicAssistantImageAttachment
+  imageObservation?: string
   signal?: AbortSignal
   onProgress?: (progress: PublicAssistantProgress) => void
 }
 
 export type PublicAssistantProgressStage =
+  | 'understanding_image'
   | 'planning'
   | 'researching'
   | 'evaluating'

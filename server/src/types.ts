@@ -77,6 +77,22 @@ export interface ChatPayload {
   pageContext?: PublicAssistantPageContext
   history?: PublicAssistantHistoryTurn[]
   intent?: PublicAssistantGenerationIntent
+  attachment?: PublicAssistantImagePayload
+}
+
+export type PublicAssistantImageMimeType = 'image/jpeg' | 'image/png' | 'image/webp'
+
+export interface PublicAssistantImagePayload {
+  kind: 'image'
+  name?: string
+  mimeType: PublicAssistantImageMimeType
+  dataUrl: string
+}
+
+export interface PublicAssistantImageAttachment extends PublicAssistantImagePayload {
+  name: string
+  digest: string
+  byteLength: number
 }
 
 export interface PublicAssistantPageContext {

@@ -1,9 +1,12 @@
+import { readBoundedTextBody } from './boundedBody'
+
 export interface AssistantEnv {
   PUBLIC_ASSISTANT_API_BASE_URL?: string
   PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS?: string
 }
 
 const MAX_REQUEST_BYTES = 32_000
+const MAX_MULTIMODAL_REQUEST_BYTES = 512_000
 const MAX_RESPONSE_BYTES = 256_000
 const MAX_STREAM_RESPONSE_BYTES = 512_000
 
@@ -44,10 +47,15 @@ async function proxyAssistant(
     if (!contentType.includes('application/json')) {
       return jsonResponse({ error: 'public-assistant-json-required' }, { status: 415 })
     }
-    body = await request.text()
-    if (new TextEncoder().encode(body).byteLength > MAX_REQUEST_BYTES) {
+    const requestBody = await readBoundedTextBody(
+      request.body,
+      requestLimitForPath(upstreamPath),
+      'public-assistant-request-too-large',
+    )
+    if (!requestBody.ok) {
       return jsonResponse({ error: 'public-assistant-request-too-large' }, { status: 413 })
     }
+    body = requestBody.text
   }
 
   const controller = new AbortController()
@@ -105,6 +113,12 @@ async function proxyAssistant(
   } finally {
     if (!streamHandedOff) cleanup()
   }
+}
+
+function requestLimitForPath(upstreamPath: string) {
+  return upstreamPath === '/chat/public' || upstreamPath === '/chat/public/stream'
+    ? MAX_MULTIMODAL_REQUEST_BYTES
+    : MAX_REQUEST_BYTES
 }
 
 function createBoundedProxyStream(

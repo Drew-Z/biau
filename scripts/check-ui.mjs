@@ -2445,6 +2445,11 @@ const toPublicAssistantSse = (answer) => [
 const feedbackPayloads = []
 const publicAssistantRequestBodies = []
 const originalPublicAssistantHistoryFixture = createPublicAssistantHistoryFixture()
+const publicAssistantImageFixture = {
+  name: 'assistant-fixture.png',
+  mimeType: 'image/png',
+  buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64'),
+}
 if (!normalizePublicAssistantSessionHistory(originalPublicAssistantHistoryFixture)) {
   throw new Error('public assistant history fixture no longer satisfies the production normalizer')
 }
@@ -2732,6 +2737,31 @@ if (
 ) {
   failures.push('/blog public assistant: expected history, new-session, and fullscreen commands')
 }
+const desktopImageInput = publicAssistantPage.locator('input[type="file"][accept="image/jpeg,image/png,image/webp"]')
+await desktopImageInput.setInputFiles(publicAssistantImageFixture)
+await publicAssistantPage.locator('.public-assistant__image-preview').waitFor({ state: 'visible' })
+const compactImageLayout = await publicAssistantPage.evaluate(() => {
+  const panel = document.querySelector('.public-assistant__panel')
+  const composer = document.querySelector('.public-assistant__composer')
+  const preview = document.querySelector('.public-assistant__image-preview')
+  if (!(panel instanceof HTMLElement) || !(composer instanceof HTMLElement) || !(preview instanceof HTMLElement)) return null
+  const panelRect = panel.getBoundingClientRect()
+  const composerRect = composer.getBoundingClientRect()
+  const previewRect = preview.getBoundingClientRect()
+  return {
+    previewInsideComposer: previewRect.left >= composerRect.left - 1 && previewRect.right <= composerRect.right + 1,
+    composerInsidePanel: composerRect.left >= panelRect.left - 1 && composerRect.right <= panelRect.right + 1,
+    privacyCopy: preview.textContent?.includes('不写入历史') ?? false,
+  }
+})
+await publicAssistantPage.getByRole('button', { name: '移除图片' }).click()
+const compactImageFocusRestored = await publicAssistantPage.waitForFunction(() => {
+  const trigger = document.querySelector('[aria-label="添加图片"]')
+  return !document.querySelector('.public-assistant__image-preview') && trigger === document.activeElement
+}, undefined, { timeout: 2_000 }).then(() => true).catch(() => false)
+if (!compactImageLayout?.previewInsideComposer || !compactImageLayout.composerInsidePanel || !compactImageLayout.privacyCopy || !compactImageFocusRestored) {
+  failures.push('/blog public assistant image: compact preview should stay contained, disclose ephemeral use, and restore remove focus')
+}
 const editQuestionButton = publicAssistantPage.getByRole('button', { name: '编辑问题' })
 if ((await editQuestionButton.count()) !== 1) {
   failures.push('/blog public assistant edit: expected one edit command on the persisted visitor question')
@@ -2831,6 +2861,8 @@ if (await publicAssistantPage.locator('.public-assistant__panel').isVisible().ca
   failures.push('/blog public assistant: internal citation navigation should close the assistant surface')
 }
 await publicAssistantPage.locator('.public-assistant__trigger').click()
+await desktopImageInput.setInputFiles(publicAssistantImageFixture)
+await publicAssistantPage.locator('.public-assistant__image-preview').waitFor({ state: 'visible' })
 await publicAssistantPage.locator('#public-assistant-input').fill('基于刚才的历史继续说明')
 await publicAssistantPage.getByRole('button', { name: '发送问题' }).click()
 await publicAssistantPage.waitForFunction(() => document.querySelectorAll('.public-assistant__message.is-assistant').length === 2)
@@ -2838,9 +2870,12 @@ if (
   publicAssistantRequestBodies.length !== 1 ||
   !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(publicAssistantRequestBodies[0]?.requestId ?? '') ||
   publicAssistantRequestBodies[0]?.history?.length !== 2 ||
-  publicAssistantRequestBodies[0]?.history?.[0]?.content !== '历史问题'
+  publicAssistantRequestBodies[0]?.history?.[0]?.content !== '历史问题' ||
+  publicAssistantRequestBodies[0]?.attachment?.kind !== 'image' ||
+  !publicAssistantRequestBodies[0]?.attachment?.dataUrl?.startsWith('data:image/') ||
+  (await publicAssistantPage.locator('.public-assistant__image-preview').count()) !== 0
 ) {
-  failures.push('/blog public assistant: the first follow-up should include the restored conversation history')
+  failures.push('/blog public assistant: the first follow-up should include restored history, forward one image, and clear its preview')
 }
 if (!(await publicAssistantPage.getByText(/已自动恢复（2 次尝试）/u).last().isVisible().catch(() => false))) {
   failures.push('/blog public assistant recovery: recovered answers should expose the bounded attempt count')
@@ -2969,6 +3004,18 @@ if (
 ) {
   failures.push('/blog public assistant: desktop fullscreen should keep one centered content column and one isolated message scroller')
 }
+await desktopImageInput.setInputFiles(publicAssistantImageFixture)
+await publicAssistantPage.locator('.public-assistant__image-preview').waitFor({ state: 'visible' })
+const fullscreenImageContained = await publicAssistantPage.evaluate(() => {
+  const panel = document.querySelector('.public-assistant__panel')
+  const preview = document.querySelector('.public-assistant__image-preview')
+  if (!(panel instanceof HTMLElement) || !(preview instanceof HTMLElement)) return false
+  const panelRect = panel.getBoundingClientRect()
+  const previewRect = preview.getBoundingClientRect()
+  return previewRect.left >= panelRect.left - 1 && previewRect.right <= panelRect.right + 1
+})
+await publicAssistantPage.getByRole('button', { name: '移除图片' }).click()
+if (!fullscreenImageContained) failures.push('/blog public assistant image: desktop fullscreen preview must remain inside the assistant panel')
 await publicAssistantPage.getByRole('button', { name: '退出全屏' }).click()
 const expectedInitialSuggestions = getPublicAssistantSuggestions('/blog').slice(0, 3)
 const visibleSuggestionLabels = await publicAssistantPage.locator('.public-assistant__suggestion').allInnerTexts()
@@ -3938,6 +3985,33 @@ for (const width of [320, 390, 430]) {
     const root = document.querySelector('.public-assistant')
     return root instanceof HTMLElement && root.style.getPropertyValue('--public-assistant-viewport-height') === '640px'
   })
+  await mobileAssistantPage.locator('input[type="file"][accept="image/jpeg,image/png,image/webp"]').setInputFiles(publicAssistantImageFixture)
+  await mobileAssistantPage.locator('.public-assistant__image-preview').waitFor({ state: 'visible' })
+  const mobileImageLayout = await mobileAssistantPage.evaluate(() => {
+    const panel = document.querySelector('.public-assistant__panel')
+    const preview = document.querySelector('.public-assistant__image-preview')
+    const remove = document.querySelector('[aria-label="移除图片"]')
+    if (!(panel instanceof HTMLElement) || !(preview instanceof HTMLElement) || !(remove instanceof HTMLElement)) return null
+    const panelRect = panel.getBoundingClientRect()
+    const previewRect = preview.getBoundingClientRect()
+    const removeRect = remove.getBoundingClientRect()
+    return {
+      documentOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      previewInside: previewRect.left >= panelRect.left - 1 && previewRect.right <= panelRect.right + 1,
+      removeWidth: removeRect.width,
+      removeHeight: removeRect.height,
+    }
+  })
+  await mobileAssistantPage.getByRole('button', { name: '移除图片' }).click()
+  if (
+    !mobileImageLayout ||
+    mobileImageLayout.documentOverflow > 1 ||
+    !mobileImageLayout.previewInside ||
+    mobileImageLayout.removeWidth < 44 ||
+    mobileImageLayout.removeHeight < 44
+  ) {
+    failures.push(`/blog public assistant image ${width}px: preview must stay contained with a 44px remove target`)
+  }
   await mobileAssistantPage.locator('.public-assistant__suggestion').first().click()
   await mobileAssistantPage.locator('.public-assistant__message.is-assistant').waitFor({ state: 'visible' })
   const mobileUserCount = await mobileAssistantPage.locator('.public-assistant__message.is-user').count()

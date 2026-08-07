@@ -5520,11 +5520,67 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .public-assistant__composer {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: var(--space-8);
   align-items: end;
   padding-top: 2px;
   background: color-mix(in oklch, var(--panel) 92%, transparent);
+}
+
+.public-assistant__image-preview,
+.public-assistant__image-issue {
+  grid-column: 1 / -1;
+}
+
+.public-assistant__image-preview {
+  min-width: 0;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-8);
+  color: var(--ink);
+  background: color-mix(in oklch, var(--panel-strong) 64%, transparent);
+  border: 1px solid var(--flow-ui-card-border);
+  border-radius: var(--radius-sm);
+}
+
+.public-assistant__image-preview img {
+  width: 48px;
+  height: 48px;
+  display: block;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.public-assistant__image-preview > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.public-assistant__image-preview strong,
+.public-assistant__image-preview span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-assistant__image-preview strong {
+  font-size: 12px;
+}
+
+.public-assistant__image-preview span,
+.public-assistant__image-issue {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.public-assistant__image-issue {
+  margin: 0;
+  color: color-mix(in oklch, var(--rose) 72%, var(--ink));
 }
 
 .public-assistant__history-backdrop {
@@ -6081,6 +6137,17 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   justify-content: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+.public-assistant__composer button.is-attach,
+.public-assistant__image-preview button {
+  width: 44px;
+  min-width: 44px;
+  padding: 0;
+}
+
+.public-assistant__image-preview button {
+  min-height: 44px;
 }
 
 .public-assistant__composer button.is-stop {

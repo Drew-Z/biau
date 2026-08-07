@@ -11,6 +11,7 @@ import {
   toAiDailyOperationsDiagnostics,
 } from './aiDailyOperations.js'
 import { normalizePublicAssistantPayload } from './publicAssistantAgent.js'
+import { normalizePublicAssistantImageAttachment } from './publicAssistantImage.js'
 import {
   cancelPublicAssistantRequest,
   deletePublicAssistantSession,
@@ -104,6 +105,10 @@ export function createApp(options: { publicFeedEnabled?: boolean } = {}) {
     void next
     const name = error instanceof Error ? error.name : ''
     const message = error instanceof Error ? error.message : 'unknown-error'
+    if (isRequestBodyTooLarge(error)) {
+      res.status(413).json({ error: 'public-assistant-request-too-large' })
+      return
+    }
     if (name === 'DatabaseNotConfigured') {
       res.status(503).json({ error: message })
       return
@@ -432,18 +437,27 @@ function registerPublicAssistantRoutes(app: express.Express) {
 }
 
 function acceptPublicAssistantRequest(req: express.Request, res: express.Response) {
-  const request = normalizePublicAssistantPayload(req.body as ChatPayload)
-  if (!request) {
-    res.status(400).json({ error: 'missing-message' })
-    return null
-  }
   const rateLimit = consumePublicAssistantRateLimit(`chat:${req.ip ?? 'unknown'}`)
   if (!rateLimit.allowed) {
     res.setHeader('Retry-After', String(rateLimit.retryAfterSeconds))
     res.status(429).json({ error: 'public-assistant-rate-limited' })
     return null
   }
+  const payload = req.body as ChatPayload
+  if (payload.attachment !== undefined && !normalizePublicAssistantImageAttachment(payload.attachment)) {
+    res.status(400).json({ error: 'invalid-public-assistant-image' })
+    return null
+  }
+  const request = normalizePublicAssistantPayload(payload)
+  if (!request) {
+    res.status(400).json({ error: 'missing-message' })
+    return null
+  }
   return request
+}
+
+function isRequestBodyTooLarge(error: unknown) {
+  return typeof error === 'object' && error !== null && 'status' in error && error.status === 413
 }
 
 function acceptPublicAssistantHistoryRequest(req: express.Request, res: express.Response) {
