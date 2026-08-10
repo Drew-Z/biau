@@ -27,14 +27,14 @@ Restore the production public assistant knowledge path by replacing the failed Q
 
 ## Acceptance Criteria
 
-- [ ] The committed SQL creates the required extensions and six `rag_*` tables, stores `rag_chunks.embedding` as `extensions.vector(4096)`, omits an ANN vector index, and enables RLS on every new table.
-- [ ] Render Blueprint, environment examples, deployment docs, README, deployment checks, and backend specifications identify Supabase pgvector as the production RAG store and require `RAG_DATABASE_URL`.
-- [ ] Relevant RAG contracts, deployment contract, server TypeScript build, lint, frontend build, and whitespace checks pass locally without real model calls.
-- [ ] The additive schema migration is applied to the active public-assistant Supabase project, and post-migration inspection confirms the tables, 4096-dimensional vector column, RLS, and absence of public policies.
-- [ ] The Render RAG service is configured with `RAG_STORE_PROVIDER=supabase` and a server-only database connection, then deploys the intended Git commit successfully.
-- [ ] The authenticated public sync succeeds and `/health` reports `store=supabase-pgvector`, `vectorReady=true`, `documentCount=29`, `chunkCount=58`, and a non-null `lastSyncAt`.
-- [ ] A real public-assistant business question uses the deployed RAG route and returns relevant public evidence; this request is an acceptance task, not a model liveness probe.
-- [ ] The existing non-RLS public assistant tables are reported as a separate manual/security follow-up rather than silently modified.
+- [x] The committed SQL creates the required extensions and six `rag_*` tables, stores `rag_chunks.embedding` as `extensions.vector(4096)`, omits an ANN vector index, and enables RLS on every new table.
+- [x] Render Blueprint, environment examples, deployment docs, README, deployment checks, and backend specifications identify Supabase pgvector as the production RAG store and require `RAG_DATABASE_URL`.
+- [x] Relevant RAG contracts, deployment contract, server TypeScript build, lint, frontend build, and whitespace checks pass locally without real model calls.
+- [x] The additive schema migration is applied to the active public-assistant Supabase project, and post-migration inspection confirms the tables, 4096-dimensional vector column, RLS, and absence of public policies.
+- [x] The Render RAG service is configured with `RAG_STORE_PROVIDER=supabase` and a server-only database connection, then deploys the intended Git commit successfully.
+- [x] The authenticated public sync succeeds and `/health` reports `store=supabase-pgvector`, `vectorReady=true`, `documentCount=29`, `chunkCount=58`, and a non-null `lastSyncAt`.
+- [x] A real public-assistant business question uses the deployed RAG route and returns relevant public evidence; this request is an acceptance task, not a model liveness probe.
+- [x] The existing non-RLS public assistant tables are reported as a separate manual/security follow-up rather than silently modified.
 
 ## Out Of Scope
 

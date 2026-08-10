@@ -6,12 +6,19 @@
 - [x] Add a deterministic schema contract check covering dimensions, indexes, and RLS.
 - [x] Update `render.yaml`, `.env.example`, `README.md`, deployment docs, backend specs, and deployment-contract checks for Supabase pgvector production.
 - [x] Run local RAG, deployment, TypeScript, lint, build, and whitespace verification without provider calls.
-- [ ] Commit and push the implementation to `main`.
-- [ ] Apply the additive schema migration to the active public-assistant Supabase project.
-- [ ] Inspect vector type, RLS state, policies, and database advisors.
-- [ ] Update the Render RAG service provider/database variables without printing secrets and deploy the committed revision.
-- [ ] Trigger the existing public RAG sync workflow and verify 29 documents / 58 chunks plus vector readiness.
-- [ ] Run one approved real public-assistant business acceptance request and record remaining manual/security follow-ups.
+- [x] Commit and push the implementation to `main` (`6ccdf556`, `7cb6f77e`).
+- [x] Apply the additive schema migration to the active public-assistant Supabase project.
+- [x] Inspect vector type, RLS state, policies, and database advisors.
+- [x] Update the Render RAG service provider/database variables without printing secrets and deploy the committed revision (`dep-d9sol82jnfac739so21g`).
+- [x] Trigger the existing public RAG sync workflow and verify 29 documents / 58 chunks plus vector readiness (workflow `31370568374`).
+- [x] Run one approved real public-assistant business acceptance request and record remaining manual/security follow-ups.
+
+## Acceptance Evidence
+
+- Render `/health` returned `store=supabase-pgvector`, `vectorReady=true`, `keywordReady=true`, `rerankerReady=true`, `documentCount=29`, `chunkCount=58`, and `buildCommit=7cb6f77e2b14ddbb7eb72b431b4d2a48fadc70ae`.
+- GitHub workflow `Drew-Z/biau#31370568374` completed successfully after the public sync scope fix.
+- A real site-scoped question returned three verified public citations from the deployed RAG route. The model provider was unavailable for that request, so the API correctly returned a cited degraded answer; this is recorded as a separate provider configuration/availability follow-up, not a RAG-store failure.
+- Existing `PublicAssistantRequest`, `PublicAssistantAnswerRevision`, and `PublicAssistantBranch` remain a separate manual security follow-up because they need a compatibility-safe RLS policy design.
 
 ## Validation Commands
 
