@@ -104,6 +104,7 @@
     "docs:deployment-check": "node scripts/check-deployment-contract.mjs",
     "docs:manual-gates-check": "tsx scripts/check-manual-gates.ts",
     "docs:observability-check": "node scripts/check-observability-docs.mjs",
+    "docs:project-notes-generate": "tsx scripts/generate-project-notes-question-bank.ts",
     "docs:project-notes-check": "tsx scripts/check-project-notes-docs.ts",
     "analytics:check": "tsx scripts/check-analytics-route-metadata.ts",
     "erp:synthetic": "node scripts/check-erp-synthetic.mjs",

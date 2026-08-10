@@ -4,6 +4,8 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { fileURLToPath } from 'node:url'
 
+import { renderQuestionBank } from './generate-project-notes-question-bank'
+
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDir, '..')
 const notesDir = resolve(repoRoot, 'docs/project-notes')
@@ -15,14 +17,14 @@ const repositoryRoots = new Map<string, string>([
 ])
 
 const requiredDocuments: Record<string, string[]> = {
-  'README.md': ['Scope And Privacy Boundary', 'Evidence Labels', 'Document Map', 'Validation'],
-  'chatus.md': ['Executive Summary', 'Product Boundary', 'Architecture', 'Core Implementation', 'Core Data Flow', 'Reliability And Failure Handling', 'Trade-Offs', 'Security And Privacy', 'Verification', 'Delivery Status', 'Code Entrypoints', 'Evidence', 'Interview Focus'],
-  'anchor.md': ['Executive Summary', 'Product Boundary', 'Architecture', 'Core Implementation', 'Core Data Flow', 'Reliability And Failure Handling', 'Trade-Offs', 'Security And Privacy', 'Verification', 'Delivery Status', 'Code Entrypoints', 'Evidence', 'Interview Focus'],
-  'public-assistant.md': ['Executive Summary', 'Product Boundary', 'Architecture', 'Core Implementation', 'Core Data Flow', 'Reliability And Failure Handling', 'Trade-Offs', 'Security And Privacy', 'Verification', 'Delivery Status', 'Code Entrypoints', 'Evidence', 'Interview Focus'],
-  'ai-daily.md': ['Executive Summary', 'Product Boundary', 'Architecture', 'Core Implementation', 'Core Data Flow', 'Reliability And Failure Handling', 'Trade-Offs', 'Security And Privacy', 'Verification', 'Delivery Status', 'Code Entrypoints', 'Evidence', 'Interview Focus'],
-  'cross-project-patterns.md': ['Shared Boundaries', 'Evidence-Bound Design', 'Deterministic Checks', 'Fail-Closed Comparison', 'Realtime And Asynchronous Execution', 'Failure And Recovery', 'Privacy And Public Projection', 'Trade-Offs', 'Evidence'],
-  'interview-question-bank.md': ['Chatus', 'Anchor', 'Public Assistant', 'AI Daily', 'Cross-Project'],
-  'evidence-register.md': ['Label Definitions', 'Chatus Evidence', 'Anchor Evidence', 'Public Assistant Evidence', 'AI Daily Evidence', 'Cross-Project Evidence', 'Production Observation Boundary'],
+  'README.md': ['范围与隐私边界', '证据标签', '文档索引', '题库结构', '验证方式'],
+  'chatus.md': ['项目摘要', '产品边界', '架构与职责', '核心实现', '核心数据流', '可靠性与故障处理', '关键取舍', '安全与隐私', '验证矩阵', '交付状态', '代码入口', '证据索引', '面试重点'],
+  'anchor.md': ['项目摘要', '产品边界', '架构与职责', '核心实现', '核心数据流', '可靠性与故障处理', '关键取舍', '安全与隐私', '验证矩阵', '交付状态', '代码入口', '证据索引', '面试重点'],
+  'public-assistant.md': ['项目摘要', '产品边界', '架构与职责', '核心实现', '核心数据流', '可靠性与故障处理', '关键取舍', '安全与隐私', '验证矩阵', '交付状态', '代码入口', '证据索引', '面试重点'],
+  'ai-daily.md': ['项目摘要', '产品边界', '架构与职责', '核心实现', '核心数据流', '可靠性与故障处理', '关键取舍', '安全与隐私', '验证矩阵', '交付状态', '代码入口', '证据索引', '面试重点'],
+  'cross-project-patterns.md': ['共同边界', '证据约束设计', '确定性检查', '失败闭合对比', '实时与异步执行', '故障与恢复', '隐私与公开投影', '关键取舍', '证据索引'],
+  'interview-question-bank.md': ['Chatus', 'Anchor', '公开助手', 'AI 日报', '跨项目'],
+  'evidence-register.md': ['标签定义', 'Chatus 证据', 'Anchor 证据', '公开助手证据', 'AI 日报证据', '跨项目证据', '生产观察边界'],
 }
 
 const allowedLabels = new Set(['source-verified', 'production-observed', 'documented-design', 'portfolio-claim'])
@@ -33,12 +35,29 @@ const qaPrefixToScope: Record<string, string> = {
   'AI-DAILY': 'ai-daily',
   CROSS: 'cross-project',
 }
-const qaMinimums: Record<string, number> = {
-  chatus: 25,
-  anchor: 25,
-  'public-assistant': 25,
-  'ai-daily': 25,
-  'cross-project': 20,
+const qaTargets: Record<string, number> = {
+  chatus: 65,
+  anchor: 60,
+  'public-assistant': 60,
+  'ai-daily': 65,
+  'cross-project': 50,
+}
+const qaEvidencePrefixes: Record<string, string> = {
+  chatus: 'E-CHATUS-',
+  anchor: 'E-ANCHOR-',
+  'public-assistant': 'E-PA-',
+  'ai-daily': 'E-AID-',
+  'cross-project': 'E-CROSS-',
+}
+const minimumHanCharacters: Record<string, number> = {
+  'README.md': 250,
+  'chatus.md': 800,
+  'anchor.md': 800,
+  'public-assistant.md': 800,
+  'ai-daily.md': 800,
+  'cross-project-patterns.md': 500,
+  'interview-question-bank.md': 5_000,
+  'evidence-register.md': 500,
 }
 
 const sensitivePatterns: Array<[string, RegExp]> = [
@@ -99,6 +118,10 @@ async function main() {
       continue
     }
     contents.set(fileName, markdown)
+    const hanCharacters = [...markdown.matchAll(/\p{Script=Han}/gu)].length
+    if (hanCharacters < minimumHanCharacters[fileName]) {
+      issues.push(`${fileName}: expected at least ${minimumHanCharacters[fileName]} Chinese characters, got ${hanCharacters}`)
+    }
     for (const heading of headings) {
       if (!markdown.includes(`## ${heading}`)) issues.push(`${fileName}: missing heading "## ${heading}"`)
     }
@@ -177,36 +200,62 @@ async function main() {
   }
 
   const interviewMarkdown = contents.get('interview-question-bank.md') ?? ''
+  if (interviewMarkdown !== renderQuestionBank()) {
+    issues.push('interview-question-bank.md: generated output is stale; run npm.cmd run docs:project-notes-generate')
+  }
+  if (/^- (?:Scope|Question|Follow-up|Answer|Failure Scenario|Verification|Evidence):/gmu.test(interviewMarkdown)) {
+    issues.push('interview-question-bank.md: contains legacy English Q&A field names')
+  }
   const qaBlocks = collectQaBlocks(interviewMarkdown)
   const qaIds = new Set<string>()
-  const qaCounts: Record<string, number> = Object.fromEntries(Object.keys(qaMinimums).map((scope) => [scope, 0]))
+  const questions = new Set<string>()
+  const qaCounts: Record<string, number> = Object.fromEntries(Object.keys(qaTargets).map((scope) => [scope, 0]))
+  const qaNumbers: Record<string, number[]> = Object.fromEntries(Object.keys(qaTargets).map((scope) => [scope, []]))
   for (const block of qaBlocks) {
     if (qaIds.has(block.id)) issues.push(`interview-question-bank.md: duplicate QA ID ${block.id}`)
     qaIds.add(block.id)
-    const scope = block.body.match(/^- Scope: ([a-z-]+)\s*$/mu)?.[1]
-    const question = block.body.match(/^- Question: (.+)$/mu)?.[1]?.trim()
-    const followUp = block.body.match(/^- Follow-up: (.+)$/mu)?.[1]?.trim()
-    const answer = block.body.match(/^- Answer: (.+)$/mu)?.[1]?.trim()
-    const evidence = block.body.match(/^- Evidence: (.+)$/mu)?.[1]?.trim()
+    const scope = block.body.match(/^- 范围: ([a-z-]+)\s*$/mu)?.[1]
+    const question = block.body.match(/^- 问题: (.+)$/mu)?.[1]?.trim()
+    const followUp = block.body.match(/^- 深入追问: (.+)$/mu)?.[1]?.trim()
+    const answer = block.body.match(/^- 参考回答: (.+)$/mu)?.[1]?.trim()
+    const failureScenario = block.body.match(/^- 失败场景: (.+)$/mu)?.[1]?.trim()
+    const verification = block.body.match(/^- 验证方式: (.+)$/mu)?.[1]?.trim()
+    const evidence = block.body.match(/^- 证据: (.+)$/mu)?.[1]?.trim()
     const expectedScope = qaPrefixToScope[block.prefix]
     if (scope !== expectedScope) issues.push(`${block.id}: expected scope ${expectedScope}, got ${scope ?? 'missing'}`)
-    if (!question) issues.push(`${block.id}: missing Question`)
-    if (!followUp || followUp.length < 60) issues.push(`${block.id}: Follow-up must cover an alternative, failure signal, and verification strategy`)
-    if (!answer || answer.length < 40) issues.push(`${block.id}: Answer must contain at least 40 characters`)
+    if (!question || !/\p{Script=Han}/u.test(question)) issues.push(`${block.id}: missing Chinese Question`)
+    else if (questions.has(question)) issues.push(`${block.id}: duplicate Question`)
+    else questions.add(question)
+    if (!followUp || followUp.length < 45) issues.push(`${block.id}: 深入追问 must contain at least 45 characters`)
+    if (!answer || answer.length < 55) issues.push(`${block.id}: 参考回答 must contain at least 55 characters`)
+    if (!failureScenario || failureScenario.length < 35) issues.push(`${block.id}: 失败场景 must contain at least 35 characters`)
+    if (!verification || verification.length < 35) issues.push(`${block.id}: 验证方式 must contain at least 35 characters`)
     if (!evidence) {
-      issues.push(`${block.id}: missing Evidence`)
+      issues.push(`${block.id}: missing 证据`)
     } else {
       const references = [...evidence.matchAll(/\bE-[A-Z-]+-\d{3}\b/gu)].map((match) => match[0])
-      if (references.length === 0) issues.push(`${block.id}: Evidence must reference at least one evidence ID`)
+      if (references.length === 0) issues.push(`${block.id}: 证据 must reference at least one evidence ID`)
       for (const reference of references) if (!evidenceIds.has(reference)) issues.push(`${block.id}: unknown evidence ${reference}`)
+      const expectedEvidencePrefix = qaEvidencePrefixes[expectedScope]
+      if (expectedEvidencePrefix && !references.some((reference) => reference.startsWith(expectedEvidencePrefix))) {
+        issues.push(`${block.id}: expected at least one ${expectedEvidencePrefix} evidence reference`)
+      }
     }
-    if (expectedScope) qaCounts[expectedScope] += 1
+    if (expectedScope) {
+      qaCounts[expectedScope] += 1
+      qaNumbers[expectedScope].push(Number(block.id.slice(-3)))
+    }
   }
 
-  for (const [scope, minimum] of Object.entries(qaMinimums)) {
-    if (qaCounts[scope] < minimum) issues.push(`interview-question-bank.md: ${scope} needs at least ${minimum} Q&A items, got ${qaCounts[scope]}`)
+  for (const [scope, target] of Object.entries(qaTargets)) {
+    if (qaCounts[scope] !== target) issues.push(`interview-question-bank.md: ${scope} needs exactly ${target} Q&A items, got ${qaCounts[scope]}`)
+    const sortedNumbers = qaNumbers[scope].sort((left, right) => left - right)
+    const expectedNumbers = Array.from({ length: target }, (_, index) => index + 1)
+    if (sortedNumbers.some((value, index) => value !== expectedNumbers[index])) {
+      issues.push(`interview-question-bank.md: ${scope} QA numbering must be continuous from 001 to ${String(target).padStart(3, '0')}`)
+    }
   }
-  if (qaBlocks.length < 120) issues.push(`interview-question-bank.md: needs at least 120 Q&A items, got ${qaBlocks.length}`)
+  if (qaBlocks.length !== 300) issues.push(`interview-question-bank.md: needs exactly 300 Q&A items, got ${qaBlocks.length}`)
 
   if (issues.length > 0) {
     console.error(`Project notes check failed with ${issues.length} issue(s):`)
@@ -215,7 +264,7 @@ async function main() {
     return
   }
 
-  console.log(`Project notes check passed: ${Object.entries(qaCounts).map(([scope, count]) => `${scope}=${count}`).join(', ')}, total=${qaBlocks.length}, evidence=${evidenceIds.size}`)
+  console.log(`项目技术档案检查通过：${Object.entries(qaCounts).map(([scope, count]) => `${scope}=${count}`).join(', ')}，总计=${qaBlocks.length}，证据=${evidenceIds.size}`)
 }
 
 main().catch((error) => {

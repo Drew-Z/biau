@@ -1,101 +1,130 @@
-# Anchor Learning Engineering Dossier
+# Anchor Learning 工程技术档案
 
-## Executive Summary
+## 项目摘要
 
-Anchor Learning is a Flutter learning assistant that turns technical documents and code into traceable knowledge and practice. Its defining contract is not “AI generated a quiz,” but “the learner can inspect the source chunk, locator, explanation, and validation boundary behind the quiz.” [source-verified] Evidence: E-ANCHOR-001, E-ANCHOR-003.
+Anchor Learning 是一款 Flutter 学习助手，把技术文档与代码转化为可追溯知识和练习。它的核心合同不是“AI 生成了一道题”，而是“学习者能检查题目背后的 source chunk、locator、解释、引用和验证边界”。[source-verified] 证据：E-ANCHOR-001、E-ANCHOR-003。
 
-The public web surface is a separate static guided Demo. It provides three bilingual datasets and twelve questions with progress recovery, citations, excerpts, and scripted tutor hints. It does not upload files, call a backend, run analytics, or invoke a model. [source-verified] Evidence: E-ANCHOR-006, E-ANCHOR-007.
+公开 Web 是独立的静态引导演示，内置 Flutter、Git、JavaScript 三套双语数据和十二道题，支持进度恢复、引用摘录、解释和脚本化导师提示。它不上传文件、不访问后端、不做 analytics、不调用模型。[source-verified] 证据：E-ANCHOR-006、E-ANCHOR-007。
 
-## Product Boundary
+## 产品边界
 
-- The Flutter client is the full product direction; Android Private Alpha is the currently supported release surface.
-- The browser Demo demonstrates the source-evidence loop with bundled Flutter, Git, and JavaScript material.
-- The Demo does not claim Flutter Web parity, project import, login, cloud sync, real-time AI, or production model evaluation.
-- Persistent package IDs, database names, secure-storage prefixes, and environment names retain compatibility identifiers after the local folder rename.
+- Flutter 客户端承载完整产品方向，当前受支持的发布面是 Android Private Alpha。
+- 浏览器 Demo 只演示“问题 → 回答 → 反馈 → 来源证据 → 导师提示”的可见闭环。
+- Demo 不声称具备 Flutter Web parity、项目导入、账号、云同步、实时 AI 或生产模型评估。
+- 本地目录已改名为 `anchor`；package ID、数据库名、secure-storage prefix 和环境变量仍保留兼容标识，迁移不属于本次目录改名。
 
-[source-verified] Evidence: E-ANCHOR-001, E-ANCHOR-002, E-ANCHOR-009.
+[source-verified] 证据：E-ANCHOR-001、E-ANCHOR-002、E-ANCHOR-009。
 
-## Architecture
+## 架构与职责
 
-The client uses Flutter and Riverpod for UI/state boundaries, sqflite repositories for local SQLite persistence, Dio for network-capable services, and task-oriented AI service modules. Domain data covers sources, source chunks, knowledge points, questions, learning sessions, checkpoints, evaluation, privacy export, and release evidence. [source-verified] Evidence: E-ANCHOR-002, E-ANCHOR-004.
+Flutter 和 Riverpod 负责 UI/状态边界，sqflite repository 负责本地 SQLite 持久化，Dio 支撑网络能力，`lib/services/` 中的任务服务负责导入、生成、Agent、检索、评估、隐私和发布边界。[source-verified] 证据：E-ANCHOR-002、E-ANCHOR-004。
 
-The generation and grounding chain is split into explicit tasks: knowledge extraction, prerequisite mapping, question generation, citation verification, and question validation. This makes it possible to test a failed citation independently from an invalid answer rather than treating model output as one opaque blob.
+| 层级 | 主要职责 | 权威状态 | 典型失败边界 |
+| --- | --- | --- | --- |
+| `lib/features/` | 学习、deck、Agent、知识库、profile、ingestion UI | 可重建界面状态 | 页面销毁或 provider 重建 |
+| `lib/data/` | model、repository、database helper、demo seed | 本地领域记录 | migration、transaction、partial seed |
+| `lib/services/` | ingestion、generation、checkpoint、search、evaluation、privacy、release | 长任务与服务合同 | 输入版本、外部调用、恢复与验证 |
+| `web/landing/app/` | 静态 Demo 数据、渲染、进度和语言 | 浏览器内置数据与 localStorage | 旧版本或损坏缓存 |
 
-## Core Implementation
+生成链拆为 knowledge extraction、prerequisite mapping、question generation、citation verification 和 question validation。引用断链与答案不一致因此可以分别测试，不被一个大型 prompt 的 success 布尔值掩盖。
 
-- `lib/main.dart` owns application startup and the first-run gate; feature modules under `lib/features/` own learning, deck, Agent, knowledge-base, profile, and ingestion surfaces.
-- `lib/data/` owns models, repositories, the sqflite database helper, and deterministic demo seeding.
-- `lib/services/` owns ingestion, generation tasks, Agent runtime, evaluation, privacy, release, and scheduling boundaries.
-- `web/landing/app/scripts/data.js` defines the bundled `Dataset -> Question -> Options -> Explanation -> Citations -> TutorHints` contract.
-- `web/landing/app/scripts/app.js` owns locale-aware rendering, answer flow, `anchor.demo.progress.v1` normalization, recovery, completion, and reset.
+## 核心实现
 
-[source-verified] Evidence: E-ANCHOR-002, E-ANCHOR-004, E-ANCHOR-006, E-ANCHOR-007.
+- `lib/main.dart` 负责应用启动与 first-run gate；`lib/app.dart` 负责应用级导航。
+- `lib/data/database/database_helper.dart` 和 `lib/data/repositories/` 管理 sqflite 持久化与 repository contract。
+- `lib/services/` 管理导入、生成 Task、Agent runtime、hybrid search、interview、evaluation、privacy、release 与 scheduling。
+- `web/landing/app/scripts/data.js` 定义 `Dataset -> Question -> Options -> Explanation -> Citations -> TutorHints`。
+- `web/landing/app/scripts/app.js` 负责 locale-aware render、答题、`anchor.demo.progress.v1` 归一化、恢复、完成和重置。
 
-## Core Data Flow
+[source-verified] 证据：E-ANCHOR-002、E-ANCHOR-004、E-ANCHOR-006、E-ANCHOR-007。
 
-1. Import selects supported document or code sources.
-2. Content hashes detect unchanged or updated material.
-3. `SemanticChunker` preserves structural boundaries and emits stable locators.
-4. Extraction and prerequisite tasks build learning concepts.
-5. Question generation produces a candidate with cited chunk identifiers.
-6. Citation verification checks that references exist and contain supporting material.
-7. Question validation checks answer consistency against the evidence.
-8. Accepted material enters the local repository and learning runtime.
-9. Hybrid search and checkpoints support longer tutoring or interview sessions.
+## 核心数据流
 
-[source-verified] Evidence: E-ANCHOR-003, E-ANCHOR-004.
+1. 用户选择受支持的文档或代码来源。
+2. content hash 区分未变化、更新和重复内容。
+3. `SemanticChunker` 按 Markdown/代码结构形成有界 chunk，并输出可读 locator。
+4. extraction 与 prerequisite Task 构建知识概念和先修关系。
+5. question generation 生成包含 cited chunk ID 的候选题。
+6. citation verification 检查引用是否存在、可定位且包含候选支持材料。
+7. question validation 检查题干、选项与正确答案是否和证据一致。
+8. 通过门禁的内容进入本地 repository 和学习 runtime；失败候选保持可检查状态。
+9. hybrid search 与 checkpoint 支持更长的导师或模拟面试会话。
 
-## Reliability And Failure Handling
+[source-verified] 证据：E-ANCHOR-003、E-ANCHOR-004。
 
-Traceability is preserved as data: chunk identifier, locator, content hash, cited excerpts, and validation state. A failed validation remains an inspectable failure instead of being silently promoted to a trusted question. Checkpoints make long sessions resumable, while repository boundaries keep partial UI state separate from durable learning records. [source-verified] Evidence: E-ANCHOR-003, E-ANCHOR-004.
+## 可靠性与故障处理
 
-The browser Demo validates and normalizes `anchor.demo.progress.v1`. Unknown datasets, invalid options, stale versions, or out-of-range indexes are discarded or clamped. Locale is shared through `anchor.locale`, with browser-language fallback and synchronized document metadata. [source-verified] Evidence: E-ANCHOR-006, E-ANCHOR-007.
+### 可追溯数据
 
-## Trade-Offs
+chunk ID、locator、content hash、引用摘录和 validation state 都是持久字段。验证失败不会被静默提升为可信题目；来源变化后，依赖记录必须进入失效、重建或复核流程。[source-verified] 证据：E-ANCHOR-003、E-ANCHOR-004。
 
-- Local-first sqflite persistence improves privacy and offline continuity, but makes schema migration, backup compatibility, and eventual multi-device conflict handling explicit product work.
-- Structure-aware chunking and two validation gates add latency and can reject otherwise fluent model output; the alternative is faster generation with weaker source support.
-- A static browser Demo is deterministic, inexpensive, and safe to expose publicly, but cannot demonstrate import, model execution, cloud sync, or full Flutter behavior.
-- Preserving application IDs, database names, secure-storage prefixes, and export identifiers avoids breaking existing installs, but leaves historical names that must be documented during the rebrand.
+### 长任务恢复
 
-[source-verified] Evidence: E-ANCHOR-003, E-ANCHOR-007, E-ANCHOR-009.
+checkpoint 保存可恢复阶段、必要输入引用和版本，不复制完整文档或无界模型上下文。恢复前需核对 schema、来源 hash 和已提交阶段，避免旧 checkpoint 重放到新流程。
 
-## Security And Privacy
+### Demo 状态恢复
 
-- Client learning data is local-first; export, deletion, support bundle, and credential storage have dedicated service boundaries.
-- The browser Demo contains only bundled source excerpts and stores only locale and Demo progress.
-- Its response policy blocks external connections, and `no-transform` prevents the hosting edge from injecting analytics code.
-- Public project screenshots contain only built-in teaching fixtures.
+浏览器读取 `anchor.demo.progress.v1` 时校验版本、dataset、question index、option 和提交状态；未知值被丢弃，越界索引按合同钳制或整体重置。语言由 `anchor.locale` 统一，默认跟随浏览器，显式选择后同步可见文本、`html.lang`、标题、描述和 ARIA。[source-verified] 证据：E-ANCHOR-006、E-ANCHOR-007。
 
-[source-verified] Evidence: E-ANCHOR-005, E-ANCHOR-007.
+### 首次 Demo 播种残余风险
 
-## Verification
+Flutter 首次 Demo seed 仍存在非原子写入风险：若部分 source 已写入而后续 chunk 失败，下次启动可能把残缺数据识别为 existing user。该风险不由静态 Web Demo 引入，也尚未通过本轮文档工作解决；后续应使用单事务或稳定 seed version 做幂等补偿。
 
-The Flutter repository contains broad service, database, Agent, evaluation, privacy, first-run, and Private Alpha tests. The release workflow is consolidated on a dependency-compatible Flutter toolchain and keeps the build target aligned with Android Private Alpha; repository test inventory still must not be confused with a production mobile acceptance. [source-verified] Evidence: E-ANCHOR-005, E-ANCHOR-011.
+## 关键取舍
 
-The web slice has five deterministic data/state tests and twelve Playwright cases across desktop, tablet, and mobile. The expanded suite completes all twelve bundled questions and covers locale/metadata, citations, scripted tutor disclosure, completion, malformed-state recovery, persistence/reset, keyboard and ARIA state, overflow, nonblank screenshots, and zero off-origin requests. The same twelve cases passed against production. [source-verified] Evidence: E-ANCHOR-012. [production-observed] Evidence: E-ANCHOR-008.
+| 决策 | 选择原因 | 代价或失败信号 | 需要补充的验证 |
+| --- | --- | --- | --- |
+| local-first sqflite | 隐私、离线连续性、用户数据所有权 | migration、backup、多设备冲突更复杂 | Android 安装升级、数据库迁移、备份恢复 |
+| 结构感知 chunk + locator | 保留章节/符号语义并可回到原文 | 长无空行内容、格式变化会挑战边界稳定性 | 大文件、无空行代码、格式微调与唯一 ID |
+| citation 与 answer 双门禁 | 区分引用存在和语义支持 | 增加延迟，也可能拒绝流畅候选 | 否定、乱序、部分支持、多选组合反例 |
+| 静态 Web Demo | 确定性、低成本、零 provider 风险 | 无法展示导入、模型、云同步和完整 Flutter | 三视口、全部 12 题、零 off-origin、资产 hash |
+| 保留兼容标识 | 避免升级、数据库和 credential 丢失 | 品牌名与历史标识并存 | 将来独立设计迁移和回滚计划 |
 
-## Delivery Status
+[source-verified] 证据：E-ANCHOR-003、E-ANCHOR-007、E-ANCHOR-009。
 
-The local checkout is named `anchor`, while compatibility-sensitive runtime identifiers remain unchanged. The static site is deployed at the public Anchor hostname: `/` and `/app/` return their intended surfaces, while `/app/index.html` canonicalizes to `/app/`. [production-observed] Evidence: E-ANCHOR-008.
+## 安全与隐私
 
-The production web regression passed, but that result does not certify Android installation, database migration, model correctness, cloud synchronization, or other unsupported platform builds. [source-verified] Evidence: E-ANCHOR-009.
+- 学习资料、知识点、题目和进度默认 local-first；export、deletion、support bundle 和 credential storage 有独立服务边界。
+- 浏览器 Demo 只包含内置教学摘录，只保存语言和 Demo 进度。
+- Demo response policy 阻止外部连接，`no-transform` 避免托管边缘注入 analytics。
+- 公开截图只使用内置教学 fixture，不使用真实导入资料。
+- “引用验证”和“问题验证”是风险门禁，不得宣传为绝对正确或彻底消除幻觉。
 
-## Code Entrypoints
+[source-verified] 证据：E-ANCHOR-005、E-ANCHOR-007。
 
-- Flutter startup and navigation: `lib/main.dart` and `lib/app.dart`.
-- Local persistence: `lib/data/database/database_helper.dart` and `lib/data/repositories/`.
-- Ingestion, generation, Agent, evaluation, and privacy services: `lib/services/`.
-- Browser Demo data and runtime: `web/landing/app/scripts/data.js` and `web/landing/app/scripts/app.js`.
-- Web unit/E2E gates: `web/tests/data.test.mjs` and `web/tests/demo.spec.js`.
-- Android Private Alpha CI: `.github/workflows/ci.yml`.
+## 验证矩阵
 
-[source-verified] Evidence: E-ANCHOR-004, E-ANCHOR-006, E-ANCHOR-007, E-ANCHOR-011, E-ANCHOR-012.
+| 层级 | 覆盖范围 | 已有证据 | 仍不能证明 |
+| --- | --- | --- | --- |
+| Flutter unit/service | service、database、Agent、evaluation、privacy、first-run、Private Alpha | 345 项测试通过记录 | 当前移动生产环境与真实模型质量 |
+| Analyze/Build | Dart format、analyzer、Android release build | 同一兼容 toolchain 的 CI job | 安装升级和真实设备行为 |
+| Web unit | 三套数据、题型、状态归一化 | 5 项确定性检查 | 浏览器布局和部署缓存 |
+| Web Playwright | 12 题、locale、citation、tutor、recovery、ARIA、三视口、网络边界 | 本地和生产各 12 项通过 | Flutter import、SQLite、AI Task、云同步 |
+| Asset parity | HTML 引用的 versioned JS 与仓库 SHA-256 一致 | 5 个关键资产一致 | 持续可用性 |
 
-## Evidence
+[source-verified] 证据：E-ANCHOR-005、E-ANCHOR-011、E-ANCHOR-012；[production-observed] 证据：E-ANCHOR-008。
 
-Primary evidence: E-ANCHOR-001 through E-ANCHOR-012. Source-backed statements come from the Flutter repository and the isolated web commits; deployment observations are separately labeled.
+## 交付状态
 
-## Interview Focus
+静态站已部署在 Anchor 公共域名：`/` 与 `/app/` 返回不同的预期页面，`/app/index.html` canonicalize 到 `/app/`。生产 Playwright 和关键资产 hash 检查通过。[production-observed] 证据：E-ANCHOR-008。
 
-Expect questions about locator stability, structure-aware chunking, citation versus answer validation, content-hash imports, local database migrations, checkpoint recovery, the value and limits of a static Demo, storage-version normalization, and why “anti-hallucination” is expressed as a gate rather than an absolute guarantee.
+这些结果不认证 Android 安装、数据库 migration、模型正确性、云同步、iOS 或其他 unsupported 平台。[source-verified] 证据：E-ANCHOR-009。
+
+## 代码入口
+
+- Flutter 启动与导航：`lib/main.dart`、`lib/app.dart`
+- 本地持久化：`lib/data/database/database_helper.dart`、`lib/data/repositories/`
+- ingestion、generation、Agent、evaluation、privacy：`lib/services/`
+- Web Demo 数据与 runtime：`web/landing/app/scripts/data.js`、`web/landing/app/scripts/app.js`
+- Web unit/E2E：`web/tests/data.test.mjs`、`web/tests/demo.spec.js`
+- Android Private Alpha CI：`.github/workflows/ci.yml`
+
+[source-verified] 证据：E-ANCHOR-004、E-ANCHOR-006、E-ANCHOR-007、E-ANCHOR-011、E-ANCHOR-012。
+
+## 证据索引
+
+主要证据为 E-ANCHOR-001 至 E-ANCHOR-012。源码事实来自 Anchor commit `3df49e00fac37bef169631b4c2f986f26df8ab4d`；生产观察单独标记，不与测试库存或未来设计混用。
+
+## 面试重点
+
+重点准备 locator 稳定性、结构切块、content hash 增量导入、Task 拆分、citation 与 answer 双门禁、local-first migration、checkpoint 恢复、混合检索、静态 Demo 的价值和局限、localStorage 版本化、首次播种非原子风险，以及为什么“anti-hallucination”必须表达为门禁而不是绝对保证。
