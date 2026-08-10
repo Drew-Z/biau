@@ -207,6 +207,7 @@ export async function syncPostgresRagStore(): Promise<RagSyncResponse | null> {
     ok: true,
     mode: 'postgres',
     accepted: true,
+    scope: 'public',
     health: await getPostgresRagHealth(),
     diagnostics: {
       sourceName,

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const schema = await readFile(resolve(repoRoot, 'server/sql/rag-store-pgvector.sql'), 'utf8')
+const store = await readFile(resolve(repoRoot, 'server/src/ragPostgresStore.ts'), 'utf8')
 const tables = ['rag_documents', 'rag_chunks', 'rag_entities', 'rag_relations', 'rag_sync_runs', 'rag_eval_runs']
 
 assert.match(schema, /create extension if not exists vector with schema extensions;/u)
@@ -22,5 +23,6 @@ assert.match(
   schema,
   /revoke all on table rag_documents, rag_chunks, rag_entities, rag_relations, rag_sync_runs, rag_eval_runs from anon, authenticated;/u,
 )
+assert.match(store, /mode: 'postgres',\s+accepted: true,\s+scope: 'public',/u)
 
 console.log('RAG pgvector schema contract passed')
