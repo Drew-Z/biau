@@ -380,3 +380,37 @@ Ranked the approved 59-model catalog without model probes, configured a bounded 
 
 - Commit and push the isolated branch, deploy matching Cloudflare/Render configuration, then verify `/health` and unauthenticated relay `401` without invoking a model.
 - Run a real image question only after separate explicit user approval.
+
+
+## Session 11: Public assistant multimodal rollout
+
+**Date**: 2026-08-10
+**Task**: Public assistant multimodal rollout
+**Branch**: `codex/public-assistant-main-integration`
+
+### Summary
+
+Added bounded multimodal routing and three-model fallback, deployed Cloudflare and Render configuration, and verified health plus relay authentication without live model calls.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c35b2280` | (see git log) |
+| `06e204d7` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
