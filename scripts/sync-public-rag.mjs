@@ -5,6 +5,14 @@ import { fileURLToPath } from 'node:url'
 const DEFAULT_POLL_INTERVAL_MS = 15_000
 const DEFAULT_MAX_ATTEMPTS = 60
 
+export class PublicRagSyncError extends Error {
+  constructor(diagnostics) {
+    super('public-rag-sync-rejected')
+    this.name = 'PublicRagSyncError'
+    this.diagnostics = diagnostics
+  }
+}
+
 export async function syncPublicRagAfterDeployment(input) {
   const baseUrl = normalizeBaseUrl(input.baseUrl)
   const token = String(input.token ?? '').trim()
@@ -64,7 +72,7 @@ export async function syncPublicRagAfterDeployment(input) {
     !isRecord(payload.diagnostics) ||
     payload.diagnostics.sourceChecksum !== expectedChecksum
   ) {
-    throw new Error('public-rag-sync-rejected')
+    throw new PublicRagSyncError(publicRagSyncFailureDiagnostics(response.status, payload))
   }
   return payload
 }
@@ -93,6 +101,34 @@ function isRecord(value) {
   return typeof value === 'object' && value !== null
 }
 
+function publicRagSyncFailureDiagnostics(httpStatus, payload) {
+  const diagnostics = isRecord(payload) && isRecord(payload.diagnostics) ? payload.diagnostics : {}
+  return {
+    httpStatus,
+    ...(isRecord(payload) && typeof payload.accepted === 'boolean' ? { accepted: payload.accepted } : {}),
+    ...stableDiagnosticString('error', isRecord(payload) ? payload.error : undefined),
+    ...stableDiagnosticString('reason', diagnostics.reason),
+    ...stableDiagnosticString('providerStep', diagnostics.providerStep),
+    ...stableDiagnosticString('errorKind', diagnostics.errorKind),
+    ...boundedDiagnosticNumber('providerHttpStatus', diagnostics.httpStatus, 100, 599),
+    ...boundedDiagnosticNumber('expectedDimension', diagnostics.expectedDimension, 1, 100_000),
+    ...boundedDiagnosticNumber('actualDimension', diagnostics.actualDimension, 1, 100_000),
+    ...boundedDiagnosticNumber('attemptedEndpoints', diagnostics.attemptedEndpoints, 0, 10),
+    ...boundedDiagnosticNumber('timeoutMs', diagnostics.timeoutMs, 0, 300_000),
+    ...boundedDiagnosticNumber('documentCount', diagnostics.documentCount, 0, 100_000),
+    ...boundedDiagnosticNumber('chunkCount', diagnostics.chunkCount, 0, 1_000_000),
+  }
+}
+
+function stableDiagnosticString(key, value) {
+  const normalized = typeof value === 'string' ? value.trim() : ''
+  return /^[a-z0-9][a-z0-9_-]{0,79}$/u.test(normalized) ? { [key]: normalized } : {}
+}
+
+function boundedDiagnosticNumber(key, value, minimum, maximum) {
+  return Number.isInteger(value) && value >= minimum && value <= maximum ? { [key]: value } : {}
+}
+
 async function main() {
   const expectedChecksum = process.env.EXPECTED_SOURCE_CHECKSUM?.trim() || await readPublicKnowledgeChecksum()
   const result = await syncPublicRagAfterDeployment({
@@ -114,7 +150,9 @@ async function main() {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   main().catch((error) => {
-    console.error(error instanceof Error ? error.message : 'public-rag-sync-failed')
+    console.error(error instanceof PublicRagSyncError
+      ? JSON.stringify({ error: error.message, ...error.diagnostics })
+      : error instanceof Error ? error.message : 'public-rag-sync-failed')
     process.exitCode = 1
   })
 }
