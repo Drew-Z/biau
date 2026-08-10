@@ -23,9 +23,10 @@ Rank the approved channel catalog, configure bounded adaptive model fallback, an
 - [x] Image fixtures prove bounded Responses `input_image` construction, cancellation, timeout, response redaction, and prompt-injection isolation without calling a live model.
 - [x] UI fixtures prove one-image preview/remove, compression/size rejection, retry/edit-resend continuity, fullscreen/mobile containment, and accessible controls.
 - [x] Existing public assistant, relay, API, persistence, UI, lint, server-build, and production-build checks pass without live model calls.
-- [ ] Cloudflare and Render configuration is deployed with no secret disclosure; non-model health/auth boundaries pass. Any real multimodal acceptance requires separate user approval.
+- [x] Cloudflare and Render configuration is deployed with no secret disclosure; non-model health/auth boundaries pass. Any real multimodal acceptance requires separate user approval.
 
 ## Notes
 
 - The catalog exposed 59 IDs and only an OpenAI-compatible endpoint marker. Capability ranking is therefore a static product decision, not evidence that each model currently accepts the production Responses payload.
 - `gpt-4.1` is selected as the stable vision tool model; `gemini-3.1-pro-preview` remains a quality-first text fallback whose preview status is reflected in its lower operational confidence.
+- Production rollout evidence on 2026-08-10: Cloudflare deployment `f30e252b`, Render deploy `dep-d9r14um417fc73b698cg` at commit `c35b2280` is live, the direct and same-origin health boundaries returned `200`, and an unauthenticated relay request returned `401`. No live model or image request was sent.
