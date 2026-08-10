@@ -23,6 +23,7 @@
     "assistant:public-sync-check": "node scripts/check-public-rag-sync.mjs",
     "assistant:eval": "tsx scripts/evaluate-assistant-rag.ts",
     "assistant:rag-smoke": "tsx server/scripts/rag-smoke.ts",
+    "assistant:rag-pgvector-schema-check": "node scripts/check-rag-pgvector-schema.mjs",
     "assistant:hybrid-contract": "tsx server/scripts/rag-hybrid-contract-check.ts",
     "assistant:rag-sync-local": "tsx server/scripts/rag-sync-local.ts --check",
     "assistant:service-modes-smoke": "tsx server/scripts/service-modes-smoke.ts",

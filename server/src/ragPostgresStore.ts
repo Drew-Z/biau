@@ -2,7 +2,14 @@ import { createHash } from 'node:crypto'
 import { Pool, type PoolClient } from 'pg'
 import { env } from './env.js'
 import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
-import { embedText, formatVector } from './ragEmbeddings.js'
+import {
+  embedText,
+  embedTexts,
+  EmbeddingDimensionMismatchError,
+  EmbeddingProviderError,
+  formatVector,
+  type RagEmbeddingResult,
+} from './ragEmbeddings.js'
 import type { AssistantScope, Citation, RagChunkCitation, RagHealthResponse, RagRetrievePayload, RagRetrieveResponse, RagSyncResponse } from './types.js'
 
 interface CandidateRow {
@@ -30,6 +37,7 @@ interface RelationRow {
 
 const SERVICE_NAME = 'biau-rag-orchestrator'
 const POSTGRES_STORE_NAME = 'supabase-pgvector'
+const POSTGRES_EMBEDDING_DIMENSION = 4096
 let ragPool: Pool | null = null
 
 export function isPostgresRagStoreConfigured() {
@@ -149,8 +157,22 @@ export async function syncPostgresRagStore(): Promise<RagSyncResponse | null> {
 
   const sourceName = 'server/data/public-knowledge-v2.json'
   const sourceChecksum = hashJson(publicKnowledgeV2)
-  const client = await pool.connect()
+  let embeddings: RagEmbeddingResult[]
   try {
+    embeddings = await embedTexts(
+      publicKnowledgeV2.knowledge_chunks.map((chunk) => [chunk.section, chunk.text, ...chunk.metadata.tags].join('\n')),
+      { expectedDimensions: POSTGRES_EMBEDDING_DIMENSION },
+    )
+    if (embeddings.length !== publicKnowledgeV2.knowledge_chunks.length) {
+      return postgresSyncFailure(sourceName, sourceChecksum, 'embedding_result_count_mismatch', 'embedding', 'invalid_response')
+    }
+  } catch (error) {
+    return normalizePostgresSyncFailure(error, sourceName, sourceChecksum, 'embedding')
+  }
+
+  let client: PoolClient | null = null
+  try {
+    client = await pool.connect()
     await client.query('begin')
     const syncRun = await client.query<{ id: string }>(
       `
@@ -169,16 +191,16 @@ export async function syncPostgresRagStore(): Promise<RagSyncResponse | null> {
     )
 
     await syncDocuments(client)
-    await syncChunks(client)
+    await syncChunks(client, embeddings)
     await syncEntities(client)
     await syncRelations(client)
     await client.query(`update rag_sync_runs set status = 'completed', finished_at = now() where id = $1`, [syncRun.rows[0]?.id])
     await client.query('commit')
   } catch (error) {
-    await client.query('rollback').catch(() => undefined)
-    throw error
+    await client?.query('rollback').catch(() => undefined)
+    return normalizePostgresSyncFailure(error, sourceName, sourceChecksum, 'postgres_transaction')
   } finally {
-    client.release()
+    client?.release()
   }
 
   return {
@@ -234,18 +256,19 @@ async function syncDocuments(client: PoolClient) {
   await client.query(`delete from rag_documents where visibility = 'public' and not (id = any($1::text[]))`, [documentIds])
 }
 
-async function syncChunks(client: PoolClient) {
+async function syncChunks(client: PoolClient, embeddings: RagEmbeddingResult[]) {
   if (!publicKnowledgeV2) return
   const chunkIds = publicKnowledgeV2.knowledge_chunks.map((chunk) => chunk.id)
-  for (const chunk of publicKnowledgeV2.knowledge_chunks) {
-    const embedding = await embedText([chunk.section, chunk.text, ...chunk.metadata.tags].join('\n'))
+  for (const [index, chunk] of publicKnowledgeV2.knowledge_chunks.entries()) {
+    const embedding = embeddings[index]
+    if (!embedding) throw new Error('missing-prepared-embedding')
     await client.query(
       `
         insert into rag_chunks (
           id, document_id, section, text, metadata, token_count, content_hash,
           embedding, embedding_model, embedding_dimension, embedded_at, updated_at
         )
-        values ($1, $2, $3, $4, $5, $6, $7, $8::vector, $9, $10, now(), now())
+        values ($1, $2, $3, $4, $5, $6, $7, $8::extensions.vector(4096), $9, $10, now(), now())
         on conflict (id) do update set
           document_id = excluded.document_id,
           section = excluded.section,
@@ -359,7 +382,7 @@ async function fetchKeywordCandidates(pool: Pool, visibility: AssistantScope[], 
 }
 
 async function fetchVectorCandidates(pool: Pool, visibility: AssistantScope[], query: string, limit: number, modelCalls: { count: number }) {
-  const embedding = await embedText(query).catch(() => null)
+  const embedding = await embedText(query, { expectedDimensions: POSTGRES_EMBEDDING_DIMENSION }).catch(() => null)
   if (!embedding) return []
   modelCalls.count += embedding.modelCalls
   try {
@@ -370,7 +393,7 @@ async function fetchVectorCandidates(pool: Pool, visibility: AssistantScope[], q
           c.document_id,
           c.section,
           c.text,
-          greatest(0, 1 - (c.embedding <=> $2::vector)) as score,
+          greatest(0, 1 - (c.embedding <=> $2::extensions.vector(4096))) as score,
           'vector+pgvector' as reason,
           d.title,
           d.summary,
@@ -382,7 +405,7 @@ async function fetchVectorCandidates(pool: Pool, visibility: AssistantScope[], q
         where d.visibility = any($1::text[])
           and c.embedding is not null
           and c.embedding_model = $3
-        order by c.embedding <=> $2::vector asc
+        order by c.embedding <=> $2::extensions.vector(4096) asc
         limit $4
       `,
       [visibility, formatVector(embedding.vector), embedding.model, limit],
@@ -528,6 +551,70 @@ function emptyPostgresHealth(): RagHealthResponse {
     entityCount: 0,
     relationCount: 0,
   }
+}
+
+function normalizePostgresSyncFailure(
+  error: unknown,
+  sourceName: string,
+  sourceChecksum: string,
+  providerStep: 'embedding' | 'postgres_transaction',
+) {
+  if (error instanceof EmbeddingDimensionMismatchError) {
+    return postgresSyncFailure(sourceName, sourceChecksum, 'embedding_dimension_mismatch', providerStep, 'dimension_mismatch', {
+      expectedDimension: error.expectedDimensions,
+      actualDimension: error.actualDimensions,
+    })
+  }
+  if (error instanceof EmbeddingProviderError) {
+    return postgresSyncFailure(sourceName, sourceChecksum, error.reason, providerStep, classifyEmbeddingError(error), {
+      httpStatus: error.httpStatus,
+      attemptedEndpoints: error.attemptedEndpoints,
+      timeoutMs: error.timeoutMs,
+    })
+  }
+  return postgresSyncFailure(sourceName, sourceChecksum, 'postgres_sync_failed', providerStep, 'database_error')
+}
+
+function postgresSyncFailure(
+  sourceName: string,
+  sourceChecksum: string,
+  reason: string,
+  providerStep: string,
+  errorKind: string,
+  details: {
+    httpStatus?: number
+    expectedDimension?: number
+    actualDimension?: number
+    attemptedEndpoints?: number
+    timeoutMs?: number
+  } = {},
+): RagSyncResponse {
+  return {
+    ok: true,
+    mode: 'postgres',
+    accepted: false,
+    scope: 'public',
+    health: emptyPostgresHealth(),
+    diagnostics: {
+      mode: POSTGRES_STORE_NAME,
+      scope: 'public',
+      reason,
+      providerStep,
+      errorKind,
+      sourceName,
+      sourceChecksum,
+      documentCount: publicKnowledgeV2?.public_documents.length ?? 0,
+      chunkCount: publicKnowledgeV2?.knowledge_chunks.length ?? 0,
+      ...details,
+    },
+  }
+}
+
+function classifyEmbeddingError(error: EmbeddingProviderError) {
+  if (error.reason.includes('timeout')) return 'timeout'
+  if (error.reason.includes('network')) return 'network_error'
+  if (error.reason.includes('empty')) return 'invalid_response'
+  return typeof error.httpStatus === 'number' ? 'http_status' : 'provider_error'
 }
 
 function buildEmptyResponse(intent: string, fallbackReason: 'private-credential' | 'no_public_context'): RagRetrieveResponse {

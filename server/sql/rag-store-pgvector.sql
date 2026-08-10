@@ -1,9 +1,9 @@
 -- BIAU Port public assistant RAG store schema template.
--- Intended for Supabase Postgres or Render Postgres with pgvector enabled.
--- This file is public-safe: no connection strings, hosts, keys, roles, or secrets.
+-- Intended for the server-only Supabase Postgres RAG store.
+-- This file is public-safe: no connection strings, hosts, keys, or secrets.
 
-create extension if not exists vector;
-create extension if not exists pgcrypto;
+create extension if not exists vector with schema extensions;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists rag_documents (
   id text primary key,
@@ -27,7 +27,7 @@ create table if not exists rag_chunks (
   metadata jsonb not null default '{}'::jsonb,
   token_count integer,
   content_hash text not null,
-  embedding vector,
+  embedding extensions.vector(4096),
   embedding_model text,
   embedding_dimension integer,
   embedded_at timestamptz,
@@ -88,10 +88,22 @@ create index if not exists rag_documents_metadata_idx on rag_documents using gin
 create index if not exists rag_chunks_document_id_idx on rag_chunks (document_id);
 create index if not exists rag_chunks_metadata_idx on rag_chunks using gin (metadata);
 create index if not exists rag_chunks_text_search_idx on rag_chunks using gin (to_tsvector('simple', text));
-create index if not exists rag_chunks_embedding_hnsw_idx on rag_chunks using hnsw (embedding vector_cosine_ops) where embedding is not null;
+-- The approved embedding model emits 4096 dimensions. pgvector cannot build an
+-- ANN index on vector values above 2000 dimensions, and this corpus is small,
+-- so retrieval intentionally uses exact cosine search.
 
 create index if not exists rag_entities_aliases_idx on rag_entities using gin (aliases);
 create index if not exists rag_relations_from_idx on rag_relations (from_entity_id);
 create index if not exists rag_relations_to_idx on rag_relations (to_entity_id);
 create index if not exists rag_sync_runs_source_checksum_idx on rag_sync_runs (source_checksum);
 create index if not exists rag_eval_runs_source_checksum_idx on rag_eval_runs (source_checksum);
+
+alter table rag_documents enable row level security;
+alter table rag_chunks enable row level security;
+alter table rag_entities enable row level security;
+alter table rag_relations enable row level security;
+alter table rag_sync_runs enable row level security;
+alter table rag_eval_runs enable row level security;
+
+revoke all on table rag_documents, rag_chunks, rag_entities, rag_relations, rag_sync_runs, rag_eval_runs from anon, authenticated;
+revoke all on sequence rag_relations_id_seq from anon, authenticated;

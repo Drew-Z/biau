@@ -105,8 +105,6 @@ export const env = {
   aiDailyProductionGenerationEnabled: readBoolean(process.env.AI_DAILY_PRODUCTION_GENERATION_ENABLED),
   ragStoreProvider: readFirstEnv('RAG_STORE_PROVIDER') || 'local',
   ragDatabaseUrl: readFirstEnv('RAG_DATABASE_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DB_URL'),
-  supabaseUrl: readFirstEnv('SUPABASE_URL'),
-  supabaseServiceRoleKey: readFirstEnv('SUPABASE_SERVICE_ROLE_KEY'),
   ragPublicApiKey: readFirstEnv('RAG_PUBLIC_API_KEY'),
   ragSyncToken: readFirstEnv('RAG_SYNC_TOKEN'),
   qdrantUrl: normalizeOptionalBaseUrl(readFirstEnv('QDRANT_URL')),

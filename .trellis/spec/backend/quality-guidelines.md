@@ -85,7 +85,7 @@ AI Daily production deployments must mount the human-approved model bundle as th
 - The table-driven quality matrix covers every route, all six public failure classes, recovery, cancellation, injection, secret seeking, citation integrity, follow-up/edit-resend, Branch/Revision continuity, and older snapshot hydration. Fixture checks must not resolve or call a configured provider endpoint.
 - Public `/health` exposes only service/readiness capabilities and never includes exact model or provider identity. Detailed diagnostics remain behind the operations-token boundary.
 - Client session IDs cannot bypass the IP-scoped chat/feedback limiter; in-memory buckets remain bounded.
-- Hybrid Qdrant 400/404/405 fallback stays on `QDRANT_PUBLIC_ALIAS`, with a poison-base-collection fixture proving the target.
+- Production RAG uses server-only Supabase pgvector with a fixed 4096-dimensional column and exact cosine search; local and optional Qdrant adapters remain deterministic test/rollback paths.
 - Public routes remain usable without a database.
 - Committed answers live only in immutable `PublicAssistantAnswerRevision` rows. Turn is the logical question, Branch is the saved-path pointer, and Revision-scoped Feedback must never fall back to flat Turn answer ownership.
 - Completed request replay decodes the Request's frozen Revision projection and remains independent from later active-Branch changes. Selected Session history is separately reconstructed from the active Branch ancestry.
@@ -105,7 +105,7 @@ AI Daily production deployments must mount the human-approved model bundle as th
 
 - Only public scope is supported. Internal scope and the legacy generic sync route return stable rejection/404 boundaries.
 - Public publication sync requires `RAG_SYNC_TOKEN` and uses `/v1/sync/public`.
-- Qdrant/embedding/reranker credentials are server-only.
+- Supabase database, embedding, and reranker credentials are server-only.
 - Health and diagnostics expose readiness and counts, not endpoints or secrets.
 - Local/mocked stores remain deterministic for tests.
 

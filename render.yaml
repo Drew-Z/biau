@@ -146,15 +146,7 @@ services:
       - key: ASSISTANT_SERVICE_MODE
         value: rag
       - key: RAG_STORE_PROVIDER
-        value: qdrant
-      - key: QDRANT_URL
-        sync: false
-      - key: QDRANT_API_KEY
-        sync: false
-      - key: QDRANT_PUBLIC_COLLECTION
-        value: biau_public_chunks
-      - key: QDRANT_PUBLIC_ALIAS
-        value: biau_public_chunks_active
+        value: supabase
       - key: RAG_DATABASE_URL
         sync: false
       - key: RAG_PUBLIC_API_KEY

@@ -19,7 +19,7 @@ server/
 │   ├── ragEmbeddings.ts # shared OpenAI-compatible / deterministic embedding helpers
 │   ├── ragOrchestrator.ts # local/mock RAG retrieval contract and diagnostics
 │   ├── ragPostgresStore.ts # optional Supabase/pgvector RAG store compatibility
-│   ├── ragQdrantStore.ts # Qdrant Cloud RAG store for final vector retrieval path
+│   ├── ragQdrantStore.ts # Optional retained Qdrant adapter; not the production store
 │   ├── ragRoutes.ts   # RAG Orchestrator HTTP router mounted under /rag
 │   └── types.ts       # API/data payload types
 ├── scripts/
@@ -27,7 +27,7 @@ server/
 │   ├── rag-smoke.ts   # local/mock RAG Orchestrator HTTP contract smoke
 │   └── rag-sync-local.ts # public knowledge V2 sync plan / validation
 ├── sql/
-│   └── rag-store-pgvector.sql # Supabase/Render Postgres + pgvector compatibility schema template
+│   └── rag-store-pgvector.sql # Production Supabase pgvector schema
 └── data/
     └── public-knowledge.json
 

@@ -184,8 +184,7 @@ Common server variables:
 | `ADMIN_TOKEN` / `STUDIO_ADMIN_TOKEN` | Server-side admin tokens. |
 | `ASSISTANT_MODEL_*` | Server-side OpenAI-compatible model channel. |
 | `ASSISTANT_RAG_API_BASE_URL` / `ASSISTANT_RAG_API_KEY` | Server-side RAG Orchestrator access from assistant APIs. |
-| `RAG_STORE_PROVIDER` | `qdrant`, `supabase`, or local fallback behavior. |
-| `QDRANT_*` | Server-side Qdrant configuration. |
+| `RAG_STORE_PROVIDER` / `RAG_DATABASE_URL` | Production Supabase pgvector store or local fallback behavior. |
 | `RAG_PUBLIC_API_KEY` / `RAG_SYNC_TOKEN` | Public retrieval and publication-sync credentials. |
 | `EMBEDDING_*` / `RERANKER_*` | Server-side embedding and optional rerank providers. |
 | `METRICS_ENABLED` | Enables low-sensitive Prometheus metrics when set to `true`. |

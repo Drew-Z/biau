@@ -198,11 +198,8 @@ Health Check Path：`/health`
 ```text
 NODE_VERSION=22
 ASSISTANT_SERVICE_MODE=rag
-RAG_STORE_PROVIDER=qdrant
-QDRANT_URL=<Qdrant server URL>
-QDRANT_API_KEY=<server-only key>
-QDRANT_PUBLIC_COLLECTION=biau_public_chunks
-QDRANT_PUBLIC_ALIAS=biau_public_chunks_active
+RAG_STORE_PROVIDER=supabase
+RAG_DATABASE_URL=<公开助手 Supabase PostgreSQL server-only URL>
 RAG_PUBLIC_API_KEY=<public service to RAG credential>
 RAG_SYNC_TOKEN=<publication sync credential>
 
@@ -219,7 +216,7 @@ RERANKER_TIMEOUT_MS=10000
 METRICS_ENABLED=false
 ```
 
-RAG 只接受 public scope。读取入口是 `/v1/retrieve`，版本化公开同步入口是 `/v1/sync/public`；旧通用同步入口不存在。`RAG_SYNC_TOKEN` 只用于发布流水线，公开助手服务只持有 `RAG_PUBLIC_API_KEY`。
+RAG 只接受 public scope。读取入口是 `/v1/retrieve`，版本化公开同步入口是 `/v1/sync/public`；旧通用同步入口不存在。`RAG_SYNC_TOKEN` 只用于发布流水线，公开助手服务只持有 `RAG_PUBLIC_API_KEY`。生产存储使用 Supabase pgvector；当前 4096 维 embedding 超过 pgvector `vector` ANN 索引的 2000 维上限，因此在当前小规模语料上使用精确余弦检索，不创建 HNSW/IVFFlat 索引。
 
 公开知识同步的 GitHub Actions workflow 是 `.github/workflows/public-rag-sync.yml`。仓库 secrets：
 
