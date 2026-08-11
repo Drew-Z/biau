@@ -46,18 +46,20 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - Cloudflare production 设置 `MODEL_RELAY_SHARED_TOKEN`（至少 32 字符随机值）、`MODEL_RELAY_UPSTREAM_BASE_URL`、`MODEL_RELAY_UPSTREAM_API_KEY` 三项 Secret，并设置模型白名单与 timeout 服务端变量。
 - 先部署 Cloudflare Pages，确认未授权 relay 请求返回稳定 `401`，且不发送模型请求。
 - 当前 `MODEL_RELAY_ALLOWED_MODELS` 只允许 `grok-4.5`；Render public service 只配置主 relay 和该 Responses 模型。备用 relay、fallback 模型和视觉模型保持关闭，直到独立渠道通过新的获批业务任务。
-- 不执行 ping、doctor、空 prompt 或逐模型测活；本轮批准只覆盖已经完成的有界候选选型，新的生产端到端请求仍需再次明确批准，并在完成后删除临时会话。
+- 不执行 ping、doctor、空 prompt 或逐模型测活；每次新的生产端到端业务请求都必须单独获得明确批准，并在完成后删除临时会话。
 - 2026-08-04 relay 诊断 revision `87210661` 已在 Cloudflare Pages 与 Render 进入生产；确定性检查、Render/Cloudflare health 与无认证 relay `401` 边界均通过。
 - 2026-08-12 已在 `207a5fe6` 上执行一次获批的站点业务问题：HTTP `200`，约 9.3 秒后以 `degraded/fallback` 结束，三次有界尝试的公开失败类别为 `upstream`；会话持久化与引用访问通过，但检索错误偏向 Legal RAG，未覆盖知航自身事实。根因是 Render Public API 缺少模型 base 环境配置，服务回退到不兼容的默认 upstream，而不是已经证明的供应商持续 `5xx`。
-- 模型 base 配置已补齐并重新部署；`/health` 与已认证非法模型请求的 `400` 合同通过，均未触达模型上游。仓库同时新增知航专属知识、别名、实体关系、排序权重和离线回归用例；`fdd733a8` 已部署到 Cloudflare Pages、Public API 与 RAG Orchestrator，版本化 Public RAG sync 成功，Supabase pgvector 的 vector/keyword/reranker readiness 全部通过，知识规模为 31 documents / 61 chunks / 166 entities / 231 relations。下一步只等待一条新的明确批准业务问题；不得自动重发首次请求。
-- 本地获批古诗任务已证明当前主渠道可生成回答。提交 `0df05c4` 已依次部署到 Cloudflare Pages 与 Render Public API；Render `/health` 返回 `200`，relay 无认证请求返回 `401`，已认证非法模型请求返回 `400`，且这些合同检查没有触达模型上游。生产回答、引用和会话体验仍需一条新的明确批准业务请求，不能用本地选型结果替代。
+- 模型 base 配置已补齐并重新部署；`/health` 与已认证非法模型请求的 `400` 合同通过，均未触达模型上游。仓库同时新增知航专属知识、别名、实体关系、排序权重和离线回归用例；`fdd733a8` 已部署到 Cloudflare Pages、Public API 与 RAG Orchestrator，版本化 Public RAG sync 成功，Supabase pgvector 的 vector/keyword/reranker readiness 全部通过，知识规模为 31 documents / 61 chunks / 166 entities / 231 relations。
+- `d1ec7adb` 已完成 Cloudflare Pages、Public API 与 RAG Orchestrator 全链生产部署。生产纯检索对同一知航问题返回 `site:public-assistant` 为第一引用，`candidateCount=60`、`citationCount=8`、`expandedEntityCount=47`，实际 reranker 模式为 `deterministic`，证明远端融合顺序修复生效。
+- 第二次获批业务验收已执行浏览器断网恢复：首次 stream 在到达 API 前被拦截，恢复后由用户动作显式重试，同一问题只到达 API 一次。最终生成仍以 `degraded` 结束；低敏日志仅支持 `failure_origin=public_api`、`http_status_class=5xx`、`attempts=3`，不能据此猜测或修改 streaming/input 协议。完整回答、移动端引用观察和桌面刷新持久化未通过；临时会话及其 turn/request 已删除。再次发送真实业务请求前仍需新的明确批准。
+- 本地获批古诗任务只证明候选主渠道曾成功生成，不能替代站点产品验收；生产端结论以当前 `d1ec7adb` 部署、纯检索结果和第二次获批业务请求的降级记录为准。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 
 ### Model and multimodal rollout
 
 - [x] Cloudflare 主上游 Secret 已更新，`MODEL_RELAY_ALLOWED_MODELS` 已收缩为单个已验证模型；不要把 URL 或 key 写入仓库和截图。
 - [x] Render public service 的主模型变量已更新；旧 fallback 模型和视觉模型变量已删除。
-- [x] Cloudflare Pages 与 Render Public API 已依次部署提交 `0df05c4`；`/health` 和不触达上游的 relay 请求合同通过。
+- [x] Cloudflare Pages、Render Public API 与 RAG Orchestrator 已部署提交 `d1ec7adb`；`/health`、纯检索和不触达上游的 relay 请求合同通过。
 - [ ] 图片理解保持关闭。只有再次获得用户明确批准，并且视觉模型通过一条真实图片业务问题后才配置 `ASSISTANT_VISION_MODEL`；不执行模型测活、逐模型探测或自动重试验收。
 
 ## Operator PostgreSQL 退役
