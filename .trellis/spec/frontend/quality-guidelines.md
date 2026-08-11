@@ -64,6 +64,7 @@ npm.cmd run docs:deployment-check
 - Avoid continuous React state updates from animation frames.
 - Canvas owns its render loop and disposes resources/listeners on unmount.
 - Worker resize, palette, and motion messages must not create parallel render timers. Runtime `prefers-reduced-motion` changes must use a token-correlated acknowledgement exposed as DOM state, stop on one static frame, and resume one render loop when animation is allowed again; UI checks wait for that acknowledgement instead of an arbitrary delay. Runtime or message failures must hide the stale canvas and reveal the explicit CSS fallback state.
+- An OffscreenCanvas worker must not emit `motion-settled` in the same task as the final draw. Defer the acknowledgement by one bounded compositor window, cancel that timer on every newer motion token, and re-check the token before posting. This keeps DOM state from claiming stability while the browser still presents the previous animated frame.
 - Reduced-motion synchronization must not trust one retained `MediaQueryList` change event as the only source of truth. Read the current query value when synchronizing, retain a low-frequency fallback poll that only acts on value changes, and send the resolved value to the worker. A late worker acknowledgement is accepted only when its token is current or its reduced/running tuple still matches the current page state; stale contradictory acknowledgements are ignored.
 - Pixel stability checks run against the production preview worker path. After the DOM acknowledgement, wait for two browser animation frames so the compositor can present the acknowledged canvas frame, then compare pixels; do not replace this with a fixed sleep or a looser motion threshold.
 - Route changes must not repeatedly restart expensive initialization or cause project/blog page flicker.
@@ -145,10 +146,27 @@ npm.cmd run docs:deployment-check
 ## Performance
 
 - Lazy-load route-heavy private/Studio surfaces.
+- Keep `/projects` and `/blog` synchronously rendered. Their small route components and `catalog-pages.css` are part of the entry path so direct navigation never exposes `.route-loading`; route-heavy detail, status, Studio, AI Daily, NotFound, and public-assistant surfaces import `route-pages.css` from their lazy module.
+- `src/index.css` imports `catalog-pages.css` before `flow-pages.css`. The order is contractual: base desktop catalog rules load first and the responsive rules in `flow-pages.css` must remain able to override them.
+- Do not import `route-pages.css` from an eager component or the application entry. Doing so collapses the lazy CSS chunk back into the entry bundle.
 - Do not ship obsolete page CSS/components after route removal.
 - Optimize screenshots to web-friendly formats and dimensions.
 - Avoid duplicate data indexes or repeated normalization in render loops.
-- Run `performance:check` when changing background, intro, route chunks, or large assets.
+- Run `performance:check` when changing background, intro, route chunks, or large assets. It must enforce the entry CSS budget and fail when the named `route-pages-*.css` chunk disappears.
+- Run `check:ui:smoke` for quick route/CSS/overflow feedback and `check:ui` before completion. The smoke check covers entry routes without loading flashes plus lazy routes with the route CSS present at desktop, 390px, and 320px.
+
+```css
+/* Correct: entry CSS keeps high-frequency catalog pages stable. */
+@import './styles/catalog-pages.css';
+@import './styles/flow-pages.css';
+```
+
+```tsx
+// Correct: a lazy route owns its route-only CSS dependency.
+import '../styles/route-pages.css'
+```
+
+Wrong: importing `route-pages.css` from `App.tsx`, `index.css`, `ProjectsPage`, or `BlogPage`, or making those two high-frequency routes lazy merely to satisfy the byte counter.
 
 ## Data Safety
 

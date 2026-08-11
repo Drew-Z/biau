@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import '../styles/route-pages.css'
 import {
   STUDIO_STORAGE_KEYS,
   normalizeStudioIssueDetail,

@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, List } from 'lucide-react'
+import '../styles/route-pages.css'
 import {
   getReliabilityProjectStatusCounts,
   reliabilityStatusOrder,

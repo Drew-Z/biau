@@ -120,6 +120,7 @@
     "site:status": "tsx scripts/generate-site-status.ts",
     "xunqiu:synthetic": "node scripts/check-xunqiu-synthetic.mjs",
     "preview": "vite preview",
+    "check:ui:smoke": "node scripts/check-ui-smoke.mjs",
     "check:ui": "tsx scripts/check-ui.mjs",
     "images:optimize": "node scripts/optimize-images.mjs",
     "sitemap:generate": "tsx scripts/generate-sitemap.mjs",

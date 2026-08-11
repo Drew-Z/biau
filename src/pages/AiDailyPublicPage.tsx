@@ -1,6 +1,7 @@
 import { AlertCircle, ArrowRight, Clock3, RefreshCw, Rss, ShieldCheck } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import '../styles/route-pages.css'
 import {
   requestAiDailyPublicFeed,
   type AiDailyPublicFeedPayload,

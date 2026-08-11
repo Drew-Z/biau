@@ -1,4 +1,4 @@
-import { readFile, stat } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 
 const distDir = path.resolve('dist')
@@ -15,9 +15,15 @@ const cssAsset = requireAsset(/<link[^>]+href="\/?(assets\/index-[^"]+\.css)"/i,
 const scriptAsset = requireAsset(/<script[^>]+src="\/?(assets\/index-[^"]+\.js)"/i, 'JavaScript')
 const cssBytes = (await stat(path.join(distDir, cssAsset))).size
 const scriptBytes = (await stat(path.join(distDir, scriptAsset))).size
+const assetFiles = await readdir(path.join(distDir, 'assets'))
+const routeCssAsset = assetFiles.find((file) => /^route-pages-[^.]+\.css$/i.test(file))
+if (!routeCssAsset) {
+  throw new Error('dist/assets 缺少按需加载的 route-pages CSS chunk')
+}
+const routeCssBytes = (await stat(path.join(distDir, 'assets', routeCssAsset))).size
 
 const budgets = {
-  cssBytes: 245_000,
+  cssBytes: 222_755,
   scriptBytes: 430_000,
 }
 
@@ -42,6 +48,7 @@ if (!/\/assets\/\*[\s\S]*max-age=31536000[\s\S]*immutable/i.test(headers)) {
 
 console.log('# Build performance budget')
 console.log(`- css: ${cssBytes} / ${budgets.cssBytes} bytes`)
+console.log(`- route css: ${routeCssBytes} bytes (${routeCssAsset})`)
 console.log(`- js: ${scriptBytes} / ${budgets.scriptBytes} bytes`)
 console.log('- external blocking stylesheets: 0')
 console.log('- immutable asset cache: configured')

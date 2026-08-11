@@ -33,7 +33,7 @@ Keep complex business data in `src/data/` first. Add a backend or CMS only when 
 
 ## Styling Ownership
 
-Global styles are regular CSS files imported from `src/App.tsx` and `src/main.tsx`. Split CSS by concern, such as `src/styles/theme.css`, `navigation.css`, `flow-pages.css`, and `hero-split.css`. Avoid adding CSS-in-JS libraries.
+Global styles are regular CSS files imported from `src/App.tsx` and `src/main.tsx`. Split CSS by concern, such as `src/styles/theme.css`, `navigation.css`, `catalog-pages.css`, `flow-pages.css`, and `hero-split.css`. Low-frequency lazy pages and the public assistant import `route-pages.css` from their own module so Vite emits one shared on-demand CSS chunk. Avoid adding CSS-in-JS libraries.
 
 ## Naming
 

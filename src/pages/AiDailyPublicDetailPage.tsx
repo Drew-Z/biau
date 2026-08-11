@@ -1,6 +1,7 @@
 import { AlertCircle, ArrowLeft, ExternalLink, RefreshCw } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import '../styles/route-pages.css'
 import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
 import {
   requestAiDailyPublicDetail,

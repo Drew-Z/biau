@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import '../styles/route-pages.css'
 import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
 import { blogColumnMeta } from '../data/blog'
 import { getBlogProjectIds, getPublicBlogPostSummary, getRelatedBlogPosts } from '../data/blogCuration'

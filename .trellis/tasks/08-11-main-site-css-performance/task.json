@@ -3,7 +3,7 @@
   "name": "main-site-css-performance",
   "title": "Main site CSS performance hardening",
   "description": "Reduce shipped CSS below the existing performance budget while preserving current desktop/mobile behavior, motion, themes, and public routes.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

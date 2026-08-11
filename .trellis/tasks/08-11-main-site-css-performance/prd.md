@@ -18,11 +18,11 @@
 
 ## Acceptance Criteria
 
-- [ ] `performance:check` 通过，入口 CSS <= 222,755 bytes，入口 JavaScript 仍在现有预算内。
-- [ ] `lint`、`build`、`check:ui:smoke`、`check:ui` 和 `git diff --check` 通过。
-- [ ] 320/390/430px 不出现横向页面溢出、导航遮挡、详情不可读或助手全屏错位。
-- [ ] 正常动画、reduced motion、CSS fallback、light/dark 和三个 harbor scene 均保持回归覆盖。
-- [ ] lazy route 首次进入没有明显 FOUC 或缺失样式。
+- [x] `performance:check` 通过，入口 CSS <= 222,755 bytes，入口 JavaScript 仍在现有预算内。
+- [x] `lint`、`build`、`check:ui:smoke`、`check:ui` 和 `git diff --check` 通过。
+- [x] 320/390/430px 不出现横向页面溢出、导航遮挡、详情不可读或助手全屏错位。
+- [x] 正常动画、reduced motion、CSS fallback、light/dark 和三个 harbor scene 均保持回归覆盖。
+- [x] lazy route 首次进入没有明显 FOUC 或缺失样式。
 
 ## Out Of Scope
 

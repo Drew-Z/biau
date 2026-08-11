@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { ExternalLink, Link as LinkIcon, List } from 'lucide-react'
+import '../styles/route-pages.css'
 import {
   findReliabilityProjectForTarget,
   getReliabilityProjectStatusCounts,

@@ -22,6 +22,7 @@ let palette: FlowPalette | undefined
 let requestedRunning = false
 let reducedMotion = false
 let timer: ReturnType<typeof setTimeout> | undefined
+let settledTimer: ReturnType<typeof setTimeout> | undefined
 let start = performance.now()
 let motionToken = 0
 
@@ -29,6 +30,12 @@ function cancelFrame() {
   if (!timer) return
   clearTimeout(timer)
   timer = undefined
+}
+
+function cancelSettled() {
+  if (!settledTimer) return
+  clearTimeout(settledTimer)
+  settledTimer = undefined
 }
 
 function drawFrame() {
@@ -47,12 +54,17 @@ function frame(token = motionToken) {
 }
 
 function postMotionSettled(token: number) {
-  self.postMessage({
-    type: 'motion-settled',
-    reducedMotion,
-    running: requestedRunning,
-    motionToken: token,
-  })
+  cancelSettled()
+  settledTimer = setTimeout(() => {
+    settledTimer = undefined
+    if (token !== motionToken) return
+    self.postMessage({
+      type: 'motion-settled',
+      reducedMotion,
+      running: requestedRunning,
+      motionToken: token,
+    })
+  }, 50)
 }
 
 function updateMotion(nextReducedMotion: boolean, nextRequestedRunning: boolean, nextMotionToken: number) {
@@ -60,6 +72,7 @@ function updateMotion(nextReducedMotion: boolean, nextRequestedRunning: boolean,
   const wasAnimating = requestedRunning && !reducedMotion
   const willAnimate = nextRequestedRunning && !nextReducedMotion
   cancelFrame()
+  cancelSettled()
   motionToken = nextMotionToken
   reducedMotion = nextReducedMotion
   requestedRunning = nextRequestedRunning
@@ -88,6 +101,7 @@ self.onmessage = ({ data }: MessageEvent<Message>) => {
     }
   } catch (error) {
     cancelFrame()
+    cancelSettled()
     requestedRunning = false
     self.postMessage({ type: 'error', message: error instanceof Error ? error.message : 'Flow worker failed' })
   }

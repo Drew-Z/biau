@@ -20,6 +20,7 @@ import {
   Trash2,
   XCircle,
 } from 'lucide-react'
+import '../styles/route-pages.css'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   STUDIO_STORAGE_KEYS,
