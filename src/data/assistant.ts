@@ -141,6 +141,15 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
     visibility: 'public',
   },
   {
+    id: 'site:public-assistant',
+    title: `${formatProductName('public-assistant')}｜公开研究助手`,
+    summary:
+      '知航 BIAU Beacon 是泊岸主站面向外部访客的匿名、只读公开研究助手。它使用 conditional LangGraph 组织 Agentic RAG，根据问题选择 direct、site、web 或 combined 路由，并经过证据分级、有界恢复、回答生成和 claim/citation 校验。站内检索由 public-only Supabase pgvector 提供 4096 维向量、关键词和轻量实体关系扩展，公开网页搜索只把 Tavily 结果作为发现线索，最终引用必须来自经过 SSRF-safe 抓取的原网页或公开 RAG 证据。知航不会访问成员私有知识、长期记忆、后台凭据或写入工具，也不会把 provider、模型地址、token、内部 prompt 和原始诊断暴露给访客；证据不足、模型不可用或图片理解未配置时会明确降级，而不是补造事实或猜图。',
+    href: '/',
+    tags: ['知航', 'BIAU Beacon', '公开助手', '公开研究助手', 'Agentic RAG', 'LangGraph', 'public-only RAG', 'Supabase pgvector', '混合检索', 'Tavily', '引用', '匿名', '只读', '安全边界'],
+    visibility: 'public',
+  },
+  {
     id: 'site:status',
     title: '项目可靠性观察',
     summary:

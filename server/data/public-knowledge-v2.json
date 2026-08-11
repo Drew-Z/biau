@@ -16,6 +16,30 @@
       "sourceType": "site"
     },
     {
+      "id": "site:public-assistant",
+      "title": "知航 BIAU Beacon｜公开研究助手",
+      "summary": "知航 BIAU Beacon 是泊岸主站面向外部访客的匿名、只读公开研究助手。它使用 conditional LangGraph 组织 Agentic RAG，根据问题选择 direct、site、web 或 combined 路由，并经过证据分级、有界恢复、回答生成和 claim/citation 校验。站内检索由 public-only Supabase pgvector 提供 4096 维向量、关键词和轻量实体关系扩展，公开网页搜索只把 Tavily 结果作为发现线索，最终引用必须来自经过 SSRF-safe 抓取的原网页或公开 RAG 证据。知航不会访问成员私有知识、长期记忆、后台凭据或写入工具，也不会把 provider、模型地址、token、内部 prompt 和原始诊断暴露给访客；证据不足、模型不可用或图片理解未配置时会明确降级，而不是补造事实或猜图。",
+      "href": "/",
+      "tags": [
+        "知航",
+        "BIAU Beacon",
+        "公开助手",
+        "公开研究助手",
+        "Agentic RAG",
+        "LangGraph",
+        "public-only RAG",
+        "Supabase pgvector",
+        "混合检索",
+        "Tavily",
+        "引用",
+        "匿名",
+        "只读",
+        "安全边界"
+      ],
+      "visibility": "public",
+      "sourceType": "site"
+    },
+    {
       "id": "site:status",
       "title": "项目可靠性观察",
       "summary": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。Operator/internal-RAG 退役已经完成；当前人工队列聚焦 AI Daily 首个真实版次、Studio 审核与 Publish Export，以及 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。公开助手、匿名持久化、Supabase pgvector 公开 RAG 与同源 SSE 已有低敏验收记录。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。",
@@ -742,6 +766,56 @@
           "项目展示",
           "知识库",
           "公开站点"
+        ]
+      }
+    },
+    {
+      "id": "chunk:site:public-assistant:1",
+      "documentId": "site:public-assistant",
+      "text": "知航 BIAU Beacon 是泊岸主站面向外部访客的匿名、只读公开研究助手。 它使用 conditional LangGraph 组织 Agentic RAG，根据问题选择 direct、site、web 或 combined 路由，并经过证据分级、有界恢复、回答生成和 claim/citation 校验。 站内检索由 public-only Supabase pgvector 提供 4096 维向量、关键词和轻量实体关系扩展，公开网页搜索只把 Tavily 结果作为发现线索，最终引用必须来自经过 SSRF-safe 抓取的原网页或公开 RAG 证据。",
+      "section": "summary",
+      "metadata": {
+        "sourceType": "site",
+        "tags": [
+          "知航",
+          "BIAU Beacon",
+          "公开助手",
+          "公开研究助手",
+          "Agentic RAG",
+          "LangGraph",
+          "public-only RAG",
+          "Supabase pgvector",
+          "混合检索",
+          "Tavily",
+          "引用",
+          "匿名",
+          "只读",
+          "安全边界"
+        ]
+      }
+    },
+    {
+      "id": "chunk:site:public-assistant:2",
+      "documentId": "site:public-assistant",
+      "text": "知航不会访问成员私有知识、长期记忆、后台凭据或写入工具，也不会把 provider、模型地址、token、内部 prompt 和原始诊断暴露给访客；证据不足、模型不可用或图片理解未配置时会明确降级，而不是补造事实或猜图。",
+      "section": "summary-2",
+      "metadata": {
+        "sourceType": "site",
+        "tags": [
+          "知航",
+          "BIAU Beacon",
+          "公开助手",
+          "公开研究助手",
+          "Agentic RAG",
+          "LangGraph",
+          "public-only RAG",
+          "Supabase pgvector",
+          "混合检索",
+          "Tavily",
+          "引用",
+          "匿名",
+          "只读",
+          "安全边界"
         ]
       }
     },
@@ -4022,6 +4096,25 @@
       }
     },
     {
+      "id": "site:public-assistant",
+      "type": "feature",
+      "name": "知航 BIAU Beacon",
+      "aliases": [
+        "知航",
+        "biau beacon",
+        "公开助手",
+        "公开研究助手",
+        "agentic rag",
+        "langgraph",
+        "public-only rag",
+        "混合检索"
+      ],
+      "metadata": {
+        "documentId": "site:public-assistant",
+        "href": "/"
+      }
+    },
+    {
       "id": "site:resources",
       "type": "feature",
       "name": "资源分享",
@@ -4942,6 +5035,16 @@
       "weight": 0.85,
       "evidenceDocumentIds": [
         "site:ai-daily"
+      ]
+    },
+    {
+      "id": "contains:site:biau-port->site:public-assistant",
+      "fromEntityId": "site:biau-port",
+      "toEntityId": "site:public-assistant",
+      "type": "contains",
+      "weight": 1,
+      "evidenceDocumentIds": [
+        "site:public-assistant"
       ]
     },
     {
@@ -7237,8 +7340,43 @@
     "searchAliases": [
       {
         "triggers": [
+          "知航",
+          "biau beacon",
+          "公开助手",
+          "公开研究助手"
+        ],
+        "terms": [
+          "知航",
+          "BIAU Beacon",
+          "公开助手",
+          "公开研究助手",
+          "Agentic RAG",
+          "LangGraph",
+          "public-only RAG",
+          "混合检索",
+          "引用",
+          "匿名只读"
+        ]
+      },
+      {
+        "triggers": [
           "rag",
           "知识库",
+          "agentic rag",
+          "混合检索"
+        ],
+        "terms": [
+          "Agentic RAG",
+          "public-only RAG",
+          "混合检索",
+          "引用",
+          "知识库",
+          "Legal RAG"
+        ]
+      },
+      {
+        "triggers": [
+          "legal rag",
           "合同审查",
           "合同",
           "法律"

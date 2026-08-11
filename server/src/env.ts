@@ -9,8 +9,22 @@ function readFirstEnv(...keys: string[]) {
   return ''
 }
 
-function normalizeBaseUrl(value: string) {
-  return (value || 'https://api.openai.com/v1').replace(/\/$/, '')
+const DEFAULT_OPENAI_BASE_URL = 'https://api.openai.com/v1'
+
+export function resolveAssistantModelBaseUrl(input: {
+  assistantApiKey?: string
+  assistantBaseUrl?: string
+  openaiApiKey?: string
+  openaiBaseUrl?: string
+}) {
+  const assistantBaseUrl = normalizeOptionalBaseUrl(input.assistantBaseUrl?.trim() ?? '')
+  if (assistantBaseUrl) return assistantBaseUrl
+
+  const openaiBaseUrl = normalizeOptionalBaseUrl(input.openaiBaseUrl?.trim() ?? '')
+  if (openaiBaseUrl) return openaiBaseUrl
+
+  const hasExplicitAssistantKey = Boolean(input.assistantApiKey?.trim())
+  return !hasExplicitAssistantKey && input.openaiApiKey?.trim() ? DEFAULT_OPENAI_BASE_URL : ''
 }
 
 function normalizeCorsOrigin(value: string | undefined) {
@@ -19,8 +33,17 @@ function normalizeCorsOrigin(value: string | undefined) {
   return origin.replace(/\/+$/, '')
 }
 
-const assistantModelApiKey = readFirstEnv('ASSISTANT_MODEL_API_KEY', 'OPENAI_API_KEY')
-const assistantModelBaseUrl = normalizeBaseUrl(readFirstEnv('ASSISTANT_MODEL_BASE_URL', 'OPENAI_BASE_URL'))
+const explicitAssistantModelApiKey = readFirstEnv('ASSISTANT_MODEL_API_KEY')
+const legacyOpenAiApiKey = readFirstEnv('OPENAI_API_KEY')
+const legacyOpenAiBaseUrl = normalizeOptionalBaseUrl(readFirstEnv('OPENAI_BASE_URL'))
+  || (legacyOpenAiApiKey ? DEFAULT_OPENAI_BASE_URL : '')
+const assistantModelApiKey = explicitAssistantModelApiKey || legacyOpenAiApiKey
+const assistantModelBaseUrl = resolveAssistantModelBaseUrl({
+  assistantApiKey: explicitAssistantModelApiKey,
+  assistantBaseUrl: readFirstEnv('ASSISTANT_MODEL_BASE_URL'),
+  openaiApiKey: legacyOpenAiApiKey,
+  openaiBaseUrl: readFirstEnv('OPENAI_BASE_URL'),
+})
 const assistantModelName = readFirstEnv('ASSISTANT_MODEL_NAME', 'OPENAI_MODEL') || 'gpt-4.1-mini'
 const assistantModelProvider = readFirstEnv('ASSISTANT_MODEL_PROVIDER', 'OPENAI_PROVIDER') || 'openai-compatible'
 const assistantModelFallbackBaseUrl = normalizeOptionalBaseUrl(readFirstEnv('ASSISTANT_MODEL_FALLBACK_BASE_URL'))
@@ -87,8 +110,8 @@ export const env = {
   assistantRagApiBaseUrl,
   assistantRagApiKey,
   assistantRagTimeoutMs,
-  openaiApiKey: process.env.OPENAI_API_KEY?.trim() || assistantModelApiKey,
-  openaiBaseUrl: normalizeBaseUrl(process.env.OPENAI_BASE_URL?.trim() || assistantModelBaseUrl),
+  openaiApiKey: legacyOpenAiApiKey || assistantModelApiKey,
+  openaiBaseUrl: legacyOpenAiBaseUrl || assistantModelBaseUrl,
   openaiModel: process.env.OPENAI_MODEL?.trim() || assistantModelName,
   adminToken,
   studioAdminToken: process.env.STUDIO_ADMIN_TOKEN?.trim() || adminToken,

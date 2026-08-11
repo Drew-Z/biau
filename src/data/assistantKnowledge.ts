@@ -197,7 +197,15 @@ export const ASSISTANT_SEARCH_KEYWORDS = [
 
 export const ASSISTANT_SEARCH_ALIASES: AssistantSearchAliasGroup[] = [
   {
-    triggers: ['rag', '知识库', '合同审查', '合同', '法律'],
+    triggers: ['知航', 'biau beacon', '公开助手', '公开研究助手'],
+    terms: ['知航', 'BIAU Beacon', '公开助手', '公开研究助手', 'Agentic RAG', 'LangGraph', 'public-only RAG', '混合检索', '引用', '匿名只读'],
+  },
+  {
+    triggers: ['rag', '知识库', 'agentic rag', '混合检索'],
+    terms: ['Agentic RAG', 'public-only RAG', '混合检索', '引用', '知识库', 'Legal RAG'],
+  },
+  {
+    triggers: ['legal rag', '合同审查', '合同', '法律'],
     terms: ['legal rag', '引用溯源', '合同审查', '风险审查', 'hybrid retrieval', 'pgvector'],
   },
   {
@@ -460,6 +468,18 @@ function createEntitiesAndRelations(
   })
 
   for (const document of documents) {
+    if (document.id === 'site:public-assistant') {
+      addEntity(entities, {
+        id: 'site:public-assistant',
+        type: 'feature',
+        name: formatProductName('public-assistant'),
+        aliases: ['知航', 'BIAU Beacon', '公开助手', '公开研究助手', 'Agentic RAG', 'LangGraph', 'public-only RAG', '混合检索'],
+        metadata: { documentId: document.id, href: document.href },
+      })
+      addRelation(relations, 'site:biau-port', 'site:public-assistant', 'contains', [document.id], 1)
+      continue
+    }
+
     if (document.id === 'site:status') {
       addEntity(entities, {
         id: 'status:site-status',
@@ -719,6 +739,7 @@ function scoreKnowledgeItem(
   }
 
   if (intent === 'site-overview' && item.id === 'site:intro') score += 16
+  if (item.id === 'site:public-assistant' && isPublicAssistantKnowledgeRequest(normalized)) score += 20
   if (intent === 'reliability-status' && (item.id === 'site:status' || item.href === '/status')) score += 14
   if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && isAiDailyKnowledgeRequest(normalized)) score += 16
   if (intent === 'blog-knowledge' && item.id === 'site:ai-daily' && !isAiDailyKnowledgeRequest(normalized)) score -= 30
@@ -847,6 +868,10 @@ function isPrivateCredentialRequest(normalized: string) {
 
 function isAiDailyKnowledgeRequest(normalized: string) {
   return ['ai daily', 'ai日报', 'ai 日报', '日报'].some((term) => normalized.includes(term))
+}
+
+function isPublicAssistantKnowledgeRequest(normalized: string) {
+  return ['知航', 'biau beacon', '公开助手', '公开研究助手'].some((term) => normalized.includes(term))
 }
 
 function isResourceSharingKnowledgeRequest(normalized: string) {

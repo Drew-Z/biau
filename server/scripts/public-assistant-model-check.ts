@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
-import { env } from '../src/env.js'
+import { env, resolveAssistantModelBaseUrl } from '../src/env.js'
 import {
   createPublicAssistantModel,
   generatePublicAssistantDraft,
@@ -41,6 +41,13 @@ const original = {
   openaiBaseUrl: env.openaiBaseUrl,
   openaiModel: env.openaiModel,
 }
+
+assert.equal(resolveAssistantModelBaseUrl({ assistantApiKey: 'relay-key' }), '')
+assert.equal(resolveAssistantModelBaseUrl({ openaiApiKey: 'legacy-openai-key' }), 'https://api.openai.com/v1')
+assert.equal(resolveAssistantModelBaseUrl({
+  assistantApiKey: 'relay-key',
+  openaiBaseUrl: 'https://relay.example.invalid/v1/',
+}), 'https://relay.example.invalid/v1')
 
 const observedPaths: string[] = []
 const observedBodies: unknown[] = []

@@ -106,6 +106,15 @@ const evalCases: EvalCase[] = [
     description: '技术栈反查应引用 BIAU Port 主站项目。',
   },
   {
+    id: 'public-assistant-agentic-rag',
+    question: '请根据本站公开资料，说明知航 BIAU Beacon 的主要能力、当前采用的 Agentic RAG 技术路线，以及它明确不会做的事情。',
+    expectedIntent: 'technology-architecture',
+    requiredCitationIds: ['site:public-assistant'],
+    requiredAnswerIncludes: ['知航', 'BIAU Beacon'],
+    minCitationCount: 1,
+    description: '知航技术问题应优先引用公开助手专属知识，而不是被泛 RAG 词误导到 Legal RAG。',
+  },
+  {
     id: 'reliability-status',
     question: '项目可靠性观察页能告诉我哪些入口是否正常？',
     expectedIntent: 'reliability-status',

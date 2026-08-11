@@ -19,6 +19,7 @@
 - Evidence/query rewrite recovery is bounded to one retry. Generation uses one initial primary-channel attempt and at most two retries across the whole configured channel chain. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; an independent fallback chain reserves minimum future-attempt windows without extending that deadline. Cancellation stops active work and all future attempts.
 - Generation channel order is passively adaptive per service process: the configured quality order is the cold-start baseline, while real answer attempts build bounded, time-decayed success/failure reputation and first-activity latency. A recently stable channel stays preferred instead of yielding immediately to a repeatedly failing higher-priority channel. Failures still open a bounded in-memory circuit; cooldown expiry grants one real request a half-open lease while concurrent requests continue through known healthy channels. The request freezes its channel order at start so concurrent outcomes cannot reshuffle an active attempt chain. Opening the assistant, `/health`, and ranking functions never call a model or enumerate a provider catalog. Process restarts clear this ephemeral health state, and stale reputation decays back toward configured quality order.
 - Production currently enables only the approved `grok-4.5` Responses primary channel. The runtime keeps the bounded independent fallback capability, but no fallback model enters production until its whole channel passes an approved real business task; total generation attempts remain capped at three when fallback is configured.
+- A primary channel configured through `ASSISTANT_MODEL_API_KEY` must also provide an explicit model base URL. Missing base configuration is `not_configured`; it must never silently inherit the public OpenAI endpoint. The standard OpenAI base is retained only for the legacy `OPENAI_API_KEY` contract when no explicit assistant key is present.
 - When every configured channel is open or already leased for recovery, routing returns no provider candidate and the agent emits its bounded degraded response immediately. It does not deliberately call a channel that is still inside its cooldown.
 - Primary configuration/authentication/endpoint, timeout/network, 408/425/429/5xx, empty, or invalid failures may advance to an independent fallback. Permanent request errors, policy refusal, and cancellation never switch channels. Multiple fallback models share one failure domain: authentication or network failure stops that provider, while model-specific endpoint/rate-limit/upstream/empty/invalid failure may advance to the next configured fallback model.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
@@ -27,6 +28,7 @@
 ## Evidence And Web Research
 
 - Production site retrieval uses public-only Supabase pgvector evidence. It combines exact 4096-dimensional cosine search, keyword candidates, and bounded entity/relation expansion before deterministic merging and optional provider reranking.
+- Public products whose names overlap generic technology terms must own a dedicated knowledge document, name-triggered aliases, entity relation, and retrieval regression. Generic terms such as `rag` may expand several relevant concepts, but must not make one product such as Legal RAG the implicit owner of every Agentic RAG question; a BIAU Beacon question must rank `site:public-assistant` first.
 - Local retrieval and the explicitly selected Qdrant adapter remain deterministic test/rollback paths. The optional Qdrant path must query its configured active public alias and never an internal or unversioned collection.
 - Reranker absence or failure must be reported internally as deterministic fallback; do not claim provider reranking.
 - Tavily Basic Search is the default pure-search discovery adapter; auto parameters, generated answers, raw content, and images remain disabled. Brave Search and Exa remain optional. Every adapter produces normalized leads only and never replaces the configured generation channel chain.
@@ -220,6 +222,47 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 - Commit/checksum readiness gates prevent a stale deploy from activating newer knowledge.
 - Cloudflare Functions expose the thin same-origin browser proxy plus two authenticated fixed-upstream Responses egress relay routes: primary and fallback. The chat stream Function and both model relay routes forward bounded SSE without buffering, preserve cancellation, and keep their timeout active until the upstream body closes. Model credentials may live in the relay secret bindings; search, RAG, embedding, reranker, sync, and database credentials remain on their owning server services.
 - Deployed public chat, feedback, persistence, and public sync acceptance passed before the Operator/internal-RAG retirement began. Runtime code and configuration are public-only; PostgreSQL retirement, legacy Render Operator service deletion, and obsolete internal-Qdrant collection deletion completed through separate backed-up manual gates.
+
+## Scenario: Primary Model Base Fail-Closed Configuration
+
+### 1. Scope / Trigger
+
+- Applies when resolving the primary public-assistant generation channel from `ASSISTANT_MODEL_*` or legacy `OPENAI_*` variables.
+
+### 2. Signatures
+
+- `resolveAssistantModelBaseUrl({ assistantApiKey?, assistantBaseUrl?, openaiApiKey?, openaiBaseUrl? }) -> string` owns base selection before `resolveModelChannel()` computes readiness.
+
+### 3. Contracts
+
+- An explicit `ASSISTANT_MODEL_BASE_URL` wins and is normalized without a trailing slash.
+- An explicit `OPENAI_BASE_URL` remains a supported compatibility alias.
+- `https://api.openai.com/v1` is inferred only when `OPENAI_API_KEY` is present and `ASSISTANT_MODEL_API_KEY` is absent.
+- An explicit assistant key with no assistant/legacy base resolves to an empty string, so the channel is not configured.
+
+### 4. Validation & Error Matrix
+
+- Assistant key + explicit base -> configured primary channel.
+- Legacy OpenAI key + no base -> configured standard OpenAI channel.
+- Assistant key + no base -> `not_configured`, zero provider requests.
+- Empty keys/base -> `not_configured`, zero provider requests.
+
+### 5. Good / Base / Bad Cases
+
+- Good: relay key and relay base are both set, so Responses calls use the fixed relay.
+- Base: no model configuration exists and the public assistant returns its bounded unavailable/degraded state.
+- Bad: a relay key and non-OpenAI model silently call the OpenAI public endpoint because the base variable was omitted.
+
+### 6. Tests Required
+
+- `npm.cmd run assistant:public-model-check` asserts explicit assistant-key fail-closed behavior, legacy OpenAI default compatibility, base normalization, and zero provider calls for unconfigured channels.
+- `npm.cmd run docs:deployment-check` keeps Render, `.env.example`, and deployment documentation aligned on the explicit production base variable.
+
+### 7. Wrong vs Correct
+
+Wrong: use a global default base before knowing whether the credential belongs to OpenAI or to a fixed relay.
+
+Correct: pair an explicit assistant credential with an explicit base, preserve the legacy OpenAI default only for the legacy OpenAI credential, and otherwise fail closed as `not_configured`.
 
 ## Required Checks
 
