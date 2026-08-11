@@ -48,7 +48,7 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - Render public service 的主 base 指向 `/api/model-relay`，备用 base 指向 `/api/model-relay/fallback`；两者使用同一 relay shared token。冷启动顺序为 `grok-4.5`、`gemini-3.1-pro-preview`、`gpt-4.1`，图片工具固定使用备用渠道中的 `gpt-4.1`。
 - 不执行 ping、doctor、空 prompt 或逐模型测活；只使用用户已批准的真实诗歌问题进行一次端到端验收，并删除临时会话。
 - 2026-08-04 relay 诊断 revision `87210661` 已在 Cloudflare Pages 与 Render 进入生产；确定性检查、Render/Cloudflare health 与无认证 relay `401` 边界均通过。
-- 2026-08-12 已在 `059b74a2` 上执行一次获批的站点业务问题：HTTP `200`，RAG 返回合法站内证据且会话持久化通过，但三次有界生成尝试后仍为 `degraded/fallback`。低敏 Render 恢复事件为 `provider_unavailable`，主、备 relay 的配置/鉴权合同已通过，失败仍处于上游 `5xx` 边界。
+- 2026-08-12 已在 `059b74a2` 上执行一次获批的站点业务问题：HTTP `200`，站内检索返回合法证据且会话持久化通过，但三次有界生成尝试后仍为 `degraded/fallback`。随后已修正 Public API 的外部 RAG URL 错配，但未自动发送第二次真实请求。低敏 Render 恢复事件为 `provider_unavailable`，主、备 relay 的配置/鉴权合同已通过，失败仍处于上游 `5xx` 边界。
 - 最终 model-answer 验收仍未通过。不得自动重试或逐模型测活；应先在供应商控制台处理渠道 `5xx`，任何后续真实请求都需重新批准。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 

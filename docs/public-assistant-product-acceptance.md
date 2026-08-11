@@ -25,11 +25,11 @@
 | 部署版本 | Cloudflare Pages、Public API 与 RAG 均已部署 `059b74a2` |
 | 健康边界 | 同源 `/api/health`、Public API `/health` 与 RAG `/health` 均返回 `200`；健康检查未调用模型 |
 | RAG 配置 | Supabase pgvector、向量/关键词/reranker readiness 均为 true；修正 Public API 中多余句点导致的 RAG base URL 错配 |
-| 真实业务请求 | HTTP `200`，但终态为 `degraded`、生成模式为 fallback，运维失败类别为 `provider_unavailable` |
+| 真实业务请求 | HTTP `200`，站内检索返回证据，但终态为 `degraded`、生成模式为 fallback，运维失败类别为 `provider_unavailable` |
 | 引用 | 返回 3 条合法站内引用；因模型回答未成功，不计为有用回答的引用验收 |
 | 持久化 | API 重新加载后会话、分支、turn、revision 和 3 条引用均一致 |
 | relay 边界 | 主、备固定 relay 的配置与共享鉴权均通过不触达上游的无效请求合同检查；当前失败发生在上游 `5xx` 边界 |
-| 结论 | 生产链路、RAG 证据与持久化可用，模型回答不可用；保持“产品待验收” |
+| 结论 | 同源/API、站内检索证据与持久化可用；外部 RAG URL 已修正但未通过第二次真实请求重验，模型回答不可用；保持“产品待验收” |
 
 ## 已通过命令
 
