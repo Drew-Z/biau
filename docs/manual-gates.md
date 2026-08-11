@@ -49,7 +49,7 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - 不执行 ping、doctor、空 prompt 或逐模型测活；本轮批准只覆盖已经完成的有界候选选型，新的生产端到端请求仍需再次明确批准，并在完成后删除临时会话。
 - 2026-08-04 relay 诊断 revision `87210661` 已在 Cloudflare Pages 与 Render 进入生产；确定性检查、Render/Cloudflare health 与无认证 relay `401` 边界均通过。
 - 2026-08-12 已在 `207a5fe6` 上执行一次获批的站点业务问题：HTTP `200`，约 9.3 秒后以 `degraded/fallback` 结束，三次有界尝试的公开失败类别为 `upstream`；会话持久化与引用访问通过，但检索错误偏向 Legal RAG，未覆盖知航自身事实。根因是 Render Public API 缺少模型 base 环境配置，服务回退到不兼容的默认 upstream，而不是已经证明的供应商持续 `5xx`。
-- 模型 base 配置已补齐并重新部署；`/health` 与已认证非法模型请求的 `400` 合同通过，均未触达模型上游。仓库同时新增知航专属知识、别名、实体关系、排序权重和离线回归用例，待部署到 Public API/RAG、同步公开 Supabase pgvector 后，再申请一条新的明确批准业务问题；不得自动重发首次请求。
+- 模型 base 配置已补齐并重新部署；`/health` 与已认证非法模型请求的 `400` 合同通过，均未触达模型上游。仓库同时新增知航专属知识、别名、实体关系、排序权重和离线回归用例；`fdd733a8` 已部署到 Cloudflare Pages、Public API 与 RAG Orchestrator，版本化 Public RAG sync 成功，Supabase pgvector 的 vector/keyword/reranker readiness 全部通过，知识规模为 31 documents / 61 chunks / 166 entities / 231 relations。下一步只等待一条新的明确批准业务问题；不得自动重发首次请求。
 - 本地获批古诗任务已证明当前主渠道可生成回答。提交 `0df05c4` 已依次部署到 Cloudflare Pages 与 Render Public API；Render `/health` 返回 `200`，relay 无认证请求返回 `401`，已认证非法模型请求返回 `400`，且这些合同检查没有触达模型上游。生产回答、引用和会话体验仍需一条新的明确批准业务请求，不能用本地选型结果替代。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 

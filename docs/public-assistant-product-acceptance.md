@@ -22,15 +22,15 @@
 
 | 证据 | 低敏结果 |
 | --- | --- |
-| 部署版本 | 首次真实请求运行于 `207a5fe6`；随后 Render Public API 在同一代码版本补齐模型 base 配置并完成部署 |
-| 健康边界 | Public API `/health` 返回 `200`；已认证的非法模型请求返回稳定 `400`，两项检查均未触达模型上游 |
+| 部署版本 | 首次真实请求运行于 `207a5fe6`；配置修复后，知航专属知识与 fail-closed 防复发修复已通过 `fdd733a8` 部署到 Cloudflare Pages、Public API 与 RAG Orchestrator |
+| 健康边界 | Cloudflare 同源健康、Public API `/health` 与 RAG `/health` 均返回 `200`；Cloudflare relay 无认证请求和 RAG sync 无认证请求均返回稳定 `401`，这些检查未触达模型上游 |
 | 首次真实业务请求 | HTTP `200`，约 9.3 秒完成；终态为 `degraded`、生成模式为 fallback、恢复状态为 degraded、三次有界尝试的公开失败类别为 `upstream` |
 | 首次检索与引用 | 站内检索错误偏向 Legal RAG，未命中知航专属资料；返回引用可以访问，但不满足该问题的事实覆盖要求，因此引用验收不通过 |
 | 持久化 | API 重新加载后会话、分支、turn、revision 与引用保持一致；验收完成后已删除临时会话 |
 | 已定位根因 | Render Public API 缺少模型 base 环境配置，服务回退到与当前 relay token/model 不兼容的默认 upstream，导致生成失败 |
 | 配置修复 | 已补齐模型 base 配置并重新部署；`/health` 与不触达上游的 relay 输入合同通过，尚未消耗新的真实模型验收请求 |
-| 检索修复 | 本地新增知航专属公开知识、别名、实体关系和排序权重；`assistant:index` 生成 31 docs / 61 chunks，`assistant:eval` 通过 17/17 且 `modelCalls=0` |
-| 结论 | 配置根因已修复，知航专属检索修复待部署与公开 RAG 同步；仍需新的明确批准完成同一真实业务闭环，当前保持“产品待验收” |
+| 检索修复 | 知航专属公开知识、别名、实体关系和排序权重已上线；版本化 Public RAG sync 成功，生产 Supabase pgvector readiness 为 vector/keyword/reranker 全绿，规模为 31 docs / 61 chunks / 166 entities / 231 relations；离线 `assistant:eval` 通过 17/17 且 `modelCalls=0` |
+| 结论 | 配置根因、错误检索与缺失部署均已修复；仍需新的明确批准完成同一真实业务闭环，当前保持“产品待重新验收” |
 
 ## 已通过命令
 
@@ -45,7 +45,6 @@ npm run check:ui
 
 ## 最后人工 gate
 
-1. 先部署知航专属知识资产到 Public API 与 RAG Orchestrator，并通过现有 Public RAG sync 同步公开 Supabase pgvector；只运行健康、readiness 与非模型合同检查。
-2. 下一条真实、公开安全的业务问题必须在执行前重新获得批准；不对首次失败自动重试，也不用 ping、doctor、空 prompt、catalog probe 或逐模型测活替代业务验收。
-3. 下次验收需同时完成有用模型回答、知航专属引用核对、刷新恢复、浏览器侧失败恢复和手机视口观察；记录不保存问题全文、token、provider 或内部诊断。
-4. 全部通过后才能把状态改为“产品可用”；再次失败则保持待验收或如实标记 degraded。
+1. 下一条真实、公开安全的业务问题必须在执行前重新获得批准；不对首次失败自动重试，也不用 ping、doctor、空 prompt、catalog probe 或逐模型测活替代业务验收。
+2. 下次验收需同时完成有用模型回答、知航专属引用核对、刷新恢复、浏览器侧失败恢复和手机视口观察；记录不保存问题全文、token、provider 或内部诊断。
+3. 全部通过后才能把状态改为“产品可用”；再次失败则保持待验收或如实标记 degraded。

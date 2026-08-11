@@ -132,7 +132,7 @@ Focused checks:
 - [x] Deploy the single-channel contract to Cloudflare Pages before Render Public API, then verify `/health`, relay authentication, and model allowlisting without calling the upstream model.
 - [x] Execute the first approved real site question once, record the degraded result, identify the missing Render model-base configuration, repair it, and verify only non-model health/relay contracts.
 - [x] Add dedicated BIAU Beacon public knowledge, aliases, entity relations, retrieval weighting and a no-model regression case after the first request was incorrectly grounded in Legal RAG.
-- [ ] Deploy the new knowledge assets to Public API and RAG Orchestrator, run Public RAG sync, and verify health/readiness without sending a model request.
+- [x] Deploy the new knowledge assets to Public API and RAG Orchestrator at `fdd733a8`, complete the version-matched Public RAG sync, and verify public/API health plus Supabase pgvector vector/keyword/reranker readiness without sending a model request.
 - [ ] Obtain a new explicit approval before replaying the same real business question; the earlier approval was consumed by the failed request.
 - [ ] Verify recovery by blocking a browser request before it reaches the API, restoring connectivity, and then completing the approved real request; observe desktop/mobile answer, citations and refresh persistence without inducing provider failure.
 - [x] Record only low-sensitive evidence and mark the product `产品可用`, `待验收` or truthful degraded state.
