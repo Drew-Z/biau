@@ -317,12 +317,14 @@ Correct: carry the generated knowledge prior into remote fusion, execute one sha
 ### 2. Signatures
 
 - `buildPublicAssistantRecoveryLogRecord({ recovery, diagnostic, failureClass, durationMs }) -> PublicAssistantRecoveryLogRecord | null` owns the only production recovery log projection.
+- The Pages relay emits `X-BIAU-Relay-Origin: pages_function` on every handled response. `requestResponsesText()` accepts that fixed value only for a configured BIAU relay channel and records a missing marker on an already received relay HTTP response as the low-sensitive inferred boundary `edge`.
 
 ### 3. Contracts
 
 - Logs may include only fixed enums, an HTTP status class such as `4xx` or `5xx`, bounded attempt count, and duration bucket.
-- `failure_origin` distinguishes `configuration`, `public_api`, `relay_upstream`, `network`, and `response`.
+- `failure_origin` distinguishes `configuration`, `public_api`, `relay_function`, `relay_edge`, `relay_upstream`, `network`, and `response`.
 - Relay failures are identified only from the trusted fixed-enum `X-BIAU-Relay-Failure` header; raw upstream bodies never enter logs.
+- `relay_function` means the Pages Function handled the response but no upstream-failure enum applied. `relay_edge` means the configured BIAU relay returned an HTTP response without the Function origin marker; neither label identifies a provider or exposes an endpoint.
 - Model/provider identity, endpoints, credentials, question text, request IDs, and session IDs remain forbidden.
 
 ### 4. Validation & Error Matrix
@@ -330,18 +332,21 @@ Correct: carry the generated knowledge prior into remote fusion, execute one sha
 - Missing explicit channel configuration -> `configuration`, no HTTP class.
 - Render-to-relay network/timeout -> `network`.
 - Relay returns a fixed provider rejection -> `relay_upstream` plus bounded HTTP class.
-- Public API validation/auth/model allowlist rejection before upstream -> `public_api` plus bounded HTTP class.
+- Relay configuration/auth/input/allowlist rejection before upstream -> `relay_function` plus bounded HTTP class.
+- Cloudflare edge/platform HTTP failure before the Function marker is attached -> `relay_edge` plus bounded HTTP class.
+- A non-relay generation endpoint HTTP rejection -> `public_api` plus bounded HTTP class.
 - Empty or invalid successful response -> `response`.
 
 ### 5. Good / Base / Bad Cases
 
-- Good: operations can see `relay_upstream + 5xx` and know configuration/auth changes are not justified by that evidence alone.
+- Good: operations can distinguish `relay_function`, `relay_edge`, and `relay_upstream + 5xx` without logging provider, endpoint, or response data.
 - Base: no recovery happened, so no recovery record is emitted.
 - Bad: every upstream failure becomes `provider_unavailable`, or raw status/body/endpoint/model values are logged to make diagnosis possible.
 
 ### 6. Tests Required
 
-- `npm.cmd run assistant:public-model-check` asserts origin/status classification and scans the serialized record for forbidden fields.
+- `npm.cmd run assistant:public-model-check` asserts Function/edge/upstream origin classification and scans the serialized record for forbidden fields.
+- `npm.cmd run cf-model-relay:check` asserts the fixed Function origin marker on fail-closed, success, streaming, and upstream-rejection responses.
 - `npm.cmd run server:build` is required because the root Vite build does not compile the independent `server/tsconfig.json` project.
 - Production verification uses one user-approved business request; scheduled probes and provider catalog calls remain forbidden.
 
@@ -349,7 +354,7 @@ Correct: carry the generated knowledge prior into remote fusion, execute one sha
 
 Wrong: log only a broad failure label that cannot distinguish a local request problem from a relay upstream problem, or compensate by logging raw provider diagnostics.
 
-Correct: preserve one low-cardinality origin, one status class, attempts, and duration while keeping every sensitive identifier out of the record.
+Correct: preserve one authenticated relay-boundary marker, one low-cardinality origin, one status class, attempts, and duration while keeping every sensitive identifier out of the record.
 
 ## Required Checks
 

@@ -141,12 +141,14 @@ export type ProviderRelayFailureKind =
   | 'invalid_response'
   | 'response_too_large'
   | 'timeout'
+export type ProviderRelayOriginKind = 'pages_function' | 'edge'
 export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_error' | 'http_status' | 'invalid_response'
 
 export interface ProviderDiagnostic {
   kind: ProviderDiagnosticKind
   httpStatus?: number
   relayFailure?: ProviderRelayFailureKind
+  relayOrigin?: ProviderRelayOriginKind
   attemptedEndpoints: number
   timeoutMs: number
 }

@@ -26,7 +26,7 @@ export interface PublicAssistantRecoveryLogRecord {
   event: 'public-assistant-recovery'
   state: 'recovered' | 'degraded'
   failure_class: PublicAssistantOperationalFailureClass
-  failure_origin: 'configuration' | 'public_api' | 'relay_upstream' | 'network' | 'response'
+  failure_origin: 'configuration' | 'public_api' | 'relay_function' | 'relay_edge' | 'relay_upstream' | 'network' | 'response'
   http_status_class?: `${number}xx`
   attempts: 1 | 2 | 3
   duration_bucket: PublicAssistantRecoveryDurationBucket
@@ -59,6 +59,8 @@ function classifyFailureOrigin(
   if (diagnostic?.relayFailure) return 'relay_upstream'
   if (diagnostic?.kind === 'network_error' || diagnostic?.kind === 'timeout') return 'network'
   if (diagnostic?.kind === 'empty_response') return 'response'
+  if (diagnostic?.relayOrigin === 'pages_function') return 'relay_function'
+  if (diagnostic?.relayOrigin === 'edge') return 'relay_edge'
   return 'public_api'
 }
 

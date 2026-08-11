@@ -143,6 +143,46 @@ assert.deepEqual(buildPublicAssistantRecoveryLogRecord({
   attempts: 3,
   duration_bucket: '1s_to_5s',
 })
+assert.deepEqual(buildPublicAssistantRecoveryLogRecord({
+  recovery: { state: 'degraded', attempts: 3, failureClass: 'upstream' },
+  diagnostic: {
+    kind: 'http_status',
+    httpStatus: 503,
+    relayOrigin: 'pages_function',
+    attemptedEndpoints: 1,
+    timeoutMs: 1_000,
+  },
+  failureClass: 'upstream',
+  durationMs: 2_700,
+}), {
+  event: 'public-assistant-recovery',
+  state: 'degraded',
+  failure_class: 'provider_unavailable',
+  failure_origin: 'relay_function',
+  http_status_class: '5xx',
+  attempts: 3,
+  duration_bucket: '1s_to_5s',
+})
+assert.deepEqual(buildPublicAssistantRecoveryLogRecord({
+  recovery: { state: 'degraded', attempts: 3, failureClass: 'upstream' },
+  diagnostic: {
+    kind: 'http_status',
+    httpStatus: 503,
+    relayOrigin: 'edge',
+    attemptedEndpoints: 1,
+    timeoutMs: 1_000,
+  },
+  failureClass: 'upstream',
+  durationMs: 2_700,
+}), {
+  event: 'public-assistant-recovery',
+  state: 'degraded',
+  failure_class: 'provider_unavailable',
+  failure_origin: 'relay_edge',
+  http_status_class: '5xx',
+  attempts: 3,
+  duration_bucket: '1s_to_5s',
+})
 assert.equal(buildPublicAssistantRecoveryLogRecord({
   recovery: { state: 'none', attempts: 1 },
   durationMs: 20,
@@ -194,6 +234,7 @@ const server = createServer((request, response) => {
       response.writeHead(502, {
         'Content-Type': 'application/json',
         'X-BIAU-Relay-Failure': 'upstream_unreachable',
+        'X-BIAU-Relay-Origin': 'pages_function',
       })
       response.end(JSON.stringify({ error: 'redacted-relay-error' }))
       return
@@ -473,13 +514,21 @@ try {
   assert.equal(unsupportedSchema.failureClass, 'upstream')
   assert.equal(unsupportedSchema.diagnostic?.attemptedEndpoints, 1, 'schema rejection must not switch protocols')
   const relayUnreachable = await requestResponsesText({
-    channel: fixtureChannel,
+    channel: { ...fixtureChannel, provider: 'cloudflare-model-relay' },
     system: 'fixture',
     user: 'fixture-relay-unreachable',
     timeoutMs: 1_000,
   })
   assert.equal(relayUnreachable.diagnostic?.relayFailure, 'upstream_unreachable')
+  assert.equal(relayUnreachable.diagnostic?.relayOrigin, 'pages_function')
   assert.equal(classifyOperationalFailure(relayUnreachable.diagnostic), 'relay_unreachable')
+  const relayEdgeFailure = await requestResponsesText({
+    channel: { ...fixtureChannel, provider: 'cloudflare-model-relay' },
+    system: 'fixture',
+    user: 'fixture-schema-unsupported',
+    timeoutMs: 1_000,
+  })
+  assert.equal(relayEdgeFailure.diagnostic?.relayOrigin, 'edge')
   const emptyResult = await requestResponsesText({
     channel: fixtureChannel,
     system: 'fixture',

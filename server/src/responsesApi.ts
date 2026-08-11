@@ -2,6 +2,7 @@ import type {
   ProviderDiagnostic,
   ProviderDiagnosticKind,
   ProviderRelayFailureKind,
+  ProviderRelayOriginKind,
   PublicAssistantRecoveryFailureClass,
 } from './types.js'
 
@@ -9,6 +10,7 @@ export interface ResponsesApiChannel {
   apiKey: string
   baseUrl: string
   model: string
+  provider?: string
 }
 
 export interface ResponsesApiResult {
@@ -160,6 +162,7 @@ async function requestEndpoint(input: {
   const abort = new AbortController()
   let diagnosticKind: ProviderDiagnosticKind = 'network_error'
   let responseStatus: number | undefined
+  let relayOrigin: ProviderRelayOriginKind | undefined
   const onAbort = () => abort.abort()
   input.signal?.addEventListener('abort', onAbort, { once: true })
   if (input.signal?.aborted) abort.abort()
@@ -203,8 +206,11 @@ async function requestEndpoint(input: {
     })
     firstActivityMs = Math.max(0, Date.now() - startedAt)
     responseStatus = response.status
+    relayOrigin = readRelayOrigin(response.headers, input.channel)
     if (!response.ok) {
-      const relayFailure = readRelayFailure(response.headers.get('X-BIAU-Relay-Failure'))
+      const relayFailure = relayOrigin === 'pages_function'
+        ? readRelayFailure(response.headers.get('X-BIAU-Relay-Failure'))
+        : undefined
       await response.body?.cancel().catch(() => undefined)
       return {
         ok: false,
@@ -214,6 +220,7 @@ async function requestEndpoint(input: {
           kind: 'http_status' as const,
           httpStatus: response.status,
           ...(relayFailure ? { relayFailure } : {}),
+          ...(relayOrigin ? { relayOrigin } : {}),
           attemptedEndpoints: 0,
           timeoutMs: input.timeoutMs,
         },
@@ -236,6 +243,7 @@ async function requestEndpoint(input: {
       diagnostic: {
         kind: 'http_status' as const,
         httpStatus: response.status,
+        ...(relayOrigin ? { relayOrigin } : {}),
         attemptedEndpoints: 0,
         timeoutMs: input.timeoutMs,
       },
@@ -259,6 +267,7 @@ async function requestEndpoint(input: {
       diagnostic: {
         kind,
         ...(kind === 'http_status' ? { httpStatus: responseStatus } : {}),
+        ...(kind === 'http_status' && relayOrigin ? { relayOrigin } : {}),
         attemptedEndpoints: 0,
         timeoutMs: input.timeoutMs,
       },
@@ -287,6 +296,22 @@ const RELAY_FAILURES = new Set<ProviderRelayFailureKind>([
 function readRelayFailure(value: string | null): ProviderRelayFailureKind | undefined {
   const normalized = value?.trim().toLowerCase() as ProviderRelayFailureKind | undefined
   return normalized && RELAY_FAILURES.has(normalized) ? normalized : undefined
+}
+
+function readRelayOrigin(headers: Headers, channel: ResponsesApiChannel): ProviderRelayOriginKind | undefined {
+  if (!expectsBiauRelay(channel)) return undefined
+  return headers.get('X-BIAU-Relay-Origin')?.trim().toLowerCase() === 'pages_function'
+    ? 'pages_function'
+    : 'edge'
+}
+
+function expectsBiauRelay(channel: ResponsesApiChannel) {
+  if (channel.provider === 'cloudflare-model-relay') return true
+  try {
+    return /\/api\/model-relay(?:\/fallback)?$/u.test(new URL(channel.baseUrl).pathname.replace(/\/+$/u, ''))
+  } catch {
+    return false
+  }
 }
 
 const MAX_RESPONSES_STREAM_BYTES = 512_000

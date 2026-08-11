@@ -40,6 +40,7 @@ If a public-assistant recovery event must be logged, allow only a fixed event na
 - `request_rejected` means a bounded `400`, `409`, or `422` response rejected the request contract; inspect the approved provider protocol and payload shape without logging either.
 - `provider_unavailable` means the relay/provider returned a `5xx` response; use platform status and provider dashboards before considering a retry.
 - `relay_unreachable`, `relay_invalid_response`, and `relay_response_too_large` are derived only from the relay's fixed enum response header. They distinguish transport, content-contract, and size failures without exposing the upstream response, URL, model, or exact provider status.
+- `failure_origin` may distinguish `relay_function`, `relay_edge`, and `relay_upstream` only from fixed relay headers plus the configured relay boundary. A missing Function origin marker on an already received BIAU relay HTTP response is `relay_edge`; it must not fall back to a misleading provider or Public API claim.
 - `upstream` intentionally groups all remaining HTTP/provider failures. Diagnose it with provider-side dashboards or an approved real task, never by widening production logs.
 
 The mapper may inspect exact status in memory, but the record must never contain that status. Successful one-attempt requests and blocked/cancelled requests do not emit this recovery event.

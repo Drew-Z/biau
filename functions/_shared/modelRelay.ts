@@ -255,6 +255,7 @@ function relayHeaders(contentType: string, cacheControl = 'no-store', relayFailu
     'Cache-Control': cacheControl,
     'X-Content-Type-Options': 'nosniff',
     'X-Accel-Buffering': 'no',
+    'X-BIAU-Relay-Origin': 'pages_function',
     ...(relayFailure ? { 'X-BIAU-Relay-Failure': relayFailure } : {}),
   }
 }

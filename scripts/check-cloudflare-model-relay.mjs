@@ -37,6 +37,7 @@ function payload(overrides = {}) {
 
 const missingConfig = await relayResponses({ request: request(payload()), env: {} })
 assertStatus(missingConfig, 503, 'missing relay configuration must fail closed')
+assertOrigin(missingConfig, 'missing relay configuration origin')
 const weakTokenConfig = await relayResponses({
   request: request(payload()),
   env: { ...relayEnv, MODEL_RELAY_SHARED_TOKEN: 'short-token' },
@@ -48,7 +49,9 @@ const noFetch = async () => {
   fetchCalls += 1
   return new Response('{}', { headers: { 'Content-Type': 'application/json' } })
 }
-assertStatus(await relayResponsesRequest(request(payload(), 'wrong-token'), relayEnv, { fetch: noFetch }), 401, 'invalid relay token')
+const invalidToken = await relayResponsesRequest(request(payload(), 'wrong-token'), relayEnv, { fetch: noFetch })
+assertStatus(invalidToken, 401, 'invalid relay token')
+assertOrigin(invalidToken, 'invalid relay token origin')
 assertStatus(await relayResponsesRequest(request(payload(), 'fixture-relay-token-with-32-characters', 'text/plain'), relayEnv, { fetch: noFetch }), 415, 'non-JSON relay request')
 assertStatus(await relayResponsesRequest(request(payload({ model: 'unknown-model' })), relayEnv, { fetch: noFetch }), 400, 'unknown relay model')
 assertStatus(await relayResponsesRequest(request(payload({ endpoint: 'https://attacker.example' })), relayEnv, { fetch: noFetch }), 400, 'caller-controlled endpoint')
@@ -66,6 +69,7 @@ const jsonResponse = await relayResponsesRequest(request(payload()), relayEnv, {
   },
 })
 assertStatus(jsonResponse, 200, 'JSON relay success')
+assertOrigin(jsonResponse, 'JSON relay success origin')
 if ((await jsonResponse.json()).output_text !== 'fixture answer') throw new Error('relay must preserve bounded JSON success')
 if (observed?.url !== 'https://provider.example/v1/responses') throw new Error('relay must use the fixed configured Responses endpoint')
 const observedHeaders = new Headers(observed?.init?.headers)
@@ -129,6 +133,7 @@ const upstreamRejected = await relayResponsesRequest(request(payload()), relayEn
 })
 assertStatus(upstreamRejected, 403, 'upstream status must reach the trusted Render caller')
 assertHeader(upstreamRejected, 'provider_rejected', 'upstream rejection classification')
+assertOrigin(upstreamRejected, 'upstream rejection origin')
 const rejectedText = await upstreamRejected.text()
 if (rejectedText.includes('private provider body') || !rejectedText.includes('model-relay-upstream-rejected')) {
   throw new Error('relay must redact upstream error bodies')
@@ -176,6 +181,7 @@ const sseResponse = await relayResponsesRequest(request(payload({ stream: true }
   },
 })
 assertStatus(sseResponse, 200, 'SSE relay success')
+assertOrigin(sseResponse, 'SSE relay success origin')
 if (!sseResponse.headers.get('Content-Type')?.includes('text/event-stream')) throw new Error('relay must preserve SSE content type')
 const reader = sseResponse.body?.getReader()
 if (!reader || (await reader.read()).done) throw new Error('relay must stream the first SSE frame')
@@ -204,4 +210,9 @@ function assertStatus(response, expected, label) {
 function assertHeader(response, expected, label) {
   const observed = response.headers.get('X-BIAU-Relay-Failure')
   if (observed !== expected) throw new Error(`${label}: expected ${expected}, received ${observed}`)
+}
+
+function assertOrigin(response, label) {
+  const observed = response.headers.get('X-BIAU-Relay-Origin')
+  if (observed !== 'pages_function') throw new Error(`${label}: expected pages_function, received ${observed}`)
 }
