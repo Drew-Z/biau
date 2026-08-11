@@ -1,9 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(repoRoot, 'public/status/erp-synthetic.json')
+const DEFAULT_STATUS_PATH = 'public/status/erp-synthetic.json'
+const existingOutputPath = resolve(repoRoot, DEFAULT_STATUS_PATH)
 const DEFAULT_TIMEOUT_MS = 12_000
 const CHECK_IDS = ['ozon-erp-health', 'ozon-erp-auth', 'ozon-erp-plugin-sync']
 const REGISTRATION_STATUS = {
@@ -198,7 +200,13 @@ function registrationIssue(status, liveCommit, expectedCommit) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: DEFAULT_STATUS_PATH,
+    allowReliabilityTemp: true,
+  })
   const baseUrl = normalizeBaseUrl(process.env.ERP_SYNTHETIC_API_BASE_URL)
   const expectedCommit = normalizeCommit(process.env.ERP_SYNTHETIC_EXPECTED_COMMIT)
   const username = String(process.env.ERP_SYNTHETIC_USERNAME || '').trim()
@@ -208,13 +216,13 @@ async function main() {
   const checks = []
 
   if (!baseUrl) {
-    if (!args.forceUnconfigured && (await hasReadableExistingReport())) {
+    if (!args.forceUnconfigured && !statusOutput.temporary && (await hasReadableExistingReport())) {
       console.log('ERP_SYNTHETIC_API_BASE_URL is not configured; preserved existing ERP synthetic report.')
       return
     }
 
     checks.push(...CHECK_IDS.map((id) => emptyCheck(id, 'ERP_SYNTHETIC_API_BASE_URL is not configured')))
-    await writeReport({
+    await writeReport(statusOutput, {
       checkedAt,
       apiBaseConfigured: false,
       hasCredentials,
@@ -274,7 +282,7 @@ async function main() {
       ),
     )
     checks.push(emptyCheck('ozon-erp-plugin-sync', 'Credentials are required before plugin or sync smoke checks'))
-    await writeReport({
+    await writeReport(statusOutput, {
       checkedAt,
       apiBaseConfigured: true,
       hasCredentials,
@@ -324,7 +332,7 @@ async function main() {
     ),
   )
 
-  await writeReport({
+  await writeReport(statusOutput, {
     checkedAt,
     apiBaseConfigured: true,
     hasCredentials,
@@ -343,14 +351,14 @@ async function main() {
 
 async function hasReadableExistingReport() {
   try {
-    const payload = JSON.parse(await readFile(outputPath, 'utf8'))
+    const payload = JSON.parse(await readFile(existingOutputPath, 'utf8'))
     return Boolean(payload && typeof payload === 'object' && Array.isArray(payload.checks))
   } catch {
     return false
   }
 }
 
-async function writeReport(report) {
+async function writeReport(statusOutput, report) {
   const payload = {
     checkedAt: report.checkedAt,
     apiBaseConfigured: report.apiBaseConfigured,
@@ -363,8 +371,7 @@ async function writeReport(report) {
     ok: report.checks.every((check) => check.status !== 'offline'),
     checks: report.checks,
   }
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
+  if (statusOutput.enabled) await writeJsonAtomically(statusOutput.filePath, payload)
 }
 
 main().catch((error) => {

@@ -3,7 +3,7 @@
   "name": "main-site-verification-diagnostics",
   "title": "Main site verification diagnostics",
   "description": "Make UI and public-link verification faster to diagnose, distinguish environment failures from product failures, and preserve truthful status reporting.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

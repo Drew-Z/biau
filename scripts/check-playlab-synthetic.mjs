@@ -1,9 +1,9 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(repoRoot, 'public/status/biau-playlab-synthetic.json')
+const DEFAULT_STATUS_PATH = 'public/status/biau-playlab-synthetic.json'
 const DEFAULT_BASE_URL = 'https://games.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 12_000
 const WEB_BUILDS_CHECK_ID = 'biau-playlab-web-builds'
@@ -409,7 +409,13 @@ function checkMobileHints(pages, checkedAt) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: DEFAULT_STATUS_PATH,
+    allowReliabilityTemp: true,
+  })
   const checkedAt = new Date().toISOString()
   const pages = []
 
@@ -439,10 +445,9 @@ async function main() {
     checks,
   }
 
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
+  if (statusOutput.enabled) await writeJsonAtomically(statusOutput.filePath, payload)
   console.log(
-    `Playlab synthetic report generated: web=${webBuilds.check.status}, mobile=${mobileHints.status}, playable=${webBuilds.playablePagePassed}/${webBuilds.playablePageCount}, resources=${webBuilds.resourcePassed}/${webBuilds.resourceCount}.`,
+    `Playlab synthetic check completed${statusOutput.enabled ? ` and wrote ${statusOutput.displayPath}` : ' without writing a snapshot'}: web=${webBuilds.check.status}, mobile=${mobileHints.status}, playable=${webBuilds.playablePagePassed}/${webBuilds.playablePageCount}, resources=${webBuilds.resourcePassed}/${webBuilds.resourceCount}.`,
   )
 
   if (args.strict && checks.some((check) => check.status === 'offline')) process.exitCode = 1

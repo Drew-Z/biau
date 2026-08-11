@@ -1,10 +1,12 @@
 import { spawn } from 'node:child_process'
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, relative, resolve } from 'node:path'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { reliabilityTempPrefix, resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(repoRoot, 'public/status/reliability-suite.json')
+const DEFAULT_STATUS_PATH = 'public/status/reliability-suite.json'
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const DEFAULT_TIMEOUT_MS = 12_000
 const DEFAULT_STEP_TIMEOUT_MS = 90_000
@@ -23,7 +25,6 @@ const steps = [
     id: 'public-links',
     label: 'Public project link manifest',
     script: 'public-links:check',
-    extraArgs: ['--write-status', 'public/status/public-links-synthetic.json'],
     supportsStrict: true,
     outputPath: 'public/status/public-links-synthetic.json',
     reportKind: 'synthetic',
@@ -161,11 +162,21 @@ function quoteWindowsArg(value) {
   return `"${raw.replace(/"/gu, '\\"')}"`
 }
 
-function commandForStep(step, args) {
+function commandForStep(step, args, temporaryOutputPath, temporaryRoot) {
   const forwardedArgs = [...(step.extraArgs ?? []), '--timeout', String(args.timeoutMs)]
+  const displayArgs = [...forwardedArgs]
   if (args.strict && step.supportsStrict) forwardedArgs.push('--strict')
+  if (args.strict && step.supportsStrict) displayArgs.push('--strict')
+  if (temporaryOutputPath) {
+    forwardedArgs.push('--write-status', temporaryOutputPath)
+    displayArgs.push('--write-status', '[temporary]')
+  }
+  if (step.id === 'site-status') {
+    forwardedArgs.push('--status-input-dir', temporaryRoot)
+    displayArgs.push('--status-input-dir', '[temporary]')
+  }
   return {
-    display: `npm run ${step.script}${forwardedArgs.length > 0 ? ` -- ${forwardedArgs.join(' ')}` : ''}`,
+    display: `npm run ${step.script}${displayArgs.length > 0 ? ` -- ${displayArgs.join(' ')}` : ''}`,
     spawnArgs: ['run', step.script, '--', ...forwardedArgs],
   }
 }
@@ -284,22 +295,35 @@ function collectCheckIssues(checks) {
   return issues.slice(0, 8)
 }
 
-async function readJsonFile(relativePath) {
-  const filePath = resolve(repoRoot, relativePath)
+async function readJsonFile(pathValue) {
+  const filePath = isAbsolute(pathValue) ? pathValue : resolve(repoRoot, pathValue)
   return JSON.parse(await readFile(filePath, 'utf8'))
 }
 
-async function summarizeOutputFile(step) {
+async function seedTemporaryProjections(temporaryRoot) {
+  for (const step of steps) {
+    if (!step.outputPath) continue
+    try {
+      const payload = await readJsonFile(step.outputPath)
+      await writeJsonAtomically(join(temporaryRoot, basename(step.outputPath)), payload)
+    } catch {
+      // A missing baseline is valid on a fresh clone; the live step may create it.
+    }
+  }
+}
+
+async function summarizeOutputFile(step, pathValue = step.outputPath) {
   if (!step.outputPath) return null
 
   try {
-    const payload = await readJsonFile(step.outputPath)
+    const payload = await readJsonFile(pathValue)
     if (!isRecord(payload)) return null
 
     if (step.reportKind === 'site-status') {
       const targets = Array.isArray(payload.targets) ? payload.targets : []
       const targetSummary = isRecord(payload.summary) ? payload.summary : countStatuses(targets)
       return {
+        readable: true,
         ok: payload.ok !== false,
         summary: `site status targets: online=${targetSummary.online ?? 0} degraded=${targetSummary.degraded ?? 0} offline=${targetSummary.offline ?? 0} unchecked=${targetSummary.unchecked ?? 0}`,
         issues: collectCheckIssues(targets),
@@ -309,12 +333,14 @@ async function summarizeOutputFile(step) {
     const checks = Array.isArray(payload.checks) ? payload.checks : []
     const statusSummary = countStatuses(checks)
     return {
+      readable: true,
       ok: payload.ok !== false && statusSummary.offline === 0,
       summary: `synthetic checks: online=${statusSummary.online} degraded=${statusSummary.degraded} offline=${statusSummary.offline} unchecked=${statusSummary.unchecked}`,
       issues: collectCheckIssues(checks),
     }
   } catch {
     return {
+      readable: false,
       ok: false,
       summary: `expected report was not readable at ${step.outputPath}`,
       issues: ['expected report was not readable'],
@@ -350,7 +376,8 @@ function parseJsonFromMixedOutput(text) {
   return JSON.parse(text.slice(start, end + 1))
 }
 
-async function runStep(step, args) {
+async function runStep(step, args, temporaryRoot) {
+  const temporaryOutputPath = step.outputPath ? join(temporaryRoot, basename(step.outputPath)) : ''
   if (args.skips.has(step.id)) {
     return {
       id: step.id,
@@ -362,6 +389,8 @@ async function runStep(step, args) {
       outputPath: step.outputPath,
       summary: 'Skipped by --skip',
       issues: [],
+      temporaryOutputPath: '',
+      projectionReady: true,
     }
   }
 
@@ -380,14 +409,18 @@ async function runStep(step, args) {
         ? `Skipped because required environment is not configured: ${missingEnv.join(', ')}. Existing report is preserved: ${preservedReport.summary}.`
         : `Skipped because required environment is not configured: ${missingEnv.join(', ')}. No existing report was readable.`,
       issues: preservedReport?.issues ?? [],
+      temporaryOutputPath: '',
+      projectionReady: true,
     }
   }
 
-  const command = commandForStep(step, args)
+  const command = commandForStep(step, args, temporaryOutputPath, temporaryRoot)
   console.log(`→ ${step.label}`)
   const result = await runCommand(command.spawnArgs, args.stepTimeoutMs)
   const parsed =
-    step.reportKind === 'site-monitor' ? summarizeSiteMonitor(result.stdout) : await summarizeOutputFile(step)
+    step.reportKind === 'site-monitor'
+      ? summarizeSiteMonitor(result.stdout)
+      : await summarizeOutputFile(step, temporaryOutputPath)
 
   const processFailed = result.exitCode !== 0 || result.timedOut || Boolean(result.spawnError)
   const reportFailed = parsed?.ok === false
@@ -409,6 +442,8 @@ async function runStep(step, args) {
     outputPath: step.outputPath,
     summary: parsed?.summary ?? (status === 'passed' ? 'command completed' : 'command failed'),
     issues: issues.slice(0, 10),
+    temporaryOutputPath,
+    projectionReady: !step.outputPath || parsed?.readable === true,
   }
 }
 
@@ -427,68 +462,67 @@ function summarizeSuite(stepResults, durationMs) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
-  const startedAt = Date.now()
-  const checkedAt = new Date().toISOString()
-  const stepResults = []
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: DEFAULT_STATUS_PATH,
+  })
+  const temporaryRoot = await mkdtemp(join(tmpdir(), reliabilityTempPrefix()))
 
-  for (const step of steps) {
-    stepResults.push(await runStep(step, args))
+  try {
+    await seedTemporaryProjections(temporaryRoot)
+    const startedAt = Date.now()
+    const checkedAt = new Date().toISOString()
+    const stepResults = []
+
+    for (const step of steps) {
+      stepResults.push(await runStep(step, args, temporaryRoot))
+    }
+
+    const durationMs = Date.now() - startedAt
+    const report = {
+      checkedAt,
+      ok: stepResults.every((step) => step.status !== 'failed'),
+      strict: args.strict,
+      timeoutMs: args.timeoutMs,
+      stepTimeoutMs: args.stepTimeoutMs,
+      summary: summarizeSuite(stepResults, durationMs),
+      steps: stepResults.map(({ temporaryOutputPath: _temporaryOutputPath, projectionReady: _projectionReady, ...step }) => ({
+        ...step,
+        outputPath: step.outputPath ? relative(repoRoot, resolve(repoRoot, step.outputPath)).replace(/\\/gu, '/') : undefined,
+      })),
+    }
+
+    if (statusOutput.enabled) {
+      const incompleteProjection = stepResults.find((step) => !step.projectionReady)
+      if (incompleteProjection) {
+        throw new Error(`cannot publish because ${incompleteProjection.id} did not produce a readable temporary projection`)
+      }
+
+      for (const step of stepResults) {
+        if (!step.temporaryOutputPath || !step.outputPath) continue
+        const payload = await readJsonFile(step.temporaryOutputPath)
+        await writeJsonAtomically(resolve(repoRoot, step.outputPath), payload)
+      }
+      await writeJsonAtomically(statusOutput.filePath, report)
+    }
+
+    console.log(
+      statusOutput.enabled
+        ? `Reliability suite published: ${statusOutput.displayPath}`
+        : 'Reliability suite completed with temporary projections only; public/status was not modified.',
+    )
+    console.log(`passed=${report.summary.passed} failed=${report.summary.failed} skipped=${report.summary.skipped}`)
+
+    if (args.strict && !report.ok) process.exitCode = 1
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true })
   }
-
-  const durationMs = Date.now() - startedAt
-  const report = {
-    checkedAt,
-    ok: stepResults.every((step) => step.status !== 'failed'),
-    strict: args.strict,
-    timeoutMs: args.timeoutMs,
-    stepTimeoutMs: args.stepTimeoutMs,
-    summary: summarizeSuite(stepResults, durationMs),
-    steps: stepResults.map((step) => ({
-      ...step,
-      outputPath: step.outputPath ? relative(repoRoot, resolve(repoRoot, step.outputPath)).replace(/\\/gu, '/') : undefined,
-    })),
-  }
-
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`)
-  console.log(`Reliability suite report generated: ${relative(repoRoot, outputPath).replace(/\\/gu, '/')}`)
-  console.log(`passed=${report.summary.passed} failed=${report.summary.failed} skipped=${report.summary.skipped}`)
-
-  if (args.strict && !report.ok) process.exitCode = 1
 }
 
-main().catch(async (error) => {
+main().catch((error) => {
   const message = sanitizeIssue(error instanceof Error ? error.message : String(error))
-  const checkedAt = new Date().toISOString()
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(
-    outputPath,
-    `${JSON.stringify(
-      {
-        checkedAt,
-        ok: false,
-        strict: process.argv.includes('--strict'),
-        timeoutMs: DEFAULT_TIMEOUT_MS,
-        stepTimeoutMs: DEFAULT_STEP_TIMEOUT_MS,
-        summary: { total: 0, passed: 0, failed: 1, skipped: 0, durationMs: 0 },
-        steps: [
-          {
-            id: 'reliability-suite',
-            label: 'Reliability suite runner',
-            command: 'node scripts/check-reliability-suite.mjs',
-            status: 'failed',
-            durationMs: 0,
-            exitCode: 1,
-            summary: 'runner failed before executing checks',
-            issues: [message],
-          },
-        ],
-      },
-      null,
-      2,
-    )}\n`,
-  )
   console.error(message)
   process.exitCode = 1
 })

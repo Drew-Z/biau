@@ -1,9 +1,11 @@
-import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
+import { readFile, readdir, stat } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(repoRoot, 'public/status/xunqiu-synthetic.json')
+const DEFAULT_STATUS_PATH = 'public/status/xunqiu-synthetic.json'
+const existingOutputPath = resolve(repoRoot, DEFAULT_STATUS_PATH)
 const DEFAULT_TIMEOUT_MS = 12_000
 const forceUnconfiguredFlags = new Set(['--force-unconfigured', '--force'])
 const COMPAT_ENDPOINTS = [
@@ -117,7 +119,7 @@ function issueFromResponse(response, fallback = '') {
 
 async function tryReadExistingReport() {
   try {
-    return JSON.parse(await readFile(outputPath, 'utf8'))
+    return JSON.parse(await readFile(existingOutputPath, 'utf8'))
   } catch {
     return null
   }
@@ -341,7 +343,13 @@ function apkGateCheck(apkGate) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: DEFAULT_STATUS_PATH,
+    allowReliabilityTemp: true,
+  })
   const baseUrl = normalizeBaseUrl(process.env.XUNQIU_SYNTHETIC_API_BASE_URL)
   const checkedAt = new Date().toISOString()
   const checks = []
@@ -349,7 +357,7 @@ async function main() {
   const apkGate = summarizeApkGate(await listApkArtifacts(args.artifactRoots), artifactRootsConfigured)
 
   if (!baseUrl) {
-    if (!artifactRootsConfigured && !args.forceUnconfigured) {
+    if (!artifactRootsConfigured && !args.forceUnconfigured && !statusOutput.temporary) {
       const existingReport = await tryReadExistingReport()
       if (existingReport) {
         console.log(
@@ -366,7 +374,7 @@ async function main() {
       emptyCheck('xunqiu-compat-api', 'XUNQIU_SYNTHETIC_API_BASE_URL is not configured'),
       apkGateCheck(apkGate),
     )
-    await writeReport({ checkedAt, apiBaseConfigured: false, apkGate, checks })
+    await writeReport(statusOutput, { checkedAt, apiBaseConfigured: false, apkGate, checks })
     console.log('Xunqiu synthetic report generated without API base URL; all live checks are unchecked.')
     return
   }
@@ -399,7 +407,7 @@ async function main() {
   checks.push(compatCheckFromResults(compatResults))
   checks.push(apkGateCheck(apkGate))
 
-  await writeReport({ checkedAt, apiBaseConfigured: true, apkGate, checks })
+  await writeReport(statusOutput, { checkedAt, apiBaseConfigured: true, apkGate, checks })
   console.log(
     `Xunqiu synthetic report generated: online=${checks.filter((check) => check.status === 'online').length} unchecked=${checks.filter((check) => check.status === 'unchecked').length} offline=${checks.filter((check) => check.status === 'offline').length}`,
   )
@@ -407,7 +415,7 @@ async function main() {
   if (args.strict && checks.some((check) => check.status === 'offline')) process.exitCode = 1
 }
 
-async function writeReport(report) {
+async function writeReport(statusOutput, report) {
   const payload = {
     checkedAt: report.checkedAt,
     apiBaseConfigured: report.apiBaseConfigured,
@@ -416,8 +424,7 @@ async function writeReport(report) {
     ok: report.checks.every((check) => check.status !== 'offline'),
     checks: report.checks,
   }
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
+  if (statusOutput.enabled) await writeJsonAtomically(statusOutput.filePath, payload)
 }
 
 main().catch((error) => {

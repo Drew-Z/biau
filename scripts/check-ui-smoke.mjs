@@ -1,4 +1,6 @@
 import { chromium } from 'playwright'
+import { createVerificationProgress } from './lib/verification-progress.mjs'
+import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const routes = [
@@ -16,11 +18,20 @@ const viewports = [
 
 const browser = await chromium.launch({ headless: true })
 const failures = []
+const progress = createVerificationProgress('check:ui:smoke')
 
 try {
   for (const route of routes) {
     for (const viewport of viewports) {
+      const failureCount = failures.length
+      progress.start('route-smoke', `${viewport.name} ${route.path}`)
       const page = await browser.newPage({ viewport })
+      let externalRequestBlocked = false
+      await installLocalNetworkGuard(page, base, ({ resourceType }) => {
+        if (externalRequestBlocked) return
+        externalRequestBlocked = true
+        failures.push(`${route.path} ${viewport.name}: external_request_blocked (${resourceType})`)
+      })
       if (route.forbidsLoadingFlash) {
         await page.addInitScript(() => {
           window.__routeLoadingSeen = false
@@ -62,12 +73,18 @@ try {
         failures.push(`${route.path} ${viewport.name}: ${error instanceof Error ? error.message : String(error)}`)
       } finally {
         await page.close()
+        progress.finish(failures.length === failureCount)
       }
     }
   }
+} catch (error) {
+  failures.push(`${progress.currentLabel()}: ${error instanceof Error ? error.message : String(error)}`)
+  progress.finish(false)
 } finally {
   await browser.close()
 }
+
+progress.printSummary()
 
 if (failures.length > 0) {
   console.error(failures.join('\n'))

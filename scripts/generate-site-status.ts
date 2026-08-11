@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
@@ -9,6 +9,8 @@ import {
   type ReliabilityStatus,
   type SiteStatusTarget,
 } from '../src/data/statusTargets.ts'
+import { classifyNetworkFailure, shouldRetryNetworkResult } from './lib/network-diagnostics.mjs'
+import { resolveStatusInputDirectory, resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 type GeneratedStatus = Extract<ReliabilityStatus, 'online' | 'degraded' | 'offline' | 'unchecked'>
 type SiteStatusIssueKind =
@@ -40,8 +42,6 @@ interface Summary {
 }
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(repoRoot, 'public/status/site-status.json')
-const statusDir = resolve(repoRoot, 'public/status')
 const DEFAULT_TIMEOUT_MS = 12_000
 
 interface SyntheticCheckResult {
@@ -63,6 +63,7 @@ function parseArgs(argv: string[]) {
   const args = {
     timeoutMs: Number(process.env.SITE_STATUS_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
     strict: process.env.SITE_STATUS_STRICT === '1',
+    statusInputDir: '',
   }
 
   const readValue = (index: number) => argv[index + 1] ?? ''
@@ -79,6 +80,15 @@ function parseArgs(argv: string[]) {
     }
     if (item.startsWith('--timeout=')) {
       args.timeoutMs = Number(item.slice('--timeout='.length))
+      continue
+    }
+    if (item === '--status-input-dir') {
+      args.statusInputDir = readValue(index)
+      index += 1
+      continue
+    }
+    if (item.startsWith('--status-input-dir=')) {
+      args.statusInputDir = item.slice('--status-input-dir='.length)
     }
   }
 
@@ -92,30 +102,6 @@ function statusFromHttpStatus(httpStatus: number, hasNetworkError: boolean): Gen
   if ([401, 403, 404, 405, 408, 409, 425, 429].includes(httpStatus)) return 'degraded'
   if (httpStatus > 0) return 'offline'
   return 'unchecked'
-}
-
-function classifyFetchError(error: unknown): SiteStatusIssueKind {
-  if (!error || typeof error !== 'object') return 'network_error'
-  const record = error as { name?: unknown; code?: unknown; cause?: unknown }
-  const code =
-    typeof record.code === 'string'
-      ? record.code
-      : record.cause && typeof record.cause === 'object'
-        ? ((record.cause as { code?: unknown }).code ?? '')
-        : ''
-
-  if (record.name === 'AbortError' || code === 'ETIMEDOUT') return 'timeout'
-  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'dns_error'
-  if (
-    code === 'CERT_HAS_EXPIRED' ||
-    code === 'SELF_SIGNED_CERT_IN_CHAIN' ||
-    code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' ||
-    code === 'DEPTH_ZERO_SELF_SIGNED_CERT'
-  ) {
-    return 'tls_error'
-  }
-  if (code === 'ECONNREFUSED' || code === 'ECONNRESET' || code === 'UND_ERR_SOCKET') return 'connection_error'
-  return 'network_error'
 }
 
 function issueFromStatus(httpStatus: number, issueKind: SiteStatusIssueKind) {
@@ -136,8 +122,7 @@ function delay(ms: number) {
 }
 
 function shouldRetryStatus(result: Awaited<ReturnType<typeof fetchWithTimeout>>) {
-  if (['timeout', 'network_error', 'connection_error'].includes(result.issueKind)) return true
-  return result.httpStatus >= 500
+  return shouldRetryNetworkResult(result.httpStatus, result.issueKind)
 }
 
 async function fetchWithTimeout(url: string, timeoutMs: number) {
@@ -168,7 +153,7 @@ async function fetchWithTimeout(url: string, timeoutMs: number) {
       finalUrl: url,
       durationMs: Date.now() - startedAt,
       error: error instanceof Error ? error.message : String(error),
-      issueKind: classifyFetchError(error),
+      issueKind: classifyNetworkFailure(error) as SiteStatusIssueKind,
     }
   } finally {
     clearTimeout(timeout)
@@ -255,19 +240,19 @@ function formatFreshnessEvidence(check: SyntheticCheckResult, generatedAtMs: num
   return `证据时间：${check.checkedAt || '未记录'}；证据新鲜度：${evidenceFreshnessLabel(freshness)}（${formatEvidenceAge(check.checkedAt, generatedAtMs)}）`
 }
 
-async function loadSyntheticChecks(): Promise<Map<string, SyntheticCheckResult>> {
+async function loadSyntheticChecks(statusDirectory: string): Promise<Map<string, SyntheticCheckResult>> {
   const merged = new Map<string, SyntheticCheckResult>()
   let entries: string[]
 
   try {
-    entries = await readdir(statusDir)
+    entries = await readdir(statusDirectory)
   } catch {
     return merged
   }
 
   const syntheticFiles = entries.filter((entry) => entry.endsWith('-synthetic.json'))
   for (const fileName of syntheticFiles) {
-    for (const check of await loadSyntheticChecksFromFile(resolve(statusDir, fileName))) {
+    for (const check of await loadSyntheticChecksFromFile(resolve(statusDirectory, fileName))) {
       merged.set(check.id, check)
     }
   }
@@ -343,12 +328,19 @@ async function checkTarget(target: SiteStatusTarget, timeoutMs: number): Promise
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: 'public/status/site-status.json',
+    allowReliabilityTemp: true,
+  })
+  const statusInputDir = resolveStatusInputDirectory(args.statusInputDir, { repoRoot })
   const generatedAt = new Date()
   const checkedAt = generatedAt.toISOString()
   const generatedAtMs = generatedAt.getTime()
   const targets = []
-  const syntheticChecks = await loadSyntheticChecks()
+  const syntheticChecks = await loadSyntheticChecks(statusInputDir)
 
   for (const target of siteStatusTargets) {
     targets.push(await checkTarget(target, args.timeoutMs))
@@ -364,10 +356,11 @@ async function main() {
     reliabilityProjects: mergeReliabilityProjects(targets, syntheticChecks, generatedAtMs),
   }
 
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(result, null, 2)}\n`)
+  if (statusOutput.enabled) await writeJsonAtomically(statusOutput.filePath, result)
 
-  console.log(`Generated public/status/site-status.json with ${targets.length} targets.`)
+  console.log(
+    `${statusOutput.enabled ? `Generated ${statusOutput.displayPath}` : 'Checked site status without writing a snapshot'} with ${targets.length} targets.`,
+  )
   console.log(`online=${summary.online} degraded=${summary.degraded} offline=${summary.offline} unchecked=${summary.unchecked}`)
 
   if (args.strict && !result.ok) process.exitCode = 1

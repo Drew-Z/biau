@@ -1,9 +1,10 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(repoRoot, 'public/status/blog-semi-synthetic.json')
+const DEFAULT_STATUS_PATH = 'public/status/blog-semi-synthetic.json'
 const DEFAULT_BASE_URL = 'https://biau.playlab.eu.cc'
 const DEFAULT_TIMEOUT_MS = 12_000
 const ROUTE_CHECK_ID = 'blog-semi-public-routes'
@@ -404,7 +405,13 @@ async function validateAssistantApi(baseUrl, timeoutMs, checkedAt, allowChat, sk
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: DEFAULT_STATUS_PATH,
+    allowReliabilityTemp: true,
+  })
   const checkedAt = new Date().toISOString()
   const results = []
 
@@ -443,10 +450,9 @@ async function main() {
     checks: [routeCheck, assistantCheck],
   }
 
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
+  if (statusOutput.enabled) await writeJsonAtomically(statusOutput.filePath, payload)
   console.log(
-    `Main-site synthetic report generated: routes=${routeCheck.status} (${passed}/${results.length}), assistant=${assistantCheck.status}.`,
+    `Main-site synthetic check completed${statusOutput.enabled ? ` and wrote ${statusOutput.displayPath}` : ' without writing a snapshot'}: routes=${routeCheck.status} (${passed}/${results.length}), assistant=${assistantCheck.status}.`,
   )
 
   if (args.strict && payload.checks.some((check) => check.status === 'offline')) process.exitCode = 1

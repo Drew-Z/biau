@@ -1,5 +1,7 @@
 import { chromium } from 'playwright'
 import sharp from 'sharp'
+import { createVerificationProgress } from './lib/verification-progress.mjs'
+import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 import {
   findReliabilityProjectForTarget,
   reliabilityProjects as staticReliabilityProjects,
@@ -262,6 +264,8 @@ const projectDetailVisualCases = projects
   .filter((project) => project.expectedVisuals > 0)
 
 async function gotoApp(page, path, options = {}) {
+  const viewport = page.viewportSize()
+  progress.setContext(`${viewport ? `${viewport.width}x${viewport.height} ` : ''}${path}`)
   const url = `${base}${path}`
   const waitUntil = options.waitUntil ?? 'domcontentloaded'
   const timeout = options.timeout ?? 45_000
@@ -293,6 +297,25 @@ async function gotoApp(page, path, options = {}) {
       )
       .catch(() => {})
   }
+}
+
+const networkGuards = new WeakMap()
+
+async function createUiPage(browser, options) {
+  const page = await browser.newPage(options)
+  const blockedTypes = new Set()
+  const guard = await installLocalNetworkGuard(page, base, ({ resourceType }) => {
+    const key = `${resourceType}`
+    if (blockedTypes.has(key)) return
+    blockedTypes.add(key)
+    failures.push(`${progress.currentLabel()}: external_request_blocked (${resourceType})`)
+  })
+  networkGuards.set(page, guard)
+  return page
+}
+
+function wasBlockedVerificationRequest(page, url) {
+  return networkGuards.get(page)?.wasBlocked(url) === true
 }
 
 async function waitForImageReady(imageLocator, timeout = 15_000) {
@@ -419,7 +442,7 @@ async function checkStudioWorkspaceModes(browser, failures) {
   const mobileWidths = [320, 390, 430]
 
   for (const width of mobileWidths) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    const page = await createUiPage(browser, { viewport: { width, height: 900 } })
     await page.addInitScript(() => {
       window.localStorage.setItem('biau-studio-admin-token', 'ui-check-token')
     })
@@ -581,7 +604,7 @@ async function checkStudioWorkspaceModes(browser, failures) {
     await page.close()
   }
 
-  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const desktop = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
   await desktop.addInitScript(() => {
     window.localStorage.setItem('biau-studio-admin-token', 'ui-check-token')
   })
@@ -602,7 +625,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
   const mobileWidths = [320, 390, 430]
 
   for (const width of mobileWidths) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    const page = await createUiPage(browser, { viewport: { width, height: 900 } })
     await page.route('**/health', (route) =>
       route.fulfill({
         status: 200,
@@ -677,7 +700,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
     await page.close()
   }
 
-  const blog = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  const blog = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
   await gotoApp(blog, '/blog/legal-rag-review')
   await blog.waitForTimeout(400)
   if (Number(await blog.locator('.public-assistant').getAttribute('data-collision-offset')) !== 0) {
@@ -685,7 +708,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
   }
   await blog.close()
 
-  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const desktop = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
   await desktop.route('**/health', (route) =>
     route.fulfill({
       status: 200,
@@ -722,7 +745,7 @@ async function checkMobilePrimaryNavigation(browser, failures) {
   ]
 
   for (const width of [320, 390, 430]) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    const page = await createUiPage(browser, { viewport: { width, height: 900 } })
     await page.route('**/health', (route) =>
       route.fulfill({
         status: 200,
@@ -815,7 +838,7 @@ async function checkMobilePrimaryNavigation(browser, failures) {
     await page.close()
   }
 
-  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const desktop = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
   await gotoApp(desktop, '/')
   if (await desktop.locator('.mobile-tabbar').isVisible().catch(() => false)) {
     failures.push('/ home desktop: mobile bottom navigation must remain hidden')
@@ -834,7 +857,7 @@ async function checkMobileProjectCatalog(browser, failures) {
   const standaloneGames = projects.filter((project) => project.category === 'interactive')
 
   for (const width of [320, 390, 430]) {
-    const page = await browser.newPage({ viewport: { width, height: 900 } })
+    const page = await createUiPage(browser, { viewport: { width, height: 900 } })
     await page.addInitScript(() => {
       window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
     })
@@ -927,7 +950,7 @@ async function checkMobileProjectCatalog(browser, failures) {
     await page.close()
   }
 
-  const desktop = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const desktop = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
   await gotoApp(desktop, '/projects')
   if (
     (await desktop.locator('.project-group-toggle:visible').count()) !== 0 ||
@@ -947,7 +970,7 @@ async function checkMobileProjectCatalog(browser, failures) {
   }
   await desktop.close()
 
-  const playlab = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const playlab = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
   await gotoApp(playlab, '/projects/biau-playlab')
   const expectedDetailHrefs = standaloneGames.map((project) => `/projects/${project.id}`)
   const expectedPlayHrefs = [
@@ -967,7 +990,7 @@ async function checkMobileProjectCatalog(browser, failures) {
   await playlab.close()
 
   for (const game of standaloneGames) {
-    const detail = await browser.newPage({ viewport: { width: 390, height: 900 } })
+    const detail = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
     await gotoApp(detail, `/projects/${game.id}`)
     const title = await detail.locator('.project-detail-page .detail-title').first().innerText().catch(() => '')
     if (!title.includes(game.title)) {
@@ -995,7 +1018,7 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
   ]
 
   for (const viewport of viewports) {
-    const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } })
+    const page = await createUiPage(browser, { viewport: { width: viewport.width, height: viewport.height } })
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.route('**/health', (route) =>
       route.fulfill({
@@ -1101,7 +1124,7 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
     await page.close()
   }
 
-  const statusOverview = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  const statusOverview = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
   await gotoApp(statusOverview, '/status')
   if (
     !(await statusOverview.locator('.status-section-navigator').isVisible().catch(() => false)) ||
@@ -1111,7 +1134,7 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
   }
   await statusOverview.close()
 
-  const missing = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  const missing = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
   await gotoApp(missing, '/status/missing-reading-guide')
   if ((await missing.locator('.detail-reading-guide').count()) !== 0) {
     failures.push('/status/missing-reading-guide: missing status detail should not render a reading guide')
@@ -1120,10 +1143,18 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
 }
 const failures = []
 const browser = await chromium.launch({ headless: true })
+const progress = createVerificationProgress('check:ui')
 
-for (const viewport of viewports) {
-  for (const route of routes) {
-    const page = await browser.newPage({ viewport })
+function finishProgressGroup(failureCount) {
+  progress.finish(failures.length === failureCount)
+}
+
+try {
+  for (const viewport of viewports) {
+    for (const route of routes) {
+      const failureCount = failures.length
+      progress.start('route-matrix', `${viewport.name} ${route.path}`)
+    const page = await createUiPage(browser, { viewport })
     const logs = []
 
     page.on('console', (message) => {
@@ -1133,7 +1164,8 @@ for (const viewport of viewports) {
       }
     })
     page.on('requestfailed', (request) => {
-      logs.push(`requestfailed: ${request.url()} ${request.failure()?.errorText ?? 'failed'}`)
+      if (wasBlockedVerificationRequest(page, request.url())) return
+      logs.push(`requestfailed: ${request.resourceType()} ${request.failure()?.errorText ?? 'failed'}`)
     })
     page.on('pageerror', (error) => logs.push(`pageerror: ${error.message}`))
     if (route.clearLocalStorageKeys?.length || route.localStorageValues) {
@@ -1540,17 +1572,22 @@ for (const viewport of viewports) {
       failures.push(`${viewport.name} ${route.path}: ${logs.join(' | ')}`)
     }
 
-    await page.close()
+      await page.close()
+      finishProgressGroup(failureCount)
+    }
   }
-}
+  progress.start('studio-mobile', 'workspace modes and focused mobile surfaces')
+  const studioMobileFailures = failures.length
+  await checkStudioWorkspaceModes(browser, failures)
+  await checkMobileDetailSurfaceCoordination(browser, failures)
+  await checkMobilePrimaryNavigation(browser, failures)
+  await checkMobileProjectCatalog(browser, failures)
+  await checkStatusDetailReadingNavigation(browser, failures)
+  finishProgressGroup(studioMobileFailures)
 
-await checkStudioWorkspaceModes(browser, failures)
-await checkMobileDetailSurfaceCoordination(browser, failures)
-await checkMobilePrimaryNavigation(browser, failures)
-await checkMobileProjectCatalog(browser, failures)
-await checkStatusDetailReadingNavigation(browser, failures)
-
-const statusPage = await browser.newPage({ viewport: viewports[0] })
+  progress.start('catalog-reading', 'status, blog, navigation, and detail reading')
+  const catalogReadingFailures = failures.length
+const statusPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(statusPage, '/status')
 if (await statusPage.locator('.status-section-navigator').isVisible().catch(() => false)) {
   failures.push('/status desktop navigator: mobile section navigator should stay hidden')
@@ -1769,7 +1806,7 @@ const statusSectionIds = [
   'status-projects',
 ]
 for (const width of [320, 390, 430]) {
-  const mobileStatusPage = await browser.newPage({ viewport: { width, height: 900 } })
+  const mobileStatusPage = await createUiPage(browser, { viewport: { width, height: 900 } })
   await gotoApp(mobileStatusPage, '/status')
   const navigator = mobileStatusPage.locator('.status-section-navigator')
   const sectionSelect = mobileStatusPage.getByRole('combobox', { name: '选择状态页分区' })
@@ -1832,7 +1869,7 @@ for (const width of [320, 390, 430]) {
   await mobileStatusPage.close()
 }
 
-const interactionPage = await browser.newPage({ viewport: viewports[0] })
+const interactionPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(interactionPage, '/blog')
 if (await interactionPage.locator('.blog-column-select').isVisible().catch(() => false)) {
   failures.push('/blog columns: mobile column selector should stay hidden on desktop')
@@ -1905,7 +1942,7 @@ if (!(await queryEmptyState.filter({ hasText: expectedQueryEmptyState.descriptio
 await interactionPage.close()
 
 for (const width of [320, 390, 430]) {
-  const mobileBlogPage = await browser.newPage({ viewport: { width, height: 900 } })
+  const mobileBlogPage = await createUiPage(browser, { viewport: { width, height: 900 } })
   await gotoApp(mobileBlogPage, '/blog')
 
   const mobileSelectorShell = mobileBlogPage.locator('.blog-column-select')
@@ -1960,7 +1997,11 @@ for (const width of [320, 390, 430]) {
   await mobileBlogPage.close()
 }
 
-const navFocusPage = await browser.newPage({ viewport: viewports[0] })
+  finishProgressGroup(catalogReadingFailures)
+  progress.start('flow-intro', 'background, scenes, reduced motion, and runtime fallback')
+  const flowIntroFailures = failures.length
+
+const navFocusPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(navFocusPage, '/blog')
 const expectedNavFocusTargets = new Set(['brand', '首页', '项目', '博客', '状态', 'theme', 'language', 'primary'])
 const seenNavFocusTargets = new Map()
@@ -2003,7 +2044,7 @@ for (const target of expectedNavFocusTargets) {
 }
 await navFocusPage.close()
 
-const navIndicatorPage = await browser.newPage({ viewport: viewports[0] })
+const navIndicatorPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(navIndicatorPage, '/blog')
 const navIndicator = await navIndicatorPage.locator('.nav-link-center.active').evaluate((item) => {
   const style = getComputedStyle(item, '::after')
@@ -2022,7 +2063,7 @@ await navIndicatorPage.close()
 const harborThemeSignatures = []
 for (const theme of ['light', 'dark']) {
   for (const scene of ['dusk', 'garden', 'stellar']) {
-    const harborThemePage = await browser.newPage({ viewport: viewports[0], colorScheme: theme })
+    const harborThemePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: theme })
     await harborThemePage.addInitScript(({ harborScene, harborTheme }) => {
       window.localStorage.setItem('theme', harborTheme)
       window.localStorage.setItem('biau-port-harbor-scene', harborScene)
@@ -2038,7 +2079,7 @@ for (const theme of ['light', 'dark']) {
 if (new Set(harborThemeSignatures).size !== 6) {
   failures.push('/ home flow canvas: light/dark dusk, garden, and stellar should render six distinct frames')
 }
-const cardResponsePage = await browser.newPage({ viewport: viewports[0], colorScheme: 'dark' })
+const cardResponsePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
 await cardResponsePage.addInitScript(() => {
   window.localStorage.setItem('theme', 'dark')
   window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
@@ -2091,7 +2132,7 @@ if (
 }
 await cardResponsePage.close()
 
-const mobileHarborPage = await browser.newPage({ viewport: { width: 390, height: 844 }, colorScheme: 'dark' })
+const mobileHarborPage = await createUiPage(browser, { viewport: { width: 390, height: 844 }, colorScheme: 'dark' })
 await mobileHarborPage.addInitScript(() => {
   window.localStorage.setItem('theme', 'dark')
   window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
@@ -2109,7 +2150,7 @@ if (mobileHarbor.pageOverflow > 1 || mobileHarbor.width > 488 || mobileHarbor.he
   failures.push('/ home mobile flow: expected bounded overflow and viewport-sized capped-DPR canvas at 390px')
 }
 await mobileHarborPage.close()
-const reducedHarborPage = await browser.newPage({ viewport: viewports[0], colorScheme: 'dark', reducedMotion: 'reduce' })
+const reducedHarborPage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark', reducedMotion: 'reduce' })
 await reducedHarborPage.addInitScript(() => {
   window.localStorage.setItem('theme', 'dark')
   window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
@@ -2173,7 +2214,7 @@ if (!reducedModeReady) {
 }
 await reducedHarborPage.close()
 
-const motionSwitchPage = await browser.newPage({
+const motionSwitchPage = await createUiPage(browser, {
   viewport: viewports[0],
   colorScheme: 'dark',
   reducedMotion: 'no-preference',
@@ -2253,6 +2294,10 @@ if (resumedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')
 }
 await motionSwitchPage.close()
+
+  finishProgressGroup(flowIntroFailures)
+  progress.start('public-assistant', 'warm-up, history, branches, citations, recovery, and cancellation')
+  const publicAssistantFailures = failures.length
 
 const publicAssistantLongToken = `harbor-${'x'.repeat(180)}`
 const publicAssistantCodeFixture = `const harbor = '${'biau-port-'.repeat(18)}'`
@@ -2504,7 +2549,7 @@ const originalPublicAssistantHistoryWithBranchesFixture = {
 }
 
 for (const width of [1440, 320, 390, 430]) {
-  const warmupPage = await browser.newPage({ viewport: { width, height: width >= 1000 ? 900 : 780 } })
+  const warmupPage = await createUiPage(browser, { viewport: { width, height: width >= 1000 ? 900 : 780 } })
   let healthRequests = 0
   let chatRequests = 0
   let sessionRequests = 0
@@ -2613,7 +2658,7 @@ for (const width of [1440, 320, 390, 430]) {
 }
 
 let activePublicAssistantHistoryFixture = originalPublicAssistantHistoryFixture
-const publicAssistantPage = await browser.newPage({ viewport: viewports[0] })
+const publicAssistantPage = await createUiPage(browser, { viewport: viewports[0] })
 await publicAssistantPage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
     version: 2,
@@ -3216,7 +3261,7 @@ const revisionHistory = (activeBranchId, selectedRevisionId) => createPublicAssi
 })
 const revisionBranchBodies = []
 const revisionGenerationBodies = []
-const revisionPage = await browser.newPage({ viewport: viewports[0] })
+const revisionPage = await createUiPage(browser, { viewport: viewports[0] })
 await revisionPage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
     version: 2,
@@ -3450,7 +3495,7 @@ const replayHistory = (authoritative = false) => createPublicAssistantHistoryFix
   hasEarlierTurns: false,
 })
 let replayHistoryRequests = 0
-const replayRecoveryPage = await browser.newPage({ viewport: viewports[0] })
+const replayRecoveryPage = await createUiPage(browser, { viewport: viewports[0] })
 await replayRecoveryPage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
     version: 2,
@@ -3525,7 +3570,7 @@ if (
 }
 await replayRecoveryPage.close()
 
-const expiredSessionPage = await browser.newPage({ viewport: viewports[0] })
+const expiredSessionPage = await createUiPage(browser, { viewport: viewports[0] })
 await expiredSessionPage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
     version: 2,
@@ -3566,7 +3611,7 @@ if (
 await expiredSessionPage.close()
 
 let restoreAttemptCount = 0
-const restoreRetryPage = await browser.newPage({ viewport: viewports[0] })
+const restoreRetryPage = await createUiPage(browser, { viewport: viewports[0] })
 await restoreRetryPage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
     version: 2,
@@ -3628,7 +3673,7 @@ if (restoreAttemptCount !== 2 || await restoreRetryPage.getByRole('button', { na
 }
 await restoreRetryPage.close()
 
-const restoreRacePage = await browser.newPage({ viewport: viewports[0] })
+const restoreRacePage = await createUiPage(browser, { viewport: viewports[0] })
 await restoreRacePage.addInitScript(() => {
   window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
     version: 2,
@@ -3682,7 +3727,7 @@ await restoreRacePage.close()
 let offlineChatRequestCount = 0
 const offlineChatRequestBodies = []
 let offlineHistoryRequestCount = 0
-const offlineRecoveryPage = await browser.newPage({ viewport: viewports[0] })
+const offlineRecoveryPage = await createUiPage(browser, { viewport: viewports[0] })
 await offlineRecoveryPage.addInitScript(() => {
   window.__publicAssistantUiOnline = true
   Object.defineProperty(navigator, 'onLine', {
@@ -3795,7 +3840,7 @@ await offlineRecoveryPage.close()
 
 let rateLimitedChatRequestCount = 0
 const rateLimitedChatRequestBodies = []
-const rateLimitRecoveryPage = await browser.newPage({ viewport: viewports[0] })
+const rateLimitRecoveryPage = await createUiPage(browser, { viewport: viewports[0] })
 await rateLimitRecoveryPage.route('**/api/health', (route) => route.fulfill({
   status: 200,
   contentType: 'application/json',
@@ -3863,7 +3908,7 @@ if (
 }
 await rateLimitRecoveryPage.close()
 
-const cancellationPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+const cancellationPage = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
 await cancellationPage.addInitScript(() => {
   const nativeFetch = window.fetch.bind(window)
   window.fetch = (input, init = {}) => {
@@ -3951,7 +3996,7 @@ if (
 await cancellationPage.close()
 
 for (const width of [320, 390, 430]) {
-  const mobileAssistantPage = await browser.newPage({ viewport: { width, height: 900 } })
+  const mobileAssistantPage = await createUiPage(browser, { viewport: { width, height: 900 } })
   const mobileGenerationBodies = []
   await mobileAssistantPage.route('**/api/health', async (route) => {
     await route.fulfill({
@@ -4220,8 +4265,12 @@ for (const width of [320, 390, 430]) {
   await mobileAssistantPage.close()
 }
 
+  finishProgressGroup(publicAssistantFailures)
+  progress.start('catalog-projects', 'route stability, home carousel, project visuals, and mobile reading')
+  const catalogProjectFailures = failures.length
+
 for (const path of ['/projects', '/blog']) {
-  const routeFlashPage = await browser.newPage({ viewport: viewports[0] })
+  const routeFlashPage = await createUiPage(browser, { viewport: viewports[0] })
   await routeFlashPage.addInitScript(() => {
     window.__routeFlashEvents = []
     const record = (kind, value) => {
@@ -4245,7 +4294,7 @@ for (const path of ['/projects', '/blog']) {
   await routeFlashPage.close()
 }
 
-const homeIntroPage = await browser.newPage({ viewport: viewports[0] })
+const homeIntroPage = await createUiPage(browser, { viewport: viewports[0] })
 await homeIntroPage.addInitScript(() => {
   window.sessionStorage.removeItem('biau-port-harbor-intro:v3')
   window.__harborIntroEvents = []
@@ -4442,7 +4491,7 @@ if (mobileIntroSeen !== '1') {
 }
 await mobileIntroContext.close()
 
-const homeCarouselPage = await browser.newPage({ viewport: viewports[0] })
+const homeCarouselPage = await createUiPage(browser, { viewport: viewports[0] })
 await homeCarouselPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
@@ -4488,7 +4537,7 @@ if (!wheelScrollY || wheelScrollY === initialScrollY) {
 }
 await homeCarouselPage.close()
 
-const homeTitleDragPage = await browser.newPage({ viewport: viewports[0] })
+const homeTitleDragPage = await createUiPage(browser, { viewport: viewports[0] })
 await homeTitleDragPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
@@ -4520,7 +4569,7 @@ if (!titleBox) {
 }
 await homeTitleDragPage.close()
 
-const homeCarouselClickPage = await browser.newPage({ viewport: viewports[0] })
+const homeCarouselClickPage = await createUiPage(browser, { viewport: viewports[0] })
 await homeCarouselClickPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
@@ -4533,7 +4582,7 @@ await homeCarouselClickPage.waitForURL(`${base}/projects/legal-rag`, { timeout: 
 })
 await homeCarouselClickPage.close()
 
-const homeCarouselActionKeyboardPage = await browser.newPage({ viewport: viewports[0] })
+const homeCarouselActionKeyboardPage = await createUiPage(browser, { viewport: viewports[0] })
 await homeCarouselActionKeyboardPage.addInitScript(() => {
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
   window.__openedUrls = []
@@ -4564,7 +4613,7 @@ if (!actionKeyboardResult.openedUrls.some((url) => url === 'https://legal-rag-we
 }
 await homeCarouselActionKeyboardPage.close()
 
-const blogCardKeyboardPage = await browser.newPage({ viewport: viewports[0] })
+const blogCardKeyboardPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(blogCardKeyboardPage, '/blog')
 const firstKeyboardBlogCard = blogCardKeyboardPage.locator('.blog-card[role="link"]').first()
 await firstKeyboardBlogCard.focus()
@@ -4687,7 +4736,7 @@ for (const width of [320, 390, 430]) {
 
   await touchContext.close()
 }
-const keyboardPage = await browser.newPage({ viewport: viewports[0] })
+const keyboardPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(keyboardPage, '/projects')
 for (let index = 0; index < 20; index += 1) {
   const focusedProject = await keyboardPage.evaluate(() => document.activeElement?.classList.contains('project-card'))
@@ -4705,7 +4754,7 @@ if (!focusedProject) {
 }
 await keyboardPage.close()
 
-const projectsMobileActionPage = await browser.newPage({ viewport: viewports[1] })
+const projectsMobileActionPage = await createUiPage(browser, { viewport: viewports[1] })
 await gotoApp(projectsMobileActionPage, '/projects')
 const legalRagMobileCard = projectsMobileActionPage.locator('.project-card').filter({ hasText: 'Legal RAG' }).first()
 const mobileFooterVisible = await legalRagMobileCard.locator('.project-footer').isVisible().catch(() => false)
@@ -4746,7 +4795,7 @@ if (mobileActionPathname !== '/projects') {
 }
 await projectsMobileActionPage.close()
 
-const projectDetailButtonKeyboardPage = await browser.newPage({ viewport: viewports[0] })
+const projectDetailButtonKeyboardPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(projectDetailButtonKeyboardPage, '/projects')
 await projectDetailButtonKeyboardPage
   .getByRole('button', { name: '查看项目详情：Legal RAG｜法律智能机器人与合同审查' })
@@ -4756,7 +4805,7 @@ await projectDetailButtonKeyboardPage.waitForURL(`${base}/projects/legal-rag`, {
 })
 await projectDetailButtonKeyboardPage.close()
 
-const imagePage = await browser.newPage({ viewport: viewports[1] })
+const imagePage = await createUiPage(browser, { viewport: viewports[1] })
 await gotoApp(imagePage, '/projects/legal-rag')
 const heroImage = imagePage.locator('.detail-hero-image img')
 const heroImageReady = await waitForImageReady(heroImage)
@@ -4775,7 +4824,7 @@ if (!webpSource?.endsWith('.webp')) {
 }
 await imagePage.close()
 
-const originalImageLinkPage = await browser.newPage({ viewport: viewports[1] })
+const originalImageLinkPage = await createUiPage(browser, { viewport: viewports[1] })
 await gotoApp(originalImageLinkPage, '/projects/xunqiu')
 const originalImageLink = originalImageLinkPage.getByRole('link', { name: /打开 .+ 项目截图原图/ })
 const originalImageHref = await originalImageLink.getAttribute('href')
@@ -4825,7 +4874,7 @@ if (!originalImageMobileMetrics) {
 await originalImageLinkPage.close()
 
 for (const project of projectDetailVisualCases) {
-  const projectVisualPage = await browser.newPage({ viewport: viewports[0] })
+  const projectVisualPage = await createUiPage(browser, { viewport: viewports[0] })
   await gotoApp(projectVisualPage, `/projects/${project.id}`)
 
   const visualFigures = projectVisualPage.locator('.project-case-study .project-visual')
@@ -4920,7 +4969,7 @@ for (const project of projectDetailVisualCases) {
   await projectVisualPage.close()
 }
 
-const detailQuickLinksPage = await browser.newPage({ viewport: viewports[1] })
+const detailQuickLinksPage = await createUiPage(browser, { viewport: viewports[1] })
 await gotoApp(detailQuickLinksPage, '/projects/legal-rag')
 const legalQuickLinks = detailQuickLinksPage.locator('.detail-header .detail-quick-links')
 const legalQuickLinkCount = await legalQuickLinks.locator('a.link-badge').count()
@@ -4987,7 +5036,7 @@ if (!legalLowerExternalClass?.includes('link-badge--external') || !legalLowerInt
 }
 await detailQuickLinksPage.close()
 
-const xunqiuQuickLinksPage = await browser.newPage({ viewport: viewports[1] })
+const xunqiuQuickLinksPage = await createUiPage(browser, { viewport: viewports[1] })
 await gotoApp(xunqiuQuickLinksPage, '/projects/xunqiu')
 const xunqiuQuickLinks = xunqiuQuickLinksPage.locator('.detail-header .detail-quick-links')
 for (const label of ['产品展示页', '技术文档']) {
@@ -5011,7 +5060,7 @@ await xunqiuQuickLinksPage.close()
 
 for (const projectId of ['ozon-erp', 'xunqiu']) {
   const projectPath = `/projects/${projectId}`
-  const relatedPage = await browser.newPage({ viewport: viewports[0] })
+  const relatedPage = await createUiPage(browser, { viewport: viewports[0] })
   await gotoApp(relatedPage, projectPath)
 
   const relatedSection = relatedPage
@@ -5058,7 +5107,7 @@ for (const projectId of ['ozon-erp', 'xunqiu']) {
   await relatedPage.close()
 }
 
-const projectDetailInternalLinkPage = await browser.newPage({ viewport: viewports[0] })
+const projectDetailInternalLinkPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(projectDetailInternalLinkPage, '/projects/legal-rag')
 const projectDetailSpaMarker = await projectDetailInternalLinkPage.evaluate(() => {
   window.__projectDetailSpaMarker = `project-detail-${Date.now()}`
@@ -5084,7 +5133,7 @@ const readingGuideViewports = [
 
 for (const viewport of readingGuideViewports) {
   for (const path of readingGuideRoutes) {
-    const readingPage = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } })
+    const readingPage = await createUiPage(browser, { viewport: { width: viewport.width, height: viewport.height } })
     if (viewport.reducedMotion) await readingPage.emulateMedia({ reducedMotion: 'reduce' })
     await readingPage.addInitScript(() => {
       window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
@@ -5269,7 +5318,7 @@ for (const viewport of readingGuideViewports) {
 }
 
 for (const path of ['/blog/missing-reading-guide', '/projects/missing-reading-guide']) {
-  const missingDetailPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+  const missingDetailPage = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
   await gotoApp(missingDetailPage, path)
   if ((await missingDetailPage.locator('.detail-reading-guide').count()) !== 0) {
     failures.push(`${path}: missing detail states should not render an empty reading guide`)
@@ -5278,7 +5327,7 @@ for (const path of ['/blog/missing-reading-guide', '/projects/missing-reading-gu
 }
 
 for (const width of [320, 390, 430]) {
-  const mobileHomePage = await browser.newPage({ viewport: { width, height: 900 } })
+  const mobileHomePage = await createUiPage(browser, { viewport: { width, height: 900 } })
   await mobileHomePage.addInitScript(() => {
     window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
   })
@@ -5440,7 +5489,7 @@ const mobileDetailRoutes = ['/blog/legal-rag-review', '/projects/legal-rag']
 
 for (const width of [320, 390, 430]) {
   for (const path of mobileDetailRoutes) {
-    const mobileDetailPage = await browser.newPage({ viewport: { width, height: 900 } })
+    const mobileDetailPage = await createUiPage(browser, { viewport: { width, height: 900 } })
     await mobileDetailPage.addInitScript(() => {
       window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
     })
@@ -5551,7 +5600,11 @@ for (const width of [320, 390, 430]) {
   }
 }
 
-const publicFeedRefreshPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  finishProgressGroup(catalogProjectFailures)
+  progress.start('ai-daily-seo', 'public feed, detail loading, citations, and reduced motion')
+  const aiDailySeoFailures = failures.length
+
+const publicFeedRefreshPage = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
 await installAiDailyPublicRefreshFixture(publicFeedRefreshPage)
 await gotoApp(publicFeedRefreshPage, '/ai-daily')
 await publicFeedRefreshPage.getByText('公开 Flash 标题').waitFor({ state: 'visible' })
@@ -5571,7 +5624,7 @@ if (!refreshErrorCleared) {
 }
 await publicFeedRefreshPage.close()
 
-const publicFeedStalePage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+const publicFeedStalePage = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
 await installAiDailyPublicStaleFixture(publicFeedStalePage)
 await gotoApp(publicFeedStalePage, '/ai-daily')
 await publicFeedStalePage.getByText('投影需要关注').waitFor({ state: 'visible', timeout: 3_000 })
@@ -5580,7 +5633,7 @@ if (!(await publicFeedStalePage.getByText('投影需要关注').isVisible().catc
 }
 await publicFeedStalePage.close()
 
-const invalidCitationPage = await browser.newPage({ viewport: { width: 390, height: 900 } })
+const invalidCitationPage = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
 await installAiDailyPublicInvalidCitationFixture(invalidCitationPage)
 await gotoApp(invalidCitationPage, '/ai-daily/invalid-citation')
 await invalidCitationPage.getByText('无法打开这条快讯').waitFor({ state: 'visible' })
@@ -5592,7 +5645,7 @@ if (await invalidCitationPage.evaluate(() => document.body.dataset.compromised =
 }
 await invalidCitationPage.close()
 
-const publicDetailRacePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+const publicDetailRacePage = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
 await installAiDailyPublicRaceFixture(publicDetailRacePage)
 await gotoApp(publicDetailRacePage, '/ai-daily/slow-event')
 await publicDetailRacePage.evaluate(() => {
@@ -5606,7 +5659,7 @@ if (!(await publicDetailRacePage.getByText('快速当前快讯').isVisible().cat
 }
 await publicDetailRacePage.close()
 
-const publicFeedReducedMotionPage = await browser.newPage({
+const publicFeedReducedMotionPage = await createUiPage(browser, {
   viewport: { width: 390, height: 900 },
   reducedMotion: 'reduce',
 })
@@ -5627,8 +5680,15 @@ if (reducedMotionState.dotAnimation !== 'none' || reducedMotionState.barAnimatio
   failures.push('/ai-daily reduced motion: loading indicators should remain static when motion is reduced')
 }
 await publicFeedReducedMotionPage.close()
+  finishProgressGroup(aiDailySeoFailures)
+} catch (error) {
+  failures.push(`${progress.currentLabel()}: ${error instanceof Error ? error.message : String(error)}`)
+  progress.finish(false)
+} finally {
+  await browser.close()
+}
 
-await browser.close()
+progress.printSummary()
 
 if (failures.length > 0) {
   console.error(failures.join('\n'))

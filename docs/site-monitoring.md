@@ -79,7 +79,7 @@ npm.cmd run site:monitor
 npm.cmd run public-links:check
 ```
 
-`reliability:check` 是跨项目可靠性总入口，会顺序运行主站、公开项目外链、Legal RAG、ERP、Xunqiu、Pet、BIAU Playlab 的 synthetic 检查，再生成 `public/status/site-status.json` 和 `public/status/reliability-suite.json`。默认会继续执行后续步骤并写出套件报告；需要让 CI 在故障时失败时使用：
+`reliability:check` 是跨项目可靠性总入口，会顺序运行主站、公开项目外链、Legal RAG、ERP、Xunqiu、Pet、BIAU Playlab 的 synthetic 检查，并在 OS 临时目录聚合 `site-status` 与套件报告。默认只检查，不修改 `public/status/*`；需要让 CI 在故障时失败时使用：
 
 ```powershell
 npm.cmd run reliability:check -- --strict
@@ -90,7 +90,18 @@ npm.cmd run reliability:check -- --skip site-monitor
 - `--strict`：任一步骤失败或报告出现失败状态时，命令最终返回非 0。
 - `--timeout`：传给每个 synthetic / status / monitor 脚本的请求超时时间，单位毫秒。
 - `--skip`：跳过某个步骤，支持多次传入或逗号分隔，例如 `--skip site-monitor,pet,playlab`。
-- `public/status/reliability-suite.json` 只保存低敏摘要，不保存环境变量、API base URL、token、原始 stdout/stderr 或外部平台后台链接。
+- 临时汇总会先复制已有公开快照；缺少环境变量而跳过的项目继续使用已有证据参与 `site:status` 聚合。
+- 临时目录始终在结束时清理，套件报告不保存环境变量、API base URL、token、原始 stdout/stderr、临时绝对路径或外部平台后台链接。
+
+只有确认本次证据需要成为公开状态时，才显式发布：
+
+```powershell
+npm.cmd run reliability:publish
+npm.cmd run main-site:synthetic:publish
+npm.cmd run site:status:publish
+```
+
+所有状态脚本也支持裸 `--write-status` 使用既定 `public/status/<name>.json`，或传入 `public/status/` 下的显式路径。越界路径会在写入前被拒绝；可靠性套件内部使用受控临时目录和原子 JSON 写入。
 
 主站 synthetic 默认只检查公开页面、sitemap、robots 和同域
 `/api/health`。它不会默认向 `/api/chat/public` 发送问题，避免在公开助手
@@ -148,7 +159,7 @@ npm.cmd run site:monitor -- --timeout 15000
 npm.cmd run public-links:check
 npm.cmd run public-links:check -- --json
 npm.cmd run public-links:check -- --timeout 20000
-npm.cmd run public-links:check -- --write-status public/status/public-links-synthetic.json
+npm.cmd run public-links:publish
 ```
 
 `public-links:check` 从 `src/data/hero.ts` 和 `src/data/portfolio.ts`
@@ -156,11 +167,17 @@ npm.cmd run public-links:check -- --write-status public/status/public-links-synt
 它不请求模型、不读取 token、不保存响应正文；如果外部平台冷启动或临时限流导致
 失败，应先复跑确认，再决定是否更新状态页或人工门禁。
 
-当传入 `--write-status public/status/public-links-synthetic.json` 时，脚本会额外生成
+当运行 `public-links:publish` 或显式传入 `--write-status` 时，脚本会额外生成
 低敏 synthetic 快照，供 `/status` 和 `reliability:check` 合并展示。这个快照只保存
 链接总数、失败总数、聚合状态和错误类别，不保存具体 URL、最终跳转地址或原始错误正文。
 
 脚本失败会返回非 0，适合后续放进 GitHub Actions、定时器或手动发布检查。
+
+## UI 检查诊断
+
+`check:ui:smoke` 与 `check:ui` 都会输出 `[START]`、`[PASS]`、`[FAIL]` 和分组耗时。full 检查保留 17 条路由、桌面/移动视口与全部专项断言；长时间运行时可直接从最后一个 group、路由和视口定位停顿位置。
+
+两个 UI 检查都只允许 `UI_CHECK_BASE`、loopback、`data:`、`blob:` 与显式页面 fixture。真实外部请求会在浏览器发出前以 `external_request_blocked` 失败，因此确定性 UI 检查不会调用模型、搜索、embedding 或生产 API。
 
 ## 事件统计边界
 

@@ -235,6 +235,8 @@ npm run status:contract
 npm run check:ui
 ```
 
+These commands inspect current behavior without changing committed status snapshots. Use `npm run reliability:publish` or the matching `*:publish` command only when the checked evidence is intentionally ready for publication.
+
 Broad local gate:
 
 ```bash

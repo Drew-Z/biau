@@ -154,6 +154,8 @@ npm.cmd run docs:deployment-check
 - Avoid duplicate data indexes or repeated normalization in render loops.
 - Run `performance:check` when changing background, intro, route chunks, or large assets. It must enforce the entry CSS budget and fail when the named `route-pages-*.css` chunk disappears.
 - Run `check:ui:smoke` for quick route/CSS/overflow feedback and `check:ui` before completion. The smoke check covers entry routes without loading flashes plus lazy routes with the route CSS present at desktop, 390px, and 320px.
+- Both UI commands use the shared `[START]` / `[PASS]` / `[FAIL]` progress contract with named groups, current route/viewport context, group duration, and a final summary. Full keeps the 17-route × desktop/mobile matrix and all specialist assertions; progress instrumentation may not reduce coverage.
+- Every Playwright page installs the shared local-network guard before navigation. `UI_CHECK_BASE`, loopback, `data:`, `blob:`, and later explicit page fixtures are allowed through `route.fallback()`; any other real HTTP(S) request fails as `external_request_blocked` without printing the target URL.
 
 ```css
 /* Correct: entry CSS keeps high-frequency catalog pages stable. */

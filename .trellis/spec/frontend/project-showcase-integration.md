@@ -38,7 +38,7 @@ Generation and validation commands:
 ```powershell
 npm.cmd run assistant:index
 npm.cmd run sitemap:generate
-npm.cmd run site:status
+npm.cmd run site:status:publish
 npm.cmd run project-details:check
 npm.cmd run assistant:kg-check
 npm.cmd run status:contract
@@ -54,7 +54,7 @@ npm.cmd run docs:project-notes-check
 - Capability-level `ReliabilityCheck` entries require separately recorded evidence. Use `production-observed` only for a dated, scoped run record; test source proves coverage definition, not a passing run.
 - A newly deployed static demo requires both a production browser acceptance and deployed-asset parity. Hash the exact asset URLs referenced by the deployed HTML, including version query parameters; an unversioned cache entry is not the user-facing asset when the document references a versioned URL.
 - Project details require at least three in-body visuals, including one runtime screenshot and one architecture/workflow/data-flow/diagram. Raster visuals require PNG and same-stem WebP variants.
-- `assistant:index`, `sitemap:generate`, and `site:status` are generated projections. Regenerate them after their source data changes and commit the synchronized output.
+- `assistant:index`, `sitemap:generate`, and `site:status:publish` are generated projections. Regenerate them after their source data changes and commit the synchronized output. Plain `site:status` is a read-only verification command.
 - `docs/project-notes/evidence-register.md` rows use repository-relative paths. `working-tree` is allowed for the current task record before commit; immutable commits are preferred after publication.
 - Cross-project conclusions name the project-specific evidence IDs they derive from. A comparison document cannot be its only evidence.
 - `docs/project-notes/` is a Simplified Chinese engineering archive. Descriptive headings, table labels, narrative text, and interview fields are Chinese; code symbols, repository-relative paths, URLs, SHAs, Evidence IDs, evidence labels, and stable scope values remain unchanged.

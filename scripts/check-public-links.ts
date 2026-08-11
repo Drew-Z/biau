@@ -1,10 +1,19 @@
-import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
 import { heroContent } from '../src/data/hero'
 import { projects, type ProjectDetailSection, type ProjectLink, type ProjectVisualBlock } from '../src/data/portfolio'
 import { MAIN_SITE_URL } from '../src/data/siteLinks'
+import {
+  buildPublicFailureSummary,
+  classifyHttpResult,
+  classifyNetworkFailure,
+  normalizePublicIssueKinds,
+  shouldRetryNetworkResult,
+} from './lib/network-diagnostics.mjs'
+import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
+
+type LinkIssueKind = '' | 'timeout' | 'dns_error' | 'tls_error' | 'connection_error' | 'network_error' | 'http_status'
 
 interface LinkTarget {
   url: string
@@ -18,6 +27,7 @@ interface CheckResult extends LinkTarget {
   durationMs: number
   finalUrl: string
   issue: string
+  issueKind: LinkIssueKind
 }
 
 const DEFAULT_TIMEOUT_MS = 20_000
@@ -29,7 +39,6 @@ function parseArgs(argv: string[]) {
     json: false,
     timeoutMs: Number(process.env.PUBLIC_LINKS_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
     maxLinks: Number(process.env.PUBLIC_LINKS_MAX || DEFAULT_MAX_LINKS),
-    writeStatusPath: '',
   }
 
   const readValue = (index: number) => argv[index + 1] ?? ''
@@ -37,15 +46,6 @@ function parseArgs(argv: string[]) {
     const item = argv[index]
     if (item === '--json') {
       args.json = true
-      continue
-    }
-    if (item === '--write-status') {
-      args.writeStatusPath = readValue(index)
-      index += 1
-      continue
-    }
-    if (item.startsWith('--write-status=')) {
-      args.writeStatusPath = item.slice('--write-status='.length)
       continue
     }
     if (item === '--timeout') {
@@ -73,24 +73,15 @@ function parseArgs(argv: string[]) {
 }
 
 function classifyIssueKind(result: CheckResult) {
-  if (result.ok) return ''
-  const issue = result.issue.toLowerCase()
-  if (issue.includes('timeout') || issue.includes('abort')) return 'timeout'
-  if (issue.includes('enotfound') || issue.includes('eai_again')) return 'dns_error'
-  if (issue.includes('certificate') || issue.includes('cert') || issue.includes('tls')) return 'tls_error'
-  if (issue.includes('econnrefused') || issue.includes('econnreset') || issue.includes('socket')) return 'connection_error'
-  if (result.status > 0) return 'http_status'
-  return 'network_error'
+  return result.ok ? '' : result.issueKind
 }
 
 function buildStatusIssues(results: CheckResult[]) {
   const failed = results.filter((result) => !result.ok)
   if (failed.length === 0) return []
 
-  const issueKinds = Array.from(new Set(failed.map(classifyIssueKind).filter(Boolean))).sort()
-  return [
-    `${failed.length} public project links failed; issue classes: ${issueKinds.join(', ') || 'unknown'}. Run npm.cmd run public-links:check for details.`,
-  ]
+  const issueKinds = normalizePublicIssueKinds(failed.map(classifyIssueKind).filter(Boolean))
+  return [buildPublicFailureSummary(failed.length, issueKinds, 'npm.cmd run public-links:check')]
 }
 
 function buildStatusPayload(checkedAt: string, results: CheckResult[]) {
@@ -120,12 +111,6 @@ function buildStatusPayload(checkedAt: string, results: CheckResult[]) {
       },
     ],
   }
-}
-
-async function writeStatusPayload(relativeOutputPath: string, payload: unknown) {
-  const outputPath = resolve(repoRoot, relativeOutputPath)
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
 }
 
 function normalizePublicUrl(value: string) {
@@ -190,11 +175,6 @@ function shouldFallbackToGet(status: number) {
   return status === 405 || status === 501
 }
 
-function shouldRetry(status: number, issue: string) {
-  if (issue) return true
-  return status === 408 || status === 425 || status === 429 || status >= 500
-}
-
 async function fetchOnce(url: string, method: 'HEAD' | 'GET', timeoutMs: number) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
@@ -216,6 +196,7 @@ async function fetchOnce(url: string, method: 'HEAD' | 'GET', timeoutMs: number)
       finalUrl: response.url,
       durationMs: Date.now() - startedAt,
       issue: '',
+      issueKind: '' as const,
     }
   } catch (error) {
     const issue =
@@ -229,6 +210,7 @@ async function fetchOnce(url: string, method: 'HEAD' | 'GET', timeoutMs: number)
       finalUrl: url,
       durationMs: Date.now() - startedAt,
       issue,
+      issueKind: classifyNetworkFailure(error) as Exclude<LinkIssueKind, '' | 'http_status'>,
     }
   } finally {
     clearTimeout(timeout)
@@ -244,7 +226,7 @@ async function checkTarget(target: LinkTarget, timeoutMs: number): Promise<Check
     result = await fetchOnce(target.url, method, timeoutMs)
   }
 
-  if (shouldRetry(result.status, result.issue)) {
+  if (shouldRetryNetworkResult(result.status, result.issueKind)) {
     await delay(750)
     const retry = await fetchOnce(target.url, method, timeoutMs)
     result = {
@@ -253,7 +235,8 @@ async function checkTarget(target: LinkTarget, timeoutMs: number): Promise<Check
     }
   }
 
-  const ok = !result.issue && result.status >= 200 && result.status < 400
+  const httpResult = classifyHttpResult(result.status)
+  const ok = !result.issue && httpResult.ok
   const issue = result.issue || (ok ? '' : `HTTP ${result.status || 'request failed'}`)
   return {
     ...target,
@@ -263,6 +246,7 @@ async function checkTarget(target: LinkTarget, timeoutMs: number): Promise<Check
     durationMs: result.durationMs,
     finalUrl: result.finalUrl,
     issue,
+    issueKind: result.issueKind || (httpResult.issueKind as 'http_status'),
   }
 }
 
@@ -284,7 +268,13 @@ function printMarkdown(checkedAt: string, results: CheckResult[]) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: 'public/status/public-links-synthetic.json',
+    allowReliabilityTemp: true,
+  })
   const checkedAt = new Date().toISOString()
   const targets = collectTargets().slice(0, args.maxLinks)
   const results: CheckResult[] = []
@@ -301,9 +291,9 @@ async function main() {
     results,
   }
 
-  if (args.writeStatusPath) {
+  if (statusOutput.enabled) {
     const statusPayload = buildStatusPayload(checkedAt, results)
-    await writeStatusPayload(args.writeStatusPath, statusPayload)
+    await writeJsonAtomically(statusOutput.filePath, statusPayload)
   }
 
   if (args.json) {

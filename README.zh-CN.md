@@ -128,6 +128,8 @@ npm run project-details:check
 npm run status:contract
 ```
 
+这些命令默认只检查，不修改已提交的公开状态快照。只有确认本次证据需要发布时，才运行 `npm run reliability:publish` 或对应的 `*:publish` 命令。
+
 ## 部署
 
 静态站推荐 Cloudflare Pages：

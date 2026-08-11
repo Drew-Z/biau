@@ -1,9 +1,11 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outputPath = resolve(repoRoot, 'public/status/legal-rag-synthetic.json')
+const DEFAULT_STATUS_PATH = 'public/status/legal-rag-synthetic.json'
+const existingOutputPath = resolve(repoRoot, DEFAULT_STATUS_PATH)
 const DEFAULT_TIMEOUT_MS = 15_000
 const DEFAULT_PROJECT_ID = 'project_default'
 const CHECK_IDS = [
@@ -209,7 +211,7 @@ function demoAccessSummary(status) {
 
 async function readExistingReportSummary() {
   try {
-    const payload = JSON.parse(await readFile(outputPath, 'utf8'))
+    const payload = JSON.parse(await readFile(existingOutputPath, 'utf8'))
     const checks = Array.isArray(payload?.checks) ? payload.checks : []
     const counts = checks.reduce(
       (summary, check) => {
@@ -249,7 +251,13 @@ async function waitForSeedJob(baseUrl, jobId, timeoutMs, cookieJar) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
+  const argv = process.argv.slice(2)
+  const args = parseArgs(argv)
+  const statusOutput = resolveStatusOutput(argv, {
+    repoRoot,
+    defaultRelativePath: DEFAULT_STATUS_PATH,
+    allowReliabilityTemp: true,
+  })
   const baseUrl = normalizeBaseUrl(process.env.LEGAL_RAG_API_BASE_URL)
   const email = String(process.env.LEGAL_RAG_SYNTHETIC_EMAIL || '').trim()
   const password = String(process.env.LEGAL_RAG_SYNTHETIC_PASSWORD || '')
@@ -260,7 +268,7 @@ async function main() {
   const cookieJar = new Map()
 
   if (!baseUrl) {
-    const existingReport = args.forceUnconfigured ? null : await readExistingReportSummary()
+    const existingReport = args.forceUnconfigured || statusOutput.temporary ? null : await readExistingReportSummary()
     if (existingReport) {
       console.log(
         `Legal RAG API base URL is not configured; preserving existing report (${existingReport.demoAccessStatus}, online=${existingReport.counts.online} degraded=${existingReport.counts.degraded} offline=${existingReport.counts.offline} unchecked=${existingReport.counts.unchecked}). Use --force-unconfigured to regenerate unchecked output.`,
@@ -269,7 +277,7 @@ async function main() {
     }
 
     checks.push(...CHECK_IDS.map((id) => emptyCheck(id, 'LEGAL_RAG_API_BASE_URL is not configured')))
-    await writeReport({
+    await writeReport(statusOutput, {
       checkedAt,
       apiBaseConfigured: false,
       hasCredentials,
@@ -296,7 +304,7 @@ async function main() {
       emptyCheck('legal-rag-contract-review', 'API health did not pass; contract review checks were skipped'),
       emptyCheck('legal-rag-observability', 'API health did not pass; quality report checks were skipped'),
     )
-    await writeReport({
+    await writeReport(statusOutput, {
       checkedAt,
       apiBaseConfigured: true,
       hasCredentials,
@@ -318,7 +326,7 @@ async function main() {
       emptyCheck('legal-rag-contract-review', 'Auth status did not confirm the demo gate; contract review checks were skipped'),
       emptyCheck('legal-rag-observability', 'Auth status did not confirm the demo gate; quality report checks were skipped'),
     )
-    await writeReport({
+    await writeReport(statusOutput, {
       checkedAt,
       apiBaseConfigured: true,
       hasCredentials,
@@ -338,7 +346,7 @@ async function main() {
       emptyCheck('legal-rag-contract-review', 'Auth is enabled; credentials are required for contract review checks'),
       emptyCheck('legal-rag-observability', 'Auth is enabled; credentials are required for quality report checks'),
     )
-    await writeReport({
+    await writeReport(statusOutput, {
       checkedAt,
       apiBaseConfigured: true,
       hasCredentials,
@@ -369,7 +377,7 @@ async function main() {
         { ...failed, id: 'legal-rag-contract-review' },
         { ...failed, id: 'legal-rag-observability' },
       )
-      await writeReport({
+      await writeReport(statusOutput, {
         checkedAt,
         apiBaseConfigured: true,
         hasCredentials,
@@ -464,7 +472,7 @@ async function main() {
   const demoAccessStatus = checks.every((check) => check.status === 'online')
     ? DEMO_ACCESS_STATUS.OPEN_DEMO
     : DEMO_ACCESS_STATUS.DEGRADED
-  await writeReport({ checkedAt, apiBaseConfigured: true, hasCredentials, demoAccessStatus, checks })
+  await writeReport(statusOutput, { checkedAt, apiBaseConfigured: true, hasCredentials, demoAccessStatus, checks })
   console.log(
     `Legal RAG synthetic report generated: online=${checks.filter((check) => check.status === 'online').length} unchecked=${checks.filter((check) => check.status === 'unchecked').length} offline=${checks.filter((check) => check.status === 'offline').length}`,
   )
@@ -472,7 +480,7 @@ async function main() {
   if (args.strict && checks.some((check) => check.status === 'offline')) process.exitCode = 1
 }
 
-async function writeReport(report) {
+async function writeReport(statusOutput, report) {
   const payload = {
     checkedAt: report.checkedAt,
     apiBaseConfigured: report.apiBaseConfigured,
@@ -482,8 +490,7 @@ async function writeReport(report) {
     ok: report.checks.every((check) => check.status !== 'offline'),
     checks: report.checks,
   }
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`)
+  if (statusOutput.enabled) await writeJsonAtomically(statusOutput.filePath, payload)
 }
 
 main().catch((error) => {
