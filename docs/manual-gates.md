@@ -48,7 +48,8 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - 当前 `MODEL_RELAY_ALLOWED_MODELS` 只允许 `grok-4.5`；Render public service 只配置主 relay 和该 Responses 模型。备用 relay、fallback 模型和视觉模型保持关闭，直到独立渠道通过新的获批业务任务。
 - 不执行 ping、doctor、空 prompt 或逐模型测活；本轮批准只覆盖已经完成的有界候选选型，新的生产端到端请求仍需再次明确批准，并在完成后删除临时会话。
 - 2026-08-04 relay 诊断 revision `87210661` 已在 Cloudflare Pages 与 Render 进入生产；确定性检查、Render/Cloudflare health 与无认证 relay `401` 边界均通过。
-- 2026-08-12 已在 `059b74a2` 上执行一次获批的站点业务问题：HTTP `200`，站内检索返回合法证据且会话持久化通过，但三次有界生成尝试后仍为 `degraded/fallback`。随后已修正 Public API 的外部 RAG URL 错配，但未自动发送第二次真实请求。低敏 Render 恢复事件为 `provider_unavailable`，主、备 relay 的配置/鉴权合同已通过，失败仍处于上游 `5xx` 边界。
+- 2026-08-12 已在 `207a5fe6` 上执行一次获批的站点业务问题：HTTP `200`，约 9.3 秒后以 `degraded/fallback` 结束，三次有界尝试的公开失败类别为 `upstream`；会话持久化与引用访问通过，但检索错误偏向 Legal RAG，未覆盖知航自身事实。根因是 Render Public API 缺少模型 base 环境配置，服务回退到不兼容的默认 upstream，而不是已经证明的供应商持续 `5xx`。
+- 模型 base 配置已补齐并重新部署；`/health` 与已认证非法模型请求的 `400` 合同通过，均未触达模型上游。仓库同时新增知航专属知识、别名、实体关系、排序权重和离线回归用例，待部署到 Public API/RAG、同步公开 Supabase pgvector 后，再申请一条新的明确批准业务问题；不得自动重发首次请求。
 - 本地获批古诗任务已证明当前主渠道可生成回答。提交 `0df05c4` 已依次部署到 Cloudflare Pages 与 Render Public API；Render `/health` 返回 `200`，relay 无认证请求返回 `401`，已认证非法模型请求返回 `400`，且这些合同检查没有触达模型上游。生产回答、引用和会话体验仍需一条新的明确批准业务请求，不能用本地选型结果替代。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 
