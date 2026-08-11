@@ -127,9 +127,9 @@ Focused checks:
 
 ### E2. Public assistant manual product gate
 
-- [ ] Prepare one real business request and acceptance sheet; ask for explicit approval immediately before execution.
+- [x] Prepare one real business request and acceptance sheet; ask for explicit approval immediately before execution.
 - [ ] Verify recovery by blocking a browser request before it reaches the API, restoring connectivity, and then completing the approved real request; observe desktop/mobile answer, citations and refresh persistence without inducing provider failure.
-- [ ] Record only low-sensitive evidence and mark the product `产品可用`, `待验收` or truthful degraded state.
+- [x] Record only low-sensitive evidence and mark the product `产品可用`, `待验收` or truthful degraded state.
 - [ ] Never turn this into a scheduled model probe.
 
 ### E3. AI Daily deterministic audit/fixes
