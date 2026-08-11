@@ -38,5 +38,15 @@ export function HomePage() {
     window.open(link, '_blank', 'noopener,noreferrer')
   }
 
-  return <HeroSplit onProjectClick={handleProjectClick} onProjectAction={handleProjectAction} />
+  const handleProjectStatus = (link: string) => {
+    navigate(link)
+  }
+
+  return (
+    <HeroSplit
+      onProjectClick={handleProjectClick}
+      onProjectAction={handleProjectAction}
+      onProjectStatus={handleProjectStatus}
+    />
+  )
 }

@@ -1,12 +1,14 @@
 import { ArrowRight } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import type { Project } from '../data/portfolio'
+import { findProjectPublication, getPublishedProjectLinks } from '../data/projectPublication'
 import { ResponsiveImage } from './ResponsiveImage'
 
 interface ProjectCardProps {
   project: Project
   index?: number
   onViewDetails: () => void
+  onNavigate: (href: string) => void
 }
 
 const categoryAccent: Record<Project['category'], string> = {
@@ -15,10 +17,14 @@ const categoryAccent: Record<Project['category'], string> = {
   interactive: 'image',
   mobile: 'preview',
   platform: 'formula',
+  tool: 'signal',
 }
 
-export function ProjectCard({ project, index, onViewDetails }: ProjectCardProps) {
+export function ProjectCard({ project, index, onViewDetails, onNavigate }: ProjectCardProps) {
   const number = index ? String(index).padStart(2, '0') : undefined
+  const publishedLinks = getPublishedProjectLinks(findProjectPublication(project.id), project.links)
+    .filter((link) => link.type === 'external' || link.intent === 'status')
+    .slice(0, 2)
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return
     if (event.key !== 'Enter' && event.key !== ' ') return
@@ -77,23 +83,41 @@ export function ProjectCard({ project, index, onViewDetails }: ProjectCardProps)
             <ArrowRight size={16} aria-hidden />
           </button>
           
-          {project.links.length > 0 && (
+          {publishedLinks.length > 0 && (
             <div className="project-links">
-              {project.links.filter(link => link.type === 'external').slice(0, 2).map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link-badge"
-                  onClick={(e) => e.stopPropagation()}
-                  onKeyDown={(e) => {
-                    e.stopPropagation()
-                  }}
-                >
-                  {link.label}
-                </a>
-              ))}
+              {publishedLinks.map((link) =>
+                link.type === 'external' ? (
+                  <a
+                    key={`${link.intent}-${link.href}`}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="link-badge"
+                    title={link.explanation}
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      e.stopPropagation()
+                    }}
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <button
+                    key={`${link.intent}-${link.href}`}
+                    type="button"
+                    className="link-badge link-badge--status"
+                    aria-label={`${link.label}：${project.title}`}
+                    title={link.explanation}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onNavigate(link.href)
+                    }}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    {link.label}
+                  </button>
+                ),
+              )}
             </div>
           )}
         </div>

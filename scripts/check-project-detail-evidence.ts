@@ -9,6 +9,7 @@ import {
   type ProjectLink,
   type ProjectVisualBlock,
 } from '../src/data/portfolio'
+import { findProjectPublication } from '../src/data/projectPublication'
 
 interface ProjectEvidenceSummary {
   id: string
@@ -113,6 +114,7 @@ function checkLink(projectId: string, link: ProjectLink, context: string) {
 }
 
 function checkProjectShell(project: Project) {
+  const publication = findProjectPublication(project.id)
   checkPublicText(project.id, 'title', project.title)
   checkPublicText(project.id, 'summary', project.summary)
   checkPublicText(project.id, 'role', project.role)
@@ -120,7 +122,7 @@ function checkProjectShell(project: Project) {
   for (const item of project.stack) checkPublicText(project.id, 'stack item', item)
   for (const item of project.assistantContext ?? []) checkPublicText(project.id, 'assistantContext item', item)
 
-  checkAsset(project.id, 'hero image', project.image)
+  if (publication?.availability !== 'planned') checkAsset(project.id, 'hero image', project.image)
   checkPublicText(project.id, 'hero image alt', project.imageAlt)
   checkPublicText(project.id, 'hero image caption', project.imageCaption)
   if (COVER_EVIDENCE_PROJECT_IDS.has(project.id)) {
@@ -241,6 +243,7 @@ async function checkAssetQuality() {
 
 for (const project of projects) {
   checkProjectShell(project)
+  const publication = findProjectPublication(project.id)
 
   if (!project.detailContent) {
     fail(project.id, 'missing detailContent')
@@ -256,13 +259,13 @@ for (const project of projects) {
   if (sections.length < MIN_DETAIL_SECTIONS) {
     fail(project.id, `needs at least ${MIN_DETAIL_SECTIONS} detail sections, got ${sections.length}`)
   }
-  if (visuals.length < MIN_BODY_VISUALS) {
+  if (publication?.availability !== 'planned' && visuals.length < MIN_BODY_VISUALS) {
     fail(project.id, `needs at least ${MIN_BODY_VISUALS} in-body visuals, got ${visuals.length}`)
   }
-  if (!visuals.some((visual) => visual.type === 'screenshot')) {
+  if (publication?.availability !== 'planned' && !visuals.some((visual) => visual.type === 'screenshot')) {
     fail(project.id, 'needs at least one in-body screenshot visual for runtime evidence')
   }
-  if (!visuals.some((visual) => STRUCTURAL_VISUAL_TYPES.has(visual.type))) {
+  if (publication?.availability !== 'planned' && !visuals.some((visual) => STRUCTURAL_VISUAL_TYPES.has(visual.type))) {
     fail(project.id, 'needs at least one workflow/architecture/data-flow/diagram visual for structural explanation')
   }
 

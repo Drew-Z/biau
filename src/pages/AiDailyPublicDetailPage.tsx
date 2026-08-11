@@ -7,6 +7,7 @@ import {
   requestAiDailyPublicDetail,
   type AiDailyPublicDetailPayload,
 } from '../utils/aiDailyPublicApi'
+import { formatProductName } from '../data/productRegistry'
 import { applySeo } from '../utils/seo'
 
 export function AiDailyPublicDetailPage() {
@@ -68,7 +69,7 @@ export function AiDailyPublicDetailPage() {
   useEffect(() => {
     if (!payload) return
     applySeo({
-      title: `${payload.item.title} | BIAU Port AI 日报`,
+      title: `${payload.item.title} | ${formatProductName('ai-daily')} AI 日报`,
       description: (payload.item.factSummary || payload.item.whyItMatters).trim().slice(0, 180),
       canonicalPath: `/ai-daily/${payload.item.publicId}`,
       type: 'article',
@@ -105,7 +106,7 @@ export function AiDailyPublicDetailPage() {
 
   return (
     <article className="page-stack detail-page ai-daily-public-detail-page">
-      <Link to="/ai-daily" className="detail-back"><ArrowLeft size={16} aria-hidden /><span>AI 日报</span></Link>
+      <Link to="/ai-daily" className="detail-back"><ArrowLeft size={16} aria-hidden /><span>{formatProductName('ai-daily')}｜AI 日报</span></Link>
       <header className="detail-header">
         <div className="detail-badges"><span className="tag">AI DAILY</span>{item.corrected && <span className="ai-daily-public-correction">已修正</span>}</div>
         <h1 className="detail-title">{item.title}</h1>

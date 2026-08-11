@@ -1,4 +1,5 @@
 import { heroContent } from './hero'
+import { formatProductTitle } from './productRegistry'
 import { MAIN_SITE_URL } from './siteLinks'
 
 export type SiteStatusTargetKind = 'workbench' | 'business' | 'showcase' | 'mobile'
@@ -49,49 +50,49 @@ const targetMeta: Record<
   Pick<SiteStatusTarget, 'label' | 'kind' | 'expectation' | 'description' | 'note'>
 > = {
   'legal-rag': {
-    label: 'Legal RAG 在线工作台',
+    label: formatProductTitle('legal-rag', '在线工作台'),
     kind: 'workbench',
     expectation: 'login-gated',
     description: '法律 RAG 与合同审查演示工作台入口。',
     note: '工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。',
   },
   chatus: {
-    label: 'Chatus 邀请制工作台',
+    label: formatProductTitle('chatus', 'Chatus 邀请制工作台'),
     kind: 'workbench',
     expectation: 'login-gated',
     description: '私人 AI 工作台的登录与受限访客入口。',
     note: '入口可达只代表工作台登录面可访问，不代表成员账号、访问材料或完整 Agent 能力已向公众开放。',
   },
   'anchor-learning': {
-    label: 'Anchor Learning 浏览器 Demo',
+    label: formatProductTitle('anchor-learning', '浏览器 Demo'),
     kind: 'showcase',
     expectation: 'static-site',
     description: '来源可溯源学习助手的双语官网与内置数据浏览器 Demo。',
     note: 'L0 状态只代表浏览器 Demo 入口可达；3 套内置数据的答题与来源交互由独立 Playwright 验收记录支持，不代表 Flutter 导入、云同步或实时 AI 已在网页端开放。',
   },
   'ozon-erp': {
-    label: 'Ozon ERP 演示入口',
+    label: formatProductTitle('ozon-erp', 'Ozon ERP 演示入口'),
     kind: 'business',
     expectation: 'login-gated',
     description: '电商业务系统登录与演示入口。',
     note: '代码侧支持生产普通注册默认开放，但当前线上状态以 bootstrap synthetic 为准；登录页主品牌和后台侧栏已接入 BIAU Port / 泊岸外壳。',
   },
   'biau-playlab': {
-    label: 'BIAU Playlab 游戏站',
+    label: formatProductTitle('biau-playlab', '游戏站'),
     kind: 'showcase',
     expectation: 'static-site',
     description: 'Godot 游戏项目展示、详情与 Web 试玩入口。',
     note: '游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。',
   },
   xunqiu: {
-    label: '寻球产品展示页',
+    label: formatProductTitle('xunqiu', '产品展示页'),
     kind: 'mobile',
     expectation: 'static-site',
     description: '寻球 Android 64 位迁移展示页、技术文档和 APK 发布状态。',
     note: '展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；未批准阶段 APK 已撤下，公开下载等待正式 release 证据。',
   },
   'pet-workspace': {
-    label: 'Pet App 展示页',
+    label: formatProductTitle('pet-workspace', 'App 展示页'),
     kind: 'mobile',
     expectation: 'static-site',
     description: 'AI 桌宠社区 App 截图、下载状态和 APK 发布门禁说明。',
@@ -121,7 +122,7 @@ export const siteStatusTargets: SiteStatusTarget[] = heroContent.projects
 export const reliabilityProjects: ReliabilityProject[] = [
   {
     id: 'blog-semi',
-    title: 'BIAU Port 主站',
+    title: formatProductTitle('biau-port', '主站'),
     category: 'main-site',
     summary: '主站负责项目展示、公开助手、博客内容和状态页本身，是跨项目可靠性视图的聚合入口。',
     checks: [
@@ -188,7 +189,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
   },
   {
     id: 'legal-rag',
-    title: 'Legal RAG 法律机器人',
+    title: formatProductTitle('legal-rag', 'Legal RAG 法律机器人'),
     category: 'ai-workbench',
     summary: '重点不是只看工作台能否打开，而是法律问答、citation、合同审查和质量面板是否能完成演示闭环。',
     checks: [
@@ -257,7 +258,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
   },
   {
     id: 'chatus',
-    title: 'Chatus 私人 AI 工作台',
+    title: formatProductTitle('chatus', 'Chatus 私人 AI 工作台'),
     category: 'ai-workbench',
     summary: 'Chatus 的公开可靠性边界是邀请制入口、session 隔离、会话状态和发布门禁，不公开成员或 provider 运营数据。',
     checks: [
@@ -314,7 +315,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
   },
   {
     id: 'anchor-learning',
-    title: 'Anchor Learning 锚学',
+    title: formatProductTitle('anchor-learning'),
     category: 'ai-workbench',
     summary: 'Anchor 的公开可靠性重点是静态官网、双语偏好、内置数据答题、来源证据和零外部 Demo 请求。',
     checks: [
@@ -371,7 +372,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
   },
   {
     id: 'ozon-erp',
-    title: 'Ozon ERP',
+    title: formatProductTitle('ozon-erp', 'Ozon ERP'),
     category: 'business-system',
     summary: 'ERP 的可靠性要覆盖登录/注册、角色边界、店铺配置、插件连接和商品同步，而不只是登录页响应。',
     checks: [
@@ -438,7 +439,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
   },
   {
     id: 'xunqiu',
-    title: '寻球',
+    title: formatProductTitle('xunqiu'),
     category: 'mobile-app',
     summary: '寻球需要同时看静态展示页、后端健康、兼容 API、APK 本地归档和移动端正式发布 gate。',
     checks: [
@@ -496,7 +497,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
   },
   {
     id: 'pet-gamer',
-    title: 'Pet / Gamer',
+    title: formatProductTitle('pet-workspace', 'Pet / Gamer'),
     category: 'mobile-app',
     summary: '当前适合展示工作进展与发布清单，正式 APK、社区 API 和账号体系还需要后续版本接入。',
     checks: [
@@ -540,7 +541,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
   },
   {
     id: 'biau-playlab',
-    title: 'BIAU Playlab / Game',
+    title: formatProductTitle('biau-playlab', 'Game'),
     category: 'interactive',
     summary: '游戏项目以静态站、游戏详情、Web 试玩资源、截图和移动端提示为主要可靠性边界。',
     checks: [

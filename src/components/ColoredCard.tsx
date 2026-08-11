@@ -1,17 +1,19 @@
 import type { HeroProject } from '../data/hero'
-import { ExternalLink } from 'lucide-react'
+import type { ProjectCtaProjection } from '../data/projectPublication'
+import { Activity, ExternalLink } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 
 interface ColoredCardProps {
   project: HeroProject
   index: number
   projectCount: number
+  entryAction: ProjectCtaProjection
   loopCopy?: boolean
   onClick: () => void
   onActionClick?: () => void
 }
 
-export function ColoredCard({ project, index, projectCount, loopCopy = false, onClick, onActionClick }: ColoredCardProps) {
+export function ColoredCard({ project, index, projectCount, entryAction, loopCopy = false, onClick, onActionClick }: ColoredCardProps) {
   const number = String((index % Math.max(projectCount, 1)) + 1).padStart(2, '0')
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return
@@ -40,11 +42,12 @@ export function ColoredCard({ project, index, projectCount, loopCopy = false, on
           <span className="literary-title"> ——{project.poetry}</span>
         </p>
       </div>
-      {project.externalLink && onActionClick && (
+      {onActionClick && (
         <button
           className="carousel-action"
           type="button"
-          aria-label={project.actionLabel ?? `打开外部项目页面：${project.title}`}
+          data-entry-mode={entryAction.mode}
+          aria-label={entryAction.enabled ? project.actionLabel ?? `打开外部项目页面：${project.title}` : `${entryAction.label}：${project.title}`}
           onClick={(event) => {
             event.stopPropagation()
             onActionClick()
@@ -53,8 +56,8 @@ export function ColoredCard({ project, index, projectCount, loopCopy = false, on
             event.stopPropagation()
           }}
         >
-          <span>{project.action}</span>
-          <ExternalLink size={16} aria-hidden />
+          <span>{entryAction.enabled ? project.action : entryAction.mode === 'status-only' ? 'STATUS' : entryAction.label}</span>
+          {entryAction.enabled ? <ExternalLink size={16} aria-hidden /> : <Activity size={16} aria-hidden />}
         </button>
       )}
     </article>

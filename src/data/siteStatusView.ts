@@ -209,9 +209,38 @@ export function hasReliabilityStatusAttention(summary: ReliabilityStatusCounts) 
 export function mergeSiteStatusPayload(payload: SiteStatusPayload | null): SiteStatusPayload {
   const payloadTargets = Array.isArray(payload?.targets) ? payload.targets : []
   const generatedTargets = new Map(payloadTargets.map((target) => [target.id, target]))
-  const targets = siteStatusTargets.map((target) => generatedTargets.get(target.id) ?? createUncheckedTarget(target))
+  const targets = siteStatusTargets.map((target) => {
+    const generated = generatedTargets.get(target.id)
+    if (!generated) return createUncheckedTarget(target)
+    return {
+      ...generated,
+      projectId: target.projectId,
+      projectTitle: target.projectTitle,
+      label: target.label,
+      url: target.url,
+      kind: target.kind,
+      expectation: target.expectation,
+      description: target.description,
+      note: target.note,
+    }
+  })
   const summary = payload?.summary && payloadTargets.length === targets.length ? payload.summary : buildSummary(targets)
-  const projects = Array.isArray(payload?.reliabilityProjects) ? payload.reliabilityProjects : reliabilityProjects
+  const staticProjects = new Map(reliabilityProjects.map((project) => [project.id, project]))
+  const projects = Array.isArray(payload?.reliabilityProjects)
+    ? payload.reliabilityProjects.map((project) => {
+        const current = staticProjects.get(project.id)
+        return current
+          ? {
+              ...project,
+              title: current.title,
+              category: current.category,
+              summary: current.summary,
+              gates: current.gates,
+              nextActions: current.nextActions,
+            }
+          : project
+      })
+    : reliabilityProjects
 
   return {
     checkedAt: payload?.checkedAt ?? '',

@@ -16,9 +16,10 @@ BIAU Port / 泊岸是一个基于 React、Vite、TypeScript、自定义设计令
 
 ## 功能概览
 
-- 项目案例页：展示 Legal RAG、Ozon ERP、Pet、Xunqiu、BIAU Playlab 等项目的实现、架构、截图、流程、质量证据和后续路线。
-- 公开助手：使用 public-only LangGraph，自适应组合站内知识与经过安全抓取的公开网页证据，并返回 claim-level citation。
-- Content Studio：管理博客草稿、AI 日报 issue、来源材料、审核和发布导出。
+- 项目案例页：展示律航 LexBeacon、商舱 OpsDeck、帆灵 SailSprite、寻球 BallTrail、游湾 BIAU Playlab 等项目的实现、架构、截图、流程、质量证据和后续路线。
+- 知航 BIAU Beacon：使用 public-only LangGraph，自适应组合站内知识与经过安全抓取的公开网页证据，并返回 claim-level citation。
+- 潮讯 TideBrief：通过 Content Studio 管理 AI 日报 issue、来源材料、审核和发布导出。
+- 画帆 BIAU Canvas：以 planned 工具案例展示图像托管产品的公开准入清单，不提供虚构入口或未验证可用性承诺。
 - AI Daily：从来源池生成日报草稿，经过人工审核后发布。
 - 可靠性状态：记录公开链接、synthetic 检查、项目状态、人工门禁和低敏可观测性边界。
 

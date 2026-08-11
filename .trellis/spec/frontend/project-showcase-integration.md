@@ -17,6 +17,44 @@ interface Project {
   assistantContext?: string[]
 }
 
+// src/data/productRegistry.ts
+declare const PRODUCT_IDS: readonly [
+  'biau-port',
+  'public-assistant',
+  'ai-daily',
+  'canvas',
+  'legal-rag',
+  'chatus',
+  'pet-workspace',
+  'ozon-erp',
+  'xunqiu',
+  'anchor-learning',
+  'enterprise-document-agent',
+  'biau-playlab',
+]
+type ProductId = (typeof PRODUCT_IDS)[number]
+
+interface ProductIdentity {
+  id: ProductId
+  name: { zh: string; en: string }
+  descriptor: { zh: string; en?: string }
+  publicProjection: 'public' | 'planned' | 'internal' | 'reference'
+}
+
+// src/data/projectPublication.ts
+type ProductAvailability = 'online' | 'degraded' | 'offline' | 'unchecked' | 'planned'
+type ProductAccess = 'public' | 'login-gated' | 'case-only'
+type ProjectLinkIntent = 'entry' | 'documentation' | 'repository' | 'evidence' | 'status'
+
+interface ProjectPublication {
+  projectId: string
+  productId: ProductId
+  availability: ProductAvailability
+  access: ProductAccess
+  owner: string
+  statusHref: string
+}
+
 // src/data/hero.ts
 interface HeroProject {
   id: string
@@ -39,6 +77,7 @@ Generation and validation commands:
 npm.cmd run assistant:index
 npm.cmd run sitemap:generate
 npm.cmd run site:status:publish
+npm.cmd run project-registry:check
 npm.cmd run project-details:check
 npm.cmd run assistant:kg-check
 npm.cmd run status:contract
@@ -50,6 +89,12 @@ npm.cmd run docs:project-notes-check
 ## 3. Contracts
 
 - `src/data/portfolio.ts` is the canonical public project narrative. Treat every field, link, screenshot, caption, and `assistantContext` entry as publishable.
+- `src/data/productRegistry.ts` owns public product identity. Display names, descriptors, aliases, family attribution, and public/planned/internal/reference projection must not be redefined in page components.
+- `src/data/projectPublication.ts` owns public-entry policy. Maturity, availability, and access are independent dimensions; `login-gated` is an access boundary, not proof that an entry is online.
+- Every external project link declares an intent. Only `entry` links are governed by availability; valid `documentation`, `repository`, and `evidence` links remain visible when a product entry becomes unchecked or offline.
+- `planned`, `unchecked`, `offline`, or `case-only` projects never expose a direct product-entry CTA. Project cards and details replace the first blocked entry with a status/planning action while preserving the case study.
+- Cloud-provider dashboards are management surfaces, never public product URLs. A known Pages/Render project name may be stored as a technical alias, but an account-scoped Dashboard URL must not enter portfolio links, assistant knowledge, screenshots, or status targets.
+- A planned tool such as `canvas` may appear in the catalog with truthful scope and an online checklist, but it must have no fabricated screenshot, public URL, online badge, or active status target.
 - A hero project with `externalLink` creates one L0 `SiteStatusTarget`; its `targetMeta` key must equal the hero project id. L0 HTTP reachability proves only that one URL responds, not that adjacent routes or product workflows work.
 - Capability-level `ReliabilityCheck` entries require separately recorded evidence. Use `production-observed` only for a dated, scoped run record; test source proves coverage definition, not a passing run.
 - A newly deployed static demo requires both a production browser acceptance and deployed-asset parity. Hash the exact asset URLs referenced by the deployed HTML, including version query parameters; an unversioned cache entry is not the user-facing asset when the document references a versioned URL.
@@ -78,6 +123,11 @@ npm.cmd run docs:project-notes-check
 | A generated Q&A field is missing, too short, duplicated, or uses a legacy English field name | `docs:project-notes-check` fails. |
 | Q&A count is not exactly `65/60/60/65/50`, numbering has a gap, or an evidence family does not match scope | `docs:project-notes-check` fails. |
 | External URL returns non-accepted status | `public-links:check` fails and the status page remains truthful. |
+| Public-link failures cluster on one domain family while DNS resolves and TLS connections reset | Record the local network limitation; do not write or downgrade the public status snapshot from that run. |
+| Planned/unchecked/offline/case-only publication exposes an `entry` URL | `project-registry:check` fails or UI regression must fail. |
+| External project link has no explicit intent | `project-registry:check` fails. |
+| Public display text omits the registered Chinese or English identity | `project-registry:check` fails unless the use is an allowed technical/history context. |
+| Reference-only/internal learning directory enters catalog or assistant knowledge | `project-registry:check` fails. |
 | L0 entry is online but a richer synthetic is absent | Report entry reachability only; keep the capability check `planned` or `unchecked`. |
 | Production browser checks pass but a referenced asset hash differs | Treat the deployment as incomplete, redeploy the current output, and repeat browser plus hash acceptance. |
 
@@ -85,13 +135,17 @@ npm.cmd run docs:project-notes-check
 
 - Good: add portfolio, hero, status metadata, sanitized visuals, a dated production observation, dossiers, generated knowledge/status/sitemap, and run every relevant gate.
 - Good: update one structured interview topic, regenerate the full bank, and let the checker prove exact counts, continuous IDs, Chinese fields, evidence scope, and sensitive-content boundaries.
+- Good: mark a login-gated project `unchecked`, replace its workbench entry with `/status/<id>`, and keep its public health evidence and technical documentation visible.
+- Good: add `画帆 BIAU Canvas` as `planned + case-only`, name `cloudflare-imgbed` only as the technical deployment subject, and wait for a public domain/privacy/evidence gate before enabling a CTA.
 - Base: a project can exist only in the catalog with internal detail navigation; omit `externalLink` when there is no truthful public target.
 - Bad: point the hero at a login URL, observe HTTP 200, then claim authenticated workflows, model calls, or all related routes are verified.
+- Bad: use a Cloudflare/Render Dashboard link as the public tool URL or keep an unchecked product entry active because an old synthetic once passed.
 - Bad: append hand-written blocks directly to `interview-question-bank.md`, keep generic repeated follow-ups, or lower the checker from exact targets to loose minimums.
 
 ## 6. Tests Required
 
 - `project-details:check`: assert section count, unique visual ids, screenshot/diagram mix, alt/caption/source fields, dimensions, and PNG/WebP pairs.
+- `project-registry:check`: assert identity completeness, unique names, publication coverage, explicit link intent, CTA disable policy, planned Canvas boundary, and forbidden reference/internal projections.
 - `assistant:kg-check`: assert generated documents/chunks/entities/relations match current public data.
 - `status:contract`: assert unique target ids and valid `relatedTargetId` joins.
 - `docs:project-notes-generate`: deterministically render the 60 structured topics into the same 300-question byte sequence on repeated runs.
@@ -99,6 +153,7 @@ npm.cmd run docs:project-notes-check
 - `public-links:check`: report every failed public URL; distinguish task-added links from unrelated existing outages in the handoff.
 - Static-demo production acceptance: run the browser suite against the public origin and compare key HTML/script assets byte-for-byte using their deployed reference URLs.
 - `lint`, `build`, and `check:ui`: assert typed projections compile and all public project/status routes remain readable at desktop and mobile widths.
+- `check:ui`: assert an unavailable entry becomes a status action in the home carousel, project cards, detail quick links, and visual source links while independent evidence/documentation remains reachable.
 
 ## 7. Wrong vs Correct
 
@@ -142,3 +197,23 @@ topic(
 ```
 
 Then run `npm.cmd run docs:project-notes-generate` followed by `npm.cmd run docs:project-notes-check`.
+
+### Wrong: availability and access collapsed into one label
+
+```typescript
+{ status: 'login-gated', href: cloudDashboardUrl }
+```
+
+### Correct: independent publication dimensions and public-safe projection
+
+```typescript
+{
+  availability: 'unchecked',
+  access: 'login-gated',
+  externalHref: publicWorkbenchUrl,
+  statusHref: '/status/legal-rag',
+}
+
+// getProjectCta(...) returns a disabled status-only projection until the
+// public entry and login boundary are verified again.
+```

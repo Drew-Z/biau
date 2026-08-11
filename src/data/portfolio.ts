@@ -1,13 +1,31 @@
-export type ProjectCategory = 'ai' | 'business' | 'interactive' | 'mobile' | 'platform'
+export type ProjectCategory = 'ai' | 'business' | 'interactive' | 'mobile' | 'platform' | 'tool'
 export type ProjectStatus = 'main' | 'live' | 'mvp' | 'ongoing'
 
-import { OZON_ERP_ENTRY_URL } from './siteLinks'
+import {
+  ANCHOR_LEARNING_DEMO_URL,
+  ANCHOR_LEARNING_SITE_URL,
+  BIAU_PLAYLAB_PLAY_URL,
+  BIAU_PLAYLAB_SITE_URL,
+  CHATUS_SITE_URL,
+  LEGAL_RAG_HEALTH_URL,
+  LEGAL_RAG_SITE_URL,
+  OZON_ERP_ENTRY_URL,
+  PET_APP_SHOWCASE_PATH,
+  XUNQIU_BACKEND_DOCS_URL,
+  XUNQIU_DOCS_URL,
+  XUNQIU_SITE_URL,
+} from './siteLinks'
+import type { ProjectLinkIntent } from './projectPublication'
+import { formatProductTitle } from './productRegistry'
 
-export interface ProjectLink {
+interface ProjectLinkBase {
   label: string
   href: string
-  type: 'internal' | 'external'
 }
+
+export type ProjectLink =
+  | (ProjectLinkBase & { type: 'internal'; intent?: never })
+  | (ProjectLinkBase & { type: 'external'; intent: ProjectLinkIntent })
 
 export type ProjectDetailContentKey =
   | 'overview'
@@ -36,6 +54,7 @@ export interface ProjectVisualBlock {
   caption?: string
   sourceLabel?: string
   sourceUrl?: string
+  sourceIntent?: ProjectLinkIntent
 }
 
 export interface ProjectDetailSection {
@@ -66,14 +85,8 @@ export interface Project {
   assistantContext?: string[]
 }
 
-const GAME_SITE_URL = 'https://games.playlab.eu.cc'
-const PLAY_SITE_URL = 'https://play.playlab.eu.cc'
-const XUNQIU_SITE_URL = 'https://xunqiu.playlab.eu.cc'
-const XUNQIU_DOCS_URL = `${XUNQIU_SITE_URL}/docs.html`
-const XUNQIU_BACKEND_DOCS_URL = `${XUNQIU_SITE_URL}/docs/technical/validation-and-deploy.md`
-
-function externalLink(label: string, href: string): ProjectLink {
-  return { label, href, type: 'external' }
+function externalLink(label: string, href: string, intent: ProjectLinkIntent): ProjectLink {
+  return { label, href, type: 'external', intent }
 }
 
 function internalLink(label: string, href: string): ProjectLink {
@@ -81,11 +94,11 @@ function internalLink(label: string, href: string): ProjectLink {
 }
 
 function gameSiteLink(slug: string): ProjectLink {
-  return externalLink('游戏站详情', `${GAME_SITE_URL}/games/${slug}/`)
+  return externalLink('游戏站详情', `${BIAU_PLAYLAB_SITE_URL}/games/${slug}/`, 'entry')
 }
 
 function gamePlayLink(slug: string): ProjectLink {
-  return externalLink('Web 试玩', `${PLAY_SITE_URL}/${slug}/index.html`)
+  return externalLink('Web 试玩', `${BIAU_PLAYLAB_PLAY_URL}/${slug}/index.html`, 'entry')
 }
 
 export const categoryLabels: Record<ProjectCategory, string> = {
@@ -94,6 +107,7 @@ export const categoryLabels: Record<ProjectCategory, string> = {
   interactive: '互动体验',
   mobile: '移动端',
   platform: '博客系统',
+  tool: '工具',
 }
 
 export const statusLabels: Record<ProjectStatus, string> = {
@@ -115,7 +129,7 @@ export const projectDetailGroupLabels: Record<ProjectDetailContentKey, string> =
 export const projects: Project[] = [
   {
     id: 'legal-rag',
-    title: 'Legal RAG｜法律智能机器人与合同审查',
+    title: formatProductTitle('legal-rag', 'Legal RAG 与合同审查'),
     summary: '已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。',
     category: 'ai',
     status: 'main',
@@ -124,8 +138,8 @@ export const projects: Project[] = [
     stack: ['Vue 3', 'Express', 'TypeScript', 'PostgreSQL', 'pgvector', 'RAG'],
     highlights: ['公开安全数据集', 'Hybrid Retrieval', '引用与诊断', '规则优先合同审查'],
     links: [
-      externalLink('在线工作台', 'https://legal-rag-web.onrender.com'),
-      externalLink('API Health', 'https://legal-rag-api-9bki.onrender.com/api/health'),
+      externalLink('在线工作台', LEGAL_RAG_SITE_URL, 'entry'),
+      externalLink('API Health', LEGAL_RAG_HEALTH_URL, 'evidence'),
       internalLink('项目复盘', '/blog/legal-rag-review'),
       internalLink('生产化路线', '/blog/legal-rag-production-upgrade-plan'),
     ],
@@ -144,7 +158,8 @@ export const projects: Project[] = [
             alt: 'Legal RAG 知识库工作台界面截图',
             caption: '公开展示知识库、问答和诊断区的工作台截图，不包含真实账号、密钥或私有后台地址。',
             sourceLabel: '打开工作台',
-            sourceUrl: 'https://legal-rag-web.onrender.com',
+            sourceUrl: LEGAL_RAG_SITE_URL,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -200,7 +215,8 @@ export const projects: Project[] = [
             alt: 'Legal RAG 问答结果与引用诊断界面截图',
             caption: '截图展示公开安全数据集上的问答、引用和诊断信息，不包含真实法律业务资料、账号或模型配置。',
             sourceLabel: '打开工作台',
-            sourceUrl: 'https://legal-rag-web.onrender.com',
+            sourceUrl: LEGAL_RAG_SITE_URL,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -305,7 +321,7 @@ export const projects: Project[] = [
   },
   {
     id: 'chatus',
-    title: 'Chatus｜邀请制私人 AI 工作台',
+    title: formatProductTitle('chatus', 'Chatus 邀请制私人 AI 工作台'),
     summary: '部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、长期记忆、能力授权与可恢复流。',
     category: 'ai',
     status: 'main',
@@ -315,7 +331,7 @@ export const projects: Project[] = [
     imageCaption: '封面使用确定性合成会话数据，展示邀请制工作区的消息、附件和工具布局，不包含真实成员、线路或运营信息。',
     stack: ['React 19', 'TypeScript', 'Cloudflare Workers', 'Agents SDK', 'Durable Objects', 'KV', 'PWA'],
     highlights: ['邀请制入口', '会话级 Agent', '首输出前回退', '显式长期记忆'],
-    links: [externalLink('邀请制工作台', 'https://chatus.ciallobill.qzz.io')],
+    links: [externalLink('邀请制工作台', CHATUS_SITE_URL, 'entry')],
     detailContent: {
       overview: [
         {
@@ -331,7 +347,8 @@ export const projects: Project[] = [
             alt: 'Chatus 合成会话工作区桌面端界面截图',
             caption: '截图来自视觉测试夹具，用户、会话正文、附件名和线路名均为合成数据，不包含真实成员、模型凭据或运营记录。',
             sourceLabel: '打开邀请制入口',
-            sourceUrl: 'https://chatus.ciallobill.qzz.io',
+            sourceUrl: CHATUS_SITE_URL,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -399,7 +416,8 @@ export const projects: Project[] = [
             alt: 'Chatus 长期记忆编辑抽屉桌面端截图',
             caption: '截图使用空白视觉测试账号和示例占位文案，展示记忆的可见与可编辑边界，不包含真实成员偏好。',
             sourceLabel: '打开邀请制入口',
-            sourceUrl: 'https://chatus.ciallobill.qzz.io',
+            sourceUrl: CHATUS_SITE_URL,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -436,7 +454,7 @@ export const projects: Project[] = [
   },
   {
     id: 'pet-workspace',
-    title: 'AI 桌宠社区与生成管线',
+    title: formatProductTitle('pet-workspace', 'AI 桌宠社区与生成管线'),
     summary: '仍在推进中的 AI 桌宠工程工作区，围绕 Android 桌宠社区、Community API、生成服务、人审发布、质量门禁和 App 安全契约组织。',
     category: 'ai',
     status: 'main',
@@ -445,8 +463,8 @@ export const projects: Project[] = [
     stack: ['Android', 'Node.js', 'FastAPI', 'PostgreSQL', 'Agent Worker', '质量门禁'],
     highlights: ['桌宠孵化', '社区审核', '不透明下载 ID', '人审发布'],
     links: [
-      externalLink('App 展示页', '/pet-app-showcase/'),
-      externalLink('展示页源码', 'https://github.com/Drew-Z/gamer/tree/main/pet-app-showcase-site'),
+      externalLink('App 展示页', PET_APP_SHOWCASE_PATH, 'entry'),
+      externalLink('展示页源码', 'https://github.com/Drew-Z/gamer/tree/main/pet-app-showcase-site', 'repository'),
       internalLink('生成管线文章', '/blog/pet-workspace-pipeline'),
     ],
     detailContent: {
@@ -474,7 +492,8 @@ export const projects: Project[] = [
             alt: 'Gamer Pet App 桌宠模式首页截图',
             caption: '真实模拟器截图用于展示当前 App 工作面；APK 下载仍受正式签名包和人工批准门禁约束。',
             sourceLabel: '打开 App 展示页',
-            sourceUrl: '/pet-app-showcase/',
+            sourceUrl: PET_APP_SHOWCASE_PATH,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -490,7 +509,8 @@ export const projects: Project[] = [
             alt: 'Gamer Pet App 孵化桌宠界面截图',
             caption: '模拟器截图展示孵化桌宠页面的当前设计状态；它是展示证据，不代表公开 APK 已发布。',
             sourceLabel: '打开 App 展示页',
-            sourceUrl: '/pet-app-showcase/',
+            sourceUrl: PET_APP_SHOWCASE_PATH,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -517,7 +537,8 @@ export const projects: Project[] = [
             alt: 'Gamer Pet App 社区页面截图',
             caption: '模拟器截图展示社区页和内容流状态；真实社区数据、账号和后台配置不进入公开页面。',
             sourceLabel: '打开 App 展示页',
-            sourceUrl: '/pet-app-showcase/',
+            sourceUrl: PET_APP_SHOWCASE_PATH,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -626,7 +647,7 @@ export const projects: Project[] = [
   },
   {
     id: 'ozon-erp',
-    title: 'Ozon 电商 ERP',
+    title: formatProductTitle('ozon-erp', 'Ozon 电商 ERP'),
     summary: '面向小团队 Ozon 店铺运营的业务系统案例，覆盖 Vue 管理后台、Express API、Prisma/PostgreSQL、队列任务和 Chrome MV3 采集插件。',
     category: 'business',
     status: 'main',
@@ -635,7 +656,7 @@ export const projects: Project[] = [
     stack: ['Vue 3', 'Vite', 'Express', 'Prisma', 'PostgreSQL', 'Redis', 'BullMQ', 'WXT', 'Chrome MV3'],
     highlights: ['运营后台', '采集铺货', '受保护写入', '任务与审计闭环'],
     links: [
-      externalLink('访问 ERP', OZON_ERP_ENTRY_URL),
+      externalLink('访问 ERP', OZON_ERP_ENTRY_URL, 'entry'),
       internalLink('架构文章', '/blog/ozon-erp-architecture'),
     ],
     detailContent: {
@@ -654,6 +675,7 @@ export const projects: Project[] = [
             caption: '截图只展示公开安全的演示界面，不包含真实店铺凭据或订单数据。',
             sourceLabel: '访问 ERP',
             sourceUrl: OZON_ERP_ENTRY_URL,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -802,7 +824,7 @@ export const projects: Project[] = [
   },
   {
     id: 'biau-playlab',
-    title: 'BIAU Playlab｜游戏作品集与系统设计内容站',
+    title: formatProductTitle('biau-playlab', '游戏作品集与系统设计内容站'),
     summary: '基于 Astro 的独立游戏作品集与试玩平台，整合六个已部署 Godot Web 游戏、项目详情、截图/视频、开发日志和系统设计文章。',
     category: 'platform',
     status: 'live',
@@ -810,10 +832,10 @@ export const projects: Project[] = [
     image: '/images/projects/showcase/space-war-web-showcase.png',
     stack: ['Astro 5', 'Content Collections', 'Godot Web', 'Cloudflare Pages', 'R2'],
     highlights: ['六个可试玩游戏', '项目详情页', '内容审计', '公开端点检查'],
-    detailLink: externalLink('进入游戏站', `${GAME_SITE_URL}/`),
+    detailLink: externalLink('进入游戏站', `${BIAU_PLAYLAB_SITE_URL}/`, 'entry'),
     links: [
-      externalLink('游戏站', `${GAME_SITE_URL}/`),
-      externalLink('源码仓库', 'https://github.com/ciallo-bill/blog'),
+      externalLink('游戏站', `${BIAU_PLAYLAB_SITE_URL}/`, 'entry'),
+      externalLink('源码仓库', 'https://github.com/ciallo-bill/blog', 'repository'),
       internalLink('展示标准文章', '/blog/game-showcase-standard'),
     ],
     detailContent: {
@@ -831,6 +853,7 @@ export const projects: Project[] = [
             alt: 'BIAU Playlab 游戏站与 Space War Web 试玩展示截图',
             sourceLabel: '进入游戏站',
             sourceUrl: 'https://games.playlab.eu.cc',
+            sourceIntent: 'entry',
             caption: '截图来自公开游戏站，用于证明 Playlab 已有可访问作品集入口和试玩链路。',
           },
         },
@@ -897,7 +920,8 @@ export const projects: Project[] = [
             alt: 'BIAU Playlab 中 Raiden 原型的真实运行截图',
             caption: '真实游戏运行截图用于展示可试玩构建，不代表所有游戏在所有设备上都有同等性能表现。',
             sourceLabel: '查看 Raiden 项目',
-            sourceUrl: `${GAME_SITE_URL}/games/raiden/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/raiden/`,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -986,7 +1010,7 @@ export const projects: Project[] = [
   },
   {
     id: 'anchor-learning',
-    title: 'Anchor Learning｜来源可溯源的 AI 学习代理',
+    title: formatProductTitle('anchor-learning', '来源可溯源的 AI 学习代理'),
     summary: 'Flutter 本地优先学习助手，以结构化切分、精确 locator、引用核验和答案校验把文档转成可追溯练习；官网提供无后端、无实时 AI 的双语浏览器 Demo。',
     category: 'ai',
     status: 'main',
@@ -997,9 +1021,9 @@ export const projects: Project[] = [
     stack: ['Flutter', 'Dart', 'Riverpod', 'sqflite', 'Dio', 'Agent Runtime', 'Static Web Demo'],
     highlights: ['精确来源定位', '引用与答案双验', '本地优先', '浏览器引导 Demo'],
     links: [
-      externalLink('官网', 'https://anchor.playlab.eu.cc'),
-      externalLink('浏览器 Demo', 'https://anchor.playlab.eu.cc/app/'),
-      externalLink('GitHub', 'https://github.com/Drew-Z/anchor'),
+      externalLink('官网', ANCHOR_LEARNING_SITE_URL, 'entry'),
+      externalLink('浏览器 Demo', ANCHOR_LEARNING_DEMO_URL, 'entry'),
+      externalLink('GitHub', 'https://github.com/Drew-Z/anchor', 'repository'),
     ],
     detailContent: {
       overview: [
@@ -1016,7 +1040,8 @@ export const projects: Project[] = [
             alt: 'Anchor Learning 浏览器 Demo 桌面端答题界面截图',
             caption: 'Demo 全程使用仓库内置教学数据，不上传文件、不访问后端，也不调用 AI provider；它展示证据交互而非完整 Flutter 功能。',
             sourceLabel: '打开浏览器 Demo',
-            sourceUrl: 'https://anchor.playlab.eu.cc/app/',
+            sourceUrl: ANCHOR_LEARNING_DEMO_URL,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -1097,7 +1122,8 @@ export const projects: Project[] = [
             alt: 'Anchor Learning 平板端来源证据与解释界面截图',
             caption: '截图中的 locator 指向内置 Git 教学样例，不是本机路径或私有仓库；页面状态由版本化 localStorage 进度恢复。',
             sourceLabel: '打开浏览器 Demo',
-            sourceUrl: 'https://anchor.playlab.eu.cc/app/',
+            sourceUrl: ANCHOR_LEARNING_DEMO_URL,
+            sourceIntent: 'entry',
           },
         },
         {
@@ -1146,7 +1172,7 @@ export const projects: Project[] = [
   },
   {
     id: 'blog-semi',
-    title: 'BIAU Port 内容与助手平台｜当前主站',
+    title: formatProductTitle('biau-port', '内容与助手平台'),
     summary: '当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。',
     category: 'platform',
     status: 'ongoing',
@@ -1175,6 +1201,7 @@ export const projects: Project[] = [
             alt: 'BIAU Port 主站首页桌面端截图',
             sourceLabel: '回到首页',
             sourceUrl: '/',
+            sourceIntent: 'evidence',
             caption: '截图来自当前主站首页，用于说明 BIAU Port 的项目入口和品牌第一印象。',
           },
         },
@@ -1292,6 +1319,81 @@ export const projects: Project[] = [
     ],
   },
   {
+    id: 'canvas',
+    title: formatProductTitle('canvas', '图像托管与分享工具'),
+    summary: '已确认存在 Cloudflare Pages 技术部署主体的图像托管工具规划项；公开域名、维护边界、隐私规则与验收证据齐备前只展示案例规划。',
+    category: 'tool',
+    status: 'ongoing',
+    role: 'Cloudflare Pages / 图像托管 / 公开准入规划',
+    stack: ['Cloudflare Pages', 'Image hosting', 'Public release gate'],
+    highlights: ['planned 准入', '隐私边界待确认', '不虚构公开入口', '上线证据清单'],
+    links: [],
+    detailContent: {
+      overview: [
+        {
+          title: '先建立可公开的产品边界',
+          body:
+            '画帆 BIAU Canvas 对应已经存在的 cloudflare-imgbed 技术部署主体，但 Cloudflare Dashboard 只属于账号级管理面，不能作为访客入口。当前案例只确认项目主体存在，不把后台地址、内部配置或未经验证的能力包装成公开产品。',
+        },
+      ],
+      workflow: [
+        {
+          title: '从 planned 到 online 的准入流程',
+          items: [
+            '确认独立、稳定且无需管理权限的公开生产域名。',
+            '定义上传、访问、配额、保留、删除和滥用处理流程。',
+            '完成桌面与手机端核心流程验收，再补充真实公开截图。',
+            '通过状态目标、synthetic、助手知识和 owner 复核后，才开放直接体验入口。',
+          ],
+        },
+      ],
+      architecture: [
+        {
+          title: '技术标识与公开品牌分离',
+          body:
+            '`cloudflare-imgbed` 继续作为 Cloudflare 项目的稳定技术标识，公开展示使用画帆 BIAU Canvas。命名变化不要求重命名服务、路由或资源，未来公开域名也必须与账号级 Dashboard 管理地址分离。',
+        },
+      ],
+      quality: [
+        {
+          title: '上线前需要的可核验证据',
+          items: [
+            '公开域名的 title、favicon、核心路由和错误状态检查。',
+            '上传、读取、删除、超限和不支持文件类型的浏览器验收。',
+            '手机端布局、键盘访问、长文件名和异常网络恢复检查。',
+            '不包含账号、密钥、后台地址或私有对象信息的截图与低敏状态记录。',
+          ],
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '尚未确认可公开的生产域名，因此不提供直接体验按钮。',
+            '尚未确认源码与维护边界、隐私政策、存储期限、配额和删除机制。',
+            '尚未获得可公开截图、移动端验收与 synthetic 证据，不能标记为 online。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续公开路线',
+          items: [
+            '由维护者确认生产域名、公开功能范围与 owner。',
+            '补齐隐私、存储、限额、删除和滥用处理说明。',
+            '使用真实公开页面完成核心流程、移动端、错误恢复和可访问性验收。',
+            '同步主站入口、状态目标、公开助手知识和低敏发布证据后申请 online。',
+          ],
+        },
+      ],
+    },
+    assistantContext: [
+      '画帆 BIAU Canvas 是图像托管与分享工具的 planned 项目，技术部署主体名为 cloudflare-imgbed。',
+      '当前没有经过产品验收的公开入口；Cloudflare Dashboard 是账号级管理页面，不能作为访客链接或公开证据。',
+      '升级为 online 前需要确认公开域名、维护边界、隐私与存储规则、配额与删除机制、真实截图、移动端核心流程、状态目标和 synthetic。',
+    ],
+  },
+  {
     id: 'game-first-tetris',
     title: '俄罗斯方块原型｜Tetris',
     summary: 'Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化、触屏桥接、响应式布局和截图回归。',
@@ -1318,7 +1420,8 @@ export const projects: Project[] = [
             alt: '俄罗斯方块原型桌面端经典模式截图',
             caption: '真实游戏截图展示经典模式运行状态；移动端触控和窄屏体验仍按项目边界持续回归。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/first-tetris/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/first-tetris/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1370,7 +1473,8 @@ export const projects: Project[] = [
             alt: '俄罗斯方块原型移动端主菜单与触控入口截图',
             caption: '移动端菜单截图展示窄屏入口与触控展示状态；真实触屏手感仍按后续回归继续优化。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/first-tetris/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/first-tetris/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1428,7 +1532,8 @@ export const projects: Project[] = [
             alt: 'Next Spacewar 太空射击战斗截图',
             caption: '真实战斗截图来自展示构建，用于说明短任务主循环已具备可试玩形态。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/next-spacewar/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/next-spacewar/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1531,7 +1636,8 @@ export const projects: Project[] = [
             alt: 'intespace 玩家中枢界面截图',
             caption: '真实主界面截图展示当前玩家中枢，不把统一试玩前的版本包装成最终商业成品。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/intespace/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/intespace/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1578,7 +1684,8 @@ export const projects: Project[] = [
             alt: 'intespace 竖屏战斗 HUD 截图',
             caption: '真实战斗 HUD 截图用于展示局内信息结构；平衡、路线可读性和触屏体验仍需持续验证。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/intespace/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/intespace/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1636,7 +1743,8 @@ export const projects: Project[] = [
             alt: 'Raiden Prototype Stage 01 战斗截图',
             caption: '真实关卡截图展示 RC 候选的战斗反馈；素材授权和正式资源替换仍按项目边界继续检查。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/raiden/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/raiden/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1739,7 +1847,8 @@ export const projects: Project[] = [
             alt: 'Space War 复古横版射击战斗截图',
             caption: '真实战斗截图展示复古横版射击完成度；Web 首次加载和移动输入仍需持续观察。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/space-war/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/space-war/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1842,7 +1951,8 @@ export const projects: Project[] = [
             alt: 'Spacewar II 菜单截图',
             caption: '真实菜单截图展示第六个试玩项目接入状态；移动端缩放和 HUD 可读性仍是后续回归重点。',
             sourceLabel: '查看游戏详情',
-            sourceUrl: `${GAME_SITE_URL}/games/spacewar-ii/`,
+            sourceUrl: `${BIAU_PLAYLAB_SITE_URL}/games/spacewar-ii/`,
+            sourceIntent: 'entry',
           },
         },
       ],
@@ -1920,7 +2030,7 @@ export const projects: Project[] = [
   },
   {
     id: 'xunqiu',
-    title: '寻球｜移动端与现代后端重建',
+    title: formatProductTitle('xunqiu', '移动端与现代后端重建'),
     summary: '足球社群移动端迁移案例：旧版 App 和旧后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3、PostgreSQL、Render 与 R2 上传链路。',
     category: 'mobile',
     status: 'main',
@@ -1929,9 +2039,9 @@ export const projects: Project[] = [
     stack: ['Android 64', 'Java 17', 'Spring Boot 3', 'PostgreSQL', 'Flyway', 'Cloudflare R2', 'Render'],
     highlights: ['新旧链路分流', '旧接口兼容', '短视频上传播放', '测试矩阵与烟测'],
     links: [
-      externalLink('产品展示页', `${XUNQIU_SITE_URL}/`),
-      externalLink('技术文档', XUNQIU_DOCS_URL),
-      externalLink('后端验证文档', XUNQIU_BACKEND_DOCS_URL),
+      externalLink('产品展示页', `${XUNQIU_SITE_URL}/`, 'entry'),
+      externalLink('技术文档', XUNQIU_DOCS_URL, 'documentation'),
+      externalLink('后端验证文档', XUNQIU_BACKEND_DOCS_URL, 'documentation'),
       internalLink('迁移复盘文章', '/blog/xunqiu-android64-rebuild'),
     ],
     detailContent: {
@@ -1950,6 +2060,7 @@ export const projects: Project[] = [
             caption: '真实运行截图来自公开展示页，用于说明 64 位客户端迁移结果；APK 在正式 release 审核完成前不提供公开下载。',
             sourceLabel: '打开产品展示页',
             sourceUrl: 'https://xunqiu.playlab.eu.cc/',
+            sourceIntent: 'entry',
           },
         },
         {
@@ -2117,6 +2228,7 @@ export function getProjectAssistantTags(project: Project) {
 export const capabilityTracks = [
   { title: 'AI 应用', detail: 'RAG、Agent、引用溯源、审核闭环', value: 'Legal RAG / Pet Workspace' },
   { title: '业务系统', detail: '后台、API、数据库、队列、审计日志', value: 'Ozon 电商 ERP' },
+  { title: '工具产品', detail: '图像托管、隐私边界、发布准入与状态证据', value: '画帆 BIAU Canvas' },
   { title: '互动体验', detail: 'Godot 展示入口、试玩计划、游戏展示页', value: '6 个游戏项目' },
   { title: '博客系统', detail: 'React + 自定义 CSS、Astro、内容审计、部署准备', value: 'BIAU Port / Playlab' },
 ]

@@ -79,6 +79,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://biau.playlab.eu.cc/projects/canvas</loc>
+    <lastmod>2026-08-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://biau.playlab.eu.cc/projects/game-first-tetris</loc>
     <lastmod>2026-07-08</lastmod>
     <changefreq>monthly</changefreq>

@@ -8,6 +8,8 @@
 - [Content Studio](./content-studio.md)
 - [AI Daily Pipeline](./ai-daily-pipeline.md)
 - [Studio / AI Daily 生产就绪记录](./studio-ai-daily-production-readiness.md)
+- [知航产品验收矩阵](./public-assistant-product-acceptance.md)
+- [潮讯产品验收矩阵](./ai-daily-product-acceptance.md)
 - [站点监察](./site-monitoring.md)
 - [可观测性策略](./observability-strategy.md)
 
@@ -153,7 +155,7 @@ npm run ai-daily:acceptance -- init --acceptance-id <id> --edition-date <YYYY-MM
 | BIAU Playlab | 新试玩上线时确认公开入口和资源版本 | `playlab:synthetic` 与移动端试玩通过 |
 | Chatus | 使用其独立 Trellis 任务和独立部署边界 | 自身 lint/test/build/deploy 证据 |
 | Anchor Learning | 浏览器 Demo 继续保持零外部请求；Flutter Private Alpha 单独补齐安装、升级和本地数据迁移证据 | 浏览器 Demo 回归通过，Private Alpha 具备可复跑 release 证据 |
-| Duoduo Learn | 正在并行开发，未经用户确认不得修改 | 稳定 commit、截图、Flutter 验证和独立 release gate |
+| 画帆 BIAU Canvas | 确认公开域名、owner、隐私/存储/限额/删除规则和可公开截图 | 核心流程、移动端、状态目标、助手知识与 synthetic 同时通过后升级为 online |
 
 ## 访问分析与可观测性
 

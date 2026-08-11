@@ -31,6 +31,7 @@ import {
   searchPublicKnowledge,
   type AssistantKnowledgeItem,
 } from '../data/assistant'
+import { formatProductName } from '../data/productRegistry'
 import { PUBLIC_ASSISTANT_API_BASE, SAME_ORIGIN_ASSISTANT_API_BASE } from '../utils/assistantApi'
 import { trackAnalyticsEvent } from '../utils/analytics'
 import {
@@ -129,6 +130,8 @@ interface WidgetMessage {
   feedbackError?: boolean
   requestId?: string
 }
+
+const PUBLIC_ASSISTANT_NAME = formatProductName('public-assistant')
 
 type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
 type PublicAssistantBranchAction =
@@ -623,7 +626,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       ? '助手已就绪'
       : warmup.state === 'error'
         ? '助手等待重试'
-        : '泊岸研究助手'
+        : PUBLIC_ASSISTANT_NAME
 
   const loadSessionBrowserState = (targetSessionId: string, fallbackMode: PublicAssistantMode = 'auto') => {
     const draft = readPublicAssistantDraft(targetSessionId)
@@ -1665,7 +1668,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
           <header className="public-assistant__header">
             <div className="public-assistant__title">
               <p className="public-assistant__eyebrow">PUBLIC RESEARCH</p>
-              <h2 id="public-assistant-title">泊岸研究助手</h2>
+              <h2 id="public-assistant-title">{PUBLIC_ASSISTANT_NAME}</h2>
               <span className={`public-assistant__status ${serviceStatus.className}`}>{serviceStatus.label}</span>
             </div>
             <div className="public-assistant__header-actions" aria-label="会话操作">

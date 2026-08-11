@@ -244,6 +244,11 @@ input:focus-visible,
   color: var(--accent-blue);
 }
 
+button.link-badge {
+  font: inherit;
+  cursor: pointer;
+}
+
 /* Blog Card Styles */
 .blog-card {
   padding: 2rem;

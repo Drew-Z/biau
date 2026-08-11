@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ExternalLink, Link as LinkIcon } from 'lucide-react'
+import { Activity, ArrowLeft, CircleAlert, ExternalLink, Link as LinkIcon } from 'lucide-react'
 import '../styles/route-pages.css'
 import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
 import { blogColumnMeta } from '../data/blog'
@@ -14,9 +14,15 @@ import {
   type ProjectDetailContent,
   type ProjectDetailContentKey,
   type ProjectDetailSection,
-  type ProjectLink,
   type ProjectVisualBlock,
 } from '../data/portfolio'
+import {
+  findProjectPublication,
+  getProjectCta,
+  getPublishedProjectLinks,
+  type ProjectPublication,
+  type PublishedProjectLink,
+} from '../data/projectPublication'
 import { ResponsiveImage } from '../components/ResponsiveImage'
 
 const projectDetailContentOrder: ProjectDetailContentKey[] = [
@@ -55,6 +61,12 @@ export function ProjectDetailPage() {
   const navigate = useNavigate()
 
   const project = useMemo(() => projects.find((p) => p.id === id), [id])
+  const publication = useMemo(() => (project ? findProjectPublication(project.id) : undefined), [project])
+  const publishedLinks = useMemo(
+    () => (project ? getPublishedProjectLinks(publication, project.links) : []),
+    [project, publication],
+  )
+  const entryAction = useMemo(() => (publication ? getProjectCta(publication) : undefined), [publication])
   const detailGroups = useMemo(() => getProjectDetailGroups(project?.detailContent), [project])
 
   const related = useMemo(() => {
@@ -73,14 +85,14 @@ export function ProjectDetailPage() {
       { id: 'project-highlights', label: '核心亮点' },
       { id: 'project-stack', label: '技术栈' },
     ]
-    if (project.links.length) items.push({ id: 'project-links', label: '相关链接' })
+    if (publishedLinks.length) items.push({ id: 'project-links', label: '相关链接' })
     detailGroups.forEach((group) => {
       items.push({ id: `project-${group.key}`, label: projectDetailGroupLabels[group.key] })
     })
     if (projectReadings.length) items.push({ id: 'project-readings', label: '延展阅读' })
     if (related.length) items.push({ id: 'project-related', label: getRelatedProjectsTitle(project, related) })
     return items
-  }, [detailGroups, project, projectReadings, related])
+  }, [detailGroups, project, projectReadings, publishedLinks.length, related])
 
   if (!project) {
     return (
@@ -112,10 +124,16 @@ export function ProjectDetailPage() {
         <h1 className="detail-title">{project.title}</h1>
         <p className="detail-role">{project.role}</p>
         <p className="detail-summary">{project.summary}</p>
-        {project.links.length > 0 && (
+        {entryAction?.explanation && (
+          <p className={`detail-entry-note is-${entryAction.mode}`}>
+            <CircleAlert size={16} aria-hidden />
+            <span>{entryAction.explanation}</span>
+          </p>
+        )}
+        {publishedLinks.length > 0 && (
           <nav className="detail-quick-links" aria-label={`${project.title} 快速链接`}>
-            {project.links.map((link) => (
-              <ProjectLinkBadge key={link.href} link={link} />
+            {publishedLinks.map((link) => (
+              <ProjectLinkBadge key={`${link.intent}-${link.href}`} link={link} />
             ))}
           </nav>
         )}
@@ -163,19 +181,19 @@ export function ProjectDetailPage() {
           </div>
         </section>
 
-        {project.links.length > 0 && (
+        {publishedLinks.length > 0 && (
           <section id="project-links" className="detail-block">
             <h2 className="detail-block-title">相关链接</h2>
             <div className="detail-links">
-              {project.links.map((link) => (
-                <ProjectLinkBadge key={link.href} link={link} />
+              {publishedLinks.map((link) => (
+                <ProjectLinkBadge key={`${link.intent}-${link.href}`} link={link} />
               ))}
             </div>
           </section>
         )}
       </div>
 
-      {detailGroups.length > 0 && <ProjectDetailContentSections groups={detailGroups} />}
+      {detailGroups.length > 0 && <ProjectDetailContentSections groups={detailGroups} publication={publication} />}
 
       {projectReadings.length > 0 && (
         <section id="project-readings" className="detail-related">
@@ -212,9 +230,10 @@ export function ProjectDetailPage() {
 
 interface ProjectDetailContentSectionsProps {
   groups: ProjectDetailGroup[]
+  publication?: ProjectPublication
 }
 
-function ProjectDetailContentSections({ groups }: ProjectDetailContentSectionsProps) {
+function ProjectDetailContentSections({ groups, publication }: ProjectDetailContentSectionsProps) {
   return (
     <section className="detail-body project-case-study" aria-label="项目案例分析">
       {groups.map((group) => (
@@ -222,7 +241,7 @@ function ProjectDetailContentSections({ groups }: ProjectDetailContentSectionsPr
           <p className="project-case-study__eyebrow">{projectDetailGroupLabels[group.key]}</p>
           <div className="project-case-study__sections">
             {group.sections.map((section) => (
-              <ProjectDetailContentSection key={section.title} section={section} />
+              <ProjectDetailContentSection key={section.title} section={section} publication={publication} />
             ))}
           </div>
         </section>
@@ -233,9 +252,12 @@ function ProjectDetailContentSections({ groups }: ProjectDetailContentSectionsPr
 
 interface ProjectDetailContentSectionProps {
   section: ProjectDetailSection
+  publication?: ProjectPublication
 }
 
-function ProjectDetailContentSection({ section }: ProjectDetailContentSectionProps) {
+function ProjectDetailContentSection({ section, publication }: ProjectDetailContentSectionProps) {
+  const publishedLinks = getPublishedProjectLinks(publication, section.links ?? [])
+
   return (
     <article className="project-case-study__section">
       <h3>{section.title}</h3>
@@ -247,21 +269,31 @@ function ProjectDetailContentSection({ section }: ProjectDetailContentSectionPro
           ))}
         </ul>
       )}
-      {section.links && section.links.length > 0 && (
+      {publishedLinks.length > 0 && (
         <div className="detail-links project-case-study__links">
-          {section.links.map((link) => (
-            <ProjectLinkBadge key={link.href} link={link} />
+          {publishedLinks.map((link) => (
+            <ProjectLinkBadge key={`${link.intent}-${link.href}`} link={link} />
           ))}
         </div>
       )}
-      {section.visual && <ProjectVisualFigure visual={section.visual} />}
+      {section.visual && <ProjectVisualFigure visual={section.visual} publication={publication} />}
     </article>
   )
 }
 
-function ProjectVisualFigure({ visual }: { visual: ProjectVisualBlock }) {
+function ProjectVisualFigure({ visual, publication }: { visual: ProjectVisualBlock; publication?: ProjectPublication }) {
   const label = projectVisualTypeLabels[visual.type]
   const figureClassName = `project-visual project-visual--${visual.type}`
+  const sourceLink = visual.sourceUrl
+    ? getPublishedProjectLinks(publication, [
+        {
+          label: visual.sourceLabel ?? '查看来源',
+          href: visual.sourceUrl,
+          type: visual.sourceUrl.startsWith('/') ? 'internal' : 'external',
+          intent: visual.sourceIntent,
+        },
+      ])[0]
+    : undefined
 
   return (
     <figure className={figureClassName}>
@@ -283,44 +315,63 @@ function ProjectVisualFigure({ visual }: { visual: ProjectVisualBlock }) {
           <ResponsiveImage src={visual.image} alt={visual.alt ?? visual.title} />
         </a>
       )}
-      {(visual.caption || visual.sourceUrl) && (
+      {(visual.caption || sourceLink) && (
         <p className="project-visual__caption">
           {visual.caption && <span className="project-visual__caption-text">{visual.caption}</span>}
-          {visual.sourceUrl && (
-            <a
-              href={visual.sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="project-visual__source-link"
-            >
-              {visual.sourceLabel ?? '查看来源'}
-            </a>
-          )}
+          {sourceLink &&
+            (sourceLink.type === 'internal' ? (
+              <Link to={sourceLink.href} className="project-visual__source-link" title={sourceLink.explanation}>
+                {sourceLink.label}
+              </Link>
+            ) : (
+              <a
+                href={sourceLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="project-visual__source-link"
+                title={sourceLink.explanation}
+              >
+                {sourceLink.label}
+              </a>
+            ))}
         </p>
       )}
     </figure>
   )
 }
 
-function ProjectLinkBadge({ link }: { link: ProjectLink }) {
+function ProjectLinkBadge({ link }: { link: PublishedProjectLink }) {
   const linkClassName = `link-badge link-badge--${link.type}`
   const content = (
     <>
-      {link.type === 'external' ? <ExternalLink size={16} aria-hidden /> : <LinkIcon size={16} aria-hidden />}
+      {link.intent === 'status' ? (
+        <Activity size={16} aria-hidden />
+      ) : link.type === 'external' ? (
+        <ExternalLink size={16} aria-hidden />
+      ) : (
+        <LinkIcon size={16} aria-hidden />
+      )}
       <span>{link.label}</span>
     </>
   )
 
   if (link.type === 'internal') {
     return (
-      <Link to={link.href} className={linkClassName} data-link-type={link.type}>
+      <Link to={link.href} className={linkClassName} data-link-type={link.type} title={link.explanation}>
         {content}
       </Link>
     )
   }
 
   return (
-    <a href={link.href} target="_blank" rel="noopener noreferrer" className={linkClassName} data-link-type={link.type}>
+    <a
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={linkClassName}
+      data-link-type={link.type}
+      title={link.explanation}
+    >
       {content}
     </a>
   )

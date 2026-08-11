@@ -9,6 +9,7 @@ const routes = [
   { path: '/blog', title: '知识库', expectsRouteCss: false, forbidsLoadingFlash: true },
   { path: '/status', title: '项目可靠性观察', expectsRouteCss: true },
   { path: '/projects/legal-rag', title: 'Legal RAG', expectsRouteCss: true },
+  { path: '/projects/canvas', title: 'BIAU Canvas', expectsRouteCss: true },
 ]
 const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },

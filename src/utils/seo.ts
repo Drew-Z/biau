@@ -1,11 +1,13 @@
 import type { BlogPostSummary } from '../data/blogShared'
 import type { Project } from '../data/portfolio'
+import { formatProductName, getProductIdentity } from '../data/productRegistry'
 
 export const SITE_URL = 'https://biau.playlab.eu.cc'
-export const SITE_NAME = 'BIAU Port / 泊岸'
-export const DEFAULT_TITLE = 'BIAU Port 泊岸 | AI 应用、项目展示与知识库'
+const masterSite = getProductIdentity('biau-port')
+export const SITE_NAME = `${masterSite.name.en} / ${masterSite.name.zh}`
+export const DEFAULT_TITLE = `${formatProductName('biau-port')} | AI 应用、项目展示与知识库`
 export const DEFAULT_DESCRIPTION =
-  'BIAU Port 泊岸用 React、Vite 与自定义设计系统组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。'
+  `${formatProductName('biau-port')} 用 React、Vite 与自定义设计系统组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。`
 export const DEFAULT_IMAGE = `${SITE_URL}/images/projects/showcase/blog-semi-home-desktop.png`
 
 export interface SeoMeta {
@@ -97,7 +99,7 @@ export function getStaticSeo(pathname: string): SeoMeta {
 
   if (path === '/ai-daily') {
     return {
-      title: 'AI 日报 | BIAU Port',
+      title: `${formatProductName('ai-daily')}｜AI 日报 | ${masterSite.name.en}`,
       description: '浏览 BIAU Port 泊岸经过证据整理与人工批准的近期 AI 动态和公开来源。',
       canonicalPath: '/ai-daily',
       type: 'website',
@@ -106,7 +108,7 @@ export function getStaticSeo(pathname: string): SeoMeta {
 
   if (path.startsWith('/ai-daily/')) {
     return {
-      title: 'AI 日报快讯 | BIAU Port',
+      title: `${formatProductName('ai-daily')}｜AI 日报快讯 | ${masterSite.name.en}`,
       description: '查看一条经过公开审核的 AI 快讯、影响说明、不确定性和来源引用。',
       canonicalPath: path,
       type: 'article',

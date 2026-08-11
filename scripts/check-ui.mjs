@@ -19,9 +19,11 @@ import { heroContent } from '../src/data/hero.ts'
 import { blogColumnMeta, blogColumnOrder, getBlogEmptyState } from '../src/data/blog.ts'
 import { getPublicAssistantSuggestions } from '../src/data/assistant.ts'
 import { normalizePublicAssistantSessionHistory } from '../src/utils/publicAssistantApi.ts'
+import { formatProductTitle } from '../src/data/productRegistry.ts'
 
 const base = process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'
 const siteUrl = 'https://biau.playlab.eu.cc'
+const legalRagProjectTitle = formatProductTitle('legal-rag', 'Legal RAG 与合同审查')
 
 async function measureLocatorFrameDelta(page, locator, intervalMs = 500) {
   const readPixels = async () =>
@@ -55,13 +57,13 @@ const routes = [
   { path: '/', title: 'BIAU PORT', nav: '所有项目', canonical: '/' },
   { path: '/projects', title: '项目集', nav: '回主页', canonical: '/projects' },
   { path: '/blog', title: '知识库', nav: '回主页', canonical: '/blog' },
-  { path: '/ai-daily', title: 'AI 日报', nav: '回主页', canonical: '/ai-daily', aiDailyPublicFixture: true },
+  { path: '/ai-daily', title: '潮讯 TideBrief', nav: '回主页', canonical: '/ai-daily', aiDailyPublicFixture: true },
   {
     path: '/ai-daily/flash-public-1',
     title: '公开 Flash 标题',
     nav: '回主页',
     canonical: '/ai-daily/flash-public-1',
-    seoTitle: '公开 Flash 标题 | BIAU Port AI 日报',
+    seoTitle: '公开 Flash 标题 | 潮讯 TideBrief AI 日报',
     seoDescription: '这是 UI 检查使用的证据绑定事实摘要。',
     aiDailyPublicFixture: true,
   },
@@ -853,6 +855,7 @@ async function checkMobileProjectCatalog(browser, failures) {
       title: '全栈开发',
       projects: catalogProjects.filter((project) => ['business', 'platform', 'mobile'].includes(project.category)),
     },
+    { key: 'tool', title: '工具', projects: catalogProjects.filter((project) => project.category === 'tool') },
   ]
   const standaloneGames = projects.filter((project) => project.category === 'interactive')
 
@@ -862,11 +865,11 @@ async function checkMobileProjectCatalog(browser, failures) {
       window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
     })
     await gotoApp(page, '/projects')
-    await page.waitForFunction(() => document.querySelectorAll('.project-group-toggle').length === 2)
+    await page.waitForFunction(() => document.querySelectorAll('.project-group-toggle').length === 3)
 
     const toggles = page.locator('.project-group-toggle')
     if ((await toggles.count()) !== expectedGroups.length) {
-      failures.push(`/projects mobile ${width}px: expected two project group controls`)
+      failures.push(`/projects mobile ${width}px: expected three project group controls`)
     }
 
     const initialState = await page.evaluate(() => ({
@@ -876,7 +879,7 @@ async function checkMobileProjectCatalog(browser, failures) {
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
     }))
     if (
-      initialState.expanded.join(',') !== 'true,false' ||
+      initialState.expanded.join(',') !== 'true,false,false' ||
       initialState.visiblePanels.join(',') !== 'project-group-panel-ai'
     ) {
       failures.push(`/projects mobile ${width}px: AI applications should be the only default group`)
@@ -957,7 +960,7 @@ async function checkMobileProjectCatalog(browser, failures) {
     (await desktop.locator('.projects-grid:visible').count()) !== expectedGroups.length ||
     (await desktop.locator('.project-card:visible').count()) !== catalogProjects.length
   ) {
-    failures.push('/projects desktop: both catalog groups and all catalog projects should remain visible')
+    failures.push('/projects desktop: all catalog groups and projects should remain visible')
   }
   const desktopTitles = await desktop.locator('.project-card:visible').evaluateAll((cards) =>
     cards.map((card) => card.getAttribute('data-graph-label') ?? ''),
@@ -969,6 +972,26 @@ async function checkMobileProjectCatalog(browser, failures) {
     failures.push('/projects desktop: standalone game cards should be consolidated into one Playlab card')
   }
   await desktop.close()
+
+  const canvas = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
+  await gotoApp(canvas, '/projects/canvas')
+  const canvasState = await canvas.evaluate(() => ({
+    title: document.querySelector('.project-detail-page .detail-title')?.textContent ?? '',
+    entryNote: document.querySelector('.detail-entry-note')?.textContent ?? '',
+    externalLinks: document.querySelectorAll('.project-detail-page a[href^="http"]').length,
+    heroImages: document.querySelectorAll('.detail-hero-figure img').length,
+    overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+  }))
+  if (!canvasState.title.includes('画帆') || !canvasState.title.includes('BIAU Canvas')) {
+    failures.push('/projects/canvas: planned detail should use the canonical bilingual product name')
+  }
+  if (!canvasState.entryNote.includes('等待公开域名') || canvasState.externalLinks !== 0 || canvasState.heroImages !== 0) {
+    failures.push('/projects/canvas: planned detail must not expose an external entry or fabricated runtime screenshot')
+  }
+  if (canvasState.overflow) {
+    failures.push('/projects/canvas mobile 390px: planned detail should not overflow horizontally')
+  }
+  await canvas.close()
 
   const playlab = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
   await gotoApp(playlab, '/projects/biau-playlab')
@@ -4576,7 +4599,7 @@ await homeCarouselClickPage.addInitScript(() => {
 await gotoApp(homeCarouselClickPage, '/')
 await homeCarouselClickPage.locator('.carousel-viewport').hover({ force: true })
 await homeCarouselClickPage.waitForTimeout(120)
-await homeCarouselClickPage.locator('.carousel-card').filter({ hasText: '法律智能机器人' }).nth(1).click({ force: true })
+await homeCarouselClickPage.locator('.carousel-card').filter({ hasText: legalRagProjectTitle }).nth(1).click({ force: true })
 await homeCarouselClickPage.waitForURL(`${base}/projects/legal-rag`, { timeout: 5000 }).catch(() => {
   failures.push('/ home carousel: expected Legal RAG card click to navigate to project detail')
 })
@@ -4594,7 +4617,7 @@ await homeCarouselActionKeyboardPage.addInitScript(() => {
 await gotoApp(homeCarouselActionKeyboardPage, '/')
 await homeCarouselActionKeyboardPage.locator('.carousel-viewport').hover({ force: true })
 const legalRagAction = homeCarouselActionKeyboardPage
-  .getByRole('button', { name: '打开外部项目页面：法律智能机器人' })
+  .getByRole('button', { name: `查看当前状态：${legalRagProjectTitle}` })
   .nth(1)
 await legalRagAction.focus()
 await homeCarouselActionKeyboardPage.keyboard.press('Enter')
@@ -4605,11 +4628,11 @@ const actionKeyboardResult = await homeCarouselActionKeyboardPage.evaluate(() =>
   pathname: window.location.pathname,
   openedUrls: window.__openedUrls ?? [],
 }))
-if (actionKeyboardResult.pathname !== '/') {
-  failures.push('/ home carousel: keyboard activation on external action should not navigate to project detail')
+if (actionKeyboardResult.pathname !== '/status/legal-rag') {
+  failures.push('/ home carousel: keyboard activation on an unavailable project should open its status route')
 }
-if (!actionKeyboardResult.openedUrls.some((url) => url === 'https://legal-rag-web.onrender.com')) {
-  failures.push('/ home carousel: expected keyboard activation on Legal RAG action to open external link')
+if (actionKeyboardResult.openedUrls.length > 0) {
+  failures.push('/ home carousel: unavailable project status action should not open an external URL')
 }
 await homeCarouselActionKeyboardPage.close()
 
@@ -4759,46 +4782,31 @@ await gotoApp(projectsMobileActionPage, '/projects')
 const legalRagMobileCard = projectsMobileActionPage.locator('.project-card').filter({ hasText: 'Legal RAG' }).first()
 const mobileFooterVisible = await legalRagMobileCard.locator('.project-footer').isVisible().catch(() => false)
 const mobileDetailButtonVisible = await legalRagMobileCard
-  .getByRole('button', { name: '查看项目详情：Legal RAG｜法律智能机器人与合同审查' })
+  .getByRole('button', { name: `查看项目详情：${legalRagProjectTitle}` })
   .isVisible()
   .catch(() => false)
-const mobileExternalLink = legalRagMobileCard.getByRole('link', { name: '在线工作台' }).first()
-const mobileExternalLinkVisible = await mobileExternalLink.isVisible().catch(() => false)
-const mobileExternalHref = await mobileExternalLink.getAttribute('href').catch(() => null)
-const mobileExternalTarget = await mobileExternalLink.getAttribute('target').catch(() => null)
-const mobileExternalRel = await mobileExternalLink.getAttribute('rel').catch(() => null)
+const mobileStatusButton = legalRagMobileCard.getByRole('button', { name: '查看当前状态：律航 LexBeacon｜Legal RAG 与合同审查' }).first()
+const mobileStatusVisible = await mobileStatusButton.isVisible().catch(() => false)
 if (!mobileFooterVisible) {
   failures.push('/projects mobile actions: expected project card footer to stay visible')
 }
 if (!mobileDetailButtonVisible) {
   failures.push('/projects mobile actions: expected visible detail button in project card footer')
 }
-if (!mobileExternalLinkVisible) {
-  failures.push('/projects mobile actions: expected visible external project link in project card footer')
-}
-if (mobileExternalHref !== 'https://legal-rag-web.onrender.com') {
-  failures.push(`/projects mobile actions: expected Legal RAG external href, got "${mobileExternalHref}"`)
-}
-if (mobileExternalTarget !== '_blank') {
-  failures.push(`/projects mobile actions: expected external link target _blank, got "${mobileExternalTarget}"`)
-}
-if (mobileExternalRel !== 'noopener noreferrer') {
-  failures.push(`/projects mobile actions: expected external link rel noopener noreferrer, got "${mobileExternalRel}"`)
-}
-const popupPromise = projectsMobileActionPage.waitForEvent('popup', { timeout: 3000 }).catch(() => null)
-await mobileExternalLink.click()
-const mobileExternalPopup = await popupPromise
-if (mobileExternalPopup) await mobileExternalPopup.close()
-const mobileActionPathname = await projectsMobileActionPage.evaluate(() => window.location.pathname)
-if (mobileActionPathname !== '/projects') {
-  failures.push('/projects mobile actions: external link click should not navigate the card to a detail page')
+if (!mobileStatusVisible) {
+  failures.push('/projects mobile actions: unchecked project should expose its status action instead of an external link')
+} else {
+  await mobileStatusButton.click()
+  await projectsMobileActionPage.waitForURL(`${base}/status/legal-rag`, { timeout: 5000 }).catch(() => {
+    failures.push('/projects mobile actions: status action should navigate to the Legal RAG status route')
+  })
 }
 await projectsMobileActionPage.close()
 
 const projectDetailButtonKeyboardPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(projectDetailButtonKeyboardPage, '/projects')
 await projectDetailButtonKeyboardPage
-  .getByRole('button', { name: '查看项目详情：Legal RAG｜法律智能机器人与合同审查' })
+  .getByRole('button', { name: `查看项目详情：${legalRagProjectTitle}` })
   .press('Enter')
 await projectDetailButtonKeyboardPage.waitForURL(`${base}/projects/legal-rag`, { timeout: 5000 }).catch(() => {
   failures.push('/projects keyboard: Enter on project detail button did not navigate to detail page')
@@ -4973,14 +4981,20 @@ const detailQuickLinksPage = await createUiPage(browser, { viewport: viewports[1
 await gotoApp(detailQuickLinksPage, '/projects/legal-rag')
 const legalQuickLinks = detailQuickLinksPage.locator('.detail-header .detail-quick-links')
 const legalQuickLinkCount = await legalQuickLinks.locator('a.link-badge').count()
-const legalQuickExternal = legalQuickLinks.getByRole('link', { name: '在线工作台' }).first()
+const legalQuickStatus = legalQuickLinks.getByRole('link', { name: '查看当前状态' }).first()
+const legalQuickEvidence = legalQuickLinks.getByRole('link', { name: 'API Health' }).first()
 const legalQuickInternal = legalQuickLinks.getByRole('link', { name: '项目复盘' }).first()
-const legalQuickExternalVisible = await legalQuickExternal.isVisible().catch(() => false)
+const legalQuickStatusVisible = await legalQuickStatus.isVisible().catch(() => false)
+const legalQuickEvidenceVisible = await legalQuickEvidence.isVisible().catch(() => false)
 const legalQuickInternalVisible = await legalQuickInternal.isVisible().catch(() => false)
-const legalQuickExternalTarget = await legalQuickExternal.getAttribute('target').catch(() => null)
-const legalQuickExternalRel = await legalQuickExternal.getAttribute('rel').catch(() => null)
-const legalQuickExternalClass = await legalQuickExternal.getAttribute('class').catch(() => '')
-const legalQuickExternalType = await legalQuickExternal.getAttribute('data-link-type').catch(() => null)
+const legalQuickStatusHref = await legalQuickStatus.getAttribute('href').catch(() => null)
+const legalQuickStatusTarget = await legalQuickStatus.getAttribute('target').catch(() => null)
+const legalQuickStatusClass = await legalQuickStatus.getAttribute('class').catch(() => '')
+const legalQuickStatusType = await legalQuickStatus.getAttribute('data-link-type').catch(() => null)
+const legalQuickEvidenceTarget = await legalQuickEvidence.getAttribute('target').catch(() => null)
+const legalQuickEvidenceRel = await legalQuickEvidence.getAttribute('rel').catch(() => null)
+const legalQuickEvidenceClass = await legalQuickEvidence.getAttribute('class').catch(() => '')
+const legalQuickEvidenceType = await legalQuickEvidence.getAttribute('data-link-type').catch(() => null)
 const legalQuickInternalHref = await legalQuickInternal.getAttribute('href').catch(() => null)
 const legalQuickInternalTarget = await legalQuickInternal.getAttribute('target').catch(() => null)
 const legalQuickInternalClass = await legalQuickInternal.getAttribute('class').catch(() => '')
@@ -4992,9 +5006,9 @@ const legalQuickLinksBeforeImage = await detailQuickLinksPage.evaluate(() => {
   return quickLinks.getBoundingClientRect().bottom < image.getBoundingClientRect().top
 })
 const legalLowerLinkCount = await detailQuickLinksPage.locator('.detail-body .detail-links a.link-badge').count()
-const legalLowerExternalClass = await detailQuickLinksPage
+const legalLowerEvidenceClass = await detailQuickLinksPage
   .locator('.detail-body .detail-links a.link-badge')
-  .filter({ hasText: '在线工作台' })
+  .filter({ hasText: 'API Health' })
   .first()
   .getAttribute('class')
   .catch(() => '')
@@ -5007,17 +5021,20 @@ const legalLowerInternalClass = await detailQuickLinksPage
 if (legalQuickLinkCount < 4) {
   failures.push(`/projects/legal-rag quick links: expected header to expose existing links, got ${legalQuickLinkCount}`)
 }
-if (!legalQuickExternalVisible || !legalQuickInternalVisible) {
-  failures.push('/projects/legal-rag quick links: expected external and internal quick links to be visible')
+if (!legalQuickStatusVisible || !legalQuickEvidenceVisible || !legalQuickInternalVisible) {
+  failures.push('/projects/legal-rag quick links: expected status, evidence, and internal quick links to be visible')
 }
-if (legalQuickExternalTarget !== '_blank') {
-  failures.push(`/projects/legal-rag quick links: expected external target _blank, got "${legalQuickExternalTarget}"`)
+if (legalQuickStatusHref !== '/status/legal-rag' || legalQuickStatusTarget) {
+  failures.push('/projects/legal-rag quick links: unchecked entry should become an internal status route')
 }
-if (legalQuickExternalRel !== 'noopener noreferrer') {
-  failures.push(`/projects/legal-rag quick links: expected external rel noopener noreferrer, got "${legalQuickExternalRel}"`)
+if (!legalQuickStatusClass?.includes('link-badge--internal') || legalQuickStatusType !== 'internal') {
+  failures.push('/projects/legal-rag quick links: expected internal status affordance')
 }
-if (!legalQuickExternalClass?.includes('link-badge--external') || legalQuickExternalType !== 'external') {
-  failures.push('/projects/legal-rag quick links: expected external quick link affordance')
+if (legalQuickEvidenceTarget !== '_blank' || legalQuickEvidenceRel !== 'noopener noreferrer') {
+  failures.push('/projects/legal-rag quick links: independent evidence should remain a safe external link')
+}
+if (!legalQuickEvidenceClass?.includes('link-badge--external') || legalQuickEvidenceType !== 'external') {
+  failures.push('/projects/legal-rag quick links: expected external evidence affordance')
 }
 if (legalQuickInternalHref !== '/blog/legal-rag-review' || legalQuickInternalTarget) {
   failures.push('/projects/legal-rag quick links: expected internal quick link to stay an SPA route without target')
@@ -5031,18 +5048,24 @@ if (!legalQuickLinksBeforeImage) {
 if (legalLowerLinkCount < 4) {
   failures.push(`/projects/legal-rag quick links: expected lower related links block to remain, got ${legalLowerLinkCount}`)
 }
-if (!legalLowerExternalClass?.includes('link-badge--external') || !legalLowerInternalClass?.includes('link-badge--internal')) {
-  failures.push('/projects/legal-rag quick links: expected lower links to keep external/internal affordance')
+if (!legalLowerEvidenceClass?.includes('link-badge--external') || !legalLowerInternalClass?.includes('link-badge--internal')) {
+  failures.push('/projects/legal-rag quick links: expected lower evidence/internal links to keep their affordance')
+}
+if (await detailQuickLinksPage.getByRole('link', { name: '在线工作台' }).count()) {
+  failures.push('/projects/legal-rag quick links: unchecked product entry must not remain directly accessible')
 }
 await detailQuickLinksPage.close()
 
 const xunqiuQuickLinksPage = await createUiPage(browser, { viewport: viewports[1] })
 await gotoApp(xunqiuQuickLinksPage, '/projects/xunqiu')
 const xunqiuQuickLinks = xunqiuQuickLinksPage.locator('.detail-header .detail-quick-links')
-for (const label of ['产品展示页', '技术文档']) {
+for (const label of ['查看当前状态', '技术文档', '后端验证文档']) {
   if (!(await xunqiuQuickLinks.getByRole('link', { name: label }).first().isVisible().catch(() => false))) {
     failures.push(`/projects/xunqiu quick links: expected visible "${label}" quick link`)
   }
+}
+if (await xunqiuQuickLinks.getByRole('link', { name: '产品展示页' }).count()) {
+  failures.push('/projects/xunqiu quick links: unchecked product entry should be replaced by its status route')
 }
 if (await xunqiuQuickLinks.getByRole('link', { name: '阶段 APK' }).count()) {
   failures.push('/projects/xunqiu quick links: unapproved stage APK link should not be public')

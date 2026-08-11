@@ -1,15 +1,17 @@
 import { useRef, useEffect, useCallback, type PointerEvent } from 'react'
 import { ColoredCard } from './ColoredCard'
 import type { HeroProject } from '../data/hero'
+import { getProjectCta, getProjectPublication } from '../data/projectPublication'
 import { usesMobileInteractionMode } from '../utils/responsive'
 
 interface RightScrollCardsProps {
   projects: HeroProject[]
   onProjectClick: (link: string) => void
   onProjectAction: (link: string) => void
+  onProjectStatus: (link: string) => void
 }
 
-export function RightScrollCards({ projects, onProjectClick, onProjectAction }: RightScrollCardsProps) {
+export function RightScrollCards({ projects, onProjectClick, onProjectAction, onProjectStatus }: RightScrollCardsProps) {
   const wrapperRef = useRef<HTMLElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -280,16 +282,19 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction }: 
           }}
         >
           {loopedProjects.map((project, index) => {
-            const externalLink = project.externalLink
+            const entryAction = getProjectCta(getProjectPublication(project.id))
             return (
               <ColoredCard
                 key={`${project.id}-${index}`}
                 project={project}
                 index={index}
                 projectCount={projects.length}
+                entryAction={entryAction}
                 loopCopy={index >= projects.length}
                 onClick={() => onProjectClick(project.detailLink)}
-                onActionClick={externalLink ? () => onProjectAction(externalLink) : undefined}
+                onActionClick={() =>
+                  entryAction.enabled ? onProjectAction(entryAction.href) : onProjectStatus(entryAction.href)
+                }
               />
             )
           })}

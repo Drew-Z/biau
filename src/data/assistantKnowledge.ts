@@ -1,4 +1,5 @@
 import type { Project } from './portfolio'
+import { formatProductName } from './productRegistry'
 
 export type AssistantKnowledgeSourceType = 'site' | 'project' | 'blog' | 'status'
 export type AssistantKnowledgeEntityType =
@@ -121,6 +122,8 @@ export const ASSISTANT_SEARCH_KEYWORDS = [
   '手动处理',
   'ai daily',
   'ai 日报',
+  '潮讯',
+  'tidebrief',
   '日报',
   '首发',
   'studio-first',
@@ -138,6 +141,8 @@ export const ASSISTANT_SEARCH_KEYWORDS = [
   '低敏证据',
   '刷新全部状态',
   '公开助手模型配置',
+  '知航',
+  'biau beacon',
   '合同审查',
   '合同',
   '法律',
@@ -449,7 +454,7 @@ function createEntitiesAndRelations(
   addEntity(entities, {
     id: 'site:biau-port',
     type: 'site',
-    name: 'BIAU Port 泊岸',
+    name: formatProductName('biau-port'),
     aliases: ['泊岸', 'biau port', 'biau', '主站', '当前网站'],
     metadata: { documentId: 'site:intro', href: '/' },
   })
@@ -471,8 +476,8 @@ function createEntitiesAndRelations(
       addEntity(entities, {
         id: 'site:ai-daily',
         type: 'feature',
-        name: 'AI 日报',
-        aliases: ['AI Daily', 'AI 日报', '日报', '首发', 'Studio-first', 'Publish Export', 'hidden', 'review-needed'],
+        name: formatProductName('ai-daily'),
+        aliases: ['潮讯', 'TideBrief', 'AI Daily', 'AI 日报', '日报', '首发', 'Studio-first', 'Publish Export', 'hidden', 'review-needed'],
         metadata: { documentId: document.id, href: document.href },
       })
       addRelation(relations, 'site:biau-port', 'site:ai-daily', 'contains', [document.id], 0.85)

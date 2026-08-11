@@ -7,6 +7,7 @@ import {
   type AiDailyPublicFeedPayload,
   type AiDailyPublicItem,
 } from '../utils/aiDailyPublicApi'
+import { formatProductName } from '../data/productRegistry'
 
 const REFRESH_INTERVAL_MS = 60_000
 
@@ -90,7 +91,7 @@ export function AiDailyPublicPage() {
       <section className="section-header page-hero ai-daily-public-hero">
         <div>
           <p className="section-subtitle">AI DAILY / 每日快讯</p>
-          <h1 className="section-title">AI 日报</h1>
+          <h1 className="section-title">{formatProductName('ai-daily')}</h1>
           <p className="section-description">
             只展示经过证据整理与人工批准的近期 AI 动态。每条快讯保留公开引用，修正会沿用同一个事件地址。
           </p>
@@ -100,7 +101,7 @@ export function AiDailyPublicPage() {
         </div>
       </section>
 
-      <section className="ai-daily-public-overview" aria-label="AI 日报状态">
+      <section className="ai-daily-public-overview" aria-label="潮讯 AI 日报状态">
         <div className="ai-daily-public-freshness" data-state={freshness?.status ?? (loading ? 'loading' : 'empty')}>
           <span className="ai-daily-public-status-dot" aria-hidden="true" />
           <div>

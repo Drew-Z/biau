@@ -53,7 +53,7 @@ Use the live site or a local dev server for the current route state:
 | Projects | `/projects` |
 | Blog | `/blog` |
 | Status | `/status` |
-| Public assistant widget | Public site routes |
+| 知航 BIAU Beacon public assistant | Public site routes |
 | Content Studio | `/studio` |
 | Pet app showcase | `/pet-app-showcase/` |
 
@@ -61,9 +61,10 @@ Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/s
 
 ## What It Does
 
-- Presents project case-study pages for Legal RAG, Ozon ERP, Pet workspace, Xunqiu, BIAU Playlab, and related apps.
-- Publishes curated blog content, knowledge notes, project notes, resources, and AI Daily drafts after review.
-- Provides a public LangGraph research assistant that adaptively combines BIAU knowledge and verified public-web evidence with claim-level citations.
+- Presents project case-study pages for 律航 LexBeacon, 商舱 OpsDeck, 帆灵 SailSprite, 寻球 BallTrail, 游湾 BIAU Playlab, and related apps.
+- Publishes curated blog content, knowledge notes, project notes, resources, and 潮讯 TideBrief AI Daily drafts after review.
+- Provides 知航 BIAU Beacon, a public LangGraph research assistant that adaptively combines BIAU knowledge and verified public-web evidence with claim-level citations.
+- Previews 画帆 BIAU Canvas as a planned image-hosting tool without exposing a fabricated public URL or unverified availability claim.
 - Provides a Content Studio for draft editing, AI Daily issue management, source items, reviews, and publish export records.
 - Tracks public link health, synthetic checks, project reliability status, manual gates, and low-sensitive observability boundaries.
 

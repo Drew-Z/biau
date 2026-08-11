@@ -5,7 +5,7 @@ import { ProjectCard } from '../components/ProjectCard'
 import { catalogProjects } from '../data/portfolio'
 import { trackAnalyticsEvent } from '../utils/analytics'
 
-type ProjectGroupKey = 'ai' | 'fullstack'
+type ProjectGroupKey = 'ai' | 'fullstack' | 'tool'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
@@ -25,10 +25,12 @@ export function ProjectsPage() {
     const business = catalogProjects.filter((project) => project.category === 'business')
     const mobile = catalogProjects.filter((project) => project.category === 'mobile')
     const platform = catalogProjects.filter((project) => project.category === 'platform')
+    const tool = catalogProjects.filter((project) => project.category === 'tool')
 
     return [
       { key: 'ai' as const, title: 'AI 应用', projects: ai },
       { key: 'fullstack' as const, title: '全栈开发', projects: [...business, ...platform, ...mobile] },
+      { key: 'tool' as const, title: '工具', projects: tool },
     ]
   }, [])
 
@@ -89,6 +91,7 @@ export function ProjectsPage() {
                     project={project}
                     index={projectIndex}
                     onViewDetails={() => openProjectDetail(project.id)}
+                    onNavigate={navigate}
                   />
                 )
               })}

@@ -1,7 +1,7 @@
 [
   {
     "id": "site:intro",
-    "title": "BIAU Port 站点简介",
+    "title": "泊岸 BIAU Port 站点简介",
     "summary": "BIAU Port 泊岸是一个围绕 AI 应用、业务系统、互动体验、移动端案例与知识内容组织的展示站，强调可演示、可筛选、可落地的项目表达。",
     "href": "/",
     "tags": [
@@ -55,10 +55,12 @@
   },
   {
     "id": "site:ai-daily",
-    "title": "AI 日报栏目发布状态",
-    "summary": "AI 日报 / AI Daily 是博客里的独立栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。未审核草稿不会展示给访客，也不会进入公开助手索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。",
+    "title": "潮讯 TideBrief｜AI 日报栏目发布状态",
+    "summary": "潮讯 TideBrief 是泊岸的 AI 日报栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。未审核草稿不会展示给访客，也不会进入知航 BIAU Beacon 索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。",
     "href": "/blog",
     "tags": [
+      "潮讯",
+      "TideBrief",
       "AI 日报",
       "AI Daily",
       "博客栏目",
@@ -76,7 +78,7 @@
   },
   {
     "id": "project:legal-rag",
-    "title": "Legal RAG｜法律智能机器人与合同审查",
+    "title": "律航 LexBeacon｜Legal RAG 与合同审查",
     "summary": "已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。 Legal RAG 是已部署的全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。 系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。 合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。 项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。 Legal RAG 后端还把配置用户、项目成员、项目空间授权、ingestion job 和 audit log 纳入数据模型，让公开演示能够解释“谁在什么项目空间里做了什么 AI 操作”。 Legal RAG Web 工作台的标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸品牌；公开试用凭据仍只能通过低权限、可轮换、可公开的 demo 配置展示。 线上工作台入口是 https://legal-rag-web.onrender.com，有登录门禁，公开页面不会放真实后台/admin 密码；如果 Legal RAG 登录页显示公开演示凭据，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则仍是受控演示入口。 Legal RAG 公开自助试用需要维护者同时配置 API 侧登录校验密码和 Web 侧 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD；VITE_PUBLIC_DEMO_PASSWORD 会进入前端包，所以只能填写可公开、低权限、可轮换的 demo 密码。 推荐公开演示顺序是：登录受保护工作台、初始化公开安全数据集、执行带 citation/diagnostics 的 RAG 问答、运行示例合同审查、查看质量面板的 runtime、citation/refusal 评测、审查召回、readiness checks、趋势和审计日志。 后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。",
     "href": "/projects/legal-rag",
     "tags": [
@@ -100,7 +102,7 @@
   },
   {
     "id": "project:chatus",
-    "title": "Chatus｜邀请制私人 AI 工作台",
+    "title": "泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台",
     "summary": "部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、长期记忆、能力授权与可恢复流。 Chatus 是部署在 Cloudflare Workers 上的邀请制私人 AI 工作台，只提供受控网页体验，不对外分发公开 OpenAI-compatible API。 前端使用 React 19、TypeScript 和 PWA 能力；运行时使用 Cloudflare Worker、KV、Agents SDK 与 SQLite Durable Objects。 成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。 多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。 长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。 公开入口是 https://chatus.ciallobill.qzz.io；入口可达不代表访客拥有成员账号、访问码或完整能力。 主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。",
     "href": "/projects/chatus",
     "tags": [
@@ -125,7 +127,7 @@
   },
   {
     "id": "project:pet-workspace",
-    "title": "AI 桌宠社区与生成管线",
+    "title": "帆灵 SailSprite｜AI 桌宠社区与生成管线",
     "summary": "仍在推进中的 AI 桌宠工程工作区，围绕 Android 桌宠社区、Community API、生成服务、人审发布、质量门禁和 App 安全契约组织。 AI 桌宠项目是进行中的多模块工程工作区，核心包括 Android 桌宠社区 App、Node Community API、Admin Review、Pet Generator 适配层、FastAPI 风格生成规则服务、可信 Worker、QA 门禁和人工审核发布链路。 Android 侧覆盖桌宠 shell、默认桌宠资产、桌面悬浮服务、生成 UI 状态、Community API client、pet.zip 导入请求构造和社区交互，不直接调用生成内核或 Agent。 Community API 是 App 唯一后端入口，包含 health、SLA、metrics、feed、community-home、approved pets、package download descriptor、wallet、check-in、submissions、import drafts、bundle validation、admin review 和 fantasy-pet proxy 等能力。 生成规则服务负责 app-safe job 创建、轮询、artifact 索引、不透明 downloadId、人工 review decision、package plan、pet.zip 构建、worker readiness 和内部 GA/Codex/QA 证据；机器证据不能替代人工视觉 accept。 质量证据包括 Node workspace tests、Android 单元测试、Community API routes/server/store/rate-limit/metrics/SLA/logging/postgres 测试、pet package contract 测试、追踪矩阵、结构化日志、Prometheus metrics 和 SLA 文档。 私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。 项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待正式签名包，debug 构建只作为内部验证信号，不提供占位下载。 Pet 项目详情页正文已经穿插 Android 首页、孵化桌宠和社区页截图，说明这些是公开展示当前工作面的证据；正式 APK 下载仍必须等待 release 构建、签名、SHA-256、版本说明、回归和人工批准。 最近一次 APK 发布门禁审计只找到 debug APK，没有 release APK/AAB 候选；公开下载继续关闭，后续需要正式构建、签名策略、校验摘要、版本说明、回归证据和人工确认。 当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。",
     "href": "/projects/pet-workspace",
     "tags": [
@@ -149,7 +151,7 @@
   },
   {
     "id": "project:ozon-erp",
-    "title": "Ozon 电商 ERP",
+    "title": "商舱 OpsDeck｜Ozon 电商 ERP",
     "summary": "面向小团队 Ozon 店铺运营的业务系统案例，覆盖 Vue 管理后台、Express API、Prisma/PostgreSQL、队列任务和 Chrome MV3 采集插件。 Ozon ERP 是面向小团队跨境店铺运营的业务系统，包含 Vue/Vite 管理后台、Express API、Prisma/PostgreSQL 数据模型、可选 Redis/BullMQ 队列、WXT/Chrome MV3 浏览器插件和共享计算包。 管理后台覆盖登录、注册、Owner 初始化、概览、店铺、商品、商品草稿、导入历史、工具、选品规则、商品编辑和设置等工作流，重点解决店铺授权、商品同步、采集铺货、定价利润和运营追踪。 认证入口已经补充确认密码校验、Owner 初始化提示、主站返回桥接、BIAU Port / 泊岸 favicon、登录页主品牌和登录后侧栏归属；Ozon ERP 保留为业务系统产品名。 代码侧已经支持生产普通自助注册默认开放；线上是否正在开放以 /api/auth/bootstrap 与状态页 synthetic 结果为准，状态异常时应先复查部署提交与 ERP_REGISTRATION_ENABLED 开关。 ERP 概览页已经补充登录后首次引导，展示当前账号/角色、Owner 与协作者职责说明，并说明已有 Owner 后新注册账号默认是 operator，不自动获得 Owner 权限。 Express API 注册 auth、shops、products、selection、settings、ozon、collect、market metrics、commission rates、api.chrome、exchange rates、watermark 和 uploads 等路由。 Prisma 模型覆盖用户、店铺、Ozon 凭证、Seller 会话、商品、采集商品、草稿、导入日志、PendingAction、JobQueue、AuditLog、市场指标和佣金映射等对象。 外部平台写入通过 PendingAction 和 JobQueue 收口；当前代码和测试显示商品写入与一键铺货默认偏向队列或本地后台执行，只有显式配置 inline 才同步执行。 浏览器插件负责 Ozon/Seller 页面采集、Seller 上下文读取、跨标签页请求、ERP 路由打开和图片下载，并通过认证或扩展密钥边界接入 ERP API。 项目验证证据包括 API/shared Vitest、受保护写入测试、Ozon 同步容错测试、插件接口映射测试、插件版本发布检查、smoke 脚本、交接清单、上线检查、佣金覆盖报告和依赖审计记录。 后续优化方向包括运行模式可视化、Worker/队列运维、佣金可信映射补齐、权限和审计增强、插件发布自动化、日志脱敏、备份演练和部署自动化。",
     "href": "/projects/ozon-erp",
     "tags": [
@@ -176,7 +178,7 @@
   },
   {
     "id": "project:biau-playlab",
-    "title": "BIAU Playlab｜游戏作品集与系统设计内容站",
+    "title": "游湾 BIAU Playlab｜游戏作品集与系统设计内容站",
     "summary": "基于 Astro 的独立游戏作品集与试玩平台，整合六个已部署 Godot Web 游戏、项目详情、截图/视频、开发日志和系统设计文章。 BIAU Playlab 是已部署的 Astro 5 游戏作品集与试玩平台，整合六个 Godot Web 游戏、项目详情页、截图/视频、开发日志、系统设计文章和公开试玩入口。 游戏站已统一使用 BIAU Playlab 命名，并把 favicon、导航副标题和页脚归属对齐到 BIAU Port / 泊岸，保留 Playlab 作为游戏作品集产品名。 站点使用 Astro content collections 管理 games、devlogs、published articles 和 article workbench；games schema 包含 status、engine、platforms、screenshots、playableWeb、embedUrl、downloadLinks、repoUrl、challenge、mechanic、contribution、outcome、nextStep、milestones 和 devlogSlugs。 六个游戏包括 Tetris、Next Spacewar、intespace、Raiden、space-war 和 Spacewar II；Spacewar II 已作为第六个公开 Web 试玩项目接入，并补齐菜单、战斗和结果页真实截图。 Godot Web 试玩入口由独立试玩域名承载，首次加载可能较慢；移动端输入、横竖屏缩放、HUD 可读性和浏览器性能仍需要持续回归。 最近内容审计统计到 4 篇已发布文章、39 篇文章工作区草稿、6 个游戏项目和 5 篇开发日志，静态资源引用和内容关系检查通过。 Playlab 的质量链路包括 content:audit、Astro build、dist:audit、deploy:pages、deploy:play、play export/check/upload 和 deploy:check；dist:audit 会检查站内链接、资源路径和 JSON-LD，公开端点检查覆盖游戏站、六个游戏详情页、六个试玩入口、RSS、sitemap、robots 和主站项目页。 当前 Playlab 应作为游戏作品集平台展示；博客和部分文章归档质量仍是后续优化方向，不应把它描述成已经完全成熟的内容产品。",
     "href": "/projects/biau-playlab",
     "tags": [
@@ -199,7 +201,7 @@
   },
   {
     "id": "project:anchor-learning",
-    "title": "Anchor Learning｜来源可溯源的 AI 学习代理",
+    "title": "锚学 Anchor Learning｜来源可溯源的 AI 学习代理",
     "summary": "Flutter 本地优先学习助手，以结构化切分、精确 locator、引用核验和答案校验把文档转成可追溯练习；官网提供无后端、无实时 AI 的双语浏览器 Demo。 Anchor Learning (锚学) 是基于 Flutter、Riverpod 和 sqflite 的本地优先学习助手，核心设计原则是可溯源性优先与生成后验证。 支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 结构化切分并生成精确 locator 与 content hash。 题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。 Agent 学习模式支持长会话、检查点恢复、混合检索（BM25 + 语义）、苏格拉底式引导和编程练习生成。 核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。 已部署双语官网 https://anchor.playlab.eu.cc 与静态浏览器 Demo https://anchor.playlab.eu.cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。 浏览器 Demo 会在 `anchor.locale` 保存中英文偏好，在 `anchor.demo.progress.v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。 开源仓库是 https://github.com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。",
     "href": "/projects/anchor-learning",
     "tags": [
@@ -224,7 +226,7 @@
   },
   {
     "id": "project:blog-semi",
-    "title": "BIAU Port 内容与助手平台｜当前主站",
+    "title": "泊岸 BIAU Port｜内容与助手平台",
     "summary": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开研究助手和内容 Studio。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。 公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。 公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only RAG 证据。 RAG Orchestrator 生产存储使用 Supabase pgvector，组合 4096 维精确余弦检索、关键词召回和轻量实体关系扩展；本地与可选 Qdrant 适配器只用于确定性测试或回滚兼容。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。 当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；Operator/internal-RAG 退役已经完成，后续人工队列聚焦 Studio 被退回草稿修订、证据完整版本审核、Publish Export 与各关联项目的受控发布 gate。",
     "href": "/projects/blog-semi",
     "tags": [
@@ -247,6 +249,27 @@
       "LangGraph Agent",
       "内容治理",
       "UI 验证"
+    ],
+    "visibility": "public"
+  },
+  {
+    "id": "project:canvas",
+    "title": "画帆 BIAU Canvas｜图像托管与分享工具",
+    "summary": "已确认存在 Cloudflare Pages 技术部署主体的图像托管工具规划项；公开域名、维护边界、隐私规则与验收证据齐备前只展示案例规划。 画帆 BIAU Canvas 是图像托管与分享工具的 planned 项目，技术部署主体名为 cloudflare-imgbed。 当前没有经过产品验收的公开入口；Cloudflare Dashboard 是账号级管理页面，不能作为访客链接或公开证据。 升级为 online 前需要确认公开域名、维护边界、隐私与存储规则、配额与删除机制、真实截图、移动端核心流程、状态目标和 synthetic。",
+    "href": "/projects/canvas",
+    "tags": [
+      "tool",
+      "工具",
+      "ongoing",
+      "建设中",
+      "Cloudflare Pages / 图像托管 / 公开准入规划",
+      "Cloudflare Pages",
+      "Image hosting",
+      "Public release gate",
+      "planned 准入",
+      "隐私边界待确认",
+      "不虚构公开入口",
+      "上线证据清单"
     ],
     "visibility": "public"
   },
@@ -379,7 +402,7 @@
   },
   {
     "id": "project:xunqiu",
-    "title": "寻球｜移动端与现代后端重建",
+    "title": "寻球 BallTrail｜移动端与现代后端重建",
     "summary": "足球社群移动端迁移案例：旧版 App 和旧后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3、PostgreSQL、Render 与 R2 上传链路。 寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。 64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。 现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。 短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。 项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。 现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。 公开展示站提供产品页、技术文档和 APK 发布状态；未批准的阶段包已从公开仓库与下载入口撤下，不包含旧后端 IP、测试密码、签名路径或私有云配置。 阶段 APK 继续保留在维护者本地归档；后续公开下载需要正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准。 寻球静态展示站首页、技术文档页和 404 页已统一 BIAU Port / 泊岸标题与 favicon，并在页脚说明归属泊岸项目展示体系。 后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。",
     "href": "/projects/xunqiu",
     "tags": [

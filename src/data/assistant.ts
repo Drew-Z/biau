@@ -10,6 +10,7 @@ import {
   type PublicKnowledgeV2,
 } from './assistantKnowledge'
 import { getProjectAssistantSummary, getProjectAssistantTags, projects } from './portfolio'
+import { formatProductName, formatProductTitle } from './productRegistry'
 
 export type AssistantVisibility = 'public'
 
@@ -36,8 +37,8 @@ export const publicAssistantSuggestions: AssistantSuggestion[] = [
   },
   {
     id: 'legal-rag-entry',
-    label: 'Legal RAG 怎么体验',
-    prompt: 'Legal RAG 法律机器人现在能展示哪些能力？我应该从哪个入口开始看？',
+    label: '律航怎么体验',
+    prompt: `${formatProductTitle('legal-rag', 'Legal RAG')} 现在能展示哪些能力？我应该从哪个入口开始看？`,
   },
   {
     id: 'status-overview',
@@ -132,7 +133,7 @@ const blogKnowledge: AssistantKnowledgeItem[] = getAssistantBlogPosts().map((pos
 export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
   {
     id: 'site:intro',
-    title: 'BIAU Port 站点简介',
+    title: `${formatProductName('biau-port')} 站点简介`,
     summary:
       'BIAU Port 泊岸是一个围绕 AI 应用、业务系统、互动体验、移动端案例与知识内容组织的展示站，强调可演示、可筛选、可落地的项目表达。',
     href: '/',
@@ -159,11 +160,11 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
   },
   {
     id: 'site:ai-daily',
-    title: 'AI 日报栏目发布状态',
+    title: `${formatProductName('ai-daily')}｜AI 日报栏目发布状态`,
     summary:
-      'AI 日报 / AI Daily 是博客里的独立栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。未审核草稿不会展示给访客，也不会进入公开助手索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。',
+      '潮讯 TideBrief 是泊岸的 AI 日报栏目，用来记录 AI 模型、工具、行业案例和工程实践的高频动态。当前公开列表可能还没有 AI 日报文章，因为首期内容必须先在 Studio-first 内部流程中完成来源池、日报 issue、hidden / review-needed 草稿、人工审核、Publish Export、静态导出、Git diff 审查和博客质量检查。未审核草稿不会展示给访客，也不会进入知航 BIAU Beacon 索引；只有通过人工 review 和导出检查后的内容才会出现在公开博客页。',
     href: '/blog',
-    tags: ['AI 日报', 'AI Daily', '博客栏目', 'Studio-first', '来源池', '日报 issue', 'hidden', 'review-needed', 'Publish Export', '人工审核', '静态导出', 'Git diff 审查'],
+    tags: ['潮讯', 'TideBrief', 'AI 日报', 'AI Daily', '博客栏目', 'Studio-first', '来源池', '日报 issue', 'hidden', 'review-needed', 'Publish Export', '人工审核', '静态导出', 'Git diff 审查'],
     visibility: 'public',
   },
   ...projectKnowledge,

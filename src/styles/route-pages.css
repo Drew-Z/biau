@@ -1521,6 +1521,23 @@
   border-color: color-mix(in oklch, var(--green) 30%, transparent);
 }
 
+.detail-entry-note {
+  max-width: 72ch;
+  margin: var(--space-12, 12px) 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-8, 8px);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.detail-entry-note svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--amber);
+}
+
 .detail-page .link-badge:hover {
   transform: translateY(-2px);
   color: var(--ink);

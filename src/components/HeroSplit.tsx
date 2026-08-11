@@ -8,6 +8,7 @@ import { getGreeting, formatDateTime } from '../utils/time'
 interface HeroSplitProps {
   onProjectClick: (link: string) => void
   onProjectAction: (link: string) => void
+  onProjectStatus: (link: string) => void
 }
 
 const POEM_ROTATE_MS = 6300
@@ -15,7 +16,7 @@ const TITLE_SWITCH_DISTANCE = 120
 const TOUCH_TITLE_SWITCH_DISTANCE = 58
 const TOUCH_HORIZONTAL_BIAS = 1.18
 
-export function HeroSplit({ onProjectClick, onProjectAction }: HeroSplitProps) {
+export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: HeroSplitProps) {
   const { poems, projects } = heroContent
 
   return (
@@ -28,7 +29,12 @@ export function HeroSplit({ onProjectClick, onProjectAction }: HeroSplitProps) {
         <SystemStatus />
       </section>
 
-      <RightScrollCards projects={projects} onProjectClick={onProjectClick} onProjectAction={onProjectAction} />
+      <RightScrollCards
+        projects={projects}
+        onProjectClick={onProjectClick}
+        onProjectAction={onProjectAction}
+        onProjectStatus={onProjectStatus}
+      />
     </main>
   )
 }
