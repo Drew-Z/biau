@@ -236,6 +236,7 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 ### 3. Contracts
 
 - An explicit `ASSISTANT_MODEL_BASE_URL` wins and is normalized without a trailing slash.
+- Production Render uses the stable Cloudflare Pages project domain `https://biau.pages.dev/api/model-relay`; the visitor-facing custom domain is not a server-to-server relay base because its edge path produced bounded `502` responses before an upstream subrequest was registered.
 - An explicit `OPENAI_BASE_URL` remains a supported compatibility alias.
 - `https://api.openai.com/v1` is inferred only when `OPENAI_API_KEY` is present and `ASSISTANT_MODEL_API_KEY` is absent.
 - An explicit assistant key with no assistant/legacy base resolves to an empty string, so the channel is not configured.

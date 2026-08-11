@@ -86,7 +86,7 @@ CORS_ORIGIN=https://biau.playlab.eu.cc
 TRUST_PROXY=true
 DATABASE_URL=<公开助手匿名 session、turn、feedback 和 aggregate 数据库 URL>
 
-ASSISTANT_MODEL_BASE_URL=https://biau.playlab.eu.cc/api/model-relay
+ASSISTANT_MODEL_BASE_URL=https://biau.pages.dev/api/model-relay
 ASSISTANT_MODEL_API_KEY=<与 MODEL_RELAY_SHARED_TOKEN 相同>
 ASSISTANT_MODEL_NAME=grok-4.5
 ASSISTANT_MODEL_PROVIDER=cloudflare-model-relay
@@ -114,6 +114,8 @@ PUBLIC_WEB_SEARCH_MAX_RESULTS=5
 PUBLIC_WEB_FETCH_MAX_PAGES=3
 METRICS_ENABLED=false
 ```
+
+生产服务端 relay 固定使用 Cloudflare Pages 项目的稳定 `biau.pages.dev` 域名。`biau.playlab.eu.cc` 继续作为访客主站域名，但不再承担 Render 到 Pages Function 的服务端 relay 跳转；2026-08-12 的真实业务验收在该自定义域记录到三次 `502`，且同秒 Pages Functions 分析未登记 upstream subrequest。
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 

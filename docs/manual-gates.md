@@ -51,15 +51,17 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - 2026-08-12 已在 `207a5fe6` 上执行一次获批的站点业务问题：HTTP `200`，约 9.3 秒后以 `degraded/fallback` 结束，三次有界尝试的公开失败类别为 `upstream`；会话持久化与引用访问通过，但检索错误偏向 Legal RAG，未覆盖知航自身事实。根因是 Render Public API 缺少模型 base 环境配置，服务回退到不兼容的默认 upstream，而不是已经证明的供应商持续 `5xx`。
 - 模型 base 配置已补齐并重新部署；`/health` 与已认证非法模型请求的 `400` 合同通过，均未触达模型上游。仓库同时新增知航专属知识、别名、实体关系、排序权重和离线回归用例；`fdd733a8` 已部署到 Cloudflare Pages、Public API 与 RAG Orchestrator，版本化 Public RAG sync 成功，Supabase pgvector 的 vector/keyword/reranker readiness 全部通过，知识规模为 31 documents / 61 chunks / 166 entities / 231 relations。
 - `d1ec7adb` 已完成 Cloudflare Pages、Public API 与 RAG Orchestrator 全链生产部署。生产纯检索对同一知航问题返回 `site:public-assistant` 为第一引用，`candidateCount=60`、`citationCount=8`、`expandedEntityCount=47`，实际 reranker 模式为 `deterministic`，证明远端融合顺序修复生效。
-- 第二次获批业务验收已执行浏览器断网恢复：首次 stream 在到达 API 前被拦截，恢复后由用户动作显式重试，同一问题只到达 API 一次。最终生成仍以 `degraded` 结束；低敏日志仅支持 `failure_origin=public_api`、`http_status_class=5xx`、`attempts=3`，不能据此猜测或修改 streaming/input 协议。完整回答、移动端引用观察和桌面刷新持久化未通过；临时会话及其 turn/request 已删除。再次发送真实业务请求前仍需新的明确批准。
-- 本地获批古诗任务只证明候选主渠道曾成功生成，不能替代站点产品验收；生产端结论以当前 `d1ec7adb` 部署、纯检索结果和第二次获批业务请求的降级记录为准。
+- 第二次获批业务验收已执行浏览器断网恢复：首次 stream 在到达 API 前被拦截，恢复后由用户动作显式重试，同一问题只到达 API 一次。最终生成仍以 `degraded` 结束；旧日志只能给出 `public_api + 5xx`，不能据此猜测或修改 streaming/input 协议。临时会话及其 turn/request 已删除。
+- `65c8af15` 已部署新的低敏 relay 来源归因。第三次获批业务验收只产生 1 个站点 Request，检索正确返回 4 条站内证据和 3 条知航相关引用，但生成仍为 `degraded`。Render recovery 明确为 `relay_edge + 5xx`；Cloudflare zone 在同一时间窗记录 3 个 relay 动态 `502`，同秒 Pages Functions 为 success、0 error、0 upstream subrequest，未登记到模型上游。
+- Render relay base 已从访客自定义域切换为稳定 `https://biau.pages.dev/api/model-relay`，对应 `65c8af15` 配置部署已 live。该 Pages 域的未认证请求可到达 Function 并返回固定来源头，检查不触达模型；仍需新的明确批准才能再次发送真实业务问题。
+- 本地获批古诗任务只证明候选主渠道曾成功生成，不能替代站点产品验收；生产端仍保持“产品待验收”。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 
 ### Model and multimodal rollout
 
 - [x] Cloudflare 主上游 Secret 已更新，`MODEL_RELAY_ALLOWED_MODELS` 已收缩为单个已验证模型；不要把 URL 或 key 写入仓库和截图。
 - [x] Render public service 的主模型变量已更新；旧 fallback 模型和视觉模型变量已删除。
-- [x] Cloudflare Pages、Render Public API 与 RAG Orchestrator 已部署提交 `d1ec7adb`；`/health`、纯检索和不触达上游的 relay 请求合同通过。
+- [x] Cloudflare Pages、Render Public API 与 RAG Orchestrator 已部署提交 `65c8af15`；`/health`、纯检索和不触达上游的 relay 请求合同通过，Render relay base 已切换到稳定 Pages 域。
 - [ ] 图片理解保持关闭。只有再次获得用户明确批准，并且视觉模型通过一条真实图片业务问题后才配置 `ASSISTANT_VISION_MODEL`；不执行模型测活、逐模型探测或自动重试验收。
 
 ## Operator PostgreSQL 退役
@@ -83,15 +85,15 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 ## Supabase Data API 权限加固
 
-生产权限加固已于 2026-07-26 完成。仓库未使用浏览器端 Supabase client，应用通过服务端 Prisma 直连数据库；最近 API 日志也没有站点 `/rest/v1` 数据访问。
+生产权限加固已于 2026-07-26 完成。仓库未使用浏览器端 Supabase client，应用通过服务端 Prisma 直连数据库；最近 API 日志也没有站点 `/rest/v1` 数据访问。2026-08-12 只读复核发现后续迁移新增的 `PublicAssistantRequest`、`PublicAssistantAnswerRevision`、`PublicAssistantBranch` 尚未启用 RLS，原“全部启用”结论已漂移。
 
-- 剩余 25 张 `public` 表已全部启用 RLS。
+- 既有 25 张 `public` 表已启用 RLS；上述 3 张后续新增表需要独立迁移补齐。
 - `anon` / `authenticated` 已失去 public schema、table、sequence 与 function 权限。
 - `postgres` 创建未来 public 对象时不再自动授予 Data API 权限。
 - 两个 AI Daily 审计触发器函数已固定 `search_path` 并撤销公开执行。
 - Public、Studio 与 RAG 健康检查通过，受保护数据计数未变化。
 
-当前无 RLS policy 是服务器专用数据库的有意默认拒绝状态。未来如果引入 Supabase REST、GraphQL、Realtime、Edge Function 或浏览器/mobile client，必须先新建独立 Trellis 任务，按最小权限恢复 schema/object grant 并设计逐表 RLS policy；不得直接恢复 Supabase 的全表默认授权。完整 runbook 位于 `scripts/operations/postgres/data-api-hardening/README.md`。
+当前只读 grants 查询确认 `anon` / `authenticated` 对这 3 张表仍无 table privilege，因此没有形成 Data API 公开读取；但 RLS 漂移必须作为 defense-in-depth 缺口处理。不要直接在线执行 `ALTER TABLE`：先新建独立 Trellis 任务，补 migration、验证 Prisma 服务路径、运行 advisor 并准备回滚。未来如果引入 Supabase REST、GraphQL、Realtime、Edge Function 或浏览器/mobile client，仍必须按最小权限恢复 schema/object grant 并设计逐表 RLS policy。完整 runbook 位于 `scripts/operations/postgres/data-api-hardening/README.md`。
 
 ## Content Studio / AI Daily
 

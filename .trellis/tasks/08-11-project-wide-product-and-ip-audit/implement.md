@@ -136,9 +136,14 @@ Focused checks:
 - [x] Obtain a new explicit approval before replaying the same real business question; the earlier approval was consumed by the failed request.
 - [x] Deploy `d1ec7adb` across Cloudflare Pages, Public API and RAG Orchestrator, then verify production health and pure retrieval: `site:public-assistant` ranks first with deterministic reranking and no answer-generation request.
 - [x] Verify the browser recovery action by blocking the first stream before it reaches the API, restoring connectivity, and explicitly retrying; the approved question reaches the API exactly once, so the browser fault does not induce a provider failure or duplicate turn.
-- [ ] Complete the approved real request with a non-degraded model answer, verified citations, desktop refresh persistence and mobile observation. The latest request completed as `degraded` with low-sensitive origin `public_api` and status class `5xx`; full answer, mobile citation review and desktop refresh remain unaccepted.
+- [x] Deploy `65c8af15` across Cloudflare Pages, Public API and RAG Orchestrator, then classify the next approved failure as `relay_function`, `relay_edge`, or `relay_upstream` without provider/model/endpoint/request identifiers.
+- [x] Execute the third approved site question once. Production created exactly one Request/Turn/Revision, retrieval returned four site evidence items and three Beacon citations, but generation remained `degraded`; Cloudflare recorded three custom-domain relay `502` responses and zero matching upstream subrequests.
+- [x] Switch Render's relay base from the visitor custom domain to stable `https://biau.pages.dev/api/model-relay`, update deployment drift checks, and redeploy without sending another model request.
+- [ ] Complete the approved real request with a non-degraded model answer, verified citations, desktop refresh persistence and mobile observation. The latest request completed as `degraded` with low-sensitive origin `relay_edge` and status class `5xx`; full answer, mobile citation review and desktop refresh remain unaccepted.
 - [x] Record only low-sensitive evidence and mark the product `产品可用`, `待验收` or truthful degraded state.
-- [ ] Never turn this into a scheduled model probe.
+- [x] Never turn this into a scheduled model probe.
+
+Operational note: a local documentation-tool preflight accidentally ran one unrelated Smart Search connectivity chat and model-list request. It did not use the production assistant or create another site Turn, but it violated this task's no-probe boundary and must not be repeated.
 
 ### E3. AI Daily deterministic audit/fixes
 
@@ -183,6 +188,7 @@ Focused checks:
 - [x] Run desktop/mobile UI smoke and inspect no-overflow screenshots.
 - [x] Review `git diff --check` and ensure unrelated user changes are excluded; keep the locally failed `public/status/blog-semi-synthetic.json` snapshot unstaged.
 - [x] Update manual-gate documentation with only genuinely unresolved production actions.
+- [x] Record the post-migration RLS drift found on three internal assistant tables; `anon` / `authenticated` have no direct table grants, and remediation is deferred to a separate migration-backed security task.
 
 ## Files With Elevated Risk
 
