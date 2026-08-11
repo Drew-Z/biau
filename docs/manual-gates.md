@@ -49,14 +49,14 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - 不执行 ping、doctor、空 prompt 或逐模型测活；本轮批准只覆盖已经完成的有界候选选型，新的生产端到端请求仍需再次明确批准，并在完成后删除临时会话。
 - 2026-08-04 relay 诊断 revision `87210661` 已在 Cloudflare Pages 与 Render 进入生产；确定性检查、Render/Cloudflare health 与无认证 relay `401` 边界均通过。
 - 2026-08-12 已在 `059b74a2` 上执行一次获批的站点业务问题：HTTP `200`，站内检索返回合法证据且会话持久化通过，但三次有界生成尝试后仍为 `degraded/fallback`。随后已修正 Public API 的外部 RAG URL 错配，但未自动发送第二次真实请求。低敏 Render 恢复事件为 `provider_unavailable`，主、备 relay 的配置/鉴权合同已通过，失败仍处于上游 `5xx` 边界。
-- 本地获批古诗任务已证明当前主渠道可生成回答，但 Cloudflare 与 Render 新配置仍需按顺序重新部署后才能形成生产证据；不得用本地结果替代生产端到端验收。
+- 本地获批古诗任务已证明当前主渠道可生成回答。提交 `0df05c4` 已依次部署到 Cloudflare Pages 与 Render Public API；Render `/health` 返回 `200`，relay 无认证请求返回 `401`，已认证非法模型请求返回 `400`，且这些合同检查没有触达模型上游。生产回答、引用和会话体验仍需一条新的明确批准业务请求，不能用本地选型结果替代。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 
 ### Model and multimodal rollout
 
 - [x] Cloudflare 主上游 Secret 已更新，`MODEL_RELAY_ALLOWED_MODELS` 已收缩为单个已验证模型；不要把 URL 或 key 写入仓库和截图。
 - [x] Render public service 的主模型变量已更新；旧 fallback 模型和视觉模型变量已删除。
-- [ ] 先完成新的 Cloudflare Pages 部署，再部署 Render Public API；之后只检查 `/health` 和不触达上游的 relay 请求合同。
+- [x] Cloudflare Pages 与 Render Public API 已依次部署提交 `0df05c4`；`/health` 和不触达上游的 relay 请求合同通过。
 - [ ] 图片理解保持关闭。只有再次获得用户明确批准，并且视觉模型通过一条真实图片业务问题后才配置 `ASSISTANT_VISION_MODEL`；不执行模型测活、逐模型探测或自动重试验收。
 
 ## Operator PostgreSQL 退役
