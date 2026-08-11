@@ -82,11 +82,6 @@ const serviceContracts = [
       'ASSISTANT_MODEL_API_KEY',
       'ASSISTANT_MODEL_PROTOCOL',
       'ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE',
-      'ASSISTANT_MODEL_FALLBACK_BASE_URL',
-      'ASSISTANT_MODEL_FALLBACK_API_KEY',
-      'ASSISTANT_MODEL_FALLBACK_MODELS',
-      'ASSISTANT_MODEL_FALLBACK_PROVIDER',
-      'ASSISTANT_VISION_MODEL',
       'ASSISTANT_RAG_API_BASE_URL',
       'ASSISTANT_RAG_API_KEY',
       'PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS',
@@ -110,9 +105,6 @@ const serviceContracts = [
       ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE: 'off',
       ASSISTANT_MODEL_PROVIDER: 'cloudflare-model-relay',
       ASSISTANT_MODEL_NAME: 'grok-4.5',
-      ASSISTANT_MODEL_FALLBACK_MODELS: 'gemini-3.1-pro-preview,gpt-4.1',
-      ASSISTANT_MODEL_FALLBACK_PROVIDER: 'grok-4.5-channel-relay',
-      ASSISTANT_VISION_MODEL: 'gpt-4.1',
       PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS: '45000',
       PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS: '20000',
       PUBLIC_ASSISTANT_VISION_TIMEOUT_MS: '12000',
@@ -126,6 +118,13 @@ const serviceContracts = [
       PUBLIC_WEB_SEARCH_MAX_RESULTS: '5',
       PUBLIC_WEB_FETCH_MAX_PAGES: '3',
     },
+    forbiddenEnv: [
+      'ASSISTANT_MODEL_FALLBACK_BASE_URL',
+      'ASSISTANT_MODEL_FALLBACK_API_KEY',
+      'ASSISTANT_MODEL_FALLBACK_MODELS',
+      'ASSISTANT_MODEL_FALLBACK_PROVIDER',
+      'ASSISTANT_VISION_MODEL',
+    ],
     requiredStart: 'npm run prisma:migrate && npm run server:start',
     requiredHealth: '/health',
   },
@@ -273,6 +272,12 @@ function checkRenderBlueprint(renderText) {
       }
     }
 
+    for (const envKey of service.forbiddenEnv ?? []) {
+      if (block.includes(`key: ${envKey}`)) {
+        issues.push(`${service.name} 当前 Blueprint 不应强制设置可选 env：${envKey}`)
+      }
+    }
+
     if (!['public', 'studio'].includes(service.mode) && block.includes('key: TRUST_PROXY')) {
       issues.push(`${service.name} 不应设置 TRUST_PROXY；该代理信任配置只属于接收公开代理流量的服务。`)
     }
@@ -329,15 +334,15 @@ async function main() {
       'MODEL_RELAY_SHARED_TOKEN=',
       'MODEL_RELAY_UPSTREAM_BASE_URL=',
       'MODEL_RELAY_UPSTREAM_API_KEY=',
-      'MODEL_RELAY_ALLOWED_MODELS=grok-4.5,gemini-3.1-pro-preview,gpt-4.1',
+      'MODEL_RELAY_ALLOWED_MODELS=grok-4.5',
       'MODEL_RELAY_TIMEOUT_MS=50000',
       'PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS=20000',
       'ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off',
-      'ASSISTANT_MODEL_FALLBACK_BASE_URL=https://biau.playlab.eu.cc/api/model-relay/fallback',
+      'ASSISTANT_MODEL_FALLBACK_BASE_URL=',
       'ASSISTANT_MODEL_FALLBACK_API_KEY=',
-      'ASSISTANT_MODEL_FALLBACK_MODELS=gemini-3.1-pro-preview,gpt-4.1',
-      'ASSISTANT_MODEL_FALLBACK_PROVIDER=grok-4.5-channel-relay',
-      'ASSISTANT_VISION_MODEL=gpt-4.1',
+      'ASSISTANT_MODEL_FALLBACK_MODELS=',
+      'ASSISTANT_MODEL_FALLBACK_PROVIDER=',
+      'ASSISTANT_VISION_MODEL=',
       'PUBLIC_ASSISTANT_VISION_TIMEOUT_MS=12000',
       'PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS=800',
       'PUBLIC_ASSISTANT_RETENTION_DAYS=30',
@@ -369,13 +374,12 @@ async function main() {
       'PUBLIC_ASSISTANT_PROXY_TIMEOUT_MS=55000',
       'MODEL_RELAY_SHARED_TOKEN',
       'MODEL_RELAY_UPSTREAM_BASE_URL',
-      'MODEL_RELAY_ALLOWED_MODELS=grok-4.5,gemini-3.1-pro-preview,gpt-4.1',
+      'MODEL_RELAY_ALLOWED_MODELS=grok-4.5',
       'POST /api/model-relay/responses',
       'POST /api/model-relay/fallback/responses',
       'PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS=20000',
-      'ASSISTANT_MODEL_FALLBACK_BASE_URL=https://biau.playlab.eu.cc/api/model-relay/fallback',
-      'ASSISTANT_MODEL_FALLBACK_MODELS=gemini-3.1-pro-preview,gpt-4.1',
-      'ASSISTANT_VISION_MODEL=gpt-4.1',
+      '当前生产只启用已通过获批古诗生成任务的 `grok-4.5` Responses 主通道',
+      '`ASSISTANT_VISION_MODEL` 留空',
       'PUBLIC_ASSISTANT_VISION_TIMEOUT_MS=12000',
       'Planner 只使用主通道',
       '`/health` 只检查是否至少存在一套完整配置',

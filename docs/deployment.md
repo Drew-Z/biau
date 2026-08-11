@@ -43,15 +43,15 @@ VITE_AI_DAILY_API_BASE_URL=<Studio Render URL>
 MODEL_RELAY_SHARED_TOKEN=<Cloudflare 与 Render 共享的至少 32 字符随机 server-only token>
 MODEL_RELAY_UPSTREAM_BASE_URL=<获批第一套渠道的 Responses base URL>
 MODEL_RELAY_UPSTREAM_API_KEY=<获批第一套渠道的 server-only key>
-MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL=<获批独立备用渠道的 Responses base URL>
-MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY=<获批独立备用渠道的 server-only key>
-MODEL_RELAY_ALLOWED_MODELS=grok-4.5,gemini-3.1-pro-preview,gpt-4.1
+MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL=
+MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY=
+MODEL_RELAY_ALLOWED_MODELS=grok-4.5
 MODEL_RELAY_TIMEOUT_MS=50000
 ```
 
 `PUBLIC_ASSISTANT_API_BASE_URL`、proxy timeout 和 `MODEL_RELAY_*` 都是 Functions 的服务端变量，不会进入 Vite bundle。URL、上游 key 与共享 token 使用 Cloudflare Secret 类型；模型白名单与 timeout 可以使用普通服务端变量。不要创建 `VITE_*` 模型、搜索、RAG、数据库或 Token 变量。
 
-`POST /api/model-relay/responses` 和 `POST /api/model-relay/fallback/responses` 只接受共享 bearer token、JSON Responses 请求和上述模型。两个路由分别固定到主/备用上游，不接收浏览器 Cookie、任意上游 URL、任意模型或未知顶层字段；非 2xx 上游正文会被丢弃，仅保留固定枚举供 Render 映射为低敏故障类别。SSE 直接流式转发并保留取消传播、总时限、512 KB 请求上限和 512 KB 响应上限。
+`POST /api/model-relay/responses` 和可选的 `POST /api/model-relay/fallback/responses` 只接受共享 bearer token、JSON Responses 请求和上述白名单模型。两个路由分别固定到主/备用上游，不接收浏览器 Cookie、任意上游 URL、任意模型或未知顶层字段；备用 Secret 未配置时 fallback 路由会 fail closed。非 2xx 上游正文会被丢弃，仅保留固定枚举供 Render 映射为低敏故障类别。SSE 直接流式转发并保留取消传播、总时限、512 KB 请求上限和 512 KB 响应上限。
 
 发布后验证：
 
@@ -92,11 +92,6 @@ ASSISTANT_MODEL_NAME=grok-4.5
 ASSISTANT_MODEL_PROVIDER=cloudflare-model-relay
 ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
-ASSISTANT_MODEL_FALLBACK_BASE_URL=https://biau.playlab.eu.cc/api/model-relay/fallback
-ASSISTANT_MODEL_FALLBACK_API_KEY=<与 MODEL_RELAY_SHARED_TOKEN 相同>
-ASSISTANT_MODEL_FALLBACK_MODELS=gemini-3.1-pro-preview,gpt-4.1
-ASSISTANT_MODEL_FALLBACK_PROVIDER=grok-4.5-channel-relay
-ASSISTANT_VISION_MODEL=gpt-4.1
 
 ASSISTANT_RAG_API_BASE_URL=<RAG Render URL>
 ASSISTANT_RAG_API_KEY=<与 RAG_PUBLIC_API_KEY 相同>
@@ -124,9 +119,11 @@ METRICS_ENABLED=false
 
 `ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 Responses relay 支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
 
-公开助手保留现有 `ASSISTANT_MODEL_*` 作为主通道。四个 `ASSISTANT_MODEL_FALLBACK_*` 变量必须完整填写才会启用备用链；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。冷启动质量顺序为 `grok-4.5`、`gemini-3.1-pro-preview`、`gpt-4.1`，真实回答结果只通过进程内被动信誉和熔断调整后续请求顺序，不在打开助手或健康检查时测活。Planner 只使用主通道，失败后使用确定性 Planner；最终回答的第 1 次尝试使用主通道，第 2/3 次才使用备用模型。主通道和备用通道通过两个独立的同源 Cloudflare relay 路由访问各自固定上游：主路由是 `/api/model-relay`，备用路由是 `/api/model-relay/fallback`。这样认证、网络、固定上游和供应商 5xx 故障不会被错误地视为同一故障域。
+当前生产只启用已通过获批古诗生成任务的 `grok-4.5` Responses 主通道。运行时仍保留独立备用链能力，但只有四个 `ASSISTANT_MODEL_FALLBACK_*` 变量完整填写时才会启用；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。未通过业务任务的候选模型不进入生产链，避免认证失败或上游故障延长访客等待。真实回答结果只通过进程内被动信誉和熔断调整后续请求顺序，不在打开助手或健康检查时测活。Planner 只使用主通道，失败后使用确定性 Planner；配置独立备用链后，最终回答才会在共享绝对截止时间内切换备用模型。
 
-图片问题最多携带一张浏览器端压缩后的 JPEG、PNG 或 WebP。Cloudflare 只对 `/chat/public`、`/chat/public/stream` 和固定模型 relay 放宽到 512 KB；历史、反馈和分支接口仍保持 32 KB。Render 校验 data URL、Base64、文件魔数和 256 KB 解码后上限，只用 SHA-256 digest 参与请求幂等，不保存原图。LangGraph 的图片理解节点通过已配置备用渠道中的 `gpt-4.1` 生成最多 4000 字的不可信视觉观察，再交给原规划/检索/回答链；失败时明确降级，不让文本模型猜图。
+未来启用备用链时，在 Render 额外填写 `ASSISTANT_MODEL_FALLBACK_BASE_URL`、`ASSISTANT_MODEL_FALLBACK_API_KEY`、`ASSISTANT_MODEL_FALLBACK_MODELS` 和 `ASSISTANT_MODEL_FALLBACK_PROVIDER`；在 Cloudflare 同时填写备用上游两个 Secret，并把获批模型加入 `MODEL_RELAY_ALLOWED_MODELS`。这些值默认留空，不属于当前生产必填项。
+
+图片问题最多携带一张浏览器端压缩后的 JPEG、PNG 或 WebP。Cloudflare 只对 `/chat/public`、`/chat/public/stream` 和固定模型 relay 放宽到 512 KB；历史、反馈和分支接口仍保持 32 KB。Render 校验 data URL、Base64、文件魔数和 256 KB 解码后上限，只用 SHA-256 digest 参与请求幂等，不保存原图。当前没有经过业务任务验证的视觉模型，因此 `ASSISTANT_VISION_MODEL` 留空：图片问题会准确提示图片理解暂不可用，不会让文本模型猜测图片内容。未来只有在一个已配置备用渠道中的视觉模型通过获批图片任务后才启用该变量。
 
 MCP 不是图片能力本身，因此同一 Render 进程内不再增加一次 MCP 网络自调用。图片理解实现保留 typed tool 边界；只有未来其他产品需要复用时，才在这一边界外增加 MCP facade。
 

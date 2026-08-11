@@ -18,7 +18,7 @@
 - `auto` is the default product mode. The compact scope selector exposes `site` and `web` only as explicit user overrides when automatic tool selection is unsuitable; they must not return as equal-weight primary navigation. Combined site/web research runs concurrently.
 - Evidence/query rewrite recovery is bounded to one retry. Generation uses one initial primary-channel attempt and at most two retries across the whole configured channel chain. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; an independent fallback chain reserves minimum future-attempt windows without extending that deadline. Cancellation stops active work and all future attempts.
 - Generation channel order is passively adaptive per service process: the configured quality order is the cold-start baseline, while real answer attempts build bounded, time-decayed success/failure reputation and first-activity latency. A recently stable channel stays preferred instead of yielding immediately to a repeatedly failing higher-priority channel. Failures still open a bounded in-memory circuit; cooldown expiry grants one real request a half-open lease while concurrent requests continue through known healthy channels. The request freezes its channel order at start so concurrent outcomes cannot reshuffle an active attempt chain. Opening the assistant, `/health`, and ranking functions never call a model or enumerate a provider catalog. Process restarts clear this ephemeral health state, and stale reputation decays back toward configured quality order.
-- The production cold-start order is `grok-4.5`, `gemini-3.1-pro-preview`, then `gpt-4.1`. The latter two share one independent fallback failure domain; total generation attempts remain capped at three.
+- Production currently enables only the approved `grok-4.5` Responses primary channel. The runtime keeps the bounded independent fallback capability, but no fallback model enters production until its whole channel passes an approved real business task; total generation attempts remain capped at three when fallback is configured.
 - When every configured channel is open or already leased for recovery, routing returns no provider candidate and the agent emits its bounded degraded response immediately. It does not deliberately call a channel that is still inside its cooldown.
 - Primary configuration/authentication/endpoint, timeout/network, 408/425/429/5xx, empty, or invalid failures may advance to an independent fallback. Permanent request errors, policy refusal, and cancellation never switch channels. Multiple fallback models share one failure domain: authentication or network failure stops that provider, while model-specific endpoint/rate-limit/upstream/empty/invalid failure may advance to the next configured fallback model.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
@@ -93,7 +93,7 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 - Rate limiting uses the request IP in process memory but never persists an IP address. Buckets are bounded and a client-provided session ID cannot bypass chat or feedback limits.
 - Persist only bounded anonymous session/turn/feedback data for 30 days. Long-lived aggregates store topic fingerprints and counters rather than raw questions or answers.
 - A request may carry one JPEG, PNG, or WebP attachment. The browser resizes/compresses it, while the server revalidates data URL, Base64, decoded bytes, and file signature with a 256 KB decoded limit. Original image bytes are request-scoped only; persistence and idempotency retain only the normalized attachment digest, kind, and MIME type.
-- The LangGraph `understand_image` node calls `ASSISTANT_VISION_MODEL=gpt-4.1` through an already configured fallback channel and treats the bounded result as untrusted observation. Image text cannot select tools or change policy. Vision failure is explicit and does not let a text-only path guess unseen content.
+- When configured, the LangGraph `understand_image` node calls `ASSISTANT_VISION_MODEL` through an already configured fallback channel and treats the bounded result as untrusted observation. Production currently leaves this variable empty until a vision model passes an approved image task. Image text cannot select tools or change policy; missing or failed vision is explicit and never lets a text-only path guess unseen content.
 - The in-process typed vision tool is authoritative. MCP may wrap this boundary for future cross-product reuse, but the public service must not add an MCP self-network hop solely to call its own tool.
 - Database absence degrades persistence without making the public route unusable.
 
@@ -125,14 +125,14 @@ Correct: request Basic Search leads with generated content disabled, then fetch 
 
 ### 5. Good / Base / Bad Cases
 
-- Good: a compressed screenshot is validated, observed through `gpt-4.1`, then the untrusted observation enters the existing plan/research/generate/verify graph.
+- Good: a compressed screenshot is validated, observed through an approved configured vision model, then the untrusted observation enters the existing plan/research/generate/verify graph.
 - Base: a text-only request omits `attachment` entirely and retains its legacy request hash and behavior.
 - Bad: persist the data URL, trust instructions rendered inside an image, call an arbitrary image endpoint, or let a text-only fallback claim it saw the image.
 
 ### 6. Tests Required
 
 - Image checks assert MIME/signature/size validation, canonicalization, digest-only hashing, legacy no-image hash compatibility, bounded Responses `input_image`, cancellation, timeout, injection isolation, and no model continuation after vision failure.
-- Cloudflare checks assert streaming bounded reads, a 512 KB chat/relay request ceiling, retained 32 KB non-chat ceilings, fixed upstream routing, and the three-model allowlist.
+- Cloudflare checks assert streaming bounded reads, a 512 KB chat/relay request ceiling, retained 32 KB non-chat ceilings, fixed upstream routing, and the configured bounded model allowlist.
 - UI checks assert preview/remove, actual encoded Blob MIME, retry/cancel preservation, session-switch clearing, no localStorage image persistence, 44px controls, and compact/fullscreen 320/390/430 containment.
 
 ### 7. Wrong vs Correct
@@ -289,6 +289,6 @@ npm.cmd run cf-model-relay:check
 
 Wrong: expose a generic authenticated proxy, accept caller-provided URLs/models, reuse browser headers, return provider error text, buffer SSE, or put the upstream key in a `VITE_*` variable.
 
-Correct: one secret-authenticated route, one fixed HTTPS Responses upstream, a three-model allowlist, fresh headers, bounded streaming, redacted errors, and Render-owned Agent/RAG behavior.
+Correct: one secret-authenticated route, one fixed HTTPS Responses upstream, a bounded allowlist containing only approved models, fresh headers, bounded streaming, redacted errors, and Render-owned Agent/RAG behavior.
 
 These checks use local fixtures only. They must not probe a live model, search, embedding, Qdrant, or reranker provider. External acceptance uses one user-approved business question after deployment.

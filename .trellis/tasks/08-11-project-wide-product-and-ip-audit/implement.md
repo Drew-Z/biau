@@ -128,6 +128,7 @@ Focused checks:
 ### E2. Public assistant manual product gate
 
 - [x] Prepare one real business request and acceptance sheet; ask for explicit approval immediately before execution.
+- [x] Use the user-approved bounded poetry task to verify candidate generation channels; keep only the successful `grok-4.5` Responses channel in the production configuration and leave unverified fallback/vision routes disabled.
 - [ ] Verify recovery by blocking a browser request before it reaches the API, restoring connectivity, and then completing the approved real request; observe desktop/mobile answer, citations and refresh persistence without inducing provider failure.
 - [x] Record only low-sensitive evidence and mark the product `产品可用`, `待验收` or truthful degraded state.
 - [ ] Never turn this into a scheduled model probe.

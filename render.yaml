@@ -29,16 +29,6 @@ services:
         value: responses
       - key: ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE
         value: "off"
-      - key: ASSISTANT_MODEL_FALLBACK_BASE_URL
-        sync: false
-      - key: ASSISTANT_MODEL_FALLBACK_API_KEY
-        sync: false
-      - key: ASSISTANT_MODEL_FALLBACK_MODELS
-        value: gemini-3.1-pro-preview,gpt-4.1
-      - key: ASSISTANT_MODEL_FALLBACK_PROVIDER
-        value: grok-4.5-channel-relay
-      - key: ASSISTANT_VISION_MODEL
-        value: gpt-4.1
       - key: ASSISTANT_RAG_API_BASE_URL
         sync: false
       - key: ASSISTANT_RAG_API_KEY
