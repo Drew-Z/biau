@@ -342,6 +342,7 @@ Correct: carry the generated knowledge prior into remote fusion, execute one sha
 ### 6. Tests Required
 
 - `npm.cmd run assistant:public-model-check` asserts origin/status classification and scans the serialized record for forbidden fields.
+- `npm.cmd run server:build` is required because the root Vite build does not compile the independent `server/tsconfig.json` project.
 - Production verification uses one user-approved business request; scheduled probes and provider catalog calls remain forbidden.
 
 ### 7. Wrong vs Correct

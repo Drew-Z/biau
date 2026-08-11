@@ -58,7 +58,7 @@ function classifyFailureOrigin(
   if (fallback === 'empty' || fallback === 'invalid') return 'response'
   if (diagnostic?.relayFailure) return 'relay_upstream'
   if (diagnostic?.kind === 'network_error' || diagnostic?.kind === 'timeout') return 'network'
-  if (diagnostic?.kind === 'empty_response' || diagnostic?.kind === 'invalid_response') return 'response'
+  if (diagnostic?.kind === 'empty_response') return 'response'
   return 'public_api'
 }
 

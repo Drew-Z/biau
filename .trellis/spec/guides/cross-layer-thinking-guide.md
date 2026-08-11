@@ -125,6 +125,8 @@ After implementation:
       a local scorer test does not prove SQL/vector/reranker ordering parity
 - [ ] Verified readiness and response metadata describe behavior that actually ran
       (`reranked`, fallback mode, provider mode), not a hard-coded capability claim
+- [ ] Ran each independently configured TypeScript project; a successful frontend
+      Vite build does not prove a separate backend `tsconfig.json` compiles
 
 **Real-world example**: The public assistant's local knowledge eval correctly
 ranked `site:public-assistant` first, but Supabase pgvector merged saturated
