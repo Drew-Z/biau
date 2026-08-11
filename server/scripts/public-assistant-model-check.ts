@@ -117,10 +117,32 @@ assert.deepEqual(safeRecoveryRecord, {
   event: 'public-assistant-recovery',
   state: 'degraded',
   failure_class: 'access_denied',
+  failure_origin: 'public_api',
+  http_status_class: '4xx',
   attempts: 1,
   duration_bucket: '1s_to_5s',
 })
 assert.doesNotMatch(JSON.stringify(safeRecoveryRecord), /httpStatus|model|provider|endpoint|question|request|session/iu)
+assert.deepEqual(buildPublicAssistantRecoveryLogRecord({
+  recovery: { state: 'degraded', attempts: 3, failureClass: 'upstream' },
+  diagnostic: {
+    kind: 'http_status',
+    httpStatus: 503,
+    relayFailure: 'provider_rejected',
+    attemptedEndpoints: 1,
+    timeoutMs: 1_000,
+  },
+  failureClass: 'upstream',
+  durationMs: 2_700,
+}), {
+  event: 'public-assistant-recovery',
+  state: 'degraded',
+  failure_class: 'provider_unavailable',
+  failure_origin: 'relay_upstream',
+  http_status_class: '5xx',
+  attempts: 3,
+  duration_bucket: '1s_to_5s',
+})
 assert.equal(buildPublicAssistantRecoveryLogRecord({
   recovery: { state: 'none', attempts: 1 },
   durationMs: 20,

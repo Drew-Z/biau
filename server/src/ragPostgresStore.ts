@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { Pool, type PoolClient } from 'pg'
 import { env } from './env.js'
 import { publicKnowledgeV2, retrieveKnowledge } from './knowledge.js'
+import { isExternalRerankerConfigured, rerankRagCandidates } from './ragReranker.js'
 import {
   embedText,
   embedTexts,
@@ -12,7 +13,7 @@ import {
 } from './ragEmbeddings.js'
 import type { AssistantScope, Citation, RagChunkCitation, RagHealthResponse, RagRetrievePayload, RagRetrieveResponse, RagSyncResponse } from './types.js'
 
-interface CandidateRow {
+export interface PostgresRagCandidateRow {
   chunk_id: string
   document_id: string
   section: string
@@ -81,6 +82,7 @@ export async function getPostgresRagHealth(): Promise<RagHealthResponse> {
       vectorReady: embeddedChunkCount > 0,
       keywordReady: chunkCount > 0,
       rerankerReady: true,
+      rerankerMode: isExternalRerankerConfigured() ? 'provider' : 'deterministic',
       lastSyncAt: row?.last_sync_at ?? null,
       documentCount: readCount(row?.document_count),
       chunkCount,
@@ -116,7 +118,18 @@ export async function retrievePostgresRagContext(
     fetchEntityCandidates(pool, visibility, patterns, candidateLimit),
   ])
 
-  const candidates = mergeCandidates([...keywordRows, ...vectorRows, ...entityRows])
+  const fused = fusePostgresRagCandidates({
+    keywordRows,
+    vectorRows,
+    entityRows,
+    localChunks: localSignal.chunks,
+  })
+  const reranked = await rerankRagCandidates(payload.query, fused.map((candidate) => ({
+    id: candidate.id,
+    text: [candidate.citation.title, candidate.section, candidate.text].join('\n'),
+    score: candidate.score,
+  })))
+  const candidates = applyPostgresRerankOrder(fused, reranked.candidates, reranked.mode)
   const citations = buildCitations(candidates, limit)
   const citationIds = new Set(citations.map((citation) => citation.id))
   const chunks = candidates
@@ -140,7 +153,8 @@ export async function retrievePostgresRagContext(
       retrievalMode: 'agentic-hybrid-pgvector',
       store: POSTGRES_STORE_NAME,
       candidateCount: candidates.length,
-      reranked: true,
+      reranked: candidates.length > 1,
+      rerankerMode: reranked.mode,
       sufficient: sufficiency === 'enough',
       sufficiency,
       fallbackReason: sufficiency === 'none' ? 'no_public_context' : null,
@@ -345,7 +359,7 @@ async function syncRelations(client: PoolClient) {
 
 async function fetchKeywordCandidates(pool: Pool, visibility: AssistantScope[], patterns: string[], limit: number) {
   if (patterns.length === 0) return []
-  const result = await pool.query<CandidateRow>(
+  const result = await pool.query<PostgresRagCandidateRow>(
     `
       select
         c.id as chunk_id,
@@ -387,7 +401,7 @@ async function fetchVectorCandidates(pool: Pool, visibility: AssistantScope[], q
   if (!embedding) return []
   modelCalls.count += embedding.modelCalls
   try {
-    const result = await pool.query<CandidateRow>(
+    const result = await pool.query<PostgresRagCandidateRow>(
       `
         select
           c.id as chunk_id,
@@ -450,7 +464,7 @@ async function fetchEntityCandidates(pool: Pool, visibility: AssistantScope[], p
     }
   }
   if (documentIds.size === 0) return []
-  const result = await pool.query<CandidateRow>(
+  const result = await pool.query<PostgresRagCandidateRow>(
     `
       select
         c.id as chunk_id,
@@ -476,31 +490,45 @@ async function fetchEntityCandidates(pool: Pool, visibility: AssistantScope[], p
   return result.rows
 }
 
-function mergeCandidates(rows: CandidateRow[]) {
+interface PostgresRagCandidate {
+  id: string
+  documentId: string
+  section: string
+  text: string
+  score: number
+  reason: string
+  citation: Citation
+}
+
+const POSTGRES_SIGNAL_WEIGHTS = {
+  keyword: 0.35,
+  vector: 0.4,
+  entity: 0.25,
+} as const
+
+export function fusePostgresRagCandidates(input: {
+  keywordRows: PostgresRagCandidateRow[]
+  vectorRows: PostgresRagCandidateRow[]
+  entityRows: PostgresRagCandidateRow[]
+  localChunks: Array<Pick<RagChunkCitation, 'id' | 'score'>>
+}) {
   const byChunk = new Map<
     string,
-    {
-      id: string
-      documentId: string
-      section: string
-      text: string
-      score: number
-      reason: string
-      citation: Citation
-    }
+    PostgresRagCandidate & { signalScore: number; reasons: Set<string> }
   >()
-  for (const row of rows) {
-    const score = normalizeScore(row.score)
+  const addSignal = (row: PostgresRagCandidateRow, weight: number) => {
+    const signalScore = normalizeScore(row.score) * weight
     const existing = byChunk.get(row.chunk_id)
-    const reason = existing && !existing.reason.includes(row.reason) ? `${existing.reason}+${row.reason}` : row.reason
-    if (!existing || score > existing.score) {
+    if (!existing) {
       byChunk.set(row.chunk_id, {
         id: row.chunk_id,
         documentId: row.document_id,
         section: row.section,
         text: row.text,
-        score,
-        reason,
+        score: 0,
+        reason: row.reason,
+        signalScore,
+        reasons: new Set([row.reason]),
         citation: {
           id: row.document_id,
           title: row.title,
@@ -511,13 +539,45 @@ function mergeCandidates(rows: CandidateRow[]) {
         },
       })
     } else {
-      existing.reason = reason
+      existing.signalScore += signalScore
+      existing.reasons.add(row.reason)
     }
   }
-  return Array.from(byChunk.values()).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, 'zh-CN'))
+
+  input.keywordRows.forEach((row) => addSignal(row, POSTGRES_SIGNAL_WEIGHTS.keyword))
+  input.vectorRows.forEach((row) => addSignal(row, POSTGRES_SIGNAL_WEIGHTS.vector))
+  input.entityRows.forEach((row) => addSignal(row, POSTGRES_SIGNAL_WEIGHTS.entity))
+
+  const localScores = new Map(input.localChunks.map((chunk) => [chunk.id, normalizeScore(chunk.score)]))
+  return Array.from(byChunk.values()).map(({ signalScore, reasons, ...candidate }) => ({
+    ...candidate,
+    score: normalizeScore(Math.min(1, signalScore) * 0.65 + (localScores.get(candidate.id) ?? 0) * 0.35),
+    reason: [...reasons, ...(localScores.has(candidate.id) ? ['local-semantic-prior'] : [])].join('+'),
+  })).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, 'zh-CN'))
 }
 
-function buildCitations(candidates: ReturnType<typeof mergeCandidates>, limit: number) {
+function applyPostgresRerankOrder(
+  candidates: PostgresRagCandidate[],
+  reranked: Array<{ id: string; score: number }>,
+  mode: 'provider' | 'deterministic',
+) {
+  const byId = new Map(candidates.map((candidate) => [candidate.id, candidate]))
+  const ordered: PostgresRagCandidate[] = []
+  for (const item of reranked) {
+    const candidate = byId.get(item.id)
+    if (!candidate) continue
+    ordered.push({
+      ...candidate,
+      score: normalizeScore(item.score),
+      reason: `${candidate.reason}+${mode}-rerank`,
+    })
+    byId.delete(item.id)
+  }
+  ordered.push(...byId.values())
+  return ordered
+}
+
+function buildCitations(candidates: PostgresRagCandidate[], limit: number) {
   const citations: Citation[] = []
   const seen = new Set<string>()
   for (const candidate of candidates) {

@@ -26,6 +26,8 @@ export interface PublicAssistantRecoveryLogRecord {
   event: 'public-assistant-recovery'
   state: 'recovered' | 'degraded'
   failure_class: PublicAssistantOperationalFailureClass
+  failure_origin: 'configuration' | 'public_api' | 'relay_upstream' | 'network' | 'response'
+  http_status_class?: `${number}xx`
   attempts: 1 | 2 | 3
   duration_bucket: PublicAssistantRecoveryDurationBucket
 }
@@ -41,9 +43,28 @@ export function buildPublicAssistantRecoveryLogRecord(input: {
     event: 'public-assistant-recovery',
     state: input.recovery.state,
     failure_class: classifyOperationalFailure(input.diagnostic, input.failureClass),
+    failure_origin: classifyFailureOrigin(input.diagnostic, input.failureClass),
+    ...httpStatusClass(input.diagnostic?.httpStatus),
     attempts: normalizeAttempts(input.recovery.attempts),
     duration_bucket: recoveryDurationBucket(input.durationMs),
   }
+}
+
+function classifyFailureOrigin(
+  diagnostic?: ProviderDiagnostic,
+  fallback?: PublicAssistantRecoveryFailureClass,
+): PublicAssistantRecoveryLogRecord['failure_origin'] {
+  if (fallback === 'not_configured') return 'configuration'
+  if (fallback === 'empty' || fallback === 'invalid') return 'response'
+  if (diagnostic?.relayFailure) return 'relay_upstream'
+  if (diagnostic?.kind === 'network_error' || diagnostic?.kind === 'timeout') return 'network'
+  if (diagnostic?.kind === 'empty_response' || diagnostic?.kind === 'invalid_response') return 'response'
+  return 'public_api'
+}
+
+function httpStatusClass(status: number | undefined) {
+  if (!Number.isInteger(status) || status! < 100 || status! > 599) return {}
+  return { http_status_class: `${Math.floor(status! / 100)}xx` as `${number}xx` }
 }
 
 export function logPublicAssistantRecovery(input: Parameters<typeof buildPublicAssistantRecoveryLogRecord>[0]) {

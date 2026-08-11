@@ -264,6 +264,92 @@ Wrong: use a global default base before knowing whether the credential belongs t
 
 Correct: pair an explicit assistant credential with an explicit base, preserve the legacy OpenAI default only for the legacy OpenAI credential, and otherwise fail closed as `not_configured`.
 
+## Scenario: Production Retrieval Fusion Parity
+
+### 1. Scope / Trigger
+
+- Applies whenever public knowledge retrieval uses a remote store such as Supabase pgvector instead of the deterministic in-process knowledge scorer.
+
+### 2. Signatures
+
+- `retrieveKnowledge(query, limit) -> KnowledgeRetrievalResult` owns the deterministic semantic prior derived from the versioned public knowledge asset.
+- `fusePostgresRagCandidates({ keywordRows, vectorRows, entityRows, localChunks }) -> PostgresRagCandidate[]` combines remote keyword, vector, entity/relation, and deterministic prior signals without collapsing them to one maximum score.
+- `rerankRagCandidates(query, candidates) -> { candidates, mode: 'provider' | 'deterministic' }` is the final bounded ordering stage for both pgvector and Qdrant retrieval.
+
+### 3. Contracts
+
+- Keyword, vector, and entity/relation signals remain separately weighted and additive; one saturated signal cannot erase evidence from the other retrieval paths.
+- The deterministic knowledge scorer contributes a bounded prior so product-specific aliases and entities in the generated asset survive the remote-store boundary.
+- Every Postgres retrieval actually runs the shared reranker. `meta.reranked` and `meta.rerankerMode` describe executed behavior, never assumed readiness.
+- Health exposes `rerankerMode: provider` only when the external reranker is configured; otherwise deterministic reranking remains ready and is reported accurately.
+
+### 4. Validation & Error Matrix
+
+- External reranker configured and successful -> provider order, `rerankerMode=provider`.
+- External reranker absent, rejected, timed out, or invalid -> deterministic order, `rerankerMode=deterministic`.
+- Remote vector embedding unavailable -> keyword/entity/local-prior retrieval continues; no false provider-rerank claim.
+- Product-specific question with generic technology terms -> the named product document must outrank generic articles when the local knowledge contract does so.
+
+### 5. Good / Base / Bad Cases
+
+- Good: a BIAU Beacon Agentic RAG question ranks `site:public-assistant` before generic Agentic RAG and Legal RAG articles in local and pgvector paths.
+- Base: the external reranker is not configured, so deterministic reranking preserves the same product-specific prior and reports that mode.
+- Bad: each signal is normalized to `1`, the merge keeps only `max(score)`, and tied chunks fall back to lexical IDs that place a generic blog before the named product.
+
+### 6. Tests Required
+
+- `npm.cmd run assistant:eval` asserts the deterministic knowledge asset ranks the named product for the approved acceptance question with zero model calls.
+- `npm.cmd run assistant:hybrid-contract` reproduces saturated keyword/vector candidates plus an entity match and proves Postgres fusion ranks `site:public-assistant` first.
+- `npm.cmd run assistant:rag-smoke` asserts retrieval metadata reports the actual reranker mode and bounded public-only candidates.
+
+### 7. Wrong vs Correct
+
+Wrong: validate only `searchAssistantKnowledge()` in the frontend data module, then assume pgvector SQL, signal fusion, and production reranking preserve the same order.
+
+Correct: carry the generated knowledge prior into remote fusion, execute one shared reranker contract, expose its actual mode, and regression-test the production fusion layer with the same product-specific question.
+
+## Scenario: Low-Sensitivity Recovery Origin Diagnostics
+
+### 1. Scope / Trigger
+
+- Applies when a public assistant request recovers or degrades after a model-channel failure.
+
+### 2. Signatures
+
+- `buildPublicAssistantRecoveryLogRecord({ recovery, diagnostic, failureClass, durationMs }) -> PublicAssistantRecoveryLogRecord | null` owns the only production recovery log projection.
+
+### 3. Contracts
+
+- Logs may include only fixed enums, an HTTP status class such as `4xx` or `5xx`, bounded attempt count, and duration bucket.
+- `failure_origin` distinguishes `configuration`, `public_api`, `relay_upstream`, `network`, and `response`.
+- Relay failures are identified only from the trusted fixed-enum `X-BIAU-Relay-Failure` header; raw upstream bodies never enter logs.
+- Model/provider identity, endpoints, credentials, question text, request IDs, and session IDs remain forbidden.
+
+### 4. Validation & Error Matrix
+
+- Missing explicit channel configuration -> `configuration`, no HTTP class.
+- Render-to-relay network/timeout -> `network`.
+- Relay returns a fixed provider rejection -> `relay_upstream` plus bounded HTTP class.
+- Public API validation/auth/model allowlist rejection before upstream -> `public_api` plus bounded HTTP class.
+- Empty or invalid successful response -> `response`.
+
+### 5. Good / Base / Bad Cases
+
+- Good: operations can see `relay_upstream + 5xx` and know configuration/auth changes are not justified by that evidence alone.
+- Base: no recovery happened, so no recovery record is emitted.
+- Bad: every upstream failure becomes `provider_unavailable`, or raw status/body/endpoint/model values are logged to make diagnosis possible.
+
+### 6. Tests Required
+
+- `npm.cmd run assistant:public-model-check` asserts origin/status classification and scans the serialized record for forbidden fields.
+- Production verification uses one user-approved business request; scheduled probes and provider catalog calls remain forbidden.
+
+### 7. Wrong vs Correct
+
+Wrong: log only a broad failure label that cannot distinguish a local request problem from a relay upstream problem, or compensate by logging raw provider diagnostics.
+
+Correct: preserve one low-cardinality origin, one status class, attempts, and duration while keeping every sensitive identifier out of the record.
+
 ## Required Checks
 
 ```powershell

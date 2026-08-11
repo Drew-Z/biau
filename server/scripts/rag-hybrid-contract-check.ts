@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { fusePostgresRagCandidates, type PostgresRagCandidateRow } from '../src/ragPostgresStore.js'
 import { buildQdrantHybridCollectionConfig, buildQdrantHybridQueryPayload } from '../src/ragQdrantStore.js'
 import { rerankRagCandidates } from '../src/ragReranker.js'
 import { buildRagSparseCorpus, buildRagSparseVector } from '../src/ragSparse.js'
@@ -35,5 +36,57 @@ const reranked = await rerankRagCandidates('hybrid retrieval citations', [
 ], { allowProvider: false })
 assert.equal(reranked.mode, 'deterministic')
 assert.equal(reranked.candidates[0].id, 'strong')
+
+const postgresRow = (
+  chunkId: string,
+  documentId: string,
+  score: number,
+  reason: string,
+  title: string,
+  text: string,
+): PostgresRagCandidateRow => ({
+  chunk_id: chunkId,
+  document_id: documentId,
+  section: 'summary',
+  text,
+  score,
+  reason,
+  title,
+  summary: text,
+  href: '/',
+  tags: [],
+  visibility: 'public',
+})
+
+const beaconChunk = postgresRow(
+  'chunk:site:public-assistant:1',
+  'site:public-assistant',
+  1,
+  'keyword+metadata',
+  '知航 BIAU Beacon｜公开研究助手',
+  '知航 BIAU Beacon 使用 Agentic RAG、LangGraph、混合检索和引用校验。',
+)
+const genericRagChunk = postgresRow(
+  'chunk:blog:agentic-rag-frontier-2026:1',
+  'blog:agentic-rag-frontier-2026',
+  1,
+  'keyword+metadata',
+  'Agentic RAG 知识地图',
+  '通用 Agentic RAG、混合检索与 GraphRAG 架构文章。',
+)
+const postgresFused = fusePostgresRagCandidates({
+  keywordRows: [genericRagChunk, beaconChunk],
+  vectorRows: [
+    { ...genericRagChunk, score: 0.92, reason: 'vector+pgvector' },
+    { ...beaconChunk, score: 0.78, reason: 'vector+pgvector' },
+  ],
+  entityRows: [{ ...beaconChunk, score: 0.64, reason: 'entity+relation' }],
+  localChunks: [
+    { id: beaconChunk.chunk_id, score: 1 },
+    { id: genericRagChunk.chunk_id, score: 0.55 },
+  ],
+})
+assert.equal(postgresFused[0]?.documentId, 'site:public-assistant')
+assert.match(postgresFused[0]?.reason ?? '', /keyword\+metadata\+vector\+pgvector\+entity\+relation\+local-semantic-prior/u)
 
 console.log('RAG hybrid contract passed')

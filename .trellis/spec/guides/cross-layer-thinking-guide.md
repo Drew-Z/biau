@@ -120,6 +120,18 @@ After implementation:
       casting payload fields locally
 - [ ] Checked that derived state points back to the source event identifier
       (`seq`, `id`, `version`) instead of inventing a second cursor
+- [ ] When generated knowledge/configuration has both local and remote consumers,
+      tested the real remote fusion/projection layer with the same acceptance case;
+      a local scorer test does not prove SQL/vector/reranker ordering parity
+- [ ] Verified readiness and response metadata describe behavior that actually ran
+      (`reranked`, fallback mode, provider mode), not a hard-coded capability claim
+
+**Real-world example**: The public assistant's local knowledge eval correctly
+ranked `site:public-assistant` first, but Supabase pgvector merged saturated
+keyword/vector/entity scores with `max()` and broke ties by chunk ID. Production
+therefore cited generic Agentic RAG and Legal RAG content. The fix carried the
+deterministic knowledge prior into additive remote fusion, executed the shared
+reranker, exposed its actual mode, and added a production-layer regression.
 
 ---
 
