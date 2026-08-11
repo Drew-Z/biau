@@ -26,8 +26,8 @@
 
 ## Evidence And Web Research
 
-- Site retrieval uses public-only Qdrant evidence. Dense and sparse candidates are fused with RRF before optional provider reranking.
-- If hybrid Qdrant query is unsupported or rejected, dense fallback must query the configured active public alias, never the base collection name.
+- Production site retrieval uses public-only Supabase pgvector evidence. It combines exact 4096-dimensional cosine search, keyword candidates, and bounded entity/relation expansion before deterministic merging and optional provider reranking.
+- Local retrieval and the explicitly selected Qdrant adapter remain deterministic test/rollback paths. The optional Qdrant path must query its configured active public alias and never an internal or unversioned collection.
 - Reranker absence or failure must be reported internally as deterministic fallback; do not claim provider reranking.
 - Tavily Basic Search is the default pure-search discovery adapter; auto parameters, generated answers, raw content, and images remain disabled. Brave Search and Exa remain optional. Every adapter produces normalized leads only and never replaces the configured generation channel chain.
 - Web search results are discovery leads. Only successfully fetched, SSRF-safe original HTTPS pages may become citations.
@@ -215,7 +215,8 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 
 ## Sync And Deployment
 
-- Public knowledge sync writes a versioned Qdrant collection, validates the replacement, and then switches the configured alias.
+- Production public knowledge sync prepares all 4096-dimensional embeddings, then transactionally replaces public Supabase pgvector documents, chunks, entities, and relations. A failed embedding or database transaction must leave the previous committed public dataset readable.
+- The optional Qdrant adapter may still use a validated versioned collection and alias switch, but it is not the production store.
 - Commit/checksum readiness gates prevent a stale deploy from activating newer knowledge.
 - Cloudflare Functions expose the thin same-origin browser proxy plus two authenticated fixed-upstream Responses egress relay routes: primary and fallback. The chat stream Function and both model relay routes forward bounded SSE without buffering, preserve cancellation, and keep their timeout active until the upstream body closes. Model credentials may live in the relay secret bindings; search, RAG, embedding, reranker, sync, and database credentials remain on their owning server services.
 - Deployed public chat, feedback, persistence, and public sync acceptance passed before the Operator/internal-RAG retirement began. Runtime code and configuration are public-only; PostgreSQL retirement, legacy Render Operator service deletion, and obsolete internal-Qdrant collection deletion completed through separate backed-up manual gates.

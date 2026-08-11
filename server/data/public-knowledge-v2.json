@@ -18,7 +18,7 @@
     {
       "id": "site:status",
       "title": "项目可靠性观察",
-      "summary": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。当前人工队列先备份并退役旧 Operator-only PostgreSQL 数据，随后运行 AI Daily 首个真实版次、完成 Studio 审核与 Publish Export；之后处理 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。公开助手、匿名持久化、公开 RAG 与同源 SSE 已有低敏验收记录。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。",
+      "summary": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。Operator/internal-RAG 退役已经完成；当前人工队列聚焦 AI Daily 首个真实版次、Studio 审核与 Publish Export，以及 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。公开助手、匿名持久化、Supabase pgvector 公开 RAG 与同源 SSE 已有低敏验收记录。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。",
       "href": "/status",
       "tags": [
         "状态页",
@@ -243,7 +243,7 @@
     {
       "id": "project:blog-semi",
       "title": "BIAU Port 内容与助手平台｜当前主站",
-      "summary": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开研究助手和内容 Studio。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。 公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。 公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only Qdrant 证据。 RAG Orchestrator 使用 Qdrant public alias、dense+sparse RRF、可选 provider reranker 与确定性 fallback，并通过版本化 public sync 切换 collection。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。 当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；后续仍需完成旧 Operator-only 数据的受审退役、Studio 被退回草稿修订、证据完整版本审核与 Publish Export。",
+      "summary": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开研究助手和内容 Studio。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。 公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。 公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only RAG 证据。 RAG Orchestrator 生产存储使用 Supabase pgvector，组合 4096 维精确余弦检索、关键词召回和轻量实体关系扩展；本地与可选 Qdrant 适配器只用于确定性测试或回滚兼容。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。 当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；Operator/internal-RAG 退役已经完成，后续人工队列聚焦 Studio 被退回草稿修订、证据完整版本审核、Publish Export 与各关联项目的受控发布 gate。",
       "href": "/projects/blog-semi",
       "tags": [
         "platform",
@@ -723,7 +723,7 @@
     {
       "id": "chunk:site:status:1",
       "documentId": "site:status",
-      "text": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。 当前人工队列先备份并退役旧 Operator-only PostgreSQL 数据，随后运行 AI Daily 首个真实版次、完成 Studio 审核与 Publish Export；之后处理 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。 公开助手、匿名持久化、公开 RAG 与同源 SSE 已有低敏验收记录。",
+      "text": "状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。 Operator/internal-RAG 退役已经完成；当前人工队列聚焦 AI Daily 首个真实版次、Studio 审核与 Publish Export，以及 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。 公开助手、匿名持久化、Supabase pgvector 公开 RAG 与同源 SSE 已有低敏验收记录。",
       "section": "summary",
       "metadata": {
         "sourceType": "status",
@@ -1538,7 +1538,7 @@
     {
       "id": "chunk:project:blog-semi:3",
       "documentId": "project:blog-semi",
-      "text": "公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only Qdrant 证据。 RAG Orchestrator 使用 Qdrant public alias、dense+sparse RRF、可选 provider reranker 与确定性 fallback，并通过版本化 public sync 切换 collection。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。",
+      "text": "公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only RAG 证据。 RAG Orchestrator 生产存储使用 Supabase pgvector，组合 4096 维精确余弦检索、关键词召回和轻量实体关系扩展；本地与可选 Qdrant 适配器只用于确定性测试或回滚兼容。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。",
       "section": "summary-3",
       "metadata": {
         "sourceType": "project",
@@ -1600,7 +1600,7 @@
     {
       "id": "chunk:project:blog-semi:5",
       "documentId": "project:blog-semi",
-      "text": "当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；后续仍需完成旧 Operator-only 数据的受审退役、Studio 被退回草稿修订、证据完整版本审核与 Publish Export。",
+      "text": "当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；Operator/internal-RAG 退役已经完成，后续人工队列聚焦 Studio 被退回草稿修订、证据完整版本审核、Publish Export 与各关联项目的受控发布 gate。",
       "section": "summary-5",
       "metadata": {
         "sourceType": "project",

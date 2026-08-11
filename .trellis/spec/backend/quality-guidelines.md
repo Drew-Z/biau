@@ -73,7 +73,7 @@ AI Daily production deployments must mount the human-approved model bundle as th
 
 `RAG_SYNC_TOKEN` authorizes versioned public knowledge sync. The browser and public assistant service must never receive it.
 
-`docs:deployment-check` owns consistency between `render.yaml`, `.env.example`, deployment docs, manual gates, and this spec.
+`docs:deployment-check` owns consistency between `render.yaml`, `.env.example`, bilingual README files, deployment docs, manual gates, public-assistant specs/notes, typed public status/assistant sources, and generated `site-status` / public-knowledge projections. It must reject stale current-production claims such as `store=qdrant`, Qdrant public-alias readiness, or unfinished Operator retirement while still allowing Qdrant in explicit optional/rollback and historical-retirement contexts.
 
 ## Public Assistant
 

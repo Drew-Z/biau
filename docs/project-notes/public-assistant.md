@@ -28,7 +28,7 @@ BIAU Port 公开助手是嵌入主站的匿名、只读、public-only 研究界�
 | `publicAssistantAgent.ts` | LangGraph 节点、条件路由、并行研究、一次恢复、claim verification | 仅输出 public allowlist |
 | `publicAssistantPersistence.ts` | 可选 session/turn/feedback、30 天清理、低敏聚合 | 数据库缺失不阻断回答 |
 
-站内研究使用 public-only Qdrant 数据，dense 与 sparse 结果通过 RRF 融合，可选 rerank。Web 研究先 discovery，后 original-page fetch；plan 需要时两路可以并行。
+站内研究的生产存储使用 server-only Supabase pgvector：4096 维精确余弦检索与关键词召回、轻量实体关系扩展共同形成候选，可选 rerank；本地与 Qdrant 适配器只保留给确定性测试或回滚兼容。Web 研究先 discovery，后 original-page fetch；plan 需要时两路可以并行。
 
 ## 核心实现
 
@@ -103,7 +103,7 @@ site 与 web 具有独立失败域。组合模式中，一路失败不会自动�
 
 ## 验证矩阵
 
-检查矩阵覆盖 direct/site/web/combined 路由、follow-up、edit/resend、Graph 与公共 payload 契约、六类安全降级、有界恢复、取消、prompt injection、secret seeking、citation 完整性、Branch/Revision 连续性、旧快照 hydration、Responses JSON/SSE/chat-relay/schema 行为、指标、Web fetch 安全、混合检索、持久化、限流、Cloudflare proxy、知识生成、Qdrant 同步、服务模式和 UI 流程。Fixture 不解析真实 provider endpoint；live acceptance 必须在部署后使用一条明确批准的真实业务问题。[source-verified] 证据：E-PA-005、E-PA-008。
+检查矩阵覆盖 direct/site/web/combined 路由、follow-up、edit/resend、Graph 与公共 payload 契约、六类安全降级、有界恢复、取消、prompt injection、secret seeking、citation 完整性、Branch/Revision 连续性、旧快照 hydration、Responses JSON/SSE/chat-relay/schema 行为、指标、Web fetch 安全、混合检索、持久化、限流、Cloudflare proxy、知识生成、pgvector schema/public sync、可选 Qdrant 兼容路径、服务模式和 UI 流程。Fixture 不解析真实 provider endpoint；live acceptance 必须在部署后使用一条明确批准的真实业务问题。[source-verified] 证据：E-PA-005、E-PA-008。
 
 | 验证层 | 覆盖内容 | 能证明什么 | 明确限制 |
 | --- | --- | --- | --- |

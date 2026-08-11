@@ -417,7 +417,7 @@
       "RAG Eval Set"
     ],
     "projectExamples": ["BIAU Port 公开研究助手", "public-only RAG Orchestrator", "Content Studio"],
-    "publicAngle": "解释为什么泊岸公开助手选择 Agentic Hybrid RAG + public-only RAG Orchestrator + Qdrant，而不是一开始就引入重图数据库。",
+    "publicAngle": "解释为什么泊岸公开助手选择 Agentic Hybrid RAG + public-only RAG Orchestrator + Supabase pgvector，并把 Qdrant 保留为可选兼容适配器，而不是一开始就引入重图数据库。",
     "evidenceSources": [
       "https://arxiv.org/html/2501.09136v4",
       "https://arxiv.org/html/2604.09666v1",
@@ -432,13 +432,14 @@
       "server/src/model.ts",
       "server/src/ragClient.ts",
       "server/src/ragOrchestrator.ts",
+      "server/src/ragPostgresStore.ts",
       "server/src/ragQdrantStore.ts",
       "server/src/knowledge.ts"
     ],
     "safeFacts": [
       "截至本轮 2026-07-04 smart-search 调研，前沿 RAG 更像多层控制系统，不是单次 top-k 检索。",
       "Agentic RAG、Adaptive-RAG、Self-RAG、CRAG、Contextual Retrieval、Qdrant hybrid queries 和 GraphRAG 都支持本文的分层判断。",
-      "当前泊岸公开助手已经包含 conditional LangGraph、public-only RAG Orchestrator、Qdrant hybrid adapter、原网页证据抓取、本地 fallback、敏感信息拒答和 claim/citation 自检。",
+      "当前泊岸公开助手已经包含 conditional LangGraph、public-only RAG Orchestrator、Supabase pgvector 生产存储、可选 Qdrant 兼容适配器、原网页证据抓取、本地 fallback、敏感信息拒答和 claim/citation 自检。",
       "公开助手、Studio 和 RAG 使用独立服务边界；助手保持匿名、只读和公开证据限定。"
     ],
     "uncertainFacts": [

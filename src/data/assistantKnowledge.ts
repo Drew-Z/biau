@@ -784,7 +784,7 @@ function buildIntentAnswerBody(intent: AssistantRetrievalIntent, titleList: stri
     return '适合先看有公开入口或受控演示路径的项目；如果入口需要登录，就以页面显示的公开 demo 凭据和状态页说明为准。'
   }
   if (intent === 'reliability-status') {
-    return '当前人工队列先备份并退役旧 Operator-only PostgreSQL 数据，再运行 AI Daily 首个真实版次、处理 Studio 中被退回修改的 hidden 草稿、审核证据完整的新版草稿并创建 Publish Export；之后处理 Legal RAG、ERP、Xunqiu、Pet 等需要凭据或 release 证据的 gate。公开助手、匿名持久化、公开 RAG 与同源 SSE 已有低敏验收记录。公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道密钥或签名材料。'
+    return 'Operator/internal-RAG 退役已经完成。当前人工队列聚焦 AI Daily 首个真实版次、Studio 中被退回修改的 hidden 草稿、证据完整版本审核与 Publish Export；之后处理 Legal RAG、ERP、Xunqiu、Pet 等需要凭据或 release 证据的 gate。公开助手、匿名持久化、Supabase pgvector 公开 RAG 与同源 SSE 已有低敏验收记录。公开侧只记录低敏证据，不写 token、密码、数据库 URL、模型渠道密钥或签名材料。'
   }
   if (intent === 'technology-architecture') {
     return '可以按技术栈反查相关项目，再进入项目详情看实现、架构、质量验证和后续优化。'

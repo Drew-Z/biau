@@ -75,7 +75,7 @@ Project screenshots and diagrams are tracked in [docs/showcase-assets.md](docs/s
 - Cloudflare Pages Functions for same-domain public assistant endpoints.
 - Express backend with `public`, `studio`, `rag`, and local `all` service modes.
 - One server-only Responses generation model with bounded planning, research, evidence grading, recovery, generation, and verification.
-- Public-only RAG Orchestrator with a versioned Qdrant alias, dense+sparse RRF, sync token, embedding adapter, and optional reranker adapter.
+- Public-only RAG Orchestrator with server-only Supabase pgvector, exact 4096-dimensional cosine search, keyword/entity expansion, a sync token, and optional embedding/reranker adapters. A Qdrant adapter remains available only for compatibility and rollback tests.
 - Prisma/PostgreSQL persistence for bounded anonymous assistant sessions/turns/feedback plus Studio drafts, AI Daily issues, source items, reviews, and publish exports.
 - Studio-first AI Daily flow: source pool -> issue -> hidden/review-needed draft -> review -> publish export -> static content diff.
 - Default-off analytics adapter for Plausible, Umami, or local debug events.
@@ -93,7 +93,7 @@ flowchart TB
   PublicAPI --> LangGraph["Public-only LangGraph\nplan / research / grade / verify"]
   PublicAPI --> AppDB["Public assistant PostgreSQL\nanonymous turns / feedback / aggregates"]
   StudioAPI --> StudioDB["Studio PostgreSQL\ndrafts / sources / AI Daily / exports"]
-  RAG --> Qdrant["Qdrant public alias\ndense + sparse chunks"]
+  RAG --> Pgvector["Supabase pgvector\npublic 4096-dimension chunks"]
   RAG --> Embedding["Embedding provider\nserver-only"]
   PublicAPI --> Model["OpenAI-compatible model\nserver-only"]
 ```
@@ -104,7 +104,7 @@ Recommended production shape uses three independent Render Web Services from the
 | --- | --- | --- |
 | `biau-public-assistant-api` | `public` | Public chat API and public-only retrieval. |
 | `biau-content-studio-api` | `studio` | Drafts, reviews, source items, AI Daily issues, publish exports. |
-| `biau-rag-orchestrator` | `rag` | Public-only retrieval, versioned sync, Qdrant/vector store, embedding, optional rerank. |
+| `biau-rag-orchestrator` | `rag` | Public-only retrieval, transactional sync, Supabase pgvector, embedding, optional rerank. |
 
 Detailed docs:
 
@@ -189,7 +189,7 @@ Common server variables:
 | `EMBEDDING_*` / `RERANKER_*` | Server-side embedding and optional rerank providers. |
 | `METRICS_ENABLED` | Enables low-sensitive Prometheus metrics when set to `true`. |
 
-Use placeholders in docs and examples. Put real keys, database URLs, model base URLs, tokens, Qdrant keys, and provider endpoints only in your local environment or deployment platform.
+Use placeholders in docs and examples. Put real keys, database URLs, model base URLs, tokens, vector-store keys, and provider endpoints only in your local environment or deployment platform.
 
 ## Development Scripts
 
@@ -278,7 +278,7 @@ npm ci && npm run prisma:generate && npm run server:build
 npm run prisma:migrate:studio && npm run server:start
 ```
 
-See [docs/deployment.md](docs/deployment.md) for service-specific environment variables, migration order, CORS rules, Qdrant setup, and Cloudflare Function checks.
+See [docs/deployment.md](docs/deployment.md) for service-specific environment variables, migration order, CORS rules, Supabase pgvector setup, the optional Qdrant adapter boundary, and Cloudflare Function checks.
 
 ## Project Structure
 
@@ -342,7 +342,7 @@ npm run verify
 
 - Treat everything committed to this repository as public.
 - Do not commit `.env`, `.env.local`, keys, database URLs, model base URLs, API keys, bearer tokens, service/admin tokens, signing paths, or private dashboards.
-- Do not put model, RAG, database, Qdrant, Studio, or admin credentials in `VITE_*`.
+- Do not put model, RAG, database/vector-store, Studio, or admin credentials in `VITE_*`.
 - Public assistant answers must be grounded in public citations and must refuse or fall back when context is insufficient.
 - Public assistant tools are anonymous, read-only, public-evidence-only, and cannot publish content or mutate project/cloud state.
 - Studio drafts stay `hidden + review-needed` until a human reviews and exports them.

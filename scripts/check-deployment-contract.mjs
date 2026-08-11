@@ -25,6 +25,50 @@ const files = {
     label: '.trellis/spec/backend/quality-guidelines.md',
     path: resolve(repoRoot, '.trellis/spec/backend/quality-guidelines.md'),
   },
+  readme: {
+    label: 'README.md',
+    path: resolve(repoRoot, 'README.md'),
+  },
+  readmeZh: {
+    label: 'README.zh-CN.md',
+    path: resolve(repoRoot, 'README.zh-CN.md'),
+  },
+  statusTargets: {
+    label: 'src/data/statusTargets.ts',
+    path: resolve(repoRoot, 'src/data/statusTargets.ts'),
+  },
+  portfolio: {
+    label: 'src/data/portfolio.ts',
+    path: resolve(repoRoot, 'src/data/portfolio.ts'),
+  },
+  assistantData: {
+    label: 'src/data/assistant.ts',
+    path: resolve(repoRoot, 'src/data/assistant.ts'),
+  },
+  assistantKnowledge: {
+    label: 'src/data/assistantKnowledge.ts',
+    path: resolve(repoRoot, 'src/data/assistantKnowledge.ts'),
+  },
+  publicAssistantSpec: {
+    label: '.trellis/spec/backend/public-research-assistant.md',
+    path: resolve(repoRoot, '.trellis/spec/backend/public-research-assistant.md'),
+  },
+  publicAssistantNote: {
+    label: 'docs/project-notes/public-assistant.md',
+    path: resolve(repoRoot, 'docs/project-notes/public-assistant.md'),
+  },
+  siteStatus: {
+    label: 'public/status/site-status.json',
+    path: resolve(repoRoot, 'public/status/site-status.json'),
+  },
+  publicKnowledge: {
+    label: 'server/data/public-knowledge.json',
+    path: resolve(repoRoot, 'server/data/public-knowledge.json'),
+  },
+  publicKnowledgeV2: {
+    label: 'server/data/public-knowledge-v2.json',
+    path: resolve(repoRoot, 'server/data/public-knowledge-v2.json'),
+  },
 }
 
 const serviceContracts = [
@@ -150,6 +194,14 @@ const stalePhrases = [
   'CF_ACCESS_TEAM_DOMAIN',
 ]
 
+const staleProductionTruthPhrases = [
+  'store=qdrant',
+  'Qdrant public alias readiness',
+  'RAG Orchestrator 使用 Qdrant public alias',
+  '后续仍需完成旧 Operator-only',
+  '先备份并退役旧 Operator-only',
+]
+
 function collectMissing(label, text, needles) {
   const issues = []
   for (const needle of needles) {
@@ -230,12 +282,40 @@ function checkRenderBlueprint(renderText) {
 }
 
 async function main() {
-  const [render, envExample, deployment, manualGates, backendSpec] = await Promise.all([
+  const [
+    render,
+    envExample,
+    deployment,
+    manualGates,
+    backendSpec,
+    readme,
+    readmeZh,
+    statusTargets,
+    portfolio,
+    assistantData,
+    assistantKnowledge,
+    publicAssistantSpec,
+    publicAssistantNote,
+    siteStatus,
+    publicKnowledge,
+    publicKnowledgeV2,
+  ] = await Promise.all([
     readFile(files.render.path, 'utf8'),
     readFile(files.envExample.path, 'utf8'),
     readFile(files.deployment.path, 'utf8'),
     readFile(files.manualGates.path, 'utf8'),
     readFile(files.backendSpec.path, 'utf8'),
+    readFile(files.readme.path, 'utf8'),
+    readFile(files.readmeZh.path, 'utf8'),
+    readFile(files.statusTargets.path, 'utf8'),
+    readFile(files.portfolio.path, 'utf8'),
+    readFile(files.assistantData.path, 'utf8'),
+    readFile(files.assistantKnowledge.path, 'utf8'),
+    readFile(files.publicAssistantSpec.path, 'utf8'),
+    readFile(files.publicAssistantNote.path, 'utf8'),
+    readFile(files.siteStatus.path, 'utf8'),
+    readFile(files.publicKnowledge.path, 'utf8'),
+    readFile(files.publicKnowledgeV2.path, 'utf8'),
   ])
 
   const issues = [
@@ -333,13 +413,44 @@ async function main() {
       'Studio API mode',
       '`RAG_SYNC_TOKEN` authorizes versioned public knowledge sync',
       'Production RAG uses server-only Supabase pgvector',
+      'generated `site-status` / public-knowledge projections',
       '`AI_DAILY_MODEL_APPROVAL_FILE`',
       '`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`',
     ]),
+    ...collectMissing(files.readme.label, readme, ['server-only Supabase pgvector', 'Qdrant adapter remains available only for compatibility and rollback tests']),
+    ...collectMissing(files.readmeZh.label, readmeZh, ['生产 RAG 使用服务端 Supabase pgvector', '可选 Qdrant 适配器只保留给兼容与回滚测试']),
+    ...collectMissing(files.statusTargets.label, statusTargets, ['Supabase pgvector readiness', 'store=supabase-pgvector']),
+    ...collectMissing(files.portfolio.label, portfolio, ['RAG Orchestrator 生产存储使用 Supabase pgvector', 'Operator/internal-RAG 退役已经完成']),
+    ...collectMissing(files.assistantData.label, assistantData, ['Supabase pgvector 公开 RAG', 'Operator/internal-RAG 退役已经完成']),
+    ...collectMissing(files.assistantKnowledge.label, assistantKnowledge, ['Supabase pgvector 公开 RAG', 'Operator/internal-RAG 退役已经完成']),
+    ...collectMissing(files.publicAssistantSpec.label, publicAssistantSpec, [
+      'Production site retrieval uses public-only Supabase pgvector evidence',
+      'The optional Qdrant adapter may still use a validated versioned collection and alias switch, but it is not the production store',
+    ]),
+    ...collectMissing(files.publicAssistantNote.label, publicAssistantNote, ['生产存储使用 server-only Supabase pgvector', 'Qdrant 适配器只保留给确定性测试或回滚兼容']),
+    ...collectMissing(files.siteStatus.label, siteStatus, ['Supabase pgvector readiness', 'store=supabase-pgvector']),
+    ...collectMissing(files.publicKnowledge.label, publicKnowledge, ['Supabase pgvector', 'Operator/internal-RAG 退役已经完成']),
+    ...collectMissing(files.publicKnowledgeV2.label, publicKnowledgeV2, ['Supabase pgvector', 'Operator/internal-RAG 退役已经完成']),
     ...collectPresent(files.envExample.label, envExample, stalePhrases),
     ...collectPresent(files.deployment.label, deployment, stalePhrases),
     ...collectPresent(files.manualGates.label, manualGates, stalePhrases),
     ...collectPresent(files.backendSpec.label, backendSpec, stalePhrases),
+    ...[
+      [files.envExample, envExample],
+      [files.readme, readme],
+      [files.readmeZh, readmeZh],
+      [files.deployment, deployment],
+      [files.manualGates, manualGates],
+      [files.statusTargets, statusTargets],
+      [files.portfolio, portfolio],
+      [files.assistantData, assistantData],
+      [files.assistantKnowledge, assistantKnowledge],
+      [files.publicAssistantSpec, publicAssistantSpec],
+      [files.publicAssistantNote, publicAssistantNote],
+      [files.siteStatus, siteStatus],
+      [files.publicKnowledge, publicKnowledge],
+      [files.publicKnowledgeV2, publicKnowledgeV2],
+    ].flatMap(([file, text]) => collectPresent(file.label, text, staleProductionTruthPhrases)),
   ]
 
   if (issues.length > 0) {

@@ -171,9 +171,9 @@ export const reliabilityProjects: ReliabilityProject[] = [
         layer: 'observability',
         label: 'RAG Orchestrator health',
         status: 'online',
-        description: '检查外部 RAG Orchestrator `/health`、Qdrant public alias readiness、hybrid retrieval 和低敏公开同步结果。',
+        description: '检查外部 RAG Orchestrator `/health`、Supabase pgvector readiness、hybrid retrieval 和低敏公开同步结果。',
         evidence:
-          '生产 RAG Orchestrator 已完成低敏验收：store=qdrant，public alias 可检索，版本化公开知识同步、dense+sparse RRF 和 citation 投影通过受控业务流验证。真实 RAG token、Qdrant key、embedding endpoint 和文档正文不进入公开状态。',
+          '生产 RAG Orchestrator 已完成低敏验收：store=supabase-pgvector，4096 维向量与关键词/实体关系混合检索可用，事务式公开知识同步和 citation 投影通过受控业务流验证。真实 RAG token、数据库 URL、embedding endpoint 和文档正文不进入公开状态。',
         cadence: '部署后 + 每日',
         ownerHint: 'RAG Orchestrator',
       },
@@ -183,7 +183,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
       '把 `main-site:synthetic` 接入定时任务或内部监控。',
       '把 `public-links:check` 纳入发布前和外链更新后的可靠性巡检，避免首页按钮或项目详情来源链接再次指向访客不可见页面。',
       'Cloudflare Pages Functions 部署后先复查 `/api/health`；需要验证模型回答时，再显式运行 `main-site:synthetic -- --assistant-chat`。',
-      '把生产 RAG Orchestrator `/health`、public alias 与公开知识 sync 的低敏摘要纳入定时 synthetic 或内部监控。',
+      '把生产 RAG Orchestrator `/health`、pgvector readiness 与公开知识 sync 的低敏摘要纳入定时 synthetic 或内部监控。',
     ],
   },
   {

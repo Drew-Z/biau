@@ -33,7 +33,7 @@ flowchart TB
   PublicAPI --> Agent["Public-only LangGraph\n规划 / 研究 / 分级 / 校验"]
   PublicAPI --> AppDB["公开助手数据库\n匿名 turn / feedback / aggregate"]
   StudioAPI --> StudioDB["Studio 数据库"]
-  RAG --> Vector["Qdrant public alias\ndense + sparse"]
+  RAG --> Vector["Supabase pgvector\n公开 4096 维 chunks"]
   RAG --> Embedding["Embedding Provider"]
 ```
 
@@ -73,7 +73,7 @@ http://localhost:8787
 
 ## 配置
 
-前端变量必须使用 `VITE_*`，会被打包到浏览器中；数据库、模型、RAG、Qdrant、管理员 token 等敏感配置只能放在服务端环境变量或部署平台中。
+前端变量必须使用 `VITE_*`，会被打包到浏览器中；数据库、模型、RAG、向量存储、管理员 token 等敏感配置只能放在服务端环境变量或部署平台中。生产 RAG 使用服务端 Supabase pgvector；可选 Qdrant 适配器只保留给兼容与回滚测试。
 
 常用服务端变量包括：
 
@@ -84,12 +84,14 @@ http://localhost:8787
 - `ASSISTANT_MODEL_*`
 - `ASSISTANT_RAG_API_BASE_URL`
 - `ASSISTANT_RAG_API_KEY`
-- `QDRANT_*`
+- `RAG_STORE_PROVIDER`
+- `RAG_DATABASE_URL`
+- `QDRANT_*`（可选兼容适配器）
 - `RAG_PUBLIC_API_KEY`
 - `RAG_SYNC_TOKEN`
 - `EMBEDDING_*`
 
-不要把真实 key、数据库 URL、模型中转地址、Qdrant key、管理员 token 或邀请码提交到仓库。
+不要把真实 key、数据库 URL、模型中转地址、向量存储 key、管理员 token 或邀请码提交到仓库。
 
 ## 常用脚本
 

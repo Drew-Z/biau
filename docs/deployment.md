@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | `biau-public-assistant-api` | `ASSISTANT_SERVICE_MODE=public` | 公开研究助手、匿名会话/反馈持久化 |
 | `biau-content-studio-api` | `ASSISTANT_SERVICE_MODE=studio` | Content Studio、AI Daily、发布导出 |
-| `biau-rag-orchestrator` | `ASSISTANT_SERVICE_MODE=rag` | public-only Qdrant 检索与公开知识同步 |
+| `biau-rag-orchestrator` | `ASSISTANT_SERVICE_MODE=rag` | public-only Supabase pgvector 检索与公开知识同步 |
 
 Cloudflare Pages 承载静态站和同源 Functions。浏览器只访问同源 `/api/chat/public*` 与 Studio 公共读取入口；模型、搜索、RAG、数据库和同步凭据均留在服务器端。
 
@@ -23,7 +23,7 @@ Browser
             -> bounded primary + fallback Responses generation chain
                  -> authenticated fixed-upstream Cloudflare model relay
             -> Tavily discovery + safe original-page fetch
-            -> biau-rag-orchestrator -> Qdrant public alias
+            -> biau-rag-orchestrator -> Supabase pgvector
             -> public assistant PostgreSQL
        -> biau-content-studio-api
             -> Studio / AI Daily PostgreSQL
@@ -237,14 +237,14 @@ npm run assistant:public-sync-check
 以下顺序记录 2026-07-26 已完成的 public-only 发布与 Operator/internal-RAG 退役流程：
 
 1. 备份公开助手数据库与 Studio 数据库，保留可回滚的 Render revision。
-2. 部署并验证 `biau-rag-orchestrator` public-only 代码与 public alias。
+2. 部署并验证 `biau-rag-orchestrator` public-only 代码与当时的公开 RAG 存储路径。
 3. 部署 `biau-public-assistant-api`，运行 Prisma public persistence migrations。
 4. 部署 `biau-content-studio-api`，确认 Studio/AI Daily migration 与 health 正常。
 5. 部署 Cloudflare Pages，完成同源 SSE、feedback、public sync 和持久化验收。
 6. 停止旧 Operator writer，运行 `scripts/operations/postgres/operator-retirement/preflight.sql`。
 7. 只有在备份可恢复、数据库指纹和 allowlist 均经人工确认后，才运行 `apply.sql` 与 `verify.sql`。
 8. 通过 public persistence、Studio 和 RAG smoke 后，最后人工删除 Render Operator 服务（已完成）。
-9. 在独立观察窗口后，人工删除旧 internal Qdrant collection 与平台侧废弃变量。
+9. 在独立观察窗口后，人工删除旧 internal Qdrant collection 与平台侧废弃变量（已完成；当前生产公开存储已迁移到 Supabase pgvector）。
 
 破坏性 Operator SQL 不得放入 `prisma/migrations/`，因为 Render 启动会自动执行 Prisma migrations。完整操作见 `scripts/operations/postgres/operator-retirement/README.md`。
 
@@ -284,7 +284,7 @@ npm run build
 
 ## 回滚
 
-- SQL 退役前：回滚应用 revision 和 Qdrant public alias 即可。
+- SQL 退役前：回滚应用 revision 和当时的公开 RAG 存储配置即可。
 - SQL 退役后：停止写入，把已验证的备份恢复到新数据库，再切换数据库 URL 与上一应用 revision；重新跑旧 migration 只能恢复空表结构，不能恢复数据。
 - Studio/AI Daily 数据库从不进入 Operator 退役 allowlist。
 - 模型中继无需数据库回滚；恢复 Render 上一组 model base/key/provider 并回滚 Cloudflare Pages deployment 即可。

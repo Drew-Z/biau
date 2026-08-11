@@ -25,13 +25,13 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 - Public：公开研究助手、匿名会话、反馈与低敏聚合。
 - Studio：Content Studio、AI Daily 与 Publish Export。
-- RAG：public-only Qdrant collection/alias、hybrid retrieval 与公开知识同步。
+- RAG：server-only Supabase pgvector、hybrid retrieval 与公开知识同步；可选 Qdrant 适配器只用于兼容/回滚测试。
 
 已完成的生产门禁：
 
 - Cloudflare 同源 SSE 已返回完整 `ready -> progress -> result -> done`。
 - 用户批准的真实研究问题已得到模型回答、原网页证据和合法 citation 映射。
-- 匿名 session/turn、feedback、公开 RAG sync 与 public alias 已完成验收。
+- 匿名 session/turn、feedback、公开 RAG sync 与 Supabase pgvector readiness 已完成验收。
 - Cloudflare 生产环境已收缩为站点、Public proxy 与 Studio browser base 所需变量。
 - Operator PostgreSQL 生产退役已完成：备份恢复演练、preflight、allowlist apply、verify 和 Public/Studio/RAG 健康检查均通过。
 
@@ -67,14 +67,14 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 4. 只有在目标数据库指纹与 allowlist 均人工确认后，才以确认串运行 `apply.sql`。
 5. 立即运行 `verify.sql`、public persistence、Studio 与 RAG smoke。
 6. 观察通过后，最后人工删除 Render Operator 服务（已完成）。
-7. public alias 稳定且备份/回滚信息保留后，已通过独立 gate 删除 internal Qdrant collection。
+7. 当时的公开 RAG 路径稳定且备份/回滚信息保留后，已通过独立 gate 删除 internal Qdrant collection。
 
 破坏性 SQL 不在 `prisma/migrations/` 中，不会随 Render 重启自动执行；脚本不使用 `CASCADE`，也不会触碰 `PublicAssistant*`、Studio 或 AI Daily 表。
 
 退役收尾已完成：
 
 - 已删除暂停的 legacy Render Operator 服务。
-- 已在确认 public alias 稳定后删除旧 internal Qdrant collection，并清理 RAG 服务的废弃 internal collection/API-key 变量。
+- 已在确认当时的公开 RAG 路径稳定后删除旧 internal Qdrant collection，并清理 RAG 服务的废弃 internal collection/API-key 变量。
 
 ## Supabase Data API 权限加固
 
@@ -152,6 +152,7 @@ npm run ai-daily:acceptance -- init --acceptance-id <id> --edition-date <YYYY-MM
 | Pet | 等待正式 release APK/AAB、签名、校验和与公开下载批准 | `pet:synthetic` 与下载入口同时通过 |
 | BIAU Playlab | 新试玩上线时确认公开入口和资源版本 | `playlab:synthetic` 与移动端试玩通过 |
 | Chatus | 使用其独立 Trellis 任务和独立部署边界 | 自身 lint/test/build/deploy 证据 |
+| Anchor Learning | 浏览器 Demo 继续保持零外部请求；Flutter Private Alpha 单独补齐安装、升级和本地数据迁移证据 | 浏览器 Demo 回归通过，Private Alpha 具备可复跑 release 证据 |
 | Duoduo Learn | 正在并行开发，未经用户确认不得修改 | 稳定 commit、截图、Flutter 验证和独立 release gate |
 
 ## 可观测性门禁

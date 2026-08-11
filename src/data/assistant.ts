@@ -143,7 +143,7 @@ export const publicKnowledgeBase: AssistantKnowledgeItem[] = [
     id: 'site:status',
     title: '项目可靠性观察',
     summary:
-      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。当前人工队列先备份并退役旧 Operator-only PostgreSQL 数据，随后运行 AI Daily 首个真实版次、完成 Studio 审核与 Publish Export；之后处理 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。公开助手、匿名持久化、公开 RAG 与同源 SSE 已有低敏验收记录。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。',
+      '状态页汇总主站、Legal RAG、Ozon ERP、寻球、Pet 和 BIAU Playlab 等公开入口与可靠性检查，区分 online、degraded、offline、unchecked 与 planned。Operator/internal-RAG 退役已经完成；当前人工队列聚焦 AI Daily 首个真实版次、Studio 审核与 Publish Export，以及 Legal RAG 低权限 demo、ERP 生产注册策略、Xunqiu / Pet 正式 release 等需要凭据或发布证据的 gate。公开助手、匿名持久化、Supabase pgvector 公开 RAG 与同源 SSE 已有低敏验收记录。公开侧只记录成功状态、检查命令、HTTP 状态、计数、时间和错误类别，不记录 token、密码、数据库 URL、模型渠道密钥、模型 base URL、签名材料、私有后台或生产敏感指标。',
     href: '/status',
     tags: ['状态页', '可靠性观察', '人工 gate', '低敏证据', '公开入口', 'health check', 'synthetic', 'public-only RAG', '数据库退役', 'release gate'],
     visibility: 'public',

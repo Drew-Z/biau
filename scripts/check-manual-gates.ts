@@ -83,6 +83,14 @@ const statusProjectLedgerCoverage = {
     label: 'BIAU Playlab / Game',
     needles: ['BIAU Playlab', 'playlab:synthetic', '公开入口'],
   },
+  chatus: {
+    label: 'Chatus 私人 AI 工作台',
+    needles: ['Chatus', '独立 Trellis', 'lint/test/build/deploy'],
+  },
+  'anchor-learning': {
+    label: 'Anchor Learning 锚学',
+    needles: ['Anchor Learning', '浏览器 Demo', 'Flutter Private Alpha'],
+  },
 } satisfies Record<string, LedgerCoverage>
 
 const secretPatterns = [
