@@ -3,7 +3,7 @@
   "name": "08-11-main-site-audit",
   "title": "Main site audit and hardening",
   "description": "Audit and harden public truth, CSS performance, and verification diagnostics without changing already-validated product behavior.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": null,
   "scope": null,
   "package": null,

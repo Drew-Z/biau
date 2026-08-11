@@ -63,14 +63,22 @@
 
 ## Acceptance Criteria
 
-- [ ] 三个子任务分别通过自己的验收，并在父任务中留下结果摘要。
-- [ ] `npm.cmd run lint`、`npm.cmd run build`、`npm.cmd run performance:check` 和 `npm.cmd run check:ui` 全部通过。
-- [ ] 入口 CSS 不超过基线的 90%（222,755 bytes），且不通过提高预算实现。
-- [ ] `npm.cmd run assistant:index` 后 `assistant:kg-check` 通过，公开知识不再把 Qdrant/旧 Operator 描述为当前生产事实。
-- [ ] `npm.cmd run site:status` 后 `status:contract` 与 `docs:deployment-check` 通过，生成状态与 Supabase pgvector 生产合同一致。
-- [ ] `npm.cmd run public-links:check` 对每个失败输出稳定的低敏错误类别；HTTP 403 仍保持失败。
-- [ ] 核心 UI smoke 可独立执行并输出进度；全量 UI 回归仍覆盖现有 17 条路由及 320/390/430px 关键移动宽度。
-- [ ] `git diff --check` 通过，且差异不包含 `public/status/blog-semi-synthetic.json` 的覆盖或回滚。
+- [x] 三个子任务分别通过自己的验收，并在父任务中留下结果摘要。
+- [x] `npm.cmd run lint`、`npm.cmd run build`、`npm.cmd run performance:check` 和 `npm.cmd run check:ui` 全部通过。
+- [x] 入口 CSS 不超过基线的 90%（222,755 bytes），且不通过提高预算实现。
+- [x] `npm.cmd run assistant:index` 后 `assistant:kg-check` 通过，公开知识不再把 Qdrant/旧 Operator 描述为当前生产事实。
+- [x] `npm.cmd run site:status` 后 `status:contract` 与 `docs:deployment-check` 通过，生成状态与 Supabase pgvector 生产合同一致。
+- [x] `npm.cmd run public-links:check` 对每个失败输出稳定的低敏错误类别；HTTP 403 仍保持失败。
+- [x] 核心 UI smoke 可独立执行并输出进度；全量 UI 回归仍覆盖现有 17 条路由及 320/390/430px 关键移动宽度。
+- [x] `git diff --check` 通过，且差异不包含 `public/status/blog-semi-synthetic.json` 的覆盖或回滚。
+
+## Result Summary
+
+- Public truth：生产说明、状态源、项目详情和公开助手知识已统一到 Supabase pgvector 主路径；Qdrant 仅保留为兼容/回滚适配器。
+- CSS performance：入口 CSS 为 128,781 bytes，低于 222,755 bytes 验收上限；路由样式拆分后的公开页、Studio、背景动效与移动端阅读回归通过。
+- Verification diagnostics：网络错误分类、显式状态发布、临时可靠性汇总、UI 进度/耗时与外部网络隔离已落地。
+- Parent gate：`npm.cmd run verify` 通过；完整 UI 回归为 40 个进度单元、17 条路由 × 2 视口、`failed=0`，总耗时 238,774 ms。
+- 收口过程同步修复了三处合同漂移：人工队列 RAG 评测、Trellis 归档忽略根目录、可观测性总账标题。
 
 ## Out Of Scope
 

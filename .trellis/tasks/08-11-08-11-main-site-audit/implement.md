@@ -4,12 +4,12 @@
 
 ### 1. Public truth alignment
 
-- [ ] 读取当前 RAG 运行时、生产规范和已完成 Operator 退役记录，建立一份允许出现 `Qdrant` 的上下文清单。
-- [ ] 更新 `src/data/statusTargets.ts`、`src/data/portfolio.ts`、`src/data/assistant.ts` 的当前生产事实和人工队列。
-- [ ] 同步 `README.md`、`README.zh-CN.md`、`docs/deployment.md`、`docs/project-notes/public-assistant.md` 与 `.trellis/spec/backend/public-research-assistant.md`。
-- [ ] 更新或扩展部署/状态 contract，阻止生产说明再次回退到 Qdrant 或未完成 Operator 退役。
-- [ ] 运行生成器并审查 `server/data/public-knowledge*.json`、`public/status/site-status.json` 差异。
-- [ ] 确认不触碰用户已有 `public/status/blog-semi-synthetic.json` 改动。
+- [x] 读取当前 RAG 运行时、生产规范和已完成 Operator 退役记录，建立一份允许出现 `Qdrant` 的上下文清单。
+- [x] 更新 `src/data/statusTargets.ts`、`src/data/portfolio.ts`、`src/data/assistant.ts` 的当前生产事实和人工队列。
+- [x] 同步 `README.md`、`README.zh-CN.md`、`docs/deployment.md`、`docs/project-notes/public-assistant.md` 与 `.trellis/spec/backend/public-research-assistant.md`。
+- [x] 更新或扩展部署/状态 contract，阻止生产说明再次回退到 Qdrant 或未完成 Operator 退役。
+- [x] 运行生成器并审查 `server/data/public-knowledge*.json`、`public/status/site-status.json` 差异。
+- [x] 确认不触碰用户已有 `public/status/blog-semi-synthetic.json` 改动。
 
 Validation:
 
@@ -28,11 +28,11 @@ git diff --check
 
 ### 2. CSS performance hardening
 
-- [ ] 按 selector 引用、route ownership 和 cascade 依赖标记 `src/index.css` 与 `src/styles/flow-pages.css` 的共享/路由专属/废弃规则。
-- [ ] 先删除已经被 scoped 新规则完整覆盖的旧样式和 `App.css` 重复规则。
-- [ ] 将 Studio、AI Daily、详情/状态、公开助手等明确属于 lazy route/component 的 CSS 移入对应模块 import。
-- [ ] 扩展性能报告，使入口与路由 CSS chunk 均可见，并保留原预算。
-- [ ] 在每个拆分批次后运行 build、performance 和 targeted smoke；完成后运行全量 UI 回归。
+- [x] 按 selector 引用、route ownership 和 cascade 依赖标记 `src/index.css` 与 `src/styles/flow-pages.css` 的共享/路由专属/废弃规则。
+- [x] 先删除已经被 scoped 新规则完整覆盖的旧样式和 `App.css` 重复规则。
+- [x] 将 Studio、AI Daily、详情/状态、公开助手等明确属于 lazy route/component 的 CSS 移入对应模块 import。
+- [x] 扩展性能报告，使入口与路由 CSS chunk 均可见，并保留原预算。
+- [x] 在每个拆分批次后运行 build、performance 和 targeted smoke；完成后运行全量 UI 回归。
 
 Validation:
 
@@ -47,11 +47,11 @@ git diff --check
 
 ### 3. Verification diagnostics
 
-- [ ] 为 UI 检查定义命名检查组、进度/耗时输出和可独立执行的 smoke 参数或脚本。
-- [ ] 保持现有完整覆盖；确认 smoke 不调用外部 API，full 仍覆盖 17 条路由及关键 320/390/430px 视口。
-- [ ] 为 public-link fetch 错误增加低敏、跨平台的固定类别映射和 fixture contract。
-- [ ] 验证默认运行不写状态；验证显式写入只包含低敏摘要。
-- [ ] 更新 package scripts 与相关 frontend/project-showcase spec。
+- [x] 为 UI 检查定义命名检查组、进度/耗时输出和可独立执行的 smoke 参数或脚本。
+- [x] 保持现有完整覆盖；确认 smoke 不调用外部 API，full 仍覆盖 17 条路由及关键 320/390/430px 视口。
+- [x] 为 public-link fetch 错误增加低敏、跨平台的固定类别映射和 fixture contract。
+- [x] 验证默认运行不写状态；验证显式写入只包含低敏摘要。
+- [x] 更新 package scripts 与相关 frontend/project-showcase spec。
 
 Validation:
 
@@ -83,6 +83,6 @@ git diff --check
 
 ## Pre-Start Review
 
-- [ ] 用户确认按三个子任务顺序实施。
-- [ ] 父任务和三个子任务均无占位内容或未解决阻塞问题。
-- [ ] `task.py start` 只在规划审阅通过后执行；inline 模式不需要填充 JSONL manifest。
+- [x] 用户确认按三个子任务顺序实施。
+- [x] 父任务和三个子任务均无占位内容或未解决阻塞问题。
+- [x] `task.py start` 只在规划审阅通过后执行；inline 模式不需要填充 JSONL manifest。

@@ -155,12 +155,12 @@ npm run ai-daily:acceptance -- init --acceptance-id <id> --edition-date <YYYY-MM
 | Anchor Learning | 浏览器 Demo 继续保持零外部请求；Flutter Private Alpha 单独补齐安装、升级和本地数据迁移证据 | 浏览器 Demo 回归通过，Private Alpha 具备可复跑 release 证据 |
 | Duoduo Learn | 正在并行开发，未经用户确认不得修改 | 稳定 commit、截图、Flutter 验证和独立 release gate |
 
-## 可观测性门禁
+## 访问分析与可观测性
 
 | Gate | 人工原因 | 默认决策 |
 | --- | --- | --- |
-| Cloudflare Analytics / Search Console | 需要站点所有权 | 可独立启用，不阻塞产品功能 |
-| Plausible 或 Umami | 需要隐私、托管和口径选择 | 不同时接两套访客统计 |
+| Cloudflare Analytics / Search Console / Webmaster | 需要站点所有权 | 可独立启用，不阻塞产品功能 |
+| Plausible 或 Umami 二选一 | 需要隐私、托管和口径选择 | 不同时接两套访客统计 |
 | Prometheus / Grafana / ARMS | 需要 scrape、告警和平台账号 | `/metrics` 默认关闭，生产启用需人工配置 |
 | Sentry / Faro / Langfuse | 可能收集错误、prompt、trace 和用户内容 | 明确采样、脱敏与保留周期后再接入 |
 

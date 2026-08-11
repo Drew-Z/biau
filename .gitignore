@@ -38,6 +38,7 @@ server/data/ai-daily-model-approval.v1.json
 .trellis/.runtime/
 .trellis/tmp/
 .trellis/workspace/
+.trellis/tasks/archive/
 ref/
 original-src/
 content-drafts/.checkpoints/

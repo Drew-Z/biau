@@ -39,7 +39,7 @@ const ledgerNeedles = [
   '## Operator PostgreSQL 退役',
   '## Content Studio / AI Daily',
   '## 关联项目门禁',
-  '## 可观测性门禁',
+  '## 访问分析与可观测性',
   '## AI Daily 当前人工队列',
   '禁止 ping、doctor、空 prompt、catalog probe 和无意义测活',
   'needs-changes',
