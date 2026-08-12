@@ -224,7 +224,7 @@ export interface AiDailyGenerationProviders {
 }
 
 export const aiDailyGenerationSchemaVersion = 'ai-daily-generation-v2'
-export const aiDailyGenerationPromptVersion = 'ai-daily-prompt-v2'
+export const aiDailyGenerationPromptVersion = 'ai-daily-prompt-v3'
 
 export type AiDailyExtractionStageResult =
   | {

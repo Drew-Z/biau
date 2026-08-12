@@ -5,6 +5,11 @@ import type {
   AiDailyStructuredGenerationProvider,
   AiDailyStructuredGenerationRequest,
 } from './aiDailyGeneration.js'
+import {
+  aiDailyClaimTypes,
+  aiDailyVerifierReasonCodes,
+  aiDailyVerifierVerdicts,
+} from './aiDailyGeneration.js'
 import type { AiDailyModelRuntimeChannel, AiDailyModelRuntimeCandidate } from './aiDailyModelRuntime.js'
 import { readResponsesContent } from './responsesApi.js'
 
@@ -66,7 +71,7 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
     input: [
       {
         role: 'system',
-        content: [{ type: 'input_text', text: buildSystemPrompt(request.role, request.schemaVersion) }],
+        content: [{ type: 'input_text', text: buildAiDailyStructuredSystemPrompt(request.role, request.schemaVersion) }],
       },
       {
         role: 'user',
@@ -120,7 +125,7 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
   throw new Error(lastFailure)
 }
 
-function buildSystemPrompt(role: AiDailyGenerationRole, schemaVersion: string) {
+export function buildAiDailyStructuredSystemPrompt(role: AiDailyGenerationRole, schemaVersion: string) {
   const common = [
     '你是 BIAU AI Daily 的受约束编辑模型。',
     '只返回一个合法 JSON 对象，不要 Markdown 代码围栏、解释、前后缀或 URL。',
@@ -128,12 +133,31 @@ function buildSystemPrompt(role: AiDailyGenerationRole, schemaVersion: string) {
     `必须遵守生成契约 ${schemaVersion}。`,
   ]
   if (role === 'extractor') {
-    return [...common, '输出 {"claims":[...]}。每条 claim 必须有 claimId、text、claimType、evidenceIds、directSupport、conflictingEvidenceIds、uncertainty；evidenceIds 只能引用输入 evidenceId。'].join('\n')
+    return [
+      ...common,
+      '输出 {"claims":[...]}，即使没有可支持事实也必须返回 claims 数组。',
+      '每条 claim 必须且只能按契约填写 claimId、text、claimType、evidenceIds、directSupport、conflictingEvidenceIds、uncertainty。',
+      `claimType 只能是：${aiDailyClaimTypes.join('、')}。uncertainty 只能是：low、medium、high。directSupport 必须是布尔值。`,
+      'claimId 必须是简短稳定标识；evidenceIds 至少一个且只能引用输入 evidenceId；conflictingEvidenceIds 必须是数组，只能引用输入 evidenceId，没有冲突时返回空数组。',
+    ].join('\n')
   }
   if (role === 'composer') {
-    return [...common, '输出 title、subtitle、introduction、events、trends；每个正文块都必须绑定输入 claimIds，不能创建没有依据的新事实。'].join('\n')
+    return [
+      ...common,
+      '输出 title、subtitle、introduction、events、trends。events 必须包含 1 至 10 项，trends 最多 6 项。',
+      'introduction 和每个 trend 必须是 {"text":"...","claimIds":[...]}；每个 event 必须包含 eventId、title、factSummary、whyItMatters、uncertainty、claimIds。',
+      'factSummary 与 whyItMatters 也必须使用 {"text":"...","claimIds":[...]}；event.claimIds 必须与两个正文块引用的 claimIds 完全一致。',
+      '所有 claimIds 只能引用输入 claimId；uncertainty 只能是 low、medium、high；不能创建没有依据的新事实或输出 URL。',
+    ].join('\n')
   }
-  return [...common, '输出 reviews 和 blockReviews；必须逐项覆盖输入要求的 claim 与正文 block，verdict 只能是 entailed、contradicted、insufficient、unverifiable。'].join('\n')
+  return [
+    ...common,
+    '输出 reviews 和 blockReviews，必须逐项且不重复覆盖输入要求的 claim 与正文 block。',
+    `verdict 只能是：${aiDailyVerifierVerdicts.join('、')}。reasonCode 只能是：${aiDailyVerifierReasonCodes.join('、')}。`,
+    '每条 review 必须包含 claimId、verdict、supportingEvidenceIds、reasonCode、correctedText；supportingEvidenceIds 只能引用输入 evidenceId。',
+    '每条 blockReview 必须包含 blockId、verdict、supportingClaimIds、reasonCode、correctedText；supportingClaimIds 只能引用该 block 已绑定的 claimId。',
+    'correctedText 没有必要修正时必须返回 null；数组字段没有项目时必须返回空数组。',
+  ].join('\n')
 }
 
 function responsesEndpoints(baseUrl: string) {

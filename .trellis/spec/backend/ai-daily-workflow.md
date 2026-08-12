@@ -133,6 +133,63 @@ attempt.errorCategory = classifyAiDailyGenerationProviderError(error)
 
 The shared classifier preserves one fixed low-sensitive category, and the checkpoint decoder validates the same source-of-truth list.
 
+## Scenario: Structured generation prompt-validator parity
+
+### 1. Scope / Trigger
+
+- Trigger: changing extractor, composer, or verifier output fields, enums, array bounds, ID bindings, repair instructions, or prompt text.
+- Goal: keep the model-visible contract executable and identical to the runtime normalizers, so a valid Responses channel is not rejected merely because the prompt omitted a required enum or shape rule.
+
+### 2. Signatures
+
+- `buildAiDailyStructuredSystemPrompt(role, schemaVersion) -> string` owns the complete model-visible structured-output contract.
+- `normalizeFactExtractionOutput`, `normalizeCompositionOutput`, and `normalizeVerifierOutput` remain the authoritative runtime validators.
+- `aiDailyGenerationPromptVersion` must change whenever prompt behavior or repair guidance changes.
+
+### 3. Contracts
+
+- The extractor prompt lists every required claim field, all `claimType` values, the `low | medium | high` uncertainty enum, boolean `directSupport`, evidence-ID ownership, and empty-array behavior.
+- The composer prompt lists the 1-10 event bound, maximum six trends, every nested claim block, exact event-to-block claim binding, uncertainty enum, and URL prohibition.
+- The verifier prompt lists every verdict and reason code, required review/block-review fields, ID ownership, complete non-duplicated coverage, nullable `correctedText`, and empty-array behavior.
+- Repair keeps the same full system contract and adds only bounded validation issue codes plus the previous structured output; it does not change endpoint, protocol, model, or retry count.
+
+### 4. Validation & Error Matrix
+
+- Prompt omits a validator enum or required field -> contract test failure before deployment.
+- First output violates the normalizer -> one repair call with bounded issues and previous output.
+- Repaired output still violates the normalizer -> `schema_invalid`; do not silently coerce values or publish partial structures.
+- Provider transport/auth/upstream failure -> preserve its fixed provider category; do not relabel it as schema drift.
+
+### 5. Good / Base / Bad Cases
+
+- Good: extractor sees every legal `claimType` and uncertainty value, returns valid claims, and generation advances to compose.
+- Base: the first output misses a field, repair receives the validator issue and the complete contract, and the second output passes.
+- Bad: validator requires `claimType=interpretation` and `uncertainty=low`, but the prompt only says “include claimType and uncertainty”; repeated schema rejection is then misdiagnosed as provider instability.
+
+### 6. Tests Required
+
+- `npm.cmd run ai-daily:model-runtime-check` asserts the system prompt contains representative values and bounds from all three validator contracts while provider requests remain Responses-only and omit `temperature`.
+- `npm.cmd run ai-daily:provider-check` keeps the one-repair limit, schema rejection, fallback ordering, and fixed provider-error categories covered without external calls.
+- Run `npm.cmd run ai-daily:contracts-check`, `npm.cmd run server:build`, `npm.cmd run lint`, and `npm.cmd run build` before deployment.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```text
+Output claimType and uncertainty.
+```
+
+This names fields but leaves the model guessing values that the validator will accept.
+
+#### Correct
+
+```text
+claimType must be one of the exported aiDailyClaimTypes; uncertainty must be low, medium, or high.
+```
+
+The prompt imports the same exported enum source used by validation, and tests prevent future drift.
+
 ## Scenario: Studio live-run ingestion authorization
 
 ### 1. Scope / Trigger

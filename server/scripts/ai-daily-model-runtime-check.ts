@@ -15,7 +15,7 @@ import {
   validateAiDailyModelApprovalBundle,
   validateAiDailyModelManualSelectionProposal,
 } from '../src/aiDailyModelArtifacts.js'
-import { createAiDailyResponsesProvider } from '../src/aiDailyModelProvider.js'
+import { buildAiDailyStructuredSystemPrompt, createAiDailyResponsesProvider } from '../src/aiDailyModelProvider.js'
 import {
   buildAiDailyProductionProviders,
   defaultAiDailyModelApprovalFile,
@@ -112,6 +112,18 @@ try {
   assert(!Object.hasOwn(observedBodies[0], 'temperature'), 'provider request must omit temperature')
   assert(Array.isArray(observedBodies[0].input), 'provider request must use Responses input')
   assert(!Object.hasOwn(observedBodies[0], 'messages'), 'provider request must not use Chat Completions messages')
+  const extractorPrompt = buildAiDailyStructuredSystemPrompt('extractor', aiDailyGenerationSchemaVersion)
+  for (const required of ['announcement', 'interpretation', 'low、medium、high', 'directSupport', 'conflictingEvidenceIds']) {
+    assert(extractorPrompt.includes(required), `extractor prompt must describe validator contract: ${required}`)
+  }
+  const composerPrompt = buildAiDailyStructuredSystemPrompt('composer', aiDailyGenerationSchemaVersion)
+  for (const required of ['1 至 10', '最多 6', 'factSummary', 'whyItMatters']) {
+    assert(composerPrompt.includes(required), `composer prompt must describe validator contract: ${required}`)
+  }
+  const verifierPrompt = buildAiDailyStructuredSystemPrompt('verifier', aiDailyGenerationSchemaVersion)
+  for (const required of ['entailed', 'scope_inflation', 'supportingEvidenceIds', 'supportingClaimIds']) {
+    assert(verifierPrompt.includes(required), `verifier prompt must describe validator contract: ${required}`)
+  }
 
   const baseUrl = runtime.channels[0].baseUrl
   const compatibilityProvider = createAiDailyResponsesProvider({
