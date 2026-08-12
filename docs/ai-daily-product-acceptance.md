@@ -1,10 +1,10 @@
 # 潮讯 TideBrief 产品验收矩阵
 
-更新时间：2026-08-11
+更新时间：2026-08-12
 
 ## 当前结论
 
-潮讯 TideBrief 当前为 **工程就绪，首个真实 Edition 已尝试但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。真实来源刷新已完成，但生成 revision 被固定质量门禁拒绝，未进入人工审核或发布。
+潮讯 TideBrief 当前为 **工程就绪，真实 Edition 生成已尝试但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。真实来源刷新已完成，但最新生成 revision 仍被固定质量门禁拒绝，未进入人工审核或发布。
 
 ## 验收矩阵
 
@@ -43,15 +43,15 @@ npm run check:ui
 | --- | --- |
 | 真实来源刷新 | 一次手动刷新完成；80 个候选、75 条证据 ready、40 个聚类、8 条入选，22 个 work item 全部成功 |
 | 生产配置 | Render runtime 与静态批准 bundle 绑定校验通过；production generation 仅在执行窗口临时开启，business evaluation、Cron 和 public feed 保持关闭 |
-| 真实生成 | 仅创建 1 个 `PRODUCTION` run；终态为 `completed-with-gaps`，没有持久化 provider 原始错误 |
-| 生成结果 | 唯一 revision 的 `validationStatus=rejected`，固定 finding 为 `extractor-schema-or-provider-failure`；保留 8 条 citation snapshot，但没有可审核正文 block |
+| 真实生成 | 同一 Edition 仅执行一次获批重跑；Issue `cmspekr1d000044bmbbnjin5u` 的最新 Run 为 `cmspkl33d000045c7w21irnvy`，HTTP 入口返回 `202`，终态为 `COMPLETED_WITH_GAPS`，`attemptNumber=3` |
+| 生成结果 | `EXTRACT_FACTS`、`VALIDATE`、`DRAFT` checkpoint 已记录；Revision 2 使用 `promptVersion=ai-daily-prompt-v3`，`validationStatus=REJECTED`、`applyState=DISCARDED`，保留 8 条 citation snapshot；唯一 critical finding 为 `extractor-schema-or-provider-failure` |
 | 审核与发布 | 未创建可审核 draft，未执行 Studio review、Publish Export、部署或公开 Feed 验收 |
-| 回滚边界 | production generation 已恢复关闭；Cron 与 public feed 未开启。rollback evidence 已初始化但未封存，数据库备份、上一 revision 与 migration 记录仍需人工补齐 |
-| 结论 | 真实来源闭环通过，真实生成与产品级发布未通过；潮讯继续保持“待验收”，不得宣称已发布或每日自动运行 |
+| 回滚边界 | rollback evidence `tidebrief-rollback-2026-08-12` 已封存；custom-format 数据库 dump 已完成独立恢复验证，上一 Render revision 与 19 条 migration 已记录，`npm.cmd run ai-daily:rollback -- check --require-sealed` 通过。该 manifest 保留既有 acceptance binding，不冒充对最新 Run 的最终 acceptance seal。`AI_DAILY_PRODUCTION_GENERATION_ENABLED`、`AI_DAILY_PUBLIC_FEED_ENABLED`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED` 均为 `false`，Cron 未创建 |
+| 结论 | 真实来源闭环通过，真实生成、人工审核与产品级发布未通过；潮讯继续保持“待验收”，不得宣称已发布或每日自动运行。除非完成新的实质性生产修复并重新获得批准，不得继续真实调用 |
 
 ## 最后人工 gate
 
-1. 临执行前批准一期真实 Edition，并确认当前来源范围和生成 runtime。
+1. 在新的实质性生产修复部署后，重新批准一次真实 Edition；当前不得以重试代替修复。
 2. 完成真实来源采集、候选审核、生成、Studio 人工修订与批准。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。

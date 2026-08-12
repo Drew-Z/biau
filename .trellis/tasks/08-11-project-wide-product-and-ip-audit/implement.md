@@ -168,14 +168,15 @@ Focused checks:
 
 ### E4. AI Daily manual product gate
 
-- [x] Obtain explicit approval before real-source/model execution and execute one bounded first-edition attempt without automatic retry.
+- [x] Obtain explicit approval before real-source/model execution and execute one bounded first-edition attempt plus one approved same-Edition rerun without automatic retry.
 - [ ] Generate one real Edition, review sources and claims in Studio, and require human approval.
 - [ ] Run Publish Export, deploy the public payload and verify Feed/detail on desktop/mobile.
-- [ ] Record low-sensitive acceptance evidence; leave Cron disabled.
+- [ ] Record and seal the complete low-sensitive acceptance evidence after a future successful review/export/deployment; rollback evidence for the failed run is already sealed and Cron remains disabled.
 
 ### Rollback point
 
 - Failed acceptance keeps the product in `待验收`/degraded state. It does not delete test data automatically or publish a failed Edition.
+- The latest rerun is `COMPLETED_WITH_GAPS` with `promptVersion=ai-daily-prompt-v3` and `validationStatus=REJECTED`; no draft, review, export, deployment, or public Feed exists. Generation, public Feed, and business evaluation are disabled and Cron is not created. Do not perform another real provider call until a substantive production fix is deployed and explicitly approved.
 
 ## Final Integration Gate
 

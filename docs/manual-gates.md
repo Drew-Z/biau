@@ -120,13 +120,16 @@ AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved bundle hash>
 
 ## AI Daily 当前人工队列
 
-2026-08-12 已按批准执行首个真实 Edition 尝试：来源刷新完成并选出 8 条证据，但唯一生产生成 run 以 `completed-with-gaps` 结束，revision 被固定 `extractor-schema-or-provider-failure` 拒绝，未创建可审核 draft、Publish Export 或公开 Feed。`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 已恢复 `false`，Cron、business evaluation 与 public feed 仍关闭；rollback evidence 已初始化但未封存，当前不能把潮讯标记为产品可用。
+2026-08-12 已完成首个真实 Edition 的一次获批同 Edition 重跑。Issue `cmspekr1d000044bmbbnjin5u` 的最新 Run `cmspkl33d000045c7w21irnvy` 以 `COMPLETED_WITH_GAPS` 结束，`attemptNumber=3`；Revision 2 的 `promptVersion=ai-daily-prompt-v3` 仍为 `validationStatus=REJECTED` / `applyState=DISCARDED`，唯一 critical finding 为 `extractor-schema-or-provider-failure`。未创建 draft，未执行 Studio review、Publish Export、部署或公开 Feed。
 
-### 1. 运行首个真实版次
+rollback evidence `tidebrief-rollback-2026-08-12` 已封存，custom-format 数据库 dump 已完成独立恢复验证，上一 Render revision 和 19 条 migration 已记录；强校验 `npm.cmd run ai-daily:rollback -- check --require-sealed` 已通过。该 manifest 保留既有 acceptance binding，不代表最新 Run 已完成最终 acceptance seal。当前 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`、`AI_DAILY_PUBLIC_FEED_ENABLED=false`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=false`，Cron 未创建。潮讯保持“待验收”，不得把 `COMPLETED_WITH_GAPS` 或 `REJECTED` 写成生产成功；除非完成新的实质性修复并重新获得批准，不得继续真实调用。
 
-- 首个真实版次已完成一次有界尝试；后续重跑前必须先修复并重新审查 extractor schema/provider 兼容性。
-- production generation 已恢复 `false`，business evaluation、Cron 与 public feed 保持关闭。
-- 不临时修改 Web Service Start Command，不把该流程包装成模型测活。
+### 1. 后续真实版次
+
+- 先完成 extractor schema/provider 兼容性等实质性生产修复并部署，再重新取得明确业务批准。
+- 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
+- production generation、business evaluation、Cron 与 public feed 保持关闭。
+- 不临时修改 Web Service Start Command。
 
 ### 2. 初始化验收 manifest
 
