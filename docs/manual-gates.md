@@ -122,6 +122,8 @@ AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved bundle hash>
 
 2026-08-12 已完成首个真实 Edition 的一次获批同 Edition 重跑。Issue `cmspekr1d000044bmbbnjin5u` 的最新 Run `cmspkl33d000045c7w21irnvy` 以 `COMPLETED_WITH_GAPS` 结束，`attemptNumber=3`；Revision 2 的 `promptVersion=ai-daily-prompt-v3` 仍为 `validationStatus=REJECTED` / `applyState=DISCARDED`，唯一 critical finding 为 `extractor-schema-or-provider-failure`。未创建 draft，未执行 Studio review、Publish Export、部署或公开 Feed。
 
+2026-08-12 已部署实质性生产修复提交 `2566ac15`。修复将 AI Daily 三角色 provider 统一到共享 Responses 边界，并为 extractor/composer/verifier 发送 `text.format.type=json_schema`、`strict=true` 的角色专属 strict schema；`aiDailyGenerationPromptVersion` 已升级为 `ai-daily-prompt-v4`，旧 approval bundle 不再适用。离线 runtime/provider/composition/26 项合同、server build、lint、Vite build 与 rollback sealed check 全部通过，均为零 provider/network 调用。Render `/health` 已返回 `200`，Studio 未授权返回 `401 missing-studio-token`，公开 Feed 路由保持关闭。新的 approval bundle、Render Secret File/hash、Studio 二次确认和真实版次仍未完成，因此不得继续真实调用。
+
 rollback evidence `tidebrief-rollback-2026-08-12` 已封存，custom-format 数据库 dump 已完成独立恢复验证，上一 Render revision 和 19 条 migration 已记录；强校验 `npm.cmd run ai-daily:rollback -- check --require-sealed` 已通过。该 manifest 保留既有 acceptance binding，不代表最新 Run 已完成最终 acceptance seal。当前 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`、`AI_DAILY_PUBLIC_FEED_ENABLED=false`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=false`，Cron 未创建。潮讯保持“待验收”，不得把 `COMPLETED_WITH_GAPS` 或 `REJECTED` 写成生产成功；除非完成新的实质性修复并重新获得批准，不得继续真实调用。
 
 ### 1. 后续真实版次

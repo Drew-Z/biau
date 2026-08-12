@@ -47,11 +47,11 @@ npm run check:ui
 | 生成结果 | `EXTRACT_FACTS`、`VALIDATE`、`DRAFT` checkpoint 已记录；Revision 2 使用 `promptVersion=ai-daily-prompt-v3`，`validationStatus=REJECTED`、`applyState=DISCARDED`，保留 8 条 citation snapshot；唯一 critical finding 为 `extractor-schema-or-provider-failure` |
 | 审核与发布 | 未创建可审核 draft，未执行 Studio review、Publish Export、部署或公开 Feed 验收 |
 | 回滚边界 | rollback evidence `tidebrief-rollback-2026-08-12` 已封存；custom-format 数据库 dump 已完成独立恢复验证，上一 Render revision 与 19 条 migration 已记录，`npm.cmd run ai-daily:rollback -- check --require-sealed` 通过。该 manifest 保留既有 acceptance binding，不冒充对最新 Run 的最终 acceptance seal。`AI_DAILY_PRODUCTION_GENERATION_ENABLED`、`AI_DAILY_PUBLIC_FEED_ENABLED`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED` 均为 `false`，Cron 未创建 |
-| 结论 | 真实来源闭环通过，真实生成、人工审核与产品级发布未通过；潮讯继续保持“待验收”，不得宣称已发布或每日自动运行。除非完成新的实质性生产修复并重新获得批准，不得继续真实调用 |
+| 结论 | 真实来源闭环通过，`2566ac15` 已部署实质性 Structured Outputs/provider 边界修复并将 prompt 升级为 `ai-daily-prompt-v4`；修复后的离线质量门和线上 `/health=200` 已通过，但真实生成、人工审核与产品级发布仍未通过。潮讯继续保持“待验收”，不得宣称已发布或每日自动运行。新的 approval bundle/Secret File/hash 与明确业务批准完成前不得继续真实调用 |
 
 ## 最后人工 gate
 
-1. 在新的实质性生产修复部署后，重新批准一次真实 Edition；当前不得以重试代替修复。
+1. 在 `2566ac15` 部署和离线/健康校验通过后，重新生成并明确批准 `prompt-v4` 对应的 approval bundle，再批准一次真实 Edition；当前不得以重试代替修复。
 2. 完成真实来源采集、候选审核、生成、Studio 人工修订与批准。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。
