@@ -11,7 +11,12 @@ import {
   aiDailyVerifierVerdicts,
 } from './aiDailyGeneration.js'
 import type { AiDailyModelRuntimeChannel, AiDailyModelRuntimeCandidate } from './aiDailyModelRuntime.js'
-import { readResponsesContent } from './responsesApi.js'
+import {
+  parseStructuredResponse,
+  requestResponsesText,
+  type ResponsesApiResult,
+  type ResponsesJsonSchema,
+} from './responsesApi.js'
 
 export function createAiDailyResponsesProvider(input: {
   candidate: AiDailyModelRuntimeCandidate
@@ -65,64 +70,208 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
         `上一次输出：${JSON.stringify(request.repair.previousOutput).slice(0, 80_000)}`,
       ].join('\n')
     : ''
-  const body = {
-    model: channel.modelIdentifier,
+  const result = await requestResponsesText({
+    channel: {
+      apiKey: channel.apiKey,
+      baseUrl: channel.baseUrl,
+      model: channel.modelIdentifier,
+    },
+    timeoutMs: channel.timeoutMs,
     stream: false,
-    input: [
-      {
-        role: 'system',
-        content: [{ type: 'input_text', text: buildAiDailyStructuredSystemPrompt(request.role, request.schemaVersion) }],
-      },
-      {
-        role: 'user',
-        content: [{
-          type: 'input_text',
-          text: [
-            `任务角色：${request.role}`,
-            `生成契约版本：${request.schemaVersion}`,
-            '输入数据如下。只根据输入完成任务，不要编造来源、URL、凭据或未提供的事实。',
-            payload,
-            repairInstruction,
-          ].filter(Boolean).join('\n\n'),
-        }],
-      },
-    ],
-  }
+    system: buildAiDailyStructuredSystemPrompt(request.role, request.schemaVersion),
+    user: [
+      `任务角色：${request.role}`,
+      `生成契约版本：${request.schemaVersion}`,
+      '输入数据如下。只根据输入完成任务，不要编造来源、URL、凭据或未提供的事实。',
+      payload,
+      repairInstruction,
+    ].filter(Boolean).join('\n\n'),
+    jsonSchema: buildAiDailyStructuredOutputSchema(request.role),
+  })
+  if (!result.content) throw new Error(toAiDailyProviderError(result))
+  const structured = parseStructuredResponse(result.content)
+  if (structured === null) throw new Error('ai-daily-provider-json-invalid')
+  return structured
+}
 
-  let lastFailure = 'ai-daily-provider-request-failed'
-  for (const endpoint of responsesEndpoints(channel.baseUrl)) {
-    const abort = new AbortController()
-    const timeout = setTimeout(() => abort.abort(), channel.timeoutMs)
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${channel.apiKey}`,
-          'Content-Type': 'application/json',
+const IDENTIFIER_SCHEMA = {
+  type: 'string',
+  minLength: 1,
+  maxLength: 96,
+  pattern: '^[A-Za-z0-9][A-Za-z0-9._:-]*$',
+} as const
+const UNCERTAINTY_SCHEMA = { type: 'string', enum: ['low', 'medium', 'high'] } as const
+const CLAIM_IDS_SCHEMA = {
+  type: 'array',
+  minItems: 1,
+  maxItems: 40,
+  items: IDENTIFIER_SCHEMA,
+} as const
+const CLAIM_BLOCK_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['text', 'claimIds'],
+  properties: {
+    text: { type: 'string', minLength: 1, maxLength: 1_200 },
+    claimIds: CLAIM_IDS_SCHEMA,
+  },
+} as const
+
+export function buildAiDailyStructuredOutputSchema(role: AiDailyGenerationRole): ResponsesJsonSchema {
+  if (role === 'extractor') {
+    return structuredSchema('ai_daily_extractor_v2', {
+      type: 'object',
+      additionalProperties: false,
+      required: ['claims'],
+      properties: {
+        claims: {
+          type: 'array',
+          maxItems: 120,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: [
+              'claimId',
+              'text',
+              'claimType',
+              'evidenceIds',
+              'directSupport',
+              'conflictingEvidenceIds',
+              'uncertainty',
+            ],
+            properties: {
+              claimId: IDENTIFIER_SCHEMA,
+              text: { type: 'string', minLength: 1, maxLength: 800 },
+              claimType: { type: 'string', enum: [...aiDailyClaimTypes] },
+              evidenceIds: {
+                type: 'array',
+                minItems: 1,
+                maxItems: 20,
+                items: IDENTIFIER_SCHEMA,
+              },
+              directSupport: { type: 'boolean' },
+              conflictingEvidenceIds: {
+                type: 'array',
+                maxItems: 20,
+                items: IDENTIFIER_SCHEMA,
+              },
+              uncertainty: UNCERTAINTY_SCHEMA,
+            },
+          },
         },
-        body: JSON.stringify(body),
-        signal: abort.signal,
-      })
-      if (!response.ok) {
-        lastFailure = response.status >= 500 ? 'ai-daily-provider-upstream-error' : `ai-daily-provider-http-${response.status}`
-        if ([404, 405].includes(response.status)) continue
-        throw new Error(lastFailure)
-      }
-      const json = await response.json().catch(() => null)
-      const content = readResponsesContent(json)
-      if (!content) throw new Error('ai-daily-provider-empty-response')
-      return parseJsonContent(content)
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') lastFailure = 'ai-daily-provider-timeout'
-      else if (error instanceof Error && error.message.startsWith('ai-daily-provider-')) lastFailure = error.message
-      else lastFailure = 'ai-daily-provider-network-error'
-      if (lastFailure === 'ai-daily-provider-http-404' || lastFailure === 'ai-daily-provider-http-405') continue
-      throw new Error(lastFailure, { cause: error })
-    } finally {
-      clearTimeout(timeout)
-    }
+      },
+    })
   }
-  throw new Error(lastFailure)
+  if (role === 'composer') {
+    return structuredSchema('ai_daily_composer_v2', {
+      type: 'object',
+      additionalProperties: false,
+      required: ['title', 'subtitle', 'introduction', 'events', 'trends'],
+      properties: {
+        title: { type: 'string', minLength: 1, maxLength: 120 },
+        subtitle: { type: 'string', minLength: 1, maxLength: 180 },
+        introduction: CLAIM_BLOCK_SCHEMA,
+        events: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 10,
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['eventId', 'title', 'factSummary', 'whyItMatters', 'uncertainty', 'claimIds'],
+            properties: {
+              eventId: IDENTIFIER_SCHEMA,
+              title: { type: 'string', minLength: 1, maxLength: 140 },
+              factSummary: CLAIM_BLOCK_SCHEMA,
+              whyItMatters: CLAIM_BLOCK_SCHEMA,
+              uncertainty: UNCERTAINTY_SCHEMA,
+              claimIds: CLAIM_IDS_SCHEMA,
+            },
+          },
+        },
+        trends: {
+          type: 'array',
+          maxItems: 6,
+          items: CLAIM_BLOCK_SCHEMA,
+        },
+      },
+    })
+  }
+  return structuredSchema('ai_daily_verifier_v2', {
+    type: 'object',
+    additionalProperties: false,
+    required: ['reviews', 'blockReviews'],
+    properties: {
+      reviews: {
+        type: 'array',
+        maxItems: 120,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['claimId', 'verdict', 'supportingEvidenceIds', 'reasonCode', 'correctedText'],
+          properties: {
+            claimId: IDENTIFIER_SCHEMA,
+            verdict: { type: 'string', enum: [...aiDailyVerifierVerdicts] },
+            supportingEvidenceIds: {
+              type: 'array',
+              maxItems: 20,
+              items: IDENTIFIER_SCHEMA,
+            },
+            reasonCode: { type: 'string', enum: [...aiDailyVerifierReasonCodes] },
+            correctedText: {
+              anyOf: [
+                { type: 'string', minLength: 1, maxLength: 800 },
+                { type: 'null' },
+              ],
+            },
+          },
+        },
+      },
+      blockReviews: {
+        type: 'array',
+        maxItems: 160,
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['blockId', 'verdict', 'supportingClaimIds', 'reasonCode', 'correctedText'],
+          properties: {
+            blockId: { ...IDENTIFIER_SCHEMA, maxLength: 160 },
+            verdict: { type: 'string', enum: [...aiDailyVerifierVerdicts] },
+            supportingClaimIds: {
+              type: 'array',
+              maxItems: 40,
+              items: IDENTIFIER_SCHEMA,
+            },
+            reasonCode: { type: 'string', enum: [...aiDailyVerifierReasonCodes] },
+            correctedText: {
+              anyOf: [
+                { type: 'string', minLength: 1, maxLength: 1_200 },
+                { type: 'null' },
+              ],
+            },
+          },
+        },
+      },
+    },
+  })
+}
+
+function structuredSchema(name: string, schema: Record<string, unknown>): ResponsesJsonSchema {
+  return { name, schema, strict: true }
+}
+
+function toAiDailyProviderError(result: ResponsesApiResult) {
+  if (result.failure === 'empty_response') return 'ai-daily-provider-empty-response'
+  if (result.failure === 'invalid_response') return 'ai-daily-provider-json-invalid'
+  const diagnostic = result.diagnostic
+  if (diagnostic?.kind === 'timeout') return 'ai-daily-provider-timeout'
+  if (diagnostic?.kind === 'network_error') return 'ai-daily-provider-network-error'
+  if (diagnostic?.kind === 'http_status' && diagnostic.httpStatus) {
+    return diagnostic.httpStatus >= 500
+      ? 'ai-daily-provider-upstream-error'
+      : `ai-daily-provider-http-${diagnostic.httpStatus}`
+  }
+  return 'ai-daily-provider-request-failed'
 }
 
 export function buildAiDailyStructuredSystemPrompt(role: AiDailyGenerationRole, schemaVersion: string) {
@@ -158,61 +307,4 @@ export function buildAiDailyStructuredSystemPrompt(role: AiDailyGenerationRole, 
     '每条 blockReview 必须包含 blockId、verdict、supportingClaimIds、reasonCode、correctedText；supportingClaimIds 只能引用该 block 已绑定的 claimId。',
     'correctedText 没有必要修正时必须返回 null；数组字段没有项目时必须返回空数组。',
   ].join('\n')
-}
-
-function responsesEndpoints(baseUrl: string) {
-  const normalized = baseUrl.replace(/\/+$/u, '')
-  if (normalized.endsWith('/responses')) return [normalized]
-  if (normalized.endsWith('/v1')) return [`${normalized}/responses`]
-  return [...new Set([`${normalized}/responses`, `${normalized}/v1/responses`])]
-}
-
-function parseJsonContent(content: string) {
-  const normalized = content.replace(/^```(?:json)?\s*/iu, '').replace(/\s*```$/u, '').trim()
-  try {
-    return JSON.parse(normalized) as unknown
-  } catch {
-    const candidate = findBalancedJson(normalized)
-    if (!candidate) throw new Error('ai-daily-provider-json-invalid')
-    try {
-      return JSON.parse(candidate) as unknown
-    } catch {
-      throw new Error('ai-daily-provider-json-invalid')
-    }
-  }
-}
-
-function findBalancedJson(value: string) {
-  const objectStart = value.indexOf('{')
-  const arrayStart = value.indexOf('[')
-  const start = objectStart < 0
-    ? arrayStart
-    : arrayStart < 0
-      ? objectStart
-      : Math.min(objectStart, arrayStart)
-  if (start < 0) return ''
-  const opening = value[start]
-  const closing = opening === '{' ? '}' : ']'
-  let depth = 0
-  let quoted = false
-  let escaped = false
-  for (let index = start; index < value.length; index += 1) {
-    const char = value[index]
-    if (quoted) {
-      if (escaped) escaped = false
-      else if (char === '\\') escaped = true
-      else if (char === '"') quoted = false
-      continue
-    }
-    if (char === '"') {
-      quoted = true
-      continue
-    }
-    if (char === opening) depth += 1
-    if (char === closing) {
-      depth -= 1
-      if (depth === 0) return value.slice(start, index + 1)
-    }
-  }
-  return ''
 }

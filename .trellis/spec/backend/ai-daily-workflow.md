@@ -143,6 +143,7 @@ The shared classifier preserves one fixed low-sensitive category, and the checkp
 ### 2. Signatures
 
 - `buildAiDailyStructuredSystemPrompt(role, schemaVersion) -> string` owns the complete model-visible structured-output contract.
+- `buildAiDailyStructuredOutputSchema(role) -> ResponsesJsonSchema` owns the request-level Structured Outputs contract for each role; the provider must call the shared `requestResponsesText()` boundary instead of maintaining a second raw `fetch` implementation.
 - `normalizeFactExtractionOutput`, `normalizeCompositionOutput`, and `normalizeVerifierOutput` remain the authoritative runtime validators.
 - `aiDailyGenerationPromptVersion` must change whenever prompt behavior or repair guidance changes.
 
@@ -152,10 +153,14 @@ The shared classifier preserves one fixed low-sensitive category, and the checkp
 - The composer prompt lists the 1-10 event bound, maximum six trends, every nested claim block, exact event-to-block claim binding, uncertainty enum, and URL prohibition.
 - The verifier prompt lists every verdict and reason code, required review/block-review fields, ID ownership, complete non-duplicated coverage, nullable `correctedText`, and empty-array behavior.
 - Repair keeps the same full system contract and adds only bounded validation issue codes plus the previous structured output; it does not change endpoint, protocol, model, or retry count.
+- Responses requests must include `text.format.type=json_schema`, `strict=true`, a role-specific schema, and `additionalProperties=false` on every object. The schema mirrors the normalizer's required fields, enums, and array bounds; uniqueness and cross-record bindings remain validator responsibilities.
+- The schema must stay within the provider's supported Structured Outputs subset. Do not add unsupported keywords such as `uniqueItems`, `allOf`, or `not`; an unsupported strict schema is a provider request failure, not a model-quality result.
 
 ### 4. Validation & Error Matrix
 
 - Prompt omits a validator enum or required field -> contract test failure before deployment.
+- Missing `text.format` or schema/validator drift -> `ai-daily:model-runtime-check` failure before deployment.
+- Unsupported strict-schema keyword -> remove it and keep the equivalent semantic check in the normalizer; never retry the same business task with a guessed schema.
 - First output violates the normalizer -> one repair call with bounded issues and previous output.
 - Repaired output still violates the normalizer -> `schema_invalid`; do not silently coerce values or publish partial structures.
 - Provider transport/auth/upstream failure -> preserve its fixed provider category; do not relabel it as schema drift.

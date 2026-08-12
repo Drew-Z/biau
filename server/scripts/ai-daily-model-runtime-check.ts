@@ -15,7 +15,11 @@ import {
   validateAiDailyModelApprovalBundle,
   validateAiDailyModelManualSelectionProposal,
 } from '../src/aiDailyModelArtifacts.js'
-import { buildAiDailyStructuredSystemPrompt, createAiDailyResponsesProvider } from '../src/aiDailyModelProvider.js'
+import {
+  buildAiDailyStructuredOutputSchema,
+  buildAiDailyStructuredSystemPrompt,
+  createAiDailyResponsesProvider,
+} from '../src/aiDailyModelProvider.js'
 import {
   buildAiDailyProductionProviders,
   defaultAiDailyModelApprovalFile,
@@ -112,6 +116,8 @@ try {
   assert(!Object.hasOwn(observedBodies[0], 'temperature'), 'provider request must omit temperature')
   assert(Array.isArray(observedBodies[0].input), 'provider request must use Responses input')
   assert(!Object.hasOwn(observedBodies[0], 'messages'), 'provider request must not use Chat Completions messages')
+  assertStructuredOutputRequest(observedBodies[0], 'ai_daily_extractor_v2')
+  assertRoleSchemasMatchNormalizerContracts()
   const extractorPrompt = buildAiDailyStructuredSystemPrompt('extractor', aiDailyGenerationSchemaVersion)
   for (const required of ['announcement', 'interpretation', 'low、medium、high', 'directSupport', 'conflictingEvidenceIds']) {
     assert(extractorPrompt.includes(required), `extractor prompt must describe validator contract: ${required}`)
@@ -305,6 +311,80 @@ function assertThrows(callback: () => unknown, label: string) {
     threw = true
   }
   assert(threw, label)
+}
+
+function assertStructuredOutputRequest(body: Record<string, unknown>, expectedName: string) {
+  const text = body.text
+  assert(isRecord(text), 'provider request must include Responses text config')
+  const format = text.format
+  assert(isRecord(format), 'provider request must include Responses text.format')
+  assertEqual(format.type, 'json_schema', 'provider request structured output type')
+  assertEqual(format.name, expectedName, 'provider request structured output schema name')
+  assertEqual(format.strict, true, 'provider request structured output strict mode')
+  assert(isRecord(format.schema), 'provider request must include a JSON Schema')
+  assertEqual(format.schema.additionalProperties, false, 'root schema must reject extra fields')
+}
+
+function assertRoleSchemasMatchNormalizerContracts() {
+  const extractor = schemaRecord('extractor')
+  assertDeepEqual(extractor.required, ['claims'], 'extractor required fields')
+  const extractorClaim = arrayItemSchema(propertySchema(extractor, 'claims'))
+  assertDeepEqual(
+    propertySchema(extractorClaim, 'claimType').enum,
+    ['announcement', 'release', 'metric', 'date', 'price', 'quote', 'interpretation'],
+    'extractor claim type enum',
+  )
+  assertDeepEqual(propertySchema(extractorClaim, 'uncertainty').enum, ['low', 'medium', 'high'], 'extractor uncertainty enum')
+  assertEqual(propertySchema(extractorClaim, 'evidenceIds').minItems, 1, 'extractor evidence binding floor')
+
+  const composer = schemaRecord('composer')
+  const events = propertySchema(composer, 'events')
+  assertEqual(events.minItems, 1, 'composer event floor')
+  assertEqual(events.maxItems, 10, 'composer event ceiling')
+  assertEqual(propertySchema(composer, 'trends').maxItems, 6, 'composer trend ceiling')
+  const composerEvent = arrayItemSchema(events)
+  assertDeepEqual(
+    composerEvent.required,
+    ['eventId', 'title', 'factSummary', 'whyItMatters', 'uncertainty', 'claimIds'],
+    'composer event required fields',
+  )
+
+  const verifier = schemaRecord('verifier')
+  assertDeepEqual(verifier.required, ['reviews', 'blockReviews'], 'verifier required arrays')
+  const review = arrayItemSchema(propertySchema(verifier, 'reviews'))
+  assertDeepEqual(
+    propertySchema(review, 'verdict').enum,
+    ['entailed', 'contradicted', 'insufficient', 'unverifiable'],
+    'verifier verdict enum',
+  )
+  assertDeepEqual(
+    propertySchema(review, 'reasonCode').enum,
+    ['exact_support', 'scope_inflation', 'date_mismatch', 'number_mismatch', 'attribution_error', 'missing_support'],
+    'verifier reason enum',
+  )
+}
+
+function schemaRecord(role: AiDailyGenerationRole) {
+  const schema = buildAiDailyStructuredOutputSchema(role).schema
+  assert(isRecord(schema), `${role} schema must be an object`)
+  assertEqual(schema.additionalProperties, false, `${role} schema must reject extra fields`)
+  return schema
+}
+
+function propertySchema(schema: Record<string, unknown>, name: string) {
+  assert(isRecord(schema.properties), 'schema properties must be an object')
+  const property = schema.properties[name]
+  assert(isRecord(property), `schema property missing: ${name}`)
+  return property
+}
+
+function arrayItemSchema(schema: Record<string, unknown>) {
+  assert(isRecord(schema.items), 'array item schema must be an object')
+  return schema.items
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }
 
 async function expectFailure(action: () => Promise<unknown>, expectedMessage: string) {
