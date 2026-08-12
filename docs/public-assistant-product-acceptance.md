@@ -4,7 +4,7 @@
 
 ## 当前结论
 
-知航 BIAU Beacon 当前为 **工程就绪，生产检索已修复，生成链路仍降级，产品待验收**。确定性合同已覆盖公开 API、会话版本、分支、浏览器状态、持久化、恢复、安全、取消和降级语义；`65c8af15` 已完成 Cloudflare Pages、Public API 与 RAG Orchestrator 全链部署，生产检索稳定命中知航专属资料。第三次获批业务验收只产生一个站点 Request，检索返回 4 条证据和 3 条知航相关引用，但回答仍为 `degraded`。新低敏证据把失败收窄到 Cloudflare 自定义域的 relay edge/Pages 执行边界；Render relay base 已切换到稳定 `biau.pages.dev` 域，等待下一次独立批准完成最终业务验收。
+知航 BIAU Beacon 当前为 **工程就绪，生产检索已修复，生成链路仍降级，产品待验收**。确定性合同已覆盖公开 API、会话版本、分支、浏览器状态、持久化、恢复、安全、取消和降级语义；`65c8af15` 已完成 Cloudflare Pages、Public API 与 RAG Orchestrator 全链部署，生产检索稳定命中知航专属资料。第四次获批业务验收在稳定 Pages relay base 上仍返回 `degraded`，Cloudflare 精确窗口显示三次 Function 异常与三次上游 subrequest 对应，故障已收窄为 relay upstream transport；引用、刷新恢复和手机布局观察通过，但完整模型回答仍未通过。
 
 ## 验收矩阵
 
@@ -39,7 +39,20 @@
 | 配置修复 | Render `ASSISTANT_MODEL_BASE_URL` 已从访客自定义域切换到稳定 `https://biau.pages.dev/api/model-relay`；该路径的未认证请求可到达 Function 并返回固定来源头，检查未触达模型上游 |
 | 未通过项 | 未得到完整模型回答；本地 Playwright 在读取已完成 SSE body 时发生协议错误，桌面刷新和手机引用观察未继续，以避免第二次模型请求 |
 | 会话清理 | 临时会话已按精确问题和时间窗定位并删除；删除后 turns 为 0、requests 为 0 |
-| 结论 | 远端检索融合已经通过，生成故障收窄到 Cloudflare 自定义域 relay 边界；切换稳定 Pages 域后仍需新的独立批准验证完整回答、刷新恢复和手机引用布局 |
+| 结论 | 远端检索融合已经通过；第三次验收将自定义域 edge 排除出后端 relay base，第四次验收进一步证明稳定 Pages Function 已发起上游请求，但 upstream transport 仍失败 |
+
+## 2026-08-12 第四次生产验收记录
+
+| 证据 | 低敏结果 |
+| --- | --- |
+| 部署与健康 | `a5c6db79` 的 Pages、Public API、RAG 与稳定 relay base 配置均已部署；稳定 Pages 域 `/api/health` 返回 `200`，`modelConfigured=true` |
+| 真实业务请求 | 只发送 1 个 `site` 业务请求，数据库对应 1 个 Request、1 个 Turn、1 个 Revision；终态仍为 `degraded`，三次有界尝试，公开失败类别为 `upstream` |
+| 检索与引用 | 返回 4 条站内证据、3 条已核验 HTTP `200` 引用；知航专属资料继续排在正确位置 |
+| 会话与桌面恢复 | 桌面刷新后同一会话恢复成功，未再次发送模型请求；临时会话删除后读取返回 `404` |
+| 手机观察 | 390px 视口文档宽度为 390，面板与 3 张引用卡均无横向溢出；恢复过程模型请求数为 0 |
+| Cloudflare 精确窗口 | `polished-heart-b217` 在对应分钟出现 `scriptThrewException`，`errors=3`、`subrequests=3`；同窗口 subrequest 聚合出现 `502/responseDisconnect` |
+| 归因 | Render recovery 为 `relay_upstream + 5xx`，说明 Function 已发起三次上游调用但连接/响应传输失败；不再归因于自定义域 edge、RAG、payload 或持久化 |
+| 结论 | 引用、桌面刷新、手机布局和会话清理通过；非降级模型回答未通过，产品继续保持“待验收”，不得自动重试或改写协议 |
 
 ## 已通过命令
 
@@ -55,6 +68,6 @@ npm run check:ui
 ## 最后人工 gate
 
 1. 稳定 Pages relay base 的 Render 部署与无模型健康/认证边界已通过；不修改 Responses payload、streaming 协议或模型名单。
-2. 下一条真实、公开安全的业务问题必须在执行前重新获得批准；不自动重试，也不用 ping、doctor、空 prompt、catalog probe 或逐模型测活替代业务验收。
-3. 下次验收仍需完成有用模型回答、知航专属引用核对、桌面刷新持久化和手机视口观察；浏览器断网恢复动作已经完成。记录不保存问题全文、token、provider 或内部诊断。
+2. 第四次真实请求已消耗本轮批准额度；不自动重试，也不用 ping、doctor、空 prompt、catalog probe 或逐模型测活替代业务验收。
+3. 浏览器断网恢复动作、引用核对、桌面刷新、手机无溢出和会话清理已通过；剩余唯一产品门禁是非降级模型回答。
 4. 全部通过后才能把状态改为“产品可用”；再次失败则保持待验收或如实标记 degraded。

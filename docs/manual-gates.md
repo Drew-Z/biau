@@ -53,7 +53,8 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 - `d1ec7adb` 已完成 Cloudflare Pages、Public API 与 RAG Orchestrator 全链生产部署。生产纯检索对同一知航问题返回 `site:public-assistant` 为第一引用，`candidateCount=60`、`citationCount=8`、`expandedEntityCount=47`，实际 reranker 模式为 `deterministic`，证明远端融合顺序修复生效。
 - 第二次获批业务验收已执行浏览器断网恢复：首次 stream 在到达 API 前被拦截，恢复后由用户动作显式重试，同一问题只到达 API 一次。最终生成仍以 `degraded` 结束；旧日志只能给出 `public_api + 5xx`，不能据此猜测或修改 streaming/input 协议。临时会话及其 turn/request 已删除。
 - `65c8af15` 已部署新的低敏 relay 来源归因。第三次获批业务验收只产生 1 个站点 Request，检索正确返回 4 条站内证据和 3 条知航相关引用，但生成仍为 `degraded`。Render recovery 明确为 `relay_edge + 5xx`；Cloudflare zone 在同一时间窗记录 3 个 relay 动态 `502`，同秒 Pages Functions 为 success、0 error、0 upstream subrequest，未登记到模型上游。
-- Render relay base 已从访客自定义域切换为稳定 `https://biau.pages.dev/api/model-relay`，对应 `65c8af15` 配置部署已 live。该 Pages 域的未认证请求可到达 Function 并返回固定来源头，检查不触达模型；仍需新的明确批准才能再次发送真实业务问题。
+- Render relay base 已从访客自定义域切换为稳定 `https://biau.pages.dev/api/model-relay`，对应配置部署已 live。该 Pages 域的未认证请求可到达 Function 并返回固定来源头，检查不触达模型。
+- 第四次获批业务验收已在稳定 Pages relay base 上完成：只产生 1 个站点 Request，检索返回 4 条站内证据和 3 条已核验引用；桌面刷新、手机 390px 无溢出、会话删除和恢复观察通过。最终仍为 `degraded/upstream`，Cloudflare 精确窗口显示 `scriptThrewException(errors=3, subrequests=3)` 与 `502/responseDisconnect`，低敏归因为 relay upstream transport；完整模型回答仍未通过。
 - 本地获批古诗任务只证明候选主渠道曾成功生成，不能替代站点产品验收；生产端仍保持“产品待验收”。
 - 回滚只恢复上一组 Render model 变量和上一 Cloudflare Pages deployment，不需要数据库迁移或回滚。
 
@@ -119,12 +120,12 @@ AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved bundle hash>
 
 ## AI Daily 当前人工队列
 
+2026-08-12 已按批准执行首个真实 Edition 尝试：来源刷新完成并选出 8 条证据，但唯一生产生成 run 以 `completed-with-gaps` 结束，revision 被固定 `extractor-schema-or-provider-failure` 拒绝，未创建可审核 draft、Publish Export 或公开 Feed。`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 已恢复 `false`，Cron、business evaluation 与 public feed 仍关闭；rollback evidence 已初始化但未封存，当前不能把潮讯标记为产品可用。
+
 ### 1. 运行首个真实版次
 
-- 暂时将 Studio 的 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 设为 `true` 并部署。
-- 保持 business evaluation、Cron 与 public feed 关闭。
-- 在 AI Daily 工作区选择证据完整且包含 Tier 1 来源的 Edition，运行一次明确批准的真实版次。
-- run 到达终态后立即把 generation flag 恢复为 `false` 并重新部署。
+- 首个真实版次已完成一次有界尝试；后续重跑前必须先修复并重新审查 extractor schema/provider 兼容性。
+- production generation 已恢复 `false`，business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command，不把该流程包装成模型测活。
 
 ### 2. 初始化验收 manifest

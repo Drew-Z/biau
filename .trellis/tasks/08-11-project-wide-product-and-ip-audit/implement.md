@@ -139,7 +139,7 @@ Focused checks:
 - [x] Deploy `65c8af15` across Cloudflare Pages, Public API and RAG Orchestrator, then classify the next approved failure as `relay_function`, `relay_edge`, or `relay_upstream` without provider/model/endpoint/request identifiers.
 - [x] Execute the third approved site question once. Production created exactly one Request/Turn/Revision, retrieval returned four site evidence items and three Beacon citations, but generation remained `degraded`; Cloudflare recorded three custom-domain relay `502` responses and zero matching upstream subrequests.
 - [x] Switch Render's relay base from the visitor custom domain to stable `https://biau.pages.dev/api/model-relay`, update deployment drift checks, and redeploy without sending another model request.
-- [ ] Complete the approved real request with a non-degraded model answer, verified citations, desktop refresh persistence and mobile observation. The latest request completed as `degraded` with low-sensitive origin `relay_edge` and status class `5xx`; full answer, mobile citation review and desktop refresh remain unaccepted.
+- [ ] Complete an approved real request with a non-degraded model answer. The fourth request verified three citations, desktop refresh persistence, 390px mobile containment and session cleanup without duplicate model calls, but generation remained `degraded`; Cloudflare showed three Function exceptions, three upstream subrequests and `502/responseDisconnect`, narrowing the remaining failure to relay upstream transport.
 - [x] Record only low-sensitive evidence and mark the product `产品可用`, `待验收` or truthful degraded state.
 - [x] Never turn this into a scheduled model probe.
 
@@ -168,7 +168,7 @@ Focused checks:
 
 ### E4. AI Daily manual product gate
 
-- [ ] Ask for explicit approval before real-source/model execution.
+- [x] Obtain explicit approval before real-source/model execution and execute one bounded first-edition attempt without automatic retry.
 - [ ] Generate one real Edition, review sources and claims in Studio, and require human approval.
 - [ ] Run Publish Export, deploy the public payload and verify Feed/detail on desktop/mobile.
 - [ ] Record low-sensitive acceptance evidence; leave Cron disabled.

@@ -4,7 +4,7 @@
 
 ## 当前结论
 
-潮讯 TideBrief 当前为 **工程就绪，真实 Edition 待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略，检查期间 `networkCalls=0`、`providerCalls=0`。这不能替代生产来源采集、生成和人工审核。
+潮讯 TideBrief 当前为 **工程就绪，首个真实 Edition 已尝试但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。真实来源刷新已完成，但生成 revision 被固定质量门禁拒绝，未进入人工审核或发布。
 
 ## 验收矩阵
 
@@ -36,6 +36,18 @@ npm run check:ui
 ```
 
 `ai-daily:production-readiness-check` 在本地进程看不到 Render 私有环境变量，因此报告的 `0/12 production keys` 只代表本地 shell 未配置，不能据此判断线上 Render 缺失。生产值仍需在真实 Edition 前由平台配置和运行结果验证，且不得复制到仓库。
+
+## 2026-08-12 首个真实 Edition 尝试
+
+| 环节 | 低敏结果 |
+| --- | --- |
+| 真实来源刷新 | 一次手动刷新完成；80 个候选、75 条证据 ready、40 个聚类、8 条入选，22 个 work item 全部成功 |
+| 生产配置 | Render runtime 与静态批准 bundle 绑定校验通过；production generation 仅在执行窗口临时开启，business evaluation、Cron 和 public feed 保持关闭 |
+| 真实生成 | 仅创建 1 个 `PRODUCTION` run；终态为 `completed-with-gaps`，没有持久化 provider 原始错误 |
+| 生成结果 | 唯一 revision 的 `validationStatus=rejected`，固定 finding 为 `extractor-schema-or-provider-failure`；保留 8 条 citation snapshot，但没有可审核正文 block |
+| 审核与发布 | 未创建可审核 draft，未执行 Studio review、Publish Export、部署或公开 Feed 验收 |
+| 回滚边界 | production generation 已恢复关闭；Cron 与 public feed 未开启。rollback evidence 已初始化但未封存，数据库备份、上一 revision 与 migration 记录仍需人工补齐 |
+| 结论 | 真实来源闭环通过，真实生成与产品级发布未通过；潮讯继续保持“待验收”，不得宣称已发布或每日自动运行 |
 
 ## 最后人工 gate
 
