@@ -9,7 +9,7 @@
 - [ ] Configure metrics, diagnostics, retention, and alerts. (low-sensitive diagnostics/metrics, six-category failure projection, repository Grafana/Prometheus assets, offline contract checks, and guarded retention dry-run completed; retention mutation plus production scrape/import/notification routing remain)
 - [x] Run the full deterministic quality gate.
 - [x] Approve and deliver the manual static-selection bundle.
-- [x] Run one explicitly confirmed real edition attempt and one approved same-Edition rerun; both remained rejected/degraded and did not produce a draft.
+- [x] Run one explicitly confirmed real edition attempt and two approved same-Edition reruns; all remained rejected/degraded and did not produce a draft. After the substantive relay-token repair, the latest approved Run `cmsqdx5bp000045j2q7rh3mxj` completed with gaps and revision 4 was rejected/discarded at the extractor/provider boundary.
 - [ ] Review/approve selected flashes and the daily draft, export, deploy, and verify public behavior.
 - [x] Record final runbook, manual gates, and sealed rollback evidence for the failed acceptance attempt.
 

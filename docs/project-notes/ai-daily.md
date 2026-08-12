@@ -4,7 +4,7 @@
 
 AI 日报是一套 evidence-first 的采集、生成、编辑和发布系统，明确拆分 source discovery、original-page evidence、freshness、dedupe、clustering、ranking、durable generation revision、human review、Flash projection 和静态 Daily Edition。[source-verified] 证据：E-AID-001、E-AID-002、E-AID-003。
 
-当前真实状态是“采集闭环已取得 evidence-ready 选择，但生成闭环未完成”：两次获批真实 generation attempt 都在 extraction 的共享 Responses 请求边界失败，没有创建 generated draft 或 public edition，production generation flag 已关闭。[production-observed] 证据：E-AID-008、E-AID-009。
+当前真实状态是“采集闭环已取得 evidence-ready 选择，但生成闭环仍未完成”：在 relay token 漂移修复并重新获批后，唯一一次受控真实 generation attempt 仍在 extraction 的共享 Responses 请求边界以低敏 `provider_error` 失败，没有创建 generated draft 或 public edition；production generation flag 已恢复关闭。[production-observed] 证据：E-AID-008、E-AID-009。
 
 ## 产品边界
 
@@ -109,9 +109,9 @@ provider failure 只保存 request invalid、auth、rate limit、unsupported end
 
 ## 交付状态
 
-生产 ingestion 已选出 evidence-ready 内容。第一次获批 extraction 使用既定 mapping，第二次在更换 bundle 后重试；两次都只执行了一次 bounded provider call，并在共享 Responses 请求边界返回同类低敏 `provider_error`。失败没有越过 extraction，没有创建可提升 revision、draft 或 public content，generation flag 随后关闭。[production-observed] 证据：E-AID-008。
+生产 ingestion 已选出 evidence-ready 内容。relay token 漂移修复后，site-owner 明确批准了一次受控真实版次 `cmsqdx5bp000045j2q7rh3mxj`；它完成 `EXTRACT_FACTS`、`VALIDATE`、`DRAFT` checkpoint，最终为 `COMPLETED_WITH_GAPS`，最新 revision 4 以低敏 `extractor-schema-or-provider-failure` 被 `REJECTED` / `DISCARDED`，保留 8 个 citation snapshot，但没有创建 draft 或 public content。generation flag 已在终态后恢复关闭。[production-observed] 证据：E-AID-008、E-AID-009。
 
-诊断构建已部署，service health 与 authenticated workspace 在 generation disabled 状态下通过。这证明诊断部署路径，不证明 generation path。下一次真实调用仍需 owner 明确批准。[production-observed] 证据：E-AID-009。
+这次真实版次证明了批准、runtime、Secret File/hash、Studio queue、lease worker 和 revision 持久化链路已执行；它没有证明共享 Responses relay/provider 已可完成结构化 extraction。下一步必须先取得新的实质性生产修复和新的 owner 批准，不能把这次失败 Run 当作发布验收。[production-observed] 证据：E-AID-009、E-AID-010。
 
 ## 代码入口
 
