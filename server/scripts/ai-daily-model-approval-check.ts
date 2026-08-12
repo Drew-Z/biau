@@ -33,6 +33,8 @@ async function main() {
     bundleHash: bundleSummary.bundleHash,
     selectionRecordHash: bundleSummary.selectionRecordHash,
     approvedAt: bundleSummary.approvedAt,
+    promptVersion: bundleSummary.promptVersion,
+    generationSchemaVersion: bundleSummary.generationSchemaVersion,
     runtime: {
       channelCount: runtimeSummary.channelCount,
       candidateCount: runtimeSummary.candidateCount,

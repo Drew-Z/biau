@@ -9,7 +9,9 @@ import {
   type AiDailyModelEvaluationSelectionRecord,
 } from './aiDailyModelEvaluation.js'
 import {
+  aiDailyGenerationPromptVersion,
   aiDailyGenerationRoles,
+  aiDailyGenerationSchemaVersion,
   type AiDailyGenerationRole,
 } from './aiDailyGeneration.js'
 import {
@@ -19,9 +21,12 @@ import {
 
 export const aiDailyModelEvaluationProposalSchemaVersion = 'ai-daily-model-evaluation-proposal-v2'
 export const aiDailyModelApprovalBundleSchemaVersion = 'ai-daily-model-approval-bundle-v2'
-export const aiDailyModelManualSelectionProposalSchemaVersion = 'ai-daily-model-manual-selection-proposal-v1'
-export const aiDailyModelManualSelectionBundleSchemaVersion = 'ai-daily-model-manual-selection-bundle-v1'
-export const aiDailyModelManualSelectionRecordSchemaVersion = 'ai-daily-model-manual-selection-v1'
+export const aiDailyModelManualSelectionProposalSchemaVersion = 'ai-daily-model-manual-selection-proposal-v2'
+export const aiDailyModelManualSelectionBundleSchemaVersion = 'ai-daily-model-manual-selection-bundle-v2'
+export const aiDailyModelManualSelectionRecordSchemaVersion = 'ai-daily-model-manual-selection-v2'
+
+const previousAiDailyModelManualSelectionProposalSchemaVersion = 'ai-daily-model-manual-selection-proposal-v1'
+const previousAiDailyModelManualSelectionRecordSchemaVersion = 'ai-daily-model-manual-selection-v1'
 
 const manualSelectionPendingNote = 'Static role mapping awaits explicit human approval and first-edition Studio review.'
 
@@ -57,6 +62,8 @@ interface AiDailyModelManualSelectionRecordBase {
   schemaVersion: typeof aiDailyModelManualSelectionRecordSchemaVersion
   selectionId: string
   generatedAt: string
+  promptVersion: string
+  generationSchemaVersion: string
   roles: AiDailyModelManualSelectionRole[]
   redundancy: 'reduced_redundancy'
   reducedRedundancyAcknowledged: true
@@ -91,6 +98,10 @@ export interface AiDailyModelManualSelectionBundle {
 
 export type AiDailyModelProposal = AiDailyModelEvaluationProposal | AiDailyModelManualSelectionProposal
 export type AiDailyModelApprovalArtifact = AiDailyModelApprovalBundle | AiDailyModelManualSelectionBundle
+type AiDailyModelSelectionRecord =
+  | AiDailyModelEvaluationSelectionRecord
+  | AiDailyApprovedModelEvaluationSelection
+  | AiDailyModelManualSelectionRecord
 
 export function createAiDailyModelManualSelectionProposal(input: {
   selectionId: string
@@ -99,11 +110,6 @@ export function createAiDailyModelManualSelectionProposal(input: {
   candidateIds: Record<AiDailyGenerationRole, string>
   acknowledgeReducedRedundancy: boolean
 }): AiDailyModelManualSelectionProposal {
-  if (input.acknowledgeReducedRedundancy !== true) {
-    throw new Error('ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required')
-  }
-  const selectionId = requireManualSlug(input.selectionId, 'selection-id')
-  const generatedAt = requireIsoDate(input.generatedAt, 'manual-selection-generated-at')
   const roles = aiDailyGenerationRoles.map((role) => {
     const candidateId = requireManualSlug(input.candidateIds[role], `${role}-candidate-id`)
     const resolved = resolveAiDailyRuntimeCandidate(input.runtime, candidateId)
@@ -118,10 +124,46 @@ export function createAiDailyModelManualSelectionProposal(input: {
       redundancy: 'reduced_redundancy' as const,
     }
   })
+  return createManualSelectionProposal({
+    selectionId: input.selectionId,
+    generatedAt: input.generatedAt,
+    roles,
+    acknowledgeReducedRedundancy: input.acknowledgeReducedRedundancy,
+  })
+}
+
+export function upgradeAiDailyModelManualSelectionProposal(input: {
+  proposal: unknown
+  generatedAt: string
+  acknowledgeReducedRedundancy: boolean
+}): AiDailyModelManualSelectionProposal {
+  const previous = validatePreviousManualSelectionProposal(input.proposal)
+  return createManualSelectionProposal({
+    selectionId: previous.selectionId,
+    generatedAt: input.generatedAt,
+    roles: previous.roles,
+    acknowledgeReducedRedundancy: input.acknowledgeReducedRedundancy,
+  })
+}
+
+function createManualSelectionProposal(input: {
+  selectionId: string
+  generatedAt: string
+  roles: AiDailyModelManualSelectionRole[]
+  acknowledgeReducedRedundancy: boolean
+}) {
+  if (input.acknowledgeReducedRedundancy !== true) {
+    throw new Error('ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required')
+  }
+  const selectionId = requireManualSlug(input.selectionId, 'selection-id')
+  const generatedAt = requireIsoDate(input.generatedAt, 'manual-selection-generated-at')
+  const roles = input.roles.map((role, index) => normalizeManualSelectionRole(role, aiDailyGenerationRoles[index]))
   const selectionBase = {
     schemaVersion: aiDailyModelManualSelectionRecordSchemaVersion as typeof aiDailyModelManualSelectionRecordSchemaVersion,
     selectionId,
     generatedAt,
+    promptVersion: aiDailyGenerationPromptVersion,
+    generationSchemaVersion: aiDailyGenerationSchemaVersion,
     roles,
     redundancy: 'reduced_redundancy' as const,
     reducedRedundancyAcknowledged: true as const,
@@ -174,6 +216,7 @@ export function approveAiDailyModelManualSelectionProposal(input: {
     throw new Error('ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required')
   }
   const proposal = validateAiDailyModelManualSelectionProposal(input.proposal)
+  assertAiDailyModelSelectionCurrentGenerationContract(proposal.selection)
   const reviewedAt = requireIsoDate(input.review.reviewedAt, 'manual-selection-reviewed-at')
   const reviewedBy = requireSafeManualText(input.review.reviewedBy, 'manual-selection-reviewed-by', 160)
   const notes = requireSafeManualText(input.review.notes, 'manual-selection-review-notes', 500)
@@ -310,6 +353,7 @@ export function approveAiDailyModelEvaluationProposal(input: {
   review: { reviewedAt: string; reviewedBy: string; notes: string }
 }): AiDailyModelApprovalBundle {
   const proposal = validateAiDailyModelEvaluationProposal(input.proposal)
+  assertAiDailyModelSelectionCurrentGenerationContract(proposal.selection)
   const approval = approveAiDailyModelEvaluation(proposal.selection, input.review)
   if (!approval.ok) throw new Error(`ai-daily-model-evaluation-approval-rejected:${approval.issues.join(',')}`)
   const base = {
@@ -385,6 +429,8 @@ function normalizeManualSelectionRecord(
     'schemaVersion',
     'selectionId',
     'generatedAt',
+    'promptVersion',
+    'generationSchemaVersion',
     'roles',
     'redundancy',
     'reducedRedundancyAcknowledged',
@@ -411,6 +457,8 @@ function normalizeManualSelectionRecord(
     schemaVersion: aiDailyModelManualSelectionRecordSchemaVersion as typeof aiDailyModelManualSelectionRecordSchemaVersion,
     selectionId: requireManualSlug(value.selectionId, 'manual-selection-id'),
     generatedAt: requireIsoDate(value.generatedAt, 'manual-selection-record-generated-at'),
+    promptVersion: requireManualVersion(value.promptVersion, 'manual-selection-prompt-version'),
+    generationSchemaVersion: requireManualVersion(value.generationSchemaVersion, 'manual-selection-generation-schema-version'),
     roles,
     redundancy: 'reduced_redundancy' as const,
     reducedRedundancyAcknowledged: true as const,
@@ -420,6 +468,62 @@ function normalizeManualSelectionRecord(
     throw new Error('invalid-ai-daily-model-manual-selection-record-hash')
   }
   return { ...base, recordHash: value.recordHash as string } as AiDailyModelManualSelectionRecord
+}
+
+function validatePreviousManualSelectionProposal(value: unknown) {
+  if (!isRecord(value) || value.schemaVersion !== previousAiDailyModelManualSelectionProposalSchemaVersion) {
+    throw new Error('invalid-ai-daily-model-manual-selection-upgrade-source')
+  }
+  assertExactKeys(value, ['schemaVersion', 'generatedAt', 'selection', 'proposalHash'], 'manual-selection-upgrade-source')
+  const generatedAt = requireIsoDate(value.generatedAt, 'manual-selection-upgrade-generated-at')
+  if (!isRecord(value.selection) || value.selection.schemaVersion !== previousAiDailyModelManualSelectionRecordSchemaVersion) {
+    throw new Error('invalid-ai-daily-model-manual-selection-upgrade-record')
+  }
+  const selection = value.selection
+  assertExactKeys(selection, [
+    'schemaVersion',
+    'selectionId',
+    'generatedAt',
+    'roles',
+    'redundancy',
+    'reducedRedundancyAcknowledged',
+    'approval',
+    'recordHash',
+  ], 'manual-selection-upgrade-record')
+  if (selection.generatedAt !== generatedAt || !Array.isArray(selection.roles) || selection.roles.length !== aiDailyGenerationRoles.length) {
+    throw new Error('invalid-ai-daily-model-manual-selection-upgrade-record')
+  }
+  if (selection.redundancy !== 'reduced_redundancy' || selection.reducedRedundancyAcknowledged !== true) {
+    throw new Error('invalid-ai-daily-model-manual-selection-upgrade-redundancy')
+  }
+  if (!isRecord(selection.approval)) throw new Error('invalid-ai-daily-model-manual-selection-upgrade-approval')
+  assertExactKeys(selection.approval, ['status', 'reviewedAt', 'reviewedBy', 'notes'], 'manual-selection-upgrade-approval')
+  const approval = normalizePendingManualApproval(selection.approval)
+  const roles = selection.roles.map((role, index) => normalizeManualSelectionRole(role, aiDailyGenerationRoles[index]))
+  const selectionBase = {
+    schemaVersion: previousAiDailyModelManualSelectionRecordSchemaVersion,
+    selectionId: requireManualSlug(selection.selectionId, 'manual-selection-upgrade-id'),
+    generatedAt,
+    roles,
+    redundancy: 'reduced_redundancy' as const,
+    reducedRedundancyAcknowledged: true as const,
+    approval,
+  }
+  if (selection.recordHash !== hashArtifact(selectionBase)) {
+    throw new Error('invalid-ai-daily-model-manual-selection-upgrade-record-hash')
+  }
+  const proposalBase = {
+    schemaVersion: previousAiDailyModelManualSelectionProposalSchemaVersion,
+    generatedAt,
+    selection: { ...selectionBase, recordHash: selection.recordHash },
+  }
+  if (value.proposalHash !== hashArtifact(proposalBase)) {
+    throw new Error('invalid-ai-daily-model-manual-selection-upgrade-proposal-hash')
+  }
+  return {
+    selectionId: selectionBase.selectionId,
+    roles,
+  }
 }
 
 function normalizeManualSelectionRole(value: unknown, expectedRole: AiDailyGenerationRole): AiDailyModelManualSelectionRole {
@@ -472,6 +576,21 @@ export function createAiDailyModelArtifactHash(value: unknown) {
   return hashArtifact(value)
 }
 
+export function assertAiDailyModelSelectionCurrentGenerationContract(selection: AiDailyModelSelectionRecord) {
+  const promptVersions = selection.schemaVersion === aiDailyModelManualSelectionRecordSchemaVersion
+    ? [selection.promptVersion]
+    : selection.roles.map((role) => role.promptVersion)
+  const generationSchemaVersions = selection.schemaVersion === aiDailyModelManualSelectionRecordSchemaVersion
+    ? [selection.generationSchemaVersion]
+    : selection.roles.map((role) => role.generationSchemaVersion)
+  if (promptVersions.some((version) => version !== aiDailyGenerationPromptVersion)) {
+    throw new Error('ai-daily-model-approval-prompt-version-drift')
+  }
+  if (generationSchemaVersions.some((version) => version !== aiDailyGenerationSchemaVersion)) {
+    throw new Error('ai-daily-model-approval-generation-schema-version-drift')
+  }
+}
+
 function requireManualSlug(value: unknown, label: string) {
   if (typeof value !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(value) || value.length > 120) {
     throw new Error(`invalid-ai-daily-model-manual-selection-${label}`)
@@ -489,6 +608,13 @@ function requireManualModelIdentifier(value: unknown, label: string) {
     containsSensitiveArtifactText(value)
   ) {
     throw new Error(`invalid-ai-daily-model-manual-selection-${label}`)
+  }
+  return value
+}
+
+function requireManualVersion(value: unknown, label: string) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/u.test(value)) {
+    throw new Error(`invalid-ai-daily-model-${label}`)
   }
   return value
 }

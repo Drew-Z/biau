@@ -31,7 +31,12 @@ import {
   type AiDailyEvaluationCaseDescriptor,
   type AiDailyModelEvaluationCandidateInput,
 } from '../src/aiDailyModelEvaluation.js'
-import { createAiDailyGenerationPayloadHash, type AiDailyQualityCaseResult } from '../src/aiDailyGeneration.js'
+import {
+  aiDailyGenerationPromptVersion,
+  aiDailyGenerationSchemaVersion,
+  createAiDailyGenerationPayloadHash,
+  type AiDailyQualityCaseResult,
+} from '../src/aiDailyGeneration.js'
 import { normalizeAiDailyModelRuntimeConfig } from '../src/aiDailyModelRuntime.js'
 
 const editionDate = '2026-07-20'
@@ -608,8 +613,8 @@ function buildCandidate(
     caseSetId: aiDailyModelEvaluationCaseSetId(role),
     caseSetHash: createAiDailyEvaluationCaseSetHash(caseDescriptors),
     caseDescriptors,
-    promptVersion: 'ai-daily-prompt-v2',
-    generationSchemaVersion: 'ai-daily-generation-v2',
+    promptVersion: aiDailyGenerationPromptVersion,
+    generationSchemaVersion: aiDailyGenerationSchemaVersion,
     evaluatedAt: '2026-07-20T00:00:00.000Z',
     cases,
     performance: {

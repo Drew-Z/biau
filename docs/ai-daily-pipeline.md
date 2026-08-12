@@ -298,7 +298,7 @@ npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluat
 
 两条审批路径都默认输出本地 `server/data/ai-daily-model-approval.v1.json`（Git 忽略）。生产部署先把它上传为 Render Studio 的 Secret File `ai-daily-model-approval.v1.json`，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json` 与输出的 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`；后续创建 Editorial Cron 时必须在该服务重复上传。生产 runner 会重新校验 selection/bundle hash，以及 runtime candidate、role、provider、failure domain 和 model identifier；任何不一致都会 fail closed。
 
-评估 artifact 使用 v2 schema，静态选型 artifact 使用独立 v1 schema，首版验收使用 `ai-daily-acceptance-v3` 并记录 `selectionBasis`。Secret File 文件名和挂载路径保持稳定，但旧本地 proposal/bundle 不能手工改版本号或沿用旧 hash。
+评估 artifact 与静态选型 artifact 都使用各自独立的 v2 schema，首版验收使用 `ai-daily-acceptance-v3` 并记录 `selectionBasis`。静态 v2 artifact 额外绑定当前 `promptVersion` 与 `generationSchemaVersion`。Secret File 文件名和挂载路径保持稳定；旧 v1 pending proposal 只能通过 `npm.cmd run ai-daily:model-select-upgrade -- --input <selection.local.json> --acknowledge-reduced-redundancy` 转成新的 v2 pending proposal后重新审批，旧 approval bundle 不能升级、手工改版本号或沿用旧 hash。
 
 部署前可在已配置同一份 server-only runtime 和审批文件的环境中运行：
 

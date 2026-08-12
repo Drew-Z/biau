@@ -181,6 +181,33 @@ try {
     },
   })
   assertEqual(validateAiDailyModelApprovalBundle(bundle).bundleHash, bundle.bundleHash, 'bundle validation')
+  for (const [field, value, expectedMessage] of [
+    ['promptVersion', 'ai-daily-prompt-stale', 'ai-daily-model-approval-prompt-version-drift'],
+    ['generationSchemaVersion', 'ai-daily-generation-stale', 'ai-daily-model-approval-generation-schema-version-drift'],
+  ] as const) {
+    const staleProposal = createAiDailyModelEvaluationProposal({
+      selectionId: field === 'promptVersion'
+        ? 'business-selection-prompt-drift-check'
+        : 'business-selection-schema-drift-check',
+      generatedAt: '2026-07-19T15:00:00.000Z',
+      candidates: runtime.candidates.map((candidate, index) => ({
+        ...buildCandidateInput(runtime, candidate.candidateId, index % 2 === 0),
+        [field]: value,
+      })),
+    })
+    assertThrowsMessage(
+      () => approveAiDailyModelEvaluationProposal({
+        proposal: staleProposal,
+        review: {
+          reviewedAt: '2026-07-19T15:10:00.000Z',
+          reviewedBy: 'site-owner-check',
+          notes: 'Stale measured selection must not be approved.',
+        },
+      }),
+      expectedMessage,
+      `measured approval must reject stale ${field}`,
+    )
+  }
   const providers = buildAiDailyProductionProviders({ runtime, bundle })
   assertEqual(providers.extractor.primary.id, 'extractor-a', 'approved extractor primary')
   assertEqual(providers.extractor.fallbacks?.[0]?.id, 'extractor-b', 'approved extractor fallback')
@@ -209,6 +236,26 @@ try {
     manualProposal.proposalHash,
     'manual proposal validation',
   )
+  assertEqual(manualProposal.selection.promptVersion, aiDailyGenerationPromptVersion, 'manual proposal prompt binding')
+  assertEqual(manualProposal.selection.generationSchemaVersion, aiDailyGenerationSchemaVersion, 'manual proposal schema binding')
+  for (const [field, value, expectedMessage] of [
+    ['promptVersion', 'ai-daily-prompt-stale', 'ai-daily-model-approval-prompt-version-drift'],
+    ['generationSchemaVersion', 'ai-daily-generation-stale', 'ai-daily-model-approval-generation-schema-version-drift'],
+  ] as const) {
+    assertThrowsMessage(
+      () => approveAiDailyModelManualSelectionProposal({
+        proposal: createStaleManualProposal(manualProposal, { [field]: value }),
+        review: {
+          reviewedAt: '2026-07-23T15:10:00.000Z',
+          reviewedBy: 'site-owner-check',
+          notes: 'Stale manual selection must not be approved.',
+        },
+        acknowledgeReducedRedundancy: true,
+      }),
+      expectedMessage,
+      `manual approval must reject stale ${field}`,
+    )
+  }
   assertThrows(
     () => approveAiDailyModelManualSelectionProposal({
       proposal: manualProposal,
@@ -231,6 +278,8 @@ try {
     acknowledgeReducedRedundancy: true,
   })
   assertEqual(validateAiDailyModelApprovalArtifact(manualBundle).bundleHash, manualBundle.bundleHash, 'manual bundle validation')
+  assertEqual(manualBundle.selection.promptVersion, aiDailyGenerationPromptVersion, 'manual bundle prompt binding')
+  assertEqual(manualBundle.selection.generationSchemaVersion, aiDailyGenerationSchemaVersion, 'manual bundle schema binding')
   const manualProviders = buildAiDailyProductionProviders({ runtime: reducedRuntime, bundle: manualBundle })
   assertEqual(manualProviders.extractor.primary.id, 'extractor-a', 'manual extractor primary')
   assertEqual(manualProviders.extractor.fallbacks?.length, 0, 'manual extractor has no independent fallback')
@@ -258,12 +307,51 @@ try {
     () => buildAiDailyProductionProviders({ runtime: manualDriftedRuntime, bundle: manualBundle }),
     'manual selection runtime channel drift',
   )
+  assertThrows(
+    () => buildAiDailyProductionProviders({
+      runtime: reducedRuntime,
+      bundle: {
+        ...manualBundle,
+        selection: { ...manualBundle.selection, promptVersion: 'ai-daily-prompt-stale' },
+      },
+    }),
+    'manual selection prompt version drift',
+  )
+  assertThrows(
+    () => buildAiDailyProductionProviders({
+      runtime: reducedRuntime,
+      bundle: {
+        ...manualBundle,
+        selection: { ...manualBundle.selection, generationSchemaVersion: 'ai-daily-generation-stale' },
+      },
+    }),
+    'manual selection generation schema version drift',
+  )
+  const legacyManualProposal = createLegacyManualProposal(manualProposal)
+  const legacyManualBundle = createLegacyManualBundle(manualBundle)
+  assertThrows(
+    () => validateAiDailyModelApprovalArtifact(legacyManualBundle),
+    'legacy manual approval bundle must require fresh approval',
+  )
 
   const driftedRuntime = {
     ...runtime,
     channels: runtime.channels.map((channel, index) => index === 0 ? { ...channel, providerRef: 'provider-drifted' } : channel),
   }
   assertThrows(() => buildAiDailyProductionProviders({ runtime: driftedRuntime, bundle }), 'runtime channel drift')
+  assertThrows(
+    () => buildAiDailyProductionProviders({
+      runtime,
+      bundle: {
+        ...bundle,
+        selection: {
+          ...bundle.selection,
+          roles: bundle.selection.roles.map((role) => ({ ...role, promptVersion: 'ai-daily-prompt-stale' })),
+        },
+      },
+    }),
+    'measured selection prompt version drift',
+  )
 
   const tampered = { ...bundle, bundleHash: '0'.repeat(64) }
   let tamperRejected = false
@@ -280,7 +368,7 @@ try {
   )
   await validateCustomApprovalBundleFile(bundle, runtime)
   await validateCustomApprovalBundleFile(manualBundle, reducedRuntime)
-  await validateManualSelectionCli(reducedRuntime)
+  await validateManualSelectionCli(reducedRuntime, legacyManualProposal, legacyManualBundle)
 
   const invalid = normalizeAiDailyModelRuntimeConfig({ schemaVersion: 'wrong', channels: [], candidates: [] })
   assert(!invalid.ok, 'invalid runtime config should fail closed')
@@ -311,6 +399,16 @@ function assertThrows(callback: () => unknown, label: string) {
     threw = true
   }
   assert(threw, label)
+}
+
+function assertThrowsMessage(callback: () => unknown, expectedMessage: string, label: string) {
+  let actualMessage = ''
+  try {
+    callback()
+  } catch (error) {
+    actualMessage = error instanceof Error ? error.message : String(error)
+  }
+  assertEqual(actualMessage, expectedMessage, label)
 }
 
 function assertStructuredOutputRequest(body: Record<string, unknown>, expectedName: string) {
@@ -404,6 +502,7 @@ async function validateConfiguredApprovalBundleFile() {
   } catch (error) {
     if (isMissingFileError(error)) return 'absent'
     if (error instanceof Error && error.message === 'ai-daily-model-approval-bundle-missing') return 'absent'
+    if (error instanceof Error && error.message === 'invalid-ai-daily-model-approval-artifact') return 'stale'
     throw error
   }
 }
@@ -471,9 +570,16 @@ async function validateCustomApprovalBundleFile(
   }
 }
 
-async function validateManualSelectionCli(runtime: AiDailyModelRuntimeConfig) {
+async function validateManualSelectionCli(
+  runtime: AiDailyModelRuntimeConfig,
+  legacyProposal: unknown,
+  legacyBundle: unknown,
+) {
   const directory = await mkdtemp(path.join(tmpdir(), 'biau-ai-daily-selection-'))
   const proposalPath = path.join(directory, 'selection.local.json')
+  const legacyProposalPath = path.join(directory, 'selection-v1.local.json')
+  const legacyBundlePath = path.join(directory, 'approval-v1.local.json')
+  const upgradedProposalPath = path.join(directory, 'selection-v2.local.json')
   const bundlePath = path.join(directory, 'approval.local.json')
   const commandEnv = {
     ...process.env,
@@ -481,6 +587,35 @@ async function validateManualSelectionCli(runtime: AiDailyModelRuntimeConfig) {
     AI_DAILY_MODEL_RUNTIME_JSON: JSON.stringify(runtime),
   }
   try {
+    await writeFile(legacyProposalPath, `${JSON.stringify(legacyProposal)}\n`, 'utf8')
+    await writeFile(legacyBundlePath, `${JSON.stringify(legacyBundle)}\n`, 'utf8')
+    const missingAcknowledgement = spawnNpmScript('ai-daily:model-select-upgrade', [
+      '--input', legacyProposalPath,
+      '--out', upgradedProposalPath,
+      '--generated-at', '2026-08-12T07:00:00.000Z',
+    ], commandEnv)
+    assert(missingAcknowledgement.status !== 0, 'manual selection upgrade CLI must require acknowledgement again')
+    const approvedBundleUpgrade = spawnNpmScript('ai-daily:model-select-upgrade', [
+      '--input', legacyBundlePath,
+      '--out', upgradedProposalPath,
+      '--generated-at', '2026-08-12T07:00:00.000Z',
+      '--acknowledge-reduced-redundancy',
+    ], commandEnv)
+    assert(approvedBundleUpgrade.status !== 0, 'legacy approved bundle must not be upgraded')
+    const upgraded = spawnNpmScript('ai-daily:model-select-upgrade', [
+      '--input', legacyProposalPath,
+      '--out', upgradedProposalPath,
+      '--generated-at', '2026-08-12T07:00:00.000Z',
+      '--acknowledge-reduced-redundancy',
+    ], commandEnv)
+    assert(upgraded.status === 0, 'manual selection upgrade CLI should create a v2 pending proposal')
+    assert(upgraded.stdout.includes('"modelCalls": 0'), 'manual selection upgrade CLI must report zero model calls')
+    assert(upgraded.stdout.includes(aiDailyGenerationPromptVersion), 'manual selection upgrade CLI must report current prompt version')
+    assert(!upgraded.stdout.includes('test-key-'), 'manual selection upgrade CLI must not expose runtime credentials')
+    const upgradedProposal = validateAiDailyModelManualSelectionProposal(JSON.parse(await readFile(upgradedProposalPath, 'utf8')))
+    assertEqual(upgradedProposal.selection.promptVersion, aiDailyGenerationPromptVersion, 'upgraded proposal prompt binding')
+    assertEqual(upgradedProposal.selection.generationSchemaVersion, aiDailyGenerationSchemaVersion, 'upgraded proposal schema binding')
+
     const selected = spawnNpmScript('ai-daily:model-select', [
       '--selection-id', 'manual-selection-cli-check',
       '--extractor', 'extractor-a',
@@ -509,6 +644,58 @@ async function validateManualSelectionCli(runtime: AiDailyModelRuntimeConfig) {
   } finally {
     await rm(directory, { recursive: true, force: true })
   }
+}
+
+function createLegacyManualProposal(proposal: ReturnType<typeof createAiDailyModelManualSelectionProposal>) {
+  const { promptVersion, generationSchemaVersion, recordHash, ...selectionFields } = proposal.selection
+  void promptVersion
+  void generationSchemaVersion
+  void recordHash
+  const selectionBase = {
+    ...selectionFields,
+    schemaVersion: 'ai-daily-model-manual-selection-v1',
+  }
+  const selection = { ...selectionBase, recordHash: createAiDailyModelArtifactHash(selectionBase) }
+  const proposalBase = {
+    schemaVersion: 'ai-daily-model-manual-selection-proposal-v1',
+    generatedAt: proposal.generatedAt,
+    selection,
+  }
+  return { ...proposalBase, proposalHash: createAiDailyModelArtifactHash(proposalBase) }
+}
+
+function createStaleManualProposal(
+  proposal: ReturnType<typeof createAiDailyModelManualSelectionProposal>,
+  versions: Partial<Pick<typeof proposal.selection, 'promptVersion' | 'generationSchemaVersion'>>,
+) {
+  const { recordHash, ...selectionFields } = proposal.selection
+  void recordHash
+  const selectionBase = { ...selectionFields, ...versions }
+  const selection = { ...selectionBase, recordHash: createAiDailyModelArtifactHash(selectionBase) }
+  const proposalBase = {
+    schemaVersion: proposal.schemaVersion,
+    generatedAt: proposal.generatedAt,
+    selection,
+  }
+  return { ...proposalBase, proposalHash: createAiDailyModelArtifactHash(proposalBase) }
+}
+
+function createLegacyManualBundle(bundle: ReturnType<typeof approveAiDailyModelManualSelectionProposal>) {
+  const { promptVersion, generationSchemaVersion, recordHash, ...selectionFields } = bundle.selection
+  void promptVersion
+  void generationSchemaVersion
+  void recordHash
+  const selectionBase = {
+    ...selectionFields,
+    schemaVersion: 'ai-daily-model-manual-selection-v1',
+  }
+  const selection = { ...selectionBase, recordHash: createAiDailyModelArtifactHash(selectionBase) }
+  const bundleBase = {
+    schemaVersion: 'ai-daily-model-manual-selection-bundle-v1',
+    approvedAt: bundle.approvedAt,
+    selection,
+  }
+  return { ...bundleBase, bundleHash: createAiDailyModelArtifactHash(bundleBase) }
 }
 
 function spawnNpmScript(script: string, args: string[], env: NodeJS.ProcessEnv) {

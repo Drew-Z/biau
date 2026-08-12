@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AiDailyGenerationProviders, AiDailyGenerationRole } from './aiDailyGeneration.js'
 import {
+  assertAiDailyModelSelectionCurrentGenerationContract,
   aiDailyModelApprovalBundleSchemaVersion,
   getAiDailyModelApprovalBasis,
   validateAiDailyModelApprovalArtifact,
@@ -46,6 +47,7 @@ export function buildAiDailyProductionProviders(input: {
   runtime: AiDailyModelRuntimeConfig
   bundle: AiDailyModelApprovalArtifact
 }): AiDailyGenerationProviders {
+  assertAiDailyModelSelectionCurrentGenerationContract(input.bundle.selection)
   if (input.bundle.schemaVersion !== aiDailyModelApprovalBundleSchemaVersion) {
     return buildManualSelectionProviders(input.runtime, input.bundle)
   }
@@ -107,6 +109,8 @@ export function summarizeAiDailyModelApprovalBundle(bundle: AiDailyModelApproval
       selectionId: bundle.selection.selectionId,
       selectionRecordHash: bundle.selection.recordHash,
       approvedAt: bundle.selection.approval.reviewedAt,
+      promptVersion: bundle.selection.promptVersion,
+      generationSchemaVersion: bundle.selection.generationSchemaVersion,
       roles: bundle.selection.roles.map((role) => ({
         role: role.role,
         primaryCandidateId: role.candidateId,
@@ -121,6 +125,8 @@ export function summarizeAiDailyModelApprovalBundle(bundle: AiDailyModelApproval
     selectionId: bundle.selection.selectionId,
     selectionRecordHash: bundle.selection.recordHash,
     approvedAt: bundle.selection.approval.reviewedAt,
+    promptVersion: bundle.selection.roles[0]?.promptVersion ?? '',
+    generationSchemaVersion: bundle.selection.roles[0]?.generationSchemaVersion ?? '',
     roles: bundle.selection.roles.map((role) => ({
       role: role.role,
       primaryCandidateId: role.primaryCandidateId,

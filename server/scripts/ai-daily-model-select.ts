@@ -31,6 +31,8 @@ async function main() {
     output: outputPath,
     proposalHash: proposal.proposalHash,
     selectionId: proposal.selection.selectionId,
+    promptVersion: proposal.selection.promptVersion,
+    generationSchemaVersion: proposal.selection.generationSchemaVersion,
     selectionBasis: 'manual-static-selection',
     approvalStatus: proposal.selection.approval.status,
     redundancy: proposal.selection.redundancy,

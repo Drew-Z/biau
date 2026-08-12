@@ -76,6 +76,7 @@
     "ai-daily:model-evaluate": "tsx server/scripts/ai-daily-model-evaluate.ts",
     "ai-daily:model-approve": "tsx server/scripts/ai-daily-model-approve.ts",
     "ai-daily:model-select": "tsx server/scripts/ai-daily-model-select.ts",
+    "ai-daily:model-select-upgrade": "tsx server/scripts/ai-daily-model-select-upgrade.ts",
     "ai-daily:model-select-approve": "tsx server/scripts/ai-daily-model-select-approve.ts",
     "ai-daily:acceptance": "tsx server/scripts/ai-daily-acceptance.ts",
     "ai-daily:acceptance-check": "tsx server/scripts/ai-daily-acceptance-check.ts",

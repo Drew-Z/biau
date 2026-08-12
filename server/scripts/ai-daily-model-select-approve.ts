@@ -27,6 +27,8 @@ async function main() {
     output: outputPath,
     bundleHash: bundle.bundleHash,
     selectionId: bundle.selection.selectionId,
+    promptVersion: bundle.selection.promptVersion,
+    generationSchemaVersion: bundle.selection.generationSchemaVersion,
     selectionBasis: 'manual-static-selection',
     approvalStatus: bundle.selection.approval.status,
     redundancy: bundle.selection.redundancy,

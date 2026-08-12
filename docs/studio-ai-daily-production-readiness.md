@@ -113,7 +113,7 @@ npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluat
 
 批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。部署后运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次执行窗口还必须暂时设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，再在 Studio AI Daily 工作区选择 Edition、展开“运行真实版次”并完成二次确认；受保护 API 返回 `202` 后由持久化 worker 执行。`--live` CLI 保留为受控 Job Runner 的等价运维入口。run 到达终态后恢复关闭 production generation，并继续完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
 
-评估 proposal/bundle 使用 v2 schema，手动静态 proposal/bundle 使用独立 v1 schema；验收 manifest 使用 `ai-daily-acceptance-v3`，其中 `selectionBasis` 明确区分两条路径。Render 的 Secret File 名称仍保持 `ai-daily-model-approval.v1.json` 以维持稳定挂载路径；若曾生成过旧 proposal/bundle，必须重新生成和审批，禁止直接改 JSON 版本号或沿用旧 hash。
+评估 proposal/bundle 与手动静态 proposal/bundle 都使用各自独立的 v2 schema；静态 artifact 绑定当前 prompt/schema 版本，验收 manifest 使用 `ai-daily-acceptance-v3`，其中 `selectionBasis` 明确区分两条路径。Render 的 Secret File 名称仍保持 `ai-daily-model-approval.v1.json` 以维持稳定挂载路径；旧 v1 pending proposal可通过显式 upgrade CLI 重建为 v2 pending proposal，但必须重新审批，旧 approved bundle 不能升级、直接改 JSON 版本号或沿用旧 hash。
 
 ## 发布边界
 
