@@ -48,6 +48,7 @@ The first live edition is queued from the authenticated Studio workspace after a
 - The provider adapter uses the OpenAI-compatible Responses contract for every role, omits `temperature`, bounds runtime inputs, and exposes only stable error categories. Runtime v2 requires `protocol: "responses"`; endpoint compatibility fallback is allowed only after `404/405`, while network, timeout, authentication, rate-limit, invalid-response, and `5xx` failures do not resubmit the same model task to another guessed path.
 - Real evaluation is optional, serial, and requires `--execute`, an enabled environment gate, and a matching approval id. It writes a Git-ignored proposal that retains aggregate scores/hashes but no prompt, source text, raw output, endpoint, or credential. Static selection and approval commands are offline-only and never call a provider.
 - Human approval creates a tamper-evident bundle. Live execution revalidates bundle hashes and runtime provider/failure-domain/model identity, then claims only `PRODUCTION` work. Fixture execution claims only `FIXTURE` work.
+- A production channel repair may add a dedicated fixed-upstream relay route instead of overwriting an existing shared route. The route owns one endpoint/key pair, issues at most one upstream request, and has a distinct provider/failure-domain identity. Existing bundles cannot cross that identity boundary; a new proposal, approval bundle, Secret File/hash delivery, deployment, and separately approved real Edition are required.
 
 ## Rollback
 

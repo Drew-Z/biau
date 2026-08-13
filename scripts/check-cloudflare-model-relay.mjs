@@ -1,5 +1,6 @@
 import { onRequestPost as relayResponses } from '../functions/api/model-relay/responses.ts'
 import { onRequestPost as fallbackRelayResponses } from '../functions/api/model-relay/fallback/responses.ts'
+import { onRequestPost as free3RelayResponses } from '../functions/api/model-relay/free3/responses.ts'
 import { relayResponsesRequest } from '../functions/_shared/modelRelay.ts'
 
 const relayEnv = {
@@ -8,6 +9,8 @@ const relayEnv = {
   MODEL_RELAY_UPSTREAM_API_KEY: 'fixture-upstream-key',
   MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL: 'https://fallback.example/v1',
   MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY: 'fixture-fallback-key',
+  MODEL_RELAY_FREE3_UPSTREAM_BASE_URL: 'https://free3.example/v1',
+  MODEL_RELAY_FREE3_UPSTREAM_API_KEY: 'fixture-free3-key',
   MODEL_RELAY_ALLOWED_MODELS: 'fixture-primary,fixture-fallback-a,fixture-fallback-b',
   MODEL_RELAY_TIMEOUT_MS: '50',
 }
@@ -122,6 +125,29 @@ assertStatus(fallbackJson, 200, 'fallback relay JSON success')
 if (fallbackObserved?.url !== 'https://fallback.example/v1/responses') throw new Error('fallback relay must use its own fixed Responses endpoint')
 const fallbackHeaders = new Headers(fallbackObserved?.init?.headers)
 if (fallbackHeaders.get('Authorization') !== 'Bearer fixture-fallback-key') throw new Error('fallback relay must use its own upstream authorization')
+
+const free3MissingConfig = await free3RelayResponses({
+  request: request(payload()),
+  env: { ...relayEnv, MODEL_RELAY_FREE3_UPSTREAM_BASE_URL: undefined, MODEL_RELAY_FREE3_UPSTREAM_API_KEY: undefined },
+})
+assertStatus(free3MissingConfig, 503, 'Free3 relay must fail closed when its upstream is unavailable')
+let free3FetchCalls = 0
+let free3Observed
+const free3Json = await relayResponsesRequest(request(payload()), relayEnv, {
+  async fetch(url, init) {
+    free3FetchCalls += 1
+    free3Observed = { url: String(url), init }
+    return new Response(JSON.stringify({ output_text: 'Free3 fixture answer' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  },
+}, 'free3')
+assertStatus(free3Json, 200, 'Free3 relay JSON success')
+if (free3FetchCalls !== 1) throw new Error(`Free3 relay must issue exactly one upstream request, received ${free3FetchCalls}`)
+if (free3Observed?.url !== 'https://free3.example/v1/responses') throw new Error('Free3 relay must use its own fixed Responses endpoint')
+const free3Headers = new Headers(free3Observed?.init?.headers)
+if (free3Headers.get('Authorization') !== 'Bearer fixture-free3-key') throw new Error('Free3 relay must use its own upstream authorization')
 
 const upstreamRejected = await relayResponsesRequest(request(payload()), relayEnv, {
   async fetch() {

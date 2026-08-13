@@ -130,6 +130,10 @@ AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<approved bundle hash>
 
 rollback evidence `tidebrief-rollback-2026-08-12` 已封存，custom-format 数据库 dump 已完成独立恢复验证，上一 Render revision 和 19 条 migration 已记录；强校验 `npm.cmd run ai-daily:rollback -- check --require-sealed` 已通过。该 manifest 保留既有 acceptance binding，不代表最新 Run 已完成最终 acceptance seal。当前 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=false`、`AI_DAILY_PUBLIC_FEED_ENABLED=false`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED=false`，Cron 未创建。潮讯保持“待验收”，不得把 `COMPLETED_WITH_GAPS` 或 `REJECTED` 写成生产成功；除非完成新的实质性修复并重新获得批准，不得继续真实调用。
 
+最新获批 Run `cmsqdx5bp000045j2q7rh3mxj`（work item `cmsqdx5ce000145j28q2avapi`）仍以 `COMPLETED_WITH_GAPS` 结束；Revision 4 为 `REJECTED` / `DISCARDED`，保留 8 个 citation snapshot，但没有 draft 或公共内容。Cloudflare 匹配请求约 8 秒后返回固定 `model-relay-upstream-unreachable` 错误包，根因收敛为原 relay 渠道的上游传输异常。站点所有 generation、business evaluation、public Feed 开关仍为 `false`，Cron 未创建。
+
+用户已授权优先使用本地私有配置中的稳定 `Free3` Responses 渠道。生产修复使用独立 `/api/model-relay/free3/responses` 固定出口和独立 Cloudflare Secret，不覆盖主/旧 fallback；AI Daily runtime 只绑定 `providerRef=free3-relay`、`failureDomainRef=free3-channel` 与 `grok-4.5`，不声明自动 fallback，继续标记 `reduced_redundancy`。这项“优先使用”授权只批准渠道选择和修复部署，不批准真实 Edition。由于 runtime identity 已改变，旧 proposal/bundle 和旧真实调用批准均不可复用；必须在新 proposal hash、bundle hash 和部署验证完成后再次取得明确批准。
+
 ### 1. 后续真实版次
 
 - 先完成 extractor schema/provider 兼容性等实质性生产修复并部署，再重新取得明确业务批准。

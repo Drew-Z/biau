@@ -6,6 +6,8 @@ export interface ModelRelayEnv {
   MODEL_RELAY_UPSTREAM_API_KEY?: string
   MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL?: string
   MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY?: string
+  MODEL_RELAY_FREE3_UPSTREAM_BASE_URL?: string
+  MODEL_RELAY_FREE3_UPSTREAM_API_KEY?: string
   MODEL_RELAY_ALLOWED_MODELS?: string
   MODEL_RELAY_TIMEOUT_MS?: string
 }
@@ -23,7 +25,25 @@ type RelayFailure =
   | 'response_too_large'
   | 'timeout'
 
-export type ModelRelayChannel = 'primary' | 'fallback'
+export type ModelRelayChannel = 'primary' | 'fallback' | 'free3'
+
+const UPSTREAM_ENV_BY_CHANNEL = {
+  primary: {
+    baseUrl: 'MODEL_RELAY_UPSTREAM_BASE_URL',
+    apiKey: 'MODEL_RELAY_UPSTREAM_API_KEY',
+  },
+  fallback: {
+    baseUrl: 'MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL',
+    apiKey: 'MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY',
+  },
+  free3: {
+    baseUrl: 'MODEL_RELAY_FREE3_UPSTREAM_BASE_URL',
+    apiKey: 'MODEL_RELAY_FREE3_UPSTREAM_API_KEY',
+  },
+} as const satisfies Record<ModelRelayChannel, {
+  baseUrl: keyof ModelRelayEnv
+  apiKey: keyof ModelRelayEnv
+}>
 
 const MAX_REQUEST_BYTES = 512_000
 const MAX_RESPONSE_BYTES = 512_000
@@ -121,12 +141,9 @@ export async function relayResponsesRequest(
 
 function resolveRelayConfig(env: ModelRelayEnv, channel: ModelRelayChannel) {
   const sharedToken = env.MODEL_RELAY_SHARED_TOKEN?.trim() ?? ''
-  const upstreamApiKey = (channel === 'fallback'
-    ? env.MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY
-    : env.MODEL_RELAY_UPSTREAM_API_KEY)?.trim() ?? ''
-  const endpoint = responsesEndpoint(channel === 'fallback'
-    ? env.MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL
-    : env.MODEL_RELAY_UPSTREAM_BASE_URL)
+  const channelEnv = UPSTREAM_ENV_BY_CHANNEL[channel]
+  const upstreamApiKey = env[channelEnv.apiKey]?.trim() ?? ''
+  const endpoint = responsesEndpoint(env[channelEnv.baseUrl])
   const allowedModels = parseAllowedModels(env.MODEL_RELAY_ALLOWED_MODELS)
   if (sharedToken.length < MIN_SHARED_TOKEN_LENGTH || !upstreamApiKey || !endpoint || allowedModels.size === 0) return null
   return {

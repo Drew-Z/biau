@@ -308,7 +308,7 @@ function readRelayOrigin(headers: Headers, channel: ResponsesApiChannel): Provid
 function expectsBiauRelay(channel: ResponsesApiChannel) {
   if (channel.provider === 'cloudflare-model-relay') return true
   try {
-    return /\/api\/model-relay(?:\/fallback)?$/u.test(new URL(channel.baseUrl).pathname.replace(/\/+$/u, ''))
+    return /\/api\/model-relay(?:\/(?:fallback|free3))?$/u.test(new URL(channel.baseUrl).pathname.replace(/\/+$/u, ''))
   } catch {
     return false
   }

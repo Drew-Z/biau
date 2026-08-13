@@ -522,6 +522,17 @@ try {
   assert.equal(relayUnreachable.diagnostic?.relayFailure, 'upstream_unreachable')
   assert.equal(relayUnreachable.diagnostic?.relayOrigin, 'pages_function')
   assert.equal(classifyOperationalFailure(relayUnreachable.diagnostic), 'relay_unreachable')
+  const free3RelayUnreachable = await requestResponsesText({
+    channel: {
+      ...fixtureChannel,
+      baseUrl: `http://127.0.0.1:${address.port}/api/model-relay/free3`,
+    },
+    system: 'fixture',
+    user: 'fixture-relay-unreachable',
+    timeoutMs: 1_000,
+  })
+  assert.equal(free3RelayUnreachable.diagnostic?.relayFailure, 'upstream_unreachable')
+  assert.equal(free3RelayUnreachable.diagnostic?.relayOrigin, 'pages_function')
   const relayEdgeFailure = await requestResponsesText({
     channel: { ...fixtureChannel, provider: 'cloudflare-model-relay' },
     system: 'fixture',

@@ -45,13 +45,15 @@ MODEL_RELAY_UPSTREAM_BASE_URL=<获批第一套渠道的 Responses base URL>
 MODEL_RELAY_UPSTREAM_API_KEY=<获批第一套渠道的 server-only key>
 MODEL_RELAY_FALLBACK_UPSTREAM_BASE_URL=
 MODEL_RELAY_FALLBACK_UPSTREAM_API_KEY=
+MODEL_RELAY_FREE3_UPSTREAM_BASE_URL=<AI Daily 获批 Free3 渠道的 Responses base URL>
+MODEL_RELAY_FREE3_UPSTREAM_API_KEY=<AI Daily 获批 Free3 渠道的 server-only key>
 MODEL_RELAY_ALLOWED_MODELS=grok-4.5
 MODEL_RELAY_TIMEOUT_MS=50000
 ```
 
 `PUBLIC_ASSISTANT_API_BASE_URL`、proxy timeout 和 `MODEL_RELAY_*` 都是 Functions 的服务端变量，不会进入 Vite bundle。URL、上游 key 与共享 token 使用 Cloudflare Secret 类型；模型白名单与 timeout 可以使用普通服务端变量。不要创建 `VITE_*` 模型、搜索、RAG、数据库或 Token 变量。
 
-`POST /api/model-relay/responses` 和可选的 `POST /api/model-relay/fallback/responses` 只接受共享 bearer token、JSON Responses 请求和上述白名单模型。两个路由分别固定到主/备用上游，不接收浏览器 Cookie、任意上游 URL、任意模型或未知顶层字段；备用 Secret 未配置时 fallback 路由会 fail closed。非 2xx 上游正文会被丢弃，仅保留固定枚举供 Render 映射为低敏故障类别。SSE 直接流式转发并保留取消传播、总时限、512 KB 请求上限和 512 KB 响应上限。
+`POST /api/model-relay/responses`、可选的 `POST /api/model-relay/fallback/responses` 和 AI Daily 专用的 `POST /api/model-relay/free3/responses` 只接受共享 bearer token、JSON Responses 请求和上述白名单模型。三个路由分别固定到主、备用和 Free3 上游，不接收浏览器 Cookie、任意上游 URL、任意模型或未知顶层字段；任一路由的专用 Secret 未完整配置时都会 fail closed。每个路由对一条请求最多发送一次固定上游请求，relay 不因网络、timeout 或 `5xx` 自动切换其他渠道；Responses 客户端仅在收到 `404/405` 时保留既有兼容路径回退。非 2xx 上游正文会被丢弃，仅保留固定枚举供 Render 映射为低敏故障类别。SSE 直接流式转发并保留取消传播、总时限、512 KB 请求上限和 512 KB 响应上限。
 
 发布后验证：
 
@@ -173,6 +175,8 @@ AI_DAILY_OPERATIONS_METRICS_ENABLED=true
 ```
 
 模型批准包通过 Render Secret File 上传，挂载为 `/etc/secrets/ai-daily-model-approval.v1.json`。Render Secret Files 不会在 Render 服务之间自动共享；未来创建 Editorial Cron 时，必须为 Cron 单独上传同一批准包并配置相同 runtime/path/hash。
+
+AI Daily 的 Free3 生产切换必须使用一个新的 server-only runtime channel，base 指向 `/api/model-relay/free3`，并为 extractor/composer/verifier 各绑定一个 `grok-4.5` candidate。该 channel 使用独立的 `providerRef=free3-relay` 与 `failureDomainRef=free3-channel`，仍标记 `reduced_redundancy`，不声明独立 fallback。旧的 approval bundle 绑定了不同的 provider/failure-domain identity，不能复用；必须先生成和批准新 proposal/bundle，再更新 Secret File/hash。平台配置、部署和非模型验证完成后，仍需针对一次真实 Edition 单独取得明确批准。
 
 AI Daily 第一期真实日报通过人工验收前，`AI_DAILY_PUBLIC_FEED_ENABLED` 与 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 保持 `false`。Editorial Cron 暂不加入 Blueprint，避免未批准的自动发布。
 

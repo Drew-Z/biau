@@ -387,14 +387,15 @@ npm.cmd run cf-model-relay:check
 
 ### 2. Signatures
 
-- `relayResponsesRequest(request, env, dependencies?, channel?) -> Promise<Response>` where `channel` is `primary | fallback`.
-- Pages routes: `POST /api/model-relay/responses` and `POST /api/model-relay/fallback/responses`
-- Cloudflare bindings: `MODEL_RELAY_SHARED_TOKEN`, primary/fallback `MODEL_RELAY_*_UPSTREAM_BASE_URL` and `MODEL_RELAY_*_UPSTREAM_API_KEY`, `MODEL_RELAY_ALLOWED_MODELS`, and optional `MODEL_RELAY_TIMEOUT_MS`.
+- `relayResponsesRequest(request, env, dependencies?, channel?) -> Promise<Response>` where `channel` is `primary | fallback | free3`.
+- Pages routes: `POST /api/model-relay/responses`, `POST /api/model-relay/fallback/responses`, and `POST /api/model-relay/free3/responses`.
+- Cloudflare bindings: `MODEL_RELAY_SHARED_TOKEN`, primary/fallback/Free3 route-specific `MODEL_RELAY_*_UPSTREAM_BASE_URL` and `MODEL_RELAY_*_UPSTREAM_API_KEY`, `MODEL_RELAY_ALLOWED_MODELS`, and optional `MODEL_RELAY_TIMEOUT_MS`.
 
 ### 3. Contracts
 
 - The caller presents `Authorization: Bearer <MODEL_RELAY_SHARED_TOKEN>`; the configured token must contain at least 32 characters, and comparison hashes both values and uses a constant-work byte loop.
 - The relay constructs exactly one HTTPS `/responses` endpoint from the configured base. No request field or header can select an endpoint.
+- Every channel maps explicitly to its own base/key pair. A Free3 request never falls through to primary/fallback and transport, timeout, authentication, rate-limit, invalid-response, or `5xx` failures never trigger a second relay request; only the caller's existing `404/405` Responses-path compatibility rule may try its second path.
 - Accepted top-level body fields are `model`, `stream`, `max_output_tokens`, `text`, and `input`; `model` must be in the bounded allowlist.
 - Upstream headers are rebuilt from scratch with only bearer auth, JSON content type, and JSON/SSE accept negotiation.
 - Chat generation and relay request bodies are at most 512 KB so one compressed image can pass end to end; non-generation assistant routes remain at 32 KB. JSON and SSE responses are at most 512 KB; the timeout is bounded to 55 seconds.
@@ -418,7 +419,7 @@ npm.cmd run cf-model-relay:check
 ### 6. Tests Required
 
 - `npm.cmd run cf-model-relay:check` uses injected fetch fixtures and never resolves or calls a live model URL.
-- Assert config/auth/input failures make zero fetch calls, exact fixed endpoint/header reconstruction, JSON/SSE success, error-body redaction, size limits, timeout, and stream cancellation.
+- Assert config/auth/input failures make zero fetch calls, exact route-specific endpoint/header reconstruction, Free3 single-send isolation, JSON/SSE success, error-body redaction, size limits, timeout, and stream cancellation.
 - Run `cf-assistant:smoke`, public model/agent checks, `docs:deployment-check`, `lint`, and `build` before deployment.
 
 ### 7. Wrong vs Correct
