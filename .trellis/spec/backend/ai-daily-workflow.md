@@ -304,6 +304,8 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - The Responses adapter deliberately omits `temperature`. It accepts an exact `/responses` endpoint, a `/v1` base, or a provider base that can be resolved through the two known Responses paths. Only `404` or `405` proves a guessed path is incompatible and permits trying the alternate path. Timeout, network, authentication, rate-limit, invalid response, and `5xx` failures stop immediately so one business task is not submitted twice and the original failure category is preserved.
 - Real evaluation is serial and requires all three gates: `--execute`, `AI_DAILY_BUSINESS_EVALUATION_ENABLED=true`, and a command `--approval-id` equal to `AI_DAILY_MODEL_EVALUATION_APPROVAL_ID`. The default proposal path contains `.local.` and is Git-ignored.
 - Production binding accepts either approved artifact family. It revalidates candidate, role, provider alias, failure-domain alias, model identifier, prompt version, generation schema version, selection/bundle hashes, and approval status against the current runtime; measured artifacts additionally revalidate candidate records. A prompt/schema drift fails before a provider or database claim. `--fixture` claims only `FIXTURE` work; `--live` claims only `PRODUCTION` work and additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`.
+- A relay `upstream_unreachable` / upstream `5xx` is a transport failure, not a model-schema rejection. If the same private Responses channel is reachable from Render but not from the relay edge, Studio may move to a direct HTTPS runtime instead of resubmitting the same task through guessed relay paths. The direct runtime keeps the real provider failure domain but receives a new `providerRef` and candidate identities; it therefore requires a new pending proposal, explicit proposal approval, bundle/Secret File/hash delivery, and a separately approved real Edition. A prior relay bundle or real-Edition approval cannot cross this transport identity change.
+- A production transport-identity replacement is backup-first. Copy the current stable Secret File to a new bounded backup name, read it back, and verify both raw content identity and its canonical bundle hash before replacing the stable mount. After updating the stable file, runtime JSON, and expected hash, read back all three, keep generation/business-evaluation/public-feed disabled, deploy once, and run the offline approval check plus health/auth/route/Cron observations. These checks must make zero model calls and do not approve a real Edition.
 
 ### 4. Validation & Error Matrix
 
@@ -320,6 +322,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Sensitive review metadata -> approval rejected with a `*-sensitive` issue.
 - Missing/malformed runtime JSON, role candidate gap, duplicate id, unsafe URL, or missing key/model -> `invalid-ai-daily-model-runtime:<stable issues>` before any provider call.
 - Provider `404`/`405` on a guessed path -> try the alternate known Responses path; provider `5xx`, timeout, network error, or any other HTTP failure -> stop with one low-sensitive `ai-daily-provider-*` category and do not retry a different guessed path.
+- Relay-origin `upstream_unreachable` or upstream `5xx` -> persist a bounded transport category; do not report schema rejection and do not infer that a direct runtime is already healthy. A later direct-runtime proposal remains zero-call and pending until explicitly approved.
 - Missing or tampered proposal/bundle fields or hashes -> stable invalid artifact error; runtime provider/failure-domain/model drift -> `ai-daily-<role>-runtime-channel-drift`.
 - Approved prompt drift -> `ai-daily-model-approval-prompt-version-drift`; generation schema drift -> `ai-daily-model-approval-generation-schema-version-drift` before any provider call.
 - Manual selection without either explicit acknowledgement -> `ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required`; unknown artifact fields, role-order drift, fake metrics, or a mismatched candidate role fail closed.
@@ -335,6 +338,9 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Bad: register two candidate ids backed by the same relay failure domain and report them as full redundancy.
 - Good: a base URL without `/v1` returns `404` for the first known path and succeeds on the second; exactly two loopback requests are observed.
 - Base: an approved bundle is present but the runtime model identifier changed; live execution fails closed and requires a new approved model-selection artifact from either supported path.
+- Good: one approved Edition records exactly one relay attempt with `provider_upstream_error`; generation is disabled immediately, and a zero-call direct-runtime proposal uses a new `providerRef` while preserving the same failure domain.
+- Base: relay transport fails but direct reachability has not been proven; the direct proposal may be prepared and checked offline, but no bundle, Render update, or real call occurs before the new approval gates.
+- Bad: relabel the relay bundle as direct, reuse the consumed real-Edition approval, or call the direct endpoint merely to prove liveness.
 - Bad: after a `503` from the first guessed endpoint, submit the same prompt to a second guessed endpoint and finally report its `404`, hiding the original provider outage.
 
 ### 6. Tests Required
@@ -342,6 +348,8 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Run `npm.cmd run ai-daily:model-evaluation-check` after changing the golden case-set asset, category/negative-tag taxonomy, slice thresholds, role selection, fallback rules, case-set hashing, evaluation records, or approval state. The check must prove that scenario/outcome/score changes alter the golden contract version, all three roles exercise every declared negative tag, and a globally passing candidate with a weak negative slice remains ineligible.
 - Run `npm.cmd run ai-daily:model-runtime-check` after changing runtime channel parsing, structured request compatibility, either approval artifact family, or runner mode gates. Assert runtime v2 rejects non-Responses protocols, requests use Responses `input` rather than Chat Completions `messages`, URL credentials/query/hash rejection, no `temperature`, `404/405` compatibility fallback, no duplicate request after `5xx`, same-provider pool opt-in, both manual CLI acknowledgements, zero-call manual CLI round-trip, artifact tamper rejection, runtime drift rejection, and `externalProviderCalls=0`. Run the real evaluator only with the explicit `--execute` and approval-id gates; it is an optional business task, not a health check.
 - Run `npm.cmd run studio:ai-daily-workspace-check` and `npm.cmd run assistant:service-modes-smoke` after changing Studio live-run readiness, confirmation, route isolation, or workspace projection. These checks use fixtures/missing-database boundaries only and must not call a provider.
+- For a relay-to-direct transport repair, assert the pending artifact changes `providerRef` and candidate ids, preserves the real `failureDomainRef`, and remains `manual-static-selection / reduced_redundancy / modelCalls=0`; never add a direct liveness request to an automated check.
+- Record only the proposal/bundle hashes, backup filename, deploy id, low-sensitive runtime counts/aliases, disabled safety flags, route status classes, Cron absence, and zero-call result. Do not record the direct base URL, API key, raw runtime JSON, Secret File contents, or provider response.
 - Keep every non-trivial Prisma `include` used by the Studio workspace in a named object with `satisfies Prisma.<Model>Include`. The public DTO may expose a stable alias such as `overrides`, but the database query must use the exact Prisma relation name (`editorialOverrides`). This compile-time contract prevents fixture-only DTO checks from hiding a production `Unknown field` query failure.
 - Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.
 - A passing fixture contract is a repository check, not a production model approval. The static mapping still requires human approval and first-edition Studio review; optional measured candidates still require explicit real execution and human primary/fallback approval.
@@ -386,6 +394,27 @@ throw new Error(failure)
 ```
 
 Only path incompatibility permits endpoint fallback; execution failures remain single-attempt and keep their original low-sensitive category.
+
+#### Wrong: reuse relay approval for a direct runtime
+
+```ts
+runtime.channels[0].baseUrl = directProviderBaseUrl
+await queueAiDailyGenerationWork(prisma, approvedRelayBundle)
+```
+
+This changes the transport/provider identity without human review and can silently reuse a consumed real-call approval.
+
+#### Correct: create a new zero-call direct proposal
+
+```ts
+createAiDailyModelManualSelectionProposal({
+  runtime: directRuntimeWithNewProviderRef,
+  candidateIds: directCandidateIds,
+  acknowledgeReducedRedundancy: true,
+})
+```
+
+The proposal preserves the true failure domain but receives new provider/candidate identities. It remains pending until separately approved, delivered, and followed by a new real-Edition approval.
 
 ## Scenario: AI Daily production operations observability
 
