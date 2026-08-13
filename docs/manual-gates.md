@@ -134,6 +134,10 @@ rollback evidence `tidebrief-rollback-2026-08-12` 已封存，custom-format 数�
 
 用户已授权优先使用本地私有配置中的稳定 `Free3` Responses 渠道。生产修复使用独立 `/api/model-relay/free3/responses` 固定出口和独立 Cloudflare Secret，不覆盖主/旧 fallback；AI Daily runtime 只绑定 `providerRef=free3-relay`、`failureDomainRef=free3-channel` 与 `grok-4.5`，不声明自动 fallback，继续标记 `reduced_redundancy`。这项“优先使用”授权只批准渠道选择和修复部署，不批准真实 Edition。由于 runtime identity 已改变，旧 proposal/bundle 和旧真实调用批准均不可复用；必须在新 proposal hash、bundle hash 和部署验证完成后再次取得明确批准。
 
+Free3 修复提交 `2ccd44c8` 已推送 `main`。Cloudflare Pages production deployment `adcc0f4b-675f-4531-af08-10c66259fe8c` 已 active，两项 Free3 专用 Secret 均显示为 encrypted；新路由无认证请求返回 `401 model-relay-unauthorized` 和 `X-BIAU-Relay-Origin=pages_function`。本地 Python HTTP 栈的已认证非法模型补验被 Cloudflare edge 以无 Function 来源头的纯文本 `403` 提前拦截，因此不把生产 `400` 写成已通过；确定性 relay fixture 已证明非法模型在 fetch 前返回 `400`。上述请求都未触达 Free3 上游，也不是模型调用。
+
+Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health=200` 且 database/auth ready，未授权 workspace 为 `401 missing-studio-token`，public Feed 为 `404`，部署窗口无 error-level 日志。控制面复核确认 generation、business evaluation、public Feed 均为 `false`，Cron 未创建。新的零调用 static proposal 为 `ai-daily-free3-grok45-static-v2`，hash `708108cf06ea92d1e9cf8f8d15441e36134ee5d465695e4e2cac840b5f11c740`；三角色分别绑定 `extractor-free3-grok45`、`composer-free3-grok45`、`verifier-free3-grok45`，模型均为 `grok-4.5`，状态 `pending / reduced_redundancy`，artifact 不保留 endpoint/token。下一步必须明确批准这个 proposal hash 后才能生成 bundle 并更新 Render runtime/Secret File/hash；真实 Edition 仍需再单独批准。
+
 ### 1. 后续真实版次
 
 - 先完成 extractor schema/provider 兼容性等实质性生产修复并部署，再重新取得明确业务批准。
