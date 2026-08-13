@@ -1,5 +1,5 @@
 import { normalizeStudioAiDailyWorkspace } from '../../src/data/studio.js'
-import { summarizeAiDailyRunEventDiagnostics } from '../src/studioAiDailyWorkspace.js'
+import { summarizeAiDailyGenerationDiagnostics, summarizeAiDailyRunEventDiagnostics } from '../src/studioAiDailyWorkspace.js'
 
 const issueFixture = {
   id: 'issue-1',
@@ -92,6 +92,15 @@ const fixture = {
             ],
             rawResponse: 'drop-me',
           },
+        },
+      ],
+      generationDiagnostics: [
+        {
+          stage: 'compose',
+          failureCode: 'composer-schema-or-provider-failure',
+          attempts: [{ role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid' }],
+          providerId: 'private-candidate',
+          rawResponse: 'drop-me',
         },
       ],
       workItems: [],
@@ -235,6 +244,17 @@ if (
   throw new Error('run event diagnostics should preserve the bounded discovery summary')
 }
 if ('rawResponse' in eventDiagnostics) throw new Error('unknown run event diagnostic fields must be dropped')
+const generationDiagnostics = workspace.runs[0]?.generationDiagnostics[0]
+if (
+  generationDiagnostics?.stage !== 'compose' ||
+  generationDiagnostics.attempts[0]?.outcome !== 'schema-rejected' ||
+  generationDiagnostics.attempts[0]?.calls !== 2
+) {
+  throw new Error('generation diagnostics should preserve bounded stage attempt evidence')
+}
+if ('providerId' in generationDiagnostics.attempts[0] || 'rawResponse' in generationDiagnostics) {
+  throw new Error('generation diagnostics must drop provider identity and raw output')
+}
 if (workspace.runs[0]?.candidates[0]?.clusterId !== 'cluster-1') {
   throw new Error('candidate cluster membership should normalize')
 }
@@ -312,6 +332,37 @@ if (
 const serializedDiagnostics = JSON.stringify(projectedDiagnostics)
 for (const forbidden of ['private.example', 'secret-value', 'authorization', 'apiToken', 'rawResponse', 'endpoint']) {
   if (serializedDiagnostics.includes(forbidden)) throw new Error(`run event diagnostics leaked forbidden field: ${forbidden}`)
+}
+
+const projectedGenerationDiagnostics = summarizeAiDailyGenerationDiagnostics([
+  {
+    stage: 'COMPOSE',
+    payloadJson: {
+      ok: false,
+      failureCode: 'composer-schema-or-provider-failure',
+      attempts: [{
+        providerId: 'private-composer-candidate',
+        role: 'composer',
+        slot: 'primary',
+        outcome: 'schema-rejected',
+        calls: 2,
+        errorCategory: 'schema_invalid',
+        endpoint: 'https://private.example/v1',
+        rawResponse: { authorization: 'credential-placeholder' },
+      }],
+    },
+  },
+])
+if (
+  projectedGenerationDiagnostics[0]?.stage !== 'compose' ||
+  projectedGenerationDiagnostics[0]?.attempts[0]?.outcome !== 'schema-rejected' ||
+  projectedGenerationDiagnostics[0]?.attempts[0]?.errorCategory !== 'schema_invalid'
+) {
+  throw new Error('backend generation diagnostics should preserve bounded attempt classification')
+}
+const serializedGenerationDiagnostics = JSON.stringify(projectedGenerationDiagnostics)
+for (const forbidden of ['private-composer-candidate', 'private.example', 'secret-value', 'authorization', 'providerId', 'rawResponse', 'endpoint']) {
+  if (serializedGenerationDiagnostics.includes(forbidden)) throw new Error(`generation diagnostics leaked forbidden field: ${forbidden}`)
 }
 
 console.log('Studio AI Daily workspace check passed')

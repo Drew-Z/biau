@@ -191,6 +191,40 @@ export interface StudioAiDailyWorkspaceRunEventDiagnostics {
   }>
 }
 
+const studioAiDailyGenerationStages = ['extract-facts', 'compose', 'verify'] as const
+const studioAiDailyGenerationRoles = ['extractor', 'composer', 'verifier'] as const
+const studioAiDailyGenerationSlots = ['primary', 'fallback'] as const
+const studioAiDailyGenerationOutcomes = ['succeeded', 'failed', 'schema-rejected', 'quality-rejected'] as const
+const studioAiDailyGenerationFailureCodes = [
+  'extractor-schema-or-provider-failure',
+  'duplicate-claim-id',
+  'composer-schema-or-provider-failure',
+  'verifier-schema-or-provider-failure',
+  'generation-failure',
+] as const
+const studioAiDailyGenerationErrorCategories = [
+  'provider_error',
+  'provider_request_invalid',
+  'provider_auth',
+  'provider_rate_limited',
+  'provider_endpoint_unsupported',
+  'provider_upstream_error',
+  'provider_timeout',
+  'provider_network_error',
+  'provider_empty_response',
+  'provider_invalid_json',
+  'provider_payload_too_large',
+  'schema_invalid',
+  'provider_quality_below_floor',
+] as const
+
+type StudioAiDailyGenerationStage = (typeof studioAiDailyGenerationStages)[number]
+type StudioAiDailyGenerationRole = (typeof studioAiDailyGenerationRoles)[number]
+type StudioAiDailyGenerationSlot = (typeof studioAiDailyGenerationSlots)[number]
+type StudioAiDailyGenerationOutcome = (typeof studioAiDailyGenerationOutcomes)[number]
+type StudioAiDailyGenerationFailureCode = (typeof studioAiDailyGenerationFailureCodes)[number]
+type StudioAiDailyGenerationErrorCategory = (typeof studioAiDailyGenerationErrorCategories)[number]
+
 export interface StudioAiDailyWorkspaceCandidate {
   id: string
   clusterId: string | null
@@ -249,6 +283,17 @@ export interface StudioAiDailyWorkspaceRun {
   createdAt: string
   updatedAt: string
   events: StudioAiDailyWorkspaceRunEvent[]
+  generationDiagnostics: Array<{
+    stage: StudioAiDailyGenerationStage
+    failureCode: StudioAiDailyGenerationFailureCode | null
+    attempts: Array<{
+      role: StudioAiDailyGenerationRole
+      slot: StudioAiDailyGenerationSlot
+      outcome: StudioAiDailyGenerationOutcome
+      calls: number
+      errorCategory: StudioAiDailyGenerationErrorCategory | null
+    }>
+  }>
   workItems: Array<{
     id: string
     kind: string
@@ -924,6 +969,34 @@ function normalizeWorkspaceRun(value: unknown): StudioAiDailyWorkspaceRun | null
         }))
         .filter((item) => Boolean(item.id && item.runId && item.action && item.actor && item.createdAt))
     : []
+  const generationDiagnostics = Array.isArray(value.generationDiagnostics)
+    ? value.generationDiagnostics.flatMap((diagnostic) => {
+        if (!isRecord(diagnostic)) return []
+        const stage = studioAiDailyGenerationStages.find((entry) => entry === diagnostic.stage) ?? null
+        if (!stage) return []
+        const attempts = Array.isArray(diagnostic.attempts)
+          ? diagnostic.attempts.flatMap((attempt) => {
+              if (!isRecord(attempt)) return []
+              const role = studioAiDailyGenerationRoles.find((entry) => entry === attempt.role) ?? null
+              const slot = studioAiDailyGenerationSlots.find((entry) => entry === attempt.slot) ?? null
+              const outcome = studioAiDailyGenerationOutcomes.find((entry) => entry === attempt.outcome) ?? null
+              if (!role || !slot || !outcome) return []
+              return [{
+                role,
+                slot,
+                outcome,
+                calls: readNumber(attempt.calls),
+                errorCategory: studioAiDailyGenerationErrorCategories.find((entry) => entry === attempt.errorCategory) ?? null,
+              }]
+            }).slice(0, 8)
+          : []
+        return [{
+          stage,
+          failureCode: studioAiDailyGenerationFailureCodes.find((entry) => entry === diagnostic.failureCode) ?? null,
+          attempts,
+        }]
+      })
+    : []
   return {
     id: value.id,
     issueId: readNullableString(value.issueId),
@@ -949,6 +1022,7 @@ function normalizeWorkspaceRun(value: unknown): StudioAiDailyWorkspaceRun | null
     events: Array.isArray(value.events)
       ? value.events.map(normalizeWorkspaceRunEvent).filter((item): item is StudioAiDailyWorkspaceRunEvent => item !== null)
       : [],
+    generationDiagnostics,
     workItems,
     candidates: Array.isArray(value.candidates)
       ? value.candidates.map(normalizeWorkspaceCandidate).filter((item): item is StudioAiDailyWorkspaceCandidate => item !== null)

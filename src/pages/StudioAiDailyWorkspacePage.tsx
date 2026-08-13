@@ -280,6 +280,10 @@ function createWorkspaceUiFixturePayload() {
       },
       { id: 'ui-event-1', sequence: 1, stage: 'collect', kind: 'run-started', outcome: 'success', providerRole: null, attemptNumber: 1, errorCategory: null, durationMs: null, createdAt: '2026-07-19T03:00:00.000Z', diagnostics: null },
     ],
+    generationDiagnostics: [
+      { stage: 'extract-facts', failureCode: null, attempts: [{ role: 'extractor', slot: 'primary', outcome: 'succeeded', calls: 1, errorCategory: null }] },
+      { stage: 'compose', failureCode: 'composer-schema-or-provider-failure', attempts: [{ role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid' }] },
+    ],
     workItems: [],
     candidates: [candidate],
     clusters: [
@@ -1580,6 +1584,7 @@ function RunsView({ workspace }: { workspace: StudioAiDailyWorkspace }) {
             <div><dt>freshness</dt><dd>{formatDateTime(run.pipelineFreshnessAt)}</dd></div>
           </dl>
           {run.finalErrorCategory && <p className="studio-ai-daily-error"><AlertTriangle size={15} aria-hidden="true" />{run.finalErrorCategory}</p>}
+          <GenerationDiagnostics run={run} />
           <div className="studio-ai-daily-event-list">
             {run.events.slice(0, 6).map((event) => (
               <div key={event.id}>
@@ -1721,6 +1726,28 @@ function RunEventDiagnostics({ event }: { event: StudioAiDailyWorkspaceRun['even
           {diagnostics.gaps.map((gap) => <span key={gap}>{gap}</span>)}
         </div>
       )}
+    </div>
+  )
+}
+
+function GenerationDiagnostics({ run }: { run: StudioAiDailyWorkspaceRun }) {
+  if (run.generationDiagnostics.length === 0) return null
+  return (
+    <div className="studio-ai-daily-diagnostics" aria-label="Generation stage diagnostics">
+      <div className="studio-ai-daily-findings">
+        {run.generationDiagnostics.flatMap((diagnostic) =>
+          diagnostic.attempts.map((attempt, index) => (
+            <span
+              className={statusClass(attempt.outcome)}
+              key={`${diagnostic.stage}:${attempt.role}:${attempt.slot}:${index}`}
+            >
+              {formatStatus(diagnostic.stage)} · {attempt.role}/{attempt.slot}: {formatStatus(attempt.outcome)} · {attempt.calls} call{attempt.calls === 1 ? '' : 's'}
+              {attempt.errorCategory ? ` / ${attempt.errorCategory}` : ''}
+              {diagnostic.failureCode ? ` / ${diagnostic.failureCode}` : ''}
+            </span>
+          )),
+        )}
+      </div>
     </div>
   )
 }

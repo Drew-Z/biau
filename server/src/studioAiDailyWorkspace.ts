@@ -1,12 +1,19 @@
 import { Prisma } from '@prisma/client'
 import { requireStudioDatabase } from './db.js'
 import { summarizeAiDailyEditableContent } from './aiDailyEditionRepository.js'
+import { isAiDailyGenerationProviderErrorCategory } from './aiDailyGeneration.js'
 import { inspectAiDailyProductionReadiness } from './aiDailyStudioProduction.js'
 
 type StudioPrisma = ReturnType<typeof requireStudioDatabase>
 
 const aiDailyWorkspaceRunInclude = {
   events: { orderBy: [{ createdAt: 'desc' }, { sequence: 'desc' }], take: 40 },
+  generationCheckpoints: {
+    where: { stage: { in: ['EXTRACT_FACTS', 'COMPOSE', 'VERIFY'] } },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    take: 3,
+    select: { stage: true, payloadJson: true },
+  },
   workItems: {
     orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
     take: 30,
@@ -115,6 +122,54 @@ function safeDiscoveryOutcome(value: unknown) {
 
 function safeDiscoveryRedundancy(value: unknown) {
   return value === 'full' || value === 'reduced_redundancy' || value === 'primary_unavailable' ? value : null
+}
+
+const generationDiagnosticStages = ['EXTRACT_FACTS', 'COMPOSE', 'VERIFY'] as const
+const generationDiagnosticRoles = ['extractor', 'composer', 'verifier'] as const
+const generationDiagnosticSlots = ['primary', 'fallback'] as const
+const generationDiagnosticOutcomes = ['succeeded', 'failed', 'schema-rejected', 'quality-rejected'] as const
+const generationDiagnosticFailureCodes = new Set([
+  'extractor-schema-or-provider-failure',
+  'duplicate-claim-id',
+  'composer-schema-or-provider-failure',
+  'verifier-schema-or-provider-failure',
+])
+
+function safeLiteral<const T extends readonly string[]>(value: unknown, allowed: T): T[number] | null {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T[number]) : null
+}
+
+export function summarizeAiDailyGenerationDiagnostics(
+  checkpoints: Array<{ stage: unknown; payloadJson: Prisma.JsonValue }>,
+) {
+  return checkpoints.flatMap((checkpoint) => {
+    const stage = safeLiteral(checkpoint.stage, generationDiagnosticStages)
+    const payload = readJsonRecord(checkpoint.payloadJson)
+    if (!stage || !payload) return []
+    const attempts = Array.isArray(payload.attempts)
+      ? payload.attempts.flatMap((attempt) => {
+          const record = readJsonRecord(attempt as Prisma.JsonValue)
+          if (!record) return []
+          const role = safeLiteral(record.role, generationDiagnosticRoles)
+          const slot = safeLiteral(record.slot, generationDiagnosticSlots)
+          const outcome = safeLiteral(record.outcome, generationDiagnosticOutcomes)
+          const calls = boundedCount(record.calls, 12)
+          if (!role || !slot || !outcome || calls === null) return []
+          return [{
+            role,
+            slot,
+            outcome,
+            calls,
+            errorCategory: isAiDailyGenerationProviderErrorCategory(record.errorCategory) ? record.errorCategory : null,
+          }]
+        }).slice(0, 8)
+      : []
+    const rawFailureCode = boundedString(payload.failureCode, 96)
+    const failureCode = rawFailureCode
+      ? generationDiagnosticFailureCodes.has(rawFailureCode) ? rawFailureCode : 'generation-failure'
+      : null
+    return [{ stage: stage.toLowerCase().replaceAll('_', '-'), failureCode, attempts }]
+  })
 }
 
 export function summarizeAiDailyRunEventDiagnostics(value: Prisma.JsonValue | null | undefined) {
@@ -261,6 +316,10 @@ function toRunResponse(run: {
     createdAt: Date
     metadataJson: Prisma.JsonValue | null
   }>
+  generationCheckpoints: Array<{
+    stage: string
+    payloadJson: Prisma.JsonValue
+  }>
   workItems: Array<{
     id: string
     kind: string
@@ -370,6 +429,7 @@ function toRunResponse(run: {
       createdAt: event.createdAt.toISOString(),
       diagnostics: summarizeAiDailyRunEventDiagnostics(event.metadataJson),
     })),
+    generationDiagnostics: summarizeAiDailyGenerationDiagnostics(run.generationCheckpoints),
     workItems: run.workItems.map((item) => ({
       id: item.id,
       kind: item.kind.toLowerCase().replaceAll('_', '-'),

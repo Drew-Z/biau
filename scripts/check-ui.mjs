@@ -1353,6 +1353,10 @@ try {
       if ((await page.getByRole('option', { name: /AI Daily 工作区 UI Check/u }).count()) !== 1) {
         failures.push(`${viewport.name} ${route.path}: expected fixture Edition title`)
       }
+      const generationDiagnostic = page.getByText(/Compose · composer\/primary: Schema Rejected · 2 calls \/ schema_invalid/u).first()
+      if (!(await generationDiagnostic.isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: generation diagnostics should expose the bounded composer attempt classification`)
+      }
       await page.getByRole('tab', { name: 'Candidates / Events' }).click()
       if (!(await page.getByText('官方模型平台更新').isVisible().catch(() => false))) {
         failures.push(`${viewport.name} ${route.path}: expected candidate evidence card`)
