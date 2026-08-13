@@ -16,6 +16,7 @@ import {
   validateAiDailyModelManualSelectionProposal,
 } from '../src/aiDailyModelArtifacts.js'
 import {
+  aiDailyStructuredMaxOutputTokens,
   buildAiDailyStructuredOutputSchema,
   buildAiDailyStructuredSystemPrompt,
   createAiDailyResponsesProvider,
@@ -70,6 +71,22 @@ const server = createServer((request, response) => {
       response.end(JSON.stringify({ error: 'upstream-unavailable' }))
       return
     }
+    if (requestPath === '/stream/responses') {
+      response.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      setTimeout(() => {
+        response.write('event: response.output_text.delta\n')
+        response.write(`data: ${JSON.stringify({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: '{"title":"Daily","subtitle":"Brief","introduction":{"text":"Intro","claimIds":["claim-1"]},"events":[' })}\n\n`)
+        setTimeout(() => {
+          response.write('event: response.output_text.delta\n')
+          response.write(`data: ${JSON.stringify({ type: 'response.output_text.delta', output_index: 0, content_index: 0, delta: '{"eventId":"event-1","title":"Event","factSummary":{"text":"Fact","claimIds":["claim-1"]},"whyItMatters":{"text":"Why","claimIds":["claim-1"]},"uncertainty":"low","claimIds":["claim-1"]}],"trends":[]}' })}\n\n`)
+          setTimeout(() => {
+            response.write('event: response.completed\n')
+            response.end(`data: ${JSON.stringify({ type: 'response.completed' })}\n\n`)
+          }, 25)
+        }, 25)
+      }, 25)
+      return
+    }
     response.writeHead(200, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify({
       output: [{
@@ -114,6 +131,8 @@ try {
   assertDeepEqual(output, { claims: [] }, 'provider fenced json parsing')
   assertEqual(observedBodies.length, 1, 'provider request count')
   assert(!Object.hasOwn(observedBodies[0], 'temperature'), 'provider request must omit temperature')
+  assertEqual(observedBodies[0].stream, true, 'AI Daily provider must request streaming Responses')
+  assertEqual(observedBodies[0].max_output_tokens, aiDailyStructuredMaxOutputTokens, 'AI Daily output token ceiling')
   assert(Array.isArray(observedBodies[0].input), 'provider request must use Responses input')
   assert(!Object.hasOwn(observedBodies[0], 'messages'), 'provider request must not use Chat Completions messages')
   assertStructuredOutputRequest(observedBodies[0], 'ai_daily_extractor_v2')
@@ -130,6 +149,21 @@ try {
   for (const required of ['entailed', 'scope_inflation', 'supportingEvidenceIds', 'supportingClaimIds']) {
     assert(verifierPrompt.includes(required), `verifier prompt must describe validator contract: ${required}`)
   }
+
+  const composerCandidate = runtime.candidates.find((candidate) => candidate.role === 'composer')
+  if (!composerCandidate) throw new Error('composer-runtime-candidate-missing')
+  const streamingProvider = createAiDailyResponsesProvider({
+    candidate: composerCandidate,
+    channel: { ...runtime.channels[0], baseUrl: `${runtime.channels[0].baseUrl}/stream`, timeoutMs: 40 },
+    slot: 'primary',
+  })
+  const streamingOutput = await streamingProvider.generate({
+    role: 'composer',
+    schemaVersion: aiDailyGenerationSchemaVersion,
+    payload: { claims: [{ claimId: 'claim-1' }] },
+  })
+  assertEqual((streamingOutput as { title?: unknown }).title, 'Daily', 'composer SSE structured response decoding')
+  assertStructuredOutputRequest(observedBodies.at(-1) ?? {}, 'ai_daily_composer_v2')
 
   const baseUrl = runtime.channels[0].baseUrl
   const compatibilityProvider = createAiDailyResponsesProvider({

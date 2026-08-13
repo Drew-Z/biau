@@ -18,6 +18,8 @@ import {
   type ResponsesJsonSchema,
 } from './responsesApi.js'
 
+export const aiDailyStructuredMaxOutputTokens = 8_192
+
 export function createAiDailyResponsesProvider(input: {
   candidate: AiDailyModelRuntimeCandidate
   channel: AiDailyModelRuntimeChannel
@@ -77,7 +79,8 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
       model: channel.modelIdentifier,
     },
     timeoutMs: channel.timeoutMs,
-    stream: false,
+    stream: true,
+    maxOutputTokens: aiDailyStructuredMaxOutputTokens,
     system: buildAiDailyStructuredSystemPrompt(request.role, request.schemaVersion),
     user: [
       `任务角色：${request.role}`,

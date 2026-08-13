@@ -207,6 +207,7 @@ async function requestEndpoint(input: {
     firstActivityMs = Math.max(0, Date.now() - startedAt)
     responseStatus = response.status
     relayOrigin = readRelayOrigin(response.headers, input.channel)
+    if (input.stream) armTimeout()
     if (!response.ok) {
       const relayFailure = relayOrigin === 'pages_function'
         ? readRelayFailure(response.headers.get('X-BIAU-Relay-Failure'))
