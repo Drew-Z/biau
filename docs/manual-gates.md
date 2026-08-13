@@ -138,6 +138,8 @@ Free3 修复提交 `2ccd44c8` 已推送 `main`。Cloudflare Pages production dep
 
 Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health=200` 且 database/auth ready，未授权 workspace 为 `401 missing-studio-token`，public Feed 为 `404`，部署窗口无 error-level 日志。控制面复核确认 generation、business evaluation、public Feed 均为 `false`，Cron 未创建。新的零调用 static proposal 为 `ai-daily-free3-grok45-static-v2`，hash `708108cf06ea92d1e9cf8f8d15441e36134ee5d465695e4e2cac840b5f11c740`；三角色分别绑定 `extractor-free3-grok45`、`composer-free3-grok45`、`verifier-free3-grok45`，模型均为 `grok-4.5`，状态 `pending / reduced_redundancy`，artifact 不保留 endpoint/token。下一步必须明确批准这个 proposal hash 后才能生成 bundle 并更新 Render runtime/Secret File/hash；真实 Edition 仍需再单独批准。
 
+2026-08-13 Free3 控制面交付已完成：已明确批准 proposal hash `708108cf06ea92d1e9cf8f8d15441e36134ee5d465695e4e2cac840b5f11c740` 并生成 bundle hash `45d9c5c272a81a415a2085b06d7a51706fd5b186f240cfd0689d04460d551097`。Render Studio 的旧稳定 Secret File 已先备份为 `ai-daily-model-approval.pre-free3.json`，备份与旧稳定文件 hash 一致；稳定文件读回 hash 与批准 bundle canonical hash 一致。`AI_DAILY_MODEL_RUNTIME_JSON` 已切换到唯一 Free3 channel（1 channel / 3 candidates / 1 failure domain），`AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH` 已匹配。手动部署 `dep-d9un2fr7uimc73a5jru0` 已 `live`；离线 delivery check `networkCalls=0` 通过，`/health=200`、数据库/鉴权 ready、未授权 workspace `401 missing-studio-token`、public Feed `404`。generation、business evaluation、public Feed 仍为 `false`，Cron 未创建。Free3 目录中的其他模型只记录为后续候选，未加入本 bundle、未逐模型探测；真实 Edition 仍需单独的明确批准。
+
 ### 1. 后续真实版次
 
 - 先完成 extractor schema/provider 兼容性等实质性生产修复并部署，再重新取得明确业务批准。
