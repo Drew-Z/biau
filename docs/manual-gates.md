@@ -146,9 +146,11 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 同日站点所有者已明确批准上述 direct proposal，生成 bundle hash `09b6b5438edf4b548e2a780633460119fc395eca85e641ee8aef7431b9cee23b`，审批过程 `modelCalls=0`。Render 更新遵循 backup-first：旧稳定 Secret File 已复制为 `ai-daily-model-approval.pre-free3-direct.json`，回读保持旧 bundle hash `45d9c5c272a81a415a2085b06d7a51706fd5b186f240cfd0689d04460d551097`；稳定文件与 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH` 现均匹配 direct bundle。runtime 回读为 1 channel / 3 candidates / 1 failure domain，`providerRef=free3-direct`、`failureDomainRef=free3-channel`，三角色 candidate 均为已批准的 `*-free3-direct-grok45`。手动部署 `dep-d9uqiu2jobas73bglrc0` 已 `live`；离线 delivery check `networkCalls=0`，`/health=200` 且 database/auth ready，未授权 workspace 为 `401 missing-studio-token`，public Feed 为 `404`，部署窗口无 error-level 日志，Render Cron 数量为 0。generation、business evaluation、public Feed 均保持 `false`。本次没有调用模型或执行真实 Edition；下一次真实 Edition 必须再次获得单独明确批准。
 
+随后站点所有者单独批准一次 direct Free3 真实 Edition。generation-only 部署 `dep-d9ur79vqj5pc738add90` live 后，Studio 入口只提交一次 `202`，创建 Run `cmsrh9d5c000049jurscxa7oe` / work item `cmsrh9d5w000149ju71mluavn`。Run attempt 7 以 `COMPLETED_WITH_GAPS` 结束，并完成 `EXTRACT_FACTS`、`COMPOSE`、`VALIDATE`、`DRAFT` checkpoint；Revision 6 `cmsrhemt1000a49ju7jvqnat7` 为 `REJECTED` / `DISCARDED`，critical finding 为 `composer-schema-or-provider-failure`，保留 8 个 citation snapshot、0 个内容块且无 draft。该结果证明 direct transport 已越过原 relay upstream 阻断，但 composer/provider Structured Outputs 兼容性仍未通过。generation 立即恢复为 `false`，关闭部署 `dep-d9urbhvqj5pc738ams4g` 已 live；`/health=200`、workspace production generation=`disabled`、public Feed=`404`、error-level 日志为 0，business evaluation/public Feed 仍关闭，Cron 未创建。未执行 Studio review、Publish Export、内容部署或公开发布。下一次真实 Edition 必须先完成新的实质性 composer/provider 修复并重新获得明确批准。
+
 ### 1. 后续真实版次
 
-- 先完成 extractor schema/provider 兼容性等实质性生产修复并部署，再重新取得明确业务批准。
+- 先完成 composer/provider Structured Outputs 兼容性等实质性生产修复并部署，再重新取得明确业务批准。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。

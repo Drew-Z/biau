@@ -340,6 +340,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Base: an approved bundle is present but the runtime model identifier changed; live execution fails closed and requires a new approved model-selection artifact from either supported path.
 - Good: one approved Edition records exactly one relay attempt with `provider_upstream_error`; generation is disabled immediately, and a zero-call direct-runtime proposal uses a new `providerRef` while preserving the same failure domain.
 - Base: relay transport fails but direct reachability has not been proven; the direct proposal may be prepared and checked offline, but no bundle, Render update, or real call occurs before the new approval gates.
+- Base: direct transport reaches the provider and persists extractor/composer/validator checkpoints, but the composer boundary returns a bounded `composer-schema-or-provider-failure`; reject/discard the revision, project no draft, disable generation, and require a new composer/provider repair before another approval.
 - Bad: relabel the relay bundle as direct, reuse the consumed real-Edition approval, or call the direct endpoint merely to prove liveness.
 - Bad: after a `503` from the first guessed endpoint, submit the same prompt to a second guessed endpoint and finally report its `404`, hiding the original provider outage.
 
