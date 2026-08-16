@@ -170,7 +170,7 @@ Focused checks:
 ### E4. AI Daily manual product gate
 
 - [x] Obtain explicit approval before real-source/model execution and execute one bounded first-edition attempt plus one approved same-Edition rerun without automatic retry.
-- [x] Prepare and explicitly approve zero-call CPA static proposal `ai-daily-cpa-deepseek-v4-flash-static-v1` (`508e23df7a6b53f7aee74fee6845fc5686f2b5988208e1a745be3868cefbb263`), producing bundle `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248` with one exact model candidate per role and `modelCalls=0`; Render runtime/Secret File delivery remains a manual gate.
+- [x] Prepare and explicitly approve zero-call CPA static proposal `ai-daily-cpa-deepseek-v4-flash-static-v1` (`508e23df7a6b53f7aee74fee6845fc5686f2b5988208e1a745be3868cefbb263`), producing bundle `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248` with one exact model candidate per role and `modelCalls=0`; deliver the Render runtime/Secret File/hash and validate them through the Shell-less Studio startup check (`networkCalls=0`).
 - [ ] Generate one real Edition, review sources and claims in Studio, and require human approval.
 - [ ] Run Publish Export, deploy the public payload and verify Feed/detail on desktop/mobile.
 - [ ] Record and seal the complete low-sensitive acceptance evidence after a future successful review/export/deployment; rollback evidence for the failed run is already sealed and Cron remains disabled.

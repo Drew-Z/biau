@@ -81,26 +81,35 @@ export async function inspectAiDailyProductionReadiness(): Promise<AiDailyProduc
  * Validate the delivered runtime and approval file without enabling the
  * production worker. This is used by deployments that do not expose a shell.
  */
-export async function inspectAiDailyModelDelivery(): Promise<AiDailyModelDeliveryReadiness> {
+export async function inspectAiDailyModelDelivery(
+  input: {
+    runtimeJson?: string
+    approvalFile?: string
+    approvalBundleHash?: string
+  } = {},
+): Promise<AiDailyModelDeliveryReadiness> {
+  const runtimeJson = input.runtimeJson ?? env.aiDailyModelRuntimeJson
+  const approvalFile = input.approvalFile ?? env.aiDailyModelApprovalFile
+  const approvalBundleHash = input.approvalBundleHash ?? env.aiDailyModelApprovalBundleHash
   const hasDeliveryConfig = Boolean(
-    env.aiDailyModelRuntimeJson || env.aiDailyModelApprovalFile || env.aiDailyModelApprovalBundleHash,
+    runtimeJson || approvalFile || approvalBundleHash,
   )
   if (!hasDeliveryConfig) return { status: 'not-configured', networkCalls: 0 }
 
   try {
-    const runtime = readAiDailyModelRuntimeConfig()
+    const runtime = readAiDailyModelRuntimeConfig(runtimeJson)
     if (!runtime.ok) throw new Error(`invalid-ai-daily-model-runtime:${runtime.issues.join(',')}`)
-    if (!env.aiDailyModelApprovalFile) throw new Error('ai-daily-model-approval-file-not-configured')
-    if (!path.isAbsolute(env.aiDailyModelApprovalFile)) {
+    if (!approvalFile) throw new Error('ai-daily-model-approval-file-not-configured')
+    if (!path.isAbsolute(approvalFile)) {
       throw new Error('ai-daily-model-approval-file-path-invalid')
     }
-    if (!/^[a-f0-9]{64}$/u.test(env.aiDailyModelApprovalBundleHash)) {
+    if (!/^[a-f0-9]{64}$/u.test(approvalBundleHash)) {
       throw new Error('ai-daily-model-approval-bundle-hash-not-configured')
     }
 
     const bundle = await loadAiDailyModelApprovalBundle(
-      env.aiDailyModelApprovalFile,
-      env.aiDailyModelApprovalBundleHash,
+      approvalFile,
+      approvalBundleHash,
     )
     buildAiDailyProductionProviders({ runtime: runtime.config, bundle })
     const runtimeSummary = summarizeAiDailyModelRuntime(runtime.config)

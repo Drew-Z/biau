@@ -28,6 +28,7 @@ import {
   summarizeAiDailyModelApprovalBundle,
 } from '../src/aiDailyModelProduction.js'
 import { resolveAiDailyRunnerGenerationMode } from '../src/aiDailyRunnerMode.js'
+import { inspectAiDailyModelDelivery } from '../src/aiDailyStudioProduction.js'
 import {
   normalizeAiDailyModelRuntimeConfig,
   summarizeAiDailyModelRuntime,
@@ -591,6 +592,31 @@ async function validateCustomApprovalBundleFile(
       })),
     }
     assertApprovalDeliveryCheck({ runtime: runnerRuntime, filePath, bundleHash: bundle.bundleHash })
+    const delivery = await inspectAiDailyModelDelivery({
+      runtimeJson: JSON.stringify(runnerRuntime),
+      approvalFile: filePath,
+      approvalBundleHash: bundle.bundleHash,
+    })
+    assertEqual(delivery.status, 'ready', 'startup delivery inspection should pass')
+    if (delivery.status !== 'ready') throw new Error('startup-delivery-inspection-not-ready')
+    assertEqual(delivery.networkCalls, 0, 'startup delivery inspection network calls')
+    assertEqual(delivery.bundleHash, bundle.bundleHash, 'startup delivery inspection bundle hash')
+    assertEqual(delivery.channelCount, runnerRuntime.channels.length, 'startup delivery inspection channel count')
+    assertEqual(delivery.candidateCount, runnerRuntime.candidates.length, 'startup delivery inspection candidate count')
+    assertEqual(
+      delivery.failureDomainCount,
+      new Set(runnerRuntime.channels.map((channel) => channel.failureDomainRef)).size,
+      'startup delivery inspection failure domain count',
+    )
+    const driftedDelivery = await inspectAiDailyModelDelivery({
+      runtimeJson: JSON.stringify(runnerRuntime),
+      approvalFile: filePath,
+      approvalBundleHash: '0'.repeat(64),
+    })
+    assertEqual(driftedDelivery.status, 'misconfigured', 'startup delivery inspection should reject hash drift')
+    if (driftedDelivery.status !== 'misconfigured') throw new Error('startup-delivery-drift-not-rejected')
+    assertEqual(driftedDelivery.networkCalls, 0, 'startup delivery drift network calls')
+    assertEqual(driftedDelivery.issue, 'model-approval-bundle-invalid', 'startup delivery drift category')
     assertLiveRunnerConfigFailure({
       runtime: runnerRuntime,
       filePath: '',

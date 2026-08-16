@@ -466,6 +466,7 @@ The proposal preserves the true failure domain but receives new provider/candida
 - Runtime candidate ids, roles, provider aliases, failure-domain aliases, and model identifiers must match the approved records. Base URLs and keys remain server-only and never enter the bundle or checker output. Checker output includes `selectionBasis` so a manual mapping cannot be mistaken for measured quality evidence.
 - Render Secret Files and environment variables are service-scoped. Studio and every Editorial Cron that executes `--live` each receive their own copy of the same file/runtime/hash. Ingest Cron never receives model credentials or the approval bundle.
 - The production bundle is generated locally, reviewed by a human, Git-ignored, and uploaded through Render. `render.yaml` intentionally omits Cron services until the first live edition passes its manual gate.
+- On deployments without Render Shell access, Studio startup invokes `inspectAiDailyModelDelivery()` whenever any delivery value is configured. It reads only the server-side runtime JSON, absolute Secret File, and expected hash; it builds the provider binding without network/database work and logs only `networkCalls=0`, bounded counts, the canonical bundle hash, or a fixed issue category. It never enables the production worker and never logs endpoints, keys, provider responses, or raw errors.
 
 ### 4. Validation & Error Matrix
 
@@ -482,6 +483,7 @@ The proposal preserves the true failure domain but receives new provider/candida
 ### 5. Good / Base / Bad Cases
 
 - Good: Studio and Editorial Cron each mount the same reviewed file, use the same expected hash, and pass `ai-daily:model-approval-check` without exposing endpoint/key data.
+- Good: a Shell-less Studio deployment logs `AI Daily model delivery check passed` with `networkCalls=0`, one channel, three candidates, one failure domain, and the expected bundle hash before becoming live.
 - Base: a fresh clone has no real bundle; deterministic checks pass, while production readiness reports the remaining human gate.
 - Bad: only Studio receives the Secret File while Editorial Cron inherits nothing and fails on its first scheduled run.
 - Bad: a previous valid bundle remains mounted after the expected hash changes, or a relative repository path is used in production.
@@ -489,6 +491,7 @@ The proposal preserves the true failure domain but receives new provider/candida
 ### 6. Tests Required
 
 - `npm.cmd run ai-daily:model-runtime-check` must cover an absolute temporary file, valid checker output, missing file configuration, relative path rejection, missing hash, stale hash, malformed JSON, tampered hash, and runtime identity drift without external calls.
+- `npm.cmd run ai-daily:model-runtime-check` must also exercise `inspectAiDailyModelDelivery()` with injected runtime/file/hash values, assert the ready summary and zero-call hash-drift failure, and verify that credentials/endpoints do not appear in output.
 - `npm.cmd run ai-daily:production-readiness-check -- --json` must report `networkCalls: 0`, preserve an unconfigured delivery as `manual-gate`, and fail configured-invalid delivery.
 - `npm.cmd run docs:deployment-check` must bind `render.yaml`, `.env.example`, deployment docs, manual gates, and this code-spec to the same path/hash/service-boundary contract.
 - Run `npm.cmd run ai-daily:contracts-check`, `npm.cmd run server:build`, `npm.cmd run lint`, `npm.cmd run build`, `git diff --check`, and a sensitive scan before commit.

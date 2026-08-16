@@ -10,7 +10,7 @@
 - 三角色模型评估 contract、手动静态选型 contract、server-only OpenAI-compatible Responses provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；两条路径都不会在 readiness 或部署检查中调用模型。
 - 来源采集已经接入同一套 Studio 持久化 worker：版本化 manifest 幂等同步、到期 feed 排队、公开来源安全抓取、条件请求和证据选择都由数据库 work item/lease 驱动；它只访问公开来源，不调用模型或搜索 provider。工作区的“同步并刷新证据”调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，服务重启后会恢复未完成的采集任务。
 - 当前待交付的 CPA 手动静态选型让 extractor/composer/verifier 统一使用精确 `free5/DeepSeek-V4-Flash`。该映射只表达一个可审计的角色身份，不宣称模型质量得分或独立故障转移；bundle 会明确标记 `manual-static-selection` 与 `reduced_redundancy`，不配置自动 fallback。
-- 2026-08-16 已明确批准零调用 proposal `ai-daily-cpa-deepseek-v4-flash-static-v1`（proposal hash `508e23df7a6b53f7aee74fee6845fc5686f2b5988208e1a745be3868cefbb263`），生成 bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`，输出确认 `modelCalls=0`。proposal/bundle 只保存 provider/failure-domain/model/candidate 身份，不保存 endpoint 或 token；Render runtime 与 Secret File 尚未更新，服务仍保留旧配置，尚未部署，也未执行真实 Edition。
+- 2026-08-16 已明确批准零调用 proposal `ai-daily-cpa-deepseek-v4-flash-static-v1`（proposal hash `508e23df7a6b53f7aee74fee6845fc5686f2b5988208e1a745be3868cefbb263`），生成 bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`，输出确认 `modelCalls=0`。站点所有者已在 Render Studio 交付 runtime、Secret File 与 hash；部署 `dep-da0sqpe1egvs739g6oq0`（提交 `fc08c2a1`）启动期自动校验通过，日志确认 `networkCalls=0`、1 channel、3 candidates、1 failure domain，bundle hash 完全匹配。该校验不启用 production worker；真实 Edition、Studio 审核、Publish Export 和公开 Feed 仍未执行。
 
 ## 服务边界
 
@@ -111,7 +111,7 @@ npm.cmd run ai-daily:model-evaluate -- --execute --approval-id <approved-run-id>
 npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluation.local.json --reviewed-by site-owner --notes "Measured selection approved for one controlled edition."
 ```
 
-批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。部署后运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次执行窗口还必须暂时设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，再在 Studio AI Daily 工作区选择 Edition、展开“运行真实版次”并完成二次确认；受保护 API 返回 `202` 后由持久化 worker 执行。`--live` CLI 保留为受控 Job Runner 的等价运维入口。run 到达终态后恢复关闭 production generation，并继续完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
+批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。Render Studio 无 Shell 时，部署启动会自动执行等价的零调用校验；有 Shell 的环境仍可运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次执行窗口还必须暂时设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，再在 Studio AI Daily 工作区选择 Edition、展开“运行真实版次”并完成二次确认；受保护 API 返回 `202` 后由持久化 worker 执行。`--live` CLI 保留为受控 Job Runner 的等价运维入口。run 到达终态后恢复关闭 production generation，并继续完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
 
 评估 proposal/bundle 与手动静态 proposal/bundle 都使用各自独立的 v2 schema；静态 artifact 绑定当前 prompt/schema 版本，验收 manifest 使用 `ai-daily-acceptance-v3`，其中 `selectionBasis` 明确区分两条路径。Render 的 Secret File 名称仍保持 `ai-daily-model-approval.v1.json` 以维持稳定挂载路径；旧 v1 pending proposal可通过显式 upgrade CLI 重建为 v2 pending proposal，但必须重新审批，旧 approved bundle 不能升级、直接改 JSON 版本号或沿用旧 hash。
 
