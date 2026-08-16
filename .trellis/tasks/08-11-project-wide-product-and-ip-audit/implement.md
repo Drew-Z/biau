@@ -140,7 +140,7 @@ Focused checks:
 - [x] Execute the third approved site question once. Production created exactly one Request/Turn/Revision, retrieval returned four site evidence items and three Beacon citations, but generation remained `degraded`; Cloudflare recorded three custom-domain relay `502` responses and zero matching upstream subrequests.
 - [x] Switch Render's relay base from the visitor custom domain to stable `https://biau.pages.dev/api/model-relay`, update deployment drift checks, and redeploy without sending another model request.
 - [x] Prepare the server-side CPA cutover with exact `free5/DeepSeek-V4-Flash` identity, no committed URL/key, and a production single-attempt generation boundary; do not modify the CPA repository.
-- [ ] Complete an approved real request with a non-degraded model answer. The fourth request verified three citations, desktop refresh persistence, 390px mobile containment and session cleanup without duplicate model calls, but generation remained `degraded`; Cloudflare showed three Function exceptions, three upstream subrequests and `502/responseDisconnect`, narrowing the remaining failure to relay upstream transport.
+- [x] Complete an approved real request with a non-degraded model answer. The 2026-08-16 real visitor SSE task returned `answered` / `model` with one generation attempt and one verified citation; the cited route returned `200`, the temporary session was deleted, and the earlier acceptance already proved desktop refresh persistence, offline recovery and 390px mobile containment without duplicate model calls.
 - [x] Record only low-sensitive evidence and mark the product `产品可用`, `待验收` or truthful degraded state.
 - [x] Never turn this into a scheduled model probe.
 

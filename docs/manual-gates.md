@@ -152,6 +152,8 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 同日已在 Public API 健康边界确认 `200`、`database=true`、`mode=model`、`modelConfigured=true` 后执行一次有实际站点价值的比较类业务问题。Render 网关返回 `504`，未形成回答；对应时间窗没有匹配的应用/请求日志，临时会话删除返回 `404`，因此不能把它记为模型成功或 provider 失败，也不再自动重试。知航继续保持“产品待验收”，剩余门禁是一次可核验的非降级回答及其引用/持久化/移动端观察。
 
+随后改用真实访客同源 `/api/chat/public/stream` 执行一条新的画帆状态业务问题。响应为 HTTP `200` 与完整 `ready -> progress -> result -> done`，终态 `answered` / `model`、一次生成尝试、约 14 秒，返回 1 条 `verified` 站内引用；引用页面核验为 HTTP `200`。响应包含完整 conversation identity，临时会话删除成功，删除后读取为 `404`。结合此前已经通过的桌面刷新持久化、断网恢复和 390px 移动端观察，知航产品级门禁已关闭并可标记“产品可用”；该结论不等于长期 SLA，默认 synthetic 继续不调用模型。
+
 ### 1. 后续真实版次
 
 - 先完成 composer/provider Structured Outputs 兼容性等实质性生产修复并部署，再重新取得明确业务批准。
