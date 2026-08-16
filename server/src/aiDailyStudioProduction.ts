@@ -1,10 +1,17 @@
 import { randomUUID } from 'node:crypto'
+import path from 'node:path'
 import type { PrismaClient } from '@prisma/client'
 import {
   classifyAiDailyProductionConfigurationError,
   resolveAiDailyProductionGenerationExecution,
   type AiDailyProductionConfigurationIssue,
 } from './aiDailyGenerationExecution.js'
+import {
+  buildAiDailyProductionProviders,
+  loadAiDailyModelApprovalBundle,
+  summarizeAiDailyModelApprovalBundle,
+} from './aiDailyModelProduction.js'
+import { readAiDailyModelRuntimeConfig, summarizeAiDailyModelRuntime } from './aiDailyModelRuntime.js'
 import { executeAiDailyGenerationWork } from './aiDailyGenerationRunner.js'
 import { summarizeAiDailyGenerationEvidenceReadinessIssues } from './aiDailyGeneration.js'
 import {
@@ -27,6 +34,18 @@ export type AiDailyProductionReadiness =
   | { status: 'disabled'; enabled: false; issue: 'production-generation-disabled' }
   | { status: 'misconfigured'; enabled: true; issue: AiDailyProductionConfigurationIssue }
   | { status: 'ready'; enabled: true; issue: null }
+
+export type AiDailyModelDeliveryReadiness =
+  | { status: 'not-configured'; networkCalls: 0 }
+  | {
+      status: 'ready'
+      networkCalls: 0
+      bundleHash: string
+      channelCount: number
+      candidateCount: number
+      failureDomainCount: number
+    }
+  | { status: 'misconfigured'; networkCalls: 0; issue: AiDailyProductionConfigurationIssue }
 
 export class AiDailyStudioProductionError extends Error {
   constructor(
@@ -53,6 +72,51 @@ export async function inspectAiDailyProductionReadiness(): Promise<AiDailyProduc
     return {
       status: 'misconfigured',
       enabled: true,
+      issue: classifyAiDailyProductionConfigurationError(error),
+    }
+  }
+}
+
+/**
+ * Validate the delivered runtime and approval file without enabling the
+ * production worker. This is used by deployments that do not expose a shell.
+ */
+export async function inspectAiDailyModelDelivery(): Promise<AiDailyModelDeliveryReadiness> {
+  const hasDeliveryConfig = Boolean(
+    env.aiDailyModelRuntimeJson || env.aiDailyModelApprovalFile || env.aiDailyModelApprovalBundleHash,
+  )
+  if (!hasDeliveryConfig) return { status: 'not-configured', networkCalls: 0 }
+
+  try {
+    const runtime = readAiDailyModelRuntimeConfig()
+    if (!runtime.ok) throw new Error(`invalid-ai-daily-model-runtime:${runtime.issues.join(',')}`)
+    if (!env.aiDailyModelApprovalFile) throw new Error('ai-daily-model-approval-file-not-configured')
+    if (!path.isAbsolute(env.aiDailyModelApprovalFile)) {
+      throw new Error('ai-daily-model-approval-file-path-invalid')
+    }
+    if (!/^[a-f0-9]{64}$/u.test(env.aiDailyModelApprovalBundleHash)) {
+      throw new Error('ai-daily-model-approval-bundle-hash-not-configured')
+    }
+
+    const bundle = await loadAiDailyModelApprovalBundle(
+      env.aiDailyModelApprovalFile,
+      env.aiDailyModelApprovalBundleHash,
+    )
+    buildAiDailyProductionProviders({ runtime: runtime.config, bundle })
+    const runtimeSummary = summarizeAiDailyModelRuntime(runtime.config)
+    const bundleSummary = summarizeAiDailyModelApprovalBundle(bundle)
+    return {
+      status: 'ready',
+      networkCalls: 0,
+      bundleHash: bundleSummary.bundleHash,
+      channelCount: runtimeSummary.channelCount,
+      candidateCount: runtimeSummary.candidateCount,
+      failureDomainCount: runtimeSummary.failureDomains.length,
+    }
+  } catch (error) {
+    return {
+      status: 'misconfigured',
+      networkCalls: 0,
       issue: classifyAiDailyProductionConfigurationError(error),
     }
   }
