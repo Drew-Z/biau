@@ -245,7 +245,11 @@ async function generateNode(state: PublicAssistantState) {
   const plan = state.agentPlan ?? fallbackPlan(state.request)
   const attempts: PublicAssistantModelAttemptTiming[] = []
   let draft: PublicAssistantDraft | undefined
-  for (let attempt = 1 as 1 | 2 | 3; attempt <= 3; attempt = (attempt + 1) as 1 | 2 | 3) {
+  for (
+    let attempt = 1 as 1 | 2 | 3;
+    attempt <= env.publicAssistantModelMaxAttempts;
+    attempt = (attempt + 1) as 1 | 2 | 3
+  ) {
     state.request.signal?.throwIfAborted()
     if (attempt > 1) {
       emitProgress(state.request, 'recovering')
@@ -289,7 +293,7 @@ async function generateNode(state: PublicAssistantState) {
     attempts.push(timing)
     draft = { ...nextDraft, attempts: [...attempts] }
     const nextRelation = state.dependencies.model.nextAttemptRelation?.(attempt, state.request) ?? 'same-channel'
-    if (!isRetryableModelDraft(nextDraft, nextRelation) || attempt === 3 || !hasRetryBudget(state, attempt)) break
+    if (!isRetryableModelDraft(nextDraft, nextRelation) || !hasRetryBudget(state, attempt)) break
   }
   if (!draft) {
     draft = buildBudgetExhaustedDraft(state, plan)
@@ -330,7 +334,7 @@ function isRetryableModelDraft(draft: PublicAssistantDraft, relation: PublicAssi
 }
 
 function hasRetryBudget(state: PublicAssistantState, attempt: 1 | 2 | 3) {
-  if (attempt >= 3) return false
+  if (attempt >= env.publicAssistantModelMaxAttempts) return false
   const delayMs = retryDelayMs(attempt + 1 as 2 | 3)
   return remainingBudgetMs(state) - delayMs >= minimumAttemptBudgetMs()
 }
@@ -344,9 +348,14 @@ function remainingAttemptTimeoutMs(state: PublicAssistantState, attempt: 1 | 2 |
   if (!state.dependencies.model.hasIndependentFallback?.(state.request)) {
     return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs))
   }
-  const futureAttempts = 3 - attempt
+  const futureAttempts = Math.max(0, env.publicAssistantModelMaxAttempts - attempt)
   const futureAttemptBudgetMs = futureAttempts * minimumAttemptBudgetMs()
-  const futureBackoffMs = attempt === 1 ? retryDelayMs(2) + retryDelayMs(3) : attempt === 2 ? retryDelayMs(3) : 0
+  const futureBackoffMs = attempt === 1
+    ? (env.publicAssistantModelMaxAttempts >= 2 ? retryDelayMs(2) : 0)
+      + (env.publicAssistantModelMaxAttempts >= 3 ? retryDelayMs(3) : 0)
+    : attempt === 2 && env.publicAssistantModelMaxAttempts >= 3
+      ? retryDelayMs(3)
+      : 0
   return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs - futureAttemptBudgetMs - futureBackoffMs))
 }
 

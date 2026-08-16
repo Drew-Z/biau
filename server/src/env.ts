@@ -95,6 +95,7 @@ export const env = {
   assistantModelStructuredOutputsMode: readStructuredOutputsMode(process.env.ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE),
   publicAssistantRequestTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS, 25000, 5000, 45000),
   publicAssistantAnswerTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS, 20000, 5000, 30000),
+  publicAssistantModelMaxAttempts: readBoundedInteger(process.env.PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS, 3, 1, 3),
   publicAssistantVisionTimeoutMs: readBoundedInteger(process.env.PUBLIC_ASSISTANT_VISION_TIMEOUT_MS, 12000, 3000, 20000),
   publicAssistantDirectMaxOutputTokens: readBoundedInteger(process.env.PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS, 800, 128, 2048),
   publicAssistantRateLimit: readBoundedInteger(process.env.PUBLIC_ASSISTANT_RATE_LIMIT, 20, 1, 120),

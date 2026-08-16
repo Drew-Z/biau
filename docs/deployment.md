@@ -88,10 +88,10 @@ CORS_ORIGIN=https://biau.playlab.eu.cc
 TRUST_PROXY=true
 DATABASE_URL=<公开助手匿名 session、turn、feedback 和 aggregate 数据库 URL>
 
-ASSISTANT_MODEL_BASE_URL=https://biau.pages.dev/api/model-relay
-ASSISTANT_MODEL_API_KEY=<与 MODEL_RELAY_SHARED_TOKEN 相同>
-ASSISTANT_MODEL_NAME=grok-4.5
-ASSISTANT_MODEL_PROVIDER=cloudflare-model-relay
+ASSISTANT_MODEL_BASE_URL=<CPA Responses base URL ending in /v1>
+ASSISTANT_MODEL_API_KEY=<CPA server-only client key>
+ASSISTANT_MODEL_NAME=free5/DeepSeek-V4-Flash
+ASSISTANT_MODEL_PROVIDER=cpa-channel-gateway
 ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
 
@@ -101,6 +101,7 @@ ASSISTANT_RAG_TIMEOUT_MS=3000
 
 PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS=45000
 PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS=20000
+PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1
 PUBLIC_ASSISTANT_VISION_TIMEOUT_MS=12000
 PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS=800
 PUBLIC_ASSISTANT_RATE_LIMIT=20
@@ -117,21 +118,21 @@ PUBLIC_WEB_FETCH_MAX_PAGES=3
 METRICS_ENABLED=false
 ```
 
-生产服务端 relay 固定使用 Cloudflare Pages 项目的稳定 `biau.pages.dev` 域名。`biau.playlab.eu.cc` 继续作为访客主站域名，但不再承担 Render 到 Pages Function 的服务端 relay 跳转；2026-08-12 的真实业务验收在该自定义域记录到三次 `502`，且同秒 Pages Functions 分析未登记 upstream subrequest。
+生产模型配置改为由 Render 服务端直接消费单租户 CPA Responses 网关。真实 base URL 和 client key 只写入 Render 环境变量，不进入仓库、浏览器变量、健康响应或验收记录；访客域名仍只承担站点与公开 API 入口。旧 Cloudflare model relay 代码和变量暂时保留为历史回滚边界，但不再是当前模型路径。
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 
-`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 Responses relay 支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
+`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 CPA Responses 路径支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
 
-当前生产只启用已通过获批古诗生成任务的 `grok-4.5` Responses 主通道。运行时仍保留独立备用链能力，但只有四个 `ASSISTANT_MODEL_FALLBACK_*` 变量完整填写时才会启用；`MODELS` 是逗号分隔的有序列表，服务端去重后最多保留两个模型。未通过业务任务的候选模型不进入生产链，避免认证失败或上游故障延长访客等待。真实回答结果只通过进程内被动信誉和熔断调整后续请求顺序，不在打开助手或健康检查时测活。Planner 只使用主通道，失败后使用确定性 Planner；配置独立备用链后，最终回答才会在共享绝对截止时间内切换备用模型。
+当前待交付配置只启用精确模型 `free5/DeepSeek-V4-Flash`，不使用可能随 CPA 配置移动的别名。`PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` 保证一次真实问题的失败生成不会被自动重放；Planner 只使用主通道，Planner 失败后使用确定性 Planner。运行时保留的 `ASSISTANT_MODEL_FALLBACK_*` 能力在生产保持未配置，`free7-glm-5-2/glm-5-2` 仅作为未来需要重新批准的替代方案，不在同一次请求中自动切换。
 
-未来启用备用链时，在 Render 额外填写 `ASSISTANT_MODEL_FALLBACK_BASE_URL`、`ASSISTANT_MODEL_FALLBACK_API_KEY`、`ASSISTANT_MODEL_FALLBACK_MODELS` 和 `ASSISTANT_MODEL_FALLBACK_PROVIDER`；在 Cloudflare 同时填写备用上游两个 Secret，并把获批模型加入 `MODEL_RELAY_ALLOWED_MODELS`。这些值默认留空，不属于当前生产必填项。
+未来若启用备用链，必须先为新的精确模型和 failure domain 完成单独业务批准，再在 Render 填写完整的 `ASSISTANT_MODEL_FALLBACK_*`；这些值默认留空，不属于当前生产必填项。CPA 自己负责渠道互斥与忙碌隐藏，本站不通过自动重放绕过该约束。
 
 图片问题最多携带一张浏览器端压缩后的 JPEG、PNG 或 WebP。Cloudflare 只对 `/chat/public`、`/chat/public/stream` 和固定模型 relay 放宽到 512 KB；历史、反馈和分支接口仍保持 32 KB。Render 校验 data URL、Base64、文件魔数和 256 KB 解码后上限，只用 SHA-256 digest 参与请求幂等，不保存原图。当前没有经过业务任务验证的视觉模型，因此 `ASSISTANT_VISION_MODEL` 留空：图片问题会准确提示图片理解暂不可用，不会让文本模型猜测图片内容。未来只有在一个已配置备用渠道中的视觉模型通过获批图片任务后才启用该变量。
 
 MCP 不是图片能力本身，因此同一 Render 进程内不再增加一次 MCP 网络自调用。图片理解实现保留 typed tool 边界；只有未来其他产品需要复用时，才在这一边界外增加 MCP facade。
 
-一次公开请求最多包含三次生成尝试，所有通道、尝试与 200/400ms 可取消退避共享 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` 的绝对截止时间，不会为每次尝试或切换通道重置 45 秒预算。启用独立备用链时，运行时会为后续尝试保留最低执行窗口；未配置备用链时保留原有单通道重试行为。`/health` 只检查是否至少存在一套完整配置，不调用模型，也不返回通道数量、顺序、provider、model 或 endpoint。
+生产一次公开请求只允许一次最终回答生成尝试，并与 Planner、检索共享 `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` 的绝对截止时间。代码仍支持在独立、已批准的回滚环境中把上限显式设为 1 至 3，但当前 Blueprint 固定为 1。`/health` 只检查是否至少存在一套完整配置，不调用模型，也不返回通道数量、顺序、provider、model 或 endpoint。
 
 `METRICS_ENABLED=false` 时 `/metrics` 不采集也不暴露。生产 scrape 目标、鉴权和告警接收方仍是人工 gate；`/health` 始终与指标开关独立。
 
@@ -176,7 +177,7 @@ AI_DAILY_OPERATIONS_METRICS_ENABLED=true
 
 模型批准包通过 Render Secret File 上传，挂载为 `/etc/secrets/ai-daily-model-approval.v1.json`。Render Secret Files 不会在 Render 服务之间自动共享；未来创建 Editorial Cron 时，必须为 Cron 单独上传同一批准包并配置相同 runtime/path/hash。
 
-AI Daily 的 Free3 生产切换必须使用一个新的 server-only runtime channel，base 指向 `/api/model-relay/free3`，并为 extractor/composer/verifier 各绑定一个 `grok-4.5` candidate。该 channel 使用独立的 `providerRef=free3-relay` 与 `failureDomainRef=free3-channel`，仍标记 `reduced_redundancy`，不声明独立 fallback。旧的 approval bundle 绑定了不同的 provider/failure-domain identity，不能复用；必须先生成和批准新 proposal/bundle，再更新 Secret File/hash。平台配置、部署和非模型验证完成后，仍需针对一次真实 Edition 单独取得明确批准。
+AI Daily 的 CPA 切换使用一个新的 server-only runtime channel，并为 extractor/composer/verifier 各绑定一个精确的 `free5/DeepSeek-V4-Flash` candidate。该 channel 使用 `providerRef=cpa-gateway` 与 `failureDomainRef=cpa-free5`，显式标记 `reduced_redundancy`，不声明独立 fallback；真实 base URL 和 API key 只存在于 Render runtime JSON。旧 Free3 approval bundle 与这一 provider/failure-domain/model identity 不一致，不能复用。必须先生成并明确批准新的零调用 proposal/bundle，再更新 Secret File/hash；平台交付完成后，一次真实 Edition 仍需再次单独批准。
 
 AI Daily 第一期真实日报通过人工验收前，`AI_DAILY_PUBLIC_FEED_ENABLED` 与 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 保持 `false`。Editorial Cron 暂不加入 Blueprint，避免未批准的自动发布。
 
@@ -283,7 +284,7 @@ npm run build
 
 上述 deterministic checks 不得访问真实模型、搜索、embedding、reranker 或向量数据库供应商。
 
-公开助手可靠性版本发布时只部署 `biau-public-assistant-api` 与匹配提交的 Cloudflare 静态站，不重启 Content Studio 或 RAG Orchestrator。模型中继必须先部署 Cloudflare 代码和 secrets，再把 Render base/key 切到 relay；反向顺序会产生可避免的短时 404/401。先请求 `/health`，这一动作不得调用模型；随后最多执行一条用户明确批准的真实业务问题，检查公开安全元数据并删除该临时匿名会话。结构化输出与生产 Prometheus scrape 仍分别受上述人工 gate 约束。
+公开助手可靠性版本发布时只部署 `biau-public-assistant-api` 与匹配提交的 Cloudflare 静态站，不重启 Content Studio 或 RAG Orchestrator。先在 Render 原子更新 CPA base/key/model/provider，再手动部署 Public API；自动部署保持关闭，避免代码先于服务端凭据切换。部署后先请求 `/health`，这一动作不得调用模型；随后最多执行一条用户明确批准的真实业务问题，检查公开安全元数据并删除该临时匿名会话。结构化输出与生产 Prometheus scrape 仍分别受上述人工 gate 约束。
 
 ## 回滚
 

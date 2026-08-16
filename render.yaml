@@ -22,9 +22,9 @@ services:
       - key: ASSISTANT_MODEL_API_KEY
         sync: false
       - key: ASSISTANT_MODEL_NAME
-        value: grok-4.5
+        value: free5/DeepSeek-V4-Flash
       - key: ASSISTANT_MODEL_PROVIDER
-        value: cloudflare-model-relay
+        value: cpa-channel-gateway
       - key: ASSISTANT_MODEL_PROTOCOL
         value: responses
       - key: ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE
@@ -39,6 +39,8 @@ services:
         value: "45000"
       - key: PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS
         value: "20000"
+      - key: PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS
+        value: "1"
       - key: PUBLIC_ASSISTANT_VISION_TIMEOUT_MS
         value: "12000"
       - key: PUBLIC_ASSISTANT_DIRECT_MAX_OUTPUT_TOKENS

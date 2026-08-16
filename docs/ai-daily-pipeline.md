@@ -276,7 +276,7 @@ npm.cmd run ai-daily:model-select-approve -- `
 
 两个命令都输出 `modelCalls: 0`。proposal/bundle 只保存 candidate id、role、provider/failure-domain alias、model identifier、批准状态和 canonical hash；不保存 endpoint、key、prompt、原始输出、质量分或延迟。每个角色只有一个 primary，因此 artifact 必须保持 `manual-static-selection`、`reduced_redundancy` 和空 fallback，不能把同一中转的多个模型描述成独立容灾。
 
-当前建议把 `qwen3.7-max-t` 对应的 candidate 用于 extractor/verifier，把 `grok-4.5` 对应的 candidate 用于 composer。这里依据的是模型名称和角色职责，不是可用性测活或质量排名。真正的质量 gate 是一份完整 AI Daily 真实版次：进入 Studio 后人工核验事实、来源、引用、中文表达和公开安全，再决定批准、退回或更换模型。
+当前 CPA 静态 proposal 把精确 `free5/DeepSeek-V4-Flash` 对应的 candidate 用于 extractor/composer/verifier。这里依据的是已批准的配置身份，不是可用性测活或质量排名；`free7-glm-5-2/glm-5-2` 只是另行审批的替代候选，不能在同一次请求中自动切换。真正的质量 gate 是一份完整 AI Daily 真实版次：进入 Studio 后人工核验事实、来源、引用、中文表达和公开安全，再决定批准、退回或更换模型。
 
 ### 可选路径：需要对照或独立 fallback 时再实测
 

@@ -294,6 +294,14 @@ try {
   env.openaiBaseUrl = ''
   env.openaiModel = ''
 
+  env.assistantModelName = 'free5/DeepSeek-V4-Flash'
+  assert.equal(
+    resolveModelChannels()[0]?.model,
+    'free5/DeepSeek-V4-Flash',
+    'channel-qualified CPA model ids must remain exact',
+  )
+  env.assistantModelName = 'fixture-responses-model'
+
   const request: PublicAssistantRequest = {
     question: 'Legal RAG 有哪些公开能力？',
     mode: 'auto',

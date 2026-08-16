@@ -107,6 +107,34 @@ try {
   assertEqual(summary.channelCount, 2, 'runtime channel count')
   assertDeepEqual(summary.roles, { extractor: 2, composer: 2, verifier: 2 }, 'runtime role counts')
   assertEqual(summary.failureDomains.length, 2, 'independent failure domains')
+  const cpaRuntime = buildCpaStaticRuntime(`http://127.0.0.1:${address.port}`)
+  const cpaProposal = createAiDailyModelManualSelectionProposal({
+    selectionId: 'ai-daily-cpa-deepseek-v4-flash-static-v1',
+    generatedAt: '2026-08-16T00:00:00.000Z',
+    runtime: cpaRuntime,
+    candidateIds: {
+      extractor: 'extractor-cpa-free5-deepseek-v4',
+      composer: 'composer-cpa-free5-deepseek-v4',
+      verifier: 'verifier-cpa-free5-deepseek-v4',
+    },
+    acknowledgeReducedRedundancy: true,
+  })
+  assertDeepEqual(
+    cpaProposal.selection.roles.map((role) => ({
+      role: role.role,
+      providerRef: role.providerRef,
+      failureDomainRef: role.failureDomainRef,
+      modelIdentifier: role.modelIdentifier,
+    })),
+    [
+      { role: 'extractor', providerRef: 'cpa-gateway', failureDomainRef: 'cpa-free5', modelIdentifier: 'free5/DeepSeek-V4-Flash' },
+      { role: 'composer', providerRef: 'cpa-gateway', failureDomainRef: 'cpa-free5', modelIdentifier: 'free5/DeepSeek-V4-Flash' },
+      { role: 'verifier', providerRef: 'cpa-gateway', failureDomainRef: 'cpa-free5', modelIdentifier: 'free5/DeepSeek-V4-Flash' },
+    ],
+    'CPA static selection identity',
+  )
+  assert(!JSON.stringify(cpaProposal).includes('test-key-cpa'), 'CPA proposal must omit runtime credentials')
+  assert(!JSON.stringify(cpaProposal).includes(`127.0.0.1:${address.port}`), 'CPA proposal must omit runtime endpoint')
   const reducedRuntime = {
     ...runtime,
     channels: runtime.channels.map((channel) => ({ ...channel, failureDomainRef: 'shared-provider-domain' })),
@@ -827,6 +855,28 @@ function isMissingFileError(error: unknown): error is NodeJS.ErrnoException {
 
 function buildRuntime(baseUrl: string): AiDailyModelRuntimeConfig {
   const parsed = normalizeAiDailyModelRuntimeConfig(runtimeInput(baseUrl), { allowLocalBaseUrl: true })
+  if (!parsed.ok) throw new Error(parsed.issues.join(','))
+  return parsed.config
+}
+
+function buildCpaStaticRuntime(baseUrl: string): AiDailyModelRuntimeConfig {
+  const parsed = normalizeAiDailyModelRuntimeConfig({
+    schemaVersion: 'ai-daily-model-runtime-v2',
+    channels: [{
+      id: 'cpa-free5-deepseek-v4',
+      providerRef: 'cpa-gateway',
+      failureDomainRef: 'cpa-free5',
+      protocol: 'responses',
+      baseUrl,
+      apiKey: 'test-key-cpa',
+      modelIdentifier: 'free5/DeepSeek-V4-Flash',
+    }],
+    candidates: [
+      { candidateId: 'extractor-cpa-free5-deepseek-v4', role: 'extractor', channelId: 'cpa-free5-deepseek-v4' },
+      { candidateId: 'composer-cpa-free5-deepseek-v4', role: 'composer', channelId: 'cpa-free5-deepseek-v4' },
+      { candidateId: 'verifier-cpa-free5-deepseek-v4', role: 'verifier', channelId: 'cpa-free5-deepseek-v4' },
+    ],
+  }, { allowLocalBaseUrl: true })
   if (!parsed.ok) throw new Error(parsed.issues.join(','))
   return parsed.config
 }

@@ -180,6 +180,50 @@ async function modelRecoveryCheck() {
   assert.deepEqual(progress, ['planning', 'answering', 'recovering', 'recovering', 'verifying'])
 }
 
+async function configuredSingleAttemptCheck() {
+  const originalMaxAttempts = env.publicAssistantModelMaxAttempts
+  let calls = 0
+  const delays: number[] = []
+  env.publicAssistantModelMaxAttempts = 1
+  try {
+    const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, {
+      model: {
+        async plan() {
+          return { route: 'direct', queries: [], requiresFreshness: false, planner: 'fallback' }
+        },
+        async answer() {
+          calls += 1
+          return {
+            answer: '模型暂时不可用。',
+            status: 'degraded',
+            claims: [],
+            suggestions: [],
+            model: 'fixture-model',
+            provider: 'fixture-provider',
+            failure: 'provider_error',
+            diagnostic: { kind: 'http_status', httpStatus: 503, attemptedEndpoints: 1, timeoutMs: 100 },
+            attempts: [{ attempt: 1, durationMs: 10, failureClass: 'upstream' }],
+          }
+        },
+      },
+      async retrieveSite() {
+        return { evidence: [] }
+      },
+      async researchWeb() {
+        return { evidence: [], available: true }
+      },
+      async sleep(delayMs) {
+        delays.push(delayMs)
+      },
+    })
+    assert.equal(calls, 1, 'production single-attempt mode must not replay a failed generation')
+    assert.deepEqual(delays, [])
+    assert.deepEqual(response.meta?.recovery, { state: 'degraded', attempts: 1, failureClass: 'upstream' })
+  } finally {
+    env.publicAssistantModelMaxAttempts = originalMaxAttempts
+  }
+}
+
 async function independentFallbackRecoveryCheck() {
   const originalRequestTimeoutMs = env.publicAssistantRequestTimeoutMs
   const originalAnswerTimeoutMs = env.publicAssistantAnswerTimeoutMs
@@ -802,6 +846,7 @@ await directCreativeRouteCheck()
 await explicitResearchModeOverridesDirectTaskCheck()
 await boundedRetryCheck()
 await modelRecoveryCheck()
+await configuredSingleAttemptCheck()
 await independentFallbackRecoveryCheck()
 await sameFailureDomainNetworkStopsCheck()
 await sameFailureDomainModelFailureAdvancesCheck()

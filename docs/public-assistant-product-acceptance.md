@@ -1,10 +1,10 @@
 # 知航 BIAU Beacon 产品验收矩阵
 
-更新时间：2026-08-12
+更新时间：2026-08-16
 
 ## 当前结论
 
-知航 BIAU Beacon 当前为 **工程就绪，生产检索已修复，生成链路仍降级，产品待验收**。确定性合同已覆盖公开 API、会话版本、分支、浏览器状态、持久化、恢复、安全、取消和降级语义；`65c8af15` 已完成 Cloudflare Pages、Public API 与 RAG Orchestrator 全链部署，生产检索稳定命中知航专属资料。第四次获批业务验收在稳定 Pages relay base 上仍返回 `degraded`，Cloudflare 精确窗口显示三次 Function 异常与三次上游 subrequest 对应，故障已收窄为 relay upstream transport；引用、刷新恢复和手机布局观察通过，但完整模型回答仍未通过。
+知航 BIAU Beacon 当前为 **工程就绪，生产检索已修复，生成链路待 CPA 配置交付，产品待验收**。确定性合同已覆盖公开 API、会话版本、分支、浏览器状态、持久化、恢复、安全、取消和降级语义；生产侧已准备直接消费单租户 CPA Responses 网关，并将最终回答生成上限固定为一次。2026-08-16 的配置切换和 AI Daily proposal 均为零模型调用；Render 的真实 base/key 仍需由部署者写入服务端环境，之后还要单独批准一次真实业务问题，才能更新产品级结论。
 
 ## 验收矩阵
 
