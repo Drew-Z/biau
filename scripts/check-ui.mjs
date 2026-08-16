@@ -99,6 +99,7 @@ const routes = [
     title: 'AI Daily 工作区',
     nav: '回主页',
     canonical: '/studio/ai-daily',
+    expectedText: '生产配置已通过启动校验；仅提交一次真实版次，完成后立即关闭生成。',
     localStorageValues: { 'biau-studio-admin-token': 'ui-check-token' },
     aiDailyWorkspaceFixture: true,
   },

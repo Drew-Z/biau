@@ -6092,6 +6092,7 @@
 .studio-ai-daily-summary strong { color: var(--ink); font-size: 17px; }
 .studio-ai-daily-issue-picker { min-width: min(100%, 420px); }
 .studio-ai-daily-live-run-action { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-8, 8px); flex-wrap: wrap; }
+.studio-ai-daily-live-run-note { flex: 1 1 260px; max-width: 360px; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
 .studio-ai-daily-live-run-panel { min-width: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr); gap: var(--space-14, 14px); align-items: end; padding: var(--space-16, 16px); border: 1px solid color-mix(in oklch, var(--amber) 42%, var(--flow-ui-card-border)); border-radius: var(--radius-md); background: color-mix(in oklch, var(--amber) 5%, var(--panel)); }
 .studio-ai-daily-live-run-panel > div:first-child { min-width: 0; align-self: start; }
 .studio-ai-daily-live-run-panel h2 { margin: 4px 0 0; color: var(--ink); font-size: 18px; overflow-wrap: anywhere; }

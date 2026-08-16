@@ -149,6 +149,12 @@ function statusClass(value: string | null | undefined) {
   return 'is-muted'
 }
 
+function productionGenerationHint(status: StudioAiDailyWorkspace['productionGeneration']['status']) {
+  if (status === 'ready') return '生产配置已通过启动校验；仅提交一次真实版次，完成后立即关闭生成。'
+  if (status === 'misconfigured') return '生产配置未通过；先修复 Render runtime、Secret File 和 hash，再提交真实版次。'
+  return '为防止意外模型调用，生产生成当前关闭；需要真实版次时只开启短窗口，提交后立即关闭。'
+}
+
 function latestRun(workspace: StudioAiDailyWorkspace | null): StudioAiDailyWorkspaceRun | null {
   return workspace?.runs[0] ?? null
 }
@@ -1451,6 +1457,9 @@ export function StudioAiDailyWorkspacePage() {
                     : workspace.productionGeneration.status === 'disabled'
                       ? '生产生成未启用'
                       : '生产配置未通过'}
+                </span>
+                <span className="studio-ai-daily-live-run-note" role="status">
+                  {productionGenerationHint(workspace.productionGeneration.status)}
                 </span>
                 <button
                   type="button"
