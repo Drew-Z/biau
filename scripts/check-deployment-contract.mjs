@@ -393,7 +393,7 @@ async function main() {
       'ASSISTANT_MODEL_PROVIDER=cpa-channel-gateway',
       'PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS=20000',
       'PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1',
-      '当前待交付配置只启用精确模型 `free5/DeepSeek-V4-Flash`',
+      '当前已交付配置只启用精确模型 `free5/DeepSeek-V4-Flash`',
       '`ASSISTANT_VISION_MODEL` 留空',
       'PUBLIC_ASSISTANT_VISION_TIMEOUT_MS=12000',
       'Planner 只使用主通道',

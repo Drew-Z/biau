@@ -124,7 +124,7 @@ METRICS_ENABLED=false
 
 `ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 CPA Responses 路径支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
 
-当前待交付配置只启用精确模型 `free5/DeepSeek-V4-Flash`，不使用可能随 CPA 配置移动的别名。`PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` 保证一次真实问题的失败生成不会被自动重放；Planner 只使用主通道，Planner 失败后使用确定性 Planner。运行时保留的 `ASSISTANT_MODEL_FALLBACK_*` 能力在生产保持未配置，`free7-glm-5-2/glm-5-2` 仅作为未来需要重新批准的替代方案，不在同一次请求中自动切换。
+当前已交付配置只启用精确模型 `free5/DeepSeek-V4-Flash`，不使用可能随 CPA 配置移动的别名。`PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` 保证一次真实问题的失败生成不会被自动重放；Planner 只使用主通道，Planner 失败后使用确定性 Planner。运行时保留的 `ASSISTANT_MODEL_FALLBACK_*` 能力在生产保持未配置，`free7-glm-5-2/glm-5-2` 仅作为未来需要重新批准的替代方案，不在同一次请求中自动切换。配置交付和健康边界已验证，非降级真实回答仍是独立产品门禁。
 
 未来若启用备用链，必须先为新的精确模型和 failure domain 完成单独业务批准，再在 Render 填写完整的 `ASSISTANT_MODEL_FALLBACK_*`；这些值默认留空，不属于当前生产必填项。CPA 自己负责渠道互斥与忙碌隐藏，本站不通过自动重放绕过该约束。
 
