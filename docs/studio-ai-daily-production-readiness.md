@@ -10,7 +10,7 @@
 - 三角色模型评估 contract、手动静态选型 contract、server-only OpenAI-compatible Responses provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；两条路径都不会在 readiness 或部署检查中调用模型。
 - 来源采集已经接入同一套 Studio 持久化 worker：版本化 manifest 幂等同步、到期 feed 排队、公开来源安全抓取、条件请求和证据选择都由数据库 work item/lease 驱动；它只访问公开来源，不调用模型或搜索 provider。工作区的“同步并刷新证据”调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，服务重启后会恢复未完成的采集任务。
 - 当前待交付的 CPA 手动静态选型让 extractor/composer/verifier 统一使用精确 `free5/DeepSeek-V4-Flash`。该映射只表达一个可审计的角色身份，不宣称模型质量得分或独立故障转移；bundle 会明确标记 `manual-static-selection` 与 `reduced_redundancy`，不配置自动 fallback。
-- 2026-08-16 已在占位 base/key 上生成零调用 pending proposal `ai-daily-cpa-deepseek-v4-flash-static-v1`，proposal hash 为 `508e23df7a6b53f7aee74fee6845fc5686f2b5988208e1a745be3868cefbb263`。它只保存 provider/failure-domain/model/candidate 身份，不保存 endpoint 或 token；尚未批准、尚未生成 bundle、尚未上传 Secret File、尚未部署，也未执行真实 Edition。
+- 2026-08-16 已明确批准零调用 proposal `ai-daily-cpa-deepseek-v4-flash-static-v1`（proposal hash `508e23df7a6b53f7aee74fee6845fc5686f2b5988208e1a745be3868cefbb263`），生成 bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`，输出确认 `modelCalls=0`。proposal/bundle 只保存 provider/failure-domain/model/candidate 身份，不保存 endpoint 或 token；Render runtime 与 Secret File 尚未更新，服务仍保留旧配置，尚未部署，也未执行真实 Edition。
 
 ## 服务边界
 
