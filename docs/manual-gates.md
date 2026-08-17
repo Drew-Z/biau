@@ -160,10 +160,12 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 同日站点所有者再次明确批准一个额外的受控真实 Edition，继续使用同一 CPA bundle。generation-only 部署 `dep-da15rsm7bikc738e0b4g` 达到 `live`，启动交付检查仍为 `networkCalls=0`、1 channel、3 candidates、1 failure domain。受保护入口仅提交一次、客户端不重试并返回 `202`，创建 Run `cmswjo7dx00004aiv12tusgck` / work item `cmswjo7gn00014aiv2uzki1dk`，`attemptNumber=10`。两次 extractor 和一次 composer 再次成功；唯一 verifier 调用再次以 `provider_invalid_json` / `verifier-schema-or-provider-failure` 失败，Run 终态仍为 `COMPLETED_WITH_GAPS`。Revision 9 `cmswjravo000c4aivuw4me2ad` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，自动进入 `REJECTED` / `DISCARDED`，0 个内容块且没有 projection draft。未重试，未创建 ContentDraft，未执行 Studio review、Publish Export、内容部署或公开发布。generation 随即恢复为 `false`，关闭部署 `dep-da163spt0dsc73b3j8v0` 已 `live`；最终 workspace 为 `disabled`，全局 `PENDING/LEASED/RETRY_WAIT=0`、活动阶段为 0、expired lease 为 0，Public Feed 仍为 `404`，执行与部署窗口 error-level 日志为 0。该结果复现了 attempt 9 的同一 verifier 兼容性阻塞；在低敏响应形状诊断和实质修复部署、重新批准前，不再提交未改变 bundle 的 Edition。
 
+2026-08-17 站点所有者批准并执行一次新的单次真实 Edition，使用已交付且未改变的 CPA bundle。生成开关仅在窗口内开启；部署 `dep-da1an9c9v7es73avfkf0` live 后，启动交付检查确认 `networkCalls=0`、1 channel、3 candidates、1 failure domain，Studio workspace 为 `ready`。受保护入口只提交一次并返回 `202`，创建 Run `cmswv63av00004af0hdopyxwi` / work item `cmswv63dd00014af0arizw4o4`，`attemptNumber=11`。Extractor 两次调用均成功，composer 两次调用均成功；唯一 verifier 调用以 `provider_timeout` / `verifier-schema-or-provider-failure` 失败，响应形状、完成状态、长度桶和 JSON 形状诊断均为 `null`（未收到可解析响应）。Run 于 `2026-08-17T06:46:45Z` 以 `COMPLETED_WITH_GAPS` 结束，Revision 10 `cmswvf3au000c4af044xstgcp` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，0 个内容块，自动 `REJECTED` / `DISCARDED`，没有 projection draft。未重试、未创建 ContentDraft、未执行 Studio review、Publish Export、内容部署或公开发布；生成开关已关闭，恢复部署 `dep-da1b1jdbedkc73cgj5o0` live，最终 workspace 为 `disabled`，队列与活动阶段均为 0，Public Feed 仍为 `404`，关闭窗口 error-level 日志为 0。
+
 ### 1. 后续真实版次
 
-- 先完成 verifier Structured Output 的低敏响应形状诊断与实质性修复，区分模型返回非法 JSON 与网关丢失 Responses `text.format=json_schema` / SSE 输出形状；不得把连续两次 extractor/composer 成功外推为 verifier 已兼容。
-- 只有修复完成、零调用合同与交付校验通过后，才能重新取得一次“真实 Edition”明确批准；不得直接重试或把 bundle 校验当成真实业务成功。
+- 当前最新一次真实 Edition 已将阻塞收敛为 verifier 请求的 `provider_timeout`；因为没有收到响应，不能把它归因于模型非法 JSON，也不能证明网关返回形状丢失。下一步必须针对 verifier 的超时/响应等待边界完成实质性修复，并部署后读取新的固定诊断。
+- 只有修复完成、零调用合同与交付校验通过后，才能重新取得下一次“真实 Edition”明确批准；不得直接重试或把 bundle 校验当成真实业务成功。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。
