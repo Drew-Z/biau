@@ -309,7 +309,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - A relay `upstream_unreachable` / upstream `5xx` is a transport failure, not a model-schema rejection. If the same private Responses channel is reachable from Render but not from the relay edge, Studio may move to a direct HTTPS runtime instead of resubmitting the same task through guessed relay paths. The direct runtime keeps the real provider failure domain but receives a new `providerRef` and candidate identities; it therefore requires a new pending proposal, explicit proposal approval, bundle/Secret File/hash delivery, and a separately approved real Edition. A prior relay bundle or real-Edition approval cannot cross this transport identity change.
 - A production transport-identity replacement is backup-first. Copy the current stable Secret File to a new bounded backup name, read it back, and verify both raw content identity and its canonical bundle hash before replacing the stable mount. After updating the stable file, runtime JSON, and expected hash, read back all three, keep generation/business-evaluation/public-feed disabled, deploy once, and run the offline approval check plus health/auth/route/Cron observations. These checks must make zero model calls and do not approve a real Edition.
 - Studio workspace generation diagnostics are a read-only projection of existing `EXTRACT_FACTS`, `COMPOSE`, and `VERIFY` checkpoint attempts. The authenticated DTO exposes only stage, role, slot, bounded call count, fixed outcome, fixed error category, an allowlisted failure code, and the four fixed response-diagnostic literals described below. It must omit candidate/provider/model identity, endpoint, prompt, input/output, raw response, credential, and arbitrary checkpoint fields. This projection requires no migration and must never create a new model call.
-- AI Daily Structured Outputs requests use Responses SSE with a fixed `max_output_tokens=8192`. The channel timeout is an inactivity budget: response headers and each accepted stream chunk re-arm it, while the output byte/character ceilings still terminate oversized responses. Composer and verifier requests additionally use role-owned minimum wait floors `aiDailyComposerTimeoutFloorMs=120000` and `aiDailyVerifierTimeoutFloorMs=120000`; an explicitly larger channel timeout remains authoritative, while a smaller configured timeout cannot terminate long structured drafting/review payloads before they have a fair response window. A transport timeout changes the prompt contract and requires a fresh approval bundle before production generation can claim work; it must not be worked around by probing unapproved catalog models.
+- AI Daily Structured Outputs requests use Responses SSE with a fixed `max_output_tokens=8192`. The channel timeout is an inactivity budget: response headers and each accepted stream chunk re-arm it. Raw SSE transport bytes and retained structured text have separate ceilings: `MAX_RESPONSES_STREAM_BYTES=2_097_152` permits bounded reasoning/metadata envelopes, while `MAX_RESPONSES_TEXT_CHARS=64_000` still rejects oversized model content. Composer and verifier requests additionally use role-owned minimum wait floors `aiDailyComposerTimeoutFloorMs=120000` and `aiDailyVerifierTimeoutFloorMs=120000`; an explicitly larger channel timeout remains authoritative, while a smaller configured timeout cannot terminate long structured drafting/review payloads before they have a fair response window. A transport timeout changes the prompt contract and requires a fresh approval bundle before production generation can claim work; it must not be worked around by probing unapproved catalog models.
 - Failed Structured Outputs attempts may additionally retain only four fixed low-sensitive response diagnostics: an allowlisted response-shape enum, stream-completion enum, bounded length bucket, and structured-JSON parse-shape enum. Legacy checkpoints restore missing fields as `null`; unknown persisted values fail checkpoint restoration, and the Studio/backend/browser boundary revalidates the same allowlists. Raw response text, arbitrary event names, exact lengths, provider identifiers, and dynamic parse errors remain forbidden. A successful attempt and non-response failure record these fields as `null`.
 
 ### 4. Validation & Error Matrix
@@ -332,6 +332,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Unknown checkpoint stage, attempt role/slot/outcome/error category, or failure code -> drop the unknown field/entry or project the generic `generation-failure`; never reflect arbitrary persisted text to the browser.
 - Missing response-diagnostic fields in a legacy attempt -> restore all four as `null`; an unknown non-null response-diagnostic value -> `ai-daily-checkpoint-schema-invalid` before any provider call.
 - HTTP `200` with syntactically valid JSON but no recognized Responses or Chat Completions envelope -> `invalid_response` with `responseShape=invalid_payload`, not `empty_response`.
+- Raw SSE bytes over `2_097_152` or retained structured text over `64_000` characters -> `invalid_response` with `lengthBucket=oversized`; diagnostics never retain the exact length or raw envelope.
 - Approved prompt drift -> `ai-daily-model-approval-prompt-version-drift`; generation schema drift -> `ai-daily-model-approval-generation-schema-version-drift` before any provider call.
 - Manual selection without either explicit acknowledgement -> `ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required`; unknown artifact fields, role-order drift, fake metrics, or a mismatched candidate role fail closed.
 - No explicit runner mode, both modes, disabled production, or missing approved bundle -> fail before claiming generation work.
@@ -353,6 +354,8 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Bad: expose the checkpoint `providerId`, model, endpoint, previous output, or raw response in Studio merely because the route is authenticated.
 - Good: a truncated verifier SSE result records only `sse_output_text`, `delta_only`, `short`, and `truncated_json`, allowing operators to distinguish missing completion from malformed structured content.
 - Base: an older checkpoint without those four fields resumes with null diagnostics and drops unknown fields while preserving the stable attempt category and call count.
+- Good: a bounded reasoning-heavy SSE envelope larger than `512KB` but smaller than `2MiB` is discarded frame-by-frame, then the following structured output is parsed within the independent `64K` content ceiling.
+- Bad: count reasoning/metadata envelope bytes against the structured-content ceiling, or raise the retained content ceiling merely because SSE wrapper overhead increased.
 - Bad: persist exact response length, arbitrary SSE event names, parser exception text, or any raw response fragment as a diagnostic.
 - Bad: relabel the relay bundle as direct, reuse the consumed real-Edition approval, or call the direct endpoint merely to prove liveness.
 - Bad: after a `503` from the first guessed endpoint, submit the same prompt to a second guessed endpoint and finally report its `404`, hiding the original provider outage.
@@ -365,7 +368,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - For a relay-to-direct transport repair, assert the pending artifact changes `providerRef` and candidate ids, preserves the real `failureDomainRef`, and remains `manual-static-selection / reduced_redundancy / modelCalls=0`; never add a direct liveness request to an automated check.
 - Record only the proposal/bundle hashes, backup filename, deploy id, low-sensitive runtime counts/aliases, disabled safety flags, route status classes, Cron absence, and zero-call result. Do not record the direct base URL, API key, raw runtime JSON, Secret File contents, or provider response.
 - Run `npm.cmd run studio:ai-daily-workspace-check` after changing checkpoint diagnostics. Assert the backend and browser decoders preserve the fixed attempt classification and call count while dropping provider/candidate identity, endpoint, raw response, authorization material, and unknown fields.
-- Run `npm.cmd run ai-daily:model-runtime-check` after changing the AI Daily Responses transport. The loopback provider must assert `stream=true`, the fixed output-token ceiling, strict role schema, SSE structured-output decoding, and `externalProviderCalls=0`.
+- Run `npm.cmd run ai-daily:model-runtime-check` after changing the AI Daily Responses transport. The loopback provider must assert `stream=true`, the fixed output-token ceiling, strict role schema, SSE structured-output decoding, a reasoning-only envelope above the former `512KB` transport limit followed by valid structured content, and `externalProviderCalls=0`.
 - Responses transport fixtures must cover normal and code-fenced JSON, embedded/truncated/malformed/no-JSON results, unexpected non-SSE envelopes, delta-only streams, `output_text.done`, `response.completed`, and completion-event precedence without contacting an external provider.
 - Keep every non-trivial Prisma `include` used by the Studio workspace in a named object with `satisfies Prisma.<Model>Include`. The public DTO may expose a stable alias such as `overrides`, but the database query must use the exact Prisma relation name (`editorialOverrides`). This compile-time contract prevents fixture-only DTO checks from hiding a production `Unknown field` query failure.
 - Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.
@@ -450,6 +453,23 @@ attempt.jsonShape = responsesStructuredParseShapes.includes(jsonShape) ? jsonSha
 ```
 
 The adapter owns the fixed enums, checkpoint restoration fails on injected non-null values, and Studio revalidates the same allowlists before rendering.
+
+#### Wrong: use one ceiling for SSE transport and structured content
+
+```ts
+if (bytesRead > MAX_STRUCTURED_TEXT_CHARS) throw new Error('responses-stream-too-large')
+```
+
+This rejects a bounded response when ignored reasoning or metadata frames consume more bytes than the retained JSON text.
+
+#### Correct: bound transport and retained content independently
+
+```ts
+if (bytesRead > MAX_RESPONSES_STREAM_BYTES) throw new Error('responses-stream-too-large')
+if (content.length > MAX_RESPONSES_TEXT_CHARS) return invalidResponse('oversized')
+```
+
+The adapter permits bounded SSE overhead without weakening the smaller structured-output limit or persisting raw response data.
 
 ## Scenario: AI Daily production operations observability
 

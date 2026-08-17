@@ -482,7 +482,10 @@ function expectsBiauRelay(channel: ResponsesApiChannel) {
   }
 }
 
-const MAX_RESPONSES_STREAM_BYTES = 512_000
+// SSE envelopes may include provider-side reasoning and repeated metadata in
+// addition to the bounded structured output. Keep that transport budget
+// separate from the much smaller retained text ceiling below.
+const MAX_RESPONSES_STREAM_BYTES = 2_097_152
 const MAX_RESPONSES_TEXT_CHARS = 64_000
 
 function providerFailureClass(diagnostic: ProviderDiagnostic | undefined): PublicAssistantRecoveryFailureClass {

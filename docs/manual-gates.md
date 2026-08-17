@@ -166,10 +166,14 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 针对该结果的零调用修复已提交到工作区：composer 与 verifier 现在各自使用 `120000ms` 角色级最小 inactivity 等待窗口，显式更大的渠道 timeout 仍优先；loopback runtime 回归同时覆盖延迟 composer/verifier 响应，`externalProviderCalls=0`。修复尚未部署，不能视为真实 Edition 成功；部署后仍需新的明确真实版次批准。
 
+2026-08-17 随后在同一 CPA bundle 上获得并执行一次新的单次真实 Edition，生成开关仅在窗口内开启。入口只提交一次并返回 `202`，创建 Run `cmsx0foyc00004adl7gqiwgfr` / work item `cmsx0fp3w00014adlgn1e8p3e`，`attemptNumber=13`；两次 extractor 调用成功，composer 唯一调用以 `provider_invalid_json` / `composer-schema-or-provider-failure` 失败，低敏诊断为 `responseShape=invalid_payload`、`streamCompletion=none`、`lengthBucket=oversized`、`jsonShape=null`，verifier 未开始。Run 于 `2026-08-17T09:08:58Z` 以 `COMPLETED_WITH_GAPS` 结束，没有 draft、内容块、review、export、部署或公开发布；生成开关已恢复为 `false`。关闭部署 `dep-da1d18b7uimc73ehj3sg` 为 `live`，`/health=200`、workspace production generation=`disabled`，待处理/租约/重试队列、活动阶段和 expired lease 均为 0，Public Feed 为 `404`，部署窗口无 error-level 日志。该诊断把阻塞从超时收敛为原始 SSE 传输预算耗尽：reasoning/包装事件先超过 `512KB`，尚未解析到正文；不记录原始响应，也不据此推断模型质量。
+
+随后完成零外呼修复：Responses SSE 原始传输预算提升为有界 `2MiB`，保留结构化正文 `64K` 上限；loopback runtime 回归增加 `700KB` reasoning-only 事件后接合法正文的用例，`externalProviderCalls=0`。修复仅改变共享传输边界，不改变 provider/model、prompt 或 schema 身份；完成部署和离线合同检查后，仍需新的明确真实版次批准，不能直接重试 attempt 13。
+
 ### 1. 后续真实版次
 
-- 当前最新一次真实 Edition 已将阻塞收敛为 composer 请求的 `provider_timeout`；extractor 两次调用成功，composer 一次调用超时，verifier 未开始。因为没有收到响应，不能把它归因于模型非法 JSON，也不能证明网关返回形状丢失。下一步必须针对 composer/verifier 的超时/响应等待边界完成实质性修复，并部署后读取新的固定诊断。
-- 零调用修复已在仓库完成：Structured Outputs 的 composer 与 verifier 都使用角色级 `120000ms` 最小 inactivity 等待窗口，显式更大的渠道 timeout 仍优先；loopback runtime 回归已覆盖延迟 composer/verifier 响应，`externalProviderCalls=0`。该修复尚未部署，不能视为真实 Edition 成功。
+- 当前最新一次真实 Edition 已将阻塞收敛为 composer 原始 SSE 传输预算耗尽；extractor 两次调用成功，composer 一次调用失败，verifier 未开始。`invalid_payload + oversized` 只表示有界响应预算耗尽，不保留或推断原始模型正文。
+- 零调用修复已在仓库完成：Responses SSE 原始传输预算为有界 `2MiB`，结构化正文仍限制为 `64K`，并保留 composer/verifier 各自 `120000ms` 最小 inactivity 等待窗口；loopback runtime 回归覆盖延迟响应和 700KB reasoning 包，`externalProviderCalls=0`。修复尚未部署，不能视为真实 Edition 成功。
 - 只有修复完成、零调用合同与交付校验通过后，才能重新取得下一次“真实 Edition”明确批准；不得直接重试或把 bundle 校验当成真实业务成功。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。

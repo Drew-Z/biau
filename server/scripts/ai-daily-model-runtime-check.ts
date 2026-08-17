@@ -108,6 +108,21 @@ const server = createServer((request, response) => {
       }, 100)
       return
     }
+    if (requestPath === '/reasoning-heavy/responses') {
+      response.writeHead(200, { 'Content-Type': 'text/event-stream' })
+      response.write(sseFrame('response.reasoning.delta', {
+        type: 'response.reasoning.delta',
+        delta: 'r'.repeat(700_000),
+      }))
+      response.write(sseFrame('response.output_text.delta', {
+        type: 'response.output_text.delta',
+        delta: '{"claims":[]}',
+      }))
+      response.end(sseFrame('response.completed', {
+        type: 'response.completed',
+      }))
+      return
+    }
     response.writeHead(200, { 'Content-Type': 'application/json' })
     response.end(JSON.stringify({
       output: [{
@@ -276,6 +291,18 @@ try {
   })
   assertEqual((delayedComposerOutput as { title?: unknown }).title, 'Daily', 'composer delayed response must use the role timeout floor')
   assertEqual(aiDailyComposerTimeoutFloorMs, 120_000, 'composer timeout floor')
+
+  const reasoningHeavyProvider = createAiDailyResponsesProvider({
+    candidate: runtime.candidates[0],
+    channel: { ...runtime.channels[0], baseUrl: `${runtime.channels[0].baseUrl}/reasoning-heavy`, timeoutMs: 100 },
+    slot: 'primary',
+  })
+  const reasoningHeavyOutput = await reasoningHeavyProvider.generate({
+    role: 'extractor',
+    schemaVersion: aiDailyGenerationSchemaVersion,
+    payload: { evidence: [] },
+  })
+  assertDeepEqual(reasoningHeavyOutput, { claims: [] }, 'reasoning-heavy SSE envelope must not consume the structured output budget')
 
   const baseUrl = runtime.channels[0].baseUrl
   const compatibilityProvider = createAiDailyResponsesProvider({
