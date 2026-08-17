@@ -178,7 +178,7 @@ Focused checks:
 ### Rollback point
 
 - Failed acceptance keeps the product in `待验收`/degraded state. It does not delete test data automatically or publish a failed Edition.
-- The latest approved run is attempt 14 (`cmsx35fz200004ajbvxgxy6dv`). Both extractor calls, composer, and verifier succeeded, but deterministic validation rejected Revision 13 (`cmsx37zmr000c4ajb8j327zfb`) for insufficient/contradicted composition support, missing official evidence, verifier contradiction, and trend independent-source gaps. There is no draft, review, export, deployment, or public Feed. Production generation, public Feed, and business evaluation are disabled and Cron is not created. A bounded content-quality repair must preserve the current validation floors, and another real provider call requires a new explicit approval.
+- The latest approved run is attempt 14 (`cmsx35fz200004ajbvxgxy6dv`). Both extractor calls, composer, and verifier succeeded, but deterministic validation rejected Revision 13 (`cmsx37zmr000c4ajb8j327zfb`) for insufficient/contradicted composition support, missing official evidence, verifier contradiction, and trend independent-source gaps. There is no draft, review, export, deployment, or public Feed. The zero-call `ai-daily-prompt-v6` repair now adds bounded evidence-aware composition plus one verifier-driven repair/recheck while preserving every validation floor; its contracts pass locally, but it is not deployed and invalidates the v5 bundle. Production generation, public Feed, and business evaluation are disabled and Cron is not created. A new v6 proposal/bundle approval and delivery must finish before another separately approved real provider call.
 
 ## Final Integration Gate
 

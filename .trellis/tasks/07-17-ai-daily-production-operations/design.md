@@ -51,6 +51,14 @@ The first live edition is queued from the authenticated Studio workspace after a
 - Human approval creates a tamper-evident bundle. Live execution revalidates bundle hashes and runtime provider/failure-domain/model identity, then claims only `PRODUCTION` work. Fixture execution claims only `FIXTURE` work.
 - A production channel repair may add a dedicated fixed-upstream relay route instead of overwriting an existing shared route. The route owns one endpoint/key pair, issues at most one upstream request, and has a distinct provider/failure-domain identity. Existing bundles cannot cross that identity boundary; a new proposal, approval bundle, Secret File/hash delivery, deployment, and separately approved real Edition are required.
 
+## Bounded Content-quality Repair
+
+The composer receives a bounded evidence context in addition to extracted claims. The context exposes only the evidence id, source role/tier, publisher, public publisher domain, publication time, and a bounded excerpt. This gives composition enough information to avoid release/date/price/API/availability claims without official support and to omit trend blocks that do not span two independent publisher domains.
+
+After the first composer and verifier outputs pass their schemas, the deterministic validator remains authoritative. One content-quality repair cycle is allowed only when every critical finding belongs to a fixed repairable set: contradicted/insufficient claim or block support, missing official evidence, or insufficient independent trend sources. The repair composer receives the normalized prior composition, verifier reviews, fixed findings, claims, and bounded evidence context; it must return a complete replacement composition. That replacement is verified once and then goes through the unchanged deterministic validator. A failed repair call, failed verifier call, non-repairable finding, or second rejection stops the workflow without another loop, fallback guess, or relaxed quality floor.
+
+The existing durable stage order remains `EXTRACT_FACTS -> COMPOSE -> VERIFY -> VALIDATE -> DRAFT`. `COMPOSE` keeps the first schema-valid composition. `VERIFY` owns the bounded verify/repair/reverify unit and stores the final composition, final reviews, and all bounded provider attempts. Legacy `VERIFY` checkpoints without a final composition restore against the `COMPOSE` checkpoint; new checkpoints validate the stored final composition before deterministic validation. Prompt behavior advances to a new version, so an old approval bundle cannot authorize this flow.
+
 ## Rollback
 
 Disable both Cron Jobs, production generation, and the public feed feature flag. Preserve database history and keep manual Studio/offline draft workflows available.

@@ -174,11 +174,13 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 站点所有者随后明确批准一次新的真实 Edition。生成开关仅在部署 `dep-da1dvuk9v7es73b6s43g` 的受控窗口内开启，受保护入口只提交一次并返回 `202`，创建 Run `cmsx35fz200004ajbvxgxy6dv` / work item `cmsx35g2100014ajbly5xtuyf`，`attemptNumber=14`；客户端没有重试或第二次提交。两次 extractor、一次 composer 和一次 verifier 调用全部成功，证明 Structured Outputs 传输、解析和三角色 schema 已越过此前阻塞。Run 仍以 `COMPLETED_WITH_GAPS` 结束：Revision 13 `cmsx37zmr000c4ajb8j327zfb` 在确定性 Validate 阶段因 `composition-verifier-insufficient`、`composition-verifier-contradicted`、`official-evidence-required`、`verifier-contradicted` 与 `trend-independent-sources-required` 被自动 `REJECTED` / `DISCARDED`，保留 8 条 citation、0 个内容块且没有 draft。未执行 Studio review、Publish Export、内容部署或公开发布。生成开关立即恢复为 `false`，关闭部署 `dep-da1e4j7lk1mc739r5bjg` 已 `live`；最终 `/health=200`、database/auth ready、production generation=`disabled`，待处理/租约/重试队列、活动阶段和 expired lease 均为 0，Public Feed=`404`，执行与关闭部署窗口无 error-level 日志。
 
+针对 attempt 14 的零外呼实质修复已在本地完成，并将 prompt 合同升级为 `ai-daily-prompt-v6`。Composer 现在只接收受限 evidence 投影（证据 id、来源角色/层级、publisher、公开域名、时间和有界摘要，不含完整 URL、content hash、locator 或任意字段），从首次写作起约束 official evidence 与跨域 trend。首轮 verifier 后，只有六个固定的 contradicted/insufficient、official-evidence 和独立来源 critical finding 可以触发一次完整 composer 替换稿与一次 verifier 复核；第二次仍不通过、结构错误或 deadline 到期均立即停止。最终稿、复核和完整受限 attempts 归属于现有 `VERIFY` checkpoint，旧 checkpoint 兼容且重放不调用模型。26 项合同、runner/quality/model-runtime/model-evaluation、server build、lint、Vite build、性能与文档/部署门禁均以 `externalProviderCalls=0` 通过；official evidence 缺失回归仍为 `REJECTED`。该修改尚未部署，也没有批准或调用模型；prompt v6 使当前 v5 bundle 按契约失效，必须重新生成、批准和交付。
+
 ### 1. 后续真实版次
 
 - 当前最新一次真实 Edition 已通过 extractor、composer 和 verifier 的 Responses/SSE/schema 边界，阻塞收敛到确定性内容质量验证：composition 支持不足或矛盾、需要官方证据的 claim 缺少 official evidence，以及 trend 未覆盖两个独立来源域。
-- 下一步应针对 composer/verifier 的内容修复闭环和证据选择约束做零外呼设计与合同回归；不能放宽现有官方证据、独立来源或 contradicted/insufficient 拒绝门槛来换取通过。
-- 完成新的实质性质量修复、合同与交付校验后，才能重新取得下一次“真实 Edition”明确批准；不得直接重试或把三角色 provider 成功当成整期业务成功。
+- evidence-aware composer 与单次 verifier 驱动修复闭环已经通过零外呼合同；没有放宽官方证据、独立来源或 contradicted/insufficient 拒绝门槛。
+- 下一步先为 `ai-daily-prompt-v6` 生成并明确批准新的 proposal/bundle，完成 Render Secret File/hash 交付和禁用态部署校验；部署完成后仍需重新取得一次单独的“真实 Edition”明确批准。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。

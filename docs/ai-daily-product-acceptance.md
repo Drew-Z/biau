@@ -74,9 +74,20 @@ npm run check:ui
 | 关闭窗口 | production generation 立即恢复为 `false`；关闭部署 `dep-da163spt0dsc73b3j8v0` live，workspace=`disabled`，全局队列和活动阶段清空，Feed=`404`，error-level 日志为 0 |
 | 结论 | 与 attempt 9 相同的 verifier 失败被再次复现；下一步必须先增加低敏 Responses/SSE 响应形状诊断并完成实质修复，不再对未改变 bundle 直接重试 |
 
+## 2026-08-17 CPA 真实 Edition（attempt 14）
+
+| 环节 | 低敏结果 |
+| --- | --- |
+| 唯一提交 | 受保护入口只提交一次并返回 `202`；Run `cmsx35fz200004ajbvxgxy6dv`、work item `cmsx35g2100014ajbly5xtuyf`、attempt 14 |
+| 生成结果 | 两次 extractor、一次 composer 和一次 verifier 全部成功；Responses/SSE/schema 边界通过，Run 仍为 `COMPLETED_WITH_GAPS` |
+| Revision | Revision 13 `cmsx37zmr000c4ajb8j327zfb` 为 `REJECTED` / `DISCARDED`，8 条 citation、0 个内容块且无 draft；固定 finding 为 composition 支持不足/矛盾、official evidence 缺失、claim contradiction 与 trend 独立来源不足 |
+| 审核与发布 | 未重试，未执行 Studio review、Publish Export、内容部署或公开 Feed |
+| 关闭窗口 | production generation 已恢复为 `false`；关闭部署 `dep-da1e4j7lk1mc739r5bjg` live，队列与活动阶段为 0，Feed=`404`，error-level 日志为 0 |
+| 零外呼修复 | `ai-daily-prompt-v6` 增加受限 evidence 上下文和一次 verifier 驱动的 composer 修复/复核；第二次仍不通过或出现结构 finding 时保持拒绝。26 项合同及构建/性能/文档门禁通过，`externalProviderCalls=0`；当前 v5 bundle 因 prompt 漂移失效，修复尚未部署或调用模型 |
+
 ## 最后人工 gate
 
-1. 增加低敏 Responses/SSE 响应形状诊断，定位并修复 verifier 的 Structured Output 兼容性；不得用直接重试或无意义测活代替修复。
-2. 修复后的零调用合同、approval/runtime 交付校验通过后，重新取得一次真实 Edition 明确批准，并完成生成、Studio 人工修订与批准。
+1. 为 `ai-daily-prompt-v6` 生成新的零调用 proposal/bundle，取得明确批准并完成 Render Secret File/hash 与禁用态部署校验。
+2. 部署后重新取得一次单独的真实 Edition 明确批准，再完成生成、Studio 人工修订与批准；不得用直接重试或无意义测活代替业务验收。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。
