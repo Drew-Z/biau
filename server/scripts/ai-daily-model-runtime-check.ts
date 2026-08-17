@@ -20,6 +20,7 @@ import {
   buildAiDailyStructuredOutputSchema,
   buildAiDailyStructuredSystemPrompt,
   createAiDailyResponsesProvider,
+  aiDailyVerifierTimeoutFloorMs,
 } from '../src/aiDailyModelProvider.js'
 import {
   buildAiDailyProductionProviders,
@@ -87,9 +88,16 @@ const server = createServer((request, response) => {
           setTimeout(() => {
             response.write('event: response.completed\n')
             response.end(`data: ${JSON.stringify({ type: 'response.completed' })}\n\n`)
-          }, 25)
-        }, 25)
-      }, 25)
+          }, 60)
+        }, 60)
+      }, 60)
+      return
+    }
+    if (requestPath === '/verifier-delayed/responses') {
+      setTimeout(() => {
+        response.writeHead(200, { 'Content-Type': 'application/json' })
+        response.end(JSON.stringify({ output_text: '{"reviews":[],"blockReviews":[]}' }))
+      }, 100)
       return
     }
     response.writeHead(200, { 'Content-Type': 'application/json' })
@@ -222,7 +230,7 @@ try {
   if (!composerCandidate) throw new Error('composer-runtime-candidate-missing')
   const streamingProvider = createAiDailyResponsesProvider({
     candidate: composerCandidate,
-    channel: { ...runtime.channels[0], baseUrl: `${runtime.channels[0].baseUrl}/stream`, timeoutMs: 40 },
+    channel: { ...runtime.channels[0], baseUrl: `${runtime.channels[0].baseUrl}/stream`, timeoutMs: 100 },
     slot: 'primary',
   })
   const streamingOutput = await streamingProvider.generate({
@@ -232,6 +240,21 @@ try {
   })
   assertEqual((streamingOutput as { title?: unknown }).title, 'Daily', 'composer SSE structured response decoding')
   assertStructuredOutputRequest(observedBodies.at(-1) ?? {}, 'ai_daily_composer_v2')
+
+  const verifierCandidate = runtime.candidates.find((candidate) => candidate.role === 'verifier')
+  if (!verifierCandidate) throw new Error('verifier-runtime-candidate-missing')
+  const delayedVerifierProvider = createAiDailyResponsesProvider({
+    candidate: verifierCandidate,
+    channel: { ...runtime.channels[0], baseUrl: `${runtime.channels[0].baseUrl}/verifier-delayed`, timeoutMs: 40 },
+    slot: 'primary',
+  })
+  const delayedVerifierOutput = await delayedVerifierProvider.generate({
+    role: 'verifier',
+    schemaVersion: aiDailyGenerationSchemaVersion,
+    payload: { claims: [], composition: {} },
+  })
+  assertDeepEqual(delayedVerifierOutput, { reviews: [], blockReviews: [] }, 'verifier delayed response must use the role timeout floor')
+  assertEqual(aiDailyVerifierTimeoutFloorMs, 120_000, 'verifier timeout floor')
 
   const baseUrl = runtime.channels[0].baseUrl
   const compatibilityProvider = createAiDailyResponsesProvider({

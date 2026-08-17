@@ -21,6 +21,7 @@ import {
 } from './responsesApi.js'
 
 export const aiDailyStructuredMaxOutputTokens = 8_192
+export const aiDailyVerifierTimeoutFloorMs = 120_000
 
 export function createAiDailyResponsesProvider(input: {
   candidate: AiDailyModelRuntimeCandidate
@@ -74,13 +75,16 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
         `上一次输出：${JSON.stringify(request.repair.previousOutput).slice(0, 80_000)}`,
       ].join('\n')
     : ''
+  const timeoutMs = request.role === 'verifier'
+    ? Math.max(channel.timeoutMs, aiDailyVerifierTimeoutFloorMs)
+    : channel.timeoutMs
   const result = await requestResponsesText({
     channel: {
       apiKey: channel.apiKey,
       baseUrl: channel.baseUrl,
       model: channel.modelIdentifier,
     },
-    timeoutMs: channel.timeoutMs,
+    timeoutMs,
     stream: true,
     maxOutputTokens: aiDailyStructuredMaxOutputTokens,
     system: buildAiDailyStructuredSystemPrompt(request.role, request.schemaVersion),
