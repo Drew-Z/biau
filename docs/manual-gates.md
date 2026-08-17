@@ -162,9 +162,14 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 2026-08-17 站点所有者批准并执行一次新的单次真实 Edition，使用已交付且未改变的 CPA bundle。生成开关仅在窗口内开启；部署 `dep-da1an9c9v7es73avfkf0` live 后，启动交付检查确认 `networkCalls=0`、1 channel、3 candidates、1 failure domain，Studio workspace 为 `ready`。受保护入口只提交一次并返回 `202`，创建 Run `cmswv63av00004af0hdopyxwi` / work item `cmswv63dd00014af0arizw4o4`，`attemptNumber=11`。Extractor 两次调用均成功，composer 两次调用均成功；唯一 verifier 调用以 `provider_timeout` / `verifier-schema-or-provider-failure` 失败，响应形状、完成状态、长度桶和 JSON 形状诊断均为 `null`（未收到可解析响应）。Run 于 `2026-08-17T06:46:45Z` 以 `COMPLETED_WITH_GAPS` 结束，Revision 10 `cmswvf3au000c4af044xstgcp` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，0 个内容块，自动 `REJECTED` / `DISCARDED`，没有 projection draft。未重试、未创建 ContentDraft、未执行 Studio review、Publish Export、内容部署或公开发布；生成开关已关闭，恢复部署 `dep-da1b1jdbedkc73cgj5o0` live，最终 workspace 为 `disabled`，队列与活动阶段均为 0，Public Feed 仍为 `404`，关闭窗口 error-level 日志为 0。
 
+2026-08-17 随后完成一次新的受控真实 Edition，使用同一 CPA bundle。生成开关只在窗口内开启，部署 `dep-da1bjg9t0dsc73bfm0d0` live，启动交付检查保持 `networkCalls=0`、1 channel、3 candidates、1 failure domain；受保护入口仅提交一次并返回 `202`，创建 Run `cmswxazy6000049b458h9kgwu` / work item `cmswxazys000149b40q762wvk`，`attemptNumber=12`。两次 extractor 调用成功，composer 调用以 `provider_timeout` / `composer-schema-or-provider-failure` 失败，verifier 未开始；响应形状、完成状态、长度桶和 JSON 形状诊断均为 `null`。Run 于 `2026-08-17T07:41:00Z` 以 `COMPLETED_WITH_GAPS` 结束，没有 projection draft 或内容块。未重试、未执行 Studio review、Publish Export、内容部署或公开发布；生成开关已立即恢复为 `false`，关闭部署 `dep-da1c4lflk1mc739mlmu0` 已 `live`，最终队列与活动阶段为 0，Public Feed 仍为 `404`，错误级日志无记录。
+
+针对该结果的零调用修复已提交到工作区：composer 与 verifier 现在各自使用 `120000ms` 角色级最小 inactivity 等待窗口，显式更大的渠道 timeout 仍优先；loopback runtime 回归同时覆盖延迟 composer/verifier 响应，`externalProviderCalls=0`。修复尚未部署，不能视为真实 Edition 成功；部署后仍需新的明确真实版次批准。
+
 ### 1. 后续真实版次
 
-- 当前最新一次真实 Edition 已将阻塞收敛为 verifier 请求的 `provider_timeout`；因为没有收到响应，不能把它归因于模型非法 JSON，也不能证明网关返回形状丢失。下一步必须针对 verifier 的超时/响应等待边界完成实质性修复，并部署后读取新的固定诊断。
+- 当前最新一次真实 Edition 已将阻塞收敛为 composer 请求的 `provider_timeout`；extractor 两次调用成功，composer 一次调用超时，verifier 未开始。因为没有收到响应，不能把它归因于模型非法 JSON，也不能证明网关返回形状丢失。下一步必须针对 composer/verifier 的超时/响应等待边界完成实质性修复，并部署后读取新的固定诊断。
+- 零调用修复已在仓库完成：Structured Outputs 的 composer 与 verifier 都使用角色级 `120000ms` 最小 inactivity 等待窗口，显式更大的渠道 timeout 仍优先；loopback runtime 回归已覆盖延迟 composer/verifier 响应，`externalProviderCalls=0`。该修复尚未部署，不能视为真实 Edition 成功。
 - 只有修复完成、零调用合同与交付校验通过后，才能重新取得下一次“真实 Edition”明确批准；不得直接重试或把 bundle 校验当成真实业务成功。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。

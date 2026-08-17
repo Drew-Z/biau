@@ -128,6 +128,27 @@ After implementation:
 - [ ] Ran each independently configured TypeScript project; a successful frontend
       Vite build does not prove a separate backend `tsconfig.json` compiles
 
+## Structured Provider Inactivity Budgets
+
+When multiple business roles share one Responses/SSE transport, do not assume a
+timeout that works for one role is sufficient for every role. The channel timeout
+is a transport setting, while payload size and review complexity are role-specific
+contracts.
+
+- Give long-form roles an explicit minimum inactivity floor in the owning provider
+  adapter; a larger operator-configured channel timeout remains authoritative.
+- Add one delayed-header or delayed-body loopback case for each role with a floor.
+  The check must prove the request succeeds and `externalProviderCalls=0`.
+- Keep successful short-role behavior on the configured channel budget when there
+  is no evidence that it needs a floor. This avoids hiding a genuinely stalled
+  upstream behind an unnecessarily long wait.
+- Record only fixed timeout/failure categories in production diagnostics; never
+  widen the record to include provider identity, endpoint, prompt, or raw output.
+
+The common failure pattern is a green extractor fixture followed by a production
+composer or verifier timeout. Treat that as a cross-layer contract gap, not proof
+that the provider returned malformed JSON.
+
 **Real-world example**: The public assistant's local knowledge eval correctly
 ranked `site:public-assistant` first, but Supabase pgvector merged saturated
 keyword/vector/entity scores with `max()` and broke ties by chunk ID. Production

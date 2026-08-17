@@ -16,6 +16,7 @@ import {
   validateAiDailyModelManualSelectionProposal,
 } from '../src/aiDailyModelArtifacts.js'
 import {
+  aiDailyComposerTimeoutFloorMs,
   aiDailyStructuredMaxOutputTokens,
   buildAiDailyStructuredOutputSchema,
   buildAiDailyStructuredSystemPrompt,
@@ -97,6 +98,13 @@ const server = createServer((request, response) => {
       setTimeout(() => {
         response.writeHead(200, { 'Content-Type': 'application/json' })
         response.end(JSON.stringify({ output_text: '{"reviews":[],"blockReviews":[]}' }))
+      }, 100)
+      return
+    }
+    if (requestPath === '/composer-delayed/responses') {
+      setTimeout(() => {
+        response.writeHead(200, { 'Content-Type': 'application/json' })
+        response.end(JSON.stringify({ output_text: '{"title":"Daily","subtitle":"Brief","introduction":{"text":"Intro","claimIds":["claim-1"]},"events":[{"eventId":"event-1","title":"Event","factSummary":{"text":"Fact","claimIds":["claim-1"]},"whyItMatters":{"text":"Why","claimIds":["claim-1"]},"uncertainty":"low","claimIds":["claim-1"]}],"trends":[]}' }))
       }, 100)
       return
     }
@@ -255,6 +263,19 @@ try {
   })
   assertDeepEqual(delayedVerifierOutput, { reviews: [], blockReviews: [] }, 'verifier delayed response must use the role timeout floor')
   assertEqual(aiDailyVerifierTimeoutFloorMs, 120_000, 'verifier timeout floor')
+
+  const delayedComposerProvider = createAiDailyResponsesProvider({
+    candidate: composerCandidate,
+    channel: { ...runtime.channels[0], baseUrl: `${runtime.channels[0].baseUrl}/composer-delayed`, timeoutMs: 40 },
+    slot: 'primary',
+  })
+  const delayedComposerOutput = await delayedComposerProvider.generate({
+    role: 'composer',
+    schemaVersion: aiDailyGenerationSchemaVersion,
+    payload: { claims: [{ claimId: 'claim-1' }] },
+  })
+  assertEqual((delayedComposerOutput as { title?: unknown }).title, 'Daily', 'composer delayed response must use the role timeout floor')
+  assertEqual(aiDailyComposerTimeoutFloorMs, 120_000, 'composer timeout floor')
 
   const baseUrl = runtime.channels[0].baseUrl
   const compatibilityProvider = createAiDailyResponsesProvider({
