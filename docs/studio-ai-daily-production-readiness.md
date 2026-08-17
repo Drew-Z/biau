@@ -12,7 +12,7 @@
 - CPA v6 手动静态选型让 extractor/composer/verifier 统一使用精确 `free5/DeepSeek-V4-Flash`。该映射只表达一个可审计的角色身份，不宣称模型质量得分或独立故障转移；bundle 明确标记 `manual-static-selection` 与 `reduced_redundancy`，不配置自动 fallback。
 - 2026-08-17 已明确批准并交付零调用 proposal `ai-daily-cpa-deepseek-v4-flash-static-v2`（proposal hash `db654a7ae6a09e0d6eb7a343fa3b1a79ce847a5d0aa02ec680b536e73ace64b3`），bundle hash `8481cd3b66f91054625290034340a49ddddb5063c5e2e87a2477a6c2d60d1a3a`，绑定 `ai-daily-prompt-v6` / `ai-daily-generation-v2`，生成过程 `modelCalls=0`。它已用于 Run `cmsxar81600004bal6qbas8wr`；两次 extractor、两次 composer 和两次 verifier 均成功，但 Revision 14 `cmsxauh6s000c4bal87hkuhip` 仍因三个 `scope_inflation` 文本块和 claim `grok-bot-launch` 缺少 official evidence 而 `REJECTED` / `DISCARDED`，没有 draft 或公开内容。
 - 生产窗口已经安全关闭：部署 `dep-da1h7mnqj5pc73d21le0` 为 `live`，production generation 与 stage diagnostics 为 `disabled`，队列、backlog、活动阶段和 expired lease 均为 0，Public Feed=`404`，关闭后的 error-level 日志为 0。
-- 当前代码合同已升级为 `ai-daily-prompt-v7`：repair 使用后端派生的允许/排除 claim、删除 event/event-claim/trend 和重写 block 指令，并要求每个最终编辑文本块包含简体中文；没有可发布 claim 时不调用 repair provider。完整 27 项零外呼合同及构建/文档门禁通过。v6 bundle 已因 prompt drift 失效；下一步只生成 pending v7 proposal，明确批准前不得创建 bundle、修改 Render Secret File/hash、开启生产生成或提交真实 Edition。
+- 当前代码合同已升级为 `ai-daily-prompt-v7`：repair 使用后端派生的允许/排除 claim、删除 event/event-claim/trend 和重写 block 指令，并要求每个最终编辑文本块包含简体中文；没有可发布 claim 时不调用 repair provider。完整 27 项零外呼合同及构建/文档门禁通过。v7 proposal hash `a5274c8a147de67e6ae00c912e0e370b46efbb4a2d8b668e3a51d6a21784edb8` 已明确批准，生成并交付 bundle hash `962243d6fe24a996d5b2994ba83edcac4fdb8f7f311c657d9194dc99d71aa464`。部署 `dep-da1j8im417fc73ajorag` 在禁用态通过启动、health/auth、队列、Feed 和 error-log 校验，`networkCalls=0`；下一次真实 Edition 仍需另行明确批准。
 
 ## 服务边界
 

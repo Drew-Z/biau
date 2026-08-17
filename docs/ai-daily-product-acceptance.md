@@ -4,7 +4,7 @@
 
 ## 当前结论
 
-潮讯 TideBrief 当前为 **工程就绪，CPA v6 真实 Edition 已完成三角色及一次质量修复，但产品仍待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 Run `cmsxar81600004bal6qbas8wr` 的六次角色调用全部成功，但 Revision 14 仍因三个范围膨胀文本块与一个缺少官方证据的 claim 被自动拒绝并丢弃，未进入人工审核或发布。v7 确定性删减与中文门槛已通过零外呼检查，尚待新 proposal 批准和交付。
+潮讯 TideBrief 当前为 **工程就绪，CPA v6 真实 Edition 已完成三角色及一次质量修复，但产品仍待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 Run `cmsxar81600004bal6qbas8wr` 的六次角色调用全部成功，但 Revision 14 仍因三个范围膨胀文本块与一个缺少官方证据的 claim 被自动拒绝并丢弃，未进入人工审核或发布。v7 确定性删减与中文门槛已经通过零外呼检查，新的 proposal/bundle 也已批准、交付并完成禁用态部署校验；下一次真实 Edition 仍需单独批准。
 
 ## 验收矩阵
 
@@ -99,7 +99,7 @@ npm run check:ui
 
 ## 最后人工 gate
 
-1. 为 `ai-daily-prompt-v7` 生成零调用 pending proposal并核对 hash；取得明确 proposal 批准后才创建 bundle、更新 Render Secret File/hash，并完成禁用态部署校验。
-2. 交付后重新取得一次单独的真实 Edition 明确批准，要求生成结果通过确定性内容验证，再完成 Studio 人工修订与批准；不得用直接重试或无意义测活代替业务验收。
+1. `ai-daily-prompt-v7` proposal、bundle、Render Secret File/hash 与禁用态部署校验已经完成；bundle hash 为 `962243d6fe24a996d5b2994ba83edcac4fdb8f7f311c657d9194dc99d71aa464`，部署为 `dep-da1j8im417fc73ajorag`，全程零模型调用。
+2. 重新取得一次单独的真实 Edition 明确批准，要求生成结果通过确定性内容验证，再完成 Studio 人工修订与批准；不得把 proposal 批准复用为 Edition 批准，也不得用直接重试或无意义测活代替业务验收。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。

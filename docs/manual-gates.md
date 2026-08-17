@@ -186,11 +186,13 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 针对 Revision 14 的零外呼实质修复已升级为 `ai-daily-prompt-v7`。后端不再只靠自然语言要求模型“收缩”，而是生成 `allowedClaimIds`、`excludedClaimIds`、`removeEventIds`、`removeEventClaimIds`、`rewriteBlockIds` 与 `removeTrendBlockIds`：缺少官方证据、`directSupport=false`、存在冲突或 verifier 判定 contradicted/insufficient 的 claim 被排除；删除事件不能通过更换 `eventId` 重建。所有最终标题、副标题、导语、事件和趋势文本块必须包含简体中文编辑文本；产品名和技术缩写可保留原文。没有可发布 claim 时跳过 repair provider 调用并保持拒绝。quality/runner/model-runtime 与完整 27 项合同、server/Vite build、lint、performance、deployment/manual-gate 和 diff 检查均以 `externalProviderCalls=0` 通过。v6 bundle 已因 prompt drift 失效；当前修改没有批准 bundle、修改 Render Secret File/hash、部署开启生成或提交真实 Edition。
 
+站点所有者随后明确批准 v7 pending proposal `ai-daily-cpa-deepseek-v4-flash-static-v3`，proposal hash 为 `a5274c8a147de67e6ae00c912e0e370b46efbb4a2d8b668e3a51d6a21784edb8`。审批生成 bundle hash `962243d6fe24a996d5b2994ba83edcac4fdb8f7f311c657d9194dc99d71aa464`；proposal/bundle 均为 `modelCalls=0`，离线交付检查为 `networkCalls=0`、1 channel、3 candidates、1 failure domain。旧 v6 本地 bundle 在替换前已保留。上传已审核 Secret File 后，Render 只合并更新 expected hash，并将提交 `3d47b0f0` 部署为 `dep-da1j8im417fc73ajorag`。启动日志验证精确 v7 hash 且 `networkCalls=0`；health/database/auth 正常，未授权 Workspace=`401 missing-studio-token`，production generation 与 stage diagnostics 均为 disabled，`PENDING` / `LEASED` / `RETRY_WAIT`、backlog、活动阶段和 expired lease 均为 0，Public Feed=`404`，部署窗口 error-level 日志为 0。该交付没有调用模型、执行诊断、开启生成或提交真实 Edition。
+
 ### 1. 后续真实版次
 
 - 当前最新一次真实 Edition 已完成 extractor、composer、verifier 及单次质量修复闭环；阻塞收敛到三个 `scope_inflation` 文本块和一个缺少 official evidence 的 claim。
 - v7 确定性删减与简体中文门槛已经通过零外呼合同；没有放宽官方证据、独立来源或 contradicted/insufficient 拒绝门槛。
-- 下一步只生成 v7 零调用 pending proposal 并报告 hash；取得明确 proposal 批准后，才可创建 bundle、更新 Render Secret File/hash，并在三个生产开关保持 `false` 时完成禁用态部署校验。完整真实 Edition 仍需再次获得单独明确批准。
+- v7 proposal、bundle、Secret File/hash 与禁用态部署校验已经完成。下一步如需运行完整真实 Edition，仍必须再次获得一次单独明确批准；本次 proposal 批准不能复用为 Edition 批准。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、stage diagnostics、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。
