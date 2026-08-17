@@ -172,11 +172,13 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 修复提交 `19a28f4a` 已推送并通过 Render Studio 部署 `dep-da1de83l550s73fe66bg` 上线。部署后复核为 `/health=200`、database/auth ready、未授权 workspace=`401`、生产生成=`disabled`、待处理/租约/重试队列、活动阶段与 expired lease 均为 0、Public Feed=`404`，部署窗口无 error-level 日志。完整 26 项 AI Daily 合同、provider/runtime、server build、lint、前端 build、性能预算和文档门禁通过，所有自动检查 `externalProviderCalls=0`。该交付不消费或替代下一次真实 Edition 批准。
 
+站点所有者随后明确批准一次新的真实 Edition。生成开关仅在部署 `dep-da1dvuk9v7es73b6s43g` 的受控窗口内开启，受保护入口只提交一次并返回 `202`，创建 Run `cmsx35fz200004ajbvxgxy6dv` / work item `cmsx35g2100014ajbly5xtuyf`，`attemptNumber=14`；客户端没有重试或第二次提交。两次 extractor、一次 composer 和一次 verifier 调用全部成功，证明 Structured Outputs 传输、解析和三角色 schema 已越过此前阻塞。Run 仍以 `COMPLETED_WITH_GAPS` 结束：Revision 13 `cmsx37zmr000c4ajb8j327zfb` 在确定性 Validate 阶段因 `composition-verifier-insufficient`、`composition-verifier-contradicted`、`official-evidence-required`、`verifier-contradicted` 与 `trend-independent-sources-required` 被自动 `REJECTED` / `DISCARDED`，保留 8 条 citation、0 个内容块且没有 draft。未执行 Studio review、Publish Export、内容部署或公开发布。生成开关立即恢复为 `false`，关闭部署 `dep-da1e4j7lk1mc739r5bjg` 已 `live`；最终 `/health=200`、database/auth ready、production generation=`disabled`，待处理/租约/重试队列、活动阶段和 expired lease 均为 0，Public Feed=`404`，执行与关闭部署窗口无 error-level 日志。
+
 ### 1. 后续真实版次
 
-- 当前最新一次真实 Edition 已将阻塞收敛为 composer 原始 SSE 传输预算耗尽；extractor 两次调用成功，composer 一次调用失败，verifier 未开始。`invalid_payload + oversized` 只表示有界响应预算耗尽，不保留或推断原始模型正文。
-- 零调用修复已部署：Responses SSE 原始传输预算为有界 `2MiB`，结构化正文仍限制为 `64K`，并保留 composer/verifier 各自 `120000ms` 最小 inactivity 等待窗口；loopback runtime 回归覆盖延迟响应和 700KB reasoning 包，`externalProviderCalls=0`。部署与健康门禁通过，但不能视为真实 Edition 成功。
-- 只有修复完成、零调用合同与交付校验通过后，才能重新取得下一次“真实 Edition”明确批准；不得直接重试或把 bundle 校验当成真实业务成功。
+- 当前最新一次真实 Edition 已通过 extractor、composer 和 verifier 的 Responses/SSE/schema 边界，阻塞收敛到确定性内容质量验证：composition 支持不足或矛盾、需要官方证据的 claim 缺少 official evidence，以及 trend 未覆盖两个独立来源域。
+- 下一步应针对 composer/verifier 的内容修复闭环和证据选择约束做零外呼设计与合同回归；不能放宽现有官方证据、独立来源或 contradicted/insufficient 拒绝门槛来换取通过。
+- 完成新的实质性质量修复、合同与交付校验后，才能重新取得下一次“真实 Edition”明确批准；不得直接重试或把三角色 provider 成功当成整期业务成功。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。
