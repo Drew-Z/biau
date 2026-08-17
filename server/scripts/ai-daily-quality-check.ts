@@ -1,8 +1,10 @@
 import {
+  buildAiDailyCompositionQualityRepairDirectives,
   classifyAiDailyRiskClaims,
   evaluateAiDailyQualityReport,
   isAiDailyContentQualityRepairableFindingCode,
   runAiDailyGeneration,
+  validateAiDailyCompositionQualityRepairOutput,
   validateAiDailyComposition,
 } from '../src/aiDailyGeneration.js'
 import {
@@ -13,6 +15,7 @@ import { assert, assertEqual } from './ai-daily-check-helpers.js'
 
 const definitions = buildAiDailyQualityFixtureDefinitions()
 for (const code of [
+  'composition-language-required',
   'composition-verifier-insufficient',
   'composition-verifier-contradicted',
   'official-evidence-required',
@@ -125,11 +128,81 @@ assert(
   'a tier label cannot replace the official source role for high-risk claims',
 )
 
+const scopeInflatedBlockIds = new Set([
+  'composition:subtitle',
+  'composition:introduction',
+  'event:event-1:why-it-matters',
+])
+const repairDirectives = buildAiDailyCompositionQualityRepairDirectives({
+  evidence: claimedOfficialEvidence,
+  claims: trendResult.claims,
+  composition: trendResult.composition,
+  reviews: trendResult.reviews,
+  blockReviews: trendResult.blockReviews.map((review) => scopeInflatedBlockIds.has(review.blockId)
+    ? { ...review, verdict: 'insufficient', reasonCode: 'scope_inflation', correctedText: null }
+    : review),
+  findings: [
+    { severity: 'critical', code: 'official-evidence-required', claimId: releaseClaim.claimId },
+    { severity: 'critical', code: 'composition-verifier-insufficient', blockId: 'composition:subtitle' },
+    { severity: 'critical', code: 'composition-verifier-insufficient', blockId: 'composition:introduction' },
+    { severity: 'critical', code: 'composition-verifier-insufficient', blockId: 'event:event-1:why-it-matters' },
+  ],
+})
+assertEqual(repairDirectives.targetLanguage, 'zh-CN', 'quality repair target language')
+assert(repairDirectives.excludedClaimIds.includes(releaseClaim.claimId), 'unsupported official claim must be excluded')
+assert(repairDirectives.removeEventIds.includes('event-1'), 'event with an excluded claim must be removed')
+assert(repairDirectives.removeEventClaimIds.includes(releaseClaim.claimId), 'removed event claims must be fenced')
+assert(repairDirectives.rewriteBlockIds.includes('composition:subtitle'), 'subtitle must be rewritten narrowly')
+assert(repairDirectives.rewriteBlockIds.includes('composition:introduction'), 'introduction must be rewritten narrowly')
+const renamedRemovedEventIssues = validateAiDailyCompositionQualityRepairOutput(
+  {
+    ...trendResult.composition,
+    events: trendResult.composition.events.map((event) => event.eventId === 'event-1'
+      ? { ...event, eventId: 'renamed-event-1' }
+      : event),
+  },
+  repairDirectives,
+)
+assert(
+  renamedRemovedEventIssues.includes('quality-repair-removed-event-claim-retained'),
+  'renaming an event must not bypass a deterministic removal directive',
+)
+
+const englishComposition = {
+  ...trendResult.composition,
+  title: 'AI Daily',
+  subtitle: 'Daily model and platform updates',
+  introduction: { ...trendResult.composition.introduction, text: 'Today brought several model and platform updates.' },
+  events: trendResult.composition.events.map((event, index) => ({
+    ...event,
+    title: `Technology update ${index + 1}`,
+    factSummary: { ...event.factSummary, text: 'A product update was reported.' },
+    whyItMatters: { ...event.whyItMatters, text: 'This may affect developer decisions.' },
+  })),
+  trends: trendResult.composition.trends.map((trend) => ({ ...trend, text: 'Several updates focused on deployment.' })),
+}
+const englishValidation = validateAiDailyComposition({
+  evidence: trendDefinition.evidence,
+  claims: trendResult.claims,
+  composition: englishComposition,
+  reviews: trendResult.reviews,
+  blockReviews: trendResult.blockReviews,
+  requiredReviewClaimIds: new Set(classifyAiDailyRiskClaims(
+    trendResult.claims,
+    trendEvidenceById,
+    englishComposition,
+  )),
+})
+assert(
+  englishValidation.findings.some((finding) => finding.code === 'composition-language-required'),
+  'English-only editorial output must fail the deterministic language gate',
+)
+
 const repairedQualityResult = await runAiDailyGeneration({
   evidence: trendDefinition.evidence,
   providers: buildAiDailyGenerationProvidersFixture({
     verifier: {
-      verifierVerdict: 'contradicted',
+      verifierVerdict: 'entailed',
       verifierCompositionVerdict: 'insufficient',
       verifierVerdictAfterQualityRepair: 'entailed',
       verifierCompositionVerdictAfterQualityRepair: 'entailed',
@@ -156,15 +229,35 @@ const nonOfficialResult = await runAiDailyGeneration({
   evidence: nonOfficialEvidence,
   providers: buildAiDailyGenerationProvidersFixture(),
 })
-assertEqual(nonOfficialResult.status, 'REJECTED', 'quality repair must not waive official evidence')
+assertEqual(nonOfficialResult.status, 'VALID', 'quality repair may recover by deleting unsupported official claims')
+assert(nonOfficialResult.composition, 'repaired non-official composition required')
+const unsupportedOfficialClaimIds = nonOfficialResult.claims
+  .filter((claim) => claim.claimType === 'release' || claim.claimType === 'date')
+  .map((claim) => claim.claimId)
+const repairedCompositionJson = JSON.stringify(nonOfficialResult.composition)
 assert(
-  nonOfficialResult.findings.some((finding) => finding.code === 'official-evidence-required'),
-  'official evidence finding must survive an unsuccessful bounded repair',
+  unsupportedOfficialClaimIds.every((claimId) => !repairedCompositionJson.includes(claimId)),
+  'unsupported official claims must be absent from the recovered composition',
 )
 assertEqual(
   nonOfficialResult.attempts.filter((attempt) => attempt.role === 'composer').length,
   2,
-  'failed official-evidence repair must stop after one composer repair',
+  'official-evidence deletion uses exactly one composer repair',
+)
+
+const allHighRiskNonOfficialResult = await runAiDailyGeneration({
+  evidence: nonOfficialEvidence.slice(0, 3),
+  providers: buildAiDailyGenerationProvidersFixture(),
+})
+assertEqual(allHighRiskNonOfficialResult.status, 'REJECTED', 'no supported claim means fail closed')
+assert(
+  allHighRiskNonOfficialResult.findings.some((finding) => finding.code === 'official-evidence-required'),
+  'official evidence floor must remain when no publishable subset exists',
+)
+assertEqual(
+  allHighRiskNonOfficialResult.attempts.filter((attempt) => attempt.role === 'composer').length,
+  1,
+  'no publishable claim must not spend a repair composer call',
 )
 
 console.log(`AI Daily quality check passed with ${report.caseCount} evidence-labeled cases and ${report.negativeSlices.length} negative slices`)

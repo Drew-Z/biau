@@ -249,6 +249,16 @@ export interface AiDailyCompositionQualityRepairResult {
   attempted: boolean
 }
 
+export interface AiDailyCompositionQualityRepairDirectives {
+  targetLanguage: 'zh-CN'
+  allowedClaimIds: string[]
+  excludedClaimIds: string[]
+  removeEventIds: string[]
+  removeEventClaimIds: string[]
+  rewriteBlockIds: string[]
+  removeTrendBlockIds: string[]
+}
+
 export interface AiDailyGenerationProviders {
   extractor: {
     primary: AiDailyStructuredGenerationProvider
@@ -268,9 +278,10 @@ export interface AiDailyGenerationProviders {
 }
 
 export const aiDailyGenerationSchemaVersion = 'ai-daily-generation-v2'
-export const aiDailyGenerationPromptVersion = 'ai-daily-prompt-v6'
+export const aiDailyGenerationPromptVersion = 'ai-daily-prompt-v7'
 
 export const aiDailyContentQualityRepairableFindingCodes = [
+  'composition-language-required',
   'composition-verifier-insufficient',
   'composition-verifier-contradicted',
   'official-evidence-required',
@@ -399,6 +410,7 @@ export async function composeAiDailyFacts(input: {
     reviews: AiDailyClaimReview[]
     blockReviews: AiDailyCompositionBlockReview[]
     findings: AiDailyGenerationFinding[]
+    directives: AiDailyCompositionQualityRepairDirectives
   }
   allowSchemaRepair?: boolean
   allowFallbacks?: boolean
@@ -415,6 +427,7 @@ export async function composeAiDailyFacts(input: {
               previousComposition: input.qualityRepair.previousComposition,
               reviews: input.qualityRepair.reviews,
               blockReviews: input.qualityRepair.blockReviews,
+              directives: input.qualityRepair.directives,
               findings: input.qualityRepair.findings.slice(0, 40).map((finding) => ({
                 severity: finding.severity,
                 code: finding.code,
@@ -426,7 +439,15 @@ export async function composeAiDailyFacts(input: {
           }
         : {}),
     },
-    validate: (value) => normalizeCompositionOutput(value, new Set(input.claims.map((claim) => claim.claimId))),
+    validate: (value) => {
+      const normalized = normalizeCompositionOutput(value, new Set(input.claims.map((claim) => claim.claimId)))
+      if (!normalized.ok || !input.qualityRepair) return normalized
+      const issues = validateAiDailyCompositionQualityRepairOutput(
+        normalized.value,
+        input.qualityRepair.directives,
+      )
+      return issues.length > 0 ? { ok: false, issues } : normalized
+    },
     allowSchemaRepair: input.allowSchemaRepair,
     allowFallbacks: input.allowFallbacks,
   })
@@ -511,6 +532,25 @@ export async function repairAiDailyCompositionQuality(input: {
     }
   }
 
+  const directives = buildAiDailyCompositionQualityRepairDirectives({
+    evidence: input.evidence,
+    claims: input.claims,
+    composition: input.composition,
+    reviews: input.reviews,
+    blockReviews: input.blockReviews,
+    findings: criticalFindings,
+  })
+  if (directives.allowedClaimIds.length === 0) {
+    return {
+      composition: input.composition,
+      reviews: input.reviews,
+      blockReviews: input.blockReviews,
+      requiredReviewClaimIds: input.requiredReviewClaimIds,
+      attempts: [],
+      attempted: false,
+    }
+  }
+
   input.assertBeforeRepairCall?.()
   const repairedComposition = await composeAiDailyFacts({
     evidence: input.evidence,
@@ -521,6 +561,7 @@ export async function repairAiDailyCompositionQuality(input: {
       reviews: input.reviews,
       blockReviews: input.blockReviews,
       findings: criticalFindings,
+      directives,
     },
   })
   if (!repairedComposition.ok) {
@@ -564,6 +605,121 @@ export async function repairAiDailyCompositionQuality(input: {
 
 export function isAiDailyContentQualityRepairableFindingCode(value: string) {
   return (aiDailyContentQualityRepairableFindingCodes as readonly string[]).includes(value)
+}
+
+export function buildAiDailyCompositionQualityRepairDirectives(input: {
+  evidence: AiDailyGenerationEvidence[]
+  claims: AiDailyAtomicClaim[]
+  composition: AiDailyComposition
+  reviews: AiDailyClaimReview[]
+  blockReviews: AiDailyCompositionBlockReview[]
+  findings: AiDailyGenerationFinding[]
+}): AiDailyCompositionQualityRepairDirectives {
+  const evidenceById = new Map(input.evidence.map((item) => [item.evidenceId, item]))
+  const reviewsByClaimId = new Map(input.reviews.map((review) => [review.claimId, review]))
+  const blockReviewsById = new Map(input.blockReviews.map((review) => [review.blockId, review]))
+  const findingClaimIds = new Set(
+    input.findings
+      .filter((finding) => (
+        finding.severity === 'critical' &&
+        ['official-evidence-required', 'verifier-insufficient', 'verifier-contradicted'].includes(finding.code)
+      ))
+      .map((finding) => finding.claimId)
+      .filter((claimId): claimId is string => Boolean(claimId)),
+  )
+  const excludedClaimIds = input.claims
+    .filter((claim) => {
+      const review = reviewsByClaimId.get(claim.claimId)
+      return (
+        findingClaimIds.has(claim.claimId) ||
+        claim.directSupport === false ||
+        claim.conflictingEvidenceIds.length > 0 ||
+        (requiresOfficialEvidence(claim) && !claim.evidenceIds.some((id) => evidenceById.get(id)?.sourceKind === 'official')) ||
+        review?.verdict === 'contradicted' ||
+        review?.verdict === 'insufficient'
+      )
+    })
+    .map((claim) => claim.claimId)
+  const excludedClaimIdSet = new Set(excludedClaimIds)
+  const criticalBlockIds = new Set(
+    input.findings
+      .filter((finding) => finding.severity === 'critical' && finding.blockId)
+      .map((finding) => finding.blockId as string),
+  )
+  const removeEventIds = new Set<string>()
+  const rewriteBlockIds = new Set<string>()
+  const removeTrendBlockIds = new Set<string>()
+
+  for (const event of input.composition.events) {
+    if (event.claimIds.some((claimId) => excludedClaimIdSet.has(claimId))) {
+      removeEventIds.add(event.eventId)
+    }
+  }
+  input.composition.trends.forEach((trend, index) => {
+    const blockId = `composition:trend:${index + 1}`
+    if (trend.claimIds.some((claimId) => excludedClaimIdSet.has(claimId))) {
+      removeTrendBlockIds.add(blockId)
+    }
+  })
+
+  for (const blockId of criticalBlockIds) {
+    if (blockId.startsWith('composition:trend:')) {
+      removeTrendBlockIds.add(blockId)
+      continue
+    }
+    const eventMatch = /^event:(.+):(title|fact-summary|why-it-matters)$/u.exec(blockId)
+    if (eventMatch?.[1] && blockReviewsById.get(blockId)?.correctedText === null) {
+      removeEventIds.add(eventMatch[1])
+      continue
+    }
+    rewriteBlockIds.add(blockId)
+  }
+
+  const removeEventClaimIds = uniqueStrings(
+    input.composition.events
+      .filter((event) => removeEventIds.has(event.eventId))
+      .flatMap((event) => event.claimIds),
+  )
+
+  for (const blockId of ['composition:title', 'composition:subtitle', 'composition:introduction']) {
+    if (criticalBlockIds.has(blockId) || excludedClaimIds.length > 0) rewriteBlockIds.add(blockId)
+  }
+
+  return {
+    targetLanguage: 'zh-CN',
+    allowedClaimIds: input.claims
+      .map((claim) => claim.claimId)
+      .filter((claimId) => !excludedClaimIdSet.has(claimId)),
+    excludedClaimIds,
+    removeEventIds: [...removeEventIds],
+    removeEventClaimIds,
+    rewriteBlockIds: [...rewriteBlockIds],
+    removeTrendBlockIds: [...removeTrendBlockIds],
+  }
+}
+
+export function validateAiDailyCompositionQualityRepairOutput(
+  composition: AiDailyComposition,
+  directives: AiDailyCompositionQualityRepairDirectives,
+) {
+  const issues: string[] = []
+  const allowedClaimIds = new Set(directives.allowedClaimIds)
+  const usedClaimIds = collectCompositionClaimIds(composition)
+  if (usedClaimIds.some((claimId) => !allowedClaimIds.has(claimId))) {
+    issues.push('quality-repair-disallowed-claim-retained')
+  }
+  const removedEventIds = new Set(directives.removeEventIds)
+  if (composition.events.some((event) => removedEventIds.has(event.eventId))) {
+    issues.push('quality-repair-event-not-removed')
+  }
+  const removedEventClaimIds = new Set(directives.removeEventClaimIds)
+  if (composition.events.some((event) => event.claimIds.some((claimId) => removedEventClaimIds.has(claimId)))) {
+    issues.push('quality-repair-removed-event-claim-retained')
+  }
+  if (!hasAiDailyChineseEditorialLanguage(composition)) {
+    issues.push('composition-language-required')
+  }
+  return issues
 }
 
 export function finalizeAiDailyGeneration(input: {
@@ -868,6 +1024,9 @@ export function validateAiDailyComposition(input: {
     ...input.composition.trends.map((trend) => trend.text),
   ].join('\n')
   if (/https?:\/\//iu.test(compositionText)) findings.push({ severity: 'critical', code: 'generated-url-forbidden' })
+  if (!hasAiDailyChineseEditorialLanguage(input.composition)) {
+    findings.push({ severity: 'critical', code: 'composition-language-required' })
+  }
   if (/(史上最|绝对|彻底|颠覆一切|guaranteed|best ever|revolutionary)/iu.test(compositionText)) {
     findings.push({ severity: 'review', code: 'sensational-wording' })
   }
@@ -1288,6 +1447,16 @@ function collectCompositionClaimIds(composition: AiDailyComposition) {
     ]),
     ...composition.trends.flatMap((trend) => trend.claimIds),
   ])
+}
+
+function hasAiDailyChineseEditorialLanguage(composition: AiDailyComposition) {
+  return [
+    composition.title,
+    composition.subtitle,
+    composition.introduction.text,
+    ...composition.events.flatMap((event) => [event.title, event.factSummary.text, event.whyItMatters.text]),
+    ...composition.trends.map((trend) => trend.text),
+  ].every((text) => /\p{Script=Han}/u.test(text))
 }
 
 function buildAiDailyComposerEvidenceContext(evidence: AiDailyGenerationEvidence[]) {

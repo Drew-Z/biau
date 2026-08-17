@@ -190,7 +190,12 @@ function fixtureCompose(
 ): AiDailyComposition {
   const payload = asRecord(request.payload)
   const claims = Array.isArray(payload.claims) ? payload.claims.filter(isAtomicClaim) : []
-  const selected = claims.slice(0, 8)
+  const qualityRepair = asRecord(payload.qualityRepair)
+  const directives = asRecord(qualityRepair.directives)
+  const allowedClaimIds = new Set(readStringArray(directives.allowedClaimIds))
+  const selected = (allowedClaimIds.size > 0
+    ? claims.filter((claim) => allowedClaimIds.has(claim.claimId))
+    : claims).slice(0, 8)
   const first = selected[0]
   if (!first) {
     return {
@@ -209,7 +214,7 @@ function fixtureCompose(
       claimIds: [first.claimId],
     },
     events: selected.map((claim, index) => ({
-      eventId: `event-${index + 1}`,
+      eventId: allowedClaimIds.size > 0 ? `repair-event-${index + 1}` : `event-${index + 1}`,
       title: `技术更新 ${index + 1}`,
       factSummary: {
         text: hallucinated && index === 0 ? '该模型已经实现完全自主意识，且无需任何人工监督。' : claim.text,
@@ -344,4 +349,8 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function readString(value: unknown) {
   return typeof value === 'string' ? value : ''
+}
+
+function readStringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }

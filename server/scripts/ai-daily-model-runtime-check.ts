@@ -249,6 +249,10 @@ try {
     'sourceKind=official',
     'publisherDomain',
     'qualityRepair',
+    'allowedClaimIds',
+    'removeEventIds',
+    'removeEventClaimIds',
+    '简体中文',
     'contradicted/insufficient',
   ]) {
     assert(composerPrompt.includes(required), `composer prompt must describe validator contract: ${required}`)

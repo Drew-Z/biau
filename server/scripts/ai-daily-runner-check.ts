@@ -229,7 +229,7 @@ async function main() {
   const rejected = await runAiDailyGenerationWorkflow({
     runId: 'run-rejected',
     evidence,
-    providers: buildAiDailyGenerationProvidersFixture({ verifier: { verifierVerdict: 'contradicted' } }),
+    providers: buildAiDailyGenerationProvidersFixture({ verifier: { verifierCompositionVerdict: 'insufficient' } }),
     store: rejectedStore,
   })
   expectEqual(rejected.result.status, 'REJECTED', 'critical finding status')
@@ -249,7 +249,7 @@ async function main() {
   const repairedStore = new FixtureRunnerStore()
   const repairProviders = buildAiDailyGenerationProvidersFixture({
     verifier: {
-      verifierVerdict: 'contradicted',
+      verifierVerdict: 'entailed',
       verifierCompositionVerdict: 'insufficient',
       verifierVerdictAfterQualityRepair: 'entailed',
       verifierCompositionVerdictAfterQualityRepair: 'entailed',
@@ -285,6 +285,16 @@ async function main() {
     if (Object.hasOwn(firstEvidenceContext, forbidden)) throw new Error(`composer evidence context exposed ${forbidden}`)
   }
   if (!observedComposerPayloads[1]?.qualityRepair) throw new Error('repair composer payload must include qualityRepair')
+  const repairPayload = observedComposerPayloads[1].qualityRepair as Record<string, unknown>
+  const directives = repairPayload.directives as Record<string, unknown> | undefined
+  if (!directives) throw new Error('repair composer payload must include deterministic directives')
+  expectEqual(directives.targetLanguage, 'zh-CN', 'repair target language')
+  if (!Array.isArray(directives.allowedClaimIds) || directives.allowedClaimIds.length === 0) {
+    throw new Error('repair directives must include a bounded allowed claim set')
+  }
+  for (const field of ['excludedClaimIds', 'removeEventIds', 'removeEventClaimIds', 'rewriteBlockIds', 'removeTrendBlockIds']) {
+    if (!Array.isArray(directives[field])) throw new Error(`repair directives missing ${field}`)
+  }
   const repairedVerifyPayload = repairedStore.checkpoints.get('run-quality-repaired')?.get('VERIFY')?.payload as
     | Record<string, unknown>
     | undefined
