@@ -56,7 +56,7 @@ The verifier receives both the risk-classified claims and every generated compos
 
 The composer receives a bounded evidence projection rather than claims alone. The projection owns `evidenceId`, source role/tier, publisher, public publisher domain, publication time, and a bounded excerpt; it omits full URLs, content hashes, locators, provider identity, and arbitrary evidence fields. This lets the prompt enforce the same official-evidence and independent-domain rules that deterministic validation owns without widening the persisted or browser diagnostics boundary.
 
-After one schema-valid composer output and one schema-valid verifier output, deterministic validation may authorize exactly one content-quality repair cycle. Every critical finding must be in the fixed repairable set: `composition-verifier-insufficient`, `composition-verifier-contradicted`, `official-evidence-required`, `verifier-insufficient`, `verifier-contradicted`, or `trend-independent-sources-required`. The repair receives the normalized composition, fixed findings, verifier reviews, claims, and bounded evidence projection; it performs one composer call and one verifier call, with the existing one-schema-repair allowance inside each role. A non-repairable finding, provider/schema failure, deadline breach, or second deterministic rejection stops without another quality loop or a weaker floor.
+After one schema-valid composer output and one schema-valid verifier output, deterministic validation may authorize exactly one content-quality repair cycle. Every critical finding must be in the fixed repairable set: `composition-language-required`, `composition-verifier-insufficient`, `composition-verifier-contradicted`, `official-evidence-required`, `verifier-insufficient`, `verifier-contradicted`, or `trend-independent-sources-required`. The repair receives the normalized composition, fixed findings, verifier reviews, claims, bounded evidence projection, and server-derived removal/rewrite directives; it performs one composer call and one verifier call, with the existing one-schema-repair allowance inside each role. A non-repairable finding, provider/schema failure, deadline breach, empty publishable claim set, or second deterministic rejection stops without another quality loop or a weaker floor.
 
 The durable stage list remains unchanged. `COMPOSE` stores the first schema-valid composition. `VERIFY` owns first verification plus the optional repair/reverification unit and stores the final composition, final reviews, and all bounded attempts. New checkpoint reads validate the final composition; legacy `VERIFY` checkpoints without it fall back to the `COMPOSE` checkpoint. Replay of a completed `VERIFY` checkpoint makes no model call.
 
@@ -77,6 +77,69 @@ The automatic checks use fixture providers only. `ai-daily:run`, `ai-daily:compo
 The authenticated Studio product entry is `POST /studio/api/ai-daily/issues/:id/live-run`. It requires the current issue `updatedAt`, a bounded actor, and the exact `RUN_APPROVED_PRODUCTION_EDITION` confirmation value. Before returning `202`, it revalidates the production flag, runtime/approval binding, issue version, selection authority, and at least three complete ready selected evidence records, then writes the existing durable `PRODUCTION` run/work item. It never turns on the production flag itself. A Studio-process worker polls only already-queued production work, claims it through the shared lease, reuses the same execution service as the CLI, and resumes from immutable checkpoints after restart. Multiple Studio instances remain fenced by the database lease.
 
 The live provider boundary is the OpenAI-compatible Responses API with a structured JSON response. Every runtime channel uses `protocol: "responses"`; Chat Completions is not an AI Daily fallback. The request deliberately omits optional sampling fields such as `temperature` because relay compatibility is not guaranteed. Runtime channels carry private base URLs and keys only in deployment environment; candidate records and approval bundles retain provider/failure-domain aliases, model identifiers, aggregate quality, latency, usage summaries, and hashes, never endpoints, credentials, prompts, source text, raw outputs, or raw provider errors.
+
+## Scenario: Deterministic quality repair directives and Chinese editorial floor
+
+### 1. Scope / Trigger
+
+- Trigger: changing the content-quality repairable finding set, claim/event/trend deletion rules, repair payload, or language requirements for public-facing AI Daily text.
+- Goal: make repair a bounded server-owned transformation contract instead of asking the model to infer which unsupported content must disappear.
+
+### 2. Signatures
+
+- `buildAiDailyCompositionQualityRepairDirectives(input) -> AiDailyCompositionQualityRepairDirectives` derives one bounded directive set from evidence, claims, composition, reviews, block reviews, and critical findings.
+- `validateAiDailyCompositionQualityRepairOutput(composition, directives) -> string[]` rejects a repaired composition that retains forbidden claims/events or lacks Chinese editorial text.
+- `AiDailyCompositionQualityRepairDirectives` contains `targetLanguage`, `allowedClaimIds`, `excludedClaimIds`, `removeEventIds`, `removeEventClaimIds`, `rewriteBlockIds`, and `removeTrendBlockIds`.
+- `aiDailyGenerationPromptVersion` is `ai-daily-prompt-v7`; every v6 or earlier proposal/bundle is stale.
+
+### 3. Contracts
+
+- `targetLanguage` is exactly `zh-CN`. Every final title, subtitle, introduction, event title/summary/impact, and trend block must contain Chinese editorial text; product names and technical abbreviations may remain in their original form.
+- A claim is excluded when it lacks direct support, has conflicting evidence, needs but lacks official evidence, or is contradicted/insufficient in the verifier result or critical findings. Only `allowedClaimIds` may appear in the replacement composition.
+- An event using an excluded claim is removed as a whole. Its claim ids enter `removeEventClaimIds`, so changing only the event id cannot recreate the same removed event. A trend using an excluded claim or carrying a critical trend block finding is removed.
+- Critical subtitle/introduction/title blocks are rewritten narrowly from allowed claims. A critical event block with `correctedText=null` removes the event rather than authorizing a new inference.
+- If no allowed claim remains, no repair provider call is made and deterministic validation keeps the Edition rejected. Repair never weakens official-evidence, independent-domain, contradicted, insufficient, schema, checkpoint, or deadline gates.
+
+### 4. Validation & Error Matrix
+
+- Repaired output uses an id outside `allowedClaimIds` -> schema repair issue `quality-repair-disallowed-claim-retained`.
+- Repaired output retains an exact removed event id -> `quality-repair-event-not-removed`.
+- Repaired output renames an event but retains any `removeEventClaimIds` claim -> `quality-repair-removed-event-claim-retained`.
+- Any final editorial text block contains no Han character -> critical `composition-language-required`.
+- No allowed claim remains -> skip the repair call and preserve the original deterministic rejection.
+- A repaired composition passes these checks but fails the verifier or deterministic evidence rules -> `REJECTED`; do not start a second quality cycle.
+
+### 5. Good / Base / Bad Cases
+
+- Good: one unsupported release claim is removed with its event, supported claims are rewritten into Chinese, the single re-verification passes, and the resulting composition becomes eligible.
+- Base: every claim requires unavailable official evidence. The runner spends zero repair calls and remains rejected.
+- Bad: rename `event-1` to `event-new` while retaining the removed claim, or keep an English-only replacement because the JSON schema is otherwise valid.
+
+### 6. Tests Required
+
+- `npm.cmd run ai-daily:quality-check` must assert directive derivation, renamed-event fencing, deletion-based recovery, no-call behavior for an empty publishable claim set, and the English-only deterministic rejection.
+- `npm.cmd run ai-daily:runner-check` must assert the repair composer receives every directive field and that the existing single composer/single verifier repair budget and checkpoint replay rules remain intact.
+- `npm.cmd run ai-daily:model-runtime-check` must assert the composer system prompt names the claim/event fencing rules and simplified-Chinese requirement while `externalProviderCalls=0`.
+- Keep all three checks in `ai-daily:contracts-check`; also run `server:build`, `lint`, `build`, `performance:check`, documentation gates, `git diff --check`, and a sensitive-value scan before commit.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+qualityRepair: { findings, previousComposition }
+// Trust the model to decide which unsupported claims or events to remove.
+```
+
+#### Correct
+
+```ts
+const directives = buildAiDailyCompositionQualityRepairDirectives(input)
+if (directives.allowedClaimIds.length === 0) return rejectedWithoutRepairCall()
+qualityRepair: { findings, previousComposition, directives }
+```
+
+The server owns the publishable subset and validates the replacement before re-verification; the model cannot restore excluded content by renaming it.
 
 ## Scenario: Bounded generation provider failure persistence
 
@@ -388,7 +451,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - A production transport-identity replacement is backup-first. Copy the current stable Secret File to a new bounded backup name, read it back, and verify both raw content identity and its canonical bundle hash before replacing the stable mount. After updating the stable file, runtime JSON, and expected hash, read back all three, keep generation/business-evaluation/public-feed disabled, deploy once, and run the offline approval check plus health/auth/route/Cron observations. These checks must make zero model calls and do not approve a real Edition.
 - Studio workspace generation diagnostics are a read-only projection of existing `EXTRACT_FACTS`, `COMPOSE`, and `VERIFY` checkpoint attempts. The authenticated DTO exposes only stage, role, slot, bounded call count, fixed outcome, fixed error category, an allowlisted failure code, and the four fixed response-diagnostic literals described below. It must omit candidate/provider/model identity, endpoint, prompt, input/output, raw response, credential, and arbitrary checkpoint fields. This projection requires no migration and must never create a new model call.
 - AI Daily Structured Outputs requests use Responses SSE with a fixed `max_output_tokens=8192`. The channel timeout is an inactivity budget: response headers and each accepted stream chunk re-arm it. Raw SSE transport bytes and retained structured text have separate ceilings: `MAX_RESPONSES_STREAM_BYTES=2_097_152` permits bounded reasoning/metadata envelopes, while `MAX_RESPONSES_TEXT_CHARS=64_000` still rejects oversized model content. Composer and verifier requests additionally use role-owned minimum wait floors `aiDailyComposerTimeoutFloorMs=120000` and `aiDailyVerifierTimeoutFloorMs=120000`; an explicitly larger channel timeout remains authoritative, while a smaller configured timeout cannot terminate long structured drafting/review payloads before they have a fair response window. A transport timeout changes the prompt contract and requires a fresh approval bundle before production generation can claim work; it must not be worked around by probing unapproved catalog models.
-- Evidence-aware composition and the bounded verifier-driven quality repair use `ai-daily-prompt-v6`. The prompt requires official support for release/date/price/API/availability claims, two publisher domains for trends, and deletion or contraction of contradicted/insufficient prose. Because this changes prompt behavior and maximum successful call shape, every earlier approval bundle is stale and must be replaced before production generation is enabled.
+- Evidence-aware composition and the bounded verifier-driven quality repair use `ai-daily-prompt-v7`. The prompt requires simplified-Chinese editorial blocks, official support for release/date/price/API/availability claims, two publisher domains for trends, and deterministic deletion or contraction of contradicted/insufficient prose. The repair payload carries a server-derived publishable claim set plus explicit event/trend removal and block-rewrite directives. Because this changes prompt behavior and the repair request contract, every v6 or earlier approval bundle is stale and must be replaced before production generation is enabled.
 - Failed Structured Outputs attempts may additionally retain only four fixed low-sensitive response diagnostics: an allowlisted response-shape enum, stream-completion enum, bounded length bucket, and structured-JSON parse-shape enum. Legacy checkpoints restore missing fields as `null`; unknown persisted values fail checkpoint restoration, and the Studio/backend/browser boundary revalidates the same allowlists. Raw response text, arbitrary event names, exact lengths, provider identifiers, and dynamic parse errors remain forbidden. A successful attempt and non-response failure record these fields as `null`.
 
 ### 4. Validation & Error Matrix
@@ -412,7 +475,9 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Missing response-diagnostic fields in a legacy attempt -> restore all four as `null`; an unknown non-null response-diagnostic value -> `ai-daily-checkpoint-schema-invalid` before any provider call.
 - HTTP `200` with syntactically valid JSON but no recognized Responses or Chat Completions envelope -> `invalid_response` with `responseShape=invalid_payload`, not `empty_response`.
 - Raw SSE bytes over `2_097_152` or retained structured text over `64_000` characters -> `invalid_response` with `lengthBucket=oversized`; diagnostics never retain the exact length or raw envelope.
-- A deterministic rejection containing only the fixed repairable content findings -> at most one composer repair and one verifier recheck; a second rejection remains `REJECTED`.
+- A deterministic rejection containing only the fixed repairable content findings -> derive the bounded directives, then use at most one composer repair and one verifier recheck; a second rejection remains `REJECTED`.
+- English-only title/subtitle/introduction/event/trend text -> `composition-language-required`; the bounded repair may rewrite it once, but every final editorial block must contain Chinese text.
+- Empty `allowedClaimIds` after evidence/review filtering -> no repair call and the original rejection remains terminal.
 - Any structural, checkpoint, unknown-claim/evidence, or non-allowlisted critical finding -> no content repair call; reject immediately.
 - Approved prompt drift -> `ai-daily-model-approval-prompt-version-drift`; generation schema drift -> `ai-daily-model-approval-generation-schema-version-drift` before any provider call.
 - Manual selection without either explicit acknowledgement -> `ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required`; unknown artifact fields, role-order drift, fake metrics, or a mismatched candidate role fail closed.
@@ -453,8 +518,8 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Record only the proposal/bundle hashes, backup filename, deploy id, low-sensitive runtime counts/aliases, disabled safety flags, route status classes, Cron absence, and zero-call result. Do not record the direct base URL, API key, raw runtime JSON, Secret File contents, or provider response.
 - Run `npm.cmd run studio:ai-daily-workspace-check` after changing checkpoint diagnostics. Assert the backend and browser decoders preserve the fixed attempt classification and call count while dropping provider/candidate identity, endpoint, raw response, authorization material, and unknown fields.
 - Run `npm.cmd run ai-daily:model-runtime-check` after changing the AI Daily Responses transport. The loopback provider must assert `stream=true`, the fixed output-token ceiling, strict role schema, SSE structured-output decoding, a reasoning-only envelope above the former `512KB` transport limit followed by valid structured content, and `externalProviderCalls=0`.
-- `npm.cmd run ai-daily:runner-check` must prove the initial composer receives only the bounded evidence projection, the repair composer receives `qualityRepair`, successful repair adds exactly one composer and verifier attempt, persistent rejection stops after that pair, final `VERIFY` replay makes no calls, and legacy `VERIFY` checkpoints remain readable.
-- `npm.cmd run ai-daily:quality-check` must prove every fixed repairable finding code, reject non-allowlisted structural findings from the repair trigger, and preserve the official-evidence floor after an unsuccessful repair.
+- `npm.cmd run ai-daily:runner-check` must prove the initial composer receives only the bounded evidence projection, the repair composer receives every deterministic `qualityRepair.directives` field, successful repair adds exactly one composer and verifier attempt, persistent rejection stops after that pair, final `VERIFY` replay makes no calls, and legacy `VERIFY` checkpoints remain readable.
+- `npm.cmd run ai-daily:quality-check` must prove every fixed repairable finding code, reject non-allowlisted structural findings from the repair trigger, prevent renamed events from restoring removed claims, require Chinese editorial text, recover by deleting an unsupported official claim when a supported subset remains, and preserve the official-evidence floor without a repair call when no publishable claim remains.
 - Responses transport fixtures must cover normal and code-fenced JSON, embedded/truncated/malformed/no-JSON results, unexpected non-SSE envelopes, delta-only streams, `output_text.done`, `response.completed`, and completion-event precedence without contacting an external provider.
 - Keep every non-trivial Prisma `include` used by the Studio workspace in a named object with `satisfies Prisma.<Model>Include`. The public DTO may expose a stable alias such as `overrides`, but the database query must use the exact Prisma relation name (`editorialOverrides`). This compile-time contract prevents fixture-only DTO checks from hiding a production `Unknown field` query failure.
 - Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.

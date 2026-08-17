@@ -4,7 +4,7 @@
 
 ## 当前结论
 
-潮讯 TideBrief 当前为 **工程就绪，CPA 真实 Edition 已到 verifier 但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 attempt 10 再次由 extractor 与 composer 成功推进到 verifier，但 verifier 返回不可解析 JSON，生成 revision 被自动拒绝并丢弃，未进入人工审核或发布。
+潮讯 TideBrief 当前为 **工程就绪，CPA v6 真实 Edition 已完成三角色及一次质量修复，但产品仍待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 Run `cmsxar81600004bal6qbas8wr` 的六次角色调用全部成功，但 Revision 14 仍因三个范围膨胀文本块与一个缺少官方证据的 claim 被自动拒绝并丢弃，未进入人工审核或发布。v7 确定性删减与中文门槛已通过零外呼检查，尚待新 proposal 批准和交付。
 
 ## 验收矩阵
 
@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | 来源发现 | 33 个来源、10 个查询组、启用/暂缓/拒绝状态与零网络 fixture | 已通过 | 真实 Edition 保留标题、URL、发布时间/抓取时间与来源等级 |
 | 证据、时效与去重 | evidence、freshness、dedupe、ranking 与负向案例 | 已通过 | 编辑者核对候选相关性、重复项、过期项和 Tier 1 证据 |
-| 三角色生成 | approval bundle、runtime drift、runner resume/deadline 与 30 个 golden case | extractor/composer 真实调用通过；verifier 待修复 | 获批 runtime 完成一次通过 verifier 的真实 Edition 生成 |
+| 三角色生成 | approval bundle、runtime drift、runner resume/deadline、确定性质量 repair 与 30 个 golden case | 三角色与一次 repair/reverify 真实调用通过；最终内容质量待通过 | 获批 v7 runtime 生成一份通过确定性验证的真实 Edition |
 | 人工审核 | needs-changes、checklist、revision、review policy 与 optimistic token | 已通过 | Studio 人工修订并批准最终内容与引用 |
 | Publish Export | draft/review/version 绑定、公开 payload schema 与回滚契约 | 已通过 | 对同一 Edition 创建 Export，审查静态内容 diff 并部署 |
 | 公开 Feed 与详情 | CORS、ETag、分页、fresh/stale/empty/404/410/network 状态 | 已通过合同与 UI fixture；待生产观察 | 桌面和手机验收 Feed、详情、引用、`304` 与撤回语义 |
@@ -85,9 +85,21 @@ npm run check:ui
 | 关闭窗口 | production generation 已恢复为 `false`；关闭部署 `dep-da1e4j7lk1mc739r5bjg` live，队列与活动阶段为 0，Feed=`404`，error-level 日志为 0 |
 | 零外呼修复 | `ai-daily-prompt-v6` 增加受限 evidence 上下文和一次 verifier 驱动的 composer 修复/复核；第二次仍不通过或出现结构 finding 时保持拒绝。26 项合同及构建/性能/文档门禁通过，`externalProviderCalls=0`；当前 v5 bundle 因 prompt 漂移失效，修复尚未部署或调用模型 |
 
+## 2026-08-17 CPA v6 真实 Edition（Revision 14）
+
+| 环节 | 低敏结果 |
+| --- | --- |
+| 已交付合同 | 手动静态 bundle hash `8481cd3b66f91054625290034340a49ddddb5063c5e2e87a2477a6c2d60d1a3a`，绑定 `ai-daily-prompt-v6` / `ai-daily-generation-v2`；proposal/bundle 创建与交付校验均为零模型调用 |
+| 唯一提交 | 获得单独明确批准后只提交一次；Run `cmsxar81600004bal6qbas8wr` 终态为 `COMPLETED_WITH_GAPS` |
+| 生成结果 | 两次 extractor、两次 composer 和两次 verifier 全部成功，证明初稿、首轮验证、单次质量 repair 与 reverify 均执行完成 |
+| Revision | Revision 14 `cmsxauh6s000c4bal87hkuhip` 为 `REJECTED` / `DISCARDED`；`composition:subtitle`、`composition:introduction`、`event:evt-openai-bedrock:why-it-matters` 为 `scope_inflation`，claim `grok-bot-launch` 为 `official-evidence-required` |
+| 审核与发布 | 未创建 draft，未执行 Studio review、Publish Export、内容部署或公开 Feed |
+| 关闭窗口 | 恢复部署 `dep-da1h7mnqj5pc73d21le0` live；production generation 与 stage diagnostics 均 disabled，队列/backlog/活动阶段/expired lease 为 0，Feed=`404`，error-level 日志为 0 |
+| v7 零外呼修复 | 后端派生允许/排除 claim、删除 event/event-claim/trend 与重写 block 指令，阻止改名恢复已删事件；每个最终编辑块必须包含简体中文，无可发布 claim 时跳过 repair 调用并 fail closed。27 项合同及构建/性能/文档门禁通过，`externalProviderCalls=0`；v6 bundle 因 prompt 漂移失效 |
+
 ## 最后人工 gate
 
-1. 为 `ai-daily-prompt-v6` 生成新的零调用 proposal/bundle，取得明确批准并完成 Render Secret File/hash 与禁用态部署校验。
-2. 部署后重新取得一次单独的真实 Edition 明确批准，再完成生成、Studio 人工修订与批准；不得用直接重试或无意义测活代替业务验收。
+1. 为 `ai-daily-prompt-v7` 生成零调用 pending proposal并核对 hash；取得明确 proposal 批准后才创建 bundle、更新 Render Secret File/hash，并完成禁用态部署校验。
+2. 交付后重新取得一次单独的真实 Edition 明确批准，要求生成结果通过确定性内容验证，再完成 Studio 人工修订与批准；不得用直接重试或无意义测活代替业务验收。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。
