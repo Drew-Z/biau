@@ -4,7 +4,7 @@
 
 ## 当前结论
 
-潮讯 TideBrief 当前为 **工程就绪，CPA 真实 Edition 已到 verifier 但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 attempt 9 的 extractor 与 composer 已成功，但 verifier 返回不可解析 JSON，生成 revision 被自动拒绝并丢弃，未进入人工审核或发布。
+潮讯 TideBrief 当前为 **工程就绪，CPA 真实 Edition 已到 verifier 但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 attempt 10 再次由 extractor 与 composer 成功推进到 verifier，但 verifier 返回不可解析 JSON，生成 revision 被自动拒绝并丢弃，未进入人工审核或发布。
 
 ## 验收矩阵
 
@@ -62,9 +62,21 @@ npm run check:ui
 | 关闭窗口 | production generation 立即恢复为 `false`；关闭部署 `dep-da15avou01pc739gokkg` live，workspace=`disabled`，关闭启动检查仍为 `networkCalls=0` |
 | 结论 | 当前证据不能区分模型自身输出非法 JSON 与 CPA 丢失 Structured Outputs/SSE 响应形状；先完成 verifier 实质修复，再重新交付和批准一次真实 Edition |
 
+## 2026-08-17 CPA 真实 Edition（attempt 10）
+
+| 环节 | 低敏结果 |
+| --- | --- |
+| 生产配置 | 继续使用同一获批 CPA bundle；开启部署 `dep-da15rsm7bikc738e0b4g` live，启动检查 `networkCalls=0`、1 channel、3 candidates、1 failure domain |
+| 唯一提交 | 受保护入口只提交一次、客户端不重试并返回 `202`；Run `cmswjo7dx00004aiv12tusgck`、work item `cmswjo7gn00014aiv2uzki1dk`、attempt 10 |
+| 生成结果 | 两次 extractor 与一次 composer 调用成功；唯一 verifier 调用再次失败为 `provider_invalid_json` / `verifier-schema-or-provider-failure`；Run 终态 `COMPLETED_WITH_GAPS` |
+| Revision | Revision 9 `cmswjravo000c4aivuw4me2ad` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，`REJECTED` / `DISCARDED`，0 个内容块且无 projection draft |
+| 审核与发布 | 未自动重试，未创建 ContentDraft，未执行 Studio review、Publish Export、内容部署或公开 Feed |
+| 关闭窗口 | production generation 立即恢复为 `false`；关闭部署 `dep-da163spt0dsc73b3j8v0` live，workspace=`disabled`，全局队列和活动阶段清空，Feed=`404`，error-level 日志为 0 |
+| 结论 | 与 attempt 9 相同的 verifier 失败被再次复现；下一步必须先增加低敏 Responses/SSE 响应形状诊断并完成实质修复，不再对未改变 bundle 直接重试 |
+
 ## 最后人工 gate
 
-1. 定位并修复 verifier 的 Responses Structured Output 兼容性；不得用直接重试或无意义测活代替修复。
+1. 增加低敏 Responses/SSE 响应形状诊断，定位并修复 verifier 的 Structured Output 兼容性；不得用直接重试或无意义测活代替修复。
 2. 修复后的零调用合同、approval/runtime 交付校验通过后，重新取得一次真实 Edition 明确批准，并完成生成、Studio 人工修订与批准。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。

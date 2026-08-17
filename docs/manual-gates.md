@@ -158,9 +158,11 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 2026-08-17 站点所有者随后单独批准一次 CPA bundle 真实 Edition。Studio 的 `CORS_ORIGIN` 先与当前部署的 `https://biau.pages.dev` 对齐，预检返回 `204`、authenticated workspace 返回 `200`；这只修复 Studio 浏览器连接，不代表公开 Feed 已启用。generation-only 部署 `dep-da157vflk1mc73983h0g` live 后，启动校验确认 bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`、`networkCalls=0`、1 channel、3 candidates、1 failure domain。Studio “确认并入队”只点击一次并返回 `202`，创建 Run `cmswhrctl000049hzeb6mvay4` / work item `cmswhrcw0000149hz0mhjihmi`，`attemptNumber=9`。Run 终态为 `COMPLETED_WITH_GAPS`：两次 extractor 调用和一次 composer 调用成功，唯一 verifier 调用以 `provider_invalid_json` / `verifier-schema-or-provider-failure` 失败。Revision 8 `cmswhuytl000c49hziau5us19` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，自动进入 `REJECTED` / `DISCARDED`，0 个内容块且没有 projection draft。未重试，未执行 Studio review、Publish Export、内容部署或公开发布。generation 随即恢复为 `false`，关闭部署 `dep-da15avou01pc739gokkg` 已 `live`；最终 workspace 显示 production generation=`disabled`，关闭实例启动校验仍为 `networkCalls=0`。
 
+同日站点所有者再次明确批准一个额外的受控真实 Edition，继续使用同一 CPA bundle。generation-only 部署 `dep-da15rsm7bikc738e0b4g` 达到 `live`，启动交付检查仍为 `networkCalls=0`、1 channel、3 candidates、1 failure domain。受保护入口仅提交一次、客户端不重试并返回 `202`，创建 Run `cmswjo7dx00004aiv12tusgck` / work item `cmswjo7gn00014aiv2uzki1dk`，`attemptNumber=10`。两次 extractor 和一次 composer 再次成功；唯一 verifier 调用再次以 `provider_invalid_json` / `verifier-schema-or-provider-failure` 失败，Run 终态仍为 `COMPLETED_WITH_GAPS`。Revision 9 `cmswjravo000c4aivuw4me2ad` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，自动进入 `REJECTED` / `DISCARDED`，0 个内容块且没有 projection draft。未重试，未创建 ContentDraft，未执行 Studio review、Publish Export、内容部署或公开发布。generation 随即恢复为 `false`，关闭部署 `dep-da163spt0dsc73b3j8v0` 已 `live`；最终 workspace 为 `disabled`，全局 `PENDING/LEASED/RETRY_WAIT=0`、活动阶段为 0、expired lease 为 0，Public Feed 仍为 `404`，执行与部署窗口 error-level 日志为 0。该结果复现了 attempt 9 的同一 verifier 兼容性阻塞；在低敏响应形状诊断和实质修复部署、重新批准前，不再提交未改变 bundle 的 Edition。
+
 ### 1. 后续真实版次
 
-- 先完成 verifier Structured Output 的实质性修复，区分模型返回非法 JSON 与网关丢失 Responses `text.format=json_schema` / SSE 输出形状；不得把本次 extractor/composer 成功外推为 verifier 已兼容。
+- 先完成 verifier Structured Output 的低敏响应形状诊断与实质性修复，区分模型返回非法 JSON 与网关丢失 Responses `text.format=json_schema` / SSE 输出形状；不得把连续两次 extractor/composer 成功外推为 verifier 已兼容。
 - 只有修复完成、零调用合同与交付校验通过后，才能重新取得一次“真实 Edition”明确批准；不得直接重试或把 bundle 校验当成真实业务成功。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。
