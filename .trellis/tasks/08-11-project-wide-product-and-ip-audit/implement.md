@@ -178,7 +178,7 @@ Focused checks:
 ### Rollback point
 
 - Failed acceptance keeps the product in `待验收`/degraded state. It does not delete test data automatically or publish a failed Edition.
-- The latest rerun is `COMPLETED_WITH_GAPS` with `promptVersion=ai-daily-prompt-v3` and `validationStatus=REJECTED`; no draft, review, export, deployment, or public Feed exists. Generation, public Feed, and business evaluation are disabled and Cron is not created. Do not perform another real provider call until a substantive production fix is deployed and explicitly approved.
+- The latest approved run is attempt 13 (`cmsx0foyc00004adl7gqiwgfr`), which ended `COMPLETED_WITH_GAPS`: both extractor calls succeeded, the composer exhausted the former bounded raw SSE budget before structured content was parsed, and verifier did not start. No draft, review, export, deployment, or public Feed exists. The substantive zero-call repair is deployed at `19a28f4a` / `dep-da1de83l550s73fe66bg`; production generation, public Feed, and business evaluation remain disabled and Cron is not created. Do not perform another real provider call without a new explicit approval.
 
 ## Final Integration Gate
 
