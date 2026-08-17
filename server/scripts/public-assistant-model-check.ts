@@ -230,6 +230,11 @@ const server = createServer((request, response) => {
       response.end(JSON.stringify({ output_text: 'x'.repeat(65_000) }))
       return
     }
+    if (user.includes('fixture-invalid-envelope')) {
+      response.writeHead(200, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ status: 'ok' }))
+      return
+    }
     if (user.includes('fixture-relay-unreachable')) {
       response.writeHead(502, {
         'Content-Type': 'application/json',
@@ -562,6 +567,15 @@ try {
     timeoutMs: 1_000,
   })
   assert.equal(oversizedResult.failureClass, 'invalid')
+  const invalidEnvelopeResult = await requestResponsesText({
+    channel: fixtureChannel,
+    system: 'fixture',
+    user: 'fixture-invalid-envelope',
+    timeoutMs: 1_000,
+  })
+  assert.equal(invalidEnvelopeResult.failure, 'invalid_response')
+  assert.equal(invalidEnvelopeResult.failureClass, 'invalid')
+  assert.equal(invalidEnvelopeResult.responseShape, 'invalid_payload')
   assert.ok(unsupportedSchema.durationMs >= 0)
   assert.ok(unsupportedSchema.firstActivityMs !== undefined)
 

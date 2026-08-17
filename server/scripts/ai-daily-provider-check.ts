@@ -59,6 +59,27 @@ assertEqual(
   'repair failure must count both primary calls before fallback',
 )
 
+const diagnosticFailure = await runAiDailyGeneration({
+  evidence,
+  providers: buildAiDailyGenerationProvidersFixture({
+    verifier: {
+      providerErrorDiagnostics: {
+        responseShape: 'sse_output_text',
+        streamCompletion: 'delta_only',
+        lengthBucket: 'short',
+        jsonShape: 'truncated_json',
+      },
+    },
+  }),
+  extractionBatchMaxItems: 8,
+})
+const verifierDiagnostic = diagnosticFailure.attempts.find((attempt) => attempt.role === 'verifier')
+assertEqual(verifierDiagnostic?.errorCategory, 'provider_invalid_json', 'verifier response-shape failure category')
+assertEqual(verifierDiagnostic?.responseShape, 'sse_output_text', 'verifier response shape projection')
+assertEqual(verifierDiagnostic?.streamCompletion, 'delta_only', 'verifier stream completion projection')
+assertEqual(verifierDiagnostic?.lengthBucket, 'short', 'verifier response length bucket')
+assertEqual(verifierDiagnostic?.jsonShape, 'truncated_json', 'verifier structured parse shape')
+
 assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-http-400')), 'provider_request_invalid', 'HTTP 400 classification')
 assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-http-401')), 'provider_auth', 'HTTP auth classification')
 assertEqual(classifyAiDailyGenerationProviderError(new Error('ai-daily-provider-http-404')), 'provider_endpoint_unsupported', 'endpoint classification')

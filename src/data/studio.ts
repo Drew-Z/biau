@@ -217,6 +217,37 @@ const studioAiDailyGenerationErrorCategories = [
   'schema_invalid',
   'provider_quality_below_floor',
 ] as const
+const studioAiDailyGenerationResponseShapes = [
+  'responses_output_text',
+  'responses_output_message',
+  'chat_completions_message',
+  'sse_output_text',
+  'sse_chat_delta',
+  'sse_completed_response',
+  'invalid_payload',
+  'unknown',
+] as const
+const studioAiDailyGenerationStreamCompletions = [
+  'none',
+  'delta_only',
+  'output_text_done',
+  'response_completed',
+  'delta_and_completed',
+  'output_text_done_and_completed',
+  'done_marker',
+] as const
+const studioAiDailyGenerationLengthBuckets = ['empty', 'short', 'medium', 'long', 'oversized'] as const
+const studioAiDailyGenerationJsonShapes = [
+  'object',
+  'array',
+  'scalar',
+  'code_fenced',
+  'embedded_json',
+  'truncated_json',
+  'malformed_json',
+  'no_json',
+  'empty',
+] as const
 
 type StudioAiDailyGenerationStage = (typeof studioAiDailyGenerationStages)[number]
 type StudioAiDailyGenerationRole = (typeof studioAiDailyGenerationRoles)[number]
@@ -224,6 +255,10 @@ type StudioAiDailyGenerationSlot = (typeof studioAiDailyGenerationSlots)[number]
 type StudioAiDailyGenerationOutcome = (typeof studioAiDailyGenerationOutcomes)[number]
 type StudioAiDailyGenerationFailureCode = (typeof studioAiDailyGenerationFailureCodes)[number]
 type StudioAiDailyGenerationErrorCategory = (typeof studioAiDailyGenerationErrorCategories)[number]
+type StudioAiDailyGenerationResponseShape = (typeof studioAiDailyGenerationResponseShapes)[number]
+type StudioAiDailyGenerationStreamCompletion = (typeof studioAiDailyGenerationStreamCompletions)[number]
+type StudioAiDailyGenerationLengthBucket = (typeof studioAiDailyGenerationLengthBuckets)[number]
+type StudioAiDailyGenerationJsonShape = (typeof studioAiDailyGenerationJsonShapes)[number]
 
 export interface StudioAiDailyWorkspaceCandidate {
   id: string
@@ -292,6 +327,10 @@ export interface StudioAiDailyWorkspaceRun {
       outcome: StudioAiDailyGenerationOutcome
       calls: number
       errorCategory: StudioAiDailyGenerationErrorCategory | null
+      responseShape: StudioAiDailyGenerationResponseShape | null
+      streamCompletion: StudioAiDailyGenerationStreamCompletion | null
+      lengthBucket: StudioAiDailyGenerationLengthBucket | null
+      jsonShape: StudioAiDailyGenerationJsonShape | null
     }>
   }>
   workItems: Array<{
@@ -987,6 +1026,10 @@ function normalizeWorkspaceRun(value: unknown): StudioAiDailyWorkspaceRun | null
                 outcome,
                 calls: readNumber(attempt.calls),
                 errorCategory: studioAiDailyGenerationErrorCategories.find((entry) => entry === attempt.errorCategory) ?? null,
+                responseShape: studioAiDailyGenerationResponseShapes.find((entry) => entry === attempt.responseShape) ?? null,
+                streamCompletion: studioAiDailyGenerationStreamCompletions.find((entry) => entry === attempt.streamCompletion) ?? null,
+                lengthBucket: studioAiDailyGenerationLengthBuckets.find((entry) => entry === attempt.lengthBucket) ?? null,
+                jsonShape: studioAiDailyGenerationJsonShapes.find((entry) => entry === attempt.jsonShape) ?? null,
               }]
             }).slice(0, 8)
           : []

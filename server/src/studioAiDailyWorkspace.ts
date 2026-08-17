@@ -3,6 +3,12 @@ import { requireStudioDatabase } from './db.js'
 import { summarizeAiDailyEditableContent } from './aiDailyEditionRepository.js'
 import { isAiDailyGenerationProviderErrorCategory } from './aiDailyGeneration.js'
 import { inspectAiDailyProductionReadiness } from './aiDailyStudioProduction.js'
+import {
+  responsesLengthBuckets,
+  responsesResponseShapes,
+  responsesStreamCompletions,
+  responsesStructuredParseShapes,
+} from './responsesApi.js'
 
 type StudioPrisma = ReturnType<typeof requireStudioDatabase>
 
@@ -161,6 +167,10 @@ export function summarizeAiDailyGenerationDiagnostics(
             outcome,
             calls,
             errorCategory: isAiDailyGenerationProviderErrorCategory(record.errorCategory) ? record.errorCategory : null,
+            responseShape: safeLiteral(record.responseShape, responsesResponseShapes),
+            streamCompletion: safeLiteral(record.streamCompletion, responsesStreamCompletions),
+            lengthBucket: safeLiteral(record.lengthBucket, responsesLengthBuckets),
+            jsonShape: safeLiteral(record.jsonShape, responsesStructuredParseShapes),
           }]
         }).slice(0, 8)
       : []

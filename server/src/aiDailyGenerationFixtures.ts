@@ -1,9 +1,11 @@
 import {
   collectAiDailyCompositionReviewTargets,
+  AiDailyGenerationProviderError,
   type AiDailyAtomicClaim,
   type AiDailyComposition,
   type AiDailyGenerationEvidence,
   type AiDailyGenerationProviders,
+  type AiDailyGenerationProviderResponseDiagnostics,
   type AiDailyGenerationRole,
   type AiDailyStructuredGenerationProvider,
   type AiDailyStructuredGenerationRequest,
@@ -92,6 +94,7 @@ interface FixtureProviderOptions {
   duplicateVerifierBlockReview: boolean
   sensationalComposer: boolean
   hallucinatedComposer: boolean
+  providerErrorDiagnostics: AiDailyGenerationProviderResponseDiagnostics | null
 }
 
 function createFixtureProvider(
@@ -111,6 +114,7 @@ function createFixtureProvider(
     duplicateVerifierBlockReview: options.duplicateVerifierBlockReview ?? false,
     sensationalComposer: options.sensationalComposer ?? false,
     hallucinatedComposer: options.hallucinatedComposer ?? false,
+    providerErrorDiagnostics: options.providerErrorDiagnostics ?? null,
   }
   return {
     id: resolved.id,
@@ -118,6 +122,9 @@ function createFixtureProvider(
     slot: resolved.slot,
     qualityScore: resolved.qualityScore,
     async generate(request) {
+      if (resolved.providerErrorDiagnostics) {
+        throw new AiDailyGenerationProviderError('ai-daily-provider-json-invalid', resolved.providerErrorDiagnostics)
+      }
       if (resolved.throwAlways) throw new Error('fixture-provider-error')
       if (resolved.throwOnRepair && request.repair) throw new Error('fixture-provider-repair-error')
       if (resolved.invalidBeforeRepair && !request.repair) return { invalid: true }

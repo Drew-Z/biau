@@ -23,6 +23,12 @@ import {
 } from './aiDailyGeneration.js'
 import { evaluateAiDailyLease } from './aiDailyDomain.js'
 import {
+  responsesLengthBuckets,
+  responsesResponseShapes,
+  responsesStreamCompletions,
+  responsesStructuredParseShapes,
+} from './responsesApi.js'
+import {
   completeAiDailyGenerationRun,
   completeAiDailyWorkItem,
   listAiDailyGenerationCheckpoints,
@@ -543,8 +549,27 @@ function readAttempts(value: unknown): AiDailyGenerationProviderAttempt[] {
     ) {
       throw new Error('ai-daily-checkpoint-schema-invalid')
     }
-    return record as unknown as AiDailyGenerationProviderAttempt
+    return {
+      providerId: record.providerId,
+      role: record.role as AiDailyGenerationProviderAttempt['role'],
+      slot: record.slot as AiDailyGenerationProviderAttempt['slot'],
+      outcome: record.outcome as AiDailyGenerationProviderAttempt['outcome'],
+      calls: record.calls,
+      errorCategory: record.errorCategory as AiDailyGenerationProviderAttempt['errorCategory'],
+      responseShape: readNullableLiteral(record.responseShape, responsesResponseShapes),
+      streamCompletion: readNullableLiteral(record.streamCompletion, responsesStreamCompletions),
+      lengthBucket: readNullableLiteral(record.lengthBucket, responsesLengthBuckets),
+      jsonShape: readNullableLiteral(record.jsonShape, responsesStructuredParseShapes),
+    }
   })
+}
+
+function readNullableLiteral<const T extends readonly string[]>(value: unknown, allowed: T): T[number] | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== 'string' || !(allowed as readonly string[]).includes(value)) {
+    throw new Error('ai-daily-checkpoint-schema-invalid')
+  }
+  return value as T[number]
 }
 
 function readFailureCode(value: unknown) {

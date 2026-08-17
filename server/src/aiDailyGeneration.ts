@@ -6,6 +6,12 @@ import {
   type AiDailyQualityCategory,
   type AiDailyQualityNegativeTag,
 } from './aiDailyQualityContract.js'
+import type {
+  ResponsesLengthBucket,
+  ResponsesResponseShape,
+  ResponsesStreamCompletion,
+  ResponsesStructuredParseShape,
+} from './responsesApi.js'
 
 export const aiDailyGenerationRoles = ['extractor', 'composer', 'verifier'] as const
 export type AiDailyGenerationRole = (typeof aiDailyGenerationRoles)[number]
@@ -32,6 +38,31 @@ export function isAiDailyGenerationProviderErrorCategory(
   value: unknown,
 ): value is AiDailyGenerationProviderErrorCategory {
   return aiDailyGenerationProviderErrorCategories.some((category) => category === value)
+}
+
+export interface AiDailyGenerationProviderResponseDiagnostics {
+  responseShape: ResponsesResponseShape | null
+  streamCompletion: ResponsesStreamCompletion | null
+  lengthBucket: ResponsesLengthBucket | null
+  jsonShape: ResponsesStructuredParseShape | null
+}
+
+export class AiDailyGenerationProviderError extends Error {
+  readonly responseDiagnostics: AiDailyGenerationProviderResponseDiagnostics
+
+  constructor(message: string, responseDiagnostics: AiDailyGenerationProviderResponseDiagnostics) {
+    super(message)
+    this.name = 'AiDailyGenerationProviderError'
+    this.responseDiagnostics = responseDiagnostics
+  }
+}
+
+export function readAiDailyGenerationProviderResponseDiagnostics(
+  error: unknown,
+): AiDailyGenerationProviderResponseDiagnostics {
+  return error instanceof AiDailyGenerationProviderError
+    ? error.responseDiagnostics
+    : emptyAiDailyGenerationProviderResponseDiagnostics()
 }
 
 export const aiDailyClaimTypes = [
@@ -171,6 +202,10 @@ export interface AiDailyGenerationProviderAttempt {
   outcome: 'succeeded' | 'failed' | 'schema-rejected' | 'quality-rejected'
   calls: number
   errorCategory: AiDailyGenerationProviderErrorCategory | null
+  responseShape: ResponsesResponseShape | null
+  streamCompletion: ResponsesStreamCompletion | null
+  lengthBucket: ResponsesLengthBucket | null
+  jsonShape: ResponsesStructuredParseShape | null
 }
 
 export interface AiDailyGenerationFinding {
@@ -890,6 +925,7 @@ async function runGenerationRole<T>(input: {
         outcome: 'quality-rejected',
         calls: 0,
         errorCategory: 'provider_quality_below_floor',
+        ...emptyAiDailyGenerationProviderResponseDiagnostics(),
       })
       continue
     }
@@ -899,7 +935,15 @@ async function runGenerationRole<T>(input: {
       const first = await provider.generate({ role: input.role, schemaVersion: aiDailyGenerationSchemaVersion, payload: input.payload })
       const firstValidation = input.validate(first)
       if (firstValidation.ok) {
-        attempts.push({ providerId: boundedIdentifier(provider.id, 80) || input.role, role: input.role, slot: provider.slot, outcome: 'succeeded', calls, errorCategory: null })
+        attempts.push({
+          providerId: boundedIdentifier(provider.id, 80) || input.role,
+          role: input.role,
+          slot: provider.slot,
+          outcome: 'succeeded',
+          calls,
+          errorCategory: null,
+          ...emptyAiDailyGenerationProviderResponseDiagnostics(),
+        })
         return { ok: true, value: firstValidation.value, attempts }
       }
       calls += 1
@@ -911,10 +955,26 @@ async function runGenerationRole<T>(input: {
       })
       const repairedValidation = input.validate(repaired)
       if (repairedValidation.ok) {
-        attempts.push({ providerId: boundedIdentifier(provider.id, 80) || input.role, role: input.role, slot: provider.slot, outcome: 'succeeded', calls, errorCategory: null })
+        attempts.push({
+          providerId: boundedIdentifier(provider.id, 80) || input.role,
+          role: input.role,
+          slot: provider.slot,
+          outcome: 'succeeded',
+          calls,
+          errorCategory: null,
+          ...emptyAiDailyGenerationProviderResponseDiagnostics(),
+        })
         return { ok: true, value: repairedValidation.value, attempts }
       }
-      attempts.push({ providerId: boundedIdentifier(provider.id, 80) || input.role, role: input.role, slot: provider.slot, outcome: 'schema-rejected', calls, errorCategory: 'schema_invalid' })
+      attempts.push({
+        providerId: boundedIdentifier(provider.id, 80) || input.role,
+        role: input.role,
+        slot: provider.slot,
+        outcome: 'schema-rejected',
+        calls,
+        errorCategory: 'schema_invalid',
+        ...emptyAiDailyGenerationProviderResponseDiagnostics(),
+      })
     } catch (error) {
       attempts.push({
         providerId: boundedIdentifier(provider.id, 80) || input.role,
@@ -923,6 +983,7 @@ async function runGenerationRole<T>(input: {
         outcome: 'failed',
         calls: Math.max(1, calls),
         errorCategory: classifyAiDailyGenerationProviderError(error),
+        ...readAiDailyGenerationProviderResponseDiagnostics(error),
       })
     }
   }
@@ -942,6 +1003,15 @@ export function classifyAiDailyGenerationProviderError(error: unknown): AiDailyG
   if (/^ai-daily-provider-http-(?:404|405)$/u.test(message)) return 'provider_endpoint_unsupported'
   if (/^ai-daily-provider-http-4\d\d$/u.test(message)) return 'provider_request_invalid'
   return 'provider_error'
+}
+
+function emptyAiDailyGenerationProviderResponseDiagnostics(): AiDailyGenerationProviderResponseDiagnostics {
+  return {
+    responseShape: null,
+    streamCompletion: null,
+    lengthBucket: null,
+    jsonShape: null,
+  }
 }
 
 function normalizeGenerationEvidence(evidence: AiDailyGenerationEvidence[]) {

@@ -141,6 +141,40 @@ function formatStatus(value: string | null | undefined) {
     .join(' ')
 }
 
+function formatGenerationDiagnostic(value: string | null | undefined) {
+  const labels: Record<string, string> = {
+    responses_output_text: 'Responses output_text',
+    responses_output_message: 'Responses output message',
+    chat_completions_message: 'Chat message',
+    sse_output_text: 'SSE output text',
+    sse_chat_delta: 'SSE chat delta',
+    sse_completed_response: 'SSE completed response',
+    invalid_payload: '响应载荷无效',
+    unknown: '未知响应形状',
+    none: '无完成事件',
+    delta_only: '仅 delta',
+    output_text_done: 'output_text.done',
+    response_completed: 'response.completed',
+    delta_and_completed: 'delta + completed',
+    output_text_done_and_completed: 'done + completed',
+    done_marker: '[DONE]',
+    empty: '空响应',
+    short: '短响应',
+    medium: '中等响应',
+    long: '长响应',
+    oversized: '超限响应',
+    object: 'JSON 对象',
+    array: 'JSON 数组',
+    scalar: 'JSON 标量',
+    code_fenced: '代码围栏 JSON',
+    embedded_json: '嵌入 JSON',
+    truncated_json: '截断 JSON',
+    malformed_json: '畸形 JSON',
+    no_json: '无 JSON 对象',
+  }
+  return value ? labels[value] ?? value : '未记录'
+}
+
 function statusClass(value: string | null | undefined) {
   if (!value) return 'is-muted'
   if (/(failed|error|rejected|withdrawn|expired|blocked)/iu.test(value)) return 'is-danger'
@@ -287,8 +321,8 @@ function createWorkspaceUiFixturePayload() {
       { id: 'ui-event-1', sequence: 1, stage: 'collect', kind: 'run-started', outcome: 'success', providerRole: null, attemptNumber: 1, errorCategory: null, durationMs: null, createdAt: '2026-07-19T03:00:00.000Z', diagnostics: null },
     ],
     generationDiagnostics: [
-      { stage: 'extract-facts', failureCode: null, attempts: [{ role: 'extractor', slot: 'primary', outcome: 'succeeded', calls: 1, errorCategory: null }] },
-      { stage: 'compose', failureCode: 'composer-schema-or-provider-failure', attempts: [{ role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid' }] },
+      { stage: 'extract-facts', failureCode: null, attempts: [{ role: 'extractor', slot: 'primary', outcome: 'succeeded', calls: 1, errorCategory: null, responseShape: null, streamCompletion: null, lengthBucket: null, jsonShape: null }] },
+      { stage: 'compose', failureCode: 'composer-schema-or-provider-failure', attempts: [{ role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid', responseShape: 'sse_output_text', streamCompletion: 'output_text_done_and_completed', lengthBucket: 'short', jsonShape: 'object' }] },
     ],
     workItems: [],
     candidates: [candidate],
@@ -1745,16 +1779,25 @@ function GenerationDiagnostics({ run }: { run: StudioAiDailyWorkspaceRun }) {
     <div className="studio-ai-daily-diagnostics" aria-label="Generation stage diagnostics">
       <div className="studio-ai-daily-findings">
         {run.generationDiagnostics.flatMap((diagnostic) =>
-          diagnostic.attempts.map((attempt, index) => (
-            <span
-              className={statusClass(attempt.outcome)}
-              key={`${diagnostic.stage}:${attempt.role}:${attempt.slot}:${index}`}
-            >
-              {formatStatus(diagnostic.stage)} · {attempt.role}/{attempt.slot}: {formatStatus(attempt.outcome)} · {attempt.calls} call{attempt.calls === 1 ? '' : 's'}
-              {attempt.errorCategory ? ` / ${attempt.errorCategory}` : ''}
-              {diagnostic.failureCode ? ` / ${diagnostic.failureCode}` : ''}
-            </span>
-          )),
+          diagnostic.attempts.map((attempt, index) => {
+            const details = [
+              attempt.responseShape && `响应：${formatGenerationDiagnostic(attempt.responseShape)}`,
+              attempt.streamCompletion && `完成：${formatGenerationDiagnostic(attempt.streamCompletion)}`,
+              attempt.lengthBucket && `长度：${formatGenerationDiagnostic(attempt.lengthBucket)}`,
+              attempt.jsonShape && `JSON：${formatGenerationDiagnostic(attempt.jsonShape)}`,
+            ].filter((detail): detail is string => Boolean(detail))
+            return (
+              <span
+                className={statusClass(attempt.outcome)}
+                key={`${diagnostic.stage}:${attempt.role}:${attempt.slot}:${index}`}
+              >
+                {formatStatus(diagnostic.stage)} · {attempt.role}/{attempt.slot}: {formatStatus(attempt.outcome)} · {attempt.calls} call{attempt.calls === 1 ? '' : 's'}
+                {attempt.errorCategory ? ` / ${attempt.errorCategory}` : ''}
+                {diagnostic.failureCode ? ` / ${diagnostic.failureCode}` : ''}
+                {details.length > 0 ? ` / ${details.join(' / ')}` : ''}
+              </span>
+            )
+          }),
         )}
       </div>
     </div>

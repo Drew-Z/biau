@@ -49,6 +49,10 @@ import {
   type AiDailyGenerationRole,
   type AiDailyQualityCaseResult,
 } from '../src/aiDailyGeneration.js'
+import {
+  parseStructuredResponseDetailed,
+  readResponsesStreamResult,
+} from '../src/responsesApi.js'
 import { assert, assertDeepEqual, assertEqual } from './ai-daily-check-helpers.js'
 
 const observedBodies: Array<Record<string, unknown>> = []
@@ -98,6 +102,41 @@ const server = createServer((request, response) => {
     }))
   })
 })
+
+const sseFrame = (event: string, payload: unknown) => `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`
+
+assertEqual(parseStructuredResponseDetailed('{"claims":[]}').shape, 'object', 'normal JSON object shape')
+assertEqual(parseStructuredResponseDetailed('```json\n{"claims":[]}\n```').shape, 'code_fenced', 'code-fenced JSON shape')
+assertEqual(parseStructuredResponseDetailed('{"claims":[').shape, 'truncated_json', 'truncated JSON shape')
+assertEqual(parseStructuredResponseDetailed('provider returned prose').shape, 'no_json', 'missing JSON shape')
+assertEqual(parseStructuredResponseDetailed('{claims:[]}').shape, 'malformed_json', 'malformed JSON shape')
+const deltaOnly = await readResponsesStreamResult(new Response([
+  sseFrame('response.output_text.delta', { type: 'response.output_text.delta', delta: '{"claims":[]}' }),
+].join('')).body)
+assertEqual(deltaOnly.content, '{"claims":[]}', 'delta-only stream content')
+assertEqual(deltaOnly.responseShape, 'sse_output_text', 'delta-only response shape')
+assertEqual(deltaOnly.streamCompletion, 'delta_only', 'delta-only completion shape')
+const outputTextDone = await readResponsesStreamResult(new Response([
+  sseFrame('response.output_text.done', { type: 'response.output_text.done', text: '{"claims":[]}' }),
+].join('')).body)
+assertEqual(outputTextDone.streamCompletion, 'output_text_done', 'output_text.done completion shape')
+const completedOnly = await readResponsesStreamResult(new Response([
+  sseFrame('response.completed', { type: 'response.completed', response: { output_text: '{"claims":[]}' } }),
+].join('')).body)
+assertEqual(completedOnly.content, '{"claims":[]}', 'completed-only stream content')
+assertEqual(completedOnly.responseShape, 'sse_completed_response', 'completed-only response shape')
+assertEqual(completedOnly.streamCompletion, 'response_completed', 'completed-only completion shape')
+const deltaAndCompleted = await readResponsesStreamResult(new Response([
+  sseFrame('response.output_text.delta', { type: 'response.output_text.delta', delta: '{"claims":[]}' }),
+  sseFrame('response.completed', { type: 'response.completed' }),
+].join('')).body)
+assertEqual(deltaAndCompleted.streamCompletion, 'delta_and_completed', 'delta plus completed completion shape')
+const doneAndCompleted = await readResponsesStreamResult(new Response([
+  sseFrame('response.output_text.done', { type: 'response.output_text.done', text: '{"claims":[{"source":"done"}]}' }),
+  sseFrame('response.completed', { type: 'response.completed', response: { output_text: '{"claims":[{"source":"completed"}]}' } }),
+].join('')).body)
+assertEqual(doneAndCompleted.content, '{"claims":[{"source":"completed"}]}', 'completed response must win over output_text.done')
+assertEqual(doneAndCompleted.streamCompletion, 'output_text_done_and_completed', 'done plus completed completion shape')
 
 await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
 try {

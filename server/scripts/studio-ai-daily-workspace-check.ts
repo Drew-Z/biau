@@ -98,7 +98,7 @@ const fixture = {
         {
           stage: 'compose',
           failureCode: 'composer-schema-or-provider-failure',
-          attempts: [{ role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid' }],
+          attempts: [{ role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid', responseShape: 'sse_output_text', streamCompletion: 'delta_only', lengthBucket: 'short', jsonShape: 'truncated_json' }],
           providerId: 'private-candidate',
           rawResponse: 'drop-me',
         },
@@ -248,7 +248,11 @@ const generationDiagnostics = workspace.runs[0]?.generationDiagnostics[0]
 if (
   generationDiagnostics?.stage !== 'compose' ||
   generationDiagnostics.attempts[0]?.outcome !== 'schema-rejected' ||
-  generationDiagnostics.attempts[0]?.calls !== 2
+  generationDiagnostics.attempts[0]?.calls !== 2 ||
+  generationDiagnostics.attempts[0]?.responseShape !== 'sse_output_text' ||
+  generationDiagnostics.attempts[0]?.streamCompletion !== 'delta_only' ||
+  generationDiagnostics.attempts[0]?.lengthBucket !== 'short' ||
+  generationDiagnostics.attempts[0]?.jsonShape !== 'truncated_json'
 ) {
   throw new Error('generation diagnostics should preserve bounded stage attempt evidence')
 }
@@ -347,6 +351,10 @@ const projectedGenerationDiagnostics = summarizeAiDailyGenerationDiagnostics([
         outcome: 'schema-rejected',
         calls: 2,
         errorCategory: 'schema_invalid',
+        responseShape: 'sse_output_text',
+        streamCompletion: 'delta_only',
+        lengthBucket: 'short',
+        jsonShape: 'truncated_json',
         endpoint: 'https://private.example/v1',
         rawResponse: { authorization: 'credential-placeholder' },
       }],

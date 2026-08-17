@@ -267,7 +267,7 @@ The persisted selection decision authorizes its exact evidence independently of 
 
 ### 1. Scope / Trigger
 
-- Trigger: changing extractor/composer/verifier static role mappings, AI Daily quality thresholds, evaluation case sets, runtime model channels, provider compatibility, primary/fallback selection, production model approval, or live runner mode.
+- Trigger: changing extractor/composer/verifier static role mappings, AI Daily quality thresholds, evaluation case sets, runtime model channels, Responses/SSE parsing or diagnostics, provider compatibility, primary/fallback selection, production model approval, or live runner mode.
 - Goal: support a truthful zero-call static mapping for the initial edition, retain measured evaluation when it adds value, and keep both approval paths tamper-evident without turning fixture checks into model liveness calls.
 
 ### 2. Signatures
@@ -283,6 +283,8 @@ The persisted selection decision authorizes its exact evidence independently of 
 - Manual selection command: `npm.cmd run ai-daily:model-select -- --selection-id <id> --extractor <candidate-id> --composer <candidate-id> --verifier <candidate-id> --acknowledge-reduced-redundancy`.
 - Manual approval command: `npm.cmd run ai-daily:model-select-approve -- --input <selection.local.json> --reviewed-by <safe-id> --notes <safe-note> --acknowledge-reduced-redundancy`.
 - Production edition command: `npm.cmd run ai-daily:run -- --date <YYYY-MM-DD> --live`.
+- Response decoding: `readResponsesStreamResult(body)` and `parseStructuredResponseDetailed(text)` return content plus fixed shape diagnostics; `AiDailyGenerationProviderError.responseDiagnostics` carries only those enums into a failed attempt.
+- Durable attempt fields: `responseShape`, `streamCompletion`, `lengthBucket`, and `jsonShape`, each an allowlisted literal or `null`.
 
 Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failureDomainRef`, `modelIdentifier`, `caseSetId`, `caseSetHash`, `caseDescriptors`, `promptVersion`, `generationSchemaVersion`, `evaluatedAt`, category/negative-tag-labeled case results, performance, and execution evidence.
 
@@ -306,8 +308,9 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Production binding accepts either approved artifact family. It revalidates candidate, role, provider alias, failure-domain alias, model identifier, prompt version, generation schema version, selection/bundle hashes, and approval status against the current runtime; measured artifacts additionally revalidate candidate records. A prompt/schema drift fails before a provider or database claim. `--fixture` claims only `FIXTURE` work; `--live` claims only `PRODUCTION` work and additionally requires `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`.
 - A relay `upstream_unreachable` / upstream `5xx` is a transport failure, not a model-schema rejection. If the same private Responses channel is reachable from Render but not from the relay edge, Studio may move to a direct HTTPS runtime instead of resubmitting the same task through guessed relay paths. The direct runtime keeps the real provider failure domain but receives a new `providerRef` and candidate identities; it therefore requires a new pending proposal, explicit proposal approval, bundle/Secret File/hash delivery, and a separately approved real Edition. A prior relay bundle or real-Edition approval cannot cross this transport identity change.
 - A production transport-identity replacement is backup-first. Copy the current stable Secret File to a new bounded backup name, read it back, and verify both raw content identity and its canonical bundle hash before replacing the stable mount. After updating the stable file, runtime JSON, and expected hash, read back all three, keep generation/business-evaluation/public-feed disabled, deploy once, and run the offline approval check plus health/auth/route/Cron observations. These checks must make zero model calls and do not approve a real Edition.
-- Studio workspace generation diagnostics are a read-only projection of existing `EXTRACT_FACTS`, `COMPOSE`, and `VERIFY` checkpoint attempts. The authenticated DTO exposes only stage, role, slot, bounded call count, fixed outcome, fixed error category, and an allowlisted failure code. It must omit candidate/provider/model identity, endpoint, prompt, input/output, raw response, credential, and arbitrary checkpoint fields. This projection requires no migration and must never create a new model call.
+- Studio workspace generation diagnostics are a read-only projection of existing `EXTRACT_FACTS`, `COMPOSE`, and `VERIFY` checkpoint attempts. The authenticated DTO exposes only stage, role, slot, bounded call count, fixed outcome, fixed error category, an allowlisted failure code, and the four fixed response-diagnostic literals described below. It must omit candidate/provider/model identity, endpoint, prompt, input/output, raw response, credential, and arbitrary checkpoint fields. This projection requires no migration and must never create a new model call.
 - AI Daily Structured Outputs requests use Responses SSE with a fixed `max_output_tokens=8192`. The channel timeout is an inactivity budget: response headers and each accepted stream chunk re-arm it, while the output byte/character ceilings still terminate oversized responses. A transport timeout changes the prompt contract and requires a fresh approval bundle before production generation can claim work; it must not be worked around by probing unapproved catalog models.
+- Failed Structured Outputs attempts may additionally retain only four fixed low-sensitive response diagnostics: an allowlisted response-shape enum, stream-completion enum, bounded length bucket, and structured-JSON parse-shape enum. Legacy checkpoints restore missing fields as `null`; unknown persisted values fail checkpoint restoration, and the Studio/backend/browser boundary revalidates the same allowlists. Raw response text, arbitrary event names, exact lengths, provider identifiers, and dynamic parse errors remain forbidden. A successful attempt and non-response failure record these fields as `null`.
 
 ### 4. Validation & Error Matrix
 
@@ -327,6 +330,8 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Relay-origin `upstream_unreachable` or upstream `5xx` -> persist a bounded transport category; do not report schema rejection and do not infer that a direct runtime is already healthy. A later direct-runtime proposal remains zero-call and pending until explicitly approved.
 - Missing or tampered proposal/bundle fields or hashes -> stable invalid artifact error; runtime provider/failure-domain/model drift -> `ai-daily-<role>-runtime-channel-drift`.
 - Unknown checkpoint stage, attempt role/slot/outcome/error category, or failure code -> drop the unknown field/entry or project the generic `generation-failure`; never reflect arbitrary persisted text to the browser.
+- Missing response-diagnostic fields in a legacy attempt -> restore all four as `null`; an unknown non-null response-diagnostic value -> `ai-daily-checkpoint-schema-invalid` before any provider call.
+- HTTP `200` with syntactically valid JSON but no recognized Responses or Chat Completions envelope -> `invalid_response` with `responseShape=invalid_payload`, not `empty_response`.
 - Approved prompt drift -> `ai-daily-model-approval-prompt-version-drift`; generation schema drift -> `ai-daily-model-approval-generation-schema-version-drift` before any provider call.
 - Manual selection without either explicit acknowledgement -> `ai-daily-model-manual-selection-reduced-redundancy-acknowledgement-required`; unknown artifact fields, role-order drift, fake metrics, or a mismatched candidate role fail closed.
 - No explicit runner mode, both modes, disabled production, or missing approved bundle -> fail before claiming generation work.
@@ -346,6 +351,9 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Base: direct transport reaches the provider and persists extractor/composer/validator checkpoints, but the composer boundary returns a bounded `composer-schema-or-provider-failure`; reject/discard the revision, project no draft, disable generation, and require a new composer/provider repair before another approval.
 - Good: after that rejection, deploy a zero-call Studio diagnostic projection and read the existing `COMPOSE` attempt as `failed` or `schema-rejected` before choosing a compatibility repair; no provider request is needed to classify the stored failure.
 - Bad: expose the checkpoint `providerId`, model, endpoint, previous output, or raw response in Studio merely because the route is authenticated.
+- Good: a truncated verifier SSE result records only `sse_output_text`, `delta_only`, `short`, and `truncated_json`, allowing operators to distinguish missing completion from malformed structured content.
+- Base: an older checkpoint without those four fields resumes with null diagnostics and drops unknown fields while preserving the stable attempt category and call count.
+- Bad: persist exact response length, arbitrary SSE event names, parser exception text, or any raw response fragment as a diagnostic.
 - Bad: relabel the relay bundle as direct, reuse the consumed real-Edition approval, or call the direct endpoint merely to prove liveness.
 - Bad: after a `503` from the first guessed endpoint, submit the same prompt to a second guessed endpoint and finally report its `404`, hiding the original provider outage.
 
@@ -358,6 +366,7 @@ Candidate input includes `candidateId`, `role`, `profile`, `providerRef`, `failu
 - Record only the proposal/bundle hashes, backup filename, deploy id, low-sensitive runtime counts/aliases, disabled safety flags, route status classes, Cron absence, and zero-call result. Do not record the direct base URL, API key, raw runtime JSON, Secret File contents, or provider response.
 - Run `npm.cmd run studio:ai-daily-workspace-check` after changing checkpoint diagnostics. Assert the backend and browser decoders preserve the fixed attempt classification and call count while dropping provider/candidate identity, endpoint, raw response, authorization material, and unknown fields.
 - Run `npm.cmd run ai-daily:model-runtime-check` after changing the AI Daily Responses transport. The loopback provider must assert `stream=true`, the fixed output-token ceiling, strict role schema, SSE structured-output decoding, and `externalProviderCalls=0`.
+- Responses transport fixtures must cover normal and code-fenced JSON, embedded/truncated/malformed/no-JSON results, unexpected non-SSE envelopes, delta-only streams, `output_text.done`, `response.completed`, and completion-event precedence without contacting an external provider.
 - Keep every non-trivial Prisma `include` used by the Studio workspace in a named object with `satisfies Prisma.<Model>Include`. The public DTO may expose a stable alias such as `overrides`, but the database query must use the exact Prisma relation name (`editorialOverrides`). This compile-time contract prevents fixture-only DTO checks from hiding a production `Unknown field` query failure.
 - Keep this command inside `ai-daily:contracts-check` and `ai-daily:production-readiness-check`. Both paths are deterministic and must report zero provider calls.
 - A passing fixture contract is a repository check, not a production model approval. The static mapping still requires human approval and first-edition Studio review; optional measured candidates still require explicit real execution and human primary/fallback approval.
@@ -423,6 +432,24 @@ createAiDailyModelManualSelectionProposal({
 ```
 
 The proposal preserves the true failure domain but receives new provider/candidate identities. It remains pending until separately approved, delivered, and followed by a new real-Edition approval.
+
+#### Wrong: persist provider-derived diagnostics directly
+
+```ts
+attempt.responseShape = providerPayload.type
+attempt.jsonShape = error.message
+```
+
+Provider text is unbounded and can disclose response content or create dynamic durable labels.
+
+#### Correct: project fixed adapter-owned diagnostics
+
+```ts
+attempt.responseShape = responsesResponseShapes.includes(shape) ? shape : null
+attempt.jsonShape = responsesStructuredParseShapes.includes(jsonShape) ? jsonShape : null
+```
+
+The adapter owns the fixed enums, checkpoint restoration fails on injected non-null values, and Studio revalidates the same allowlists before rendering.
 
 ## Scenario: AI Daily production operations observability
 

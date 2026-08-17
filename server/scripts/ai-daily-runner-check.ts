@@ -128,6 +128,46 @@ async function main() {
   expectEqual(resumed.executedStages.join(','), 'VERIFY,VALIDATE,DRAFT', 'resume remaining stages')
   expectEqual(resumed.result.callCount, happy.result.callCount, 'resume should preserve prior provider attempts')
 
+  const legacyAttemptStore = new FixtureRunnerStore()
+  await expectInterruption(
+    () =>
+      runAiDailyGenerationWorkflow({
+        runId: 'run-legacy-attempt',
+        evidence,
+        providers,
+        store: legacyAttemptStore,
+        stopAfterStage: 'EXTRACT_FACTS',
+      }),
+    'EXTRACT_FACTS',
+  )
+  const legacyAttemptCheckpoint = legacyAttemptStore.checkpoints.get('run-legacy-attempt')?.get('EXTRACT_FACTS')
+  if (!legacyAttemptCheckpoint) throw new Error('missing legacy attempt fixture checkpoint')
+  const legacyAttemptPayload = structuredClone(legacyAttemptCheckpoint.payload) as {
+    attempts: Array<Record<string, unknown>>
+  }
+  for (const attempt of legacyAttemptPayload.attempts) {
+    delete attempt.responseShape
+    delete attempt.streamCompletion
+    delete attempt.lengthBucket
+    delete attempt.jsonShape
+    attempt.unknownProviderField = 'drop-me'
+  }
+  legacyAttemptCheckpoint.payload = legacyAttemptPayload
+  const legacyAttemptResume = await runAiDailyGenerationWorkflow({
+    runId: 'run-legacy-attempt',
+    evidence,
+    providers,
+    store: legacyAttemptStore,
+  })
+  const restoredLegacyAttempt = legacyAttemptResume.result.attempts[0]
+  expectEqual(restoredLegacyAttempt?.responseShape, null, 'legacy response shape should restore as null')
+  expectEqual(restoredLegacyAttempt?.streamCompletion, null, 'legacy completion shape should restore as null')
+  expectEqual(restoredLegacyAttempt?.lengthBucket, null, 'legacy length bucket should restore as null')
+  expectEqual(restoredLegacyAttempt?.jsonShape, null, 'legacy JSON shape should restore as null')
+  if (restoredLegacyAttempt && 'unknownProviderField' in restoredLegacyAttempt) {
+    throw new Error('legacy checkpoint restoration must drop unknown provider fields')
+  }
+
   const invalidCategoryStore = new FixtureRunnerStore()
   await expectInterruption(
     () =>
@@ -145,10 +185,23 @@ async function main() {
     ?.get('EXTRACT_FACTS')
   if (!invalidCategoryCheckpoint) throw new Error('missing invalid error category fixture checkpoint')
   const invalidCategoryPayload = structuredClone(invalidCategoryCheckpoint.payload) as {
-    attempts: Array<{ errorCategory: unknown }>
+    attempts: Array<{ errorCategory: unknown; responseShape?: unknown }>
   }
   if (!invalidCategoryPayload.attempts[0]) throw new Error('missing invalid error category fixture attempt')
   invalidCategoryPayload.attempts[0].errorCategory = 'provider_unbounded_dynamic_error'
+  invalidCategoryCheckpoint.payload = invalidCategoryPayload
+  await expectFailure(
+    () =>
+      runAiDailyGenerationWorkflow({
+        runId: 'run-invalid-error-category',
+        evidence,
+        providers,
+        store: invalidCategoryStore,
+      }),
+    'ai-daily-checkpoint-schema-invalid',
+  )
+  invalidCategoryPayload.attempts[0].errorCategory = null
+  invalidCategoryPayload.attempts[0].responseShape = 'provider-response-leak'
   invalidCategoryCheckpoint.payload = invalidCategoryPayload
   await expectFailure(
     () =>

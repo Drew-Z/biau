@@ -1,4 +1,5 @@
 import type {
+  AiDailyGenerationProviderResponseDiagnostics,
   AiDailyGenerationProviders,
   AiDailyGenerationRole,
   AiDailyGenerationSlot,
@@ -6,13 +7,14 @@ import type {
   AiDailyStructuredGenerationRequest,
 } from './aiDailyGeneration.js'
 import {
+  AiDailyGenerationProviderError,
   aiDailyClaimTypes,
   aiDailyVerifierReasonCodes,
   aiDailyVerifierVerdicts,
 } from './aiDailyGeneration.js'
 import type { AiDailyModelRuntimeChannel, AiDailyModelRuntimeCandidate } from './aiDailyModelRuntime.js'
 import {
-  parseStructuredResponse,
+  parseStructuredResponseDetailed,
   requestResponsesText,
   type ResponsesApiResult,
   type ResponsesJsonSchema,
@@ -91,10 +93,20 @@ async function requestStructuredJson(channel: AiDailyModelRuntimeChannel, reques
     ].filter(Boolean).join('\n\n'),
     jsonSchema: buildAiDailyStructuredOutputSchema(request.role),
   })
-  if (!result.content) throw new Error(toAiDailyProviderError(result))
-  const structured = parseStructuredResponse(result.content)
-  if (structured === null) throw new Error('ai-daily-provider-json-invalid')
-  return structured
+  if (!result.content) {
+    throw new AiDailyGenerationProviderError(
+      toAiDailyProviderError(result),
+      toAiDailyProviderResponseDiagnostics(result, result.failure === 'empty_response' ? 'empty' : null),
+    )
+  }
+  const structured = parseStructuredResponseDetailed(result.content)
+  if (structured.value === null) {
+    throw new AiDailyGenerationProviderError(
+      'ai-daily-provider-json-invalid',
+      toAiDailyProviderResponseDiagnostics(result, structured.shape),
+    )
+  }
+  return structured.value
 }
 
 const IDENTIFIER_SCHEMA = {
@@ -275,6 +287,18 @@ function toAiDailyProviderError(result: ResponsesApiResult) {
       : `ai-daily-provider-http-${diagnostic.httpStatus}`
   }
   return 'ai-daily-provider-request-failed'
+}
+
+function toAiDailyProviderResponseDiagnostics(
+  result: ResponsesApiResult,
+  jsonShape: AiDailyGenerationProviderResponseDiagnostics['jsonShape'],
+): AiDailyGenerationProviderResponseDiagnostics {
+  return {
+    responseShape: result.responseShape ?? null,
+    streamCompletion: result.streamCompletion ?? null,
+    lengthBucket: result.lengthBucket ?? null,
+    jsonShape,
+  }
 }
 
 export function buildAiDailyStructuredSystemPrompt(role: AiDailyGenerationRole, schemaVersion: string) {

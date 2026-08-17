@@ -13,6 +13,45 @@ export interface ResponsesApiChannel {
   provider?: string
 }
 
+export const responsesResponseShapes = [
+  'responses_output_text',
+  'responses_output_message',
+  'chat_completions_message',
+  'sse_output_text',
+  'sse_chat_delta',
+  'sse_completed_response',
+  'invalid_payload',
+  'unknown',
+] as const
+export type ResponsesResponseShape = (typeof responsesResponseShapes)[number]
+
+export const responsesStreamCompletions = [
+  'none',
+  'delta_only',
+  'output_text_done',
+  'response_completed',
+  'delta_and_completed',
+  'output_text_done_and_completed',
+  'done_marker',
+] as const
+export type ResponsesStreamCompletion = (typeof responsesStreamCompletions)[number]
+
+export const responsesLengthBuckets = ['empty', 'short', 'medium', 'long', 'oversized'] as const
+export type ResponsesLengthBucket = (typeof responsesLengthBuckets)[number]
+
+export const responsesStructuredParseShapes = [
+  'object',
+  'array',
+  'scalar',
+  'code_fenced',
+  'embedded_json',
+  'truncated_json',
+  'malformed_json',
+  'no_json',
+  'empty',
+] as const
+export type ResponsesStructuredParseShape = (typeof responsesStructuredParseShapes)[number]
+
 export interface ResponsesApiResult {
   content: string | null
   diagnostic?: ProviderDiagnostic
@@ -20,6 +59,9 @@ export interface ResponsesApiResult {
   failureClass?: PublicAssistantRecoveryFailureClass
   durationMs: number
   firstActivityMs?: number
+  responseShape?: ResponsesResponseShape
+  streamCompletion?: ResponsesStreamCompletion
+  lengthBucket?: ResponsesLengthBucket
 }
 
 export interface ResponsesJsonSchema {
@@ -40,6 +82,9 @@ interface ResponsesEndpointResult {
   durationMs: number
   firstActivityMs?: number
   invalidResponse: boolean
+  responseShape?: ResponsesResponseShape
+  streamCompletion?: ResponsesStreamCompletion
+  lengthBucket?: ResponsesLengthBucket
 }
 
 export async function requestResponsesText(input: {
@@ -61,12 +106,18 @@ export async function requestResponsesText(input: {
   const endpoints = responsesEndpoints(input.channel.baseUrl)
   let diagnostic: ProviderDiagnostic | undefined
   let firstActivityMs: number | undefined
+  let responseShape: ResponsesResponseShape | undefined
+  let streamCompletion: ResponsesStreamCompletion | undefined
+  let lengthBucket: ResponsesLengthBucket | undefined
   for (const [index, endpoint] of endpoints.entries()) {
     const attempt = await requestEndpoint({ ...input, endpoint })
     firstActivityMs ??= attempt.firstActivityMs === undefined
       ? undefined
       : Math.max(0, Date.now() - startedAt - attempt.durationMs + attempt.firstActivityMs)
     diagnostic = { ...attempt.diagnostic, attemptedEndpoints: index + 1 }
+    responseShape = attempt.responseShape
+    streamCompletion = attempt.streamCompletion
+    lengthBucket = attempt.lengthBucket
     if (attempt.invalidResponse) {
       return {
         content: null,
@@ -75,6 +126,9 @@ export async function requestResponsesText(input: {
         durationMs: Math.max(0, Date.now() - startedAt),
         ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
         diagnostic,
+        ...(responseShape ? { responseShape } : {}),
+        ...(streamCompletion ? { streamCompletion } : {}),
+        ...(lengthBucket ? { lengthBucket } : {}),
       }
     }
     if (attempt.ok) {
@@ -91,6 +145,9 @@ export async function requestResponsesText(input: {
             attemptedEndpoints: index + 1,
             timeoutMs: input.timeoutMs,
           },
+          ...(responseShape ? { responseShape } : {}),
+          ...(streamCompletion ? { streamCompletion } : {}),
+          lengthBucket: 'empty',
         }
       }
       if (content.length > MAX_RESPONSES_TEXT_CHARS) {
@@ -101,6 +158,9 @@ export async function requestResponsesText(input: {
           durationMs: Math.max(0, Date.now() - startedAt),
           ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
           diagnostic,
+          ...(responseShape ? { responseShape } : {}),
+          ...(streamCompletion ? { streamCompletion } : {}),
+          lengthBucket: 'oversized',
         }
       }
       return {
@@ -108,6 +168,9 @@ export async function requestResponsesText(input: {
         diagnostic,
         durationMs: Math.max(0, Date.now() - startedAt),
         ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
+        ...(responseShape ? { responseShape } : {}),
+        ...(streamCompletion ? { streamCompletion } : {}),
+        ...(lengthBucket ? { lengthBucket } : {}),
       }
     }
     if (!attempt.httpStatus || ![404, 405].includes(attempt.httpStatus)) break
@@ -119,20 +182,37 @@ export async function requestResponsesText(input: {
     durationMs: Math.max(0, Date.now() - startedAt),
     ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
     diagnostic,
+    ...(responseShape ? { responseShape } : {}),
+    ...(streamCompletion ? { streamCompletion } : {}),
+    ...(lengthBucket ? { lengthBucket } : {}),
   }
 }
 
 export function parseStructuredResponse(value: string): unknown | null {
-  const normalized = value.replace(/^```(?:json)?\s*/iu, '').replace(/\s*```$/u, '').trim()
+  return parseStructuredResponseDetailed(value).value
+}
+
+export function parseStructuredResponseDetailed(value: string): {
+  value: unknown | null
+  shape: ResponsesStructuredParseShape
+} {
+  const raw = value.trim()
+  if (!raw) return { value: null, shape: 'empty' }
+  const codeFenced = /^```(?:json)?\s*/iu.test(raw) && /\s*```$/u.test(raw)
+  const normalized = raw.replace(/^```(?:json)?\s*/iu, '').replace(/\s*```$/u, '').trim()
   try {
-    return JSON.parse(normalized) as unknown
+    const parsed = JSON.parse(normalized) as unknown
+    return { value: parsed, shape: codeFenced ? 'code_fenced' : jsonValueShape(parsed) }
   } catch {
     const candidate = findBalancedJson(normalized)
-    if (!candidate) return null
+    if (!candidate) {
+      const hasJsonStart = normalized.includes('{') || normalized.includes('[')
+      return { value: null, shape: hasJsonStart ? 'truncated_json' : 'no_json' }
+    }
     try {
-      return JSON.parse(candidate) as unknown
+      return { value: JSON.parse(candidate) as unknown, shape: 'embedded_json' }
     } catch {
-      return null
+      return { value: null, shape: 'malformed_json' }
     }
   }
 }
@@ -163,6 +243,9 @@ async function requestEndpoint(input: {
   let diagnosticKind: ProviderDiagnosticKind = 'network_error'
   let responseStatus: number | undefined
   let relayOrigin: ProviderRelayOriginKind | undefined
+  let responseShape: ResponsesResponseShape | undefined
+  let streamCompletion: ResponsesStreamCompletion | undefined
+  let lengthBucket: ResponsesLengthBucket | undefined
   const onAbort = () => abort.abort()
   input.signal?.addEventListener('abort', onAbort, { once: true })
   if (input.signal?.aborted) abort.abort()
@@ -231,12 +314,85 @@ async function requestEndpoint(input: {
       }
     }
     const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
-    const content = input.stream && contentType.includes('text/event-stream')
-      ? await readResponsesStreamContent(response.body, () => {
+    const streamed = input.stream && contentType.includes('text/event-stream')
+      ? await readResponsesStreamResult(response.body, () => {
         firstActivityMs ??= Math.max(0, Date.now() - startedAt)
         armTimeout()
       })
-      : readResponsesContent(await response.json().catch(() => null))
+      : null
+    if (streamed) {
+      responseShape = streamed.responseShape
+      streamCompletion = streamed.streamCompletion
+      lengthBucket = streamed.lengthBucket
+    }
+    let content = streamed?.content ?? ''
+    if (!streamed) {
+      const bodyText = await response.text()
+      lengthBucket = bodyText.length > MAX_RESPONSES_STREAM_BYTES ? 'oversized' : lengthBucketFor(bodyText)
+      if (bodyText.length > MAX_RESPONSES_STREAM_BYTES) {
+        return {
+          ok: false,
+          content: '',
+          httpStatus: response.status,
+          diagnostic: {
+            kind: 'http_status' as const,
+            httpStatus: response.status,
+            ...(relayOrigin ? { relayOrigin } : {}),
+            attemptedEndpoints: 0,
+            timeoutMs: input.timeoutMs,
+          },
+          durationMs: Math.max(0, Date.now() - startedAt),
+          firstActivityMs,
+          invalidResponse: true,
+          responseShape: 'invalid_payload',
+          lengthBucket: 'oversized',
+        }
+      }
+      try {
+        const payload = JSON.parse(bodyText) as unknown
+        const parsed = readResponsesContentResult(payload)
+        if (!parsed.recognized) {
+          return {
+            ok: false,
+            content: '',
+            httpStatus: response.status,
+            diagnostic: {
+              kind: 'http_status' as const,
+              httpStatus: response.status,
+              ...(relayOrigin ? { relayOrigin } : {}),
+              attemptedEndpoints: 0,
+              timeoutMs: input.timeoutMs,
+            },
+            durationMs: Math.max(0, Date.now() - startedAt),
+            firstActivityMs,
+            invalidResponse: true,
+            responseShape: 'invalid_payload',
+            lengthBucket: lengthBucketFor(bodyText),
+          }
+        }
+        content = parsed.content
+        responseShape = parsed.responseShape
+        lengthBucket = parsed.lengthBucket
+      } catch {
+        return {
+          ok: false,
+          content: '',
+          httpStatus: response.status,
+          diagnostic: {
+            kind: 'http_status' as const,
+            httpStatus: response.status,
+            ...(relayOrigin ? { relayOrigin } : {}),
+            attemptedEndpoints: 0,
+            timeoutMs: input.timeoutMs,
+          },
+          durationMs: Math.max(0, Date.now() - startedAt),
+          firstActivityMs,
+          invalidResponse: true,
+          responseShape: 'invalid_payload',
+          lengthBucket: lengthBucketFor(bodyText),
+        }
+      }
+    }
     return {
       ok: true,
       content,
@@ -251,10 +407,18 @@ async function requestEndpoint(input: {
       durationMs: Math.max(0, Date.now() - startedAt),
       firstActivityMs,
       invalidResponse: false,
+      ...(responseShape ? { responseShape } : {}),
+      ...(streamCompletion ? { streamCompletion } : {}),
+      ...(lengthBucket ? { lengthBucket } : {}),
     }
   } catch (error) {
     input.signal?.throwIfAborted()
     const invalidResponse = error instanceof Error && error.message === 'responses-stream-too-large'
+    if (invalidResponse) {
+      responseShape = 'invalid_payload'
+      streamCompletion ??= 'none'
+      lengthBucket = 'oversized'
+    }
     const observedDiagnosticKind = readDiagnosticKind()
     const kind: ProviderDiagnosticKind = observedDiagnosticKind === 'timeout'
       ? 'timeout'
@@ -275,6 +439,9 @@ async function requestEndpoint(input: {
       durationMs: Math.max(0, Date.now() - startedAt),
       ...(firstActivityMs === undefined ? {} : { firstActivityMs }),
       invalidResponse,
+      ...(responseShape ? { responseShape } : {}),
+      ...(streamCompletion ? { streamCompletion } : {}),
+      ...(lengthBucket ? { lengthBucket } : {}),
     }
   } finally {
     if (timeout) clearTimeout(timeout)
@@ -328,11 +495,30 @@ export async function readResponsesStreamContent(
   body: ReadableStream<Uint8Array> | null,
   onActivity: () => void = () => undefined,
 ) {
-  if (!body) return ''
+  return (await readResponsesStreamResult(body, onActivity)).content
+}
+
+export async function readResponsesStreamResult(
+  body: ReadableStream<Uint8Array> | null,
+  onActivity: () => void = () => undefined,
+): Promise<{
+  content: string
+  responseShape: ResponsesResponseShape
+  streamCompletion: ResponsesStreamCompletion
+  lengthBucket: ResponsesLengthBucket
+}> {
+  if (!body) return { content: '', responseShape: 'unknown', streamCompletion: 'none', lengthBucket: 'empty' }
   const reader = body.getReader()
   const decoder = new TextDecoder()
   const fragments = new Map<string, string>()
   let completed = ''
+  let completedShape: ResponsesResponseShape | undefined
+  let responseShape: ResponsesResponseShape = 'unknown'
+  let sawDelta = false
+  let sawOutputTextDone = false
+  let sawCompleted = false
+  let sawDoneMarker = false
+  let malformedFrame = false
   let buffer = ''
   let bytesRead = 0
 
@@ -344,28 +530,43 @@ export async function readResponsesStreamContent(
       .map((line) => line.slice(5).trimStart())
       .join('\n')
       .trim()
-    if (!data || data === '[DONE]') return
+    if (!data) return
+    if (data === '[DONE]') {
+      sawDoneMarker = true
+      return
+    }
     let payload: unknown
     try {
       payload = JSON.parse(data) as unknown
     } catch {
+      malformedFrame = true
       return
     }
     if (!isRecord(payload)) return
     const type = typeof payload.type === 'string' ? payload.type : eventName
     const key = streamFragmentKey(payload)
     if (type === 'response.output_text.delta') {
+      sawDelta = true
+      responseShape = 'sse_output_text'
       const delta = readTextValue(payload.delta)
       if (delta) fragments.set(key, `${fragments.get(key) ?? ''}${delta}`)
       return
     }
     if (type === 'response.output_text.done') {
+      sawOutputTextDone = true
+      responseShape = 'sse_output_text'
       const text = readTextValue(payload.text)
       if (text) fragments.set(key, text)
       return
     }
-    if (type === 'response.completed' && isRecord(payload.response)) {
-      completed = readResponsesContent(payload.response) || completed
+    if (type === 'response.completed') {
+      sawCompleted = true
+      if (isRecord(payload.response)) {
+        const completedResult = readResponsesContentResult(payload.response)
+        completed = completedResult.content || completed
+        completedShape = completedResult.content ? 'sse_completed_response' : completedShape
+        responseShape = completedShape ?? responseShape
+      }
       return
     }
     if (type === 'error' || type === 'response.failed' || type === 'response.error') {
@@ -375,10 +576,14 @@ export async function readResponsesStreamContent(
     const firstChoice = Array.isArray(payload.choices) ? payload.choices.find(isRecord) : null
     const delta = firstChoice && isRecord(firstChoice.delta) ? readMessageDelta(firstChoice.delta.content) : ''
     if (delta) {
+      sawDelta = true
+      responseShape = 'sse_chat_delta'
       fragments.set('relay-choice', `${fragments.get('relay-choice') ?? ''}${delta}`)
       return
     }
-    completed = readResponsesContent(payload) || completed
+    const payloadResult = readResponsesContentResult(payload)
+    completed = payloadResult.content || completed
+    if (payloadResult.content) responseShape = payloadResult.responseShape === 'chat_completions_message' ? 'sse_chat_delta' : 'sse_completed_response'
   }
 
   try {
@@ -401,7 +606,26 @@ export async function readResponsesStreamContent(
   } finally {
     reader.releaseLock()
   }
-  return (completed || [...fragments.values()].join('')).trim()
+  const content = (completed || [...fragments.values()].join('')).trim()
+  const streamCompletion = sawOutputTextDone && sawCompleted
+    ? 'output_text_done_and_completed'
+    : sawDelta && sawCompleted
+      ? 'delta_and_completed'
+      : sawCompleted
+        ? 'response_completed'
+        : sawOutputTextDone
+          ? 'output_text_done'
+          : sawDelta
+            ? 'delta_only'
+            : sawDoneMarker
+              ? 'done_marker'
+              : 'none'
+  return {
+    content,
+    responseShape: content ? responseShape : malformedFrame ? 'invalid_payload' : responseShape,
+    streamCompletion,
+    lengthBucket: lengthBucketFor(content),
+  }
 }
 
 function streamFragmentKey(value: Record<string, unknown>) {
@@ -412,10 +636,23 @@ function streamFragmentKey(value: Record<string, unknown>) {
 }
 
 export function readResponsesContent(value: unknown) {
-  if (!isRecord(value)) return ''
-  if (typeof value.output_text === 'string' && value.output_text.trim()) return value.output_text.trim()
-  const responsesContent = Array.isArray(value.output)
-    ? value.output
+  return readResponsesContentResult(value).content
+}
+
+function readResponsesContentResult(value: unknown): {
+  content: string
+  responseShape: ResponsesResponseShape
+  lengthBucket: ResponsesLengthBucket
+  recognized: boolean
+} {
+  if (!isRecord(value)) return { content: '', responseShape: 'unknown', lengthBucket: 'empty', recognized: false }
+  if (typeof value.output_text === 'string') {
+    const content = value.output_text.trim()
+    return { content, responseShape: 'responses_output_text', lengthBucket: lengthBucketFor(content), recognized: true }
+  }
+  const responsesOutput = Array.isArray(value.output) ? value.output : null
+  const responsesContent = responsesOutput
+    ? responsesOutput
       .filter(isRecord)
       .filter((item) => item.type === 'message' && item.role === 'assistant' && Array.isArray(item.content))
       .flatMap((item) => item.content as unknown[])
@@ -425,11 +662,40 @@ export function readResponsesContent(value: unknown) {
       .join('')
       .trim()
     : ''
-  if (responsesContent) return responsesContent
+  if (responsesOutput) {
+    return {
+      content: responsesContent,
+      responseShape: 'responses_output_message',
+      lengthBucket: lengthBucketFor(responsesContent),
+      recognized: true,
+    }
+  }
 
-  const firstChoice = Array.isArray(value.choices) ? value.choices.find(isRecord) : null
+  const chatChoices = Array.isArray(value.choices) ? value.choices : null
+  const firstChoice = chatChoices?.find(isRecord) ?? null
   const message = firstChoice && isRecord(firstChoice.message) ? firstChoice.message : null
-  return message ? readMessageContent(message.content) : ''
+  const content = message ? readMessageContent(message.content) : ''
+  return {
+    content,
+    responseShape: chatChoices ? 'chat_completions_message' : 'unknown',
+    lengthBucket: lengthBucketFor(content),
+    recognized: chatChoices !== null,
+  }
+}
+
+function jsonValueShape(value: unknown): ResponsesStructuredParseShape {
+  if (Array.isArray(value)) return 'array'
+  if (typeof value === 'object' && value !== null) return 'object'
+  return 'scalar'
+}
+
+function lengthBucketFor(value: string): ResponsesLengthBucket {
+  const length = value.trim().length
+  if (length === 0) return 'empty'
+  if (length <= 4_096) return 'short'
+  if (length <= 16_384) return 'medium'
+  if (length <= MAX_RESPONSES_TEXT_CHARS) return 'long'
+  return 'oversized'
 }
 
 function readMessageContent(value: unknown) {
