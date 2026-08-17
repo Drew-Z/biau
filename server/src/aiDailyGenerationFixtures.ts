@@ -90,6 +90,8 @@ interface FixtureProviderOptions {
   invalidBeforeRepair: boolean
   verifierVerdict: 'entailed' | 'contradicted' | 'insufficient' | 'unverifiable'
   verifierCompositionVerdict: 'entailed' | 'contradicted' | 'insufficient' | 'unverifiable'
+  verifierVerdictAfterQualityRepair: 'entailed' | 'contradicted' | 'insufficient' | 'unverifiable' | null
+  verifierCompositionVerdictAfterQualityRepair: 'entailed' | 'contradicted' | 'insufficient' | 'unverifiable' | null
   duplicateVerifierReview: boolean
   duplicateVerifierBlockReview: boolean
   sensationalComposer: boolean
@@ -110,6 +112,8 @@ function createFixtureProvider(
     invalidBeforeRepair: options.invalidBeforeRepair ?? false,
     verifierVerdict: options.verifierVerdict ?? 'entailed',
     verifierCompositionVerdict: options.verifierCompositionVerdict ?? 'entailed',
+    verifierVerdictAfterQualityRepair: options.verifierVerdictAfterQualityRepair ?? null,
+    verifierCompositionVerdictAfterQualityRepair: options.verifierCompositionVerdictAfterQualityRepair ?? null,
     duplicateVerifierReview: options.duplicateVerifierReview ?? false,
     duplicateVerifierBlockReview: options.duplicateVerifierBlockReview ?? false,
     sensationalComposer: options.sensationalComposer ?? false,
@@ -133,14 +137,20 @@ function createFixtureProvider(
           return fixtureExtract(request)
         case 'composer':
           return fixtureCompose(request, resolved.sensationalComposer, resolved.hallucinatedComposer)
-        case 'verifier':
+        case 'verifier': {
+          const qualityRepairAttempt = asRecord(request.payload).qualityRepairAttempt === true
           return fixtureVerify(
             request,
-            resolved.verifierVerdict,
-            resolved.verifierCompositionVerdict,
+            qualityRepairAttempt
+              ? resolved.verifierVerdictAfterQualityRepair ?? resolved.verifierVerdict
+              : resolved.verifierVerdict,
+            qualityRepairAttempt
+              ? resolved.verifierCompositionVerdictAfterQualityRepair ?? resolved.verifierCompositionVerdict
+              : resolved.verifierCompositionVerdict,
             resolved.duplicateVerifierReview,
             resolved.duplicateVerifierBlockReview,
           )
+        }
       }
     },
   }

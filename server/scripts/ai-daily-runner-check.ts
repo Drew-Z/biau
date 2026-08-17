@@ -235,6 +235,95 @@ async function main() {
   expectEqual(rejected.result.status, 'REJECTED', 'critical finding status')
   expectEqual(rejected.projection.applyState, 'DISCARDED', 'rejected revision state')
   expectEqual(rejected.projection.draftId, null, 'rejected revision must not create a draft')
+  expectEqual(
+    rejected.result.attempts.filter((attempt) => attempt.role === 'composer').length,
+    2,
+    'persistent quality rejection must use exactly one composer repair attempt',
+  )
+  expectEqual(
+    rejected.result.attempts.filter((attempt) => attempt.role === 'verifier').length,
+    2,
+    'persistent quality rejection must use exactly one verifier recheck',
+  )
+
+  const repairedStore = new FixtureRunnerStore()
+  const repairProviders = buildAiDailyGenerationProvidersFixture({
+    verifier: {
+      verifierVerdict: 'contradicted',
+      verifierCompositionVerdict: 'insufficient',
+      verifierVerdictAfterQualityRepair: 'entailed',
+      verifierCompositionVerdictAfterQualityRepair: 'entailed',
+    },
+  })
+  const repairComposer = repairProviders.composer.primary
+  const observedComposerPayloads: Array<Record<string, unknown>> = []
+  repairProviders.composer.primary = {
+    ...repairComposer,
+    async generate(request) {
+      observedComposerPayloads.push(request.payload as Record<string, unknown>)
+      return repairComposer.generate(request)
+    },
+  }
+  const repaired = await runAiDailyGenerationWorkflow({
+    runId: 'run-quality-repaired',
+    evidence,
+    providers: repairProviders,
+    store: repairedStore,
+  })
+  expectEqual(repaired.result.status, 'VALID', 'bounded quality repair status')
+  expectEqual(repaired.result.callCount, happy.result.callCount + 2, 'bounded quality repair call budget')
+  expectEqual(observedComposerPayloads.length, 2, 'initial and repair composer payload count')
+  const initialEvidenceContext = observedComposerPayloads[0]?.evidence
+  if (!Array.isArray(initialEvidenceContext) || typeof initialEvidenceContext[0] !== 'object' || !initialEvidenceContext[0]) {
+    throw new Error('composer payload must include bounded evidence context')
+  }
+  const firstEvidenceContext = initialEvidenceContext[0] as Record<string, unknown>
+  for (const field of ['evidenceId', 'sourceKind', 'sourceTier', 'publisher', 'publisherDomain', 'publishedAt', 'excerpt']) {
+    if (!Object.hasOwn(firstEvidenceContext, field)) throw new Error(`composer evidence context missing ${field}`)
+  }
+  for (const forbidden of ['url', 'canonicalUrl', 'contentHash', 'locator']) {
+    if (Object.hasOwn(firstEvidenceContext, forbidden)) throw new Error(`composer evidence context exposed ${forbidden}`)
+  }
+  if (!observedComposerPayloads[1]?.qualityRepair) throw new Error('repair composer payload must include qualityRepair')
+  const repairedVerifyPayload = repairedStore.checkpoints.get('run-quality-repaired')?.get('VERIFY')?.payload as
+    | Record<string, unknown>
+    | undefined
+  expectEqual(repairedVerifyPayload?.qualityRepairAttempted, true, 'VERIFY checkpoint quality repair marker')
+  if (!repairedVerifyPayload?.composition) throw new Error('VERIFY checkpoint must retain the final repaired composition')
+  const repairedReplay = await runAiDailyGenerationWorkflow({
+    runId: 'run-quality-repaired',
+    evidence,
+    providers,
+    store: repairedStore,
+  })
+  expectEqual(repairedReplay.result.status, 'VALID', 'quality-repaired checkpoint replay status')
+  expectEqual(repairedReplay.executedStages.length, 0, 'quality-repaired checkpoint replay must make no calls')
+
+  const legacyVerifyStore = new FixtureRunnerStore()
+  await expectInterruption(
+    () => runAiDailyGenerationWorkflow({
+      runId: 'run-legacy-verify',
+      evidence,
+      providers,
+      store: legacyVerifyStore,
+      stopAfterStage: 'VERIFY',
+    }),
+    'VERIFY',
+  )
+  const legacyVerifyCheckpoint = legacyVerifyStore.checkpoints.get('run-legacy-verify')?.get('VERIFY')
+  if (!legacyVerifyCheckpoint) throw new Error('missing legacy VERIFY fixture checkpoint')
+  const legacyVerifyPayload = structuredClone(legacyVerifyCheckpoint.payload) as Record<string, unknown>
+  delete legacyVerifyPayload.composition
+  delete legacyVerifyPayload.qualityRepairAttempted
+  legacyVerifyCheckpoint.payload = legacyVerifyPayload
+  const legacyVerifyReplay = await runAiDailyGenerationWorkflow({
+    runId: 'run-legacy-verify',
+    evidence,
+    providers,
+    store: legacyVerifyStore,
+  })
+  expectEqual(legacyVerifyReplay.result.status, 'VALID', 'legacy VERIFY checkpoint compatibility')
+  expectEqual(legacyVerifyReplay.executedStages.join(','), 'VALIDATE,DRAFT', 'legacy VERIFY resume stages')
 
   const protectedStore = new FixtureRunnerStore()
   const firstProtected = await runAiDailyGenerationWorkflow({

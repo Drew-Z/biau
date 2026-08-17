@@ -241,11 +241,27 @@ try {
     assert(extractorPrompt.includes(required), `extractor prompt must describe validator contract: ${required}`)
   }
   const composerPrompt = buildAiDailyStructuredSystemPrompt('composer', aiDailyGenerationSchemaVersion)
-  for (const required of ['1 至 10', '最多 6', 'factSummary', 'whyItMatters']) {
+  for (const required of [
+    '1 至 10',
+    '最多 6',
+    'factSummary',
+    'whyItMatters',
+    'sourceKind=official',
+    'publisherDomain',
+    'qualityRepair',
+    'contradicted/insufficient',
+  ]) {
     assert(composerPrompt.includes(required), `composer prompt must describe validator contract: ${required}`)
   }
   const verifierPrompt = buildAiDailyStructuredSystemPrompt('verifier', aiDailyGenerationSchemaVersion)
-  for (const required of ['entailed', 'scope_inflation', 'supportingEvidenceIds', 'supportingClaimIds']) {
+  for (const required of [
+    'entailed',
+    'scope_inflation',
+    'supportingEvidenceIds',
+    'supportingClaimIds',
+    '范围扩大',
+    '正文 block 独立核验',
+  ]) {
     assert(verifierPrompt.includes(required), `verifier prompt must describe validator contract: ${required}`)
   }
 

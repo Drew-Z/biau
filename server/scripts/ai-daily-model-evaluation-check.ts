@@ -85,7 +85,11 @@ const fixtureProviders = buildAiDailyGenerationProvidersFixture()
 const fixtureClaims = await extractAiDailyFacts({ evidence: fixtureDefinitions[0]!.evidence, providers: fixtureProviders })
 assert.equal(fixtureClaims.ok, true, 'verifier scenario contract needs deterministic claims')
 if (!fixtureClaims.ok) throw new Error('ai-daily-verifier-scenario-claims-missing')
-const fixtureComposition = await composeAiDailyFacts({ claims: fixtureClaims.claims, providers: fixtureProviders })
+const fixtureComposition = await composeAiDailyFacts({
+  evidence: fixtureDefinitions[0]!.evidence,
+  claims: fixtureClaims.claims,
+  providers: fixtureProviders,
+})
 assert.equal(fixtureComposition.ok, true, 'verifier scenario contract needs deterministic composition')
 if (!fixtureComposition.ok) throw new Error('ai-daily-verifier-scenario-composition-missing')
 for (const definition of fixtureDefinitions) {

@@ -10,6 +10,7 @@ import {
   normalizeCompositionOutput,
   normalizeFactExtractionOutput,
   normalizeVerifierOutput,
+  repairAiDailyCompositionQuality,
   summarizeAiDailyGenerationEvidenceReadinessIssues,
   verifyAiDailyComposition,
   type AiDailyAtomicClaim,
@@ -149,7 +150,11 @@ export async function runAiDailyGenerationWorkflow(input: {
       resumedStages.push('COMPOSE')
     } else {
       assertBeforeDeadline(input.deadlineAt, now())
-      const composed = await composeAiDailyFacts({ claims, providers: input.providers })
+      const composed = await composeAiDailyFacts({
+        evidence: input.evidence,
+        claims,
+        providers: input.providers,
+      })
       allAttempts.push(...composed.attempts)
       if (composed.ok) composition = composed.composition
       else rejectedCode = composed.code
@@ -175,6 +180,7 @@ export async function runAiDailyGenerationWorkflow(input: {
       reviews = restored.reviews
       blockReviews = restored.blockReviews
       requiredReviewClaimIds = restored.requiredReviewClaimIds
+      composition = restored.composition
       allAttempts.push(...restored.attempts)
       rejectedCode = restored.failureCode
       resumedStages.push('VERIFY')
@@ -191,16 +197,44 @@ export async function runAiDailyGenerationWorkflow(input: {
       if (verified.ok) {
         reviews = verified.reviews
         blockReviews = verified.blockReviews
+        const repaired = await repairAiDailyCompositionQuality({
+          evidence: input.evidence,
+          claims,
+          composition,
+          reviews,
+          blockReviews,
+          requiredReviewClaimIds,
+          providers: input.providers,
+          assertBeforeRepairCall: () => assertBeforeDeadline(input.deadlineAt, now()),
+        })
+        composition = repaired.composition
+        reviews = repaired.reviews
+        blockReviews = repaired.blockReviews
+        requiredReviewClaimIds = repaired.requiredReviewClaimIds
+        allAttempts.push(...repaired.attempts)
+        await saveStage(input, 'VERIFY', {
+          ok: true,
+          composition,
+          reviews,
+          blockReviews,
+          requiredReviewClaimIds,
+          qualityRepairAttempted: repaired.attempted,
+          failureCode: null,
+          attempts: [...verified.attempts, ...repaired.attempts],
+        })
+      } else {
+        rejectedCode = verified.code
+        await saveStage(input, 'VERIFY', {
+          ok: false,
+          composition,
+          reviews: [],
+          blockReviews: [],
+          requiredReviewClaimIds: verified.requiredReviewClaimIds,
+          qualityRepairAttempted: false,
+          failureCode: verified.code,
+          attempts: verified.attempts,
+        })
       }
-      else rejectedCode = verified.code
-      await saveStage(input, 'VERIFY', {
-        ok: verified.ok,
-        reviews: verified.ok ? verified.reviews : [],
-        blockReviews: verified.ok ? verified.blockReviews : [],
-        requiredReviewClaimIds: verified.requiredReviewClaimIds,
-        failureCode: verified.ok ? null : verified.code,
-        attempts: verified.attempts,
-      })
       executedStages.push('VERIFY')
     }
   }
@@ -482,6 +516,7 @@ function readVerificationCheckpoint(
   const failureCode = readFailureCode(record.failureCode)
   if (failureCode) {
     return {
+      composition,
       reviews: [] as AiDailyClaimReview[],
       blockReviews: [] as AiDailyCompositionBlockReview[],
       requiredReviewClaimIds,
@@ -489,7 +524,12 @@ function readVerificationCheckpoint(
       failureCode,
     }
   }
-  const compositionBlocks = collectAiDailyCompositionReviewTargets(composition)
+  const restoredComposition = normalizeCompositionOutput(
+    record.composition ?? composition,
+    new Set(claims.map((claim) => claim.claimId)),
+  )
+  if (!restoredComposition.ok) throw new Error('ai-daily-checkpoint-schema-invalid')
+  const compositionBlocks = collectAiDailyCompositionReviewTargets(restoredComposition.value)
   const normalized = normalizeVerifierOutput(
     { reviews: record.reviews, blockReviews: record.blockReviews },
     new Set(requiredReviewClaimIds),
@@ -500,6 +540,7 @@ function readVerificationCheckpoint(
     throw new Error('ai-daily-checkpoint-schema-invalid')
   }
   return {
+    composition: restoredComposition.value,
     reviews: normalized.value.reviews,
     blockReviews: normalized.value.blockReviews,
     requiredReviewClaimIds,

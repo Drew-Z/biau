@@ -173,7 +173,11 @@ async function evaluateComposerCase(provider: AiDailyStructuredGenerationProvide
   const extracted = await extractAiDailyFacts({ evidence: evidenceScenario.evidence, providers: fixtureProviders })
   if (!extracted.ok) throw new Error('ai-daily-business-evaluation-fixture-extractor-failed')
   const scenario = createAiDailyComposerEvaluationScenario(extracted.claims, definition)
-  const output = await composeAiDailyFacts({ claims: scenario.claims, providers: replaceProvider('composer', provider) })
+  const output = await composeAiDailyFacts({
+    evidence: evidenceScenario.evidence,
+    claims: scenario.claims,
+    providers: replaceProvider('composer', provider),
+  })
   const callCount = output.attempts.reduce((sum, attempt) => sum + attempt.calls, 0)
   if (!output.ok) return { callCount, result: failedCase(), exercisedNegativeTags: scenario.exercisedNegativeTags }
   const knownClaims = new Set(scenario.claims.map((claim) => claim.claimId))
@@ -212,7 +216,11 @@ async function evaluateVerifierCase(
   const evidenceScenario = createAiDailyExtractorEvaluationScenario(definition)
   const extracted = await extractAiDailyFacts({ evidence: evidenceScenario.evidence, providers: fixtureProviders })
   if (!extracted.ok) throw new Error('ai-daily-business-evaluation-fixture-extractor-failed')
-  const composed = await composeAiDailyFacts({ claims: extracted.claims, providers: fixtureProviders })
+  const composed = await composeAiDailyFacts({
+    evidence: evidenceScenario.evidence,
+    claims: extracted.claims,
+    providers: fixtureProviders,
+  })
   if (!composed.ok) throw new Error('ai-daily-business-evaluation-fixture-composer-failed')
   const scenario = createAiDailyVerifierEvaluationScenario(extracted.claims, composed.composition, definition)
   const output = await verifyAiDailyComposition({

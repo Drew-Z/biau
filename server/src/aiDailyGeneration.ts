@@ -240,6 +240,15 @@ export interface AiDailyGenerationResult {
   promptVersion: string
 }
 
+export interface AiDailyCompositionQualityRepairResult {
+  composition: AiDailyComposition
+  reviews: AiDailyClaimReview[]
+  blockReviews: AiDailyCompositionBlockReview[]
+  requiredReviewClaimIds: string[]
+  attempts: AiDailyGenerationProviderAttempt[]
+  attempted: boolean
+}
+
 export interface AiDailyGenerationProviders {
   extractor: {
     primary: AiDailyStructuredGenerationProvider
@@ -259,7 +268,16 @@ export interface AiDailyGenerationProviders {
 }
 
 export const aiDailyGenerationSchemaVersion = 'ai-daily-generation-v2'
-export const aiDailyGenerationPromptVersion = 'ai-daily-prompt-v5'
+export const aiDailyGenerationPromptVersion = 'ai-daily-prompt-v6'
+
+export const aiDailyContentQualityRepairableFindingCodes = [
+  'composition-verifier-insufficient',
+  'composition-verifier-contradicted',
+  'official-evidence-required',
+  'verifier-insufficient',
+  'verifier-contradicted',
+  'trend-independent-sources-required',
+] as const
 
 export type AiDailyExtractionStageResult =
   | {
@@ -297,7 +315,11 @@ export async function runAiDailyGeneration(input: {
 }): Promise<AiDailyGenerationResult> {
   const extracted = await extractAiDailyFacts(input)
   if (!extracted.ok) return rejectedGenerationWithAttempts(extracted.code, extracted.attempts)
-  const composed = await composeAiDailyFacts({ claims: extracted.claims, providers: input.providers })
+  const composed = await composeAiDailyFacts({
+    evidence: extracted.evidence,
+    claims: extracted.claims,
+    providers: input.providers,
+  })
   const extractionAttempts = extracted.attempts
   if (!composed.ok) {
     return rejectedGenerationWithAttempts(composed.code, [...extractionAttempts, ...composed.attempts], extracted.claims)
@@ -308,18 +330,27 @@ export async function runAiDailyGeneration(input: {
     composition: composed.composition,
     providers: input.providers,
   })
-  const attempts = [...extractionAttempts, ...composed.attempts, ...verified.attempts]
+  const initialAttempts = [...extractionAttempts, ...composed.attempts, ...verified.attempts]
   if (!verified.ok) {
-    return rejectedGenerationWithAttempts(verified.code, attempts, extracted.claims, composed.composition)
+    return rejectedGenerationWithAttempts(verified.code, initialAttempts, extracted.claims, composed.composition)
   }
-  return finalizeAiDailyGeneration({
+  const repaired = await repairAiDailyCompositionQuality({
     evidence: extracted.evidence,
     claims: extracted.claims,
     composition: composed.composition,
     reviews: verified.reviews,
     blockReviews: verified.blockReviews,
     requiredReviewClaimIds: verified.requiredReviewClaimIds,
-    attempts,
+    providers: input.providers,
+  })
+  return finalizeAiDailyGeneration({
+    evidence: extracted.evidence,
+    claims: extracted.claims,
+    composition: repaired.composition,
+    reviews: repaired.reviews,
+    blockReviews: repaired.blockReviews,
+    requiredReviewClaimIds: repaired.requiredReviewClaimIds,
+    attempts: [...initialAttempts, ...repaired.attempts],
   })
 }
 
@@ -356,13 +387,39 @@ export async function extractAiDailyFacts(input: {
 }
 
 export async function composeAiDailyFacts(input: {
+  evidence: AiDailyGenerationEvidence[]
   claims: AiDailyAtomicClaim[]
   providers: AiDailyGenerationProviders
+  qualityRepair?: {
+    previousComposition: AiDailyComposition
+    reviews: AiDailyClaimReview[]
+    blockReviews: AiDailyCompositionBlockReview[]
+    findings: AiDailyGenerationFinding[]
+  }
 }): Promise<AiDailyCompositionStageResult> {
   const composed = await runGenerationRole({
     role: 'composer',
     providers: input.providers.composer,
-    payload: { claims: input.claims },
+    payload: {
+      claims: input.claims,
+      evidence: buildAiDailyComposerEvidenceContext(input.evidence),
+      ...(input.qualityRepair
+        ? {
+            qualityRepair: {
+              previousComposition: input.qualityRepair.previousComposition,
+              reviews: input.qualityRepair.reviews,
+              blockReviews: input.qualityRepair.blockReviews,
+              findings: input.qualityRepair.findings.slice(0, 40).map((finding) => ({
+                severity: finding.severity,
+                code: finding.code,
+                claimId: finding.claimId,
+                eventId: finding.eventId,
+                blockId: finding.blockId,
+              })),
+            },
+          }
+        : {}),
+    },
     validate: (value) => normalizeCompositionOutput(value, new Set(input.claims.map((claim) => claim.claimId))),
   })
   return composed.ok
@@ -375,6 +432,7 @@ export async function verifyAiDailyComposition(input: {
   claims: AiDailyAtomicClaim[]
   composition: AiDailyComposition
   providers: AiDailyGenerationProviders
+  qualityRepairAttempt?: boolean
 }): Promise<AiDailyVerificationStageResult> {
   const evidenceById = new Map(input.evidence.map((item) => [item.evidenceId, item]))
   const requiredReviewClaimIds = classifyAiDailyRiskClaims(input.claims, evidenceById, input.composition)
@@ -387,6 +445,7 @@ export async function verifyAiDailyComposition(input: {
       requiredReviewClaimIds,
       compositionBlocks,
       evidence: input.evidence,
+      qualityRepairAttempt: input.qualityRepairAttempt === true,
     },
     validate: (value) => normalizeVerifierOutput(
       value,
@@ -404,6 +463,95 @@ export async function verifyAiDailyComposition(input: {
         attempts: verified.attempts,
       }
     : { ok: false, code: 'verifier-schema-or-provider-failure', requiredReviewClaimIds, attempts: verified.attempts }
+}
+
+export async function repairAiDailyCompositionQuality(input: {
+  evidence: AiDailyGenerationEvidence[]
+  claims: AiDailyAtomicClaim[]
+  composition: AiDailyComposition
+  reviews: AiDailyClaimReview[]
+  blockReviews: AiDailyCompositionBlockReview[]
+  requiredReviewClaimIds: string[]
+  providers: AiDailyGenerationProviders
+  assertBeforeRepairCall?: () => void
+}): Promise<AiDailyCompositionQualityRepairResult> {
+  const initial = validateAiDailyComposition({
+    evidence: input.evidence,
+    claims: input.claims,
+    composition: input.composition,
+    reviews: input.reviews,
+    blockReviews: input.blockReviews,
+    requiredReviewClaimIds: new Set(input.requiredReviewClaimIds),
+  })
+  const criticalFindings = initial.findings.filter((finding) => finding.severity === 'critical')
+  if (
+    initial.status !== 'REJECTED' ||
+    criticalFindings.length === 0 ||
+    criticalFindings.some((finding) => !isAiDailyContentQualityRepairableFindingCode(finding.code))
+  ) {
+    return {
+      composition: input.composition,
+      reviews: input.reviews,
+      blockReviews: input.blockReviews,
+      requiredReviewClaimIds: input.requiredReviewClaimIds,
+      attempts: [],
+      attempted: false,
+    }
+  }
+
+  input.assertBeforeRepairCall?.()
+  const repairedComposition = await composeAiDailyFacts({
+    evidence: input.evidence,
+    claims: input.claims,
+    providers: input.providers,
+    qualityRepair: {
+      previousComposition: input.composition,
+      reviews: input.reviews,
+      blockReviews: input.blockReviews,
+      findings: criticalFindings,
+    },
+  })
+  if (!repairedComposition.ok) {
+    return {
+      composition: input.composition,
+      reviews: input.reviews,
+      blockReviews: input.blockReviews,
+      requiredReviewClaimIds: input.requiredReviewClaimIds,
+      attempts: repairedComposition.attempts,
+      attempted: true,
+    }
+  }
+
+  input.assertBeforeRepairCall?.()
+  const repairedVerification = await verifyAiDailyComposition({
+    evidence: input.evidence,
+    claims: input.claims,
+    composition: repairedComposition.composition,
+    providers: input.providers,
+    qualityRepairAttempt: true,
+  })
+  if (!repairedVerification.ok) {
+    return {
+      composition: input.composition,
+      reviews: input.reviews,
+      blockReviews: input.blockReviews,
+      requiredReviewClaimIds: input.requiredReviewClaimIds,
+      attempts: [...repairedComposition.attempts, ...repairedVerification.attempts],
+      attempted: true,
+    }
+  }
+  return {
+    composition: repairedComposition.composition,
+    reviews: repairedVerification.reviews,
+    blockReviews: repairedVerification.blockReviews,
+    requiredReviewClaimIds: repairedVerification.requiredReviewClaimIds,
+    attempts: [...repairedComposition.attempts, ...repairedVerification.attempts],
+    attempted: true,
+  }
+}
+
+export function isAiDailyContentQualityRepairableFindingCode(value: string) {
+  return (aiDailyContentQualityRepairableFindingCodes as readonly string[]).includes(value)
 }
 
 export function finalizeAiDailyGeneration(input: {
@@ -1111,6 +1259,18 @@ function collectCompositionClaimIds(composition: AiDailyComposition) {
     ]),
     ...composition.trends.flatMap((trend) => trend.claimIds),
   ])
+}
+
+function buildAiDailyComposerEvidenceContext(evidence: AiDailyGenerationEvidence[]) {
+  return evidence.slice(0, 40).map((item) => ({
+    evidenceId: item.evidenceId,
+    sourceKind: item.sourceKind,
+    sourceTier: item.sourceTier,
+    publisher: readText(item.publisher, 160),
+    publisherDomain: readPublicHostname(item.canonicalUrl),
+    publishedAt: item.publishedAt,
+    excerpt: readText(item.quote, 1_600),
+  }))
 }
 
 export function collectAiDailyCompositionReviewTargets(

@@ -331,6 +331,10 @@ export function buildAiDailyStructuredSystemPrompt(role: AiDailyGenerationRole, 
       'introduction 和每个 trend 必须是 {"text":"...","claimIds":[...]}；每个 event 必须包含 eventId、title、factSummary、whyItMatters、uncertainty、claimIds。',
       'factSummary 与 whyItMatters 也必须使用 {"text":"...","claimIds":[...]}；event.claimIds 必须与两个正文块引用的 claimIds 完全一致。',
       '所有 claimIds 只能引用输入 claimId；uncertainty 只能是 low、medium、high；不能创建没有依据的新事实或输出 URL。',
+      '输入 evidence 只提供受限证据上下文。release、date、price、API、availability 或明确声称官方的表述，只能绑定至少一条 sourceKind=official 的证据；否则必须删除对应表述和 claimId。',
+      'trend 必须由至少两个不同 publisherDomain 的证据共同支持；不足时返回空 trends 数组，不能把单一来源扩写成跨事件趋势。',
+      '不得使用 directSupport=false、存在 conflictingEvidenceIds，或 verifier 判定 contradicted/insufficient 的 claim 扩写事实；标题、副标题、导语和影响说明同样必须严格受绑定 claim 支持。',
+      '如果输入含 qualityRepair，必须依据 findings、reviews、blockReviews 和 correctedText 返回一份完整替换稿；删除或收缩不受支持内容，不得仅解释问题，也不得降低证据要求。',
     ].join('\n')
   }
   return [
@@ -339,6 +343,8 @@ export function buildAiDailyStructuredSystemPrompt(role: AiDailyGenerationRole, 
     `verdict 只能是：${aiDailyVerifierVerdicts.join('、')}。reasonCode 只能是：${aiDailyVerifierReasonCodes.join('、')}。`,
     '每条 review 必须包含 claimId、verdict、supportingEvidenceIds、reasonCode、correctedText；supportingEvidenceIds 只能引用输入 evidenceId。',
     '每条 blockReview 必须包含 blockId、verdict、supportingClaimIds、reasonCode、correctedText；supportingClaimIds 只能引用该 block 已绑定的 claimId。',
+    '只有输入证据逐字或等价支持完整表述时才能判定 entailed；范围扩大、数字/日期/归属不一致必须判定 contradicted，支持不足必须判定 insufficient。',
+    '标题、副标题、导语、事实摘要、影响说明和趋势都按正文 block 独立核验；correctedText 应给出可由现有 claim 支持的收缩表述，无法修正时返回 null。',
     'correctedText 没有必要修正时必须返回 null；数组字段没有项目时必须返回空数组。',
   ].join('\n')
 }

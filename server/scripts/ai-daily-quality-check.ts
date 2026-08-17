@@ -1,6 +1,7 @@
 import {
   classifyAiDailyRiskClaims,
   evaluateAiDailyQualityReport,
+  isAiDailyContentQualityRepairableFindingCode,
   runAiDailyGeneration,
   validateAiDailyComposition,
 } from '../src/aiDailyGeneration.js'
@@ -11,6 +12,20 @@ import {
 import { assert, assertEqual } from './ai-daily-check-helpers.js'
 
 const definitions = buildAiDailyQualityFixtureDefinitions()
+for (const code of [
+  'composition-verifier-insufficient',
+  'composition-verifier-contradicted',
+  'official-evidence-required',
+  'verifier-insufficient',
+  'verifier-contradicted',
+  'trend-independent-sources-required',
+]) {
+  assert(isAiDailyContentQualityRepairableFindingCode(code), `repairable quality finding: ${code}`)
+}
+assert(
+  !isAiDailyContentQualityRepairableFindingCode('composition-review-missing'),
+  'structural validation findings must not trigger content repair',
+)
 assertEqual(definitions.length, 30, 'evidence-labeled quality case count')
 const cases = []
 for (const definition of definitions) {
@@ -108,6 +123,48 @@ assert(
     finding.code === 'official-evidence-required' && finding.claimId === releaseClaim.claimId
   )),
   'a tier label cannot replace the official source role for high-risk claims',
+)
+
+const repairedQualityResult = await runAiDailyGeneration({
+  evidence: trendDefinition.evidence,
+  providers: buildAiDailyGenerationProvidersFixture({
+    verifier: {
+      verifierVerdict: 'contradicted',
+      verifierCompositionVerdict: 'insufficient',
+      verifierVerdictAfterQualityRepair: 'entailed',
+      verifierCompositionVerdictAfterQualityRepair: 'entailed',
+    },
+  }),
+})
+assertEqual(repairedQualityResult.status, 'VALID', 'one bounded verifier-driven quality repair should recover')
+assertEqual(
+  repairedQualityResult.attempts.filter((attempt) => attempt.role === 'composer').length,
+  2,
+  'quality repair composer attempt count',
+)
+assertEqual(
+  repairedQualityResult.attempts.filter((attempt) => attempt.role === 'verifier').length,
+  2,
+  'quality repair verifier attempt count',
+)
+
+const nonOfficialEvidence = trendDefinition.evidence.map((item) => ({
+  ...item,
+  sourceKind: 'primary_media' as const,
+}))
+const nonOfficialResult = await runAiDailyGeneration({
+  evidence: nonOfficialEvidence,
+  providers: buildAiDailyGenerationProvidersFixture(),
+})
+assertEqual(nonOfficialResult.status, 'REJECTED', 'quality repair must not waive official evidence')
+assert(
+  nonOfficialResult.findings.some((finding) => finding.code === 'official-evidence-required'),
+  'official evidence finding must survive an unsuccessful bounded repair',
+)
+assertEqual(
+  nonOfficialResult.attempts.filter((attempt) => attempt.role === 'composer').length,
+  2,
+  'failed official-evidence repair must stop after one composer repair',
 )
 
 console.log(`AI Daily quality check passed with ${report.caseCount} evidence-labeled cases and ${report.negativeSlices.length} negative slices`)
