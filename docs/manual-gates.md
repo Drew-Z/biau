@@ -156,9 +156,12 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 2026-08-16/17 已完成 CPA bundle 的一次受控生成窗口验证：generation-only 部署 `dep-da146is9v7es73ahs79g` 曾达到 `live`，但在受保护 Studio 页面没有提交新的真实版次；随后关闭生成的恢复部署 `dep-da149rm1egvs739uo2r0` 已 `live`。恢复部署启动日志确认同一 bundle 校验通过（`networkCalls=0`、1 channel、3 candidates、1 failure domain），Studio `/health=200` 且 database/auth ready。Supabase 复核显示 Issue `cmspekr1d000044bmbbnjin5u` 最新仍为 Run `cmsrq64n3000049ilq4aiuyyd`、`attemptNumber=8`、`COMPLETED_WITH_GAPS`；Revision 7 `cmsrq67y6000849illm3gklel` 为 `REJECTED` / `DISCARDED`，没有 draft、Studio review、Publish Export、公开部署或 Feed，活动生产任务为 `0`。本次没有新的模型调用；生产生成、business evaluation、public Feed 和 Cron 继续关闭。
 
+2026-08-17 站点所有者随后单独批准一次 CPA bundle 真实 Edition。Studio 的 `CORS_ORIGIN` 先与当前部署的 `https://biau.pages.dev` 对齐，预检返回 `204`、authenticated workspace 返回 `200`；这只修复 Studio 浏览器连接，不代表公开 Feed 已启用。generation-only 部署 `dep-da157vflk1mc73983h0g` live 后，启动校验确认 bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`、`networkCalls=0`、1 channel、3 candidates、1 failure domain。Studio “确认并入队”只点击一次并返回 `202`，创建 Run `cmswhrctl000049hzeb6mvay4` / work item `cmswhrcw0000149hz0mhjihmi`，`attemptNumber=9`。Run 终态为 `COMPLETED_WITH_GAPS`：两次 extractor 调用和一次 composer 调用成功，唯一 verifier 调用以 `provider_invalid_json` / `verifier-schema-or-provider-failure` 失败。Revision 8 `cmswhuytl000c49hziau5us19` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，自动进入 `REJECTED` / `DISCARDED`，0 个内容块且没有 projection draft。未重试，未执行 Studio review、Publish Export、内容部署或公开发布。generation 随即恢复为 `false`，关闭部署 `dep-da15avou01pc739gokkg` 已 `live`；最终 workspace 显示 production generation=`disabled`，关闭实例启动校验仍为 `networkCalls=0`。
+
 ### 1. 后续真实版次
 
-- 仅在已交付且启动校验通过的 CPA bundle 基础上，重新取得一次“真实 Edition”明确批准，并在 Studio 页面由操作人确认后提交一次；不得把受控窗口或 bundle 校验当成真实业务成功。
+- 先完成 verifier Structured Output 的实质性修复，区分模型返回非法 JSON 与网关丢失 Responses `text.format=json_schema` / SSE 输出形状；不得把本次 extractor/composer 成功外推为 verifier 已兼容。
+- 只有修复完成、零调用合同与交付校验通过后，才能重新取得一次“真实 Edition”明确批准；不得直接重试或把 bundle 校验当成真实业务成功。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。

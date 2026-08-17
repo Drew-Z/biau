@@ -1,10 +1,10 @@
 # 潮讯 TideBrief 产品验收矩阵
 
-更新时间：2026-08-12
+更新时间：2026-08-17
 
 ## 当前结论
 
-潮讯 TideBrief 当前为 **工程就绪，真实 Edition 生成已尝试但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。真实来源刷新已完成，但最新生成 revision 仍被固定质量门禁拒绝，未进入人工审核或发布。
+潮讯 TideBrief 当前为 **工程就绪，CPA 真实 Edition 已到 verifier 但未通过，产品待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 attempt 9 的 extractor 与 composer 已成功，但 verifier 返回不可解析 JSON，生成 revision 被自动拒绝并丢弃，未进入人工审核或发布。
 
 ## 验收矩阵
 
@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | 来源发现 | 33 个来源、10 个查询组、启用/暂缓/拒绝状态与零网络 fixture | 已通过 | 真实 Edition 保留标题、URL、发布时间/抓取时间与来源等级 |
 | 证据、时效与去重 | evidence、freshness、dedupe、ranking 与负向案例 | 已通过 | 编辑者核对候选相关性、重复项、过期项和 Tier 1 证据 |
-| 三角色生成 | approval bundle、runtime drift、runner resume/deadline 与 30 个 golden case | 已通过离线合同 | 获批 runtime 完成一次真实 Edition 生成 |
+| 三角色生成 | approval bundle、runtime drift、runner resume/deadline 与 30 个 golden case | extractor/composer 真实调用通过；verifier 待修复 | 获批 runtime 完成一次通过 verifier 的真实 Edition 生成 |
 | 人工审核 | needs-changes、checklist、revision、review policy 与 optimistic token | 已通过 | Studio 人工修订并批准最终内容与引用 |
 | Publish Export | draft/review/version 绑定、公开 payload schema 与回滚契约 | 已通过 | 对同一 Edition 创建 Export，审查静态内容 diff 并部署 |
 | 公开 Feed 与详情 | CORS、ETag、分页、fresh/stale/empty/404/410/network 状态 | 已通过合同与 UI fixture；待生产观察 | 桌面和手机验收 Feed、详情、引用、`304` 与撤回语义 |
@@ -49,9 +49,22 @@ npm run check:ui
 | 回滚边界 | rollback evidence `tidebrief-rollback-2026-08-12` 已封存；custom-format 数据库 dump 已完成独立恢复验证，上一 Render revision 与 19 条 migration 已记录，`npm.cmd run ai-daily:rollback -- check --require-sealed` 通过。该 manifest 保留既有 acceptance binding，不冒充对最新 Run 的最终 acceptance seal。`AI_DAILY_PRODUCTION_GENERATION_ENABLED`、`AI_DAILY_PUBLIC_FEED_ENABLED`、`AI_DAILY_BUSINESS_EVALUATION_ENABLED` 均为 `false`，Cron 未创建 |
 | 结论 | 真实来源闭环通过，`2566ac15` 已部署实质性 Structured Outputs/provider 边界修复并将 prompt 升级为 `ai-daily-prompt-v4`；修复后的离线质量门和线上 `/health=200` 已通过，但真实生成、人工审核与产品级发布仍未通过。潮讯继续保持“待验收”，不得宣称已发布或每日自动运行。新的 approval bundle/Secret File/hash 与明确业务批准完成前不得继续真实调用 |
 
+## 2026-08-17 CPA 真实 Edition
+
+| 环节 | 低敏结果 |
+| --- | --- |
+| Studio 连接 | `CORS_ORIGIN` 与当前 `https://biau.pages.dev` Studio origin 对齐；预检 `204`，authenticated workspace `200` |
+| 生产配置 | CPA bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`；开启部署 `dep-da157vflk1mc73983h0g` live，启动检查 `networkCalls=0`、1 channel、3 candidates、1 failure domain |
+| 唯一提交 | 受保护入口只提交一次并返回 `202`；Run `cmswhrctl000049hzeb6mvay4`、work item `cmswhrcw0000149hz0mhjihmi`、attempt 9 |
+| 生成结果 | 两次 extractor 与一次 composer 调用成功；唯一 verifier 调用失败为 `provider_invalid_json` / `verifier-schema-or-provider-failure`；Run 终态 `COMPLETED_WITH_GAPS` |
+| Revision | Revision 8 `cmswhuytl000c49hziau5us19` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，`REJECTED` / `DISCARDED`，0 个内容块且无 projection draft |
+| 审核与发布 | 未自动重试，未创建 ContentDraft，未执行 Studio review、Publish Export、内容部署或公开 Feed |
+| 关闭窗口 | production generation 立即恢复为 `false`；关闭部署 `dep-da15avou01pc739gokkg` live，workspace=`disabled`，关闭启动检查仍为 `networkCalls=0` |
+| 结论 | 当前证据不能区分模型自身输出非法 JSON 与 CPA 丢失 Structured Outputs/SSE 响应形状；先完成 verifier 实质修复，再重新交付和批准一次真实 Edition |
+
 ## 最后人工 gate
 
-1. 在 `2566ac15` 部署和离线/健康校验通过后，重新生成并明确批准 `prompt-v4` 对应的 approval bundle，再批准一次真实 Edition；当前不得以重试代替修复。
-2. 完成真实来源采集、候选审核、生成、Studio 人工修订与批准。
+1. 定位并修复 verifier 的 Responses Structured Output 兼容性；不得用直接重试或无意义测活代替修复。
+2. 修复后的零调用合同、approval/runtime 交付校验通过后，重新取得一次真实 Edition 明确批准，并完成生成、Studio 人工修订与批准。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。
