@@ -171,6 +171,7 @@ AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json
 AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH=<ai-daily:model-select-approve 或 model-approve 输出的 bundleHash>
 AI_DAILY_BUSINESS_EVALUATION_ENABLED=false
 AI_DAILY_PRODUCTION_GENERATION_ENABLED=false
+AI_DAILY_STAGE_DIAGNOSTICS_ENABLED=false
 METRICS_ENABLED=false
 AI_DAILY_OPERATIONS_METRICS_ENABLED=true
 ```
@@ -179,7 +180,7 @@ AI_DAILY_OPERATIONS_METRICS_ENABLED=true
 
 AI Daily 的 CPA 切换使用一个新的 server-only runtime channel，并为 extractor/composer/verifier 各绑定一个精确的 `free5/DeepSeek-V4-Flash` candidate。该 channel 使用 `providerRef=cpa-gateway` 与 `failureDomainRef=cpa-free5`，显式标记 `reduced_redundancy`，不声明独立 fallback；真实 base URL 和 API key 只存在于 Render runtime JSON。旧 Free3 approval bundle 与这一 provider/failure-domain/model identity 不一致，不能复用。必须先生成并明确批准新的零调用 proposal/bundle，再更新 Secret File/hash；平台交付完成后，一次真实 Edition 仍需再次单独批准。
 
-AI Daily 第一期真实日报通过人工验收前，`AI_DAILY_PUBLIC_FEED_ENABLED` 与 `AI_DAILY_PRODUCTION_GENERATION_ENABLED` 保持 `false`。Editorial Cron 暂不加入 Blueprint，避免未批准的自动发布。
+AI Daily 第一期真实日报通过人工验收前，`AI_DAILY_PUBLIC_FEED_ENABLED`、`AI_DAILY_PRODUCTION_GENERATION_ENABLED` 与 `AI_DAILY_STAGE_DIAGNOSTICS_ENABLED` 保持 `false`。单阶段诊断只在人工调试窗口短时开启，并要求 production generation 与 business evaluation 同时关闭；Editorial Cron 暂不加入 Blueprint，避免未批准的自动发布。
 
 ## Render: public-only RAG
 

@@ -25,11 +25,17 @@ import {
   upsertAiDailySourceFeed,
 } from './aiDailyIngestionRepository.js'
 import { loadAiDailyWorkspace } from './studioAiDailyWorkspace.js'
+import { aiDailyGenerationRoles, type AiDailyGenerationRole } from './aiDailyGeneration.js'
 import {
   AiDailyStudioProductionError,
   aiDailyLiveRunConfirmation,
   queueAiDailyStudioProductionRun,
 } from './aiDailyStudioProduction.js'
+import {
+  AiDailyStageDiagnosticError,
+  aiDailyStageDiagnosticConfirmation,
+  runAiDailyStageDiagnostic,
+} from './aiDailyStageDiagnostics.js'
 import { wakeAiDailyStudioIngestionWorker } from './aiDailyStudioIngestion.js'
 import { queueAiDailyIngestionRefresh } from './aiDailyIngestionRunner.js'
 import { loadAiDailyOperationsSnapshot, toAiDailyOperationsDiagnostics } from './aiDailyOperations.js'
@@ -739,6 +745,37 @@ export function createStudioRouter() {
     }
   })
 
+  router.post('/ai-daily/issues/:id/stage-diagnostics', async (req, res, next) => {
+    try {
+      const input = readAiDailyStageDiagnosticInput(req.body)
+      if ('error' in input) {
+        res.status(400).json({ error: input.error })
+        return
+      }
+      if (!env.aiDailyStageDiagnosticsEnabled) {
+        res.status(503).json({ error: 'ai-daily-stage-diagnostics-disabled' })
+        return
+      }
+      const prisma = requireStudioDatabase()
+      const result = await runAiDailyStageDiagnostic(prisma, {
+        issueId: readRouteParam(req.params.id),
+        ...input.data,
+      })
+      res.json({ result })
+    } catch (error) {
+      if (error instanceof AiDailyStageDiagnosticError) {
+        const status = error.code === 'ai-daily-stage-diagnostics-issue-not-found'
+          ? 404
+          : error.code === 'ai-daily-stage-diagnostics-disabled' || error.code === 'ai-daily-stage-diagnostics-configuration-invalid'
+            ? 503
+            : 409
+        res.status(status).json({ error: error.code, ...error.details })
+        return
+      }
+      next(error)
+    }
+  })
+
   router.post('/ai-daily/editorial-overrides', async (req, res, next) => {
     try {
       const input = readAiDailyEditorialOverrideInput(req.body)
@@ -1166,6 +1203,20 @@ function readAiDailyLiveRunInput(value: unknown) {
     return { error: 'invalid-ai-daily-live-run' as const }
   }
   return { data: { actor, expectedIssueUpdatedAt } }
+}
+
+function readAiDailyStageDiagnosticInput(value: unknown):
+  | { error: 'invalid-ai-daily-stage-diagnostic' }
+  | { data: { role: AiDailyGenerationRole; expectedIssueUpdatedAt: Date } } {
+  if (!isRecord(value)) return { error: 'invalid-ai-daily-stage-diagnostic' }
+  const role = aiDailyGenerationRoles.includes(value.role as AiDailyGenerationRole)
+    ? (value.role as AiDailyGenerationRole)
+    : null
+  const expectedIssueUpdatedAt = readRequiredDate(value.expectedIssueUpdatedAt)
+  if (!role || !expectedIssueUpdatedAt || value.confirmation !== aiDailyStageDiagnosticConfirmation) {
+    return { error: 'invalid-ai-daily-stage-diagnostic' }
+  }
+  return { data: { role, expectedIssueUpdatedAt } }
 }
 
 function isValidSlug(value: string) {

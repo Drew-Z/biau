@@ -250,7 +250,7 @@ const studioAiDailyGenerationJsonShapes = [
 ] as const
 
 type StudioAiDailyGenerationStage = (typeof studioAiDailyGenerationStages)[number]
-type StudioAiDailyGenerationRole = (typeof studioAiDailyGenerationRoles)[number]
+export type StudioAiDailyGenerationRole = (typeof studioAiDailyGenerationRoles)[number]
 type StudioAiDailyGenerationSlot = (typeof studioAiDailyGenerationSlots)[number]
 type StudioAiDailyGenerationOutcome = (typeof studioAiDailyGenerationOutcomes)[number]
 type StudioAiDailyGenerationFailureCode = (typeof studioAiDailyGenerationFailureCodes)[number]
@@ -259,6 +259,23 @@ type StudioAiDailyGenerationResponseShape = (typeof studioAiDailyGenerationRespo
 type StudioAiDailyGenerationStreamCompletion = (typeof studioAiDailyGenerationStreamCompletions)[number]
 type StudioAiDailyGenerationLengthBucket = (typeof studioAiDailyGenerationLengthBuckets)[number]
 type StudioAiDailyGenerationJsonShape = (typeof studioAiDailyGenerationJsonShapes)[number]
+
+const studioAiDailyStageDiagnosticDurationBuckets = ['under-5s', 'under-30s', 'under-120s', '120s-or-more'] as const
+type StudioAiDailyStageDiagnosticDurationBucket = (typeof studioAiDailyStageDiagnosticDurationBuckets)[number]
+
+export interface StudioAiDailyStageDiagnosticResult {
+  role: StudioAiDailyGenerationRole
+  status: 'succeeded' | 'failed'
+  errorCategory: StudioAiDailyGenerationErrorCategory | null
+  providerCalls: 0 | 1
+  durationBucket: StudioAiDailyStageDiagnosticDurationBucket
+  responseDiagnostics: {
+    responseShape: StudioAiDailyGenerationResponseShape | null
+    streamCompletion: StudioAiDailyGenerationStreamCompletion | null
+    lengthBucket: StudioAiDailyGenerationLengthBucket | null
+    jsonShape: StudioAiDailyGenerationJsonShape | null
+  }
+}
 
 export interface StudioAiDailyWorkspaceCandidate {
   id: string
@@ -485,6 +502,11 @@ export interface StudioAiDailyWorkspace {
   runs: StudioAiDailyWorkspaceRun[]
   flashItems: StudioAiDailyWorkspaceFlash[]
   productionGeneration: {
+    status: 'disabled' | 'misconfigured' | 'ready'
+    enabled: boolean
+    issue: string | null
+  }
+  stageDiagnostics: {
     status: 'disabled' | 'misconfigured' | 'ready'
     enabled: boolean
     issue: string | null
@@ -1230,6 +1252,7 @@ export function normalizeStudioAiDailyWorkspace(value: unknown): StudioAiDailyWo
     ? value.flashItems.map(normalizeWorkspaceFlash).filter((item): item is StudioAiDailyWorkspaceFlash => item !== null)
     : []
   const productionGeneration = normalizeWorkspaceProductionGeneration(value.productionGeneration)
+  const stageDiagnostics = normalizeWorkspaceStageDiagnostics(value.stageDiagnostics)
   let edition: StudioAiDailyWorkspace['edition'] = null
   if (isRecord(value.edition)) {
     const editionIssue = normalizeWorkspaceIssue(value.edition.issue)
@@ -1281,6 +1304,7 @@ export function normalizeStudioAiDailyWorkspace(value: unknown): StudioAiDailyWo
     runs,
     flashItems,
     productionGeneration,
+    stageDiagnostics,
     edition,
   }
 }
@@ -1297,6 +1321,64 @@ function normalizeWorkspaceProductionGeneration(value: unknown): StudioAiDailyWo
     enabled: value.enabled === true,
     issue: readNullableString(value.issue),
   }
+}
+
+function normalizeWorkspaceStageDiagnostics(value: unknown): StudioAiDailyWorkspace['stageDiagnostics'] {
+  if (!isRecord(value)) {
+    return { status: 'misconfigured', enabled: false, issue: 'stage-diagnostics-readiness-unavailable' }
+  }
+  const status = value.status === 'ready' || value.status === 'disabled' || value.status === 'misconfigured'
+    ? value.status
+    : 'misconfigured'
+  return {
+    status,
+    enabled: value.enabled === true,
+    issue: readNullableString(value.issue),
+  }
+}
+
+export function normalizeStudioAiDailyStageDiagnosticResult(value: unknown): StudioAiDailyStageDiagnosticResult | null {
+  if (!isRecord(value) || !isRecord(value.responseDiagnostics)) return null
+  const role = readAllowedLiteral(value.role, studioAiDailyGenerationRoles)
+  const status = readAllowedLiteral(value.status, ['succeeded', 'failed'] as const)
+  const durationBucket = readAllowedLiteral(value.durationBucket, studioAiDailyStageDiagnosticDurationBuckets)
+  const providerCalls = value.providerCalls === 0 || value.providerCalls === 1 ? value.providerCalls : null
+  if (!role || !status || !durationBucket || providerCalls === null) return null
+  const errorCategory = value.errorCategory === null
+    ? null
+    : readAllowedLiteral(value.errorCategory, studioAiDailyGenerationErrorCategories)
+  if ((status === 'failed' && !errorCategory) || (status === 'succeeded' && value.errorCategory !== null)) return null
+  const responseShape = readNullableAllowedLiteral(value.responseDiagnostics.responseShape, studioAiDailyGenerationResponseShapes)
+  const streamCompletion = readNullableAllowedLiteral(value.responseDiagnostics.streamCompletion, studioAiDailyGenerationStreamCompletions)
+  const lengthBucket = readNullableAllowedLiteral(value.responseDiagnostics.lengthBucket, studioAiDailyGenerationLengthBuckets)
+  const jsonShape = readNullableAllowedLiteral(value.responseDiagnostics.jsonShape, studioAiDailyGenerationJsonShapes)
+  if (
+    (value.responseDiagnostics.responseShape !== null && !responseShape) ||
+    (value.responseDiagnostics.streamCompletion !== null && !streamCompletion) ||
+    (value.responseDiagnostics.lengthBucket !== null && !lengthBucket) ||
+    (value.responseDiagnostics.jsonShape !== null && !jsonShape)
+  ) return null
+  return {
+    role,
+    status,
+    errorCategory,
+    providerCalls,
+    durationBucket,
+    responseDiagnostics: {
+      responseShape,
+      streamCompletion,
+      lengthBucket,
+      jsonShape,
+    },
+  }
+}
+
+function readAllowedLiteral<const T extends readonly string[]>(value: unknown, allowed: T): T[number] | null {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T[number]) : null
+}
+
+function readNullableAllowedLiteral<const T extends readonly string[]>(value: unknown, allowed: T): T[number] | null {
+  return value === null ? null : readAllowedLiteral(value, allowed)
 }
 
 export function normalizeStudioPublishExport(value: unknown): StudioPublishExport | null {

@@ -9,8 +9,8 @@
 - AI Daily 自动抓取、自动摘要和自动发布保持关闭，直到首个版次和导出流程验收完成。
 - 三角色模型评估 contract、手动静态选型 contract、server-only OpenAI-compatible Responses provider path、runtime channel 漂移检查和批准 bundle 校验已经实现；两条路径都不会在 readiness 或部署检查中调用模型。
 - 来源采集已经接入同一套 Studio 持久化 worker：版本化 manifest 幂等同步、到期 feed 排队、公开来源安全抓取、条件请求和证据选择都由数据库 work item/lease 驱动；它只访问公开来源，不调用模型或搜索 provider。工作区的“同步并刷新证据”调用受保护的 `POST /studio/api/ai-daily/ingestion/refresh`，服务重启后会恢复未完成的采集任务。
-- 当前待交付的 CPA 手动静态选型让 extractor/composer/verifier 统一使用精确 `free5/DeepSeek-V4-Flash`。该映射只表达一个可审计的角色身份，不宣称模型质量得分或独立故障转移；bundle 会明确标记 `manual-static-selection` 与 `reduced_redundancy`，不配置自动 fallback。
-- 2026-08-16 已明确批准零调用 proposal `ai-daily-cpa-deepseek-v4-flash-static-v1`（proposal hash `508e23df7a6b53f7aee74fee6845fc5686f2b5988208e1a745be3868cefbb263`），生成 bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`，输出确认 `modelCalls=0`。站点所有者已在 Render Studio 交付 runtime、Secret File 与 hash；部署 `dep-da0sqpe1egvs739g6oq0`（提交 `fc08c2a1`）启动期自动校验通过，日志确认 `networkCalls=0`、1 channel、3 candidates、1 failure domain，bundle hash 完全匹配。该校验不启用 production worker；真实 Edition、Studio 审核、Publish Export 和公开 Feed 仍未执行。
+- 当前已批准但尚未交付的 CPA v6 手动静态选型让 extractor/composer/verifier 统一使用精确 `free5/DeepSeek-V4-Flash`。该映射只表达一个可审计的角色身份，不宣称模型质量得分或独立故障转移；bundle 明确标记 `manual-static-selection` 与 `reduced_redundancy`，不配置自动 fallback。
+- 2026-08-17 已明确批准零调用 proposal `ai-daily-cpa-deepseek-v4-flash-static-v2`（proposal hash `db654a7ae6a09e0d6eb7a343fa3b1a79ce847a5d0aa02ec680b536e73ace64b3`），生成 bundle hash `8481cd3b66f91054625290034340a49ddddb5063c5e2e87a2477a6c2d60d1a3a`，绑定 `ai-daily-prompt-v6` / `ai-daily-generation-v2`，输出确认 `modelCalls=0`。Render Studio 仍挂载旧 bundle；上传新 Secret File、同步 hash 并完成禁用态部署前，不得开启生产生成、阶段诊断或提交真实 Edition。
 
 ## 服务边界
 
@@ -29,6 +29,7 @@ npm.cmd run ai-daily:model-runtime-check
 npm.cmd run ai-daily:acceptance-check
 npm.cmd run ai-daily:rollback-check
 npm.cmd run ai-daily:runner-check
+npm.cmd run ai-daily:stage-diagnostics-check
 npm.cmd run ai-daily:operations-check
 npm.cmd run ai-daily:observability-contract-check
 npm.cmd run ai-daily:retention-check
@@ -37,7 +38,7 @@ npm.cmd run studio:smoke
 npm.cmd run studio:ai-daily-brief-check
 ```
 
-这些命令不调用外部模型，不需要生产数据库，也不会自动公开内容。`ai-daily:model-evaluation-check` 证明可选的 case-set hash、三角色排序、质量线、独立 fallback、低敏记录和人工批准状态机有效；`ai-daily:model-runtime-check` 还验证手动静态选型、显式 reduced-redundancy 确认、CLI 往返、provider 请求/解析、超时和 bundle 漂移门禁；两者都不能把 fixture 变成生产批准。`ai-daily:operations-check` 使用纯内存 fixture 验证 diagnostics、六类故障投影和 metrics 安全契约；`ai-daily:observability-contract-check` 验证仓库内 Grafana dashboard 与 Prometheus alert 模板；`ai-daily:retention-check` 验证默认 dry-run、发布/审核链保护和禁止 mutation 契约；`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks，只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
+这些命令不调用外部模型，不需要生产数据库，也不会自动公开内容。`ai-daily:model-evaluation-check` 证明可选的 case-set hash、三角色排序、质量线、独立 fallback、低敏记录和人工批准状态机有效；`ai-daily:model-runtime-check` 还验证手动静态选型、显式 reduced-redundancy 确认、CLI 往返、provider 请求/解析、超时和 bundle 漂移门禁；两者都不能把 fixture 变成生产批准。`ai-daily:stage-diagnostics-check` 使用 fixture 和本地 loopback 验证 Studio bearer 认证、默认关闭、单飞锁、最新 revision 重验、单次调用预算以及禁止 repair/fallback/数据库写入。`ai-daily:operations-check` 使用纯内存 fixture 验证 diagnostics、六类故障投影和 metrics 安全契约；`ai-daily:observability-contract-check` 验证仓库内 Grafana dashboard 与 Prometheus alert 模板；`ai-daily:retention-check` 验证默认 dry-run、发布/审核链保护和禁止 mutation 契约；`ai-daily:contracts-check` 默认跳过需要 disposable PostgreSQL 的 repository checks，只有明确设置 `AI_DAILY_DATABASE_CHECK=1` 并传入 `--with-database` 才会运行它们。
 
 Studio 已提供受 `STUDIO_ADMIN_TOKEN` 保护的 `GET /studio/api/ai-daily/operations` 和 `GET /studio/api/ai-daily/retention/dry-run`。后者只生成候选与阻断原因，始终不执行 mutation。只有同时设置 `METRICS_ENABLED=true` 与 `AI_DAILY_OPERATIONS_METRICS_ENABLED=true` 时，Studio `/metrics` 才会追加 operations snapshot；默认仍为关闭。snapshot 查询失败只暴露 availability=0，不输出数据库或 provider 错误。仓库已提供六类故障 dashboard/alert 模板，但生产 scrape、Grafana/ARMS 导入、通知 routing 以及任何未来 retention mutation 仍需人工平台配置和独立批准。
 
@@ -112,6 +113,8 @@ npm.cmd run ai-daily:model-approve -- --input server/data/ai-daily-model-evaluat
 ```
 
 批准 bundle 仍不能单独开启生产：先把 `ai-daily-model-approval.v1.json` 上传到 Render Studio 的 Secret Files，设置 `AI_DAILY_MODEL_APPROVAL_FILE=/etc/secrets/ai-daily-model-approval.v1.json`，并把审批输出的 `bundleHash` 填入 `AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH`。Render Studio 无 Shell 时，部署启动会自动执行等价的零调用校验；有 Shell 的环境仍可运行 `npm.cmd run ai-daily:model-approval-check` 做离线校验。首个版次执行窗口还必须暂时设置 `AI_DAILY_PRODUCTION_GENERATION_ENABLED=true`，再在 Studio AI Daily 工作区选择 Edition、展开“运行真实版次”并完成二次确认；受保护 API 返回 `202` 后由持久化 worker 执行。`--live` CLI 保留为受控 Job Runner 的等价运维入口。run 到达终态后恢复关闭 production generation，并继续完成 Studio 审核、Publish Export、部署和公开 Feed 验收。任何文件缺失、hash 漂移或 runtime provider/failure-domain/model 漂移都会 fail closed。
+
+当失败已经定位到 extractor、composer 或 verifier 中的单一阶段时，可在 production generation 与 business evaluation 均关闭后，短时设置 `AI_DAILY_STAGE_DIAGNOSTICS_ENABLED=true`。Studio 的“单阶段诊断”只接受当前 Edition、下拉框中的一个角色和二次确认；后端复用当前批准 bundle，但禁用 fallback、schema repair 和客户端重试，每次最多发出一次 provider 调用。Extractor 只读取一个有界 evidence batch；Composer/Verifier 从当前 Issue 的最新 generated revision 读取并重新校验 claims/composition。结果只返回固定错误分类、固定响应形状、`0|1` 调用数和粗粒度耗时，不写 Run、checkpoint、revision、draft、Feed 或生产审计状态。该入口不是 ping、定时健康检查或模型目录测活，诊断结束后立即恢复 flag 为 `false`。
 
 评估 proposal/bundle 与手动静态 proposal/bundle 都使用各自独立的 v2 schema；静态 artifact 绑定当前 prompt/schema 版本，验收 manifest 使用 `ai-daily-acceptance-v3`，其中 `selectionBasis` 明确区分两条路径。Render 的 Secret File 名称仍保持 `ai-daily-model-approval.v1.json` 以维持稳定挂载路径；旧 v1 pending proposal可通过显式 upgrade CLI 重建为 v2 pending proposal，但必须重新审批，旧 approved bundle 不能升级、直接改 JSON 版本号或沿用旧 hash。
 

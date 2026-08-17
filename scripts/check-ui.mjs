@@ -1324,6 +1324,22 @@ try {
     if (route.aiDailyWorkspaceFixture) {
       const fixtureStatus = page.getByText('AI Daily workspace UI check fixture 已加载。').first()
       await fixtureStatus.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {})
+      const stageDiagnosticButton = page.getByRole('button', { name: '单阶段诊断' })
+      if (!(await stageDiagnosticButton.isVisible().catch(() => false))) {
+        failures.push(`${viewport.name} ${route.path}: expected single-stage diagnostic control`)
+      } else {
+        await stageDiagnosticButton.click()
+        await page.getByLabel('诊断阶段').selectOption('composer')
+        await page.getByRole('checkbox', { name: /我确认只运行所选阶段/u }).check()
+        await page.getByRole('button', { name: '运行所选阶段' }).click()
+        if (!(await page.getByText('Fixture 已验证诊断结果界面；没有调用任何模型。').isVisible().catch(() => false))) {
+          failures.push(`${viewport.name} ${route.path}: stage diagnostic fixture should render a bounded result`)
+        }
+        if (!(await page.locator('.studio-ai-daily-stage-diagnostic-result').getByText('Composer · 内容编排').isVisible().catch(() => false))) {
+          failures.push(`${viewport.name} ${route.path}: stage diagnostic result should preserve selected role`)
+        }
+        await page.getByRole('button', { name: '关闭' }).click()
+      }
       const tabs = page.getByRole('tab', { name: /Runs|Sources|Candidates \/ Events|Flash Review|Edition/u })
       if ((await tabs.count()) !== 5) {
         failures.push(`${viewport.name} ${route.path}: expected five AI Daily workspace tabs`)

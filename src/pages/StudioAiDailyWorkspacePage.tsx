@@ -25,12 +25,15 @@ import { Link, useSearchParams } from 'react-router-dom'
 import {
   STUDIO_STORAGE_KEYS,
   normalizeStudioAiDailyWorkspace,
+  normalizeStudioAiDailyStageDiagnosticResult,
   readStoredStudioToken,
   readStudioError,
   type StudioAiDailyWorkspace,
   type StudioAiDailyWorkspaceCandidate,
   type StudioAiDailyWorkspaceFlash,
   type StudioAiDailyWorkspaceRun,
+  type StudioAiDailyGenerationRole,
+  type StudioAiDailyStageDiagnosticResult,
 } from '../data/studio'
 import {
   STUDIO_API_BASE,
@@ -53,6 +56,7 @@ type StudioEdition = NonNullable<StudioAiDailyWorkspace['edition']>
 type StudioEditionRevision = StudioEdition['generatedRevisions'][number]
 
 const AI_DAILY_LIVE_RUN_CONFIRMATION = 'RUN_APPROVED_PRODUCTION_EDITION'
+const AI_DAILY_STAGE_DIAGNOSTIC_CONFIRMATION = 'RUN_APPROVED_STAGE_DIAGNOSTIC'
 
 interface EditorialOverrideRequest {
   kind: EditorialOverrideKind
@@ -171,6 +175,19 @@ function formatGenerationDiagnostic(value: string | null | undefined) {
     truncated_json: '截断 JSON',
     malformed_json: '畸形 JSON',
     no_json: '无 JSON 对象',
+    provider_error: '通用 provider 错误',
+    provider_request_invalid: '请求格式无效',
+    provider_auth: '认证失败',
+    provider_rate_limited: '渠道限流',
+    provider_endpoint_unsupported: '端点不兼容',
+    provider_upstream_error: '上游服务错误',
+    provider_timeout: '响应超时',
+    provider_network_error: '网络错误',
+    provider_empty_response: '空响应',
+    provider_invalid_json: 'JSON 无效',
+    provider_payload_too_large: '请求体过大',
+    schema_invalid: '业务结构无效',
+    provider_quality_below_floor: '质量门未满足',
   }
   return value ? labels[value] ?? value : '未记录'
 }
@@ -187,6 +204,19 @@ function productionGenerationHint(status: StudioAiDailyWorkspace['productionGene
   if (status === 'ready') return '生产配置已通过启动校验；仅提交一次真实版次，完成后立即关闭生成。'
   if (status === 'misconfigured') return '生产配置未通过；先修复 Render runtime、Secret File 和 hash，再提交真实版次。'
   return '为防止意外模型调用，生产生成当前关闭；需要真实版次时只开启短窗口，提交后立即关闭。'
+}
+
+function stageDiagnosticRoleLabel(role: StudioAiDailyGenerationRole) {
+  if (role === 'extractor') return 'Extractor · 事实抽取'
+  if (role === 'composer') return 'Composer · 内容编排'
+  return 'Verifier · 证据复核'
+}
+
+function stageDiagnosticDurationLabel(value: StudioAiDailyStageDiagnosticResult['durationBucket']) {
+  if (value === 'under-5s') return '少于 5 秒'
+  if (value === 'under-30s') return '5–30 秒'
+  if (value === 'under-120s') return '30–120 秒'
+  return '至少 120 秒'
 }
 
 function latestRun(workspace: StudioAiDailyWorkspace | null): StudioAiDailyWorkspaceRun | null {
@@ -378,6 +408,11 @@ function createWorkspaceUiFixturePayload() {
       },
     ],
     productionGeneration: {
+      status: 'ready',
+      enabled: true,
+      issue: null,
+    },
+    stageDiagnostics: {
       status: 'ready',
       enabled: true,
       issue: null,
@@ -895,6 +930,12 @@ export function StudioAiDailyWorkspacePage() {
   const [liveRunActor, setLiveRunActor] = useState('站长')
   const [liveRunPending, setLiveRunPending] = useState(false)
   const [liveRunStatus, setLiveRunStatus] = useState('')
+  const [stageDiagnosticPanelOpen, setStageDiagnosticPanelOpen] = useState(false)
+  const [stageDiagnosticRole, setStageDiagnosticRole] = useState<StudioAiDailyGenerationRole>('extractor')
+  const [stageDiagnosticConfirmed, setStageDiagnosticConfirmed] = useState(false)
+  const [stageDiagnosticPending, setStageDiagnosticPending] = useState(false)
+  const [stageDiagnosticStatus, setStageDiagnosticStatus] = useState('')
+  const [stageDiagnosticResult, setStageDiagnosticResult] = useState<StudioAiDailyStageDiagnosticResult | null>(null)
   const [ingestionPending, setIngestionPending] = useState(false)
   const [ingestionStatus, setIngestionStatus] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -903,6 +944,7 @@ export function StudioAiDailyWorkspacePage() {
   const editorialMutationSequence = useRef(0)
   const editionMutationSequence = useRef(0)
   const liveRunSequence = useRef(0)
+  const stageDiagnosticSequence = useRef(0)
   const selectedIssueIdRef = useRef(selectedIssueId)
 
   const selectedIssue = workspace?.selectedIssue ?? null
@@ -1010,6 +1052,7 @@ export function StudioAiDailyWorkspacePage() {
       editorialMutationSequence.current += 1
       editionMutationSequence.current += 1
       liveRunSequence.current += 1
+      stageDiagnosticSequence.current += 1
       setIsLoading(false)
       setFlashMutationKey('')
       setEditorialMutationKey('')
@@ -1017,6 +1060,11 @@ export function StudioAiDailyWorkspacePage() {
       setLiveRunPending(false)
       setLiveRunPanelOpen(false)
       setLiveRunConfirmed(false)
+      setStageDiagnosticPending(false)
+      setStageDiagnosticPanelOpen(false)
+      setStageDiagnosticConfirmed(false)
+      setStageDiagnosticStatus('')
+      setStageDiagnosticResult(null)
       window.localStorage.removeItem(STUDIO_STORAGE_KEYS.adminToken)
       setWorkspace(null)
       setStatusText('Studio token 已清除。')
@@ -1024,6 +1072,11 @@ export function StudioAiDailyWorkspacePage() {
   }
 
   const changeIssue = (issueId: string) => {
+    stageDiagnosticSequence.current += 1
+    setStageDiagnosticPending(false)
+    setStageDiagnosticConfirmed(false)
+    setStageDiagnosticStatus('')
+    setStageDiagnosticResult(null)
     selectedIssueIdRef.current = issueId
     setSelectedIssueId(issueId)
     setSearchParams((current) => {
@@ -1058,6 +1111,7 @@ export function StudioAiDailyWorkspacePage() {
     editorialMutationSequence.current += 1
     editionMutationSequence.current += 1
     liveRunSequence.current += 1
+    stageDiagnosticSequence.current += 1
     selectedIssueIdRef.current = ''
     setIsLoading(false)
     setFlashMutationKey('')
@@ -1066,6 +1120,11 @@ export function StudioAiDailyWorkspacePage() {
     setLiveRunPending(false)
     setLiveRunPanelOpen(false)
     setLiveRunConfirmed(false)
+    setStageDiagnosticPending(false)
+    setStageDiagnosticPanelOpen(false)
+    setStageDiagnosticConfirmed(false)
+    setStageDiagnosticStatus('')
+    setStageDiagnosticResult(null)
     setDraftToken('')
     setAdminToken('')
     setWorkspace(null)
@@ -1387,6 +1446,78 @@ export function StudioAiDailyWorkspacePage() {
     }
   }, [adminToken, liveRunActor, liveRunConfirmed, liveRunPending, loadWorkspace, setSearchParams, useUiCheckFixture, workspace])
 
+  const runStageDiagnostic = useCallback(async () => {
+    const issue = workspace?.selectedIssue
+    if (!issue || !stageDiagnosticConfirmed || stageDiagnosticPending) return
+    const mutationId = stageDiagnosticSequence.current + 1
+    stageDiagnosticSequence.current = mutationId
+    setStageDiagnosticPending(true)
+    setStageDiagnosticStatus('')
+    setStageDiagnosticResult(null)
+    try {
+      if (useUiCheckFixture) {
+        const fixtureResult: StudioAiDailyStageDiagnosticResult = {
+          role: stageDiagnosticRole,
+          status: 'failed',
+          errorCategory: 'provider_quality_below_floor',
+          providerCalls: 0,
+          durationBucket: 'under-5s',
+          responseDiagnostics: { responseShape: null, streamCompletion: null, lengthBucket: null, jsonShape: null },
+        }
+        setStageDiagnosticResult(fixtureResult)
+        setStageDiagnosticStatus('Fixture 已验证诊断结果界面；没有调用任何模型。')
+        return
+      }
+      if (!adminToken) {
+        setStageDiagnosticStatus('请先保存 Studio token。')
+        return
+      }
+      const response = await requestStudioApi(
+        `/ai-daily/issues/${encodeURIComponent(issue.id)}/stage-diagnostics`,
+        adminToken,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            role: stageDiagnosticRole,
+            expectedIssueUpdatedAt: issue.updatedAt,
+            confirmation: AI_DAILY_STAGE_DIAGNOSTIC_CONFIRMATION,
+          }),
+        },
+      )
+      if (stageDiagnosticSequence.current !== mutationId) return
+      if (!response.ok) {
+        const message = explainStudioApiError(response.status, readStudioError(response.payload))
+        setStageDiagnosticStatus(message)
+        setStatusText(message)
+        return
+      }
+      const payload = typeof response.payload === 'object' && response.payload !== null && 'result' in response.payload
+        ? response.payload.result
+        : null
+      const diagnostic = normalizeStudioAiDailyStageDiagnosticResult(payload)
+      if (!diagnostic) {
+        const message = 'Studio 返回的阶段诊断结果格式无效，已停止本次诊断。'
+        setStageDiagnosticStatus(message)
+        setStatusText(message)
+        return
+      }
+      setStageDiagnosticResult(diagnostic)
+      const message = diagnostic.status === 'succeeded'
+        ? `${stageDiagnosticRoleLabel(diagnostic.role)} 已通过；本次仅调用 ${diagnostic.providerCalls} 次。`
+        : `${stageDiagnosticRoleLabel(diagnostic.role)} 未通过：${formatGenerationDiagnostic(diagnostic.errorCategory)}；本次仅调用 ${diagnostic.providerCalls} 次。`
+      setStageDiagnosticStatus(message)
+      setStatusText(message)
+      setStageDiagnosticConfirmed(false)
+    } catch (error) {
+      if (stageDiagnosticSequence.current !== mutationId) return
+      const message = explainStudioClientException(error, '运行 AI Daily 单阶段诊断')
+      setStageDiagnosticStatus(message)
+      setStatusText(message)
+    } finally {
+      if (stageDiagnosticSequence.current === mutationId) setStageDiagnosticPending(false)
+    }
+  }, [adminToken, stageDiagnosticConfirmed, stageDiagnosticPending, stageDiagnosticRole, useUiCheckFixture, workspace])
+
   const refreshIngestion = useCallback(async () => {
     if (ingestionPending) return
     if (useUiCheckFixture) {
@@ -1492,6 +1623,13 @@ export function StudioAiDailyWorkspacePage() {
                       ? '生产生成未启用'
                       : '生产配置未通过'}
                 </span>
+                <span className={`studio-status-pill ${workspace.stageDiagnostics.status === 'ready' ? 'is-success' : workspace.stageDiagnostics.status === 'misconfigured' ? 'is-danger' : 'is-muted'}`}>
+                  {workspace.stageDiagnostics.status === 'ready'
+                    ? '阶段诊断已就绪'
+                    : workspace.stageDiagnostics.status === 'disabled'
+                      ? '阶段诊断未启用'
+                      : '阶段诊断配置未通过'}
+                </span>
                 <span className="studio-ai-daily-live-run-note" role="status">
                   {productionGenerationHint(workspace.productionGeneration.status)}
                 </span>
@@ -1499,12 +1637,23 @@ export function StudioAiDailyWorkspacePage() {
                   type="button"
                   className="studio-primary-button"
                   disabled={!(adminToken || useUiCheckFixture) || !selectedIssue || workspace.productionGeneration.status !== 'ready' || liveRunPending}
-                  onClick={() => setLiveRunPanelOpen((current) => !current)}
+                  onClick={() => { setLiveRunPanelOpen((current) => !current); setStageDiagnosticPanelOpen(false) }}
                   aria-expanded={liveRunPanelOpen}
                   aria-controls="studio-ai-daily-live-run-panel"
                 >
                   <CirclePlay size={16} aria-hidden="true" />
                   运行真实版次
+                </button>
+                <button
+                  type="button"
+                  className="studio-secondary-button"
+                  disabled={!(adminToken || useUiCheckFixture) || !selectedIssue || workspace.stageDiagnostics.status !== 'ready' || stageDiagnosticPending}
+                  onClick={() => { setStageDiagnosticPanelOpen((current) => !current); setLiveRunPanelOpen(false) }}
+                  aria-expanded={stageDiagnosticPanelOpen}
+                  aria-controls="studio-ai-daily-stage-diagnostic-panel"
+                >
+                  <Activity size={16} aria-hidden="true" />
+                  单阶段诊断
                 </button>
                 <button
                   type="button"
@@ -1545,6 +1694,50 @@ export function StudioAiDailyWorkspacePage() {
                 </button>
               </div>
               {liveRunStatus && <p className="assistant-status-text" role="status" aria-live="polite">{liveRunStatus}</p>}
+            </section>
+          )}
+
+          {stageDiagnosticPanelOpen && selectedIssue && (
+            <section id="studio-ai-daily-stage-diagnostic-panel" className="studio-ai-daily-stage-diagnostic-panel" aria-labelledby="studio-ai-daily-stage-diagnostic-title">
+              <div>
+                <span className="section-subtitle">REAL EDITION STAGE / ONE CALL MAX</span>
+                <h2 id="studio-ai-daily-stage-diagnostic-title">诊断 {selectedIssue.date} 的单个业务阶段</h2>
+                <p>使用当前已批准配置和 Edition 数据，不创建 Run、revision、草稿或公开内容。</p>
+              </div>
+              <label className="assistant-field">
+                <span>诊断阶段</span>
+                <select value={stageDiagnosticRole} disabled={stageDiagnosticPending} onChange={(event) => { setStageDiagnosticRole(event.target.value as StudioAiDailyGenerationRole); setStageDiagnosticConfirmed(false); setStageDiagnosticResult(null); setStageDiagnosticStatus('') }}>
+                  <option value="extractor">Extractor · 事实抽取</option>
+                  <option value="composer">Composer · 内容编排</option>
+                  <option value="verifier">Verifier · 证据复核</option>
+                </select>
+              </label>
+              <label className="studio-ai-daily-live-run-confirmation">
+                <input type="checkbox" checked={stageDiagnosticConfirmed} disabled={stageDiagnosticPending} onChange={(event) => setStageDiagnosticConfirmed(event.target.checked)} />
+                <span>我确认只运行所选阶段；最多调用一次已批准模型，且不会自动 repair、fallback 或重试。</span>
+              </label>
+              <div className="studio-ai-daily-edition-actions">
+                <button type="button" className="studio-primary-button" disabled={!stageDiagnosticConfirmed || stageDiagnosticPending} onClick={() => void runStageDiagnostic()}>
+                  <Activity size={16} aria-hidden="true" />
+                  {stageDiagnosticPending ? '正在诊断' : '运行所选阶段'}
+                </button>
+                <button type="button" className="studio-secondary-button" disabled={stageDiagnosticPending} onClick={() => { setStageDiagnosticPanelOpen(false); setStageDiagnosticConfirmed(false) }}>
+                  关闭
+                </button>
+              </div>
+              {stageDiagnosticResult && (
+                <dl className="studio-ai-daily-stage-diagnostic-result" aria-label="阶段诊断结果">
+                  <div><dt>阶段</dt><dd>{stageDiagnosticRoleLabel(stageDiagnosticResult.role)}</dd></div>
+                  <div><dt>结果</dt><dd className={statusClass(stageDiagnosticResult.status)}>{stageDiagnosticResult.status === 'succeeded' ? '通过' : '未通过'}</dd></div>
+                  <div><dt>模型调用</dt><dd>{stageDiagnosticResult.providerCalls}</dd></div>
+                  <div><dt>耗时</dt><dd>{stageDiagnosticDurationLabel(stageDiagnosticResult.durationBucket)}</dd></div>
+                  <div><dt>错误分类</dt><dd>{formatGenerationDiagnostic(stageDiagnosticResult.errorCategory)}</dd></div>
+                  <div><dt>响应形状</dt><dd>{formatGenerationDiagnostic(stageDiagnosticResult.responseDiagnostics.responseShape)}</dd></div>
+                  <div><dt>流完成态</dt><dd>{formatGenerationDiagnostic(stageDiagnosticResult.responseDiagnostics.streamCompletion)}</dd></div>
+                  <div><dt>JSON 形状</dt><dd>{formatGenerationDiagnostic(stageDiagnosticResult.responseDiagnostics.jsonShape)}</dd></div>
+                </dl>
+              )}
+              {stageDiagnosticStatus && <p className="assistant-status-text" role="status" aria-live="polite">{stageDiagnosticStatus}</p>}
             </section>
           )}
 

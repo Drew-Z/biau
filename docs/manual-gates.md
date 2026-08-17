@@ -176,11 +176,15 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 针对 attempt 14 的零外呼实质修复已在本地完成，并将 prompt 合同升级为 `ai-daily-prompt-v6`。Composer 现在只接收受限 evidence 投影（证据 id、来源角色/层级、publisher、公开域名、时间和有界摘要，不含完整 URL、content hash、locator 或任意字段），从首次写作起约束 official evidence 与跨域 trend。首轮 verifier 后，只有六个固定的 contradicted/insufficient、official-evidence 和独立来源 critical finding 可以触发一次完整 composer 替换稿与一次 verifier 复核；第二次仍不通过、结构错误或 deadline 到期均立即停止。最终稿、复核和完整受限 attempts 归属于现有 `VERIFY` checkpoint，旧 checkpoint 兼容且重放不调用模型。26 项合同、runner/quality/model-runtime/model-evaluation、server build、lint、Vite build、性能与文档/部署门禁均以 `externalProviderCalls=0` 通过；official evidence 缺失回归仍为 `REJECTED`。该修改尚未部署，也没有批准或调用模型；prompt v6 使当前 v5 bundle 按契约失效，必须重新生成、批准和交付。
 
+站点所有者已批准零调用 v6 静态选型 `ai-daily-cpa-deepseek-v4-flash-static-v2`：proposal hash `db654a7ae6a09e0d6eb7a343fa3b1a79ce847a5d0aa02ec680b536e73ace64b3`，bundle hash `8481cd3b66f91054625290034340a49ddddb5063c5e2e87a2477a6c2d60d1a3a`，prompt/schema 为 `ai-daily-prompt-v6` / `ai-daily-generation-v2`，三角色仍绑定精确 `free5/DeepSeek-V4-Flash`，生成过程 `modelCalls=0`。Render Secret File 仍是旧 bundle，因此在上传新文件并同步 hash 前不得部署 v6 或提交真实 Edition。
+
+为替代反复执行整条 Edition 的调试方式，仓库已增加独立的单阶段真实业务诊断。它必须由 `AI_DAILY_STAGE_DIAGNOSTICS_ENABLED` 短时开启，且 production generation/business evaluation 同时关闭；Studio 下拉选择 extractor/composer/verifier 后二次确认。每次最多一个 primary 调用，禁止 repair、fallback 和重试，不写 Run、checkpoint、revision、draft 或 Feed，并通过进程级单飞锁拒绝并发。该入口使用当前 Edition 证据和最新 revision，不是 ping 或 provider 测活；确定性合同使用 fixture/loopback，`externalProviderCalls=0`。
+
 ### 1. 后续真实版次
 
 - 当前最新一次真实 Edition 已通过 extractor、composer 和 verifier 的 Responses/SSE/schema 边界，阻塞收敛到确定性内容质量验证：composition 支持不足或矛盾、需要官方证据的 claim 缺少 official evidence，以及 trend 未覆盖两个独立来源域。
 - evidence-aware composer 与单次 verifier 驱动修复闭环已经通过零外呼合同；没有放宽官方证据、独立来源或 contradicted/insufficient 拒绝门槛。
-- 下一步先为 `ai-daily-prompt-v6` 生成并明确批准新的 proposal/bundle，完成 Render Secret File/hash 交付和禁用态部署校验；部署完成后仍需重新取得一次单独的“真实 Edition”明确批准。
+- 下一步上传已批准的 v6 Secret File、同步 bundle hash，保持三个生产开关为 `false` 完成禁用态部署校验；需要定位单一阶段时可另行短时开启诊断开关，完整真实 Edition 仍需再次获得单独明确批准。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。

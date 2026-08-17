@@ -86,7 +86,7 @@ function invalidProductionKeys(source) {
   if (!/^(?:true|false|1|0|yes|no|on|off)$/iu.test(source.AI_DAILY_PUBLIC_FEED_ENABLED?.trim() || '')) {
     invalid.push('AI_DAILY_PUBLIC_FEED_ENABLED')
   }
-  for (const key of ['AI_DAILY_BUSINESS_EVALUATION_ENABLED', 'AI_DAILY_PRODUCTION_GENERATION_ENABLED']) {
+  for (const key of ['AI_DAILY_BUSINESS_EVALUATION_ENABLED', 'AI_DAILY_PRODUCTION_GENERATION_ENABLED', 'AI_DAILY_STAGE_DIAGNOSTICS_ENABLED']) {
     if (!/^(?:true|false|1|0|yes|no|on|off)$/iu.test(source[key]?.trim() || '')) invalid.push(key)
   }
   if (!isAbsolute(source.AI_DAILY_MODEL_APPROVAL_FILE?.trim() || '')) invalid.push('AI_DAILY_MODEL_APPROVAL_FILE')
@@ -157,12 +157,13 @@ function parseJsonOutput(value) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2))
-  const [packageText, envExample, renderYaml, pipelineDoc, runnerSource, manifestText] = await Promise.all([
+  const [packageText, envExample, renderYaml, pipelineDoc, runnerSource, executionSource, manifestText] = await Promise.all([
     readFile(resolve(repoRoot, 'package.json'), 'utf8'),
     readFile(resolve(repoRoot, '.env.example'), 'utf8'),
     readFile(resolve(repoRoot, 'render.yaml'), 'utf8'),
     readFile(resolve(repoRoot, 'docs/ai-daily-pipeline.md'), 'utf8'),
     readFile(resolve(repoRoot, 'server/scripts/ai-daily-runner.ts'), 'utf8'),
+    readFile(resolve(repoRoot, 'server/src/aiDailyGenerationExecution.ts'), 'utf8'),
     readFile(resolve(repoRoot, 'server/data/ai-daily-source-manifest.v1.json'), 'utf8'),
   ])
   const packageJson = JSON.parse(packageText)
@@ -177,6 +178,7 @@ async function main() {
     'ai-daily:resume',
     'ai-daily:contracts-check',
     'ai-daily:studio-production-check',
+    'ai-daily:stage-diagnostics-check',
     'ai-daily:manifest-check',
     'ai-daily:model-evaluation-check',
     'ai-daily:model-runtime-check',
@@ -384,6 +386,7 @@ async function main() {
     'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
     'AI_DAILY_MODEL_EVALUATION_APPROVAL_ID',
     'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
+    'AI_DAILY_STAGE_DIAGNOSTICS_ENABLED',
   ]
   const missingEnvKeys = requiredEnvKeys.filter((key) => !new RegExp(`^${key}=`, 'mu').test(envExample))
   results.push(
@@ -407,6 +410,7 @@ async function main() {
     'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
     'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
     'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
+    'AI_DAILY_STAGE_DIAGNOSTICS_ENABLED',
   ]
   const missingRenderKeys = requiredRenderKeys.filter((key) => !studioService.includes(`- key: ${key}`))
   const renderContractOk =
@@ -417,6 +421,7 @@ async function main() {
     studioEnv.get('AI_DAILY_MODEL_APPROVAL_FILE') === renderApprovalFilePath &&
     studioEnv.get('AI_DAILY_BUSINESS_EVALUATION_ENABLED') === 'false' &&
     studioEnv.get('AI_DAILY_PRODUCTION_GENERATION_ENABLED') === 'false' &&
+    studioEnv.get('AI_DAILY_STAGE_DIAGNOSTICS_ENABLED') === 'false' &&
     missingRenderKeys.length === 0
   results.push(
     check(
@@ -467,8 +472,9 @@ async function main() {
 
   const liveEditorialProviderImplemented =
     runnerSource.includes("process.argv.includes('--live')") &&
-    runnerSource.includes('buildAiDailyProductionProviders') &&
-    runnerSource.includes("profile: 'PRODUCTION'")
+    runnerSource.includes('resolveAiDailyProductionGenerationExecution') &&
+    executionSource.includes('buildAiDailyProductionProviders') &&
+    executionSource.includes("profile: 'PRODUCTION'")
   results.push(
     check(
       'editorial-provider-gate',
@@ -523,6 +529,7 @@ async function main() {
     'AI_DAILY_MODEL_APPROVAL_BUNDLE_HASH',
     'AI_DAILY_BUSINESS_EVALUATION_ENABLED',
     'AI_DAILY_PRODUCTION_GENERATION_ENABLED',
+    'AI_DAILY_STAGE_DIAGNOSTICS_ENABLED',
     'TRUST_PROXY',
   ]
   const conditionalProductionKeys = /^(?:true|1|yes|on)$/iu.test(process.env.AI_DAILY_BUSINESS_EVALUATION_ENABLED?.trim() || '')

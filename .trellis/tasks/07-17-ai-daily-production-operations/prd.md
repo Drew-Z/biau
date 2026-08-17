@@ -21,6 +21,7 @@ Configure, observe, and accept the completed AI Daily system in production throu
 - Approve an explicit extractor/composer/verifier role mapping. The default path is a zero-call manual static selection with no independent fallback; an optional measured evaluation may be used when quality comparison or independent redundancy is actually needed.
 - Add metrics for stage/outcome, freshness, lag, backlog, leases, source health, fallback, quality rejection, and feed age.
 - Run one user-approved real edition as the first live provider task.
+- Provide an explicitly enabled, Studio-authenticated single-stage business diagnostic for a current real Edition so extractor/composer/verifier failures can be isolated without rerunning completed stages.
 - Record manual review, flash approval, daily draft approval, export, deployment verification, and rollback instructions.
 
 ## Acceptance Criteria
@@ -30,8 +31,9 @@ Configure, observe, and accept the completed AI Daily system in production throu
 - [ ] Initial sources and model roles have an approved low-sensitive selection record whose `selectionBasis` distinguishes manual static selection from measured evaluation.
 - [ ] One live edition meets freshness, coverage, citation, quality, editorial, feed, export, and public deployment checks.
 - [ ] Failure dashboards distinguish config, provider, evidence, quality, infrastructure, and stale-content conditions.
+- [ ] A stage diagnostic invokes at most one approved provider call, performs no repair/fallback/retry or database mutation, and returns only fixed low-sensitive diagnostics.
 - [ ] Disabling Cron and public-feed flags provides a documented non-destructive rollback.
 
 ## Validation
 
-Use the parent full quality gate, then perform the separately approved live business edition. No ping, doctor, diagnose, empty prompt, or liveness-only provider request is allowed.
+Use the parent full quality gate, then perform the separately approved live business edition. No ping, doctor, empty prompt, or liveness-only provider request is allowed. The separately enabled stage diagnostic is a bounded real-Edition business execution, not provider liveness testing.

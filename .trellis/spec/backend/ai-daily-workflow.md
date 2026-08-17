@@ -269,6 +269,78 @@ if (summarizeAiDailySelectionAuthorizationIssues(pack).length > 0) {
 
 The persisted selection decision authorizes its exact evidence independently of later maintenance runs.
 
+## Scenario: Studio single-stage real-Edition diagnostics
+
+### 1. Scope / Trigger
+
+- Trigger: a separately approved real Edition reaches a terminal failure and existing checkpoints isolate the blocker to extractor, composer, or verifier.
+- Goal: exercise only that real business stage once without rerunning completed roles, probing provider liveness, or mutating production workflow state.
+
+### 2. Signatures
+
+- Product entry: `POST /studio/api/ai-daily/issues/:id/stage-diagnostics` behind the existing Studio bearer middleware.
+- Service entry: `runAiDailyStageDiagnostic(prisma, { issueId, role, expectedIssueUpdatedAt })`.
+- Readiness: `inspectAiDailyStageDiagnosticReadiness()` returns only `disabled | misconfigured | ready` plus a fixed issue code.
+- Shared execution: `resolveAiDailyApprovedGenerationExecution()` validates runtime and the approved bundle without requiring or enabling the production worker.
+- Deterministic contract: `npm.cmd run ai-daily:stage-diagnostics-check`.
+
+### 3. Contracts
+
+- Environment: `AI_DAILY_STAGE_DIAGNOSTICS_ENABLED=false` by default. A diagnostic is eligible only when this flag is true and both `AI_DAILY_PRODUCTION_GENERATION_ENABLED` and `AI_DAILY_BUSINESS_EVALUATION_ENABLED` are false.
+- Request body: `{ role: 'extractor' | 'composer' | 'verifier', expectedIssueUpdatedAt: ISO date, confirmation: 'RUN_APPROVED_STAGE_DIAGNOSTIC' }`.
+- Extractor input is one bounded current evidence batch: at most 6 items and 18,000 quote characters.
+- Composer and verifier load `AiDailyIssue.latestGeneratedRevisionId`; stored `claims` pass `normalizeFactExtractionOutput`, and verifier composition also passes `normalizeCompositionOutput`, against the current evidence pack before a call.
+- Every stage passes `allowSchemaRepair=false` and `allowFallbacks=false`. The diagnostic never invokes the content-quality repair loop and asserts `providerCalls <= 1`.
+- A process-wide single-flight lock protects the shared channel. The function reads only Issue, evidence, and latest revision data; it never writes Run, work item, checkpoint, generated revision, draft, Feed, or audit state.
+- Response: `{ result: { role, status, errorCategory, providerCalls, durationBucket, responseDiagnostics } }`. `errorCategory` and the four response diagnostics are fixed literals; `providerCalls` is `0 | 1`; duration is one of `under-5s | under-30s | under-120s | 120s-or-more`.
+- The response and logs must omit provider/candidate/model identity, endpoint, credential, prompt, evidence text, raw output, repair payload, and arbitrary exception text.
+
+### 4. Validation & Error Matrix
+
+- Missing/invalid role, Edition version, or confirmation -> `400 invalid-ai-daily-stage-diagnostic`.
+- Missing/wrong Studio token -> existing `401 missing-studio-token`; missing server token -> existing `503 studio-auth-not-configured`.
+- Diagnostic flag false -> `503 ai-daily-stage-diagnostics-disabled` before database access.
+- Production generation or business evaluation active -> `409 ai-daily-stage-diagnostics-production-active`.
+- Runtime/bundle validation failure -> `503 ai-daily-stage-diagnostics-configuration-invalid` plus one fixed configuration issue.
+- Existing in-flight diagnostic -> `409 ai-daily-stage-diagnostics-busy` without a provider call.
+- Missing Issue -> `404 ai-daily-stage-diagnostics-issue-not-found`; changed `updatedAt` -> `409 ai-daily-stage-diagnostics-issue-version-conflict`.
+- Evidence authority/readiness failure -> `409 ai-daily-stage-diagnostics-evidence-not-ready` with fixed reason codes.
+- Composer/verifier without a current revision -> `409 ai-daily-stage-diagnostics-revision-required`; invalid stored claims/composition -> `409 ai-daily-stage-diagnostics-revision-invalid`.
+- Provider/schema failure after the one allowed call -> HTTP `200` with `result.status='failed'` and one fixed `errorCategory`; no automatic retry follows.
+
+### 5. Good / Base / Bad Cases
+
+- Good: attempt 14 reached all three schemas but failed deterministic content quality; an operator selects only composer, confirms once, and receives a one-call low-sensitive result without creating attempt 15.
+- Base: the diagnostic flag is false. Workspace reports `disabled`, the button is unavailable, and the protected route returns `503` without touching the database or provider.
+- Bad: a schema-invalid extractor response triggers a repair call and then a fallback. This violates the one-call budget even if the second response is valid.
+
+### 6. Tests Required
+
+- `ai-daily:stage-diagnostics-check` must cover disabled/misconfigured/ready readiness, bearer auth, invalid body, Edition version conflict, evidence failure, missing revision, all three roles, single-flight busy rejection, and low-sensitive DTO scanning.
+- The invalid-schema fixture must prove exactly one primary call, zero repair calls, and zero fallback calls.
+- The contract output must state `externalProviderCalls=0` and `databaseWrites=0`; it belongs in `ai-daily:contracts-check` and the production-readiness command inventory.
+- `studio:ai-daily-workspace-check` must normalize diagnostic readiness, and `check:ui` must exercise role selection, explicit confirmation, bounded result rendering, and desktop/mobile overflow checks.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```ts
+await queueAiDailyStudioProductionRun(prisma, { issueId, actor, expectedIssueUpdatedAt })
+// Inspect whichever stage fails after extractor/composer/verifier all rerun.
+```
+
+#### Correct
+
+```ts
+await runAiDailyStageDiagnostic(prisma, {
+  issueId,
+  role: 'verifier',
+  expectedIssueUpdatedAt,
+})
+// One approved business-stage call, no workflow writes, no repair or fallback.
+```
+
 ## Scenario: Manual static role selection and optional model evaluation
 
 ### 1. Scope / Trigger

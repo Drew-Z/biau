@@ -359,6 +359,8 @@ export async function extractAiDailyFacts(input: {
   providers: AiDailyGenerationProviders
   extractionBatchMaxItems?: number
   extractionBatchMaxChars?: number
+  allowSchemaRepair?: boolean
+  allowFallbacks?: boolean
 }): Promise<AiDailyExtractionStageResult> {
   const evidence = normalizeGenerationEvidence(input.evidence)
   if (evidence.length === 0) return { ok: false, code: 'evidence-pack-empty', evidence, attempts: [] }
@@ -374,6 +376,8 @@ export async function extractAiDailyFacts(input: {
       providers: input.providers.extractor,
       payload: { evidence: batch },
       validate: (value) => normalizeFactExtractionOutput(value, new Map(batch.map((item) => [item.evidenceId, item]))),
+      allowSchemaRepair: input.allowSchemaRepair,
+      allowFallbacks: input.allowFallbacks,
     })
     attempts.push(...extracted.attempts)
     if (!extracted.ok) {
@@ -396,6 +400,8 @@ export async function composeAiDailyFacts(input: {
     blockReviews: AiDailyCompositionBlockReview[]
     findings: AiDailyGenerationFinding[]
   }
+  allowSchemaRepair?: boolean
+  allowFallbacks?: boolean
 }): Promise<AiDailyCompositionStageResult> {
   const composed = await runGenerationRole({
     role: 'composer',
@@ -421,6 +427,8 @@ export async function composeAiDailyFacts(input: {
         : {}),
     },
     validate: (value) => normalizeCompositionOutput(value, new Set(input.claims.map((claim) => claim.claimId))),
+    allowSchemaRepair: input.allowSchemaRepair,
+    allowFallbacks: input.allowFallbacks,
   })
   return composed.ok
     ? { ok: true, composition: composed.value, attempts: composed.attempts }
@@ -433,6 +441,8 @@ export async function verifyAiDailyComposition(input: {
   composition: AiDailyComposition
   providers: AiDailyGenerationProviders
   qualityRepairAttempt?: boolean
+  allowSchemaRepair?: boolean
+  allowFallbacks?: boolean
 }): Promise<AiDailyVerificationStageResult> {
   const evidenceById = new Map(input.evidence.map((item) => [item.evidenceId, item]))
   const requiredReviewClaimIds = classifyAiDailyRiskClaims(input.claims, evidenceById, input.composition)
@@ -453,6 +463,8 @@ export async function verifyAiDailyComposition(input: {
       evidenceById,
       new Map(compositionBlocks.map((block) => [block.blockId, block])),
     ),
+    allowSchemaRepair: input.allowSchemaRepair,
+    allowFallbacks: input.allowFallbacks,
   })
   return verified.ok
     ? {
@@ -1059,8 +1071,13 @@ async function runGenerationRole<T>(input: {
   providers: { primary: AiDailyStructuredGenerationProvider; fallbacks?: AiDailyStructuredGenerationProvider[]; minimumQualityScore: number }
   payload: unknown
   validate: (value: unknown) => { ok: true; value: T } | { ok: false; issues: string[] }
+  allowSchemaRepair?: boolean
+  allowFallbacks?: boolean
 }): Promise<{ ok: true; value: T; attempts: AiDailyGenerationProviderAttempt[] } | { ok: false; attempts: AiDailyGenerationProviderAttempt[] }> {
-  const providers = [input.providers.primary, ...(input.providers.fallbacks ?? [])]
+  const providers = [
+    input.providers.primary,
+    ...(input.allowFallbacks === false ? [] : input.providers.fallbacks ?? []),
+  ]
   const attempts: AiDailyGenerationProviderAttempt[] = []
   for (let index = 0; index < providers.length; index += 1) {
     const provider = providers[index]
@@ -1093,6 +1110,18 @@ async function runGenerationRole<T>(input: {
           ...emptyAiDailyGenerationProviderResponseDiagnostics(),
         })
         return { ok: true, value: firstValidation.value, attempts }
+      }
+      if (input.allowSchemaRepair === false) {
+        attempts.push({
+          providerId: boundedIdentifier(provider.id, 80) || input.role,
+          role: input.role,
+          slot: provider.slot,
+          outcome: 'schema-rejected',
+          calls,
+          errorCategory: 'schema_invalid',
+          ...emptyAiDailyGenerationProviderResponseDiagnostics(),
+        })
+        continue
       }
       calls += 1
       const repaired = await provider.generate({

@@ -145,6 +145,11 @@ const fixture = {
     enabled: true,
     issue: null,
   },
+  stageDiagnostics: {
+    status: 'ready',
+    enabled: true,
+    issue: null,
+  },
   edition: {
     issue: issueFixture,
     draft: {
@@ -271,6 +276,9 @@ if (workspace.runs[0]?.overrides.length !== 1 || workspace.runs[0]?.overrides[0]
 if (workspace.sourceFeeds[0]?.healthStatus !== 'HEALTHY') throw new Error('source health should be preserved')
 if (workspace.productionGeneration.status !== 'ready' || !workspace.productionGeneration.enabled) {
   throw new Error('production generation readiness should normalize')
+}
+if (workspace.stageDiagnostics.status !== 'ready' || !workspace.stageDiagnostics.enabled) {
+  throw new Error('stage diagnostics readiness should normalize')
 }
 if (workspace.edition?.issue.id !== 'issue-1') throw new Error('valid edition issue should normalize')
 if (workspace.edition.draft?.id !== 'draft-1' || workspace.edition.draft.status !== 'review-needed') {

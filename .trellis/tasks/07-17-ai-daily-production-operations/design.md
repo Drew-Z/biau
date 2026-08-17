@@ -59,6 +59,12 @@ After the first composer and verifier outputs pass their schemas, the determinis
 
 The existing durable stage order remains `EXTRACT_FACTS -> COMPOSE -> VERIFY -> VALIDATE -> DRAFT`. `COMPOSE` keeps the first schema-valid composition. `VERIFY` owns the bounded verify/repair/reverify unit and stores the final composition, final reviews, and all bounded provider attempts. Legacy `VERIFY` checkpoints without a final composition restore against the `COMPOSE` checkpoint; new checkpoints validate the stored final composition before deterministic validation. Prompt behavior advances to a new version, so an old approval bundle cannot authorize this flow.
 
+## Single-stage Business Diagnostic
+
+Studio exposes a separate, fail-closed stage diagnostic only when `AI_DAILY_STAGE_DIAGNOSTICS_ENABLED=true` and both production generation and business evaluation are disabled. It reuses the approved runtime/bundle resolver without enabling the durable production worker. One process-wide single-flight lock protects the shared channel, and each request selects exactly one of extractor/composer/verifier.
+
+Extractor receives one bounded batch from the current authorized evidence pack. Composer and verifier load the Issue's latest generated revision and pass stored claims/composition through the current generation normalizers before any provider call. The diagnostic disables fallback and schema repair, never invokes the content-quality repair loop, and asserts a maximum of one provider call. It performs no database mutation and returns only role, success/failure, a fixed error category, fixed response-shape diagnostics, a `0|1` call count, and a coarse duration bucket. It is authenticated, manually confirmed, never scheduled, and cannot serve as a provider health probe.
+
 ## Rollback
 
 Disable both Cron Jobs, production generation, and the public feed feature flag. Preserve database history and keep manual Studio/offline draft workflows available.

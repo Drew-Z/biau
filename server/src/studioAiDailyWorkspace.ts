@@ -3,6 +3,7 @@ import { requireStudioDatabase } from './db.js'
 import { summarizeAiDailyEditableContent } from './aiDailyEditionRepository.js'
 import { isAiDailyGenerationProviderErrorCategory } from './aiDailyGeneration.js'
 import { inspectAiDailyProductionReadiness } from './aiDailyStudioProduction.js'
+import { inspectAiDailyStageDiagnosticReadiness } from './aiDailyStageDiagnostics.js'
 import {
   responsesLengthBuckets,
   responsesResponseShapes,
@@ -732,7 +733,7 @@ export async function loadAiDailyWorkspace(prisma: StudioPrisma, options: AiDail
     : await prisma.aiDailyIssue.findFirst({ orderBy: [{ date: 'desc' }, { id: 'desc' }] })
   if (options.issueId && !issue) throw new Error('ai-daily-issue-not-found')
 
-  const [issues, feeds, runs, flashItems, generatedRevisions, draft, productionGeneration] = await Promise.all([
+  const [issues, feeds, runs, flashItems, generatedRevisions, draft, productionGeneration, stageDiagnostics] = await Promise.all([
     prisma.aiDailyIssue.findMany({
       orderBy: [{ date: 'desc' }, { id: 'desc' }],
       take: 40,
@@ -769,6 +770,7 @@ export async function loadAiDailyWorkspace(prisma: StudioPrisma, options: AiDail
         })
       : Promise.resolve(null),
     inspectAiDailyProductionReadiness(),
+    inspectAiDailyStageDiagnosticReadiness(),
   ])
 
   return {
@@ -779,6 +781,7 @@ export async function loadAiDailyWorkspace(prisma: StudioPrisma, options: AiDail
     runs: runs.map(toRunResponse),
     flashItems: flashItems.map(toFlashResponse),
     productionGeneration,
+    stageDiagnostics,
     edition: issue
       ? {
           issue: toIssueSummary(issue),

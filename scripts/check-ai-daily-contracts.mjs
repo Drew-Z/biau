@@ -30,6 +30,7 @@ const deterministicChecks = [
   'ai-daily:rollback-check',
   'ai-daily:runner-check',
   'ai-daily:studio-production-check',
+  'ai-daily:stage-diagnostics-check',
   'ai-daily:public-payload-check',
   'ai-daily:public-feed-check',
   'ai-daily:operations-check',

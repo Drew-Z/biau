@@ -111,6 +111,8 @@ services:
         value: "false"
       - key: AI_DAILY_PRODUCTION_GENERATION_ENABLED
         value: "false"
+      - key: AI_DAILY_STAGE_DIAGNOSTICS_ENABLED
+        value: "false"
       - key: STUDIO_DATABASE_URL
         sync: false
       - key: STUDIO_ADMIN_TOKEN

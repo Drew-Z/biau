@@ -127,6 +127,7 @@ export const env = {
   aiDailyPublicRateWindowMs: readPositiveInteger(process.env.AI_DAILY_PUBLIC_RATE_WINDOW_MS, 60000),
   aiDailyBusinessEvaluationEnabled: readBoolean(process.env.AI_DAILY_BUSINESS_EVALUATION_ENABLED),
   aiDailyProductionGenerationEnabled: readBoolean(process.env.AI_DAILY_PRODUCTION_GENERATION_ENABLED),
+  aiDailyStageDiagnosticsEnabled: readBoolean(process.env.AI_DAILY_STAGE_DIAGNOSTICS_ENABLED),
   ragStoreProvider: readFirstEnv('RAG_STORE_PROVIDER') || 'local',
   ragDatabaseUrl: readFirstEnv('RAG_DATABASE_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DB_URL'),
   ragPublicApiKey: readFirstEnv('RAG_PUBLIC_API_KEY'),

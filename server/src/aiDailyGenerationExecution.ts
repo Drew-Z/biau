@@ -23,6 +23,10 @@ export function createAiDailyFixtureGenerationExecution(): AiDailyGenerationExec
 
 export async function resolveAiDailyProductionGenerationExecution(): Promise<AiDailyGenerationExecution> {
   if (!env.aiDailyProductionGenerationEnabled) throw new Error('ai-daily-production-generation-disabled')
+  return resolveAiDailyApprovedGenerationExecution()
+}
+
+export async function resolveAiDailyApprovedGenerationExecution(): Promise<AiDailyGenerationExecution> {
   const runtime = readAiDailyModelRuntimeConfig()
   if (!runtime.ok) throw new Error(`invalid-ai-daily-model-runtime:${runtime.issues.join(',')}`)
   if (!env.aiDailyModelApprovalFile) throw new Error('ai-daily-model-approval-file-not-configured')

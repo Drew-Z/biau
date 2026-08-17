@@ -6093,14 +6093,26 @@
 .studio-ai-daily-issue-picker { min-width: min(100%, 420px); }
 .studio-ai-daily-live-run-action { min-width: 0; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-8, 8px); flex-wrap: wrap; }
 .studio-ai-daily-live-run-note { flex: 1 1 260px; max-width: 360px; color: var(--muted); font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
-.studio-ai-daily-live-run-panel { min-width: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr); gap: var(--space-14, 14px); align-items: end; padding: var(--space-16, 16px); border: 1px solid color-mix(in oklch, var(--amber) 42%, var(--flow-ui-card-border)); border-radius: var(--radius-md); background: color-mix(in oklch, var(--amber) 5%, var(--panel)); }
-.studio-ai-daily-live-run-panel > div:first-child { min-width: 0; align-self: start; }
-.studio-ai-daily-live-run-panel h2 { margin: 4px 0 0; color: var(--ink); font-size: 18px; overflow-wrap: anywhere; }
-.studio-ai-daily-live-run-panel p { margin: 7px 0 0; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+.studio-ai-daily-live-run-panel,
+.studio-ai-daily-stage-diagnostic-panel { min-width: 0; display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.6fr); gap: var(--space-14, 14px); align-items: end; padding: var(--space-16, 16px); border: 1px solid color-mix(in oklch, var(--amber) 42%, var(--flow-ui-card-border)); border-radius: var(--radius-md); background: color-mix(in oklch, var(--amber) 5%, var(--panel)); }
+.studio-ai-daily-stage-diagnostic-panel { border-color: color-mix(in oklch, var(--cyan) 38%, var(--flow-ui-card-border)); background: color-mix(in oklch, var(--cyan) 4%, var(--panel)); }
+.studio-ai-daily-live-run-panel > div:first-child,
+.studio-ai-daily-stage-diagnostic-panel > div:first-child { min-width: 0; align-self: start; }
+.studio-ai-daily-live-run-panel h2,
+.studio-ai-daily-stage-diagnostic-panel h2 { margin: 4px 0 0; color: var(--ink); font-size: 18px; overflow-wrap: anywhere; }
+.studio-ai-daily-live-run-panel p,
+.studio-ai-daily-stage-diagnostic-panel p { margin: 7px 0 0; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
 .studio-ai-daily-live-run-confirmation { grid-column: 1 / -1; min-width: 0; display: flex; align-items: flex-start; gap: var(--space-8, 8px); color: var(--ink); font-size: 13px; line-height: 1.55; cursor: pointer; }
 .studio-ai-daily-live-run-confirmation input { flex: 0 0 auto; margin-top: 3px; }
 .studio-ai-daily-live-run-panel .studio-ai-daily-edition-actions,
-.studio-ai-daily-live-run-panel .assistant-status-text { grid-column: 1 / -1; }
+.studio-ai-daily-live-run-panel .assistant-status-text,
+.studio-ai-daily-stage-diagnostic-panel .studio-ai-daily-edition-actions,
+.studio-ai-daily-stage-diagnostic-panel .assistant-status-text,
+.studio-ai-daily-stage-diagnostic-result { grid-column: 1 / -1; }
+.studio-ai-daily-stage-diagnostic-result { min-width: 0; margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; overflow: hidden; border: 1px solid var(--flow-ui-card-border); border-radius: var(--radius-sm); background: var(--flow-ui-card-border); }
+.studio-ai-daily-stage-diagnostic-result > div { min-width: 0; padding: var(--space-10, 10px); background: var(--panel); }
+.studio-ai-daily-stage-diagnostic-result dt { color: var(--muted); font-size: 11px; }
+.studio-ai-daily-stage-diagnostic-result dd { margin: 4px 0 0; color: var(--ink); font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
 
 .studio-ai-daily-tabs {
   padding: var(--space-6, 6px);
@@ -6278,7 +6290,9 @@
   .studio-ai-daily-toolbar { align-items: stretch; flex-direction: column; }
   .studio-ai-daily-toolbar-actions { justify-items: stretch; }
   .studio-ai-daily-live-run-action { justify-content: flex-start; }
-  .studio-ai-daily-live-run-panel { grid-template-columns: 1fr; align-items: stretch; }
+  .studio-ai-daily-live-run-panel,
+  .studio-ai-daily-stage-diagnostic-panel { grid-template-columns: 1fr; align-items: stretch; }
+  .studio-ai-daily-stage-diagnostic-result { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .studio-ai-daily-summary { justify-content: flex-start; }
   .studio-ai-daily-grid, .studio-ai-daily-two-column { grid-template-columns: 1fr; }
   .studio-ai-daily-editorial-fields { grid-template-columns: 1fr; }
