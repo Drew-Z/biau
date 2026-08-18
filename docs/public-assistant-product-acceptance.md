@@ -14,7 +14,7 @@
 | 提问与回答 | 请求/流式终态 decoder、回答状态与失败分类 | 已通过 | 一次真实业务问题得到有用模型回答 |
 | 引用与证据 | citation/claim 正规化、证据边界与无效引用拒绝 | 已通过 | 人工打开至少一个引用，核对回答与来源一致 |
 | 会话、版本与分支 | Turn/Revision/Branch、编辑重发、重试、历史恢复和刷新持久化 | 已通过 | 真实回答刷新后仍恢复到同一会话与版本 |
-| 失败恢复 | timeout、network、not_configured、upstream、empty、invalid 与取消 fixture | 浏览器断网恢复动作已通过，最终业务闭环未通过 | 首次 stream 在到达 API 前被拦截；恢复后显式重试，同一问题只到达 API 一次 |
+| 失败恢复 | timeout、network、not_configured、upstream、empty、invalid 与取消 fixture | 已通过浏览器断网恢复与最终业务闭环 | 首次 stream 在到达 API 前被拦截；恢复后显式重试，同一问题只到达 API 一次 |
 | 桌面、手机与全屏 | 320/390/430、compact/fullscreen/history 的 UI 合同 | 已通过完整 UI gate | 手机视口人工观察输入、回答、引用、历史和退出全屏 |
 | 信息安全 | 固定低敏错误文案、无 provider/endpoint/key/stack 泄漏 | 已通过 | 验收记录只保留版本、时间、状态、引用数与结论 |
 
