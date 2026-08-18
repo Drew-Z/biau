@@ -1,8 +1,9 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/site-footer.css'
 import { useTheme } from './hooks/useTheme'
+import { useHarborScene } from './hooks/useHarborScene'
 import { FlowBackground } from './components/FlowBackground'
 import { Navigation } from './components/Navigation'
 import { SeoManager } from './components/SeoManager'
@@ -23,16 +24,6 @@ import {
 } from './utils/publicAssistantWarmup'
 
 type SiteLanguage = 'zh' | 'en'
-type HarborScene = 'dusk' | 'garden' | 'stellar'
-
-const HARBOR_SCENE_STORAGE_KEY = 'biau-port-harbor-scene'
-
-function readHarborScene(): HarborScene {
-  if (typeof window === 'undefined') return 'dusk'
-  const stored = window.localStorage.getItem(HARBOR_SCENE_STORAGE_KEY)
-  if (stored === 'dusk' || stored === 'garden' || stored === 'stellar') return stored
-  return 'dusk'
-}
 
 const ProjectDetailPage = lazy(() =>
   import('./pages/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })),
@@ -74,7 +65,7 @@ function getPageClass(pathname: string) {
 
 function App() {
   const [language, setLanguage] = useState<SiteLanguage>('zh')
-  const [harborScene, setHarborScene] = useState<HarborScene>(readHarborScene)
+  const { scene: harborScene, cycleScene: cycleHarborScene } = useHarborScene()
   const [assistantMounted, setAssistantMounted] = useState(false)
   const [assistantInitiallyOpen, setAssistantInitiallyOpen] = useState(false)
   const [assistantFooterVisible, setAssistantFooterVisible] = useState(false)
@@ -85,12 +76,6 @@ function App() {
     getPublicAssistantWarmupSnapshot,
     getPublicAssistantWarmupServerSnapshot,
   )
-
-  useLayoutEffect(() => {
-    const root = document.documentElement
-    root.dataset.harborScene = harborScene
-    window.localStorage.setItem(HARBOR_SCENE_STORAGE_KEY, harborScene)
-  }, [harborScene])
 
   useEffect(() => {
     trackRouteView(pathname)
@@ -132,9 +117,7 @@ function App() {
         themeMode={themeMode}
         harborScene={harborScene}
         onCycleTheme={cycleThemeMode}
-        onCycleHarborScene={() =>
-          setHarborScene((prev) => (prev === 'dusk' ? 'garden' : prev === 'garden' ? 'stellar' : 'dusk'))
-        }
+        onCycleHarborScene={cycleHarborScene}
         onToggleLanguage={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
       />
       {showPublicAssistant && !assistantMounted && (

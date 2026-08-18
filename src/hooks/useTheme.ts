@@ -1,62 +1,45 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import {
+  applyResolvedTheme,
+  readStoredThemeMode,
+  resolveThemeMode,
+  THEME_STORAGE_KEY,
+  type ThemeMode,
+} from '../utils/appearance'
 
-export type ThemeMode = 'light' | 'dark' | 'auto'
-export type ResolvedTheme = 'light' | 'dark'
+const SYSTEM_COLOR_QUERY = '(prefers-color-scheme: light)'
 
-const STORAGE_KEY = 'theme'
-
-// auto 模式下的浅色时段：6:00（含）至 18:00（不含）
-const LIGHT_START_HOUR = 6
-const LIGHT_END_HOUR = 18
-
-function isDaytime(date: Date): boolean {
-  const hour = date.getHours()
-  return hour >= LIGHT_START_HOUR && hour < LIGHT_END_HOUR
-}
-
-function resolveTheme(mode: ThemeMode): ResolvedTheme {
-  if (mode === 'auto') {
-    return isDaytime(new Date()) ? 'light' : 'dark'
-  }
-  return mode
-}
-
-function readStoredMode(): ThemeMode {
-  if (typeof window === 'undefined') return 'auto'
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark' || stored === 'auto') {
-    return stored
-  }
-  return 'auto'
+function readSystemPrefersLight() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  return window.matchMedia(SYSTEM_COLOR_QUERY).matches
 }
 
 export function useTheme() {
-  const [mode, setMode] = useState<ThemeMode>(readStoredMode)
-  const [, setAutoTick] = useState(0)
-  const resolved = resolveTheme(mode)
+  const [mode, setMode] = useState<ThemeMode>(readStoredThemeMode)
+  const [prefersLight, setPrefersLight] = useState(readSystemPrefersLight)
+  const resolved = resolveThemeMode(mode, prefersLight)
 
   // 持久化用户选择
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, mode)
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, mode)
+    } catch {
+      // The active mode still applies when storage is unavailable.
+    }
   }, [mode])
 
-  // auto 模式下定时重算，跨越时间边界时自动切换
   useEffect(() => {
-    if (mode !== 'auto') return
-    const timer = window.setInterval(() => {
-      setAutoTick((tick) => tick + 1)
-    }, 60_000)
-    return () => window.clearInterval(timer)
-  }, [mode])
+    if (typeof window.matchMedia !== 'function') return
+    const media = window.matchMedia(SYSTEM_COLOR_QUERY)
+    const sync = () => setPrefersLight(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
 
   // 应用到根元素：深色为默认 :root，浅色加 light-theme 类
   useLayoutEffect(() => {
-    const root = document.documentElement
-    if (resolved === 'light') {
-      root.classList.add('light-theme')
-    } else {
-      root.classList.remove('light-theme')
-    }
+    applyResolvedTheme(document.documentElement, resolved)
   }, [resolved])
 
   const cycleMode = useCallback(() => {

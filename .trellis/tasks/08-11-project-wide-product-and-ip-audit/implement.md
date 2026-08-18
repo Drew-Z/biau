@@ -198,6 +198,22 @@ Focused checks:
 - [x] Record the post-migration RLS drift found on three internal assistant tables; `anon` / `authenticated` have no direct table grants, and remediation is deferred to a separate migration-backed security task.
 - [x] Align the homepage implementation with Figma frames `32:3` and `32:4`: keep the four real public route families, add the product-positioning/status summary, preserve publication-registry CTA decisions, and adopt the 8px deep-ink/cyan/amber port-board system. Validate 320/390/430 mobile containment and 1440 desktop composition through the full UI suite, lint, build, registry, status and performance gates.
 
+## Slice F. Reference-site Appearance Fusion
+
+### Implementation
+
+- [x] Add one typed appearance contract for theme/scene values, storage keys, labels, normalization and scene cycling.
+- [x] Make `auto` follow the system color scheme at startup and runtime; prepaint persisted theme/scene before React mounts.
+- [x] Restore the existing `BiauPortMark` in navigation, split the scene button from the home link, and expose current/next scene feedback.
+- [x] Replace homepage hard-coded dark colors with semantic surface tokens covering light/dark dusk, garden and stellar combinations.
+- [x] Keep the existing Flow renderer/reduced-motion fallback and add no external visual assets or heavyweight boot runtime.
+
+### Validation
+
+- [x] Assert the six appearance combinations, readable semantic surfaces, visible Logo, keyboard scene switching, refresh persistence and system-auto response.
+- [x] Re-run 320/390/430/desktop UI containment, intro docking, full UI, lint, build and performance gates.
+- [x] Keep `public/status/blog-semi-synthetic.json` unstaged and unchanged by this slice.
+
 ## Files With Elevated Risk
 
 - `src/data/portfolio.ts`: large content catalog; avoid broad formatting or unrelated copy churn.

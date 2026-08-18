@@ -1,4 +1,6 @@
-export type HarborScene = 'dusk' | 'garden' | 'stellar'
+import type { HarborScene } from '../utils/appearance'
+
+export type { HarborScene } from '../utils/appearance'
 export type FlowPalette = readonly [string, string, string, string, string]
 const palettes: Record<'dark' | 'light', Record<HarborScene, FlowPalette>> = {
   dark: { dusk: ['#071019','#102f43','#17647a','#a85f69','#e6b86b'], garden: ['#071512','#123c32','#1f7563','#79a476','#d5c77a'], stellar: ['#080d1b','#17264b','#3f508c','#7167a9','#8ed4d0'] },

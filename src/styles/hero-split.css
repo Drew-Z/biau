@@ -727,13 +727,13 @@
 /* Homepage visual refresh: quiet port surfaces, restrained controls and explicit status. */
 .app.page-home {
   --shell-max: 1344px;
-  --ink: #f4f0e6;
-  --muted: #9aaab0;
-  --line: #36505a;
-  --green: #4fae9b;
-  --amber: #d3a75a;
-  --violet: #9b8fd2;
-  --rose: #cf8294;
+  --ink: var(--home-ink);
+  --muted: var(--home-muted);
+  --line: var(--home-line);
+  --green: var(--home-green);
+  --amber: var(--home-amber);
+  --violet: var(--home-violet);
+  --rose: var(--home-rose);
   --font-serif-display: Georgia, 'Songti SC', serif;
   --font-ui: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -754,7 +754,7 @@
 
 .app.page-home .eyebrow {
   margin-bottom: 28px;
-  color: #7fc8b7;
+  color: var(--home-accent-strong);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 650;
@@ -777,7 +777,7 @@
 .app.page-home .hero-body {
   max-width: 480px;
   margin: 28px 0 0;
-  color: #b6c4c3;
+  color: var(--home-copy);
   font-family: var(--font-ui);
   font-size: 16px;
   line-height: 1.55;
@@ -798,7 +798,7 @@
 }
 
 .app.page-home .status-text span {
-  color: #7d9195;
+  color: var(--home-faint);
   font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 650;
@@ -806,7 +806,7 @@
 }
 
 .app.page-home .status-text strong {
-  color: #e5e9e5;
+  color: var(--home-ink);
   font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 600;
@@ -823,10 +823,10 @@
   height: min(764px, calc(100vh - 180px));
   min-height: 620px;
   padding: 24px 32px 20px;
-  border: 1px solid rgb(54 80 90 / 58%);
+  border: 1px solid var(--home-panel-border);
   border-radius: 8px;
-  background: rgb(18 33 40 / 94%);
-  box-shadow: 0 18px 48px rgb(0 0 0 / 30%);
+  background: var(--home-panel-pattern), var(--home-panel-bg);
+  box-shadow: var(--home-panel-shadow);
   translate: 0;
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
@@ -843,7 +843,7 @@
 }
 
 .app.page-home .panel-head p {
-  color: #dde6e2;
+  color: var(--home-ink);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 650;
@@ -851,7 +851,7 @@
 }
 
 .app.page-home .panel-head span {
-  color: #7d9195;
+  color: var(--home-faint);
   font-size: 11px;
   letter-spacing: 0;
 }
@@ -860,8 +860,8 @@
   min-width: 72px;
   padding: 8px 12px;
   border-radius: 8px;
-  color: #bfd2ce;
-  background: #20353c;
+  color: var(--home-control-ink);
+  background: var(--home-control-bg);
   font-family: var(--font-ui);
   font-size: 11px;
   font-weight: 650;
@@ -883,16 +883,16 @@
   grid-template-columns: 32px minmax(0, 1fr) 96px;
   height: 104px;
   padding: 16px;
-  border: 1px solid rgb(54 80 90 / 55%);
+  border: 1px solid var(--home-card-border);
   border-left: 4px solid var(--card-accent);
   border-radius: 8px;
-  background: #173035;
+  background: var(--home-card-bg);
   box-shadow: none;
 }
 
-.app.page-home .carousel-card.commerce { background: #28342c; }
-.app.page-home .carousel-card.preview { background: #242b3e; }
-.app.page-home .carousel-card.image { background: #332d37; }
+.app.page-home .carousel-card.commerce { background: var(--home-card-commerce); }
+.app.page-home .carousel-card.preview { background: var(--home-card-preview); }
+.app.page-home .carousel-card.image { background: var(--home-card-image); }
 
 .app.page-home .carousel-card::before {
   color: var(--card-accent);
@@ -901,7 +901,7 @@
 }
 
 .app.page-home .carousel-card strong {
-  color: #f2f2ea;
+  color: var(--home-card-title);
   font-family: var(--font-ui);
   font-size: 15px;
   font-weight: 650;
@@ -913,7 +913,7 @@
 
 .app.page-home .carousel-card .desc {
   margin-top: 7px;
-  color: #9fb0b2;
+  color: var(--home-card-copy);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -924,15 +924,15 @@
   min-height: 44px;
   border: 0;
   border-radius: 8px;
-  color: #e1e9e5;
-  background: #23373e;
+  color: var(--home-action-ink);
+  background: var(--home-action-bg);
   box-shadow: none;
   font-size: 11px;
 }
 
 .app.page-home .carousel-card .carousel-action:hover,
 .app.page-home .carousel-card .carousel-action:focus-visible {
-  background: color-mix(in oklch, var(--card-accent) 22%, #23373e);
+  background: color-mix(in oklch, var(--card-accent) 22%, var(--home-action-bg));
 }
 
 .app.page-home .panel-footer {
@@ -945,7 +945,7 @@
   margin-top: 8px;
   padding: 0 4px;
   border: 0;
-  color: #7fc8b7;
+  color: var(--home-footer-link);
   background: transparent;
   font-family: var(--font-ui);
   font-size: 11px;
@@ -955,7 +955,7 @@
 
 .app.page-home .panel-footer:hover,
 .app.page-home .panel-footer:focus-visible {
-  color: #dff3ec;
+  color: var(--home-footer-link-hover);
 }
 
 @media (max-width: 1024px) {
@@ -1019,14 +1019,14 @@
   }
 
   .app.page-home .status-text strong {
-    color: #d3a75a;
+    color: var(--home-brand);
     font-size: 10px;
     font-weight: 550;
   }
 
   .app.page-home .status-text--port strong::before {
     content: '  ·  ';
-    color: #7d9195;
+    color: var(--home-faint);
   }
 
   .app.page-home .hero-panel {
@@ -1052,7 +1052,7 @@
   .app.page-home .panel-head > strong {
     min-width: auto;
     padding: 0;
-    color: #8fa5a7;
+    color: var(--home-muted);
     background: transparent;
     font-size: 10px;
   }

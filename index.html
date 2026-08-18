@@ -4,6 +4,29 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      ;(() => {
+        const root = document.documentElement
+        try {
+          const storedMode = localStorage.getItem('theme')
+          const mode = storedMode === 'light' || storedMode === 'dark' || storedMode === 'auto' ? storedMode : 'auto'
+          const prefersLight = matchMedia('(prefers-color-scheme: light)').matches
+          const resolved = mode === 'auto' ? (prefersLight ? 'light' : 'dark') : mode
+          root.classList.toggle('light-theme', resolved === 'light')
+          root.dataset.colorMode = resolved
+        } catch {
+          root.dataset.colorMode = 'dark'
+        }
+        try {
+          const storedScene = localStorage.getItem('biau-port-harbor-scene')
+          root.dataset.harborScene =
+            storedScene === 'garden' || storedScene === 'stellar' || storedScene === 'dusk' ? storedScene : 'dusk'
+        } catch {
+          root.dataset.harborScene = 'dusk'
+        }
+      })()
+    </script>
     <meta
       name="description"
       content="BIAU Port 泊岸用 React、Vite 与自定义设计系统组织 AI 应用、业务系统、游戏项目、移动端案例和技术知识库。"

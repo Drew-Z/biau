@@ -63,6 +63,7 @@ npm.cmd run docs:deployment-check
 ## Flow Background And Intro
 
 - Normal mode may use the full animated background; reduced motion must show a stable nonblank canvas frame when WebGL2 is available, or a stable nonblank CSS fallback otherwise.
+- Keep the eager CSS composition order `catalog-pages.css` -> `flow-pages.css` -> `appearance-themes.css` -> `hero-split.css` -> `navigation.css`. Flow supplies the renderer/fallback foundation; appearance supplies semantic tokens; the final homepage and navigation layers must remain able to project those tokens instead of being overwritten by older transparent Flow surfaces.
 - Avoid continuous React state updates from animation frames.
 - Canvas owns its render loop and disposes resources/listeners on unmount.
 - Worker resize, palette, and motion messages must not create parallel render timers. Runtime `prefers-reduced-motion` changes must use a token-correlated acknowledgement exposed as DOM state, stop on one static frame, and resume one render loop when animation is allowed again; UI checks wait for that acknowledgement instead of an arbitrary delay. Runtime or message failures must hide the stale canvas and reveal the explicit CSS fallback state.
@@ -72,6 +73,14 @@ npm.cmd run docs:deployment-check
 - Route changes must not repeatedly restart expensive initialization or cause project/blog page flicker.
 - Intro completion must land on the stable navigation logo position and not block first interaction indefinitely.
 - Visual checks compare desktop/mobile framing, exercise both runtime motion-preference directions, and confirm either a nonblank canvas or the explicit CSS fallback state.
+
+### Appearance Validation Matrix
+
+- Check `light | dark` against every `dusk | garden | stellar` scene. Each combination must expose the matching root data attributes, a visible `BiauPortMark`, and at least `4.5:1` contrast for the homepage Hero and normal-size card title surfaces.
+- Activate the scene button with `Enter`, assert the next scene reaches both the root dataset and local storage, then reload and assert it remains selected.
+- Store `theme=auto`, emulate dark -> light -> dark system changes, and assert the resolved root state follows each change while storage remains `auto`.
+- Run mobile containment in both light and dark modes at `320`, `390`, and `430` widths. The Logo, brand, theme/language controls, cards, actions, and bottom navigation must remain visible and non-overlapping.
+- Preserve six distinct Flow canvas frames. Surface-token checks do not replace the existing canvas-pixel, reduced-motion, fallback, intro-docking, and performance assertions.
 
 ### Reduced-Motion Validation Matrix
 

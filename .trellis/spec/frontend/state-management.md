@@ -15,6 +15,30 @@ The site intentionally uses React component state, route-derived state, small br
 
 Persist only stable visitor preferences. Effects that touch browser APIs must clean up listeners/timers and tolerate SSR/test environments.
 
+### Appearance Contract
+
+Treat contrast and atmosphere as independent state:
+
+```ts
+type ThemeMode = 'light' | 'dark' | 'auto'
+type HarborScene = 'dusk' | 'garden' | 'stellar'
+```
+
+`src/utils/appearance.ts` owns these unions, their storage keys, runtime
+normalization, scene order, and root-DOM projection. Hooks and components import
+that contract instead of redeclaring strings. `ThemeMode` resolves to
+`data-color-mode="light|dark"` plus the compatibility `light-theme` class;
+`HarborScene` resolves to `data-harbor-scene`. In `auto`, subscribe to
+`prefers-color-scheme` changes and keep the stored value as `auto` rather than
+overwriting it with the currently resolved theme.
+
+The synchronous `index.html` prepaint is a deliberately minimal mirror of the
+same allowed values because an imported module would run too late to prevent a
+wrong-theme first paint. `src/main.tsx` immediately reapplies the typed helper,
+and `scripts/check-ui.mjs` must catch drift by asserting all six combinations,
+refresh persistence, and runtime system-theme changes. Storage failures fall
+back to `auto` / `dusk` without blocking rendering.
+
 ## Route-Derived State
 
 - Use React Router params/location as the source of truth for project/blog/status/Studio detail routes.

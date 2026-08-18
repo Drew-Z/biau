@@ -1,11 +1,15 @@
-import { Activity, FolderKanban, Home, Library } from 'lucide-react'
+import { Activity, FolderKanban, Home, Library, Monitor, Moon, Sun } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BiauPortMark } from './BiauPortMark'
+import {
+  getNextHarborScene,
+  HARBOR_SCENE_META,
+  type HarborScene,
+  type ThemeMode,
+} from '../utils/appearance'
 
 type SiteLanguage = 'zh' | 'en'
-type ThemeMode = 'light' | 'dark' | 'auto'
-type HarborScene = 'dusk' | 'garden' | 'stellar'
 
 interface NavigationProps {
   language: SiteLanguage
@@ -16,11 +20,13 @@ interface NavigationProps {
   onToggleLanguage: () => void
 }
 
-const themeMeta: Record<ThemeMode, { glyph: string; label: Record<SiteLanguage, string> }> = {
-  light: { glyph: '☀', label: { zh: '浅色', en: 'LIGHT' } },
-  dark: { glyph: '☾', label: { zh: '深色', en: 'DARK' } },
-  auto: { glyph: '◐', label: { zh: '自动', en: 'AUTO' } },
+const themeMeta: Record<ThemeMode, { icon: LucideIcon; label: Record<SiteLanguage, string> }> = {
+  light: { icon: Sun, label: { zh: '浅色', en: 'LIGHT' } },
+  dark: { icon: Moon, label: { zh: '深色', en: 'DARK' } },
+  auto: { icon: Monitor, label: { zh: '跟随系统', en: 'SYSTEM' } },
 }
+
+const nextThemeMode: Record<ThemeMode, ThemeMode> = { light: 'dark', dark: 'auto', auto: 'light' }
 
 interface NavItem {
   to: string
@@ -54,6 +60,10 @@ export function Navigation({
   onToggleLanguage,
 }: NavigationProps) {
   const theme = themeMeta[themeMode]
+  const ThemeIcon = theme.icon
+  const nextTheme = themeMeta[nextThemeMode[themeMode]]
+  const currentScene = HARBOR_SCENE_META[harborScene]
+  const nextScene = HARBOR_SCENE_META[getNextHarborScene(harborScene)]
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const isHome = pathname === '/'
@@ -64,15 +74,27 @@ export function Navigation({
     <>
       <nav className="navigation-top" aria-label="主导航">
         <div className="nav-inner">
-          <Link className="nav-brand-section" to="/" aria-label="回到首页 / BIAU Port 泊岸">
-            <span className="nav-logo" data-scene={harborScene} onClick={onCycleHarborScene}>
+          <div className="nav-brand-section">
+            <button
+              type="button"
+              className="nav-logo"
+              data-scene={harborScene}
+              onClick={onCycleHarborScene}
+              aria-label={`当前${currentScene.label.zh}场景，点击切换到${nextScene.label.zh} / ${currentScene.label.en}, switch to ${nextScene.label.en}`}
+              title={`${currentScene.label.zh} / ${currentScene.label.en}`}
+            >
               <BiauPortMark className="nav-logo-mark" />
+            </button>
+            <Link className="nav-brand-link" to="/" aria-label="回到首页 / BIAU Port 泊岸">
+              <div className="nav-brand-text">
+                <div className="brand-title">{brandTitle[language]}</div>
+                <div className="brand-subtitle">BIAU PORT</div>
+              </div>
+            </Link>
+            <span className="sr-only" aria-live="polite">
+              当前港湾场景：{currentScene.label.zh} / {currentScene.label.en}
             </span>
-            <div className="nav-brand-text">
-              <div className="brand-title">{brandTitle[language]}</div>
-              <div className="brand-subtitle">BIAU PORT</div>
-            </div>
-          </Link>
+          </div>
 
           <ul className="nav-items-center">
             {navItems.map((item) => (
@@ -101,9 +123,10 @@ export function Navigation({
               type="button"
               className="nav-theme-toggle"
               onClick={onCycleTheme}
-              aria-label={`主题：${theme.label.zh} / Theme: ${theme.label.en}`}
+              aria-label={`当前${theme.label.zh}主题，点击切换到${nextTheme.label.zh} / ${theme.label.en}, switch to ${nextTheme.label.en}`}
+              title={`${theme.label.zh} / ${theme.label.en}`}
             >
-              {theme.glyph}
+              <ThemeIcon size={16} strokeWidth={1.9} aria-hidden />
             </button>
             <button
               type="button"

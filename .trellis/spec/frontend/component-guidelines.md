@@ -45,6 +45,20 @@ intro.style.setProperty('--harbor-logo-y', `${navRect.top + navRect.height / 2}p
 
 Use the live Logo width and height as the animated element's base box, enlarge that exact shell for the center stage, and return to scale `1` at the measured target. Copy the live Logo background, border, radius, and shadow into the intro shell so the handoff does not swap between two visually different containers. Hide or crossfade the underlying navigation Logo during docking, clear centered wordmarks before landing, then let the real navigation Logo resume its normal hover, focus, and click behavior after the intro unmounts. `scripts/check-ui.mjs` should assert target center, final geometry, shell parity, and wordmark clearance so responsive navigation changes cannot silently break the landing motion.
 
+### Convention: Navigation Appearance Controls
+
+The navigation mark is the semantic harbor-scene button and must render the
+shared `BiauPortMark`. Do not replace it with generated text, a pseudo-element
+glyph, or an invisible SVG. The adjacent brand wordmark is a separate home
+`Link`; never nest the scene button inside that link. The button's accessible
+name states the current and next scene, while the theme button uses a Lucide
+`Sun`, `Moon`, or `Monitor` icon and states the current and next theme mode.
+
+Both controls remain keyboard reachable with a visible focus ring. Scene
+activation updates `data-harbor-scene` and storage; the brand link only
+navigates home. UI checks must discover `scene` and `brand` as separate Tab
+targets and verify the real SVG remains visible in every appearance.
+
 ### Convention: Long-Form Reading Guide
 
 Blog and project detail routes longer than a few viewports use the shared

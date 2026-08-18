@@ -261,3 +261,31 @@ Existing checks remain authoritative for UI/API behavior. Do not write generated
 - Availability stays an audited declaration instead of live client-side monitoring. This favors truthful, reviewable CTAs over real-time but potentially noisy status changes.
 - One real workflow is the minimum product gate, not a statistical reliability claim. Ongoing reliability still requires later monitoring and more usage evidence.
 - Visual identity is postponed so naming and public contracts can stabilize first.
+
+## 11. Approved Appearance Fusion
+
+The 2026-08-18 visual follow-up supersedes the earlier postponement only for the
+existing master-site mark and theme behavior. Product identity, routes, content,
+publication policy, and service boundaries remain unchanged.
+
+Appearance has two orthogonal typed dimensions:
+
+```ts
+type ThemeMode = 'light' | 'dark' | 'auto'
+type HarborScene = 'dusk' | 'garden' | 'stellar'
+```
+
+`ThemeMode` resolves contrast and listens to the system color scheme in `auto`.
+`HarborScene` selects the restrained environment palette. One shared appearance
+module owns types, storage keys, normalization, labels, and cycling; React hooks,
+prepaint, navigation, FlowBackground, and UI checks consume that contract.
+
+The navigation brand is split into a semantic scene button containing the real
+`BiauPortMark` and a separate home link containing the wordmark. The homepage
+surface consumes semantic tokens for ink, copy, lines, navigation, controls,
+panels, cards, actions, and mobile tabs. Dark/light base tokens plus explicit
+scene overrides produce six combinations without duplicating component markup.
+
+The existing Flow renderer and CSS fallback remain the only ambient-motion
+owners. Reference-site 3D logo, external assets, global click delegation, theme
+debug controls, and boot-time GSAP are intentionally excluded.

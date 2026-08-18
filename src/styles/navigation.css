@@ -49,8 +49,18 @@
   display: none;
 }
 
+.nav-brand-link {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  padding: 4px 10px 4px 0;
+  border-radius: 12px;
+  color: inherit;
+  text-decoration: none;
+}
+
 .nav-brand-section:hover,
-.nav-brand-section:focus-visible {
+.nav-brand-section:focus-within {
   transform: translateY(-1px);
   border-color: color-mix(in oklch, var(--amber) 16%, transparent);
   background:
@@ -63,12 +73,12 @@
 }
 
 .nav-brand-section:hover .brand-subtitle,
-.nav-brand-section:focus-visible .brand-subtitle {
+.nav-brand-link:focus-visible .brand-subtitle {
   color: color-mix(in oklch, var(--ink) 66%, transparent);
 }
 
 .nav-brand-section:hover .brand-title,
-.nav-brand-section:focus-visible .brand-title {
+.nav-brand-link:focus-visible .brand-title {
   color: color-mix(in oklch, var(--ink) 92%, white);
 }
 
@@ -78,6 +88,8 @@
   width: 48px;
   height: 48px;
   flex-shrink: 0;
+  appearance: none;
+  padding: 0;
   cursor: pointer;
   border: 1px solid color-mix(in oklch, var(--amber) 24%, transparent);
   border-radius: 16px;
@@ -153,32 +165,32 @@
   transform-origin: center;
 }
 
-.nav-brand-section:hover .biau-port-mark__water,
-.nav-brand-section:focus-visible .biau-port-mark__water {
+.nav-logo:hover .biau-port-mark__water,
+.nav-logo:focus-visible .biau-port-mark__water {
   transform: translateY(-0.6px);
   filter: drop-shadow(0 0 5px rgba(242, 162, 58, 0.42));
 }
 
-.nav-brand-section:hover .biau-port-mark__terminal,
-.nav-brand-section:focus-visible .biau-port-mark__terminal {
+.nav-logo:hover .biau-port-mark__terminal,
+.nav-logo:focus-visible .biau-port-mark__terminal {
   opacity: 1;
   transform: translateX(0.8px);
 }
 
-.nav-brand-section:hover .biau-port-mark__beacon,
-.nav-brand-section:focus-visible .biau-port-mark__beacon {
+.nav-logo:hover .biau-port-mark__beacon,
+.nav-logo:focus-visible .biau-port-mark__beacon {
   transform: scale(1.08);
   filter: drop-shadow(0 0 5px rgba(242, 162, 58, 0.72));
 }
 
-.nav-brand-section:hover .biau-port-mark__beacon-glow,
-.nav-brand-section:focus-visible .biau-port-mark__beacon-glow {
+.nav-logo:hover .biau-port-mark__beacon-glow,
+.nav-logo:focus-visible .biau-port-mark__beacon-glow {
   opacity: 0.32;
   transform: scale(1.16);
 }
 
 .nav-logo:hover,
-.nav-brand-section:hover .nav-logo {
+.nav-logo:focus-visible {
   transform: translateY(-1px) scale(1.015);
   box-shadow:
     0 14px 32px rgba(0, 0, 0, 0.42),
@@ -187,7 +199,7 @@
 }
 
 .nav-logo:hover::after,
-.nav-brand-section:focus-visible .nav-logo::after {
+.nav-logo:focus-visible::after {
   opacity: 1;
   transform: rotate(28deg) scale(1);
 }
@@ -245,13 +257,13 @@
 }
 
 .nav-brand-section:hover .brand-subtitle,
-.nav-brand-section:focus-visible .brand-subtitle {
+.nav-brand-link:focus-visible .brand-subtitle {
   letter-spacing: 0.18em;
   transform: translateX(1px);
 }
 
 .nav-brand-section:hover .brand-title,
-.nav-brand-section:focus-visible .brand-title {
+.nav-brand-link:focus-visible .brand-title {
   letter-spacing: 0.065em;
   filter: brightness(1.08) saturate(1.08);
   transform: translateY(-3px) scaleX(1.018);
@@ -298,7 +310,8 @@
 .nav-menu-toggle:focus-visible,
 .nav-mobile-link:focus-visible,
 .nav-mobile-primary:focus-visible,
-.nav-brand-section:focus-visible {
+.nav-logo:focus-visible,
+.nav-brand-link:focus-visible {
   outline: none;
   border-color: color-mix(in oklch, var(--amber) 78%, white);
   background: rgba(214, 168, 90, 0.12);
@@ -481,7 +494,7 @@
 }
 
 .light-theme .nav-brand-section:hover,
-.light-theme .nav-brand-section:focus-visible {
+.light-theme .nav-brand-section:focus-within {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.34)),
     rgba(255, 255, 255, 0.32);
@@ -500,7 +513,8 @@
 .light-theme .nav-theme-toggle:focus-visible,
 .light-theme .nav-lang-toggle:focus-visible,
 .light-theme .nav-all-tools:focus-visible,
-.light-theme .nav-brand-section:focus-visible {
+.light-theme .nav-logo:focus-visible,
+.light-theme .nav-brand-link:focus-visible {
   border-color: color-mix(in oklch, var(--blue) 74%, black);
   background: rgba(90, 119, 202, 0.1);
   box-shadow:
@@ -1039,14 +1053,14 @@
 }
 
 /* Homepage visual refresh: map the public shell to the BIAU Port / 泊岸 board. */
-.page-home .nav-inner {
+.app.page-home .nav-inner {
   max-width: 1344px;
   margin-top: 32px;
   padding: 16px;
-  border: 1px solid #36505a;
+  border: 1px solid var(--home-nav-border);
   border-radius: 8px;
-  background: rgba(16, 27, 32, 0.88);
-  box-shadow: 0 12px 28px rgb(0 0 0 / 22%);
+  background: var(--home-nav-bg);
+  box-shadow: var(--home-nav-shadow);
   -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
 }
@@ -1058,12 +1072,18 @@
   border-radius: 8px;
 }
 
-.page-home .nav-logo {
+.page-home .nav-brand-link {
+  padding: 0;
+  border-radius: 6px;
+}
+
+.page-home .nav-logo,
+.page-home .nav-logo[data-scene] {
   width: 40px;
   height: 40px;
-  border: 0;
+  border: 1px solid var(--home-logo-border);
   border-radius: 8px;
-  background: #d3a75a;
+  background: var(--home-logo-surface);
   box-shadow: none;
 }
 
@@ -1073,23 +1093,6 @@
   filter: none;
 }
 
-.page-home .nav-logo::before {
-  content: '泊';
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  display: grid;
-  place-items: center;
-  color: #0b1519;
-  font-family: var(--font-ui);
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.page-home .nav-logo svg {
-  opacity: 0;
-}
-
 .page-home .nav-brand-text {
   gap: 4px;
   padding-right: 0;
@@ -1097,7 +1100,7 @@
 
 .page-home .brand-title {
   order: 1;
-  color: #f4f0e6;
+  color: var(--home-ink);
   background: none;
   -webkit-text-fill-color: currentColor;
   font-family: var(--font-ui);
@@ -1111,7 +1114,7 @@
 
 .page-home .brand-subtitle {
   order: 2;
-  color: #9aaab0;
+  color: var(--home-muted);
   font-size: 10px;
   letter-spacing: 0.08em;
   line-height: 1;
@@ -1125,7 +1128,7 @@
   min-width: 96px;
   padding: 8px 12px 12px;
   border-radius: 8px;
-  color: #9aaab0;
+  color: var(--home-muted);
   font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 600;
@@ -1140,7 +1143,7 @@
 }
 
 .page-home .nav-link-center.active .nav-link-en {
-  color: #f4f0e6;
+  color: var(--home-ink);
 }
 
 .page-home .nav-link-center.active::after {
@@ -1148,7 +1151,7 @@
   width: 56px;
   height: 2px;
   border-radius: 1px;
-  background: #4fae9b;
+  background: var(--home-accent);
   box-shadow: none;
 }
 
@@ -1170,15 +1173,17 @@
   padding: 0 12px;
   border: 1px solid transparent;
   border-radius: 8px;
-  color: #d8e1de;
-  background: #203138;
+  color: var(--home-control-ink);
+  background: var(--home-control-bg);
   box-shadow: none;
   font-size: 10px;
   font-weight: 650;
 }
 
 .page-home .nav-theme-toggle {
-  min-width: 72px;
+  width: 40px;
+  min-width: 40px;
+  padding: 0;
 }
 
 .page-home .nav-all-tools {
@@ -1186,7 +1191,7 @@
 }
 
 @media (max-width: 768px) {
-  .page-home .nav-inner {
+  .app.page-home .nav-inner {
     width: calc(100% - 24px);
     margin-top: 12px;
     padding: 8px 12px;
@@ -1248,17 +1253,17 @@
     right: 12px;
     left: 12px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    border: 1px solid #36505a;
+    border: 1px solid var(--home-nav-border);
     border-bottom: 0;
     border-radius: 8px 8px 0 0;
-    background: #0d171b;
-    box-shadow: 0 -10px 24px rgb(0 0 0 / 24%);
+    background: var(--home-mobile-tab-bg);
+    box-shadow: var(--home-nav-shadow);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 
   .page-home .mobile-tab.is-active {
-    background: #203a3c;
+    background: var(--home-mobile-tab-active);
   }
 
   .page-home .mobile-tab.is-active::before {

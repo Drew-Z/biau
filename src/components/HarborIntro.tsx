@@ -1,11 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { BiauPortMark } from './BiauPortMark'
+import type { HarborScene } from '../utils/appearance'
 
 const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v3'
 let introTriggeredThisRuntime = false
 
 interface HarborIntroProps {
-  harborScene: 'dusk' | 'garden' | 'stellar'
+  harborScene: HarborScene
 }
 
 function canShowIntro() {

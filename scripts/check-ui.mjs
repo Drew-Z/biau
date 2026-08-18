@@ -2055,7 +2055,7 @@ for (const width of [320, 390, 430]) {
 
 const navFocusPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(navFocusPage, '/blog')
-const expectedNavFocusTargets = new Set(['brand', '首页', '项目', '博客', '状态', 'theme', 'language', 'primary'])
+const expectedNavFocusTargets = new Set(['scene', 'brand', '首页', '项目', '博客', '状态', 'theme', 'language', 'primary'])
 const seenNavFocusTargets = new Map()
 for (let index = 0; index < 24; index += 1) {
   await navFocusPage.keyboard.press('Tab')
@@ -2065,7 +2065,8 @@ for (let index = 0; index < 24; index += 1) {
 
     const styles = getComputedStyle(active)
     let key = ''
-    if (active.classList.contains('nav-brand-section')) key = 'brand'
+    if (active.classList.contains('nav-logo')) key = 'scene'
+    if (active.classList.contains('nav-brand-link')) key = 'brand'
     if (active.classList.contains('nav-link-center')) key = active.textContent?.trim() ?? ''
     if (active.classList.contains('nav-theme-toggle')) key = 'theme'
     if (active.classList.contains('nav-lang-toggle')) key = 'language'
@@ -2125,12 +2126,181 @@ for (const theme of ['light', 'dark']) {
     const canvas = harborThemePage.locator('.flow-background[data-flow-ready="true"]')
     await canvas.waitFor({ state: 'attached' })
     harborThemeSignatures.push((await canvas.screenshot()).toString('base64'))
+    const appearance = await harborThemePage.evaluate(({ expectedTheme, expectedScene }) => {
+      const root = document.documentElement
+      const logo = document.querySelector('.nav-logo')
+      const logoMark = logo?.querySelector('.nav-logo-mark')
+      const heroTitle = document.querySelector('.hero-title-rotator')
+      const card = document.querySelector('.carousel-card')
+      const cardTitle = card?.querySelector('strong')
+
+      const resolveColor = (value) => {
+        const probe = document.createElement('span')
+        probe.style.color = value
+        document.body.append(probe)
+        const resolved = getComputedStyle(probe).color
+        probe.remove()
+        return resolved
+      }
+      const parseColor = (value) => {
+        const channels = value.match(/[\d.]+/g)?.slice(0, 3).map(Number) ?? []
+        return channels.length === 3 ? channels : null
+      }
+      const luminance = (value) => {
+        const channels = parseColor(value)
+        if (!channels) return null
+        const linear = channels.map((channel) => {
+          const normalized = channel / 255
+          return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4
+        })
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+      }
+      const contrast = (foreground, background) => {
+        const foregroundLuminance = luminance(foreground)
+        const backgroundLuminance = luminance(background)
+        if (foregroundLuminance === null || backgroundLuminance === null) return 0
+        return (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+          (Math.min(foregroundLuminance, backgroundLuminance) + 0.05)
+      }
+
+      const logoRect = logo?.getBoundingClientRect()
+      const logoStyle = logoMark ? getComputedStyle(logoMark) : null
+      const cardStyle = card ? getComputedStyle(card) : null
+      return {
+        expectedTheme,
+        expectedScene,
+        resolvedTheme: root.dataset.colorMode ?? '',
+        resolvedScene: root.dataset.harborScene ?? '',
+        lightClass: root.classList.contains('light-theme'),
+        logoTag: logo?.tagName ?? '',
+        logoOpacity: Number.parseFloat(logoStyle?.opacity ?? '0'),
+        logoWidth: logoRect?.width ?? 0,
+        logoHeight: logoRect?.height ?? 0,
+        logoPseudoContent: logo ? getComputedStyle(logo, '::before').content : '',
+        heroContrast: heroTitle
+          ? contrast(getComputedStyle(heroTitle).color, resolveColor('var(--home-page-solid)'))
+          : 0,
+        cardContrast: cardTitle && cardStyle
+          ? contrast(getComputedStyle(cardTitle).color, cardStyle.backgroundColor)
+          : 0,
+      }
+    }, { expectedTheme: theme, expectedScene: scene })
+
+    if (
+      appearance.resolvedTheme !== theme ||
+      appearance.resolvedScene !== scene ||
+      appearance.lightClass !== (theme === 'light')
+    ) {
+      failures.push(`/ home appearance ${theme}/${scene}: root theme and scene state should match persisted values`)
+    }
+    if (
+      appearance.logoTag !== 'BUTTON' ||
+      appearance.logoOpacity < 0.95 ||
+      appearance.logoWidth < 32 ||
+      appearance.logoHeight < 32 ||
+      appearance.logoPseudoContent.includes('泊')
+    ) {
+      failures.push(`/ home appearance ${theme}/${scene}: expected the real visible SVG logo inside the scene button`)
+    }
+    if (appearance.heroContrast < 4.5 || appearance.cardContrast < 4.5) {
+      failures.push(
+        `/ home appearance ${theme}/${scene}: expected readable hero/card contrast, got ${appearance.heroContrast.toFixed(2)} and ${appearance.cardContrast.toFixed(2)}`,
+      )
+    }
     await harborThemePage.close()
   }
 }
 if (new Set(harborThemeSignatures).size !== 6) {
   failures.push('/ home flow canvas: light/dark dusk, garden, and stellar should render six distinct frames')
 }
+
+const scenePreferencePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
+await scenePreferencePage.addInitScript(() => {
+  if (window.sessionStorage.getItem('ui-check-scene-seeded') !== '1') {
+    window.localStorage.setItem('theme', 'dark')
+    window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
+    window.sessionStorage.setItem('ui-check-scene-seeded', '1')
+  }
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(scenePreferencePage, '/')
+const sceneButton = scenePreferencePage.locator('.nav-logo')
+await sceneButton.focus()
+await scenePreferencePage.keyboard.press('Enter')
+await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'garden')
+const storedScene = await scenePreferencePage.evaluate(() => window.localStorage.getItem('biau-port-harbor-scene'))
+if (storedScene !== 'garden') {
+  failures.push('/ home scene preference: Enter should cycle and persist the next harbor scene')
+}
+await scenePreferencePage.reload({ waitUntil: 'domcontentloaded' })
+await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'garden')
+if ((await scenePreferencePage.locator('.nav-logo').getAttribute('data-scene')) !== 'garden') {
+  failures.push('/ home scene preference: refresh should restore the persisted harbor scene')
+}
+await scenePreferencePage.close()
+
+const autoThemePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
+await autoThemePage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'auto')
+  window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(autoThemePage, '/')
+await autoThemePage.waitForFunction(() => document.documentElement.dataset.colorMode === 'dark')
+await autoThemePage.emulateMedia({ colorScheme: 'light' })
+await autoThemePage.waitForFunction(
+  () => document.documentElement.dataset.colorMode === 'light' && document.documentElement.classList.contains('light-theme'),
+)
+await autoThemePage.emulateMedia({ colorScheme: 'dark' })
+await autoThemePage.waitForFunction(
+  () => document.documentElement.dataset.colorMode === 'dark' && !document.documentElement.classList.contains('light-theme'),
+)
+if ((await autoThemePage.evaluate(() => window.localStorage.getItem('theme'))) !== 'auto') {
+  failures.push('/ home auto theme: runtime system changes should not replace the persisted auto preference')
+}
+await autoThemePage.close()
+
+for (const theme of ['light', 'dark']) {
+  for (const width of [320, 390, 430]) {
+    const mobileAppearancePage = await createUiPage(browser, {
+      viewport: { width, height: 900 },
+      colorScheme: theme,
+    })
+    await mobileAppearancePage.addInitScript(({ storedTheme }) => {
+      window.localStorage.setItem('theme', storedTheme)
+      window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    }, { storedTheme: theme })
+    await gotoApp(mobileAppearancePage, '/')
+    const mobileAppearance = await mobileAppearancePage.evaluate(() => {
+      const logo = document.querySelector('.nav-logo-mark')
+      const brand = document.querySelector('.nav-brand-section')?.getBoundingClientRect()
+      const actions = document.querySelector('.nav-actions')?.getBoundingClientRect()
+      const shell = document.querySelector('.nav-inner')?.getBoundingClientRect()
+      return {
+        resolvedTheme: document.documentElement.dataset.colorMode ?? '',
+        logoOpacity: logo ? Number.parseFloat(getComputedStyle(logo).opacity) : 0,
+        brandRight: brand?.right ?? Number.POSITIVE_INFINITY,
+        actionsLeft: actions?.left ?? Number.NEGATIVE_INFINITY,
+        shellLeft: shell?.left ?? -1,
+        shellRight: shell?.right ?? Number.POSITIVE_INFINITY,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      }
+    })
+    if (
+      mobileAppearance.resolvedTheme !== theme ||
+      mobileAppearance.logoOpacity < 0.95 ||
+      mobileAppearance.brandRight > mobileAppearance.actionsLeft ||
+      mobileAppearance.shellLeft < -1 ||
+      mobileAppearance.shellRight > width + 1 ||
+      mobileAppearance.overflow > 1
+    ) {
+      failures.push(`/ home appearance ${theme} ${width}px: logo, navigation, and page should remain visible and contained`)
+    }
+    await mobileAppearancePage.close()
+  }
+}
+
 const cardResponsePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
 await cardResponsePage.addInitScript(() => {
   window.localStorage.setItem('theme', 'dark')

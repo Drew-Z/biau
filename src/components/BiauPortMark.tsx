@@ -64,29 +64,29 @@ export function BiauPortMark({ animated = false, ariaHidden = true, className = 
       <path
         className="biau-port-mark__terminal"
         d="M33.8 30.8L39 34.6L33.8 38.4"
-        stroke="rgba(255,246,218,0.76)"
+        stroke="var(--biau-mark-terminal, rgba(255,246,218,0.76))"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
         pathLength={1}
       />
-      <circle className="biau-port-mark__beacon-glow" cx="43.2" cy="20.5" r="7.2" fill="#F2A23A" opacity="0.18" />
-      <circle className="biau-port-mark__beacon" cx="43.2" cy="20.5" r="3.4" fill="#F2A23A" />
+      <circle className="biau-port-mark__beacon-glow" cx="43.2" cy="20.5" r="7.2" fill="var(--biau-mark-beacon, #F2A23A)" opacity="0.18" />
+      <circle className="biau-port-mark__beacon" cx="43.2" cy="20.5" r="3.4" fill="var(--biau-mark-beacon, #F2A23A)" />
       <defs>
         <linearGradient id={shellId} x1="9" y1="7" x2="57" y2="57" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#163B5B" />
-          <stop offset="0.52" stopColor="#102A43" />
-          <stop offset="1" stopColor="#071827" />
+          <stop stopColor="var(--biau-mark-shell-start, #163B5B)" />
+          <stop offset="0.52" stopColor="var(--biau-mark-shell-mid, #102A43)" />
+          <stop offset="1" stopColor="var(--biau-mark-shell-end, #071827)" />
         </linearGradient>
         <linearGradient id={strokeId} x1="20" y1="14" x2="48" y2="50" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#F7FBFF" />
-          <stop offset="0.48" stopColor="#C8D6E5" />
-          <stop offset="1" stopColor="#7FA7C7" />
+          <stop stopColor="var(--biau-mark-stroke-start, #F7FBFF)" />
+          <stop offset="0.48" stopColor="var(--biau-mark-stroke-mid, #C8D6E5)" />
+          <stop offset="1" stopColor="var(--biau-mark-stroke-end, #7FA7C7)" />
         </linearGradient>
         <linearGradient id={waterId} x1="18" y1="37" x2="46" y2="41" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#A7D6E8" />
-          <stop offset="0.58" stopColor="#EAF7FF" />
-          <stop offset="1" stopColor="#F2A23A" />
+          <stop stopColor="var(--biau-mark-water-start, #A7D6E8)" />
+          <stop offset="0.58" stopColor="var(--biau-mark-water-mid, #EAF7FF)" />
+          <stop offset="1" stopColor="var(--biau-mark-water-end, #F2A23A)" />
         </linearGradient>
       </defs>
     </svg>
