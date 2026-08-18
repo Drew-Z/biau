@@ -188,11 +188,13 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 站点所有者随后明确批准 v7 pending proposal `ai-daily-cpa-deepseek-v4-flash-static-v3`，proposal hash 为 `a5274c8a147de67e6ae00c912e0e370b46efbb4a2d8b668e3a51d6a21784edb8`。审批生成 bundle hash `962243d6fe24a996d5b2994ba83edcac4fdb8f7f311c657d9194dc99d71aa464`；proposal/bundle 均为 `modelCalls=0`，离线交付检查为 `networkCalls=0`、1 channel、3 candidates、1 failure domain。旧 v6 本地 bundle 在替换前已保留。上传已审核 Secret File 后，Render 只合并更新 expected hash，并将提交 `3d47b0f0` 部署为 `dep-da1j8im417fc73ajorag`。启动日志验证精确 v7 hash 且 `networkCalls=0`；health/database/auth 正常，未授权 Workspace=`401 missing-studio-token`，production generation 与 stage diagnostics 均为 disabled，`PENDING` / `LEASED` / `RETRY_WAIT`、backlog、活动阶段和 expired lease 均为 0，Public Feed=`404`，部署窗口 error-level 日志为 0。该交付没有调用模型、执行诊断、开启生成或提交真实 Edition。
 
+2026-08-18 站点所有者批准并执行一次 v7 单次真实 Edition。生成开关仅在窗口内开启，部署 `dep-da1ruibl550s73all83g` live 后，启动交付检查确认 `networkCalls=0`、1 channel、3 candidates、1 failure domain。受保护入口只提交一次并返回 `202`，创建 Run `cmsy2ipki00003sfrvpopyrp2` / work item `cmsy2ippu00013sfrufqm4ixh`，`attemptNumber=16`。Extractor 仅发起 1 次调用并以 `provider_rate_limited` 失败，composer/verifier 未开始；Run 以 `COMPLETED_WITH_GAPS` 结束，Revision 15 `cmsy2isvd00083sfrt5s54ll8` 使用 `ai-daily-prompt-v7` / `ai-daily-generation-v2`，保留 8 条 citation，自动 `REJECTED` / `DISCARDED`，0 个内容块且无 projection draft。未重试、未创建 ContentDraft、未执行 Studio review、Publish Export、内容部署或公开发布。生成开关立即恢复为 `false`，关闭部署 `dep-da1sihf40ujc738nkkq0` 已 `live`；最终 workspace 与 stage diagnostics 为 `disabled`，`PENDING` / `LEASED` / `RETRY_WAIT=0`、backlog、活动阶段和 expired lease 均为 0，Public Feed=`404`，关闭启动检查 `networkCalls=0`，error-level 日志无记录。该结果把阻塞定位为批准渠道的限流/容量问题；在完成容量决策前不直接重试同一 bundle，后续真实 Edition 需要新的单独明确批准。
+
 ### 1. 后续真实版次
 
-- 当前最新一次真实 Edition 已完成 extractor、composer、verifier 及单次质量修复闭环；阻塞收敛到三个 `scope_inflation` 文本块和一个缺少 official evidence 的 claim。
+- 最新一次 v7 真实 Edition 在 extractor 阶段因 `provider_rate_limited` 终止，尚未进入 composer/verifier；产品仍为“待验收”。
 - v7 确定性删减与简体中文门槛已经通过零外呼合同；没有放宽官方证据、独立来源或 contradicted/insufficient 拒绝门槛。
-- v7 proposal、bundle、Secret File/hash 与禁用态部署校验已经完成。下一步如需运行完整真实 Edition，仍必须再次获得一次单独明确批准；本次 proposal 批准不能复用为 Edition 批准。
+- v7 proposal、bundle、Secret File/hash 与禁用态部署校验已经完成；本次 Edition 批准已被 Run `cmsy2ipki00003sfrvpopyrp2` 消费。先完成渠道容量/限流处理，后续如需运行真实 Edition 必须再次获得一次单独明确批准；不能复用本次批准。
 - 不以重试、ping、doctor、空 prompt 或其他测活替代真实业务修复和批准。
 - production generation、stage diagnostics、business evaluation、Cron 与 public feed 保持关闭。
 - 不临时修改 Web Service Start Command。

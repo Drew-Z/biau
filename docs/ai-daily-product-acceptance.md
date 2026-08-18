@@ -1,10 +1,10 @@
 # 潮讯 TideBrief 产品验收矩阵
 
-更新时间：2026-08-17
+更新时间：2026-08-18
 
 ## 当前结论
 
-潮讯 TideBrief 当前为 **工程就绪，CPA v6 真实 Edition 已完成三角色及一次质量修复，但产品仍待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 Run `cmsxar81600004bal6qbas8wr` 的六次角色调用全部成功，但 Revision 14 仍因三个范围膨胀文本块与一个缺少官方证据的 claim 被自动拒绝并丢弃，未进入人工审核或发布。v7 确定性删减与中文门槛已经通过零外呼检查，新的 proposal/bundle 也已批准、交付并完成禁用态部署校验；下一次真实 Edition 仍需单独批准。
+潮讯 TideBrief 当前为 **工程就绪、产品仍待验收**。离线合同覆盖来源清单、发现适配器、证据、时效、去重、排序、三角色模型选择、生成 runner、编辑生命周期、Publish Export、公开 payload/feed、回滚与保留策略；离线检查期间 `networkCalls=0`、`providerCalls=0`。最新 v7 真实 Edition 只完成 1 次 extractor 调用，随后被渠道限流（`provider_rate_limited`）阻断，composer/verifier 未执行；Revision 15 已自动拒绝并丢弃，没有 draft、人工审核或公开发布。生产窗口已关闭，下一次真实 Edition 前必须先完成渠道容量/限流处理并重新取得单独批准。
 
 ## 验收矩阵
 
@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | 来源发现 | 33 个来源、10 个查询组、启用/暂缓/拒绝状态与零网络 fixture | 已通过 | 真实 Edition 保留标题、URL、发布时间/抓取时间与来源等级 |
 | 证据、时效与去重 | evidence、freshness、dedupe、ranking 与负向案例 | 已通过 | 编辑者核对候选相关性、重复项、过期项和 Tier 1 证据 |
-| 三角色生成 | approval bundle、runtime drift、runner resume/deadline、确定性质量 repair 与 30 个 golden case | 三角色与一次 repair/reverify 真实调用通过；最终内容质量待通过 | 获批 v7 runtime 生成一份通过确定性验证的真实 Edition |
+| 三角色生成 | approval bundle、runtime drift、runner resume/deadline、确定性质量 repair 与 30 个 golden case | v7 真实调用在 extractor 阶段被 `provider_rate_limited` 阻断；未进入 composer/verifier | 先解决渠道容量/限流，再由新批准的 v7 runtime 生成一份通过确定性验证的真实 Edition |
 | 人工审核 | needs-changes、checklist、revision、review policy 与 optimistic token | 已通过 | Studio 人工修订并批准最终内容与引用 |
 | Publish Export | draft/review/version 绑定、公开 payload schema 与回滚契约 | 已通过 | 对同一 Edition 创建 Export，审查静态内容 diff 并部署 |
 | 公开 Feed 与详情 | CORS、ETag、分页、fresh/stale/empty/404/410/network 状态 | 已通过合同与 UI fixture；待生产观察 | 桌面和手机验收 Feed、详情、引用、`304` 与撤回语义 |
@@ -97,9 +97,21 @@ npm run check:ui
 | 关闭窗口 | 恢复部署 `dep-da1h7mnqj5pc73d21le0` live；production generation 与 stage diagnostics 均 disabled，队列/backlog/活动阶段/expired lease 为 0，Feed=`404`，error-level 日志为 0 |
 | v7 零外呼修复 | 后端派生允许/排除 claim、删除 event/event-claim/trend 与重写 block 指令，阻止改名恢复已删事件；每个最终编辑块必须包含简体中文，无可发布 claim 时跳过 repair 调用并 fail closed。27 项合同及构建/性能/文档门禁通过，`externalProviderCalls=0`；v6 bundle 因 prompt 漂移失效 |
 
+## 2026-08-18 CPA v7 真实 Edition（attempt 16）
+
+| 环节 | 低敏结果 |
+| --- | --- |
+| 生产配置 | v7 bundle hash `962243d6fe24a996d5b2994ba83edcac4fdb8f7f311c657d9194dc99d71aa464`；生成开启部署 `dep-da1ruibl550s73all83g` live，启动交付检查 `networkCalls=0`、1 channel、3 candidates、1 failure domain |
+| 唯一提交 | 受保护入口仅提交一次并返回 `202`；Run `cmsy2ipki00003sfrvpopyrp2`、work item `cmsy2ippu00013sfrufqm4ixh`、attempt 16 |
+| 生成结果 | 仅 extractor 发起 1 次调用并以 `provider_rate_limited` 失败；composer/verifier 未开始；Run 终态 `COMPLETED_WITH_GAPS` |
+| Revision | Revision 15 `cmsy2isvd00083sfrt5s54ll8` 使用 `ai-daily-prompt-v7` / `ai-daily-generation-v2`，保留 8 条 citation，`REJECTED` / `DISCARDED`，0 个内容块且无 projection draft；finding 为 `extractor-schema-or-provider-failure` |
+| 审核与发布 | 未自动重试，未创建 ContentDraft，未执行 Studio review、Publish Export、内容部署或公开 Feed |
+| 关闭窗口 | production generation 立即恢复为 `false`；关闭部署 `dep-da1sihf40ujc738nkkq0` live，workspace 与 stage diagnostics 均为 `disabled`，待处理/租约/重试队列、backlog、活动阶段和 expired lease 均为 0，Public Feed=`404`，关闭启动检查 `networkCalls=0` 且 error-level 日志为 0 |
+| 结论 | 结果把当前阻塞收敛到已批准渠道的限流/容量，而非内容质量或三角色 schema；在完成容量决策前保持产品“待验收”，不提交同一 bundle 的直接重试 |
+
 ## 最后人工 gate
 
 1. `ai-daily-prompt-v7` proposal、bundle、Render Secret File/hash 与禁用态部署校验已经完成；bundle hash 为 `962243d6fe24a996d5b2994ba83edcac4fdb8f7f311c657d9194dc99d71aa464`，部署为 `dep-da1j8im417fc73ajorag`，全程零模型调用。
-2. 重新取得一次单独的真实 Edition 明确批准，要求生成结果通过确定性内容验证，再完成 Studio 人工修订与批准；不得把 proposal 批准复用为 Edition 批准，也不得用直接重试或无意义测活代替业务验收。
+2. 该 bundle 的一次真实 Edition 批准已由 Run `cmsy2ipki00003sfrvpopyrp2` 消费；在渠道容量/限流问题完成处理前，不得直接重试。后续如继续运行，必须重新取得一次单独的真实 Edition 明确批准；不得把 proposal 批准复用为 Edition 批准，也不得用直接重试或无意义测活代替业务验收。
 3. 创建 Publish Export，审查静态内容 diff，部署并验收公开 Feed/详情桌面与手机状态。
 4. 绑定并封存同一 Edition 的 acceptance/rollback 低敏摘要；全部通过后才能标记产品可用。
