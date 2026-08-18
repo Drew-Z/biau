@@ -1,4 +1,6 @@
 import { useRef, useEffect, useCallback, type PointerEvent } from 'react'
+import { ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { ColoredCard } from './ColoredCard'
 import type { HeroProject } from '../data/hero'
 import { getProjectCta, getProjectPublication } from '../data/projectPublication'
@@ -259,8 +261,11 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       }}
     >
       <div className="panel-head">
-        <p>IN PORT</p>
-        <span>{projects.length} 个项目</span>
+        <div className="panel-head__copy">
+          <p>IN PORT / 当前泊岸</p>
+          <span>项目状态与访问边界</span>
+        </div>
+        <strong>{String(projects.length).padStart(2, '0')} 项</strong>
       </div>
 
       <div
@@ -300,6 +305,13 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
           })}
         </div>
       </div>
+      <Link
+        className="panel-footer"
+        to="/projects"
+      >
+        <span>查看全部项目</span>
+        <ArrowRight size={16} aria-hidden />
+      </Link>
     </section>
   )
 }

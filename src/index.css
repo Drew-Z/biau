@@ -422,3 +422,32 @@ button.link-badge {
     font-size: 2rem;
   }
 }
+
+/* The homepage uses the port board palette; keep ambient motion quiet behind content. */
+:root:not(.light-theme) .app.page-home {
+  --flow-light-rgb: 79 174 155;
+  --flow-aqua-rgb: 42 88 98;
+  --flow-blue-rgb: 26 57 70;
+  --flow-deep-rgb: 8 24 30;
+  --flow-c1: #081014;
+  --flow-c2: #0d2027;
+  --flow-c3: #14333b;
+  --flow-c4: #102a32;
+  --flow-c5: #081014;
+  --flow-field-opacity: 0.24;
+  --flow-ribbon-opacity: 0.12;
+  --harbor-edge-opacity: 0.14;
+  --harbor-mist-opacity: 0.12;
+  --flow-blur: 60px;
+  --flow-ribbon-blur: 76px;
+}
+
+:root:not(.light-theme) .app.page-home .flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) {
+  opacity: 0.58;
+  filter: saturate(0.62) brightness(0.64) hue-rotate(10deg);
+}
+
+:root:not(.light-theme) .app.page-home .gradient-bg {
+  background: #081014;
+  animation: none;
+}

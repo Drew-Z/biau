@@ -3,7 +3,6 @@ import { heroContent, type HeroPoem } from '../data/hero'
 import { AnimatedText } from './AnimatedText'
 import { RightScrollCards } from './RightScrollCards'
 import { usesMobileInteractionMode } from '../utils/responsive'
-import { getGreeting, formatDateTime } from '../utils/time'
 
 interface HeroSplitProps {
   onProjectClick: (link: string) => void
@@ -15,6 +14,12 @@ const POEM_ROTATE_MS = 6300
 const TITLE_SWITCH_DISTANCE = 120
 const TOUCH_TITLE_SWITCH_DISTANCE = 58
 const TOUCH_HORIZONTAL_BIAS = 1.18
+const PORT_TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
+  timeZone: 'Asia/Shanghai',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
 
 export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: HeroSplitProps) {
   const { poems, projects } = heroContent
@@ -25,6 +30,10 @@ export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: 
         <h1 className="eyebrow">BIAU PORT</h1>
 
         <HeroTitleRotator poems={poems} />
+
+        <p className="hero-body">
+          把 AI 产品、业务系统、移动应用与互动体验，组织成可验证、可抵达的解决方案。
+        </p>
 
         <SystemStatus />
       </section>
@@ -284,9 +293,17 @@ function SystemStatus() {
   return (
     <div className="system-status">
       <div className="status-text">
-        <span>{getGreeting()}</span>
-        <strong>{formatDateTime(currentTime)}</strong>
+        <span>LOCAL TIME</span>
+        <strong>{formatLocalTime(currentTime)} · CST</strong>
+      </div>
+      <div className="status-text status-text--port">
+        <span>PORT STATUS</span>
+        <strong>入口状态公开可见</strong>
       </div>
     </div>
   )
+}
+
+function formatLocalTime(date: Date) {
+  return PORT_TIME_FORMATTER.format(date)
 }

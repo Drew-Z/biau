@@ -786,7 +786,7 @@ async function checkMobilePrimaryNavigation(browser, failures) {
         tabData.length !== expectedTabs.length ||
         JSON.stringify(tabData.map(({ href, label }) => ({ href, label }))) !== JSON.stringify(expectedTabs)
       ) {
-        failures.push(`${routeCase.path} mobile ${width}px: expected the five ordered primary route tabs`)
+        failures.push(`${routeCase.path} mobile ${width}px: expected the four ordered primary route tabs`)
       }
       if (tabData.some((tab) => tab.width < 44 || tab.height < 44)) {
         failures.push(`${routeCase.path} mobile ${width}px: every bottom navigation target must be at least 44px`)

@@ -1,4 +1,4 @@
-/* ===== Home Hero — mirrors 001027.xyz (沐星埠) layout ===== */
+/* ===== Home Hero — BIAU Port / 泊岸 product board ===== */
 
 /* Design tokens from the original site */
 :root.light-theme {
@@ -722,4 +722,386 @@
 
 @media (max-width: 360px) {
   .hero-intro h2.hero-title-rotator { font-size: 2.15rem; }
+}
+
+/* Homepage visual refresh: quiet port surfaces, restrained controls and explicit status. */
+.app.page-home {
+  --shell-max: 1344px;
+  --ink: #f4f0e6;
+  --muted: #9aaab0;
+  --line: #36505a;
+  --green: #4fae9b;
+  --amber: #d3a75a;
+  --violet: #9b8fd2;
+  --rose: #cf8294;
+  --font-serif-display: Georgia, 'Songti SC', serif;
+  --font-ui: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.app.page-home .home-hero {
+  max-width: var(--shell-max);
+  min-height: calc(100vh - 164px);
+  margin-top: 28px;
+  padding: 0 24px 24px;
+  gap: 48px;
+  align-items: start;
+}
+
+.app.page-home .hero-intro {
+  padding-top: 18px;
+  translate: 0;
+}
+
+.app.page-home .eyebrow {
+  margin-bottom: 28px;
+  color: #7fc8b7;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.app.page-home .hero-intro h2.hero-title-rotator {
+  max-width: 10em;
+  color: var(--ink);
+  font-family: var(--font-serif-display);
+  font-size: clamp(3.2rem, 4.1vw, 3.75rem);
+  font-weight: 400;
+  line-height: 1.12;
+}
+
+.app.page-home .hero-intro h2.hero-title-rotator .hero-subline {
+  color: var(--ink);
+}
+
+.app.page-home .hero-body {
+  max-width: 480px;
+  margin: 28px 0 0;
+  color: #b6c4c3;
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.app.page-home .system-status {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  width: min(480px, 100%);
+  margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  gap: 32px;
+}
+
+.app.page-home .status-text {
+  gap: 8px;
+}
+
+.app.page-home .status-text span {
+  color: #7d9195;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+}
+
+.app.page-home .status-text strong {
+  color: #e5e9e5;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.app.page-home .status-text--port strong {
+  white-space: nowrap;
+}
+
+.app.page-home .hero-panel {
+  grid-column: 7 / -1;
+  width: 100%;
+  height: min(764px, calc(100vh - 180px));
+  min-height: 620px;
+  padding: 24px 32px 20px;
+  border: 1px solid rgb(54 80 90 / 58%);
+  border-radius: 8px;
+  background: rgb(18 33 40 / 94%);
+  box-shadow: 0 18px 48px rgb(0 0 0 / 30%);
+  translate: 0;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+.app.page-home .panel-head {
+  align-items: start;
+  padding: 0 0 16px;
+}
+
+.app.page-home .panel-head__copy {
+  display: grid;
+  gap: 4px;
+}
+
+.app.page-home .panel-head p {
+  color: #dde6e2;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.app.page-home .panel-head span {
+  color: #7d9195;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.app.page-home .panel-head > strong {
+  min-width: 72px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: #bfd2ce;
+  background: #20353c;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.app.page-home .carousel-viewport {
+  height: calc(100% - 86px);
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border-radius: 8px;
+  mask-image: linear-gradient(transparent 0%, #000 5%, #000 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(transparent 0%, #000 5%, #000 95%, transparent 100%);
+}
+
+.app.page-home .carousel-card {
+  --card-accent: var(--green);
+  grid-template-columns: 32px minmax(0, 1fr) 96px;
+  height: 104px;
+  padding: 16px;
+  border: 1px solid rgb(54 80 90 / 55%);
+  border-left: 4px solid var(--card-accent);
+  border-radius: 8px;
+  background: #173035;
+  box-shadow: none;
+}
+
+.app.page-home .carousel-card.commerce { background: #28342c; }
+.app.page-home .carousel-card.preview { background: #242b3e; }
+.app.page-home .carousel-card.image { background: #332d37; }
+
+.app.page-home .carousel-card::before {
+  color: var(--card-accent);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.app.page-home .carousel-card strong {
+  color: #f2f2ea;
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.app.page-home .carousel-card strong::after {
+  display: none;
+}
+
+.app.page-home .carousel-card .desc {
+  margin-top: 7px;
+  color: #9fb0b2;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.app.page-home .carousel-card .carousel-action {
+  width: 96px;
+  min-width: 96px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 8px;
+  color: #e1e9e5;
+  background: #23373e;
+  box-shadow: none;
+  font-size: 11px;
+}
+
+.app.page-home .carousel-card .carousel-action:hover,
+.app.page-home .carousel-card .carousel-action:focus-visible {
+  background: color-mix(in oklch, var(--card-accent) 22%, #23373e);
+}
+
+.app.page-home .panel-footer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  padding: 0 4px;
+  border: 0;
+  color: #7fc8b7;
+  background: transparent;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.app.page-home .panel-footer:hover,
+.app.page-home .panel-footer:focus-visible {
+  color: #dff3ec;
+}
+
+@media (max-width: 1024px) {
+  .app.page-home .home-hero {
+    gap: 32px;
+  }
+
+  .app.page-home .hero-panel {
+    height: auto;
+    min-height: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .app.page-home .home-hero {
+    min-height: auto;
+    margin-top: 16px;
+    padding: 0 12px calc(var(--mobile-tabbar-clearance, 72px) + 24px);
+    gap: 16px;
+  }
+
+  .app.page-home .hero-intro {
+    padding: 0 8px;
+  }
+
+  .app.page-home .eyebrow {
+    margin-bottom: 24px;
+    font-size: 10px;
+  }
+
+  .app.page-home .hero-intro h2.hero-title-rotator {
+    max-width: 100%;
+    font-size: 2.45rem;
+    line-height: 1.08;
+  }
+
+  .app.page-home .hero-body {
+    margin-top: 16px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .app.page-home .system-status {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 0;
+    border-top: 0;
+    gap: 0;
+  }
+
+  .app.page-home .status-text {
+    display: inline-flex;
+    flex-direction: row;
+    gap: 0;
+  }
+
+  .app.page-home .status-text span {
+    display: none;
+  }
+
+  .app.page-home .status-text strong {
+    color: #d3a75a;
+    font-size: 10px;
+    font-weight: 550;
+  }
+
+  .app.page-home .status-text--port strong::before {
+    content: '  ·  ';
+    color: #7d9195;
+  }
+
+  .app.page-home .hero-panel {
+    grid-column: 1 / -1;
+    min-height: 0;
+    height: auto;
+    padding: 16px 12px 12px;
+    border-radius: 8px;
+  }
+
+  .app.page-home .panel-head {
+    padding: 0 4px 12px;
+  }
+
+  .app.page-home .panel-head p {
+    font-size: 11px;
+  }
+
+  .app.page-home .panel-head span {
+    display: none;
+  }
+
+  .app.page-home .panel-head > strong {
+    min-width: auto;
+    padding: 0;
+    color: #8fa5a7;
+    background: transparent;
+    font-size: 10px;
+  }
+
+  .app.page-home .carousel-viewport {
+    height: auto;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+
+  .app.page-home .carousel-card {
+    grid-template-columns: 28px minmax(0, 1fr) 56px;
+    min-height: 88px;
+    height: 88px;
+    gap: 12px;
+    padding: 12px 10px;
+    border-left-width: 4px;
+  }
+
+  .app.page-home .carousel-card::before {
+    font-size: 16px;
+  }
+
+  .app.page-home .carousel-card strong {
+    font-size: 13px;
+  }
+
+  .app.page-home .carousel-card .desc {
+    margin-top: 5px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .app.page-home .carousel-card .carousel-action {
+    width: 56px;
+    min-width: 56px;
+    min-height: 44px;
+    padding: 0 5px;
+    font-size: 10px;
+  }
+
+  .app.page-home .panel-footer {
+    min-height: 44px;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app.page-home .hero-intro h2.hero-title-rotator {
+    font-size: 2.25rem;
+  }
 }

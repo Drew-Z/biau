@@ -196,6 +196,7 @@ Focused checks:
 - [x] Update manual-gate documentation with only genuinely unresolved production actions.
 - [x] 2026-08-18 continuation: browser-only public entry observation refreshed across the master site, Legal RAG, Chatus, Anchor, Pet, Playlab, Xunqiu and ERP; Ozon publication CTA downgraded to `unchecked`, Playlab trial-root 404 recorded without disabling valid game entries, and the homepage contrast/mobile CTA hierarchy was rechecked at 1440, 390 and 320 widths.
 - [x] Record the post-migration RLS drift found on three internal assistant tables; `anon` / `authenticated` have no direct table grants, and remediation is deferred to a separate migration-backed security task.
+- [x] Align the homepage implementation with Figma frames `32:3` and `32:4`: keep the four real public route families, add the product-positioning/status summary, preserve publication-registry CTA decisions, and adopt the 8px deep-ink/cyan/amber port-board system. Validate 320/390/430 mobile containment and 1440 desktop composition through the full UI suite, lint, build, registry, status and performance gates.
 
 ## Files With Elevated Risk
 

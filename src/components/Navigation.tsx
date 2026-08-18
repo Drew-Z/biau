@@ -69,8 +69,8 @@ export function Navigation({
               <BiauPortMark className="nav-logo-mark" />
             </span>
             <div className="nav-brand-text">
-              <div className="brand-subtitle">BIAU PORT</div>
               <div className="brand-title">{brandTitle[language]}</div>
+              <div className="brand-subtitle">BIAU PORT</div>
             </div>
           </Link>
 
@@ -91,19 +91,19 @@ export function Navigation({
           <div className="nav-actions">
             <button
               type="button"
+              className="nav-lang-toggle"
+              onClick={onToggleLanguage}
+              aria-label="切换语言 / Switch language"
+            >
+              {language === 'zh' ? '中' : 'EN'}
+            </button>
+            <button
+              type="button"
               className="nav-theme-toggle"
               onClick={onCycleTheme}
               aria-label={`主题：${theme.label.zh} / Theme: ${theme.label.en}`}
             >
               {theme.glyph}
-            </button>
-            <button
-              type="button"
-              className="nav-lang-toggle"
-              onClick={onToggleLanguage}
-              aria-label="切换语言 / Switch language"
-            >
-              {language === 'zh' ? 'EN' : '中'}
             </button>
             <button
               type="button"

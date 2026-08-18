@@ -1037,3 +1037,231 @@
     transition: none;
   }
 }
+
+/* Homepage visual refresh: map the public shell to the BIAU Port / 泊岸 board. */
+.page-home .nav-inner {
+  max-width: 1344px;
+  margin-top: 32px;
+  padding: 16px;
+  border: 1px solid #36505a;
+  border-radius: 8px;
+  background: rgba(16, 27, 32, 0.88);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 22%);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.page-home .nav-brand-section {
+  min-height: 40px;
+  gap: 14px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.page-home .nav-logo {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: #d3a75a;
+  box-shadow: none;
+}
+
+.page-home .nav-logo svg {
+  width: 40px;
+  height: 40px;
+  filter: none;
+}
+
+.page-home .nav-logo::before {
+  content: '泊';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #0b1519;
+  font-family: var(--font-ui);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.page-home .nav-logo svg {
+  opacity: 0;
+}
+
+.page-home .nav-brand-text {
+  gap: 4px;
+  padding-right: 0;
+}
+
+.page-home .brand-title {
+  order: 1;
+  color: #f4f0e6;
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  font-family: var(--font-ui);
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: none;
+  transform: none;
+}
+
+.page-home .brand-subtitle {
+  order: 2;
+  color: #9aaab0;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+
+.page-home .nav-items-center {
+  gap: 8px;
+}
+
+.page-home .nav-link-center {
+  min-width: 96px;
+  padding: 8px 12px 12px;
+  border-radius: 8px;
+  color: #9aaab0;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.page-home .nav-link-en {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.page-home .nav-link-center.active .nav-link-en {
+  color: #f4f0e6;
+}
+
+.page-home .nav-link-center.active::after {
+  bottom: 4px;
+  width: 56px;
+  height: 2px;
+  border-radius: 1px;
+  background: #4fae9b;
+  box-shadow: none;
+}
+
+.page-home .nav-link-center.active::before {
+  display: none;
+}
+
+.page-home .nav-actions {
+  gap: 8px;
+}
+
+.page-home .nav-lang-toggle,
+.page-home .nav-theme-toggle {
+  width: auto;
+  min-width: 58px;
+  height: 40px;
+  min-height: 40px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #d8e1de;
+  background: #203138;
+  box-shadow: none;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.page-home .nav-theme-toggle {
+  min-width: 72px;
+}
+
+.page-home .nav-all-tools {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .page-home .nav-inner {
+    width: calc(100% - 24px);
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
+
+  .page-home .navigation-top {
+    padding: 0;
+  }
+
+  .page-home .nav-brand-section {
+    min-height: 40px;
+    gap: 8px;
+  }
+
+  .page-home .nav-logo,
+  .page-home .nav-logo svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .page-home .nav-brand-text {
+    display: flex;
+    gap: 4px;
+  }
+
+  .page-home .brand-subtitle {
+    display: block;
+    max-width: 90px;
+    overflow: hidden;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .page-home .brand-title {
+    max-width: 5em;
+    overflow: visible;
+    font-size: 16px;
+    line-height: 1;
+    text-overflow: clip;
+    white-space: nowrap;
+  }
+
+  .page-home .nav-lang-toggle,
+  .page-home .nav-theme-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .page-home .nav-theme-toggle {
+    min-width: 44px;
+  }
+
+  .page-home .mobile-tabbar {
+    right: 12px;
+    left: 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid #36505a;
+    border-bottom: 0;
+    border-radius: 8px 8px 0 0;
+    background: #0d171b;
+    box-shadow: 0 -10px 24px rgb(0 0 0 / 24%);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .page-home .mobile-tab.is-active {
+    background: #203a3c;
+  }
+
+  .page-home .mobile-tab.is-active::before {
+    display: none;
+  }
+}

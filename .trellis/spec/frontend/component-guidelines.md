@@ -164,6 +164,30 @@ clearance for footer content and fixed assistant controls. Mobile top navigation
 still owns brand, theme, and language controls; desktop keeps the full center
 navigation and hides the tabbar. Do not use a horizontal scroll rail, gesture-only
 navigation, or duplicate route metadata in CSS and tests.
+
+### Convention: Homepage Port Board
+
+Treat the homepage as the public port board rather than a separate marketing
+landing page. Its mobile tabbar exposes exactly the four real route families
+declared by `Navigation` (`/`, `/projects`, `/blog`, `/status`); planned or
+disabled products must not gain a navigation tab merely to fill the layout.
+
+Keep the Hero's product-positioning copy and public status summary visible, and
+derive every project action from `projectPublication` through the shared CTA
+projection. A card must not infer availability from its artwork, copy, or URL.
+
+```tsx
+const publication = getProjectPublication(project.id)
+const cta = getProjectCta(publication)
+```
+
+The homepage shell uses the existing class-based theme system with compact 8px
+surfaces, deep ink backgrounds, cyan state accents, and amber brand emphasis.
+Do not turn page sections into nested decorative cards or add a fifth mobile
+navigation column without a real public route. UI checks must assert the ordered
+route set, 44px controls, no horizontal overflow, and a first project card visible
+within the initial mobile reading rhythm at 320, 390, and 430px.
+
 ### Long Mobile Page Navigation
 
 When an evidence-heavy mobile page exceeds several viewports, preserve its
