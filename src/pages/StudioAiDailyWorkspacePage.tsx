@@ -192,6 +192,11 @@ function formatGenerationDiagnostic(value: string | null | undefined) {
   return value ? labels[value] ?? value : '未记录'
 }
 
+function generationDiagnosticAction(value: string | null | undefined) {
+  if (value !== 'provider_rate_limited') return null
+  return '先检查渠道额度或并发容量；恢复容量或交付新的获批映射后，重新取得 Edition 批准再运行，禁止直接重试。'
+}
+
 function statusClass(value: string | null | undefined) {
   if (!value) return 'is-muted'
   if (/(failed|error|rejected|withdrawn|expired|blocked)/iu.test(value)) return 'is-danger'
@@ -352,7 +357,14 @@ function createWorkspaceUiFixturePayload() {
     ],
     generationDiagnostics: [
       { stage: 'extract-facts', failureCode: null, attempts: [{ role: 'extractor', slot: 'primary', outcome: 'succeeded', calls: 1, errorCategory: null, responseShape: null, streamCompletion: null, lengthBucket: null, jsonShape: null }] },
-      { stage: 'compose', failureCode: 'composer-schema-or-provider-failure', attempts: [{ role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid', responseShape: 'sse_output_text', streamCompletion: 'output_text_done_and_completed', lengthBucket: 'short', jsonShape: 'object' }] },
+      {
+        stage: 'compose',
+        failureCode: 'composer-schema-or-provider-failure',
+        attempts: [
+          { role: 'composer', slot: 'primary', outcome: 'schema-rejected', calls: 2, errorCategory: 'schema_invalid', responseShape: 'sse_output_text', streamCompletion: 'output_text_done_and_completed', lengthBucket: 'short', jsonShape: 'object' },
+          { role: 'composer', slot: 'fallback', outcome: 'failed', calls: 1, errorCategory: 'provider_rate_limited', responseShape: null, streamCompletion: null, lengthBucket: null, jsonShape: null },
+        ],
+      },
     ],
     workItems: [],
     candidates: [candidate],
@@ -1973,11 +1985,13 @@ function GenerationDiagnostics({ run }: { run: StudioAiDailyWorkspaceRun }) {
       <div className="studio-ai-daily-findings">
         {run.generationDiagnostics.flatMap((diagnostic) =>
           diagnostic.attempts.map((attempt, index) => {
+            const nextAction = generationDiagnosticAction(attempt.errorCategory)
             const details = [
               attempt.responseShape && `响应：${formatGenerationDiagnostic(attempt.responseShape)}`,
               attempt.streamCompletion && `完成：${formatGenerationDiagnostic(attempt.streamCompletion)}`,
               attempt.lengthBucket && `长度：${formatGenerationDiagnostic(attempt.lengthBucket)}`,
               attempt.jsonShape && `JSON：${formatGenerationDiagnostic(attempt.jsonShape)}`,
+              nextAction && `下一步：${nextAction}`,
             ].filter((detail): detail is string => Boolean(detail))
             return (
               <span
@@ -1985,7 +1999,7 @@ function GenerationDiagnostics({ run }: { run: StudioAiDailyWorkspaceRun }) {
                 key={`${diagnostic.stage}:${attempt.role}:${attempt.slot}:${index}`}
               >
                 {formatStatus(diagnostic.stage)} · {attempt.role}/{attempt.slot}: {formatStatus(attempt.outcome)} · {attempt.calls} call{attempt.calls === 1 ? '' : 's'}
-                {attempt.errorCategory ? ` / ${attempt.errorCategory}` : ''}
+                {attempt.errorCategory ? ` / ${formatGenerationDiagnostic(attempt.errorCategory)}` : ''}
                 {diagnostic.failureCode ? ` / ${diagnostic.failureCode}` : ''}
                 {details.length > 0 ? ` / ${details.join(' / ')}` : ''}
               </span>

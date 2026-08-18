@@ -1370,9 +1370,17 @@ try {
       if ((await page.getByRole('option', { name: /AI Daily 工作区 UI Check/u }).count()) !== 1) {
         failures.push(`${viewport.name} ${route.path}: expected fixture Edition title`)
       }
-      const generationDiagnostic = page.getByText(/Compose · composer\/primary: Schema Rejected · 2 calls \/ schema_invalid/u).first()
+      const generationDiagnostic = page.getByText(/Compose · composer\/primary: Schema Rejected · 2 calls \/ 业务结构无效/u).first()
       if (!(await generationDiagnostic.isVisible().catch(() => false))) {
         failures.push(`${viewport.name} ${route.path}: generation diagnostics should expose the bounded composer attempt classification`)
+      }
+      const rateLimitDiagnostic = page.getByText(/Compose · composer\/fallback: Failed · 1 call \/ 渠道限流/u).first()
+      const rateLimitAction = page.getByText(/下一步：先检查渠道额度或并发容量；恢复容量或交付新的获批映射后，重新取得 Edition 批准再运行，禁止直接重试。/u).first()
+      if (
+        !(await rateLimitDiagnostic.isVisible().catch(() => false)) ||
+        !(await rateLimitAction.isVisible().catch(() => false))
+      ) {
+        failures.push(`${viewport.name} ${route.path}: rate-limit diagnostics should expose bounded copy and a no-direct-retry action`)
       }
       await page.getByRole('tab', { name: 'Candidates / Events' }).click()
       if (!(await page.getByText('官方模型平台更新').isVisible().catch(() => false))) {
