@@ -751,13 +751,30 @@
 
   .nav-brand-section {
     min-height: 46px;
-    gap: 0;
+    gap: 8px;
     padding: 0;
     border-radius: 16px;
   }
 
   .nav-brand-text {
+    display: flex;
+    min-width: 0;
+    padding-right: 0;
+  }
+
+  .brand-subtitle {
     display: none;
+  }
+
+  .brand-title {
+    max-width: 4.5em;
+    overflow: hidden;
+    font-size: 1.08rem;
+    line-height: 1;
+    letter-spacing: 0;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transform: none;
   }
 
   .nav-logo {
@@ -932,16 +949,16 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
     align-items: stretch;
     border-top: 1px solid color-mix(in oklch, var(--ink) 12%, transparent);
-    background: color-mix(in oklch, var(--panel-strong, var(--panel)) 88%, transparent);
+    background: color-mix(in oklch, var(--panel-strong, var(--panel)) 97%, transparent);
     box-shadow:
-      0 -12px 30px color-mix(in oklch, var(--ink) 10%, transparent),
+      0 -14px 34px color-mix(in oklch, var(--ink) 14%, transparent),
       inset 0 1px 0 color-mix(in oklch, white 46%, transparent);
     -webkit-backdrop-filter: blur(22px) saturate(112%);
     backdrop-filter: blur(22px) saturate(112%);
   }
 
   :root:not(.light-theme) .mobile-tabbar {
-    background: color-mix(in oklch, #090d18 90%, transparent);
+    background: color-mix(in oklch, #090d18 97%, transparent);
     border-top-color: rgba(255, 255, 255, 0.1);
   }
 

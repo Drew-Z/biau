@@ -53,6 +53,8 @@ npm.cmd run docs:deployment-check
 
 - Mobile tab bar includes exactly the public primary sections.
 - Touch targets are at least 44px where practical.
+- A fixed mobile tab bar uses an opaque surface so cards and text never remain visibly readable through the bar; the page content reserves `--mobile-tabbar-clearance` plus a content gap so the last interactive item can be scrolled above the bar.
+- Compact mobile navigation keeps a readable brand identity in `.nav-brand-text`; route-specific mobile overrides must not hide it after the base navigation rule runs. UI checks assert brand width and the compact project CTA label at `320`, `390`, and `430` widths.
 - Blog/project/status details remain vertically readable without forced horizontal swiping.
 - Floating assistant/reading controls collapse or offset near final content and footer.
 - Drawers/modals remain within viewport, expose close actions, and avoid global-nav overlap.

@@ -4705,6 +4705,32 @@ for (const width of [320, 390, 430]) {
   if (homeEntryTop > 410) {
     failures.push(`/ mobile editorial rhythm ${width}px: first home project should enter the first viewport, got y=${homeEntryTop}`)
   }
+  const homeMobileHierarchy = await touchPage.evaluate(() => {
+    const brand = document.querySelector('.nav-brand-text')
+    const compactAction = document.querySelector('.carousel-action__label--compact')
+    const fullAction = document.querySelector('.carousel-action__label--full')
+    if (!(brand instanceof HTMLElement) || !(compactAction instanceof HTMLElement) || !(fullAction instanceof HTMLElement)) {
+      return null
+    }
+    return {
+      brandDisplay: getComputedStyle(brand).display,
+      brandWidth: brand.getBoundingClientRect().width,
+      compactDisplay: getComputedStyle(compactAction).display,
+      compactText: compactAction.textContent?.trim() ?? '',
+      fullDisplay: getComputedStyle(fullAction).display,
+    }
+  })
+  if (!homeMobileHierarchy || homeMobileHierarchy.brandDisplay === 'none' || homeMobileHierarchy.brandWidth < 24) {
+    failures.push(`/ mobile home identity ${width}px: compact BIAU Port brand text should remain visible`)
+  }
+  if (
+    !homeMobileHierarchy ||
+    homeMobileHierarchy.compactDisplay === 'none' ||
+    homeMobileHierarchy.compactText.length === 0 ||
+    homeMobileHierarchy.fullDisplay !== 'none'
+  ) {
+    failures.push(`/ mobile home action ${width}px: project cards should show a compact text CTA without the desktop label`)
+  }
 
   await gotoApp(touchPage, '/projects')
   const projectCardState = await touchPage.locator('.project-card').first().evaluate((card) => ({

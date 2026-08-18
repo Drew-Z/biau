@@ -15,6 +15,11 @@ interface ColoredCardProps {
 
 export function ColoredCard({ project, index, projectCount, entryAction, loopCopy = false, onClick, onActionClick }: ColoredCardProps) {
   const number = String((index % Math.max(projectCount, 1)) + 1).padStart(2, '0')
+  const compactActionLabel = entryAction.mode === 'direct'
+    ? entryAction.label.includes('受控') ? '受控' : '打开'
+    : entryAction.mode === 'caution'
+      ? '谨慎'
+      : entryAction.label.includes('规划') ? '规划' : '状态'
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.target !== event.currentTarget) return
     if (event.key !== 'Enter' && event.key !== ' ') return
@@ -56,7 +61,8 @@ export function ColoredCard({ project, index, projectCount, entryAction, loopCop
             event.stopPropagation()
           }}
         >
-          <span>{entryAction.enabled ? project.action : entryAction.mode === 'status-only' ? 'STATUS' : entryAction.label}</span>
+          <span className="carousel-action__label carousel-action__label--full">{entryAction.label}</span>
+          <span className="carousel-action__label carousel-action__label--compact" aria-hidden>{compactActionLabel}</span>
           {entryAction.enabled ? <ExternalLink size={16} aria-hidden /> : <Activity size={16} aria-hidden />}
         </button>
       )}

@@ -194,6 +194,7 @@ Focused checks:
 - [x] Run desktop/mobile UI smoke and inspect no-overflow screenshots.
 - [x] Review `git diff --check` and ensure unrelated user changes are excluded; keep the locally failed `public/status/blog-semi-synthetic.json` snapshot unstaged.
 - [x] Update manual-gate documentation with only genuinely unresolved production actions.
+- [x] 2026-08-18 continuation: browser-only public entry observation refreshed across the master site, Legal RAG, Chatus, Anchor, Pet, Playlab, Xunqiu and ERP; Ozon publication CTA downgraded to `unchecked`, Playlab trial-root 404 recorded without disabling valid game entries, and the homepage contrast/mobile CTA hierarchy was rechecked at 1440, 390 and 320 widths.
 - [x] Record the post-migration RLS drift found on three internal assistant tables; `anon` / `authenticated` have no direct table grants, and remediation is deferred to a separate migration-backed security task.
 
 ## Files With Elevated Risk

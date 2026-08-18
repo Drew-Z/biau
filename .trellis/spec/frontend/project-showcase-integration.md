@@ -107,6 +107,7 @@ npm.cmd run docs:project-notes-check
 - Every generated Q&A block uses continuous `QA-<SCOPE>-NNN` numbering and the seven fields `范围` / `问题` / `深入追问` / `参考回答` / `失败场景` / `验证方式` / `证据`. Each scope must cite at least one evidence ID from its own evidence family.
 - Regenerate the interview bank before checking it. Never hand-edit `interview-question-bank.md`; edit the structured topic source and rerun `docs:project-notes-generate` so source and output cannot drift.
 - External-link failures remain failures unless the product contract explicitly accepts that status. Do not whitelist a real `403` merely to make the gate green.
+- When a Node `HEAD`/fetch scan fails while a browser `GET` in the same observation window succeeds, record the transport difference and keep the browser result scoped to L0 entry reachability; do not rewrite publication status from either result without the richer product-flow evidence required by the project gate.
 
 ## 4. Validation & Error Matrix
 
