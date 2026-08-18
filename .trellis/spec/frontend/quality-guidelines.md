@@ -82,6 +82,59 @@ npm.cmd run docs:deployment-check
 - Run mobile containment in both light and dark modes at `320`, `390`, and `430` widths. The Logo, brand, theme/language controls, cards, actions, and bottom navigation must remain visible and non-overlapping.
 - Preserve six distinct Flow canvas frames. Surface-token checks do not replace the existing canvas-pixel, reduced-motion, fallback, intro-docking, and performance assertions.
 
+### Production Appearance Verification Command
+
+#### 1. Scope / Trigger
+
+- Run after the appearance bundle reaches Cloudflare Pages or when diagnosing production-only theme, scene, Logo, contrast, or mobile-containment drift.
+- This command verifies the deployed homepage only. It does not replace local `check:ui`, exercise Studio fixtures, call a model/API provider, or write public status snapshots.
+
+#### 2. Signatures
+
+```powershell
+npm.cmd run check:ui:production-appearance
+$env:UI_CHECK_BASE='https://deployment.example'; npm.cmd run check:ui:production-appearance
+```
+
+- `UI_CHECK_BASE` is optional and must be an absolute `http` or `https` URL. The default is the stable `https://biau.pages.dev` Pages domain.
+
+#### 3. Contracts
+
+- Navigate only to `/` on the configured origin and install `scripts/lib/ui-network-guard.mjs` with `allowLoopback: false` before navigation.
+- Block and report any request outside the configured origin, including loopback, by resource type without printing its URL. Local UI suites retain the guard's default `allowLoopback: true` behavior.
+- Cover `light | dark` against `dusk | garden | stellar`, keyboard scene persistence, runtime `auto` response, and light/dark containment at `320`, `390`, and `430` widths.
+- Require six distinct Flow screenshots, visible real Logo geometry, matching root datasets, and at least `4.5:1` Hero/card-title contrast.
+- Seed local storage only when a key is absent; a reload check must not overwrite the preference it is validating.
+
+#### 4. Validation & Error Matrix
+
+| Condition | Required result |
+| --- | --- |
+| Invalid or non-HTTP(S) `UI_CHECK_BASE` | Exit non-zero before launching the browser |
+| External HTTP(S) request | Abort it and fail with `external_request_blocked (<type>)` |
+| Missing/failed document or homepage root | Exit non-zero without falling through to appearance assertions |
+| Theme/scene, Logo, contrast, or Flow signature mismatch | Name the bounded appearance group and exit non-zero |
+| Scene reload or runtime system-theme mismatch | Fail the dedicated persistence/auto group |
+| Mobile shell overflow, Logo loss, or brand/action overlap | Fail the exact theme/width group |
+
+#### 5. Good / Base / Bad Cases
+
+- Good: the deployed bundle passes all six appearance combinations, persistence, auto response, and six mobile checks without external requests.
+- Base: use the default stable Pages domain after a successful production deployment.
+- Bad: point the full fixture-heavy `check:ui` suite at production, allow it to contact Studio/model services, or treat a local custom-domain TLS reset as proof that the Pages deployment failed.
+
+#### 6. Tests Required
+
+- Run `npm.cmd run check:ui:production-appearance` against the deployed bundle.
+- Also run local `npm.cmd run check:ui`, `npm.cmd run check:ui:smoke`, `npm.cmd run performance:check`, `npm.cmd run lint`, and `npm.cmd run build` before completion.
+- Assert the production command reports `14` groups and `0` failures for the current matrix.
+
+#### 7. Wrong vs Correct
+
+Wrong: `UI_CHECK_BASE=https://production npm.cmd run check:ui`; production API routing breaks local Studio fixtures and can obscure the appearance result.
+
+Correct: run `check:ui` locally for fixture coverage, then run `check:ui:production-appearance` against the deployed origin for bounded, read-only appearance evidence.
+
 ### Reduced-Motion Validation Matrix
 
 - Normal -> reduce: `data-flow-motion` becomes `reduced-settled`, one nonblank static frame remains, and measured frame delta stays below the static threshold.

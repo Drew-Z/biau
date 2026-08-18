@@ -68,4 +68,6 @@
 
 2026-08-18 再次运行只读 `public-links:check -- --timeout 10000`，结果为 43 个链接中 38 个失败；失败仍主要集中在 `*.playlab.eu.cc`，并出现 Legal API `timeout` 与 ERP `HTTP 403`。同一时间窗内 Playwright 浏览器 GET 已确认主站、Anchor、Playlab 内容站、抽样试玩和 Xunqiu 文档可达，因此这组 Node `HEAD` 结果只作为网络栈限制记录，不作为入口离线证据。
 
+2026-08-19 主站提交 `fbba41e3` 已由 Cloudflare Pages 生产部署 `3a084666` 成功构建并发布。Cloudflare 控制面显示 `biau.playlab.eu.cc` 的域名、验证与部署别名均为 active；稳定 Pages 域名随后通过 6 种外观、场景持久化、自动主题响应及浅/深色 320/390/430px 共 14 组只读生产检查。本机对自定义域名的 IPv4 TLS 请求仍收到 connection reset，因此继续按网络路径限制处理，不把它写成站点下线，也不据此改写 public status 快照。
+
 本轮未写入新的 public status 快照，也没有用本机连接重置覆盖已有正式 synthetic 证据。缺少可靠当前证据的项目保持 `unchecked`；ERP 入口单独返回 `403`，继续保留为生产访问边界复核事项。

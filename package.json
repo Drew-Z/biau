@@ -135,6 +135,7 @@
     "preview": "vite preview",
     "check:ui:smoke": "node scripts/check-ui-smoke.mjs",
     "check:ui": "tsx scripts/check-ui.mjs",
+    "check:ui:production-appearance": "node scripts/check-production-appearance.mjs",
     "images:optimize": "node scripts/optimize-images.mjs",
     "sitemap:generate": "tsx scripts/generate-sitemap.mjs",
     "verify": "node scripts/verify.mjs"

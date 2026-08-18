@@ -213,6 +213,8 @@ Focused checks:
 - [x] Assert the six appearance combinations, readable semantic surfaces, visible Logo, keyboard scene switching, refresh persistence and system-auto response.
 - [x] Re-run 320/390/430/desktop UI containment, intro docking, full UI, lint, build and performance gates.
 - [x] Keep `public/status/blog-semi-synthetic.json` unstaged and unchanged by this slice.
+- [x] Add `check:ui:production-appearance` as a read-only deployed-homepage gate; it blocks external requests and does not reuse production Studio/model APIs.
+- [x] Verify production deployment `3a084666` contains commit `fbba41e3`: the stable Pages domain passes all 14 appearance groups, while the custom domain remains `active` in Cloudflare control-plane validation despite this machine's known TLS connection-reset path.
 
 ## Files With Elevated Risk
 

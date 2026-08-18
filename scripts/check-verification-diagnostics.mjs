@@ -134,4 +134,18 @@ assert.deepEqual(await runGuardFixture('https://external.example.invalid/provide
 })
 assert.deepEqual(blocked, [{ resourceType: 'fetch' }])
 
+const strictBlocked = []
+await installLocalNetworkGuard(
+  fakePage,
+  'https://biau.pages.dev',
+  (event) => strictBlocked.push(event),
+  { allowLoopback: false },
+)
+assert.deepEqual(await runGuardFixture('https://biau.pages.dev/assets/app.js', 'script'), { fallback: 1, abort: [] })
+assert.deepEqual(await runGuardFixture('http://127.0.0.1:5174/private', 'fetch'), {
+  fallback: 0,
+  abort: ['blockedbyclient'],
+})
+assert.deepEqual(strictBlocked, [{ resourceType: 'fetch' }])
+
 console.log('Verification diagnostics contract passed without network access')
