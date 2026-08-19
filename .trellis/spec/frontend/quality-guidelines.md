@@ -109,6 +109,80 @@ requestAnimationFrame(function animate() {
 
 - UI checks must compare the three computed animation signatures, observe changing normal-motion frames, verify pointer variables and panel glow on fine pointers, verify `ambient` plus zero pointer offsets on coarse pointers, and prove intro/reduced transitions pause or remove motion before the Flow loop resumes.
 
+## Flow Scene Profile And Preview Contract
+
+### 1. Scope / Trigger
+
+This contract applies when a scene change crosses `FlowBackground`, the
+OffscreenCanvas worker, and `FlowRenderer`. It prevents a palette-only change
+from silently losing its typed physics profile, and prevents a UI check from
+passing against an old server process.
+
+### 2. Signatures
+
+- `getFlowProfile(scene, light, portrait): FlowSceneProfile` is the single
+  profile factory.
+- Worker messages are `init`, `resize`, `profile`, and `motion`; every motion
+  acknowledgement carries the current `motionToken`.
+- `FlowRenderer.draw(time, profile)` and `FlowRenderer.setProfile(profile)` are
+  the only renderer profile entry points. No second Canvas or render loop is
+  allowed.
+- The homepage Canvas exposes `data-flow-scene` and the pipe-delimited
+  `data-flow-dynamics` attribute for deterministic browser assertions.
+
+### 3. Contracts
+
+`data-flow-dynamics` has exactly seven numeric values in this order:
+`speed|fieldScale|distortion|ribbonStrength|noiseScale|contrast|angle`.
+The first six values are bounded to `0.25..1.5`, `0.5..1.5`, `0.25..1.6`,
+`0.1..0.9`, `0.5..1.8`, and `0.75..1.4`; `angle` is `0..360` degrees. Portrait
+viewports may change only the profile's angle. `dusk`, `garden`, and `stellar`
+must have three distinct tuples in both light and dark mode.
+
+The worker receives one complete profile after resize and before the motion
+message. A current-token `motion-settled` acknowledgement is required before
+UI checks treat reduced/running/paused state as stable. Runtime failure hides
+the stale Canvas and exposes the CSS fallback state.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required result |
+| --- | --- |
+| Missing, non-numeric, or out-of-range profile value | UI/profile check fails; do not widen bounds to accept it |
+| Profile scene differs from the root scene | UI check fails with the scene group; fix the owner rather than masking it |
+| Worker/runtime error | `data-flow-fallback="css"`, Canvas hidden, CSS scene remains nonblank |
+| Reduced/hidden/intro state | motion acknowledgement is `reduced-settled` or `paused`; no persistent frame movement |
+| Check target serves an older bundle | stop and restart an isolated current preview, then set `UI_CHECK_BASE`; never treat stale output as current evidence |
+
+### 5. Good / Base / Bad Cases
+
+- Good: `npm.cmd run build`, serve the resulting `dist` on an isolated port,
+  set `UI_CHECK_BASE` to that origin, and observe six distinct bounded tuples.
+- Base: local `npm.cmd run check:ui` against the current preview with the
+  shared network guard and no model/API calls.
+- Bad: reuse an unknown process on the default port; it can expose a valid
+  `data-flow-ready` Canvas while omitting the new profile attributes, making
+  the result look like a product regression.
+
+### 6. Tests Required
+
+- `npm.cmd run check:ui:smoke`: route/CSS/overflow assertions.
+- `UI_CHECK_BASE=http://127.0.0.1:<isolated-port> npm.cmd run check:ui`:
+  assert all six tuples, scene-specific panel motion, stellar-only edge glow,
+  View Transition fallback, hidden/reduced lifecycle, and keyboard title input.
+- `npm.cmd run performance:check`, `npm.cmd run lint`, `npm.cmd run build`,
+  and `git diff --check`: assert budgets, type/lint correctness, and clean
+  patch formatting.
+
+### 7. Wrong vs Correct
+
+Wrong: run the full UI suite against a pre-existing `127.0.0.1:5174` process
+without checking its revision, then diagnose missing profile attributes as a
+source-code failure.
+
+Correct: build first, start a dedicated preview on an isolated port, pass its
+origin through `UI_CHECK_BASE`, and keep the existing server untouched.
+
 ### Production Appearance Verification Command
 
 #### 1. Scope / Trigger

@@ -2122,6 +2122,8 @@ await navIndicatorPage.close()
 const harborThemeSignatures = []
 const harborMaterialSignatures = []
 const harborMotionSignatures = []
+const harborFlowProfiles = new Map()
+const harborTiltResponses = new Map()
 for (const theme of ['light', 'dark']) {
   for (const scene of ['dusk', 'garden', 'stellar']) {
     const harborThemePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: theme })
@@ -2150,6 +2152,7 @@ for (const theme of ['light', 'dark']) {
       const heroTitle = document.querySelector('.hero-title-rotator')
       const card = document.querySelector('.carousel-card')
       const cardTitle = card?.querySelector('strong')
+      const flowCanvas = document.querySelector('.flow-background')
       const sceneFoundation = document.querySelector('[data-harbor-scene-foundation]')
       const sceneWash = document.querySelector('[data-harbor-scene-layer="wash"]')
       const sceneTexture = document.querySelector('[data-harbor-scene-layer="texture"]')
@@ -2196,7 +2199,13 @@ for (const theme of ['light', 'dark']) {
       const footerStyle = footer ? getComputedStyle(footer) : null
       const washStyle = sceneWash ? getComputedStyle(sceneWash) : null
       const textureStyle = sceneTexture ? getComputedStyle(sceneTexture) : null
+      const textureBeforeStyle = sceneTexture ? getComputedStyle(sceneTexture, '::before') : null
+      const textureAfterStyle = sceneTexture ? getComputedStyle(sceneTexture, '::after') : null
       const landmarkStyle = sceneLandmark ? getComputedStyle(sceneLandmark) : null
+      const panelBeforeStyle = heroPanel ? getComputedStyle(heroPanel, '::before') : null
+      const panelAfterStyle = heroPanel ? getComputedStyle(heroPanel, '::after') : null
+      const surfaceGlow = heroPanel?.querySelector(':scope > .harbor-surface-glow')
+      const surfaceGlowStyle = surfaceGlow ? getComputedStyle(surfaceGlow) : null
       const introContentCenter = eyebrowRect && statusRect ? (eyebrowRect.top + statusRect.bottom) / 2 : 0
       const panelCenter = panelRect ? panelRect.top + panelRect.height / 2 : 0
       return {
@@ -2204,6 +2213,11 @@ for (const theme of ['light', 'dark']) {
         expectedScene,
         resolvedTheme: root.dataset.colorMode ?? '',
         resolvedScene: root.dataset.harborScene ?? '',
+        flowScene: flowCanvas?.getAttribute('data-flow-scene') ?? '',
+        flowDynamics: (flowCanvas?.getAttribute('data-flow-dynamics') ?? '')
+          .split('|')
+          .filter(Boolean)
+          .map(Number),
         lightClass: root.classList.contains('light-theme'),
         logoTag: logo?.tagName ?? '',
         logoOpacity: Number.parseFloat(logoStyle?.opacity ?? '0'),
@@ -2227,6 +2241,12 @@ for (const theme of ['light', 'dark']) {
           landmarkStyle?.animationName,
           footerStyle?.animationName,
         ].join('|'),
+        panelMotion: [panelBeforeStyle?.animationName ?? '', panelAfterStyle?.animationName ?? ''],
+        surfaceGlowDisplay: surfaceGlowStyle?.display ?? '',
+        stellarTextureMotion: [
+          textureBeforeStyle?.animationName ?? '',
+          textureAfterStyle?.animationName ?? '',
+        ],
         footerBackground: footerStyle?.backgroundImage ?? '',
         materialSignature: homeHero && heroPanel && sceneFoundation && sceneWash && sceneTexture && sceneLandmark && footer
           ? [
@@ -2250,6 +2270,7 @@ for (const theme of ['light', 'dark']) {
     }, { expectedTheme: theme, expectedScene: scene })
     harborMaterialSignatures.push(appearance.materialSignature)
     harborMotionSignatures.push(appearance.motionSignature)
+    harborFlowProfiles.set(`${theme}/${scene}`, appearance.flowDynamics)
 
     if (
       appearance.resolvedTheme !== theme ||
@@ -2288,6 +2309,62 @@ for (const theme of ['light', 'dark']) {
     ) {
       failures.push(`/ home appearance ${theme}/${scene}: expected active scene-specific wash, texture, landmark, and footer motion`)
     }
+    const flowBounds = [
+      [0.25, 1.5],
+      [0.5, 1.5],
+      [0.25, 1.6],
+      [0.1, 0.9],
+      [0.5, 1.8],
+      [0.75, 1.4],
+      [0, 360],
+    ]
+    if (
+      appearance.flowScene !== scene ||
+      appearance.flowDynamics.length !== flowBounds.length ||
+      appearance.flowDynamics.some((value, index) =>
+        !Number.isFinite(value) || value < flowBounds[index][0] || value > flowBounds[index][1]
+      )
+    ) {
+      failures.push(`/ home flow profile ${theme}/${scene}: expected the typed bounded scene dynamics on the canvas`)
+    }
+    const expectedPanelMotion = {
+      dusk: ['biauDuskPanelTide', 'biauDuskPanelSheen'],
+      garden: ['biauGardenPanelBreath', 'biauGardenPanelCanopy'],
+      stellar: ['biauStellarPanelTrace', 'biauStellarPanelSweep'],
+    }[scene]
+    if (appearance.panelMotion.some((name, index) => name !== expectedPanelMotion[index])) {
+      failures.push(`/ home scene motion ${theme}/${scene}: project board should use the scene-owned motion primitives`)
+    }
+    if (
+      (scene === 'stellar' && (
+        appearance.surfaceGlowDisplay === 'none' ||
+        appearance.stellarTextureMotion.some((name) => !name || name === 'none')
+      )) ||
+      (scene !== 'stellar' && (
+        appearance.surfaceGlowDisplay !== 'none' ||
+        appearance.stellarTextureMotion.some((name) => name && name !== 'none')
+      ))
+    ) {
+      failures.push(`/ home scene motion ${theme}/${scene}: strong edge glow and multi-depth stars should belong only to stellar`)
+    }
+    if (theme === 'dark') {
+      const viewportBox = await harborThemePage.locator('.carousel-viewport').boundingBox()
+      if (viewportBox) {
+        await harborThemePage.mouse.move(
+          viewportBox.x + viewportBox.width * 0.84,
+          viewportBox.y + viewportBox.height * 0.22,
+        )
+        await harborThemePage.waitForTimeout(240)
+        const tilt = await harborThemePage.locator('.carousel-wrapper').evaluate((panel) => {
+          const style = panel.style
+          return Math.hypot(
+            Number.parseFloat(style.getPropertyValue('--carousel-tilt-x')) || 0,
+            Number.parseFloat(style.getPropertyValue('--carousel-tilt-y')) || 0,
+          )
+        })
+        harborTiltResponses.set(scene, tilt)
+      }
+    }
     await harborThemePage.close()
   }
 }
@@ -2300,9 +2377,23 @@ if (new Set(harborMaterialSignatures).size !== 6) {
 if (new Set(harborMotionSignatures).size !== 3) {
   failures.push('/ home scene motion: dusk, garden, and stellar should expose three distinct animation signatures')
 }
+for (const theme of ['light', 'dark']) {
+  const signatures = ['dusk', 'garden', 'stellar'].map((scene) =>
+    JSON.stringify(harborFlowProfiles.get(`${theme}/${scene}`) ?? [])
+  )
+  if (new Set(signatures).size !== 3) {
+    failures.push(`/ home flow profiles ${theme}: dusk, garden, and stellar should expose three distinct physics profiles`)
+  }
+}
+const gardenTilt = harborTiltResponses.get('garden') ?? 0
+const stellarTilt = harborTiltResponses.get('stellar') ?? 0
+if (gardenTilt <= 0 || stellarTilt < gardenTilt * 1.8) {
+  failures.push('/ home scene motion: garden project-board tilt should remain materially quieter than stellar')
+}
 
 const scenePreferencePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
 await scenePreferencePage.addInitScript(() => {
+  Object.defineProperty(document, 'startViewTransition', { configurable: true, value: undefined })
   if (window.sessionStorage.getItem('ui-check-scene-seeded') !== '1') {
     window.localStorage.setItem('theme', 'dark')
     window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
@@ -2317,7 +2408,7 @@ await scenePreferencePage.keyboard.press('Enter')
 await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'garden')
 const storedScene = await scenePreferencePage.evaluate(() => window.localStorage.getItem('biau-port-harbor-scene'))
 if (storedScene !== 'garden') {
-  failures.push('/ home scene preference: Enter should cycle and persist the next harbor scene')
+  failures.push('/ home scene preference: fallback switching should cycle and persist the next harbor scene')
 }
 await scenePreferencePage.reload({ waitUntil: 'domcontentloaded' })
 await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'garden')
@@ -2325,6 +2416,41 @@ if ((await scenePreferencePage.locator('.nav-logo').getAttribute('data-scene')) 
   failures.push('/ home scene preference: refresh should restore the persisted harbor scene')
 }
 await scenePreferencePage.close()
+
+const sceneTransitionPage = await createUiPage(browser, {
+  viewport: viewports[0],
+  colorScheme: 'dark',
+  reducedMotion: 'no-preference',
+})
+await sceneTransitionPage.addInitScript(() => {
+  window.__sceneViewTransitionCalls = 0
+  Object.defineProperty(document, 'startViewTransition', {
+    configurable: true,
+    value(callback) {
+      window.__sceneViewTransitionCalls += 1
+      callback()
+      const settled = Promise.resolve()
+      return { finished: settled, ready: settled, updateCallbackDone: settled, skipTransition() {} }
+    },
+  })
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(sceneTransitionPage, '/')
+await sceneTransitionPage.locator('.nav-logo').focus()
+await sceneTransitionPage.keyboard.press('Enter')
+await sceneTransitionPage.waitForFunction(() => document.documentElement.dataset.harborScene === 'garden')
+if ((await sceneTransitionPage.evaluate(() => window.__sceneViewTransitionCalls)) !== 1) {
+  failures.push('/ home scene transition: normal motion should use the available View Transition API exactly once')
+}
+await sceneTransitionPage.emulateMedia({ reducedMotion: 'reduce' })
+await sceneTransitionPage.keyboard.press('Enter')
+await sceneTransitionPage.waitForFunction(() => document.documentElement.dataset.harborScene === 'stellar')
+if ((await sceneTransitionPage.evaluate(() => window.__sceneViewTransitionCalls)) !== 1) {
+  failures.push('/ home scene transition: reduced motion should bypass the View Transition API')
+}
+await sceneTransitionPage.close()
 
 const autoThemePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
 await autoThemePage.addInitScript(() => {
@@ -2454,8 +2580,18 @@ const mobileHarbor = await mobileFlow.evaluate((canvas) => ({
   pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
   width: canvas.width,
   height: canvas.height,
+  scene: canvas.getAttribute('data-flow-scene') ?? '',
+  dynamics: (canvas.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
 }))
-if (mobileHarbor.pageOverflow > 1 || mobileHarbor.width > 488 || mobileHarbor.height > 1055) {
+const desktopStellarProfile = harborFlowProfiles.get('dark/stellar') ?? []
+if (
+  mobileHarbor.pageOverflow > 1 ||
+  mobileHarbor.width > 488 ||
+  mobileHarbor.height > 1055 ||
+  mobileHarbor.scene !== 'stellar' ||
+  mobileHarbor.dynamics.length !== 7 ||
+  mobileHarbor.dynamics[6] === desktopStellarProfile[6]
+) {
   failures.push('/ home mobile flow: expected bounded overflow and viewport-sized capped-DPR canvas at 390px')
 }
 await mobileHarborPage.close()
@@ -2529,15 +2665,29 @@ const reducedSceneMotion = await reducedHarborPage.evaluate(() => {
     animations: layers.map((layer) => getComputedStyle(layer).animationName),
     translations: layers.map((layer) => getComputedStyle(layer).translate),
     footerAnimation: getComputedStyle(document.querySelector('.site-footer')).animationName,
+    stellarTextureAnimations: [
+      getComputedStyle(document.querySelector('[data-harbor-scene-layer="texture"]'), '::before').animationName,
+      getComputedStyle(document.querySelector('[data-harbor-scene-layer="texture"]'), '::after').animationName,
+    ],
+    homeDepth: document.querySelector('.home-hero')?.getAttribute('data-home-depth') ?? '',
+    carouselScroll: document.querySelector('.carousel-track')?.style.getPropertyValue('--carousel-scroll-y') ?? '',
+    carouselTilt: [
+      document.querySelector('.carousel-wrapper')?.style.getPropertyValue('--carousel-tilt-x') ?? '',
+      document.querySelector('.carousel-wrapper')?.style.getPropertyValue('--carousel-tilt-y') ?? '',
+    ],
   }
 })
 if (
   reducedSceneMotion.state !== 'reduced' ||
   reducedSceneMotion.animations.some((name) => name !== 'none') ||
   reducedSceneMotion.translations.some((value) => value !== 'none' && value !== '0px') ||
-  reducedSceneMotion.footerAnimation !== 'none'
+  reducedSceneMotion.footerAnimation !== 'none' ||
+  reducedSceneMotion.stellarTextureAnimations.some((name) => name !== 'none') ||
+  reducedSceneMotion.homeDepth !== 'reduced' ||
+  reducedSceneMotion.carouselScroll !== '' ||
+  reducedSceneMotion.carouselTilt.some((value) => value !== '0deg')
 ) {
-  failures.push('/ home reduced motion: scene layers, pointer parallax, and footer drift should remain static')
+  failures.push('/ home reduced motion: scene, depth, carousel, stars, and footer motion should remain static')
 }
 const reducedModeReady = await reducedHarborPage
   .waitForFunction(() => {
@@ -2592,6 +2742,20 @@ if (!reducedModeReady) {
     failures.push('/ home reduced motion: expected a stable nonblank CSS fallback without WebGL2')
   }
 }
+const reducedTitle = reducedHarborPage.locator('.hero-title-rotator')
+const reducedTitleBefore = await reducedTitle.getAttribute('aria-label')
+await reducedTitle.focus()
+await reducedHarborPage.keyboard.press('Enter')
+await reducedHarborPage.waitForFunction(
+  (previous) => document.querySelector('.hero-title-rotator')?.getAttribute('aria-label') !== previous,
+  reducedTitleBefore,
+).catch(() => failures.push('/ home reduced motion: Enter should keep explicit title switching available'))
+const reducedTitleAfterEnter = await reducedTitle.getAttribute('aria-label')
+await reducedHarborPage.keyboard.press('Space')
+await reducedHarborPage.waitForFunction(
+  (previous) => document.querySelector('.hero-title-rotator')?.getAttribute('aria-label') !== previous,
+  reducedTitleAfterEnter,
+).catch(() => failures.push('/ home reduced motion: Space should keep explicit title switching available'))
 await reducedHarborPage.close()
 
 const motionSwitchPage = await createUiPage(browser, {
@@ -2633,37 +2797,64 @@ await waitForCompositorFrames(motionSwitchPage)
 const pointerSceneState = await motionSwitchPage.evaluate(() => {
   const foundation = document.querySelector('[data-harbor-scene-foundation]')
   const texture = document.querySelector('[data-harbor-scene-layer="texture"]')
+  const hero = document.querySelector('.home-hero')
   return {
     state: foundation?.getAttribute('data-scene-motion') ?? '',
     textureX: foundation?.style.getPropertyValue('--harbor-pointer-texture-x') ?? '',
     textureY: foundation?.style.getPropertyValue('--harbor-pointer-texture-y') ?? '',
     computedTranslate: texture ? getComputedStyle(texture).translate : 'none',
+    homeDepth: hero?.getAttribute('data-home-depth') ?? '',
+    depthValues: [
+      '--home-depth-intro-x',
+      '--home-depth-intro-y',
+      '--home-depth-panel-x',
+      '--home-depth-panel-y',
+    ].map((property) => Number.parseFloat(hero?.style.getPropertyValue(property) ?? '0') || 0),
   }
 })
 if (
   pointerSceneState.state !== 'interactive' ||
   !pointerSceneState.textureX ||
   !pointerSceneState.textureY ||
-  pointerSceneState.computedTranslate === 'none'
+  pointerSceneState.computedTranslate === 'none' ||
+  pointerSceneState.homeDepth !== 'interactive' ||
+  pointerSceneState.depthValues.every((value) => value === 0) ||
+  Math.max(...pointerSceneState.depthValues.map(Math.abs)) > 24
 ) {
-  failures.push('/ home scene motion: pointer movement should project bounded parallax variables onto the foundation')
+  failures.push('/ home scene motion: pointer movement should project bounded parallax and home-depth variables')
 }
 
-const motionViewport = motionSwitchPage.locator('.carousel-viewport')
-const motionViewportBox = await motionViewport.boundingBox()
-if (!motionViewportBox) {
+const motionPanel = motionSwitchPage.locator('.carousel-wrapper')
+const motionPanelBox = await motionPanel.boundingBox()
+if (!motionPanelBox) {
   failures.push('/ home scene motion: expected a measurable project-board viewport for local glow')
 } else {
-  await motionSwitchPage.mouse.move(motionViewportBox.x + 20, motionViewportBox.y + motionViewportBox.height * 0.5)
+  await motionSwitchPage.mouse.move(motionPanelBox.x + 2, motionPanelBox.y + motionPanelBox.height * 0.5)
   await waitForCompositorFrames(motionSwitchPage)
-  const panelGlowState = await motionSwitchPage.locator('.carousel-wrapper').evaluate((panel) => ({
+  const edgeGlowState = await motionPanel.evaluate((panel) => ({
     x: panel.style.getPropertyValue('--harbor-surface-glow-x'),
     y: panel.style.getPropertyValue('--harbor-surface-glow-y'),
-    opacity: panel.style.getPropertyValue('--harbor-surface-glow-opacity'),
+    opacity: Number.parseFloat(panel.style.getPropertyValue('--harbor-surface-glow-opacity')) || 0,
+    layerDisplay: getComputedStyle(panel.querySelector('.harbor-surface-glow')).display,
     layerBackground: getComputedStyle(panel.querySelector('.harbor-surface-glow')).backgroundImage,
   }))
-  if (!panelGlowState.x || !panelGlowState.y || panelGlowState.opacity !== '1' || panelGlowState.layerBackground === 'none') {
-    failures.push('/ home scene motion: project-board pointer should drive the scene-specific local glow')
+  await motionSwitchPage.mouse.move(
+    motionPanelBox.x + motionPanelBox.width * 0.5,
+    motionPanelBox.y + motionPanelBox.height * 0.5,
+  )
+  await waitForCompositorFrames(motionSwitchPage)
+  const centerGlowOpacity = await motionPanel.evaluate((panel) =>
+    Number.parseFloat(panel.style.getPropertyValue('--harbor-surface-glow-opacity')) || 0
+  )
+  if (
+    !edgeGlowState.x ||
+    !edgeGlowState.y ||
+    edgeGlowState.opacity < 0.8 ||
+    centerGlowOpacity > 0.1 ||
+    edgeGlowState.layerDisplay === 'none' ||
+    edgeGlowState.layerBackground === 'none'
+  ) {
+    failures.push('/ home scene motion: stellar glow should activate only near the project-board edge')
   }
 }
 
@@ -2697,6 +2888,35 @@ await waitForCompositorFrames(motionSwitchPage)
 const runtimeReducedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (runtimeReducedFrameDelta >= 0.05) {
   failures.push('/ home runtime motion: switching to reduce should stop the worker canvas on one stable frame')
+}
+const runtimeReducedOwners = await motionSwitchPage.evaluate(() => {
+  const hero = document.querySelector('.home-hero')
+  const track = document.querySelector('.carousel-track')
+  const panel = document.querySelector('.carousel-wrapper')
+  return {
+    homeDepth: hero?.getAttribute('data-home-depth') ?? '',
+    depthValues: [
+      '--home-depth-intro-x',
+      '--home-depth-intro-y',
+      '--home-depth-panel-x',
+      '--home-depth-panel-y',
+    ].map((property) => hero?.style.getPropertyValue(property) ?? ''),
+    carouselScroll: track?.style.getPropertyValue('--carousel-scroll-y') ?? '',
+    carouselTransform: track?.style.transform ?? '',
+    carouselTilt: [
+      panel?.style.getPropertyValue('--carousel-tilt-x') ?? '',
+      panel?.style.getPropertyValue('--carousel-tilt-y') ?? '',
+    ],
+  }
+})
+if (
+  runtimeReducedOwners.homeDepth !== 'reduced' ||
+  runtimeReducedOwners.depthValues.some((value) => value !== '0px') ||
+  runtimeReducedOwners.carouselScroll !== '' ||
+  runtimeReducedOwners.carouselTransform !== '' ||
+  runtimeReducedOwners.carouselTilt.some((value) => value !== '0deg')
+) {
+  failures.push('/ home runtime motion: reduce should reset home depth and carousel motion ownership')
 }
 
 await motionSwitchFlow.evaluate((canvas) => {
@@ -2750,6 +2970,91 @@ if (resumedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')
 }
 await motionSwitchPage.close()
+
+const hiddenLifecyclePage = await createUiPage(browser, {
+  viewport: viewports[0],
+  colorScheme: 'dark',
+  reducedMotion: 'no-preference',
+})
+await hiddenLifecyclePage.addInitScript(() => {
+  window.__uiDocumentHidden = false
+  Object.defineProperty(document, 'hidden', {
+    configurable: true,
+    get: () => window.__uiDocumentHidden,
+  })
+  window.__setUiDocumentHidden = (hidden) => {
+    window.__uiDocumentHidden = hidden
+    document.dispatchEvent(new Event('visibilitychange'))
+  }
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(hiddenLifecyclePage, '/')
+await hiddenLifecyclePage.waitForFunction(() => {
+  const track = document.querySelector('.carousel-track')
+  return Boolean(track?.style.getPropertyValue('--carousel-scroll-y'))
+})
+const hiddenBefore = await hiddenLifecyclePage.evaluate(() => ({
+  title: document.querySelector('.hero-title-rotator')?.getAttribute('aria-label') ?? '',
+  carouselScroll: document.querySelector('.carousel-track')?.style.getPropertyValue('--carousel-scroll-y') ?? '',
+}))
+await hiddenLifecyclePage.evaluate(() => window.__setUiDocumentHidden(true))
+await hiddenLifecyclePage.waitForFunction(() =>
+  document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'paused' &&
+  document.querySelector('.home-hero')?.getAttribute('data-home-depth') === 'paused'
+)
+await waitForFlowMotion(hiddenLifecyclePage, 'paused').catch(() => {
+  failures.push('/ home hidden lifecycle: flow worker did not acknowledge the paused state')
+})
+await hiddenLifecyclePage.waitForTimeout(6_600)
+const hiddenPaused = await hiddenLifecyclePage.evaluate(() => ({
+  title: document.querySelector('.hero-title-rotator')?.getAttribute('aria-label') ?? '',
+  carouselScroll: document.querySelector('.carousel-track')?.style.getPropertyValue('--carousel-scroll-y') ?? '',
+  sceneMotion: document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') ?? '',
+  homeDepth: document.querySelector('.home-hero')?.getAttribute('data-home-depth') ?? '',
+}))
+if (
+  hiddenPaused.title !== hiddenBefore.title ||
+  hiddenPaused.carouselScroll !== hiddenBefore.carouselScroll ||
+  hiddenPaused.sceneMotion !== 'paused' ||
+  hiddenPaused.homeDepth !== 'paused'
+) {
+  failures.push('/ home hidden lifecycle: title, carousel, scene, and depth should remain paused while hidden')
+}
+await hiddenLifecyclePage.evaluate(() => {
+  window.__titleChangeCount = 0
+  const title = document.querySelector('.hero-title-rotator')
+  window.__titleChangeObserver = new MutationObserver((records) => {
+    window.__titleChangeCount += records.filter((record) => record.attributeName === 'aria-label').length
+  })
+  if (title) window.__titleChangeObserver.observe(title, { attributes: true, attributeFilter: ['aria-label'] })
+  window.__setUiDocumentHidden(false)
+})
+await hiddenLifecyclePage.waitForFunction(() =>
+  document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'interactive' &&
+  document.querySelector('.home-hero')?.getAttribute('data-home-depth') === 'interactive'
+)
+await waitForFlowMotion(hiddenLifecyclePage, 'running').catch(() => {
+  failures.push('/ home hidden lifecycle: flow worker did not resume after visibility recovery')
+})
+await hiddenLifecyclePage.waitForTimeout(6_600)
+const hiddenResumed = await hiddenLifecyclePage.evaluate(() => {
+  window.__titleChangeObserver?.disconnect()
+  return {
+    title: document.querySelector('.hero-title-rotator')?.getAttribute('aria-label') ?? '',
+    titleChanges: window.__titleChangeCount ?? 0,
+    carouselScroll: document.querySelector('.carousel-track')?.style.getPropertyValue('--carousel-scroll-y') ?? '',
+  }
+})
+if (
+  hiddenResumed.title === hiddenPaused.title ||
+  hiddenResumed.titleChanges !== 1 ||
+  hiddenResumed.carouselScroll === hiddenPaused.carouselScroll
+) {
+  failures.push('/ home hidden lifecycle: recovery should resume one title interval and one carousel loop')
+}
+await hiddenLifecyclePage.close()
 
   finishProgressGroup(flowIntroFailures)
   progress.start('public-assistant', 'warm-up, history, branches, citations, recovery, and cancellation')

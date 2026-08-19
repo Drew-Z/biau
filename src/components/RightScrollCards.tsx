@@ -13,6 +13,11 @@ interface RightScrollCardsProps {
   onProjectStatus: (link: string) => void
 }
 
+const carouselMotionAllowed = () =>
+  !document.hidden &&
+  !document.documentElement.classList.contains('harbor-intro-active') &&
+  !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 export function RightScrollCards({ projects, onProjectClick, onProjectAction, onProjectStatus }: RightScrollCardsProps) {
   const wrapperRef = useRef<HTMLElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
@@ -87,7 +92,8 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     }
 
     const tick = () => {
-      if (!active || !track.isConnected) return
+      rafRef.current = 0
+      if (!active || !track.isConnected || !carouselMotionAllowed()) return
       const dragging = dragRef.current.isDragging || dragRef.current.isPointerDown
       const tilt = tiltRef.current
 
@@ -113,10 +119,47 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       rafRef.current = window.requestAnimationFrame(tick)
     }
 
-    rafRef.current = window.requestAnimationFrame(tick)
+    const resetReducedMotion = () => {
+      scrollYRef.current = 0
+      velocityYRef.current = 0
+      hasInitialPosition = false
+      tiltRef.current = { x: 0, y: 0, targetX: 0, targetY: 0 }
+      track.style.transform = ''
+      track.style.removeProperty('--carousel-scroll-y')
+      wrapper.style.setProperty('--carousel-tilt-x', '0deg')
+      wrapper.style.setProperty('--carousel-tilt-y', '0deg')
+      wrapper.style.setProperty('--harbor-surface-glow-opacity', '0')
+      wrapper.classList.remove('is-dragging')
+    }
+    const syncMotion = () => {
+      if (!carouselMotionAllowed()) {
+        if (rafRef.current) window.cancelAnimationFrame(rafRef.current)
+        rafRef.current = 0
+        velocityYRef.current = 0
+        dragRef.current.isPointerDown = false
+        dragRef.current.isDragging = false
+        dragRef.current.pointerId = -1
+        tiltRef.current.targetX = 0
+        tiltRef.current.targetY = 0
+        wrapper.classList.remove('is-dragging')
+        wrapper.style.setProperty('--harbor-surface-glow-opacity', '0')
+        if (reducedMotion.matches) resetReducedMotion()
+        return
+      }
+      if (!rafRef.current) rafRef.current = window.requestAnimationFrame(tick)
+    }
+    const observer = new MutationObserver(syncMotion)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    document.addEventListener('visibilitychange', syncMotion)
+    reducedMotion.addEventListener('change', syncMotion)
+    syncMotion()
     return () => {
       active = false
       if (rafRef.current) window.cancelAnimationFrame(rafRef.current)
+      rafRef.current = 0
+      observer.disconnect()
+      document.removeEventListener('visibilitychange', syncMotion)
+      reducedMotion.removeEventListener('change', syncMotion)
       wrapper.classList.remove('is-dragging')
     }
   }, [projects.length])
@@ -150,7 +193,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     if (!viewport) return
 
     const handleNativeWheel = (event: WheelEvent) => {
-      if (usesMobileInteractionMode()) return
+      if (usesMobileInteractionMode() || !carouselMotionAllowed()) return
       event.preventDefault()
       applyWheelDelta(event.deltaY, event.deltaMode)
     }
@@ -159,8 +202,30 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     return () => viewport.removeEventListener('wheel', handleNativeWheel)
   }, [applyWheelDelta])
 
+  const handlePanelPointerMove = (event: PointerEvent<HTMLElement>) => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+    if (
+      usesMobileInteractionMode() ||
+      !carouselMotionAllowed() ||
+      document.documentElement.dataset.harborScene !== 'stellar'
+    ) {
+      wrapper.style.setProperty('--harbor-surface-glow-opacity', '0')
+      return
+    }
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left))
+    const y = Math.max(0, Math.min(rect.height, event.clientY - rect.top))
+    const edgeDistance = Math.min(x, y, rect.width - x, rect.height - y)
+    const edgeRange = Math.max(48, Math.min(96, Math.min(rect.width, rect.height) * 0.16))
+    const opacity = Math.max(0, Math.min(1, 1 - edgeDistance / edgeRange))
+    wrapper.style.setProperty('--harbor-surface-glow-x', `${x.toFixed(1)}px`)
+    wrapper.style.setProperty('--harbor-surface-glow-y', `${y.toFixed(1)}px`)
+    wrapper.style.setProperty('--harbor-surface-glow-opacity', opacity.toFixed(3))
+  }
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    if (usesMobileInteractionMode()) return
+    if (usesMobileInteractionMode() || !carouselMotionAllowed()) return
     if (event.button !== 0) return
     const drag = dragRef.current
     drag.isPointerDown = true
@@ -177,20 +242,16 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
   }
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (usesMobileInteractionMode()) return
+    if (usesMobileInteractionMode() || !carouselMotionAllowed()) return
     const drag = dragRef.current
     const wrapper = wrapperRef.current
-    if (wrapper && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      const glowRect = wrapper.getBoundingClientRect()
-      wrapper.style.setProperty('--harbor-surface-glow-x', `${(event.clientX - glowRect.left).toFixed(1)}px`)
-      wrapper.style.setProperty('--harbor-surface-glow-y', `${(event.clientY - glowRect.top).toFixed(1)}px`)
-      wrapper.style.setProperty('--harbor-surface-glow-opacity', '1')
-    }
     if (!drag.isPointerDown) {
       if (!wrapper) return
       const rect = wrapper.getBoundingClientRect()
-      tiltRef.current.targetX = ((event.clientY - rect.top) / rect.height - 0.5) * -2.2
-      tiltRef.current.targetY = ((event.clientX - rect.left) / rect.width - 0.5) * 2.2
+      const scene = document.documentElement.dataset.harborScene
+      const tiltStrength = scene === 'garden' ? 0.9 : scene === 'stellar' ? 2.6 : 2.1
+      tiltRef.current.targetX = ((event.clientY - rect.top) / rect.height - 0.5) * -tiltStrength
+      tiltRef.current.targetY = ((event.clientX - rect.left) / rect.width - 0.5) * tiltStrength
       return
     }
 
@@ -215,8 +276,9 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     if (elapsed > 0) {
       velocityYRef.current = ((drag.lastY - event.clientY) / elapsed) * 16
     }
-    tiltRef.current.targetX = Math.max(-3.2, Math.min(3.2, dy * -0.018))
-    tiltRef.current.targetY = Math.max(-3.2, Math.min(3.2, dx * 0.018))
+    const dragTiltLimit = document.documentElement.dataset.harborScene === 'garden' ? 1.4 : 3.2
+    tiltRef.current.targetX = Math.max(-dragTiltLimit, Math.min(dragTiltLimit, dy * -0.018))
+    tiltRef.current.targetY = Math.max(-dragTiltLimit, Math.min(dragTiltLimit, dx * 0.018))
     if (distance > 5) {
       drag.clickPrevented = true
     }
@@ -257,6 +319,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     <section
       ref={wrapperRef}
       className="hero-panel carousel-wrapper"
+      onPointerMove={handlePanelPointerMove}
       onMouseEnter={() => {
         isHoveringRef.current = true
       }}

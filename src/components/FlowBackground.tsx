@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FlowRenderer } from '../background/FlowRenderer'
-import { getFlowPalette, type HarborScene } from '../background/flowPalettes'
+import { getFlowProfile, type HarborScene } from '../background/flowPalettes'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const FINE_POINTER = '(any-hover: hover) and (any-pointer: fine)'
@@ -38,10 +38,25 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     const media = matchMedia(REDUCED)
     const readReducedMotion = () => matchMedia(REDUCED).matches
     let reducedMotion = readReducedMotion()
-    const palette = () => {
+    const readProfile = () => {
       const value = document.documentElement.dataset.harborScene
       const current = value === 'garden' || value === 'stellar' || value === 'dusk' ? value : initialScene.current
-      return getFlowPalette(current, document.documentElement.classList.contains('light-theme'))
+      const portrait = innerWidth <= 768 && innerHeight >= innerWidth
+      return getFlowProfile(current, document.documentElement.classList.contains('light-theme'), portrait)
+    }
+    const publishProfile = () => {
+      const current = readProfile()
+      canvas.dataset.flowScene = current.scene
+      canvas.dataset.flowDynamics = [
+        current.dynamics.speed,
+        current.dynamics.fieldScale,
+        current.dynamics.distortion,
+        current.dynamics.ribbonStrength,
+        current.dynamics.noiseScale,
+        current.dynamics.contrast,
+        current.dynamics.angle,
+      ].join('|')
+      return current
     }
     const size = () => ({
       width: innerWidth,
@@ -96,7 +111,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
           const reduced = reducedMotion
           const running = canRun()
           if (running && (reduced ? last === 0 : now - last >= 1000 / 30)) {
-            renderer?.draw(reduced ? 0 : now / 1000, palette())
+            renderer?.draw(reduced ? 0 : now / 1000, readProfile())
             last = now
             markReady()
             if (reduced) markReducedMotionSettled()
@@ -114,12 +129,13 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
 
     const sync = () => {
       const currentSize = size()
+      const currentProfile = publishProfile()
       const token = ++motionToken
       if (worker) {
         // Motion is sent last so its acknowledgement follows resize and palette updates.
         markMotion('pending')
         worker.postMessage({ type: 'resize', ...currentSize, motionToken: token })
-        worker.postMessage({ type: 'palette', palette: palette(), motionToken: token })
+        worker.postMessage({ type: 'profile', profile: currentProfile, motionToken: token })
         worker.postMessage({
           type: 'motion',
           reducedMotion,
@@ -130,7 +146,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         renderer.resize(currentSize.width, currentSize.height, currentSize.dpr)
         if (reducedMotion) {
           last = 0
-          renderer.draw(0, palette())
+          renderer.draw(0, currentProfile)
           markReady()
           markReducedMotionSettled()
         } else if (!canRun()) {
@@ -169,7 +185,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
             type: 'init',
             canvas: offscreen,
             ...initialSize,
-            palette: palette(),
+            profile: publishProfile(),
             reducedMotion,
             running: canRun(),
             motionToken: token,
@@ -322,6 +338,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         data-flow-ready={ready || undefined}
         data-flow-fallback={fallback ? 'css' : undefined}
         data-flow-motion={motionState}
+        data-flow-scene={scene}
       />
       <span className="harbor-scene-foundation__texture" data-harbor-scene-layer="texture" />
       <span className="harbor-scene-foundation__landmark" data-harbor-scene-layer="landmark" />

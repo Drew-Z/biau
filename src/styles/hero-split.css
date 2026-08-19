@@ -71,7 +71,7 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
-  translate: 0 -10px;
+  translate: var(--home-depth-intro-x, 0px) calc(-10px + var(--home-depth-intro-y, 0px));
 }
 
 .eyebrow {
@@ -258,9 +258,19 @@
   box-shadow: rgba(255, 255, 255, 0.72) 0 1px inset, rgba(19, 30, 47, 0.13) 0 22px 46px;
   opacity: 0;
   animation: panelFadeIn 0.5s var(--ease-out-expo) 0.1s forwards;
-  translate: 0 -10px;
+  translate: var(--home-depth-panel-x, 0px) calc(-10px + var(--home-depth-panel-y, 0px));
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
+}
+
+.hero-intro h2.hero-title-rotator:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--home-accent) 72%, white);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+.home-hero[data-home-depth='interactive'] :is(.hero-intro, .hero-panel) {
+  will-change: translate;
 }
 
 .carousel-wrapper {
@@ -562,6 +572,10 @@
   .hero-intro {
     translate: 0;
   }
+
+  .hero-panel {
+    translate: 0 -10px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -672,6 +686,12 @@
 
   .carousel-card .literary-title {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-intro h2.hero-title-rotator {
+    cursor: default;
   }
 }
 

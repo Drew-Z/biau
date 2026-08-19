@@ -370,3 +370,37 @@ CSS animations pause while the intro is active or the page is hidden. Under
 glow, and footer drift are disabled while the existing stable Flow frame remains.
 No 3D Logo, GSAP timeline, brand asset, dedicated starfield Canvas, global click
 proxy, or debug control is copied from the reference site.
+
+## 15. Scene Motion Semantics Refinement
+
+The 2026-08-19 follow-up audit found that the static scene composition is now
+distinct, but the runtime still shares one hard-coded Flow field and similar
+full-layer translate/rotate/scale keyframes. Distinct animation names are not a
+sufficient product contract when the visible motion remains structurally alike.
+
+`flowPalettes.ts` therefore becomes the owner of a typed `FlowSceneProfile`, not
+only five colors. Each light/dark scene profile supplies bounded shader controls
+for speed, field scale, distortion, ribbon strength, noise scale, contrast, and
+portrait composition. `FlowBackground`, the worker protocol, and `FlowRenderer`
+pass that one profile through the existing Canvas owner; no additional renderer
+or loop is introduced.
+
+Scene semantics also govern interaction rather than only color:
+
+- `dusk` uses directional tidal flow, a warm horizontal panel sheen, and a
+  restrained horizon pulse;
+- `garden` uses slower large-scale organic flow, contour breathing, and reduced
+  hard-edge/tilt emphasis;
+- `stellar` uses high-contrast distortion, multi-depth CSS star layers, and the
+  only strong pointer-near-edge/panel-perimeter light treatment.
+
+Scene cycling uses the browser View Transition API when available and motion is
+allowed, with a direct synchronous fallback. Home depth may add one event-driven
+scroll/pointer coalescer that writes bounded CSS variables and stops once its
+targets settle. The carousel and title rotation must pause while hidden, respond
+to runtime reduced-motion changes, and preserve cleanup and keyboard parity.
+
+Validation must assert the actual typed Flow parameters, stellar-only strong
+edge ownership, scene-specific computed motion primitives, View Transition
+fallback behavior, hidden/reduced lifecycle state, and measurable but bounded
+frame changes. A uniqueness check over `animation-name` alone is insufficient.

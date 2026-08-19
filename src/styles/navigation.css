@@ -189,6 +189,34 @@
   transform: scale(1.16);
 }
 
+:root[data-harbor-scene='dusk'] .nav-logo:hover .biau-port-mark__water,
+:root[data-harbor-scene='dusk'] .nav-logo:focus-visible .biau-port-mark__water {
+  transform: translate3d(1.2px, -0.5px, 0) scaleX(1.025);
+}
+
+:root[data-harbor-scene='garden'] .nav-logo:hover .biau-port-mark__bowl,
+:root[data-harbor-scene='garden'] .nav-logo:focus-visible .biau-port-mark__bowl {
+  transform: scale(1.018, 1.035);
+  filter: drop-shadow(0 0 5px color-mix(in oklch, var(--home-accent) 46%, transparent));
+}
+
+:root[data-harbor-scene='garden'] .nav-logo:hover .biau-port-mark__water,
+:root[data-harbor-scene='garden'] .nav-logo:focus-visible .biau-port-mark__water {
+  transform: translateY(-0.35px) scaleX(0.985);
+}
+
+:root[data-harbor-scene='stellar'] .nav-logo:hover .biau-port-mark__beacon,
+:root[data-harbor-scene='stellar'] .nav-logo:focus-visible .biau-port-mark__beacon {
+  transform: scale(1.18);
+  filter: drop-shadow(0 0 7px color-mix(in oklch, var(--home-violet) 70%, white));
+}
+
+:root[data-harbor-scene='stellar'] .nav-logo:hover .biau-port-mark__beacon-glow,
+:root[data-harbor-scene='stellar'] .nav-logo:focus-visible .biau-port-mark__beacon-glow {
+  opacity: 0.46;
+  transform: scale(1.34);
+}
+
 .nav-logo:hover,
 .nav-logo:focus-visible {
   transform: translateY(-1px) scale(1.015);

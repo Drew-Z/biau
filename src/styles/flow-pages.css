@@ -678,7 +678,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   mask-composite: exclude;
-  animation: biauPortPanelTrace 7.6s linear infinite;
+  animation: none;
 }
 
 .app.page-home .carousel-wrapper::after {
@@ -703,7 +703,55 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     0 0;
   opacity: 0.56;
   mix-blend-mode: soft-light;
-  animation: biauPortPanelSweep 9.8s var(--ease-in-out) infinite;
+  animation: none;
+}
+
+:root[data-harbor-scene='dusk'] .app.page-home .carousel-wrapper::before {
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0 24%,
+      rgb(var(--flow-surface-edge-rgb) / 0.2) 36%,
+      rgb(var(--flow-surface-highlight-rgb) / 0.82) 48%,
+      rgb(var(--flow-surface-tint-rgb) / 0.28) 58%,
+      transparent 72% 100%
+    ),
+    linear-gradient(180deg, rgb(var(--flow-surface-highlight-rgb) / 0.2), transparent);
+  background-size: 260% 100%, 100% 100%;
+  animation: biauDuskPanelTide 9.2s var(--ease-in-out) infinite;
+}
+
+:root[data-harbor-scene='dusk'] .app.page-home .carousel-wrapper::after {
+  animation: biauDuskPanelSheen 12s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper::before {
+  background:
+    radial-gradient(ellipse at 12% 108%, rgb(var(--flow-surface-highlight-rgb) / 0.42), transparent 52%),
+    linear-gradient(118deg, transparent 0 68%, rgb(var(--flow-surface-edge-rgb) / 0.24) 68.2% 68.6%, transparent 69%);
+  animation: biauGardenPanelBreath 8.6s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper::after {
+  background:
+    repeating-radial-gradient(ellipse at 0% 100%, transparent 0 68px, rgb(var(--flow-surface-edge-rgb) / 0.11) 69px 70px, transparent 71px 128px),
+    radial-gradient(ellipse 42% 26% at 16% 12%, rgb(var(--flow-surface-tint-rgb) / 0.12), transparent 70%);
+  animation: biauGardenPanelCanopy 18s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='stellar'] .app.page-home .carousel-wrapper::before {
+  animation: biauStellarPanelTrace 7.6s linear infinite;
+}
+
+:root[data-harbor-scene='stellar'] .app.page-home .carousel-wrapper::after {
+  animation: biauStellarPanelSweep 9.8s var(--ease-in-out) infinite;
+}
+
+html.harbor-intro-active .app.page-home .carousel-wrapper::before,
+html.harbor-intro-active .app.page-home .carousel-wrapper::after,
+.app:has(.harbor-scene-foundation[data-scene-motion='paused']) .carousel-wrapper::before,
+.app:has(.harbor-scene-foundation[data-scene-motion='paused']) .carousel-wrapper::after {
+  animation-play-state: paused;
 }
 
 .app.page-home .carousel-wrapper > * {
@@ -724,7 +772,8 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     color-mix(in oklch, var(--home-brand) 52%, transparent) 42%,
     transparent 74%
   );
-  opacity: calc(var(--harbor-surface-glow-opacity) * 0.78);
+  display: none;
+  opacity: 0;
   transition: opacity 180ms var(--ease-smooth);
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -737,15 +786,11 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 }
 
 :root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper > .harbor-surface-glow {
-  background: radial-gradient(
-    186px 186px at var(--harbor-surface-glow-x) var(--harbor-surface-glow-y),
-    color-mix(in oklch, var(--home-accent) 72%, white) 0%,
-    color-mix(in oklch, var(--home-brand) 44%, transparent) 46%,
-    transparent 76%
-  );
+  display: none;
 }
 
 :root[data-harbor-scene='stellar'] .app.page-home .carousel-wrapper > .harbor-surface-glow {
+  display: block;
   background: radial-gradient(
     204px 204px at var(--harbor-surface-glow-x) var(--harbor-surface-glow-y),
     color-mix(in oklch, var(--home-accent) 86%, white) 0%,
@@ -1306,7 +1351,54 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   }
 }
 
-@keyframes biauPortPanelTrace {
+@keyframes biauDuskPanelTide {
+  0% {
+    background-position: 118% 0, 0 0;
+    opacity: 0.46;
+  }
+  48% {
+    opacity: 0.9;
+  }
+  100% {
+    background-position: -18% 0, 0 0;
+    opacity: 0.54;
+  }
+}
+
+@keyframes biauDuskPanelSheen {
+  from {
+    background-position: 118% 50%, 0 0;
+    opacity: 0.32;
+  }
+  to {
+    background-position: -18% 54%, 0 0;
+    opacity: 0.5;
+  }
+}
+
+@keyframes biauGardenPanelBreath {
+  from {
+    opacity: 0.34;
+    transform: scale(0.996);
+  }
+  to {
+    opacity: 0.7;
+    transform: scale(1.004);
+  }
+}
+
+@keyframes biauGardenPanelCanopy {
+  from {
+    background-position: 0 0, 0 0;
+    opacity: 0.24;
+  }
+  to {
+    background-position: 54px -34px, 0 0;
+    opacity: 0.48;
+  }
+}
+
+@keyframes biauStellarPanelTrace {
   0% {
     transform: rotate(0deg);
     opacity: 0.58;
@@ -1323,7 +1415,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   }
 }
 
-@keyframes biauPortPanelSweep {
+@keyframes biauStellarPanelSweep {
   0% {
     background-position:
       130% 48%,

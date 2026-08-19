@@ -1,5 +1,5 @@
 import { FlowRenderer } from './FlowRenderer'
-import type { FlowPalette } from './flowPalettes'
+import type { FlowSceneProfile } from './flowPalettes'
 
 type Message =
   | {
@@ -8,17 +8,17 @@ type Message =
       width: number
       height: number
       dpr: number
-      palette: FlowPalette
+      profile: FlowSceneProfile
       reducedMotion: boolean
       running: boolean
       motionToken: number
     }
   | { type: 'resize'; width: number; height: number; dpr: number; motionToken: number }
-  | { type: 'palette'; palette: FlowPalette; motionToken: number }
+  | { type: 'profile'; profile: FlowSceneProfile; motionToken: number }
   | { type: 'motion'; reducedMotion: boolean; running: boolean; motionToken: number }
 
 let renderer: FlowRenderer | undefined
-let palette: FlowPalette | undefined
+let profile: FlowSceneProfile | undefined
 let requestedRunning = false
 let reducedMotion = false
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -40,8 +40,8 @@ function cancelSettled() {
 }
 
 function drawFrame() {
-  if (!renderer || !palette) return
-  renderer.draw(reducedMotion ? 0 : (performance.now() - start) / 1000, palette)
+  if (!renderer || !profile) return
+  renderer.draw(reducedMotion ? 0 : (performance.now() - start) / 1000, profile)
   self.postMessage({ type: 'frame' })
 }
 
@@ -87,15 +87,15 @@ self.onmessage = ({ data }: MessageEvent<Message>) => {
     if (data.type === 'init') {
       // A retained buffer keeps a runtime reduced-motion switch visibly stable.
       renderer = new FlowRenderer(data.canvas, { preserveDrawingBuffer: true })
-      palette = data.palette
+      profile = data.profile
       renderer.resize(data.width, data.height, data.dpr)
       start = performance.now()
       updateMotion(data.reducedMotion, data.running, data.motionToken)
     } else if (data.type === 'resize') {
       renderer?.resize(data.width, data.height, data.dpr)
       if (!requestedRunning || reducedMotion) drawFrame()
-    } else if (data.type === 'palette') {
-      palette = data.palette
+    } else if (data.type === 'profile') {
+      profile = data.profile
       if (!requestedRunning || reducedMotion) drawFrame()
     } else {
       updateMotion(data.reducedMotion, data.running, data.motionToken)

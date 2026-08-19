@@ -1,4 +1,12 @@
-import { useState, useEffect, useRef, useCallback, type PointerEvent } from 'react'
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type KeyboardEvent,
+  type PointerEvent,
+  type RefObject,
+} from 'react'
 import { heroContent, type HeroPoem } from '../data/hero'
 import { AnimatedText } from './AnimatedText'
 import { RightScrollCards } from './RightScrollCards'
@@ -23,9 +31,11 @@ const PORT_TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
 
 export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: HeroSplitProps) {
   const { poems, projects } = heroContent
+  const heroRef = useRef<HTMLElement>(null)
+  useHomeSceneDepth(heroRef)
 
   return (
-    <main className="home-hero">
+    <main ref={heroRef} className="home-hero" data-home-depth="static">
       <section className="hero-intro">
         <h1 className="eyebrow">BIAU PORT</h1>
 
@@ -95,13 +105,9 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
 
   useEffect(() => {
     if (poems.length <= 1) return
-    const prefersReducedMotion = window.matchMedia?.(
-      '(prefers-reduced-motion: reduce)'
-    ).matches
-    if (prefersReducedMotion) return
-
     const timer = window.setInterval(() => {
       if (pausedRef.current) return
+      if (document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
       if (document.documentElement.classList.contains('harbor-intro-active')) return
       advancePoem()
     }, POEM_ROTATE_MS)
@@ -172,6 +178,7 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
 
   const handlePointerDown = (event: PointerEvent<HTMLHeadingElement>) => {
     if (event.button !== 0) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     const title = titleRef.current
     if (!title) return
     const isTouch = event.pointerType === 'touch' || event.pointerType === 'pen'
@@ -258,19 +265,28 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
     advancePoem()
   }
 
+  const handleTitleKeyDown = (event: KeyboardEvent<HTMLHeadingElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    advancePoem()
+  }
+
   return (
     <h2
       ref={titleRef}
       className={`hero-title-rotator ${ghostPoem ? 'has-hero-title-ghost' : ''}`}
       data-ghost-main={ghostPoem?.main ?? ''}
       data-ghost-sub={ghostPoem?.sub ?? ''}
-      aria-label={`${poem.main} ${poem.sub ?? ''}`.trim()}
+      aria-label={`${poem.main} ${poem.sub ?? ''}，切换下一条泊岸题句`.trim()}
+      role="button"
+      tabIndex={0}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={releaseTitle}
       onPointerCancel={releaseTitle}
       onLostPointerCapture={releaseTitle}
       onClick={handleTitleClick}
+      onKeyDown={handleTitleKeyDown}
     >
       <AnimatedText key={`main-${index}`} text={poem.main} />
       {poem.sub && (
@@ -302,6 +318,125 @@ function SystemStatus() {
       </div>
     </div>
   )
+}
+
+function useHomeSceneDepth(heroRef: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const hero = heroRef.current
+    if (!hero) return
+
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const finePointer = window.matchMedia('(any-hover: hover) and (any-pointer: fine)')
+    const desktop = window.matchMedia('(min-width: 1025px)')
+    let frame = 0
+    let pointerX = 0
+    let pointerY = 0
+    let scrollDepth = 0
+    let targetPointerX = 0
+    let targetPointerY = 0
+    let targetScrollDepth = 0
+
+    const canRun = () =>
+      !reducedMotion.matches &&
+      finePointer.matches &&
+      desktop.matches &&
+      !document.hidden &&
+      !document.documentElement.classList.contains('harbor-intro-active')
+
+    const reset = () => {
+      cancelAnimationFrame(frame)
+      frame = 0
+      pointerX = 0
+      pointerY = 0
+      scrollDepth = 0
+      targetPointerX = 0
+      targetPointerY = 0
+      targetScrollDepth = 0
+      hero.style.setProperty('--home-depth-intro-x', '0px')
+      hero.style.setProperty('--home-depth-intro-y', '0px')
+      hero.style.setProperty('--home-depth-panel-x', '0px')
+      hero.style.setProperty('--home-depth-panel-y', '0px')
+      hero.dataset.homeDepth = reducedMotion.matches ? 'reduced' : document.hidden ? 'paused' : 'static'
+    }
+
+    const render = () => {
+      frame = 0
+      if (!canRun()) {
+        reset()
+        return
+      }
+      pointerX += (targetPointerX - pointerX) * 0.12
+      pointerY += (targetPointerY - pointerY) * 0.12
+      scrollDepth += (targetScrollDepth - scrollDepth) * 0.16
+      hero.style.setProperty('--home-depth-intro-x', `${(-pointerX * 8).toFixed(2)}px`)
+      hero.style.setProperty('--home-depth-intro-y', `${(-pointerY * 5 - scrollDepth * 14).toFixed(2)}px`)
+      hero.style.setProperty('--home-depth-panel-x', `${(pointerX * 5).toFixed(2)}px`)
+      hero.style.setProperty('--home-depth-panel-y', `${(pointerY * 3 + scrollDepth * 8).toFixed(2)}px`)
+      hero.dataset.homeDepth = 'interactive'
+      if (
+        Math.abs(targetPointerX - pointerX) > 0.002 ||
+        Math.abs(targetPointerY - pointerY) > 0.002 ||
+        Math.abs(targetScrollDepth - scrollDepth) > 0.002
+      ) {
+        frame = requestAnimationFrame(render)
+      }
+    }
+
+    const requestRender = () => {
+      if (!frame && canRun()) frame = requestAnimationFrame(render)
+    }
+    const updateScrollTarget = () => {
+      const rect = hero.getBoundingClientRect()
+      const viewportHeight = Math.max(window.innerHeight, 1)
+      const center = rect.top + rect.height * 0.5
+      targetScrollDepth = Math.max(-1, Math.min(1, (viewportHeight * 0.52 - center) / viewportHeight))
+      requestRender()
+    }
+    const handlePointerMove = (event: globalThis.PointerEvent) => {
+      const rect = hero.getBoundingClientRect()
+      if (!rect.width || !rect.height) return
+      targetPointerX = Math.max(-0.5, Math.min(0.5, (event.clientX - rect.left) / rect.width - 0.5))
+      targetPointerY = Math.max(-0.5, Math.min(0.5, (event.clientY - rect.top) / rect.height - 0.5))
+      requestRender()
+    }
+    const handlePointerLeave = () => {
+      targetPointerX = 0
+      targetPointerY = 0
+      requestRender()
+    }
+    const sync = () => {
+      if (!canRun()) {
+        reset()
+        return
+      }
+      updateScrollTarget()
+    }
+
+    const observer = new MutationObserver(sync)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    window.addEventListener('scroll', updateScrollTarget, { passive: true })
+    window.addEventListener('resize', sync, { passive: true })
+    hero.addEventListener('pointerleave', handlePointerLeave, { passive: true })
+    document.addEventListener('visibilitychange', sync)
+    reducedMotion.addEventListener('change', sync)
+    finePointer.addEventListener('change', sync)
+    desktop.addEventListener('change', sync)
+    sync()
+
+    return () => {
+      reset()
+      observer.disconnect()
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('scroll', updateScrollTarget)
+      window.removeEventListener('resize', sync)
+      hero.removeEventListener('pointerleave', handlePointerLeave)
+      document.removeEventListener('visibilitychange', sync)
+      reducedMotion.removeEventListener('change', sync)
+      finePointer.removeEventListener('change', sync)
+      desktop.removeEventListener('change', sync)
+    }
+  }, [heroRef])
 }
 
 function formatLocalTime(date: Date) {

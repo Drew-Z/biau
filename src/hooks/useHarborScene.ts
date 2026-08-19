@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import {
   applyHarborScene,
   getNextHarborScene,
@@ -19,7 +20,20 @@ export function useHarborScene() {
   }, [scene])
 
   const cycleScene = useCallback(() => {
-    setScene((current) => getNextHarborScene(current))
+    const commit = () => {
+      flushSync(() => setScene((current) => getNextHarborScene(current)))
+    }
+    const transitionDocument = document as Document & {
+      startViewTransition?: (callback: () => void) => unknown
+    }
+    if (
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+      typeof transitionDocument.startViewTransition === 'function'
+    ) {
+      transitionDocument.startViewTransition(commit)
+      return
+    }
+    commit()
   }, [])
 
   return { scene, cycleScene }

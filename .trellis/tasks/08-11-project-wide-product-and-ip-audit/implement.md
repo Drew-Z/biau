@@ -265,6 +265,36 @@ Focused checks:
 - [x] Recheck 320/390/430 mobile containment and desktop composition for all scenes.
 - [x] Run full UI, smoke, lint, build, performance, and diff checks without writing or staging `public/status/blog-semi-synthetic.json`.
 
+## Slice J. Scene Motion Semantics Refinement
+
+### Implementation
+
+- [x] Replace palette-only Flow selection with typed light/dark scene profiles
+  containing bounded shader dynamics and portrait composition.
+- [x] Pass one scene profile through `FlowBackground`, the worker protocol, and
+  `FlowRenderer` without adding another Canvas or render loop.
+- [x] Make dusk, garden, and stellar use different motion primitives instead of
+  equivalent whole-layer transforms with different names.
+- [x] Restrict the strong perimeter trace and pointer-near-edge glow to stellar;
+  give dusk a tidal sheen and garden a restrained organic surface response.
+- [x] Add multi-depth stellar texture motion using the existing CSS foundation,
+  and add reduced scene-aware motion to the existing SVG mark.
+- [x] Add reduced-motion-aware View Transition scene cycling and bounded
+  event-driven home depth without React frame state.
+- [x] Pause carousel/title work while hidden, react to runtime reduced-motion,
+  preserve coarse-pointer static behavior, and add keyboard parity for title
+  rotation.
+
+- [x] Add static/profile checks for distinct Flow physics and bounded values.
+- [x] Extend UI checks for scene-specific computed motion, stellar-only edge
+  ownership, scene transition fallback, hidden/reduced lifecycle, and keyboard
+  title rotation.
+- [x] Run `npm.cmd run check:ui:smoke`, `npm.cmd run check:ui`,
+  `npm.cmd run performance:check`, `npm.cmd run lint`, `npm.cmd run build`, and
+  `git diff --check`.
+- [x] Confirm `public/status/blog-semi-synthetic.json` remains unstaged and is
+  not modified by this slice.
+
 ## Files With Elevated Risk
 
 - `src/data/portfolio.ts`: large content catalog; avoid broad formatting or unrelated copy churn.

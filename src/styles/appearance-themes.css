@@ -594,11 +594,11 @@
 }
 
 :root[data-harbor-scene='dusk'] .harbor-scene-foundation__wash {
-  animation: harborDuskWashDrift 25s var(--ease-in-out) infinite alternate;
+  animation: harborDuskWashDrift 24s var(--ease-in-out) infinite alternate;
 }
 
 :root[data-harbor-scene='dusk'] .harbor-scene-foundation__texture {
-  animation: harborDuskTideGrain 19s var(--ease-in-out) infinite alternate;
+  animation: harborDuskTideGrain 18s linear infinite;
 }
 
 :root[data-harbor-scene='dusk'] .harbor-scene-foundation__landmark {
@@ -606,11 +606,11 @@
 }
 
 :root[data-harbor-scene='garden'] .harbor-scene-foundation__wash {
-  animation: harborGardenCanopyDrift 28s var(--ease-in-out) infinite alternate;
+  animation: harborGardenCanopyDrift 32s var(--ease-in-out) infinite alternate;
 }
 
 :root[data-harbor-scene='garden'] .harbor-scene-foundation__texture {
-  animation: harborGardenContourMigration 22s var(--ease-in-out) infinite alternate;
+  animation: harborGardenContourMigration 26s linear infinite;
 }
 
 :root[data-harbor-scene='garden'] .harbor-scene-foundation__landmark {
@@ -622,11 +622,41 @@
 }
 
 :root[data-harbor-scene='stellar'] .harbor-scene-foundation__texture {
-  animation: harborStellarStarTwinkle 10s var(--ease-in-out) infinite alternate;
+  animation: harborStellarFarStars 34s linear infinite;
 }
 
 :root[data-harbor-scene='stellar'] .harbor-scene-foundation__landmark {
   animation: harborStellarChartCruise 24s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='stellar'] .harbor-scene-foundation__texture::before,
+:root[data-harbor-scene='stellar'] .harbor-scene-foundation__texture::after {
+  content: '';
+  position: absolute;
+  inset: -4%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+:root[data-harbor-scene='stellar'] .harbor-scene-foundation__texture::before {
+  background-image:
+    radial-gradient(circle, color-mix(in oklch, var(--home-accent) 84%, white) 0 0.72px, transparent 1.18px),
+    radial-gradient(circle, color-mix(in oklch, var(--home-violet) 72%, white) 0 0.58px, transparent 1.05px);
+  background-size: 116px 116px, 173px 173px;
+  background-position: 21px 12px, 67px 41px;
+  opacity: 0.64;
+  animation: harborStellarMidStars 22s linear infinite;
+}
+
+:root[data-harbor-scene='stellar'] .harbor-scene-foundation__texture::after {
+  background-image:
+    radial-gradient(circle, color-mix(in oklch, var(--home-ink) 86%, white) 0 0.9px, transparent 1.35px),
+    radial-gradient(ellipse, color-mix(in oklch, var(--home-accent) 64%, transparent) 0 0.7px, transparent 1.9px);
+  background-size: 227px 227px, 311px 311px;
+  background-position: 38px 74px, 144px 28px;
+  opacity: 0.48;
+  filter: drop-shadow(0 0 3px color-mix(in oklch, var(--home-accent) 34%, transparent));
+  animation: harborStellarNearStars 13s var(--ease-in-out) infinite alternate;
 }
 
 .harbor-scene-foundation[data-scene-motion='paused'] > :is(
@@ -642,6 +672,13 @@ html.harbor-intro-active .harbor-scene-foundation > :is(
   animation-play-state: paused;
 }
 
+.harbor-scene-foundation[data-scene-motion='paused'] .harbor-scene-foundation__texture::before,
+.harbor-scene-foundation[data-scene-motion='paused'] .harbor-scene-foundation__texture::after,
+html.harbor-intro-active .harbor-scene-foundation__texture::before,
+html.harbor-intro-active .harbor-scene-foundation__texture::after {
+  animation-play-state: paused;
+}
+
 .harbor-scene-foundation[data-scene-motion='reduced'] > :is(
     .harbor-scene-foundation__wash,
     .harbor-scene-foundation__texture,
@@ -653,6 +690,12 @@ html.harbor-intro-active .harbor-scene-foundation > :is(
   will-change: auto;
 }
 
+.harbor-scene-foundation[data-scene-motion='reduced'] .harbor-scene-foundation__texture::before,
+.harbor-scene-foundation[data-scene-motion='reduced'] .harbor-scene-foundation__texture::after {
+  animation: none;
+  transform: none;
+}
+
 @keyframes harborDuskWashDrift {
   0% { transform: translate3d(-2.5%, -1.2%, 0) rotate(-0.8deg) scale(1.03); }
   52% { transform: translate3d(1.4%, 1.1%, 0) rotate(0.45deg) scale(1.07); }
@@ -660,9 +703,9 @@ html.harbor-intro-active .harbor-scene-foundation > :is(
 }
 
 @keyframes harborDuskTideGrain {
-  0% { transform: translate3d(-1.8%, 0.8%, 0) rotate(-0.2deg); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.72); }
-  48% { transform: translate3d(0.6%, -0.6%, 0) rotate(0.15deg); opacity: var(--harbor-foundation-texture-opacity); }
-  100% { transform: translate3d(2.2%, -1.1%, 0) rotate(0.35deg); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.82); }
+  0% { background-position: center, center, 0 0; opacity: calc(var(--harbor-foundation-texture-opacity) * 0.7); }
+  46% { opacity: var(--harbor-foundation-texture-opacity); }
+  100% { background-position: 216px -18px, -240px 10px, 35px -14px; opacity: calc(var(--harbor-foundation-texture-opacity) * 0.78); }
 }
 
 @keyframes harborDuskHorizonPulse {
@@ -672,15 +715,15 @@ html.harbor-intro-active .harbor-scene-foundation > :is(
 }
 
 @keyframes harborGardenCanopyDrift {
-  0% { transform: translate3d(-2.4%, 1.4%, 0) rotate(-1deg) scale(1.035); }
-  50% { transform: translate3d(1.2%, -1.5%, 0) rotate(0.6deg) scale(1.075); }
-  100% { transform: translate3d(2.8%, 0.4%, 0) rotate(1.2deg) scale(1.05); }
+  0% { transform: translate3d(-1.4%, 1%, 0) scale(1.02, 1.06); border-radius: 44% 56% 48% 52%; }
+  50% { transform: translate3d(0.8%, -1.1%, 0) scale(1.075, 1.015); border-radius: 54% 46% 57% 43%; }
+  100% { transform: translate3d(1.6%, 0.6%, 0) scale(1.035, 1.08); border-radius: 48% 52% 42% 58%; }
 }
 
 @keyframes harborGardenContourMigration {
-  0% { transform: translate3d(-2.2%, 1.2%, 0) rotate(-0.7deg) scale(1.01); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.7); }
-  46% { transform: translate3d(0.8%, -1%, 0) rotate(0.2deg) scale(1.045); opacity: var(--harbor-foundation-texture-opacity); }
-  100% { transform: translate3d(2.4%, -0.2%, 0) rotate(0.85deg) scale(1.02); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.8); }
+  0% { background-position: center, center, 0 0; opacity: calc(var(--harbor-foundation-texture-opacity) * 0.66); }
+  44% { opacity: var(--harbor-foundation-texture-opacity); }
+  100% { background-position: 142px -76px, -184px 97px, 24px 16px; opacity: calc(var(--harbor-foundation-texture-opacity) * 0.82); }
 }
 
 @keyframes harborGardenGroundBreath {
@@ -695,11 +738,22 @@ html.harbor-intro-active .harbor-scene-foundation > :is(
   100% { transform: translate3d(2.5%, 1.2%, 0) rotate(0.7deg) scale(1.04); }
 }
 
-@keyframes harborStellarStarTwinkle {
-  0% { transform: translate3d(-1.2%, 0.6%, 0) scale(1); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.66); }
-  38% { transform: translate3d(0.4%, -0.7%, 0) scale(1.018); opacity: var(--harbor-foundation-texture-opacity); }
-  72% { transform: translate3d(1.2%, 0.4%, 0) scale(1.006); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.74); }
-  100% { transform: translate3d(1.8%, -0.4%, 0) scale(1.024); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.92); }
+@keyframes harborStellarFarStars {
+  0% { background-position: 0 0, 16px 8px, 42px 18px; opacity: calc(var(--harbor-foundation-texture-opacity) * 0.7); }
+  50% { opacity: var(--harbor-foundation-texture-opacity); }
+  100% { background-position: 72px -38px, -94px 62px, 116px -72px; opacity: calc(var(--harbor-foundation-texture-opacity) * 0.78); }
+}
+
+@keyframes harborStellarMidStars {
+  from { background-position: 21px 12px, 67px 41px; opacity: 0.42; }
+  48% { opacity: 0.76; }
+  to { background-position: 137px -66px, -106px 118px; opacity: 0.54; }
+}
+
+@keyframes harborStellarNearStars {
+  0% { background-position: 38px 74px, 144px 28px; opacity: 0.28; transform: scale(1); }
+  46% { opacity: 0.7; transform: scale(1.008); }
+  100% { background-position: -76px 132px, 244px -82px; opacity: 0.42; transform: scale(1.016); }
 }
 
 @keyframes harborStellarChartCruise {
@@ -718,5 +772,40 @@ html.harbor-intro-active .harbor-scene-foundation > :is(
     translate: 0 0 !important;
     transition: none !important;
     will-change: auto;
+  }
+
+  .harbor-scene-foundation__texture::before,
+  .harbor-scene-foundation__texture::after {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 360ms;
+  animation-timing-function: var(--ease-smooth);
+}
+
+::view-transition-old(root) {
+  animation-name: harborSceneFadeOut;
+}
+
+::view-transition-new(root) {
+  animation-name: harborSceneFadeIn;
+}
+
+@keyframes harborSceneFadeOut {
+  to { opacity: 0; filter: saturate(0.82) blur(2px); }
+}
+
+@keyframes harborSceneFadeIn {
+  from { opacity: 0; filter: saturate(0.82) blur(2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }
