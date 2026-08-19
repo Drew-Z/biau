@@ -179,8 +179,14 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (usesMobileInteractionMode()) return
     const drag = dragRef.current
+    const wrapper = wrapperRef.current
+    if (wrapper && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const glowRect = wrapper.getBoundingClientRect()
+      wrapper.style.setProperty('--harbor-surface-glow-x', `${(event.clientX - glowRect.left).toFixed(1)}px`)
+      wrapper.style.setProperty('--harbor-surface-glow-y', `${(event.clientY - glowRect.top).toFixed(1)}px`)
+      wrapper.style.setProperty('--harbor-surface-glow-opacity', '1')
+    }
     if (!drag.isPointerDown) {
-      const wrapper = wrapperRef.current
       if (!wrapper) return
       const rect = wrapper.getBoundingClientRect()
       tiltRef.current.targetX = ((event.clientY - rect.top) / rect.height - 0.5) * -2.2
@@ -258,8 +264,10 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
         isHoveringRef.current = false
         tiltRef.current.targetX = 0
         tiltRef.current.targetY = 0
+        wrapperRef.current?.style.setProperty('--harbor-surface-glow-opacity', '0')
       }}
     >
+      <span className="harbor-surface-glow" aria-hidden="true" />
       <div className="panel-head">
         <div className="panel-head__copy">
           <p>IN PORT / 当前泊岸</p>

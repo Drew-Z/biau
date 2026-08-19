@@ -67,7 +67,7 @@ npm.cmd run docs:deployment-check
 - Avoid continuous React state updates from animation frames.
 - Canvas owns its render loop and disposes resources/listeners on unmount.
 - Worker resize, palette, and motion messages must not create parallel render timers. Runtime `prefers-reduced-motion` changes must use a token-correlated acknowledgement exposed as DOM state, stop on one static frame, and resume one render loop when animation is allowed again; UI checks wait for that acknowledgement instead of an arbitrary delay. Runtime or message failures must hide the stale canvas and reveal the explicit CSS fallback state.
-- An OffscreenCanvas worker must not emit `motion-settled` in the same task as the final draw. Defer the acknowledgement by one bounded compositor window, cancel that timer on every newer motion token, and re-check the token before posting. This keeps DOM state from claiming stability while the browser still presents the previous animated frame.
+- An OffscreenCanvas worker must not emit `motion-settled` in the same task as the final draw. Defer the acknowledgement by a cancelable `120ms` compositor window, cancel that timer on every newer motion token, and re-check the token before posting. Keep the strict pixel threshold and two-browser-frame presentation wait in the UI check; the compositor window is synchronization, not permission to loosen the assertion. This keeps DOM state from claiming stability while the browser still presents the previous animated frame.
 - Reduced-motion synchronization must not trust one retained `MediaQueryList` change event as the only source of truth. Read the current query value when synchronizing, retain a low-frequency fallback poll that only acts on value changes, and send the resolved value to the worker. A late worker acknowledgement is accepted only when its token is current or its reduced/running tuple still matches the current page state; stale contradictory acknowledgements are ignored.
 - Pixel stability checks run against the production preview worker path. After the DOM acknowledgement, wait for two browser animation frames so the compositor can present the acknowledged canvas frame, then compare pixels; do not replace this with a fixed sleep or a looser motion threshold.
 - Route changes must not repeatedly restart expensive initialization or cause project/blog page flicker.
@@ -81,6 +81,33 @@ npm.cmd run docs:deployment-check
 - Store `theme=auto`, emulate dark -> light -> dark system changes, and assert the resolved root state follows each change while storage remains `auto`.
 - Run mobile containment in both light and dark modes at `320`, `390`, and `430` widths. The Logo, brand, theme/language controls, cards, actions, and bottom navigation must remain visible and non-overlapping.
 - Preserve six distinct Flow canvas frames. Surface-token checks do not replace the existing canvas-pixel, reduced-motion, fallback, intro-docking, and performance assertions.
+- A scene is not a color alias. Each `dusk | garden | stellar` scene must define a distinct Flow palette, full-viewport texture/composition, panel pattern/material, card surface or shadow treatment, and control accent behavior in both light and dark modes. Automated checks must sample these independent material signatures in addition to canvas pixels.
+- `FlowBackground` owns one fixed, pointer-inert scene foundation around the existing canvas. It contains exactly three CSS-only static layers (`wash`, `texture`, and `landmark`); do not add another canvas, request, timer, or animation loop for scene identity. The foundation remains visible behind the canvas and when the canvas enters CSS fallback.
+- The scene continues below the Hero and across longer public pages. The site footer consumes scene-specific background, pattern, border, and shadow tokens instead of a generic black/light surface. Full-page desktop/mobile evidence must include the Hero-to-footer transition.
+- Appearance signatures include the foundation base, all three static layer backgrounds, texture sizing, Hero panel material, and footer background. A first-viewport screenshot or Flow-canvas hash alone cannot prove the full-page scene contract.
+- At desktop widths above `1024px`, the homepage intro and project board form two explicit columns whose visual centers align vertically while the intro copy remains left-aligned. At `1024px` and below, restore the single-column reading order without horizontal overflow.
+
+### Scene Motion Ownership
+
+- The existing Flow canvas remains the only continuous JavaScript-rendered scene. Theme-specific material motion belongs to the three CSS foundation layers and the footer; do not add a second canvas, a React frame-state loop, or a timer-driven starfield.
+- `FlowBackground` may own one event-driven pointer coalescer. It schedules at most one `requestAnimationFrame` after pointer input, writes bounded CSS variables, and cancels the pending frame plus listeners on cleanup. Use the independent `translate` property for pointer parallax and reserve `transform` for scene keyframes so the two effects compose.
+- Expose `data-scene-motion="interactive|ambient|paused|reduced"` on the scene foundation. Fine pointers use `interactive`; coarse pointers keep CSS ambient motion without pointer parallax; hidden documents and the harbor intro use `paused`; reduced motion removes scene keyframes, pointer translation, panel glow, and footer drift.
+- Reuse `RightScrollCards`' existing pointer handler for the scene-tokenized panel glow. It must remain non-interactive, disappear on pointer exit, and be disabled on mobile/coarse and reduced-motion paths.
+
+```tsx
+// Correct: one pointer event is coalesced into one style-only paint.
+const requestPointerPaint = () => {
+  if (!frame) frame = requestAnimationFrame(paintPointer)
+}
+
+// Wrong: a second perpetual loop or React state update for ambient motion.
+requestAnimationFrame(function animate() {
+  setPointerPosition(readPointer())
+  requestAnimationFrame(animate)
+})
+```
+
+- UI checks must compare the three computed animation signatures, observe changing normal-motion frames, verify pointer variables and panel glow on fine pointers, verify `ambient` plus zero pointer offsets on coarse pointers, and prove intro/reduced transitions pause or remove motion before the Flow loop resumes.
 
 ### Production Appearance Verification Command
 

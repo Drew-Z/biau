@@ -629,6 +629,9 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 }
 
 .app.page-home .carousel-wrapper {
+  --harbor-surface-glow-x: 50%;
+  --harbor-surface-glow-y: 50%;
+  --harbor-surface-glow-opacity: 0;
   position: relative;
   overflow: hidden;
   border-color: color-mix(
@@ -706,6 +709,57 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
 .app.page-home .carousel-wrapper > * {
   position: relative;
   z-index: 1;
+}
+
+.app.page-home .carousel-wrapper > .harbor-surface-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  padding: 1px;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    172px 172px at var(--harbor-surface-glow-x) var(--harbor-surface-glow-y),
+    color-mix(in oklch, var(--home-accent) 78%, white) 0%,
+    color-mix(in oklch, var(--home-brand) 52%, transparent) 42%,
+    transparent 74%
+  );
+  opacity: calc(var(--harbor-surface-glow-opacity) * 0.78);
+  transition: opacity 180ms var(--ease-smooth);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+:root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper > .harbor-surface-glow {
+  background: radial-gradient(
+    186px 186px at var(--harbor-surface-glow-x) var(--harbor-surface-glow-y),
+    color-mix(in oklch, var(--home-accent) 72%, white) 0%,
+    color-mix(in oklch, var(--home-brand) 44%, transparent) 46%,
+    transparent 76%
+  );
+}
+
+:root[data-harbor-scene='stellar'] .app.page-home .carousel-wrapper > .harbor-surface-glow {
+  background: radial-gradient(
+    204px 204px at var(--harbor-surface-glow-x) var(--harbor-surface-glow-y),
+    color-mix(in oklch, var(--home-accent) 86%, white) 0%,
+    color-mix(in oklch, var(--home-violet) 62%, transparent) 40%,
+    color-mix(in oklch, var(--home-brand) 30%, transparent) 58%,
+    transparent 78%
+  );
+  opacity: calc(var(--harbor-surface-glow-opacity) * 0.9);
+}
+
+@media (max-width: 1024px), (any-hover: none), (prefers-reduced-motion: reduce) {
+  .app.page-home .carousel-wrapper > .harbor-surface-glow {
+    display: none;
+  }
 }
 
 .app.page-home .carousel-viewport {

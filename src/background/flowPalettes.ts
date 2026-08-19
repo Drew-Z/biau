@@ -3,7 +3,15 @@ import type { HarborScene } from '../utils/appearance'
 export type { HarborScene } from '../utils/appearance'
 export type FlowPalette = readonly [string, string, string, string, string]
 const palettes: Record<'dark' | 'light', Record<HarborScene, FlowPalette>> = {
-  dark: { dusk: ['#071019','#102f43','#17647a','#a85f69','#e6b86b'], garden: ['#071512','#123c32','#1f7563','#79a476','#d5c77a'], stellar: ['#080d1b','#17264b','#3f508c','#7167a9','#8ed4d0'] },
-  light: { dusk: ['#eaf4f5','#c7e1df','#98c6ca','#dfadb0','#f1d7a0'], garden: ['#edf5ef','#c9dfd1','#91bda8','#b9cf91','#f0dca6'], stellar: ['#edf1f8','#cbd7eb','#a9b8df','#c3b8dc','#b9dedb'] },
+  dark: {
+    dusk: ['#120914', '#3c1732', '#8e3f58', '#dc8065', '#f3bf6b'],
+    garden: ['#07150f', '#0b3827', '#1d795c', '#7cab6d', '#d7d08e'],
+    stellar: ['#040713', '#101c42', '#263c7e', '#6b62b5', '#7fd9dc'],
+  },
+  light: {
+    dusk: ['#f8eee7', '#efc3b7', '#d8888e', '#7abfc4', '#f1c678'],
+    garden: ['#eef3dc', '#d5c8e8', '#a8ddd4', '#79be8d', '#d8d98a'],
+    stellar: ['#eef2f8', '#c7d2e9', '#849dd0', '#776ea8', '#b5e1df'],
+  },
 }
 export const getFlowPalette = (scene: HarborScene, light: boolean) => palettes[light ? 'light' : 'dark'][scene]

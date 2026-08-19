@@ -216,6 +216,55 @@ Focused checks:
 - [x] Add `check:ui:production-appearance` as a read-only deployed-homepage gate; it blocks external requests and does not reuse production Studio/model APIs.
 - [x] Verify production deployment `3a084666` contains commit `fbba41e3`: the stable Pages domain passes all 14 appearance groups, while the custom domain remains `active` in Cloudflare control-plane validation despite this machine's known TLS connection-reset path.
 
+## Slice G. Scene Differentiation And Hero Balance
+
+### Implementation
+
+- [x] Audit the reference site's default, nature, and stellar surface layers and record the reusable distinctions without copying its assets or runtime.
+- [x] Replace the desktop 12-column Hero projection with a balanced two-column composition and vertically center the intro against the project board.
+- [x] Replace the generic capability-list sentence with truthful product-boundary copy.
+- [x] Give `dusk | garden | stellar` distinct Flow palettes, full-viewport textures, panel materials, and accent behavior in both light and dark modes.
+- [x] Keep the existing appearance state, Logo control, Flow renderer, routes, project data, CTA projection, and mobile reading order unchanged.
+
+### Validation
+
+- [x] Assert all six combinations remain readable and expose distinct scene material signatures in addition to distinct Flow frames.
+- [x] Verify desktop Hero balance and 320/390/430 mobile containment without changing the public status snapshot.
+- [x] Run full UI, smoke, lint, build, performance, and diff checks.
+
+## Slice H. Full-page Scene Foundations
+
+### Implementation
+
+- [x] Re-audit the saved reference source for its prepaint background, grain, organic contour, dedicated stellar starfield, panel tint, and page-level material behavior.
+- [x] Add one fixed non-interactive scene foundation around the existing Flow canvas with CSS-only wash, texture, and landmark layers.
+- [x] Project distinct dusk spectral lines, garden organic contours, and stellar star/chart layers through all six light/dark combinations.
+- [x] Replace the generic black/light footer surface with scene-specific background, pattern, border, and shadow tokens.
+- [x] Keep the existing Flow renderer, one-canvas ownership, reduced-motion state, CSS fallback, route structure, and public content unchanged.
+
+### Validation
+
+- [x] Assert every appearance has a viewport-sized fixed foundation, exactly three static scene layers, a themed footer, and six distinct combined material signatures.
+- [x] Recheck full-page desktop and 390px mobile screenshots for all scenes, including the Hero-to-footer transition.
+- [x] Run full UI, smoke, lint, build, performance, and diff checks without writing the public status snapshot.
+
+## Slice I. Theme-specific Scene Motion
+
+### Implementation
+
+- [x] Audit the reference runtime for fluid-field movement, page parallax, stellar starfield cadence, panel tilt, edge glow, performance budgets, visibility pausing, and reduced-motion cleanup.
+- [x] Add one event-driven pointer coalescer to the existing scene foundation; expose bounded motion state without React frame updates or another persistent render loop.
+- [x] Give `dusk | garden | stellar` distinct wash, texture, landmark, and footer keyframes while preserving all six light/dark material combinations.
+- [x] Reuse `RightScrollCards` pointer coordinates for one scene-tokenized local panel glow; keep the existing tilt and project interactions authoritative.
+- [x] Pause or remove the new motion for intro-active, hidden, coarse/reduced-motion, mobile, and cleanup paths.
+
+### Validation
+
+- [x] Assert three distinct animation signatures and changing normal-motion frames while retaining the existing single Flow Canvas and three foundation layers.
+- [x] Assert pointer parallax and local panel glow in fine-pointer mode, ambient-only behavior on coarse pointers, and paused/reduced static behavior without duplicate animation ownership.
+- [x] Recheck 320/390/430 mobile containment and desktop composition for all scenes.
+- [x] Run full UI, smoke, lint, build, performance, and diff checks without writing or staging `public/status/blog-semi-synthetic.json`.
+
 ## Files With Elevated Risk
 
 - `src/data/portfolio.ts`: large content catalog; avoid broad formatting or unrelated copy churn.

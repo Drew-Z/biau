@@ -32,7 +32,7 @@ export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: 
         <HeroTitleRotator poems={poems} />
 
         <p className="hero-body">
-          把 AI 产品、业务系统、移动应用与互动体验，组织成可验证、可抵达的解决方案。
+          记录每个产品从构想到上线的过程，并公开它的能力边界、当前状态与验证证据。
         </p>
 
         <SystemStatus />

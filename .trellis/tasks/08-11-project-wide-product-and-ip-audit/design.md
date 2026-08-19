@@ -289,3 +289,84 @@ scene overrides produce six combinations without duplicating component markup.
 The existing Flow renderer and CSS fallback remain the only ambient-motion
 owners. Reference-site 3D logo, external assets, global click delegation, theme
 debug controls, and boot-time GSAP are intentionally excluded.
+
+## 12. Scene Differentiation And Hero Balance Refinement
+
+The reference implementation establishes its three themes through more than a
+palette swap:
+
+- its default morning surface combines a warm spectral field, paper-like light
+  panels, and amber/blue navigation accents;
+- `nature` uses a lilac-to-cyan-to-green field, botanical color relationships,
+  and quieter organic surfaces;
+- `stellar` changes to a deep navy environment with a dedicated star field,
+  luminous edges, and darker translucent panels.
+
+BIAU Port keeps its independent `light | dark | auto` contrast dimension, but
+maps those structural ideas onto `dusk | garden | stellar`. Each harbor scene
+therefore owns three visible layers: a distinct Flow palette, a scene-specific
+full-viewport texture, and a scene-specific panel/card material. The texture is
+implemented with bounded CSS gradients above the existing Flow canvas; it adds
+no image request, starfield runtime, extra render loop, or third-party asset.
+
+The desktop Hero changes from a sparse 12-column projection to an explicit
+two-column composition. The intro stretches to the project-board height and
+centers vertically while preserving left-aligned reading; the project board
+remains the denser operational surface. Tablet/mobile return to one column and
+keep the existing project CTA, touch target, and no-overflow contracts.
+
+The positioning sentence becomes a truthful product statement about recording
+each product's path, capability boundary, current status, and evidence. It does
+not claim every listed project is currently online.
+
+## 13. Full-page Scene Foundations
+
+A second reference audit found that its themes remain identifiable even when the
+Flow field is static or visually quiet. The default scene keeps a warm paper field
+and spectral horizon, `nature` adds organic contour/fibre layers, and `stellar`
+uses a separate starfield plus chart-like luminous lines. Its footer remains part
+of the same environment instead of introducing an unrelated solid surface.
+
+BIAU Port implements the reusable structure inside `FlowBackground` as one fixed,
+non-interactive scene foundation containing `wash`, the existing Flow canvas,
+`texture`, and `landmark` layers. The three added layers are CSS-only and static;
+they create no new canvas, request, timer, or animation loop. Scene/theme tokens
+define all six material combinations. The public footer consumes matching
+scene-specific background, pattern, border, and shadow tokens so the environment
+continues below the Hero and on longer public routes. The existing canvas-ready,
+CSS-fallback, reduced-motion, routing, and stacking contracts remain unchanged.
+
+## 14. Scene Motion Fusion
+
+The motion audit separates the reference implementation into four reusable ideas:
+the existing fluid field, theme-specific material drift, event-driven pointer
+parallax, and a local panel edge glow. BIAU Port already owns the fluid field and
+project-board tilt, so this slice extends those owners instead of adding another
+runtime.
+
+`FlowBackground` owns one pointer-coalescing requestAnimationFrame that updates CSS
+variables on the existing scene foundation. It runs only after pointer input, uses
+no React state per frame, and resets on coarse pointers, reduced motion, intro,
+blur, or hidden documents. A small DOM state contract exposes `interactive`,
+`ambient`, `paused`, or `reduced` for deterministic checks. CSS uses independent
+`translate` and `transform` properties so pointer parallax and slow scene keyframes
+compose without overwriting each other.
+
+Each scene owns three animation signatures across the existing `wash`, `texture`,
+and `landmark` layers:
+
+- `dusk`: spectral wash drift, diagonal grain/tide travel, and a breathing horizon;
+- `garden`: soft canopy drift, contour migration, and organic ground breathing;
+- `stellar`: nebula drift, multi-depth star twinkle, and chart-line巡航.
+
+The existing `RightScrollCards` pointer handler also projects local pointer
+coordinates into one non-interactive glow layer. Scene tokens select warm spectral,
+organic, or stellar edge light without adding another event listener or render
+loop. Footer background positions continue the scene rhythm with a slow CSS-only
+drift.
+
+CSS animations pause while the intro is active or the page is hidden. Under
+`prefers-reduced-motion: reduce`, all new keyframes, pointer translation, panel
+glow, and footer drift are disabled while the existing stable Flow frame remains.
+No 3D Logo, GSAP timeline, brand asset, dedicated starfield Canvas, global click
+proxy, or debug control is copied from the reference site.

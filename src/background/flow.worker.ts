@@ -25,6 +25,7 @@ let timer: ReturnType<typeof setTimeout> | undefined
 let settledTimer: ReturnType<typeof setTimeout> | undefined
 let start = performance.now()
 let motionToken = 0
+const SETTLED_COMPOSITOR_DELAY_MS = 120
 
 function cancelFrame() {
   if (!timer) return
@@ -64,7 +65,7 @@ function postMotionSettled(token: number) {
       running: requestedRunning,
       motionToken: token,
     })
-  }, 50)
+  }, SETTLED_COMPOSITOR_DELAY_MS)
 }
 
 function updateMotion(nextReducedMotion: boolean, nextRequestedRunning: boolean, nextMotionToken: number) {

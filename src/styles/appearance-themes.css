@@ -1,46 +1,87 @@
 /* BIAU Port appearance contract: contrast mode x harbor scene. */
 :root {
   color-scheme: dark;
-  --home-page-solid: #081014;
-  --home-ink: #f4f0e6;
-  --home-copy: #b6c4c3;
-  --home-muted: #93a7aa;
-  --home-faint: #7d9195;
-  --home-line: #36505a;
-  --home-accent: #4fae9b;
-  --home-accent-strong: #7fc8b7;
-  --home-accent-soft: #203a3c;
-  --home-brand: #d3a75a;
-  --home-green: #4fae9b;
-  --home-amber: #d3a75a;
-  --home-violet: #9b8fd2;
-  --home-rose: #cf8294;
-  --home-nav-bg: rgb(16 27 32 / 94%);
-  --home-nav-border: #36505a;
+  --home-page-solid: #140c13;
+  --home-ink: #fff1e8;
+  --home-copy: #d3b7bb;
+  --home-muted: #b2969f;
+  --home-faint: #967c86;
+  --home-line: #694451;
+  --home-accent: #5fc1bd;
+  --home-accent-strong: #91d9d2;
+  --home-accent-soft: #3b2936;
+  --home-brand: #efad61;
+  --home-green: #5fc1bd;
+  --home-amber: #efad61;
+  --home-violet: #a78fd4;
+  --home-rose: #e17b91;
+  --home-nav-bg: rgb(35 21 31 / 94%);
+  --home-nav-border: #694451;
   --home-nav-shadow: 0 12px 28px rgb(0 0 0 / 22%);
-  --home-control-bg: #203138;
-  --home-control-ink: #d8e1de;
-  --home-panel-bg: rgb(18 33 40 / 96%);
-  --home-panel-border: rgb(54 80 90 / 64%);
-  --home-panel-shadow: 0 18px 48px rgb(0 0 0 / 30%);
-  --home-panel-pattern: linear-gradient(135deg, transparent 0 58%, rgb(79 174 155 / 8%) 58% 58.18%, transparent 58.18% 100%);
-  --home-card-bg: #173035;
-  --home-card-commerce: #28342c;
-  --home-card-preview: #242b3e;
-  --home-card-image: #332d37;
-  --home-card-border: rgb(54 80 90 / 62%);
+  --home-control-bg: #3a2835;
+  --home-control-ink: #f1dedd;
+  --home-panel-bg: rgb(40 24 35 / 96%);
+  --home-panel-border: rgb(137 78 91 / 66%);
+  --home-panel-shadow: 0 22px 52px rgb(18 5 13 / 38%);
+  --home-panel-highlight: rgb(255 221 202 / 16%);
+  --home-panel-pattern:
+    linear-gradient(164deg, transparent 0 41%, rgb(239 173 97 / 10%) 41.1% 41.3%, transparent 41.4% 100%),
+    linear-gradient(151deg, transparent 0 68%, rgb(95 193 189 / 9%) 68.1% 68.25%, transparent 68.35% 100%);
+  --home-card-bg: #35222f;
+  --home-card-commerce: #3b2f28;
+  --home-card-preview: #30263e;
+  --home-card-image: #432836;
+  --home-card-border: rgb(137 78 91 / 58%);
   --home-card-title: #f2f2ea;
-  --home-card-copy: #a9b9bb;
-  --home-action-bg: #23373e;
-  --home-action-ink: #e1e9e5;
-  --home-footer-link: #7fc8b7;
-  --home-footer-link-hover: #dff3ec;
-  --home-mobile-tab-bg: #0d171b;
-  --home-mobile-tab-active: #203a3c;
-  --home-logo-surface: #102329;
-  --home-logo-border: #715f38;
-  --home-canvas-opacity: 0.58;
-  --home-canvas-filter: saturate(0.68) brightness(0.68);
+  --home-card-copy: #c6aeb4;
+  --home-card-highlight: rgb(255 231 215 / 11%);
+  --home-card-shadow: 0 8px 18px rgb(16 4 11 / 14%);
+  --home-action-bg: #49303d;
+  --home-action-ink: #f7e5df;
+  --home-footer-link: #91d9d2;
+  --home-footer-link-hover: #e9fffb;
+  --home-mobile-tab-bg: #1c1119;
+  --home-mobile-tab-active: #3b2936;
+  --home-logo-surface: #2d1b28;
+  --home-logo-border: #9e6d43;
+  --home-canvas-opacity: 0.7;
+  --home-canvas-filter: saturate(0.98) brightness(0.78) contrast(1.04);
+  --home-scene-atmosphere:
+    linear-gradient(168deg, transparent 0 45%, rgb(239 173 97 / 18%) 45.1% 45.3%, transparent 45.4% 100%),
+    repeating-linear-gradient(168deg, transparent 0 84px, rgb(225 123 145 / 9%) 85px, transparent 87px 164px);
+  --home-scene-atmosphere-opacity: 0.74;
+  --home-scene-atmosphere-blend: screen;
+  --home-scene-detail:
+    linear-gradient(90deg, transparent 0 8%, rgb(95 193 189 / 9%) 8.1% 8.2%, transparent 8.3% 78%, rgb(239 173 97 / 8%) 78.1% 78.2%, transparent 78.3%),
+    linear-gradient(180deg, transparent 0 58%, rgb(239 173 97 / 10%) 58.1% 58.25%, transparent 58.35% 100%);
+  --home-scene-detail-opacity: 0.68;
+  --home-scene-detail-blend: screen;
+  --harbor-foundation-base: #140c13;
+  --harbor-foundation-wash:
+    radial-gradient(ellipse 78% 64% at 8% 14%, rgb(188 82 111 / 30%), transparent 68%),
+    radial-gradient(ellipse 70% 68% at 98% 42%, rgb(49 128 136 / 24%), transparent 72%),
+    linear-gradient(180deg, transparent 0 52%, rgb(51 23 36 / 32%) 72%, rgb(8 25 32 / 74%) 100%);
+  --harbor-foundation-wash-opacity: 0.78;
+  --harbor-foundation-wash-blend: soft-light;
+  --harbor-foundation-texture:
+    repeating-linear-gradient(168deg, transparent 0 108px, rgb(239 173 97 / 9%) 109px, transparent 111px 216px),
+    repeating-linear-gradient(90deg, transparent 0 239px, rgb(95 193 189 / 5%) 240px, transparent 242px 480px),
+    radial-gradient(circle, rgb(255 231 215 / 12%) 0 0.55px, transparent 0.85px);
+  --harbor-foundation-texture-size: auto, auto, 7px 7px;
+  --harbor-foundation-texture-position: center, center, 0 0;
+  --harbor-foundation-texture-opacity: 0.62;
+  --harbor-foundation-texture-blend: screen;
+  --harbor-foundation-landmark:
+    linear-gradient(180deg, transparent 0 61%, rgb(239 173 97 / 14%) 61.1% 61.25%, transparent 61.35% 100%),
+    radial-gradient(ellipse 84% 34% at 50% 104%, rgb(95 193 189 / 16%), transparent 74%);
+  --harbor-foundation-landmark-opacity: 0.72;
+  --harbor-foundation-landmark-blend: screen;
+  --harbor-footer-bg: linear-gradient(180deg, rgb(31 16 27 / 92%), rgb(9 23 30 / 98%));
+  --harbor-footer-pattern:
+    linear-gradient(165deg, transparent 0 52%, rgb(239 173 97 / 8%) 52.1% 52.25%, transparent 52.35% 100%),
+    repeating-linear-gradient(90deg, transparent 0 239px, rgb(95 193 189 / 5%) 240px, transparent 242px 480px);
+  --harbor-footer-border: rgb(239 173 97 / 24%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(255 221 202 / 10%), 0 -24px 60px rgb(9 23 30 / 24%);
   --biau-mark-shell-start: #163b5b;
   --biau-mark-shell-mid: #102a43;
   --biau-mark-shell-end: #071827;
@@ -55,46 +96,87 @@
 
 :root.light-theme {
   color-scheme: light;
-  --home-page-solid: #dbe7e5;
-  --home-ink: #13292e;
-  --home-copy: #304c51;
-  --home-muted: #506b70;
-  --home-faint: #657e82;
-  --home-line: #88a6a2;
-  --home-accent: #2c7668;
-  --home-accent-strong: #205f55;
-  --home-accent-soft: #cfe3dd;
-  --home-brand: #96631e;
-  --home-green: #2f796b;
-  --home-amber: #98651f;
-  --home-violet: #655890;
-  --home-rose: #925568;
-  --home-nav-bg: rgb(244 249 247 / 94%);
-  --home-nav-border: #91aaa7;
-  --home-nav-shadow: 0 12px 28px rgb(41 68 72 / 13%);
-  --home-control-bg: #d9e7e3;
-  --home-control-ink: #18343a;
-  --home-panel-bg: rgb(239 246 243 / 97%);
-  --home-panel-border: rgb(105 139 135 / 62%);
-  --home-panel-shadow: 0 18px 48px rgb(38 68 70 / 14%);
-  --home-panel-pattern: linear-gradient(135deg, transparent 0 58%, rgb(44 118 104 / 10%) 58% 58.18%, transparent 58.18% 100%);
-  --home-card-bg: #dceae5;
-  --home-card-commerce: #e7eadc;
-  --home-card-preview: #e2e5ef;
-  --home-card-image: #ece1e5;
-  --home-card-border: rgb(93 127 124 / 54%);
-  --home-card-title: #142d32;
-  --home-card-copy: #405d62;
-  --home-action-bg: #c9ddd6;
-  --home-action-ink: #173c3c;
-  --home-footer-link: #245f55;
-  --home-footer-link-hover: #153f39;
-  --home-mobile-tab-bg: #edf4f1;
-  --home-mobile-tab-active: #cfe3dd;
-  --home-logo-surface: #e5eeea;
-  --home-logo-border: #9b7a3f;
-  --home-canvas-opacity: 0.4;
-  --home-canvas-filter: saturate(0.72) brightness(1.02) contrast(0.94);
+  --home-page-solid: #f2e6e0;
+  --home-ink: #342532;
+  --home-copy: #654f59;
+  --home-muted: #765e68;
+  --home-faint: #866f78;
+  --home-line: #b6979f;
+  --home-accent: #277a79;
+  --home-accent-strong: #1f6265;
+  --home-accent-soft: #d8e8e4;
+  --home-brand: #a55f25;
+  --home-green: #2b7c70;
+  --home-amber: #aa652d;
+  --home-violet: #695e96;
+  --home-rose: #a8556b;
+  --home-nav-bg: rgb(250 245 242 / 95%);
+  --home-nav-border: #c3aaae;
+  --home-nav-shadow: 0 12px 28px rgb(78 44 54 / 13%);
+  --home-control-bg: #eadbd8;
+  --home-control-ink: #3d2c38;
+  --home-panel-bg: rgb(249 244 241 / 97%);
+  --home-panel-border: rgb(167 116 124 / 58%);
+  --home-panel-shadow: 0 20px 48px rgb(91 51 61 / 14%);
+  --home-panel-highlight: rgb(255 255 255 / 72%);
+  --home-panel-pattern:
+    linear-gradient(164deg, transparent 0 41%, rgb(170 101 45 / 10%) 41.1% 41.3%, transparent 41.4% 100%),
+    linear-gradient(151deg, transparent 0 68%, rgb(39 122 121 / 9%) 68.1% 68.25%, transparent 68.35% 100%);
+  --home-card-bg: #f1dfdc;
+  --home-card-commerce: #eee4d4;
+  --home-card-preview: #e6e1ed;
+  --home-card-image: #f0dde2;
+  --home-card-border: rgb(151 104 113 / 50%);
+  --home-card-title: #382934;
+  --home-card-copy: #715963;
+  --home-card-highlight: rgb(255 255 255 / 62%);
+  --home-card-shadow: 0 7px 18px rgb(91 51 61 / 8%);
+  --home-action-bg: #ead5d1;
+  --home-action-ink: #4a3039;
+  --home-footer-link: #245f61;
+  --home-footer-link-hover: #173f42;
+  --home-mobile-tab-bg: #faf2ee;
+  --home-mobile-tab-active: #eadbd8;
+  --home-logo-surface: #f3e7e1;
+  --home-logo-border: #a87847;
+  --home-canvas-opacity: 0.52;
+  --home-canvas-filter: saturate(0.92) brightness(1.02) contrast(0.98);
+  --home-scene-atmosphere:
+    linear-gradient(168deg, transparent 0 45%, rgb(170 101 45 / 16%) 45.1% 45.3%, transparent 45.4% 100%),
+    repeating-linear-gradient(168deg, transparent 0 84px, rgb(168 85 107 / 8%) 85px, transparent 87px 164px);
+  --home-scene-atmosphere-opacity: 0.72;
+  --home-scene-atmosphere-blend: multiply;
+  --home-scene-detail:
+    linear-gradient(90deg, transparent 0 8%, rgb(39 122 121 / 8%) 8.1% 8.2%, transparent 8.3% 78%, rgb(170 101 45 / 8%) 78.1% 78.2%, transparent 78.3%),
+    linear-gradient(180deg, transparent 0 58%, rgb(170 101 45 / 9%) 58.1% 58.25%, transparent 58.35% 100%);
+  --home-scene-detail-opacity: 0.58;
+  --home-scene-detail-blend: multiply;
+  --harbor-foundation-base: #f2e6e0;
+  --harbor-foundation-wash:
+    radial-gradient(ellipse 76% 62% at 5% 10%, rgb(206 134 153 / 24%), transparent 68%),
+    radial-gradient(ellipse 70% 64% at 96% 38%, rgb(92 166 166 / 20%), transparent 72%),
+    linear-gradient(180deg, rgb(255 252 248 / 38%), transparent 46%, rgb(218 236 232 / 42%) 100%);
+  --harbor-foundation-wash-opacity: 0.78;
+  --harbor-foundation-wash-blend: soft-light;
+  --harbor-foundation-texture:
+    repeating-linear-gradient(168deg, transparent 0 108px, rgb(170 101 45 / 8%) 109px, transparent 111px 216px),
+    repeating-linear-gradient(90deg, transparent 0 239px, rgb(39 122 121 / 6%) 240px, transparent 242px 480px),
+    radial-gradient(circle, rgb(52 37 50 / 14%) 0 0.45px, transparent 0.8px);
+  --harbor-foundation-texture-size: auto, auto, 7px 7px;
+  --harbor-foundation-texture-position: center, center, 0 0;
+  --harbor-foundation-texture-opacity: 0.48;
+  --harbor-foundation-texture-blend: multiply;
+  --harbor-foundation-landmark:
+    linear-gradient(180deg, transparent 0 61%, rgb(170 101 45 / 11%) 61.1% 61.25%, transparent 61.35% 100%),
+    radial-gradient(ellipse 84% 34% at 50% 104%, rgb(39 122 121 / 12%), transparent 74%);
+  --harbor-foundation-landmark-opacity: 0.58;
+  --harbor-foundation-landmark-blend: multiply;
+  --harbor-footer-bg: linear-gradient(180deg, rgb(245 235 231 / 94%), rgb(221 236 232 / 98%));
+  --harbor-footer-pattern:
+    linear-gradient(165deg, transparent 0 52%, rgb(170 101 45 / 8%) 52.1% 52.25%, transparent 52.35% 100%),
+    repeating-linear-gradient(90deg, transparent 0 239px, rgb(39 122 121 / 5%) 240px, transparent 242px 480px);
+  --harbor-footer-border: rgb(165 95 37 / 24%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(255 255 255 / 70%), 0 -24px 60px rgb(91 51 61 / 10%);
 }
 
 :root:not(.light-theme)[data-harbor-scene='garden'] {
@@ -113,12 +195,18 @@
   --home-control-bg: #1d3a31;
   --home-panel-bg: rgb(16 40 31 / 96%);
   --home-panel-border: rgb(70 112 87 / 64%);
-  --home-panel-pattern: linear-gradient(135deg, transparent 0 58%, rgb(112 180 139 / 9%) 58% 58.18%, transparent 58.18% 100%);
+  --home-panel-shadow: 0 22px 52px rgb(2 19 12 / 36%);
+  --home-panel-highlight: rgb(210 245 220 / 13%);
+  --home-panel-pattern:
+    repeating-radial-gradient(ellipse at 0% 100%, transparent 0 54px, rgb(112 180 139 / 10%) 55px 56px, transparent 57px 104px),
+    linear-gradient(118deg, transparent 0 72%, rgb(215 193 111 / 8%) 72.1% 72.3%, transparent 72.4% 100%);
   --home-card-bg: #18372c;
   --home-card-commerce: #303b2d;
   --home-card-preview: #273445;
   --home-card-image: #392f36;
   --home-card-border: rgb(70 112 87 / 58%);
+  --home-card-highlight: rgb(226 255 232 / 10%);
+  --home-card-shadow: 0 8px 18px rgb(2 19 12 / 14%);
   --home-action-bg: #24443a;
   --home-footer-link: #9bd0ab;
   --home-footer-link-hover: #e0f3e4;
@@ -126,7 +214,44 @@
   --home-mobile-tab-active: #214235;
   --home-logo-surface: #17382d;
   --home-logo-border: #78945f;
-  --home-canvas-filter: saturate(0.72) brightness(0.72);
+  --home-canvas-opacity: 0.68;
+  --home-canvas-filter: saturate(0.92) brightness(0.73) contrast(1.03);
+  --home-scene-atmosphere:
+    repeating-radial-gradient(ellipse at 4% 100%, transparent 0 72px, rgb(155 208 171 / 12%) 73px 74px, transparent 75px 132px),
+    repeating-linear-gradient(68deg, transparent 0 118px, rgb(215 193 111 / 7%) 119px, transparent 121px 236px);
+  --home-scene-atmosphere-opacity: 0.72;
+  --home-scene-atmosphere-blend: screen;
+  --home-scene-detail:
+    linear-gradient(112deg, transparent 0 24%, rgb(112 180 139 / 10%) 24.1% 24.25%, transparent 24.35% 66%, rgb(215 193 111 / 7%) 66.1% 66.2%, transparent 66.3%),
+    repeating-linear-gradient(22deg, transparent 0 146px, rgb(112 180 139 / 6%) 147px, transparent 149px 292px);
+  --home-scene-detail-opacity: 0.62;
+  --home-scene-detail-blend: screen;
+  --harbor-foundation-base: #07130f;
+  --harbor-foundation-wash:
+    radial-gradient(ellipse 72% 58% at 4% 4%, rgb(131 95 154 / 24%), transparent 68%),
+    radial-gradient(ellipse 72% 74% at 94% 34%, rgb(83 168 128 / 28%), transparent 72%),
+    linear-gradient(180deg, transparent 0 48%, rgb(18 72 54 / 34%) 74%, rgb(7 27 23 / 82%) 100%);
+  --harbor-foundation-wash-opacity: 0.78;
+  --harbor-foundation-wash-blend: screen;
+  --harbor-foundation-texture:
+    repeating-radial-gradient(ellipse at 2% 100%, transparent 0 76px, rgb(155 208 171 / 12%) 77px 78px, transparent 79px 142px),
+    repeating-radial-gradient(ellipse at 102% 10%, transparent 0 96px, rgb(215 193 111 / 8%) 97px 98px, transparent 99px 184px),
+    radial-gradient(circle, rgb(226 255 232 / 12%) 0 0.5px, transparent 0.85px);
+  --harbor-foundation-texture-size: auto, auto, 8px 8px;
+  --harbor-foundation-texture-position: center, center, 0 0;
+  --harbor-foundation-texture-opacity: 0.68;
+  --harbor-foundation-texture-blend: screen;
+  --harbor-foundation-landmark:
+    radial-gradient(ellipse 82% 28% at 42% 106%, rgb(112 180 139 / 18%), transparent 72%),
+    linear-gradient(112deg, transparent 0 62%, rgb(215 193 111 / 8%) 62.1% 62.25%, transparent 62.35% 100%);
+  --harbor-foundation-landmark-opacity: 0.72;
+  --harbor-foundation-landmark-blend: screen;
+  --harbor-footer-bg: linear-gradient(180deg, rgb(8 30 23 / 94%), rgb(5 19 16 / 99%));
+  --harbor-footer-pattern:
+    repeating-radial-gradient(ellipse at 0% 100%, transparent 0 68px, rgb(155 208 171 / 10%) 69px 70px, transparent 71px 128px),
+    linear-gradient(118deg, transparent 0 72%, rgb(215 193 111 / 7%) 72.1% 72.3%, transparent 72.4% 100%);
+  --harbor-footer-border: rgb(112 180 139 / 26%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(210 245 220 / 10%), 0 -24px 60px rgb(2 19 12 / 24%);
   --biau-mark-shell-start: #285142;
   --biau-mark-shell-mid: #153d31;
   --biau-mark-shell-end: #0b241d;
@@ -154,12 +279,18 @@
   --home-control-ink: #1d3926;
   --home-panel-bg: rgb(239 247 240 / 97%);
   --home-panel-border: rgb(111 145 118 / 60%);
-  --home-panel-pattern: linear-gradient(135deg, transparent 0 58%, rgb(71 124 88 / 10%) 58% 58.18%, transparent 58.18% 100%);
+  --home-panel-shadow: 0 20px 48px rgb(45 75 51 / 14%);
+  --home-panel-highlight: rgb(255 255 255 / 72%);
+  --home-panel-pattern:
+    repeating-radial-gradient(ellipse at 0% 100%, transparent 0 54px, rgb(71 124 88 / 10%) 55px 56px, transparent 57px 104px),
+    linear-gradient(118deg, transparent 0 72%, rgb(128 103 37 / 8%) 72.1% 72.3%, transparent 72.4% 100%);
   --home-card-bg: #dce9df;
   --home-card-commerce: #e6ead9;
   --home-card-preview: #e2e7ec;
   --home-card-image: #ede3e2;
   --home-card-border: rgb(102 134 108 / 50%);
+  --home-card-highlight: rgb(255 255 255 / 60%);
+  --home-card-shadow: 0 7px 18px rgb(45 75 51 / 8%);
   --home-action-bg: #ccdfd0;
   --home-action-ink: #21442d;
   --home-footer-link: #345f43;
@@ -168,7 +299,44 @@
   --home-mobile-tab-active: #d2e5d6;
   --home-logo-surface: #e4eee6;
   --home-logo-border: #869765;
-  --home-canvas-filter: saturate(0.76) brightness(1.01) contrast(0.96);
+  --home-canvas-opacity: 0.56;
+  --home-canvas-filter: saturate(0.9) brightness(1.01) contrast(0.97);
+  --home-scene-atmosphere:
+    repeating-radial-gradient(ellipse at 4% 100%, transparent 0 72px, rgb(71 124 88 / 11%) 73px 74px, transparent 75px 132px),
+    repeating-linear-gradient(68deg, transparent 0 118px, rgb(128 103 37 / 6%) 119px, transparent 121px 236px);
+  --home-scene-atmosphere-opacity: 0.68;
+  --home-scene-atmosphere-blend: multiply;
+  --home-scene-detail:
+    linear-gradient(112deg, transparent 0 24%, rgb(71 124 88 / 9%) 24.1% 24.25%, transparent 24.35% 66%, rgb(128 103 37 / 6%) 66.1% 66.2%, transparent 66.3%),
+    repeating-linear-gradient(22deg, transparent 0 146px, rgb(71 124 88 / 5%) 147px, transparent 149px 292px);
+  --home-scene-detail-opacity: 0.56;
+  --home-scene-detail-blend: multiply;
+  --harbor-foundation-base: #e1eee4;
+  --harbor-foundation-wash:
+    radial-gradient(ellipse 72% 58% at 4% 4%, rgb(171 145 190 / 22%), transparent 68%),
+    radial-gradient(ellipse 72% 74% at 94% 34%, rgb(111 185 145 / 24%), transparent 72%),
+    linear-gradient(180deg, rgb(249 252 246 / 38%), transparent 48%, rgb(204 229 211 / 46%) 100%);
+  --harbor-foundation-wash-opacity: 0.76;
+  --harbor-foundation-wash-blend: soft-light;
+  --harbor-foundation-texture:
+    repeating-radial-gradient(ellipse at 2% 100%, transparent 0 76px, rgb(71 124 88 / 11%) 77px 78px, transparent 79px 142px),
+    repeating-radial-gradient(ellipse at 102% 10%, transparent 0 96px, rgb(128 103 37 / 7%) 97px 98px, transparent 99px 184px),
+    radial-gradient(circle, rgb(27 48 34 / 14%) 0 0.45px, transparent 0.8px);
+  --harbor-foundation-texture-size: auto, auto, 8px 8px;
+  --harbor-foundation-texture-position: center, center, 0 0;
+  --harbor-foundation-texture-opacity: 0.54;
+  --harbor-foundation-texture-blend: multiply;
+  --harbor-foundation-landmark:
+    radial-gradient(ellipse 82% 28% at 42% 106%, rgb(71 124 88 / 14%), transparent 72%),
+    linear-gradient(112deg, transparent 0 62%, rgb(128 103 37 / 7%) 62.1% 62.25%, transparent 62.35% 100%);
+  --harbor-foundation-landmark-opacity: 0.58;
+  --harbor-foundation-landmark-blend: multiply;
+  --harbor-footer-bg: linear-gradient(180deg, rgb(234 244 235 / 95%), rgb(211 231 217 / 99%));
+  --harbor-footer-pattern:
+    repeating-radial-gradient(ellipse at 0% 100%, transparent 0 68px, rgb(71 124 88 / 9%) 69px 70px, transparent 71px 128px),
+    linear-gradient(118deg, transparent 0 72%, rgb(128 103 37 / 6%) 72.1% 72.3%, transparent 72.4% 100%);
+  --harbor-footer-border: rgb(71 124 88 / 24%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(255 255 255 / 72%), 0 -24px 60px rgb(45 75 51 / 10%);
   --biau-mark-shell-start: #38654e;
   --biau-mark-shell-mid: #234c39;
   --biau-mark-shell-end: #123024;
@@ -195,12 +363,18 @@
   --home-control-bg: #242f4c;
   --home-panel-bg: rgb(18 24 50 / 96%);
   --home-panel-border: rgb(73 89 132 / 66%);
-  --home-panel-pattern: linear-gradient(135deg, transparent 0 58%, rgb(142 212 208 / 9%) 58% 58.18%, transparent 58.18% 100%);
+  --home-panel-shadow: 0 24px 58px rgb(1 5 20 / 44%);
+  --home-panel-highlight: rgb(176 229 223 / 12%);
+  --home-panel-pattern:
+    radial-gradient(circle at 18px 20px, rgb(238 241 251 / 16%) 0 1px, transparent 1.4px),
+    linear-gradient(136deg, transparent 0 54%, rgb(142 212 208 / 11%) 54.1% 54.25%, transparent 54.35% 100%);
   --home-card-bg: #1b2d45;
   --home-card-commerce: #303448;
   --home-card-preview: #242f52;
   --home-card-image: #362f4a;
   --home-card-border: rgb(73 89 132 / 62%);
+  --home-card-highlight: rgb(190 216 255 / 10%);
+  --home-card-shadow: 0 8px 20px rgb(1 5 20 / 18%);
   --home-action-bg: #263953;
   --home-footer-link: #8ed4d0;
   --home-footer-link-hover: #d6f3f0;
@@ -208,7 +382,50 @@
   --home-mobile-tab-active: #263953;
   --home-logo-surface: #182541;
   --home-logo-border: #796b9d;
-  --home-canvas-filter: saturate(0.78) brightness(0.72);
+  --home-canvas-opacity: 0.76;
+  --home-canvas-filter: saturate(1.08) brightness(0.7) contrast(1.08);
+  --home-scene-atmosphere:
+    radial-gradient(circle at 18px 22px, rgb(238 241 251 / 72%) 0 1px, transparent 1.35px),
+    radial-gradient(circle at 54px 46px, rgb(142 212 208 / 58%) 0 1px, transparent 1.4px),
+    linear-gradient(132deg, transparent 0 36%, rgb(113 103 169 / 10%) 44%, transparent 58%);
+  --home-scene-atmosphere-size: 72px 72px, 110px 110px, 100% 100%;
+  --home-scene-atmosphere-position: 0 0, 16px 8px, center;
+  --home-scene-atmosphere-opacity: 0.78;
+  --home-scene-atmosphere-blend: screen;
+  --home-scene-detail:
+    linear-gradient(128deg, transparent 0 30%, rgb(142 212 208 / 12%) 30.1% 30.22%, transparent 30.32% 67%, rgb(197 168 226 / 10%) 67.1% 67.22%, transparent 67.32%),
+    linear-gradient(36deg, transparent 0 74%, rgb(238 241 251 / 8%) 74.1% 74.2%, transparent 74.3% 100%);
+  --home-scene-detail-opacity: 0.7;
+  --home-scene-detail-blend: screen;
+  --harbor-foundation-base: #050817;
+  --harbor-foundation-wash:
+    radial-gradient(ellipse 68% 54% at 18% 18%, rgb(59 70 147 / 30%), transparent 70%),
+    radial-gradient(ellipse 60% 72% at 92% 42%, rgb(34 112 133 / 22%), transparent 72%),
+    radial-gradient(ellipse 48% 44% at 52% 106%, rgb(112 75 153 / 18%), transparent 76%),
+    linear-gradient(180deg, rgb(4 7 19 / 14%), rgb(3 7 20 / 74%));
+  --harbor-foundation-wash-opacity: 0.8;
+  --harbor-foundation-wash-blend: screen;
+  --harbor-foundation-texture:
+    radial-gradient(circle at 18px 22px, rgb(238 241 251 / 82%) 0 0.8px, transparent 1.2px),
+    radial-gradient(circle at 54px 46px, rgb(142 212 208 / 62%) 0 0.7px, transparent 1.15px),
+    radial-gradient(circle at 31px 68px, rgb(197 168 226 / 44%) 0 0.6px, transparent 1px);
+  --harbor-foundation-texture-size: 72px 72px, 110px 110px, 148px 148px;
+  --harbor-foundation-texture-position: 0 0, 16px 8px, 42px 18px;
+  --harbor-foundation-texture-opacity: 0.8;
+  --harbor-foundation-texture-blend: screen;
+  --harbor-foundation-landmark:
+    linear-gradient(128deg, transparent 0 30%, rgb(142 212 208 / 13%) 30.1% 30.22%, transparent 30.32% 67%, rgb(197 168 226 / 11%) 67.1% 67.22%, transparent 67.32%),
+    linear-gradient(180deg, transparent 0 72%, rgb(142 212 208 / 10%) 72.1% 72.22%, transparent 72.32% 100%);
+  --harbor-foundation-landmark-opacity: 0.74;
+  --harbor-foundation-landmark-blend: screen;
+  --harbor-footer-bg: linear-gradient(180deg, rgb(7 12 30 / 96%), rgb(3 7 18 / 99%));
+  --harbor-footer-pattern:
+    radial-gradient(circle at 18px 22px, rgb(238 241 251 / 45%) 0 0.7px, transparent 1.1px),
+    radial-gradient(circle at 54px 46px, rgb(142 212 208 / 34%) 0 0.65px, transparent 1.05px),
+    linear-gradient(128deg, transparent 0 68%, rgb(197 168 226 / 8%) 68.1% 68.22%, transparent 68.32% 100%);
+  --harbor-footer-pattern-size: 72px 72px, 110px 110px, auto;
+  --harbor-footer-border: rgb(142 212 208 / 24%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(176 229 223 / 10%), 0 -28px 68px rgb(1 5 20 / 30%);
   --biau-mark-shell-start: #2c3f72;
   --biau-mark-shell-mid: #1b2b55;
   --biau-mark-shell-end: #0b1330;
@@ -236,12 +453,18 @@
   --home-control-ink: #243653;
   --home-panel-bg: rgb(241 244 250 / 97%);
   --home-panel-border: rgb(123 139 174 / 60%);
-  --home-panel-pattern: linear-gradient(135deg, transparent 0 58%, rgb(70 120 132 / 10%) 58% 58.18%, transparent 58.18% 100%);
+  --home-panel-shadow: 0 20px 50px rgb(48 61 101 / 15%);
+  --home-panel-highlight: rgb(255 255 255 / 76%);
+  --home-panel-pattern:
+    radial-gradient(circle at 18px 20px, rgb(28 41 67 / 13%) 0 1px, transparent 1.4px),
+    linear-gradient(136deg, transparent 0 54%, rgb(70 120 132 / 10%) 54.1% 54.25%, transparent 54.35% 100%);
   --home-card-bg: #dde6ee;
   --home-card-commerce: #e6e7df;
   --home-card-preview: #dfe4f0;
   --home-card-image: #e9e1ec;
   --home-card-border: rgb(112 129 165 / 50%);
+  --home-card-highlight: rgb(255 255 255 / 64%);
+  --home-card-shadow: 0 7px 18px rgb(48 61 101 / 9%);
   --home-action-bg: #d1ddea;
   --home-action-ink: #263d59;
   --home-footer-link: #315e69;
@@ -250,7 +473,50 @@
   --home-mobile-tab-active: #d2dde8;
   --home-logo-surface: #e7ebf5;
   --home-logo-border: #8572a5;
-  --home-canvas-filter: saturate(0.74) brightness(1.01) contrast(0.96);
+  --home-canvas-opacity: 0.58;
+  --home-canvas-filter: saturate(0.94) brightness(1.01) contrast(0.98);
+  --home-scene-atmosphere:
+    radial-gradient(circle at 18px 22px, rgb(28 41 67 / 30%) 0 1px, transparent 1.35px),
+    radial-gradient(circle at 54px 46px, rgb(70 120 132 / 26%) 0 1px, transparent 1.4px),
+    linear-gradient(132deg, transparent 0 36%, rgb(113 89 157 / 9%) 44%, transparent 58%);
+  --home-scene-atmosphere-size: 72px 72px, 110px 110px, 100% 100%;
+  --home-scene-atmosphere-position: 0 0, 16px 8px, center;
+  --home-scene-atmosphere-opacity: 0.62;
+  --home-scene-atmosphere-blend: multiply;
+  --home-scene-detail:
+    linear-gradient(128deg, transparent 0 30%, rgb(70 120 132 / 10%) 30.1% 30.22%, transparent 30.32% 67%, rgb(113 89 157 / 9%) 67.1% 67.22%, transparent 67.32%),
+    linear-gradient(36deg, transparent 0 74%, rgb(28 41 67 / 7%) 74.1% 74.2%, transparent 74.3% 100%);
+  --home-scene-detail-opacity: 0.52;
+  --home-scene-detail-blend: multiply;
+  --harbor-foundation-base: #e5eaf3;
+  --harbor-foundation-wash:
+    radial-gradient(ellipse 68% 54% at 18% 18%, rgb(132 133 192 / 22%), transparent 70%),
+    radial-gradient(ellipse 60% 72% at 92% 42%, rgb(103 164 179 / 18%), transparent 72%),
+    radial-gradient(ellipse 48% 44% at 52% 106%, rgb(157 133 184 / 14%), transparent 76%),
+    linear-gradient(180deg, rgb(250 252 255 / 32%), rgb(211 221 236 / 52%));
+  --harbor-foundation-wash-opacity: 0.74;
+  --harbor-foundation-wash-blend: soft-light;
+  --harbor-foundation-texture:
+    radial-gradient(circle at 18px 22px, rgb(28 41 67 / 34%) 0 0.75px, transparent 1.15px),
+    radial-gradient(circle at 54px 46px, rgb(70 120 132 / 28%) 0 0.65px, transparent 1.1px),
+    radial-gradient(circle at 31px 68px, rgb(113 89 157 / 22%) 0 0.55px, transparent 0.95px);
+  --harbor-foundation-texture-size: 72px 72px, 110px 110px, 148px 148px;
+  --harbor-foundation-texture-position: 0 0, 16px 8px, 42px 18px;
+  --harbor-foundation-texture-opacity: 0.58;
+  --harbor-foundation-texture-blend: multiply;
+  --harbor-foundation-landmark:
+    linear-gradient(128deg, transparent 0 30%, rgb(70 120 132 / 11%) 30.1% 30.22%, transparent 30.32% 67%, rgb(113 89 157 / 9%) 67.1% 67.22%, transparent 67.32%),
+    linear-gradient(180deg, transparent 0 72%, rgb(70 120 132 / 8%) 72.1% 72.22%, transparent 72.32% 100%);
+  --harbor-foundation-landmark-opacity: 0.56;
+  --harbor-foundation-landmark-blend: multiply;
+  --harbor-footer-bg: linear-gradient(180deg, rgb(235 240 249 / 96%), rgb(213 222 237 / 99%));
+  --harbor-footer-pattern:
+    radial-gradient(circle at 18px 22px, rgb(28 41 67 / 20%) 0 0.65px, transparent 1.05px),
+    radial-gradient(circle at 54px 46px, rgb(70 120 132 / 16%) 0 0.6px, transparent 1px),
+    linear-gradient(128deg, transparent 0 68%, rgb(113 89 157 / 7%) 68.1% 68.22%, transparent 68.32% 100%);
+  --harbor-footer-pattern-size: 72px 72px, 110px 110px, auto;
+  --harbor-footer-border: rgb(70 120 132 / 22%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(255 255 255 / 74%), 0 -26px 64px rgb(48 61 101 / 12%);
   --biau-mark-shell-start: #40578d;
   --biau-mark-shell-mid: #2a3e70;
   --biau-mark-shell-end: #15254d;
@@ -259,4 +525,198 @@
   --biau-mark-water-mid: #eff7f7;
   --biau-mark-water-end: #c4a8e1;
   --biau-mark-beacon: #c4a8e1;
+}
+
+.harbor-scene-foundation {
+  --harbor-pointer-wash-x: 0px;
+  --harbor-pointer-wash-y: 0px;
+  --harbor-pointer-texture-x: 0px;
+  --harbor-pointer-texture-y: 0px;
+  --harbor-pointer-landmark-x: 0px;
+  --harbor-pointer-landmark-y: 0px;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+  contain: strict;
+  background: var(--harbor-foundation-base);
+  transition: background-color 0.35s var(--ease-smooth);
+}
+
+.harbor-scene-foundation > * {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.harbor-scene-foundation__wash {
+  z-index: 0;
+  inset: -10%;
+  background: var(--harbor-foundation-wash);
+  mix-blend-mode: var(--harbor-foundation-wash-blend);
+  opacity: var(--harbor-foundation-wash-opacity);
+  translate: var(--harbor-pointer-wash-x) var(--harbor-pointer-wash-y);
+  transform-origin: 50% 44%;
+  transition: translate 260ms var(--ease-smooth);
+  will-change: transform, translate, opacity;
+}
+
+.harbor-scene-foundation > .flow-background {
+  z-index: 1;
+}
+
+.harbor-scene-foundation__texture {
+  z-index: 2;
+  inset: -6%;
+  background-image: var(--harbor-foundation-texture);
+  background-size: var(--harbor-foundation-texture-size, auto);
+  background-position: var(--harbor-foundation-texture-position, center);
+  mix-blend-mode: var(--harbor-foundation-texture-blend);
+  opacity: var(--harbor-foundation-texture-opacity);
+  translate: var(--harbor-pointer-texture-x) var(--harbor-pointer-texture-y);
+  transform-origin: center;
+  transition: translate 220ms var(--ease-smooth);
+  will-change: transform, translate, opacity;
+}
+
+.harbor-scene-foundation__landmark {
+  z-index: 3;
+  inset: -5%;
+  background: var(--harbor-foundation-landmark);
+  mix-blend-mode: var(--harbor-foundation-landmark-blend);
+  opacity: var(--harbor-foundation-landmark-opacity);
+  translate: var(--harbor-pointer-landmark-x) var(--harbor-pointer-landmark-y);
+  transform-origin: 50% 82%;
+  transition: translate 300ms var(--ease-smooth);
+  will-change: transform, translate, opacity;
+}
+
+:root[data-harbor-scene='dusk'] .harbor-scene-foundation__wash {
+  animation: harborDuskWashDrift 25s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='dusk'] .harbor-scene-foundation__texture {
+  animation: harborDuskTideGrain 19s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='dusk'] .harbor-scene-foundation__landmark {
+  animation: harborDuskHorizonPulse 13s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='garden'] .harbor-scene-foundation__wash {
+  animation: harborGardenCanopyDrift 28s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='garden'] .harbor-scene-foundation__texture {
+  animation: harborGardenContourMigration 22s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='garden'] .harbor-scene-foundation__landmark {
+  animation: harborGardenGroundBreath 15s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='stellar'] .harbor-scene-foundation__wash {
+  animation: harborStellarNebulaDrift 32s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='stellar'] .harbor-scene-foundation__texture {
+  animation: harborStellarStarTwinkle 10s var(--ease-in-out) infinite alternate;
+}
+
+:root[data-harbor-scene='stellar'] .harbor-scene-foundation__landmark {
+  animation: harborStellarChartCruise 24s var(--ease-in-out) infinite alternate;
+}
+
+.harbor-scene-foundation[data-scene-motion='paused'] > :is(
+    .harbor-scene-foundation__wash,
+    .harbor-scene-foundation__texture,
+    .harbor-scene-foundation__landmark
+  ),
+html.harbor-intro-active .harbor-scene-foundation > :is(
+    .harbor-scene-foundation__wash,
+    .harbor-scene-foundation__texture,
+    .harbor-scene-foundation__landmark
+  ) {
+  animation-play-state: paused;
+}
+
+.harbor-scene-foundation[data-scene-motion='reduced'] > :is(
+    .harbor-scene-foundation__wash,
+    .harbor-scene-foundation__texture,
+    .harbor-scene-foundation__landmark
+  ) {
+  animation: none;
+  translate: 0 0;
+  transition: none;
+  will-change: auto;
+}
+
+@keyframes harborDuskWashDrift {
+  0% { transform: translate3d(-2.5%, -1.2%, 0) rotate(-0.8deg) scale(1.03); }
+  52% { transform: translate3d(1.4%, 1.1%, 0) rotate(0.45deg) scale(1.07); }
+  100% { transform: translate3d(3%, -0.4%, 0) rotate(0.9deg) scale(1.045); }
+}
+
+@keyframes harborDuskTideGrain {
+  0% { transform: translate3d(-1.8%, 0.8%, 0) rotate(-0.2deg); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.72); }
+  48% { transform: translate3d(0.6%, -0.6%, 0) rotate(0.15deg); opacity: var(--harbor-foundation-texture-opacity); }
+  100% { transform: translate3d(2.2%, -1.1%, 0) rotate(0.35deg); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.82); }
+}
+
+@keyframes harborDuskHorizonPulse {
+  0% { transform: translate3d(-1.2%, 0.6%, 0) scaleX(1.01); opacity: calc(var(--harbor-foundation-landmark-opacity) * 0.68); }
+  55% { transform: translate3d(0.4%, -0.7%, 0) scaleX(1.055); opacity: var(--harbor-foundation-landmark-opacity); }
+  100% { transform: translate3d(1.4%, 0.2%, 0) scaleX(1.025); opacity: calc(var(--harbor-foundation-landmark-opacity) * 0.78); }
+}
+
+@keyframes harborGardenCanopyDrift {
+  0% { transform: translate3d(-2.4%, 1.4%, 0) rotate(-1deg) scale(1.035); }
+  50% { transform: translate3d(1.2%, -1.5%, 0) rotate(0.6deg) scale(1.075); }
+  100% { transform: translate3d(2.8%, 0.4%, 0) rotate(1.2deg) scale(1.05); }
+}
+
+@keyframes harborGardenContourMigration {
+  0% { transform: translate3d(-2.2%, 1.2%, 0) rotate(-0.7deg) scale(1.01); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.7); }
+  46% { transform: translate3d(0.8%, -1%, 0) rotate(0.2deg) scale(1.045); opacity: var(--harbor-foundation-texture-opacity); }
+  100% { transform: translate3d(2.4%, -0.2%, 0) rotate(0.85deg) scale(1.02); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.8); }
+}
+
+@keyframes harborGardenGroundBreath {
+  0% { transform: translate3d(-0.8%, 1.6%, 0) scale(1.01, 0.96); opacity: calc(var(--harbor-foundation-landmark-opacity) * 0.64); }
+  52% { transform: translate3d(0.5%, -0.8%, 0) scale(1.045, 1.06); opacity: var(--harbor-foundation-landmark-opacity); }
+  100% { transform: translate3d(1.1%, 0.4%, 0) scale(1.02, 1); opacity: calc(var(--harbor-foundation-landmark-opacity) * 0.78); }
+}
+
+@keyframes harborStellarNebulaDrift {
+  0% { transform: translate3d(-2%, -1.4%, 0) rotate(-0.6deg) scale(1.025); }
+  48% { transform: translate3d(1.3%, 0.6%, 0) rotate(0.35deg) scale(1.07); }
+  100% { transform: translate3d(2.5%, 1.2%, 0) rotate(0.7deg) scale(1.04); }
+}
+
+@keyframes harborStellarStarTwinkle {
+  0% { transform: translate3d(-1.2%, 0.6%, 0) scale(1); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.66); }
+  38% { transform: translate3d(0.4%, -0.7%, 0) scale(1.018); opacity: var(--harbor-foundation-texture-opacity); }
+  72% { transform: translate3d(1.2%, 0.4%, 0) scale(1.006); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.74); }
+  100% { transform: translate3d(1.8%, -0.4%, 0) scale(1.024); opacity: calc(var(--harbor-foundation-texture-opacity) * 0.92); }
+}
+
+@keyframes harborStellarChartCruise {
+  0% { transform: translate3d(-2.5%, 1.2%, 0) rotate(-0.35deg); opacity: calc(var(--harbor-foundation-landmark-opacity) * 0.58); }
+  50% { transform: translate3d(0.8%, -0.8%, 0) rotate(0.2deg); opacity: var(--harbor-foundation-landmark-opacity); }
+  100% { transform: translate3d(2.7%, -1.4%, 0) rotate(0.5deg); opacity: calc(var(--harbor-foundation-landmark-opacity) * 0.76); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .harbor-scene-foundation > :is(
+      .harbor-scene-foundation__wash,
+      .harbor-scene-foundation__texture,
+      .harbor-scene-foundation__landmark
+    ) {
+    animation: none !important;
+    translate: 0 0 !important;
+    transition: none !important;
+    will-change: auto;
+  }
 }

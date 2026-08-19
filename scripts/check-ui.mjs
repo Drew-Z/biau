@@ -302,6 +302,12 @@ async function gotoApp(page, path, options = {}) {
   }
 }
 
+async function waitForCompositorFrames(page) {
+  await page.evaluate(() => new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  }))
+}
+
 const networkGuards = new WeakMap()
 
 async function createUiPage(browser, options) {
@@ -2114,6 +2120,8 @@ if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow ==
 await navIndicatorPage.close()
 
 const harborThemeSignatures = []
+const harborMaterialSignatures = []
+const harborMotionSignatures = []
 for (const theme of ['light', 'dark']) {
   for (const scene of ['dusk', 'garden', 'stellar']) {
     const harborThemePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: theme })
@@ -2125,14 +2133,28 @@ for (const theme of ['light', 'dark']) {
     await gotoApp(harborThemePage, '/')
     const canvas = harborThemePage.locator('.flow-background[data-flow-ready="true"]')
     await canvas.waitFor({ state: 'attached' })
+    await harborThemePage.waitForFunction(
+      () => Boolean(document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion')),
+    )
     harborThemeSignatures.push((await canvas.screenshot()).toString('base64'))
     const appearance = await harborThemePage.evaluate(({ expectedTheme, expectedScene }) => {
       const root = document.documentElement
       const logo = document.querySelector('.nav-logo')
       const logoMark = logo?.querySelector('.nav-logo-mark')
+      const homeHero = document.querySelector('.home-hero')
+      const heroIntro = document.querySelector('.hero-intro')
+      const eyebrow = heroIntro?.querySelector('.eyebrow')
+      const heroBody = heroIntro?.querySelector('.hero-body')
+      const systemStatus = heroIntro?.querySelector('.system-status')
+      const heroPanel = document.querySelector('.hero-panel')
       const heroTitle = document.querySelector('.hero-title-rotator')
       const card = document.querySelector('.carousel-card')
       const cardTitle = card?.querySelector('strong')
+      const sceneFoundation = document.querySelector('[data-harbor-scene-foundation]')
+      const sceneWash = document.querySelector('[data-harbor-scene-layer="wash"]')
+      const sceneTexture = document.querySelector('[data-harbor-scene-layer="texture"]')
+      const sceneLandmark = document.querySelector('[data-harbor-scene-layer="landmark"]')
+      const footer = document.querySelector('.site-footer')
 
       const resolveColor = (value) => {
         const probe = document.createElement('span')
@@ -2166,6 +2188,17 @@ for (const theme of ['light', 'dark']) {
       const logoRect = logo?.getBoundingClientRect()
       const logoStyle = logoMark ? getComputedStyle(logoMark) : null
       const cardStyle = card ? getComputedStyle(card) : null
+      const eyebrowRect = eyebrow?.getBoundingClientRect()
+      const statusRect = systemStatus?.getBoundingClientRect()
+      const panelRect = heroPanel?.getBoundingClientRect()
+      const foundationRect = sceneFoundation?.getBoundingClientRect()
+      const foundationStyle = sceneFoundation ? getComputedStyle(sceneFoundation) : null
+      const footerStyle = footer ? getComputedStyle(footer) : null
+      const washStyle = sceneWash ? getComputedStyle(sceneWash) : null
+      const textureStyle = sceneTexture ? getComputedStyle(sceneTexture) : null
+      const landmarkStyle = sceneLandmark ? getComputedStyle(sceneLandmark) : null
+      const introContentCenter = eyebrowRect && statusRect ? (eyebrowRect.top + statusRect.bottom) / 2 : 0
+      const panelCenter = panelRect ? panelRect.top + panelRect.height / 2 : 0
       return {
         expectedTheme,
         expectedScene,
@@ -2177,6 +2210,36 @@ for (const theme of ['light', 'dark']) {
         logoWidth: logoRect?.width ?? 0,
         logoHeight: logoRect?.height ?? 0,
         logoPseudoContent: logo ? getComputedStyle(logo, '::before').content : '',
+        heroBody: heroBody?.textContent?.trim() ?? '',
+        introCenterDelta: Math.abs(introContentCenter - panelCenter),
+        sceneFoundationReady: Boolean(
+          foundationRect &&
+          foundationRect.width >= window.innerWidth &&
+          foundationRect.height >= window.innerHeight &&
+          foundationStyle?.position === 'fixed' &&
+          foundationStyle.pointerEvents === 'none'
+        ),
+        sceneLayerCount: sceneFoundation?.querySelectorAll('[data-harbor-scene-layer]').length ?? 0,
+        sceneMotionState: sceneFoundation?.getAttribute('data-scene-motion') ?? '',
+        motionSignature: [
+          washStyle?.animationName,
+          textureStyle?.animationName,
+          landmarkStyle?.animationName,
+          footerStyle?.animationName,
+        ].join('|'),
+        footerBackground: footerStyle?.backgroundImage ?? '',
+        materialSignature: homeHero && heroPanel && sceneFoundation && sceneWash && sceneTexture && sceneLandmark && footer
+          ? [
+              foundationStyle?.backgroundColor,
+              getComputedStyle(sceneWash).backgroundImage,
+              getComputedStyle(sceneTexture).backgroundImage,
+              getComputedStyle(sceneTexture).backgroundSize,
+              getComputedStyle(sceneLandmark).backgroundImage,
+              getComputedStyle(homeHero, '::before').backgroundImage,
+              getComputedStyle(heroPanel).backgroundImage,
+              footerStyle?.backgroundImage,
+            ].join('|')
+          : '',
         heroContrast: heroTitle
           ? contrast(getComputedStyle(heroTitle).color, resolveColor('var(--home-page-solid)'))
           : 0,
@@ -2185,6 +2248,8 @@ for (const theme of ['light', 'dark']) {
           : 0,
       }
     }, { expectedTheme: theme, expectedScene: scene })
+    harborMaterialSignatures.push(appearance.materialSignature)
+    harborMotionSignatures.push(appearance.motionSignature)
 
     if (
       appearance.resolvedTheme !== theme ||
@@ -2207,11 +2272,33 @@ for (const theme of ['light', 'dark']) {
         `/ home appearance ${theme}/${scene}: expected readable hero/card contrast, got ${appearance.heroContrast.toFixed(2)} and ${appearance.cardContrast.toFixed(2)}`,
       )
     }
+    if (appearance.heroBody !== '记录每个产品从构想到上线的过程，并公开它的能力边界、当前状态与验证证据。') {
+      failures.push(`/ home appearance ${theme}/${scene}: expected the audited product-boundary statement`)
+    }
+    if (appearance.introCenterDelta > 48) {
+      failures.push(`/ home appearance ${theme}/${scene}: intro should be vertically balanced with the project board`)
+    }
+    if (!appearance.sceneFoundationReady || appearance.sceneLayerCount !== 3 || appearance.footerBackground === 'none') {
+      failures.push(`/ home appearance ${theme}/${scene}: expected a fixed three-layer scene foundation and themed footer`)
+    }
+    if (
+      appearance.sceneMotionState === 'paused' ||
+      appearance.sceneMotionState === 'reduced' ||
+      appearance.motionSignature.split('|').some((name) => !name || name === 'none')
+    ) {
+      failures.push(`/ home appearance ${theme}/${scene}: expected active scene-specific wash, texture, landmark, and footer motion`)
+    }
     await harborThemePage.close()
   }
 }
 if (new Set(harborThemeSignatures).size !== 6) {
   failures.push('/ home flow canvas: light/dark dusk, garden, and stellar should render six distinct frames')
+}
+if (new Set(harborMaterialSignatures).size !== 6) {
+  failures.push('/ home scene materials: light/dark dusk, garden, and stellar should expose six distinct texture/panel signatures')
+}
+if (new Set(harborMotionSignatures).size !== 3) {
+  failures.push('/ home scene motion: dusk, garden, and stellar should expose three distinct animation signatures')
 }
 
 const scenePreferencePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
@@ -2372,6 +2459,56 @@ if (mobileHarbor.pageOverflow > 1 || mobileHarbor.width > 488 || mobileHarbor.he
   failures.push('/ home mobile flow: expected bounded overflow and viewport-sized capped-DPR canvas at 390px')
 }
 await mobileHarborPage.close()
+const coarsePointerPage = await createUiPage(browser, { viewport: { width: 390, height: 844 }, colorScheme: 'dark' })
+await coarsePointerPage.addInitScript(() => {
+  const nativeMatchMedia = window.matchMedia.bind(window)
+  window.matchMedia = (query) => {
+    if (query !== '(any-hover: hover) and (any-pointer: fine)') return nativeMatchMedia(query)
+    return {
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent() { return false },
+    }
+  }
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'garden')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(coarsePointerPage, '/')
+await coarsePointerPage.waitForFunction(
+  () => document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'ambient',
+)
+await coarsePointerPage.mouse.move(340, 720)
+await waitForCompositorFrames(coarsePointerPage)
+const coarsePointerMotion = await coarsePointerPage.evaluate(() => {
+  const foundation = document.querySelector('[data-harbor-scene-foundation]')
+  const layers = [...document.querySelectorAll('[data-harbor-scene-layer]')]
+  return {
+    state: foundation?.getAttribute('data-scene-motion') ?? '',
+    pointerValues: [
+      '--harbor-pointer-wash-x',
+      '--harbor-pointer-wash-y',
+      '--harbor-pointer-texture-x',
+      '--harbor-pointer-texture-y',
+      '--harbor-pointer-landmark-x',
+      '--harbor-pointer-landmark-y',
+    ].map((property) => foundation?.style.getPropertyValue(property).trim() ?? ''),
+    animations: layers.map((layer) => getComputedStyle(layer).animationName),
+  }
+})
+if (
+  coarsePointerMotion.state !== 'ambient' ||
+  coarsePointerMotion.pointerValues.some((value) => value !== '0px') ||
+  coarsePointerMotion.animations.some((name) => !name || name === 'none')
+) {
+  failures.push('/ home scene motion: coarse pointers should keep ambient animation without pointer parallax')
+}
+await coarsePointerPage.close()
 const reducedHarborPage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark', reducedMotion: 'reduce' })
 await reducedHarborPage.addInitScript(() => {
   window.localStorage.setItem('theme', 'dark')
@@ -2381,6 +2518,27 @@ await reducedHarborPage.addInitScript(() => {
 await gotoApp(reducedHarborPage, '/')
 const reducedFlow = reducedHarborPage.locator('.flow-background')
 await reducedFlow.waitFor({ state: 'attached' })
+await reducedHarborPage.waitForFunction(
+  () => document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'reduced',
+)
+const reducedSceneMotion = await reducedHarborPage.evaluate(() => {
+  const foundation = document.querySelector('[data-harbor-scene-foundation]')
+  const layers = [...document.querySelectorAll('[data-harbor-scene-layer]')]
+  return {
+    state: foundation?.getAttribute('data-scene-motion') ?? '',
+    animations: layers.map((layer) => getComputedStyle(layer).animationName),
+    translations: layers.map((layer) => getComputedStyle(layer).translate),
+    footerAnimation: getComputedStyle(document.querySelector('.site-footer')).animationName,
+  }
+})
+if (
+  reducedSceneMotion.state !== 'reduced' ||
+  reducedSceneMotion.animations.some((name) => name !== 'none') ||
+  reducedSceneMotion.translations.some((value) => value !== 'none' && value !== '0px') ||
+  reducedSceneMotion.footerAnimation !== 'none'
+) {
+  failures.push('/ home reduced motion: scene layers, pointer parallax, and footer drift should remain static')
+}
 const reducedModeReady = await reducedHarborPage
   .waitForFunction(() => {
     const canvas = document.querySelector('.flow-background')
@@ -2452,6 +2610,77 @@ await motionSwitchFlow.waitFor({ state: 'attached' })
 await waitForFlowMotion(motionSwitchPage, 'running').catch(() => {
   failures.push('/ home runtime motion: flow worker did not acknowledge running state')
 })
+await motionSwitchPage.waitForFunction(
+  () => document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'interactive',
+).catch(() => {
+  failures.push('/ home scene motion: fine-pointer desktop should expose interactive scene motion')
+})
+const motionLayerTransformsA = await motionSwitchPage.evaluate(() =>
+  [...document.querySelectorAll('[data-harbor-scene-layer]')].map((layer) => getComputedStyle(layer).transform),
+)
+await motionSwitchPage.waitForTimeout(180)
+const motionLayerTransformsB = await motionSwitchPage.evaluate(() =>
+  [...document.querySelectorAll('[data-harbor-scene-layer]')].map((layer) => getComputedStyle(layer).transform),
+)
+if (motionLayerTransformsA.every((value, index) => value === motionLayerTransformsB[index])) {
+  failures.push('/ home scene motion: normal preference should animate at least one scene foundation layer')
+}
+
+await motionSwitchPage.mouse.move(90, 90)
+await waitForCompositorFrames(motionSwitchPage)
+await motionSwitchPage.mouse.move(viewports[0].width - 120, viewports[0].height - 100)
+await waitForCompositorFrames(motionSwitchPage)
+const pointerSceneState = await motionSwitchPage.evaluate(() => {
+  const foundation = document.querySelector('[data-harbor-scene-foundation]')
+  const texture = document.querySelector('[data-harbor-scene-layer="texture"]')
+  return {
+    state: foundation?.getAttribute('data-scene-motion') ?? '',
+    textureX: foundation?.style.getPropertyValue('--harbor-pointer-texture-x') ?? '',
+    textureY: foundation?.style.getPropertyValue('--harbor-pointer-texture-y') ?? '',
+    computedTranslate: texture ? getComputedStyle(texture).translate : 'none',
+  }
+})
+if (
+  pointerSceneState.state !== 'interactive' ||
+  !pointerSceneState.textureX ||
+  !pointerSceneState.textureY ||
+  pointerSceneState.computedTranslate === 'none'
+) {
+  failures.push('/ home scene motion: pointer movement should project bounded parallax variables onto the foundation')
+}
+
+const motionViewport = motionSwitchPage.locator('.carousel-viewport')
+const motionViewportBox = await motionViewport.boundingBox()
+if (!motionViewportBox) {
+  failures.push('/ home scene motion: expected a measurable project-board viewport for local glow')
+} else {
+  await motionSwitchPage.mouse.move(motionViewportBox.x + 20, motionViewportBox.y + motionViewportBox.height * 0.5)
+  await waitForCompositorFrames(motionSwitchPage)
+  const panelGlowState = await motionSwitchPage.locator('.carousel-wrapper').evaluate((panel) => ({
+    x: panel.style.getPropertyValue('--harbor-surface-glow-x'),
+    y: panel.style.getPropertyValue('--harbor-surface-glow-y'),
+    opacity: panel.style.getPropertyValue('--harbor-surface-glow-opacity'),
+    layerBackground: getComputedStyle(panel.querySelector('.harbor-surface-glow')).backgroundImage,
+  }))
+  if (!panelGlowState.x || !panelGlowState.y || panelGlowState.opacity !== '1' || panelGlowState.layerBackground === 'none') {
+    failures.push('/ home scene motion: project-board pointer should drive the scene-specific local glow')
+  }
+}
+
+await motionSwitchPage.evaluate(() => document.documentElement.classList.add('harbor-intro-active'))
+await motionSwitchPage.waitForFunction(
+  () => document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'paused',
+)
+const pausedSceneAnimations = await motionSwitchPage.evaluate(() =>
+  [...document.querySelectorAll('[data-harbor-scene-layer]')].map((layer) => getComputedStyle(layer).animationPlayState),
+)
+if (pausedSceneAnimations.some((state) => state !== 'paused')) {
+  failures.push('/ home scene motion: intro-active should pause every scene foundation animation')
+}
+await motionSwitchPage.evaluate(() => document.documentElement.classList.remove('harbor-intro-active'))
+await motionSwitchPage.waitForFunction(
+  () => document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'interactive',
+)
 const animatedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (animatedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: normal preference should keep the worker canvas animated')
@@ -2461,6 +2690,10 @@ await motionSwitchPage.emulateMedia({ reducedMotion: 'reduce' })
 await waitForFlowMotion(motionSwitchPage, 'reduced-settled').catch(() => {
   failures.push('/ home runtime motion: flow worker did not acknowledge reduced-motion state')
 })
+await motionSwitchPage.waitForFunction(
+  () => document.querySelector('[data-harbor-scene-foundation]')?.getAttribute('data-scene-motion') === 'reduced',
+)
+await waitForCompositorFrames(motionSwitchPage)
 const runtimeReducedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (runtimeReducedFrameDelta >= 0.05) {
   failures.push('/ home runtime motion: switching to reduce should stop the worker canvas on one stable frame')
@@ -2511,6 +2744,7 @@ await motionSwitchPage.emulateMedia({ reducedMotion: 'no-preference' })
 await waitForFlowMotion(motionSwitchPage, 'running').catch(() => {
   failures.push('/ home runtime motion: flow worker did not acknowledge resumed state')
 })
+await waitForCompositorFrames(motionSwitchPage)
 const resumedFrameDelta = await measureLocatorFrameDelta(motionSwitchPage, motionSwitchFlow)
 if (resumedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')

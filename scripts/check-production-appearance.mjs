@@ -69,9 +69,20 @@ async function readAppearance(page, expectedTheme, expectedScene) {
     const root = document.documentElement
     const logo = document.querySelector('.nav-logo')
     const logoMark = logo?.querySelector('.nav-logo-mark')
+    const homeHero = document.querySelector('.home-hero')
+    const heroIntro = document.querySelector('.hero-intro')
+    const eyebrow = heroIntro?.querySelector('.eyebrow')
+    const heroBody = heroIntro?.querySelector('.hero-body')
+    const systemStatus = heroIntro?.querySelector('.system-status')
+    const heroPanel = document.querySelector('.hero-panel')
     const heroTitle = document.querySelector('.hero-title-rotator')
     const card = document.querySelector('.carousel-card')
     const cardTitle = card?.querySelector('strong')
+    const sceneFoundation = document.querySelector('[data-harbor-scene-foundation]')
+    const sceneWash = document.querySelector('[data-harbor-scene-layer="wash"]')
+    const sceneTexture = document.querySelector('[data-harbor-scene-layer="texture"]')
+    const sceneLandmark = document.querySelector('[data-harbor-scene-layer="landmark"]')
+    const footer = document.querySelector('.site-footer')
 
     const resolveColor = (value) => {
       const probe = document.createElement('span')
@@ -101,6 +112,14 @@ async function readAppearance(page, expectedTheme, expectedScene) {
     const logoRect = logo?.getBoundingClientRect()
     const logoStyle = logoMark ? getComputedStyle(logoMark) : null
     const cardStyle = card ? getComputedStyle(card) : null
+    const eyebrowRect = eyebrow?.getBoundingClientRect()
+    const statusRect = systemStatus?.getBoundingClientRect()
+    const panelRect = heroPanel?.getBoundingClientRect()
+    const foundationRect = sceneFoundation?.getBoundingClientRect()
+    const foundationStyle = sceneFoundation ? getComputedStyle(sceneFoundation) : null
+    const footerStyle = footer ? getComputedStyle(footer) : null
+    const introContentCenter = eyebrowRect && statusRect ? (eyebrowRect.top + statusRect.bottom) / 2 : 0
+    const panelCenter = panelRect ? panelRect.top + panelRect.height / 2 : 0
     return {
       expectedTheme: theme,
       expectedScene: scene,
@@ -112,6 +131,29 @@ async function readAppearance(page, expectedTheme, expectedScene) {
       logoWidth: logoRect?.width ?? 0,
       logoHeight: logoRect?.height ?? 0,
       logoPseudoContent: logo ? getComputedStyle(logo, '::before').content : '',
+      heroBody: heroBody?.textContent?.trim() ?? '',
+      introCenterDelta: Math.abs(introContentCenter - panelCenter),
+      sceneFoundationReady: Boolean(
+        foundationRect &&
+        foundationRect.width >= window.innerWidth &&
+        foundationRect.height >= window.innerHeight &&
+        foundationStyle?.position === 'fixed' &&
+        foundationStyle.pointerEvents === 'none'
+      ),
+      sceneLayerCount: sceneFoundation?.querySelectorAll('[data-harbor-scene-layer]').length ?? 0,
+      footerBackground: footerStyle?.backgroundImage ?? '',
+      materialSignature: homeHero && heroPanel && sceneFoundation && sceneWash && sceneTexture && sceneLandmark && footer
+        ? [
+            foundationStyle?.backgroundColor,
+            getComputedStyle(sceneWash).backgroundImage,
+            getComputedStyle(sceneTexture).backgroundImage,
+            getComputedStyle(sceneTexture).backgroundSize,
+            getComputedStyle(sceneLandmark).backgroundImage,
+            getComputedStyle(homeHero, '::before').backgroundImage,
+            getComputedStyle(heroPanel).backgroundImage,
+            footerStyle?.backgroundImage,
+          ].join('|')
+        : '',
       heroContrast: heroTitle
         ? contrast(getComputedStyle(heroTitle).color, resolveColor('var(--home-page-solid)'))
         : 0,
@@ -124,6 +166,7 @@ async function readAppearance(page, expectedTheme, expectedScene) {
 
 const browser = await chromium.launch({ headless: true })
 const flowSignatures = new Set()
+const materialSignatures = new Set()
 
 try {
   for (const theme of themes) {
@@ -142,6 +185,7 @@ try {
           await canvas.waitFor({ state: 'attached', timeout: 15_000 })
           flowSignatures.add(createHash('sha256').update(await canvas.screenshot()).digest('hex'))
           const appearance = await readAppearance(page, theme, scene)
+          materialSignatures.add(appearance.materialSignature)
           if (
             appearance.resolvedTheme !== theme ||
             appearance.resolvedScene !== scene ||
@@ -163,8 +207,20 @@ try {
               `${label}: contrast ${appearance.heroContrast.toFixed(2)}/${appearance.cardContrast.toFixed(2)}`,
             )
           }
+          if (appearance.heroBody !== '记录每个产品从构想到上线的过程，并公开它的能力边界、当前状态与验证证据。') {
+            failures.push(`${label}: audited product-boundary statement is missing`)
+          }
+          if (appearance.introCenterDelta > 48) {
+            failures.push(`${label}: intro is not vertically balanced with the project board`)
+          }
+          if (!appearance.sceneFoundationReady || appearance.sceneLayerCount !== 3 || appearance.footerBackground === 'none') {
+            failures.push(`${label}: fixed three-layer scene foundation or themed footer is missing`)
+          }
           if (theme === themes.at(-1) && scene === scenes.at(-1) && flowSignatures.size !== 6) {
             failures.push(`${label}: expected 6 distinct Flow frames, got ${flowSignatures.size}`)
+          }
+          if (theme === themes.at(-1) && scene === scenes.at(-1) && materialSignatures.size !== 6) {
+            failures.push(`${label}: expected 6 distinct scene material signatures, got ${materialSignatures.size}`)
           }
         } finally {
           await page.close()
