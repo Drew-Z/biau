@@ -275,6 +275,6 @@ Focused checks:
 
 ## Before `task.py start`
 
-- [ ] User reviews `prd.md`, `design.md`, `implement.md` and approves implementation.
-- [ ] Confirm inline execution remains active; JSONL seed rows are not used as implementation instructions.
-- [ ] Start the parent task only after approval.
+- [x] User reviews `prd.md`, `design.md`, `implement.md` and approves implementation.
+- [x] Confirm inline execution remains active; JSONL seed rows are not used as implementation instructions.
+- [x] Start the parent task only after approval.
