@@ -127,7 +127,7 @@ $env:UI_CHECK_BASE='https://deployment.example'; npm.cmd run check:ui:production
 
 #### 3. Contracts
 
-- Navigate only to `/` on the configured origin and install `scripts/lib/ui-network-guard.mjs` with `allowLoopback: false` before navigation.
+- Navigate only to `/` on the configured origin and install `scripts/lib/ui-network-guard.mjs` with `allowLoopback: false` before navigation. A static document navigation may retry once after a bounded delay; a second failure remains terminal, and the command never retries an API, Studio, or model request.
 - Block and report any request outside the configured origin, including loopback, by resource type without printing its URL. Local UI suites retain the guard's default `allowLoopback: true` behavior.
 - Cover `light | dark` against `dusk | garden | stellar`, keyboard scene persistence, runtime `auto` response, and light/dark containment at `320`, `390`, and `430` widths.
 - Require six distinct Flow screenshots, visible real Logo geometry, matching root datasets, and at least `4.5:1` Hero/card-title contrast.

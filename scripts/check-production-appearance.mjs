@@ -58,7 +58,19 @@ async function createProductionPage(browser, options, seed, label) {
 }
 
 async function gotoHome(page, label) {
-  const response = await page.goto(baseUrl.href, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+  let response = null
+  let lastError = null
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      response = await page.goto(baseUrl.href, { waitUntil: 'domcontentloaded', timeout: 30_000 })
+      lastError = null
+      break
+    } catch (error) {
+      lastError = error
+      if (attempt === 0) await page.waitForTimeout(500)
+    }
+  }
+  if (lastError) throw lastError
   if (!response?.ok()) failures.push(`${label}: document_http_${response?.status() ?? 'missing'}`)
   await page.locator('.home-hero').waitFor({ state: 'visible', timeout: 15_000 })
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))))
