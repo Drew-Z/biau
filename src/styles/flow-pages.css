@@ -785,6 +785,27 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
   mask-composite: exclude;
 }
 
+.app.page-home .harbor-panel-border-flow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.app.page-home .harbor-panel-border-flow rect {
+  fill: none;
+  stroke: color-mix(in oklch, var(--home-accent) 84%, white);
+  stroke-width: 0.8;
+  stroke-linecap: round;
+  stroke-dasharray: 0.12 0.88;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 5px color-mix(in oklch, var(--home-accent) 62%, transparent));
+}
+
 :root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper > .harbor-surface-glow {
   display: none;
 }
@@ -801,9 +822,21 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
   opacity: calc(var(--harbor-surface-glow-opacity) * 0.9);
 }
 
+:root[data-harbor-scene='stellar'] .app.page-home .harbor-panel-border-flow {
+  opacity: 0.82;
+}
+
+:root[data-harbor-scene='stellar'] .app.page-home .harbor-panel-border-flow rect {
+  animation: biauStellarPanelPerimeter 7.6s linear infinite;
+}
+
 @media (max-width: 1024px), (any-hover: none), (prefers-reduced-motion: reduce) {
   .app.page-home .carousel-wrapper > .harbor-surface-glow {
     display: none;
+  }
+
+  .app.page-home .harbor-panel-border-flow {
+    opacity: 0;
   }
 }
 
@@ -1431,6 +1464,11 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
       0 0;
     opacity: 0.36;
   }
+}
+
+@keyframes biauStellarPanelPerimeter {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -1; }
 }
 
 @keyframes muxingGradientFlow {

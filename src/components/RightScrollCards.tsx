@@ -48,10 +48,11 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
 
     let active = true
     let hasInitialPosition = false
-    const autoSpeed = 0.3
-    const friction = 0.92
-    const minVelocity = 0.15
+    const autoSpeed = 18
+    const friction = 4
+    const minVelocity = 8
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    let lastTickAt = performance.now()
 
     if (usesMobileInteractionMode()) {
       scrollYRef.current = 0
@@ -91,20 +92,22 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       if (scrollYRef.current < 0) scrollYRef.current += cycleHeight
     }
 
-    const tick = () => {
+    const tick = (now: number) => {
       rafRef.current = 0
       if (!active || !track.isConnected || !carouselMotionAllowed()) return
+      const deltaSeconds = Math.min(0.05, Math.max(0.001, (now - lastTickAt) / 1000))
+      lastTickAt = now
       const dragging = dragRef.current.isDragging || dragRef.current.isPointerDown
       const tilt = tiltRef.current
 
       const velocity = velocityYRef.current
       if (!dragging && !isHoveringRef.current && Math.abs(velocity) < 0.5 && !reducedMotion.matches) {
-        scrollYRef.current += autoSpeed
+        scrollYRef.current += autoSpeed * deltaSeconds
       }
 
       if (!dragging && Math.abs(velocityYRef.current) > minVelocity) {
-        scrollYRef.current += velocityYRef.current
-        velocityYRef.current *= friction
+        scrollYRef.current += velocityYRef.current * deltaSeconds
+        velocityYRef.current *= Math.exp(-friction * deltaSeconds)
       } else {
         velocityYRef.current = 0
       }
@@ -122,6 +125,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     const resetReducedMotion = () => {
       scrollYRef.current = 0
       velocityYRef.current = 0
+      lastTickAt = performance.now()
       hasInitialPosition = false
       tiltRef.current = { x: 0, y: 0, targetX: 0, targetY: 0 }
       track.style.transform = ''
@@ -146,7 +150,10 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
         if (reducedMotion.matches) resetReducedMotion()
         return
       }
-      if (!rafRef.current) rafRef.current = window.requestAnimationFrame(tick)
+      if (!rafRef.current) {
+        lastTickAt = performance.now()
+        rafRef.current = window.requestAnimationFrame(tick)
+      }
     }
     const observer = new MutationObserver(syncMotion)
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
@@ -297,7 +304,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     drag.isPointerDown = false
     drag.isDragging = false
     drag.pointerId = -1
-    velocityYRef.current = Math.max(-25, Math.min(25, velocityYRef.current))
+    velocityYRef.current = Math.max(-1200, Math.min(1200, velocityYRef.current))
     tiltRef.current.targetX = 0
     tiltRef.current.targetY = 0
     wrapperRef.current?.classList.remove('is-dragging')
@@ -331,6 +338,15 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       }}
     >
       <span className="harbor-surface-glow" aria-hidden="true" />
+      <svg
+        className="harbor-panel-border-flow"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <rect x="0.75" y="0.75" width="98.5" height="98.5" rx="3" pathLength="1" />
+      </svg>
       <div className="panel-head">
         <div className="panel-head__copy">
           <p>IN PORT / 当前泊岸</p>

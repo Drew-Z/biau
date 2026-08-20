@@ -24,6 +24,11 @@ uniform float u_ribbonStrength;
 uniform float u_noiseScale;
 uniform float u_contrast;
 uniform float u_angle;
+uniform float u_brightness;
+uniform float u_saturation;
+uniform float u_noiseFlow;
+uniform float u_starIntensity;
+uniform float u_starScale;
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -37,12 +42,33 @@ float noise(vec2 p) {
 
 float fbm(vec2 p) {
   float v = 0., a = .52;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 6; i++) {
     v += a * noise(p);
     p = p * 2.03 + vec2(17.2, 9.1);
     a *= .48;
   }
   return v;
+}
+
+float starLayer(vec2 uv, float scale, float depth, float seed, float time) {
+  vec2 grid = uv * scale;
+  vec2 cell = floor(grid);
+  vec2 local = fract(grid) - .5;
+  float n = hash(cell + vec2(seed, seed * 1.73));
+  float present = step(.965, n);
+  vec2 offset = vec2(hash(cell + seed + 2.1), hash(cell + seed + 8.7)) - .5;
+  float radius = length(local - offset * .82);
+  float twinkle = .72 + .28 * sin(time * (1.4 + depth * 1.8) + n * 31.);
+  float core = (1. - smoothstep(0., .045 / depth, radius)) * present * twinkle;
+  float halo = (1. - smoothstep(0., .16 / depth, radius)) * present * .18;
+  float flare = (1. - smoothstep(0., .025 / depth, abs(local.x - offset.x))) *
+    (1. - smoothstep(0., .025 / depth, abs(local.y - offset.y))) * present * .11;
+  return (core + halo + flare) * depth;
+}
+
+vec3 applySaturation(vec3 color, float saturation) {
+  float luma = dot(color, vec3(.2126, .7152, .0722));
+  return mix(vec3(luma), color, saturation);
 }
 
 vec3 pal(float t) {
@@ -65,8 +91,8 @@ void main() {
 
   float t = u_time * .045 * u_speed;
   vec2 q = vec2(
-    fbm(uv * (1.45 * u_noiseScale) + vec2(t, -t * .7)),
-    fbm(uv * (1.3 * u_noiseScale) + vec2(-t * .55, t * .8))
+    fbm(uv * (1.45 * u_noiseScale) + vec2(t * u_noiseFlow, -t * .7 * u_noiseFlow)),
+    fbm(uv * (1.3 * u_noiseScale) + vec2(-t * .55 * u_noiseFlow, t * .8 * u_noiseFlow))
   );
   vec2 r = vec2(
     fbm(uv * (2. * u_fieldScale) + q * (1.05 + u_distortion) + vec2(t * .7, 0)),
@@ -78,6 +104,13 @@ void main() {
   vec3 color = mix(pal(depth), pal(clamp(depth + .2, 0., 1.)), ribbon * u_ribbonStrength);
   color += vec3(1.) * pow(max(0., 1. - abs(field - .57) * 6.), 3.) * .09;
   color = clamp((color - .5) * u_contrast + .5, 0., 1.);
+  color = applySaturation(color, u_saturation) * u_brightness;
+  float stars = 0.;
+  stars += starLayer(v_uv - .5, 74. * u_starScale, .28, 3.1, u_time * .55);
+  stars += starLayer(v_uv - .5, 132. * u_starScale, .54, 11.7, u_time * .78);
+  stars += starLayer(v_uv - .5, 224. * u_starScale, .92, 27.3, u_time * 1.12);
+  vec3 starColor = mix(vec3(.63, .78, 1.), vec3(1., .78, .52), fract(field * 4. + .23));
+  color += starColor * stars * u_starIntensity;
   outColor = vec4(color, 1.);
 }`
 
@@ -110,6 +143,11 @@ export class FlowRenderer {
   private noiseScale: WebGLUniformLocation
   private contrast: WebGLUniformLocation
   private angle: WebGLUniformLocation
+  private brightness: WebGLUniformLocation
+  private saturation: WebGLUniformLocation
+  private noiseFlow: WebGLUniformLocation
+  private starIntensity: WebGLUniformLocation
+  private starScale: WebGLUniformLocation
   private canvas: RenderCanvas
 
   constructor(canvas: RenderCanvas, { preserveDrawingBuffer = false }: { preserveDrawingBuffer?: boolean } = {}) {
@@ -142,6 +180,11 @@ export class FlowRenderer {
     this.noiseScale = gl.getUniformLocation(program, 'u_noiseScale')!
     this.contrast = gl.getUniformLocation(program, 'u_contrast')!
     this.angle = gl.getUniformLocation(program, 'u_angle')!
+    this.brightness = gl.getUniformLocation(program, 'u_brightness')!
+    this.saturation = gl.getUniformLocation(program, 'u_saturation')!
+    this.noiseFlow = gl.getUniformLocation(program, 'u_noiseFlow')!
+    this.starIntensity = gl.getUniformLocation(program, 'u_starIntensity')!
+    this.starScale = gl.getUniformLocation(program, 'u_starScale')!
 
     const buffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
@@ -171,6 +214,11 @@ export class FlowRenderer {
     gl.uniform1f(this.noiseScale, values.noiseScale)
     gl.uniform1f(this.contrast, values.contrast)
     gl.uniform1f(this.angle, values.angle)
+    gl.uniform1f(this.brightness, profile.effects.brightness)
+    gl.uniform1f(this.saturation, profile.effects.saturation)
+    gl.uniform1f(this.noiseFlow, profile.effects.noiseFlow)
+    gl.uniform1f(this.starIntensity, profile.effects.starIntensity)
+    gl.uniform1f(this.starScale, profile.effects.starScale)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   }
 

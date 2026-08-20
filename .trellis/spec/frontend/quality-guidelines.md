@@ -183,6 +183,29 @@ source-code failure.
 Correct: build first, start a dedicated preview on an isolated port, pass its
 origin through `UI_CHECK_BASE`, and keep the existing server untouched.
 
+### 8. Scene Effects And Low-Power Contract
+
+- Scene-specific shader and material controls belong to the typed
+  `FlowSceneProfile.effects` object. Do not scatter brightness, saturation,
+  noise-flow, star intensity, or star scale as untyped component constants.
+- Keep `data-flow-dynamics` as the original seven-value
+  `speed|fieldScale|distortion|ribbonStrength|noiseScale|contrast|angle`
+  contract. Adding effect parameters must not change its order, count, or
+  numeric bounds; browser checks and downstream diagnostics depend on it.
+- Stellar stars are a profile-controlled layer in the existing Flow renderer.
+  They must reuse the page's single WebGL/OffscreenCanvas owner, remain
+  disabled when `starIntensity` is zero, and never introduce a second Canvas,
+  timer-driven starfield, or React frame loop.
+- Carousel motion is time-step based: auto-scroll and drag inertia consume
+  `deltaTime` and bounded exponential friction so the visual speed is stable
+  across 60 Hz, 120 Hz, throttled, and resumed frames. Frame-rate-dependent
+  per-tick constants are not acceptable.
+- Hidden documents, the harbor intro, and reduced-motion mode stop persistent
+  scene rendering and CSS motion while retaining one stable frame. Devices
+  advertising at most 2 GB `deviceMemory` or `connection.saveData` also keep
+  the Flow frame stable and do not start a perpetual RAF/timer loop. Any
+  resume path must schedule at most one new loop and must clear it on cleanup.
+
 ### Production Appearance Verification Command
 
 #### 1. Scope / Trigger

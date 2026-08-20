@@ -33,6 +33,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     let fallbackActive = false
     let last = 0
     let motionToken = 0
+    let drawFrame: ((now: number) => void) | undefined
     let currentMotionState: FlowMotionState = 'pending'
 
     const media = matchMedia(REDUCED)
@@ -63,7 +64,12 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
       height: innerHeight,
       dpr: Math.min(devicePixelRatio || 1, 1.25),
     })
+    const lowPowerDevice = () =>
+      Boolean((navigator as Navigator & { deviceMemory?: number }).deviceMemory &&
+        (navigator as Navigator & { deviceMemory?: number }).deviceMemory! <= 2) ||
+      Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData)
     const canRun = () => !document.hidden && !document.documentElement.classList.contains('harbor-intro-active')
+    const shouldAnimate = () => canRun() && !lowPowerDevice()
     const markReady = () => {
       if (readyReported || fallbackActive) return
       readyReported = true
@@ -106,22 +112,29 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         renderer = new FlowRenderer(canvas, { preserveDrawingBuffer: true })
         const initialSize = size()
         renderer.resize(initialSize.width, initialSize.height, initialSize.dpr)
-        const draw = (now: number) => {
+        drawFrame = (now: number) => {
           if (stopped) return
           const reduced = reducedMotion
           const running = canRun()
-          if (running && (reduced ? last === 0 : now - last >= 1000 / 30)) {
-            renderer?.draw(reduced ? 0 : now / 1000, readProfile())
+          if (running && (reduced || lowPowerDevice() || now - last >= 1000 / 30)) {
+            renderer?.draw(reduced || lowPowerDevice() ? 0 : now / 1000, readProfile())
             last = now
             markReady()
             if (reduced) markReducedMotionSettled()
+            else if (lowPowerDevice()) markMotion('paused')
             else markMotion('running')
+            if (reduced || lowPowerDevice()) {
+              raf = 0
+              return
+            }
           } else if (!running) {
             markMotion('paused')
+            raf = 0
+            return
           }
-          raf = requestAnimationFrame(draw)
+          if (drawFrame) raf = requestAnimationFrame(drawFrame)
         }
-        raf = requestAnimationFrame(draw)
+        raf = requestAnimationFrame(drawFrame)
       } catch (error) {
         activateCssFallback(error)
       }
@@ -139,7 +152,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         worker.postMessage({
           type: 'motion',
           reducedMotion,
-          running: canRun(),
+          running: canRun() && !lowPowerDevice(),
           motionToken: token,
         })
       } else if (renderer) {
@@ -151,6 +164,9 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
           markReducedMotionSettled()
         } else if (!canRun()) {
           markMotion('paused')
+        } else if (!raf && shouldAnimate()) {
+          last = 0
+          if (drawFrame) raf = requestAnimationFrame(drawFrame)
         }
       }
     }
@@ -163,7 +179,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
             markReady()
           } else if (data.type === 'motion-settled') {
             const isCurrentRequest = data.motionToken === motionToken
-            const matchesCurrentState = data.reducedMotion === reducedMotion && data.running === canRun()
+            const expectedRunning = canRun() && !lowPowerDevice()
+            const matchesCurrentState = data.reducedMotion === reducedMotion && data.running === expectedRunning
             if (!isCurrentRequest && !matchesCurrentState) return
             markMotion(data.reducedMotion ? 'reduced-settled' : data.running ? 'running' : 'paused')
           } else if (data.type === 'error') {
@@ -187,7 +204,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
             ...initialSize,
             profile: publishProfile(),
             reducedMotion,
-            running: canRun(),
+            running: canRun() && !lowPowerDevice(),
             motionToken: token,
           },
           [offscreen],
