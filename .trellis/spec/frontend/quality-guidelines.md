@@ -213,6 +213,16 @@ origin through `UI_CHECK_BASE`, and keep the existing server untouched.
   `data-flow-scene` and the seven-value `data-flow-dynamics` diagnostics
   available in isolated Vite previews and prevents the UI matrix from testing
   an untyped canvas state.
+- The CSS foundation must remain visible underneath a ready Canvas. A ready
+  flag may stop fallback animation, but must not set `.gradient-bg` or the app
+  fallback pseudo-elements to `display: none`; the fallback owns the visible
+  pixels until the first presented Canvas frame has taken over. The Canvas may
+  use one RAF handoff after a valid frame, never a double-RAF gap that creates
+  an empty frame.
+- `FlowBackground` exposes `data-flow-profile-version` and the root exposes
+  `data-harbor-scene-version` as monotonic diagnostics. A scene change updates
+  the root profile before React paints, so CSS, renderer profile, and scene
+  decoration observe one complete scene instead of a transient half-state.
 - Changing the renderer owner or adding a fallback path must preserve the same
   profile attributes, capped-DPR sizing, and scene-change synchronization as
   the Worker path.
@@ -223,6 +233,21 @@ profile, then run `check:ui` against a dev server where the Canvas has no
 
 Correct: publish the current typed profile before constructing the main-thread
 renderer and re-publish it from the existing scene/resize synchronization.
+
+### First-Frame Handoff Contract
+
+The fallback and Canvas are layered owners of the same pixels during startup
+and runtime failure. UI checks must wait for the actual Canvas/fallback state
+and, for CSS motion assertions, wait until a computed transform changes rather
+than sampling two fixed timestamps. Browser throttling can present the same
+animation frame at both timestamps even when the animation is running.
+
+Wrong: hide the fallback as soon as `data-flow-ready="true"` is set, or fail a
+motion check solely because two samples 180ms apart are equal.
+
+Correct: keep the fallback visible and stop only its animation after readiness;
+then wait for a real transform change within a bounded timeout and still fail
+when no change is observed.
 
 ### Production Appearance Verification Command
 

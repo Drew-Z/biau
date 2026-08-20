@@ -308,6 +308,17 @@ async function waitForCompositorFrames(page) {
   }))
 }
 
+async function waitForTransformChange(page, selector, before, timeout = 2_000) {
+  await page.waitForFunction(
+    ({ targetSelector, previous }) => {
+      const current = [...document.querySelectorAll(targetSelector)].map((layer) => getComputedStyle(layer).transform)
+      return current.some((value, index) => value !== previous[index])
+    },
+    { targetSelector: selector, previous: before },
+    { timeout },
+  )
+}
+
 const networkGuards = new WeakMap()
 
 async function createUiPage(browser, options) {
@@ -2213,7 +2224,9 @@ for (const theme of ['light', 'dark']) {
         expectedScene,
         resolvedTheme: root.dataset.colorMode ?? '',
         resolvedScene: root.dataset.harborScene ?? '',
+        sceneVersion: Number.parseInt(root.dataset.harborSceneVersion ?? '0', 10),
         flowScene: flowCanvas?.getAttribute('data-flow-scene') ?? '',
+        flowProfileVersion: Number.parseInt(flowCanvas?.getAttribute('data-flow-profile-version') ?? '0', 10),
         flowDynamics: (flowCanvas?.getAttribute('data-flow-dynamics') ?? '')
           .split('|')
           .filter(Boolean)
@@ -2278,6 +2291,10 @@ for (const theme of ['light', 'dark']) {
       appearance.lightClass !== (theme === 'light')
     ) {
       failures.push(`/ home appearance ${theme}/${scene}: root theme and scene state should match persisted values`)
+    }
+    if (!Number.isFinite(appearance.sceneVersion) || appearance.sceneVersion < 1 ||
+        !Number.isFinite(appearance.flowProfileVersion) || appearance.flowProfileVersion < 1) {
+      failures.push(`/ home appearance ${theme}/${scene}: expected monotonic scene/profile version diagnostics`)
     }
     if (
       appearance.logoTag !== 'BUTTON' ||
@@ -2350,12 +2367,29 @@ for (const theme of ['light', 'dark']) {
     if (theme === 'dark') {
       const viewportBox = await harborThemePage.locator('.carousel-viewport').boundingBox()
       if (viewportBox) {
+        const panel = harborThemePage.locator('.carousel-wrapper')
+        await harborThemePage.mouse.move(
+          viewportBox.x + viewportBox.width * 0.5,
+          viewportBox.y + viewportBox.height * 0.5,
+        )
+        await waitForCompositorFrames(harborThemePage)
         await harborThemePage.mouse.move(
           viewportBox.x + viewportBox.width * 0.84,
           viewportBox.y + viewportBox.height * 0.22,
         )
-        await harborThemePage.waitForTimeout(240)
-        const tilt = await harborThemePage.locator('.carousel-wrapper').evaluate((panel) => {
+        await harborThemePage.waitForFunction(
+          ({ sceneName }) => {
+            const currentPanel = document.querySelector('.carousel-wrapper')
+            if (!(currentPanel instanceof HTMLElement)) return false
+            const x = Number.parseFloat(currentPanel.style.getPropertyValue('--carousel-tilt-x')) || 0
+            const y = Number.parseFloat(currentPanel.style.getPropertyValue('--carousel-tilt-y')) || 0
+            const minimum = sceneName === 'garden' ? 0.018 : 0.052
+            return Math.hypot(x, y) >= minimum
+          },
+          { sceneName: scene },
+          { timeout: 2_000 },
+        ).catch(() => undefined)
+        const tilt = await panel.evaluate((panel) => {
           const style = panel.style
           return Math.hypot(
             Number.parseFloat(style.getPropertyValue('--carousel-tilt-x')) || 0,
@@ -2403,9 +2437,14 @@ await scenePreferencePage.addInitScript(() => {
 })
 await gotoApp(scenePreferencePage, '/')
 const sceneButton = scenePreferencePage.locator('.nav-logo')
+const initialSceneVersion = await scenePreferencePage.evaluate(() => Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10))
 await sceneButton.focus()
 await scenePreferencePage.keyboard.press('Enter')
 await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'garden')
+const nextSceneVersion = await scenePreferencePage.evaluate(() => Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10))
+if (!(nextSceneVersion > initialSceneVersion)) {
+  failures.push('/ home scene preference: scene profile version should advance exactly when the scene changes')
+}
 const storedScene = await scenePreferencePage.evaluate(() => window.localStorage.getItem('biau-port-harbor-scene'))
 if (storedScene !== 'garden') {
   failures.push('/ home scene preference: fallback switching should cycle and persist the next harbor scene')
@@ -2787,6 +2826,12 @@ const motionLayerTransformsB = await motionSwitchPage.evaluate(() =>
   [...document.querySelectorAll('[data-harbor-scene-layer]')].map((layer) => getComputedStyle(layer).transform),
 )
 if (motionLayerTransformsA.every((value, index) => value === motionLayerTransformsB[index])) {
+  await waitForTransformChange(motionSwitchPage, '[data-harbor-scene-layer]', motionLayerTransformsA).catch(() => undefined)
+}
+const motionLayerTransformsC = await motionSwitchPage.evaluate(() =>
+  [...document.querySelectorAll('[data-harbor-scene-layer]')].map((layer) => getComputedStyle(layer).transform),
+)
+if (motionLayerTransformsA.every((value, index) => value === motionLayerTransformsC[index])) {
   failures.push('/ home scene motion: normal preference should animate at least one scene foundation layer')
 }
 

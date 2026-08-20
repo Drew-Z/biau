@@ -2726,9 +2726,11 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
 }
 .flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) { opacity: 1; }
 .flow-background[data-flow-fallback='css'] { opacity: 0; }
+/* Keep the CSS composition underneath the canvas during handoff. Removing it
+   before the first presented canvas frame creates a one-frame transparent hole. */
 .app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::before,
 .app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::after,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .gradient-bg { display: none !important; animation: none !important; }
+.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .gradient-bg { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .flow-background { transition: none; } }
 
 /* Mobile editorial rhythm: consolidate tools and move useful content into the first viewport. */

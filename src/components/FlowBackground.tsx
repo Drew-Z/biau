@@ -35,6 +35,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     let motionToken = 0
     let drawFrame: ((now: number) => void) | undefined
     let currentMotionState: FlowMotionState = 'pending'
+    let profileVersion = 0
+    let profileSignature = ''
 
     const media = matchMedia(REDUCED)
     const readReducedMotion = () => matchMedia(REDUCED).matches
@@ -47,7 +49,13 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     }
     const publishProfile = () => {
       const current = readProfile()
+      const nextSignature = JSON.stringify(current)
+      if (nextSignature !== profileSignature) {
+        profileSignature = nextSignature
+        profileVersion += 1
+      }
       canvas.dataset.flowScene = current.scene
+      canvas.dataset.flowProfileVersion = String(profileVersion)
       canvas.dataset.flowDynamics = [
         current.dynamics.speed,
         current.dynamics.fieldScale,
@@ -74,9 +82,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
       if (readyReported || fallbackActive) return
       readyReported = true
       readyRaf = requestAnimationFrame(() => {
-        readyRaf = requestAnimationFrame(() => {
-          if (!stopped && !fallbackActive) setReady(true)
-        })
+        readyRaf = 0
+        if (!stopped && !fallbackActive) setReady(true)
       })
     }
     const markMotion = (next: FlowMotionState) => {

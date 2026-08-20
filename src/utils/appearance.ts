@@ -61,7 +61,12 @@ export function applyResolvedTheme(root: HTMLElement, resolved: ResolvedTheme) {
 }
 
 export function applyHarborScene(root: HTMLElement, scene: HarborScene) {
-  root.dataset.harborScene = scene
+  const sceneChanged = root.dataset.harborScene !== scene
+  if (sceneChanged) root.dataset.harborScene = scene
+  if (!root.dataset.harborSceneVersion || sceneChanged) {
+    const currentVersion = Number.parseInt(root.dataset.harborSceneVersion ?? '0', 10)
+    root.dataset.harborSceneVersion = String(Number.isFinite(currentVersion) ? currentVersion + 1 : 1)
+  }
 }
 
 export function applyInitialAppearance() {
