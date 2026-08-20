@@ -12,6 +12,8 @@
   --home-accent-strong: #91d9d2;
   --home-accent-soft: #3b2936;
   --home-brand: #efad61;
+  --stellar-scene-perimeter-opacity: 0.82;
+  --stellar-scene-perimeter-duration: 7.6s;
   --home-green: #5fc1bd;
   --home-amber: #efad61;
   --home-violet: #a78fd4;
@@ -544,6 +546,119 @@
   contain: strict;
   background: var(--harbor-foundation-base);
   transition: background-color 0.35s var(--ease-smooth);
+}
+
+.starfield-background {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transition: opacity 420ms var(--ease-smooth);
+}
+
+.starfield-background[data-starfield-state='running'],
+.starfield-background[data-starfield-state='reduced'] {
+  opacity: 1;
+}
+
+:root[data-harbor-scene='dusk'] .starfield-background {
+  opacity: 0.5;
+}
+
+:root[data-harbor-scene='garden'] .starfield-background {
+  opacity: 0.36;
+  mix-blend-mode: soft-light;
+}
+
+:root[data-harbor-scene='stellar'] .starfield-background {
+  opacity: 1;
+  filter: saturate(1.08) drop-shadow(0 0 5px color-mix(in oklch, var(--home-accent) 36%, transparent));
+}
+
+.stellar-effects {
+  --stellar-edge-glow: 0;
+  --stellar-perimeter-opacity: 0;
+  --stellar-perimeter-duration: 7.6s;
+  --stellar-brand-highlight: 0;
+  --stellar-pointer-x: 50vw;
+  --stellar-pointer-y: 50vh;
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 420ms var(--ease-smooth);
+}
+
+.stellar-effects::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 1px solid color-mix(in oklch, var(--home-accent) calc(var(--stellar-edge-glow) * 62%), transparent);
+  border-radius: 24px;
+  mask-image: linear-gradient(#000, #000), linear-gradient(#000, #000);
+  mask-composite: exclude;
+  opacity: calc(var(--stellar-edge-glow) * 0.58);
+  animation: stellarEdgeBreath 6.8s var(--ease-in-out) infinite alternate;
+}
+
+.stellar-effects__pointer-glow {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  left: calc(var(--stellar-pointer-x) - 180px);
+  top: calc(var(--stellar-pointer-y) - 180px);
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklch, var(--home-accent) 28%, white) 0, transparent 68%);
+  opacity: calc(var(--stellar-edge-glow) * 0.32);
+  filter: blur(12px);
+  transform: translateZ(0);
+  transition: left 260ms var(--ease-smooth), top 260ms var(--ease-smooth);
+}
+
+.stellar-effects__brand-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120px 120px at 52px 34px, color-mix(in oklch, var(--home-accent) 54%, white), transparent 72%);
+  opacity: calc(var(--stellar-brand-highlight) * 0.34);
+  mix-blend-mode: screen;
+}
+
+:root[data-harbor-scene='stellar'] .stellar-effects {
+  opacity: 1;
+}
+
+:root[data-harbor-scene='garden'] .stellar-effects,
+:root[data-harbor-scene='dusk'] .stellar-effects {
+  opacity: 0.34;
+}
+
+.stellar-effects[data-stellar-state='paused']::before,
+.stellar-effects[data-stellar-state='ambient']::before,
+.stellar-effects[data-stellar-state='paused'] .stellar-effects__pointer-glow,
+.stellar-effects[data-stellar-state='ambient'] .stellar-effects__pointer-glow {
+  animation-play-state: paused;
+  transition: none;
+}
+
+@keyframes stellarEdgeBreath {
+  0% { transform: scale(0.996); opacity: calc(var(--stellar-edge-glow) * 0.4); }
+  100% { transform: scale(1.004); opacity: calc(var(--stellar-edge-glow) * 0.82); }
+}
+
+@media (prefers-reduced-motion: reduce), (max-width: 768px), (any-hover: none) {
+  .stellar-effects__pointer-glow {
+    display: none;
+  }
+
+  .stellar-effects::before {
+    animation: none;
+  }
 }
 
 .harbor-scene-foundation > * {

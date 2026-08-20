@@ -11,6 +11,7 @@ import { heroContent, type HeroPoem } from '../data/hero'
 import { AnimatedText } from './AnimatedText'
 import { RightScrollCards } from './RightScrollCards'
 import { usesMobileInteractionMode } from '../utils/responsive'
+import { useHeroCinema } from '../hooks/useHeroCinema'
 
 interface HeroSplitProps {
   onProjectClick: (link: string) => void
@@ -33,15 +34,16 @@ export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: 
   const { poems, projects } = heroContent
   const heroRef = useRef<HTMLElement>(null)
   useHomeSceneDepth(heroRef)
+  useHeroCinema(heroRef, { animateTitle: false })
 
   return (
     <main ref={heroRef} className="home-hero" data-home-depth="static">
-      <section className="hero-intro">
-        <h1 className="eyebrow">BIAU PORT</h1>
+      <section className="hero-intro" data-cinema="intro">
+        <h1 className="eyebrow" data-cinema="eyebrow">BIAU PORT</h1>
 
         <HeroTitleRotator poems={poems} />
 
-        <p className="hero-body">
+        <p className="hero-body" data-cinema="body">
           记录每个产品从构想到上线的过程，并公开它的能力边界、当前状态与验证证据。
         </p>
 
@@ -62,6 +64,7 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
   const [index, setIndex] = useState(0)
   const [ghostPoem, setGhostPoem] = useState<HeroPoem | null>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
+  useHeroCinema(titleRef, { key: index, titleOnly: true })
   const pausedRef = useRef(false)
   const indexRef = useRef(0)
   const ghostTimerRef = useRef(0)
@@ -307,7 +310,7 @@ function SystemStatus() {
   }, [])
 
   return (
-    <div className="system-status">
+    <div className="system-status" data-cinema="status">
       <div className="status-text">
         <span>LOCAL TIME</span>
         <strong>{formatLocalTime(currentTime)} · CST</strong>

@@ -326,6 +326,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     <section
       ref={wrapperRef}
       className="hero-panel carousel-wrapper"
+      data-cinema="panel"
       onPointerMove={handlePanelPointerMove}
       onMouseEnter={() => {
         isHoveringRef.current = true

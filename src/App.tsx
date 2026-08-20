@@ -5,6 +5,8 @@ import './styles/site-footer.css'
 import { useTheme } from './hooks/useTheme'
 import { useHarborScene } from './hooks/useHarborScene'
 import { FlowBackground } from './components/FlowBackground'
+import { StarfieldBackground } from './components/StarfieldBackground'
+import { StellarEffects } from './components/StellarEffects'
 import { Navigation } from './components/Navigation'
 import { SeoManager } from './components/SeoManager'
 import { HarborIntro } from './components/HarborIntro'
@@ -109,6 +111,8 @@ function App() {
   return (
     <div className={`app ${pageClass}`}>
       <FlowBackground scene={harborScene} />
+      <StarfieldBackground scene={harborScene} />
+      <StellarEffects scene={harborScene} />
       {pathname === '/' && <HarborIntro harborScene={harborScene} />}
       <SeoManager />
 

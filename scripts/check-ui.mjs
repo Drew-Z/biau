@@ -2164,6 +2164,8 @@ for (const theme of ['light', 'dark']) {
       const card = document.querySelector('.carousel-card')
       const cardTitle = card?.querySelector('strong')
       const flowCanvas = document.querySelector('.flow-background')
+      const starfieldCanvas = document.querySelector('[data-starfield-background]')
+      const stellarEffects = document.querySelector('[data-stellar-effects]')
       const sceneFoundation = document.querySelector('[data-harbor-scene-foundation]')
       const sceneWash = document.querySelector('[data-harbor-scene-layer="wash"]')
       const sceneTexture = document.querySelector('[data-harbor-scene-layer="texture"]')
@@ -2227,6 +2229,13 @@ for (const theme of ['light', 'dark']) {
         sceneVersion: Number.parseInt(root.dataset.harborSceneVersion ?? '0', 10),
         flowScene: flowCanvas?.getAttribute('data-flow-scene') ?? '',
         flowProfileVersion: Number.parseInt(flowCanvas?.getAttribute('data-flow-profile-version') ?? '0', 10),
+        starfieldScene: starfieldCanvas?.getAttribute('data-starfield-scene') ?? '',
+        starfieldProfileVersion: Number.parseInt(starfieldCanvas?.getAttribute('data-starfield-profile-version') ?? '0', 10),
+        starfieldState: starfieldCanvas?.getAttribute('data-starfield-state') ?? '',
+        starfieldCount: Number.parseInt(starfieldCanvas?.getAttribute('data-starfield-count') ?? '0', 10),
+        stellarScene: stellarEffects?.getAttribute('data-stellar-scene') ?? '',
+        stellarProfileVersion: Number.parseInt(stellarEffects?.getAttribute('data-stellar-profile-version') ?? '0', 10),
+        stellarState: stellarEffects?.getAttribute('data-stellar-state') ?? '',
         flowDynamics: (flowCanvas?.getAttribute('data-flow-dynamics') ?? '')
           .split('|')
           .filter(Boolean)
@@ -2293,8 +2302,19 @@ for (const theme of ['light', 'dark']) {
       failures.push(`/ home appearance ${theme}/${scene}: root theme and scene state should match persisted values`)
     }
     if (!Number.isFinite(appearance.sceneVersion) || appearance.sceneVersion < 1 ||
-        !Number.isFinite(appearance.flowProfileVersion) || appearance.flowProfileVersion < 1) {
+        !Number.isFinite(appearance.flowProfileVersion) || appearance.flowProfileVersion < 1 ||
+        !Number.isFinite(appearance.starfieldProfileVersion) || appearance.starfieldProfileVersion < 1 ||
+        !Number.isFinite(appearance.stellarProfileVersion) || appearance.stellarProfileVersion < 1) {
       failures.push(`/ home appearance ${theme}/${scene}: expected monotonic scene/profile version diagnostics`)
+    }
+    if (
+      appearance.starfieldScene !== scene ||
+      appearance.stellarScene !== scene ||
+      !['running', 'reduced', 'paused'].includes(appearance.starfieldState) ||
+      !['running', 'ambient', 'paused'].includes(appearance.stellarState) ||
+      appearance.starfieldCount < (scene === 'stellar' ? 100 : 1)
+    ) {
+      failures.push(`/ home appearance ${theme}/${scene}: expected synchronized starfield and stellar-effects owners`)
     }
     if (
       appearance.logoTag !== 'BUTTON' ||

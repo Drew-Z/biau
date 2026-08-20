@@ -148,6 +148,7 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "fast-xml-parser": "^5.10.1",
+    "gsap": "^3.15.0",
     "ipaddr.js": "^2.4.0",
     "lucide-react": "^1.24.0",
     "markdown-to-jsx": "^9.9.0",

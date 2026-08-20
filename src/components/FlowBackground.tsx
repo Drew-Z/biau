@@ -70,7 +70,11 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     const size = () => ({
       width: innerWidth,
       height: innerHeight,
-      dpr: Math.min(devicePixelRatio || 1, 1.25),
+      dpr: (() => {
+        const profile = readProfile()
+        const portrait = innerWidth <= 768 && innerHeight >= innerWidth
+        return Math.min(devicePixelRatio || 1, portrait ? profile.renderBudget.mobileDpr : profile.renderBudget.desktopDpr)
+      })(),
     })
     const lowPowerDevice = () =>
       Boolean((navigator as Navigator & { deviceMemory?: number }).deviceMemory &&
@@ -126,7 +130,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
           if (stopped) return
           const reduced = reducedMotion
           const running = canRun()
-          if (running && (reduced || lowPowerDevice() || now - last >= 1000 / 30)) {
+          const frameBudget = readProfile().renderBudget.maxFps
+          if (running && (reduced || lowPowerDevice() || now - last >= 1000 / frameBudget)) {
             renderer?.draw(reduced || lowPowerDevice() ? 0 : now / 1000, readProfile())
             last = now
             markReady()
