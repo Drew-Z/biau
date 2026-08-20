@@ -206,6 +206,24 @@ origin through `UI_CHECK_BASE`, and keep the existing server untouched.
   the Flow frame stable and do not start a perpetual RAF/timer loop. Any
   resume path must schedule at most one new loop and must clear it on cleanup.
 
+### 9. Main-Thread Development Profile Contract
+
+- The `FlowBackground` main-thread fallback must call `publishProfile()` before
+  its first draw, just like the production Worker init path. This keeps
+  `data-flow-scene` and the seven-value `data-flow-dynamics` diagnostics
+  available in isolated Vite previews and prevents the UI matrix from testing
+  an untyped canvas state.
+- Changing the renderer owner or adding a fallback path must preserve the same
+  profile attributes, capped-DPR sizing, and scene-change synchronization as
+  the Worker path.
+
+Wrong: assume the Worker init is the only place that needs to publish the
+profile, then run `check:ui` against a dev server where the Canvas has no
+`data-flow-dynamics` attribute.
+
+Correct: publish the current typed profile before constructing the main-thread
+renderer and re-publish it from the existing scene/resize synchronization.
+
 ### Production Appearance Verification Command
 
 #### 1. Scope / Trigger

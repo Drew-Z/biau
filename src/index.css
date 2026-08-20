@@ -444,3 +444,18 @@ button.link-badge {
   background: var(--home-page-solid);
   animation: none;
 }
+
+/* The Flow canvas supplies motion; the page surface supplies the reference
+   site's broad scene gradient and remains visible during fallback. */
+.app.page-home {
+  background: var(--reference-horizon, var(--home-page-solid));
+}
+
+.app.page-home .flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) {
+  opacity: var(--reference-canvas-opacity, var(--home-canvas-opacity));
+  filter: var(--reference-canvas-filter, var(--home-canvas-filter));
+}
+
+.app.page-home .gradient-bg {
+  background: var(--reference-horizon, var(--home-page-solid));
+}

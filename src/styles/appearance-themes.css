@@ -787,6 +787,147 @@ html.harbor-intro-active .harbor-scene-foundation__texture::after {
   }
 }
 
+/* Reference-site fidelity layer: surfaces are intentionally scene-specific.
+   It is kept last so legacy shell tokens cannot collapse the six combinations
+   back into one dark panel treatment. */
+:root:not(.light-theme)[data-harbor-scene='dusk'] {
+  --reference-page: #17121d;
+  --reference-horizon: linear-gradient(135deg, #3a2038 0%, #2a2344 42%, #12323b 100%);
+  --reference-ink: #fff7f1;
+  --reference-copy: #dec9d1;
+  --reference-muted: #b9a0ae;
+  --reference-faint: #8f7a8c;
+  --reference-nav: rgb(28 21 35 / 72%);
+  --reference-nav-border: rgb(238 173 126 / 34%);
+  --reference-panel: rgb(36 27 46 / 62%);
+  --reference-panel-border: rgb(244 189 157 / 42%);
+  --reference-panel-shadow: 0 28px 70px rgb(10 5 20 / 30%);
+  --reference-card: rgb(55 39 67 / 70%);
+  --reference-card-border: rgb(224 162 177 / 30%);
+  --reference-card-shadow: 0 12px 28px rgb(12 5 22 / 22%);
+  --reference-action: rgb(238 173 126 / 18%);
+  --reference-action-ink: #ffe9da;
+  --reference-accent: #eab07e;
+  --reference-accent-soft: #8dd0cb;
+  --reference-canvas-opacity: .78;
+  --reference-canvas-filter: saturate(1.12) brightness(.88) contrast(1.03);
+}
+
+:root.light-theme[data-harbor-scene='dusk'] {
+  --reference-page: #f2e8e4;
+  --reference-horizon: linear-gradient(135deg, #f4d9d1 0%, #e8e1ee 48%, #cee5e1 100%);
+  --reference-ink: #362934;
+  --reference-copy: #654f5c;
+  --reference-muted: #796674;
+  --reference-faint: #9a8692;
+  --reference-nav: rgb(255 250 247 / 70%);
+  --reference-nav-border: rgb(145 92 106 / 34%);
+  --reference-panel: rgb(255 252 249 / 62%);
+  --reference-panel-border: rgb(159 107 116 / 38%);
+  --reference-panel-shadow: 0 24px 64px rgb(91 51 61 / 13%);
+  --reference-card: rgb(255 248 244 / 72%);
+  --reference-card-border: rgb(161 111 120 / 32%);
+  --reference-card-shadow: 0 12px 26px rgb(91 51 61 / 10%);
+  --reference-action: rgb(168 92 55 / 12%);
+  --reference-action-ink: #5b3540;
+  --reference-accent: #aa652d;
+  --reference-accent-soft: #277a79;
+  --reference-canvas-opacity: .62;
+  --reference-canvas-filter: saturate(1.02) brightness(1.04) contrast(.98);
+}
+
+:root:not(.light-theme)[data-harbor-scene='garden'] {
+  --reference-page: #0d241d;
+  --reference-horizon: linear-gradient(135deg, #262144 0%, #15535a 46%, #1f6b4a 100%);
+  --reference-ink: #f1fff2;
+  --reference-copy: #c2dec8;
+  --reference-muted: #9fc1aa;
+  --reference-faint: #789d87;
+  --reference-nav: rgb(13 37 29 / 64%);
+  --reference-nav-border: rgb(126 197 154 / 34%);
+  --reference-panel: rgb(22 65 51 / 58%);
+  --reference-panel-border: rgb(139 218 164 / 40%);
+  --reference-panel-shadow: 0 28px 70px rgb(2 25 17 / 27%);
+  --reference-card: rgb(34 91 69 / 62%);
+  --reference-card-border: rgb(151 221 172 / 32%);
+  --reference-card-shadow: 0 12px 28px rgb(1 25 16 / 20%);
+  --reference-action: rgb(128 205 153 / 18%);
+  --reference-action-ink: #e6ffe9;
+  --reference-accent: #9bd5a5;
+  --reference-accent-soft: #72d6c3;
+  --reference-canvas-opacity: .82;
+  --reference-canvas-filter: saturate(1.15) brightness(.9) contrast(1.02);
+}
+
+:root.light-theme[data-harbor-scene='garden'] {
+  --reference-page: #dbeee1;
+  --reference-horizon: linear-gradient(135deg, #ddd2ee 0%, #c9e6e2 48%, #c8e9c8 100%);
+  --reference-ink: #1d3b29;
+  --reference-copy: #41624c;
+  --reference-muted: #5d7c66;
+  --reference-faint: #7c9983;
+  --reference-nav: rgb(250 255 250 / 68%);
+  --reference-nav-border: rgb(74 125 90 / 32%);
+  --reference-panel: rgb(248 255 249 / 58%);
+  --reference-panel-border: rgb(85 145 103 / 38%);
+  --reference-panel-shadow: 0 24px 64px rgb(45 75 51 / 12%);
+  --reference-card: rgb(247 255 248 / 68%);
+  --reference-card-border: rgb(91 151 108 / 30%);
+  --reference-card-shadow: 0 12px 26px rgb(45 75 51 / 9%);
+  --reference-action: rgb(71 145 91 / 12%);
+  --reference-action-ink: #295838;
+  --reference-accent: #477c58;
+  --reference-accent-soft: #2f9b88;
+  --reference-canvas-opacity: .64;
+  --reference-canvas-filter: saturate(1.05) brightness(1.03) contrast(.97);
+}
+
+:root:not(.light-theme)[data-harbor-scene='stellar'] {
+  --reference-page: #050a1c;
+  --reference-horizon: linear-gradient(135deg, #111642 0%, #0b2d55 46%, #083c4b 100%);
+  --reference-ink: #f4f7ff;
+  --reference-copy: #c5d3ec;
+  --reference-muted: #9eaecb;
+  --reference-faint: #7788ad;
+  --reference-nav: rgb(8 16 42 / 68%);
+  --reference-nav-border: rgb(97 213 220 / 42%);
+  --reference-panel: rgb(9 25 57 / 62%);
+  --reference-panel-border: rgb(97 204 220 / 48%);
+  --reference-panel-shadow: 0 30px 78px rgb(0 4 23 / 38%);
+  --reference-card: rgb(15 45 82 / 66%);
+  --reference-card-border: rgb(88 190 221 / 38%);
+  --reference-card-shadow: 0 14px 32px rgb(0 5 27 / 28%);
+  --reference-action: rgb(85 194 216 / 18%);
+  --reference-action-ink: #e4fcff;
+  --reference-accent: #75e1e0;
+  --reference-accent-soft: #bf91ec;
+  --reference-canvas-opacity: .9;
+  --reference-canvas-filter: saturate(1.22) brightness(.82) contrast(1.12);
+}
+
+:root.light-theme[data-harbor-scene='stellar'] {
+  --reference-page: #e8eef9;
+  --reference-horizon: linear-gradient(135deg, #dce1f3 0%, #d2e7ef 50%, #d4e9e5 100%);
+  --reference-ink: #1b2d4c;
+  --reference-copy: #435779;
+  --reference-muted: #607493;
+  --reference-faint: #8392ad;
+  --reference-nav: rgb(250 253 255 / 70%);
+  --reference-nav-border: rgb(80 128 165 / 34%);
+  --reference-panel: rgb(249 252 255 / 60%);
+  --reference-panel-border: rgb(98 143 180 / 38%);
+  --reference-panel-shadow: 0 26px 66px rgb(48 61 101 / 13%);
+  --reference-card: rgb(247 252 255 / 70%);
+  --reference-card-border: rgb(87 137 177 / 32%);
+  --reference-card-shadow: 0 12px 28px rgb(48 61 101 / 10%);
+  --reference-action: rgb(70 135 160 / 12%);
+  --reference-action-ink: #294b68;
+  --reference-accent: #467884;
+  --reference-accent-soft: #71599d;
+  --reference-canvas-opacity: .66;
+  --reference-canvas-filter: saturate(1.05) brightness(1.03) contrast(1.01);
+}
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 360ms;

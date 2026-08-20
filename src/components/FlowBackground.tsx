@@ -109,6 +109,9 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
 
     const main = () => {
       try {
+        // Publish the typed profile before the first main-thread frame as well
+        // as in the worker init path; UI diagnostics must be deterministic in dev.
+        publishProfile()
         renderer = new FlowRenderer(canvas, { preserveDrawingBuffer: true })
         const initialSize = size()
         renderer.resize(initialSize.width, initialSize.height, initialSize.dpr)
