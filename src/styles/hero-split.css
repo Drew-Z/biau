@@ -776,34 +776,6 @@
   translate: 0;
 }
 
-.app.page-home .home-hero::before,
-.app.page-home .home-hero::after {
-  content: '';
-  position: fixed;
-  inset: 96px 0 0;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.app.page-home .home-hero::before {
-  background-image: var(--home-scene-atmosphere);
-  background-position: var(--home-scene-atmosphere-position, center);
-  background-size: var(--home-scene-atmosphere-size, auto);
-  mix-blend-mode: var(--home-scene-atmosphere-blend, soft-light);
-  opacity: var(--home-scene-atmosphere-opacity, 0.5);
-  transition: opacity 0.35s var(--ease-smooth), filter 0.35s var(--ease-smooth);
-}
-
-.app.page-home .home-hero::after {
-  background-image: var(--home-scene-detail);
-  background-position: var(--home-scene-detail-position, center);
-  background-size: var(--home-scene-detail-size, auto);
-  mix-blend-mode: var(--home-scene-detail-blend, soft-light);
-  opacity: var(--home-scene-detail-opacity, 0.42);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent);
-}
-
 .app.page-home .eyebrow {
   margin-bottom: 28px;
   color: var(--home-accent-strong);
@@ -1039,11 +1011,6 @@
 
   .app.page-home .hero-intro {
     padding: 0 8px;
-  }
-
-  .app.page-home .home-hero::before,
-  .app.page-home .home-hero::after {
-    inset-block-start: 72px;
   }
 
   .app.page-home .eyebrow {

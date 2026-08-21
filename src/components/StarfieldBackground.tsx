@@ -1,17 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { StarfieldRenderer } from '../background/StarfieldRenderer'
-import { getFlowProfile, type HarborScene, type StarfieldProfile } from '../background/flowPalettes'
+import { getFlowProfile, type StarfieldProfile } from '../background/flowPalettes'
 import { isLowPowerDevice } from '../utils/visualPerformance'
+import { STELLAR_SCENE } from '../utils/appearance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const MAX_FPS = 30
 
-function getScene(value: string | undefined, fallback: HarborScene): HarborScene {
-  return value === 'garden' || value === 'stellar' || value === 'dusk' ? value : fallback
-}
-
-function getProfile(scene: HarborScene): StarfieldProfile {
-  const profile = getFlowProfile(scene, document.documentElement.classList.contains('light-theme')).starfield
+function getProfile(): StarfieldProfile {
+  const profile = getFlowProfile(STELLAR_SCENE, false).starfield
   const areaCount = Math.max(150, Math.min(280, Math.round((innerWidth * innerHeight) / 4800)))
   if (isLowPowerDevice()) {
     return { ...profile, count: Math.max(48, Math.round(areaCount * 0.32)), opacity: profile.opacity * 0.72, twinkle: 0 }
@@ -19,9 +16,8 @@ function getProfile(scene: HarborScene): StarfieldProfile {
   return { ...profile, count: areaCount }
 }
 
-export function StarfieldBackground({ scene }: { scene: HarborScene }) {
+export function StarfieldBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const initialSceneRef = useRef(scene)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -38,20 +34,15 @@ export function StarfieldBackground({ scene }: { scene: HarborScene }) {
     let pointerY = 0
     let scrollProgress = 0
 
-    const readProfile = () => {
-      const current = getScene(document.documentElement.dataset.harborScene, initialSceneRef.current)
-      return getProfile(current)
-    }
+    const readProfile = getProfile
     const publishProfile = () => {
-      const activeScene = getScene(document.documentElement.dataset.harborScene, initialSceneRef.current)
-      const light = document.documentElement.classList.contains('light-theme')
-      const current = getProfile(activeScene)
-      const signature = JSON.stringify({ activeScene, light, current })
+      const current = getProfile()
+      const signature = JSON.stringify(current)
       if (signature !== profileSignature) {
         profileSignature = signature
         profileVersion += 1
       }
-      canvas.dataset.starfieldScene = activeScene
+      canvas.dataset.starfieldScene = STELLAR_SCENE
       canvas.dataset.starfieldProfileVersion = String(profileVersion)
       canvas.dataset.starfieldCount = String(current.count)
       return current
@@ -126,8 +117,6 @@ export function StarfieldBackground({ scene }: { scene: HarborScene }) {
       canvas.dataset.starfieldFallback = 'css'
     }
 
-    const observer = new MutationObserver(sync)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'] })
     addEventListener('resize', sync, { passive: true })
     addEventListener('pointermove', updatePointer, { passive: true })
     addEventListener('scroll', updateScroll, { passive: true })
@@ -139,7 +128,6 @@ export function StarfieldBackground({ scene }: { scene: HarborScene }) {
     return () => {
       stopped = true
       cancelAnimationFrame(raf)
-      observer.disconnect()
       removeEventListener('resize', sync)
       removeEventListener('pointermove', updatePointer)
       removeEventListener('scroll', updateScroll)

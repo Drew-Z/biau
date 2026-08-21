@@ -1,308 +1,7 @@
-/* Flow pages: shared home/tools treatment based on the reference site. */
+/* Shared content surfaces over the single Stellar background owner. */
 .app.page-home,
 .app.page-tools,
 .app.page-subpage {
-  --flow-c1: #d5566d;
-  --flow-c2: #e9e89d;
-  --flow-c3: #90bfe0;
-  --flow-c4: #333ca0;
-  --flow-c5: #16497b;
-  --flow-light-rgb: 213 86 109;
-  --flow-aqua-rgb: 144 191 224;
-  --flow-blue-rgb: 51 60 160;
-  --flow-deep-rgb: 22 73 123;
-  --flow-field-opacity: 0.86;
-  --flow-ribbon-opacity: 0.36;
-  --flow-blur: 34px;
-  --flow-ribbon-blur: 52px;
-  --flow-panel-alpha: 0.52;
-  --flow-hero-alpha: 0.48;
-  --flow-hero-alpha-soft: 0.26;
-  --flow-card-alpha: 0.38;
-  --flow-backdrop-blur: 24px;
-  --flow-grain-opacity: 0.08;
-  --flow-grain-size: 1px;
-  --flow-grain-density: 8px;
-  --flow-brightness: 100%;
-  --flow-contrast: 100%;
-  --flow-saturation: 112%;
-  --flow-field-blend: normal;
-  --flow-ribbon-blend: soft-light;
-  --flow-speed: 24s;
-  --flow-field-speed: 30s;
-  --flow-ribbon-speed: 26s;
-  --harbor-edge-opacity: 0.34;
-  --harbor-beam-opacity: 0.16;
-  --harbor-spectrum-opacity: 0.34;
-  --harbor-spectrum-blend: normal;
-  --harbor-mist-opacity: 0.3;
-  --harbor-mist-blend: soft-light;
-  --flow-surface-tint-rgb: 144 191 224;
-  --flow-surface-highlight-rgb: 255 230 171;
-  --flow-surface-edge-rgb: 84 224 192;
-  --flow-surface-depth-alpha: 0.16;
-  --flow-surface-sheen-opacity: 0.28;
-  --hero-title-light-shadow: none;
-  --hero-title-accent-shadow: none;
-  --flow-ui-panel-rgb: 255 255 255;
-  --flow-ui-card-rgb: 255 255 255;
-  --flow-ui-shadow-rgb: 7 14 49;
-  --flow-ui-border: #ffffff5c;
-  --flow-ui-border-strong: #ffffff6b;
-  --flow-ui-card-border: #ffffff52;
-  --flow-ui-inset: #ffffff70;
-  --flow-shadow-alpha: 0.18;
-  --bg-gradient: linear-gradient(
-    122deg,
-    var(--flow-c1) 0%,
-    var(--flow-c2) 30%,
-    var(--flow-c3) 47%,
-    var(--flow-c4) 70%,
-    var(--flow-c5) 100%
-  );
-  --panel: rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha));
-  --panel-strong: rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha));
-  --hero-bg: linear-gradient(
-    142deg,
-    rgb(var(--flow-ui-panel-rgb) / var(--flow-hero-alpha)),
-    rgb(var(--flow-ui-panel-rgb) / var(--flow-hero-alpha-soft))
-  );
-  --hero-panel-bg: linear-gradient(
-    180deg,
-    rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha)),
-    rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha))
-  );
-  --shadow: 0 26px 80px rgb(var(--flow-ui-shadow-rgb) / var(--flow-shadow-alpha));
-  isolation: isolate;
-  overflow-x: clip;
-  overflow-y: visible;
-  background: var(--bg-gradient);
-  background-size: 260% 260%;
-  animation: muxingGradientFlow var(--flow-speed) var(--ease-in-out) infinite alternate;
-}
-
-:root.light-theme .app.page-home,
-:root.light-theme .app.page-tools,
-:root.light-theme .app.page-subpage {
-  --flow-c1: #d2aab6;
-  --flow-c2: #d9ceaa;
-  --flow-c3: #b2d1d3;
-  --flow-c4: #95b7c8;
-  --flow-c5: #7397a9;
-  --flow-light-rgb: 196 139 154;
-  --flow-aqua-rgb: 158 207 206;
-  --flow-blue-rgb: 116 164 188;
-  --flow-deep-rgb: 78 124 146;
-  --flow-field-opacity: 0.68;
-  --flow-ribbon-opacity: 0.25;
-  --flow-panel-alpha: 0.64;
-  --flow-hero-alpha: 0.6;
-  --flow-hero-alpha-soft: 0.38;
-  --flow-card-alpha: 0.52;
-  --flow-backdrop-blur: 20px;
-  --flow-grain-opacity: 0.04;
-  --flow-brightness: 103%;
-  --flow-contrast: 98%;
-  --flow-saturation: 98%;
-  --flow-field-blend: soft-light;
-  --flow-ribbon-blend: soft-light;
-  --harbor-edge-opacity: 0.24;
-  --harbor-beam-opacity: 0.08;
-  --harbor-spectrum-opacity: 0.14;
-  --harbor-spectrum-blend: soft-light;
-  --harbor-mist-opacity: 0.22;
-  --harbor-mist-blend: soft-light;
-  --flow-surface-tint-rgb: 158 207 206;
-  --flow-surface-highlight-rgb: 255 239 199;
-  --flow-surface-edge-rgb: 83 120 149;
-  --flow-surface-depth-alpha: 0.12;
-  --flow-surface-sheen-opacity: 0.2;
-  --flow-ui-panel-rgb: 242 247 246;
-  --flow-ui-card-rgb: 248 250 248;
-  --flow-ui-shadow-rgb: 38 63 76;
-  --flow-ui-border: #29495b30;
-  --flow-ui-border-strong: #29495b40;
-  --flow-ui-card-border: #29495b2a;
-  --flow-ui-inset: #ffffffa6;
-  --flow-shadow-alpha: 0.13;
-}
-
-:root:not(.light-theme) .app.page-home,
-:root:not(.light-theme) .app.page-tools,
-:root:not(.light-theme) .app.page-subpage {
-  --flow-ui-panel-rgb: 18 22 40;
-  --flow-ui-card-rgb: 22 27 48;
-  --flow-ui-shadow-rgb: 0 0 0;
-  --flow-ui-border: #c9a45524;
-  --flow-ui-border-strong: #c9a4552e;
-  --flow-ui-card-border: #c9a4551f;
-  --flow-ui-inset: #c9a45514;
-  --flow-c1: #2f2b48;
-  --flow-c2: #223b61;
-  --flow-c3: #245f76;
-  --flow-c4: #0e3450;
-  --flow-c5: #071724;
-  --flow-light-rgb: 106 88 139;
-  --flow-aqua-rgb: 70 154 165;
-  --flow-blue-rgb: 41 82 145;
-  --flow-deep-rgb: 8 24 44;
-  --flow-field-opacity: 0.76;
-  --flow-ribbon-opacity: 0.5;
-  --flow-blur: 26px;
-  --flow-ribbon-blur: 54px;
-  --flow-brightness: 86%;
-  --flow-contrast: 126%;
-  --flow-saturation: 136%;
-  --flow-field-blend: screen;
-  --flow-ribbon-blend: screen;
-  --harbor-edge-opacity: 0.42;
-  --harbor-beam-opacity: 0.18;
-  --harbor-spectrum-opacity: 0.26;
-  --harbor-spectrum-blend: screen;
-  --harbor-mist-opacity: 0.32;
-  --harbor-mist-blend: screen;
-  --flow-surface-tint-rgb: 70 154 165;
-  --flow-surface-highlight-rgb: 209 171 92;
-  --flow-surface-edge-rgb: 117 172 234;
-  --flow-surface-depth-alpha: 0.3;
-  --flow-surface-sheen-opacity: 0.26;
-}
-
-:root:not(.light-theme)[data-harbor-scene='dusk'] .app.page-home,
-:root:not(.light-theme)[data-harbor-scene='dusk'] .app.page-tools,
-:root:not(.light-theme)[data-harbor-scene='dusk'] .app.page-subpage {
-  --flow-c1: #7f536c;
-  --flow-c2: #6d5b89;
-  --flow-c3: #4f8aa1;
-  --flow-c4: #1f5578;
-  --flow-c5: #08273c;
-  --flow-light-rgb: 150 88 118;
-  --flow-aqua-rgb: 91 173 184;
-  --flow-blue-rgb: 43 98 153;
-  --flow-deep-rgb: 8 39 60;
-  --flow-field-opacity: 0.74;
-  --flow-ribbon-opacity: 0.48;
-  --flow-brightness: 88%;
-  --flow-contrast: 122%;
-  --flow-saturation: 134%;
-  --flow-field-blend: screen;
-  --flow-ribbon-blend: soft-light;
-  --harbor-edge-opacity: 0.34;
-  --harbor-beam-opacity: 0.16;
-  --harbor-spectrum-opacity: 0.3;
-  --harbor-spectrum-blend: screen;
-  --harbor-mist-opacity: 0.2;
-  --harbor-mist-blend: soft-light;
-  --flow-surface-tint-rgb: 91 173 184;
-  --flow-surface-highlight-rgb: 227 142 125;
-  --flow-surface-edge-rgb: 209 171 92;
-  --flow-surface-depth-alpha: 0.24;
-  --flow-surface-sheen-opacity: 0.24;
-}
-
-:root.light-theme[data-harbor-scene='garden'] .app.page-home,
-:root.light-theme[data-harbor-scene='garden'] .app.page-tools,
-:root.light-theme[data-harbor-scene='garden'] .app.page-subpage {
-  --flow-c1: #cec2d8;
-  --flow-c2: #c6d7cb;
-  --flow-c3: #add2cc;
-  --flow-c4: #98c1aa;
-  --flow-c5: #7ca18c;
-  --flow-light-rgb: 184 158 194;
-  --flow-aqua-rgb: 157 207 199;
-  --flow-blue-rgb: 119 178 150;
-  --flow-deep-rgb: 87 139 112;
-  --flow-field-opacity: 0.64;
-  --flow-ribbon-opacity: 0.22;
-  --flow-blur: 32px;
-  --flow-ribbon-blur: 48px;
-  --flow-brightness: 102%;
-  --flow-contrast: 98%;
-  --flow-saturation: 96%;
-  --flow-field-blend: soft-light;
-  --flow-ribbon-blend: soft-light;
-  --harbor-edge-opacity: 0.22;
-  --harbor-beam-opacity: 0.07;
-  --harbor-spectrum-opacity: 0.12;
-  --harbor-spectrum-blend: soft-light;
-  --harbor-mist-opacity: 0.22;
-  --harbor-mist-blend: soft-light;
-  --flow-surface-tint-rgb: 157 207 199;
-  --flow-surface-highlight-rgb: 231 241 218;
-  --flow-surface-edge-rgb: 90 135 72;
-  --flow-surface-depth-alpha: 0.1;
-  --flow-surface-sheen-opacity: 0.17;
-}
-
-:root:not(.light-theme)[data-harbor-scene='garden'] .app.page-home,
-:root:not(.light-theme)[data-harbor-scene='garden'] .app.page-tools,
-:root:not(.light-theme)[data-harbor-scene='garden'] .app.page-subpage {
-  --flow-c1: #39423e;
-  --flow-c2: #263e36;
-  --flow-c3: #245560;
-  --flow-c4: #173f34;
-  --flow-c5: #0b2b27;
-  --flow-light-rgb: 75 86 80;
-  --flow-aqua-rgb: 55 122 126;
-  --flow-blue-rgb: 37 96 72;
-  --flow-deep-rgb: 13 51 43;
-  --flow-field-opacity: 0.72;
-  --flow-ribbon-opacity: 0.48;
-  --flow-brightness: 76%;
-  --flow-contrast: 132%;
-  --flow-saturation: 132%;
-  --flow-field-blend: screen;
-  --flow-ribbon-blend: soft-light;
-  --harbor-edge-opacity: 0.26;
-  --harbor-beam-opacity: 0.12;
-  --harbor-spectrum-opacity: 0.22;
-  --harbor-spectrum-blend: screen;
-  --harbor-mist-opacity: 0.34;
-  --harbor-mist-blend: screen;
-  --flow-surface-tint-rgb: 55 122 126;
-  --flow-surface-highlight-rgb: 123 186 125;
-  --flow-surface-edge-rgb: 65 189 183;
-  --flow-surface-depth-alpha: 0.28;
-  --flow-surface-sheen-opacity: 0.22;
-}
-
-:root.light-theme[data-harbor-scene='stellar'] .app.page-home,
-:root.light-theme[data-harbor-scene='stellar'] .app.page-tools,
-:root.light-theme[data-harbor-scene='stellar'] .app.page-subpage {
-  --flow-c1: #c9c2d6;
-  --flow-c2: #bdcbdc;
-  --flow-c3: #abc8da;
-  --flow-c4: #93b2c6;
-  --flow-c5: #7795a8;
-  --flow-light-rgb: 180 165 198;
-  --flow-aqua-rgb: 158 193 211;
-  --flow-blue-rgb: 116 157 184;
-  --flow-deep-rgb: 80 122 145;
-  --flow-field-opacity: 0.62;
-  --flow-ribbon-opacity: 0.22;
-  --flow-blur: 26px;
-  --flow-ribbon-blur: 54px;
-  --flow-brightness: 101%;
-  --flow-contrast: 99%;
-  --flow-saturation: 94%;
-  --flow-field-blend: soft-light;
-  --flow-ribbon-blend: soft-light;
-  --harbor-edge-opacity: 0.22;
-  --harbor-beam-opacity: 0.08;
-  --harbor-spectrum-opacity: 0.13;
-  --harbor-spectrum-blend: soft-light;
-  --harbor-mist-opacity: 0.18;
-  --harbor-mist-blend: soft-light;
-  --flow-surface-tint-rgb: 158 193 211;
-  --flow-surface-highlight-rgb: 220 204 236;
-  --flow-surface-edge-rgb: 116 157 184;
-  --flow-surface-depth-alpha: 0.12;
-  --flow-surface-sheen-opacity: 0.19;
-}
-
-:root:not(.light-theme)[data-harbor-scene='stellar'] .app.page-home,
-:root:not(.light-theme)[data-harbor-scene='stellar'] .app.page-tools,
-:root:not(.light-theme)[data-harbor-scene='stellar'] .app.page-subpage {
   --flow-c1: #59575c;
   --flow-c2: #2b315f;
   --flow-c3: #354b7b;
@@ -312,190 +11,67 @@
   --flow-aqua-rgb: 53 75 123;
   --flow-blue-rgb: 9 34 67;
   --flow-deep-rgb: 6 17 50;
-  --flow-field-opacity: 0.74;
-  --flow-ribbon-opacity: 0.5;
-  --flow-blur: 22px;
-  --flow-ribbon-blur: 58px;
-  --flow-brightness: 78%;
-  --flow-contrast: 138%;
-  --flow-saturation: 140%;
-  --flow-field-blend: screen;
-  --flow-ribbon-blend: screen;
-  --harbor-edge-opacity: 0.42;
-  --harbor-beam-opacity: 0.18;
-  --harbor-spectrum-opacity: 0.26;
-  --harbor-spectrum-blend: screen;
-  --harbor-mist-opacity: 0.16;
-  --harbor-mist-blend: screen;
+  --flow-field-opacity: 0;
+  --flow-ribbon-opacity: 0;
+  --flow-blur: 0px;
+  --flow-ribbon-blur: 0px;
+  --flow-panel-alpha: 0.66;
+  --flow-hero-alpha: 0.52;
+  --flow-hero-alpha-soft: 0.28;
+  --flow-card-alpha: 0.5;
+  --flow-backdrop-blur: 24px;
+  --flow-grain-opacity: 0;
+  --flow-brightness: 100%;
+  --flow-contrast: 100%;
+  --flow-saturation: 100%;
+  --flow-field-blend: normal;
+  --flow-ribbon-blend: normal;
+  --flow-speed: 0s;
   --flow-surface-tint-rgb: 53 75 123;
   --flow-surface-highlight-rgb: 209 171 92;
   --flow-surface-edge-rgb: 84 224 192;
-  --flow-surface-depth-alpha: 0.34;
-  --flow-surface-sheen-opacity: 0.3;
+  --flow-surface-depth-alpha: 0.2;
+  --flow-surface-sheen-opacity: 0.2;
+  --flow-ui-panel-rgb: 9 25 57;
+  --flow-ui-card-rgb: 15 45 82;
+  --flow-ui-shadow-rgb: 0 4 23;
+  --flow-ui-border: rgb(97 213 220 / 34%);
+  --flow-ui-border-strong: rgb(97 204 220 / 48%);
+  --flow-ui-card-border: rgb(88 190 221 / 38%);
+  --flow-ui-inset: rgb(214 246 255 / 16%);
+  --flow-shadow-alpha: 0.3;
+  --bg-gradient: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%);
+  --panel: rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha));
+  --panel-strong: rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha));
+  --hero-bg: linear-gradient(142deg, rgb(var(--flow-ui-panel-rgb) / var(--flow-hero-alpha)), rgb(var(--flow-ui-panel-rgb) / var(--flow-hero-alpha-soft)));
+  --hero-panel-bg: linear-gradient(180deg, rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha)), rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha)));
+  --shadow: 0 26px 80px rgb(var(--flow-ui-shadow-rgb) / var(--flow-shadow-alpha));
+  isolation: isolate;
+  overflow-x: clip;
+  overflow-y: visible;
+  background: transparent;
 }
-/* App pseudo-elements remain the CSS fallback while the canvas owns ambient motion.
-   Legacy gradient rules below stay isolated for a later cleanup. */
+
+:root.light-theme .app.page-home,
+:root.light-theme .app.page-tools,
+:root.light-theme .app.page-subpage {
+  --flow-ui-panel-rgb: 18 43 77;
+  --flow-ui-card-rgb: 27 57 92;
+  --flow-ui-border: rgb(164 227 239 / 58%);
+  --flow-ui-border-strong: rgb(158 222 238 / 54%);
+  --flow-ui-card-border: rgb(158 222 238 / 46%);
+  --flow-ui-inset: rgb(255 255 255 / 22%);
+  --flow-panel-alpha: 0.76;
+  --flow-card-alpha: 0.78;
+  --flow-hero-alpha: 0.6;
+  --flow-hero-alpha-soft: 0.38;
+  --flow-shadow-alpha: 0.24;
+}
 .app.page-home,
 .app.page-tools,
 .app.page-subpage {
   background: transparent;
   animation: none;
-}
-
-.app.page-home::before,
-.app.page-tools::before,
-.app.page-subpage::before,
-.app.page-home::after,
-.app.page-tools::after,
-.app.page-subpage::after {
-  content: '';
-  display: block;
-  pointer-events: none;
-  position: fixed;
-  inset: -18vmax;
-  z-index: 0;
-}
-
-.app.page-home::before,
-.app.page-tools::before,
-.app.page-subpage::before {
-  background:
-    radial-gradient(ellipse 46% 68% at 16% 34%, rgb(var(--flow-light-rgb) / 0.5), transparent 64%),
-    radial-gradient(ellipse 42% 72% at 52% 36%, rgb(var(--flow-aqua-rgb) / 0.34), transparent 68%),
-    radial-gradient(ellipse 48% 70% at 80% 62%, rgb(var(--flow-blue-rgb) / 0.42), transparent 70%);
-  filter: blur(var(--flow-blur)) saturate(1.08);
-  mix-blend-mode: var(--flow-field-blend);
-  opacity: var(--flow-field-opacity);
-}
-
-.app.page-home::after,
-.app.page-tools::after,
-.app.page-subpage::after {
-  inset: -22vmax;
-  background:
-    radial-gradient(ellipse 54% 62% at 18% 78%, rgb(var(--flow-light-rgb) / 0.24), transparent 72%),
-    radial-gradient(ellipse 58% 68% at 78% 24%, rgb(var(--flow-aqua-rgb) / 0.2), transparent 74%),
-    radial-gradient(ellipse 62% 72% at 70% 98%, rgb(var(--flow-deep-rgb) / 0.18), transparent 78%);
-  filter: blur(var(--flow-ribbon-blur)) saturate(1.04);
-  mix-blend-mode: var(--flow-ribbon-blend);
-  opacity: var(--flow-ribbon-opacity);
-}
-
-.app.page-home .gradient-bg,
-.app.page-tools .gradient-bg,
-.app.page-subpage .gradient-bg {
-  display: block;
-  overflow: hidden;
-  background:
-    linear-gradient(
-      118deg,
-      var(--flow-c1) 0%,
-      var(--flow-c2) 24%,
-      var(--flow-c3) 48%,
-      var(--flow-c4) 72%,
-      var(--flow-c5) 100%
-    );
-  background-size: 260% 260%;
-  animation: biauReferenceColorFlow 28s var(--ease-in-out) infinite alternate;
-}
-
-:root.light-theme .app.page-home .gradient-bg,
-:root.light-theme .app.page-tools .gradient-bg,
-:root.light-theme .app.page-subpage .gradient-bg {
-  filter: brightness(var(--flow-brightness)) contrast(var(--flow-contrast)) saturate(var(--flow-saturation));
-}
-
-.app.page-home .gradient-bg::before,
-.app.page-tools .gradient-bg::before,
-.app.page-subpage .gradient-bg::before,
-.app.page-home .gradient-bg::after,
-.app.page-tools .gradient-bg::after,
-.app.page-subpage .gradient-bg::after {
-  content: '';
-  display: block;
-  pointer-events: none;
-  position: absolute;
-  animation-play-state: running;
-  filter: none;
-  mix-blend-mode: normal;
-  transform: none;
-  will-change: background-position, opacity;
-}
-
-.app.page-home .gradient-bg::before,
-.app.page-tools .gradient-bg::before,
-.app.page-subpage .gradient-bg::before {
-  inset: 0;
-  background:
-    linear-gradient(
-      108deg,
-      transparent 0 22%,
-      rgba(255, 255, 255, 0.08) 32%,
-      rgba(255, 255, 255, 0.58) 43%,
-      rgba(234, 247, 255, 0.36) 50%,
-      rgba(84, 224, 192, 0.22) 57%,
-      transparent 70% 100%
-    ),
-    radial-gradient(ellipse 56% 34% at 12% 22%, rgba(255, 255, 255, 0.28), transparent 70%),
-    radial-gradient(ellipse 44% 30% at 78% 18%, rgba(234, 247, 255, 0.22), transparent 72%),
-    radial-gradient(ellipse 62% 38% at 46% 80%, rgba(255, 211, 110, 0.2), transparent 74%),
-    radial-gradient(ellipse 48% 32% at 84% 62%, rgba(84, 224, 192, 0.18), transparent 74%);
-  background-size:
-    230% 230%,
-    150% 126%,
-    138% 136%,
-    158% 146%,
-    132% 138%;
-  opacity: var(--harbor-mist-opacity);
-  animation: biauReferenceMistFlow 36s var(--ease-in-out) infinite alternate;
-}
-
-.app.page-home .gradient-bg::after,
-.app.page-tools .gradient-bg::after,
-.app.page-subpage .gradient-bg::after {
-  inset: clamp(12px, 1.5vw, 24px);
-  border-radius: clamp(20px, 3vw, 42px);
-  padding: 1px;
-  background:
-    linear-gradient(112deg, transparent 0 14%, rgba(255, 255, 255, 0.72) 24%, rgba(255, 211, 110, 0.58) 32%, rgba(84, 224, 192, 0.5) 42%, transparent 58%),
-    linear-gradient(292deg, transparent 4%, rgba(117, 172, 234, 0.5) 16%, rgba(234, 247, 255, 0.66) 27%, transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
-  background-size:
-    240% 240%,
-    220% 220%,
-    100% 100%;
-  opacity: var(--harbor-edge-opacity);
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  animation: biauReferenceEdgeFlow 24s var(--ease-in-out) infinite alternate;
-}
-
-html.harbor-intro-active .app.page-home .gradient-bg::before,
-html.harbor-intro-active .app.page-home .gradient-bg::after {
-  opacity: 0 !important;
-  animation: none !important;
-}
-
-html.harbor-intro-active .app.page-home,
-html.harbor-intro-active .app.page-home::before,
-html.harbor-intro-active .app.page-home::after,
-html.harbor-intro-active .app.page-home .gradient-bg,
-html.harbor-intro-active .app.page-home .gradient-bg::before,
-html.harbor-intro-active .app.page-home .gradient-bg::after {
-  animation: none !important;
-}
-
-html.harbor-intro-active .app.page-home::before,
-html.harbor-intro-active .app.page-home::after,
-html.harbor-intro-active .app.page-home .gradient-bg::before,
-html.harbor-intro-active .app.page-home .gradient-bg::after {
-  opacity: 0 !important;
 }
 
 .app.page-home > main,
@@ -662,119 +238,6 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   opacity: 0;
 }
 
-.app.page-home .carousel-wrapper::before,
-.app.page-home .carousel-wrapper::after {
-  content: '';
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-
-.app.page-home .carousel-wrapper::before {
-  z-index: 0;
-  padding: 1px;
-  background:
-    conic-gradient(
-      from 210deg,
-      transparent 0deg,
-      transparent 58deg,
-      rgb(var(--flow-surface-edge-rgb) / 0.18) 78deg,
-      rgb(var(--flow-surface-highlight-rgb) / 0.78) 93deg,
-      rgb(var(--flow-surface-tint-rgb) / 0.24) 112deg,
-      transparent 138deg,
-      transparent 360deg
-    ),
-    linear-gradient(
-      180deg,
-      rgb(var(--flow-surface-highlight-rgb) / 0.24),
-      rgb(var(--flow-surface-edge-rgb) / 0.04)
-    );
-  opacity: 0.82;
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask-composite: exclude;
-  animation: none;
-}
-
-.app.page-home .carousel-wrapper::after {
-  z-index: 0;
-  background:
-    linear-gradient(
-      118deg,
-      transparent 0 35%,
-      rgb(var(--flow-surface-highlight-rgb) / 0.2) 46%,
-      transparent 58%
-    ),
-    radial-gradient(
-      ellipse 42% 26% at 16% 12%,
-      rgb(var(--flow-surface-tint-rgb) / 0.14),
-      transparent 70%
-    );
-  background-size:
-    260% 260%,
-    100% 100%;
-  background-position:
-    120% 50%,
-    0 0;
-  opacity: 0.56;
-  mix-blend-mode: soft-light;
-  animation: none;
-}
-
-:root[data-harbor-scene='dusk'] .app.page-home .carousel-wrapper::before {
-  background:
-    linear-gradient(
-      90deg,
-      transparent 0 24%,
-      rgb(var(--flow-surface-edge-rgb) / 0.2) 36%,
-      rgb(var(--flow-surface-highlight-rgb) / 0.82) 48%,
-      rgb(var(--flow-surface-tint-rgb) / 0.28) 58%,
-      transparent 72% 100%
-    ),
-    linear-gradient(180deg, rgb(var(--flow-surface-highlight-rgb) / 0.2), transparent);
-  background-size: 260% 100%, 100% 100%;
-  animation: biauDuskPanelTide 9.2s var(--ease-in-out) infinite;
-}
-
-:root[data-harbor-scene='dusk'] .app.page-home .carousel-wrapper::after {
-  animation: biauDuskPanelSheen 12s var(--ease-in-out) infinite alternate;
-}
-
-:root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper::before {
-  background:
-    radial-gradient(ellipse at 12% 108%, rgb(var(--flow-surface-highlight-rgb) / 0.42), transparent 52%),
-    linear-gradient(118deg, transparent 0 68%, rgb(var(--flow-surface-edge-rgb) / 0.24) 68.2% 68.6%, transparent 69%);
-  animation: biauGardenPanelBreath 8.6s var(--ease-in-out) infinite alternate;
-}
-
-:root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper::after {
-  background:
-    repeating-radial-gradient(ellipse at 0% 100%, transparent 0 68px, rgb(var(--flow-surface-edge-rgb) / 0.11) 69px 70px, transparent 71px 128px),
-    radial-gradient(ellipse 42% 26% at 16% 12%, rgb(var(--flow-surface-tint-rgb) / 0.12), transparent 70%);
-  animation: biauGardenPanelCanopy 18s var(--ease-in-out) infinite alternate;
-}
-
-:root[data-harbor-scene='stellar'] .app.page-home .carousel-wrapper::before {
-  animation: biauStellarPanelTrace 7.6s linear infinite;
-}
-
-:root[data-harbor-scene='stellar'] .app.page-home .carousel-wrapper::after {
-  animation: biauStellarPanelSweep 9.8s var(--ease-in-out) infinite;
-}
-
-html.harbor-intro-active .app.page-home .carousel-wrapper::before,
-html.harbor-intro-active .app.page-home .carousel-wrapper::after,
-.app:has(.harbor-scene-foundation[data-scene-motion='paused']) .carousel-wrapper::before,
-.app:has(.harbor-scene-foundation[data-scene-motion='paused']) .carousel-wrapper::after {
-  animation-play-state: paused;
-}
-
 .app.page-home .carousel-wrapper > * {
   position: relative;
   z-index: 1;
@@ -827,11 +290,7 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
   filter: drop-shadow(0 0 5px color-mix(in oklch, var(--home-accent) 62%, transparent));
 }
 
-:root[data-harbor-scene='garden'] .app.page-home .carousel-wrapper > .harbor-surface-glow {
-  display: none;
-}
-
-:root[data-harbor-scene='stellar'] .app.page-home .carousel-wrapper > .harbor-surface-glow {
+.app.page-home .carousel-wrapper > .harbor-surface-glow {
   display: block;
   background: radial-gradient(
     204px 204px at var(--harbor-surface-glow-x) var(--harbor-surface-glow-y),
@@ -843,11 +302,11 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
   opacity: calc(var(--harbor-surface-glow-opacity) * 0.9);
 }
 
-:root[data-harbor-scene='stellar'] .app.page-home .harbor-panel-border-flow {
+.app.page-home .harbor-panel-border-flow {
   opacity: var(--stellar-scene-perimeter-opacity);
 }
 
-:root[data-harbor-scene='stellar'] .app.page-home .harbor-panel-border-flow rect {
+.app.page-home .harbor-panel-border-flow rect {
   animation-duration: var(--stellar-scene-perimeter-duration);
   animation-play-state: var(--stellar-scene-perimeter-play-state);
 }
@@ -1406,88 +865,6 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
   }
 }
 
-@keyframes biauDuskPanelTide {
-  0% {
-    background-position: 118% 0, 0 0;
-    opacity: 0.46;
-  }
-  48% {
-    opacity: 0.9;
-  }
-  100% {
-    background-position: -18% 0, 0 0;
-    opacity: 0.54;
-  }
-}
-
-@keyframes biauDuskPanelSheen {
-  from {
-    background-position: 118% 50%, 0 0;
-    opacity: 0.32;
-  }
-  to {
-    background-position: -18% 54%, 0 0;
-    opacity: 0.5;
-  }
-}
-
-@keyframes biauGardenPanelBreath {
-  from {
-    opacity: 0.34;
-    transform: scale(0.996);
-  }
-  to {
-    opacity: 0.7;
-    transform: scale(1.004);
-  }
-}
-
-@keyframes biauGardenPanelCanopy {
-  from {
-    background-position: 0 0, 0 0;
-    opacity: 0.24;
-  }
-  to {
-    background-position: 54px -34px, 0 0;
-    opacity: 0.48;
-  }
-}
-
-@keyframes biauStellarPanelTrace {
-  0% {
-    transform: rotate(0deg);
-    opacity: 0.58;
-  }
-  35% {
-    opacity: 0.92;
-  }
-  68% {
-    opacity: 0.72;
-  }
-  100% {
-    transform: rotate(360deg);
-    opacity: 0.58;
-  }
-}
-
-@keyframes biauStellarPanelSweep {
-  0% {
-    background-position:
-      130% 48%,
-      0 0;
-    opacity: 0.3;
-  }
-  42% {
-    opacity: 0.62;
-  }
-  100% {
-    background-position:
-      -30% 54%,
-      0 0;
-    opacity: 0.36;
-  }
-}
-
 @keyframes biauStellarPanelPerimeter {
   from { stroke-dashoffset: 0; }
   to { stroke-dashoffset: -1; }
@@ -1670,41 +1047,6 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
 
 @media (max-width: 720px) {
   .app.page-home,
-  .app.page-tools,
-  .app.page-subpage {
-    --flow-field-opacity: 0.48;
-    --flow-ribbon-opacity: 0.18;
-    --flow-blur: 20px;
-    --flow-ribbon-blur: 30px;
-    --harbor-edge-opacity: 0.2;
-    --harbor-beam-opacity: 0.09;
-    --harbor-spectrum-opacity: 0.13;
-    --harbor-mist-opacity: 0.16;
-  }
-
-  :root.light-theme .app.page-home,
-  :root.light-theme .app.page-tools,
-  :root.light-theme .app.page-subpage {
-    --flow-field-opacity: 0.42;
-    --flow-ribbon-opacity: 0.14;
-    --harbor-edge-opacity: 0.18;
-    --harbor-beam-opacity: 0.055;
-    --harbor-spectrum-opacity: 0.09;
-    --harbor-mist-opacity: 0.14;
-  }
-
-  .app.page-home::before,
-  .app.page-tools::before,
-  .app.page-subpage::before {
-    inset: -12vmax;
-  }
-
-  .app.page-home::after,
-  .app.page-tools::after,
-  .app.page-subpage::after {
-    inset: -15vmax;
-  }
-
   .app.page-home .hero-panel {
     box-shadow:
       0 18px 42px rgb(var(--flow-ui-shadow-rgb) / calc(var(--flow-surface-depth-alpha) * 0.72)),
@@ -2554,23 +1896,7 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
   .app.page-home,
   .app.page-tools,
   .app.page-subpage,
-  .app.page-home::before,
-  .app.page-tools::before,
-  .app.page-subpage::before,
-  .app.page-home::after,
-  .app.page-tools::after,
-  .app.page-subpage::after,
-  .app.page-home .gradient-bg,
-  .app.page-tools .gradient-bg,
-  .app.page-subpage .gradient-bg,
-  .app.page-home .gradient-bg::before,
-  .app.page-tools .gradient-bg::before,
-  .app.page-subpage .gradient-bg::before,
-  .app.page-home .gradient-bg::after,
-  .app.page-tools .gradient-bg::after,
-  .app.page-subpage .gradient-bg::after,
-  .app.page-home .carousel-wrapper::before,
-  .app.page-home .carousel-wrapper::after {
+  .app.page-home .carousel-wrapper > .harbor-panel-border-flow {
     animation: none !important;
   }
 
@@ -2734,7 +2060,7 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
   }
 }
 
-/* Single viewport canvas owns ambient motion; legacy filtered layers are fallback only. */
+/* Single viewport canvas owns the fixed Stellar background. */
 .flow-background {
   position: fixed;
   inset: 0;
@@ -2748,11 +2074,6 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
 }
 .flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) { opacity: 1; }
 .flow-background[data-flow-fallback='css'] { opacity: 0; }
-/* Keep the CSS composition underneath the canvas during handoff. Removing it
-   before the first presented canvas frame creates a one-frame transparent hole. */
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::before,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::after,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .gradient-bg { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .flow-background { transition: none; } }
 
 /* Mobile editorial rhythm: consolidate tools and move useful content into the first viewport. */

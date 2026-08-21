@@ -124,14 +124,7 @@
     transform 0.35s var(--ease-out-expo);
 }
 
-.nav-logo[data-scene='garden'] {
-  border-color: color-mix(in oklch, var(--green) 28%, transparent);
-  background:
-    radial-gradient(circle at 52% 55%, color-mix(in oklch, var(--amber) 18%, transparent), transparent 52%),
-    linear-gradient(145deg, #233b34 0%, #10251f 100%);
-}
-
-.nav-logo[data-scene='stellar'] {
+.nav-logo {
   border-color: color-mix(in oklch, var(--amber) 34%, transparent);
   background:
     radial-gradient(circle at 50% 54%, color-mix(in oklch, var(--amber) 28%, transparent), transparent 54%),
@@ -189,30 +182,14 @@
   transform: scale(1.16);
 }
 
-:root[data-harbor-scene='dusk'] .nav-logo:hover .biau-port-mark__water,
-:root[data-harbor-scene='dusk'] .nav-logo:focus-visible .biau-port-mark__water {
-  transform: translate3d(1.2px, -0.5px, 0) scaleX(1.025);
-}
-
-:root[data-harbor-scene='garden'] .nav-logo:hover .biau-port-mark__bowl,
-:root[data-harbor-scene='garden'] .nav-logo:focus-visible .biau-port-mark__bowl {
-  transform: scale(1.018, 1.035);
-  filter: drop-shadow(0 0 5px color-mix(in oklch, var(--home-accent) 46%, transparent));
-}
-
-:root[data-harbor-scene='garden'] .nav-logo:hover .biau-port-mark__water,
-:root[data-harbor-scene='garden'] .nav-logo:focus-visible .biau-port-mark__water {
-  transform: translateY(-0.35px) scaleX(0.985);
-}
-
-:root[data-harbor-scene='stellar'] .nav-logo:hover .biau-port-mark__beacon,
-:root[data-harbor-scene='stellar'] .nav-logo:focus-visible .biau-port-mark__beacon {
+.nav-logo:hover .biau-port-mark__beacon,
+.nav-logo:focus-visible .biau-port-mark__beacon {
   transform: scale(1.18);
   filter: drop-shadow(0 0 7px color-mix(in oklch, var(--home-violet) 70%, white));
 }
 
-:root[data-harbor-scene='stellar'] .nav-logo:hover .biau-port-mark__beacon-glow,
-:root[data-harbor-scene='stellar'] .nav-logo:focus-visible .biau-port-mark__beacon-glow {
+.nav-logo:hover .biau-port-mark__beacon-glow,
+.nav-logo:focus-visible .biau-port-mark__beacon-glow {
   opacity: 0.46;
   transform: scale(1.34);
 }
@@ -744,14 +721,7 @@
     inset -1.5px -1.5px 3px rgba(169, 188, 194, 0.38);
 }
 
-.light-theme .nav-logo[data-scene='garden'] {
-  border-color: rgba(42, 51, 40, 0.14);
-  background:
-    radial-gradient(circle at 50% 55%, rgba(196, 139, 59, 0.14), transparent 52%),
-    linear-gradient(145deg, rgba(250, 255, 249, 0.98) 0%, rgba(232, 242, 229, 0.92) 100%);
-}
-
-.light-theme .nav-logo[data-scene='stellar'] {
+.light-theme .nav-logo {
   border-color: rgba(24, 36, 58, 0.18);
   background:
     radial-gradient(circle at 50% 55%, rgba(209, 171, 92, 0.18), transparent 52%),
@@ -1105,8 +1075,7 @@
   border-radius: 6px;
 }
 
-.page-home .nav-logo,
-.page-home .nav-logo[data-scene] {
+.page-home .nav-logo {
   width: 40px;
   height: 40px;
   border: 1px solid var(--home-logo-border);
@@ -1332,8 +1301,7 @@
   border-color: color-mix(in oklch, var(--reference-accent) 22%, transparent);
 }
 
-.page-home .nav-logo,
-.page-home .nav-logo[data-scene] {
+.page-home .nav-logo {
   border-color: color-mix(in oklch, var(--reference-accent) 52%, var(--reference-nav-border));
   background: color-mix(in oklch, var(--reference-panel) 78%, transparent);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 16%);

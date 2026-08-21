@@ -4657,41 +4657,6 @@
 
 @media (max-width: 720px) {
   .app.page-home,
-  .app.page-tools,
-  .app.page-subpage {
-    --flow-field-opacity: 0.48;
-    --flow-ribbon-opacity: 0.18;
-    --flow-blur: 20px;
-    --flow-ribbon-blur: 30px;
-    --harbor-edge-opacity: 0.2;
-    --harbor-beam-opacity: 0.09;
-    --harbor-spectrum-opacity: 0.13;
-    --harbor-mist-opacity: 0.16;
-  }
-
-  :root.light-theme .app.page-home,
-  :root.light-theme .app.page-tools,
-  :root.light-theme .app.page-subpage {
-    --flow-field-opacity: 0.42;
-    --flow-ribbon-opacity: 0.14;
-    --harbor-edge-opacity: 0.18;
-    --harbor-beam-opacity: 0.055;
-    --harbor-spectrum-opacity: 0.09;
-    --harbor-mist-opacity: 0.14;
-  }
-
-  .app.page-home::before,
-  .app.page-tools::before,
-  .app.page-subpage::before {
-    inset: -12vmax;
-  }
-
-  .app.page-home::after,
-  .app.page-tools::after,
-  .app.page-subpage::after {
-    inset: -15vmax;
-  }
-
   .app.page-home .hero-panel {
     box-shadow:
       0 18px 42px rgb(var(--flow-ui-shadow-rgb) / calc(var(--flow-surface-depth-alpha) * 0.72)),
@@ -5541,23 +5506,7 @@
   .app.page-home,
   .app.page-tools,
   .app.page-subpage,
-  .app.page-home::before,
-  .app.page-tools::before,
-  .app.page-subpage::before,
-  .app.page-home::after,
-  .app.page-tools::after,
-  .app.page-subpage::after,
-  .app.page-home .gradient-bg,
-  .app.page-tools .gradient-bg,
-  .app.page-subpage .gradient-bg,
-  .app.page-home .gradient-bg::before,
-  .app.page-tools .gradient-bg::before,
-  .app.page-subpage .gradient-bg::before,
-  .app.page-home .gradient-bg::after,
-  .app.page-tools .gradient-bg::after,
-  .app.page-subpage .gradient-bg::after,
-  .app.page-home .carousel-wrapper::before,
-  .app.page-home .carousel-wrapper::after {
+  .app.page-home .carousel-wrapper > .harbor-panel-border-flow {
     animation: none !important;
   }
 
@@ -5721,7 +5670,7 @@
   }
 }
 
-/* Single viewport canvas owns ambient motion; legacy filtered layers are fallback only. */
+/* Single viewport canvas owns the fixed Stellar background. */
 .flow-background {
   position: fixed;
   inset: 0;
@@ -5735,9 +5684,6 @@
 }
 .flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) { opacity: 1; }
 .flow-background[data-flow-fallback='css'] { opacity: 0; }
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::before,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css']))::after,
-.app:has(.flow-background[data-flow-ready='true']:not([data-flow-fallback='css'])) .gradient-bg { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .flow-background { transition: none; } }
 
 /* Mobile editorial rhythm: consolidate tools and move useful content into the first viewport. */

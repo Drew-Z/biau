@@ -2,21 +2,14 @@ import { Activity, FolderKanban, Home, Library, Monitor, Moon, Sun } from 'lucid
 import type { LucideIcon } from 'lucide-react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BiauPortMark } from './BiauPortMark'
-import {
-  getNextHarborScene,
-  HARBOR_SCENE_META,
-  type HarborScene,
-  type ThemeMode,
-} from '../utils/appearance'
+import type { ThemeMode } from '../utils/appearance'
 
 type SiteLanguage = 'zh' | 'en'
 
 interface NavigationProps {
   language: SiteLanguage
   themeMode: ThemeMode
-  harborScene: HarborScene
   onCycleTheme: () => void
-  onCycleHarborScene: () => void
   onToggleLanguage: () => void
 }
 
@@ -54,16 +47,12 @@ const backHomeLabel: Record<SiteLanguage, string> = { zh: '回主页', en: 'HOME
 export function Navigation({
   language,
   themeMode,
-  harborScene,
   onCycleTheme,
-  onCycleHarborScene,
   onToggleLanguage,
 }: NavigationProps) {
   const theme = themeMeta[themeMode]
   const ThemeIcon = theme.icon
   const nextTheme = themeMeta[nextThemeMode[themeMode]]
-  const currentScene = HARBOR_SCENE_META[harborScene]
-  const nextScene = HARBOR_SCENE_META[getNextHarborScene(harborScene)]
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const isHome = pathname === '/'
@@ -75,25 +64,19 @@ export function Navigation({
       <nav className="navigation-top" aria-label="主导航">
         <div className="nav-inner">
           <div className="nav-brand-section">
-            <button
-              type="button"
+            <Link
+              to="/"
               className="nav-logo"
-              data-scene={harborScene}
-              onClick={onCycleHarborScene}
-              aria-label={`当前${currentScene.label.zh}场景，点击切换到${nextScene.label.zh} / ${currentScene.label.en}, switch to ${nextScene.label.en}`}
-              title={`${currentScene.label.zh} / ${currentScene.label.en}`}
+              aria-label="回到首页 / BIAU Port 泊岸"
             >
               <BiauPortMark className="nav-logo-mark" />
-            </button>
+            </Link>
             <Link className="nav-brand-link" to="/" aria-label="回到首页 / BIAU Port 泊岸">
               <div className="nav-brand-text">
                 <div className="brand-title">{brandTitle[language]}</div>
                 <div className="brand-subtitle">BIAU PORT</div>
               </div>
             </Link>
-            <span className="sr-only" aria-live="polite">
-              当前港湾场景：{currentScene.label.zh} / {currentScene.label.en}
-            </span>
           </div>
 
           <ul className="nav-items-center">
@@ -123,7 +106,7 @@ export function Navigation({
               type="button"
               className="nav-theme-toggle"
               onClick={onCycleTheme}
-              aria-label={`当前${theme.label.zh}主题，点击切换到${nextTheme.label.zh} / ${theme.label.en}, switch to ${nextTheme.label.en}`}
+              aria-label={`当前${theme.label.zh}主题，点击切换到${nextTheme.label.zh} / ${nextTheme.label.en}, switch to ${nextTheme.label.en}`}
               title={`${theme.label.zh} / ${theme.label.en}`}
             >
               <ThemeIcon size={16} strokeWidth={1.9} aria-hidden />

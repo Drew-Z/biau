@@ -1,12 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { BiauPortMark } from './BiauPortMark'
-import type { HarborScene } from '../utils/appearance'
 
 const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v3'
 let introTriggeredThisRuntime = false
 
 interface HarborIntroProps {
-  harborScene: HarborScene
+  harborScene?: 'stellar'
 }
 
 function canShowIntro() {
@@ -32,7 +31,7 @@ function markIntroSeen() {
   }
 }
 
-export function HarborIntro({ harborScene }: HarborIntroProps) {
+export function HarborIntro({ harborScene = 'stellar' }: HarborIntroProps) {
   const [visible, setVisible] = useState(() => !introTriggeredThisRuntime && canShowIntro())
   const [leaving, setLeaving] = useState(false)
   const introRef = useRef<HTMLDivElement>(null)

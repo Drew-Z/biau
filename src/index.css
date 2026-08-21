@@ -43,16 +43,6 @@ input:focus-visible,
   position: relative;
 }
 
-.gradient-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-primary);
-  z-index: -1;
-}
-
 /* Ensure content is above background */
 .page-section,
 .navigation-minimal {
@@ -425,37 +415,7 @@ button.link-badge {
 }
 
 /* The homepage keeps each harbor palette while muting ambient motion behind content. */
-.app.page-home {
-  --flow-field-opacity: 0.24;
-  --flow-ribbon-opacity: 0.12;
-  --harbor-edge-opacity: 0.14;
-  --harbor-mist-opacity: 0.12;
-  --flow-blur: 60px;
-  --flow-ribbon-blur: 76px;
-  background: var(--home-page-solid);
-}
-
 .app.page-home .flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) {
   opacity: var(--home-canvas-opacity);
   filter: var(--home-canvas-filter);
-}
-
-.app.page-home .gradient-bg {
-  background: var(--home-page-solid);
-  animation: none;
-}
-
-/* The Flow canvas supplies motion; the page surface supplies the reference
-   site's broad scene gradient and remains visible during fallback. */
-.app.page-home {
-  background: var(--reference-horizon, var(--home-page-solid));
-}
-
-.app.page-home .flow-background[data-flow-ready='true']:not([data-flow-fallback='css']) {
-  opacity: var(--reference-canvas-opacity, var(--home-canvas-opacity));
-  filter: var(--reference-canvas-filter, var(--home-canvas-filter));
-}
-
-.app.page-home .gradient-bg {
-  background: var(--reference-horizon, var(--home-page-solid));
 }

@@ -195,28 +195,6 @@ body {
   text-transform: uppercase;
 }
 
-/* Gradient Background */
-.gradient-bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--bg-primary);
-  z-index: -1;
-}
-
-.gradient-bg::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100vh;
-  background: var(--gradient-radial);
-  animation: gradient-shift 20s ease infinite;
-}
-
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

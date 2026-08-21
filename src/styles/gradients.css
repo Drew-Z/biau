@@ -75,23 +75,3 @@
 .hover-gradient:hover::before {
   left: 100%;
 }
-
-/* 沉稳纯色背景：深色默认纯色，仅叠加极淡单色径向光，无动画、无彩色粒子 */
-.gradient-bg::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(
-    circle at 50% 0%,
-    rgba(255, 255, 255, 0.03) 0%,
-    transparent 55%
-  );
-  z-index: 0;
-}
-
-.gradient-bg::after {
-  content: none;
-}

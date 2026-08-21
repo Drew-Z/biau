@@ -77,13 +77,3 @@
   background: rgba(169, 110, 39, 0.08);
   border: none;
 }
-
-/* Light Theme Gradient Background Override */
-.light-theme .gradient-bg {
-  background: var(--bg-primary);
-}
-
-.light-theme .gradient-bg::before,
-.light-theme .gradient-bg::after {
-  display: none;
-}

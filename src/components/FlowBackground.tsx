@@ -1,21 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { FlowRenderer } from '../background/FlowRenderer'
-import { getFlowProfile, type HarborScene } from '../background/flowPalettes'
+import { getFlowProfile } from '../background/flowPalettes'
+import { STELLAR_SCENE } from '../utils/appearance'
 import { isLowPowerDevice } from '../utils/visualPerformance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
-const FINE_POINTER = '(any-hover: hover) and (any-pointer: fine)'
 const SETTLED_COMPOSITOR_DELAY_MS = 120
 type FlowMotionState = 'pending' | 'running' | 'reduced-settled' | 'paused' | 'css-fallback'
-type SceneMotionState = 'interactive' | 'ambient' | 'paused' | 'reduced'
 
 const isWebGlUnavailable = (value: unknown) =>
   value === 'WebGL2 unavailable' || (value instanceof Error && value.message === 'WebGL2 unavailable')
 
-export function FlowBackground({ scene }: { scene: HarborScene }) {
+export function FlowBackground() {
   const ref = useRef<HTMLCanvasElement>(null)
-  const foundationRef = useRef<HTMLDivElement>(null)
-  const initialScene = useRef(scene)
   const [ready, setReady] = useState(false)
   const [fallback, setFallback] = useState(false)
   const [motionState, setMotionState] = useState<FlowMotionState>('pending')
@@ -43,10 +40,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     const readReducedMotion = () => matchMedia(REDUCED).matches
     let reducedMotion = readReducedMotion()
     const readProfile = () => {
-      const value = document.documentElement.dataset.harborScene
-      const current = value === 'garden' || value === 'stellar' || value === 'dusk' ? value : initialScene.current
       const portrait = innerWidth <= 768 && innerHeight >= innerWidth
-      return getFlowProfile(current, document.documentElement.classList.contains('light-theme'), portrait)
+      return getFlowProfile(STELLAR_SCENE, false, portrait)
     }
     const publishProfile = () => {
       const current = readProfile()
@@ -231,8 +226,6 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
       main()
     }
 
-    const observer = new MutationObserver(sync)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-harbor-scene'] })
     addEventListener('resize', sync)
     document.addEventListener('visibilitychange', sync)
     const handleMotionChange = () => {
@@ -254,7 +247,6 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
       window.clearTimeout(motionSettleTimer)
       worker?.terminate()
       renderer?.destroy()
-      observer.disconnect()
       removeEventListener('resize', sync)
       document.removeEventListener('visibilitychange', sync)
       media.removeEventListener('change', handleMotionChange)
@@ -262,115 +254,15 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     }
   }, [])
 
-  useEffect(() => {
-    const foundation = foundationRef.current
-    if (!foundation) return
-
-    const reducedMotion = matchMedia(REDUCED)
-    const finePointer = matchMedia(FINE_POINTER)
-    let frame = 0
-    let pointerX = innerWidth / 2
-    let pointerY = innerHeight / 2
-
-    const resetPointer = () => {
-      foundation.style.setProperty('--harbor-pointer-wash-x', '0px')
-      foundation.style.setProperty('--harbor-pointer-wash-y', '0px')
-      foundation.style.setProperty('--harbor-pointer-texture-x', '0px')
-      foundation.style.setProperty('--harbor-pointer-texture-y', '0px')
-      foundation.style.setProperty('--harbor-pointer-landmark-x', '0px')
-      foundation.style.setProperty('--harbor-pointer-landmark-y', '0px')
-    }
-    const resolveMotionState = (): SceneMotionState => {
-      if (reducedMotion.matches) return 'reduced'
-      if (document.hidden || document.documentElement.classList.contains('harbor-intro-active')) return 'paused'
-      return finePointer.matches ? 'interactive' : 'ambient'
-    }
-    const syncMotionState = () => {
-      const state = resolveMotionState()
-      foundation.dataset.sceneMotion = state
-      if (state !== 'interactive') {
-        cancelAnimationFrame(frame)
-        frame = 0
-        resetPointer()
-      }
-    }
-    const paintPointer = () => {
-      frame = 0
-      if (resolveMotionState() !== 'interactive') {
-        syncMotionState()
-        return
-      }
-      const x = Math.max(-1, Math.min(1, pointerX / Math.max(innerWidth, 1) * 2 - 1))
-      const y = Math.max(-1, Math.min(1, pointerY / Math.max(innerHeight, 1) * 2 - 1))
-      foundation.style.setProperty('--harbor-pointer-wash-x', `${(-x * 8).toFixed(2)}px`)
-      foundation.style.setProperty('--harbor-pointer-wash-y', `${(-y * 6).toFixed(2)}px`)
-      foundation.style.setProperty('--harbor-pointer-texture-x', `${(x * 11).toFixed(2)}px`)
-      foundation.style.setProperty('--harbor-pointer-texture-y', `${(y * 8).toFixed(2)}px`)
-      foundation.style.setProperty('--harbor-pointer-landmark-x', `${(-x * 15).toFixed(2)}px`)
-      foundation.style.setProperty('--harbor-pointer-landmark-y', `${(-y * 10).toFixed(2)}px`)
-    }
-    const requestPointerPaint = () => {
-      if (!frame) frame = requestAnimationFrame(paintPointer)
-    }
-    const handlePointerMove = (event: globalThis.PointerEvent) => {
-      pointerX = event.clientX
-      pointerY = event.clientY
-      requestPointerPaint()
-    }
-    const handlePointerExit = () => {
-      pointerX = innerWidth / 2
-      pointerY = innerHeight / 2
-      requestPointerPaint()
-    }
-    const handleResize = () => {
-      handlePointerExit()
-      syncMotionState()
-    }
-
-    const observer = new MutationObserver(syncMotionState)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-    addEventListener('pointermove', handlePointerMove, { passive: true })
-    addEventListener('pointerleave', handlePointerExit, { passive: true })
-    addEventListener('blur', handlePointerExit)
-    addEventListener('resize', handleResize, { passive: true })
-    document.addEventListener('visibilitychange', syncMotionState)
-    reducedMotion.addEventListener('change', syncMotionState)
-    finePointer.addEventListener('change', syncMotionState)
-    syncMotionState()
-
-    return () => {
-      cancelAnimationFrame(frame)
-      observer.disconnect()
-      removeEventListener('pointermove', handlePointerMove)
-      removeEventListener('pointerleave', handlePointerExit)
-      removeEventListener('blur', handlePointerExit)
-      removeEventListener('resize', handleResize)
-      document.removeEventListener('visibilitychange', syncMotionState)
-      reducedMotion.removeEventListener('change', syncMotionState)
-      finePointer.removeEventListener('change', syncMotionState)
-      resetPointer()
-    }
-  }, [])
-
   return (
-    <div
-      ref={foundationRef}
-      className="harbor-scene-foundation"
-      data-harbor-scene-foundation
-      data-scene-motion="ambient"
+    <canvas
+      ref={ref}
+      className="flow-background"
+      data-flow-ready={ready || undefined}
+      data-flow-fallback={fallback ? 'css' : undefined}
+      data-flow-motion={motionState}
+      data-flow-scene={STELLAR_SCENE}
       aria-hidden="true"
-    >
-      <span className="harbor-scene-foundation__wash" data-harbor-scene-layer="wash" />
-      <canvas
-        ref={ref}
-        className="flow-background"
-        data-flow-ready={ready || undefined}
-        data-flow-fallback={fallback ? 'css' : undefined}
-        data-flow-motion={motionState}
-        data-flow-scene={scene}
-      />
-      <span className="harbor-scene-foundation__texture" data-harbor-scene-layer="texture" />
-      <span className="harbor-scene-foundation__landmark" data-harbor-scene-layer="landmark" />
-    </div>
+    />
   )
 }

@@ -1,17 +1,12 @@
 import { useEffect, useRef } from 'react'
-import { getFlowProfile, type HarborScene } from '../background/flowPalettes'
+import { getFlowProfile } from '../background/flowPalettes'
 import { isLowPowerDevice } from '../utils/visualPerformance'
+import { STELLAR_SCENE } from '../utils/appearance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 
-function currentScene(fallback: HarborScene): HarborScene {
-  const scene = document.documentElement.dataset.harborScene
-  return scene === 'dusk' || scene === 'garden' || scene === 'stellar' ? scene : fallback
-}
-
-export function StellarEffects({ scene }: { scene: HarborScene }) {
+export function StellarEffects() {
   const ownerRef = useRef<HTMLDivElement>(null)
-  const initialSceneRef = useRef(scene)
 
   useEffect(() => {
     const owner = ownerRef.current
@@ -47,7 +42,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     }
 
     const paintEdgeTargets = () => {
-      const enabled = currentScene(initialSceneRef.current) === 'stellar' && !reducedMotion && !lowPower && !document.hidden
+      const enabled = !reducedMotion && !lowPower && !document.hidden
       edgeTargets.forEach((_layer, target) => {
         if (!enabled) {
           target.style.setProperty('--stellar-edge-glow-opacity', '0')
@@ -79,9 +74,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     }
 
     const sync = () => {
-      const activeScene = currentScene(initialSceneRef.current)
-      const light = document.documentElement.classList.contains('light-theme')
-      const profile = getFlowProfile(activeScene, light)
+      const profile = getFlowProfile(STELLAR_SCENE, false)
       lowPower = isLowPowerDevice()
       const effects = lowPower
         ? {
@@ -94,12 +87,12 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
             brandHighlight: profile.stellarEffects.brandHighlight * 0.62,
           }
         : profile.stellarEffects
-      const signature = JSON.stringify({ activeScene, light, effects })
+      const signature = JSON.stringify(effects)
       if (signature !== profileSignature) {
         profileSignature = signature
         profileVersion += 1
       }
-      owner.dataset.stellarScene = activeScene
+      owner.dataset.stellarScene = STELLAR_SCENE
       owner.dataset.stellarProfileVersion = String(profileVersion)
       owner.dataset.stellarLowPower = lowPower ? 'true' : 'false'
       owner.dataset.stellarState = reducedMotion || document.hidden ? 'paused' : lowPower ? 'ambient' : effects.edgeGlow > 0.1 ? 'running' : 'ambient'
@@ -140,7 +133,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
       sync()
     }
     const observer = new MutationObserver(sync)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'] })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     addEventListener('pointermove', handlePointer, { passive: true })
     addEventListener('resize', sync, { passive: true })
     addEventListener('scroll', syncBrandGeometry, { passive: true })

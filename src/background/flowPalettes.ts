@@ -1,7 +1,5 @@
 import type { HarborScene } from '../utils/appearance'
 
-export type { HarborScene } from '../utils/appearance'
-
 export type FlowPalette = readonly [string, string, string, string, string]
 
 export interface FlowDynamics {
@@ -56,194 +54,49 @@ export interface FlowSceneProfile {
   renderBudget: RenderBudget
 }
 
-type FlowProfileDefinition = Omit<FlowSceneProfile, 'scene' | 'dynamics'> & {
-  dynamics: Omit<FlowDynamics, 'angle'>
-  angle: number
-  portraitAngle?: number
-  portraitPalette?: FlowPalette
-}
-
-const effects: Record<HarborScene, FlowEffects> = {
-  dusk: {
-    brightness: 1.02,
-    saturation: 1.04,
-    noiseFlow: 0.9,
-    starIntensity: 0,
-    starScale: 1,
-  },
-  garden: {
-    brightness: 0.96,
-    saturation: 0.92,
-    noiseFlow: 0.64,
-    starIntensity: 0,
-    starScale: 1,
-  },
-  stellar: {
-    brightness: 0.92,
-    saturation: 1.18,
-    noiseFlow: 1.18,
-    starIntensity: 0.9,
-    starScale: 1.04,
-  },
-}
-
-const starfields: Record<HarborScene, StarfieldProfile> = {
-  dusk: {
-    enabled: true,
-    count: 34,
-    opacity: 0.16,
-    speed: 0.06,
-    parallax: 0.08,
-    twinkle: 0.16,
-    temperature: 0.24,
-    seed: 20260727,
-  },
-  garden: {
-    enabled: true,
-    count: 22,
-    opacity: 0.09,
-    speed: 0.025,
-    parallax: 0.035,
-    twinkle: 0.08,
-    temperature: 0.12,
-    seed: 20260727,
-  },
-  stellar: {
-    enabled: true,
-    count: 172,
-    opacity: 0.82,
-    speed: 0.12,
-    parallax: 1,
-    twinkle: 0.72,
-    temperature: 0.86,
-    seed: 20260727,
-  },
-}
-
-const stellarEffects: Record<HarborScene, StellarEffectsProfile> = {
-  dusk: { edgeGlow: 0.08, perimeterOpacity: 0, perimeterDuration: 0, brandHighlight: 0.12 },
-  garden: { edgeGlow: 0.04, perimeterOpacity: 0, perimeterDuration: 0, brandHighlight: 0.06 },
-  stellar: { edgeGlow: 0.9, perimeterOpacity: 0.84, perimeterDuration: 7.6, brandHighlight: 0.82 },
-}
-
-const renderBudgets: Record<HarborScene, RenderBudget> = {
-  dusk: { desktopDpr: 1.2, mobileDpr: 1, maxFps: 30 },
-  garden: { desktopDpr: 1.1, mobileDpr: 1, maxFps: 24 },
-  stellar: { desktopDpr: 1.25, mobileDpr: 1.05, maxFps: 36 },
-}
-
-const dynamics: Record<HarborScene, Omit<FlowDynamics, 'angle'>> = {
-  dusk: {
-    speed: 0.92,
-    fieldScale: 1.08,
-    distortion: 0.78,
-    ribbonStrength: 0.42,
-    noiseScale: 0.86,
-    contrast: 1.02,
-  },
-  garden: {
-    speed: 0.58,
-    fieldScale: 0.76,
-    distortion: 0.5,
-    ribbonStrength: 0.7,
-    noiseScale: 1.48,
-    contrast: 0.9,
-  },
-  stellar: {
-    speed: 0.86,
+const stellarProfile: FlowSceneProfile = {
+  scene: 'stellar',
+  palette: ['#59575c', '#2b315f', '#354b7b', '#092243', '#052433'],
+  dynamics: {
+    speed: 0.72,
     fieldScale: 1.2,
     distortion: 1.36,
     ribbonStrength: 0.3,
     noiseScale: 0.78,
-    contrast: 1.2,
+    contrast: 1.4,
+    angle: 318,
+  },
+  effects: {
+    brightness: 0.7,
+    saturation: 1.38,
+    noiseFlow: 0.58,
+    starIntensity: 0,
+    starScale: 1,
+  },
+  starfield: {
+    enabled: true,
+    count: 172,
+    opacity: 0.78,
+    speed: 1,
+    parallax: 1,
+    twinkle: 1,
+    temperature: 0.72,
+    seed: 20260727,
+  },
+  stellarEffects: {
+    edgeGlow: 0.9,
+    perimeterOpacity: 0.9,
+    perimeterDuration: 7.6,
+    brandHighlight: 0.82,
+  },
+  renderBudget: {
+    desktopDpr: 1.25,
+    mobileDpr: 1,
+    maxFps: 24,
   },
 }
 
-const profiles: Record<'dark' | 'light', Record<HarborScene, FlowProfileDefinition>> = {
-  dark: {
-    dusk: {
-      palette: ['#120914', '#3c1732', '#8e3f58', '#dc8065', '#f3bf6b'],
-      dynamics: dynamics.dusk,
-      effects: effects.dusk,
-      starfield: starfields.dusk,
-      stellarEffects: stellarEffects.dusk,
-      renderBudget: renderBudgets.dusk,
-      angle: 318,
-      portraitAngle: 262,
-      portraitPalette: ['#120914', '#8e3f58', '#f3bf6b', '#90bfe0', '#333ca0'],
-    },
-    garden: {
-      palette: ['#07150f', '#0b3827', '#1d795c', '#7cab6d', '#d7d08e'],
-      dynamics: dynamics.garden,
-      effects: effects.garden,
-      starfield: starfields.garden,
-      stellarEffects: stellarEffects.garden,
-      renderBudget: renderBudgets.garden,
-      angle: 304,
-      portraitAngle: 282,
-      portraitPalette: ['#07150f', '#1d795c', '#d7d08e', '#7cab6d', '#0b3827'],
-    },
-    stellar: {
-      palette: ['#040713', '#101c42', '#263c7e', '#6b62b5', '#7fd9dc'],
-      dynamics: dynamics.stellar,
-      effects: effects.stellar,
-      starfield: starfields.stellar,
-      stellarEffects: stellarEffects.stellar,
-      renderBudget: renderBudgets.stellar,
-      angle: 326,
-      portraitAngle: 304,
-      portraitPalette: ['#040713', '#263c7e', '#7fd9dc', '#6b62b5', '#101c42'],
-    },
-  },
-  light: {
-    dusk: {
-      palette: ['#f8eee7', '#efc3b7', '#d8888e', '#7abfc4', '#f1c678'],
-      dynamics: dynamics.dusk,
-      effects: effects.dusk,
-      starfield: starfields.dusk,
-      stellarEffects: stellarEffects.dusk,
-      renderBudget: renderBudgets.dusk,
-      angle: 318,
-      portraitAngle: 262,
-      portraitPalette: ['#f8eee7', '#d8888e', '#f1c678', '#90bfe0', '#333ca0'],
-    },
-    garden: {
-      palette: ['#eef3dc', '#d5c8e8', '#a8ddd4', '#79be8d', '#d8d98a'],
-      dynamics: dynamics.garden,
-      effects: effects.garden,
-      starfield: starfields.garden,
-      stellarEffects: stellarEffects.garden,
-      renderBudget: renderBudgets.garden,
-      angle: 304,
-      portraitAngle: 282,
-      portraitPalette: ['#eef3dc', '#a8ddd4', '#d8d98a', '#79be8d', '#d5c8e8'],
-    },
-    stellar: {
-      palette: ['#eef2f8', '#c7d2e9', '#849dd0', '#776ea8', '#b5e1df'],
-      dynamics: dynamics.stellar,
-      effects: effects.stellar,
-      starfield: starfields.stellar,
-      stellarEffects: stellarEffects.stellar,
-      renderBudget: renderBudgets.stellar,
-      angle: 326,
-      portraitAngle: 304,
-      portraitPalette: ['#eef2f8', '#849dd0', '#b5e1df', '#776ea8', '#c7d2e9'],
-    },
-  },
-}
-
-export function getFlowProfile(scene: HarborScene, light: boolean, portrait = false): FlowSceneProfile {
-  const profile = profiles[light ? 'light' : 'dark'][scene]
-  return {
-    scene,
-    palette: portrait ? (profile.portraitPalette ?? profile.palette) : profile.palette,
-    effects: profile.effects,
-    dynamics: {
-      ...profile.dynamics,
-      angle: portrait ? (profile.portraitAngle ?? profile.angle) : profile.angle,
-    },
-    starfield: profile.starfield,
-    stellarEffects: profile.stellarEffects,
-    renderBudget: profile.renderBudget,
-  }
+export function getFlowProfile(..._compatibility: [HarborScene, boolean, boolean?]): FlowSceneProfile {
+  void _compatibility
+  return stellarProfile
 }
