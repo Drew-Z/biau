@@ -828,6 +828,7 @@ html.harbor-intro-active .app.page-home .carousel-wrapper::after,
 
 :root[data-harbor-scene='stellar'] .app.page-home .harbor-panel-border-flow rect {
   animation-duration: var(--stellar-scene-perimeter-duration);
+  animation-play-state: var(--stellar-scene-perimeter-play-state);
 }
 
 @media (max-width: 1024px), (any-hover: none), (prefers-reduced-motion: reduce) {

@@ -3,6 +3,14 @@ import { getFlowProfile, type HarborScene } from '../background/flowPalettes'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 
+function isLowPowerDevice() {
+  const navigatorState = navigator as Navigator & {
+    connection?: { saveData?: boolean }
+    deviceMemory?: number
+  }
+  return Boolean(navigatorState.connection?.saveData || navigatorState.deviceMemory !== undefined && navigatorState.deviceMemory <= 2)
+}
+
 function currentScene(fallback: HarborScene): HarborScene {
   const scene = document.documentElement.dataset.harborScene
   return scene === 'dusk' || scene === 'garden' || scene === 'stellar' ? scene : fallback
@@ -10,6 +18,7 @@ function currentScene(fallback: HarborScene): HarborScene {
 
 export function StellarEffects({ scene }: { scene: HarborScene }) {
   const ownerRef = useRef<HTMLDivElement>(null)
+  const initialSceneRef = useRef(scene)
 
   useEffect(() => {
     const owner = ownerRef.current
@@ -19,42 +28,63 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     let frame = 0
     let stopped = false
     let reducedMotion = matchMedia(REDUCED).matches
+    let lowPower = isLowPowerDevice()
     let pointerX = innerWidth / 2
     let pointerY = innerHeight / 2
     let profileVersion = 0
     let profileSignature = ''
 
     const sync = () => {
-      const activeScene = currentScene(scene)
-      const profile = getFlowProfile(activeScene, document.documentElement.classList.contains('light-theme'))
-      const signature = JSON.stringify(profile.stellarEffects)
+      const activeScene = currentScene(initialSceneRef.current)
+      const light = document.documentElement.classList.contains('light-theme')
+      const profile = getFlowProfile(activeScene, light)
+      lowPower = isLowPowerDevice()
+      const effects = lowPower
+        ? {
+            ...profile.stellarEffects,
+            edgeGlow: profile.stellarEffects.edgeGlow * 0.48,
+            perimeterOpacity: profile.stellarEffects.perimeterOpacity * 0.42,
+            perimeterDuration: profile.stellarEffects.perimeterDuration > 0
+              ? profile.stellarEffects.perimeterDuration * 1.5
+              : profile.stellarEffects.perimeterDuration,
+            brandHighlight: profile.stellarEffects.brandHighlight * 0.62,
+          }
+        : profile.stellarEffects
+      const signature = JSON.stringify({ activeScene, light, effects })
       if (signature !== profileSignature) {
         profileSignature = signature
         profileVersion += 1
       }
       owner.dataset.stellarScene = activeScene
       owner.dataset.stellarProfileVersion = String(profileVersion)
-      owner.dataset.stellarState = reducedMotion || document.hidden ? 'paused' : profile.stellarEffects.edgeGlow > 0.1 ? 'running' : 'ambient'
-      owner.style.setProperty('--stellar-edge-glow', String(profile.stellarEffects.edgeGlow))
-      owner.style.setProperty('--stellar-perimeter-opacity', String(profile.stellarEffects.perimeterOpacity))
-      owner.style.setProperty('--stellar-perimeter-duration', `${profile.stellarEffects.perimeterDuration || 7.6}s`)
-      owner.style.setProperty('--stellar-brand-highlight', String(profile.stellarEffects.brandHighlight))
-      root.style.setProperty('--stellar-scene-perimeter-opacity', String(profile.stellarEffects.perimeterOpacity))
-      root.style.setProperty('--stellar-scene-perimeter-duration', `${profile.stellarEffects.perimeterDuration || 7.6}s`)
+      owner.dataset.stellarLowPower = lowPower ? 'true' : 'false'
+      owner.dataset.stellarState = reducedMotion || document.hidden ? 'paused' : lowPower ? 'ambient' : effects.edgeGlow > 0.1 ? 'running' : 'ambient'
+      owner.style.setProperty('--stellar-edge-glow', String(effects.edgeGlow))
+      owner.style.setProperty('--stellar-perimeter-opacity', String(effects.perimeterOpacity))
+      owner.style.setProperty('--stellar-perimeter-duration', `${effects.perimeterDuration || 7.6}s`)
+      owner.style.setProperty('--stellar-brand-highlight', String(effects.brandHighlight))
+      root.style.setProperty('--stellar-scene-perimeter-opacity', String(effects.perimeterOpacity))
+      root.style.setProperty('--stellar-scene-perimeter-duration', `${effects.perimeterDuration || 7.6}s`)
+      root.style.setProperty('--stellar-scene-perimeter-play-state', lowPower ? 'paused' : 'running')
       owner.style.setProperty('--stellar-pointer-x', `${pointerX}px`)
       owner.style.setProperty('--stellar-pointer-y', `${pointerY}px`)
-      if (!reducedMotion && !document.hidden && !frame) frame = requestAnimationFrame(syncFrame)
+      if (reducedMotion || lowPower || document.hidden) {
+        cancelAnimationFrame(frame)
+        frame = 0
+      } else if (!frame) {
+        frame = requestAnimationFrame(syncFrame)
+      }
     }
     const syncFrame = () => {
       frame = 0
-      if (stopped || reducedMotion || document.hidden) return
+      if (stopped || reducedMotion || lowPower || document.hidden) return
       owner.style.setProperty('--stellar-pointer-x', `${pointerX}px`)
       owner.style.setProperty('--stellar-pointer-y', `${pointerY}px`)
     }
     const handlePointer = (event: PointerEvent) => {
       pointerX = event.clientX
       pointerY = event.clientY
-      if (!reducedMotion && !frame) frame = requestAnimationFrame(syncFrame)
+      if (!reducedMotion && !lowPower && !frame) frame = requestAnimationFrame(syncFrame)
     }
     const handleMotion = () => {
       reducedMotion = matchMedia(REDUCED).matches
@@ -79,8 +109,9 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
       media.removeEventListener('change', handleMotion)
       root.style.removeProperty('--stellar-scene-perimeter-opacity')
       root.style.removeProperty('--stellar-scene-perimeter-duration')
+      root.style.removeProperty('--stellar-scene-perimeter-play-state')
     }
-  }, [scene])
+  }, [])
 
   return (
     <div ref={ownerRef} className="stellar-effects" data-stellar-effects aria-hidden="true">

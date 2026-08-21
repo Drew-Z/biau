@@ -41,6 +41,11 @@ Mode replays and SPA route transitions.
 When a visual owner depends on a theme or scene profile, update the renderer
 and its diagnostic DOM attributes from the same effect boundary. A scene
 change must not leave a stale canvas profile or a second render loop behind.
+Keep the owner effect mounted across scene/theme changes: capture the prop only
+as an initial fallback, observe the root appearance attributes, and update the
+existing renderer in place. Re-running the owner effect for every scene resets
+diagnostic versions and creates a transient cleanup/setup window, so UI checks
+must assert that every visual profile version advances after a real switch.
 
 ```tsx
 useEffect(() => {

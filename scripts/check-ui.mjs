@@ -2458,12 +2458,40 @@ await scenePreferencePage.addInitScript(() => {
 await gotoApp(scenePreferencePage, '/')
 const sceneButton = scenePreferencePage.locator('.nav-logo')
 const initialSceneVersion = await scenePreferencePage.evaluate(() => Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10))
+const initialProfileVersions = await scenePreferencePage.evaluate(() => {
+  const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
+  return {
+    flow: read('.flow-background', 'data-flow-profile-version'),
+    starfield: read('.starfield-background', 'data-starfield-profile-version'),
+    stellar: read('.stellar-effects', 'data-stellar-profile-version'),
+  }
+})
 await sceneButton.focus()
 await scenePreferencePage.keyboard.press('Enter')
 await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'garden')
+await scenePreferencePage.waitForFunction((previous) => {
+  const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
+  return read('.flow-background', 'data-flow-profile-version') > previous.flow &&
+    read('.starfield-background', 'data-starfield-profile-version') > previous.starfield &&
+    read('.stellar-effects', 'data-stellar-profile-version') > previous.stellar
+}, initialProfileVersions)
 const nextSceneVersion = await scenePreferencePage.evaluate(() => Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10))
+const nextProfileVersions = await scenePreferencePage.evaluate(() => {
+  const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
+  return {
+    flow: read('.flow-background', 'data-flow-profile-version'),
+    starfield: read('.starfield-background', 'data-starfield-profile-version'),
+    stellar: read('.stellar-effects', 'data-stellar-profile-version'),
+  }
+})
 if (!(nextSceneVersion > initialSceneVersion)) {
   failures.push('/ home scene preference: scene profile version should advance exactly when the scene changes')
+}
+if (!(nextProfileVersions.flow > initialProfileVersions.flow &&
+      nextProfileVersions.starfield > initialProfileVersions.starfield &&
+      nextProfileVersions.stellar > initialProfileVersions.stellar &&
+      new Set(Object.values(nextProfileVersions)).size === 1)) {
+  failures.push('/ home scene preference: Flow, Starfield, and Stellar profile versions should advance atomically')
 }
 const storedScene = await scenePreferencePage.evaluate(() => window.localStorage.getItem('biau-port-harbor-scene'))
 if (storedScene !== 'garden') {
@@ -2474,6 +2502,27 @@ await scenePreferencePage.waitForFunction(() => document.documentElement.dataset
 if ((await scenePreferencePage.locator('.nav-logo').getAttribute('data-scene')) !== 'garden') {
   failures.push('/ home scene preference: refresh should restore the persisted harbor scene')
 }
+const reloadedProfileVersions = await scenePreferencePage.evaluate(() => {
+  const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
+  return {
+    flow: read('.flow-background', 'data-flow-profile-version'),
+    starfield: read('.starfield-background', 'data-starfield-profile-version'),
+    stellar: read('.stellar-effects', 'data-stellar-profile-version'),
+  }
+})
+await scenePreferencePage.locator('.nav-theme-toggle').click()
+await scenePreferencePage.locator('.nav-theme-toggle').click()
+await scenePreferencePage.waitForFunction((previous) => {
+  const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
+  const versions = [
+    read('.flow-background', 'data-flow-profile-version'),
+    read('.starfield-background', 'data-starfield-profile-version'),
+    read('.stellar-effects', 'data-stellar-profile-version'),
+  ]
+  return document.documentElement.dataset.colorMode === 'light' &&
+    versions.every((value, index) => value > Object.values(previous)[index]) &&
+    new Set(versions).size === 1
+}, reloadedProfileVersions)
 await scenePreferencePage.close()
 
 const sceneTransitionPage = await createUiPage(browser, {
@@ -3035,6 +3084,91 @@ if (resumedFrameDelta <= 0.15) {
   failures.push('/ home runtime motion: switching back to no-preference should resume one worker render loop')
 }
 await motionSwitchPage.close()
+
+const lowPowerPage = await createUiPage(browser, {
+  viewport: viewports[0],
+  colorScheme: 'dark',
+  reducedMotion: 'no-preference',
+})
+await lowPowerPage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+  Object.defineProperty(Navigator.prototype, 'deviceMemory', { configurable: true, value: 2 })
+  Object.defineProperty(Navigator.prototype, 'connection', {
+    configurable: true,
+    value: { saveData: true },
+  })
+})
+await gotoApp(lowPowerPage, '/')
+await lowPowerPage.waitForFunction(() => document.querySelector('.starfield-background')?.getAttribute('data-starfield-state'))
+const lowPowerState = await lowPowerPage.evaluate(() => {
+  const effects = document.querySelector('.stellar-effects')
+  const panelBorder = document.querySelector('.harbor-panel-border-flow rect')
+  return {
+    starfieldCount: Number.parseInt(document.querySelector('.starfield-background')?.getAttribute('data-starfield-count') ?? '0', 10),
+    stellarLowPower: effects?.getAttribute('data-stellar-low-power') ?? '',
+    stellarState: effects?.getAttribute('data-stellar-state') ?? '',
+    perimeterOpacity: Number.parseFloat(document.documentElement.style.getPropertyValue('--stellar-scene-perimeter-opacity')) || 0,
+    perimeterDuration: panelBorder ? getComputedStyle(panelBorder).animationDuration : '0s',
+    perimeterPlayState: panelBorder ? getComputedStyle(panelBorder).animationPlayState : '',
+  }
+})
+if (
+  lowPowerState.starfieldCount >= 100 ||
+  lowPowerState.stellarLowPower !== 'true' ||
+  lowPowerState.stellarState !== 'ambient' ||
+  lowPowerState.perimeterOpacity >= 0.84 ||
+  lowPowerState.perimeterDuration === '7.6s' ||
+  lowPowerState.perimeterPlayState !== 'paused'
+) {
+  failures.push('/ home low-power mode: starfield and Stellar effects should lower their budget and pause pointer animation')
+}
+await lowPowerPage.close()
+
+const noWebGlPage = await createUiPage(browser, {
+  viewport: viewports[0],
+  colorScheme: 'dark',
+  reducedMotion: 'no-preference',
+})
+await noWebGlPage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+  Object.defineProperty(window, 'Worker', { configurable: true, value: undefined })
+  const getContext = HTMLCanvasElement.prototype.getContext
+  HTMLCanvasElement.prototype.getContext = function (contextId, ...args) {
+    if (contextId === 'webgl2') return null
+    return getContext.call(this, contextId, ...args)
+  }
+})
+await gotoApp(noWebGlPage, '/')
+await noWebGlPage.waitForFunction(() => document.querySelector('.flow-background')?.getAttribute('data-flow-fallback') === 'css')
+const noWebGlState = await noWebGlPage.evaluate(() => {
+  const flow = document.querySelector('.flow-background')
+  const starfield = document.querySelector('.starfield-background')
+  const app = document.querySelector('.app')
+  const appBefore = app ? getComputedStyle(app, '::before') : null
+  return {
+    flowFallback: flow?.getAttribute('data-flow-fallback') ?? '',
+    flowOpacity: flow ? Number.parseFloat(getComputedStyle(flow).opacity) : 1,
+    fallbackBackground: appBefore?.backgroundImage ?? 'none',
+    fallbackOpacity: Number.parseFloat(appBefore?.opacity ?? '0'),
+    starfieldState: starfield?.getAttribute('data-starfield-state') ?? '',
+    starfieldCount: Number.parseInt(starfield?.getAttribute('data-starfield-count') ?? '0', 10),
+  }
+})
+if (
+  noWebGlState.flowFallback !== 'css' ||
+  noWebGlState.flowOpacity !== 0 ||
+  noWebGlState.fallbackBackground === 'none' ||
+  noWebGlState.fallbackOpacity <= 0 ||
+  !['running', 'reduced', 'paused'].includes(noWebGlState.starfieldState) ||
+  noWebGlState.starfieldCount < 100
+) {
+  failures.push('/ home no-WebGL/Worker mode: CSS Flow foundation and independent starfield should remain visible')
+}
+await noWebGlPage.close()
 
 const hiddenLifecyclePage = await createUiPage(browser, {
   viewport: viewports[0],

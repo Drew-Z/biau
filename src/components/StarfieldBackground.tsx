@@ -21,6 +21,7 @@ function getProfile(scene: HarborScene): StarfieldProfile {
 
 export function StarfieldBackground({ scene }: { scene: HarborScene }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const initialSceneRef = useRef(scene)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -38,17 +39,19 @@ export function StarfieldBackground({ scene }: { scene: HarborScene }) {
     let scrollProgress = 0
 
     const readProfile = () => {
-      const current = getScene(document.documentElement.dataset.harborScene, scene)
+      const current = getScene(document.documentElement.dataset.harborScene, initialSceneRef.current)
       return getProfile(current)
     }
     const publishProfile = () => {
-      const current = readProfile()
-      const signature = JSON.stringify(current)
+      const activeScene = getScene(document.documentElement.dataset.harborScene, initialSceneRef.current)
+      const light = document.documentElement.classList.contains('light-theme')
+      const current = getProfile(activeScene)
+      const signature = JSON.stringify({ activeScene, light, current })
       if (signature !== profileSignature) {
         profileSignature = signature
         profileVersion += 1
       }
-      canvas.dataset.starfieldScene = getScene(document.documentElement.dataset.harborScene, scene)
+      canvas.dataset.starfieldScene = activeScene
       canvas.dataset.starfieldProfileVersion = String(profileVersion)
       canvas.dataset.starfieldCount = String(current.count)
       return current
@@ -144,7 +147,7 @@ export function StarfieldBackground({ scene }: { scene: HarborScene }) {
       media.removeEventListener('change', handleMotion)
       renderer?.destroy()
     }
-  }, [scene])
+  }, [])
 
   return <canvas ref={canvasRef} className="starfield-background" data-starfield-background aria-hidden="true" />
 }
