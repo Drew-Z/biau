@@ -121,7 +121,7 @@
     0 12px 30px rgb(var(--flow-ui-shadow-rgb, 0 0 0) / 0.18);
   opacity: 0;
   transform: translate3d(0, 0.16em, 0) scale(0.992);
-  animation: heroTitleGhostFade 0.72s var(--ease-out-expo) both;
+  animation: heroTitleGhostFade 0.5s var(--ease-out-expo) both;
 }
 
 .hero-intro h2.hero-title-rotator.is-hero-title-switching.has-hero-title-ghost::before {

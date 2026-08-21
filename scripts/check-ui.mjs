@@ -2219,6 +2219,7 @@ for (const theme of ['light', 'dark']) {
       const panelAfterStyle = heroPanel ? getComputedStyle(heroPanel, '::after') : null
       const surfaceGlow = heroPanel?.querySelector(':scope > .harbor-surface-glow')
       const surfaceGlowStyle = surfaceGlow ? getComputedStyle(surfaceGlow) : null
+      const perimeterFlow = heroPanel?.querySelector(':scope > .stellar-panel-border-flow')
       const introContentCenter = eyebrowRect && statusRect ? (eyebrowRect.top + statusRect.bottom) / 2 : 0
       const panelCenter = panelRect ? panelRect.top + panelRect.height / 2 : 0
       return {
@@ -2265,6 +2266,13 @@ for (const theme of ['light', 'dark']) {
         ].join('|'),
         panelMotion: [panelBeforeStyle?.animationName ?? '', panelAfterStyle?.animationName ?? ''],
         surfaceGlowDisplay: surfaceGlowStyle?.display ?? '',
+        perimeterFlowState: heroPanel?.getAttribute('data-stellar-border-flow') ?? '',
+        perimeterFlowFps: Number.parseInt(heroPanel?.getAttribute('data-stellar-border-flow-fps') ?? '0', 10),
+        perimeterFlowSize: [
+          heroPanel?.style.getPropertyValue('--stellar-border-flow-size-x') ?? '',
+          heroPanel?.style.getPropertyValue('--stellar-border-flow-size-y') ?? '',
+        ],
+        perimeterFlowDisplay: perimeterFlow ? getComputedStyle(perimeterFlow).display : '',
         stellarTextureMotion: [
           textureBeforeStyle?.animationName ?? '',
           textureAfterStyle?.animationName ?? '',
@@ -2375,11 +2383,16 @@ for (const theme of ['light', 'dark']) {
     if (
       (scene === 'stellar' && (
         appearance.surfaceGlowDisplay === 'none' ||
-        appearance.stellarTextureMotion.some((name) => !name || name === 'none')
+        appearance.stellarTextureMotion.some((name) => !name || name === 'none') ||
+        appearance.perimeterFlowState !== 'running' ||
+        appearance.perimeterFlowFps !== 30 ||
+        appearance.perimeterFlowSize.some((value) => !value) ||
+        appearance.perimeterFlowDisplay === 'none'
       )) ||
       (scene !== 'stellar' && (
         appearance.surfaceGlowDisplay !== 'none' ||
-        appearance.stellarTextureMotion.some((name) => name && name !== 'none')
+        appearance.stellarTextureMotion.some((name) => name && name !== 'none') ||
+        appearance.perimeterFlowState !== 'paused'
       ))
     ) {
       failures.push(`/ home scene motion ${theme}/${scene}: strong edge glow and multi-depth stars should belong only to stellar`)
@@ -2951,6 +2964,9 @@ if (!motionPanelBox) {
     opacity: Number.parseFloat(panel.style.getPropertyValue('--harbor-surface-glow-opacity')) || 0,
     layerDisplay: getComputedStyle(panel.querySelector('.harbor-surface-glow')).display,
     layerBackground: getComputedStyle(panel.querySelector('.harbor-surface-glow')).backgroundImage,
+    entityOpacity: Number.parseFloat(panel.style.getPropertyValue('--stellar-edge-glow-opacity')) || 0,
+    entityLayerOpacity: Number.parseFloat(getComputedStyle(panel.querySelector('.stellar-edge-glow-layer')).opacity) || 0,
+    entityLayerCount: document.querySelectorAll('.stellar-edge-glow-layer').length,
   }))
   await motionSwitchPage.mouse.move(
     motionPanelBox.x + motionPanelBox.width * 0.5,
@@ -2964,6 +2980,9 @@ if (!motionPanelBox) {
     !edgeGlowState.x ||
     !edgeGlowState.y ||
     edgeGlowState.opacity < 0.8 ||
+    edgeGlowState.entityOpacity < 0.8 ||
+    edgeGlowState.entityLayerOpacity <= 0 ||
+    edgeGlowState.entityLayerCount !== 3 ||
     centerGlowOpacity > 0.1 ||
     edgeGlowState.layerDisplay === 'none' ||
     edgeGlowState.layerBackground === 'none'

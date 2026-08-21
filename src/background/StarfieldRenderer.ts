@@ -65,14 +65,16 @@ export class StarfieldRenderer {
     if (!profile.enabled || profile.count <= 0) return
 
     const random = seededRandom(profile.seed)
+    const depths = [0.22, 0.48, 0.76, 1.08]
     this.stars = Array.from({ length: profile.count }, (_, index) => {
-      const layer = index % 3
+      const layer = index % depths.length
+      const depth = depths[layer]
       return {
         x: random(),
         y: random(),
-        depth: 0.32 + layer * 0.31 + random() * 0.16,
-        radius: 0.35 + random() * (0.5 + layer * 0.48),
-        alpha: 0.28 + random() * 0.58,
+        depth: depth + (random() - 0.5) * 0.08,
+        radius: (0.18 + random() * random() * 1.8) * (0.66 + depth * 0.44),
+        alpha: 0.24 + random() * 0.62,
         phase: random() * Math.PI * 2,
         temperature: random(),
       }
@@ -105,15 +107,21 @@ export class StarfieldRenderer {
 
     for (const star of this.stars) {
       const drift = seconds * profile.speed * star.depth
-      const x = ((star.x + drift * 0.018) % 1) * this.width + this.pointerX * profile.parallax * star.depth * 18
-      const y = ((star.y + this.scroll * profile.parallax * star.depth * 0.02) % 1) * this.height + this.pointerY * profile.parallax * star.depth * 12
-      const twinkle = 1 - profile.twinkle * 0.32 + Math.sin(seconds * (0.8 + star.depth * 1.9) + star.phase) * profile.twinkle * 0.32
-      const intensity = clamp(profile.opacity * star.alpha * twinkle, 0, 1)
+      const visualDepth = clamp(star.depth, 0.12, 1.12)
+      const parallaxDepth = visualDepth * visualDepth
+      const x = ((star.x + drift * 0.018) % 1) * this.width + this.pointerX * profile.parallax * 52 * parallaxDepth
+      const y = ((star.y + this.scroll * profile.parallax * 0.02) % 1) * this.height + this.pointerY * profile.parallax * 42 * parallaxDepth
+      const timeMs = seconds * 1000
+      const twinkle = profile.twinkle <= 0
+        ? 1
+        : 0.94 + Math.sin(timeMs * 0.00055 * profile.speed + star.phase) * (0.025 + visualDepth * 0.045)
+          + Math.sin(timeMs * 0.0017 + star.phase * 1.7) * 0.018
+      const intensity = clamp(profile.opacity * star.alpha * twinkle * (0.58 + visualDepth * 0.42), 0, 1)
       const warmth = clamp(profile.temperature * (0.45 + star.temperature * 0.7), 0, 1)
       const red = mixChannel(148, 255, warmth)
       const green = mixChannel(197, 224, warmth)
       const blue = mixChannel(255, 184, warmth)
-      const radius = star.radius * (0.74 + star.depth * 0.38)
+      const radius = star.radius * (0.74 + visualDepth * 0.38)
 
       context.fillStyle = `rgba(${red}, ${green}, ${blue}, ${intensity})`
       context.beginPath()

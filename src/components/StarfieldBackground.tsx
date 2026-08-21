@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { StarfieldRenderer } from '../background/StarfieldRenderer'
 import { getFlowProfile, type HarborScene, type StarfieldProfile } from '../background/flowPalettes'
+import { isLowPowerDevice } from '../utils/visualPerformance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const MAX_FPS = 30
@@ -11,12 +12,11 @@ function getScene(value: string | undefined, fallback: HarborScene): HarborScene
 
 function getProfile(scene: HarborScene): StarfieldProfile {
   const profile = getFlowProfile(scene, document.documentElement.classList.contains('light-theme')).starfield
-  const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-  const deviceMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
-  if (connection?.saveData || deviceMemory !== undefined && deviceMemory <= 2) {
-    return { ...profile, count: Math.round(profile.count * 0.38), opacity: profile.opacity * 0.72, twinkle: profile.twinkle * 0.45 }
+  const areaCount = Math.max(150, Math.min(280, Math.round((innerWidth * innerHeight) / 4800)))
+  if (isLowPowerDevice()) {
+    return { ...profile, count: Math.max(48, Math.round(areaCount * 0.32)), opacity: profile.opacity * 0.72, twinkle: 0 }
   }
-  return profile
+  return { ...profile, count: areaCount }
 }
 
 export function StarfieldBackground({ scene }: { scene: HarborScene }) {

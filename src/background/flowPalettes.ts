@@ -96,7 +96,7 @@ const starfields: Record<HarborScene, StarfieldProfile> = {
     parallax: 0.08,
     twinkle: 0.16,
     temperature: 0.24,
-    seed: 17,
+    seed: 20260727,
   },
   garden: {
     enabled: true,
@@ -106,17 +106,17 @@ const starfields: Record<HarborScene, StarfieldProfile> = {
     parallax: 0.035,
     twinkle: 0.08,
     temperature: 0.12,
-    seed: 53,
+    seed: 20260727,
   },
   stellar: {
     enabled: true,
     count: 172,
     opacity: 0.82,
     speed: 0.12,
-    parallax: 0.32,
+    parallax: 1,
     twinkle: 0.72,
     temperature: 0.86,
-    seed: 97,
+    seed: 20260727,
   },
 }
 

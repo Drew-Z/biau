@@ -1,15 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { getFlowProfile, type HarborScene } from '../background/flowPalettes'
+import { isLowPowerDevice } from '../utils/visualPerformance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
-
-function isLowPowerDevice() {
-  const navigatorState = navigator as Navigator & {
-    connection?: { saveData?: boolean }
-    deviceMemory?: number
-  }
-  return Boolean(navigatorState.connection?.saveData || navigatorState.deviceMemory !== undefined && navigatorState.deviceMemory <= 2)
-}
 
 function currentScene(fallback: HarborScene): HarborScene {
   const scene = document.documentElement.dataset.harborScene
@@ -33,6 +26,57 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     let pointerY = innerHeight / 2
     let profileVersion = 0
     let profileSignature = ''
+    const edgeTargets = new Map<HTMLElement, HTMLElement>()
+
+    const syncEdgeTargets = () => {
+      const nextTargets = Array.from(document.querySelectorAll<HTMLElement>('.navigation-top, .home-hero, .hero-panel'))
+      edgeTargets.forEach((layer, target) => {
+        if (nextTargets.includes(target)) return
+        layer.remove()
+        edgeTargets.delete(target)
+      })
+      nextTargets.forEach((target) => {
+        if (edgeTargets.has(target)) return
+        const layer = document.createElement('span')
+        layer.className = 'stellar-edge-glow-layer'
+        layer.setAttribute('aria-hidden', 'true')
+        target.classList.add('stellar-edge-glow-target')
+        target.append(layer)
+        edgeTargets.set(target, layer)
+      })
+    }
+
+    const paintEdgeTargets = () => {
+      const enabled = currentScene(initialSceneRef.current) === 'stellar' && !reducedMotion && !lowPower && !document.hidden
+      edgeTargets.forEach((_layer, target) => {
+        if (!enabled) {
+          target.style.setProperty('--stellar-edge-glow-opacity', '0')
+          return
+        }
+        const rect = target.getBoundingClientRect()
+        const x = Math.max(0, Math.min(rect.width, pointerX - rect.left))
+        const y = Math.max(0, Math.min(rect.height, pointerY - rect.top))
+        const outside = pointerX < rect.left || pointerX > rect.right || pointerY < rect.top || pointerY > rect.bottom
+        const edgeDistance = Math.min(x, y, rect.width - x, rect.height - y)
+        const edgeRange = Math.max(52, Math.min(96, Math.min(rect.width, rect.height) * 0.14))
+        const opacity = outside ? 0 : Math.max(0, Math.min(1, 1 - edgeDistance / edgeRange))
+        target.style.setProperty('--stellar-edge-glow-x', `${x.toFixed(1)}px`)
+        target.style.setProperty('--stellar-edge-glow-y', `${y.toFixed(1)}px`)
+        target.style.setProperty('--stellar-edge-glow-opacity', opacity.toFixed(3))
+      })
+    }
+
+    const syncBrandGeometry = () => {
+      const target = document.querySelector<HTMLElement>(
+        document.documentElement.classList.contains('harbor-intro-active')
+          ? '.harbor-intro__logo-shell'
+          : '.nav-logo',
+      )
+      if (!target) return
+      const rect = target.getBoundingClientRect()
+      owner.style.setProperty('--stellar-brand-x', `${(rect.left + rect.width / 2).toFixed(1)}px`)
+      owner.style.setProperty('--stellar-brand-y', `${(rect.top + rect.height / 2).toFixed(1)}px`)
+    }
 
     const sync = () => {
       const activeScene = currentScene(initialSceneRef.current)
@@ -66,8 +110,12 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
       root.style.setProperty('--stellar-scene-perimeter-opacity', String(effects.perimeterOpacity))
       root.style.setProperty('--stellar-scene-perimeter-duration', `${effects.perimeterDuration || 7.6}s`)
       root.style.setProperty('--stellar-scene-perimeter-play-state', lowPower ? 'paused' : 'running')
+      root.style.setProperty('--stellar-scene-edge-glow', String(effects.edgeGlow))
+      syncEdgeTargets()
+      paintEdgeTargets()
       owner.style.setProperty('--stellar-pointer-x', `${pointerX}px`)
       owner.style.setProperty('--stellar-pointer-y', `${pointerY}px`)
+      syncBrandGeometry()
       if (reducedMotion || lowPower || document.hidden) {
         cancelAnimationFrame(frame)
         frame = 0
@@ -84,6 +132,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     const handlePointer = (event: PointerEvent) => {
       pointerX = event.clientX
       pointerY = event.clientY
+      paintEdgeTargets()
       if (!reducedMotion && !lowPower && !frame) frame = requestAnimationFrame(syncFrame)
     }
     const handleMotion = () => {
@@ -94,6 +143,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'] })
     addEventListener('pointermove', handlePointer, { passive: true })
     addEventListener('resize', sync, { passive: true })
+    addEventListener('scroll', syncBrandGeometry, { passive: true })
     document.addEventListener('visibilitychange', sync)
     const media = matchMedia(REDUCED)
     media.addEventListener('change', handleMotion)
@@ -105,11 +155,21 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
       observer.disconnect()
       removeEventListener('pointermove', handlePointer)
       removeEventListener('resize', sync)
+      removeEventListener('scroll', syncBrandGeometry)
       document.removeEventListener('visibilitychange', sync)
       media.removeEventListener('change', handleMotion)
       root.style.removeProperty('--stellar-scene-perimeter-opacity')
       root.style.removeProperty('--stellar-scene-perimeter-duration')
       root.style.removeProperty('--stellar-scene-perimeter-play-state')
+      root.style.removeProperty('--stellar-scene-edge-glow')
+      edgeTargets.forEach((layer, target) => {
+        layer.remove()
+        target.classList.remove('stellar-edge-glow-target')
+        target.style.removeProperty('--stellar-edge-glow-x')
+        target.style.removeProperty('--stellar-edge-glow-y')
+        target.style.removeProperty('--stellar-edge-glow-opacity')
+      })
+      edgeTargets.clear()
     }
   }, [])
 

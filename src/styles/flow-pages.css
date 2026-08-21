@@ -632,6 +632,7 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
   --harbor-surface-glow-x: 50%;
   --harbor-surface-glow-y: 50%;
   --harbor-surface-glow-opacity: 0;
+  --stellar-border-flow-opacity: 0;
   position: relative;
   overflow: hidden;
   border-color: color-mix(
@@ -639,6 +640,26 @@ html.harbor-intro-active .app.page-home .gradient-bg::after {
     rgb(var(--flow-surface-edge-rgb) / 0.4),
     var(--flow-ui-border-strong) 74%
   );
+}
+
+.app.page-home .carousel-wrapper > .stellar-panel-border-flow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2;
+  width: 88px;
+  height: 52px;
+  pointer-events: none;
+  opacity: 0;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, color-mix(in oklch, white 72%, var(--home-accent)) 0%, color-mix(in oklch, var(--home-accent) 68%, transparent) 28%, color-mix(in oklch, var(--home-violet) 42%, transparent) 54%, transparent 76%);
+  filter: blur(5px) saturate(1.18);
+  mix-blend-mode: screen;
+  will-change: transform, width, opacity;
+}
+
+.app.page-home .carousel-wrapper[data-stellar-border-flow='running'] > .harbor-panel-border-flow {
+  opacity: 0;
 }
 
 .app.page-home .carousel-wrapper::before,

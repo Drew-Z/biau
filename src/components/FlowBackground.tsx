@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FlowRenderer } from '../background/FlowRenderer'
 import { getFlowProfile, type HarborScene } from '../background/flowPalettes'
+import { isLowPowerDevice } from '../utils/visualPerformance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const FINE_POINTER = '(any-hover: hover) and (any-pointer: fine)'
@@ -76,12 +77,8 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         return Math.min(devicePixelRatio || 1, portrait ? profile.renderBudget.mobileDpr : profile.renderBudget.desktopDpr)
       })(),
     })
-    const lowPowerDevice = () =>
-      Boolean((navigator as Navigator & { deviceMemory?: number }).deviceMemory &&
-        (navigator as Navigator & { deviceMemory?: number }).deviceMemory! <= 2) ||
-      Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData)
     const canRun = () => !document.hidden && !document.documentElement.classList.contains('harbor-intro-active')
-    const shouldAnimate = () => canRun() && !lowPowerDevice()
+    const shouldAnimate = () => canRun() && !isLowPowerDevice()
     const markReady = () => {
       if (readyReported || fallbackActive) return
       readyReported = true
@@ -131,14 +128,14 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
           const reduced = reducedMotion
           const running = canRun()
           const frameBudget = readProfile().renderBudget.maxFps
-          if (running && (reduced || lowPowerDevice() || now - last >= 1000 / frameBudget)) {
-            renderer?.draw(reduced || lowPowerDevice() ? 0 : now / 1000, readProfile())
+          if (running && (reduced || isLowPowerDevice() || now - last >= 1000 / frameBudget)) {
+            renderer?.draw(reduced || isLowPowerDevice() ? 0 : now / 1000, readProfile())
             last = now
             markReady()
             if (reduced) markReducedMotionSettled()
-            else if (lowPowerDevice()) markMotion('paused')
+            else if (isLowPowerDevice()) markMotion('paused')
             else markMotion('running')
-            if (reduced || lowPowerDevice()) {
+            if (reduced || isLowPowerDevice()) {
               raf = 0
               return
             }
@@ -167,7 +164,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         worker.postMessage({
           type: 'motion',
           reducedMotion,
-          running: canRun() && !lowPowerDevice(),
+          running: canRun() && !isLowPowerDevice(),
           motionToken: token,
         })
       } else if (renderer) {
@@ -194,7 +191,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
             markReady()
           } else if (data.type === 'motion-settled') {
             const isCurrentRequest = data.motionToken === motionToken
-            const expectedRunning = canRun() && !lowPowerDevice()
+            const expectedRunning = canRun() && !isLowPowerDevice()
             const matchesCurrentState = data.reducedMotion === reducedMotion && data.running === expectedRunning
             if (!isCurrentRequest && !matchesCurrentState) return
             markMotion(data.reducedMotion ? 'reduced-settled' : data.running ? 'running' : 'paused')
@@ -219,7 +216,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
             ...initialSize,
             profile: publishProfile(),
             reducedMotion,
-            running: canRun() && !lowPowerDevice(),
+            running: canRun() && !isLowPowerDevice(),
             motionToken: token,
           },
           [offscreen],

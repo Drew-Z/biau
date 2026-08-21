@@ -103,7 +103,7 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
       indexRef.current = next
       return next
     })
-    ghostTimerRef.current = window.setTimeout(() => setGhostPoem(null), 760)
+    ghostTimerRef.current = window.setTimeout(() => setGhostPoem(null), 540)
   }, [poems])
 
   useEffect(() => {

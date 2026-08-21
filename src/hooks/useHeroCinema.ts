@@ -68,7 +68,7 @@ export function useHeroCinema(rootRef: RefObject<HTMLElement | null>, options: H
         if (panel) timeline.to(panel, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.58 }, 0.2)
       } else {
         if (chars.length > 0) {
-          timeline.to(chars, { opacity: 1, y: 0, rotateX: 0, scale: 1, duration: 0.58, stagger: 0.028, ease: 'back.out(1.35)' })
+          timeline.to(chars, { opacity: 1, y: 0, rotateX: 0, scale: 1, duration: 1.05, stagger: 0.046, ease: 'power2.out' })
         }
       }
       }, root)

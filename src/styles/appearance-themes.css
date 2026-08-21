@@ -567,16 +567,16 @@
 }
 
 :root[data-harbor-scene='dusk'] .starfield-background {
-  opacity: 0.5;
+  opacity: 0.58;
 }
 
 :root[data-harbor-scene='garden'] .starfield-background {
-  opacity: 0.36;
+  opacity: 0.42;
   mix-blend-mode: soft-light;
 }
 
 :root[data-harbor-scene='stellar'] .starfield-background {
-  opacity: 1;
+  opacity: 0.78;
   filter: saturate(1.08) drop-shadow(0 0 5px color-mix(in oklch, var(--home-accent) 36%, transparent));
 }
 
@@ -587,6 +587,8 @@
   --stellar-brand-highlight: 0;
   --stellar-pointer-x: 50vw;
   --stellar-pointer-y: 50vh;
+  --stellar-brand-x: 52px;
+  --stellar-brand-y: 34px;
   position: fixed;
   inset: 0;
   z-index: 2;
@@ -624,10 +626,35 @@
 
 .stellar-effects__brand-glow {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(120px 120px at 52px 34px, color-mix(in oklch, var(--home-accent) 54%, white), transparent 72%);
+  width: 148px;
+  height: 148px;
+  left: calc(var(--stellar-brand-x) - 74px);
+  top: calc(var(--stellar-brand-y) - 74px);
+  background: radial-gradient(circle, color-mix(in oklch, var(--home-accent) 54%, white), transparent 72%);
   opacity: calc(var(--stellar-brand-highlight) * 0.34);
   mix-blend-mode: screen;
+}
+
+.stellar-edge-glow-target {
+  --stellar-edge-glow-x: 50%;
+  --stellar-edge-glow-y: 50%;
+  --stellar-edge-glow-opacity: 0;
+  isolation: isolate;
+}
+
+.stellar-edge-glow-target > .stellar-edge-glow-layer {
+  position: absolute;
+  left: calc(var(--stellar-edge-glow-x) - 74px);
+  top: calc(var(--stellar-edge-glow-y) - 74px);
+  z-index: 3;
+  width: 148px;
+  height: 148px;
+  pointer-events: none;
+  border-radius: 50%;
+  opacity: calc(var(--stellar-edge-glow-opacity) * var(--stellar-scene-edge-glow, 0));
+  background: radial-gradient(circle, rgb(255 255 255 / 72%) 0%, rgb(102 222 255 / 44%) 18%, rgb(111 242 184 / 28%) 34%, rgb(171 125 255 / 24%) 48%, rgb(255 176 84 / 18%) 58%, transparent 74%);
+  mix-blend-mode: screen;
+  filter: blur(2px);
 }
 
 :root[data-harbor-scene='stellar'] .stellar-effects {
