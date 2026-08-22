@@ -62,6 +62,12 @@ npm.cmd run docs:deployment-check
 
 ## Flow Background And Intro
 
+### Single Stellar Reference Parity
+
+- When the site is fixed to the Stellar profile, visual parity checks must use the reference runtime's typed profile values, not only its gradient stop colors. The current reference contract is `colors=#59575c,#2b315f,#354b7b,#092243,#052433,#061132`, `stops=0,19,41,64,86,100`, `angle=318`, `noiseScale=0.2`, `noiseIntensity=0`, `noiseFlow=0.58`, `noiseFlowAngle=315`, `fieldOpacity=0.67`, `mistOpacity=0.41`, `brightness=0.70`, `contrast=1.41`, and `saturation=1.38`.
+- Screenshot audits must capture at least three normal-motion phases (for example around `0.9s`, `2.4s`, and `5.1s`) at desktop and mobile sizes. A single frame or whole-image mean RGB is insufficient because it can miss the wide blue fluid band, central transition, and perimeter highlights.
+- Keep `FlowRenderer` and the independent `StarfieldRenderer` as the only global visual owners. Profile tuning may change the fluid material, but must not reintroduce a second canvas, static full-screen decoration, or a scene switch.
+
 - Normal mode may use the full animated background; reduced motion must show a stable nonblank canvas frame when WebGL2 is available, or a stable nonblank CSS fallback otherwise.
 - Keep the eager CSS composition order `catalog-pages.css` -> `flow-pages.css` -> `appearance-themes.css` -> `hero-split.css` -> `navigation.css`. Flow supplies the renderer/fallback foundation; appearance supplies semantic tokens; the final homepage and navigation layers must remain able to project those tokens instead of being overwritten by older transparent Flow surfaces.
 - Avoid continuous React state updates from animation frames.

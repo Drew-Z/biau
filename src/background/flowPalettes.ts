@@ -1,6 +1,6 @@
 import type { HarborScene } from '../utils/appearance'
 
-export type FlowPalette = readonly [string, string, string, string, string]
+export type FlowPalette = readonly [string, string, string, string, string, string]
 
 export interface FlowDynamics {
   speed: number
@@ -15,7 +15,12 @@ export interface FlowDynamics {
 export interface FlowEffects {
   brightness: number
   saturation: number
+  fieldOpacity: number
+  mistOpacity: number
+  noiseIntensity: number
   noiseFlow: number
+  noiseFlowAngle: number
+  noiseOctaves: number
   starIntensity: number
   starScale: number
 }
@@ -56,7 +61,7 @@ export interface FlowSceneProfile {
 
 const stellarProfile: FlowSceneProfile = {
   scene: 'stellar',
-  palette: ['#59575c', '#2b315f', '#354b7b', '#092243', '#052433'],
+  palette: ['#59575c', '#2b315f', '#354b7b', '#092243', '#052433', '#061132'],
   dynamics: {
     speed: 0.72,
     fieldScale: 1.2,
@@ -69,7 +74,12 @@ const stellarProfile: FlowSceneProfile = {
   effects: {
     brightness: 0.7,
     saturation: 1.38,
+    fieldOpacity: 0.67,
+    mistOpacity: 0.41,
+    noiseIntensity: 0,
     noiseFlow: 0.58,
+    noiseFlowAngle: 315,
+    noiseOctaves: 6,
     starIntensity: 0,
     starScale: 1,
   },
