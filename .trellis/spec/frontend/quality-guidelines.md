@@ -62,11 +62,12 @@ npm.cmd run docs:deployment-check
 
 ## Flow Background And Intro
 
-### Single Stellar Reference Parity
+### Dual-Axis Scene Reference Parity
 
-- When the site is fixed to the Stellar profile, visual parity checks must use the reference runtime's typed profile values, not only its gradient stop colors. The current reference contract is `colors=#59575c,#2b315f,#354b7b,#092243,#052433,#061132`, `stops=0,19,41,64,86,100`, `angle=318`, `noiseScale=0.2`, `noiseIntensity=0`, `noiseFlow=0.58`, `noiseFlowAngle=315`, `fieldOpacity=0.67`, `mistOpacity=0.41`, `brightness=0.70`, `contrast=1.41`, and `saturation=1.38`.
+- The appearance model has two independent axes: `light | dark | auto` controls readable content surfaces, while `dusk | garden | stellar` controls the scene profile, Flow/Starfield material, and scene-owned effects. Theme changes must not replace the stored scene.
+- Stellar visual parity checks must use the reference runtime's typed profile values, not only its gradient stop colors. The current reference contract is `colors=#59575c,#2b315f,#354b7b,#092243,#052433,#061132`, `stops=0,19,41,64,86,100`, `angle=318`, `noiseScale=0.2`, `noiseIntensity=0`, `noiseFlow=0.58`, `noiseFlowAngle=315`, `fieldOpacity=0.67`, `mistOpacity=0.41`, `brightness=0.70`, `contrast=1.41`, and `saturation=1.38`.
 - Screenshot audits must capture at least three normal-motion phases (for example around `0.9s`, `2.4s`, and `5.1s`) at desktop and mobile sizes. A single frame or whole-image mean RGB is insufficient because it can miss the wide blue fluid band, central transition, and perimeter highlights.
-- Keep `FlowRenderer` and the independent `StarfieldRenderer` as the only global visual owners. Profile tuning may change the fluid material, but must not reintroduce a second canvas, static full-screen decoration, or a scene switch.
+- Keep `FlowRenderer` and the independent `StarfieldRenderer` as the only global visual owners. Profile tuning may change the fluid material, but must not reintroduce a second canvas or unowned static full-screen decoration.
 
 - Normal mode may use the full animated background; reduced motion must show a stable nonblank canvas frame when WebGL2 is available, or a stable nonblank CSS fallback otherwise.
 - Keep the eager CSS composition order `catalog-pages.css` -> `flow-pages.css` -> `appearance-themes.css` -> `hero-split.css` -> `navigation.css`. Flow supplies the renderer/fallback foundation; appearance supplies semantic tokens; the final homepage and navigation layers must remain able to project those tokens instead of being overwritten by older transparent Flow surfaces.
@@ -116,9 +117,9 @@ requestAnimationFrame(function animate() {
 
 - UI checks must compare the three computed animation signatures, observe changing normal-motion frames, verify pointer variables and panel glow on fine pointers, verify `ambient` plus zero pointer offsets on coarse pointers, and prove intro/reduced transitions pause or remove motion before the Flow loop resumes.
 
-### Fixed Stellar Intro Lifecycle
+### Harbor Scene Intro Lifecycle
 
-- When the homepage uses the single Stellar composition, `light`, `dark`, and `auto` may change content readability tokens but must not restore a full-screen `body` or `.app` background gradient. The Flow CSS fallback and both canvas owners remain the only background composition owners.
+- For every harbor scene, `light`, `dark`, and `auto` may change content readability tokens but must not restore a competing full-screen `body` or `.app` background gradient. The Flow CSS fallback and both canvas owners remain the only background composition owners.
 - `FlowBackground` and `StarfieldBackground` must observe `document.documentElement` class changes because `HarborIntro` gates animation through `harbor-intro-active`. On class removal, reuse the existing `sync()` path to resume the one renderer/worker and one RAF; do not recreate the owner.
 - Intro-resume UI checks wait for the class to be removed, the owner state to report `running`, the compositor opacity transition to settle, and at least two normal-motion frame samples to differ. A screenshot taken during the 420ms opacity transition is not valid evidence of a missing background.
 
@@ -294,6 +295,7 @@ $env:UI_CHECK_BASE='https://deployment.example'; npm.cmd run check:ui:production
 - Cover `light | dark` against `dusk | garden | stellar`, keyboard scene persistence, runtime `auto` response, and light/dark containment at `320`, `390`, and `430` widths.
 - Require six distinct Flow screenshots, visible real Logo geometry, matching root datasets, and at least `4.5:1` Hero/card-title contrast.
 - Seed local storage only when a key is absent; a reload check must not overwrite the preference it is validating.
+- Resolve CSS colors through a temporary DOM element instead of parsing token strings directly. Composite translucent panel/card colors over `--home-page-solid` before calculating WCAG contrast; modern browsers may serialize the same valid color as `rgb(...)`, `rgba(...)`, or `#RRGGBBAA`.
 
 #### 4. Validation & Error Matrix
 
@@ -305,6 +307,7 @@ $env:UI_CHECK_BASE='https://deployment.example'; npm.cmd run check:ui:production
 | Theme/scene, Logo, contrast, or Flow signature mismatch | Name the bounded appearance group and exit non-zero |
 | Scene reload or runtime system-theme mismatch | Fail the dedicated persistence/auto group |
 | Mobile shell overflow, Logo loss, or brand/action overlap | Fail the exact theme/width group |
+| CSS token cannot be resolved to a browser-computed color | Fail contrast instead of treating the token text as an RGB tuple |
 
 #### 5. Good / Base / Bad Cases
 

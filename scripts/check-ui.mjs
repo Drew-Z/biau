@@ -2073,6 +2073,7 @@ const flowIntroFailures = failures.length
 const introResumePage = await createUiPage(browser, { viewport: { width: 1440, height: 1000 }, colorScheme: 'light' })
 await introResumePage.addInitScript(() => {
   window.localStorage.setItem('theme', 'light')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
   window.sessionStorage.removeItem('biau-port-harbor-intro:v3')
 })
 await gotoApp(introResumePage, '/')
@@ -2184,53 +2185,152 @@ if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow ==
 }
 await navIndicatorPage.close()
 
-const fixedSceneChecks = []
+const harborScenes = ['dusk', 'garden', 'stellar']
+const harborFlowSignatures = new Map()
 
 for (const theme of ['light', 'dark']) {
-  const page = await createUiPage(browser, { viewport: viewports[0], colorScheme: theme })
-  await page.addInitScript(({ harborTheme }) => {
-    window.localStorage.setItem('theme', harborTheme)
-    window.localStorage.setItem('biau-port-harbor-scene', 'garden')
-    window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
-  }, { harborTheme: theme })
-  await gotoApp(page, '/')
-  const canvas = page.locator('.flow-background[data-flow-ready="true"]')
-  await canvas.waitFor({ state: 'attached', timeout: 15_000 })
-  const state = await page.evaluate(() => {
-    const root = document.documentElement
-    const flow = document.querySelector('.flow-background')
-    const stars = document.querySelector('.starfield-background')
-    const effects = document.querySelector('.stellar-effects')
-    const logo = document.querySelector('.nav-logo')
-    return {
-      scene: root.dataset.harborScene ?? '',
-      flowScene: flow?.getAttribute('data-flow-scene') ?? '',
-      starfieldScene: stars?.getAttribute('data-starfield-scene') ?? '',
-      stellarScene: effects?.getAttribute('data-stellar-scene') ?? '',
-      hasFoundation: Boolean(document.querySelector('[data-harbor-scene-foundation]')),
-      hasSceneButton: logo?.tagName === 'BUTTON',
-      logoHref: logo?.getAttribute('href') ?? '',
-      dynamics: (flow?.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
+  for (const scene of harborScenes) {
+    const page = await createUiPage(browser, { viewport: viewports[0], colorScheme: theme })
+    await page.addInitScript(({ harborScene, harborTheme }) => {
+      window.localStorage.setItem('theme', harborTheme)
+      window.localStorage.setItem('biau-port-harbor-scene', harborScene)
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    }, { harborScene: scene, harborTheme: theme })
+    await gotoApp(page, '/')
+    await page.waitForFunction(() => {
+      const root = document.documentElement
+      return Boolean(
+        root.dataset.harborScene &&
+        document.querySelector('.flow-background')?.getAttribute('data-flow-scene') &&
+        document.querySelector('.starfield-background')?.getAttribute('data-starfield-scene') &&
+        document.querySelector('.stellar-effects')?.getAttribute('data-stellar-scene'),
+      )
+    }, undefined, { timeout: 15_000 })
+    const state = await page.evaluate(() => {
+      const root = document.documentElement
+      const flow = document.querySelector('.flow-background')
+      const stars = document.querySelector('.starfield-background')
+      const effects = document.querySelector('.stellar-effects')
+      const logo = document.querySelector('.nav-logo')
+      const brand = document.querySelector('.nav-brand-link')
+      return {
+        scene: root.dataset.harborScene ?? '',
+        sceneVersion: Number.parseInt(root.dataset.harborSceneVersion ?? '0', 10),
+        flowScene: flow?.getAttribute('data-flow-scene') ?? '',
+        flowVersion: Number.parseInt(flow?.getAttribute('data-flow-profile-version') ?? '0', 10),
+        starfieldScene: stars?.getAttribute('data-starfield-scene') ?? '',
+        starfieldVersion: Number.parseInt(stars?.getAttribute('data-starfield-profile-version') ?? '0', 10),
+        starfieldCount: Number.parseInt(stars?.getAttribute('data-starfield-count') ?? '0', 10),
+        stellarScene: effects?.getAttribute('data-stellar-scene') ?? '',
+        stellarVersion: Number.parseInt(effects?.getAttribute('data-stellar-profile-version') ?? '0', 10),
+        stellarState: effects?.getAttribute('data-stellar-state') ?? '',
+        perimeterOpacity: Number.parseFloat(root.style.getPropertyValue('--stellar-scene-perimeter-opacity')) || 0,
+        hasSceneButton: logo?.tagName === 'BUTTON',
+        logoScene: logo?.getAttribute('data-scene') ?? '',
+        brandHref: brand?.getAttribute('href') ?? '',
+        dynamics: (flow?.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
+      }
+    })
+    harborFlowSignatures.set(`${theme}/${scene}`, JSON.stringify(state.dynamics))
+    if (
+      state.scene !== scene || state.flowScene !== scene || state.starfieldScene !== scene ||
+      state.stellarScene !== scene || state.logoScene !== scene || !state.hasSceneButton || state.brandHref !== '/' ||
+      state.dynamics.length !== 7 || state.sceneVersion < 1 || state.flowVersion < 1 ||
+      state.starfieldVersion < 1 || state.stellarVersion < 1
+    ) {
+      failures.push(`/ home appearance ${theme}/${scene}: root scene and visual owners should share one persisted profile`)
     }
-  })
-  fixedSceneChecks.push(state)
-  await page.close()
-}
-
-for (const [index, state] of fixedSceneChecks.entries()) {
-  if (
-    state.scene !== 'stellar' ||
-    state.flowScene !== 'stellar' ||
-    state.starfieldScene !== 'stellar' ||
-    state.stellarScene !== 'stellar' ||
-    state.hasFoundation ||
-    state.hasSceneButton ||
-    state.logoHref !== '/' ||
-    state.dynamics.length !== 7
-  ) {
-    failures.push('/ home Stellar ownership: fixed scene contract failed for ' + ['light', 'dark'][index])
+    if (
+      (scene === 'stellar' && (state.stellarState !== 'running' || state.perimeterOpacity <= 0 || state.starfieldCount < 100)) ||
+      (scene !== 'stellar' && (state.stellarState !== 'inactive' || state.perimeterOpacity > 0.01 || state.starfieldCount >= 100))
+    ) {
+      failures.push(`/ home appearance ${theme}/${scene}: Stellar edge effects and dense stars should remain Stellar-only`)
+    }
+    await page.close()
   }
 }
+
+for (const theme of ['light', 'dark']) {
+  const signatures = harborScenes.map((scene) => harborFlowSignatures.get(`${theme}/${scene}`))
+  if (new Set(signatures).size !== harborScenes.length) {
+    failures.push(`/ home appearance ${theme}: dusk, garden, and stellar should expose independent Flow dynamics`)
+  }
+}
+
+const scenePreferencePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
+await scenePreferencePage.addInitScript(() => {
+  Object.defineProperty(document, 'startViewTransition', { configurable: true, value: undefined })
+  window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(scenePreferencePage, '/')
+const readProfileVersions = () => scenePreferencePage.evaluate(() => {
+  const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
+  return {
+    scene: Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10),
+    flow: read('.flow-background', 'data-flow-profile-version'),
+    stars: read('.starfield-background', 'data-starfield-profile-version'),
+    effects: read('.stellar-effects', 'data-stellar-profile-version'),
+  }
+})
+const expectSceneSwitch = async (expectedScene, trigger) => {
+  const before = await readProfileVersions()
+  await trigger()
+  await scenePreferencePage.waitForFunction((scene) => document.documentElement.dataset.harborScene === scene, expectedScene)
+  await scenePreferencePage.waitForFunction((previous) => {
+    const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
+    return Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10) > previous.scene &&
+      read('.flow-background', 'data-flow-profile-version') > previous.flow &&
+      read('.starfield-background', 'data-starfield-profile-version') > previous.stars &&
+      read('.stellar-effects', 'data-stellar-profile-version') > previous.effects
+  }, before)
+  const persisted = await scenePreferencePage.evaluate(() => ({
+    stored: window.localStorage.getItem('biau-port-harbor-scene'),
+    button: document.querySelector('.nav-logo')?.getAttribute('data-scene') ?? '',
+  }))
+  if (persisted.stored !== expectedScene || persisted.button !== expectedScene) {
+    failures.push(`/ home scene preference: ${expectedScene} should update button state and local storage`)
+  }
+}
+await expectSceneSwitch('garden', () => scenePreferencePage.locator('.nav-logo').click())
+await scenePreferencePage.locator('.nav-logo').focus()
+await expectSceneSwitch('stellar', () => scenePreferencePage.keyboard.press('Enter'))
+await scenePreferencePage.keyboard.press('Enter')
+await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'dusk')
+await scenePreferencePage.reload({ waitUntil: 'domcontentloaded' })
+await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'dusk')
+await scenePreferencePage.locator('.nav-theme-toggle').click()
+await scenePreferencePage.locator('.nav-theme-toggle').click()
+const independentThemeState = await scenePreferencePage.evaluate(() => ({
+  scene: document.documentElement.dataset.harborScene ?? '',
+  storedScene: window.localStorage.getItem('biau-port-harbor-scene'),
+  storedTheme: window.localStorage.getItem('theme'),
+}))
+if (independentThemeState.scene !== 'dusk' || independentThemeState.storedScene !== 'dusk' || independentThemeState.storedTheme !== 'light') {
+  failures.push('/ home scene preference: cycling light/dark/auto must not replace the selected harbor scene')
+}
+await scenePreferencePage.close()
+
+const autoThemePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
+await autoThemePage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'auto')
+  window.localStorage.setItem('biau-port-harbor-scene', 'garden')
+  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+})
+await gotoApp(autoThemePage, '/')
+await autoThemePage.waitForFunction(() => document.documentElement.dataset.colorMode === 'dark')
+await autoThemePage.emulateMedia({ colorScheme: 'light' })
+await autoThemePage.waitForFunction(() => document.documentElement.dataset.colorMode === 'light')
+const autoThemeState = await autoThemePage.evaluate(() => ({
+  scene: document.documentElement.dataset.harborScene ?? '',
+  storedScene: window.localStorage.getItem('biau-port-harbor-scene'),
+  storedTheme: window.localStorage.getItem('theme'),
+}))
+if (autoThemeState.scene !== 'garden' || autoThemeState.storedScene !== 'garden' || autoThemeState.storedTheme !== 'auto') {
+  failures.push('/ home auto appearance: system color changes must preserve the selected harbor scene')
+}
+await autoThemePage.close()
 
 const fixedScenePage = await createUiPage(browser, { viewport: { width: 390, height: 844 }, colorScheme: 'dark' })
 await fixedScenePage.addInitScript(() => {
@@ -2247,14 +2347,15 @@ const mobileState = await mobileFlow.evaluate((canvas) => ({
   dynamics: (canvas.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
   overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
 }))
-if (mobileState.scene !== 'stellar' || mobileState.dynamics.length !== 7 || mobileState.overflow > 1) {
-  failures.push('/ home mobile Stellar background: canvas should remain bounded and fixed')
+if (mobileState.scene !== 'dusk' || mobileState.dynamics.length !== 7 || mobileState.overflow > 1) {
+  failures.push('/ home mobile dusk background: canvas should remain bounded and scene-specific')
 }
 await fixedScenePage.close()
 
 const reducedStellarPage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark', reducedMotion: 'reduce' })
 await reducedStellarPage.addInitScript(() => {
   window.localStorage.setItem('theme', 'dark')
+  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
   window.sessionStorage.setItem('ui-check-scene-seeded', '1')
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
