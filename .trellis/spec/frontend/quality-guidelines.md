@@ -116,6 +116,21 @@ requestAnimationFrame(function animate() {
 
 - UI checks must compare the three computed animation signatures, observe changing normal-motion frames, verify pointer variables and panel glow on fine pointers, verify `ambient` plus zero pointer offsets on coarse pointers, and prove intro/reduced transitions pause or remove motion before the Flow loop resumes.
 
+### Fixed Stellar Intro Lifecycle
+
+- When the homepage uses the single Stellar composition, `light`, `dark`, and `auto` may change content readability tokens but must not restore a full-screen `body` or `.app` background gradient. The Flow CSS fallback and both canvas owners remain the only background composition owners.
+- `FlowBackground` and `StarfieldBackground` must observe `document.documentElement` class changes because `HarborIntro` gates animation through `harbor-intro-active`. On class removal, reuse the existing `sync()` path to resume the one renderer/worker and one RAF; do not recreate the owner.
+- Intro-resume UI checks wait for the class to be removed, the owner state to report `running`, the compositor opacity transition to settle, and at least two normal-motion frame samples to differ. A screenshot taken during the 420ms opacity transition is not valid evidence of a missing background.
+
+```tsx
+// Correct: root class changes reuse the existing lifecycle synchronizer.
+const rootClassObserver = new MutationObserver(() => sync())
+rootClassObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
+// Wrong: recreate the renderer when HarborIntro leaves.
+new FlowRenderer(canvas)
+```
+
 ## Flow Scene Profile And Preview Contract
 
 ### 1. Scope / Trigger

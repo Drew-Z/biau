@@ -41,12 +41,6 @@
   --font-ui: 'DM Sans', 'Noto Sans SC', sans-serif;
 }
 
-/* Page background gradient (warm beige), matches the original home body */
-.light-theme body,
-.light-theme .app {
-  background: linear-gradient(180deg, #dbe4e5 0%, #bfd0d3 100%);
-}
-
 /* ===== Hero grid shell ===== */
 .home-hero {
   --home-grid-gap: var(--space-24);

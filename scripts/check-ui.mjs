@@ -2068,7 +2068,61 @@ for (const width of [320, 390, 430]) {
 
   finishProgressGroup(catalogReadingFailures)
   progress.start('flow-intro', 'background, scenes, reduced motion, and runtime fallback')
-  const flowIntroFailures = failures.length
+const flowIntroFailures = failures.length
+
+const introResumePage = await createUiPage(browser, { viewport: { width: 1440, height: 1000 }, colorScheme: 'light' })
+await introResumePage.addInitScript(() => {
+  window.localStorage.setItem('theme', 'light')
+  window.sessionStorage.removeItem('biau-port-harbor-intro:v3')
+})
+await gotoApp(introResumePage, '/')
+await introResumePage.waitForFunction(
+  () => !document.documentElement.classList.contains('harbor-intro-active'),
+  undefined,
+  { timeout: 10_000 },
+)
+await waitForFlowMotion(introResumePage, 'running', 10_000)
+await introResumePage.waitForFunction(
+  () => document.querySelector('.starfield-background')?.getAttribute('data-starfield-state') === 'running',
+  undefined,
+  { timeout: 10_000 },
+)
+await introResumePage.waitForTimeout(650)
+const introResumeState = await introResumePage.evaluate(() => {
+  const flow = document.querySelector('.flow-background')
+  const starfield = document.querySelector('.starfield-background')
+  const flowStyle = flow ? getComputedStyle(flow) : null
+  const starfieldStyle = starfield ? getComputedStyle(starfield) : null
+  const bodyStyle = getComputedStyle(document.body)
+  const appStyle = getComputedStyle(document.querySelector('.app'))
+  return {
+    flowMotion: flow?.getAttribute('data-flow-motion') ?? '',
+    starfieldState: starfield?.getAttribute('data-starfield-state') ?? '',
+    flowReady: flow?.getAttribute('data-flow-ready') === 'true',
+    flowOpacity: Number.parseFloat(flowStyle?.opacity ?? '0'),
+    starfieldOpacity: Number.parseFloat(starfieldStyle?.opacity ?? '0'),
+    bodyBackground: bodyStyle.backgroundImage,
+    appBackground: appStyle.backgroundImage,
+    overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  }
+})
+const flowDelta = await measureLocatorFrameDelta(introResumePage, introResumePage.locator('.flow-background'), 800)
+const starfieldDelta = await measureLocatorFrameDelta(introResumePage, introResumePage.locator('.starfield-background'), 800)
+if (
+  introResumeState.flowMotion !== 'running' ||
+  introResumeState.starfieldState !== 'running' ||
+  !introResumeState.flowReady ||
+  introResumeState.flowOpacity <= 0 ||
+  introResumeState.starfieldOpacity <= 0 ||
+  introResumeState.bodyBackground !== 'none' ||
+  introResumeState.appBackground !== 'none' ||
+  introResumeState.overflow > 1 ||
+  flowDelta <= 0.02 ||
+  starfieldDelta <= 0.02
+) {
+  failures.push(`/ home intro resume: Stellar owners should resume with visible multi-phase motion, got ${JSON.stringify({ ...introResumeState, flowDelta, starfieldDelta })}`)
+}
+await introResumePage.close()
 
 const navFocusPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(navFocusPage, '/blog')

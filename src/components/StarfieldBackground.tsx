@@ -123,6 +123,8 @@ export function StarfieldBackground() {
     document.addEventListener('visibilitychange', sync)
     const media = matchMedia(REDUCED)
     media.addEventListener('change', handleMotion)
+    const rootClassObserver = new MutationObserver(() => sync())
+    rootClassObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
     updateScroll()
 
     return () => {
@@ -133,6 +135,7 @@ export function StarfieldBackground() {
       removeEventListener('scroll', updateScroll)
       document.removeEventListener('visibilitychange', sync)
       media.removeEventListener('change', handleMotion)
+      rootClassObserver.disconnect()
       renderer?.destroy()
     }
   }, [])

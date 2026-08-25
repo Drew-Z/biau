@@ -239,6 +239,8 @@ export function FlowBackground() {
       if (nextReducedMotion !== reducedMotion) handleMotionChange()
     }, 250)
     media.addEventListener('change', handleMotionChange)
+    const rootClassObserver = new MutationObserver(() => sync())
+    rootClassObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
     return () => {
       stopped = true
@@ -250,6 +252,7 @@ export function FlowBackground() {
       removeEventListener('resize', sync)
       document.removeEventListener('visibilitychange', sync)
       media.removeEventListener('change', handleMotionChange)
+      rootClassObserver.disconnect()
       window.clearInterval(motionPoll)
     }
   }, [])
