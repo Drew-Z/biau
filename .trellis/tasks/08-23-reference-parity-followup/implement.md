@@ -22,8 +22,8 @@
 - [x] `npm.cmd run performance:check`
 - [x] `npm.cmd run check:ui:smoke`
 - [x] `npm.cmd run check:ui`
-- [ ] 运行生产 appearance 检查（部署后）；每次提交部署后重新对照参考站和主站。
-- [ ] `git diff --check`，确认 status JSON 未被修改或暂存。
+- [x] 运行生产 appearance 检查（部署后）；第一次 `light/320` 为瞬时超时，复测后 8/8 组通过，线上 `https://biau.pages.dev` 已验证。
+- [x] `git diff --check`，确认 status JSON 未被修改或暂存。
 
 ## 风险与回滚点
 
