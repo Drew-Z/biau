@@ -4,8 +4,10 @@ import { BiauPortMark } from './BiauPortMark'
 const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v3'
 let introTriggeredThisRuntime = false
 
+import type { HarborScene } from '../utils/appearance'
+
 interface HarborIntroProps {
-  harborScene?: 'stellar'
+  harborScene?: HarborScene
 }
 
 function canShowIntro() {
@@ -31,7 +33,7 @@ function markIntroSeen() {
   }
 }
 
-export function HarborIntro({ harborScene = 'stellar' }: HarborIntroProps) {
+export function HarborIntro({ harborScene = 'dusk' }: HarborIntroProps) {
   const [visible, setVisible] = useState(() => !introTriggeredThisRuntime && canShowIntro())
   const [leaving, setLeaving] = useState(false)
   const introRef = useRef<HTMLDivElement>(null)

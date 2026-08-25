@@ -1,16 +1,7 @@
-/* Shared content surfaces over the single Stellar background owner. */
+/* Shared content surfaces inherit the active harbor scene token contract. */
 .app.page-home,
 .app.page-tools,
 .app.page-subpage {
-  --flow-c1: #59575c;
-  --flow-c2: #2b315f;
-  --flow-c3: #354b7b;
-  --flow-c4: #092243;
-  --flow-c5: #052433;
-  --flow-light-rgb: 89 87 92;
-  --flow-aqua-rgb: 53 75 123;
-  --flow-blue-rgb: 9 34 67;
-  --flow-deep-rgb: 6 17 50;
   --flow-field-opacity: 0;
   --flow-ribbon-opacity: 0;
   --flow-blur: 0px;
@@ -27,24 +18,24 @@
   --flow-field-blend: normal;
   --flow-ribbon-blend: normal;
   --flow-speed: 0s;
-  --flow-surface-tint-rgb: 53 75 123;
-  --flow-surface-highlight-rgb: 209 171 92;
-  --flow-surface-edge-rgb: 84 224 192;
+  --flow-surface-tint-rgb: var(--home-accent-rgb);
+  --flow-surface-highlight-rgb: var(--home-accent-strong-rgb);
+  --flow-surface-edge-rgb: var(--home-accent-rgb);
   --flow-surface-depth-alpha: 0.2;
   --flow-surface-sheen-opacity: 0.2;
-  --flow-ui-panel-rgb: 9 25 57;
-  --flow-ui-card-rgb: 15 45 82;
-  --flow-ui-shadow-rgb: 0 4 23;
-  --flow-ui-border: rgb(97 213 220 / 34%);
-  --flow-ui-border-strong: rgb(97 204 220 / 48%);
-  --flow-ui-card-border: rgb(88 190 221 / 38%);
-  --flow-ui-inset: rgb(214 246 255 / 16%);
+  --flow-ui-panel-rgb: var(--home-panel-rgb);
+  --flow-ui-card-rgb: var(--home-card-rgb);
+  --flow-ui-shadow-rgb: var(--home-page-solid-rgb);
+  --flow-ui-border: var(--home-panel-border);
+  --flow-ui-border-strong: color-mix(in oklch, var(--home-panel-border) 78%, var(--home-accent-strong));
+  --flow-ui-card-border: var(--home-card-border);
+  --flow-ui-inset: var(--home-panel-highlight);
   --flow-shadow-alpha: 0.3;
-  --bg-gradient: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%);
-  --panel: rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha));
-  --panel-strong: rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha));
-  --hero-bg: linear-gradient(142deg, rgb(var(--flow-ui-panel-rgb) / var(--flow-hero-alpha)), rgb(var(--flow-ui-panel-rgb) / var(--flow-hero-alpha-soft)));
-  --hero-panel-bg: linear-gradient(180deg, rgb(var(--flow-ui-panel-rgb) / var(--flow-panel-alpha)), rgb(var(--flow-ui-card-rgb) / var(--flow-card-alpha)));
+  --bg-gradient: var(--harbor-scene-background);
+  --panel: var(--home-panel-bg);
+  --panel-strong: var(--home-card-bg);
+  --hero-bg: linear-gradient(142deg, color-mix(in srgb, var(--home-panel-bg) 88%, transparent), color-mix(in srgb, var(--home-panel-bg) 52%, transparent));
+  --hero-panel-bg: linear-gradient(180deg, var(--home-panel-bg), var(--home-card-bg));
   --shadow: 0 26px 80px rgb(var(--flow-ui-shadow-rgb) / var(--flow-shadow-alpha));
   isolation: isolate;
   overflow-x: clip;
@@ -55,12 +46,6 @@
 :root.light-theme .app.page-home,
 :root.light-theme .app.page-tools,
 :root.light-theme .app.page-subpage {
-  --flow-ui-panel-rgb: 18 43 77;
-  --flow-ui-card-rgb: 27 57 92;
-  --flow-ui-border: rgb(164 227 239 / 58%);
-  --flow-ui-border-strong: rgb(158 222 238 / 54%);
-  --flow-ui-card-border: rgb(158 222 238 / 46%);
-  --flow-ui-inset: rgb(255 255 255 / 22%);
   --flow-panel-alpha: 0.76;
   --flow-card-alpha: 0.78;
   --flow-hero-alpha: 0.6;
@@ -736,7 +721,7 @@
   height: 28px;
   display: inline-grid;
   place-items: center;
-  color: #092243;
+  color: var(--home-page-solid);
   background: var(--amber);
   border-radius: 999px;
   font-family: var(--font-mono);

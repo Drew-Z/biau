@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FlowRenderer } from '../background/FlowRenderer'
 import { getFlowProfile } from '../background/flowPalettes'
-import { STELLAR_SCENE } from '../utils/appearance'
+import { isHarborScene, type HarborScene } from '../utils/appearance'
 import { isLowPowerDevice } from '../utils/visualPerformance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
@@ -11,8 +11,9 @@ type FlowMotionState = 'pending' | 'running' | 'reduced-settled' | 'paused' | 'c
 const isWebGlUnavailable = (value: unknown) =>
   value === 'WebGL2 unavailable' || (value instanceof Error && value.message === 'WebGL2 unavailable')
 
-export function FlowBackground() {
+export function FlowBackground({ scene }: { scene: HarborScene }) {
   const ref = useRef<HTMLCanvasElement>(null)
+  const initialSceneRef = useRef(scene)
   const [ready, setReady] = useState(false)
   const [fallback, setFallback] = useState(false)
   const [motionState, setMotionState] = useState<FlowMotionState>('pending')
@@ -41,7 +42,10 @@ export function FlowBackground() {
     let reducedMotion = readReducedMotion()
     const readProfile = () => {
       const portrait = innerWidth <= 768 && innerHeight >= innerWidth
-      return getFlowProfile(STELLAR_SCENE, false, portrait)
+      const activeScene = isHarborScene(document.documentElement.dataset.harborScene)
+        ? document.documentElement.dataset.harborScene
+        : initialSceneRef.current
+      return getFlowProfile(activeScene, document.documentElement.classList.contains('light-theme'), portrait)
     }
     const publishProfile = () => {
       const current = readProfile()
@@ -240,7 +244,10 @@ export function FlowBackground() {
     }, 250)
     media.addEventListener('change', handleMotionChange)
     const rootClassObserver = new MutationObserver(() => sync())
-    rootClassObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    rootClassObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'],
+    })
 
     return () => {
       stopped = true
@@ -264,7 +271,7 @@ export function FlowBackground() {
       data-flow-ready={ready || undefined}
       data-flow-fallback={fallback ? 'css' : undefined}
       data-flow-motion={motionState}
-      data-flow-scene={STELLAR_SCENE}
+      data-flow-scene={scene}
       aria-hidden="true"
     />
   )

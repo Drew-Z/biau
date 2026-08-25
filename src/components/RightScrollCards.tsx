@@ -164,7 +164,10 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       }
     }
     const observer = new MutationObserver(syncMotion)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'],
+    })
     document.addEventListener('visibilitychange', syncMotion)
     reducedMotion.addEventListener('change', syncMotion)
     syncMotion()
@@ -391,7 +394,8 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     if (!drag.isPointerDown) {
       if (!wrapper) return
       const rect = wrapper.getBoundingClientRect()
-      const tiltStrength = 2.6
+      const scene = document.documentElement.dataset.harborScene
+      const tiltStrength = scene === 'garden' ? 0.9 : scene === 'dusk' ? 2.1 : 2.6
       tiltRef.current.targetX = ((event.clientY - rect.top) / rect.height - 0.5) * -tiltStrength
       tiltRef.current.targetY = ((event.clientX - rect.left) / rect.width - 0.5) * tiltStrength
       return
@@ -419,7 +423,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       const instantVelocity = ((drag.lastY - event.clientY) / elapsed) * 1000
       velocityYRef.current = velocityYRef.current * 0.6 + instantVelocity * 0.4
     }
-    const dragTiltLimit = 3.2
+    const dragTiltLimit = document.documentElement.dataset.harborScene === 'garden' ? 1.4 : 3.2
     tiltRef.current.targetX = Math.max(-dragTiltLimit, Math.min(dragTiltLimit, dy * -0.018))
     tiltRef.current.targetY = Math.max(-dragTiltLimit, Math.min(dragTiltLimit, dx * 0.018))
     if (distance > 5) {

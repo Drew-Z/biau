@@ -3,7 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/site-footer.css'
 import { useTheme } from './hooks/useTheme'
-import { STELLAR_SCENE } from './utils/appearance'
+import { useHarborScene } from './hooks/useHarborScene'
 import { FlowBackground } from './components/FlowBackground'
 import { StarfieldBackground } from './components/StarfieldBackground'
 import { StellarEffects } from './components/StellarEffects'
@@ -67,6 +67,7 @@ function getPageClass(pathname: string) {
 
 function App() {
   const [language, setLanguage] = useState<SiteLanguage>('zh')
+  const { scene: harborScene, cycleScene: cycleHarborScene } = useHarborScene()
   const [assistantMounted, setAssistantMounted] = useState(false)
   const [assistantInitiallyOpen, setAssistantInitiallyOpen] = useState(false)
   const [assistantFooterVisible, setAssistantFooterVisible] = useState(false)
@@ -109,16 +110,18 @@ function App() {
 
   return (
     <div className={`app ${pageClass}`}>
-      <FlowBackground />
-      <StarfieldBackground />
-      <StellarEffects />
-      {pathname === '/' && <HarborIntro harborScene={STELLAR_SCENE} />}
+      <FlowBackground scene={harborScene} />
+      <StarfieldBackground scene={harborScene} />
+      <StellarEffects scene={harborScene} />
+      {pathname === '/' && <HarborIntro harborScene={harborScene} />}
       <SeoManager />
 
       <Navigation
         language={language}
         themeMode={themeMode}
+        harborScene={harborScene}
         onCycleTheme={cycleThemeMode}
+        onCycleHarborScene={cycleHarborScene}
         onToggleLanguage={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
       />
       {showPublicAssistant && !assistantMounted && (

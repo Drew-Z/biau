@@ -1,12 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { getFlowProfile } from '../background/flowPalettes'
 import { isLowPowerDevice } from '../utils/visualPerformance'
-import { STELLAR_SCENE } from '../utils/appearance'
+import { isHarborScene, type HarborScene } from '../utils/appearance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 
-export function StellarEffects() {
+export function StellarEffects({ scene }: { scene: HarborScene }) {
   const ownerRef = useRef<HTMLDivElement>(null)
+  const initialSceneRef = useRef(scene)
 
   useEffect(() => {
     const owner = ownerRef.current
@@ -42,7 +43,7 @@ export function StellarEffects() {
     }
 
     const paintEdgeTargets = () => {
-      const enabled = !reducedMotion && !lowPower && !document.hidden
+      const enabled = root.dataset.harborScene === 'stellar' && !reducedMotion && !lowPower && !document.hidden
       edgeTargets.forEach((_layer, target) => {
         if (!enabled) {
           target.style.setProperty('--stellar-edge-glow-opacity', '0')
@@ -74,7 +75,8 @@ export function StellarEffects() {
     }
 
     const sync = () => {
-      const profile = getFlowProfile(STELLAR_SCENE, false)
+      const activeScene = isHarborScene(root.dataset.harborScene) ? root.dataset.harborScene : initialSceneRef.current
+      const profile = getFlowProfile(activeScene, root.classList.contains('light-theme'))
       lowPower = isLowPowerDevice()
       const effects = lowPower
         ? {
@@ -87,29 +89,29 @@ export function StellarEffects() {
             brandHighlight: profile.stellarEffects.brandHighlight * 0.62,
           }
         : profile.stellarEffects
-      const signature = JSON.stringify(effects)
+      const signature = JSON.stringify({ activeScene, effects })
       if (signature !== profileSignature) {
         profileSignature = signature
         profileVersion += 1
       }
-      owner.dataset.stellarScene = STELLAR_SCENE
+      owner.dataset.stellarScene = activeScene
       owner.dataset.stellarProfileVersion = String(profileVersion)
       owner.dataset.stellarLowPower = lowPower ? 'true' : 'false'
-      owner.dataset.stellarState = reducedMotion || document.hidden ? 'paused' : lowPower ? 'ambient' : effects.edgeGlow > 0.1 ? 'running' : 'ambient'
+      owner.dataset.stellarState = activeScene !== 'stellar' ? 'inactive' : reducedMotion || document.hidden ? 'paused' : lowPower ? 'ambient' : effects.edgeGlow > 0.1 ? 'running' : 'ambient'
       owner.style.setProperty('--stellar-edge-glow', String(effects.edgeGlow))
       owner.style.setProperty('--stellar-perimeter-opacity', String(effects.perimeterOpacity))
       owner.style.setProperty('--stellar-perimeter-duration', `${effects.perimeterDuration || 7.6}s`)
       owner.style.setProperty('--stellar-brand-highlight', String(effects.brandHighlight))
       root.style.setProperty('--stellar-scene-perimeter-opacity', String(effects.perimeterOpacity))
       root.style.setProperty('--stellar-scene-perimeter-duration', `${effects.perimeterDuration || 7.6}s`)
-      root.style.setProperty('--stellar-scene-perimeter-play-state', lowPower ? 'paused' : 'running')
+      root.style.setProperty('--stellar-scene-perimeter-play-state', activeScene === 'stellar' && !lowPower ? 'running' : 'paused')
       root.style.setProperty('--stellar-scene-edge-glow', String(effects.edgeGlow))
       syncEdgeTargets()
       paintEdgeTargets()
       owner.style.setProperty('--stellar-pointer-x', `${pointerX}px`)
       owner.style.setProperty('--stellar-pointer-y', `${pointerY}px`)
       syncBrandGeometry()
-      if (reducedMotion || lowPower || document.hidden) {
+      if (activeScene !== 'stellar' || reducedMotion || lowPower || document.hidden) {
         cancelAnimationFrame(frame)
         frame = 0
       } else if (!frame) {
@@ -118,7 +120,7 @@ export function StellarEffects() {
     }
     const syncFrame = () => {
       frame = 0
-      if (stopped || reducedMotion || lowPower || document.hidden) return
+      if (stopped || root.dataset.harborScene !== 'stellar' || reducedMotion || lowPower || document.hidden) return
       owner.style.setProperty('--stellar-pointer-x', `${pointerX}px`)
       owner.style.setProperty('--stellar-pointer-y', `${pointerY}px`)
     }
@@ -126,14 +128,17 @@ export function StellarEffects() {
       pointerX = event.clientX
       pointerY = event.clientY
       paintEdgeTargets()
-      if (!reducedMotion && !lowPower && !frame) frame = requestAnimationFrame(syncFrame)
+      if (root.dataset.harborScene === 'stellar' && !reducedMotion && !lowPower && !frame) frame = requestAnimationFrame(syncFrame)
     }
     const handleMotion = () => {
       reducedMotion = matchMedia(REDUCED).matches
       sync()
     }
     const observer = new MutationObserver(sync)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'],
+    })
     addEventListener('pointermove', handlePointer, { passive: true })
     addEventListener('resize', sync, { passive: true })
     addEventListener('scroll', syncBrandGeometry, { passive: true })

@@ -18,7 +18,13 @@
         } catch {
           root.dataset.colorMode = 'dark'
         }
-        root.dataset.harborScene = 'stellar'
+        try {
+          const storedScene = localStorage.getItem('biau-port-harbor-scene')
+          root.dataset.harborScene =
+            storedScene === 'garden' || storedScene === 'stellar' || storedScene === 'dusk' ? storedScene : 'dusk'
+        } catch {
+          root.dataset.harborScene = 'dusk'
+        }
         root.dataset.performance = 'balanced'
       })()
     </script>
@@ -57,9 +63,13 @@
         margin: 0;
       }
 
-      body {
-        background: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%);
-      }
+      body { background: var(--biau-prepaint-background, #120914); }
+      :root[data-harbor-scene='dusk'] { --biau-prepaint-background: linear-gradient(122deg, #120914 0%, #3c1732 30%, #8e3f58 47%, #1f5578 72%, #08273c 100%); }
+      :root[data-harbor-scene='garden'] { --biau-prepaint-background: linear-gradient(122deg, #07150f 0%, #0b3827 30%, #1d795c 47%, #173f34 72%, #0b2b27 100%); }
+      :root[data-harbor-scene='stellar'] { --biau-prepaint-background: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%); }
+      :root.light-theme[data-harbor-scene='dusk'] { --biau-prepaint-background: linear-gradient(122deg, #f8eee7 0%, #efc3b7 30%, #d8888e 47%, #7abfc4 72%, #7397a9 100%); }
+      :root.light-theme[data-harbor-scene='garden'] { --biau-prepaint-background: linear-gradient(122deg, #eef3dc 0%, #d5c8e8 30%, #a8ddd4 47%, #79be8d 72%, #7ca18c 100%); }
+      :root.light-theme[data-harbor-scene='stellar'] { --biau-prepaint-background: linear-gradient(122deg, #c9c2d6 0%, #bdcbdc 30%, #abc8da 47%, #93b2c6 70%, #7795a8 100%); }
     </style>
     <title>BIAU Port 泊岸 | AI 应用、项目展示与知识库</title>
   </head>
