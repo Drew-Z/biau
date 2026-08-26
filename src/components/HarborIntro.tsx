@@ -4,10 +4,10 @@ import { BiauPortMark } from './BiauPortMark'
 const INTRO_STORAGE_KEY = 'biau-port-harbor-intro:v3'
 let introTriggeredThisRuntime = false
 
-import type { HarborScene } from '../utils/appearance'
+import type { SiteTheme } from '../utils/appearance'
 
 interface HarborIntroProps {
-  harborScene?: HarborScene
+  theme?: SiteTheme
 }
 
 function canShowIntro() {
@@ -33,12 +33,25 @@ function markIntroSeen() {
   }
 }
 
-export function HarborIntro({ harborScene = 'dusk' }: HarborIntroProps) {
+export function HarborIntro({ theme = 'morning' }: HarborIntroProps) {
   const [visible, setVisible] = useState(() => !introTriggeredThisRuntime && canShowIntro())
   const [leaving, setLeaving] = useState(false)
   const introRef = useRef<HTMLDivElement>(null)
   const vesselRef = useRef<HTMLDivElement>(null)
   const completionRef = useRef({ vessel: false, mark: false, leaving: false })
+
+  const finishIntro = () => {
+    markIntroSeen()
+    setVisible(false)
+  }
+
+  const beginLeaving = () => {
+    if (completionRef.current.leaving) return
+    completionRef.current.leaving = true
+    document.documentElement.classList.add('harbor-intro-settling')
+    introRef.current?.classList.add('is-harbor-intro-leaving')
+    setLeaving(true)
+  }
 
   useLayoutEffect(() => {
     if (!visible) return
@@ -110,6 +123,18 @@ export function HarborIntro({ harborScene = 'dusk' }: HarborIntroProps) {
     completionRef.current = { vessel: false, mark: false, leaving: false }
   }, [visible])
 
+  useEffect(() => {
+    if (!visible || leaving) return
+    const fallback = window.setTimeout(beginLeaving, 2_500)
+    return () => window.clearTimeout(fallback)
+  }, [visible, leaving])
+
+  useEffect(() => {
+    if (!visible || !leaving) return
+    const fallback = window.setTimeout(finishIntro, 600)
+    return () => window.clearTimeout(fallback)
+  }, [visible, leaving])
+
   if (!visible) return null
 
   return (
@@ -119,8 +144,7 @@ export function HarborIntro({ harborScene = 'dusk' }: HarborIntroProps) {
       aria-hidden="true"
       onAnimationEnd={(event) => {
         if (event.currentTarget === event.target && event.animationName === 'harborIntroVeil') {
-          markIntroSeen()
-          setVisible(false)
+          finishIntro()
           return
         }
         if (event.animationName === 'harborMarkLand') {
@@ -130,10 +154,7 @@ export function HarborIntro({ harborScene = 'dusk' }: HarborIntroProps) {
           completionRef.current.vessel = true
         }
         if (completionRef.current.mark && completionRef.current.vessel && !completionRef.current.leaving) {
-          completionRef.current.leaving = true
-          document.documentElement.classList.add('harbor-intro-settling')
-          event.currentTarget.classList.add('is-harbor-intro-leaving')
-          setLeaving(true)
+          beginLeaving()
           return
         }
       }}
@@ -145,7 +166,7 @@ export function HarborIntro({ harborScene = 'dusk' }: HarborIntroProps) {
       <div className="harbor-intro__wake harbor-intro__wake--a" />
       <div className="harbor-intro__wake harbor-intro__wake--b" />
       <div ref={vesselRef} className="harbor-intro__vessel">
-        <span className="harbor-intro__logo-shell" data-scene={harborScene}>
+        <span className="harbor-intro__logo-shell" data-theme={theme}>
           <BiauPortMark className="harbor-intro__boat" animated />
         </span>
       </div>

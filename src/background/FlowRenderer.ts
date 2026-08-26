@@ -1,4 +1,4 @@
-import type { FlowSceneProfile } from './flowPalettes'
+import type { FlowThemeProfile } from './flowPalettes'
 
 type RenderCanvas = HTMLCanvasElement | OffscreenCanvas
 
@@ -50,7 +50,7 @@ float noise(vec2 p) {
 float fbm(vec2 p) {
   float value = 0., amplitude = .5;
   mat2 rotate = mat2(.8, -.6, .6, .8);
-  for (int i = 0; i < 7; i++) {
+  for (int i = 0; i < 6; i++) {
     if (i >= u_noiseOctaves) break;
     value += amplitude * noise(p);
     p = rotate * p * 2.03 + 13.7;
@@ -228,22 +228,22 @@ export class FlowRenderer {
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height)
   }
 
-  draw(seconds: number, profile: FlowSceneProfile) {
+  draw(seconds: number, profile: FlowThemeProfile) {
     const gl = this.gl
     const dynamics = profile.dynamics
     const effects = profile.effects
-    const stops = profile.palette.map((_, index) => index === profile.palette.length - 1 ? 1 : [0, .19, .41, .64, .86][index] ?? index / Math.max(profile.palette.length - 1, 1))
+    const stops = profile.stops ?? profile.palette.map((_, index) => index === profile.palette.length - 1 ? 1 : [0, .19, .41, .64, .86][index] ?? index / Math.max(profile.palette.length - 1, 1))
     gl.useProgram(this.program)
     gl.activeTexture(gl.TEXTURE0)
     gl.bindTexture(gl.TEXTURE_2D, this.texture)
     gl.uniform1i(this.noiseSampler, 0)
     gl.uniform2f(this.resolution, this.canvas.width, this.canvas.height)
-    gl.uniform1f(this.time, seconds)
+    gl.uniform1f(this.time, seconds * (26 / dynamics.speed))
     gl.uniform1f(this.angle, dynamics.angle)
-    gl.uniform1f(this.distortion, dynamics.distortion / 1.9)
-    gl.uniform1f(this.fieldOpacity, effects.fieldOpacity)
-    gl.uniform1f(this.mistOpacity, effects.mistOpacity)
-    gl.uniform1f(this.noiseScale, Math.max(0.2, dynamics.noiseScale * 0.25))
+    gl.uniform1f(this.distortion, dynamics.distortion)
+    gl.uniform1f(this.fieldOpacity, dynamics.fieldScale)
+    gl.uniform1f(this.mistOpacity, dynamics.ribbonStrength)
+    gl.uniform1f(this.noiseScale, dynamics.noiseScale)
     gl.uniform1f(this.noiseIntensity, effects.noiseIntensity)
     gl.uniform1f(this.noiseFlow, effects.noiseFlow)
     gl.uniform1f(this.noiseFlowAngle, effects.noiseFlowAngle)

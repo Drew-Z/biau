@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { FlowRenderer } from '../background/FlowRenderer'
 import { getFlowProfile } from '../background/flowPalettes'
-import { isHarborScene, type HarborScene } from '../utils/appearance'
+import { isSiteTheme, type SiteTheme } from '../utils/appearance'
 import { isLowPowerDevice } from '../utils/visualPerformance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
@@ -11,9 +11,9 @@ type FlowMotionState = 'pending' | 'running' | 'reduced-settled' | 'paused' | 'c
 const isWebGlUnavailable = (value: unknown) =>
   value === 'WebGL2 unavailable' || (value instanceof Error && value.message === 'WebGL2 unavailable')
 
-export function FlowBackground({ scene }: { scene: HarborScene }) {
+export function FlowBackground({ theme }: { theme: SiteTheme }) {
   const ref = useRef<HTMLCanvasElement>(null)
-  const initialSceneRef = useRef(scene)
+  const initialThemeRef = useRef(theme)
   const [ready, setReady] = useState(false)
   const [fallback, setFallback] = useState(false)
   const [motionState, setMotionState] = useState<FlowMotionState>('pending')
@@ -42,10 +42,10 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     let reducedMotion = readReducedMotion()
     const readProfile = () => {
       const portrait = innerWidth <= 768 && innerHeight >= innerWidth
-      const activeScene = isHarborScene(document.documentElement.dataset.harborScene)
-        ? document.documentElement.dataset.harborScene
-        : initialSceneRef.current
-      return getFlowProfile(activeScene, document.documentElement.classList.contains('light-theme'), portrait)
+      const activeTheme = isSiteTheme(document.documentElement.dataset.siteTheme)
+        ? document.documentElement.dataset.siteTheme
+        : initialThemeRef.current
+      return getFlowProfile(activeTheme, portrait)
     }
     const publishProfile = () => {
       const current = readProfile()
@@ -54,7 +54,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
         profileSignature = nextSignature
         profileVersion += 1
       }
-      canvas.dataset.flowScene = current.scene
+      canvas.dataset.flowTheme = current.theme
       canvas.dataset.flowProfileVersion = String(profileVersion)
       canvas.dataset.flowDynamics = [
         current.dynamics.speed,
@@ -246,7 +246,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
     const rootClassObserver = new MutationObserver(() => sync())
     rootClassObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'],
+      attributeFilter: ['class', 'data-site-theme', 'data-site-theme-version'],
     })
 
     return () => {
@@ -271,7 +271,7 @@ export function FlowBackground({ scene }: { scene: HarborScene }) {
       data-flow-ready={ready || undefined}
       data-flow-fallback={fallback ? 'css' : undefined}
       data-flow-motion={motionState}
-      data-flow-scene={scene}
+      data-flow-theme={theme}
       aria-hidden="true"
     />
   )

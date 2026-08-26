@@ -1,9 +1,210 @@
-/* Theme tokens: color mode controls legibility, harbor scene controls material. */
+/* Single-axis theme tokens. Morning and Nature are light materials; Stellar is the dark field. */
 :root {
+  color-scheme: light;
+  --home-page-solid: #f1e6e2;
+  --home-page-solid-rgb: 241 230 226;
+  --home-ink: #182945;
+  --home-copy: #31435d;
+  --home-muted: #536780;
+  --home-faint: #718298;
+  --home-line: rgb(24 41 69 / 18%);
+  --home-accent: #c34f70;
+  --home-accent-rgb: 195 79 112;
+  --home-accent-strong: #234f96;
+  --home-accent-strong-rgb: 35 79 150;
+  --home-accent-soft: #d9d9a2;
+  --home-brand: #c34f70;
+  --home-green: #438f74;
+  --home-amber: #c77f31;
+  --home-violet: #5b56a5;
+  --home-rose: #c34f70;
+  --home-nav-bg: rgb(250 247 244 / 24%);
+  --home-nav-border: rgb(24 41 69 / 12%);
+  --home-nav-shadow: 0 14px 34px rgb(24 41 69 / 7%);
+  --home-control-bg: rgb(255 255 255 / 48%);
+  --home-control-ink: #182945;
+  --home-panel-bg: rgb(245 247 246 / 48%);
+  --home-panel-rgb: 255 252 248;
+  --home-panel-border: rgb(24 41 69 / 14%);
+  --home-panel-shadow: 0 24px 56px rgb(24 41 69 / 11%);
+  --home-panel-highlight: rgb(255 255 255 / 48%);
+  --home-panel-pattern: none;
+  --home-card-bg: rgb(248 249 247 / 58%);
+  --home-card-rgb: 255 252 248;
+  --home-card-commerce: rgb(255 255 255 / 46%);
+  --home-card-preview: rgb(232 240 247 / 52%);
+  --home-card-image: rgb(249 238 235 / 52%);
+  --home-card-border: rgb(24 41 69 / 13%);
+  --home-card-title: #182945;
+  --home-card-copy: #3a4f6a;
+  --home-card-highlight: rgb(255 255 255 / 46%);
+  --home-card-shadow: 0 12px 26px rgb(24 41 69 / 8%);
+  --home-action-bg: rgb(255 255 255 / 44%);
+  --home-action-ink: #182945;
+  --home-footer-link: #2867a1;
+  --home-footer-link-hover: #b53d68;
+  --home-mobile-tab-bg: rgb(250 247 244 / 78%);
+  --home-mobile-tab-active: rgb(255 255 255 / 64%);
+  --home-logo-surface: #f7f1ec;
+  --home-logo-border: #c34f70;
+  --home-canvas-opacity: 1;
+  --home-canvas-filter: none;
+  --harbor-scene-background: linear-gradient(122deg, #d5566d 0%, #e9e89d 23%, #90bfe0 47%, #333ca0 79%, #16497b 100%);
+  --harbor-footer-bg: linear-gradient(180deg, rgb(241 230 226 / 90%), rgb(221 232 235 / 96%));
+  --harbor-footer-pattern: none;
+  --harbor-footer-pattern-size: auto;
+  --harbor-footer-border: rgb(24 41 69 / 18%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(255 255 255 / 60%), 0 -24px 58px rgb(24 41 69 / 10%);
+  --biau-mark-shell-start: #f8f4ef;
+  --biau-mark-shell-mid: #e5d5d0;
+  --biau-mark-shell-end: #c9dbea;
+  --biau-mark-stroke-start: #213456;
+  --biau-mark-stroke-mid: #315e9b;
+  --biau-mark-stroke-end: #b53d68;
+  --biau-mark-water-start: #8fc8d3;
+  --biau-mark-water-mid: #f3d67e;
+  --biau-mark-water-end: #b85b7e;
+  --biau-mark-beacon: #c77f31;
+  --stellar-scene-perimeter-opacity: 0;
+  --stellar-scene-perimeter-duration: 0s;
+  --stellar-scene-perimeter-play-state: paused;
+  --reference-page: #f1e6e2;
+  --reference-horizon: var(--harbor-scene-background);
+  --reference-ink: var(--home-ink);
+  --reference-copy: var(--home-copy);
+  --reference-muted: var(--home-muted);
+  --reference-faint: var(--home-faint);
+  --reference-nav: var(--home-nav-bg);
+  --reference-nav-border: var(--home-nav-border);
+  --reference-panel: var(--home-panel-bg);
+  --reference-panel-border: var(--home-panel-border);
+  --reference-panel-shadow: var(--home-panel-shadow);
+  --reference-card: var(--home-card-bg);
+  --reference-card-border: var(--home-card-border);
+  --reference-card-shadow: var(--home-card-shadow);
+  --reference-action: var(--home-action-bg);
+  --reference-action-ink: var(--home-action-ink);
+  --reference-accent: var(--home-accent);
+  --reference-accent-soft: var(--home-accent-soft);
+  --reference-canvas-opacity: var(--home-canvas-opacity);
+  --reference-canvas-filter: var(--home-canvas-filter);
+}
+
+:root[data-site-theme='morning'] {
+  color-scheme: light;
+}
+
+:root[data-site-theme='nature'] {
+  color-scheme: light;
+  --home-page-solid: #e5f1e8;
+  --home-page-solid-rgb: 229 241 232;
+  --home-ink: #173c35;
+  --home-copy: #2d5b50;
+  --home-muted: #4e766b;
+  --home-faint: #73968b;
+  --home-line: rgb(23 60 53 / 18%);
+  --home-accent: #3e946e;
+  --home-accent-rgb: 62 148 110;
+  --home-accent-strong: #2478a0;
+  --home-accent-strong-rgb: 36 120 160;
+  --home-accent-soft: #a7d9bb;
+  --home-brand: #367f62;
+  --home-green: #3e946e;
+  --home-amber: #b9893c;
+  --home-violet: #74679e;
+  --home-rose: #a76b89;
+  --home-nav-bg: rgb(244 251 246 / 24%);
+  --home-nav-border: rgb(23 60 53 / 12%);
+  --home-nav-shadow: 0 16px 34px rgb(23 60 53 / 8%);
+  --home-control-bg: rgb(242 252 245 / 56%);
+  --home-control-ink: #1d4a3d;
+  --home-panel-bg: rgb(239 248 241 / 46%);
+  --home-panel-rgb: 244 251 246;
+  --home-panel-border: rgb(23 60 53 / 13%);
+  --home-panel-shadow: 0 24px 58px rgb(23 60 53 / 12%);
+  --home-panel-highlight: rgb(255 255 255 / 62%);
+  --home-panel-pattern:
+    repeating-radial-gradient(
+      ellipse at 0% 100%,
+      transparent 0 54px,
+      rgb(62 148 110 / 12%) 55px 56px,
+      transparent 57px 112px
+    ),
+    linear-gradient(
+      118deg,
+      transparent 0 72%,
+      rgb(185 137 60 / 9%) 72.1% 72.35%,
+      transparent 72.45% 100%
+    );
+  --home-card-bg: rgb(239 248 241 / 56%);
+  --home-card-rgb: 244 251 246;
+  --home-card-commerce: rgb(231 244 229 / 72%);
+  --home-card-preview: rgb(226 242 238 / 70%);
+  --home-card-image: rgb(237 237 224 / 70%);
+  --home-card-border: rgb(23 60 53 / 13%);
+  --home-card-title: #173c35;
+  --home-card-copy: #356458;
+  --home-card-highlight: rgb(255 255 255 / 58%);
+  --home-card-shadow: 0 12px 26px rgb(23 60 53 / 10%);
+  --home-action-bg: rgb(248 255 250 / 58%);
+  --home-action-ink: #173c35;
+  --home-footer-link: #287c69;
+  --home-mobile-tab-bg: rgb(240 249 243 / 80%);
+  --home-mobile-tab-active: rgb(255 255 255 / 62%);
+  --home-logo-surface: #edf8f0;
+  --home-logo-border: #3e946e;
+  --home-canvas-opacity: 1;
+  --home-canvas-filter: none;
+  --harbor-scene-background: linear-gradient(122deg, #e6d6f9 0%, #c5b2d2 6%, #98dddf 24%, #8fd695 58%, #61a769 74%, #5b873d 100%);
+  --harbor-footer-bg: linear-gradient(180deg, rgb(229 241 232 / 92%), rgb(210 232 223 / 97%));
+  --harbor-footer-pattern:
+    repeating-radial-gradient(
+      ellipse at 0% 100%,
+      transparent 0 68px,
+      rgb(62 148 110 / 10%) 69px 70px,
+      transparent 71px 130px
+    ),
+    linear-gradient(
+      118deg,
+      transparent 0 72%,
+      rgb(185 137 60 / 7%) 72.1% 72.3%,
+      transparent 72.4% 100%
+    );
+  --harbor-footer-pattern-size: auto, auto;
+  --harbor-footer-border: rgb(23 60 53 / 18%);
+  --harbor-footer-shadow: inset 0 1px 0 rgb(255 255 255 / 64%), 0 -24px 58px rgb(23 60 53 / 10%);
+  --biau-mark-shell-start: #d9f0df;
+  --biau-mark-shell-mid: #a8d7b7;
+  --biau-mark-shell-end: #6ba98d;
+  --biau-mark-stroke-start: #173c35;
+  --biau-mark-stroke-mid: #2478a0;
+  --biau-mark-stroke-end: #367f62;
+  --biau-mark-water-start: #98dddf;
+  --biau-mark-water-mid: #8fd695;
+  --biau-mark-water-end: #b9893c;
+  --biau-mark-beacon: #b9893c;
+  --reference-page: var(--home-page-solid);
+  --reference-horizon: var(--harbor-scene-background);
+  --reference-ink: var(--home-ink);
+  --reference-copy: var(--home-copy);
+  --reference-muted: var(--home-muted);
+  --reference-nav: var(--home-nav-bg);
+  --reference-nav-border: var(--home-nav-border);
+  --reference-panel: var(--home-panel-bg);
+  --reference-panel-border: var(--home-panel-border);
+  --reference-card: var(--home-card-bg);
+  --reference-card-border: var(--home-card-border);
+  --reference-action: var(--home-action-bg);
+  --reference-action-ink: var(--home-action-ink);
+  --reference-accent: var(--home-accent);
+  --reference-accent-soft: var(--home-accent-soft);
+}
+
+:root[data-site-theme='stellar'] {
   color-scheme: dark;
-  --home-page-solid: #071827;
-  --home-page-solid-rgb: 7 24 39;
-  --home-ink: #eef1fb;
+  --home-page-solid: #050a1c;
+  --home-page-solid-rgb: 5 10 28;
+  --home-ink: #f4f7ff;
   --home-copy: #c5d3ec;
   --home-muted: #9eaecb;
   --home-faint: #7788ad;
@@ -11,7 +212,6 @@
   --home-accent: #75e1e0;
   --home-accent-rgb: 117 225 224;
   --home-accent-strong: #a8f0eb;
-  --home-accent-strong-rgb: 168 240 235;
   --home-accent-soft: #243b5b;
   --home-brand: #c4a8e1;
   --home-green: #75e1e0;
@@ -28,130 +228,50 @@
   --home-panel-border: rgb(97 204 220 / 42%);
   --home-panel-shadow: 0 30px 78px rgb(0 4 23 / 38%);
   --home-panel-highlight: rgb(214 246 255 / 16%);
-  --home-panel-pattern: none;
   --home-card-bg: rgb(15 45 82 / 76%);
   --home-card-rgb: 15 45 82;
-  --home-card-commerce: rgb(25 48 78 / 78%);
-  --home-card-preview: rgb(30 42 83 / 78%);
-  --home-card-image: rgb(47 43 75 / 78%);
   --home-card-border: rgb(88 190 221 / 38%);
   --home-card-title: #f4f7ff;
   --home-card-copy: #c5d3ec;
-  --home-card-highlight: rgb(238 250 255 / 12%);
-  --home-card-shadow: 0 14px 32px rgb(0 5 27 / 28%);
   --home-action-bg: rgb(85 194 216 / 18%);
   --home-action-ink: #e4fcff;
   --home-footer-link: #8fe4e4;
-  --home-footer-link-hover: #e9ffff;
   --home-mobile-tab-bg: rgb(8 16 42 / 92%);
   --home-mobile-tab-active: #1b3153;
   --home-logo-surface: #182541;
   --home-logo-border: #8572a5;
-  --home-canvas-opacity: 0.92;
-  --home-canvas-filter: saturate(1.1) brightness(0.9) contrast(1.08);
+  --home-canvas-opacity: 1;
+  --home-canvas-filter: none;
   --harbor-scene-background: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%);
   --harbor-footer-bg: linear-gradient(180deg, rgb(7 12 30 / 94%), rgb(3 7 18 / 99%));
-  --harbor-footer-pattern: none;
-  --harbor-footer-pattern-size: auto;
   --harbor-footer-border: rgb(142 212 208 / 24%);
   --harbor-footer-shadow: inset 0 1px 0 rgb(176 229 223 / 10%), 0 -28px 68px rgb(1 5 20 / 30%);
-  --biau-mark-shell-start: #2c3f72;
-  --biau-mark-shell-mid: #1b2b55;
-  --biau-mark-shell-end: #0b1330;
-  --biau-mark-stroke-start: #f7fbff;
-  --biau-mark-stroke-mid: #c8d6e5;
-  --biau-mark-stroke-end: #9baee2;
-  --biau-mark-water-start: #91cbd6;
-  --biau-mark-water-mid: #e4f4f4;
-  --biau-mark-water-end: #c4a8e1;
-  --biau-mark-beacon: #c4a8e1;
   --stellar-scene-perimeter-opacity: 0.9;
   --stellar-scene-perimeter-duration: 7.6s;
   --stellar-scene-perimeter-play-state: running;
-  --reference-page: #050a1c;
-  --reference-horizon: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%);
-  --reference-ink: #f4f7ff;
-  --reference-copy: #c5d3ec;
-  --reference-muted: #9eaecb;
-  --reference-faint: #7788ad;
-  --reference-nav: rgb(8 16 42 / 72%);
-  --reference-nav-border: rgb(97 213 220 / 42%);
-  --reference-panel: rgb(9 25 57 / 66%);
-  --reference-panel-border: rgb(97 204 220 / 48%);
-  --reference-panel-shadow: 0 30px 78px rgb(0 4 23 / 38%);
-  --reference-card: rgb(15 45 82 / 70%);
-  --reference-card-border: rgb(88 190 221 / 38%);
-  --reference-card-shadow: 0 14px 32px rgb(0 5 27 / 28%);
-  --reference-action: rgb(85 194 216 / 18%);
-  --reference-action-ink: #e4fcff;
-  --reference-accent: #75e1e0;
-  --reference-accent-soft: #bf91ec;
-  --reference-canvas-opacity: 0.92;
-  --reference-canvas-filter: saturate(1.1) brightness(0.9) contrast(1.08);
+  --reference-page: var(--home-page-solid);
+  --reference-horizon: var(--harbor-scene-background);
+  --reference-ink: var(--home-ink);
+  --reference-copy: var(--home-copy);
+  --reference-muted: var(--home-muted);
+  --reference-faint: var(--home-faint);
+  --reference-nav: var(--home-nav-bg);
+  --reference-nav-border: var(--home-nav-border);
+  --reference-panel: var(--home-panel-bg);
+  --reference-panel-border: var(--home-panel-border);
+  --reference-panel-shadow: var(--home-panel-shadow);
+  --reference-card: var(--home-card-bg);
+  --reference-card-border: var(--home-card-border);
+  --reference-card-shadow: var(--home-card-shadow);
+  --reference-action: var(--home-action-bg);
+  --reference-action-ink: var(--home-action-ink);
+  --reference-accent: var(--home-accent);
+  --reference-accent-soft: var(--home-accent-soft);
 }
 
-:root.light-theme {
-  color-scheme: light;
-  --home-ink: #f4f7ff;
-  --home-copy: #d9e6f6;
-  --home-muted: #c0cee5;
-  --home-faint: #a8bad6;
-  --home-line: rgb(182 222 237 / 52%);
-  --home-accent: #9ee8e5;
-  --home-accent-rgb: 158 232 229;
-  --home-accent-strong: #d5ffff;
-  --home-accent-strong-rgb: 213 255 255;
-  --home-accent-soft: rgb(73 115 155 / 52%);
-  --home-brand: #e1c6ff;
-  --home-nav-bg: rgb(12 28 56 / 80%);
-  --home-nav-border: rgb(164 227 239 / 58%);
-  --home-nav-shadow: 0 12px 28px rgb(5 20 46 / 28%);
-  --home-control-bg: rgb(48 82 124 / 82%);
-  --home-control-ink: #ffffff;
-  --home-panel-bg: rgb(18 43 77 / 76%);
-  --home-panel-rgb: 18 43 77;
-  --home-panel-border: rgb(158 222 238 / 54%);
-  --home-panel-shadow: 0 26px 66px rgb(0 18 48 / 28%);
-  --home-panel-highlight: rgb(255 255 255 / 22%);
-  --home-card-bg: rgb(27 57 92 / 78%);
-  --home-card-rgb: 27 57 92;
-  --home-page-solid-rgb: 0 18 48;
-  --home-card-commerce: rgb(39 62 91 / 80%);
-  --home-card-preview: rgb(39 55 103 / 80%);
-  --home-card-image: rgb(64 54 91 / 80%);
-  --home-card-border: rgb(158 222 238 / 46%);
-  --home-card-title: #ffffff;
-  --home-card-copy: #d9e6f6;
-  --home-card-highlight: rgb(255 255 255 / 16%);
-  --home-card-shadow: 0 14px 32px rgb(0 18 48 / 24%);
-  --home-action-bg: rgb(111 211 224 / 28%);
-  --home-action-ink: #ffffff;
-  --home-footer-link: #b5f5f1;
-  --home-footer-link-hover: #ffffff;
-  --home-mobile-tab-bg: rgb(10 26 54 / 94%);
-  --home-mobile-tab-active: rgb(48 82 124 / 88%);
-  --home-logo-surface: #24436e;
-  --home-logo-border: #b7a1dc;
-  --harbor-footer-bg: linear-gradient(180deg, rgb(14 35 66 / 96%), rgb(7 19 40 / 99%));
-  --harbor-scene-background: linear-gradient(122deg, #c9c2d6 0%, #bdcbdc 30%, #abc8da 47%, #93b2c6 70%, #7795a8 100%);
-  --harbor-footer-border: rgb(158 222 238 / 40%);
-  --harbor-footer-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 -26px 64px rgb(0 18 48 / 24%);
-  --reference-ink: #ffffff;
-  --reference-copy: #d9e6f6;
-  --reference-muted: #c0cee5;
-  --reference-faint: #a8bad6;
-  --reference-nav: rgb(12 28 56 / 78%);
-  --reference-nav-border: rgb(164 227 239 / 58%);
-  --reference-panel: rgb(18 43 77 / 72%);
-  --reference-panel-border: rgb(158 222 238 / 54%);
-  --reference-panel-shadow: 0 26px 66px rgb(0 18 48 / 28%);
-  --reference-card: rgb(27 57 92 / 76%);
-  --reference-card-border: rgb(158 222 238 / 46%);
-  --reference-card-shadow: 0 14px 32px rgb(0 18 48 / 24%);
-  --reference-action: rgb(111 211 224 / 28%);
-  --reference-action-ink: #ffffff;
-  --reference-accent: #9ee8e5;
-  --reference-accent-soft: #d9baff;
+body {
+  background: var(--home-page-solid);
+  color: var(--home-ink);
 }
 
 .starfield-background {
@@ -169,7 +289,7 @@
 
 .starfield-background[data-starfield-state='running'],
 .starfield-background[data-starfield-state='reduced'] {
-  opacity: 0.78;
+  opacity: var(--home-canvas-opacity);
 }
 
 .stellar-effects {
@@ -185,7 +305,6 @@
 }
 
 .stellar-effects__pointer-glow { display: none; }
-
 .stellar-effects__brand-glow {
   position: absolute;
   width: 148px;
@@ -197,13 +316,7 @@
   mix-blend-mode: screen;
 }
 
-.stellar-edge-glow-target {
-  --stellar-edge-glow-x: 50%;
-  --stellar-edge-glow-y: 50%;
-  --stellar-edge-glow-opacity: 0;
-  isolation: isolate;
-}
-
+.stellar-edge-glow-target { isolation: isolate; }
 .stellar-edge-glow-target > .stellar-edge-glow-layer {
   position: absolute;
   left: calc(var(--stellar-edge-glow-x) - 74px);
@@ -221,131 +334,4 @@
 
 @media (prefers-reduced-motion: reduce), (max-width: 768px), (any-hover: none) {
   .stellar-effects__brand-glow { opacity: 0.12; }
-}
-
-/* Scene material overrides stay token-based so the canvas and page surfaces share one owner. */
-:root[data-harbor-scene='dusk'] {
-  --home-page-solid: #140c13;
-  --home-page-solid-rgb: 18 5 13;
-  --home-ink: #fff1e8;
-  --home-copy: #d3b7bb;
-  --home-muted: #b2969f;
-  --home-faint: #967c86;
-  --home-accent: #e17b91;
-  --home-accent-rgb: 225 123 145;
-  --home-accent-strong: #ffd08a;
-  --home-accent-strong-rgb: 255 208 138;
-  --home-accent-soft: #3b2936;
-  --home-brand: #efad61;
-  --home-nav-bg: rgb(35 21 31 / 94%);
-  --home-nav-border: rgb(239 173 97 / 42%);
-  --home-control-bg: #3a2835;
-  --home-control-ink: #f1dedd;
-  --home-panel-bg: rgb(40 24 35 / 94%);
-  --home-panel-rgb: 40 24 35;
-  --home-panel-border: rgb(225 123 145 / 56%);
-  --home-panel-shadow: 0 22px 52px rgb(18 5 13 / 38%);
-  --home-panel-highlight: rgb(255 221 202 / 16%);
-  --home-panel-pattern: linear-gradient(164deg, transparent 0 41%, rgb(239 173 97 / 10%) 41.1% 41.3%, transparent 41.4% 100%);
-  --home-card-bg: #35222f;
-  --home-card-rgb: 53 34 47;
-  --home-card-border: rgb(225 123 145 / 46%);
-  --home-card-title: #f2f2ea;
-  --home-card-copy: #c6aeb4;
-  --home-action-bg: #49303d;
-  --home-action-ink: #f7e5df;
-  --home-footer-link: #91d9d2;
-  --home-logo-surface: #2d1b28;
-  --home-logo-border: #9e6d43;
-  --harbor-scene-background: linear-gradient(122deg, #120914 0%, #3c1732 30%, #8e3f58 47%, #1f5578 72%, #08273c 100%);
-  --harbor-footer-bg: linear-gradient(180deg, rgb(20 12 19 / 96%), rgb(8 25 32 / 99%));
-  --harbor-footer-border: rgb(239 173 97 / 34%);
-  --harbor-footer-shadow: inset 0 1px 0 rgb(255 221 202 / 10%), 0 -28px 68px rgb(18 5 13 / 30%);
-  --stellar-scene-perimeter-opacity: 0;
-  --stellar-scene-perimeter-duration: 0s;
-  --stellar-scene-perimeter-play-state: paused;
-}
-
-:root[data-harbor-scene='garden'] {
-  --home-page-solid: #07150f;
-  --home-page-solid-rgb: 2 18 12;
-  --home-ink: #eff8e9;
-  --home-copy: #c8dec2;
-  --home-muted: #a3be9d;
-  --home-faint: #78987d;
-  --home-accent: #79be8d;
-  --home-accent-rgb: 121 190 141;
-  --home-accent-strong: #d8d98a;
-  --home-accent-strong-rgb: 216 217 138;
-  --home-accent-soft: #173f34;
-  --home-brand: #d7d08e;
-  --home-nav-bg: rgb(7 25 18 / 92%);
-  --home-nav-border: rgb(121 190 141 / 40%);
-  --home-control-bg: #173f34;
-  --home-control-ink: #e7f4dc;
-  --home-panel-bg: rgb(12 42 31 / 92%);
-  --home-panel-rgb: 12 42 31;
-  --home-panel-border: rgb(121 190 141 / 50%);
-  --home-panel-shadow: 0 22px 52px rgb(2 18 12 / 38%);
-  --home-panel-highlight: rgb(216 217 138 / 14%);
-  --home-panel-pattern: radial-gradient(ellipse at 12% 108%, rgb(216 217 138 / 16%), transparent 52%);
-  --home-card-bg: #123d2d;
-  --home-card-rgb: 18 61 45;
-  --home-card-border: rgb(121 190 141 / 44%);
-  --home-card-title: #edf8e8;
-  --home-card-copy: #c3d9bc;
-  --home-action-bg: #205642;
-  --home-action-ink: #eaf7df;
-  --home-footer-link: #b7e0a5;
-  --home-logo-surface: #174533;
-  --home-logo-border: #8bc79b;
-  --harbor-scene-background: linear-gradient(122deg, #07150f 0%, #0b3827 30%, #1d795c 47%, #173f34 72%, #0b2b27 100%);
-  --harbor-footer-bg: linear-gradient(180deg, rgb(7 21 15 / 96%), rgb(11 43 39 / 99%));
-  --harbor-footer-border: rgb(121 190 141 / 30%);
-  --harbor-footer-shadow: inset 0 1px 0 rgb(216 217 138 / 10%), 0 -28px 68px rgb(2 18 12 / 30%);
-  --stellar-scene-perimeter-opacity: 0;
-  --stellar-scene-perimeter-duration: 0s;
-  --stellar-scene-perimeter-play-state: paused;
-}
-
-:root[data-harbor-scene='stellar'] {
-  --stellar-scene-perimeter-opacity: 0.9;
-  --stellar-scene-perimeter-duration: 7.6s;
-  --stellar-scene-perimeter-play-state: running;
-}
-
-:root.light-theme[data-harbor-scene='dusk'] {
-  --home-ink: #fff8f5;
-  --home-copy: #f0dfe0;
-  --home-muted: #ddc2c8;
-  --home-panel-bg: rgb(63 32 51 / 86%);
-  --home-panel-rgb: 63 32 51;
-  --home-card-bg: #58394c;
-  --home-card-rgb: 88 57 76;
-  --home-page-solid-rgb: 36 40 53;
-  --home-card-copy: #f0dfe0;
-  --home-nav-bg: rgb(63 32 51 / 88%);
-  --home-control-bg: #6e4350;
-  --home-panel-border: rgb(255 207 174 / 62%);
-  --home-card-border: rgb(255 207 174 / 52%);
-  --harbor-footer-bg: linear-gradient(180deg, rgb(63 32 51 / 96%), rgb(36 40 53 / 99%));
-  --harbor-scene-background: linear-gradient(122deg, #f8eee7 0%, #efc3b7 30%, #d8888e 47%, #7abfc4 72%, #7397a9 100%);
-}
-
-:root.light-theme[data-harbor-scene='garden'] {
-  --home-ink: #f8fff3;
-  --home-copy: #e6f2df;
-  --home-muted: #cfe3c6;
-  --home-panel-bg: rgb(24 70 51 / 84%);
-  --home-panel-rgb: 24 70 51;
-  --home-card-bg: #2e684d;
-  --home-card-rgb: 46 104 77;
-  --home-page-solid-rgb: 19 53 47;
-  --home-card-copy: #e6f2df;
-  --home-nav-bg: rgb(24 70 51 / 88%);
-  --home-control-bg: #3c805f;
-  --home-panel-border: rgb(216 239 168 / 64%);
-  --home-card-border: rgb(216 239 168 / 52%);
-  --harbor-footer-bg: linear-gradient(180deg, rgb(24 70 51 / 96%), rgb(19 53 47 / 99%));
-  --harbor-scene-background: linear-gradient(122deg, #eef3dc 0%, #d5c8e8 30%, #a8ddd4 47%, #79be8d 72%, #7ca18c 100%);
 }

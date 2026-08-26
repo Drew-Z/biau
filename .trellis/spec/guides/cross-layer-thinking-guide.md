@@ -100,6 +100,20 @@ create one owner for:
 
 Rendering code may format fields, but it must not redefine the payload contract.
 
+### Mistake 5: Reinterpreting A Numeric Profile At A Later Boundary
+
+**Bad**: a typed visual profile contains reference parameters, but the renderer
+applies undocumented scale factors before writing shader uniforms. The palette
+still looks plausible, while the field composition is materially wrong.
+
+**Good**: record the unit and transform at the profile boundary, pass reference
+values through unchanged unless the reference explicitly defines a transform,
+and assert the complete profile tuple in browser tests.
+
+**Rule**: for configuration that travels `profile -> renderer/worker -> shader`,
+test both the diagnostic tuple and a rendered screenshot. A range check or
+palette-only comparison cannot prove semantic parity.
+
 ---
 
 ## Checklist for Cross-Layer Features
@@ -127,6 +141,9 @@ After implementation:
       (`reranked`, fallback mode, provider mode), not a hard-coded capability claim
 - [ ] Ran each independently configured TypeScript project; a successful frontend
       Vite build does not prove a separate backend `tsconfig.json` compiles
+- [ ] For numeric profile/configuration values that cross a renderer or worker,
+      verified units and transforms at every hop rather than only checking that
+      values fall within a plausible range
 
 ## Structured Provider Inactivity Budgets
 

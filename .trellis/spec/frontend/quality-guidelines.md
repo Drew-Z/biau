@@ -62,12 +62,21 @@ npm.cmd run docs:deployment-check
 
 ## Flow Background And Intro
 
-### Dual-Axis Scene Reference Parity
+### Single-Axis Reference Theme Parity
 
-- The appearance model has two independent axes: `light | dark | auto` controls readable content surfaces, while `dusk | garden | stellar` controls the scene profile, Flow/Starfield material, and scene-owned effects. Theme changes must not replace the stored scene.
-- Stellar visual parity checks must use the reference runtime's typed profile values, not only its gradient stop colors. The current reference contract is `colors=#59575c,#2b315f,#354b7b,#092243,#052433,#061132`, `stops=0,19,41,64,86,100`, `angle=318`, `noiseScale=0.2`, `noiseIntensity=0`, `noiseFlow=0.58`, `noiseFlowAngle=315`, `fieldOpacity=0.67`, `mistOpacity=0.41`, `brightness=0.70`, `contrast=1.41`, and `saturation=1.38`.
-- Screenshot audits must capture at least three normal-motion phases (for example around `0.9s`, `2.4s`, and `5.1s`) at desktop and mobile sizes. A single frame or whole-image mean RGB is insufficient because it can miss the wide blue fluid band, central transition, and perimeter highlights.
-- Keep `FlowRenderer` and the independent `StarfieldRenderer` as the only global visual owners. Profile tuning may change the fluid material, but must not reintroduce a second canvas or unowned static full-screen decoration.
+- `morning`, `nature`, and `stellar` are complete visual systems, not a
+  light/dark overlay plus a scene value. The root's `data-site-theme` is the
+  only appearance contract; `light-theme` is derived compatibility only.
+- Profile parity uses the reference runtime's complete typed values, not only
+  gradient stops. A numeric profile keeps its reference unit through
+  `FlowThemeProfile -> renderer/worker -> shader`; implicit legacy scaling is
+  a regression even when the resulting value remains in a plausible range.
+- Screenshot audits cover desktop plus `320`, `390`, and `430` mobile widths.
+  Motion frames need not match pixel-for-pixel, but Nature must retain the
+  reference class of pale-cyan and deeper leaf-green low-frequency cloud forms.
+- Keep `FlowRenderer`, `StarfieldBackground`, and `StellarEffects` as the
+  existing bounded visual owners. Do not add a Canvas, Worker, permanent RAF,
+  or unowned full-screen decoration.
 
 - Normal mode may use the full animated background; reduced motion must show a stable nonblank canvas frame when WebGL2 is available, or a stable nonblank CSS fallback otherwise.
 - Keep the eager CSS composition order `catalog-pages.css` -> `flow-pages.css` -> `appearance-themes.css` -> `hero-split.css` -> `navigation.css`. Flow supplies the renderer/fallback foundation; appearance supplies semantic tokens; the final homepage and navigation layers must remain able to project those tokens instead of being overwritten by older transparent Flow surfaces.
@@ -84,23 +93,41 @@ npm.cmd run docs:deployment-check
 
 ### Appearance Validation Matrix
 
-- Check `light | dark` against every `dusk | garden | stellar` scene. Each combination must expose the matching root data attributes, a visible `BiauPortMark`, and at least `4.5:1` contrast for the homepage Hero and normal-size card title surfaces.
-- Activate the scene button with `Enter`, assert the next scene reaches both the root dataset and local storage, then reload and assert it remains selected.
-- Store `theme=auto`, emulate dark -> light -> dark system changes, and assert the resolved root state follows each change while storage remains `auto`.
-- Run mobile containment in both light and dark modes at `320`, `390`, and `430` widths. The Logo, brand, theme/language controls, cards, actions, and bottom navigation must remain visible and non-overlapping.
-- Preserve six distinct Flow canvas frames. Surface-token checks do not replace the existing canvas-pixel, reduced-motion, fallback, intro-docking, and performance assertions.
-- A scene is not a color alias. Each `dusk | garden | stellar` scene must define a distinct Flow palette, full-viewport texture/composition, panel pattern/material, card surface or shadow treatment, and control accent behavior in both light and dark modes. Automated checks must sample these independent material signatures in addition to canvas pixels.
-- `FlowBackground` owns one fixed, pointer-inert scene foundation around the existing canvas. It contains exactly three CSS-only static layers (`wash`, `texture`, and `landmark`); do not add another canvas, request, timer, or animation loop for scene identity. The foundation remains visible behind the canvas and when the canvas enters CSS fallback.
-- The scene continues below the Hero and across longer public pages. The site footer consumes scene-specific background, pattern, border, and shadow tokens instead of a generic black/light surface. Full-page desktop/mobile evidence must include the Hero-to-footer transition.
-- Appearance signatures include the foundation base, all three static layer backgrounds, texture sizing, Hero panel material, and footer background. A first-viewport screenshot or Flow-canvas hash alone cannot prove the full-page scene contract.
+- Check exactly `morning`, `nature`, and `stellar`. Each must expose matching
+  root/Flow/Starfield/Stellar/intro diagnostics, a visible `BiauPortMark`, and
+  at least `4.5:1` contrast for homepage Hero and normal-size card titles.
+- Direct pointer and `Enter` activation update `biau-port-theme` and the root
+  dataset, then survive reload. A fixture seeds a default only when the new key
+  is absent; it never overwrites the value used by the reload assertion.
+- Run mobile containment at `320`, `390`, and `430` widths for all themes. The
+  Logo, three 44px theme targets, language control, cards, actions, and bottom
+  navigation remain visible and non-overlapping.
+- Preserve three distinct Flow dynamics tuples. Surface-token checks do not
+  replace Canvas-pixel, reduced-motion, fallback, intro-docking, and performance
+  assertions.
+- A theme is not a color alias. Morning, Nature, and Stellar each define a
+  distinct Flow palette/composition, full-viewport material, panel/card
+  treatment, and control accent behavior. Nature specifically retains the
+  reference cyan-to-leaf-green cloud composition rather than a mint recolor.
+- `FlowBackground` owns one fixed, pointer-inert theme foundation around the existing canvas. It contains exactly three CSS-only static layers (`wash`, `texture`, and `landmark`); do not add another canvas, request, timer, or animation loop for theme identity. The foundation remains visible behind the canvas and when the canvas enters CSS fallback.
+- The theme continues below the Hero and across longer public pages. The site footer consumes theme-specific background, pattern, border, and shadow tokens instead of a generic black/light surface. Full-page desktop/mobile evidence must include the Hero-to-footer transition.
+- Appearance signatures include the foundation base, all three static layer backgrounds, texture sizing, Hero panel material, and footer background. A first-viewport screenshot or Flow-canvas hash alone cannot prove the full-page theme contract.
 - At desktop widths above `1024px`, the homepage intro and project board form two explicit columns whose visual centers align vertically while the intro copy remains left-aligned. At `1024px` and below, restore the single-column reading order without horizontal overflow.
 
-### Scene Motion Ownership
+### Theme Motion Ownership
 
-- The existing Flow canvas remains the only continuous JavaScript-rendered scene. Theme-specific material motion belongs to the three CSS foundation layers and the footer; do not add a second canvas, a React frame-state loop, or a timer-driven starfield.
-- `FlowBackground` may own one event-driven pointer coalescer. It schedules at most one `requestAnimationFrame` after pointer input, writes bounded CSS variables, and cancels the pending frame plus listeners on cleanup. Use the independent `translate` property for pointer parallax and reserve `transform` for scene keyframes so the two effects compose.
-- Expose `data-scene-motion="interactive|ambient|paused|reduced"` on the scene foundation. Fine pointers use `interactive`; coarse pointers keep CSS ambient motion without pointer parallax; hidden documents and the harbor intro use `paused`; reduced motion removes scene keyframes, pointer translation, panel glow, and footer drift.
-- Reuse `RightScrollCards`' existing pointer handler for the scene-tokenized panel glow. It must remain non-interactive, disappear on pointer exit, and be disabled on mobile/coarse and reduced-motion paths.
+- The existing Flow canvas remains the only continuous JavaScript-rendered
+  background. Theme-specific material motion belongs to existing CSS layers
+  and the footer; do not add a second canvas, a React frame-state loop, or a
+  timer-driven starfield.
+- `FlowBackground` may own one event-driven pointer coalescer. It schedules at most one `requestAnimationFrame` after pointer input, writes bounded CSS variables, and cancels the pending frame plus listeners on cleanup. Use the independent `translate` property for pointer parallax and reserve `transform` for theme keyframes so the two effects compose.
+- Expose motion state through the existing `data-flow-motion` diagnostics.
+  Fine pointers use existing bounded interaction; coarse pointers keep ambient
+  motion without pointer parallax; hidden documents and the harbor intro pause;
+  reduced motion removes continuous visual drift.
+- Reuse `RightScrollCards`' existing pointer handler for theme-tokenized panel
+  glow. It remains non-interactive, disappears on pointer exit, and is disabled
+  on mobile/coarse and reduced-motion paths.
 
 ```tsx
 // Correct: one pointer event is coalesced into one style-only paint.
@@ -115,12 +142,19 @@ requestAnimationFrame(function animate() {
 })
 ```
 
-- UI checks must compare the three computed animation signatures, observe changing normal-motion frames, verify pointer variables and panel glow on fine pointers, verify `ambient` plus zero pointer offsets on coarse pointers, and prove intro/reduced transitions pause or remove motion before the Flow loop resumes.
+- UI checks compare the three computed theme signatures, observe changing
+  normal-motion frames, verify fine-pointer panel glow, and prove intro/reduced
+  transitions pause or remove motion before the Flow loop resumes.
 
-### Harbor Scene Intro Lifecycle
+### Harbor Theme Intro Lifecycle
 
-- For every harbor scene, `light`, `dark`, and `auto` may change content readability tokens but must not restore a competing full-screen `body` or `.app` background gradient. The Flow CSS fallback and both canvas owners remain the only background composition owners.
-- `FlowBackground` and `StarfieldBackground` must observe `document.documentElement` class changes because `HarborIntro` gates animation through `harbor-intro-active`. On class removal, reuse the existing `sync()` path to resume the one renderer/worker and one RAF; do not recreate the owner.
+- No theme may restore a competing full-screen `body` or `.app` background
+  gradient. The Flow CSS fallback and current canvas owners remain the only
+  background composition owners.
+- `FlowBackground` and `StarfieldBackground` observe `class`,
+  `data-site-theme`, and `data-site-theme-version` because `HarborIntro` gates
+  animation through `harbor-intro-active`. On class removal, reuse the existing
+  `sync()` path to resume one renderer/worker and one RAF; do not recreate the owner.
 - Intro-resume UI checks wait for the class to be removed, the owner state to report `running`, the compositor opacity transition to settle, and at least two normal-motion frame samples to differ. A screenshot taken during the 420ms opacity transition is not valid evidence of a missing background.
 
 ```tsx
@@ -132,35 +166,42 @@ rootClassObserver.observe(document.documentElement, { attributes: true, attribut
 new FlowRenderer(canvas)
 ```
 
-## Flow Scene Profile And Preview Contract
+## Flow Theme Profile And Preview Contract
 
 ### 1. Scope / Trigger
 
-This contract applies when a scene change crosses `FlowBackground`, the
+This contract applies when a theme change crosses `FlowBackground`, the
 OffscreenCanvas worker, and `FlowRenderer`. It prevents a palette-only change
-from silently losing its typed physics profile, and prevents a UI check from
-passing against an old server process.
+or implicit numeric transform from silently losing the reference composition,
+and prevents a UI check from passing against an old server process.
 
 ### 2. Signatures
 
-- `getFlowProfile(scene, light, portrait): FlowSceneProfile` is the single
+- `getFlowProfile(theme, portrait): FlowThemeProfile` is the single
   profile factory.
 - Worker messages are `init`, `resize`, `profile`, and `motion`; every motion
   acknowledgement carries the current `motionToken`.
 - `FlowRenderer.draw(time, profile)` and `FlowRenderer.setProfile(profile)` are
   the only renderer profile entry points. No second Canvas or render loop is
   allowed.
-- The homepage Canvas exposes `data-flow-scene` and the pipe-delimited
+- The homepage Canvas exposes `data-flow-theme` and the pipe-delimited
   `data-flow-dynamics` attribute for deterministic browser assertions.
 
 ### 3. Contracts
 
 `data-flow-dynamics` has exactly seven numeric values in this order:
 `speed|fieldScale|distortion|ribbonStrength|noiseScale|contrast|angle`.
-The first six values are bounded to `0.25..1.5`, `0.5..1.5`, `0.25..1.6`,
-`0.1..0.9`, `0.5..1.8`, and `0.75..1.4`; `angle` is `0..360` degrees. Portrait
-viewports may change only the profile's angle. `dusk`, `garden`, and `stellar`
-must have three distinct tuples in both light and dark mode.
+The values are reference units, not generic normalized ranges. Current desktop
+tuples are Morning `15|0.53|0.39|0.33|0.2|1.09|318`, Nature
+`10|0.82|0.19|0.75|3|1.03|318`, and Stellar
+`15|0.67|0.71|0.41|0.2|1.41|318`. Portrait may change only its documented angle
+and palette ordering.
+
+`FlowRenderer` maps the profile directly: `u_time = seconds * (26 / speed)`,
+`u_distortion = distortion`, `u_fieldOpacity = fieldScale`,
+`u_mistOpacity = ribbonStrength`, and `u_noiseScale = noiseScale`. Do not
+reintroduce legacy multiplier/divider conversions. The reference Canvas
+composition uses opacity `1` and filter `none`.
 
 The worker receives one complete profile after resize and before the motion
 message. A current-token `motion-settled` acknowledgement is required before
@@ -171,16 +212,16 @@ the stale Canvas and exposes the CSS fallback state.
 
 | Condition | Required result |
 | --- | --- |
-| Missing, non-numeric, or out-of-range profile value | UI/profile check fails; do not widen bounds to accept it |
-| Profile scene differs from the root scene | UI check fails with the scene group; fix the owner rather than masking it |
-| Worker/runtime error | `data-flow-fallback="css"`, Canvas hidden, CSS scene remains nonblank |
+| Missing, non-numeric, or mismatched reference value | UI/profile check fails; do not normalize it into a plausible range |
+| Profile theme differs from the root theme | UI check fails with the theme group; fix the owner rather than masking it |
+| Worker/runtime error | `data-flow-fallback="css"`, Canvas hidden, CSS theme remains nonblank |
 | Reduced/hidden/intro state | motion acknowledgement is `reduced-settled` or `paused`; no persistent frame movement |
 | Check target serves an older bundle | stop and restart an isolated current preview, then set `UI_CHECK_BASE`; never treat stale output as current evidence |
 
 ### 5. Good / Base / Bad Cases
 
 - Good: `npm.cmd run build`, serve the resulting `dist` on an isolated port,
-  set `UI_CHECK_BASE` to that origin, and observe six distinct bounded tuples.
+  set `UI_CHECK_BASE` to that origin, and observe the three exact tuples.
 - Base: local `npm.cmd run check:ui` against the current preview with the
   shared network guard and no model/API calls.
 - Bad: reuse an unknown process on the default port; it can expose a valid
@@ -191,7 +232,7 @@ the stale Canvas and exposes the CSS fallback state.
 
 - `npm.cmd run check:ui:smoke`: route/CSS/overflow assertions.
 - `UI_CHECK_BASE=http://127.0.0.1:<isolated-port> npm.cmd run check:ui`:
-  assert all six tuples, scene-specific panel motion, stellar-only edge glow,
+  assert all three tuples, theme-specific material, Stellar-only edge glow,
   View Transition fallback, hidden/reduced lifecycle, and keyboard title input.
 - `npm.cmd run performance:check`, `npm.cmd run lint`, `npm.cmd run build`,
   and `git diff --check`: assert budgets, type/lint correctness, and clean
@@ -206,10 +247,10 @@ source-code failure.
 Correct: build first, start a dedicated preview on an isolated port, pass its
 origin through `UI_CHECK_BASE`, and keep the existing server untouched.
 
-### 8. Scene Effects And Low-Power Contract
+### 8. Theme Effects And Low-Power Contract
 
-- Scene-specific shader and material controls belong to the typed
-  `FlowSceneProfile.effects` object. Do not scatter brightness, saturation,
+- Theme-specific shader and material controls belong to the typed
+  `FlowThemeProfile.effects` object. Do not scatter brightness, saturation,
   noise-flow, star intensity, or star scale as untyped component constants.
 - Keep `data-flow-dynamics` as the original seven-value
   `speed|fieldScale|distortion|ribbonStrength|noiseScale|contrast|angle`
@@ -224,7 +265,7 @@ origin through `UI_CHECK_BASE`, and keep the existing server untouched.
   across 60 Hz, 120 Hz, throttled, and resumed frames. Frame-rate-dependent
   per-tick constants are not acceptable.
 - Hidden documents, the harbor intro, and reduced-motion mode stop persistent
-  scene rendering and CSS motion while retaining one stable frame. Devices
+  theme rendering and CSS motion while retaining one stable frame. Devices
   advertising at most 2 GB `deviceMemory` or `connection.saveData` also keep
   the Flow frame stable and do not start a perpetual RAF/timer loop. Any
   resume path must schedule at most one new loop and must clear it on cleanup.
@@ -233,7 +274,7 @@ origin through `UI_CHECK_BASE`, and keep the existing server untouched.
 
 - The `FlowBackground` main-thread fallback must call `publishProfile()` before
   its first draw, just like the production Worker init path. This keeps
-  `data-flow-scene` and the seven-value `data-flow-dynamics` diagnostics
+  `data-flow-theme` and the seven-value `data-flow-dynamics` diagnostics
   available in isolated Vite previews and prevents the UI matrix from testing
   an untyped canvas state.
 - The CSS foundation must remain visible underneath a ready Canvas. A ready
@@ -243,11 +284,11 @@ origin through `UI_CHECK_BASE`, and keep the existing server untouched.
   use one RAF handoff after a valid frame, never a double-RAF gap that creates
   an empty frame.
 - `FlowBackground` exposes `data-flow-profile-version` and the root exposes
-  `data-harbor-scene-version` as monotonic diagnostics. A scene change updates
-  the root profile before React paints, so CSS, renderer profile, and scene
-  decoration observe one complete scene instead of a transient half-state.
+  `data-site-theme-version` as monotonic diagnostics. A theme change updates
+  the root before React paints, so CSS, renderer profile, and decoration
+  observe one complete theme instead of a transient half-state.
 - Changing the renderer owner or adding a fallback path must preserve the same
-  profile attributes, capped-DPR sizing, and scene-change synchronization as
+  profile attributes, capped-DPR sizing, and theme-change synchronization as
   the Worker path.
 
 Wrong: assume the Worker init is the only place that needs to publish the
@@ -255,7 +296,7 @@ profile, then run `check:ui` against a dev server where the Canvas has no
 `data-flow-dynamics` attribute.
 
 Correct: publish the current typed profile before constructing the main-thread
-renderer and re-publish it from the existing scene/resize synchronization.
+renderer and re-publish it from the existing theme/resize synchronization.
 
 ### First-Frame Handoff Contract
 
@@ -276,7 +317,7 @@ when no change is observed.
 
 #### 1. Scope / Trigger
 
-- Run after the appearance bundle reaches Cloudflare Pages or when diagnosing production-only theme, scene, Logo, contrast, or mobile-containment drift.
+- Run after the appearance bundle reaches Cloudflare Pages or when diagnosing production-only theme, Logo, contrast, or mobile-containment drift.
 - This command verifies the deployed homepage only. It does not replace local `check:ui`, exercise Studio fixtures, call a model/API provider, or write public status snapshots.
 
 #### 2. Signatures
@@ -292,8 +333,8 @@ $env:UI_CHECK_BASE='https://deployment.example'; npm.cmd run check:ui:production
 
 - Navigate only to `/` on the configured origin and install `scripts/lib/ui-network-guard.mjs` with `allowLoopback: false` before navigation. A static document navigation may retry once after a bounded delay; a second failure remains terminal, and the command never retries an API, Studio, or model request.
 - Block and report any request outside the configured origin, including loopback, by resource type without printing its URL. Local UI suites retain the guard's default `allowLoopback: true` behavior.
-- Cover `light | dark` against `dusk | garden | stellar`, keyboard scene persistence, runtime `auto` response, and light/dark containment at `320`, `390`, and `430` widths.
-- Require six distinct Flow screenshots, visible real Logo geometry, matching root datasets, and at least `4.5:1` Hero/card-title contrast.
+- Cover Morning, Nature, and Stellar, keyboard theme persistence, and theme containment at `320`, `390`, and `430` widths.
+- Require three exact Flow dynamics signatures, visible real Logo geometry, matching root datasets, and at least `4.5:1` Hero/card-title contrast.
 - Seed local storage only when a key is absent; a reload check must not overwrite the preference it is validating.
 - Resolve CSS colors through a temporary DOM element instead of parsing token strings directly. Composite translucent panel/card colors over `--home-page-solid` before calculating WCAG contrast; modern browsers may serialize the same valid color as `rgb(...)`, `rgba(...)`, or `#RRGGBBAA`.
 
@@ -304,14 +345,14 @@ $env:UI_CHECK_BASE='https://deployment.example'; npm.cmd run check:ui:production
 | Invalid or non-HTTP(S) `UI_CHECK_BASE` | Exit non-zero before launching the browser |
 | External HTTP(S) request | Abort it and fail with `external_request_blocked (<type>)` |
 | Missing/failed document or homepage root | Exit non-zero without falling through to appearance assertions |
-| Theme/scene, Logo, contrast, or Flow signature mismatch | Name the bounded appearance group and exit non-zero |
-| Scene reload or runtime system-theme mismatch | Fail the dedicated persistence/auto group |
+| Theme, Logo, contrast, or Flow signature mismatch | Name the bounded appearance group and exit non-zero |
+| Theme reload/persistence mismatch | Fail the dedicated persistence group |
 | Mobile shell overflow, Logo loss, or brand/action overlap | Fail the exact theme/width group |
 | CSS token cannot be resolved to a browser-computed color | Fail contrast instead of treating the token text as an RGB tuple |
 
 #### 5. Good / Base / Bad Cases
 
-- Good: the deployed bundle passes all six appearance combinations, persistence, auto response, and six mobile checks without external requests.
+- Good: the deployed bundle passes three theme appearances, persistence, and nine mobile checks without external requests.
 - Base: use the default stable Pages domain after a successful production deployment.
 - Bad: point the full fixture-heavy `check:ui` suite at production, allow it to contact Studio/model services, or treat a local custom-domain TLS reset as proof that the Pages deployment failed.
 

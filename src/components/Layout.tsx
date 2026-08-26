@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { useTheme } from '../hooks/useTheme'
-import { useHarborScene } from '../hooks/useHarborScene'
+import { useSiteTheme } from '../hooks/useSiteTheme'
 import { Navigation } from './Navigation'
 import { FlowBackground } from './FlowBackground'
 
@@ -13,19 +12,16 @@ export interface SiteOutletContext {
 
 export function Layout() {
   const [language, setLanguage] = useState<SiteLanguage>('zh')
-  const { mode: themeMode, cycleMode: cycleThemeMode } = useTheme()
-  const { scene: harborScene, cycleScene: cycleHarborScene } = useHarborScene()
+  const { theme, selectTheme } = useSiteTheme()
 
   return (
     <div className="app">
-      <FlowBackground scene={harborScene} />
+      <FlowBackground theme={theme} />
 
       <Navigation
         language={language}
-        themeMode={themeMode}
-        harborScene={harborScene}
-        onCycleTheme={cycleThemeMode}
-        onCycleHarborScene={cycleHarborScene}
+        theme={theme}
+        onSelectTheme={selectTheme}
         onToggleLanguage={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
       />
 

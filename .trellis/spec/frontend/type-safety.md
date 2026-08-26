@@ -8,7 +8,9 @@ The frontend is TypeScript-first. `npm run build` runs `tsc -b` before `vite bui
 
 Keep domain types next to the data they describe. `src/data/portfolio.ts` defines `ProjectCategory`, `ProjectStatus`, `ProjectLink`, and `Project` before exporting `projects`. Components import those types with `import type`, as `ProjectCard` does.
 
-Local UI-only types can stay inside the component or hook module. `SiteLanguage` and `HarborScene` are currently defined near the app/layout logic that uses them.
+Local UI-only types can stay inside the component or hook module. `SiteLanguage`
+may stay near the app/layout logic that uses it; the shared appearance union is
+`SiteTheme` from `src/utils/appearance.ts`.
 
 Shared API payload types belong in dedicated modules. The assistant server uses `server/src/types.ts` for chat and knowledge shapes; frontend code should mirror or import shared contracts deliberately rather than casting arbitrary payloads.
 
@@ -23,7 +25,10 @@ This keeps additions to categories/statuses visible at compile time.
 
 ## Runtime Checks
 
-For browser storage, validate strings before accepting them. `readHarborScene()` and `readStoredMode()` only return known literal values and otherwise fall back to defaults.
+For browser storage, validate strings before accepting them. `isSiteTheme()`
+guards `morning | nature | stellar`; `readStoredSiteTheme()` applies the
+documented legacy mappings and otherwise returns Morning. Do not let components
+accept raw local-storage strings or introduce a second appearance union.
 
 There is no runtime validation library in the frontend. Do not add one unless the feature has a clear boundary with untrusted external payloads.
 

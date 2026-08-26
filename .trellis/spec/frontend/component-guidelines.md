@@ -47,17 +47,18 @@ Use the live Logo width and height as the animated element's base box, enlarge t
 
 ### Convention: Navigation Appearance Controls
 
-The navigation mark is the semantic harbor-scene button and must render the
-shared `BiauPortMark`. Do not replace it with generated text, a pseudo-element
-glyph, or an invisible SVG. The adjacent brand wordmark is a separate home
-`Link`; never nest the scene button inside that link. The button's accessible
-name states the current and next scene, while the theme button uses a Lucide
-`Sun`, `Moon`, or `Monitor` icon and states the current and next theme mode.
+The navigation mark renders the shared `BiauPortMark` inside a normal home
+`Link`; it is not an appearance control. Theme selection is one explicit
+three-option group with stable `data-theme-option` values `morning`, `nature`,
+and `stellar`, Lucide icons, `aria-pressed`, and at least 44px touch targets on
+mobile. The root's `data-site-theme` is the sole appearance source of truth;
+the derived `light-theme` class is compatibility-only.
 
-Both controls remain keyboard reachable with a visible focus ring. Scene
-activation updates `data-harbor-scene` and storage; the brand link only
-navigates home. UI checks must discover `scene` and `brand` as separate Tab
-targets and verify the real SVG remains visible in every appearance.
+All three options remain keyboard reachable with visible focus rings. Selection
+updates `biau-port-theme`, `data-site-theme`, and the monotonic
+`data-site-theme-version` in one synchronous commit. UI checks must verify the
+three options, direct selection, refresh persistence, and the real SVG logo in
+every theme.
 
 ### Convention: Long-Form Reading Guide
 

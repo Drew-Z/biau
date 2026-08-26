@@ -1920,7 +1920,18 @@ for (const width of [320, 390, 430]) {
     root.style.scrollBehavior = 'auto'
     document.querySelector('#status-manual')?.scrollIntoView({ block: 'start' })
     root.style.scrollBehavior = previous
+    window.dispatchEvent(new Event('scroll'))
   })
+  await mobileStatusPage.waitForFunction(
+    () => {
+      const target = document.querySelector('#status-manual')
+      if (!target) return false
+      const top = target.getBoundingClientRect().top
+      return top >= 70 && top <= 105
+    },
+    undefined,
+    { timeout: 2_000 },
+  ).catch(() => undefined)
   await mobileStatusPage.waitForFunction(
     () => document.querySelector('.status-section-navigator select')?.value === 'status-manual',
     undefined,
@@ -2072,8 +2083,7 @@ const flowIntroFailures = failures.length
 
 const introResumePage = await createUiPage(browser, { viewport: { width: 1440, height: 1000 }, colorScheme: 'light' })
 await introResumePage.addInitScript(() => {
-  window.localStorage.setItem('theme', 'light')
-  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.localStorage.setItem('biau-port-theme', 'stellar')
   window.sessionStorage.removeItem('biau-port-harbor-intro:v3')
 })
 await gotoApp(introResumePage, '/')
@@ -2127,7 +2137,7 @@ await introResumePage.close()
 
 const navFocusPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(navFocusPage, '/blog')
-const expectedNavFocusTargets = new Set(['scene', 'brand', '首页', '项目', '博客', '状态', 'theme', 'language', 'primary'])
+const expectedNavFocusTargets = new Set(['brand', '首页', '项目', '博客', '状态', 'morning', 'nature', 'stellar', 'language', 'primary'])
 const seenNavFocusTargets = new Map()
 for (let index = 0; index < 24; index += 1) {
   await navFocusPage.keyboard.press('Tab')
@@ -2137,10 +2147,10 @@ for (let index = 0; index < 24; index += 1) {
 
     const styles = getComputedStyle(active)
     let key = ''
-    if (active.classList.contains('nav-logo')) key = 'scene'
+    if (active.classList.contains('nav-logo')) key = 'brand'
     if (active.classList.contains('nav-brand-link')) key = 'brand'
     if (active.classList.contains('nav-link-center')) key = active.textContent?.trim() ?? ''
-    if (active.classList.contains('nav-theme-toggle')) key = 'theme'
+    if (active.classList.contains('nav-theme-option')) key = active.getAttribute('data-theme-option') ?? ''
     if (active.classList.contains('nav-lang-toggle')) key = 'language'
     if (active.classList.contains('nav-all-tools')) key = 'primary'
     if (!key) return null
@@ -2185,25 +2195,28 @@ if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow ==
 }
 await navIndicatorPage.close()
 
-const harborScenes = ['dusk', 'garden', 'stellar']
-const harborFlowSignatures = new Map()
+const siteThemes = ['morning', 'nature', 'stellar']
+const referenceFlowDynamics = {
+  morning: [15, 0.53, 0.39, 0.33, 0.2, 1.09, 318],
+  nature: [10, 0.82, 0.19, 0.75, 3, 1.03, 318],
+  stellar: [15, 0.67, 0.71, 0.41, 0.2, 1.41, 318],
+}
+const themeFlowSignatures = new Map()
 
-for (const theme of ['light', 'dark']) {
-  for (const scene of harborScenes) {
-    const page = await createUiPage(browser, { viewport: viewports[0], colorScheme: theme })
-    await page.addInitScript(({ harborScene, harborTheme }) => {
-      window.localStorage.setItem('theme', harborTheme)
-      window.localStorage.setItem('biau-port-harbor-scene', harborScene)
+for (const theme of siteThemes) {
+    const page = await createUiPage(browser, { viewport: viewports[0], colorScheme: theme === 'stellar' ? 'dark' : 'light' })
+    await page.addInitScript(({ siteTheme }) => {
+      window.localStorage.setItem('biau-port-theme', siteTheme)
       window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
-    }, { harborScene: scene, harborTheme: theme })
+    }, { siteTheme: theme })
     await gotoApp(page, '/')
     await page.waitForFunction(() => {
       const root = document.documentElement
       return Boolean(
-        root.dataset.harborScene &&
-        document.querySelector('.flow-background')?.getAttribute('data-flow-scene') &&
-        document.querySelector('.starfield-background')?.getAttribute('data-starfield-scene') &&
-        document.querySelector('.stellar-effects')?.getAttribute('data-stellar-scene'),
+        root.dataset.siteTheme &&
+        document.querySelector('.flow-background')?.getAttribute('data-flow-theme') &&
+        document.querySelector('.starfield-background')?.getAttribute('data-starfield-theme') &&
+        document.querySelector('.stellar-effects')?.getAttribute('data-stellar-theme'),
       )
     }, undefined, { timeout: 15_000 })
     const state = await page.evaluate(() => {
@@ -2214,148 +2227,112 @@ for (const theme of ['light', 'dark']) {
       const logo = document.querySelector('.nav-logo')
       const brand = document.querySelector('.nav-brand-link')
       return {
-        scene: root.dataset.harborScene ?? '',
-        sceneVersion: Number.parseInt(root.dataset.harborSceneVersion ?? '0', 10),
-        flowScene: flow?.getAttribute('data-flow-scene') ?? '',
+        theme: root.dataset.siteTheme ?? '',
+        themeVersion: Number.parseInt(root.dataset.siteThemeVersion ?? '0', 10),
+        flowTheme: flow?.getAttribute('data-flow-theme') ?? '',
         flowVersion: Number.parseInt(flow?.getAttribute('data-flow-profile-version') ?? '0', 10),
-        starfieldScene: stars?.getAttribute('data-starfield-scene') ?? '',
+        starfieldTheme: stars?.getAttribute('data-starfield-theme') ?? '',
         starfieldVersion: Number.parseInt(stars?.getAttribute('data-starfield-profile-version') ?? '0', 10),
         starfieldCount: Number.parseInt(stars?.getAttribute('data-starfield-count') ?? '0', 10),
-        stellarScene: effects?.getAttribute('data-stellar-scene') ?? '',
+        stellarTheme: effects?.getAttribute('data-stellar-theme') ?? '',
         stellarVersion: Number.parseInt(effects?.getAttribute('data-stellar-profile-version') ?? '0', 10),
         stellarState: effects?.getAttribute('data-stellar-state') ?? '',
         perimeterOpacity: Number.parseFloat(root.style.getPropertyValue('--stellar-scene-perimeter-opacity')) || 0,
         hasSceneButton: logo?.tagName === 'BUTTON',
-        logoScene: logo?.getAttribute('data-scene') ?? '',
+        logoTheme: logo?.getAttribute('data-theme') ?? '',
         brandHref: brand?.getAttribute('href') ?? '',
         dynamics: (flow?.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
       }
     })
-    harborFlowSignatures.set(`${theme}/${scene}`, JSON.stringify(state.dynamics))
+    themeFlowSignatures.set(theme, JSON.stringify(state.dynamics))
     if (
-      state.scene !== scene || state.flowScene !== scene || state.starfieldScene !== scene ||
-      state.stellarScene !== scene || state.logoScene !== scene || !state.hasSceneButton || state.brandHref !== '/' ||
-      state.dynamics.length !== 7 || state.sceneVersion < 1 || state.flowVersion < 1 ||
+      state.theme !== theme || state.flowTheme !== theme || state.starfieldTheme !== theme ||
+      state.stellarTheme !== theme || state.logoTheme !== theme || state.hasSceneButton || state.brandHref !== '/' ||
+      JSON.stringify(state.dynamics) !== JSON.stringify(referenceFlowDynamics[theme]) ||
+      state.themeVersion < 1 || state.flowVersion < 1 ||
       state.starfieldVersion < 1 || state.stellarVersion < 1
     ) {
-      failures.push(`/ home appearance ${theme}/${scene}: root scene and visual owners should share one persisted profile`)
+      failures.push(`/ home appearance ${theme}: root theme and visual owners should share one persisted profile`)
     }
     if (
-      (scene === 'stellar' && (state.stellarState !== 'running' || state.perimeterOpacity <= 0 || state.starfieldCount < 100)) ||
-      (scene !== 'stellar' && (state.stellarState !== 'inactive' || state.perimeterOpacity > 0.01 || state.starfieldCount >= 100))
+      (theme === 'stellar' && (state.stellarState !== 'running' || state.perimeterOpacity <= 0 || state.starfieldCount < 100)) ||
+      (theme !== 'stellar' && (state.stellarState !== 'inactive' || state.perimeterOpacity > 0.01 || state.starfieldCount >= 100))
     ) {
-      failures.push(`/ home appearance ${theme}/${scene}: Stellar edge effects and dense stars should remain Stellar-only`)
+      failures.push(`/ home appearance ${theme}: Stellar edge effects and dense stars should remain Stellar-only`)
     }
     await page.close()
-  }
 }
 
-for (const theme of ['light', 'dark']) {
-  const signatures = harborScenes.map((scene) => harborFlowSignatures.get(`${theme}/${scene}`))
-  if (new Set(signatures).size !== harborScenes.length) {
-    failures.push(`/ home appearance ${theme}: dusk, garden, and stellar should expose independent Flow dynamics`)
-  }
+if (new Set(themeFlowSignatures.values()).size !== siteThemes.length) {
+  failures.push('/ home appearance: morning, nature, and stellar should expose independent Flow dynamics')
 }
 
-const scenePreferencePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
-await scenePreferencePage.addInitScript(() => {
+const themePreferencePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'light' })
+await themePreferencePage.addInitScript(() => {
   Object.defineProperty(document, 'startViewTransition', { configurable: true, value: undefined })
-  window.localStorage.setItem('theme', 'dark')
-  window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
+  if (window.localStorage.getItem('biau-port-theme') === null) {
+    window.localStorage.setItem('biau-port-theme', 'morning')
+  }
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
-await gotoApp(scenePreferencePage, '/')
-const readProfileVersions = () => scenePreferencePage.evaluate(() => {
+await gotoApp(themePreferencePage, '/')
+const readProfileVersions = () => themePreferencePage.evaluate(() => {
   const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
   return {
-    scene: Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10),
+    theme: Number.parseInt(document.documentElement.dataset.siteThemeVersion ?? '0', 10),
     flow: read('.flow-background', 'data-flow-profile-version'),
     stars: read('.starfield-background', 'data-starfield-profile-version'),
     effects: read('.stellar-effects', 'data-stellar-profile-version'),
   }
 })
-const expectSceneSwitch = async (expectedScene, trigger) => {
+const expectThemeSwitch = async (expectedTheme, trigger) => {
   const before = await readProfileVersions()
   await trigger()
-  await scenePreferencePage.waitForFunction((scene) => document.documentElement.dataset.harborScene === scene, expectedScene)
-  await scenePreferencePage.waitForFunction((previous) => {
+  await themePreferencePage.waitForFunction((theme) => document.documentElement.dataset.siteTheme === theme, expectedTheme)
+  await themePreferencePage.waitForFunction((previous) => {
     const read = (selector, attribute) => Number.parseInt(document.querySelector(selector)?.getAttribute(attribute) ?? '0', 10)
-    return Number.parseInt(document.documentElement.dataset.harborSceneVersion ?? '0', 10) > previous.scene &&
+    return Number.parseInt(document.documentElement.dataset.siteThemeVersion ?? '0', 10) > previous.theme &&
       read('.flow-background', 'data-flow-profile-version') > previous.flow &&
       read('.starfield-background', 'data-starfield-profile-version') > previous.stars &&
       read('.stellar-effects', 'data-stellar-profile-version') > previous.effects
   }, before)
-  const persisted = await scenePreferencePage.evaluate(() => ({
-    stored: window.localStorage.getItem('biau-port-harbor-scene'),
-    button: document.querySelector('.nav-logo')?.getAttribute('data-scene') ?? '',
+  const persisted = await themePreferencePage.evaluate(() => ({
+    stored: window.localStorage.getItem('biau-port-theme'),
+    pressed: document.querySelector(`[data-theme-option="${document.documentElement.dataset.siteTheme}"]`)?.getAttribute('aria-pressed') ?? '',
   }))
-  if (persisted.stored !== expectedScene || persisted.button !== expectedScene) {
-    failures.push(`/ home scene preference: ${expectedScene} should update button state and local storage`)
+  if (persisted.stored !== expectedTheme || persisted.pressed !== 'true') {
+    failures.push(`/ home theme preference: ${expectedTheme} should update the selected option and local storage`)
   }
 }
-await expectSceneSwitch('garden', () => scenePreferencePage.locator('.nav-logo').click())
-await scenePreferencePage.locator('.nav-logo').focus()
-await expectSceneSwitch('stellar', () => scenePreferencePage.keyboard.press('Enter'))
-await scenePreferencePage.keyboard.press('Enter')
-await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'dusk')
-await scenePreferencePage.reload({ waitUntil: 'domcontentloaded' })
-await scenePreferencePage.waitForFunction(() => document.documentElement.dataset.harborScene === 'dusk')
-await scenePreferencePage.locator('.nav-theme-toggle').click()
-await scenePreferencePage.locator('.nav-theme-toggle').click()
-const independentThemeState = await scenePreferencePage.evaluate(() => ({
-  scene: document.documentElement.dataset.harborScene ?? '',
-  storedScene: window.localStorage.getItem('biau-port-harbor-scene'),
-  storedTheme: window.localStorage.getItem('theme'),
-}))
-if (independentThemeState.scene !== 'dusk' || independentThemeState.storedScene !== 'dusk' || independentThemeState.storedTheme !== 'light') {
-  failures.push('/ home scene preference: cycling light/dark/auto must not replace the selected harbor scene')
-}
-await scenePreferencePage.close()
+await expectThemeSwitch('nature', () => themePreferencePage.locator('[data-theme-option="nature"]').click())
+await themePreferencePage.locator('[data-theme-option="stellar"]').focus()
+await expectThemeSwitch('stellar', () => themePreferencePage.keyboard.press('Enter'))
+await themePreferencePage.reload({ waitUntil: 'domcontentloaded' })
+await themePreferencePage.waitForFunction(() => document.documentElement.dataset.siteTheme === 'stellar')
+await themePreferencePage.close()
 
-const autoThemePage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark' })
-await autoThemePage.addInitScript(() => {
-  window.localStorage.setItem('theme', 'auto')
-  window.localStorage.setItem('biau-port-harbor-scene', 'garden')
-  window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
-})
-await gotoApp(autoThemePage, '/')
-await autoThemePage.waitForFunction(() => document.documentElement.dataset.colorMode === 'dark')
-await autoThemePage.emulateMedia({ colorScheme: 'light' })
-await autoThemePage.waitForFunction(() => document.documentElement.dataset.colorMode === 'light')
-const autoThemeState = await autoThemePage.evaluate(() => ({
-  scene: document.documentElement.dataset.harborScene ?? '',
-  storedScene: window.localStorage.getItem('biau-port-harbor-scene'),
-  storedTheme: window.localStorage.getItem('theme'),
-}))
-if (autoThemeState.scene !== 'garden' || autoThemeState.storedScene !== 'garden' || autoThemeState.storedTheme !== 'auto') {
-  failures.push('/ home auto appearance: system color changes must preserve the selected harbor scene')
-}
-await autoThemePage.close()
-
-const fixedScenePage = await createUiPage(browser, { viewport: { width: 390, height: 844 }, colorScheme: 'dark' })
-await fixedScenePage.addInitScript(() => {
-  window.localStorage.setItem('theme', 'dark')
-  window.localStorage.setItem('biau-port-harbor-scene', 'dusk')
+const fixedThemePage = await createUiPage(browser, { viewport: { width: 390, height: 844 }, colorScheme: 'light' })
+await fixedThemePage.addInitScript(() => {
+  window.localStorage.setItem('biau-port-theme', 'morning')
   window.sessionStorage.setItem('ui-check-scene-seeded', '1')
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
-await gotoApp(fixedScenePage, '/')
-const mobileFlow = fixedScenePage.locator('.flow-background')
+await gotoApp(fixedThemePage, '/')
+const mobileFlow = fixedThemePage.locator('.flow-background')
 await mobileFlow.waitFor({ state: 'attached', timeout: 15_000 })
 const mobileState = await mobileFlow.evaluate((canvas) => ({
-  scene: canvas.getAttribute('data-flow-scene') ?? '',
+  theme: canvas.getAttribute('data-flow-theme') ?? '',
   dynamics: (canvas.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
   overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
 }))
-if (mobileState.scene !== 'dusk' || mobileState.dynamics.length !== 7 || mobileState.overflow > 1) {
-  failures.push('/ home mobile dusk background: canvas should remain bounded and scene-specific')
+if (mobileState.theme !== 'morning' || mobileState.dynamics.length !== 7 || mobileState.overflow > 1) {
+  failures.push('/ home mobile morning background: canvas should remain bounded and theme-specific')
 }
-await fixedScenePage.close()
+await fixedThemePage.close()
 
 const reducedStellarPage = await createUiPage(browser, { viewport: viewports[0], colorScheme: 'dark', reducedMotion: 'reduce' })
 await reducedStellarPage.addInitScript(() => {
-  window.localStorage.setItem('theme', 'dark')
-  window.localStorage.setItem('biau-port-harbor-scene', 'stellar')
+  window.localStorage.setItem('biau-port-theme', 'stellar')
   window.sessionStorage.setItem('ui-check-scene-seeded', '1')
   window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
 })
@@ -2368,10 +2345,10 @@ await reducedStellarPage.waitForFunction(
   { timeout: 8_000 },
 )
 const reducedState = await reducedFlow.evaluate((canvas) => ({
-  scene: canvas.getAttribute('data-flow-scene') ?? '',
+  theme: canvas.getAttribute('data-flow-theme') ?? '',
   motion: canvas.getAttribute('data-flow-motion') ?? '',
 }))
-if (reducedState.scene !== 'stellar' || !['reduced-settled', 'paused', 'css-fallback'].includes(reducedState.motion)) {
+if (reducedState.theme !== 'stellar' || !['reduced-settled', 'paused', 'css-fallback'].includes(reducedState.motion)) {
   failures.push('/ home reduced motion: Stellar canvas should settle or use the same CSS fallback')
 }
 await reducedStellarPage.close()

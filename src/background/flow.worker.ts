@@ -1,5 +1,5 @@
 import { FlowRenderer } from './FlowRenderer'
-import type { FlowSceneProfile } from './flowPalettes'
+import type { FlowThemeProfile } from './flowPalettes'
 
 type Message =
   | {
@@ -8,17 +8,17 @@ type Message =
       width: number
       height: number
       dpr: number
-      profile: FlowSceneProfile
+      profile: FlowThemeProfile
       reducedMotion: boolean
       running: boolean
       motionToken: number
     }
   | { type: 'resize'; width: number; height: number; dpr: number; motionToken: number }
-  | { type: 'profile'; profile: FlowSceneProfile; motionToken: number }
+  | { type: 'profile'; profile: FlowThemeProfile; motionToken: number }
   | { type: 'motion'; reducedMotion: boolean; running: boolean; motionToken: number }
 
 let renderer: FlowRenderer | undefined
-let profile: FlowSceneProfile | undefined
+let profile: FlowThemeProfile | undefined
 let requestedRunning = false
 let reducedMotion = false
 let timer: ReturnType<typeof setTimeout> | undefined

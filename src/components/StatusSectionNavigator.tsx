@@ -34,10 +34,12 @@ export function StatusSectionNavigator() {
 
     updateCurrentSection()
     window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    document.addEventListener('scroll', scheduleUpdate, { capture: true, passive: true })
     window.addEventListener('resize', scheduleUpdate)
     return () => {
       if (frame) window.cancelAnimationFrame(frame)
       window.removeEventListener('scroll', scheduleUpdate)
+      document.removeEventListener('scroll', scheduleUpdate, true)
       window.removeEventListener('resize', scheduleUpdate)
     }
   }, [])

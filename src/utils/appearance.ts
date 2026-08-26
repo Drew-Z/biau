@@ -1,74 +1,78 @@
-export const THEME_STORAGE_KEY = 'theme'
-export const HARBOR_SCENE_STORAGE_KEY = 'biau-port-harbor-scene'
+export const SITE_THEME_STORAGE_KEY = 'biau-port-theme'
+export const LEGACY_THEME_STORAGE_KEY = 'theme'
+export const LEGACY_HARBOR_SCENE_STORAGE_KEY = 'biau-port-harbor-scene'
 
-export const THEME_MODES = ['light', 'dark', 'auto'] as const
-export const HARBOR_SCENES = ['dusk', 'garden', 'stellar'] as const
+export const SITE_THEMES = ['morning', 'nature', 'stellar'] as const
+export type SiteTheme = (typeof SITE_THEMES)[number]
 
-export type ThemeMode = (typeof THEME_MODES)[number]
-export type ResolvedTheme = Exclude<ThemeMode, 'auto'>
-export type HarborScene = (typeof HARBOR_SCENES)[number]
+export const DEFAULT_SITE_THEME: SiteTheme = 'morning'
 
-export const HARBOR_SCENE_META: Record<HarborScene, { label: { zh: string; en: string } }> = {
-  dusk: { label: { zh: '暮港', en: 'DUSK' } },
-  garden: { label: { zh: '自然', en: 'GARDEN' } },
+export const SITE_THEME_META: Record<SiteTheme, { label: { zh: string; en: string } }> = {
+  morning: { label: { zh: '晨曦', en: 'MORNING' } },
+  nature: { label: { zh: '自然', en: 'NATURE' } },
   stellar: { label: { zh: '星辰', en: 'STELLAR' } },
 }
 
-export function isThemeMode(value: string | null): value is ThemeMode {
-  return value !== null && THEME_MODES.some((mode) => mode === value)
+const LEGACY_SCENE_THEME: Record<string, SiteTheme> = {
+  dusk: 'morning',
+  garden: 'nature',
+  stellar: 'stellar',
 }
 
-export function isHarborScene(value: string | null | undefined): value is HarborScene {
-  return value != null && HARBOR_SCENES.some((scene) => scene === value)
+const LEGACY_COLOR_THEME: Record<string, SiteTheme> = {
+  light: 'morning',
+  dark: 'stellar',
+  auto: 'morning',
 }
 
-export function readStoredThemeMode(): ThemeMode {
-  if (typeof window === 'undefined') return 'auto'
+export function isSiteTheme(value: string | null | undefined): value is SiteTheme {
+  return value != null && SITE_THEMES.some((theme) => theme === value)
+}
+
+export function readStoredSiteTheme(): SiteTheme {
+  if (typeof window === 'undefined') return DEFAULT_SITE_THEME
+
   try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
-    return isThemeMode(stored) ? stored : 'auto'
+    const stored = window.localStorage.getItem(SITE_THEME_STORAGE_KEY)
+    if (isSiteTheme(stored)) return stored
+
+    const legacyScene = window.localStorage.getItem(LEGACY_HARBOR_SCENE_STORAGE_KEY)
+    const legacyColor = window.localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
+    const migrated = (legacyScene && LEGACY_SCENE_THEME[legacyScene])
+      || (legacyColor && LEGACY_COLOR_THEME[legacyColor])
+      || DEFAULT_SITE_THEME
+    window.localStorage.setItem(SITE_THEME_STORAGE_KEY, migrated)
+    return migrated
   } catch {
-    return 'auto'
+    return DEFAULT_SITE_THEME
   }
 }
 
-export function readStoredHarborScene(): HarborScene {
-  if (typeof window === 'undefined') return 'dusk'
-  try {
-    const stored = window.localStorage.getItem(HARBOR_SCENE_STORAGE_KEY)
-    return isHarborScene(stored) ? stored : 'dusk'
-  } catch {
-    return 'dusk'
+export function applySiteTheme(root: HTMLElement, theme: SiteTheme) {
+  const changed = root.dataset.siteTheme !== theme
+  if (changed) root.dataset.siteTheme = theme
+  root.classList.toggle('light-theme', theme !== 'stellar')
+  root.style.colorScheme = theme === 'stellar' ? 'dark' : 'light'
+  delete root.dataset.colorMode
+  delete root.dataset.harborScene
+  delete root.dataset.harborSceneVersion
+
+  if (!root.dataset.siteThemeVersion || changed) {
+    const currentVersion = Number.parseInt(root.dataset.siteThemeVersion ?? '0', 10)
+    root.dataset.siteThemeVersion = String(Number.isFinite(currentVersion) ? currentVersion + 1 : 1)
   }
 }
 
-export function getNextHarborScene(scene: HarborScene): HarborScene {
-  const index = HARBOR_SCENES.indexOf(scene)
-  return HARBOR_SCENES[(index + 1) % HARBOR_SCENES.length]
-}
-
-export function resolveThemeMode(mode: ThemeMode, prefersLight: boolean): ResolvedTheme {
-  if (mode === 'auto') return prefersLight ? 'light' : 'dark'
-  return mode
-}
-
-export function applyResolvedTheme(root: HTMLElement, resolved: ResolvedTheme) {
-  root.classList.toggle('light-theme', resolved === 'light')
-  root.dataset.colorMode = resolved
-}
-
-export function applyHarborScene(root: HTMLElement, scene: HarborScene) {
-  const sceneChanged = root.dataset.harborScene !== scene
-  if (sceneChanged) root.dataset.harborScene = scene
-  if (!root.dataset.harborSceneVersion || sceneChanged) {
-    const currentVersion = Number.parseInt(root.dataset.harborSceneVersion ?? '0', 10)
-    root.dataset.harborSceneVersion = String(Number.isFinite(currentVersion) ? currentVersion + 1 : 1)
+export function persistSiteTheme(theme: SiteTheme) {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(SITE_THEME_STORAGE_KEY, theme)
+  } catch {
+    // The selected visual state still applies when storage is unavailable.
   }
 }
 
 export function applyInitialAppearance() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return
-  const prefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches ?? false
-  applyResolvedTheme(document.documentElement, resolveThemeMode(readStoredThemeMode(), prefersLight))
-  applyHarborScene(document.documentElement, readStoredHarborScene())
+  if (typeof document === 'undefined') return
+  applySiteTheme(document.documentElement, readStoredSiteTheme())
 }

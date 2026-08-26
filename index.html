@@ -8,23 +8,22 @@
     <script>
       ;(() => {
         const root = document.documentElement
+        let theme = 'morning'
         try {
-          const storedMode = localStorage.getItem('theme')
-          const mode = storedMode === 'light' || storedMode === 'dark' || storedMode === 'auto' ? storedMode : 'auto'
-          const prefersLight = matchMedia('(prefers-color-scheme: light)').matches
-          const resolved = mode === 'auto' ? (prefersLight ? 'light' : 'dark') : mode
-          root.classList.toggle('light-theme', resolved === 'light')
-          root.dataset.colorMode = resolved
-        } catch {
-          root.dataset.colorMode = 'dark'
-        }
-        try {
+          const storedTheme = localStorage.getItem('biau-port-theme')
           const storedScene = localStorage.getItem('biau-port-harbor-scene')
-          root.dataset.harborScene =
-            storedScene === 'garden' || storedScene === 'stellar' || storedScene === 'dusk' ? storedScene : 'dusk'
-        } catch {
-          root.dataset.harborScene = 'dusk'
-        }
+          const storedMode = localStorage.getItem('theme')
+          if (storedTheme === 'morning' || storedTheme === 'nature' || storedTheme === 'stellar') theme = storedTheme
+          else if (storedScene === 'dusk') theme = 'morning'
+          else if (storedScene === 'garden') theme = 'nature'
+          else if (storedScene === 'stellar') theme = 'stellar'
+          else if (storedMode === 'dark') theme = 'stellar'
+          localStorage.setItem('biau-port-theme', theme)
+        } catch {}
+        root.dataset.siteTheme = theme
+        root.dataset.siteThemeVersion = '1'
+        root.classList.toggle('light-theme', theme !== 'stellar')
+        root.style.colorScheme = theme === 'stellar' ? 'dark' : 'light'
         root.dataset.performance = 'balanced'
       })()
     </script>
@@ -63,13 +62,10 @@
         margin: 0;
       }
 
-      body { background: var(--biau-prepaint-background, #120914); }
-      :root[data-harbor-scene='dusk'] { --biau-prepaint-background: linear-gradient(122deg, #120914 0%, #3c1732 30%, #8e3f58 47%, #1f5578 72%, #08273c 100%); }
-      :root[data-harbor-scene='garden'] { --biau-prepaint-background: linear-gradient(122deg, #07150f 0%, #0b3827 30%, #1d795c 47%, #173f34 72%, #0b2b27 100%); }
-      :root[data-harbor-scene='stellar'] { --biau-prepaint-background: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%); }
-      :root.light-theme[data-harbor-scene='dusk'] { --biau-prepaint-background: linear-gradient(122deg, #f8eee7 0%, #efc3b7 30%, #d8888e 47%, #7abfc4 72%, #7397a9 100%); }
-      :root.light-theme[data-harbor-scene='garden'] { --biau-prepaint-background: linear-gradient(122deg, #eef3dc 0%, #d5c8e8 30%, #a8ddd4 47%, #79be8d 72%, #7ca18c 100%); }
-      :root.light-theme[data-harbor-scene='stellar'] { --biau-prepaint-background: linear-gradient(122deg, #c9c2d6 0%, #bdcbdc 30%, #abc8da 47%, #93b2c6 70%, #7795a8 100%); }
+      body { background: var(--biau-prepaint-background, #f4e7df); }
+      :root[data-site-theme='morning'] { --biau-prepaint-background: linear-gradient(122deg, #d5566d 0%, #e9e89d 23%, #90bfe0 47%, #333ca0 79%, #16497b 100%); }
+      :root[data-site-theme='nature'] { --biau-prepaint-background: linear-gradient(122deg, #e6d6f9 0%, #c5b2d2 6%, #98dddf 24%, #8fd695 58%, #61a769 74%, #5b873d 100%); }
+      :root[data-site-theme='stellar'] { --biau-prepaint-background: linear-gradient(122deg, #59575c 0%, #2b315f 30%, #354b7b 47%, #092243 70%, #052433 100%); }
     </style>
     <title>BIAU Port 泊岸 | AI 应用、项目展示与知识库</title>
   </head>

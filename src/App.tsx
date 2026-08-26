@@ -2,8 +2,7 @@ import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react
 import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/site-footer.css'
-import { useTheme } from './hooks/useTheme'
-import { useHarborScene } from './hooks/useHarborScene'
+import { useSiteTheme } from './hooks/useSiteTheme'
 import { FlowBackground } from './components/FlowBackground'
 import { StarfieldBackground } from './components/StarfieldBackground'
 import { StellarEffects } from './components/StellarEffects'
@@ -67,11 +66,10 @@ function getPageClass(pathname: string) {
 
 function App() {
   const [language, setLanguage] = useState<SiteLanguage>('zh')
-  const { scene: harborScene, cycleScene: cycleHarborScene } = useHarborScene()
+  const { theme, selectTheme } = useSiteTheme()
   const [assistantMounted, setAssistantMounted] = useState(false)
   const [assistantInitiallyOpen, setAssistantInitiallyOpen] = useState(false)
   const [assistantFooterVisible, setAssistantFooterVisible] = useState(false)
-  const { mode: themeMode, cycleMode: cycleThemeMode } = useTheme()
   const { pathname } = useLocation()
   const assistantWarmup = useSyncExternalStore(
     subscribePublicAssistantWarmup,
@@ -110,18 +108,16 @@ function App() {
 
   return (
     <div className={`app ${pageClass}`}>
-      <FlowBackground scene={harborScene} />
-      <StarfieldBackground scene={harborScene} />
-      <StellarEffects scene={harborScene} />
-      {pathname === '/' && <HarborIntro harborScene={harborScene} />}
+      <FlowBackground theme={theme} />
+      <StarfieldBackground theme={theme} />
+      <StellarEffects theme={theme} />
+      {pathname === '/' && <HarborIntro theme={theme} />}
       <SeoManager />
 
       <Navigation
         language={language}
-        themeMode={themeMode}
-        harborScene={harborScene}
-        onCycleTheme={cycleThemeMode}
-        onCycleHarborScene={cycleHarborScene}
+        theme={theme}
+        onSelectTheme={selectTheme}
         onToggleLanguage={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
       />
       {showPublicAssistant && !assistantMounted && (

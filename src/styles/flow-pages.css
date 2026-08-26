@@ -52,6 +52,18 @@
   --flow-hero-alpha-soft: 0.38;
   --flow-shadow-alpha: 0.24;
 }
+
+/* The reference homepage uses a thin translucent board, not opaque white cards. */
+:root:is([data-site-theme='morning'], [data-site-theme='nature']) .app.page-home {
+  --flow-panel-alpha: 0.44;
+  --flow-card-alpha: 0.56;
+  --flow-hero-alpha: 0.38;
+  --flow-hero-alpha-soft: 0.2;
+  --flow-shadow-alpha: 0.18;
+  --flow-surface-depth-alpha: 0.14;
+  --flow-surface-sheen-opacity: 0.13;
+  --flow-backdrop-blur: 18px;
+}
 .app.page-home,
 .app.page-tools,
 .app.page-subpage {
@@ -1097,9 +1109,9 @@
     gap: 0;
   }
 
-  .app.page-home .nav-theme-toggle,
-  .app.page-tools .nav-theme-toggle,
-  .app.page-subpage .nav-theme-toggle {
+  .app.page-home .nav-theme-selector,
+  .app.page-tools .nav-theme-selector,
+  .app.page-subpage .nav-theme-selector {
     width: 40px;
     height: 40px;
     border-radius: 14px;

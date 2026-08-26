@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react'
 import { getFlowProfile } from '../background/flowPalettes'
 import { isLowPowerDevice } from '../utils/visualPerformance'
-import { isHarborScene, type HarborScene } from '../utils/appearance'
+import { isSiteTheme, type SiteTheme } from '../utils/appearance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 
-export function StellarEffects({ scene }: { scene: HarborScene }) {
+export function StellarEffects({ theme }: { theme: SiteTheme }) {
   const ownerRef = useRef<HTMLDivElement>(null)
-  const initialSceneRef = useRef(scene)
+  const initialThemeRef = useRef(theme)
 
   useEffect(() => {
     const owner = ownerRef.current
@@ -43,7 +43,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     }
 
     const paintEdgeTargets = () => {
-      const enabled = root.dataset.harborScene === 'stellar' && !reducedMotion && !lowPower && !document.hidden
+      const enabled = root.dataset.siteTheme === 'stellar' && !reducedMotion && !lowPower && !document.hidden
       edgeTargets.forEach((_layer, target) => {
         if (!enabled) {
           target.style.setProperty('--stellar-edge-glow-opacity', '0')
@@ -75,8 +75,8 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     }
 
     const sync = () => {
-      const activeScene = isHarborScene(root.dataset.harborScene) ? root.dataset.harborScene : initialSceneRef.current
-      const profile = getFlowProfile(activeScene, root.classList.contains('light-theme'))
+      const activeTheme = isSiteTheme(root.dataset.siteTheme) ? root.dataset.siteTheme : initialThemeRef.current
+      const profile = getFlowProfile(activeTheme)
       lowPower = isLowPowerDevice()
       const effects = lowPower
         ? {
@@ -89,29 +89,29 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
             brandHighlight: profile.stellarEffects.brandHighlight * 0.62,
           }
         : profile.stellarEffects
-      const signature = JSON.stringify({ activeScene, effects })
+      const signature = JSON.stringify({ activeTheme, effects })
       if (signature !== profileSignature) {
         profileSignature = signature
         profileVersion += 1
       }
-      owner.dataset.stellarScene = activeScene
+      owner.dataset.stellarTheme = activeTheme
       owner.dataset.stellarProfileVersion = String(profileVersion)
       owner.dataset.stellarLowPower = lowPower ? 'true' : 'false'
-      owner.dataset.stellarState = activeScene !== 'stellar' ? 'inactive' : reducedMotion || document.hidden ? 'paused' : lowPower ? 'ambient' : effects.edgeGlow > 0.1 ? 'running' : 'ambient'
+      owner.dataset.stellarState = activeTheme !== 'stellar' ? 'inactive' : reducedMotion || document.hidden ? 'paused' : lowPower ? 'ambient' : effects.edgeGlow > 0.1 ? 'running' : 'ambient'
       owner.style.setProperty('--stellar-edge-glow', String(effects.edgeGlow))
       owner.style.setProperty('--stellar-perimeter-opacity', String(effects.perimeterOpacity))
       owner.style.setProperty('--stellar-perimeter-duration', `${effects.perimeterDuration || 7.6}s`)
       owner.style.setProperty('--stellar-brand-highlight', String(effects.brandHighlight))
       root.style.setProperty('--stellar-scene-perimeter-opacity', String(effects.perimeterOpacity))
       root.style.setProperty('--stellar-scene-perimeter-duration', `${effects.perimeterDuration || 7.6}s`)
-      root.style.setProperty('--stellar-scene-perimeter-play-state', activeScene === 'stellar' && !lowPower ? 'running' : 'paused')
+      root.style.setProperty('--stellar-scene-perimeter-play-state', activeTheme === 'stellar' && !lowPower ? 'running' : 'paused')
       root.style.setProperty('--stellar-scene-edge-glow', String(effects.edgeGlow))
       syncEdgeTargets()
       paintEdgeTargets()
       owner.style.setProperty('--stellar-pointer-x', `${pointerX}px`)
       owner.style.setProperty('--stellar-pointer-y', `${pointerY}px`)
       syncBrandGeometry()
-      if (activeScene !== 'stellar' || reducedMotion || lowPower || document.hidden) {
+      if (activeTheme !== 'stellar' || reducedMotion || lowPower || document.hidden) {
         cancelAnimationFrame(frame)
         frame = 0
       } else if (!frame) {
@@ -120,7 +120,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     }
     const syncFrame = () => {
       frame = 0
-      if (stopped || root.dataset.harborScene !== 'stellar' || reducedMotion || lowPower || document.hidden) return
+      if (stopped || root.dataset.siteTheme !== 'stellar' || reducedMotion || lowPower || document.hidden) return
       owner.style.setProperty('--stellar-pointer-x', `${pointerX}px`)
       owner.style.setProperty('--stellar-pointer-y', `${pointerY}px`)
     }
@@ -128,7 +128,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
       pointerX = event.clientX
       pointerY = event.clientY
       paintEdgeTargets()
-      if (root.dataset.harborScene === 'stellar' && !reducedMotion && !lowPower && !frame) frame = requestAnimationFrame(syncFrame)
+      if (root.dataset.siteTheme === 'stellar' && !reducedMotion && !lowPower && !frame) frame = requestAnimationFrame(syncFrame)
     }
     const handleMotion = () => {
       reducedMotion = matchMedia(REDUCED).matches
@@ -137,7 +137,7 @@ export function StellarEffects({ scene }: { scene: HarborScene }) {
     const observer = new MutationObserver(sync)
     observer.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'],
+      attributeFilter: ['class', 'data-site-theme', 'data-site-theme-version'],
     })
     addEventListener('pointermove', handlePointer, { passive: true })
     addEventListener('resize', sync, { passive: true })

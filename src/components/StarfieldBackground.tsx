@@ -2,25 +2,25 @@ import { useEffect, useRef } from 'react'
 import { StarfieldRenderer } from '../background/StarfieldRenderer'
 import { getFlowProfile, type StarfieldProfile } from '../background/flowPalettes'
 import { isLowPowerDevice } from '../utils/visualPerformance'
-import { isHarborScene, type HarborScene } from '../utils/appearance'
+import { isSiteTheme, type SiteTheme } from '../utils/appearance'
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 const MAX_FPS = 30
 
-function getProfile(scene: HarborScene): StarfieldProfile {
-  const profile = getFlowProfile(scene, document.documentElement.classList.contains('light-theme')).starfield
+function getProfile(theme: SiteTheme): StarfieldProfile {
+  const profile = getFlowProfile(theme).starfield
   const viewportScale = Math.max(0.6, Math.min(1.35, Math.sqrt((innerWidth * innerHeight) / (1440 * 1000))))
-  const sceneFloor = scene === 'stellar' ? 100 : scene === 'dusk' ? 18 : 12
-  const areaCount = Math.max(sceneFloor, Math.round(profile.count * viewportScale))
+  const themeFloor = theme === 'stellar' ? 100 : theme === 'morning' ? 18 : 12
+  const areaCount = Math.max(themeFloor, Math.round(profile.count * viewportScale))
   if (isLowPowerDevice()) {
     return { ...profile, count: Math.max(8, Math.round(areaCount * 0.32)), opacity: profile.opacity * 0.72, twinkle: 0 }
   }
   return { ...profile, count: areaCount }
 }
 
-export function StarfieldBackground({ scene }: { scene: HarborScene }) {
+export function StarfieldBackground({ theme }: { theme: SiteTheme }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const initialSceneRef = useRef(scene)
+  const initialThemeRef = useRef(theme)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -37,19 +37,19 @@ export function StarfieldBackground({ scene }: { scene: HarborScene }) {
     let pointerY = 0
     let scrollProgress = 0
 
-    const readScene = () => isHarborScene(document.documentElement.dataset.harborScene)
-      ? document.documentElement.dataset.harborScene
-      : initialSceneRef.current
-    const readProfile = () => getProfile(readScene())
+    const readTheme = () => isSiteTheme(document.documentElement.dataset.siteTheme)
+      ? document.documentElement.dataset.siteTheme
+      : initialThemeRef.current
+    const readProfile = () => getProfile(readTheme())
     const publishProfile = () => {
-      const activeScene = readScene()
-      const current = getProfile(activeScene)
+      const activeTheme = readTheme()
+      const current = getProfile(activeTheme)
       const signature = JSON.stringify(current)
       if (signature !== profileSignature) {
         profileSignature = signature
         profileVersion += 1
       }
-      canvas.dataset.starfieldScene = activeScene
+      canvas.dataset.starfieldTheme = activeTheme
       canvas.dataset.starfieldProfileVersion = String(profileVersion)
       canvas.dataset.starfieldCount = String(current.count)
       return current
@@ -133,7 +133,7 @@ export function StarfieldBackground({ scene }: { scene: HarborScene }) {
     const rootClassObserver = new MutationObserver(() => sync())
     rootClassObserver.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['class', 'data-harbor-scene', 'data-harbor-scene-version'],
+      attributeFilter: ['class', 'data-site-theme', 'data-site-theme-version'],
     })
     updateScroll()
 
