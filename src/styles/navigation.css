@@ -1417,3 +1417,10 @@
     flex-basis: 142px;
   }
 }
+
+@media (min-width: 1025px) and (min-height: 800px) {
+  .app.page-home .nav-inner {
+    max-width: 970px;
+    margin-top: 72px;
+  }
+}

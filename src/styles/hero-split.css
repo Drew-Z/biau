@@ -1146,9 +1146,15 @@
   text-shadow: 0 0 22px color-mix(in oklch, var(--home-accent) 28%, transparent);
 }
 
-.app.page-home .hero-intro h2.hero-title-rotator,
-.app.page-home .hero-intro h2.hero-title-rotator .hero-subline {
+.app.page-home .hero-intro h2.hero-title-rotator {
   color: var(--home-ink);
+}
+
+.app.page-home .hero-intro h2.hero-title-rotator .hero-subline {
+  color: transparent;
+  background: var(--home-subline-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
 .app.page-home .hero-body {
@@ -1259,4 +1265,48 @@
 .app.page-home .panel-footer:hover,
 .app.page-home .panel-footer:focus-visible {
   color: var(--home-ink);
+}
+
+/* Keep the light scenes as thin boards over the calibrated cloud fields. */
+:root:is([data-site-theme='morning'], [data-site-theme='nature']) .app.page-home .hero-panel {
+  background:
+    var(--home-panel-pattern),
+    linear-gradient(145deg, rgb(255 255 255 / 4%), transparent 36%),
+    var(--home-panel-bg);
+}
+
+:root:is([data-site-theme='morning'], [data-site-theme='nature']) .app.page-home .carousel-card {
+  --home-card-surface: var(--home-card-bg);
+  background:
+    linear-gradient(140deg, rgb(255 255 255 / 4%), transparent 44%),
+    var(--home-card-surface);
+}
+
+:root:is([data-site-theme='morning'], [data-site-theme='nature']) .app.page-home .carousel-card.commerce {
+  --home-card-surface: var(--home-card-commerce);
+}
+
+:root:is([data-site-theme='morning'], [data-site-theme='nature']) .app.page-home .carousel-card.preview {
+  --home-card-surface: var(--home-card-preview);
+}
+
+:root:is([data-site-theme='morning'], [data-site-theme='nature']) .app.page-home .carousel-card.image {
+  --home-card-surface: var(--home-card-image);
+}
+
+@media (min-width: 1025px) and (min-height: 800px) {
+  .app.page-home .home-hero {
+    max-width: 970px;
+    min-height: calc(100vh - 216px);
+    margin-top: 15px;
+    grid-template-columns: minmax(0, 0.955fr) minmax(0, 1.045fr);
+    gap: clamp(40px, 4.1vw, 59px);
+  }
+
+  .app.page-home .hero-panel {
+    height: 510px;
+    min-height: 0;
+    position: relative;
+    top: 5px;
+  }
 }

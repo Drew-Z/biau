@@ -1,0 +1,101 @@
+{
+  "morning": {
+    "rootTheme": "morning",
+    "flowTheme": "morning",
+    "flowMotion": "running",
+    "flowDynamics": "15|0.53|0.39|0.33|0.2|1.09|318",
+    "panel": {
+      "x": 729,
+      "y": 225,
+      "width": 476,
+      "height": 510
+    },
+    "hero": {
+      "x": 235,
+      "y": 145,
+      "width": 970,
+      "height": 684
+    },
+    "nav": {
+      "x": 235,
+      "y": 72,
+      "width": 970,
+      "height": 58
+    },
+    "title": {
+      "x": 235,
+      "y": 348.1,
+      "width": 435,
+      "height": 108
+    },
+    "sublineGradient": "linear-gradient(135deg, rgb(211, 124, 134) 0%, rgb(135, 155, 201) 50%, rgb(118, 164, 149) 100%)",
+    "stellarState": "inactive",
+    "overflow": 0
+  },
+  "nature": {
+    "rootTheme": "nature",
+    "flowTheme": "nature",
+    "flowMotion": "running",
+    "flowDynamics": "10|0.82|0.19|0.75|3|1.03|318",
+    "panel": {
+      "x": 729,
+      "y": 225,
+      "width": 476,
+      "height": 510
+    },
+    "hero": {
+      "x": 235,
+      "y": 145,
+      "width": 970,
+      "height": 684
+    },
+    "nav": {
+      "x": 235,
+      "y": 72,
+      "width": 970,
+      "height": 58
+    },
+    "title": {
+      "x": 235,
+      "y": 348.1,
+      "width": 435,
+      "height": 108
+    },
+    "sublineGradient": "linear-gradient(135deg, rgb(165, 182, 135) 0%, rgb(129, 164, 158) 50%, rgb(179, 155, 122) 100%)",
+    "stellarState": "inactive",
+    "overflow": 0
+  },
+  "stellar": {
+    "rootTheme": "stellar",
+    "flowTheme": "stellar",
+    "flowMotion": "running",
+    "flowDynamics": "15|0.67|0.71|0.41|0.2|1.41|318",
+    "panel": {
+      "x": 729,
+      "y": 225,
+      "width": 476,
+      "height": 510
+    },
+    "hero": {
+      "x": 235,
+      "y": 145,
+      "width": 970,
+      "height": 684
+    },
+    "nav": {
+      "x": 235,
+      "y": 72,
+      "width": 970,
+      "height": 58
+    },
+    "title": {
+      "x": 235,
+      "y": 348.1,
+      "width": 435,
+      "height": 108
+    },
+    "sublineGradient": "linear-gradient(135deg, rgb(219, 193, 138) 0%, rgb(168, 196, 224) 50%, rgb(137, 212, 184) 100%)",
+    "stellarState": "running",
+    "overflow": 0
+  }
+}

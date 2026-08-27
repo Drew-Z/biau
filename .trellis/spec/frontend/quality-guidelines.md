@@ -113,6 +113,7 @@ npm.cmd run docs:deployment-check
 - The theme continues below the Hero and across longer public pages. The site footer consumes theme-specific background, pattern, border, and shadow tokens instead of a generic black/light surface. Full-page desktop/mobile evidence must include the Hero-to-footer transition.
 - Appearance signatures include the foundation base, all three static layer backgrounds, texture sizing, Hero panel material, and footer background. A first-viewport screenshot or Flow-canvas hash alone cannot prove the full-page theme contract.
 - At desktop widths above `1024px`, the homepage intro and project board form two explicit columns whose visual centers align vertically while the intro copy remains left-aligned. At `1024px` and below, restore the single-column reading order without horizontal overflow.
+- When the homepage board also receives runtime depth or tilt transforms, apply a tall-desktop static alignment nudge with `position: relative; top: ...` rather than another `translate` declaration; this keeps the geometry stable when the runtime transform is composed or animated.
 
 ### Theme Motion Ownership
 

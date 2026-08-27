@@ -13,6 +13,7 @@
   --home-accent-strong: #234f96;
   --home-accent-strong-rgb: 35 79 150;
   --home-accent-soft: #d9d9a2;
+  --home-subline-gradient: linear-gradient(135deg, #d37c86 0%, #879bc9 50%, #76a495 100%);
   --home-brand: #c34f70;
   --home-green: #438f74;
   --home-amber: #c77f31;
@@ -23,21 +24,21 @@
   --home-nav-shadow: 0 14px 34px rgb(24 41 69 / 7%);
   --home-control-bg: rgb(255 255 255 / 48%);
   --home-control-ink: #182945;
-  --home-panel-bg: rgb(245 247 246 / 48%);
+  --home-panel-bg: rgb(245 247 246 / 44%);
   --home-panel-rgb: 255 252 248;
   --home-panel-border: rgb(24 41 69 / 14%);
   --home-panel-shadow: 0 24px 56px rgb(24 41 69 / 11%);
   --home-panel-highlight: rgb(255 255 255 / 48%);
   --home-panel-pattern: none;
-  --home-card-bg: rgb(248 249 247 / 58%);
+  --home-card-bg: rgb(248 249 247 / 42%);
   --home-card-rgb: 255 252 248;
-  --home-card-commerce: rgb(255 255 255 / 46%);
-  --home-card-preview: rgb(232 240 247 / 52%);
-  --home-card-image: rgb(249 238 235 / 52%);
+  --home-card-commerce: rgb(255 255 255 / 42%);
+  --home-card-preview: rgb(232 240 247 / 44%);
+  --home-card-image: rgb(249 238 235 / 44%);
   --home-card-border: rgb(24 41 69 / 13%);
   --home-card-title: #182945;
   --home-card-copy: #3a4f6a;
-  --home-card-highlight: rgb(255 255 255 / 46%);
+  --home-card-highlight: rgb(255 255 255 / 32%);
   --home-card-shadow: 0 12px 26px rgb(24 41 69 / 8%);
   --home-action-bg: rgb(255 255 255 / 44%);
   --home-action-ink: #182945;
@@ -108,6 +109,7 @@
   --home-accent-strong: #2478a0;
   --home-accent-strong-rgb: 36 120 160;
   --home-accent-soft: #a7d9bb;
+  --home-subline-gradient: linear-gradient(135deg, #a5b687 0%, #81a49e 50%, #b39b7a 100%);
   --home-brand: #367f62;
   --home-green: #3e946e;
   --home-amber: #b9893c;
@@ -118,7 +120,7 @@
   --home-nav-shadow: 0 16px 34px rgb(23 60 53 / 8%);
   --home-control-bg: rgb(242 252 245 / 56%);
   --home-control-ink: #1d4a3d;
-  --home-panel-bg: rgb(239 248 241 / 46%);
+  --home-panel-bg: rgb(239 248 241 / 42%);
   --home-panel-rgb: 244 251 246;
   --home-panel-border: rgb(23 60 53 / 13%);
   --home-panel-shadow: 0 24px 58px rgb(23 60 53 / 12%);
@@ -136,15 +138,15 @@
       rgb(185 137 60 / 9%) 72.1% 72.35%,
       transparent 72.45% 100%
     );
-  --home-card-bg: rgb(239 248 241 / 56%);
+  --home-card-bg: rgb(239 248 241 / 42%);
   --home-card-rgb: 244 251 246;
-  --home-card-commerce: rgb(231 244 229 / 72%);
-  --home-card-preview: rgb(226 242 238 / 70%);
-  --home-card-image: rgb(237 237 224 / 70%);
+  --home-card-commerce: rgb(231 244 229 / 48%);
+  --home-card-preview: rgb(226 242 238 / 48%);
+  --home-card-image: rgb(237 237 224 / 48%);
   --home-card-border: rgb(23 60 53 / 13%);
   --home-card-title: #173c35;
   --home-card-copy: #356458;
-  --home-card-highlight: rgb(255 255 255 / 58%);
+  --home-card-highlight: rgb(255 255 255 / 36%);
   --home-card-shadow: 0 12px 26px rgb(23 60 53 / 10%);
   --home-action-bg: rgb(248 255 250 / 58%);
   --home-action-ink: #173c35;
@@ -213,6 +215,7 @@
   --home-accent-rgb: 117 225 224;
   --home-accent-strong: #a8f0eb;
   --home-accent-soft: #243b5b;
+  --home-subline-gradient: linear-gradient(135deg, #dbc18a 0%, #a8c4e0 50%, #89d4b8 100%);
   --home-brand: #c4a8e1;
   --home-green: #75e1e0;
   --home-amber: #e6b878;
