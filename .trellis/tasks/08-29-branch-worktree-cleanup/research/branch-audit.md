@@ -49,3 +49,11 @@ Delete after approval:
 - remote `origin/codex/public-assistant-ui-polish` at `8ed124db`
 
 All deletion candidates are already ancestors of `origin/main`. Their committed history remains recoverable from `main`; the recorded tip SHAs also allow recreating a local branch if needed.
+
+## Execution Result
+
+- User approved the exact cleanup list.
+- The two superseded uncommitted files were restored only inside `D:\workspace4Cursor\blog-semi-public-route`, then the clean worktree was removed through `git worktree remove` and pruned.
+- All listed merged local branches and `origin/codex/public-assistant-ui-polish` were deleted.
+- `main` was pushed successfully to `origin/main` at `903f9533`.
+- Remaining local branches are `main`, `claude/blog-semi-claude-dev`, and active-task base `codex/public-assistant-main-integration`.

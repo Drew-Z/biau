@@ -17,12 +17,12 @@
 
 ## Acceptance Criteria
 
-- [ ] `blog-semi-public-route` 的两份未提交改动有证据支持的归宿决定。
-- [ ] 未经批准不执行 worktree、分支或远端分支删除。
-- [ ] 获批删除后，`git worktree list --porcelain` 只保留规范主目录和仍需保留的活动 worktree。
-- [ ] 旧本地/远端分支均按已合并和依赖状态处理，`git branch --no-merged main` 为空。
-- [ ] `main` 的预期提交进入 `origin/main`，且用户 JSON 仍保持原有未提交状态。
-- [ ] 最终运行工作区审计并报告所有保留项与未处理风险。
+- [x] `blog-semi-public-route` 的两份未提交改动有证据支持的归宿决定。
+- [x] 未经批准不执行 worktree、分支或远端分支删除。
+- [x] 获批删除后，`git worktree list --porcelain` 只保留规范主目录和仍需保留的活动 worktree。
+- [x] 旧本地/远端分支均按已合并和依赖状态处理，`git branch --no-merged main` 为空。
+- [x] `main` 的预期提交进入 `origin/main`，且用户 JSON 仍保持原有未提交状态。
+- [x] 最终运行工作区审计并报告所有保留项与未处理风险。
 
 ## Open Question
 
