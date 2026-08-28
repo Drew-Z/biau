@@ -27,7 +27,7 @@
 
 ## Claude Code 与 Codex 协作
 
-参考 `D:\workspace4Cursor\learn\anchor` 的实际协作方式，本项目采用“独立 worktree + 独立分支 + commit 交接”的串行模型：
+本项目启用机器级 `codex-claude-collaboration` skill，采用“Codex 主协调 + Claude 后台 leaf + 独立 worktree + commit 交接”的串行模型。需要快速进入该模式时，在 Claude Code 中运行 `/codex-collaboration`；在 Codex 中使用 `$codex-claude-collaboration`。
 
 1. 一次只处理一个 Trellis task 或一个可独立验收的叶任务。
 2. 规范主目录用于基线检查、集成和最终验证；不要把两个代理同时放进同一个未提交工作区。
@@ -37,10 +37,16 @@
 6. 每次交接必须记录：`task`、`branch/worktree`、`commit`、变更文件、验证结果、已知风险，以及明确排除的未提交文件。
 7. 合并、冲突解决和推送由一个明确的集成人负责。允许在用户已授权且验证通过后显式执行 `git push origin main`；不要安装自动推送 hook，也不要把 Trellis `session_auto_commit` 当成产品代码提交。
 
+### 协作模式切换
+
+- `/codex-collaboration` 只负责建立本次 leaf 的协作契约和状态检查，不会自动启动第二个写入任务。
+- Claude 后台任务由 Codex 使用 `D:\Agent\codex\skills\codex-claude-collaboration\scripts\claude-bg-run.ps1` 启动，并由 `claude-bg-status.ps1` 观察。
+- 发生网络、上游或进程无响应时，先查看状态和 worktree，再使用 `claude-bg-recover.ps1` 的 `Resume` 或 `FreshContinuation` 模式；禁止无条件重复运行。
+- 本项目的 Trellis task 负责需求、设计和验收记录；通用 skill 负责跨代理交接与恢复，两者不要同时创建第二套任务编排。
+
 ### 当前工作区保护
 
-- `public/status/blog-semi-synthetic.json` 的既有用户改动不属于任何新 task，除非用户明确指定，否则不得覆盖、暂存或提交。
-- `D:\workspace4Cursor\blog-semi-public-route` 是另一个活动 worktree；不得清理、回滚、复用或删除，除非先确认其任务已结束且工作树满足回收条件。
+- `public/status/blog-semi-synthetic.json` 默认只读；只有在检查结果经过确认后，才可通过显式 publish 命令更新。
 - 在创建或回收 worktree 前，先运行 `D:\workspace4Cursor\.workspace-management\audit-worktrees.ps1`，并核对远端、分支和 `git worktree list --porcelain`。
 
 ### Claude Code 起始检查

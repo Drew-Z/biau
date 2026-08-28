@@ -2,7 +2,7 @@
   "mcpServers": {
     "context7": {
       "source": "Claude Code plugin: context7@claude-plugins-official",
-      "note": "当前 WSL 环境由官方插件提供，无需在项目里重复配置。"
+      "note": "当前 Claude Code 环境由官方插件提供，无需在项目里重复配置。"
     },
     "playwright": {
       "source": "Claude Code plugin: playwright@claude-plugins-official",

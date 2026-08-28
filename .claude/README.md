@@ -6,10 +6,13 @@ This directory stores project-level Claude Code commands for `blog-semi`.
 - `commands/verify-build.md`: install dependencies and run lint/build checks.
 - `commands/deploy-check.md`: check Cloudflare Pages deployment readiness.
 - `commands/ui-review.md`: review layout, theme, responsive behavior, and route clarity.
+- `commands/codex-collaboration.md`: enter the Codex-primary/Claude-background leaf workflow and prepare a safe handoff.
+
+The reusable coordination skill is installed at `D:\Agent\codex\skills\codex-claude-collaboration`. It is project-neutral; this project contract supplies the Trellis task, owned files, forbidden paths, and validation commands.
 
 Local permissions live in `.claude/settings.local.json`; it is intentionally ignored by Git through the existing `*.local` rule.
 
-User-level plugins currently expected in the WSL Claude Code environment:
+User-level plugins are managed by the active Claude Code installation under `D:\Agent`; they are not project-local dependencies:
 
 - `frontend-design@claude-plugins-official`
 - `code-review@claude-plugins-official`

@@ -39,7 +39,7 @@
 ## Shell Preference
 
 - Windows 环境下优先使用简单命令。
-- 给用户展示命令时优先使用 Git Bash 风格；需要执行项目脚本时可以直接使用 `npm.cmd`。
+- 给用户展示命令时优先使用 PowerShell 7 语法；需要执行项目脚本时可以直接使用 `npm.cmd`。
 - 不要使用破坏性 Git 命令，例如 `git reset --hard`、`git clean -fd`、`git checkout -- <file>`，除非用户明确要求。
 - 用户已确认本项目可以在每次成功提交后默认执行 `git push origin main`，除非用户明确说明“不要推送”“先别推”或当前分支不是 `main`。
 - 不要安装无条件 `post-commit` 自动推送 hook；自动推送应由代理在提交后显式执行并确认结果。
@@ -49,6 +49,10 @@
 ### Codex workflow
 
 For Codex-style clarification, planning, implementation, validation, and finish-work, see `docs/agents/codex-workflow.md`.
+
+### Codex + Claude collaboration
+
+When the user asks for shared Codex and Claude Code development, invoke the machine-level `$codex-claude-collaboration` skill. Keep Codex as the coordinator and final verifier; give Claude one bounded leaf in a separate managed worktree. Record the leaf objective, owned and forbidden files, acceptance commands, worktree, branch, and base SHA before launch. Use the skill's background runner and status/recovery scripts instead of starting a second writer in the main checkout. Trellis remains the project planning and acceptance record; merge, conflict resolution, push, deployment, and release decisions stay with one explicit integrator.
 
 ### Issue tracker
 
