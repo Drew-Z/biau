@@ -147,6 +147,7 @@
 .nav-logo .biau-port-mark__shell,
 .nav-logo .biau-port-mark__spine,
 .nav-logo .biau-port-mark__bowl,
+.nav-logo .biau-port-mark__stage,
 .nav-logo .biau-port-mark__water,
 .nav-logo .biau-port-mark__terminal,
 .nav-logo .biau-port-mark__beacon,
@@ -158,16 +159,16 @@
   transform-origin: center;
 }
 
-.nav-logo:hover .biau-port-mark__water,
-.nav-logo:focus-visible .biau-port-mark__water {
-  transform: translateY(-0.6px);
-  filter: drop-shadow(0 0 5px rgba(242, 162, 58, 0.42));
+.nav-logo:hover .biau-port-mark__bowl,
+.nav-logo:focus-visible .biau-port-mark__bowl {
+  transform: translateY(-0.45px);
+  filter: drop-shadow(0 0 4px color-mix(in oklch, var(--home-accent) 36%, transparent));
 }
 
-.nav-logo:hover .biau-port-mark__terminal,
-.nav-logo:focus-visible .biau-port-mark__terminal {
+.nav-logo:hover .biau-port-mark__stage,
+.nav-logo:focus-visible .biau-port-mark__stage {
   opacity: 1;
-  transform: translateX(0.8px);
+  transform: translateY(-0.4px);
 }
 
 .nav-logo:hover .biau-port-mark__beacon,
@@ -305,7 +306,7 @@
   font-weight: 700;
   letter-spacing: 1px;
   color: var(--ink);
-  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+  font-family: var(--font-ui);
 }
 
 .nav-link-center:focus-visible,
@@ -336,7 +337,7 @@
   letter-spacing: 1px;
   color: var(--ink);
   line-height: 1;
-  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+  font-family: var(--font-ui);
   transition:
     color 0.2s var(--ease-smooth),
     letter-spacing 0.26s var(--ease-out-expo),
@@ -450,7 +451,7 @@
   letter-spacing: 0.02em;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+  font-family: var(--font-ui);
 }
 
 .nav-lang-toggle:hover {
@@ -543,7 +544,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  font-family: "DM Sans", "Noto Sans SC", sans-serif;
+  font-family: var(--font-ui);
 }
 
 .nav-all-tools:hover {
@@ -818,6 +819,7 @@
   .nav-actions {
     gap: 0.3rem;
     min-width: 0;
+    flex: 0 0 auto;
   }
 
   .nav-theme-toggle,
@@ -1242,7 +1244,11 @@
 
 @media (max-width: 768px) {
   .nav-theme-selector {
+    width: 142px;
+    min-width: 142px;
+    max-width: 142px;
     min-height: 44px;
+    flex: 0 0 142px;
     gap: 2px;
     padding: 3px;
   }
@@ -1263,6 +1269,23 @@
 }
 
 @media (max-width: 380px) {
+  .page-subpage .nav-inner {
+    column-gap: 0;
+  }
+
+  .page-subpage .nav-brand-link {
+    padding-right: 0;
+  }
+
+  .page-subpage .nav-brand-section {
+    gap: 4px;
+  }
+
+  .page-subpage .brand-title {
+    max-width: 2em;
+    font-size: 0.8125rem;
+  }
+
   .page-home .nav-theme-selector {
     width: 142px;
     min-width: 142px;
@@ -1422,5 +1445,85 @@
   .app.page-home .nav-inner {
     max-width: 970px;
     margin-top: 72px;
+  }
+}
+
+/* Keep the shared navigation legible above every animated scene. */
+:root[data-site-theme] .app .nav-inner {
+  background: var(--home-nav-bg);
+  border-color: var(--home-nav-border);
+  box-shadow: var(--home-nav-shadow), inset 0 1px 0 var(--home-panel-highlight);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+  backdrop-filter: blur(18px) saturate(1.12);
+}
+
+/* The shared mark is an open brand signature, not a filled app tile. */
+:root[data-site-theme] .app .nav-logo,
+:root[data-site-theme] .app.page-home .nav-logo {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+:root[data-site-theme] .app .nav-logo:focus-visible,
+:root[data-site-theme] .app.page-home .nav-logo:focus-visible,
+:root[data-site-theme] .app .nav-brand-link:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--home-accent) 76%, white);
+  outline-offset: 3px;
+}
+
+:root[data-site-theme] .app .nav-logo::after {
+  content: none;
+}
+
+:root[data-site-theme] .app .nav-logo svg {
+  filter: drop-shadow(0 5px 12px color-mix(in oklch, var(--home-accent) 18%, transparent));
+}
+
+:root[data-site-theme] .app .nav-link-center {
+  color: var(--home-nav-muted);
+}
+
+:root[data-site-theme] .app .nav-link-center .nav-link-en {
+  color: var(--home-nav-muted);
+}
+
+:root[data-site-theme] .app .nav-link-center:not(.active):hover,
+:root[data-site-theme] .app .nav-link-center:not(.active):focus-visible {
+  background: var(--home-nav-hover-bg);
+}
+
+:root[data-site-theme] .app .nav-link-center.active {
+  background: var(--home-nav-active-bg);
+}
+
+:root[data-site-theme] .app .nav-link-center.active .nav-link-en,
+:root[data-site-theme] .app .nav-link-center:hover .nav-link-en,
+:root[data-site-theme] .app .nav-link-center:focus-visible .nav-link-en {
+  color: var(--home-nav-text);
+}
+
+:root[data-site-theme] .app .nav-brand-section,
+:root[data-site-theme] .app .nav-brand-section .brand-subtitle {
+  color: var(--home-nav-muted);
+}
+
+:root[data-site-theme] .app .brand-title {
+  color: var(--home-nav-text);
+}
+
+:root[data-site-theme] .app .nav-lang-toggle,
+:root[data-site-theme] .app .nav-theme-selector {
+  background: var(--home-control-bg);
+  border-color: var(--home-nav-border);
+  color: var(--home-nav-text);
+  box-shadow: inset 0 1px 0 var(--home-panel-highlight);
+}
+
+@media (max-width: 768px) {
+  :root[data-site-theme] .app .nav-inner {
+    border-radius: 16px;
   }
 }

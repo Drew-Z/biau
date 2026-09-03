@@ -1,5 +1,4 @@
 import { ArrowRight } from 'lucide-react'
-import type { KeyboardEvent } from 'react'
 import type { Project } from '../data/portfolio'
 import { findProjectPublication, getPublishedProjectLinks } from '../data/projectPublication'
 import { ResponsiveImage } from './ResponsiveImage'
@@ -25,23 +24,12 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
   const publishedLinks = getPublishedProjectLinks(findProjectPublication(project.id), project.links)
     .filter((link) => link.type === 'external' || link.intent === 'status')
     .slice(0, 2)
-  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
-    if (event.target !== event.currentTarget) return
-    if (event.key !== 'Enter' && event.key !== ' ') return
-    event.preventDefault()
-    onViewDetails()
-  }
-
   return (
     <article
       className={`glass-card project-card feature-card hover-lift ${categoryAccent[project.category]}`}
       data-project-index={number}
       data-graph-label={project.title}
       onClick={onViewDetails}
-      onKeyDown={handleKeyDown}
-      role="link"
-      tabIndex={0}
-      aria-label={`查看项目：${project.title}`}
     >
       {project.image && (
         <div className="project-image">

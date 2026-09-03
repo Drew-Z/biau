@@ -1,0 +1,153 @@
+.codex-logo-v2-mark {
+  --codex-logo-v2-structure-start: #f7f9fc;
+  --codex-logo-v2-structure-mid: #c7d4e6;
+  --codex-logo-v2-structure-end: #7896b8;
+  --codex-logo-v2-current-start: #79d9e1;
+  --codex-logo-v2-current-end: #e6b878;
+  --codex-logo-v2-node: #e6b878;
+  --codex-logo-v2-node-glow-opacity: 0.2;
+  display: block;
+  flex: none;
+  overflow: visible;
+}
+
+:root[data-site-theme='morning'] .codex-logo-v2-mark,
+.logo-lab-theme.logo-lab-theme--morning .codex-logo-v2-mark {
+  --codex-logo-v2-structure-start: #172840;
+  --codex-logo-v2-structure-mid: #315574;
+  --codex-logo-v2-structure-end: #6b8ea7;
+  --codex-logo-v2-current-start: #2997ae;
+  --codex-logo-v2-current-end: #d64f69;
+  --codex-logo-v2-node: #d64f69;
+}
+
+:root[data-site-theme='nature'] .codex-logo-v2-mark,
+.logo-lab-theme.logo-lab-theme--nature .codex-logo-v2-mark {
+  --codex-logo-v2-structure-start: #1d342a;
+  --codex-logo-v2-structure-mid: #3f6f59;
+  --codex-logo-v2-structure-end: #83a77f;
+  --codex-logo-v2-current-start: #378f70;
+  --codex-logo-v2-current-end: #d2a251;
+  --codex-logo-v2-node: #d2a251;
+  --codex-logo-v2-node-glow-opacity: 0.16;
+}
+
+:root[data-site-theme='stellar'] .codex-logo-v2-mark,
+.logo-lab-theme.logo-lab-theme--stellar .codex-logo-v2-mark {
+  --codex-logo-v2-structure-start: #f3f6fc;
+  --codex-logo-v2-structure-mid: #c0d0e7;
+  --codex-logo-v2-structure-end: #7897bf;
+  --codex-logo-v2-current-start: #62d8dc;
+  --codex-logo-v2-current-end: #e4b36e;
+  --codex-logo-v2-node: #e4b36e;
+  --codex-logo-v2-node-glow-opacity: 0.28;
+}
+
+.codex-logo-v2-mark__node-glow {
+  opacity: var(--codex-logo-v2-node-glow-opacity);
+}
+
+.is-codex-logo-v2-monochrome .codex-logo-v2-mark__quay,
+.is-codex-logo-v2-monochrome .codex-logo-v2-mark__contour,
+.is-codex-logo-v2-monochrome .codex-logo-v2-mark__channel,
+.is-codex-logo-v2-monochrome .codex-logo-v2-mark__evidence {
+  stroke: currentColor;
+}
+
+.is-codex-logo-v2-monochrome .codex-logo-v2-mark__node {
+  fill: currentColor;
+}
+
+.is-codex-logo-v2-monochrome .codex-logo-v2-mark__node-glow {
+  display: none;
+}
+
+.codex-logo-v2-mark[data-mark-size='24'] .codex-logo-v2-mark__evidence,
+.codex-logo-v2-mark[data-mark-size='24'] .codex-logo-v2-mark__node-glow,
+.codex-logo-v2-mark[data-mark-size='40'] .codex-logo-v2-mark__evidence {
+  display: none;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__quay,
+.is-codex-logo-v2-animated .codex-logo-v2-mark__contour,
+.is-codex-logo-v2-animated .codex-logo-v2-mark__channel,
+.is-codex-logo-v2-animated .codex-logo-v2-mark__evidence {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__quay--upper {
+  animation: codexLogoV2Draw 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__quay--lower {
+  animation: codexLogoV2Draw 0.38s cubic-bezier(0.16, 1, 0.3, 1) 0.08s forwards;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__contour {
+  animation: codexLogoV2Draw 0.74s cubic-bezier(0.16, 1, 0.3, 1) 0.14s forwards;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__channel {
+  animation: codexLogoV2Draw 0.32s cubic-bezier(0.16, 1, 0.3, 1) 0.48s forwards;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__evidence {
+  animation: codexLogoV2Draw 0.24s cubic-bezier(0.16, 1, 0.3, 1) 0.62s forwards;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__node,
+.is-codex-logo-v2-animated .codex-logo-v2-mark__node-glow {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__node {
+  animation: codexLogoV2Node 0.36s cubic-bezier(0.16, 1, 0.3, 1) 0.68s forwards;
+}
+
+.is-codex-logo-v2-animated .codex-logo-v2-mark__node-glow {
+  animation: codexLogoV2Glow 0.46s ease-out 0.66s forwards;
+}
+
+@keyframes codexLogoV2Draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes codexLogoV2Node {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes codexLogoV2Glow {
+  from { opacity: 0; }
+  to { opacity: var(--codex-logo-v2-node-glow-opacity); }
+}
+
+.logo-lab-card__mono .is-codex-logo-v2-monochrome {
+  color: #18243a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-codex-logo-v2-animated .codex-logo-v2-mark__quay,
+  .is-codex-logo-v2-animated .codex-logo-v2-mark__contour,
+  .is-codex-logo-v2-animated .codex-logo-v2-mark__channel,
+  .is-codex-logo-v2-animated .codex-logo-v2-mark__evidence {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .is-codex-logo-v2-animated .codex-logo-v2-mark__node {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .is-codex-logo-v2-animated .codex-logo-v2-mark__node-glow {
+    opacity: var(--codex-logo-v2-node-glow-opacity);
+    transform: none;
+    animation: none;
+  }
+}

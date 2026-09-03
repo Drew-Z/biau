@@ -1,0 +1,397 @@
+.logo-lab-page {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+  padding-bottom: 7rem;
+}
+
+@media (max-width: 768px) {
+  .app.page-brand-logo-lab .mobile-tabbar {
+    display: none;
+  }
+}
+
+.logo-lab-hero {
+  max-width: 860px;
+  margin: 0 auto;
+  padding-top: clamp(3.5rem, 8vw, 7rem);
+  text-align: center;
+}
+
+.logo-lab-hero .section-title {
+  max-width: 760px;
+  margin-inline: auto;
+}
+
+.logo-lab-hero .section-description {
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.logo-lab-hero__meta {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.35rem;
+  color: var(--home-nav-muted, var(--text-secondary));
+  font-size: 0.78rem;
+}
+
+.logo-lab-hero__meta span {
+  padding: 0.38rem 0.62rem;
+  border: 1px solid var(--home-nav-border, rgba(255, 255, 255, 0.18));
+  border-radius: 999px;
+  background: var(--home-control-bg, rgba(255, 255, 255, 0.08));
+}
+
+.logo-lab-variants {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 3rem;
+}
+
+.logo-lab-card,
+.logo-lab-theme,
+.logo-lab-next {
+  border: 1px solid var(--home-panel-border, rgba(255, 255, 255, 0.14));
+  border-radius: 8px;
+  background: var(--home-panel-bg, rgba(14, 20, 35, 0.58));
+  box-shadow: var(--home-panel-shadow, 0 24px 58px rgb(0 0 0 / 14%)), inset 0 1px 0 var(--home-panel-highlight, rgb(255 255 255 / 8%));
+}
+
+.logo-lab-card {
+  min-width: 0;
+  padding: clamp(1.15rem, 2vw, 1.7rem);
+}
+
+.logo-lab-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 154px;
+}
+
+.logo-lab-card__eyebrow {
+  margin: 0 0 0.55rem;
+  color: var(--home-accent, var(--accent-cyan));
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+
+.logo-lab-card h2,
+.logo-lab-section-head h2,
+.logo-lab-next h2 {
+  margin: 0;
+  color: var(--home-nav-text, var(--text-primary));
+  font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+.logo-lab-card__hero-mark {
+  display: grid;
+  place-items: center;
+  width: 154px;
+  height: 154px;
+  flex: 0 0 154px;
+  border: 1px solid var(--home-nav-border, rgba(255, 255, 255, 0.14));
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 50% 46%, color-mix(in oklch, var(--home-accent, #8bc9ff) 18%, transparent), transparent 66%),
+    linear-gradient(145deg, #1b2141, #090d1f);
+}
+
+.logo-lab-card__description,
+.logo-lab-card__read,
+.logo-lab-next p {
+  color: var(--home-nav-muted, var(--text-secondary));
+  line-height: 1.7;
+}
+
+.logo-lab-card__description {
+  min-height: 3.4em;
+  margin: 1.2rem 0 0.5rem;
+}
+
+.logo-lab-card__read {
+  margin: 0;
+  color: var(--home-nav-text, var(--text-primary));
+  font-size: 0.86rem;
+}
+
+.logo-lab-card__section {
+  margin-top: 1.4rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--home-nav-border, rgba(255, 255, 255, 0.14));
+}
+
+.logo-lab-card__section-head,
+.logo-lab-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.logo-lab-card__section-head {
+  color: var(--home-nav-text, var(--text-primary));
+  font-size: 0.88rem;
+  font-weight: 680;
+}
+
+.logo-lab-card__hint {
+  color: var(--home-nav-muted, var(--text-secondary));
+  font-size: 0.72rem;
+  font-weight: 450;
+}
+
+.logo-lab-card__mono {
+  display: grid;
+  place-items: center;
+  min-height: 158px;
+  margin-top: 0.7rem;
+  border-radius: 6px;
+  background: #f5f3ed;
+}
+
+.logo-lab-card__mono .logo-lab-mark {
+  --lab-ink-start: #161c2a;
+  --lab-ink-mid: #273451;
+  --lab-ink-end: #161c2a;
+  --lab-accent-start: #161c2a;
+  --lab-accent-end: #161c2a;
+}
+
+.logo-lab-card__sizes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.7rem;
+}
+
+.logo-lab-size {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  color: var(--home-nav-muted, var(--text-secondary));
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.logo-lab-size__surface {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 76px;
+  border: 1px solid var(--home-nav-border, rgba(255, 255, 255, 0.14));
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in oklch, var(--home-accent, #8bc9ff) 12%, transparent), transparent 68%),
+    linear-gradient(145deg, #1b2141, #090d1f);
+}
+
+.logo-lab-mark {
+  --lab-ink-start: #f7f9fc;
+  --lab-ink-mid: #c7d4e6;
+  --lab-ink-end: #7896b8;
+  --lab-accent-start: #79d9e1;
+  --lab-accent-end: #e6b878;
+  display: block;
+  overflow: visible;
+}
+
+.logo-lab-mark__ink-start { stop-color: var(--lab-ink-start); }
+.logo-lab-mark__ink-mid { stop-color: var(--lab-ink-mid); }
+.logo-lab-mark__ink-end { stop-color: var(--lab-ink-end); }
+.logo-lab-mark__accent-start { stop-color: var(--lab-accent-start); }
+.logo-lab-mark__accent-end { stop-color: var(--lab-accent-end); }
+
+.logo-lab-mark.is-monochrome {
+  --lab-ink-start: #18243a;
+  --lab-ink-mid: #18243a;
+  --lab-ink-end: #18243a;
+  --lab-accent-start: #18243a;
+  --lab-accent-end: #18243a;
+}
+
+.logo-lab-mark[data-mark-size='24'] .logo-lab-mark__corners,
+.logo-lab-mark[data-mark-size='24'] .logo-lab-mark__port-cut,
+.logo-lab-mark[data-mark-size='24'] .logo-lab-mark__evidence,
+.logo-lab-mark[data-mark-size='40'] .logo-lab-mark__evidence {
+  display: none;
+}
+
+.logo-lab-mark__corners,
+.logo-lab-mark__spine,
+.logo-lab-mark__bowl,
+.logo-lab-mark__ascender,
+.logo-lab-mark__port-cut,
+.logo-lab-mark__evidence {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.logo-lab-mark.is-animated .logo-lab-mark__spine,
+.logo-lab-mark.is-animated .logo-lab-mark__bowl,
+.logo-lab-mark.is-animated .logo-lab-mark__ascender,
+.logo-lab-mark.is-animated .logo-lab-mark__port-cut,
+.logo-lab-mark.is-animated .logo-lab-mark__evidence {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: logoLabDraw 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.logo-lab-mark.is-animated .logo-lab-mark__bowl { animation-delay: 0.12s; }
+.logo-lab-mark.is-animated .logo-lab-mark__ascender { animation-delay: 0.2s; }
+.logo-lab-mark.is-animated .logo-lab-mark__port-cut { animation-delay: 0.42s; }
+.logo-lab-mark.is-animated .logo-lab-mark__evidence { animation-delay: 0.55s; }
+.logo-lab-mark.is-animated .logo-lab-mark__node {
+  transform-origin: center;
+  animation: logoLabNode 0.5s ease-out 0.58s both;
+}
+
+@keyframes logoLabDraw { to { stroke-dashoffset: 0; } }
+@keyframes logoLabNode { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+
+.logo-lab-themes {
+  margin-top: 4.5rem;
+}
+
+.logo-lab-section-head {
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.logo-lab-section-head > p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--home-nav-muted, var(--text-secondary));
+  font-size: 0.86rem;
+  line-height: 1.6;
+  text-align: right;
+}
+
+.logo-lab-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.logo-lab-theme {
+  min-height: 238px;
+  padding: 1rem;
+}
+
+.logo-lab-theme--morning {
+  background: linear-gradient(145deg, rgb(250 244 231 / 88%), rgb(190 215 219 / 58%));
+}
+
+.logo-lab-theme--morning .logo-lab-mark {
+  --lab-ink-start: #15233b;
+  --lab-ink-mid: #2b4b6e;
+  --lab-ink-end: #527e9f;
+  --lab-accent-start: #3d9fb9;
+  --lab-accent-end: #d5566d;
+}
+
+.logo-lab-theme--nature {
+  background: linear-gradient(145deg, rgb(238 246 237 / 90%), rgb(173 203 180 / 62%));
+}
+
+.logo-lab-theme--nature .logo-lab-mark {
+  --lab-ink-start: #203329;
+  --lab-ink-mid: #426d5a;
+  --lab-ink-end: #729f7d;
+  --lab-accent-start: #4b9b72;
+  --lab-accent-end: #d5a85d;
+}
+
+.logo-lab-theme--stellar {
+  background: radial-gradient(circle at 50% 18%, rgb(62 91 144 / 36%), transparent 48%), linear-gradient(145deg, #1b2138, #0b0f1d);
+}
+
+.logo-lab-theme--stellar .logo-lab-mark {
+  --lab-ink-start: #f2f5fb;
+  --lab-ink-mid: #c6d2e6;
+  --lab-ink-end: #8fa8cb;
+  --lab-accent-start: #75e1e0;
+  --lab-accent-end: #e6b878;
+}
+
+.logo-lab-theme__copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--lab-ink-start);
+  font-weight: 700;
+}
+
+.logo-lab-theme--stellar .logo-lab-theme__copy { color: #f2f5fb; }
+
+.logo-lab-theme__copy small {
+  color: color-mix(in oklch, currentColor 64%, transparent);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.logo-lab-theme__marks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(0.5rem, 3vw, 1.5rem);
+  min-height: 180px;
+}
+
+.logo-lab-theme__marks > svg {
+  flex: none;
+}
+
+.logo-lab-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 4.5rem;
+  padding: 1.25rem 1.5rem;
+}
+
+.logo-lab-next p { max-width: 680px; margin: 0.55rem 0 0; }
+.logo-lab-next .btn { flex: 0 0 auto; }
+
+@media (max-width: 860px) {
+  .logo-lab-variants,
+  .logo-lab-theme-grid { grid-template-columns: 1fr; }
+  .logo-lab-theme { min-height: 210px; }
+  .logo-lab-next { align-items: flex-start; flex-direction: column; }
+}
+
+@media (max-width: 560px) {
+  .logo-lab-page { width: min(100% - 28px, 1240px); }
+  .logo-lab-card__head { min-height: 0; }
+  .logo-lab-card__hero-mark { width: 112px; height: 112px; flex-basis: 112px; }
+  .logo-lab-card__hero-mark .codex-logo-v2-mark,
+  .logo-lab-card__hero-mark .claude-logo-v2-mark,
+  .logo-lab-card__hero-mark .codex-logo-v3-mark,
+  .logo-lab-card__hero-mark .claude-logo-v3-mark { width: 104px; height: 104px; }
+  .logo-lab-card__description { min-height: 0; }
+  .logo-lab-section-head { align-items: flex-start; flex-direction: column; }
+  .logo-lab-section-head > p { text-align: left; }
+  .logo-lab-theme__marks { min-height: 160px; }
+  .logo-lab-theme__marks { gap: 0.25rem; }
+  .logo-lab-theme__marks > svg { width: clamp(68px, 24vw, 96px); height: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-lab-mark.is-animated .logo-lab-mark__spine,
+  .logo-lab-mark.is-animated .logo-lab-mark__bowl,
+  .logo-lab-mark.is-animated .logo-lab-mark__ascender,
+  .logo-lab-mark.is-animated .logo-lab-mark__port-cut,
+  .logo-lab-mark.is-animated .logo-lab-mark__evidence,
+  .logo-lab-mark.is-animated .logo-lab-mark__node {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+    transform: none;
+  }
+}

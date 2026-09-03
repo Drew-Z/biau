@@ -2242,6 +2242,7 @@ for (const theme of siteThemes) {
         logoTheme: logo?.getAttribute('data-theme') ?? '',
         brandHref: brand?.getAttribute('href') ?? '',
         dynamics: (flow?.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
+        carouselSurfaces: [...document.querySelectorAll('.carousel-card:not([data-loop-copy="true"])')].slice(0, 5).map((card) => getComputedStyle(card).getPropertyValue('--home-card-surface').trim()),
       }
     })
     themeFlowSignatures.set(theme, JSON.stringify(state.dynamics))
@@ -2249,6 +2250,7 @@ for (const theme of siteThemes) {
       state.theme !== theme || state.flowTheme !== theme || state.starfieldTheme !== theme ||
       state.stellarTheme !== theme || state.logoTheme !== theme || state.hasSceneButton || state.brandHref !== '/' ||
       JSON.stringify(state.dynamics) !== JSON.stringify(referenceFlowDynamics[theme]) ||
+      (theme === 'stellar' && state.carouselSurfaces.some((surface) => !/(22\s*[, ]\s*27\s*[, ]\s*48|#161b30)/i.test(surface))) ||
       state.themeVersion < 1 || state.flowVersion < 1 ||
       state.starfieldVersion < 1 || state.stellarVersion < 1
     ) {
@@ -4822,19 +4824,38 @@ for (const width of [320, 390, 430]) {
 }
 const keyboardPage = await createUiPage(browser, { viewport: viewports[0] })
 await gotoApp(keyboardPage, '/projects')
-for (let index = 0; index < 20; index += 1) {
-  const focusedProject = await keyboardPage.evaluate(() => document.activeElement?.classList.contains('project-card'))
-  if (focusedProject) break
-  await keyboardPage.keyboard.press('Tab')
+const firstProjectCard = keyboardPage.locator('.project-card').first()
+const firstProjectDetailButton = firstProjectCard.getByRole('button', { name: /查看项目详情：/ }).first()
+const cardRole = await firstProjectCard.getAttribute('role')
+const cardTabIndex = await firstProjectCard.getAttribute('tabindex')
+if (cardRole || cardTabIndex) {
+  failures.push('/projects semantics: project cards should not expose link semantics around nested controls')
 }
-const focusedProject = await keyboardPage.evaluate(() => document.activeElement?.classList.contains('project-card'))
-if (!focusedProject) {
-  failures.push('/projects keyboard: expected Tab to reach a project card')
+await firstProjectDetailButton.focus()
+const focusedProjectDetailButton = await keyboardPage.evaluate(() => {
+  const active = document.activeElement
+  return active instanceof HTMLButtonElement && active.closest('.project-card') !== null
+})
+if (!focusedProjectDetailButton) {
+  failures.push('/projects keyboard: expected Tab navigation to reach the project detail button')
 } else {
   await keyboardPage.keyboard.press('Enter')
   await keyboardPage.waitForURL(/\/projects\/[^/]+$/, { timeout: 5000 }).catch(() => {
-    failures.push('/projects keyboard: Enter on focused project card did not navigate to detail page')
+    failures.push('/projects keyboard: Enter on project detail button did not navigate to detail page')
   })
+}
+/*
+ * Keep the card's pointer affordance, but make keyboard activation explicit
+ * through its semantic detail button so nested links/buttons remain valid.
+ */
+if (cardRole === 'link') {
+  failures.push('/projects semantics: project card role=link must be removed when it contains controls')
+}
+/*
+ * The detail button remains the single keyboard entry point for each card.
+ */
+if (await firstProjectDetailButton.count() === 0) {
+  failures.push('/projects keyboard: project card is missing its detail button')
 }
 await keyboardPage.close()
 
@@ -5436,13 +5457,21 @@ for (const width of [320, 390, 430]) {
     const innerRect = inner.getBoundingClientRect()
     const cardRects = visibleCards.map((card) => {
       const rect = card.getBoundingClientRect()
+      const title = card.querySelector('strong')
+      const desc = card.querySelector('.desc')
       const action = card.querySelector('.carousel-action')
       const actionRect = action?.getBoundingClientRect()
+      const titleRect = title?.getBoundingClientRect()
+      const descRect = desc?.getBoundingClientRect()
       return {
         left: rect.left,
         right: rect.right,
         top: rect.top,
         bottom: rect.bottom,
+        titleTop: titleRect?.top ?? rect.top,
+        titleBottom: titleRect?.bottom ?? rect.bottom,
+        descTop: descRect?.top ?? rect.top,
+        descBottom: descRect?.bottom ?? rect.bottom,
         hasAction: Boolean(actionRect),
         actionWidth: actionRect?.width ?? 0,
         actionHeight: actionRect?.height ?? 0,
@@ -5508,13 +5537,16 @@ for (const width of [320, 390, 430]) {
   const cardsStayBounded = mobileLayout.cardRects.every(
     (rect) => rect.left >= -1 && rect.right <= mobileLayout.viewportWidth + 1 && rect.actionRight <= mobileLayout.viewportWidth + 1,
   )
+  const cardContentStaysVisible = mobileLayout.cardRects.every(
+    (rect) => rect.titleTop >= rect.top - 1 && rect.titleBottom <= rect.bottom + 1 && rect.descTop >= rect.top - 1 && rect.descBottom <= rect.bottom + 1,
+  )
   const cardsDoNotOverlap = mobileLayout.cardRects.every(
     (rect, index, rects) => index === 0 || rect.top >= rects[index - 1].bottom - 1,
   )
   const actionsAreOperable = mobileLayout.cardRects.every(
     (rect) => !rect.hasAction || (rect.actionWidth >= 40 && rect.actionHeight >= 40),
   )
-  if (!cardsStayBounded || !cardsDoNotOverlap) {
+  if (!cardsStayBounded || !cardContentStaysVisible || !cardsDoNotOverlap) {
     failures.push(`/ home mobile ${width}px: project rows should stay in the viewport and form a non-overlapping column`)
   }
   if (!actionsAreOperable) {
@@ -5567,6 +5599,64 @@ for (const width of [320, 390, 430]) {
   }
 
   await mobileHomePage.close()
+}
+
+for (const width of [320, 390, 430]) {
+  for (const path of ['/projects', '/blog', '/projects/legal-rag', '/blog/legal-rag-review', '/status']) {
+    const mobileNavigationPage = await createUiPage(browser, { viewport: { width, height: 900 } })
+    await mobileNavigationPage.addInitScript(() => {
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    })
+    await gotoApp(mobileNavigationPage, path)
+    const navigationLayout = await mobileNavigationPage.evaluate(() => {
+      const root = document.documentElement
+      const inner = document.querySelector('.nav-inner')
+      const brand = document.querySelector('.nav-brand-section')
+      const actions = document.querySelector('.nav-actions')
+      const options = [...document.querySelectorAll('.nav-theme-option')]
+      if (!(inner instanceof HTMLElement) || !(brand instanceof HTMLElement) || !(actions instanceof HTMLElement) || options.length !== 3) {
+        return null
+      }
+      const innerRect = inner.getBoundingClientRect()
+      const brandRect = brand.getBoundingClientRect()
+      const actionsRect = actions.getBoundingClientRect()
+      const optionRects = options.map((option) => {
+        const rect = option.getBoundingClientRect()
+        return { left: rect.left, right: rect.right, width: rect.width, height: rect.height }
+      })
+      return {
+        viewportWidth: root.clientWidth,
+        horizontalOverflow: root.scrollWidth > root.clientWidth,
+        innerLeft: innerRect.left,
+        innerRight: innerRect.right,
+        brandRight: brandRect.right,
+        actionsLeft: actionsRect.left,
+        options: optionRects,
+        brandDisplay: getComputedStyle(document.querySelector('.nav-brand-link')).display,
+      }
+    })
+    if (!navigationLayout) {
+      failures.push(`${path} mobile navigation ${width}px: expected brand, actions, and exactly three theme options`)
+      await mobileNavigationPage.close()
+      continue
+    }
+    if (navigationLayout.horizontalOverflow) {
+      failures.push(`${path} mobile navigation ${width}px: page should not overflow horizontally`)
+    }
+    if (navigationLayout.innerLeft < -1 || navigationLayout.innerRight > navigationLayout.viewportWidth + 1) {
+      failures.push(`${path} mobile navigation ${width}px: navigation shell should stay inside the viewport`)
+    }
+    if (navigationLayout.brandRight > navigationLayout.actionsLeft + 1) {
+      failures.push(`${path} mobile navigation ${width}px: brand should not overlap theme/language actions`)
+    }
+    if (navigationLayout.brandDisplay === 'none') {
+      failures.push(`${path} mobile navigation ${width}px: brand identity should remain available`)
+    }
+    if (navigationLayout.options.some((option) => option.left < -1 || option.right > navigationLayout.viewportWidth + 1 || option.width < 43.5 || option.height < 43.5)) {
+      failures.push(`${path} mobile navigation ${width}px: all three theme options should remain visible and touch-sized`)
+    }
+    await mobileNavigationPage.close()
+  }
 }
 
 const mobileDetailRoutes = ['/blog/legal-rag-review', '/projects/legal-rag']

@@ -1,0 +1,280 @@
+/*
+ * Quay Cut — BIAU Port 标记再生成候选（Claude v2）。
+ *
+ * 仅供 logo 候选对比，不参与现役 .nav-logo / favicon。所有令牌都走
+ * --claude-mark-v2-* 命名空间，不与生产的 --biau-mark-* 冲突，也不需要改
+ * appearance-themes.css：三套材质在本文件内按 :root[data-site-theme] 自带。
+ *
+ * 命名对照：land 陆地实体 / water 切口里的水 / berth 泊位状态块 /
+ * glow 泊位光晕 / shore 岸线高光 / rim 外缘光 / gauge 证据刻度。
+ */
+
+/* morning —— 与生产 :root 同为默认主题：深港岩板 + 浅水切口 + 琥珀泊位 */
+:root,
+:root[data-site-theme='morning'],
+.logo-lab-theme.logo-lab-theme--morning .claude-logo-v2 {
+  --claude-mark-v2-land-start: #24405f;
+  --claude-mark-v2-land-mid: #172e48;
+  --claude-mark-v2-land-end: #0d1e30;
+  --claude-mark-v2-water-start: #eaf6ff;
+  --claude-mark-v2-water-mid: #bcdcf0;
+  --claude-mark-v2-water-end: #8fc4dd;
+  --claude-mark-v2-berth: #c77f31;
+  --claude-mark-v2-berth-strong: #e8a94b;
+  --claude-mark-v2-shore: rgb(240 249 255 / 66%);
+  --claude-mark-v2-rim: rgb(240 249 255 / 34%);
+  --claude-mark-v2-gauge: rgb(226 240 252 / 60%);
+  --claude-mark-v2-glow-opacity: 0.26;
+}
+
+/* nature —— 深林岸体 + 薄荷水道，泊位沿用本主题既有琥珀 */
+:root[data-site-theme='nature'],
+.logo-lab-theme.logo-lab-theme--nature .claude-logo-v2 {
+  --claude-mark-v2-land-start: #1d4a3f;
+  --claude-mark-v2-land-mid: #143a32;
+  --claude-mark-v2-land-end: #0c2820;
+  --claude-mark-v2-water-start: #e6fbf4;
+  --claude-mark-v2-water-mid: #b3e4dc;
+  --claude-mark-v2-water-end: #86ccc0;
+  --claude-mark-v2-berth: #b9893c;
+  --claude-mark-v2-berth-strong: #dcae5c;
+  --claude-mark-v2-shore: rgb(232 253 245 / 64%);
+  --claude-mark-v2-rim: rgb(232 253 245 / 32%);
+  --claude-mark-v2-gauge: rgb(214 240 230 / 58%);
+  --claude-mark-v2-glow-opacity: 0.24;
+}
+
+/*
+ * stellar —— 现役 --biau-mark-* 在 stellar 下没有覆盖、会继承浅色外壳，这是既存缺口。
+ * 本候选自带一套：陆地略亮于页面底色 #0b0e1a 以保住轮廓，水道走主题 accent 的冷光，
+ * 外缘光沿用 --home-logo-border 的紫调，避免深底上"陆地糊进页面"。
+ */
+:root[data-site-theme='stellar'],
+.logo-lab-theme.logo-lab-theme--stellar .claude-logo-v2 {
+  --claude-mark-v2-land-start: #2a3252;
+  --claude-mark-v2-land-mid: #1e2540;
+  --claude-mark-v2-land-end: #161c31;
+  --claude-mark-v2-water-start: #c2f6f2;
+  --claude-mark-v2-water-mid: #75e1e0;
+  --claude-mark-v2-water-end: #3f9fb4;
+  --claude-mark-v2-berth: #e6b878;
+  --claude-mark-v2-berth-strong: #f6d8a4;
+  --claude-mark-v2-shore: rgb(196 246 255 / 72%);
+  --claude-mark-v2-rim: rgb(164 145 200 / 60%);
+  --claude-mark-v2-gauge: rgb(196 246 255 / 56%);
+  --claude-mark-v2-glow-opacity: 0.34;
+}
+
+/* ---------- 尺寸与基线 ---------- */
+
+.claude-logo-v2 {
+  display: block;
+  overflow: visible;
+}
+
+.claude-logo-v2[data-mark-size='24'] {
+  width: 24px;
+  height: 24px;
+}
+
+.claude-logo-v2[data-mark-size='40'] {
+  width: 40px;
+  height: 40px;
+}
+
+.claude-logo-v2[data-mark-size='64'] {
+  width: 64px;
+  height: 64px;
+}
+
+.claude-logo-v2__glow {
+  opacity: var(--claude-mark-v2-glow-opacity, 0.26);
+}
+
+/*
+ * ---------- 可读性阶梯 ----------
+ * 24px：只保留轮廓（含右缘两个切口）+ 泊位 accent，脆弱细节全部撤掉。
+ * 40px：加回岸线与外缘光；刻度仍隐藏（2.0 单位在 40px 下只有 1.25px）。
+ * 48px+：全部细节。
+ */
+.claude-logo-v2[data-mark-size='24'] .claude-logo-v2__gauge,
+.claude-logo-v2[data-mark-size='24'] .claude-logo-v2__rim,
+.claude-logo-v2[data-mark-size='24'] .claude-logo-v2__shore,
+.claude-logo-v2[data-mark-size='40'] .claude-logo-v2__gauge {
+  display: none;
+}
+
+.claude-logo-v2[data-mark-size='24'] .claude-logo-v2__glow {
+  opacity: calc(var(--claude-mark-v2-glow-opacity, 0.26) * 1.5);
+}
+
+/* ---------- 单色模式 ---------- */
+
+.is-claude-logo-v2-monochrome .claude-logo-v2__land,
+.is-claude-logo-v2-monochrome .claude-logo-v2__berth {
+  fill: currentcolor;
+}
+
+.is-claude-logo-v2-monochrome .claude-logo-v2__water {
+  fill: currentcolor;
+  fill-opacity: 0.14;
+}
+
+.is-claude-logo-v2-monochrome .claude-logo-v2__glow {
+  display: none;
+}
+
+.is-claude-logo-v2-monochrome .claude-logo-v2__shore {
+  stroke: currentcolor;
+  stroke-opacity: 0.34;
+}
+
+.is-claude-logo-v2-monochrome .claude-logo-v2__rim {
+  stroke: currentcolor;
+  stroke-opacity: 0.22;
+}
+
+.is-claude-logo-v2-monochrome .claude-logo-v2__gauge {
+  stroke: currentcolor;
+  stroke-opacity: 0.46;
+}
+
+.logo-lab-card__mono .is-claude-logo-v2-monochrome {
+  color: #18243a;
+}
+
+/*
+ * ---------- 入场编排 ----------
+ * 语序即承诺句：先成陆（划定边界）→ 水灌入切口（公开通道）→ 岸线成形 →
+ * 单元沿水道靠泊（状态）→ 刻度逐格落下（证据）。总时长 1.6s，短于现役 dock 2.02s。
+ * 只在 .is-claude-logo-v2-animated 下生效；静态渲染不依赖任何动画终值。
+ */
+
+@keyframes claudeQuayLandIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes claudeQuayWaterIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes claudeQuayShoreDraw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* L 形靠泊：先沿水道水平进港，再折下入泊位，不斜穿陆地 */
+@keyframes claudeQuayBerthDock {
+  0% {
+    opacity: 0;
+    transform: translate(11px, -9.6px);
+  }
+
+  45% {
+    opacity: 1;
+    transform: translate(0, -9.6px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes claudeQuayGlowIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: var(--claude-mark-v2-glow-opacity, 0.26);
+  }
+}
+
+@keyframes claudeQuayGaugeRise {
+  from {
+    opacity: 0;
+    transform: translate(0, 3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0);
+  }
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__land {
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+  animation: claudeQuayLandIn 0.52s cubic-bezier(0.22, 0.68, 0.32, 1) both;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__water {
+  animation: claudeQuayWaterIn 0.46s ease-out 0.18s both;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__shore {
+  stroke-dasharray: 1;
+  animation: claudeQuayShoreDraw 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__berth {
+  animation: claudeQuayBerthDock 0.42s cubic-bezier(0.34, 0.62, 0.3, 1) 0.72s both;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__glow {
+  animation: claudeQuayGlowIn 0.5s ease-out 0.86s both;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__gauge {
+  animation: claudeQuayGaugeRise 0.3s ease-out both;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__gauge[data-gauge-step='1'] {
+  animation-delay: 1.06s;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__gauge[data-gauge-step='2'] {
+  animation-delay: 1.18s;
+}
+
+.is-claude-logo-v2-animated .claude-logo-v2__gauge[data-gauge-step='3'] {
+  animation-delay: 1.3s;
+}
+
+/*
+ * 降级到静态：静态基线本身就是终态（land/water/gauge 默认 opacity 1、berth 无位移、
+ * shore 无 dasharray），所以关掉动画即可，不依赖 animation-fill-mode 停在最后一帧。
+ */
+@media (prefers-reduced-motion: reduce) {
+  .is-claude-logo-v2-animated .claude-logo-v2__land,
+  .is-claude-logo-v2-animated .claude-logo-v2__water,
+  .is-claude-logo-v2-animated .claude-logo-v2__shore,
+  .is-claude-logo-v2-animated .claude-logo-v2__berth,
+  .is-claude-logo-v2-animated .claude-logo-v2__glow,
+  .is-claude-logo-v2-animated .claude-logo-v2__gauge {
+    animation: none;
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    transform: none;
+  }
+}

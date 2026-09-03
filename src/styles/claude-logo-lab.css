@@ -1,0 +1,167 @@
+.claude-logo-lab-mark {
+  --claude-lab-quay-start: #1c2e4e;
+  --claude-lab-quay-mid: #27466f;
+  --claude-lab-quay-end: #315e9b;
+  --claude-lab-basin-start: #2f6fa8;
+  --claude-lab-basin-mid: #4f8fb8;
+  --claude-lab-basin-end: #b85b7e;
+  --claude-lab-node: #c77f31;
+  --claude-lab-node-glow-opacity: 0.2;
+  --claude-lab-draw-ease: var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+  display: block;
+  flex: none;
+}
+
+:root[data-site-theme='nature'] .claude-logo-lab-mark {
+  --claude-lab-quay-start: #173c35;
+  --claude-lab-quay-mid: #205a4c;
+  --claude-lab-quay-end: #2478a0;
+  --claude-lab-basin-start: #2f8f8c;
+  --claude-lab-basin-mid: #4f9f7c;
+  --claude-lab-basin-end: #8fd695;
+  --claude-lab-node: #b9893c;
+  --claude-lab-node-glow-opacity: 0.18;
+}
+
+:root[data-site-theme='stellar'] .claude-logo-lab-mark {
+  --claude-lab-quay-start: #f4f7ff;
+  --claude-lab-quay-mid: #c5d3ec;
+  --claude-lab-quay-end: #75e1e0;
+  --claude-lab-basin-start: #a8f0eb;
+  --claude-lab-basin-mid: #8fd4e4;
+  --claude-lab-basin-end: #bf91ec;
+  --claude-lab-node: #e6b878;
+  --claude-lab-node-glow-opacity: 0.32;
+}
+
+.logo-lab-theme.logo-lab-theme--morning .claude-logo-lab-mark {
+  --claude-lab-quay-start: #15233b;
+  --claude-lab-quay-mid: #2b4b6e;
+  --claude-lab-quay-end: #527e9f;
+  --claude-lab-basin-start: #3d9fb9;
+  --claude-lab-basin-mid: #5f9fc0;
+  --claude-lab-basin-end: #d5566d;
+  --claude-lab-node: #d5566d;
+  --claude-lab-node-glow-opacity: 0.2;
+}
+
+.logo-lab-theme.logo-lab-theme--nature .claude-logo-lab-mark {
+  --claude-lab-quay-start: #203329;
+  --claude-lab-quay-mid: #426d5a;
+  --claude-lab-quay-end: #729f7d;
+  --claude-lab-basin-start: #4b9b72;
+  --claude-lab-basin-mid: #6eb886;
+  --claude-lab-basin-end: #d5a85d;
+  --claude-lab-node: #d5a85d;
+  --claude-lab-node-glow-opacity: 0.18;
+}
+
+.logo-lab-theme.logo-lab-theme--stellar .claude-logo-lab-mark {
+  --claude-lab-quay-start: #f2f5fb;
+  --claude-lab-quay-mid: #c6d2e6;
+  --claude-lab-quay-end: #8fa8cb;
+  --claude-lab-basin-start: #75e1e0;
+  --claude-lab-basin-mid: #8fd4e4;
+  --claude-lab-basin-end: #bf91ec;
+  --claude-lab-node: #e6b878;
+  --claude-lab-node-glow-opacity: 0.32;
+}
+
+.claude-logo-lab-mark__node-glow {
+  opacity: var(--claude-lab-node-glow-opacity, 0.2);
+}
+
+.is-claude-logo-lab-mark-monochrome .claude-logo-lab-mark__quay-upper,
+.is-claude-logo-lab-mark-monochrome .claude-logo-lab-mark__quay-lower,
+.is-claude-logo-lab-mark-monochrome .claude-logo-lab-mark__basin,
+.is-claude-logo-lab-mark-monochrome .claude-logo-lab-mark__channel-cut {
+  stroke: currentColor;
+}
+
+.is-claude-logo-lab-mark-monochrome .claude-logo-lab-mark__node {
+  fill: currentColor;
+}
+
+.is-claude-logo-lab-mark-monochrome .claude-logo-lab-mark__node-glow {
+  display: none;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__quay-upper,
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__quay-lower,
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__basin,
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__channel-cut {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__quay-lower {
+  animation: claudeLabDraw 0.42s var(--claude-lab-draw-ease) 0.06s forwards;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__quay-upper {
+  animation: claudeLabDraw 0.34s var(--claude-lab-draw-ease) 0.32s forwards;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__basin {
+  animation: claudeLabDraw 0.66s var(--claude-lab-draw-ease) 0.5s forwards;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__channel-cut {
+  animation: claudeLabDraw 0.28s var(--claude-lab-draw-ease) 0.8s forwards;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__node,
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__node-glow {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__node {
+  animation: claudeLabBeacon 0.46s var(--claude-lab-draw-ease) 1.06s forwards;
+}
+
+.is-claude-logo-lab-mark-animated .claude-logo-lab-mark__node-glow {
+  animation: claudeLabBeaconGlow 0.6s ease-out 1s forwards;
+}
+
+@keyframes claudeLabDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes claudeLabBeacon {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes claudeLabBeaconGlow {
+  from { opacity: 0; }
+  to { opacity: var(--claude-lab-node-glow-opacity, 0.2); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-claude-logo-lab-mark-animated .claude-logo-lab-mark__quay-upper,
+  .is-claude-logo-lab-mark-animated .claude-logo-lab-mark__quay-lower,
+  .is-claude-logo-lab-mark-animated .claude-logo-lab-mark__basin,
+  .is-claude-logo-lab-mark-animated .claude-logo-lab-mark__channel-cut {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .is-claude-logo-lab-mark-animated .claude-logo-lab-mark__node {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .is-claude-logo-lab-mark-animated .claude-logo-lab-mark__node-glow {
+    opacity: var(--claude-lab-node-glow-opacity, 0.2);
+    transform: none;
+    animation: none;
+  }
+}
+
+.logo-lab-card__mono .is-claude-logo-lab-mark-monochrome {
+  color: #18243a;
+}

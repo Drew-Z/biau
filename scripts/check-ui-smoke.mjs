@@ -10,6 +10,7 @@ const routes = [
   { path: '/status', title: '项目可靠性观察', expectsRouteCss: true },
   { path: '/projects/legal-rag', title: 'Legal RAG', expectsRouteCss: true },
   { path: '/projects/canvas', title: 'BIAU Canvas', expectsRouteCss: true },
+  { path: '/studio/brand/logo-lab', title: 'BIAU Port Logo 对照实验', expectsRouteCss: false, logoLab: true },
 ]
 const viewports = [
   { name: 'desktop', width: 1440, height: 1000 },
@@ -59,6 +60,15 @@ try {
             document.querySelector('style[data-vite-dev-id*="route-pages.css"], link[href*="route-pages"]'),
           ),
           routeLoadingSeen: Boolean(window.__routeLoadingSeen),
+          logoLab: {
+            codexMarks: document.querySelectorAll('.codex-logo-v3-mark').length,
+            labelledCodexMarks: document.querySelectorAll('.codex-logo-v3-mark[role="img"]').length,
+            claudeMarks: document.querySelectorAll('.claude-logo-v3-mark').length,
+            labelledClaudeMarks: document.querySelectorAll('.claude-logo-v3-mark[role="img"]').length,
+            mobileTabbarDisplay: document.querySelector('.mobile-tabbar')
+              ? getComputedStyle(document.querySelector('.mobile-tabbar')).display
+              : 'missing',
+          },
         }))
 
         if (state.overflow > 1) {
@@ -69,6 +79,12 @@ try {
         }
         if (route.forbidsLoadingFlash && state.routeLoadingSeen) {
           failures.push(`${route.path} ${viewport.name}: high-frequency route displayed route-loading`)
+        }
+        if (route.logoLab && (state.logoLab.codexMarks !== 9 || state.logoLab.labelledCodexMarks !== 9 || state.logoLab.claudeMarks !== 9 || state.logoLab.labelledClaudeMarks !== 9)) {
+          failures.push(`${route.path} ${viewport.name}: expected 9 labelled Codex V3 and 9 labelled Claude V3 marks, got ${state.logoLab.codexMarks}/${state.logoLab.labelledCodexMarks}/${state.logoLab.claudeMarks}/${state.logoLab.labelledClaudeMarks}`)
+        }
+        if (route.logoLab && viewport.name !== 'desktop' && state.logoLab.mobileTabbarDisplay !== 'none') {
+          failures.push(`${route.path} ${viewport.name}: mobile tabbar obscures the comparison surface`)
         }
       } catch (error) {
         failures.push(`${route.path} ${viewport.name}: ${error instanceof Error ? error.message : String(error)}`)

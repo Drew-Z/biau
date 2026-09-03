@@ -151,6 +151,15 @@ export function getStaticSeo(pathname: string): SeoMeta {
     }
   }
 
+  if (path === '/studio/brand/logo-lab') {
+    return {
+      title: 'BIAU Port Logo 对照实验 | 品牌工作台',
+      description: '比较 BIAU Port 定制大写 B 与流线小写 b 的单色轮廓、小尺寸稳定性和三主题材质表现。',
+      canonicalPath: '/studio/brand/logo-lab',
+      type: 'website',
+    }
+  }
+
   if (path.startsWith('/studio/ai-daily/')) {
     return {
       title: 'AI 日报详情 | BIAU Port 内容工作台',

@@ -1,0 +1,172 @@
+.abstract-port-lab-mark {
+  --abstract-port-lab-ink-start: #15233b;
+  --abstract-port-lab-ink-mid: #2b4b6e;
+  --abstract-port-lab-ink-end: #527e9f;
+  --abstract-port-lab-accent-start: #3d9fb9;
+  --abstract-port-lab-accent-end: #d5566d;
+  --abstract-port-lab-node: #d5566d;
+  --abstract-port-lab-node-glow-opacity: 0.18;
+  --abstract-port-lab-draw-ease: var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+  display: block;
+  flex: none;
+}
+
+.abstract-port-lab-mark__ink-start { stop-color: var(--abstract-port-lab-ink-start); }
+.abstract-port-lab-mark__ink-mid { stop-color: var(--abstract-port-lab-ink-mid); }
+.abstract-port-lab-mark__ink-end { stop-color: var(--abstract-port-lab-ink-end); }
+.abstract-port-lab-mark__accent-start { stop-color: var(--abstract-port-lab-accent-start); }
+.abstract-port-lab-mark__accent-end { stop-color: var(--abstract-port-lab-accent-end); }
+
+:root[data-site-theme='nature'] .abstract-port-lab-mark {
+  --abstract-port-lab-ink-start: #203329;
+  --abstract-port-lab-ink-mid: #426d5a;
+  --abstract-port-lab-ink-end: #729f7d;
+  --abstract-port-lab-accent-start: #4b9b72;
+  --abstract-port-lab-accent-end: #d5a85d;
+  --abstract-port-lab-node: #d5a85d;
+  --abstract-port-lab-node-glow-opacity: 0.16;
+}
+
+:root[data-site-theme='stellar'] .abstract-port-lab-mark {
+  --abstract-port-lab-ink-start: #f2f5fb;
+  --abstract-port-lab-ink-mid: #c6d2e6;
+  --abstract-port-lab-ink-end: #8fa8cb;
+  --abstract-port-lab-accent-start: #75e1e0;
+  --abstract-port-lab-accent-end: #e6b878;
+  --abstract-port-lab-node: #e6b878;
+  --abstract-port-lab-node-glow-opacity: 0.28;
+}
+
+.logo-lab-theme.logo-lab-theme--morning .abstract-port-lab-mark {
+  --abstract-port-lab-ink-start: #15233b;
+  --abstract-port-lab-ink-mid: #2b4b6e;
+  --abstract-port-lab-ink-end: #527e9f;
+  --abstract-port-lab-accent-start: #3d9fb9;
+  --abstract-port-lab-accent-end: #d5566d;
+  --abstract-port-lab-node: #d5566d;
+}
+
+.logo-lab-theme.logo-lab-theme--nature .abstract-port-lab-mark {
+  --abstract-port-lab-ink-start: #203329;
+  --abstract-port-lab-ink-mid: #426d5a;
+  --abstract-port-lab-ink-end: #729f7d;
+  --abstract-port-lab-accent-start: #4b9b72;
+  --abstract-port-lab-accent-end: #d5a85d;
+  --abstract-port-lab-node: #d5a85d;
+}
+
+.logo-lab-theme.logo-lab-theme--stellar .abstract-port-lab-mark {
+  --abstract-port-lab-ink-start: #f2f5fb;
+  --abstract-port-lab-ink-mid: #c6d2e6;
+  --abstract-port-lab-ink-end: #8fa8cb;
+  --abstract-port-lab-accent-start: #75e1e0;
+  --abstract-port-lab-accent-end: #e6b878;
+  --abstract-port-lab-node: #e6b878;
+}
+
+.abstract-port-lab-mark__node-glow {
+  opacity: var(--abstract-port-lab-node-glow-opacity, 0.18);
+}
+
+.is-abstract-port-lab-mark-monochrome .abstract-port-lab-mark__channel,
+.is-abstract-port-lab-mark-monochrome .abstract-port-lab-mark__quay {
+  stroke: currentColor;
+}
+
+.is-abstract-port-lab-mark-monochrome .abstract-port-lab-mark__spine,
+.is-abstract-port-lab-mark-monochrome .abstract-port-lab-mark__basin {
+  stroke: currentColor;
+}
+
+.is-abstract-port-lab-mark-monochrome .abstract-port-lab-mark__node {
+  fill: currentColor;
+}
+
+.is-abstract-port-lab-mark-monochrome .abstract-port-lab-mark__node-glow {
+  display: none;
+}
+
+.abstract-port-lab-mark[data-mark-size='24'] .abstract-port-lab-mark__quay,
+.abstract-port-lab-mark[data-mark-size='24'] .abstract-port-lab-mark__node-glow {
+  display: none;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__spine,
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__basin,
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__channel,
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__quay {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__spine {
+  animation: abstractPortLabDraw 0.72s var(--abstract-port-lab-draw-ease) forwards;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__basin {
+  animation: abstractPortLabDraw 0.6s var(--abstract-port-lab-draw-ease) 0.12s forwards;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__channel {
+  animation: abstractPortLabDraw 0.42s var(--abstract-port-lab-draw-ease) 0.32s forwards;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__quay {
+  animation: abstractPortLabDraw 0.24s var(--abstract-port-lab-draw-ease) 0.52s forwards;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__node,
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__node-glow {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__node {
+  animation: abstractPortLabBeacon 0.42s var(--abstract-port-lab-draw-ease) 0.72s forwards;
+}
+
+.is-abstract-port-lab-mark-animated .abstract-port-lab-mark__node-glow {
+  animation: abstractPortLabBeaconGlow 0.52s ease-out 0.7s forwards;
+}
+
+@keyframes abstractPortLabDraw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes abstractPortLabBeacon {
+  from { opacity: 0; transform: scale(0.55); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes abstractPortLabBeaconGlow {
+  from { opacity: 0; }
+  to { opacity: var(--abstract-port-lab-node-glow-opacity, 0.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-abstract-port-lab-mark-animated .abstract-port-lab-mark__spine,
+  .is-abstract-port-lab-mark-animated .abstract-port-lab-mark__basin,
+  .is-abstract-port-lab-mark-animated .abstract-port-lab-mark__channel,
+  .is-abstract-port-lab-mark-animated .abstract-port-lab-mark__quay {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+
+  .is-abstract-port-lab-mark-animated .abstract-port-lab-mark__node {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .is-abstract-port-lab-mark-animated .abstract-port-lab-mark__node-glow {
+    opacity: var(--abstract-port-lab-node-glow-opacity, 0.18);
+    transform: none;
+    animation: none;
+  }
+}
+
+.logo-lab-card__mono .is-abstract-port-lab-mark-monochrome {
+  color: #18243a;
+}

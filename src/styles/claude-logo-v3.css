@@ -1,0 +1,140 @@
+/* Claude Logo V3 Mark - Flow Threshold Design */
+
+.claude-logo-v3-mark {
+  display: inline-block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+/* Theme-specific color tokens */
+:root {
+  --claude-v3-flow-start: #315e9b;
+  --claude-v3-flow-mid: #2478a0;
+  --claude-v3-flow-end: #367f62;
+  --claude-v3-threshold-start: #e5f1e8;
+  --claude-v3-threshold-mid: #d9f0df;
+  --claude-v3-threshold-end: #a8d7b7;
+  --claude-v3-marker: #c77f31;
+}
+
+:root[data-site-theme='morning'] .claude-logo-v3-mark,
+.logo-lab-theme.logo-lab-theme--morning .claude-logo-v3-mark {
+  --claude-v3-flow-start: #315e9b;
+  --claude-v3-flow-mid: #2478a0;
+  --claude-v3-flow-end: #367f62;
+  --claude-v3-threshold-start: #e5f1e8;
+  --claude-v3-threshold-mid: #d9f0df;
+  --claude-v3-threshold-end: #a8d7b7;
+  --claude-v3-marker: #c77f31;
+}
+
+:root[data-site-theme='nature'] .claude-logo-v3-mark,
+.logo-lab-theme.logo-lab-theme--nature .claude-logo-v3-mark {
+  --claude-v3-flow-start: #2478a0;
+  --claude-v3-flow-mid: #367f62;
+  --claude-v3-flow-end: #438f74;
+  --claude-v3-threshold-start: #d9f0df;
+  --claude-v3-threshold-mid: #a8d7b7;
+  --claude-v3-threshold-end: #6ba98d;
+  --claude-v3-marker: #b9893c;
+}
+
+:root[data-site-theme='stellar'] .claude-logo-v3-mark,
+.logo-lab-theme.logo-lab-theme--stellar .claude-logo-v3-mark {
+  --claude-v3-flow-start: #7fa7c7;
+  --claude-v3-flow-mid: #5b8cb8;
+  --claude-v3-flow-end: #98b8a8;
+  --claude-v3-threshold-start: #1a2f3e;
+  --claude-v3-threshold-mid: #243847;
+  --claude-v3-threshold-end: #2d4a5a;
+  --claude-v3-marker: #d9a558;
+}
+
+/* Monochrome mode */
+.is-claude-v3-monochrome .claude-v3-mark__threshold {
+  stroke: currentColor;
+  opacity: 0.45;
+}
+
+.is-claude-v3-monochrome .claude-v3-mark__flow-upper,
+.is-claude-v3-monochrome .claude-v3-mark__flow-lower,
+.is-claude-v3-monochrome .claude-v3-mark__spine {
+  stroke: currentColor;
+}
+
+.is-claude-v3-monochrome .claude-v3-mark__marker {
+  fill: currentColor;
+}
+
+.logo-lab-card__mono .is-claude-v3-monochrome {
+  color: #18243a;
+}
+
+/* Animation - flow progression */
+@keyframes claude-v3-flow-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.3;
+  }
+  50% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -0.2;
+    opacity: 0.8;
+  }
+}
+
+@keyframes claude-v3-marker-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+/* Apply animation when requested */
+.is-claude-v3-animated .claude-v3-mark__flow-upper {
+  stroke-dasharray: 1;
+  animation: claude-v3-flow-draw 3s ease-in-out infinite;
+}
+
+.is-claude-v3-animated .claude-v3-mark__flow-lower {
+  stroke-dasharray: 1;
+  animation: claude-v3-flow-draw 3s ease-in-out 0.4s infinite;
+}
+
+.is-claude-v3-animated .claude-v3-mark__spine {
+  stroke-dasharray: 1;
+  animation: claude-v3-flow-draw 3s ease-in-out 0.2s infinite;
+}
+
+.is-claude-v3-animated .claude-v3-mark__marker {
+  animation: claude-v3-marker-pulse 2s ease-in-out infinite;
+}
+
+.is-claude-v3-animated .claude-v3-mark__marker--top {
+  animation-delay: 0s;
+}
+
+.is-claude-v3-animated .claude-v3-mark__marker--middle {
+  animation-delay: 0.3s;
+}
+
+.is-claude-v3-animated .claude-v3-mark__marker--bottom {
+  animation-delay: 0.6s;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .is-claude-v3-animated .claude-v3-mark__flow-upper,
+  .is-claude-v3-animated .claude-v3-mark__flow-lower,
+  .is-claude-v3-animated .claude-v3-mark__spine,
+  .is-claude-v3-animated .claude-v3-mark__marker {
+    animation: none;
+  }
+}

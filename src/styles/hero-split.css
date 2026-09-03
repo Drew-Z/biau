@@ -37,8 +37,6 @@
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 
-  --font-serif-display: 'Fraunces', 'Noto Serif SC', 'Songti SC', serif;
-  --font-ui: 'DM Sans', 'Noto Sans SC', sans-serif;
 }
 
 /* ===== Hero grid shell ===== */
@@ -748,8 +746,6 @@
   --amber: var(--home-amber);
   --violet: var(--home-violet);
   --rose: var(--home-rose);
-  --font-serif-display: Georgia, 'Songti SC', serif;
-  --font-ui: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
 .app.page-home .home-hero {
@@ -1091,8 +1087,9 @@
 
   .app.page-home .carousel-card {
     grid-template-columns: 28px minmax(0, 1fr) 56px;
+    grid-template-rows: auto;
     min-height: 88px;
-    height: 88px;
+    height: auto;
     gap: 12px;
     padding: 12px 10px;
     border-left-width: 4px;
@@ -1198,10 +1195,10 @@
   border: 1px solid color-mix(in oklch, var(--home-accent) 24%, transparent);
 }
 
-.app.page-home .carousel-card,
-.app.page-home .carousel-card.commerce,
-.app.page-home .carousel-card.preview,
-.app.page-home .carousel-card.image {
+:root[data-site-theme] .app.page-home .carousel-card,
+:root[data-site-theme] .app.page-home .carousel-card.commerce,
+:root[data-site-theme] .app.page-home .carousel-card.preview,
+:root[data-site-theme] .app.page-home .carousel-card.image {
   border-color: var(--home-card-border);
   background:
     linear-gradient(140deg, rgb(255 255 255 / 8%), transparent 44%),
@@ -1211,19 +1208,19 @@
   backdrop-filter: blur(15px) saturate(1.08);
 }
 
-.app.page-home .carousel-card.commerce {
+:root[data-site-theme] .app.page-home .carousel-card.commerce {
   background:
     linear-gradient(140deg, rgb(255 255 255 / 10%), transparent 44%),
     var(--home-card-commerce);
 }
 
-.app.page-home .carousel-card.preview {
+:root[data-site-theme] .app.page-home .carousel-card.preview {
   background:
     linear-gradient(140deg, rgb(255 255 255 / 8%), transparent 44%),
     var(--home-card-preview);
 }
 
-.app.page-home .carousel-card.image {
+:root[data-site-theme] .app.page-home .carousel-card.image {
   background:
     linear-gradient(140deg, rgb(255 255 255 / 9%), transparent 44%),
     var(--home-card-image);
@@ -1309,4 +1306,84 @@
     position: relative;
     top: 5px;
   }
+}
+
+/* Keep the homepage surfaces aligned with the reference's thin, theme-colored glass. */
+:root[data-site-theme] .app.page-home .hero-panel {
+  background:
+    linear-gradient(
+      180deg,
+      rgb(var(--home-panel-rgb) / 0.52),
+      rgb(var(--home-card-rgb) / 0.38)
+    );
+  box-shadow: var(--home-panel-shadow), inset 0 1px 0 var(--home-panel-highlight);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+
+:root[data-site-theme] .app.page-home .carousel-card,
+:root[data-site-theme] .app.page-home .carousel-card.commerce,
+:root[data-site-theme] .app.page-home .carousel-card.preview,
+:root[data-site-theme] .app.page-home .carousel-card.image {
+  --home-card-surface: rgb(var(--home-card-rgb) / 0.38);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--card-accent) 6%, var(--home-card-surface)),
+      var(--home-card-surface) 70%
+    );
+  box-shadow: var(--home-card-shadow), inset 0 1px 0 var(--home-card-highlight);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+:root[data-site-theme] .app.page-home .carousel-card.commerce {
+  --home-card-surface: var(--home-card-commerce);
+}
+
+:root[data-site-theme] .app.page-home .carousel-card.preview {
+  --home-card-surface: var(--home-card-preview);
+}
+
+:root[data-site-theme] .app.page-home .carousel-card.image {
+  --home-card-surface: var(--home-card-image);
+}
+
+/* Stellar keeps the port board readable while letting the star field carry through. */
+:root[data-site-theme='stellar'] .app.page-home .hero-panel {
+  background:
+    radial-gradient(
+      ellipse 72% 48% at 86% 0%,
+      rgb(var(--home-accent-rgb) / 0.12),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 64% 72% at 8% 100%,
+      rgb(46 79 144 / 0.14),
+      transparent 76%
+    ),
+    linear-gradient(
+      180deg,
+      rgb(14 20 39 / 0.62),
+      rgb(12 18 34 / 0.48)
+    );
+  border-color: color-mix(in oklch, var(--home-panel-border) 76%, var(--home-accent) 24%);
+  box-shadow:
+    0 24px 58px rgb(0 0 0 / 0.22),
+    inset 0 1px 0 rgb(214 246 255 / 0.16),
+    0 0 32px rgb(var(--home-accent-rgb) / 0.08);
+  -webkit-backdrop-filter: blur(10px) saturate(1.14);
+  backdrop-filter: blur(10px) saturate(1.14);
+}
+
+:root[data-site-theme='stellar'] .app.page-home .carousel-card {
+  background:
+    linear-gradient(135deg, rgb(84 128 184 / 0.08), transparent 44%),
+    linear-gradient(180deg, rgb(22 29 52 / 0.54), rgb(16 23 43 / 0.44));
+  border-color: color-mix(in oklch, var(--home-card-border) 76%, var(--home-accent) 24%);
+  box-shadow:
+    var(--home-card-shadow),
+    inset 0 1px 0 rgb(214 246 255 / 0.12),
+    0 0 18px rgb(var(--home-accent-rgb) / 0.045);
 }

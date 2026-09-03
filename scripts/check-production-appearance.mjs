@@ -82,6 +82,8 @@ async function readAppearance(page) {
     const logo = document.querySelector('.nav-logo')
     const logoMark = document.querySelector('.nav-logo-mark')
     const brand = document.querySelector('.nav-brand-link')
+    const nav = document.querySelector('.nav-inner')
+    const navLink = document.querySelector('.nav-link-center:not(.active) .nav-link-en')
     const heroTitle = document.querySelector('.hero-title-rotator')
     const card = document.querySelector('.carousel-card')
     const cardTitle = card?.querySelector('strong')
@@ -136,8 +138,10 @@ async function readAppearance(page) {
     const panelBackground = parseColor(rootStyle.getPropertyValue('--home-panel-bg'))
     const cardBackground = parseColor(rootStyle.getPropertyValue('--home-card-bg'))
     const solidBackground = parseColor(pageSolid)
+    const navBackground = nav ? parseColor(getComputedStyle(nav).backgroundColor) : null
     const resolvedPanelBackground = panelBackground && solidBackground ? composite(panelBackground, solidBackground) : null
     const resolvedCardBackground = cardBackground && solidBackground ? composite(cardBackground, solidBackground) : null
+    const resolvedNavBackground = navBackground && solidBackground ? composite(navBackground, solidBackground) : null
     const serializeColor = (color) => color ? `rgb(${color.r} ${color.g} ${color.b})` : ''
     const appearance = {
       theme: root.dataset.siteTheme ?? '',
@@ -157,6 +161,10 @@ async function readAppearance(page) {
       logoOpacity: Number.parseFloat(logoMark ? getComputedStyle(logoMark).opacity : '0'),
       heroContrast: heroTitle ? contrast(getComputedStyle(heroTitle).color, serializeColor(resolvedPanelBackground)) : 0,
       cardContrast: cardTitle ? contrast(getComputedStyle(cardTitle).color, serializeColor(resolvedCardBackground)) : 0,
+      navContrast: navLink ? contrast(getComputedStyle(navLink).color, serializeColor(resolvedNavBackground)) : 0,
+      navAlpha: navBackground?.a ?? 0,
+      navBackdrop: nav ? getComputedStyle(nav).backdropFilter : '',
+      panelBackdrop: document.querySelector('.hero-panel') ? getComputedStyle(document.querySelector('.hero-panel')).backdropFilter : '',
       flowDynamics: (flow?.getAttribute('data-flow-dynamics') ?? '').split('|').filter(Boolean).map(Number),
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       controls: {
@@ -208,6 +216,12 @@ try {
         }
         if (appearance.logoOpacity < 0.95 || appearance.heroContrast < 4.5 || appearance.cardContrast < 4.5) {
           failures.push(`${label}: logo visibility or homepage contrast contract failed ${JSON.stringify({ logoOpacity: appearance.logoOpacity, heroContrast: appearance.heroContrast, cardContrast: appearance.cardContrast })}`)
+        }
+        if (appearance.navAlpha < 0.7 || appearance.navContrast < 4.5 || !appearance.navBackdrop.includes('blur')) {
+          failures.push(`${label}: navigation surface should remain opaque, contrasted, and separated from the animated background ${JSON.stringify({ navAlpha: appearance.navAlpha, navContrast: appearance.navContrast, navBackdrop: appearance.navBackdrop })}`)
+        }
+        if (theme === 'stellar' && !appearance.panelBackdrop.includes('blur')) {
+          failures.push(`${label}: Stellar Port panel should preserve a blurred, background-integrated surface`)
         }
         if (!hasThemeSpecificEffects(appearance, theme)) {
           failures.push(`${label}: Stellar-only effects or dense starfield contract failed`)

@@ -43,6 +43,7 @@ const StudioAiDailyIssuePage = lazy(() =>
 const StudioAiDailyWorkspacePage = lazy(() =>
   import('./pages/StudioAiDailyWorkspacePage').then((module) => ({ default: module.StudioAiDailyWorkspacePage })),
 )
+const LogoLabPage = lazy(() => import('./pages/LogoLabPage').then((module) => ({ default: module.LogoLabPage })))
 const AiDailyPublicPage = lazy(() => import('./pages/AiDailyPublicPage').then((module) => ({ default: module.AiDailyPublicPage })))
 const AiDailyPublicDetailPage = lazy(() =>
   import('./pages/AiDailyPublicDetailPage').then((module) => ({ default: module.AiDailyPublicDetailPage })),
@@ -54,6 +55,7 @@ function getPageClass(pathname: string) {
   if (pathname === '/') return 'page-home'
   if (pathname === '/projects') return 'page-tools page-subpage'
   if (pathname.startsWith('/projects/')) return 'page-detail page-project-detail page-subpage'
+  if (pathname === '/studio/brand/logo-lab') return 'page-studio page-brand-logo-lab page-subpage'
   if (pathname === '/studio' || pathname.startsWith('/studio/')) return 'page-studio page-subpage'
   if (pathname === '/status') return 'page-status page-subpage'
   if (pathname.startsWith('/status/')) return 'page-status page-status-detail page-detail page-subpage'
@@ -169,6 +171,7 @@ function App() {
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/studio/ai-daily/:issueId" element={<StudioAiDailyIssuePage />} />
           <Route path="/studio/ai-daily" element={<StudioAiDailyWorkspacePage />} />
+          <Route path="/studio/brand/logo-lab" element={<LogoLabPage />} />
           <Route path="/studio/*" element={<StudioPage />} />
           <Route path="/status" element={<SiteStatusPage />} />
           <Route path="/status/:projectId" element={<SiteStatusDetailPage />} />

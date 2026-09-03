@@ -1,18 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect x="5" y="5" width="54" height="54" rx="18" fill="url(#shell)" />
-  <path d="M25.5 48.5C22.5 52.4 18.3 52.7 15.8 49.8" stroke="rgba(255,255,255,0.28)" stroke-width="4.8" stroke-linecap="round" />
-  <path d="M24.5 15.2V48.1" stroke="url(#stroke)" stroke-width="5.4" stroke-linecap="round" />
-  <path d="M25.8 20.4C38.8 20.2 47.4 27.2 45.2 36.3C43.1 45.1 34.4 49.9 25.3 45.7" stroke="url(#stroke)" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M18.3 39.1C23.7 36.2 29.1 36.7 34.3 39.3C38 41.1 41.7 40.6 45.4 37.7" stroke="url(#water)" stroke-width="2.3" stroke-linecap="round" />
-  <path d="M33.8 30.8L39 34.6L33.8 38.4" stroke="rgba(255,246,218,0.76)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="43.2" cy="20.5" r="7.2" fill="#F2A23A" opacity="0.18" />
-  <circle cx="43.2" cy="20.5" r="3.4" fill="#F2A23A" />
+  <path d="M13.5 18V14.2C13.5 12.2 15.2 10.5 17.2 10.5H21M43 10.5H46.8C48.8 10.5 50.5 12.2 50.5 14.2V18M13.5 46V49.8C13.5 51.8 15.2 53.5 17.2 53.5H21M43 53.5H46.8C48.8 53.5 50.5 51.8 50.5 49.8V46" stroke="rgba(24,36,58,0.25)" stroke-width="1.25" stroke-linecap="round" />
+  <path d="M18.8 24.5V21.5H45.2V24.5" stroke="url(#stroke)" stroke-width="5.2" stroke-linejoin="miter" />
+  <path d="M23.5 34H40.5" stroke="url(#stroke)" stroke-width="5" stroke-linecap="round" />
+  <path d="M26.5 44.5H37.5" stroke="url(#stroke)" stroke-width="5" stroke-linecap="round" />
+  <path d="M32 44.5V23" stroke="url(#stroke)" stroke-width="6" stroke-linecap="round" />
+  <path d="M24 52H30.5M33.5 52H40" stroke="url(#water)" stroke-width="2.2" stroke-linecap="round" />
+  <circle cx="32" cy="15" r="6.6" fill="#C68A3C" opacity="0.18" />
+  <circle cx="32" cy="15" r="4.8" fill="none" stroke="#B67834" opacity="0.5" />
+  <circle cx="32" cy="15" r="3.2" fill="#B67834" />
   <defs>
-    <linearGradient id="shell" x1="9" y1="7" x2="57" y2="57" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#163B5B" />
-      <stop offset="0.52" stop-color="#102A43" />
-      <stop offset="1" stop-color="#071827" />
-    </linearGradient>
     <linearGradient id="stroke" x1="20" y1="14" x2="48" y2="50" gradientUnits="userSpaceOnUse">
       <stop stop-color="#F7FBFF" />
       <stop offset="0.48" stop-color="#C8D6E5" />
