@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Review the candidate's component API, SVG accessibility, CSS ownership, and responsive behavior."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Review protected-file boundaries and enforce the required frontend validation gates."}

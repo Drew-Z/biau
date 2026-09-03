@@ -1,0 +1,3 @@
+{"file":".trellis/spec/frontend/directory-structure.md","reason":"Place the isolated React mark, CSS, and brand documentation in the repository's established ownership boundaries."}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Follow the existing typed component, class-based CSS, accessibility, and brand-mark conventions."}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Preserve frontend safety boundaries and run the required lint, build, and diff checks."}
