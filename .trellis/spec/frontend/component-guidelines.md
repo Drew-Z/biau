@@ -25,7 +25,7 @@ Keep route-level composition in `src/pages/` and reusable units in `src/componen
 
 Use typed props interfaces for reusable components. Pass callbacks for navigation or actions instead of importing router state into deeply reusable display components. `ProjectCard` receives `onViewDetails`, while `ProjectsPage` owns `useNavigate()` and external-link behavior.
 
-When a card is clickable, keep keyboard access in sync with pointer access. `ProjectCard` uses `role="link"`, `tabIndex={0}`, `aria-label`, and an `Enter`/space key handler.
+When a card exposes pointer affordance alongside nested actions, keep keyboard access on the explicit action controls instead of making the container a competing interactive element. `ProjectCard` keeps its detail action as a keyboard-focusable `button`, while status and external-link actions retain their own semantics; the card surface may still forward pointer activation without adding `role="link"`, `tabIndex`, or a container key handler that conflicts with nested controls.
 
 ## Styling
 
@@ -59,6 +59,40 @@ updates `biau-port-theme`, `data-site-theme`, and the monotonic
 `data-site-theme-version` in one synchronous commit. UI checks must verify the
 three options, direct selection, refresh persistence, and the real SVG logo in
 every theme.
+
+### Convention: Isolated Brand-Mark Experiments
+
+Unreleased logo directions belong in a lazy Studio route (currently
+`/studio/brand/logo-lab`) and must not replace the production `BiauPortMark`,
+`public/favicon.svg`, project icons, navigation imports, or sitemap metadata.
+Keep each candidate as a small named component under `src/components/` with a
+shared `64 × 64` viewBox and theme-specific CSS tokens; geometry must remain
+open and experimental rather than closing into a standard letterform or app
+tile. The experiment page owns comparison copy and sizing, while the candidate
+only owns its SVG geometry and state classes.
+
+Candidate SVGs use the following accessibility contract:
+
+```tsx
+const labelled = !ariaHidden && Boolean(title)
+const titleId = `${useId().replace(/:/g, '')}-mark-title`
+
+<svg
+  viewBox="0 0 64 64"
+  role={labelled ? 'img' : undefined}
+  aria-hidden={labelled ? undefined : 'true'}
+  aria-labelledby={labelled ? titleId : undefined}
+  focusable="false"
+>
+  {labelled ? <title id={titleId}>{title}</title> : null}
+</svg>
+```
+
+Use `useId()` (with a safe DOM id) for every gradient/filter/title reference;
+never share a hard-coded id between repeated samples. `ariaHidden={false}`
+without a title is still decorative and must not announce an unlabeled SVG.
+The production mark keeps its own component and animation contract until a
+separate product decision promotes one candidate.
 
 ### Convention: Long-Form Reading Guide
 

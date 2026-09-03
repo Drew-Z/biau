@@ -115,6 +115,28 @@ npm.cmd run docs:deployment-check
 - At desktop widths above `1024px`, the homepage intro and project board form two explicit columns whose visual centers align vertically while the intro copy remains left-aligned. At `1024px` and below, restore the single-column reading order without horizontal overflow.
 - When the homepage board also receives runtime depth or tilt transforms, apply a tall-desktop static alignment nudge with `position: relative; top: ...` rather than another `translate` declaration; this keeps the geometry stable when the runtime transform is composed or animated.
 
+### Brand Experiment Isolation And Comparison Matrix
+
+- The `/studio/brand/logo-lab` route is lazy-loaded and review-only. It must not
+  enter the public navigation, project catalog, sitemap, or production status
+  payload, and mobile must hide the global tabbar so the long comparison surface
+  remains reachable.
+- Candidate marks are evaluated against the same `64 × 64` geometry contract in
+  color and monochrome at `24`, `40`, `48`, and `64px`, across `morning`,
+  `nature`, and `stellar`, with reduced-motion enabled. A candidate that is
+  blocked or incomplete keeps an explicit review label; it is never presented as
+  an independent final delivery.
+- The smoke check must assert nine rendered and nine labelled marks per
+  candidate, no document overflow at desktop/`390`/`320`, and no mobile tabbar
+  on the experiment route. The production `BiauPortMark` and favicon remain
+  unchanged until a separate product decision and migration review.
+
+```text
+Correct: lazy Logo Lab -> shared test matrix -> explicit candidate review label
+Wrong: import an experimental mark into Navigation or replace favicon during a
+       visual comparison, then infer production readiness from one screenshot
+```
+
 ### Theme Motion Ownership
 
 - The existing Flow canvas remains the only continuous JavaScript-rendered

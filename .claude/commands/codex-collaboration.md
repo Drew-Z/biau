@@ -24,6 +24,7 @@
 & 'D:\Agent\codex\skills\codex-claude-collaboration\scripts\claude-bg-run.ps1' `
   -ProjectRoot 'D:\workspace4Cursor\blog-semi' `
   -Worktree '<managed-worktree>' `
+  -PermissionMode 'bypassPermissions' `
   -Prompt '<leaf prompt with ownership and acceptance>' `
   -OwnedFile '<owned path or glob>' `
   -ForbiddenFile '<forbidden path or glob>'

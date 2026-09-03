@@ -41,6 +41,7 @@
 
 - `/codex-collaboration` 只负责建立本次 leaf 的协作契约和状态检查，不会自动启动第二个写入任务。
 - Claude 后台任务由 Codex 使用 `D:\Agent\codex\skills\codex-claude-collaboration\scripts\claude-bg-run.ps1` 启动，并由 `claude-bg-status.ps1` 观察。
+- 本项目的后台 leaf 必须显式传入 `-PermissionMode bypassPermissions`；不要依赖当前 PowerShell 是否加载了带 `--dangerously-skip-permissions` 的临时 `claude` 包装函数。runner 会在该模式下显式追加危险权限参数，并将实际请求记录到任务 manifest。
 - 发生网络、上游或进程无响应时，先查看状态和 worktree，再使用 `claude-bg-recover.ps1` 的 `Resume` 或 `FreshContinuation` 模式；禁止无条件重复运行。
 - 本项目的 Trellis task 负责需求、设计和验收记录；通用 skill 负责跨代理交接与恢复，两者不要同时创建第二套任务编排。
 
