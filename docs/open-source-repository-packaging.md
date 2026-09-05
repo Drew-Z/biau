@@ -34,7 +34,7 @@ Badges for stack/runtime/license/build status when accurate.
 
 Before editing a README, inspect the current repository rather than trusting the existing README:
 
-- local instructions: `AGENTS.md`, `CLAUDE.md`, `.cursor/rules`;
+- local instructions: `AGENTS.md`, `docs/agents/codex-workflow.md`, and `.trellis/spec/`;
 - package and build files: `package.json`, workspace manifests, Dockerfiles, Compose files, CI workflows;
 - runtime contracts: API routes, env parsing, migrations, health checks, scripts, static hosts, mobile build files;
 - docs and public assets: architecture docs, deployment docs, screenshots, diagrams, release notes;
@@ -50,9 +50,9 @@ Record any manual gate instead of pretending it is complete:
 
 Before pushing a repository as a public project, audit local workflow artifacts:
 
-- keep public-safe config/examples such as `.github/`, `.gitignore`, `.dockerignore`, `.env.example`, reusable `.agents/skills/`, `.codex/config.toml`, `.claude/commands/`, `.trellis/spec/`, and `.trellis/scripts/` when they are intentional contributor workflow assets;
+- keep public-safe config/examples such as `.github/`, `.gitignore`, `.dockerignore`, `.env.example`, reusable `.agents/skills/`, `.codex/config.toml`, `.codex/hooks.json`, `.trellis/spec/`, and `.trellis/scripts/` when they are intentional contributor workflow assets;
 - remove from Git tracking, but keep local if useful, process-history folders such as `.agent-work/`, `.scratch/`, `.trellis/workspace/`, and `.trellis/tasks/archive/`;
-- ignore local assistant/runtime state such as `.claude/settings.local.json`, `.codex/sessions/`, `.codex/tmp/`, `.trellis/.developer`, `.trellis/.runtime/`, and `.trellis/tmp/`;
+- ignore local assistant/runtime state such as `.codex/sessions/`, `.codex/tmp/`, `.trellis/.developer`, `.trellis/.runtime/`, and `.trellis/tmp/`; retired tool directories remain local and are not contributor entry points;
 - do not bulk-delete hidden directories without checking whether they are source, CI/deploy config, examples, or contributor workflow.
 
 ## Public-Safe Rules

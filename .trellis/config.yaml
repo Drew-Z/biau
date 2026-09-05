@@ -107,4 +107,5 @@ channel:
 # sub-agents).
 #
 codex:
-  dispatch_mode: sub-agent
+  # Codex is the sole development owner; the main session implements and checks.
+  dispatch_mode: inline

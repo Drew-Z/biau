@@ -32,7 +32,10 @@ Before backend edits:
 
 ## Local Rules Imported
 
-These specs incorporate rules from `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/data-safety.mdc`, and `.cursor/rules/verify.mdc`, plus the current `server/`, `prisma/`, and `scripts/verify.mjs` implementation.
+The current instruction sources are `AGENTS.md`, `docs/agents/codex-workflow.md`,
+and these project-local specs, backed by `server/`, `prisma/`, and
+`scripts/verify.mjs`. Historical editor-specific rules have been incorporated
+here; they are not required development entry points.
 
 ## Core Project Rules
 

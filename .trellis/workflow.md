@@ -1,5 +1,14 @@
 # Development Workflow
 
+## Project Execution
+
+This project uses Codex only. `AGENTS.md` and `docs/agents/codex-workflow.md`
+define the local operating policy. `.trellis/config.yaml` selects
+`codex.dispatch_mode: inline`: the main Codex session implements and verifies.
+Other platform sections below are shared Trellis reference material, not
+instructions to launch another development tool. Historical collaboration
+records do not override the current project policy.
+
 ---
 
 ## Core Principles
@@ -236,6 +245,7 @@ Dispatch prompt starts with `Active task: <task path from task.py current>`. Rea
 
 [workflow-state:in_progress-inline]
 Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> `trellis-update-spec` -> commit (Phase 3.4) -> `/trellis:finish-work`.
+Codex is the sole development owner; the main session implements and verifies. Do not launch external coding agents or resume historical collaboration leaves.
 Do not dispatch implement/check sub-agents in inline mode.
 Read context: `prd.md` -> `design.md if present` -> `implement.md if present`, plus relevant spec/research loaded by skills.
 [/workflow-state:in_progress-inline]

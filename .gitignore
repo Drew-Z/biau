@@ -31,7 +31,8 @@ server/data/ai-daily-model-approval.v1.json
 # Local scratch artifacts
 .agent-work/
 .scratch/
-.claude/settings.local.json
+# Retired project-local coding tool state
+.claude/
 .codex/sessions/
 .codex/tmp/
 .trellis/.developer

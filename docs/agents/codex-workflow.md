@@ -1,6 +1,24 @@
 # Codex Workflow
 
-This file adapts the Cursor workflow notes into a Codex-friendly project workflow. Use it as a practical operating guide, not as ceremony for every small edit.
+This project is developed with Codex. The main session owns planning,
+implementation, final verification, and delivery.
+
+## Project Entry Points
+
+- `AGENTS.md`: primary project instructions.
+- `.codex/config.toml` and `.codex/hooks.json`: project Codex configuration and workflow-state hook registration.
+- `.agents/skills/`: shared project skills.
+- `.trellis/config.yaml`, `.trellis/workflow.md`, `.trellis/tasks/`, and `.trellis/spec/`: execution mode, workflow, task records, and coding guidelines.
+
+Trellis uses `codex.dispatch_mode: inline`. Load `trellis-before-dev`, implement
+in the main session, and verify with the `trellis-check` skill. Optional
+read-only exploration follows the user's sub-agent rules; implementation and
+final verification stay with the main session. Claude Code runners, commands,
+and cross-tool handoffs are retired for this project.
+
+The old `.agent-work/` records and historical worktrees are reference material,
+not current task pointers. Start from `task.py current --source` and the current
+user request. Existing Logo Lab comparisons remain application assets.
 
 ## When to use the full flow
 
@@ -16,6 +34,18 @@ Before writing code, make the goal explicit.
 - Identify unknowns, constraints, acceptance criteria, and risky assumptions.
 - Ask the fewest useful questions. For vague product or UX work, use grill-me style questioning: one focused question at a time until the request is implementable.
 - If a question can be answered from the repository, inspect the repository instead of asking the user.
+
+## Starting A Session
+
+Use PowerShell 7 in the canonical checkout. Inspect the existing work before
+starting a new task:
+
+```powershell
+git status --short --branch
+git worktree list --porcelain
+python ./.trellis/scripts/task.py current --source
+python ./.trellis/scripts/get_context.py
+```
 
 ## Phase 1: Gather Evidence
 
@@ -49,20 +79,26 @@ Keep changes narrow and project-native.
 - Avoid new dependencies, broad abstractions, file moves, or opportunistic rewrites unless they are necessary.
 - Never expose secrets or hard-code private infrastructure details.
 
+For project inventory, inspect `src/data/portfolio.ts`, route components, and
+the relevant project specs. Resolve any source-project directory before reading
+it and keep it read-only. Do not add `douyu`, `yihuan-helper`, or `ques` to the
+showcase. Project details describe engineering; case studies describe the
+business problem, approach, result, and public evidence.
+
 ## Phase 4: Validate
 
 Use the smallest meaningful checks for the change.
 
 Default validation order:
 
-```bash
+```powershell
 npm.cmd run lint
 npm.cmd run build
 ```
 
 Other useful project commands:
 
-```bash
+```powershell
 npm.cmd run verify
 npm.cmd run check:ui
 npm.cmd run blog:check
@@ -72,6 +108,18 @@ npm.cmd run server:smoke
 ```
 
 For documentation-only changes, validate file existence, links, structure, and the relevant diff. Do not claim runtime validation when no runtime command was run.
+
+For UI work, use actual browser measurements and screenshots across desktop,
+`320/390/430` widths, all three themes, and both language states. Review route
+changes, keyboard focus, reduced motion, text fit, and control reachability.
+Use a current local preview for browser checks and set `UI_CHECK_BASE` to its
+origin. Keep public status snapshots read-only unless their explicit publishing
+workflow is authorized.
+
+For deployment preparation, verify `npm.cmd run build`, the `dist` output,
+SPA fallback behavior, and the current deployment contract. Follow
+`docs/deployment.md` for provider-specific details. A preparation check does
+not itself publish anything.
 
 ## Phase 5: Finish
 

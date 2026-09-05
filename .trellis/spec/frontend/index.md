@@ -28,7 +28,10 @@ Before frontend edits:
 
 ## Local Rules Imported
 
-These specs incorporate rules from `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/ui-system.mdc`, `.cursor/rules/data-safety.mdc`, and `.cursor/rules/verify.mdc`.
+The current instruction sources are `AGENTS.md`, `docs/agents/codex-workflow.md`,
+and these project-local specs, backed by the current frontend implementation.
+Historical editor-specific rules have been incorporated here; they are not
+required development entry points.
 
 ## Core Project Rules
 

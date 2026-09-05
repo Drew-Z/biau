@@ -50,9 +50,14 @@
 
 For Codex-style clarification, planning, implementation, validation, and finish-work, see `docs/agents/codex-workflow.md`.
 
-### Codex + Claude collaboration
+### Codex-only development
 
-When the user asks for shared Codex and Claude Code development, invoke the machine-level `$codex-claude-collaboration` skill. Keep Codex as the coordinator and final verifier; give Claude one bounded leaf in a separate managed worktree. Record the leaf objective, owned and forbidden files, acceptance commands, worktree, branch, and base SHA before launch. Use the skill's background runner and status/recovery scripts instead of starting a second writer in the main checkout. Trellis remains the project planning and acceptance record; merge, conflict resolution, push, deployment, and release decisions stay with one explicit integrator.
+- 本项目仅使用 Codex 开发；主会话负责方案、实现、最终验证和交付，不再启动 Claude Code 后台任务或双工具交接流程。
+- `AGENTS.md` 是项目指令入口，`.codex/` 保存 Codex 配置与 hooks，`.agents/skills/` 保存 skills，`.trellis/` 保存任务、规范和开发记录。
+- `.trellis/config.yaml` 使用 `codex.dispatch_mode: inline`；主会话通过 `trellis-before-dev` 读取规范、直接实施，再按 `trellis-check` skill 验证。
+- 确需宽而重的只读探索时，遵循用户的子代理规则；子代理不承担代码修改、方案取舍和最终验证。
+- 旧协作记录与 worktree 仅作历史成果保留，不作为当前任务入口；有未提交或未合并成果的 worktree 不得直接删除。
+- 通用 Trellis 解析器中的多平台兼容逻辑和已有 Logo Lab 比较资产继续保留，不把工具退出误当成业务代码清理。
 
 ### Issue tracker
 

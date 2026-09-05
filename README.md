@@ -194,6 +194,11 @@ Use placeholders in docs and examples. Put real keys, database URLs, model base 
 
 ## Development Scripts
 
+Development uses Codex with [AGENTS.md](AGENTS.md) as the project instruction
+entry and [the Codex workflow](docs/agents/codex-workflow.md) as the operating
+guide. Trellis runs in inline mode: the main Codex session implements and
+verifies changes using the existing project specs and skills.
+
 ```bash
 npm run dev
 npm run build
