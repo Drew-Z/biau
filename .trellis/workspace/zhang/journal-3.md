@@ -214,3 +214,55 @@ Completed the Morning/Nature/Stellar single-axis theme migration, reference Flow
 ### Next Steps
 
 - None - task complete
+
+
+## Session 112: Codex-only development closeout
+
+**Date**: 2026-09-06
+**Task**: Codex-only development closeout
+**Branch**: `main`
+
+### Summary
+
+Committed the approved Codex-only migration and archived its task locally; preserved UI work and historical worktrees without pushing or deploying.
+
+### Main Changes
+
+#### Scope And Approval
+
+- The user approved the scoped local migration commit, task archive, and session record. No push or deployment was authorized for this closeout.
+- Work commit: 3fad71caf5b20f08b546d699a8aef7f51403fe54. Retired project-local Claude entry points and switched the existing Trellis workflow to Codex inline ownership.
+- Archived only 09-05-codex-only-development under .trellis/tasks/archive/2026-09/. Other active tasks remain open.
+
+#### Verification
+
+- Re-ran lint, TypeScript/Vite build, manual-gates checks, task manifests, Codex TOML parsing, the real inline workflow hook, and the staged diff check successfully.
+- The migration commit contains exactly 22 approved configuration, documentation, and task files; no existing UI work was included.
+- No application source changed in the migration, so no new browser-matrix run was required for this closeout.
+
+#### Preserved Work
+
+- Existing UI changes, the continuous UI task, four historical worktrees, application Logo Lab assets, and earlier evidence remain separate and untouched.
+- Claude entry files remain recoverable in the backup location recorded by the archived task.
+- No disposable temporary files were created or removed. The pre-existing leading-space evidence directory remains in place.
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3fad71caf5b20f08b546d699a8aef7f51403fe54` | (see git log) |
+
+### Testing
+
+- [OK] Lint, TypeScript/Vite build, manual-gates check, task manifests, and staged diff check.
+- [OK] Codex TOML parsing and the real Codex inline workflow hook.
+- [OK] All 22 protected files still match their pre-migration SHA-256 hashes after task archival.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
