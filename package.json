@@ -107,6 +107,8 @@
     "blog:knowledge-check": "tsx scripts/check-blog-knowledge-quality.ts",
     "blog:project-notes-check": "tsx scripts/check-blog-project-notes-quality.ts",
     "project-details:check": "tsx scripts/check-project-detail-evidence.ts",
+    "projects:discovery-check": "tsx scripts/check-project-discovery.ts",
+    "projects:discovery-ui": "node scripts/check-project-discovery-ui.mjs",
     "project-registry:check": "tsx scripts/check-product-registry.ts",
     "docs:deployment-check": "node scripts/check-deployment-contract.mjs",
     "docs:manual-gates-check": "tsx scripts/check-manual-gates.ts",

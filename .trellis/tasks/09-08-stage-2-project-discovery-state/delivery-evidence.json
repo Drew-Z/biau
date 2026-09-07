@@ -1,0 +1,47 @@
+{
+  "baselineHead": "393bb854b3a899b0fa91fbd718ba6ecc06b07e49",
+  "buildEntry": "index-DSoEAwr8.js",
+  "buildEntrySha256": "6d86b3dd6505e23c714101841b0956e8b0ee7edc52234e62a7b73bd7b0a4d50d",
+  "files": [
+    {
+      "path": "src/pages/ProjectsPage.tsx",
+      "sha256": "7d6ad9dedfd4aeaec7595f93bd9ef7c6ca31ba8f0d8152541c204c2df857adde"
+    },
+    {
+      "path": "src/pages/ProjectDetailPage.tsx",
+      "sha256": "396cf14b5f87fcd561052037e61ae71f4cfe058b37952fc7a022c6b6da2e5317"
+    },
+    {
+      "path": "src/utils/projectDiscovery.ts",
+      "sha256": "5d15f02f4722e0d04e9fc0b2ad55f682fef6676ae1b990ab577cbb9473483706"
+    },
+    {
+      "path": "scripts/check-project-discovery.ts",
+      "sha256": "9fe05b8d3ea0240382e14f906f708216d15d11622148389abd0d9b5d2b85b287"
+    },
+    {
+      "path": "scripts/check-project-discovery-ui.mjs",
+      "sha256": "e590e4428add74099938265c343550f82b9779c4aa44fe9f734066ffea502c7c"
+    },
+    {
+      "path": "scripts/check-ui.mjs",
+      "sha256": "3673ac73559860ca34e2778f97c0327af0efdab86ccf334daf30eeb0eba59134"
+    },
+    {
+      "path": "scripts/check-analytics-route-metadata.ts",
+      "sha256": "1872874027533b3520577ebe56c0eddcab90d0e75cc9bd5290d12dccc1399b15"
+    },
+    {
+      "path": "package.json",
+      "sha256": "57c3c2ca8e5da4cf07956022fd73188f2f7606d41313b29122589c40b1fc0657"
+    },
+    {
+      "path": ".trellis/spec/frontend/state-management.md",
+      "sha256": "54f76caf1f50d2155f95131c50634728d53bef7430aad1c3781712838950bda2"
+    },
+    {
+      "path": "public/status/blog-semi-synthetic.json",
+      "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+    }
+  ]
+}

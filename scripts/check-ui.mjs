@@ -3,6 +3,7 @@ import sharp from 'sharp'
 import { createVerificationProgress } from './lib/verification-progress.mjs'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 import { checkBlogDiscoveryNavigation } from './check-blog-discovery-ui.mjs'
+import { checkProjectDiscoveryNavigation } from './check-project-discovery-ui.mjs'
 import {
   findReliabilityProjectForTarget,
   reliabilityProjects as staticReliabilityProjects,
@@ -1799,6 +1800,11 @@ try {
   progress.start('blog-discovery', 'URL state, history, shared links, and safe detail returns')
   await checkBlogDiscoveryNavigation(browser, base)
   finishProgressGroup(blogDiscoveryFailures)
+
+  const projectDiscoveryFailures = failures.length
+  progress.start('project-discovery', 'group URLs, history, shared links, breakpoints, and detail returns')
+  await checkProjectDiscoveryNavigation(browser, base)
+  finishProgressGroup(projectDiscoveryFailures)
 
   for (const viewport of viewports) {
     for (const route of routes) {

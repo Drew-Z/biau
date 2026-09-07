@@ -107,6 +107,14 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Save/review/export actions update the canonical loaded record, then refresh dependent summaries.
 - Hidden/review-needed drafts never enter public blog state automatically.
 
+## Scenario: Project Catalog Discovery
+
+- `src/utils/projectDiscovery.ts` owns the project `group` URL contract: `ai/fullstack/tool`, first duplicate value only, unknown values fall back to ai, default ai and unknown parameters are omitted from canonical URLs.
+- The route is the source for the selected mobile group. Explicit changes push history, reselecting the same group does not, and URL normalization uses replace. Do not persist a second group state in browser storage.
+- The existing 720px breakpoint only changes panel visibility: mobile shows the selected group; desktop shows every group and project. Resizing must preserve the URL selection and original category order/counts.
+- Project/detail/related-project navigation carries the normalized group. Normal and missing-detail return links start from fixed `/projects`, never arbitrary returnTo. Blog readings and evidence/experience links keep their own addresses; SEO and analytics omit the group query.
+- `projects:discovery-check` verifies the URL boundary; `projects:discovery-ui` (also included in full UI) covers history, reload, copied links, related/missing returns, keyboard access and breakpoint changes. Reading-position/focus restoration is a separate contract.
+
 ## Scenario: Project Detail Projection
 
 - `detailContent` remains the source for implementation, workflow, architecture, quality, limits, and roadmap sections.

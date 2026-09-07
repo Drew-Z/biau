@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { Activity, ArrowLeft, CircleAlert, ExternalLink, Link as LinkIcon } from 'lucide-react'
 import '../styles/route-pages.css'
 import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
@@ -24,6 +24,7 @@ import {
   type PublishedProjectLink,
 } from '../data/projectPublication'
 import { ResponsiveImage } from '../components/ResponsiveImage'
+import { getProjectListHref, parseProjectGroupSearch, serializeProjectGroupSearch } from '../utils/projectDiscovery'
 
 const projectDetailContentOrder: ProjectDetailContentKey[] = [
   'overview',
@@ -58,7 +59,10 @@ const projectVisualTypeLabels: Record<ProjectVisualBlock['type'], string> = {
 
 export function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
+  const { search } = useLocation()
+  const group = parseProjectGroupSearch(search)
+  const listHref = getProjectListHref(group)
+  const groupSearch = serializeProjectGroupSearch(group)
 
   const project = useMemo(() => projects.find((p) => p.id === id), [id])
   const publication = useMemo(() => (project ? findProjectPublication(project.id) : undefined), [project])
@@ -100,10 +104,10 @@ export function ProjectDetailPage() {
         <div className="detail-missing">
           <h1 className="section-title">未找到该项目</h1>
           <p className="section-description">该项目可能已下线或链接有误。</p>
-          <button className="btn" onClick={() => navigate('/projects')}>
+          <Link className="btn" to={listHref}>
             <ArrowLeft size={16} aria-hidden />
             <span>返回项目集</span>
-          </button>
+          </Link>
         </div>
       </main>
     )
@@ -111,7 +115,7 @@ export function ProjectDetailPage() {
 
   return (
     <article className="page-stack detail-page project-detail-page">
-      <Link to="/projects" className="detail-back">
+      <Link to={listHref} className="detail-back">
         <ArrowLeft size={16} aria-hidden />
         <span>项目集</span>
       </Link>
@@ -215,7 +219,7 @@ export function ProjectDetailPage() {
           <h2 className="detail-block-title">{getRelatedProjectsTitle(project, related)}</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
-              <Link key={item.id} to={`/projects/${item.id}`} className="detail-related-card">
+              <Link key={item.id} to={`/projects/${item.id}${groupSearch}`} className="detail-related-card">
                 <span className="detail-related-cat">{projectCategoryLabels[item.category]}</span>
                 <h3>{item.title}</h3>
                 <p>{item.summary}</p>

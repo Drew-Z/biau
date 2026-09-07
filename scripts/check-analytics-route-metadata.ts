@@ -12,6 +12,20 @@ const routeCases: RouteCase[] = [
   { pathname: '/', routePattern: '/', routeArea: 'home', routeDepth: 0 },
   { pathname: '/projects', routePattern: '/projects', routeArea: 'projects', routeDepth: 1 },
   {
+    pathname: '/projects?group=tool#selection',
+    routePattern: '/projects',
+    routeArea: 'projects',
+    routeDepth: 1,
+    forbidden: ['group', 'tool', 'selection', '?', '#'],
+  },
+  {
+    pathname: '/projects/legal-rag?group=fullstack&returnTo=fixture-only',
+    routePattern: '/projects/:id',
+    routeArea: 'project-detail',
+    routeDepth: 2,
+    forbidden: ['legal-rag', 'group', 'fullstack', 'returnTo', 'fixture-only', '?'],
+  },
+  {
     pathname: '/projects/legal-rag?token=abc#private',
     routePattern: '/projects/:id',
     routeArea: 'project-detail',

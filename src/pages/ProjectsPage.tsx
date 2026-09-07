@@ -1,23 +1,33 @@
 import { ChevronDown } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ProjectCard } from '../components/ProjectCard'
 import { catalogProjects } from '../data/portfolio'
 import { trackAnalyticsEvent } from '../utils/analytics'
-
-type ProjectGroupKey = 'ai' | 'fullstack' | 'tool'
+import { parseProjectGroupSearch, serializeProjectGroupSearch, type ProjectGroupKey } from '../utils/projectDiscovery'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
-  const [activeMobileGroup, setActiveMobileGroup] = useState<ProjectGroupKey>('ai')
+  const { search } = useLocation()
+  const [, setSearchParams] = useSearchParams()
+  const activeMobileGroup = parseProjectGroupSearch(search)
+  const groupSearch = serializeProjectGroupSearch(activeMobileGroup)
   const [isMobileLayout, setIsMobileLayout] = useState(false)
+
+  useEffect(() => {
+    if (search !== groupSearch && window.location.search === search) setSearchParams(groupSearch, { replace: true })
+  }, [groupSearch, search, setSearchParams])
+
+  const selectMobileGroup = (group: ProjectGroupKey) => {
+    if (group !== parseProjectGroupSearch(window.location.search)) setSearchParams(serializeProjectGroupSearch(group))
+  }
 
   const openProjectDetail = (projectId: string) => {
     trackAnalyticsEvent('project_detail_open', {
       source: 'projects-page-card',
       projectId,
     })
-    navigate(`/projects/${projectId}`)
+    navigate(`/projects/${projectId}${serializeProjectGroupSearch(parseProjectGroupSearch(window.location.search))}`)
   }
 
   const projectGroups = useMemo(() => {
@@ -69,7 +79,7 @@ export function ProjectsPage() {
               className="project-group-toggle"
               aria-expanded={isActive}
               aria-controls={panelId}
-              onClick={() => setActiveMobileGroup(group.key)}
+              onClick={() => selectMobileGroup(group.key)}
             >
               <span className="project-group-toggle__index">{group.key.toUpperCase()}</span>
               <span className="project-group-toggle__copy">
