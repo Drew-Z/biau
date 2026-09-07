@@ -10,4 +10,6 @@
 
 本子任务实际重新运行：`node --check scripts/check-ui.mjs`、`git diff --check`、父子上下文 `task.py validate`，均通过。`delivery-baseline.json` 保存 7 文件和受保护状态快照的 SHA-256；暂存与提交后逐一校验相等。父任务协议单独提交为 `88da821c`。
 
-保留前导空格目录、原持续 UI 未跟踪记录和历史 worktree。本子任务未创建一次性临时文件或启动 preview。代码交付与归档结果随后记录在本文件。
+代码交付：`cb327d8c`。15 个文件中 7 个为完整旧 UI 差异，其余是本子任务资料；暂存白名单/源码 blob 等值检查通过，提交前后 8 个 SHA-256 全部一致。保留前导空格目录、原持续 UI 未跟踪记录和历史 worktree。本子任务未创建一次性临时文件或启动 preview。
+
+已用 `task.py archive --no-commit` 归档到本目录，然后实际执行 `task.py start 09-06-website-completion-roadmap`；`current --source` 确认父任务来自当前会话。第一轮闭环已实际走通，下一轮选择博客浏览状态。
