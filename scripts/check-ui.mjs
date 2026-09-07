@@ -1866,6 +1866,67 @@ if (legalBackHref !== '/status') {
 }
 await statusPage.close()
 
+const statusNotePayload = mergeSiteStatusPayload(null)
+const statusNoteWarning = 'UI check: entry verification failed'
+const statusNoteCases = statusNotePayload.targets.map((target, index) => {
+  const note = target.note.trim()
+  const cases = [
+    { name: 'no-issue', issues: [], notes: [note] },
+    { name: 'distinct-issue', issues: [statusNoteWarning], notes: [statusNoteWarning, note] },
+    { name: 'same-issue', issues: [note], notes: [note] },
+    { name: 'padded-issue', issues: [`  ${note}\n`], notes: [note] },
+    { name: 'blank-issue', issues: ['  \n'], notes: [note] },
+  ]
+  return cases[index % cases.length]
+})
+const statusNoteFixture = {
+  ...statusNotePayload,
+  targets: statusNotePayload.targets.map((target, index) => ({ ...target, issues: statusNoteCases[index].issues })),
+}
+for (const { width, theme, language } of [
+  { width: 1440, theme: 'morning', language: 'zh' },
+  { width: 320, theme: 'morning', language: 'zh' },
+  { width: 390, theme: 'stellar', language: 'en' },
+  { width: 430, theme: 'nature', language: 'zh' },
+]) {
+  const notePage = await createUiPage(browser, {
+    viewport: { width, height: 900 },
+    hasTouch: width < 720,
+    isMobile: width < 720,
+    reducedMotion: 'reduce',
+  })
+  try {
+    await notePage.addInitScript((initialTheme) => {
+      window.localStorage.setItem('biau-port-theme', initialTheme)
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    }, theme)
+    await notePage.route('**/status/site-status.json', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(statusNoteFixture) }),
+    )
+    await gotoApp(notePage, '/status')
+    await notePage.getByText(statusNoteWarning, { exact: true }).first().waitFor({ state: 'visible' })
+    if (language === 'en') await notePage.locator('.nav-lang-toggle').click()
+    for (const [index, scenario] of statusNoteCases.entries()) {
+      const notes = await notePage.locator('.status-target').nth(index).locator('.status-target__note').evaluateAll((items) =>
+        items.map((item) => ({
+          text: item.textContent.trim(),
+          soft: item.classList.contains('is-soft'),
+          visible: item.getBoundingClientRect().height > 0 && getComputedStyle(item).visibility !== 'hidden',
+        })),
+      )
+      const expectedNotes = scenario.notes.map((text, noteIndex) => ({ text, soft: noteIndex > 0, visible: true }))
+      if (JSON.stringify(notes) !== JSON.stringify(expectedNotes)) {
+        failures.push(`/status notes ${width}px ${theme}/${language} ${scenario.name}: expected one copy of each distinct note with primary/secondary emphasis`)
+      }
+    }
+    if (await notePage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)) {
+      failures.push(`/status notes ${width}px ${theme}/${language}: notes must not introduce horizontal overflow`)
+    }
+  } finally {
+    await notePage.close()
+  }
+}
+
 const statusSectionIds = [
   'status-overview',
   'status-summary',

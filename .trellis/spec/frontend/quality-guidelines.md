@@ -408,6 +408,8 @@ Correct: run `check:ui` locally for fixture coverage, then run `check:ui:product
 - Hidden drafts, private docs, credentials, private URLs, debug APKs, and unapproved downloads never render.
 - External links expose external affordance and safe target/rel behavior.
 - Internal links preserve SPA navigation.
+- Status entry cards render one primary note from the trimmed first issue, falling back to the trimmed catalog note. Render `.status-target__note.is-soft` only for a nonempty catalog note different from that primary text; do not duplicate fallback copy or hide a distinct warning to reduce card height. Keep source status data unchanged.
+- The status note browser fixtures cover absent, distinct, identical, whitespace-padded, and blank first issues at desktop and `320/390/430`, including three themes and both language states. Assert exact note count/text, primary versus secondary emphasis, visibility, and overflow; a page with missing warnings must fail just as a page with duplicate notes does.
 - Project details include useful screenshots/diagrams inside the article flow, not only one hero image.
 - `/ai-daily` and `/ai-daily/:publicId` expose approved public projections only. At 320px through desktop they must keep loading, error, empty, stale, correction, pagination, facts, uncertainty, and citations vertically readable without overflow.
 - AI Daily refresh and pagination controls expose pending/disabled state, do not create overlapping requests, preserve the last successful payload on transient failure, and do not flicker when an ETag refresh returns `304`.

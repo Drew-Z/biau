@@ -195,6 +195,8 @@ export function SiteStatusPage() {
           const meta = statusMeta[target.status]
           const detailProject = findReliabilityProjectForTarget(target, status.reliabilityProjects ?? [])
           const detailHref = detailProject ? getStatusDetailPath(detailProject.id) : '/status'
+          const note = target.note.trim()
+          const primaryNote = target.issues[0]?.trim() || note
           return (
             <article key={target.id} className={`status-target glass-card is-${meta.tone}`}>
               <div className="status-target__main">
@@ -221,8 +223,8 @@ export function SiteStatusPage() {
                 </div>
               </dl>
 
-              <p className="status-target__note">{target.issues[0] ?? target.note}</p>
-              <p className="status-target__note is-soft">{target.note}</p>
+              {primaryNote && <p className="status-target__note">{primaryNote}</p>}
+              {note && note !== primaryNote && <p className="status-target__note is-soft">{note}</p>}
 
               <div className="status-target__actions">
                 <Link
