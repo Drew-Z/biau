@@ -1042,6 +1042,44 @@ async function checkMobileProjectCatalog(browser, failures) {
 }
 async function checkStatusDetailReadingNavigation(browser, failures) {
   const routePath = '/status/legal-rag'
+  async function checkActionTargets(page, viewport, groups) {
+    const context = `${new URL(page.url()).pathname} ${viewport.width}px ${viewport.theme}/${viewport.language}`
+    for (const { selector, hrefs, desktopHeight } of groups) {
+      const actions = page.locator(selector)
+      if ((await actions.count()) !== hrefs.length) {
+        failures.push(`${context}: expected ${hrefs.length} status detail actions for ${selector}`)
+      }
+      for (const [index, action] of (await actions.all()).entries()) {
+        if (!(await action.isVisible())) {
+          failures.push(`${context}: status detail action ${selector}[${index}] must be visible`)
+          continue
+        }
+        await action.scrollIntoViewIfNeeded()
+        const target = await action.evaluate((element) => {
+          const rect = element.getBoundingClientRect()
+          const style = getComputedStyle(element)
+          const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)
+          return {
+            width: rect.width,
+            height: rect.height,
+            left: rect.left,
+            right: rect.right,
+            href: element.getAttribute('href'),
+            opaque: Number.parseFloat(style.opacity) > 0,
+            hit: Boolean(hit && element.contains(hit)),
+          }
+        })
+        const minHeight = viewport.width <= 720 ? 44 : desktopHeight
+        if (
+          target.width < 44 || target.height < minHeight ||
+          target.left < -0.5 || target.right > viewport.width + 0.5 ||
+          target.href !== hrefs[index] || !target.opaque || !target.hit
+        ) {
+          failures.push(`${context}: status detail action ${selector}[${index}] must be a visible, reachable ${minHeight}px target, got ${JSON.stringify(target)}`)
+        }
+      }
+    }
+  }
   const expectedIds = [
     'status-detail-overview',
     'status-detail-distribution',
@@ -1052,14 +1090,18 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
   ]
   const expectedProject = staticReliabilityProjects.find((project) => project.id === 'legal-rag')
   const viewports = [
-    { name: 'desktop', width: 1440, height: 1000 },
-    { name: 'mobile-320', width: 320, height: 900 },
-    { name: 'mobile-390', width: 390, height: 900 },
-    { name: 'mobile-430', width: 430, height: 900 },
+    { name: 'desktop', width: 1440, height: 1000, theme: 'morning', language: 'zh' },
+    { name: 'mobile-320', width: 320, height: 900, theme: 'morning', language: 'zh' },
+    { name: 'mobile-390', width: 390, height: 900, theme: 'stellar', language: 'en' },
+    { name: 'mobile-430', width: 430, height: 900, theme: 'nature', language: 'zh' },
   ]
 
   for (const viewport of viewports) {
-    const page = await createUiPage(browser, { viewport: { width: viewport.width, height: viewport.height } })
+    const page = await createUiPage(browser, {
+      viewport: { width: viewport.width, height: viewport.height },
+      hasTouch: viewport.width <= 720,
+      isMobile: viewport.width <= 720,
+    })
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.route('**/health', (route) =>
       route.fulfill({
@@ -1068,10 +1110,16 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
         body: JSON.stringify({ mode: 'fallback', modelConfigured: false }),
       }),
     )
-    await page.addInitScript(() => {
+    await page.addInitScript((theme) => {
       window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
-    })
+      window.localStorage.setItem('biau-port-theme', theme)
+    }, viewport.theme)
     await gotoApp(page, routePath)
+    if (viewport.language === 'en') await page.locator('.nav-lang-toggle').click()
+    await checkActionTargets(page, viewport, [
+      { selector: '.status-detail-actions .btn', hrefs: ['/status', routePath], desktopHeight: 40 },
+      { selector: '.status-project__header-tools > a', hrefs: ['/status'], desktopHeight: 30 },
+    ])
 
     const guide = page.locator('.detail-reading-guide')
     const toggle = guide.locator('.detail-reading-guide__toggle')
@@ -1175,12 +1223,32 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
   }
   await statusOverview.close()
 
-  const missing = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
-  await gotoApp(missing, '/status/missing-reading-guide')
-  if ((await missing.locator('.detail-reading-guide').count()) !== 0) {
-    failures.push('/status/missing-reading-guide: missing status detail should not render a reading guide')
+  for (const viewport of viewports) {
+    const missing = await createUiPage(browser, {
+      viewport: { width: viewport.width, height: viewport.height },
+      hasTouch: viewport.width <= 720,
+      isMobile: viewport.width <= 720,
+      reducedMotion: 'reduce',
+    })
+    try {
+      await missing.addInitScript((theme) => {
+        window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+        window.localStorage.setItem('biau-port-theme', theme)
+      }, viewport.theme)
+      await gotoApp(missing, '/status/missing-reading-guide')
+      if (viewport.language === 'en') await missing.locator('.nav-lang-toggle').click()
+      if ((await missing.locator('.detail-reading-guide').count()) !== 0) {
+        failures.push(`/status/missing-reading-guide ${viewport.name}: missing status detail should not render a reading guide`)
+      }
+      await checkActionTargets(missing, viewport, [
+        { selector: '.site-status-page .detail-missing .btn', hrefs: ['/status'], desktopHeight: 40 },
+      ])
+      await missing.locator('.detail-missing .btn').press('Enter')
+      await missing.waitForURL(`${base}/status`)
+    } finally {
+      await missing.close()
+    }
   }
-  await missing.close()
 }
 const failures = []
 const browser = await chromium.launch({ headless: true })

@@ -4906,6 +4906,12 @@
     min-height: 44px;
   }
 
+  .status-detail-actions .btn,
+  .site-status-page .detail-missing .btn,
+  .status-project__header-tools > a {
+    min-height: 44px;
+  }
+
   .project-group {
     gap: var(--space-8);
   }
