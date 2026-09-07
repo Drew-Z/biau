@@ -1,32 +1,41 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { BlogCard } from '../components/BlogCard'
 import { BlogColumnFilter } from '../components/BlogColumnFilter'
 import { blogColumnOrder, getBlogEmptyState, type BlogColumn } from '../data/blog'
+import { getPublicBlogPosts } from '../data/blogCuration'
 import {
-  filterBlogPosts,
-  getPublicBlogPosts,
-} from '../data/blogCuration'
-
-const PAGE_SIZE = 12
+  normalizeBlogQuery,
+  parseBlogDiscoverySearch,
+  resolveBlogDiscovery,
+  serializeBlogDiscoveryState,
+  type BlogDiscoveryState,
+} from '../utils/blogDiscovery'
 
 export function BlogPage() {
   const navigate = useNavigate()
-  const [selectedBlogColumn, setSelectedBlogColumn] = useState<BlogColumn | 'all'>('all')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [page, setPage] = useState(1)
+  const { search } = useLocation()
+  const [, setSearchParams] = useSearchParams()
+  const [queryDraft, setQueryDraft] = useState<string | null>(null)
 
   const publicBlogs = useMemo(() => getPublicBlogPosts(), [])
 
-  const filteredBlogs = useMemo(() => {
-    return filterBlogPosts(publicBlogs, {
-      column: selectedBlogColumn,
-      query: searchQuery,
-    })
-  }, [publicBlogs, searchQuery, selectedBlogColumn])
+  const { state, filteredPosts: filteredBlogs, visiblePosts: visibleBlogs, totalPages } = useMemo(
+    () => resolveBlogDiscovery(search, publicBlogs),
+    [publicBlogs, search],
+  )
+  const { column: selectedBlogColumn, query: searchQuery, page } = state
+  const canonicalSearch = serializeBlogDiscoveryState(state)
 
-  const totalPages = Math.max(1, Math.ceil(filteredBlogs.length / PAGE_SIZE))
-  const visibleBlogs = filteredBlogs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  useEffect(() => {
+    if (search !== canonicalSearch) setSearchParams(canonicalSearch, { replace: true })
+  }, [canonicalSearch, search, setSearchParams])
+
+  useEffect(() => {
+    const restoreUrlInput = () => setQueryDraft(null)
+    window.addEventListener('popstate', restoreUrlInput)
+    return () => window.removeEventListener('popstate', restoreUrlInput)
+  }, [])
 
   const availableColumns = useMemo(() => {
     return blogColumnOrder
@@ -47,14 +56,22 @@ export function BlogPage() {
 
   const emptyState = getBlogEmptyState(selectedBlogColumn, searchQuery)
 
+  const updateDiscovery = (patch: Partial<BlogDiscoveryState>, replace = false) => {
+    // History is updated before React Router commits its transition. Reading it
+    // here keeps fast input from overwriting a just-selected column.
+    const currentSearch = window.location.search
+    const nextSearch = serializeBlogDiscoveryState({ ...parseBlogDiscoverySearch(currentSearch), ...patch })
+    if (nextSearch !== currentSearch) setSearchParams(nextSearch, { replace })
+  }
+
   const handleSelectColumn = (column: BlogColumn | 'all') => {
-    setSelectedBlogColumn(column)
-    setPage(1)
+    updateDiscovery({ column, page: 1 })
   }
 
   const handleSearchChange = (value: string) => {
-    setSearchQuery(value)
-    setPage(1)
+    const query = normalizeBlogQuery(value)
+    setQueryDraft(query)
+    updateDiscovery({ query, page: 1 }, true)
   }
 
   return (
@@ -82,8 +99,9 @@ export function BlogPage() {
             id="blog-search"
             className="blog-search"
             type="search"
-            value={searchQuery}
+            value={queryDraft ?? searchQuery}
             onChange={(event) => handleSearchChange(event.target.value)}
+            onBlur={() => setQueryDraft(null)}
             placeholder="搜索文章、项目方法、技术关键词"
           />
           <p className="blog-result-meta" aria-live="polite">
@@ -97,7 +115,10 @@ export function BlogPage() {
           <BlogCard
             key={post.slug}
             post={post}
-            onReadMore={() => navigate(`/blog/${post.slug}`)}
+            onReadMore={() => {
+              const current = resolveBlogDiscovery(window.location.search, publicBlogs)
+              navigate(`/blog/${post.slug}${serializeBlogDiscoveryState(current.state)}`)
+            }}
           />
         ))}
       </div>
@@ -120,7 +141,7 @@ export function BlogPage() {
           type="button"
           disabled={page === 1}
           aria-disabled={page === 1}
-          onClick={() => setPage((current) => current - 1)}
+          onClick={() => updateDiscovery({ page: page - 1 })}
         >
           上一页
         </button>
@@ -132,7 +153,7 @@ export function BlogPage() {
           type="button"
           disabled={page === totalPages}
           aria-disabled={page === totalPages}
-          onClick={() => setPage((current) => current + 1)}
+          onClick={() => updateDiscovery({ page: page + 1 })}
         >
           下一页
         </button>

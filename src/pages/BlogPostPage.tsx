@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import '../styles/route-pages.css'
 import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
 import { blogColumnMeta } from '../data/blog'
-import { getBlogProjectIds, getPublicBlogPostSummary, getRelatedBlogPosts } from '../data/blogCuration'
+import { getBlogProjectIds, getPublicBlogPosts, getPublicBlogPostSummary, getRelatedBlogPosts } from '../data/blogCuration'
 import { getBlogPost } from '../data/blogContent'
 import type { BlogPost } from '../data/blogShared'
 import { projects } from '../data/portfolio'
+import { getBlogListHref, resolveBlogDiscovery, serializeBlogDiscoveryState } from '../utils/blogDiscovery'
 
 export function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>()
-  const navigate = useNavigate()
+  const { search } = useLocation()
   const [loadedPost, setLoadedPost] = useState<{ slug: string; post: BlogPost | null } | null>(null)
+  const listState = useMemo(() => resolveBlogDiscovery(search, getPublicBlogPosts()).state, [search])
+  const listHref = getBlogListHref(listState)
+  const listSearch = serializeBlogDiscoveryState(listState)
 
   const publicPostSummary = useMemo(() => (slug ? getPublicBlogPostSummary(slug) : undefined), [slug])
   const post = publicPostSummary ? (loadedPost && loadedPost.slug === slug ? loadedPost.post : undefined) : null
@@ -77,10 +81,10 @@ export function BlogPostPage() {
         <div className="detail-missing">
           <h1 className="section-title">未找到该文章</h1>
           <p className="section-description">该文章可能已下线或链接有误。</p>
-          <button className="btn" onClick={() => navigate('/blog')}>
+          <Link className="btn" to={listHref}>
             <ArrowLeft size={16} aria-hidden />
             <span>返回知识库</span>
-          </button>
+          </Link>
         </div>
       </main>
     )
@@ -88,7 +92,7 @@ export function BlogPostPage() {
 
   return (
     <article className="page-stack detail-page blog-post-page">
-      <Link to="/blog" className="detail-back">
+      <Link to={listHref} className="detail-back">
         <ArrowLeft size={16} aria-hidden />
         <span>知识库</span>
       </Link>
@@ -184,7 +188,7 @@ export function BlogPostPage() {
           <h2 className="detail-block-title">延展阅读</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
-              <Link key={item.slug} to={`/blog/${item.slug}`} className="detail-related-card">
+              <Link key={item.slug} to={`/blog/${item.slug}${listSearch}`} className="detail-related-card">
                 <span className="detail-related-cat">{blogColumnMeta[item.column].titleZh}</span>
                 <h3>{item.title}</h3>
                 <p>{item.detail}</p>

@@ -36,6 +36,20 @@ const routeCases: RouteCase[] = [
   },
   { pathname: '/blog', routePattern: '/blog', routeArea: 'blog', routeDepth: 1 },
   {
+    pathname: '/blog?column=knowledge&q=discovery-fixture-private&page=2#reading',
+    routePattern: '/blog',
+    routeArea: 'blog',
+    routeDepth: 1,
+    forbidden: ['knowledge', 'discovery-fixture-private', 'column', 'page=', 'reading', '?', '#'],
+  },
+  {
+    pathname: '/blog/legal-rag-review?column=project-notes&q=discovery-fixture-private',
+    routePattern: '/blog/:slug',
+    routeArea: 'blog-post',
+    routeDepth: 2,
+    forbidden: ['legal-rag-review', 'project-notes', 'discovery-fixture-private', 'column', '?'],
+  },
+  {
     pathname: '/blog/agentic-rag-frontier-2026?debug=true',
     routePattern: '/blog/:slug',
     routeArea: 'blog-post',

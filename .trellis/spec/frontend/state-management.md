@@ -120,6 +120,12 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Hidden/review-needed drafts do not enter list/detail/assistant/sitemap.
 - Column, search, pagination, and empty state are derived from one filtered public collection.
 - Changing column/search resets pagination to page one.
+- `src/utils/blogDiscovery.ts` owns the blog `column/q/page` URL contract and the filtered/paginated projection. The route is authoritative; only the focused search input may keep a transient editing draft to avoid dropped characters during Router transitions. Blur/popstate discard that draft; never persist it or derive a separate result collection from it.
+- Only known columns and safe positive integer pages are accepted; clamp valid pages to the filtered page count. Bound search to 120 Unicode code points while preserving typing spaces. Duplicate parameters use the first value, unknown parameters are discarded, and default values are omitted from canonical URLs.
+- Normalize malformed URLs and update typed search with Router `replace`; explicit column/page changes create history entries. Browser back/forward and reload must derive the controls and result set from the resulting location.
+- Event handlers merge edits into the current browser search, which can be newer than React Router's rendered location during a transition. Verify fast typing immediately after a column change so a stale render cannot drop characters or reset the column.
+- Article and related-article links carry only this normalized search context. Normal/missing-detail return links are constructed from the fixed `/blog` path, never an arbitrary `returnTo`. Canonical SEO and analytics remain query/hash-free.
+- Run `blog:discovery-check` for deterministic multi-page/invalid-input cases and `blog:discovery-ui` (also included in `check:ui`) for actual history, refresh, copied links, keyboard navigation and empty results. Scroll/focus restoration is a separate contract, not implied by preserving filter state.
 
 ## Mobile State Rules
 

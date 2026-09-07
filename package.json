@@ -102,6 +102,8 @@
     "studio:smoke": "node scripts/check-studio-smoke.mjs",
     "blog:audit": "tsx scripts/audit-blog-catalog.ts",
     "blog:check": "node scripts/check-public-blog.mjs",
+    "blog:discovery-check": "tsx scripts/check-blog-discovery.ts",
+    "blog:discovery-ui": "node scripts/check-blog-discovery-ui.mjs",
     "blog:knowledge-check": "tsx scripts/check-blog-knowledge-quality.ts",
     "blog:project-notes-check": "tsx scripts/check-blog-project-notes-quality.ts",
     "project-details:check": "tsx scripts/check-project-detail-evidence.ts",

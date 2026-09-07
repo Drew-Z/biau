@@ -55,17 +55,7 @@ export function StatusSectionNavigator() {
     const targetTop = Math.max(0, window.scrollY + target.getBoundingClientRect().top - 86)
     const longJump = Math.abs(targetTop - window.scrollY) > window.innerHeight * 2
     setCurrentSection(section.id)
-    if (reduceMotion || longJump) {
-      const previousScrollBehavior = document.documentElement.style.scrollBehavior
-      document.documentElement.style.scrollBehavior = 'auto'
-      window.scrollTo({ top: targetTop, behavior: 'auto' })
-      window.requestAnimationFrame(() => {
-        document.documentElement.style.scrollBehavior = previousScrollBehavior
-        setCurrentSection(section.id)
-      })
-      return
-    }
-    window.scrollTo({ top: targetTop, behavior: 'smooth' })
+    window.scrollTo({ top: targetTop, behavior: reduceMotion || longJump ? 'instant' : 'smooth' })
   }
 
   const currentIndex = statusSections.findIndex((section) => section.id === currentSection)

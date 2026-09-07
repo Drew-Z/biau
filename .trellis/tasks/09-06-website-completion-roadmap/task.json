@@ -19,7 +19,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "09-08-stage-1-ui-delivery"
+    "09-08-stage-1-ui-delivery",
+    "09-08-stage-2-blog-discovery-state"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -28,13 +29,13 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 2,
-      "activeChild": null,
+      "activeChild": "09-08-stage-2-blog-discovery-state",
       "lastCompletedChild": "09-08-stage-1-ui-delivery",
-      "nextAction": "Plan and implement normalized blog list URL state and safe detail returns; assess project grouping separately afterward.",
+      "nextAction": "Commit and archive the verified blog discovery child, then return to the parent and assess project grouping. Final full UI: 42 groups, 0 failures.",
       "ownerThreadId": "01a07cf9-7ffa-7843-a3f6-c20b39aa224b",
-      "automationId": null,
+      "automationId": "automation",
       "cadenceMinutes": 15,
       "authorizationDate": "2026-09-08"
     }

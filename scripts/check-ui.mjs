@@ -2,6 +2,7 @@ import { chromium } from 'playwright'
 import sharp from 'sharp'
 import { createVerificationProgress } from './lib/verification-progress.mjs'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
+import { checkBlogDiscoveryNavigation } from './check-blog-discovery-ui.mjs'
 import {
   findReliabilityProjectForTarget,
   reliabilityProjects as staticReliabilityProjects,
@@ -1794,6 +1795,11 @@ try {
   await checkNavigationTypography(browser)
   finishProgressGroup(navigationTypographyFailures)
 
+  const blogDiscoveryFailures = failures.length
+  progress.start('blog-discovery', 'URL state, history, shared links, and safe detail returns')
+  await checkBlogDiscoveryNavigation(browser, base)
+  finishProgressGroup(blogDiscoveryFailures)
+
   for (const viewport of viewports) {
     for (const route of routes) {
       const failureCount = failures.length
@@ -2603,14 +2609,10 @@ for (const width of [320, 390, 430]) {
     }
   }
 
-  await mobileStatusPage.evaluate(() => {
-    const root = document.documentElement
-    const previous = root.style.scrollBehavior
-    root.style.scrollBehavior = 'auto'
-    document.querySelector('#status-manual')?.scrollIntoView({ block: 'start' })
-    root.style.scrollBehavior = previous
-    window.dispatchEvent(new Event('scroll'))
-  })
+  // Exercise manual reading with real input without changing page styles.
+  const manualScrollDelta = await mobileStatusPage.locator('#status-manual').evaluate((item) => item.getBoundingClientRect().top - 86)
+  await mobileStatusPage.mouse.move(width / 2, 450)
+  await mobileStatusPage.mouse.wheel(0, manualScrollDelta)
   await mobileStatusPage.waitForFunction(
     () => {
       const target = document.querySelector('#status-manual')
@@ -2626,12 +2628,20 @@ for (const width of [320, 390, 430]) {
     undefined,
     { timeout: 2000 },
   ).catch(() => undefined)
-  if ((await sectionSelect.inputValue()) !== 'status-manual') {
-    failures.push(`/status mobile navigator ${width}px: scrolling should update the current section`)
+  const manualScrollState = await mobileStatusPage.evaluate(() => ({
+    scrollY: window.scrollY,
+    selected: document.querySelector('.status-section-navigator select')?.value,
+    targetTop: document.querySelector('#status-manual')?.getBoundingClientRect().top,
+    stickyTop: document.querySelector('.status-section-navigator')?.getBoundingClientRect().top,
+  }))
+  if (manualScrollState.targetTop === undefined || manualScrollState.targetTop < 70 || manualScrollState.targetTop > 105) {
+    failures.push(`/status mobile navigator ${width}px: wheel scrolling should reach the manual queue, got ${JSON.stringify(manualScrollState)}`)
   }
-  const stickyTop = await navigator.evaluate((item) => item.getBoundingClientRect().top)
-  if (stickyTop < 0 || stickyTop > 16) {
-    failures.push(`/status mobile navigator ${width}px: sticky navigator should remain near the viewport top`)
+  if (manualScrollState.selected !== 'status-manual') {
+    failures.push(`/status mobile navigator ${width}px: scrolling should update the current section, got ${JSON.stringify(manualScrollState)}`)
+  }
+  if (manualScrollState.stickyTop === undefined || manualScrollState.stickyTop < 0 || manualScrollState.stickyTop > 16) {
+    failures.push(`/status mobile navigator ${width}px: sticky navigator should remain near the viewport top, got ${JSON.stringify(manualScrollState)}`)
   }
   const overflow = await mobileStatusPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)
   if (overflow) failures.push(`/status mobile navigator ${width}px: page should not overflow horizontally`)

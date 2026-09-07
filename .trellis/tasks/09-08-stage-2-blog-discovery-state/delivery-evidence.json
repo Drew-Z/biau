@@ -1,0 +1,54 @@
+{
+  "baselineHead": "3a6e8ee7e658a216ecd4ef574baa972d294c4405",
+  "buildEntry": "index-CIPJVgde.js",
+  "files": [
+    {
+      "path": "package.json",
+      "sha256": "2247661ae4cf8baa2df2b318b911ca5325f2a9780d3b2d9f1c9718604530da7f"
+    },
+    {
+      "path": "scripts/check-analytics-route-metadata.ts",
+      "sha256": "6602e54dd8afbdaeda81bd9c23d7afd0faf1c5898562b99fb4d94e28bd2062ad"
+    },
+    {
+      "path": "scripts/check-ui.mjs",
+      "sha256": "5432e1a86cd5cf9c2f086219d6d45fecb6d76772bd541a71a5355f912251625c"
+    },
+    {
+      "path": "scripts/check-blog-discovery.ts",
+      "sha256": "7d8f7c5784e3b7d81b85ad7cfc1fcc69a5b0d7ce84d8894fa19141237c11de17"
+    },
+    {
+      "path": "scripts/check-blog-discovery-ui.mjs",
+      "sha256": "0918398e8d3d56e41016efce43160c20acd665375289559bae84afb80e6cb60a"
+    },
+    {
+      "path": "src/pages/BlogPage.tsx",
+      "sha256": "25b2e6ed1e22eb2ff1adbd64b38457dc07c03b5126ed590ec8fbf65786883a49"
+    },
+    {
+      "path": "src/pages/BlogPostPage.tsx",
+      "sha256": "de5dc7c8921e1e3e93b8f9515e8e8f6c48b5cb545e721304b47d9110feeff2db"
+    },
+    {
+      "path": "src/utils/blogDiscovery.ts",
+      "sha256": "7bb155c9a0403a30b67b0be68fd2145fd94eafc777fad03e7fdfbf95af1d5015"
+    },
+    {
+      "path": "src/components/StatusSectionNavigator.tsx",
+      "sha256": "d9797ea963fba3ca321d3a98a101b1f3fd02a0575af8e939c7998a8dc6dcfad9"
+    },
+    {
+      "path": ".trellis/spec/frontend/state-management.md",
+      "sha256": "7748c226b8e0b5514335e80f0482ea3c628966746f5ce0d991f3f83dca4627b7"
+    },
+    {
+      "path": ".trellis/spec/frontend/quality-guidelines.md",
+      "sha256": "3e9c04f29afdccec8c50628b629c4900987e84ef12b19c3d637cf468d05aef65"
+    },
+    {
+      "path": "public/status/blog-semi-synthetic.json",
+      "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+    }
+  ]
+}

@@ -22,7 +22,7 @@
 3. 回写父任务 `activeChild`、`phase=execute` 和下一动作，用 `task.py start` 激活子任务。主会话按 `trellis-before-dev` 实施，不派实现/检查代理。
 4. `phase=verify`：检查本次完整范围，运行必要 lint/build/确定性合同/浏览器检查。复用当前同一代码状态已通过的检查时记录来源，不能把旧版本或部分验证说成全量通过。
 5. `phase=deliver`：展示精确提交范围，检查暂存白名单并本地提交。禁止 push/deploy/sign、真实生产模型调用、公开内容发布、业务 Feed/Cron 启用及修改保护状态快照；不得自动消费账户 usage reset。
-6. 保存验收结果、commit 和剩余限制。用 `task.py archive <child> --no-commit` 归档该子任务，再只提交该子任务的移动和父任务记账；不归档父任务或历史持续任务。
+6. 保存验收结果、commit 和剩余限制。用 `task.py archive <child> --no-commit` 归档该子任务，再只提交该子任务的移动和父任务记账；不归档父任务或历史持续任务。归档根目录被忽略，首次跟踪仅对本子任务的精确归档目录使用 `git add -f`，再核对原路径删除与目标完整文件集；不得 force 整个 archive。命令部分成功时先检查索引，再补未完成部分。
 7. 实际运行 `task.py start 09-06-website-completion-roadmap`，把 `activeChild` 清空、`lastCompletedChild` 更新、`round` 增加、`phase=assess`，在 `assessment.md` 写下新评估。直接进入下一项，无需用户再次发消息。
 
 ## 恢复、等待和停止
