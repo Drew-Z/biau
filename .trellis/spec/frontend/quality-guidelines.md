@@ -40,6 +40,107 @@ npm.cmd run docs:deployment-check
 - Letter spacing is `0`; do not scale font size directly with viewport width.
 - Preserve a multi-color but restrained palette; do not regress to a one-note dark-blue/purple/beige theme.
 
+## Navigation Typography Contract
+
+Desktop top-navigation labels are one shared visual system across `/`, catalog
+routes, detail routes, and every theme/language state. Define its five text
+measurements once on `.navigation-top`; both `.nav-link-center` and
+`.nav-link-en` consume those custom properties. Page-specific selectors may
+change layout, surface treatment, and state emphasis, but must not override
+`font-family`, `font-size`, `font-weight`, `letter-spacing`, or `line-height`.
+This prevents a route change from changing label width, weight, or baseline.
+
+```css
+.navigation-top {
+  --nav-desktop-font-family: var(--font-ui);
+  --nav-desktop-font-size: 14px;
+  --nav-desktop-font-weight: 650;
+  --nav-desktop-letter-spacing: 0;
+  --nav-desktop-line-height: 1.2;
+}
+
+.nav-link-center,
+.nav-link-en {
+  font-family: var(--nav-desktop-font-family);
+  font-size: var(--nav-desktop-font-size);
+  font-weight: var(--nav-desktop-font-weight);
+  letter-spacing: var(--nav-desktop-letter-spacing);
+  line-height: var(--nav-desktop-line-height);
+}
+```
+
+`active`, `hover`, and `focus-visible` may change color, background, shadow,
+underline, or a bounded non-measurement translation. They must not change the
+five properties above, apply text scale, or alter the label's measured width or
+height. The mobile `.mobile-tab__label` has its own readable contract
+(`10px / 750 / 0 / 1.05`) and likewise remains stable across route/theme/language
+states; do not force desktop values onto it.
+
+When changing navigation CSS, `scripts/check-ui.mjs` must retain its
+`navigation-typography` browser group: inspect computed values and label bounds
+for `/`, `/projects`, `/blog`, `/status`, a project detail, and a blog detail;
+cover desktop `1440`, mobile `320/390/430`, `morning/nature/stellar`, Chinese
+and English, plus initial/active/hover/focus-visible/route-switch states.
+Normalize browser-serialized `letter-spacing: normal` to `0px`; a failure must
+identify the route, viewport, theme, language, and state rather than weakening
+the assertion.
+
+## Desktop Active Navigation Visual Contract
+
+Desktop route tabs also share one target and indicator geometry. Keep the four
+items at `96px` minimum width with an `8px` gap, `8px 12px 12px` padding, and an
+`8px` radius so changing routes does not swap between wide compact targets and
+narrow widely spaced targets. The active indicator is a `56px × 2px` line,
+positioned `4px` from the bottom with a `1px` radius. Its color and restrained
+shadow come from `--home-accent` / `--home-accent-soft`; do not add a second
+route-only glow pseudo-element.
+
+```css
+.navigation-top {
+  --nav-desktop-item-gap: 8px;
+  --nav-desktop-item-min-width: 96px;
+  --nav-active-indicator-width: 56px;
+  --nav-active-indicator-height: 2px;
+}
+
+.nav-link-center.active::before {
+  content: none;
+  display: none;
+}
+```
+
+Homepage, catalog, and detail selectors must not override this geometry.
+Theme color differences are intentional, but within one theme the computed
+active background, indicator gradient, shadow, and pseudo-element visibility
+must stay identical across routes and across active hover/focus states. The
+`navigation-typography` browser group owns these computed-style and geometry
+assertions alongside the existing text contract.
+
+At `769–1023px`, keep the same four route tabs and active contract but use the
+intermediate desktop shell: Logo, route tabs, language, and the three-theme
+selector remain visible; the duplicate brand-text home link and primary CTA may
+hide because Logo and the explicit Home tab preserve that destination. At
+`1024px` the complete desktop brand and subpage CTA return. Tests must compare
+the actual rectangles of the shell, its three regions, all route links, and all
+visible controls against the viewport and against adjacent regions. A matching
+`scrollWidth` / `clientWidth` pair is not sufficient because global horizontal
+clipping can hide an out-of-bounds control without creating a scrollbar.
+
+## Motion Content Readability Contract
+
+Desktop auto-moving content must preserve readable edge content and a stable
+keyboard target. Decorative viewport masks may soften the clipping edge, but
+their fully transparent range must stay outside primary text and actions. For
+the home carousel, each edge fade is capped at `6px`; mobile keeps the mask
+disabled because it renders a static vertical list.
+
+Mouse hover and keyboard focus are equivalent pause signals for automatic
+carousel motion. Keep the track stationary while focus remains anywhere inside
+the panel, including nested action buttons, and resume only after focus leaves
+the complete panel. `scripts/check-ui.mjs` must verify the mask depth from
+computed styles and measure track movement while a nested action owns focus;
+do not let a concurrent pointer hover make the keyboard assertion pass.
+
 ## Content Studio
 
 - Mobile uses focused workspace modes; desktop keeps the complete workspace visible.
@@ -52,6 +153,7 @@ npm.cmd run docs:deployment-check
 ## Mobile Navigation And Reading
 
 - Mobile tab bar includes exactly the public primary sections.
+- Its grid track count equals the shared `Navigation` route count (currently four). The first and last tabs fill the padded content edges, every track is equal width, and route changes preserve that contract. Never retain an empty fifth track or invent a disabled destination to fill it.
 - Touch targets are at least 44px where practical.
 - On `/status`, `.status-target__actions .btn` and `.status-project-card__link` use `min-height: 44px` within the existing `max-width: 720px` rules; keep the desktop `40px` density. Do not widen the shared selector to status-detail or missing-page actions without separate evidence.
 - The status mobile browser matrix at `320/390/430` must find both action groups and assert visible, measurable targets at least `44px` wide/high with horizontal viewport containment. Missing groups and hidden/zero-size actions must fail; filtering them out before measurement can make an inaccessible page pass. Use scrolled screenshots and hit testing to verify reachability, not `scrollWidth` alone.

@@ -1,5 +1,18 @@
 /* Navigation - 顶部导航栏（原版浮动玻璃条样式） */
 .navigation-top {
+  --nav-desktop-font-family: var(--font-ui);
+  --nav-desktop-font-size: 14px;
+  --nav-desktop-font-weight: 650;
+  --nav-desktop-letter-spacing: 0;
+  --nav-desktop-line-height: 1.2;
+  --nav-desktop-item-gap: 8px;
+  --nav-desktop-item-min-width: 96px;
+  --nav-desktop-item-padding: 8px 12px 12px;
+  --nav-desktop-item-radius: 8px;
+  --nav-active-indicator-bottom: 4px;
+  --nav-active-indicator-width: 56px;
+  --nav-active-indicator-height: 2px;
+  --nav-active-indicator-radius: 1px;
   position: relative;
   z-index: 100;
 }
@@ -278,7 +291,7 @@
 /* 中间导航 */
 .nav-items-center {
   display: flex;
-  gap: 3.25rem;
+  gap: var(--nav-desktop-item-gap);
   list-style: none;
   margin: 0;
   padding: 0;
@@ -291,22 +304,23 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 64px;
+  min-width: var(--nav-desktop-item-min-width);
   gap: 0.25rem;
   background: transparent;
   border: none;
-  border-radius: 16px;
+  border-radius: var(--nav-desktop-item-radius);
   cursor: pointer;
-  padding: 0.5rem 0.75rem 0.75rem;
+  padding: var(--nav-desktop-item-padding);
   transition:
     transform 0.24s var(--ease-out-expo),
     color 0.2s var(--ease-smooth),
     text-shadow 0.24s var(--ease-smooth);
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-family: var(--nav-desktop-font-family);
+  font-size: var(--nav-desktop-font-size);
+  font-weight: var(--nav-desktop-font-weight);
+  letter-spacing: var(--nav-desktop-letter-spacing);
+  line-height: var(--nav-desktop-line-height);
   color: var(--ink);
-  font-family: var(--font-ui);
 }
 
 .nav-link-center:focus-visible,
@@ -332,60 +346,39 @@
 }
 
 .nav-link-en {
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-family: var(--nav-desktop-font-family);
+  font-size: var(--nav-desktop-font-size);
+  font-weight: var(--nav-desktop-font-weight);
+  letter-spacing: var(--nav-desktop-letter-spacing);
+  line-height: var(--nav-desktop-line-height);
   color: var(--ink);
-  line-height: 1;
-  font-family: var(--font-ui);
   transition:
     color 0.2s var(--ease-smooth),
-    letter-spacing 0.26s var(--ease-out-expo),
     transform 0.26s var(--ease-out-expo),
     text-shadow 0.26s var(--ease-smooth);
 }
 
-/* 活动项底部细下划线（与原版一致） */
+/* Active geometry is shared across routes; theme tokens provide the color. */
 .nav-link-center.active::after {
   content: '';
   position: absolute;
-  bottom: 1px;
+  bottom: var(--nav-active-indicator-bottom);
   left: 50%;
   transform: translateX(-50%);
-  width: 46px;
-  height: 4px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklch, var(--amber) 82%, white) 24%,
-    var(--amber) 50%,
-    color-mix(in oklch, var(--amber) 82%, white) 76%,
-    transparent
-  );
-  box-shadow:
-    0 0 9px color-mix(in oklch, var(--amber) 46%, transparent),
-    0 0 20px color-mix(in oklch, var(--amber) 28%, transparent);
+  width: var(--nav-active-indicator-width);
+  height: var(--nav-active-indicator-height);
+  border-radius: var(--nav-active-indicator-radius);
+  background: linear-gradient(90deg, var(--home-accent), var(--home-accent-soft));
+  box-shadow: 0 0 16px color-mix(in oklch, var(--home-accent) 40%, transparent);
 }
 
 .nav-link-center.active::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -2px;
-  width: 70px;
-  height: 18px;
-  border-radius: 999px;
-  background: radial-gradient(ellipse at center, color-mix(in oklch, var(--amber) 26%, transparent), transparent 70%);
-  filter: blur(8px);
-  opacity: 0.54;
-  transform: translateX(-50%);
-  pointer-events: none;
+  content: none;
+  display: none;
 }
 
 .nav-link-center:hover .nav-link-en {
   color: var(--accent-orange);
-  letter-spacing: 1.8px;
   text-shadow: 0 0 18px color-mix(in oklch, var(--amber) 28%, transparent);
   transform: translateY(-1px);
 }
@@ -404,27 +397,6 @@
   text-shadow:
     0 0 10px color-mix(in oklch, var(--amber) 38%, transparent),
     0 0 26px rgba(117, 172, 234, 0.22);
-}
-
-:root:not(.light-theme) .nav-link-center.active::after {
-  height: 5px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(117, 172, 234, 0.7) 18%,
-    rgba(234, 247, 255, 0.96) 46%,
-    rgba(255, 211, 110, 0.86) 62%,
-    transparent
-  );
-  box-shadow:
-    0 0 11px rgba(234, 247, 255, 0.42),
-    0 0 26px rgba(117, 172, 234, 0.32),
-    0 0 36px rgba(255, 211, 110, 0.22);
-}
-
-:root:not(.light-theme) .nav-link-center.active::before {
-  opacity: 0.82;
-  background: radial-gradient(ellipse at center, rgba(117, 172, 234, 0.36), rgba(255, 211, 110, 0.12) 46%, transparent 72%);
 }
 
 /* 右侧操作区：语言切换 + 所有项目 */
@@ -559,17 +531,6 @@
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.24));
   border-color: color-mix(in oklch, var(--ink) 18%, transparent);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.64);
-}
-
-.light-theme .nav-link-center.active::after {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in oklch, var(--accent-orange) 82%, white) 24%,
-    var(--accent-orange) 50%,
-    color-mix(in oklch, var(--accent-orange) 82%, white) 76%,
-    transparent
-  );
 }
 
 .nav-theme-toggle,
@@ -811,11 +772,6 @@
     border-radius: 14px;
   }
 
-  .nav-link-en {
-    font-size: 13px;
-    letter-spacing: 0.02em;
-  }
-
   .nav-actions {
     gap: 0.3rem;
     min-width: 0;
@@ -960,7 +916,7 @@
       calc(6px + env(safe-area-inset-bottom, 0px))
       max(8px, env(safe-area-inset-left, 0px));
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: stretch;
     border-top: 1px solid color-mix(in oklch, var(--ink) 12%, transparent);
     background: color-mix(in oklch, var(--panel-strong, var(--panel)) 97%, transparent);
@@ -1120,43 +1076,16 @@
   line-height: 1;
 }
 
-.page-home .nav-items-center {
-  gap: 8px;
-}
-
 .page-home .nav-link-center {
-  min-width: 96px;
-  padding: 8px 12px 12px;
-  border-radius: 8px;
   color: var(--home-muted);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
 }
 
 .page-home .nav-link-en {
   color: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0;
 }
 
 .page-home .nav-link-center.active .nav-link-en {
   color: var(--home-ink);
-}
-
-.page-home .nav-link-center.active::after {
-  bottom: 4px;
-  width: 56px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--home-accent);
-  box-shadow: none;
-}
-
-.page-home .nav-link-center.active::before {
-  display: none;
 }
 
 .page-home .nav-actions {
@@ -1361,7 +1290,6 @@
   .page-home .mobile-tabbar {
     right: 12px;
     left: 12px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     border: 1px solid var(--home-nav-border);
     border-bottom: 0;
     border-radius: 8px 8px 0 0;
@@ -1399,11 +1327,6 @@
 .page-home .brand-subtitle,
 .page-home .nav-link-center {
   color: var(--reference-muted);
-}
-
-.page-home .nav-link-center.active::after {
-  background: linear-gradient(90deg, var(--reference-accent), var(--reference-accent-soft));
-  box-shadow: 0 0 16px color-mix(in oklch, var(--reference-accent) 40%, transparent);
 }
 
 .page-home .nav-lang-toggle,
@@ -1525,5 +1448,35 @@
 @media (max-width: 768px) {
   :root[data-site-theme] .app .nav-inner {
     border-radius: 16px;
+  }
+}
+
+/* Keep the desktop route row, theme controls, and language control visible on
+   narrow desktop/tablet widths without introducing a second navigation mode. */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .nav-inner,
+  .app.page-home .nav-inner {
+    width: calc(100% - 32px);
+    max-width: none;
+    margin-top: 16px;
+    padding: 12px 16px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .nav-brand-section,
+  .page-home .nav-brand-section {
+    min-height: 48px;
+    padding: 0;
+  }
+
+  .nav-brand-link,
+  .nav-all-tools {
+    display: none;
+  }
+
+  .nav-actions,
+  .page-home .nav-actions {
+    gap: 4px;
   }
 }

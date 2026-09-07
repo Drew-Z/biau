@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, type PointerEvent } from 'react'
+import { useRef, useEffect, useCallback, type FocusEvent, type PointerEvent } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ColoredCard } from './ColoredCard'
@@ -370,6 +370,16 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     wrapper.style.setProperty('--harbor-surface-glow-opacity', opacity.toFixed(3))
   }
 
+  const handlePanelFocusIn = () => {
+    isHoveringRef.current = true
+  }
+
+  const handlePanelFocusOut = (event: FocusEvent<HTMLElement>) => {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+      isHoveringRef.current = false
+    }
+  }
+
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (usesMobileInteractionMode() || !carouselMotionAllowed()) return
     if (event.button !== 0) return
@@ -483,6 +493,8 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
         tiltRef.current.targetY = 0
         wrapperRef.current?.style.setProperty('--harbor-surface-glow-opacity', '0')
       }}
+      onFocusCapture={handlePanelFocusIn}
+      onBlurCapture={handlePanelFocusOut}
     >
       <span className="harbor-surface-glow" aria-hidden="true" />
       <svg

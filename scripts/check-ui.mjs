@@ -1250,6 +1250,536 @@ async function checkStatusDetailReadingNavigation(browser, failures) {
     }
   }
 }
+
+const navigationTypographyRoutes = [
+  '/',
+  '/projects',
+  '/blog',
+  '/status',
+  '/projects/legal-rag',
+  '/blog/legal-rag-review',
+]
+const navigationTypographyThemes = ['morning', 'nature', 'stellar']
+const navigationTypographyLanguages = ['zh', 'en']
+const navigationContainmentWidths = [769, 800, 900, 1023, 1024]
+const navigationContainmentRoutes = ['/', '/projects', '/blog/legal-rag-review']
+
+function isSameTypography(actual, expected) {
+  return (
+    actual.fontFamily === expected.fontFamily &&
+    actual.fontSize === expected.fontSize &&
+    actual.fontWeight === expected.fontWeight &&
+    actual.letterSpacing === expected.letterSpacing &&
+    actual.lineHeight === expected.lineHeight
+  )
+}
+
+function isSameActiveNavigationVisual(actual, expected) {
+  return JSON.stringify(actual) === JSON.stringify(expected)
+}
+
+function hasDesktopNavigationContract(signature) {
+  return (
+    signature.fontFamily.length > 0 &&
+    signature.fontSize === '14px' &&
+    signature.fontWeight === '650' &&
+    signature.letterSpacing === '0px' &&
+    Math.abs(Number.parseFloat(signature.lineHeight) - 16.8) < 0.01
+  )
+}
+
+function hasMobileTabContract(signature) {
+  return (
+    signature.fontFamily.length > 0 &&
+    signature.fontSize === '10px' &&
+    signature.fontWeight === '750' &&
+    signature.letterSpacing === '0px' &&
+    Math.abs(Number.parseFloat(signature.lineHeight) - 10.5) < 0.01
+  )
+}
+
+function navigationTypographyFailure(context, message) {
+  const failure = `navigation-typography viewport=${context.viewport} theme=${context.theme} language=${context.language} route=${context.route} status=${context.status}: ${message}`
+  failures.push(failure)
+  if (process.env.UI_CHECK_DIAGNOSTICS === '1') console.error(failure)
+}
+
+async function readNavigationTextState(locator) {
+  return locator.evaluate((element) => {
+    const label = element.querySelector('.nav-link-en')
+    if (!(label instanceof HTMLElement)) return null
+    const signature = (target) => {
+      const style = getComputedStyle(target)
+      return {
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        letterSpacing: style.letterSpacing === 'normal' ? '0px' : style.letterSpacing,
+        lineHeight: style.lineHeight,
+      }
+    }
+    const rect = label.getBoundingClientRect()
+    return {
+      link: signature(element),
+      label: signature(label),
+      rect: { width: rect.width, height: rect.height },
+      focusVisible: element.matches(':focus-visible'),
+    }
+  })
+}
+
+async function readActiveNavigationVisualState(locator) {
+  return locator.evaluate((element) => {
+    const style = getComputedStyle(element)
+    const after = getComputedStyle(element, '::after')
+    const before = getComputedStyle(element, '::before')
+    const rect = element.getBoundingClientRect()
+    return {
+      geometry: {
+        width: Math.round(rect.width * 100) / 100,
+        height: Math.round(rect.height * 100) / 100,
+        padding: style.padding,
+        borderRadius: style.borderRadius,
+        afterBottom: after.bottom,
+        afterWidth: after.width,
+        afterHeight: after.height,
+        afterRadius: after.borderRadius,
+        beforeDisplay: before.display,
+        beforeContent: before.content,
+      },
+      appearance: {
+        backgroundColor: style.backgroundColor,
+        afterBackgroundImage: after.backgroundImage,
+        afterBoxShadow: after.boxShadow,
+        afterOpacity: after.opacity,
+      },
+    }
+  })
+}
+
+function hasDesktopActiveNavigationContract(state) {
+  return (
+    Math.abs(state.geometry.width - 96) < 0.1 &&
+    state.geometry.height > 36 &&
+    state.geometry.height < 38 &&
+    state.geometry.padding === '8px 12px 12px' &&
+    state.geometry.borderRadius === '8px' &&
+    state.geometry.afterBottom === '4px' &&
+    state.geometry.afterWidth === '56px' &&
+    state.geometry.afterHeight === '2px' &&
+    state.geometry.afterRadius === '1px' &&
+    state.geometry.beforeDisplay === 'none' &&
+    state.geometry.beforeContent === 'none' &&
+    state.appearance.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+    state.appearance.afterBackgroundImage !== 'none' &&
+    state.appearance.afterBoxShadow !== 'none' &&
+    state.appearance.afterOpacity === '1'
+  )
+}
+
+async function readDesktopNavigationContainment(page) {
+  return page.evaluate(() => {
+    const readRect = (element) => {
+      if (!(element instanceof HTMLElement) || getComputedStyle(element).display === 'none') return null
+      const rect = element.getBoundingClientRect()
+      return {
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+      }
+    }
+    const visible = (selector) => readRect(document.querySelector(selector)) !== null
+    return {
+      viewportWidth: document.documentElement.clientWidth,
+      inner: readRect(document.querySelector('.nav-inner')),
+      brand: readRect(document.querySelector('.nav-brand-section')),
+      items: readRect(document.querySelector('.nav-items-center')),
+      actions: readRect(document.querySelector('.nav-actions')),
+      logo: readRect(document.querySelector('.nav-logo')),
+      links: [...document.querySelectorAll('.nav-link-center')].map(readRect),
+      controls: [...document.querySelectorAll('.nav-lang-toggle, .nav-theme-selector, .nav-all-tools')]
+        .map(readRect)
+        .filter(Boolean),
+      brandLinkVisible: visible('.nav-brand-link'),
+      primaryActionVisible: visible('.nav-all-tools'),
+    }
+  })
+}
+
+function hasContainedDesktopNavigation(state) {
+  const tolerance = 1
+  const withinViewport = (rect) =>
+    rect && rect.left >= -tolerance && rect.right <= state.viewportWidth + tolerance
+  const separated = (left, right) => left && right && left.right <= right.left + tolerance
+  return (
+    state.inner &&
+    state.brand &&
+    state.items &&
+    state.actions &&
+    state.logo &&
+    state.links.length === 4 &&
+    state.controls.length >= 2 &&
+    [state.inner, state.brand, state.items, state.actions, state.logo, ...state.links, ...state.controls].every(withinViewport) &&
+    state.brand.left >= state.inner.left - tolerance &&
+    state.actions.right <= state.inner.right + tolerance &&
+    separated(state.brand, state.items) &&
+    separated(state.items, state.actions)
+  )
+}
+
+async function readMobileTabState(page) {
+  const activeTabs = page.locator('.mobile-tab.is-active')
+  const count = await activeTabs.count()
+  if (count !== 1) return { count, state: null }
+  const state = await activeTabs.first().evaluate((element) => {
+    const label = element.querySelector('.mobile-tab__label')
+    if (!(label instanceof HTMLElement)) return null
+    const style = getComputedStyle(label)
+    const tabRect = element.getBoundingClientRect()
+    return {
+      signature: {
+        fontFamily: style.fontFamily,
+        fontSize: style.fontSize,
+        fontWeight: style.fontWeight,
+        letterSpacing: style.letterSpacing === 'normal' ? '0px' : style.letterSpacing,
+        lineHeight: style.lineHeight,
+      },
+      rect: { width: tabRect.width, height: tabRect.height },
+    }
+  })
+  return { count, state }
+}
+
+async function readMobileTabbarLayoutState(page) {
+  return page.locator('.mobile-tabbar').evaluate((tabbar) => {
+    const style = getComputedStyle(tabbar)
+    const rect = tabbar.getBoundingClientRect()
+    const tabs = [...tabbar.querySelectorAll('.mobile-tab')].map((tab) => {
+      const tabRect = tab.getBoundingClientRect()
+      return { left: tabRect.left, right: tabRect.right, width: tabRect.width }
+    })
+    return {
+      trackCount: style.gridTemplateColumns.trim().split(/\s+/).filter(Boolean).length,
+      contentLeft: rect.left + Number.parseFloat(style.borderLeftWidth) + Number.parseFloat(style.paddingLeft),
+      contentRight: rect.right - Number.parseFloat(style.borderRightWidth) - Number.parseFloat(style.paddingRight),
+      tabs,
+    }
+  })
+}
+
+function hasFourTrackMobileTabbar(state) {
+  if (state.trackCount !== 4 || state.tabs.length !== 4) return false
+  const [first, ...remaining] = state.tabs
+  const last = state.tabs.at(-1)
+  return (
+    first &&
+    last &&
+    Math.abs(first.left - state.contentLeft) < 0.1 &&
+    Math.abs(last.right - state.contentRight) < 0.1 &&
+    remaining.every((tab) => Math.abs(tab.width - first.width) < 0.1)
+  )
+}
+
+async function focusNavigationLinkWithKeyboard(page) {
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+  })
+  // Seed focus on a known desktop navigation control, then move with the
+  // keyboard so the browser exposes :focus-visible deterministically. A
+  // blind Tab walk is sensitive to route-specific lazy content and can miss
+  // the nav entirely after a pointer interaction.
+  const firstLink = page.locator('.nav-link-center').first()
+  await firstLink.focus()
+  await page.keyboard.press('Tab')
+  const seededIndex = await page.evaluate(() => {
+    const active = document.activeElement
+    if (!(active instanceof HTMLElement) || !active.classList.contains('nav-link-center')) return -1
+    return [...document.querySelectorAll('.nav-link-center')].indexOf(active)
+  })
+  if (seededIndex >= 0) return page.locator('.nav-link-center').nth(seededIndex)
+
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    await page.keyboard.press('Tab')
+    const index = await page.evaluate(() => {
+      const active = document.activeElement
+      if (!(active instanceof HTMLElement) || !active.classList.contains('nav-link-center')) return -1
+      return [...document.querySelectorAll('.nav-link-center')].indexOf(active)
+    })
+    if (index >= 0) return page.locator('.nav-link-center').nth(index)
+  }
+  return null
+}
+
+async function checkNavigationTypography(browser) {
+  let desktopReference = null
+  let mobileReference = null
+  const activeVisualReferences = new Map()
+
+  for (const theme of navigationTypographyThemes) {
+    for (const language of navigationTypographyLanguages) {
+      const page = await createUiPage(browser, { viewport: { width: 1440, height: 1000 } })
+      try {
+        await page.addInitScript(({ initialTheme }) => {
+          window.localStorage.setItem('biau-port-theme', initialTheme)
+          window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+        }, { initialTheme: theme })
+
+        for (const route of navigationTypographyRoutes) {
+          await gotoApp(page, route)
+          if (language === 'en') await page.locator('.nav-lang-toggle').click()
+          const context = { viewport: '1440', theme, language, route, status: 'initial' }
+          const links = page.locator('.nav-link-center')
+          const linkCount = await links.count()
+          if (linkCount !== 4) {
+            navigationTypographyFailure(context, `expected 4 desktop links, got ${linkCount}`)
+            continue
+          }
+
+          const initial = await readNavigationTextState(links.first())
+          if (!initial) {
+            navigationTypographyFailure(context, 'expected measurable desktop navigation label')
+            continue
+          }
+          if (!hasDesktopNavigationContract(initial.link) || !hasDesktopNavigationContract(initial.label)) {
+            navigationTypographyFailure(context, `desktop token contract mismatch ${JSON.stringify(initial)}`)
+          }
+          if (!isSameTypography(initial.link, initial.label)) {
+            navigationTypographyFailure(context, `link and label signatures diverged ${JSON.stringify(initial)}`)
+          }
+          if (desktopReference && !isSameTypography(initial.label, desktopReference)) {
+            navigationTypographyFailure(context, `cross-route signature drift ${JSON.stringify(initial.label)}`)
+          }
+          desktopReference ??= initial.label
+
+          const signatures = await Promise.all(
+            Array.from({ length: linkCount }, (_, index) => readNavigationTextState(links.nth(index))),
+          )
+          if (signatures.some((state) => !state || !isSameTypography(state.label, desktopReference))) {
+            navigationTypographyFailure(context, 'desktop links must share the same typography signature')
+          }
+          if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)) {
+            navigationTypographyFailure(context, 'horizontal overflow detected')
+          }
+
+          const active = page.locator('.nav-link-center.active')
+          const activeState = await readNavigationTextState(active)
+          if (!activeState || !isSameTypography(activeState.label, desktopReference)) {
+            navigationTypographyFailure({ ...context, status: 'active' }, `active signature drift ${JSON.stringify(activeState)}`)
+          }
+          const activeVisualState = await readActiveNavigationVisualState(active)
+          const activeVisualReference = activeVisualReferences.get(theme)
+          if (!hasDesktopActiveNavigationContract(activeVisualState)) {
+            navigationTypographyFailure(
+              { ...context, status: 'active-visual' },
+              `active visual contract mismatch ${JSON.stringify(activeVisualState)}`,
+            )
+          }
+          if (activeVisualReference && !isSameActiveNavigationVisual(activeVisualState, activeVisualReference)) {
+            navigationTypographyFailure(
+              { ...context, status: 'active-visual' },
+              `active visual cross-route drift ${JSON.stringify(activeVisualState)}`,
+            )
+          }
+          activeVisualReferences.set(theme, activeVisualReference ?? activeVisualState)
+
+          await active.hover()
+          await page.waitForTimeout(300)
+          const activeHoverVisualState = await readActiveNavigationVisualState(active)
+          if (!isSameActiveNavigationVisual(activeHoverVisualState, activeVisualReferences.get(theme))) {
+            navigationTypographyFailure(
+              { ...context, status: 'active-hover' },
+              `active hover changed visual contract ${JSON.stringify(activeHoverVisualState)}`,
+            )
+          }
+
+          await active.focus()
+          await page.keyboard.press('Shift+Tab')
+          await page.keyboard.press('Tab')
+          const activeFocusVisible = await active.evaluate((element) => element.matches(':focus-visible'))
+          const activeFocusVisualState = await readActiveNavigationVisualState(active)
+          if (
+            !activeFocusVisible ||
+            !isSameActiveNavigationVisual(activeFocusVisualState, activeVisualReferences.get(theme))
+          ) {
+            navigationTypographyFailure(
+              { ...context, status: 'active-focus-visible' },
+              `active focus changed visual contract ${JSON.stringify({ activeFocusVisible, activeFocusVisualState })}`,
+            )
+          }
+
+          const hoverTarget = page.locator('.nav-link-center:not(.active)').first()
+          const hoverBefore = await readNavigationTextState(hoverTarget)
+          await hoverTarget.hover()
+          await page.waitForTimeout(300)
+          const hoverAfter = await readNavigationTextState(hoverTarget)
+          if (
+            !hoverBefore ||
+            !hoverAfter ||
+            !isSameTypography(hoverAfter.label, desktopReference) ||
+            Math.abs(hoverAfter.rect.width - hoverBefore.rect.width) > 0.1 ||
+            Math.abs(hoverAfter.rect.height - hoverBefore.rect.height) > 0.1
+          ) {
+            navigationTypographyFailure({ ...context, status: 'hover' }, `hover changed text measurement ${JSON.stringify({ hoverBefore, hoverAfter })}`)
+          }
+
+          const focusedLink = await focusNavigationLinkWithKeyboard(page)
+          const focusState = focusedLink ? await readNavigationTextState(focusedLink) : null
+          if (!focusState || !focusState.focusVisible || !isSameTypography(focusState.label, desktopReference)) {
+            navigationTypographyFailure({ ...context, status: 'focus-visible' }, `focus signature drift ${JSON.stringify(focusState)}`)
+          }
+
+          const switchTarget = route === '/projects' ? '/blog' : '/projects'
+          await page.mouse.move(0, 0)
+          await page.locator(`.nav-link-center[href="${switchTarget}"]`).click()
+          await page.waitForFunction((path) => window.location.pathname === path, switchTarget)
+          await page.locator('.route-loading').waitFor({ state: 'detached', timeout: 10_000 }).catch(() => {})
+          await page.locator(`.nav-link-center.active[href="${switchTarget}"]`).waitFor({ state: 'visible', timeout: 2_000 })
+          const afterRouteChange = await readNavigationTextState(page.locator('.nav-link-center').first())
+          if (!afterRouteChange || !isSameTypography(afterRouteChange.label, desktopReference)) {
+            navigationTypographyFailure(
+              { ...context, route: switchTarget, status: 'route-switch' },
+              `route switch signature drift ${JSON.stringify(afterRouteChange)}`,
+            )
+          }
+          const switchedActiveVisualState = await readActiveNavigationVisualState(page.locator('.nav-link-center.active'))
+          if (!isSameActiveNavigationVisual(switchedActiveVisualState, activeVisualReferences.get(theme))) {
+            navigationTypographyFailure(
+              { ...context, route: switchTarget, status: 'route-switch-active-visual' },
+              `route switch changed active visual contract ${JSON.stringify(switchedActiveVisualState)}`,
+            )
+          }
+          if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)) {
+            navigationTypographyFailure({ ...context, route: switchTarget, status: 'route-switch' }, 'horizontal overflow detected')
+          }
+        }
+      } finally {
+        await page.close()
+      }
+    }
+  }
+
+  for (const width of navigationContainmentWidths) {
+    for (const theme of navigationTypographyThemes) {
+      for (const language of navigationTypographyLanguages) {
+        const page = await createUiPage(browser, { viewport: { width, height: 900 } })
+        try {
+          await page.addInitScript(({ initialTheme }) => {
+            window.localStorage.setItem('biau-port-theme', initialTheme)
+            window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+          }, { initialTheme: theme })
+
+          for (const route of navigationContainmentRoutes) {
+            await gotoApp(page, route)
+            if (language === 'en') await page.locator('.nav-lang-toggle').click()
+            const context = { viewport: `${width}`, theme, language, route, status: 'desktop-containment' }
+            const state = await readDesktopNavigationContainment(page)
+            if (!hasContainedDesktopNavigation(state)) {
+              navigationTypographyFailure(context, `navigation controls must remain inside the viewport ${JSON.stringify(state)}`)
+            }
+
+            const compact = width <= 1023
+            if (state.brandLinkVisible === compact || state.primaryActionVisible !== (!compact && route !== '/')) {
+              navigationTypographyFailure(
+                context,
+                `unexpected intermediate visibility contract ${JSON.stringify({
+                  brandLinkVisible: state.brandLinkVisible,
+                  primaryActionVisible: state.primaryActionVisible,
+                })}`,
+              )
+            }
+
+            const activeVisualState = await readActiveNavigationVisualState(page.locator('.nav-link-center.active'))
+            if (!hasDesktopActiveNavigationContract(activeVisualState)) {
+              navigationTypographyFailure(
+                context,
+                `intermediate active visual contract mismatch ${JSON.stringify(activeVisualState)}`,
+              )
+            }
+          }
+        } finally {
+          await page.close()
+        }
+      }
+    }
+  }
+
+  for (const width of [320, 390, 430]) {
+    for (const theme of navigationTypographyThemes) {
+      for (const language of navigationTypographyLanguages) {
+        const page = await createUiPage(browser, { viewport: { width, height: 900 } })
+        try {
+          await page.addInitScript(({ initialTheme }) => {
+            window.localStorage.setItem('biau-port-theme', initialTheme)
+            window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+          }, { initialTheme: theme })
+
+          for (const route of navigationTypographyRoutes) {
+            await gotoApp(page, route)
+            if (language === 'en') await page.locator('.nav-lang-toggle').click()
+            const context = { viewport: `${width}`, theme, language, route, status: 'mobile-active' }
+            const initial = await readMobileTabState(page)
+            if (initial.count !== 1 || !initial.state) {
+              navigationTypographyFailure(context, `expected one active mobile tab, got ${initial.count}`)
+              continue
+            }
+            if (!hasMobileTabContract(initial.state.signature)) {
+              navigationTypographyFailure(context, `mobile tab token contract mismatch ${JSON.stringify(initial.state)}`)
+            }
+            if (initial.state.rect.width < 44 || initial.state.rect.height < 44) {
+              navigationTypographyFailure(context, `mobile tab must keep a 44px touch target ${JSON.stringify(initial.state.rect)}`)
+            }
+            if (mobileReference && !isSameTypography(initial.state.signature, mobileReference)) {
+              navigationTypographyFailure(context, `mobile cross-route signature drift ${JSON.stringify(initial.state.signature)}`)
+            }
+            mobileReference ??= initial.state.signature
+            if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)) {
+              navigationTypographyFailure(context, 'horizontal overflow detected')
+            }
+            const initialTabbarLayout = await readMobileTabbarLayoutState(page)
+            if (!hasFourTrackMobileTabbar(initialTabbarLayout)) {
+              navigationTypographyFailure(
+                { ...context, status: 'mobile-grid' },
+                `four route tabs must fill four grid tracks ${JSON.stringify(initialTabbarLayout)}`,
+              )
+            }
+
+            const switchTarget = route.startsWith('/blog') ? '/projects' : '/blog'
+            await page.locator(`.mobile-tab[href="${switchTarget}"]`).click()
+            await page.waitForFunction((path) => window.location.pathname === path, switchTarget)
+            await page.locator('.route-loading').waitFor({ state: 'detached', timeout: 10_000 }).catch(() => {})
+            const afterRouteChange = await readMobileTabState(page)
+            if (
+              afterRouteChange.count !== 1 ||
+              !afterRouteChange.state ||
+              !isSameTypography(afterRouteChange.state.signature, mobileReference)
+            ) {
+              navigationTypographyFailure(
+                { ...context, route: switchTarget, status: 'mobile-route-switch' },
+                `mobile active tab signature drift ${JSON.stringify(afterRouteChange)}`,
+              )
+            }
+            const switchedTabbarLayout = await readMobileTabbarLayoutState(page)
+            if (!hasFourTrackMobileTabbar(switchedTabbarLayout)) {
+              navigationTypographyFailure(
+                { ...context, route: switchTarget, status: 'mobile-route-switch-grid' },
+                `route switch must preserve four filled grid tracks ${JSON.stringify(switchedTabbarLayout)}`,
+              )
+            }
+            if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1)) {
+              navigationTypographyFailure({ ...context, route: switchTarget, status: 'mobile-route-switch' }, 'horizontal overflow detected')
+            }
+          }
+        } finally {
+          await page.close()
+        }
+      }
+    }
+  }
+}
+
 const failures = []
 const browser = await chromium.launch({ headless: true })
 const progress = createVerificationProgress('check:ui')
@@ -1259,6 +1789,11 @@ function finishProgressGroup(failureCount) {
 }
 
 try {
+  const navigationTypographyFailures = failures.length
+  progress.start('navigation-typography', 'desktop and mobile route, theme, language, and interaction matrix')
+  await checkNavigationTypography(browser)
+  finishProgressGroup(navigationTypographyFailures)
+
   for (const viewport of viewports) {
     for (const route of routes) {
       const failureCount = failures.length
@@ -2214,6 +2749,17 @@ for (const width of [320, 390, 430]) {
   if ((await mobileBlogPage.locator('.blog-card').count()) === 0) {
     failures.push(`/blog mobile columns ${width}px: selecting a populated column should show curated cards`)
   }
+  const readMoreTarget = mobileBlogPage.locator('.blog-card .btn').first()
+  const readMoreBox = await readMoreTarget.boundingBox()
+  if (
+    !readMoreBox ||
+    readMoreBox.width <= 0 ||
+    readMoreBox.height < 44 ||
+    readMoreBox.x < -0.1 ||
+    readMoreBox.x + readMoreBox.width > width + 0.1
+  ) {
+    failures.push(`/blog mobile columns ${width}px: read-more action must keep a contained 44px touch target`)
+  }
   const populatedPageMeta = await mobileBlogPage.locator('.blog-result-meta').innerText()
   if (!populatedPageMeta.includes('第 1 /')) {
     failures.push(`/blog mobile columns ${width}px: changing columns should reset pagination to page one`)
@@ -2344,8 +2890,13 @@ const navIndicator = await navIndicatorPage.locator('.nav-link-center.active').e
     background: style.backgroundImage,
   }
 })
-if (navIndicator.width < 32 || navIndicator.height < 3 || navIndicator.shadow === 'none') {
-  failures.push('/blog nav indicator: active underline should be wide, thick, and visible')
+if (
+  Math.abs(navIndicator.width - 56) > 0.1 ||
+  Math.abs(navIndicator.height - 2) > 0.1 ||
+  navIndicator.shadow === 'none' ||
+  navIndicator.background === 'none'
+) {
+  failures.push('/blog nav indicator: active underline should match the shared visible contract')
 }
 await navIndicatorPage.close()
 
@@ -4713,6 +5264,19 @@ await gotoApp(homeCarouselPage, '/')
 const carouselViewport = homeCarouselPage.locator('.carousel-viewport')
 const carouselTrack = homeCarouselPage.locator('.carousel-track')
 await carouselViewport.hover({ force: true })
+const carouselEdgeFade = await carouselViewport.evaluate((viewport) => {
+  const mask = getComputedStyle(viewport).maskImage
+  const stops = [...mask.matchAll(/(\d+(?:\.\d+)?)%/g)].map((match) => Number.parseFloat(match[1]))
+  const rect = viewport.getBoundingClientRect()
+  if (stops.length < 4 || !Number.isFinite(rect.height)) return null
+  return {
+    topPx: rect.height * (stops[1] / 100),
+    bottomPx: rect.height * ((100 - stops.at(-2)) / 100),
+  }
+})
+if (!carouselEdgeFade || carouselEdgeFade.topPx > 6 || carouselEdgeFade.bottomPx > 6) {
+  failures.push('/ home carousel: edge fade should not obscure primary card copy or actions')
+}
 const initialScrollY = await carouselTrack.evaluate((track) =>
   getComputedStyle(track).getPropertyValue('--carousel-scroll-y').trim()
 )
@@ -4806,11 +5370,21 @@ await homeCarouselActionKeyboardPage.addInitScript(() => {
   }
 })
 await gotoApp(homeCarouselActionKeyboardPage, '/')
-await homeCarouselActionKeyboardPage.locator('.carousel-viewport').hover({ force: true })
+await homeCarouselActionKeyboardPage.mouse.move(0, 0)
 const legalRagAction = homeCarouselActionKeyboardPage
   .getByRole('button', { name: `查看当前状态：${legalRagProjectTitle}` })
   .nth(1)
 await legalRagAction.focus()
+const focusPauseStart = await homeCarouselActionKeyboardPage.locator('.carousel-track').evaluate((track) =>
+  Number.parseFloat(getComputedStyle(track).getPropertyValue('--carousel-scroll-y')),
+)
+await homeCarouselActionKeyboardPage.waitForTimeout(350)
+const focusPauseEnd = await homeCarouselActionKeyboardPage.locator('.carousel-track').evaluate((track) =>
+  Number.parseFloat(getComputedStyle(track).getPropertyValue('--carousel-scroll-y')),
+)
+if (!Number.isFinite(focusPauseStart) || !Number.isFinite(focusPauseEnd) || Math.abs(focusPauseEnd - focusPauseStart) > 0.1) {
+  failures.push('/ home carousel: keyboard focus should pause automatic motion')
+}
 await homeCarouselActionKeyboardPage.keyboard.press('Enter')
 await homeCarouselActionKeyboardPage.waitForTimeout(100)
 await homeCarouselActionKeyboardPage.keyboard.press('Space')
@@ -5874,6 +6448,19 @@ for (const width of [320, 390, 430]) {
     if (readingLayout.bodyFontSize < 15) {
       failures.push(`${path} mobile ${width}px: primary detail text should be at least 15px`)
     }
+
+    const detailBack = mobileDetailPage.locator('.detail-back').first()
+    const detailBackBox = await detailBack.boundingBox()
+    if (
+      !detailBackBox ||
+      detailBackBox.width <= 0 ||
+      detailBackBox.height < 44 ||
+      detailBackBox.x < -0.1 ||
+      detailBackBox.x + detailBackBox.width > width + 0.1
+    ) {
+      failures.push(`${path} mobile ${width}px: detail back navigation must keep a contained 44px touch target`)
+    }
+
     if (
       readingLayout.bodyBackground !== 'rgba(0, 0, 0, 0)' ||
       readingLayout.bodyBorderTopWidth !== '0px' ||
@@ -5951,6 +6538,66 @@ if (!refreshErrorCleared) {
   failures.push('/ai-daily refresh: a successful 304 should clear the previous error')
 }
 await publicFeedRefreshPage.close()
+
+for (const { width, theme, language } of [
+  { width: 320, theme: 'morning', language: 'zh' },
+  { width: 390, theme: 'stellar', language: 'en' },
+  { width: 430, theme: 'nature', language: 'zh' },
+]) {
+  const mobileRefreshPage = await createUiPage(browser, {
+    viewport: { width, height: 900 },
+    hasTouch: true,
+    isMobile: true,
+    reducedMotion: 'reduce',
+  })
+  try {
+    await mobileRefreshPage.addInitScript(({ initialTheme }) => {
+      window.localStorage.setItem('biau-port-theme', initialTheme)
+      window.sessionStorage.setItem('biau-port-harbor-intro:v3', '1')
+    }, { initialTheme: theme })
+    await installAiDailyPublicRefreshFixture(mobileRefreshPage)
+    await gotoApp(mobileRefreshPage, '/ai-daily')
+    await mobileRefreshPage.getByText('公开 Flash 标题').waitFor({ state: 'visible' })
+    if (language === 'en') await mobileRefreshPage.locator('.nav-lang-toggle').click()
+
+    const refreshTarget = await mobileRefreshPage.locator('.ai-daily-public-refresh .icon-button').evaluate((button) => {
+      const rect = button.getBoundingClientRect()
+      return {
+        disabled: button instanceof HTMLButtonElement ? button.disabled : true,
+        rect: {
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          width: rect.width,
+          height: rect.height,
+        },
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        documentWidth: document.documentElement.scrollWidth,
+      }
+    })
+    const mobileContext = `/ai-daily mobile refresh ${width}px ${theme}/${language}`
+    if (refreshTarget.disabled) {
+      failures.push(`${mobileContext}: refresh control should be enabled after the feed loads`)
+    }
+    if (refreshTarget.rect.width < 44 || refreshTarget.rect.height < 44) {
+      failures.push(`${mobileContext}: refresh control must keep a 44px touch target ${JSON.stringify(refreshTarget.rect)}`)
+    }
+    if (
+      refreshTarget.rect.left < -0.1 ||
+      refreshTarget.rect.top < -0.1 ||
+      refreshTarget.rect.right > refreshTarget.viewport.width + 0.1 ||
+      refreshTarget.rect.bottom > refreshTarget.viewport.height + 0.1
+    ) {
+      failures.push(`${mobileContext}: refresh control must remain inside the viewport ${JSON.stringify(refreshTarget)}`)
+    }
+    if (refreshTarget.documentWidth > refreshTarget.viewport.width + 1) {
+      failures.push(`${mobileContext}: refresh control must not introduce horizontal overflow ${JSON.stringify(refreshTarget)}`)
+    }
+  } finally {
+    await mobileRefreshPage.close()
+  }
+}
 
 const publicFeedStalePage = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
 await installAiDailyPublicStaleFixture(publicFeedStalePage)

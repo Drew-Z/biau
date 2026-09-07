@@ -1,0 +1,37 @@
+{
+  "baselineHead": "253b221397e8b6c0dc179168d937ae91a370d4cc",
+  "files": [
+    {
+      "path": ".trellis/spec/frontend/quality-guidelines.md",
+      "sha256": "7303d516ffac6ce5eba24a3d632be0f0f52f43b4303ef128f1b1d8e864987ba1"
+    },
+    {
+      "path": "scripts/check-ui.mjs",
+      "sha256": "011a40d00b2699ff92651ada62aa12e0bf955b35d44aa8b28bf0e109fa2e65c9"
+    },
+    {
+      "path": "src/components/RightScrollCards.tsx",
+      "sha256": "a20e7b037e92f55fb9b1e8d0327a9524d339786a68989b0b2b957a4dede9924d"
+    },
+    {
+      "path": "src/styles/catalog-pages.css",
+      "sha256": "e492d4136781228dbb8968240a7635b6e4a73d4169deae18afb66f21fe9b5b33"
+    },
+    {
+      "path": "src/styles/hero-split.css",
+      "sha256": "106f781ea33ea1c60c43f2345ec0934c27c7b7a279d03e3d0d3cad1a1be43aaf"
+    },
+    {
+      "path": "src/styles/navigation.css",
+      "sha256": "dd6f2aa59fec4660c83d9d7bf3b19fdc37ab0e9fef04d8ce69a76e0404e503d6"
+    },
+    {
+      "path": "src/styles/route-pages.css",
+      "sha256": "84fc6c3d614158a9b5889bea6c7187d0b839663e6753370af6505fc96f916792"
+    },
+    {
+      "path": "public/status/blog-semi-synthetic.json",
+      "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+    }
+  ]
+}

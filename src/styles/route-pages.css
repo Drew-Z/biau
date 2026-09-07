@@ -5043,7 +5043,7 @@
   }
 
   .detail-back {
-    min-height: 38px;
+    min-height: 44px;
     padding-inline: var(--space-12, 12px);
     font-size: 12px;
   }
@@ -6016,6 +6016,7 @@
   .ai-daily-public-overview { grid-template-columns: 1fr auto; gap: 12px; padding-inline: 0; border-inline: 0; }
   .ai-daily-public-coverage { justify-content: flex-end; padding-inline: 0; border-inline: 0; }
   .ai-daily-public-refresh { grid-column: 1 / -1; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--line-subtle, rgba(90, 75, 63, 0.18)); }
+  .ai-daily-public-refresh .icon-button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
   .ai-daily-public-grid { grid-template-columns: 1fr; }
   .ai-daily-public-card { min-height: 0; padding: 18px; }
   .ai-daily-public-notice { align-items: flex-start; flex-wrap: wrap; }
