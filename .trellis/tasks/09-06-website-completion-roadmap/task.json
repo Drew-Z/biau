@@ -1,0 +1,42 @@
+{
+  "id": "website-completion-roadmap",
+  "name": "website-completion-roadmap",
+  "title": "网站完善路线图",
+  "description": "Continuously assess BIAU Port, execute one verifiable child task at a time, and return to the roadmap after delivery. Follow loop.md and assessment.md; preserve local-only and public-content boundaries.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-06",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "09-08-stage-1-ui-delivery"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "loop": {
+      "version": 1,
+      "enabled": true,
+      "phase": "execute",
+      "round": 1,
+      "activeChild": "09-08-stage-1-ui-delivery",
+      "lastCompletedChild": null,
+      "nextAction": "Review and deliver the seven verified UI files in 09-08-stage-1-ui-delivery, then return to assessment.",
+      "ownerThreadId": "01a07cf9-7ffa-7843-a3f6-c20b39aa224b",
+      "automationId": null,
+      "cadenceMinutes": 15,
+      "authorizationDate": "2026-09-08"
+    }
+  }
+}

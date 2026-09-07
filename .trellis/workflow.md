@@ -9,6 +9,12 @@ Other platform sections below are shared Trellis reference material, not
 instructions to launch another development tool. Historical collaboration
 records do not override the current project policy.
 
+The authorized website roadmap loop is scoped to
+`09-06-website-completion-roadmap` and its linked children. Follow
+`docs/agents/codex-workflow.md` and the parent's `loop.md`: existing continuous
+authorization covers routine creation/start/local commits; planning and checks
+remain required. Finish each child, return to the parent, reassess, and continue.
+
 ---
 
 ## Core Principles
@@ -214,6 +220,7 @@ Sub-agent mode: curate `implement.jsonl` and `check.jsonl` as spec/research mani
 [workflow-state:planning-inline]
 Load `trellis-brainstorm`; stay in planning.
 Lightweight: `prd.md` can be enough. Complex: finish `prd.md`, `design.md`, and `implement.md`; ask for review before `task.py start`.
+For the authorized website roadmap loop, use the parent's recorded scope approval instead of asking for repeated start consent; review artifacts before activation.
 Multi-deliverable scope: consider a parent task plus independently verifiable child tasks; dependencies must be written in child artifacts, not implied by tree position.
 Inline mode: skip jsonl curation; Phase 2 reads artifacts/specs via `trellis-before-dev`.
 [/workflow-state:planning-inline]
@@ -245,6 +252,7 @@ Dispatch prompt starts with `Active task: <task path from task.py current>`. Rea
 
 [workflow-state:in_progress-inline]
 Flow: `trellis-before-dev` -> edit -> `trellis-check` -> validation -> `trellis-update-spec` -> commit (Phase 3.4) -> `/trellis:finish-work`.
+For the authorized website roadmap loop, follow the parent's `loop.md`: complete/archive only the child, return to the parent with `task.py start`, reassess, and continue under existing local-only authorization.
 Codex is the sole development owner; the main session implements and verifies. Do not launch external coding agents or resume historical collaboration leaves.
 Do not dispatch implement/check sub-agents in inline mode.
 Read context: `prd.md` -> `design.md if present` -> `implement.md if present`, plus relevant spec/research loaded by skills.

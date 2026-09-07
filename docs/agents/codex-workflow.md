@@ -20,6 +20,24 @@ The old `.agent-work/` records and historical worktrees are reference material,
 not current task pointers. Start from `task.py current --source` and the current
 user request. Existing Logo Lab comparisons remain application assets.
 
+## Authorized Roadmap Continuation
+
+The `09-06-website-completion-roadmap` parent and its explicitly linked children
+follow the scoped loop in that task's `loop.md`, authorized on 2026-09-08.
+Read its `assessment.md` and `task.json.meta.loop` before choosing work. Resume
+the one unfinished child first; otherwise assess current evidence, plan one
+verifiable child, implement, validate, commit locally, archive that child, and
+actually return to the parent with `task.py start` before selecting the next.
+The existing authorization covers routine planning/start/local-commit gates;
+do not repeatedly ask for "continue". Planning artifacts and quality checks
+remain required. New product decisions and existing production/publication
+boundaries still apply. Keep the parent open and preserve other tasks' changes.
+
+Trellis persists this protocol; it is not the scheduler. Native Codex heartbeat
+continuation stays in the same chat and checkout. It must resume saved work,
+avoid another writer, and stop on the user's request or when only gated work
+remains. Do not add an infinite shell runner or a business publishing cron.
+
 ## When to use the full flow
 
 Use the full flow for new features, multi-file changes, refactors, data model changes, deployment-sensitive work, security-sensitive work, or vague requests.
