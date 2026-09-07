@@ -4898,7 +4898,12 @@
   }
 
   .status-target__actions .btn {
+    min-height: 44px;
     justify-content: center;
+  }
+
+  .status-project-card__link {
+    min-height: 44px;
   }
 
   .project-group {

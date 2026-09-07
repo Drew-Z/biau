@@ -53,6 +53,8 @@ npm.cmd run docs:deployment-check
 
 - Mobile tab bar includes exactly the public primary sections.
 - Touch targets are at least 44px where practical.
+- On `/status`, `.status-target__actions .btn` and `.status-project-card__link` use `min-height: 44px` within the existing `max-width: 720px` rules; keep the desktop `40px` density. Do not widen the shared selector to status-detail or missing-page actions without separate evidence.
+- The status mobile browser matrix at `320/390/430` must find both action groups and assert visible, measurable targets at least `44px` wide/high with horizontal viewport containment. Missing groups and hidden/zero-size actions must fail; filtering them out before measurement can make an inaccessible page pass. Use scrolled screenshots and hit testing to verify reachability, not `scrollWidth` alone.
 - A fixed mobile tab bar uses an opaque surface so cards and text never remain visibly readable through the bar; the page content reserves `--mobile-tabbar-clearance` plus a content gap so the last interactive item can be scrolled above the bar.
 - Compact mobile navigation keeps a readable brand identity in `.nav-brand-text`; route-specific mobile overrides must not hide it after the base navigation rule runs. UI checks assert brand width and the compact project CTA label at `320`, `390`, and `430` widths.
 - Blog/project/status details remain vertically readable without forced horizontal swiping.

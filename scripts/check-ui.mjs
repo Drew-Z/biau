@@ -1893,6 +1893,31 @@ for (const width of [320, 390, 430]) {
     failures.push(`/status mobile navigator ${width}px: project reliability evidence should remain rendered`)
   }
 
+  for (const selector of ['.status-target__actions .btn', '.status-project-card__link']) {
+    const statusActions = await mobileStatusPage.locator(selector).evaluateAll((actions) =>
+      actions.map((action) => {
+        const style = getComputedStyle(action)
+        const rect = action.getBoundingClientRect()
+        return {
+          label: (action.textContent ?? '').trim(),
+          visible: style.display !== 'none' && style.visibility !== 'hidden' && Number.parseFloat(style.opacity || '1') > 0,
+          width: rect.width,
+          height: rect.height,
+          left: rect.left,
+          right: rect.right,
+        }
+      }),
+    )
+    const invalidActions = statusActions.filter((action) =>
+      !action.visible || action.width < 44 || action.height < 44 || action.left < -0.5 || action.right > width + 0.5,
+    )
+    if (statusActions.length === 0 || invalidActions.length > 0) {
+      failures.push(
+        `/status mobile actions ${width}px ${selector}: expected visible, contained 44px touch targets, got ${JSON.stringify(invalidActions)}`,
+      )
+    }
+  }
+
   for (const sectionId of statusSectionIds) {
     await sectionSelect.selectOption(sectionId)
     await mobileStatusPage.waitForFunction(
