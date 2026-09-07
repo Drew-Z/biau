@@ -7,7 +7,7 @@
 - [x] 用户确认主要成功标准为项目理解与内容发现，并完成 PRD convergence pass。
 - [x] 2026-09-08 用户授权持续评估与执行；父任务承担循环协议，进入 `in_progress`，不直接启动所有阶段。
 - [x] 第一项独立子任务 `09-08-stage-1-ui-delivery` 已完成并归档，已实际返回父任务重新评估。
-- [ ] 在任何代码编辑前运行 `trellis-before-dev`，读取 frontend 相关 spec 和当前子任务上下文。
+- [x] 在子任务代码编辑前使用 `trellis-before-dev`，读取 frontend 相关 spec 和当前子任务上下文；后续子任务继续遵守。
 
 ## Stage 1：UI 稳定与交付
 
@@ -20,7 +20,7 @@
 ## Stage 2：浏览与查找
 
 - [x] 完成返回路径只读基线：14 组确认博客筛选/搜索与移动项目分组丢失，详见 `discovery-baseline.md`；未改生产代码。
-- [ ] 在 Stage 1 交付边界确认后创建并评审实际 Stage 2 子任务；父任务保持执行循环。
+- [x] 在 Stage 1 交付边界确认后创建并评审实际 Stage 2 博客子任务；已交付并返回父任务，项目分组继续独立实施。
 
 1. 先为 `ProjectsPage`、`BlogPage`、`BlogColumnFilter`、`filterBlogPosts()` 和相关 CSS 画出现有状态流。
 2. 设计并实现规范化 query 参数：项目筛选/搜索（若证据支持）、博客 column/query/page；同步浏览器后退、前进、刷新和复制链接。
@@ -104,6 +104,7 @@ npm.cmd run docs:manual-gates-check
 
 - [x] 保存 `loop.md`、`assessment.md` 和 `task.json.meta.loop`，核对工作流入口一致。
 - [x] 第一轮：审查并交付 7 个历史 UI 修改文件，复用本会话已通过且代码未改变的 UI-012 完整验证，提交 `cb327d8c`。
-- [ ] 返回父任务，重新评估并完成博客/项目列表状态的下一项独立子任务。
+- [x] 返回父任务，重新评估并完成博客状态子任务；提交 `9991079a`，完整 UI 42 组与 smoke 21 组通过，已归档并再次返回父任务。
+- [ ] 轮次 3：实现项目移动分组的 URL、历史和详情返回；保留桌面完整分组展示。
 - [x] 首轮协议实际走通；原生 heartbeat `automation` 已创建并回读配置，ACTIVE、每 15 分钟、当前会话一致。
 - [ ] 持续在每轮末尾更新子任务验收、提交、归档位置和下一动作；不归档父任务。
