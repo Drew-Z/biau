@@ -1,0 +1,526 @@
+{
+  "schemaVersion": "public-content-audit-v1",
+  "checkedAt": "2026-09-08T01:36:42.9310036Z",
+  "baselineHead": "618d83af91b600454408c962747f691220d5419f",
+  "modelChannel": "none",
+  "build": "index-3_YH5-i2.js",
+  "publicContentChanged": false,
+  "matrix": {
+    "head": "618d83af",
+    "projects": 15,
+    "catalog": 9,
+    "publicPosts": 11,
+    "sitemapCount": 40,
+    "knowledgeCount": 31,
+    "internalReferences": 63,
+    "uniqueInternalTargets": 39,
+    "issues": [
+      "Unresolved internal reference publication.pet-workspace.statusHref: /status/pet-workspace"
+    ],
+    "metadataMismatches": [],
+    "matrix": [
+      {
+        "id": "legal-rag",
+        "title": "律航 LexBeacon｜Legal RAG 与合同审查",
+        "catalog": true,
+        "availability": "unchecked",
+        "access": "login-gated",
+        "blogSlugs": [
+          "legal-rag-review",
+          "legal-rag-production-upgrade-plan"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "chatus",
+        "title": "泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台",
+        "catalog": true,
+        "availability": "unchecked",
+        "access": "login-gated",
+        "blogSlugs": [],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "pet-workspace",
+        "title": "帆灵 SailSprite｜AI 桌宠社区与生成管线",
+        "catalog": true,
+        "availability": "online",
+        "access": "public",
+        "blogSlugs": [
+          "pet-workspace-pipeline"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "ozon-erp",
+        "title": "商舱 OpsDeck｜Ozon 电商 ERP",
+        "catalog": true,
+        "availability": "unchecked",
+        "access": "login-gated",
+        "blogSlugs": [
+          "ozon-erp-architecture"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "biau-playlab",
+        "title": "游湾 BIAU Playlab｜游戏作品集与系统设计内容站",
+        "catalog": true,
+        "availability": "online",
+        "access": "public",
+        "blogSlugs": [
+          "game-showcase-standard"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "anchor-learning",
+        "title": "锚学 Anchor Learning｜来源可溯源的 AI 学习代理",
+        "catalog": true,
+        "availability": "online",
+        "access": "public",
+        "blogSlugs": [],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "blog-semi",
+        "title": "泊岸 BIAU Port｜内容与助手平台",
+        "catalog": true,
+        "availability": "unchecked",
+        "access": "case-only",
+        "blogSlugs": [
+          "agentic-rag-frontier-2026",
+          "content-modeling-project-site",
+          "public-content-governance",
+          "static-site-release-verification",
+          "blog-content-system-build-log"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "canvas",
+        "title": "画帆 BIAU Canvas｜图像托管与分享工具",
+        "catalog": true,
+        "availability": "planned",
+        "access": "case-only",
+        "blogSlugs": [],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "game-first-tetris",
+        "title": "俄罗斯方块原型｜Tetris",
+        "catalog": false,
+        "availability": null,
+        "access": null,
+        "blogSlugs": [
+          "game-showcase-standard"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "game-next-spacewar",
+        "title": "太空战机｜展示构建",
+        "catalog": false,
+        "availability": null,
+        "access": null,
+        "blogSlugs": [
+          "game-showcase-standard"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "intespace",
+        "title": "竖屏肉鸽射击｜intespace",
+        "catalog": false,
+        "availability": null,
+        "access": null,
+        "blogSlugs": [
+          "game-showcase-standard"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "raiden-prototype",
+        "title": "纵版弹幕射击｜垂直切片",
+        "catalog": false,
+        "availability": null,
+        "access": null,
+        "blogSlugs": [
+          "game-showcase-standard"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "space-war",
+        "title": "复古横版射击｜space-war",
+        "catalog": false,
+        "availability": null,
+        "access": null,
+        "blogSlugs": [
+          "game-showcase-standard"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "spacewar-ii",
+        "title": "移动纵向射击｜Spacewar II",
+        "catalog": false,
+        "availability": null,
+        "access": null,
+        "blogSlugs": [
+          "game-showcase-standard"
+        ],
+        "assistant": true,
+        "sitemap": true
+      },
+      {
+        "id": "xunqiu",
+        "title": "寻球 BallTrail｜移动端与现代后端重建",
+        "catalog": true,
+        "availability": "unchecked",
+        "access": "public",
+        "blogSlugs": [
+          "xunqiu-android64-rebuild"
+        ],
+        "assistant": true,
+        "sitemap": true
+      }
+    ],
+    "suggestionProbes": [
+      {
+        "path": "/blog/%",
+        "error": "URIError"
+      },
+      {
+        "path": "/blog/%E0%A4%A",
+        "error": "URIError"
+      },
+      {
+        "path": "/projects/%",
+        "error": "URIError"
+      },
+      {
+        "path": "/projects/%E0%A4%A",
+        "error": "URIError"
+      },
+      {
+        "path": "/blog/missing-post",
+        "count": 3,
+        "error": null
+      },
+      {
+        "path": "/projects/missing-project",
+        "count": 3,
+        "error": null
+      }
+    ]
+  },
+  "assistantRouteBaseline": {
+    "build": "index-3_YH5-i2.js",
+    "navigation": "SPA navigation after assistant has mounted",
+    "results": [
+      {
+        "width": 390,
+        "closed": false,
+        "path": "/blog/%",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      },
+      {
+        "width": 390,
+        "closed": false,
+        "path": "/projects/%E0%A4%A",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      },
+      {
+        "width": 390,
+        "closed": true,
+        "path": "/blog/%",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      },
+      {
+        "width": 390,
+        "closed": true,
+        "path": "/projects/%E0%A4%A",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      },
+      {
+        "width": 1440,
+        "closed": false,
+        "path": "/blog/%",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      },
+      {
+        "width": 1440,
+        "closed": false,
+        "path": "/projects/%E0%A4%A",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      },
+      {
+        "width": 1440,
+        "closed": true,
+        "path": "/blog/%",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          },
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      },
+      {
+        "width": 1440,
+        "closed": true,
+        "path": "/projects/%E0%A4%A",
+        "rootChildren": 0,
+        "errors": [
+          {
+            "name": "URIError",
+            "message": "URI malformed"
+          }
+        ],
+        "api": [
+          {
+            "method": "GET",
+            "path": "/api/health"
+          }
+        ],
+        "blocked": []
+      }
+    ]
+  },
+  "statusRouteBaseline": [
+    {
+      "width": 390,
+      "path": "/status/pet-workspace",
+      "before": [
+        "没有找到这个状态页"
+      ],
+      "after": [
+        "没有找到这个状态页"
+      ],
+      "rootChildren": 1,
+      "errors": [],
+      "api": [],
+      "blocked": [],
+      "diagnosticError": null
+    },
+    {
+      "width": 390,
+      "path": "/status/pet-gamer",
+      "before": [
+        "帆灵 SailSprite｜Pet / Gamer"
+      ],
+      "after": [
+        "帆灵 SailSprite｜Pet / Gamer"
+      ],
+      "rootChildren": 1,
+      "errors": [],
+      "api": [],
+      "blocked": [],
+      "diagnosticError": null
+    },
+    {
+      "width": 1440,
+      "path": "/status/pet-workspace",
+      "before": [
+        "没有找到这个状态页"
+      ],
+      "after": [
+        "没有找到这个状态页"
+      ],
+      "rootChildren": 1,
+      "errors": [],
+      "api": [],
+      "blocked": [],
+      "diagnosticError": null
+    },
+    {
+      "width": 1440,
+      "path": "/status/pet-gamer",
+      "before": [
+        "帆灵 SailSprite｜Pet / Gamer"
+      ],
+      "after": [
+        "帆灵 SailSprite｜Pet / Gamer"
+      ],
+      "rootChildren": 1,
+      "errors": [],
+      "api": [],
+      "blocked": [],
+      "diagnosticError": null
+    }
+  ],
+  "publicLinks": {
+    "total": 43,
+    "passed": 6,
+    "connectionErrors": 35,
+    "http403": 1,
+    "timeout": 1,
+    "exitCode": 1,
+    "wroteStatus": false
+  },
+  "passedCommands": [
+    "project-details:check",
+    "project-registry:check",
+    "blog:check",
+    "docs:manual-gates-check",
+    "status:contract",
+    "blog:audit",
+    "blog:knowledge-check",
+    "blog:project-notes-check",
+    "assistant:kg-check",
+    "assistant:eval"
+  ],
+  "hashes": [
+    {
+      "sha256": "48b80870bea3f36ab2b3b415875cc74c954572b19d523935740bbcbc9e3944bc",
+      "path": "src/data/portfolio.ts"
+    },
+    {
+      "sha256": "3186711eb9745ad8230b1fa9182cf1f8f80a10d05eb25824332f565068d10c5e",
+      "path": "src/data/projectPublication.ts"
+    },
+    {
+      "sha256": "b8d48c88e966d1af917628fa2e15587fa99599ad4fc948a8a51c16074cf09ed3",
+      "path": "src/data/statusTargets.ts"
+    },
+    {
+      "sha256": "4687630d581f3c8d6217bf5e901ee3c5b094f2e9f69be077ff34467917fc0633",
+      "path": "src/data/blog.ts"
+    },
+    {
+      "sha256": "9587fcceb4c8e0608e373c07088e6fae803b5585f4385a28b776af1845d61afb",
+      "path": "src/data/blogContent.ts"
+    },
+    {
+      "sha256": "70d805e852d80e0173d5f9f8f3921dec25cfdba55e928220b80636a192fe6493",
+      "path": "src/data/blogCuration.ts"
+    },
+    {
+      "sha256": "54cf0b7cfdc2dcd9f0f4c76abf73b082a57957fcc257074b7650ccb41c825301",
+      "path": "src/data/assistant.ts"
+    },
+    {
+      "sha256": "a44cd7114460d56ca26d700fbff0cfca2a703f6b4e85063042b38a612aa30ad4",
+      "path": "server/data/public-knowledge.json"
+    },
+    {
+      "sha256": "7d95fc0ce0ae092802ab232dbfb65029fef95805ac25074ccd484c6e04b8be46",
+      "path": "server/data/public-knowledge-v2.json"
+    },
+    {
+      "sha256": "56e63515a42ff63cf8b0a842570272bf0e2ae696b0b35e7ea3a8c58f7a43bcfe",
+      "path": "public/sitemap.xml"
+    },
+    {
+      "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909",
+      "path": "public/status/blog-semi-synthetic.json"
+    },
+    {
+      "sha256": "2ff7ff0d7810d802107833d50e5b018245d4b99f32665438c86d6464b2d3ac2f",
+      "path": "dist/assets/index-3_YH5-i2.js"
+    }
+  ]
+}

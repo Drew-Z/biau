@@ -22,7 +22,8 @@
     "09-08-stage-1-ui-delivery",
     "09-08-stage-2-blog-discovery-state",
     "09-08-stage-2-project-discovery-state",
-    "09-08-stage-2-reading-navigation"
+    "09-08-stage-2-reading-navigation",
+    "09-08-stage-3-content-evidence-audit"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -31,11 +32,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 5,
-      "activeChild": null,
+      "activeChild": "09-08-stage-3-content-evidence-audit",
       "lastCompletedChild": "09-08-stage-2-reading-navigation",
-      "nextAction": "Reading restoration delivered as 37f93b5b and archived; parent task actually reactivated. Assess project/blog public evidence and content consistency using existing read-only contracts before selecting the next bounded child.",
+      "nextAction": "Deliver/archive the completed audit and return to parent. It found 8 reproducible malformed-path assistant crashes and one Pet status ID mismatch; prioritize the crash with bounded route recovery checks.",
       "ownerThreadId": "01a07cf9-7ffa-7843-a3f6-c20b39aa224b",
       "automationId": "automation",
       "cadenceMinutes": 15,
