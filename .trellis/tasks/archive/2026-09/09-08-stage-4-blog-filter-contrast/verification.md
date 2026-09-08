@@ -26,4 +26,6 @@
 
 ## 边界
 
+本地交付提交 `da19773ca10af1cb1069a90276a2509e73e97f5b`，共 12 个白名单文件。已用 `task.py archive --no-commit` 仅归档本项，并实际执行 `task.py start 09-06-website-completion-roadmap` 返回父任务。
+
 检查使用本地 Chromium、preview 和 API fixture，不访问真实模型或生产 API，不作全站/跨浏览器/生产无障碍合规声明。没有推送、部署、签名或内容发布。原有未跟踪任务资料、前导空格目录和历史 worktree 保留；本项新增的日志/截图为验收证据。
