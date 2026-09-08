@@ -340,3 +340,38 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 第 13 轮评估详情公共阅读界面，收敛文件与验证边界后继续实施。
+
+
+## Session 115: 详情公共阅读界面双语交付
+
+**Date**: 2026-09-09
+**Task**: 详情公共阅读界面双语交付
+**Branch**: `main`
+
+### Summary
+
+完成第 13 轮详情公共阅读界面与共享目录双语，原文和 publication 事实保持。最终完整 UI 46/0、smoke 21/0、语言专项 12+24+12+5+1+24+4+2、lint/build/performance 与相关合同通过；恢复时 23 个源码/检查器/规范/边界文件和 8 个构建文件无漂移。22 文件白名单本地提交，已仅归档本子任务并实际启动父任务，第 14 轮继续评估项目共享入口文案。未 push、部署、签名、调用真实模型或公开发布；未删除文件，原有资料、worktree、原服务与验收证据保留。
+
+### Main Changes
+
+- 文章/项目公共阅读控件与共享目录接入中英文；保留原文章节、图片与公开入口投影。
+- 入口依赖恢复为类型导入；两类缺失详情移动返回按钮补齐 44px，保存中间失败与最终验证证据。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `87b2e01c` | feat(i18n): localize detail reading controls and guide |
+
+### Testing
+
+- [OK] lint、最终 build、performance、blog/projects discovery、project-details、registry、analytics 通过。
+- [OK] 语言专项、smoke 21/0、完整 UI 46/0；源码与构建冻结清单无漂移，模型调用 0。
+
+### Status
+
+[OK] **第 13 轮完成并归档，父路线图继续**
+
+### Next Steps
+
+- 第 14 轮评估项目共享公开入口文案，保留访问门禁和作者事实后收敛下一子任务。
