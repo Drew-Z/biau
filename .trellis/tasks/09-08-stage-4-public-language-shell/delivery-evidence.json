@@ -1,0 +1,214 @@
+{
+  "baseCommit": "e3f6cecd80365ad7761a757a6ca10c715d298796",
+  "preview": "http://127.0.0.1:5185",
+  "environment": "Windows PowerShell 7 / Node 24.14.0 / Playwright Chromium",
+  "productionActions": [],
+  "fullUi": {
+    "exitCode": 0,
+    "groups": 46,
+    "failures": 0,
+    "durationMs": 1033914,
+    "snapshot": {
+      "baseCommit": "e3f6cecd80365ad7761a757a6ca10c715d298796",
+      "fullUiExit": 0,
+      "fullUiGroups": 46,
+      "fullUiFailed": 0,
+      "fullUiDurationMs": 1033914,
+      "files": [
+        {
+          "path": "src/App.tsx",
+          "sha256": "fac1dee12bc43b46a5f526f1dc8f4ac57dd90223043e0848d4ca5c0a9be40507"
+        },
+        {
+          "path": "src/components/Navigation.tsx",
+          "sha256": "e890ef8859db6efae087b65937125b238f3af65be1f5ac5ff51f7e1b3e300071"
+        },
+        {
+          "path": "src/components/SiteFooter.tsx",
+          "sha256": "19c5469497fd278d22a38dce5a07bdde88d8828212ff768b4f4dce9410931df6"
+        },
+        {
+          "path": "src/pages/NotFoundPage.tsx",
+          "sha256": "2cf04954d70762e58cafbc3ba09a5023ffa54684e850eb346e060c6320734899"
+        },
+        {
+          "path": "src/hooks/useSiteLanguage.ts",
+          "sha256": "68ea4aa4c2827e61928fa85d7c7c58b4eb87bc569816861979d5089d207b0de5"
+        },
+        {
+          "path": "src/utils/siteLanguage.ts",
+          "sha256": "9eee50cd4953a03536f94b7269dec4edde15113272b53e1a2d3998f8a0c0afd4"
+        },
+        {
+          "path": "src/components/Layout.tsx",
+          "sha256": "de62af98d3c3208484270ed6bce23bff0226ba41ecd7181d4f45aa10fd09201f"
+        },
+        {
+          "path": "src/data/hero.ts",
+          "sha256": "465f074aeb479ebdb76b60624af4df063f3b9dd561790d5197720f88f51349c4"
+        },
+        {
+          "path": "scripts/check-site-language-ui.mjs",
+          "sha256": "0249074a8509fcf36cd0b5fdeabbfd6b834375c40623dd1d199a78aca001530e"
+        },
+        {
+          "path": "scripts/lib/ui-language.mjs",
+          "sha256": "54825beea6a9d0e0c23a9310aa601f256fc2fa8201fa9618f18ce740e4781234"
+        },
+        {
+          "path": "scripts/check-blog-discovery-ui.mjs",
+          "sha256": "3200b3bac070e3a0ff322051823ee4ff3853e2c16b37a97066719f7cece489a3"
+        },
+        {
+          "path": "scripts/check-ui.mjs",
+          "sha256": "8823af6acaefff4a6777647f5edceed6351b402ed99e6024d529f51e1f6cf86f"
+        },
+        {
+          "path": "package.json",
+          "sha256": "3fee1b58c667ba7d7f73804a0554d15b19e8925a09dd0cdb3efffb150213ffe3"
+        },
+        {
+          "path": "public/status/blog-semi-synthetic.json",
+          "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+        }
+      ],
+      "build": [
+        {
+          "Algorithm": "SHA256",
+          "Hash": "0ACD28AE859142F792229B8404FE27235DF15BD3EA83D795158D5DDBFBCB2BAE",
+          "Path": "D:\\workspace4Cursor\\blog-semi\\dist\\index.html"
+        },
+        {
+          "Algorithm": "SHA256",
+          "Hash": "1EA3EF2CC7EBF75CA1B94DA42ED1A0CCCB9AF2E39D6C070314684D8046B381D2",
+          "Path": "D:\\workspace4Cursor\\blog-semi\\dist\\assets\\index-DfxLk5nx.js"
+        }
+      ]
+    },
+    "subsequentChange": "Only the focused language fixture restores and asserts the named theme before layout/screenshots. Final focused run passed on that updated checker; app/build/other checkers are unchanged."
+  },
+  "finalFocused": {
+    "exitCode": 0,
+    "matrixGroups": 12,
+    "storageGroups": 5,
+    "loadingGroups": 1,
+    "modelCalls": 0,
+    "checkerSha256": "bc8810bf098feade16492d671f43d67b5e4af583071490636fe2120378dadb22"
+  },
+  "smoke": {
+    "exitCode": 0,
+    "groups": 21,
+    "failures": 0,
+    "durationMs": 9628
+  },
+  "static": {
+    "lintExit": 0,
+    "buildExit": 0,
+    "performanceExit": 0,
+    "entryJsBytes": 298370,
+    "entryCssBytes": 152211,
+    "routeCssBytes": 141623
+  },
+  "logs": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-negative.log",
+      "sha256": "cf8ba4a1ff411115b1f97f8349c5ce2cd932ed2ea0102e10e0fe241bf0099533",
+      "bytes": 1098
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-lint.log",
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727",
+      "bytes": 40
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-build.log",
+      "sha256": "ad6a8077767f1cb7924f42e634c4962a6bab4dda4124521c2f70aae6b63c5c1b",
+      "bytes": 4396
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-ui.log",
+      "sha256": "f40eec749cd28810f6ece7543aeb5c2642a0ae386d3923046c3cb122eb5a813f",
+      "bytes": 731
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-ui-context.log",
+      "sha256": "5a92bd9fd74a12921377cb2adc1267eadcffc8702ffb7e36d7de3675a3fe268b",
+      "bytes": 1057
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-ui-layout.log",
+      "sha256": "fce8a94d5181279557e4939221528dc9bc7a375f00a6d3ecf834a0aae2600809",
+      "bytes": 176
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-full-ui.log",
+      "sha256": "93f34e0aa4740d4e09adc90aa7f6d736ee385727c58bdd8b2ddcec76e8382387",
+      "bytes": 6553
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-full-ui-evidence.json",
+      "sha256": "44645a4b887fd4c52c47ce613e05b0178f0c6f8919a2e55d874fff9a9702e902",
+      "bytes": 2613
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-ui-final.log",
+      "sha256": "cb17c77688442aec87997f0511f884c8d0a9a552331919ee3cb94385271dbbae",
+      "bytes": 393
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-smoke.log",
+      "sha256": "2e590ba36cedef3f147bc49cc8ae5b9408ada26a2093c1019116192b2ffd0388",
+      "bytes": 2667
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-1440-morning-en.png",
+      "sha256": "3337b0a8222997646ac6cc7643db3d3bd7602e9884d268d9dd075a92e91b3882"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-1440-nature-en.png",
+      "sha256": "20c342b9f096d52f710b162483ef6ba7e0d51f901d767cf9d18f5f96dcdce9dc"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-1440-stellar-en.png",
+      "sha256": "4ab8cc61ed6f381d07131219e045655556e5f6a76bcb107331e4ba0c7a321bd3"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-320-morning-en.png",
+      "sha256": "edbd35339c3c39b5f38d6426d32ab74794258f41d9606e3bb7d2eda35a7cb59b"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-320-nature-en.png",
+      "sha256": "4e2a8079f345c1bc9a11652cce8ee49d3cbae8595e115934ceec7d2d0ac4b03a"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-320-stellar-en.png",
+      "sha256": "9b4cbe6138cf31d78f277efb21567da93a8e731e8616a25faea34338a8d92452"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-390-morning-en.png",
+      "sha256": "76209584122f30a1e5090d33f2af3fea20719d6c2d9fea34f335c63183a8dc2f"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-390-nature-en.png",
+      "sha256": "899b0c8c64e78c21531afd3d2ff6f64b4e8e274aeaf8be3c919661d2fff823a0"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-390-stellar-en.png",
+      "sha256": "96d9fa6bbb606f8b795fd61a1da52961752cf3659500ef7e09ffb3c72fd18bd3"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-430-morning-en.png",
+      "sha256": "c9c6aab50e55518427c69b1dbafa661c6126fa48c4cf52872a3920f4812a0985"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-430-nature-en.png",
+      "sha256": "23cc6bd42160638601676da8ea139b29309df24c50c92fa4c7cd4639e9993f5f"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-resume-20260908-62seN4\\language-shell-430-stellar-en.png",
+      "sha256": "ba92a6b9166a44a7ec1cef7b29257bee1af87a65a5f4b974edbeb2610966bbaf"
+    }
+  ]
+}

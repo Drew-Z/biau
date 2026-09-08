@@ -6,6 +6,8 @@ import { checkBlogDiscoveryNavigation } from './check-blog-discovery-ui.mjs'
 import { checkProjectDiscoveryNavigation } from './check-project-discovery-ui.mjs'
 import { checkReadingNavigation } from './check-reading-navigation-ui.mjs'
 import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
+import { checkSiteLanguage } from './check-site-language-ui.mjs'
+import { selectSiteLanguage } from './lib/ui-language.mjs'
 import {
   findReliabilityProjectForTarget,
   reliabilityProjects as staticReliabilityProjects,
@@ -1533,7 +1535,7 @@ async function checkNavigationTypography(browser) {
 
         for (const route of navigationTypographyRoutes) {
           await gotoApp(page, route)
-          if (language === 'en') await page.locator('.nav-lang-toggle').click()
+          await selectSiteLanguage(page, language)
           const context = { viewport: '1440', theme, language, route, status: 'initial' }
           const links = page.locator('.nav-link-center')
           const linkCount = await links.count()
@@ -1677,7 +1679,7 @@ async function checkNavigationTypography(browser) {
 
           for (const route of navigationContainmentRoutes) {
             await gotoApp(page, route)
-            if (language === 'en') await page.locator('.nav-lang-toggle').click()
+            await selectSiteLanguage(page, language)
             const context = { viewport: `${width}`, theme, language, route, status: 'desktop-containment' }
             const state = await readDesktopNavigationContainment(page)
             if (!hasContainedDesktopNavigation(state)) {
@@ -1722,7 +1724,7 @@ async function checkNavigationTypography(browser) {
 
           for (const route of navigationTypographyRoutes) {
             await gotoApp(page, route)
-            if (language === 'en') await page.locator('.nav-lang-toggle').click()
+            await selectSiteLanguage(page, language)
             const context = { viewport: `${width}`, theme, language, route, status: 'mobile-active' }
             const initial = await readMobileTabState(page)
             if (initial.count !== 1 || !initial.state) {
@@ -1797,6 +1799,11 @@ try {
   progress.start('navigation-typography', 'desktop and mobile route, theme, language, and interaction matrix')
   await checkNavigationTypography(browser)
   finishProgressGroup(navigationTypographyFailures)
+
+  const siteLanguageFailures = failures.length
+  progress.start('site-language', 'shared copy, preference persistence, language semantics and storage failures')
+  await checkSiteLanguage(browser, base)
+  finishProgressGroup(siteLanguageFailures)
 
   const blogDiscoveryFailures = failures.length
   progress.start('blog-discovery', 'URL state, history, shared links, and safe detail returns')

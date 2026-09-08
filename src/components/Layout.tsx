@@ -3,8 +3,9 @@ import { Outlet } from 'react-router-dom'
 import { useSiteTheme } from '../hooks/useSiteTheme'
 import { Navigation } from './Navigation'
 import { FlowBackground } from './FlowBackground'
+import type { SiteLanguage } from '../utils/siteLanguage'
 
-export type SiteLanguage = 'zh' | 'en'
+export type { SiteLanguage } from '../utils/siteLanguage'
 
 export interface SiteOutletContext {
   language: SiteLanguage

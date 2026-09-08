@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
 import sharp from 'sharp'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
+import { assertSiteLanguage, selectSiteLanguage } from './lib/ui-language.mjs'
 
 const listSearch = '?column=project-notes&q=RAG'
 
@@ -31,8 +32,7 @@ async function createPage(browser, base, { width, theme }) {
 
 async function openDocument(page, url, language) {
   await page.goto(url, { waitUntil: 'load' })
-  await page.locator('.nav-lang-toggle').waitFor({ state: 'visible' })
-  if (language === 'en') await page.locator('.nav-lang-toggle').click()
+  await selectSiteLanguage(page, language)
 }
 
 async function checkList(page, { column = 'project-notes', query = 'RAG', titles } = {}) {
@@ -197,7 +197,7 @@ export async function checkBlogDiscoveryNavigation(browser, base) {
           const titles = await checkList(page)
           assert.ok(titles.length > 0, 'the existing RAG project notes must be discoverable')
           await page.reload({ waitUntil: 'load' })
-          if (language === 'en') await page.locator('.nav-lang-toggle').click()
+          await assertSiteLanguage(page, language)
           await checkList(page, { titles })
 
           const copied = await createPage(browser, base, { width, theme })

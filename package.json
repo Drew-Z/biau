@@ -111,6 +111,7 @@
     "projects:discovery-ui": "node scripts/check-project-discovery-ui.mjs",
     "reading:navigation-ui": "node scripts/check-reading-navigation-ui.mjs",
     "public-routes:ui": "tsx scripts/check-public-route-recovery-ui.mjs",
+    "language:ui": "node scripts/check-site-language-ui.mjs",
     "project-registry:check": "tsx scripts/check-product-registry.ts",
     "docs:deployment-check": "node scripts/check-deployment-contract.mjs",
     "docs:manual-gates-check": "tsx scripts/check-manual-gates.ts",

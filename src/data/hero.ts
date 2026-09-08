@@ -10,7 +10,7 @@ import {
 import type { PublicProjectId } from './projectPublication'
 import { formatProductTitle, getProductIdentity } from './productRegistry'
 
-export type SiteLanguage = 'zh' | 'en'
+export type { SiteLanguage } from '../utils/siteLanguage'
 
 export type CardAccent = 'signal' | 'commerce' | 'image' | 'preview'
 

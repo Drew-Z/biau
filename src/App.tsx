@@ -3,6 +3,8 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/site-footer.css'
 import { useSiteTheme } from './hooks/useSiteTheme'
+import { SiteLanguageContext, useSiteLanguage, useSiteLanguagePreference } from './hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from './utils/siteLanguage'
 import { FlowBackground } from './components/FlowBackground'
 import { StarfieldBackground } from './components/StarfieldBackground'
 import { StellarEffects } from './components/StellarEffects'
@@ -23,8 +25,6 @@ import {
   startPublicAssistantWarmup,
   subscribePublicAssistantWarmup,
 } from './utils/publicAssistantWarmup'
-
-type SiteLanguage = 'zh' | 'en'
 
 const ProjectDetailPage = lazy(() =>
   import('./pages/ProjectDetailPage').then((module) => ({ default: module.ProjectDetailPage })),
@@ -66,8 +66,8 @@ function getPageClass(pathname: string) {
   return 'page-not-found page-subpage'
 }
 
-function App() {
-  const [language, setLanguage] = useState<SiteLanguage>('zh')
+function AppContent({ onToggleLanguage }: { onToggleLanguage: () => void }) {
+  const language = useSiteLanguage()
   const { theme, selectTheme } = useSiteTheme()
   const [assistantMounted, setAssistantMounted] = useState(false)
   const [assistantInitiallyOpen, setAssistantInitiallyOpen] = useState(false)
@@ -109,7 +109,7 @@ function App() {
   const showPublicAssistant = !pathname.startsWith('/studio')
 
   return (
-    <div className={`app ${pageClass}`}>
+    <div className={`app ${pageClass}`} lang="zh-CN">
       <FlowBackground theme={theme} />
       <StarfieldBackground theme={theme} />
       <StellarEffects theme={theme} />
@@ -120,7 +120,7 @@ function App() {
         language={language}
         theme={theme}
         onSelectTheme={selectTheme}
-        onToggleLanguage={() => setLanguage((prev) => (prev === 'zh' ? 'en' : 'zh'))}
+        onToggleLanguage={onToggleLanguage}
       />
       {showPublicAssistant && !assistantMounted && (
         <PublicAssistantLauncher
@@ -160,8 +160,8 @@ function App() {
 
       <Suspense
         fallback={
-          <main className="page-stack route-loading">
-            <div className="detail-missing">载入中</div>
+          <main className="page-stack route-loading" lang={SITE_LANGUAGE_TAGS[language]}>
+            <div className="detail-missing" role="status">{language === 'zh' ? '载入中' : 'Loading'}</div>
           </main>
         }
       >
@@ -184,6 +184,15 @@ function App() {
       </Suspense>
       <SiteFooter />
     </div>
+  )
+}
+
+function App() {
+  const { language, toggleLanguage } = useSiteLanguagePreference()
+  return (
+    <SiteLanguageContext.Provider value={language}>
+      <AppContent onToggleLanguage={toggleLanguage} />
+    </SiteLanguageContext.Provider>
   )
 }
 

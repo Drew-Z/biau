@@ -3,8 +3,7 @@ import type { LucideIcon } from 'lucide-react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BiauPortMark } from './BiauPortMark'
 import { SITE_THEMES, SITE_THEME_META, type SiteTheme } from '../utils/appearance'
-
-type SiteLanguage = 'zh' | 'en'
+import { SITE_LANGUAGE_TAGS, type SiteLanguage } from '../utils/siteLanguage'
 
 interface NavigationProps {
   language: SiteLanguage
@@ -56,18 +55,18 @@ export function Navigation({
 
   return (
     <>
-      <nav className="navigation-top" aria-label="主导航">
+      <nav className="navigation-top" aria-label={language === 'zh' ? '主导航' : 'Main navigation'} lang={SITE_LANGUAGE_TAGS[language]}>
         <div className="nav-inner">
           <div className="nav-brand-section">
             <Link
               to="/"
               className="nav-logo"
               data-theme={theme}
-              aria-label="回到首页 / BIAU Port 泊岸"
+              aria-label={language === 'zh' ? '回到首页 / BIAU Port 泊岸' : 'Home / BIAU Port'}
             >
               <BiauPortMark className="nav-logo-mark" />
             </Link>
-            <Link className="nav-brand-link" to="/" aria-label="回到首页 / BIAU Port 泊岸">
+            <Link className="nav-brand-link" to="/" aria-label={language === 'zh' ? '回到首页 / BIAU Port 泊岸' : 'Home / BIAU Port'}>
               <div className="nav-brand-text">
                 <div className="brand-title">{brandTitle[language]}</div>
                 <div className="brand-subtitle">BIAU PORT</div>
@@ -94,11 +93,12 @@ export function Navigation({
               type="button"
               className="nav-lang-toggle"
               onClick={onToggleLanguage}
-              aria-label="切换语言 / Switch language"
+              aria-label={language === 'zh' ? '切换到英文' : 'Switch to Chinese'}
+              title={language === 'zh' ? '切换到英文' : 'Switch to Chinese'}
             >
               {language === 'zh' ? '中' : 'EN'}
             </button>
-            <div className="nav-theme-selector" role="group" aria-label="选择主题 / Select theme">
+            <div className="nav-theme-selector" role="group" aria-label={language === 'zh' ? '选择主题' : 'Select theme'}>
               {SITE_THEMES.map((option) => {
                 const ThemeIcon = themeIcons[option]
                 const label = SITE_THEME_META[option].label
@@ -109,8 +109,8 @@ export function Navigation({
                     className="nav-theme-option"
                     data-theme-option={option}
                     aria-pressed={theme === option}
-                    aria-label={`${label.zh}主题 / ${label.en} theme`}
-                    title={`${label.zh} / ${label.en}`}
+                    aria-label={language === 'zh' ? `${label.zh}主题` : `${label.en} theme`}
+                    title={label[language]}
                     onClick={() => onSelectTheme(option)}
                   >
                     <span className="nav-theme-swatch" aria-hidden />
@@ -120,7 +120,7 @@ export function Navigation({
               })}
             </div>
             <span className="sr-only" aria-live="polite">
-              当前主题：{SITE_THEME_META[theme].label.zh} / {SITE_THEME_META[theme].label.en}
+              {language === 'zh' ? '当前主题：' : 'Current theme: '}{SITE_THEME_META[theme].label[language]}
             </span>
             <button
               type="button"
@@ -134,7 +134,7 @@ export function Navigation({
         </div>
       </nav>
 
-      <nav className="mobile-tabbar" aria-label="移动端主导航">
+      <nav className="mobile-tabbar" aria-label={language === 'zh' ? '移动端主导航' : 'Mobile navigation'} lang={SITE_LANGUAGE_TAGS[language]}>
         {navItems.map((item) => {
           const Icon = item.icon
           return (
@@ -143,7 +143,7 @@ export function Navigation({
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) => `mobile-tab ${isActive ? 'is-active' : ''}`}
-              aria-label={`${item.label.zh} / ${item.label.en}`}
+              aria-label={item.mobileLabel?.[language] ?? item.label[language]}
             >
               <Icon className="mobile-tab__icon" size={19} strokeWidth={1.9} aria-hidden />
               <span className="mobile-tab__label">{item.mobileLabel?.[language] ?? item.label[language]}</span>

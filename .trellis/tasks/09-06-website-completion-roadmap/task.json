@@ -28,7 +28,8 @@
     "09-08-stage-4-language-interaction-audit",
     "09-08-stage-4-blog-filter-semantics",
     "09-08-stage-4-blog-filter-contrast",
-    "09-08-stage-6-pr-quality-workflow"
+    "09-08-stage-6-pr-quality-workflow",
+    "09-08-stage-4-public-language-shell"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -37,11 +38,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 11,
-      "activeChild": null,
+      "activeChild": "09-08-stage-4-public-language-shell",
       "lastCompletedChild": "09-08-stage-6-pr-quality-workflow",
-      "nextAction": "PR workflow 037eee5d is delivered and archived; parent actually started. User chose staged Chinese/English coverage: public interface first, content afterward. Inspect the existing language audit and public UI owners, plan the shared language/persistence and bounded public-interface child, then implement inline. Production and push restrictions remain.",
+      "nextAction": "Shared-language shell passed full UI 46/0, final focused language 12+5+1, smoke 21/0 and static gates. Evidence saved. Commit exact whitelist locally, archive this child, actually start the parent, then plan catalog interface translation. Production and push restrictions remain.",
       "ownerThreadId": "01a080b3-741a-74c0-a22b-fe6dcfae4b15",
       "automationId": "automation",
       "cadenceMinutes": 15,

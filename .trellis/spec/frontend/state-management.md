@@ -14,6 +14,26 @@ The site intentionally uses React component state, route-derived state, small br
 
 Persist only stable visitor preferences. Effects that touch browser APIs must clean up listeners/timers and tolerate SSR/test environments.
 
+### Language Contract
+
+- `src/utils/siteLanguage.ts` owns `SiteLanguage`, `biau-port-language`, and the
+  `zh -> zh-CN` / `en -> en` document tags. Missing, invalid, or unreadable
+  storage falls back to Chinese. A write failure must not block the active choice.
+- App calls `useSiteLanguagePreference` once and supplies the read-only
+  `SiteLanguageContext`. Route components use `useSiteLanguage`; do not create
+  another preference state or remount routes when language changes.
+- The preference is initialized lazily and projected to `html.lang` and storage
+  in a layout effect. It survives navigation, history, refresh, and a new document
+  in the same browser context without changing theme or discovery URL state.
+- Translation is staged: navigation, footer, route loading, and 404 currently
+  follow the preference. App retains `lang="zh-CN"` as the fallback for remaining
+  Chinese pages/content; each localized surface overrides it with its actual
+  language. Before localizing a whole page, mark any untranslated authored
+  content explicitly. Do not claim translated SEO/content or invent locale URLs.
+- Existing UI fixtures must select a language from the actual current value;
+  blindly toggling after `goto` now reverses a persisted choice. A refresh test
+  must assert the retained language before making any corrective selection.
+
 ### Appearance Contract
 
 The site theme is one authoritative, persistent state:

@@ -13,6 +13,15 @@ git diff --check
 
 Also run feature-specific checks such as `analytics:check`, `project-details:check`, `blog:check`, or `status:contract` when their contracts change.
 
+For shared-language changes, run `npm.cmd run language:ui` against the current
+local build. `checkSiteLanguage` is also included in full UI. It verifies both
+languages across 320/390/430/1440px and three theme selections, keyboard focus,
+route/history/refresh persistence, a second document, invalid/blocked storage,
+lazy route loading, 404 recovery, localized accessible names, and actual content
+language markers. Its network guard allows local fixtures only and asserts zero
+model calls. Keep authored content Chinese until its separate translation phase.
+Do not reset language storage in an init script before a persistence assertion.
+
 For the public AI Daily Feed or detail route, also run:
 
 ```powershell
