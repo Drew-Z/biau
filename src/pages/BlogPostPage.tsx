@@ -9,6 +9,7 @@ import { getBlogPost } from '../data/blogContent'
 import type { BlogPost } from '../data/blogShared'
 import { projects } from '../data/portfolio'
 import { getBlogListHref, resolveBlogDiscovery, serializeBlogDiscoveryState } from '../utils/blogDiscovery'
+import { useDetailReadingNavigation } from '../hooks/useReadingNavigation'
 
 export function BlogPostPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -20,6 +21,7 @@ export function BlogPostPage() {
 
   const publicPostSummary = useMemo(() => (slug ? getPublicBlogPostSummary(slug) : undefined), [slug])
   const post = publicPostSummary ? (loadedPost && loadedPost.slug === slug ? loadedPost.post : undefined) : null
+  const { relatedState, returnState } = useDetailReadingNavigation(listHref, post !== undefined)
 
   useEffect(() => {
     let cancelled = false
@@ -79,9 +81,9 @@ export function BlogPostPage() {
     return (
       <main className="page-stack detail-page">
         <div className="detail-missing">
-          <h1 className="section-title">未找到该文章</h1>
+          <h1 className="section-title" tabIndex={-1} data-reading-heading>未找到该文章</h1>
           <p className="section-description">该文章可能已下线或链接有误。</p>
-          <Link className="btn" to={listHref}>
+          <Link className="btn" to={listHref} state={returnState}>
             <ArrowLeft size={16} aria-hidden />
             <span>返回知识库</span>
           </Link>
@@ -92,7 +94,7 @@ export function BlogPostPage() {
 
   return (
     <article className="page-stack detail-page blog-post-page">
-      <Link to={listHref} className="detail-back">
+      <Link to={listHref} className="detail-back" state={returnState}>
         <ArrowLeft size={16} aria-hidden />
         <span>知识库</span>
       </Link>
@@ -102,7 +104,7 @@ export function BlogPostPage() {
           <span className="tag">{blogColumnMeta[post.column].titleZh}</span>
           {post.series && <span className="blog-series">「{post.series}」</span>}
         </div>
-        <h1 className="detail-title">{post.title}</h1>
+        <h1 className="detail-title" tabIndex={-1} data-reading-heading>{post.title}</h1>
         <p className="detail-summary">{post.detail}</p>
         <div className="blog-meta detail-meta">
           <span className="blog-read-time">{post.readTime}</span>
@@ -188,7 +190,7 @@ export function BlogPostPage() {
           <h2 className="detail-block-title">延展阅读</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
-              <Link key={item.slug} to={`/blog/${item.slug}${listSearch}`} className="detail-related-card">
+              <Link key={item.slug} to={`/blog/${item.slug}${listSearch}`} className="detail-related-card" state={relatedState}>
                 <span className="detail-related-cat">{blogColumnMeta[item.column].titleZh}</span>
                 <h3>{item.title}</h3>
                 <p>{item.detail}</p>

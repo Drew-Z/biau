@@ -1,0 +1,59 @@
+{
+  "baselineHead": "0351f601ca510e5c4f0c171f31faa94f10c25113",
+  "buildEntry": "index-3_YH5-i2.js",
+  "buildEntrySha256": "2ff7ff0d7810d802107833d50e5b018245d4b99f32665438c86d6464b2d3ac2f",
+  "files": [
+    {
+      "path": "src/hooks/useReadingNavigation.ts",
+      "sha256": "e4b73a6169c6e43395011e0f525fd69acc6104cba2f87f3ec7c393d7efe0ae6f"
+    },
+    {
+      "path": "src/pages/BlogPage.tsx",
+      "sha256": "0085abe8f625dc9f676a6d37fb85d96441b8f10277c0beb2126dd3ddb24d4eef"
+    },
+    {
+      "path": "src/pages/BlogPostPage.tsx",
+      "sha256": "5d27d3f82418b660ea402cd7cfde9da82afcb62586a5a11ab3f92466bde14a5e"
+    },
+    {
+      "path": "src/pages/ProjectsPage.tsx",
+      "sha256": "e975818733c1160b133ff2e75431e298ad5a38102f3dd3dfc3863d4cd777d930"
+    },
+    {
+      "path": "src/pages/ProjectDetailPage.tsx",
+      "sha256": "c53ea6a71241ee99742c9a5f8ec7e4648df624e29053b0dc067a36cab3fa1aae"
+    },
+    {
+      "path": "src/components/BlogCard.tsx",
+      "sha256": "47312bac8c69e141b0e83e71ec8ea41c4da507aff7cfc9ee0b9ae9b792b45f84"
+    },
+    {
+      "path": "src/components/ProjectCard.tsx",
+      "sha256": "83289e9d0df9094ba6b553ff2804cf1b1c7a5ef57f33aba0af4a39fa74522800"
+    },
+    {
+      "path": "scripts/check-reading-navigation-ui.mjs",
+      "sha256": "a301b142d2dcd4f43027b7fd6d15ccc85091741775e0ef68b79339b6efdd536a"
+    },
+    {
+      "path": "scripts/check-ui.mjs",
+      "sha256": "af982b957461a9ec539b51d13797763888784cf5524f667bc73b3c583f10e53b"
+    },
+    {
+      "path": "package.json",
+      "sha256": "10fb114c68db168bbc3d0ae6de5468035345ee720218e80b240dd8330b727632"
+    },
+    {
+      "path": ".trellis/spec/frontend/state-management.md",
+      "sha256": "507b82bedce721490b7db6c35eff97e989878890422bb59812c69d2f08d9c540"
+    },
+    {
+      "path": ".trellis/spec/frontend/hook-guidelines.md",
+      "sha256": "01a73a263ddc92f4f202f3c87c47f1a58c62035d4809e8787075686f7bf0454f"
+    },
+    {
+      "path": "public/status/blog-semi-synthetic.json",
+      "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+    }
+  ]
+}

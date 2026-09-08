@@ -17,6 +17,7 @@ export function BlogCard({ post, onReadMore }: BlogCardProps) {
   return (
     <article
       className="glass-card blog-card hover-lift"
+      data-reading-card={`blog:${post.slug}`}
       role="link"
       tabIndex={0}
       aria-label={`阅读文章：${post.title}`}
@@ -47,6 +48,7 @@ export function BlogCard({ post, onReadMore }: BlogCardProps) {
 
       <button
         className="btn"
+        data-reading-entry={`blog:${post.slug}`}
         onClick={(event) => {
           event.stopPropagation()
           onReadMore()

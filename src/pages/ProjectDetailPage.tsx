@@ -25,6 +25,7 @@ import {
 } from '../data/projectPublication'
 import { ResponsiveImage } from '../components/ResponsiveImage'
 import { getProjectListHref, parseProjectGroupSearch, serializeProjectGroupSearch } from '../utils/projectDiscovery'
+import { useDetailReadingNavigation } from '../hooks/useReadingNavigation'
 
 const projectDetailContentOrder: ProjectDetailContentKey[] = [
   'overview',
@@ -63,6 +64,7 @@ export function ProjectDetailPage() {
   const group = parseProjectGroupSearch(search)
   const listHref = getProjectListHref(group)
   const groupSearch = serializeProjectGroupSearch(group)
+  const { relatedState, returnState } = useDetailReadingNavigation(listHref)
 
   const project = useMemo(() => projects.find((p) => p.id === id), [id])
   const publication = useMemo(() => (project ? findProjectPublication(project.id) : undefined), [project])
@@ -102,9 +104,9 @@ export function ProjectDetailPage() {
     return (
       <main className="page-stack detail-page">
         <div className="detail-missing">
-          <h1 className="section-title">未找到该项目</h1>
+          <h1 className="section-title" tabIndex={-1} data-reading-heading>未找到该项目</h1>
           <p className="section-description">该项目可能已下线或链接有误。</p>
-          <Link className="btn" to={listHref}>
+          <Link className="btn" to={listHref} state={returnState}>
             <ArrowLeft size={16} aria-hidden />
             <span>返回项目集</span>
           </Link>
@@ -115,7 +117,7 @@ export function ProjectDetailPage() {
 
   return (
     <article className="page-stack detail-page project-detail-page">
-      <Link to={listHref} className="detail-back">
+      <Link to={listHref} className="detail-back" state={returnState}>
         <ArrowLeft size={16} aria-hidden />
         <span>项目集</span>
       </Link>
@@ -125,7 +127,7 @@ export function ProjectDetailPage() {
           <span className="tag">{projectCategoryLabels[project.category]}</span>
           <span className="detail-status">{statusLabels[project.status]}</span>
         </div>
-        <h1 className="detail-title">{project.title}</h1>
+        <h1 className="detail-title" tabIndex={-1} data-reading-heading>{project.title}</h1>
         <p className="detail-role">{project.role}</p>
         <p className="detail-summary">{project.summary}</p>
         {entryAction?.explanation && (
@@ -219,7 +221,7 @@ export function ProjectDetailPage() {
           <h2 className="detail-block-title">{getRelatedProjectsTitle(project, related)}</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
-              <Link key={item.id} to={`/projects/${item.id}${groupSearch}`} className="detail-related-card">
+              <Link key={item.id} to={`/projects/${item.id}${groupSearch}`} className="detail-related-card" state={relatedState}>
                 <span className="detail-related-cat">{projectCategoryLabels[item.category]}</span>
                 <h3>{item.title}</h3>
                 <p>{item.summary}</p>

@@ -59,6 +59,16 @@ not overwrite the preference just before a reload assertion.
 
 Pages consume typed projections. If two consumers derive the same summary/tags/status, keep one shared projection helper.
 
+## Scenario: Catalog Reading Navigation
+
+- `useReadingNavigation.ts` owns bounded, document-local reading records: at most 40 catalog entries and 40 detail positions, keyed by Router location key rather than URL alone. History state carries only an opaque origin key and an explicit return marker; positions never enter localStorage/sessionStorage or analytics.
+- Discovery URL helpers remain authoritative for filters/groups and fixed return destinations. Same-family related details carry the origin key; cross-family links do not. Recheck the stored canonical catalog href before accepting an origin.
+- Restore a catalog entry only for an explicit detail return or a POP directly from a detail. A later visit to Status or another route must not revive the previous reading position; same-page search/filter changes retain their normal input focus and history behavior.
+- Stable content IDs distinguish card and action focus. Restore the actual keyboard entry, or the existing detail action for a pointer-only card surface. Measure document layout offsets, excluding temporary entrance/press transforms; keep the action visible between the measured top navigation and mobile tabbar. Resizes may reposition the entry; missing/hidden/expired origins fall back to the catalog heading.
+- New PUSH details focus a `tabIndex={-1}` heading at the top after content is ready. POP details retain their remembered scroll position. With no in-memory position, direct/reloaded details retain native initial behavior; copied/reloaded detail return links still lead to the valid catalog heading. Real fragments resolve after asynchronous content exists and take precedence over a fresh top reset.
+- User pointer, keyboard, touch or wheel interaction while content is pending cancels late automatic positioning. Route changes and Strict Mode replays clean up scheduled frames and listeners. Do not set global `history.scrollRestoration` or temporarily rewrite root scrolling styles.
+- `reading:navigation-ui`, also included in full UI, verifies actual focus/geometry/history across the four standard widths, three themes and both navigation languages, plus ordinary motion, related/missing/copied/reloaded returns, duplicate catalog history entries, resized/hidden targets, fragments and delayed-content cancellation. Wait for finite entry animations and eager detail images when establishing stable test references; do not weaken geometry assertions to accommodate unsettled layout.
+
 ## Scenario: Public Assistant State
 
 - The public widget is available on public routes and hidden on `/studio*`.

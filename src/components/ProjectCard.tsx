@@ -58,6 +58,7 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
         <div className="project-footer">
           <button
             className="btn"
+            data-reading-entry={`projects:${project.id}`}
             aria-label={`查看项目详情：${project.title}`}
             onClick={(e) => {
               e.stopPropagation()

@@ -4,7 +4,8 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ProjectCard } from '../components/ProjectCard'
 import { catalogProjects } from '../data/portfolio'
 import { trackAnalyticsEvent } from '../utils/analytics'
-import { parseProjectGroupSearch, serializeProjectGroupSearch, type ProjectGroupKey } from '../utils/projectDiscovery'
+import { getProjectListHref, parseProjectGroupSearch, serializeProjectGroupSearch, type ProjectGroupKey } from '../utils/projectDiscovery'
+import { useCatalogReadingNavigation } from '../hooks/useReadingNavigation'
 
 export function ProjectsPage() {
   const navigate = useNavigate()
@@ -12,7 +13,8 @@ export function ProjectsPage() {
   const [, setSearchParams] = useSearchParams()
   const activeMobileGroup = parseProjectGroupSearch(search)
   const groupSearch = serializeProjectGroupSearch(activeMobileGroup)
-  const [isMobileLayout, setIsMobileLayout] = useState(false)
+  const [isMobileLayout, setIsMobileLayout] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 720px)').matches)
+  const rememberReadingEntry = useCatalogReadingNavigation(getProjectListHref(activeMobileGroup))
 
   useEffect(() => {
     if (search !== groupSearch && window.location.search === search) setSearchParams(groupSearch, { replace: true })
@@ -27,7 +29,10 @@ export function ProjectsPage() {
       source: 'projects-page-card',
       projectId,
     })
-    navigate(`/projects/${projectId}${serializeProjectGroupSearch(parseProjectGroupSearch(window.location.search))}`)
+    const group = parseProjectGroupSearch(window.location.search)
+    navigate(`/projects/${projectId}${serializeProjectGroupSearch(group)}`, {
+      state: rememberReadingEntry(`projects:${projectId}`, getProjectListHref(group)),
+    })
   }
 
   const projectGroups = useMemo(() => {
@@ -59,7 +64,7 @@ export function ProjectsPage() {
     <main className="projects-tools-page page-stack">
       <section className="section-header page-hero">
         <p className="section-subtitle">PROJECT PORTFOLIO</p>
-        <h1 className="section-title">项目集</h1>
+        <h1 className="section-title" tabIndex={-1} data-reading-heading>项目集</h1>
         <p className="section-description">让技术落进可演示的流程</p>
       </section>
 

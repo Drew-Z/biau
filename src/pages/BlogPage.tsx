@@ -4,7 +4,9 @@ import { BlogCard } from '../components/BlogCard'
 import { BlogColumnFilter } from '../components/BlogColumnFilter'
 import { blogColumnOrder, getBlogEmptyState, type BlogColumn } from '../data/blog'
 import { getPublicBlogPosts } from '../data/blogCuration'
+import { useCatalogReadingNavigation } from '../hooks/useReadingNavigation'
 import {
+  getBlogListHref,
   normalizeBlogQuery,
   parseBlogDiscoverySearch,
   resolveBlogDiscovery,
@@ -26,6 +28,7 @@ export function BlogPage() {
   )
   const { column: selectedBlogColumn, query: searchQuery, page } = state
   const canonicalSearch = serializeBlogDiscoveryState(state)
+  const rememberReadingEntry = useCatalogReadingNavigation(getBlogListHref(state))
 
   useEffect(() => {
     if (search !== canonicalSearch) setSearchParams(canonicalSearch, { replace: true })
@@ -78,7 +81,7 @@ export function BlogPage() {
     <main className="blog-index-page page-stack">
       <section className="section-header page-hero">
         <p className="section-subtitle">KNOWLEDGE BASE</p>
-        <h1 className="section-title">知识库</h1>
+        <h1 className="section-title" tabIndex={-1} data-reading-heading>知识库</h1>
         <p className="section-description">从实践中提炼项目方法、技术路线和公开内容系统。</p>
       </section>
 
@@ -117,7 +120,9 @@ export function BlogPage() {
             post={post}
             onReadMore={() => {
               const current = resolveBlogDiscovery(window.location.search, publicBlogs)
-              navigate(`/blog/${post.slug}${serializeBlogDiscoveryState(current.state)}`)
+              navigate(`/blog/${post.slug}${serializeBlogDiscoveryState(current.state)}`, {
+                state: rememberReadingEntry(`blog:${post.slug}`, getBlogListHref(current.state)),
+              })
             }}
           />
         ))}
