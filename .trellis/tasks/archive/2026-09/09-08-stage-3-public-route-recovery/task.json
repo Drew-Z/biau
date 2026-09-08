@@ -3,7 +3,7 @@
   "name": "stage-3-public-route-recovery",
   "title": "修复公开路由与错误地址恢复",
   "description": "Prevent malformed blog/project paths from crashing a mounted assistant, repair the existing Pet status reference, and add focused route recovery regression checks without changing public facts.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -11,16 +11,24 @@
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-09-08",
-  "completedAt": null,
+  "completedAt": "2026-09-08",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "8a0dd62710834d71bc1a46c65c23434458a7b310",
   "pr_url": null,
   "subtasks": [],
   "children": [],
   "parent": "09-06-website-completion-roadmap",
   "relatedFiles": [],
   "notes": "",
-  "meta": {}
+  "meta": {
+    "delivery": {
+      "verified": true,
+      "focusedScenarios": 70,
+      "fullUiGroups": 45,
+      "fullUiFailed": 0,
+      "localOnly": true
+    }
+  }
 }

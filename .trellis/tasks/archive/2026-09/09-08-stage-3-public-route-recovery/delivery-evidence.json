@@ -1,5 +1,5 @@
 {
-  "status": "verified",
+  "status": "delivered",
   "baselineHead": "cdc97640fb908b7922fe038c8f612f3b091a624a",
   "previewOrigin": "http://127.0.0.1:5184",
   "build": {
@@ -137,5 +137,6 @@
     "Chromium only",
     "Local API fixtures, no production or live-model validation",
     "Direct malformed-request diagnostic did not record HTTP status or body; no confirmed middleware attribution"
-  ]
+  ],
+  "deliveryCommit": "8a0dd62710834d71bc1a46c65c23434458a7b310"
 }
