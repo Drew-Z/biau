@@ -29,3 +29,5 @@
 实际环境为 Windows、Git Bash、Node 24.14.0；工作流目标为 Ubuntu/Node 22。远端 CI 未执行，本地也未重复 npm ci 或安装 Linux 系统依赖。依赖安装写法依据已抓取的官方文档与仓库约定，不将它们说成本机实际执行结果。
 
 日志、结构化验证和官方文档位于 `C:/Users/zhang/AppData/Local/Temp/blog-semi-resume-20260908-62seN4`，哈希见 `delivery-evidence.json`。本轮一次性 `verify-site-quality.ps1` 已清理；日志和截图证据保留。中断恢复后重新校验 14 个源码/规范文件、12 份证据文件和构建哈希，全部一致，没有遗留检查进程。
+
+本地交付提交 `037eee5d88f91a1f5ba564ee73864df3472a537a`，共 13 个白名单文件。已仅归档本子任务，并实际执行 `task.py start 09-06-website-completion-roadmap` 返回父任务；远端未推送。
