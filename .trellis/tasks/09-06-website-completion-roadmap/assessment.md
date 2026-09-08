@@ -87,3 +87,6 @@
 - 选择：已证实的桌面栏目筛选语义缺口优先于全站翻译。对已有单选按钮组增加可读取的选中状态，帮助辅助技术辨认当前栏目，沿用原生 button 的 Enter/Space 与 Tab 顺序。
 - 边界：只在 BlogColumnFilter 中从现有 selectedColumn 派生 group/pressed 语义；复用已有“选择知识库栏目”辅助标签。不引入 tab/radio 模型、不改移动 select、公开文案、排序/筛选数据、URL 状态或 CSS。
 - 验收：先用新断言在原 build 失败；再检查全部栏目（含空栏目）、默认值、鼠标/键盘、前进后退/刷新/复制地址与 720/721 resize 的唯一选中投影，接入现有博客专项。运行 lint/build、博客合同/专项及所需 UI 门禁后交付。
+- 接续：2026-09-08 用户指定新会话接手。既有子任务和修改保留，父任务 owner 与原生 heartbeat 目标迁到 `01a080b3-741a-74c0-a22b-fe6dcfae4b15`；heartbeat 保持读取到的 PAUSED 状态。
+- 验收完成：新会话加强了原生 Tab/Shift+Tab 遍历检查，重新通过 lint/build、博客合同 8 组、博客专项 24+6 组、smoke 21 组和性能预算。完整 UI 明确复用原会话 45 组、0 失败的最终日志（970554ms）；前后构建 JS/HTML 哈希以及 preview 返回字节一致。业务组件保持原修复，公开数据、CSS、路由与依赖未变。下一步精确本地提交和归档，再实际返回父任务。
+- 调度复核：原生更新工具返回迁移成功且 PAUSED；稍后原 `D:/Agent/codex/automations/automation/automation.toml` 已不存在。记录为当前持久化状态未确认，未重建/启用自动化，不推断移除原因；本会话继续完成手动闭环。

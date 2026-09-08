@@ -42,6 +42,18 @@ async function checkList(page, { column = 'project-notes', query = 'RAG', titles
     (expectedTitles === null || JSON.stringify([...document.querySelectorAll('.blog-card .blog-title')].map((title) => title.textContent)) === JSON.stringify(expectedTitles))
   ), { expectedColumn: column, expectedQuery: query, expectedTitles: titles ?? null }, { timeout: 5000 })
   assert.equal(await page.locator('.blog-column-select select').inputValue(), column, 'column must follow the URL')
+  const filterGroup = page.locator('.blog-column-filter')
+  assert.equal(await filterGroup.getAttribute('role'), 'group')
+  assert.equal(await filterGroup.getAttribute('aria-label'), '选择知识库栏目')
+  const columns = await page.locator('.blog-column-select option').evaluateAll((options) => options.map((option) => option.value))
+  const buttons = filterGroup.locator('button')
+  const pressed = await buttons.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-pressed')))
+  assert.deepEqual(pressed, columns.map((value) => String(value === column)), 'every column must expose its current selected state')
+  if (await filterGroup.isVisible()) {
+    const selected = page.getByRole('group', { name: '选择知识库栏目', exact: true }).getByRole('button', { pressed: true })
+    assert.equal(await selected.count(), 1, 'one selected column must be exposed to accessibility tools')
+    assert.equal(await selected.textContent(), await buttons.nth(columns.indexOf(column)).textContent())
+  }
   assert.equal(await page.locator('#blog-search').inputValue(), query, 'search must follow the URL')
   const actualTitles = await page.locator('.blog-card .blog-title').allTextContents()
   if (titles) assert.deepEqual(actualTitles, titles, 'return must restore the same result collection')
@@ -53,6 +65,57 @@ async function checkList(page, { column = 'project-notes', query = 'RAG', titles
 async function selectProjectNotes(page, width) {
   if (width <= 430) await page.locator('.blog-column-select select').selectOption('project-notes')
   else await page.locator('.blog-column-filter .filter-btn').filter({ hasText: 'Project Notes' }).click()
+}
+
+async function checkFilterSemantics(browser, base) {
+  let groups = 0
+  for (const width of [721, 1440]) {
+    for (const theme of ['morning', 'nature', 'stellar']) {
+      const { page, errors } = await createPage(browser, base, { width, theme })
+      try {
+        await openDocument(page, `${base}/blog`, 'zh')
+        const columns = await page.locator('.blog-column-select option').evaluateAll((options) => options.map((option) => option.value))
+        const buttons = page.locator('.blog-column-filter button')
+        await buttons.first().focus()
+        for (const [index, column] of columns.entries()) {
+          assert(await buttons.nth(index).evaluate((node) => node === document.activeElement), 'Tab must follow the native column button order')
+          await page.keyboard.press(index % 2 === 0 ? 'Space' : 'Enter')
+          await checkList(page, { column, query: '' })
+          assert(await buttons.nth(index).evaluate((node) => node === document.activeElement), 'selection must preserve button focus')
+          if (index < columns.length - 1) await page.keyboard.press('Tab')
+        }
+        await page.keyboard.press('Shift+Tab')
+        assert(await buttons.nth(columns.length - 2).evaluate((node) => node === document.activeElement), 'Shift+Tab must follow the reverse native button order')
+        await page.goBack()
+        await checkList(page, { column: columns.at(-2), query: '' })
+        await page.goForward()
+        await checkList(page, { column: columns.at(-1), query: '' })
+        await page.reload({ waitUntil: 'load' })
+        await checkList(page, { column: columns.at(-1), query: '' })
+
+        await page.setViewportSize({ width: 720, height: 900 })
+        assert.equal(await page.locator('.blog-column-filter').isVisible(), false)
+        const mobileSelect = page.locator('.blog-column-select select')
+        assert(await mobileSelect.isVisible())
+        await mobileSelect.selectOption('knowledge')
+        await checkList(page, { column: 'knowledge', query: '' })
+        await page.setViewportSize({ width: 721, height: 900 })
+        assert.equal(await mobileSelect.isVisible(), false)
+        assert(await page.locator('.blog-column-filter').isVisible())
+        await checkList(page, { column: 'knowledge', query: '' })
+        assert.deepEqual(errors, [], `filter semantics ${width}/${theme}: page/network errors`)
+        if (process.env.UI_CHECK_ARTIFACT_DIR) {
+          await page.setViewportSize({ width, height: 900 })
+          await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+          await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `blog-filter-semantics-${width}-${theme}.png`) })
+        }
+        groups += 1
+      } finally {
+        await page.close()
+      }
+    }
+  }
+  return groups
 }
 
 export async function checkBlogDiscoveryNavigation(browser, base) {
@@ -161,14 +224,15 @@ export async function checkBlogDiscoveryNavigation(browser, base) {
       }
     }
   }
-  return { groups }
+  const semanticGroups = await checkFilterSemantics(browser, base)
+  return { groups, semanticGroups }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   const browser = await chromium.launch({ headless: true })
   try {
     const result = await checkBlogDiscoveryNavigation(browser, process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174')
-    console.log(`Blog discovery UI passed: ${result.groups} viewport/theme/language groups.`)
+    console.log(`Blog discovery UI passed: ${result.groups} viewport/theme/language groups; ${result.semanticGroups} column semantics and breakpoint groups.`)
   } catch (error) {
     console.error(error)
     process.exitCode = 1

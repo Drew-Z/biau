@@ -49,10 +49,11 @@ export function BlogColumnFilter({ columns, counts, totalCount, selectedColumn, 
         </span>
       </label>
 
-      <div className="blog-column-filter">
+      <div className="blog-column-filter" role="group" aria-label="选择知识库栏目">
         <button
           type="button"
           className={`filter-btn ${selectedColumn === 'all' ? 'active' : ''}`}
+          aria-pressed={selectedColumn === 'all'}
           onClick={() => onSelect('all')}
         >
           <span className="filter-btn-title">全部</span>
@@ -66,6 +67,7 @@ export function BlogColumnFilter({ columns, counts, totalCount, selectedColumn, 
               key={column}
               type="button"
               className={`filter-btn ${selectedColumn === column ? 'active' : ''} ${count === 0 ? 'is-empty' : ''}`}
+              aria-pressed={selectedColumn === column}
               onClick={() => onSelect(column)}
             >
               <span className="filter-btn-title">{meta.titleZh}</span>

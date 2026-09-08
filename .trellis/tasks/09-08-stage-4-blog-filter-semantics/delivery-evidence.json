@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-08T11:57:59.288Z",
+  "status": "verified",
+  "threadId": "01a080b3-741a-74c0-a22b-fe6dcfae4b15",
+  "sourceThreadId": "01a07cf9-7ffa-7843-a3f6-c20b39aa224b",
+  "artifactDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-resume-20260908-62seN4",
+  "inheritedArtifactDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-discovery-20260908-4f78e2a8f7f64b4799ddd9b9e3b8da57",
+  "sha256": {
+    "src/components/BlogColumnFilter.tsx": "a9efee842093f1a26b949754e89988540e7fcbb4e2fb7e354a18ba85d1d9d22c",
+    "scripts/check-blog-discovery-ui.mjs": "fde425e72e4fb44717c7e454e1f0088eb6f038692bdca92d6559a68d18236b9b",
+    "scripts/check-ui.mjs": "a870ba696a20c00ce117ba75a180df9d662f77e293d68ff703b39280fc5c6b4c",
+    ".trellis/spec/frontend/component-guidelines.md": "631d5dbc8f7a44321d90f3e2914b715ff0d84f17c09602b526240356309440ff",
+    "package.json": "ed27f9d75b35543c94e273ae442404819b2b72cc42a6183b70919bb1cf4e365c",
+    "package-lock.json": "b96c8c5c5357947654f47dba1f568495ed75b29d6355dee321f4714fde420809",
+    "src/App.tsx": "c6dbc165c103d1a12f0c4b0318ca11a9dc66f09b0edbfd2aab65e47d984d5f99",
+    "src/pages/BlogPage.tsx": "0085abe8f625dc9f676a6d37fb85d96441b8f10277c0beb2126dd3ddb24d4eef",
+    "src/utils/blogDiscovery.ts": "7bb155c9a0403a30b67b0be68fd2145fd94eafc777fad03e7fdfbf95af1d5015",
+    "public/status/blog-semi-synthetic.json": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+  },
+  "build": {
+    "entry": "/assets/index-SpSfukuL.js",
+    "entrySha256": "0ee035e5e37dfcf00cc14363657d756382efd5ec0af99b376b9606d00de9a365",
+    "htmlSha256": "08c3c941b231178d2f179e98a2a79e736881769c9fd5742ab333d0351661e3d8"
+  },
+  "servedBuildVerified": true,
+  "currentChecks": {
+    "filter-final-static": {
+      "exitCode": 0,
+      "startedAt": "2026-09-08T11:33:55.756Z",
+      "finishedAt": "2026-09-08T11:34:13.153Z",
+      "durationMs": 17397,
+      "log": "filter-final-static.log",
+      "sha256": "9e534e39fbdc626b1c9e60f8d2cd0e595e22d1c45e4fb27956cb93504646f8c3"
+    },
+    "filter-final-browser": {
+      "exitCode": 0,
+      "startedAt": "2026-09-08T11:51:59.956Z",
+      "finishedAt": "2026-09-08T11:53:40.095Z",
+      "durationMs": 100139,
+      "log": "filter-final-browser.log",
+      "sha256": "e9722d02ec7653b0019b749fd7925a9e8e9f50cc0535a323c45e59dd12531236"
+    }
+  },
+  "inheritedLogs": {
+    "blog-filter-semantics-full-ui.log": "d8acbb0895edd267cb7d00d2dda2a89aaa0dcda6069feadc01f8c6fde94cdbfb",
+    "blog-filter-semantics-ui.log": "1f7047faad5a20bd79833124304be7c990fc06b97f5c67062d620313d5671bec",
+    "blog-filter-semantics-negative.log": "9f8179c3962aa033876fdf3f2ddf1e6c4f4bf979c68a73755f0607f2813b3987",
+    "blog-filter-semantics-build.log": "b1b053e8a228ebfc223b3758c1872605c71dbbcf26f43fa872679bf5f57cb8ea",
+    "blog-filter-semantics-contract.log": "a222de3f804e082ecd71faa44062e66981ef0b8e20c209c945bb4a50796e72d6",
+    "blog-filter-semantics-smoke.log": "1346293de115b6749ed03d86e28d6d3729d30cb15879a188c9db05602173ac85",
+    "blog-filter-semantics-performance.log": "8941af1b98dc0416506f4258be735b6de3642a6cee9f0d0dd85936a61fa3bfa2"
+  },
+  "inheritedFullUi": {
+    "groups": 45,
+    "failed": 0,
+    "durationMs": 970554,
+    "source": "blog-filter-semantics-full-ui.log",
+    "reuseBasis": "The current business source rebuilds to the same entry JS and HTML hashes; full UI entry script is unchanged. Only the focused checker gains real Tab/Shift+Tab assertions, which passed in the current 24+6-group rerun.",
+    "observedProcessExitInThisSession": false
+  },
+  "focusedUi": {
+    "navigationGroups": 24,
+    "semanticGroups": 6
+  },
+  "smoke": {
+    "groups": 21,
+    "failed": 0,
+    "durationMs": 9529
+  },
+  "protectedFilesUnchanged": [
+    "public/status/blog-semi-synthetic.json",
+    "package-lock.json",
+    "src/App.tsx",
+    "src/pages/BlogPage.tsx",
+    "src/utils/blogDiscovery.ts"
+  ],
+  "automation": {
+    "id": "automation",
+    "requestedTargetThreadId": "01a080b3-741a-74c0-a22b-fe6dcfae4b15",
+    "updateAcknowledgedStatus": "PAUSED",
+    "currentScheduleVerified": false,
+    "lastPersistenceCheck": "Original automation.toml no longer exists; no recreation or enabling performed."
+  },
+  "limitations": [
+    "Chromium, local preview and API fixtures only; no live model or production validation.",
+    "Inherited full UI is explicitly reused evidence, not a full rerun in the current session."
+  ]
+}

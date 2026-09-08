@@ -139,6 +139,15 @@ do not duplicate filtering state. Every option must expose the complete Chinese
 and English identity plus its count or pending state. Do not use a clipped,
 no-wrap horizontal rail or partial-card peek as the only discovery mechanism.
 
+The desktop blog column buttons form a named `role="group"` and each exposes
+`aria-pressed={selectedColumn === column}` (including `all`). The URL-derived
+selection is shared with the native mobile select; do not introduce a second
+selection state or a tab/radio keyboard model. Keep the existing Enter/Space
+button activation and Tab order. `blog:discovery-ui` checks one pressed button
+after history, reload, empty results and 720/721 resizing, plus every column.
+Its keyboard sequence moves between buttons with real Tab/Shift+Tab events;
+focusing each button programmatically cannot verify the native tab order.
+
 ### Mobile Catalog Progressive Disclosure
 
 When a public catalog has a small number of stable groups but many repeated
