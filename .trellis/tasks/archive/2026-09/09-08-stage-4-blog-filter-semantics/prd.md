@@ -17,7 +17,7 @@ Expose existing desktop blog column selection with accessible group and pressed 
 - [x] 原 build 的新断言 exit 1，六个按钮的 aria-pressed 均为 null；审计 721/1440 两组 accessible snapshot 也确认无选中状态。
 - [x] 当前栏目的语义状态随点击、键盘、历史、刷新、复制地址、空结果和桌面/移动 resize 正确更新，移动原生选择仍有效。
 - [x] 博客 URL 合同、专项、lint/build、smoke、完整 UI 和性能检查通过；原有验证与新验证明确区分，保存证据。
-- [ ] 精确本地提交、归档并实际返回父任务评估。
+- [x] 精确本地提交、归档并实际返回父任务评估。
 
 ## Notes
 

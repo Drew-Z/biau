@@ -36,4 +36,4 @@
 
 `delivery-evidence.json` 保存本会话/来源会话、构建/源码/日志哈希和检查时长。当前证据在 `C:/Users/zhang/AppData/Local/Temp/blog-semi-resume-20260908-62seN4`；来源证据在 `C:/Users/zhang/AppData/Local/Temp/blog-semi-discovery-20260908-4f78e2a8f7f64b4799ddd9b9e3b8da57`。
 
-按白名单本地提交后，仅归档本子任务并实际运行 `task.py start 09-06-website-completion-roadmap` 返回父任务，继续依据最新证据评估。
+本地工作提交为 `3e0bdbdafd3beb109e9f9415a521460410abe8b7`。已仅归档本子任务，并实际运行 `task.py start 09-06-website-completion-roadmap` 返回父任务，继续依据最新证据评估。
