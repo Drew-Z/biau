@@ -61,3 +61,10 @@
 - 初检：当前 HEAD `618d83af` 上 project-details（15 项）、registry（12 identities / 9 publications）、blog:check、manual gates、status 合同（8 projects / 7 external targets / 33 checks）全部通过。public-links 实测 43 个目标、37 失败：35 个 connection_error、ERP HTTP 403、Legal API timeout；不据此改写公开状态。
 - 选择：建立 `09-08-stage-3-content-evidence-audit`，以覆盖矩阵、检查证据和具体候选为验收终点。该项只写审计与任务记录，不生成文章或改公开投影；需要修复时交回父任务独立定界。
 - 核验结果：10 项既有合同通过，11 篇文章正文元数据、助手 v1/v2 生成产物和 40 条 sitemap 集合一致。63 个结构化站内引用中发现帆灵 publication 的 `/status/pet-workspace` 不对应实际 `pet-gamer`；两种宽度证实错误地址缺失、正确地址可读。另发现助手已挂载后损坏编码路径会抛 URIError，390/1440 × 打开/关闭 × 博客/项目的 8 次 SPA 导航均清空根节点；所有 API 为本地 fixture，没有模型调用。这两项交回父任务排序，未在审计中修改源码。
+- 交付：`c308d09bf7bd2543ff05b2f97efabb8058dc9ae8` 已提交 9 个资料文件，归档至 `archive/2026-09/09-08-stage-3-content-evidence-audit`，并实际返回父任务；所有业务文件保持原状。
+
+## 轮次 6：公开路由边界修复评估
+
+- 优先级：助手已挂载后的损坏地址可让整页清空，是已证实的可恢复错误处理缺口，优先于增加内容或翻译。帆灵备用状态引用错误同属公开路由完整性，可在同一小范围验收中关闭。
+- 收敛范围：助手路径解码回退、既有 publication 的一个状态 href，以及对应确定性/真实浏览器检查。修正已有目标引用不升级项目状态、不添加公开事实、不重新生成助手知识；不改变原状态 ID 或 sitemap。
+- 验证要求：检查先在未修复代码上失败；损坏路径在助手打开/关闭时均保留普通缺失页，正常编码/既有详情建议保持，历史返回仍工作；9 份 publication 的 statusHref 全部解析到总览或真实状态项目。使用 API fixture、零模型调用，运行必要 lint/build、registry、assistant 合同、专项与全站 UI，之后重新评估。
