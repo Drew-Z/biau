@@ -40,7 +40,7 @@
 
 ## 交付与保留
 
-验收完成，待精确本地提交、仅归档本子任务并实际启动父任务。本文随后记录真实提交与回切结果。
+工作提交 `d215071e0397966f10ed62f7b71d9ad02cd2fcc7` 包含精确白名单 24 个文件；提交前全部源码/构建/日志/代表性截图哈希和暂存集合核对通过。已使用 `task.py archive 09-09-stage-4-catalog-language --no-commit` 仅归档本子任务，并实际运行 `task.py start 09-06-website-completion-roadmap`，当前会话指针确认返回父任务。父任务进入第 13 轮评估。
 
 所有浏览器检查使用本地 preview `http://127.0.0.1:5190`、fixture 和网络 guard，模型调用为零。没有 push、部署、签名、公开发布、生产验收、真实模型调用或 Feed/Cron 启用；未改保护快照、public/server、依赖、工作流、portfolio/projectPublication 或文章源数据。
 
