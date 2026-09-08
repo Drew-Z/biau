@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-09-08T13:16:54.066Z",
+  "status": "verified",
+  "threadId": "01a080b3-741a-74c0-a22b-fe6dcfae4b15",
+  "baseCommit": "ce2db3da",
+  "artifactDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-resume-20260908-62seN4",
+  "sha256": {
+    "src/styles/catalog-pages.css": "fbf8e8a5d6599e68ba826e4c964d83ac2c23d99884debb71e7582cdcd5f60398",
+    "scripts/check-blog-discovery-ui.mjs": "ca75312f9fb2bde389451f3b30f285b99457571e7045fa6cd6098eaa4b15f9af",
+    ".trellis/spec/frontend/component-guidelines.md": "e5799466e531c170e55b24b932e5547be8ed0290e9a5e0df71d8866be36f01a5",
+    "src/components/BlogColumnFilter.tsx": "a9efee842093f1a26b949754e89988540e7fcbb4e2fb7e354a18ba85d1d9d22c",
+    "src/index.css": "46a143a5d8da0c957ebd126e65bd7fa36c03213f5ad77efaed595ec312bf55d0",
+    "src/App.tsx": "c6dbc165c103d1a12f0c4b0318ca11a9dc66f09b0edbfd2aab65e47d984d5f99",
+    "src/pages/BlogPage.tsx": "0085abe8f625dc9f676a6d37fb85d96441b8f10277c0beb2126dd3ddb24d4eef",
+    "src/utils/blogDiscovery.ts": "7bb155c9a0403a30b67b0be68fd2145fd94eafc777fad03e7fdfbf95af1d5015",
+    "scripts/check-ui.mjs": "a870ba696a20c00ce117ba75a180df9d662f77e293d68ff703b39280fc5c6b4c",
+    "package.json": "ed27f9d75b35543c94e273ae442404819b2b72cc42a6183b70919bb1cf4e365c",
+    "package-lock.json": "b96c8c5c5357947654f47dba1f568495ed75b29d6355dee321f4714fde420809",
+    "public/status/blog-semi-synthetic.json": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+  },
+  "build": {
+    "entry": "/assets/index-C0uRHKOK.js",
+    "sha256": "d00e52420f1ea59a41c619867f4282b7e09bdb48857c5b34544c3e5fd5aa2eed",
+    "htmlSha256": "e952c8f258f5ac212d3acbee58d94816a9d18d162d61f91d6052f6d160207e3e"
+  },
+  "servedBuildVerified": true,
+  "currentChecks": {
+    "contrast-final-static-v3": {
+      "exitCode": 0,
+      "startedAt": "2026-09-08T12:30:55.250Z",
+      "finishedAt": "2026-09-08T12:31:09.678Z",
+      "log": "contrast-final-static-v3.log",
+      "sha256": "5997b1bd3262dbe52b4c208d826705d0aefce009c0e1df456cae6f3bcb3012b7"
+    },
+    "contrast-semantic-v3": {
+      "exitCode": 0,
+      "startedAt": "2026-09-08T12:31:31.946Z",
+      "finishedAt": "2026-09-08T12:32:02.691Z",
+      "log": "contrast-semantic-v3.log",
+      "sha256": "50bb2cd92d2f277a476d7bbb4e117fa3efd585bbb15a72d88bb651238e332f96"
+    },
+    "contrast-final-full-ui": {
+      "exitCode": 1,
+      "startedAt": "2026-09-08T12:32:21.023Z",
+      "finishedAt": "2026-09-08T12:49:30.395Z",
+      "log": "contrast-final-full-ui.log",
+      "sha256": "f793e5c064d9b087de9accaa85c9fd198e49bc8318df7832266688fa00af0315"
+    },
+    "contrast-final-full-ui-confirm": {
+      "exitCode": 0,
+      "startedAt": "2026-09-08T12:54:24.327Z",
+      "finishedAt": "2026-09-08T13:13:32.790Z",
+      "log": "contrast-final-full-ui-confirm.log",
+      "sha256": "c2c76fc7226e439d94aed61d4f6fd7090608faab1d0e9da72776640676a43db5"
+    }
+  },
+  "logs": {
+    "filter-contrast-baseline.json": "ac39c45153602b2d53223c150fcc3b308b5178dcf5f2ed5cea8774b397065717",
+    "filter-contrast-negative.log": "998c7c6f2ca1ff669312c2c865c52c59ca329f816ad5b2a1df98798c754f648d",
+    "contrast-final-static.log": "981d7f2bd13392ba7f7ca676a8f714796987f0342019d6ff637c555f66be8870",
+    "contrast-final-focused.log": "81550b077a6f36dae914ced7b794f760e3b78aabf88f9385078405a5de908d51",
+    "contrast-semantic-v2.log": "68f517dee9135d278762f24c8898392f58607857ff429972aa522d7628556139",
+    "status-scroll-diagnostic-v2.log": "8f4f2c817c83c3d30ab46dfc4aa8d1726a3378547da2ffe283dc5ee1f32906c0"
+  },
+  "focusedUi": {
+    "navigationGroups": 24,
+    "semanticGroups": 6,
+    "contrastSamples": 576,
+    "minimumRequiredContrast": 4.5
+  },
+  "fullUi": {
+    "groups": 45,
+    "failed": 0,
+    "durationMs": 1124527,
+    "source": "contrast-final-full-ui-confirm.log",
+    "observedProcessExit": 0
+  },
+  "smoke": {
+    "groups": 21,
+    "failed": 0,
+    "durationMs": 19552
+  },
+  "initialFullUiFailure": {
+    "groups": 45,
+    "failed": 1,
+    "durationMs": 1027867,
+    "source": "contrast-final-full-ui.log",
+    "failure": "Existing 430px status navigator wheel check unexpectedly returned to scrollY=0; no blog contrast failure.",
+    "followup": "Four unchanged focused 320/390/430 status runs passed, followed by the unchanged full confirmation. No speculative page or checker fix; original failure retained.",
+    "focusedDurationMs": 30160,
+    "focusedSectionSha256": "e9ae9892157650a89f95b6dac852752e0b6115a8d4f94caaf00577a63ce3f064"
+  },
+  "limitations": [
+    "Local Chromium and preview fixtures only; no production or cross-browser acceptance.",
+    "The initial status wheel failure was not reproduced; its cause remains unconfirmed.",
+    "No push, deployment, signing, public-content update or live model call."
+  ]
+}

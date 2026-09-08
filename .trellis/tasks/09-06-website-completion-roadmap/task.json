@@ -26,7 +26,8 @@
     "09-08-stage-3-content-evidence-audit",
     "09-08-stage-3-public-route-recovery",
     "09-08-stage-4-language-interaction-audit",
-    "09-08-stage-4-blog-filter-semantics"
+    "09-08-stage-4-blog-filter-semantics",
+    "09-08-stage-4-blog-filter-contrast"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -35,11 +36,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 9,
-      "activeChild": null,
+      "activeChild": "09-08-stage-4-blog-filter-contrast",
       "lastCompletedChild": "09-08-stage-4-blog-filter-semantics",
-      "nextAction": "Assess the remaining local scope: verify the visually muted empty-column controls against their actual styles, then inspect existing Stage 5/6 acceptance gates. Keep product/translation and production decisions gated. Automation persistence is unverified; do not recreate it implicitly.",
+      "nextAction": "Column contrast is verified: 6 groups/576 text samples, full UI 45/45 and smoke 21/21; 12 source hashes and served build are stable. Preserve the first status-wheel failure and unchanged passing followups as documented evidence. Commit the exact child scope, archive it, actually start the parent, then prepare the credential-free PR quality workflow described in remaining-gates.md.",
       "ownerThreadId": "01a080b3-741a-74c0-a22b-fe6dcfae4b15",
       "automationId": "automation",
       "cadenceMinutes": 15,

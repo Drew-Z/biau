@@ -148,6 +148,19 @@ after history, reload, empty results and 720/721 resizing, plus every column.
 Its keyboard sequence moves between buttons with real Tab/Shift+Tab events;
 focusing each button programmatically cannot verify the native tab order.
 
+Every desktop column title, English subtitle, count, and pending label must
+retain at least 4.5:1 text contrast in all three themes. Empty columns remain
+enabled controls: use the existing `--ink` token without subtitle opacity or
+an extra transparent empty-state color. Explicitly inherit subtitle color to
+override the generic `.filter-btn-subtitle` transparent `currentColor` rule.
+Keep the pending text and border as the distinction. The column group uses
+`--home-page-solid` to isolate its text from the animated page backdrop; a
+partially transparent panel can fail even when text itself is fully opaque.
+The browser check samples the actual background with glyphs
+temporarily hidden, composites the computed text color and ancestor opacity,
+and restores the masking style in `finally`; cover selection, hover, keyboard,
+and 721/1440 widths instead of checking token names alone.
+
 ### Mobile Catalog Progressive Disclosure
 
 When a public catalog has a small number of stable groups but many repeated
