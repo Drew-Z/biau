@@ -266,3 +266,43 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - None - task complete
+
+
+## Session 113: 接续路线图：栏目无障碍、PR 门禁与共享界面双语
+
+**Date**: 2026-09-09
+**Task**: 接续路线图：栏目无障碍、PR 门禁与共享界面双语
+**Branch**: `main`
+
+### Summary
+
+完成并归档第 8 至 11 轮，均实际返回父任务。栏目选中语义与文字对比度、PR 基础质量 workflow、共享中英文偏好和导航/页脚/载入/404 已本地提交。最新业务构建实际完整 UI 46 组零失败、最终语言专项 12+5+1、smoke 21 组、lint/build/performance 通过。保留第 9 轮首次状态页偶发失败及复验记录。用户已选择公共界面先行，父任务第 12 轮评估目录控件；内容翻译和生产门禁尚未完成。未 push、部署、签名、调用真实模型或发布内容；自动化持久配置未确认且未重建。原有资料保留，已清理自有一次性脚本和两个空 CI Temp 目录。
+
+### Main Changes
+
+- 栏目组增加真实选中状态；文字与实色背景保持至少 4.5:1。
+- PR 基础质量检查使用现有本地命令，验证 preview 生命周期与失败传递。
+- 中英文偏好跨路由与刷新保留，共享导航、页脚、载入及 404 接入；正文保留中文语言语义。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e0bdbda` | fix(a11y): expose blog column selection state |
+| `da19773c` | fix(a11y): preserve blog column text contrast |
+| `037eee5d` | ci: add local site quality checks for pull requests |
+| `a8142559` | feat(i18n): persist language and translate shared public UI |
+
+### Testing
+
+- 最新运行时代码完整 UI 46/0；全量后仅加强语言截图的目标主题断言，最终专项 12+5+1、smoke 21/0 和 lint 通过。
+- TypeScript/build 与 performance 通过；完整日志、失败诊断与 SHA256 在各归档子任务的 verification 和 delivery-evidence 中。
+- 无生产调用；远端 Ubuntu/Node 22 CI 尚未运行。
+
+### Status
+
+第 8 至 11 轮已交付并归档；父路线图仍进行中，第 12 轮为目录公共控件双语评估。
+
+### Next Steps
+
+- 按公共界面先行决定继续目录、详情及其他公共控件，随后独立评估内容翻译。
