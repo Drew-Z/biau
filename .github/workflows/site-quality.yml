@@ -1,0 +1,111 @@
+name: Site Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  site-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      CI: 'true'
+      UI_CHECK_PORT: '5174'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Check local contracts
+        run: |
+          npm run blog:discovery-check
+          npm run projects:discovery-check
+          npm run analytics:check
+          npm run project-registry:check
+
+      - name: Check build budgets
+        run: npm run performance:check
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run local browser smoke
+        run: |
+          artifact_dir="$RUNNER_TEMP/blog-semi-site-quality"
+          mkdir -p "$artifact_dir"
+          export UI_CHECK_BASE="http://127.0.0.1:$UI_CHECK_PORT"
+          node --input-type=module -e '
+            import { createServer } from "node:net";
+            const probe = createServer();
+            probe.once("error", (error) => {
+              console.error("Preview port check failed:", error.code);
+              process.exitCode = 1;
+            });
+            probe.listen(Number(process.env.UI_CHECK_PORT), "127.0.0.1", () => probe.close());
+          '
+          node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port "$UI_CHECK_PORT" --strictPort > "$artifact_dir/preview.log" 2>&1 &
+          preview_pid=$!
+          cleanup() {
+            kill "$preview_pid" 2>/dev/null || true
+            wait "$preview_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+          ready=false
+          for attempt in {1..30}; do
+            if ! kill -0 "$preview_pid" 2>/dev/null; then
+              cat "$artifact_dir/preview.log"
+              exit 1
+            fi
+            if curl --fail --silent --max-time 2 "$UI_CHECK_BASE" > /dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != true ]]; then
+            cat "$artifact_dir/preview.log"
+            echo 'Preview did not become ready before the deadline' >&2
+            exit 1
+          fi
+          npm run check:ui:smoke 2>&1 | tee "$artifact_dir/smoke.log"
+
+      - name: Upload browser logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: site-quality-browser-logs
+          path: |
+            ${{ runner.temp }}/blog-semi-site-quality/preview.log
+            ${{ runner.temp }}/blog-semi-site-quality/smoke.log
+          if-no-files-found: ignore
+          retention-days: 7

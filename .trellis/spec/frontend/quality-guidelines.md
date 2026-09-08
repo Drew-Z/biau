@@ -21,6 +21,26 @@ npm.cmd run analytics:check
 npm.cmd run docs:deployment-check
 ```
 
+## Pull Request Baseline
+
+`.github/workflows/site-quality.yml` runs on ordinary pull requests, main pushes,
+and manual dispatch. It uses Node 22 and the existing npm commands for lint,
+build, blog/project discovery, analytics, registry, performance, and browser
+smoke. Keep the full local `check:ui` delivery gate above; CI smoke covers seven
+routes at three widths and does not replace the specialist interaction matrix.
+
+Keep this workflow independent of production credentials, public knowledge
+generation, local AI Daily acceptance records, deployment, and schedules. Its
+token permission is `contents: read`, and checkout must not persist credentials.
+Do not substitute the broader `verify` command for this bounded baseline.
+
+Install Chromium with its system dependencies, bind preview to loopback with
+strictPort, reject an occupied port, bound readiness polling, and clean up the
+owned Node PID on exit. Explicit Bash/pipefail must preserve smoke failures
+through tee. Upload only the current preview/smoke logs from RUNNER_TEMP. When
+changing this lifecycle, verify success, failure propagation, and port-conflict
+cleanup; distinguish local shell validation from actual GitHub runner results.
+
 ## Review Priorities
 
 1. Broken routes, hidden content leaks, or credential exposure.

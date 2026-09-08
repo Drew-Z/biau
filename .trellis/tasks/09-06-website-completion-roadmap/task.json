@@ -27,7 +27,8 @@
     "09-08-stage-3-public-route-recovery",
     "09-08-stage-4-language-interaction-audit",
     "09-08-stage-4-blog-filter-semantics",
-    "09-08-stage-4-blog-filter-contrast"
+    "09-08-stage-4-blog-filter-contrast",
+    "09-08-stage-6-pr-quality-workflow"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -36,11 +37,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 10,
-      "activeChild": null,
+      "activeChild": "09-08-stage-6-pr-quality-workflow",
       "lastCompletedChild": "09-08-stage-4-blog-filter-contrast",
-      "nextAction": "Contrast child da19773c is delivered and archived; the parent was actually started. Create one bounded PR quality workflow task using the existing local checks and official documentation in remaining-gates.md. Preserve source/data/dependency boundaries and distinguish local YAML/shell checks from unexecuted GitHub CI.",
+      "nextAction": "PR quality workflow is locally verified: YAML, Bash, smoke 21/21, failure 17, occupied-port 1, TERM 143, owned preview cleanup, static contracts and unchanged business/build hashes. Commit exact child scope, archive it and actually return to parent. GitHub CI, language policy and production acceptance remain outside this completed local validation.",
       "ownerThreadId": "01a080b3-741a-74c0-a22b-fe6dcfae4b15",
       "automationId": "automation",
       "cadenceMinutes": 15,

@@ -19,7 +19,7 @@
 
 ## 本地质量工作流
 
-仓库 `.github/workflows/` 当前只有：
+本轮实施前，仓库 `.github/workflows/` 仅有：
 
 | 工作流 | 触发与范围 | 基础质量门禁 |
 | --- | --- | --- |
@@ -35,7 +35,7 @@
 - 候选工作流使用普通 `pull_request`、main `push` 和手动触发，`contents: read`、checkout 不持久化凭证、按 workflow/ref 取消过期执行；无路径过滤，避免必需检查因过滤而停在 Pending。
 - 明确 `shell: bash`，GitHub 使用 `bash --noprofile --norc -eo pipefail`；preview 使用独立 PID、有界 readiness 检查及退出清理，smoke 失败必须保留非零退出码。
 - 复用仓库 Node 22 和 Actions v5 惯例。当前本机仅确认 Node 24，尚未模拟 Ubuntu/Node 22；不得把本地通过当成远端 CI 通过。
-- 当前仅记录候选，未建立新子任务或修改 workflow。先完成活动的对比度子任务，再收敛 PRD、实施与验收。
+- 对比度交付后已建立 `09-08-stage-6-pr-quality-workflow`，新增 `site-quality.yml`，配置和本地成功/失败/端口冲突/TERM 清理路径通过。目标仍为 Ubuntu/Node 22，远端尚未运行；详情见子任务 verification.md。
 
 ## 仍需用户决定
 
