@@ -22,6 +22,15 @@ language markers. Its network guard allows local fixtures only and asserts zero
 model calls. Keep authored content Chinese until its separate translation phase.
 Do not reset language storage in an init script before a persistence assertion.
 
+The same language matrix also verifies both catalog interfaces: titles, search
+and pagination names, native/desktop column identities, counts, project groups,
+card actions, authored-text language markers, 44px targets and text containment.
+Compare authored content and publication-action snapshots across switches and
+assert stable URL/history plus a connected catalog DOM node. Exercise every
+column's no-results state in both languages and real first-publication states.
+Blog discovery retains real keyboard and background contrast sampling in both
+languages; project reload checks assert persistence before any corrective action.
+
 For the public AI Daily Feed or detail route, also run:
 
 ```powershell
@@ -184,6 +193,10 @@ do not let a concurrent pointer hover make the keyboard assertion pass.
 - Mobile tab bar includes exactly the public primary sections.
 - Its grid track count equals the shared `Navigation` route count (currently four). The first and last tabs fill the padded content edges, every track is equal width, and route changes preserve that contract. Never retain an empty fifth track or invent a disabled destination to fill it.
 - Touch targets are at least 44px where practical.
+- At `max-width: 720px`, blog pagination uses two flexible button columns around
+  the page counter, 44px minimum targets and bounded inline padding. Keep English
+  Previous/Next and the counter aligned in one row at 320/390/430; font scaling,
+  clipped labels and a wrapped second button are not acceptable fixes.
 - On `/status`, `.status-target__actions .btn` and `.status-project-card__link` use `min-height: 44px` within the existing `max-width: 720px` rules; keep the desktop `40px` density. Do not widen the shared selector to status-detail or missing-page actions without separate evidence.
 - The status mobile browser matrix at `320/390/430` must find both action groups and assert visible, measurable targets at least `44px` wide/high with horizontal viewport containment. Missing groups and hidden/zero-size actions must fail; filtering them out before measurement can make an inaccessible page pass. Use scrolled screenshots and hit testing to verify reachability, not `scrollWidth` alone.
 - Status-section navigation uses explicit `instant` scroll behavior for reduced motion and long jumps. Do not temporarily override root `scroll-behavior` or restore a stale selected section in a later animation frame; rapid section changes and subsequent wheel input must leave the scroll spy in control. Browser checks exercise all six section choices followed by real wheel input, asserting the target position, current section, sticky position and unchanged page containment.

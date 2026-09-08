@@ -3,11 +3,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { ProjectCard } from '../components/ProjectCard'
 import { catalogProjects } from '../data/portfolio'
+import { catalogCopy } from '../data/catalogCopy'
 import { trackAnalyticsEvent } from '../utils/analytics'
 import { getProjectListHref, parseProjectGroupSearch, serializeProjectGroupSearch, type ProjectGroupKey } from '../utils/projectDiscovery'
 import { useCatalogReadingNavigation } from '../hooks/useReadingNavigation'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 
 export function ProjectsPage() {
+  const language = useSiteLanguage()
+  const copy = catalogCopy[language]
   const navigate = useNavigate()
   const { search } = useLocation()
   const [, setSearchParams] = useSearchParams()
@@ -43,9 +48,9 @@ export function ProjectsPage() {
     const tool = catalogProjects.filter((project) => project.category === 'tool')
 
     return [
-      { key: 'ai' as const, title: 'AI 应用', projects: ai },
-      { key: 'fullstack' as const, title: '全栈开发', projects: [...business, ...platform, ...mobile] },
-      { key: 'tool' as const, title: '工具', projects: tool },
+      { key: 'ai' as const, projects: ai },
+      { key: 'fullstack' as const, projects: [...business, ...platform, ...mobile] },
+      { key: 'tool' as const, projects: tool },
     ]
   }, [])
 
@@ -61,11 +66,11 @@ export function ProjectsPage() {
   let projectIndex = 0
 
   return (
-    <main className="projects-tools-page page-stack">
+    <main className="projects-tools-page page-stack" lang={SITE_LANGUAGE_TAGS[language]}>
       <section className="section-header page-hero">
-        <p className="section-subtitle">PROJECT PORTFOLIO</p>
-        <h1 className="section-title" tabIndex={-1} data-reading-heading>项目集</h1>
-        <p className="section-description">让技术落进可演示的流程</p>
+        <p className="section-subtitle" lang="en">PROJECT PORTFOLIO</p>
+        <h1 className="section-title" tabIndex={-1} data-reading-heading>{copy.projectsTitle}</h1>
+        <p className="section-description">{copy.projectsDescription}</p>
       </section>
 
 
@@ -76,8 +81,8 @@ export function ProjectsPage() {
         return (
           <section key={group.key} className={`project-group ${isActive ? 'is-mobile-active' : ''}`}>
             <div className="project-group-head">
-              <span>{group.key.toUpperCase()}</span>
-              <h2 className="project-group-title">{group.title}</h2>
+              <span lang="en">{group.key.toUpperCase()}</span>
+              <h2 className="project-group-title">{copy.projectGroups[group.key]}</h2>
             </div>
             <button
               type="button"
@@ -86,10 +91,10 @@ export function ProjectsPage() {
               aria-controls={panelId}
               onClick={() => selectMobileGroup(group.key)}
             >
-              <span className="project-group-toggle__index">{group.key.toUpperCase()}</span>
+              <span className="project-group-toggle__index" lang="en">{group.key.toUpperCase()}</span>
               <span className="project-group-toggle__copy">
-                <strong>{group.title}</strong>
-                <em>{group.projects.length} 个项目</em>
+                <strong>{copy.projectGroups[group.key]}</strong>
+                <em>{copy.projectCount(group.projects.length)}</em>
               </span>
               <ChevronDown size={18} aria-hidden />
             </button>

@@ -25,11 +25,16 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
 - The preference is initialized lazily and projected to `html.lang` and storage
   in a layout effect. It survives navigation, history, refresh, and a new document
   in the same browser context without changing theme or discovery URL state.
-- Translation is staged: navigation, footer, route loading, and 404 currently
-  follow the preference. App retains `lang="zh-CN"` as the fallback for remaining
-  Chinese pages/content; each localized surface overrides it with its actual
-  language. Before localizing a whole page, mark any untranslated authored
-  content explicitly. Do not claim translated SEO/content or invent locale URLs.
+- Translation is staged: navigation, footer, route loading, 404 and catalog
+  interface controls follow the preference. `catalogCopy.ts` owns catalog UI
+  labels and counts; `getBlogEmptyState` accepts an optional language defaulting
+  to Chinese. Column options preserve both existing identities, with the active
+  language first. App retains `lang="zh-CN"` as the fallback for remaining pages;
+  localized catalog roots override it and mark authored card text Chinese.
+  Publication-controlled card links retain their original projection and Chinese
+  language until the shared publication interface is translated across consumers.
+  Do not remount routes, reset discovery/input state, translate authored data,
+  claim translated SEO/content or invent locale URLs during UI localization.
 - Existing UI fixtures must select a language from the actual current value;
   blindly toggling after `goto` now reverses a persisted choice. A refresh test
   must assert the retained language before making any corrective selection.

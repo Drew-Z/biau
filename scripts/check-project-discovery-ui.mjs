@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
+import { assertSiteLanguage, selectSiteLanguage } from './lib/ui-language.mjs'
 
 const groups = ['ai', 'fullstack', 'tool']
 const groupSearch = { ai: '', fullstack: '?group=fullstack', tool: '?group=tool' }
@@ -29,17 +30,9 @@ async function createPage(browser, base, width, theme) {
   return { page, errors }
 }
 
-async function selectLanguage(page, language) {
-  const toggle = page.locator('.nav-lang-toggle')
-  await toggle.waitFor({ state: 'visible' })
-  const label = language === 'en' ? 'EN' : '中'
-  if ((await toggle.innerText()).trim() !== label) await toggle.click()
-  await page.waitForFunction((expected) => document.querySelector('.nav-lang-toggle')?.textContent?.trim() === expected, label)
-}
-
 async function openDocument(page, url, language) {
   await page.goto(url, { waitUntil: 'load' })
-  await selectLanguage(page, language)
+  await selectSiteLanguage(page, language)
 }
 
 async function checkCatalog(page, group, width, expectedTitles) {
@@ -82,7 +75,7 @@ export async function checkProjectDiscoveryNavigation(browser, base) {
             const titles = await checkCatalog(page, group, width)
             assert.equal(await page.locator('html').getAttribute('data-site-theme'), theme)
             await page.reload({ waitUntil: 'load' })
-            await selectLanguage(page, language)
+            await assertSiteLanguage(page, language)
             await checkCatalog(page, group, width, titles)
             await openDocument(copied.page, page.url(), language)
             await checkCatalog(copied.page, group, width, titles)

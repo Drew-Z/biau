@@ -3,7 +3,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
-import { assertSiteLanguage } from './lib/ui-language.mjs'
+import { assertSiteLanguage, selectSiteLanguage } from './lib/ui-language.mjs'
 
 const languageKey = 'biau-port-language'
 const listPath = '/blog?column=project-notes&q=RAG'
@@ -89,14 +89,101 @@ async function checkShellLayout(page) {
   for (let index = 1; index < layout.controls.length; index += 1) assert.ok(layout.controls[index - 1].right <= layout.controls[index].left + 1, 'navigation controls must not overlap')
 }
 
+async function checkCatalogCopy(page, language, family) {
+  const english = language === 'en'
+  const tag = english ? 'en' : 'zh-CN'
+  await assertSiteLanguage(page, language)
+  const main = page.locator(family === 'blog' ? '.blog-index-page' : '.projects-tools-page')
+  await main.waitFor({ state: 'visible' })
+  assert.ok(await main.evaluate((node, expected) => node.matches(`:lang(${expected})`), tag), 'catalog controls must carry their selected language')
+  assert.equal(await main.locator('h1').innerText(), family === 'blog' ? (english ? 'Knowledge Base' : '知识库') : (english ? 'Projects' : '项目集'))
+
+  if (family === 'blog') {
+    const search = page.getByRole('searchbox', { name: english ? 'Search knowledge base articles' : '搜索知识库文章', exact: true })
+    assert.equal(await search.count(), 1)
+    assert.equal(await search.getAttribute('placeholder'), english ? 'Search articles or topics' : '搜索文章、项目方法、技术关键词')
+    assert.equal(await page.locator('.blog-tools').getAttribute('aria-label'), english ? 'Article search' : '文章检索')
+    const columnLabel = english ? 'Select knowledge base column' : '选择知识库栏目'
+    assert.equal(await page.locator('.blog-column-filter').getAttribute('aria-label'), columnLabel)
+    assert.equal(await page.locator('.blog-column-select select').getAttribute('aria-label'), columnLabel)
+    assert.deepEqual(await page.locator('.filter-btn-title').allTextContents(), english
+      ? ['All Notes', 'Knowledge Notes', 'Project Notes', 'Resource Picks', 'AI Daily', 'Build Log']
+      : ['全部', '知识积累', '项目总结', '资源分享', 'AI 日报', '构建手记'])
+    assert.ok(await page.locator('.filter-btn-subtitle > span').evaluateAll((nodes, expected) => nodes.length === 6 && nodes.every((node) => node.matches(`:lang(${expected})`)), english ? 'zh-CN' : 'en'), 'secondary column names must retain their own language')
+    const options = await page.locator('.blog-column-select option').allTextContents()
+    assert.ok(options.every((text) => /[\p{Script=Han}]/u.test(text) && /[A-Za-z]/u.test(text)), 'native options must retain both column identities')
+    assert.equal(await page.locator('.blog-pagination').getAttribute('aria-label'), english ? 'Article pagination' : '文章分页')
+    assert.deepEqual(await page.locator('.blog-pagination button').allTextContents(), english ? ['Previous', 'Next'] : ['上一页', '下一页'])
+    assert.match(await page.locator('.blog-result-meta').innerText(), english ? /^Public selection · \d+ articles? · Page \d+ \/ \d+$/u : /^公开精选 · \d+ 篇文章 · 第 \d+ \/ \d+ 页$/u)
+    const cards = page.locator('.blog-card')
+    assert.ok(await cards.count() > 0)
+    for (const card of await cards.all()) {
+      const title = await card.locator('.blog-title').innerText()
+      assert.equal(await card.getAttribute('aria-label'), english ? `Read article: ${title}` : `阅读文章：${title}`)
+      assert.equal((await card.locator('.btn').textContent()).trim(), english ? 'Read more →' : '阅读全文 →')
+    }
+    assert.ok(await page.locator('.blog-title, .blog-detail, .blog-header, .blog-tags').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored article text must remain Chinese')
+  } else {
+    const names = english ? ['AI Applications', 'Full-stack Development', 'Tools'] : ['AI 应用', '全栈开发', '工具']
+    assert.deepEqual(await page.locator('.project-group-title').allTextContents(), names)
+    assert.deepEqual(await page.locator('.project-group-toggle__copy strong').allTextContents(), names)
+    for (const group of await page.locator('.project-group').all()) {
+      const count = await group.locator('.project-card').count()
+      assert.equal(await group.locator('.project-group-toggle__copy em').textContent(), english ? `${count} ${count === 1 ? 'project' : 'projects'}` : `${count} 个项目`)
+    }
+    for (const card of await page.locator('.project-card').all()) {
+      const title = await card.locator('.project-title').textContent()
+      const action = card.locator('.project-footer > .btn')
+      assert.equal((await action.textContent()).trim(), english ? 'View details' : '查看详情')
+      assert.equal(await action.getAttribute('aria-label'), english ? `View project details: ${title}` : `查看项目详情：${title}`)
+      assert.ok(await action.evaluate((node, expected) => node.matches(`:lang(${expected})`), tag))
+    }
+    assert.ok(await page.locator('.project-title, .project-summary, .project-header, .project-stack, .project-links').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored project text and publication actions retain Chinese semantics')
+  }
+}
+
+async function checkCatalogLayout(page) {
+  await page.evaluate(async () => { await document.fonts.ready })
+  await page.waitForFunction(() => [...(document.querySelector('main')?.getAnimations({ subtree: true }) ?? [])].every((animation) => animation.playState !== 'running' || animation.effect?.getComputedTiming().iterations === Infinity))
+  const layout = await page.evaluate(() => {
+    const nodes = [...document.querySelectorAll('main .section-title, main .section-description, .blog-column-select, .blog-column-select__control, .filter-btn, .filter-btn-title, .filter-btn-subtitle, .blog-result-meta, .blog-pagination button, .blog-card .btn, .project-group-toggle, .project-group-toggle__copy, .project-footer > .btn')].filter((node) => node.getClientRects().length > 0)
+    const clipped = nodes.filter((node) => {
+      const rect = node.getBoundingClientRect()
+      return rect.left < -1 || rect.right > innerWidth + 1 || node.scrollWidth > node.clientWidth + 1
+    }).map((node) => ({ className: node.className, text: node.textContent.trim() }))
+    const small = innerWidth <= 430 ? nodes.filter((node) => node.matches('.blog-column-select__control, .blog-pagination button, .blog-card .btn, .project-group-toggle, .project-footer > .btn') && (node.getBoundingClientRect().height < 43.5 || node.getBoundingClientRect().width < 43.5)).map((node) => ({ className: node.className, parent: node.parentElement.className, text: node.textContent.trim(), width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height })) : []
+    const pagination = innerWidth <= 430 ? [...document.querySelectorAll('.blog-pagination > *')].map((node) => {
+      const rect = node.getBoundingClientRect()
+      return rect.top + rect.height / 2
+    }) : []
+    return { clipped, small, pagination, overflow: document.documentElement.scrollWidth - innerWidth }
+  })
+  assert.deepEqual(layout.clipped, [], 'catalog labels and controls must fit without clipping')
+  assert.deepEqual(layout.small, [], 'mobile catalog controls must retain 44px targets')
+  if (layout.pagination.length) assert.ok(layout.pagination.length === 3 && Math.max(...layout.pagination) - Math.min(...layout.pagination) <= 1, 'mobile pagination must keep both actions and its counter aligned in one row')
+  assert.ok(layout.overflow <= 1, 'localized catalogs must not overflow')
+}
+
+async function catalogContentSnapshot(page, family) {
+  return page.locator(family === 'blog' ? '.blog-header, .blog-title, .blog-detail, .blog-meta, .blog-tags' : '.project-header, .project-title, .project-summary, .project-stack, .project-links').evaluateAll((nodes) => nodes.map((node) => ({
+    text: node.textContent,
+    actions: [...node.querySelectorAll('a, button')].map((action) => ({ tag: action.tagName, href: action.getAttribute('href'), title: action.getAttribute('title'), name: action.getAttribute('aria-label') })),
+  })))
+}
+
 export async function checkSiteLanguage(browser, base) {
   let matrixGroups = 0
+  let emptyGroups = 0
   for (const width of [320, 390, 430, 1440]) {
     for (const theme of ['morning', 'nature', 'stellar']) {
       const { page, errors, requests } = await createPage(browser, base, { width, theme })
       try {
         await page.goto(`${base}${listPath}`, { waitUntil: 'load' })
         await assertSiteLanguage(page, 'zh')
+        await checkCatalogCopy(page, 'zh', 'blog')
+        const blogContent = await catalogContentSnapshot(page, 'blog')
+        const catalogNode = await page.locator('main').elementHandle()
+        const historyBeforeLanguage = await page.evaluate(() => history.length)
         const toggle = page.locator('.nav-lang-toggle')
         await toggle.focus()
         await page.keyboard.press('Enter')
@@ -104,18 +191,40 @@ export async function checkSiteLanguage(browser, base) {
         assert.ok(await toggle.evaluate((node) => node === document.activeElement), 'language selection must preserve keyboard focus')
         assert.equal(await page.evaluate((key) => localStorage.getItem(key), languageKey), 'en')
         assert.equal(new URL(page.url()).pathname + new URL(page.url()).search, listPath)
-        assert.ok(await page.locator('main').evaluate((node) => node.matches(':lang(zh-CN)')), 'untranslated page content must retain Chinese semantics')
+        assert.equal(await page.evaluate(() => history.length), historyBeforeLanguage, 'language changes must not create catalog history')
+        assert.ok(await catalogNode.evaluate((node) => node.isConnected), 'language changes must not remount the catalog')
+        assert.equal(await page.locator('.blog-index-page h1').innerText(), 'Knowledge Base', 'catalog headings must follow the selected language')
+        assert.ok(await page.locator('main').evaluate((node) => node.matches(':lang(en)')), 'localized catalog controls must carry English semantics')
+        assert.ok(await page.locator('.blog-title, .blog-detail').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'untranslated article content must retain Chinese semantics')
+        await checkCatalogCopy(page, 'en', 'blog')
+        assert.deepEqual(await catalogContentSnapshot(page, 'blog'), blogContent, 'language changes must not translate authored article content')
+        assert.equal(await page.locator('#blog-search').inputValue(), 'RAG')
+        assert.equal(await page.locator('.blog-column-select select').inputValue(), 'project-notes')
+        await checkCatalogLayout(page)
+        if (process.env.UI_CHECK_ARTIFACT_DIR) await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `catalog-blog-${width}-${theme}-en.png`), fullPage: true })
         assert.equal(await page.locator('html').getAttribute('data-site-theme'), theme)
         const nextTheme = theme === 'nature' ? 'stellar' : 'nature'
         await page.locator(`[data-theme-option="${nextTheme}"]`).focus()
         await page.keyboard.press('Space')
         assert.equal(await page.locator('html').getAttribute('data-site-theme'), nextTheme)
         await assertSiteLanguage(page, 'en')
+        await page.locator(`[data-theme-option="${theme}"]`).click()
+        assert.equal(await page.locator('html').getAttribute('data-site-theme'), theme)
 
         const navigation = page.locator(width <= 430 ? '.mobile-tabbar' : '.nav-items-center')
         await navigation.locator('a[href="/projects"]').click()
         await page.waitForURL(`${base}/projects`)
         await assertSiteLanguage(page, 'en')
+        await checkCatalogCopy(page, 'en', 'projects')
+        await checkCatalogLayout(page)
+        const projectContent = await catalogContentSnapshot(page, 'projects')
+        const projectHistory = await page.evaluate(() => history.length)
+        await selectSiteLanguage(page, 'zh')
+        await checkCatalogCopy(page, 'zh', 'projects')
+        assert.deepEqual(await catalogContentSnapshot(page, 'projects'), projectContent, 'project content and publication actions must not change with interface language')
+        await selectSiteLanguage(page, 'en')
+        assert.equal(await page.evaluate(() => history.length), projectHistory)
+        if (process.env.UI_CHECK_ARTIFACT_DIR) await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `catalog-projects-${width}-${theme}-en.png`), fullPage: true })
         await page.goBack()
         await page.waitForURL(`${base}${listPath}`)
         await assertSiteLanguage(page, 'en')
@@ -123,13 +232,15 @@ export async function checkSiteLanguage(browser, base) {
         await page.waitForURL(`${base}/projects`)
         await page.reload({ waitUntil: 'load' })
         await assertSiteLanguage(page, 'en')
-        assert.equal(await page.locator('html').getAttribute('data-site-theme'), nextTheme, 'refresh must preserve independent theme choice')
+        await checkCatalogCopy(page, 'en', 'projects')
+        assert.equal(await page.locator('html').getAttribute('data-site-theme'), theme, 'refresh must preserve independent theme choice')
 
         const copied = await page.context().newPage()
         try {
           await guardPage(copied, base, errors, requests)
           await copied.goto(`${base}${listPath}`, { waitUntil: 'load' })
           await assertSiteLanguage(copied, 'en')
+          await checkCatalogCopy(copied, 'en', 'blog')
         } finally {
           await copied.close()
         }
@@ -167,6 +278,45 @@ export async function checkSiteLanguage(browser, base) {
         await page.context().close()
       }
     }
+  }
+
+  const emptyFixture = await createPage(browser, base)
+  try {
+    const { page, errors, requests } = emptyFixture
+    for (const language of ['zh', 'en']) {
+      await page.goto(`${base}/blog`, { waitUntil: 'load' })
+      await selectSiteLanguage(page, language)
+      const english = language === 'en'
+      const columns = await page.locator('.blog-column-select option').evaluateAll((nodes) => nodes.map((node) => node.value))
+      for (const [index, column] of columns.entries()) {
+        await page.locator('#blog-search').fill('')
+        await page.locator('.blog-column-select select').selectOption(column)
+        await page.waitForFunction((expected) => document.querySelector('.blog-column-select select')?.value === expected && document.querySelector('#blog-search')?.value === '', column)
+        if (await page.locator('.blog-card').count() === 0) {
+          const firstPublish = page.locator('.blog-empty')
+          await firstPublish.waitFor({ state: 'visible' })
+          assert.equal(await firstPublish.getAttribute('data-blog-empty-query'), 'false')
+          assert.equal(/[\p{Script=Han}]/u.test(await firstPublish.innerText()), !english, 'first-publication empty copy must follow the selected language')
+        }
+        const columnTitle = await page.locator('.filter-btn-title').nth(index).textContent()
+        await page.locator('#blog-search').fill('catalog-no-results-6c1f')
+        const empty = page.locator('.blog-empty[data-blog-empty-query="true"]')
+        await empty.waitFor({ state: 'visible' })
+        const expectedTitle = column === 'all'
+          ? (english ? 'No matching articles' : '没有找到相关文章')
+          : (english ? `${columnTitle}: no matching articles` : `${columnTitle} 没有匹配结果`)
+        assert.equal(await empty.locator('h2').textContent(), expectedTitle)
+        assert.ok(await empty.evaluate((node, expected) => node.matches(`:lang(${expected})`), english ? 'en' : 'zh-CN'))
+        assert.equal(/[\p{Script=Han}]/u.test(await empty.innerText()), !english)
+        assert.match(await page.locator('.blog-result-meta').innerText(), english ? /0 articles · Page 1 \/ 1$/u : /0 篇文章 · 第 1 \/ 1 页$/u)
+        assert.ok(await page.locator('.blog-pagination button').first().isDisabled())
+        assert.ok(await page.locator('.blog-pagination button').last().isDisabled())
+        emptyGroups += 1
+      }
+    }
+    assertLocalOnly(errors, requests)
+  } finally {
+    await emptyFixture.page.context().close()
   }
 
   const storageCases = [
@@ -216,7 +366,7 @@ export async function checkSiteLanguage(browser, base) {
     releaseChunk()
     await delayed.page.context().close()
   }
-  return { matrixGroups, storageGroups: storageCases.length, loadingGroups: 1, modelCalls: 0 }
+  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, modelCalls: 0 }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

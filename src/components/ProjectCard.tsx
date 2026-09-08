@@ -1,6 +1,9 @@
 import { ArrowRight } from 'lucide-react'
 import type { Project } from '../data/portfolio'
 import { findProjectPublication, getPublishedProjectLinks } from '../data/projectPublication'
+import { catalogCopy } from '../data/catalogCopy'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 import { ResponsiveImage } from './ResponsiveImage'
 
 interface ProjectCardProps {
@@ -20,6 +23,8 @@ const categoryAccent: Record<Project['category'], string> = {
 }
 
 export function ProjectCard({ project, index, onViewDetails, onNavigate }: ProjectCardProps) {
+  const language = useSiteLanguage()
+  const copy = catalogCopy[language]
   const number = index ? String(index).padStart(2, '0') : undefined
   const publishedLinks = getPublishedProjectLinks(findProjectPublication(project.id), project.links)
     .filter((link) => link.type === 'external' || link.intent === 'status')
@@ -27,6 +32,7 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
   return (
     <article
       className={`glass-card project-card feature-card hover-lift ${categoryAccent[project.category]}`}
+      lang="zh-CN"
       data-project-index={number}
       data-graph-label={project.title}
       onClick={onViewDetails}
@@ -55,11 +61,11 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
           )}
         </div>
         
-        <div className="project-footer">
+        <div className="project-footer" lang={SITE_LANGUAGE_TAGS[language]}>
           <button
             className="btn"
             data-reading-entry={`projects:${project.id}`}
-            aria-label={`查看项目详情：${project.title}`}
+            aria-label={copy.projectDetails(project.title)}
             onClick={(e) => {
               e.stopPropagation()
               onViewDetails()
@@ -68,12 +74,12 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
               e.stopPropagation()
             }}
           >
-            <span>查看详情</span>
+            <span>{copy.viewDetails}</span>
             <ArrowRight size={16} aria-hidden />
           </button>
           
           {publishedLinks.length > 0 && (
-            <div className="project-links">
+            <div className="project-links" lang="zh-CN">
               {publishedLinks.map((link) =>
                 link.type === 'external' ? (
                   <a

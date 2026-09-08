@@ -139,6 +139,12 @@ do not duplicate filtering state. Every option must expose the complete Chinese
 and English identity plus its count or pending state. Do not use a clipped,
 no-wrap horizontal rail or partial-card peek as the only discovery mechanism.
 
+Catalog controls follow `useSiteLanguage`. Put the selected language first in
+native option text and desktop primary labels, retain the alternate identity,
+and mark desktop alternate labels with their actual `lang`. Counts and pending
+labels follow the selected interface language; stable column/group values and
+URL selection must not depend on translated text.
+
 The desktop blog column buttons form a named `role="group"` and each exposes
 `aria-pressed={selectedColumn === column}` (including `all`). The URL-derived
 selection is shared with the native mobile select; do not introduce a second
@@ -159,7 +165,7 @@ partially transparent panel can fail even when text itself is fully opaque.
 The browser check samples the actual background with glyphs
 temporarily hidden, composites the computed text color and ancestor opacity,
 and restores the masking style in `finally`; cover selection, hover, keyboard,
-and 721/1440 widths instead of checking token names alone.
+and both languages at 721/1440 widths instead of checking token names alone.
 
 ### Mobile Catalog Progressive Disclosure
 

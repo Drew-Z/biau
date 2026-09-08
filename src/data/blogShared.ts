@@ -1,3 +1,5 @@
+import type { SiteLanguage } from '../utils/siteLanguage'
+
 export type BlogColumn = 'knowledge' | 'project-notes' | 'resources' | 'ai-daily' | 'build-log'
 
 export interface BlogColumnMeta {
@@ -94,8 +96,59 @@ const firstPublishEmptyState: Record<BlogColumn, BlogEmptyState> = {
   },
 }
 
-export function getBlogEmptyState(column: BlogColumn | 'all', query: string): BlogEmptyState {
+const firstPublishEmptyStateEn: Record<BlogColumn, BlogEmptyState> = {
+  knowledge: {
+    title: 'Knowledge Notes are being prepared',
+    description: 'This column collects reusable technical understanding and engineering methods. Knowledge points, scenarios, checklists and sources are checked before publication.',
+    note: 'Drafts that have not passed the article quality checks are not included in the public list.',
+  },
+  'project-notes': {
+    title: 'Project Notes await new retrospectives',
+    description: 'Project Notes cover lessons across projects, version changes and technical case studies, without repeating the feature lists on project pages.',
+    note: 'Public evidence, screenshots and the scope of future work are checked before a retrospective is published.',
+  },
+  resources: {
+    title: 'Resource Picks await curation',
+    description: 'Resource Picks share first-hand assessments of tools, articles, repositories, models and courses, rather than uncurated link lists.',
+    note: 'Each pick needs use cases, an assessment, limitations and a review for public sharing.',
+  },
+  'ai-daily': {
+    title: 'AI Daily is preparing its first post',
+    description: 'AI sources, daily issues and unpublished drafts are managed separately before publication.',
+    note: 'Posts require human review and publication checks. Unreviewed drafts are not shown to visitors.',
+  },
+  'build-log': {
+    title: 'No new public Build Log entries',
+    description: 'Build Log documents changes to the site, assistant, content system and workflows, with conclusions rather than unfinished process notes.',
+    note: 'New entries are shared after local verification and a review of the supporting evidence for sensitive information.',
+  },
+}
+
+export function getBlogEmptyState(column: BlogColumn | 'all', query: string, language: SiteLanguage = 'zh'): BlogEmptyState {
   const hasQuery = query.trim().length > 0
+
+  if (language === 'en') {
+    if (hasQuery) {
+      return column === 'all'
+        ? {
+          title: 'No matching articles',
+          description: 'No public articles match these keywords.',
+          note: 'Try a project name, technology, RAG, release verification or content governance.',
+        }
+        : {
+          title: `${blogColumnMeta[column].titleEn}: no matching articles`,
+          description: 'No public articles in this column match these keywords.',
+          note: 'Clear the search to see all public articles in this column, or choose All Notes to widen the search.',
+        }
+    }
+    return column === 'all'
+      ? {
+        title: 'No public articles yet',
+        description: 'Articles must pass curation, review and publication checks before they appear here.',
+        note: 'Unreviewed drafts and internal materials are not shown in the public knowledge base.',
+      }
+      : firstPublishEmptyStateEn[column]
+  }
 
   if (hasQuery) {
     if (column === 'all') {

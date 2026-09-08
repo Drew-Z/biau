@@ -29,7 +29,8 @@
     "09-08-stage-4-blog-filter-semantics",
     "09-08-stage-4-blog-filter-contrast",
     "09-08-stage-6-pr-quality-workflow",
-    "09-08-stage-4-public-language-shell"
+    "09-08-stage-4-public-language-shell",
+    "09-09-stage-4-catalog-language"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -38,12 +39,12 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 12,
-      "activeChild": null,
+      "activeChild": "09-09-stage-4-catalog-language",
       "lastCompletedChild": "09-08-stage-4-public-language-shell",
-      "nextAction": "Shared-language shell a8142559 is delivered and archived; parent actually started. Plan the next bounded catalog interface child: blog/project headings, discovery controls, counts, empty states and card actions, preserving authored content and URL/reading contracts. Inspect publication CTA ownership before including shared action labels. Production and push restrictions remain.",
-      "ownerThreadId": "01a080b3-741a-74c0-a22b-fe6dcfae4b15",
+      "nextAction": "Deliver the verified catalog language child: preserve the final 46/0 UI evidence and unchanged source/build hashes, commit the exact whitelist locally, archive only this child and actually start the parent before assessing the next public-interface language task.",
+      "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
       "authorizationDate": "2026-09-08",

@@ -1,0 +1,271 @@
+{
+  "baseCommit": "0ac0dfa97afeb6d2da34e760ca24231862d701be",
+  "preview": "http://127.0.0.1:5190",
+  "verifiedAt": "2026-09-08T20:28:42.9866579+00:00",
+  "status": "verified-awaiting-local-delivery",
+  "productionActions": [],
+  "modelCalls": 0,
+  "artifactDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71",
+  "fullUi": {
+    "exitCode": 0,
+    "groups": 46,
+    "failures": 0,
+    "durationMs": 1042641,
+    "wrapperDurationMs": 1045197,
+    "changedFiles": [],
+    "executedOnFinalBuild": true
+  },
+  "languageUi": {
+    "exitCode": 0,
+    "matrixGroups": 12,
+    "catalogGroups": 24,
+    "emptyGroups": 12,
+    "storageGroups": 5,
+    "loadingGroups": 1,
+    "modelCalls": 0
+  },
+  "blogFilter": {
+    "groups": 12,
+    "contrastSamples": 1152
+  },
+  "smoke": {
+    "exitCode": 0,
+    "groups": 21,
+    "failures": 0,
+    "durationMs": 9562
+  },
+  "static": {
+    "lintExit": 0,
+    "buildExit": 0,
+    "performanceExit": 0,
+    "blogDiscoveryGroups": 8,
+    "blogFixturePosts": 25,
+    "projectDiscoveryGroups": 6,
+    "analyticsCases": 17,
+    "registryIdentities": 12,
+    "publicationRecords": 9,
+    "entryJsBytes": 300449,
+    "buildEvidence": "final-build.log; static-checks.json contains an earlier build before the final pagination layout fix"
+  },
+  "freeze": {
+    "baseCommit": "0ac0dfa97afeb6d2da34e760ca24231862d701be",
+    "files": [
+      {
+        "path": "src/pages/BlogPage.tsx",
+        "sha256": "d748fcfabe2d03a1ba72051e8a2aac37552b987248f453f38ef271b11d9aec16"
+      },
+      {
+        "path": "src/pages/ProjectsPage.tsx",
+        "sha256": "51070d9421278576c40c30b1b00e03001a8abf21ccdaa52c8b8d43a5b5ea4c19"
+      },
+      {
+        "path": "src/components/BlogColumnFilter.tsx",
+        "sha256": "64d05f4b9a56df80d546aa13a751e73dfd4b92a2071b8b68934d8c89ca89d5c7"
+      },
+      {
+        "path": "src/components/BlogCard.tsx",
+        "sha256": "065a005e0899b1101b21fa2fd9ba1d5da12d186daa3725ee9491e6c931e641cf"
+      },
+      {
+        "path": "src/components/ProjectCard.tsx",
+        "sha256": "48fb78ff86de003de4a756131a7bcb291bf8fb2736d7980881b7fc2a93dddddb"
+      },
+      {
+        "path": "src/data/blogShared.ts",
+        "sha256": "c30981e595a1ff2e4090cd2c62d5083e84e41aedd5c9ac33d463d8c5913a3620"
+      },
+      {
+        "path": "src/data/catalogCopy.ts",
+        "sha256": "2bd017276d86ff30bd4e210141cd669da492927b1ad2a0fe52f70a1b089999dd"
+      },
+      {
+        "path": "src/styles/flow-pages.css",
+        "sha256": "3c29ba5f81521a2e589bf7edae957d310a7ccbc1f60ecaf8e07069e94b33382e"
+      },
+      {
+        "path": "src/hooks/useSiteLanguage.ts",
+        "sha256": "68ea4aa4c2827e61928fa85d7c7c58b4eb87bc569816861979d5089d207b0de5"
+      },
+      {
+        "path": "src/hooks/useReadingNavigation.ts",
+        "sha256": "e4b73a6169c6e43395011e0f525fd69acc6104cba2f87f3ec7c393d7efe0ae6f"
+      },
+      {
+        "path": "src/utils/siteLanguage.ts",
+        "sha256": "9eee50cd4953a03536f94b7269dec4edde15113272b53e1a2d3998f8a0c0afd4"
+      },
+      {
+        "path": "scripts/check-site-language-ui.mjs",
+        "sha256": "4e1f508f2bd7deab1f6768742021ca9f3a7cd26cd877da5d46e5c6be7658497f"
+      },
+      {
+        "path": "scripts/check-blog-discovery-ui.mjs",
+        "sha256": "4740cb012d3920582e9470eba7131561dce89fd643f0421f1ce07858355c31be"
+      },
+      {
+        "path": "scripts/check-project-discovery-ui.mjs",
+        "sha256": "b44fda8c2ed0d6bd635b1d4653f7c0f9e628afb27f61562e1f57e97233a37a82"
+      },
+      {
+        "path": "scripts/check-reading-navigation-ui.mjs",
+        "sha256": "a301b142d2dcd4f43027b7fd6d15ccc85091741775e0ef68b79339b6efdd536a"
+      },
+      {
+        "path": "scripts/check-ui.mjs",
+        "sha256": "8823af6acaefff4a6777647f5edceed6351b402ed99e6024d529f51e1f6cf86f"
+      },
+      {
+        "path": "scripts/lib/ui-language.mjs",
+        "sha256": "54825beea6a9d0e0c23a9310aa601f256fc2fa8201fa9618f18ce740e4781234"
+      },
+      {
+        "path": "package.json",
+        "sha256": "3fee1b58c667ba7d7f73804a0554d15b19e8925a09dd0cdb3efffb150213ffe3"
+      },
+      {
+        "path": "public/status/blog-semi-synthetic.json",
+        "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+      }
+    ],
+    "build": [
+      {
+        "path": "dist/index.html",
+        "sha256": "4875a93e15148863806495a8bffaccf97cd3c1ebde907f67f97755950dc7ce10"
+      },
+      {
+        "path": "dist/assets/index-J5mLG8va.js",
+        "sha256": "fbe08d8f47c455772a6d38b271250cba8f202ee1a247b2e328fa4e7c3bd72fd5"
+      },
+      {
+        "path": "dist/assets/index-Cln-YnDP.css",
+        "sha256": "52ff760e654957a6bb21e01e52983356e63588bec970b120ce944d3ba8b4ace9"
+      }
+    ],
+    "previewPort": 5190,
+    "servedHtmlSha256": "4875a93e15148863806495a8bffaccf97cd3c1ebde907f67f97755950dc7ce10"
+  },
+  "logs": [
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/catalog-language-baseline.log",
+      "sha256": "290b051a6de8203e332722e262802e4b647ac7c6edf8f5e92c7b7509986fd0df",
+      "bytes": 976
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/language-ui-first.log",
+      "sha256": "a8da3a83aac75ec1c0ad63b66b186dd6051a2c4244c573fbddc945cafa24092b",
+      "bytes": 1072
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/language-ui-second.log",
+      "sha256": "7893bf289e5630759fd1286491fd2d901ccfb61e352c84a4cbea8603f61e7fa6",
+      "bytes": 1088
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/language-ui-third.log",
+      "sha256": "08be2f9a57a8efd0789eb48d7ac300ae6018af38353861fb1ca1b32eca77035f",
+      "bytes": 1612
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/language-ui-touch-fix.log",
+      "sha256": "19d7371703feeb168bf48248d1176a078842a48d0568af4930e8714a62d05044",
+      "bytes": 231
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/final-lint.log",
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727",
+      "bytes": 40
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/final-build.log",
+      "sha256": "d2de1b9f5710cde1ec9d60d964b7248b5391b54588c8be3d7bcb6291ddc5daaf",
+      "bytes": 4396
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/final-performance-check.log",
+      "sha256": "8291aa3a66b9119913b1699444f2a2c4bd47604782b3662a11c32ceadcaa9e2b",
+      "bytes": 299
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/blog-discovery-check.log",
+      "sha256": "a222de3f804e082ecd71faa44062e66981ef0b8e20c209c945bb4a50796e72d6",
+      "bytes": 157
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/projects-discovery-check.log",
+      "sha256": "ceb6ecd57161a3507520067bf22db665904b30139eedebc316a6e7689032fc2d",
+      "bytes": 136
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/analytics-check.log",
+      "sha256": "0f95057573584534707ed1c172746286b7c9802f9dd3bf2f7385dd2663c6f04e",
+      "bytes": 147
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/project-registry-check.log",
+      "sha256": "6878c68be3d13c65a3a1784a8210d522a8aa5e711095df3feb8cc1dda4eb9e01",
+      "bytes": 161
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/language-ui-final.log",
+      "sha256": "19d7371703feeb168bf48248d1176a078842a48d0568af4930e8714a62d05044",
+      "bytes": 231
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/blog-filter-bilingual.log",
+      "sha256": "788456f816dfe6344deecab887019bda156269864a971269a792ae68db9dc9f7",
+      "bytes": 39
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/ui-smoke-final.log",
+      "sha256": "9e85e4ea6e2c4a6aff8a128d16b4e783908cbc267156b9145b1f1cecf87dfd2c",
+      "bytes": 2667
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/ui-full-final.log",
+      "sha256": "8a8c91c7e9dd3db6e52aead8e2625c281e24c0bf6ca6c6fd08bfcc93cfe3650e",
+      "bytes": 6553
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/ui-full-result.json",
+      "sha256": "1eb671bacc78606ade6f9f3b926f2d447264b305b11b590ef9057600c854762a",
+      "bytes": 72
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/source-freeze-before-full.json",
+      "sha256": "5b2830318cffbaaf891566629c54c83ec938e1bbe6c579f5de736cd14026a4f4",
+      "bytes": 3428
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/static-checks.json",
+      "sha256": "ea2bc915fdca573b7bad539478b898c95b7f37cf2248d443b4382e60e18cf881",
+      "bytes": 2028
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/catalog-blog-320-morning-en.png",
+      "sha256": "bcf1dbce55da982ab0a4845532ea7a27dd5966d392995e437b5258bb65862786"
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/catalog-blog-320-morning-en-before-pagination-row-fix.png",
+      "sha256": "9c822f054b46e80fe602c420fdbdafd8013c997a4e2649cf9f17054e80fafbc7"
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/catalog-blog-1440-nature-en.png",
+      "sha256": "22b72b30101ca8704d2e6c1f1a6fe28625f54c933e1aeee661c6106ce28dfe34"
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/catalog-projects-320-stellar-en.png",
+      "sha256": "26b10ffb98c5fdc108f0c16a517a4285701869fde3f77e10a692f72316bd862e"
+    },
+    {
+      "path": "C:/Users/zhang/AppData/Local/Temp/blog-semi-catalog-20260909-f0005f71/catalog-projects-1440-morning-en.png",
+      "sha256": "8998ac9e9627dc1bd0d5daf290716a09b36ddfe5200e994857e6d189f0552d31"
+    }
+  ],
+  "limitations": [
+    "Authored content, SEO and publication actions remain in their original language.",
+    "Local fixtures only; no remote CI or production verification.",
+    "Heartbeat persistence is unconfirmed and was not changed."
+  ]
+}

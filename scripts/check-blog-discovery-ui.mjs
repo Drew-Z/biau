@@ -44,14 +44,16 @@ async function checkList(page, { column = 'project-notes', query = 'RAG', titles
   ), { expectedColumn: column, expectedQuery: query, expectedTitles: titles ?? null }, { timeout: 5000 })
   assert.equal(await page.locator('.blog-column-select select').inputValue(), column, 'column must follow the URL')
   const filterGroup = page.locator('.blog-column-filter')
+  const english = await page.locator('html').getAttribute('lang') === 'en'
+  const groupLabel = english ? 'Select knowledge base column' : '选择知识库栏目'
   assert.equal(await filterGroup.getAttribute('role'), 'group')
-  assert.equal(await filterGroup.getAttribute('aria-label'), '选择知识库栏目')
+  assert.equal(await filterGroup.getAttribute('aria-label'), groupLabel)
   const columns = await page.locator('.blog-column-select option').evaluateAll((options) => options.map((option) => option.value))
   const buttons = filterGroup.locator('button')
   const pressed = await buttons.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('aria-pressed')))
   assert.deepEqual(pressed, columns.map((value) => String(value === column)), 'every column must expose its current selected state')
   if (await filterGroup.isVisible()) {
-    const selected = page.getByRole('group', { name: '选择知识库栏目', exact: true }).getByRole('button', { pressed: true })
+    const selected = page.getByRole('group', { name: groupLabel, exact: true }).getByRole('button', { pressed: true })
     assert.equal(await selected.count(), 1, 'one selected column must be exposed to accessibility tools')
     assert.equal(await selected.textContent(), await buttons.nth(columns.indexOf(column)).textContent())
   }
@@ -129,11 +131,12 @@ async function checkFilterTextContrast(page, context) {
 export async function checkFilterSemantics(browser, base) {
   let groups = 0
   let contrastSamples = 0
+  const appearances = ['morning', 'nature', 'stellar'].flatMap((theme) => ['zh', 'en'].map((language) => ({ theme, language })))
   for (const width of [721, 1440]) {
-    for (const theme of ['morning', 'nature', 'stellar']) {
+    for (const { theme, language } of appearances) {
       const { page, errors } = await createPage(browser, base, { width, theme })
       try {
-        await openDocument(page, `${base}/blog`, 'zh')
+        await openDocument(page, `${base}/blog`, language)
         const columns = await page.locator('.blog-column-select option').evaluateAll((options) => options.map((option) => option.value))
         const buttons = page.locator('.blog-column-filter button')
         await buttons.first().focus()
@@ -142,14 +145,14 @@ export async function checkFilterSemantics(browser, base) {
           await page.keyboard.press(index % 2 === 0 ? 'Space' : 'Enter')
           await checkList(page, { column, query: '' })
           assert(await buttons.nth(index).evaluate((node) => node === document.activeElement), 'selection must preserve button focus')
-          contrastSamples += await checkFilterTextContrast(page, `${width}/${theme}/${column}/keyboard`)
+          contrastSamples += await checkFilterTextContrast(page, `${width}/${theme}/${language}/${column}/keyboard`)
           if (index < columns.length - 1) await page.keyboard.press('Tab')
         }
         await page.keyboard.press('Shift+Tab')
         assert(await buttons.nth(columns.length - 2).evaluate((node) => node === document.activeElement), 'Shift+Tab must follow the reverse native button order')
         for (const button of [buttons.first(), page.locator('.blog-column-filter .filter-btn.is-empty').first()]) {
           await button.hover()
-          contrastSamples += await checkFilterTextContrast(page, `${width}/${theme}/hover`)
+          contrastSamples += await checkFilterTextContrast(page, `${width}/${theme}/${language}/hover`)
         }
         await page.mouse.move(0, 0)
         await page.goBack()
@@ -169,11 +172,11 @@ export async function checkFilterSemantics(browser, base) {
         assert.equal(await mobileSelect.isVisible(), false)
         assert(await page.locator('.blog-column-filter').isVisible())
         await checkList(page, { column: 'knowledge', query: '' })
-        assert.deepEqual(errors, [], `filter semantics ${width}/${theme}: page/network errors`)
+        assert.deepEqual(errors, [], `filter semantics ${width}/${theme}/${language}: page/network errors`)
         if (process.env.UI_CHECK_ARTIFACT_DIR) {
           await page.setViewportSize({ width, height: 900 })
           await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
-          await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `blog-filter-semantics-${width}-${theme}.png`) })
+          await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `blog-filter-semantics-${width}-${theme}-${language}.png`) })
         }
         groups += 1
       } finally {
@@ -257,7 +260,7 @@ export async function checkBlogDiscoveryNavigation(browser, base) {
           await checkList(page, { query: 'no-results-fixture-79e38', titles: [] })
           assert.ok(await page.locator('.blog-pagination button').first().isDisabled())
           assert.ok(await page.locator('.blog-pagination button').last().isDisabled())
-          assert.match(await page.locator('.blog-result-meta').innerText(), /第 1 \/ 1 页/u)
+          assert.match(await page.locator('.blog-result-meta').innerText(), language === 'en' ? /Page 1 \/ 1$/u : /第 1 \/ 1 页/u)
           await page.locator('#blog-search').fill('RAG ')
           await page.locator('#blog-search').pressSequentially('公开')
           assert.equal(await page.locator('#blog-search').inputValue(), 'RAG 公开', 'typing must retain word separators')

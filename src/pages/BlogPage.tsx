@@ -4,7 +4,10 @@ import { BlogCard } from '../components/BlogCard'
 import { BlogColumnFilter } from '../components/BlogColumnFilter'
 import { blogColumnOrder, getBlogEmptyState, type BlogColumn } from '../data/blog'
 import { getPublicBlogPosts } from '../data/blogCuration'
+import { catalogCopy } from '../data/catalogCopy'
 import { useCatalogReadingNavigation } from '../hooks/useReadingNavigation'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 import {
   getBlogListHref,
   normalizeBlogQuery,
@@ -15,6 +18,8 @@ import {
 } from '../utils/blogDiscovery'
 
 export function BlogPage() {
+  const language = useSiteLanguage()
+  const copy = catalogCopy[language]
   const navigate = useNavigate()
   const { search } = useLocation()
   const [, setSearchParams] = useSearchParams()
@@ -57,7 +62,7 @@ export function BlogPage() {
     return counts
   }, [publicBlogs])
 
-  const emptyState = getBlogEmptyState(selectedBlogColumn, searchQuery)
+  const emptyState = getBlogEmptyState(selectedBlogColumn, searchQuery, language)
 
   const updateDiscovery = (patch: Partial<BlogDiscoveryState>, replace = false) => {
     // History is updated before React Router commits its transition. Reading it
@@ -78,11 +83,11 @@ export function BlogPage() {
   }
 
   return (
-    <main className="blog-index-page page-stack">
+    <main className="blog-index-page page-stack" lang={SITE_LANGUAGE_TAGS[language]}>
       <section className="section-header page-hero">
-        <p className="section-subtitle">KNOWLEDGE BASE</p>
-        <h1 className="section-title" tabIndex={-1} data-reading-heading>知识库</h1>
-        <p className="section-description">从实践中提炼项目方法、技术路线和公开内容系统。</p>
+        <p className="section-subtitle" lang="en">KNOWLEDGE BASE</p>
+        <h1 className="section-title" tabIndex={-1} data-reading-heading>{copy.blogTitle}</h1>
+        <p className="section-description">{copy.blogDescription}</p>
       </section>
 
       <div className="blog-discovery">
@@ -94,9 +99,9 @@ export function BlogPage() {
           onSelect={handleSelectColumn}
         />
 
-        <section className="blog-tools" aria-label="文章检索">
+        <section className="blog-tools" aria-label={copy.searchRegion}>
           <label className="sr-only" htmlFor="blog-search">
-            搜索知识库文章
+            {copy.searchLabel}
           </label>
           <input
             id="blog-search"
@@ -105,10 +110,10 @@ export function BlogPage() {
             value={queryDraft ?? searchQuery}
             onChange={(event) => handleSearchChange(event.target.value)}
             onBlur={() => setQueryDraft(null)}
-            placeholder="搜索文章、项目方法、技术关键词"
+            placeholder={copy.searchPlaceholder}
           />
           <p className="blog-result-meta" aria-live="polite">
-            公开精选 · {filteredBlogs.length} 篇文章 · 第 {page} / {totalPages} 页
+            {copy.resultSummary(filteredBlogs.length, page, totalPages)}
           </p>
         </section>
       </div>
@@ -140,7 +145,7 @@ export function BlogPage() {
         </section>
       )}
 
-      <nav className="blog-pagination" aria-label="文章分页">
+      <nav className="blog-pagination" aria-label={copy.pagination}>
         <button
           className="btn"
           type="button"
@@ -148,7 +153,7 @@ export function BlogPage() {
           aria-disabled={page === 1}
           onClick={() => updateDiscovery({ page: page - 1 })}
         >
-          上一页
+          {copy.previousPage}
         </button>
         <span>
           {page} / {totalPages}
@@ -160,7 +165,7 @@ export function BlogPage() {
           aria-disabled={page === totalPages}
           onClick={() => updateDiscovery({ page: page + 1 })}
         >
-          下一页
+          {copy.nextPage}
         </button>
       </nav>
     </main>
