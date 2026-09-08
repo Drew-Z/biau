@@ -31,6 +31,15 @@ column's no-results state in both languages and real first-publication states.
 Blog discovery retains real keyboard and background contrast sampling in both
 languages; project reload checks assert persistence before any corrective action.
 
+`checkDetailReadingLanguage`, called by the same language entry, covers article
+and project controls, fixed and authored section languages, preserved content /
+publication / image snapshots, connected article/guide nodes, stable ids and
+history, outline focus/Escape/real anchors, missing returns and delayed content.
+Test language-state continuity separately from the existing outside-pointer
+dismissal. Status and AI Daily guide items retain Chinese semantics while their
+shared guide controls translate. Fixture payloads must satisfy the real decoder,
+including explicit nullable `uncertainty` and `correctedAt` fields.
+
 For the public AI Daily Feed or detail route, also run:
 
 ```powershell
@@ -193,6 +202,10 @@ do not let a concurrent pointer hover make the keyboard assertion pass.
 - Mobile tab bar includes exactly the public primary sections.
 - Its grid track count equals the shared `Navigation` route count (currently four). The first and last tabs fill the padded content edges, every track is equal width, and route changes preserve that contract. Never retain an empty fifth track or invent a disabled destination to fill it.
 - Touch targets are at least 44px where practical.
+- Blog/project missing details use `.detail-missing--catalog .btn` with 44px
+  minimum height inside the existing 720px breakpoint. Scope this to those
+  measured return actions; preserve other missing-page families and desktop
+  density. Check both languages, visibility, text fit and actual return URLs.
 - At `max-width: 720px`, blog pagination uses two flexible button columns around
   the page counter, 44px minimum targets and bounded inline padding. Keep English
   Previous/Next and the counter aligned in one row at 320/390/430; font scaling,
@@ -623,6 +636,11 @@ Correct: run `check:ui` locally for fixture coverage, then run `check:ui:product
 - Do not ship obsolete page CSS/components after route removal.
 - Optimize screenshots to web-friendly formats and dimensions.
 - Avoid duplicate data indexes or repeated normalization in render loops.
+- Small UI dictionaries use type-only imports for project types. A runtime
+  import of the full `portfolio` module from a shared reading dictionary can
+  move project data into the entry chunk (observed 300449 -> 423376 bytes).
+  Choose existing Chinese versus English UI maps at the page that already owns
+  the project data import, then recheck chunk output and the performance budget.
 - Run `performance:check` when changing background, intro, route chunks, or large assets. It must enforce the entry CSS budget and fail when the named `route-pages-*.css` chunk disappears.
 - Run `check:ui:smoke` for quick route/CSS/overflow feedback and `check:ui` before completion. The smoke check covers entry routes without loading flashes plus lazy routes with the route CSS present at desktop, 390px, and 320px.
 - Both UI commands use the shared `[START]` / `[PASS]` / `[FAIL]` progress contract with named groups, current route/viewport context, group duration, and a final summary. Full keeps the 17-route × desktop/mobile matrix and all specialist assertions; progress instrumentation may not reduce coverage.

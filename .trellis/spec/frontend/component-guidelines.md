@@ -119,6 +119,17 @@ global smooth-scroll rule.
 Loading and missing-detail states do not render an empty guide. Keep the public
 assistant behind the open outline and verify the guide at `320`, `390`, `430`,
 and desktop widths.
+
+The guide's public labels follow `useSiteLanguage`; its section text has a
+separate language contract. `itemsLanguage?: SiteLanguage` defaults to `zh` for
+untranslated callers, and `DetailReadingItem.language` overrides an individual
+label. Localized blog/project pages pass the active language; authored article
+sections keep `{ id, label: section.title, language: 'zh' }`. Mark both the
+current label and each outline label with the resolved language. Preserve ids,
+open state, focus, anchor handlers and scroll measurement when labels change.
+The collapsed current label may retain its existing truncation; the expanded
+outline must expose the full text with wrapping.
+
 ## Content and Assets
 
 Use real sanitized project screenshots when available. If an asset is missing, use a stable fallback asset or omit the image; do not fabricate business evidence, metrics, customers, or screenshots.

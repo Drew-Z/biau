@@ -5418,6 +5418,10 @@
 }
 
 @media (max-width: 720px) {
+  .detail-missing--catalog .btn {
+    min-height: 44px;
+  }
+
   .detail-reading-guide {
     width: 100%;
     top: var(--space-8);

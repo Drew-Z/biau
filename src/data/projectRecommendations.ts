@@ -1,5 +1,6 @@
 import { getProjectBlogPosts } from './blogCuration'
 import { projects, type Project } from './portfolio'
+import type { SiteLanguage } from '../utils/siteLanguage'
 
 const maxRelatedProjects = 3
 const projectOrder = new Map(projects.map((project, index) => [project.id, index]))
@@ -112,6 +113,8 @@ export function getRelatedProjects(project: Project) {
   return [...relationMatches, ...fallbacks].map((entry) => entry.project)
 }
 
-export function getRelatedProjectsTitle(project: Project, related: Project[]) {
-  return related.some((item) => item.category !== project.category) ? '相关项目' : '同类项目'
+export function getRelatedProjectsTitle(project: Project, related: Project[], language: SiteLanguage = 'zh') {
+  const hasOtherCategory = related.some((item) => item.category !== project.category)
+  if (language === 'en') return hasOtherCategory ? 'Related projects' : 'Similar projects'
+  return hasOtherCategory ? '相关项目' : '同类项目'
 }

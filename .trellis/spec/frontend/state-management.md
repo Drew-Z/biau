@@ -35,6 +35,16 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
   language until the shared publication interface is translated across consumers.
   Do not remount routes, reset discovery/input state, translate authored data,
   claim translated SEO/content or invent locale URLs during UI localization.
+- Article and project detail controls also follow the shared preference through
+  `detailCopy.ts`. Keep authored titles, body/sections, captions and image alt
+  text Chinese; `ResponsiveImage` already forwards native `lang` attributes.
+  Language changes must not become content-load or reading-reset dependencies.
+  Fixed project section headings select the existing Chinese mapping or its
+  English UI mapping in the page; Studio/export keep their original map.
+  `getRelatedProjectsTitle(project, related, language = 'zh')` translates only
+  the title, never recommendation ranking. Publication labels/explanations and
+  shared category/status text retain their original projection until localized
+  across consumers in a separate task.
 - Existing UI fixtures must select a language from the actual current value;
   blindly toggling after `goto` now reverses a persisted choice. A refresh test
   must assert the retained language before making any corrective selection.

@@ -6,6 +6,8 @@ import { DetailReadingGuide, type DetailReadingItem } from '../components/Detail
 import { blogColumnMeta } from '../data/blog'
 import { getProjectBlogPosts } from '../data/blogCuration'
 import { getRelatedProjects, getRelatedProjectsTitle } from '../data/projectRecommendations'
+import { catalogCopy } from '../data/catalogCopy'
+import { detailCopy, projectDetailGroupLabelsEn } from '../data/detailCopy'
 import {
   projects,
   categoryLabels as projectCategoryLabels,
@@ -26,6 +28,8 @@ import {
 import { ResponsiveImage } from '../components/ResponsiveImage'
 import { getProjectListHref, parseProjectGroupSearch, serializeProjectGroupSearch } from '../utils/projectDiscovery'
 import { useDetailReadingNavigation } from '../hooks/useReadingNavigation'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS, type SiteLanguage } from '../utils/siteLanguage'
 
 const projectDetailContentOrder: ProjectDetailContentKey[] = [
   'overview',
@@ -48,17 +52,14 @@ function getProjectDetailGroups(content?: ProjectDetailContent): ProjectDetailGr
     .filter((group) => group.sections.length > 0)
 }
 
-const projectVisualTypeLabels: Record<ProjectVisualBlock['type'], string> = {
-  screenshot: '界面截图',
-  architecture: '架构图',
-  workflow: '流程图',
-  'data-flow': '数据流',
-  status: '状态证据',
-  release: '发布证据',
-  diagram: '说明图',
+function getProjectGroupLabels(language: SiteLanguage) {
+  return language === 'en' ? projectDetailGroupLabelsEn : projectDetailGroupLabels
 }
 
 export function ProjectDetailPage() {
+  const language = useSiteLanguage()
+  const copy = detailCopy[language]
+  const languageTag = SITE_LANGUAGE_TAGS[language]
   const { id } = useParams<{ id: string }>()
   const { search } = useLocation()
   const group = parseProjectGroupSearch(search)
@@ -88,27 +89,27 @@ export function ProjectDetailPage() {
   const readingItems = useMemo<DetailReadingItem[]>(() => {
     if (!project) return []
     const items: DetailReadingItem[] = [
-      { id: 'project-highlights', label: '核心亮点' },
-      { id: 'project-stack', label: '技术栈' },
+      { id: 'project-highlights', label: copy.project.highlights },
+      { id: 'project-stack', label: copy.project.stack },
     ]
-    if (publishedLinks.length) items.push({ id: 'project-links', label: '相关链接' })
+    if (publishedLinks.length) items.push({ id: 'project-links', label: copy.project.links })
     detailGroups.forEach((group) => {
-      items.push({ id: `project-${group.key}`, label: projectDetailGroupLabels[group.key] })
+      items.push({ id: `project-${group.key}`, label: getProjectGroupLabels(language)[group.key] })
     })
-    if (projectReadings.length) items.push({ id: 'project-readings', label: '延展阅读' })
-    if (related.length) items.push({ id: 'project-related', label: getRelatedProjectsTitle(project, related) })
+    if (projectReadings.length) items.push({ id: 'project-readings', label: copy.furtherReading })
+    if (related.length) items.push({ id: 'project-related', label: getRelatedProjectsTitle(project, related, language) })
     return items
-  }, [detailGroups, project, projectReadings, publishedLinks.length, related])
+  }, [copy, detailGroups, language, project, projectReadings, publishedLinks.length, related])
 
   if (!project) {
     return (
-      <main className="page-stack detail-page">
-        <div className="detail-missing">
-          <h1 className="section-title" tabIndex={-1} data-reading-heading>未找到该项目</h1>
-          <p className="section-description">该项目可能已下线或链接有误。</p>
+      <main className="page-stack detail-page" lang={languageTag}>
+        <div className="detail-missing detail-missing--catalog">
+          <h1 className="section-title" tabIndex={-1} data-reading-heading>{copy.project.missingTitle}</h1>
+          <p className="section-description">{copy.project.missingDescription}</p>
           <Link className="btn" to={listHref} state={returnState}>
             <ArrowLeft size={16} aria-hidden />
-            <span>返回项目集</span>
+            <span>{copy.project.back}</span>
           </Link>
         </div>
       </main>
@@ -116,13 +117,13 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <article className="page-stack detail-page project-detail-page">
+    <article className="page-stack detail-page project-detail-page" lang={languageTag}>
       <Link to={listHref} className="detail-back" state={returnState}>
         <ArrowLeft size={16} aria-hidden />
-        <span>项目集</span>
+        <span>{catalogCopy[language].projectsTitle}</span>
       </Link>
 
-      <header className="detail-header">
+      <header className="detail-header" lang="zh-CN">
         <div className="detail-badges">
           <span className="tag">{projectCategoryLabels[project.category]}</span>
           <span className="detail-status">{statusLabels[project.status]}</span>
@@ -137,7 +138,7 @@ export function ProjectDetailPage() {
           </p>
         )}
         {publishedLinks.length > 0 && (
-          <nav className="detail-quick-links" aria-label={`${project.title} 快速链接`}>
+          <nav className="detail-quick-links" aria-label={copy.project.quickLinks(project.title)} lang={languageTag}>
             {publishedLinks.map((link) => (
               <ProjectLinkBadge key={`${link.intent}-${link.href}`} link={link} />
             ))}
@@ -152,24 +153,24 @@ export function ProjectDetailPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="detail-hero-image"
-            aria-label={`打开 ${project.title} 项目截图原图`}
+            aria-label={copy.project.openScreenshot(project.title)}
           >
-            <ResponsiveImage src={project.image} alt={project.imageAlt ?? project.title} loading="eager" />
+            <ResponsiveImage src={project.image} alt={project.imageAlt ?? project.title} loading="eager" lang="zh-CN" />
             <span className="detail-hero-image-action" aria-hidden="true">
               <LinkIcon size={16} aria-hidden />
-              <span>打开原图</span>
+              <span>{copy.project.openOriginal}</span>
             </span>
           </a>
-          {project.imageCaption && <figcaption className="detail-hero-caption">{project.imageCaption}</figcaption>}
+          {project.imageCaption && <figcaption className="detail-hero-caption" lang="zh-CN">{project.imageCaption}</figcaption>}
         </figure>
       )}
 
-      <DetailReadingGuide items={readingItems} />
+      <DetailReadingGuide items={readingItems} itemsLanguage={language} />
 
       <div className="detail-body">
         <section id="project-highlights" className="detail-block">
-          <h2 className="detail-block-title">核心亮点</h2>
-          <ul className="detail-highlights">
+          <h2 className="detail-block-title">{copy.project.highlights}</h2>
+          <ul className="detail-highlights" lang="zh-CN">
             {project.highlights.map((highlight) => (
               <li key={highlight}>{highlight}</li>
             ))}
@@ -177,8 +178,8 @@ export function ProjectDetailPage() {
         </section>
 
         <section id="project-stack" className="detail-block">
-          <h2 className="detail-block-title">技术栈</h2>
-          <div className="detail-stack">
+          <h2 className="detail-block-title">{copy.project.stack}</h2>
+          <div className="detail-stack" lang="zh-CN">
             {project.stack.map((tech) => (
               <span key={tech} className="stack-tag">
                 {tech}
@@ -189,7 +190,7 @@ export function ProjectDetailPage() {
 
         {publishedLinks.length > 0 && (
           <section id="project-links" className="detail-block">
-            <h2 className="detail-block-title">相关链接</h2>
+            <h2 className="detail-block-title">{copy.project.links}</h2>
             <div className="detail-links">
               {publishedLinks.map((link) => (
                 <ProjectLinkBadge key={`${link.intent}-${link.href}`} link={link} />
@@ -203,11 +204,11 @@ export function ProjectDetailPage() {
 
       {projectReadings.length > 0 && (
         <section id="project-readings" className="detail-related">
-          <h2 className="detail-block-title">延展阅读</h2>
+          <h2 className="detail-block-title">{copy.furtherReading}</h2>
           <div className="detail-related-grid">
             {projectReadings.map((post) => (
-              <Link key={post.slug} to={`/blog/${post.slug}`} className="detail-related-card">
-                <span className="detail-related-cat">{blogColumnMeta[post.column].titleZh}</span>
+              <Link key={post.slug} to={`/blog/${post.slug}`} className="detail-related-card" lang="zh-CN">
+                <span className="detail-related-cat" lang={languageTag}>{language === 'en' ? blogColumnMeta[post.column].titleEn : blogColumnMeta[post.column].titleZh}</span>
                 <h3>{post.title}</h3>
                 <p>{post.detail}</p>
               </Link>
@@ -218,10 +219,10 @@ export function ProjectDetailPage() {
 
       {related.length > 0 && (
         <section id="project-related" className="detail-related">
-          <h2 className="detail-block-title">{getRelatedProjectsTitle(project, related)}</h2>
+          <h2 className="detail-block-title">{getRelatedProjectsTitle(project, related, language)}</h2>
           <div className="detail-related-grid">
             {related.map((item) => (
-              <Link key={item.id} to={`/projects/${item.id}${groupSearch}`} className="detail-related-card" state={relatedState}>
+              <Link key={item.id} to={`/projects/${item.id}${groupSearch}`} className="detail-related-card" state={relatedState} lang="zh-CN">
                 <span className="detail-related-cat">{projectCategoryLabels[item.category]}</span>
                 <h3>{item.title}</h3>
                 <p>{item.summary}</p>
@@ -240,11 +241,13 @@ interface ProjectDetailContentSectionsProps {
 }
 
 function ProjectDetailContentSections({ groups, publication }: ProjectDetailContentSectionsProps) {
+  const language = useSiteLanguage()
+  const copy = detailCopy[language].project
   return (
-    <section className="detail-body project-case-study" aria-label="项目案例分析">
+    <section className="detail-body project-case-study" aria-label={copy.caseStudy}>
       {groups.map((group) => (
         <section id={`project-${group.key}`} key={group.key} className="detail-block detail-block-wide project-case-study__group">
-          <p className="project-case-study__eyebrow">{projectDetailGroupLabels[group.key]}</p>
+          <p className="project-case-study__eyebrow">{getProjectGroupLabels(language)[group.key]}</p>
           <div className="project-case-study__sections">
             {group.sections.map((section) => (
               <ProjectDetailContentSection key={section.title} section={section} publication={publication} />
@@ -265,7 +268,7 @@ function ProjectDetailContentSection({ section, publication }: ProjectDetailCont
   const publishedLinks = getPublishedProjectLinks(publication, section.links ?? [])
 
   return (
-    <article className="project-case-study__section">
+    <article className="project-case-study__section" lang="zh-CN">
       <h3>{section.title}</h3>
       {section.body && <p className="blog-post-body-text">{section.body}</p>}
       {section.items && section.items.length > 0 && (
@@ -288,7 +291,9 @@ function ProjectDetailContentSection({ section, publication }: ProjectDetailCont
 }
 
 function ProjectVisualFigure({ visual, publication }: { visual: ProjectVisualBlock; publication?: ProjectPublication }) {
-  const label = projectVisualTypeLabels[visual.type]
+  const language = useSiteLanguage()
+  const copy = detailCopy[language].project
+  const label = copy.visualTypes[visual.type]
   const figureClassName = `project-visual project-visual--${visual.type}`
   const sourceLink = visual.sourceUrl
     ? getPublishedProjectLinks(publication, [
@@ -302,10 +307,10 @@ function ProjectVisualFigure({ visual, publication }: { visual: ProjectVisualBlo
     : undefined
 
   return (
-    <figure className={figureClassName}>
+    <figure className={figureClassName} lang={SITE_LANGUAGE_TAGS[language]}>
       <figcaption className="project-visual__meta">
         <span className="project-visual__type">{label}</span>
-        <span className="project-visual__text">
+        <span className="project-visual__text" lang="zh-CN">
           <strong>{visual.title}</strong>
           <span>{visual.description}</span>
         </span>
@@ -316,13 +321,13 @@ function ProjectVisualFigure({ visual, publication }: { visual: ProjectVisualBlo
           target="_blank"
           rel="noopener noreferrer"
           className="project-visual__image"
-          aria-label={`打开 ${visual.title} 原图`}
+          aria-label={copy.openImage(visual.title)}
         >
-          <ResponsiveImage src={visual.image} alt={visual.alt ?? visual.title} />
+          <ResponsiveImage src={visual.image} alt={visual.alt ?? visual.title} lang="zh-CN" />
         </a>
       )}
       {(visual.caption || sourceLink) && (
-        <p className="project-visual__caption">
+        <p className="project-visual__caption" lang="zh-CN">
           {visual.caption && <span className="project-visual__caption-text">{visual.caption}</span>}
           {sourceLink &&
             (sourceLink.type === 'internal' ? (
@@ -363,7 +368,7 @@ function ProjectLinkBadge({ link }: { link: PublishedProjectLink }) {
 
   if (link.type === 'internal') {
     return (
-      <Link to={link.href} className={linkClassName} data-link-type={link.type} title={link.explanation}>
+      <Link to={link.href} className={linkClassName} data-link-type={link.type} title={link.explanation} lang="zh-CN">
         {content}
       </Link>
     )
@@ -377,6 +382,7 @@ function ProjectLinkBadge({ link }: { link: PublishedProjectLink }) {
       className={linkClassName}
       data-link-type={link.type}
       title={link.explanation}
+      lang="zh-CN"
     >
       {content}
     </a>

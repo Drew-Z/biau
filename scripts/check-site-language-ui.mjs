@@ -171,6 +171,252 @@ async function catalogContentSnapshot(page, family) {
   })))
 }
 
+const readingPages = [
+  { family: 'blog', path: '/blog/legal-rag-review?column=project-notes&q=RAG', root: '.blog-post-page', back: '/blog?column=project-notes&q=RAG' },
+  { family: 'projects', path: '/projects/legal-rag?group=fullstack', root: '.project-detail-page', back: '/projects?group=fullstack' },
+]
+
+const fixedReadingLabels = {
+  'blog-knowledge': ['知识点', 'Key concepts'],
+  'blog-scenarios': ['应用场景', 'Use cases'],
+  'blog-practice': ['实践清单', 'Practice checklist'],
+  'blog-takeaways': ['关键收获', 'Key takeaways'],
+  'blog-related-projects': ['关联项目', 'Related projects'],
+  'blog-related-posts': ['延展阅读', 'Further reading'],
+  'project-highlights': ['核心亮点', 'Highlights'],
+  'project-stack': ['技术栈', 'Technology stack'],
+  'project-links': ['相关链接', 'Links'],
+  'project-overview': ['案例概览', 'Overview'],
+  'project-workflow': ['工作台能力', 'Workspace capabilities'],
+  'project-architecture': ['实现与架构', 'Implementation and architecture'],
+  'project-quality': ['质量与验证', 'Quality and verification'],
+  'project-limitations': ['当前边界', 'Current limitations'],
+  'project-roadmap': ['后续优化', 'Next improvements'],
+  'project-readings': ['延展阅读', 'Further reading'],
+}
+
+async function checkReadingGuideCopy(page, language, { status = false, authored = false } = {}) {
+  const english = language === 'en'
+  const tag = english ? 'en' : 'zh-CN'
+  const guide = page.locator('.detail-reading-guide')
+  const label = status ? (english ? 'Status navigation' : '状态导航') : (english ? 'Reading guide' : '阅读导航')
+  assert.equal(await guide.getAttribute('aria-label'), label)
+  assert.ok(await guide.evaluate((node, expected) => node.matches(`:lang(${expected})`), tag))
+  assert.equal(await guide.locator('[role="progressbar"]').getAttribute('aria-label'), english ? 'Reading progress' : '全文阅读进度')
+  assert.equal(await guide.locator('nav').getAttribute('aria-label'), english ? 'On this page' : '本文目录')
+  assert.equal(await guide.locator('.detail-reading-guide__outline-head strong').textContent(), english ? 'On this page' : '本文目录')
+  const anchors = guide.locator('nav a')
+  const count = await anchors.count()
+  assert.ok(count > 0)
+  assert.equal(await guide.locator('.detail-reading-guide__outline-head > span').textContent(), english ? `${count} ${count === 1 ? 'section' : 'sections'}` : `${count} 个章节`)
+  assert.equal(await guide.locator('a[aria-current="location"]').count(), 1)
+  for (const anchor of await anchors.all()) {
+    const id = (await anchor.getAttribute('href')).slice(1)
+    assert.equal(await page.locator(`[id="${id}"]`).count(), 1, 'every outline target must still exist exactly once')
+    const text = anchor.locator('span').nth(1)
+    const itemTag = authored || id.startsWith('blog-section-') ? 'zh-CN' : tag
+    assert.ok(await text.evaluate((node, expected) => node.matches(`:lang(${expected})`), itemTag), `outline language: ${id}`)
+    if (id.startsWith('blog-section-')) assert.equal(await text.textContent(), await page.locator(`[id="${id}"] h2`).textContent())
+    if (!authored && fixedReadingLabels[id]) {
+      assert.equal(await text.textContent(), fixedReadingLabels[id][english ? 1 : 0])
+      const heading = page.locator(`[id="${id}"] > .detail-block-title, [id="${id}"] > .project-case-study__eyebrow`)
+      assert.equal(await heading.textContent(), fixedReadingLabels[id][english ? 1 : 0])
+      assert.ok(await heading.evaluate((node, expected) => node.matches(`:lang(${expected})`), tag))
+    }
+    if (id === 'project-related') {
+      assert.match(await text.textContent(), english ? /^(Related projects|Similar projects)$/u : /^(相关项目|同类项目)$/u)
+      assert.equal(await text.textContent(), await page.locator('#project-related > h2').textContent())
+    }
+  }
+  const activeId = await guide.getAttribute('data-active-section')
+  const currentTag = authored || activeId.startsWith('blog-section-') ? 'zh-CN' : tag
+  assert.ok(await guide.locator('.detail-reading-guide__current').evaluate((node, expected) => node.matches(`:lang(${expected})`), currentTag))
+}
+
+async function readingContentSnapshot(page, root) {
+  return page.locator(root).evaluate((node) => ({
+    content: [...node.querySelectorAll('.detail-title, .detail-summary, .detail-role, .blog-series, .detail-highlights, .blog-post-section, .detail-stack, .detail-related-card h3, .detail-related-card p, .project-case-study__section > h3, .project-case-study__section > .blog-post-body-text, .project-visual__text, .project-visual__caption-text, .detail-hero-caption')].map((item) => item.textContent),
+    images: [...node.querySelectorAll('img')].map((item) => ({ src: item.getAttribute('src'), alt: item.getAttribute('alt') })),
+    publication: [...node.querySelectorAll('.link-badge, .detail-entry-note, .project-visual__source-link')].map((item) => ({ text: item.textContent, href: item.getAttribute('href'), title: item.getAttribute('title') })),
+  }))
+}
+
+async function checkReadingPageCopy(page, reading, language) {
+  const english = language === 'en'
+  const root = page.locator(reading.root)
+  assert.equal(await root.locator('.detail-back').textContent(), reading.family === 'blog' ? (english ? 'Knowledge Base' : '知识库') : (english ? 'Projects' : '项目集'))
+  assert.equal(await root.locator('.detail-back').getAttribute('href'), reading.back)
+  assert.ok(await root.evaluate((node, expected) => node.matches(`:lang(${expected})`), english ? 'en' : 'zh-CN'))
+  assert.ok(await root.locator('.detail-title, .detail-summary, .detail-highlights, .blog-post-section, .detail-stack, .detail-related-card h3, .detail-related-card p, .project-case-study__section > h3, .project-visual__text, img, .link-badge, .detail-entry-note, .project-visual__source-link').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored text, image alternatives and publication actions must remain Chinese')
+  if (reading.family === 'projects') {
+    assert.equal(await root.locator('.detail-hero-image-action').textContent(), english ? 'Open original' : '打开原图')
+    assert.equal(await root.locator('.project-case-study').getAttribute('aria-label'), english ? 'Project case study' : '项目案例分析')
+    const title = await root.locator('h1').textContent()
+    assert.equal(await root.locator('.detail-quick-links').getAttribute('aria-label'), english ? `${title} quick links` : `${title} 快速链接`)
+    assert.equal(await root.locator('.detail-hero-image').getAttribute('aria-label'), english ? `Open original screenshot for ${title}` : `打开 ${title} 项目截图原图`)
+  }
+  await checkReadingGuideCopy(page, language)
+}
+
+async function checkReadingLayout(page) {
+  await page.evaluate(async () => { await document.fonts.ready })
+  await page.waitForFunction(() => [...(document.querySelector('.detail-page')?.getAnimations({ subtree: true }) ?? [])].every((animation) => animation.playState !== 'running' || animation.effect?.getComputedTiming().iterations === Infinity))
+  await page.waitForFunction(() => [...document.querySelectorAll('img[loading="eager"]')].every((node) => node.complete && node.naturalWidth > 0))
+  const result = await page.evaluate(() => {
+    const selectors = '.detail-back, .detail-block-title, .project-case-study__eyebrow, .detail-reading-guide__toggle, .detail-reading-guide__eyebrow, .detail-reading-guide__outline-head, .detail-reading-guide__outline a, .detail-missing h1, .detail-missing p, .detail-missing .btn'
+    const nodes = [...document.querySelectorAll(selectors)].filter((node) => node.getClientRects().length > 0)
+    const clipped = nodes.filter((node) => {
+      const rect = node.getBoundingClientRect()
+      return rect.left < -1 || rect.right > innerWidth + 1 || node.scrollWidth > node.clientWidth + 1
+    }).map((node) => ({ className: node.className, text: node.textContent }))
+    const small = innerWidth <= 430 ? nodes.filter((node) => node.matches('a, button') && (node.getBoundingClientRect().height < 43.5 || node.getBoundingClientRect().width < 43.5)).map((node) => ({ text: node.textContent, height: node.getBoundingClientRect().height })) : []
+    return { clipped, small, overflow: document.documentElement.scrollWidth - innerWidth }
+  })
+  assert.deepEqual(result.clipped, [], 'reading labels and expanded outline must fit')
+  assert.deepEqual(result.small, [], 'mobile reading actions must keep 44px targets')
+  assert.ok(result.overflow <= 1)
+}
+
+export async function checkDetailReadingLanguage(browser, base) {
+  let detailGroups = 0
+  for (const width of [320, 390, 430, 1440]) {
+    for (const theme of ['morning', 'nature', 'stellar']) {
+      const { page, errors, requests } = await createPage(browser, base, { width, theme })
+      try {
+        for (const reading of readingPages) {
+          await page.goto(`${base}${reading.path}`, { waitUntil: 'load' })
+          await page.locator(reading.root).waitFor({ state: 'visible' })
+          await selectSiteLanguage(page, 'zh')
+          await checkReadingPageCopy(page, reading, 'zh')
+          const content = await readingContentSnapshot(page, reading.root)
+          const rootNode = await page.locator(reading.root).elementHandle()
+          const guideNode = await page.locator('.detail-reading-guide').elementHandle()
+          const ids = await page.locator('.detail-reading-guide nav a').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')))
+          const location = await page.evaluate(() => ({ href: window.location.href, history: history.length }))
+          const toggle = page.locator('.detail-reading-guide__toggle')
+          await toggle.focus()
+          await page.keyboard.press('Enter')
+          await page.locator('.detail-reading-guide nav').waitFor({ state: 'visible' })
+          await checkReadingLayout(page)
+          const firstAnchor = page.locator('.detail-reading-guide nav a').first()
+          await firstAnchor.focus()
+          // Isolate the language-state update from the existing outside-pointer dismissal.
+          await page.locator('.nav-lang-toggle').evaluate((node) => node.click())
+          await assertSiteLanguage(page, 'en')
+          await checkReadingPageCopy(page, reading, 'en')
+          assert.ok(await rootNode.evaluate((node) => node.isConnected), 'language must not remount the article')
+          assert.ok(await guideNode.evaluate((node) => node.isConnected), 'language must not remount the reading guide')
+          assert.equal(await toggle.getAttribute('aria-expanded'), 'true', 'a language-state update must retain outline state')
+          assert.ok(await firstAnchor.evaluate((node) => node === document.activeElement), 'a language-state update must retain outline focus')
+          assert.deepEqual(await page.evaluate(() => ({ href: window.location.href, history: history.length })), location)
+          assert.deepEqual(await page.locator('.detail-reading-guide nav a').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href'))), ids)
+          assert.deepEqual(await readingContentSnapshot(page, reading.root), content)
+          await checkReadingLayout(page)
+          if (process.env.UI_CHECK_ARTIFACT_DIR) await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `reading-${reading.family}-${width}-${theme}-en.png`) })
+          await page.keyboard.press('Escape')
+          assert.equal(await toggle.getAttribute('aria-expanded'), 'false')
+          assert.ok(await toggle.evaluate((node) => node === document.activeElement))
+          await page.keyboard.press('Enter')
+          const target = reading.family === 'blog' ? 'blog-section-1' : 'project-architecture'
+          await page.locator(`.detail-reading-guide a[href="#${target}"]`).focus()
+          await page.keyboard.press('Enter')
+          await page.waitForFunction((id) => document.querySelector('.detail-reading-guide')?.getAttribute('data-active-section') === id && document.querySelector('.detail-reading-guide__toggle')?.getAttribute('aria-expanded') === 'false', target)
+          await checkReadingGuideCopy(page, 'en')
+          assert.ok(await page.evaluate(() => window.scrollY > 0), 'outline navigation must move into the article')
+          await page.reload({ waitUntil: 'load' })
+          await page.locator(reading.root).waitFor({ state: 'visible' })
+          await assertSiteLanguage(page, 'en')
+          await checkReadingPageCopy(page, reading, 'en')
+          for (const language of ['en', 'zh']) {
+            await page.goto(`${base}/${reading.family}/missing-reading-language${new URL(`${base}${reading.path}`).search}`, { waitUntil: 'load' })
+            await selectSiteLanguage(page, language)
+            await page.locator('.detail-missing').waitFor({ state: 'visible' })
+            const english = language === 'en'
+            assert.equal(await page.locator('.detail-missing h1').textContent(), reading.family === 'blog' ? (english ? 'Article not found' : '未找到该文章') : (english ? 'Project not found' : '未找到该项目'))
+            const back = page.locator('.detail-missing .btn')
+            assert.equal((await back.textContent()).trim(), reading.family === 'blog' ? (english ? 'Back to knowledge base' : '返回知识库') : (english ? 'Back to projects' : '返回项目集'))
+            assert.equal(await back.getAttribute('href'), reading.back)
+            assert.equal(await page.locator('.detail-reading-guide').count(), 0)
+            await checkReadingLayout(page)
+            await back.focus()
+            await page.keyboard.press('Enter')
+            await page.waitForURL(`${base}${reading.back}`)
+            await assertSiteLanguage(page, language)
+          }
+          detailGroups += 1
+        }
+        assertLocalOnly(errors, requests)
+      } catch (error) {
+        throw new Error(`reading-language ${width}/${theme}: ${error.message}`, { cause: error })
+      } finally {
+        await page.context().close()
+      }
+    }
+  }
+
+  let legacyGuideGroups = 0
+  for (const width of [320, 1440]) {
+    const { page, errors, requests } = await createPage(browser, base, { width, stored: 'en' })
+    let dailyRequests = 0
+    const dailyTime = '2026-09-09T00:00:00.000Z'
+    await page.route('**/public/ai-daily/events/reading-language-fixture*', (route) => {
+      dailyRequests += 1
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+        item: { publicId: 'reading-language-fixture', revision: 1, title: '阅读语言检查', factSummary: '公开事实摘要。', whyItMatters: '检查目录语言标记。', uncertainty: null, approvedAt: dailyTime, updatedAt: dailyTime, corrected: false, correctedAt: null, citations: [] },
+        meta: { generatedAt: dailyTime, windowHours: 72, freshness: { status: 'fresh', stale: false, staleAfterMinutes: 180, latestApprovalAt: dailyTime, latestProjectionAt: dailyTime } },
+      }) })
+    })
+    try {
+      for (const path of ['/status/legal-rag', '/ai-daily/reading-language-fixture']) {
+        await page.goto(`${base}${path}`, { waitUntil: 'load' })
+        await page.locator('.detail-reading-guide').waitFor({ state: 'visible' }).catch((error) => {
+          throw new Error(`reading-language legacy guide ${width}${path}: ${error.message}`, { cause: error })
+        })
+        for (const language of ['en', 'zh']) {
+          await selectSiteLanguage(page, language)
+          await checkReadingGuideCopy(page, language, { status: path.startsWith('/status'), authored: true })
+        }
+        legacyGuideGroups += 1
+      }
+      assert.equal(dailyRequests, 1)
+      assertLocalOnly(errors, requests)
+    } finally {
+      await page.context().close()
+    }
+  }
+
+  for (const language of ['zh', 'en']) {
+    const { page, errors, requests } = await createPage(browser, base, { stored: language })
+    let releaseContent
+    let heldContent = 0
+    const contentReady = new Promise((release) => { releaseContent = release })
+    await page.route('**/assets/legal-rag-review-*.js', async (route) => {
+      heldContent += 1
+      await contentReady
+      await route.continue()
+    })
+    try {
+      await page.goto(`${base}${readingPages[0].path}`, { waitUntil: 'domcontentloaded' })
+      await page.locator('.detail-missing').waitFor({ state: 'visible' })
+      assert.equal(await page.locator('.detail-missing h1').textContent(), language === 'en' ? 'Loading article' : '文章载入中')
+      assert.ok(await page.locator('.detail-missing').evaluate((node, expected) => node.matches(`:lang(${expected})`), language === 'en' ? 'en' : 'zh-CN'))
+      assert.equal(await page.locator('.detail-reading-guide').count(), 0)
+      const nextLanguage = language === 'en' ? 'zh' : 'en'
+      await selectSiteLanguage(page, nextLanguage)
+      assert.equal(await page.locator('.detail-missing h1').textContent(), nextLanguage === 'en' ? 'Loading article' : '文章载入中')
+      assert.equal(heldContent, 1, 'language changes must not reload authored content')
+      releaseContent()
+      await page.locator('.blog-post-page').waitFor({ state: 'visible' })
+      await checkReadingPageCopy(page, readingPages[0], nextLanguage)
+      assertLocalOnly(errors, requests)
+    } finally {
+      releaseContent()
+      await page.context().close()
+    }
+  }
+  return { detailGroups, legacyGuideGroups, detailLoadingGroups: 2 }
+}
+
 export async function checkSiteLanguage(browser, base) {
   let matrixGroups = 0
   let emptyGroups = 0
@@ -366,7 +612,8 @@ export async function checkSiteLanguage(browser, base) {
     releaseChunk()
     await delayed.page.context().close()
   }
-  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, modelCalls: 0 }
+  const reading = await checkDetailReadingLanguage(browser, base)
+  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, modelCalls: 0 }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

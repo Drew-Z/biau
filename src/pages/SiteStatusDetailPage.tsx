@@ -15,6 +15,8 @@ import {
 } from '../data/siteStatusView'
 import { useSiteStatus } from '../hooks/useSiteStatus'
 import { DetailReadingGuide, type DetailReadingItem } from '../components/DetailReadingGuide'
+import { detailCopy } from '../data/detailCopy'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
 
 const statusDetailReadingItems: DetailReadingItem[] = [
   { id: 'status-detail-overview', label: '状态概览' },
@@ -157,6 +159,7 @@ function StatusProjectDetail({ project }: { project: ReliabilityProject }) {
 }
 
 export function SiteStatusDetailPage() {
+  const language = useSiteLanguage()
   const { projectId = '' } = useParams()
   const { status, loadError } = useSiteStatus()
   const project = status.reliabilityProjects?.find((item) => item.id === projectId)
@@ -196,7 +199,7 @@ export function SiteStatusDetailPage() {
         </div>
       </section>
       {loadError && <p className="status-load-error">状态数据暂未读取成功：{loadError}</p>}
-      <DetailReadingGuide items={statusDetailReadingItems} label="状态导航" />
+      <DetailReadingGuide items={statusDetailReadingItems} label={detailCopy[language].reading.statusNavigation} />
       <section className="status-reliability" aria-label={`${project.title} 可靠性详情`}>
         <StatusProjectDetail project={project} />
       </section>

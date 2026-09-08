@@ -1,0 +1,356 @@
+{
+  "baseCommit": "5215516f095f803e158e2902f78ec929ef2cd935",
+  "preview": "http://127.0.0.1:5190",
+  "environment": "Windows PowerShell 7 / Node 24.14.0 / Playwright Chromium",
+  "fullUi": {
+    "sessionId": 55966,
+    "exitCode": 0,
+    "groups": 46,
+    "failures": 0,
+    "durationMs": 1100170,
+    "outerResult": {
+      "smokeExit": 0,
+      "fullExit": 0,
+      "durationMs": 1101654,
+      "changedFiles": []
+    },
+    "freeze": {
+      "baseCommit": "5215516f095f803e158e2902f78ec929ef2cd935",
+      "files": [
+        {
+          "path": "src/data/detailCopy.ts",
+          "sha256": "4cbc820c99007d97673fb9918962a291b8027fe535a89dc7e076f9dc3e3c088e"
+        },
+        {
+          "path": "src/data/projectRecommendations.ts",
+          "sha256": "4f65b8ac99a0bafaccaa8ee0ca41695815290ff5a48e36fd6129a49a0fa68abe"
+        },
+        {
+          "path": "src/pages/BlogPostPage.tsx",
+          "sha256": "7e919ff487a5a942e000e69994e7ac4c838613154915ad9c4d6295c53abf53cf"
+        },
+        {
+          "path": "src/pages/ProjectDetailPage.tsx",
+          "sha256": "7cdd93fef3333ac593b52a441ad73db5459330d528c3dd0b903397ad8cda3724"
+        },
+        {
+          "path": "src/components/DetailReadingGuide.tsx",
+          "sha256": "40632aed920d0655464ef7bfb904b5cf70501a40528a32edef80d98027f9a148"
+        },
+        {
+          "path": "src/pages/SiteStatusDetailPage.tsx",
+          "sha256": "0fd24d2000e62f6f6ebed779d484176526bb74263815f8545f2c88fbe38fb955"
+        },
+        {
+          "path": "src/styles/route-pages.css",
+          "sha256": "5e1a24537ee91d5918b7a5953f250025cd1af7dec8d2149a4ffea861b8f99c11"
+        },
+        {
+          "path": "scripts/check-site-language-ui.mjs",
+          "sha256": "5e2de2cdc8a291b2d53bb7900c75b7bbad2844e01f264ddc381277d473c4ce56"
+        },
+        {
+          "path": "scripts/check-ui.mjs",
+          "sha256": "67071b136afdbec1fd56ea82bf05e193f43604be231a767212219a35aa311bdb"
+        },
+        {
+          "path": ".trellis/spec/frontend/component-guidelines.md",
+          "sha256": "2b20f70fc99e0c111c66cb4b2cb7e39e529363f3c67ebc04119db060f4bd4b6d"
+        },
+        {
+          "path": ".trellis/spec/frontend/state-management.md",
+          "sha256": "6b815e28643bbae999eca6470efb606fc6cdc977cb5752f35f79c9e2b2c12ba9"
+        },
+        {
+          "path": ".trellis/spec/frontend/quality-guidelines.md",
+          "sha256": "3119801e46a638181baab353f1c44eef6fe93a1c196d74623929c035bb126a1e"
+        },
+        {
+          "path": "src/hooks/useReadingNavigation.ts",
+          "sha256": "e4b73a6169c6e43395011e0f525fd69acc6104cba2f87f3ec7c393d7efe0ae6f"
+        },
+        {
+          "path": "src/hooks/useSiteLanguage.ts",
+          "sha256": "68ea4aa4c2827e61928fa85d7c7c58b4eb87bc569816861979d5089d207b0de5"
+        },
+        {
+          "path": "src/utils/siteLanguage.ts",
+          "sha256": "9eee50cd4953a03536f94b7269dec4edde15113272b53e1a2d3998f8a0c0afd4"
+        },
+        {
+          "path": "src/components/ResponsiveImage.tsx",
+          "sha256": "e2a66060f25fd7e4cdf0cc155270929c79c25ea5ea109104c930e741d27145c5"
+        },
+        {
+          "path": "src/pages/AiDailyPublicDetailPage.tsx",
+          "sha256": "5bd2c3fce707bfaee0bff2ec6a518f8fe25f17f64bfd2e232099ef5019a1e191"
+        },
+        {
+          "path": "src/data/portfolio.ts",
+          "sha256": "48b80870bea3f36ab2b3b415875cc74c954572b19d523935740bbcbc9e3944bc"
+        },
+        {
+          "path": "src/data/projectPublication.ts",
+          "sha256": "a05a5e20f9c39ae8ab0f238a9176959efdfcf9c70a08908c500615e2b28a327a"
+        },
+        {
+          "path": "scripts/check-reading-navigation-ui.mjs",
+          "sha256": "a301b142d2dcd4f43027b7fd6d15ccc85091741775e0ef68b79339b6efdd536a"
+        },
+        {
+          "path": "scripts/check-public-route-recovery-ui.mjs",
+          "sha256": "cfa2b3b8de594c634e6d09bd3ef5ee8e2f676ff17f166dca85c7ac8287a42187"
+        },
+        {
+          "path": "package.json",
+          "sha256": "3fee1b58c667ba7d7f73804a0554d15b19e8925a09dd0cdb3efffb150213ffe3"
+        },
+        {
+          "path": "public/status/blog-semi-synthetic.json",
+          "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+        }
+      ],
+      "build": [
+        {
+          "path": "dist/index.html",
+          "sha256": "007b1f38c3784fb6a23838aa3c058095a774d34fd1ee8d761eddaf4036f39c59"
+        },
+        {
+          "path": "dist/assets/BlogPostPage-B42D4ZzU.js",
+          "sha256": "f99437d5dca43c3230ae2447707362c10c823517d2d10801e0ab696fd0d5f907"
+        },
+        {
+          "path": "dist/assets/DetailReadingGuide-DrJZ67YO.js",
+          "sha256": "33790784097335e488cd6d82c807941e68888301e40b8371a0111e9009ed9ea8"
+        },
+        {
+          "path": "dist/assets/index-Cln-YnDP.css",
+          "sha256": "52ff760e654957a6bb21e01e52983356e63588bec970b120ce944d3ba8b4ace9"
+        },
+        {
+          "path": "dist/assets/index-DBe1Z8s9.js",
+          "sha256": "62ce2ce524ec47fc77320a41481ea3277d0cd5772c8aeea8cc3ba1ba0cd0d152"
+        },
+        {
+          "path": "dist/assets/ProjectDetailPage-DkkhFRoj.js",
+          "sha256": "5e674ea0b9d5d2bbc5a5f9dda650f4d8ce5e546947e1d5325045a7e3b6cb19e7"
+        },
+        {
+          "path": "dist/assets/route-pages-D5WCNMWA.css",
+          "sha256": "6d04358ead0ebd3cd0fcb932294aff0f6ffae1820f3c1db0e31464c34263ef77"
+        },
+        {
+          "path": "dist/assets/SiteStatusDetailPage-B5nv_9fN.js",
+          "sha256": "84ea779ac91d705fca7e923d7a7ca388dada28f99c7d024e2aa37ff0b242d4b2"
+        }
+      ],
+      "previewPort": 5190,
+      "servedHtmlSha256": "007b1f38c3784fb6a23838aa3c058095a774d34fd1ee8d761eddaf4036f39c59"
+    },
+    "recoveryRecheck": {
+      "files": 23,
+      "buildFiles": 8,
+      "changed": []
+    }
+  },
+  "finalFocused": {
+    "results": {
+      "lintExit": 0,
+      "performanceExit": 0,
+      "languageExit": 0
+    },
+    "matrixGroups": 12,
+    "catalogGroups": 24,
+    "emptyGroups": 12,
+    "storageGroups": 5,
+    "loadingGroups": 1,
+    "detailGroups": 24,
+    "legacyGuideGroups": 4,
+    "detailLoadingGroups": 2,
+    "modelCalls": 0
+  },
+  "smoke": {
+    "exitCode": 0,
+    "groups": 21,
+    "failures": 0,
+    "durationMs": 9790
+  },
+  "static": {
+    "lintExit": 0,
+    "buildExit": 0,
+    "buildLog": "build-missing-touch-fix.log",
+    "performanceExit": 0,
+    "performanceLog": "final-performance-check.log",
+    "entryJsBytes": 300457,
+    "entryCssBytes": 152366,
+    "routeCssBytes": 141669,
+    "blogDiscoveryGroups": 8,
+    "projectDiscoveryGroups": 6,
+    "projects": 15,
+    "registryIdentities": 12,
+    "publications": 9,
+    "analyticsRoutes": 17
+  },
+  "logs": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\detail-language-baseline.log",
+      "sha256": "aadd6a00f6871cfc39470d6fd3d5e4719bd17abec50a6f539a7332d4ae592fa4",
+      "bytes": 1169
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\baseline-result.json",
+      "sha256": "42497d8c8104d87d4a49b41ac902d3cdee9279c832c79ead611c2bfef9542ba3",
+      "bytes": 169
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\static-checks.json",
+      "sha256": "d11cfab3accdafdb8c0bf73d22494352d8e70142ef0ec1e4b2a7b40c381b62bc",
+      "bytes": 729
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\lint.log",
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727",
+      "bytes": 40
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\build.log",
+      "sha256": "590e0489a0c9cb918b96b836969cb586711ca0df80d53e5f73170412b634a9b2",
+      "bytes": 4262
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\performance-check.log",
+      "sha256": "0a0bf2dd35249ccdb68efbb458ebcdd61355c223929b4811d34f6049d68a87d8",
+      "bytes": 299
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\blog-discovery-check.log",
+      "sha256": "a222de3f804e082ecd71faa44062e66981ef0b8e20c209c945bb4a50796e72d6",
+      "bytes": 157
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\projects-discovery-check.log",
+      "sha256": "ceb6ecd57161a3507520067bf22db665904b30139eedebc316a6e7689032fc2d",
+      "bytes": 136
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\project-details-check.log",
+      "sha256": "37b6fd5c93a04addb325322c496d8ce072970b13edd9d6beacef85db1c149f57",
+      "bytes": 427
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\project-registry-check.log",
+      "sha256": "6878c68be3d13c65a3a1784a8210d522a8aa5e711095df3feb8cc1dda4eb9e01",
+      "bytes": 161
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\analytics-check.log",
+      "sha256": "0f95057573584534707ed1c172746286b7c9802f9dd3bf2f7385dd2663c6f04e",
+      "bytes": 147
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\build-copy-dependency-fix.log",
+      "sha256": "574fc0e62c645c670057f4cd42bc86efdd61c8b7bdf5ce7d2b7004882b14607b",
+      "bytes": 4396
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\performance-copy-dependency-fix.log",
+      "sha256": "a5198e579b585ddfc619b9a724b6a0ccff6102d3e70640afaa9895d92c8ca6b9",
+      "bytes": 299
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\detail-language-first.log",
+      "sha256": "161f257267d2dfe57f05e188b60f35b22a2cfbbf65ee5e9b8940c1961352b2ce",
+      "bytes": 1327
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\build-missing-touch-fix.log",
+      "sha256": "d0c0065f57a401c5a7704d30150cc445b949e26a7b7445505dce2c62e6b1819b",
+      "bytes": 4396
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\detail-language-second.log",
+      "sha256": "a452ba18e4968a214df05f814059f6f5df09a81d915775e2c12645bb8498ff8b",
+      "bytes": 497
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\final-lint.log",
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727",
+      "bytes": 40
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\final-performance-check.log",
+      "sha256": "e15f94e6ee36c0ff67cfb65bb95f296a2dd95e952e7e9480fe52f4a9f179e792",
+      "bytes": 299
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\language-ui-final.log",
+      "sha256": "35dd6d83375d243e2a9e2f3cca8aebd811ba887f1959e7b937c9e7899ace821f",
+      "bytes": 304
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\final-focused-result.json",
+      "sha256": "fe30e026e8afd4549e3c24439ead0aa8426b9a46225f02b57e5475d6b8047706",
+      "bytes": 70
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\source-freeze-before-full.json",
+      "sha256": "45c40a5a6b105e673818b4f34ba31dd0b18bcc373dc8186b6092924fab5bcdeb",
+      "bytes": 4885
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\ui-smoke-final.log",
+      "sha256": "6686435dc79972cbc1c703e108640ce2f94fe6ff34b7b277edf532f8fc2b38a0",
+      "bytes": 2667
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\ui-full-final.log",
+      "sha256": "03bfd068e740a66364fae13e25c87db24bcb19a62c777a443a27c679db8a4865",
+      "bytes": 6554
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\ui-full-result.json",
+      "sha256": "9cf35ed7e11566cf70e350f95e439f67178b542a5511d3a85d5fc775a5815eac",
+      "bytes": 91
+    }
+  ],
+  "manuallyReviewedScreenshots": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\reading-blog-320-morning-en.png",
+      "sha256": "466b1effe72cf541d87a31bd685c481bbc6b8da56fd0160c45045506a4e6b1e0",
+      "bytes": 218705
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\reading-projects-320-stellar-en.png",
+      "sha256": "ce7584f8218a3d8f488803e31af4e9fad9d952a4bf7fbc22e976963cda07f214",
+      "bytes": 114962
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\reading-blog-1440-nature-en.png",
+      "sha256": "195417f572bac107858602a4f3117dfaf74280775f4d7bb9a51cba7314534f92",
+      "bytes": 733089
+    }
+  ],
+  "limits": [
+    "Language-state continuity is isolated from existing outside-pointer dismissal.",
+    "The initial 40px measurement was the 320px English article missing return; final matrix covers both detail families.",
+    "Reviewed screenshots show reading guide and body views, not every header, image action or missing state.",
+    "Publication text, authored content, shared project category/status, home and other public pages remain for later phases.",
+    "The early static-checks.json build/performance results are intermediate versions; final logs are identified separately."
+  ],
+  "productionActions": [],
+  "cleanup": {
+    "deletedFiles": [],
+    "preserved": [
+      "existing nine untracked records",
+      "historical worktrees",
+      "original preview service",
+      "owned 5190 preview for continuation",
+      "verification evidence"
+    ]
+  },
+  "delivery": {
+    "workCommit": null,
+    "archivedTask": null,
+    "parentReturn": null
+  }
+}

@@ -30,7 +30,8 @@
     "09-08-stage-4-blog-filter-contrast",
     "09-08-stage-6-pr-quality-workflow",
     "09-08-stage-4-public-language-shell",
-    "09-09-stage-4-catalog-language"
+    "09-09-stage-4-catalog-language",
+    "09-09-stage-4-detail-reading-language"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -39,11 +40,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 13,
-      "activeChild": null,
+      "activeChild": "09-09-stage-4-detail-reading-language",
       "lastCompletedChild": "09-09-stage-4-catalog-language",
-      "nextAction": "Assess and bound the next public reading interface language task using BlogPostPage, ProjectDetailPage and DetailReadingGuide. Preserve authored content, publication projections, stable section IDs and reading restoration; finish archive bookkeeping before starting a child.",
+      "nextAction": "Deliver the verified detail reading language child: full UI passed 46/0 with unchanged source/build hashes, focused language and smoke passed. Record evidence, commit the exact whitelist locally, archive only the child and actually start the parent before assessing the next public interface scope.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

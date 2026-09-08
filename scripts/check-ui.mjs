@@ -298,8 +298,7 @@ async function gotoApp(page, path, options = {}) {
     await page
       .waitForFunction(
         () => {
-          const title = document.querySelector('h1, .hero-title-main')?.textContent?.trim() ?? ''
-          return title.length > 0 && title !== '文章载入中'
+          return Boolean(document.querySelector('.blog-post-page [data-reading-heading], .detail-missing [data-reading-heading]'))
         },
         null,
         { timeout: 15_000 },

@@ -1,6 +1,9 @@
 import { BookOpen, Check, ChevronDown } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
+import { detailCopy } from '../data/detailCopy'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS, type SiteLanguage } from '../utils/siteLanguage'
 import {
   announceMobileSurfaceLayout,
   announceMobileSurfaceOpen,
@@ -12,18 +15,23 @@ import {
 export interface DetailReadingItem {
   id: string
   label: string
+  language?: SiteLanguage
 }
 
 interface DetailReadingGuideProps {
   items: DetailReadingItem[]
   label?: string
+  itemsLanguage?: SiteLanguage
 }
 
 function clampProgress(value: number) {
   return Math.min(100, Math.max(0, Math.round(value)))
 }
 
-export function DetailReadingGuide({ items, label = '阅读导航' }: DetailReadingGuideProps) {
+export function DetailReadingGuide({ items, label, itemsLanguage = 'zh' }: DetailReadingGuideProps) {
+  const language = useSiteLanguage()
+  const copy = detailCopy[language].reading
+  const guideLabel = label ?? copy.navigation
   const rootRef = useRef<HTMLElement | null>(null)
   const toggleRef = useRef<HTMLButtonElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -147,7 +155,8 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
     <aside
       ref={rootRef}
       className={`detail-reading-guide ${isOpen ? 'is-open' : ''} ${isAutoHidden ? 'is-auto-hidden' : ''}`}
-      aria-label={label}
+      lang={SITE_LANGUAGE_TAGS[language]}
+      aria-label={guideLabel}
       data-active-section={activeItem?.id ?? ''}
     >
       <div className="detail-reading-guide__shell">
@@ -165,8 +174,8 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
         >
           <BookOpen size={18} aria-hidden />
           <span className="detail-reading-guide__copy">
-            <span className="detail-reading-guide__eyebrow">{label}</span>
-            <span className="detail-reading-guide__current">{activeItem?.label}</span>
+            <span className="detail-reading-guide__eyebrow">{guideLabel}</span>
+            <span className="detail-reading-guide__current" lang={SITE_LANGUAGE_TAGS[activeItem?.language ?? itemsLanguage]}>{activeItem?.label}</span>
           </span>
           <span className="detail-reading-guide__percent">{progress}%</span>
           <ChevronDown className="detail-reading-guide__chevron" size={18} aria-hidden />
@@ -175,7 +184,7 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
         <div
           className="detail-reading-guide__progress"
           role="progressbar"
-          aria-label="全文阅读进度"
+          aria-label={copy.progress}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={progress}
@@ -186,12 +195,12 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
         <nav
           id="detail-reading-outline"
           className="detail-reading-guide__outline"
-          aria-label="本文目录"
+          aria-label={copy.outline}
           hidden={!isOpen}
         >
           <div className="detail-reading-guide__outline-head">
-            <strong>本文目录</strong>
-            <span>{items.length} 个章节</span>
+            <strong>{copy.outline}</strong>
+            <span>{copy.sectionCount(items.length)}</span>
           </div>
           <ol>
             {items.map((item, index) => {
@@ -205,7 +214,7 @@ export function DetailReadingGuide({ items, label = '阅读导航' }: DetailRead
                     onClick={(event) => handleNavigate(event, item.id)}
                   >
                     <span className="detail-reading-guide__index">{String(index + 1).padStart(2, '0')}</span>
-                    <span>{item.label}</span>
+                    <span lang={SITE_LANGUAGE_TAGS[item.language ?? itemsLanguage]}>{item.label}</span>
                     {isActive && <Check size={15} aria-hidden />}
                   </a>
                 </li>
