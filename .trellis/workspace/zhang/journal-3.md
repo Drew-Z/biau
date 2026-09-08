@@ -306,3 +306,37 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 按公共界面先行决定继续目录、详情及其他公共控件，随后独立评估内容翻译。
+
+
+## Session 114: 接续路线图：目录公共界面双语交付
+
+**Date**: 2026-09-09
+**Task**: 接续路线图：目录公共界面双语交付
+**Branch**: `main`
+
+### Summary
+
+第 12 轮完成知识库与项目目录公共控件双语、原内容语言标记和移动分页 44px 同行布局。最终完整 UI 实跑 46 组零失败、smoke 21 组、语言专项 12+24+12+5+1、栏目 12 组/1152 对比度样本及 lint/build/目录合同/analytics/registry/performance 通过。精确白名单提交 d215071e，归档仅本子任务并实际返回父任务，第 13 轮评估详情公共阅读界面。正文/SEO 与共享 publication 文案仍待后续处理；未 push、部署、签名、调用真实模型、发布内容或重建 heartbeat。原有未跟踪资料和 worktree 保留；本轮未删除文件，Temp 验收证据及自有 preview 留作复核。父路线图继续。
+
+### Main Changes
+
+- 共享语言接入两类目录的检索、分组、计数、空态和卡片操作；原内容与 publication 投影保持。
+- 修正移动分页 42px 目标及 320px 英文换行，沉淀规范与回归证据。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d215071e` | feat(i18n): localize catalog controls and mobile pagination |
+
+### Testing
+
+- [OK] 最终完整 UI 46/0、smoke 21/0、语言专项 12+24+12+5+1、栏目 12 组/1152 对比度样本、lint/build/目录合同/analytics/registry/performance 全部通过，恢复后源码及构建哈希未变。
+
+### Status
+
+[OK] **第 12 轮子任务已完成并归档；父路线图继续。**
+
+### Next Steps
+
+- 第 13 轮评估详情公共阅读界面，收敛文件与验证边界后继续实施。
