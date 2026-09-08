@@ -1,0 +1,141 @@
+{
+  "status": "verified",
+  "baselineHead": "cdc97640fb908b7922fe038c8f612f3b091a624a",
+  "previewOrigin": "http://127.0.0.1:5184",
+  "build": {
+    "entry": "/assets/index-C16oVPxo.js",
+    "bytes": 295681,
+    "sha256": "adf399bc579f4fe65ecef17c48dcd860c6de1a7cce1101bfd35ea1aee9bcaaf2",
+    "servedMatchesDist": true,
+    "htmlSha256": "952952abc6d78ddf2833520ac008dc571bca9cb007b37c64ddf8abd2285e0067"
+  },
+  "sha256": {
+    "src/data/assistant.ts": "74a7a204a5aca5c737749eaf1ce285671d0e8d23ace5d975044d2c4489b6c81a",
+    "src/data/projectPublication.ts": "a05a5e20f9c39ae8ab0f238a9176959efdfcf9c70a08908c500615e2b28a327a",
+    "scripts/check-assistant-knowledge-v2.ts": "fb2d4e73ec9eab4e71c1d517143218e3f38262d981ffc1c95b3054f7562223b7",
+    "scripts/check-product-registry.ts": "45e57b2e87be287c6dcf51a4e3c386318721a511990ed94b39f81c0594ab5fd5",
+    "scripts/check-public-route-recovery-ui.mjs": "cfa2b3b8de594c634e6d09bd3ef5ee8e2f676ff17f166dca85c7ac8287a42187",
+    "scripts/check-ui.mjs": "a870ba696a20c00ce117ba75a180df9d662f77e293d68ff703b39280fc5c6b4c",
+    "package.json": "ed27f9d75b35543c94e273ae442404819b2b72cc42a6183b70919bb1cf4e365c",
+    ".trellis/spec/frontend/type-safety.md": "ca2e71a6503fc5a9792910cc3f5eb9dcac208d7d6da340efc167c00e97dd6b03",
+    "public/status/blog-semi-synthetic.json": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909",
+    "server/data/public-knowledge.json": "a44cd7114460d56ca26d700fbff0cfca2a703f6b4e85063042b38a612aa30ad4",
+    "server/data/public-knowledge-v2.json": "7d95fc0ce0ae092802ab232dbfb65029fef95805ac25074ccd484c6e04b8be46",
+    "public/sitemap.xml": "56e63515a42ff63cf8b0a842570272bf0e2ae696b0b35e7ea3a8c58f7a43bcfe",
+    "package-lock.json": "b96c8c5c5357947654f47dba1f568495ed75b29d6355dee321f4714fde420809"
+  },
+  "checks": {
+    "assistantKnowledge": {
+      "exitCode": 0,
+      "documents": 31,
+      "chunks": 61,
+      "entities": 166,
+      "relations": 231,
+      "routeCases": 26,
+      "log": "route-recovery-assistant.log"
+    },
+    "registry": {
+      "exitCode": 0,
+      "identities": 12,
+      "publications": 9,
+      "log": "route-recovery-registry.log"
+    },
+    "assistantEval": {
+      "exitCode": 0,
+      "passed": 17,
+      "total": 17,
+      "modelCalls": 0,
+      "log": "route-recovery-eval.log"
+    },
+    "statusContract": {
+      "exitCode": 0,
+      "projects": 8,
+      "externalTargets": 7,
+      "checks": 33,
+      "log": "route-recovery-status.log"
+    },
+    "lint": {
+      "exitCode": 0,
+      "log": "route-recovery-lint-final-v2.log"
+    },
+    "build": {
+      "exitCode": 0,
+      "log": "route-recovery-build.log"
+    },
+    "performance": {
+      "exitCode": 0,
+      "entryCssBytes": 152358,
+      "routeCssBytes": 141623,
+      "entryJsBytes": 295681,
+      "log": "route-recovery-performance.log"
+    },
+    "smoke": {
+      "exitCode": 0,
+      "groups": 21,
+      "failed": 0,
+      "durationMs": 10816,
+      "log": "route-recovery-smoke.log"
+    },
+    "focusedUi": {
+      "exitCode": 0,
+      "matrixGroups": 48,
+      "encodedGroups": 4,
+      "statusGroups": 18,
+      "modelCalls": 0,
+      "log": "route-recovery-ui-final-v2.log"
+    },
+    "fullUi": {
+      "exitCode": 0,
+      "groups": 45,
+      "failed": 0,
+      "durationMs": 1156319,
+      "log": "route-recovery-check-ui-final.log"
+    }
+  },
+  "negativeBaselines": [
+    {
+      "log": "route-recovery-assistant-negative.log",
+      "exitCode": 1,
+      "reason": "URIError from native decode"
+    },
+    {
+      "log": "route-recovery-registry-negative.log",
+      "exitCode": 1,
+      "reason": "pet-workspace status route does not exist"
+    },
+    {
+      "log": "route-recovery-ui-negative.log",
+      "exitCode": 1,
+      "reason": "mounted assistant malformed route clears the page"
+    }
+  ],
+  "intermediateChecks": [
+    {
+      "log": "route-recovery-ui.log",
+      "outcome": "failed-checker-title-pattern"
+    },
+    {
+      "log": "route-recovery-ui-final.log",
+      "outcome": "failed-checker-matched-catalog-h3-before-navigation"
+    },
+    {
+      "log": "route-recovery-lint-final.log",
+      "outcome": "exit-result-unavailable-after-interruption; superseded-by-final-v2"
+    },
+    {
+      "log": "route-recovery-heading-diagnostic.log",
+      "exitCode": 0,
+      "outcome": "catalog-h3-and-detail-h1-distinguished; detail-suggestions-correct"
+    }
+  ],
+  "artifactDirectory": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-discovery-20260908-4f78e2a8f7f64b4799ddd9b9e3b8da57",
+  "screenshotsReviewed": [
+    "route-recovery-blog-320-morning-closed.png",
+    "route-recovery-projects-1440-stellar-closed.png"
+  ],
+  "limitations": [
+    "Chromium only",
+    "Local API fixtures, no production or live-model validation",
+    "Direct malformed-request diagnostic did not record HTTP status or body; no confirmed middleware attribution"
+  ]
+}

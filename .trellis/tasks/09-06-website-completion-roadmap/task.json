@@ -23,7 +23,8 @@
     "09-08-stage-2-blog-discovery-state",
     "09-08-stage-2-project-discovery-state",
     "09-08-stage-2-reading-navigation",
-    "09-08-stage-3-content-evidence-audit"
+    "09-08-stage-3-content-evidence-audit",
+    "09-08-stage-3-public-route-recovery"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -32,15 +33,16 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 6,
-      "activeChild": null,
+      "activeChild": "09-08-stage-3-public-route-recovery",
       "lastCompletedChild": "09-08-stage-3-content-evidence-audit",
-      "nextAction": "Audit c308d09b is archived and parent reactivated. Define a bounded public route recovery child: prevent malformed-path assistant crashes, correct the existing Pet status reference, and verify route contracts without publishing content.",
+      "nextAction": "All route recovery checks passed, including 70 focused scenarios and 45 full UI groups. Review the exact staged whitelist, commit locally, archive this child, return to parent and assess Stage 4 language/inclusive interaction.",
       "ownerThreadId": "01a07cf9-7ffa-7843-a3f6-c20b39aa224b",
       "automationId": "automation",
       "cadenceMinutes": 15,
-      "authorizationDate": "2026-09-08"
+      "authorizationDate": "2026-09-08",
+      "lastHeartbeatObservedAt": "2026-09-08T04:59:41.041Z"
     }
   }
 }

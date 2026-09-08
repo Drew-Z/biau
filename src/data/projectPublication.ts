@@ -105,7 +105,7 @@ export const projectPublications = {
     availability: 'online',
     access: 'public',
     owner: 'Pet workspace',
-    statusHref: '/status/pet-workspace',
+    statusHref: '/status/pet-gamer',
     externalHref: PET_APP_SHOWCASE_URL,
     evidenceLabel: '2026-07-09 synthetic 验证展示页与 4/4 截图；APK 下载仍独立受 gate 约束',
     verifiedAt: '2026-07-09T02:23:53.694Z',

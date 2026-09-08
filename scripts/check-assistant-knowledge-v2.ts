@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import {
+  getPublicAssistantSuggestions,
   publicKnowledgeBase,
   publicKnowledgeV2,
   searchAssistantKnowledge,
@@ -113,6 +114,44 @@ function assertDocumentsArePublic(knowledge: PublicKnowledgeV2) {
   }
 }
 
+function assertRouteSuggestions() {
+  const cases: Array<[string, string]> = [
+    ['/', 'demo-ready-projects'],
+    ['/unknown', 'demo-ready-projects'],
+    ['/projects/', 'projects-1'],
+    ['/blog/', 'blog-1'],
+    ['/status/legal-rag', 'status-1'],
+    ['/ai-daily/example', 'ai-daily-1'],
+    ['/projects/legal-rag', 'project-legal-rag-1'],
+    ['/projects/%6cegal-rag/', 'project-legal-rag-1'],
+    ['/blog/legal-rag-review', 'blog-legal-rag-review-1'],
+    ['/blog/%6cegal-rag-review/', 'blog-legal-rag-review-1'],
+    ['/projects/missing-project', 'demo-ready-projects'],
+    ['/blog/missing-post', 'demo-ready-projects'],
+    ['/projects/%256cegal-rag', 'demo-ready-projects'],
+    ['/blog/%256cegal-rag-review', 'demo-ready-projects'],
+    ['/projects/legal-rag%2F', 'demo-ready-projects'],
+    ['/blog/legal-rag-review%2F', 'demo-ready-projects'],
+    ['/projects/%E6%9C%AA%E7%9F%A5', 'demo-ready-projects'],
+    ['/blog/%E6%9C%AA%E7%9F%A5', 'demo-ready-projects'],
+    ['/projects/%', 'demo-ready-projects'],
+    ['/blog/%', 'demo-ready-projects'],
+    ['/projects/%E0%A4%A', 'demo-ready-projects'],
+    ['/blog/%E0%A4%A', 'demo-ready-projects'],
+    ['/projects/%ED%A0%80', 'demo-ready-projects'],
+    ['/blog/%F0%28%8C%28', 'demo-ready-projects'],
+    ['/projects/%GG', 'demo-ready-projects'],
+    ['/blog/%C0%AF', 'demo-ready-projects'],
+  ]
+  for (const [pathname, firstId] of cases) {
+    const suggestions = getPublicAssistantSuggestions(pathname)
+    assert(suggestions.length === 3, `${pathname}: expected three route suggestions`)
+    assert(suggestions[0]?.id === firstId, `${pathname}: expected ${firstId}, got ${suggestions[0]?.id}`)
+    assert(suggestions.every((suggestion) => suggestion.label.trim() && suggestion.prompt.trim()), `${pathname}: empty suggestion`)
+  }
+  return cases.length
+}
+
 const generated = readGeneratedKnowledge()
 assertGeneratedIsFresh(generated)
 assertDocumentsArePublic(publicKnowledgeV2)
@@ -124,7 +163,8 @@ expectCitation('这个站点的可靠性状态怎么看？', 'site:status')
 assertDemoQuery()
 assertTechQuery()
 assertNoSensitiveValues(publicKnowledgeV2)
+const routeSuggestionCases = assertRouteSuggestions()
 
 console.log(
-  `Assistant knowledge V2 check passed (${publicKnowledgeV2.public_documents.length} docs, ${publicKnowledgeV2.knowledge_chunks.length} chunks, ${publicKnowledgeV2.entities.length} entities, ${publicKnowledgeV2.relations.length} relations)`,
+  `Assistant knowledge V2 check passed (${publicKnowledgeV2.public_documents.length} docs, ${publicKnowledgeV2.knowledge_chunks.length} chunks, ${publicKnowledgeV2.entities.length} entities, ${publicKnowledgeV2.relations.length} relations; ${routeSuggestionCases} route suggestion cases)`,
 )

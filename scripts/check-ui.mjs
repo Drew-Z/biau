@@ -5,6 +5,7 @@ import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 import { checkBlogDiscoveryNavigation } from './check-blog-discovery-ui.mjs'
 import { checkProjectDiscoveryNavigation } from './check-project-discovery-ui.mjs'
 import { checkReadingNavigation } from './check-reading-navigation-ui.mjs'
+import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
 import {
   findReliabilityProjectForTarget,
   reliabilityProjects as staticReliabilityProjects,
@@ -1811,6 +1812,11 @@ try {
   progress.start('reading-navigation', 'catalog entry position and focus, detail history, fragments and loading')
   await checkReadingNavigation(browser, base)
   finishProgressGroup(readingNavigationFailures)
+
+  const publicRouteRecoveryFailures = failures.length
+  progress.start('public-route-recovery', 'malformed detail paths, assistant recovery and published status references')
+  await checkPublicRouteRecovery(browser, base)
+  finishProgressGroup(publicRouteRecoveryFailures)
 
   for (const viewport of viewports) {
     for (const route of routes) {

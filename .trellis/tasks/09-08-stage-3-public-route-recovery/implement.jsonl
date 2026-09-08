@@ -1,0 +1,1 @@
+{"file":".trellis/spec/frontend/type-safety.md","reason":"Keep browser path decoding at one narrow boundary without weakening typed public data."}

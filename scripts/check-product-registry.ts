@@ -18,6 +18,7 @@ import { reliabilityProjects } from '../src/data/statusTargets'
 
 const issues: string[] = []
 const forbiddenPublicReferences = ['duoduo-original', 'aicoding-cookbook']
+const statusPaths = new Set(['/status', ...reliabilityProjects.map((project) => `/status/${project.id}`)])
 
 function fail(message: string) {
   issues.push(message)
@@ -62,7 +63,9 @@ function checkPublication(publication: ProjectPublication) {
   }
   if (!productRegistry[publication.productId]) fail(`${publication.projectId}: productId is not registered`)
   if (!isNonEmpty(publication.owner)) fail(`${publication.projectId}: owner is missing`)
-  if (!publication.statusHref.startsWith('/status')) fail(`${publication.projectId}: statusHref must use the status route`)
+  if (!statusPaths.has(publication.statusHref)) {
+    fail(`${publication.projectId}: statusHref must reference the status overview or an existing reliability project`)
+  }
 
   const projection = getProjectCta(publication)
   const mustDisable =

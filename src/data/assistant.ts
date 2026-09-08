@@ -62,7 +62,8 @@ export function getPublicAssistantSuggestions(pathname: string): AssistantSugges
     ])
   }
   if (path.startsWith('/projects/')) {
-    const id = decodeURIComponent(path.slice('/projects/'.length))
+    const id = decodeRouteSegment(path.slice('/projects/'.length))
+    if (id === null) return publicAssistantSuggestions.slice(0, 3)
     const project = projects.find((item) => item.id === id)
     if (!project) return publicAssistantSuggestions.slice(0, 3)
     return createSuggestions(`project-${id}`, [
@@ -79,7 +80,8 @@ export function getPublicAssistantSuggestions(pathname: string): AssistantSugges
     ])
   }
   if (path.startsWith('/blog/')) {
-    const slug = decodeURIComponent(path.slice('/blog/'.length))
+    const slug = decodeRouteSegment(path.slice('/blog/'.length))
+    if (slug === null) return publicAssistantSuggestions.slice(0, 3)
     const post = getPublicBlogPostSummary(slug)
     if (!post) return publicAssistantSuggestions.slice(0, 3)
     return createSuggestions(`blog-${slug}`, [
@@ -103,6 +105,14 @@ export function getPublicAssistantSuggestions(pathname: string): AssistantSugges
     ])
   }
   return publicAssistantSuggestions.slice(0, 3)
+}
+
+function decodeRouteSegment(value: string): string | null {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return null
+  }
 }
 
 function createSuggestions(
