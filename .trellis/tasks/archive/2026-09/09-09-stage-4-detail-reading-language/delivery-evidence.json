@@ -311,6 +311,16 @@
       "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\ui-full-result.json",
       "sha256": "9cf35ed7e11566cf70e350f95e439f67178b542a5511d3a85d5fc775a5815eac",
       "bytes": 91
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\archive-task.log",
+      "sha256": "16f2bd71d02b45c5b365290d4f6be0d9a18d47dd4eafaa00e88c9c64914ae282",
+      "bytes": 139
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-language-20260909-9828749c\\parent-return.log",
+      "sha256": "350a8e79caa1637a8241c6b724263b9bc73e70347712836429f664201c179dbc",
+      "bytes": 222
     }
   ],
   "manuallyReviewedScreenshots": [
@@ -349,8 +359,13 @@
     ]
   },
   "delivery": {
-    "workCommit": null,
-    "archivedTask": null,
-    "parentReturn": null
+    "workCommit": "87b2e01cf5b87b369c09457e836aa9bcc1583e1e",
+    "archivedTask": ".trellis/tasks/archive/2026-09/09-09-stage-4-detail-reading-language",
+    "parentReturn": {
+      "command": "python ./.trellis/scripts/task.py start 09-06-website-completion-roadmap",
+      "exitCode": 0,
+      "source": "session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc",
+      "currentTask": ".trellis/tasks/09-06-website-completion-roadmap"
+    }
   }
 }

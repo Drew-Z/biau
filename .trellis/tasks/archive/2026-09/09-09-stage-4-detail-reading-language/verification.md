@@ -42,3 +42,5 @@
 证据保留于 `C:/Users/zhang/AppData/Local/Temp/blog-semi-reading-language-20260909-9828749c`，日志及代表截图 hash 随 `delivery-evidence.json` 保存。保护文件 `public/status/blog-semi-synthetic.json` 始终为 `d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909`。
 
 没有 push、部署、签名、真实模型调用、内容发布、Feed/Cron 或自动化修改。保留原有九项未跟踪记录、历史 worktree 与原服务；本轮未创建一次性脚本、未删除文件，自有 preview 与证据供下一轮复核。按白名单本地提交后，仅归档本子任务并实际启动父任务；实际 commit 与回切记录随后补入交付证据。
+
+已完成：工作提交 `87b2e01cf5b87b369c09457e836aa9bcc1583e1e`，22 个精确白名单文件；`task.py archive 09-09-stage-4-detail-reading-language --no-commit` 后实际 `task.py start 09-06-website-completion-roadmap`。两条命令均 exit 0，会话指针已核对；日志为 `archive-task.log` 和 `parent-return.log`，实际结果已写入交付 JSON。父任务保持进行中并进入第 14 轮评估。
