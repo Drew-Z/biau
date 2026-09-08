@@ -1,0 +1,110 @@
+{
+  "audit": "blog-filter-selected-state-baseline",
+  "cases": 2,
+  "missingSemanticSelection": 2,
+  "results": [
+    {
+      "width": 721,
+      "query": "?column=knowledge",
+      "before": "- button \"全部 All Notes · 11 篇\"\n- button \"知识积累 Knowledge Notes · 4 篇\"\n- button \"项目总结 Project Notes · 6 篇\"\n- button \"资源分享 Resource Picks · 待首发\"\n- button \"AI 日报 AI Daily · 待首发\"\n- button \"构建手记 Build Log · 1 篇\"",
+      "after": "- button \"全部 All Notes · 11 篇\"\n- button \"知识积累 Knowledge Notes · 4 篇\"\n- button \"项目总结 Project Notes · 6 篇\"\n- button \"资源分享 Resource Picks · 待首发\"\n- button \"AI 日报 AI Daily · 待首发\"\n- button \"构建手记 Build Log · 1 篇\"",
+      "state": [
+        {
+          "text": "全部All Notes · 11 篇",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "知识积累Knowledge Notes · 4 篇",
+          "active": true,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "项目总结Project Notes · 6 篇",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "资源分享Resource Picks · 待首发",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "AI 日报AI Daily · 待首发",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "构建手记Build Log · 1 篇",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        }
+      ],
+      "errors": []
+    },
+    {
+      "width": 1440,
+      "query": "?column=knowledge",
+      "before": "- button \"全部 All Notes · 11 篇\"\n- button \"知识积累 Knowledge Notes · 4 篇\"\n- button \"项目总结 Project Notes · 6 篇\"\n- button \"资源分享 Resource Picks · 待首发\"\n- button \"AI 日报 AI Daily · 待首发\"\n- button \"构建手记 Build Log · 1 篇\"",
+      "after": "- button \"全部 All Notes · 11 篇\"\n- button \"知识积累 Knowledge Notes · 4 篇\"\n- button \"项目总结 Project Notes · 6 篇\"\n- button \"资源分享 Resource Picks · 待首发\"\n- button \"AI 日报 AI Daily · 待首发\"\n- button \"构建手记 Build Log · 1 篇\"",
+      "state": [
+        {
+          "text": "全部All Notes · 11 篇",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "知识积累Knowledge Notes · 4 篇",
+          "active": true,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "项目总结Project Notes · 6 篇",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "资源分享Resource Picks · 待首发",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "AI 日报AI Daily · 待首发",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        },
+        {
+          "text": "构建手记Build Log · 1 篇",
+          "active": false,
+          "ariaPressed": null,
+          "ariaSelected": null,
+          "role": null
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "modelCalls": 0
+}

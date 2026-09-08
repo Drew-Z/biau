@@ -1,0 +1,140 @@
+{
+  "audit": "language-interaction",
+  "base": "http://127.0.0.1:5184",
+  "groups": 6,
+  "pageErrors": [],
+  "apiRequests": [
+    {
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health"
+    },
+    {
+      "method": "GET",
+      "path": "/api/health"
+    }
+  ],
+  "results": [
+    {
+      "width": 1440,
+      "theme": "morning",
+      "route": "/blog",
+      "pageErrors": [],
+      "apiRequests": [],
+      "language": {
+        "beforeReload": {
+          "language": "en",
+          "heading": "项目集",
+          "focus": "A.nav-link-center active"
+        },
+        "afterReload": {
+          "language": "中",
+          "heading": "项目集",
+          "focus": "BODY",
+          "storedLanguage": null
+        },
+        "pageCopyAfterReload": "项目集 / 固定中文主体与页脚"
+      }
+    },
+    {
+      "width": 390,
+      "theme": "stellar",
+      "route": "/blog",
+      "pageErrors": [],
+      "apiRequests": [],
+      "language": {
+        "beforeReload": {
+          "language": "en",
+          "heading": "项目集",
+          "focus": "A.mobile-tab is-active"
+        },
+        "afterReload": {
+          "language": "中",
+          "heading": "项目集",
+          "focus": "BODY",
+          "storedLanguage": null
+        },
+        "pageCopyAfterReload": "项目集 / 固定中文主体与页脚"
+      }
+    },
+    {
+      "width": 390,
+      "theme": "stellar",
+      "route": "/blog",
+      "pageErrors": [],
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ],
+      "keyboard": {
+        "blogFilter": "select keyboard changed value",
+        "search": "keyboard focus and input accepted",
+        "cardEnter": "detail opened",
+        "guideEscape": "focus restored",
+        "guideDestination": {
+          "targetId": "blog-related-posts",
+          "activeTag": "BODY",
+          "activeId": "",
+          "targetContainsFocus": false,
+          "focusInsideHiddenOutline": false
+        }
+      }
+    },
+    {
+      "width": 320,
+      "theme": "morning",
+      "route": "/projects",
+      "pageErrors": [],
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ],
+      "keyboard": {
+        "projectGroupEnter": "fullstack group opened",
+        "projectCardEnter": "detail opened"
+      }
+    },
+    {
+      "width": 430,
+      "theme": "nature",
+      "route": "/status",
+      "pageErrors": [],
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ],
+      "keyboard": {
+        "statusSelectEnd": "last section selected"
+      }
+    },
+    {
+      "width": 390,
+      "theme": "stellar",
+      "route": "/blog",
+      "pageErrors": [],
+      "apiRequests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ],
+      "keyboard": {
+        "assistantEscape": "closed and trigger focus restored"
+      }
+    }
+  ],
+  "modelCalls": 0
+}

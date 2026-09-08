@@ -1,0 +1,199 @@
+{
+  "audit": "reading-guide-keyboard-focus-baseline",
+  "cases": 8,
+  "targetFocusMissing": 8,
+  "nextTabOutsideTarget": 0,
+  "modelCalls": 0,
+  "results": [
+    {
+      "width": 320,
+      "path": "/blog/legal-rag-review",
+      "destination": {
+        "targetId": "blog-related-posts",
+        "scrollY": 5809,
+        "targetTop": 91.984375,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "项目总结Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示Legal RAG 已经从 MVP 闭环推进到更接近可交付原型：项目空间、异步入库、pgvector、hybrid r",
+        "href": "/blog/legal-rag-production-upgrade-plan",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ]
+    },
+    {
+      "width": 320,
+      "path": "/projects/legal-rag",
+      "destination": {
+        "targetId": "project-related",
+        "scrollY": 8849,
+        "targetTop": 91.890625,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "AI 应用泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、",
+        "href": "/projects/chatus",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "path": "/blog/legal-rag-review",
+      "destination": {
+        "targetId": "blog-related-posts",
+        "scrollY": 5107,
+        "targetTop": 92.046875,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "项目总结Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示Legal RAG 已经从 MVP 闭环推进到更接近可交付原型：项目空间、异步入库、pgvector、hybrid r",
+        "href": "/blog/legal-rag-production-upgrade-plan",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ]
+    },
+    {
+      "width": 390,
+      "path": "/projects/legal-rag",
+      "destination": {
+        "targetId": "project-related",
+        "scrollY": 8059,
+        "targetTop": 92.359375,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "AI 应用泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、",
+        "href": "/projects/chatus",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ]
+    },
+    {
+      "width": 430,
+      "path": "/blog/legal-rag-review",
+      "destination": {
+        "targetId": "blog-related-posts",
+        "scrollY": 4788,
+        "targetTop": 92.421875,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "项目总结Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示Legal RAG 已经从 MVP 闭环推进到更接近可交付原型：项目空间、异步入库、pgvector、hybrid r",
+        "href": "/blog/legal-rag-production-upgrade-plan",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ]
+    },
+    {
+      "width": 430,
+      "path": "/projects/legal-rag",
+      "destination": {
+        "targetId": "project-related",
+        "scrollY": 7785,
+        "targetTop": 92.34375,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "AI 应用泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、",
+        "href": "/projects/chatus",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": [
+        {
+          "method": "GET",
+          "path": "/api/health"
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "path": "/blog/legal-rag-review",
+      "destination": {
+        "targetId": "blog-related-posts",
+        "scrollY": 4548,
+        "targetTop": 98.703125,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "项目总结Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示Legal RAG 已经从 MVP 闭环推进到更接近可交付原型：项目空间、异步入库、pgvector、hybrid r",
+        "href": "/blog/legal-rag-production-upgrade-plan",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": []
+    },
+    {
+      "width": 1440,
+      "path": "/projects/legal-rag",
+      "destination": {
+        "targetId": "project-related",
+        "scrollY": 6083,
+        "targetTop": 98.078125,
+        "activeTag": "BODY",
+        "activeId": "",
+        "containsFocus": false
+      },
+      "nextTab": {
+        "tag": "A",
+        "text": "AI 应用泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、",
+        "href": "/projects/chatus",
+        "inTarget": true
+      },
+      "errors": [],
+      "requests": []
+    }
+  ]
+}

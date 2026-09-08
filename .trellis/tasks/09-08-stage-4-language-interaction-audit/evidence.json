@@ -1,0 +1,87 @@
+{
+  "audit": "stage-4-language-interaction",
+  "verifiedAt": "2026-09-08T06:06:55.708Z",
+  "baselineHead": "f7fc6ab40149c10f3dfd9817e70b1721f2032641",
+  "artifactDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-discovery-20260908-4f78e2a8f7f64b4799ddd9b9e3b8da57",
+  "sourceHashes": {
+    "src/App.tsx": "c6dbc165c103d1a12f0c4b0318ca11a9dc66f09b0edbfd2aab65e47d984d5f99",
+    "src/components/Navigation.tsx": "57a0bceec69854afdca3fdb5f7f085d79aa7325665ab875297ae9d5a48c9f863",
+    "src/components/BlogColumnFilter.tsx": "1eeacf7d6c54f8d722d7de2ab446d99b4175260c7a8c65e71dd101edb21907fc",
+    "src/components/DetailReadingGuide.tsx": "fc0ad249e297852c63e28d63289a7c8d78f170f1a6f6763923b741eec8b4db11",
+    "src/components/PublicAssistantWidget.tsx": "29b970ad02f6036faecff65a2153133e4e83a668e9921e1ad8818733df023b2a",
+    "src/components/SiteFooter.tsx": "6ce68ab75f611f00f1a41bc2e003cc215acf68dfd802b53cdd6f57715c6630d1",
+    "src/utils/appearance.ts": "bb7185256e8fb828b92a2982156da05e3f13293851864ce4163e802ee50bd2fa",
+    "index.html": "03549466080311b3420847c2b32225478979e2930bd9e805bfaba57366e3fdb1",
+    "public/status/blog-semi-synthetic.json": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+  },
+  "sourceUnchanged": true,
+  "checks": {
+    "interactions": {
+      "exitCode": 0,
+      "groups": 6,
+      "log": "language-interaction-audit-final.log"
+    },
+    "guideFocus": {
+      "exitCode": 0,
+      "cases": 8,
+      "missingTargetFocus": 8,
+      "nextTabInTarget": 8,
+      "log": "reading-guide-focus-baseline.log"
+    },
+    "filterSemanticSelection": {
+      "exitCode": 0,
+      "cases": 2,
+      "missingSelection": 2,
+      "log": "blog-filter-accessibility-baseline.log"
+    },
+    "taskValidate": {
+      "exitCode": 0
+    },
+    "diffCheck": {
+      "exitCode": 0
+    }
+  },
+  "reusedChecks": {
+    "reason": "Documentation-only audit; business sources are unchanged since verified route recovery delivery.",
+    "fullUi": {
+      "groups": 45,
+      "failed": 0,
+      "durationMs": 1156319,
+      "log": "route-recovery-check-ui-final.log"
+    },
+    "lint": "route-recovery-lint-final-v2.log",
+    "build": "route-recovery-build.log",
+    "smoke": "route-recovery-smoke.log"
+  },
+  "candidates": [
+    {
+      "id": "blog-filter-selected-state",
+      "priority": "P2",
+      "decision": "ready-for-local-fix",
+      "reason": "Visual active state has no accessible pressed/selected state at both desktop widths."
+    },
+    {
+      "id": "site-language-coverage",
+      "priority": "P2",
+      "decision": "needs-product-scope",
+      "reason": "Navigation-only translation with refresh reset; public copy/translation scope is not authorized."
+    },
+    {
+      "id": "reading-guide-focus",
+      "priority": "P3",
+      "decision": "record-only",
+      "reason": "Focus returns to BODY but next Tab reaches the target in all eight cases; no proven keyboard navigation failure."
+    }
+  ],
+  "screenshotsReviewed": [
+    "blog-filter-accessibility-baseline.png",
+    "reading-guide-focus-blog-baseline.png"
+  ],
+  "limitations": [
+    "Chromium only",
+    "No screen-reader execution",
+    "No production or live-model checks",
+    "Real blog data has one page; no claimed browser multi-page coverage"
+  ],
+  "modelCalls": 0
+}
