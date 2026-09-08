@@ -5,8 +5,8 @@
 - [x] 激活子任务，编写浏览器检查，在旧 build 上保存负向结果。
 - [x] 实现有上限的阅读 hook、稳定入口标识及各页面接入，不改 CSS/公开内容。
 - [x] 运行专项和边界用例，修复后运行 lint/build、URL 合同、analytics、performance、smoke 与完整 UI。
-- [ ] 主会话核对截图、源码/快照哈希和差异，更新规范与验收，精确提交并归档。
-- [ ] 实际返回父任务重新评估后续候选。
+- [x] 主会话核对截图、源码/快照哈希和差异，更新规范与验收，精确提交 `37f93b5b` 并归档。
+- [x] 实际调用 `task.py start 09-06-website-completion-roadmap` 返回父任务重新评估后续候选。
 
 命令：`npm.cmd run reading:navigation-ui`（本地 preview 5184）、`npm.cmd run blog:discovery-check`、`npm.cmd run projects:discovery-check`、`npm.cmd run analytics:check`、`npm.cmd run lint`、`npm.cmd run build`、`npm.cmd run performance:check`、`npm.cmd run check:ui:smoke`、`npm.cmd run check:ui`、`git diff --check`。
 
@@ -22,4 +22,4 @@
 - 范围核验复现从 Status 后退会错误恢复旧文章入口（期望 y=0，实际 y=1983）；已把 POP 恢复限定为直接来自详情，追加独立回归。
 - 只读探子未返回可用结论，已中断；主会话自行核对卡片调用点、CSS、路由与检查覆盖。两卡片仅由各自目录调用。
 
-当前恢复点：最终 lint/build、48+4+22 组阅读专项、URL 合同、analytics、performance、21 组 smoke 及完整 UI 44 组全部通过。完整 UI 为 931080ms、0 失败，已实际取得 exit 0。13 个源码/检查器/规范/保护快照和入口哈希保持一致；主会话已复核三张代表性返回截图。下一步精确提交、归档并返回父任务，完整结果见 `verification.md`。
+交付结果：最终 lint/build、48+4+22 组阅读专项、URL 合同、analytics、performance、21 组 smoke 及完整 UI 44 组全部通过。完整 UI 为 931080ms、0 失败，已实际取得 exit 0。13 个源码/检查器/规范/保护快照和入口哈希保持一致；主会话已复核三张代表性返回截图。22 个文件已本地提交 `37f93b5b1cafef60df54dfa97663e671ec8a1b48`，子任务已归档并实际返回父任务。完整结果见 `verification.md`。证据与共用 preview 留给后续评估复用，没有新建一次性诊断 runner；其他来源资料保持原状。
