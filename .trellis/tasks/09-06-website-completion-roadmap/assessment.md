@@ -202,3 +202,9 @@
 - SEO 结果：`SeoManager` 只按 pathname 更新 metadata；`src/utils/seo.ts` 的静态、项目和博客 title/description 使用中文固定或 authored 源，canonical/Open Graph/Twitter URL 保持稳定；`index.html` 与 `sitemap.xml` 只有中文默认/单一 URL 体系，没有既定 `hreflang` 或 locale 路由合同。
 - 验收：`blog:check`、`project-details:check`、`project-registry:check`、公开助手 API/会话/browser-state、`ai-daily:public-payload-check`、`analytics:check` 均 exit 0；审计资料已提交 `d8602279`，子任务已归档并实际回切父任务。
 - 决策结论：下一步不能直接翻译 authored 内容或重写 SEO。必须先决定字段范围、译文来源/审核责任、原文与译文 URL/canonical/hreflang 策略，以及助手/AI Daily approved payload 是否允许翻译。父路线图回到第 21 轮 assess，保留本地-only 和生产门禁边界。
+
+## 轮次 22：暂缓 authored 与 SEO 翻译
+
+- 用户决定：翻译范围暂时保持现状。保留已交付的公共界面中英文，不启动项目/博客 authored 内容、助手回答/引用、AI Daily payload 或 SEO metadata 的翻译实现。
+- 路线图状态：没有待执行的翻译子任务，父任务进入 `waiting`；不修改 heartbeat，不改公开数据、canonical/sitemap、生产版次、Feed/Cron 或保护状态快照。
+- 恢复条件：用户明确开启内容翻译或提出其他独立的项目理解/内容发现问题后，再从当前工作区和已归档审计证据重新评估。

@@ -594,3 +594,39 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - None - task complete
+
+
+## Session 122: 翻译范围暂缓与路线图等待
+
+**Date**: 2026-09-10
+**Task**: 翻译范围暂缓与路线图等待
+**Branch**: `main`
+
+### Summary
+
+用户确认翻译暂时保持现状，父路线图进入 waiting。
+
+### Main Changes
+
+记录用户对翻译范围的明确决定：现有公共界面双语成果保持不变，项目/博客 authored 内容、SEO metadata、公开助手回答与引用、AI Daily approved payload 暂不翻译。
+
+- 父路线图 `09-06-website-completion-roadmap` 更新为第 22 轮 `waiting`，无活动子任务，最后完成子任务为 `09-10-stage-5-authored-content-seo-language-audit`。
+- 不创建 authored 内容或 SEO 翻译实现子任务，不修改业务源码、公开数据、生产流程、heartbeat 或保护状态文件。
+- 后续仅在用户明确开启内容翻译，或提出其他独立的网站理解/内容发现问题时恢复路线图。
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] 待执行任务指针、路线图 JSON 状态、Trellis 归档门禁、Git diff 和保护文件 SHA-256 校验。
+- [OK] 本轮没有新增业务代码，因此沿用前序公共界面语言交付与 authored/SEO 审计的既有验证结果。
+
+### Status
+
+[OK] 第 22 轮决定已记录；父路线图保持 waiting。未 push、deploy、sign、publish，未调用真实模型，未启用 Feed/Cron，未修改 heartbeat 或保护状态文件。
+
+### Next Steps
+
+- 等待用户未来明确的内容翻译决策，或等待其他独立的网站理解/内容发现问题。
