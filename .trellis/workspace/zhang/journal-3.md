@@ -447,3 +447,37 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 第 16 轮按项目理解与内容发现优先级，评估剩余首页、AI Daily 和助手公共界面；不重复请求常规继续许可，保留生产与公开发布门禁。
+
+
+## Session 118: 首页公共界面语言交付与路线图回切
+
+**Date**: 2026-09-10
+**Task**: 首页公共界面语言交付与路线图回切
+**Branch**: `main`
+
+### Summary
+
+完成首页固定公共界面双语：新增 typed Home copy，保留 authored 中文语义、轮播/拖拽/键盘/项目投影合同；语言专项、smoke、完整 UI、阅读导航、性能和差异校验通过。归档首页子任务，父路线图进入第 18 轮 assess，下一候选为公开助手固定控件盘点。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `46a0a22a` | (see git log) |
+| `9477aa63` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
