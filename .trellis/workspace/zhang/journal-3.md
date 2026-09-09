@@ -666,3 +666,40 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 等待用户明确新的内容翻译范围或独立的网站问题；恢复时先重新核对工作区和既有审计证据。
+
+
+## Session 124: 项目理解与内容发现基线复核
+
+**Date**: 2026-09-10
+**Task**: 项目理解与内容发现基线复核
+**Branch**: `main`
+
+### Summary
+
+按规划完成项目理解与内容发现只读基线，未发现新缺口，路线图再次停止。
+
+### Main Changes
+
+按既定顺序恢复路线图并完成项目理解与内容发现只读基线；所有检查均使用现有本地 fixture 和预览，不修改业务代码、公开数据或生产流程。
+
+- 博客发现合同 8 组通过；项目发现合同 6 组通过。
+- 博客发现 UI 24 组视口/主题/语言、12 组栏目语义和 1152 个对比度样本通过；项目发现 UI 24 组视口/主题/语言和 2 组断点通过。
+- 阅读导航 48+4+22 组通过；公开路由恢复 48+4+18 组通过，`modelCalls=0`。
+- 没有新的独立本地缺口，父路线图再次保存为 `enabled=false`、`phase=stopped`，不创建空子任务。
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] `blog:discovery-check`、`projects:discovery-check`、`blog:discovery-ui`、`projects:discovery-ui`、`reading:navigation-ui` 和 `public-routes:ui` 全部通过。
+- [OK] 已核对预览响应、任务状态、工作区差异和历史未跟踪资料边界；公开路由检查 `modelCalls=0`。
+
+### Status
+
+[OK] 第 24 轮只读基线完成；没有新的可独立验收问题，路线图已再次停止。未 push、deploy、sign、publish，未调用真实模型，未启用 Feed/Cron，未修改 heartbeat 或保护状态文件。
+
+### Next Steps
+
+- 等待新的可复现网站问题或明确的内容翻译决策；恢复时先重新核对工作区和既有审计证据。

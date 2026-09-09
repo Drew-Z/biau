@@ -48,5 +48,6 @@
 - 第 21 轮 authored/SEO 审计已由 `d8602279` 本地交付并归档。审计确认项目 15 个、公开文章 11 篇、助手知识 31 条的 authored/payload 字段仍是原始语言；`SeoManager` 按 pathname 更新单一中文 metadata，canonical/Open Graph/Twitter 与 sitemap 仍是一套稳定 URL，没有已批准的 locale/hreflang 合同。下一实现前必须明确译文字段与审核责任、URL/canonical/hreflang 策略，以及助手/AI Daily approved payload 是否允许翻译；不据审计自动改公开内容、SEO、生产版次或 Feed/Cron。
 - 第 22 轮用户确认翻译暂时保持现状：已交付的公共界面双语继续保留，authored 内容、助手/AI Daily payload 和 SEO metadata 不启动翻译实现。父路线图等待新的明确范围或其他独立问题，不修改 heartbeat、公开数据、生产版次、Feed/Cron 或保护状态快照。
 - 第 23 轮用户确认暂停路线图：本地合同复核无新缺口，父任务已保存为 `enabled=false`、`phase=stopped`。不隐式重建或修改未确认持久化的 heartbeat；恢复时先重新评估新范围和工作区状态。
+- 第 24 轮按用户规划完成项目理解/内容发现只读基线：博客、项目、阅读导航和公开路由恢复合同及 UI 矩阵全部通过，没有新的独立本地缺口。父任务再次停止，不创建空子任务；恢复仍需新的可复现问题或明确翻译决策。
 - 公开内容发布、AI Daily 生产版次、Cloudflare/Render 变更与真实模型调用不在当前本地循环范围内。
 - 原 heartbeat 更新曾获工具接受，但原本地配置后来消失；当前未确认调度持久化，不隐式重建。
