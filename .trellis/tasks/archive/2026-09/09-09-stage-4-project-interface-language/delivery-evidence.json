@@ -766,6 +766,21 @@
       "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\verification-freeze.json",
       "bytes": 12698,
       "sha256": "1bfcf0c21d576a3c0f0ec7ef293ecbbc796a880103ecae1c7b9ddb23b9447a75"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\archive.log",
+      "bytes": 145,
+      "sha256": "b8f9fb5eefb36f99940667d85e1619f6138dc4b11f8371b781fbe4b5e39cbdcc"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\parent-return.log",
+      "bytes": 222,
+      "sha256": "350a8e79caa1637a8241c6b724263b9bc73e70347712836429f664201c179dbc"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\parent-current.log",
+      "bytes": 123,
+      "sha256": "d8a563f2016f756642785715204800497066af338d791f62f68a082e9d8d6d6e"
     }
   ],
   "screenshots": [
@@ -901,7 +916,14 @@
     "Public UI only; authored content, project-specific reasons and SEO remain original.",
     "Homepage outside the project panel, status, AI Daily and assistant pages are not fully localized.",
     "Screenshots cover representative first viewports; they do not claim every source link was manually inspected.",
-    "No push, deploy, signing, real model calls, content publication, Feed/Cron or automation changes.",
-    "Task is awaiting local commit and archive/actual parent return; no delivery action is claimed here."
-  ]
+    "No push, deploy, signing, real model calls, content publication, Feed/Cron or automation changes."
+  ],
+  "delivery": {
+    "workCommit": "75431775a3a079630f3e54c1cb3c9df63dfa0426",
+    "workFiles": 26,
+    "archive": ".trellis/tasks/archive/2026-09/09-09-stage-4-project-interface-language",
+    "parentStartExecuted": true,
+    "parentSource": "session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc",
+    "nextRound": 15
+  }
 }
