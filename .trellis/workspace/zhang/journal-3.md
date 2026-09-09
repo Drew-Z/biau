@@ -412,3 +412,38 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 第 15 轮从当前源码评估剩余公共界面语言，优先确认项目入口到状态页的连续阅读；作者内容与生产门禁保持独立范围。
+
+
+## Session 117: 状态公共界面双语交付
+
+**Date**: 2026-09-09
+**Task**: 状态公共界面双语交付
+**Branch**: `main`
+
+### Summary
+
+第15轮补齐状态总览、详情、分区目录、固定状态说明和格式化缺值的中英文；保留作者证据、状态判断、请求和导航生命周期。最终lint/build、五项合同和性能通过；语言12+24+12+5+1+24+4+2+60+36+4+3组、modelCalls 0，smoke 21/0，完整UI 46/0（1469358ms）。修正旧语言locator和Node/tsx fixture加载入口差异；34受检文件、49构建、9响应与11原有资料无漂移。仅归档本子任务并实际启动父任务，进入第16轮评估；未推送、部署、签名、发布或改自动化。
+
+### Main Changes
+
+- 状态总览/详情和六分区/六目录接入共享偏好；默认中文 formatter、状态 tone/code、原证据和请求/滚动生命周期保持。
+- 新状态浏览器模块接入 Node 语言入口和 tsx 完整 UI；局部修复旧 accessible name 定位和 TypeScript fixture 传递导入解析。
+- 精确工作提交 21 文件，只归档当前子任务并实际返回父任务；保留六个代表视口人工复核、完整日志及原有十一份资料。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `68b3e16222521a3a098062efb1de749ef046314f` | feat(i18n): localize status overview and detail interfaces |
+
+### Testing
+
+- [OK] lint/build、状态/registry/details/analytics/assistant 合同、performance、完整语言、smoke 21/0、完整 UI 46/0；34 受检文件、49 构建和 9 preview 响应无漂移，零真实模型调用。
+
+### Status
+
+[OK] 第 15 轮子任务已交付并归档；父路线图保持启用，当前实际指针已回到父任务。
+
+### Next Steps
+
+- 第 16 轮按项目理解与内容发现优先级，评估剩余首页、AI Daily 和助手公共界面；不重复请求常规继续许可，保留生产与公开发布门禁。
