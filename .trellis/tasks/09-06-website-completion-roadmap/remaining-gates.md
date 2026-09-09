@@ -45,5 +45,6 @@
 - 第 18 轮公开助手固定界面已由 `a9ed378b` 本地交付并归档：launcher、状态、模式、历史、分支、引用/证据外壳、修订、反馈、图片、输入和恢复控件跟随唯一 `SiteLanguage`；固定界面语言专项新增 12 组，`publicAssistantModelCalls=0`，smoke 21/0、完整 UI 46/0、lint/build/performance 通过，保护状态快照 hash 未变。回答正文、用户问题、建议问题、分支预览、历史标题、引用标题/摘要/URL、claim 和模型元数据仍保留 authored/payload 原始语言；这不代表公开助手内容或生产服务已经双语。
 - 下一轮重新评估公开助手剩余内容语言与其他公共界面候选。优先寻找不依赖 authored 翻译、引用标题、真实模型或生产状态的可复现本地缺口；助手内容事实、引用、模型调用、生产状态和公开发布继续走既有门禁。
 - 第 20 轮公共界面覆盖复核未发现新的本地缺口：首页、目录/详情、状态、AI Daily、404、公开助手以及共享导航/页脚的固定控件和语言标记均已有覆盖。`AppContent` 外层 `.app` 的 `lang="zh-CN"` 是未本地化 Studio/剩余页面的规范 fallback，公共页面根节点会覆盖它；Studio/Logo Lab 标签不属于公开范围。当前等待 authored 内容/SEO 翻译策略或独立生产批准，不创建空子任务，不修改 heartbeat 或保护状态快照。
+- 第 21 轮 authored/SEO 审计已由 `d8602279` 本地交付并归档。审计确认项目 15 个、公开文章 11 篇、助手知识 31 条的 authored/payload 字段仍是原始语言；`SeoManager` 按 pathname 更新单一中文 metadata，canonical/Open Graph/Twitter 与 sitemap 仍是一套稳定 URL，没有已批准的 locale/hreflang 合同。下一实现前必须明确译文字段与审核责任、URL/canonical/hreflang 策略，以及助手/AI Daily approved payload 是否允许翻译；不据审计自动改公开内容、SEO、生产版次或 Feed/Cron。
 - 公开内容发布、AI Daily 生产版次、Cloudflare/Render 变更与真实模型调用不在当前本地循环范围内。
 - 原 heartbeat 更新曾获工具接受，但原本地配置后来消失；当前未确认调度持久化，不隐式重建。

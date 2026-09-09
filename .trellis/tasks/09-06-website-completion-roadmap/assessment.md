@@ -194,3 +194,11 @@
 - 误报排除：`AppContent` 的最外层 `.app` 继续保留 `lang="zh-CN"`，这是 frontend state-management 规范为未本地化 Studio/剩余页面规定的 fallback；所有已本地化公共页面根节点会覆盖它。Studio/Logo Lab 的中文编辑器标签不属于公开路由范围，不能把它们当作公开界面缺口。
 - 结论：当前没有同时满足“公共路径、固定界面、已有本地证据、无需新产品决定”的下一项。剩余语言工作涉及 authored 内容/SEO 或引用/模型事实；另一条路线涉及 AI Daily 生产版次、公开发布、真实模型和 Feed/Cron。父任务进入 `waiting`，不创建空子任务，不修改 heartbeat 或保护状态快照。
 - 恢复条件：用户明确 authored 内容/SEO 的翻译策略，或单独批准相应生产门禁后，再重新评估并创建有边界的子任务；恢复时先核对新证据和当前工作区。
+
+## 轮次 21：Authored 内容与 SEO 双语范围审计交付
+
+- 选择依据：用户确认先推进 authored 内容与 SEO 范围决策，因此创建只读子任务 `09-10-stage-5-authored-content-seo-language-audit`；任务不翻译、不改公开数据、不调用模型或生产服务。
+- 审计结果：15 个项目、11 篇公开文章、4 条公开助手默认建议和 31 条公开知识项均完成字段级分类。项目/博客 authored 字段、AI Daily approved payload、助手回答/引用/claim/model metadata 与固定界面 copy 已明确分离。
+- SEO 结果：`SeoManager` 只按 pathname 更新 metadata；`src/utils/seo.ts` 的静态、项目和博客 title/description 使用中文固定或 authored 源，canonical/Open Graph/Twitter URL 保持稳定；`index.html` 与 `sitemap.xml` 只有中文默认/单一 URL 体系，没有既定 `hreflang` 或 locale 路由合同。
+- 验收：`blog:check`、`project-details:check`、`project-registry:check`、公开助手 API/会话/browser-state、`ai-daily:public-payload-check`、`analytics:check` 均 exit 0；审计资料已提交 `d8602279`，子任务已归档并实际回切父任务。
+- 决策结论：下一步不能直接翻译 authored 内容或重写 SEO。必须先决定字段范围、译文来源/审核责任、原文与译文 URL/canonical/hreflang 策略，以及助手/AI Daily approved payload 是否允许翻译。父路线图回到第 21 轮 assess，保留本地-only 和生产门禁边界。
