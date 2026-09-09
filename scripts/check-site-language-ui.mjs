@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url'
 import { chromium } from 'playwright'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 import { assertSiteLanguage, selectSiteLanguage } from './lib/ui-language.mjs'
+import { checkStatusInterfaceLanguage } from './check-status-language-ui.mjs'
 
 const languageKey = 'biau-port-language'
 const listPath = '/blog?column=project-notes&q=RAG'
@@ -382,7 +383,7 @@ export async function checkDetailReadingLanguage(browser, base) {
         })
         for (const language of ['en', 'zh']) {
           await selectSiteLanguage(page, language)
-          await checkReadingGuideCopy(page, language, { status: path.startsWith('/status'), authored: true })
+          await checkReadingGuideCopy(page, language, { status: path.startsWith('/status'), authored: path.startsWith('/ai-daily') })
         }
         legacyGuideGroups += 1
       }
@@ -622,7 +623,8 @@ export async function checkSiteLanguage(browser, base) {
   }
   const reading = await checkDetailReadingLanguage(browser, base)
   const projectInterface = await checkProjectInterfaceLanguage(browser, base)
-  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, ...projectInterface, modelCalls: 0 }
+  const statusInterface = await checkStatusInterfaceLanguage(browser, base)
+  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, ...projectInterface, ...statusInterface, modelCalls: 0 }
 }
 
 async function checkProjectInterfaceLayout(page) {

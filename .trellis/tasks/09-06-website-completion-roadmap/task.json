@@ -32,7 +32,8 @@
     "09-08-stage-4-public-language-shell",
     "09-09-stage-4-catalog-language",
     "09-09-stage-4-detail-reading-language",
-    "09-09-stage-4-project-interface-language"
+    "09-09-stage-4-project-interface-language",
+    "09-09-stage-4-status-interface-language"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -41,11 +42,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 15,
-      "activeChild": null,
+      "activeChild": "09-09-stage-4-status-interface-language",
       "lastCompletedChild": "09-09-stage-4-project-interface-language",
-      "nextAction": "Project interface language delivered locally as 75431775, archived alone, and actual parent return confirmed. Inspect the remaining public interface language boundaries and choose one evidence-backed, bounded child. Preserve authored content and all production restrictions; do not treat project UI delivery as full-site translation.",
+      "nextAction": "Status interface validation is complete: final lint, build/performance, five contracts, full language, smoke 21/0 and full UI 46/0. All 34 checked files, 49 build files, 9 preview responses and 11 unrelated files match the final freeze. Commit the exact local scope, archive only this child, actually start the parent, and assess the next authorized candidate.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

@@ -10,6 +10,8 @@ import {
   type ReliabilityStatusCounts,
   type SiteStatusTarget,
 } from './statusTargets'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
+import type { SiteLanguage } from '../utils/siteLanguage'
 
 export type EntryStatusValue = Exclude<ReliabilityStatus, 'planned'>
 
@@ -252,11 +254,16 @@ export function mergeSiteStatusPayload(payload: SiteStatusPayload | null): SiteS
   }
 }
 
-export function formatCheckedAt(value: string) {
-  if (!value) return '未生成'
+const statusFormatCopy = {
+  zh: { notGenerated: '未生成', unreadableTime: '时间不可读', notRecorded: '未记录' },
+  en: { notGenerated: 'Not generated', unreadableTime: 'Unreadable time', notRecorded: 'Not recorded' },
+}
+
+export function formatCheckedAt(value: string, language: SiteLanguage = 'zh') {
+  if (!value) return statusFormatCopy[language].notGenerated
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '时间不可读'
-  return new Intl.DateTimeFormat('zh-CN', {
+  if (Number.isNaN(date.getTime())) return statusFormatCopy[language].unreadableTime
+  return new Intl.DateTimeFormat(SITE_LANGUAGE_TAGS[language], {
     dateStyle: 'medium',
     timeStyle: 'medium',
     hour12: false,
@@ -299,12 +306,12 @@ export function parseEvidenceFreshness(evidence: string): ParsedEvidenceFreshnes
   }
 }
 
-export function formatDuration(value: number) {
-  if (!Number.isFinite(value) || value <= 0) return '未记录'
+export function formatDuration(value: number, language: SiteLanguage = 'zh') {
+  if (!Number.isFinite(value) || value <= 0) return statusFormatCopy[language].notRecorded
   if (value < 1000) return `${Math.round(value)} ms`
   return `${(value / 1000).toFixed(2)} s`
 }
 
-export function formatHttpStatus(value: number) {
-  return value > 0 ? `HTTP ${value}` : '未记录'
+export function formatHttpStatus(value: number, language: SiteLanguage = 'zh') {
+  return value > 0 ? `HTTP ${value}` : statusFormatCopy[language].notRecorded
 }

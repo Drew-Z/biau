@@ -8,7 +8,6 @@ import {
   reliabilityStatusOrder,
 } from '../data/statusTargets'
 import {
-  expectationLabels,
   formatCheckedAt,
   formatDuration,
   formatHttpStatus,
@@ -17,32 +16,19 @@ import {
   getStatusDetailPath,
   hasEntryStatusAttention,
   hasReliabilityStatusAttention,
-  layerLabels,
-  projectCategoryLabels,
-  statusMeta,
 } from '../data/siteStatusView'
+import { statusInterfaceCopy } from '../data/statusInterfaceCopy'
 import { StatusSectionNavigator } from '../components/StatusSectionNavigator'
 import { useSiteStatus } from '../hooks/useSiteStatus'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 
 const entrySummaryKeys = ['online', 'degraded', 'offline', 'unchecked'] as const
 const reliabilitySummaryKeys = ['online', 'degraded', 'offline', 'unchecked', 'planned'] as const
 
-const entrySummaryLabels: Record<(typeof entrySummaryKeys)[number], { label: string; hint: string }> = {
-  online: { label: '可用入口', hint: '公开入口最近一次检测已响应' },
-  degraded: { label: '受限入口', hint: '入口响应但可能需要登录、重试或说明' },
-  offline: { label: '异常入口', hint: '最近一次检测未能确认入口可达' },
-  unchecked: { label: '未检测入口', hint: '尚未生成公开入口检测数据' },
-}
-
-const reliabilitySummaryLabels: Record<(typeof reliabilitySummaryKeys)[number], { label: string; hint: string }> = {
-  online: { label: '在线能力', hint: '已有入口或 synthetic 证据支撑的能力项' },
-  degraded: { label: '受限能力', hint: '能力可触达但存在登录、配置或人工 gate' },
-  offline: { label: '异常能力', hint: '最近一次检查显示能力不可用' },
-  unchecked: { label: '未检测能力', hint: '已有检查项但缺少当前公开检测数据' },
-  planned: { label: '待接入能力', hint: '已纳入观察路线，等待平台、凭据或发布门禁' },
-}
-
 export function SiteStatusPage() {
+  const language = useSiteLanguage()
+  const copy = statusInterfaceCopy[language]
   const { status, loadError } = useSiteStatus()
   const reliabilitySummary = useMemo(
     () => getReliabilityStatusSummary(status.reliabilityProjects),
@@ -55,17 +41,17 @@ export function SiteStatusPage() {
   const entryNeedsAttention = hasEntryStatusAttention(status.summary)
   const reliabilityNeedsAttention = hasReliabilityStatusAttention(reliabilitySummary)
   const overviewTitle = entryNeedsAttention
-    ? '部分入口需要关注'
+    ? copy.overview.entries
     : reliabilityNeedsAttention
-      ? '部分能力仍待验证'
-      : '入口与关键能力稳定'
+      ? copy.overview.capabilities
+      : copy.overview.stable
 
   return (
-    <main className="site-status-page page-stack">
+    <main className="site-status-page page-stack" lang={SITE_LANGUAGE_TAGS[language]}>
       <section className="section-header page-hero status-hero">
-        <p className="section-subtitle">SITE STATUS</p>
-        <h1 className="section-title">项目可靠性观察</h1>
-        <p className="section-description">最近一次公开入口检测，以及每个重点项目的关键能力、指标接入和人工 gate。</p>
+        <p className="section-subtitle" lang="en">SITE STATUS</p>
+        <h1 className="section-title">{copy.title}</h1>
+        <p className="section-description">{copy.description}</p>
       </section>
 
       <StatusSectionNavigator />
@@ -74,80 +60,80 @@ export function SiteStatusPage() {
         <div className="status-overview__lead">
           <span className={`status-pulse ${entryNeedsAttention || reliabilityNeedsAttention ? 'degraded' : 'online'}`} aria-hidden />
           <div>
-            <p className="section-subtitle">LAST CHECK</p>
+            <p className="section-subtitle" lang="en">LAST CHECK</p>
             <h2>{overviewTitle}</h2>
           </div>
         </div>
-        <dl className="status-metrics" aria-label="站点入口状态摘要">
+        <dl className="status-metrics" aria-label={copy.metricsLabel}>
           <div>
-            <dt>检测时间</dt>
-            <dd>{formatCheckedAt(status.checkedAt)}</dd>
+            <dt>{copy.checkedAt}</dt>
+            <dd>{formatCheckedAt(status.checkedAt, language)}</dd>
           </div>
           <div>
-            <dt>检测基准</dt>
-            <dd>{status.base}</dd>
+            <dt>{copy.baseline}</dt>
+            <dd lang="en">{status.base}</dd>
           </div>
           <div>
-            <dt>可用入口</dt>
+            <dt>{copy.availableEntries}</dt>
             <dd>
               {status.summary.online}/{status.summary.total}
             </dd>
           </div>
           <div>
-            <dt>可靠性项</dt>
+            <dt>{copy.reliabilityItems}</dt>
             <dd>{reliabilitySummary.total}</dd>
           </div>
         </dl>
-        {loadError && <p className="status-load-error">状态数据暂未读取成功：{loadError}</p>}
+        {loadError && <p className="status-load-error">{copy.loadError}<span lang="">{loadError}</span></p>}
       </section>
 
-      <section id="status-summary" className="status-summary-clusters" aria-label="状态统计">
-        <div className="status-summary-cluster" aria-label="公开入口统计">
+      <section id="status-summary" className="status-summary-clusters" aria-label={copy.summaryLabel}>
+        <div className="status-summary-cluster" aria-label={copy.entrySummaryLabel}>
           <div className="status-summary-cluster__head">
-            <p className="section-subtitle">ENTRY REACHABILITY</p>
-            <h2>入口可达性</h2>
+            <p className="section-subtitle" lang="en">ENTRY REACHABILITY</p>
+            <h2>{copy.entryTitle}</h2>
           </div>
           <div className="status-summary-grid status-summary-grid--entry">
             {entrySummaryKeys.map((key) => (
               <div
                 key={key}
-                className={`status-summary-card glass-card is-${statusMeta[key].tone}`}
+                className={`status-summary-card glass-card is-${copy.states[key].tone}`}
                 data-status-scope="entry"
                 data-status-key={key}
               >
-                <span>{entrySummaryLabels[key].label}</span>
+                <span>{copy.entrySummary[key].label}</span>
                 <strong>{status.summary[key]}</strong>
-                <p>{entrySummaryLabels[key].hint}</p>
+                <p>{copy.entrySummary[key].hint}</p>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="status-summary-cluster" aria-label="可靠性能力统计">
+        <div className="status-summary-cluster" aria-label={copy.reliabilitySummaryLabel}>
           <div className="status-summary-cluster__head">
-            <p className="section-subtitle">RELIABILITY COVERAGE</p>
-            <h2>能力检查项</h2>
+            <p className="section-subtitle" lang="en">RELIABILITY COVERAGE</p>
+            <h2>{copy.reliabilityTitle}</h2>
           </div>
           <div className="status-summary-grid status-summary-grid--reliability">
             {reliabilitySummaryKeys.map((key) => (
               <div
                 key={key}
-                className={`status-summary-card glass-card is-${statusMeta[key].tone}`}
+                className={`status-summary-card glass-card is-${copy.states[key].tone}`}
                 data-status-scope="reliability"
                 data-status-key={key}
               >
-                <span>{reliabilitySummaryLabels[key].label}</span>
+                <span>{copy.reliabilitySummary[key].label}</span>
                 <strong>{reliabilitySummary[key]}</strong>
-                <p>{reliabilitySummaryLabels[key].hint}</p>
+                <p>{copy.reliabilitySummary[key].hint}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section id="status-layers" className="status-layer-grid" aria-label="可靠性分层">
-        {(Object.keys(layerLabels) as Array<keyof typeof layerLabels>).map((layer) => {
-          const meta = layerLabels[layer]
+      <section id="status-layers" className="status-layer-grid" aria-label={copy.layerLabel}>
+        {(Object.keys(copy.layers) as Array<keyof typeof copy.layers>).map((layer) => {
+          const meta = copy.layers[layer]
           return (
             <article key={layer} className="status-layer-card glass-card">
               <span>{meta.code}</span>
@@ -158,14 +144,14 @@ export function SiteStatusPage() {
         })}
       </section>
 
-      <section id="status-manual" className="status-manual-queue" aria-label="待处理人工任务">
+      <section id="status-manual" className="status-manual-queue" aria-label={copy.manualLabel}>
         <div className="status-manual-queue__head">
           <div>
-            <p className="section-subtitle">ACTION QUEUE</p>
-            <h2>下一步人工队列</h2>
-            <p>从每个项目的人工 gate 和后续接入里提取首要事项；这里只展示公开安全摘要，细节仍回到项目状态页。</p>
+            <p className="section-subtitle" lang="en">ACTION QUEUE</p>
+            <h2>{copy.manualTitle}</h2>
+            <p>{copy.manualDescription}</p>
           </div>
-          <span>{manualActionQueue.length} items</span>
+          <span lang="en">{manualActionQueue.length} items</span>
         </div>
         <div className="status-manual-queue__grid">
           {manualActionQueue.map((item) => (
@@ -176,23 +162,23 @@ export function SiteStatusPage() {
               data-project-id={item.projectId}
             >
               <div className="status-manual-action__meta">
-                <span>{item.typeLabel}</span>
-                <span>{projectCategoryLabels[item.projectCategory]}</span>
+                <span>{copy.manualTypes[item.type]}</span>
+                <span>{copy.categories[item.projectCategory]}</span>
               </div>
-              <h3>{item.projectTitle}</h3>
-              <p>{item.text}</p>
-              <Link to={item.detailPath} className="btn status-manual-action__link" aria-label={`查看${item.projectTitle}详细状态`}>
+              <h3 lang="zh-CN">{item.projectTitle}</h3>
+              <p lang="zh-CN">{item.text}</p>
+              <Link to={item.detailPath} className="btn status-manual-action__link" aria-label={copy.manualDetails(item.projectTitle)}>
                 <List size={16} aria-hidden />
-                <span>查看详情</span>
+                <span>{copy.viewDetails}</span>
               </Link>
             </article>
           ))}
         </div>
       </section>
 
-      <section id="status-targets" className="status-targets" aria-label="主页外链检测结果">
+      <section id="status-targets" className="status-targets" aria-label={copy.targetsLabel}>
         {status.targets.map((target) => {
-          const meta = statusMeta[target.status]
+          const meta = copy.states[target.status]
           const detailProject = findReliabilityProjectForTarget(target, status.reliabilityProjects ?? [])
           const detailHref = detailProject ? getStatusDetailPath(detailProject.id) : '/status'
           const note = target.note.trim()
@@ -202,45 +188,45 @@ export function SiteStatusPage() {
               <div className="status-target__main">
                 <div className="status-target__titleline">
                   <span className={`status-badge is-${meta.tone}`}>{meta.label}</span>
-                  <span>{expectationLabels[target.expectation]}</span>
+                  <span>{copy.expectations[target.expectation]}</span>
                 </div>
-                <h2>{target.label}</h2>
-                <p>{target.description}</p>
+                <h2 lang="zh-CN">{target.label}</h2>
+                <p lang="zh-CN">{target.description}</p>
               </div>
 
               <dl className="status-target__facts">
                 <div>
                   <dt>HTTP</dt>
-                  <dd>{formatHttpStatus(target.httpStatus)}</dd>
+                  <dd>{formatHttpStatus(target.httpStatus, language)}</dd>
                 </div>
                 <div>
-                  <dt>耗时</dt>
-                  <dd>{formatDuration(target.durationMs)}</dd>
+                  <dt>{copy.elapsed}</dt>
+                  <dd>{formatDuration(target.durationMs, language)}</dd>
                 </div>
                 <div>
-                  <dt>单项检测</dt>
-                  <dd>{formatCheckedAt(target.checkedAt)}</dd>
+                  <dt>{copy.singleCheck}</dt>
+                  <dd>{formatCheckedAt(target.checkedAt, language)}</dd>
                 </div>
               </dl>
 
-              {primaryNote && <p className="status-target__note">{primaryNote}</p>}
-              {note && note !== primaryNote && <p className="status-target__note is-soft">{note}</p>}
+              {primaryNote && <p className="status-target__note" lang="zh-CN">{primaryNote}</p>}
+              {note && note !== primaryNote && <p className="status-target__note is-soft" lang="zh-CN">{note}</p>}
 
               <div className="status-target__actions">
                 <Link
                   className="btn status-target__detail-link"
                   to={detailHref}
-                  aria-label={`详细状态：${detailProject?.title ?? target.label}`}
+                  aria-label={copy.detailName(detailProject?.title ?? target.label)}
                 >
                   <List size={16} aria-hidden />
-                  <span>详细状态</span>
+                  <span>{copy.detailLabel}</span>
                 </Link>
                 <Link to={`/projects/${target.projectId}`} className="btn">
                   <LinkIcon size={16} aria-hidden />
-                  <span>项目详情</span>
+                  <span>{copy.projectDetails}</span>
                 </Link>
                 <a className="btn btn-primary" href={target.url} target="_blank" rel="noopener noreferrer">
-                  <span>打开入口</span>
+                  <span>{copy.openEntry}</span>
                   <ExternalLink size={16} aria-hidden />
                 </a>
               </div>
@@ -249,20 +235,20 @@ export function SiteStatusPage() {
         })}
       </section>
 
-      <section id="status-projects" className="status-project-index" aria-label="可靠性详情页">
+      <section id="status-projects" className="status-project-index" aria-label={copy.projectsLabel}>
         {status.reliabilityProjects?.map((project) => {
           const projectCounts = getReliabilityProjectStatusCounts(project)
           const visibleStatuses = reliabilityStatusOrder.filter((statusKey) => projectCounts[statusKey] > 0)
           return (
             <article key={project.id} className="status-project-card glass-card">
               <div>
-                <p className="section-subtitle">{projectCategoryLabels[project.category]}</p>
-                <h2>{project.title}</h2>
-                <p>{project.summary}</p>
+                <p className="section-subtitle">{copy.categories[project.category]}</p>
+                <h2 lang="zh-CN">{project.title}</h2>
+                <p lang="zh-CN">{project.summary}</p>
               </div>
-              <dl className="status-project__status-strip" aria-label={`${project.title} 状态分布`}>
+              <dl className="status-project__status-strip" aria-label={copy.distribution(project.title)}>
                 {visibleStatuses.map((statusKey) => {
-                  const meta = statusMeta[statusKey]
+                  const meta = copy.states[statusKey]
                   return (
                     <div key={statusKey} className={`is-${meta.tone}`}>
                       <dt>{meta.label}</dt>
@@ -271,19 +257,19 @@ export function SiteStatusPage() {
                   )
                 })}
               </dl>
-              <dl className="status-project-card__meta" aria-label={`${project.title} 人工门禁摘要`}>
+              <dl className="status-project-card__meta" aria-label={copy.gatesSummary(project.title)}>
                 <div>
-                  <dt>人工 gate</dt>
+                  <dt>{copy.gates}</dt>
                   <dd>{project.gates.length}</dd>
                 </div>
                 <div>
-                  <dt>后续接入</dt>
+                  <dt>{copy.nextActions}</dt>
                   <dd>{project.nextActions.length}</dd>
                 </div>
               </dl>
               <Link to={getStatusDetailPath(project.id)} className="btn status-project-card__link">
                 <List size={16} aria-hidden />
-                <span>查看详细状态</span>
+                <span>{copy.viewStatus}</span>
               </Link>
             </article>
           )

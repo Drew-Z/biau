@@ -45,6 +45,9 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
   the title, never recommendation ranking. Project category/status labels select
   the existing Chinese maps or their English UI maps without changing the source
   metadata used by assistant and export projections.
+- Status overview/detail and their fixed section labels follow the same
+  preference through `statusInterfaceCopy.ts`; see Status Interface Projection
+  below for the boundary between UI labels and original status evidence.
 - Existing UI fixtures must select a language from the actual current value;
   blindly toggling after `goto` now reverses a persisted choice. A refresh test
   must assert the retained language before making any corrective selection.
@@ -114,6 +117,66 @@ before Enter instead of trying to focus a hidden desktop button.
 Wrong: `cta.label.includes('受控')` or rewriting `projectPublications` to display
 English. Correct: `getProjectCta(publication, language).compactLabel` and
 `getPublishedProjectLinks(publication, links, language)` across every consumer.
+
+### Status Interface Projection
+
+#### 1. Scope / Trigger
+
+Localize fixed status controls, explanations and section labels while preserving
+published status data, authored project text and Studio/export defaults.
+
+#### 2. Signatures
+
+- `formatCheckedAt(value: string, language: SiteLanguage = 'zh')`
+- `formatDuration(value: number, language: SiteLanguage = 'zh')`
+- `formatHttpStatus(value: number, language: SiteLanguage = 'zh')`
+- `statusInterfaceCopy[language]` projects fixed UI text; the static
+  `statusOverviewSectionIds` and `statusDetailSectionIds` remain navigation ids.
+
+#### 3. Contracts
+
+Chinese maps remain the source for status tones, layer codes and default copy.
+English overrides labels only. Do not mutate source records, reorder manual
+tasks, change attention branches or translate evidence before parsing it.
+`parseEvidenceFreshness` retains its Chinese label, original age text and
+default-Chinese date projection. The UI formats its raw timestamp and maps its
+four freshness labels without changing the evidence or inferring a new status.
+
+Keep `dateStyle: 'medium'`, `timeStyle: 'medium'`, `hour12: false` and the existing
+local timezone. Authored descriptions, check metadata, gates and next actions
+stay Chinese. Raw errors of unknown language use `lang=""`; their fixed prefix
+translates. Language changes must not restart `useSiteStatus`, remount pages,
+recreate section scroll listeners or clear the reading outline.
+
+#### 4. Validation & Error Matrix
+
+| Input / state | Required result |
+| --- | --- |
+| Empty / invalid time | Localized Not generated / Unreadable time; Chinese by default |
+| Missing duration or HTTP result | Localized Not recorded; existing numeric units and rounding retained |
+| Four parsed freshness labels | Localized UI badge; original timestamp, age text and tone retained |
+| Loading or failed JSON request | Static fallback stays readable; language causes no extra request |
+| Language change at a section / outline | Stable ids, selection, focus and route history |
+
+#### 5. Good / Base / Bad Cases
+
+Good: format a parsed timestamp with the visitor language while retaining the
+original Chinese evidence below it. Base: Studio omits the language and receives
+the original Chinese formatter output. Bad: translating evidence before parsing
+it, or making language a dependency of the status fetch effect.
+
+#### 6. Tests Required
+
+`status:contract` checks default/explicit locales, missing/invalid values,
+numeric units, immutable maps/queue and four unchanged parsed evidence states.
+`checkStatusInterfaceLanguage` in `language:ui` and full UI covers the page,
+request, navigation, original-content and layout contracts.
+
+#### 7. Wrong vs Correct
+
+Wrong: write English strings into `statusMeta` or `check.evidence`.
+Correct: render `statusInterfaceCopy[language].states[check.status]` and call
+`formatCheckedAt(freshness.checkedAt, language)` only at the localized page.
 
 ### Appearance Contract
 

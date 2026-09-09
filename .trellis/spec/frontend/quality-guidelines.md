@@ -36,8 +36,9 @@ and project controls, fixed and authored section languages, preserved content /
 publication / image snapshots, connected article/guide nodes, stable ids and
 history, outline focus/Escape/real anchors, missing returns and delayed content.
 Test language-state continuity separately from the existing outside-pointer
-dismissal. Status and AI Daily guide items retain Chinese semantics while their
-shared guide controls translate. Fixture payloads must satisfy the real decoder,
+dismissal. AI Daily guide items retain Chinese semantics while their shared
+guide controls translate; status guide items follow the selected language.
+Fixture payloads must satisfy the real decoder,
 including explicit nullable `uncertainty` and `correctedAt` fields.
 
 `checkProjectInterfaceLanguage` extends the same entry with the homepage project
@@ -61,6 +62,27 @@ uses `min-width: 0`, normal whitespace and bounded word wrapping. Assert label
 and icon rectangles lie inside the button as well as checking the page bounds:
 an 88px button can contain a 99.6px text label in the viewport while overflowing
 its own background. Inspect representative desktop screenshots after this check.
+
+`checkStatusInterfaceLanguage` covers overview, detail and missing status pages
+at four widths and three themes: 36 page groups, four delayed/error groups and
+three overview branches. Compare original evidence, counts, tone classes and
+link targets before/after real language clicks; retain connected page nodes,
+stable section ids, URL/history, request counts, refresh preference and theme.
+Check translated fixed labels separately from authored Chinese text, date
+formatting and raw freshness evidence. Delayed/error fixtures must preserve the
+static fallback and must not retry just because the language changed.
+Exercise section selection and outline focus/Escape/anchors, 44px mobile
+targets and text containment. For continuity assertions across a language
+switch, locate the same control by stable identity and assert its translated
+accessible name separately: a locator bound to the old English name cannot
+resolve the control after it becomes Chinese. Keep native outside-pointer
+dismissal separate from DOM-click language-state checks. Review representative
+screenshots; fixture statuses are not production availability evidence.
+This module is shared by the Node-based `language:ui` and tsx-based full UI
+commands. Load TypeScript fixture data with the existing `tsx/esm/api` scoped
+`tsImport` API; a static `.ts` import can pass under tsx and still fail when Node
+resolves an extensionless transitive import. Validate the actual npm entry point
+without changing application imports or adding a global loader.
 
 For the public AI Daily Feed or detail route, also run:
 

@@ -1,5 +1,17 @@
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import assert from 'node:assert/strict'
+import {
+  formatCheckedAt,
+  formatDuration,
+  formatHttpStatus,
+  parseEvidenceFreshness,
+  statusMeta,
+  layerLabels,
+  projectCategoryLabels,
+  getStatusManualActionQueue,
+} from '../src/data/siteStatusView'
+import { statusInterfaceCopy, statusOverviewSectionIds, statusDetailSectionIds } from '../src/data/statusInterfaceCopy'
 import {
   reliabilityProjects,
   reliabilityStatusOrder,
@@ -560,10 +572,61 @@ async function checkMergedSiteStatusEvidence() {
   }
 }
 
+function checkStatusInterfaceFormatting() {
+  const originalData = JSON.stringify({ reliabilityProjects, siteStatusTargets, statusMeta, layerLabels, projectCategoryLabels })
+  const originalQueue = getStatusManualActionQueue()
+  for (const language of ['zh', 'en'] as const) {
+    const copy = statusInterfaceCopy[language]
+    assert.deepEqual(Object.keys(copy.overviewSections), [...statusOverviewSectionIds])
+    assert.deepEqual(Object.keys(copy.detailSections), [...statusDetailSectionIds])
+    for (const key of reliabilityStatusOrder) assert.equal(copy.states[key].tone, statusMeta[key].tone)
+    for (const key of Object.keys(layerLabels) as Array<keyof typeof layerLabels>) assert.equal(copy.layers[key].code, layerLabels[key].code)
+  }
+  assert.deepEqual(statusInterfaceCopy.zh.states, statusMeta)
+  assert.deepEqual(statusInterfaceCopy.zh.layers, layerLabels)
+  assert.deepEqual(statusInterfaceCopy.zh.categories, projectCategoryLabels)
+  assert.deepEqual(getStatusManualActionQueue(), originalQueue, 'UI projections must not translate or reorder the source action queue')
+  assert.equal(JSON.stringify({ reliabilityProjects, siteStatusTargets, statusMeta, layerLabels, projectCategoryLabels }), originalData)
+  for (const [value, chinese, english] of [
+    ['', '未生成', 'Not generated'],
+    ['invalid-time', '时间不可读', 'Unreadable time'],
+  ]) {
+    assert.equal(formatCheckedAt(value), chinese)
+    assert.equal(formatCheckedAt(value, 'zh'), chinese)
+    assert.equal(formatCheckedAt(value, 'en'), english)
+  }
+  const timestamp = '2026-09-09T00:12:34.000Z'
+  for (const [language, locale] of [['zh', 'zh-CN'], ['en', 'en']] as const) {
+    assert.equal(formatCheckedAt(timestamp, language), new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium', timeStyle: 'medium', hour12: false,
+    }).format(new Date(timestamp)), 'locale must preserve the timestamp and existing local-time formatting options')
+  }
+  for (const value of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+    assert.equal(formatDuration(value), '未记录')
+    assert.equal(formatDuration(value, 'en'), 'Not recorded')
+  }
+  for (const [value, expected] of [[10.5, '11 ms'], [999, '999 ms'], [1000, '1.00 s'], [1200, '1.20 s']] as const) {
+    assert.equal(formatDuration(value), expected)
+    assert.equal(formatDuration(value, 'en'), expected)
+  }
+  assert.equal(formatHttpStatus(0), '未记录')
+  assert.equal(formatHttpStatus(0, 'en'), 'Not recorded')
+  for (const value of [200, 401, 503]) assert.equal(formatHttpStatus(value, 'en'), `HTTP ${value}`)
+  for (const [label, tone] of [['新鲜', 'online'], ['接近过期', 'degraded'], ['已过期', 'degraded'], ['未知', 'unchecked']] as const) {
+    const evidence = `原始证据。证据时间：${timestamp}；证据新鲜度：${label}（12 分钟）。`
+    assert.deepEqual(parseEvidenceFreshness(evidence), {
+      checkedAt: timestamp, checkedAtLabel: formatCheckedAt(timestamp), freshnessLabel: label, ageText: '12 分钟', tone,
+    }, 'UI formatting must not alter the original evidence parser or its Chinese projection')
+  }
+  assert.equal(parseEvidenceFreshness('No generated freshness data'), null)
+  console.log('Status interface formatting passed: two locales, missing/invalid values, numeric units, and four unchanged evidence states.')
+}
+
 async function main() {
   const knownCheckIds = checkStaticStatusData()
   await checkSyntheticSnapshots(knownCheckIds)
   await checkMergedSiteStatusEvidence()
+  checkStatusInterfaceFormatting()
 
   if (issues.length > 0) {
     console.error(`Status contract check failed with ${issues.length} issue(s):`)

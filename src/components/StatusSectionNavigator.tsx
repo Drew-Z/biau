@@ -1,18 +1,14 @@
 import { useEffect, useState } from 'react'
 import { ChevronDown, MapPinned } from 'lucide-react'
+import { statusInterfaceCopy, statusOverviewSectionIds } from '../data/statusInterfaceCopy'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 
-const statusSections = [
-  { id: 'status-overview', label: '总体状态', shortLabel: '总体' },
-  { id: 'status-summary', label: '状态统计', shortLabel: '统计' },
-  { id: 'status-layers', label: '可靠性分层', shortLabel: '分层' },
-  { id: 'status-manual', label: '人工待办', shortLabel: '待办' },
-  { id: 'status-targets', label: '入口检测', shortLabel: '入口' },
-  { id: 'status-projects', label: '项目可靠性', shortLabel: '项目' },
-] as const
-
-type StatusSectionId = (typeof statusSections)[number]['id']
+type StatusSectionId = (typeof statusOverviewSectionIds)[number]
 
 export function StatusSectionNavigator() {
+  const language = useSiteLanguage()
+  const copy = statusInterfaceCopy[language]
   const [currentSection, setCurrentSection] = useState<StatusSectionId>('status-overview')
 
   useEffect(() => {
@@ -20,10 +16,10 @@ export function StatusSectionNavigator() {
     const updateCurrentSection = () => {
       frame = 0
       const readingLine = Math.min(180, window.innerHeight * 0.22)
-      let active: StatusSectionId = statusSections[0].id
-      for (const section of statusSections) {
-        const target = document.getElementById(section.id)
-        if (target && target.getBoundingClientRect().top <= readingLine) active = section.id
+      let active: StatusSectionId = statusOverviewSectionIds[0]
+      for (const id of statusOverviewSectionIds) {
+        const target = document.getElementById(id)
+        if (target && target.getBoundingClientRect().top <= readingLine) active = id
       }
       setCurrentSection(active)
     }
@@ -45,35 +41,35 @@ export function StatusSectionNavigator() {
   }, [])
 
   const handleSectionChange = (value: string) => {
-    const section = statusSections.find((item) => item.id === value)
-    if (!section) return
+    const sectionId = statusOverviewSectionIds.find((id) => id === value)
+    if (!sectionId) return
 
-    const target = document.getElementById(section.id)
+    const target = document.getElementById(sectionId)
     if (!target) return
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const targetTop = Math.max(0, window.scrollY + target.getBoundingClientRect().top - 86)
     const longJump = Math.abs(targetTop - window.scrollY) > window.innerHeight * 2
-    setCurrentSection(section.id)
+    setCurrentSection(sectionId)
     window.scrollTo({ top: targetTop, behavior: reduceMotion || longJump ? 'instant' : 'smooth' })
   }
 
-  const currentIndex = statusSections.findIndex((section) => section.id === currentSection)
-  const current = statusSections[currentIndex] ?? statusSections[0]
+  const currentIndex = statusOverviewSectionIds.indexOf(currentSection)
+  const current = copy.overviewSections[statusOverviewSectionIds[currentIndex] ?? statusOverviewSectionIds[0]]
 
   return (
-    <nav className="status-section-navigator" aria-label="状态页分区导航">
+    <nav className="status-section-navigator" aria-label={copy.navigatorLabel} lang={SITE_LANGUAGE_TAGS[language]}>
       <div className="status-section-navigator__meta">
-        <span>STATUS MAP</span>
+        <span lang="en">STATUS MAP</span>
         <strong>{current.shortLabel}</strong>
-        <em>{currentIndex + 1} / {statusSections.length}</em>
+        <em>{currentIndex + 1} / {statusOverviewSectionIds.length}</em>
       </div>
       <label className="status-section-navigator__control">
         <MapPinned size={18} aria-hidden />
-        <select aria-label="选择状态页分区" value={currentSection} onChange={(event) => handleSectionChange(event.target.value)}>
-          {statusSections.map((section, index) => (
-            <option key={section.id} value={section.id}>
-              {index + 1}. {section.label}
+        <select aria-label={copy.selectSection} value={currentSection} onChange={(event) => handleSectionChange(event.target.value)}>
+          {statusOverviewSectionIds.map((id, index) => (
+            <option key={id} value={id}>
+              {index + 1}. {copy.overviewSections[id].label}
             </option>
           ))}
         </select>
