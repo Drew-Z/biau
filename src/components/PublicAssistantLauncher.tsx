@@ -3,6 +3,9 @@ import { LoaderCircle, RotateCw } from 'lucide-react'
 import { usePublicAssistantCollision } from '../hooks/usePublicAssistantCollision'
 import { announceMobileSurfaceOpen } from '../utils/mobileSurface'
 import type { PublicAssistantWarmupSnapshot } from '../utils/publicAssistantWarmup'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { publicAssistantInterfaceCopy } from '../data/publicAssistantInterfaceCopy'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 
 interface PublicAssistantLauncherProps {
   warmup: PublicAssistantWarmupSnapshot
@@ -13,20 +16,23 @@ interface PublicAssistantLauncherProps {
 }
 
 export function PublicAssistantLauncher({ warmup, footerVisible, onIntent, onOpen, opening = false }: PublicAssistantLauncherProps) {
+  const language = useSiteLanguage()
+  const copy = publicAssistantInterfaceCopy[language]
   const rootRef = useRef<HTMLDivElement | null>(null)
   usePublicAssistantCollision(rootRef, opening)
   const label = opening
-    ? '正在打开助手'
+    ? copy.launcher.opening
     : warmup.state === 'warming'
-    ? '助手准备中'
+    ? copy.launcher.warming
     : warmup.state === 'ready'
-      ? '助手已就绪'
+      ? copy.launcher.ready
       : warmup.state === 'error'
-        ? '助手等待重试'
-        : '泊岸研究助手'
+        ? copy.launcher.error
+        : copy.launcher.idle
   return (
     <div
       ref={rootRef}
+      lang={SITE_LANGUAGE_TAGS[language]}
       className={`public-assistant public-assistant-launcher ${footerVisible ? 'is-footer-visible' : ''}`}
       data-assistant-warmup={warmup.state}
       data-collision-offset="0"

@@ -81,6 +81,9 @@ import {
 import { formatPublicAssistantRecoveryLabel } from '../utils/publicAssistantPresentation'
 import { usePublicAssistantCollision } from '../hooks/usePublicAssistantCollision'
 import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { publicAssistantInterfaceCopy } from '../data/publicAssistantInterfaceCopy'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 import {
   createPublicAssistantRequestId,
   createPublicAssistantSessionId,
@@ -186,35 +189,6 @@ const MAX_FALLBACK_ANSWER_LENGTH = 520
 function normalizePublicAssistantQuestion(value: string) {
   return value.replace(/\s+/gu, ' ').trim().slice(0, MAX_MESSAGE_LENGTH)
 }
-
-const MODE_OPTIONS: Array<{ value: PublicAssistantMode; label: string }> = [
-  { value: 'auto', label: '自动选择' },
-  { value: 'site', label: '仅本站' },
-  { value: 'web', label: '仅公开网页' },
-]
-
-const NEGATIVE_FEEDBACK_REASONS: Array<{ value: NegativeFeedbackReason; label: string }> = [
-  { value: 'incorrect', label: '内容不准确' },
-  { value: 'unclear', label: '表达不清楚' },
-  { value: 'missing-sources', label: '缺少来源' },
-  { value: 'outdated', label: '信息已过时' },
-  { value: 'other', label: '其他问题' },
-]
-
-const STATUS_LABELS: Record<PublicAssistantStatus, string> = {
-  answered: '已回答',
-  partial: '部分证据',
-  uncertain: '证据不足',
-  degraded: '降级回答',
-  blocked: '已安全拦截',
-}
-
-const ROUTE_LABELS = {
-  direct: '直接回答',
-  site: '本站检索',
-  web: '网页研究',
-  combined: '综合研究',
-} as const
 
 function getAssistantApiBase(preferredApiBase?: string | null) {
   return preferredApiBase || CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE
@@ -322,43 +296,43 @@ function readPublicAssistantPageContext(): PublicAssistantPageContext {
   }
 }
 
-function getServiceStatus(state: AssistantServiceState) {
-  if (state === 'online') return { className: 'is-model', label: '研究助手已响应' }
-  if (state === 'degraded') return { className: 'is-fallback', label: '回答服务已降级' }
-  if (state === 'error') return { className: 'is-error', label: '研究服务暂不可用' }
-  return { className: 'is-ready', label: '可检索本站与公开网页' }
+function getServiceStatus(state: AssistantServiceState, copy: typeof publicAssistantInterfaceCopy.zh) {
+  if (state === 'online') return { className: 'is-model', label: copy.service.online }
+  if (state === 'degraded') return { className: 'is-fallback', label: copy.service.degraded }
+  if (state === 'error') return { className: 'is-error', label: copy.service.error }
+  return { className: 'is-ready', label: copy.service.ready }
 }
 
-function formatAnswerMeta(message: WidgetMessage) {
+function formatAnswerMeta(message: WidgetMessage, copy: typeof publicAssistantInterfaceCopy.zh, language: 'zh' | 'en') {
   if (!message.status || !message.meta) return ''
-  const labels = [STATUS_LABELS[message.status]]
+  const labels = [copy.statuses[message.status]]
   const research = message.meta.research
   const recovery = message.meta.recovery
   if (research) {
-    labels.push(ROUTE_LABELS[research.route])
-    if (research.evidenceCount > 0) labels.push(`${research.evidenceCount} 条证据`)
-    if (research.durationMs > 0) labels.push(`${(research.durationMs / 1_000).toFixed(1)} 秒`)
+    labels.push(copy.routes[research.route])
+    if (research.evidenceCount > 0) labels.push(copy.evidenceCount(research.evidenceCount))
+    if (research.durationMs > 0) labels.push(copy.seconds((research.durationMs / 1_000).toFixed(1)))
   } else if (message.meta.citationCount > 0) {
-    labels.push(`${message.meta.citationCount} 条站内来源`)
+    labels.push(copy.siteSourceCount(message.meta.citationCount))
   }
-  const recoveryLabel = formatPublicAssistantRecoveryLabel(recovery)
+  const recoveryLabel = formatPublicAssistantRecoveryLabel(recovery, language)
   if (recoveryLabel) labels.push(recoveryLabel)
   return labels.join(' · ')
 }
 
-function getLoadingLabel(mode: PublicAssistantMode, stage: PublicAssistantProgressStage | null) {
-  if (stage === 'understanding_image') return '正在读取图片中的可见内容…'
-  if (stage === 'planning') return '正在判断问题需要哪些公开资料…'
-  if (stage === 'researching') return mode === 'site' ? '正在检索本站公开资料…' : '正在搜索并读取公开来源…'
-  if (stage === 'evaluating') return '正在筛选可引用的证据…'
-  if (stage === 'refining') return '证据还不够，正在调整检索…'
-  if (stage === 'answering') return '正在基于证据组织回答…'
-  if (stage === 'recovering') return '回答服务波动，正在重新尝试…'
-  if (stage === 'verifying') return '正在核对结论与引用…'
-  if (stage === 'saving') return '正在保存本次匿名记录…'
-  if (mode === 'site') return '正在检索本站公开资料…'
-  if (mode === 'web') return '正在搜索并核验公开网页…'
-  return '正在判断问题并组织研究…'
+function getLoadingLabel(mode: PublicAssistantMode, stage: PublicAssistantProgressStage | null, copy: typeof publicAssistantInterfaceCopy.zh) {
+  if (stage === 'understanding_image') return copy.loading.image
+  if (stage === 'planning') return copy.loading.planning
+  if (stage === 'researching') return mode === 'site' ? copy.loading.site : copy.loading.researching
+  if (stage === 'evaluating') return copy.loading.evaluating
+  if (stage === 'refining') return copy.loading.refining
+  if (stage === 'answering') return copy.loading.answering
+  if (stage === 'recovering') return copy.loading.recovering
+  if (stage === 'verifying') return copy.loading.verifying
+  if (stage === 'saving') return copy.loading.saving
+  if (mode === 'site') return copy.loading.site
+  if (mode === 'web') return copy.loading.web
+  return copy.loading.auto
 }
 
 function toAssistantIssue(
@@ -401,66 +375,49 @@ function isAssistantIssueRetryBlocked(issue: AssistantIssue | null, isOnline: bo
   return !isOnline || Boolean(issue?.retryAfterSeconds && issue.retryAfterSeconds > 0)
 }
 
-function getAssistantRetryLabel(issue: AssistantIssue | null, fallback = '重试') {
+function getAssistantRetryLabel(issue: AssistantIssue | null, fallback: string, copy: typeof publicAssistantInterfaceCopy.zh) {
   return issue?.retryAfterSeconds && issue.retryAfterSeconds > 0
-    ? `${issue.retryAfterSeconds} 秒后`
+    ? copy.retryAfter(issue.retryAfterSeconds)
     : fallback
 }
 
-function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean) {
-  if (!isOnline) return { title: '设备当前离线', detail: '网络恢复后可以继续本次操作。' }
-  if (issue.code === 'public-assistant-offline') {
-    return { title: '网络已恢复', detail: '问题仍然保留，可以立即重试。' }
-  }
+function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean, copy: typeof publicAssistantInterfaceCopy.zh) {
+  if (!isOnline) return copy.issues.offline
+  if (issue.code === 'public-assistant-offline') return copy.issues.restored
   if (issue.code === 'public-assistant-rate-limited') {
-    const detail = issue.retryAfterSeconds && issue.retryAfterSeconds > 0
-      ? `可在 ${issue.retryAfterSeconds} 秒后重试。`
-      : '等待时间已结束，可以重试。'
-    return { title: '请求较多', detail }
+    return { title: copy.rateLimited.title, detail: issue.retryAfterSeconds && issue.retryAfterSeconds > 0 ? copy.rateLimited.waiting(issue.retryAfterSeconds) : copy.rateLimited.ready }
   }
-  if (issue.scope === 'branch') {
-    return { title: '分支操作未完成', detail: '当前对话路径没有改变，可以重试本次操作。' }
-  }
-  if (issue.intent?.kind === 'answer-revision') {
-    return { title: '重新生成未完成', detail: '当前回答版本已保留，可以重试本次生成。' }
-  }
+  if (issue.scope === 'branch') return copy.issues.branch
+  if (issue.intent?.kind === 'answer-revision') return copy.issues.revision
   if (issue.scope === 'health' && (
     issue.code.includes('timeout') ||
     issue.code.includes('unreachable') ||
     issue.code === 'public-assistant-service-unavailable'
-  )) {
-    return { title: '助手服务仍在启动', detail: '输入内容已经保留，可以稍后重新准备服务。' }
-  }
-  if (issue.code.includes('timeout')) return { title: '本次研究超时', detail: '服务没有在限定时间内完成，可以直接重试。' }
-  if (issue.code.includes('unreachable') || issue.code === 'public-assistant-endpoint-unreachable') {
-    return { title: '暂时无法连接研究服务', detail: '可能正在冷启动或网络不可达，可以稍后重试。' }
-  }
-  if (issue.code === 'session-not-found') return { title: '会话已过期', detail: '这条匿名历史已被清理，可以新建会话继续。' }
-  if (issue.code === 'public-assistant-request-cancelled') return { title: '已停止生成', detail: '问题仍保留在当前会话中，可以重新发起。' }
+  )) return copy.issues.starting
+  if (issue.code.includes('timeout')) return copy.issues.timeout
+  if (issue.code.includes('unreachable') || issue.code === 'public-assistant-endpoint-unreachable') return copy.issues.unreachable
+  if (issue.code === 'session-not-found') return copy.issues.expired
+  if (issue.code === 'public-assistant-request-cancelled') return copy.issues.cancelled
   if (issue.code === 'invalid-public-assistant-image' || issue.code === 'public-assistant-request-too-large') {
-    return { title: '图片无法发送', detail: '请重新选择一张较小的 JPEG、PNG 或 WebP 图片。' }
+    return copy.issues.image
   }
-  if (issue.code === 'public-assistant-history-refresh-required') {
-    return { title: '会话状态需要刷新', detail: '回答已经收到。刷新完成前不会发送下一问，以免进入错误的会话分支。' }
-  }
-  if (issue.code === 'database-not-configured' || issue.code === 'public-assistant-service-unavailable') {
-    return { title: '历史服务暂不可用', detail: '当前仍可提问，但暂时无法读取或保存历史。' }
-  }
-  if (issue.code.includes('invalid-response')) return { title: '响应格式异常', detail: '服务返回了无法安全展示的内容，请重试。' }
-  return { title: '本次请求未完成', detail: '已保留站内兜底结果，可以重新发起研究。' }
+  if (issue.code === 'public-assistant-history-refresh-required') return copy.issues.refresh
+  if (issue.code === 'database-not-configured' || issue.code === 'public-assistant-service-unavailable') return copy.issues.history
+  if (issue.code.includes('invalid-response')) return copy.issues.invalid
+  return copy.issues.failed
 }
 
-function formatSessionDate(value: string) {
+function formatSessionDate(value: string, language: 'zh' | 'en') {
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return ''
-  return new Intl.DateTimeFormat('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(parsed)
+  return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(parsed)
 }
 
-function formatCitationDate(value: string | null) {
+function formatCitationDate(value: string | null, language: 'zh' | 'en') {
   if (!value) return ''
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return ''
-  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed)
+  return new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'zh-CN', { year: 'numeric', month: 'short', day: 'numeric' }).format(parsed)
 }
 
 function projectConversationMessages(
@@ -518,6 +475,8 @@ interface PublicAssistantWidgetProps {
 
 export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHandled }: PublicAssistantWidgetProps) {
   const { pathname } = useLocation()
+  const language = useSiteLanguage()
+  const copy = publicAssistantInterfaceCopy[language]
   const [shouldRestoreInitialSession] = useState(hasPersistedPublicAssistantSessionRegistry)
   const [sessionRegistry, setSessionRegistry] = useState<PublicAssistantSessionRegistry>(readPublicAssistantSessionRegistry)
   const initialDraft = readPublicAssistantDraft(sessionRegistry.currentSessionId)
@@ -605,14 +564,14 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const editTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const clearAssistantCollision = usePublicAssistantCollision(rootRef, isOpen)
   const serviceStatus = warmup.state === 'warming'
-    ? { className: 'is-warming', label: '助手服务准备中' }
+    ? { className: 'is-warming', label: copy.service.warming }
     : warmup.state === 'error'
-      ? { className: 'is-error', label: '助手服务等待重试' }
-      : getServiceStatus(serviceState)
+      ? { className: 'is-error', label: copy.service.warmupError }
+      : getServiceStatus(serviceState, copy)
   const warmupIssue = warmup.issueCode ? { code: warmup.issueCode, scope: 'health' as const } : null
-  const warmupIssueCopy = warmupIssue ? getAssistantIssueCopy(warmupIssue, isOnline) : null
-  const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline) : null
-  const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline) : null
+  const warmupIssueCopy = warmupIssue ? getAssistantIssueCopy(warmupIssue, isOnline, copy) : null
+  const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline, copy) : null
+  const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline, copy) : null
   const issueRetryBlocked = isAssistantIssueRetryBlocked(issue, isOnline)
   const initialRestoreRetryBlocked = isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'
@@ -621,12 +580,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || isImageProcessing || !isWarmupReady
   const isQuestionEditing = editingTurnId !== null
   const launcherLabel = warmup.state === 'warming'
-    ? '助手准备中'
+    ? copy.launcher.warming
     : warmup.state === 'ready'
-      ? '助手已就绪'
+      ? copy.launcher.ready
       : warmup.state === 'error'
-        ? '助手等待重试'
-        : PUBLIC_ASSISTANT_NAME
+        ? copy.launcher.error
+        : copy.launcher.idle
 
   const loadSessionBrowserState = (targetSessionId: string, fallbackMode: PublicAssistantMode = 'auto') => {
     const draft = readPublicAssistantDraft(targetSessionId)
@@ -1183,7 +1142,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }
 
   const removeHistorySession = async (targetSessionId: string) => {
-    if (!apiBase || !window.confirm('删除这条匿名会话及其原始记录？')) return
+    if (!apiBase || !window.confirm(copy.history.deleteConfirm)) return
     if (targetSessionId === sessionIdRef.current) stopBranchAction()
     const controller = new AbortController()
     historyRequestRef.current?.abort()
@@ -1262,12 +1221,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     } catch (error) {
       const code = error instanceof PublicAssistantImageError ? error.code : 'decode-failed'
       setImageIssue(code === 'unsupported'
-        ? '仅支持 JPEG、PNG 或 WebP 图片。'
+        ? copy.image.unsupported
         : code === 'source-too-large'
-          ? '原图超过 8 MB，请选择更小的图片。'
+          ? copy.image.sourceTooLarge
           : code === 'output-too-large'
-            ? '图片压缩后仍然过大，请裁剪后重试。'
-            : '图片无法读取，请换一张图片重试。')
+            ? copy.image.outputTooLarge
+            : copy.image.unreadable)
     } finally {
       fileInput.value = ''
       setIsImageProcessing(false)
@@ -1638,6 +1597,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   return (
     <div
       ref={rootRef}
+      lang={SITE_LANGUAGE_TAGS[language]}
       className={`public-assistant ${isOpen ? 'is-open' : ''} ${isOpen && isFullscreen ? 'is-fullscreen' : ''} ${footerVisible ? 'is-footer-visible' : ''}`}
     >
       <button
@@ -1667,34 +1627,34 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         >
           <header className="public-assistant__header">
             <div className="public-assistant__title">
-              <p className="public-assistant__eyebrow">PUBLIC RESEARCH</p>
-              <h2 id="public-assistant-title">{PUBLIC_ASSISTANT_NAME}</h2>
+              <p className="public-assistant__eyebrow">{copy.eyebrow.publicResearch}</p>
+              <h2 id="public-assistant-title" lang="">{PUBLIC_ASSISTANT_NAME}</h2>
               <span className={`public-assistant__status ${serviceStatus.className}`}>{serviceStatus.label}</span>
             </div>
-            <div className="public-assistant__header-actions" aria-label="会话操作">
+            <div className="public-assistant__header-actions" aria-label={copy.history.actions}>
               <button
                 ref={historyTriggerRef}
                 type="button"
                 onClick={openHistory}
                 disabled={!isWarmupReady}
-                aria-label="查看历史会话"
-                title="历史会话"
+                aria-label={copy.history.open}
+                title={copy.history.title}
               >
                 <History size={18} aria-hidden />
               </button>
-              <button type="button" onClick={startNewConversation} aria-label="新建会话" title="新建会话">
+              <button type="button" onClick={startNewConversation} aria-label={copy.history.newSession} title={copy.history.newSession}>
                 <MessageSquarePlus size={18} aria-hidden />
               </button>
               <button
                 type="button"
                 className="public-assistant__fullscreen-toggle"
                 onClick={() => setIsFullscreen((current) => !current)}
-                aria-label={isFullscreen ? '退出全屏' : '进入全屏'}
-                title={isFullscreen ? '退出全屏' : '进入全屏'}
+                aria-label={isFullscreen ? copy.fullscreen.exit : copy.fullscreen.enter}
+                title={isFullscreen ? copy.fullscreen.exit : copy.fullscreen.enter}
               >
                 {isFullscreen ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
               </button>
-              <button ref={closeButtonRef} type="button" onClick={closeWidget} aria-label="关闭研究助手" title="关闭">
+              <button ref={closeButtonRef} type="button" onClick={closeWidget} aria-label={copy.closeAssistant} title={copy.close}>
                 <X size={18} aria-hidden />
               </button>
             </div>
@@ -1705,7 +1665,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
               <button
                 type="button"
                 className="public-assistant__history-backdrop"
-                aria-label="关闭历史会话"
+                aria-label={copy.history.close}
                 tabIndex={-1}
                 onClick={closeHistory}
               />
@@ -1718,38 +1678,38 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
               >
                 <header>
                   <div>
-                    <p className="public-assistant__eyebrow">RECENT SESSIONS</p>
-                    <h3 id="public-assistant-history-title">历史会话</h3>
+                    <p className="public-assistant__eyebrow">{copy.eyebrow.recentSessions}</p>
+                    <h3 id="public-assistant-history-title">{copy.history.title}</h3>
                   </div>
-                  <button ref={historyCloseRef} type="button" onClick={closeHistory} aria-label="返回当前会话" title="返回">
+                  <button ref={historyCloseRef} type="button" onClick={closeHistory} aria-label={copy.history.back} title={copy.history.backTitle}>
                     <X size={18} aria-hidden />
                   </button>
                 </header>
                 <button type="button" className="public-assistant__history-new" onClick={startNewConversation}>
                   <MessageSquarePlus size={17} aria-hidden />
-                  <span>新建会话</span>
+                  <span>{copy.history.newSession}</span>
                 </button>
                 <div className="public-assistant__history-list">
                   {historyState === 'loading' && (
                     <div className="public-assistant__history-state" role="status">
                       <LoaderCircle className="is-spinning" size={16} aria-hidden />
-                      <span>正在读取匿名历史…</span>
+                      <span>{copy.history.loading}</span>
                     </div>
                   )}
                   {historyState === 'error' && (
                     <div className="public-assistant__history-state" role="status">
-                      <strong>{issueCopy?.title ?? '历史暂不可用'}</strong>
-                      <span>{issueCopy?.detail ?? '稍后可以重试。'}</span>
+                      <strong>{issueCopy?.title ?? copy.history.unavailable}</strong>
+                      <span>{issueCopy?.detail ?? copy.history.retryDetail}</span>
                       <button type="button" onClick={retryHistory} disabled={issueRetryBlocked}>
                         <RefreshCw size={15} aria-hidden />
-                        <span>{getAssistantRetryLabel(issue)}</span>
+                        <span>{getAssistantRetryLabel(issue, copy.retry, copy)}</span>
                       </button>
                     </div>
                   )}
                   {historyState === 'ready' && historySessions.length === 0 && (
                     <div className="public-assistant__history-state">
-                      <strong>还没有可恢复的会话</strong>
-                      <span>完成一次提问后，会话会在这个浏览器中保留。</span>
+                      <strong>{copy.history.emptyTitle}</strong>
+                      <span>{copy.history.emptyDetail}</span>
                     </div>
                   )}
                   {historySessions.map((session) => (
@@ -1760,16 +1720,16 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                         disabled={historyLoadingId !== null}
                         onClick={() => void openHistorySession(session.id)}
                       >
-                        <strong>{session.title}</strong>
-                        <span>{session.turnCount} 轮 · {formatSessionDate(session.lastActiveAt)}</span>
+                        <strong lang="">{session.title}</strong>
+                        <span lang="">{copy.history.turns(session.turnCount)} · {formatSessionDate(session.lastActiveAt, language)}</span>
                       </button>
                       <button
                         type="button"
                         className="public-assistant__history-delete"
                         disabled={historyLoadingId !== null}
                         onClick={() => void removeHistorySession(session.id)}
-                        aria-label={`删除会话：${session.title}`}
-                        title="删除会话"
+                        aria-label={copy.history.deleteLabel(session.title)}
+                        title={copy.history.delete}
                       >
                         {historyLoadingId === session.id
                           ? <LoaderCircle className="is-spinning" size={15} aria-hidden />
@@ -1782,12 +1742,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             </>
           )}
 
-          <p className="public-assistant__hint">问本站内容，也可以研究公开网页。</p>
+          <p className="public-assistant__hint">{copy.hint}</p>
 
           {conversation.branches.length > 0 && conversation.activeBranchId && (
             <label className="public-assistant__branch-picker">
               <GitBranch size={15} aria-hidden />
-              <span className="sr-only">当前会话分支</span>
+              <span className="sr-only">{copy.branch.current}</span>
               <select
                 value={conversation.activeBranchId}
                 disabled={!isConversationReady || isSnapshotVisible || isAssistantBusy || branchActionPending || isQuestionEditing}
@@ -1795,14 +1755,14 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
               >
                 {conversation.branches.map((branch) => (
                   <option key={branch.id} value={branch.id}>
-                    分支 {branch.ordinal} · {branch.turnCount}{branch.hasEarlierTurns ? '+' : ''} 轮 · {branch.preview}
+                    {copy.branch.option(branch.ordinal, branch.turnCount, branch.hasEarlierTurns, branch.preview)}
                   </option>
                 ))}
               </select>
               {(conversation.branchesTruncated || conversation.revisionsTruncated) && (
                 <span className="public-assistant__branch-disclosure" role="note">
-                  {conversation.branchesTruncated && <span>较早分支未显示。</span>}
-                  {conversation.revisionsTruncated && <span>部分问题的较早回答版本未显示，版本计数仅针对当前载入内容。</span>}
+                  {conversation.branchesTruncated && <span>{copy.branch.earlier}</span>}
+                  {conversation.revisionsTruncated && <span>{copy.branch.revisions}</span>}
                 </span>
               )}
             </label>
@@ -1811,22 +1771,22 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
           <details className="public-assistant__modes">
             <summary>
               <SlidersHorizontal size={15} aria-hidden />
-              <span>高级设置</span>
-              <small>{MODE_OPTIONS.find((option) => option.value === mode)?.label ?? '自动选择'}</small>
+              <span>{copy.advanced}</span>
+              <small>{copy.modes[mode]}</small>
             </summary>
             <label>
-              <span>资料范围</span>
+              <span>{copy.scope}</span>
               <select
-                aria-label="资料范围"
+                aria-label={copy.scope}
                 value={mode}
                 disabled={isAssistantBusy}
                 onChange={(event) => {
-                  const nextMode = MODE_OPTIONS.find((option) => option.value === event.target.value)?.value
-                  if (nextMode) setMode(nextMode)
+                  const nextMode = event.target.value
+                  if (nextMode === 'auto' || nextMode === 'site' || nextMode === 'web') setMode(nextMode)
                 }}
               >
-                {MODE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                {Object.entries(copy.modes).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
                 ))}
               </select>
             </label>
@@ -1836,15 +1796,15 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             className="public-assistant__messages"
             ref={scrollRef}
             role="log"
-            aria-label="对话记录"
+            aria-label={copy.transcript}
             aria-busy={isAssistantBusy}
             aria-live="off"
             onScroll={handleMessagesScroll}
           >
             {messages.length === 0 && isConversationReady && isWarmupReady && !isLoading && (
               <div className="public-assistant__empty">
-                <strong>从一个具体问题开始</strong>
-                <span>助手会选择直接回答、本站检索或公开网页研究。</span>
+                <strong>{copy.empty.title}</strong>
+                <span>{copy.empty.detail}</span>
               </div>
             )}
 
@@ -1852,8 +1812,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
               <div className="public-assistant__notice public-assistant__notice--warmup" data-assistant-warmup="warming">
                 <LoaderCircle className="is-spinning" size={16} aria-hidden />
                 <div>
-                  <strong>助手服务正在准备</strong>
-                  <span>输入内容会保留，服务就绪后即可发送。</span>
+                  <strong>{copy.warmup.title}</strong>
+                  <span>{copy.warmup.detail}</span>
                 </div>
               </div>
             )}
@@ -1861,8 +1821,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             {warmup.state === 'error' && warmupIssue && (
               <div className="public-assistant__notice public-assistant__notice--warmup" data-assistant-warmup="error">
                 <div>
-                  <strong>{warmupIssueCopy?.title ?? '助手服务暂未就绪'}</strong>
-                  <span>{warmupIssueCopy?.detail ?? '输入内容已经保留，可以稍后重新准备服务。'}</span>
+                  <strong>{warmupIssueCopy?.title ?? copy.warmup.unavailable}</strong>
+                  <span>{warmupIssueCopy?.detail ?? copy.warmup.detail}</span>
                 </div>
                 <button
                   type="button"
@@ -1870,7 +1830,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                   disabled={!isOnline}
                 >
                   <RefreshCw size={15} aria-hidden />
-                  <span>重新准备</span>
+                  <span>{copy.warmup.retry}</span>
                 </button>
               </div>
             )}
@@ -1878,31 +1838,31 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             {isRestoringSession && isWarmupReady && (
               <div className="public-assistant__loading" role="status">
                 <LoaderCircle className="is-spinning" size={15} aria-hidden />
-                <span>正在恢复当前匿名会话…</span>
+                <span>{copy.restoring}</span>
               </div>
             )}
 
             {isSnapshotVisible && (
               <div className="public-assistant__continuity-note public-assistant__continuity-note--snapshot" role="status">
                 <History size={14} aria-hidden />
-                <span>正在显示此浏览器保存的只读快照，恢复服务端会话后才能继续操作。</span>
+                <span>{copy.snapshot}</span>
               </div>
             )}
 
             {initialRestoreState === 'error' && (
               <div className="public-assistant__notice public-assistant__notice--restore" role="status">
                 <div>
-                  <strong>{initialRestoreIssueCopy?.title ?? '当前会话暂时无法恢复'}</strong>
-                  <span>{initialRestoreIssueCopy?.detail ?? '可以重试恢复，或新建一条空白会话。'}</span>
+                    <strong>{initialRestoreIssueCopy?.title ?? copy.restore.title}</strong>
+                    <span>{initialRestoreIssueCopy?.detail ?? copy.restore.detail}</span>
                 </div>
                 <div className="public-assistant__notice-actions">
                   <button type="button" onClick={retryInitialRestore} disabled={initialRestoreRetryBlocked}>
                     <RefreshCw size={15} aria-hidden />
-                    <span>{getAssistantRetryLabel(initialRestoreIssue, '重试恢复')}</span>
+                    <span>{getAssistantRetryLabel(initialRestoreIssue, copy.retryRestore, copy)}</span>
                   </button>
                   <button type="button" onClick={startNewConversation}>
                     <MessageSquarePlus size={15} aria-hidden />
-                    <span>新建会话</span>
+                    <span>{copy.history.newSession}</span>
                   </button>
                 </div>
               </div>
@@ -1911,7 +1871,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             {historyTruncated && (
               <div className="public-assistant__continuity-note" role="status">
                 <History size={14} aria-hidden />
-                <span>已恢复最近一段对话，较早内容未载入。</span>
+                <span>{copy.truncated}</span>
               </div>
             )}
 
@@ -1931,7 +1891,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                             resendEditedQuestion()
                           }}
                         >
-                          <label className="sr-only" htmlFor={`public-assistant-edit-${message.turnId}`}>编辑问题内容</label>
+                          <label className="sr-only" htmlFor={`public-assistant-edit-${message.turnId}`}>{copy.question.editContent}</label>
                           <textarea
                             ref={editTextareaRef}
                             id={`public-assistant-edit-${message.turnId}`}
@@ -1949,7 +1909,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                           <div className="public-assistant__question-editor-actions">
                             <button type="button" onClick={() => closeQuestionEditor(true)}>
                               <X size={15} aria-hidden />
-                              <span>取消</span>
+                              <span>{copy.question.cancel}</span>
                             </button>
                             <button
                               type="submit"
@@ -1962,8 +1922,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                               <Send size={15} aria-hidden />
                               <span>
                                 {normalizePublicAssistantQuestion(editingQuestion) === normalizePublicAssistantQuestion(message.content)
-                                  ? '重新发送'
-                                  : '发送修改'}
+                                  ? copy.question.resend
+                                  : copy.question.sendEdit}
                               </span>
                             </button>
                           </div>
@@ -1971,9 +1931,9 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                       )
                     : (
                         <>
-                          <p>{message.content}</p>
+                          <p lang="">{message.content}</p>
                           {message.turnId && (
-                            <div className="public-assistant__user-message-actions" aria-label="问题操作">
+                            <div className="public-assistant__user-message-actions" aria-label={copy.question.actions}>
                               <button
                                 ref={(element) => {
                                   if (element) editTriggerRefs.current.set(message.turnId!, element)
@@ -1982,8 +1942,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                                 type="button"
                                 onClick={() => startEditingQuestion(message)}
                                 disabled={isAssistantBusy || isQuestionEditing}
-                                aria-label="编辑问题"
-                                title="编辑并从此处创建新分支"
+                                aria-label={copy.question.edit}
+                                title={copy.question.editTitle}
                               >
                                 <Pencil size={15} aria-hidden />
                               </button>
@@ -1993,7 +1953,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                       )}
                 {message.role === 'assistant' && (
                   <>
-                    {((message.meta && formatAnswerMeta(message)) || (message.claims?.length ?? 0) > 0 || (message.citations?.length ?? 0) > 0) && (
+                    {((message.meta && formatAnswerMeta(message, copy, language)) || (message.claims?.length ?? 0) > 0 || (message.citations?.length ?? 0) > 0) && (
                       <details
                         className="public-assistant__evidence"
                         open={!isMobileSurfaceViewport() || expandedEvidenceIds.has(message.id)}
@@ -2007,12 +1967,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                           })
                         }}
                       >
-                        <summary>来源与回答信息（{message.citations?.length ?? 0}）</summary>
-                        {message.meta && <small className="public-assistant__meta">{formatAnswerMeta(message)}</small>}
+                        <summary>{copy.evidence.summary(message.citations?.length ?? 0)}</summary>
+                        {message.meta && <small className="public-assistant__meta">{formatAnswerMeta(message, copy, language)}</small>}
 
                     {message.claims && message.claims.length > 0 && (
                       <details className="public-assistant__claims">
-                        <summary>查看证据对应（{message.claims.length}）</summary>
+                        <summary>{copy.evidence.claims(message.claims.length)}</summary>
                         <ol>
                           {message.claims.map((claim) => {
                             const linkedCitations = claim.citationIds
@@ -2023,15 +1983,15 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                               .filter((entry) => entry.index >= 0)
                             return (
                               <li key={claim.id}>
-                                <span>{claim.text}</span>
+                                <span lang="">{claim.text}</span>
                                 {linkedCitations.length > 0 && (
-                                  <div className="public-assistant__claim-sources" aria-label="这条结论的来源">
+                                  <div className="public-assistant__claim-sources" aria-label={copy.evidence.claimSources}>
                                     {linkedCitations.map((entry) => (
                                       <button
                                         key={entry.citationId}
                                         type="button"
                                         aria-controls={citationElementId(message.id, entry.index)}
-                                        aria-label={`定位来源：${message.citations?.[entry.index]?.title ?? entry.citationId}`}
+                                        aria-label={copy.evidence.locate(message.citations?.[entry.index]?.title ?? entry.citationId)}
                                         onClick={() => focusCitation(message, entry.citationId)}
                                       >
                                         {entry.citationId}
@@ -2047,7 +2007,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                     )}
 
                     {message.citations && message.citations.length > 0 && (
-                      <div className="public-assistant__citations" aria-label="回答来源">
+                      <div className="public-assistant__citations" aria-label={copy.evidence.sources}>
                         {message.citations.map((citation, index) => {
                           const key = citationKey(message.id, citation.id)
                           const elementId = citationElementId(message.id, index)
@@ -2056,21 +2016,21 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                             if (element) citationRefs.current.set(key, element)
                             else citationRefs.current.delete(key)
                           }
-                          const publishedLabel = formatCitationDate(citation.publishedAt)
+                          const publishedLabel = formatCitationDate(citation.publishedAt, language)
                           const content = (
                             <>
                               <span className="public-assistant__citation-kicker">
-                                {citation.source === 'web' ? '外部网页' : '本站资料'} · {citation.id || `来源 ${index + 1}`}
+                                {citation.source === 'web' ? copy.evidence.web : copy.evidence.site} · <span lang="">{citation.id || copy.evidence.fallbackId(index + 1)}</span>
                               </span>
-                              <strong>{citation.title}</strong>
+                              <strong lang="">{citation.title}</strong>
                               <span className="public-assistant__citation-meta">
-                                <span>{citation.section}</span>
+                                <span lang="">{citation.section}</span>
                                 {publishedLabel && <time dateTime={citation.publishedAt ?? undefined}>{publishedLabel}</time>}
                                 <span className={`is-${citation.evidenceStatus}`}>
-                                  {citation.evidenceStatus === 'verified' ? '已核验' : '部分证据'}
+                                  {citation.evidenceStatus === 'verified' ? copy.evidence.verified : copy.evidence.partial}
                                 </span>
                               </span>
-                              <span>{citation.excerpt || citation.summary}</span>
+                              <span lang="">{citation.excerpt || citation.summary}</span>
                               {citation.source === 'web' && <ExternalLink size={13} aria-hidden />}
                             </>
                           )
@@ -2083,7 +2043,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                               className={className}
                               target="_blank"
                               rel="noopener noreferrer"
-                              aria-label={`在新窗口打开来源：${citation.title}`}
+                              aria-label={copy.evidence.openWeb(citation.title)}
                             >
                               {content}
                             </a>
@@ -2095,7 +2055,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                               to={citation.href}
                               className={className}
                               onClick={prepareInternalCitationNavigation}
-                              aria-label={`查看站内来源：${citation.title}`}
+                              aria-label={copy.evidence.openSite(citation.title)}
                             >
                               {content}
                             </Link>
@@ -2107,14 +2067,14 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                     )}
 
                     {message.revisionId && message.revisionNo && message.revisionCount && (
-                      <div className="public-assistant__revision-toolbar" aria-label="回答版本">
+                      <div className="public-assistant__revision-toolbar" aria-label={copy.revision.label}>
                         <div className="public-assistant__revision-nav">
                           <button
                             type="button"
                             onClick={() => navigateRevision(message, -1)}
                             disabled={message.revisionNo <= 1 || isAssistantBusy || isQuestionEditing}
-                            aria-label="查看上一版回答"
-                            title="上一版"
+                            aria-label={copy.revision.previous}
+                            title={copy.revision.previousTitle}
                           >
                             <ChevronLeft size={15} aria-hidden />
                           </button>
@@ -2123,8 +2083,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                             type="button"
                             onClick={() => navigateRevision(message, 1)}
                             disabled={message.revisionNo >= message.revisionCount || isAssistantBusy || isQuestionEditing}
-                            aria-label="查看下一版回答"
-                            title="下一版"
+                            aria-label={copy.revision.next}
+                            title={copy.revision.nextTitle}
                           >
                             <ChevronRight size={15} aria-hidden />
                           </button>
@@ -2140,18 +2100,18 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                             disabled={!isConversationReady || isSnapshotVisible || isAssistantBusy || branchActionPending || isQuestionEditing}
                           >
                             <GitBranch size={14} aria-hidden />
-                            <span>从此版本继续</span>
+                            <span>{copy.revision.continue}</span>
                           </button>
                         )}
                       </div>
                     )}
 
-                    <div className="public-assistant__message-actions" aria-label="回答操作">
+                    <div className="public-assistant__message-actions" aria-label={copy.answer.actions}>
                       <button
                         type="button"
                         onClick={() => void copyAnswer(message)}
-                        aria-label={copiedMessageId === message.id ? '已复制回答' : '复制回答'}
-                        title={copiedMessageId === message.id ? '已复制' : '复制回答'}
+                        aria-label={copiedMessageId === message.id ? copy.answer.copied : copy.answer.copy}
+                        title={copiedMessageId === message.id ? copy.answer.copiedTitle : copy.answer.copy}
                       >
                         {copiedMessageId === message.id ? <Check size={15} aria-hidden /> : <Copy size={15} aria-hidden />}
                       </button>
@@ -2160,8 +2120,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                           type="button"
                           onClick={() => regenerateAnswer(message)}
                           disabled={!isConversationReady || isSnapshotVisible || isAssistantBusy || isQuestionEditing}
-                          aria-label="重新生成回答"
-                          title="重新生成"
+                          aria-label={copy.answer.regenerate}
+                          title={copy.answer.regenerateTitle}
                         >
                           <RefreshCw size={15} aria-hidden />
                         </button>
@@ -2176,9 +2136,9 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                               void sendFeedback(message, 'up', 'helpful')
                             }}
                             disabled={message.feedbackPending || !isWarmupReady || !isConversationReady || isSnapshotVisible}
-                            aria-label="这个回答有帮助"
+                            aria-label={copy.answer.helpful}
                             aria-pressed={message.feedback === 'up'}
-                            title="有帮助"
+                            title={copy.answer.helpfulTitle}
                           >
                             <ThumbsUp size={15} aria-hidden />
                           </button>
@@ -2191,35 +2151,35 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                             }}
                             onClick={() => setFeedbackMenuMessageId((current) => current === message.id ? null : message.id)}
                             disabled={message.feedbackPending || !isWarmupReady || !isConversationReady || isSnapshotVisible}
-                            aria-label="这个回答需要改进"
+                            aria-label={copy.answer.improve}
                             aria-pressed={message.feedback === 'down'}
                             aria-expanded={feedbackMenuMessageId === message.id}
                             aria-controls={`public-assistant-feedback-${message.id}`}
-                            title="需要改进"
+                            title={copy.answer.improveTitle}
                           >
                             <ThumbsDown size={15} aria-hidden />
                           </button>
                         </>
                       )}
-                      {message.feedbackError && <span role="status">反馈未提交</span>}
+                      {message.feedbackError && <span role="status">{copy.answer.feedbackFailed}</span>}
                     </div>
                     {feedbackMenuMessageId === message.id && (
                       <div
                         className="public-assistant__feedback-reasons"
                         id={`public-assistant-feedback-${message.id}`}
                         role="group"
-                        aria-label="选择需要改进的原因"
+                        aria-label={copy.answer.feedbackGroup}
                       >
-                        <span>哪里需要改进？</span>
+                        <span>{copy.answer.feedbackPrompt}</span>
                         <div>
-                          {NEGATIVE_FEEDBACK_REASONS.map((option) => (
+                          {(Object.entries(copy.feedbackReasons) as Array<[NegativeFeedbackReason, string]>).map(([value, label]) => (
                             <button
-                              key={option.value}
+                              key={value}
                               type="button"
                               disabled={message.feedbackPending || !isWarmupReady || !isConversationReady || isSnapshotVisible}
-                              onClick={() => void sendFeedback(message, 'down', option.value)}
+                              onClick={() => void sendFeedback(message, 'down', value)}
                             >
-                              {option.label}
+                              {label}
                             </button>
                           ))}
                         </div>
@@ -2233,9 +2193,9 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             {isLoading && (
               <div className="public-assistant__loading">
                 <LoaderCircle className="is-spinning" size={15} aria-hidden />
-                <span>{getLoadingLabel(mode, progressStage)}</span>
+                <span>{getLoadingLabel(mode, progressStage, copy)}</span>
                 {waitingSeconds >= 8 && (
-                  <span className="public-assistant__loading-elapsed" aria-hidden>{waitingSeconds} 秒</span>
+                  <span className="public-assistant__loading-elapsed" aria-hidden>{copy.seconds(waitingSeconds)}</span>
                 )}
               </div>
             )}
@@ -2248,7 +2208,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                 </div>
                 <button type="button" onClick={retryIssue} disabled={isAssistantBusy || isQuestionEditing || issueRetryBlocked}>
                   <RefreshCw size={15} aria-hidden />
-                  <span>{getAssistantRetryLabel(issue, issue.scope === 'branch' ? '重试本次操作' : '重试')}</span>
+                  <span>{getAssistantRetryLabel(issue, issue.scope === 'branch' ? copy.retryAction : copy.retry, copy)}</span>
                 </button>
               </div>
             )}
@@ -2256,26 +2216,26 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             {hasNewContent && (
               <button type="button" className="public-assistant__latest" onClick={scrollToLatest}>
                 <ArrowDown size={15} aria-hidden />
-                <span>回到最新</span>
+                <span>{copy.latest}</span>
               </button>
             )}
           </div>
 
           <span className="sr-only" aria-live="polite">
             {warmup.state === 'warming'
-              ? '助手服务正在准备，输入内容会保留'
+              ? copy.live.warming
               : warmup.state === 'error'
-                ? '助手服务暂未就绪，可以重新准备'
+                ? copy.live.error
                 : isRestoringSession
-                  ? '正在恢复当前会话'
+                  ? copy.live.restoring
               : isLoading
-                ? '正在生成回答'
+              ? copy.live.loading
               : issue?.code === 'public-assistant-request-cancelled'
-                ? '已停止生成'
-                : messages.at(-1)?.role === 'assistant' ? '回答已完成' : ''}
+                ? copy.live.cancelled
+                : messages.at(-1)?.role === 'assistant' ? copy.live.completed : ''}
           </span>
 
-          <div className="public-assistant__suggestions" aria-label="建议提问">
+          <div className="public-assistant__suggestions" aria-label={copy.suggestions}>
             {(latestSuggestions?.map((suggestion) => ({ id: suggestion, label: suggestion, prompt: suggestion }))
               ?? routeSuggestions).slice(0, 3).map((suggestion) => (
               <button
@@ -2285,7 +2245,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                 disabled={isAssistantBusy || isQuestionEditing || !isConversationReady}
                 onClick={() => void submitQuestion(suggestion.prompt)}
               >
-                {suggestion.label}
+                <span lang="">{suggestion.label}</span>
               </button>
             ))}
           </div>
@@ -2306,12 +2266,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             />
             {imageAttachment && (
               <div className="public-assistant__image-preview">
-                <img src={imageAttachment.dataUrl} alt="待发送图片预览" />
+                <img src={imageAttachment.dataUrl} alt={copy.image.preview} />
                 <div>
                   <strong>{imageAttachment.name}</strong>
-                  <span>仅用于本次回答，不写入历史</span>
+                  <span>{copy.image.use}</span>
                 </div>
-                <button type="button" onClick={removeImageAttachment} aria-label="移除图片" title="移除图片">
+                <button type="button" onClick={removeImageAttachment} aria-label={copy.image.remove} title={copy.image.remove}>
                   <X size={15} aria-hidden />
                 </button>
               </div>
@@ -2323,12 +2283,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
               className="is-attach"
               disabled={isAssistantBusy || isQuestionEditing || !isConversationReady}
               onClick={() => imageInputRef.current?.click()}
-              aria-label={imageAttachment ? '更换图片' : '添加图片'}
-              title={imageAttachment ? '更换图片' : '添加图片'}
+              aria-label={imageAttachment ? copy.image.replace : copy.image.add}
+              title={imageAttachment ? copy.image.replace : copy.image.add}
             >
               {isImageProcessing ? <LoaderCircle className="spin" size={17} aria-hidden /> : <ImagePlus size={17} aria-hidden />}
             </button>
-            <label className="sr-only" htmlFor="public-assistant-input">向研究助手提问</label>
+            <label className="sr-only" htmlFor="public-assistant-input">{copy.composer.label}</label>
             <textarea
               ref={inputRef}
               id="public-assistant-input"
@@ -2343,7 +2303,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                   void submitQuestion(input)
                 }
               }}
-              placeholder="输入一个需要回答或研究的问题"
+              placeholder={copy.composer.placeholder}
             />
             {isLoading ? (
               <button
@@ -2353,19 +2313,19 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                   event.preventDefault()
                   cancelActiveChat()
                 }}
-                aria-label="停止生成"
+                aria-label={copy.composer.stopLabel}
               >
                 <Square size={15} fill="currentColor" aria-hidden />
-                <span>停止</span>
+                <span>{copy.composer.stop}</span>
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={!isWarmupReady || !isConversationReady || isQuestionEditing || isImageProcessing || input.trim().length === 0}
-                aria-label="发送问题"
+                aria-label={copy.composer.sendLabel}
               >
                 <Send size={16} aria-hidden />
-                <span>发送</span>
+                <span>{copy.composer.send}</span>
               </button>
             )}
           </form>

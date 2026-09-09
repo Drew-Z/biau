@@ -1,6 +1,8 @@
 import { Children, Fragment, isValidElement, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Check, Copy } from 'lucide-react'
 import Markdown, { type MarkdownToJSX } from 'markdown-to-jsx/react'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { publicAssistantInterfaceCopy } from '../data/publicAssistantInterfaceCopy'
 
 interface PublicAssistantMessageContentProps {
   content: string
@@ -30,7 +32,7 @@ function readCodeBlock(children: ReactNode) {
   }
 }
 
-function AssistantCodeBlock({ code, language }: AssistantCodeBlockProps) {
+function AssistantCodeBlock({ code, language, copy }: AssistantCodeBlockProps & { copy: typeof publicAssistantInterfaceCopy.zh }) {
   const [copied, setCopied] = useState(false)
   const resetTimerRef = useRef<number | null>(null)
 
@@ -57,8 +59,8 @@ function AssistantCodeBlock({ code, language }: AssistantCodeBlockProps) {
         <button
           type="button"
           onClick={() => void copyCode()}
-          aria-label={copied ? '已复制代码' : '复制代码'}
-          title={copied ? '已复制' : '复制代码'}
+          aria-label={copied ? copy.markdown.copiedCode : copy.markdown.copyCode}
+          title={copied ? copy.markdown.copied : copy.markdown.copyCode}
         >
           {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
         </button>
@@ -78,22 +80,29 @@ const markdownOptions: MarkdownToJSX.Options = {
     a: ({ children }: { children?: ReactNode }) => <span>{children}</span>,
     img: ({ alt }: { alt?: string }) => <span>{alt ?? ''}</span>,
     input: () => null,
-    pre: ({ children }: { children?: ReactNode }) => {
-    const block = readCodeBlock(children)
-    return <AssistantCodeBlock code={block.code} language={block.language} />
-    },
-    table: ({ children }: { children?: ReactNode }) => (
-      <div className="public-assistant-markdown__table-scroll" role="region" aria-label="回答中的表格" tabIndex={0}>
-        <table>{children}</table>
-      </div>
-    ),
   },
 }
 
 export function PublicAssistantMessageContent({ content }: PublicAssistantMessageContentProps) {
+  const language = useSiteLanguage()
+  const copy = publicAssistantInterfaceCopy[language]
   return (
-    <div className="public-assistant-markdown">
-      <Markdown options={markdownOptions}>{content}</Markdown>
+    <div className="public-assistant-markdown" lang="">
+      <Markdown options={{
+        ...markdownOptions,
+        overrides: {
+          ...markdownOptions.overrides,
+          pre: ({ children }: { children?: ReactNode }) => {
+            const block = readCodeBlock(children)
+            return <AssistantCodeBlock code={block.code} language={block.language} copy={copy} />
+          },
+          table: ({ children }: { children?: ReactNode }) => (
+            <div className="public-assistant-markdown__table-scroll" role="region" aria-label={copy.markdown.table} tabIndex={0}>
+              <table lang="">{children}</table>
+            </div>
+          ),
+        },
+      }}>{content}</Markdown>
     </div>
   )
 }

@@ -35,7 +35,8 @@
     "09-09-stage-4-project-interface-language",
     "09-09-stage-4-status-interface-language",
     "09-09-stage-4-ai-daily-interface-language",
-    "09-10-stage-4-home-interface-language"
+    "09-10-stage-4-home-interface-language",
+    "09-10-stage-4-public-assistant-interface-language"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -44,11 +45,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+    "phase": "execute",
       "round": 18,
-      "activeChild": null,
+    "activeChild": "09-10-stage-4-public-assistant-interface-language",
       "lastCompletedChild": "09-10-stage-4-home-interface-language",
-      "nextAction": "Reassess the remaining Public Assistant fixed interface language surface. Separate mechanical UI labels and recovery controls from authored answers, citations, model facts and production behavior; create one bounded child only if local fixtures can verify it.",
+    "nextAction": "Implement and verify the bounded Public Assistant fixed interface language surface while preserving authored payloads, request contracts, session state and production boundaries.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

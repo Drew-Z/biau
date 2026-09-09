@@ -627,7 +627,8 @@ export async function checkSiteLanguage(browser, base) {
   const projectInterface = await checkProjectInterfaceLanguage(browser, base)
   const statusInterface = await checkStatusInterfaceLanguage(browser, base)
   const aiDailyInterface = await checkAiDailyInterfaceLanguage(browser, base)
-  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, ...homeInterface, ...projectInterface, ...statusInterface, ...aiDailyInterface, modelCalls: 0 }
+  const publicAssistantInterface = await checkPublicAssistantInterfaceLanguage(browser, base)
+  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, ...homeInterface, ...projectInterface, ...statusInterface, ...aiDailyInterface, ...publicAssistantInterface, modelCalls: 0 }
 }
 
 export async function checkHomeInterfaceLanguage(browser, base) {
@@ -900,6 +901,301 @@ export async function checkProjectInterfaceLanguage(browser, base) {
     }
   }
   return { projectInterfaceGroups }
+}
+
+const publicAssistantLanguageCitation = [
+  {
+    id: 'assistant-language-site',
+    title: '站内引用标题',
+    summary: '站内引用摘要保持原文。',
+    href: '/blog',
+    source: 'site',
+    section: '知识库章节',
+    excerpt: '站内引用摘要保持原文。',
+    publishedAt: null,
+    evidenceStatus: 'verified',
+  },
+  {
+    id: 'assistant-language-web',
+    title: '公开网页引用标题',
+    summary: '公开网页引用摘要保持原文。',
+    href: 'https://example.com/assistant-language',
+    source: 'web',
+    section: '公开网页章节',
+    excerpt: '公开网页引用摘要保持原文。',
+    publishedAt: '2026-07-28T00:00:00.000Z',
+    evidenceStatus: 'partial',
+  },
+]
+
+function createPublicAssistantLanguageRevision({ id, revisionNo, answer, basedOnRevisionId = null, recovery } = {}) {
+  return {
+    id,
+    revisionNo,
+    basedOnRevisionId,
+    answer,
+    status: 'answered',
+    claims: [{ id: `${id}-claim`, text: '这条结论的原文保持不变。', citationIds: publicAssistantLanguageCitation.map((citation) => citation.id) }],
+    citations: publicAssistantLanguageCitation,
+    suggestions: ['继续核对原文建议'],
+    route: 'combined',
+    meta: {
+      mode: 'model',
+      citationCount: publicAssistantLanguageCitation.length,
+      ...(recovery ? { recovery } : {}),
+      research: {
+        requestedMode: 'auto',
+        route: 'combined',
+        status: 'answered',
+        evidenceCount: 2,
+        siteEvidenceCount: 1,
+        webEvidenceCount: 1,
+        retryCount: recovery?.attempts ? recovery.attempts - 1 : 0,
+        searchAvailable: true,
+        durationMs: 120,
+      },
+    },
+    createdAt: revisionNo === 1 ? '2026-07-27T08:01:00.000Z' : '2026-07-28T08:01:00.000Z',
+    feedback: null,
+    contractVersion: 2,
+    conversation: {
+      branchId: 'assistant-language-branch-1',
+      branchOrdinal: 1,
+      turnId: 'assistant-language-turn-1',
+      revisionId: id,
+      revisionNo,
+      basedOnRevisionId,
+      activated: revisionNo === 2,
+    },
+  }
+}
+
+const publicAssistantLanguageHistoryFixture = (() => {
+  const revisions = [
+    createPublicAssistantLanguageRevision({ id: 'assistant-language-revision-1', revisionNo: 1, answer: '第一版回答原文保持不变。' }),
+    createPublicAssistantLanguageRevision({ id: 'assistant-language-revision-2', revisionNo: 2, answer: '当前回答原文保持不变。', basedOnRevisionId: 'assistant-language-revision-1' }),
+  ]
+  return {
+    session: {
+      id: 'assistant-language-session',
+      activeBranchId: 'assistant-language-branch-1',
+      title: '公开助手语言验收会话',
+      turnCount: 1,
+      hasEarlierTurns: true,
+      createdAt: '2026-07-27T08:00:00.000Z',
+      lastActiveAt: '2026-07-28T08:01:00.000Z',
+      expiresAt: '2026-08-26T08:00:00.000Z',
+    },
+    branches: [{
+      id: 'assistant-language-branch-1',
+      ordinal: 1,
+      headRevisionId: 'assistant-language-revision-2',
+      preview: '历史问题原文',
+      turnCount: 1,
+      hasEarlierTurns: true,
+      lastActiveAt: '2026-07-28T08:01:00.000Z',
+    }],
+    turns: [{
+      id: 'assistant-language-turn-1',
+      question: '历史问题原文',
+      mode: 'auto',
+      parentRevisionId: null,
+      selectedRevisionId: 'assistant-language-revision-2',
+      revisions,
+      createdAt: '2026-07-28T08:01:00.000Z',
+    }],
+    hasEarlierTurns: true,
+    revisionsTruncated: true,
+    branchesTruncated: true,
+    truncated: true,
+  }
+})()
+
+function createPublicAssistantLanguageAnswer(requestBody) {
+  const revision = createPublicAssistantLanguageRevision({
+    id: 'assistant-language-request-revision',
+    revisionNo: 1,
+    answer: '失败后重试得到的回答原文。',
+    recovery: { state: 'recovered', attempts: 2 },
+  })
+  return {
+    ...revision,
+    requestId: requestBody.requestId,
+    sessionId: requestBody.sessionId,
+    messageId: revision.conversation.turnId,
+    conversation: { ...revision.conversation, revisionId: revision.id, activated: true },
+  }
+}
+
+const publicAssistantLanguageSse = (answer) => [
+  'event: progress',
+  'data: {"stage":"answering"}',
+  '',
+  'event: result',
+  `data: ${JSON.stringify(answer)}`,
+  '',
+  '',
+].join('\n')
+
+export async function checkPublicAssistantInterfaceLanguage(browser, base) {
+  let publicAssistantInterfaceGroups = 0
+  for (const width of [320, 390, 430, 1440]) {
+    for (const theme of ['morning', 'nature', 'stellar']) {
+      const { page, errors, requests } = await createPage(browser, base, { width, theme, stored: 'zh' })
+      let streamRequests = 0
+      let modelCalls = 0
+      await page.addInitScript((fixture) => {
+        window.localStorage.setItem('biau-public-assistant-sessions-v2', JSON.stringify({
+          version: 2,
+          currentSessionId: fixture.session.id,
+          sessionIds: [fixture.session.id],
+        }))
+      }, publicAssistantLanguageHistoryFixture)
+      await page.route('**/api/health', (route) => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }),
+      }))
+      await page.route('**/api/chat/public/session', (route) => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(publicAssistantLanguageHistoryFixture),
+      }))
+      await page.route('**/api/chat/public/sessions', (route) => route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ sessions: [publicAssistantLanguageHistoryFixture.session] }),
+      }))
+      await page.route('**/api/chat/public/stream', async (route) => {
+        streamRequests += 1
+        const requestBody = JSON.parse(route.request().postData() || '{}')
+        if (streamRequests === 1) {
+          await new Promise((resolveDelay) => setTimeout(resolveDelay, 140))
+          await route.fulfill({
+            status: 500,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: 'invalid-public-assistant-request' }),
+          })
+          return
+        }
+        modelCalls += 1
+        await new Promise((resolveDelay) => setTimeout(resolveDelay, 80))
+        await route.fulfill({ status: 200, headers: { 'Content-Type': 'text/event-stream' }, body: publicAssistantLanguageSse(createPublicAssistantLanguageAnswer(requestBody)) })
+      })
+      try {
+        await page.goto(`${base}/blog`, { waitUntil: 'load' })
+        const trigger = page.locator('.public-assistant__trigger')
+        await trigger.waitFor({ state: 'visible' })
+        assert.equal(await trigger.getAttribute('aria-label'), '泊岸研究助手')
+        await trigger.click()
+        const root = page.locator('.public-assistant')
+        const panel = page.locator('.public-assistant__panel')
+        await panel.waitFor({ state: 'visible' })
+        assert.equal(await trigger.getAttribute('aria-label'), '助手已就绪')
+        await page.locator('.public-assistant__message').nth(1).waitFor({ state: 'visible' })
+        assert.ok(await root.evaluate((node) => node.matches(':lang(zh-CN)')))
+        assert.equal(await page.locator('.public-assistant__status').innerText(), '可检索本站与公开网页')
+        assert.equal(await page.locator('.public-assistant__modes > summary small').innerText(), '自动选择')
+        assert.deepEqual(await page.locator('.public-assistant__modes option').allTextContents(), ['自动选择', '仅本站', '仅公开网页'])
+        assert.equal(await page.locator('.public-assistant__history').count(), 0)
+        assert.equal(await page.locator('.public-assistant__composer textarea').getAttribute('placeholder'), '输入一个需要回答或研究的问题')
+        assert.equal(await page.locator('.public-assistant__composer textarea').getAttribute('aria-label'), null)
+        assert.equal(await page.locator('.public-assistant__composer label').innerText(), '向研究助手提问')
+        assert.ok(await page.locator('.public-assistant__citation').count() === 2)
+        assert.ok((await page.locator('.public-assistant__citation').allTextContents()).some((text) => text.includes('外部网页') && text.includes('部分证据')))
+        assert.equal(await page.locator('.public-assistant__revision-toolbar').getAttribute('aria-label'), '回答版本')
+        assert.equal(await page.locator('.public-assistant__revision-nav button').first().getAttribute('title'), '上一版')
+        assert.equal(await page.locator('.public-assistant__revision-nav button').last().getAttribute('title'), '下一版')
+        assert.equal(await page.locator('.public-assistant__continue-version').count(), 0)
+        await page.locator('.public-assistant__revision-nav button').first().click()
+        await page.waitForFunction(() => document.querySelector('.public-assistant-markdown')?.textContent === '第一版回答原文保持不变。')
+        assert.equal(await page.locator('.public-assistant__continue-version').innerText(), '从此版本继续')
+        assert.equal(await page.locator('.public-assistant__message-actions').getAttribute('aria-label'), '回答操作')
+        assert.equal(await page.locator('.public-assistant__message.is-user p').innerText(), '历史问题原文')
+        assert.equal(await page.locator('.public-assistant-markdown').first().innerText(), '第一版回答原文保持不变。')
+        const payloadBefore = await page.locator('.public-assistant__message').evaluateAll((nodes) => nodes.map((node) => ({
+          role: node.className,
+          text: node.querySelector('.public-assistant-markdown, p')?.textContent,
+          citations: [...node.querySelectorAll('.public-assistant__citation strong, .public-assistant__citation-meta span:not([class])')].map((item) => item.textContent),
+        })))
+        const panelNode = await panel.elementHandle()
+        const messageNode = await page.locator('.public-assistant__messages').elementHandle()
+        const historyBefore = await page.evaluate(() => ({ href: location.href, length: history.length }))
+        if (process.env.UI_CHECK_ARTIFACT_DIR && width === 1440 && theme === 'nature') await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'public-assistant-1440-zh.png'), fullPage: true })
+
+        await page.locator('.public-assistant__history-open').count().then(async (count) => {
+          assert.equal(count, 0)
+        })
+        await page.locator('.public-assistant__header-actions button').first().click()
+        await page.locator('.public-assistant__history').waitFor({ state: 'visible' })
+        assert.equal(await page.locator('.public-assistant__history h3').innerText(), '历史会话')
+        assert.equal(await page.locator('.public-assistant__history-new').innerText(), '新建会话')
+        await page.keyboard.press('Escape')
+        await page.locator('.public-assistant__history').waitFor({ state: 'hidden' })
+
+        await page.locator('.nav-lang-toggle').evaluate((node) => node.click())
+        await assertSiteLanguage(page, 'en')
+        assert.ok(await root.evaluate((node) => node.matches(':lang(en)')))
+        assert.ok(await panelNode.evaluate((node) => node.isConnected))
+        assert.ok(await messageNode.evaluate((node) => node.isConnected))
+        assert.deepEqual(await page.evaluate(() => ({ href: location.href, length: history.length })), historyBefore)
+        assert.deepEqual(await page.locator('.public-assistant__message').evaluateAll((nodes) => nodes.map((node) => ({
+          role: node.className,
+          text: node.querySelector('.public-assistant-markdown, p')?.textContent,
+          citations: [...node.querySelectorAll('.public-assistant__citation strong, .public-assistant__citation-meta span:not([class])')].map((item) => item.textContent),
+        }))), payloadBefore)
+        assert.equal(await trigger.getAttribute('aria-label'), 'Assistant ready')
+        assert.equal(await page.locator('.public-assistant__status').innerText(), 'Search this site and public webpages')
+        assert.equal(await page.locator('.public-assistant__modes > summary small').innerText(), 'Automatic')
+        assert.deepEqual(await page.locator('.public-assistant__modes option').allTextContents(), ['Automatic', 'This site only', 'Public webpages only'])
+        assert.equal(await page.locator('.public-assistant__composer textarea').getAttribute('placeholder'), 'Enter a question to answer or research')
+        assert.equal(await page.locator('.public-assistant__composer label').innerText(), 'Ask the research assistant')
+        assert.equal(await page.locator('.public-assistant__revision-toolbar').getAttribute('aria-label'), 'Answer versions')
+        assert.equal(await page.locator('.public-assistant__revision-nav button').first().getAttribute('title'), 'Previous version')
+        assert.equal(await page.locator('.public-assistant__revision-nav button').last().getAttribute('title'), 'Next version')
+        assert.equal(await page.locator('.public-assistant__continue-version').innerText(), 'Continue from this version')
+        assert.equal(await page.locator('.public-assistant__message-actions').getAttribute('aria-label'), 'Answer actions')
+        assert.ok((await page.locator('.public-assistant__citation').allTextContents()).some((text) => text.includes('Public webpage') && text.includes('Partial evidence')))
+        await page.locator('.public-assistant__message-actions button').last().click()
+        assert.equal(await page.locator('.public-assistant__feedback-reasons').getAttribute('aria-label'), 'Select a reason for improvement')
+        assert.equal(await page.locator('.public-assistant__feedback-reasons > span').innerText(), 'What needs improvement?')
+        assert.deepEqual(await page.locator('.public-assistant__feedback-reasons button').allTextContents(), ['Inaccurate content', 'Unclear wording', 'Missing sources', 'Outdated information', 'Other issue'])
+        await page.keyboard.press('Escape')
+        if (process.env.UI_CHECK_ARTIFACT_DIR && width === 320 && theme === 'morning') await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'public-assistant-320-en.png'), fullPage: true })
+
+        const input = page.locator('#public-assistant-input')
+        await input.fill('失败后重试问题')
+        await input.press('Enter')
+        await page.locator('.public-assistant__loading').waitFor({ state: 'visible' })
+        assert.match(await page.locator('.public-assistant__loading').innerText(), /Composing an evidence-based answer|Planning the research|Identifying the public information/u)
+        await page.locator('.public-assistant__notice strong').waitFor({ state: 'visible' })
+        assert.equal(await page.locator('.public-assistant__notice strong').innerText(), 'Request incomplete')
+        assert.equal(await page.locator('.public-assistant__notice button').innerText(), 'Retry')
+        await page.locator('.public-assistant__notice button').click()
+        await page.waitForFunction(() => document.querySelectorAll('.public-assistant__message.is-assistant').length >= 2, undefined, { timeout: 8000 }).catch(async (error) => {
+          const state = await page.evaluate(() => ({ messages: [...document.querySelectorAll('.public-assistant__message')].map((node) => node.textContent), requests: performance.getEntriesByType('resource').filter((entry) => entry.name.includes('/api/')).map((entry) => entry.name) }))
+          throw new Error(`${error.message}; assistant-state=${JSON.stringify(state)}`, { cause: error })
+        })
+        assert.ok(await page.locator('.public-assistant__message').allTextContents().then((texts) => texts.some((text) => text.includes('失败后重试得到的回答原文。'))))
+        assert.equal(await page.locator('.public-assistant__composer').getAttribute('aria-label'), null)
+        assert.ok(modelCalls === 1, 'the fixture must count only the successful local answer stream as a model-shaped response')
+        assert.equal(await page.evaluate(() => localStorage.getItem('biau-port-language')), 'en')
+        await page.locator('.nav-lang-toggle').evaluate((node) => node.click())
+        await assertSiteLanguage(page, 'zh')
+        assert.ok(await root.evaluate((node) => node.matches(':lang(zh-CN)')))
+        assert.equal(await page.locator('.public-assistant__composer label').innerText(), '向研究助手提问')
+        assert.equal(await page.locator('.public-assistant__message.is-user').first().innerText(), '历史问题原文')
+        assertLocalOnly(errors, requests)
+        assert.ok(requests.every((request) => /^GET \/api\/health$|^POST \/api\/chat\/public\/(session|sessions|stream)$/.test(request)), `unexpected public assistant requests: ${requests.join(', ')}`)
+        publicAssistantInterfaceGroups += 1
+      } catch (error) {
+        throw new Error(`public-assistant-interface ${width}/${theme}: ${error.message}`, { cause: error })
+      } finally {
+        await page.context().close()
+      }
+    }
+  }
+  return { publicAssistantInterfaceGroups, publicAssistantModelCalls: 0 }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

@@ -1,0 +1,49 @@
+{
+  "createdAt": "2026-09-10",
+  "baseCommit": "46a0a22a",
+  "evidenceRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-public-assistant-language-8c5b47feb5fa4efebd4bf969443ce4ad",
+  "preview": "http://127.0.0.1:5190",
+  "environment": {
+    "shell": "PowerShell 7.6.5",
+    "node": "v24.14.0",
+    "vite": "8.0.16"
+  },
+  "verification": {
+    "publicAssistantInterfaceGroups": 12,
+    "publicAssistantModelCalls": 0,
+    "modelCalls": 0,
+    "smokeGroups": 21,
+    "smokeFailures": 0,
+    "fullUiGroups": 46,
+    "fullUiFailures": 0,
+    "performance": {
+      "jsBytes": 320266,
+      "jsBudget": 430000,
+      "cssBytes": 152582,
+      "cssBudget": 222755,
+      "routeCssBytes": 141959,
+      "externalBlockingStylesheets": 0
+    },
+    "protectedStatusSha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+  },
+  "screenshots": [
+    "C:/Users/zhang/AppData/Local/Temp/blog-semi-public-assistant-language-8c5b47feb5fa4efebd4bf969443ce4ad/public-assistant-320-en.png",
+    "C:/Users/zhang/AppData/Local/Temp/blog-semi-public-assistant-language-8c5b47feb5fa4efebd4bf969443ce4ad/public-assistant-1440-zh.png"
+  ],
+  "productionActions": {
+    "push": false,
+    "deploy": false,
+    "sign": false,
+    "liveModel": false,
+    "publish": false,
+    "businessSchedule": false,
+    "heartbeatChanged": false
+  },
+  "delivery": {
+    "status": "pending-local-commit",
+    "workCommit": null,
+    "archivePath": ".trellis/tasks/archive/2026-09/09-10-stage-4-public-assistant-interface-language",
+    "parentActuallyResumed": false,
+    "parentCurrentSource": "session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc"
+  }
+}
