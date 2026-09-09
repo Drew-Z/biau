@@ -42,9 +42,10 @@
     "heartbeatChanged": false
   },
   "delivery": {
-    "status": "ready-for-local-commit",
-    "workCommit": null,
-    "archivePath": null,
-    "parentActuallyResumed": false
+    "status": "archived-returned-to-parent",
+    "workCommit": "46a0a22a",
+    "archivePath": ".trellis/tasks/archive/2026-09/09-10-stage-4-home-interface-language",
+    "parentActuallyResumed": true,
+    "parentCurrentSource": "session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc"
   }
 }
