@@ -36,7 +36,8 @@
     "09-09-stage-4-status-interface-language",
     "09-09-stage-4-ai-daily-interface-language",
     "09-10-stage-4-home-interface-language",
-    "09-10-stage-4-public-assistant-interface-language"
+    "09-10-stage-4-public-assistant-interface-language",
+    "09-10-stage-5-authored-content-seo-language-audit"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -45,11 +46,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-    "phase": "waiting",
+    "phase": "execute",
       "round": 20,
-    "activeChild": null,
-    "lastCompletedChild": "09-10-stage-4-public-assistant-interface-language",
-    "nextAction": "Waiting for a new product decision on authored-content/SEO translation scope or separate production approval; no bounded local public-interface candidate remains. Resume with fresh evidence before creating a child, keeping real models, publication, Feed/Cron, heartbeat and the protected status snapshot outside this loop.",
+    "activeChild": "09-10-stage-5-authored-content-seo-language-audit",
+      "lastCompletedChild": "09-10-stage-4-public-assistant-interface-language",
+    "nextAction": "Execute the bounded authored-content and SEO language audit; classify public fields and metadata with evidence without changing content, routes, production state or the protected snapshot, then return to assess.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
