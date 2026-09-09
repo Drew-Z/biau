@@ -41,4 +41,4 @@
 
 - Windows / PowerShell 7.6.5 / Node 24.14.0 / Vite 8.0.16，本地 preview 为 127.0.0.1:5190。接续时确认 PID 10300 及 Vite preview 命令行，原 5183 服务保留。
 - 所有证据位于 `C:/Users/zhang/AppData/Local/Temp/blog-semi-status-language-20260909-18585bd6`；截图/日志均有验收用途，当前没有一次性脚本或已删除文件。
-- 本轮质量门禁已通过，正在精确本地工作提交；随后仅归档本子任务并实际启动父任务。没有 push、部署、签名、真实模型、内容发布、Feed/Cron 启用或 heartbeat 修改。
+- 本地工作提交 `68b3e16222521a3a098062efb1de749ef046314f` 包含精确 21 个文件；本项已归档至 `archive/2026-09/09-09-stage-4-status-interface-language`。实际 `task.py start` 返回父任务并核对会话指针，原始日志保留。没有 push、部署、签名、真实模型、内容发布、Feed/Cron 启用或 heartbeat 修改；父循环继续。

@@ -656,7 +656,10 @@
     "ui-full-final.log": "bdc31f915a868dc9bfb692607546ca160a7416cbfef51eec2607693fd9322f7a",
     "ui-smoke-final-result.json": "ef611e8a57a0500117bd58505e2612fedec0af441ff2b5ef5586b84773e3c49b",
     "ui-smoke-final.log": "d78fb3744f0fb730740a197ad07f120970567722a247f7f86e4b4934c03df15d",
-    "verification-final-freeze.json": "61c0d0cf02bfce0c8e27fa4b0ccc6088c425796047946845c660f1bdd3aef597"
+    "verification-final-freeze.json": "61c0d0cf02bfce0c8e27fa4b0ccc6088c425796047946845c660f1bdd3aef597",
+    "archive.log": "2ecd2a2f2bd9d5186b5f7ec729f28396ec59bc23a4f818457036e6baf300e255",
+    "parent-return.log": "350a8e79caa1637a8241c6b724263b9bc73e70347712836429f664201c179dbc",
+    "parent-current.log": "d8a563f2016f756642785715204800497066af338d791f62f68a082e9d8d6d6e"
   },
   "screenshots": {
     "status-language-detail-1440-nature-en.png": "fef4a8df74f0d0b8d0f62cb186b9ed75ab4605a39443af784e5e3f1e4f7cfe6e",
@@ -754,7 +757,11 @@
     "Historical production gates and automation scheduler state were not revalidated."
   ],
   "delivery": {
-    "status": "verified-awaiting-local-commit",
-    "parentReturnExecuted": false
+    "status": "archived-returned-to-parent",
+    "workCommit": "68b3e16222521a3a098062efb1de749ef046314f",
+    "workFileCount": 21,
+    "archivePath": ".trellis/tasks/archive/2026-09/09-09-stage-4-status-interface-language",
+    "parentReturnExecuted": true,
+    "parentCurrentSource": "session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc"
   }
 }
