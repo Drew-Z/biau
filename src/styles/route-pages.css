@@ -6022,14 +6022,19 @@
 @media (max-width: 720px) {
   .ai-daily-public-page .ai-daily-public-hero { align-items: flex-start; }
   .ai-daily-public-hero-mark { width: 50px; height: 50px; }
-  .ai-daily-public-overview { grid-template-columns: 1fr auto; gap: 12px; padding-inline: 0; border-inline: 0; }
-  .ai-daily-public-coverage { justify-content: flex-end; padding-inline: 0; border-inline: 0; }
+  .ai-daily-public-overview { grid-template-columns: minmax(0, 1fr); gap: 12px; padding-inline: 0; border-inline: 0; }
+  .ai-daily-public-coverage { justify-content: space-between; padding-inline: 0; border-inline: 0; }
   .ai-daily-public-refresh { grid-column: 1 / -1; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--line-subtle, rgba(90, 75, 63, 0.18)); }
   .ai-daily-public-refresh .icon-button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
   .ai-daily-public-grid { grid-template-columns: 1fr; }
   .ai-daily-public-card { min-height: 0; padding: 18px; }
   .ai-daily-public-notice { align-items: flex-start; flex-wrap: wrap; }
+  .ai-daily-public-notice > div { flex-basis: calc(100% - 30px); }
   .ai-daily-public-notice .btn { margin-left: 30px; }
+  .ai-daily-public-card__footer a,
+  .ai-daily-public-notice .btn,
+  .ai-daily-public-load-more .btn,
+  .detail-missing--ai-daily .btn { min-height: 44px; }
 }
 
 /* AI Daily editorial workspace */

@@ -8,6 +8,7 @@ import { checkReadingNavigation } from './check-reading-navigation-ui.mjs'
 import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
 import { checkSiteLanguage } from './check-site-language-ui.mjs'
 import { selectSiteLanguage } from './lib/ui-language.mjs'
+import { createAiDailyPublicFixtureItem, createAiDailyPublicPayloads } from './lib/ai-daily-ui-fixtures.mjs'
 import {
   findReliabilityProjectForTarget,
   reliabilityProjects as staticReliabilityProjects,
@@ -135,54 +136,6 @@ async function installAiDailyPublicFixture(page) {
   await page.route('**/public/ai-daily/events/flash-public-1*', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', headers: { ETag: '"ui-check-detail"' }, body: JSON.stringify(detail) }),
   )
-}
-
-function createAiDailyPublicFixtureItem(overrides = {}) {
-  return {
-    publicId: 'flash-public-1',
-    revision: 2,
-    title: '公开 Flash 标题',
-    factSummary: '这是 UI 检查使用的证据绑定事实摘要。',
-    whyItMatters: '这条快讯用于确认公开阅读层的布局与来源边界。',
-    uncertainty: '后续信息仍需继续观察。',
-    approvedAt: '2026-07-19T10:00:00.000Z',
-    updatedAt: '2026-07-19T10:00:00.000Z',
-    corrected: true,
-    correctedAt: '2026-07-19T11:00:00.000Z',
-    citations: [
-      {
-        title: '公开来源标题',
-        publisher: 'Example AI Lab',
-        url: 'https://example.com/ai-daily/ui-check',
-        publishedAt: '2026-07-19T09:00:00.000Z',
-        excerpt: '公开来源摘要，用来检查引用卡片的换行和外链安全属性。',
-      },
-    ],
-    ...overrides,
-  }
-}
-
-function createAiDailyPublicPayloads(item, freshnessOverrides = {}) {
-  const freshness = {
-    status: 'fresh',
-    stale: false,
-    staleAfterMinutes: 180,
-    latestApprovalAt: item.approvedAt,
-    latestProjectionAt: item.updatedAt,
-    ...freshnessOverrides,
-  }
-  const feed = {
-    items: [item],
-    nextCursor: null,
-    meta: {
-      generatedAt: item.updatedAt,
-      windowHours: 72,
-      freshness,
-      editorialCoverage: { scope: 'page', itemCount: 1, citedItemCount: 1, citationCoverage: 1 },
-    },
-  }
-  const detail = { item, meta: { generatedAt: item.updatedAt, windowHours: 72, freshness } }
-  return { feed, detail }
 }
 
 async function installAiDailyPublicRefreshFixture(page) {

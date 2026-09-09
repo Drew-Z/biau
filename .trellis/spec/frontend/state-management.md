@@ -48,6 +48,9 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
 - Status overview/detail and their fixed section labels follow the same
   preference through `statusInterfaceCopy.ts`; see Status Interface Projection
   below for the boundary between UI labels and original status evidence.
+- Public AI Daily feed/detail controls, errors and fixed reading labels use
+  `aiDailyInterfaceCopy.ts`. Keep approved content and citation text unchanged;
+  see Public AI Daily Interface Language for request and language boundaries.
 - Existing UI fixtures must select a language from the actual current value;
   blindly toggling after `goto` now reverses a persisted choice. A refresh test
   must assert the retained language before making any corrective selection.
@@ -266,6 +269,71 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Transient refresh failure preserves the last successful payload and labels the failure. Visibility polling runs only while the document is visible and no more frequently than the configured 60-second interval.
 - Detail route changes reset payload and ETag for the new `publicId`. A detail `304` preserves the loaded item and clears any previous error; `404` and `410` remain distinct user-facing terminal states.
 - Loading, refreshing, stale, empty, error, correction, and pagination state must not discard readable approved content or create parallel requests.
+
+### Public AI Daily Interface Language
+
+#### 1. Scope / Trigger
+
+Translate public feed/detail controls and state explanations without changing
+approved projections, API decoding, publication decisions or SEO.
+
+#### 2. Signatures
+
+- `classifyAiDailyFeedError(status: number, error: string | null): AiDailyFeedError`
+- `classifyAiDailyDetailError(status: number, error: string | null): AiDailyDetailError`
+- `formatAiDailyDate(value: string, language: SiteLanguage = 'zh', includeYear = false)`
+- `formatAiDailyTime(value: number, language: SiteLanguage = 'zh')`
+- `aiDailyInterfaceCopy[language]` owns fixed labels and the finite error maps.
+
+#### 3. Contracts
+
+State stores error categories; render maps them to the current language. Feed
+`load` retains `[]`, detail `load` retains `[publicId]`, and their effects retain
+`[load]`. Language must not restart requests, the 60-second visibility timer,
+abort/sequence fences, ETag state or loaded content. Detail SEO remains derived
+from `[payload]` only. Date options retain short month, numeric day and two-digit
+hour/minute; detail additionally includes the year. Preserve the local timezone
+and original default hour cycle; omitted language remains Chinese.
+
+Root UI carries the active language; approved title, facts, impact and uncertainty
+retain `lang="zh-CN"`. Citation publisher/title/excerpt keep their original text
+under `lang=""`; the source action has its own active-language span. Source URLs
+and `target="_blank" rel="noreferrer"` remain unchanged. The four stable
+`ai-daily-fact/impact/uncertainty/citations` IDs never depend on translated labels.
+Optional sections still depend on uncertainty/citations, and the reading guide
+receives `itemsLanguage={language}` without a language key or remount.
+
+#### 4. Validation & Error Matrix
+
+| Input / state | Required result |
+| --- | --- |
+| Feed 404 / 429 / 503 | not-found / rate-limited / not-configured, before network classification |
+| Detail 404 | not-found, before withdrawn or network signals |
+| Detail 410 with withdrawn code / other code | withdrawn / expired, before network classification |
+| Network code / other failure | network / unavailable in the active language |
+| Missing publicId | missing-id without starting a request |
+| Empty or invalid date | Localized time-pending label; Chinese by default |
+| Pending, failed, appended or 304 content | Language changes presentation only; existing payload/ETag retained |
+
+#### 5. Good / Base / Bad Cases
+
+Good: an already-visible 503 error changes language without another request.
+Base: omitted formatter language retains the original Chinese date. Bad: storing
+the translated error string or adding `language` to `load` dependencies.
+
+#### 6. Tests Required
+
+`ai-daily:public-payload-check` covers error priority, original Chinese messages,
+both date locales and default options. `checkAiDailyInterfaceLanguage` in the
+Node language entry and tsx full UI covers content/SEO identity, request counts,
+polling starts, outline state/focus, reload/history, delays, errors, optional
+sections, refresh/304, append ETags and aborted/late detail responses.
+
+#### 7. Wrong vs Correct
+
+Wrong: `setError(copy.feed.errors.network)` inside a language-dependent fetch.
+Correct: `setError(classifyAiDailyFeedError(result.status, result.error))`, then
+render `copy.feed.errors[error]` from the existing shared preference.
 
 ## Scenario: Content Studio State
 

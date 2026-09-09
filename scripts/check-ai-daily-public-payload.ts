@@ -1,3 +1,11 @@
+import strictAssert from 'node:assert/strict'
+import {
+  aiDailyInterfaceCopy,
+  classifyAiDailyDetailError,
+  classifyAiDailyFeedError,
+  formatAiDailyDate,
+  formatAiDailyTime,
+} from '../src/data/aiDailyInterfaceCopy'
 import {
   decodeAiDailyPublicPayload,
   type AiDailyPublicCitation,
@@ -129,10 +137,64 @@ for (const invalidCase of invalidCases) {
   assert(decodeAiDailyPublicPayload(payload) === null, `${invalidCase.name} should be rejected`)
 }
 
+// Preserve the pre-localization error precedence, including overlapping signals.
+const feedErrorCases = [
+  [404, null, 'not-found', '公开 AI 日报接口尚未配置或没有公开入口。'],
+  [429, null, 'rate-limited', '刷新太频繁，请稍后再试。'],
+  [503, null, 'not-configured', '内容服务还没有连接到 Studio 数据库。'],
+  [0, 'public-ai-daily-network-error', 'network', '浏览器无法连接内容服务，请稍后重试。'],
+  [500, null, 'unavailable', '内容服务暂时返回异常状态。'],
+  [200, 'invalid-public-ai-daily-response', 'unavailable', '内容服务暂时返回异常状态。'],
+  [404, 'public-ai-daily-network-error', 'not-found', '公开 AI 日报接口尚未配置或没有公开入口。'],
+  [429, 'public-ai-daily-network-error', 'rate-limited', '刷新太频繁，请稍后再试。'],
+  [503, 'public-ai-daily-network-error', 'not-configured', '内容服务还没有连接到 Studio 数据库。'],
+] as const
+for (const [status, error, expected, originalCopy] of feedErrorCases) {
+  const category = classifyAiDailyFeedError(status, error)
+  strictAssert.equal(category, expected)
+  strictAssert.equal(aiDailyInterfaceCopy.zh.feed.errors[category], originalCopy)
+  strictAssert.ok(aiDailyInterfaceCopy.en.feed.errors[category].length > 0)
+}
+const detailErrorCases = [
+  [404, null, 'not-found', '这条快讯不存在，或还没有通过公开审核。'],
+  [410, 'public-item-withdrawn', 'withdrawn', '这条快讯已被撤回。'],
+  [410, null, 'expired', '这条快讯已超过公开保留时间。'],
+  [0, 'public-ai-daily-network-error', 'network', '浏览器无法连接内容服务，请稍后重试。'],
+  [500, null, 'unavailable', '内容服务暂时返回异常状态。'],
+  [200, 'invalid-public-ai-daily-response', 'unavailable', '内容服务暂时返回异常状态。'],
+  [404, 'public-item-withdrawn', 'not-found', '这条快讯不存在，或还没有通过公开审核。'],
+  [404, 'public-ai-daily-network-error', 'not-found', '这条快讯不存在，或还没有通过公开审核。'],
+  [410, 'public-ai-daily-network-error', 'expired', '这条快讯已超过公开保留时间。'],
+] as const
+for (const [status, error, expected, originalCopy] of detailErrorCases) {
+  const category = classifyAiDailyDetailError(status, error)
+  strictAssert.equal(category, expected)
+  strictAssert.equal(aiDailyInterfaceCopy.zh.detail.errors[category], originalCopy)
+  strictAssert.ok(aiDailyInterfaceCopy.en.detail.errors[category].length > 0)
+}
+strictAssert.equal(aiDailyInterfaceCopy.zh.detail.errors['missing-id'], '缺少公开事件地址。')
+strictAssert.equal(aiDailyInterfaceCopy.en.detail.errors['missing-id'], 'The public event address is missing.')
+
+const approvalTime = '2026-07-19T10:05:00.000Z'
+for (const language of ['zh', 'en'] as const) {
+  const locale = language === 'zh' ? 'zh-CN' : 'en'
+  for (const includeYear of [false, true]) {
+    const originalOptions: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }
+    if (includeYear) originalOptions.year = 'numeric'
+    strictAssert.equal(formatAiDailyDate(approvalTime, language, includeYear), new Intl.DateTimeFormat(locale, originalOptions).format(new Date(approvalTime)))
+  }
+  strictAssert.equal(formatAiDailyTime(Date.parse(approvalTime), language), new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(Date.parse(approvalTime)))
+  for (const invalid of ['', 'not-a-time']) strictAssert.equal(formatAiDailyDate(invalid, language), language === 'zh' ? '时间待确认' : 'Time to be confirmed')
+}
+strictAssert.equal(formatAiDailyDate(approvalTime), formatAiDailyDate(approvalTime, 'zh'))
+strictAssert.equal(formatAiDailyTime(Date.parse(approvalTime)), formatAiDailyTime(Date.parse(approvalTime), 'zh'))
+strictAssert.deepEqual([0, 1, 3].map(aiDailyInterfaceCopy.en.feed.sources), ['Sources being collected', '1 public source', '3 public sources'])
+strictAssert.deepEqual([0, 1, 3].map(aiDailyInterfaceCopy.zh.feed.sources), ['来源整理中', '1 个公开来源', '3 个公开来源'])
+
 if (issues.length > 0) {
   console.error(`AI Daily public payload check failed with ${issues.length} issue(s):`)
   for (const issue of issues) console.error(`- ${issue}`)
   process.exitCode = 1
 } else {
-  console.log(`AI Daily public payload check passed (${invalidCases.length} invalid cases, 3 valid cases)`)
+  console.log(`AI Daily public payload check passed (${invalidCases.length} invalid cases, 3 valid cases; ${feedErrorCases.length + detailErrorCases.length + 1} UI error contracts; both date locales and original Chinese defaults)`)
 }

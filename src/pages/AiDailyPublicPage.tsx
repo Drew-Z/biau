@@ -8,14 +8,19 @@ import {
   type AiDailyPublicItem,
 } from '../utils/aiDailyPublicApi'
 import { formatProductName } from '../data/productRegistry'
+import { aiDailyInterfaceCopy, classifyAiDailyFeedError, formatAiDailyDate, formatAiDailyTime, type AiDailyFeedError } from '../data/aiDailyInterfaceCopy'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 
 const REFRESH_INTERVAL_MS = 60_000
 
 export function AiDailyPublicPage() {
+  const language = useSiteLanguage()
+  const copy = aiDailyInterfaceCopy[language]
   const [payload, setPayload] = useState<AiDailyPublicFeedPayload | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<AiDailyFeedError | null>(null)
   const [lastFetchedAt, setLastFetchedAt] = useState<number | null>(null)
   const etagRef = useRef<string | null>(null)
   const payloadRef = useRef<AiDailyPublicFeedPayload | null>(null)
@@ -53,7 +58,7 @@ export function AiDailyPublicPage() {
       return
     }
     if (!result.ok || !result.payload) {
-      setError(explainPublicFeedError(result.status, result.error))
+      setError(classifyAiDailyFeedError(result.status, result.error))
       return
     }
     etagRef.current = append ? etagRef.current : result.etag
@@ -87,13 +92,13 @@ export function AiDailyPublicPage() {
 
   const freshness = payload?.meta.freshness
   return (
-    <main className="page-stack ai-daily-public-page">
+    <main className="page-stack ai-daily-public-page" lang={SITE_LANGUAGE_TAGS[language]}>
       <section className="section-header page-hero ai-daily-public-hero">
         <div>
-          <p className="section-subtitle">AI DAILY / 每日快讯</p>
-          <h1 className="section-title">{formatProductName('ai-daily')}</h1>
+          <p className="section-subtitle">{copy.feed.subtitle}</p>
+          <h1 className="section-title" lang="zh-CN">{formatProductName('ai-daily')}</h1>
           <p className="section-description">
-            只展示经过证据整理与人工批准的近期 AI 动态。每条快讯保留公开引用，修正会沿用同一个事件地址。
+            {copy.feed.description}
           </p>
         </div>
         <div className="ai-daily-public-hero-mark" aria-hidden="true">
@@ -101,22 +106,22 @@ export function AiDailyPublicPage() {
         </div>
       </section>
 
-      <section className="ai-daily-public-overview" aria-label="潮讯 AI 日报状态">
+      <section className="ai-daily-public-overview" aria-label={copy.feed.statusLabel}>
         <div className="ai-daily-public-freshness" data-state={freshness?.status ?? (loading ? 'loading' : 'empty')}>
           <span className="ai-daily-public-status-dot" aria-hidden="true" />
           <div>
-            <strong>{formatFreshness(freshness?.status, loading)}</strong>
-            <span>{formatLatestApproval(freshness?.latestApprovalAt)}</span>
+            <strong>{copy.feed.freshness[freshness?.status ?? (loading ? 'loading' : 'empty')]}</strong>
+            <span>{freshness?.latestApprovalAt ? copy.feed.latestApproval(formatAiDailyDate(freshness.latestApprovalAt, language)) : copy.feed.noApproval}</span>
           </div>
         </div>
         <div className="ai-daily-public-coverage">
-          <span>本页证据覆盖</span>
+          <span>{copy.feed.coverage}</span>
           <strong>{payload ? `${Math.round(payload.meta.editorialCoverage.citationCoverage * 100)}%` : '—'}</strong>
         </div>
         <div className="ai-daily-public-refresh">
           <Clock3 size={16} aria-hidden />
-          <span>{lastFetchedAt ? `更新于 ${formatTime(lastFetchedAt)}` : '等待首次同步'}</span>
-          <button type="button" className="icon-button" onClick={() => void load()} disabled={loading || refreshing} aria-label="刷新 AI 日报">
+          <span>{lastFetchedAt ? copy.feed.updatedAt(formatAiDailyTime(lastFetchedAt, language)) : copy.feed.waitingForSync}</span>
+          <button type="button" className="icon-button" onClick={() => void load()} disabled={loading || refreshing} aria-label={copy.feed.refresh}>
             <RefreshCw size={16} aria-hidden className={refreshing ? 'is-spinning' : undefined} />
           </button>
         </div>
@@ -126,11 +131,11 @@ export function AiDailyPublicPage() {
         <section className="ai-daily-public-notice is-error" role="alert">
           <AlertCircle size={18} aria-hidden />
           <div>
-            <strong>暂时无法刷新 AI 日报</strong>
-            <p>{error}{payload ? ' 已保留上一次成功加载的内容。' : ''}</p>
+            <strong>{copy.feed.refreshFailed}</strong>
+            <p>{copy.feed.errors[error]}{payload ? copy.feed.keptContent : ''}</p>
           </div>
           <button type="button" className="btn btn-compact" onClick={() => void load()}>
-            重试
+            {copy.retry}
           </button>
         </section>
       )}
@@ -138,34 +143,34 @@ export function AiDailyPublicPage() {
       {freshness?.stale && (
         <section className="ai-daily-public-notice is-stale" role="status">
           <Clock3 size={18} aria-hidden />
-          <p>当前 API 可用，但最近一次公开投影已经超过 {freshness.staleAfterMinutes} 分钟，内容可能暂时滞后。</p>
+          <p>{copy.feed.staleNotice(freshness.staleAfterMinutes)}</p>
         </section>
       )}
 
       {loading && !payload && (
         <section className="ai-daily-public-empty" aria-live="polite">
           <span className="loading-bar" aria-hidden="true" />
-          <p>正在读取已批准的 AI 动态…</p>
+          <p>{copy.feed.loading}</p>
         </section>
       )}
 
       {!loading && payload && payload.items.length === 0 && (
         <section className="ai-daily-public-empty">
           <ShieldCheck size={24} aria-hidden />
-          <h2>公开快讯暂为空</h2>
-          <p>内容工作台还没有把近期事件批准为公开 Flash。静态 AI 日报仍会按独立审核流程发布。</p>
+          <h2>{copy.feed.emptyTitle}</h2>
+          <p>{copy.feed.emptyDescription}</p>
         </section>
       )}
 
       {payload && payload.items.length > 0 && (
-        <section className="ai-daily-public-feed" aria-label="近期 AI 快讯">
+        <section className="ai-daily-public-feed" aria-label={copy.feed.feedLabel}>
           <div className="ai-daily-public-grid">
             {payload.items.map((item) => <AiDailyPublicCard key={item.publicId} item={item} />)}
           </div>
           {payload.nextCursor && (
             <div className="ai-daily-public-load-more">
               <button type="button" className="btn" onClick={() => void load(true)} disabled={refreshing}>
-                {refreshing ? '读取中…' : '加载更早快讯'}
+                {refreshing ? copy.feed.loadingMore : copy.feed.loadMore}
                 <ArrowRight size={16} aria-hidden />
               </button>
             </div>
@@ -177,50 +182,23 @@ export function AiDailyPublicPage() {
 }
 
 function AiDailyPublicCard({ item }: { item: AiDailyPublicItem }) {
+  const language = useSiteLanguage()
+  const copy = aiDailyInterfaceCopy[language]
   return (
     <article className="ai-daily-public-card">
       <div className="ai-daily-public-card__meta">
-        <span>{formatDate(item.approvedAt)}</span>
-        {item.corrected && <span className="ai-daily-public-correction">已修正</span>}
+        <span>{formatAiDailyDate(item.approvedAt, language)}</span>
+        {item.corrected && <span className="ai-daily-public-correction">{copy.corrected}</span>}
       </div>
-      <h2>{item.title}</h2>
-      <p className="ai-daily-public-card__summary">{item.factSummary}</p>
-      <p className="ai-daily-public-card__impact">{item.whyItMatters}</p>
+      <h2 lang="zh-CN">{item.title}</h2>
+      <p className="ai-daily-public-card__summary" lang="zh-CN">{item.factSummary}</p>
+      <p className="ai-daily-public-card__impact" lang="zh-CN">{item.whyItMatters}</p>
       <div className="ai-daily-public-card__footer">
-        <span>{item.citations.length ? `${item.citations.length} 个公开来源` : '来源整理中'}</span>
-        <Link to={`/ai-daily/${item.publicId}`} aria-label={`阅读 ${item.title}`}>
-          阅读详情 <ArrowRight size={15} aria-hidden />
+        <span>{copy.feed.sources(item.citations.length)}</span>
+        <Link to={`/ai-daily/${item.publicId}`} aria-label={copy.feed.readItem(item.title)}>
+          {copy.feed.readDetails} <ArrowRight size={15} aria-hidden />
         </Link>
       </div>
     </article>
   )
-}
-
-function formatFreshness(status: 'fresh' | 'stale' | 'empty' | undefined, loading: boolean) {
-  if (loading && !status) return '正在同步'
-  if (status === 'fresh') return '公开投影正常'
-  if (status === 'stale') return '投影需要关注'
-  return '等待公开内容'
-}
-
-function formatLatestApproval(value: string | null | undefined) {
-  return value ? `最近批准 ${formatDate(value)}` : '还没有可公开的批准记录'
-}
-
-function formatDate(value: string) {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '时间待确认'
-  return new Intl.DateTimeFormat('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(date)
-}
-
-function formatTime(value: number) {
-  return new Intl.DateTimeFormat('zh-CN', { hour: '2-digit', minute: '2-digit' }).format(value)
-}
-
-function explainPublicFeedError(status: number, error: string | null) {
-  if (status === 404) return '公开 AI 日报接口尚未配置或没有公开入口。'
-  if (status === 429) return '刷新太频繁，请稍后再试。'
-  if (status === 503) return '内容服务还没有连接到 Studio 数据库。'
-  if (error === 'public-ai-daily-network-error') return '浏览器无法连接内容服务，请稍后重试。'
-  return '内容服务暂时返回异常状态。'
 }

@@ -36,8 +36,8 @@ and project controls, fixed and authored section languages, preserved content /
 publication / image snapshots, connected article/guide nodes, stable ids and
 history, outline focus/Escape/real anchors, missing returns and delayed content.
 Test language-state continuity separately from the existing outside-pointer
-dismissal. AI Daily guide items retain Chinese semantics while their shared
-guide controls translate; status guide items follow the selected language.
+dismissal. Status and AI Daily fixed guide items follow the selected language;
+authored article section titles keep their original Chinese semantics.
 Fixture payloads must satisfy the real decoder,
 including explicit nullable `uncertainty` and `correctedAt` fields.
 
@@ -87,10 +87,37 @@ without changing application imports or adding a global loader.
 For the public AI Daily Feed or detail route, also run:
 
 ```powershell
+npm.cmd run ai-daily:public-payload-check
 npm.cmd run ai-daily:public-feed-check
 npm.cmd run analytics:check
 npm.cmd run docs:deployment-check
 ```
+
+`checkAiDailyInterfaceLanguage` shares the existing pure fixture factories in
+`scripts/lib/ai-daily-ui-fixtures.mjs` with full UI. Cover feed/detail at four
+widths and three themes in both languages, plus pending loads, all finite HTTP /
+network errors, stale/empty/minimal content, refresh failure then 304, cursor
+append without an ETag, and language changes before an aborted/late route reply.
+Compare approved text, original source strings/URLs, section IDs, revision,
+coverage, correction flags and SEO; keep page/guide/card DOM nodes connected.
+Language must not add requests or start another 60000ms interval. Reload tests
+assert the saved preference before any corrective selection.
+
+At `max-width: 720px`, AI Daily overview uses one bounded column with freshness,
+coverage and refresh rows so long English labels cannot consume the date column.
+Feed detail links, notice retry, pagination and `.detail-missing--ai-daily .btn`
+have at least 44px targets. Notice copy occupies the remaining icon row and retry
+wraps below it; never squeeze error words into a 77px column. Check actual text
+rectangles inside controls as well as document overflow and visible dimensions.
+For hit testing, scroll the action into the usable reading area: native
+`scrollIntoViewIfNeeded` can stop under the fixed tabbar. Require a successful
+center-point hit and keyboard activation after that movement.
+
+Use the final citation anchor for the short standard fixture's directory jump.
+An intermediate target can land correctly while the next heading is already
+inside the existing 240px scroll-spy range; do not change the production reading
+guide to force that fixture's active ID. Retain focus/Escape, genuine hrefs,
+nonzero movement and the final section's active state.
 
 ## Pull Request Baseline
 
