@@ -45,12 +45,12 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": true,
-    "phase": "waiting",
-      "round": 22,
+      "enabled": false,
+      "phase": "stopped",
+      "round": 23,
     "activeChild": null,
     "lastCompletedChild": "09-10-stage-5-authored-content-seo-language-audit",
-    "nextAction": "Translation scope is deferred by the user; keep the delivered public interface language work as-is and wait for an explicit future decision before creating any authored-content or SEO translation child.",
+      "nextAction": "Roadmap paused at the user's request after translation scope was deferred; resume only after an explicit new content-translation decision or an independent website issue is provided.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

@@ -630,3 +630,39 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 等待用户未来明确的内容翻译决策，或等待其他独立的网站理解/内容发现问题。
+
+
+## Session 123: 暂停网站完善路线图
+
+**Date**: 2026-09-10
+**Task**: 暂停网站完善路线图
+**Branch**: `main`
+
+### Summary
+
+用户确认暂停路线图，已保存 stopped/disabled 恢复点。
+
+### Main Changes
+
+用户确认暂时不继续翻译范围，路线图保存为停止状态，不创建新的子任务。
+
+- 父任务 `09-06-website-completion-roadmap` 更新为 `enabled=false`、`phase=stopped`、第 23 轮，保留 `automationId` 作为未来恢复线索。
+- 本轮复核博客、项目证据/注册、公开助手、AI Daily public payload 和分析路由合同均通过，没有新的独立本地缺口。
+- 历史子任务、持续 UI 未跟踪资料和保护状态文件均未修改；未隐式重建或修改未确认持久化的 heartbeat。
+
+### Git Commits
+
+(No commits - planning session)
+
+### Testing
+
+- [OK] `blog:check`、`project-details:check`、`project-registry:check`、公开助手 API/会话/browser-state、`ai-daily:public-payload-check` 和 `analytics:check` 全部通过。
+- [OK] 已核对任务指针、停止状态 JSON、工作区差异和既有未跟踪资料边界。
+
+### Status
+
+[OK] 第 23 轮完成暂停记录；路线图已停止自动循环。未 push、deploy、sign、publish，未调用真实模型，未启用 Feed/Cron，未修改 heartbeat 或保护状态文件。
+
+### Next Steps
+
+- 等待用户明确新的内容翻译范围或独立的网站问题；恢复时先重新核对工作区和既有审计证据。
