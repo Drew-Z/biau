@@ -623,10 +623,93 @@ export async function checkSiteLanguage(browser, base) {
     await delayed.page.context().close()
   }
   const reading = await checkDetailReadingLanguage(browser, base)
+  const homeInterface = await checkHomeInterfaceLanguage(browser, base)
   const projectInterface = await checkProjectInterfaceLanguage(browser, base)
   const statusInterface = await checkStatusInterfaceLanguage(browser, base)
   const aiDailyInterface = await checkAiDailyInterfaceLanguage(browser, base)
-  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, ...projectInterface, ...statusInterface, ...aiDailyInterface, modelCalls: 0 }
+  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, ...homeInterface, ...projectInterface, ...statusInterface, ...aiDailyInterface, modelCalls: 0 }
+}
+
+export async function checkHomeInterfaceLanguage(browser, base) {
+  let homeInterfaceGroups = 0
+  for (const width of [320, 390, 430, 1440]) {
+    for (const theme of ['morning', 'nature', 'stellar']) {
+      const { page, errors, requests } = await createPage(browser, base, { width, theme })
+      try {
+        await page.goto(`${base}/`, { waitUntil: 'load' })
+        const home = page.locator('.home-hero')
+        await home.waitFor({ state: 'visible' })
+        const homeNode = await home.elementHandle()
+        const titleNode = await home.locator('.hero-title-rotator').elementHandle()
+        const trackNode = await home.locator('.carousel-track').elementHandle()
+        const historyBefore = await page.evaluate(() => history.length)
+        const authored = await home.evaluate((root) => ({
+          body: root.querySelector('.hero-body')?.textContent ?? '',
+          title: root.querySelector('.hero-title-rotator')?.textContent ?? '',
+        }))
+        for (const language of ['zh', 'en']) {
+          const authoredBeforeLanguage = await home.evaluate((root) => ({
+            body: root.querySelector('.hero-body')?.textContent ?? '',
+            title: root.querySelector('.hero-title-rotator')?.textContent ?? '',
+          }))
+          await selectSiteLanguage(page, language)
+          const english = language === 'en'
+          const tag = english ? 'en' : 'zh-CN'
+          assert.ok(await home.evaluate((node, expected) => node.matches(`:lang(${expected})`), tag), 'Home fixed interface must carry its selected language')
+          assert.ok(await homeNode.evaluate((node) => node.isConnected), 'language changes must not remount the Home root')
+          assert.ok(await titleNode.evaluate((node) => node.isConnected), 'language changes must not remount the Home title')
+          assert.ok(await trackNode.evaluate((node) => node.isConnected), 'language changes must not remount the Home carousel')
+          assert.equal(await page.evaluate(() => history.length), historyBefore, 'language changes must not add Home history')
+          const authoredAfterLanguage = await home.evaluate((root) => ({
+            body: root.querySelector('.hero-body')?.textContent ?? '',
+            title: root.querySelector('.hero-title-rotator')?.textContent ?? '',
+          }))
+          assert.equal(authoredAfterLanguage.body, authored.body, 'authored Home body must remain unchanged across language switches')
+          assert.equal(authoredAfterLanguage.title, authoredBeforeLanguage.title, 'language changes must not rotate the authored Home title')
+          assert.ok(await page.locator('.hero-body, .hero-mainline, .hero-subline').evaluateAll((nodes) => nodes.length >= 2 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored Home text must retain Chinese semantics')
+          assert.ok(await home.locator('.hero-title-rotator').evaluate((node, expected) => node.matches(`:lang(${expected})`), tag), 'Home title action must carry its selected language')
+          assert.deepEqual(await home.locator('.status-text span').allTextContents(), english ? ['LOCAL TIME', 'PORT STATUS'] : ['本地时间', '入口状态'])
+          assert.equal(await home.locator('.status-text--port strong').textContent(), english ? 'Public entry status is visible' : '入口状态公开可见')
+          assert.match(await home.locator('.status-text strong').first().textContent(), /^\d{2}:\d{2} · CST$/u)
+          const titleLabel = await home.locator('.hero-title-rotator').getAttribute('aria-label')
+          assert.ok(titleLabel)
+          assert.ok(english ? titleLabel.includes('Switch to the next BIAU Port line:') : titleLabel.endsWith('切换下一条泊岸题句'), `Home title action should follow ${language}`)
+          const beforeKeyboard = titleLabel
+          await home.locator('.hero-title-rotator').focus()
+          await page.keyboard.press('Enter')
+          await page.waitForFunction((previous) => document.querySelector('.hero-title-rotator')?.getAttribute('aria-label') !== previous, beforeKeyboard)
+          await page.evaluate(async () => { await document.fonts.ready })
+          const layout = await home.evaluate((root) => {
+            const visible = (node) => node.getClientRects().length > 0
+            const nodes = [...root.querySelectorAll('.status-text span, .status-text strong, .hero-body, .hero-title-rotator')].filter(visible)
+            const clipped = nodes.filter((node) => {
+              const rect = node.getBoundingClientRect()
+              return rect.left < -1 || rect.right > innerWidth + 1 || node.scrollWidth > node.clientWidth + 1
+            }).map((node) => ({ className: node.className, text: node.textContent }))
+            const title = root.querySelector('.hero-title-rotator').getBoundingClientRect()
+            return { clipped, titleWidth: title.width, titleHeight: title.height, overflow: document.documentElement.scrollWidth - innerWidth }
+          })
+          assert.deepEqual(layout.clipped, [], 'Home fixed text must fit its viewport and container')
+          assert.ok(layout.overflow <= 1, 'Home interface must not overflow')
+          if (width <= 430) assert.ok(layout.titleWidth >= 43.5 && layout.titleHeight >= 43.5, 'Home title action must retain a 44px target')
+        }
+        await selectSiteLanguage(page, 'en')
+        await page.reload({ waitUntil: 'load' })
+        await home.waitFor({ state: 'visible' })
+        await assertSiteLanguage(page, 'en')
+        assert.ok(await home.evaluate((node) => node.matches(':lang(en)')))
+        assert.equal(await home.locator('.status-text--port strong').textContent(), 'Public entry status is visible')
+        assert.equal(await page.evaluate(() => history.length), historyBefore)
+        assertLocalOnly(errors, requests)
+        homeInterfaceGroups += 1
+      } catch (error) {
+        throw new Error(`home-interface ${width}/${theme}: ${error.message}`, { cause: error })
+      } finally {
+        await page.context().close()
+      }
+    }
+  }
+  return { homeInterfaceGroups }
 }
 
 async function checkProjectInterfaceLayout(page) {

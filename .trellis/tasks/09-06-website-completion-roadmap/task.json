@@ -34,7 +34,8 @@
     "09-09-stage-4-detail-reading-language",
     "09-09-stage-4-project-interface-language",
     "09-09-stage-4-status-interface-language",
-    "09-09-stage-4-ai-daily-interface-language"
+    "09-09-stage-4-ai-daily-interface-language",
+    "09-10-stage-4-home-interface-language"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -43,11 +44,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "deliver",
-      "round": 16,
-      "activeChild": "09-09-stage-4-ai-daily-interface-language",
-      "lastCompletedChild": "09-09-stage-4-status-interface-language",
-      "nextAction": "The AI Daily child passed all gates: specialist 24+4+10+3+3, full language, smoke 21/0, full UI 46/0, with zero final hash drift. Commit the exact owned file list locally, archive only this child with --no-commit, actually start the parent, record delivery and reassess remaining authorized work.",
+      "phase": "execute",
+      "round": 17,
+      "activeChild": "09-10-stage-4-home-interface-language",
+      "lastCompletedChild": "09-09-stage-4-ai-daily-interface-language",
+      "nextAction": "Implement and verify the bounded Home public-interface language child. Preserve authored hero content, project panel projection, motion, route/history and all production boundaries; then deliver, archive only the child, return to this parent and reassess Public Assistant.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

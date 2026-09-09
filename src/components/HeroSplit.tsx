@@ -8,10 +8,13 @@ import {
   type RefObject,
 } from 'react'
 import { heroContent, type HeroPoem } from '../data/hero'
+import { homeInterfaceCopy } from '../data/homeInterfaceCopy'
 import { AnimatedText } from './AnimatedText'
 import { RightScrollCards } from './RightScrollCards'
 import { usesMobileInteractionMode } from '../utils/responsive'
 import { useHeroCinema } from '../hooks/useHeroCinema'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 
 interface HeroSplitProps {
   onProjectClick: (link: string) => void
@@ -32,18 +35,19 @@ const PORT_TIME_FORMATTER = new Intl.DateTimeFormat('zh-CN', {
 
 export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: HeroSplitProps) {
   const { poems, projects } = heroContent
+  const language = useSiteLanguage()
   const heroRef = useRef<HTMLElement>(null)
   useHomeSceneDepth(heroRef)
   useHeroCinema(heroRef, { animateTitle: false })
 
   return (
-    <main ref={heroRef} className="home-hero" data-home-depth="static">
+    <main ref={heroRef} className="home-hero" data-home-depth="static" lang={SITE_LANGUAGE_TAGS[language]}>
       <section className="hero-intro" data-cinema="intro">
         <h1 className="eyebrow" data-cinema="eyebrow">BIAU PORT</h1>
 
         <HeroTitleRotator poems={poems} />
 
-        <p className="hero-body" data-cinema="body">
+        <p className="hero-body" data-cinema="body" lang="zh-CN">
           记录每个产品从构想到上线的过程，并公开它的能力边界、当前状态与验证证据。
         </p>
 
@@ -61,6 +65,8 @@ export function HeroSplit({ onProjectClick, onProjectAction, onProjectStatus }: 
 }
 
 function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
+  const language = useSiteLanguage()
+  const copy = homeInterfaceCopy[language]
   const [index, setIndex] = useState(0)
   const [ghostPoem, setGhostPoem] = useState<HeroPoem | null>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
@@ -280,7 +286,10 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
       className={`hero-title-rotator ${ghostPoem ? 'has-hero-title-ghost' : ''}`}
       data-ghost-main={ghostPoem?.main ?? ''}
       data-ghost-sub={ghostPoem?.sub ?? ''}
-      aria-label={`${poem.main} ${poem.sub ?? ''}，切换下一条泊岸题句`.trim()}
+      lang={SITE_LANGUAGE_TAGS[language]}
+      aria-label={language === 'en'
+        ? `${copy.titleAction}: ${poem.main}${poem.sub ? ` / ${poem.sub}` : ''}`
+        : `${poem.main} ${poem.sub ?? ''}，${copy.titleAction}`.trim()}
       role="button"
       tabIndex={0}
       onPointerDown={handlePointerDown}
@@ -291,9 +300,11 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
       onClick={handleTitleClick}
       onKeyDown={handleTitleKeyDown}
     >
-      <AnimatedText key={`main-${index}`} text={poem.main} />
+      <span className="hero-mainline" lang="zh-CN">
+        <AnimatedText key={`main-${index}`} text={poem.main} />
+      </span>
       {poem.sub && (
-        <span className="hero-subline">
+        <span className="hero-subline" lang="zh-CN">
           <AnimatedText key={`sub-${index}`} text={poem.sub} delay={subDelay} />
         </span>
       )}
@@ -302,6 +313,8 @@ function HeroTitleRotator({ poems }: { poems: HeroPoem[] }) {
 }
 
 function SystemStatus() {
+  const language = useSiteLanguage()
+  const copy = homeInterfaceCopy[language]
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
@@ -312,12 +325,12 @@ function SystemStatus() {
   return (
     <div className="system-status" data-cinema="status">
       <div className="status-text">
-        <span>LOCAL TIME</span>
+        <span>{copy.status.localTime}</span>
         <strong>{formatLocalTime(currentTime)} · CST</strong>
       </div>
       <div className="status-text status-text--port">
-        <span>PORT STATUS</span>
-        <strong>入口状态公开可见</strong>
+        <span>{copy.status.portStatus}</span>
+        <strong>{copy.status.portValue}</strong>
       </div>
     </div>
   )
