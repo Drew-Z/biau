@@ -31,7 +31,8 @@
     "09-08-stage-6-pr-quality-workflow",
     "09-08-stage-4-public-language-shell",
     "09-09-stage-4-catalog-language",
-    "09-09-stage-4-detail-reading-language"
+    "09-09-stage-4-detail-reading-language",
+    "09-09-stage-4-project-interface-language"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -40,11 +41,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 14,
-      "activeChild": null,
+      "activeChild": "09-09-stage-4-project-interface-language",
       "lastCompletedChild": "09-09-stage-4-detail-reading-language",
-      "nextAction": "Assess shared project publication labels, category/status UI and their public consumers after detail reading delivery. Distinguish generic interface copy from authored unavailability explanations, preserve link targets and access gates, then plan one bounded child and continue the local-only loop.",
+      "nextAction": "Final project interface verification passed: full UI 46/0, final language matrix with 60 project interface groups, same-build smoke 21/0, and static contracts. Preserve the first full-UI readiness failure and its checker-only fix, save final 28-source/47-build evidence, commit the exact child whitelist locally, archive only this child and actually return to the parent before the next assessment.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

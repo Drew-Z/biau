@@ -266,8 +266,13 @@ projection. A card must not infer availability from its artwork, copy, or URL.
 
 ```tsx
 const publication = getProjectPublication(project.id)
-const cta = getProjectCta(publication)
+const cta = getProjectCta(publication, language)
 ```
+
+Render the full and compact action labels from this projection, including their
+language metadata. Do not inspect Chinese or English label substrings to infer
+access state. The panel's fixed copy follows `useSiteLanguage`, while authored
+project text remains Chinese; language is not a carousel-effect dependency.
 
 The homepage shell uses the existing class-based theme system with compact 8px
 surfaces, deep ink backgrounds, cyan state accents, and amber brand emphasis.

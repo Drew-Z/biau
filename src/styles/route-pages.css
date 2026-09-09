@@ -5422,6 +5422,11 @@
     min-height: 44px;
   }
 
+  .project-detail-page .link-badge,
+  .project-detail-page .project-visual__source-link {
+    min-height: 44px;
+  }
+
   .detail-reading-guide {
     width: 100%;
     top: var(--space-8);

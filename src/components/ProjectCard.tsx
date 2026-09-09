@@ -26,7 +26,7 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
   const language = useSiteLanguage()
   const copy = catalogCopy[language]
   const number = index ? String(index).padStart(2, '0') : undefined
-  const publishedLinks = getPublishedProjectLinks(findProjectPublication(project.id), project.links)
+  const publishedLinks = getPublishedProjectLinks(findProjectPublication(project.id), project.links, language)
     .filter((link) => link.type === 'external' || link.intent === 'status')
     .slice(0, 2)
   return (
@@ -79,7 +79,7 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
           </button>
           
           {publishedLinks.length > 0 && (
-            <div className="project-links" lang="zh-CN">
+            <div className="project-links" lang={SITE_LANGUAGE_TAGS[language]}>
               {publishedLinks.map((link) =>
                 link.type === 'external' ? (
                   <a
@@ -89,27 +89,30 @@ export function ProjectCard({ project, index, onViewDetails, onNavigate }: Proje
                     rel="noopener noreferrer"
                     className="link-badge"
                     title={link.explanation}
+                    lang={SITE_LANGUAGE_TAGS[link.explanationLanguage ?? link.labelLanguage]}
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       e.stopPropagation()
                     }}
                   >
-                    {link.label}
+                    <span className="project-entry-label" lang={SITE_LANGUAGE_TAGS[link.labelLanguage]}>{link.label}</span>
                   </a>
                 ) : (
                   <button
                     key={`${link.intent}-${link.href}`}
                     type="button"
                     className="link-badge link-badge--status"
-                    aria-label={`${link.label}：${project.title}`}
+                    data-project-href={link.href}
                     title={link.explanation}
+                    lang={SITE_LANGUAGE_TAGS[link.explanationLanguage ?? link.labelLanguage]}
                     onClick={(event) => {
                       event.stopPropagation()
                       onNavigate(link.href)
                     }}
                     onKeyDown={(event) => event.stopPropagation()}
                   >
-                    {link.label}
+                    <span className="project-entry-label" lang={SITE_LANGUAGE_TAGS[link.labelLanguage]}>{link.label}</span>
+                    <span className="sr-only" lang="zh-CN">{`${language === 'en' ? ': ' : '：'}${project.title}`}</span>
                   </button>
                 ),
               )}

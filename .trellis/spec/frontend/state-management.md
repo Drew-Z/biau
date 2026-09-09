@@ -31,8 +31,8 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
   to Chinese. Column options preserve both existing identities, with the active
   language first. App retains `lang="zh-CN"` as the fallback for remaining pages;
   localized catalog roots override it and mark authored card text Chinese.
-  Publication-controlled card links retain their original projection and Chinese
-  language until the shared publication interface is translated across consumers.
+  Publication-controlled card labels use the shared language projection described
+  below; authored explanations retain their original text and language.
   Do not remount routes, reset discovery/input state, translate authored data,
   claim translated SEO/content or invent locale URLs during UI localization.
 - Article and project detail controls also follow the shared preference through
@@ -42,12 +42,78 @@ Persist only stable visitor preferences. Effects that touch browser APIs must cl
   Fixed project section headings select the existing Chinese mapping or its
   English UI mapping in the page; Studio/export keep their original map.
   `getRelatedProjectsTitle(project, related, language = 'zh')` translates only
-  the title, never recommendation ranking. Publication labels/explanations and
-  shared category/status text retain their original projection until localized
-  across consumers in a separate task.
+  the title, never recommendation ranking. Project category/status labels select
+  the existing Chinese maps or their English UI maps without changing the source
+  metadata used by assistant and export projections.
 - Existing UI fixtures must select a language from the actual current value;
   blindly toggling after `goto` now reverses a persisted choice. A refresh test
   must assert the retained language before making any corrective selection.
+
+### Project Interface Projection
+
+#### 1. Scope / Trigger
+
+Shared project actions, candidate link labels, category/status labels, and the
+homepage project panel follow the visitor preference. Translation must preserve
+publication records, availability decisions, authored facts and navigation.
+
+#### 2. Signatures
+
+- `getProjectCta(publication, language: SiteLanguage = 'zh'): ProjectCtaProjection`
+  returns `label`, `compactLabel`, `labelLanguage`, and optional
+  `explanationLanguage` alongside the existing access/navigation fields.
+- `getPublishedProjectLinks(publication, links, language: SiteLanguage = 'zh')`
+  returns ordered `PublishedProjectLink[]` with independent label/explanation
+  language metadata. `projectInterfaceCopy.ts` owns the fixed UI copy.
+
+#### 3. Contracts
+
+The selected language cannot change `mode`, `enabled`, `href`, `statusHref`, link
+`type`/`intent`, candidate order, or the single fallback for unavailable entries.
+`compactLabel` is explicit output; never derive action meaning from translated
+substrings. Project-specific `unavailableReason` stays Chinese; generic access
+explanations translate. Known candidate labels use exact Map lookups; unknown
+labels remain authored text with the existing Chinese fallback.
+
+Components apply language to the label text independently of an authored tooltip
+or explanation. Keep a Chinese project title in its own text span where native
+accessible-name composition permits it. UI category/status maps must not change
+the source map; `live` means `Page exists`, not verified availability. Language
+updates must not restart carousel, content-loading, or reading effects.
+
+#### 4. Validation & Error Matrix
+
+| Condition | Required result |
+| --- | --- |
+| Planned / unchecked / offline publication | Original status-only destination and authored reason |
+| Case-only or missing external entry | Status-only destination with localized generic explanation |
+| Degraded public / controlled entry | Same caution mode and destination; explicit Caution short label |
+| Online public / controlled entry | Same direct destination; Open / Access short label |
+| Multiple unavailable entry candidates | One status fallback; other evidence and order retained |
+| Missing publication or unknown label | Candidate target preserved; unknown text remains unchanged |
+
+#### 5. Good / Base / Bad Cases
+
+Good: English `View current status` still opens the existing status route with
+the original Chinese project-specific reason. Base: omitted language preserves
+Chinese copy. Bad: translating a label enables a previously gated entry or
+changes an unknown authored label through substring matching.
+
+#### 6. Tests Required
+
+`project-registry:check` covers CTA fixtures, real publications and candidate
+sets, immutable inputs, default Chinese, exact-label fallback, and deduplication.
+`checkProjectInterfaceLanguage` in `language:ui` verifies real browser content,
+language markers, connected carousel DOM, links, keyboard actions and layout.
+Mobile catalog status actions are visible; desktop retains its detail-only
+layout and reaches status through the detail page. Assert visibility and focus
+before Enter instead of trying to focus a hidden desktop button.
+
+#### 7. Wrong vs Correct
+
+Wrong: `cta.label.includes('受控')` or rewriting `projectPublications` to display
+English. Correct: `getProjectCta(publication, language).compactLabel` and
+`getPublishedProjectLinks(publication, links, language)` across every consumer.
 
 ### Appearance Contract
 

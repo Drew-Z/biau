@@ -9,7 +9,7 @@ These guidelines describe the actual React/Vite/custom CSS frontend in this repo
 | [Directory Structure](./directory-structure.md) | Frontend module ownership, route/data/style layout, naming | Filled |
 | [Component Guidelines](./component-guidelines.md) | Component shape, Lucide icons, props, styling, accessibility | Filled |
 | [Hook Guidelines](./hook-guidelines.md) | Custom hook patterns, browser API guards, effect cleanup | Filled |
-| [State Management](./state-management.md) | Local state, route-derived state, persistent UI state, static data | Filled |
+| [State Management](./state-management.md) | Local/route state, persistent preferences, project interface projections, static data | Filled |
 | [Quality Guidelines](./quality-guidelines.md) | Lint/build gates, UI rules, public data safety | Filled |
 | [Project Showcase Integration](./project-showcase-integration.md) | Cross-layer project, evidence, status, assistant, and generated-artifact contract | Filled |
 | [Type Safety](./type-safety.md) | Type organization, literal unions, runtime checks | Filled |

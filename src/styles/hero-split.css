@@ -528,6 +528,13 @@
   line-height: 1;
 }
 
+.carousel-card .carousel-action__label--full {
+  min-width: 0;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .carousel-card .carousel-action__label--compact {
   display: none;
 }

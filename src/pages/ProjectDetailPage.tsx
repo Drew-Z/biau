@@ -8,6 +8,7 @@ import { getProjectBlogPosts } from '../data/blogCuration'
 import { getRelatedProjects, getRelatedProjectsTitle } from '../data/projectRecommendations'
 import { catalogCopy } from '../data/catalogCopy'
 import { detailCopy, projectDetailGroupLabelsEn } from '../data/detailCopy'
+import { projectCategoryLabelsEn, projectStatusLabelsEn } from '../data/projectInterfaceCopy'
 import {
   projects,
   categoryLabels as projectCategoryLabels,
@@ -60,6 +61,8 @@ export function ProjectDetailPage() {
   const language = useSiteLanguage()
   const copy = detailCopy[language]
   const languageTag = SITE_LANGUAGE_TAGS[language]
+  const categoryLabels = language === 'en' ? projectCategoryLabelsEn : projectCategoryLabels
+  const projectStatusLabels = language === 'en' ? projectStatusLabelsEn : statusLabels
   const { id } = useParams<{ id: string }>()
   const { search } = useLocation()
   const group = parseProjectGroupSearch(search)
@@ -70,10 +73,10 @@ export function ProjectDetailPage() {
   const project = useMemo(() => projects.find((p) => p.id === id), [id])
   const publication = useMemo(() => (project ? findProjectPublication(project.id) : undefined), [project])
   const publishedLinks = useMemo(
-    () => (project ? getPublishedProjectLinks(publication, project.links) : []),
-    [project, publication],
+    () => (project ? getPublishedProjectLinks(publication, project.links, language) : []),
+    [language, project, publication],
   )
-  const entryAction = useMemo(() => (publication ? getProjectCta(publication) : undefined), [publication])
+  const entryAction = useMemo(() => (publication ? getProjectCta(publication, language) : undefined), [language, publication])
   const detailGroups = useMemo(() => getProjectDetailGroups(project?.detailContent), [project])
 
   const related = useMemo(() => {
@@ -125,14 +128,14 @@ export function ProjectDetailPage() {
 
       <header className="detail-header" lang="zh-CN">
         <div className="detail-badges">
-          <span className="tag">{projectCategoryLabels[project.category]}</span>
-          <span className="detail-status">{statusLabels[project.status]}</span>
+          <span className="tag" lang={languageTag}>{categoryLabels[project.category]}</span>
+          <span className="detail-status" lang={languageTag}>{projectStatusLabels[project.status]}</span>
         </div>
         <h1 className="detail-title" tabIndex={-1} data-reading-heading>{project.title}</h1>
         <p className="detail-role">{project.role}</p>
         <p className="detail-summary">{project.summary}</p>
         {entryAction?.explanation && (
-          <p className={`detail-entry-note is-${entryAction.mode}`}>
+          <p className={`detail-entry-note is-${entryAction.mode}`} lang={SITE_LANGUAGE_TAGS[entryAction.explanationLanguage ?? language]}>
             <CircleAlert size={16} aria-hidden />
             <span>{entryAction.explanation}</span>
           </p>
@@ -223,7 +226,7 @@ export function ProjectDetailPage() {
           <div className="detail-related-grid">
             {related.map((item) => (
               <Link key={item.id} to={`/projects/${item.id}${groupSearch}`} className="detail-related-card" state={relatedState} lang="zh-CN">
-                <span className="detail-related-cat">{projectCategoryLabels[item.category]}</span>
+                <span className="detail-related-cat" lang={languageTag}>{categoryLabels[item.category]}</span>
                 <h3>{item.title}</h3>
                 <p>{item.summary}</p>
               </Link>
@@ -265,7 +268,8 @@ interface ProjectDetailContentSectionProps {
 }
 
 function ProjectDetailContentSection({ section, publication }: ProjectDetailContentSectionProps) {
-  const publishedLinks = getPublishedProjectLinks(publication, section.links ?? [])
+  const language = useSiteLanguage()
+  const publishedLinks = getPublishedProjectLinks(publication, section.links ?? [], language)
 
   return (
     <article className="project-case-study__section" lang="zh-CN">
@@ -303,7 +307,7 @@ function ProjectVisualFigure({ visual, publication }: { visual: ProjectVisualBlo
           type: visual.sourceUrl.startsWith('/') ? 'internal' : 'external',
           intent: visual.sourceIntent,
         },
-      ])[0]
+      ], language)[0]
     : undefined
 
   return (
@@ -331,8 +335,8 @@ function ProjectVisualFigure({ visual, publication }: { visual: ProjectVisualBlo
           {visual.caption && <span className="project-visual__caption-text">{visual.caption}</span>}
           {sourceLink &&
             (sourceLink.type === 'internal' ? (
-              <Link to={sourceLink.href} className="project-visual__source-link" title={sourceLink.explanation}>
-                {sourceLink.label}
+              <Link to={sourceLink.href} className="project-visual__source-link" title={sourceLink.explanation} lang={SITE_LANGUAGE_TAGS[sourceLink.explanationLanguage ?? sourceLink.labelLanguage]}>
+                <span className="project-entry-label" lang={SITE_LANGUAGE_TAGS[sourceLink.labelLanguage]}>{sourceLink.label}</span>
               </Link>
             ) : (
               <a
@@ -341,8 +345,9 @@ function ProjectVisualFigure({ visual, publication }: { visual: ProjectVisualBlo
                 rel="noopener noreferrer"
                 className="project-visual__source-link"
                 title={sourceLink.explanation}
+                lang={SITE_LANGUAGE_TAGS[sourceLink.explanationLanguage ?? sourceLink.labelLanguage]}
               >
-                {sourceLink.label}
+                <span className="project-entry-label" lang={SITE_LANGUAGE_TAGS[sourceLink.labelLanguage]}>{sourceLink.label}</span>
               </a>
             ))}
         </p>
@@ -362,13 +367,13 @@ function ProjectLinkBadge({ link }: { link: PublishedProjectLink }) {
       ) : (
         <LinkIcon size={16} aria-hidden />
       )}
-      <span>{link.label}</span>
+      <span className="project-entry-label" lang={SITE_LANGUAGE_TAGS[link.labelLanguage]}>{link.label}</span>
     </>
   )
 
   if (link.type === 'internal') {
     return (
-      <Link to={link.href} className={linkClassName} data-link-type={link.type} title={link.explanation} lang="zh-CN">
+      <Link to={link.href} className={linkClassName} data-link-type={link.type} title={link.explanation} lang={SITE_LANGUAGE_TAGS[link.explanationLanguage ?? link.labelLanguage]}>
         {content}
       </Link>
     )
@@ -382,7 +387,7 @@ function ProjectLinkBadge({ link }: { link: PublishedProjectLink }) {
       className={linkClassName}
       data-link-type={link.type}
       title={link.explanation}
-      lang="zh-CN"
+      lang={SITE_LANGUAGE_TAGS[link.explanationLanguage ?? link.labelLanguage]}
     >
       {content}
     </a>

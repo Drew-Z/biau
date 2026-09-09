@@ -4,6 +4,9 @@ import { Link } from 'react-router-dom'
 import { ColoredCard } from './ColoredCard'
 import type { HeroProject } from '../data/hero'
 import { getProjectCta, getProjectPublication } from '../data/projectPublication'
+import { projectInterfaceCopy } from '../data/projectInterfaceCopy'
+import { useSiteLanguage } from '../hooks/useSiteLanguage'
+import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 import { usesMobileInteractionMode } from '../utils/responsive'
 import { getVisualPerformanceMode } from '../utils/visualPerformance'
 
@@ -26,6 +29,8 @@ const CAROUSEL_MIN_GLIDE_VELOCITY = 16
 const CAROUSEL_WHEEL_SCALE = 2.5
 
 export function RightScrollCards({ projects, onProjectClick, onProjectAction, onProjectStatus }: RightScrollCardsProps) {
+  const language = useSiteLanguage()
+  const copy = projectInterfaceCopy[language].carousel
   const wrapperRef = useRef<HTMLElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -482,6 +487,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     <section
       ref={wrapperRef}
       className="hero-panel carousel-wrapper"
+      lang={SITE_LANGUAGE_TAGS[language]}
       data-cinema="panel"
       onPointerMove={handlePanelPointerMove}
       onMouseEnter={() => {
@@ -509,10 +515,10 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       <span ref={borderFlowRef} className="stellar-panel-border-flow" aria-hidden="true" />
       <div className="panel-head">
         <div className="panel-head__copy">
-          <p>IN PORT / 当前泊岸</p>
-          <span>项目状态与访问边界</span>
+          <p>{copy.title}</p>
+          <span>{copy.description}</span>
         </div>
-        <strong>{String(projects.length).padStart(2, '0')} 项</strong>
+        <strong>{copy.count(projects.length)}</strong>
       </div>
 
       <div
@@ -522,7 +528,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
-        aria-label="浏览 IN PORT 项目"
+        aria-label={copy.browse}
       >
         <div
           ref={trackRef}
@@ -534,7 +540,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
           }}
         >
           {loopedProjects.map((project, index) => {
-            const entryAction = getProjectCta(getProjectPublication(project.id))
+            const entryAction = getProjectCta(getProjectPublication(project.id), language)
             return (
               <ColoredCard
                 key={`${project.id}-${index}`}
@@ -556,7 +562,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
         className="panel-footer"
         to="/projects"
       >
-        <span>查看全部项目</span>
+        <span>{copy.allProjects}</span>
         <ArrowRight size={16} aria-hidden />
       </Link>
     </section>

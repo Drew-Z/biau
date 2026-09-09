@@ -1,0 +1,907 @@
+{
+  "createdAt": "2026-09-09T14:03:23.8780186+08:00",
+  "baseCommit": "9a6ff19c6533b6bf20eb5f328683095e7eba3221",
+  "preview": "http://127.0.0.1:5190",
+  "environment": "Windows PowerShell 7.6.5 / Node 24.14.0 / Playwright Chromium",
+  "finalFreeze": {
+    "createdAt": "2026-09-09T05:30:33.598Z",
+    "baseCommit": "9a6ff19c6533b6bf20eb5f328683095e7eba3221",
+    "preview": "http://127.0.0.1:5190",
+    "buildLog": "build-action-fit.log",
+    "files": [
+      {
+        "path": "src/data/projectInterfaceCopy.ts",
+        "sha256": "79e7dcd92a427d74cd09fffc008d3ef80c17f966ca6e51a567451df26a097634"
+      },
+      {
+        "path": "src/data/projectPublication.ts",
+        "sha256": "d97446648196f827b5c08a4a1dfabe59af865902fd6916b0ec6366f1bba82e88"
+      },
+      {
+        "path": "src/components/ColoredCard.tsx",
+        "sha256": "ee9c4a2cbee4720c7adc14bd0dee769f6eda25cd7b7e5a618974e2f1f52d695a"
+      },
+      {
+        "path": "src/components/ProjectCard.tsx",
+        "sha256": "cb9125dbd96fbfc03ba06aa2422a49e78ed0c10c43f094841a25f9062e97fcb7"
+      },
+      {
+        "path": "src/components/RightScrollCards.tsx",
+        "sha256": "3a455e785b4cea13872ee77b27125d22903572afa21d3a08047a968d574d75ee"
+      },
+      {
+        "path": "src/pages/ProjectDetailPage.tsx",
+        "sha256": "23204244687cd8409264c73c50afae38a49e858bf1b0af4b9a450aaf53078e95"
+      },
+      {
+        "path": "src/styles/navigation.css",
+        "sha256": "ecb39111504c1399ed344e7a5ddbd1b1bb17aceb25dae60cea9820b9cdd64153"
+      },
+      {
+        "path": "src/styles/route-pages.css",
+        "sha256": "21e70b10d80cab68e2ec4bdf75ba75b3f111f256cd92f03ef9b8f98bf6c7e96a"
+      },
+      {
+        "path": "src/styles/hero-split.css",
+        "sha256": "bb4638f77f262062027e2475a745aa5e11dc0c808722203db02cebdac7e03a5f"
+      },
+      {
+        "path": "scripts/check-product-registry.ts",
+        "sha256": "a213058bd932c3ce4cf308cfd5ea5a2f291568bb9e493472cc820690308e5207"
+      },
+      {
+        "path": "scripts/check-site-language-ui.mjs",
+        "sha256": "15fa2f1fc6b5cc767838a53342dc923d1550e24649733b9125eb72c51a09dadb"
+      },
+      {
+        "path": "scripts/check-ui.mjs",
+        "sha256": "b1bd8cd23b80b4dfc5f479f80447671dc6d66f6dd3757e85d775da25876681e6"
+      },
+      {
+        "path": ".trellis/spec/frontend/state-management.md",
+        "sha256": "db216f7a85e44f0e66e3e4a7d280035914c762b59ca5c0ca476a558597b05cd1"
+      },
+      {
+        "path": ".trellis/spec/frontend/quality-guidelines.md",
+        "sha256": "7b5335a0701851fa46b46a63b1957c5b5538bed5d30e35be4a7fca0ff3acfa8c"
+      },
+      {
+        "path": ".trellis/spec/frontend/component-guidelines.md",
+        "sha256": "0454660db1f42bb8691572d51682bd5c15ef9a6ad4ac3601badaef539289ef0b"
+      },
+      {
+        "path": ".trellis/spec/frontend/index.md",
+        "sha256": "5d3039116e9558abe89fa9d549014c1bd0e3f63aab61392c644dae3a80798735"
+      },
+      {
+        "path": "src/data/portfolio.ts",
+        "sha256": "48b80870bea3f36ab2b3b415875cc74c954572b19d523935740bbcbc9e3944bc"
+      },
+      {
+        "path": "src/data/hero.ts",
+        "sha256": "465f074aeb479ebdb76b60624af4df063f3b9dd561790d5197720f88f51349c4"
+      },
+      {
+        "path": "src/data/productRegistry.ts",
+        "sha256": "01108e37cc447a948dc79d7a00192c9d6809b2d9f255b1635d6e63617fbb3c1d"
+      },
+      {
+        "path": "src/data/siteLinks.ts",
+        "sha256": "757ea556cb95114e4ca390da8c31c83a39001cd65678eedc501dfe356c20e1d6"
+      },
+      {
+        "path": "src/hooks/useSiteLanguage.ts",
+        "sha256": "68ea4aa4c2827e61928fa85d7c7c58b4eb87bc569816861979d5089d207b0de5"
+      },
+      {
+        "path": "src/hooks/useReadingNavigation.ts",
+        "sha256": "e4b73a6169c6e43395011e0f525fd69acc6104cba2f87f3ec7c393d7efe0ae6f"
+      },
+      {
+        "path": "src/utils/siteLanguage.ts",
+        "sha256": "9eee50cd4953a03536f94b7269dec4edde15113272b53e1a2d3998f8a0c0afd4"
+      },
+      {
+        "path": "public/status/blog-semi-synthetic.json",
+        "sha256": "d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909"
+      },
+      {
+        "path": "package.json",
+        "sha256": "3fee1b58c667ba7d7f73804a0554d15b19e8925a09dd0cdb3efffb150213ffe3"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "b96c8c5c5357947654f47dba1f568495ed75b29d6355dee321f4714fde420809"
+      },
+      {
+        "path": "src/App.tsx",
+        "sha256": "fac1dee12bc43b46a5f526f1dc8f4ac57dd90223043e0848d4ca5c0a9be40507"
+      },
+      {
+        "path": "src/data/detailCopy.ts",
+        "sha256": "4cbc820c99007d97673fb9918962a291b8027fe535a89dc7e076f9dc3e3c088e"
+      }
+    ],
+    "build": [
+      {
+        "path": "dist/index.html",
+        "sha256": "15dbbef3da90dd8523a1b6f6879ae90e4856a39d382b892d94e4ec0c8626efbf",
+        "bytes": 4034
+      },
+      {
+        "path": "dist/assets/agentic-rag-frontier-2026-DrmE26OJ.js",
+        "sha256": "fc8c6033a3469e1d0fe18a64192221a22b018200067037b3882fd480be92b92b",
+        "bytes": 9495
+      },
+      {
+        "path": "dist/assets/aiDailyPublicApi-A0gwkiVC.js",
+        "sha256": "f1168c289711e9d2a5822d041aed5c034348685dec9089fc56022b1e3f352cf5",
+        "bytes": 5051
+      },
+      {
+        "path": "dist/assets/AiDailyPublicDetailPage-v9b4sFZd.js",
+        "sha256": "7b5dca725e876efec227fefe8888c542784b5537e9af9f22a7d4e5f5d360767e",
+        "bytes": 5563
+      },
+      {
+        "path": "dist/assets/AiDailyPublicPage-iWQNuHB0.js",
+        "sha256": "e65f537eeb238137bdcf3e1b90c0b2f354fd55d14d2b2ab84cd41ba1e98daa1c",
+        "bytes": 7231
+      },
+      {
+        "path": "dist/assets/blog-content-system-build-log-jxfIMnmV.js",
+        "sha256": "4ea2336a144505d8142e2a85dfd1397ca57c42b1674f054075d649128a14f0f1",
+        "bytes": 4793
+      },
+      {
+        "path": "dist/assets/BlogPostPage-BD6kT2N9.js",
+        "sha256": "7f7c9c333001d3bb86122512282ae6919cc0e01ac9309a925a8e515cb824b733",
+        "bytes": 7193
+      },
+      {
+        "path": "dist/assets/check-YY3bOAwA.js",
+        "sha256": "e6aa481a9285014ed3ff508dbc96a6f241609e15709b16bb03ec08862c5f093a",
+        "bytes": 113
+      },
+      {
+        "path": "dist/assets/circle-alert-kLIjlse_.js",
+        "sha256": "cb2d160a68a2129c5e1011092763266c739ac7b4c4e22efd4ff0d82ac00f72f8",
+        "bytes": 239
+      },
+      {
+        "path": "dist/assets/content-modeling-project-site-ByIDamc_.js",
+        "sha256": "9113576713b231c4c560dae385e3bd5ee071d6ab02f825ce8c13d80f9d0d9cf4",
+        "bytes": 7717
+      },
+      {
+        "path": "dist/assets/DetailReadingGuide-DnBrlDJx.js",
+        "sha256": "06597a2dc797a891d51668cc93c7b0099a5e4d67a84e5faabb3197ce275b8340",
+        "bytes": 7217
+      },
+      {
+        "path": "dist/assets/flow.worker-DWHifzn2.js",
+        "sha256": "d912012559b6258965e56156e8d065291894a1129d443496aafa4953291d55b4",
+        "bytes": 10647
+      },
+      {
+        "path": "dist/assets/game-showcase-standard-UHJsIYGv.js",
+        "sha256": "e6e910db61c579468f70364e838c1dc4b598ca646f0af94802f59021f6c8d14b",
+        "bytes": 6856
+      },
+      {
+        "path": "dist/assets/gsap-BzJVEuuP.js",
+        "sha256": "d7495e0e8ae231bd4efe9113437f1bb661adbab8c13f754364b5563d5e76c4ae",
+        "bytes": 69577
+      },
+      {
+        "path": "dist/assets/index-DspgprCS.js",
+        "sha256": "7f0ac361514fc26f4bad9f796ac48a905b434a8671508db9aa65d71ebf134f8b",
+        "bytes": 304440
+      },
+      {
+        "path": "dist/assets/index-DwjkEcCi.css",
+        "sha256": "316ea0220b0802618df7d032d17cfedf6e5a8f4c69beefa3a1aaf33b71424db6",
+        "bytes": 152582
+      },
+      {
+        "path": "dist/assets/jsx-runtime-Bk8LH5we.js",
+        "sha256": "15cc7b37802f060106658a61b5b401426edb79c9721a6e62de590b8613fbbacb",
+        "bytes": 50427
+      },
+      {
+        "path": "dist/assets/legal-rag-production-upgrade-plan-DKaBh47X.js",
+        "sha256": "785aa44c3d77f02d19a8ba493d1dd1b8e9fef3a04fd85b6a5fda8c00769a5cdb",
+        "bytes": 6925
+      },
+      {
+        "path": "dist/assets/legal-rag-review-qNQTtl6T.js",
+        "sha256": "d206e78ae64e4d5f9871c3b16fdb5788084f3776c18b4892cc31c6816cf7e215",
+        "bytes": 6683
+      },
+      {
+        "path": "dist/assets/link-DDtGr0vg.js",
+        "sha256": "79040db369c4cfda37ab933c4ad0862af93b5515b25188880bda66be79729de6",
+        "bytes": 245
+      },
+      {
+        "path": "dist/assets/LogoLabPage-BJfk6X2_.css",
+        "sha256": "46077ded995afa106f84758f67ed91360b45d5ee8be6a74860d1a739116c8292",
+        "bytes": 15294
+      },
+      {
+        "path": "dist/assets/LogoLabPage-ByMrzRBU.js",
+        "sha256": "63f89b4f7eaf6a45518911ef0fdd55654e43cdd8a0140d3be38f3d17c0d2cedd",
+        "bytes": 10250
+      },
+      {
+        "path": "dist/assets/NotFoundPage-DxJPzlvi.js",
+        "sha256": "0a5c4fa53c075f4cd5b531560b3da22e68dbc9250d7976b3e267286734c6a709",
+        "bytes": 1122
+      },
+      {
+        "path": "dist/assets/ozon-erp-architecture-C9nl5ILb.js",
+        "sha256": "5db1e00ac2a7537750244cd76bee65ea29037866d764e756d992aef43f3f9f91",
+        "bytes": 6559
+      },
+      {
+        "path": "dist/assets/pencil-line-UlVfppbf.js",
+        "sha256": "7702f27c9ecbd0b32fc1eb6a1674654410ea3c573f02c16a2abe16fb30d8224b",
+        "bytes": 432
+      },
+      {
+        "path": "dist/assets/pet-workspace-pipeline--7PJLtH7.js",
+        "sha256": "1d34923a65c6292c28d92a29f52a6e0b2ff4f8f817fcdead2580b803edc3d877",
+        "bytes": 7010
+      },
+      {
+        "path": "dist/assets/portfolio-CsrMmVOB.js",
+        "sha256": "dfdcfbeed838d6591b5c67e9f7daf095eefb490fdbe8faa19e1ccbc70cc4c6a4",
+        "bytes": 131651
+      },
+      {
+        "path": "dist/assets/productRegistry-BbwXSHYa.js",
+        "sha256": "9f116e427ebf8020e240334c6a93e631d16f72244b6631c6ff44b6d0f4e5f4b7",
+        "bytes": 3388
+      },
+      {
+        "path": "dist/assets/ProjectDetailPage-Cp44uTn-.js",
+        "sha256": "492a5ce25ae202aa98501be3fa3ec1ea0f035589b40e7e01105f21920d56c4ac",
+        "bytes": 10971
+      },
+      {
+        "path": "dist/assets/public-content-governance-BcngvoWM.js",
+        "sha256": "f3a01d0da871038f00cf5ba831103b866708d7729854a90db66439c822f6b8f7",
+        "bytes": 7774
+      },
+      {
+        "path": "dist/assets/PublicAssistantWidget-C5wby4QT.js",
+        "sha256": "f9b28f8aab71e2fb3ebef4cd5af6df0568ed26bb75f56dc819110f843e233383",
+        "bytes": 173579
+      },
+      {
+        "path": "dist/assets/refresh-cw-C9f7Mro3.js",
+        "sha256": "0277967019057fc1db776ee039a3ebd4e0c70a79e504f26a4b7e31d87859bdb0",
+        "bytes": 310
+      },
+      {
+        "path": "dist/assets/route-pages-D2wT6MZS.css",
+        "sha256": "086b7a88ad136c985a293b358dcb68b8d1e9581445a9e25b5734538669c2a389",
+        "bytes": 141752
+      },
+      {
+        "path": "dist/assets/rss-DKJ0PKXg.js",
+        "sha256": "9e8e63656a64059fe36187b557e9f04022b5ab7028b8785866e6cc3b402cba41",
+        "bytes": 213
+      },
+      {
+        "path": "dist/assets/send-CQMfD07e.js",
+        "sha256": "f834a1c793599f47724c041a90f398757616cafd39a38734ba16bb8fca651957",
+        "bytes": 462
+      },
+      {
+        "path": "dist/assets/siteLinks-BCS2JgGg.js",
+        "sha256": "600eb18e44f6fb8a0044ade5556d019ecc8399d0b2ce6627e3aa8c7b4b539961",
+        "bytes": 701
+      },
+      {
+        "path": "dist/assets/SiteStatusDetailPage-Bw5raXmm.js",
+        "sha256": "e90916533734e971cd3afc46417b69d04c000f61045de72f352d08089daf21f7",
+        "bytes": 6931
+      },
+      {
+        "path": "dist/assets/SiteStatusPage-CcpqJAQe.js",
+        "sha256": "9556564653fbf50a5af9e14ecfdfc8b8b4830ae212b0be645c7f887778289761",
+        "bytes": 11651
+      },
+      {
+        "path": "dist/assets/siteStatusView-BMzr5Ytj.js",
+        "sha256": "acd694e4a01bd26cc9b4a39b8a760068abc04772018c12cf9b582c447e099367",
+        "bytes": 26907
+      },
+      {
+        "path": "dist/assets/static-site-release-verification-CuNUShNV.js",
+        "sha256": "7be719ada178c38acfc505c318fe4b2f4caf612a0ae611058a99aad299e17236",
+        "bytes": 8345
+      },
+      {
+        "path": "dist/assets/StudioAiDailyIssuePage-C-reJwpm.js",
+        "sha256": "6ad9261b1d549798ec38d3562e81c6400b9365bcfdfe15afd0bcaf163a9ef1e9",
+        "bytes": 17553
+      },
+      {
+        "path": "dist/assets/StudioAiDailyWorkspacePage-DMbNq2fR.js",
+        "sha256": "52374dfadbdfded2557b47ed9b02077de7882aa449315b1217fb8062e0557dd6",
+        "bytes": 82033
+      },
+      {
+        "path": "dist/assets/studioApi-Cy7qNSPa.js",
+        "sha256": "0baf2f92e6614a043b5ad1e7a66912510c0a0819f0f8823609a948c345345a96",
+        "bytes": 30266
+      },
+      {
+        "path": "dist/assets/StudioPage-C_uUtNYN.js",
+        "sha256": "bc762a617d0082aa3a2e2041ab842d0be7d760a0aa2ece8b9de552cb5fa188ce",
+        "bytes": 61813
+      },
+      {
+        "path": "dist/assets/trash-2-5KCpstRK.js",
+        "sha256": "a80b3729884ec777e8be326bc585d820420d5419f7ae3124361ec73497f5c43c",
+        "bytes": 317
+      },
+      {
+        "path": "dist/assets/useSiteStatus-Tewg0pkC.js",
+        "sha256": "5bd8367aa18507e51ce3428b4cb14d5054aeb2d04c26f67e9e7bb3db18b87523",
+        "bytes": 797
+      },
+      {
+        "path": "dist/assets/xunqiu-android64-rebuild-MOI3FBEV.js",
+        "sha256": "e119d8f0be136ed1a5b50271b33506b50a0f0ce663e662e76f5a2014d3197396",
+        "bytes": 7081
+      }
+    ],
+    "served": [
+      "dist/index.html",
+      "dist/assets/index-DspgprCS.js",
+      "dist/assets/index-DwjkEcCi.css",
+      "dist/assets/ProjectDetailPage-Cp44uTn-.js",
+      "dist/assets/route-pages-D2wT6MZS.css"
+    ],
+    "publicationSha256": "42c87f7c52586683f8464f305d2d9ee7abf6b3fa3e0e82d842b8aa7abc0b247f",
+    "protectedDiffExit": 0,
+    "priorFreeze": "verification-freeze.json",
+    "changedChecks": [
+      ".trellis/spec/frontend/quality-guidelines.md",
+      "scripts/check-site-language-ui.mjs"
+    ]
+  },
+  "finalFullUi": {
+    "result": {
+      "smokeExit": 0,
+      "smokeSource": "ui-smoke-delivery.log",
+      "sameBusinessBuild": true,
+      "fullExit": 0,
+      "fullDurationMs": 1403217.7136,
+      "sourceFiles": 28,
+      "buildFiles": 47,
+      "changedFiles": [],
+      "finishedAt": "2026-09-09T13:57:00.5594175+08:00"
+    },
+    "groups": 46,
+    "failures": 0,
+    "durationMs": 1401545,
+    "log": "ui-full-final.log",
+    "session": 47702
+  },
+  "finalLanguage": {
+    "result": {
+      "languageExit": 0,
+      "durationMs": 183628.2172,
+      "log": "language-readiness-final.log",
+      "freeze": "verification-final-freeze.json"
+    },
+    "matrixGroups": 12,
+    "catalogGroups": 24,
+    "emptyGroups": 12,
+    "storageGroups": 5,
+    "loadingGroups": 1,
+    "detailGroups": 24,
+    "legacyGuideGroups": 4,
+    "detailLoadingGroups": 2,
+    "projectInterfaceGroups": 60,
+    "modelCalls": 0
+  },
+  "smoke": {
+    "exitCode": 0,
+    "groups": 21,
+    "failures": 0,
+    "durationMs": 9904,
+    "source": "ui-smoke-delivery.log",
+    "reusedOnSameBusinessBuild": true
+  },
+  "static": {
+    "lintLog": "lint-readiness-final.log",
+    "buildLog": "build-action-fit.log",
+    "performanceLog": "performance-action-fit.log",
+    "entryJsBytes": 304440,
+    "entryCssBytes": 152582,
+    "routeCssBytes": 141752,
+    "registryLog": "registry-final.log",
+    "otherContracts": "contracts-result.json",
+    "allExitCodes": 0
+  },
+  "firstFullUi": {
+    "result": {
+      "smokeExit": 0,
+      "smokeDurationMs": 10757.437,
+      "fullExit": 1,
+      "fullDurationMs": 463357.7074,
+      "sourceFiles": 28,
+      "buildFiles": 47,
+      "changedFiles": [],
+      "finishedAt": "2026-09-09T13:13:09.2131051+08:00"
+    },
+    "groups": 2,
+    "failures": 1,
+    "durationMs": 460323,
+    "log": "ui-full-delivery.log",
+    "diagnostic": "detail-readiness-focus.json",
+    "resolution": "Wait for lazy detail root and prescribed heading focus before activating status action. Only checker/spec changed; same business build."
+  },
+  "navigationBoundary": {
+    "cases": 30,
+    "result": "navigation-boundary-result.json"
+  },
+  "postRunHashCheck": {
+    "sourceFiles": 28,
+    "buildFiles": 47,
+    "changedFiles": []
+  },
+  "logs": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\action-containment-negative.json",
+      "bytes": 461,
+      "sha256": "32c5452c24028764bb194877ef29751b72e84c813acf3fcf6ef4b7f92b445c66"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\action-containment-negative.log",
+      "bytes": 636,
+      "sha256": "ed23deb1a1c413adab68675fe2ab7ad995eb216cbd54f0bbbe783c0d2436b23d"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\analytics-check.log",
+      "bytes": 147,
+      "sha256": "0f95057573584534707ed1c172746286b7c9802f9dd3bf2f7385dd2663c6f04e"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\assistant-kg-check.log",
+      "bytes": 203,
+      "sha256": "fe1ef0dc25b5852c37fac0b7507338e02bc670cd08514768ed753d971c2b4fec"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\baseline-result.json",
+      "bytes": 211,
+      "sha256": "abb4d107cb83de241fc5fa1b2865d3b7a931a7502f31d9b49d51666abd73f783"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\baseline-source.json",
+      "bytes": 1653,
+      "sha256": "0fcd656e3d1e8f83f231736a352b1c9c208ddb5a69e85b9ac77213e069abfe90"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\build-action-fit.log",
+      "bytes": 4396,
+      "sha256": "f90b6d2a2f04e0848c511bea6ad29d58fdb9d7530fe1f8631bf921d9afd15c75"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\build-brand-width-fix.log",
+      "bytes": 4396,
+      "sha256": "2740e8c56bfd35dfc938037d193ad6246d93c558dbb9fec2a81144b08b51882e"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\build-first.log",
+      "bytes": 4396,
+      "sha256": "bdf2e701069aa77416ae3dd9bda95e073523facdd49d12ef428a40e36bd58c78"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\build-mobile-brand-fix.log",
+      "bytes": 4639,
+      "sha256": "ae973d75e3c74814316f650dad012eedc281e44281b12e000bb7dc815502eedf"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\build-navigation-fix.log",
+      "bytes": 4396,
+      "sha256": "2c15346d1f8264eeb6e22ae15de943691cc17639eb23400dad737c2a3615c722"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\build-project-touch-fix.log",
+      "bytes": 4814,
+      "sha256": "7c407c1f317b393cef7aae473035c4b358e53a75e04156780e5c87c3bb47dd5b"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\contracts-result.json",
+      "bytes": 433,
+      "sha256": "887c3eb61917dcdc2cee8b8b46d6a3d296489542b209f8a4d446229d9f641b79"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\detail-readiness-diagnostic.log",
+      "bytes": 437,
+      "sha256": "faf147ced2280906bbb74694b74ce1b78085b8cc386b1f4ff6c7e856911a6ef5"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\detail-readiness-focus.json",
+      "bytes": 895,
+      "sha256": "67e3886567635abfeb170c6606ed2b92e651f511800d4039cc9d080891811f7e"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\detail-readiness-focus.log",
+      "bytes": 625,
+      "sha256": "77ebe21f610f130fb9578228d353c795a4de61291e64fb213b97c85dc5f529d0"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\freeze-check.log",
+      "bytes": 985,
+      "sha256": "19c253ccab3699b141ef33ff32decfc1de1cd1331506f82320b26c65aaba7040"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\freeze-final.log",
+      "bytes": 160,
+      "sha256": "9dcb072bde4e63c83b6c511cee403d8020caceb01cb1e57e022c4a4941b077ed"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\freeze-readiness-final.log",
+      "bytes": 172,
+      "sha256": "07d33e42888e753672cf3e47eed7258dd501ed40cb4892d47891c1405abcd64e"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-action-fit-result.json",
+      "bytes": 75,
+      "sha256": "5201a67c4b4c07d7bb1ec48acde3cc693e21b31232ee5cd0cf912ef845381109"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-action-fit.log",
+      "bytes": 64,
+      "sha256": "be870c00da048a41449609ed76f4abc009111622ad3b2eced43264c18e9c537e"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-after-brand-width.log",
+      "bytes": 5719,
+      "sha256": "fe13f1088d813bd4ffaf010f9be2a2dbc08695c3a916c69289a25346948fe244"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-after-navigation.log",
+      "bytes": 1542,
+      "sha256": "13588d761e7f2e1997fc77ccfc6b5af2d19b3e01b433d5e8cbeb8311188bf75f"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-after-touch-fix.log",
+      "bytes": 1341,
+      "sha256": "7477874e56375c8d4ea9616521b4ef2388c027c6e7b552e29795665dd53e9db6"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-empty-contract.log",
+      "bytes": 1764,
+      "sha256": "f0fff2347e644798627fe0843eff7b92aa077d9900e6e9855b696a70d16c6ae4"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-final-result.json",
+      "bytes": 75,
+      "sha256": "b66bc6ac98c4e1eeea26cb151b779c411c7107e035ac21c87f7a0a8c590bdf39"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-final.log",
+      "bytes": 64,
+      "sha256": "5f26bc2cbf5c58b7205ac1c91d74d68d783160874bdbf957005a73dcec97a212"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-first.log",
+      "bytes": 973,
+      "sha256": "abce836b47381d93510c57a715dbca054bdc04f500c72a91c90ee175bc1a4b31"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-mobile-brand-fix.log",
+      "bytes": 1383,
+      "sha256": "190a9ccbcdb9431b367d799c796b74da6b4473ab16d1a9c4152bd127c69b56ec"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-negative.log",
+      "bytes": 1145,
+      "sha256": "095742ad5d923ce666fa119dbc57019f852e0700b53b4fa1d40692886531de29"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\interface-toggle-diagnostic.log",
+      "bytes": 1156,
+      "sha256": "9bee3a14d98670a6112504c6a4378ce8ca6393349a580e0abc9f307c910e43b3"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\language-delivery-result.json",
+      "bytes": 133,
+      "sha256": "0e0bc3be65dffd4a3deefd813835654f58b7fe3bf9c93c0db70c686215ca1cef"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\language-delivery.log",
+      "bytes": 335,
+      "sha256": "8ca1d35fa0f3e88696b595b6e8f746776a924907adbeb69af84551236bd3323c"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\language-readiness-final-result.json",
+      "bytes": 146,
+      "sha256": "266337765cfcfa0bb64897b4088f4990d0c4600b6c2d2aee2c2c4293b8523c2c"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\language-readiness-final.log",
+      "bytes": 335,
+      "sha256": "8ca1d35fa0f3e88696b595b6e8f746776a924907adbeb69af84551236bd3323c"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\lint-action-fit.log",
+      "bytes": 40,
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\lint-final.log",
+      "bytes": 40,
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\lint-first.log",
+      "bytes": 40,
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\lint-mobile-brand-fix.log",
+      "bytes": 40,
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\lint-readiness-final.log",
+      "bytes": 40,
+      "sha256": "ec75fb9ac22d71ae9f74ef74ac3be24c21b15abb0ac17adce82383970f2e1727"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\navigation-boundary-and-desktop-action.log",
+      "bytes": 763,
+      "sha256": "87eb59fdcf85e4c614ee59ec4f42fda91866076103214129a79f7fc4e2874db9"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\navigation-boundary-result.json",
+      "bytes": 7577,
+      "sha256": "cbdf207b86714ba5b5f4c443f6eac85e7ac9177de729b1919ef27dd98388e456"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\navigation-layout-diagnostic.log",
+      "bytes": 3831,
+      "sha256": "6a87c3987816839c40ee8f7f797a7bfdfe39af005a9819bc29c735b3e3407045"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\performance-action-fit.log",
+      "bytes": 299,
+      "sha256": "89d5553da590c18c70760c5de03956d13a53dcd81e1f5633f3b2c5f7c4ccb1d1"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\performance-final.log",
+      "bytes": 299,
+      "sha256": "d5dc8376adc44decb8af3eda731c45419d244e194c57e280528f8beb958eab32"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\performance-first.log",
+      "bytes": 299,
+      "sha256": "825936438ecd11bfdb1c0e6b3544a511d7608401629cd5303dd9a34e7a738f09"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-action-name-check.log",
+      "bytes": 199,
+      "sha256": "063d5fbe3efefd496998570a8df5840c00cc8778b8233295dc7d581a2b7f402f"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-details-check.log",
+      "bytes": 427,
+      "sha256": "37b6fd5c93a04addb325322c496d8ce072970b13edd9d6beacef85db1c149f57"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\projects-discovery-check.log",
+      "bytes": 136,
+      "sha256": "ceb6ecd57161a3507520067bf22db665904b30139eedebc316a6e7689032fc2d"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\publication-records-before.json",
+      "bytes": 104,
+      "sha256": "8bc619e1f0c7e0924b26f8e57d7600abc0fca6ad1b7111500dd51c09d48932e1"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\registry-final.log",
+      "bytes": 288,
+      "sha256": "119e734b6f21df1b38dd4917e397714e88eabe79ea68119bce8d224a764c47f0"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\registry-first.log",
+      "bytes": 274,
+      "sha256": "4a855b751e7bbfa06b0bf627c9e1c308a6dc156596f47abdf68e84790c507a9d"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\registry-negative.log",
+      "bytes": 918,
+      "sha256": "b4479917091fc0877a20f24f296003f342b9e66d5b1e6bc74a775b95976400c8"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\toggle-hit-diagnostic.log",
+      "bytes": 1526,
+      "sha256": "e996dd8558a4a5aaa15b57a9a5d4a64e585e7402af398fc1ea39aee7f2a2f6da"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\ui-delivery-result.json",
+      "bytes": 229,
+      "sha256": "7e33b9b6a31ba1fb95a3667aba88e88519a4540a0f9fb1d713b2601f3f7b8380"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\ui-final-result.json",
+      "bytes": 270,
+      "sha256": "65384398cf886d81b902f947d6f25583e92fabf098a5bedff706059b3c8940da"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\ui-full-delivery.log",
+      "bytes": 820,
+      "sha256": "1894acb5bb157d7473a4404b4ba7d13ec2f1406c40a422de70a0f4eb874af49f"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\ui-full-final.log",
+      "bytes": 6554,
+      "sha256": "f827f02035185319af49daaa2783d7dc141f9033c23ce532f17c3d54d13ddebf"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\ui-smoke-delivery.log",
+      "bytes": 2667,
+      "sha256": "42e43ddf7769f9a20dfcd60f9fe00c6f89a4e48715b0089b601d19a91330f3e4"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\ui-start-check.json",
+      "bytes": 124,
+      "sha256": "c844b649dafb4f5c11992f7f85e2907a48400ef2ab29e0a36de1dfbd3f927a16"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\verification-final-freeze.json",
+      "bytes": 12862,
+      "sha256": "8a389faaeee3c1735860aed17451c19efc7ead0d46702b825cdc4173a1cb20b7"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\verification-freeze.json",
+      "bytes": 12698,
+      "sha256": "1bfcf0c21d576a3c0f0ec7ef293ecbbc796a880103ecae1c7b9ddb23b9447a75"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-canvas-1440-nature-en.png",
+      "bytes": 676872,
+      "sha256": "178dd4961d580dc6b47bc017021f2cbf00c6394d7cb4c43aacc844bf087bcaee"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-canvas-320-morning-en.png",
+      "bytes": 237752,
+      "sha256": "572733826571a89b5f963e5f635029aa6ef05abac5faff6b308e4affebd9c970"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-canvas-430-stellar-en.png",
+      "bytes": 194437,
+      "sha256": "1825f870050a17c4320fee5538f56c8f98e43b46ed60980a01bc179edc9f349f"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-catalog-1440-nature-en.png",
+      "bytes": 913223,
+      "sha256": "1a52c51ef43db31f2162d22a0989d4a479372e7239f2efe111d7790c9320c2c2"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-catalog-320-morning-en.png",
+      "bytes": 276019,
+      "sha256": "ba68cd50622fde48d3da46bc491acd5a6da4df1977e1a4df0bc27f8459134bce"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-catalog-430-stellar-en.png",
+      "bytes": 236184,
+      "sha256": "5fc2f69588786cd0115b26a358bb2b9b74894ff1ae8cf402c4a71374b33f7742"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-home-1440-nature-en.png",
+      "bytes": 1347531,
+      "sha256": "0e1edcda4a07d8b3327c47d088b62ce54c11f9f9937eccfd3a0d3b3fb0541227"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-home-320-morning-en.png",
+      "bytes": 332151,
+      "sha256": "94d9f9c6b320821e4e77721681888f025e11050a139cb401a7e1ceac7ebe6052"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-home-430-stellar-en.png",
+      "bytes": 344918,
+      "sha256": "4d80f1345afff5c169435759379b4eff06f006c48ab27976f989ca0bf76883b0"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-legal-rag-1440-nature-en.png",
+      "bytes": 661098,
+      "sha256": "64bc8eb969a128e4b2edb916c1f7f7de4da3dc6a689c10a85051883eb113ad9d"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-legal-rag-320-morning-en.png",
+      "bytes": 209932,
+      "sha256": "8bca3bdd3361ba946da34fb20834b32e9a9c0a15b1f47ca9a4bb5b9d3715c0ef"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-legal-rag-430-stellar-en.png",
+      "bytes": 183652,
+      "sha256": "d3a80670074edd9432978589e9a748a60c8491b6ee56b3beaf144f64d60fc8ae"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-pet-workspace-1440-nature-en.png",
+      "bytes": 595854,
+      "sha256": "8244b4f3b1256f2a07bfe11ba2e0f1972de0b6e47378548bbc2c8d4616d587c0"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-pet-workspace-320-morning-en.png",
+      "bytes": 222101,
+      "sha256": "9af3d37c1132594d920b06806f7877566695e743c2080639f23627d8e7b97229"
+    },
+    {
+      "path": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-project-interface-20260909-a25cee24\\project-interface-pet-workspace-430-stellar-en.png",
+      "bytes": 179847,
+      "sha256": "ba70e2de45fa9021e29bcdd06e8ac1120521a62728a9965d61b975c9db7ea99d"
+    }
+  ],
+  "finalManualReview": [
+    "project-interface-home-1440-nature-en.png",
+    "project-interface-legal-rag-320-morning-en.png"
+  ],
+  "preservedUnrelatedFiles": [
+    {
+      "path": " .trellis/tasks/08-29-continuous-ui-product-polish/evidence/current-morning-desktop.png",
+      "sha256": "25b2e06062283f9b6f1830294e18f123c772d2a39bee39f7d70725823dcb40a7"
+    },
+    {
+      "path": " .trellis/tasks/08-29-continuous-ui-product-polish/evidence/current-nature-desktop.png",
+      "sha256": "57e538fef752f84665295c5a3d1816c24dfa03fc06a1e855152943fa1d9056df"
+    },
+    {
+      "path": " .trellis/tasks/08-29-continuous-ui-product-polish/evidence/current-stellar-desktop.png",
+      "sha256": "d2ab383aa438335617347285625b40f049324ed33c1f08faae8cafcbcf3c5a2c"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/check.jsonl",
+      "sha256": "522b960a8ae00e4d014573cd87b5688298e3313a90c8b5db648898aad30a9731"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/design.md",
+      "sha256": "fecdc3a5adfd07a36ff239f35168e459e0c3eab8f38dce343c0eeee1929da2d9"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/implement.jsonl",
+      "sha256": "9d68353d7004cf788fd2f0229d36e33f3ac1cce2e17125f6f19462e69c65b5ea"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/implement.md",
+      "sha256": "76a4b445c49d661300313680ef27943bba33a23b4d3e34028aafa411edf81a62"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/navigation-typography-baseline.md",
+      "sha256": "a198161880b9b8b6165ec6f4475b2856df03d3998f3034d0355c1e830393be5e"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/prd.md",
+      "sha256": "654d22b42b42868016e89839cc5ea13045654e85941d046d5145163e6ffe5b2f"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/task.json",
+      "sha256": "f6630760f8fc95ae52f32a1185c2a1ec44d66eebd5ffd69914ace2de17c0f8db"
+    },
+    {
+      "path": ".trellis/tasks/09-04-continuous-ui-quality-loop/ui-audit.md",
+      "sha256": "ea122873734cfff1f50623a08f82befa6fc42c3d5480991f9f072e36e706d4a7"
+    }
+  ],
+  "productionActions": [],
+  "removedFiles": [],
+  "limitations": [
+    "Public UI only; authored content, project-specific reasons and SEO remain original.",
+    "Homepage outside the project panel, status, AI Daily and assistant pages are not fully localized.",
+    "Screenshots cover representative first viewports; they do not claim every source link was manually inspected.",
+    "No push, deploy, signing, real model calls, content publication, Feed/Cron or automation changes.",
+    "Task is awaiting local commit and archive/actual parent return; no delivery action is claimed here."
+  ]
+}

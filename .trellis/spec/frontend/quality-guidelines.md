@@ -40,6 +40,28 @@ dismissal. Status and AI Daily guide items retain Chinese semantics while their
 shared guide controls translate. Fixture payloads must satisfy the real decoder,
 including explicit nullable `uncertainty` and `correctedAt` fields.
 
+`checkProjectInterfaceLanguage` extends the same entry with the homepage project
+panel, catalog and representative project details across the four widths and
+three themes. Keep authored text and action-target snapshots separate from
+translated-label assertions; compare access mode, target/type/intent, safe link
+attributes, carousel DOM identity and history. Cover real language clicks,
+refresh persistence and keyboard entry. Desktop catalog links remain hidden by
+its existing layout: use its detail button and then the detail status link;
+mobile tests must require a visible, focused status button before Enter.
+An SPA URL can change while the previous catalog still renders during lazy
+loading. Wait for the detail root and its prescribed heading focus before
+focusing the next command; URL completion alone does not mean the page is ready.
+Canvas currently has no candidate links, so assert zero rather than fabricating
+an action or requiring a nonempty list for every project. Registry fixtures
+cover generic access states not present in current public browser data.
+
+Homepage full action labels may wrap inside the fixed button column. Keep their
+font size, explicit short labels, and separate icons; `.carousel-action__label--full`
+uses `min-width: 0`, normal whitespace and bounded word wrapping. Assert label
+and icon rectangles lie inside the button as well as checking the page bounds:
+an 88px button can contain a 99.6px text label in the viewport while overflowing
+its own background. Inspect representative desktop screenshots after this check.
+
 For the public AI Daily Feed or detail route, also run:
 
 ```powershell
@@ -202,6 +224,9 @@ do not let a concurrent pointer hover make the keyboard assertion pass.
 - Mobile tab bar includes exactly the public primary sections.
 - Its grid track count equals the shared `Navigation` route count (currently four). The first and last tabs fill the padded content edges, every track is equal width, and route changes preserve that contract. Never retain an empty fifth track or invent a disabled destination to fill it.
 - Touch targets are at least 44px where practical.
+- Project detail `.link-badge` and `.project-visual__source-link` use 44px minimum
+  height inside the existing 720px breakpoint. Cover quick links, ordinary links
+  and image sources in both languages without changing desktop density.
 - Blog/project missing details use `.detail-missing--catalog .btn` with 44px
   minimum height inside the existing 720px breakpoint. Scope this to those
   measured return actions; preserve other missing-page families and desktop
@@ -217,6 +242,13 @@ do not let a concurrent pointer hover make the keyboard assertion pass.
 - `checkStatusDetailReadingNavigation()` covers two hero actions plus one header return link on a valid status detail and one return action on a missing status detail, at desktop and `320/390/430` with three themes and both language states. Require exact counts and destinations, visibility, minimum dimensions, horizontal containment, and center-point hit testing after scrolling. The missing route must omit the reading guide and return to `/status` on Enter.
 - A fixed mobile tab bar uses an opaque surface so cards and text never remain visibly readable through the bar; the page content reserves `--mobile-tabbar-clearance` plus a content gap so the last interactive item can be scrolled above the bar.
 - Compact mobile navigation keeps a readable brand identity in `.nav-brand-text`; route-specific mobile overrides must not hide it after the base navigation rule runs. UI checks assert brand width and the compact project CTA label at `320`, `390`, and `430` widths.
+- Homepage navigation at `max-width: 768px` uses `minmax(0, 1fr) auto`; its brand
+  section may shrink and its title wraps inside the available width. Retain the
+  44px language/theme controls. Check visible brand text containment and its
+  rectangle against the language button, then exercise real clicks in both
+  directions. Fixed title width plus visible overflow can intercept the click
+  even when the document itself has no horizontal scrollbar. Verify the
+  380/381 and 768/769 boundaries when changing these rules.
 - Blog/project/status details remain vertically readable without forced horizontal swiping.
 - Floating assistant/reading controls collapse or offset near final content and footer.
 - Drawers/modals remain within viewport, expose close actions, and avoid global-nav overlap.

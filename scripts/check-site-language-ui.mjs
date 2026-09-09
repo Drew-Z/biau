@@ -138,7 +138,8 @@ async function checkCatalogCopy(page, language, family) {
       assert.equal(await action.getAttribute('aria-label'), english ? `View project details: ${title}` : `查看项目详情：${title}`)
       assert.ok(await action.evaluate((node, expected) => node.matches(`:lang(${expected})`), tag))
     }
-    assert.ok(await page.locator('.project-title, .project-summary, .project-header, .project-stack, .project-links').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored project text and publication actions retain Chinese semantics')
+    assert.ok(await page.locator('.project-title, .project-summary, .project-header, .project-stack').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored project text retains Chinese semantics')
+    await checkProjectLinkCopy(page, language)
   }
 }
 
@@ -165,7 +166,13 @@ async function checkCatalogLayout(page) {
 }
 
 async function catalogContentSnapshot(page, family) {
-  return page.locator(family === 'blog' ? '.blog-header, .blog-title, .blog-detail, .blog-meta, .blog-tags' : '.project-header, .project-title, .project-summary, .project-stack, .project-links').evaluateAll((nodes) => nodes.map((node) => ({
+  if (family === 'projects') {
+    return page.locator('.projects-tools-page').evaluate((root) => ({
+      content: [...root.querySelectorAll('.project-header, .project-title, .project-summary, .project-stack')].map((node) => node.textContent),
+      actions: [...root.querySelectorAll('.project-links a, .project-links button')].map((node) => ({ tag: node.tagName, href: node.getAttribute('href') ?? node.getAttribute('data-project-href'), title: node.getAttribute('title'), target: node.getAttribute('target'), rel: node.getAttribute('rel') })),
+    }))
+  }
+  return page.locator('.blog-header, .blog-title, .blog-detail, .blog-meta, .blog-tags').evaluateAll((nodes) => nodes.map((node) => ({
     text: node.textContent,
     actions: [...node.querySelectorAll('a, button')].map((action) => ({ tag: action.tagName, href: action.getAttribute('href'), title: action.getAttribute('title'), name: action.getAttribute('aria-label') })),
   })))
@@ -237,7 +244,7 @@ async function readingContentSnapshot(page, root) {
   return page.locator(root).evaluate((node) => ({
     content: [...node.querySelectorAll('.detail-title, .detail-summary, .detail-role, .blog-series, .detail-highlights, .blog-post-section, .detail-stack, .detail-related-card h3, .detail-related-card p, .project-case-study__section > h3, .project-case-study__section > .blog-post-body-text, .project-visual__text, .project-visual__caption-text, .detail-hero-caption')].map((item) => item.textContent),
     images: [...node.querySelectorAll('img')].map((item) => ({ src: item.getAttribute('src'), alt: item.getAttribute('alt') })),
-    publication: [...node.querySelectorAll('.link-badge, .detail-entry-note, .project-visual__source-link')].map((item) => ({ text: item.textContent, href: item.getAttribute('href'), title: item.getAttribute('title') })),
+    publication: [...node.querySelectorAll('.link-badge, .detail-entry-note, .project-visual__source-link')].map((item) => ({ tag: item.tagName, href: item.getAttribute('href'), type: item.getAttribute('data-link-type'), target: item.getAttribute('target'), rel: item.getAttribute('rel'), title: item.getAttribute('title'), authoredExplanation: item.matches('.detail-entry-note') ? item.textContent : null })),
   }))
 }
 
@@ -247,8 +254,9 @@ async function checkReadingPageCopy(page, reading, language) {
   assert.equal(await root.locator('.detail-back').textContent(), reading.family === 'blog' ? (english ? 'Knowledge Base' : '知识库') : (english ? 'Projects' : '项目集'))
   assert.equal(await root.locator('.detail-back').getAttribute('href'), reading.back)
   assert.ok(await root.evaluate((node, expected) => node.matches(`:lang(${expected})`), english ? 'en' : 'zh-CN'))
-  assert.ok(await root.locator('.detail-title, .detail-summary, .detail-highlights, .blog-post-section, .detail-stack, .detail-related-card h3, .detail-related-card p, .project-case-study__section > h3, .project-visual__text, img, .link-badge, .detail-entry-note, .project-visual__source-link').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored text, image alternatives and publication actions must remain Chinese')
+  assert.ok(await root.locator('.detail-title, .detail-summary, .detail-highlights, .blog-post-section, .detail-stack, .detail-related-card h3, .detail-related-card p, .project-case-study__section > h3, .project-visual__text, img').evaluateAll((nodes) => nodes.length > 0 && nodes.every((node) => node.matches(':lang(zh-CN)'))), 'authored text and image alternatives must remain Chinese')
   if (reading.family === 'projects') {
+    await checkProjectLinkCopy(page, language)
     assert.equal(await root.locator('.detail-hero-image-action').textContent(), english ? 'Open original' : '打开原图')
     assert.equal(await root.locator('.project-case-study').getAttribute('aria-label'), english ? 'Project case study' : '项目案例分析')
     const title = await root.locator('h1').textContent()
@@ -467,7 +475,7 @@ export async function checkSiteLanguage(browser, base) {
         const projectHistory = await page.evaluate(() => history.length)
         await selectSiteLanguage(page, 'zh')
         await checkCatalogCopy(page, 'zh', 'projects')
-        assert.deepEqual(await catalogContentSnapshot(page, 'projects'), projectContent, 'project content and publication actions must not change with interface language')
+        assert.deepEqual(await catalogContentSnapshot(page, 'projects'), projectContent, 'authored content, access explanations and action targets must not change with interface language')
         await selectSiteLanguage(page, 'en')
         assert.equal(await page.evaluate(() => history.length), projectHistory)
         if (process.env.UI_CHECK_ARTIFACT_DIR) await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `catalog-projects-${width}-${theme}-en.png`), fullPage: true })
@@ -613,7 +621,198 @@ export async function checkSiteLanguage(browser, base) {
     await delayed.page.context().close()
   }
   const reading = await checkDetailReadingLanguage(browser, base)
-  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, modelCalls: 0 }
+  const projectInterface = await checkProjectInterfaceLanguage(browser, base)
+  return { matrixGroups, catalogGroups: matrixGroups * 2, emptyGroups, storageGroups: storageCases.length, loadingGroups: 1, ...reading, ...projectInterface, modelCalls: 0 }
+}
+
+async function checkProjectInterfaceLayout(page) {
+  await page.evaluate(async () => { await document.fonts.ready })
+  await page.waitForFunction(() => [...document.getAnimations()].every((animation) => animation.playState !== 'running' || animation.effect?.getComputedTiming().iterations === Infinity))
+  const layout = await page.evaluate(() => {
+    const selectors = '.page-home .brand-title, .page-home .nav-brand-link, .carousel-wrapper .panel-head__copy, .carousel-wrapper .panel-head > strong, .carousel-action__label, .carousel-wrapper .panel-footer, .project-entry-label, .detail-badges .tag, .detail-status'
+    const nodes = [...document.querySelectorAll(selectors)].filter((node) => node.getClientRects().length > 0)
+    const clipped = nodes.filter((node) => {
+      const rect = node.getBoundingClientRect()
+      return rect.left < -1 || rect.right > innerWidth + 1 || node.scrollWidth > node.clientWidth + 1
+    }).map((node) => ({ text: node.textContent, className: node.className }))
+    const controls = [...document.querySelectorAll('.carousel-action, .carousel-wrapper .panel-footer, .project-links .link-badge, .detail-page .link-badge, .project-visual__source-link')].filter((node) => node.getClientRects().length > 0)
+    const small = innerWidth <= 430 ? controls.filter((node) => node.getBoundingClientRect().height < 43.5 || node.getBoundingClientRect().width < 43.5).map((node) => ({ text: node.textContent, className: node.className, height: node.getBoundingClientRect().height, width: node.getBoundingClientRect().width })) : []
+    const actionContentOverflow = [...document.querySelectorAll('.carousel-action')].filter((node) => node.getClientRects().length > 0).flatMap((node) => {
+      const control = node.getBoundingClientRect()
+      return [...node.querySelectorAll('.carousel-action__label, svg')].filter((child) => {
+        if (child.getClientRects().length === 0) return false
+        const rect = child.getBoundingClientRect()
+        return rect.left < control.left - 1 || rect.right > control.right + 1 || rect.top < control.top - 1 || rect.bottom > control.bottom + 1
+      }).map((child) => ({ label: node.getAttribute('aria-label'), child: child.getAttribute('class') ?? child.tagName, width: control.width }))
+    })
+    const brand = document.querySelector('.page-home .nav-brand-link')?.getBoundingClientRect()
+    const language = document.querySelector('.page-home .nav-lang-toggle')?.getBoundingClientRect()
+    const navigationOverlap = brand && language && brand.width > 0 ? Math.max(0, brand.right - language.left) : 0
+    return { clipped, small, actionContentOverflow, navigationOverlap, overflow: document.documentElement.scrollWidth - innerWidth }
+  })
+  assert.deepEqual(layout.clipped, [], 'project interface labels must fit')
+  assert.deepEqual(layout.small, [], 'mobile project actions must retain 44px targets')
+  assert.deepEqual(layout.actionContentOverflow, [], 'project action text and icons must fit inside their button')
+  assert.ok(layout.navigationOverlap <= 1, `home brand must not intercept language controls: overlap=${layout.navigationOverlap}px`)
+  assert.ok(layout.overflow <= 1)
+}
+
+async function checkProjectLinkCopy(page, language, { empty = false } = {}) {
+  const tag = language === 'en' ? 'en' : 'zh-CN'
+  const labels = page.locator('.project-entry-label')
+  if (empty) assert.equal(await labels.count(), 0, 'a project without link candidates must not gain an action')
+  else assert.ok(await labels.count() > 0)
+  for (const label of await labels.all()) {
+    assert.ok(await label.evaluate((node, expected) => node.matches(`:lang(${expected})`), tag))
+    if (language === 'en') assert.ok(!/[\p{Script=Han}]/u.test(await label.textContent()), 'known project interface labels translate')
+  }
+  for (const link of await page.locator('.link-badge[title], .project-visual__source-link[title]').all()) {
+    const title = await link.getAttribute('title')
+    if (/[\p{Script=Han}]/u.test(title)) assert.ok(await link.evaluate((node) => node.matches(':lang(zh-CN)')), 'authored tooltip language must remain Chinese')
+  }
+  for (const link of await page.locator('a.link-badge[target="_blank"], a.project-visual__source-link[target="_blank"]').all()) {
+    assert.match(await link.getAttribute('rel'), /noopener/u)
+    assert.match(await link.getAttribute('rel'), /noreferrer/u)
+  }
+}
+
+export async function checkProjectInterfaceLanguage(browser, base) {
+  let projectInterfaceGroups = 0
+  const categoryEnglish = { 'AI 应用': 'AI applications', '业务系统': 'Business systems', '互动体验': 'Interactive experiences', '移动端': 'Mobile apps', '博客系统': 'Blog platform', '工具': 'Tools' }
+  const statusEnglish = { '重点展示': 'Featured', '已有页面': 'Page exists', MVP: 'MVP', '建设中': 'In progress' }
+  for (const width of [320, 390, 430, 1440]) {
+    for (const theme of ['morning', 'nature', 'stellar']) {
+      const { page, errors, requests } = await createPage(browser, base, { width, theme })
+      const capture = async (surface) => {
+        if (process.env.UI_CHECK_ARTIFACT_DIR && ((width === 320 && theme === 'morning') || (width === 430 && theme === 'stellar') || (width === 1440 && theme === 'nature'))) {
+          await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `project-interface-${surface}-${width}-${theme}-en.png`) })
+        }
+      }
+      try {
+        await page.goto(`${base}/`, { waitUntil: 'load' })
+        const panel = page.locator('.carousel-wrapper')
+        await panel.waitFor({ state: 'visible' })
+        const panelNode = await panel.elementHandle()
+        const trackNode = await panel.locator('.carousel-track').elementHandle()
+        const authoredCards = await panel.locator('.carousel-card > div').allTextContents()
+        const modes = await panel.locator('.carousel-action').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-entry-mode')))
+        const historyBefore = await page.evaluate(() => history.length)
+        await selectSiteLanguage(page, 'en')
+        assert.equal(await panel.locator('.panel-head__copy > span').textContent(), 'Project status and access')
+        assert.equal(await panel.locator('.panel-head__copy > p').textContent(), 'IN PORT')
+        const count = await panel.locator('.carousel-card:not([data-loop-copy])').count()
+        assert.equal(await panel.locator('.panel-head > strong').textContent(), `${String(count).padStart(2, '0')} projects`)
+        assert.equal(await panel.locator('.carousel-viewport').getAttribute('aria-label'), 'Browse IN PORT projects')
+        assert.equal(await panel.locator('.panel-footer').textContent(), 'View all projects')
+        assert.ok(await panelNode.evaluate((node) => node.isConnected))
+        assert.ok(await trackNode.evaluate((node) => node.isConnected))
+        assert.equal(await page.evaluate(() => history.length), historyBefore)
+        assert.deepEqual(await panel.locator('.carousel-card > div').allTextContents(), authoredCards)
+        assert.deepEqual(await panel.locator('.carousel-action').evaluateAll((nodes) => nodes.map((node) => node.getAttribute('data-entry-mode'))), modes)
+        assert.ok(await panel.locator('.carousel-card > div').evaluateAll((nodes) => nodes.every((node) => node.matches(':lang(zh-CN)'))))
+        for (const card of await panel.locator('.carousel-card:not([data-loop-copy])').all()) {
+          const title = await card.locator('strong').textContent()
+          assert.equal(await card.getAttribute('aria-label'), `View project details: ${title}`)
+          const action = card.locator('.carousel-action')
+          const direct = await action.getAttribute('data-entry-mode') === 'direct'
+          assert.equal(await action.locator('.carousel-action__label--full').textContent(), direct ? 'Open project' : 'View current status')
+          assert.equal(await action.locator('.carousel-action__label--compact').textContent(), direct ? 'Open' : 'Status')
+          assert.equal(await action.getAttribute('aria-label'), `${direct ? 'Open project' : 'View current status'}: ${title}`)
+        }
+        await checkProjectInterfaceLayout(page)
+        await capture('home')
+        await selectSiteLanguage(page, 'zh')
+        assert.equal(await panel.locator('.panel-head__copy > span').textContent(), '项目状态与访问边界')
+        assert.equal(await panel.locator('.panel-footer').textContent(), '查看全部项目')
+        await checkProjectInterfaceLayout(page)
+        await selectSiteLanguage(page, 'en')
+        await page.reload({ waitUntil: 'load' })
+        await assertSiteLanguage(page, 'en')
+        assert.equal(await panel.locator('.panel-head__copy > span').textContent(), 'Project status and access')
+        await panel.locator('.carousel-card:not([data-loop-copy]) .carousel-action').first().focus()
+        await page.keyboard.press('Enter')
+        await page.waitForURL(`${base}/status/legal-rag`)
+        await assertSiteLanguage(page, 'en')
+        await page.goBack()
+        await panel.locator('.panel-footer').focus()
+        await page.keyboard.press('Enter')
+        await page.waitForURL(`${base}/projects`)
+        projectInterfaceGroups += 1
+
+        await selectSiteLanguage(page, 'zh')
+        const catalog = await catalogContentSnapshot(page, 'projects')
+        await checkProjectLinkCopy(page, 'zh')
+        await checkProjectInterfaceLayout(page)
+        await selectSiteLanguage(page, 'en')
+        await checkProjectLinkCopy(page, 'en')
+        assert.deepEqual(await catalogContentSnapshot(page, 'projects'), catalog)
+        await checkProjectInterfaceLayout(page)
+        await capture('catalog')
+        const legalCard = page.locator('.project-card').filter({ has: page.locator('[data-reading-entry="projects:legal-rag"]') })
+        let status = legalCard.locator('.link-badge--status')
+        assert.equal(await status.locator('.project-entry-label').textContent(), 'View current status')
+        if (width > 720) {
+          assert.equal(await status.isVisible(), false, 'desktop catalog retains its detail-only action layout')
+          const detail = legalCard.locator('[data-reading-entry="projects:legal-rag"]')
+          await detail.focus()
+          assert.ok(await detail.evaluate((node) => document.activeElement === node))
+          await page.keyboard.press('Enter')
+          await page.waitForURL(`${base}/projects/legal-rag`)
+          await page.locator('.project-detail-page').waitFor({ state: 'visible' })
+          await page.waitForFunction(() => {
+            const heading = document.querySelector('.project-detail-page [data-reading-heading]')
+            return heading && document.activeElement === heading
+          })
+          await checkProjectInterfaceLayout(page)
+          status = page.locator('.detail-quick-links a[href="/status/legal-rag"]')
+        }
+        assert.ok(await status.isVisible(), 'the current layout must expose its status action')
+        await status.focus()
+        assert.ok(await status.evaluate((node) => document.activeElement === node))
+        await page.keyboard.press('Enter')
+        await page.waitForURL(`${base}/status/legal-rag`)
+        await assertSiteLanguage(page, 'en')
+        projectInterfaceGroups += 1
+
+        for (const id of ['legal-rag', 'pet-workspace', 'canvas']) {
+          await page.goto(`${base}/projects/${id}?group=fullstack`, { waitUntil: 'load' })
+          await page.locator('.project-detail-page').waitFor({ state: 'visible' })
+          await selectSiteLanguage(page, 'zh')
+          const category = await page.locator('.detail-header .tag').textContent()
+          const state = await page.locator('.detail-status').textContent()
+          const content = await readingContentSnapshot(page, '.project-detail-page')
+          await checkProjectLinkCopy(page, 'zh', { empty: id === 'canvas' })
+          await checkProjectInterfaceLayout(page)
+          await selectSiteLanguage(page, 'en')
+          assert.equal(await page.locator('.detail-header .tag').textContent(), categoryEnglish[category])
+          assert.equal(await page.locator('.detail-status').textContent(), statusEnglish[state])
+          assert.ok(await page.locator('.detail-header .tag, .detail-status').evaluateAll((nodes) => nodes.every((node) => node.matches(':lang(en)'))))
+          await checkProjectLinkCopy(page, 'en', { empty: id === 'canvas' })
+          assert.deepEqual(await readingContentSnapshot(page, '.project-detail-page'), content)
+          const note = page.locator('.detail-entry-note')
+          if (await note.count()) assert.ok(await note.evaluate((node) => node.matches(':lang(zh-CN)')), 'project-specific unavailability stays authored')
+          await checkProjectInterfaceLayout(page)
+          await capture(id)
+          if (id === 'legal-rag') {
+            const quickStatus = page.locator('.detail-quick-links a[href="/status/legal-rag"]')
+            assert.equal(await quickStatus.locator('.project-entry-label').textContent(), 'View current status')
+            await quickStatus.focus()
+            await page.keyboard.press('Enter')
+            await page.waitForURL(`${base}/status/legal-rag`)
+          }
+          if (id === 'canvas') assert.equal(await page.locator('.detail-back').getAttribute('href'), '/projects?group=fullstack')
+          projectInterfaceGroups += 1
+        }
+        assertLocalOnly(errors, requests)
+      } catch (error) {
+        const state = await page.evaluate(() => ({ href: location.href, language: document.documentElement.lang, toggle: document.querySelector('.nav-lang-toggle')?.textContent, focused: document.activeElement?.className }))
+        throw new Error(`project-interface ${width}/${theme}: ${error.message}; state=${JSON.stringify(state)}; pageErrors=${JSON.stringify(errors)}`, { cause: error })
+      } finally {
+        await page.context().close()
+      }
+    }
+  }
+  return { projectInterfaceGroups }
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {

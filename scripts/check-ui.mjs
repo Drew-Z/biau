@@ -5629,7 +5629,7 @@ const mobileDetailButtonVisible = await legalRagMobileCard
   .getByRole('button', { name: `查看项目详情：${legalRagProjectTitle}` })
   .isVisible()
   .catch(() => false)
-const mobileStatusButton = legalRagMobileCard.getByRole('button', { name: '查看当前状态：律航 LexBeacon｜Legal RAG 与合同审查' }).first()
+const mobileStatusButton = legalRagMobileCard.getByRole('button', { name: `查看当前状态 ：${legalRagProjectTitle}`, exact: true }).first()
 const mobileStatusVisible = await mobileStatusButton.isVisible().catch(() => false)
 if (!mobileFooterVisible) {
   failures.push('/projects mobile actions: expected project card footer to stay visible')

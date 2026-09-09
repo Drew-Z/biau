@@ -8,6 +8,8 @@ import {
   XUNQIU_SITE_URL,
 } from './siteLinks'
 import type { ProductId } from './productRegistry'
+import { getProjectLinkCopy, projectInterfaceCopy } from './projectInterfaceCopy'
+import type { SiteLanguage } from '../utils/siteLanguage'
 
 export const PUBLIC_PROJECT_IDS = [
   'legal-rag',
@@ -58,9 +60,12 @@ export interface ProjectCtaProjection {
   mode: ProjectCtaMode
   enabled: boolean
   label: string
+  compactLabel: string
+  labelLanguage: SiteLanguage
   href: string
   statusHref: string
   explanation?: string
+  explanationLanguage?: SiteLanguage
 }
 
 export interface ProjectLinkCandidate {
@@ -72,7 +77,9 @@ export interface ProjectLinkCandidate {
 
 export interface PublishedProjectLink extends ProjectLinkCandidate {
   intent: ProjectLinkIntent
+  labelLanguage: SiteLanguage
   explanation?: string
+  explanationLanguage?: SiteLanguage
 }
 
 export const projectPublications = {
@@ -190,26 +197,30 @@ export function findProjectPublication(projectId: string) {
   return isPublicProjectId(projectId) ? getProjectPublication(projectId) : undefined
 }
 
-export function getProjectCta(publication: ProjectPublication): ProjectCtaProjection {
-  const statusOnly = (explanation: string): ProjectCtaProjection => ({
+export function getProjectCta(publication: ProjectPublication, language: SiteLanguage = 'zh'): ProjectCtaProjection {
+  const copy = projectInterfaceCopy[language].cta
+  const statusOnly = (explanation: string, explanationLanguage: SiteLanguage = language): ProjectCtaProjection => ({
     mode: 'status-only',
     enabled: false,
-    label: publication.availability === 'planned' ? '查看项目规划' : '查看当前状态',
+    label: publication.availability === 'planned' ? copy.plan : copy.status,
+    compactLabel: publication.availability === 'planned' ? copy.compact.plan : copy.compact.status,
+    labelLanguage: language,
     href: publication.availability === 'planned' ? `/projects/${publication.projectId}` : publication.statusHref,
     statusHref: publication.statusHref,
     explanation,
+    explanationLanguage,
   })
 
   if (publication.availability === 'planned' || publication.availability === 'unchecked' || publication.availability === 'offline') {
-    return statusOnly(publication.unavailableReason)
+    return statusOnly(publication.unavailableReason, 'zh')
   }
 
   if (publication.access === 'case-only') {
-    return statusOnly('该项目仅展示案例内容，不提供直接体验入口。')
+    return statusOnly(copy.caseOnly)
   }
 
   if (!publication.externalHref) {
-    return statusOnly('项目入口尚未配置。')
+    return statusOnly(copy.missingEntry)
   }
 
   const gated = publication.access === 'login-gated'
@@ -217,47 +228,61 @@ export function getProjectCta(publication: ProjectPublication): ProjectCtaProjec
     return {
       mode: 'caution',
       enabled: true,
-      label: gated ? '打开受控入口' : '谨慎访问',
+      label: gated ? copy.controlled : copy.caution,
+      compactLabel: copy.compact.caution,
+      labelLanguage: language,
       href: publication.externalHref,
       statusHref: publication.statusHref,
-      explanation: '部分能力可能不可用，请先查看当前状态。',
+      explanation: copy.degraded,
+      explanationLanguage: language,
     }
   }
 
   return {
     mode: 'direct',
     enabled: true,
-    label: gated ? '打开受控入口' : '打开项目',
+    label: gated ? copy.controlled : copy.open,
+    compactLabel: gated ? copy.compact.controlled : copy.compact.open,
+    labelLanguage: language,
     href: publication.externalHref,
     statusHref: publication.statusHref,
-    explanation: gated ? '该入口需要登录、邀请或受控演示凭据。' : undefined,
+    explanation: gated ? copy.gated : undefined,
+    explanationLanguage: gated ? language : undefined,
   }
 }
 
 export function getPublishedProjectLinks(
   publication: ProjectPublication | undefined,
   links: readonly ProjectLinkCandidate[],
+  language: SiteLanguage = 'zh',
 ): PublishedProjectLink[] {
+  const localizeLink = (link: ProjectLinkCandidate): PublishedProjectLink => ({
+    ...link,
+    ...getProjectLinkCopy(link.label, language),
+    intent: link.intent ?? 'evidence',
+  })
   if (!publication) {
-    return links.map((link) => ({ ...link, intent: link.intent ?? 'evidence' }))
+    return links.map(localizeLink)
   }
 
-  const cta = getProjectCta(publication)
+  const cta = getProjectCta(publication, language)
   let statusLinkAdded = false
 
   return links.flatMap((link): PublishedProjectLink[] => {
     const intent = link.intent ?? 'evidence'
-    if (intent !== 'entry' || cta.enabled) return [{ ...link, intent }]
+    if (intent !== 'entry' || cta.enabled) return [localizeLink(link)]
     if (statusLinkAdded) return []
 
     statusLinkAdded = true
     return [
       {
         label: cta.label,
+        labelLanguage: cta.labelLanguage,
         href: cta.href,
         type: 'internal',
         intent: 'status',
         explanation: cta.explanation,
+        explanationLanguage: cta.explanationLanguage,
       },
     ]
   })
