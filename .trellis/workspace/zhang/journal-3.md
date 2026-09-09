@@ -481,3 +481,41 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - None - task complete
+
+
+## Session 119: 公开助手公共界面语言交付与路线图回切
+
+**Date**: 2026-09-10
+**Task**: 公开助手公共界面语言交付与路线图回切
+**Branch**: `main`
+
+### Summary
+
+完成公开助手固定公共界面双语交付，保留 authored/payload 内容与生产边界，完成语言、smoke、完整 UI、性能和保护快照校验；子任务已归档并实际回切父路线图。
+
+### Main Changes
+
+完成公开助手固定公共界面双语交付，并将子任务归档后实际回切网站完善路线图。保留用户问题、回答正文、建议问题、分支预览、历史标题、引用资料、claim、模型元数据和生产行为的原始合同；本地 fixture 全程零真实模型调用。
+
+- 新增 typed Public Assistant interface copy，覆盖 launcher、状态、模式、历史、分支、引用/证据、修订、反馈、图片和输入等固定控件的中英文。
+- 让 Public Assistant launcher、message content 和 widget 跟随唯一 SiteLanguage，并为界面根节点设置正确的 lang；authored/payload 内容继续使用原始语言语义。
+- 扩展公开助手语言 fixture，覆盖 320/390/430/1440 宽度、三主题、历史/修订/分支/引用/claims、loading、stream recovery、feedback、fullscreen、mobile collision、持久化、零外部请求和零模型调用。
+- 子任务归档至 `.trellis/tasks/archive/2026-09/09-10-stage-4-public-assistant-interface-language`，父路线图进入第 19 轮 assess。
+
+### Testing
+
+- [OK] `npm.cmd run lint`
+- [OK] `npm.cmd run build`
+- [OK] `npm.cmd run performance:check`
+- [OK] `UI_CHECK_BASE=http://127.0.0.1:5190 npm.cmd run language:ui`：公开助手新增 12 组，`publicAssistantModelCalls=0`
+- [OK] `UI_CHECK_BASE=http://127.0.0.1:5190 npm.cmd run check:ui:smoke`：21/0
+- [OK] `UI_CHECK_BASE=http://127.0.0.1:5190 npm.cmd run check:ui`：46/0
+- [OK] `git diff --check`；保护状态快照 SHA-256 保持 `d744ad0698c429fc3ecd33af3cae16911e00234c6e4d28ad30e5805bb9414909`
+
+### Status
+
+[OK] 第 18 轮子任务已提交 `a9ed378b`、归档并实际返回父路线图。未 push、deploy、sign、publish，未调用真实模型，未启用 Feed/Cron，未修改 heartbeat 或保护状态文件。
+
+### Next Steps
+
+- 第 19 轮重新评估剩余公开助手内容语言与其他公共界面候选；继续不盲译 authored 内容，不触碰生产 AI Daily 版次、真实模型、公开发布、Feed/Cron、heartbeat 和保护状态快照。

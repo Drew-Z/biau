@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 118
+- **Total Sessions**: 119
 - **Last Active**: 2026-09-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~483 | Active |
+| `journal-3.md` | ~521 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 119 | 2026-09-10 | 公开助手公共界面语言交付与路线图回切 | `a9ed378b` | `main` |
 | 118 | 2026-09-10 | 首页公共界面语言交付与路线图回切 | `46a0a22a`, `9477aa63` | `main` |
 | 117 | 2026-09-09 | 状态公共界面双语交付 | `68b3e16222521a3a098062efb1de749ef046314f` | `main` |
 | 116 | 2026-09-09 | 路线图第 14 轮：项目公开入口与状态标签双语 | `75431775a3a079630f3e54c1cb3c9df63dfa0426` | `main` |

@@ -40,10 +40,10 @@
     "heartbeatChanged": false
   },
   "delivery": {
-    "status": "pending-local-commit",
-    "workCommit": null,
+    "status": "archived-returned-to-parent",
+    "workCommit": "a9ed378b",
     "archivePath": ".trellis/tasks/archive/2026-09/09-10-stage-4-public-assistant-interface-language",
-    "parentActuallyResumed": false,
+    "parentActuallyResumed": true,
     "parentCurrentSource": "session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc"
   }
 }
