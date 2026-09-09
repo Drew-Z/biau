@@ -187,3 +187,10 @@
 - 重新评估：第 18 轮公开助手固定界面已完成双语覆盖，launcher、状态、模式、历史、分支、引用/证据外壳、修订、反馈、图片和输入控件均跟随共享语言；回答正文、用户问题、建议问题、分支预览、历史标题、引用标题/摘要/URL、claim、模型元数据和服务事实保持原始 payload。
 - 交付证据：`a9ed378b` 已本地提交公开助手 typed copy、语言投影、回归 fixture 和任务资料；语言专项新增 12 组，`publicAssistantModelCalls=0`，smoke 21/0，完整 UI 46/0，performance、lint、build 和 `git diff --check` 通过，保护状态快照 SHA-256 保持不变。子任务已归档并实际回切父任务。
 - 边界结论：本地化固定控件不等于公开助手回答内容、引用资料、生产 relay 或真实服务已经双语；不把 authored 内容、模型输出、生产版次、发布、Feed/Cron 或 heartbeat 扩入下一轮。下一候选必须重新基于本地证据收敛，并继续保持零真实模型调用与保护文件不变。
+
+## 轮次 20：公共界面覆盖复核与等待
+
+- 复核范围：重新检查首页、项目目录/详情、博客目录/详情、状态总览/详情、AI Daily feed/detail、404、公开助手 launcher/widget/message content，以及 `Navigation`、`SiteFooter` 和共享语言投影。固定控件、加载/错误/空态、辅助标签和页面根语言均已有 `useSiteLanguage` 或明确的 authored/payload 语言标记。
+- 误报排除：`AppContent` 的最外层 `.app` 继续保留 `lang="zh-CN"`，这是 frontend state-management 规范为未本地化 Studio/剩余页面规定的 fallback；所有已本地化公共页面根节点会覆盖它。Studio/Logo Lab 的中文编辑器标签不属于公开路由范围，不能把它们当作公开界面缺口。
+- 结论：当前没有同时满足“公共路径、固定界面、已有本地证据、无需新产品决定”的下一项。剩余语言工作涉及 authored 内容/SEO 或引用/模型事实；另一条路线涉及 AI Daily 生产版次、公开发布、真实模型和 Feed/Cron。父任务进入 `waiting`，不创建空子任务，不修改 heartbeat 或保护状态快照。
+- 恢复条件：用户明确 authored 内容/SEO 的翻译策略，或单独批准相应生产门禁后，再重新评估并创建有边界的子任务；恢复时先核对新证据和当前工作区。

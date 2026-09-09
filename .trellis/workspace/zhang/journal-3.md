@@ -519,3 +519,40 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 第 19 轮重新评估剩余公开助手内容语言与其他公共界面候选；继续不盲译 authored 内容，不触碰生产 AI Daily 版次、真实模型、公开发布、Feed/Cron、heartbeat 和保护状态快照。
+
+
+## Session 120: 路线图公共界面覆盖复核与等待
+
+**Date**: 2026-09-10
+**Task**: 路线图公共界面覆盖复核与等待
+**Branch**: `main`
+
+### Summary
+
+完成第 20 轮公共界面覆盖复核，确认固定界面无新的本地缺口；剩余工作依赖 authored 内容/SEO 决策或生产批准，父路线图进入 waiting。
+
+### Main Changes
+
+完成第 20 轮公共界面覆盖复核。重新检查首页、项目、博客、状态、AI Daily、404、公开助手及共享导航/页脚，固定界面和语言标记均已有覆盖；确认 AppContent 外层 zh-CN 是规范允许的 Studio/剩余页面 fallback，不是公开界面缺口。当前剩余工作需要 authored 内容/SEO 翻译策略或生产批准，父路线图进入 waiting。
+
+- 更新父路线图 `task.json`：`phase=waiting`、`round=20`、无活动子任务，并记录恢复条件。
+- 在 `assessment.md` 记录公共路径覆盖复核、误报排除和停止制造空任务的结论。
+- 在 `remaining-gates.md` 记录固定界面已覆盖、Studio/Logo Lab 不属于公开范围，以及待用户/生产门禁输入。
+
+### Git Commits
+
+- None; this was a record-only assessment.
+
+### Testing
+
+- [OK] 只读源码与 frontend state-management 规范复核完成。
+- [OK] `task.py current --source` 仍指向网站完善路线图；未创建子任务、未修改业务源码。
+- [OK] 既有公开助手语言交付证据保持 `publicAssistantModelCalls=0`、完整 UI 46/0 和保护状态 hash 不变。
+
+### Status
+
+[OK] 第 20 轮评估完成，父任务进入 waiting。未 push、deploy、sign、publish，未调用真实模型，未启用 Feed/Cron，未修改 heartbeat 或保护状态文件。
+
+### Next Steps
+
+- 等待 authored 内容/SEO 翻译策略或独立生产批准；恢复后先核对新证据，再创建有边界的子任务。
