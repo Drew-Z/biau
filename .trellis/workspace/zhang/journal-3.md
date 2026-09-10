@@ -933,3 +933,45 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 
 - Prisma 兼容修复或明确升级范围、远端 Actions、AI Daily/真实助手生产验收按独立门禁进入；保持翻译暂缓。
 - 有新的本地可复现问题再选有限子任务，不重跑已通过的同状态检查，不改未知 heartbeat 配置。
+
+
+## Session 130: 快速开始文档契约与 Prisma 上游复核
+
+**Date**: 2026-09-11
+**Task**: 快速开始文档契约与 Prisma 上游复核
+**Branch**: `main`
+
+### Summary
+
+修正 Node 下限和锁文件安装说明，验证文档并归档子任务；Prisma 四项 high 仍待兼容上游。
+
+### Main Changes
+
+- 修正 README.md 和 README.zh-CN.md：Node 22.x 最低 22.13.0 或 24.x，首次安装使用锁文件 npm ci，Windows 示例使用 PowerShell 7 / npm.cmd。
+- 两份指南的 7 条命令一致、4 个 npm run 入口存在、24 处本地文件链接有效；PowerShell 7.6.5 解析 14 条语句无错误，docs:manual-gates-check 和 git diff --check 通过。
+- 519 个运行时输入和原有 13 份未跟踪资料的原字节保持；保护状态快照未变。文档修复未重跑 lint/build/UI，没有安装、生成、服务启动、数据库或真实模型调用。
+- 新的完整和 --omit=dev 官方 npm audit 均为 4 high / exit 1，error 为空；Prisma 7.10.0 的精确告警依赖未修复，latest 为 8.0.0-rc.13。保留依赖版本，等待兼容上游或明确升级范围。
+- 工作提交 de9a5658362612e869da8291d6a445a0abd6d5a2 已按 10 文件白名单完成；仅 09-11-stage-6-local-quick-start 归档，实际返回父任务，27/27 子任务完成、父任务第 42 轮 in_progress / waiting。
+- 清理本轮独占审计副本和缓存 31 文件、64733247 bytes；原始日志、metadata 与验证证据保留。旧资料及旧工作树保持，未重试旧的被拒清理。
+- 下一步条件：兼容 Prisma 修复或明确升级范围、独立远端 Actions / AI Daily / 助手生产范围，或新的本地可复现问题。保持翻译暂缓，不推送/部署/签名，不修改未知 heartbeat。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `de9a5658362612e869da8291d6a445a0abd6d5a2` | docs: align quick start with locked Node toolchain |
+
+### Testing
+
+- [OK] 文档门禁、命令顺序/入口、本地文件链接、PowerShell 语法与 diff 检查通过。
+- [OK] 按 Linux/Windows x64 分别核对 Node engine 范围；519 个源输入与原有 13 份资料保持。
+- [INFO] 两次新 npm audit 均为 4 high / exit 1，保留原告警；本轮未重跑运行时检查。
+
+### Status
+
+[OK] **本地快速开始子任务已完成并归档；父路线图仍为 in_progress / waiting。**
+
+### Next Steps
+
+- 等待兼容 Prisma 修复或明确升级范围、独立远端 Actions / AI Daily / 助手生产范围，或新的本地可复现问题；翻译暂缓和本地操作边界保持。
