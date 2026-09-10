@@ -1,6 +1,6 @@
 # 兼容依赖修复验收
 
-依赖修复已完成全部本地验证：27 项检查、smoke 21/0、完整 UI 46/0 均通过，进入精确本地提交与归档。官方审计仍有 4 个已记录的 Prisma 固定依赖条目，Linux 浏览器 CI 仍保持独立阻塞。
+依赖修复已完成全部本地验证：27 项检查、smoke 21/0、完整 UI 46/0 均通过，并已精确本地提交为 `eb25462f756453555fc466d8f61c88b05ee341a6`。本子任务已归档，已实际返回父路线图第 33 轮评估。官方审计仍有 4 个已记录的 Prisma 固定依赖条目，Linux 浏览器 CI 仍保持独立阻塞。
 
 ## 变更与审计
 
@@ -33,7 +33,11 @@
 - 本轮 preview PID 40984 已退出，5197 端口已实际重新绑定核对为空闲；原有 5190 预览与历史 worktree 未操作。
 - CI Linux 浏览器验收仍保留 review / blocked，不归档、不计为完成；本次本地依赖回归不能替代其剩余步骤。
 - 本任务没有新接口、环境合同或生产行为；既有质量规范已覆盖所需门禁，依赖版本与残留审查细节留在本任务记录，不新增重复规范。
+- 工作提交 `eb25462f` 只含锁文件、本子任务 8 个资料文件与父任务 assessment / task 两个记账文件，共 11 个文件。
+- 已运行 `task.py archive 09-10-stage-6-dependency-security --no-commit`，仅本子任务移动至 `.trellis/tasks/archive/2026-09/09-10-stage-6-dependency-security`；原活动目录已不存在，归档 task.json 为 completed。
+- 已运行 `task.py start 09-06-website-completion-roadmap`，并以 `task.py current --source` 核对当前会话指针为父任务。父任务清空 activeChild、更新 lastCompletedChild 并进入第 33 轮，CI 仍保留 review / blocked。
+- 交付期间只调整任务与开发记录，复用上述同一锁文件的实际终局，不重复安装或全量 UI 检查；未推送、部署或修改自动化。
 
 证据目录：`C:\Users\zhang\AppData\Local\Temp\blog-semi-dependency-triage-20260910T072022177Z`。
 
-最终提交只包含锁文件、当前子任务资料与父任务记账。任务 npm-cache 的删除在执行前被自动审批拒绝，返回 `blocked by policy`；它仍留在上述 Temp 目录，未改用其他方式删除。精确位置与现状写入 temporary-cleanup-manifest.json。此前自动审批拒绝处理的 undefined 两份材料也继续保留且未提交，不重试该动作。
+任务 npm-cache 的删除在执行前被自动审批拒绝，返回 `blocked by policy`；它仍留在上述 Temp 目录，未改用其他方式删除。精确位置与现状写入 temporary-cleanup-manifest.json。此前自动审批拒绝处理的 undefined 两份材料也继续保留且未提交，不重试该动作。
