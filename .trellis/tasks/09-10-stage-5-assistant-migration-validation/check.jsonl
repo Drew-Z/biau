@@ -1,0 +1,2 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"核对空 schema、旧数据保真、触发器和整会话生命周期验证。"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"只运行相关确定性门禁，区分本地 PostgreSQL 证据和生产验收。"}

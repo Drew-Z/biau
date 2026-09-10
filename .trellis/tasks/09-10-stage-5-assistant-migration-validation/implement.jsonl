@@ -1,0 +1,2 @@
+{"file":".trellis/spec/backend/database-guidelines.md","reason":"公开助手迁移、不可变修订与本机 PostgreSQL 验收合同。"}
+{"file":".trellis/spec/backend/logging-guidelines.md","reason":"临时数据库凭证及连接信息不得进入持久化证据。"}

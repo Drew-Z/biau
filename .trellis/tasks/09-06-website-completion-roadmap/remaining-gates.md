@@ -6,6 +6,8 @@
 
 `assistant:public-api-check`、`assistant:public-conversation-check`、`assistant:public-browser-state-check` 均在本会话 exit 0。前两类传输和状态断言使用本地数据/替换 fetch，未调用真实模型。本地 UI 的完整助手场景由当前子任务的完整 `check:ui` 另行覆盖。
 
+2026-09-10 第 29 轮补齐 PostgreSQL 迁移验收：使用已缓存 PostgreSQL 18.4、loopback 临时端口和一次性 tmpfs 容器，既有 `assistant:public-migration-check` 实际 exit 0。空 schema、旧数据保真、7 项不可变/归属约束与整会话删除均通过；临时 schema 和容器已清理，既有 17 个容器、43 个卷保留，9 个受检文件无漂移。因此“缺少测试数据库 URL”不再是当前本地迁移验收阻塞。该结论不代替生产版本、线上数据或 Supabase RLS 验收；完整范围与证据记录于 `09-10-stage-5-assistant-migration-validation` 子任务。
+
 ## AI Daily
 
 `ai-daily:production-readiness-check -- --json` 本次 exit 1，报告 `networkCalls=0`。17 项中 13 pass、3 manual-gate、1 fail；不把它概括为生产就绪。

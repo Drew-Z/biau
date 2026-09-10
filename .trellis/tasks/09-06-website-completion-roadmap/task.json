@@ -40,7 +40,8 @@
     "09-10-stage-5-authored-content-seo-language-audit",
     "09-10-stage-6-cross-domain-gap-audit",
     "09-10-stage-6-public-link-projection",
-    "09-10-stage-5-assistant-composer-fit"
+    "09-10-stage-5-assistant-composer-fit",
+    "09-10-stage-5-assistant-migration-validation"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -49,11 +50,11 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 29,
-      "activeChild": null,
+      "activeChild": "09-10-stage-5-assistant-migration-validation",
       "lastCompletedChild": "09-10-stage-5-assistant-composer-fit",
-      "nextAction": "Create a bounded validation child for the existing assistant revision migration check using an isolated local PostgreSQL container; preserve production boundaries and record exact cleanup evidence.",
+      "nextAction": "Commit the passing PostgreSQL 18.4 migration evidence and verified cleanup records, archive only the validation child, then return to the parent and reassess.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

@@ -254,3 +254,4 @@
 - 本轮继续复核尚存门禁与可用本地验收条件。翻译暂缓、生产事实、公开发布、真实模型、Feed/Cron、保护快照和未确认的 heartbeat 状态仍沿用原边界；只依据具体证据选择下一项。
 - 新的可执行条件：只读确认 Docker 当前 context 为 `desktop-linux`，endpoint 为本机 named pipe，server 29.3.1 正在运行，已有 `postgres:18-alpine` 镜像。`scripts/check-public-assistant-revision-migration.mjs` 只接受 loopback PostgreSQL，覆盖空 schema、旧数据回填、7 个触发器、分支/修订归属及级联删除，并在 finally 删除其临时 schema。
 - 选择：下一项仅在一次性本地 PostgreSQL 容器中运行既有 migration check，使用独立数据库、loopback 临时端口和任务自有临时数据，保存结果后清理该容器。它可以补齐第 25 轮缺少测试数据库 URL 的验收，既不需要生产数据库，也不扩张模型或发布授权；若暴露失败，先记录准确证据再定界修复。
+- 验收：`09-10-stage-5-assistant-migration-validation` 在缓存 PostgreSQL 18.4 上实际通过既有迁移检查，exit 0；空 schema、旧数据保真、7 项不可变/归属约束和整会话删除全部通过。临时 schema/public 表为 0，唯一 tmpfs 容器已自动移除，原有 17 个容器、43 个卷保留，未新增卷；9 个受检文件无漂移。具体证据见该子任务 verification.md，进入精确本地交付。
