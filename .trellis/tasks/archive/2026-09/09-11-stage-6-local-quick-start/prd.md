@@ -24,7 +24,7 @@
 - [x] 两份快速开始的版本范围、锁文件安装和命令顺序一致，Node 下限来自实际锁定依赖。
 - [x] 命令名称在 package.json 中存在，本地链接可解析，PowerShell 示例语法有效。
 - [x] `npm.cmd run docs:manual-gates-check` 与 `git diff --check` 通过。
-- [ ] package / lock、业务源码、workflow、保护状态文件和原有 13 份未跟踪资料保持；只提交 owned files。
+- [x] package / lock、业务源码、workflow、保护状态文件和原有 13 份未跟踪资料保持；只提交 owned files。
 
 ## Notes
 

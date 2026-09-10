@@ -4,7 +4,7 @@
 
 本轮只修正 README.md 和 README.zh-CN.md 的快速开始：Node 22.x 至少 22.13.0，或 Node 24.x；首次检出用 npm ci 安装已提交的锁文件；Windows 示例使用 PowerShell 7 / npm.cmd，其他系统使用相同参数的 npm。保留知识生成、前端启动和可选后端启动的原顺序。
 
-起点为 047dbed484a94dc7b44a5c3f24db6a9b479a81c8。没有改 package / lock、运行时代码、workflow、模型或生产配置。检查通过，等待精确本地提交后归档本子任务并实际返回父路线图。
+起点为 047dbed484a94dc7b44a5c3f24db6a9b479a81c8。没有改 package / lock、运行时代码、workflow、模型或生产配置。工作提交 de9a5658362612e869da8291d6a445a0abd6d5a2 包含已核对的 10 个白名单文件，未签名、未推送；已按父任务协议仅归档本子任务并实际返回父路线图，task.py list 确认 27/27 子任务完成。父任务保留 in_progress / waiting，其他未完成任务保持。
 
 ## Node 依据
 
