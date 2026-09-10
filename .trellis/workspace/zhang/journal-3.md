@@ -877,3 +877,59 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 
 - 获得完整 Ubuntu 索引和所需包下载可靠的证据，或另行明确目标 runner 后，恢复原 CI 并固定源从空缓存执行七步；不重复相同环境的完整尝试。
 - Prisma 兼容修复、AI Daily/真实助手/远端验收按各自条件进入；保持翻译暂缓和生产边界。
+
+
+## Session 129: Ubuntu CI 全流程验收与下载恢复
+
+**Date**: 2026-09-11
+**Task**: Ubuntu CI 全流程验收与下载恢复
+**Branch**: `main`
+
+### Summary
+
+完成 HTTPS APT 与 npm 单连接预检，Ubuntu 七步及 smoke 21/0 通过；归档 CI 并回到路线图第 40 轮等待独立门禁。
+
+### Main Changes
+
+### 验收与纠错
+
+- 工作提交 f6fb8fed：保留 HTTP 完整 APT 预检失败、HTTPS 129 包/114398812 bytes 下载成功，以及后续 HTTPS-only 正式 CI 的官方 npm ECONNRESET 失败，清除过期 running 状态。
+- 独立 Node 22 / Debian 空缓存预检只设 npm_config_maxsockets=1（默认实测 15），原样 npm ci exit 0、294172ms，445 个安装节点版本/integrity/resolved 一致；三个生命周期脚本成功，审计 446 包/4 high。
+- 预检原外层 exit 1 是 package.json 的 archive/工作区不同换行字节被误比较。离线确认容器安装后与导入 tar 完全一致，archive/混合换行工作区/Git blob 规范化后内容相同；原始失败及初次离线断言错误均保存，安装没有重跑。质量规范补充了正确比较基线。
+- 最终全新 Ubuntu 24.04.4 / Node 22.23.2 / npm 10.9.8，以已验证官方 HTTPS APT（TLS/签名/完整性检查保持）与 npm maxsockets=1 原样执行七步一次；七步 exit 0，smoke 21/0、10260ms，preview 端口释放，外层 exit 0。
+- 本次 445 个安装节点、678 个主仓库源/原构建文件、13 份既有未跟踪资料和全部原脚本保持。任务容器均移除，17 个原有容器、运行集合及 43 个卷保留，新增卷 0。主机完整 UI 46/0 继续明确复用 eb25462f，本轮新增 Linux smoke 不与旧结果混合。
+
+### 交付与恢复点
+
+- 仅 CI 子任务由 465f96fd 归档至 .trellis/tasks/archive/2026-09/09-10-stage-6-ci-linux-validation；实际 start 返回父任务后列表为 26/26 completed。父任务第 40 轮 enabled=false、phase=waiting，无活动或阻塞子任务，最后完成项为 Linux CI；父任务与历史持续 UI 未归档。
+- 剩余 Prisma 固定链告警、实际远端 Actions、AI Daily/真实助手生产验收仍按独立门禁处理。没有推送、部署、签名、真实模型/生产数据库调用、公开发布或 Feed/Cron 变更；翻译继续暂缓，保护状态快照未变。
+- heartbeat 只读核对未找到 automation.toml；view automation 仅返回应用卡片，没有可读状态字段，未修改调度器。不能把本地 waiting 记为定时器已经暂停。
+
+### 证据与临时资源
+
+证据根目录：C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-transport-20260910T1236149923932Z。正式通过结果在 ci-single-connection/result.json 与 final-validation.json；此前 HTTPS-only 失败在 ci-with-transport/，独立安装与离线纠正在 npm-single-connection/。
+
+已清理两个本任务 source.tar 和一个冗余字节诊断脚本，3 文件/167179382 bytes，清单为 temporary-cleanup-manifest.json。保留日志、官方来源、配置、安装 metadata 与复验 helper。旧 npm-cache、undefined 两文件此前被自动审批以 blocked by policy 拒绝清理，本轮未重试，继续保留且未提交；其余原有 13 份资料与历史 worktree 保留。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f6fb8fedbae517d122dfac71a10192f532a4858f` | docs(ci): validate Ubuntu workflow with verified download settings |
+
+### Testing
+
+- [OK] Ubuntu 原七步全部 exit 0；Chromium/系统依赖、smoke 21/0 和 preview 退出清理通过。
+- [OK] 445 个安装节点、678 个源/原构建文件、13 份旧资料、原资源与保护快照保持；归档跟踪及精确提交白名单检查通过。
+- [RECORDED] 所有旧网络失败和验证器纠正保留；安装 audit 为 4 high，独立生产投影 audit 没有重跑；Windows 完整 UI 46/0 明确复用 eb25462f。
+
+### Status
+
+- [OK] Linux CI 子任务完成并归档，26/26 关联子任务已完成。
+- [WAITING] 父路线图第 40 轮等待独立产品/生产/远端范围或新复现，父任务自身未完成、未归档。
+
+### Next Steps
+
+- Prisma 兼容修复或明确升级范围、远端 Actions、AI Daily/真实助手生产验收按独立门禁进入；保持翻译暂缓。
+- 有新的本地可复现问题再选有限子任务，不重跑已通过的同状态检查，不改未知 heartbeat 配置。

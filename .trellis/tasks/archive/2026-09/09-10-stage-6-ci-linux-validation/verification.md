@@ -133,3 +133,4 @@
 - 主机完整 UI 46/0 继续明确复用 eb25462f 的同代码/同构建证据，未额外重跑；本轮新增的是上述完整 Linux CI 与 21/0 smoke。checkout/setup-node、远端权限/cache/artifact 和默认 runner 网络仍须独立远端验收。
 - 验收完成后按精确路径清理两个本任务源 tar 和冗余 package 字节诊断脚本，共 3 文件、167179382 bytes；清单为证据根 temporary-cleanup-manifest.json。两份源 tar 均为 SHA-256 42baee8c80d842c539090e2f9e1091575128c6ea7d07658f930075807d10b407；复验需先按固定源重新导出，原日志、配置、官方文档、安装 metadata 与验证 helper 均保留。旧 npm-cache / undefined 策略拒绝目标未重试。
 - 交付：f6fb8fedbae517d122dfac71a10192f532a4858f 精确提交 9 个任务/规范文件，未签名、未推送。仅本 CI 子任务由 task.py archive --no-commit 归档；归档前后除 task.json 状态变更外文件字节一致，后续仅补齐交付清单。已实际 start 父任务并核对列表为 26/26 completed，父任务自身与历史持续 UI 未归档。
+- 归档提交为 465f96fdebb5484b1ce761a1ad09fd09b34ea0c8；本地归档跟踪合同通过。开发记录为 journal-3.md 的 Session 129，父路线图第 40 轮 waiting，活动/阻塞子任务均为空。

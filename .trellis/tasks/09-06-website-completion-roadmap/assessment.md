@@ -378,3 +378,4 @@
 
 - 剩余明确事项依赖新的产品/生产范围、兼容上游或可复现证据。父任务保留 in_progress，enabled=false、phase=waiting、round=40；不创建空任务或重复完整测试。
 - 旧 heartbeat 只读核对：CODEX_HOME 下未找到 automation.toml；view automation 仅返回已在应用渲染卡片，未提供状态字段，未修改调度器。当前本地 waiting 不能写成 heartbeat 已成功暂停。相关结果保存在本轮 automation-inspection.json；不重建或覆盖未知配置。
+- 归档提交 465f96fdebb5484b1ce761a1ad09fd09b34ea0c8 已确认未签名、未推送；Session 129 保存本轮完整验收与剩余恢复条件。工作提交 f6fb8fed 与归档提交分开，既有 13 份未跟踪资料未混入提交。
