@@ -255,4 +255,11 @@
 - 新的可执行条件：只读确认 Docker 当前 context 为 `desktop-linux`，endpoint 为本机 named pipe，server 29.3.1 正在运行，已有 `postgres:18-alpine` 镜像。`scripts/check-public-assistant-revision-migration.mjs` 只接受 loopback PostgreSQL，覆盖空 schema、旧数据回填、7 个触发器、分支/修订归属及级联删除，并在 finally 删除其临时 schema。
 - 选择：下一项仅在一次性本地 PostgreSQL 容器中运行既有 migration check，使用独立数据库、loopback 临时端口和任务自有临时数据，保存结果后清理该容器。它可以补齐第 25 轮缺少测试数据库 URL 的验收，既不需要生产数据库，也不扩张模型或发布授权；若暴露失败，先记录准确证据再定界修复。
 - 验收：`09-10-stage-5-assistant-migration-validation` 在缓存 PostgreSQL 18.4 上实际通过既有迁移检查，exit 0；空 schema、旧数据保真、7 项不可变/归属约束和整会话删除全部通过。临时 schema/public 表为 0，唯一 tmpfs 容器已自动移除，原有 17 个容器、43 个卷保留，未新增卷；9 个受检文件无漂移。具体证据见该子任务 verification.md，进入精确本地交付。
-- 交付：`fc1a02a6134e827910684f65ad24df5cc6c6c988` 已精确本地提交 10 个验收与任务文件；仅归档至 `archive/2026-09/09-10-stage-5-assistant-migration-validation`，原活动目录已不存在。归档提交后实际回切父任务，保留生产与发布门禁。
+- 交付：`fc1a02a6134e827910684f65ad24df5cc6c6c988` 已精确本地提交 10 个验收与任务文件；仅归档至 `archive/2026-09/09-10-stage-5-assistant-migration-validation`，归档提交为 `6d283760`，原活动目录已不存在。随后实际执行 `task.py start 09-06-website-completion-roadmap` 并核对会话指针，保留生产与发布门禁。
+
+## 轮次 30：本地迁移验收后重新评估
+
+- 当前 23 个关联子任务均已完成，源码无待交付修改。第 28 轮助手窄屏缺口已修复且最终完整 UI 46/0；第 29 轮 PostgreSQL 18.4 实际迁移验收关闭了缺少本地测试数据库的阻塞，没有出现新的实现失败。
+- 已有证据覆盖网站发现/阅读 UI、项目注册与公开链接投影、助手接口/会话/浏览器状态以及本轮数据库迁移；这不等于没有任何潜在问题，只是当前没有尚未关闭且已复现的本地候选，不制造空任务或反复运行已通过检查。
+- 剩余明确门禁是远端 CI 的实际执行、AI Daily 验收记录绑定/真实版次/审核发布、生产服务和真实模型验收。本轮没有刷新其生产状态，也没有扩大本地授权；用户已决定暂缓的 authored/SEO 翻译继续保持。
+- 结论：保存为 `enabled=false`、`phase=waiting`、无活动子任务；等待新的可复现本地问题或独立明确的远端 CI/生产工作范围。未重建或修改持久化状态未确认的 heartbeat，不把本地循环状态当作调度器已暂停的证明。

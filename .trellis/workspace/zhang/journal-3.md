@@ -740,3 +740,39 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 父路线图推进已有助手 PostgreSQL migration check 的一次性本地容器验收；生产数据库、模型和发布门禁保持。
+
+
+## Session 126: 公开助手本地 PostgreSQL 迁移验收
+
+**Date**: 2026-09-10
+**Task**: 公开助手本地 PostgreSQL 迁移验收
+**Branch**: `main`
+
+### Summary
+
+在已有本机 Docker 中使用缓存 PostgreSQL 18.4、loopback 临时端口和 tmpfs 数据目录，实际通过既有公开助手迁移检查，exit 0。空 schema、旧数据保真、7 项不可变或归属约束、整会话删除均通过；临时 schema 和唯一容器已清理，原有 17 个容器及运行集合、43 个卷保留，无新增卷。9 个受检文件和保护快照无漂移，无源码或生产变更。精确本地提交 10 个验收与任务文件，仅归档当前子任务并实际回切父路线图第 30 轮；不推送，剩余远端 CI 和生产门禁保留。
+
+### Main Changes
+
+- 用独立 tmpfs 数据库关闭既有迁移检查缺少测试数据库的阻塞，没有修改业务源码或迁移。
+- 保存空 schema、旧数据保真、不可变/归属约束、会话删除及资源清理证据。
+- 子任务已本地交付、归档并实际回切父路线图；第 30 轮没有新证据支持的本地候选，进入等待。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fc1a02a6134e827910684f65ad24df5cc6c6c988` | test(assistant): verify revision migrations on local postgres |
+
+### Testing
+
+- [OK] 既有 migration check 在 PostgreSQL 18.4 实际 exit 0，临时 schema/public 表残留为 0，9 个受检文件无漂移。
+- [OK] 唯一测试容器已清理，原有 17 个容器及运行集合、43 个数据卷保留，未新增卷；精确白名单和 diff 检查通过。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 等待新的可复现本地问题或独立生产/远端 CI 工作范围；authored/SEO 翻译保持暂缓，不重建未确认的 heartbeat。

@@ -32,4 +32,6 @@
 
 验收日志作为交付证据保留。原有未跟踪资料和上一子任务 `undefined/` 中受自动审批限制的两份临时文件不变。工作提交为 `fc1a02a6134e827910684f65ad24df5cc6c6c988`，精确白名单 10 个文件和 staged diff 检查通过；仅本地提交，未推送。
 
-已通过 `task.py archive 09-10-stage-5-assistant-migration-validation --no-commit` 仅归档本子任务，目标为 `archive/2026-09/09-10-stage-5-assistant-migration-validation`；原目录已不存在。归档提交后实际返回父任务并回写结果。
+已通过 `task.py archive 09-10-stage-5-assistant-migration-validation --no-commit` 仅归档本子任务，目标为 `archive/2026-09/09-10-stage-5-assistant-migration-validation`；原目录已不存在。归档提交为 `6d283760ad554a2d6a7887a98078fe49c4ad81a1`。
+
+归档提交后实际执行 `task.py start 09-06-website-completion-roadmap`，由 `task.py current --source` 确认会话指针已返回父任务，来源 `session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc`。父任务进入第 30 轮评估，其他任务保持。

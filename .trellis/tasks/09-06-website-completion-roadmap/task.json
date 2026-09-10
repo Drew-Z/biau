@@ -49,12 +49,12 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": true,
-      "phase": "deliver",
-      "round": 29,
-      "activeChild": "09-10-stage-5-assistant-migration-validation",
-      "lastCompletedChild": "09-10-stage-5-assistant-composer-fit",
-      "nextAction": "Commit the passing PostgreSQL 18.4 migration evidence and verified cleanup records, archive only the validation child, then return to the parent and reassess.",
+      "enabled": false,
+      "phase": "waiting",
+      "round": 30,
+      "activeChild": null,
+      "lastCompletedChild": "09-10-stage-5-assistant-migration-validation",
+      "nextAction": "Await a new reproducible local issue or separately scoped remote-CI/production work. Authored and SEO translation remain paused; do not rerun passed suites or recreate the unconfirmed heartbeat.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
