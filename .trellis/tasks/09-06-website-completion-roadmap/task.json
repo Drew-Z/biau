@@ -42,7 +42,8 @@
     "09-10-stage-6-public-link-projection",
     "09-10-stage-5-assistant-composer-fit",
     "09-10-stage-5-assistant-migration-validation",
-    "09-10-stage-6-ci-linux-validation"
+    "09-10-stage-6-ci-linux-validation",
+    "09-10-stage-6-dependency-security"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -51,12 +52,14 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 32,
-      "activeChild": null,
-      "blockedChildren": ["09-10-stage-6-ci-linux-validation"],
+      "activeChild": "09-10-stage-6-dependency-security",
+      "blockedChildren": [
+        "09-10-stage-6-ci-linux-validation"
+      ],
       "lastCompletedChild": "09-10-stage-5-assistant-migration-validation",
-      "nextAction": "Keep Linux browser validation in review until package-download conditions improve; assess the confirmed npm advisories and prepare a separate bounded compatible-dependency task.",
+      "nextAction": "Commit the verified compatible lockfile and task evidence, archive only the dependency child, then return to the roadmap; retain Linux CI as blocked and preserve policy-rejected temporary cleanup targets.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

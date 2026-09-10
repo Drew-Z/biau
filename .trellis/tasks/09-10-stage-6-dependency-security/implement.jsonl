@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"依赖变化后的构建、图片、浏览与完整 UI 验收，保持原断言与公共内容边界。"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"后端依赖影响、fixture 检查、零真实模型调用及数据库/生产隔离。"}

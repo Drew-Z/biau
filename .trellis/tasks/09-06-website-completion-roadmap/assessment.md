@@ -278,3 +278,6 @@
 - 7 月 `07-29-public-assistant-reliability-v2/research/dependency-audit.md` 记录当时 React Router RSC 告警无兼容修复；当前审计已将其列为可兼容修复，旧结论不能直接沿用。
 - 当前结果还涉及 qs、Undici、构建/图片工具等依赖，需要按调用路径与已发布补丁区分处理；Prisma 相关条目的自动建议仍包含跨主版本降级，不能使用 `npm audit fix --force`。
 - 下一项只核对具体依赖图、可兼容补丁与回归范围，再决定最小变更。Linux CI 浏览器步骤仍是独立未完成门禁，翻译、生产模型、发布、Feed/Cron 和保护快照边界保持。
+- 已实施 `09-10-stage-6-dependency-security`：仅更新锁文件 43 个兼容节点，17 个本机包安装成功，关闭 12 个告警条目；完整与生产投影 audit 均剩 4 high，Prisma 固定依赖的公告、实际路径和跨主版本降级风险已单独记录。package.json、Prisma、Playwright 与业务源码保持。
+- 验证：27 项前后端/助手/内容/图片/预算检查全部 exit 0，smoke 21/0，完整 UI 46/0（1306557ms，实际 exit 0）。505 个非变更输入和 490 个源码/新构建输入无漂移，保护快照不变；自有 preview 已退出且 5197 端口空闲。进入精确本地交付；CI 阻塞项不归档、不计完成。
+- 清理：本轮 CI 的一次性源 tar 与两份重复 stdout 已删除；依赖任务 npm-cache 的删除被自动审批拒绝（仅返回 blocked by policy），缓存保留在任务 Temp，未绕过。早前 undefined 两份文件同样保留且未提交。

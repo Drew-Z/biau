@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"新依赖与构建的 lint/build、smoke/full UI、预算及旧 Linux 验收边界。"}
+{"file":".trellis/spec/backend/quality-guidelines.md","reason":"审查残留依赖路径与相关后端合同，保持生产连接和真实模型关闭。"}
