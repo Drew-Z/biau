@@ -1037,6 +1037,31 @@ const publicAssistantLanguageSse = (answer) => [
   '',
 ].join('\n')
 
+async function assertAssistantPlaceholderFits(page, width) {
+  if (width <= 768) {
+    await page.locator('.public-assistant.is-fullscreen').waitFor({ state: 'visible' })
+    await page.waitForFunction(() => {
+      const panel = document.querySelector('.public-assistant.is-fullscreen .public-assistant__panel')
+      return panel && Math.abs(panel.getBoundingClientRect().width - innerWidth) <= 1
+    })
+  }
+  await page.evaluate(async () => {
+    await document.fonts.ready
+    await new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame)))
+  })
+  const input = await page.locator('#public-assistant-input').evaluate((node) => ({
+    value: node.value,
+    placeholder: node.placeholder,
+    clientHeight: node.clientHeight,
+    scrollHeight: node.scrollHeight,
+  }))
+  assert.equal(input.value, '', 'placeholder visibility must be checked on the empty composer')
+  assert.ok(
+    input.scrollHeight <= input.clientHeight + 1,
+    `assistant placeholder must fit without clipping: ${JSON.stringify(input)}`,
+  )
+}
+
 export async function checkPublicAssistantInterfaceLanguage(browser, base) {
   let publicAssistantInterfaceGroups = 0
   for (const width of [320, 390, 430, 1440]) {
@@ -1101,6 +1126,7 @@ export async function checkPublicAssistantInterfaceLanguage(browser, base) {
         assert.equal(await page.locator('.public-assistant__composer textarea').getAttribute('placeholder'), '输入一个需要回答或研究的问题')
         assert.equal(await page.locator('.public-assistant__composer textarea').getAttribute('aria-label'), null)
         assert.equal(await page.locator('.public-assistant__composer label').innerText(), '向研究助手提问')
+        await assertAssistantPlaceholderFits(page, width)
         assert.ok(await page.locator('.public-assistant__citation').count() === 2)
         assert.ok((await page.locator('.public-assistant__citation').allTextContents()).some((text) => text.includes('外部网页') && text.includes('部分证据')))
         assert.equal(await page.locator('.public-assistant__revision-toolbar').getAttribute('aria-label'), '回答版本')
@@ -1150,6 +1176,7 @@ export async function checkPublicAssistantInterfaceLanguage(browser, base) {
         assert.deepEqual(await page.locator('.public-assistant__modes option').allTextContents(), ['Automatic', 'This site only', 'Public webpages only'])
         assert.equal(await page.locator('.public-assistant__composer textarea').getAttribute('placeholder'), 'Enter a question to answer or research')
         assert.equal(await page.locator('.public-assistant__composer label').innerText(), 'Ask the research assistant')
+        await assertAssistantPlaceholderFits(page, width)
         assert.equal(await page.locator('.public-assistant__revision-toolbar').getAttribute('aria-label'), 'Answer versions')
         assert.equal(await page.locator('.public-assistant__revision-nav button').first().getAttribute('title'), 'Previous version')
         assert.equal(await page.locator('.public-assistant__revision-nav button').last().getAttribute('title'), 'Next version')
@@ -1184,6 +1211,7 @@ export async function checkPublicAssistantInterfaceLanguage(browser, base) {
         await assertSiteLanguage(page, 'zh')
         assert.ok(await root.evaluate((node) => node.matches(':lang(zh-CN)')))
         assert.equal(await page.locator('.public-assistant__composer label').innerText(), '向研究助手提问')
+        await assertAssistantPlaceholderFits(page, width)
         assert.equal(await page.locator('.public-assistant__message.is-user').first().innerText(), '历史问题原文')
         assertLocalOnly(errors, requests)
         assert.ok(requests.every((request) => /^GET \/api\/health$|^POST \/api\/chat\/public\/(session|sessions|stream)$/.test(request)), `unexpected public assistant requests: ${requests.join(', ')}`)

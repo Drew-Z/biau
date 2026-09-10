@@ -6303,4 +6303,9 @@
 @media (max-width: 360px) {
   .detail-title,
   .blog-post-page .detail-title { font-size: 2rem; }
+
+  .public-assistant__composer textarea {
+    /* Three text lines plus the existing vertical padding and borders. */
+    min-height: calc(3 * 1.45em + 20px);
+  }
 }

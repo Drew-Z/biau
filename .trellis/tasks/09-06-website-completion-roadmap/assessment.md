@@ -239,3 +239,10 @@
 - 验证：`lint`、`build`、`project-registry:check`、`verification:diagnostics-check`、projection check 和 `git diff --check` 通过。只读现场链接检查未写 snapshot；Node 的 Playlab/主站 connection reset 与 GitHub timeout 仍按网络限制记录。
 - 交付：修复提交 `8188e3d6`，子任务已归档至 `archive/2026-09/09-10-stage-6-public-link-projection`，并实际执行 `task.py start` 返回父任务。上一轮审计归档提交为 `d1f6edce`。
 - 结论：UI smoke（正确端口 `21/21`）、项目整理合同和公开助手合同没有新增缺口；助手 migration 仍只缺测试数据库 URL，生产事实仍未批准。父任务保存为 `enabled=false`、`phase=stopped`，等待新的可复现证据、生产批准或用户提出下一项范围。
+
+## 轮次 28：完整 UI 与助手输入布局复核
+
+- 按用户“继续”恢复旧检查；旧进程与终局输出不可恢复，在原有 5190 构建预览重新运行。完整 UI 46/0、1396064ms，实际 exit 0；六项助手/项目/链接合同通过，527 个受检文件和构建未漂移。
+- 截图复核补充发现：320px 英文助手空输入框在三主题稳定出现 `scrollHeight=76 > clientHeight=57`，提示末行裁切。等待全屏及字体就绪的 10 组核验有 3 组失败、7 组对照通过；现有语言断言只核对文本，没有检查内部可见性。
+- 选择 `09-10-stage-5-assistant-composer-fit`：现有 CSS 的窄屏输入高度与真实浏览器回归；保持原文、字号、业务逻辑和生产边界。详情见 `round-28-validation.md`，不将全量通过扩大为没有任何 UI 问题。
+- 实施与最终验收：窄屏输入框容纳三行提示，新增真实内部可见性断言；旧构建先以 76/57 失败。最终助手专项 12 组、边界/长草稿 22 组、smoke 21/0、完整 UI 46/0（1372710ms，实际 exit 0）、三项助手合同、lint/build/performance/diff 均通过。528 个受检文件无漂移，保护快照不变；进入本地提交和子任务归档。

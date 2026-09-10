@@ -39,7 +39,8 @@
     "09-10-stage-4-public-assistant-interface-language",
     "09-10-stage-5-authored-content-seo-language-audit",
     "09-10-stage-6-cross-domain-gap-audit",
-    "09-10-stage-6-public-link-projection"
+    "09-10-stage-6-public-link-projection",
+    "09-10-stage-5-assistant-composer-fit"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -47,12 +48,12 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "stopped",
-      "round": 27,
-      "activeChild": null,
+      "enabled": true,
+      "phase": "deliver",
+      "round": 28,
+      "activeChild": "09-10-stage-5-assistant-composer-fit",
       "lastCompletedChild": "09-10-stage-6-public-link-projection",
-      "nextAction": "No additional local UI, project-organization, or public-assistant gap is independently actionable without new production evidence or a product decision; resume on new evidence.",
+      "nextAction": "Commit the verified composer repair (full UI 46/0, 528 unchanged files), archive only the active child, then return to the parent and reassess.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
