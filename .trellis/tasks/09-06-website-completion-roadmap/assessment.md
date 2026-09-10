@@ -222,3 +222,12 @@
 - 博客发现合同通过 8 组 fixture；项目发现合同通过 6 组；博客发现 UI 通过 24 组视口/主题/语言、12 组栏目语义和 1152 个对比度样本；项目发现 UI 通过 24 组视口/主题/语言和 2 组断点。
 - 阅读导航通过 48 组矩阵、4 组动效和 22 组边界；公开路由恢复通过 48 组矩阵、4 组编码和 18 组状态，`modelCalls=0`。
 - 结论：当前没有新的、可由本地证据独立验收且不依赖翻译策略或生产批准的项目理解/内容发现缺口。父任务再次保存为 `enabled=false`、`phase=stopped`；不创建空子任务。
+
+## 轮次 25：跨域网站体验与项目助手缺口审计
+
+- 用户提出继续核对网站 UI、项目整理和公开助手。本轮创建只读子任务 `09-10-stage-6-cross-domain-gap-audit`，保持翻译暂缓、生产边界关闭和保护状态不变。
+- 公共 UI：博客/项目发现、阅读导航、公开路由恢复、项目详情、AI Daily payload 与 smoke 均通过；smoke 首次失败只是默认 5174 未启动，临时 Vite 服务启动后 `21/21` 通过。截图人工复核没有发现稳定遮挡或溢出。
+- 项目整理：项目详情、registry、状态和 discovery 合同通过；15 个项目、9 个公开 publication 与 12 个 product identity 无重复/孤立项。Playlab 浏览器 GET 的内容站三页返回 200，Node synthetic 的 offline 归类为网络路径限制。ERP 403 与既有 `unchecked + login-gated` 语义一致。
+- 公开助手：知识库、质量、agent/model、图像、多模态、指标、持久化、限流、API、会话和 browser-state 合同通过，fixture 真实模型调用为零。migration check 因缺少 `PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL` 阻塞，未连接真实数据库。
+- 唯一高置信度候选：`scripts/check-public-links.ts` 在 `:152-172` 直接收集原始 hero/portfolio/detail/visual URL；公开页面在 `ProjectCard.tsx:29-31` 和 `ProjectDetailPage.tsx:75-77,270-310` 使用 `getPublishedProjectLinks()` 投影。`unchecked` 项目的 entry 已在页面隐藏为 status-only，但仍被巡检器计入，造成公开链接统计和故障分类噪声。具体证据已归档至 `archive/2026-09/09-10-stage-6-cross-domain-gap-audit`。
+- 结果：子任务已归档并实际返回父任务。下一项创建一个只修改链接巡检目标收集与确定性回归的修复子任务，不修改 publication 状态、公开内容、助手、生产配置或保护快照。

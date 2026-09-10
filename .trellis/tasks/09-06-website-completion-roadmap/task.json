@@ -37,7 +37,9 @@
     "09-09-stage-4-ai-daily-interface-language",
     "09-10-stage-4-home-interface-language",
     "09-10-stage-4-public-assistant-interface-language",
-    "09-10-stage-5-authored-content-seo-language-audit"
+    "09-10-stage-5-authored-content-seo-language-audit",
+    "09-10-stage-6-cross-domain-gap-audit",
+    "09-10-stage-6-public-link-projection"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -45,12 +47,12 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "stopped",
-      "round": 24,
-    "activeChild": null,
-    "lastCompletedChild": "09-10-stage-5-authored-content-seo-language-audit",
-      "nextAction": "No independent project-understanding or content-discovery gap was found in the round-24 baseline; keep the roadmap stopped until a new issue or explicit translation decision is provided.",
+      "enabled": true,
+      "phase": "execute",
+      "round": 26,
+      "activeChild": "09-10-stage-6-public-link-projection",
+      "lastCompletedChild": "09-10-stage-6-cross-domain-gap-audit",
+      "nextAction": "Implement the public-link target projection repair, run deterministic and project quality checks, then archive and return to the roadmap.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
