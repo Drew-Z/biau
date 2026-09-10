@@ -17,3 +17,14 @@
 - `retry-1` 的两次 Chromium 安装均因不同 Ubuntu 包的 `500 / unexpected EOF` 失败，两个任务容器均已回收。APT 默认清缓存行为与 HTTPS 传输截断诊断已保存；按 design.md 再执行一次有界、仅调整容器下载恢复配置的 `recovery-apt`，保留所有旧日志。
 - 恢复配置预检查的空 hook 误判已在独立副本修正；最终新容器中 `npm ci` 出现 `ECONNRESET`，未到 Chromium 阶段。停止重试，实际终局、清理和 678 文件无漂移均已写入 verification.md。
 - 未满足浏览器验收，因此保留 review / blocked，不归档或声称完成。父任务记录 blockedChildren 后按协议继续独立依赖审计。
+
+## 第 34 轮恢复
+
+- [x] Windows 与隔离 Linux 下载探测均通过，跨环境内容哈希、已知字体 SHA-256 和 npm integrity 匹配；探测容器已清理。
+- [x] 冻结 `f9c1133f` 的 678 个源/构建输入及新锁文件，导出 1511 个已跟踪文件（私有配置路径 0），核对七个原样脚本；准备脚本与 PowerShell helper 语法通过。
+- [ ] 从空 npm / Chromium 缓存重新执行全部七个步骤，保留每步实际退出码，不复用旧锁文件结果。
+- [ ] 核对 preview 退出、任务容器回收、原资源保留与冻结输入无漂移，再更新完整验收结论。
+
+- 本次单次运行实际失败于新锁文件的 npm ci，exit 1；Ubuntu bootstrap 通过，后续步骤和 preview 未运行。两份依赖的镜像请求重试恢复，最终 aborted 的未完成 unpack 为 js-tiktoken；完整 npm debug 日志已保存，不直接认定唯一根因。
+- 三个相关包的官方/镜像串行对照均成功且 integrity 一致。4 个本轮 CI/探测容器均移除，原资源保留；父任务独立评估仅下载地址变化的候选，本 CI 子任务保持 review / blocked。
+- 终局完整性已核对：678 个源码/构建输入和 13 份原有未跟踪资料无漂移。父任务的官方地址候选在独立空缓存 Linux 实验中安装 445 包成功，版本/integrity 无偏差，未计入本 CI 的通过步骤。

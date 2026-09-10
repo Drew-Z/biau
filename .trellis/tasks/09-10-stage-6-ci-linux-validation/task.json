@@ -21,15 +21,25 @@
   "children": [],
   "parent": "09-06-website-completion-roadmap",
   "relatedFiles": [],
-  "notes": "Linux baseline steps passed on a234e599; Chromium and smoke remain blocked by repeated package download failures. Not completed or archived.",
+  "notes": "New f9c1133f attempt passed Ubuntu bootstrap but npm ci failed with ECONNRESET. No remaining workflow steps ran. Package logs expose fixed npmmirror URLs; single-package official/mirror comparisons both passed. Preserve blocked CI while the parent investigates a source-only candidate independently.",
   "meta": {
     "validation": {
       "state": "blocked",
-      "blockedAt": "2026-09-10T07:27:32.1864796Z",
-      "reason": "Three Chromium dependency installs failed with Ubuntu 500/unexpected EOF; the final bounded recovery was then stopped by npm ECONNRESET.",
-      "missingChecks": ["Chromium installation", "Linux browser smoke", "preview exit cleanup"],
-      "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-20260910T044412002Z",
-      "resumeCondition": "Confirm improved local package-download conditions, then pin the intended source snapshot and resume remaining checks. Reassess earlier results if dependencies or workflow change."
+      "blockedAt": "2026-09-10T10:13:13.1789063Z",
+      "reason": "On f9c1133f, bounded download probes and Ubuntu bootstrap passed, but clean npm ci failed with ECONNRESET. All later workflow steps remain unexecuted for this lockfile; no unchanged full retry is planned.",
+      "missingChecks": ["Clean npm ci", "Linux lint and build", "Linux local contracts and build budgets", "Chromium installation", "Linux browser smoke", "preview exit cleanup"],
+      "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l",
+      "resumeCondition": "Confirm improved local package-download conditions, then pin the intended source snapshot and resume remaining checks. Reassess earlier results if dependencies or workflow change.",
+      "recovery": {
+        "sourceCommit": "f9c1133f1a59363ca55136b6fbf9bafbd8859649",
+        "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l",
+        "downloadProbesPassed": true,
+        "allWorkflowStepsRequired": true,
+        "maxFullAttempts": 1,
+        "passed": false,
+        "failureStage": "01-install-dependencies.sh",
+        "taskContainersRemoved": true
+      }
     }
   }
 }

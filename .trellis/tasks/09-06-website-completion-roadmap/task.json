@@ -51,15 +51,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
-      "round": 33,
+      "enabled": true,
+      "phase": "assess",
+      "round": 35,
       "activeChild": null,
-      "blockedChildren": [
-        "09-10-stage-6-ci-linux-validation"
-      ],
+      "blockedChildren": ["09-10-stage-6-ci-linux-validation"],
       "lastCompletedChild": "09-10-stage-6-dependency-security",
-      "nextAction": "Wait for improved Linux package-download conditions, a compatible Prisma advisory fix or an independently scoped upgrade, a new reproducible local issue, or explicit production scope. Resume blocked CI against the intended source and lockfile; do not reuse its old-lock baseline as new-lock success. Preserve deferred translation, unconfirmed heartbeat state, and policy-rejected temporary cleanup targets.",
+      "nextAction": "The official-registry-only candidate completed a clean Linux transport install with 445 matching package versions/integrities. Create a bounded lockfile source-portability child, review and apply only 479 resolved-host changes, deliver it locally, then resume the existing Ubuntu CI child against the new committed source. Keep the original CI failure visible.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

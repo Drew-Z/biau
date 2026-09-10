@@ -297,3 +297,19 @@
 
 - 结论：剩余明确候选依赖外部下载条件、兼容上游修复、独立升级决策或生产范围。父任务保留 in_progress，保存 `enabled=false`、`phase=waiting`、`round=33` 和无活动子任务；blockedChildren 继续包含 Linux CI，不归档父任务、CI 或历史持续 UI 任务。
 - authored/SEO 翻译继续暂缓。未重建或修改持久化状态未确认的 heartbeat；本地循环 waiting 不等于已验证调度器暂停。原有资料、worktree、保护状态和因自动审批拒绝而保留的临时文件均保持。
+
+## 轮次 34：Linux 下载条件再评估
+
+- 用户要求继续，当前源提交为 `f9c1133f`，依赖锁文件仍为已验收的 `25A49D19...4F87D1`，工作区只保留既有未跟踪资料。本轮先做有明确终点的下载条件探测，不直接重复整套失败安装。
+- 探测范围：上次失败的官方 Ubuntu 字体包及新锁文件中的官方 npm 二进制包；限制单次传输时间，记录 HTTP 状态、字节数和已知 integrity / SHA-256。若能取得完整下载，再在隔离 Linux 环境确认；否则保留原 CI 阻塞，停止同类重复尝试。
+- 满足恢复条件后复用既有 CI 子任务，不创建重复任务；固定本轮源提交和新锁文件，重新运行全部依赖相关步骤，不沿用旧锁文件的成功结果。官方来源、实际 Chromium 依赖安装、原样 workflow 和 21 组 smoke 门禁保持。
+- 恢复证据：`2026-09-10T10:03:56Z`，Windows HTTPS 与隔离 Linux 的原 Ubuntu HTTP / npm HTTPS 路径均完整取得两个字体包及 sharp-libvips-linux-x64 包，三份内容 SHA-256 跨环境一致，已知字体 SHA-256 与 npm integrity 均匹配。Linux 探测容器已移除，既有容器/卷保留。证据目录为 `C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l`；这只证明样本下载成功，不能提前视为整套 CI 通过。
+- 据此恢复已有 `09-10-stage-6-ci-linux-validation`，使用当前 `f9c1133f` 快照和新锁文件，重新执行七个原样 run 步骤。只进行一次完整恢复尝试，不沿用旧检查、不预装 npm/浏览器缓存，也不更换官方源或修改仓库 workflow。
+- 终局：Ubuntu bootstrap exit 0，但新锁文件 npm ci 在约 51 秒后 ECONNRESET / aborted，后续六步和 preview 均未运行；本轮 CI / 探测的 4 个容器已清理，原资源保留。保持 CI review / blocked，停止相同输入的完整重试。
+
+## 轮次 35：锁文件下载源可移植性复核
+
+- 新日志显示两个 npmmirror CDN 请求发生 ECONNRESET 后重试成功，最终未完成的 unpack 指向 js-tiktoken，但终端堆栈没有准确失败 URL。三个相关包的官方/镜像串行下载对照全部通过且原 integrity 一致，不能将镜像判为永久不可用或把其中一个 URL 当作已证明的唯一根因。
+- 当前锁文件固定了 479 个 npmmirror resolved 地址和 43 个官方地址；仓库文档未发现必须固定镜像的产品约定。下一步仅在 Temp 构造官方地址候选，保持全部版本、依赖图、完整性字段和其余 metadata，再用隔离 Linux 的干净安装验证整批传输。候选未应用主仓库，只有实际结果支持后才独立定界修复。
+- 候选结果：只改 479 个 resolved 的主机名，新增/移除/版本/integrity/其他 metadata 变化均为 0。空缓存 Node 22 / Linux x64 的传输实验安装 445 个包，exit 0、42612ms，安装节点与锁定版本/integrity 无偏差；不执行生命周期脚本与 audit，因此不算正式 CI 通过。唯一候选容器已清理，原资源保留。
+- 选择独立的锁文件官方源可移植性子任务，范围只包含 package-lock.json 下载地址、任务记录及必要的质量约定；用完整字段差异和安装结果审查后交付，再恢复既有 Ubuntu CI。保留所有镜像失败与串行成功证据，不夸大为已经证明全部网络问题由镜像引起。

@@ -2,9 +2,9 @@
 
 ## 结论
 
-当前为 **review / 外部下载阻塞**，未完成、未归档。Ubuntu 24.04 / Node 22 下的干净安装、lint、build、四项本地合同和性能预算已取得 exit 0；Chromium 系统依赖下载未成功，浏览器 smoke 未执行。不能将本记录称为 CI 全通过，也不能引用其他环境的 21/0 代替本项。
+第 34 轮对 `f9c1133f` 和新锁文件的单次恢复已取得终局：Ubuntu bootstrap 通过，但干净 `npm ci` 再次以 ECONNRESET / aborted 失败，后续六个 workflow 步骤均未执行。当前继续保留 **review / blocked**，未完成、未归档。以下旧基线与本轮失败均完整保留，不能将旧结果或其他环境的 21/0 视为新锁文件的 Linux CI 通过。
 
-## 源快照与环境
+## 初次源快照与环境
 
 - 源提交：`a234e599f7b96373e859bcea0753e69195241a01`。通过 `git archive` 导出 1496 个已跟踪文件，不携带主机 node_modules、未跟踪文件、私有环境文件或 `.git`。
 - workflow SHA-256：`8b2cde17faf0e78435fd2d5593129b1f254f3ec1f66ccf6f70d5c20ed5eb1438`。7 个 run 字段原样提取，逐项哈希见证据目录的 `step-manifest.json`。
@@ -14,7 +14,7 @@
 - Playwright 1.61.1 官方 noble 镜像内置 Node 24，因此实际使用 Ubuntu 基础镜像加缓存 Node 22。官方来源保存在 `github-runners.json`、`playwright-docker.json`、`playwright-dockerfile.json`，没有更新项目依赖。
 - 所有容器使用本机 Docker named pipe、唯一任务 label，无主机目录挂载、无主机端口发布、无既有卷和生产凭证。Linux Bash 仅在容器内执行。
 
-## 实际步骤结果
+## 旧基线的实际步骤结果
 
 | 原 workflow 步骤 | 结果与证据 |
 | --- | --- |
@@ -34,7 +34,7 @@
 4. `recovery-apt` 在 `07:14:08 UTC` 结束于本地 helper 预检查：APT 清除 hook 后保留空条目，检查器误判为配置未生效。未执行 npm 或浏览器安装；失败记录保留。
 5. 修正检查器后，`recovery-apt-fixed` 在新容器确认下载恢复配置生效：最后加载的 APT 配置保留缓存、每个文件最多 3 次重试、30 秒传输超时，官方 HTTP 源保持。`npm ci` 在 `07:19:20 UTC` 以 `ECONNRESET` 失败，因此没有进入 Chromium 阶段。该环境调整的有效性仅验证到配置；不能声称它修好了 Ubuntu 下载。
 
-所有尝试均保存独立结果，没有覆盖前次失败。现已停止重复运行；恢复需要下载条件改善，或先独立确认一个可完成下载的本地环境。若后续依赖或工作流发生变化，必须重新固定源提交与输入，不能把旧检查结果直接算作新版本通过。
+以上尝试均保存独立结果，没有覆盖前次失败；当时停止重复运行并记录外部阻塞。恢复需要下载条件改善，或先独立确认一个可完成下载的本地环境。若后续依赖或工作流发生变化，必须重新固定源提交与输入，不能把旧检查结果直接算作新版本通过。
 
 ## 源码与资源核对
 
@@ -56,10 +56,23 @@
 - `recovery-apt/`：预检查误判及实际 APT 配置；`recovery-apt-fixed/`：修正后的 helper、有效配置与 npm 网络失败。
 - 源 tar SHA-256：`0C874E85F7BE4D571D7E30A0D6CE714CB5A4BF25E13F927AEDB75278300300BA`。一次性 tar 与两份重复的官方正文 stdout 日志已删除；精确路径、大小与哈希保存在 `temporary-cleanup-manifest.json`。恢复脚本运行前必须重新导出所需源快照。
 
-工作状态保留为 review，`meta.validation.state=blocked`；通过父任务 `blockedChildren` 跟踪，暂不归档。已实际执行 `task.py start 09-06-website-completion-roadmap` 并核对当前会话指针；按父任务协议转入独立可执行项，下载条件变化后再恢复本项。
+上述失败交付时，工作状态保留为 review，`meta.validation.state=blocked`，通过父任务 `blockedChildren` 跟踪且未归档；当时实际执行 `task.py start 09-06-website-completion-roadmap` 返回父任务，按协议转入独立依赖修复。第 34 轮根据新证据恢复同一子任务，详见下节。
 
 此前自动审批拒绝搬移/删除的 `undefined/composer-boundaries.json` 与 `undefined/composer-final-320-en.png` 仍保留且未提交，本轮没有重试该被拒绝的动作。
 
 ## 后续独立线索
 
-初次 npm 安装提示 16 个存在告警的依赖条目（3 moderate / 13 high），不是 16 个彼此独立的漏洞。对 package / lock 副本的官方 registry 只读审计复现同样数量。7 月旧记录曾保留 React Router RSC 告警；当前审计已给出兼容修复，因此应由父任务单独核对依赖升级和残留风险，不在 CI 记录任务中改依赖。
+初次 npm 安装提示 16 个存在告警的依赖条目（3 moderate / 13 high），不是 16 个彼此独立的漏洞。该线索已由独立依赖子任务复核并以 `eb25462f` 修复 12 个条目，剩余 Prisma 固定链 4 high；具体调用路径与残留边界见已归档依赖任务。本轮只验证新锁文件，不继续改动依赖。
+
+## 第 34 轮：新锁文件恢复
+
+- 恢复依据：Windows HTTPS 与隔离 Linux 的原 Ubuntu HTTP / npm HTTPS 路径均完整下载两个曾失败字体包及 sharp-libvips-linux-x64；3 份内容跨环境 SHA-256 一致，已知字体哈希和 npm integrity 匹配。探测容器已移除，既有资源保留。小样本成功只用于判断可以恢复，不能代替完整安装。
+- 新源提交：`f9c1133f1a59363ca55136b6fbf9bafbd8859649`；锁文件 SHA-256：`25A49D1911B43AEDF40C3E8892016DF5E72BC777F21EDA0275D3D3470D4F87D1`。导出 1511 个已跟踪文件，私有配置路径 0；冻结当前主工作区 678 个源/构建输入。
+- 七个 run 字段重新从未修改的 workflow 原样提取，脚本哈希与既有 manifest 一致。使用原 Ubuntu 与 Node 镜像；实际确认 Ubuntu 24.04.4、Node v22.23.2、npm 10.9.8、Linux x64，以及空 node_modules、npm 和浏览器缓存。
+- 所有七步重新执行，不复用旧锁文件结果；不注入主机下载包、不调整 APT 配置或官方源，不修改 workflow。单次工作流执行预算 20 分钟，失败后停止重复完整尝试。
+- 新证据目录：`C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l`。本轮执行从 `10:10:19Z` 开始，`10:13:13Z` 取得最终失败与清理结果；bootstrap exit 0，`npm ci` 从 `10:12:14Z` 至 `10:13:06Z` 以 exit 1 结束。其余六步未运行，preview 未启动。
+- npm 原始 debug 日志显示 @radix-ui/primitive 和 @jridgewell/resolve-uri 的 `cdn.npmmirror.com` 请求曾 ECONNRESET，npm 内置第二次尝试均取得 200；最终 aborted 后未完成的 unpack 计时器指向 js-tiktoken。最终堆栈没有附带准确失败 URL，不能把这一线索写成已证明的唯一根因。
+- 锁文件有 479 个 resolved 指向 registry.npmmirror.com，43 个指向 registry.npmjs.org。补充单包对照中，三个相关包在官方和镜像路径均完整下载，内容哈希及原 integrity 一致；因此不是镜像永久不可达的证据。整批安装失败与串行单包成功仍需区分，父任务将独立核对保持版本/integrity 的官方源候选。
+- 2 个 CI 容器和 2 个探测容器均已清理，原有 17 个容器及运行集合、43 个卷保留，新增卷 0。未重复原样完整安装，未修改仓库源码、锁文件、workflow 或私有配置。
+- 最终 `2026-09-10T10:30:18Z` 核对 678 个源码/构建输入和 13 份原有未跟踪文件均无漂移，保护快照保持；`final-validation.json` 明确保存 workflowPassed=false、smokeExecuted=false、previewStarted=false。
+- 父任务的独立临时实验只把 479 个 resolved 地址转为官方 registry，全部版本、integrity 和其他 metadata 保持。Node 22 / Linux x64 的空缓存 `npm ci --ignore-scripts --no-audit --no-fund` 在 42612ms 实际 exit 0，445 个安装节点与原锁定版本/integrity 一致；候选容器已移除。此结果验证整批传输，不包括生命周期脚本、audit、Ubuntu 或浏览器 CI，候选当时尚未应用仓库。
