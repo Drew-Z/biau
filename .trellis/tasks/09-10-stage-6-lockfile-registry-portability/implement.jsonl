@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"CI, dependency and UI validation boundaries"}
+{"file":".trellis/tasks/09-10-stage-6-ci-linux-validation/verification.md","reason":"Preserved download failures and candidate experiment evidence"}

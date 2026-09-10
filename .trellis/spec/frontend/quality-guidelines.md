@@ -139,6 +139,23 @@ through tee. Upload only the current preview/smoke logs from RUNNER_TEMP. When
 changing this lifecycle, verify success, failure propagation, and port-conflict
 cleanup; distinguish local shell validation from actual GitHub runner results.
 
+### Dependency Download Provenance
+
+Keep public npm tarball `packages[*].resolved` URLs in `package-lock.json` on
+`https://registry.npmjs.org/`; machine-specific mirror preferences must not become
+hard-coded repository download dependencies. Diagnose the actual resolved URL
+and npm debug log, not just the configured default registry. A successful serial
+download or HTTP 200 header does not prove that a clean batch install will finish.
+
+For a download-address-only repair, compare the parsed lockfile and require zero
+version, integrity, dependency-graph, or other metadata changes. Preserve the
+tarball path and SRI; never change integrity to accept different bytes. A clean
+`npm ci --ignore-scripts --no-audit --no-fund` experiment verifies transport and
+unpacking only. It does not replace lifecycle scripts, audit, or the original
+Ubuntu/Node 22 workflow. Reuse existing UI results only with unchanged runtime
+packages, source and build bytes, and state their source explicitly; retain every
+failed download attempt separately from subsequent successful validation.
+
 ## Review Priorities
 
 1. Broken routes, hidden content leaks, or credential exposure.
