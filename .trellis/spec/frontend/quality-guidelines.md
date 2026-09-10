@@ -156,6 +156,15 @@ Ubuntu/Node 22 workflow. Reuse existing UI results only with unchanged runtime
 packages, source and build bytes, and state their source explicitly; retain every
 failed download attempt separately from subsequent successful validation.
 
+For local Windows-to-Linux validation using `git archive`, freeze the actual
+archive member bytes before installation and compare container files with that
+baseline afterward. Git blobs, archives and the Windows worktree can have
+different line endings, including mixed endings, while representing the same
+source. Keep their raw hashes separate; normalize copies only to diagnose the
+source relationship, never to conceal a container mutation or accept changed
+lockfile integrity. If the verifier compares the wrong baseline, preserve its
+failure and correct the comparison offline before rerunning installation.
+
 ## Review Priorities
 
 1. Broken routes, hidden content leaks, or credential exposure.

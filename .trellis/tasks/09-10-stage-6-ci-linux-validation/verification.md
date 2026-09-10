@@ -2,7 +2,7 @@
 
 ## 结论
 
-第 36 轮对 `d06b5ace` 的正式恢复已结束，仍未通过：Ubuntu bootstrap 的 `apt-get update` 因软件包索引下载 `500 / unexpected EOF` 退出 100，七项 workflow 检查实际执行 0 项。本子任务保留 review / blocked，未完成、未归档。第 34 轮 `f9c1133f` 的 npm ECONNRESET 与更早失败均完整保留；本次未运行 npm，不能用它判断官方源锁文件的整套安装结果。
+第 39 轮对 `5fa06f51` 的本地 Ubuntu 24.04 / Node 22 验收已通过：从空缓存执行原七个 workflow run 步骤，全部 exit 0，浏览器 smoke 21 组/0 失败，preview 端口与任务容器清理通过。此次 runner 使用已验证的官方 HTTPS APT 与 npm_config_maxsockets=1，保留 TLS、签名、生命周期与审计；没有复用旧步骤或下载缓存。这不代表原默认传输环境或远端 Actions 已通过，npm 安装审计仍有 4 high。第 38、36、34 轮及更早失败、两类验证器误判和修正均保留。
 
 ## 初次源快照与环境
 
@@ -91,3 +91,44 @@
 - 不对相同环境继续完整重试。恢复条件为完整 Ubuntu 包索引及所需包下载可靠，或另行明确目标 runner；随后固定源提交，从空缓存重做全部七步。少量 tarball 下载成功不能替代包索引与完整 CI 验收。
 - 旧依赖任务 npm-cache 与 undefined 两份文件此前被自动审批以 `blocked by policy` 拒绝清理，本轮没有重试，仍保留且未提交。没有推送、部署、真实模型调用、生产数据库操作或 Feed/Cron 变更。
 - 本轮阻塞资料以 `22d752c8d84e60aae2dbd888b0ea66999b6e6a6c` 精确本地提交 10 个文档/状态文件。已实际执行 task.py start 返回父任务并核对指针，父任务第 37 轮 waiting，blockedChildren 继续保留本项；开发记录为 journal-3.md 的 Session 128。本任务未归档，也未登记完成提交。
+
+## 第 38 轮：完整 APT 预检及官方源 npm 失败
+
+- 证据根：`C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-transport-20260910T1236149923932Z`。只读确认原 Ubuntu 官方 HTTP 源、默认 APT hook 与 Docker 内部代理；代理存在不是故障根因证明。官方 APT 手册支持禁用流水线和保留证书验证的 HTTPS 候选。
+- HTTP 禁用 Pipeline-Depth 的单次完整预检：索引和计划 exit 0，下载 exit 100；fonts-ipafont-gothic 与 fonts-wqy-zenhei 返回 500 / unexpected EOF。该候选没有解决完整下载。
+- 独立 HTTPS 候选只改两条 URIs scheme，使用缓存官方 Node 镜像的公开 CA bundle，保持 suite/component/Signed-By、APT 签名/完整性检查和 Verify-Peer/Verify-Host。空缓存索引、解析、download-only 全部 exit 0：Playwright 1.61.1 tools/chromium 加 bootstrap 的 36 直接包展开为 129 包、114398812 bytes。
+- 清单名称、大小和总字节完全一致；129 份实际 SHA-256 留存。最初补充解析器误以为 print-uris 提供 SHA256，实际为 MD5Sum；误判与修正均保存。没有独立的预期 SHA-256 比较，完整性依据为 APT 原校验及成功下载，不能把解析器异常写成包损坏或掩盖它。
+- 四个诊断/预检容器已移除，源与旧资料核对通过后，在 `ci-with-transport` 以固定 5fa06f51、相同镜像与 Node 二进制启动全新空缓存 CI。未注入预检 deb/npm/browser 缓存，原七个 run 字节/hash 保持，主机配置不变。
+- 正式执行 2026-09-10T13:48:22.5341882Z–13:52:20.5795455Z；Ubuntu 24.04.4、Linux x64、Node v22.23.2、npm 10.9.8。bootstrap exit 0；npm ci 从 13:50:15.5374268Z 至 13:52:13.8934230Z，exit 1 / ECONNRESET / aborted。其余六步未执行，preview 未启动；没有本次 Linux smoke 或端口退出结论。
+- npm debug 日志显示官方 registry audit bulk POST 200，以及多个官方 tarball 首次请求 ECONNRESET，部分由 npm 内建重试恢复；@prisma/config packument 也连接重置。最终 TLSSocket 堆栈没有唯一失败 URL。审计已启动但没有新的完整审计结论；既不能归因于旧镜像，也不能认定连接并发已是根因。
+- 两个正式 CI 容器 `c4ecb2a050e7fef835d29e1d06c3c5802d12e08bd4b810005a75d5fbe7c25dfe`、`0cbcc15c22ac1ff37977feef4b4423dc1c4ccd657d8762d4906b10f10bbf9a94` 已移除。2026-09-10T17:10:48.316Z 的 `ci-with-transport/final-validation.json` 再次核对 678 个源/构建文件、13 份旧资料及七份原样脚本，均无漂移；17 个原有容器、运行集合、43 个卷保留，新增卷 0。
+- 这次完整运行的尝试已用完，不原样重跑。源码 tar 暂保留用于独立单连接预检；所有旧结果与被拒绝清理目标继续保留。没有推送、部署、真实模型调用或生产更改。
+
+## 第 39 轮：单连接完整 npm 安装预检
+
+- `npm-single-connection/` 使用同一 5fa06f51 快照、缓存官方 Node 22.23.2 / npm 10.9.8 / Debian 12，空 npm/浏览器缓存和 node_modules。实测 npm 默认 maxsockets=15，本次执行环境为 1，audit=true、ignore-scripts=false、strict-ssl=true、官方 registry；没有主机挂载、端口或机器配置修改。
+- 原样 npm ci 于 2026-09-10T17:16:37.610Z–17:21:31.782Z 完成，exit 0、294172ms；安装 445 包、审计 446 包，仍报告 4 high。Prisma preinstall、Prisma engines postinstall 与 esbuild postinstall 均 exit 0；安装节点的版本/integrity/resolved 与锁定字段一致。这是安装审计摘要，不是新一轮独立生产投影 audit 或零告警结论。
+- 原 helper 外层 exit 1 源于后置 package.json 哈希比较，原始 result.json 和失败保留。离线核对发现 git archive 含 191 个 CRLF，主工作区含 180 CRLF 与 11 LF，Git blob 为 191 LF；三者规范化后的全部字节一致。容器安装后哈希 d12406b5...5029436 与导入 tar 完全一致，根锁文件 A38EE122...7F59D52 保持。最初离线 raw archive==blob 假设也失败，修正检查已将这次误判记录在 verification.json；没有改输入、完整性字段或重跑安装。
+- `verification.json` 于 17:26:53Z 实际 exit 0，确认安装及后置检查通过。唯一容器 `64ba95532b7a3cac77c1bd1209be3f57062d880fc5926552b88076038a7fe154` 已移除，17 个原有容器、运行集合和 43 个卷保留，新增卷 0；678 个源/构建文件和 13 份旧资料无漂移。此预检不算 Ubuntu CI，也不证明下载永久稳定或并发为唯一根因。
+- 由此恢复同一 CI 子任务；新 `ci-single-connection/` 固定同一源 tar（SHA-256 42baee8c...d10b407）、同一七个原样脚本，从新空缓存 Ubuntu 环境运行一次，保留 HTTPS APT 设置并增加 npm_config_maxsockets=1。最终结果必须独立取得，不复用 Debian 安装或任何旧 workflow 步骤。
+
+## 第 39 轮：完整 Ubuntu 验收终局
+
+证据目录为 `C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-transport-20260910T1236149923932Z/ci-single-connection`。运行时间 2026-09-10T17:37:29.9714853Z–17:44:48.4007914Z，外层 exit 0；正式七步均在一次新运行中完成，没有复用旧版本结果。
+
+| 原 workflow 步骤 | 本次结果 |
+| --- | --- |
+| npm ci | exit 0，安装 445 包/审计 446 包，生命周期开启且成功，审计仍为 4 high；167794ms。 |
+| lint | exit 0；12514ms。 |
+| build | exit 0，包含 TypeScript 检查；5632ms。 |
+| 四项本地合同 | exit 0，博客/项目发现、分析与项目 registry 均通过；1231ms。 |
+| performance:check | exit 0，CSS 152582/222755 bytes、JS 320266/430000 bytes、route CSS 142027 bytes；阻塞外部样式 0，immutable cache 已配置。 |
+| Chromium 与系统依赖 | 原样 npx playwright install --with-deps chromium，exit 0；约 170 秒，实际安装 Chrome for Testing/Headless Shell 149.0.7827.55（v1228）及 FFmpeg v1011。 |
+| preview 与 smoke | exit 0，smoke SUMMARY groups=21 failed=0 total=10260ms；最后实际绑定 5174 成功，确认退出端口已释放。 |
+
+- sourceCommit 为 5fa06f51，workflow SHA-256 和七段脚本字节保持。Ubuntu 24.04.4、Linux x64、Node v22.23.2、npm 10.9.8、Playwright 1.61.1、镜像和 Node 二进制身份均与设计一致。
+- 系统包由官方 HTTPS 源重新取得，保留签名、完整性检查、原缓存清理 hook 与证书/主机验证。npm 为 maxsockets=1、audit=true、ignore-scripts=false、strict-ssl=true；未把临时下载配置写入主机或仓库 workflow，不声称证明代理或并发为唯一根因。
+- `final-validation.json` 于 17:45:15.516Z 实际 exit 0：445 个安装节点版本/integrity/resolved 一致，package.json 与实际导入字节前后相同，锁文件 A38EE122...7F59D52 保持；678 个源/原构建文件、13 份旧资料及集合、七个脚本无漂移。
+- 本次 CI 容器 c004b5b3...9567693 与运行时来源容器 c1610d1f...9b123c 均移除；17 个原有容器、运行集合及 43 个卷保留，新增卷 0。真实模型调用 0，没有生产连接、远端 Actions、推送、部署、公开发布、Feed/Cron 或保护快照变化。
+- 主机完整 UI 46/0 继续明确复用 eb25462f 的同代码/同构建证据，未额外重跑；本轮新增的是上述完整 Linux CI 与 21/0 smoke。checkout/setup-node、远端权限/cache/artifact 和默认 runner 网络仍须独立远端验收。
+- 验收完成后按精确路径清理两个本任务源 tar 和冗余 package 字节诊断脚本，共 3 文件、167179382 bytes；清单为证据根 temporary-cleanup-manifest.json。两份源 tar 均为 SHA-256 42baee8c80d842c539090e2f9e1091575128c6ea7d07658f930075807d10b407；复验需先按固定源重新导出，原日志、配置、官方文档、安装 metadata 与验证 helper 均保留。旧 npm-cache / undefined 策略拒绝目标未重试。

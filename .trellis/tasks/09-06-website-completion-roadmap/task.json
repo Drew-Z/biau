@@ -52,15 +52,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
-      "round": 37,
-      "activeChild": null,
-      "blockedChildren": [
-        "09-10-stage-6-ci-linux-validation"
-      ],
+      "enabled": true,
+      "phase": "deliver",
+      "round": 39,
+      "activeChild": "09-10-stage-6-ci-linux-validation",
+      "blockedChildren": [],
       "lastCompletedChild": "09-10-stage-6-lockfile-registry-portability",
-      "nextAction": "Wait for reliable complete Ubuntu package-index and package downloads before resuming the existing CI child, or new reproducible local evidence / an explicitly scoped upstream or production task. CI has zero executed workflow steps on d06b5ace; do not repeat unchanged setup or count it complete. Translation remains deferred; no push, deploy, real model, Feed/Cron or heartbeat changes.",
+      "nextAction": "The fresh Ubuntu / Node 22 run passed all seven original steps, smoke 21/0, preview cleanup and final input/resource checks with verified HTTPS APT and npm maxsockets=1. Deliver the exact evidence/spec records locally, archive only the CI child, then actually return to this parent and assess the remaining independent gates. Preserve all earlier failures and the no-push boundary.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

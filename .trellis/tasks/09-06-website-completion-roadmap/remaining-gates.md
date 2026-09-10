@@ -67,3 +67,10 @@
 - d06b5ace 的正式 Ubuntu / Node 22 恢复在 apt-get update 下载包索引时返回 HTTP 500 / unexpected EOF、exit 100；七项 workflow 检查实际执行 0 项。需要完整 Ubuntu 索引与所需系统包下载可靠，或明确其他目标 runner，再固定源从空缓存重做全部七步；旧结果、单包探测和候选传输不能代替本次验收。
 - 最近一次实际完整与生产投影 audit 均剩 Prisma 固定链 4 high、exit 1；本次没有运行到 npm 或产生新的 audit 结果。等待兼容上游修复或另行确定跨主版本范围，不强制降级或覆盖上游精确依赖。
 - 主机 UI/助手/项目的已复现问题已关闭，最新完整 UI 46/0、smoke 21/0 来自 eb25462f，官方源地址修复满足其证据复用条件。父任务已实际回切并进入第 37 轮 waiting，无活动子任务；翻译暂缓及 AI Daily、真实模型、远端 CI 的独立门禁保持，未修改未确认的 heartbeat。
+
+## 2026-09-11 第 39 轮本地 CI 验收
+
+- 原 Linux CI 本地阻塞已解除：5fa06f51 在全新 Ubuntu 24.04.4 / Node 22.23.2 / npm 10.9.8 空缓存容器中执行全部七个原样 run 步骤，exit 0，smoke 21/0、10260ms，preview 端口释放、任务容器回收、原资源与 678+13 个文件保持。
+- 此次成功使用容器内官方 HTTPS APT（签名/完整性与 TLS 验证保持）和 npm_config_maxsockets=1；仓库 workflow、主机网络/npm 配置与依赖均未改。不把它描述为默认下载环境永久修复或实际 GitHub Actions 通过；远端 checkout/setup-node、权限、缓存与 artifact 仍在独立门禁内。
+- 本轮完整 npm ci 的安装审计仍报告 4 high，与既有 Prisma 固定链告警数量一致；独立完整/生产投影 audit 沿用已归档依赖任务证据，没有 force、override 或跨主版本降级。
+- 单连接预检最初因 archive 与 Windows 工作区换行差异误报后置失败，经离线原字节核对纠正；原失败与后续成功均留档。尚需完成本地资料提交、仅归档 CI，并实际返回父任务评估剩余生产/远端事项。

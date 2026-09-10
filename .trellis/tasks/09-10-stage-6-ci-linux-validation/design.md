@@ -29,3 +29,21 @@
 第 34 轮原样恢复仍在 npm 解包阶段 ECONNRESET。随后独立子任务仅改 479 个 resolved 地址，保持全部版本/integrity；空缓存 Linux 传输实验安装 445 包成功，主机 lint/build/performance 通过，677 个非锁文件输入和全部构建字节保持。该修复已提交 efce524e 并归档。
 
 本次固定包含修复的 `d06b5ace` 与锁文件 `A38EE122...7F59D52`，在独立 `official-registry-ci` 证据目录重新导出源并执行完整七步；Node/Ubuntu/浏览器版本、空缓存、原始命令、APT 配置和源、20 分钟步骤预算与资源边界不变。无需复制或注入临时实验的包缓存，不能用传输试验替代本次正式检查。仅做一次包含新修复的完整验收，保留此前所有原始失败。
+
+## 第 38 轮：完整 APT 下载预检与传输调整
+
+第 36 轮已在原始 APT 环境失败并完整收尾。本次先测试一个有官方手册依据的不同配置：禁用 HTTP Pipeline-Depth，单次传输超时 30 秒，APT::Update::Error-Mode=any，保持默认签名/完整性检查及原 apt 缓存清理 hook。原源、suite、component 和 Signed-By 不变，不修改主机代理，也不认定代理已被证明是根因。
+
+预检从原 Ubuntu 镜像的空索引与包缓存开始，用锁定 Playwright 1.61.1 的实际 tools/chromium 集合与 ca-certificates/curl/git，更新全部索引并完整 download-only，保存逐步退出码、包清单/大小/哈希和资源清理。HTTP 候选最多一次、总预算 600 秒。只有该候选失败时才允许同源 HTTPS 候选一次；HTTPS 使用官方 Node 镜像公开 CA bundle，验证复制哈希、Verify-Peer/Verify-Host，保持官方 keyring。两种失败后停止，不继续追加同类变体。
+
+完整预检通过是恢复条件，不是 CI 成功。恢复时新建独立空缓存 Ubuntu / Node 22 容器，固定源与锁文件，在容器内设置相同传输配置，原样执行七个 workflow run 步骤一次；不复用预检 deb/npm/browser 缓存。所有结果独立标明配置变化，保留默认环境失败和远端 Actions 未执行的边界。
+
+## 第 39 轮：npm 单连接完整安装预检
+
+第 38 轮正式 CI 已在官方 npm 源的多个 tarball 请求出现 ECONNRESET；HTTPS APT 成功并未解决 npm 整批传输。已保存的 [npm 10 配置文档](https://docs.npmjs.com/cli/v10/using-npm/config#maxsockets) 说明 maxsockets 限制每个 origin 的最大连接数，npm_config_ 环境变量可设置配置。这只支持连接并发假设，尚未证明网络或代理根因；实际默认值须在容器中读取。
+
+在本轮证据根的独立 `npm-single-connection` 目录保留新结果，复用固定 5fa06f51 的 source.tar，核对源身份、tar SHA-256 和锁文件。使用缓存官方 node:22-bookworm 镜像的唯一临时容器，空 node_modules/npm/浏览器缓存，无主机目录挂载、端口发布或凭据。该 Debian / Node 22 试验只验证 npm 安装，不能算 Ubuntu 或 Chromium 验收。
+
+只对执行命令设置 `npm_config_maxsockets=1`；读取 Node/npm、默认与生效 maxsockets、audit、ignore-scripts、strict-ssl 与 registry。保持 `audit=true`、`ignore-scripts=false` 和证书验证，原样执行 `npm ci` 一次，900 秒超时；不加 ignore-scripts/no-audit/offline、不注入缓存、不改依赖或机器配置。保存真实退出码、npm debug 日志、生命周期结果、完整安装摘要、实际安装节点版本/integrity 与根锁文件哈希；npm ci 成功不等于零安全告警。
+
+无论成败都精确核对所有权后回收唯一容器，核对既有资源、678 个源/构建文件与 13 份旧资料。只有安装及上述核对全部通过，才在另一个证据目录准备全新空缓存 Ubuntu / Node 22 CI，沿用已验证 HTTPS APT 配置并增加相同容器级 npm 设置，原样执行七步一次，不复用预检安装缓存。预检仍失败则停止追加同类变体，保存外部阻塞并返回父任务；完整 CI 失败也不原样重跑。
