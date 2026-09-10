@@ -25,4 +25,6 @@
 
 已本地提交 `efce524ec74745e928126d0e3cf3ddc4ff0b5ce1`，仅归档本子任务至 `.trellis/tasks/archive/2026-09/09-10-stage-6-lockfile-registry-portability`，原活动目录已不存在；已实际执行 task.py start 返回父任务第 36 轮评估，由父任务继续恢复原 Ubuntu CI。未推送、部署、调用真实模型、公开内容或启用 Feed/Cron；旧 npm-cache 和 undefined 文件的策略拒绝边界保持。
 
+归档提交为 `d06b5ace84cccfb67c6694f19af55d793387e403`。父任务随后实际恢复原 CI，并以该提交执行一次正式 Ubuntu 验收；此次在 apt-get update 软件包索引下载阶段以 exit 100 结束，未运行 npm 或七项 workflow 检查。该独立 CI 子任务继续 review / blocked，本下载地址修复的已完成范围与传输/主机验证结论保持；详情见原 CI 子任务第 36 轮记录。
+
 证据目录：`C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l`；主要记录为 registry-candidate.json、candidate-install-result.json、registry-fix-checks.json、registry-fix-validation.json。

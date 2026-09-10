@@ -2,7 +2,7 @@
 
 ## 结论
 
-第 34 轮对 `f9c1133f` 和新锁文件的单次恢复已取得终局：Ubuntu bootstrap 通过，但干净 `npm ci` 再次以 ECONNRESET / aborted 失败，后续六个 workflow 步骤均未执行。当前继续保留 **review / blocked**，未完成、未归档。以下旧基线与本轮失败均完整保留，不能将旧结果或其他环境的 21/0 视为新锁文件的 Linux CI 通过。
+第 36 轮对 `d06b5ace` 的正式恢复已结束，仍未通过：Ubuntu bootstrap 的 `apt-get update` 因软件包索引下载 `500 / unexpected EOF` 退出 100，七项 workflow 检查实际执行 0 项。本子任务保留 review / blocked，未完成、未归档。第 34 轮 `f9c1133f` 的 npm ECONNRESET 与更早失败均完整保留；本次未运行 npm，不能用它判断官方源锁文件的整套安装结果。
 
 ## 初次源快照与环境
 
@@ -76,3 +76,17 @@
 - 2 个 CI 容器和 2 个探测容器均已清理，原有 17 个容器及运行集合、43 个卷保留，新增卷 0。未重复原样完整安装，未修改仓库源码、锁文件、workflow 或私有配置。
 - 最终 `2026-09-10T10:30:18Z` 核对 678 个源码/构建输入和 13 份原有未跟踪文件均无漂移，保护快照保持；`final-validation.json` 明确保存 workflowPassed=false、smokeExecuted=false、previewStarted=false。
 - 父任务的独立临时实验只把 479 个 resolved 地址转为官方 registry，全部版本、integrity 和其他 metadata 保持。Node 22 / Linux x64 的空缓存 `npm ci --ignore-scripts --no-audit --no-fund` 在 42612ms 实际 exit 0，445 个安装节点与原锁定版本/integrity 一致；候选容器已移除。此结果验证整批传输，不包括生命周期脚本、audit、Ubuntu 或浏览器 CI，候选当时尚未应用仓库。
+
+## 第 36 轮：官方源锁文件正式验收
+
+- 独立修复工作提交为 efce524e、归档提交为 d06b5ace；本次源固定 `d06b5ace84cccfb67c6694f19af55d793387e403`，锁文件 SHA-256 为 `A38EE12252FAFE0C8C243FC6CA82714AD9D83E1F598BCB05019B1571F7F59D52`。
+- 在新证据子目录 `official-registry-ci` 配置原始七步，不复用旧步骤或安装缓存；helper 只更新固定源身份和前置候选证据引用，保留同一镜像、Node 二进制、Chromium 安装命令、workflow 与退出清理合同。实际执行范围见下文。
+- prepare 与 PowerShell helper 语法通过；实际冻结 678 个源/构建输入，导出 1518 个已跟踪文件，私有配置路径 0，七个脚本逐字节及哈希与原 workflow 一致。
+- 实际运行时间为 `2026-09-10T12:01:43.3680597Z` 至 `12:02:59.5586668Z`，工具最终 exit 1。容器内确认 Ubuntu 24.04.4、Linux x64、Node v22.23.2、npm 10.9.8，以及空 node_modules / npm / 浏览器缓存。
+- bootstrap 在 `apt-get update` 下载 `noble/main/binary-amd64/Packages` 时出现 HTTP 500 / unexpected EOF，exit 100；未执行后续 ca-certificates/curl/git 安装，也未进入第一个 workflow run 步骤。七项检查全部未运行，smoke 未执行，preview 未启动，因此不存在本次 preview 退出通过结论。
+- 任务容器 `f878da291a7810bc03499b4417889a038e5ee1aaabecbed5907e7fa269696ff5` 与 `2ca5b6f9d98e9b3e99f56909b49ae7c79ed7a92f6107b75d131a503d2d729886` 均在精确 label 核验后移除。原有 17 个容器、运行集合和 43 个卷保留，新增卷 0；主机原 preview 未操作。
+- `2026-09-10T12:05:39.329Z` 的独立终局核对确认 678 个冻结文件、13 份原有未跟踪资料及其完整集合无漂移；保护快照和新锁文件哈希保持。两个容器再次按 ID 核实不存在，七份脚本与 YAML 原文一致。
+- 新原始结果保存在 `official-registry-ci/result.json`、`bootstrap.log`、`source-baseline.json`、`step-manifest.json`、`resources-before.json`、`resources-after.json` 和 `final-validation.json`；没有 step-results、smoke 或 preview 日志，因为未执行相应步骤。旧 Temp 根目录的失败和候选实验结果未覆盖。
+- 五个本轮一次性文件已按精确路径及哈希清理，共 190698308 bytes：根目录的两个字体 deb、sharp tarball、旧 source.tar 和 `official-registry-ci/source.tar`。路径、大小、SHA-256 和已删除结果见根目录 `temporary-cleanup-manifest.json`；保留日志、候选锁文件和复验 helper。新源归档哈希为 `63A8B8AAF2032C7F0005E8EA11669DB33E55B499F25FD09ED44600048155A9DD`，恢复时应在新的证据目录按固定提交重新生成。
+- 不对相同环境继续完整重试。恢复条件为完整 Ubuntu 包索引及所需包下载可靠，或另行明确目标 runner；随后固定源提交，从空缓存重做全部七步。少量 tarball 下载成功不能替代包索引与完整 CI 验收。
+- 旧依赖任务 npm-cache 与 undefined 两份文件此前被自动审批以 `blocked by policy` 拒绝清理，本轮没有重试，仍保留且未提交。没有推送、部署、真实模型调用、生产数据库操作或 Feed/Cron 变更。

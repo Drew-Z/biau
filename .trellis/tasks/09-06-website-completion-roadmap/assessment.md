@@ -320,3 +320,19 @@
 
 - 当前 26 个关联子任务中，25 个已完成；原 Linux CI 仍为独立未完成项。下载地址修复保留全部运行依赖内容和原构建，官方地址的批量传输已获得通过证据，但完整 lifecycle / audit / Ubuntu / Chromium / smoke 仍需要原样验证。
 - 选择恢复既有 `09-10-stage-6-ci-linux-validation`，固定包含 efce524e 的新提交，重新冻结输入并从空 npm/浏览器缓存执行全部七个 run 步骤；这是更改已提交下载地址后的验收，不重跑旧锁文件的失败环境。保留所有旧失败，维持单次完整尝试与原生产边界。
+- 实际结果：`d06b5ace` 的单次恢复于 `2026-09-10T12:02:59Z` 结束。Ubuntu / Node / 空缓存身份核对通过，但 `apt-get update` 的 noble/main 软件包索引下载出现 HTTP 500 / unexpected EOF，bootstrap exit 100；七项 workflow 检查执行 0 项，npm、Chromium、smoke 和 preview 均未启动。本次没有验证到官方源锁文件的正常 lifecycle/audit 安装，不能归因于新的 npm 下载地址。
+- 终局：`12:05:39Z` 核对 678 个源/构建输入、13 份原有未跟踪资料均无漂移。两个自有容器移除，原有 17 容器 / 43 卷及运行集合保留，新增卷 0。五个本轮一次性下载/源 tar 已清理，共 190698308 bytes；日志、候选与复验 helper 保留，旧策略拒绝目标未重试。
+- CI 保留 review / blocked 且不归档，父任务以 blockedChildren 跟踪。下一步实际返回父任务评估；不对相同环境继续完整重试，不把源码完整性通过当作 CI 通过。
+
+## 轮次 37：官方源修复与 CI 阻塞后重新评估
+
+- 已实际执行 `task.py start 09-06-website-completion-roadmap` 并核对当前会话指针；任务列表确认 26 个关联子任务中 25 个 completed，原 Linux CI 为 review / blocked。activeChild 清空，lastCompletedChild 仍为锁文件下载地址修复，未把 CI 计入完成项。
+- 官方源修复的主机 lint/build/performance 与候选传输验收已交付，源码、依赖内容和构建保持；完整 UI 46/0 与 smoke 21/0 明确复用 eb25462f 的 Windows 证据，本轮没有重跑全量 UI。此前 UI、项目整理和助手的已复现问题均已关闭，没有新证据支持在此收尾中创建额外重构或重复审计任务。
+
+| 剩余事项 | 当前证据与恢复条件 |
+| --- | --- |
+| 原 Linux CI | d06b5ace 本次失败在 Ubuntu 包索引下载，尚未运行任何 workflow 步骤。需要完整索引与所需系统包下载可靠的证据，或另行明确目标 runner，之后固定源并从空缓存运行全部七步；不根据少量包下载成功原样再跑。 |
+| Prisma 固定依赖告警 | 最近一次实际完整与生产投影 audit 均为 4 high、exit 1；下载地址修复没有变更相关版本，本次 bootstrap 失败也没有产生新的 npm audit 结果。等待兼容上游修复或另行确定跨主版本范围。 |
+| AI Daily、真实助手与远端运行 | 版次/验收绑定、审核发布、生产服务/模型和远端 CI 仍需独立范围；本轮没有重验线上状态。默认本地循环不推送、部署、发布或启用 Feed/Cron，authored/SEO 翻译继续暂缓。 |
+
+- 结论：父任务保留 in_progress，`enabled=false`、`phase=waiting`、`round=37`；没有新建子任务，也未归档父任务、阻塞 CI 或历史持续 UI 任务。未修改持久化状态未确认的 heartbeat，本地 waiting 不代表已验证调度器暂停。

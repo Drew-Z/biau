@@ -21,15 +21,15 @@
   "children": [],
   "parent": "09-06-website-completion-roadmap",
   "relatedFiles": [],
-  "notes": "New f9c1133f attempt passed Ubuntu bootstrap but npm ci failed with ECONNRESET. No remaining workflow steps ran. Package logs expose fixed npmmirror URLs; single-package official/mirror comparisons both passed. Preserve blocked CI while the parent investigates a source-only candidate independently.",
+  "notes": "Registry-only fix efce524e is complete and archived. The single official-registry Ubuntu validation on d06b5ace ended during apt-get update with HTTP 500 / unexpected EOF (exit 100), before any workflow run step. Preserve all earlier failures; keep this child review / blocked and do not archive or repeat unchanged setup. Both task containers were removed and frozen workspace inputs were preserved.",
   "meta": {
     "validation": {
       "state": "blocked",
-      "blockedAt": "2026-09-10T10:13:13.1789063Z",
-      "reason": "On f9c1133f, bounded download probes and Ubuntu bootstrap passed, but clean npm ci failed with ECONNRESET. All later workflow steps remain unexecuted for this lockfile; no unchanged full retry is planned.",
+      "blockedAt": "2026-09-10T12:02:59.5586668Z",
+      "reason": "On d06b5ace, Ubuntu apt-get update failed to download the noble/main package index with HTTP 500 / unexpected EOF (exit 100). None of the seven original workflow steps ran; this attempt did not reach npm ci, Chromium or preview.",
       "missingChecks": ["Clean npm ci", "Linux lint and build", "Linux local contracts and build budgets", "Chromium installation", "Linux browser smoke", "preview exit cleanup"],
-      "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l",
-      "resumeCondition": "Confirm improved local package-download conditions, then pin the intended source snapshot and resume remaining checks. Reassess earlier results if dependencies or workflow change.",
+      "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l/official-registry-ci",
+      "resumeCondition": "Confirm reliable complete Ubuntu package-index and required-package downloads, or explicitly select another target runner. Then pin the intended source and execute all seven original steps with clean caches. Successful individual tarball probes alone do not justify another unchanged full attempt.",
       "recovery": {
         "sourceCommit": "f9c1133f1a59363ca55136b6fbf9bafbd8859649",
         "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l",
@@ -39,6 +39,22 @@
         "passed": false,
         "failureStage": "01-install-dependencies.sh",
         "taskContainersRemoved": true
+      },
+      "officialRegistryRecovery": {
+        "sourceCommit": "d06b5ace84cccfb67c6694f19af55d793387e403",
+        "lockfileSha256": "a38ee12252fafe0c8c243fc6ca82714ad9d83e1f598bcb05019b1571f7f59d52",
+        "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l/official-registry-ci",
+        "maxFullAttempts": 1,
+        "allWorkflowStepsRequired": true,
+        "startedAt": "2026-09-10T12:01:43.3680597Z",
+        "finishedAt": "2026-09-10T12:02:59.5586668Z",
+        "passed": false,
+        "failureStage": "bootstrap-runner-tools",
+        "bootstrapExitCode": 100,
+        "workflowStepsExecuted": 0,
+        "taskContainersRemoved": true,
+        "frozenFilesPreserved": 678,
+        "originalUntrackedFilesPreserved": 13
       }
     }
   }

@@ -52,15 +52,15 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": true,
-      "phase": "assess",
-      "round": 36,
+      "enabled": false,
+      "phase": "waiting",
+      "round": 37,
       "activeChild": null,
       "blockedChildren": [
         "09-10-stage-6-ci-linux-validation"
       ],
       "lastCompletedChild": "09-10-stage-6-lockfile-registry-portability",
-      "nextAction": "The registry portability fix efce524e is verified and archived, and this roadmap is active again. Resume the existing Ubuntu CI child from the new committed snapshot, execute all seven original run steps once with clean caches, and preserve the earlier failure records.",
+      "nextAction": "Wait for reliable complete Ubuntu package-index and package downloads before resuming the existing CI child, or new reproducible local evidence / an explicitly scoped upstream or production task. CI has zero executed workflow steps on d06b5ace; do not repeat unchanged setup or count it complete. Translation remains deferred; no push, deploy, real model, Feed/Cron or heartbeat changes.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
