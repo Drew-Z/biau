@@ -120,25 +120,39 @@ Detailed docs:
 
 Requirements:
 
-- Node.js 22 or newer
-- npm
+- Node.js 22.x, at least 22.13.0 (recommended to match CI), or Node.js 24.x
+- npm, included with Node.js
 
-Install dependencies:
+Use the latest patch of your chosen Node branch. The minimum version follows the
+committed dependency requirements, including ESLint 10.
 
-```bash
-npm install
+The examples below use PowerShell 7 on Windows. On macOS or Linux, use `npm`
+with the same arguments in place of `npm.cmd`.
+
+Check the active versions:
+
+```powershell
+node --version
+npm.cmd --version
+```
+
+For a fresh checkout, install the versions recorded in `package-lock.json`,
+matching CI:
+
+```powershell
+npm.cmd ci
 ```
 
 Generate assistant knowledge:
 
-```bash
-npm run assistant:index
+```powershell
+npm.cmd run assistant:index
 ```
 
 Start the frontend:
 
-```bash
-npm run dev
+```powershell
+npm.cmd run dev
 ```
 
 Open:
@@ -149,9 +163,9 @@ http://localhost:5173
 
 Start the local Express backend when working on assistant, Studio, or RAG APIs:
 
-```bash
-npm run prisma:generate
-npm run server:dev
+```powershell
+npm.cmd run prisma:generate
+npm.cmd run server:dev
 ```
 
 Local server default:

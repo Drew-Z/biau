@@ -379,3 +379,12 @@
 - 剩余明确事项依赖新的产品/生产范围、兼容上游或可复现证据。父任务保留 in_progress，enabled=false、phase=waiting、round=40；不创建空任务或重复完整测试。
 - 旧 heartbeat 只读核对：CODEX_HOME 下未找到 automation.toml；view automation 仅返回已在应用渲染卡片，未提供状态字段，未修改调度器。当前本地 waiting 不能写成 heartbeat 已成功暂停。相关结果保存在本轮 automation-inspection.json；不重建或覆盖未知配置。
 - 归档提交 465f96fdebb5484b1ce761a1ad09fd09b34ea0c8 已确认未签名、未推送；Session 129 保存本轮完整验收与剩余恢复条件。工作提交 f6fb8fed 与归档提交分开，既有 13 份未跟踪资料未混入提交。
+
+## 轮次 41：依赖上游复核与本地快速开始
+
+- 2026-09-11 用户继续后核对 main 的 047dbed4、当前父任务及 26/26 已完成子任务；仅保留原有 13 份未跟踪资料。此前完整 Linux CI 已通过，不恢复历史失败运行。
+- 官方 registry 当前 prev 为 Prisma 7.10.0，latest 为 8.0.0-rc.13。7.10.0 仍精确依赖 mysql2 3.15.3，@prisma/config 7.10.0 仍精确依赖 deepmerge-ts 7.1.5；新的完整和 --omit=dev audit 均为 4 high / exit 1，没有错误字段。未升级、降级或 override 依赖。
+- 项目入口核查发现两份 README 的 Node 22+ 承诺宽于锁定工具链：按目标分别检查，18 个 Linux x64、17 个 Windows x64 节点不接受 22.0.0，两者各有 10 个 ESLint 节点不接受 22.12.0。22.13.0、22.23.2、24.0.0 与 24.14.0 的两个 x64 目标均满足 engine 条件；仅属静态兼容检查。首次安装也与 CI 的 npm ci 不一致。
+- 选择轻量子任务 09-11-stage-6-local-quick-start，统一两个快速开始的 Node 下限、锁文件安装及 Windows 命令；收益是让新接手者按受支持的工具链复现已有本地流程。只改文档，验证成本为命令/链接/engine 核验及现有文档门禁，无新增服务。
+- CONTEXT.md 的缺失已核对 docs/agents/domain.md：文件明确可选，缺失时继续，不作为缺陷或独立建项依据。原始证据在 C:\Users\zhang\AppData\Local\Temp\blog-semi-quick-start-20260910T1909322779799Z。
+- 两份指南已修正；7 条命令的顺序一致，24 处本地文件链接和 14 条 PowerShell 语句解析通过，现有文档门禁与 diff 检查通过。519 个源/依赖/状态/workflow 输入及原有 13 份资料无漂移；本轮未运行安装、生成、服务启动或模型调用。清理自有审计副本/缓存 31 文件、64733247 bytes，原始证据保留，进入精确本地交付。

@@ -80,3 +80,9 @@
 - 已核对 26/26 关联子任务 completed，活动子任务及阻塞子任务均为空。父路线图保持 in_progress，enabled=false、phase=waiting；最后完成项为 Linux CI，未归档父任务或历史持续 UI。
 - 下一项必须有新的独立依据：Prisma 兼容修复/明确升级范围、AI Daily 或助手生产验收范围、实际远端 Actions 范围，或新的本地可复现问题。翻译暂停、本地不推送/部署/签名、不调用真实模型和保护状态快照的边界继续有效。
 - heartbeat 只读 view 返回应用卡片但没有状态字段，CODEX_HOME 下没有找到 automation.toml；未修改未知配置，不能将本地 waiting 当作调度器暂停已验证。
+
+## 2026-09-11 第 41 轮上游与项目入口复核
+
+- 新的完整和 --omit=dev 官方 npm audit 仍均为 4 high / exit 1，错误字段为空。Prisma 7.10.0 与 @prisma/config 7.10.0 仍固定 mysql2 3.15.3 / deepmerge-ts 7.1.5；latest 已指向 8.0.0-rc.13，不能当作 Prisma 7 的兼容修复。等待兼容上游或另行明确升级范围，保留现有依赖图。
+- 本轮独立本地缺口为两份 README 的 Node 22+ 启动说明与锁定工具链不符。09-11-stage-6-local-quick-start 已完成文档修复与静态/文档验证，待精确提交和子任务归档；没有重跑已通过的完整 CI。
+- CONTEXT.md 是可选文档；没有依据仅凭它不存在就创建整理任务。真实 Actions、AI Daily/助手生产范围与翻译暂缓决定保持，未修改 scheduler。

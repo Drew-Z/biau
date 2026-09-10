@@ -1,0 +1,42 @@
+{
+  "id": "stage-6-local-quick-start",
+  "name": "stage-6-local-quick-start",
+  "title": "本地快速开始的 Node 与锁文件契约",
+  "description": "Align both local Quick Start guides with locked Node engine requirements, npm ci, and PowerShell examples; preserve runtime files and local-only boundaries.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-11",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "README.md",
+    "README.zh-CN.md"
+  ],
+  "notes": "Lightweight documentation task. Parent loop authorization covers review, implementation, validation and local delivery; no dependency upgrade or production action.",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "date": "2026-09-11",
+      "docsManualGatesExitCode": 0,
+      "diffCheckExitCode": 0,
+      "commandSequenceLength": 7,
+      "localFileLinksChecked": 24,
+      "powerShellStatementsParsed": 14,
+      "sourceFilesPreserved": 519,
+      "originalUntrackedFilesPreserved": 13,
+      "runtimeTestsRerun": false
+    }
+  }
+}

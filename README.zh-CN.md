@@ -44,13 +44,26 @@ flowchart TB
 
 要求：
 
-- Node.js 22+
-- npm
+- Node.js 22.x，至少 22.13.0（推荐，与 CI 保持一致），或 Node.js 24.x
+- Node.js 自带的 npm
 
-```bash
-npm install
-npm run assistant:index
-npm run dev
+使用所选 Node 分支的最新补丁版本。最低版本取自已提交依赖的要求，其中包括 ESLint 10。
+
+以下示例使用 Windows 上的 PowerShell 7；macOS 或 Linux 可将 `npm.cmd` 换为 `npm`，参数相同。
+
+先确认当前版本：
+
+```powershell
+node --version
+npm.cmd --version
+```
+
+首次检出项目后，按 `package-lock.json` 安装已锁定的版本，与 CI 保持一致：
+
+```powershell
+npm.cmd ci
+npm.cmd run assistant:index
+npm.cmd run dev
 ```
 
 前端默认地址：
@@ -61,9 +74,9 @@ http://localhost:5173
 
 需要调试助手、Studio 或 RAG API 时：
 
-```bash
-npm run prisma:generate
-npm run server:dev
+```powershell
+npm.cmd run prisma:generate
+npm.cmd run server:dev
 ```
 
 本地 Express 默认地址：

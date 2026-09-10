@@ -44,7 +44,8 @@
     "09-10-stage-5-assistant-migration-validation",
     "09-10-stage-6-ci-linux-validation",
     "09-10-stage-6-dependency-security",
-    "09-10-stage-6-lockfile-registry-portability"
+    "09-10-stage-6-lockfile-registry-portability",
+    "09-11-stage-6-local-quick-start"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -52,13 +53,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
-      "round": 40,
-      "activeChild": null,
+      "enabled": true,
+      "phase": "deliver",
+      "round": 41,
+      "activeChild": "09-11-stage-6-local-quick-start",
       "blockedChildren": [],
       "lastCompletedChild": "09-10-stage-6-ci-linux-validation",
-      "nextAction": "All 26 associated local children are completed, including Ubuntu CI delivered in f6fb8fed and archived. Wait for a compatible Prisma upstream fix or an explicit upgrade scope, AI Daily/assistant production scope, remote Actions authorization, or a newly reproduced local issue. Preserve the current translation scope and do not push/deploy/call real models. The legacy heartbeat view returned a UI card but no status fields; scheduler state remains unverified and unchanged.",
+      "nextAction": "Deliver the bounded Quick Start documentation repair: Node 22.x >=22.13.0 or 24.x, npm ci, and PowerShell examples. Validate documentation and frozen inputs, commit only owned files, archive only the child, then actually return to this roadmap. Fresh full and production audit still report the same four high Prisma chain entries; preserve dependencies and all local-only boundaries. Scheduler state remains unverified and unchanged.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
