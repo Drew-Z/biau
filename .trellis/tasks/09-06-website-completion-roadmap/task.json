@@ -45,7 +45,8 @@
     "09-10-stage-6-ci-linux-validation",
     "09-10-stage-6-dependency-security",
     "09-10-stage-6-lockfile-registry-portability",
-    "09-11-stage-6-local-quick-start"
+    "09-11-stage-6-local-quick-start",
+    "09-11-stage-5-assistant-image-lifecycle"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -53,13 +54,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
-      "round": 42,
-      "activeChild": null,
+      "enabled": true,
+      "phase": "deliver",
+      "round": 43,
+      "activeChild": "09-11-stage-5-assistant-image-lifecycle",
       "blockedChildren": [],
       "lastCompletedChild": "09-11-stage-6-local-quick-start",
-      "nextAction": "All 27 associated local children are completed, including Quick Start documentation delivered in de9a5658 and archived. Fresh full and production npm audit still report four high entries: Prisma 7.10.0 retains the affected exact pins, while latest is 8.0.0-rc.13. Wait for a compatible upstream fix or explicit upgrade scope, independent remote Actions or AI Daily/assistant production scope, or a newly reproduced local issue. Preserve translation pause, original untracked files and local-only boundaries; scheduler state remains unverified and unchanged.",
+      "nextAction": "Deliver the image-lifecycle child from the exact 16-file local commit whitelist. Its final full UI passed 46/0, including 48 image cases, and terminal source/build/original-file checks passed. Archive only this child, record the work and actually return to this roadmap for reassessment. Retain the earlier unresolved intermittent status-wheel observation and all failed/interrupted evidence. Preserve production, translation, protected-snapshot, original-file and scheduler boundaries.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

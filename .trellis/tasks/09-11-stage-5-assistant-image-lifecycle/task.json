@@ -1,0 +1,103 @@
+{
+  "id": "stage-5-assistant-image-lifecycle",
+  "name": "stage-5-assistant-image-lifecycle",
+  "title": "公开助手图片处理与会话隔离",
+  "description": "Fence asynchronous image preparation to its owning conversation, prevent Enter from submitting before the selected image is ready, and add local browser regression evidence.",
+  "status": "review",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-11",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/PublicAssistantWidget.tsx",
+    "scripts/check-public-assistant-image-ui.mjs",
+    "scripts/check-reading-navigation-ui.mjs",
+    "scripts/check-ui.mjs",
+    ".trellis/spec/frontend/index.md",
+    ".trellis/spec/frontend/state-management.md",
+    ".trellis/spec/frontend/quality-guidelines.md"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "evidenceRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-image-s795go",
+      "fullUiSessionId": null,
+      "finalSummary": "validation-summary.json",
+      "finalCheckedAt": "2026-09-10T23:29:31.424Z",
+      "fullUiAttempt1": {
+        "sessionId": 82845,
+        "exitCode": 1,
+        "groups": 5,
+        "failed": 1,
+        "failure": "reading fixture module-interception race",
+        "diagnosticRounds": 12,
+        "raceReproductions": 2
+      },
+      "previewSessionId": 75434,
+      "fullUiAttempt2": {
+        "sessionId": 64120,
+        "state": "interrupted",
+        "exitCode": -1,
+        "reason": "Owner stopped after reproducing expired-current-session image processing that never resets",
+        "inputManifest": "validation-inputs-2.json",
+        "log": "full-ui-2.log",
+        "result": "full-ui-2-result.json"
+      },
+      "readingUi": {
+        "exitCode": 0,
+        "matrixGroups": 48,
+        "normalMotionGroups": 4,
+        "edgeGroups": 22
+      },
+      "fullUiAttempt3": {
+        "sessionId": 77511,
+        "state": "failed",
+        "exitCode": 1,
+        "groups": 46,
+        "failed": 1,
+        "durationMs": 1492895,
+        "failure": "390px status manual-wheel scroll stayed at the overview; three assertions in one catalog-reading group",
+        "inputManifest": "validation-inputs-3.json",
+        "log": "full-ui-3.log",
+        "result": "full-ui-3-result.json"
+      },
+      "fullUiAttempt4": {
+        "sessionId": 45249,
+        "state": "passed",
+        "exitCode": 0,
+        "groups": 46,
+        "failed": 0,
+        "durationMs": 1395263,
+        "startedAt": "2026-09-10T23:01:40.6250844Z",
+        "finishedAt": "2026-09-10T23:24:57.5971660Z",
+        "inputManifest": "validation-inputs-3.json",
+        "inputCheck": "full-ui-4-input-check.json",
+        "log": "full-ui-4.log",
+        "result": "full-ui-4-result.json"
+      },
+      "statusWheelDiagnosis": {
+        "isolatedCasesPassed": 24,
+        "originalCatalogReadingGroupsPassed": 3,
+        "applicationOrAssertionChange": false,
+        "rootCause": "unconfirmed; retain original full-suite failure"
+      },
+      "imageCasesPassed": 48,
+      "imageCasesRequired": 48,
+      "smokeCasesPassed": 21,
+      "realModelCalls": 0
+    }
+  }
+}

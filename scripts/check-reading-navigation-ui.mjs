@@ -349,10 +349,12 @@ export async function checkReadingEdgeCases(browser, base) {
     const gate = new Promise((resolve) => { release = resolve })
     let resolveLoaded
     const loaded = new Promise((resolve) => { resolveLoaded = resolve })
-    let intercepted = false
+    let resolveIntercepted
+    const intercepted = new Promise((resolve) => { resolveIntercepted = resolve })
+    let interceptionTimeout
     try {
       await delayed.page.route((url) => url.origin === new URL(base).origin && /\/assets\/legal-rag-review-[\w-]+\.js$/u.test(url.pathname), async (route) => {
-        intercepted = true
+        resolveIntercepted()
         await gate
         await route.continue()
         resolveLoaded()
@@ -361,7 +363,15 @@ export async function checkReadingEdgeCases(browser, base) {
       await delayed.page.locator('[data-reading-entry="blog:legal-rag-review"]').focus()
       await delayed.page.keyboard.press('Enter')
       await delayed.page.locator('.detail-missing h1').filter({ hasText: '文章载入中' }).waitFor({ state: 'visible' })
-      assert.ok(intercepted, 'fixture must delay the actual article module')
+      // The loading DOM may commit before Playwright receives the request event.
+      await Promise.race([
+        intercepted,
+        new Promise((_, reject) => {
+          interceptionTimeout = setTimeout(() => reject(new Error('fixture must delay the actual article module')), 5000)
+        }),
+      ])
+      clearTimeout(interceptionTimeout)
+      assert.equal(await delayed.page.locator('.blog-post-page .detail-title').count(), 0, 'article must remain unloaded until the fixture releases its module')
       if (action === 'interaction') await delayed.page.locator('.nav-lang-toggle').click()
       if (action === 'leave') await delayed.page.locator('.mobile-tab[href="/projects"]').click()
       const beforeY = await delayed.page.evaluate(() => window.scrollY)
@@ -383,6 +393,7 @@ export async function checkReadingEdgeCases(browser, base) {
       assert.deepEqual(delayed.errors, [])
       edgeGroups += 1
     } finally {
+      clearTimeout(interceptionTimeout)
       release()
       await delayed.page.close()
     }

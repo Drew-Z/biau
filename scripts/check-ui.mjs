@@ -7,6 +7,7 @@ import { checkProjectDiscoveryNavigation } from './check-project-discovery-ui.mj
 import { checkReadingNavigation } from './check-reading-navigation-ui.mjs'
 import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
 import { checkSiteLanguage } from './check-site-language-ui.mjs'
+import { checkPublicAssistantImageLifecycle } from './check-public-assistant-image-ui.mjs'
 import { selectSiteLanguage } from './lib/ui-language.mjs'
 import { createAiDailyPublicFixtureItem, createAiDailyPublicPayloads } from './lib/ai-daily-ui-fixtures.mjs'
 import {
@@ -3049,6 +3050,7 @@ await reducedStellarPage.close()
 
   finishProgressGroup(flowIntroFailures)
   progress.start('public-assistant', 'warm-up, history, branches, citations, recovery, and cancellation')
+  console.log('Public assistant image lifecycle passed:', await checkPublicAssistantImageLifecycle(browser, base))
   const publicAssistantFailures = failures.length
 
 const publicAssistantLongToken = `harbor-${'x'.repeat(180)}`

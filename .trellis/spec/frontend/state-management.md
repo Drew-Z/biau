@@ -260,6 +260,29 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Editing a persisted visitor question is an immutable Branch fork, never an in-place Turn mutation or `answer-revision`. Build a `new-turn` intent from the edited Turn's parent: the root uses `{ branchId: null, parentRevisionId: null }`; a later Turn uses the current `activeBranchId` plus that Turn's original `parentRevisionId`. Prompt history contains only Turns before the edited Turn.
 - An edit-and-resend completion always refreshes authoritative Session history before replacing the visible path, even when the new Branch was activated normally. The pending projection may display progress, but it must not assemble or retain old descendants as persisted ancestry. Preserve the force-refresh flag across cancellation and explicit retry.
 
+### Image Preparation Ownership
+
+- Each `preparePublicAssistantImage(File)` call has a unique object identity in
+  `imagePreparationRef` and captures its owning `sessionId`. Success, catch, and
+  finally may update state or the native file input only while both still match.
+  `isImageProcessing` projects that work to the UI; it is not the ownership token.
+- `resetImageAttachment` synchronously invalidates the token and clears the busy
+  state, preview, image error, and file input. `commitSessionRegistry` invokes it
+  whenever the current session ID changes, including a `session-not-found`
+  recovery that forgets the current capability. Clearing only explicit New/Delete
+  actions misses expiry and can leave the composer permanently busy after an old
+  completion is correctly ignored.
+- Successful authoritative history/Branch hydration also resets images when the
+  session ID stays the same. Explicit remove uses the same reset. A new selection
+  may start immediately; an older finally must not enable submission or empty the
+  newer selection's file input. Unmount invalidates the token without setting
+  component state. This discards late results; it does not abort browser decoding.
+- `submitQuestion` checks both `isImageProcessing` and the synchronous preparation
+  ref before analytics, request IDs, or API calls. Enter shares the button's gate,
+  preserves the draft, and never schedules an automatic send after preparation.
+  Keep Shift+Enter and composition-input behavior intact. Image bytes stay in
+  memory; retain the existing compression, limits, and resource cleanup helper.
+
 ## Scenario: Public AI Daily Feed State
 
 - Public Feed and detail responses pass through `src/utils/aiDailyPublicApi.ts`; route components do not cast `unknown` payloads or render unvalidated citation URLs.

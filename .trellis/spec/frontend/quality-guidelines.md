@@ -719,6 +719,72 @@ Correct: run `check:ui` locally for fixture coverage, then run `check:ui:product
 - Suggested prompts are bounded; UI checks validate the rendered starter contract rather than requiring hidden overflow items.
 - One-image UI fixtures cover selection, compressed preview, remove/focus restoration, request forwarding, retry continuity, privacy across refresh, and compact/fullscreen/mobile containment. No browser fixture calls a live model.
 
+### Image Lifecycle Browser Check
+
+#### 1. Scope / Trigger
+
+Run when changing image preparation, conversation ownership, reset paths, or the
+shared submit gate. This supplements the existing image and conversation checks.
+
+#### 2. Signatures
+
+```powershell
+$env:UI_CHECK_BASE = 'http://127.0.0.1:5174'
+node scripts/check-public-assistant-image-ui.mjs
+```
+
+`checkPublicAssistantImageLifecycle(browser, base)` returns
+`{ cases: 48, modelCalls: 0 }` after the current matrix passes. The same function
+runs inside the full UI `public-assistant` group.
+
+#### 3. Contracts
+
+`UI_CHECK_BASE` defaults to the loopback preview above and must use HTTP(S) with
+`localhost`, `127.0.0.1`, or `[::1]`. `UI_CHECK_ARTIFACT_DIR` optionally receives
+screenshots. Each page uses an isolated context, blocked service workers, and the
+shared network guard. Health, history, deletion, and chat are local fixtures;
+unknown API paths fail. Validate history fixtures with the production normalizer
+through scoped `tsx/esm/api` import so the Node and tsx entry points agree.
+
+Decode a real synthetic PNG through the production image helper. Hold its final
+FileReader operation until the test releases success or dispatches a controlled
+read failure. Assert DOM state, file-input identity, and outgoing payloads rather
+than inspecting React state. Fixture failure is not a production model result.
+
+#### 4. Validation & Error Matrix
+
+| Condition | Required result |
+| --- | --- |
+| Non-loopback or non-HTTP(S) base | Fail before page navigation |
+| Enter while image preparation is pending | Zero chat requests; draft retained |
+| New session, restored history, deletion, current-session expiry, or remove | Busy/preview/error/input reset; new image selection immediately available |
+| Old success, error, or finally after reset | No stale preview/error; newer busy state and file input retained |
+| Current read failure, then another selection | Existing error shown; retry selection succeeds and clears that error |
+| Ready image and explicit Enter | One request with that image; sent draft and preview cleared |
+| Image bytes in either browser storage | Fail |
+
+#### 5. Good / Base / Bad Cases
+
+Good: a current history capability expires during preparation, the composer
+releases it, and only the next selected image appears. Base: a ready image is sent
+once. Bad: the preview is protected but an ignored old finally leaves busy true.
+
+#### 6. Tests Required
+
+Keep four representative configurations: 1440/Morning/Chinese,
+320/Stellar/English, 390/Nature/Chinese, and 430/Morning/English. Each covers five
+reset paths with old success/failure, the send gate including Shift+Enter and
+composition, and current-failure recovery: 48 cases. Check browser storage in
+every case and retain zero model calls. The standalone check does not replace
+the complete UI suite, smoke, lint/build, or relevant assistant contracts.
+
+#### 7. Wrong vs Correct
+
+Wrong: clear processing unconditionally in finally, or fence the result while
+resetting only visible New/Delete buttons. Correct: fence all completion paths
+by selection identity and session, and reset at the current-session ID setter as
+well as same-session history hydration and explicit removal.
+
 ## SEO And Analytics
 
 - Every public route has useful title, description, canonical, and Open Graph metadata.
@@ -781,7 +847,12 @@ Wrong: importing `route-pages.css` from `App.tsx`, `index.css`, `ProjectsPage`, 
 - Public assistant concise/fallback behavior, safe structured Markdown, code copy, `recovering`, eight-second elapsed copy, recovery metadata, all six degraded failure classes, stop during provider work/backoff, late-response isolation, cancellation retry, immutable regeneration without duplicate questions, Revision-scoped citations/feedback, older snapshot hydration, and exact structured-feedback payloads.
 - Public assistant free-instance warm-up at desktop and 320/390/430: 504 then 200 produces exactly two health calls, zero chat calls while warming, editable draft preservation, disabled generation commands, ordered history restore, explicit final retry, and no overflow.
 - Public assistant scope controls, authoritative Branch history/selection/continue hydration, completed-replay isolation, automatic continuity/expiry/retry/truncation disclosure, Branch turn counts, Revision count scope, citation provenance metadata, offline-to-online recovery without automatic replay, wall-clock `Retry-After` countdowns, claim-to-source focus, internal navigation closure, history/full-screen focus behavior, mobile panel/trigger/soft-keyboard layout, 44px Revision/Branch controls, 320/390/430 containment, verified citations, feedback, and rate-limit behavior.
-- Mobile public navigation and detail reading.
+- Mobile public navigation and detail reading. In delayed article fixtures,
+  loading DOM can commit before Playwright receives the module request event.
+  `check-reading-navigation-ui.mjs` waits up to five seconds for the actual
+  interception, requires the article to remain unloaded before release, and then
+  retains the completion/interaction/leave focus and scroll assertions. Neither
+  an immediate boolean check nor a fixed sleep establishes that handshake.
 - Studio focused modes and review entry.
 - Background animation/reduced-motion frames.
 - AI Daily Feed/detail happy paths, stale/error/empty states, cursor pagination, `304` recovery, rapid route changes, safe citations, and reduced-motion loading indicators.

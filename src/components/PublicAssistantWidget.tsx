@@ -537,6 +537,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const historyCloseRef = useRef<HTMLButtonElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const imageInputRef = useRef<HTMLInputElement | null>(null)
+  const imagePreparationRef = useRef<{ sessionId: string } | null>(null)
   const imageAttachButtonRef = useRef<HTMLButtonElement | null>(null)
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -587,13 +588,20 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         ? copy.launcher.error
         : copy.launcher.idle
 
-  const loadSessionBrowserState = (targetSessionId: string, fallbackMode: PublicAssistantMode = 'auto') => {
+  const resetImageAttachment = useCallback(() => {
+    imagePreparationRef.current = null
+    setIsImageProcessing(false)
+    setImageAttachment(null)
+    setImageIssue(null)
+    if (imageInputRef.current) imageInputRef.current.value = ''
+  }, [setIsImageProcessing, setImageAttachment, setImageIssue])
+
+  const loadSessionBrowserState = useCallback((targetSessionId: string, fallbackMode: PublicAssistantMode = 'auto') => {
     const draft = readPublicAssistantDraft(targetSessionId)
     setInput(draft?.input ?? '')
     setMode(draft?.mode ?? fallbackMode)
-    setImageAttachment(null)
-    setImageIssue(null)
-  }
+    resetImageAttachment()
+  }, [resetImageAttachment, setInput, setMode])
 
   const acceptAuthoritativeHistory = (history: PublicAssistantSessionHistory) => {
     shouldFollowOutputRef.current = true
@@ -605,11 +613,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     writePublicAssistantHistorySnapshot(history)
   }
 
-  const commitSessionRegistry = (next: PublicAssistantSessionRegistry) => {
+  const commitSessionRegistry = useCallback((next: PublicAssistantSessionRegistry) => {
+    if (sessionIdRef.current !== next.currentSessionId) resetImageAttachment()
     sessionIdRef.current = next.currentSessionId
     persistPublicAssistantSessionRegistry(next)
     setSessionRegistry(next)
-  }
+  }, [resetImageAttachment, setSessionRegistry])
 
   const scrollToLatest = () => {
     const container = scrollRef.current
@@ -695,6 +704,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }, [messages, isOpen, isLoading])
 
   useEffect(() => () => {
+    imagePreparationRef.current = null
     activeRequestRef.current?.controller.abort()
     branchActionRequestRef.current?.abort()
     historyRequestRef.current?.abort()
@@ -854,7 +864,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         initialRestoreRequestRef.current = null
       }
     }
-  }, [apiBase, isOpen, isWarmupReady, restoreRetryNonce, sessionRegistry])
+  }, [apiBase, commitSessionRegistry, isOpen, isWarmupReady, loadSessionBrowserState, restoreRetryNonce, sessionRegistry])
 
   useEffect(() => {
     if (!isOpen) return
@@ -1029,8 +1039,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     setConversation(createEmptyPublicAssistantConversation())
     closeQuestionEditor()
     setInput('')
-    setImageAttachment(null)
-    setImageIssue(null)
+    resetImageAttachment()
     setMode('auto')
     setIsSnapshotVisible(false)
     setIssue(null)
@@ -1159,8 +1168,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         shouldFollowOutputRef.current = true
         setConversation(createEmptyPublicAssistantConversation())
         setInput('')
-        setImageAttachment(null)
-        setImageIssue(null)
+        resetImageAttachment()
         setMode('auto')
         setIsSnapshotVisible(false)
         setInitialRestoreState('ready')
@@ -1212,13 +1220,20 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     const fileInput = event.currentTarget
     const file = fileInput.files?.[0]
     if (!file || isLoading) return
+    const preparation = { sessionId: sessionIdRef.current }
+    imagePreparationRef.current = preparation
+    const isCurrentPreparation = () => (
+      imagePreparationRef.current === preparation && sessionIdRef.current === preparation.sessionId
+    )
     setIsImageProcessing(true)
     setImageIssue(null)
     try {
       const prepared = await preparePublicAssistantImage(file)
+      if (!isCurrentPreparation()) return
       setImageAttachment(prepared)
       setIssue((current) => current?.scope === 'chat' ? null : current)
     } catch (error) {
+      if (!isCurrentPreparation()) return
       const code = error instanceof PublicAssistantImageError ? error.code : 'decode-failed'
       setImageIssue(code === 'unsupported'
         ? copy.image.unsupported
@@ -1228,14 +1243,16 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             ? copy.image.outputTooLarge
             : copy.image.unreadable)
     } finally {
-      fileInput.value = ''
-      setIsImageProcessing(false)
+      if (isCurrentPreparation()) {
+        imagePreparationRef.current = null
+        fileInput.value = ''
+        setIsImageProcessing(false)
+      }
     }
   }
 
   const removeImageAttachment = () => {
-    setImageAttachment(null)
-    setImageIssue(null)
+    resetImageAttachment()
     setIssue((current) => current?.scope === 'chat' && current.attachment ? null : current)
     window.requestAnimationFrame(() => imageAttachButtonRef.current?.focus({ preventScroll: true }))
   }
@@ -1257,7 +1274,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     } = {},
   ) => {
     const trimmed = normalizePublicAssistantQuestion(question)
-    if (!trimmed || isLoading || activeRequestRef.current || !isConversationReady || !isWarmupReady) return
+    if (!trimmed || isLoading || activeRequestRef.current || isImageProcessing || imagePreparationRef.current || !isConversationReady || !isWarmupReady) return
 
     trackAnalyticsEvent('public_assistant_question', {
       source: 'floating-widget',
