@@ -362,3 +362,19 @@
 
 - 最终本地 Ubuntu CI 于 2026-09-10T17:44:48Z 完整通过，七步全部 exit 0；smoke 21/0、10260ms，preview 端口释放。17:45:15Z 独立核对 445 个安装节点、678 个源/构建文件、13 份旧资料、七个脚本及原资源通过，两个容器已移除。CI 的本地验收阻塞已解除，进入精确本地交付和子任务归档。
 - 通过结论明确包含容器级官方 HTTPS APT 与 npm 单连接设置；既不覆盖默认环境失败，也不代替远端 Actions。安装审计仍为 4 high，生产投影独立 audit 未重跑；业务代码、workflow、依赖、原构建与翻译范围保持。质量规范补充 archive/工作区不同字节基线的离线核验方法。
+
+- 交付：f6fb8fedbae517d122dfac71a10192f532a4858f 本地提交 9 个任务/规范文件，未签名、未推送；仅 CI 子任务归档至 archive/2026-09，移动后的文件身份已核对。已实际执行 task.py start 返回父任务，列表确认 26/26 completed。两个源 tar 与一个冗余诊断脚本已清理，共 167179382 bytes；日志与原始失败保留。
+
+## 轮次 40：本地 Linux CI 交付后重新评估
+
+- 26 个关联子任务全部 completed；activeChild 清空，blockedChildren 为空，lastCompletedChild 为 Linux CI。本轮新增的是同一快照的完整 Ubuntu 验收，没有重做已交付的 UI、项目整理或助手修复；主任务和历史持续任务保持未归档。
+
+| 剩余事项 | 当前证据与下一步条件 |
+| --- | --- |
+| Prisma 固定链告警 | 本次完整 npm ci 仍报告 4 high；既有独立完整/生产投影 audit 的具体调用路径分析保持。等兼容上游修复，或明确跨主版本升级范围；不 force、override 或自动降级。 |
+| 实际 GitHub Actions | 本地 Ubuntu 的七个 run 步骤已完整通过，但 checkout/setup-node、远端权限/cache/artifact 和默认网络尚未实际执行。需独立推送/远端运行范围，不能将本地容器结论扩大为远端结果。 |
+| AI Daily 与真实助手服务 | 真实版次、历史验收绑定、审核发布、生产数据库/relay/模型仍按原任务单独验收。本次没有刷新线上状态，也不凭本地 fixture 或迁移通过启用生产。 |
+| 其他本地问题与语言 | 既有可复现 UI/项目/助手问题已交付；当前没有新增失败支持独立修改，这不保证不存在潜在问题。新的复现进入下一有限子任务；authored/SEO 翻译继续暂缓。 |
+
+- 剩余明确事项依赖新的产品/生产范围、兼容上游或可复现证据。父任务保留 in_progress，enabled=false、phase=waiting、round=40；不创建空任务或重复完整测试。
+- 旧 heartbeat 只读核对：CODEX_HOME 下未找到 automation.toml；view automation 仅返回已在应用渲染卡片，未提供状态字段，未修改调度器。当前本地 waiting 不能写成 heartbeat 已成功暂停。相关结果保存在本轮 automation-inspection.json；不重建或覆盖未知配置。

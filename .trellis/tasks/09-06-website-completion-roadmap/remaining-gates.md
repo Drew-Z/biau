@@ -73,4 +73,10 @@
 - 原 Linux CI 本地阻塞已解除：5fa06f51 在全新 Ubuntu 24.04.4 / Node 22.23.2 / npm 10.9.8 空缓存容器中执行全部七个原样 run 步骤，exit 0，smoke 21/0、10260ms，preview 端口释放、任务容器回收、原资源与 678+13 个文件保持。
 - 此次成功使用容器内官方 HTTPS APT（签名/完整性与 TLS 验证保持）和 npm_config_maxsockets=1；仓库 workflow、主机网络/npm 配置与依赖均未改。不把它描述为默认下载环境永久修复或实际 GitHub Actions 通过；远端 checkout/setup-node、权限、缓存与 artifact 仍在独立门禁内。
 - 本轮完整 npm ci 的安装审计仍报告 4 high，与既有 Prisma 固定链告警数量一致；独立完整/生产投影 audit 沿用已归档依赖任务证据，没有 force、override 或跨主版本降级。
-- 单连接预检最初因 archive 与 Windows 工作区换行差异误报后置失败，经离线原字节核对纠正；原失败与后续成功均留档。尚需完成本地资料提交、仅归档 CI，并实际返回父任务评估剩余生产/远端事项。
+- 单连接预检最初因 archive 与 Windows 工作区换行差异误报后置失败，经离线原字节核对纠正；原失败与后续成功均留档。验收资料已由 f6fb8fed 本地提交，仅 CI 子任务归档并实际返回父任务。
+
+## 2026-09-11 第 40 轮当前恢复点
+
+- 已核对 26/26 关联子任务 completed，活动子任务及阻塞子任务均为空。父路线图保持 in_progress，enabled=false、phase=waiting；最后完成项为 Linux CI，未归档父任务或历史持续 UI。
+- 下一项必须有新的独立依据：Prisma 兼容修复/明确升级范围、AI Daily 或助手生产验收范围、实际远端 Actions 范围，或新的本地可复现问题。翻译暂停、本地不推送/部署/签名、不调用真实模型和保护状态快照的边界继续有效。
+- heartbeat 只读 view 返回应用卡片但没有状态字段，CODEX_HOME 下没有找到 automation.toml；未修改未知配置，不能将本地 waiting 当作调度器暂停已验证。
