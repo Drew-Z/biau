@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 126
+- **Total Sessions**: 127
 - **Last Active**: 2026-09-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~778 | Active |
+| `journal-3.md` | ~825 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 127 | 2026-09-10 | Linux CI 阻塞记录与兼容依赖修复 | `210b5916`, `eb25462f` | `main` |
 | 126 | 2026-09-10 | 公开助手本地 PostgreSQL 迁移验收 | `fc1a02a6134e827910684f65ad24df5cc6c6c988` | `main` |
 | 125 | 2026-09-10 | 公开助手窄屏输入修复与路线图第 29 轮评估 | `b3b331fb7816c6d0f88d8fdc500780da576f6624` | `main` |
 | 124 | 2026-09-10 | 项目理解与内容发现基线复核 | - | `main` |

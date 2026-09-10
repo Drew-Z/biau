@@ -776,3 +776,50 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 等待新的可复现本地问题或独立生产/远端 CI 工作范围；authored/SEO 翻译保持暂缓，不重建未确认的 heartbeat。
+
+
+## Session 127: Linux CI 阻塞记录与兼容依赖修复
+
+**Date**: 2026-09-10
+**Task**: Linux CI 阻塞记录与兼容依赖修复
+**Branch**: `main`
+
+### Summary
+
+记录 Ubuntu 24.04 / Node 22 本地 CI 的真实执行边界：旧锁文件的干净安装、lint/build、合同与预算通过，Chromium 依赖反复下载失败，最后一次有界恢复又遇到 npm ECONNRESET；CI 保持 review / blocked，未执行 smoke。随后仅兼容更新锁文件 43 个节点，告警依赖条目从 16 降至 4 high，完整与生产投影 audit 的 exit 1 原样保留。新锁文件在 Windows 的 27 项检查、smoke 21/0、完整 UI 46/0 全部通过。依赖修复已本地提交、仅归档本子任务并实际返回父路线图第 33 轮；剩余项依赖外部条件或独立决策，父任务进入等待。
+
+### Main Changes
+
+- CI 记录提交 210b5916：保存 Ubuntu 下载 500 / unexpected EOF、修正恢复预检查后 npm ECONNRESET 的原始证据；未修改 workflow 或业务代码。8 个任务容器均已清理，原有 17 个容器及运行集合、43 个卷保持。
+- 依赖修复提交 eb25462f：仅修改 package-lock.json，43 个锁定节点兼容升级，新增 / 移除 / 纯 metadata 变化均为 0；package.json、Prisma、Playwright、业务源码、公开数据与保护快照保持。
+- 完整与生产投影审计均剩 prisma / @prisma/config / deepmerge-ts / mysql2 共 4 个 high 条目。已审查固定版本链、官方公告和当前调用路径；没有采用跨主版本降级、overrides 或 audit fix --force，也未把这些条目视为 dev-only。
+- 仅依赖子任务已归档至 .trellis/tasks/archive/2026-09/09-10-stage-6-dependency-security，归档提交 f5c76182；已实际核对会话指针返回父任务。父任务第 33 轮记录 24/25 子任务完成，CI 单独阻塞，enabled=false / phase=waiting。
+- CI 证据：C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-20260910T044412002Z；依赖证据：C:/Users/zhang/AppData/Local/Temp/blog-semi-dependency-triage-20260910T072022177Z。
+- 已删除本轮 CI 的 source.tar 和两份重复 stdout，保留原始结果与复验脚本。npm-cache 删除及此前 undefined 两份材料的处理被自动审批拒绝，仅返回 blocked by policy；继续保留且未提交，未改用其他方法。
+- 收尾使用 add_session.py 的 --stdin 输入详细记录，没有创建一次性 journal 输入文件。翻译继续暂缓，未推送、部署、发布、调用真实模型或启用 Feed/Cron，未修改未确认持久化状态的 heartbeat。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `210b5916` | docs(ci): record Linux baseline and download blockers |
+| `eb25462f` | fix(deps): update compatible packages with security advisories |
+
+### Testing
+
+- [OK] 新锁文件下的 lint、前后端 build、助手/内容/图片/发现/链接/预算等 27 项检查全部 exit 0。
+- [OK] Windows x64 / Node 24.14.0：smoke 21/0、完整 UI 46/0（1306557ms），均取得实际 exit 0；真实模型调用 0。
+- [OK] 505 个非变更输入与 490 个源码/新构建输入在终局无漂移；收尾再次核对 package.json、锁文件和保护快照哈希保持。
+- [BLOCKED] Ubuntu 24.04 / Node 22：旧源 a234e599 的前五步通过，Chromium 安装和 smoke 未完成；新锁文件的静态 engine 通过不能代替 Linux 实跑。
+- [RECORDED] 完整与生产投影 audit 均剩 4 high，实际 exit 1；原始结果、当前调用路径和后续重评条件完整保留。
+- [OK] 自有 preview 已退出且 5197 端口释放，8 个 CI 容器已移除；归档和开发记录按精确白名单核对，原有资料保留。
+
+### Status
+
+[OK] 兼容依赖修复已完成并归档；Linux CI 保持 review / blocked，父路线图保持 in_progress / waiting，不将整个路线图或生产验收标记完成。
+
+### Next Steps
+
+- 下载条件改善后，固定预期源提交与新锁文件，恢复既有 Linux CI 子任务并重跑受依赖变化影响的步骤。
+- Prisma 出现兼容修复或明确独立升级范围后，重查残留公告、依赖链与相关回归；新本地复现问题按父任务协议评估。
+- authored/SEO 翻译继续暂缓；生产模型、发布与 Feed/Cron 保留原门禁，不重建状态未确认的 heartbeat。

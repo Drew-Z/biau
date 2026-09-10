@@ -281,7 +281,7 @@
 - 已实施 `09-10-stage-6-dependency-security`：仅更新锁文件 43 个兼容节点，17 个本机包安装成功，关闭 12 个告警条目；完整与生产投影 audit 均剩 4 high，Prisma 固定依赖的公告、实际路径和跨主版本降级风险已单独记录。package.json、Prisma、Playwright 与业务源码保持。
 - 验证：27 项前后端/助手/内容/图片/预算检查全部 exit 0，smoke 21/0，完整 UI 46/0（1306557ms，实际 exit 0）。505 个非变更输入和 490 个源码/新构建输入无漂移，保护快照不变；自有 preview 已退出且 5197 端口空闲。进入精确本地交付；CI 阻塞项不归档、不计完成。
 - 清理：本轮 CI 的一次性源 tar 与两份重复 stdout 已删除；依赖任务 npm-cache 的删除被自动审批拒绝（仅返回 blocked by policy），缓存保留在任务 Temp，未绕过。早前 undefined 两份文件同样保留且未提交。
-- 交付：`eb25462f756453555fc466d8f61c88b05ee341a6` 已精确本地提交 11 个文件；仅归档依赖子任务至 `archive/2026-09/09-10-stage-6-dependency-security`，原活动目录已不存在。已实际运行 `task.py start 09-06-website-completion-roadmap` 并核对当前会话指针；CI 子任务仍为 review / blocked。
+- 交付：`eb25462f756453555fc466d8f61c88b05ee341a6` 已精确本地提交 11 个文件；仅归档依赖子任务至 `archive/2026-09/09-10-stage-6-dependency-security`，归档提交为 `f5c76182`，原活动目录已不存在。已实际运行 `task.py start 09-06-website-completion-roadmap` 并核对当前会话指针；CI 子任务仍为 review / blocked。开发记录见 journal-3.md 的 Session 127。
 
 ## 轮次 33：兼容依赖交付后重新评估
 

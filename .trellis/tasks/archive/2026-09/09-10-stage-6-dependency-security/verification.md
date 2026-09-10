@@ -37,6 +37,7 @@
 - 已运行 `task.py archive 09-10-stage-6-dependency-security --no-commit`，仅本子任务移动至 `.trellis/tasks/archive/2026-09/09-10-stage-6-dependency-security`；原活动目录已不存在，归档 task.json 为 completed。
 - 已运行 `task.py start 09-06-website-completion-roadmap`，并以 `task.py current --source` 核对当前会话指针为父任务。父任务清空 activeChild、更新 lastCompletedChild 并进入第 33 轮，CI 仍保留 review / blocked。
 - 交付期间只调整任务与开发记录，复用上述同一锁文件的实际终局，不重复安装或全量 UI 检查；未推送、部署或修改自动化。
+- 归档提交为 `f5c76182`；开发记录已写入 `.trellis/workspace/zhang/journal-3.md` 的 Session 127，准确区分依赖任务完成与 Linux CI 阻塞。
 
 证据目录：`C:\Users\zhang\AppData\Local\Temp\blog-semi-dependency-triage-20260910T072022177Z`。
 
