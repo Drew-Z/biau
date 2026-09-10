@@ -1,0 +1,1 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"核对原样 CI run 步骤、实际退出码、smoke 与资源清理；不将容器结果冒称远端 Actions 通过。"}

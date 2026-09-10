@@ -27,7 +27,7 @@
 
 ## 恢复、等待和停止
 
-- 同一失败先诊断、有限修复；重复相同外部失败且没有新证据时记录阻塞，不无限重跑。还有其他独立可执行项就继续。
+- 同一失败先诊断、有限修复；重复相同外部失败且没有新证据时记录阻塞，不无限重跑。还有其他独立可执行项就继续：未通过的子任务保留 `review` 与 `meta.validation.state=blocked`，不得标记完成或归档；父任务以 `blockedChildren` 记录它，清空 `activeChild` 后实际返回父任务，再选择独立项。仅在记录的外部条件变化后恢复阻塞项。
 - 剩余工作全部依赖新产品事实、生产批准或外部条件时，`phase=waiting`，列出精确所需输入并暂停 heartbeat；用户补充后先重新评估。
 - 授权范围全部完成时，或用户停止时，关闭 `enabled` 并暂停 heartbeat。不得为了让循环一直运行而生成无价值修改。
 - 原生会话 heartbeat 每 15 分钟提供恢复机会，只使用本会话和规范目录；正在工作的回合连续执行。它不承诺机器休眠、应用退出、额度/服务错误后仍能执行。成功创建与未来实际触发分别记录。
@@ -42,4 +42,4 @@ python ./.trellis/scripts/task.py list
 python ./.trellis/scripts/task.py start 09-06-website-completion-roadmap
 ```
 
-先读取 `meta.loop.activeChild` 决定恢复父任务还是子任务；上面的最后一条只用于没有未完成子任务、或刚完成子任务并返回评估时。
+先读取 `meta.loop.activeChild` 决定恢复父任务还是子任务；上面的最后一条只用于没有未完成子任务、刚完成子任务并返回评估，或已按上文保存外部阻塞并转入其他独立工作的情况。`blockedChildren` 不能计入 `lastCompletedChild`。

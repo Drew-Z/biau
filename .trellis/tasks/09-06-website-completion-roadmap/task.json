@@ -41,7 +41,8 @@
     "09-10-stage-6-cross-domain-gap-audit",
     "09-10-stage-6-public-link-projection",
     "09-10-stage-5-assistant-composer-fit",
-    "09-10-stage-5-assistant-migration-validation"
+    "09-10-stage-5-assistant-migration-validation",
+    "09-10-stage-6-ci-linux-validation"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -49,12 +50,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
-      "round": 30,
+      "enabled": true,
+      "phase": "assess",
+      "round": 32,
       "activeChild": null,
+      "blockedChildren": ["09-10-stage-6-ci-linux-validation"],
       "lastCompletedChild": "09-10-stage-5-assistant-migration-validation",
-      "nextAction": "Await a new reproducible local issue or separately scoped remote-CI/production work. Authored and SEO translation remain paused; do not rerun passed suites or recreate the unconfirmed heartbeat.",
+      "nextAction": "Keep Linux browser validation in review until package-download conditions improve; assess the confirmed npm advisories and prepare a separate bounded compatible-dependency task.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

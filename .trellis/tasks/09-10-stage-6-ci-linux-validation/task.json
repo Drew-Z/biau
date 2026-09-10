@@ -1,0 +1,35 @@
+{
+  "id": "stage-6-ci-linux-validation",
+  "name": "stage-6-ci-linux-validation",
+  "title": "CI Ubuntu 与 Node 22 本地干净环境验收",
+  "description": "从已提交快照在本地 Ubuntu 24.04/Node 22 容器执行现有 CI 的干净安装、lint/build、合同、性能和浏览器 smoke，保存实际结果与清理证据；不推送或触发远端 CI。",
+  "status": "review",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-10",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [],
+  "notes": "Linux baseline steps passed on a234e599; Chromium and smoke remain blocked by repeated package download failures. Not completed or archived.",
+  "meta": {
+    "validation": {
+      "state": "blocked",
+      "blockedAt": "2026-09-10T07:27:32.1864796Z",
+      "reason": "Three Chromium dependency installs failed with Ubuntu 500/unexpected EOF; the final bounded recovery was then stopped by npm ECONNRESET.",
+      "missingChecks": ["Chromium installation", "Linux browser smoke", "preview exit cleanup"],
+      "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-20260910T044412002Z",
+      "resumeCondition": "Confirm improved local package-download conditions, then pin the intended source snapshot and resume remaining checks. Reassess earlier results if dependencies or workflow change."
+    }
+  }
+}

@@ -263,3 +263,18 @@
 - 已有证据覆盖网站发现/阅读 UI、项目注册与公开链接投影、助手接口/会话/浏览器状态以及本轮数据库迁移；这不等于没有任何潜在问题，只是当前没有尚未关闭且已复现的本地候选，不制造空任务或反复运行已通过检查。
 - 剩余明确门禁是远端 CI 的实际执行、AI Daily 验收记录绑定/真实版次/审核发布、生产服务和真实模型验收。本轮没有刷新其生产状态，也没有扩大本地授权；用户已决定暂缓的 authored/SEO 翻译继续保持。
 - 结论：保存为 `enabled=false`、`phase=waiting`、无活动子任务；等待新的可复现本地问题或独立明确的远端 CI/生产工作范围。未重建或修改持久化状态未确认的 heartbeat，不把本地循环状态当作调度器已暂停的证明。
+
+## 轮次 31：CI 目标环境的本地复核
+
+- 用户继续后按既有本地授权恢复评估。第 10 轮 CI 记录明确仅在 Windows/Git Bash/Node 24 验证过；Ubuntu/Node 22 下的干净 `npm ci`、构建与浏览器 smoke 尚未执行。这是已记录的验收缺口，适合在推送之前本地补齐。
+- 官方 `actions/runner-images` 当前将 x64 `ubuntu-latest` 指向 Ubuntu 24.04。Playwright 官方文档要求镜像与项目版本匹配，但 1.61.1 的 noble Dockerfile 内置 Node 24；实际方案使用官方 Ubuntu 24.04 基础镜像和本机缓存的官方 Node 22 运行时，保留项目锁定的 Playwright 1.61.1。runner、Playwright 文档与 Dockerfile 正文均由 smart-search fetch 取得，provider 为 Tavily，没有模型调用。
+- 下一项只在本机隔离容器中执行已有 workflow 的 run 步骤，使用已提交快照和干净 Linux 依赖。所有下载限于官方镜像、npm 和浏览器/系统安装依赖；检查仍只访问本地页面与 fixture。保留原构建、预览、用户资料、生产配置和保护快照，不推送或调用远端 Actions。
+- 本地结果：初次干净 npm ci、lint、build、四项合同与性能预算均 exit 0；3 次原样 Chromium 安装均在 Ubuntu 软件包下载遇到 `500 / unexpected EOF`。下载恢复配置的预检查误判修正后，新容器又在 npm ci 遇到 `ECONNRESET`，未进入 Chromium / smoke；保存失败证据并停止重跑，不能报告 CI 全通过。
+- 最终核对 678 个文件无漂移、保护快照不变；8 个任务容器全部移除，原有 17 容器 / 43 卷及运行集合保留。本子任务保留 review / blocked，不归档、不计入已完成项；父任务以 blockedChildren 记录，已实际运行 `task.py start 09-06-website-completion-roadmap` 并核对当前会话指针，按外部阻塞协议继续独立工作。
+
+## 轮次 32：依赖告警与既有处置复核
+
+- 新证据：Linux 安装日志报告 16 个存在告警的依赖条目，官方 npm registry 对 package / lock 副本的只读审计也返回 3 moderate / 13 high。原仓库与私有配置未修改，没有执行 audit fix。
+- 7 月 `07-29-public-assistant-reliability-v2/research/dependency-audit.md` 记录当时 React Router RSC 告警无兼容修复；当前审计已将其列为可兼容修复，旧结论不能直接沿用。
+- 当前结果还涉及 qs、Undici、构建/图片工具等依赖，需要按调用路径与已发布补丁区分处理；Prisma 相关条目的自动建议仍包含跨主版本降级，不能使用 `npm audit fix --force`。
+- 下一项只核对具体依赖图、可兼容补丁与回归范围，再决定最小变更。Linux CI 浏览器步骤仍是独立未完成门禁，翻译、生产模型、发布、Feed/Cron 和保护快照边界保持。
