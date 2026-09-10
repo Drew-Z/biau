@@ -703,3 +703,40 @@ Committed the approved Codex-only migration and archived its task locally; prese
 ### Next Steps
 
 - 等待新的可复现网站问题或明确的内容翻译决策；恢复时先重新核对工作区和既有审计证据。
+
+
+## Session 125: 公开助手窄屏输入修复与路线图第 29 轮评估
+
+**Date**: 2026-09-10
+**Task**: 公开助手窄屏输入修复与路线图第 29 轮评估
+**Branch**: `main`
+
+### Summary
+
+修复 320px 英文助手输入提示裁切，并补充等待全屏及字体就绪的真实内部可见性回归。最终 lint/build/performance、助手专项 12 组、边界与长草稿 22 组、smoke 21/0、完整 UI 46/0 和三项助手合同全部通过，528 文件无漂移、保护快照不变。精确本地提交 13 文件，仅归档当前子任务并实际返回父路线图；没有推送。原有资料和 worktree 保留，undefined 下两个本轮临时文件因自动审批拒绝搬移/删除而保留。第 29 轮确认本地 Docker 与已缓存 PostgreSQL 可用于下一项隔离迁移验收，不连接生产数据库。
+
+### Main Changes
+
+- 既有窄屏 CSS 为助手输入框保留三行提示空间；沿用原字号、文案和长草稿滚动。
+- 语言检查等待实际全屏宽度及字体就绪，再验证空输入内部文字完整可见；同步质量规范。
+- 子任务已本地提交、归档并实际回切父路线图，开始第 29 轮有边界的后续评估。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b3b331fb7816c6d0f88d8fdc500780da576f6624` | fix(assistant): prevent narrow composer placeholder clipping |
+
+### Testing
+
+- [OK] lint、build、performance 和三项助手合同。
+- [OK] 助手语言 12 组、边界/长草稿 22 组、smoke 21/0、最终完整 UI 46/0，真实模型调用 0。
+- [OK] 528 个受检文件无漂移，保护快照 SHA-256 不变，精确提交白名单及 diff 检查通过。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 父路线图推进已有助手 PostgreSQL migration check 的一次性本地容器验收；生产数据库、模型和发布门禁保持。

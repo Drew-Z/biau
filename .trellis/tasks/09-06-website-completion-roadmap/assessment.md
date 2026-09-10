@@ -246,4 +246,11 @@
 - 截图复核补充发现：320px 英文助手空输入框在三主题稳定出现 `scrollHeight=76 > clientHeight=57`，提示末行裁切。等待全屏及字体就绪的 10 组核验有 3 组失败、7 组对照通过；现有语言断言只核对文本，没有检查内部可见性。
 - 选择 `09-10-stage-5-assistant-composer-fit`：现有 CSS 的窄屏输入高度与真实浏览器回归；保持原文、字号、业务逻辑和生产边界。详情见 `round-28-validation.md`，不将全量通过扩大为没有任何 UI 问题。
 - 实施与最终验收：窄屏输入框容纳三行提示，新增真实内部可见性断言；旧构建先以 76/57 失败。最终助手专项 12 组、边界/长草稿 22 组、smoke 21/0、完整 UI 46/0（1372710ms，实际 exit 0）、三项助手合同、lint/build/performance/diff 均通过。528 个受检文件无漂移，保护快照不变；进入本地提交和子任务归档。
-- 交付：`b3b331fb7816c6d0f88d8fdc500780da576f6624` 已精确本地提交 13 个文件；仅归档至 `archive/2026-09/09-10-stage-5-assistant-composer-fit`，原活动目录已不存在。原有资料、历史 worktree、保护快照和本轮受自动审批限制的临时文件保留；归档提交后实际回切父任务重新评估。
+- 交付：`b3b331fb7816c6d0f88d8fdc500780da576f6624` 已精确本地提交 13 个文件；仅归档至 `archive/2026-09/09-10-stage-5-assistant-composer-fit`，归档提交为 `b9c4ef44`，原活动目录已不存在。随后实际执行 `task.py start 09-06-website-completion-roadmap` 并核对会话指针已返回父任务。原有资料、历史 worktree、保护快照和本轮受自动审批限制的临时文件保留。
+
+## 轮次 29：窄屏助手交付后再评估
+
+- 当前基线：22 个关联子任务均已完成，本轮窄屏助手修复的最终完整 UI 为 46/0，语言专项 12 组、边界/长草稿 22 组和 smoke 21/0 通过。交付期间只修改任务记录，受检源码与构建保持；不重复运行同一组完整检查。
+- 本轮继续复核尚存门禁与可用本地验收条件。翻译暂缓、生产事实、公开发布、真实模型、Feed/Cron、保护快照和未确认的 heartbeat 状态仍沿用原边界；只依据具体证据选择下一项。
+- 新的可执行条件：只读确认 Docker 当前 context 为 `desktop-linux`，endpoint 为本机 named pipe，server 29.3.1 正在运行，已有 `postgres:18-alpine` 镜像。`scripts/check-public-assistant-revision-migration.mjs` 只接受 loopback PostgreSQL，覆盖空 schema、旧数据回填、7 个触发器、分支/修订归属及级联删除，并在 finally 删除其临时 schema。
+- 选择：下一项仅在一次性本地 PostgreSQL 容器中运行既有 migration check，使用独立数据库、loopback 临时端口和任务自有临时数据，保存结果后清理该容器。它可以补齐第 25 轮缺少测试数据库 URL 的验收，既不需要生产数据库，也不扩张模型或发布授权；若暴露失败，先记录准确证据再定界修复。

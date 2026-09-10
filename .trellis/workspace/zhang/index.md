@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 124
+- **Total Sessions**: 125
 - **Last Active**: 2026-09-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~699 | Active |
+| `journal-3.md` | ~738 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 125 | 2026-09-10 | 公开助手窄屏输入修复与路线图第 29 轮评估 | `b3b331fb7816c6d0f88d8fdc500780da576f6624` | `main` |
 | 124 | 2026-09-10 | 项目理解与内容发现基线复核 | - | `main` |
 | 123 | 2026-09-10 | 暂停网站完善路线图 | - | `main` |
 | 122 | 2026-09-10 | 翻译范围暂缓与路线图等待 | - | `main` |

@@ -41,4 +41,5 @@
 
 - 工作提交：`b3b331fb7816c6d0f88d8fdc500780da576f6624`，13 个文件，精确暂存白名单及 `git diff --cached --check` 通过；没有推送。
 - 提交后源码改动已清零，保护快照保持原 SHA-256；原有九项未跟踪记录及本轮 `undefined/` 两个临时文件继续保留。
-- 已通过 `task.py archive 09-10-stage-5-assistant-composer-fit --no-commit` 仅归档本子任务，归档位置为 `archive/2026-09/09-10-stage-5-assistant-composer-fit`；原活动目录已不存在，当前会话指针已按脚本清空。归档提交后实际返回父任务并补充回切记录。
+- 已通过 `task.py archive 09-10-stage-5-assistant-composer-fit --no-commit` 仅归档本子任务，归档位置为 `archive/2026-09/09-10-stage-5-assistant-composer-fit`；原活动目录已不存在。精确归档提交为 `b9c4ef441b314f2edcd8e1b99493a211b78de8df`。
+- 归档提交后实际运行 `task.py start 09-06-website-completion-roadmap`，再由 `task.py current --source` 确认指针为父任务，来源为 `session:codex_01a081db-9a3f-7093-b8a2-e65d4a776ddc`；父任务进入第 29 轮重新评估，未归档父任务或历史持续 UI 任务。
