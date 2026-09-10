@@ -1,9 +1,15 @@
 import { dirname, resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { heroContent } from '../src/data/hero'
-import { projects, type ProjectDetailSection, type ProjectLink, type ProjectVisualBlock } from '../src/data/portfolio'
+import { projects, type ProjectDetailSection, type ProjectVisualBlock } from '../src/data/portfolio'
 import { MAIN_SITE_URL } from '../src/data/siteLinks'
+import {
+  findProjectPublication,
+  getProjectCta,
+  getPublishedProjectLinks,
+  type ProjectLinkCandidate,
+} from '../src/data/projectPublication'
 import {
   buildPublicFailureSummary,
   classifyHttpResult,
@@ -140,29 +146,56 @@ function flattenSections(sections: Record<string, ProjectDetailSection[] | undef
   return Object.values(sections ?? {}).flatMap((items) => items ?? [])
 }
 
-function pushProjectLink(targets: Map<string, Set<string>>, projectId: string, link: ProjectLink, context: string) {
+function pushProjectLink(targets: Map<string, Set<string>>, projectId: string, link: ProjectLinkCandidate, context: string) {
   pushTarget(targets, link.href, `${projectId}: ${context} / ${link.label}`)
 }
 
-function pushVisualSource(targets: Map<string, Set<string>>, projectId: string, visual: ProjectVisualBlock | undefined) {
-  if (!visual?.sourceUrl) return
-  pushTarget(targets, visual.sourceUrl, `${projectId}: visual ${visual.id} / ${visual.sourceLabel ?? 'source'}`)
+function pushPublishedLinks(
+  targets: Map<string, Set<string>>,
+  projectId: string,
+  publication: ReturnType<typeof findProjectPublication>,
+  links: readonly ProjectLinkCandidate[],
+  context: string,
+) {
+  for (const link of getPublishedProjectLinks(publication, links)) {
+    pushProjectLink(targets, projectId, link, context)
+  }
 }
 
-function collectTargets() {
+function visualSourceCandidate(visual: ProjectVisualBlock | undefined): ProjectLinkCandidate | undefined {
+  if (!visual?.sourceUrl) return undefined
+  return {
+    label: visual.sourceLabel ?? '查看来源',
+    href: visual.sourceUrl,
+    type: visual.sourceUrl.startsWith('/') ? 'internal' : 'external',
+    intent: visual.sourceIntent,
+  }
+}
+
+export function collectTargets() {
   const targets = new Map<string, Set<string>>()
 
   for (const project of heroContent.projects) {
-    pushTarget(targets, project.externalLink, `home hero: ${project.id} / ${project.action}`)
+    const publication = findProjectPublication(project.id)
+    if (!publication) {
+      pushTarget(targets, project.externalLink, `home hero: ${project.id} / ${project.action}`)
+      continue
+    }
+
+    const action = getProjectCta(publication)
+    pushTarget(targets, action.href, `home hero: ${project.id} / ${project.action}`)
   }
 
   for (const project of projects) {
-    if (project.detailLink) pushProjectLink(targets, project.id, project.detailLink, 'detailLink')
-    for (const link of project.links) pushProjectLink(targets, project.id, link, 'project link')
+    const publication = findProjectPublication(project.id)
+    pushPublishedLinks(targets, project.id, publication, project.links, 'project link')
 
     for (const section of flattenSections(project.detailContent)) {
-      for (const link of section.links ?? []) pushProjectLink(targets, project.id, link, `section ${section.title}`)
-      pushVisualSource(targets, project.id, section.visual)
+      pushPublishedLinks(targets, project.id, publication, section.links ?? [], `section ${section.title}`)
+      const visualSource = visualSourceCandidate(section.visual)
+      if (visualSource) {
+        pushPublishedLinks(targets, project.id, publication, [visualSource], `visual ${section.visual?.id ?? 'source'}`)
+      }
     }
   }
 
@@ -305,7 +338,9 @@ async function main() {
   if (!payload.ok) process.exitCode = 1
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exitCode = 1
-})
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exitCode = 1
+  })
+}
