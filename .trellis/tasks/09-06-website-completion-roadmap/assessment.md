@@ -231,3 +231,11 @@
 - 公开助手：知识库、质量、agent/model、图像、多模态、指标、持久化、限流、API、会话和 browser-state 合同通过，fixture 真实模型调用为零。migration check 因缺少 `PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL` 阻塞，未连接真实数据库。
 - 唯一高置信度候选：`scripts/check-public-links.ts` 在 `:152-172` 直接收集原始 hero/portfolio/detail/visual URL；公开页面在 `ProjectCard.tsx:29-31` 和 `ProjectDetailPage.tsx:75-77,270-310` 使用 `getPublishedProjectLinks()` 投影。`unchecked` 项目的 entry 已在页面隐藏为 status-only，但仍被巡检器计入，造成公开链接统计和故障分类噪声。具体证据已归档至 `archive/2026-09/09-10-stage-6-cross-domain-gap-audit`。
 - 结果：子任务已归档并实际返回父任务。下一项创建一个只修改链接巡检目标收集与确定性回归的修复子任务，不修改 publication 状态、公开内容、助手、生产配置或保护快照。
+
+## 轮次 26：公开链接巡检 projection 修复
+
+- 选择：修复上一轮唯一高置信度候选。`scripts/check-public-links.ts` 现在复用 `findProjectPublication`、`getProjectCta` 和 `getPublishedProjectLinks`；页面不可见的原始 `entry` 和未渲染 `detailLink` 不再进入 public link target，status、documentation、repository、evidence 和聚合游戏入口继续进入。
+- 新增确定性命令 `npm.cmd run public-links:projection-check`，覆盖隐藏 entry、status 替换、各类 link intent、聚合游戏和去重。目标集合为 44 个可见目标。
+- 验证：`lint`、`build`、`project-registry:check`、`verification:diagnostics-check`、projection check 和 `git diff --check` 通过。只读现场链接检查未写 snapshot；Node 的 Playlab/主站 connection reset 与 GitHub timeout 仍按网络限制记录。
+- 交付：修复提交 `8188e3d6`，子任务已归档至 `archive/2026-09/09-10-stage-6-public-link-projection`，并实际执行 `task.py start` 返回父任务。上一轮审计归档提交为 `d1f6edce`。
+- 结论：UI smoke（正确端口 `21/21`）、项目整理合同和公开助手合同没有新增缺口；助手 migration 仍只缺测试数据库 URL，生产事实仍未批准。父任务保存为 `enabled=false`、`phase=stopped`，等待新的可复现证据、生产批准或用户提出下一项范围。
