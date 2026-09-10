@@ -23,6 +23,6 @@
 
 官方和镜像的三组单包对照均下载成功，不能将镜像说成永久不可达或已证明的全部失败根因；原整批安装失败日志完整保留。本项的传输试验不包括 lifecycle、audit、Ubuntu 或 Chromium/smoke，正式 CI 仍由原子任务独立完成。Prisma 固定链的残留告警不因下载地址变化而关闭。
 
-本地提交、仅归档本子任务并实际返回父任务后，再恢复原 Ubuntu CI。未推送、部署、调用真实模型、公开内容或启用 Feed/Cron；旧 npm-cache 和 undefined 文件的策略拒绝边界保持。
+已本地提交 `efce524ec74745e928126d0e3cf3ddc4ff0b5ce1`，仅归档本子任务至 `.trellis/tasks/archive/2026-09/09-10-stage-6-lockfile-registry-portability`，原活动目录已不存在；已实际执行 task.py start 返回父任务第 36 轮评估，由父任务继续恢复原 Ubuntu CI。未推送、部署、调用真实模型、公开内容或启用 Feed/Cron；旧 npm-cache 和 undefined 文件的策略拒绝边界保持。
 
 证据目录：`C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l`；主要记录为 registry-candidate.json、candidate-install-result.json、registry-fix-checks.json、registry-fix-validation.json。

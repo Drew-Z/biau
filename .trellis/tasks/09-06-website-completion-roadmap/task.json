@@ -53,14 +53,14 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "deliver",
-      "round": 35,
-      "activeChild": "09-10-stage-6-lockfile-registry-portability",
+      "phase": "assess",
+      "round": 36,
+      "activeChild": null,
       "blockedChildren": [
         "09-10-stage-6-ci-linux-validation"
       ],
-      "lastCompletedChild": "09-10-stage-6-dependency-security",
-      "nextAction": "Apply the verified official-registry-only lockfile candidate within the source-portability child, run lint/build/performance and compare artifact identity, commit and archive that child, then return to the roadmap and resume the existing Ubuntu CI against the new committed source.",
+      "lastCompletedChild": "09-10-stage-6-lockfile-registry-portability",
+      "nextAction": "The registry portability fix efce524e is verified and archived, and this roadmap is active again. Resume the existing Ubuntu CI child from the new committed snapshot, execute all seven original run steps once with clean caches, and preserve the earlier failure records.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,
