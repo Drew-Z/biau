@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 127
+- **Total Sessions**: 128
 - **Last Active**: 2026-09-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~825 | Active |
+| `journal-3.md` | ~879 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 128 | 2026-09-10 | 锁文件官方源修复与 Ubuntu CI 恢复 | `9f6b0e127af88138f12c612203811cee36ebd430`, `efce524ec74745e928126d0e3cf3ddc4ff0b5ce1`, `22d752c8d84e60aae2dbd888b0ea66999b6e6a6c` | `main` |
 | 127 | 2026-09-10 | Linux CI 阻塞记录与兼容依赖修复 | `210b5916`, `eb25462f` | `main` |
 | 126 | 2026-09-10 | 公开助手本地 PostgreSQL 迁移验收 | `fc1a02a6134e827910684f65ad24df5cc6c6c988` | `main` |
 | 125 | 2026-09-10 | 公开助手窄屏输入修复与路线图第 29 轮评估 | `b3b331fb7816c6d0f88d8fdc500780da576f6624` | `main` |

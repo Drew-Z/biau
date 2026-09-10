@@ -823,3 +823,57 @@ Committed the approved Codex-only migration and archived its task locally; prese
 - 下载条件改善后，固定预期源提交与新锁文件，恢复既有 Linux CI 子任务并重跑受依赖变化影响的步骤。
 - Prisma 出现兼容修复或明确独立升级范围后，重查残留公告、依赖链与相关回归；新本地复现问题按父任务协议评估。
 - authored/SEO 翻译继续暂缓；生产模型、发布与 Feed/Cron 保留原门禁，不重建状态未确认的 heartbeat。
+
+
+## Session 128: 锁文件官方源修复与 Ubuntu CI 恢复
+
+**Date**: 2026-09-10
+**Task**: 锁文件官方源修复与 Ubuntu CI 恢复
+**Branch**: `main`
+
+### Summary
+
+完成官方源下载地址修复与独立验收；正式 Ubuntu CI 在包索引下载阶段阻塞，保存资源完整性和父任务第 37 轮恢复条件。
+
+### 本轮交付与证据
+
+- 官方源可移植性修复 efce524e：只将 479 个 resolved 主机名调整为 registry.npmjs.org，522 个 tarball 地址均为官方源；全部版本、integrity、依赖图及 package.json 保持。该子任务已由 d06b5ace 归档并实际回到父任务。
+- 原 f9c1133f 的干净 Ubuntu npm ci 因 ECONNRESET 失败；三个相关包的官方/镜像单包对照均成功，因此没有认定镜像永久不可达或唯一根因。诊断记录提交为 9f6b0e12。
+- 官方源候选的隔离 Linux / Node 22 空缓存传输实验安装 445 包，exit 0、42612ms；该实验使用 --ignore-scripts --no-audit --no-fund，不是完整 CI。应用后主机 lint/build/performance 均 exit 0，677 个非锁文件输入及全部构建无漂移；完整 UI 46/0 与 smoke 21/0 明确复用 eb25462f 的 Windows 证据，本下载地址修复没有重跑全量 UI。
+- d06b5ace 的正式 Ubuntu 24.04.4 / Node 22.23.2 / npm 10.9.8 恢复于 12:02:59 UTC 结束：apt-get update 的 noble/main 索引下载返回 HTTP 500 / unexpected EOF，bootstrap exit 100、外层 exit 1；七项 workflow 检查执行 0 项，npm / Chromium / smoke / preview 均未启动。阻塞资料提交为 22d752c8，没有把旧成功结果合并为本次通过。
+- 终局核对 678 个源/构建输入、13 份原有未跟踪文件及其集合保持；两个自有容器移除，原有 17 容器、运行集合、43 卷保留，新增卷 0。保护快照与 A38EE122...7F59D52 锁文件哈希不变。
+
+### 当前恢复点
+
+父任务已实际 start 并确认会话指针，当前 26 个关联子任务中 25 个 completed；CI 保留 review / blocked，未归档。第 37 轮 enabled=false、phase=waiting、activeChild=null，blockedChildren 仅包含原 CI，lastCompletedChild 为官方源修复。需要完整 Ubuntu 索引和所需包下载可靠的证据，或另行明确目标 runner，再固定源从空缓存执行全部七步；不对相同环境完整重试。
+
+Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1；本次未执行到 npm，没有新的 audit 结果。authored/SEO 翻译继续暂缓，AI Daily 版次、真实助手和远端运行仍在独立门禁内。没有推送、部署、签名、真实模型或生产数据库操作、公开发布、Feed/Cron 或 heartbeat 变更；本地 waiting 不代表已确认调度器暂停。
+
+### 临时资源
+
+已按精确路径和哈希删除本轮两个字体 deb、sharp tarball 及两份源 tar，共 190698308 bytes；保留低敏结果、日志、候选与复验 helper。证据根目录为 C:/Users/zhang/AppData/Local/Temp/blog-semi-ci-linux-resume-20260910T095901931286Z-72kd9_9l，新 CI 结果位于 official-registry-ci/，清理清单为 temporary-cleanup-manifest.json。旧 npm-cache 和 undefined 两份文件此前被自动审批以 blocked by policy 拒绝清理，本轮未重试，继续保留且未提交。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9f6b0e127af88138f12c612203811cee36ebd430` | docs(ci): record registry download diagnostics and recovery boundary |
+| `efce524ec74745e928126d0e3cf3ddc4ff0b5ce1` | fix(deps): use official registry URLs for locked packages |
+| `22d752c8d84e60aae2dbd888b0ea66999b6e6a6c` | docs(ci): record official-registry Ubuntu bootstrap blocker |
+
+### Testing
+
+- [OK] 候选传输安装、主机 lint/build/performance、字段/integrity 比较；完整 UI 46/0 与 smoke 21/0 明确复用 eb25462f，不是本轮重新执行。
+- [BLOCKED] 正式 Ubuntu bootstrap exit 100，七项 workflow 检查执行 0 项，Chromium/smoke/preview 未启动。
+- [OK] 678 个冻结文件、13 份原有资料、原资源与保护快照保持；五个自有临时文件清理；任务关系、提交白名单和 git diff --check 通过。
+
+### Status
+
+- 官方源下载地址子任务已完成并归档。
+- Linux CI 仍为 review / blocked，未完成、未归档；父路线图第 37 轮 waiting。
+
+### Next Steps
+
+- 获得完整 Ubuntu 索引和所需包下载可靠的证据，或另行明确目标 runner 后，恢复原 CI 并固定源从空缓存执行七步；不重复相同环境的完整尝试。
+- Prisma 兼容修复、AI Daily/真实助手/远端验收按各自条件进入；保持翻译暂缓和生产边界。

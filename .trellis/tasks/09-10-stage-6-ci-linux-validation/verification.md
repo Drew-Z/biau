@@ -90,3 +90,4 @@
 - 五个本轮一次性文件已按精确路径及哈希清理，共 190698308 bytes：根目录的两个字体 deb、sharp tarball、旧 source.tar 和 `official-registry-ci/source.tar`。路径、大小、SHA-256 和已删除结果见根目录 `temporary-cleanup-manifest.json`；保留日志、候选锁文件和复验 helper。新源归档哈希为 `63A8B8AAF2032C7F0005E8EA11669DB33E55B499F25FD09ED44600048155A9DD`，恢复时应在新的证据目录按固定提交重新生成。
 - 不对相同环境继续完整重试。恢复条件为完整 Ubuntu 包索引及所需包下载可靠，或另行明确目标 runner；随后固定源提交，从空缓存重做全部七步。少量 tarball 下载成功不能替代包索引与完整 CI 验收。
 - 旧依赖任务 npm-cache 与 undefined 两份文件此前被自动审批以 `blocked by policy` 拒绝清理，本轮没有重试，仍保留且未提交。没有推送、部署、真实模型调用、生产数据库操作或 Feed/Cron 变更。
+- 本轮阻塞资料以 `22d752c8d84e60aae2dbd888b0ea66999b6e6a6c` 精确本地提交 10 个文档/状态文件。已实际执行 task.py start 返回父任务并核对指针，父任务第 37 轮 waiting，blockedChildren 继续保留本项；开发记录为 journal-3.md 的 Session 128。本任务未归档，也未登记完成提交。

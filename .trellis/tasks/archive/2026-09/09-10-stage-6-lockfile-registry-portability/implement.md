@@ -5,4 +5,4 @@
 - [x] 应用仅 resolved 主机名变化的候选，核对完整字段与哈希。
 - [x] 运行 lint/build/performance 并核对输入/构建无漂移，记录完整 UI 证据复用边界。
 - [x] 更新必要质量规范，按白名单本地提交 efce524e、仅归档本子任务并实际返回父任务。
-- [ ] 父任务恢复既有 Ubuntu CI，并记录本轮 journal。
+- [x] 父任务实际恢复既有 Ubuntu CI；本轮开发记录为 journal-3.md 的 Session 128。CI 的独立 bootstrap 下载阻塞由原子任务保存，未计为通过。

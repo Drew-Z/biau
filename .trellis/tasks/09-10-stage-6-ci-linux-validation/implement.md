@@ -36,4 +36,4 @@
 - [ ] 从空缓存执行全部七步：本次在 Ubuntu bootstrap 的 apt-get update 以 exit 100 结束，workflow 步骤实际执行 0 项。
 - [ ] 取得 Chromium / smoke / preview 退出终局及资源、源码完整性核对，再精确本地交付。
 - [x] 保存本次真实失败、两个容器移除、原有资源保留和 678 个输入 / 13 份旧资料无漂移证据；五个本轮一次性下载/源归档文件已清理。
-- [ ] 保留 review / blocked，精确提交阻塞记录、实际返回父任务重新评估，并记录 journal；不归档 CI。
+- [x] 保留 review / blocked，以 22d752c8 精确提交阻塞记录、实际返回父任务第 37 轮重新评估，并记录 Session 128；不归档 CI。
