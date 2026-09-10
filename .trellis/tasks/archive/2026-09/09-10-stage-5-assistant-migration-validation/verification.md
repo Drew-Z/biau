@@ -30,4 +30,6 @@
 
 本项补齐第 25 轮缺少测试数据库的本地验收；结论仅覆盖上述四份迁移和 PostgreSQL 18.4 合成数据，不能扩大为 Supabase RLS、生产数据库版本、线上数据或真实服务已经验收。无业务源码变更，沿用刚完成的 lint/build、完整 UI 46/0 等基线，不重复运行相同检查。
 
-验收日志作为交付证据保留。原有未跟踪资料和上一子任务 `undefined/` 中受自动审批限制的两份临时文件不变。现在进行精确本地提交，随后仅归档本子任务并实际返回父任务。
+验收日志作为交付证据保留。原有未跟踪资料和上一子任务 `undefined/` 中受自动审批限制的两份临时文件不变。工作提交为 `fc1a02a6134e827910684f65ad24df5cc6c6c988`，精确白名单 10 个文件和 staged diff 检查通过；仅本地提交，未推送。
+
+已通过 `task.py archive 09-10-stage-5-assistant-migration-validation --no-commit` 仅归档本子任务，目标为 `archive/2026-09/09-10-stage-5-assistant-migration-validation`；原目录已不存在。归档提交后实际返回父任务并回写结果。
