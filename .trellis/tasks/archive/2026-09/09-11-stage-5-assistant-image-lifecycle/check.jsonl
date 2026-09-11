@@ -1,4 +1,4 @@
-{"file":".trellis/tasks/09-11-stage-5-assistant-image-lifecycle/prd.md","reason":"Image preparation ownership, reset and send requirements"}
+{"file":".trellis/tasks/archive/2026-09/09-11-stage-5-assistant-image-lifecycle/prd.md","reason":"Image preparation ownership, reset and send requirements"}
 {"file":".trellis/spec/frontend/component-guidelines.md","reason":"Public assistant image and interaction boundaries"}
 {"file":".trellis/spec/frontend/state-management.md","reason":"Session state and late completion ownership"}
 {"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Local browser fixtures and full UI delivery gate"}
