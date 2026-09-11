@@ -1029,3 +1029,56 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 已实际返回父路线图第 44 轮，继续核验分支操作 pending 时的输入提交；不扩大翻译或生产范围。
+
+
+## Session 132: 公开助手分支发送隔离与路线图第 45 轮评估
+
+**Date**: 2026-09-11
+**Task**: 公开助手分支发送隔离与路线图第 45 轮评估
+**Branch**: `main`
+
+### Summary
+
+修复分支操作 pending 时向旧路径发送的问题，32 分支场景与 48 图片场景通过，本轮完整 UI 46/0。完成本地交付和子任务归档，实际返回父路线图并保存外部恢复条件。
+
+### Main Changes
+
+### 交付
+
+- 有界复核在 1440/320 × 分支选择/从旧版本继续 × Enter/按钮的 8 个路径均发现旧分支误发。永久回归在旧构建实际失败：chat 实际 1、预期 0。
+- Widget 两处发送限制复用 isAssistantBusy，共用提交函数额外读取已有 Branch pending ref；等待期间保留可编辑草稿，不自动排队发送。保持编辑后重发的同事件调用和既有图片、会话、控制器合同。
+- 新增 32 场景检查，覆盖四个代表配置、两个分支动作的成功/失败/重试/新会话取消；校验 session、Branch、parent Revision、history、草稿及明确发送，接入原完整 UI 的助手组。
+- 工作提交 694f781262cd651f3975bedff6e9972b316c27ed。仅本子任务归档，实际 task.py start 返回父路线图第 45 轮，29/29 关联子任务完成；未归档父任务或历史持续 UI。
+
+### 验证
+
+- lint 无 warning；build、助手 API/会话/browser-state 合同和 performance 通过。分支专项 32/32、图片专项 48/48、smoke 21/0（9627ms）。
+- 本轮唯一一次完整 UI 46/0（1527514ms），包含新增专项和全部既有助手流程，原状态页 wheel 断言通过。未改变该断言，也不宣称已查清旧偶发观察的根因。
+- 最终冻结核对 505 源文件、172 构建、3 规范、47 preview 响应和保护快照保持，原有 13 份资料原字节保持。已复看 320 英文、1440 中文 pending 截图。
+- 自有 preview PID 35168/5198 已停止，等待退出、监听为 0 和真实端口重绑释放均通过；全部本轮检查会话已结束。
+- 未推送、部署、签名、调用真实模型、修改生产 DB/relay、公开内容、Feed/Cron、保护快照或未知 heartbeat 配置。翻译继续保持现状。
+
+### 恢复条件
+
+父任务保持 in_progress，enabled=false、phase=waiting、round=45。下一步由新的可复现本地问题、兼容 Prisma 修复/明确升级范围、独立远端 CI 或 AI Daily/助手生产验收范围触发。本轮未刷新 npm audit、registry 或线上状态；本地等待不代表未知调度器已成功暂停。
+
+证据：C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-branch-knackD。原有未跟踪资料、旧 worktree 和此前被拒绝的清理目标保留。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `694f781262cd651f3975bedff6e9972b316c27ed` | (see git log) |
+
+### Testing
+
+- 分支 32/32、图片 48/48、smoke 21/0、完整 UI 46/0；lint/build、相关助手合同、performance 与冻结输入核对通过。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 父路线图第 45 轮等待新的本地复现、兼容依赖修复或独立远端/生产验收范围；翻译和本地提交边界保持。

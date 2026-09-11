@@ -6,7 +6,7 @@
 - lint 无 warning；build、三项助手合同、两项独立浏览器专项、performance 与 smoke 21/0 全部通过。当前回合没有为获得结果而改动原断言或重跑完整 UI。
 - 进程结束后的 `final-validation.json` 确认 505 源文件、172 构建、3 份规范、47 个实际 preview 响应及保护快照匹配冻结版本；13 份原有资料保持，索引为空。1440 中文与 320 英文代表截图已由主会话复看。
 - 自有 preview PID 35168 已按命令/父 PID/监听归属核对后停止，等待真实退出，再确认监听为 0 并实际绑定释放 5198；`preview-cleanup.json` passed。工具会话 11080 真实终局 exit 1，无剩余本轮检查或 preview。
-- 15 个精确白名单文件已本地、未签名提交为 `694f781262cd651f3975bedff6e9972b316c27ed`，未推送。本子任务已单独归档至 `archive/2026-09`，JSONL 引用修正，并已实际 `task.py start` 返回父路线图第 45 轮；待记录开发 Session。下面的“尚未终局”是过程中的历史状态。
+- 15 个精确白名单文件已本地、未签名提交为 `694f781262cd651f3975bedff6e9972b316c27ed`，未推送。本子任务已单独归档至 `archive/2026-09`，JSONL 引用修正，归档提交 `dd5eb516`；已实际 `task.py start` 返回父路线图第 45 轮并记录 Session 132。下面的“尚未终局”是过程中的历史状态。
 
 ## 过程记录
 
@@ -29,3 +29,9 @@
 - 审查保留编辑后重发在同一事件中的调用合同，未将尚未刷新的 isQuestionEditing 加入 shared submit guard。既有图片同步 ref、active chat ref、会话恢复和 warm-up 限制由 shared busy 与原 refs 保留；相关合同与专项已通过，完整 UI 仍待终局。
 - 规范将该组合门禁和独立检查的命令、环境键、32 场景及错误矩阵落入 state-management / quality-guidelines，并同步 frontend index。未改测试阈值、旧 wheel 断言、业务 CSS、文案或后端。
 - 最终助手完整组实际通过，包含此前待验证的编辑后重发、修订、恢复、取消及图文组合流程；末轮结论见“最终结果”。
+
+## 归档与资源
+
+- Session 132 只引用工作提交；`journal-check.json` 确认原 journal 的 52007 bytes 完整前缀保留，仅追加 53 行。index 仅更新总数、日志行数和新记录，并恢复原 EOF 的一个 LF；未重排历史。
+- 记录验证完成后精确删除自有 Session 输入与两份临时字节备份，共 3 文件、67047 bytes，路径/hash 保存在 `owned-temp-cleanup.json`。原始负向探针、日志、截图、输入 manifest、验证/重放脚本和全部旧资料保留。
+- 父任务的 29/29 子任务已完成，无活动或阻塞子任务；当前明确剩余项依赖新本地复现、兼容上游或独立远端/生产范围，等待条件已写入第 45 轮评估。没有重复完整测试、扩展翻译或修改未知 scheduler。
