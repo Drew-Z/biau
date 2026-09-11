@@ -6,7 +6,10 @@
 - `validation-inputs.json` 已冻结 506 源文件、172 构建、3 规范、47 个实际 preview 响应；13 份旧资料和保护快照一致。
 - 本任务唯一一次完整 UI 实际 exit 0，46 组 / 0 失败、1633051ms；2026-09-11T02:36:56.3135959Z 开始、03:04:12.9503249Z 结束，工具会话 63868 已回收终局，原始结果为 `full-ui-result.json`。
 - `final-validation.json` 实际通过：506 源文件、172 构建、3 规范、47 个实际 preview 响应与冻结记录逐字节一致；索引为空，13 份旧资料与保护快照保持。主会话已查看最终 `history-final/history-pending-restore-320.png` 和 `history-final/history-pending-delete-current-1440.png`，等待态草稿可编辑、发送禁用、原有布局保持。
-- 验证已完成，进入本地工作提交、资源回收和子任务归档；这些交付动作分别在发生后记录，不提前记为完成。
+- 工作提交 `7c09a265dea43818680f754b52153995df69e9ae` 已完成，15 个文件与精确暂存白名单一致；仅本地、未签名、未推送。
+- 自有 preview PID 24392 的父进程、命令、启动时间和 5198 监听归属核对后已停止；进程退出、无监听及真实 `TcpListener` 重绑释放通过，记录为 `preview-cleanup.json`。工具会话 50883 在主动停止后实际 exit 1，属于资源回收终局，不是检查失败。
+- 首次 cleanup 的时间比较把 `ConvertFrom-Json` 自动解码的 DateTime 再按本地时间解析，误触发 PID 复用保护，命令实际 exit 1 且尚未停止进程。`preview-cleanup-time-diagnostic.json` 记录启动 UTC 01:27:51 早于归属记录 UTC 01:37:55；使用 `-DateKind String` 和 `DateTimeOffset` 明确比较 UTC 后通过。没有绕过进程归属核验或写入无效成功记录。
+- 只读 workspace audit 后实际 `task.py archive ... --no-commit` 已仅归档本子任务至 `.trellis/tasks/archive/2026-09/09-11-stage-5-assistant-history-send-gate`；两个 JSONL 中的 PRD 引用修正后各 4 条通过验证。归档 metadata 为 completed，commit 指向本轮工作提交；待实际返回父任务与追加日志。
 
 ## 基线与复现
 
