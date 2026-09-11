@@ -9,6 +9,7 @@ import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
 import { checkSiteLanguage } from './check-site-language-ui.mjs'
 import { checkPublicAssistantImageLifecycle } from './check-public-assistant-image-ui.mjs'
 import { checkPublicAssistantBranchSendGate } from './check-public-assistant-branch-ui.mjs'
+import { checkPublicAssistantHistorySendGate } from './check-public-assistant-history-ui.mjs'
 import { selectSiteLanguage } from './lib/ui-language.mjs'
 import { createAiDailyPublicFixtureItem, createAiDailyPublicPayloads } from './lib/ai-daily-ui-fixtures.mjs'
 import {
@@ -3053,6 +3054,7 @@ await reducedStellarPage.close()
   progress.start('public-assistant', 'warm-up, history, branches, citations, recovery, and cancellation')
   console.log('Public assistant image lifecycle passed:', await checkPublicAssistantImageLifecycle(browser, base))
   console.log('Public assistant branch send gate passed:', await checkPublicAssistantBranchSendGate(browser, base))
+  console.log('Public assistant history send gate passed:', await checkPublicAssistantHistorySendGate(browser, base))
   const publicAssistantFailures = failures.length
 
 const publicAssistantLongToken = `harbor-${'x'.repeat(180)}`

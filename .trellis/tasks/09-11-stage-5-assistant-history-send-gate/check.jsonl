@@ -1,0 +1,4 @@
+{"file":".trellis/tasks/09-11-stage-5-assistant-history-send-gate/prd.md","reason":"Acceptance and preserved boundary review"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Ownership and stale completion gates"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"Editable drafts and history interaction"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Permanent regression, full UI and evidence checks"}

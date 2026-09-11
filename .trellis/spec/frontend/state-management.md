@@ -274,6 +274,40 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Editing a persisted visitor question is an immutable Branch fork, never an in-place Turn mutation or `answer-revision`. Build a `new-turn` intent from the edited Turn's parent: the root uses `{ branchId: null, parentRevisionId: null }`; a later Turn uses the current `activeBranchId` plus that Turn's original `parentRevisionId`. Prompt history contains only Turns before the edited Turn.
 - An edit-and-resend completion always refreshes authoritative Session history before replacing the visible path, even when the new Branch was activated normally. The pending projection may display progress, but it must not assemble or retain old descendants as persisted ancestry. Preserve the force-refresh flag across cancellation and explicit retry.
 
+### History Operation Ownership
+
+- `historyLoadingId !== null` contributes to `isAssistantBusy` for authoritative
+  restore and deletion. `historyActionPendingRef` is the synchronous command gate:
+  acquire it before either action, reject duplicate history actions and chat/Branch
+  commands, and release it only in the current `historyRequestRef` controller's
+  finally. A read-only history-list refresh uses the transport ref but does not
+  acquire this gate or disable explicit chat submission.
+- Closing the history drawer or assistant does not cancel its accepted history
+  action. The editable composer retains the current session's draft, while Enter,
+  native form submission, send, suggestions, regeneration, edit and Branch/image
+  controls remain blocked. Do not queue an automatic send for settlement.
+- Successful restore hydrates the destination's history and its own saved draft;
+  keep the old draft under the old session ID rather than carrying it to the new
+  context. Successful deletion clears the current session's browser state and
+  enters an empty new session. A transient failure keeps the original path and draft; an
+  explicit history retry repeats only that action.
+- If explicit history restoration returns `session-not-found` for the current
+  session, clear its draft/snapshot and replace the visible reducer, mode and
+  restore state with an empty fresh session. `forgetPublicAssistantSession` may
+  select the first remaining capability, so do not commit that ID with the expired
+  transcript still mounted. Preserve other registered capabilities and drafts
+  without automatically activating them. Expiry of a non-current target only
+  removes that target and leaves the current conversation usable.
+- Confirmed deletion of the current session silently calls `stopActiveChat` before
+  DELETE, reusing the captured request/session cancellation identity and transport
+  abort. The late answer cannot keep or repopulate the next conversation. A
+  dismissed confirmation has no effect; deleting a different session does not
+  cancel an independent current generation.
+- New conversation synchronously aborts and clears the history transport, pending
+  ref and loading ID. Unmount invalidates the refs without updating UI state. An
+  older finally must not release a newer history operation; controller identity
+  owns settlement, independently of drawer visibility.
+
 ### Image Preparation Ownership
 
 - Each `preparePublicAssistantImage(File)` call has a unique object identity in

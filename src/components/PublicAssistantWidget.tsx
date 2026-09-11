@@ -547,6 +547,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const branchActionPendingRef = useRef(false)
   const branchActionRequestRef = useRef<AbortController | null>(null)
   const historyRequestRef = useRef<AbortController | null>(null)
+  const historyActionPendingRef = useRef(false)
   const initialRestoreRequestRef = useRef<AbortController | null>(null)
   const initialRestoreTargetRef = useRef<string | null>(shouldRestoreInitialSession ? sessionRegistry.currentSessionId : null)
 
@@ -578,7 +579,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
   const isWarmupReady = warmup.state === 'ready'
-  const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || isImageProcessing || !isWarmupReady
+  const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || historyLoadingId !== null || isImageProcessing || !isWarmupReady
   const isQuestionEditing = editingTurnId !== null
   const launcherLabel = warmup.state === 'warming'
     ? copy.launcher.warming
@@ -708,6 +709,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     activeRequestRef.current?.controller.abort()
     branchActionRequestRef.current?.abort()
     historyRequestRef.current?.abort()
+    historyRequestRef.current = null
+    historyActionPendingRef.current = false
     const initialRestoreRequest = initialRestoreRequestRef.current
     initialRestoreRequest?.abort()
     if (initialRestoreRequestRef.current === initialRestoreRequest) initialRestoreRequestRef.current = null
@@ -1031,6 +1034,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     stopInitialRestore()
     historyRequestRef.current?.abort()
     historyRequestRef.current = null
+    historyActionPendingRef.current = false
     const previousSessionId = sessionIdRef.current
     clearPublicAssistantSessionBrowserState(previousSessionId)
     const nextSessionId = createPublicAssistantSessionId()
@@ -1110,7 +1114,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }
 
   const openHistorySession = async (targetSessionId: string) => {
-    if (!apiBase || historyLoadingId) return
+    if (!apiBase || historyActionPendingRef.current) return
+    historyActionPendingRef.current = true
     stopActiveChat()
     stopBranchAction()
     stopInitialRestore()
@@ -1138,21 +1143,41 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       setIssue(nextIssue)
       if (nextIssue.code === 'session-not-found') {
         clearPublicAssistantSessionBrowserState(targetSessionId)
-        const nextRegistry = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
+        const expiredCurrentSession = targetSessionId === sessionIdRef.current
+        const withoutExpired = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
+        const nextRegistry = expiredCurrentSession && sessionRegistry.sessionIds.some((id) => id !== targetSessionId)
+          ? rememberPublicAssistantSession(withoutExpired, createPublicAssistantSessionId())
+          : withoutExpired
+        if (expiredCurrentSession) {
+          shouldFollowOutputRef.current = true
+          setConversation(createEmptyPublicAssistantConversation())
+          loadSessionBrowserState(nextRegistry.currentSessionId)
+          setIsSnapshotVisible(false)
+          setHasNewContent(false)
+          setHistoryTruncated(false)
+          setInitialRestoreState('ready')
+          setInitialRestoreIssue(null)
+          setIssue(null)
+        }
         commitSessionRegistry(nextRegistry)
         setHistorySessions((current) => current.filter((session) => session.id !== targetSessionId))
       }
     } finally {
       if (historyRequestRef.current === controller) {
         historyRequestRef.current = null
+        historyActionPendingRef.current = false
         setHistoryLoadingId(null)
       }
     }
   }
 
   const removeHistorySession = async (targetSessionId: string) => {
-    if (!apiBase || !window.confirm(copy.history.deleteConfirm)) return
-    if (targetSessionId === sessionIdRef.current) stopBranchAction()
+    if (!apiBase || historyActionPendingRef.current || !window.confirm(copy.history.deleteConfirm)) return
+    historyActionPendingRef.current = true
+    if (targetSessionId === sessionIdRef.current) {
+      stopActiveChat()
+      stopBranchAction()
+    }
     const controller = new AbortController()
     historyRequestRef.current?.abort()
     historyRequestRef.current = controller
@@ -1185,6 +1210,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     } finally {
       if (historyRequestRef.current === controller) {
         historyRequestRef.current = null
+        historyActionPendingRef.current = false
         setHistoryLoadingId(null)
       }
     }
@@ -1274,7 +1300,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     } = {},
   ) => {
     const trimmed = normalizePublicAssistantQuestion(question)
-    if (!trimmed || isAssistantBusy || activeRequestRef.current || branchActionPendingRef.current || imagePreparationRef.current || !isConversationReady) return
+    if (!trimmed || isAssistantBusy || activeRequestRef.current || branchActionPendingRef.current || historyActionPendingRef.current || imagePreparationRef.current || !isConversationReady) return
 
     trackAnalyticsEvent('public_assistant_question', {
       source: 'floating-widget',
@@ -1573,7 +1599,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }
 
   const runBranchAction = async (action: PublicAssistantBranchAction) => {
-    if (!apiBase || !isWarmupReady || !isConversationReady || isSnapshotVisible || branchActionPendingRef.current || isLoading || isQuestionEditing) return
+    if (!apiBase || !isWarmupReady || !isConversationReady || isSnapshotVisible || branchActionPendingRef.current || historyActionPendingRef.current || isLoading || isQuestionEditing) return
     const controller = new AbortController()
     const requestSessionId = sessionIdRef.current
     branchActionPendingRef.current = true

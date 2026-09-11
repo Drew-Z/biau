@@ -848,6 +848,84 @@ Wrong: duplicate a partial set of busy flags in the send button and keyboard pat
 Correct: share `isAssistantBusy` and add the synchronous Branch ref at the command
 boundary, preserving explicit-send semantics and the existing question-edit flow.
 
+### History Pending Send Browser Check
+
+#### 1. Scope / Trigger
+
+Run when changing history restore/deletion, the shared send gate, conversation
+cancellation or session-draft ownership. This complements the Branch and image
+checks and the existing initial-restore coverage.
+
+#### 2. Signatures
+
+```powershell
+$env:UI_CHECK_BASE = 'http://127.0.0.1:5174'
+node scripts/check-public-assistant-history-ui.mjs
+```
+
+`checkPublicAssistantHistorySendGate(browser, base)` returns
+`{ cases: 60, modelCalls: 0 }` after the matrix passes. Full UI calls this function
+inside the existing `public-assistant` group without replacing its other checks.
+
+#### 3. Contracts
+
+`UI_CHECK_BASE` defaults to the local preview above and only accepts loopback
+HTTP(S). Optional `UI_CHECK_ARTIFACT_DIR` receives pending-state and failure
+screenshots. Isolated contexts block service workers and external HTTP requests;
+health, session list/detail/DELETE, cancel and chat are fixtures. Unknown API
+paths fail. History and v2 answers pass the production normalizers through scoped
+`tsx/esm/api` imports in both Node and full UI entry points.
+
+Explicit response gates have bounded waits, controller-abort allowances and
+finally cleanup. Assert DOM controls, session storage and captured requests, not
+React internals. Check `sessionId`, Branch/parent intent and exact prompt history.
+Wait for the history trigger to regain focus after closing its drawer, then place
+the caret deliberately with Control+End before asserting that Shift+Enter appends
+a newline. Loading a saved draft does not guarantee an end selection, and a queued
+drawer-focus restoration must finish before testing composer keyboard input.
+
+#### 4. Validation & Error Matrix
+
+| Condition | Required result |
+| --- | --- |
+| Restore / DELETE pending after drawer close or assistant reopen | Editable owning draft; zero new chats or pending questions; shared controls disabled |
+| Restore success | Destination history and destination draft; old draft stays under its own session |
+| Current deletion success | Empty new session and deleted draft removed; explicit send has null Branch/parent and no old history |
+| Controlled failure / explicit retry | Original context and draft retained; retry repeats the exact operation without sending a question |
+| Current session expires, with or without other saved sessions | Fresh empty context; old draft/snapshot removed; other saved sessions preserved without activation |
+| Non-current restore target expires | Forget only that target; current draft, Branch/parent and history remain usable |
+| New conversation / old response during a newer history operation | Immediate release for New; late old completion cannot restore context or release the newer gate |
+| Current deletion while generation is active | One cancellation with original request/session; no late answer, replay or lingering busy state |
+| Dismissed deletion confirmation | No DELETE or cancellation; original generation remains active |
+| Read-only list refresh pending | Explicit chat remains available and preserves current context |
+| Composition Enter, unknown API, page error or external request | No composition submission; unexpected traffic/errors fail |
+
+#### 5. Good / Base / Bad Cases
+
+Good: close the drawer while B restores, continue editing A's draft, and only
+explicitly send B's own draft after B arrives. Base: failed restoration leaves A
+usable. Bad: treat drawer closure as completed restoration or let an old finally
+enable submission during a newer history operation.
+
+#### 6. Tests Required
+
+The four configurations are 1440/Morning/Chinese, 320/Stellar/English,
+390/Nature/Chinese and 430/Morning/English. Each covers restore/current-delete
+with success, failure, explicit retry and new-session cancellation (8), current
+deletion during generation with success/failure and dismissed-confirmation
+controls (2), superseded history (1), list-only refresh (1), current expiry with /
+without another saved capability and non-current expiry (3): 60 scenarios.
+Retain the old-build failure and final-build pass. Run the Branch/image matrices,
+assistant API/conversation/browser-state contracts, lint/build, performance,
+smoke and full UI before delivery.
+
+#### 7. Wrong vs Correct
+
+Wrong: use `historyLoadingId` only to disable buttons inside the drawer, or cancel
+only Branch work when deleting the generating session. Correct: project history
+operations into shared busy, guard commands synchronously, and release the
+captured active generation on confirmed current-session deletion.
+
 ## SEO And Analytics
 
 - Every public route has useful title, description, canonical, and Open Graph metadata.

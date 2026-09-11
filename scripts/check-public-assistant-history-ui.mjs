@@ -1,0 +1,432 @@
+import assert from 'node:assert/strict'
+import { chromium } from 'playwright'
+import { tsImport } from 'tsx/esm/api'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
+
+const { normalizePublicAssistantSessionHistory, normalizePublicAssistantAnswer } = await tsImport('../src/utils/publicAssistantApi.ts', import.meta.url)
+const sessionIds = ['history-send-ui-session-a', 'history-send-ui-session-b']
+const registryKey = 'biau-public-assistant-sessions-v2'
+const draftPrefix = 'biau-public-assistant-draft-v1:'
+const drafts = ['会话 A 的草稿', '会话 B 的草稿']
+const pendingDraft = '等待历史操作时继续编辑的草稿'
+const configurations = [
+  { width: 1440, theme: 'morning', language: 'zh' },
+  { width: 320, theme: 'stellar', language: 'en' },
+  { width: 390, theme: 'nature', language: 'zh' },
+  { width: 430, theme: 'morning', language: 'en' },
+]
+
+function historyFixture(id) {
+  const date = '2026-09-01T08:00:00.000Z'
+  const branchId = id + '-branch'
+  const revisionId = id + '-revision'
+  return {
+    session: {
+      id, activeBranchId: branchId, title: id, turnCount: 1, hasEarlierTurns: false,
+      createdAt: date, lastActiveAt: date, expiresAt: '2026-10-01T08:00:00.000Z',
+    },
+    branches: [{ id: branchId, ordinal: 1, headRevisionId: revisionId, preview: '本地历史路径', turnCount: 1, hasEarlierTurns: false, lastActiveAt: date }],
+    turns: [{
+      id: id + '-turn', question: '历史问题 ' + id, mode: 'site', parentRevisionId: null,
+      selectedRevisionId: revisionId, createdAt: date,
+      revisions: [{
+        id: revisionId, revisionNo: 1, basedOnRevisionId: null, answer: '历史回答 ' + id,
+        status: 'answered', claims: [], citations: [], suggestions: [], route: 'site',
+        meta: { mode: 'model', citationCount: 0 }, createdAt: date, feedback: null,
+      }],
+    }],
+    hasEarlierTurns: false, revisionsTruncated: false, branchesTruncated: false, truncated: false,
+  }
+}
+
+for (const id of sessionIds) assert.ok(normalizePublicAssistantSessionHistory(historyFixture(id)), 'history fixture must satisfy the production decoder')
+
+async function bounded(promise, label, timeout = 20_000) {
+  let timer
+  try {
+    return await Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(label)), timeout) })])
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+function responseGate() {
+  return { started: Promise.withResolvers(), release: Promise.withResolvers(), settled: Promise.withResolvers(), active: false, allowAbort: false }
+}
+
+async function afterPaint(page) {
+  await page.evaluate(() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done))))
+}
+
+async function currentSession(page) {
+  return page.evaluate(key => JSON.parse(localStorage.getItem(key)).currentSessionId, registryKey)
+}
+
+async function readDraft(page, id) {
+  return page.evaluate(key => JSON.parse(sessionStorage.getItem(key) ?? 'null')?.input ?? null, draftPrefix + id)
+}
+
+async function createHistoryPage(browser, base, configuration, options = {}) {
+  const page = await browser.newPage({ viewport: { width: configuration.width, height: 900 }, reducedMotion: 'reduce', serviceWorkers: 'block' })
+  page.setDefaultTimeout(10_000)
+  const errors = []
+  const chats = []
+  const cancellations = []
+  const actions = []
+  const stages = []
+  const chatGate = responseGate()
+  const listGate = responseGate()
+  const cancellationReceived = Promise.withResolvers()
+  let initialRestore = true
+  let listCount = 0
+  await installLocalNetworkGuard(page, base, () => errors.push('external-request'), { allowLoopback: false })
+  page.on('pageerror', error => errors.push(error.message))
+  await page.addInitScript(({ language, theme, ids, registry, prefix, values }) => {
+    localStorage.setItem('biau-port-language', language)
+    localStorage.setItem('biau-port-theme', theme)
+    localStorage.setItem(registry, JSON.stringify({ version: 2, currentSessionId: ids[0], sessionIds: ids }))
+    ids.forEach((id, index) => sessionStorage.setItem(prefix + id, JSON.stringify({ version: 1, sessionId: id, input: values[index], mode: index === 0 ? 'site' : 'web', updatedAt: Date.now() })))
+  }, { ...configuration, ids: options.onlyCurrent ? sessionIds.slice(0, 1) : sessionIds, registry: registryKey, prefix: draftPrefix, values: drafts })
+  const serveGate = async (gate, reply) => {
+    gate.active = true
+    gate.started.resolve()
+    try {
+      const outcome = await bounded(gate.release.promise, 'history fixture was not released')
+      await reply(outcome)
+    } catch (error) {
+      if (!gate.allowAbort) errors.push('fixture: ' + error.message)
+    } finally {
+      gate.active = false
+      gate.settled.resolve()
+    }
+  }
+  await page.route('**/api/**', async route => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname
+    const reply = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
+    if (path === '/api/health') return reply({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true })
+    if (path === '/api/chat/public/sessions') {
+      listCount += 1
+      const body = { sessions: sessionIds.filter(id => request.postDataJSON().sessionIds.includes(id)).map(id => historyFixture(id).session) }
+      if (options.delayList && listCount === 1) return serveGate(listGate, () => reply(body))
+      return reply(body)
+    }
+    if (path === '/api/chat/public/session') {
+      const body = request.postDataJSON()
+      if (initialRestore && request.method() === 'POST' && body.sessionId === sessionIds[0]) {
+        initialRestore = false
+        return reply(historyFixture(sessionIds[0]))
+      }
+      const gate = stages[actions.length]
+      if (!gate || gate.id !== body.sessionId || gate.method !== request.method()) {
+        errors.push('unexpected-history-operation')
+        return reply({ error: 'unexpected-fixture-request' }, 500)
+      }
+      actions.push({ method: request.method(), body })
+      return serveGate(gate, outcome => outcome === 'failure'
+        ? reply({ error: 'public-assistant-service-unavailable' }, 503)
+        : outcome === 'expired'
+          ? reply({ error: 'session-not-found' }, 404)
+          : reply(request.method() === 'DELETE' ? { ok: true } : historyFixture(body.sessionId)))
+    }
+    if (path === '/api/chat/public/cancel') {
+      const body = request.postDataJSON()
+      cancellations.push(body)
+      cancellationReceived.resolve(body)
+      return reply({ ok: true })
+    }
+    if (path === '/api/chat/public/stream') {
+      const body = request.postDataJSON()
+      const index = chats.length
+      chats.push({ body, whileHistoryPending: stages.some(gate => gate.active), whileListPending: listGate.active })
+      const answer = {
+        contractVersion: 2, requestId: body.requestId, sessionId: body.sessionId,
+        answer: '本地明确发送完成 ' + (index + 1), status: 'answered', claims: [], citations: [], suggestions: [],
+        conversation: {
+          branchId: body.intent?.branchId ?? body.sessionId + '-branch', branchOrdinal: 1,
+          turnId: 'history-send-ui-new-turn-' + index, revisionId: 'history-send-ui-new-revision-' + index,
+          revisionNo: 1, basedOnRevisionId: null, activated: true,
+        },
+        meta: { mode: 'model', citationCount: 0 },
+      }
+      assert.ok(normalizePublicAssistantAnswer(answer), 'chat fixture must satisfy the production decoder')
+      const send = () => route.fulfill({ status: 200, contentType: 'text/event-stream', body: 'event: result\ndata: ' + JSON.stringify(answer) + '\n\n' })
+      if (options.holdChat && index === 0) return serveGate(chatGate, send)
+      return send()
+    }
+    errors.push('unexpected-api: ' + request.method() + ' ' + path)
+    return reply({ error: 'unexpected-fixture-request' }, 500)
+  })
+  const close = async () => {
+    const gates = [...stages, chatGate, listGate]
+    for (const gate of gates) { gate.allowAbort = true; gate.release.resolve('success') }
+    await Promise.all(gates.filter(gate => gate.active).map(gate => bounded(gate.settled.promise, 'history fixture cleanup timed out')))
+    await page.close()
+  }
+  try {
+    await page.goto(base + '/blog', { waitUntil: 'load' })
+    await page.locator('.public-assistant__trigger').click()
+    await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
+    await page.waitForFunction(() => document.querySelector('.public-assistant__composer button[type=submit]')?.disabled === false)
+    assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
+    return { page, errors, chats, cancellations, cancellationReceived, actions, stages, chatGate, listGate, close }
+  } catch (error) {
+    await close()
+    throw error
+  }
+}
+
+async function openHistoryEntry(page, id) {
+  if (!await page.locator('.public-assistant__history').count()) await page.locator('.public-assistant__header-actions button').first().click()
+  const entry = page.locator('.public-assistant__history-list article').filter({ has: page.getByText(id, { exact: true }) })
+  await entry.waitFor({ state: 'visible' })
+  return entry
+}
+
+async function closeHistoryAndRestoreFocus(page) {
+  await page.locator('.public-assistant__history header button').click()
+  await page.waitForFunction(() => document.activeElement === document.querySelector('.public-assistant__header-actions button'))
+}
+
+async function startHistoryAction(test, action, target = action === 'restore' ? sessionIds[1] : sessionIds[0]) {
+  const entry = await openHistoryEntry(test.page, target)
+  const gate = { ...responseGate(), id: target, method: action === 'restore' ? 'POST' : 'DELETE' }
+  test.stages.push(gate)
+  if (action === 'restore') await entry.locator('.public-assistant__history-open').click()
+  else {
+    test.page.once('dialog', dialog => dialog.accept())
+    await entry.locator('.public-assistant__history-delete').click()
+  }
+  await bounded(gate.started.promise, 'history action did not reach its fixture')
+  await closeHistoryAndRestoreFocus(test.page)
+  return gate
+}
+
+async function assertPending(test, draft = pendingDraft, expectedChats = 0, expectedQuestions = 1) {
+  const { page, chats } = test
+  const input = page.locator('#public-assistant-input')
+  assert.equal(await input.isEnabled(), true, 'history pending leaves the owning session draft editable')
+  await input.fill(draft)
+  await input.press('Enter')
+  await page.locator('.public-assistant__composer').evaluate(form => form.requestSubmit())
+  await afterPaint(page)
+  assert.equal(chats.length, expectedChats, 'Enter and form submission must not send while history changes are pending')
+  assert.equal(await page.locator('.public-assistant__composer button[type=submit]').isDisabled(), true, 'send must project the history operation gate')
+  assert.equal(await input.inputValue(), draft)
+  assert.equal(await page.locator('.public-assistant__message.is-user').count(), expectedQuestions, 'blocked submission must not append a pending question')
+  const controls = page.locator('.public-assistant__branch-picker select, .public-assistant__suggestion, .public-assistant__composer .is-attach, .public-assistant__user-message-actions button')
+  assert.ok(await controls.count() > 0)
+  assert.equal(await controls.evaluateAll(elements => elements.every(element => element.disabled)), true, 'context-changing controls share history busy state')
+}
+
+async function settleHistory(test, gate, outcome) {
+  gate.release.resolve(outcome)
+  await bounded(gate.settled.promise, 'history response did not finish')
+  await test.page.waitForFunction(() => document.querySelector('.public-assistant__composer .is-attach')?.disabled === false)
+}
+
+async function explicitSend(test, configuration, id, draft, hasHistory = true, expectedChats = 0, allowListPending = false) {
+  const { page, chats } = test
+  const input = page.locator('#public-assistant-input')
+  assert.equal(chats.length, expectedChats, 'settling history must not automatically send')
+  assert.equal(await currentSession(page), id)
+  assert.equal(await input.inputValue(), draft)
+  await input.press('Control+End')
+  await input.press('Shift+Enter')
+  assert.equal(await input.inputValue(), draft + '\n')
+  await input.dispatchEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true })
+  await afterPaint(page)
+  assert.equal(chats.length, expectedChats, 'composition must not send')
+  if (configuration.language === 'en') await page.locator('.public-assistant__composer button[type=submit]').click()
+  else await input.press('Enter')
+  await page.getByText('本地明确发送完成 ' + (expectedChats + 1), { exact: true }).waitFor({ state: 'visible' })
+  assert.equal(chats.length, expectedChats + 1)
+  const sent = chats[expectedChats]
+  assert.equal(sent.whileHistoryPending, false)
+  assert.equal(sent.whileListPending, allowListPending)
+  assert.equal(sent.body.sessionId, id)
+  assert.equal(sent.body.message, draft)
+  assert.deepEqual(sent.body.intent, { kind: 'new-turn', branchId: hasHistory ? id + '-branch' : null, parentRevisionId: hasHistory ? id + '-revision' : null })
+  assert.deepEqual(sent.body.history, hasHistory ? [{ role: 'user', content: '历史问题 ' + id }, { role: 'assistant', content: '历史回答 ' + id }] : [])
+  assert.equal(await input.inputValue(), '')
+}
+
+async function checkTransition(test, configuration, action, outcome) {
+  const { page } = test
+  let gate = await startHistoryAction(test, action)
+  if (outcome === 'success') {
+    await page.locator('.public-assistant__header-actions button').last().click()
+    await page.locator('.public-assistant__trigger').click()
+  }
+  await assertPending(test)
+  if (process.env.UI_CHECK_ARTIFACT_DIR && outcome === 'success') {
+    await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'history-pending-' + action + '-' + configuration.width + '.png') })
+  }
+  if (outcome === 'new-session') {
+    gate.allowAbort = true
+    await page.locator('.public-assistant__header-actions button').nth(1).click()
+    const nextId = await currentSession(page)
+    assert.notEqual(nextId, sessionIds[0])
+    await page.locator('#public-assistant-input').fill('新会话明确发送')
+    assert.equal(await page.locator('.public-assistant__composer button[type=submit]').isEnabled(), true)
+    gate.release.resolve('success')
+    await bounded(gate.settled.promise, 'cancelled history response did not finish')
+    await afterPaint(page)
+    assert.equal(await page.locator('.public-assistant__branch-picker').count(), 0, 'late history must not restore a previous path')
+    await explicitSend(test, configuration, nextId, '新会话明确发送', false)
+    return
+  }
+  await settleHistory(test, gate, outcome === 'success' ? 'success' : 'failure')
+  let currentDraft = pendingDraft
+  if (outcome !== 'success') {
+    assert.equal(await currentSession(page), sessionIds[0])
+    assert.equal(await page.locator('#public-assistant-input').inputValue(), currentDraft)
+  }
+  if (outcome === 'retry') {
+    gate = await startHistoryAction(test, action)
+    currentDraft += '，重试期间继续编辑'
+    await assertPending(test, currentDraft)
+    assert.deepEqual(test.actions[1], test.actions[0], 'explicit retry retains the same history operation')
+    await settleHistory(test, gate, 'success')
+  }
+  if (outcome === 'failure') await explicitSend(test, configuration, sessionIds[0], currentDraft)
+  else if (action === 'restore') {
+    assert.equal(await readDraft(page, sessionIds[0]), currentDraft, 'restore keeps the old session draft under its old identity')
+    assert.equal(await readDraft(page, sessionIds[1]), drafts[1])
+    await explicitSend(test, configuration, sessionIds[1], drafts[1])
+  } else {
+    const nextId = await currentSession(page)
+    assert.notEqual(nextId, sessionIds[0])
+    assert.equal(await readDraft(page, sessionIds[0]), null, 'deleting the current session removes its draft')
+    assert.equal(await page.locator('#public-assistant-input').inputValue(), '')
+    assert.equal(await page.locator('.public-assistant__message').count(), 0)
+    await page.locator('#public-assistant-input').fill('删除后明确发送')
+    await explicitSend(test, configuration, nextId, '删除后明确发送', false)
+  }
+}
+
+async function checkExpiredHistory(test, configuration, kind) {
+  const { page } = test
+  const target = kind === 'other' ? sessionIds[1] : sessionIds[0]
+  const gate = await startHistoryAction(test, 'restore', target)
+  await assertPending(test)
+  await settleHistory(test, gate, 'expired')
+  const registry = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), registryKey)
+  assert.equal(registry.sessionIds.includes(target), false, 'expired capability must be forgotten')
+  assert.equal(await readDraft(page, target), null, 'expired session draft must be cleared')
+  assert.equal(await page.evaluate(id => sessionStorage.getItem('biau-public-assistant-history-v1:' + id), target), null)
+  if (kind === 'other') {
+    await explicitSend(test, configuration, sessionIds[0], pendingDraft)
+  } else {
+    const nextId = registry.currentSessionId
+    assert.equal(sessionIds.includes(nextId), false, 'current-session expiry must create a fresh context instead of selecting another stored capability')
+    assert.equal(await page.locator('.public-assistant__message').count(), 0, 'expired transcript must not survive under a new session identity')
+    assert.equal(await page.locator('.public-assistant__branch-picker').count(), 0)
+    assert.equal(await page.locator('#public-assistant-input').inputValue(), '')
+    assert.equal(registry.sessionIds.includes(sessionIds[1]), kind === 'current-with-other')
+    if (kind === 'current-with-other') assert.equal(await readDraft(page, sessionIds[1]), drafts[1], 'an unrelated saved session draft remains untouched')
+    await page.locator('#public-assistant-input').fill('过期恢复后的明确问题')
+    await explicitSend(test, configuration, nextId, '过期恢复后的明确问题', false)
+  }
+  assert.equal(test.actions.length, 1, 'expiry must not automatically restore another session')
+}
+
+async function checkActiveDeletion(test, outcome) {
+  const { page, chatGate } = test
+  await page.locator('#public-assistant-input').fill('删除前正在生成的问题')
+  await page.locator('#public-assistant-input').press('Enter')
+  await bounded(chatGate.started.promise, 'initial chat did not start')
+  const entry = await openHistoryEntry(page, sessionIds[0])
+  page.once('dialog', dialog => dialog.dismiss())
+  await entry.locator('.public-assistant__history-delete').click()
+  assert.equal(test.actions.length, 0, 'dismissing deletion must not send DELETE')
+  assert.equal(test.cancellations.length, 0, 'dismissing deletion must not cancel the active generation')
+  assert.equal(await page.locator('.public-assistant__composer .is-stop').count(), 1)
+  chatGate.allowAbort = true
+  const gate = await startHistoryAction(test, 'delete-current')
+  const cancellation = await bounded(test.cancellationReceived.promise, 'confirmed current-session deletion must cancel the active generation', 5_000)
+  assert.deepEqual(cancellation, { requestId: test.chats[0].body.requestId, sessionId: sessionIds[0] })
+  assert.equal(test.cancellations.length, 1)
+  await assertPending(test, pendingDraft, 1, 2)
+  await settleHistory(test, gate, outcome)
+  const nextId = await currentSession(page)
+  assert.equal(nextId === sessionIds[0], outcome === 'failure')
+  await page.locator('#public-assistant-input').fill('删除处理结束后的草稿')
+  assert.equal(await page.locator('.public-assistant__composer button[type=submit]').isEnabled(), true, 'the old generation must not keep the current composer busy')
+  chatGate.release.resolve('success')
+  await bounded(chatGate.settled.promise, 'cancelled chat response did not finish')
+  await afterPaint(page)
+  assert.equal(await currentSession(page), nextId)
+  assert.equal(await page.getByText('本地明确发送完成 1', { exact: true }).count(), 0, 'cancelled generation cannot insert its late answer')
+  assert.equal(await page.locator('#public-assistant-input').inputValue(), '删除处理结束后的草稿')
+  assert.equal(test.chats.length, 1, 'deletion and cancellation do not replay the question')
+}
+
+async function checkSupersededHistory(test, configuration) {
+  const { page } = test
+  const first = await startHistoryAction(test, 'restore')
+  first.allowAbort = true
+  await page.locator('.public-assistant__header-actions button').nth(1).click()
+  const nextId = await currentSession(page)
+  const second = await startHistoryAction(test, 'restore', sessionIds[0])
+  first.release.resolve('success')
+  await bounded(first.settled.promise, 'old history response did not finish')
+  await assertPending(test, pendingDraft, 0, 0)
+  assert.equal(await currentSession(page), nextId, 'superseded history cannot select its session')
+  await settleHistory(test, second, 'success')
+  assert.equal(await readDraft(page, nextId), pendingDraft)
+  assert.equal(await page.locator('#public-assistant-input').inputValue(), '')
+  await page.locator('#public-assistant-input').fill('再次恢复后的明确问题')
+  await explicitSend(test, configuration, sessionIds[0], '再次恢复后的明确问题')
+}
+
+export async function checkPublicAssistantHistorySendGate(browser, base) {
+  const url = new URL(base)
+  assert.ok(['http:', 'https:'].includes(url.protocol) && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname), 'history UI checks require a local preview')
+  let cases = 0
+  for (const configuration of configurations) {
+    const scenarios = [
+      ...['current-with-other', 'current-only', 'other'].map(kind => ({ name: 'expired-' + kind, options: { onlyCurrent: kind === 'current-only' }, run: test => checkExpiredHistory(test, configuration, kind) })),
+      ...['success', 'failure'].map(outcome => ({ name: 'active-deletion-' + outcome, options: { holdChat: true }, run: test => checkActiveDeletion(test, outcome) })),
+      ...['restore', 'delete-current'].flatMap(action => ['success', 'failure', 'retry', 'new-session'].map(outcome => ({ name: action + '-' + outcome, run: test => checkTransition(test, configuration, action, outcome) }))),
+      { name: 'superseded-history', run: test => checkSupersededHistory(test, configuration) },
+      { name: 'list-only', options: { delayList: true }, run: async test => {
+        await test.page.locator('.public-assistant__header-actions button').first().click()
+        await bounded(test.listGate.started.promise, 'list refresh did not start')
+        await closeHistoryAndRestoreFocus(test.page)
+        await explicitSend(test, configuration, sessionIds[0], drafts[0], true, 0, true)
+        test.listGate.release.resolve('success')
+        await bounded(test.listGate.settled.promise, 'list refresh did not finish')
+        await afterPaint(test.page)
+        assert.equal(test.chats.length, 1)
+        assert.equal(await currentSession(test.page), sessionIds[0])
+      } },
+    ]
+    for (const scenario of scenarios) {
+      const label = [configuration.width, configuration.theme, configuration.language, scenario.name].join('/')
+      const test = await createHistoryPage(browser, base, configuration, scenario.options)
+      try {
+        await scenario.run(test)
+        assert.deepEqual(test.errors, [], 'history interactions must not cause page errors or external requests')
+        cases += 1
+      } catch (error) {
+        if (process.env.UI_CHECK_ARTIFACT_DIR) await test.page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'history-failure-' + configuration.width + '-' + scenario.name + '.png') }).catch(() => {})
+        throw new Error(label + ': ' + error.message, { cause: error })
+      } finally {
+        await test.close()
+      }
+    }
+  }
+  return { cases, modelCalls: 0 }
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const browser = await chromium.launch({ headless: true })
+  try {
+    console.log('Public assistant history send gate passed:', await checkPublicAssistantHistorySendGate(browser, process.env.UI_CHECK_BASE ?? 'http://127.0.0.1:5174'))
+  } finally {
+    await browser.close()
+  }
+}

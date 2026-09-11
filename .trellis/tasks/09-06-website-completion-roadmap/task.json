@@ -47,7 +47,8 @@
     "09-10-stage-6-lockfile-registry-portability",
     "09-11-stage-6-local-quick-start",
     "09-11-stage-5-assistant-image-lifecycle",
-    "09-11-stage-5-assistant-branch-send-gate"
+    "09-11-stage-5-assistant-branch-send-gate",
+    "09-11-stage-5-assistant-history-send-gate"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -55,13 +56,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
-      "round": 45,
-      "activeChild": null,
+      "enabled": true,
+      "phase": "deliver",
+      "round": 46,
+      "activeChild": "09-11-stage-5-assistant-history-send-gate",
       "blockedChildren": [],
       "lastCompletedChild": "09-11-stage-5-assistant-branch-send-gate",
-      "nextAction": "Wait for a reproducible local issue, compatible Prisma upstream fix or explicit major-upgrade scope, or independent remote-CI / AI-Daily / assistant-production scope. Branch-send isolation is delivered and all 29 children are complete. Do not repeat unchanged full UI checks or broaden translation; preserve original files, protected snapshots and unknown scheduler configuration.",
+      "nextAction": "Deliver the validated history-operation and expired-session isolation fix through an exact local work commit, owned preview cleanup and child-only archive; then actually return to the roadmap and assess the next bounded candidate. Full UI passed 46/0 and frozen inputs match. Preserve local-only authorization, translation pause, original files, protected snapshot and unknown scheduler configuration.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

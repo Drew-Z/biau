@@ -1,0 +1,52 @@
+{
+  "id": "stage-5-assistant-history-send-gate",
+  "name": "stage-5-assistant-history-send-gate",
+  "title": "公开助手历史会话操作与过期恢复隔离",
+  "description": "Fence sends during history restore/deletion, cancel current generation on deletion, and reset expired current sessions without mixing another session identity with stale history.",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-11",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/PublicAssistantWidget.tsx",
+    "scripts/check-public-assistant-history-ui.mjs",
+    "scripts/check-ui.mjs",
+    ".trellis/spec/frontend/state-management.md",
+    ".trellis/spec/frontend/quality-guidelines.md",
+    ".trellis/spec/frontend/index.md"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "evidenceRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-history-2272dc2221b54956bb9f3d779884aaa3",
+      "previewSessionId": 50883,
+      "fullUiSessionId": 63868,
+      "inputManifest": "validation-inputs.json",
+      "finalValidation": "final-validation.json",
+      "fullUiResult": "full-ui-result.json",
+      "fullUiGroupsPassed": 46,
+      "fullUiGroupsFailed": 0,
+      "fullUiDurationMs": 1633051,
+      "finalScreenshotsReviewed": true,
+      "historyCasesPassed": 60,
+      "branchCasesPassed": 32,
+      "imageCasesPassed": 48,
+      "smokeCasesPassed": 21,
+      "realModelCalls": 0
+    }
+  }
+}
