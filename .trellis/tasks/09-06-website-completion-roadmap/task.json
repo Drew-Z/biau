@@ -60,7 +60,7 @@
       "activeChild": null,
       "blockedChildren": [],
       "lastCompletedChild": "09-11-stage-5-assistant-image-lifecycle",
-      "nextAction": "Complete the image-lifecycle archive and Session 131 bookkeeping, then make a bounded local assessment of composer submission while branch actions are pending. Reproduce a user path before declaring a defect or creating a repair task. Keep the unresolved status-wheel observation as evidence only; preserve all production, translation, original-file and scheduler boundaries.",
+      "nextAction": "Make a bounded local assessment of composer submission while branch actions are pending. Reproduce a user path before declaring a defect or creating a repair task. The image-lifecycle work is archived and recorded in Session 131. Keep the unresolved status-wheel observation as evidence only; preserve all production, translation, original-file and scheduler boundaries.",
       "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
       "automationId": "automation",
       "cadenceMinutes": 15,

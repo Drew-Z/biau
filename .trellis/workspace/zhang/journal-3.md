@@ -975,3 +975,57 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 等待兼容 Prisma 修复或明确升级范围、独立远端 Actions / AI Daily / 助手生产范围，或新的本地可复现问题；翻译暂缓和本地操作边界保持。
+
+
+## Session 131: 公开助手图片生命周期隔离与完整 UI 验收
+
+**Date**: 2026-09-11
+**Task**: 公开助手图片生命周期隔离与完整 UI 验收
+**Branch**: `main`
+
+### Summary
+
+完成图片异步归属、共享发送门禁及 48 场景回归；完整 UI 46/0，通过精确本地交付、子任务归档和父路线图回切。保留阅读夹具诊断、过期会话负向证据与未定根因的滚轮观察。
+
+### Main Changes
+
+### 本轮交付
+
+- 为公开助手的图片准备建立 selection/session 双重归属；新建、历史恢复、删除、过期 ID 变化和移除图片都会使旧结果失效。旧 success/catch/finally 不覆盖新的图片、错误、busy 或 file input。
+- 提交入口同时检查同步 preparation ref 与 React processing 状态，阻止 Enter 在图片就绪前发送；保留文字、Shift+Enter、输入法组合输入、现有压缩和仅内存保存合同。
+- 新增 48 场景的 loopback 浏览器回归，并接入现有完整 UI。阅读延迟模块夹具改为有界等待真实拦截，保留释放前正文未加载和原焦点/滚动断言。
+- 工作提交 916ac7e27fd3b69f270ddd2082a1a72b56050abb；仅本子任务已归档并实际返回父路线图第 44 轮，28/28 子任务完成。翻译保持现状。
+
+### 验证与限制
+
+- 最终 lint 无 warning；build、助手 API/会话/browser-state 合同、performance 均通过。图片 48/48，阅读 48+4+22，smoke 21/0，第四轮独立完整 UI 46/0（1395263ms）。
+- 首轮阅读同步失败、第二轮因新复现的过期会话路径主动中止、第三轮状态页单次 wheel 失败均保留。24 个独立 wheel 场景和 3 次原组重放未复现；第四轮同源码/构建/断言通过，不宣称状态页根因已修复。
+- 最终输入冻结及收尾核对：504 源文件、172 构建、47 个 preview 资源、原有 13 份资料和保护快照保持。收尾只复核磁盘字节，不把它写成重新运行 HTTP/UI。
+- 自有 preview 37300/5198 已退出并真实重新绑定释放。首次 PowerShell non-terminating exception 后的成功声明无效，保留原结果和独立 preview-cleanup-correction.json。
+- 已删除两份被后续快照取代的自有冻结脚本（5884 bytes）；原始日志、manifest、截图、最终验证脚本、旧未跟踪资料与 worktree 保留。
+- 未推送、部署、签名、调用真实模型、修改生产 DB/relay/版次、启用 Feed/Cron 或修改未知 heartbeat。Prisma 固定链告警与独立生产/远端门禁未在本轮刷新。
+
+### 下一步
+
+对分支操作 pending 时的发送行为做有终点的本地核验；只有用户路径确实复现问题后才建独立修复项。保留未定根因的 wheel 观察，不重复完整 UI 碰运气，也不因建议区部分下一行可见而臆造布局缺陷。
+
+本轮证据：C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-image-s795go。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `916ac7e27fd3b69f270ddd2082a1a72b56050abb` | (see git log) |
+
+### Testing
+
+- 图片 48/48、完整 UI 46/0、smoke 21/0、阅读 48+4+22；lint/build、相关助手合同、性能与收尾输入核对均通过。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 已实际返回父路线图第 44 轮，继续核验分支操作 pending 时的输入提交；不扩大翻译或生产范围。

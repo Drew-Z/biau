@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 130
+- **Total Sessions**: 131
 - **Last Active**: 2026-09-11
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~977 | Active |
+| `journal-3.md` | ~1031 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 131 | 2026-09-11 | 公开助手图片生命周期隔离与完整 UI 验收 | `916ac7e27fd3b69f270ddd2082a1a72b56050abb` | `main` |
 | 130 | 2026-09-11 | 快速开始文档契约与 Prisma 上游复核 | `de9a5658362612e869da8291d6a445a0abd6d5a2` | `main` |
 | 129 | 2026-09-11 | Ubuntu CI 全流程验收与下载恢复 | `f6fb8fedbae517d122dfac71a10192f532a4858f` | `main` |
 | 128 | 2026-09-10 | 锁文件官方源修复与 Ubuntu CI 恢复 | `9f6b0e127af88138f12c612203811cee36ebd430`, `efce524ec74745e928126d0e3cf3ddc4ff0b5ce1`, `22d752c8d84e60aae2dbd888b0ea66999b6e6a6c` | `main` |

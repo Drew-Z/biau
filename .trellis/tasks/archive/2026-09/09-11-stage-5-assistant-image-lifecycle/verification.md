@@ -74,7 +74,9 @@
 
 ## 收尾记录
 
-- 实现与最终验证已通过，16 个白名单文件已本地、未签名提交为 `916ac7e27fd3b69f270ddd2082a1a72b56050abb`，未推送。本子任务已单独归档至 `archive/2026-09/09-11-stage-5-assistant-image-lifecycle`，两个 JSONL 的 PRD 引用同步；已实际运行 `task.py start 09-06-website-completion-roadmap` 并由 `current --source` 确认父任务指针。待记录开发 Session。
+- 实现与最终验证已通过，16 个白名单文件已本地、未签名提交为 `916ac7e27fd3b69f270ddd2082a1a72b56050abb`，未推送。本子任务已单独归档至 `archive/2026-09/09-11-stage-5-assistant-image-lifecycle`，两个 JSONL 的 PRD 引用同步；已实际运行 `task.py start 09-06-website-completion-roadmap` 并由 `current --source` 确认父任务指针。归档提交 `7f9d540d` 和工作提交分离。
 - 自有 preview PID 37300 已停止，会话 75434 真实终局 exit 1。首次停止后立即尝试端口重绑时发生 PowerShell non-terminating exception，原 `preview-cleanup.json` 中的成功声明无效，原文件保留。后续启用 terminating errors、确认进程退出及监听为 0，再实际完成 127.0.0.1:5198 的绑定和释放；`preview-cleanup-correction.json` 记录纠正结果及时间 2026-09-10T23:43:32.5379778Z。
 - 已精确删除本轮被第三份输入快照取代的 `freeze-validation.mjs` 与 `freeze-validation-2.mjs`，共 2 文件、5884 bytes；删除前的路径和 SHA-256 保存在 `owned-temp-cleanup.json`。所有输入 manifest、原始失败/中止/成功日志、截图及最终检查脚本保留；原有资料和旧清理拒绝目标未处理。
 - `closeout-before-archive.json` 独立核对最终输入：504 源文件、172 构建、47 个此前验证过的 preview 文件在磁盘上保持原字节，未重启 preview 或重新发送 HTTP 请求；13 份原有资料保持，1513 个不在已批准修改范围内的原 tracked 文件保持。历史 `validation-summary.json` 未覆盖。
+- Session 131 已通过 `add_session.py --no-commit` 记录，只引用工作提交。`journal-final-check.json` 确认原日志 48591 bytes 完整前缀保留，只追加 54 行；index 仅改变总数、当前日志行数和新记录，保留原历史及末尾单个 LF。最初验证入口/CRLF 分隔符未通过的诊断写入 `journal-check.json`，未作为成功依据。
+- 记录核验后精确清理自有 Session 输入及两份临时字节备份，3 文件、63683 bytes，记录于 `journal-temp-cleanup.json`；连同两份旧冻结脚本，本轮共删除 5 个一次性文件、69567 bytes。其他证据和原有资料保持。
