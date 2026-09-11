@@ -254,6 +254,20 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Server recovery metadata belongs to the immutable Revision snapshot and remains distinct from a browser-local degraded fallback. Cancelling, switching sessions, restoring history, or starting a new conversation clears attempt progress and elapsed timers; late completion fences remain authoritative.
 - Successful restore, Branch selection, and continue-from-revision replace the visible path atomically from the normalized server history. The browser never constructs persisted ancestry by joining local messages.
 - Failed Branch selection and continue actions keep the current path, surface a retryable issue in the main conversation, and retain the exact bounded action for explicit retry. A synchronous pending fence prevents double-clicks from sending the action twice; only the authoritative success response hydrates a new path.
+- Composer submission shares `isAssistantBusy` with its send button, including
+  Branch pending work. `submitQuestion` also checks `branchActionPendingRef`
+  synchronously before analytics, request IDs, or pending Turn creation, alongside
+  the active-chat and image-preparation refs. A disabled Branch picker or suggestion
+  is insufficient: Enter and native form submission must use the same command gate.
+- Keep the composer editable while a Branch action is pending. Success, failure,
+  and explicit Branch retry preserve the draft and never queue an automatic send;
+  the visitor's next explicit submission uses the then-authoritative Branch and
+  parent Revision. New-session cancellation releases the fence immediately, while
+  the existing controller/session checks ignore the old response.
+- Do not add the stale `isQuestionEditing` projection to the shared submit guard:
+  `resendEditedQuestion` closes its editor and calls `submitQuestion` within one
+  event, before that React state change commits. Keep editing restrictions in the
+  dedicated command and composer controls.
 - Background health failures never replace a visible user-action issue carrying chat or Branch retry identity. Successful Branch completion clears only the Branch issue it owns, so late independent requests cannot erase another operation's recovery state.
 - A completed replay triggers an authoritative Session-history refresh before the visible path changes. Older controllers, Session captures, frozen replay metadata, or failed history fetches must not move the current Branch head backward.
 - A version-2 completion with `activated: false` belongs to a saved non-active Branch and must not enter the visible Turn list or prompt history. Fetch authoritative Session history just as for replay; if that refresh fails, keep the existing path, show a recovery notice, and disable follow-up until restore succeeds or the visitor starts a new conversation.

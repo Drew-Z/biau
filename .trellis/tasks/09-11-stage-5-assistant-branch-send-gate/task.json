@@ -1,0 +1,65 @@
+{
+  "id": "stage-5-assistant-branch-send-gate",
+  "name": "stage-5-assistant-branch-send-gate",
+  "title": "公开助手分支切换期间的发送隔离",
+  "description": "Prevent composer submission while an authoritative branch action is pending, preserving editable drafts and explicit-send recovery.",
+  "status": "review",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-11",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/PublicAssistantWidget.tsx",
+    "scripts/check-public-assistant-branch-ui.mjs",
+    "scripts/check-ui.mjs",
+    ".trellis/spec/frontend/index.md",
+    ".trellis/spec/frontend/state-management.md",
+    ".trellis/spec/frontend/quality-guidelines.md"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "evidenceRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-branch-knackD",
+      "previewSessionId": null,
+      "fullUiSessionId": null,
+      "fullUi": {
+        "sessionId": 74422,
+        "exitCode": 0,
+        "groups": 46,
+        "failed": 0,
+        "durationMs": 1527514,
+        "startedAt": "2026-09-11T00:29:55.1748853Z",
+        "finishedAt": "2026-09-11T00:55:24.3913601Z",
+        "result": "full-ui-result.json"
+      },
+      "previewCleanup": {
+        "sessionId": 11080,
+        "exitCode": 1,
+        "processId": 35168,
+        "port": 5198,
+        "state": "stopped",
+        "loopbackRebindPassed": true,
+        "evidence": "preview-cleanup.json"
+      },
+      "finalSummary": "final-validation.json",
+      "inputManifest": "validation-inputs.json",
+      "branchCasesPassed": 32,
+      "imageCasesPassed": 48,
+      "smokeCasesPassed": 21,
+      "realModelCalls": 0
+    }
+  }
+}

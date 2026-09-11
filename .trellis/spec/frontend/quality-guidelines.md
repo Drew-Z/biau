@@ -785,6 +785,69 @@ resetting only visible New/Delete buttons. Correct: fence all completion paths
 by selection identity and session, and reset at the current-session ID setter as
 well as same-session history hydration and explicit removal.
 
+### Branch Pending Send Browser Check
+
+#### 1. Scope / Trigger
+
+Run when changing Branch pending state, the shared send gate, draft preservation,
+or cancellation. It complements the existing revision and image checks.
+
+#### 2. Signatures
+
+```powershell
+$env:UI_CHECK_BASE = 'http://127.0.0.1:5174'
+node scripts/check-public-assistant-branch-ui.mjs
+```
+
+`checkPublicAssistantBranchSendGate(browser, base)` returns
+`{ cases: 32, modelCalls: 0 }` and runs inside the full UI `public-assistant` group.
+
+#### 3. Contracts
+
+`UI_CHECK_BASE` defaults to the preview above and accepts only loopback HTTP(S).
+Optional `UI_CHECK_ARTIFACT_DIR` receives representative pending-state screenshots
+and failures. Contexts block service workers and external requests. Health,
+history, Branch, and chat use fixtures; unknown API paths fail. Validate history
+and version-2 answer payloads with the production normalizers via `tsx/esm/api`.
+
+Branch responses use explicit gates with a bounded timeout and timer cleanup.
+Test real Enter and native form submission, editable draft state, and outgoing
+`sessionId`, `intent.branchId`, `intent.parentRevisionId`, and `history`; do not
+inspect React internals. Every scenario finishes its gates and closes its context.
+
+#### 4. Validation & Error Matrix
+
+| Condition | Required result |
+| --- | --- |
+| Branch select / continue pending | Editable draft, disabled send, zero chat and no appended question |
+| Authoritative success | Draft retained; only an explicit send uses the new Branch and parent |
+| Controlled 503 failure | Old path and draft retained; explicit send uses the original active parent |
+| Explicit Branch retry | Same action body; sends remain blocked until its response settles |
+| New conversation during pending | Fence released immediately; late old response cannot restore the old path |
+| Shift+Enter / composition Enter after settlement | Newline / no submission; subsequent explicit command sends exactly once |
+| Unexpected API, page error, external request, or non-loopback base | Fail |
+
+#### 5. Good / Base / Bad Cases
+
+Good: select Branch B, edit the draft while waiting, then explicitly send with B's
+parent after confirmation. Base: a settled failure leaves Branch A usable. Bad:
+disable only the Branch picker while Enter sends the draft with A's stale parent.
+
+#### 6. Tests Required
+
+Four configurations (1440/Morning/Chinese, 320/Stellar/English,
+390/Nature/Chinese, 430/Morning/English) cover both select and continue-from-revision
+with success, failure, explicit retry, and new-session cancellation: 32 scenarios.
+Retain the failing old-build assertion and current-build pass. Run the 48 image
+cases, relevant assistant contracts, lint/build, smoke, performance, and complete UI
+before delivery; the standalone matrix does not replace those gates.
+
+#### 7. Wrong vs Correct
+
+Wrong: duplicate a partial set of busy flags in the send button and keyboard path.
+Correct: share `isAssistantBusy` and add the synchronous Branch ref at the command
+boundary, preserving explicit-send semantics and the existing question-edit flow.
+
 ## SEO And Analytics
 
 - Every public route has useful title, description, canonical, and Open Graph metadata.

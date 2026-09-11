@@ -1274,7 +1274,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     } = {},
   ) => {
     const trimmed = normalizePublicAssistantQuestion(question)
-    if (!trimmed || isLoading || activeRequestRef.current || isImageProcessing || imagePreparationRef.current || !isConversationReady || !isWarmupReady) return
+    if (!trimmed || isAssistantBusy || activeRequestRef.current || branchActionPendingRef.current || imagePreparationRef.current || !isConversationReady) return
 
     trackAnalyticsEvent('public_assistant_question', {
       source: 'floating-widget',
@@ -2338,7 +2338,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
             ) : (
               <button
                 type="submit"
-                disabled={!isWarmupReady || !isConversationReady || isQuestionEditing || isImageProcessing || input.trim().length === 0}
+                disabled={isAssistantBusy || !isConversationReady || isQuestionEditing || input.trim().length === 0}
                 aria-label={copy.composer.sendLabel}
               >
                 <Send size={16} aria-hidden />
