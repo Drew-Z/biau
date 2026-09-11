@@ -8,7 +8,7 @@
 - [x] 按 `trellis-check` 审查实现和草稿/会话边界，运行专项与基础门禁；按 `trellis-update-spec` 沉淀状态与检查合同。
 - [x] 冻结最终 source / build / spec / preview 响应，唯一一次完整 UI 实际 exit 0、46/0，随后 `final-validation.json` 核对通过；所有真实失败单独保留。
 - [x] 按 15 文件精确白名单本地未签名提交 `7c09a265`；自有 preview 退出/无监听/真实端口重绑通过；仅归档本子任务，两个 JSONL 各 4 条引用均重新验证通过。
-- [ ] 实际 `task.py start 09-06-website-completion-roadmap` 返回父任务，追加 Session 和新评估，清理自有一次性临时文件，原证据/旧资料保持。
+- [x] 实际 `task.py start 09-06-website-completion-roadmap` 返回父任务第 47 轮，追加 Session 133 并验证旧日志原字节；清理自有一次性输入/备份 3 个文件、70572 bytes，原证据与旧资料保持。最终提交后保真结果另存 `closeout.json`。
 
 ## 验证入口
 

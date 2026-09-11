@@ -10,6 +10,8 @@
 - 自有 preview PID 24392 的父进程、命令、启动时间和 5198 监听归属核对后已停止；进程退出、无监听及真实 `TcpListener` 重绑释放通过，记录为 `preview-cleanup.json`。工具会话 50883 在主动停止后实际 exit 1，属于资源回收终局，不是检查失败。
 - 首次 cleanup 的时间比较把 `ConvertFrom-Json` 自动解码的 DateTime 再按本地时间解析，误触发 PID 复用保护，命令实际 exit 1 且尚未停止进程。`preview-cleanup-time-diagnostic.json` 记录启动 UTC 01:27:51 早于归属记录 UTC 01:37:55；使用 `-DateKind String` 和 `DateTimeOffset` 明确比较 UTC 后通过。没有绕过进程归属核验或写入无效成功记录。
 - 只读 workspace audit 后实际 `task.py archive ... --no-commit` 已仅归档本子任务至 `.trellis/tasks/archive/2026-09/09-11-stage-5-assistant-history-send-gate`；两个 JSONL 中的 PRD 引用修正后各 4 条通过验证。归档 metadata 为 completed，commit 指向本轮工作提交；待实际返回父任务与追加日志。
+- 归档提交 `08c0db8deed04c20d336a082f86fb621562f9a6e` 已完成；随后实际 `task.py start` 返回父路线图，第 47 轮 assess、30/30 子任务完成，未归档父任务和其他持续任务。剩余本轮日志与最终保真核对独立记录。
+- Session 133 已追加，只引用工作提交；`session-133-preservation.json` 确认旧 journal 的 55240 bytes 完整前缀、index 非自动区与历史行保持，原 EOF LF 已恢复。`session-133-cleanup.json` 确认删除本轮明确自有的输入与备份 3 个文件、70572 bytes；原始日志、截图、manifest、诊断/复现脚本和旧资料保留。日志提交后的最终保真检查记录为 `closeout.json`，该步骤只核对磁盘字节，不重新运行 HTTP/UI。
 
 ## 基线与复现
 

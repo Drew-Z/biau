@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 132
+- **Total Sessions**: 133
 - **Last Active**: 2026-09-11
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~1084 | Active |
+| `journal-3.md` | ~1136 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 133 | 2026-09-11 | 公开助手历史操作与过期恢复隔离 | `7c09a265dea43818680f754b52153995df69e9ae` | `main` |
 | 132 | 2026-09-11 | 公开助手分支发送隔离与路线图第 45 轮评估 | `694f781262cd651f3975bedff6e9972b316c27ed` | `main` |
 | 131 | 2026-09-11 | 公开助手图片生命周期隔离与完整 UI 验收 | `916ac7e27fd3b69f270ddd2082a1a72b56050abb` | `main` |
 | 130 | 2026-09-11 | 快速开始文档契约与 Prisma 上游复核 | `de9a5658362612e869da8291d6a445a0abd6d5a2` | `main` |
