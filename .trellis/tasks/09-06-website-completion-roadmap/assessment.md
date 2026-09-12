@@ -510,3 +510,13 @@
 - 归档提交 `52b6d9fb3b5c5934836f87cc52b46bad7f587e78` 完成；逐项解析 33 个关联子任务记录，全部 completed，父任务当前来源仍为本会话，activeChild/blockedChildren 为空。原有 6 个持续任务保留，不归档父路线图。
 - 本轮有界恢复提示问题已闭合，完整 UI 没有剩余失败；没有证据支持继续创建新的本地修复子任务。生产助手/DB/relay、真实远端 CI、Studio/AI Daily 版次与发布仍需独立范围，authored/SEO 翻译继续暂缓。依赖等待条件沿用 2026-09-12T15:42:56Z 的官方元数据复核，本轮未重复查询或刷新 audit，也未读取当前生产状态。
 - 父任务保持 in_progress，round=50、enabled=false、phase=waiting；等待新本地证据、兼容依赖修复或范围明确的外部任务。没有操作未知 heartbeat 配置，本地 waiting 不表示确认调度器暂停。
+
+### 轮次 50 续跑：图片错误提示的语言一致性
+
+- 用户再次要求继续，基线为 `bbc80a4044585431a5d8d856b04f5e8de3a0a1c9`；1568 tracked、13 原 untracked 保持，506 source/172 build/3 spec 与上轮最终输入一致，没有重复旧全量或依赖查询。
+- 前置分支探针确认切换后重试仍保留原 request/intent，4 组均未把旧问题插入新分支；结合既有精确重试契约，暂不据此修改行为。初版图片探针停在会话准备，未到语言断言，单独保留为准备失败。
+- 使用既有图片夹具完成有效核验：1440/Morning/中文转英文、320/Stellar/英文转中文，已失败后切换与读取 pending 时切换共 4/4 仍显示旧语言。聊天/模型调用 0，草稿保持、页面/外部请求错误 0；原始证据在 `C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-branch-retry-fa3hoffd/image-language-before-valid.json`。
+- 创建并评审 P3 子任务 `09-13-stage-4-assistant-image-error-language`：仅将图片错误状态改为已有代码，在 render 时复用当前字典，扩展既有图片回归和规范。图片解码/压缩/所有权、重试请求身份、CSS、公开内容和依赖保持；本地 loop 恢复 execute 不表示修改 scheduler，归档并实际返回后才递增轮次。
+
+- 最终图片 72、三项助手合同、lint/build、性能与 smoke 21/0 通过。首次完整 UI 在 AI 日报详情页等待超时，原 44 组语言矩阵单独诊断通过；未改代码、超时或断言，完整 UI 16937 复跑实际 exit 0、46/0、组累计 1889430ms（外层 1890995ms），包含图片 72 / Branch 32 / 历史 188，模型 0。首次失败保留，原因未定位，不计通过。
+- `final-validation.json` 核对 506 source / 172 build / 3 spec / 49 HTTP responses 与冻结一致；主会话已复看四配置截图，原 13 份资料与保护状态保持。进入 deliver，按精确 13 文件白名单本地提交，随后仅归档本子任务并实际返回父任务。

@@ -348,6 +348,13 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 
 ### Image Preparation Ownership
 
+- `imageIssue` stores `PublicAssistantImageError['code'] | null`, not translated
+  text. Unknown preparation errors become `decode-failed`. Derive `imageIssueCopy`
+  during render from the current `copy.image` mapping for `unsupported`,
+  `source-too-large`, `output-too-large`, and `decode-failed` (`unreadable`). A
+  closed/reopened widget or a read finishing after a language switch must use the
+  current language without restarting image preparation or clearing the draft.
+  Keep locale changes out of the ownership token and completion side effects.
 - Each `preparePublicAssistantImage(File)` call has a unique object identity in
   `imagePreparationRef` and captures its owning `sessionId`. Success, catch, and
   finally may update state or the native file input only while both still match.

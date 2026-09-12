@@ -723,8 +723,9 @@ Correct: run `check:ui` locally for fixture coverage, then run `check:ui:product
 
 #### 1. Scope / Trigger
 
-Run when changing image preparation, conversation ownership, reset paths, or the
-shared submit gate. This supplements the existing image and conversation checks.
+Run when changing image preparation, image-error language projection, conversation
+ownership, reset paths, or the shared submit gate. This supplements the existing
+image and conversation checks.
 
 #### 2. Signatures
 
@@ -734,7 +735,7 @@ node scripts/check-public-assistant-image-ui.mjs
 ```
 
 `checkPublicAssistantImageLifecycle(browser, base)` returns
-`{ cases: 48, modelCalls: 0 }` after the current matrix passes. The same function
+`{ cases: 72, modelCalls: 0 }` after the current matrix passes. The same function
 runs inside the full UI `public-assistant` group.
 
 #### 3. Contracts
@@ -751,6 +752,15 @@ FileReader operation until the test releases success or dispatches a controlled
 read failure. Assert DOM state, file-input identity, and outgoing payloads rather
 than inspecting React state. Fixture failure is not a production model result.
 
+`checkImageErrorLanguage(test, configuration, scenario)` also checks all four image
+error codes and the unknown-error fallback. Unsupported MIME and oversized input
+exercise the real helper guards; bounded canvas/FileReader fixtures exercise
+encoding limits and read failures. Restore browser-method overrides in finally.
+Switch through the visible close/language/reopen controls in both directions,
+including a failure released only after the language change. Compare authored
+question/answer nodes separately from translated evidence/status labels; assert
+the two fixture content nodes exist before checking their unchanged text.
+
 #### 4. Validation & Error Matrix
 
 | Condition | Required result |
@@ -760,6 +770,9 @@ than inspecting React state. Fixture failure is not a production model result.
 | New session, restored history, deletion, current-session expiry, or remove | Busy/preview/error/input reset; new image selection immediately available |
 | Old success, error, or finally after reset | No stale preview/error; newer busy state and file input retained |
 | Current read failure, then another selection | Existing error shown; retry selection succeeds and clears that error |
+| Error retained across language switch/reopen | Current dictionary text, same draft/mode/session/Branch and authored messages, no new requests |
+| Image read starts before language switch and fails after it | Current language on first error render; busy gate releases normally |
+| Unsupported format, oversized input/output, or unknown image exception | Correct bounded error label in both languages; no raw exception or persisted image bytes |
 | Ready image and explicit Enter | One request with that image; sent draft and preview cleared |
 | Image bytes in either browser storage | Fail |
 
@@ -774,8 +787,12 @@ once. Bad: the preview is protected but an ignored old finally leaves busy true.
 Keep four representative configurations: 1440/Morning/Chinese,
 320/Stellar/English, 390/Nature/Chinese, and 430/Morning/English. Each covers five
 reset paths with old success/failure, the send gate including Shift+Enter and
-composition, and current-failure recovery: 48 cases. Check browser storage in
-every case and retain zero model calls. The standalone check does not replace
+composition, and current-failure recovery: the original 48 cases. Add six language
+cases per configuration (failure before/after the switch, unsupported format,
+oversized input/output, unknown exception), for 72 total. Assert translated text
+containment, empty native file input after failure, unchanged network requests,
+and successful explicit image reselection. Check browser storage in every case
+and retain zero model calls. The standalone check does not replace
 the complete UI suite, smoke, lint/build, or relevant assistant contracts.
 
 #### 7. Wrong vs Correct
@@ -784,6 +801,11 @@ Wrong: clear processing unconditionally in finally, or fence the result while
 resetting only visible New/Delete buttons. Correct: fence all completion paths
 by selection identity and session, and reset at the current-session ID setter as
 well as same-session history hydration and explicit removal.
+
+Wrong: `setImageIssue(copy.image.unreadable)` in an async catch freezes the old
+language. Correct: store the existing typed error code and read `copy.image` in
+the render projection. Changing language must neither finish a held read nor
+retry one; a later failure uses the newly selected language.
 
 ### Branch Pending Send Browser Check
 
@@ -838,7 +860,7 @@ disable only the Branch picker while Enter sends the draft with A's stale parent
 Four configurations (1440/Morning/Chinese, 320/Stellar/English,
 390/Nature/Chinese, 430/Morning/English) cover both select and continue-from-revision
 with success, failure, explicit retry, and new-session cancellation: 32 scenarios.
-Retain the failing old-build assertion and current-build pass. Run the 48 image
+Retain the failing old-build assertion and current-build pass. Run the 72 image
 cases, relevant assistant contracts, lint/build, smoke, performance, and complete UI
 before delivery; the standalone matrix does not replace those gates.
 

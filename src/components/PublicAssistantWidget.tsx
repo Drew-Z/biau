@@ -497,7 +497,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const [progressStage, setProgressStage] = useState<PublicAssistantProgressStage | null>(null)
   const [input, setInput] = useState(initialDraft?.input ?? '')
   const [imageAttachment, setImageAttachment] = useState<PublicAssistantImageAttachment | null>(null)
-  const [imageIssue, setImageIssue] = useState<string | null>(null)
+  const [imageIssue, setImageIssue] = useState<PublicAssistantImageError['code'] | null>(null)
   const [isImageProcessing, setIsImageProcessing] = useState(false)
   const [editingTurnId, setEditingTurnId] = useState<string | null>(null)
   const [editingQuestion, setEditingQuestion] = useState('')
@@ -577,6 +577,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const warmupIssueCopy = warmupIssue ? getAssistantIssueCopy(warmupIssue, isOnline, copy) : null
   const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline, copy) : null
   const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline, copy, 'restore') : null
+  const imageIssueCopy = imageIssue ? {
+    unsupported: copy.image.unsupported,
+    'source-too-large': copy.image.sourceTooLarge,
+    'output-too-large': copy.image.outputTooLarge,
+    'decode-failed': copy.image.unreadable,
+  }[imageIssue] : null
   const issueRetryBlocked = isAssistantIssueRetryBlocked(issue, isOnline)
   const initialRestoreRetryBlocked = historyLoadingId !== null || isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'
@@ -1273,14 +1279,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       setIssue((current) => current?.scope === 'chat' ? null : current)
     } catch (error) {
       if (!isCurrentPreparation()) return
-      const code = error instanceof PublicAssistantImageError ? error.code : 'decode-failed'
-      setImageIssue(code === 'unsupported'
-        ? copy.image.unsupported
-        : code === 'source-too-large'
-          ? copy.image.sourceTooLarge
-          : code === 'output-too-large'
-            ? copy.image.outputTooLarge
-            : copy.image.unreadable)
+      setImageIssue(error instanceof PublicAssistantImageError ? error.code : 'decode-failed')
     } finally {
       if (isCurrentPreparation()) {
         imagePreparationRef.current = null
@@ -2332,7 +2331,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
                 </button>
               </div>
             )}
-            {imageIssue && <p className="public-assistant__image-issue" role="alert">{imageIssue}</p>}
+            {imageIssueCopy && <p className="public-assistant__image-issue" role="alert">{imageIssueCopy}</p>}
             <button
               ref={imageAttachButtonRef}
               type="button"

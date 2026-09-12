@@ -1,0 +1,49 @@
+{
+  "id": "stage-4-assistant-image-error-language",
+  "name": "stage-4-assistant-image-error-language",
+  "title": "公开助手图片错误提示跟随当前语言",
+  "description": "Fix stale translated image-error state after a language change, including errors settling after the language switch; preserve image ownership and recovery behavior.",
+  "status": "review",
+  "dev_type": "frontend",
+  "scope": "public-assistant",
+  "package": null,
+  "priority": "P3",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-13",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/PublicAssistantWidget.tsx",
+    "scripts/check-public-assistant-image-ui.mjs",
+    ".trellis/spec/frontend/state-management.md",
+    ".trellis/spec/frontend/quality-guidelines.md"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "evidenceDir": "C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-branch-retry-fa3hoffd",
+      "checkedAt": "2026-09-12T23:10:02.796705Z",
+      "requiredChecks": 9,
+      "imageCases": 72,
+      "fullUiGroups": 46,
+      "fullUiFailed": 0,
+      "smokeGroups": 21,
+      "fullUiResult": "full-ui-verified-result.json",
+      "inputEvidence": "final-validation.json",
+      "firstFullUiAttempt": "AI Daily detail-page wait timeout; retained separately; 44-group diagnosis and unchanged full UI rerun passed"
+    },
+    "authorization": {
+      "source": "website-completion-roadmap/loop.md and user continue",
+      "localOnly": true
+    }
+  }
+}

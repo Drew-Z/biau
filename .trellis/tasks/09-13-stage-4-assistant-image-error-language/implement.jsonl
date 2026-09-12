@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend checklists and verification entry points"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Image ownership and language projection contracts"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Image fixtures and full UI validation"}
+{"file": ".trellis/tasks/09-13-stage-4-assistant-image-error-language/prd.md", "reason": "Bounded image-error language requirements"}

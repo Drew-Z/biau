@@ -51,7 +51,8 @@
     "09-11-stage-5-assistant-history-send-gate",
     "09-11-stage-5-assistant-session-state-ownership",
     "09-12-stage-5-assistant-restore-retry-gate",
-    "09-13-stage-5-assistant-restore-error-copy"
+    "09-13-stage-5-assistant-restore-error-copy",
+    "09-13-stage-4-assistant-image-error-language"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -59,13 +60,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
+      "enabled": true,
+      "phase": "deliver",
       "round": 50,
-      "activeChild": null,
+      "activeChild": "09-13-stage-4-assistant-image-error-language",
       "blockedChildren": [],
       "lastCompletedChild": "09-13-stage-5-assistant-restore-error-copy",
-      "nextAction": "Round 50 is complete; all 33 linked children are completed, the latest child is archived, and the current task actually returned to this roadmap. The bounded restore-copy issue and final local matrix are resolved with 46/0 full UI; no new actionable local failure is evidenced. Resume on new local evidence, compatible upstream dependency repair, or a separately defined remote-CI/production-assistant/Studio/AI-Daily scope. Keep authored/SEO translation deferred, no push/deploy/sign or production calls, and leave unknown scheduler configuration unchanged. Dependency waiting conditions still reference the 2026-09-12T15:42:56Z check; no new registry or production audit was performed.",
+      "nextAction": "Final image 72, Branch 32, history 188, full UI 46/0, smoke 21/0, lint/build, assistant contracts and performance passed. Final inputs match 506 source / 172 build / 3 spec / 49 local HTTP responses. The first AI Daily detail wait timeout is retained; its original 44-group diagnostic and unchanged full UI rerun passed. Commit the exact 13-file scope locally, archive only this child, then actually return to the roadmap and reassess. No push/deploy/sign, production calls, publication or scheduler changes.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,

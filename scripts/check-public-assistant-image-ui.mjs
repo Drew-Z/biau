@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 
 const { normalizePublicAssistantSessionHistory } = await tsImport('../src/utils/publicAssistantApi.ts', import.meta.url)
+const { publicAssistantInterfaceCopy } = await tsImport('../src/data/publicAssistantInterfaceCopy.ts', import.meta.url)
 const imageBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', 'base64')
 const registryKey = 'biau-public-assistant-sessions-v2'
 const sessionIds = ['image-ui-session-a', 'image-ui-session-b']
@@ -237,10 +238,114 @@ async function checkCurrentFailure(page) {
   assert.equal(await page.locator('.public-assistant__image-issue').count(), 0)
 }
 
+async function checkImageErrorLanguage(test, configuration, scenario) {
+  const { page, chats, requests } = test
+  const input = page.locator('#public-assistant-input')
+  const notice = page.locator('.public-assistant__image-issue')
+  const draft = '图片错误切换语言时保留的草稿'
+  await input.fill(draft)
+  const before = {
+    url: page.url(),
+    registry: await page.evaluate(key => localStorage.getItem(key), registryKey),
+    branch: await page.locator('.public-assistant__branch-picker select').inputValue(),
+    mode: await page.locator('.public-assistant__modes select').inputValue(),
+    messages: await page.locator('.public-assistant__message.is-user > p, .public-assistant__message.is-assistant > .public-assistant-markdown').allTextContents(),
+    requests: [...requests],
+  }
+  assert.equal(before.messages.length, 2, 'the language fixture must expose its question and answer content')
+  let pendingRead = null
+  try {
+    if (scenario.kind === 'language-read-failure') {
+      pendingRead = await selectImage(page, 'language-read-failure.png')
+      if (scenario.timing === 'after-error') await finishImage(page, pendingRead, 'failure')
+    } else {
+      if (scenario.kind === 'language-output-too-large') {
+        await page.evaluate(() => {
+          const nativeToBlob = HTMLCanvasElement.prototype.toBlob
+          window.__assistantImageEncodingRestore = () => { HTMLCanvasElement.prototype.toBlob = nativeToBlob }
+          HTMLCanvasElement.prototype.toBlob = function (callback, type) {
+            callback(new Blob([new Uint8Array(256_001)], { type }))
+          }
+        })
+      } else if (scenario.kind === 'language-unknown-error') {
+        await page.evaluate(() => {
+          const nativeRead = FileReader.prototype.readAsDataURL
+          window.__assistantImageReadRestore = () => { FileReader.prototype.readAsDataURL = nativeRead }
+          FileReader.prototype.readAsDataURL = function () { throw new Error('controlled image-reader failure') }
+        })
+      }
+      await page.locator('.public-assistant__composer input[type=file]').setInputFiles({
+        name: scenario.kind === 'language-unsupported' ? 'unsupported.gif' : 'language-error.png',
+        mimeType: scenario.kind === 'language-unsupported' ? 'image/gif' : 'image/png',
+        buffer: scenario.kind === 'language-source-too-large' ? Buffer.alloc(8_000_001) : imageBytes,
+      })
+    }
+    if (scenario.timing !== 'during-read') {
+      await notice.waitFor({ state: 'visible' })
+      assert.equal(await notice.textContent(), publicAssistantInterfaceCopy[configuration.language].image[scenario.copyKey], 'the fixture must reach the intended image error')
+    }
+  } finally {
+    await page.evaluate(() => {
+      window.__assistantImageEncodingRestore?.()
+      window.__assistantImageReadRestore?.()
+      delete window.__assistantImageEncodingRestore
+      delete window.__assistantImageReadRestore
+    })
+  }
+
+  for (const language of [configuration.language === 'zh' ? 'en' : 'zh', configuration.language]) {
+    await page.locator('.public-assistant__header-actions button').last().click()
+    await page.locator('.nav-lang-toggle').click()
+    await page.locator('.public-assistant__trigger').click()
+    await afterPaint(page)
+    assert.equal(await page.evaluate(() => localStorage.getItem('biau-port-language')), language)
+    if (scenario.timing === 'during-read' && pendingRead !== null) {
+      assert.equal(await notice.count(), 0, 'language changes must not finish the pending image read')
+      assert.equal(await page.locator('.public-assistant__composer .is-attach').isDisabled(), true)
+      await finishImage(page, pendingRead, 'failure')
+      pendingRead = null
+    }
+    await notice.waitFor({ state: 'visible' })
+    assert.equal(await notice.textContent(), publicAssistantInterfaceCopy[language].image[scenario.copyKey], 'image errors must follow the current language even when a read began in another language')
+    assert.equal(await input.inputValue(), draft)
+    assert.equal(await page.locator('.public-assistant__modes select').inputValue(), before.mode)
+    assert.equal(await page.evaluate(key => localStorage.getItem(key), registryKey), before.registry)
+    assert.equal(await page.locator('.public-assistant__branch-picker select').inputValue(), before.branch)
+    assert.deepEqual(await page.locator('.public-assistant__message.is-user > p, .public-assistant__message.is-assistant > .public-assistant-markdown').allTextContents(), before.messages)
+    assert.equal(page.url(), before.url)
+    assert.deepEqual(requests, before.requests, 'language changes must not restore history or submit requests')
+    assert.equal(chats.length, 0)
+    assert.equal(await page.locator('.public-assistant__composer .is-attach').isEnabled(), true)
+    assert.equal(await page.locator('.public-assistant__composer button[type=submit]').isEnabled(), true)
+    assert.equal(await page.locator('.public-assistant__composer input[type=file]').evaluate(node => node.files.length), 0)
+    const contained = await notice.evaluate(node => {
+      const rect = node.getBoundingClientRect()
+      const panel = node.closest('.public-assistant__panel').getBoundingClientRect()
+      return rect.left >= panel.left - 1 && rect.right <= panel.right + 1 && rect.bottom <= panel.bottom + 1 && node.scrollWidth <= node.clientWidth + 1
+    })
+    assert.equal(contained, true, 'translated image errors must remain within the assistant panel')
+    if (process.env.UI_CHECK_ARTIFACT_DIR && scenario.timing === 'during-read' && language !== configuration.language) {
+      await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'image-error-language-' + configuration.width + '-' + language + '.png') })
+    }
+  }
+  const retry = await selectImage(page, 'language-retry.png')
+  await finishImage(page, retry)
+  await page.locator('.public-assistant__image-preview strong').filter({ hasText: 'language-retry.png' }).waitFor({ state: 'visible' })
+  assert.equal(await notice.count(), 0, 'a successful new selection clears the retained image error')
+  assert.equal(await input.inputValue(), draft)
+  assert.deepEqual(requests, before.requests)
+}
+
 export async function checkPublicAssistantImageLifecycle(browser, base) {
   const url = new URL(base)
   assert.ok(['http:', 'https:'].includes(url.protocol) && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname), 'image UI checks require a local preview')
   const scenarios = [
+    { kind: 'language-read-failure', timing: 'after-error', copyKey: 'unreadable' },
+    { kind: 'language-read-failure', timing: 'during-read', copyKey: 'unreadable' },
+    { kind: 'language-unsupported', copyKey: 'unsupported' },
+    { kind: 'language-source-too-large', copyKey: 'sourceTooLarge' },
+    { kind: 'language-output-too-large', copyKey: 'outputTooLarge' },
+    { kind: 'language-unknown-error', copyKey: 'unreadable' },
     { kind: 'send-gate' },
     ...['new-session', 'history', 'delete', 'remove', 'expired-current'].flatMap(kind => ['success', 'failure'].map(outcome => ({ kind, outcome }))),
     { kind: 'current-failure' },
@@ -248,10 +353,12 @@ export async function checkPublicAssistantImageLifecycle(browser, base) {
   let cases = 0
   for (const configuration of configurations) {
     for (const scenario of scenarios) {
-      const label = [configuration.width, configuration.theme, configuration.language, scenario.kind, scenario.outcome].filter(Boolean).join('/')
-      const { page, errors, chats } = await createImagePage(browser, base, configuration, scenario.kind === 'expired-current')
+      const label = [configuration.width, configuration.theme, configuration.language, scenario.kind, scenario.timing, scenario.outcome].filter(Boolean).join('/')
+      const test = await createImagePage(browser, base, configuration, scenario.kind === 'expired-current')
+      const { page, errors, chats } = test
       try {
-        if (scenario.kind === 'send-gate') await checkSendGate(page, chats)
+        if (scenario.kind.startsWith('language-')) await checkImageErrorLanguage(test, configuration, scenario)
+        else if (scenario.kind === 'send-gate') await checkSendGate(page, chats)
         else if (scenario.kind === 'current-failure') await checkCurrentFailure(page)
         else await checkResetRace(page, chats, scenario.kind, scenario.outcome, configuration.language)
         await assertNoPersistedImages(page)
@@ -263,7 +370,7 @@ export async function checkPublicAssistantImageLifecycle(browser, base) {
         cases += 1
       } catch (error) {
         if (process.env.UI_CHECK_ARTIFACT_DIR) {
-          await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'image-lifecycle-failure-' + configuration.width + '-' + scenario.kind + '.png') }).catch(() => {})
+          await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'image-lifecycle-failure-' + configuration.width + '-' + scenario.kind + (scenario.timing ? '-' + scenario.timing : '') + '.png') }).catch(() => {})
         }
         throw new Error(label + ': ' + error.message, { cause: error })
       } finally {
