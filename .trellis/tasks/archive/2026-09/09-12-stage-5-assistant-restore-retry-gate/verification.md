@@ -1,6 +1,6 @@
 # 验收记录
 
-状态：质量门禁通过，工作提交完成，子任务已移入归档目录，等待父任务返回。
+状态：质量门禁通过，工作/归档提交完成，已实际返回父任务。
 
 ## 旧版本证据
 
@@ -37,3 +37,9 @@
 工作提交为 `f467ecaa0e130af5cce19e854ef8fd7df391a251`，精确 13 文件。`work-commit.json` 已验证 Git blob、工作树原字节、父提交与无签名状态；未混入原有资料，未推送。
 
 本子任务已通过 `task.py archive --no-commit` 移入 `archive/2026-09/09-12-stage-5-assistant-restore-retry-gate`；两个 JSONL 的 PRD 引用已同步归档位置。其余历史持续任务与父路线图保持开放。
+
+归档提交 `3c42bcaa9eb6a17668ba9e9e4505ab838cbc6692` 已核对七文件移动及父记账；随后实际运行 `task.py start 09-06-website-completion-roadmap` 并确认会话指针。父任务进入轮次 49，32/32 子项完成，本子任务所有 PRD 验收项闭合。
+
+本轮预览已关闭：`preview-cleanup.json` 确认 PID 29344 的创建时间/路径/命令及端口归属一致后停止，进程退出、5198 无监听且重新绑定成功；未停止其他进程。父任务的依赖条件复核仅查官方元数据，package/lock 原字节未变，不影响本次冻结验收。
+
+Session 135 已记录；原 journal 61587 字节前缀、index 134 条历史行内容和顺序均保持。`temporary-cleanup.json` 记录本轮两份一次性元数据脚本（6160 bytes）及更早生成的 fixture 模块已删除；原资料未删除，证据日志/截图/清单保留。最终日志提交的原字节与 Git blob 记录于 `journal-commit.json`，提交后的冻结输入/原文件校验以 `closeout.json` 为准。

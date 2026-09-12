@@ -479,3 +479,14 @@
 - 修复和质量门禁已完成：源码仅两处 gate 判断，永久回归在旧构建按预期失败；最终 history 152、Branch 32、image 48、smoke 21/0、完整 UI 46/0（1737358 ms）、lint/build、三项合同及性能均真实通过。完整 UI 内同样执行三套助手矩阵，真实模型调用为 0。
 - `final-validation.json` 已验证 506 source、172 build、3 spec、49 个实际 HTTP 响应与冻结输入一致，原 13 份资料及保护快照保持。精确提交范围为 6 个既有文件及本子任务 7 个文件，尚未归档；下一步仅本地提交、归档、实际返回与新评估。
 - 工作提交 `f467ecaa0e130af5cce19e854ef8fd7df391a251` 已完成并核对精确 13 文件、Git blob、受检原字节与无签名状态。只归档本子任务到 `archive/2026-09/09-12-stage-5-assistant-restore-retry-gate`，同步两份 JSONL 的 PRD 引用；其余持续任务保持开放。先完成本次七文件移动及父记账提交，再实际返回父任务并进入轮次 49。
+
+## 轮次 49：恢复重试互斥交付后重新评估
+
+- 工作提交 `f467ecaa0e130af5cce19e854ef8fd7df391a251`、归档提交 `3c42bcaa9eb6a17668ba9e9e4505ab838cbc6692` 已完成，均未签名或推送。已实际 `task.py start 09-06-website-completion-roadmap`，本会话指针返回父任务；activeChild 清空、lastCompletedChild 更新，32/32 关联子任务完成。
+- 本次有界本地回归没有尚未处理的失败：历史 152、Branch 32、image 48、smoke 21/0、完整 UI 46/0，加上 lint/build、三项合同和性能均通过；最终输入/49 个 HTTP 响应及原资料保真通过。不会因持续循环重复同一套检查或创建空子任务。
+- 任务清单仍保留 manual-gates、AI Daily pipeline/production-operations、公开助手 relay、持续 UI 与本路线图，共 6 项。下一步只核对此前记录的兼容依赖修复条件是否变化；真实远端 CI、生产助手/DB/relay、Studio 发布、AI Daily 容量/版次及 authored/SEO 翻译边界保持，不把旧记录说成当前生产验收。
+- 2026-09-12T15:42:56Z 已从官方 npm 元数据复核依赖条件：`prisma` 的 `latest` 指向 `8.0.0-rc.14`，超出当前声明；现有 `^7.9.1` 内稳定版本为 7.9.1、7.10.0，最高 7.10.0 仍精确依赖 `mysql2@3.15.3`，其 `@prisma/config@7.10.0` 仍精确依赖 `deepmerge-ts@7.1.5`。此前等待的两条固定边尚未获得兼容修复，不为新版号本身创建升级子任务。
+- 依据为证据目录 `dependency-condition.json`，含官方 URL、响应 SHA-256、版本范围与依赖字段；package.json / lock 原字节保持，未安装、未执行新的 audit，因此不把旧“4 high”说成当前审计结果。两次元数据准备错误（将 latest 当作原主版本结构、版本端点不接受 install-v1 格式而返回 406）分别保留；改为稳定范围选择和 application/json 后取得上述结果，不计为产品回归。
+- 本轮没有其他已复现且待交付的本地失败；父任务保持 in_progress，`enabled=false`、`phase=waiting`、`round=49`。等待新本地证据、兼容上游修复，或用户定义独立远端/生产/发布范围；不重复全量 UI、不创建空子任务。未知 heartbeat 配置未修改，本地 waiting 不等于确认调度器暂停。
+- 本轮预览 PID 29344 已按创建时间、可执行路径、命令行和监听归属精确核对后停止；`preview-cleanup.json` 确认进程退出、5198 无监听且可实际重新绑定，没有停止其他进程。其余验收日志/截图/输入清单保留供回查，原 13 份资料及历史 worktree 保留。
+- Session 135 已记录并验证原 journal 61587 字节前缀和 index 134 条历史行保持；本轮两份元数据准备脚本（6160 bytes）及早前生成的 fixture 模块已清理，失败/成功证据保留。最后一次本地记录提交后核对 `closeout.json` 所绑定的最终 HEAD、冻结输入和原资料，不重跑已经通过的完整 UI。

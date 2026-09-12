@@ -52,6 +52,7 @@
       "fullUiDurationMs": 1737358,
       "finalValidation": "final-validation.json",
       "workCommitReceipt": "work-commit.json",
+      "previewCleanup": "preview-cleanup.json",
       "realModelCalls": 0
     }
   }

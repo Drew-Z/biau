@@ -1181,3 +1181,43 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 已实际返回父路线图第 48 轮等待；新的本地复现、兼容依赖修复或明确远端/生产范围出现后继续。原资料与未知 scheduler 保持。
+
+
+## Session 135: 公开助手恢复重试互斥与路线图第49轮评估
+
+**Date**: 2026-09-13
+**Task**: 公开助手恢复重试互斥与路线图第49轮评估
+**Branch**: `main`
+
+### Summary
+
+交付公开助手恢复重试门禁，完成全部本地验收并返回路线图；复核兼容依赖条件后等待新证据或独立外部范围。
+
+### Main Changes
+
+- 1440/320 本地复现恢复重试竞争：A 重试成功后，B 的迟到恢复失败重新禁用 A 的输入框；旧探针 2/2，新增永久回归在旧构建真实 exit 1。
+- 组件仅补两处判断：重试按钮加入 historyLoadingId，命令入口检查 historyActionPendingRef；保留离线/Retry-After、现有请求所有权与只读列表刷新行为。
+- 历史矩阵从 100 增至 152，覆盖成功、503、404、删除、同步点击和列表刷新；Branch 32、image 48 及完整 UI 中的同一矩阵均通过，真实模型调用 0。
+- 冻结并在完整 UI 后核对 506 source、172 build、3 spec、49 个 HTTP 响应；原 13 份未跟踪资料、其他既有 tracked 文件及保护快照保留。
+- 工作提交 f467ecaa0e130af5cce19e854ef8fd7df391a251 仅 13 文件；归档提交 3c42bcaa9eb6a17668ba9e9e4505ab838cbc6692 仅本子任务七文件移动与父记账。已实际返回父任务，32/32 子项完成。
+- 父任务第 49 轮从官方 npm 核对 ^7.9.1 范围：最高稳定 Prisma 7.10.0 仍固定 mysql2 3.15.3 和 config 的 deepmerge-ts 7.1.5；latest 为范围外的 8.0.0-rc.14。没有升级、安装或新 audit，不把旧告警计数当作新结果。
+- 专用预览 PID 29344 已按完整身份关闭，5198 无监听且可重新绑定；生成的临时 fixture 模块已删除，证据日志/截图/清单保留。没有 push/deploy/sign、真实生产调用、公开发布、Feed/Cron 或 scheduler 修改。
+- 证据目录：C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-restore-retry-1icsdx4s。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f467ecaa0e130af5cce19e854ef8fd7df391a251` | (see git log) |
+
+### Testing
+
+- [OK] lint/build、三项助手合同、history 152、Branch 32、image 48、性能、smoke 21/0、完整 UI 46/0（1737358 ms）全部通过；最终输入与原资料保真通过。
+
+### Status
+
+[OK] **当前子任务已交付；父路线图等待外部条件**
+
+### Next Steps
+
+- 父路线图维持 waiting / round 49；等待新本地复现、兼容上游修复，或明确的远端 CI/生产助手/Studio/AI Daily 范围。authored/SEO 翻译继续暂缓。

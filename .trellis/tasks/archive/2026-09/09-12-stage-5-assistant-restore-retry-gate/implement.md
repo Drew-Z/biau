@@ -10,8 +10,8 @@
 - [x] 运行三项助手合同、history 152、Branch 32、image 48、性能与 smoke。
 - [x] 完整 UI 取得真实终局并在原字节输入上验证；检查新增断言、共享入口、受保护资料及 Git 差异。
 - [x] 记录 verification 和精确提交白名单，本地无签名提交。
-- [ ] 只归档本子任务、提交移动与父记账，实际 `task.py start 09-06-website-completion-roadmap` 返回父任务并重新评估。
-- [ ] 追加本轮日志；关闭自己创建的预览并清理可丢弃临时文件；核对最终 Git 状态。
+- [x] 只归档本子任务、提交移动与父记账，实际 `task.py start 09-06-website-completion-roadmap` 返回父任务并重新评估。
+- [x] 追加本轮日志；关闭自己创建的预览并清理可丢弃临时文件；核对最终提交范围与原资料。
 
 ## 验证命令
 
@@ -50,3 +50,7 @@ git diff --check
 - `pre-full-ui-checks.json` 汇总 10 项前置命令的真实成功、日志哈希和最终输入清单哈希；`source-review.json` 证明生产源码仅为计划中的两个替换，测试与组件字节仍等于冻结值。`work-commit-plan.json` 保存 13 文件白名单，检查时索引为空、只有 6 个计划内 tracked 改动和本子任务 7 个新文件，原 13 份资料未混入。
 - `final-validation.json` 于完整 UI 结束后验证 506 source、172 build、3 spec 及 49 个 HTTP 响应仍与冻结输入一致；原 13 份资料、其余既有 tracked 文件及保护快照保持。`git diff --check` 通过。质量门禁已通过，后续只有精确范围提交、归档、父任务评估及日志收尾。
 - 工作提交 `f467ecaa0e130af5cce19e854ef8fd7df391a251` 已完成，精确 13 文件，无签名、未 push/deploy。`work-commit.json` 核对父提交、文件集合、每个 Git blob 和受检工作树原字节；提交后已跟踪工作树/索引干净，仅保留原 13 份资料。
+- 归档提交 `3c42bcaa9eb6a17668ba9e9e4505ab838cbc6692` 已完成，`archive-commit.json` 核对七文件移动及父记账的精确范围/原字节/无签名。已实际 `task.py start 09-06-website-completion-roadmap`，当前会话指针回到父任务；任务清单确认 32/32 子项完成、其他 6 个持续任务保持。
+- 父任务第 49 轮进一步只读复核官方 npm 的兼容稳定范围，Prisma 7.10.0 仍保留原 mysql2/deepmerge 固定边，没有新的兼容修复候选；未安装或执行新 audit。父任务进入 waiting，未修改未知 scheduler。预览 PID 29344 已验证身份并停止，端口 5198 无监听且实际重绑成功；见 `preview-cleanup.json`。
+- Session 135 已追加，`session-validation.json` 验证原 journal 61587 字节前缀及 index 134 条历史记录保持；本轮采用 stdin，没有新建临时日志输入文件。生成的探针 fixture 模块已由 finally 删除，另清理了本轮两份元数据准备脚本（6160 bytes），保留对应失败 JSON、最终条件记录及验收日志/截图/清单；见 `temporary-cleanup.json`。
+- 最后仅提交本子任务验收勾选/收尾、父任务第 49 轮评估及 Session 135 日志。最终提交后以 `verify-inputs.mjs closeout` 和 `closeout.json` 再核对冻结输入、既有文件、原 13 份资料及最终 HEAD，不重复已通过的全量测试。
