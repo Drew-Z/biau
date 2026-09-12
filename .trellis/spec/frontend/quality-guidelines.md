@@ -852,8 +852,8 @@ boundary, preserving explicit-send semantics and the existing question-edit flow
 
 #### 1. Scope / Trigger
 
-Run when changing history restore/deletion, the shared send gate, conversation
-cancellation, registry/draft ownership or initial/manual restore handoff. This
+Run when changing history restore/deletion, recovery notice copy, the shared send
+gate, conversation cancellation, registry/draft ownership or initial/manual restore handoff. This
 complements the Branch and image checks and the existing initial-restore coverage.
 
 #### 2. Signatures
@@ -864,7 +864,7 @@ node scripts/check-public-assistant-history-ui.mjs
 ```
 
 `checkPublicAssistantHistorySendGate(browser, base)` returns
-`{ cases: 152, modelCalls: 0 }` after the matrix passes. Full UI calls this function
+`{ cases: 188, modelCalls: 0 }` after the matrix passes. Full UI calls this function
 inside the existing `public-assistant` group without replacing its other checks.
 
 #### 3. Contracts
@@ -904,6 +904,10 @@ drawer-focus restoration must finish before testing composer keyboard input.
 | History action and restore retry clicked in one synchronous batch | Ref gate rejects retry before disabled is projected; no concurrent recovery owner |
 | Pending history action settles after initial failure | Success/expiry/deletion preserves the correct context; unresolved current history requires explicit retry; no automatic retry/chat |
 | Initial restore failed while read-only list refresh is pending | Explicit current-session retry remains available and can restore/send without waiting for the list |
+| Initial restore returns 503, unknown failure, timeout, unreachable or invalid data | Existing restore explanation, retained identity/draft, no claim of a usable composer or fallback answer; explicit Retry or New works |
+| Restore error becomes offline/online or Retry-After expires | Specialized offline/countdown copy and gate remain correct; no automatic restore or chat |
+| Restore error survives close, language switch and reopen | Same identity/draft and request count; translated recovery explanation and actions remain contained |
+| List fails after the current conversation was restored | Existing history-list explanation; current conversation remains explicitly sendable |
 | New conversation / old response during a newer history operation | Immediate release for New; late old completion cannot restore context or release the newer gate |
 | Current deletion while generation is active | One cancellation with original request/session; no late answer, replay or lingering busy state |
 | Dismissed deletion confirmation | No DELETE or cancellation; original generation remains active |
@@ -932,7 +936,15 @@ by explicit current retry or New (6), and successful manual takeover (1). Each
 also starts from an initial 503 and checks current/other restoration with
 success/503/404 (6), current/other deletion with success/503 (4), synchronous
 history-action/retry clicks for restore and deletion (2), and recovery during
-read-only list refresh (1): 152 scenarios across the four configurations.
+read-only list refresh (1). Nine more cases per configuration cover six initial
+restore errors, offline/online recovery, a 429 countdown and a failed history
+list in an already-restored conversation: 188 scenarios across the four configurations.
+The six errors include an invalid 200 response that fails the actual decoder.
+Assert copy against the recovery action, zero initial answers, unchanged session
+and draft, and actual explicit recovery/New/chat payloads. Reuse the notice text /
+button geometry check. Switch language through the visible control after closing
+the assistant, reopen it, and prove no restore was scheduled. Full UI also retains
+the received-answer refresh notice check; generic restore copy must not erase it.
 For synchronous cases, prove the retry DOM button is still enabled at the second
 click, then assert zero extra session requests. Hold the original restore independently
 and release it during the replacement retry/New/success checks; assert actual
@@ -954,6 +966,10 @@ state together with request ownership.
 Wrong: let an initial-restore retry run during manual restore/deletion just because
 its own controller is empty. Correct: share the rendered and synchronous history
 action gate, retain existing retry backoff, and keep list-only transport independent.
+Wrong: show "you can still ask questions" or "fallback result retained" for an
+unrestored session with disabled input and no answer. Correct: select restore
+copy using its presentation context, while preserving offline, rate-limit and
+received-answer refresh explanations without changing request state.
 
 ## SEO And Analytics
 

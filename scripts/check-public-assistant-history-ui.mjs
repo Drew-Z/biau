@@ -18,6 +18,14 @@ const configurations = [
   { width: 390, theme: 'nature', language: 'zh' },
   { width: 430, theme: 'morning', language: 'en' },
 ]
+const initialRestoreFailures = [
+  { name: 'service-unavailable', response: { status: 503, body: { error: 'public-assistant-service-unavailable' } } },
+  { name: 'database-not-configured', response: { status: 503, body: { error: 'database-not-configured' } } },
+  { name: 'unknown-failure', response: { status: 500, body: { error: 'history-fixture-unknown-failure' } } },
+  { name: 'timeout', response: { status: 504, body: { error: 'public-assistant-upstream-timeout' } } },
+  { name: 'unreachable', response: { status: 502, body: { error: 'public-assistant-endpoint-unreachable' } } },
+  { name: 'invalid-response', response: { status: 200, body: {} } },
+]
 
 function historyFixture(id) {
   const date = '2026-09-01T08:00:00.000Z'
@@ -107,10 +115,11 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
   await page.route('**/api/**', async route => {
     const request = route.request()
     const path = new URL(request.url()).pathname
-    const reply = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
+    const reply = (body, status = 200, headers = {}) => route.fulfill({ status, headers, contentType: 'application/json', body: JSON.stringify(body) })
     if (path === '/api/health') return reply({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true })
     if (path === '/api/chat/public/sessions') {
       listCount += 1
+      if (options.failList) return reply({ error: 'public-assistant-service-unavailable' }, 503)
       const body = { sessions: sessionIds.filter(id => request.postDataJSON().sessionIds.includes(id)).map(id => historyFixture(id).session) }
       if (options.delayList && listCount === 1) return serveGate(listGate, () => reply(body))
       return reply(body)
@@ -120,7 +129,10 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
       if (initialRestore && request.method() === 'POST' && body.sessionId === sessionIds[0]) {
         initialRestore = false
         if (options.holdInitialRestore) return serveGate(initialGate, () => reply(historyFixture(sessionIds[0])))
-        if (options.failInitialRestore) return reply({ error: 'public-assistant-service-unavailable' }, 503)
+        if (options.failInitialRestore) {
+          const response = options.initialRestoreResponse ?? initialRestoreFailures[0].response
+          return reply(response.body, response.status, response.headers)
+        }
         return reply(historyFixture(sessionIds[0]))
       }
       const gate = stages[actions.length]
@@ -269,6 +281,108 @@ async function explicitSend(test, configuration, id, draft, hasHistory = true, e
   assert.deepEqual(sent.body.intent, { kind: 'new-turn', branchId: hasHistory ? id + '-branch' : null, parentRevisionId: hasHistory ? id + '-revision' : null })
   assert.deepEqual(sent.body.history, hasHistory ? [{ role: 'user', content: '历史问题 ' + id }, { role: 'assistant', content: '历史回答 ' + id }] : [])
   assert.equal(await input.inputValue(), '')
+}
+
+async function assertRestoreNotice(notice, expectedCopy) {
+  await notice.waitFor({ state: 'visible' })
+  assert.equal(await notice.locator('strong').textContent(), expectedCopy.title, 'restore notice must describe the current recovery action')
+  assert.equal(await notice.locator('span').first().textContent(), expectedCopy.detail, 'restore notice must not claim an available composer or nonexistent fallback answer')
+  const layout = await notice.evaluate(element => {
+    const area = element.getBoundingClientRect()
+    const buttons = [...element.querySelectorAll('button')].map(button => button.getBoundingClientRect())
+    const text = [...element.firstElementChild.querySelectorAll('strong, span')].flatMap(element => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      return [...range.getClientRects()]
+    })
+    return {
+      overlaps: text.some(line => buttons.some(button => Math.min(line.right, button.right) - Math.max(line.left, button.left) > 0.5 && Math.min(line.bottom, button.bottom) - Math.max(line.top, button.top) > 0.5)),
+      contained: [...text, ...buttons].every(rect => rect.left >= area.left - 0.5 && rect.right <= area.right + 0.5 && rect.top >= area.top - 0.5 && rect.bottom <= area.bottom + 0.5),
+    }
+  })
+  assert.equal(layout.overlaps, false, 'restore explanation must not overlap recovery buttons')
+  assert.equal(layout.contained, true, 'restore explanation and buttons stay within the notice')
+}
+
+async function checkInitialRestoreFailure(test, configuration, kind) {
+  const { page } = test
+  const copy = publicAssistantInterfaceCopy[configuration.language]
+  const notice = page.locator('.public-assistant__notice--restore')
+  const retry = notice.locator('button').first()
+  assert.equal(await page.locator('#public-assistant-input').isDisabled(), true)
+  assert.equal(await page.locator('.public-assistant__composer button[type=submit]').isDisabled(), true)
+  assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
+  assert.equal(await readDraft(page, sessionIds[0]), drafts[0])
+  assert.equal(await currentSession(page), sessionIds[0])
+  assert.equal(await page.locator('.public-assistant__message').count(), 0, 'restoration has not produced a chat or fallback answer')
+  if (kind === 'rate-limit') {
+    assert.equal(await notice.locator('strong').textContent(), copy.rateLimited.title)
+    assert.equal(await retry.isDisabled(), true, 'restore copy must retain the Retry-After gate')
+    assert.match(await notice.locator('span').first().textContent(), /[1-3]/u)
+    await page.waitForFunction(() => document.querySelector('.public-assistant__notice--restore button')?.disabled === false)
+    await assertRestoreNotice(notice, { title: copy.rateLimited.title, detail: copy.rateLimited.ready })
+  } else {
+    await assertRestoreNotice(notice, copy.restore)
+  }
+  if (kind === 'offline') {
+    await page.context().setOffline(true)
+    await page.waitForFunction(expected => document.querySelector('.public-assistant__notice--restore strong')?.textContent === expected, copy.issues.offline.title)
+    await assertRestoreNotice(notice, copy.issues.offline)
+    assert.equal(await retry.isDisabled(), true)
+    await page.context().setOffline(false)
+    await page.waitForFunction(() => document.querySelector('.public-assistant__notice--restore button')?.disabled === false)
+    await assertRestoreNotice(notice, copy.restore)
+  }
+  if (kind === 'service-unavailable') {
+    const previousUrl = page.url()
+    await page.locator('.public-assistant__header-actions button').last().click()
+    await page.locator('.nav-lang-toggle').click()
+    await page.locator('.public-assistant__trigger').click()
+    await assertRestoreNotice(notice, publicAssistantInterfaceCopy[configuration.language === 'zh' ? 'en' : 'zh'].restore)
+    assert.equal(page.url(), previousUrl)
+    assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
+    assert.equal(await currentSession(page), sessionIds[0])
+  }
+  assert.equal(await retry.isEnabled(), true)
+  assert.equal(test.actions.length, 0, 'network, countdown, language and reopen changes must not automatically restore')
+  assert.equal(test.chats.length, 0, 'restore error presentation must not send a question')
+  if (process.env.UI_CHECK_ARTIFACT_DIR && ['service-unavailable', 'unknown-failure'].includes(kind)) {
+    await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'history-restore-copy-' + configuration.width + '-' + kind + '.png') })
+  }
+  if (kind === 'unknown-failure') {
+    await notice.locator('button').nth(1).click()
+    const nextId = await currentSession(page)
+    assert.equal(sessionIds.includes(nextId), false)
+    assert.equal(await notice.count(), 0)
+    assert.equal(await page.locator('.public-assistant__message').count(), 0)
+    assert.equal(await page.locator('#public-assistant-input').inputValue(), '')
+    await page.locator('#public-assistant-input').fill('恢复错误后新会话明确发送')
+    await explicitSend(test, configuration, nextId, '恢复错误后新会话明确发送', false)
+  } else {
+    const gate = { ...responseGate(), id: sessionIds[0], method: 'POST' }
+    test.stages.push(gate)
+    await retry.click()
+    await bounded(gate.started.promise, 'explicit restore after error notice did not start')
+    assert.deepEqual(test.actions, [{ method: 'POST', body: { sessionId: sessionIds[0] } }])
+    await settleHistory(test, gate, 'success')
+    await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
+    assert.equal(await notice.count(), 0)
+    await explicitSend(test, configuration, sessionIds[0], drafts[0])
+  }
+}
+
+async function checkReadyListFailure(test, configuration) {
+  const { page } = test
+  const copy = publicAssistantInterfaceCopy[configuration.language]
+  await page.locator('.public-assistant__header-actions button').first().click()
+  const error = page.locator('.public-assistant__history-state')
+  await error.locator('strong').waitFor({ state: 'visible' })
+  assert.equal(await error.locator('strong').textContent(), copy.issues.history.title)
+  assert.equal(await error.locator('span').first().textContent(), copy.issues.history.detail, 'a ready conversation retains the existing history-list explanation')
+  await closeHistoryAndRestoreFocus(page)
+  assert.equal(await page.locator('.public-assistant__notice--restore').count(), 0)
+  assert.equal(await page.locator('#public-assistant-input').isEnabled(), true)
+  await explicitSend(test, configuration, sessionIds[0], drafts[0])
 }
 
 async function checkTransition(test, configuration, action, outcome) {
@@ -456,24 +570,7 @@ async function checkInterruptedInitialRestore(test, configuration, kind, recover
   await bounded(gate.settled.promise, 'replacement restoration did not settle')
   await page.locator('.public-assistant__loading').waitFor({ state: 'hidden' })
   const recoveryNotice = page.locator('.public-assistant__notice--restore')
-  await recoveryNotice.waitFor({ state: 'visible' })
-  const noticeLayout = await recoveryNotice.evaluate(notice => {
-    const area = notice.getBoundingClientRect()
-    const buttons = [...notice.querySelectorAll('button')].map(button => button.getBoundingClientRect())
-    const text = [...notice.firstElementChild.querySelectorAll('strong, span')].flatMap(element => {
-      const range = document.createRange()
-      range.selectNodeContents(element)
-      return [...range.getClientRects()]
-    })
-    return {
-      overlaps: text.some(line => buttons.some(button => Math.min(line.right, button.right) - Math.max(line.left, button.left) > 0.5 && Math.min(line.bottom, button.bottom) - Math.max(line.top, button.top) > 0.5)),
-      contained: [...text, ...buttons].every(rect => rect.left >= area.left - 0.5 && rect.right <= area.right + 0.5 && rect.top >= area.top - 0.5 && rect.bottom <= area.bottom + 0.5),
-    }
-  })
-  assert.equal(noticeLayout.overlaps, false, 'restore explanation must not overlap recovery buttons')
-  assert.equal(noticeLayout.contained, true, 'restore explanation and buttons stay within the notice')
-  assert.equal(await recoveryNotice.locator('strong').textContent(), publicAssistantInterfaceCopy[configuration.language].restore.title)
-  assert.equal(await recoveryNotice.locator('span').first().textContent(), publicAssistantInterfaceCopy[configuration.language].restore.detail)
+  await assertRestoreNotice(recoveryNotice, publicAssistantInterfaceCopy[configuration.language].restore)
   assert.equal(await page.locator('#public-assistant-input').isDisabled(), true, 'unrestored current history must remain fenced until explicit recovery')
   assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
   assert.equal(await currentSession(page), sessionIds[0])
@@ -623,6 +720,10 @@ export async function checkPublicAssistantHistorySendGate(browser, base) {
   let cases = 0
   for (const configuration of configurations) {
     const scenarios = [
+      ...initialRestoreFailures.map(failure => ({ name: 'initial-restore-' + failure.name, options: { failInitialRestore: true, initialRestoreResponse: failure.response }, run: test => checkInitialRestoreFailure(test, configuration, failure.name) })),
+      { name: 'initial-restore-offline', options: { failInitialRestore: true }, run: test => checkInitialRestoreFailure(test, configuration, 'offline') },
+      { name: 'initial-restore-rate-limit', options: { failInitialRestore: true, initialRestoreResponse: { status: 429, headers: { 'Retry-After': '3' }, body: { error: 'public-assistant-rate-limited' } } }, run: test => checkInitialRestoreFailure(test, configuration, 'rate-limit') },
+      { name: 'ready-list-failure', options: { failList: true }, run: test => checkReadyListFailure(test, configuration) },
       ...['restore', 'delete'].flatMap(action => sessionIds.flatMap(target => (action === 'restore' ? ['success', 'failure', 'expired'] : ['success', 'failure']).map(outcome => ({ name: 'restore-retry-' + action + '-' + sessionIds.indexOf(target) + '-' + outcome, options: { failInitialRestore: true }, run: test => checkRestoreRetryDuringHistory(test, configuration, action, target, outcome) })))),
       ...['restore', 'delete'].map(action => ({ name: 'restore-retry-synchronous-' + action, options: { failInitialRestore: true }, run: test => checkRestoreRetryDuringHistory(test, configuration, action, action === 'restore' ? sessionIds[1] : sessionIds[0], action === 'restore' ? 'failure' : 'success', true) })),
       { name: 'restore-retry-list-only', options: { failInitialRestore: true, delayList: true }, run: test => checkRestoreRetryDuringList(test, configuration) },

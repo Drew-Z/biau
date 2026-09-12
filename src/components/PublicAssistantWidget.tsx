@@ -381,12 +381,13 @@ function getAssistantRetryLabel(issue: AssistantIssue | null, fallback: string, 
     : fallback
 }
 
-function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean, copy: typeof publicAssistantInterfaceCopy.zh) {
+function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean, copy: typeof publicAssistantInterfaceCopy.zh, context: 'request' | 'restore' = 'request') {
   if (!isOnline) return copy.issues.offline
   if (issue.code === 'public-assistant-offline') return copy.issues.restored
   if (issue.code === 'public-assistant-rate-limited') {
     return { title: copy.rateLimited.title, detail: issue.retryAfterSeconds && issue.retryAfterSeconds > 0 ? copy.rateLimited.waiting(issue.retryAfterSeconds) : copy.rateLimited.ready }
   }
+  if (context === 'restore') return issue.code === 'public-assistant-history-refresh-required' ? copy.issues.refresh : copy.restore
   if (issue.code === 'public-assistant-restore-interrupted') return copy.restore
   if (issue.scope === 'branch') return copy.issues.branch
   if (issue.intent?.kind === 'answer-revision') return copy.issues.revision
@@ -575,7 +576,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const warmupIssue = warmup.issueCode ? { code: warmup.issueCode, scope: 'health' as const } : null
   const warmupIssueCopy = warmupIssue ? getAssistantIssueCopy(warmupIssue, isOnline, copy) : null
   const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline, copy) : null
-  const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline, copy) : null
+  const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline, copy, 'restore') : null
   const issueRetryBlocked = isAssistantIssueRetryBlocked(issue, isOnline)
   const initialRestoreRetryBlocked = historyLoadingId !== null || isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'

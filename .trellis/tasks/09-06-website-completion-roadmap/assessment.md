@@ -490,3 +490,14 @@
 - 本轮没有其他已复现且待交付的本地失败；父任务保持 in_progress，`enabled=false`、`phase=waiting`、`round=49`。等待新本地证据、兼容上游修复，或用户定义独立远端/生产/发布范围；不重复全量 UI、不创建空子任务。未知 heartbeat 配置未修改，本地 waiting 不等于确认调度器暂停。
 - 本轮预览 PID 29344 已按创建时间、可执行路径、命令行和监听归属精确核对后停止；`preview-cleanup.json` 确认进程退出、5198 无监听且可实际重新绑定，没有停止其他进程。其余验收日志/截图/输入清单保留供回查，原 13 份资料及历史 worktree 保留。
 - Session 135 已记录并验证原 journal 61587 字节前缀和 index 134 条历史行保持；本轮两份元数据准备脚本（6160 bytes）及早前生成的 fixture 模块已清理，失败/成功证据保留。最后一次本地记录提交后核对 `closeout.json` 所绑定的最终 HEAD、冻结输入和原资料，不重跑已经通过的完整 UI。
+
+### 轮次 49 续跑：恢复失败提示核验
+
+- 用户再次要求继续；核对本地 main/HEAD、父指针、原资料后，只针对上一轮提示线索做有界检查，没有重跑旧全量或依赖查询。
+- 新本地探针在 1440/Morning/中文与 320/Stellar/英文的服务 503、数据库 503、未知 500 和 504 超时共 8/8 显示不适用说明；输入/发送均禁用、消息为 0，却出现可继续提问或已保留兜底结果的描述。模型/聊天/外部请求及页面错误均为 0。证据位于 `C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-restore-copy-5p83n7xv/assessment-before.json`。
+- 创建 P3 子任务 `09-13-stage-5-assistant-restore-error-copy`，完成 PRD/design/implement。仅修改恢复错误的文案投影与现有历史回归，复用字典；离线、限流倒计时和回答后的刷新提示保留，其他请求上下文保持。计划历史矩阵 152→188，并取得新构建完整验证。
+- 根据既有本地持续授权恢复 loop execute；这不表示已读取或修改 heartbeat scheduler。父轮次仍为 49，当前子任务归档并实际返回后才递增。
+
+- 首次完整 UI 在三个组通过后中断，无结果 JSON，原检查/预览进程均已退出，不能记为通过。`full-ui-interrupted.json` 保留观测；恢复预览并经 `resume-check.json` 核对 506/172/3/49 一致后，仅以 `full-ui-resumed` 重跑完整 UI，已通过的历史 188、Branch 32、image 48、smoke 21/0 和静态检查不重复。
+
+- 最终同构建完整 UI 28906 实际 exit 0、46/0、组累计 1899615ms（外层 1904137ms）；历史 188/Branch 32/image 48、smoke 21/0、lint/build/三项合同/性能均通过，最终 506/172/3/49 冻结保真通过。主会话已复看代表截图，进入 deliver，待精确本地提交、仅归档本子任务并实际返回父任务。

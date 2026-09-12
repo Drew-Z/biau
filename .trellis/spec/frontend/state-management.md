@@ -327,6 +327,15 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
   restore modifier at every viewport. Existing copy and buttons stay readable
   without text/button overlap; do not inherit chat-success wording for a failed
   initial history restoration.
+- `getAssistantIssueCopy(issue, isOnline, copy, context = 'request')` accepts the
+  explicit `restore` presentation context only for `initialRestoreIssueCopy`.
+  Ordinary restoration failures use `copy.restore`: follow-up is still fenced,
+  and neither a research request nor a fallback answer necessarily exists.
+  Keep offline/reconnected and rate-limit copy ahead of this context, including
+  the existing countdown fields. Within it, `public-assistant-history-refresh-required` retains
+  the received-answer refresh explanation. Other request contexts keep their
+  existing mappings; do not rewrite transport codes or globally change history
+  copy to repair a restore-specific notice. Language changes only reproject copy.
 - Confirmed deletion of the current session silently calls `stopActiveChat` before
   DELETE, reusing the captured request/session cancellation identity and transport
   abort. The late answer cannot keep or repopulate the next conversation. A

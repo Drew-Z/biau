@@ -1,0 +1,61 @@
+{
+  "id": "stage-5-assistant-restore-error-copy",
+  "name": "stage-5-assistant-restore-error-copy",
+  "title": "公开助手恢复失败提示与操作状态一致",
+  "description": "使初次会话恢复失败的提示符合禁用发送状态，保留离线、限流和已回答后的刷新提示。",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": "public-assistant",
+  "package": null,
+  "priority": "P3",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-13",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/PublicAssistantWidget.tsx",
+    "scripts/check-public-assistant-history-ui.mjs",
+    ".trellis/spec/frontend/state-management.md",
+    ".trellis/spec/frontend/quality-guidelines.md"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "checkedAt": "2026-09-12T19:49:29.434880+00:00",
+      "checks": [
+        "lint-final",
+        "build-final",
+        "api-final",
+        "conversation-final",
+        "browser-state-final",
+        "history-final",
+        "branch-final",
+        "image-final",
+        "performance-final",
+        "smoke-final",
+        "full-ui-resumed"
+      ],
+      "fullUi": {
+        "groups": 46,
+        "failed": 0,
+        "groupTotalMs": 1899615,
+        "outerDurationMs": 1904137,
+        "toolSession": 28906
+      },
+      "evidence": "final-checks.json",
+      "previousAttempt": "full-ui-interrupted.json"
+    },
+    "evidenceDirectory": "C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-restore-copy-5p83n7xv",
+    "baselineCommit": "1d2b72d8ee96ffef83877be266021f3788896349",
+    "authorization": "2026-09-08 roadmap loop and current continue request; local only"
+  }
+}
