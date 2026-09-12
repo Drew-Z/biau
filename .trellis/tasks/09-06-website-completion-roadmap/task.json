@@ -66,7 +66,7 @@
       "activeChild": "09-13-stage-4-assistant-image-error-language",
       "blockedChildren": [],
       "lastCompletedChild": "09-13-stage-5-assistant-restore-error-copy",
-      "nextAction": "Final image 72, Branch 32, history 188, full UI 46/0, smoke 21/0, lint/build, assistant contracts and performance passed. Final inputs match 506 source / 172 build / 3 spec / 49 local HTTP responses. The first AI Daily detail wait timeout is retained; its original 44-group diagnostic and unchanged full UI rerun passed. Commit the exact 13-file scope locally, archive only this child, then actually return to the roadmap and reassess. No push/deploy/sign, production calls, publication or scheduler changes.",
+      "nextAction": "Work commit cc74128ba8929a06e5ac87dbd560f65f91fdb320 is complete and the owned preview was released. Final image 72 / Branch 32 / history 188, full UI 46/0, smoke 21/0, static checks and 506/172/3/49 input verification passed; the first timeout and successful diagnostic remain recorded. Archive only this child, commit the archive bookkeeping, then actually start the parent and reassess round 51. No push/deploy/sign, production calls, publication or scheduler changes.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,

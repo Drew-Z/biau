@@ -8,7 +8,7 @@
 - [x] trellis-check：审查完整差异，执行下面的必要验证。
 - [x] trellis-update-spec：记录错误代码派生译文契约与 72 场景矩阵。
 - [x] 冻结最终 source/build/spec 与本地预览响应，完整 UI 后再次核对。
-- [ ] Phase 3.4：核对精确暂存文件、提交 blob 与原字节，完成无签名本地提交。
+- [x] Phase 3.4：核对精确暂存文件、提交 blob 与原字节，完成无签名本地提交 `cc74128ba8929a06e5ac87dbd560f65f91fdb320`。
 - [ ] trellis-finish-work：只归档本子任务、实际返回父任务、再评估、记录会话并回收自有预览。
 
 ## 验证
