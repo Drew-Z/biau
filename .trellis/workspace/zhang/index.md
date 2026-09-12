@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 135
+- **Total Sessions**: 136
 - **Last Active**: 2026-09-13
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~1223 | Active |
+| `journal-3.md` | ~1264 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 136 | 2026-09-13 | 公开助手恢复失败提示与路线图第50轮评估 | `5807095d6ea35451665e204e7befea72822f47ee` | `main` |
 | 135 | 2026-09-13 | 公开助手恢复重试互斥与路线图第49轮评估 | `f467ecaa0e130af5cce19e854ef8fd7df391a251` | `main` |
 | 134 | 2026-09-12 | 公开助手异步会话状态归属接续交付 | `3a5eb8cda408802ef13997ab9f8dc624a7356fdd` | `main` |
 | 133 | 2026-09-11 | 公开助手历史操作与过期恢复隔离 | `7c09a265dea43818680f754b52153995df69e9ae` | `main` |

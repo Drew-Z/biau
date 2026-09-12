@@ -1221,3 +1221,44 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 父路线图维持 waiting / round 49；等待新本地复现、兼容上游修复，或明确的远端 CI/生产助手/Studio/AI Daily 范围。authored/SEO 翻译继续暂缓。
+
+
+## Session 136: 公开助手恢复失败提示与路线图第50轮评估
+
+**Date**: 2026-09-13
+**Task**: 公开助手恢复失败提示与路线图第50轮评估
+**Branch**: `main`
+
+### Summary
+
+修复初次恢复失败提示与操作状态不符的问题，完成本地验收、子任务归档及路线图第50轮评估。
+
+### Main Changes
+
+- 本地负向探针在 1440 中文和 320 英文复现 8/8 文案不符；新增永久回归在旧构建真实 exit 1，确认失败来自恢复提示语义。
+- 组件仅增加 restore 显示上下文并由初次恢复错误调用，复用现有双语恢复说明；保留离线、联网、Retry-After 与回答后权威历史刷新提示的优先级，不改变请求、存储或发送门禁。
+- 历史矩阵由 152 增至 188，新增普通恢复错误、无效 200 decoder、离线/联网、429 倒计时、语言重开及恢复后列表失败场景；同步更新状态管理和质量规范。
+- 首次完整 UI 会话 88862 中断且无终局，原日志单独保留；核对同一冻结构建后只补跑缺失的全量验收。最终会话 28906 真实 exit 0、46 组/0 失败，组累计 1899615 ms、外层 1904137 ms。
+- 全量后核对 506 source、172 build、3 spec、49 HTTP 响应一致；原 13 份未跟踪资料、其他原有 tracked 文件及保护快照保留。
+- 工作提交 5807095d6ea35451665e204e7befea72822f47ee 仅 13 文件；归档提交 52b6d9fb3b5c5934836f87cc52b46bad7f587e78 只移动当前子任务七文件并更新父记录。已实际返回父路线图，33/33 关联子任务 completed。
+- 第 50 轮未发现新的有证据本地修复项；父任务保持 in_progress / waiting。依赖条件沿用 2026-09-12T15:42:56Z 官方元数据核验，本轮未重查或运行新 audit；生产助手、远端 CI、Studio/AI Daily 和发布仍需独立范围，authored/SEO 翻译继续暂缓。
+- 自有预览 PID 32728 已按完整身份关闭，端口 5198 已重绑验证释放；日志、截图和复现清单保留为验收证据，原用户资料及用途不明文件保留。本轮没有删除文件，没有 push/deploy/sign、生产模型/DB/relay 调用、公开发布、Feed/Cron 或 scheduler 修改。
+- 证据目录：C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-restore-copy-5p83n7xv。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5807095d6ea35451665e204e7befea72822f47ee` | fix: align assistant restore errors with recovery state |
+
+### Testing
+
+- [OK] lint/build、API/conversation/browser-state、history 188、Branch 32、image 48、性能、smoke 21/0、完整 UI 46/0 全部通过；最终输入、原资料和保护快照核验通过。
+
+### Status
+
+[OK] **当前子任务已交付；父路线图等待新证据或外部条件**
+
+### Next Steps
+
+- 父路线图维持 waiting / round 50；等待新的本地复现、兼容上游修复或范围明确的远端 CI/生产助手/Studio/AI Daily 任务。本地 waiting 不代表已经操作或暂停调度器。
