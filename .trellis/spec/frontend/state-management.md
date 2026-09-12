@@ -276,6 +276,13 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 
 ### History Operation Ownership
 
+- `sessionRegistryRef` holds the latest registry for command completion, while
+  `sessionRegistry` projects it to React. `commitSessionRegistry` synchronously
+  updates the ref and current ID before persistence/state projection. Every
+  remember/forget operation derives from that latest registry, never the snapshot
+  captured before an await. Independent completion of chat A must not reintroduce
+  capability B after B was deleted. Keep persistence outside React state updaters
+  and retain the existing storage-failure fallback and pure registry helpers.
 - `historyLoadingId !== null` contributes to `isAssistantBusy` for authoritative
   restore and deletion. `historyActionPendingRef` is the synchronous command gate:
   acquire it before either action, reject duplicate history actions and chat/Branch
@@ -297,7 +304,22 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
   select the first remaining capability, so do not commit that ID with the expired
   transcript still mounted. Preserve other registered capabilities and drafts
   without automatically activating them. Expiry of a non-current target only
-  removes that target and leaves the current conversation usable.
+  removes that target; an already-restored current conversation stays usable.
+- Manual history restoration that takes over a not-ready initial restore owns
+  its terminal state too. If it fails, stop the ownerless loading projection and
+  show the existing initial-restore error/retry controls, preserving the current
+  identity and draft. A failed or expired non-current selection does not prove
+  that the current history is ready: keep submission fenced until explicit retry
+  of the current session succeeds or the visitor starts a new conversation.
+  Map the local restore-interrupted issue to the existing generic restore copy:
+  no answer was received and the current session is not necessarily expired.
+  Preserve a rate-limit issue and its backoff fields; keep current-session
+  expiry on its existing fresh-context path. Old initial controllers cannot
+  complete a newer retry or override manual success; never auto-retry on failure.
+- Restore error notices stack explanation and recovery actions within the scoped
+  restore modifier at every viewport. Existing copy and buttons stay readable
+  without text/button overlap; do not inherit chat-success wording for a failed
+  initial history restoration.
 - Confirmed deletion of the current session silently calls `stopActiveChat` before
   DELETE, reusing the captured request/session cancellation identity and transport
   abort. The late answer cannot keep or repopulate the next conversation. A

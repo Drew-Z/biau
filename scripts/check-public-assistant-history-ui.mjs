@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 
 const { normalizePublicAssistantSessionHistory, normalizePublicAssistantAnswer } = await tsImport('../src/utils/publicAssistantApi.ts', import.meta.url)
+const { publicAssistantInterfaceCopy } = await tsImport('../src/data/publicAssistantInterfaceCopy.ts', import.meta.url)
 const sessionIds = ['history-send-ui-session-a', 'history-send-ui-session-b']
 const registryKey = 'biau-public-assistant-sessions-v2'
 const draftPrefix = 'biau-public-assistant-draft-v1:'
@@ -77,6 +78,7 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
   const actions = []
   const stages = []
   const chatGate = responseGate()
+  const initialGate = responseGate()
   const listGate = responseGate()
   const cancellationReceived = Promise.withResolvers()
   let initialRestore = true
@@ -117,6 +119,7 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
       const body = request.postDataJSON()
       if (initialRestore && request.method() === 'POST' && body.sessionId === sessionIds[0]) {
         initialRestore = false
+        if (options.holdInitialRestore) return serveGate(initialGate, () => reply(historyFixture(sessionIds[0])))
         return reply(historyFixture(sessionIds[0]))
       }
       const gate = stages[actions.length]
@@ -160,7 +163,7 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
     return reply({ error: 'unexpected-fixture-request' }, 500)
   })
   const close = async () => {
-    const gates = [...stages, chatGate, listGate]
+    const gates = [...stages, chatGate, initialGate, listGate]
     for (const gate of gates) { gate.allowAbort = true; gate.release.resolve('success') }
     await Promise.all(gates.filter(gate => gate.active).map(gate => bounded(gate.settled.promise, 'history fixture cleanup timed out')))
     await page.close()
@@ -168,6 +171,10 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
   try {
     await page.goto(base + '/blog', { waitUntil: 'load' })
     await page.locator('.public-assistant__trigger').click()
+    if (options.holdInitialRestore) {
+      await bounded(initialGate.started.promise, 'initial restoration did not start')
+      return { page, errors, chats, cancellations, cancellationReceived, actions, stages, chatGate, initialGate, listGate, close }
+    }
     await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
     await page.waitForFunction(() => document.querySelector('.public-assistant__composer button[type=submit]')?.disabled === false)
     assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
@@ -382,12 +389,143 @@ async function checkSupersededHistory(test, configuration) {
   await explicitSend(test, configuration, sessionIds[0], '再次恢复后的明确问题')
 }
 
+async function checkOtherDeletionDuringChat(test, outcome) {
+  const { page, chatGate } = test
+  await page.locator('#public-assistant-input').fill('删除其他会话期间正在生成的问题')
+  await page.locator('#public-assistant-input').press('Enter')
+  await bounded(chatGate.started.promise, 'independent generation did not start')
+  await page.locator('#public-assistant-input').fill(pendingDraft)
+  const gate = await startHistoryAction(test, 'delete-other', sessionIds[1])
+  const finishChat = async () => {
+    chatGate.release.resolve('success')
+    await bounded(chatGate.settled.promise, 'independent generation did not settle')
+    await page.getByText('本地明确发送完成 1', { exact: true }).waitFor({ state: 'visible' })
+  }
+  const finishDelete = async () => {
+    await openHistoryEntry(page, sessionIds[1])
+    gate.release.resolve(outcome === 'failure' ? 'failure' : 'success')
+    await bounded(gate.settled.promise, 'non-current deletion did not settle')
+    if (outcome === 'failure') {
+      await page.waitForFunction(() => {
+        const buttons = [...document.querySelectorAll('.public-assistant__history-open')]
+        return buttons.length > 0 && buttons.every(button => !button.disabled)
+      })
+    } else {
+      await page.waitForFunction(({ key, id }) => !JSON.parse(localStorage.getItem(key)).sessionIds.includes(id), { key: registryKey, id: sessionIds[1] })
+    }
+    await closeHistoryAndRestoreFocus(page)
+  }
+  if (outcome === 'delete-first') {
+    await finishDelete()
+    await finishChat()
+  } else {
+    await finishChat()
+    await finishDelete()
+  }
+  await afterPaint(page)
+  const registry = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), registryKey)
+  assert.equal(registry.currentSessionId, sessionIds[0])
+  assert.equal(registry.sessionIds.includes(sessionIds[1]), outcome === 'failure', 'late generation must not restore a deleted capability from an older registry')
+  assert.equal(await readDraft(page, sessionIds[1]), outcome === 'failure' ? drafts[1] : null)
+  assert.equal(await readDraft(page, sessionIds[0]), pendingDraft)
+  assert.equal(await page.locator('#public-assistant-input').inputValue(), pendingDraft)
+  assert.equal(test.chats.length, 1, 'independent generation completes once without replay')
+  assert.equal(test.chats[0].body.sessionId, sessionIds[0])
+  assert.equal(test.chats[0].body.intent.parentRevisionId, sessionIds[0] + '-revision')
+  assert.equal(test.cancellations.length, 0, 'deleting another session must not cancel the current generation')
+  assert.equal(await page.locator('.public-assistant__composer button[type=submit]').isEnabled(), true)
+}
+
+async function checkInterruptedInitialRestore(test, configuration, kind, recovery) {
+  const { page, initialGate } = test
+  initialGate.allowAbort = true
+  const target = kind === 'current-failure' ? sessionIds[0] : sessionIds[1]
+  const gate = await startHistoryAction(test, 'restore', target)
+  gate.release.resolve(kind === 'other-expired' ? 'expired' : 'failure')
+  await bounded(gate.settled.promise, 'replacement restoration did not settle')
+  await page.locator('.public-assistant__loading').waitFor({ state: 'hidden' })
+  const recoveryNotice = page.locator('.public-assistant__notice--restore')
+  await recoveryNotice.waitFor({ state: 'visible' })
+  const noticeLayout = await recoveryNotice.evaluate(notice => {
+    const area = notice.getBoundingClientRect()
+    const buttons = [...notice.querySelectorAll('button')].map(button => button.getBoundingClientRect())
+    const text = [...notice.firstElementChild.querySelectorAll('strong, span')].flatMap(element => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      return [...range.getClientRects()]
+    })
+    return {
+      overlaps: text.some(line => buttons.some(button => Math.min(line.right, button.right) - Math.max(line.left, button.left) > 0.5 && Math.min(line.bottom, button.bottom) - Math.max(line.top, button.top) > 0.5)),
+      contained: [...text, ...buttons].every(rect => rect.left >= area.left - 0.5 && rect.right <= area.right + 0.5 && rect.top >= area.top - 0.5 && rect.bottom <= area.bottom + 0.5),
+    }
+  })
+  assert.equal(noticeLayout.overlaps, false, 'restore explanation must not overlap recovery buttons')
+  assert.equal(noticeLayout.contained, true, 'restore explanation and buttons stay within the notice')
+  assert.equal(await recoveryNotice.locator('strong').textContent(), publicAssistantInterfaceCopy[configuration.language].restore.title)
+  assert.equal(await recoveryNotice.locator('span').first().textContent(), publicAssistantInterfaceCopy[configuration.language].restore.detail)
+  assert.equal(await page.locator('#public-assistant-input').isDisabled(), true, 'unrestored current history must remain fenced until explicit recovery')
+  assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
+  assert.equal(await currentSession(page), sessionIds[0])
+  assert.equal(await recoveryNotice.locator('button').first().isEnabled(), true)
+  assert.equal(test.chats.length, 0)
+  assert.equal(test.actions.length, 1, 'failure does not automatically retry a restore')
+  const registry = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), registryKey)
+  assert.equal(registry.sessionIds.includes(sessionIds[1]), kind !== 'other-expired')
+  assert.equal(await readDraft(page, sessionIds[1]), kind === 'other-expired' ? null : drafts[1])
+  if (process.env.UI_CHECK_ARTIFACT_DIR && kind === 'other-expired' && recovery === 'retry') {
+    await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'history-interrupted-restore-' + configuration.width + '.png') })
+  }
+  if (recovery === 'retry') {
+    const retry = { ...responseGate(), id: sessionIds[0], method: 'POST' }
+    test.stages.push(retry)
+    await recoveryNotice.locator('button').first().click()
+    await bounded(retry.started.promise, 'explicit current-session retry did not start')
+    initialGate.release.resolve('success')
+    await bounded(initialGate.settled.promise, 'superseded initial response did not settle')
+    await afterPaint(page)
+    assert.equal(await page.locator('.public-assistant__loading').isVisible(), true, 'old initial response cannot finish the newer retry')
+    assert.equal(await page.locator('.public-assistant__message').count(), 0)
+    retry.release.resolve('success')
+    await bounded(retry.settled.promise, 'explicit retry did not settle')
+    await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
+    await explicitSend(test, configuration, sessionIds[0], drafts[0])
+    assert.deepEqual(test.actions[1], { method: 'POST', body: { sessionId: sessionIds[0] } }, 'restore recovery targets the current session, not the failed history selection')
+  } else {
+    await recoveryNotice.locator('button').nth(1).click()
+    const nextId = await currentSession(page)
+    assert.equal(sessionIds.includes(nextId), false)
+    initialGate.release.resolve('success')
+    await bounded(initialGate.settled.promise, 'superseded initial response did not settle after New')
+    await afterPaint(page)
+    assert.equal(await page.locator('.public-assistant__message').count(), 0)
+    assert.equal(await page.locator('.public-assistant__loading, .public-assistant__notice--restore').count(), 0)
+    await page.locator('#public-assistant-input').fill('恢复失败后新会话明确发送')
+    await explicitSend(test, configuration, nextId, '恢复失败后新会话明确发送', false)
+  }
+}
+
+async function checkInterruptedInitialRestoreSuccess(test, configuration) {
+  const { page, initialGate } = test
+  initialGate.allowAbort = true
+  const gate = await startHistoryAction(test, 'restore')
+  await settleHistory(test, gate, 'success')
+  initialGate.release.resolve('success')
+  await bounded(initialGate.settled.promise, 'old initial response did not settle after manual success')
+  await afterPaint(page)
+  assert.equal(await page.locator('.public-assistant__loading, .public-assistant__notice--restore').count(), 0)
+  assert.equal(await readDraft(page, sessionIds[0]), drafts[0])
+  await explicitSend(test, configuration, sessionIds[1], drafts[1])
+}
+
 export async function checkPublicAssistantHistorySendGate(browser, base) {
   const url = new URL(base)
   assert.ok(['http:', 'https:'].includes(url.protocol) && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname), 'history UI checks require a local preview')
   let cases = 0
   for (const configuration of configurations) {
     const scenarios = [
+      ...['delete-first', 'chat-first', 'failure'].map(outcome => ({ name: 'other-deletion-' + outcome, options: { holdChat: true }, run: test => checkOtherDeletionDuringChat(test, outcome) })),
+      ...['current-failure', 'other-failure', 'other-expired'].flatMap(kind => ['retry', 'new-session'].map(recovery => ({ name: 'interrupted-restore-' + kind + '-' + recovery, options: { holdInitialRestore: true }, run: test => checkInterruptedInitialRestore(test, configuration, kind, recovery) }))),
+      { name: 'interrupted-restore-success', options: { holdInitialRestore: true }, run: test => checkInterruptedInitialRestoreSuccess(test, configuration) },
       ...['current-with-other', 'current-only', 'other'].map(kind => ({ name: 'expired-' + kind, options: { onlyCurrent: kind === 'current-only' }, run: test => checkExpiredHistory(test, configuration, kind) })),
       ...['success', 'failure'].map(outcome => ({ name: 'active-deletion-' + outcome, options: { holdChat: true }, run: test => checkActiveDeletion(test, outcome) })),
       ...['restore', 'delete-current'].flatMap(action => ['success', 'failure', 'retry', 'new-session'].map(outcome => ({ name: action + '-' + outcome, run: test => checkTransition(test, configuration, action, outcome) }))),

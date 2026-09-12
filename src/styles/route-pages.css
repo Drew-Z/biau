@@ -3802,6 +3802,8 @@
 }
 
 .public-assistant__notice--restore {
+  flex-direction: column;
+  align-items: stretch;
   color: color-mix(in oklch, var(--amber) 72%, var(--ink));
   background: color-mix(in oklch, var(--amber) 9%, var(--panel-strong));
   border-color: color-mix(in oklch, var(--amber) 26%, var(--flow-ui-card-border));

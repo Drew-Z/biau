@@ -48,7 +48,8 @@
     "09-11-stage-6-local-quick-start",
     "09-11-stage-5-assistant-image-lifecycle",
     "09-11-stage-5-assistant-branch-send-gate",
-    "09-11-stage-5-assistant-history-send-gate"
+    "09-11-stage-5-assistant-history-send-gate",
+    "09-11-stage-5-assistant-session-state-ownership"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -57,13 +58,13 @@
     "loop": {
       "version": 1,
       "enabled": true,
-      "phase": "assess",
+      "phase": "deliver",
       "round": 47,
-      "activeChild": null,
+      "activeChild": "09-11-stage-5-assistant-session-state-ownership",
       "blockedChildren": [],
       "lastCompletedChild": "09-11-stage-5-assistant-history-send-gate",
-      "nextAction": "Complete the session journal and final byte-preservation check, then perform a bounded read-only assessment of remaining assistant lifecycle leads before choosing another child. Thirty linked children are complete; do not repeat delivered work or claim unverified leads as defects. Preserve local-only authorization, translation pause, original files, protected snapshot and unknown scheduler configuration.",
-      "ownerThreadId": "01a081db-9a3f-7093-b8a2-e65d4a776ddc",
+      "nextAction": "The session-state ownership child passed full UI 46/0 and post-resume verification of 506 source, 172 build, 3 spec and 47 preview responses. Commit its exact whitelist locally without signing, release the owned preview, archive only this child, and actually return to the parent for reassessment. Preserve translation, production, original files, protected snapshot and unknown scheduler boundaries.",
+      "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,
       "authorizationDate": "2026-09-08",

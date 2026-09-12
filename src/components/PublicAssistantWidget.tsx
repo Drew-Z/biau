@@ -387,6 +387,7 @@ function getAssistantIssueCopy(issue: AssistantIssue, isOnline: boolean, copy: t
   if (issue.code === 'public-assistant-rate-limited') {
     return { title: copy.rateLimited.title, detail: issue.retryAfterSeconds && issue.retryAfterSeconds > 0 ? copy.rateLimited.waiting(issue.retryAfterSeconds) : copy.rateLimited.ready }
   }
+  if (issue.code === 'public-assistant-restore-interrupted') return copy.restore
   if (issue.scope === 'branch') return copy.issues.branch
   if (issue.intent?.kind === 'answer-revision') return copy.issues.revision
   if (issue.scope === 'health' && (
@@ -542,6 +543,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const sessionIdRef = useRef(sessionId)
+  const sessionRegistryRef = useRef(sessionRegistry)
   const shouldFollowOutputRef = useRef(true)
   const activeRequestRef = useRef<ActiveChatRequest | null>(null)
   const branchActionPendingRef = useRef(false)
@@ -616,6 +618,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
 
   const commitSessionRegistry = useCallback((next: PublicAssistantSessionRegistry) => {
     if (sessionIdRef.current !== next.currentSessionId) resetImageAttachment()
+    sessionRegistryRef.current = next
     sessionIdRef.current = next.currentSessionId
     persistPublicAssistantSessionRegistry(next)
     setSessionRegistry(next)
@@ -839,8 +842,9 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
           const nextIssue = toAssistantIssue(error, 'history')
           if (nextIssue.code === 'session-not-found') {
             clearPublicAssistantSessionBrowserState(targetSessionId)
-            const withoutExpired = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
-            const nextRegistry = sessionRegistry.sessionIds.some((id) => id !== targetSessionId)
+            const currentRegistry = sessionRegistryRef.current
+            const withoutExpired = forgetPublicAssistantSession(currentRegistry, targetSessionId)
+            const nextRegistry = currentRegistry.sessionIds.some((id) => id !== targetSessionId)
               ? rememberPublicAssistantSession(withoutExpired, createPublicAssistantSessionId())
               : withoutExpired
             commitSessionRegistry(nextRegistry)
@@ -1038,7 +1042,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     const previousSessionId = sessionIdRef.current
     clearPublicAssistantSessionBrowserState(previousSessionId)
     const nextSessionId = createPublicAssistantSessionId()
-    commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, nextSessionId))
+    commitSessionRegistry(rememberPublicAssistantSession(sessionRegistryRef.current, nextSessionId))
     shouldFollowOutputRef.current = true
     setConversation(createEmptyPublicAssistantConversation())
     closeQuestionEditor()
@@ -1115,6 +1119,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
 
   const openHistorySession = async (targetSessionId: string) => {
     if (!apiBase || historyActionPendingRef.current) return
+    const needsInitialRestore = !isConversationReady
     historyActionPendingRef.current = true
     stopActiveChat()
     stopBranchAction()
@@ -1127,7 +1132,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     try {
       const history = await requestPublicAssistantSession({ apiBase, sessionId: targetSessionId, signal: controller.signal })
       if (historyRequestRef.current !== controller) return
-      commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, targetSessionId))
+      commitSessionRegistry(rememberPublicAssistantSession(sessionRegistryRef.current, targetSessionId))
       acceptAuthoritativeHistory(history)
       setInitialRestoreState('ready')
       setInitialRestoreIssue(null)
@@ -1140,12 +1145,19 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       if (error instanceof DOMException && error.name === 'AbortError') return
       if (historyRequestRef.current !== controller) return
       const nextIssue = toAssistantIssue(error, 'history')
+      const expiredCurrentSession = nextIssue.code === 'session-not-found' && targetSessionId === sessionIdRef.current
       setIssue(nextIssue)
+      if (needsInitialRestore && !expiredCurrentSession) {
+        setInitialRestoreState('error')
+        setInitialRestoreIssue(nextIssue.code === 'public-assistant-rate-limited'
+          ? nextIssue
+          : { ...nextIssue, code: 'public-assistant-restore-interrupted' })
+      }
       if (nextIssue.code === 'session-not-found') {
         clearPublicAssistantSessionBrowserState(targetSessionId)
-        const expiredCurrentSession = targetSessionId === sessionIdRef.current
-        const withoutExpired = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
-        const nextRegistry = expiredCurrentSession && sessionRegistry.sessionIds.some((id) => id !== targetSessionId)
+        const currentRegistry = sessionRegistryRef.current
+        const withoutExpired = forgetPublicAssistantSession(currentRegistry, targetSessionId)
+        const nextRegistry = expiredCurrentSession && currentRegistry.sessionIds.some((id) => id !== targetSessionId)
           ? rememberPublicAssistantSession(withoutExpired, createPublicAssistantSessionId())
           : withoutExpired
         if (expiredCurrentSession) {
@@ -1186,7 +1198,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       await deletePublicAssistantSession({ apiBase, sessionId: targetSessionId, signal: controller.signal })
       if (historyRequestRef.current !== controller) return
       clearPublicAssistantSessionBrowserState(targetSessionId)
-      let nextRegistry = forgetPublicAssistantSession(sessionRegistry, targetSessionId)
+      let nextRegistry = forgetPublicAssistantSession(sessionRegistryRef.current, targetSessionId)
       if (targetSessionId === sessionIdRef.current) {
         stopInitialRestore()
         nextRegistry = rememberPublicAssistantSession(nextRegistry, createPublicAssistantSessionId())
@@ -1435,7 +1447,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       setInput((current) => current === submittedDraft ? '' : current)
       if (attachment && imageAttachment?.dataUrl === attachment.dataUrl) setImageAttachment(null)
     }
-    if (result.sessionId) commitSessionRegistry(rememberPublicAssistantSession(sessionRegistry, result.sessionId))
+    if (result.sessionId) commitSessionRegistry(rememberPublicAssistantSession(sessionRegistryRef.current, result.sessionId))
     if (authoritativeHistory) {
       acceptAuthoritativeHistory(authoritativeHistory)
     } else if (!authoritativeHistoryIssue) {

@@ -853,8 +853,8 @@ boundary, preserving explicit-send semantics and the existing question-edit flow
 #### 1. Scope / Trigger
 
 Run when changing history restore/deletion, the shared send gate, conversation
-cancellation or session-draft ownership. This complements the Branch and image
-checks and the existing initial-restore coverage.
+cancellation, registry/draft ownership or initial/manual restore handoff. This
+complements the Branch and image checks and the existing initial-restore coverage.
 
 #### 2. Signatures
 
@@ -864,7 +864,7 @@ node scripts/check-public-assistant-history-ui.mjs
 ```
 
 `checkPublicAssistantHistorySendGate(browser, base)` returns
-`{ cases: 60, modelCalls: 0 }` after the matrix passes. Full UI calls this function
+`{ cases: 100, modelCalls: 0 }` after the matrix passes. Full UI calls this function
 inside the existing `public-assistant` group without replacing its other checks.
 
 #### 3. Contracts
@@ -894,6 +894,12 @@ drawer-focus restoration must finish before testing composer keyboard input.
 | Controlled failure / explicit retry | Original context and draft retained; retry repeats the exact operation without sending a question |
 | Current session expires, with or without other saved sessions | Fresh empty context; old draft/snapshot removed; other saved sessions preserved without activation |
 | Non-current restore target expires | Forget only that target; current draft, Branch/parent and history remain usable |
+| Non-current DELETE and current generation complete in either order | Deleted capability/draft stay absent; current generation completes once without cancellation; a newer current draft survives |
+| Non-current DELETE fails during current generation | Target capability/draft retained; current generation and draft remain independent |
+| Manual restore interrupts initial loading, then fails or expires | Loading ends in visible current-restore recovery controls; current identity/draft retained; no automatic retry or premature chat |
+| Explicit recovery after interrupted initial restore | Retry requests the current session, or New creates empty context; old initial response cannot finish a newer retry |
+| Interrupted-restore notice | Existing generic restore copy, no claim of a received answer; text and button rectangles remain disjoint and inside the notice |
+| Manual restore succeeds before the old initial response arrives | Destination history/draft stay authoritative after the old response settles |
 | New conversation / old response during a newer history operation | Immediate release for New; late old completion cannot restore context or release the newer gate |
 | Current deletion while generation is active | One cancellation with original request/session; no late answer, replay or lingering busy state |
 | Dismissed deletion confirmation | No DELETE or cancellation; original generation remains active |
@@ -903,9 +909,10 @@ drawer-focus restoration must finish before testing composer keyboard input.
 #### 5. Good / Base / Bad Cases
 
 Good: close the drawer while B restores, continue editing A's draft, and only
-explicitly send B's own draft after B arrives. Base: failed restoration leaves A
-usable. Bad: treat drawer closure as completed restoration or let an old finally
-enable submission during a newer history operation.
+explicitly send B's own draft after B arrives. Base: failed restoration leaves an
+already-restored A usable; a not-ready A exposes explicit recovery. Bad: treat
+drawer closure as completed restoration or let an old finally enable submission
+during a newer history operation.
 
 #### 6. Tests Required
 
@@ -914,7 +921,13 @@ The four configurations are 1440/Morning/Chinese, 320/Stellar/English,
 with success, failure, explicit retry and new-session cancellation (8), current
 deletion during generation with success/failure and dismissed-confirmation
 controls (2), superseded history (1), list-only refresh (1), current expiry with /
-without another saved capability and non-current expiry (3): 60 scenarios.
+without another saved capability and non-current expiry (3). Each also covers
+non-current DELETE with two success orders and one failure (3), interrupted
+initial restoration with current/other transient failure or other expiry followed
+by explicit current retry or New (6), and successful manual takeover (1): 100
+scenarios across the four configurations. Hold the original restore independently
+and release it during the replacement retry/New/success checks; assert actual
+loading/error DOM, request targets, localStorage registry and session drafts.
 Retain the old-build failure and final-build pass. Run the Branch/image matrices,
 assistant API/conversation/browser-state contracts, lint/build, performance,
 smoke and full UI before delivery.
@@ -925,6 +938,10 @@ Wrong: use `historyLoadingId` only to disable buttons inside the drawer, or canc
 only Branch work when deleting the generating session. Correct: project history
 operations into shared busy, guard commands synchronously, and release the
 captured active generation on confirmed current-session deletion.
+Wrong: merge an asynchronous completion into its captured registry or leave an
+aborted initial restore loading after manual failure. Correct: merge against the
+latest committed registry and transfer responsibility for a recoverable terminal
+state together with request ownership.
 
 ## SEO And Analytics
 
