@@ -3,7 +3,7 @@
   "name": "stage-5-assistant-session-state-ownership",
   "title": "公开助手异步会话状态归属",
   "description": "Merge assistant session registry changes against current state and settle interrupted initial restores into explicit recoverable errors.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": null,
   "scope": null,
   "package": null,
@@ -11,11 +11,11 @@
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-09-11",
-  "completedAt": null,
+  "completedAt": "2026-09-12",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "3a5eb8cda408802ef13997ab9f8dc624a7356fdd",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -31,7 +31,7 @@
   "notes": "",
   "meta": {
     "validation": {
-      "state": "verified",
+      "state": "passed",
       "evidenceRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-session-state-740b1880339d40009a5f534c397f7f08",
       "baseline": "baseline.json",
       "plannedHistoryCases": 100,
@@ -49,7 +49,9 @@
       "finalValidation": "final-validation.json",
       "resumedByThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "resumedPreviewProcessId": 28444,
-      "resumedPreviewRecord": "resume-01a0952f-preview.json"
+      "resumedPreviewRecord": "resume-01a0952f-preview.json",
+      "previewCleanup": "resume-01a0952f-preview-cleanup.json",
+      "workCommitReceipt": "resume-01a0952f-work-commit.json"
     }
   }
 }

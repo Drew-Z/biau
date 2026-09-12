@@ -49,3 +49,6 @@
 - `full-ui-result.json` 与原始 `full-ui.log` 均确认 2026-09-11T05:38:39Z 完整 UI 46/0；日志同时包含历史 100、分支 32、图片 48 的通过结果。`final-checks-result.json` 九项 exit 0 和 smoke 21/0 已回读。原通过检查被明确复用，接续期间未重建或重复全量测试。
 - 原 preview 已退出、5198 无监听；以同一 `dist` 新建本轮隐藏预览，PID 28444，身份记录为 `resume-01a0952f-preview.json`。`verify-inputs.mjs final-validation` 实际 exit 0：506 源文件、172 构建、3 规范、47 HTTP 响应与冻结 manifest 完全一致，原 13 份资料及保护快照保持。
 - 主会话重新审查 Widget 状态提交/控制器归属、历史检查、局部 CSS 与三份规范，并复看最终 1440/320 截图；恢复文案与按钮不重叠。`task.py validate` 两份 JSONL 各 4 条及 `git diff --check` 通过。下一步仅本地未签名提交、关闭自有预览、归档本子任务并实际返回父任务。
+- 工作提交 `3a5eb8cda408802ef13997ab9f8dc624a7356fdd` 已完成，15 文件暂存集合与原白名单完全一致，Git blob 和工作树原字节逐项核对，未签名、未推送；`resume-01a0952f-work-commit.json` 保存回执。自有 preview 28444 已退出，5198 无监听且实际 TCP 重绑成功，见 `resume-01a0952f-preview-cleanup.json`。
+- 提交准备先遇到 Windows 默认 GBK 解码 UTF-8 任务文件，以及已有原提交计划的防覆盖保护；均在暂存前终止，随后显式 UTF-8 并复用原白名单完成提交。预览停止的首轮保护因 PowerShell 自动把 JSON 日期转为 DateTime 后重新解析而丢失小数精度，在停止前拒绝；改用 `ConvertFrom-Json -DateKind String` 后与 CIM 原时间精确一致，才执行停止。工具错误未被当作产品失败或测试重跑理由。
+- `task.py archive --no-commit` 仅移动本子任务至当前目录，原路径已不存在；两份 JSONL 的 PRD 路径已更新且各 4 条引用验证通过。已实际执行 `task.py start 09-06-website-completion-roadmap`，`current --source` 确认接续会话指向父任务；父任务与历史持续任务保持开放。后续 Session、评估与最终保真记录见父第 48 轮。

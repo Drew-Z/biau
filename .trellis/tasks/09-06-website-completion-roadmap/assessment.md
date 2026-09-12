@@ -456,3 +456,14 @@
 - 选择独立 `09-11-stage-5-assistant-session-state-ownership`，仅修复最新 registry 合并与恢复失败终态，扩展现有历史检查。原 30 子任务不重做；新子任务基线保存 1547 tracked、13 untracked、172 build，范围不涉及 API/helper、CSS、翻译、依赖或生产。
 - 首批 100 场景通过后，主会话截图核验发现恢复终态的误导文案及桌面文字/按钮重叠；永久 Range 几何检查实际失败后，复用既有 copy.restore 并局部调整 restore notice 的两行 CSS，纳入同一子任务 R6。最终 100/32/48 场景、三项合同、lint/build、性能与 smoke 21/0 通过，506/172/3/47 冻结保真通过；完整 UI 19264 首次执行中，待真实终局与后置核对。
 - 2026-09-12 用户指定从原会话接续到 `01a0952f-555f-7c70-a491-ba1840e626a3`，已实际恢复该子任务并移交本地 loop owner，未修改 scheduler。完整 UI 原始结果与日志确认唯一执行 exit 0、46/0、1767900ms；原 preview 已退出，重新提供相同 dist 后 `final-validation.json` 核对 506 源/172 构建/3 规范/47 实际响应一致，13 份原有资料与保护快照保持。主会话复看最终截图和改动，进入本地提交、资源回收与归档阶段；不重复全量测试。
+- 工作提交 `3a5eb8cda408802ef13997ab9f8dc624a7356fdd` 已完成，精确 15 文件且未签名、未推送。恢复预览 28444/5198 已退出、无监听并真实重绑释放；工作区只读审计仍保留规范目录、全部历史 worktree 与原 13 份资料。准备只归档当前子任务并实际返回父任务进入第 48 轮。
+
+## 轮次 48：异步会话状态交付后重新评估
+
+- 工作提交 `3a5eb8cda408802ef13997ab9f8dc624a7356fdd` 已完成，本子任务已单独归档到 `archive/2026-09/09-11-stage-5-assistant-session-state-ownership`。已实际执行 `task.py start 09-06-website-completion-roadmap`，接续会话指针回到本父任务；activeChild 清空，blockedChildren 仍为空，原 30 个子任务不重复交付。
+- 已复现的已删除 capability 回写、初次恢复失去终态、提示文案与按钮重叠均已闭合。当前同源码/构建的历史 100、分支 32、图片 48、smoke 21/0、完整 UI 46/0，以及 lint/build、三项合同和性能检查均通过；47 个实际预览响应与冻结哈希一致。
+- 下一步只检索其他活动任务已记录的本地失败与门禁，不把未刷新过的生产/依赖事实当作当前验证，不因持续循环创建空任务。翻译、远端 CI、生产 DB/relay/model、公开 Feed/Cron 和未知 scheduler 的边界继续保留。
+- 主会话只读复核当前任务清单及相关实施/验收记录：历史 UI 队列的 UI-010/011/012 均写明已本地交付，后续以新的浏览器证据选择问题；AI Daily 的最新已记录真实尝试（2026-08-18）停于 extractor `provider_rate_limited`，要求容量决策及新一次 Edition 授权；manual-gates 尚待选定 Studio 草稿的编辑/归档、审核和首次 Publish Export。上述记录不等于本轮查询过当前生产状态。
+- 依据：`09-04-continuous-ui-quality-loop/ui-audit.md:187-198`、`07-17-ai-daily-production-operations/implement.md:164-168`、`07-14-manual-gates-closure/implement.md:19-20`。AI Daily 父任务的 5/6 子项与未完成 production-operations 保持；公开助手 relay 父任务的旧生产计划不作为本次默认执行授权，不归档这些历史任务。
+- 本轮没有新增已复现且尚未交付的本地失败。Prisma 兼容上游、真实远端 CI、真实助手与 AI Daily/Studio 发布仍需独立条件或范围，依赖告警与线上状态没有重新查询；不能把旧数值当作新检查。父任务保持 in_progress，`enabled=false`、`phase=waiting`、`round=48`，不创建空子任务或重复完整 UI。
+- 未修改未知 heartbeat 配置；此处本地 waiting 不代表已确认调度器暂停。原 13 份资料、保护快照与历史 worktree 保留，后续只有本次 Session 记录及最终保真收尾。
