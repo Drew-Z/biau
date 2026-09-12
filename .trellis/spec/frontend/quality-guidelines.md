@@ -864,7 +864,7 @@ node scripts/check-public-assistant-history-ui.mjs
 ```
 
 `checkPublicAssistantHistorySendGate(browser, base)` returns
-`{ cases: 100, modelCalls: 0 }` after the matrix passes. Full UI calls this function
+`{ cases: 152, modelCalls: 0 }` after the matrix passes. Full UI calls this function
 inside the existing `public-assistant` group without replacing its other checks.
 
 #### 3. Contracts
@@ -900,6 +900,10 @@ drawer-focus restoration must finish before testing composer keyboard input.
 | Explicit recovery after interrupted initial restore | Retry requests the current session, or New creates empty context; old initial response cannot finish a newer retry |
 | Interrupted-restore notice | Existing generic restore copy, no claim of a received answer; text and button rectangles remain disjoint and inside the notice |
 | Manual restore succeeds before the old initial response arrives | Destination history/draft stay authoritative after the old response settles |
+| Initial restore failed, then current/other restore or DELETE is pending | Recovery retry disabled, including after drawer close; no second POST; New remains available |
+| History action and restore retry clicked in one synchronous batch | Ref gate rejects retry before disabled is projected; no concurrent recovery owner |
+| Pending history action settles after initial failure | Success/expiry/deletion preserves the correct context; unresolved current history requires explicit retry; no automatic retry/chat |
+| Initial restore failed while read-only list refresh is pending | Explicit current-session retry remains available and can restore/send without waiting for the list |
 | New conversation / old response during a newer history operation | Immediate release for New; late old completion cannot restore context or release the newer gate |
 | Current deletion while generation is active | One cancellation with original request/session; no late answer, replay or lingering busy state |
 | Dismissed deletion confirmation | No DELETE or cancellation; original generation remains active |
@@ -924,8 +928,13 @@ controls (2), superseded history (1), list-only refresh (1), current expiry with
 without another saved capability and non-current expiry (3). Each also covers
 non-current DELETE with two success orders and one failure (3), interrupted
 initial restoration with current/other transient failure or other expiry followed
-by explicit current retry or New (6), and successful manual takeover (1): 100
-scenarios across the four configurations. Hold the original restore independently
+by explicit current retry or New (6), and successful manual takeover (1). Each
+also starts from an initial 503 and checks current/other restoration with
+success/503/404 (6), current/other deletion with success/503 (4), synchronous
+history-action/retry clicks for restore and deletion (2), and recovery during
+read-only list refresh (1): 152 scenarios across the four configurations.
+For synchronous cases, prove the retry DOM button is still enabled at the second
+click, then assert zero extra session requests. Hold the original restore independently
 and release it during the replacement retry/New/success checks; assert actual
 loading/error DOM, request targets, localStorage registry and session drafts.
 Retain the old-build failure and final-build pass. Run the Branch/image matrices,
@@ -942,6 +951,9 @@ Wrong: merge an asynchronous completion into its captured registry or leave an
 aborted initial restore loading after manual failure. Correct: merge against the
 latest committed registry and transfer responsibility for a recoverable terminal
 state together with request ownership.
+Wrong: let an initial-restore retry run during manual restore/deletion just because
+its own controller is empty. Correct: share the rendered and synchronous history
+action gate, retain existing retry backoff, and keep list-only transport independent.
 
 ## SEO And Analytics
 

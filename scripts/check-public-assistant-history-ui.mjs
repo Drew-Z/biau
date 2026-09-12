@@ -120,6 +120,7 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
       if (initialRestore && request.method() === 'POST' && body.sessionId === sessionIds[0]) {
         initialRestore = false
         if (options.holdInitialRestore) return serveGate(initialGate, () => reply(historyFixture(sessionIds[0])))
+        if (options.failInitialRestore) return reply({ error: 'public-assistant-service-unavailable' }, 503)
         return reply(historyFixture(sessionIds[0]))
       }
       const gate = stages[actions.length]
@@ -173,12 +174,14 @@ async function createHistoryPage(browser, base, configuration, options = {}) {
     await page.locator('.public-assistant__trigger').click()
     if (options.holdInitialRestore) {
       await bounded(initialGate.started.promise, 'initial restoration did not start')
-      return { page, errors, chats, cancellations, cancellationReceived, actions, stages, chatGate, initialGate, listGate, close }
+    } else if (options.failInitialRestore) {
+      await page.locator('.public-assistant__notice--restore').waitFor({ state: 'visible' })
+    } else {
+      await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
+      await page.waitForFunction(() => document.querySelector('.public-assistant__composer button[type=submit]')?.disabled === false)
+      assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
     }
-    await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
-    await page.waitForFunction(() => document.querySelector('.public-assistant__composer button[type=submit]')?.disabled === false)
-    assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
-    return { page, errors, chats, cancellations, cancellationReceived, actions, stages, chatGate, listGate, close }
+    return { page, errors, chats, cancellations, cancellationReceived, actions, stages, chatGate, initialGate, listGate, close }
   } catch (error) {
     await close()
     throw error
@@ -197,14 +200,22 @@ async function closeHistoryAndRestoreFocus(page) {
   await page.waitForFunction(() => document.activeElement === document.querySelector('.public-assistant__header-actions button'))
 }
 
-async function startHistoryAction(test, action, target = action === 'restore' ? sessionIds[1] : sessionIds[0]) {
+async function startHistoryAction(test, action, target = action === 'restore' ? sessionIds[1] : sessionIds[0], synchronousRetry = false) {
   const entry = await openHistoryEntry(test.page, target)
   const gate = { ...responseGate(), id: target, method: action === 'restore' ? 'POST' : 'DELETE' }
   test.stages.push(gate)
-  if (action === 'restore') await entry.locator('.public-assistant__history-open').click()
-  else {
-    test.page.once('dialog', dialog => dialog.accept())
-    await entry.locator('.public-assistant__history-delete').click()
+  if (action !== 'restore') test.page.once('dialog', dialog => dialog.accept())
+  const selector = action === 'restore' ? '.public-assistant__history-open' : '.public-assistant__history-delete'
+  if (synchronousRetry) {
+    gate.retryWasEnabledBeforeProjection = await entry.evaluate((element, actionSelector) => {
+      const retry = document.querySelector('.public-assistant__notice--restore button')
+      element.querySelector(actionSelector).click()
+      const enabled = !retry.disabled
+      retry.click()
+      return enabled
+    }, selector)
+  } else {
+    await entry.locator(selector).click()
   }
   await bounded(gate.started.promise, 'history action did not reach its fixture')
   await closeHistoryAndRestoreFocus(test.page)
@@ -517,12 +528,104 @@ async function checkInterruptedInitialRestoreSuccess(test, configuration) {
   await explicitSend(test, configuration, sessionIds[1], drafts[1])
 }
 
+async function checkRestoreRetryDuringHistory(test, configuration, action, target, outcome, synchronousRetry = false) {
+  const { page } = test
+  const gate = await startHistoryAction(test, action, target, synchronousRetry)
+  const notice = page.locator('.public-assistant__notice--restore')
+  await notice.waitFor({ state: 'visible' })
+  if (synchronousRetry) assert.equal(gate.retryWasEnabledBeforeProjection, true, 'synchronous fixture must exercise the command before disabled is projected')
+  assert.equal(await notice.locator('button').first().isDisabled(), true, 'current-session restore retry must share the pending history action gate')
+  assert.equal(await notice.locator('button').nth(1).isEnabled(), true, 'New remains available while history owns recovery')
+  assert.equal(await page.locator('#public-assistant-input').isDisabled(), true)
+  assert.equal(await page.locator('#public-assistant-input').inputValue(), drafts[0])
+  await afterPaint(page)
+  assert.equal(test.actions.length, 1, 'retry must not start a concurrent session request')
+  assert.equal(test.chats.length, 0)
+  assert.equal(await currentSession(page), sessionIds[0])
+  if (process.env.UI_CHECK_ARTIFACT_DIR && action === 'restore' && target === sessionIds[1] && outcome === 'failure' && !synchronousRetry) {
+    await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, 'history-restore-retry-pending-' + configuration.width + '.png') })
+  }
+
+  gate.release.resolve(outcome)
+  await bounded(gate.settled.promise, 'history operation during restore error did not settle')
+  const removed = outcome === 'expired' || (action === 'delete' && outcome === 'success')
+  const freshSession = target === sessionIds[0] && removed
+  if (freshSession) {
+    await page.waitForFunction(({ key, id }) => JSON.parse(localStorage.getItem(key)).currentSessionId !== id, { key: registryKey, id: sessionIds[0] })
+  } else if (action === 'restore' && outcome === 'success') {
+    await page.getByText('历史回答 ' + target, { exact: true }).waitFor({ state: 'visible' })
+  } else {
+    await page.waitForFunction(() => document.querySelector('.public-assistant__notice--restore button')?.disabled === false)
+  }
+  await afterPaint(page)
+  assert.equal(test.actions.length, 1, 'settlement must not automatically retry current history')
+  assert.equal(test.chats.length, 0, 'settlement must not automatically send')
+  const registry = await page.evaluate(key => JSON.parse(localStorage.getItem(key)), registryKey)
+  assert.equal(registry.sessionIds.includes(target), !removed)
+  assert.equal(await readDraft(page, target), removed ? null : drafts[sessionIds.indexOf(target)])
+  const other = sessionIds.find(id => id !== target)
+  assert.equal(registry.sessionIds.includes(other), true, 'unrelated capability survives')
+  assert.equal(await readDraft(page, other), drafts[sessionIds.indexOf(other)], 'unrelated draft survives')
+
+  if (freshSession) {
+    assert.equal(sessionIds.includes(registry.currentSessionId), false, 'current deletion/expiry creates a fresh context')
+    assert.equal(await notice.count(), 0)
+    assert.equal(await page.locator('.public-assistant__message, .public-assistant__branch-picker').count(), 0)
+    assert.equal(await page.locator('#public-assistant-input').inputValue(), '')
+    await page.locator('#public-assistant-input').fill('历史处理后新会话明确发送')
+    await explicitSend(test, configuration, registry.currentSessionId, '历史处理后新会话明确发送', false)
+  } else if (action === 'restore' && outcome === 'success') {
+    assert.equal(await notice.count(), 0)
+    await explicitSend(test, configuration, target, drafts[sessionIds.indexOf(target)])
+  } else {
+    assert.equal(registry.currentSessionId, sessionIds[0])
+    assert.equal(await page.locator('#public-assistant-input').isDisabled(), true, 'unrestored history stays fenced until explicit recovery')
+    assert.equal(await page.locator('.public-assistant__message').count(), 0)
+    const retry = { ...responseGate(), id: sessionIds[0], method: 'POST' }
+    test.stages.push(retry)
+    await notice.locator('button').first().click()
+    await bounded(retry.started.promise, 'retry must become available after history settlement')
+    assert.deepEqual(test.actions[1], { method: 'POST', body: { sessionId: sessionIds[0] } })
+    retry.release.resolve('success')
+    await bounded(retry.settled.promise, 'explicit current recovery did not settle')
+    await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
+    await explicitSend(test, configuration, sessionIds[0], drafts[0])
+  }
+}
+
+async function checkRestoreRetryDuringList(test, configuration) {
+  const { page, listGate } = test
+  await page.locator('.public-assistant__header-actions button').first().click()
+  await bounded(listGate.started.promise, 'read-only list did not start')
+  await closeHistoryAndRestoreFocus(page)
+  const retryButton = page.locator('.public-assistant__notice--restore button').first()
+  assert.equal(await retryButton.isEnabled(), true, 'read-only list transport must not own the restore retry gate')
+  const retry = { ...responseGate(), id: sessionIds[0], method: 'POST' }
+  test.stages.push(retry)
+  await retryButton.click()
+  await bounded(retry.started.promise, 'current retry must start while the list is pending')
+  assert.equal(listGate.active, true)
+  retry.release.resolve('success')
+  await bounded(retry.settled.promise, 'current retry during list did not settle')
+  await page.getByText('历史回答 ' + sessionIds[0], { exact: true }).waitFor({ state: 'visible' })
+  await explicitSend(test, configuration, sessionIds[0], drafts[0], true, 0, true)
+  listGate.release.resolve('success')
+  await bounded(listGate.settled.promise, 'read-only list did not settle')
+  await afterPaint(page)
+  assert.equal(test.actions.length, 1)
+  assert.equal(test.chats.length, 1)
+  assert.equal(await currentSession(page), sessionIds[0])
+}
+
 export async function checkPublicAssistantHistorySendGate(browser, base) {
   const url = new URL(base)
   assert.ok(['http:', 'https:'].includes(url.protocol) && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname), 'history UI checks require a local preview')
   let cases = 0
   for (const configuration of configurations) {
     const scenarios = [
+      ...['restore', 'delete'].flatMap(action => sessionIds.flatMap(target => (action === 'restore' ? ['success', 'failure', 'expired'] : ['success', 'failure']).map(outcome => ({ name: 'restore-retry-' + action + '-' + sessionIds.indexOf(target) + '-' + outcome, options: { failInitialRestore: true }, run: test => checkRestoreRetryDuringHistory(test, configuration, action, target, outcome) })))),
+      ...['restore', 'delete'].map(action => ({ name: 'restore-retry-synchronous-' + action, options: { failInitialRestore: true }, run: test => checkRestoreRetryDuringHistory(test, configuration, action, action === 'restore' ? sessionIds[1] : sessionIds[0], action === 'restore' ? 'failure' : 'success', true) })),
+      { name: 'restore-retry-list-only', options: { failInitialRestore: true, delayList: true }, run: test => checkRestoreRetryDuringList(test, configuration) },
       ...['delete-first', 'chat-first', 'failure'].map(outcome => ({ name: 'other-deletion-' + outcome, options: { holdChat: true }, run: test => checkOtherDeletionDuringChat(test, outcome) })),
       ...['current-failure', 'other-failure', 'other-expired'].flatMap(kind => ['retry', 'new-session'].map(recovery => ({ name: 'interrupted-restore-' + kind + '-' + recovery, options: { holdInitialRestore: true }, run: test => checkInterruptedInitialRestore(test, configuration, kind, recovery) }))),
       { name: 'interrupted-restore-success', options: { holdInitialRestore: true }, run: test => checkInterruptedInitialRestoreSuccess(test, configuration) },

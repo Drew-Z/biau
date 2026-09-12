@@ -289,6 +289,13 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
   commands, and release it only in the current `historyRequestRef` controller's
   finally. A read-only history-list refresh uses the transport ref but does not
   acquire this gate or disable explicit chat submission.
+- Initial-restore retry shares that action gate: include `historyLoadingId !== null`
+  in `initialRestoreRetryBlocked` without replacing the offline/Retry-After rule,
+  and check `historyActionPendingRef.current` in `retryInitialRestore` before
+  scheduling its target. Otherwise a retry can succeed while manual restoration
+  is pending, then the manual failure can wrongly fence the recovered history.
+  Keep target/controller checks too. Do not block on `historyRequestRef` alone:
+  read-only list refresh must still allow explicit current-session recovery.
 - Closing the history drawer or assistant does not cancel its accepted history
   action. The editable composer retains the current session's draft, while Enter,
   native form submission, send, suggestions, regeneration, edit and Branch/image

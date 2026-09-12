@@ -577,7 +577,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const issueCopy = issue ? getAssistantIssueCopy(issue, isOnline, copy) : null
   const initialRestoreIssueCopy = initialRestoreIssue ? getAssistantIssueCopy(initialRestoreIssue, isOnline, copy) : null
   const issueRetryBlocked = isAssistantIssueRetryBlocked(issue, isOnline)
-  const initialRestoreRetryBlocked = isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
+  const initialRestoreRetryBlocked = historyLoadingId !== null || isAssistantIssueRetryBlocked(initialRestoreIssue, isOnline)
   const isRestoringSession = initialRestoreState === 'loading'
   const isConversationReady = initialRestoreState === 'ready'
   const isWarmupReady = warmup.state === 'ready'
@@ -1062,7 +1062,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }
 
   const retryInitialRestore = () => {
-    if (initialRestoreRetryBlocked || initialRestoreTargetRef.current || initialRestoreRequestRef.current) return
+    if (initialRestoreRetryBlocked || historyActionPendingRef.current || initialRestoreTargetRef.current || initialRestoreRequestRef.current) return
     stopInitialRestore()
     initialRestoreTargetRef.current = sessionIdRef.current
     setInitialRestoreState('loading')

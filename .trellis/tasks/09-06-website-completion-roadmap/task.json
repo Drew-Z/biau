@@ -49,7 +49,8 @@
     "09-11-stage-5-assistant-image-lifecycle",
     "09-11-stage-5-assistant-branch-send-gate",
     "09-11-stage-5-assistant-history-send-gate",
-    "09-11-stage-5-assistant-session-state-ownership"
+    "09-11-stage-5-assistant-session-state-ownership",
+    "09-12-stage-5-assistant-restore-retry-gate"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -57,13 +58,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
+      "enabled": true,
+      "phase": "deliver",
       "round": 48,
-      "activeChild": null,
+      "activeChild": "09-12-stage-5-assistant-restore-retry-gate",
       "blockedChildren": [],
       "lastCompletedChild": "09-11-stage-5-assistant-session-state-ownership",
-      "nextAction": "Round 48 is waiting after all 31 linked children were delivered and the current task actually returned to the roadmap. Resume when a new local failure is reproduced, a compatible dependency repair appears, or the user defines a separate remote-CI, production-assistant, Studio-publication or AI-Daily capacity/Edition scope. Keep authored/SEO translation deferred. Preserve original files and the protected snapshot; do not repeat unchanged validation, create empty children, or modify unknown scheduler configuration.",
+      "nextAction": "The restore-retry-gate child passed all checks: history 152, Branch 32, image 48, smoke 21/0, full UI 46/0 (1737358 ms), lint/build, three contracts and performance. Final validation confirms frozen 506 source, 172 build, 3 spec and 49 actual preview responses plus original-file preservation. Deliver the exact 13-file scope locally without signing, archive only this child, actually return to the roadmap and reassess. No push/deploy/model/publication or scheduler changes.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,

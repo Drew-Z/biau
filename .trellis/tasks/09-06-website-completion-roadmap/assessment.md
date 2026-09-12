@@ -468,3 +468,13 @@
 - 本轮没有新增已复现且尚未交付的本地失败。Prisma 兼容上游、真实远端 CI、真实助手与 AI Daily/Studio 发布仍需独立条件或范围，依赖告警与线上状态没有重新查询；不能把旧数值当作新检查。父任务保持 in_progress，`enabled=false`、`phase=waiting`、`round=48`，不创建空子任务或重复完整 UI。
 - 未修改未知 heartbeat 配置；此处本地 waiting 不代表已确认调度器暂停。原 13 份资料、保护快照与历史 worktree 保留，后续只有本次 Session 记录及最终保真收尾。
 - 归档提交 `ec3d7099fe7228179504adc1f73482f67e1601bb` 已完成，仅包含本子任务移动/引用与父记账。Session 134 已追加并验证原日志 58628 字节前缀及 index 133 条历史行保持；本次 3 个临时输入/备份、73680 bytes 已清理，保留原始失败/成功证据。最终日志提交后通过证据目录的 `verify-inputs.mjs closeout` 核对已跟踪文件、冻结输入及原 13 份资料，不重跑原全量检查。
+
+### 2026-09-12 用户继续后的有界本地核验
+
+- 用户在 Session 134 交付后再次要求“继续”。HEAD 为 `e72ed5428868046e9eb299d9af73c3578fa772cf`，当前指针仍是本父任务，31/31 已关联子任务完成；原 13 份资料与历史 worktree 保持，没有重复旧检查。
+- 新证据：初次 A 恢复失败后，B 的手动恢复 pending 时，访客关闭历史抽屉仍能点击 A 的重试。A 重试成功后，B 的迟到 503 把可用状态重新设为 error。1440/Morning/中文与 320/Stellar/英文 2/2 复现；A 的历史仍显示、输入框却再次禁用，草稿/身份未迁移、聊天和真实模型调用均为 0。
+- 依据：`PublicAssistantWidget.tsx` 的 `initialRestoreRetryBlocked` / `retryInitialRestore` 未包含历史门禁，而 `openHistorySession` 捕获未恢复状态并负责失败终态；本地探针实际 exit 1、请求顺序及 DOM 记录在 `C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-restore-retry-1icsdx4s/assessment-before.json`。
+- 创建一个已复现的 P2 子任务 `09-12-stage-5-assistant-restore-retry-gate`，完成 PRD/design/implement 后启动。仅补齐现有恢复重试入口的 UI/ref 门禁，扩展已有历史矩阵，不增加状态机、API、样式、文案或依赖。用户收益是恢复成功的会话不会因并发旧恢复失败而重新不可输入。
+- 预计验证：新增 52 个历史场景、既有 Branch/image/合同、lint/build/性能/smoke/完整 UI，保存最终输入哈希与真实退出码。保持本地持续授权边界；恢复本地 loop 不代表操作或确认未知 scheduler。当前仍是轮次 48，子任务交付并实际返回后才递增。
+- 修复和质量门禁已完成：源码仅两处 gate 判断，永久回归在旧构建按预期失败；最终 history 152、Branch 32、image 48、smoke 21/0、完整 UI 46/0（1737358 ms）、lint/build、三项合同及性能均真实通过。完整 UI 内同样执行三套助手矩阵，真实模型调用为 0。
+- `final-validation.json` 已验证 506 source、172 build、3 spec、49 个实际 HTTP 响应与冻结输入一致，原 13 份资料及保护快照保持。精确提交范围为 6 个既有文件及本子任务 7 个文件，尚未归档；下一步仅本地提交、归档、实际返回与新评估。
