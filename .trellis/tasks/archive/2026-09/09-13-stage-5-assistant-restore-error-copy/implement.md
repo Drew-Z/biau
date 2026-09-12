@@ -10,7 +10,7 @@
 - [x] trellis-check：检查完整差异，运行以下必要验证并保存真实退出码。
 - [x] trellis-update-spec：记录恢复文案与专用错误的优先级，更新历史矩阵数量。
 - [x] 冻结最终输入和预览响应，完成 smoke/完整 UI 后核对无漂移。
-- [ ] Phase 3.4：核对精确暂存白名单、本地无签名提交。
+- [x] Phase 3.4：核对精确暂存白名单、本地无签名提交。
 - [ ] trellis-finish-work：只归档本子任务，实际返回父任务、重新评估、记录会话及清理自有资源。
 
 ## 验证命令
@@ -42,3 +42,5 @@ git diff --check
 - `baseline-proof.json` 证明 506 source/172 build/3 spec 与上一轮最终输入一致；`assessment-before.json` 真实 exit 1，8/8 文案不符，网络边界检查通过。
 
 - 最终完整 UI 28906 已取得 exit 0、46/0、组累计 1899615ms；外层 1904137ms。`final-validation.json` 再次核对 506/172/3/49 与冻结输入一致，`final-checks.json` 收齐真实终局。首次中断日志单独保留。
+
+- 工作提交 `5807095d6ea35451665e204e7befea72822f47ee`：精确 13 文件，Git blob/原字节核验通过，无签名、未推送。恢复预览 PID 32728 已核对身份后停止，端口 5198 已真实重绑验证释放。
