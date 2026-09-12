@@ -522,3 +522,13 @@
 - `final-validation.json` 核对 506 source / 172 build / 3 spec / 49 HTTP responses 与冻结一致；主会话已复看四配置截图，原 13 份资料与保护状态保持。进入 deliver，按精确 13 文件白名单本地提交，随后仅归档本子任务并实际返回父任务。
 
 - 工作提交 `cc74128ba8929a06e5ac87dbd560f65f91fdb320` 已完成，精确 13 文件且未签名、未推送；原资料保持。自有预览 PID 32616 已按完整身份关闭，5198 无监听且实际重绑成功。工作区审计保留规范目录与历史 worktree；准备只归档当前子任务，再实际返回父任务进入第 51 轮。
+
+## 轮次 51：图片错误语言一致性交付后重新评估
+
+- 工作提交 `cc74128ba8929a06e5ac87dbd560f65f91fdb320` 与归档提交 `8fee23c7ab3a8adea4895e540eee8ff46a442709` 已完成。已实际执行 `task.py start 09-06-website-completion-roadmap`，当前来源为接续会话；`parent-return.json` 逐项核对 34/34 关联子任务 completed，activeChild 清空、blockedChildren 为空。
+- 本项已复现的错误出现后切换语言、跨语言迟到失败均已修复。图片 72 / Branch 32 / 历史 188、smoke 21/0、完整 UI 46/0 及静态检查真实通过；506/172/3/49 后置保真核对通过。首次 AI 日报详情等待超时未再次复现，44 组诊断与完整复跑均通过；失败和诊断证据保留，后续若重现应先保留失败页面再判断根因，不重复当前已通过检查。
+- 实际复核剩余 6 个持续任务。持续 UI 的 UI-010/011/012 均已交付；manual-gates 仍要求选定 Studio 草稿编辑或归档、审核及首次 Publish Export；AI Daily 记录的最新真实尝试为 2026-08-18 extractor `provider_rate_limited`，后续需容量决定及新的 Edition 范围。依据：`09-04-continuous-ui-quality-loop/ui-audit.md:187-198`、`07-14-manual-gates-closure/implement.md:19-20`、`07-17-ai-daily-production-operations/implement.md:164-168`。这些是当前仓库记录，不等于本轮刷新过生产事实。
+- 兼容依赖条件沿用 2026-09-12T15:42:56Z 的官方元数据核对；本轮没有新 audit、依赖升级、生产助手/DB/relay 或远端 CI 查询。authored/SEO 翻译继续暂缓；其他历史任务与 worktree 保留。
+- 没有新增已复现且未交付的本地问题，不创建空子任务。父任务保持 in_progress，round=51、enabled=false、phase=waiting，等待新的本地证据、兼容依赖修复或范围明确的外部任务；未知 heartbeat 配置未修改，本地 waiting 不表示确认调度器暂停。
+
+- Session 137 已追加并核对原 journal 的 67185 bytes 前缀与 index 的 136 条历史行保持，原 EOF 换行保持。本轮没有删除文件；自有预览已回收，原始失败/成功证据、诊断和提交清单保留，原 13 份资料与历史 worktree 保留。最后记录提交后执行 `closeout.json` 核对最终 HEAD 和受检输入，不重复已通过的测试。

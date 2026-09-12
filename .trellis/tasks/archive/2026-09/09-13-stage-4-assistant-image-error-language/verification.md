@@ -1,6 +1,6 @@
 # 验收记录
 
-状态：最终验收通过，工作提交与七文件归档已完成。图片 72 场景、静态检查、smoke 21/0、完整 UI 46/0 与后置输入核对通过；首次完整 UI 超时单独保留，不计通过。待归档提交、实际返回父路线图与会话记录。
+状态：最终验收、工作提交、子任务归档、实际返回父路线图及 Session 137 记录完成。图片 72 场景、静态检查、smoke 21/0、完整 UI 46/0 与后置输入核对通过；首次完整 UI 超时单独保留，不计通过。
 
 ## 证据
 
@@ -40,7 +40,14 @@
 
 - 工作提交 `cc74128ba8929a06e5ac87dbd560f65f91fdb320` 已按 `work-commit-plan.json` 的精确 13 文件白名单完成；`work-stage.json` 与 `work-commit.json` 核验暂存/提交 blob 和工作树原字节，未签名或推送。
 - `preview-cleanup.json`：2026-09-12T23:17:09.0289797Z，核对 PID 32616 的创建时间、可执行路径、完整命令行和监听归属后停止；进程退出、5198 无监听且实际重绑成功。未停止其他进程。
-- 工作区只读审计已完成，规范目录、原 13 份资料及历史 worktree 保留。已用 `task.py archive 09-13-stage-4-assistant-image-error-language --no-commit` 仅归档本子任务至当前目录；`archive-move.json` 核验精确七文件及完成状态，两份 JSONL 的 PRD 引用已同步。下一步提交归档记账，再实际返回父任务、重新评估并记录 Session 137。
+- 工作区只读审计已完成，规范目录、原 13 份资料及历史 worktree 保留。已用 `task.py archive 09-13-stage-4-assistant-image-error-language --no-commit` 仅归档本子任务至当前目录；`archive-move.json` 核验精确七文件及完成状态，两份 JSONL 的 PRD 引用已同步。
+
+## 会话收尾
+
+- 归档提交 `8fee23c7ab3a8adea4895e540eee8ff46a442709` 已完成，随后实际 `task.py start 09-06-website-completion-roadmap`；`parent-return.json` 核对本会话指针、34/34 关联子任务 completed、activeChild/blockedChildren 为空。
+- Session 137 使用工作提交记录；`session-137.json` 核验原 journal 的 67185 bytes 前缀与 index 的 136 条历史行完全保留，EOF 换行保持，Testing/Status/Next Steps 已填写真实结果。
+- 第 51 轮没有新的已复现本地问题；父路线图保留 in_progress / waiting，等待新证据、兼容依赖修复或范围明确的外部工作。原 6 个持续任务保留，生产与依赖旧记录未在本轮刷新；没有修改未知 scheduler。
+- 本轮没有删除文件。自有预览已回收，日志、截图、复现与提交清单保留为验收证据；原 13 份资料及用途不明文件保留。最后记录提交后的输入和原资料保真结果见证据目录 `closeout.json`。
 
 ## 边界
 

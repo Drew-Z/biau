@@ -1262,3 +1262,44 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 父路线图维持 waiting / round 50；等待新的本地复现、兼容上游修复或范围明确的远端 CI/生产助手/Studio/AI Daily 任务。本地 waiting 不代表已经操作或暂停调度器。
+
+
+## Session 137: 公开助手图片错误语言一致性与路线图第51轮评估
+
+**Date**: 2026-09-13
+**Task**: 公开助手图片错误语言一致性与路线图第51轮评估
+**Branch**: `main`
+
+### Summary
+
+修复图片失败提示保留旧语言的问题，完成本地验收、子任务归档和路线图第51轮评估。
+
+### Main Changes
+
+- 本地有效探针在 1440 中文转英文与 320 英文转中文复现 4/4 旧语言错误提示，覆盖已出现错误和跨语言迟到失败；新增永久回归在旧构建因语言断言真实失败。
+- 组件严格只有四处改动：使用已有图片错误 code 类型保存状态，在 render 时按当前 copy 映射提示，catch 只保存 code，JSX 展示派生值。未知异常沿用 decode-failed；图片归属、过期回调隔离、压缩/解码、草稿和请求行为保持。
+- 图片矩阵保留原 48 场景并新增 24 场景，共 72；覆盖四类代码、未知异常、双向语言切换、异步失败、草稿/身份保持和成功重新选图。同步状态管理与质量规范，主会话复看四配置截图。
+- 首次完整 UI 在 AI 日报详情页等待超时；保持原代码、超时和断言，原矩阵 44 组诊断通过，完整复跑最终 46/0、组累计 1889430ms、外层 1890995ms。首次超时原因尚未定位，原失败及诊断证据保留，不计为通过。
+- 最终图片 72、Branch 32、历史 188、smoke 21/0、lint/build、三项助手合同和性能通过；全量后 506 source / 172 build / 3 spec / 49 HTTP 响应与冻结一致，原 13 份资料与保护快照保持。
+- 工作提交 cc74128ba8929a06e5ac87dbd560f65f91fdb320 仅 13 文件；归档提交 8fee23c7ab3a8adea4895e540eee8ff46a442709 只处理本子任务七文件移动/引用和父记录。已实际返回父路线图，逐项核对 34/34 关联子任务 completed，当前 round 51 / waiting。
+- 剩余 6 个持续任务保留；本轮未发现新的已复现本地问题。依赖条件沿用 2026-09-12T15:42:56Z 的官方核对，生产与 AI Daily 容量/版次记录未刷新；authored/SEO 翻译继续暂缓，新的外部工作须有明确范围。
+- 自有预览 PID 32616 已按完整身份停止，5198 无监听且实际重绑成功。未删除文件；日志、截图、复现和提交清单保留为验收证据，原用户资料及用途不明文件保留。没有 push/deploy/sign、真实模型/DB/relay、公开发布、Feed/Cron 或 scheduler 修改。
+- 证据目录：C:/Users/zhang/AppData/Local/Temp/blog-semi-assistant-branch-retry-fa3hoffd。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cc74128ba8929a06e5ac87dbd560f65f91fdb320` | fix: keep assistant image errors in the current language |
+
+### Testing
+
+- [OK] lint/build、API/conversation/browser-state、图片 72、Branch 32、历史 188、性能、smoke 21/0、完整 UI 46/0 通过；最终 506/172/3/49 输入保真、原资料和保护快照核验通过。
+
+### Status
+
+[OK] **当前子任务已本地交付；父路线图等待新证据或外部条件**
+
+### Next Steps
+
+- 父路线图维持 waiting / round 51；等待新的本地复现、兼容上游修复或范围明确的远端 CI/生产助手/Studio/AI Daily 任务。本地 waiting 不代表已操作或暂停调度器。
