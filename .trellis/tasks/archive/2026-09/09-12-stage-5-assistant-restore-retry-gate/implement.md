@@ -9,7 +9,7 @@
 - [x] 依次 lint/build，冻结最终 source/build/spec 哈希；核对真实预览响应。
 - [x] 运行三项助手合同、history 152、Branch 32、image 48、性能与 smoke。
 - [x] 完整 UI 取得真实终局并在原字节输入上验证；检查新增断言、共享入口、受保护资料及 Git 差异。
-- [ ] 记录 verification 和精确提交白名单，本地无签名提交。
+- [x] 记录 verification 和精确提交白名单，本地无签名提交。
 - [ ] 只归档本子任务、提交移动与父记账，实际 `task.py start 09-06-website-completion-roadmap` 返回父任务并重新评估。
 - [ ] 追加本轮日志；关闭自己创建的预览并清理可丢弃临时文件；核对最终 Git 状态。
 
@@ -49,3 +49,4 @@ git diff --check
 - 完整 UI 工具会话 `84385` 已取得真实 exit 0：46 组通过、0 失败，组累计 1737358 ms；实际起止为 2026-09-12T14:37:04.5473837Z 至 15:06:04.7680681Z。完整 UI 内也执行了 history 152、Branch 32、image 48 并全部通过。原始日志/回执为 `full-ui.log`、`full-ui-result.json`。
 - `pre-full-ui-checks.json` 汇总 10 项前置命令的真实成功、日志哈希和最终输入清单哈希；`source-review.json` 证明生产源码仅为计划中的两个替换，测试与组件字节仍等于冻结值。`work-commit-plan.json` 保存 13 文件白名单，检查时索引为空、只有 6 个计划内 tracked 改动和本子任务 7 个新文件，原 13 份资料未混入。
 - `final-validation.json` 于完整 UI 结束后验证 506 source、172 build、3 spec 及 49 个 HTTP 响应仍与冻结输入一致；原 13 份资料、其余既有 tracked 文件及保护快照保持。`git diff --check` 通过。质量门禁已通过，后续只有精确范围提交、归档、父任务评估及日志收尾。
+- 工作提交 `f467ecaa0e130af5cce19e854ef8fd7df391a251` 已完成，精确 13 文件，无签名、未 push/deploy。`work-commit.json` 核对父提交、文件集合、每个 Git blob 和受检工作树原字节；提交后已跟踪工作树/索引干净，仅保留原 13 份资料。

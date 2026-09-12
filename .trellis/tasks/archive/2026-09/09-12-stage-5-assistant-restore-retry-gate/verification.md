@@ -1,6 +1,6 @@
 # 验收记录
 
-状态：质量门禁通过，等待本地提交与归档。
+状态：质量门禁通过，工作提交完成，子任务已移入归档目录，等待父任务返回。
 
 ## 旧版本证据
 
@@ -33,3 +33,7 @@
 `source-review.json` 确认组件精确等于基线加两个计划内替换；`pre-full-ui-checks.json` 绑定 10 项前置命令日志与输入清单。完整 UI 内也通过了 152/32/48 三个矩阵。任务 manifest 各 4 条引用有效，`git diff --check` 通过；提交按 `work-commit-plan.json` 的 13 文件白名单执行，不包含原有资料。
 
 本次只证明本地 fixture/构建行为；没有执行生产模型/DB/relay 验收、push、deploy、签名、公开发布或 Feed/Cron 操作，也未修改 scheduler。依赖、内容和生产门禁仍属于父路线图的独立范围。
+
+工作提交为 `f467ecaa0e130af5cce19e854ef8fd7df391a251`，精确 13 文件。`work-commit.json` 已验证 Git blob、工作树原字节、父提交与无签名状态；未混入原有资料，未推送。
+
+本子任务已通过 `task.py archive --no-commit` 移入 `archive/2026-09/09-12-stage-5-assistant-restore-retry-gate`；两个 JSONL 的 PRD 引用已同步归档位置。其余历史持续任务与父路线图保持开放。
