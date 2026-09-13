@@ -52,7 +52,8 @@
     "09-11-stage-5-assistant-session-state-ownership",
     "09-12-stage-5-assistant-restore-retry-gate",
     "09-13-stage-5-assistant-restore-error-copy",
-    "09-13-stage-4-assistant-image-error-language"
+    "09-13-stage-4-assistant-image-error-language",
+    "09-13-stage-5-assistant-feedback-focus"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -60,13 +61,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
+      "enabled": true,
+      "phase": "deliver",
       "round": 51,
-      "activeChild": null,
+      "activeChild": "09-13-stage-5-assistant-feedback-focus",
       "blockedChildren": [],
       "lastCompletedChild": "09-13-stage-4-assistant-image-error-language",
-      "nextAction": "Round 51 reassessment is complete: 34/34 child tasks delivered; the remaining six ongoing tasks require new local evidence, a compatible upstream fix, or an explicitly scoped remote/production/editorial task. Original AI Daily detail timeout did not recur in its 44-group diagnostic or complete UI rerun; retain evidence and investigate if it recurs. Do not repeat passing checks or create empty tasks. Preserve deferred authored/SEO translation, original files, worktrees and all local-only boundaries; no scheduler change was made.",
+      "nextAction": "All feedback-task checks passed, including full UI 46/0 and final frozen inputs; commit exactly 16 owned files locally, archive only this child, then actually return to round 52. No scheduler change.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,

@@ -1,0 +1,73 @@
+{
+  "id": "stage-5-assistant-feedback-focus",
+  "name": "stage-5-assistant-feedback-focus",
+  "title": "公开助手反馈完成的菜单与焦点归属",
+  "description": "Bound late feedback menu and focus effects to the originating interaction while preserving Revision feedback and retry.",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": "public-assistant",
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-13",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/PublicAssistantWidget.tsx",
+    "scripts/check-public-assistant-feedback-ui.mjs",
+    "scripts/check-ui.mjs",
+    ".trellis/spec/frontend/state-management.md",
+    ".trellis/spec/frontend/quality-guidelines.md",
+    ".trellis/spec/frontend/index.md",
+    "scripts/check-public-assistant-history-ui.mjs"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "evidenceDirectory": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-assistant-feedback-7c541gfb",
+      "baselineHead": "018d28d3446e3f1529619987364956dbafb0f484",
+      "reproducedCases": 12,
+      "controlCases": 4,
+      "feedbackCases": 72,
+      "modelCalls": 0,
+      "staticChecks": "passed",
+      "fullUi": {
+        "groups": 46,
+        "failed": 0,
+        "toolSession": 45091,
+        "durationMs": 2311435
+      },
+      "freeze": "507 source / 172 build / 3 spec / 49 local HTTP responses",
+      "historyDiagnostic": "reproduced on attempt 4; Enter reached the initial mobile close button",
+      "historyCases": 188,
+      "finalInputs": "validation-inputs-final.json",
+      "checksAlreadyPassed": [
+        "lint-verified",
+        "build",
+        "api",
+        "conversation",
+        "browser-state",
+        "performance",
+        "feedback-final-verified",
+        "history-final",
+        "smoke"
+      ],
+      "passedAt": "2026-09-13T03:59:17.830442+00:00",
+      "finalProof": "final-validation.json",
+      "finalChecks": "final-checks.json"
+    },
+    "planning": {
+      "convergedAt": "2026-09-13T00:18:56.631798+00:00",
+      "authorization": "Parent loop.md persistent local execution authorization; user continued this task."
+    }
+  }
+}

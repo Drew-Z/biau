@@ -391,6 +391,10 @@ async function checkTransition(test, configuration, action, outcome) {
   if (outcome === 'success') {
     await page.locator('.public-assistant__header-actions button').last().click()
     await page.locator('.public-assistant__trigger').click()
+    const initialFocus = configuration.width <= 768
+      ? '.public-assistant__header-actions button:last-child'
+      : '#public-assistant-input'
+    await page.waitForFunction(selector => document.activeElement === document.querySelector(selector), initialFocus)
   }
   await assertPending(test)
   if (process.env.UI_CHECK_ARTIFACT_DIR && outcome === 'success') {

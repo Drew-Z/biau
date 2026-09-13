@@ -10,6 +10,7 @@ import { checkSiteLanguage } from './check-site-language-ui.mjs'
 import { checkPublicAssistantImageLifecycle } from './check-public-assistant-image-ui.mjs'
 import { checkPublicAssistantBranchSendGate } from './check-public-assistant-branch-ui.mjs'
 import { checkPublicAssistantHistorySendGate } from './check-public-assistant-history-ui.mjs'
+import { checkPublicAssistantFeedbackFocus } from './check-public-assistant-feedback-ui.mjs'
 import { selectSiteLanguage } from './lib/ui-language.mjs'
 import { createAiDailyPublicFixtureItem, createAiDailyPublicPayloads } from './lib/ai-daily-ui-fixtures.mjs'
 import {
@@ -3055,6 +3056,7 @@ await reducedStellarPage.close()
   console.log('Public assistant image lifecycle passed:', await checkPublicAssistantImageLifecycle(browser, base))
   console.log('Public assistant branch send gate passed:', await checkPublicAssistantBranchSendGate(browser, base))
   console.log('Public assistant history send gate passed:', await checkPublicAssistantHistorySendGate(browser, base))
+  console.log('Public assistant feedback focus passed:', await checkPublicAssistantFeedbackFocus(browser, base))
   const publicAssistantFailures = failures.length
 
 const publicAssistantLongToken = `harbor-${'x'.repeat(180)}`

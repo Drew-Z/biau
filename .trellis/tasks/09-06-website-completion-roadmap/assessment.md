@@ -532,3 +532,9 @@
 - 没有新增已复现且未交付的本地问题，不创建空子任务。父任务保持 in_progress，round=51、enabled=false、phase=waiting，等待新的本地证据、兼容依赖修复或范围明确的外部任务；未知 heartbeat 配置未修改，本地 waiting 不表示确认调度器暂停。
 
 - Session 137 已追加并核对原 journal 的 67185 bytes 前缀与 index 的 136 条历史行保持，原 EOF 换行保持。本轮没有删除文件；自有预览已回收，原始失败/成功证据、诊断和提交清单保留，原 13 份资料与历史 worktree 保留。最后记录提交后执行 `closeout.json` 核对最终 HEAD 和受检输入，不重复已通过的测试。
+
+- 2026-09-13 用户继续后，以 `018d28d3446e3f1529619987364956dbafb0f484` 恢复只读评估。506 source、172 build、3 spec 与上一项最终冻结一致，1575 tracked 和原 13 untracked 已保存新基线。当前会话和父任务指针一致，没有未完成子任务或检查进程。
+- 延迟反馈探针实际完成 16 场景：1440/Morning/zh 与 320/Stellar/en 中，12 个访客已切至其他菜单、草稿或 Escape 后草稿的场景全部被旧反馈抢回焦点；旧成功还会关闭另一回答菜单。4 个原菜单对照正常，模型 0。新证据位于 `C:\Users\zhang\AppData\Local\Temp\blog-semi-assistant-feedback-7c541gfb`，不复用旧任务脚本作本次验收。
+- 已创建并收敛 P2 子任务 `09-13-stage-5-assistant-feedback-focus`，只收窄 `sendFeedback` 的菜单/焦点副作用并补充专项与规范。原 Revision 评分、请求、双语、草稿及原焦点合同保持；按既有持续授权恢复本地 execute，round 在交付并实际返回后递增，未知 scheduler 未修改。
+- 反馈 72 场景修复后通过。首次完整 UI 在历史 `320/stellar/en/restore-success` 失败；独立事件轨迹第 4 次复现：重开后的初始焦点帧在测试填草稿后聚焦关闭按钮，Enter 因而关闭助手。仅为原检查增加实际焦点就绪等待，产品移动端行为和原断言保持；历史 188 与 lint 随后通过。
+- 最终 `full-ui-verified` 已真实 exit 0、46/0（外层 2311435ms），包含图片 72 / Branch 32 / 历史 188 / 反馈 72，模型 0；smoke 21/0 与其余必要检查通过。507 source / 172 build / 3 spec / 49 本地响应、原资料及保护快照后置核对一致。进入精确 16 文件本地交付，首次失败和诊断保留，不计为通过。

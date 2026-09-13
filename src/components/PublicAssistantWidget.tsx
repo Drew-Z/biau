@@ -1527,6 +1527,19 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     reason: PublicAssistantFeedbackReason,
   ) => {
     if (!apiBase || !isWarmupReady || !isConversationReady || isSnapshotVisible || !message.sessionId || !message.revisionId || message.feedbackPending) return
+    const feedbackMenu = rating === 'down' ? document.getElementById(`public-assistant-feedback-${message.id}`) : null
+    const settleFeedbackInteraction = (closeMenu: boolean) => {
+      if (!feedbackMenu?.isConnected) return
+      const activeElement = document.activeElement
+      // Disabling the submitted reason can move focus to body while its menu remains open.
+      const restoreFocus = activeElement === document.body ||
+        feedbackMenu.contains(activeElement) ||
+        activeElement === feedbackTriggerRefs.current.get(message.id)
+      if (closeMenu) setFeedbackMenuMessageId((current) => current === message.id ? null : current)
+      if (restoreFocus) {
+        setFeedbackFocusRequest((current) => ({ messageId: message.id, sequence: (current?.sequence ?? 0) + 1 }))
+      }
+    }
     setConversation((current) => updatePublicAssistantRevisionFeedback(current, message.revisionId!, {
       feedback: message.feedback ?? null,
       feedbackPending: true,
@@ -1546,7 +1559,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         feedbackError: false,
       }))
       if (rating === 'down') {
-        closeFeedbackMenuAndRestoreFocus(message.id)
+        settleFeedbackInteraction(true)
       } else {
         setFeedbackMenuMessageId((current) => current === message.id ? null : current)
       }
@@ -1557,7 +1570,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         feedbackError: true,
       }))
       if (rating === 'down') {
-        setFeedbackFocusRequest((current) => ({ messageId: message.id, sequence: (current?.sequence ?? 0) + 1 }))
+        settleFeedbackInteraction(false)
       }
     }
   }

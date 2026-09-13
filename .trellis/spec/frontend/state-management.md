@@ -274,6 +274,27 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 - Editing a persisted visitor question is an immutable Branch fork, never an in-place Turn mutation or `answer-revision`. Build a `new-turn` intent from the edited Turn's parent: the root uses `{ branchId: null, parentRevisionId: null }`; a later Turn uses the current `activeBranchId` plus that Turn's original `parentRevisionId`. Prompt history contains only Turns before the edited Turn.
 - An edit-and-resend completion always refreshes authoritative Session history before replacing the visible path, even when the new Branch was activated normally. The pending projection may display progress, but it must not assemble or retain old descendants as persisted ancestry. Preserve the force-refresh flag across cancellation and explicit retry.
 
+### Feedback Interaction Ownership
+
+- `sendFeedback` captures the actual negative-reason menu node before awaiting
+  its request. Its `settleFeedbackInteraction(closeMenu)` may affect menus or
+  focus only while that node remains connected. A message ID alone cannot prove
+  that a menu still belongs to the original interaction after close/reopen.
+- Successful feedback conditionally closes only its own message's menu; failure
+  leaves that menu available. Restore the owning trigger after pending clears
+  only if focus remains inside that menu, on its trigger, or on `document.body`.
+  Chromium blurs a newly disabled reason button to body, so this last case keeps
+  the normal success/failure keyboard contract. An input, another answer's
+  control, or history control keeps its current focus.
+- Keep Revision feedback updates independent of this DOM ownership check.
+  A superseded menu does not cancel an accepted rating or change its payload;
+  update only the original Revision with the existing reducer. Do not add a
+  global feedback busy gate or automatically retry. Explicit Escape retains
+  its synchronous close-and-restore behavior.
+- `checkPublicAssistantFeedbackFocus` verifies both completion orders, failure
+  and explicit retry, another menu, editable drafts, reopen and history changes.
+  Only bounded local fixtures may be used; preserve existing model/request gates.
+
 ### History Operation Ownership
 
 - `sessionRegistryRef` holds the latest registry for command completion, while

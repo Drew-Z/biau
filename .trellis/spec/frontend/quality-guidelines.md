@@ -719,6 +719,60 @@ Correct: run `check:ui` locally for fixture coverage, then run `check:ui:product
 - Suggested prompts are bounded; UI checks validate the rendered starter contract rather than requiring hidden overflow items.
 - One-image UI fixtures cover selection, compressed preview, remove/focus restoration, request forwarding, retry continuity, privacy across refresh, and compact/fullscreen/mobile containment. No browser fixture calls a live model.
 
+### Feedback Focus Browser Check
+
+#### 1. Scope / Trigger
+
+Run when changing feedback completion, menu lifetime, or feedback focus behavior.
+Keep the existing full UI Escape, structured-payload, failure and retry assertions.
+
+#### 2. Signatures
+
+`node scripts/check-public-assistant-feedback-ui.mjs` accepts the local
+`UI_CHECK_BASE` and optional existing `UI_CHECK_ARTIFACT_DIR`.
+`checkPublicAssistantFeedbackFocus(browser, base)` runs in full UI too and returns
+`{ cases: 72, modelCalls: 0 }` only after all current scenarios pass.
+
+#### 3. Contracts
+
+Use the production history decoder, scoped `tsImport`, local network guard and
+bounded response gates with finally cleanup. Each POST must contain exactly the
+original `sessionId`, `revisionId`, `rating` and fixed `reason`; positive feedback
+uses `helpful`. Compare actual activeElement, menu identity, transcript, Branch,
+mode, both session drafts, registry and URL. Do not infer focus from ARIA alone.
+
+#### 4. Validation & Error Matrix
+
+At 1440/Morning/zh, 320/Stellar/en, 390/Nature/zh and 430/Morning/en, exercise
+success and failure for seven interactions: original menu, another menu (including
+keyboard focus in its reasons), composer, Escape then composer, close/reopen,
+history drawer and another restored session. Add both completion orders for two
+pending answers, again with old success/failure: 18 scenarios per configuration.
+Original-menu failure explicitly retries; success also checks positive feedback.
+
+#### 5. Good / Base / Bad Cases
+
+Base: staying at the original disabled reason restores its trigger after success
+or failure. Good: editing a draft or opening answer B retains that focus and B's
+menu when answer A settles. Bad: A's late success closes B, or A's late failure
+steals a composer/history focus even though the error belongs to A's Revision.
+
+#### 6. Tests Required
+
+Run this standalone Node entry plus lint/build, assistant API/conversation/browser
+state checks, performance, smoke and full UI. Retain model-call and external-
+request assertions, real keyboard activation, explicit retry payload equality,
+no automatic submission, and representative screenshots with contained controls.
+The pre-fix build must fail the regression assertion, not a fixture setup error.
+
+#### 7. Wrong vs Correct
+
+Wrong: unconditionally call `closeFeedbackMenuAndRestoreFocus(message.id)` after
+an asynchronous response, or treat body focus as proof of ownership without
+checking the original menu. Correct: capture the originating node, retain the
+Revision update, and separately gate menu closure and focus restoration by the
+still-current interaction.
+
 ### Image Lifecycle Browser Check
 
 #### 1. Scope / Trigger
@@ -905,6 +959,12 @@ Wait for the history trigger to regain focus after closing its drawer, then plac
 the caret deliberately with Control+End before asserting that Shift+Enter appends
 a newline. Loading a saved draft does not guarantee an end selection, and a queued
 drawer-focus restoration must finish before testing composer keyboard input.
+After closing and reopening the assistant, wait for its prescribed initial focus
+too: the close command at mobile widths, the composer on desktop. Finding or
+filling the textarea does not prove that the queued initial-focus frame finished.
+Without that wait, Enter can activate the close command and make the subsequent
+composer assertion time out. Keep the real focus predicate and all existing
+pending/Enter/form assertions; do not substitute a sleep or alter product focus.
 
 #### 4. Validation & Error Matrix
 

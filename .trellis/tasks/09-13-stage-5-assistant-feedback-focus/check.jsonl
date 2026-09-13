@@ -1,0 +1,3 @@
+{"file":".trellis/tasks/09-13-stage-5-assistant-feedback-focus/prd.md","reason":"Acceptance criteria and protected scope"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"Mandatory lint build full UI and local fixture contracts"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"Preserve independent request and session ownership"}
