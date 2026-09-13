@@ -579,3 +579,12 @@
 - 已创建、收敛并实际激活 P2 子任务 `09-13-stage-4-carousel-wheel-zoom`：只补齐 Ctrl wheel 边界，新增 33 场景专项、原完整 UI 接入和规范。普通运动、触屏策略、resize 生命周期及公开事实保持；沿用持续本地授权恢复 execute，交付并实际返回后才递增轮次，未知 scheduler 未修改。
 - 永久专项先在旧构建捕获 Ctrl wheel 的 -42px 即时位移，再实施一行守卫；选择器错误与取点后页面下移导致的误命中分别诊断并保留，未弱化事件断言。最终专项 33/33、完整 UI 46/0、smoke 21/0、lint/build/性能通过，509/4/172/49 最终受检输入一致；当前进入精确本地交付，完成归档并实际返回后进入第 54 轮。
 - 工作提交 `8955fa4800f0002f0609b9ecb6a2a56f66c4ea18` 已完成；只读工作区审计后，仅当前七份任务文件通过 `task.py archive --no-commit` 移入 2026-09 归档，两个 JSONL 引用已校正。当前尚待归档提交和实际回切父任务，轮次仍为 53。
+
+## 轮次 54：首页轮播滚轮缩放交付后重新评估
+
+- 工作提交 `8955fa4800f0002f0609b9ecb6a2a56f66c4ea18` 与归档提交 `46af6dec521920f590c7fd6d16b65a55eae8fb72` 已完成，均未签名、未推送。已实际执行 `task.py start 09-06-website-completion-roadmap`；本会话指针返回父任务，`parent-return.json` 逐项核对 37/37 关联子任务 completed，原 36 项 metadata 原字节保持，activeChild 与 blockedChildren 清空。
+- 本轮已确认的 Ctrl wheel / 原生 pinch 被轮播消费问题闭合。产品仅增加一行入口守卫；33 场景专项独立及完整运行均通过，包含 Ctrl wheel 12、实际 pinch 12、普通 wheel 9。完整 UI 46/0（2319242ms）、smoke 21/0、lint/build/性能通过，509/4/172/49 最终输入一致；原断言与助手各矩阵保持。
+- 主会话实际复读剩余队列：UI-010/011/012 已关闭，后续需新浏览器证据；manual-gates 尚待选定 Studio needs-changes 草稿编辑/归档、人工完整审核及首次 Publish Export；AI Daily 最新记录仍是 2026-08-18 extractor `provider_rate_limited`，需容量决定和新一次 Edition 授权。依据为 `09-04-continuous-ui-quality-loop/ui-audit.md:187-198`、`07-14-manual-gates-closure/implement.md:19-20`、`07-17-ai-daily-production-operations/implement.md:164-168`；这些是当前仓库记录，未刷新生产事实。
+- 兼容依赖沿用 2026-09-12T15:42:56Z 官方核对，本轮没有新 audit、升级或元数据查询。远端 CI、生产助手 DB/relay/model、内容发布仍需独立范围，authored/SEO 翻译继续暂缓；六个持续任务和历史 worktree 保留。
+- 没有新增已复现且待交付的本地失败，不创建空子任务。父任务保持 in_progress、round=54、enabled=false、phase=waiting，等待新证据、兼容上游修复或范围明确的外部任务；未修改或声称暂停未知 heartbeat/scheduler。当前尚待 Session 140、预览关闭和最终记录提交后的 closeout。
+- 归档提交后的 509/4/172/49 核对已通过；自有 preview PID 6948 按完整身份关闭，5198 无监听且实际重绑释放成功，工具终局已收取。Session 140 已追加，旧 journal 的 77958 bytes 前缀、139 条旧索引行、CRLF 和原 EOF 均保持。没有删除文件；原 13 份资料、验收证据和历史 worktree 保留。最后记录提交后执行 closeout，核对最终 HEAD 与受检字节。

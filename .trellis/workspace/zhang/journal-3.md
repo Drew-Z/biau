@@ -1386,3 +1386,45 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 父路线图维持 waiting / round 53；等待新的本地复现、兼容上游修复或范围明确的远端 CI/生产助手/Studio/AI Daily 任务。最后记录提交后执行 closeout 字节核对；本地 waiting 不代表已操作或暂停调度器。
+
+
+## Session 140: 首页轮播原生缩放与路线图第54轮评估
+
+**Date**: 2026-09-13
+**Task**: 首页轮播原生缩放与路线图第54轮评估
+**Branch**: `main`
+
+### Summary
+
+修复首页轮播消费浏览器缩放输入的问题，完成本地验收、当前子任务归档和路线图第54轮评估。
+
+### Main Changes
+
+- 三主题真实输入确认轮播会消费 Ctrl wheel 和原生 mouse-source pinch；有效探针有 6 个问题场景、页面缩放和普通滚轮对照。永久专项先在旧构建捕获 -42px 即时位移，再实施守卫。
+- RightScrollCards 只新增一行 Ctrl 入口守卫，保留非 passive listener、普通滚轮、移动/减少动画 gate、拖动、暂停和惯性。完整 UI 只增加 import 与原 catalog-projects 组调用两行，旧断言保持；同步三份前端规范。
+- 专项覆盖三主题、中英文、桌面、320/390/430 和减少动画，共 33 场景：Ctrl wheel 12、实际 pinch 12、普通 wheel 9。选择器准备错误和页面取点后下移 280px 的误命中分别诊断、保留；最终使用即时定位与两帧等待，保留真实目标、事件归属、即时位移和视口缩放断言。
+- 六项验收通过：最终 lint/build/性能、专项 33、smoke 21/0、唯一一次完整 UI 46/0（外层 2319242ms，组累计 2317764ms）。完整运行再次通过轮播 33、阅读链接 75、助手图片 72 / Branch 32 / 历史 188 / 反馈 72，真实模型调用 0。
+- 提交后再次核对 509 source / 4 spec / 172 build / 49 实际 HTTP 响应与冻结一致；实际主题、语言、宽度和约 1.4 倍原生缩放均核实。主会话已查看三主题桌面与 320px 截图，原 13 份资料和保护快照保持。
+- 工作提交 8955fa4800f0002f0609b9ecb6a2a56f66c4ea18 精确 15 文件；归档提交 46af6dec521920f590c7fd6d16b65a55eae8fb72 仅移动当前七文件、校正两份 JSONL 引用和父记账。已实际返回父任务，37/37 子任务 completed，第 54 轮评估完成，六个持续任务保留。
+- 当前仓库队列仍需 Studio 草稿/人工审核/Publish Export 范围、AI Daily 容量及新 Edition 授权、远端 CI 和生产助手范围；未刷新生产事实。依赖沿用 2026-09-12T15:42:56Z 官方核对，本轮未新 audit 或升级；authored/SEO 翻译继续暂缓。
+- 自有 preview PID 6948 已按原始创建时间、可执行路径、完整命令行与端口归属核对后关闭，5198 无监听且实际重绑释放成功；工具会话 83094 的主动结束 exit 1 与产品检查分开。没有删除文件，证据、原资料和历史 worktree 保留；未 push、deploy、签名、调用真实模型/DB/relay、公开内容、启用 Feed/Cron 或修改 scheduler。
+- 证据目录：C:/Users/zhang/AppData/Local/Temp/blog-semi-carousel-wheel-fj7gm_p4。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8955fa4800f0002f0609b9ecb6a2a56f66c4ea18` | fix: preserve native zoom over the home carousel |
+
+### Testing
+
+- [OK] lint/build、performance、轮播 33、smoke 21/0、完整 UI 46/0 六项验收通过；完整运行含阅读 75、图片 72、Branch 32、历史 188、反馈 72，模型 0；最终 509/4/172/49 与冻结一致，原资料及保护快照保持。
+
+### Status
+
+[OK] **当前子任务已本地交付；父路线图等待新证据或外部条件**
+
+### Next Steps
+
+- 父路线图维持 waiting / round 54；等待新的本地复现、兼容上游修复或范围明确的远端 CI/生产助手/Studio/AI Daily 任务。最后记录提交后执行 closeout 字节核对；本地 waiting 不代表已操作或暂停调度器。
