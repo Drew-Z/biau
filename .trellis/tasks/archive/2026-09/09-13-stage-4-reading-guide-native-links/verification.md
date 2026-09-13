@@ -25,9 +25,14 @@
 - `trellis-check` 已复核 PRD/design/implement、产品差异、新专项、完整 UI 接入和规范。普通主按钮/Enter 与原生或已取消事件的处理边界符合设计；既有关闭、延后滚动、焦点、href 和路由/query/fragment 语义保持。
 - 新专项在 Context 级限制本地网络并覆盖新文档首个请求，初始 about:blank 不写存储，全部 Context 在 finally 关闭。三个有界事件观测不依赖操作系统的 Meta/Alt 默认动作。
 - 原完整 UI 只增加两行，没有删除断言或改变既有 46 组；lint/build/性能通过，无新依赖或跨层 API 改动。`git diff --check` 通过；已知 LF/CRLF clean-filter 提示不构成检查失败，不整体改写换行。
-- 已完成 component/quality/index 三份规范同步。下一步是精确本地工作提交、当前子任务归档、实际返回父任务、Session 139 与预览资源收尾；这些尚未完成的动作不计入 AC4。
+- 已完成 component/quality/index 三份规范同步；本地工作提交、归档和返回记录见下节，Session 与最终收尾以实际执行结果记账。
 
 ## 本地交付
 
 - 工作提交 `0f7002118c80c86d4f946039d48e54b633f9d7a7` 已完成，精确 15 文件，未签名、未推送。`work-stage.json` 与 `work-commit.json` 记录白名单、Git blob 及工作树原字节核对，提交前后受检代码保持。
-- 归档前工作区只读审计成功，保留规范目录、所有历史 worktree 和原 13 份资料；仅准备归档当前子任务，父路线图和其余持续任务保持开放。
+- 归档前工作区只读审计成功，保留规范目录、所有历史 worktree 和原 13 份资料；归档范围仅为当前子任务，父路线图和其余持续任务保持开放。
+- 归档提交 `4efc946a376ce60a4d092f71a32fb9c3ee6ab2c9` 已完成，仅移动当前七文件、校正两份 JSONL 引用并更新父记账；未签名、未推送。已实际执行 `task.py start 09-06-website-completion-roadmap`，`parent-return.json` 核对本会话指针和 36/36 已关联子任务 completed；父任务进入第 53 轮评估，保留其余持续任务。
+- 第 53 轮复读剩余队列后没有新的已证实本地问题，父任务保持 in_progress 并转为 waiting / enabled=false；生产、发布、依赖和翻译边界保持，没有操作未知 scheduler。
+- `preview-cleanup.json` 已确认本轮 PID 7396 的完整身份、进程退出、5198 无监听及实际重绑释放。首次保护检查因自动日期转换失真而在停止前失败，`preview-cleanup-precheck.json` 保留错误与诊断；采用 `ConvertFrom-Json -DateKind String` 保留原时间后核对成功。`preview-terminal.json` 保存主动关闭后的 exit 1，与已经通过的验收分开。
+- Session 139 已通过 `add_session.py --stdin --no-commit` 追加，仅引用本轮实际工作提交。`session-139.json` 确认旧 journal 的 74267 bytes 前缀、index 的 138 条历史行、CRLF 和原 EOF 保持；没有轮转或改写旧会话。
+- 没有删除本轮文件；复现、失败、诊断、截图、受检输入和提交清单保留为验收依据。原 13 份未跟踪资料和历史 worktree 保持，未执行推送、部署、签名、真实模型/DB/relay、公开内容、Feed/Cron 或 scheduler 变更。最终记录提交后由 `closeout.json` 再绑定最终 HEAD、受检 source/spec/build 与原资料哈希。

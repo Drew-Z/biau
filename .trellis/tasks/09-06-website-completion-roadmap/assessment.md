@@ -559,3 +559,14 @@
 - `final-validation.json` 核对 508 source / 4 spec / 172 build / 49 实际 HTTP 响应与冻结一致，原 13 份资料和保护快照保持。主会话最终复审通过，进入精确 15 文件本地交付；旧构建永久回归的有效失败、两次探针观测错误和初始存储夹具错误分别保留，不计为通过。
 - 工作提交 `0f7002118c80c86d4f946039d48e54b633f9d7a7` 已完成，精确 15 文件且未签名、未推送。已核对 Git blob 与工作树原字节；归档前只读审计保留规范目录、历史 worktree 和原 13 份资料。下一步只归档本子任务，再实际返回父任务进入第 53 轮。
 - `task.py archive --no-commit` 已仅移动当前七文件到 `archive/2026-09/09-13-stage-4-reading-guide-native-links`，状态 completed，记录实际工作提交；两份 JSONL 的 PRD 引用已精确校正。先提交这次移动及父记账，再实际激活父任务，不把计划返回写成已经返回。
+
+## 轮次 53：阅读目录原生链接交付后重新评估
+
+- 工作提交 `0f7002118c80c86d4f946039d48e54b633f9d7a7` 与归档提交 `4efc946a376ce60a4d092f71a32fb9c3ee6ab2c9` 已完成，均未签名、未推送。已实际 `task.py start 09-06-website-completion-roadmap`，本会话指针返回父任务；`parent-return.json` 逐项核对 36/36 关联子任务 completed，activeChild 清空、blockedChildren 为空。
+- 本轮已复现的目录修饰键操作被拦截问题已闭合。新增 75 场景独立运行和完整运行均通过，覆盖 48 个真实新文档、24 个普通跳转与 3 个事件归属检查；完整 UI 46/0、smoke 21/0、lint/build/性能通过，508/4/172/49 最终输入核对一致。原 BODY 焦点策略已有旧审计支持，保持原行为，不据此制造新修复任务。
+- 当前六个持续任务仍保留，先核对记录中的本地待办与外部门禁；不重复完整 UI，不把此前依赖或生产记录当作本轮新检查，也不操作未知 scheduler。
+- 已实际复读当前仓库待办：UI-010/011/012 已关闭，后续需新的浏览器证据；manual-gates 尚待选定 Studio needs-changes 草稿编辑/归档、人工审核与首次 Publish Export；AI Daily 最新记录仍为 2026-08-18 extractor `provider_rate_limited`，后续需容量决定和新一次 Edition 授权。依据为 `09-04-continuous-ui-quality-loop/ui-audit.md:187-198`、`07-14-manual-gates-closure/implement.md:19-20`、`07-17-ai-daily-production-operations/implement.md:164-168`，没有据此声称已刷新生产事实。
+- 兼容依赖继续沿用 2026-09-12T15:42:56Z 的官方核对，本轮未执行新 audit、升级或元数据查询。真实远端 CI、生产助手 DB/relay/model、内容发布仍需独立范围，authored/SEO 翻译继续暂缓；保留六个持续任务和历史 worktree。
+- 本轮没有新增已复现且待交付的本地失败，不创建空子任务。父任务保持 in_progress，round=53、enabled=false、phase=waiting，等待新的本地证据、兼容上游修复或范围明确的外部任务；本地 waiting 不表示已操作或暂停未知 heartbeat/scheduler。
+- 自有 preview PID 7396 已按原始创建时间、可执行路径、完整命令行和 5198 监听归属核对后关闭，进程退出、端口无监听且实际重绑释放成功。初次保护检查因 PowerShell 自动日期转换失真而在停止前退出，诊断与最终成功分别保留；主动关闭产生的工具 exit 1 不计为测试失败。原资料和验收证据保留，尚余 Session 139 与最终记录提交后的 closeout 核对。
+- Session 139 已追加并核对旧 journal 的 74267 bytes 前缀、index 的 138 条历史行、CRLF 和原 EOF 保持。没有删除文件；复现、诊断、截图、冻结及提交证明继续保留，原 13 份资料和历史 worktree 保留。最后记录提交后执行 `closeout.json` 核对最终 HEAD 与受检字节，不重复通过的测试。
