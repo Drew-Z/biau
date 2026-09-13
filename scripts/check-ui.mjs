@@ -5,6 +5,7 @@ import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
 import { checkBlogDiscoveryNavigation } from './check-blog-discovery-ui.mjs'
 import { checkProjectDiscoveryNavigation } from './check-project-discovery-ui.mjs'
 import { checkReadingNavigation } from './check-reading-navigation-ui.mjs'
+import { checkReadingGuideLinks } from './check-reading-guide-links-ui.mjs'
 import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
 import { checkSiteLanguage } from './check-site-language-ui.mjs'
 import { checkPublicAssistantImageLifecycle } from './check-public-assistant-image-ui.mjs'
@@ -1774,6 +1775,7 @@ try {
   const readingNavigationFailures = failures.length
   progress.start('reading-navigation', 'catalog entry position and focus, detail history, fragments and loading')
   await checkReadingNavigation(browser, base)
+  console.log('Reading guide native links passed:', await checkReadingGuideLinks(browser, base))
   finishProgressGroup(readingNavigationFailures)
 
   const publicRouteRecoveryFailures = failures.length

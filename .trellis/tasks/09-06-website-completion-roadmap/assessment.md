@@ -548,3 +548,12 @@
 - 实际复读剩余队列：UI-010/011/012 已关闭；manual-gates 的 Studio 草稿编辑/归档、人工审核和首次 Publish Export 尚待明确范围；AI Daily 最新记录的真实运行仍为 2026-08-18 extractor `provider_rate_limited`，需要容量决定及新的 Edition 授权。依据分别为 `09-04-continuous-ui-quality-loop/ui-audit.md:187-198`、`07-14-manual-gates-closure/implement.md:19-20`、`07-17-ai-daily-production-operations/implement.md:164-168`。这些是仓库记录，不等于刷新过生产。
 - 兼容依赖仍沿用 2026-09-12T15:42:56Z 的官方核对，本轮没有新 audit 或包升级。远端 CI、生产助手 DB/relay/model、内容发布及 authored/SEO 翻译不在本轮本地修复范围内；保留六个持续任务，不创建空任务。父任务保持 in_progress，round=52、enabled=false、phase=waiting；本地状态不表示操作了未知 heartbeat/scheduler。
 - 自有 preview PID 11100 已按完整创建时间、可执行路径、命令行和监听归属核对后停止；5198 无监听且实际重绑释放成功，未停止其他进程。没有删除文件；复现、诊断、截图、冻结及提交证明保留作为验收依据，原 13 份资料与历史 worktree 保留。Session 138 已追加，旧 journal 的 70501 bytes 前缀、index 的 137 条历史行及原 EOF 换行保持；最后记录提交后执行最终 closeout 字节核对，不重复已通过测试。
+
+### 第 52 轮继续：阅读目录原生链接操作
+
+- 用户继续后，以 `a4dff7166ecf0e943ce0734e814ca696c6805b1d` 核对当前任务、干净 tracked 工作树、507 source / 172 build / 3 spec 和原 13 份资料。一次有界只读探子未及时返回可用结果，已中断，后续由主会话自行定位；未启动实现或检查代理。
+- 原目录 BODY 焦点线索已有旧审计确认 Tab 能继续进入目标内容，本轮不据此修改。新的有效浏览器探针确认博客/项目/状态详情 Ctrl 点击与 Ctrl+Enter 共 6/6 场景被无条件 preventDefault 拦截，原页面滚动且目录关闭；3/3 原生导航链接对照成功打开新页，模型 0、页面与外部请求错误 0。
+- 前两次探针因新页事件与 about:blank 就绪观测失败，原始脚本和日志保留，不计为通过；有效证据为 `C:/Users/zhang/AppData/Local/Temp/blog-semi-reading-reassessment-amv2iduv/reading-modifier-before.json`。
+- 已建立、收敛并激活 P3 子任务 `09-13-stage-4-reading-guide-native-links`：只为共享目录加入原生事件边界、专项和规范，保留普通焦点/滚动合同和原完整 UI 断言。沿用持续本地授权恢复 execute；交付并实际返回后再递增轮次，未知 scheduler 未修改。
+- 最终专项 75、lint/build/性能、smoke 21/0 和唯一一次完整 UI 46/0 全部真实通过。完整 UI 外层 2238122ms，含阅读链接 75、图片 72 / Branch 32 / 历史 188 / 反馈 72，模型 0；原完整 UI 断言保持，不重复通过的检查。
+- `final-validation.json` 核对 508 source / 4 spec / 172 build / 49 实际 HTTP 响应与冻结一致，原 13 份资料和保护快照保持。主会话最终复审通过，进入精确 15 文件本地交付；旧构建永久回归的有效失败、两次探针观测错误和初始存储夹具错误分别保留，不计为通过。

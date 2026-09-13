@@ -53,7 +53,8 @@
     "09-12-stage-5-assistant-restore-retry-gate",
     "09-13-stage-5-assistant-restore-error-copy",
     "09-13-stage-4-assistant-image-error-language",
-    "09-13-stage-5-assistant-feedback-focus"
+    "09-13-stage-5-assistant-feedback-focus",
+    "09-13-stage-4-reading-guide-native-links"
   ],
   "parent": null,
   "relatedFiles": [],
@@ -61,13 +62,13 @@
   "meta": {
     "loop": {
       "version": 1,
-      "enabled": false,
-      "phase": "waiting",
+      "enabled": true,
+      "phase": "deliver",
       "round": 52,
-      "activeChild": null,
+      "activeChild": "09-13-stage-4-reading-guide-native-links",
       "blockedChildren": [],
       "lastCompletedChild": "09-13-stage-5-assistant-feedback-focus",
-      "nextAction": "Round 52 reassessment complete: 35/35 child tasks delivered. Pointer checks found no additional persistent feedback obstruction. The remaining six ongoing tasks need new local evidence, a compatible upstream fix, or an explicitly scoped remote/production/editorial task; preserve deferred authored/SEO translation and all original files/worktrees. Do not repeat passing checks or create empty tasks. No scheduler change was made.",
+      "nextAction": "All six local checks passed: reading links 75, smoke 21/0, full UI 46/0, lint/build/performance. Final 508 source, 4 spec, 172 build and 49 preview responses match frozen inputs. Complete precise local delivery, child-only archive and actual parent return. No scheduler change.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,

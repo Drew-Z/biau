@@ -1,0 +1,57 @@
+{
+  "id": "stage-4-reading-guide-native-links",
+  "name": "stage-4-reading-guide-native-links",
+  "title": "阅读目录原生链接操作",
+  "description": "Preserve native modified link activation in the shared reading guide while retaining ordinary in-page navigation.",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": "frontend",
+  "package": null,
+  "priority": "P3",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-13",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/DetailReadingGuide.tsx",
+    "scripts/check-reading-guide-links-ui.mjs",
+    "scripts/check-ui.mjs",
+    ".trellis/spec/frontend/component-guidelines.md",
+    ".trellis/spec/frontend/quality-guidelines.md",
+    ".trellis/spec/frontend/index.md"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "evidenceDirectory": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-reading-reassessment-amv2iduv",
+      "baselineHead": "a4dff7166ecf0e943ce0734e814ca696c6805b1d",
+      "reproducedCases": 6,
+      "controlCases": 3,
+      "readingCases": 75,
+      "modelCalls": 0,
+      "checksPassed": ["lint", "build", "guide-final", "performance", "smoke", "full-ui"],
+      "fullUi": {
+        "groups": 46,
+        "failed": 0,
+        "toolSession": 86957,
+        "durationMs": 2238122,
+        "groupTotalMs": 2234745
+      },
+      "smoke": { "groups": 21, "failed": 0 },
+      "freeze": "508 source / 4 spec / 172 build / 49 local HTTP responses",
+      "finalInputs": "validation-inputs.json",
+      "finalProof": "final-validation.json",
+      "finalChecks": "final-checks.json",
+      "passedAt": "2026-09-13T07:53:09.060181+00:00"
+    }
+  }
+}

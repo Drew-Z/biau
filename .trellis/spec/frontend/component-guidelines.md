@@ -105,8 +105,26 @@ The guide is a sticky in-flow orientation control, not a fixed sidebar or mobile
 bottom bar. Its collapsed state exposes the current major section and whole-page
 progress. The explicit outline may use bounded local scrolling while open, but
 normal reading remains document-owned. Opening the outline brings the complete
-guide into view; `Escape`, outside pointer interaction, and selecting a real
-anchor all close it.
+guide into view; `Escape`, outside pointer interaction, and an ordinary primary
+anchor activation all close it.
+
+Chapter anchors retain native link semantics. Before any custom scrolling or
+open-state change, return when the click is already `defaultPrevented`, uses a
+non-primary button, or includes Ctrl/Meta/Shift/Alt. Modified activation belongs
+to the browser: preserve the real href, including the current route/query and
+fragment, and do not close or scroll the source guide. Do not replace this with
+`window.open`. Unmodified Enter produces an ordinary primary click and retains
+the existing close-then-scroll behavior and focus strategy.
+
+| Activation | Owner and result |
+| --- | --- |
+| Ordinary primary click / Enter | Guide closes, then scrolls the existing target |
+| Ctrl/Meta/Shift/Alt or non-primary button | Browser keeps its native link action; no guide side effects |
+| Already cancelled event | Existing event owner; no guide side effects |
+
+`checkReadingGuideLinks` verifies real modified-click/keyboard/middle-button
+documents and ordinary chapter jumps. Checking that an href exists is not
+enough: cancelling the click can silently consume the visitor's new-tab intent.
 
 Use `prefers-reduced-motion` to choose instant versus smooth section navigation.
 When an outline is in normal flow, close it before scrolling the target and defer

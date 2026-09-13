@@ -141,6 +141,7 @@ export function DetailReadingGuide({ items, label, itemsLanguage = 'zh' }: Detai
   if (items.length === 0) return null
 
   const handleNavigate = (event: ReactMouseEvent<HTMLAnchorElement>, id: string) => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     const target = document.getElementById(id)
     if (!target) return
     event.preventDefault()

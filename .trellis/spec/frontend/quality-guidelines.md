@@ -41,6 +41,31 @@ authored article section titles keep their original Chinese semantics.
 Fixture payloads must satisfy the real decoder,
 including explicit nullable `uncertainty` and `correctedAt` fields.
 
+`checkReadingGuideLinks(browser, base)` in
+`scripts/check-reading-guide-links-ui.mjs` runs inside full UI's existing
+reading-navigation group and also has a standalone Node entry. Its 75 cases
+cover blog/project/status details at 1440/320/390/430 across three themes and
+both languages: modified click/Enter, Shift click, middle click, and ordinary
+click/Enter, plus bounded Meta/Alt/pre-cancelled event ownership checks. Keep
+the existing full UI reading-guide and language assertions intact.
+
+For native new documents, observe `BrowserContext`'s `page` event, wait for the
+exact destination URL and its actual guide/target DOM, then compare the source
+URL/history, content, preferences, open outline and settled scroll position.
+Do not rely only on the source page's `popup` event or treat the initial
+about:blank document's DOMContentLoaded as destination readiness. Install the
+local network guard on the context so it covers the first new-document request;
+seed browser storage only when the init script has reached the intended origin.
+Close every context and its opened documents in `finally`. With
+`UI_CHECK_ARTIFACT_DIR` set, keep per-case results and representative screenshots
+in the runner-provided directory. A failed setup/control is separate from a
+product regression, and neither may be counted as a successful check.
+
+```powershell
+$env:UI_CHECK_BASE = 'http://127.0.0.1:5198'
+node scripts/check-reading-guide-links-ui.mjs
+```
+
 `checkProjectInterfaceLanguage` extends the same entry with the homepage project
 panel, catalog and representative project details across the four widths and
 three themes. Keep authored text and action-target snapshots separate from
