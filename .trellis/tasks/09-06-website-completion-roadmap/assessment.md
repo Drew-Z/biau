@@ -539,3 +539,12 @@
 - 反馈 72 场景修复后通过。首次完整 UI 在历史 `320/stellar/en/restore-success` 失败；独立事件轨迹第 4 次复现：重开后的初始焦点帧在测试填草稿后聚焦关闭按钮，Enter 因而关闭助手。仅为原检查增加实际焦点就绪等待，产品移动端行为和原断言保持；历史 188 与 lint 随后通过。
 - 最终 `full-ui-verified` 已真实 exit 0、46/0（外层 2311435ms），包含图片 72 / Branch 32 / 历史 188 / 反馈 72，模型 0；smoke 21/0 与其余必要检查通过。507 source / 172 build / 3 spec / 49 本地响应、原资料及保护快照后置核对一致。进入精确 16 文件本地交付，首次失败和诊断保留，不计为通过。
 - 工作提交 `20a5f4b196d59abe95a12ce7212f0d6db3d5f1e5` 已核对精确 16 文件、Git blob 和原字节，未签名、未推送。归档前工作区只读审计保留规范主目录和所有历史 worktree；只归档本子任务，随后实际返回父任务进入第 52 轮。
+
+## 轮次 52：反馈交互归属交付后重新评估
+
+- 工作提交 `20a5f4b196d59abe95a12ce7212f0d6db3d5f1e5` 与归档提交 `3e235d6556f66591907cb3f552f0f7da3826b415` 已完成。仅归档当前反馈子任务七文件并校正两份 JSONL 引用；已实际 `task.py start 09-06-website-completion-roadmap`，`parent-return.json` 逐项核对 35/35 子任务 completed，activeChild 清空、blockedChildren 为空。
+- 反馈晚到不再关闭新菜单或抢走草稿/历史焦点；正常成功、失败、重试、正反馈和两请求交错通过。最终完整 UI 46/0，含图片 72、Branch 32、历史 188、反馈 72；首轮历史检查竞态已有实际事件序列定位，补齐就绪等待后复验通过。原失败与诊断单独保留。
+- 针对截图中桌面“回到最新”与理由菜单接近的线索，完成四配置短探针：菜单滚入对话区域并经过绘制后，20 个按钮中心均命中自身，四次新的实际反馈点击成功；模型 0、页面/外部请求错误 0。桌面滚动前的控件在对话裁切区之外，未发现稳定阻塞，不把截图重叠直接列为新缺陷。证据：`feedback-overlay-assessment.json`。
+- 实际复读剩余队列：UI-010/011/012 已关闭；manual-gates 的 Studio 草稿编辑/归档、人工审核和首次 Publish Export 尚待明确范围；AI Daily 最新记录的真实运行仍为 2026-08-18 extractor `provider_rate_limited`，需要容量决定及新的 Edition 授权。依据分别为 `09-04-continuous-ui-quality-loop/ui-audit.md:187-198`、`07-14-manual-gates-closure/implement.md:19-20`、`07-17-ai-daily-production-operations/implement.md:164-168`。这些是仓库记录，不等于刷新过生产。
+- 兼容依赖仍沿用 2026-09-12T15:42:56Z 的官方核对，本轮没有新 audit 或包升级。远端 CI、生产助手 DB/relay/model、内容发布及 authored/SEO 翻译不在本轮本地修复范围内；保留六个持续任务，不创建空任务。父任务保持 in_progress，round=52、enabled=false、phase=waiting；本地状态不表示操作了未知 heartbeat/scheduler。
+- 自有 preview PID 11100 已按完整创建时间、可执行路径、命令行和监听归属核对后停止；5198 无监听且实际重绑释放成功，未停止其他进程。没有删除文件；复现、诊断、截图、冻结及提交证明保留作为验收依据，原 13 份资料与历史 worktree 保留。Session 138 已追加，旧 journal 的 70501 bytes 前缀、index 的 137 条历史行及原 EOF 换行保持；最后记录提交后执行最终 closeout 字节核对，不重复已通过测试。
