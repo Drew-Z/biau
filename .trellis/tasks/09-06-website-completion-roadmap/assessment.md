@@ -570,3 +570,11 @@
 - 本轮没有新增已复现且待交付的本地失败，不创建空子任务。父任务保持 in_progress，round=53、enabled=false、phase=waiting，等待新的本地证据、兼容上游修复或范围明确的外部任务；本地 waiting 不表示已操作或暂停未知 heartbeat/scheduler。
 - 自有 preview PID 7396 已按原始创建时间、可执行路径、完整命令行和 5198 监听归属核对后关闭，进程退出、端口无监听且实际重绑释放成功。初次保护检查因 PowerShell 自动日期转换失真而在停止前退出，诊断与最终成功分别保留；主动关闭产生的工具 exit 1 不计为测试失败。原资料和验收证据保留，尚余 Session 139 与最终记录提交后的 closeout 核对。
 - Session 139 已追加并核对旧 journal 的 74267 bytes 前缀、index 的 138 条历史行、CRLF 和原 EOF 保持。没有删除文件；复现、诊断、截图、冻结及提交证明继续保留，原 13 份资料和历史 worktree 保留。最后记录提交后执行 `closeout.json` 核对最终 HEAD 与受检字节，不重复通过的测试。
+
+### 第 53 轮继续：首页轮播滚轮缩放
+
+- 用户继续后，以 `1a90dc10dec64bac7256ae41ed308012222e7044` 核对父任务、1591 tracked 和原 13 份资料，508 source / 4 spec / 172 build / 49 实际响应与上一项验收一致。未重复旧全量，也未刷新生产或依赖事实。
+- 新浏览器证据确认三主题 Ctrl+wheel 和原生 mouse-source pinch 共 6/6 被轮播取消并转换为位移；轮播三个 pinch scale 保持 1，外部三个对照实际放大到约 1.4，普通轮播三个对照正常。headless Ctrl+wheel 外部也不执行 chrome 缩放，仅作为事件归属观察；实际缩放结论由原生 pinch 支持，模型/API/页面与外部请求错误均 0。
+- 首轮两个普通滚轮未命中目标，已排除；显式坐标和真实事件目标检查后取得三组有效对照。证据 `C:/Users/zhang/AppData/Local/Temp/blog-semi-carousel-wheel-fj7gm_p4/assessment-before.json` 保留有效 15 场景、原始观测与限制，主会话已查看缩放对照截图。
+- 已创建、收敛并实际激活 P2 子任务 `09-13-stage-4-carousel-wheel-zoom`：只补齐 Ctrl wheel 边界，新增 33 场景专项、原完整 UI 接入和规范。普通运动、触屏策略、resize 生命周期及公开事实保持；沿用持续本地授权恢复 execute，交付并实际返回后才递增轮次，未知 scheduler 未修改。
+- 永久专项先在旧构建捕获 Ctrl wheel 的 -42px 即时位移，再实施一行守卫；选择器错误与取点后页面下移导致的误命中分别诊断并保留，未弱化事件断言。最终专项 33/33、完整 UI 46/0、smoke 21/0、lint/build/性能通过，509/4/172/49 最终受检输入一致；当前进入精确本地交付，完成归档并实际返回后进入第 54 轮。

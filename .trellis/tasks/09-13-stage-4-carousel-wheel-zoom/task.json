@@ -1,0 +1,75 @@
+{
+  "id": "stage-4-carousel-wheel-zoom",
+  "name": "stage-4-carousel-wheel-zoom",
+  "title": "首页轮播滚轮缩放",
+  "description": "Preserve browser zoom for Ctrl-modified carousel wheel events without changing ordinary carousel scrolling or motion modes.",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": "homepage-carousel",
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-13",
+  "completedAt": null,
+  "branch": "main",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/components/RightScrollCards.tsx",
+    "scripts/check-home-carousel-wheel-ui.mjs",
+    "scripts/check-ui.mjs",
+    ".trellis/spec/frontend/component-guidelines.md",
+    ".trellis/spec/frontend/quality-guidelines.md",
+    ".trellis/spec/frontend/index.md"
+  ],
+  "notes": "",
+  "meta": {
+    "planning": {
+      "authorization": "Parent loop.md persistent local execution authorization; user continued the roadmap.",
+      "evidenceDirectory": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-carousel-wheel-fj7gm_p4",
+      "baselineHead": "1a90dc10dec64bac7256ae41ed308012222e7044",
+      "reproducedCases": 6,
+      "nativePinchControls": 3,
+      "ordinaryWheelControls": 3
+    },
+    "validation": {
+      "state": "passed",
+      "evidenceDirectory": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-carousel-wheel-fj7gm_p4",
+      "baselineHead": "1a90dc10dec64bac7256ae41ed308012222e7044",
+      "reproducedCases": 6,
+      "carouselCases": 33,
+      "modelCalls": 0,
+      "checksPassed": [
+        "lint-final",
+        "build",
+        "wheel-final",
+        "performance",
+        "smoke",
+        "full-ui"
+      ],
+      "fullUi": {
+        "groups": 46,
+        "failed": 0,
+        "groupTotalMs": 2317764,
+        "toolSession": 54817,
+        "durationMs": 2319242.0
+      },
+      "smoke": {
+        "groups": 21,
+        "failed": 0,
+        "groupTotalMs": 10037
+      },
+      "freeze": "509 source / 4 spec / 172 build / 49 local HTTP responses",
+      "finalInputs": "validation-inputs.json",
+      "finalProof": "final-validation.json",
+      "finalChecks": "final-checks.json",
+      "passedAt": "2026-09-13T11:32:43.510937+00:00"
+    }
+  }
+}

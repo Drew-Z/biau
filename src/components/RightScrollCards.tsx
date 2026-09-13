@@ -344,6 +344,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     if (!viewport) return
 
     const handleNativeWheel = (event: WheelEvent) => {
+      if (event.ctrlKey) return
       if (usesMobileInteractionMode() || !carouselMotionAllowed()) return
       event.preventDefault()
       applyWheelDelta(event.deltaY, event.deltaMode)

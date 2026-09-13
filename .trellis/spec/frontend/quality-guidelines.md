@@ -310,6 +310,51 @@ the complete panel. `scripts/check-ui.mjs` must verify the mask depth from
 computed styles and measure track movement while a nested action owns focus;
 do not let a concurrent pointer hover make the keyboard assertion pass.
 
+### Native Carousel Wheel Zoom
+
+`checkHomeCarouselWheel(browser, base)` in
+`scripts/check-home-carousel-wheel-ui.mjs` runs 33 cases inside full UI's
+existing `catalog-projects` group and through its standalone Node entry. Cover
+three themes and both languages on animated desktop, 320/390/430 narrow layouts,
+and reduced motion. Preserve the earlier mask, focus, drag and ordinary-wheel
+assertions. Narrow mouse-wheel cases do not validate physical touch gestures.
+
+| Input and mode | Required result |
+| --- | --- |
+| Ordinary animated-desktop wheel | Cancelled, with immediate carousel movement |
+| Ctrl wheel, every mode | Not cancelled, with no same-event carousel movement |
+| Ordinary narrow/reduced-motion wheel | Not cancelled; static track stays untransformed |
+| Native mouse-source pinch | Trusted Ctrl wheel; visual viewport actually scales from 1 to about 1.4 |
+
+Position the real target with instant `scrollIntoView`, allow two animation
+frames to settle, then use fresh visible coordinates, `elementFromPoint`, and
+the actual event target. A hover-triggered positioning step can still move the
+page between measurement and wheel delivery; retain coordinates, scroll and
+target geometry in failure evidence. Observe each event
+with passive capture/bubble listeners and compare the same event's before/after
+position, avoiding autoplay timing as a substitute. Record `isTrusted`,
+`cancelable`, `defaultPrevented`, modifiers and delta: an uncancellable Ctrl
+event can still reveal an erroneous carousel update.
+
+Use Chromium `Input.synthesizePinchGesture` with `gestureSourceType: 'mouse'`
+and a page-region control to prove native zoom; do not use CSS zoom, emulated
+page scale or synthetic DOM events. Headless Ctrl+wheel may leave browser chrome
+zoom unchanged even outside the carousel, so it proves event ownership only.
+Compare URL/history, language/theme and actual project titles before/after, and
+do not classify legal visual-viewport zoom as document layout overflow.
+
+Each case owns a context with service workers blocked, the local network guard,
+and fixed API failures; assert no page/network errors and zero API/model calls.
+Seed preferences only on the intended origin, close contexts in `finally`, and
+write results/screenshots only when `UI_CHECK_ARTIFACT_DIR` is provided. Preserve
+failed setup evidence separately from a valid old-build regression. A missing
+project-title selector is a check defect, not a product failure.
+
+```powershell
+$env:UI_CHECK_BASE = 'http://127.0.0.1:5198'
+node scripts/check-home-carousel-wheel-ui.mjs
+```
+
 ## Content Studio
 
 - Mobile uses focused workspace modes; desktop keeps the complete workspace visible.

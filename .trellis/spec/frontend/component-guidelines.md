@@ -299,6 +299,27 @@ navigation column without a real public route. UI checks must assert the ordered
 route set, 44px controls, no horizontal overflow, and a first project card visible
 within the initial mobile reading rhythm at 320, 390, and 430px.
 
+### Homepage Carousel Wheel Ownership
+
+`RightScrollCards.handleNativeWheel` returns immediately for `event.ctrlKey`,
+before cancelling the event or updating scroll position/velocity. Browsers also
+deliver trackpad pinch as Ctrl-modified wheel input; consuming it can block
+native zoom and move the project list. Do not manually implement browser zoom.
+
+```tsx
+if (event.ctrlKey) return
+if (usesMobileInteractionMode() || !carouselMotionAllowed()) return
+event.preventDefault()
+applyWheelDelta(event.deltaY, event.deltaMode)
+```
+
+Keep the non-passive listener and its cleanup: ordinary animated-desktop wheel
+still belongs to the carousel. Mobile and reduced-motion gates, drag/hover/focus
+behavior, autoplay, wrapping and inertia constants retain their existing paths.
+This contract concerns wheel input, not a new touch/pointer gesture policy.
+`checkHomeCarouselWheel` verifies trusted input, actual targets, cancellation,
+same-event movement and native visual-viewport zoom.
+
 ### Long Mobile Page Navigation
 
 When an evidence-heavy mobile page exceeds several viewports, preserve its

@@ -6,6 +6,7 @@ import { checkBlogDiscoveryNavigation } from './check-blog-discovery-ui.mjs'
 import { checkProjectDiscoveryNavigation } from './check-project-discovery-ui.mjs'
 import { checkReadingNavigation } from './check-reading-navigation-ui.mjs'
 import { checkReadingGuideLinks } from './check-reading-guide-links-ui.mjs'
+import { checkHomeCarouselWheel } from './check-home-carousel-wheel-ui.mjs'
 import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
 import { checkSiteLanguage } from './check-site-language-ui.mjs'
 import { checkPublicAssistantImageLifecycle } from './check-public-assistant-image-ui.mjs'
@@ -5030,6 +5031,7 @@ for (const width of [320, 390, 430]) {
   finishProgressGroup(publicAssistantFailures)
   progress.start('catalog-projects', 'route stability, home carousel, project visuals, and mobile reading')
   const catalogProjectFailures = failures.length
+  console.log('Home carousel wheel zoom passed:', await checkHomeCarouselWheel(browser, base))
 
 for (const path of ['/projects', '/blog']) {
   const routeFlashPage = await createUiPage(browser, { viewport: viewports[0] })
