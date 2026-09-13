@@ -68,7 +68,7 @@
       "activeChild": "09-13-stage-4-reading-guide-native-links",
       "blockedChildren": [],
       "lastCompletedChild": "09-13-stage-5-assistant-feedback-focus",
-      "nextAction": "All six local checks passed: reading links 75, smoke 21/0, full UI 46/0, lint/build/performance. Final 508 source, 4 spec, 172 build and 49 preview responses match frozen inputs. Complete precise local delivery, child-only archive and actual parent return. No scheduler change.",
+      "nextAction": "Work commit 0f7002118c80c86d4f946039d48e54b633f9d7a7 delivered all six passed checks. Only the reading-guide child has been archived and its JSONL references corrected. Commit the exact move and parent bookkeeping, then actually return to the roadmap for round 53. No scheduler change.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,

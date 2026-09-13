@@ -3,7 +3,7 @@
   "name": "stage-4-reading-guide-native-links",
   "title": "阅读目录原生链接操作",
   "description": "Preserve native modified link activation in the shared reading guide while retaining ordinary in-page navigation.",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": "frontend",
   "scope": "frontend",
   "package": null,
@@ -11,11 +11,11 @@
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-09-13",
-  "completedAt": null,
+  "completedAt": "2026-09-13",
   "branch": "main",
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "0f7002118c80c86d4f946039d48e54b633f9d7a7",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -38,7 +38,14 @@
       "controlCases": 3,
       "readingCases": 75,
       "modelCalls": 0,
-      "checksPassed": ["lint", "build", "guide-final", "performance", "smoke", "full-ui"],
+      "checksPassed": [
+        "lint",
+        "build",
+        "guide-final",
+        "performance",
+        "smoke",
+        "full-ui"
+      ],
       "fullUi": {
         "groups": 46,
         "failed": 0,
@@ -46,7 +53,10 @@
         "durationMs": 2238122,
         "groupTotalMs": 2234745
       },
-      "smoke": { "groups": 21, "failed": 0 },
+      "smoke": {
+        "groups": 21,
+        "failed": 0
+      },
       "freeze": "508 source / 4 spec / 172 build / 49 local HTTP responses",
       "finalInputs": "validation-inputs.json",
       "finalProof": "final-validation.json",

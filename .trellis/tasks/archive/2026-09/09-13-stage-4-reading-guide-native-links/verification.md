@@ -26,3 +26,8 @@
 - 新专项在 Context 级限制本地网络并覆盖新文档首个请求，初始 about:blank 不写存储，全部 Context 在 finally 关闭。三个有界事件观测不依赖操作系统的 Meta/Alt 默认动作。
 - 原完整 UI 只增加两行，没有删除断言或改变既有 46 组；lint/build/性能通过，无新依赖或跨层 API 改动。`git diff --check` 通过；已知 LF/CRLF clean-filter 提示不构成检查失败，不整体改写换行。
 - 已完成 component/quality/index 三份规范同步。下一步是精确本地工作提交、当前子任务归档、实际返回父任务、Session 139 与预览资源收尾；这些尚未完成的动作不计入 AC4。
+
+## 本地交付
+
+- 工作提交 `0f7002118c80c86d4f946039d48e54b633f9d7a7` 已完成，精确 15 文件，未签名、未推送。`work-stage.json` 与 `work-commit.json` 记录白名单、Git blob 及工作树原字节核对，提交前后受检代码保持。
+- 归档前工作区只读审计成功，保留规范目录、所有历史 worktree 和原 13 份资料；仅准备归档当前子任务，父路线图和其余持续任务保持开放。
