@@ -64,6 +64,13 @@
       "fullUiGroups": 46,
       "fullUiFailed": 0
     },
-    "authorization": "Parent roadmap local continuation authorized 2026-09-08; user continued 2026-09-14."
+    "authorization": "Parent roadmap local continuation authorized 2026-09-08; user continued 2026-09-14.",
+    "delivery": {
+      "archiveCommit": "9cdb089054d96e822e3db641e32b9e330aeff58f",
+      "returnedToParent": true,
+      "parentRound": 55,
+      "localOnly": true,
+      "previewStopped": true
+    }
   }
 }

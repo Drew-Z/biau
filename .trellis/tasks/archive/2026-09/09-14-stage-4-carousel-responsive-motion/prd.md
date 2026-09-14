@@ -23,7 +23,7 @@
 - [x] AC1 / R1：320/390/430 初始页面在三主题、两种界面语言下放大至桌面后自动滚动，真实普通 wheel 被轮播接收且后续惯性继续，首个桌面周期已正确测量。
 - [x] AC2 / R2：768/769 边界及重复窄/宽切换后，移动模式轨道无内联平移和持续样式写入，恢复桌面后无重复循环、空白周期或残留惯性。
 - [x] AC3 / R3：动态 reduced-motion / pointer 模式与静态初始模式按现有判定正确暂停恢复，原生 wheel 缩放专项通过；内容、链接、DOM、偏好、URL/history 和原交互验收保持。
-- [ ] AC4 / R4：主会话完成 lint、build、运动专项、wheel 专项、performance、smoke、完整 UI 和精确差异/输入核对，随后本地提交、仅归档本子任务并实际返回父路线图。
+- [x] AC4 / R4：主会话完成 lint、build、运动专项、wheel 专项、performance、smoke、完整 UI 和精确差异/输入核对，随后本地提交、仅归档本子任务并实际返回父路线图。
 
 ## Constraints And Out Of Scope
 

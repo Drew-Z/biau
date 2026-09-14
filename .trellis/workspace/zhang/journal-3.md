@@ -1428,3 +1428,44 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 父路线图维持 waiting / round 54；等待新的本地复现、兼容上游修复或范围明确的远端 CI/生产助手/Studio/AI Daily 任务。最后记录提交后执行 closeout 字节核对；本地 waiting 不代表已操作或暂停调度器。
+
+
+## Session 141: 首页轮播响应式运动交付与主题文字原因分析
+
+**Date**: 2026-09-14
+**Task**: 首页轮播响应式运动交付与主题文字原因分析
+**Branch**: `main`
+
+### Summary
+
+完成轮播运动修复的本地交付与路线图第55轮回切，并基于六组浏览器测量分析主题文字层级问题。
+
+### Main Changes
+
+- 真实窄屏/桌面对照确认轮播 effect 挂载时提前返回与当前输入模式不一致；统一响应 max-width/pointer/reduced-motion 的生命周期，保留 Ctrl wheel、惯性常量、拖动及暂停策略。
+- 永久运动专项 24/24 配置（78 静态阶段）、原 wheel 33/33，最终 lint/build/performance、smoke 21/0、唯一一次完整 UI 46/0 全部通过。完整 UI 外层 2712294ms，组累计 2708595ms；涵盖阅读 75、图片 72、Branch 32、历史 188、反馈 72，模型 0。
+- 保留旧构建有效失败，以及 769px 指针仍落在面板内的准备错误；改用真实导航 Logo 取点后通过，没有因此再次修改产品。构建后只有 checker 准备和规范调整，实际编译源码及构建字节一致。
+- 工作提交 9487b92423796fc849840284d2f1631ca49d331b 精确 16 文件；归档提交 9cdb089054d96e822e3db641e32b9e330aeff58f 仅当前七文件移动/引用校正及父记账。已实际返回父路线图，第 55 轮、38/38 子任务完成，其他持续任务保留。
+- 预览中断曾令 pre-delivery HTTP 阶段 WinError 10061；同 dist 重启后 510 source / 4 spec / 172 build / 49 实际 HTTP 响应与冻结一致，原 13 份未跟踪资料与旧 37 子任务原字节保持，未重复完整 UI。
+- 用户主题文字分析完成三主题 × 两语言六组只读取样：高亮角色、650/700 粗体、长标题密度、分类强调色被公共选择器覆盖，以及 Stellar 材质/边框覆盖差异都有当前证据。浏览器隔离移除一条强调色声明立即恢复四色，已还原；没有改动主题源码。报告：C:/Users/zhang/AppData/Local/Temp/blog-semi-theme-typography-06cZqS/analysis.md。
+- 自有预览 PID 13232 已按完整身份核对关闭，端口释放及重绑验证成功，工具会话 79430 主动结束 exit 1 已收取；所有本轮浏览器已关闭。临时证据有后续对照用途，未删除原资料或历史 worktree。
+- 父路线图 waiting / round 55 表示分析已交付、等待用户选定调整范围；未修改 scheduler，未 push/deploy/sign、调用真实 DB/relay/model、公开内容、启用 Feed/Cron 或更改保护快照。轮播证据：C:/Users/zhang/AppData/Local/Temp/blog-semi-carousel-resize-ke1j094n。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9487b92423796fc849840284d2f1631ca49d331b` | fix: resume carousel motion across responsive changes |
+
+### Testing
+
+- [OK] lint/build/performance、运动 24/24、wheel 33/33、smoke 21/0、完整 UI 46/0；输入 510/4/172/49 不变。主题分析六组 API/model/page/external-request 均 0；浏览器临时 CSS 已还原。
+
+### Status
+
+[OK] **当前轮播子任务已本地交付；主题文字原因分析已完成**
+
+### Next Steps
+
+- 根据已保存的文字角色、字重、分类色与覆盖链证据确定下一轮调整范围。当前父任务 waiting / round 55；不启动无关猎测，不推送或发布。
