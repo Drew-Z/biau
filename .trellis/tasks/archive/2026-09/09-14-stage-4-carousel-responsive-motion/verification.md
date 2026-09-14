@@ -45,3 +45,5 @@ smoke 组累计为 10525ms。轮播两项专项的 API/model/page/external-reque
 原预览退出后，首次 pre-delivery 在 HTTP 核对阶段收到 WinError 10061；没有生成成功记录，也不是 UI 断言失败。恢复时确认旧 PID 16032 不存在、5198 无监听、旧工具会话不存在，再用相同 dist 启动自有预览，保留 preview-resume.log / preview-resume.json。
 
 pre-delivery-resumed.json 已重新核对 510 source / 4 spec / 172 build / 49 实际 HTTP 响应，全部与最终验收输入一致；原 13 份未跟踪资料及旧 37 个完成子任务完整，索引为空，差异仅在本子任务白名单。没有重跑已通过且输入未变的完整 UI。
+
+工作提交：`9487b92423796fc849840284d2f1631ca49d331b`，16 个精确文件，暂存/提交 blob 与工作树原字节核对通过；未 push、deploy 或签名。

@@ -70,7 +70,7 @@
       "activeChild": "09-14-stage-4-carousel-responsive-motion",
       "blockedChildren": [],
       "lastCompletedChild": "09-13-stage-4-carousel-wheel-zoom",
-      "nextAction": "All responsive carousel checks passed. Commit the exact child scope locally, archive only this child, return to the parent, then analyze the user-provided theme typography comparison.",
+      "nextAction": "Responsive carousel work committed locally and current child archived; commit the exact archive, then actually return to the parent and analyze the user-provided theme typography comparison.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,
