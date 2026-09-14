@@ -1,0 +1,44 @@
+{
+  "id": "stage-4-theme-typography-hierarchy",
+  "name": "stage-4-theme-typography-hierarchy",
+  "title": "三主题文字层级与卡片配色",
+  "description": "Plan and verify calmer text hierarchy, category accents and coherent surfaces for the homepage and shared navigation across all three themes.",
+  "status": "planning",
+  "dev_type": "frontend",
+  "scope": "home-theme-typography",
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-14",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/styles/appearance-themes.css",
+    "src/styles/hero-split.css",
+    "src/styles/navigation.css",
+    "scripts/check-ui.mjs"
+  ],
+  "notes": "",
+  "meta": {
+    "planning": {
+      "state": "ready",
+      "updatedAt": "2026-09-15",
+      "request": "Plan the next steps; continue planning without product implementation in this turn.",
+      "baseCommit": "bb771db78d5e419a3a9ea45951fb326a8baff264",
+      "evidenceRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-theme-plan-9culjb26",
+      "analysisRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-theme-typography-06cZqS",
+      "prdConvergence": "complete",
+      "defaultTitleTypeface": "existing light serif; recommendation, not an explicit user selection",
+      "implementationStarted": false,
+      "validationScope": "planning documents and preservation only"
+    }
+  }
+}
