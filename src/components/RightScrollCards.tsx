@@ -7,7 +7,7 @@ import { getProjectCta, getProjectPublication } from '../data/projectPublication
 import { projectInterfaceCopy } from '../data/projectInterfaceCopy'
 import { useSiteLanguage } from '../hooks/useSiteLanguage'
 import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
-import { usesMobileInteractionMode } from '../utils/responsive'
+import { MOBILE_INTERACTION_QUERY, usesMobileInteractionMode } from '../utils/responsive'
 import { getVisualPerformanceMode } from '../utils/visualPerformance'
 
 interface RightScrollCardsProps {
@@ -65,20 +65,8 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     const friction = CAROUSEL_FRICTION
     const minVelocity = CAROUSEL_MIN_GLIDE_VELOCITY
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const mobileInteraction = window.matchMedia(MOBILE_INTERACTION_QUERY)
     let lastTickAt = performance.now()
-
-    if (usesMobileInteractionMode()) {
-      scrollYRef.current = 0
-      velocityYRef.current = 0
-      track.style.transform = ''
-      track.style.removeProperty('--carousel-scroll-y')
-      wrapper.style.removeProperty('--carousel-tilt-x')
-      wrapper.style.removeProperty('--carousel-tilt-y')
-      wrapper.classList.remove('is-dragging')
-      return () => {
-        wrapper.classList.remove('is-dragging')
-      }
-    }
 
     const updateCycleHeight = () => {
       const firstCard = track.querySelector<HTMLElement>('.carousel-card')
@@ -107,7 +95,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
 
     const tick = (now: number) => {
       rafRef.current = 0
-      if (!active || !track.isConnected || !carouselMotionAllowed()) return
+      if (!active || !track.isConnected || usesMobileInteractionMode() || !carouselMotionAllowed()) return
       const deltaSeconds = Math.min(CAROUSEL_MAX_DELTA_SECONDS, Math.max(0.001, (now - lastTickAt) / 1000))
       lastTickAt = now
       const dragging = dragRef.current.isDragging || dragRef.current.isPointerDown
@@ -135,7 +123,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       rafRef.current = window.requestAnimationFrame(tick)
     }
 
-    const resetReducedMotion = () => {
+    const resetStaticMotion = () => {
       scrollYRef.current = 0
       velocityYRef.current = 0
       lastTickAt = performance.now()
@@ -149,7 +137,8 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       wrapper.classList.remove('is-dragging')
     }
     const syncMotion = () => {
-      if (!carouselMotionAllowed()) {
+      const isMobile = usesMobileInteractionMode()
+      if (isMobile || !carouselMotionAllowed()) {
         if (rafRef.current) window.cancelAnimationFrame(rafRef.current)
         rafRef.current = 0
         velocityYRef.current = 0
@@ -160,7 +149,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
         tiltRef.current.targetY = 0
         wrapper.classList.remove('is-dragging')
         wrapper.style.setProperty('--harbor-surface-glow-opacity', '0')
-        if (reducedMotion.matches) resetReducedMotion()
+        if (isMobile || reducedMotion.matches) resetStaticMotion()
         return
       }
       if (!rafRef.current) {
@@ -175,6 +164,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
     })
     document.addEventListener('visibilitychange', syncMotion)
     reducedMotion.addEventListener('change', syncMotion)
+    mobileInteraction.addEventListener('change', syncMotion)
     syncMotion()
     return () => {
       active = false
@@ -183,6 +173,7 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
       observer.disconnect()
       document.removeEventListener('visibilitychange', syncMotion)
       reducedMotion.removeEventListener('change', syncMotion)
+      mobileInteraction.removeEventListener('change', syncMotion)
       wrapper.classList.remove('is-dragging')
     }
   }, [projects.length])

@@ -299,6 +299,30 @@ navigation column without a real public route. UI checks must assert the ordered
 route set, 44px controls, no horizontal overflow, and a first project card visible
 within the initial mobile reading rhythm at 320, 390, and 430px.
 
+### Homepage Carousel Responsive Motion
+
+`RightScrollCards` uses the exported `MOBILE_INTERACTION_QUERY` from
+`src/utils/responsive.ts`: `(max-width: 768px), (pointer: coarse)`. Subscribe to
+that query's `change` event in the motion effect and remove the listener in
+cleanup. Install the lifecycle even when the initial page is mobile; an early
+return at mount leaves later desktop input without a measured cycle or RAF.
+
+Both `syncMotion` and `tick` respect the current mobile mode. Reuse the existing
+static reset and RAF reference instead of adding React state or remounting the
+carousel when the viewport changes.
+
+| Condition | Motion lifecycle |
+| --- | --- |
+| Mobile interaction or reduced motion | Cancel RAF; reset position, velocity, cycle initialization and tilt; remove inline track translation |
+| Hidden document or active brand intro | Pause using the existing position-preserving path |
+| Animated desktop | Start only if no RAF is pending; measure the current card cycle on the next tick |
+
+CSS `transform: none` alone does not stop a running effect. Desktop-to-mobile
+must stop track style writes, and mobile-to-desktop must recover autoplay and
+ordinary-wheel inertia without a reload. Preserve the `projects.length` effect
+dependency, existing pointer handlers, pause signals, wheel ownership and motion
+constants. Language/theme updates keep their existing DOM and state continuity.
+
 ### Homepage Carousel Wheel Ownership
 
 `RightScrollCards.handleNativeWheel` returns immediately for `event.ctrlKey`,

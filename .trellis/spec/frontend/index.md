@@ -7,10 +7,10 @@ These guidelines describe the actual React/Vite/custom CSS frontend in this repo
 | Guide | Description | Status |
 |-------|-------------|--------|
 | [Directory Structure](./directory-structure.md) | Frontend module ownership, route/data/style layout, naming | Filled |
-| [Component Guidelines](./component-guidelines.md) | Component shape, Lucide icons, props, styling, accessibility, native reading links and wheel zoom | Filled |
+| [Component Guidelines](./component-guidelines.md) | Component shape, Lucide icons, props, styling, accessibility, native reading links and responsive carousel motion | Filled |
 | [Hook Guidelines](./hook-guidelines.md) | Custom hook patterns, browser API guards, effect cleanup | Filled |
 | [State Management](./state-management.md) | Local/route state, persistent preferences, interface projections, assistant registry/image/Branch/history/feedback ownership, static data | Filled |
-| [Quality Guidelines](./quality-guidelines.md) | Lint/build gates, UI rules, native reading documents and carousel wheel input, image/Branch/history/feedback fixtures and restore recovery, public data safety | Filled |
+| [Quality Guidelines](./quality-guidelines.md) | Lint/build gates, UI rules, native reading documents, carousel wheel and mode transitions, image/Branch/history/feedback fixtures and restore recovery, public data safety | Filled |
 | [Project Showcase Integration](./project-showcase-integration.md) | Cross-layer project, evidence, status, assistant, and generated-artifact contract | Filled |
 | [Type Safety](./type-safety.md) | Type organization, literal unions, runtime checks | Filled |
 

@@ -588,3 +588,10 @@
 - 兼容依赖沿用 2026-09-12T15:42:56Z 官方核对，本轮没有新 audit、升级或元数据查询。远端 CI、生产助手 DB/relay/model、内容发布仍需独立范围，authored/SEO 翻译继续暂缓；六个持续任务和历史 worktree 保留。
 - 没有新增已复现且待交付的本地失败，不创建空子任务。父任务保持 in_progress、round=54、enabled=false、phase=waiting，等待新证据、兼容上游修复或范围明确的外部任务；未修改或声称暂停未知 heartbeat/scheduler。当前尚待 Session 140、预览关闭和最终记录提交后的 closeout。
 - 归档提交后的 509/4/172/49 核对已通过；自有 preview PID 6948 按完整身份关闭，5198 无监听且实际重绑释放成功，工具终局已收取。Session 140 已追加，旧 journal 的 77958 bytes 前缀、139 条旧索引行、CRLF 和原 EOF 均保持。没有删除文件；原 13 份资料、验收证据和历史 worktree 保留。最后记录提交后执行 closeout，核对最终 HEAD 与受检字节。
+
+### 第 54 轮继续：首页轮播响应式运动
+
+- 2026-09-14 用户继续后，以 `afc56c09ec3940d9fa725c530a4405687a0079d2` 核对父任务、1599 tracked、原 13 份资料和 37 个 completed 子任务；509 source / 4 spec / 172 build / 49 实际本地响应与前项验收一致。未重跑旧全量、未刷新生产或依赖事实。
+- 六组本地 Chromium 观察确认三个主题首次窄屏 320/390/430 → 1440 后自动滚动及 wheel 惯性均为 0，直接桌面对照有运动；桌面 → 窄屏仍写入内联轨道位置。API/model/page/external-request 均 0；证据 `C:/Users/zhang/AppData/Local/Temp/blog-semi-carousel-resize-ke1j094n/probe-before/`。这是本轮新证据，前项只处理原生 wheel 缩放。
+- 创建前已运行只读工作区审计；已建立 P2 子任务 `09-14-stage-4-carousel-responsive-motion`，规划范围为现有移动模式的运动生命周期、专项和规范。当前准备启动；沿用持续本地授权，未知 scheduler 保持，只有交付并实际返回父任务后才递增轮次。
+- 最终运动专项 24/24、wheel 33/33、smoke 21/0、lint/build/性能和唯一完整 UI 46/0（外层 2712294ms，组累计 2708595ms）均通过。初次 769px 指针落在面板内的准备失败单独保留；改为真实导航 Logo 取点，产品与全部断言保持。510/4/172/49 已冻结；进入精确本地交付。用户随后提供参考站与本站截图，要求分析三主题文字偏亮及层级原因；当前修复交付后继续该只读分析，不混入当前 CSS 改动。

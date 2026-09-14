@@ -355,6 +355,38 @@ $env:UI_CHECK_BASE = 'http://127.0.0.1:5198'
 node scripts/check-home-carousel-wheel-ui.mjs
 ```
 
+### Responsive Carousel Motion
+
+`checkHomeCarouselMotion(browser, base)` in
+`scripts/check-home-carousel-motion-ui.mjs` runs 24 cases through its standalone
+Node entry and full UI's existing `catalog-projects` group. Eighteen cases cover
+three themes, both languages and initial 320/390/430 widths, then 1440, 768/769
+and repeated narrow/desktop transitions. Six cases cover initial reduced motion,
+runtime reduce/no-preference and actual coarse/fine pointer media-query changes.
+Pointer emulation verifies the existing mode gate, not physical touch gestures.
+
+For static phases, assert zero position, cleared inline translation, computed
+`transform: none`, and no track style mutations over real animation frames.
+Checking computed transform alone misses a loop still writing behind mobile
+CSS. For running phases, require visible project cards and actual frame movement.
+Use a trusted ordinary wheel at fresh visible coordinates, assert its target,
+cancellation and immediate movement, then verify additional inertia while hover
+pauses autoplay. Keep the separate native-wheel zoom checks and existing
+focus/drag/mask assertions intact.
+
+Before measuring autoplay, move the real pointer onto the navigation Logo and
+assert all actual pause reasons are false. At intermediate widths the carousel
+panel can span the viewport: `(1, 1)` is not necessarily outside it. Preserve a
+failed pause precondition as setup evidence; do not remove the pause assertion
+or alter product behavior to satisfy that setup.
+
+Compare connected track/wrapper identity, project/action text, preferences,
+footer href and URL/history through each transition. Use context-level local
+network guards, fixed API failures and zero API/model-call assertions. Close CDP
+sessions and browser contexts in nested `finally` blocks. Write per-case JSON
+and representative screenshots only into the supplied `UI_CHECK_ARTIFACT_DIR`;
+never fall back to an `undefined/` output directory.
+
 ## Content Studio
 
 - Mobile uses focused workspace modes; desktop keeps the complete workspace visible.
