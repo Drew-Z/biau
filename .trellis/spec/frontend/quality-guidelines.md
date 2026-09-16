@@ -209,6 +209,105 @@ failure and correct the comparison offline before rerunning installation.
 - Letter spacing is `0`; do not scale font size directly with viewport width.
 - Preserve a multi-color but restrained palette; do not regress to a one-note dark-blue/purple/beige theme.
 
+## Homepage Typography And Contrast
+
+### 1. Scope / Trigger
+
+Apply this contract when homepage text, card material, content height or shared
+navigation typography changes across themes.
+
+### 2. Signatures
+
+`checkHomeTypography(browser, base)` in `scripts/check-home-typography-ui.mjs`
+runs in full UI's existing `catalog-projects` group before the wheel/motion
+checks. Run its standalone entry with the existing TypeScript loader because it
+reads `heroContent.projects` and its transitive TypeScript imports:
+
+```powershell
+$env:UI_CHECK_BASE = 'http://127.0.0.1:5198'
+node --import tsx scripts/check-home-typography-ui.mjs
+```
+
+### 3. Contracts And Evidence
+
+Cover Morning/Nature/Stellar × zh/en × 1440/320/390/430: 24 configurations.
+Desktop captures initial, animated-background and actual WebGL-disabled CSS
+fallback states. Each mobile configuration captures initial plus three real
+scrolling positions. The current nine-project data produces 90 background
+samples; derive the project count from `heroContent.projects.length`, not a
+hard-coded historical count. Preserve registered titles, summaries, entry modes,
+connected DOM identity, URL/history and restored preferences across switches.
+
+Assert all four category accents, index and left-border colors against the
+theme palette; normal borders share the theme token and Stellar variants share
+surface/shadow/backdrop treatment. Assert 400/500 text roles, distinct title/body
+colors, desktop 124px card height, full text Range containment, no text/action
+overlap, 44px actions, no horizontal overflow and a visible first mobile card.
+
+### 4. Validation And Error Matrix
+
+Sample screenshots of the actual composed viewport at six points per fully
+visible text Range, using sRGB luminance and text alpha × ancestor opacity.
+Hide glyph paint without changing surfaces, geometry, background animation or
+opacity. The Hero rotator and its `::before` ghost need explicit visibility
+masking; hiding `.char` alone leaves the outgoing title painted. Wait for finite
+animations/transitions after both adding and removing the mask. Exclude the
+Hero's gradient subline from ordinary `color` sampling. GSAP writes inline
+opacity outside `document.getAnimations()`: wait for the rotator/characters to
+reach opacity 1 and the ghost to clear, then collect readiness and state in the
+same `waitForFunction` browser task. Every desktop animated sample deliberately
+triggers a real Enter title rotation before returning focus to the card action.
+Do not sample a character during its zero/partial-opacity entry phase.
+
+| Condition | Required result |
+| --- | --- |
+| Necessary text, including Hero/card titles | Every measured contrast minimum is at least 4.5:1; no upper contrast cap |
+| Text behind fixed navigation/assistant or a carousel edge | Skip that hidden line and use real scrolling to expose later content |
+| Autoplay displays a loop copy | Measure the visible copy; use original nodes for identity assertions |
+| Glyphs/ghost still painted or masking transition unfinished | Fix sampling preparation; do not tune product colors to a contaminated sample |
+| Business API attempt, external request or page error | Fail; only GET `/api/health` may use the local fixture |
+
+### 5. Good, Base And Bad Cases
+
+Good: restrained role colors stay readable on real animated backgrounds.
+Base: all categories and complete authored content survive both preference
+switches and the return to the initial state. Bad: uniform card accent, clipped
+summary, blanket opacity reduction, or a passing contrast value measured behind
+an unrelated fixed control. Representative frame samples do not guarantee every
+future animation frame or every unrelated page's text.
+
+### 6. Tests Required
+
+Retain existing navigation geometry and carousel input assertions. Inspect
+three-theme desktop/mobile screenshots and CDP platform fonts; a CSS font stack
+alone does not establish which Windows font was drawn. Each case owns and closes
+its context/CDP session in `finally`, blocks service workers, installs the local
+network guard before navigation, and asserts zero model calls. Write JSON and
+screenshots only to the supplied `UI_CHECK_ARTIFACT_DIR`, never `undefined/`.
+
+### 7. Wrong vs Correct
+
+Wrong: mask only `.hero-title-rotator .char`; the outgoing title's pseudo-element
+remains visible and contaminates the background sample. Correct: hide the
+rotator, its `::before`, and `.char`, then wait for finite paint transitions:
+
+```css
+.hero-title-rotator, .hero-title-rotator::before, .hero-title-rotator .char {
+  visibility: hidden !important;
+}
+```
+
+## Project Detail Visual Captions
+
+In `projectDetailVisualCases`, collect `visual.caption` from all visual blocks,
+independently of `visual.image`. `ProjectVisualFigure` may render a textual
+workflow/architecture description without an image. Count and compare the
+`.project-visual__caption-text` nodes; the enclosing `__caption` paragraph can
+also exist for a source link alone. Keep image/alt, caption text and source-link
+counts separate, with exact counts and complete strings. The Roleplay detail is
+an existing no-image case with four captions; do not remove that content or
+weaken count assertions to fit an image-only assumption.
+
 ## Navigation Typography Contract
 
 Desktop top-navigation labels are one shared visual system across `/`, catalog
@@ -223,7 +322,7 @@ This prevents a route change from changing label width, weight, or baseline.
 .navigation-top {
   --nav-desktop-font-family: var(--font-ui);
   --nav-desktop-font-size: 14px;
-  --nav-desktop-font-weight: 650;
+  --nav-desktop-font-weight: 500;
   --nav-desktop-letter-spacing: 0;
   --nav-desktop-line-height: 1.2;
 }
@@ -415,6 +514,10 @@ never fall back to an `undefined/` output directory.
 - On `/status`, `.status-target__actions .btn` and `.status-project-card__link` use `min-height: 44px` within the existing `max-width: 720px` rules; keep the desktop `40px` density. Do not widen the shared selector to status-detail or missing-page actions without separate evidence.
 - The status mobile browser matrix at `320/390/430` must find both action groups and assert visible, measurable targets at least `44px` wide/high with horizontal viewport containment. Missing groups and hidden/zero-size actions must fail; filtering them out before measurement can make an inaccessible page pass. Use scrolled screenshots and hit testing to verify reachability, not `scrollWidth` alone.
 - Status-section navigation uses explicit `instant` scroll behavior for reduced motion and long jumps. Do not temporarily override root `scroll-behavior` or restore a stale selected section in a later animation frame; rapid section changes and subsequent wheel input must leave the scroll spy in control. Browser checks exercise all six section choices followed by real wheel input, asserting the target position, current section, sticky position and unchanged page containment.
+- Prepare that native wheel after the final select by moving the pointer, waiting
+  for two compositor frames, then reading the current target delta. Preserve the
+  70–105px landing, selected-section and sticky-position assertions; do not use
+  a stale pre-positioning delta or replace genuine wheel input with DOM scrolling.
 - Status-detail controls also use `min-height: 44px` at `max-width: 720px`: `.status-detail-actions .btn`, `.status-project__header-tools > a`, and `.site-status-page .detail-missing .btn`. Keep the desktop `40px` actions / `30px` header link and the non-interactive count badge unchanged. Scope the missing-state override to the status page so other detail families retain their own evidence and layout contracts.
 - `checkStatusDetailReadingNavigation()` covers two hero actions plus one header return link on a valid status detail and one return action on a missing status detail, at desktop and `320/390/430` with three themes and both language states. Require exact counts and destinations, visibility, minimum dimensions, horizontal containment, and center-point hit testing after scrolling. The missing route must omit the reading guide and return to `/status` on Enter.
 - A fixed mobile tab bar uses an opaque surface so cards and text never remain visibly readable through the bar; the page content reserves `--mobile-tabbar-clearance` plus a content gap so the last interactive item can be scrolled above the bar.
@@ -426,6 +529,10 @@ never fall back to an `undefined/` output directory.
   directions. Fixed title width plus visible overflow can intercept the click
   even when the document itself has no horizontal scrollbar. Verify the
   380/381 and 768/769 boundaries when changing these rules.
+- Keep this homepage grid on `.app.page-home .navigation-top .nav-inner` so the
+  later lazy `route-pages.css` rules cannot restore a competing three-column
+  layout. Exercise real language/theme clicks after lazy CSS has loaded; forced
+  clicks cannot prove that brand text leaves the controls reachable.
 - Blog/project/status details remain vertically readable without forced horizontal swiping.
 - Floating assistant/reading controls collapse or offset near final content and footer.
 - Drawers/modals remain within viewport, expose close actions, and avoid global-nav overlap.

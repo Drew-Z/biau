@@ -1,49 +1,67 @@
-# 三主题文字层级与卡片配色实施计划
+# 三主题文字层级与卡片配色实施记录
 
 ## 当前状态
 
-本轮仅规划。子任务创建于 2026-09-14，规划于 2026-09-15 继续；复用原目录，不按日期重新建项。完成 PRD/design/本文件与基线记录后停止在 planning；没有执行产品修改或运行实现验收。
+规划保存于本地提交 `8d9624fc`，用户回复“可以”后已实际 start 本子任务。2026-09-16 最终 `ui-caption-contract` 实际 exit 0、46 组/0 失败；所有验收检查与主会话复审通过，三份前端规范已同步。当前进入本地提交和归档，尚未把计划交付记作已完成。
 
-推荐字体方向为轻衬线卡片标题；可选偏好未收到明确选项，方案按推荐默认整理。该偏好不阻塞规划完成，不能记录成已获用户选择。
+采用已确认整体方案的轻衬线默认；该选择不被记作用户单独回答了字体选项。证据根目录：`C:/Users/zhang/AppData/Local/Temp/blog-semi-theme-implementation-bfwxnc62`。
 
 ## 顺序与检查点
 
-- [x] 恢复前次分析、父 PRD/design/implement 和当前 Git 状态；确认已有子任务及唯一规范目录。
-- [x] 记录 planning 基线，创建目录前运行工作区只读审计；原 13 份未跟踪资料与历史 worktree 保留。
-- [x] 建立本子任务并完成需求收敛、影响范围、设计与验收矩阵；相关事实详见 baseline.md。
-- [ ] 实施开始前重新核对本 PRD/design/implement、现有用户选择及工作区差异；按父路线图授权实际 start 当前子任务，使用 trellis-before-dev 读取相关前端规范。
-- [ ] 保存当前三主题代表截图与最长标题矩形；确认实际编译源码仍匹配前次证据，差异则刷新基线。
-- [ ] 节点 A：修复分类 accent 与背景/边框覆盖链；用真实浏览器验证四种分类与各 variant 的材质归属，保存修改前失败与修复后结果。
-- [ ] 节点 B：按角色调整标题、正文、辅助文字、状态、计数、按钮和共享导航；先收敛 Stellar，再投影 Morning/Nature，记录实际字体与背景对比度。
-- [ ] 节点 C：依据长标题矩形选择统一桌面卡片高度，移动端保持自适应；复核摘要、动作区、首屏节奏与 44px 目标，复用轮播专项确认周期/输入保持。
-- [ ] 主会话完成 trellis-check；检查本任务全部 diff、动态主题/语言与状态归属，更新新视觉的确定性检查，不弱化旧交互断言。
-- [ ] 依次 lint/build、首页层级专项、原运动/缩放专项、performance、smoke；主会话查看三主题桌面与窄屏前后截图。
-- [ ] 方案和专项稳定后，在同一最终版本运行一次完整 UI；失败先诊断，仅在输入变化/修复/未解问题需要时重跑对应检查。
-- [ ] trellis-update-spec：更新分类 token 所有权、文字角色与新的导航合同；检查器、规范与产品采用同一验收版本。
-- [ ] 冻结最终输入/证据，核对精确白名单与原资料；本地不签名提交，保留所有权与回滚信息。
-- [ ] 只归档本子任务；实际 start 父路线图后再递增 round/清空 activeChild，记录交付及新评估；关闭自有预览并检查本轮临时资源用途。
+- [x] 恢复前次分析、规划与父任务授权；沿用原任务目录，实际 start 并读取前端规范。
+- [x] 保存原 24 组截图、1614 个 tracked 文件及原 13 份未跟踪资料的哈希与所有权边界。
+- [x] 2026-09-16 保存恢复基线：Roleplay 接入是既有外部改动，当前首页 9 项；保护该组内容和原资料。
+- [x] 节点 A：恢复四类 accent、序号与左边框；各 variant 仅提供材质，共用规则统一投影。
+- [x] 节点 B：标题/正文 400，普通信息/动作/桌面导航 500；校准三主题小字、底色与常态按钮。
+- [x] 节点 C：按真实内容选择桌面 124px，移动自适应；摘要/诗句不靠新增截断挤入旧高度。
+- [x] 首页专项 24 配置、90 次视口/滚动阅读取样通过；主会话查看三主题桌面前后与 320px 英文截图。
+- [x] lint、build、performance 通过；原 24 组响应式轮播运动、33 场景原生缩放/滚轮和 smoke 21/0 通过。
+- [x] 标题完整遮罩后的 24/90 专项、状态页三宽度 × 三次原生 wheel 定向复核和最新 lint 通过。
+- [x] 同一冻结输入的完整 UI 终局通过：`ui-caption-contract` 46/0；前三次失败保留，不计为通过。
+- [x] 主会话完成 trellis-check 最终结论，更新分类、文字、导航、采样与无图片说明合同。
+- [ ] 核对原资料、外部改动、索引白名单与源码/构建/实际 HTTP 哈希，精确本地不签名提交。
+- [ ] 只归档本子任务，实际 start 父任务后再更新 round 和评估；记录日志、关闭自有预览并检查临时资源。
 
-## 验证命令
+## 已取得的结果
 
-实现后按实际检查入口执行；下面的 typography 脚本是待实现交付物，本轮没有运行它。
+| 检查 | 证据目录 | 实际结果 |
+| --- | --- | --- |
+| lint | lint-caption-contract | 最新说明数量合同修改后 exit 0 |
+| TypeScript + Vite | build-reading-contrast | exit 0 |
+| 首页层级 | typography-gsap-ready | 完整标题遮罩和 GSAP 就绪读取，含真实 Enter 轮换；24 配置 / 90 次背景取样，exit 0 |
+| 响应式运动 | motion-final | 24 组，exit 0 |
+| 原生缩放/滚轮 | wheel-final | 33 场景，exit 0 |
+| 路由 smoke | smoke-final | 21 组 / 0 失败，exit 0 |
+| 状态页原生 wheel | status-wheel-local-health | 320/390/430 各三次，9 场景，exit 0；本地 health fixture 6 次、业务 API 0 |
+| 项目图文说明 | project-visual-captions | 15 项目 / 50 条说明，精确数量/文本、图片和来源数量通过，exit 0 |
+| 构建体积 | performance-final | CSS 150130 / 222755 bytes；JS 320853 / 430000 bytes，exit 0 |
+| 首次完整 UI | ui-final | 45 组 / 2 失败，exit 1；保留失败，不计为通过 |
+| 第二次完整 UI | ui-ghost-compositor | 45 组 / 1 失败，exit 1；状态 wheel 已通过，标题 GSAP 采样未就绪 |
+| 第三次完整 UI | ui-gsap-ready | 46 组 / 1 失败，exit 1；首页 24/90、wheel 33、motion 24 及 SEO 通过，唯一失败为 Roleplay 无图片说明数量 |
+| 最终完整 UI | ui-caption-contract | exit 0；46 组 / 0 失败；外层 2709368ms，组累计 2707806ms |
 
-```powershell
-npm.cmd run lint
-npm.cmd run build
-$env:UI_CHECK_BASE = 'http://127.0.0.1:5198'
-node scripts/check-home-typography-ui.mjs
-node scripts/check-home-carousel-motion-ui.mjs
-node scripts/check-home-carousel-wheel-ui.mjs
-npm.cmd run performance:check
-npm.cmd run check:ui:smoke
-npm.cmd run check:ui
-git diff --check
-```
+原候选冻结于 `final-validation-input.json`；最新检查输入另存 `validation-input-caption-contract.json`。363 份源码/公开输入中仅两个检查脚本变化，174 份构建哈希全部一致，实际 HTTP index 与 dist 相符，索引仍为空。第三次全量后与其冻结记录逐项相等，不存在用新数据测旧构建的问题。复用未变化构建的 build/performance/motion/wheel/smoke 成功结果。该构建含恢复时已存在的 Roleplay 数据；不将它纳入本任务的产品提交范围。新出现的项目盘点任务、图标及原资料均保留。测试使用本机 Node 24.14.0。
 
-网络隔离和 fixture 沿用仓库既有 browser helper。新专项需提供独立入口，支持由完整 UI 调用；证据目录独立命名、拒绝覆盖历史失败。开始正式全量前保存源码/构建版本，不能拿旧页面的完整 UI 结论替代新视觉的验收。
+最终全量后 `final-validation.json` 再次核对 363 source / 174 dist / 实际 HTTP index 全部相等。`preservation-final.json` 确认原 13 份未跟踪资料、外部 Roleplay 修改、依赖和保护快照保持；不存在范围外 tracked 变化。最终所测最低对比度为 Morning 4.767、Nature 5.177、Stellar 5.179，属于真实代表帧结果，不扩大为全站每帧保证。
 
-## 本轮规划验收
+## 诊断记录
 
-确认三份规划和 baseline 文件存在且无占位项，PRD 的每项需求均映射验收，引用的现有源码/规范/证据路径可访问。审阅 PRD 全文完成收敛；核对任务仍为 planning，父子关联唯一、原 38 个子任务不变。只检查文档结构与 Git 范围，不运行 lint/build/UI 来假装验证尚未实施的页面。
+- 旧构建四类 accent 只有一种，是有效回归证据。
+- 108–112px 初稿容不下 95.34375px 的真实内容；124px 提供 98px 内高。
+- 浅色背景下小字曾低于 4.5:1，已通过角色颜色和局部表面共同校准，未统一降低祖先 opacity。
+- 移动导航曾被 late route CSS 覆盖成三列，真实语言按钮被品牌挡住；修改所属规则后真实点击通过。
+- 固定底部导航后的不可见行、未结束的遮罩过渡分别造成两类取样错误。现在用视口截图、遮挡矩形、实际滚动和有限过渡等待处理；保留失败证据，未降低 4.5:1 门槛。
+- 悬停经过助手触发其既有健康预热；专项使用固定本地 GET health fixture，业务 API 尝试失败，真实模型调用 0。
+- 首次完整 UI 在 Stellar 英文桌面的动画背景阶段报告标题“涌”4.301:1。真实 Enter 诊断证实旧遮罩只隐藏 `.char`，标题 `::before` 残影仍为 visible；完整遮罩隐藏标题和该伪元素后 24/90 复核通过。未改产品动画、星空底色或对比度阈值。
+- 同次完整 UI 的状态页 320px 原生 wheel 回到顶部。旧顺序独立诊断曾成功，不能断言唯一根因；检查现在先移动指针、等待两次 compositor frame，再读取当前 delta。三宽度各三次定向复核通过，保留 70–105px 目标、当前分区、sticky 与无溢出断言。首次定向脚本因把六次健康预热计为业务请求而失败；补齐已有 health fixture 的本地分类后通过，失败目录保留。
+- 第二次完整 UI 的状态 wheel 已通过，但 Stellar 中文桌面取到了新标题“我看见未来”的 GSAP 入场帧，逐字 opacity 从 0.686 到 0；CSS 动画等待并不覆盖 GSAP 的内联更新。快照现在通过同一次 `waitForFunction` 读取验证标题/字形 opacity 为 1 且残影清除；每个桌面动画样本先真实 Enter 轮换再采样，24/90 和 lint 已通过。未跳过低对比度读数、删除角色或停止背景动画。
+- 第三次完整 UI 已跑完 46 组，仅 Roleplay 说明数量失败：旧检查先筛选带图片的 visual，预期为 0；现有组件对无图片的流程/架构文字同样显示 caption，实际为 4。检查改为从全部 visual 获取 caption，并直接读取 `__caption-text`，避免把仅有来源链接的容器误计为文字。15 项目/50 说明定向复核及 lint 通过；未改项目数据或组件。
+- 曾误用 npm exec 下载 Node 26 缓存；后续固定本机 Node 24，package.json / package-lock.json 未改。已结合 `typography-first` 安装记录、创建时间、版本/manifest 哈希和无活动进程核实 `D:/Agent/npm-cache/_npx/1838e33cf768caf6` 属于本轮；单独用 PowerShell 清理其 23 文件、207534733 bytes。`node26-cache-ownership.json` / `node26-cache-cleanup.json` 保存证据；共享 `_cacache` 与其他 `_npx` 目录未动。
 
-本轮若保存规划提交，只包含当前规划文件与父任务记账，不归档子任务、不标记实现通过、不执行 task.py start 或 push。后续用户要求实施时直接恢复本目录，无需重复创建任务或询问常规启动许可。
+## 验证入口
+
+`npm.cmd run lint`、`npm.cmd run build`、`npm.cmd run performance:check`、`npm.cmd run check:ui:smoke`、`npm.cmd run check:ui`。首页专项使用 `node --import tsx scripts/check-home-typography-ui.mjs`；motion/wheel 专项沿用独立 Node 入口。每项通过 `run-check.py` 写入独立目录，设置本地 `UI_CHECK_BASE=http://127.0.0.1:5198` 和 `UI_CHECK_ARTIFACT_DIR`，保留真实 exit code。
+
+## 规划历史
+
+规划阶段仅验证文档与保全范围，并保存到 `8d9624fc`；其不运行产品检查、不 start、不归档的约束只属于该历史阶段。用户已批准实施，当前按父路线图本地授权完成验证、提交和归档；持续不 push/deploy/sign。

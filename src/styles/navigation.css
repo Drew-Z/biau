@@ -2,7 +2,7 @@
 .navigation-top {
   --nav-desktop-font-family: var(--font-ui);
   --nav-desktop-font-size: 14px;
-  --nav-desktop-font-weight: 650;
+  --nav-desktop-font-weight: 500;
   --nav-desktop-letter-spacing: 0;
   --nav-desktop-line-height: 1.2;
   --nav-desktop-item-gap: 8px;
@@ -1105,7 +1105,7 @@
   background: var(--home-control-bg);
   box-shadow: none;
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 500;
 }
 
 .page-home .nav-theme-selector { flex: 0 0 auto; }
@@ -1227,12 +1227,13 @@
 }
 
 @media (max-width: 768px) {
-  .app.page-home .nav-inner {
+  .app.page-home .navigation-top .nav-inner {
     width: calc(100% - 32px);
-    margin-top: 8px;
+    margin: 8px auto 0;
     padding: 4px 0;
     border-radius: 0;
     grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
   }
 
   .page-home .navigation-top {
@@ -1350,7 +1351,7 @@
 }
 
 @media (max-width: 380px) {
-  .app.page-home .nav-inner {
+  .app.page-home .navigation-top .nav-inner {
     gap: 4px;
   }
 

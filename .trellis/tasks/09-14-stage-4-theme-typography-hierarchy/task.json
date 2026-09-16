@@ -3,7 +3,7 @@
   "name": "stage-4-theme-typography-hierarchy",
   "title": "三主题文字层级与卡片配色",
   "description": "Plan and verify calmer text hierarchy, category accents and coherent surfaces for the homepage and shared navigation across all three themes.",
-  "status": "planning",
+  "status": "in_progress",
   "dev_type": "frontend",
   "scope": "home-theme-typography",
   "package": null,
@@ -24,6 +24,7 @@
     "src/styles/appearance-themes.css",
     "src/styles/hero-split.css",
     "src/styles/navigation.css",
+    "scripts/check-home-typography-ui.mjs",
     "scripts/check-ui.mjs"
   ],
   "notes": "",
@@ -39,6 +40,24 @@
       "defaultTitleTypeface": "existing light serif; recommendation, not an explicit user selection",
       "implementationStarted": false,
       "validationScope": "planning documents and preservation only"
+    },
+    "implementation": {
+      "state": "verified",
+      "approvedAt": "2026-09-15",
+      "approval": "User accepted the reviewed plan with 可以.",
+      "baseCommit": "8d9624fcea9054172e1d3cd25ff63235823773b5",
+      "evidenceRoot": "C:/Users/zhang/AppData/Local/Temp/blog-semi-theme-implementation-bfwxnc62",
+      "startedThroughTaskCommand": true,
+      "resumedAt": "2026-09-16",
+      "currentCheck": "ui-caption-contract",
+      "validationInput": "validation-input-caption-contract.json",
+      "previousFullUi": "ui-final: 45 groups/2 failed; ui-ghost-compositor: 45 groups/1 failed; ui-gsap-ready: 46 groups/1 failed. All failures retained; corrected glyph/GSAP/wheel preparation and caption counting. Final ui-caption-contract passed 46/0.",
+      "verifiedAt": "2026-09-16",
+      "fullUiExitCode": 0,
+      "fullUiGroups": 46,
+      "fullUiFailed": 0,
+      "finalInputProof": "final-validation.json",
+      "externalInputNote": "Roleplay integration was already present at resume, with nine hero projects. Preserved separately in resume-2026-09-16-baseline.json; not owned product changes."
     }
   }
 }

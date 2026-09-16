@@ -293,11 +293,51 @@ access state. The panel's fixed copy follows `useSiteLanguage`, while authored
 project text remains Chinese; language is not a carousel-effect dependency.
 
 The homepage shell uses the existing class-based theme system with compact 8px
-surfaces, deep ink backgrounds, cyan state accents, and amber brand emphasis.
+surfaces and semantic `--home-*` colors for Morning, Nature, and Stellar.
 Do not turn page sections into nested decorative cards or add a fifth mobile
 navigation column without a real public route. UI checks must assert the ordered
 route set, 44px controls, no horizontal overflow, and a first project card visible
 within the initial mobile reading rhythm at 320, 390, and 430px.
+
+### Homepage Theme Typography And Category Materials
+
+`appearance-themes.css` owns theme colors; `hero-split.css` projects text roles
+and card materials. Keep the category map `signal → green`, `preview → violet`,
+`commerce → amber`, `image → rose`. The common homepage card rule must not
+reassign `--card-accent`: doing so erases the category rules. Variants provide
+`--home-card-surface`, and one shared rule combines that surface with a 6%
+category tint. Declare `border-left-color: var(--card-accent)` after the common
+border color, including hover/focus states. The visible index uses the same
+accent. Stellar variants share the same base surface and material treatment.
+
+| Text role | Font and weight | Color owner |
+| --- | --- | --- |
+| Hero main title | Existing display serif, 400 | `--home-ink` |
+| Card title | `--font-serif-display`, 400; desktop 16px, mobile 14px | `--home-card-title` |
+| Hero / card body | Existing UI sans, 400; card copy 12px | `--home-copy` / `--home-card-copy` |
+| Poem / auxiliary labels | Existing role font, 400 | `--home-muted` |
+| Status values / panel count / ordinary actions | UI sans, 500 | Their existing copy/action tokens |
+| Desktop navigation | Shared UI sans, 14px/500/0/1.2 | Shared navigation tokens |
+
+Keep the strongest light text for a small number of anchors. Do not dim whole
+containers with opacity: small auxiliary text can already be close to its
+reading threshold. The panel footer consumes `--home-footer-link`; a later
+generic accent override must not replace its independently calibrated color.
+
+Desktop `.carousel-viewport` defines `--card-h: 124px`, consumed by the card's
+height. This accommodates complete current titles, summaries and desktop poems;
+mobile cards retain `height: auto` and their existing hidden poem. Keep summaries
+as full block text, without the old line clamp. Future longer content needs a
+measured shared height, not smaller fonts, rewritten titles or new truncation.
+The viewport's `calc(100% - 86px)` reserves its header/footer space; its 86px is
+not the card height. `RightScrollCards` continues measuring real card geometry.
+
+Morning and Nature place a blurred, borderless `--home-reading-surface` behind
+the Hero copy to preserve readability over cloud animation. Stellar keeps that
+surface transparent. Reuse this CSS surface and existing background owners;
+do not introduce another renderer or animation loop to compensate for text.
+See the quality guide's homepage typography matrix for contrast and layout
+assertions, including actual platform fonts and genuine theme/language clicks.
 
 ### Homepage Carousel Responsive Motion
 

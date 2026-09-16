@@ -8,6 +8,7 @@ import { checkReadingNavigation } from './check-reading-navigation-ui.mjs'
 import { checkReadingGuideLinks } from './check-reading-guide-links-ui.mjs'
 import { checkHomeCarouselWheel } from './check-home-carousel-wheel-ui.mjs'
 import { checkHomeCarouselMotion } from './check-home-carousel-motion-ui.mjs'
+import { checkHomeTypography } from './check-home-typography-ui.mjs'
 import { checkPublicRouteRecovery } from './check-public-route-recovery-ui.mjs'
 import { checkSiteLanguage } from './check-site-language-ui.mjs'
 import { checkPublicAssistantImageLifecycle } from './check-public-assistant-image-ui.mjs'
@@ -224,7 +225,7 @@ const projectDetailVisualCases = projects
       expectedVisualAltTexts: imageBackedVisuals
         .map((visual) => visual.alt ?? visual.title)
         .filter((text) => text.trim().length > 0),
-      expectedVisualCaptions: imageBackedVisuals
+      expectedVisualCaptions: visuals
         .map((visual) => visual.caption ?? '')
         .filter((text) => text.trim().length > 0),
       expectedVisualSourceLinks: visuals.filter((visual) => Boolean(visual.sourceUrl)).length,
@@ -1247,7 +1248,7 @@ function hasDesktopNavigationContract(signature) {
   return (
     signature.fontFamily.length > 0 &&
     signature.fontSize === '14px' &&
-    signature.fontWeight === '650' &&
+    signature.fontWeight === '500' &&
     signature.letterSpacing === '0px' &&
     Math.abs(Number.parseFloat(signature.lineHeight) - 16.8) < 0.01
   )
@@ -2595,8 +2596,11 @@ for (const width of [320, 390, 430]) {
   }
 
   // Exercise manual reading with real input without changing page styles.
-  const manualScrollDelta = await mobileStatusPage.locator('#status-manual').evaluate((item) => item.getBoundingClientRect().top - 86)
   await mobileStatusPage.mouse.move(width / 2, 450)
+  // The last select can jump instantly; let its scroll reach the compositor
+  // before calculating a delta for native wheel input at the current position.
+  await waitForCompositorFrames(mobileStatusPage)
+  const manualScrollDelta = await mobileStatusPage.locator('#status-manual').evaluate((item) => item.getBoundingClientRect().top - 86)
   await mobileStatusPage.mouse.wheel(0, manualScrollDelta)
   await mobileStatusPage.waitForFunction(
     () => {
@@ -5032,6 +5036,7 @@ for (const width of [320, 390, 430]) {
   finishProgressGroup(publicAssistantFailures)
   progress.start('catalog-projects', 'route stability, home carousel, project visuals, and mobile reading')
   const catalogProjectFailures = failures.length
+  console.log('Home typography passed:', await checkHomeTypography(browser, base))
   console.log('Home carousel wheel zoom passed:', await checkHomeCarouselWheel(browser, base))
   console.log('Home carousel responsive motion passed:', await checkHomeCarouselMotion(browser, base))
 
@@ -5701,7 +5706,7 @@ for (const project of projectDetailVisualCases) {
   const visibleVisualCount = await projectVisualPage.locator('.project-case-study .project-visual:visible').count()
   const visualImages = projectVisualPage.locator('.project-case-study .project-visual__image img')
   const renderedImageCount = await visualImages.count()
-  const visualCaptions = projectVisualPage.locator('.project-case-study .project-visual__caption')
+  const visualCaptions = projectVisualPage.locator('.project-case-study .project-visual__caption-text')
   const renderedCaptionCount = await visualCaptions.count()
   const visualSourceLinks = projectVisualPage.locator('.project-case-study .project-visual__source-link')
   const renderedSourceLinkCount = await visualSourceLinks.count()
