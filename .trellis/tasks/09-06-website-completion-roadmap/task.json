@@ -71,7 +71,7 @@
       "activeChild": "09-14-stage-4-theme-typography-hierarchy",
       "blockedChildren": [],
       "lastCompletedChild": "09-14-stage-4-carousel-responsive-motion",
-      "nextAction": "Final typography, wheel/motion, full UI 46/0 and input preservation passed. Commit the exact typography scope locally, archive only this child, then actually start the parent and reassess; preserve the separate Roleplay and portfolio-refresh work.",
+      "nextAction": "Typography work b4be3ce8 is locally committed and this child is archived on disk. Commit only its archive and parent bookkeeping, then actually start the parent and reassess. Preserve separate Roleplay and portfolio-refresh work; historical raw test evidence is currently unavailable.",
       "ownerThreadId": "01a0952f-555f-7c70-a491-ba1840e626a3",
       "automationId": "automation",
       "cadenceMinutes": 15,
