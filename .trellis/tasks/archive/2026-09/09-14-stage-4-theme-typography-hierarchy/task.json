@@ -60,7 +60,7 @@
       "externalInputNote": "Roleplay integration was already present at resume, with nine hero projects. Preserved separately in resume-2026-09-16-baseline.json; not owned product changes."
     },
     "delivery": {
-      "state": "archived_pending_parent_return",
+      "state": "complete",
       "workCommit": "b4be3ce8a7dbdb91a81ce54b37c524d082877b70",
       "workCommittedAt": "2026-09-16T16:03:56+08:00",
       "resumedAt": "2026-09-19",
@@ -68,9 +68,18 @@
       "historicalEvidenceAvailability": "On 2026-09-19 the prior evidence directories existed but contained no files; prior screenshots, raw logs and frozen-input proofs cannot be reopened. Results are retained as historical, not newly rerun verification.",
       "recoveryManifest": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-theme-implementation-bfwxnc62\\manifest.json",
       "archived": true,
-      "parentStarted": false,
+      "parentStarted": true,
       "archivedAt": "2026-09-19",
-      "archivePath": ".trellis/tasks/archive/2026-09/09-14-stage-4-theme-typography-hierarchy"
+      "archivePath": ".trellis/tasks/archive/2026-09/09-14-stage-4-theme-typography-hierarchy",
+      "archiveCommit": "e1204c6dd1480ef002e413d5d500ba209cfec12b",
+      "parentStartedAt": "2026-09-19T08:31:04.736479+08:00",
+      "parentSessionSource": "session:codex_01a0952f-555f-7c70-a491-ba1840e626a3",
+      "parentRound": 56,
+      "completedAt": "2026-09-19",
+      "session": 142,
+      "parentAssessment": "waiting",
+      "closeoutReport": "C:\\Users\\zhang\\AppData\\Local\\Temp\\blog-semi-theme-implementation-bfwxnc62\\closeout-2026-09-19.json",
+      "preview": "Prior PID 31092 absent and port 5198 not listening; no new preview started during closeout."
     }
   }
 }
