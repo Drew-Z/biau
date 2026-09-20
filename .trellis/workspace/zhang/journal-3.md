@@ -1510,3 +1510,36 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 当前文字层级子任务完成；父路线图等待新的可复现本地问题或明确的 Studio/AI Daily 范围。独立项目盘点工作继续由原任务负责。
+
+
+## Session 143: Stellar 光效补漏与推送后核验
+
+**Date**: 2026-09-21
+**Task**: Stellar 光效补漏与推送后核验
+**Branch**: `main`
+
+### Summary
+
+定位指针和自动边光两层混合覆盖文字；边缘蒙版与计数控制底修复。首页24配置98采样、最终检查器2配置14采样、motion24、smoke21和appearance14通过，lint/build/performance通过。40子任务本地完成，返回父任务第57轮；本次未推送，旧版本RAG就绪失败另待诊断。外部13项修改和保护哈希保持；证据及恢复清单见归档verification.md。
+
+### Main Changes
+
+将指针光晕和自动沿边光斑限制在2px边缘；计数复用深色控制底；新增真实悬停与运动帧对比度回归，修正窄中心窗口导致的检查超时。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0131aa78552744aa31afd69fd7b18e0612f22c1f` | (see git log) |
+
+### Testing
+
+- [OK] lint/build/performance；首页24配置98采样；最终专项2配置14采样；motion24；smoke21；本地appearance14。外部13项修改与保护文件哈希未变。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 本地任务已归档，父任务第57轮等待；补漏提交尚未推送，发布后核验精确线上版本。旧版Public RAG就绪失败单独定界。
