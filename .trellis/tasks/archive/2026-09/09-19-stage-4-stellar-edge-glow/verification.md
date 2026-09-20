@@ -32,3 +32,5 @@
 恢复组：D:/Agent/codex/backups/tasks/2026-09-19T06-03-54-022Z-stage-4-stellar-edge-glow，manifest.json记录基线SHA/文件哈希与实体快照。
 
 额外验证：现有 check:ui:production-appearance 对本地最终构建运行14组/0失败（base为127.0.0.1:5199），覆盖三主题、键盘持久化、默认主题和三个移动宽度。此结果不是新版线上验收。
+
+本地工作提交：0131aa78552744aa31afd69fd7b18e0612f22c1f（15个白名单文件）；远端未更新。
