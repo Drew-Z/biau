@@ -260,9 +260,6 @@ export function RightScrollCards({ projects, onProjectClick, onProjectAction, on
         const revealProgress = revealStartedAt ? Math.max(0, Math.min(1, (now - revealStartedAt) / 1400)) : 0
         const reveal = revealProgress * revealProgress * (3 - 2 * revealProgress)
         const major = 88 * (point.vertical ? 1.45 : 1)
-        flow.style.transform = `translate3d(${(point.x - major / 2).toFixed(1)}px, ${(point.y - 26).toFixed(1)}px, 0)`
-        flow.style.width = `${major.toFixed(1)}px`
-        flow.style.height = '52px'
         flow.style.opacity = String(0.9 * reveal)
         wrapper.style.setProperty('--stellar-border-flow-x', `${point.x.toFixed(1)}px`)
         wrapper.style.setProperty('--stellar-border-flow-y', `${point.y.toFixed(1)}px`)

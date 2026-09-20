@@ -264,6 +264,31 @@ async function platformFonts(context, page) {
   } finally { await cdp.detach() }
 }
 
+async function freezeBorderFlowNearCount(page) {
+  // Capture a real frame as the moving light passes the count. Freeze only its
+  // computed paint/geometry so screenshot latency cannot miss this position.
+  return page.waitForFunction(() => {
+    const panel = document.querySelector('.hero-panel')
+    const light = panel?.querySelector('.stellar-panel-border-flow')
+    const count = panel?.querySelector('.panel-head > strong')
+    if (!panel || !light || !count || panel.dataset.stellarBorderFlow !== 'running') return false
+    const box = panel.getBoundingClientRect()
+    const countBox = count.getBoundingClientRect()
+    const panelStyle = getComputedStyle(panel)
+    const x = Number.parseFloat(panelStyle.getPropertyValue('--stellar-border-flow-x'))
+    const y = Number.parseFloat(panelStyle.getPropertyValue('--stellar-border-flow-y'))
+    const style = getComputedStyle(light)
+    // Use the count's full vertical span: a busy renderer can jump across a
+    // narrow center-only window between two actual animation frames.
+    if (!Number.isFinite(x) || !Number.isFinite(y) || Math.abs(x - box.width) > 2 || y < countBox.top - box.top || y > countBox.bottom - box.top || Number(style.opacity) < 0.8) return false
+    const freeze = document.createElement('style')
+    const properties = ['transform', 'width', 'height', 'left', 'top', 'background-image', 'opacity']
+    freeze.textContent = `.stellar-panel-border-flow { ${properties.map(property => `${property}: ${style.getPropertyValue(property)} !important;`).join(' ')} }`
+    document.head.append(freeze)
+    return freeze
+  }, undefined, { timeout: 15_000 })
+}
+
 async function checkCase(browser, base, theme, language, width) {
   const context = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block' })
   const evidence = { name: `${theme}-${language}-${width}`, stages: [], errors: [], apiRequests: [], modelCalls: 0 }
@@ -348,6 +373,25 @@ async function checkCase(browser, base, theme, language, width) {
       await page.locator('.hero-title-rotator').press('Enter')
       await page.locator('.carousel-action').first().focus()
       await captureState(page, evidence, 'animated-background')
+      if (theme === 'stellar') {
+        // Pointer-driven decoration must stay clear of the real reading surface.
+        for (const [label, selector] of [
+          ['count', '.panel-head > strong'],
+          ['panel-title', '.panel-head p'],
+          ['navigation', '.nav-link-center:not(.active) .nav-link-en'],
+        ]) {
+          await page.locator(selector).first().hover()
+          await captureState(page, evidence, `edge-glow-${label}`)
+        }
+        const frozenLight = await freezeBorderFlowNearCount(page)
+        try {
+          evidence.borderFlowFrame = await frozenLight.evaluate(node => node.textContent)
+          await captureState(page, evidence, 'border-flow-count')
+        } finally {
+          await frozenLight.evaluate(node => node.remove())
+          await frozenLight.dispose()
+        }
+      }
       await page.emulateMedia({ reducedMotion: 'reduce' })
       await page.addInitScript(() => {
         Object.defineProperty(HTMLCanvasElement.prototype, 'transferControlToOffscreen', { configurable: true, value: undefined })

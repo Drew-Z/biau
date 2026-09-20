@@ -217,18 +217,19 @@
 
 .app.page-home .carousel-wrapper > .stellar-panel-border-flow {
   position: absolute;
-  left: 0;
-  top: 0;
+  inset: 0;
   z-index: 2;
-  width: 88px;
-  height: 52px;
+  padding: 2px;
   pointer-events: none;
   opacity: 0;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, color-mix(in oklch, white 72%, var(--home-accent)) 0%, color-mix(in oklch, var(--home-accent) 68%, transparent) 28%, color-mix(in oklch, var(--home-violet) 42%, transparent) 54%, transparent 76%);
+  border-radius: inherit;
+  background: radial-gradient(ellipse calc(var(--stellar-border-flow-size-x, 88px) / 2) calc(var(--stellar-border-flow-size-y, 52px) / 2) at var(--stellar-border-flow-x, 0px) var(--stellar-border-flow-y, 0px), color-mix(in oklch, white 72%, var(--home-accent)) 0%, color-mix(in oklch, var(--home-accent) 68%, transparent) 28%, color-mix(in oklch, var(--home-violet) 42%, transparent) 54%, transparent 76%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   filter: blur(5px) saturate(1.18);
   mix-blend-mode: screen;
-  will-change: transform, width, opacity;
 }
 
 .app.page-home .carousel-wrapper[data-stellar-border-flow='running'] > .harbor-panel-border-flow {

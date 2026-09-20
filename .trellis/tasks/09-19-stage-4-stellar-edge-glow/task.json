@@ -1,0 +1,66 @@
+{
+  "id": "stage-4-stellar-edge-glow",
+  "name": "stage-4-stellar-edge-glow",
+  "title": "修复 Stellar 边缘光晕覆盖文字",
+  "description": "",
+  "status": "in_progress",
+  "dev_type": "frontend",
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-09-19",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "09-06-website-completion-roadmap",
+  "relatedFiles": [
+    "src/styles/appearance-themes.css",
+    "src/styles/hero-split.css",
+    "src/styles/flow-pages.css",
+    "src/components/RightScrollCards.tsx",
+    "scripts/check-home-typography-ui.mjs",
+    ".trellis/spec/frontend/quality-guidelines.md"
+  ],
+  "notes": "",
+  "meta": {
+    "validation": {
+      "state": "passed",
+      "lint": "passed",
+      "build": "passed",
+      "performance": "passed",
+      "typography": {
+        "configurations": 24,
+        "backgroundSamples": 98,
+        "failures": 0
+      },
+      "evidenceDir": "D:/Agent/codex/visualizations/2026/09/12/01a0952f-555f-7c70-a491-ba1840e626a3/release-verification-2026-09-19-2026-09-19T05-27-57-101Z",
+      "recoveryGroup": "D:/Agent/codex/backups/tasks/2026-09-19T06-03-54-022Z-stage-4-stellar-edge-glow",
+      "motion": {
+        "cases": 24,
+        "failures": 0
+      },
+      "smoke": {
+        "groups": 21,
+        "failures": 0
+      },
+      "finalCheckerRerun": {
+        "configurations": 2,
+        "backgroundSamples": 14,
+        "failures": 0
+      },
+      "publication": "local-only-not-pushed",
+      "appearance": {
+        "groups": 14,
+        "failures": 0,
+        "base": "http://127.0.0.1:5199"
+      }
+    }
+  }
+}

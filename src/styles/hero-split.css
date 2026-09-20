@@ -1269,6 +1269,13 @@
   border-left-color: var(--card-accent);
 }
 
+/* The desktop count is a small control surface over a changing background. */
+@media (min-width: 769px) {
+  :root[data-site-theme='stellar'] .app.page-home .panel-head > strong {
+    background: var(--home-control-bg);
+  }
+}
+
 /* Stellar keeps the port board readable while letting the star field carry through. */
 :root[data-site-theme='stellar'] .app.page-home .hero-panel {
   background:

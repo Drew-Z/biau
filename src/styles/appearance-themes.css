@@ -351,15 +351,20 @@ body {
 .stellar-edge-glow-target { isolation: isolate; }
 .stellar-edge-glow-target > .stellar-edge-glow-layer {
   position: absolute;
-  left: calc(var(--stellar-edge-glow-x) - 74px);
-  top: calc(var(--stellar-edge-glow-y) - 74px);
+  inset: 0;
   z-index: 3;
-  width: 148px;
-  height: 148px;
+  width: auto;
+  height: auto;
+  padding: 2px;
   pointer-events: none;
-  border-radius: 50%;
+  border-radius: inherit;
   opacity: calc(var(--stellar-edge-glow-opacity) * var(--stellar-edge-glow, 0.9));
-  background: radial-gradient(circle, rgb(255 255 255 / 72%) 0%, rgb(102 222 255 / 44%) 18%, rgb(111 242 184 / 28%) 34%, rgb(171 125 255 / 24%) 48%, rgb(255 176 84 / 18%) 58%, transparent 74%);
+  background: radial-gradient(circle 74px at var(--stellar-edge-glow-x) var(--stellar-edge-glow-y), rgb(255 255 255 / 72%) 0%, rgb(102 222 255 / 44%) 18%, rgb(111 242 184 / 28%) 34%, rgb(171 125 255 / 24%) 48%, rgb(255 176 84 / 18%) 58%, transparent 74%);
+  /* Keep decorative screen blending on the edge, clear of the reading surface. */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
   mix-blend-mode: screen;
   filter: blur(2px);
 }

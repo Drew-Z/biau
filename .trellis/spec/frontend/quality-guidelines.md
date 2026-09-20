@@ -232,9 +232,15 @@ node --import tsx scripts/check-home-typography-ui.mjs
 
 Cover Morning/Nature/Stellar × zh/en × 1440/320/390/430: 24 configurations.
 Desktop captures initial, animated-background and actual WebGL-disabled CSS
-fallback states. Each mobile configuration captures initial plus three real
-scrolling positions. The current nine-project data produces 90 background
-samples; derive the project count from `heroContent.projects.length`, not a
+fallback states. Stellar desktop additionally samples real pointer hover over
+the project count, panel title and inactive navigation text in both languages.
+Wait for the native moving perimeter light to reach the count, then freeze only
+that layer's computed paint and geometry for one screenshot; remove the freeze
+in `finally`. The remaining background keeps running. A timeout is a failure,
+not evidence that the count is readable.
+Each mobile configuration captures initial plus three real scrolling positions.
+The current matrix produces 98 background samples; derive the project count
+from `heroContent.projects.length`, not a
 hard-coded historical count. Preserve registered titles, summaries, entry modes,
 connected DOM identity, URL/history and restored preferences across switches.
 
@@ -268,6 +274,15 @@ Do not sample a character during its zero/partial-opacity entry phase.
 | Business API attempt, external request or page error | Fail; only GET `/api/health` may use the local fixture |
 
 ### 5. Good, Base And Bad Cases
+
+Stellar's pointer-driven and moving perimeter screen blends are clipped to the
+target's 2px edge with an excluding content-box mask. Neither may recolor text. The
+desktop count uses the existing opaque control surface so a bright background
+cannot erase its contrast. Retain all three edge owners and their motion cleanup.
+The perimeter owner updates its existing position/size custom properties; the
+full-panel masked layer consumes them instead of moving a light above content.
+When investigating an overlapping blend layer, computed text color alone is
+not the final painted foreground: verify the composite before tuning role colors.
 
 Good: restrained role colors stay readable on real animated backgrounds.
 Base: all categories and complete authored content survive both preference

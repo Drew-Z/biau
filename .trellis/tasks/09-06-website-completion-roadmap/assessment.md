@@ -629,3 +629,10 @@
 - manual-gates 仍待选定 Studio needs-changes 草稿编辑/归档、完整审核与首次 Publish Export；AI Daily 最新仓库记录仍为 2026-08-18 extractor provider_rate_limited，后续需容量决定和新一次 Edition 范围。依据为 09-04-continuous-ui-quality-loop/ui-audit.md:187-198、07-14-manual-gates-closure/implement.md:19-20、07-17-ai-daily-production-operations/implement.md:164-168。没有查询当前生产、重新验证依赖上游或扩大发布授权。
 - 独立 `09-16-project-portfolio-refresh` 仍 planning、parent=null，记录 B1 的 Roleplay/帆灵/锚学同步；它已有自己的范围与未提交输入，本路线图不接管、启动或归档。authored/SEO 翻译继续暂缓。
 - 父任务保持 in_progress，round=56、enabled=false、phase=waiting；剩余候选依赖新的本地证据或独立产品/生产范围，不创建空子任务。没有修改未知 heartbeat/scheduler，本地 waiting 不代表确认调度器已暂停。旧自有预览已不存在，5198 无监听；恢复组及当前有验收用途的核对记录保留。
+
+### 第 56 轮推送后复核与 Stellar 光效补漏（2026-09-19 至 09-20）
+
+- 用户此前明确确认的推送已完成：5ea0814f 与实际 origin/main 一致。对应 Site Quality run35410546715 通过、Cloudflare Pages 自动部署成功；稳定域与部署预览 HTML/6 份入口资源哈希一致。Public RAG sync run35410546708 因就绪门禁等待约15分钟后失败，未执行同步POST，精确后端原因仍未确定。
+- 推送后首页只读矩阵发现 Stellar 动态计数3.47:1；追踪定位到指针光晕和自动沿边光斑两层screen混合覆盖文字。不是文字遮罩缺失；该早期口头推断已由实际透明计算样式否定。两层均改为2px边缘蒙版，桌面计数复用既有深色控制底。只修改绘制投影，不改文字颜色/字重/卡片尺寸/四色分类/公开项目数据。
+- 子任务09-19-stage-4-stellar-edge-glow按当前本地授权交付。lint/build/performance、首页24配置/98采样、motion24、smoke21/0通过；最终检查器等待窗口由实际计数上下边界界定，保留真实帧与4.5门槛，专项中英文2配置/14采样与lint重新通过。代表截图复看通过；外部13项修改与保护快照哈希不变。
+- 证据保存于 D:/Agent/codex/visualizations/2026/09/12/01a0952f-555f-7c70-a491-ba1840e626a3/release-verification-2026-09-19-2026-09-19T05-27-57-101Z；恢复组 D:/Agent/codex/backups/tasks/2026-09-19T06-03-54-022Z-stage-4-stellar-edge-glow。新版补漏尚未推送，不将本地9项目构建当作线上8项目验收，不冒称本版本全站46组完整UI重跑。
