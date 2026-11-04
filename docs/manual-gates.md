@@ -39,6 +39,12 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 这些证据已完成旧 Operator 数据面的受控退役；随后已分别删除 legacy Render Operator 服务与 external internal Qdrant collection，当前不再存在 Operator/internal-RAG 删除门禁。
 
+2026-11-04 发布复核：上述已完成项属于历史验收。当前公共助手修复与 B1—B3 项目资料已按批准提交 `83a859b6` 并部署到 Pages（`d29e242e-eee2-4baa-8aa6-7d0a22fb9d73`）、Public（`dep-dblf0qon74is739v3pq0`）和 RAG（`dep-dblf0qjncjis73dmh3o0`）；Studio 未部署。两个站点同源 health 均为 200，核心公开路由 7/7，Roleplay sitemap 缺项已修复。
+
+本次公开知识同步在已验证的 public-only 四表/向量恢复点之后只提交 1 次，返回 `accepted=false / embedding_provider_error / providerHttpStatus=503`，失败位于写入事务之前。远端仍为 31 documents / 61 chunks / 166 entities / 231 relations，最后成功同步为 2026-08-11；新源 32/75/176/253 尚未写入。服务部署版本与 source checksum 匹配不能替代索引同步成功。按已批准发布顺序，同步失败后停止业务验收，不自动重试；先处理 embedding 上游故障，再明确有界同步重试窗口。原问题的单次真实咨询批准尚未消费，实际请求 0 次、测试会话 0 个，回答/引用/恢复/390px 仍待本轮验收。
+
+2026-11-04 14:13 UTC 状态采样为 8 个外部入口中 7 online、ERP connection_error；入口可达不代表模型或受保护业务通过。低敏部署、同步失败与恢复摘要见 `.trellis/tasks/10-05-public-assistant-usability/production-verification-2026-11-04.json`；公开索引恢复点仅在本地受控恢复组中保存，凭据未写入文件或日志。
+
 ## Roleplay 角色剧场公开演示
 
 Roleplay 角色剧场是独立部署的游客式多角色 AI 对话演示，角色库入口为 `https://roleplay.playlab.eu.cc/`。主站只记录公开入口、角色库规模和低敏技术边界；API Key、上游地址、管理员令牌、服务器 IP、访客消息和完整角色卡提示词必须继续留在独立服务端。

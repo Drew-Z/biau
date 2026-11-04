@@ -2,10 +2,10 @@
   "id": "project-portfolio-refresh",
   "name": "project-portfolio-refresh",
   "title": "项目现状盘点与主站同步规划",
-  "description": "同步现有项目真实进展；B1/B2/B3 已本地验证，B3 于 2026-10-05 完成游湾、六游戏与主站自身；B4 待办。",
+  "description": "B1/B2/B3 静态内容已于 2026-11-04 获批发布；B4 部署及页面核验完成，公开索引同步因 embedding HTTP 503 受阻。",
   "status": "in_progress",
   "dev_type": "frontend",
-  "scope": "B3 verified locally; B4 pending",
+  "scope": "B1-B3 published; B4 public index sync blocked",
   "package": null,
   "priority": "P2",
   "creator": "zhang",
@@ -15,7 +15,7 @@
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -34,14 +34,16 @@
     "server/data/public-knowledge-v2.json",
     "public/sitemap.xml"
   ],
-  "notes": "B1/B2 本地交付保留；B3 使用同恢复组，合同、lint/build、21 组 smoke、240 组定向 UI 与完整 46 组 UI 均通过。未提交、推送、部署或写公开状态快照；B4 待办，parent 仍为空，不归档整项任务。",
+  "notes": "Pages/Public/RAG 同版本部署通过；主站 7/7、外部入口 7 online + ERP connection_error。一次公开同步在 embedding 阶段返回 503，未进入写入事务；真实咨询批准未消费。parent 仍为空，任务保持进行中，不重启旧路线图。",
   "meta": {
     "b1": {
       "status": "verified-local",
       "completedAt": "2026-09-25",
       "verification": "b1-verification.md",
       "nextBatch": "B2",
-      "published": false
+      "published": true,
+      "publishedAt": "2026-11-04",
+      "publishCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb"
     },
     "b2": {
       "status": "verified-local",
@@ -49,7 +51,9 @@
       "completedAt": "2026-10-05",
       "verification": "b2-verification.md",
       "nextBatch": "B3",
-      "published": false
+      "published": true,
+      "publishedAt": "2026-11-04",
+      "publishCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb"
     },
     "b3": {
       "status": "verified-local",
@@ -57,7 +61,18 @@
       "completedAt": "2026-10-05",
       "verification": "b3-verification.md",
       "nextBatch": "B4",
-      "published": false
+      "published": true,
+      "publishedAt": "2026-11-04",
+      "publishCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb"
+    },
+    "b4": {
+      "status": "deployed-index-sync-blocked",
+      "releaseCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
+      "publishedAt": "2026-11-04",
+      "verification": "../10-05-public-assistant-usability/production-verification-2026-11-04.json",
+      "indexSyncAttempts": 1,
+      "businessSubmissions": 0,
+      "nextStep": "Resolve embedding upstream and complete the bounded public index sync before consultation acceptance."
     }
   }
 }

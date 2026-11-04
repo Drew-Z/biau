@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "checkedAt": "2026-11-04T14:14:38.606523+00:00",
+  "releaseCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
+  "releaseState": "deployed-index-sync-blocked",
+  "deployments": {
+    "public": {
+      "deploymentId": "dep-dblf0qon74is739v3pq0",
+      "status": "live",
+      "commit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
+      "finishedAt": "2026-11-04T08:48:16.087227Z"
+    },
+    "rag": {
+      "deploymentId": "dep-dblf0qjncjis73dmh3o0",
+      "status": "live",
+      "commit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
+      "finishedAt": "2026-11-04T08:46:46.713775Z"
+    },
+    "pages": {
+      "deploymentId": "d29e242e-eee2-4baa-8aa6-7d0a22fb9d73",
+      "status": "success",
+      "commit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb"
+    }
+  },
+  "observations": {
+    "custom": {
+      "httpStatus": 200,
+      "checkedAt": "2026-11-04T14:14:36.163Z",
+      "ok": true,
+      "database": true,
+      "modelConfigured": true,
+      "serviceMode": "public"
+    },
+    "pages": {
+      "httpStatus": 200,
+      "checkedAt": "2026-11-04T14:14:36.968Z",
+      "ok": true,
+      "database": true,
+      "modelConfigured": true,
+      "serviceMode": "public"
+    },
+    "rag": {
+      "httpStatus": 200,
+      "checkedAt": "2026-11-04T14:14:38.144Z",
+      "ok": true,
+      "buildCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
+      "publicSourceChecksum": "746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3",
+      "store": "supabase-pgvector",
+      "vectorReady": true,
+      "keywordReady": true,
+      "rerankerReady": true,
+      "documentCount": 31,
+      "chunkCount": 61,
+      "entityCount": 166,
+      "relationCount": 231,
+      "lastSyncAt": "2026-08-11T18:46:47.615Z"
+    },
+    "sitemap": {
+      "httpStatus": 200,
+      "roleplayStatusPresent": true,
+      "roleplayProjectPresent": true
+    },
+    "leafAsset": {
+      "httpStatus": 200,
+      "matchesRelease": true
+    }
+  },
+  "indexSync": {
+    "submittedUtc": "2026-11-04T14:10:46.170Z",
+    "expectedCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
+    "expectedChecksum": "746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3",
+    "submissionCount": 1,
+    "state": "failed",
+    "failedUtc": "2026-11-04T14:10:52.428Z",
+    "diagnostics": {
+      "httpStatus": 200,
+      "accepted": false,
+      "reason": "embedding_provider_error",
+      "providerStep": "embedding",
+      "errorKind": "http_status",
+      "providerHttpStatus": 503,
+      "attemptedEndpoints": 1,
+      "timeoutMs": 20000,
+      "documentCount": 32,
+      "chunkCount": 75
+    }
+  },
+  "indexRecovery": {
+    "sha256": "b740de0a9fcac7e46da83dc3804772d8acf23513e5da1fdb155a97bd3d547225",
+    "bytes": 2687076,
+    "counts": {
+      "rag_documents": 31,
+      "rag_chunks": 61,
+      "rag_entities": 166,
+      "rag_relations": 231
+    },
+    "typedRestorationReadOnlyVerified": true
+  },
+  "businessAcceptance": {
+    "state": "not-started",
+    "reason": "index-sync-failed-before-business-gate",
+    "modelSubmissions": 0,
+    "anonymousSessionsCreated": 0,
+    "automaticRetry": false
+  },
+  "browserReadOnly": {
+    "routes": [
+      "/",
+      "/projects/roleplay-demo",
+      "/status/roleplay-demo"
+    ],
+    "httpStatus": 200,
+    "appRootPresent": true,
+    "chatRequestsBlocked": true
+  },
+  "networkObservation": "Python urllib health returned 403; Node and Chromium using the existing system proxy returned 200. No application or proxy settings changed.",
+  "aiDaily": {
+    "productionChanges": false,
+    "realEditionSubmissions": 0,
+    "acceptanceCandidate": "server/data/ai-daily-acceptance.cpa-v7-2026-11-04.local.json",
+    "sealed": false,
+    "remainingBlocker": "approved-channel-capacity-and-real-business-gates"
+  },
+  "retainedParallelWork": [
+    "scripts/check-public-assistant-pet-ui.mjs",
+    "src/components/PublicAssistantPet.tsx",
+    "src/styles/public-assistant-pet.css"
+  ],
+  "statusSnapshots": {
+    "mainSiteCheckedAt": "2026-11-04T14:13:45.621Z",
+    "mainSiteRoutesPassed": 7,
+    "mainSiteRoutesTotal": 7,
+    "assistantChat": "unchecked",
+    "siteStatusCheckedAt": "2026-11-04T14:19:59.743Z",
+    "externalSummary": {
+      "total": 8,
+      "online": 7,
+      "degraded": 0,
+      "offline": 1,
+      "unchecked": 0
+    },
+    "failedExternalTarget": "ozon-erp-entry",
+    "ragState": "degraded"
+  },
+  "followupValidation": {
+    "build": "passed",
+    "lint": "passed",
+    "statusContract": "passed",
+    "manualGatesContract": "passed",
+    "deploymentContract": "passed-after-restoring-store-marker",
+    "diffCheck": "passed",
+    "scope": "Status text, generated snapshots, release evidence and task records; parallel pet edits excluded from the release."
+  }
+}

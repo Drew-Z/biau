@@ -1543,3 +1543,43 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - 本地任务已归档，父任务第57轮等待；补漏提交尚未推送，发布后核验精确线上版本。旧版Public RAG就绪失败单独定界。
+
+
+## Session 144: 发布助手修复并记录知识同步上游阻塞
+
+**Date**: 2026-11-04
+**Task**: 发布助手修复并记录知识同步上游阻塞
+**Branch**: `main`
+
+### Summary
+
+三处部署通过；索引同步因 embedding 503 受阻，单次咨询批准未消费；刷新状态与 B4 台账。
+
+### Main Changes
+
+- 生产代码提交 83a859b6 已推送，Pages/Public/RAG 三处部署及公开页面检查通过；Studio 未部署。
+- 公开索引四表/向量快照已经验证，唯一同步在 embedding 阶段收到上游 HTTP 503，写入事务尚未开始；远端保留 31/61/166/231。
+- 原问题的单次真实咨询批准尚未消费，业务请求 0、测试会话 0；助手与 B4 均保持进行中，parent 为空，不重启旧路线图。
+- 主站 7/7；外部入口 7 online、ERP connection_error。状态源和快照已明确同步受阻，未把历史 answered/model 写成本轮验收。
+- 构建、lint、状态/文档/部署合同通过；部署合同曾发现遗漏存储标识，补回实际 store=supabase-pgvector 后通过。
+- AI 日报当前 v7 验收候选未封存，容量与真实业务门禁保留；未执行新的 Edition 或开启 Feed/Cron。
+- 精确提交本轮台账与状态；保留并行桌宠改动、青珑资源、旧未跟踪目录、历史 worktree。本续作没有新增一次性临时文件。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `83a859b65764ea57addc2b72cb6a54ed3876f1cb` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
