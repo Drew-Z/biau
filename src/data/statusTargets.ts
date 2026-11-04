@@ -75,7 +75,7 @@ const targetMeta: Record<
     kind: 'business',
     expectation: 'login-gated',
     description: '电商业务系统登录与演示入口。',
-    note: '代码侧支持生产普通注册默认开放，但当前线上状态以 bootstrap synthetic 为准；登录页主品牌和后台侧栏已接入 BIAU Port / 泊岸外壳。',
+    note: '代码侧支持普通注册；2026-08-18 的停机页是历史观察，旧 bootstrap synthetic 不代表当前状态，入口与角色策略需重新验收。',
   },
   'biau-playlab': {
     label: formatProductTitle('biau-playlab', '游戏站'),
@@ -83,6 +83,13 @@ const targetMeta: Record<
     expectation: 'static-site',
     description: 'Godot 游戏项目展示、详情与 Web 试玩入口。',
     note: '游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。',
+  },
+  'roleplay-demo': {
+    label: formatProductTitle('roleplay-demo', '角色库'),
+    kind: 'showcase',
+    expectation: 'public-entry',
+    description: '游客式多角色 AI 对话演示的角色库和聊天入口。',
+    note: '入口可达只代表角色库与游客前端可访问；模型延迟、上游并发和角色内容边界仍按演示服务策略处理。',
   },
   xunqiu: {
     label: formatProductTitle('xunqiu', '产品展示页'),
@@ -121,10 +128,59 @@ export const siteStatusTargets: SiteStatusTarget[] = heroContent.projects
 
 export const reliabilityProjects: ReliabilityProject[] = [
   {
+    id: 'roleplay-demo',
+    title: formatProductTitle('roleplay-demo', '角色库'),
+    category: 'interactive',
+    summary: 'Roleplay 的公开记录覆盖角色库、分享页和游客服务的低敏 health 响应；2026-09-15 的观察不代表模型上游长期健康或回答质量。',
+    checks: [
+      {
+        id: 'roleplay-demo-entry',
+        layer: 'entry',
+        label: '角色库入口',
+        status: 'online',
+        description: '检查 Roleplay 角色库首页是否返回公开页面。',
+        evidence: '2026-09-15 已验证 `https://roleplay.playlab.eu.cc/` 返回 HTTP 200。',
+        cadence: '每次生成状态页',
+        ownerHint: 'Roleplay 公开入口',
+        relatedTargetId: 'roleplay-demo-entry',
+      },
+      {
+        id: 'roleplay-demo-chat',
+        layer: 'synthetic',
+        label: '角色分享页',
+        status: 'online',
+        description: '检查独立角色入口能否初始化指定角色并返回聊天页。',
+        evidence: '2026-09-15 已验证 `/r/jiangchiye` 返回 HTTP 200，并在页面状态中包含指定角色。',
+        cadence: '角色路由或前端发布后',
+        ownerHint: 'Roleplay 前端',
+        relatedTargetId: 'roleplay-demo-entry',
+      },
+      {
+        id: 'roleplay-demo-health',
+        layer: 'synthetic',
+        label: '游客服务健康接口',
+        status: 'online',
+        description: '检查游客后端 health 是否返回配置标签和角色数量等低敏状态；此接口不执行模型生成。',
+        evidence: '2026-09-15 health 返回 `ok=true`、模型配置标签和 13 张角色卡；该响应不证明上游模型健康、回复质量或 SLA。',
+        cadence: '模型或角色配置变更后',
+        ownerHint: 'Roleplay 游客后端',
+        relatedTargetId: 'roleplay-demo-entry',
+      },
+    ],
+    gates: [
+      '主站只公开入口、角色数量和技术边界，不公开 API Key、上游地址、管理员令牌、服务器 IP 或内部路径。',
+      '角色卡来源、许可证、SFW 边界和访客提示词由 Roleplay 独立服务维护，主站不复制完整角色卡内容。',
+    ],
+    nextActions: [
+      '将 Roleplay health 与入口检查纳入定期 synthetic。',
+      '复杂角色提示词优化或模型更换后重新验证响应延迟和分享入口。',
+    ],
+  },
+  {
     id: 'blog-semi',
     title: formatProductTitle('biau-port', '主站'),
     category: 'main-site',
-    summary: '主站负责项目展示、公开助手、博客内容和状态页本身，是跨项目可靠性视图的聚合入口。',
+    summary: '2026-10-05 核对本地三组目录、内容搜索/阅读返回、三主题和中英文公共界面；正文不自动翻译，线上版本未在本轮核定。知航历史产品验收与潮讯待真实 Edition/Feed 分开，以下 checks 保留原观察。',
     checks: [
       {
         id: 'blog-semi-public-routes',
@@ -179,7 +235,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
         ownerHint: 'RAG Orchestrator',
       },
     ],
-    gates: ['开启生产模型、生产 metrics scrape 或第三方告警前需要人工确认。'],
+    gates: ['知航 2026-08-16 受控 SSE 回答与引用验收不代表长期 SLA；潮讯 2026-08-18 v7 Edition 被限流且未公开发布，后续真实 Edition/Feed 仍需独立验收。开启生产模型、生产 metrics scrape 或第三方告警前需要人工确认。'],
     nextActions: [
       '把 `main-site:synthetic` 接入定时任务或内部监控。',
       '把 `public-links:check` 纳入发布前和外链更新后的可靠性巡检，避免首页按钮或项目详情来源链接再次指向访客不可见页面。',
@@ -191,7 +247,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'legal-rag',
     title: formatProductTitle('legal-rag', 'Legal RAG 法律机器人'),
     category: 'ai-workbench',
-    summary: '重点不是只看工作台能否打开，而是法律问答、citation、合同审查和质量面板是否能完成演示闭环。',
+    summary: '2026-10-04 已核对导入、引用问答、规则审查回退和质量报告源码；受保护运行链路仍待独立验收，mock 评测不代表真实模型效果。下方 checks 保留原观察日期。',
     checks: [
       {
         id: 'legal-rag-entry',
@@ -246,7 +302,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: [
-      '当前公开 demo 状态由 `public/status/legal-rag-synthetic.json` 的 `demoAccessStatus` 记录；最近一次低敏检查确认 API health 在线，但受保护问答、合同审查和质量面板需要低权限 demo 凭据后再验证。',
+      '既有 synthetic 的核验时间为 2026-07-06（UTC），当时 API health 在线；本次未登录或调用模型，受保护问答、合同审查和质量面板仍需低权限身份及单独批准的业务验收。',
       '公开 demo 凭据必须可回收且经人工确认；真实后台管理员密码不能写入文章、项目页或状态页。',
       'Web 登录页展示的 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 只用于公开安全数据集演示；凭据轮换时必须同步 API auth 配置和 Web 展示配置。',
     ],
@@ -260,7 +316,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'chatus',
     title: formatProductTitle('chatus', 'Chatus 私人 AI 工作台'),
     category: 'ai-workbench',
-    summary: 'Chatus 的公开可靠性边界是邀请制入口、session 隔离、会话状态和发布门禁，不公开成员或 provider 运营数据。',
+    summary: '2026-10-04 源码核对确认会话 Agent 的 Skill/工具分配、访客收窄和会话设置修复接线；包含未提交工作树，不能作为已部署或生产验收证据。',
     checks: [
       {
         id: 'chatus-entry',
@@ -305,6 +361,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: [
+      '能力分配与 MCP 写入确认在源码中分别校验；成员/访客与撤销后的会话行为仍需在源项目受控环境验收。',
       '不得把真实访问码、成员身份、provider 配置、托管密钥或运营指标复制到主站状态数据。',
       '不得用主动 completion 测活代替真实任务脱敏遥测；模型调用只在 Chatus 自身获得批准的测试边界内发生。',
     ],
@@ -317,7 +374,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'anchor-learning',
     title: formatProductTitle('anchor-learning'),
     category: 'ai-workbench',
-    summary: 'Anchor 的公开可靠性重点是静态官网、双语偏好、内置数据答题、来源证据和零外部 Demo 请求。',
+    summary: 'Anchor 的公开可靠性重点是静态官网、双语偏好、内置数据答题、来源证据和零外部 Demo 请求；Android v1.0.0 公开产物与 Private Alpha readiness 单独治理。',
     checks: [
       {
         id: 'anchor-learning-entry',
@@ -355,14 +412,15 @@ export const reliabilityProjects: ReliabilityProject[] = [
         layer: 'observability',
         label: 'Flutter Private Alpha 发布证据',
         status: 'planned',
-        description: 'Android Private Alpha 需要独立验证安装、升级、备份恢复、数据库迁移和正式构建。',
-        evidence: '浏览器 Demo 的通过结果不能替代 Flutter 客户端发布门禁。',
+        description: 'Android Private Alpha 已有公开 v1.0.0 APK，但仍需以当前产物和新鲜证据独立验证安装、升级、备份恢复、数据库迁移和正式构建。',
+        evidence: 'v1.0.0 APK 于 2026-09-15 发布；2026-09-16 API 核验记录 26,404,187 bytes、SHA-256 `3371870ee2691f0aa3496e2e6fb1153a6c028b840bfef33c924dbea8cf96d475`。2026-09-24 readiness CLI 重跑为 HOLD，阻塞码为 `automated_gate_evidence_stale`、`android_build_bytes_mismatch`、`android_build_sha256_mismatch`、`release_day_acceptance_primary_stale`、`release_day_acceptance_fallback_stale`、`physical_device_evidence_stale`。浏览器 Demo 的通过结果不能替代 Flutter 客户端发布门禁。',
         cadence: '每次 Android Alpha 发布',
         ownerHint: 'Anchor mobile release',
       },
     ],
     gates: [
       '浏览器 Demo 只能宣称打包数据与静态交互，不宣称实时 AI、文件导入、云同步或 Flutter Web parity。',
+      'v1.0.0 APK 于 2026-09-15 公开发布；2026-09-24 Private Alpha readiness 复核仍为 HOLD，6 个阻塞项涉及构建大小/摘要不匹配与验收证据过期。公开产物存在不等于当前验收已通过。',
       '任何真实模型验收都需要单独批准，当前主站和 Demo 回归不得发起 provider 调用。',
     ],
     nextActions: [
@@ -374,7 +432,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'ozon-erp',
     title: formatProductTitle('ozon-erp', 'Ozon ERP'),
     category: 'business-system',
-    summary: 'ERP 的可靠性要覆盖登录/注册、角色边界、店铺配置、插件连接和商品同步，而不只是登录页响应。',
+    summary: '2026-10-04 核对注册角色与任务执行源码：已有 Owner 后普通注册为 operator；执行器默认 real，排队不等于模拟。2026-08-18 停机页为历史观察，当前入口待复核。',
     checks: [
       {
         id: 'ozon-erp-entry',
@@ -403,7 +461,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
         label: '登录 / 注册策略',
         status: 'planned',
         description: '验证登录可用、当前线上注册策略、显式关闭开关效果和新用户默认角色安全。',
-        evidence: 'ERP 仓库注册逻辑支持未设置开关时默认开放普通注册，显式关闭值仍会关闭；当前线上是否开放由 `/api/auth/bootstrap` 的 registrationEnabled 决定，新注册账号默认是 operator。',
+        evidence: 'ERP 源码支持未设置开关时开放普通注册，显式关闭值仍会关闭；已有 Owner 后新账号为 operator，没有 Owner 时走初始化边界。源码不证明当前线上注册策略。',
         cadence: '鉴权改动后',
         ownerHint: 'Auth synthetic check',
       },
@@ -429,7 +487,8 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: [
-      '最近一次公开 bootstrap synthetic 已确认生产 registrationEnabled=true；新注册账号默认 operator。登录 smoke、插件同步和可公开 demo 凭据仍需低权限账号或脱敏 fixture 后再验证。',
+      '2026-07-06（UTC）的 bootstrap synthetic 曾记录 registrationEnabled=true；2026-08-18 又观察到停机页。本次未重新访问，旧记录均不证明当前可达性或注册策略。',
+      '任务执行器默认 real，未显式关闭写入开关会继续检查凭据与目标；非 real 分支拒绝写任务，不是完整 mock 演示。低权限账号、隔离数据和外部写入控制需分别确认。',
     ],
     nextActions: [
       '将公开 ERP API origin 配置到定时任务的 `ERP_SYNTHETIC_API_BASE_URL`，持续生成 health 与 registrationEnabled 检查；无配置本地运行会保留既有报告。',
@@ -441,14 +500,14 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'xunqiu',
     title: formatProductTitle('xunqiu'),
     category: 'mobile-app',
-    summary: '寻球需要同时看静态展示页、后端健康、兼容 API、APK 本地归档和移动端正式发布 gate。',
+    summary: '2026-10-04 分别核对静态展示、现代后端和 Android 源码；兼容接口的占位结果与未实际上传的 URL 不代表业务成功，正式 APK 仍有独立发布 gate。',
     checks: [
       {
         id: 'xunqiu-entry',
         layer: 'entry',
         label: '产品展示页',
         status: 'unchecked',
-        description: '检查寻球展示页、文档和阶段包入口是否响应，并确认标题/favicon 归属泊岸展示体系。',
+        description: '检查寻球展示页、文档和发布状态说明是否响应，并确认标题/favicon 归属泊岸展示体系；不要求开放阶段包下载。',
         evidence: '由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。',
         cadence: '每次生成状态页',
         ownerHint: '公开入口',
@@ -469,7 +528,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
         layer: 'synthetic',
         label: '兼容 API smoke',
         status: 'planned',
-        description: '检查动态、视频、球队和球场等兼容 API 返回安全成功结构。',
+        description: '检查动态、视频、球队和球场等兼容 API 的实际字段与业务结果；stub 或安全空结果不能计为完整能力通过。',
         evidence: '后端 smoke-test 和 MockMvc compatibility tests 已覆盖这些接口类型。',
         cadence: 'API 变更后',
         ownerHint: 'Compatibility API',
@@ -486,7 +545,8 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: [
-      '最近一次 Xunqiu synthetic 的 `apkGate.status` 为 `stage-apk-found`：可以展示阶段包存在，但不能把它描述为正式批准发布。',
+      '2026-07-14 的 Xunqiu synthetic 记录 `stage-apk-found`，这是历史产物观察；2026-10-04 核对展示站源码仍关闭 APK 下载，本次未构建、验签或安装。',
+      '存储配置缺失时后端跳过实际上传，但仍可返回占位 URL；媒体下载/播放、真实 API 与静态展示必须分别验收。',
       '后端真实 URL、正式 APK 下载和生产部署变更都需要人工确认。',
     ],
     nextActions: [
@@ -499,7 +559,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'pet-gamer',
     title: formatProductTitle('pet-workspace', 'Pet / Gamer'),
     category: 'mobile-app',
-    summary: '当前适合展示工作进展与发布清单，正式 APK、社区 API 和账号体系还需要后续版本接入。',
+    summary: '本地已有 release APK/AAB；2026-09-24 复算大小和摘要与 9 月 16 日归档记录一致。本轮未验签、安装或批准分发，公开下载继续关闭；下方 synthetic 保留其注明日期的历史观察。',
     checks: [
       {
         id: 'pet-showcase',
@@ -518,7 +578,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
         label: 'APK 发布 gate',
         status: 'planned',
         description: '检查正式 release 构建、签名、校验摘要、下载链接、回滚说明和隐私说明后再公开。',
-        evidence: '最近一次门禁审计由 pet synthetic 的 `apkGate` 记录；当前只发现 debug APK 时仍不公开下载，也不声明 APK 已发布。',
+        evidence: '2026-07-09 synthetic 的 debug-only 是历史记录。2026-09-16 已确认 release APK 0.1.0 / code 1（14,920,672 bytes）与 AAB（14,385,956 bytes），2026-09-24 复算摘要一致；本轮未验签或安装，也未批准公开分发。',
         cadence: '发布候选生成后',
         ownerHint: 'Release checklist',
       },
@@ -534,16 +594,16 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: [
-      '最近一次 Pet synthetic 的 `apkGate.status` 为 `debug-only`，只发现 debug APK；这不是公开发布候选，不能放下载链接。',
+      '2026-07-09 synthetic 的 `debug-only` 不再描述当前构建现况；2026-09-24 已复核本地 release 归档大小与摘要，但签名、安装/回归和批准证据尚未在本轮核验，主站仍不开放下载。',
       '真实 Pet APK 发布、后端部署和账号体系公开演示都需要人工确认。',
     ],
-    nextActions: ['准备正式 release 构建和签名策略后再形成 release candidate 清单。', '有正式签名包、校验摘要、版本说明和回归证据后补下载状态检查。'],
+    nextActions: ['以已核验的 release 归档为基线，核对签名、安装/回归、版本说明和公开分发批准。', '在获准的状态发布步骤中刷新 synthetic；公开下载须另有完整发布证据。'],
   },
   {
     id: 'biau-playlab',
     title: formatProductTitle('biau-playlab', 'Game'),
     category: 'interactive',
-    summary: '游戏项目以静态站、游戏详情、Web 试玩资源、截图和移动端提示为主要可靠性边界。',
+    summary: '2026-10-05 核对六游戏源码和本地 Web 文件；源码提交、导出包、线上资源与设备体验仍需分别绑定。Spacewar II 当前为键盘操作，五游戏已有录制文件、Spacewar II 短视频待补；下方 checks 保留历史观察。',
     checks: [
       {
         id: 'biau-playlab-entry',
@@ -578,9 +638,9 @@ export const reliabilityProjects: ReliabilityProject[] = [
       },
     ],
     gates: [
-      '最近一次 Playlab synthetic 已验证 6/6 个试玩页面和 36/36 个发现资源响应；上线新的试玩构建或公开测试版本仍需要人工确认。',
+      '既有 synthetic 记录为 6/6 试玩页面与 36/36 资源响应；本轮未重跑，资源响应不能替代版本一致性、实际玩法或触屏验收。上线新的试玩构建或公开测试版本仍需要人工确认。',
     ],
-    nextActions: ['把 Playlab synthetic 从 HTML 发现资源升级为版本化 manifest 检查。', '把关键游戏详情纳入 UI 回归截图。'],
+    nextActions: ['将源码提交、Web 包摘要与线上引用资源绑定到版本化 manifest。', '补素材采集日期和设备范围，优先核实 Spacewar II 键盘/触屏边界与短视频。'],
   },
 ]
 

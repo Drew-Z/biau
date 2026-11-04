@@ -107,9 +107,34 @@
       "sourceType": "site"
     },
     {
+      "id": "project:roleplay-demo",
+      "title": "角色剧场 Roleplay｜游客式多角色聊天演示",
+      "summary": "面向公开访客的多角色 AI 对话演示：从角色库选择人物，进入独立聊天页，并通过服务端保留模型密钥与会话边界。 Roleplay 是独立部署的游客式多角色 AI 对话演示，公开入口为 roleplay.playlab.eu.cc。 2026-09-15 的公开观察记录 13 张可切换角色卡，访客可以从角色库进入聊天页，也可以使用 /r/<角色ID> 独立分享入口。 模型密钥、上游接口和游客会话保留在服务器端，浏览器不接触 API Key；服务通过 Nginx 和 Cloudflare Tunnel 提供 HTTPS。 health 记录的模型配置标签为 GLM 游客模式；复杂角色的回复速度受上游并发和提示词长度影响，health 不代表上游模型长期健康或回答质量。",
+      "href": "/projects/roleplay-demo",
+      "tags": [
+        "ai",
+        "AI 应用",
+        "live",
+        "已有页面",
+        "访客式 AI 体验 / 多角色角色库 / Cloudflare Tunnel",
+        "Static HTML/CSS/JavaScript",
+        "Node.js",
+        "GLM",
+        "Cloudflare Tunnel",
+        "HttpOnly Session",
+        "13 张角色卡",
+        "无需登录体验",
+        "服务端密钥隔离",
+        "角色独立分享链接"
+      ],
+      "visibility": "public",
+      "sourceType": "project",
+      "projectId": "roleplay-demo"
+    },
+    {
       "id": "project:legal-rag",
       "title": "律航 LexBeacon｜Legal RAG 与合同审查",
-      "summary": "已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。 Legal RAG 是已部署的全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。 系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。 合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。 项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。 Legal RAG 后端还把配置用户、项目成员、项目空间授权、ingestion job 和 audit log 纳入数据模型，让公开演示能够解释“谁在什么项目空间里做了什么 AI 操作”。 Legal RAG Web 工作台的标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸品牌；公开试用凭据仍只能通过低权限、可轮换、可公开的 demo 配置展示。 线上工作台入口是 https://legal-rag-web.onrender.com，有登录门禁，公开页面不会放真实后台/admin 密码；如果 Legal RAG 登录页显示公开演示凭据，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则仍是受控演示入口。 Legal RAG 公开自助试用需要维护者同时配置 API 侧登录校验密码和 Web 侧 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD；VITE_PUBLIC_DEMO_PASSWORD 会进入前端包，所以只能填写可公开、低权限、可轮换的 demo 密码。 推荐公开演示顺序是：登录受保护工作台、初始化公开安全数据集、执行带 citation/diagnostics 的 RAG 问答、运行示例合同审查、查看质量面板的 runtime、citation/refusal 评测、审查召回、readiness checks、趋势和审计日志。 后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。",
+      "summary": "法律文档 RAG 与合同风险审查工作台，串联材料导入、引用问答、规则优先审查和质量面板；受保护流程仍需独立运行验收。 Legal RAG 是全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。2026-10-04 核对 fd34e11c 源码接线，未执行登录、导入或模型验收；公开入口仍为 unchecked + login-gated。 系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。 合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。 项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。 mock provider 只适合本地演示，不代表真实模型效果。引用帮助回到召回片段核对，合同规则与模型建议都不能替代专业人工复核；测试源码存在不代表本次已运行通过。 Legal RAG 后端还把配置用户、项目成员、项目空间授权、ingestion job 和 audit log 纳入数据模型，让公开演示能够解释“谁在什么项目空间里做了什么 AI 操作”。 Legal RAG Web 工作台的标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸品牌；公开试用凭据仍只能通过低权限、可轮换、可公开的 demo 配置展示。 线上工作台入口是 https://legal-rag-web.onrender.com，有登录门禁，公开页面不会放真实后台/admin 密码；如果 Legal RAG 登录页显示公开演示凭据，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则仍是受控演示入口。 Legal RAG 公开自助试用需要维护者同时配置 API 侧登录校验密码和 Web 侧 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD；VITE_PUBLIC_DEMO_PASSWORD 会进入前端包，所以只能填写可公开、低权限、可轮换的 demo 密码。 推荐公开演示顺序是：登录受保护工作台、初始化公开安全数据集、执行带 citation/diagnostics 的 RAG 问答、运行示例合同审查、查看质量面板的 runtime、citation/refusal 评测、审查召回、readiness checks、趋势和审计日志。 后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。",
       "href": "/projects/legal-rag",
       "tags": [
         "ai",
@@ -135,7 +160,7 @@
     {
       "id": "project:chatus",
       "title": "泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台",
-      "summary": "部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、长期记忆、能力授权与可恢复流。 Chatus 是部署在 Cloudflare Workers 上的邀请制私人 AI 工作台，只提供受控网页体验，不对外分发公开 OpenAI-compatible API。 前端使用 React 19、TypeScript 和 PWA 能力；运行时使用 Cloudflare Worker、KV、Agents SDK 与 SQLite Durable Objects。 成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。 多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。 长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。 公开入口是 https://chatus.ciallobill.qzz.io；入口可达不代表访客拥有成员账号、访问码或完整能力。 主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。",
+      "summary": "面向受邀成员的 AI 工作台，以会话 Agent、Skills 与工具分配、显式记忆和可恢复流支撑持续工作；访客能力单独收窄。 Chatus 是部署在 Cloudflare Workers 上的邀请制私人 AI 工作台，只提供受控网页体验，不对外分发公开 OpenAI-compatible API。 前端使用 React 19、TypeScript 和 PWA 能力；运行时使用 Cloudflare Worker、KV、Agents SDK 与 SQLite Durable Objects。 成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。 多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。 长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。 2026-10-04 核对 a7f41480 基线及工作树：工作会话支持手动/自动 Skill 模式，工具需同时满足成员分配、启用和执行器可用；MCP 写入/破坏性操作逐次确认，访客没有成员 Skill/工具能力。此次只核对源码，未运行源项目测试或生产验收。 公开入口是 https://chatus.ciallobill.qzz.io；入口可达不代表访客拥有成员账号、访问码或完整能力。 主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。",
       "href": "/projects/chatus",
       "tags": [
         "ai",
@@ -152,7 +177,7 @@
         "PWA",
         "邀请制入口",
         "会话级 Agent",
-        "首输出前回退",
+        "Skills 与工具授权",
         "显式长期记忆"
       ],
       "visibility": "public",
@@ -162,7 +187,7 @@
     {
       "id": "project:pet-workspace",
       "title": "帆灵 SailSprite｜AI 桌宠社区与生成管线",
-      "summary": "仍在推进中的 AI 桌宠工程工作区，围绕 Android 桌宠社区、Community API、生成服务、人审发布、质量门禁和 App 安全契约组织。 AI 桌宠项目是进行中的多模块工程工作区，核心包括 Android 桌宠社区 App、Node Community API、Admin Review、Pet Generator 适配层、FastAPI 风格生成规则服务、可信 Worker、QA 门禁和人工审核发布链路。 Android 侧覆盖桌宠 shell、默认桌宠资产、桌面悬浮服务、生成 UI 状态、Community API client、pet.zip 导入请求构造和社区交互，不直接调用生成内核或 Agent。 Community API 是 App 唯一后端入口，包含 health、SLA、metrics、feed、community-home、approved pets、package download descriptor、wallet、check-in、submissions、import drafts、bundle validation、admin review 和 fantasy-pet proxy 等能力。 生成规则服务负责 app-safe job 创建、轮询、artifact 索引、不透明 downloadId、人工 review decision、package plan、pet.zip 构建、worker readiness 和内部 GA/Codex/QA 证据；机器证据不能替代人工视觉 accept。 质量证据包括 Node workspace tests、Android 单元测试、Community API routes/server/store/rate-limit/metrics/SLA/logging/postgres 测试、pet package contract 测试、追踪矩阵、结构化日志、Prometheus metrics 和 SLA 文档。 私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。 项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待正式签名包，debug 构建只作为内部验证信号，不提供占位下载。 Pet 项目详情页正文已经穿插 Android 首页、孵化桌宠和社区页截图，说明这些是公开展示当前工作面的证据；正式 APK 下载仍必须等待 release 构建、签名、SHA-256、版本说明、回归和人工批准。 最近一次 APK 发布门禁审计只找到 debug APK，没有 release APK/AAB 候选；公开下载继续关闭，后续需要正式构建、签名策略、校验摘要、版本说明、回归证据和人工确认。 当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。",
+      "summary": "仍在推进中的 AI 桌宠工程工作区，围绕 Android 桌宠社区、Community API、生成服务、人审发布、质量门禁和 App 安全契约组织。 AI 桌宠项目是进行中的多模块工程工作区，核心包括 Android 桌宠社区 App、Node Community API、Admin Review、Pet Generator 适配层、FastAPI 风格生成规则服务、可信 Worker、QA 门禁和人工审核发布链路。 Android 侧覆盖桌宠 shell、默认桌宠资产、桌面悬浮服务、生成 UI 状态、Community API client、pet.zip 导入请求构造和社区交互，不直接调用生成内核或 Agent。 Community API 是 App 唯一后端入口，包含 health、SLA、metrics、feed、community-home、approved pets、package download descriptor、wallet、check-in、submissions、import drafts、bundle validation、admin review 和 fantasy-pet proxy 等能力。 生成规则服务负责 app-safe job 创建、轮询、artifact 索引、不透明 downloadId、人工 review decision、package plan、pet.zip 构建、worker readiness 和内部 GA/Codex/QA 证据；机器证据不能替代人工视觉 accept。 质量证据包括 Node workspace tests、Android 单元测试、Community API routes/server/store/rate-limit/metrics/SLA/logging/postgres 测试、pet package contract 测试、追踪矩阵、结构化日志、Prometheus metrics 和 SLA 文档。 私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。 项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域公开记录本地 release APK/AAB 的版本、大小和摘要，但仍不提供下载入口。 Pet 项目详情页正文已有 Android 首页、孵化桌宠和社区页截图；本轮未核验 release 归档的签名、安装和完整生成流程，也未批准公开分发，不能据此断言源项目从未完成这些工作。主站公开下载继续关闭。 2026-09-16 本地归档核验记录 release APK 0.1.0 / code 1 为 14,920,672 bytes（SHA-256 ab60204e6ab0b94a84b2dccef32eb65e26b1cbba728dac56f167a8940ff89108），AAB 为 14,385,956 bytes（SHA-256 0fad67e69ad1540bbe4ad23e0b6d79322cd9ab04b686db45bba785abe140777c）；2026-09-24 复算大小和摘要一致。归档事实不能替代公开发布门禁。 当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。",
       "href": "/projects/pet-workspace",
       "tags": [
         "ai",
@@ -188,7 +213,7 @@
     {
       "id": "project:ozon-erp",
       "title": "商舱 OpsDeck｜Ozon 电商 ERP",
-      "summary": "面向小团队 Ozon 店铺运营的业务系统案例，覆盖 Vue 管理后台、Express API、Prisma/PostgreSQL、队列任务和 Chrome MV3 采集插件。 Ozon ERP 是面向小团队跨境店铺运营的业务系统，包含 Vue/Vite 管理后台、Express API、Prisma/PostgreSQL 数据模型、可选 Redis/BullMQ 队列、WXT/Chrome MV3 浏览器插件和共享计算包。 管理后台覆盖登录、注册、Owner 初始化、概览、店铺、商品、商品草稿、导入历史、工具、选品规则、商品编辑和设置等工作流，重点解决店铺授权、商品同步、采集铺货、定价利润和运营追踪。 认证入口已经补充确认密码校验、Owner 初始化提示、主站返回桥接、BIAU Port / 泊岸 favicon、登录页主品牌和登录后侧栏归属；Ozon ERP 保留为业务系统产品名。 代码侧已经支持生产普通自助注册默认开放；线上是否正在开放以 /api/auth/bootstrap 与状态页 synthetic 结果为准，状态异常时应先复查部署提交与 ERP_REGISTRATION_ENABLED 开关。 ERP 概览页已经补充登录后首次引导，展示当前账号/角色、Owner 与协作者职责说明，并说明已有 Owner 后新注册账号默认是 operator，不自动获得 Owner 权限。 Express API 注册 auth、shops、products、selection、settings、ozon、collect、market metrics、commission rates、api.chrome、exchange rates、watermark 和 uploads 等路由。 Prisma 模型覆盖用户、店铺、Ozon 凭证、Seller 会话、商品、采集商品、草稿、导入日志、PendingAction、JobQueue、AuditLog、市场指标和佣金映射等对象。 外部平台写入通过 PendingAction 和 JobQueue 收口；当前代码和测试显示商品写入与一键铺货默认偏向队列或本地后台执行，只有显式配置 inline 才同步执行。 浏览器插件负责 Ozon/Seller 页面采集、Seller 上下文读取、跨标签页请求、ERP 路由打开和图片下载，并通过认证或扩展密钥边界接入 ERP API。 项目验证证据包括 API/shared Vitest、受保护写入测试、Ozon 同步容错测试、插件接口映射测试、插件版本发布检查、smoke 脚本、交接清单、上线检查、佣金覆盖报告和依赖审计记录。 后续优化方向包括运行模式可视化、Worker/队列运维、佣金可信映射补齐、权限和审计增强、插件发布自动化、日志脱敏、备份演练和部署自动化。",
+      "summary": "面向小团队 Ozon 店铺运营的业务系统案例，覆盖 Vue 管理后台、Express API、Prisma/PostgreSQL、队列任务和 Chrome MV3 采集插件。 Ozon ERP 是面向小团队跨境店铺运营的业务系统，包含 Vue/Vite 管理后台、Express API、Prisma/PostgreSQL 数据模型、可选 Redis/BullMQ 队列、WXT/Chrome MV3 浏览器插件和共享计算包。 管理后台覆盖登录、注册、Owner 初始化、概览、店铺、商品、商品草稿、导入历史、工具、选品规则、商品编辑和设置等工作流，重点解决店铺授权、商品同步、采集铺货、定价利润和运营追踪。 认证入口已经补充确认密码校验、Owner 初始化提示、主站返回桥接、BIAU Port / 泊岸 favicon、登录页主品牌和登录后侧栏归属；Ozon ERP 保留为业务系统产品名。 代码侧已经支持生产普通自助注册默认开放；线上是否正在开放以 /api/auth/bootstrap 与状态页 synthetic 结果为准，状态异常时应先复查部署提交与 ERP_REGISTRATION_ENABLED 开关。 ERP 概览页已经补充登录后首次引导，展示当前账号/角色、Owner 与协作者职责说明，并说明已有 Owner 后新注册账号默认是 operator，不自动获得 Owner 权限。 Express API 注册 auth、shops、products、selection、settings、ozon、collect、market metrics、commission rates、api.chrome、exchange rates、watermark 和 uploads 等路由。 Prisma 模型覆盖用户、店铺、Ozon 凭证、Seller 会话、商品、采集商品、草稿、导入日志、PendingAction、JobQueue、AuditLog、市场指标和佣金映射等对象。 外部平台写入通过 PendingAction 和 JobQueue 收口；排队不等于 mock。2026-10-04 核对 e7179e00 的执行器默认 real，写入开关未显式关闭时继续检查店铺凭据与目标；非 real 分支拒绝写任务，不能假定完整模拟业务可用。 2026-08-18 入口重定向停机页并返回 403 是历史观察，本次未重新访问、登录或写入业务，不能称为当前持续故障。入口仍为 unchecked + login-gated，已有 Owner 后新注册账号为 operator。 浏览器插件负责 Ozon/Seller 页面采集、Seller 上下文读取、跨标签页请求、ERP 路由打开和图片下载，并通过认证或扩展密钥边界接入 ERP API。 项目验证证据包括 API/shared Vitest、受保护写入测试、Ozon 同步容错测试、插件接口映射测试、插件版本发布检查、smoke 脚本、交接清单、上线检查、佣金覆盖报告和依赖审计记录。 后续优化方向包括运行模式可视化、Worker/队列运维、佣金可信映射补齐、权限和审计增强、插件发布自动化、日志脱敏、备份演练和部署自动化。",
       "href": "/projects/ozon-erp",
       "tags": [
         "business",
@@ -217,7 +242,7 @@
     {
       "id": "project:biau-playlab",
       "title": "游湾 BIAU Playlab｜游戏作品集与系统设计内容站",
-      "summary": "基于 Astro 的独立游戏作品集与试玩平台，整合六个已部署 Godot Web 游戏、项目详情、截图/视频、开发日志和系统设计文章。 BIAU Playlab 是已部署的 Astro 5 游戏作品集与试玩平台，整合六个 Godot Web 游戏、项目详情页、截图/视频、开发日志、系统设计文章和公开试玩入口。 游戏站已统一使用 BIAU Playlab 命名，并把 favicon、导航副标题和页脚归属对齐到 BIAU Port / 泊岸，保留 Playlab 作为游戏作品集产品名。 站点使用 Astro content collections 管理 games、devlogs、published articles 和 article workbench；games schema 包含 status、engine、platforms、screenshots、playableWeb、embedUrl、downloadLinks、repoUrl、challenge、mechanic、contribution、outcome、nextStep、milestones 和 devlogSlugs。 六个游戏包括 Tetris、Next Spacewar、intespace、Raiden、space-war 和 Spacewar II；Spacewar II 已作为第六个公开 Web 试玩项目接入，并补齐菜单、战斗和结果页真实截图。 Godot Web 试玩入口由独立试玩域名承载，首次加载可能较慢；移动端输入、横竖屏缩放、HUD 可读性和浏览器性能仍需要持续回归。 最近内容审计统计到 4 篇已发布文章、39 篇文章工作区草稿、6 个游戏项目和 5 篇开发日志，静态资源引用和内容关系检查通过。 Playlab 的质量链路包括 content:audit、Astro build、dist:audit、deploy:pages、deploy:play、play export/check/upload 和 deploy:check；dist:audit 会检查站内链接、资源路径和 JSON-LD，公开端点检查覆盖游戏站、六个游戏详情页、六个试玩入口、RSS、sitemap、robots 和主站项目页。 当前 Playlab 应作为游戏作品集平台展示；博客和部分文章归档质量仍是后续优化方向，不应把它描述成已经完全成熟的内容产品。",
+      "summary": "基于 Astro 的游戏作品集，集中展示六个不同阶段的 Godot 项目、Web 试玩入口、历史截图/录制与开发日志；源码、导出包和设备体验分别核验。 BIAU Playlab 是已部署的 Astro 5 游戏作品集与试玩平台，整合六个 Godot Web 游戏、项目详情页、截图/视频、开发日志、系统设计文章和公开试玩入口。 游戏站已统一使用 BIAU Playlab 命名，并把 favicon、导航副标题和页脚归属对齐到 BIAU Port / 泊岸，保留 Playlab 作为游戏作品集产品名。 站点使用 Astro content collections 管理 games、devlogs、published articles 和 article workbench；games schema 包含 status、engine、platforms、screenshots、playableWeb、embedUrl、downloadLinks、repoUrl、challenge、mechanic、contribution、outcome、nextStep、milestones 和 devlogSlugs。 六个游戏包括 Tetris、Next Spacewar、intespace、Raiden、space-war 和 Spacewar II；Spacewar II 已作为第六个公开 Web 试玩项目接入，并补齐菜单、战斗和结果页真实截图。 Godot Web 试玩入口由独立试玩域名承载，首次加载可能较慢；移动端输入、横竖屏缩放、HUD 可读性和浏览器性能仍需要持续回归。 2026-10-05 只读核对六游戏源码和六套本地 Web 文件，未重跑游戏审计、导出、线上加载或真机验收；当前源码提交与线上 Web 包的版本对应仍待确认。 五个游戏已有 playtest MP4，Spacewar II 短视频仍待补；游戏条目 2026-06-28 的更新日期不等于截图或录制日期。Next Spacewar 源码标签为 0.17，intespace 为 0.1.0-phase06 / prototype，Raiden 为 RC-0.4；Space War v1.1.1 是历史发布标签。 Spacewar II 当前入口走 NokiaBattle/NokiaPlayer，三阶段、键盘移动、空格射击和 X 炸弹；移动端题材和移动视口 canvas 检查不证明触屏可玩。 Playlab 的质量链路包括 content:audit、Astro build、dist:audit、deploy:pages、deploy:play、play export/check/upload 和 deploy:check；dist:audit 会检查站内链接、资源路径和 JSON-LD，公开端点检查覆盖游戏站、六个游戏详情页、六个试玩入口、RSS、sitemap、robots 和主站项目页。 当前 Playlab 应作为游戏作品集平台展示；博客和部分文章归档质量仍是后续优化方向，不应把它描述成已经完全成熟的内容产品。",
       "href": "/projects/biau-playlab",
       "tags": [
         "platform",
@@ -242,7 +267,7 @@
     {
       "id": "project:anchor-learning",
       "title": "锚学 Anchor Learning｜来源可溯源的 AI 学习代理",
-      "summary": "Flutter 本地优先学习助手，以结构化切分、精确 locator、引用核验和答案校验把文档转成可追溯练习；官网提供无后端、无实时 AI 的双语浏览器 Demo。 Anchor Learning (锚学) 是基于 Flutter、Riverpod 和 sqflite 的本地优先学习助手，核心设计原则是可溯源性优先与生成后验证。 支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 结构化切分并生成精确 locator 与 content hash。 题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。 Agent 学习模式支持长会话、检查点恢复、混合检索（BM25 + 语义）、苏格拉底式引导和编程练习生成。 核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。 已部署双语官网 https://anchor.playlab.eu.cc 与静态浏览器 Demo https://anchor.playlab.eu.cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。 浏览器 Demo 会在 `anchor.locale` 保存中英文偏好，在 `anchor.demo.progress.v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。 开源仓库是 https://github.com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。",
+      "summary": "Flutter 本地优先学习助手，以结构化切分、精确 locator、引用核验和答案校验把文档转成可追溯练习；官网提供无后端、无实时 AI 的双语浏览器 Demo。 Anchor Learning (锚学) 是基于 Flutter、Riverpod 和 sqflite 的本地优先学习助手，核心设计原则是可溯源性优先与生成后验证。 支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 结构化切分并生成精确 locator 与 content hash。 题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。 2026-09-24 源码核对确认 Agent 会在恢复 checkpoint 前检查 readiness，工具结果不明时要求用户决策并可结束会话；编程练习提供来源核验，引用缺失时不允许标记已核验。此项为实现核对，本轮未执行模型或设备验收。 核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。 已部署双语官网 https://anchor.playlab.eu.cc 与静态浏览器 Demo https://anchor.playlab.eu.cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。 浏览器 Demo 会在 `anchor.locale` 保存中英文偏好，在 `anchor.demo.progress.v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。 开源仓库是 https://github.com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。 v1.0.0 APK 发布于 2026-09-15；2026-09-16 API 核验大小 26,404,187 bytes，SHA-256 为 3371870ee2691f0aa3496e2e6fb1153a6c028b840bfef33c924dbea8cf96d475。2026-09-24 readiness CLI 重跑仍为 HOLD，6 个阻塞码为 automated_gate_evidence_stale、android_build_bytes_mismatch、android_build_sha256_mismatch、release_day_acceptance_primary_stale、release_day_acceptance_fallback_stale、physical_device_evidence_stale。",
       "href": "/projects/anchor-learning",
       "tags": [
         "ai",
@@ -269,7 +294,7 @@
     {
       "id": "project:blog-semi",
       "title": "泊岸 BIAU Port｜内容与助手平台",
-      "summary": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开研究助手和内容 Studio。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。 公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。 公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only RAG 证据。 RAG Orchestrator 生产存储使用 Supabase pgvector，组合 4096 维精确余弦检索、关键词召回和轻量实体关系扩展；本地与可选 Qdrant 适配器只用于确定性测试或回滚兼容。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。 当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；Operator/internal-RAG 退役已经完成，后续人工队列聚焦 Studio 被退回草稿修订、证据完整版本审核、Publish Export 与各关联项目的受控发布 gate。",
+      "summary": "React 内容与助手主站，提供三组项目目录、文章搜索与阅读返回、三主题和中英文公共界面；项目正文保留原文，产品验收与本地界面进展分别记录。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建；10 个目录项目分 AI 应用、全栈开发、工具三组，六个游戏通过游湾集合承载并保留独立详情。 主站已有文章栏目/搜索/分页、URL 浏览状态与阅读返回，以及晨曦/自然/星辰三主题和中英文公共界面偏好；正文、博客原文和历史素材不会自动全量翻译。 2026-10-05 核对的是本地实现，不证明线上产物已同步。知航 2026-08-16 的一次真实 SSE 回答与引用验收是有范围的历史记录；潮讯 2026-08-18 v7 Edition 被限流、Revision 15 拒绝，公开 Edition/Feed 仍待验收，本轮零模型调用且不启用 Feed/Cron。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。 仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。 公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。 公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only RAG 证据。 RAG Orchestrator 生产存储使用 Supabase pgvector，组合 4096 维精确余弦检索、关键词召回和轻量实体关系扩展；本地与可选 Qdrant 适配器只用于确定性测试或回滚兼容。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。 内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。 当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；Operator/internal-RAG 退役已经完成，后续人工队列聚焦 Studio 被退回草稿修订、证据完整版本审核、Publish Export 与各关联项目的受控发布 gate。",
       "href": "/projects/blog-semi",
       "tags": [
         "platform",
@@ -286,11 +311,11 @@
         "PostgreSQL",
         "LangGraph",
         "Playwright",
-        "多视图主站",
-        "项目案例",
-        "LangGraph Agent",
-        "内容治理",
-        "UI 验证"
+        "三组项目目录",
+        "搜索与阅读返回",
+        "三主题",
+        "中英文界面",
+        "公开助手"
       ],
       "visibility": "public",
       "sourceType": "project",
@@ -322,7 +347,7 @@
     {
       "id": "project:game-first-tetris",
       "title": "俄罗斯方块原型｜Tetris",
-      "summary": "Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化、触屏桥接、响应式布局和截图回归。 Tetris 是 Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化实验、触屏桥接、响应式 UI 和 Web 试玩。 Playlab 游戏站证据显示 Tetris 使用 Godot 4.6.1，保留主菜单、Rogue 游戏画面和 Help 面板截图，并有 tetris-responsive-baseline 与 tetris-touch-controls 两篇开发日志说明多端适配和输入结构。 项目重点是把经典规则、现代计分反馈、移动触控和可展示的 Web 构建组织在一起；后续方向包括移动端触控细节、Rogue 强化平衡、截图/试玩回归和长期迭代。",
+      "summary": "Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化、触屏桥接、响应式布局和截图回归。 Tetris 是 Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化实验、触屏桥接、响应式 UI 和 Web 试玩。 Playlab 游戏站证据显示 Tetris 使用 Godot 4.6.1，保留主菜单、Rogue 游戏画面和 Help 面板截图，并有 tetris-responsive-baseline 与 tetris-touch-controls 两篇开发日志说明多端适配和输入结构。 项目重点是把经典规则、现代计分反馈、移动触控和可展示的 Web 构建组织在一起；后续方向包括移动端触控细节、Rogue 强化平衡、截图/试玩回归和长期迭代。 2026-10-05 核对计分与触控桥接源码，未重跑游戏或真机验收。已有 playtest 视频文件；2026-06-28 为游戏站条目更新日期，截图采集日及当前 Web 包对应源码仍待绑定。",
       "href": "/projects/game-first-tetris",
       "tags": [
         "interactive",
@@ -345,7 +370,7 @@
     {
       "id": "project:game-next-spacewar",
       "title": "太空战机｜展示构建",
-      "summary": "Godot 4.6 太空射击展示构建，补齐三波短任务、漂移/装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。 Next Spacewar 是 Godot 4.6 太空射击展示构建，核心是三波短任务、漂移目标、装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。 Playlab 游戏站为 Next Spacewar 提供主菜单、战斗和结果页真实截图以及 Web 试玩入口；开发日志把它定义为已经收成可展示的本地 build。 项目定位偏 showcase，适合说明如何把一个短时长战斗循环收束成可试玩作品；后续方向包括关卡密度、敌人差异、反馈节奏和更细的移动/键鼠输入体验。",
+      "summary": "Godot 太空射击展示构建，源码标识 0.17，包含三波短任务、漂移/装甲目标、连击奖励、菜单、帮助、暂停和结果复盘；公开 Web 包版本另行核验。 Next Spacewar 是 Godot 4.6 太空射击展示构建，核心是三波短任务、漂移目标、装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。 Playlab 游戏站为 Next Spacewar 提供主菜单、战斗和结果页真实截图以及 Web 试玩入口；开发日志把它定义为已经收成可展示的本地 build。 项目定位偏 showcase，适合说明如何把一个短时长战斗循环收束成可试玩作品；后续方向包括关卡密度、敌人差异、反馈节奏和更细的移动/键鼠输入体验。 2026-10-05 源码菜单和战斗标签为展示版本 0.17，未确认当前线上 Web 包对应版本。已有历史截图与 playtest MP4；条目更新于 2026-06-28，不等于本轮录制或触屏验收。",
       "href": "/projects/game-next-spacewar",
       "tags": [
         "interactive",
@@ -368,7 +393,7 @@
     {
       "id": "project:intespace",
       "title": "竖屏肉鸽射击｜intespace",
-      "summary": "竖屏自动射击肉鸽游戏，围绕章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长和集成试玩收口。 intespace 是竖屏自动射击肉鸽项目，包含章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长、玩家 hub、结果总结和集成试玩入口。 Playlab 游戏站记录 intespace 基于 Godot 4.6.1，武器系统 v1 已冻结结构，截图覆盖玩家中枢、战斗 HUD 和结果总结，当前处于统一试玩前完整流程收口。 项目重点是把移动端竖屏射击、Roguelite 成长、武器路线和 Boss 压力组合成较完整的长期迭代样本；后续方向包括平衡、试玩反馈、UI 文案、移动端体验和内容节奏优化。",
+      "summary": "竖屏自动射击肉鸽游戏，围绕章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长和集成试玩收口。 intespace 是竖屏自动射击肉鸽项目，包含章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长、玩家 hub、结果总结和集成试玩入口。 Playlab 游戏站记录 intespace 基于 Godot 4.6.1，武器系统 v1 已冻结结构，截图覆盖玩家中枢、战斗 HUD 和结果总结，当前处于统一试玩前完整流程收口。 项目重点是把移动端竖屏射击、Roguelite 成长、武器路线和 Boss 压力组合成较完整的长期迭代样本；后续方向包括平衡、试玩反馈、UI 文案、移动端体验和内容节奏优化。 2026-10-05 源码版本为 0.1.0-phase06 / prototype；RC 门禁依赖近期模式/路线样本，本轮未执行门禁或真机试玩。已有 playtest MP4，条目更新日期 2026-06-28 不等于素材采集日，当前线上 Web 版本待确认。",
       "href": "/projects/intespace",
       "tags": [
         "interactive",
@@ -392,7 +417,7 @@
     {
       "id": "project:raiden-prototype",
       "title": "纵版弹幕射击｜垂直切片",
-      "summary": "Godot 纵版射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场和试玩验证。 Raiden prototype 是 Godot 纵版弹幕射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场、结果页、公开 Demo 和 Web 试玩。 Playlab 游戏站记录 Raiden Prototype 当前为 RC-0.4 稳定展示候选，推荐入口是 Chapter Run，并有 Windows 预发布下载、Web 试玩和真实运行截图。 项目适合展示纵版射击的章节节奏、Boss 阶段和奖励反馈如何被压缩成可玩的垂直切片；后续方向包括弹幕可读性、音效/手感、关卡内容、难度曲线和移动端适配。",
+      "summary": "Godot 纵版射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场和试玩验证。 Raiden prototype 是 Godot 纵版弹幕射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场、结果页、公开 Demo 和 Web 试玩。 Playlab 游戏站记录 Raiden Prototype 当前为 RC-0.4 稳定展示候选，推荐入口是 Chapter Run，并有 Windows 预发布下载、Web 试玩和真实运行截图。 项目适合展示纵版射击的章节节奏、Boss 阶段和奖励反馈如何被压缩成可玩的垂直切片；后续方向包括弹幕可读性、音效/手感、关卡内容、难度曲线和移动端适配。 2026-10-05 核对源码 RC-0.4 与章节流程；局内评分提示不证明发布验收。已有历史 playtest MP4，条目更新于 2026-06-28；本轮未重跑游戏、核验 Windows 下载或确认线上 Web 包版本。",
       "href": "/projects/raiden-prototype",
       "tags": [
         "interactive",
@@ -415,7 +440,7 @@
     {
       "id": "project:space-war",
       "title": "复古横版射击｜space-war",
-      "summary": "复古横向太空射击完整版本，包含五个 Sector、连续击破奖励、首领战、道具、高分、结果页、程序化音效和发布文档。 space-war 是复古横版太空射击完整展示版本，受 Nokia 3310 Space Impact 风格启发，包含五个 Sector、敌机与道具、Boss、高分、连续击破奖励、结果页、程序化音效、Web/Windows 发布材料。 Playlab 游戏站记录 Space War 已经进入完整可玩、可展示、可维护阶段，保留 Windows Release、Web 试玩、真实菜单/战斗/结算截图和 v1.1.1 发布说明。 项目展示了从原型到发布版的收束：菜单、战斗、结算、截图素材、发布文档和公开试玩入口都已组织起来；后续方向包括平衡、移动端输入、音频层次、可观测试玩反馈和更多关卡变化。",
+      "summary": "复古横向太空射击完整版本，包含五个 Sector、连续击破奖励、首领战、道具、高分、结果页、程序化音效和发布文档。 space-war 是复古横版太空射击完整展示版本，受 Nokia 3310 Space Impact 风格启发，包含五个 Sector、敌机与道具、Boss、高分、连续击破奖励、结果页、程序化音效、Web/Windows 发布材料。 Playlab 游戏站记录 Space War 已经进入完整可玩、可展示、可维护阶段，保留 Windows Release、Web 试玩、真实菜单/战斗/结算截图和 v1.1.1 发布说明。 项目展示了从原型到发布版的收束：菜单、战斗、结算、截图素材、发布文档和公开试玩入口都已组织起来；后续方向包括平衡、移动端输入、音频层次、可观测试玩反馈和更多关卡变化。 2026-10-05 确认 v1.1.1 是本地历史发布标签，当前源码与线上 Web 版本仍需分别绑定。已有 playtest MP4；条目 2026-06-28 更新日期不等于截图采集日，本轮未做通关或移动端验收。",
       "href": "/projects/space-war",
       "tags": [
         "interactive",
@@ -425,7 +450,7 @@
         "Godot 引擎 / 复古射击 / 发布版 / 展示入口",
         "Godot 4.6",
         "复古射击",
-        "Web 包计划",
+        "Web 导出",
         "五个 Sector",
         "连续击破",
         "高分结算",
@@ -437,8 +462,8 @@
     },
     {
       "id": "project:spacewar-ii",
-      "title": "移动纵向射击｜Spacewar II",
-      "summary": "Godot 4.6 纵向移动射击续作原型，围绕差异化敌群、Boss 阶段、多向弹幕、拾取升级、炸弹、短窗口连击、清关资源结算、紧凑 HUD 和结果页接入第六个 Web 试玩位。 Spacewar II 是 Godot 4.6 纵向移动射击续作，作为第六个游戏接入 Playlab，包含差异化敌群、Boss 阶段、多向弹幕、拾取升级、炸弹、短窗口连击、资源结算、紧凑 HUD、结果页和 Web 试玩。 Playlab 游戏站记录 Spacewar II 使用 spacewar-ii 统一 slug，已纳入游戏站内容模型、试玩域名和导出脚本，真实截图覆盖菜单、Boss 战斗和结果页。 项目重点是把移动纵向射击的敌群、弹幕、拾取和结算节奏整理成可展示版本；后续方向包括移动端触控、Boss 可读性、关卡节奏、资源成长和发布素材继续打磨。",
+      "title": "纵向射击原型｜Spacewar II",
+      "summary": "Godot 纵向射击续作原型，当前主场景采用键盘移动、空格射击和 X 炸弹，包含三阶段路线、差异化敌群、Boss、连击与结算；触屏体验仍待验证。 Spacewar II 是 Godot 4.6 纵向射击续作原型，作为第六个游戏接入游湾；2026-10-05 核对实际入口为 NokiaMenu/NokiaBattle，默认三阶段，WASD/方向键移动、空格射击、X 炸弹，并非自动射击。 Playlab 游戏站记录 Spacewar II 使用 spacewar-ii 统一 slug，已纳入游戏站内容模型、试玩域名和导出脚本，真实截图覆盖菜单、Boss 战斗和结果页。 项目重点是把移动纵向射击的敌群、弹幕、拾取和结算节奏整理成可展示版本；后续方向包括移动端触控、Boss 可读性、关卡节奏、资源成长和发布素材继续打磨。 当前入口采用键盘控制，移动视口 canvas 检查不代表触屏可玩；既有截图对应条目更新日 2026-06-28，精确采集日及当前线上 Web 版本待绑定。真实试玩短视频仍待补，本轮未重跑游戏或真机验收。",
       "href": "/projects/spacewar-ii",
       "tags": [
         "interactive",
@@ -447,7 +472,7 @@
         "已有页面",
         "Godot 引擎 / 纵向射击 / Web 试玩 / 第六项目接入",
         "Godot 4.6",
-        "移动射击",
+        "纵向射击",
         "Web 导出",
         "差异化敌群",
         "短窗口连击",
@@ -461,7 +486,7 @@
     {
       "id": "project:xunqiu",
       "title": "寻球 BallTrail｜移动端与现代后端重建",
-      "summary": "足球社群移动端迁移案例：旧版 App 和旧后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3、PostgreSQL、Render 与 R2 上传链路。 寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。 64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。 现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。 短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。 项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。 现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。 公开展示站提供产品页、技术文档和 APK 发布状态；未批准的阶段包已从公开仓库与下载入口撤下，不包含旧后端 IP、测试密码、签名路径或私有云配置。 阶段 APK 继续保留在维护者本地归档；后续公开下载需要正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准。 寻球静态展示站首页、技术文档页和 404 页已统一 BIAU Port / 泊岸标题与 favicon，并在页脚说明归属泊岸项目展示体系。 后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。",
+      "summary": "足球社群迁移案例，分别展示静态站、64 位 Android 客户端和 Spring Boot 现代后端；旧接口兼容、占位能力与正式发布各有边界。 寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。 64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。 现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。 2026-10-04 分别核对展示站 d8d4ae62、后端 94b8f18b 与本地 Android 0.1.0 / code 1 源码，未执行构建、安装、上传或源项目测试。静态展示、真实 API 行为与 APK 发布必须分别验收。 短信、第三方账号、注册和未接入旧接口存在 stub/安全空结果；存储配置缺失时不执行实际上传但仍可返回占位 URL，不能把成功结构或 URL 当成完整业务与媒体可用证据。 短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。 项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。 现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。 公开展示站提供产品页、技术文档和 APK 发布状态；未批准的阶段包已从公开仓库与下载入口撤下，不包含旧后端 IP、测试密码、签名路径或私有云配置。 阶段 APK 继续保留在维护者本地归档；后续公开下载需要正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准。 寻球静态展示站首页、技术文档页和 404 页已统一 BIAU Port / 泊岸标题与 favicon，并在页脚说明归属泊岸项目展示体系。 后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。",
       "href": "/projects/xunqiu",
       "tags": [
         "mobile",
@@ -911,9 +936,61 @@
       }
     },
     {
+      "id": "chunk:project:roleplay-demo:1",
+      "documentId": "project:roleplay-demo",
+      "text": "面向公开访客的多角色 AI 对话演示：从角色库选择人物，进入独立聊天页，并通过服务端保留模型密钥与会话边界。 Roleplay 是独立部署的游客式多角色 AI 对话演示，公开入口为 roleplay. playlab. eu. cc。 2026-09-15 的公开观察记录 13 张可切换角色卡，访客可以从角色库进入聊天页，也可以使用 /r/<角色ID> 独立分享入口。 模型密钥、上游接口和游客会话保留在服务器端，浏览器不接触 API Key；服务通过 Nginx 和 Cloudflare Tunnel 提供 HTTPS。",
+      "section": "summary",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "roleplay-demo",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "live",
+          "已有页面",
+          "访客式 AI 体验 / 多角色角色库 / Cloudflare Tunnel",
+          "Static HTML/CSS/JavaScript",
+          "Node.js",
+          "GLM",
+          "Cloudflare Tunnel",
+          "HttpOnly Session",
+          "13 张角色卡",
+          "无需登录体验",
+          "服务端密钥隔离",
+          "角色独立分享链接"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:roleplay-demo:2",
+      "documentId": "project:roleplay-demo",
+      "text": "health 记录的模型配置标签为 GLM 游客模式；复杂角色的回复速度受上游并发和提示词长度影响，health 不代表上游模型长期健康或回答质量。",
+      "section": "summary-2",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "roleplay-demo",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "live",
+          "已有页面",
+          "访客式 AI 体验 / 多角色角色库 / Cloudflare Tunnel",
+          "Static HTML/CSS/JavaScript",
+          "Node.js",
+          "GLM",
+          "Cloudflare Tunnel",
+          "HttpOnly Session",
+          "13 张角色卡",
+          "无需登录体验",
+          "服务端密钥隔离",
+          "角色独立分享链接"
+        ]
+      }
+    },
+    {
       "id": "chunk:project:legal-rag:1",
       "documentId": "project:legal-rag",
-      "text": "已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。 Legal RAG 是已部署的全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。",
+      "text": "法律文档 RAG 与合同风险审查工作台，串联材料导入、引用问答、规则优先审查和质量面板；受保护流程仍需独立运行验收。 Legal RAG 是全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。 2026-10-04 核对 fd34e11c 源码接线，未执行登录、导入或模型验收；公开入口仍为 unchecked + login-gated。",
       "section": "summary",
       "metadata": {
         "sourceType": "project",
@@ -967,7 +1044,7 @@
     {
       "id": "chunk:project:legal-rag:3",
       "documentId": "project:legal-rag",
-      "text": "项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。 Legal RAG 后端还把配置用户、项目成员、项目空间授权、ingestion job 和 audit log 纳入数据模型，让公开演示能够解释“谁在什么项目空间里做了什么 AI 操作”。 Legal RAG Web 工作台的标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸品牌；公开试用凭据仍只能通过低权限、可轮换、可公开的 demo 配置展示。 线上工作台入口是 https://legal-rag-web. onrender.",
+      "text": "项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。 mock provider 只适合本地演示，不代表真实模型效果。 引用帮助回到召回片段核对，合同规则与模型建议都不能替代专业人工复核；测试源码存在不代表本次已运行通过。 Legal RAG 后端还把配置用户、项目成员、项目空间授权、ingestion job 和 audit log 纳入数据模型，让公开演示能够解释“谁在什么项目空间里做了什么 AI 操作”。",
       "section": "summary-3",
       "metadata": {
         "sourceType": "project",
@@ -994,7 +1071,7 @@
     {
       "id": "chunk:project:legal-rag:4",
       "documentId": "project:legal-rag",
-      "text": "com，有登录门禁，公开页面不会放真实后台/admin 密码；如果 Legal RAG 登录页显示公开演示凭据，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则仍是受控演示入口。 Legal RAG 公开自助试用需要维护者同时配置 API 侧登录校验密码和 Web 侧 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD；VITE_PUBLIC_DEMO_PASSWORD 会进入前端包，所以只能填写可公开、低权限、可轮换的 demo 密码。",
+      "text": "Legal RAG Web 工作台的标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸品牌；公开试用凭据仍只能通过低权限、可轮换、可公开的 demo 配置展示。 线上工作台入口是 https://legal-rag-web. onrender. com，有登录门禁，公开页面不会放真实后台/admin 密码；如果 Legal RAG 登录页显示公开演示凭据，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则仍是受控演示入口。",
       "section": "summary-4",
       "metadata": {
         "sourceType": "project",
@@ -1021,8 +1098,35 @@
     {
       "id": "chunk:project:legal-rag:5",
       "documentId": "project:legal-rag",
-      "text": "推荐公开演示顺序是：登录受保护工作台、初始化公开安全数据集、执行带 citation/diagnostics 的 RAG 问答、运行示例合同审查、查看质量面板的 runtime、citation/refusal 评测、审查召回、readiness checks、趋势和审计日志。 后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。",
+      "text": "Legal RAG 公开自助试用需要维护者同时配置 API 侧登录校验密码和 Web 侧 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD；VITE_PUBLIC_DEMO_PASSWORD 会进入前端包，所以只能填写可公开、低权限、可轮换的 demo 密码。 推荐公开演示顺序是：登录受保护工作台、初始化公开安全数据集、执行带 citation/diagnostics 的 RAG 问答、运行示例合同审查、查看质量面板的 runtime、citation/refusal 评测、审查召回、readiness checks、趋势和审计日志。",
       "section": "summary-5",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "legal-rag",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "main",
+          "重点展示",
+          "全栈 MVP / RAG 流程 / 合同审查工作台",
+          "Vue 3",
+          "Express",
+          "TypeScript",
+          "PostgreSQL",
+          "pgvector",
+          "RAG",
+          "公开安全数据集",
+          "Hybrid Retrieval",
+          "引用与诊断",
+          "规则优先合同审查"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:legal-rag:6",
+      "documentId": "project:legal-rag",
+      "text": "后续优化方向包括更完整的用户/邀请权限、更多脱敏数据集、评测趋势、OCR、rerank 模型、CI 与镜像发布。",
+      "section": "summary-6",
       "metadata": {
         "sourceType": "project",
         "projectId": "legal-rag",
@@ -1048,7 +1152,7 @@
     {
       "id": "chunk:project:chatus:1",
       "documentId": "project:chatus",
-      "text": "部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、长期记忆、能力授权与可恢复流。 Chatus 是部署在 Cloudflare Workers 上的邀请制私人 AI 工作台，只提供受控网页体验，不对外分发公开 OpenAI-compatible API。 前端使用 React 19、TypeScript 和 PWA 能力；运行时使用 Cloudflare Worker、KV、Agents SDK 与 SQLite Durable Objects。",
+      "text": "面向受邀成员的 AI 工作台，以会话 Agent、Skills 与工具分配、显式记忆和可恢复流支撑持续工作；访客能力单独收窄。 Chatus 是部署在 Cloudflare Workers 上的邀请制私人 AI 工作台，只提供受控网页体验，不对外分发公开 OpenAI-compatible API。 前端使用 React 19、TypeScript 和 PWA 能力；运行时使用 Cloudflare Worker、KV、Agents SDK 与 SQLite Durable Objects。",
       "section": "summary",
       "metadata": {
         "sourceType": "project",
@@ -1068,7 +1172,7 @@
           "PWA",
           "邀请制入口",
           "会话级 Agent",
-          "首输出前回退",
+          "Skills 与工具授权",
           "显式长期记忆"
         ]
       }
@@ -1076,7 +1180,7 @@
     {
       "id": "chunk:project:chatus:2",
       "documentId": "project:chatus",
-      "text": "成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。 多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。 长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。 公开入口是 https://chatus. ciallobill. qzz. io；入口可达不代表访客拥有成员账号、访问码或完整能力。 主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。",
+      "text": "成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。 多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。 长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。 2026-10-04 核对 a7f41480 基线及工作树：工作会话支持手动/自动 Skill 模式，工具需同时满足成员分配、启用和执行器可用；MCP 写入/破坏性操作逐次确认，访客没有成员 Skill/工具能力。",
       "section": "summary-2",
       "metadata": {
         "sourceType": "project",
@@ -1096,7 +1200,35 @@
           "PWA",
           "邀请制入口",
           "会话级 Agent",
-          "首输出前回退",
+          "Skills 与工具授权",
+          "显式长期记忆"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:chatus:3",
+      "documentId": "project:chatus",
+      "text": "此次只核对源码，未运行源项目测试或生产验收。 公开入口是 https://chatus. ciallobill. qzz. io；入口可达不代表访客拥有成员账号、访问码或完整能力。 主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。",
+      "section": "summary-3",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "chatus",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "main",
+          "重点展示",
+          "Cloudflare Agent / 多模型路由 / 会话与记忆 / 安全发布",
+          "React 19",
+          "TypeScript",
+          "Cloudflare Workers",
+          "Agents SDK",
+          "Durable Objects",
+          "KV",
+          "PWA",
+          "邀请制入口",
+          "会话级 Agent",
+          "Skills 与工具授权",
           "显式长期记忆"
         ]
       }
@@ -1185,7 +1317,7 @@
     {
       "id": "chunk:project:pet-workspace:4",
       "documentId": "project:pet-workspace",
-      "text": "私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。 项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待正式签名包，debug 构建只作为内部验证信号，不提供占位下载。",
+      "text": "私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。 项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域公开记录本地 release APK/AAB 的版本、大小和摘要，但仍不提供下载入口。",
       "section": "summary-4",
       "metadata": {
         "sourceType": "project",
@@ -1212,8 +1344,62 @@
     {
       "id": "chunk:project:pet-workspace:5",
       "documentId": "project:pet-workspace",
-      "text": "Pet 项目详情页正文已经穿插 Android 首页、孵化桌宠和社区页截图，说明这些是公开展示当前工作面的证据；正式 APK 下载仍必须等待 release 构建、签名、SHA-256、版本说明、回归和人工批准。 最近一次 APK 发布门禁审计只找到 debug APK，没有 release APK/AAB 候选；公开下载继续关闭，后续需要正式构建、签名策略、校验摘要、版本说明、回归证据和人工确认。 当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。",
+      "text": "Pet 项目详情页正文已有 Android 首页、孵化桌宠和社区页截图；本轮未核验 release 归档的签名、安装和完整生成流程，也未批准公开分发，不能据此断言源项目从未完成这些工作。 主站公开下载继续关闭。 2026-09-16 本地归档核验记录 release APK 0. 1.",
       "section": "summary-5",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "pet-workspace",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "main",
+          "重点展示",
+          "Android App / Community API / 生成管线 / 质量门禁 / 人审发布",
+          "Android",
+          "Node.js",
+          "FastAPI",
+          "PostgreSQL",
+          "Agent Worker",
+          "质量门禁",
+          "桌宠孵化",
+          "社区审核",
+          "不透明下载 ID",
+          "人审发布"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:pet-workspace:6",
+      "documentId": "project:pet-workspace",
+      "text": "0 / code 1 为 14,920,672 bytes（SHA-256 ab60204e6ab0b94a84b2dccef32eb65e26b1cbba728dac56f167a8940ff89108），AAB 为 14,385,956 bytes（SHA-256 0fad67e69ad1540bbe4ad23e0b6d79322cd9ab04b686db45bba785abe140777c）；2026-09-24 复算大小和摘要一致。 归档事实不能替代公开发布门禁。",
+      "section": "summary-6",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "pet-workspace",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "main",
+          "重点展示",
+          "Android App / Community API / 生成管线 / 质量门禁 / 人审发布",
+          "Android",
+          "Node.js",
+          "FastAPI",
+          "PostgreSQL",
+          "Agent Worker",
+          "质量门禁",
+          "桌宠孵化",
+          "社区审核",
+          "不透明下载 ID",
+          "人审发布"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:pet-workspace:7",
+      "documentId": "project:pet-workspace",
+      "text": "当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。",
+      "section": "summary-7",
       "metadata": {
         "sourceType": "project",
         "projectId": "pet-workspace",
@@ -1299,7 +1485,7 @@
     {
       "id": "chunk:project:ozon-erp:3",
       "documentId": "project:ozon-erp",
-      "text": "Express API 注册 auth、shops、products、selection、settings、ozon、collect、market metrics、commission rates、api. chrome、exchange rates、watermark 和 uploads 等路由。 Prisma 模型覆盖用户、店铺、Ozon 凭证、Seller 会话、商品、采集商品、草稿、导入日志、PendingAction、JobQueue、AuditLog、市场指标和佣金映射等对象。",
+      "text": "Express API 注册 auth、shops、products、selection、settings、ozon、collect、market metrics、commission rates、api. chrome、exchange rates、watermark 和 uploads 等路由。 Prisma 模型覆盖用户、店铺、Ozon 凭证、Seller 会话、商品、采集商品、草稿、导入日志、PendingAction、JobQueue、AuditLog、市场指标和佣金映射等对象。 外部平台写入通过 PendingAction 和 JobQueue 收口；排队不等于 mock。",
       "section": "summary-3",
       "metadata": {
         "sourceType": "project",
@@ -1329,7 +1515,7 @@
     {
       "id": "chunk:project:ozon-erp:4",
       "documentId": "project:ozon-erp",
-      "text": "外部平台写入通过 PendingAction 和 JobQueue 收口；当前代码和测试显示商品写入与一键铺货默认偏向队列或本地后台执行，只有显式配置 inline 才同步执行。 浏览器插件负责 Ozon/Seller 页面采集、Seller 上下文读取、跨标签页请求、ERP 路由打开和图片下载，并通过认证或扩展密钥边界接入 ERP API。 项目验证证据包括 API/shared Vitest、受保护写入测试、Ozon 同步容错测试、插件接口映射测试、插件版本发布检查、smoke 脚本、交接清单、上线检查、佣金覆盖报告和依赖审计记录。",
+      "text": "2026-10-04 核对 e7179e00 的执行器默认 real，写入开关未显式关闭时继续检查店铺凭据与目标；非 real 分支拒绝写任务，不能假定完整模拟业务可用。 2026-08-18 入口重定向停机页并返回 403 是历史观察，本次未重新访问、登录或写入业务，不能称为当前持续故障。 入口仍为 unchecked + login-gated，已有 Owner 后新注册账号为 operator。 浏览器插件负责 Ozon/Seller 页面采集、Seller 上下文读取、跨标签页请求、ERP 路由打开和图片下载，并通过认证或扩展密钥边界接入 ERP API。",
       "section": "summary-4",
       "metadata": {
         "sourceType": "project",
@@ -1359,7 +1545,7 @@
     {
       "id": "chunk:project:ozon-erp:5",
       "documentId": "project:ozon-erp",
-      "text": "后续优化方向包括运行模式可视化、Worker/队列运维、佣金可信映射补齐、权限和审计增强、插件发布自动化、日志脱敏、备份演练和部署自动化。",
+      "text": "项目验证证据包括 API/shared Vitest、受保护写入测试、Ozon 同步容错测试、插件接口映射测试、插件版本发布检查、smoke 脚本、交接清单、上线检查、佣金覆盖报告和依赖审计记录。 后续优化方向包括运行模式可视化、Worker/队列运维、佣金可信映射补齐、权限和审计增强、插件发布自动化、日志脱敏、备份演练和部署自动化。",
       "section": "summary-5",
       "metadata": {
         "sourceType": "project",
@@ -1389,7 +1575,7 @@
     {
       "id": "chunk:project:biau-playlab:1",
       "documentId": "project:biau-playlab",
-      "text": "基于 Astro 的独立游戏作品集与试玩平台，整合六个已部署 Godot Web 游戏、项目详情、截图/视频、开发日志和系统设计文章。 BIAU Playlab 是已部署的 Astro 5 游戏作品集与试玩平台，整合六个 Godot Web 游戏、项目详情页、截图/视频、开发日志、系统设计文章和公开试玩入口。 游戏站已统一使用 BIAU Playlab 命名，并把 favicon、导航副标题和页脚归属对齐到 BIAU Port / 泊岸，保留 Playlab 作为游戏作品集产品名。",
+      "text": "基于 Astro 的游戏作品集，集中展示六个不同阶段的 Godot 项目、Web 试玩入口、历史截图/录制与开发日志；源码、导出包和设备体验分别核验。 BIAU Playlab 是已部署的 Astro 5 游戏作品集与试玩平台，整合六个 Godot Web 游戏、项目详情页、截图/视频、开发日志、系统设计文章和公开试玩入口。 游戏站已统一使用 BIAU Playlab 命名，并把 favicon、导航副标题和页脚归属对齐到 BIAU Port / 泊岸，保留 Playlab 作为游戏作品集产品名。",
       "section": "summary",
       "metadata": {
         "sourceType": "project",
@@ -1441,7 +1627,7 @@
     {
       "id": "chunk:project:biau-playlab:3",
       "documentId": "project:biau-playlab",
-      "text": "六个游戏包括 Tetris、Next Spacewar、intespace、Raiden、space-war 和 Spacewar II；Spacewar II 已作为第六个公开 Web 试玩项目接入，并补齐菜单、战斗和结果页真实截图。 Godot Web 试玩入口由独立试玩域名承载，首次加载可能较慢；移动端输入、横竖屏缩放、HUD 可读性和浏览器性能仍需要持续回归。 最近内容审计统计到 4 篇已发布文章、39 篇文章工作区草稿、6 个游戏项目和 5 篇开发日志，静态资源引用和内容关系检查通过。",
+      "text": "六个游戏包括 Tetris、Next Spacewar、intespace、Raiden、space-war 和 Spacewar II；Spacewar II 已作为第六个公开 Web 试玩项目接入，并补齐菜单、战斗和结果页真实截图。 Godot Web 试玩入口由独立试玩域名承载，首次加载可能较慢；移动端输入、横竖屏缩放、HUD 可读性和浏览器性能仍需要持续回归。 2026-10-05 只读核对六游戏源码和六套本地 Web 文件，未重跑游戏审计、导出、线上加载或真机验收；当前源码提交与线上 Web 包的版本对应仍待确认。",
       "section": "summary-3",
       "metadata": {
         "sourceType": "project",
@@ -1467,8 +1653,34 @@
     {
       "id": "chunk:project:biau-playlab:4",
       "documentId": "project:biau-playlab",
-      "text": "Playlab 的质量链路包括 content:audit、Astro build、dist:audit、deploy:pages、deploy:play、play export/check/upload 和 deploy:check；dist:audit 会检查站内链接、资源路径和 JSON-LD，公开端点检查覆盖游戏站、六个游戏详情页、六个试玩入口、RSS、sitemap、robots 和主站项目页。 当前 Playlab 应作为游戏作品集平台展示；博客和部分文章归档质量仍是后续优化方向，不应把它描述成已经完全成熟的内容产品。",
+      "text": "五个游戏已有 playtest MP4，Spacewar II 短视频仍待补；游戏条目 2026-06-28 的更新日期不等于截图或录制日期。 Next Spacewar 源码标签为 0. 17，intespace 为 0. 1. 0-phase06 / prototype，Raiden 为 RC-0. 4；Space War v1. 1. 1 是历史发布标签。 Spacewar II 当前入口走 NokiaBattle/NokiaPlayer，三阶段、键盘移动、空格射击和 X 炸弹；移动端题材和移动视口 canvas 检查不证明触屏可玩。",
       "section": "summary-4",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "biau-playlab",
+        "tags": [
+          "platform",
+          "博客系统",
+          "live",
+          "已有页面",
+          "Astro 作品集 / Godot Web 试玩 / 内容审计 / Cloudflare Pages",
+          "Astro 5",
+          "Content Collections",
+          "Godot Web",
+          "Cloudflare Pages",
+          "R2",
+          "六个可试玩游戏",
+          "项目详情页",
+          "内容审计",
+          "公开端点检查"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:biau-playlab:5",
+      "documentId": "project:biau-playlab",
+      "text": "Playlab 的质量链路包括 content:audit、Astro build、dist:audit、deploy:pages、deploy:play、play export/check/upload 和 deploy:check；dist:audit 会检查站内链接、资源路径和 JSON-LD，公开端点检查覆盖游戏站、六个游戏详情页、六个试玩入口、RSS、sitemap、robots 和主站项目页。 当前 Playlab 应作为游戏作品集平台展示；博客和部分文章归档质量仍是后续优化方向，不应把它描述成已经完全成熟的内容产品。",
+      "section": "summary-5",
       "metadata": {
         "sourceType": "project",
         "projectId": "biau-playlab",
@@ -1521,7 +1733,7 @@
     {
       "id": "chunk:project:anchor-learning:2",
       "documentId": "project:anchor-learning",
-      "text": "题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。 Agent 学习模式支持长会话、检查点恢复、混合检索（BM25 + 语义）、苏格拉底式引导和编程练习生成。 核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。 已部署双语官网 https://anchor. playlab. eu. cc 与静态浏览器 Demo https://anchor. playlab. eu.",
+      "text": "题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。 2026-09-24 源码核对确认 Agent 会在恢复 checkpoint 前检查 readiness，工具结果不明时要求用户决策并可结束会话；编程练习提供来源核验，引用缺失时不允许标记已核验。 此项为实现核对，本轮未执行模型或设备验收。 核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。 已部署双语官网 https://anchor. playlab. eu.",
       "section": "summary-2",
       "metadata": {
         "sourceType": "project",
@@ -1549,8 +1761,64 @@
     {
       "id": "chunk:project:anchor-learning:3",
       "documentId": "project:anchor-learning",
-      "text": "cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。 浏览器 Demo 会在 `anchor. locale` 保存中英文偏好，在 `anchor. demo. progress. v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。 开源仓库是 https://github. com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。",
+      "text": "cc 与静态浏览器 Demo https://anchor. playlab. eu. cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。 浏览器 Demo 会在 `anchor. locale` 保存中英文偏好，在 `anchor. demo. progress. v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。 开源仓库是 https://github. com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。 v1. 0.",
       "section": "summary-3",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "anchor-learning",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "main",
+          "重点展示",
+          "Flutter 客户端 / 可溯源生成 / 本地优先 / 双语 Web Demo",
+          "Flutter",
+          "Dart",
+          "Riverpod",
+          "sqflite",
+          "Dio",
+          "Agent Runtime",
+          "Static Web Demo",
+          "精确来源定位",
+          "引用与答案双验",
+          "本地优先",
+          "浏览器引导 Demo"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:anchor-learning:4",
+      "documentId": "project:anchor-learning",
+      "text": "0 APK 发布于 2026-09-15；2026-09-16 API 核验大小 26,404,187 bytes，SHA-256 为 3371870ee2691f0aa3496e2e6fb1153a6c028b840bfef33c924dbea8cf96d475。",
+      "section": "summary-4",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "anchor-learning",
+        "tags": [
+          "ai",
+          "AI 应用",
+          "main",
+          "重点展示",
+          "Flutter 客户端 / 可溯源生成 / 本地优先 / 双语 Web Demo",
+          "Flutter",
+          "Dart",
+          "Riverpod",
+          "sqflite",
+          "Dio",
+          "Agent Runtime",
+          "Static Web Demo",
+          "精确来源定位",
+          "引用与答案双验",
+          "本地优先",
+          "浏览器引导 Demo"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:anchor-learning:5",
+      "documentId": "project:anchor-learning",
+      "text": "2026-09-24 readiness CLI 重跑仍为 HOLD，6 个阻塞码为 automated_gate_evidence_stale、android_build_bytes_mismatch、android_build_sha256_mismatch、release_day_acceptance_primary_stale、release_day_acceptance_fallback_stale、physical_device_evidence_stale。",
+      "section": "summary-5",
       "metadata": {
         "sourceType": "project",
         "projectId": "anchor-learning",
@@ -1577,7 +1845,7 @@
     {
       "id": "chunk:project:blog-semi:1",
       "documentId": "project:blog-semi",
-      "text": "当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开研究助手和内容 Studio。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。",
+      "text": "React 内容与助手主站，提供三组项目目录、文章搜索与阅读返回、三主题和中英文公共界面；项目正文保留原文，产品验收与本地界面进展分别记录。 BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建；10 个目录项目分 AI 应用、全栈开发、工具三组，六个游戏通过游湾集合承载并保留独立详情。 主站已有文章栏目/搜索/分页、URL 浏览状态与阅读返回，以及晨曦/自然/星辰三主题和中英文公共界面偏好；正文、博客原文和历史素材不会自动全量翻译。 2026-10-05 核对的是本地实现，不证明线上产物已同步。",
       "section": "summary",
       "metadata": {
         "sourceType": "project",
@@ -1597,18 +1865,18 @@
           "PostgreSQL",
           "LangGraph",
           "Playwright",
-          "多视图主站",
-          "项目案例",
-          "LangGraph Agent",
-          "内容治理",
-          "UI 验证"
+          "三组项目目录",
+          "搜索与阅读返回",
+          "三主题",
+          "中英文界面",
+          "公开助手"
         ]
       }
     },
     {
       "id": "chunk:project:blog-semi:2",
       "documentId": "project:blog-semi",
-      "text": "仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。 公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。",
+      "text": "知航 2026-08-16 的一次真实 SSE 回答与引用验收是有范围的历史记录；潮讯 2026-08-18 v7 Edition 被限流、Revision 15 拒绝，公开 Edition/Feed 仍待验收，本轮零模型调用且不启用 Feed/Cron。 项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。",
       "section": "summary-2",
       "metadata": {
         "sourceType": "project",
@@ -1628,18 +1896,18 @@
           "PostgreSQL",
           "LangGraph",
           "Playwright",
-          "多视图主站",
-          "项目案例",
-          "LangGraph Agent",
-          "内容治理",
-          "UI 验证"
+          "三组项目目录",
+          "搜索与阅读返回",
+          "三主题",
+          "中英文界面",
+          "公开助手"
         ]
       }
     },
     {
       "id": "chunk:project:blog-semi:3",
       "documentId": "project:blog-semi",
-      "text": "公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only RAG 证据。 RAG Orchestrator 生产存储使用 Supabase pgvector，组合 4096 维精确余弦检索、关键词召回和轻量实体关系扩展；本地与可选 Qdrant 适配器只用于确定性测试或回滚兼容。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。",
+      "text": "仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。 公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。",
       "section": "summary-3",
       "metadata": {
         "sourceType": "project",
@@ -1659,18 +1927,18 @@
           "PostgreSQL",
           "LangGraph",
           "Playwright",
-          "多视图主站",
-          "项目案例",
-          "LangGraph Agent",
-          "内容治理",
-          "UI 验证"
+          "三组项目目录",
+          "搜索与阅读返回",
+          "三主题",
+          "中英文界面",
+          "公开助手"
         ]
       }
     },
     {
       "id": "chunk:project:blog-semi:4",
       "documentId": "project:blog-semi",
-      "text": "内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。",
+      "text": "公开助手没有登录、成员、私有知识、长期记忆或写入工具；Tavily 只提供发现线索，最终 citation 只能来自 SSRF-safe 抓取的公开原网页或 public-only RAG 证据。 RAG Orchestrator 生产存储使用 Supabase pgvector，组合 4096 维精确余弦检索、关键词召回和轻量实体关系扩展；本地与可选 Qdrant 适配器只用于确定性测试或回滚兼容。 Studio 和规划脚本可生成项目详情、状态页、资源和博客草稿的 review plan；真正公开仍要手动更新 typed data、运行检查并通过 Git diff 审查。",
       "section": "summary-4",
       "metadata": {
         "sourceType": "project",
@@ -1690,18 +1958,18 @@
           "PostgreSQL",
           "LangGraph",
           "Playwright",
-          "多视图主站",
-          "项目案例",
-          "LangGraph Agent",
-          "内容治理",
-          "UI 验证"
+          "三组项目目录",
+          "搜索与阅读返回",
+          "三主题",
+          "中英文界面",
+          "公开助手"
         ]
       }
     },
     {
       "id": "chunk:project:blog-semi:5",
       "documentId": "project:blog-semi",
-      "text": "当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；Operator/internal-RAG 退役已经完成，后续人工队列聚焦 Studio 被退回草稿修订、证据完整版本审核、Publish Export 与各关联项目的受控发布 gate。",
+      "text": "内容治理规则要求隐藏草稿不进入公开列表、详情加载、助手知识或 sitemap；公开博客由 visibility、role、priority 和 project relation 控制。 验证链路包括 assistant:index、public agent/model/API/persistence/web/sync checks、hybrid-contract、rag-smoke、sitemap:generate、blog:check、lint、build、check:ui 和 verify。",
       "section": "summary-5",
       "metadata": {
         "sourceType": "project",
@@ -1721,11 +1989,42 @@
           "PostgreSQL",
           "LangGraph",
           "Playwright",
-          "多视图主站",
-          "项目案例",
-          "LangGraph Agent",
-          "内容治理",
-          "UI 验证"
+          "三组项目目录",
+          "搜索与阅读返回",
+          "三主题",
+          "中英文界面",
+          "公开助手"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:blog-semi:6",
+      "documentId": "project:blog-semi",
+      "text": "当前边界是静态公开数据驱动、匿名只读研究、人工审核发布和生产配置 gate；Operator/internal-RAG 退役已经完成，后续人工队列聚焦 Studio 被退回草稿修订、证据完整版本审核、Publish Export 与各关联项目的受控发布 gate。",
+      "section": "summary-6",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "blog-semi",
+        "tags": [
+          "platform",
+          "博客系统",
+          "ongoing",
+          "建设中",
+          "React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识",
+          "React 19",
+          "Vite",
+          "TypeScript",
+          "Lucide",
+          "Express",
+          "Prisma",
+          "PostgreSQL",
+          "LangGraph",
+          "Playwright",
+          "三组项目目录",
+          "搜索与阅读返回",
+          "三主题",
+          "中英文界面",
+          "公开助手"
         ]
       }
     },
@@ -1780,7 +2079,7 @@
     {
       "id": "chunk:project:game-first-tetris:2",
       "documentId": "project:game-first-tetris",
-      "text": "项目重点是把经典规则、现代计分反馈、移动触控和可展示的 Web 构建组织在一起；后续方向包括移动端触控细节、Rogue 强化平衡、截图/试玩回归和长期迭代。",
+      "text": "项目重点是把经典规则、现代计分反馈、移动触控和可展示的 Web 构建组织在一起；后续方向包括移动端触控细节、Rogue 强化平衡、截图/试玩回归和长期迭代。 2026-10-05 核对计分与触控桥接源码，未重跑游戏或真机验收。 已有 playtest 视频文件；2026-06-28 为游戏站条目更新日期，截图采集日及当前 Web 包对应源码仍待绑定。",
       "section": "summary-2",
       "metadata": {
         "sourceType": "project",
@@ -1804,8 +2103,32 @@
     {
       "id": "chunk:project:game-next-spacewar:1",
       "documentId": "project:game-next-spacewar",
-      "text": "Godot 4. 6 太空射击展示构建，补齐三波短任务、漂移/装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。 Next Spacewar 是 Godot 4. 6 太空射击展示构建，核心是三波短任务、漂移目标、装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。 Playlab 游戏站为 Next Spacewar 提供主菜单、战斗和结果页真实截图以及 Web 试玩入口；开发日志把它定义为已经收成可展示的本地 build。 项目定位偏 showcase，适合说明如何把一个短时长战斗循环收束成可试玩作品；后续方向包括关卡密度、敌人差异、反馈节奏和更细的移动/键鼠输入体验。",
+      "text": "Godot 太空射击展示构建，源码标识 0. 17，包含三波短任务、漂移/装甲目标、连击奖励、菜单、帮助、暂停和结果复盘；公开 Web 包版本另行核验。 Next Spacewar 是 Godot 4. 6 太空射击展示构建，核心是三波短任务、漂移目标、装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。 Playlab 游戏站为 Next Spacewar 提供主菜单、战斗和结果页真实截图以及 Web 试玩入口；开发日志把它定义为已经收成可展示的本地 build。",
       "section": "summary",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "game-next-spacewar",
+        "tags": [
+          "interactive",
+          "互动体验",
+          "live",
+          "已有页面",
+          "Godot 展示构建 / 战斗循环 / 单局复盘",
+          "Godot 4.6",
+          "太空射击",
+          "Web 导出",
+          "三波短任务",
+          "击破连击",
+          "波次奖励",
+          "结果复盘"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:game-next-spacewar:2",
+      "documentId": "project:game-next-spacewar",
+      "text": "项目定位偏 showcase，适合说明如何把一个短时长战斗循环收束成可试玩作品；后续方向包括关卡密度、敌人差异、反馈节奏和更细的移动/键鼠输入体验。 2026-10-05 源码菜单和战斗标签为展示版本 0. 17，未确认当前线上 Web 包对应版本。 已有历史截图与 playtest MP4；条目更新于 2026-06-28，不等于本轮录制或触屏验收。",
+      "section": "summary-2",
       "metadata": {
         "sourceType": "project",
         "projectId": "game-next-spacewar",
@@ -1851,10 +2174,59 @@
       }
     },
     {
+      "id": "chunk:project:intespace:2",
+      "documentId": "project:intespace",
+      "text": "2026-10-05 源码版本为 0. 1. 0-phase06 / prototype；RC 门禁依赖近期模式/路线样本，本轮未执行门禁或真机试玩。 已有 playtest MP4，条目更新日期 2026-06-28 不等于素材采集日，当前线上 Web 版本待确认。",
+      "section": "summary-2",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "intespace",
+        "tags": [
+          "interactive",
+          "互动体验",
+          "live",
+          "已有页面",
+          "Godot 引擎 / 肉鸽玩法 / 武器树 / 局外成长",
+          "Godot",
+          "肉鸽玩法",
+          "武器树系统",
+          "移动端优先",
+          "章节推进",
+          "生存挑战",
+          "Boss 试炼",
+          "局外成长"
+        ]
+      }
+    },
+    {
       "id": "chunk:project:raiden-prototype:1",
       "documentId": "project:raiden-prototype",
       "text": "Godot 纵版射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场和试玩验证。 Raiden prototype 是 Godot 纵版弹幕射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场、结果页、公开 Demo 和 Web 试玩。 Playlab 游戏站记录 Raiden Prototype 当前为 RC-0. 4 稳定展示候选，推荐入口是 Chapter Run，并有 Windows 预发布下载、Web 试玩和真实运行截图。 项目适合展示纵版射击的章节节奏、Boss 阶段和奖励反馈如何被压缩成可玩的垂直切片；后续方向包括弹幕可读性、音效/手感、关卡内容、难度曲线和移动端适配。",
       "section": "summary",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "raiden-prototype",
+        "tags": [
+          "interactive",
+          "互动体验",
+          "live",
+          "已有页面",
+          "Godot 引擎 / 纵版射击 / 原型验证",
+          "Godot",
+          "纵版射击",
+          "原型验证",
+          "双关卡章节",
+          "连锁击破",
+          "首领收束",
+          "试玩验证"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:raiden-prototype:2",
+      "documentId": "project:raiden-prototype",
+      "text": "2026-10-05 核对源码 RC-0. 4 与章节流程；局内评分提示不证明发布验收。 已有历史 playtest MP4，条目更新于 2026-06-28；本轮未重跑游戏、核验 Windows 下载或确认线上 Web 包版本。",
+      "section": "summary-2",
       "metadata": {
         "sourceType": "project",
         "projectId": "raiden-prototype",
@@ -1890,7 +2262,7 @@
           "Godot 引擎 / 复古射击 / 发布版 / 展示入口",
           "Godot 4.6",
           "复古射击",
-          "Web 包计划",
+          "Web 导出",
           "五个 Sector",
           "连续击破",
           "高分结算",
@@ -1901,7 +2273,7 @@
     {
       "id": "chunk:project:space-war:2",
       "documentId": "project:space-war",
-      "text": "项目展示了从原型到发布版的收束：菜单、战斗、结算、截图素材、发布文档和公开试玩入口都已组织起来；后续方向包括平衡、移动端输入、音频层次、可观测试玩反馈和更多关卡变化。",
+      "text": "项目展示了从原型到发布版的收束：菜单、战斗、结算、截图素材、发布文档和公开试玩入口都已组织起来；后续方向包括平衡、移动端输入、音频层次、可观测试玩反馈和更多关卡变化。 2026-10-05 确认 v1. 1. 1 是本地历史发布标签，当前源码与线上 Web 版本仍需分别绑定。 已有 playtest MP4；条目 2026-06-28 更新日期不等于截图采集日，本轮未做通关或移动端验收。",
       "section": "summary-2",
       "metadata": {
         "sourceType": "project",
@@ -1914,7 +2286,7 @@
           "Godot 引擎 / 复古射击 / 发布版 / 展示入口",
           "Godot 4.6",
           "复古射击",
-          "Web 包计划",
+          "Web 导出",
           "五个 Sector",
           "连续击破",
           "高分结算",
@@ -1925,7 +2297,7 @@
     {
       "id": "chunk:project:spacewar-ii:1",
       "documentId": "project:spacewar-ii",
-      "text": "Godot 4. 6 纵向移动射击续作原型，围绕差异化敌群、Boss 阶段、多向弹幕、拾取升级、炸弹、短窗口连击、清关资源结算、紧凑 HUD 和结果页接入第六个 Web 试玩位。 Spacewar II 是 Godot 4. 6 纵向移动射击续作，作为第六个游戏接入 Playlab，包含差异化敌群、Boss 阶段、多向弹幕、拾取升级、炸弹、短窗口连击、资源结算、紧凑 HUD、结果页和 Web 试玩。 Playlab 游戏站记录 Spacewar II 使用 spacewar-ii 统一 slug，已纳入游戏站内容模型、试玩域名和导出脚本，真实截图覆盖菜单、Boss 战斗和结果页。",
+      "text": "Godot 纵向射击续作原型，当前主场景采用键盘移动、空格射击和 X 炸弹，包含三阶段路线、差异化敌群、Boss、连击与结算；触屏体验仍待验证。 Spacewar II 是 Godot 4. 6 纵向射击续作原型，作为第六个游戏接入游湾；2026-10-05 核对实际入口为 NokiaMenu/NokiaBattle，默认三阶段，WASD/方向键移动、空格射击、X 炸弹，并非自动射击。 Playlab 游戏站记录 Spacewar II 使用 spacewar-ii 统一 slug，已纳入游戏站内容模型、试玩域名和导出脚本，真实截图覆盖菜单、Boss 战斗和结果页。",
       "section": "summary",
       "metadata": {
         "sourceType": "project",
@@ -1937,7 +2309,7 @@
           "已有页面",
           "Godot 引擎 / 纵向射击 / Web 试玩 / 第六项目接入",
           "Godot 4.6",
-          "移动射击",
+          "纵向射击",
           "Web 导出",
           "差异化敌群",
           "短窗口连击",
@@ -1949,7 +2321,7 @@
     {
       "id": "chunk:project:spacewar-ii:2",
       "documentId": "project:spacewar-ii",
-      "text": "项目重点是把移动纵向射击的敌群、弹幕、拾取和结算节奏整理成可展示版本；后续方向包括移动端触控、Boss 可读性、关卡节奏、资源成长和发布素材继续打磨。",
+      "text": "项目重点是把移动纵向射击的敌群、弹幕、拾取和结算节奏整理成可展示版本；后续方向包括移动端触控、Boss 可读性、关卡节奏、资源成长和发布素材继续打磨。 当前入口采用键盘控制，移动视口 canvas 检查不代表触屏可玩；既有截图对应条目更新日 2026-06-28，精确采集日及当前线上 Web 版本待绑定。 真实试玩短视频仍待补，本轮未重跑游戏或真机验收。",
       "section": "summary-2",
       "metadata": {
         "sourceType": "project",
@@ -1961,7 +2333,7 @@
           "已有页面",
           "Godot 引擎 / 纵向射击 / Web 试玩 / 第六项目接入",
           "Godot 4.6",
-          "移动射击",
+          "纵向射击",
           "Web 导出",
           "差异化敌群",
           "短窗口连击",
@@ -1973,7 +2345,7 @@
     {
       "id": "chunk:project:xunqiu:1",
       "documentId": "project:xunqiu",
-      "text": "足球社群移动端迁移案例：旧版 App 和旧后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3、PostgreSQL、Render 与 R2 上传链路。 寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。 64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。",
+      "text": "足球社群迁移案例，分别展示静态站、64 位 Android 客户端和 Spring Boot 现代后端；旧接口兼容、占位能力与正式发布各有边界。 寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。 64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。",
       "section": "summary",
       "metadata": {
         "sourceType": "project",
@@ -2001,7 +2373,7 @@
     {
       "id": "chunk:project:xunqiu:2",
       "documentId": "project:xunqiu",
-      "text": "现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。 短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。 项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。",
+      "text": "现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。 2026-10-04 分别核对展示站 d8d4ae62、后端 94b8f18b 与本地 Android 0. 1. 0 / code 1 源码，未执行构建、安装、上传或源项目测试。 静态展示、真实 API 行为与 APK 发布必须分别验收。",
       "section": "summary-2",
       "metadata": {
         "sourceType": "project",
@@ -2029,7 +2401,7 @@
     {
       "id": "chunk:project:xunqiu:3",
       "documentId": "project:xunqiu",
-      "text": "现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。 公开展示站提供产品页、技术文档和 APK 发布状态；未批准的阶段包已从公开仓库与下载入口撤下，不包含旧后端 IP、测试密码、签名路径或私有云配置。 阶段 APK 继续保留在维护者本地归档；后续公开下载需要正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准。",
+      "text": "短信、第三方账号、注册和未接入旧接口存在 stub/安全空结果；存储配置缺失时不执行实际上传但仍可返回占位 URL，不能把成功结构或 URL 当成完整业务与媒体可用证据。 短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。 项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。",
       "section": "summary-3",
       "metadata": {
         "sourceType": "project",
@@ -2057,8 +2429,36 @@
     {
       "id": "chunk:project:xunqiu:4",
       "documentId": "project:xunqiu",
-      "text": "寻球静态展示站首页、技术文档页和 404 页已统一 BIAU Port / 泊岸标题与 favicon，并在页脚说明归属泊岸项目展示体系。 后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。",
+      "text": "现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。 公开展示站提供产品页、技术文档和 APK 发布状态；未批准的阶段包已从公开仓库与下载入口撤下，不包含旧后端 IP、测试密码、签名路径或私有云配置。 阶段 APK 继续保留在维护者本地归档；后续公开下载需要正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准。",
       "section": "summary-4",
+      "metadata": {
+        "sourceType": "project",
+        "projectId": "xunqiu",
+        "tags": [
+          "mobile",
+          "移动端",
+          "main",
+          "重点展示",
+          "Android 64 位 / Spring Boot 3 / Render / R2",
+          "Android 64",
+          "Java 17",
+          "Spring Boot 3",
+          "PostgreSQL",
+          "Flyway",
+          "Cloudflare R2",
+          "Render",
+          "新旧链路分流",
+          "旧接口兼容",
+          "短视频上传播放",
+          "测试矩阵与烟测"
+        ]
+      }
+    },
+    {
+      "id": "chunk:project:xunqiu:5",
+      "documentId": "project:xunqiu",
+      "text": "寻球静态展示站首页、技术文档页和 404 页已统一 BIAU Port / 泊岸标题与 favicon，并在页脚说明归属泊岸项目展示体系。 后续优化方向包括真实设备回归、旧 WebView 原生化、权限与审计、文件治理、监控部署、短视频播放器升级和更完整的生产化运维。",
+      "section": "summary-5",
       "metadata": {
         "sourceType": "project",
         "projectId": "xunqiu",
@@ -2834,6 +3234,22 @@
       }
     },
     {
+      "id": "demo:roleplay-demo",
+      "type": "demo",
+      "name": "角色剧场 Roleplay 演示入口",
+      "aliases": [
+        "演示",
+        "入口",
+        "demo",
+        "打开角色库",
+        "江迟野演示"
+      ],
+      "metadata": {
+        "projectId": "roleplay-demo",
+        "href": "/projects/roleplay-demo"
+      }
+    },
+    {
       "id": "demo:space-war",
       "type": "demo",
       "name": "复古横版射击 演示入口",
@@ -2852,7 +3268,7 @@
     {
       "id": "demo:spacewar-ii",
       "type": "demo",
-      "name": "移动纵向射击 演示入口",
+      "name": "纵向射击原型 演示入口",
       "aliases": [
         "演示",
         "入口",
@@ -2919,31 +3335,9 @@
     {
       "id": "feature:blog-semi:item",
       "type": "feature",
-      "name": "多视图主站",
+      "name": "三组项目目录",
       "aliases": [
-        "多视图主站"
-      ],
-      "metadata": {
-        "projectId": "blog-semi"
-      }
-    },
-    {
-      "id": "feature:blog-semi:langgraph-agent",
-      "type": "feature",
-      "name": "LangGraph Agent",
-      "aliases": [
-        "langgraph agent"
-      ],
-      "metadata": {
-        "projectId": "blog-semi"
-      }
-    },
-    {
-      "id": "feature:blog-semi:ui",
-      "type": "feature",
-      "name": "UI 验证",
-      "aliases": [
-        "ui 验证"
+        "三组项目目录"
       ],
       "metadata": {
         "projectId": "blog-semi"
@@ -2988,6 +3382,17 @@
       "name": "邀请制入口",
       "aliases": [
         "邀请制入口"
+      ],
+      "metadata": {
+        "projectId": "chatus"
+      }
+    },
+    {
+      "id": "feature:chatus:skills",
+      "type": "feature",
+      "name": "Skills 与工具授权",
+      "aliases": [
+        "skills 与工具授权"
       ],
       "metadata": {
         "projectId": "chatus"
@@ -3112,6 +3517,28 @@
       ],
       "metadata": {
         "projectId": "raiden-prototype"
+      }
+    },
+    {
+      "id": "feature:roleplay-demo:13",
+      "type": "feature",
+      "name": "13 张角色卡",
+      "aliases": [
+        "13 张角色卡"
+      ],
+      "metadata": {
+        "projectId": "roleplay-demo"
+      }
+    },
+    {
+      "id": "feature:roleplay-demo:item",
+      "type": "feature",
+      "name": "无需登录体验",
+      "aliases": [
+        "无需登录体验"
+      ],
+      "metadata": {
+        "projectId": "roleplay-demo"
       }
     },
     {
@@ -3350,6 +3777,21 @@
       }
     },
     {
+      "id": "limitation:roleplay-demo",
+      "type": "limitation",
+      "name": "角色剧场 Roleplay 当前边界",
+      "aliases": [
+        "边界",
+        "限制",
+        "风险",
+        "当前边界"
+      ],
+      "metadata": {
+        "projectId": "roleplay-demo",
+        "documentId": "project:roleplay-demo"
+      }
+    },
+    {
       "id": "limitation:space-war",
       "type": "limitation",
       "name": "复古横版射击 当前边界",
@@ -3367,7 +3809,7 @@
     {
       "id": "limitation:spacewar-ii",
       "type": "limitation",
-      "name": "移动纵向射击 当前边界",
+      "name": "纵向射击原型 当前边界",
       "aliases": [
         "边界",
         "限制",
@@ -3475,11 +3917,11 @@
         "postgresql",
         "langgraph",
         "playwright",
-        "多视图主站",
-        "项目案例",
-        "langgraph agent",
-        "内容治理",
-        "ui 验证"
+        "三组项目目录",
+        "搜索与阅读返回",
+        "三主题",
+        "中英文界面",
+        "公开助手"
       ],
       "metadata": {
         "documentId": "project:blog-semi",
@@ -3536,7 +3978,7 @@
         "pwa",
         "邀请制入口",
         "会话级 agent",
-        "首输出前回退",
+        "skills 与工具授权",
         "显式长期记忆"
       ],
       "metadata": {
@@ -3749,6 +4191,35 @@
       }
     },
     {
+      "id": "project:roleplay-demo",
+      "type": "project",
+      "name": "角色剧场 Roleplay｜游客式多角色聊天演示",
+      "aliases": [
+        "角色剧场 roleplay｜游客式多角色聊天演示",
+        "roleplay-demo",
+        "ai",
+        "ai 应用",
+        "live",
+        "已有页面",
+        "访客式 ai 体验 / 多角色角色库 / cloudflare tunnel",
+        "static html/css/javascript",
+        "node.js",
+        "glm",
+        "cloudflare tunnel",
+        "httponly session",
+        "13 张角色卡",
+        "无需登录体验",
+        "服务端密钥隔离",
+        "角色独立分享链接"
+      ],
+      "metadata": {
+        "documentId": "project:roleplay-demo",
+        "href": "/projects/roleplay-demo",
+        "category": "ai",
+        "status": "live"
+      }
+    },
+    {
       "id": "project:space-war",
       "type": "project",
       "name": "复古横版射击｜space-war",
@@ -3762,7 +4233,7 @@
         "godot 引擎 / 复古射击 / 发布版 / 展示入口",
         "godot 4.6",
         "复古射击",
-        "web 包计划",
+        "web 导出",
         "五个 sector",
         "连续击破",
         "高分结算",
@@ -3778,9 +4249,9 @@
     {
       "id": "project:spacewar-ii",
       "type": "project",
-      "name": "移动纵向射击｜Spacewar II",
+      "name": "纵向射击原型｜Spacewar II",
       "aliases": [
-        "移动纵向射击｜spacewar ii",
+        "纵向射击原型｜spacewar ii",
         "spacewar-ii",
         "interactive",
         "互动体验",
@@ -3788,7 +4259,7 @@
         "已有页面",
         "godot 引擎 / 纵向射击 / web 试玩 / 第六项目接入",
         "godot 4.6",
-        "移动射击",
+        "纵向射击",
         "web 导出",
         "差异化敌群",
         "短窗口连击",
@@ -4014,6 +4485,21 @@
       }
     },
     {
+      "id": "roadmap:roleplay-demo",
+      "type": "roadmap",
+      "name": "角色剧场 Roleplay 后续优化",
+      "aliases": [
+        "后续",
+        "路线",
+        "roadmap",
+        "后续优化方向"
+      ],
+      "metadata": {
+        "projectId": "roleplay-demo",
+        "documentId": "project:roleplay-demo"
+      }
+    },
+    {
       "id": "roadmap:space-war",
       "type": "roadmap",
       "name": "复古横版射击 后续优化",
@@ -4031,7 +4517,7 @@
     {
       "id": "roadmap:spacewar-ii",
       "type": "roadmap",
-      "name": "移动纵向射击 后续优化",
+      "name": "纵向射击原型 后续优化",
       "aliases": [
         "后续",
         "路线",
@@ -4338,6 +4824,23 @@
       }
     },
     {
+      "id": "status:roleplay-demo",
+      "type": "status-check",
+      "name": "角色剧场 Roleplay 状态检查",
+      "aliases": [
+        "角色剧场 roleplay｜游客式多角色聊天演示",
+        "roleplay-demo",
+        "状态",
+        "可靠性",
+        "health"
+      ],
+      "metadata": {
+        "documentId": "site:status",
+        "projectId": "roleplay-demo",
+        "href": "/status"
+      }
+    },
+    {
       "id": "status:site-status",
       "type": "status-check",
       "name": "项目可靠性观察",
@@ -4372,9 +4875,9 @@
     {
       "id": "status:spacewar-ii",
       "type": "status-check",
-      "name": "移动纵向射击 状态检查",
+      "name": "纵向射击原型 状态检查",
       "aliases": [
-        "移动纵向射击｜spacewar ii",
+        "纵向射击原型｜spacewar ii",
         "spacewar-ii",
         "状态",
         "可靠性",
@@ -4502,6 +5005,16 @@
       "metadata": {}
     },
     {
+      "id": "tech:cloudflare-tunnel",
+      "type": "tech",
+      "name": "Cloudflare Tunnel",
+      "aliases": [
+        "cloudflare tunnel",
+        "cloudflaretunnel"
+      ],
+      "metadata": {}
+    },
+    {
       "id": "tech:cloudflare-workers",
       "type": "tech",
       "name": "Cloudflare Workers",
@@ -4586,6 +5099,15 @@
       "metadata": {}
     },
     {
+      "id": "tech:glm",
+      "type": "tech",
+      "name": "GLM",
+      "aliases": [
+        "glm"
+      ],
+      "metadata": {}
+    },
+    {
       "id": "tech:godot",
       "type": "tech",
       "name": "Godot",
@@ -4621,6 +5143,16 @@
       "aliases": [
         "godot web",
         "godotweb"
+      ],
+      "metadata": {}
+    },
+    {
+      "id": "tech:httponly-session",
+      "type": "tech",
+      "name": "HttpOnly Session",
+      "aliases": [
+        "httponly session",
+        "httponlysession"
       ],
       "metadata": {}
     },
@@ -4819,6 +5351,16 @@
       "metadata": {}
     },
     {
+      "id": "tech:static-html-css-javascript",
+      "type": "tech",
+      "name": "Static HTML/CSS/JavaScript",
+      "aliases": [
+        "static html/css/javascript",
+        "statichtml/css/javascript"
+      ],
+      "metadata": {}
+    },
+    {
       "id": "tech:static-web-demo",
       "type": "tech",
       "name": "Static Web Demo",
@@ -4995,6 +5537,16 @@
       "weight": 1,
       "evidenceDocumentIds": [
         "project:raiden-prototype"
+      ]
+    },
+    {
+      "id": "contains:site:biau-port->project:roleplay-demo",
+      "fromEntityId": "site:biau-port",
+      "toEntityId": "project:roleplay-demo",
+      "type": "contains",
+      "weight": 1,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
       ]
     },
     {
@@ -5288,6 +5840,16 @@
       ]
     },
     {
+      "id": "hasDemo:project:roleplay-demo->demo:roleplay-demo",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "demo:roleplay-demo",
+      "type": "hasDemo",
+      "weight": 0.9,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
+      ]
+    },
+    {
       "id": "hasDemo:project:space-war->demo:space-war",
       "fromEntityId": "project:space-war",
       "toEntityId": "demo:space-war",
@@ -5435,6 +5997,16 @@
       "weight": 0.65,
       "evidenceDocumentIds": [
         "project:raiden-prototype"
+      ]
+    },
+    {
+      "id": "hasLimitation:project:roleplay-demo->limitation:roleplay-demo",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "limitation:roleplay-demo",
+      "type": "hasLimitation",
+      "weight": 0.65,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
       ]
     },
     {
@@ -5588,6 +6160,16 @@
       ]
     },
     {
+      "id": "hasRoadmap:project:roleplay-demo->roadmap:roleplay-demo",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "roadmap:roleplay-demo",
+      "type": "hasRoadmap",
+      "weight": 0.65,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
+      ]
+    },
+    {
       "id": "hasRoadmap:project:space-war->roadmap:space-war",
       "fromEntityId": "project:space-war",
       "toEntityId": "roadmap:space-war",
@@ -5658,26 +6240,6 @@
       ]
     },
     {
-      "id": "implements:project:blog-semi->feature:blog-semi:langgraph-agent",
-      "fromEntityId": "project:blog-semi",
-      "toEntityId": "feature:blog-semi:langgraph-agent",
-      "type": "implements",
-      "weight": 0.7,
-      "evidenceDocumentIds": [
-        "project:blog-semi"
-      ]
-    },
-    {
-      "id": "implements:project:blog-semi->feature:blog-semi:ui",
-      "fromEntityId": "project:blog-semi",
-      "toEntityId": "feature:blog-semi:ui",
-      "type": "implements",
-      "weight": 0.7,
-      "evidenceDocumentIds": [
-        "project:blog-semi"
-      ]
-    },
-    {
       "id": "implements:project:canvas->feature:canvas:item",
       "fromEntityId": "project:canvas",
       "toEntityId": "feature:canvas:item",
@@ -5711,6 +6273,16 @@
       "id": "implements:project:chatus->feature:chatus:item",
       "fromEntityId": "project:chatus",
       "toEntityId": "feature:chatus:item",
+      "type": "implements",
+      "weight": 0.7,
+      "evidenceDocumentIds": [
+        "project:chatus"
+      ]
+    },
+    {
+      "id": "implements:project:chatus->feature:chatus:skills",
+      "fromEntityId": "project:chatus",
+      "toEntityId": "feature:chatus:skills",
       "type": "implements",
       "weight": 0.7,
       "evidenceDocumentIds": [
@@ -5825,6 +6397,26 @@
       "weight": 0.7,
       "evidenceDocumentIds": [
         "project:raiden-prototype"
+      ]
+    },
+    {
+      "id": "implements:project:roleplay-demo->feature:roleplay-demo:13",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "feature:roleplay-demo:13",
+      "type": "implements",
+      "weight": 0.7,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
+      ]
+    },
+    {
+      "id": "implements:project:roleplay-demo->feature:roleplay-demo:item",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "feature:roleplay-demo:item",
+      "type": "implements",
+      "weight": 0.7,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
       ]
     },
     {
@@ -6010,6 +6602,17 @@
       ]
     },
     {
+      "id": "monitoredBy:project:roleplay-demo->status:roleplay-demo",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "status:roleplay-demo",
+      "type": "monitoredBy",
+      "weight": 0.8,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo",
+        "site:status"
+      ]
+    },
+    {
       "id": "monitoredBy:project:space-war->status:space-war",
       "fromEntityId": "project:space-war",
       "toEntityId": "status:space-war",
@@ -6087,6 +6690,17 @@
       ]
     },
     {
+      "id": "relatedTo:project:anchor-learning->project:roleplay-demo",
+      "fromEntityId": "project:anchor-learning",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:anchor-learning",
+        "project:roleplay-demo"
+      ]
+    },
+    {
       "id": "relatedTo:project:anchor-learning->project:xunqiu",
       "fromEntityId": "project:anchor-learning",
       "toEntityId": "project:xunqiu",
@@ -6150,6 +6764,17 @@
       "evidenceDocumentIds": [
         "project:biau-playlab",
         "project:raiden-prototype"
+      ]
+    },
+    {
+      "id": "relatedTo:project:biau-playlab->project:roleplay-demo",
+      "fromEntityId": "project:biau-playlab",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:biau-playlab",
+        "project:roleplay-demo"
       ]
     },
     {
@@ -6252,6 +6877,17 @@
       ]
     },
     {
+      "id": "relatedTo:project:chatus->project:roleplay-demo",
+      "fromEntityId": "project:chatus",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:chatus",
+        "project:roleplay-demo"
+      ]
+    },
+    {
       "id": "relatedTo:project:chatus->project:xunqiu",
       "fromEntityId": "project:chatus",
       "toEntityId": "project:xunqiu",
@@ -6293,6 +6929,17 @@
       "evidenceDocumentIds": [
         "project:game-first-tetris",
         "project:raiden-prototype"
+      ]
+    },
+    {
+      "id": "relatedTo:project:game-first-tetris->project:roleplay-demo",
+      "fromEntityId": "project:game-first-tetris",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:game-first-tetris",
+        "project:roleplay-demo"
       ]
     },
     {
@@ -6340,6 +6987,17 @@
       ]
     },
     {
+      "id": "relatedTo:project:game-next-spacewar->project:roleplay-demo",
+      "fromEntityId": "project:game-next-spacewar",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:game-next-spacewar",
+        "project:roleplay-demo"
+      ]
+    },
+    {
       "id": "relatedTo:project:game-next-spacewar->project:space-war",
       "fromEntityId": "project:game-next-spacewar",
       "toEntityId": "project:space-war",
@@ -6370,6 +7028,17 @@
       "evidenceDocumentIds": [
         "project:intespace",
         "project:raiden-prototype"
+      ]
+    },
+    {
+      "id": "relatedTo:project:intespace->project:roleplay-demo",
+      "fromEntityId": "project:intespace",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:intespace",
+        "project:roleplay-demo"
       ]
     },
     {
@@ -6417,6 +7086,17 @@
       ]
     },
     {
+      "id": "relatedTo:project:legal-rag->project:roleplay-demo",
+      "fromEntityId": "project:legal-rag",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:legal-rag",
+        "project:roleplay-demo"
+      ]
+    },
+    {
       "id": "relatedTo:project:legal-rag->project:xunqiu",
       "fromEntityId": "project:legal-rag",
       "toEntityId": "project:xunqiu",
@@ -6450,6 +7130,17 @@
       ]
     },
     {
+      "id": "relatedTo:project:pet-workspace->project:roleplay-demo",
+      "fromEntityId": "project:pet-workspace",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:pet-workspace",
+        "project:roleplay-demo"
+      ]
+    },
+    {
       "id": "relatedTo:project:pet-workspace->project:xunqiu",
       "fromEntityId": "project:pet-workspace",
       "toEntityId": "project:xunqiu",
@@ -6458,6 +7149,17 @@
       "evidenceDocumentIds": [
         "project:pet-workspace",
         "project:xunqiu"
+      ]
+    },
+    {
+      "id": "relatedTo:project:raiden-prototype->project:roleplay-demo",
+      "fromEntityId": "project:raiden-prototype",
+      "toEntityId": "project:roleplay-demo",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:raiden-prototype",
+        "project:roleplay-demo"
       ]
     },
     {
@@ -6479,6 +7181,28 @@
       "weight": 0.45,
       "evidenceDocumentIds": [
         "project:raiden-prototype",
+        "project:spacewar-ii"
+      ]
+    },
+    {
+      "id": "relatedTo:project:roleplay-demo->project:space-war",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "project:space-war",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo",
+        "project:space-war"
+      ]
+    },
+    {
+      "id": "relatedTo:project:roleplay-demo->project:spacewar-ii",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "project:spacewar-ii",
+      "type": "relatedTo",
+      "weight": 0.45,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo",
         "project:spacewar-ii"
       ]
     },
@@ -7111,6 +7835,56 @@
       "weight": 0.9,
       "evidenceDocumentIds": [
         "project:raiden-prototype"
+      ]
+    },
+    {
+      "id": "uses:project:roleplay-demo->tech:cloudflare-tunnel",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "tech:cloudflare-tunnel",
+      "type": "uses",
+      "weight": 0.9,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
+      ]
+    },
+    {
+      "id": "uses:project:roleplay-demo->tech:glm",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "tech:glm",
+      "type": "uses",
+      "weight": 0.9,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
+      ]
+    },
+    {
+      "id": "uses:project:roleplay-demo->tech:httponly-session",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "tech:httponly-session",
+      "type": "uses",
+      "weight": 0.9,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
+      ]
+    },
+    {
+      "id": "uses:project:roleplay-demo->tech:node.js",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "tech:node.js",
+      "type": "uses",
+      "weight": 0.9,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
+      ]
+    },
+    {
+      "id": "uses:project:roleplay-demo->tech:static-html-css-javascript",
+      "fromEntityId": "project:roleplay-demo",
+      "toEntityId": "tech:static-html-css-javascript",
+      "type": "uses",
+      "weight": 0.9,
+      "evidenceDocumentIds": [
+        "project:roleplay-demo"
       ]
     },
     {

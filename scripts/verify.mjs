@@ -127,6 +127,7 @@ await run(['run', 'ai-daily:production-readiness-check'])
 await run(['run', 'ai-daily:contracts-check'])
 await run(['run', 'studio:smoke'])
 await run(['run', 'project-details:check'])
+await run(['run', 'sitemap:check'])
 await run(['run', 'status:contract'])
 
 const previewPort = await findAvailablePort(preferredPreviewPort)

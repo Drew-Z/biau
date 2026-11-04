@@ -81,6 +81,7 @@ import {
 import { formatPublicAssistantRecoveryLabel } from '../utils/publicAssistantPresentation'
 import { usePublicAssistantCollision } from '../hooks/usePublicAssistantCollision'
 import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
+import { PublicAssistantPet } from './PublicAssistantPet'
 import { useSiteLanguage } from '../hooks/useSiteLanguage'
 import { publicAssistantInterfaceCopy } from '../data/publicAssistantInterfaceCopy'
 import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
@@ -110,6 +111,8 @@ import {
   subscribePublicAssistantWarmup,
 } from '../utils/publicAssistantWarmup'
 import { preparePublicAssistantImage, PublicAssistantImageError } from '../utils/publicAssistantImage'
+import { createPublicAssistantPetActivity, type PublicAssistantPetRun } from '../utils/publicAssistantPetActivity'
+import { publicAssistantPetCopy } from '../data/publicAssistantPetCopy'
 
 interface WidgetMessage {
   id: string
@@ -166,6 +169,7 @@ interface PublicAssistantPageContext {
 
 interface ActiveChatRequest {
   controller: AbortController
+  petRun: PublicAssistantPetRun
   prompt: string
   mode: PublicAssistantMode
   sessionId: string
@@ -509,6 +513,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const [branchActionPending, setBranchActionPending] = useState(false)
   const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE)
   const [serviceState, setServiceState] = useState<AssistantServiceState>('ready')
+  const [petTasks] = useState(createPublicAssistantPetActivity)
+  const petSnapshot = useSyncExternalStore(petTasks.subscribe, petTasks.getSnapshot, petTasks.getServerSnapshot)
   const warmup = useSyncExternalStore(
     subscribePublicAssistantWarmup,
     getPublicAssistantWarmupSnapshot,
@@ -555,6 +561,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const initialRestoreTargetRef = useRef<string | null>(shouldRestoreInitialSession ? sessionRegistry.currentSessionId : null)
 
   useEffect(() => {
+    // Storage writes during render can survive a discarded concurrent render
+    // and make its retry mistake a new conversation for persisted history.
+    persistPublicAssistantSessionRegistry(sessionRegistryRef.current)
+  }, [])
+
+  useEffect(() => {
     if (!isLoading) return
     const startedAt = Date.now()
     const interval = window.setInterval(() => {
@@ -589,6 +601,15 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const isConversationReady = initialRestoreState === 'ready'
   const isWarmupReady = warmup.state === 'ready'
   const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || historyLoadingId !== null || isImageProcessing || !isWarmupReady
+  const petActivity = petSnapshot.summary.activity === 'needsInput'
+    ? 'needsInput'
+    : (issue && issue.code !== 'public-assistant-request-cancelled') || initialRestoreIssue || warmup.state === 'error'
+      ? 'blocked'
+      : petSnapshot.summary.activity !== 'idle' ? petSnapshot.summary.activity
+        : isAssistantBusy ? 'working' : 'idle'
+  const petCopy = publicAssistantPetCopy[language]
+  const petDescription = [petCopy.activities[petActivity], petSnapshot.unreadCount ? petCopy.unread(petSnapshot.unreadCount) : ''].filter(Boolean).join(' · ')
+  const petCompletionKey = petActivity === 'idle' || petActivity === 'ready' ? petSnapshot.feedbackKey : null
   const isQuestionEditing = editingTurnId !== null
   const launcherLabel = warmup.state === 'warming'
     ? copy.launcher.warming
@@ -625,11 +646,28 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
 
   const commitSessionRegistry = useCallback((next: PublicAssistantSessionRegistry) => {
     if (sessionIdRef.current !== next.currentSessionId) resetImageAttachment()
+    petTasks.retainSessions(next.sessionIds)
     sessionRegistryRef.current = next
     sessionIdRef.current = next.currentSessionId
     persistPublicAssistantSessionRegistry(next)
     setSessionRegistry(next)
-  }, [resetImageAttachment, setSessionRegistry])
+  }, [petTasks, resetImageAttachment, setSessionRegistry])
+
+  const markVisiblePetResultsRead = useCallback(() => {
+    if (!isOpen || isHistoryOpen || isAssistantBusy || !isConversationReady || document.visibilityState === 'hidden') return
+    const container = scrollRef.current
+    if (!container) return
+    const bounds = container.getBoundingClientRect()
+    for (const element of container.querySelectorAll<HTMLElement>('[data-assistant-result]')) {
+      const rect = element.getBoundingClientRect()
+      const visibleHeight = Math.min(rect.bottom, bounds.bottom, window.innerHeight) - Math.max(rect.top, bounds.top, 0)
+      if (visibleHeight < Math.min(32, rect.height) || rect.height <= 0) continue
+      petTasks.readVisibleResult(sessionId, {
+        requestId: element.dataset.assistantRequestId,
+        revisionId: element.dataset.assistantRevisionId,
+      })
+    }
+  }, [isAssistantBusy, isConversationReady, isHistoryOpen, isOpen, petTasks, sessionId])
 
   const scrollToLatest = () => {
     const container = scrollRef.current
@@ -637,6 +675,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     shouldFollowOutputRef.current = true
     container.scrollTop = container.scrollHeight
     setHasNewContent(false)
+    markVisiblePetResultsRead()
   }
 
   const focusComposer = () => {
@@ -714,9 +753,21 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     return () => window.cancelAnimationFrame(frame)
   }, [messages, isOpen, isLoading])
 
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(markVisiblePetResultsRead)
+    document.addEventListener('visibilitychange', markVisiblePetResultsRead)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      document.removeEventListener('visibilitychange', markVisiblePetResultsRead)
+    }
+  }, [markVisiblePetResultsRead, conversation, petSnapshot.summary])
+
   useEffect(() => () => {
     imagePreparationRef.current = null
-    activeRequestRef.current?.controller.abort()
+    const active = activeRequestRef.current
+    if (active) petTasks.cancel(active.petRun)
+    active?.controller.abort()
+    activeRequestRef.current = null
     branchActionRequestRef.current?.abort()
     historyRequestRef.current?.abort()
     historyRequestRef.current = null
@@ -726,13 +777,20 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     if (initialRestoreRequestRef.current === initialRestoreRequest) initialRestoreRequestRef.current = null
     if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current)
     if (citationHighlightTimerRef.current !== null) window.clearTimeout(citationHighlightTimerRef.current)
-  }, [])
+  }, [petTasks])
 
   useEffect(() => {
     if (!initiallyOpen) return
     void startPublicAssistantWarmup()
     onInitialOpenHandled?.()
   }, [initiallyOpen, onInitialOpenHandled])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const resumeWarmup = () => { void startPublicAssistantWarmup() }
+    window.addEventListener('pageshow', resumeWarmup)
+    return () => window.removeEventListener('pageshow', resumeWarmup)
+  }, [isOpen])
 
   useEffect(() => {
     writePublicAssistantDraft(sessionId, input, mode)
@@ -997,6 +1055,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
 
   const stopActiveChat = () => {
     const active = activeRequestRef.current
+    if (active) petTasks.cancel(active.petRun)
     if (active && apiBase) {
       void cancelPublicAssistantGeneration({
         apiBase: getAssistantApiBase(apiBase),
@@ -1013,6 +1072,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const cancelActiveChat = () => {
     const active = activeRequestRef.current
     if (!active) return
+    petTasks.cancel(active.petRun)
     if (apiBase) {
       void cancelPublicAssistantGeneration({
         apiBase: getAssistantApiBase(apiBase),
@@ -1259,6 +1319,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 56
     shouldFollowOutputRef.current = nearBottom
     if (nearBottom) setHasNewContent(false)
+    markVisiblePetResultsRead()
   }
 
   const handleImageSelection = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -1354,8 +1415,10 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     setIsLoading(true)
     setProgressStage('planning')
     const controller = new AbortController()
+    const petRun = petTasks.start(requestSessionId, requestId)
     activeRequestRef.current = {
       controller,
+      petRun,
       prompt: trimmed,
       mode: requestedMode,
       sessionId: requestSessionId,
@@ -1384,7 +1447,10 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         preferredApiBase: apiBase,
         signal: controller.signal,
         onProgress: (stage) => {
-          if (activeRequestRef.current?.controller === controller) setProgressStage(stage)
+          if (activeRequestRef.current?.controller === controller) {
+            petTasks.progress(petRun, stage)
+            setProgressStage(stage)
+          }
         },
         ...(attachment ? { attachment } : {}),
       })
@@ -1416,8 +1482,12 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
       }
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        petTasks.cancel(petRun)
+        return
+      }
       if (activeRequestRef.current?.controller !== controller || sessionIdRef.current !== requestSessionId) return
+      petTasks.fail(petRun)
       const nextIssue = toAssistantIssue(error, 'chat', trimmed, requestedMode, {
         requestId,
         sessionId: requestSessionId,
@@ -1463,6 +1533,10 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     if (authoritativeHistoryIssue) {
       setInitialRestoreState('error')
       setInitialRestoreIssue(authoritativeHistoryIssue)
+    }
+    if (requestSucceeded) {
+      if (authoritativeHistoryIssue) petTasks.needsInput(petRun)
+      else petTasks.complete(petRun, result.status, result.conversation?.revisionId)
     }
     if (resolvedApiBase) setApiBase(resolvedApiBase)
   }
@@ -1667,20 +1741,23 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       ref={rootRef}
       lang={SITE_LANGUAGE_TAGS[language]}
       className={`public-assistant ${isOpen ? 'is-open' : ''} ${isOpen && isFullscreen ? 'is-fullscreen' : ''} ${footerVisible ? 'is-footer-visible' : ''}`}
+      data-pet-activity={petActivity}
+      data-pet-unread-count={petSnapshot.unreadCount}
+      data-pet-feedback-count={petSnapshot.feedbackCount}
     >
       <button
         ref={triggerRef}
         type="button"
-        className={`public-assistant__trigger is-${warmup.state}`}
+        className={`public-assistant__trigger has-pet is-${warmup.state}`}
         aria-expanded={isOpen}
         aria-controls="public-assistant-panel"
         aria-label={launcherLabel}
+        aria-description={petDescription}
+        title={petDescription}
         onClick={toggleWidget}
       >
-        <span className="public-assistant__trigger-mark" aria-hidden="true">
-          {warmup.state === 'warming' ? <LoaderCircle className="is-spinning" size={15} /> : 'B'}
-        </span>
-        <span className="public-assistant__trigger-text">{launcherLabel}</span>
+        {!isOpen && <PublicAssistantPet activity={petActivity} completionKey={petCompletionKey} claimFeedback={petTasks.claimFeedback} unreadCount={petSnapshot.unreadCount} />}
+        <span className="public-assistant__trigger-text">{petSnapshot.unreadCount ? petCopy.unread(petSnapshot.unreadCount) : launcherLabel}</span>
       </button>
 
       {isOpen && (
@@ -1695,6 +1772,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         >
           <header className="public-assistant__header">
             <div className="public-assistant__title">
+              <PublicAssistantPet activity={petActivity} completionKey={petCompletionKey} claimFeedback={petTasks.claimFeedback} unreadCount={petSnapshot.unreadCount} compact />
               <p className="public-assistant__eyebrow">{copy.eyebrow.publicResearch}</p>
               <h2 id="public-assistant-title" lang="">{PUBLIC_ASSISTANT_NAME}</h2>
               <span className={`public-assistant__status ${serviceStatus.className}`}>{serviceStatus.label}</span>
@@ -1947,6 +2025,9 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
               <article
                 key={message.id}
                 className={`public-assistant__message is-${message.role} ${editingTurnId === message.turnId ? 'is-editing' : ''}`}
+                data-assistant-result={message.role === 'assistant' ? '' : undefined}
+                data-assistant-request-id={message.role === 'assistant' ? message.requestId : undefined}
+                data-assistant-revision-id={message.role === 'assistant' ? message.revisionId : undefined}
               >
                 {message.role === 'assistant'
                   ? <PublicAssistantMessageContent content={message.content} />

@@ -11,6 +11,7 @@ export const PRODUCT_IDS = [
   'anchor-learning',
   'enterprise-document-agent',
   'biau-playlab',
+  'roleplay-demo',
 ] as const
 
 export type ProductId = (typeof PRODUCT_IDS)[number]
@@ -140,6 +141,15 @@ export const productRegistry = {
     family: 'interactive',
     attribution: 'by BIAU Port / 泊岸',
     aliases: ['Playlab', '游戏作品集'],
+    publicProjection: 'public',
+  },
+  'roleplay-demo': {
+    id: 'roleplay-demo',
+    name: { zh: '角色剧场', en: 'Roleplay' },
+    descriptor: { zh: '游客式多角色 AI 对话演示', en: 'Guest multi-character AI roleplay demo' },
+    family: 'interactive',
+    attribution: 'by BIAU Port / 泊岸',
+    aliases: ['Roleplay', '角色卡演示', '游客聊天演示'],
     publicProjection: 'public',
   },
 } as const satisfies Record<ProductId, ProductIdentity>

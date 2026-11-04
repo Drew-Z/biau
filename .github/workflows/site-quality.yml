@@ -50,6 +50,8 @@ jobs:
           npm run projects:discovery-check
           npm run analytics:check
           npm run project-registry:check
+          npm run project-details:check
+          npm run sitemap:check
 
       - name: Check build budgets
         run: npm run performance:check

@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
+import { withPublicAssistantDeadline } from '../src/utils/publicAssistantDeadline'
 import {
+  cancelPublicAssistantGeneration,
   deletePublicAssistantSession,
   normalizePublicAssistantAnswer,
   normalizePublicAssistantSessionHistory,
@@ -181,6 +183,25 @@ const streamed = await readPublicAssistantEventStream(new Response([
 assert.equal(streamed.answer, '第一段。\n\n第二段。')
 assert.deepEqual(progress, ['researching', 'verifying', 'recovering'])
 
+let deadlineAborted = false
+await assert.rejects(withPublicAssistantDeadline(async (signal) => {
+  signal.addEventListener('abort', () => { deadlineAborted = true }, { once: true })
+  return new Promise<never>(() => undefined)
+}, 10), (error: unknown) => error instanceof DOMException && error.name === 'TimeoutError')
+assert.equal(deadlineAborted, true)
+const caller = new AbortController()
+caller.abort()
+let cancelledOperationStarted = false
+await assert.rejects(withPublicAssistantDeadline(async () => {
+  cancelledOperationStarted = true
+}, 10, caller.signal), (error: unknown) => error instanceof DOMException && error.name === 'AbortError')
+assert.equal(cancelledOperationStarted, false)
+const inFlightCaller = new AbortController()
+const cancelled = withPublicAssistantDeadline(async () => new Promise<never>(() => undefined), 1_000, inFlightCaller.signal)
+inFlightCaller.abort()
+await assert.rejects(cancelled, (error: unknown) => error instanceof DOMException && error.name === 'AbortError')
+assert.equal(await withPublicAssistantDeadline(async () => 'complete', 10), 'complete')
+
 await assert.rejects(
   readPublicAssistantEventStream(new Response([
     'event: error',
@@ -355,5 +376,21 @@ assert.equal(feedbackBody.revisionId, 'revision-1234')
 assert.equal(feedbackBody.reason, 'missing-sources')
 assert.equal(typeof feedbackBody.comment, 'string')
 assert.ok(String(feedbackBody.comment).length <= 240)
+
+for (const perform of [
+  () => submitPublicAssistantFeedback({ apiBase: '/api', sessionId: 'body-check-session', revisionId: 'body-check-revision', rating: 'up' }),
+  () => cancelPublicAssistantGeneration({ apiBase: '/api', sessionId: 'body-check-session', requestId: validPayload.requestId }),
+  () => deletePublicAssistantSession({ apiBase: '/api', sessionId: 'body-check-session' }),
+]) {
+  let finishBody = () => undefined as void
+  const body = new ReadableStream<Uint8Array>({ start(controller) { finishBody = () => controller.close() } })
+  globalThis.fetch = async () => new Response(body)
+  let settled = false
+  const pending = perform().then(() => { settled = true })
+  await new Promise<void>((resolve) => setImmediate(resolve))
+  assert.equal(settled, false, 'A successful mutation must consume its response body within the deadline')
+  finishBody()
+  await pending
+}
 
 console.log('Public assistant browser API contracts passed.')

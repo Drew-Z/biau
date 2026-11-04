@@ -1,0 +1,406 @@
+{
+  "createdUtc": "2026-11-04T08:27:25.989Z",
+  "scope": "Local release preparation; no commit/push/deploy or real model request",
+  "modelCalls": 0,
+  "tests": [
+    {
+      "command": "npm.cmd run build",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run server:build",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run prisma:validate",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run prisma:generate",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-agent-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-image-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-model-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-metrics-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-quality-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-api-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-conversation-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-browser-state-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-pet-activity-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-persistence-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-rate-limit-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-web-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-sync-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:hybrid-contract",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:service-modes-smoke",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:rag-smoke",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:kg-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:eval",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run server:smoke",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run cf-assistant:smoke",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run performance:check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run project-details:check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run project-registry:check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run blog:check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run docs:deployment-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run docs:manual-gates-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run status:contract",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run sitemap:check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run verification:diagnostics-check",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run ai-daily:contracts-check",
+      "result": "passed"
+    },
+    {
+      "command": "node scripts/check-public-assistant-availability-ui.mjs",
+      "result": "passed; 40 scenarios, modelCalls=0"
+    },
+    {
+      "command": "npm.cmd run check:ui:smoke",
+      "result": "passed; 21 groups, 7 routes, 3 viewports"
+    },
+    {
+      "command": "main-site synthetic on local production preview",
+      "result": "passed; 7/7; assistant API explicitly skipped"
+    },
+    {
+      "command": "main-site synthetic loopback JSON/HTML/503/405 regression",
+      "result": "passed; 4 scenarios, externalRequests=0"
+    },
+    {
+      "command": "AI Daily production bundle offline compatibility",
+      "result": "passed; current runtime and local approved v7 bundle, networkCalls=0"
+    },
+    {
+      "command": "AI Daily v7 pending acceptance binding",
+      "result": "passed; evaluation=verified, business gates missing, sealed=false"
+    },
+    {
+      "command": "npm.cmd run ai-daily:production-readiness-check",
+      "result": "blocked; old default acceptance binding mismatch; local process lacks production configuration"
+    },
+    {
+      "command": "npm.cmd run ai-daily:acceptance -- check",
+      "result": "blocked; historical manifest and current v7 bundle/rollback binding differ"
+    }
+  ],
+  "historicalFullUi": {
+    "date": "2026-10-28",
+    "groups": 46,
+    "failed": 0,
+    "currentPetDeliverableHashesMatch": true,
+    "rerunThisTurn": false
+  },
+  "productionObservations": {
+    "main": {
+      "checkedAt": "2026-11-04T07:43:15.315Z",
+      "baseConfigured": true,
+      "ok": true,
+      "checks": [
+        {
+          "id": "blog-semi-public-routes",
+          "status": "degraded",
+          "httpStatus": 200,
+          "durationMs": 2216,
+          "checkedAt": "2026-11-04T07:43:15.315Z",
+          "summary": "6/7 public routes returned expected responses",
+          "issues": [
+            "sitemap: missing /status/roleplay-demo"
+          ]
+        },
+        {
+          "id": "blog-semi-public-assistant",
+          "status": "unchecked",
+          "httpStatus": 200,
+          "durationMs": 378,
+          "checkedAt": "2026-11-04T07:43:15.315Z",
+          "summary": "Assistant health returned valid JSON; live chat validation skipped by policy",
+          "issues": []
+        }
+      ]
+    },
+    "externalTargets": {
+      "checkedAt": "2026-11-04T07:47:44.717Z",
+      "summary": {
+        "total": 8,
+        "online": 7,
+        "degraded": 0,
+        "offline": 1,
+        "unchecked": 0
+      },
+      "targets": [
+        {
+          "id": "legal-rag-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "issueKind": "none"
+        },
+        {
+          "id": "chatus-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "issueKind": "none"
+        },
+        {
+          "id": "roleplay-demo-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "issueKind": "none"
+        },
+        {
+          "id": "anchor-learning-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "issueKind": "none"
+        },
+        {
+          "id": "pet-workspace-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "issueKind": "none"
+        },
+        {
+          "id": "ozon-erp-entry",
+          "status": "offline",
+          "httpStatus": 0,
+          "issueKind": "connection_error"
+        },
+        {
+          "id": "biau-playlab-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "issueKind": "none"
+        },
+        {
+          "id": "xunqiu-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "issueKind": "none"
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Free Render cold start remains",
+    "ERP entry connection_error",
+    "New real assistant question and edition require approval",
+    "AI Daily default historical acceptance remains blocked"
+  ],
+  "cleanup": {
+    "removedTemporaryFiles": 6,
+    "removedTemporaryDirectory": "C:/Users/zhang/AppData/Local/Temp/biau-reliability-assistant-contract-1aCIRU",
+    "previewPort": 4176,
+    "previewStopped": true,
+    "status": "completed",
+    "preservedUnknownPaths": [
+      "D:/workspace4Cursor/blog-semi/ .trellis",
+      "D:/workspace4Cursor/blog-semi/undefined"
+    ],
+    "historyWorktreesPreserved": true
+  },
+  "fixtureRegression": [
+    {
+      "scenario": "json",
+      "checks": [
+        {
+          "id": "blog-semi-public-routes",
+          "status": "online",
+          "httpStatus": 200,
+          "durationMs": 36,
+          "checkedAt": "2026-11-04T07:27:29.724Z",
+          "summary": "7/7 public routes returned expected responses",
+          "issues": []
+        },
+        {
+          "id": "blog-semi-public-assistant",
+          "status": "unchecked",
+          "httpStatus": 200,
+          "durationMs": 1,
+          "checkedAt": "2026-11-04T07:27:29.724Z",
+          "summary": "Assistant health returned valid JSON; live chat validation skipped by policy",
+          "issues": []
+        }
+      ]
+    },
+    {
+      "scenario": "html200",
+      "checks": [
+        {
+          "id": "blog-semi-public-routes",
+          "status": "online",
+          "httpStatus": 200,
+          "durationMs": 34,
+          "checkedAt": "2026-11-04T07:27:29.852Z",
+          "summary": "7/7 public routes returned expected responses",
+          "issues": []
+        },
+        {
+          "id": "blog-semi-public-assistant",
+          "status": "offline",
+          "httpStatus": 200,
+          "durationMs": 1,
+          "checkedAt": "2026-11-04T07:27:29.852Z",
+          "summary": "Public assistant health returned HTML; deployment and upstream readiness require separate verification",
+          "issues": [
+            "assistant health returned HTML instead of JSON; check upstream readiness and edge routing"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "upstream503",
+      "checks": [
+        {
+          "id": "blog-semi-public-routes",
+          "status": "online",
+          "httpStatus": 200,
+          "durationMs": 32,
+          "checkedAt": "2026-11-04T07:27:29.962Z",
+          "summary": "7/7 public routes returned expected responses",
+          "issues": []
+        },
+        {
+          "id": "blog-semi-public-assistant",
+          "status": "offline",
+          "httpStatus": 503,
+          "durationMs": 0,
+          "checkedAt": "2026-11-04T07:27:29.962Z",
+          "summary": "Public assistant API did not return valid health/chat JSON",
+          "issues": [
+            "assistant health returned HTTP 503"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "method405",
+      "checks": [
+        {
+          "id": "blog-semi-public-routes",
+          "status": "online",
+          "httpStatus": 200,
+          "durationMs": 32,
+          "checkedAt": "2026-11-04T07:27:30.074Z",
+          "summary": "7/7 public routes returned expected responses",
+          "issues": []
+        },
+        {
+          "id": "blog-semi-public-assistant",
+          "status": "offline",
+          "httpStatus": 200,
+          "durationMs": 4,
+          "checkedAt": "2026-11-04T07:27:30.074Z",
+          "summary": "Public assistant health returned HTML; deployment and upstream readiness require separate verification",
+          "issues": [
+            "assistant health returned HTML instead of JSON; check upstream readiness and edge routing",
+            "assistant chat returned HTTP 405",
+            "assistant chat method not allowed; check the API route and upstream response"
+          ]
+        }
+      ]
+    }
+  ],
+  "additionalRuns": [
+    {
+      "command": "npm.cmd run check:ui:smoke without UI_CHECK_BASE",
+      "result": "failed; default 5174 refused connection; harness invocation error"
+    },
+    {
+      "command": "UI_CHECK_BASE=http://127.0.0.1:4176 npm.cmd run check:ui:smoke",
+      "result": "passed; 21 groups after final snapshot build"
+    }
+  ],
+  "finalizedUtc": "2026-11-04T08:34:47.887Z"
+}

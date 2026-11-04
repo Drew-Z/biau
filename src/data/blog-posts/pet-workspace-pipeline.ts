@@ -54,12 +54,16 @@ const post: BlogPost = {
       "body": "AI 生成资产的风险不只是“好不好看”，还包括透明背景、动作覆盖、身份一致性、预览证据、授权声明、包结构和下载路径安全。机器 QA 可以检查这些结构和流程项，帮助发现明显不合格候选；但最终能否进入社区、是否给予奖励、是否开放 package，需要人工视觉审核和审核记录。公开文章不能把机器 QA 写成最终质量担保。"
     },
     {
-      "title": "当前展示：App 展示页在线，APK 仍关闭下载",
-      "body": "主站已经有 /pet-app-showcase/ 静态展示页，用 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页，并对齐 BIAU Port / 泊岸标题与 favicon。最近一次 Pet synthetic 显示展示页和 4 张截图可访问；APK gate 仍是 debug-only，只发现 app-debug.apk，没有 release APK/AAB 候选。因此当前页面只能说明工作进展和发布清单，不能放公开 APK 下载链接。"
+      "title": "历史观察：2026-07-09 的展示页与 APK 门禁",
+      "body": "主站已有 /pet-app-showcase/ 静态展示页，用 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页，并对齐 BIAU Port / 泊岸标题与 favicon。2026-07-09 的 Pet synthetic 记录展示页与 4 张截图可访问，当时 APK gate 为 debug-only，仅发现 app-debug.apk，没有 release APK/AAB 候选。因此那次记录保留了公开下载门禁。这里是带日期的历史观察，构建现况见下方勘误。"
+    },
+    {
+      "title": "2026-09-24 勘误：已有 release 归档，分发仍需独立验收",
+      "body": "2026-09-16 的本地只读核验已确认 release APK 0.1.0 / code 1（14,920,672 bytes）和 AAB（14,385,956 bytes），并检查归档结构、CRC 与 release metadata。2026-09-24 复算大小和 SHA-256 与原记录一致，完整摘要保留在 App 展示页。此前的 debug-only 不能继续当作当前结论；这两次核验也没有执行验签、安装或完整生成流程，不能据此判断源项目是否已完成过这些工作。公开分发需另行核对签名、回归、版本说明和人工批准，主站继续关闭 APK 下载。"
     },
     {
       "title": "测试证据：多模块测试支撑，但不替代生产验收",
-      "body": "Pet/Gamer 工作区已有 Node workspace 测试覆盖 apps、packages、services 和 tools；Community API 测试覆盖 health、鉴权、Feed、approved pets、import drafts、admin review、wallet、check-in、SLA、rate limit、metrics、logging、PostgreSQL/migrations 等边界；Android 侧也有 debug unit test 和 debug APK 构建证据。这些说明工程结构可验证，但它们不等于正式 APK 发布、生产账号体系和长期 SLA 已完成。"
+      "body": "Pet/Gamer 工作区已有 Node workspace 测试覆盖 apps、packages、services 和 tools；Community API 测试覆盖 health、鉴权、Feed、approved pets、import drafts、admin review、wallet、check-in、SLA、rate limit、metrics、logging、PostgreSQL/migrations 等边界。原有材料记录了 Android debug unit test 与 debug APK 构建；后续新增的 release 归档证据见勘误。本次文章更新没有重跑这些源项目测试，既有测试与归档记录也不能替代正式 APK 发布、生产账号体系和长期 SLA 验收。"
     },
     {
       "title": "证据边界：本文依据哪些公开材料",
@@ -71,14 +75,14 @@ const post: BlogPost = {
     },
     {
       "title": "后续优化方向：先补 release gate，再谈公开下载",
-      "body": "后续优先补四类能力：第一，准备正式 release APK/AAB、签名、SHA-256、扫描/回归证据、版本说明和回滚说明；第二，完善生产鉴权、租户隔离、下载权限、审核权限和生成任务限流；第三，强化 Worker 池化、队列位置、失败恢复、运行面板和长期 SLA；第四，继续补 Android 真机/模拟器 E2E、桌宠交互、候选画廊和质量回归报告。只有这些 gate 到位后，项目页才适合开放公开下载或把更多检查标成 online。"
+      "body": "后续优先补四类能力：第一，以已有 release APK/AAB 归档为基线，核对签名、SHA-256、扫描/回归证据、版本说明和回滚说明；第二，完善生产鉴权、租户隔离、下载权限、审核权限和生成任务限流；第三，强化 Worker 池化、队列位置、失败恢复、运行面板和长期 SLA；第四，继续补 Android 真机/模拟器 E2E、桌宠交互、候选画廊和质量回归报告。只有这些 gate 到位后，项目页才适合开放公开下载或把更多检查标成 online。"
     }
   ],
   "takeaways": [
     "AI 桌宠项目的核心不是单次生成，而是 App、API、审核、资源包和发布 gate 的协作。",
     "Android App 应只消费公开安全的 Community API，不直连生成 Worker 或内部运维面。",
     "pet.zip 契约和人审记录让生成资产进入社区前可校验、可追踪、可回滚。",
-    "debug APK 只能作为内部验证证据，公开下载必须等 release 包、签名、校验和回归证据。"
+    "release APK/AAB 归档可以作为当前工程证据，但公开下载仍必须等签名、安装、校验、回归和人工批准。"
   ]
 }
 

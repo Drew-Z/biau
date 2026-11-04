@@ -1,0 +1,560 @@
+{
+  "createdUtc": "2026-11-04T08:27:26.152Z",
+  "repository": "D:\\workspace4Cursor\\blog-semi",
+  "baselineCommit": "747174b6d1957c2e23fb375da8fd2a09015e120f",
+  "status": "authorized-release-in-progress",
+  "deployTargets": [
+    "cloudflare-pages",
+    "render-public",
+    "render-rag"
+  ],
+  "studioDeployment": false,
+  "realModelRequestsApproved": true,
+  "indexSyncApproved": true,
+  "files": [
+    {
+      "path": ".github/workflows/site-quality.yml",
+      "sha256": "9e10bb8bdfd0cb673500e8af20dc8ea59cadfed64a7bd454ceb503a3518dcb8e",
+      "bytes": 3249,
+      "tracked": true
+    },
+    {
+      "path": ".trellis/spec/backend/public-research-assistant.md",
+      "sha256": "48070417291340ee34c0245247a64c4647d3f7270b15755908cbb5280a51ad25",
+      "bytes": 49787,
+      "tracked": true
+    },
+    {
+      "path": ".trellis/spec/frontend/component-guidelines.md",
+      "sha256": "71309f9c090653a44b904e94332d3092c58706a9dbe5c63359ae74c61399aef3",
+      "bytes": 30665,
+      "tracked": true
+    },
+    {
+      "path": ".trellis/spec/frontend/project-showcase-integration.md",
+      "sha256": "1a350436074a91b9665867f5bee43c5887b823e4895e36061bd6eb9d13ed3b59",
+      "bytes": 19215,
+      "tracked": true
+    },
+    {
+      "path": ".trellis/tasks/09-15-roleplay-project-integration/design.md",
+      "sha256": "0336a641c0f60ffdea259c222fef3ce92ca5668f682e4bf8f47a52c1732a4699",
+      "bytes": 826,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-15-roleplay-project-integration/implement.md",
+      "sha256": "a0c57b2109787fa95208ad5850f8177c9c2aaec792ceccd81c5111890933d468",
+      "bytes": 1774,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-15-roleplay-project-integration/prd.md",
+      "sha256": "c6a7e0af001a78fe0544c372d9a373e3ae25d50d21923432fea8f4f6160833b6",
+      "bytes": 1119,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/b1-verification.md",
+      "sha256": "9c82e1973d2bf1f25303ddc9e175d84993f71f27f02f44a298dfaa3499648a4e",
+      "bytes": 11646,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/b2-verification.md",
+      "sha256": "67f2bb887194365e49116b1114576e2ecbb4095aff098bf9d6238b56c3a48339",
+      "bytes": 11875,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/b3-verification.md",
+      "sha256": "8d03d8fbec96111527fc2c9e93c437a85c5f7939e0a3cb07f68e511f98b7b3dd",
+      "bytes": 11475,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/check.jsonl",
+      "sha256": "3eec3f9d8840e5d9a9cbf75bc1a2af05a3d93a0c671f3dd7d8a01b94330be80c",
+      "bytes": 628,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/design.md",
+      "sha256": "d3d818e1f6f3afc00c16884f2533cf930f54b4531d6037eafdc5cfbe865f3049",
+      "bytes": 10699,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/implement.jsonl",
+      "sha256": "807c6b1e57e2ceadcde4e5ce6a1d229c2acccaef3781fd396662d889443901d3",
+      "bytes": 624,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/implement.md",
+      "sha256": "ae7228c8f905075eb2caa9e40e1da4f4e87cb5e557be51d4df53581d45229898",
+      "bytes": 11449,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/inventory.md",
+      "sha256": "612c5d08c70cd4870cb8d076b91c73e8af99c5cc0117ae7e2c8c04db389356bd",
+      "bytes": 17592,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/prd.md",
+      "sha256": "558b3976312a9a75e9923aaad92d07f8e3ffe8647cfe7686ad57ef1ae4ec5ea2",
+      "bytes": 8037,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/09-16-project-portfolio-refresh/task.json",
+      "sha256": "2df8799fb193ab4d4963e0b4819fb0c9af27d1cd96324d7d23581adee24dca5e",
+      "bytes": 2041,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/design.md",
+      "sha256": "a3e53491f270f6476f2093ad2831f7d13e2e0697a15041ecec4902582fb13691",
+      "bytes": 1451,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/implement.md",
+      "sha256": "c8668d1b9766bb4594cb4788f16c0abb38f9fd83939c7e082fc93c32df57ee09",
+      "bytes": 6845,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/prd.md",
+      "sha256": "d554fcd40e8dd12c025c888b72369bb3ad9eb7c31fc237263d251ac57952f476",
+      "bytes": 1698,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/recovery.json",
+      "sha256": "e3da3756d079e217fa8efdb44800ced6bd26aafc857d9196d0e9fed3bd5e96cf",
+      "bytes": 340,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/release-2026-11-04.md",
+      "sha256": "7e78c855127491fb8caa263bfca35b0c18f8850f7a79c70a9175806a885920b0",
+      "bytes": 5316,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/task.json",
+      "sha256": "58d6b4112d98cbb2a012c10612796caedcda7b364e75b6641d4721fd13793e11",
+      "bytes": 180,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/verification-2026-11-04.json",
+      "sha256": "0657589dc8b3f6b699acfab90e4dee9c8febe42c958a8d1519d6966f83967bb4",
+      "bytes": 11427,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-05-public-assistant-usability/verification.md",
+      "sha256": "aecb9dc15a3f53ff34fceea12e5a47b9534cdc82c307270975697bc290da523b",
+      "bytes": 7113,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-15-pet-assistant/design.md",
+      "sha256": "48f8f91eb1e4776b20303f8de7cb4ed95c66f8eeab45fa2ba9d2ceb26b17c146",
+      "bytes": 996,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-15-pet-assistant/implement.md",
+      "sha256": "6d1af9e0a0c13e7b50180e607cbcb14ce9cf0494e6e242f723d5609cf7938385",
+      "bytes": 1314,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-15-pet-assistant/prd.md",
+      "sha256": "c1e331bc0b64869d4cd2852bebb6a5a248a14b31076f5d411b86d543ec683df2",
+      "bytes": 665,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-28-pet-lifecycle/design.md",
+      "sha256": "8d930c06b3396b59dfb8bb6dc4269faa808f9fe65a58439ca49fa337798d6dba",
+      "bytes": 1571,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-28-pet-lifecycle/implement.md",
+      "sha256": "3db72d1c32139abad2d9b918ba405274e278b8e051b5167a4f63cba676e9e8dd",
+      "bytes": 1831,
+      "tracked": false
+    },
+    {
+      "path": ".trellis/tasks/10-28-pet-lifecycle/prd.md",
+      "sha256": "a6fb24effe1641f789d0e005a33347db5e474a01c7401e8d1b4512999e2d3ad5",
+      "bytes": 1289,
+      "tracked": false
+    },
+    {
+      "path": "docs/manual-gates.md",
+      "sha256": "1ec97809af2e1196e97f478aa61ca0eefb37ceb19b4b346c34a5709b8485e3a6",
+      "bytes": 50005,
+      "tracked": true
+    },
+    {
+      "path": "docs/project-publication-audit.md",
+      "sha256": "64da90caacbe2d66bc54206c2d330e024cfb5405bc944a14997330bb999e1760",
+      "bytes": 13704,
+      "tracked": true
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "ac5ae420ee1d1ba02a4769d6087a63897680bfb437f1b26d0a3dba336e1ae3e2",
+      "bytes": 270703,
+      "tracked": true
+    },
+    {
+      "path": "package.json",
+      "sha256": "e3e5aad859634ef8af20e9163183509131faa9fc33cb9b011967fcfabda2f703",
+      "bytes": 12494,
+      "tracked": true
+    },
+    {
+      "path": "public/images/projects/showcase/roleplay-library.png",
+      "sha256": "4d958c1ccdc57758df8fc53897b5c8c9886013e1112cf80caa6df6223b733b11",
+      "bytes": 740395,
+      "tracked": false
+    },
+    {
+      "path": "public/images/projects/showcase/roleplay-library.webp",
+      "sha256": "1254e93e792adf387a1fb26c8b7ed55a99c1cc4a806be0512f53dbbcecffa4fd",
+      "bytes": 104432,
+      "tracked": false
+    },
+    {
+      "path": "public/images/projects/showcase/roleplay-runtime-boundary.svg",
+      "sha256": "8413cc727afe904dd9c6b6fba1dffbad72447455ee4204f4d9c2ca8d5ac2b173",
+      "bytes": 4477,
+      "tracked": false
+    },
+    {
+      "path": "public/pet-app-showcase/index.html",
+      "sha256": "f6c16826b4a6770cb665a7a43b22a2f414682980c856199b4efba62dcaae63a4",
+      "bytes": 9612,
+      "tracked": true
+    },
+    {
+      "path": "public/pet-app-showcase/styles.css",
+      "sha256": "611c5b49d65490ef2b1636d4efeefe49d2ff362f6d82a7611ffc6c9f73f51c91",
+      "bytes": 7311,
+      "tracked": true
+    },
+    {
+      "path": "public/pets/leaf/happy.png",
+      "sha256": "b312e9769be7cf52c04e9f64e4e52cd6078f3d62cdd6397016d891606b15ab64",
+      "bytes": 292063,
+      "tracked": false
+    },
+    {
+      "path": "public/pets/leaf/idle.png",
+      "sha256": "d43012290f481841040f3a7127cde357c14a2680d450872815f718ab2e31ea5c",
+      "bytes": 287354,
+      "tracked": false
+    },
+    {
+      "path": "public/pets/leaf/pet.json",
+      "sha256": "fa0cf1f5d7710ae886c3a2be5a403402ea47254141bee425371171edc9eb3188",
+      "bytes": 6188,
+      "tracked": false
+    },
+    {
+      "path": "public/pets/leaf/sleepy.png",
+      "sha256": "8a4680e7ec871af424e7d37b6fef7d0e74c5549aa5d378cf2452f9fd66769548",
+      "bytes": 279220,
+      "tracked": false
+    },
+    {
+      "path": "public/sitemap.xml",
+      "sha256": "3226a1d7752f1138ebee534334bb5e760f93d70240b6c83699addbb0387f5a89",
+      "bytes": 7653,
+      "tracked": true
+    },
+    {
+      "path": "public/status/blog-semi-synthetic.json",
+      "sha256": "5eaa42059a5ebd19f6ab886133d89216caa918482a9a864588dd1f458366739d",
+      "bytes": 720,
+      "tracked": true
+    },
+    {
+      "path": "public/status/site-status.json",
+      "sha256": "3a1ca965af1e3a646550c08d644cb540719043817c48cb2a925219606bbfe86b",
+      "bytes": 40897,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-main-site-synthetic.mjs",
+      "sha256": "26683c23beeec62bd66e903ad3159eca6dc178f680018e3faf5f6de057e19058",
+      "bytes": 15174,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-manual-gates.ts",
+      "sha256": "fb701d205186284df73d7550c90da33a91efddf6b3146275475741291a32c472",
+      "bytes": 8200,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-pet-showcase-synthetic.mjs",
+      "sha256": "2641c83cee05861fb586232b8438e3b94894f8444d148ba5fd6f39008835513e",
+      "bytes": 11157,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-product-registry.ts",
+      "sha256": "0e63893f3518c1742b23b9cdaf262bf3116a5d99e7bacad1b1544e8b1fe54ce0",
+      "bytes": 16163,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-project-detail-evidence.ts",
+      "sha256": "39ffc1eaefeb7bd75cae27dbfad972e7de3bc47c859d0730b24b86a289a07910",
+      "bytes": 12738,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-public-assistant-api.ts",
+      "sha256": "4d4a547de54e833f87f16e09f256ff4e3dd3f2d1924cf74199faea7ade7f256e",
+      "bytes": 15137,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-public-assistant-availability-ui.mjs",
+      "sha256": "a1139f41b348c1f5be1038518f065bba068b8c7945038763691c09100132504c",
+      "bytes": 12331,
+      "tracked": false
+    },
+    {
+      "path": "scripts/check-public-assistant-browser-state.ts",
+      "sha256": "af9cdfaca3935b6585031f4fde5b3a1214d8c9f9ddfa2b89802873d2d287e8be",
+      "bytes": 5785,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-public-assistant-feedback-ui.mjs",
+      "sha256": "05a1523e1f274d50f5936a65306e0c21ec97f73b9d97c8c8d3cecb35b76424ce",
+      "bytes": 20594,
+      "tracked": true
+    },
+    {
+      "path": "scripts/check-public-assistant-pet-activity.ts",
+      "sha256": "3c2cfbe084356a7f23994421487c6b5e563c43c2bb8fec8c0885f514f77068d6",
+      "bytes": 8398,
+      "tracked": false
+    },
+    {
+      "path": "scripts/check-public-assistant-pet-ui.mjs",
+      "sha256": "e8db99d5491f6f501bcbab0e22e988ddaa5cad036d7f9a5ffba339128d764a04",
+      "bytes": 28054,
+      "tracked": false
+    },
+    {
+      "path": "scripts/check-sitemap-coverage.mjs",
+      "sha256": "8e40fd04296ecd921e395a2fe2fffcaa48cdaaa0e9c7bedf0b22df4042e5a29b",
+      "bytes": 2339,
+      "tracked": false
+    },
+    {
+      "path": "scripts/check-ui.mjs",
+      "sha256": "12d84bfac199115523161624e5044f63803c92c8be5618943e029cd88120ab1d",
+      "bytes": 333848,
+      "tracked": true
+    },
+    {
+      "path": "scripts/verify.mjs",
+      "sha256": "b0427129f6c622cffdee402e5134ca3467e67bdc9c525e93e8abee3a36765d89",
+      "bytes": 4235,
+      "tracked": true
+    },
+    {
+      "path": "server/data/public-knowledge-v2.json",
+      "sha256": "02e4e86d4111d08dd526fe9025046c166464da5c127a62a5105df7a39c05e597",
+      "bytes": 276052,
+      "tracked": true
+    },
+    {
+      "path": "server/data/public-knowledge.json",
+      "sha256": "63f2196f27f52ce92919bbe6be6f6fe0394983d95794936722b520f716f447a7",
+      "bytes": 49548,
+      "tracked": true
+    },
+    {
+      "path": "server/scripts/public-assistant-consultation-check.ts",
+      "sha256": "dff62a6b25f3254c4e7a6a2548b651cd1c4b9c0fa921b03abe94b0e1f9b20f37",
+      "bytes": 4791,
+      "tracked": false
+    },
+    {
+      "path": "server/src/knowledge.ts",
+      "sha256": "981dc8d181947d46fbff856962b66141c8362ac14d48a52caa705ac5c64cf74e",
+      "bytes": 14755,
+      "tracked": true
+    },
+    {
+      "path": "server/src/publicAssistantModel.ts",
+      "sha256": "623b65ba09ee8d8dcfe75332fe4cd19e2655f9dc7db6a41e1275e49a11f2ca45",
+      "bytes": 21686,
+      "tracked": true
+    },
+    {
+      "path": "src/components/PublicAssistantLauncher.tsx",
+      "sha256": "e18eae268f5b2ee4eaaba0d55f784fc750c2e10e4cf1fd2d68c1637f43f1778a",
+      "bytes": 2294,
+      "tracked": true
+    },
+    {
+      "path": "src/components/PublicAssistantPet.tsx",
+      "sha256": "39634affd6a9e4b82042a9f35420dccc6bae40851034fced51261f82be972aeb",
+      "bytes": 2511,
+      "tracked": false
+    },
+    {
+      "path": "src/components/PublicAssistantWidget.tsx",
+      "sha256": "ed66763ff241c094f3300d78a140f768b39427df669596c604082744b76b798c",
+      "bytes": 110750,
+      "tracked": true
+    },
+    {
+      "path": "src/data/blog-posts/pet-workspace-pipeline.ts",
+      "sha256": "0879d1a244fa311b8b59fc1eca226adec3182e4c2a29b7c5e6130718a19bddf9",
+      "bytes": 8398,
+      "tracked": true
+    },
+    {
+      "path": "src/data/hero.ts",
+      "sha256": "7eb42fc1f1111803874d02b9b56b8b2a2b38c1cc70719ae6b9f3996d92cd62c8",
+      "bytes": 5063,
+      "tracked": true
+    },
+    {
+      "path": "src/data/portfolio.ts",
+      "sha256": "ad1af58ad95a2fb2833735b1f8e07b84fee5f21d6f02a35ae1cb1d38003cd527",
+      "bytes": 166332,
+      "tracked": true
+    },
+    {
+      "path": "src/data/productRegistry.ts",
+      "sha256": "8c13aa5f5c4601007a635500f2dd62844a9f5ca7a446150eb57c18bee612992a",
+      "bytes": 5668,
+      "tracked": true
+    },
+    {
+      "path": "src/data/projectInterfaceCopy.ts",
+      "sha256": "9afcd7b379840ed69487fa682da8b15bc7f30ff5c951d1eb8139956eea458d64",
+      "bytes": 5227,
+      "tracked": true
+    },
+    {
+      "path": "src/data/projectPublication.ts",
+      "sha256": "670445b4549856b66c278668d4183c4926c290e8ebe1c1c82ec9b58fd7ddfd7c",
+      "bytes": 9751,
+      "tracked": true
+    },
+    {
+      "path": "src/data/publicAssistantInterfaceCopy.ts",
+      "sha256": "6e7eb6790dc9d681246336967215325b69e0ed5c3b0a957f64c7bb76f6e026f1",
+      "bytes": 21418,
+      "tracked": true
+    },
+    {
+      "path": "src/data/publicAssistantPetCopy.ts",
+      "sha256": "dbb4923d67a60ea955bede52ba2f28cb2ca177243e70e27cb38498053c8dbe1d",
+      "bytes": 876,
+      "tracked": false
+    },
+    {
+      "path": "src/data/siteLinks.ts",
+      "sha256": "3553271ab40fb70c293b318357070525e09878d1d75965f0a73e59e3e14f4645",
+      "bytes": 1344,
+      "tracked": true
+    },
+    {
+      "path": "src/data/statusTargets.ts",
+      "sha256": "4740001e8e6ad4f412d027a615601f952e5d5eb2a0aa01b52cb8193065a83fad",
+      "bytes": 35012,
+      "tracked": true
+    },
+    {
+      "path": "src/styles/public-assistant-pet.css",
+      "sha256": "bfab8782654510ad443f7771551af72f42083832665cb2d4e0d7c7528a2597fc",
+      "bytes": 1589,
+      "tracked": false
+    },
+    {
+      "path": "src/utils/publicAssistantApi.ts",
+      "sha256": "5dbb5ef6dbe37ae7e986b5d94e945df3813014810394c66f3e3e05cb573eaf79",
+      "bytes": 33534,
+      "tracked": true
+    },
+    {
+      "path": "src/utils/publicAssistantDeadline.ts",
+      "sha256": "92cdf65564fd5df4a4bdc11892a1b18ea3103dbb8460647cea8a94e6b7df8662",
+      "bytes": 1178,
+      "tracked": false
+    },
+    {
+      "path": "src/utils/publicAssistantPetActivity.ts",
+      "sha256": "45252eae09f1851381daaca479adcbb62bfd13ff88e42dc03b9db8a710de2fef",
+      "bytes": 5796,
+      "tracked": false
+    },
+    {
+      "path": "src/utils/publicAssistantSessionRegistry.ts",
+      "sha256": "af3f319772cc16a3ff921b5d9af19a0d3c32a1c42b5069d8e0a61b7087dc7e5a",
+      "bytes": 4903,
+      "tracked": true
+    },
+    {
+      "path": "src/utils/publicAssistantWarmup.ts",
+      "sha256": "595638658329a597f59df34b9a70221ba9dad92d5d1bd7d9d3b55337245e6628",
+      "bytes": 6512,
+      "tracked": true
+    },
+    {
+      "path": "vendor/lingban-pet-runtime-0.3.0.tgz",
+      "sha256": "53229ef071405a0e6e8653e140704fee1496dc7c0c48ecc9d4be85e7af219e4d",
+      "bytes": 10962,
+      "tracked": false
+    }
+  ],
+  "administrativeManifest": ".trellis/tasks/10-05-public-assistant-usability/release-files-2026-11-04.json",
+  "excludedUntracked": [
+    " .trellis/tasks/08-29-continuous-ui-product-polish/evidence/current-morning-desktop.png",
+    " .trellis/tasks/08-29-continuous-ui-product-polish/evidence/current-nature-desktop.png",
+    " .trellis/tasks/08-29-continuous-ui-product-polish/evidence/current-stellar-desktop.png",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/check.jsonl",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/design.md",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/implement.jsonl",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/implement.md",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/navigation-typography-baseline.md",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/prd.md",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/task.json",
+    ".trellis/tasks/09-04-continuous-ui-quality-loop/ui-audit.md",
+    ".trellis/tasks/10-05-public-assistant-usability/consultation-1440.png",
+    ".trellis/tasks/10-05-public-assistant-usability/consultation-390.png",
+    ".trellis/tasks/10-05-public-assistant-usability/consultation-preview.json",
+    ".trellis/tasks/10-05-public-assistant-usability/home-typography-timeout.png",
+    ".trellis/tasks/10-05-public-assistant-usability/local-check-logs.json",
+    ".trellis/tasks/10-05-public-assistant-usability/ui-regression-result.json",
+    "public/biau-port-icon.svg",
+    "undefined/composer-boundaries.json",
+    "undefined/composer-final-320-en.png",
+    "vendor/lingban-pet-runtime-0.1.0.tgz"
+  ],
+  "ignoredLocalDeliverable": "server/data/ai-daily-acceptance.cpa-v7-2026-11-04.local.json",
+  "lastVerifiedUtc": "2026-11-04T08:42:59.328Z",
+  "releaseApproved": true,
+  "approvedBusinessRequestCount": 1
+}

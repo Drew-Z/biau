@@ -39,6 +39,16 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 这些证据已完成旧 Operator 数据面的受控退役；随后已分别删除 legacy Render Operator 服务与 external internal Qdrant collection，当前不再存在 Operator/internal-RAG 删除门禁。
 
+## Roleplay 角色剧场公开演示
+
+Roleplay 角色剧场是独立部署的游客式多角色 AI 对话演示，角色库入口为 `https://roleplay.playlab.eu.cc/`。主站只记录公开入口、角色库规模和低敏技术边界；API Key、上游地址、管理员令牌、服务器 IP、访客消息和完整角色卡提示词必须继续留在独立服务端。
+
+- 角色库当前提供 13 张可切换角色卡，并为角色提供独立分享入口；入口可达不等于长期 SLA 或所有模型请求都能立即完成。
+- 服务端使用 HttpOnly 会话、消息长度/上下文限制、请求限流和单上游并发保护；切换角色会重置当前角色上下文。
+- 当前模型为 GLM 游客模式；模型延迟、上游并发和复杂角色提示词需要在 Roleplay 独立服务中维护，主站不执行模型测活。
+- 角色卡来源、CC BY 4.0 署名、SFW 演示边界和管理员启停由 Roleplay 服务独立维护，主站不复制完整角色卡内容。
+- 入口、角色分享页和 health 的低敏检查可以纳入主站 synthetic；任何模型渠道、密钥、提示词或生产配置变更仍需在独立服务中完成备份、验证和回滚。
+
 ## Public assistant Cloudflare model relay rollout
 
 第一套 Responses 渠道通过固定上游 Cloudflare relay 接入生产 Render。2026-08-12 用户批准用古诗生成作为有界真实业务任务验证候选模型：`grok-4.5` 经 Responses 协议成功返回完整结果；其余候选分别处于认证拒绝或上游不可用状态，不进入生产 fallback。平台收口按以下门禁执行：
@@ -154,6 +164,8 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 随后改用真实访客同源 `/api/chat/public/stream` 执行一条新的画帆状态业务问题。响应为 HTTP `200` 与完整 `ready -> progress -> result -> done`，终态 `answered` / `model`、一次生成尝试、约 14 秒，返回 1 条 `verified` 站内引用；引用页面核验为 HTTP `200`。响应包含完整 conversation identity，临时会话删除成功，删除后读取为 `404`。结合此前已经通过的桌面刷新持久化、断网恢复和 390px 移动端观察，知航产品级门禁已关闭并可标记“产品可用”；该结论不等于长期 SLA，默认 synthetic 继续不调用模型。
 
+2026-11-04 再核：上述产品验收是历史证据。Pages 生产为 `747174b6`，Render Public 仍为 `c4a13197`，10 月咨询路由/超时修复未发布。免费实例曾返回 Application loading，唤醒后同源 health 为 `200`、database/modelConfigured 均为 true；本机 Node 直连失败与 Windows 系统代理未继承有关，采用现有系统代理后相同脚本可正常访问。当前主模型与既有批准一致、最多一次尝试；fallback 缺少模型列表而未启用。当前构建的 40 项助手可用性和 21 组 UI smoke 通过，均零模型调用。发布及一条新的真实业务问题验收仍待批准，不能用 health 替代。
+
 2026-08-16/17 已完成 CPA bundle 的一次受控生成窗口验证：generation-only 部署 `dep-da146is9v7es73ahs79g` 曾达到 `live`，但在受保护 Studio 页面没有提交新的真实版次；随后关闭生成的恢复部署 `dep-da149rm1egvs739uo2r0` 已 `live`。恢复部署启动日志确认同一 bundle 校验通过（`networkCalls=0`、1 channel、3 candidates、1 failure domain），Studio `/health=200` 且 database/auth ready。Supabase 复核显示 Issue `cmspekr1d000044bmbbnjin5u` 最新仍为 Run `cmsrq64n3000049ilq4aiuyyd`、`attemptNumber=8`、`COMPLETED_WITH_GAPS`；Revision 7 `cmsrq67y6000849illm3gklel` 为 `REJECTED` / `DISCARDED`，没有 draft、Studio review、Publish Export、公开部署或 Feed，活动生产任务为 `0`。本次没有新的模型调用；生产生成、business evaluation、public Feed 和 Cron 继续关闭。
 
 2026-08-17 站点所有者随后单独批准一次 CPA bundle 真实 Edition。Studio 的 `CORS_ORIGIN` 先与当前部署的 `https://biau.pages.dev` 对齐，预检返回 `204`、authenticated workspace 返回 `200`；这只修复 Studio 浏览器连接，不代表公开 Feed 已启用。generation-only 部署 `dep-da157vflk1mc73983h0g` live 后，启动校验确认 bundle hash `4fa08db8374bef1e8bdc485ad626a69b3765da6efdbda6a8f7253aaa24a70248`、`networkCalls=0`、1 channel、3 candidates、1 failure domain。Studio “确认并入队”只点击一次并返回 `202`，创建 Run `cmswhrctl000049hzeb6mvay4` / work item `cmswhrcw0000149hz0mhjihmi`，`attemptNumber=9`。Run 终态为 `COMPLETED_WITH_GAPS`：两次 extractor 调用和一次 composer 调用成功，唯一 verifier 调用以 `provider_invalid_json` / `verifier-schema-or-provider-failure` 失败。Revision 8 `cmswhuytl000c49hziau5us19` 使用 `ai-daily-prompt-v5` / `ai-daily-generation-v2`，保留 8 条 citation，自动进入 `REJECTED` / `DISCARDED`，0 个内容块且没有 projection draft。未重试，未执行 Studio review、Publish Export、内容部署或公开发布。generation 随即恢复为 `false`，关闭部署 `dep-da15avou01pc739gokkg` 已 `live`；最终 workspace 显示 production generation=`disabled`，关闭实例启动校验仍为 `networkCalls=0`。
@@ -190,6 +202,8 @@ Studio deploy `dep-d9umcqtbedkc73aijrg0` 已在相同 commit 上 live：`/health
 
 2026-08-18 站点所有者批准并执行一次 v7 单次真实 Edition。生成开关仅在窗口内开启，部署 `dep-da1ruibl550s73all83g` live 后，启动交付检查确认 `networkCalls=0`、1 channel、3 candidates、1 failure domain。受保护入口只提交一次并返回 `202`，创建 Run `cmsy2ipki00003sfrvpopyrp2` / work item `cmsy2ippu00013sfrufqm4ixh`，`attemptNumber=16`。Extractor 仅发起 1 次调用并以 `provider_rate_limited` 失败，composer/verifier 未开始；Run 以 `COMPLETED_WITH_GAPS` 结束，Revision 15 `cmsy2isvd00083sfrt5s54ll8` 使用 `ai-daily-prompt-v7` / `ai-daily-generation-v2`，保留 8 条 citation，自动 `REJECTED` / `DISCARDED`，0 个内容块且无 projection draft。未重试、未创建 ContentDraft、未执行 Studio review、Publish Export、内容部署或公开发布。生成开关立即恢复为 `false`，关闭部署 `dep-da1sihf40ujc738nkkq0` 已 `live`；最终 workspace 与 stage diagnostics 为 `disabled`，`PENDING` / `LEASED` / `RETRY_WAIT=0`、backlog、活动阶段和 expired lease 均为 0，Public Feed=`404`，关闭启动检查 `networkCalls=0`，error-level 日志无记录。该结果把阻塞定位为批准渠道的限流/容量问题；在完成容量决策前不直接重试同一 bundle，后续真实 Edition 需要新的单独明确批准。
 
+2026-11-04 只读核对 Render Studio：generation、stage diagnostics、business evaluation、public Feed 均为 false；expected bundle hash 仍为上述 v7 `962243d6…71aa464`。本地同一 bundle 与生产 runtime 的离线 provider 构造校验通过（1 channel / 3 candidates / 1 failure domain、networkCalls=0）；未读取 Secret File 内容，因此不冒充重新验证挂载文件。旧默认 acceptance 仍绑定 8 月 12 日另一 proposal/bundle，与当前 v7 和 rollback binding 不匹配；readiness 正确阻断。保留旧记录，另准备未封存的 v7 验收候选；在渠道容量有明确处理结果、新版次获批和真实 review/export/deployment 完成前不 seal，也不开启 Feed/Cron。
+
 ### 1. 后续真实版次
 
 - 最新一次 v7 真实 Edition 在 extractor 阶段因 `provider_rate_limited` 终止，尚未进入 composer/verifier；产品仍为“待验收”。
@@ -225,13 +239,13 @@ npm run ai-daily:acceptance -- init --acceptance-id <id> --edition-date <YYYY-MM
 
 | 项目 | 当前人工事项 | 成功标准 |
 | --- | --- | --- |
-| Legal RAG | 准备低权限可回收 demo 账号，验收问答、合同审查和质量面板 | credentialed synthetic 可复跑，只保留 HTTP/功能状态 |
-| ERP | 决定生产注册策略，以低权限账号复核注册、登录和默认角色 | 注册/登录和同步路径有可复跑证据 |
-| Xunqiu | 确认公开后端 base；正式 APK 需签名、SHA-256 校验、扫描和批准 | 状态页只展示获批 release |
-| Pet | 等待正式 release APK/AAB、签名、校验和与公开下载批准 | `pet:synthetic` 与下载入口同时通过 |
-| BIAU Playlab | 新试玩上线时确认公开入口和资源版本 | `playlab:synthetic` 与移动端试玩通过 |
-| Chatus | 使用其独立 Trellis 任务和独立部署边界 | 自身 lint/test/build/deploy 证据 |
-| Anchor Learning | 浏览器 Demo 继续保持零外部请求；Flutter Private Alpha 单独补齐安装、升级和本地数据迁移证据 | 浏览器 Demo 回归通过，Private Alpha 具备可复跑 release 证据 |
+| Legal RAG | 准备低权限可回收 demo 账号，单独批准后验收问答、合同审查和质量面板；2026-10-04 只核对源码，mock 不代表真实模型效果 | credentialed synthetic 可复跑，只保留 HTTP/功能状态与人工复核边界 |
+| ERP | 2026-08-18 停机为历史观察，当前入口与生产注册策略待复核；已有 Owner 后普通注册为 operator，任务执行器默认 real，必须独立确认隔离数据与写入控制 | 注册/登录和同步路径有可复跑证据，队列不被当成 mock |
+| Xunqiu | 分别验收展示站、真实 API 与 Android；占位响应/URL 不算业务成功；正式 APK 需签名、SHA-256 校验、扫描和批准 | 状态页只展示获批 release，媒体需实际上传与播放证据 |
+| Pet | 2026-09-24 已复核本地 release APK/AAB 摘要；本轮未验签、安装或批准分发，需另行核对这些证据 | `pet:synthetic`、正式 release 证据与人工批准齐备后再开启下载 |
+| BIAU Playlab | 2026-10-05 只读核对六游戏源码与本地包；新试玩须绑定源码提交、Web 摘要、线上资源和素材日期，Spacewar II 当前入口为键盘操作 | `playlab:synthetic` 资源检查与各游戏实际玩法/移动端试玩分别通过；canvas 和录制文件存在不替代输入验收 |
+| Chatus | 使用其独立 Trellis 任务和独立部署边界，核验成员 Skill/工具分配、MCP 确认、访客收窄和撤销后会话 | 自身 lint/test/build/deploy 证据，工作树实现不视为已部署 |
+| Anchor Learning | 浏览器 Demo 继续保持零外部请求；v1.0.0 APK 已公开，但 2026-09-24 readiness 复核为 HOLD，需处理构建摘要/大小与过期验收证据共 6 项阻塞 | 浏览器 Demo 回归通过，Flutter Private Alpha readiness 与 release 证据均为当前版本 |
 | 画帆 BIAU Canvas | 确认公开域名、owner、隐私/存储/限额/删除规则和可公开截图 | 核心流程、移动端、状态目标、助手知识与 synthetic 同时通过后升级为 online |
 
 ## 访问分析与可观测性

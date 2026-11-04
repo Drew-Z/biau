@@ -1,4 +1,5 @@
 import { PUBLIC_ASSISTANT_API_BASE, SAME_ORIGIN_ASSISTANT_API_BASE } from './assistantApi'
+import { withPublicAssistantDeadline } from './publicAssistantDeadline'
 
 export type PublicAssistantWarmupState = 'idle' | 'warming' | 'ready' | 'error'
 
@@ -11,16 +12,14 @@ export interface PublicAssistantWarmupSnapshot {
 const WARMUP_STORAGE_KEY = 'biau-public-assistant-warmup-v1'
 const WARMUP_READY_TTL_MS = 12 * 60 * 1_000
 const WARMUP_RETRY_DELAY_MS = 800
+const WARMUP_ATTEMPT_TIMEOUT_MS = 30_000
 const API_BASE = PUBLIC_ASSISTANT_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE
 const SERVER_SNAPSHOT: PublicAssistantWarmupSnapshot = { state: 'idle', issueCode: null, readyUntil: null }
 
 let snapshot = readStoredSnapshot()
 let activeController: AbortController | null = null
 let activePromise: Promise<PublicAssistantWarmupSnapshot> | null = null
-let readyExpiryTimer: number | null = null
 const listeners = new Set<() => void>()
-
-scheduleReadyExpiry(snapshot.readyUntil)
 
 export function getPublicAssistantWarmupSnapshot() {
   return snapshot
@@ -60,16 +59,15 @@ async function runWarmup(controller: AbortController) {
   let issueCode = 'public-assistant-endpoint-unreachable'
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
-      const response = await fetch(`${API_BASE}/health`, { method: 'GET', signal: controller.signal })
-      if (!response.ok) {
-        issueCode = statusErrorCode(response.status)
-        throw new Error(issueCode)
-      }
-      const payload = await response.json().catch(() => null)
-      if (!isRecord(payload) || payload.ok !== true) {
-        issueCode = 'public-assistant-invalid-response'
-        throw new Error(issueCode)
-      }
+      await withPublicAssistantDeadline(async (signal) => {
+        const response = await fetch(`${API_BASE}/health`, { method: 'GET', signal })
+        if (!response.ok) {
+          void response.body?.cancel().catch(() => undefined)
+          throw new Error(statusErrorCode(response.status))
+        }
+        const payload = await response.json().catch(() => null)
+        if (!isRecord(payload) || payload.ok !== true) throw new Error('public-assistant-invalid-response')
+      }, WARMUP_ATTEMPT_TIMEOUT_MS, controller.signal)
       const readyUntil = Date.now() + WARMUP_READY_TTL_MS
       updateSnapshot({ state: 'ready', issueCode: null, readyUntil })
       persistReadySnapshot(readyUntil)
@@ -79,7 +77,9 @@ async function runWarmup(controller: AbortController) {
         updateSnapshot({ state: 'idle', issueCode: null, readyUntil: null })
         return snapshot
       }
-      if (error instanceof TypeError) {
+      if (error instanceof DOMException && error.name === 'TimeoutError') {
+        issueCode = 'public-assistant-request-timeout'
+      } else if (error instanceof TypeError) {
         issueCode = typeof navigator !== 'undefined' && navigator.onLine === false
           ? 'public-assistant-offline'
           : 'public-assistant-endpoint-unreachable'
@@ -126,23 +126,7 @@ function waitForRetry(signal: AbortSignal) {
 
 function updateSnapshot(next: PublicAssistantWarmupSnapshot) {
   snapshot = next
-  scheduleReadyExpiry(next.readyUntil)
   listeners.forEach((listener) => listener())
-}
-
-function scheduleReadyExpiry(readyUntil: number | null) {
-  if (typeof window === 'undefined') return
-  if (readyExpiryTimer !== null) {
-    window.clearTimeout(readyExpiryTimer)
-    readyExpiryTimer = null
-  }
-  if (!readyUntil) return
-  readyExpiryTimer = window.setTimeout(() => {
-    readyExpiryTimer = null
-    if (snapshot.state !== 'ready' || snapshot.readyUntil !== readyUntil || readyUntil > Date.now()) return
-    clearStoredSnapshot()
-    updateSnapshot({ state: 'idle', issueCode: null, readyUntil: null })
-  }, Math.max(0, readyUntil - Date.now()))
 }
 
 function readStoredSnapshot(): PublicAssistantWarmupSnapshot {

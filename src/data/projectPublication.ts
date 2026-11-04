@@ -5,6 +5,7 @@ import {
   LEGAL_RAG_SITE_URL,
   OZON_ERP_ENTRY_URL,
   PET_APP_SHOWCASE_URL,
+  ROLEPLAY_SITE_URL,
   XUNQIU_SITE_URL,
 } from './siteLinks'
 import type { ProductId } from './productRegistry'
@@ -17,6 +18,7 @@ export const PUBLIC_PROJECT_IDS = [
   'pet-workspace',
   'ozon-erp',
   'biau-playlab',
+  'roleplay-demo',
   'anchor-learning',
   'blog-semi',
   'xunqiu',
@@ -114,7 +116,7 @@ export const projectPublications = {
     owner: 'Pet workspace',
     statusHref: '/status/pet-gamer',
     externalHref: PET_APP_SHOWCASE_URL,
-    evidenceLabel: '2026-07-09 synthetic 验证展示页与 4/4 截图；APK 下载仍独立受 gate 约束',
+    evidenceLabel: '2026-07-09 synthetic 验证展示页与 4/4 截图；2026-09-16 本地核验 release APK/AAB 归档，签名、安装和公开批准仍受 gate 约束',
     verifiedAt: '2026-07-09T02:23:53.694Z',
   },
   'ozon-erp': {
@@ -126,7 +128,7 @@ export const projectPublications = {
     owner: 'Ozon ERP',
     statusHref: '/status/ozon-erp',
     externalHref: OZON_ERP_ENTRY_URL,
-    unavailableReason: '公开入口当前重定向到托管停机页，登录与核心业务流需要在服务恢复后重新验收。',
+    unavailableReason: '2026-08-18 曾观察到入口重定向停机页并返回 403；当前可达性、登录与核心业务流待重新验收。',
   },
   'biau-playlab': {
     projectId: 'biau-playlab',
@@ -140,6 +142,18 @@ export const projectPublications = {
     evidenceLabel: '2026-07-09 synthetic 验证 3/3 页面、6/6 试玩页与 36/36 资源',
     verifiedAt: '2026-07-09T02:23:54.344Z',
   },
+  'roleplay-demo': {
+    projectId: 'roleplay-demo',
+    productId: 'roleplay-demo',
+    maturity: 'mvp',
+    availability: 'online',
+    access: 'public',
+    owner: 'Roleplay',
+    statusHref: '/status/roleplay-demo',
+    externalHref: ROLEPLAY_SITE_URL,
+    evidenceLabel: '2026-09-15 入口 HTTP 200、13 张角色卡；health 仅返回低敏配置与服务状态，不代表模型健康或回答质量',
+    verifiedAt: '2026-09-15T15:30:00.000Z',
+  },
   'anchor-learning': {
     projectId: 'anchor-learning',
     productId: 'anchor-learning',
@@ -149,7 +163,7 @@ export const projectPublications = {
     owner: 'Anchor Learning',
     statusHref: '/status/anchor-learning',
     externalHref: ANCHOR_LEARNING_DEMO_URL,
-    evidenceLabel: '2026-07-27 生产 Playwright 桌面、平板与手机验收',
+    evidenceLabel: '2026-07-27 浏览器 Demo 验收；v1.0.0 APK 于 2026-09-15 发布、9 月 16 日核验摘要；2026-09-24 readiness 复核仍 HOLD',
     verifiedAt: '2026-07-27T00:00:00.000Z',
   },
   'blog-semi': {

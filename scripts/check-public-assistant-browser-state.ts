@@ -17,6 +17,7 @@ Object.defineProperty(globalThis, 'window', {
   configurable: true,
   value: {
     sessionStorage,
+    localStorage: new MemoryStorage(),
     setTimeout,
     clearTimeout,
     addEventListener: windowEvents.addEventListener.bind(windowEvents),
@@ -31,6 +32,12 @@ Object.defineProperty(globalThis, 'navigator', {
 const browserState = await import('../src/utils/publicAssistantBrowserState')
 const { getPublicAssistantSuggestions } = await import('../src/data/assistant')
 const warmup = await import('../src/utils/publicAssistantWarmup')
+const sessionRegistry = await import('../src/utils/publicAssistantSessionRegistry')
+const freshRegistry = sessionRegistry.readPublicAssistantSessionRegistry()
+assert.equal(sessionRegistry.hasPersistedPublicAssistantSessionRegistry(), false, 'A discarded render must not create persisted history')
+sessionRegistry.persistPublicAssistantSessionRegistry(freshRegistry)
+assert.equal(sessionRegistry.hasPersistedPublicAssistantSessionRegistry(), true)
+assert.equal(sessionRegistry.readPublicAssistantSessionRegistry().currentSessionId, freshRegistry.currentSessionId)
 
 const sessionOne = 'public-session-check-0001'
 const sessionTwo = 'public-session-check-0002'
@@ -121,6 +128,16 @@ assert.equal(healthRequests, 2)
 await warmup.startPublicAssistantWarmup()
 assert.equal(healthRequests, 2)
 warmup.abortPublicAssistantWarmup()
+
+const originalNow = Date.now
+try {
+  Date.now = () => (ready.readyUntil ?? originalNow()) + 1
+  await warmup.startPublicAssistantWarmup()
+  assert.equal(healthRequests, 3, 'Reopening after cache expiry performs one fresh health check')
+  assert.equal(warmup.getPublicAssistantWarmupSnapshot().state, 'ready')
+} finally {
+  Date.now = originalNow
+}
 
 console.log('Public assistant browser-state checks passed.')
 process.exit(0)

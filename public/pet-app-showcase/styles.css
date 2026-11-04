@@ -360,6 +360,10 @@ h3 {
   line-height: 1.6;
 }
 
+.release-notes code {
+  overflow-wrap: anywhere;
+}
+
 .site-bridge {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 0.48fr);

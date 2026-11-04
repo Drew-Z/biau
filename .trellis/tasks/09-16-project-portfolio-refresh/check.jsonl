@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "确认实现遵循前端规范与必要的质量检查。"}
+{"file": ".trellis/spec/frontend/project-showcase-integration.md", "reason": "核对项目详情、入口政策、状态和助手等公开内容的一致性。"}
+{"file": ".trellis/tasks/09-16-project-portfolio-refresh/inventory.md", "reason": "核对内容修正是否符合证据范围，不将历史记录或产物存在扩写为生产验收。"}
+{"file": ".trellis/tasks/09-16-project-portfolio-refresh/implement.md", "reason": "按批次验收差异处理、生成投影、sitemap 覆盖和页面行为。"}

@@ -250,6 +250,33 @@ history loading. Persisted-session restore starts only after warm-up reaches
 `ready`. Never auto-replay a chat question or describe a warm-up 504 as a model
 failure. The final error exposes an explicit health retry and no keep-alive job.
 
+Each health attempt has a 30-second deadline covering headers and body, including
+the one allowed retry. Cache expiry must not revoke readiness in an already open
+conversation: the next explicit open/intent rechecks the expired cache. A
+`pageshow` event resumes preparation for an open widget after pagehide cancelled
+it. Do not add periodic health requests or automatically resubmit a question.
+
+All public-assistant transports share an abortable absolute deadline: 65 seconds
+for generation, 30 for explicit health, and 20 for history/branch/feedback/cancel.
+The deadline covers response consumption, not only `fetch`. Timeout becomes a
+retryable request-timeout error; caller cancellation stays AbortError. Restore
+timeouts preserve the session identity and its send fence until explicit retry or
+New session. A valid terminal SSE result/error finishes without waiting for HTTP
+EOF and cancels the remaining reader. The availability browser matrix covers
+headers/body stalls, expiry, restore, JSON compatibility, no-database chat and
+follow-up at 1440/320/390/430; fixtures cannot contact real providers.
+
+Successful feedback/cancel/delete responses consume their small body inside the
+same deadline. Do not cancel an unread successful mutation body: Chromium may
+omit its network completion event. Browser tests also bound `response.finished()`
+so a missing completion event fails instead of hanging the entire suite.
+
+The session registry reader is side-effect free. Persist its initial identity
+only after the widget commits, then use the existing explicit registry command
+for changes. A storage write inside a state initializer can survive an abandoned
+concurrent render, trigger false initial-history restoration and discard a fresh
+draft after a 404. Verify this in both development and production builds.
+
 The synchronous launcher remains mounted as a stable placeholder while the
 lazy workspace chunk is opening. This prevents a trigger/read-guide collision
 window on mobile and preserves the measured collision offset. Initial session

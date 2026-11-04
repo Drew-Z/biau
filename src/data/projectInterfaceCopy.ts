@@ -95,6 +95,8 @@ const projectLinkLabelsEn = new Map<string, string>([
   ['后端验证文档', 'Backend verification docs'],
   ['回到首页', 'Back to home'],
   ['在线工作台', 'Online workspace'],
+  ['打开角色库', 'Open roleplay library'],
+  ['江迟野演示', 'Open Jiang Chiye demo'],
   ['官网', 'Website'],
   ['展示标准文章', 'Showcase standards article'],
   ['展示页源码', 'Showcase source code'],

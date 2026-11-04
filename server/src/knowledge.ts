@@ -153,7 +153,7 @@ export function retrieveKnowledge(query: string, limit = publicKnowledgeV2?.fall
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title, 'zh-CN'))
 
-  const citations = selectCitationsForIntent(scored, normalizedLimit, intent).map((entry) => entry.item)
+  const citations = selectCitationsForIntent(scored, normalizedLimit, intent, normalized).map((entry) => entry.item)
   const diversity = new Set(citations.map((item) => inferSourceType(item))).size
   const sufficiency = citations.length === 0 ? 'none' : citations.length >= 2 || diversity >= 2 ? 'enough' : 'weak'
   const scoreByDocument = new Map(scored.map((entry) => [entry.item.id, entry.score]))
@@ -248,7 +248,16 @@ function selectCitationsForIntent(
   scored: Array<{ item: KnowledgeItem; score: number }>,
   limit: number,
   intent: RetrievalIntent,
+  query: string,
 ) {
+  if ((intent === 'demo-access' || intent === 'project-experience') &&
+    /(?:哪些|所有|每个|各个|推荐|列出).{0,16}项目|项目.{0,16}(?:列表|清单|目录)|which.{0,20}(?:projects|demos)/iu.test(query)) {
+    // A catalog question needs distinct projects, not several articles about
+    // the highest-scoring project. Keep the same bounded source records.
+    const projects = scored.filter((entry) => inferSourceType(entry.item) === 'project')
+    const other = scored.filter((entry) => inferSourceType(entry.item) !== 'project')
+    return [...projects, ...other].slice(0, limit)
+  }
   const selected = scored.slice(0, limit)
   if (intent !== 'demo-access' || selected.length < limit) return selected
 
@@ -288,7 +297,7 @@ function buildChunkResults(
 ) {
   if (!publicKnowledgeV2) return []
   const citationIds = new Set(citations.map((citation) => citation.id))
-  return publicKnowledgeV2.knowledge_chunks
+  const ranked = publicKnowledgeV2.knowledge_chunks
     .filter((chunk) => citationIds.has(chunk.documentId))
     .map((chunk): KnowledgeChunkResult => {
       const documentScore = scoreByDocument.get(chunk.documentId) ?? 1
@@ -304,7 +313,12 @@ function buildChunkResults(
       }
     })
     .sort((a, b) => b.score - a.score || a.id.localeCompare(b.id, 'zh-CN'))
-    .slice(0, Math.max(1, citations.length))
+  // Give each selected document an evidence slot before taking another chunk
+  // from one document; otherwise a long project can occupy every result.
+  return citations.flatMap((citation) => {
+    const chunk = ranked.find((item) => item.documentId === citation.id)
+    return chunk ? [chunk] : []
+  })
 }
 
 function scoreKnowledgeItem(

@@ -173,7 +173,10 @@ function checkVisual(projectId: string, visual: ProjectVisualBlock) {
     fail(projectId, `visual ${visual.id} sourceUrl must be a public route or https URL`)
   }
 
-  if (!visual.image) return
+  if (!visual.image?.trim()) {
+    if (visual.type === 'screenshot') fail(projectId, `visual ${visual.id} screenshot is missing an image`)
+    return
+  }
   if (!visual.image.startsWith('/images/projects/')) {
     fail(projectId, `visual ${visual.id} must use a public /images/projects/ asset`)
     return

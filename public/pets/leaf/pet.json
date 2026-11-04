@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "representation": "sprite2d",
+  "name": "叶芽",
+  "license": {
+    "status": "not-specified"
+  },
+  "actions": {
+    "idle": {
+      "file": "idle.png",
+      "sha256": "d43012290f481841040f3a7127cde357c14a2680d450872815f718ab2e31ea5c",
+      "meta": {
+        "frameCount": 6,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 3.0,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 6,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 650.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 300.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 250.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 100.0
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 250.0
+            },
+            {
+              "sourceFrame": 5,
+              "durationMs": 450.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "happy": {
+      "file": "happy.png",
+      "sha256": "b312e9769be7cf52c04e9f64e4e52cd6078f3d62cdd6397016d891606b15ab64",
+      "meta": {
+        "frameCount": 6,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 6.0,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 6,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 5,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 166.66666666666666
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 166.66666666666666
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "sleepy": {
+      "file": "sleepy.png",
+      "sha256": "8a4680e7ec871af424e7d37b6fef7d0e74c5549aa5d378cf2452f9fd66769548",
+      "meta": {
+        "frameCount": 6,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 2.0,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 6,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 450.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 350.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 700.0
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 5,
+              "durationMs": 500.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    }
+  }
+}

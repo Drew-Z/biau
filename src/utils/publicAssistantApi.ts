@@ -1,3 +1,5 @@
+import { withPublicAssistantDeadline } from './publicAssistantDeadline'
+
 export type PublicAssistantMode = 'auto' | 'site' | 'web'
 export type PublicAssistantStatus = 'answered' | 'partial' | 'uncertain' | 'degraded' | 'blocked'
 export type PublicAssistantRoute = 'direct' | 'site' | 'web' | 'combined'
@@ -211,25 +213,26 @@ export interface PublicAssistantRequestInput {
 }
 
 export async function requestPublicAssistant(input: PublicAssistantRequestInput) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(toPublicAssistantRequestBody(input)),
     signal: input.signal,
-  })
-  if (!response.ok) {
-    throw await responseError(response)
-  }
-  const payload = await response.json().catch(() => null)
-  const answer = normalizePublicAssistantAnswer(payload)
-  if (!answer) throw new PublicAssistantTransportError('public-assistant-invalid-response')
-  return answer
+  }, async (response) => {
+    if (!response.ok) {
+      throw await responseError(response)
+    }
+    const payload = await response.json().catch(() => null)
+    const answer = normalizePublicAssistantAnswer(payload)
+    if (!answer) throw new PublicAssistantTransportError('public-assistant-invalid-response')
+    return answer
+  }, 65_000)
 }
 
 export async function requestPublicAssistantStream(
   input: PublicAssistantRequestInput & { onProgress?: (stage: PublicAssistantProgressStage) => void },
 ) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/stream`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public/stream`, {
     method: 'POST',
     headers: {
       Accept: 'text/event-stream',
@@ -237,15 +240,16 @@ export async function requestPublicAssistantStream(
     },
     body: JSON.stringify(toPublicAssistantRequestBody(input)),
     signal: input.signal,
-  })
-  if (!response.ok) {
-    throw await responseError(response, [404, 405, 501].includes(response.status))
-  }
-  const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
-  if (!contentType.includes('text/event-stream') || !response.body) {
-    throw new PublicAssistantTransportError('public-assistant-stream-unsupported', { canFallbackToJson: true })
-  }
-  return readPublicAssistantEventStream(response.body, input.onProgress)
+  }, async (response) => {
+    if (!response.ok) {
+      throw await responseError(response, [404, 405, 501].includes(response.status))
+    }
+    const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
+    if (!contentType.includes('text/event-stream') || !response.body) {
+      throw new PublicAssistantTransportError('public-assistant-stream-unsupported', { canFallbackToJson: true })
+    }
+    return readPublicAssistantEventStream(response.body, input.onProgress)
+  }, 65_000)
 }
 
 const MAX_PUBLIC_ASSISTANT_STREAM_BYTES = 512_000
@@ -253,7 +257,7 @@ const MAX_PUBLIC_ASSISTANT_STREAM_BYTES = 512_000
 export async function readPublicAssistantEventStream(
   body: ReadableStream<Uint8Array>,
   onProgress?: (stage: PublicAssistantProgressStage) => void,
-) {
+): Promise<PublicAssistantAnswer> {
   const reader = body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
@@ -320,6 +324,12 @@ export async function readPublicAssistantEventStream(
       const frames = buffer.split(/\r?\n\r?\n/u)
       buffer = frames.pop() ?? ''
       frames.forEach(consumeFrame)
+      // A terminal frame completes the application protocol. Some proxies keep
+      // the HTTP stream open; waiting for EOF would hide an already valid answer.
+      if (result || terminalState.error) {
+        void reader.cancel().catch(() => undefined)
+        break
+      }
     }
     buffer += decoder.decode()
     if (buffer.trim()) consumeFrame(buffer)
@@ -351,7 +361,7 @@ function toPublicAssistantRequestBody(input: PublicAssistantRequestInput) {
 }
 
 async function responseError(response: Response, canFallbackToJson = false) {
-  const payload = await response.clone().json().catch(() => null)
+  const payload = await response.json().catch(() => null)
   const upstreamCode = isRecord(payload) ? readString(payload.error, 100) : ''
   const code = [429, 502, 503, 504].includes(response.status) ? statusErrorCode(response.status) : (upstreamCode || statusErrorCode(response.status))
   const retryAfterSeconds = readRetryAfter(response.headers.get('Retry-After'))
@@ -390,7 +400,7 @@ export async function submitPublicAssistantFeedback(input: {
   reason?: PublicAssistantFeedbackReason
   comment?: string
 }) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/feedback`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public/feedback`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -400,21 +410,24 @@ export async function submitPublicAssistantFeedback(input: {
       reason: input.reason,
       comment: input.comment?.replace(/\s+/gu, ' ').trim().slice(0, 240),
     }),
+  }, async (response) => {
+    if (!response.ok) throw await responseError(response)
+    await response.text()
   })
-  if (!response.ok) throw await responseError(response)
 }
 
 export async function requestPublicAssistantHealth(apiBase: string, signal?: AbortSignal) {
-  const response = await fetchPublicAssistant(`${apiBase}/health`, { method: 'GET', signal })
-  if (!response.ok) throw await responseError(response)
-  const payload = await response.json().catch(() => null)
-  if (!isRecord(payload) || payload.ok !== true) throw new PublicAssistantTransportError('public-assistant-invalid-response')
-  return {
-    ok: true,
-    database: payload.database === true,
-    modelConfigured: payload.modelConfigured === true,
-    webSearchConfigured: payload.webSearchConfigured === true,
-  } satisfies PublicAssistantHealth
+  return fetchPublicAssistant(`${apiBase}/health`, { method: 'GET', signal }, async (response) => {
+    if (!response.ok) throw await responseError(response)
+    const payload = await response.json().catch(() => null)
+    if (!isRecord(payload) || payload.ok !== true) throw new PublicAssistantTransportError('public-assistant-invalid-response')
+    return {
+      ok: true,
+      database: payload.database === true,
+      modelConfigured: payload.modelConfigured === true,
+      webSearchConfigured: payload.webSearchConfigured === true,
+    } satisfies PublicAssistantHealth
+  }, 30_000)
 }
 
 export async function cancelPublicAssistantGeneration(input: {
@@ -422,13 +435,15 @@ export async function cancelPublicAssistantGeneration(input: {
   requestId: string
   sessionId: string
 }) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/cancel`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public/cancel`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ requestId: input.requestId, sessionId: input.sessionId }),
     keepalive: true,
+  }, async (response) => {
+    if (!response.ok && response.status !== 404) throw await responseError(response)
+    await response.text()
   })
-  if (!response.ok && response.status !== 404) throw await responseError(response)
 }
 
 function readRequestId(value: unknown) {
@@ -444,21 +459,22 @@ export async function requestPublicAssistantSessions(input: {
   sessionIds: string[]
   signal?: AbortSignal
 }) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/sessions`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionIds: input.sessionIds.slice(0, 24) }),
     signal: input.signal,
+  }, async (response) => {
+    if (!response.ok) throw await responseError(response)
+    const payload = await response.json().catch(() => null)
+    if (!isRecord(payload) || !Array.isArray(payload.sessions)) {
+      throw new PublicAssistantTransportError('public-assistant-invalid-response')
+    }
+    return payload.sessions
+      .map(normalizePublicAssistantSessionSummary)
+      .filter((session): session is PublicAssistantSessionSummary => session !== null)
+      .slice(0, 24)
   })
-  if (!response.ok) throw await responseError(response)
-  const payload = await response.json().catch(() => null)
-  if (!isRecord(payload) || !Array.isArray(payload.sessions)) {
-    throw new PublicAssistantTransportError('public-assistant-invalid-response')
-  }
-  return payload.sessions
-    .map(normalizePublicAssistantSessionSummary)
-    .filter((session): session is PublicAssistantSessionSummary => session !== null)
-    .slice(0, 24)
 }
 
 export async function requestPublicAssistantSession(input: {
@@ -466,17 +482,18 @@ export async function requestPublicAssistantSession(input: {
   sessionId: string
   signal?: AbortSignal
 }) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/session`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public/session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionId: input.sessionId }),
     signal: input.signal,
+  }, async (response) => {
+    if (!response.ok) throw await responseError(response)
+    const payload = await response.json().catch(() => null)
+    const history = normalizePublicAssistantSessionHistory(payload)
+    if (!history) throw new PublicAssistantTransportError('public-assistant-invalid-response')
+    return history
   })
-  if (!response.ok) throw await responseError(response)
-  const payload = await response.json().catch(() => null)
-  const history = normalizePublicAssistantSessionHistory(payload)
-  if (!history) throw new PublicAssistantTransportError('public-assistant-invalid-response')
-  return history
 }
 
 export async function requestPublicAssistantBranch(input: {
@@ -492,19 +509,20 @@ export async function requestPublicAssistantBranch(input: {
   revisionId: string
   signal?: AbortSignal
 }) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/branch`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public/branch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input.action === 'select'
       ? { sessionId: input.sessionId, action: input.action, branchId: input.branchId }
       : { sessionId: input.sessionId, action: input.action, revisionId: input.revisionId }),
     signal: input.signal,
+  }, async (response) => {
+    if (!response.ok) throw await responseError(response)
+    const payload = await response.json().catch(() => null)
+    const history = normalizePublicAssistantSessionHistory(payload)
+    if (!history) throw new PublicAssistantTransportError('public-assistant-invalid-response')
+    return history
   })
-  if (!response.ok) throw await responseError(response)
-  const payload = await response.json().catch(() => null)
-  const history = normalizePublicAssistantSessionHistory(payload)
-  if (!history) throw new PublicAssistantTransportError('public-assistant-invalid-response')
-  return history
 }
 
 export async function deletePublicAssistantSession(input: {
@@ -512,13 +530,15 @@ export async function deletePublicAssistantSession(input: {
   sessionId: string
   signal?: AbortSignal
 }) {
-  const response = await fetchPublicAssistant(`${input.apiBase}/chat/public/session`, {
+  return fetchPublicAssistant(`${input.apiBase}/chat/public/session`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sessionId: input.sessionId }),
     signal: input.signal,
+  }, async (response) => {
+    if (!response.ok) throw await responseError(response)
+    await response.text()
   })
-  if (!response.ok) throw await responseError(response)
 }
 
 export function normalizePublicAssistantAnswer(value: unknown): PublicAssistantAnswer | null {
@@ -835,11 +855,27 @@ function readPositiveCount(value: unknown) {
   return count > 0 ? count : null
 }
 
-async function fetchPublicAssistant(input: RequestInfo | URL, init: RequestInit) {
+async function fetchPublicAssistant<T>(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  consume: (response: Response) => Promise<T>,
+  timeoutMs = 20_000,
+) {
   try {
-    return await fetch(input, init)
+    return await withPublicAssistantDeadline(async (signal) => {
+      const response = await fetch(input, { ...init, signal })
+      try {
+        return await consume(response)
+      } finally {
+        if (!response.bodyUsed) void response.body?.cancel().catch(() => undefined)
+      }
+    }, timeoutMs, init.signal)
   } catch (error) {
+    if (error instanceof PublicAssistantTransportError) throw error
     if (error instanceof DOMException && error.name === 'AbortError') throw error
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      throw new PublicAssistantTransportError('public-assistant-request-timeout')
+    }
     const offline = typeof navigator !== 'undefined' && navigator.onLine === false
     throw new PublicAssistantTransportError(offline ? 'public-assistant-offline' : 'public-assistant-endpoint-unreachable')
   }

@@ -170,7 +170,7 @@ function validateShowcasePage(response) {
   const requiredText = [
     'AI 桌宠社区 App 展示与下载状态',
     '/projects/pet-workspace',
-    'APK 待公开构建',
+    'APK 待完成验收',
     '公开 APK 前置条件',
     '<link rel="canonical" href="https://biau.playlab.eu.cc/pet-app-showcase/"',
   ]

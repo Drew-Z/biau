@@ -66,7 +66,6 @@ export function readPublicAssistantSessionRegistry(): PublicAssistantSessionRegi
     }
     const legacy = readSessionId(window.localStorage.getItem(CURRENT_SESSION_STORAGE_KEY))
     const registry = { version: 2 as const, currentSessionId: legacy || fresh, sessionIds: [legacy || fresh] }
-    persistPublicAssistantSessionRegistry(registry)
     return registry
   } catch {
     return { version: 2, currentSessionId: fresh, sessionIds: [fresh] }

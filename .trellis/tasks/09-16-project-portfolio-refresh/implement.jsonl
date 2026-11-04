@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "遵循主站既有前端规范和验证入口，控制共享数据与界面改动范围。"}
+{"file": ".trellis/spec/frontend/project-showcase-integration.md", "reason": "复用项目身份、展示内容、发布政策与生成投影的接入契约。"}
+{"file": ".trellis/tasks/09-16-project-portfolio-refresh/inventory.md", "reason": "按逐项目证据、F01—F08 差异和验证边界更新真实进展。"}
+{"file": ".trellis/tasks/09-16-project-portfolio-refresh/design.md", "reason": "采用已落档的数据归属、同步顺序和各批次内容设计。"}

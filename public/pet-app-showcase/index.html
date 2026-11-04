@@ -22,11 +22,11 @@
           <h1 id="page-title">AI 桌宠社区 App 展示与下载状态</h1>
           <p class="lead">
             当前展示的是 Android 桌宠社区 App 的阶段工作面：桌宠首页、孵化入口、社区展示和个人页都已整理为可公开查看的模拟器截图。
-            内部 debug 构建已经用于阶段验证，但公开 APK 下载仍处于发布门禁中，只有在正式 release 构建、签名、校验、回归和人工审核完成后才会开放。
+            2026-09-24 已复核本地 release APK/AAB 的大小与摘要。核验范围不包含签名、安装或完整生成流程；公开分发需要另行核对验收与批准记录，APK 下载继续关闭。
           </p>
 
           <div class="hero-actions" aria-label="页面操作">
-            <button type="button" disabled aria-disabled="true">APK 待公开构建</button>
+            <button type="button" disabled aria-disabled="true">APK 待完成验收</button>
             <a href="#screenshots">查看截图</a>
             <a class="secondary-link" href="/projects/pet-workspace">项目详情</a>
           </div>
@@ -42,7 +42,7 @@
             </div>
             <div>
               <dt>下载状态</dt>
-              <dd>待正式签名包</dd>
+              <dd>release 归档待验收</dd>
             </div>
             <div>
               <dt>发布门禁</dt>
@@ -131,7 +131,7 @@
           <p class="eyebrow">Release Checklist</p>
           <h2 id="checklist-title">公开 APK 前置条件</h2>
           <p>
-            下载区保持关闭，直到每个公开发布条件都有可复现证据。当前只把 debug 构建作为内部验证信号，不把调试包、内部 artifact 或未审核候选包装成正式下载。
+            下载区保持关闭，直到每个公开发布条件都有可复现证据。下方记录本地 release 归档摘要；签名、安装与回归、人工批准需另有验收记录。
           </p>
         </div>
 
@@ -139,7 +139,7 @@
           <article>
             <span>01</span>
             <h3>可复现构建</h3>
-            <p>确认正式 release 构建命令、版本号和产物来源，避免使用临时 debug 包。</p>
+            <p>记录 release variant、版本号、产物来源和复算摘要，确保候选包不是临时 debug 构建。</p>
           </article>
           <article>
             <span>02</span>
@@ -169,15 +169,16 @@
           <p class="eyebrow">Download Gate</p>
           <h2 id="download-title">公开下载策略</h2>
           <p>
-            当前页面不提供 APK 文件，也不放置占位下载链接。debug 构建只能证明 App 已进入内部验证，公开下载还需要完成正式 release 构建、签名策略、版本说明、基础回归和人工确认后再开启。
+            当前页面不提供 APK 文件，也不放置占位下载链接。本地 release 归档只能证明构建产物存在，公开下载还需要完成签名策略、安装/基础回归、版本说明和人工确认后再开启。
           </p>
         </div>
         <ul>
-          <li>已定位内部 debug 构建，可用于后续整理正式发布候选清单。</li>
-          <li>不把 debug 包伪装成公开发布包。</li>
+          <li>release APK 0.1.0 / code 1：14,920,672 bytes，SHA-256：<code>ab60204e6ab0b94a84b2dccef32eb65e26b1cbba728dac56f167a8940ff89108</code>。</li>
+          <li>release AAB：14,385,956 bytes，SHA-256：<code>0fad67e69ad1540bbe4ad23e0b6d79322cd9ab04b686db45bba785abe140777c</code>。</li>
+          <li>2026-09-16 核对归档结构、CRC 和 release metadata；2026-09-24 复算大小与摘要一致。本轮未验签、未安装，也未批准公开分发。</li>
           <li>不绕过生成 - 人审 - 展示的状态门禁。</li>
           <li>不暴露内部 worker、私有 token、服务器地址或 artifact 路径。</li>
-          <li>后续可接入正式 APK、版本号、校验摘要和更新日志。</li>
+          <li>后续补齐签名、安装/回归、版本说明和批准记录后，再把按钮替换为真实下载链接。</li>
         </ul>
       </section>
 

@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { LoaderCircle, RotateCw } from 'lucide-react'
+import { PublicAssistantPet } from './PublicAssistantPet'
 import { usePublicAssistantCollision } from '../hooks/usePublicAssistantCollision'
 import { announceMobileSurfaceOpen } from '../utils/mobileSurface'
 import type { PublicAssistantWarmupSnapshot } from '../utils/publicAssistantWarmup'
@@ -39,7 +39,7 @@ export function PublicAssistantLauncher({ warmup, footerVisible, onIntent, onOpe
     >
       <button
         type="button"
-        className={`public-assistant__trigger is-${opening ? 'warming' : warmup.state}`}
+        className={`public-assistant__trigger has-pet is-${opening ? 'warming' : warmup.state}`}
         aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={opening}
@@ -52,13 +52,7 @@ export function PublicAssistantLauncher({ warmup, footerVisible, onIntent, onOpe
           onOpen()
         }}
       >
-        <span className="public-assistant__trigger-mark" aria-hidden="true">
-          {opening || warmup.state === 'warming'
-            ? <LoaderCircle className="is-spinning" size={15} />
-            : warmup.state === 'error'
-              ? <RotateCw size={15} />
-              : 'B'}
-        </span>
+        <PublicAssistantPet activity={opening || warmup.state === 'warming' ? 'working' : warmup.state === 'error' ? 'blocked' : 'idle'} />
         <span className="public-assistant__trigger-text">{label}</span>
       </button>
     </div>

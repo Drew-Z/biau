@@ -5,6 +5,7 @@ import {
   LEGAL_RAG_SITE_URL,
   OZON_ERP_ENTRY_URL,
   PET_APP_SHOWCASE_URL,
+  ROLEPLAY_SITE_URL,
   XUNQIU_SITE_URL,
 } from './siteLinks'
 import type { PublicProjectId } from './projectPublication'
@@ -62,13 +63,23 @@ export const heroContent = {
     {
       id: 'chatus',
       title: formatProductTitle('chatus', 'Chatus 私人 AI 工作台'),
-      description: '邀请制成员空间，以会话 Agent、长期记忆和多模型协调支撑持续工作',
+      description: '邀请制成员空间，以会话 Agent、能力分配和显式记忆支撑持续工作',
       poetry: '《让每段上下文都有停泊之处》',
       action: 'INVITE',
       actionLabel: '打开 Chatus 邀请制工作台',
       accent: 'signal',
       detailLink: '/projects/chatus',
       externalLink: CHATUS_SITE_URL,
+    },
+    {
+      id: 'roleplay-demo',
+      title: formatProductTitle('roleplay-demo', '游客式多角色聊天'),
+      description: '从角色库进入独立故事页，在服务端密钥隔离下体验 GLM 多角色对话',
+      poetry: '《让每个故事都有自己的入口》',
+      action: 'CHAT',
+      accent: 'signal',
+      detailLink: '/projects/roleplay-demo',
+      externalLink: ROLEPLAY_SITE_URL,
     },
     {
       id: 'anchor-learning',
@@ -93,7 +104,7 @@ export const heroContent = {
     {
       id: 'ozon-erp',
       title: formatProductTitle('ozon-erp', 'Ozon ERP'),
-      description: '后台、API、队列、插件，串起跨境运营全链路',
+      description: '连接插件采集、后台草稿、任务执行与审计，说明跨境运营的写入边界',
       poetry: '《在商品流转中织网》',
       action: 'OPEN',
       accent: 'image',
@@ -103,7 +114,7 @@ export const heroContent = {
     {
       id: 'biau-playlab',
       title: formatProductTitle('biau-playlab', '游戏站'),
-      description: '六个 Godot 原型、Web 试玩、开发日志与系统拆解内容站',
+      description: '六个不同阶段的 Godot 项目，集中展示玩法、Web 入口与开发记录',
       poetry: '《把可玩的想法停靠成港》',
       action: 'PLAY',
       accent: 'preview',
@@ -113,7 +124,7 @@ export const heroContent = {
     {
       id: 'xunqiu',
       title: formatProductTitle('xunqiu', '移动端系统'),
-      description: 'Android 64 位客户端、现代后端、R2 上传与 Render 部署链路',
+      description: '分层呈现 Android 64 位迁移、现代后端兼容与静态展示',
       poetry: '《让球场邀约重新连成网络》',
       action: 'VIEW',
       accent: 'commerce',
@@ -123,7 +134,7 @@ export const heroContent = {
     {
       id: 'blog-semi',
       title: formatProductTitle('biau-port', '当前主站与知识库'),
-      description: '把首页、项目、知识文章和自动部署组织成持续更新的站点',
+      description: '三组项目目录、内容搜索、阅读返回与三主题中英文界面',
       poetry: '《在文字中凝固思考的痕迹》',
       action: 'READ',
       accent: 'signal',

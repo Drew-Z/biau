@@ -5,6 +5,7 @@ export const MAIN_SITE_URL = 'https://biau.playlab.eu.cc'
 export const LEGAL_RAG_SITE_URL = 'https://legal-rag-web.onrender.com'
 export const LEGAL_RAG_HEALTH_URL = 'https://legal-rag-api-9bki.onrender.com/api/health'
 export const CHATUS_SITE_URL = 'https://chatus.ciallobill.qzz.io'
+export const ROLEPLAY_SITE_URL = 'https://roleplay.playlab.eu.cc'
 export const ANCHOR_LEARNING_SITE_URL = 'https://anchor.playlab.eu.cc'
 export const ANCHOR_LEARNING_DEMO_URL = `${ANCHOR_LEARNING_SITE_URL}/app/`
 export const PET_APP_SHOWCASE_URL = `${MAIN_SITE_URL}/pet-app-showcase/`

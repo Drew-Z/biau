@@ -124,6 +124,7 @@ const reliabilityProductIds: Record<string, ProductId> = {
   xunqiu: 'xunqiu',
   'pet-gamer': 'pet-workspace',
   'biau-playlab': 'biau-playlab',
+  'roleplay-demo': 'roleplay-demo',
 }
 
 for (const project of reliabilityProjects) {

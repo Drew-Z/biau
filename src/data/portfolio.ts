@@ -11,6 +11,7 @@ import {
   LEGAL_RAG_SITE_URL,
   OZON_ERP_ENTRY_URL,
   PET_APP_SHOWCASE_PATH,
+  ROLEPLAY_SITE_URL,
   XUNQIU_BACKEND_DOCS_URL,
   XUNQIU_DOCS_URL,
   XUNQIU_SITE_URL,
@@ -128,9 +129,141 @@ export const projectDetailGroupLabels: Record<ProjectDetailContentKey, string> =
 
 export const projects: Project[] = [
   {
+    id: 'roleplay-demo',
+    title: formatProductTitle('roleplay-demo', '游客式多角色聊天演示'),
+    summary: '面向公开访客的多角色 AI 对话演示：从角色库选择人物，进入独立聊天页，并通过服务端保留模型密钥与会话边界。',
+    category: 'ai',
+    status: 'live',
+    role: '访客式 AI 体验 / 多角色角色库 / Cloudflare Tunnel',
+    image: '/images/projects/showcase/roleplay-library.png',
+    imageAlt: 'Roleplay 游客角色库展示多张可选择的角色卡',
+    imageCaption: '截图来自公开角色库首页，展示游客选择角色后进入独立聊天页的入口。',
+    stack: ['Static HTML/CSS/JavaScript', 'Node.js', 'GLM', 'Cloudflare Tunnel', 'HttpOnly Session'],
+    highlights: ['13 张角色卡', '无需登录体验', '服务端密钥隔离', '角色独立分享链接'],
+    links: [
+      externalLink('打开角色库', ROLEPLAY_SITE_URL, 'entry'),
+      externalLink('江迟野演示', `${ROLEPLAY_SITE_URL}/r/jiangchiye`, 'entry'),
+    ],
+    detailContent: {
+      overview: [
+        {
+          title: '从酒馆管理界面收束为访客演示入口',
+          body:
+            'Roleplay 不把完整 SillyTavern 管理界面直接交给游客，而是将角色库、角色入口和聊天会话拆成清晰的公开路径。访客先浏览角色卡，再进入独立故事页，适合项目展示、课堂演示和单角色分享。',
+        },
+        {
+          title: '角色库与独立分享',
+          body:
+            '角色库提供场景筛选、头像、标签和推荐开场；每张角色卡都有独立的 `/r/<id>` 分享入口，进入后自动初始化对应角色的首条消息，不需要访客先完成复杂配置。',
+        },
+      ],
+      workflow: [
+        {
+          title: '推荐访客路径',
+          items: [
+            '打开角色库首页，按都市、校园、古风、奇幻或悬疑筛选角色。',
+            '选择角色后进入聊天页，使用推荐开场或直接输入消息。',
+            '需要分享时使用角色独立链接，让每个演示从明确的人物设定开始。',
+          ],
+        },
+        {
+          title: '演示场景控制',
+          items: [
+            '服务端控制角色列表、角色启停、游客提示词长度和上游模型，不把这些控制项交给浏览器。',
+            '切换角色会重置当前角色上下文，避免不同人物之间混入历史对话。',
+          ],
+          visual: {
+            id: 'roleplay-visitor-flow',
+            type: 'workflow',
+            title: '角色库到聊天页的访客流程',
+            description: '访客从角色筛选、角色分享入口到独立聊天页的公开演示路径。',
+            alt: 'Roleplay 角色库和聊天页访客流程说明',
+            caption: '流程说明角色选择和会话初始化的产品路径，不包含访客对话正文或服务端配置。',
+          },
+        },
+      ],
+      architecture: [
+        {
+          title: '浏览器、游客前端与模型服务分层',
+          body:
+            '浏览器只访问公开角色库和游客聊天接口；独立 Node.js 服务读取服务器端角色卡与模型密钥，并通过本机 Nginx 和 Cloudflare Tunnel 对外提供 HTTPS。主站只保留项目说明和入口，不代理聊天请求。',
+          visual: {
+            id: 'roleplay-runtime-boundary',
+            type: 'architecture',
+            title: '访客演示运行边界',
+            description: '浏览器、游客前端、服务端会话和模型上游之间的职责分层。',
+            image: '/images/projects/showcase/roleplay-runtime-boundary.svg',
+            alt: 'Roleplay 访客演示运行边界架构图',
+            caption: '架构说明只展示公开可讨论的职责边界，不包含服务器凭据、模型密钥或内部地址。',
+          },
+        },
+      ],
+      quality: [
+        {
+          title: '公开入口验收',
+          body:
+            '2026-09-15 的公开观察确认角色库、聊天页、角色分享入口和健康接口可访问，当时记录 13 张角色卡；health 只用于记录 ok、配置标签和角色数量等低敏服务状态，不代表上游模型长期健康或回答质量。',
+          visual: {
+            id: 'roleplay-public-entry-check',
+            type: 'screenshot',
+            title: '角色库与分享入口检查',
+            description: '记录角色库、独立角色链接和游客健康接口的公开可达性。',
+            image: '/images/projects/showcase/roleplay-library.png',
+            alt: 'Roleplay 公开角色库首页截图，展示角色卡、分类筛选和独立故事入口',
+            caption: '截图记录公开角色库和低敏角色数量状态；不保存访客消息、API Key 或管理员令牌。',
+            sourceLabel: '打开角色库',
+            sourceUrl: ROLEPLAY_SITE_URL,
+            sourceIntent: 'entry',
+          },
+        },
+        {
+          title: '资源与延迟边界',
+          items: [
+            '游客会话使用 HttpOnly Cookie，并限制会话数量、消息长度、上下文长度和请求频率。',
+            'GLM 上游存在并发与响应延迟约束，复杂角色可能需要更短的游客提示词或更友好的排队提示。',
+          ],
+          visual: {
+            id: 'roleplay-session-boundary',
+            type: 'data-flow',
+            title: '游客会话与模型请求边界',
+            description: '浏览器、游客会话、服务端模型请求和公开站点之间的低敏数据流边界。',
+            alt: 'Roleplay 游客会话与模型请求边界说明',
+            caption: '数据流说明浏览器不保存模型密钥，服务端负责会话和模型请求的受控边界。',
+          },
+        },
+      ],
+      limitations: [
+        {
+          title: '当前边界',
+          items: [
+            '这是公开演示站，不是多租户生产聊天平台；会话保存在服务内存中，重启后不承诺长期保留。',
+            '角色卡内容需要遵守来源许可和 SFW 演示边界，公开页面不承诺所有角色都适用于任何主题。',
+            '上游模型并发和网络波动会影响回复速度，公开演示应准备简短问题和备用角色。',
+          ],
+        },
+      ],
+      roadmap: [
+        {
+          title: '后续优化方向',
+          items: [
+            '继续为复杂角色编写更短的游客专用提示词，降低首回复延迟。',
+            '增加角色收藏、演示标签和管理员可见的低敏运行统计。',
+            '在保持 API Key 服务端隔离的前提下，评估更稳定的排队、限流和多上游回退策略。',
+          ],
+        },
+      ],
+    },
+    assistantContext: [
+      'Roleplay 是独立部署的游客式多角色 AI 对话演示，公开入口为 roleplay.playlab.eu.cc。',
+      '2026-09-15 的公开观察记录 13 张可切换角色卡，访客可以从角色库进入聊天页，也可以使用 /r/<角色ID> 独立分享入口。',
+      '模型密钥、上游接口和游客会话保留在服务器端，浏览器不接触 API Key；服务通过 Nginx 和 Cloudflare Tunnel 提供 HTTPS。',
+      'health 记录的模型配置标签为 GLM 游客模式；复杂角色的回复速度受上游并发和提示词长度影响，health 不代表上游模型长期健康或回答质量。',
+    ],
+  },
+  {
     id: 'legal-rag',
     title: formatProductTitle('legal-rag', 'Legal RAG 与合同审查'),
-    summary: '已部署的法律文档 RAG 与合同风险审查工作台，覆盖公开安全数据集导入、引用溯源问答、合同审查、质量评测和诊断面板。',
+    summary: '法律文档 RAG 与合同风险审查工作台，串联材料导入、引用问答、规则优先审查和质量面板；受保护流程仍需独立运行验收。',
     category: 'ai',
     status: 'main',
     role: '全栈 MVP / RAG 流程 / 合同审查工作台',
@@ -170,7 +303,7 @@ export const projects: Project[] = [
         {
           title: 'Demo 访问边界',
           body:
-            '线上工作台有登录门禁，这是为了保护模型网关、上传接口和 pgvector 数据库资源。如果登录页显示“公开演示凭据”，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则该入口仍是受控演示，需要维护者在 API 侧配置低权限登录密码，并在 Web 侧配置 VITE_PUBLIC_DEMO_EMAIL / VITE_PUBLIC_DEMO_PASSWORD 后重新部署。真实后台密码不能写进项目页、文章或状态页。',
+            '工作台有登录门禁。只有入口重新验收、并提供专门的低权限演示身份后，才能体验受保护流程；没有公开演示身份时，需要联系维护者安排演示。主站目前保留案例与状态入口，不提供后台凭据。',
         },
         {
           title: '泊岸品牌入口已同步',
@@ -183,7 +316,7 @@ export const projects: Project[] = [
           title: '公开演示路径',
           items: [
             '先打开带登录门禁的线上工作台，说明登录保护用于隔离模型 key、上传接口和数据库资源；如果登录页显示公开演示凭据，再使用页面给出的专用 demo 账号登录。',
-            '如果登录页只显示邮箱和密码输入框、没有“公开演示凭据”区域，说明 Web 静态站尚未配置公开 demo 密码；这时不能把真实后台密码写到公开页面里，只能由维护者配置可公开、低权限、可轮换的 demo 凭据。',
+            '没有公开演示身份时，先阅读案例和流程材料；不要使用真实法律文件或后台账号尝试演示。',
             '进入知识库页初始化公开安全数据集，观察导入任务、文档判重、chunk 和 pgvector 持久化链路。',
             '切到智能问答，提问技术服务合同验收风险，重点看 answer、citations、diagnostics 和 answer source，而不是只看生成文本是否流畅。',
             '切到合同审查，使用示例合同查看风险条款、风险等级、修改建议、引用和导出边界。',
@@ -246,6 +379,11 @@ export const projects: Project[] = [
       ],
       quality: [
         {
+          title: '2026-10-04 源码核对范围',
+          body:
+            '本次核对 fd34e11c 版本的导入路由、RAG 服务、合同审查和质量报告接线：业务 API 经过认证中间件，问答返回召回片段引用与 diagnostics，审查模型增强异常时回退规则结果。mock provider 的质量报告不代表真实模型效果；本次没有执行登录、导入、模型或源项目测试，既有截图与运行记录保留其历史范围，法律结论仍需人工复核。',
+        },
+        {
           title: '评测与质量面板',
           body:
             '仓库中保留 RAG 问答和合同审查的 eval fixtures，API 也提供 quality 与 evaluation 报告路由。页面中的质量面板用于展示检索命中、引用、结构化审查等维度，让调整 chunk、召回、rerank 或提示词时有可对比的基线。',
@@ -307,10 +445,11 @@ export const projects: Project[] = [
       ],
     },
     assistantContext: [
-      'Legal RAG 是已部署的全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。',
+      'Legal RAG 是全栈法律文档 RAG 与合同审查工作台，前端使用 Vue 3/Vite/TypeScript，后端使用 Express/TypeScript，共享类型包连接 Web 与 API。2026-10-04 核对 fd34e11c 源码接线，未执行登录、导入或模型验收；公开入口仍为 unchecked + login-gated。',
       '系统支持公开安全数据集和文档导入，RAG pipeline 包含清洗、项目级 SHA-256 去重、章节感知 chunk、embedding、memory/pgvector 存储、query rewrite、向量+关键词混合召回、merge/filter/rerank、grounded answer 或 refusal、citations 与 diagnostics。',
       '合同审查采用规则优先策略，规则召回付款、交付、违约责任、知识产权、争议解决和终止等风险；模型只辅助改写已召回风险的解释和建议，并在 schema 校验失败时回退到规则结果。',
       '项目包含 RAG 与合同审查 eval fixtures、quality/evaluation 报告路由和质量面板，适合说明 AI 应用如何做引用溯源、可解释风险审查和质量评测。',
+      'mock provider 只适合本地演示，不代表真实模型效果。引用帮助回到召回片段核对，合同规则与模型建议都不能替代专业人工复核；测试源码存在不代表本次已运行通过。',
       'Legal RAG 后端还把配置用户、项目成员、项目空间授权、ingestion job 和 audit log 纳入数据模型，让公开演示能够解释“谁在什么项目空间里做了什么 AI 操作”。',
       'Legal RAG Web 工作台的标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸品牌；公开试用凭据仍只能通过低权限、可轮换、可公开的 demo 配置展示。',
       '线上工作台入口是 https://legal-rag-web.onrender.com，有登录门禁，公开页面不会放真实后台/admin 密码；如果 Legal RAG 登录页显示公开演示凭据，访客可以使用页面给出的低权限 demo 凭据试用；如果没有显示凭据，则仍是受控演示入口。',
@@ -322,7 +461,7 @@ export const projects: Project[] = [
   {
     id: 'chatus',
     title: formatProductTitle('chatus', 'Chatus 邀请制私人 AI 工作台'),
-    summary: '部署在 Cloudflare Workers 上的邀请制 AI 工作台，以成员、会话和服务商协调三个状态边界组织多模型对话、长期记忆、能力授权与可恢复流。',
+    summary: '面向受邀成员的 AI 工作台，以会话 Agent、Skills 与工具分配、显式记忆和可恢复流支撑持续工作；访客能力单独收窄。',
     category: 'ai',
     status: 'main',
     role: 'Cloudflare Agent / 多模型路由 / 会话与记忆 / 安全发布',
@@ -330,7 +469,7 @@ export const projects: Project[] = [
     imageAlt: 'Chatus 私人 AI 工作台的合成桌面端会话界面',
     imageCaption: '封面使用确定性合成会话数据，展示邀请制工作区的消息、附件和工具布局，不包含真实成员、线路或运营信息。',
     stack: ['React 19', 'TypeScript', 'Cloudflare Workers', 'Agents SDK', 'Durable Objects', 'KV', 'PWA'],
-    highlights: ['邀请制入口', '会话级 Agent', '首输出前回退', '显式长期记忆'],
+    highlights: ['邀请制入口', '会话级 Agent', 'Skills 与工具授权', '显式长期记忆'],
     links: [externalLink('邀请制工作台', CHATUS_SITE_URL, 'entry')],
     detailContent: {
       overview: [
@@ -358,6 +497,15 @@ export const projects: Project[] = [
         },
       ],
       workflow: [
+        {
+          title: '工作 Agent 与能力分配',
+          items: [
+            '成员可为工作会话选择手动或自动 Skill 模式；服务端先核对成员可见能力，再构造本轮工具集合。',
+            'Skill 引用工具不等于获得工具权限：工具还必须被分配给成员、处于启用状态，并有可用的内置或 MCP 执行器。',
+            'MCP 写入或破坏性工具需要逐次确认；受限访客的 Skill 列表为空，不继承成员工具与自带密钥能力。',
+            '会话恢复时重新过滤已失效的能力设置，避免旧会话沿用已经撤销的 Skill。',
+          ],
+        },
         {
           title: '成员与会话分层',
           items: [
@@ -399,6 +547,11 @@ export const projects: Project[] = [
         },
       ],
       quality: [
+        {
+          title: '2026-10-04 源码与素材范围',
+          body:
+            '本次核对 a7f41480 基线及现有工作树中的能力注册、会话设置修复和 Agent 执行接线，确认成员授权与访客收窄已进入服务端路径。这里不把未提交实现当成已部署版本；既有工作区、记忆截图继续标明合成夹具来源，本次未运行源项目测试、成员登录或模型请求。',
+        },
         {
           title: '视觉、协议与部署门禁',
           items: [
@@ -448,6 +601,7 @@ export const projects: Project[] = [
       '成员级 Durable Object 管理会话索引、长期记忆和清理状态，会话级 Agent 管理消息、可恢复流、审批和分支，独立协调边界负责 provider 并发租约。',
       '多模型路由支持优先级候选和并发模式；回退只允许发生在首个可见输出之前，避免把两条 provider 输出拼接成一个回答。',
       '长期记忆对成员显式可见、可编辑、可清空，并与滚动摘要配合；成员能力在投影和执行时都会重新校验。',
+      '2026-10-04 核对 a7f41480 基线及工作树：工作会话支持手动/自动 Skill 模式，工具需同时满足成员分配、启用和执行器可用；MCP 写入/破坏性操作逐次确认，访客没有成员 Skill/工具能力。此次只核对源码，未运行源项目测试或生产验收。',
       '公开入口是 https://chatus.ciallobill.qzz.io；入口可达不代表访客拥有成员账号、访问码或完整能力。',
       '主站不得公开 Chatus 的私有源码地址、访问材料、真实成员、provider 身份、生产配置或运营数据。',
     ],
@@ -482,7 +636,7 @@ export const projects: Project[] = [
         {
           title: '新增 App 展示与下载状态页',
           body:
-            '当前已经在主站补充 /pet-app-showcase/ 独立静态展示页，用真实 Android 模拟器截图呈现桌宠模式、孵化桌宠、社区和个人页。页面标题、favicon 和入口文案已接入 BIAU Port / 泊岸统一品牌；APK 区域明确标注待正式签名包，记录 debug 构建只用于内部验证，不提供占位下载链接，也不把 debug 包包装成公开发布包。',
+            '主站的 /pet-app-showcase/ 独立静态展示页用真实 Android 模拟器截图呈现桌宠模式、孵化桌宠、社区和个人页。页面标题、favicon 和入口文案已接入 BIAU Port / 泊岸统一品牌；APK 区域展示已核验的本地 release 归档摘要与待核对的发布条件，公开下载继续关闭。',
           visual: {
             id: 'pet-android-app-showcase',
             type: 'screenshot',
@@ -499,7 +653,7 @@ export const projects: Project[] = [
         {
           title: '展示页不等同于发布页',
           body:
-            'App 展示页现在承担的是“让访客看见当前工作面”的职责：桌宠模式、孵化、社区和个人页都可以通过模拟器截图理解产品方向；APK 区域则明确写成 release gate，而不是把 debug 构建伪装成可公开下载。这样项目页可以展示真实进展，同时保留正式签名、回归和人工批准的边界。',
+            'App 展示页承担的是“让访客看见当前工作面”的职责：桌宠模式、孵化、社区和个人页都可以通过模拟器截图理解产品方向。本地 release APK/AAB 的存在是构建证据，公开下载则需要签名、安装与回归、版本说明和人工批准等独立证据。',
           visual: {
             id: 'pet-android-hatch-showcase',
             type: 'screenshot',
@@ -514,9 +668,9 @@ export const projects: Project[] = [
           },
         },
         {
-          title: 'APK 发布门禁最新结论',
+          title: 'release 归档与发布门禁',
           body:
-            '最近一次发布门禁审计只在 Pet 工作区找到 debug APK，没有找到满足公开条件的 release APK 或 AAB。因此主站和展示页继续保持 APK 下载关闭；后续必须补正式 release 构建、签名策略、校验摘要、版本说明、基础回归和人工确认后才能公开下载。',
+            '2026-09-16 的只读核验确认本地已有 release APK 0.1.0 / code 1（14,920,672 bytes）和 AAB（14,385,956 bytes），归档结构、CRC 与 release metadata 可核对。2026-09-24 复算大小和 SHA-256 与原记录一致，完整摘要见 App 展示页。本轮未验签、未安装、未执行完整生成流程，也未批准公开分发；不能据此判断源项目是否完成过这些工作，主站下载门禁继续保留。',
         },
       ],
       workflow: [
@@ -610,8 +764,8 @@ export const projects: Project[] = [
           title: '当前边界',
           items: [
             '这是进行中的产品工程，不应描述为已经完全生产化的公共 AI 桌宠平台。',
-            '公开 APK 还没有开放下载；展示页只说明当前 App 画面、debug 构建内部验证信号和发布门禁，不提供伪造或占位下载。',
-            '当前本地只确认到 debug APK 产物；debug APK 不能作为公开下载包、应用商店发布物或长期版本承诺。',
+            '公开 APK 还没有开放下载；展示页只说明当前 App 画面、release 归档核验结果和发布门禁，不提供伪造或占位下载。',
+            '本地 release APK/AAB 已有归档证据，但本轮未核验签名、安装和完整生成流程，也没有公开分发批准；归档存在不能直接作为主站下载或长期版本承诺。',
             '真实生成 Worker、模型适配、私有运维、部署验证、租户权限和完整鉴权仍属于受控后台能力，不对公开访客开放。',
             '机器 QA 只能帮助发现透明背景、动作稳定性、循环锚点和布局问题，最终发布仍需要人类视觉审核。',
             'Android 真实设备/模拟器端到端、长期 SLA、队列守护、运维 Runbook 和监控告警仍需要继续补强。',
@@ -639,9 +793,9 @@ export const projects: Project[] = [
       '生成规则服务负责 app-safe job 创建、轮询、artifact 索引、不透明 downloadId、人工 review decision、package plan、pet.zip 构建、worker readiness 和内部 GA/Codex/QA 证据；机器证据不能替代人工视觉 accept。',
       '质量证据包括 Node workspace tests、Android 单元测试、Community API routes/server/store/rate-limit/metrics/SLA/logging/postgres 测试、pet package contract 测试、追踪矩阵、结构化日志、Prometheus metrics 和 SLA 文档。',
       '私有运维侧有 preflight、smoke 和 target hooks audit 脚本，用来检查 Community API、Admin Review、Worker gate 和受控部署面；公开助手只能说明这种验证形态，不能透露私有 token、部署地址或 Worker 命令。',
-      '项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域明确标注待正式签名包，debug 构建只作为内部验证信号，不提供占位下载。',
-      'Pet 项目详情页正文已经穿插 Android 首页、孵化桌宠和社区页截图，说明这些是公开展示当前工作面的证据；正式 APK 下载仍必须等待 release 构建、签名、SHA-256、版本说明、回归和人工批准。',
-      '最近一次 APK 发布门禁审计只找到 debug APK，没有 release APK/AAB 候选；公开下载继续关闭，后续需要正式构建、签名策略、校验摘要、版本说明、回归证据和人工确认。',
+      '项目已在主站提供 /pet-app-showcase/ 静态 App 展示与下载状态页，使用 BIAU Port / 泊岸标题与 favicon，并用真实 Android 模拟器截图展示桌宠模式、孵化桌宠、社区和个人页；APK 区域公开记录本地 release APK/AAB 的版本、大小和摘要，但仍不提供下载入口。',
+      'Pet 项目详情页正文已有 Android 首页、孵化桌宠和社区页截图；本轮未核验 release 归档的签名、安装和完整生成流程，也未批准公开分发，不能据此断言源项目从未完成这些工作。主站公开下载继续关闭。',
+      '2026-09-16 本地归档核验记录 release APK 0.1.0 / code 1 为 14,920,672 bytes（SHA-256 ab60204e6ab0b94a84b2dccef32eb65e26b1cbba728dac56f167a8940ff89108），AAB 为 14,385,956 bytes（SHA-256 0fad67e69ad1540bbe4ad23e0b6d79322cd9ab04b686db45bba785abe140777c）；2026-09-24 复算大小和摘要一致。归档事实不能替代公开发布门禁。',
       '当前项目应被描述为 WIP：Android 模拟器 E2E、live 私有部署验证、生产鉴权、租户隔离、Worker daemon、队列运营、Runbook、长期 SLA 和可观测告警仍是后续优化方向。',
     ],
   },
@@ -753,7 +907,7 @@ export const projects: Project[] = [
         {
           title: '受保护写入边界',
           body:
-            '商品上架、调价、库存和归档等外部平台写入会先创建 PendingAction 与 JobQueue 记录，再根据配置选择队列/后台执行或显式 inline 执行。当前代码和测试表明，商品写入与一键铺货默认偏向队列或本地后台执行，避免页面或插件长时间等待外部平台任务完成。',
+            '商品上架、调价、库存和归档等外部平台写入会先创建 PendingAction 与 JobQueue 记录，再根据配置选择队列/后台执行或显式 inline 执行。队列只改变执行时机，不代表模拟模式：任务执行器默认选择 real，写入开关未显式关闭时还会继续检查店铺凭据与目标，再调用平台。',
         },
         {
           title: '队列、Worker 与恢复',
@@ -762,6 +916,11 @@ export const projects: Project[] = [
         },
       ],
       quality: [
+        {
+          title: '2026-10-04 源码与历史入口观察',
+          body:
+            '本次核对 e7179e00 版本的注册角色、任务执行器和写入分支，未登录或调用店铺业务。2026-08-18 的公开入口重定向停机页并返回 403 是历史观察，本次没有重新访问，不能断言今天仍停机。已有测试与报告描述其覆盖范围，不代表本次重跑通过；入口继续等待独立复核。',
+        },
         {
           title: '测试与验收证据',
           items: [
@@ -786,7 +945,7 @@ export const projects: Project[] = [
         {
           title: '当前边界',
           items: [
-            '真实 Ozon 写入必须由运行环境显式开启并配合正确凭证；测试、培训或演示环境应保持 mock 或关闭真实写入。',
+            '任务执行器默认 real，只有显式关闭写入开关才阻止该路径继续执行；未设置开关不等于只读。这里的非 real 分支会拒绝写任务，并非完整的 mock 业务演示；演示环境必须单独隔离数据、凭据与外部写入。',
             '队列模式需要 Worker 同步运行；如果只启动 API 而没有 Worker，部分任务会停留在队列或依赖本地恢复策略。',
             '佣金覆盖仍需要持续补齐可信来源；未确认类目不能为了好看而硬映射。',
             '浏览器插件依赖 Seller 页面结构、权限、Cookie 和跨标签页通信，外部页面变化会带来维护成本。',
@@ -816,7 +975,8 @@ export const projects: Project[] = [
       'ERP 概览页已经补充登录后首次引导，展示当前账号/角色、Owner 与协作者职责说明，并说明已有 Owner 后新注册账号默认是 operator，不自动获得 Owner 权限。',
       'Express API 注册 auth、shops、products、selection、settings、ozon、collect、market metrics、commission rates、api.chrome、exchange rates、watermark 和 uploads 等路由。',
       'Prisma 模型覆盖用户、店铺、Ozon 凭证、Seller 会话、商品、采集商品、草稿、导入日志、PendingAction、JobQueue、AuditLog、市场指标和佣金映射等对象。',
-      '外部平台写入通过 PendingAction 和 JobQueue 收口；当前代码和测试显示商品写入与一键铺货默认偏向队列或本地后台执行，只有显式配置 inline 才同步执行。',
+      '外部平台写入通过 PendingAction 和 JobQueue 收口；排队不等于 mock。2026-10-04 核对 e7179e00 的执行器默认 real，写入开关未显式关闭时继续检查店铺凭据与目标；非 real 分支拒绝写任务，不能假定完整模拟业务可用。',
+      '2026-08-18 入口重定向停机页并返回 403 是历史观察，本次未重新访问、登录或写入业务，不能称为当前持续故障。入口仍为 unchecked + login-gated，已有 Owner 后新注册账号为 operator。',
       '浏览器插件负责 Ozon/Seller 页面采集、Seller 上下文读取、跨标签页请求、ERP 路由打开和图片下载，并通过认证或扩展密钥边界接入 ERP API。',
       '项目验证证据包括 API/shared Vitest、受保护写入测试、Ozon 同步容错测试、插件接口映射测试、插件版本发布检查、smoke 脚本、交接清单、上线检查、佣金覆盖报告和依赖审计记录。',
       '后续优化方向包括运行模式可视化、Worker/队列运维、佣金可信映射补齐、权限和审计增强、插件发布自动化、日志脱敏、备份演练和部署自动化。',
@@ -825,7 +985,7 @@ export const projects: Project[] = [
   {
     id: 'biau-playlab',
     title: formatProductTitle('biau-playlab', '游戏作品集与系统设计内容站'),
-    summary: '基于 Astro 的独立游戏作品集与试玩平台，整合六个已部署 Godot Web 游戏、项目详情、截图/视频、开发日志和系统设计文章。',
+    summary: '基于 Astro 的游戏作品集，集中展示六个不同阶段的 Godot 项目、Web 试玩入口、历史截图/录制与开发日志；源码、导出包和设备体验分别核验。',
     category: 'platform',
     status: 'live',
     role: 'Astro 作品集 / Godot Web 试玩 / 内容审计 / Cloudflare Pages',
@@ -872,12 +1032,12 @@ export const projects: Project[] = [
         {
           title: '六个游戏项目索引',
           items: [
-            'Tetris：经典计分与 Rogue 强化并行的长期原型，已经具备 Web 试玩、触屏桥接和多尺寸截图回归。',
-            'Next Spacewar：以三波短任务、目标差异和单局复盘为核心的展示构建，重点验证紧凑射击流程。',
-            'intespace：围绕章节、生存、Boss、武器树和局内外成长组织的竖屏 Roguelite，已形成完整 session 链路。',
-            'Raiden Prototype：双关卡、火力成长、连锁奖励与首领相位组成的纵版射击垂直切片。',
-            'space-war：包含五个 Sector、首领战、高分与发布材料的完整复古横版射击版本。',
-            'Spacewar II：面向移动端的纵向射击续作原型，作为第六个项目接入统一内容和 Web 导出流程。',
+            'Tetris：经典计分与 Rogue 强化并行的长期原型，已有触屏动作桥接，超窄屏与真实触控仍需回归。',
+            'Next Spacewar：源码菜单与战斗标识为展示版本 0.17，以三波短任务、目标差异和单局复盘为核心。',
+            'intespace：源码标识 0.1.0-phase06 / prototype，章节、生存、Boss 试炼和成长流程已接线，候选门禁仍依赖试玩样本。',
+            'Raiden Prototype：RC-0.4 双关章节垂直切片，局内评价文案不替代外部试玩和发布验收。',
+            'space-war：五个 Sector、首领战和高分结算已实现；v1.1.1 是历史 Windows 发布标签，不直接代表当前 Web 包。',
+            'Spacewar II：三阶段纵向射击原型，当前主场景使用键盘移动、空格射击和 X 炸弹，不能据移动端题材宣称触屏可玩。',
           ],
           links: [
             internalLink('查看 Tetris 案例', '/projects/game-first-tetris'),
@@ -892,7 +1052,7 @@ export const projects: Project[] = [
           title: '统一 Web 试玩入口',
           items: [
             '六个游戏沿用统一 slug 规则发布到独立试玩域名；Playlab 负责项目说明，试玩站负责承载 Godot Web 构建。',
-            '试玩入口用于验证真实构建和核心玩法，不等同于所有浏览器、移动设备与网络环境下的发行质量承诺。',
+            '2026-10-05 确认六套本地 HTML/JS/WASM/PCK 文件存在；缺少绑定源码提交与线上资源摘要的发布清单，不能把当前源码版本直接当成公开 Web 版本。',
           ],
           links: [
             gamePlayLink('first-tetris'),
@@ -963,7 +1123,7 @@ export const projects: Project[] = [
         {
           title: '内容与发布质量',
           items: [
-            'content:audit 当前统计到 4 篇已发布文章、39 篇文章工作区草稿、6 个游戏项目和 5 篇开发日志，并检查静态资源引用和内容关系。',
+            '内容审计脚本检查文章、草稿、六个游戏与开发日志的引用和静态资源；本轮只读核对脚本，旧审计数量和通过记录不作为当前运行结果。',
             'verify 会串起内容审计、Astro build 和构建产物审计，减少断链、缺图和结构化数据问题。',
             'deploy:check 使用公开 URL 做端点可用性检查，覆盖内容站和试玩站的关键入口。',
             'RSS、sitemap、robots 和结构化数据不是装饰项，而是让游戏案例、开发日志和文章归档能被搜索引擎与外部阅读器稳定识别的内容基础设施。',
@@ -972,7 +1132,12 @@ export const projects: Project[] = [
         {
           title: '项目证据来自实际游戏工程',
           body:
-            '六个游戏条目不是从 README 单点摘抄，而是结合内容站 frontmatter、Godot 项目结构、脚本目录、截图/视频资产、开发日志和发布检查来整理。这样主站案例页能说明“这些游戏如何被展示和部署”，而不是只复述一个过时说明文件。',
+            '2026-10-05 按实际入口场景核对六个工程的流程、输入与版本常量，并检查本地导出文件。游戏条目的 updatedDate 均为 2026-06-28，这只是内容日期；既有截图的精确采集日和对应构建未全部绑定。本轮未重跑游戏、导出、线上加载或真机验收。',
+        },
+        {
+          title: '录制素材的覆盖范围',
+          body:
+            '游戏站已有 Tetris、Next Spacewar、intespace、Raiden 和 Space War 的五个 playtest MP4，处理脚本使用对应 AVI 录制源；Spacewar II 尚无同类短视频。文件存在不等于当前版本的完整人工试玩，后续需补录制日期、构建标识和设备范围。',
         },
       ],
       limitations: [
@@ -990,7 +1155,7 @@ export const projects: Project[] = [
           title: '后续优化方向',
           items: [
             '重写博客与项目文档，让系统设计文章、开发日志和项目案例在叙事上更统一。',
-            '为每个游戏补更清晰的版本记录、试玩反馈、移动端适配结论和性能说明。',
+            '将每个游戏的源码提交、Web 包摘要、线上引用资源、截图/录制日期和设备验收绑定到同一发布记录。',
             '继续完善试玩包自动导出、资源上传、端点检查和失败告警，让游戏发布更接近一键化。',
             '把主站、Playlab 内容站和试玩站的项目信息进一步对齐，减少多站点重复维护。',
           ],
@@ -1003,7 +1168,9 @@ export const projects: Project[] = [
       '站点使用 Astro content collections 管理 games、devlogs、published articles 和 article workbench；games schema 包含 status、engine、platforms、screenshots、playableWeb、embedUrl、downloadLinks、repoUrl、challenge、mechanic、contribution、outcome、nextStep、milestones 和 devlogSlugs。',
       '六个游戏包括 Tetris、Next Spacewar、intespace、Raiden、space-war 和 Spacewar II；Spacewar II 已作为第六个公开 Web 试玩项目接入，并补齐菜单、战斗和结果页真实截图。',
       'Godot Web 试玩入口由独立试玩域名承载，首次加载可能较慢；移动端输入、横竖屏缩放、HUD 可读性和浏览器性能仍需要持续回归。',
-      '最近内容审计统计到 4 篇已发布文章、39 篇文章工作区草稿、6 个游戏项目和 5 篇开发日志，静态资源引用和内容关系检查通过。',
+      '2026-10-05 只读核对六游戏源码和六套本地 Web 文件，未重跑游戏审计、导出、线上加载或真机验收；当前源码提交与线上 Web 包的版本对应仍待确认。',
+      '五个游戏已有 playtest MP4，Spacewar II 短视频仍待补；游戏条目 2026-06-28 的更新日期不等于截图或录制日期。Next Spacewar 源码标签为 0.17，intespace 为 0.1.0-phase06 / prototype，Raiden 为 RC-0.4；Space War v1.1.1 是历史发布标签。',
+      'Spacewar II 当前入口走 NokiaBattle/NokiaPlayer，三阶段、键盘移动、空格射击和 X 炸弹；移动端题材和移动视口 canvas 检查不证明触屏可玩。',
       'Playlab 的质量链路包括 content:audit、Astro build、dist:audit、deploy:pages、deploy:play、play export/check/upload 和 deploy:check；dist:audit 会检查站内链接、资源路径和 JSON-LD，公开端点检查覆盖游戏站、六个游戏详情页、六个试玩入口、RSS、sitemap、robots 和主站项目页。',
       '当前 Playlab 应作为游戏作品集平台展示；博客和部分文章归档质量仍是后续优化方向，不应把它描述成已经完全成熟的内容产品。',
     ],
@@ -1081,10 +1248,10 @@ export const projects: Project[] = [
         {
           title: 'Agent 学习模式',
           items: [
-            'LearningAgentRuntime 支持长会话学习，可通过 AgentCheckpoint 恢复中断的学习进度。',
+            'LearningAgentRuntime 会先检查 checkpoint 是否可恢复、是否需要用户决策，再恢复学习计划和 trace；工具结果不明时，界面提供确认结果、重新执行或结束会话的处理入口。',
             'HybridKnowledgeSearchService 混合 BM25 关键词检索和语义检索，提供精准的知识回答。',
             'InterviewerService 提供苏格拉底式面试引导，帮助理解复杂项目代码。',
-            '支持生成编程练习 (ProgrammingExercise)，提供代码实践机会。',
+            '编程练习界面区分待核验与已核验状态；引用缺失时阻止核验，展示来源依据后由用户确认，再进入正式作答。以上为 2026-09-24 源码核对，本轮未重跑模型或设备验收。',
           ],
         },
       ],
@@ -1102,10 +1269,21 @@ export const projects: Project[] = [
         {
           title: '防幻觉机制',
           body:
-            'Citation Verification 确保 AI 引用真实存在的 chunk；Question Validator 二次核验生成答案与源文档的一致性；Semantic Chunker 保证源文档结构完整。三层防线确保学习内容可信。',
+            'Citation Verification 检查引用的 chunk 是否存在；Question Validator 检查答案与来源证据是否一致；Semantic Chunker 保留文档结构。这些门禁帮助发现缺失引用和缺乏依据的答案，仍需要结合来源内容审阅结果。',
         },
       ],
       quality: [
+        {
+          title: 'Android v1.0.0 公开产物与验收边界',
+          body:
+            'v1.0.0 APK 于 2026-09-15 公开发布；2026-09-16 的 GitHub Release API 核验记录大小 26,404,187 bytes、SHA-256 3371870ee2691f0aa3496e2e6fb1153a6c028b840bfef33c924dbea8cf96d475，与当时本地产物一致。2026-09-24 只读重跑 Private Alpha readiness CLI 仍返回 HOLD（退出码 2），有以下 6 个阻塞码。公开产物与验收状态分开记录，主站继续保留浏览器 Demo 入口，不新增 APK 下载。',
+          items: [
+            '自动门禁证据过期：automated_gate_evidence_stale。',
+            '构建大小和摘要与证据不匹配：android_build_bytes_mismatch、android_build_sha256_mismatch。',
+            '主路径与回退路径的发布日验收证据过期：release_day_acceptance_primary_stale、release_day_acceptance_fallback_stale。',
+            '真机证据过期：physical_device_evidence_stale。',
+          ],
+        },
         {
           title: '可溯源性验证',
           items: [
@@ -1141,8 +1319,9 @@ export const projects: Project[] = [
           items: [
             'Flutter 客户端的 AI 生成能力需要用户自行配置兼容服务，模型输出仍需引用与答案校验，不把 provider 成功等同于内容可信。',
             '当前发布证据以 Android Private Alpha 为主，iOS、桌面和 Flutter Web 不属于已支持发布面。',
+            'v1.0.0 APK 已有公开 Release，但 2026-09-24 readiness 复核仍为 HOLD，主站维持既有下载门禁。',
             '官网 `/app/` 是使用 3 套内置数据、12 道题目的静态引导 Demo，不包含导入、登录、云同步、真实模型或完整 Flutter 应用。',
-            '大型项目导入、语义切分和题目生成可能耗时，仍需要进度反馈、取消和增量恢复策略。',
+            '源码已有 checkpoint 恢复和用户结束会话的处理，但这不等于所有导入或模型请求都可即时取消；大型材料、异常中断和跨版本恢复仍需独立验收。',
           ],
         },
       ],
@@ -1163,23 +1342,24 @@ export const projects: Project[] = [
       'Anchor Learning (锚学) 是基于 Flutter、Riverpod 和 sqflite 的本地优先学习助手，核心设计原则是可溯源性优先与生成后验证。',
       '支持项目文档导入（Markdown、代码文件等），通过 SemanticChunker 结构化切分并生成精确 locator 与 content hash。',
       '题目生成经过 Citation Verification 和 Question Validator 两道检查，分别验证引用存在性和证据对答案的支持关系；这会降低幻觉风险，但不承诺绝对正确。',
-      'Agent 学习模式支持长会话、检查点恢复、混合检索（BM25 + 语义）、苏格拉底式引导和编程练习生成。',
+      '2026-09-24 源码核对确认 Agent 会在恢复 checkpoint 前检查 readiness，工具结果不明时要求用户决策并可结束会话；编程练习提供来源核验，引用缺失时不允许标记已核验。此项为实现核对，本轮未执行模型或设备验收。',
       '核心流程包括：文档导入 → 语义切分 → 知识点提取 → 题目生成 → 双重验证 → Agent 学习辅导。',
       '已部署双语官网 https://anchor.playlab.eu.cc 与静态浏览器 Demo https://anchor.playlab.eu.cc/app/；Demo 使用 3 套内置数据和 12 道题，不上传文件、不访问后端、不调用实时 AI。',
       '浏览器 Demo 会在 `anchor.locale` 保存中英文偏好，在 `anchor.demo.progress.v1` 保存版本化进度，并在状态损坏或版本不兼容时安全重置。',
       '开源仓库是 https://github.com/Drew-Z/anchor；当前受支持发布证据以 Android Private Alpha 为主，浏览器 Demo 不等于完整 Flutter Web 应用。',
+      'v1.0.0 APK 发布于 2026-09-15；2026-09-16 API 核验大小 26,404,187 bytes，SHA-256 为 3371870ee2691f0aa3496e2e6fb1153a6c028b840bfef33c924dbea8cf96d475。2026-09-24 readiness CLI 重跑仍为 HOLD，6 个阻塞码为 automated_gate_evidence_stale、android_build_bytes_mismatch、android_build_sha256_mismatch、release_day_acceptance_primary_stale、release_day_acceptance_fallback_stale、physical_device_evidence_stale。',
     ],
   },
   {
     id: 'blog-semi',
     title: formatProductTitle('biau-port', '内容与助手平台'),
-    summary: '当前主站，用 React、自定义设计系统和轻量助手后端组织首页、项目案例、知识文章、公开助手、SEO 数据和自动化验证。',
+    summary: 'React 内容与助手主站，提供三组项目目录、文章搜索与阅读返回、三主题和中英文公共界面；项目正文保留原文，产品验收与本地界面进展分别记录。',
     category: 'platform',
     status: 'ongoing',
     role: 'React 主站 / 自定义设计系统 / 项目案例路由 / 内容治理 / 助手知识',
     image: '/images/projects/showcase/blog-semi-home-desktop.png',
     stack: ['React 19', 'Vite', 'TypeScript', 'Lucide', 'Express', 'Prisma', 'PostgreSQL', 'LangGraph', 'Playwright'],
-    highlights: ['多视图主站', '项目案例', 'LangGraph Agent', '内容治理', 'UI 验证'],
+    highlights: ['三组项目目录', '搜索与阅读返回', '三主题', '中英文界面', '公开助手'],
     links: [
       internalLink('内容模型文章', '/blog/content-modeling-project-site'),
       internalLink('公开内容治理', '/blog/public-content-governance'),
@@ -1196,13 +1376,13 @@ export const projects: Project[] = [
             id: 'blog-semi-home-ui',
             type: 'screenshot',
             title: '主站首页截图',
-            description: '首页承担项目入口和品牌第一印象，正文截图能让案例页直接呈现当前主站状态。',
+            description: '首页承担项目入口和品牌第一印象，既有截图用于展示页面组织方式。',
             image: '/images/projects/showcase/blog-semi-home-desktop.png',
             alt: 'BIAU Port 主站首页桌面端截图',
             sourceLabel: '回到首页',
             sourceUrl: '/',
             sourceIntent: 'evidence',
-            caption: '截图来自当前主站首页，用于说明 BIAU Port 的项目入口和品牌第一印象。',
+            caption: '既有主站首页截图；本轮未重新采集，不能据此判断当前主题细节或线上部署版本。',
           },
         },
         {
@@ -1216,9 +1396,9 @@ export const projects: Project[] = [
           title: '访客浏览闭环',
           items: [
             '首页 hero 项目卡片先进入主站项目详情，卡片按钮再打开外部 demo 或项目网站。',
-            '项目集按 AI 应用和全栈开发两组组织公开案例，六个游戏统一收口到 BIAU Playlab，整卡与键盘 Enter/Space 都进入主站详情页。',
+            '项目集按 AI 应用、全栈开发和工具三组组织 10 个目录项目；六个游戏保留独立详情，由游湾集合承载，不重复进入目录卡片。',
             '项目详情页统一展示核心亮点、技术栈、相关链接、案例分析、延展阅读和同类项目。',
-            '博客页通过公开精选与栏目过滤展示知识积累、项目总结、资源分享、AI 日报和构建手记等内容边界。',
+            '博客支持栏目、关键词与分页，浏览状态写入 URL；项目分组和文章列表进入详情时保存阅读入口，便于返回原列表继续浏览。',
           ],
           visual: {
             id: 'blog-semi-projects-ui',
@@ -1227,8 +1407,15 @@ export const projects: Project[] = [
             description: '项目集截图说明访客可以按项目类型浏览，再进入具体案例页或外部演示入口。',
             image: '/images/projects/showcase/blog-semi-projects-desktop.png',
             alt: 'BIAU Port 项目集桌面端截图',
-            caption: '项目集截图展示当前公开案例组织方式；具体线上状态仍以状态页和外部入口检查为准。',
+            caption: '既有项目集截图，可能早于当前三组目录和界面语言改动；具体浏览行为以页面为准。',
           },
+        },
+        {
+          title: '主题与界面语言',
+          items: [
+            '晨曦、自然、星辰三种主题保存本地偏好，主题切换尊重 reduced motion 设置。',
+            '中英文切换覆盖公共导航、目录、项目/状态界面等控件，并保存语言偏好；项目正文、博客原文和历史素材不会自动翻译。',
+          ],
         },
         {
           title: '助手与内容联动',
@@ -1268,6 +1455,14 @@ export const projects: Project[] = [
       ],
       quality: [
         {
+          title: '本地进展与历史产品验收',
+          items: [
+            '2026-10-05 核对本地浏览、主题与语言实现；本地 main 与已存储 origin/main 指向同一提交，未 fetch 或核定线上静态产物，工作区内容更新尚未发布。',
+            '知航的 2026-08-16 验收记录包含一次同源 SSE 非降级回答、一次生成尝试和一条 verified 引用，并结合此前恢复与 390px 观察关闭产品门禁；这是历史受控闭环，不是当前长期可用保证。',
+            '潮讯的 2026-08-18 v7 Edition 在 extractor 阶段被限流，Revision 15 拒绝并丢弃，未进入公开发布；真实 Edition、审核、Publish Export 和 Feed 验收仍待完成。本轮不调用模型或启用 Feed/Cron。',
+          ],
+        },
+        {
           title: '自动化验证',
           items: [
             '`npm.cmd run assistant:index` 生成公开助手知识。',
@@ -1306,7 +1501,9 @@ export const projects: Project[] = [
       ],
     },
     assistantContext: [
-      'BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建，负责组织首页、项目集、项目详情、博客、公开研究助手和内容 Studio。',
+      'BIAU Port 当前主站使用 React 19、Vite、TypeScript、自定义 CSS 设计令牌和 Lucide 图标构建；10 个目录项目分 AI 应用、全栈开发、工具三组，六个游戏通过游湾集合承载并保留独立详情。',
+      '主站已有文章栏目/搜索/分页、URL 浏览状态与阅读返回，以及晨曦/自然/星辰三主题和中英文公共界面偏好；正文、博客原文和历史素材不会自动全量翻译。',
+      '2026-10-05 核对的是本地实现，不证明线上产物已同步。知航 2026-08-16 的一次真实 SSE 回答与引用验收是有范围的历史记录；潮讯 2026-08-18 v7 Edition 被限流、Revision 15 拒绝，公开 Edition/Feed 仍待验收，本轮零模型调用且不启用 Feed/Cron。',
       '项目数据、博客 curation、助手建议和公开知识都存放在 `src/data/`，项目详情页通过 `detailContent` 展示案例分析，公开助手通过 `assistantContext` 和精选博客生成可检索知识。',
       '仓库包含公开助手、Content Studio 和 public-only RAG Orchestrator 三种 Express/TypeScript 服务模式；公开助手与 Studio 使用独立数据库，前端未配置公开 API 时仍可使用明确标注的公开知识 fallback。',
       '公开助手已经实现 public-only Agentic RAG：`runPublicAssistantAgent()` 进入 conditional LangGraph，按问题选择 direct、site、web 或 combined 路由，并执行证据分级、有界恢复、生成和 claim/citation 校验。',
@@ -1459,10 +1656,11 @@ export const projects: Project[] = [
       quality: [
         {
           title: '多端回归证据',
+          body: '沿用既有截图和 playtest 录制。游戏站条目更新于 2026-06-28；精确采集日、录制设备和当前构建对应待补，本轮未重新采集。',
           items: [
-            '开发日志记录主菜单、经典模式、Rogue 模式和 Help 在 360 x 640、393 x 852、412 x 915、960 x 640、1024 x 768、1280 x 720 等尺寸下进入最低可用线。',
+            '历史开发日志记录主菜单、经典模式、Rogue 模式和 Help 的多尺寸观察；这是既有回归记录，本轮未重跑这些游戏尺寸。',
             '393 x 852 已可用，360 x 640 仍被描述为最低可运行线，因此主站不把触控体验写成完全完成。',
-            '游戏站内容审计会检查 games 与 devlogs 的关系、公开资源引用和内容 id，避免展示页资源断链。',
+            '2026-10-05 源码核对确认 combo/B2B、软硬降计分和触控按下/释放桥接；未找到本轮可绑定到线上包的版本清单，不把桥接存在等同于真机手感验收。',
           ],
           visual: {
             id: 'tetris-mobile-menu',
@@ -1494,7 +1692,7 @@ export const projects: Project[] = [
           items: [
             '继续打磨 360 x 640 等高风险尺寸下的触屏可玩性和 HUD 阅读性。',
             '整理分支、里程碑和试玩记录，让经典主线与 Rogue 实验线的关系更清楚。',
-            '补充更完整的录屏或试玩反馈，作为未来版本迭代依据。',
+            '为已有 playtest 录制补构建标识、采集日期与设备范围，再收集当前版本的人工试玩反馈。',
           ],
         },
       ],
@@ -1503,12 +1701,13 @@ export const projects: Project[] = [
       'Tetris 是 Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化实验、触屏桥接、响应式 UI 和 Web 试玩。',
       'Playlab 游戏站证据显示 Tetris 使用 Godot 4.6.1，保留主菜单、Rogue 游戏画面和 Help 面板截图，并有 tetris-responsive-baseline 与 tetris-touch-controls 两篇开发日志说明多端适配和输入结构。',
       '项目重点是把经典规则、现代计分反馈、移动触控和可展示的 Web 构建组织在一起；后续方向包括移动端触控细节、Rogue 强化平衡、截图/试玩回归和长期迭代。',
+      '2026-10-05 核对计分与触控桥接源码，未重跑游戏或真机验收。已有 playtest 视频文件；2026-06-28 为游戏站条目更新日期，截图采集日及当前 Web 包对应源码仍待绑定。',
     ],
   },
   {
     id: 'game-next-spacewar',
     title: '太空战机｜展示构建',
-    summary: 'Godot 4.6 太空射击展示构建，补齐三波短任务、漂移/装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。',
+    summary: 'Godot 太空射击展示构建，源码标识 0.17，包含三波短任务、漂移/装甲目标、连击奖励、菜单、帮助、暂停和结果复盘；公开 Web 包版本另行核验。',
     category: 'interactive',
     status: 'live',
     role: 'Godot 展示构建 / 战斗循环 / 单局复盘',
@@ -1566,10 +1765,11 @@ export const projects: Project[] = [
       quality: [
         {
           title: '展示状态证据',
+          body: '沿用既有截图和 playtest 录制。游戏站条目更新于 2026-06-28；精确采集日和构建对应待补，本轮未重新试玩。',
           items: [
             '游戏站有真实运行主菜单、战斗和结果页截图，证明它已经从裸关卡进入完整外层体验。',
             '开发日志将主菜单、设置、About/Help、暂停、结果页和 build 标识记录为展示版完成条件。',
-            '当前阶段更偏 review、PR 和素材包装，不默认继续横向扩充关卡内容。',
+            '2026-10-05 核对菜单与战斗源码标识均为展示版本 0.17；三波编排、连击和结果转场已接线，历史里程碑编号不能替代当前 build 标识。',
           ],
           visual: {
             id: 'next-spacewar-result-summary',
@@ -1596,7 +1796,7 @@ export const projects: Project[] = [
         {
           title: '后续优化方向',
           items: [
-            '补充轻量录屏，让短任务战斗节奏比静态截图更容易被理解。',
+            '已有轻量 playtest 视频；补对应构建和录制日期，按当前版本复核战斗节奏。',
             '整理 PR/review 资料，把当前版本作为明确里程碑归档。',
             '如果后续继续推进，再评估是否扩展更丰富的关卡和内容层。',
           ],
@@ -1607,6 +1807,7 @@ export const projects: Project[] = [
       'Next Spacewar 是 Godot 4.6 太空射击展示构建，核心是三波短任务、漂移目标、装甲目标、障碍压力、击破连击、波次奖励、主菜单、帮助、暂停、结果页和单局复盘。',
       'Playlab 游戏站为 Next Spacewar 提供主菜单、战斗和结果页真实截图以及 Web 试玩入口；开发日志把它定义为已经收成可展示的本地 build。',
       '项目定位偏 showcase，适合说明如何把一个短时长战斗循环收束成可试玩作品；后续方向包括关卡密度、敌人差异、反馈节奏和更细的移动/键鼠输入体验。',
+      '2026-10-05 源码菜单和战斗标签为展示版本 0.17，未确认当前线上 Web 包对应版本。已有历史截图与 playtest MP4；条目更新于 2026-06-28，不等于本轮录制或触屏验收。',
     ],
   },
   {
@@ -1670,10 +1871,11 @@ export const projects: Project[] = [
       quality: [
         {
           title: '阶段证据',
+          body: '沿用既有截图与 playtest 录制；2026-06-28 为内容条目日期，不是已确认的素材采集日或设备验收日期。',
           items: [
-            '武器系统 v1 已冻结结构，后续重点转向路线可读性和平衡验证。',
+            '2026-10-05 源码标识为 0.1.0-phase06 / prototype，已有触摸拖动和三类模式；武器 v1 冻结是历史阶段记录，不等于当前平衡通过。',
             '玩家中枢、战斗 HUD 和结果总结截图已经补入游戏站，能说明它从系统工作台走向完整流程。',
-            'Playlab 内容审计和构建链路负责确认游戏内容关系、静态资源和站点输出。',
+            '候选门禁按近期样本量、三模式覆盖和武器路线返回 NEED SAMPLE、BALANCE RISK 或 RC READY；本轮未运行或读取玩家存档，不宣称门禁通过。',
           ],
           visual: {
             id: 'intespace-gameplay-hud',
@@ -1704,7 +1906,7 @@ export const projects: Project[] = [
           title: '后续优化方向',
           items: [
             '压缩主菜单和 HUD 的首屏信息密度，让第一次打开更像正式试玩入口。',
-            '补齐统一试玩发布说明和轻量录屏。',
+            '已有轻量 playtest 录制；补齐统一试玩的版本说明、样本范围与当前构建录制。',
             '继续验证武器路线、局外成长节奏和手机触屏体验。',
           ],
         },
@@ -1714,6 +1916,7 @@ export const projects: Project[] = [
       'intespace 是竖屏自动射击肉鸽项目，包含章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长、玩家 hub、结果总结和集成试玩入口。',
       'Playlab 游戏站记录 intespace 基于 Godot 4.6.1，武器系统 v1 已冻结结构，截图覆盖玩家中枢、战斗 HUD 和结果总结，当前处于统一试玩前完整流程收口。',
       '项目重点是把移动端竖屏射击、Roguelite 成长、武器路线和 Boss 压力组合成较完整的长期迭代样本；后续方向包括平衡、试玩反馈、UI 文案、移动端体验和内容节奏优化。',
+      '2026-10-05 源码版本为 0.1.0-phase06 / prototype；RC 门禁依赖近期模式/路线样本，本轮未执行门禁或真机试玩。已有 playtest MP4，条目更新日期 2026-06-28 不等于素材采集日，当前线上 Web 版本待确认。',
     ],
   },
   {
@@ -1771,16 +1974,17 @@ export const projects: Project[] = [
         {
           title: '开发目录与发布仓库分层',
           body:
-            '游戏站记录根目录主要承担开发工作目录角色，实际同步到 GitHub 的发布仓库为 `.publish-final`。项目使用 Godot 4.6.1，scenes 与 scripts 覆盖主菜单、战斗、章节过场、HUD、结果页、敌人和 Boss 逻辑。',
+            '项目使用 Godot 4.6.1，scenes 与 scripts 覆盖主菜单、战斗、章节过场、HUD、结果页、敌人与 Boss。统一 Web 导出脚本指向开发工程；历史 Windows 发布仓库和 Web 导出是不同链路，不能据一个目录或候选标签推断二者版本一致。',
         },
       ],
       quality: [
         {
           title: '公开 Demo 准备证据',
+          body: '沿用历史截图和 playtest 录制；游戏站条目更新于 2026-06-28，精确采集日与对应候选构建仍需补齐。',
           items: [
             '游戏站提供主菜单、Stage 02 战斗和结果页真实截图，说明它已进入外部试玩和 Demo 包装阶段。',
-            'Windows RC-0.4 预发布下载和 Web 试玩入口都已在游戏站记录。',
-            '当前验证重点是外部人工试玩、首屏理解成本、资源授权和 Web 包加载体积。',
+            '2026-10-05 源码常量仍为 RC-0.4；游戏站记录 Windows v0.4.0-rc.4 预发布链接，当前线上包和本地源码的对应尚未核实。',
+            '局内“可评审/强候选”提示取决于章节完成与评分，不是独立发布门禁；仍需外部人工试玩、资源授权和加载体验证据。',
           ],
           visual: {
             id: 'raiden-results-summary',
@@ -1818,6 +2022,7 @@ export const projects: Project[] = [
       'Raiden prototype 是 Godot 纵版弹幕射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场、结果页、公开 Demo 和 Web 试玩。',
       'Playlab 游戏站记录 Raiden Prototype 当前为 RC-0.4 稳定展示候选，推荐入口是 Chapter Run，并有 Windows 预发布下载、Web 试玩和真实运行截图。',
       '项目适合展示纵版射击的章节节奏、Boss 阶段和奖励反馈如何被压缩成可玩的垂直切片；后续方向包括弹幕可读性、音效/手感、关卡内容、难度曲线和移动端适配。',
+      '2026-10-05 核对源码 RC-0.4 与章节流程；局内评分提示不证明发布验收。已有历史 playtest MP4，条目更新于 2026-06-28；本轮未重跑游戏、核验 Windows 下载或确认线上 Web 包版本。',
     ],
   },
   {
@@ -1828,7 +2033,7 @@ export const projects: Project[] = [
     status: 'live',
     role: 'Godot 引擎 / 复古射击 / 发布版 / 展示入口',
     image: '/images/projects/showcase/space-war-gameplay.png',
-    stack: ['Godot 4.6', '复古射击', 'Web 包计划'],
+    stack: ['Godot 4.6', '复古射击', 'Web 导出'],
     highlights: ['五个 Sector', '连续击破', '高分结算', '发布文档'],
     detailLink: gameSiteLink('space-war'),
     links: [gameSiteLink('space-war'), gamePlayLink('space-war')],
@@ -1890,9 +2095,10 @@ export const projects: Project[] = [
       quality: [
         {
           title: '完成度证据',
+          body: '已有 playtest 录制和流程截图；2026-06-28 是内容条目更新日，素材采集日及对应 Web 构建尚未完整绑定。',
           items: [
-            '游戏站记录它已经形成 Windows 发布页、GitHub Release 和独立 Web 试玩入口。',
-            '菜单、战斗和结算截图证明项目不只是战斗原型，而是可以按正常流程打开、试玩、结束和再次开始。',
+            '2026-10-05 确认本地 v1.1.1 标签对应 2026-04-11 的历史提交；游戏站提供该 Windows 发布页链接，不能将它当成当前源码或 Web 包的版本。',
+            '源码包含五个 Sector、13 级武器成长和结算，既有菜单/战斗/结算截图用于展示流程；本轮未重新通关或核验下载。',
             '发布后维护重点转向试玩反馈、兼容修复、Web 包体积和展示资料补齐。',
           ],
         },
@@ -1922,17 +2128,18 @@ export const projects: Project[] = [
       'space-war 是复古横版太空射击完整展示版本，受 Nokia 3310 Space Impact 风格启发，包含五个 Sector、敌机与道具、Boss、高分、连续击破奖励、结果页、程序化音效、Web/Windows 发布材料。',
       'Playlab 游戏站记录 Space War 已经进入完整可玩、可展示、可维护阶段，保留 Windows Release、Web 试玩、真实菜单/战斗/结算截图和 v1.1.1 发布说明。',
       '项目展示了从原型到发布版的收束：菜单、战斗、结算、截图素材、发布文档和公开试玩入口都已组织起来；后续方向包括平衡、移动端输入、音频层次、可观测试玩反馈和更多关卡变化。',
+      '2026-10-05 确认 v1.1.1 是本地历史发布标签，当前源码与线上 Web 版本仍需分别绑定。已有 playtest MP4；条目 2026-06-28 更新日期不等于截图采集日，本轮未做通关或移动端验收。',
     ],
   },
   {
     id: 'spacewar-ii',
-    title: '移动纵向射击｜Spacewar II',
-    summary: 'Godot 4.6 纵向移动射击续作原型，围绕差异化敌群、Boss 阶段、多向弹幕、拾取升级、炸弹、短窗口连击、清关资源结算、紧凑 HUD 和结果页接入第六个 Web 试玩位。',
+    title: '纵向射击原型｜Spacewar II',
+    summary: 'Godot 纵向射击续作原型，当前主场景采用键盘移动、空格射击和 X 炸弹，包含三阶段路线、差异化敌群、Boss、连击与结算；触屏体验仍待验证。',
     category: 'interactive',
     status: 'live',
     role: 'Godot 引擎 / 纵向射击 / Web 试玩 / 第六项目接入',
     image: '/images/projects/showcase/spacewar-ii-menu.png',
-    stack: ['Godot 4.6', '移动射击', 'Web 导出'],
+    stack: ['Godot 4.6', '纵向射击', 'Web 导出'],
     highlights: ['差异化敌群', '短窗口连击', 'Boss 阶段', '结果结算'],
     detailLink: gameSiteLink('spacewar-ii'),
     links: [gameSiteLink('spacewar-ii'), gamePlayLink('spacewar-ii')],
@@ -1960,8 +2167,8 @@ export const projects: Project[] = [
         {
           title: '纵向短局体验',
           items: [
-            '玩家从菜单进入战斗，通过自动射击、拾取升级和炸弹清场推进短局。',
-            'scout、diver、sweeper、tank 等敌群提供基础差异，Boss 阶段升级和多向弹幕形成终盘压力。',
+            '当前入口由 NokiaMenu 进入 NokiaBattle：WASD/方向键移动，按住空格射击，X 使用炸弹；拾取升级与清场反馈推进短局。',
+            '默认三阶段路线，每阶段末尾进入 Boss；scout、diver、sweeper、tank 等敌群、多向弹幕和阶段推进形成压力。',
             '结果页收束分数、路线、击破数、升级数、最高连击、清关资源和重开路径。',
           ],
         },
@@ -1985,10 +2192,11 @@ export const projects: Project[] = [
       quality: [
         {
           title: '接入与浏览器检查',
+          body: '游戏条目更新于 2026-06-28；沿用既有截图，精确采集日与线上构建对应待补，同类真实短视频仍缺少。',
           items: [
             '开发日志记录第六个游戏进入统一 Web 试玩接入位，后续重点是 Web 导出、浏览器 canvas 和 HUD 可读性。',
-            '游戏站条目记录它已经通过本地 Web 导出和浏览器检查，并补入菜单、战斗、结果页真实运行截图。',
-            '统一导出检查脚本覆盖六个 slug 的桌面和移动视口 canvas 渲染、布局、滚动和状态提示。',
+            '2026-10-05 核对当前入口、三阶段和键盘操作；本地 Web 文件与历史菜单/战斗/结果截图存在，但源码提交、导出包和线上版本尚未绑定。',
+            '统一检查脚本定义六个 slug 的桌面/移动视口 canvas、布局和状态检查；这是覆盖定义，本轮未执行，也不证明触屏输入或完整通关。',
           ],
           visual: {
             id: 'spacewar-ii-public-loop',
@@ -2005,7 +2213,7 @@ export const projects: Project[] = [
         {
           title: '当前边界',
           items: [
-            '它是第六个接入的可试玩原型，仍需要继续观察移动端横竖屏缩放和 HUD 可读性。',
+            '当前主场景是键盘操作，移动端题材和 960 × 540 视口不能替代触屏控制；手机横竖屏、HUD 与输入需独立验收。',
             '真实试玩短视频仍待补充，当前证据以截图、导出检查和浏览器检查为主。',
             '后续只应优先修复影响公开展示和试玩可信度的问题，不默认扩成大型内容项目。',
           ],
@@ -2023,15 +2231,16 @@ export const projects: Project[] = [
       ],
     },
     assistantContext: [
-      'Spacewar II 是 Godot 4.6 纵向移动射击续作，作为第六个游戏接入 Playlab，包含差异化敌群、Boss 阶段、多向弹幕、拾取升级、炸弹、短窗口连击、资源结算、紧凑 HUD、结果页和 Web 试玩。',
+      'Spacewar II 是 Godot 4.6 纵向射击续作原型，作为第六个游戏接入游湾；2026-10-05 核对实际入口为 NokiaMenu/NokiaBattle，默认三阶段，WASD/方向键移动、空格射击、X 炸弹，并非自动射击。',
       'Playlab 游戏站记录 Spacewar II 使用 spacewar-ii 统一 slug，已纳入游戏站内容模型、试玩域名和导出脚本，真实截图覆盖菜单、Boss 战斗和结果页。',
       '项目重点是把移动纵向射击的敌群、弹幕、拾取和结算节奏整理成可展示版本；后续方向包括移动端触控、Boss 可读性、关卡节奏、资源成长和发布素材继续打磨。',
+      '当前入口采用键盘控制，移动视口 canvas 检查不代表触屏可玩；既有截图对应条目更新日 2026-06-28，精确采集日及当前线上 Web 版本待绑定。真实试玩短视频仍待补，本轮未重跑游戏或真机验收。',
     ],
   },
   {
     id: 'xunqiu',
     title: formatProductTitle('xunqiu', '移动端与现代后端重建'),
-    summary: '足球社群移动端迁移案例：旧版 App 和旧后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3、PostgreSQL、Render 与 R2 上传链路。',
+    summary: '足球社群迁移案例，分别展示静态站、64 位 Android 客户端和 Spring Boot 现代后端；旧接口兼容、占位能力与正式发布各有边界。',
     category: 'mobile',
     status: 'main',
     role: 'Android 64 位 / Spring Boot 3 / Render / R2',
@@ -2129,10 +2338,15 @@ export const projects: Project[] = [
         {
           title: '文件与媒体存储',
           body:
-            '上传由服务端接收 multipart，再通过 S3-compatible 客户端写入 Cloudflare R2；数据库记录对象 key、公开 URL、文件名、MIME 和大小。未配置 R2 时，后端仍能返回可用于链路验证的占位公开 URL，便于先验证客户端主流程。',
+            '上传由服务端接收 multipart，存储配置完整时通过 S3-compatible 客户端写入 Cloudflare R2。配置缺失时 uploadIfConfigured 会直接返回，后续仍可生成对象 key 和占位 URL；因此返回 URL 不证明文件实际上传成功，更不能替代下载或播放验收。',
         },
       ],
       quality: [
+        {
+          title: '2026-10-04 三层源码核对',
+          body:
+            '本次分别核对展示站 d8d4ae62、现代后端 94b8f18b 和本地 Android 0.1.0 / code 1 源码。展示站保留 APK 待正式发布；客户端有集中登录与 multipart 上传接线；后端对短信、第三方账号、注册及未接入旧接口返回明确占位结果。此次未构建、验签、安装、上传或执行源项目测试，既有截图只保留原观察范围。',
+        },
         {
           title: '验证链路',
           items: [
@@ -2169,7 +2383,7 @@ export const projects: Project[] = [
         {
           title: '当前边界',
           items: [
-            '64 位客户端仍有一部分页面处于需回归或安全等价状态，不能把所有旧版深层能力都表述为完整生产可用。',
+            '64 位客户端仍有一部分页面处于需回归或安全等价状态；短信、第三方账号、注册和通配旧接口的占位响应不能算作业务成功，不能把兼容 envelope 当成完整生产能力。',
             '支付、IM、推送、地图、分享、真实兑换、赛事创建和比分提交等高副作用能力保留边界，不在展示环境触发真实外部服务。',
             'Render 免费服务、演示数据和 R2 配置都更适合展示和轻量验证，不应被描述为长期生产运营方案。',
             '阶段 APK 只保留在本地归档；正式签名、SHA-256、版本说明、扫描与回归、回滚说明和发布批准完成前，公开站不提供 APK 文件或下载入口。',
@@ -2192,6 +2406,8 @@ export const projects: Project[] = [
       '寻球是足球社群移动端迁移案例，核心是旧版 App/旧 Java WAR 后端保留历史链路，新 64 位 Android 客户端接入 Spring Boot 3 现代后端。',
       '64 位客户端是轻量单模块 Android 工程，接口集中在 ApiClient，保留旧接口路径和 response envelope，覆盖登录、动态、短视频、球队、日程、赛事、球场、球币和个人页等核心路径。',
       '现代后端使用 Spring Boot 3、Java 17、PostgreSQL、Flyway、Docker、Render 和 Cloudflare R2，控制器覆盖账号、用户、动态、视频、球队、比赛、球场、搜索和 fallback。',
+      '2026-10-04 分别核对展示站 d8d4ae62、后端 94b8f18b 与本地 Android 0.1.0 / code 1 源码，未执行构建、安装、上传或源项目测试。静态展示、真实 API 行为与 APK 发布必须分别验收。',
+      '短信、第三方账号、注册和未接入旧接口存在 stub/安全空结果；存储配置缺失时不执行实际上传但仍可返回占位 URL，不能把成功结构或 URL 当成完整业务与媒体可用证据。',
       '短视频链路包含文件选择、大小/时长校验、封面、multipart 上传、R2 存储、列表回流、播放比例适配、点赞和评论，并针对小文件异常视频做了防护。',
       '项目有 Android 测试矩阵、旧版入口对照、后端 MockMvc 测试、PostgreSQL/Testcontainers 测试和部署烟测脚本；支付、IM、推送、地图、分享等高副作用能力当前以安全等价或 stub 方式收口。',
       '现代后端健康检查路径是 /free_kicker/actuator/health，smoke 脚本覆盖 health、登录、动态、短视频、球队和球场；如果公开 health 冷启动或超时，应作为运维排查信号，而不是生产 SLA 结论。',

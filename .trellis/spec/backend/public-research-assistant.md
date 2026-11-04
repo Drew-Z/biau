@@ -359,6 +359,27 @@ Correct: preserve one authenticated relay-boundary marker, one low-cardinality o
 
 ## Required Checks
 
+### Website consultation under model failure
+
+- Explicit site scope (including “站点里” and “this site”) is resolved before the
+  model planner unless the visitor requests outside research/comparison. Mode
+  overrides remain authoritative. “现在” alone does not turn site facts into web
+  research. Keep greeting/creative tasks on their existing direct path.
+- Catalog queries prioritize distinct project records over multiple related blog
+  posts. Local chunk selection reserves one slot per selected document so a long
+  document cannot silently displace the other project citations.
+- Evidence fallback stays `degraded`, is a bounded list with source titles, and
+  does not claim an exhaustive catalog or verified live availability. A site-only
+  result never uses web evidence. Do not claim model recovery from a fallback.
+- `node --import tsx server/scripts/public-assistant-consultation-check.ts` uses
+  the actual public knowledge files and a disabled model fixture. It covers the
+  reported website-demo question, configured/unconfigured planner isolation,
+  external comparisons, explicit modes, project/chunk diversity, one answer
+  attempt, source retention and zero external calls.
+- `assistant:public-model-check` runs this regression after the model contract
+  check in a separate process, keeping fixture fetch/env changes isolated. Both
+  checks must succeed; do not leave the reported-question regression manual-only.
+
 ```powershell
 npm.cmd run assistant:public-agent-check
 npm.cmd run assistant:public-image-check

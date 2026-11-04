@@ -1,0 +1,62 @@
+.public-assistant .public-assistant__trigger.has-pet {
+  width: auto;
+  min-height: 96px;
+  padding: 0 16px 0 0;
+  border-radius: 28px;
+  gap: 0;
+}
+
+.public-assistant-pet {
+  position: relative;
+  display: inline-block;
+  width: 96px;
+  height: 96px;
+  flex: 0 0 auto;
+  pointer-events: none;
+}
+
+.public-assistant-pet__canvas,
+.public-assistant-pet__fallback {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.public-assistant-pet__fallback {
+  inset: 5%;
+  background: url('/pets/leaf/idle.png') left center / 600% 100% no-repeat;
+}
+
+.public-assistant-pet:has([data-pet-state='ready']) .public-assistant-pet__fallback { visibility: hidden; }
+.public-assistant-pet__canvas[data-pet-state='error'] { visibility: hidden; }
+.public-assistant-pet__canvas canvas { display: block; }
+.public-assistant-pet.is-compact { width: 44px; height: 44px; float: left; margin-right: 8px; }
+
+.public-assistant-pet__unread {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  box-sizing: border-box;
+  border: 1px solid var(--home-ink);
+  border-radius: 9px;
+  background: var(--home-page-solid);
+  color: var(--home-ink);
+  font: 600 11px/1 var(--font-ui);
+}
+
+.public-assistant-pet.is-compact .public-assistant-pet__unread { top: 0; right: 0; }
+
+@media (max-width: 720px) {
+  .public-assistant .public-assistant__trigger.has-pet {
+    width: 72px;
+    min-height: 72px;
+    padding: 0;
+    border-radius: 24px;
+  }
+  .public-assistant__trigger.has-pet .public-assistant-pet { width: 72px; height: 72px; }
+}

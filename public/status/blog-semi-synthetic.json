@@ -1,23 +1,25 @@
 {
-  "checkedAt": "2026-07-09T02:23:53.198Z",
+  "checkedAt": "2026-11-04T07:43:15.315Z",
   "baseConfigured": true,
   "ok": true,
   "checks": [
     {
       "id": "blog-semi-public-routes",
-      "status": "online",
+      "status": "degraded",
       "httpStatus": 200,
-      "durationMs": 2756,
-      "checkedAt": "2026-07-09T02:23:53.198Z",
-      "summary": "7/7 public routes returned expected responses",
-      "issues": []
+      "durationMs": 2216,
+      "checkedAt": "2026-11-04T07:43:15.315Z",
+      "summary": "6/7 public routes returned expected responses",
+      "issues": [
+        "sitemap: missing /status/roleplay-demo"
+      ]
     },
     {
       "id": "blog-semi-public-assistant",
       "status": "unchecked",
       "httpStatus": 200,
-      "durationMs": 261,
-      "checkedAt": "2026-07-09T02:23:53.198Z",
+      "durationMs": 378,
+      "checkedAt": "2026-11-04T07:43:15.315Z",
       "summary": "Assistant health returned valid JSON; live chat validation skipped by policy",
       "issues": []
     }

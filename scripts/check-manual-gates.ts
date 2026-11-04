@@ -83,6 +83,10 @@ const statusProjectLedgerCoverage = {
     label: 'BIAU Playlab / Game',
     needles: ['BIAU Playlab', 'playlab:synthetic', '公开入口'],
   },
+  'roleplay-demo': {
+    label: 'Roleplay 角色剧场',
+    needles: ['Roleplay', '角色库', 'API Key'],
+  },
   chatus: {
     label: 'Chatus 私人 AI 工作台',
     needles: ['Chatus', '独立 Trellis', 'lint/test/build/deploy'],

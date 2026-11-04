@@ -116,6 +116,11 @@ export async function planPublicAssistantRequest(
   if (request.mode === 'site') return forcedPlan('site', request.question)
   if (request.mode === 'web') return forcedPlan('web', request.question)
   if (shouldUseDirectPublicAssistantRoute(request)) return directPlan()
+  // Explicit site scope must survive an unavailable or mistaken model planner.
+  // Time words such as “现在” do not imply that external research is needed.
+  if (isExplicitSiteQuestion(request.question) && !needsExternalComparison(request.question)) {
+    return forcedPlan('site', request.question)
+  }
 
   if (!isResponsesChannelConfigured(channel)) return buildFallbackPlan(request)
   const result = await requestResponsesText({
@@ -287,16 +292,24 @@ function normalizeClaim(value: unknown, index: number, allowedEvidence: Set<stri
 function buildFallbackPlan(request: PublicAssistantRequest): PublicAssistantPlan {
   if (request.imageObservation) return directPlan()
   const normalized = request.question.toLowerCase()
-  const siteRelated = /biau|泊岸|本站|这个网站|项目页|博客|状态页|playlab|legal|erp|pet|xunqiu|寻球/u.test(normalized)
+  const siteRelated = isExplicitSiteQuestion(normalized) || /项目页|博客|状态页|playlab|legal|erp|pet|xunqiu|寻球/u.test(normalized)
   const current = /最新|今天|现在|近期|实时|新闻|发布|价格|版本|比较|对比|是什么|为什么|怎么/u.test(normalized)
   const route: PublicAssistantRoute = shouldUseDirectPublicAssistantRoute(request)
     ? 'direct'
-    : siteRelated && current
+    : siteRelated && needsExternalComparison(normalized)
       ? 'combined'
       : siteRelated
         ? 'site'
         : 'web'
-  return { route, queries: route === 'direct' ? [] : [request.question], requiresFreshness: current, planner: 'fallback' }
+  return { route, queries: route === 'direct' ? [] : [request.question], requiresFreshness: route !== 'site' && current, planner: 'fallback' }
+}
+
+function isExplicitSiteQuestion(question: string) {
+  return /biau|泊岸|本站|站内|本网站|这个网站|当前网站|(?:这个|当前|本)站点|站点(?:里|内|中)|项目可靠性观察页|状态页|this (?:site|website)|on (?:the|our) (?:site|website)/iu.test(question)
+}
+
+function needsExternalComparison(question: string) {
+  return /外部|站外|全网|公开网页|external|public web|比较|对比|相比|compare|versus|\bvs\b/iu.test(question)
 }
 
 export function shouldUseDirectPublicAssistantRoute(request: Pick<PublicAssistantRequest, 'mode' | 'question'>) {
@@ -328,7 +341,10 @@ function buildEvidenceFallback(
   diagnostic?: PublicAssistantDraft['diagnostic'],
   timing: Omit<PublicAssistantModelAttemptTiming, 'attempt'> = { durationMs: 0 },
 ): PublicAssistantDraft {
-  const evidence = input.evidence.slice(0, 3)
+  const evidence = input.evidence
+    .filter((item) => input.plan.route !== 'site' || item.source === 'site')
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.canonicalUrl === item.canonicalUrl) === index)
+    .slice(0, 6)
   const isDirect = input.plan.route === 'direct'
   if (isDirect || evidence.length === 0) {
     return {
@@ -348,11 +364,16 @@ function buildEvidenceFallback(
   }
   const claims = evidence.map((item, index) => ({
     id: `fallback-${index + 1}`,
-    text: item.excerpt.slice(0, 180),
+    text: (input.plan.route === 'site'
+      ? item.excerpt.match(/^.*?[。！？]/u)?.[0] ?? item.excerpt.slice(0, 240)
+      : item.excerpt).slice(0, 450),
     citationIds: [item.id],
   }))
+  const introduction = input.plan.route === 'site'
+    ? '模型回答暂时不可用。以下是已找到的本站资料摘要，并非完整清单；入口可用性请以对应项目页和状态页为准。'
+    : '模型回答暂时不可用。以下是已找到的公开证据摘要，请根据来源进一步核对。'
   return {
-    answer: `模型回答暂时不可用。以下是已找到的公开证据摘要：${claims.map((claim) => claim.text).join('；')}`,
+    answer: `${introduction}\n\n${claims.map((claim, index) => `- ${evidence[index]!.title.slice(0, 120)}：${claim.text}`).join('\n\n')}`,
     status: 'degraded',
     claims,
     suggestions: [],

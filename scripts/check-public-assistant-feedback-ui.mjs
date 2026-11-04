@@ -153,7 +153,7 @@ async function settleFeedback(test, gate, outcome, index) {
   const response = test.page.waitForResponse(response => new URL(response.url()).pathname === '/api/chat/public/feedback')
   gate.release.resolve(outcome)
   await bounded(gate.settled.promise, 'feedback fixture did not settle')
-  await (await response).finished()
+  await bounded((await response).finished(), 'feedback response did not finish')
   const originalSessionVisible = await test.page.getByText('Answer ' + sessionIds[0] + ' a', { exact: true }).count()
   if (originalSessionVisible) await test.page.waitForFunction(element => !element.disabled, await negativeTrigger(test, index).elementHandle())
   await afterPaint(test.page)
