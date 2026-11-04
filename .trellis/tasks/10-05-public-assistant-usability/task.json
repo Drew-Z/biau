@@ -6,8 +6,10 @@
   "created_date": "2026-10-05",
   "assignee": "zhang",
   "releaseCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
-  "releaseState": "deployed-index-sync-blocked",
-  "nextStep": "Resolve embedding upstream HTTP 503 and obtain a bounded index-sync retry; then run the already-approved original consultation once.",
-  "businessSubmissions": 0,
-  "verification": "production-verification-2026-11-04.json"
+  "releaseState": "deployed-index-synced-generation-degraded",
+  "nextStep": "Investigate the generation channel public_api 5xx. The approved consultation was consumed once; further live acceptance needs a new explicit approval.",
+  "businessSubmissions": 1,
+  "verification": "emrank-verification-2026-11-04.json",
+  "indexCompletedAt": "2026-11-04T15:22:17.081Z",
+  "ragDeploymentCommit": "f6a4771afbfce56fef24db9e861311b799306f67"
 }

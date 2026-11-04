@@ -60,3 +60,13 @@
 - 发布后只读监测为主站路由 7/7、同源 health 200、外部入口 7 online + ERP connection_error。更新状态源及快照，明确历史成功与本轮同步受阻；公网入口通过不代表受保护业务或模型通过。
 - B1—B3 的静态内容已发布，B4 台账按实际完成部分更新；两项任务的 parent 均为空，不把旧网站路线图当成隐含父任务，也不重启旧循环。
 - 日报准备已完成离线合同和当前 v7 绑定候选，仍未封存；容量问题与真实 Edition/review/export/Feed 门禁保留，未执行 Studio 部署或新模型调用。
+
+## 2026-11-05 Embedding 切换收口
+
+- 用户授权切换至 EmRank，使用 `Qwen/Qwen3-Embedding-8B`，维度保持 4096。旧配置已在既有集中恢复组以 DPAPI 加密保存并验证恢复；Public 生成模型与 Studio 未改。
+- 新渠道首个同步超过原 20 秒限制；同批 8 个公开片段的一次诊断约 30.2 秒返回有效向量，据此把 embedding 超时设为 60 秒，再执行一次全量同步。
+- 客户端连接在 180 秒断开，数据库审计确认原请求于 `2026-11-04T15:22:17.081Z` 完成。32 documents / 75 chunks / 176 entities / 253 relations、全部 75 个向量的模型/4096 维及完成 checksum 均匹配；预备本地续跑在写入前发现完成记录，因此没有重复调用。
+- RAG 最终部署 `dep-dblkrpkipgvc73ece690` / `f6a4771a` 为 live，其后端及知识与原发布 `83a859b6` 相同。HTTP 断开不作为失败后立即重放的依据；契约已记入后端规范。
+- 原问题真实咨询已消费 1 次，HTTP 200、route=site，4 条站内引用均返回 200；桌面刷新恢复、390px 无横向溢出/输入可用、删除会话后读取 404 均通过。
+- 完整模型回答未通过：degraded/fallback，`provider_error`；精确时间窗日志为 `provider_unavailable / public_api / 5xx / attempts=1`。不把生成失败归因于 embedding，不重放问题，助手任务仍为 `in_progress`。
+- 本轮合同通过：`assistant:public-sync-check`、`assistant:rag-pgvector-schema-check`、`assistant:hybrid-contract`；状态/文档最终检查与部署收口记录见 `emrank-verification-2026-11-04.json`。

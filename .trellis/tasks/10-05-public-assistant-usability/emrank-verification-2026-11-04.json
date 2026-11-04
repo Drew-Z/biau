@@ -1,0 +1,344 @@
+{
+  "schemaVersion": 1,
+  "recordedUtc": "2026-11-04T16:40:31.236638+00:00",
+  "configuration": {
+    "state": "deployed",
+    "embeddingModelFamilyRetained": true,
+    "dimension": 4096,
+    "timeoutMs": 60000,
+    "otherRagVariablesUnchanged": true,
+    "generationVariablesChanged": false,
+    "studioChanged": false,
+    "secretRecoveryEncryptedAndRoundtripVerified": true
+  },
+  "deployments": {
+    "initialCutover": {
+      "deploymentId": "dep-dblkb1mc6qcc73blpsng",
+      "commit": "f6a4771afbfce56fef24db9e861311b799306f67"
+    },
+    "timeoutAdaptation": "dep-dblkh6l9fdbs73eggr5g",
+    "finalRag": "dep-dblkrpkipgvc73ece690",
+    "finalRagCommit": "f6a4771afbfce56fef24db9e861311b799306f67",
+    "publicCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
+    "backendSourceEquivalent": true
+  },
+  "embeddingDiagnostic": {
+    "inputCount": 8,
+    "inputCharacters": 2456,
+    "inputSha256": "6bddd4ace4552d9c33524cde9682637c212002292b37c33b1f90c38519d47675",
+    "timeoutMs": 60000,
+    "submissionCount": 1,
+    "headersMs": 29298,
+    "totalMs": 30242,
+    "httpStatus": 200,
+    "vectorCount": 8,
+    "dimensions": [
+      4096
+    ],
+    "state": "completed"
+  },
+  "sync": {
+    "httpSubmissionsAfterChannelChange": 2,
+    "firstResult": {
+      "state": "failed-or-unconfirmed",
+      "submittedUtc": "2026-11-04T14:52:02.937Z",
+      "expectedCommit": "f6a4771afbfce56fef24db9e861311b799306f67",
+      "expectedChecksum": "746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3",
+      "failedUtc": "2026-11-04T14:53:08.417Z",
+      "diagnostics": {
+        "httpStatus": 200,
+        "accepted": false,
+        "reason": "embedding_timeout",
+        "providerStep": "embedding",
+        "errorKind": "timeout",
+        "attemptedEndpoints": 1,
+        "timeoutMs": 20000,
+        "documentCount": 32,
+        "chunkCount": 75
+      }
+    },
+    "adaptedRequest": {
+      "state": "failed-or-unconfirmed",
+      "submittedUtc": "2026-11-04T15:17:13.205Z",
+      "expectedCommit": "f6a4771afbfce56fef24db9e861311b799306f67",
+      "expectedChecksum": "746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3",
+      "timeoutMs": 60000,
+      "wholeSyncDeadlineMs": 600000,
+      "reason": "Measured real batch needs 30s; timeout increased from 20s to 60s before this retry.",
+      "failedUtc": "2026-11-04T15:20:13.343Z",
+      "diagnostics": {
+        "errorType": "TypeError",
+        "reason": "sync-transport-failed"
+      }
+    },
+    "final": {
+      "state": "completed",
+      "submittedUtc": "2026-11-04T15:17:13.205Z",
+      "expectedCommit": "f6a4771afbfce56fef24db9e861311b799306f67",
+      "expectedChecksum": "746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3",
+      "timeoutMs": 60000,
+      "wholeSyncDeadlineMs": 600000,
+      "reason": "Measured real batch needs 30s; timeout increased from 20s to 60s before this retry.",
+      "failedUtc": "2026-11-04T15:20:13.343Z",
+      "diagnostics": {
+        "errorType": "TypeError",
+        "reason": "sync-transport-failed"
+      },
+      "confirmedBy": "database-after-http-disconnect",
+      "completedUtc": "2026-11-04T15:22:17.081Z",
+      "documentCount": 32,
+      "chunkCount": 75,
+      "entityCount": 176,
+      "relationCount": 253,
+      "sourceChecksum": "746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3"
+    },
+    "confirmation": {
+      "verifiedUtc": "2026-11-04T15:25:59.548Z",
+      "counts": {
+        "documents": 32,
+        "chunks": 75,
+        "entities": 176,
+        "relations": 253
+      },
+      "latestSync": {
+        "status": "completed",
+        "source_checksum": "746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3",
+        "document_count": 32,
+        "chunk_count": 75,
+        "entity_count": 176,
+        "relation_count": 253,
+        "finished_at": "2026-11-04T15:22:17.081Z"
+      },
+      "vectors": [
+        {
+          "total": 75,
+          "valid": 75
+        }
+      ],
+      "health": {
+        "httpStatus": 200,
+        "buildCommit": "f6a4771afbfce56fef24db9e861311b799306f67",
+        "store": "supabase-pgvector",
+        "vectorReady": true,
+        "keywordReady": true,
+        "rerankerReady": true,
+        "lastSyncAt": "2026-11-04T15:22:17.081Z"
+      }
+    },
+    "localSyncExecuted": false,
+    "duplicateEmbeddingCallsAfterReconciliation": 0
+  },
+  "acceptance": {
+    "state": "business-result-not-accepted",
+    "submissions": 1,
+    "blockedExtraSubmissions": 0,
+    "modelCallsRetried": false,
+    "requestMode": "auto",
+    "httpStatus": 200,
+    "streamEvents": [
+      "ready",
+      "progress",
+      "result"
+    ],
+    "transportError": null,
+    "answer": {
+      "status": "degraded",
+      "mode": "fallback",
+      "reason": "provider_error",
+      "route": "site",
+      "answerCharacters": 437,
+      "answerSha256": "2a4d882e4e18c1437266b0ce9f100cd0315e07d938ca4e0ff17ebeb08fb8e0de",
+      "citationCount": 4,
+      "siteCitationCount": 4,
+      "webCitationCount": 0,
+      "distinctSiteSources": 4,
+      "multipleProjectMentions": true
+    },
+    "citations": [
+      {
+        "path": "/projects/legal-rag",
+        "httpStatus": 200
+      },
+      {
+        "path": "/projects/roleplay-demo",
+        "httpStatus": 200
+      },
+      {
+        "path": "/projects/canvas",
+        "httpStatus": 200
+      },
+      {
+        "path": "/projects/ozon-erp",
+        "httpStatus": 200
+      }
+    ],
+    "desktopRestore": {
+      "passed": true,
+      "turns": 1,
+      "sameRevision": true,
+      "sameAnswer": true
+    },
+    "mobileRestore": {
+      "passed": true,
+      "width": 390,
+      "sameRevision": true,
+      "noHorizontalOverflow": true,
+      "inputEnabled": true
+    },
+    "passed": false,
+    "cleanup": {
+      "deleteHttpStatus": 200,
+      "subsequentReadHttpStatus": 404,
+      "passed": true
+    },
+    "completedUtc": "2026-11-04T15:51:53.512Z"
+  },
+  "generationRecovery": {
+    "timestamp": "2026-11-04T15:51:34.303464665Z",
+    "state": "degraded",
+    "failureClass": "provider_unavailable",
+    "failureOrigin": "public_api",
+    "httpStatusClass": "5xx",
+    "attempts": 1,
+    "durationBucket": "1s_to_5s"
+  },
+  "preSubmissionBrowserObservation": [
+    {
+      "state": "failed-before-submission",
+      "submissions": 0,
+      "blockedExtraSubmissions": 0,
+      "modelCallsRetried": false,
+      "failurePhase": "browser-readiness",
+      "errorType": "TimeoutError",
+      "passed": false,
+      "cleanup": {
+        "passed": true,
+        "noSubmittedSession": true
+      },
+      "completedUtc": "2026-11-04T15:38:39.657Z"
+    }
+  ],
+  "cleanup": {
+    "temporaryAnonymousSessionDeleted": true,
+    "subsequentReadHttpStatus": 404,
+    "temporaryScriptPendingDeletion": false,
+    "temporaryScriptDeleted": true
+  },
+  "validation": {
+    "publicSyncContract": "passed",
+    "pgvectorSchemaContract": "passed",
+    "hybridRetrievalContract": "passed",
+    "build": "passed",
+    "lint": "passed",
+    "statusContract": "passed",
+    "manualGatesContract": "passed",
+    "deploymentContract": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "remainingWork": [
+    "Generation channel public_api 5xx; any further live consultation requires a new explicit approval.",
+    "AI Daily capacity and real Edition/review/export/Feed gates remain unchanged."
+  ],
+  "statusRefresh": {
+    "checkedAt": "2026-11-04T16:32:08.313Z",
+    "routeCheck": {
+      "id": "blog-semi-public-routes",
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 2642,
+      "checkedAt": "2026-11-04T16:32:08.313Z",
+      "summary": "7/7 public routes returned expected responses",
+      "issues": []
+    },
+    "healthObservation": {
+      "id": "blog-semi-public-assistant",
+      "status": "offline",
+      "httpStatus": 0,
+      "durationMs": 12014,
+      "checkedAt": "2026-11-04T16:32:08.313Z",
+      "summary": "Public assistant API did not return valid health/chat JSON",
+      "issues": [
+        "assistant health returned HTTP request failed",
+        "assistant health request failed"
+      ]
+    },
+    "additionalBusinessSubmissions": 0,
+    "healthFollowup": {
+      "checkedAt": "2026-11-04T16:38:05.392Z",
+      "timeoutMs": 30000,
+      "businessSubmissions": 0,
+      "httpStatus": 200,
+      "durationMs": 1267,
+      "validJson": true,
+      "ok": true
+    },
+    "externalEntrypoints": {
+      "checkedAt": "2026-11-04T16:38:18.657Z",
+      "summary": {
+        "total": 8,
+        "online": 8,
+        "degraded": 0,
+        "offline": 0,
+        "unchecked": 0
+      },
+      "targets": [
+        {
+          "id": "legal-rag-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:18.663Z",
+          "issueKind": "none"
+        },
+        {
+          "id": "chatus-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:19.869Z",
+          "issueKind": "none"
+        },
+        {
+          "id": "roleplay-demo-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:29.018Z",
+          "issueKind": "none"
+        },
+        {
+          "id": "anchor-learning-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:31.585Z",
+          "issueKind": "none"
+        },
+        {
+          "id": "pet-workspace-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:32.521Z",
+          "issueKind": "none"
+        },
+        {
+          "id": "ozon-erp-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:33.983Z",
+          "issueKind": "none"
+        },
+        {
+          "id": "biau-playlab-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:43.573Z",
+          "issueKind": "none"
+        },
+        {
+          "id": "xunqiu-entry",
+          "status": "online",
+          "httpStatus": 200,
+          "checkedAt": "2026-11-04T16:38:44.710Z",
+          "issueKind": "none"
+        }
+      ]
+    }
+  }
+}

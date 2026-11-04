@@ -1583,3 +1583,47 @@ Prisma 固定链最近一次完整与生产投影 audit 均为 4 high、exit 1�
 ### Next Steps
 
 - None - task complete
+
+
+## Session 145: EmRank 切换与公开索引完成，生成回答保留降级
+
+**Date**: 2026-11-05
+**Task**: EmRank 切换与公开索引完成，生成回答保留降级
+**Branch**: `main`
+
+### Summary
+
+完成 embedding 切换、全量向量核验、一次咨询及清理；同步状态与台账，保留生成 5xx 待修复。
+
+### Main Changes
+
+本轮用户授权切换 embedding；运行版本为 83a859b6，RAG 最终部署 f6a4771a 的后端与知识源等价。
+
+- EmRank 使用 Qwen/Qwen3-Embedding-8B、4096 维。旧配置加密及公开索引完整恢复点已验证；本轮模型凭据未进入仓库。
+- 8 文本实际批次耗时约 30.2 秒，超时由 20 秒调整为 60 秒。全量 HTTP 同步在 180 秒断开后，先核对数据库，确认原请求于 2026-11-04T15:22:17.081Z 完成；未执行预备的本地重复同步。
+- 32 documents / 75 chunks / 176 entities / 253 relations；75 个向量模型及维度、完成 checksum 全部一致。项目资料任务 B4 完成，不归档其他任务或重启旧路线图。
+- 原问题只提交 1 次：route=site、4 条可访问引用；桌面刷新恢复、390px 无溢出/输入可用、临时会话删除及读取 404 通过。生成回答为 degraded/fallback，public_api 5xx、attempts=1；助手任务继续处理该独立故障，不重放咨询。
+- build、lint、status:contract、docs:manual-gates-check、docs:deployment-check、diff 检查通过；同步、pgvector schema 和 hybrid 合同通过。状态只读刷新为主站 7/7、外部入口 8/8；health 12 秒超时及后续 200 分别记录，未覆盖真实业务 degraded。
+- 删除本轮临时浏览器脚本。保留集中恢复组、桌宠/青珑任务修改、未知目录和历史 worktree。详情与低敏验证见任务 emrank-verification-2026-11-04.json；台账及状态以本记录所在提交发布。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `83a859b6` | (see git log) |
+| `f6a4771a` | (see git log) |
+
+### Testing
+
+- [OK] build、lint、状态/文档合同、同步/schema/hybrid 合同、Git diff 检查。
+- [OK] 引用、桌面恢复、390px、临时会话删除及读取 404。
+- [未通过] 单次真实咨询的完整模型回答：生成渠道 public_api 5xx。
+
+### Status
+
+Embedding 切换与索引发布完成；公共助手任务继续保持 in_progress。
+
+### Next Steps
+
+- 定位生成渠道故障；后续真实咨询须重新单独批准，不重复消费已用完的一次验收。

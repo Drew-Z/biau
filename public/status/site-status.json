@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-04T14:19:59.743Z",
+  "checkedAt": "2026-11-04T16:38:18.657Z",
   "base": "https://biau.playlab.eu.cc",
-  "ok": false,
+  "ok": true,
   "summary": {
     "total": 8,
-    "online": 7,
+    "online": 8,
     "degraded": 0,
-    "offline": 1,
+    "offline": 0,
     "unchecked": 0
   },
   "targets": [
@@ -22,8 +22,8 @@
       "note": "工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 763,
-      "checkedAt": "2026-11-04T14:19:59.748Z",
+      "durationMs": 1205,
+      "checkedAt": "2026-11-04T16:38:18.663Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issueKind": "none",
       "issues": []
@@ -40,8 +40,8 @@
       "note": "入口可达只代表工作台登录面可访问，不代表成员账号、访问材料或完整 Agent 能力已向公众开放。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 3192,
-      "checkedAt": "2026-11-04T14:20:00.511Z",
+      "durationMs": 9149,
+      "checkedAt": "2026-11-04T16:38:19.869Z",
       "finalUrl": "https://chatus.ciallobill.qzz.io/react-chat/",
       "issueKind": "none",
       "issues": []
@@ -58,8 +58,8 @@
       "note": "入口可达只代表角色库与游客前端可访问；模型延迟、上游并发和角色内容边界仍按演示服务策略处理。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 3082,
-      "checkedAt": "2026-11-04T14:20:03.703Z",
+      "durationMs": 2567,
+      "checkedAt": "2026-11-04T16:38:29.018Z",
       "finalUrl": "https://roleplay.playlab.eu.cc/",
       "issueKind": "none",
       "issues": []
@@ -76,8 +76,8 @@
       "note": "L0 状态只代表浏览器 Demo 入口可达；3 套内置数据的答题与来源交互由独立 Playwright 验收记录支持，不代表 Flutter 导入、云同步或实时 AI 已在网页端开放。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 993,
-      "checkedAt": "2026-11-04T14:20:06.785Z",
+      "durationMs": 936,
+      "checkedAt": "2026-11-04T16:38:31.585Z",
       "finalUrl": "https://anchor.playlab.eu.cc/app/",
       "issueKind": "none",
       "issues": []
@@ -94,8 +94,8 @@
       "note": "展示页已接入 BIAU Port / 泊岸标题与 favicon；入口可达代表展示页和截图可访问，正式 APK 下载仍需签名包、校验摘要和人工确认。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1192,
-      "checkedAt": "2026-11-04T14:20:07.778Z",
+      "durationMs": 1461,
+      "checkedAt": "2026-11-04T16:38:32.521Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
       "issueKind": "none",
       "issues": []
@@ -110,15 +110,13 @@
       "expectation": "login-gated",
       "description": "电商业务系统登录与演示入口。",
       "note": "代码侧支持普通注册；2026-08-18 的停机页是历史观察，旧 bootstrap synthetic 不代表当前状态，入口与角色策略需重新验收。",
-      "status": "offline",
-      "httpStatus": 0,
-      "durationMs": 4842,
-      "checkedAt": "2026-11-04T14:20:08.970Z",
-      "finalUrl": "https://erp.ciallobill.qzz.io/#/login?from=biau-port",
-      "issueKind": "connection_error",
-      "issues": [
-        "request failed: connection_error"
-      ]
+      "status": "online",
+      "httpStatus": 200,
+      "durationMs": 8786,
+      "checkedAt": "2026-11-04T16:38:33.983Z",
+      "finalUrl": "https://www.hidencloud.com/",
+      "issueKind": "none",
+      "issues": []
     },
     {
       "id": "biau-playlab-entry",
@@ -132,8 +130,8 @@
       "note": "游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1404,
-      "checkedAt": "2026-11-04T14:20:14.621Z",
+      "durationMs": 1137,
+      "checkedAt": "2026-11-04T16:38:43.573Z",
       "finalUrl": "https://games.playlab.eu.cc/",
       "issueKind": "none",
       "issues": []
@@ -150,8 +148,8 @@
       "note": "展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；未批准阶段 APK 已撤下，公开下载等待正式 release 证据。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 2225,
-      "checkedAt": "2026-11-04T14:20:16.025Z",
+      "durationMs": 860,
+      "checkedAt": "2026-11-04T16:38:44.710Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
       "issueKind": "none",
       "issues": []
@@ -170,7 +168,7 @@
           "label": "角色库入口",
           "status": "online",
           "description": "检查 Roleplay 角色库首页是否返回公开页面。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 3082 ms。2026-09-15 已验证 `https://roleplay.playlab.eu.cc/` 返回 HTTP 200。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2567 ms。2026-09-15 已验证 `https://roleplay.playlab.eu.cc/` 返回 HTTP 200。",
           "cadence": "每次生成状态页",
           "ownerHint": "Roleplay 公开入口",
           "relatedTargetId": "roleplay-demo-entry"
@@ -181,7 +179,7 @@
           "label": "角色分享页",
           "status": "online",
           "description": "检查独立角色入口能否初始化指定角色并返回聊天页。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 3082 ms。2026-09-15 已验证 `/r/jiangchiye` 返回 HTTP 200，并在页面状态中包含指定角色。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2567 ms。2026-09-15 已验证 `/r/jiangchiye` 返回 HTTP 200，并在页面状态中包含指定角色。",
           "cadence": "角色路由或前端发布后",
           "ownerHint": "Roleplay 前端",
           "relatedTargetId": "roleplay-demo-entry"
@@ -192,7 +190,7 @@
           "label": "游客服务健康接口",
           "status": "online",
           "description": "检查游客后端 health 是否返回配置标签和角色数量等低敏状态；此接口不执行模型生成。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 3082 ms。2026-09-15 health 返回 `ok=true`、模型配置标签和 13 张角色卡；该响应不证明上游模型健康、回复质量或 SLA。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2567 ms。2026-09-15 health 返回 `ok=true`、模型配置标签和 13 张角色卡；该响应不证明上游模型健康、回复质量或 SLA。",
           "cadence": "模型或角色配置变更后",
           "ownerHint": "Roleplay 游客后端",
           "relatedTargetId": "roleplay-demo-entry"
@@ -211,7 +209,7 @@
       "id": "blog-semi",
       "title": "泊岸 BIAU Port｜主站",
       "category": "main-site",
-      "summary": "2026-11-04 项目资料与公开助手修复已发布，7/7 核心公开路由检查通过。助手基础服务可达，但最新公开资料同步受上游故障阻塞，本轮真实回答尚未验收；潮讯仍待真实 Edition/Feed 验收。",
+      "summary": "2026-11-04 项目资料、公开助手修复与最新检索资料已上线，7/7 核心公开路由检查通过。一次真实咨询返回站内资料与可访问引用，完整模型回答仍降级；会话恢复和移动端观察通过，潮讯仍待真实 Edition/Feed 验收。",
       "checks": [
         {
           "id": "blog-semi-public-routes",
@@ -219,7 +217,7 @@
           "label": "核心公开路由",
           "status": "online",
           "description": "首页、项目集、博客、公开助手、站点地图和 robots 的 HTML/SEO 检查。",
-          "evidence": "最近一次 synthetic 检查：7/7 public routes returned expected responses；证据时间：2026-11-04T14:13:45.621Z；证据新鲜度：新鲜（6 分钟前）。`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。",
+          "evidence": "最近一次 synthetic 检查：7/7 public routes returned expected responses；证据时间：2026-11-04T16:32:08.313Z；证据新鲜度：新鲜（6 分钟前）。`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。",
           "cadence": "发布前或每日定时",
           "ownerHint": "主站脚本"
         },
@@ -237,9 +235,9 @@
           "id": "blog-semi-public-assistant",
           "layer": "synthetic",
           "label": "公开助手 health / live chat gate",
-          "status": "unchecked",
-          "description": "2026-11-04 同域 health 正常；最新资料同步未完成，本轮真实咨询、会话恢复和移动端回答验收尚未执行。",
-          "evidence": "最近一次 synthetic 检查：Assistant health returned valid JSON; live chat validation skipped by policy；证据时间：2026-11-04T14:13:45.621Z；证据新鲜度：新鲜（6 分钟前）。2026-08-16 的 answered/model、引用与恢复观察是历史证据。2026-11-04 修复已部署，health 返回 200；公开知识同步失败后按发布顺序保留单次业务批准，真实咨询请求为 0。`main-site:synthetic` 默认继续禁用 live chat。",
+          "status": "degraded",
+          "description": "2026-11-04 同域 health 正常；一次获批咨询正确走站内检索并返回 4 条可访问引用，生成回答仍降级。",
+          "evidence": "最近一次 synthetic 检查：单次获批咨询返回站内降级回答与 4 条可访问引用；桌面/390px 恢复及会话删除通过；证据时间：2026-11-04T15:51:53.512Z；证据新鲜度：新鲜（46 分钟前）；生成渠道 public_api 返回 5xx（provider_error，attempts=1）；完整模型回答未通过。本次只提交 1 个问题，结果为 degraded/fallback，生成错误为 provider_error；未自动重试。4 条站内引用访问、桌面刷新恢复、390px 无横向溢出和输入可用均通过；临时会话删除后读取为 404。2026-08-16 的 answered/model 是历史证据，不能替代本轮结果。",
           "cadence": "health 发布前或每日；live chat 仅在模型配置变更且获得批准后",
           "ownerHint": "assistant API"
         },
@@ -257,20 +255,20 @@
           "id": "blog-semi-rag-orchestrator",
           "layer": "observability",
           "label": "RAG Orchestrator health",
-          "status": "degraded",
+          "status": "online",
           "description": "检查外部 RAG Orchestrator `/health`、Supabase pgvector readiness、hybrid retrieval 和低敏公开同步结果。",
-          "evidence": "2026-11-04 store=supabase-pgvector，health 与 vector/keyword/reranker readiness 正常，但一次公开同步在 embedding 阶段收到上游 HTTP 503，未进入写入事务。索引仍为 31 documents / 61 chunks，最后成功同步为 2026-08-11；新版本所需的 32 documents / 75 chunks 尚未生效。已核验公开索引恢复点，未自动重试。",
+          "evidence": "2026-11-04 23:22（北京时间）公开索引同步完成：store=supabase-pgvector，32 documents / 75 chunks / 176 entities / 253 relations；75 个向量均为新渠道模型的 4096 维输出，数据库完成记录与源摘要一致，health 和 vector/keyword/reranker readiness 正常。",
           "cadence": "部署后 + 每日",
           "ownerHint": "RAG Orchestrator"
         }
       ],
       "gates": [
-        "知航本轮单次真实咨询批准尚未消费，须先完成公开资料同步；历史 SSE 验收不代表本轮成功或长期 SLA。潮讯 2026-08-18 v7 Edition 被限流且未公开发布，后续真实 Edition/Feed 仍需独立验收。开启生产 metrics scrape 或第三方告警前需要人工确认。"
+        "知航本轮单次咨询批准已消费，完整模型回答仍因生成上游错误待验收；先处理故障，后续真实咨询须重新单独批准。潮讯 2026-08-18 v7 Edition 被限流且未公开发布，后续真实 Edition/Feed 仍需独立验收。开启生产 metrics scrape 或第三方告警前需要人工确认。"
       ],
       "nextActions": [
         "把 `main-site:synthetic` 接入定时任务或内部监控。",
         "把 `public-links:check` 纳入发布前和外链更新后的可靠性巡检，避免首页按钮或项目详情来源链接再次指向访客不可见页面。",
-        "先处理公开知识 embedding 上游 HTTP 503，在明确的同步重试窗口内核对版本、摘要和恢复点；成功后再执行已批准原问题的一次真实咨询，不自动重放。",
+        "公开知识同步已完成；继续处理生成回答的 public_api 5xx，保持失败降级与本站证据可用，不自动重放已验收问题。",
         "把生产 RAG Orchestrator `/health`、pgvector readiness 与公开知识 sync 的低敏摘要纳入定时 synthetic 或内部监控。"
       ]
     },
@@ -286,7 +284,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 763 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1205 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -355,7 +353,7 @@
           "label": "邀请制工作台入口",
           "status": "online",
           "description": "检查 Chatus 根入口是否响应并进入登录或受限访客工作区。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 3192 ms。由 L0 入口检测自动合并；入口可达不代表成员账号或完整能力公开。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 9149 ms。由 L0 入口检测自动合并；入口可达不代表成员账号或完整能力公开。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "chatus-entry"
@@ -413,7 +411,7 @@
           "label": "浏览器 Demo HTTP 入口",
           "status": "online",
           "description": "检查公开 `/app/` URL 是否返回可接受的 HTTP 响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 993 ms。由 L0 入口检测自动合并；它不验证官网内容、规范化重定向、答题交互或完整 Flutter 产品。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 936 ms。由 L0 入口检测自动合并；它不验证官网内容、规范化重定向、答题交互或完整 Flutter 产品。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "anchor-learning-entry"
@@ -469,9 +467,9 @@
           "id": "ozon-erp-entry",
           "layer": "entry",
           "label": "演示入口",
-          "status": "offline",
+          "status": "online",
           "description": "检查 ERP 登录/演示入口是否响应，并确认入口以 BIAU Port / 泊岸品牌外壳承载 Ozon ERP 产品名。",
-          "evidence": "最近一次入口检测：request failed: connection_error。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 8786 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -539,7 +537,7 @@
           "label": "产品展示页",
           "status": "online",
           "description": "检查寻球展示页、文档和发布状态说明是否响应，并确认标题/favicon 归属泊岸展示体系；不要求开放阶段包下载。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2225 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 860 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -645,7 +643,7 @@
           "label": "游戏站入口",
           "status": "online",
           "description": "检查 Playlab 静态站入口是否响应，并确认 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属已同步。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1404 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1137 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

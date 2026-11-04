@@ -223,6 +223,51 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 - Cloudflare Functions expose the thin same-origin browser proxy plus two authenticated fixed-upstream Responses egress relay routes: primary and fallback. The chat stream Function and both model relay routes forward bounded SSE without buffering, preserve cancellation, and keep their timeout active until the upstream body closes. Model credentials may live in the relay secret bindings; search, RAG, embedding, reranker, sync, and database credentials remain on their owning server services.
 - Deployed public chat, feedback, persistence, and public sync acceptance passed before the Operator/internal-RAG retirement began. Runtime code and configuration are public-only; PostgreSQL retirement, legacy Render Operator service deletion, and obsolete internal-Qdrant collection deletion completed through separate backed-up manual gates.
 
+## Scenario: Embedding Channel Cutover And Index Readiness
+
+### 1. Scope / Trigger
+
+- Applies when changing the production RAG embedding provider or exact model identifier, including a compatible alias on another channel.
+
+### 2. Signatures
+
+- `embedTexts(texts, { expectedDimensions: 4096 })` prepares vectors before `syncPostgresRagStore()` starts its write transaction.
+- `POST /v1/sync/public` accepts an empty JSON object and the server-only sync credential. `syncPublicRagAfterDeployment()` gates submission on deployed commit and source checksum.
+
+### 3. Contracts
+
+- Keep `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL`, `EMBEDDING_DIMENSION`, and `EMBEDDING_TIMEOUT_MS` on RAG. Preserve an encrypted, access-restricted recovery point for changed secrets; record non-sensitive timeout rollback values separately.
+- Production vectors remain 4096-dimensional. A model catalog entry or identical dimension alone does not prove vector-space compatibility; regenerate the complete public corpus after a channel/model cutover.
+- The current implementation batches eight texts and permits up to three provider attempts. `attemptedEndpoints` counts endpoint alternatives, not HTTP attempts. A single sync submission can therefore issue multiple provider requests.
+- Size the embedding timeout from an approved real corpus batch, not a ping. The current fetch timer bounds response headers, while the outer sync client defaults to 120 seconds. A documented bounded outer deadline may be needed for a slow full corpus; distinguish that from each provider attempt and from the public chat deadline.
+
+### 4. Validation & Error Matrix
+
+| Condition | Required outcome |
+| --- | --- |
+| Deployment commit or source checksum differs | Do not submit sync |
+| Embedding timeout/provider error/dimension mismatch | `accepted=false`; leave the previous committed index intact |
+| HTTP 200 with `accepted=false` | Record a failed sync, not success |
+| Outer sync request expires | Treat result as unconfirmed; inspect health and `rag_sync_runs` before considering another submission |
+| Accepted sync | Verify latest completed DB checksum, four table counts, and every stored vector's model/dimension before chat acceptance |
+
+### 5. Good / Base / Bad Cases
+
+- Good: an approved eight-text corpus batch returns eight valid 4096-dimensional vectors in about 30 seconds; record evidence before changing a 20-second provider deadline to a bounded 60 seconds.
+- Base: the previous committed public index remains readable while new embeddings are prepared.
+- Bad: repeatedly replay the whole sync without an implementation/configuration change, infer success from `publicSourceChecksum`, or consume a one-shot business question before sync succeeds.
+
+### 6. Tests Required
+
+- Use `assistant:public-sync-check` for deployment/checksum gates and accepted-result validation; `assistant:hybrid-contract` and `assistant:rag-pgvector-schema-check` cover retrieval and fixed-dimension storage contracts.
+- For an authorized production cutover, record only bounded counters, hashes, HTTP/error categories and timing. Keep credentials, raw vectors and model response bodies out of committed evidence.
+- Persist the one-shot consultation request/session identity before forwarding its POST. Block extra chat requests; verify saved Revision recovery and delete the temporary Session, then require a read to return 404.
+
+### 7. Wrong vs Correct
+
+- Wrong: assume a successful `/health` or model catalog query means the new embedding channel can index the corpus, or trigger another deploy without checking whether the environment-update tool already started one.
+- Correct: observe the actual deployment, verify its backend/source revision, measure an approved corpus batch when needed, and separate configuration readiness, completed index sync and business acceptance.
+
 ## Scenario: Primary Model Base Fail-Closed Configuration
 
 ### 1. Scope / Trigger

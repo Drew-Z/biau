@@ -41,9 +41,15 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 2026-11-04 发布复核：上述已完成项属于历史验收。当前公共助手修复与 B1—B3 项目资料已按批准提交 `83a859b6` 并部署到 Pages（`d29e242e-eee2-4baa-8aa6-7d0a22fb9d73`）、Public（`dep-dblf0qon74is739v3pq0`）和 RAG（`dep-dblf0qjncjis73dmh3o0`）；Studio 未部署。两个站点同源 health 均为 200，核心公开路由 7/7，Roleplay sitemap 缺项已修复。
 
-本次公开知识同步在已验证的 public-only 四表/向量恢复点之后只提交 1 次，返回 `accepted=false / embedding_provider_error / providerHttpStatus=503`，失败位于写入事务之前。远端仍为 31 documents / 61 chunks / 166 entities / 231 relations，最后成功同步为 2026-08-11；新源 32/75/176/253 尚未写入。服务部署版本与 source checksum 匹配不能替代索引同步成功。按已批准发布顺序，同步失败后停止业务验收，不自动重试；先处理 embedding 上游故障，再明确有界同步重试窗口。原问题的单次真实咨询批准尚未消费，实际请求 0 次、测试会话 0 个，回答/引用/恢复/390px 仍待本轮验收。
+本次旧 embedding 渠道首次同步返回 `accepted=false / embedding_provider_error / providerHttpStatus=503`，写入事务未开始。用户随后明确授权切换 embedding 渠道；旧配置经 Windows DPAPI 加密及解密往返校验，公开索引恢复点继续保留。新渠道首批仍触发原 20 秒超时；用同一批 8 个公开片段作一次有界诊断，约 30 秒返回 8 个有效 4096 维向量，遂将 RAG 的 embedding 超时调整为 60 秒。经实质配置调整后的全量同步在 180 秒处断开客户端连接，但数据库审计证明它于 `2026-11-04T15:22:17.081Z` 完成。准备本地续跑时先核对到该完成记录，因此未重复执行 embedding 或数据库写入。
+
+当前远端已为 32 documents / 75 chunks / 176 entities / 253 relations，全部 75 个向量的模型标识、实际维度及数据库完成 checksum 均匹配；最终 RAG 部署 `dep-dblkrpkipgvc73ece690` 使用 `f6a4771a`，其后端与原发布 `83a859b6` 完全一致。health/source checksum 仅作部署门禁，数据库审计与向量校验才作为同步成功证据；Studio 和生成模型配置未改。
+
+原问题已按既有批准只提交 1 次：HTTP 200、route=site、4 条站内引用全部可访问；桌面刷新恢复、390px 无横向溢出和输入可用、临时 Session 删除及再次读取 404 均通过。回答为 `degraded/fallback / provider_error`，生成日志为 `provider_unavailable / public_api / 5xx / attempts=1`，没有重试。此单次批准已消费，完整模型回答仍未通过；后续必须先处理生成渠道故障，再获得新的单次真实业务批准。低敏证据见 `.trellis/tasks/10-05-public-assistant-usability/emrank-verification-2026-11-04.json`。
 
 2026-11-04 14:13 UTC 状态采样为 8 个外部入口中 7 online、ERP connection_error；入口可达不代表模型或受保护业务通过。低敏部署、同步失败与恢复摘要见 `.trellis/tasks/10-05-public-assistant-usability/production-verification-2026-11-04.json`；公开索引恢复点仅在本地受控恢复组中保存，凭据未写入文件或日志。
+
+2026-11-04 16:32—16:38 UTC 只读刷新：主站路由 7/7、外部入口 8/8 可达。助手 health 首次在 12 秒截止后失败，后续一次 30 秒上限复核在约 1.3 秒内返回 200 JSON；两次观测均保留。公共状态保留 15:51 UTC 的真实咨询 degraded 及其独立采样时间，后续健康检查没有覆盖生成失败，额外业务提交为 0。
 
 ## Roleplay 角色剧场公开演示
 

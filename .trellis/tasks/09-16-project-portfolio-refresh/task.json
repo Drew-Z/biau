@@ -2,16 +2,16 @@
   "id": "project-portfolio-refresh",
   "name": "project-portfolio-refresh",
   "title": "项目现状盘点与主站同步规划",
-  "description": "B1/B2/B3 静态内容已于 2026-11-04 获批发布；B4 部署及页面核验完成，公开索引同步因 embedding HTTP 503 受阻。",
-  "status": "in_progress",
+  "description": "B1/B2/B3 静态内容已获批发布；B4 部署、页面核验与公开索引同步完成。生成回答 5xx 由关联助手任务继续处理。",
+  "status": "completed",
   "dev_type": "frontend",
-  "scope": "B1-B3 published; B4 public index sync blocked",
+  "scope": "B1-B4 published and public index verified",
   "package": null,
   "priority": "P2",
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-09-16",
-  "completedAt": null,
+  "completedAt": "2026-11-05",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
@@ -34,7 +34,7 @@
     "server/data/public-knowledge-v2.json",
     "public/sitemap.xml"
   ],
-  "notes": "Pages/Public/RAG 同版本部署通过；主站 7/7、外部入口 7 online + ERP connection_error。一次公开同步在 embedding 阶段返回 503，未进入写入事务；真实咨询批准未消费。parent 仍为空，任务保持进行中，不重启旧路线图。",
+  "notes": "Pages/Public/RAG 已部署；主站 7/7，远端索引 32/75/176/253 与源摘要匹配，75 个向量均为新渠道模型的 4096 维输出。原问题只提交 1 次，引用/恢复/390px/删除通过，生成回答 5xx 降级留在关联助手任务。parent 仍为空，本轮不归档其他任务、不重启旧路线图。",
   "meta": {
     "b1": {
       "status": "verified-local",
@@ -66,13 +66,15 @@
       "publishCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb"
     },
     "b4": {
-      "status": "deployed-index-sync-blocked",
+      "status": "deployed-index-synced",
       "releaseCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
       "publishedAt": "2026-11-04",
-      "verification": "../10-05-public-assistant-usability/production-verification-2026-11-04.json",
-      "indexSyncAttempts": 1,
-      "businessSubmissions": 0,
-      "nextStep": "Resolve embedding upstream and complete the bounded public index sync before consultation acceptance."
+      "verification": "../10-05-public-assistant-usability/emrank-verification-2026-11-04.json",
+      "indexSyncAttempts": 3,
+      "indexCompletedAt": "2026-11-04T15:22:17.081Z",
+      "businessSubmissions": 1,
+      "businessAcceptance": "generation-degraded; tracked in public-assistant-usability",
+      "nextStep": "B4 completed. Follow generation recovery in the related assistant task without replaying the consumed one-shot consultation."
     }
   }
 }

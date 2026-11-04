@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-04T14:13:45.621Z",
+  "checkedAt": "2026-11-04T16:32:08.313Z",
   "baseConfigured": true,
   "ok": true,
   "checks": [
@@ -7,19 +7,46 @@
       "id": "blog-semi-public-routes",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 3741,
-      "checkedAt": "2026-11-04T14:13:45.621Z",
+      "durationMs": 2642,
+      "checkedAt": "2026-11-04T16:32:08.313Z",
       "summary": "7/7 public routes returned expected responses",
       "issues": []
     },
     {
       "id": "blog-semi-public-assistant",
-      "status": "unchecked",
+      "status": "degraded",
       "httpStatus": 200,
-      "durationMs": 509,
-      "checkedAt": "2026-11-04T14:13:45.621Z",
-      "summary": "Assistant health returned valid JSON; live chat validation skipped by policy",
-      "issues": []
+      "durationMs": 28340,
+      "checkedAt": "2026-11-04T15:51:53.512Z",
+      "summary": "单次获批咨询返回站内降级回答与 4 条可访问引用；桌面/390px 恢复及会话删除通过",
+      "issues": [
+        "生成渠道 public_api 返回 5xx（provider_error，attempts=1）；完整模型回答未通过"
+      ],
+      "observationKind": "authorized-browser-acceptance",
+      "submissions": 1,
+      "siteCitationCount": 4,
+      "sessionCleanupPassed": true,
+      "healthObservation": {
+        "id": "blog-semi-public-assistant",
+        "status": "offline",
+        "httpStatus": 0,
+        "durationMs": 12014,
+        "checkedAt": "2026-11-04T16:32:08.313Z",
+        "summary": "Public assistant API did not return valid health/chat JSON",
+        "issues": [
+          "assistant health returned HTTP request failed",
+          "assistant health request failed"
+        ]
+      },
+      "healthFollowup": {
+        "checkedAt": "2026-11-04T16:38:05.392Z",
+        "timeoutMs": 30000,
+        "businessSubmissions": 0,
+        "httpStatus": 200,
+        "durationMs": 1267,
+        "validJson": true,
+        "ok": true
+      }
     }
   ]
 }
