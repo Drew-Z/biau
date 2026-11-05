@@ -1,5 +1,26 @@
 # 执行记录
 
+## 2026-11-05 目录与恢复续作计划
+
+- 恢复点复用既有 manifest 的 `production-readiness-20261104.catalogRestoreFollowup`；干净文件基线 `dcb0aeb8`，保留其他任务改动。
+- 复现默认站内检索只有 4 份资料，当前目录共 16 项；原夹具指定 6 条且自行构造 evidence，未覆盖真实默认链路。
+- 从项目和入口策略生成有界目录投影，并接入 Public 的目录查询；保持向量资产与普通详情检索不变。
+- 用禁网夹具验证完整目录、入口边界、模型输入引用，以及桌面/移动刷新恢复；只读复核 TLS。
+- 完成模型/Agent/知识/API/浏览器状态相关检查、前后端构建、lint、status/deployment/manual-gates 合同和 diff 检查后记录候选。新增生产模型请求为 0。
+
+## 2026-11-05 目录与恢复续作结果
+
+- 默认检索最多 4 份资料与 16 项目录之间的缺口已修复。生成 3 组目录证据，长度分别为 830/869/867 字符；所有项目用途、项目页路径、公开/登录/案例访问边界完整进入实际 Responses 请求正文。3 组共享目录页的引用按 evidence ID 保留，模型不可用时仍返回有界 `degraded` 摘要，不声称完整回答或实时可用。
+- `assistant:index`、`assistant:kg-check` 与真实默认 Agent/检索/模型适配器/公开投影的 consultation 回归通过。该回归以 1 个纯内存 Responses SSE 响应验证 16 项资料和 3 条引用，`networkCalls=0`；不把模拟的 `answered` 当成真实模型质量证据。普通详情、技术与凭据问题保持原路径。
+- 既有向量知识文件与基线逐字节一致，仍为 32 documents / 75 chunks / 176 entities / 253 relations；本修复无需重新 embedding 或生产索引同步。
+- 开发服务与生产构建各通过 40 项可用性和 8 次收到 `partial/model` 后的真实页面刷新检查；1440/320/390/430 下均恢复同一 Session/Revision、保留草稿、允许输入且不自动重发。历史交互专项 188 场景通过。夹具只在首次导航补默认主题/语言，不重置 registry/draft。
+- `assistant:public-model-check`、Agent/API/browser-state/quality、hybrid-contract/rag-smoke、前后端 build、lint 和 status/deployment/manual-gates 合同通过；最后的目录标签与模型请求夹具修改后重新执行知识生成/检查、consultation、构建及相应 lint。完整 UI 大套历史上的 44/45 结果未被本轮专项覆盖。
+- TLS 仅作只读复核：Cloudflare 域名、HTTP validation 与 verification 均 active，DNS 为 proxied CNAME 到 Pages；certificate packs 查询权限不足（9109）。本客户端仍观察到 `RemoteCertificateNameMismatch`/连接 reset，默认 Pages 域曾返回 200，但另一次 PowerShell 请求超时。无法据此归因于 DNS、证书签发或模型，也未修改 DNS/证书。
+- 线上原问题的 `partial` 不能确定只由目录缺口造成；桌面刷新超时未在本地复现，线上恢复与完整回答仍待验收。当前仅完成本地候选；新增生产请求、生产配置修改、部署与索引写入均为 0。
+- 候选文件、验证范围、恢复方式和下一次有界验收计划见 `catalog-restore-verification-2026-11-05.json`。原有桌宠改动的 3 个 SHA-256 均保持不变；本轮开发/预览服务已停止，没有遗留一次性临时文件。
+
+## 初始执行基线
+
 - 基线 HEAD：747174b6d1957c2e23fb375da8fd2a09015e120f。
 - 恢复点见 recovery.json；干净已跟踪文件登记 Git 提交和工作区字节哈希，未提交文件不覆盖。
 - 先保存可复现的失败，再实施路由、超时和状态修复。

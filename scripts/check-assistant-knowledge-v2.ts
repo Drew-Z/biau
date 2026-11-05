@@ -8,6 +8,8 @@ import {
   type AssistantKnowledgeItem,
 } from '../src/data/assistant'
 import type { AssistantKnowledgeEntityType, AssistantKnowledgeRelationType, PublicKnowledgeV2 } from '../src/data/assistantKnowledge'
+import { buildPublicProjectCatalog } from '../src/data/assistantProjectCatalog'
+import { projects } from '../src/data/portfolio'
 
 const generatedPath = path.resolve('server/data/public-knowledge-v2.json')
 
@@ -153,6 +155,12 @@ function assertRouteSuggestions() {
 }
 
 const generated = readGeneratedKnowledge()
+const catalog = buildPublicProjectCatalog()
+assert(JSON.stringify(JSON.parse(fs.readFileSync(path.resolve('server/data/public-project-catalog.json'), 'utf8'))) === JSON.stringify(catalog), 'public-project-catalog.json is stale; run assistant:index')
+const catalogText = catalog.map(item => item.summary).join('\n')
+for (const project of projects) assert(catalogText.includes(`/projects/${project.id}`), `catalog missing ${project.id}`)
+assert(catalog.length <= 8 && catalog.every(item => item.summary.length <= 900), 'catalog must fit the model and citation budgets')
+assert(catalogText.includes('需登录或邀请') && catalogText.includes('仅案例/规划') && catalogText.includes('未开放直达'), 'catalog must preserve controlled and planned access boundaries')
 assertGeneratedIsFresh(generated)
 assertDocumentsArePublic(publicKnowledgeV2)
 assertEntityTypes(publicKnowledgeV2)

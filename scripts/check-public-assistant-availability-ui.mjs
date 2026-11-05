@@ -2,7 +2,10 @@ import assert from 'node:assert/strict'
 import { chromium } from 'playwright'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { tsImport } from 'tsx/esm/api'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
+
+const { normalizePublicAssistantAnswer, normalizePublicAssistantSessionHistory } = await tsImport('../src/utils/publicAssistantApi.ts', import.meta.url)
 
 const configurations = [
   { width: 1440, theme: 'morning', language: 'zh' },
@@ -89,7 +92,100 @@ const send = page => page.locator('.public-assistant__composer button[type=submi
 const chatCount = page => page.evaluate(() => window.__assistantFixture.calls.filter(call => ['/api/chat/public/stream', '/api/chat/public'].includes(call.path)).length)
 const ready = page => page.waitForFunction(() => document.querySelector('.public-assistant__composer button[type=submit]')?.disabled === false)
 
+async function checkReceivedAnswerReload(browser, base, configuration) {
+  const page = await browser.newPage({ viewport: { width: configuration.width, height: 900 }, reducedMotion: 'reduce', serviceWorkers: 'block' })
+  page.setDefaultTimeout(10_000)
+  const errors = []
+  let submissions = 0
+  let historyReads = 0
+  let history = null
+  let phase = 'initial-open'
+  const revisionId = 'availability-reload-revision'
+  const draft = '现在站点里哪些项目有公开演示入口？每个项目适合看什么？'
+  const followup = '继续比较这些项目'
+  page.on('pageerror', error => errors.push(error.message))
+  await installLocalNetworkGuard(page, base, () => errors.push('external-request'), { allowLoopback: false })
+  // This runs on every document: never reset the session registry or draft here.
+  await page.addInitScript(({ theme, language }) => {
+    if (!localStorage.getItem('biau-port-theme')) localStorage.setItem('biau-port-theme', theme)
+    if (!localStorage.getItem('biau-port-language')) localStorage.setItem('biau-port-language', language)
+  }, configuration)
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname
+    const json = (body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
+    if (path === '/api/health') return json({ ok: true, database: true, modelConfigured: true })
+    const body = route.request().postDataJSON()
+    if (path === '/api/chat/public/session') {
+      historyReads += 1
+      assert.equal(body.sessionId, history?.session.id)
+      return json(history)
+    }
+    if (path === '/api/chat/public/stream') {
+      submissions += 1
+      assert.equal(submissions, 1, 'Reload must never replay generation')
+      const date = new Date().toISOString()
+      const branchId = 'availability-reload-branch'
+      const turnId = 'availability-reload-turn'
+      const answer = {
+        contractVersion: 2, requestId: body.requestId, sessionId: body.sessionId,
+        answer: '公开项目可从项目页查看；实时可用性还需核验。', status: 'partial',
+        claims: [{ id: 'claim-reload', text: '项目页包含公开项目资料。', citationIds: ['catalog-reload'] }],
+        citations: [{ id: 'catalog-reload', title: '公开项目', summary: '项目与访问边界', href: '/projects', source: 'site', evidenceStatus: 'verified' }], suggestions: [],
+        conversation: { branchId, branchOrdinal: 1, turnId, revisionId, revisionNo: 1, basedOnRevisionId: null, activated: true },
+        meta: { mode: 'model', citationCount: 1, recovery: { state: 'none', attempts: 1 } },
+      }
+      history = {
+        session: { id: body.sessionId, activeBranchId: branchId, title: draft, turnCount: 1, hasEarlierTurns: false, createdAt: date, lastActiveAt: date, expiresAt: new Date(Date.now() + 86400000).toISOString() },
+        branches: [{ id: branchId, ordinal: 1, headRevisionId: revisionId, preview: draft, turnCount: 1, hasEarlierTurns: false, lastActiveAt: date }],
+        turns: [{ id: turnId, question: draft, mode: 'auto', parentRevisionId: null, selectedRevisionId: revisionId, createdAt: date,
+          revisions: [{ id: revisionId, revisionNo: 1, basedOnRevisionId: null, answer: answer.answer, status: answer.status, claims: answer.claims, citations: answer.citations, suggestions: [], route: 'site', meta: answer.meta, createdAt: date, feedback: null }],
+        }],
+        hasEarlierTurns: false, revisionsTruncated: false, branchesTruncated: false, truncated: false,
+      }
+      assert.ok(normalizePublicAssistantAnswer(answer))
+      assert.ok(normalizePublicAssistantSessionHistory(history))
+      return route.fulfill({ status: 200, contentType: 'text/event-stream', body: 'event: result\ndata: ' + JSON.stringify(answer) + '\n\n' })
+    }
+    errors.push('unexpected-api: ' + path)
+    return json({}, 503)
+  })
+  const open = async () => {
+    await page.locator('.public-assistant__trigger').click()
+    await composer(page).waitFor()
+    await page.waitForFunction(() => document.querySelector('#public-assistant-input')?.disabled === false)
+  }
+  try {
+    await page.goto(base + '/blog', { waitUntil: 'domcontentloaded' })
+    await open()
+    await composer(page).fill(draft)
+    await ready(page)
+    await send(page).click()
+    await page.locator('[data-assistant-revision-id="' + revisionId + '"]').waitFor()
+    await composer(page).fill(followup)
+    for (let reload = 1; reload <= 2; reload += 1) {
+      phase = 'reload-' + reload
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      await open()
+      await page.locator('[data-assistant-revision-id="' + revisionId + '"]').waitFor()
+      assert.equal(historyReads, reload)
+      assert.equal(await page.locator('.public-assistant__message.is-assistant').count(), 1)
+      assert.ok((await page.locator('.public-assistant__message.is-assistant').innerText()).includes(history.turns[0].revisions[0].answer))
+      assert.equal(await composer(page).inputValue(), followup)
+      assert.equal(await send(page).isEnabled(), true)
+      assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('biau-public-assistant-sessions-v2')).currentSessionId), history.session.id)
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+      assert.equal(submissions, 1)
+    }
+    assert.deepEqual(errors, [])
+  } catch (error) {
+    throw new Error(`${configuration.width}/${configuration.language}/${phase}: ${error.message}; submissions=${submissions}, historyReads=${historyReads}`, { cause: error })
+  } finally {
+    await page.close()
+  }
+}
+
 export async function checkPublicAssistantAvailability(browser, base) {
+  assert.ok(['127.0.0.1', 'localhost', '[::1]'].includes(new URL(base).hostname), 'Availability fixtures require a local preview')
   let cases = 0
   for (const configuration of configurations) {
     for (const scenario of ['expiry', 'health-header', 'health-body', 'restore', 'chat-header', 'chat-body', 'result-open', 'error-open', 'json', 'no-database']) {
@@ -178,7 +274,8 @@ export async function checkPublicAssistantAvailability(browser, base) {
       }
     }
   }
-  return { cases, modelCalls: 0 }
+  for (const configuration of configurations) await checkReceivedAnswerReload(browser, base, configuration)
+  return { cases, reloadCases: configurations.length * 2, modelCalls: 0 }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

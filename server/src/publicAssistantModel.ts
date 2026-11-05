@@ -343,7 +343,13 @@ function buildEvidenceFallback(
 ): PublicAssistantDraft {
   const evidence = input.evidence
     .filter((item) => input.plan.route !== 'site' || item.source === 'site')
-    .filter((item, index, items) => items.findIndex((candidate) => candidate.canonicalUrl === item.canonicalUrl) === index)
+    .filter((item, index, items) => {
+      // Catalog groups intentionally share the /projects landing page. Their
+      // evidence IDs are distinct, so URL de-duplication must not hide the
+      // remaining groups from the bounded degraded answer.
+      if (isProjectCatalogEvidence(item)) return items.findIndex((candidate) => candidate.id === item.id) === index
+      return items.findIndex((candidate) => candidate.canonicalUrl === item.canonicalUrl) === index
+    })
     .slice(0, 6)
   const isDirect = input.plan.route === 'direct'
   if (isDirect || evidence.length === 0) {
@@ -364,7 +370,12 @@ function buildEvidenceFallback(
   }
   const claims = evidence.map((item, index) => ({
     id: `fallback-${index + 1}`,
-    text: (input.plan.route === 'site'
+    text: (isProjectCatalogEvidence(item)
+      ? item.text.split('\n').slice(1).reduce((excerpt, entry) => {
+        const next = excerpt ? `${excerpt}\n${entry}` : entry
+        return next.length <= 450 ? next : excerpt
+      }, '')
+      : input.plan.route === 'site'
       ? item.excerpt.match(/^.*?[。！？]/u)?.[0] ?? item.excerpt.slice(0, 240)
       : item.excerpt).slice(0, 450),
     citationIds: [item.id],
@@ -384,6 +395,10 @@ function buildEvidenceFallback(
     failure,
     attempts: [{ attempt: attemptNumber, ...timing }],
   }
+}
+
+function isProjectCatalogEvidence(item: PublicAssistantEvidence) {
+  return item.source === 'site' && item.id.startsWith('site:catalog:site:project-catalog:')
 }
 
 function structuredSchema(name: string, schema: Record<string, unknown>) {

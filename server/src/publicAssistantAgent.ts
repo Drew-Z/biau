@@ -564,7 +564,7 @@ const compiledPublicAssistantGraph = new StateGraph(PublicAssistantAnnotation)
   .addEdge('finalize', END)
   .compile()
 
-async function retrieveSiteEvidence(queries: string[]): Promise<SiteResearchResult> {
+export async function retrieveSiteEvidence(queries: string[]): Promise<SiteResearchResult> {
   const contexts = await Promise.all(queries.slice(0, 2).map((query) => retrievePublicAssistantContext(query)))
   const evidence: PublicAssistantEvidence[] = []
   for (const context of contexts) {

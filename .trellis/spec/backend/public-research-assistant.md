@@ -413,6 +413,14 @@ Correct: preserve one authenticated relay-boundary marker, one low-cardinality o
 - Catalog queries prioritize distinct project records over multiple related blog
   posts. Local chunk selection reserves one slot per selected document so a long
   document cannot silently displace the other project citations.
+- A public project catalog query uses the generated
+  `server/data/public-project-catalog.json` projection before remote RAG. It
+  includes every public project record in bounded groups (at most eight records,
+  each at most 900 characters), preserves `public`, `login-gated`, and `case-only`
+  access boundaries, and returns to ordinary semantic retrieval for
+  project-specific or architecture questions. Catalog groups may share
+  `/projects`; evidence IDs remain distinct so fallback answers do not collapse
+  them by URL. Generated catalog changes do not require a vector-index sync.
 - Evidence fallback stays `degraded`, is a bounded list with source titles, and
   does not claim an exhaustive catalog or verified live availability. A site-only
   result never uses web evidence. Do not claim model recovery from a fallback.

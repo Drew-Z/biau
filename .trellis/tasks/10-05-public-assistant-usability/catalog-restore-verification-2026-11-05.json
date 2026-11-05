@@ -1,0 +1,268 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-05T13:23:19.011138+00:00",
+  "scope": "local-catalog-evidence-and-received-answer-reload",
+  "status": "local-candidate-verified-production-acceptance-pending",
+  "baseCommit": "dcb0aeb895dbdfcfad21faa6e48a672c58e9b4b7",
+  "candidate": {
+    "files": [
+      {
+        "path": "src/data/assistantProjectCatalog.ts",
+        "sha256": "b1a5f131398ce05b1c2d06cbd4039bba9593d4156960be5429099f9429709151"
+      },
+      {
+        "path": "scripts/generate-assistant-knowledge.ts",
+        "sha256": "ec7bef6ff67b86813f7de2743d9f2e6e0ff3daae7466bb8ecdb5043599255d61"
+      },
+      {
+        "path": "server/data/public-project-catalog.json",
+        "sha256": "a4c5a107e09a3791257282ebb5723a34d2cb0e8d88f4ac2f7fbd44b77193be0a"
+      },
+      {
+        "path": "server/src/knowledge.ts",
+        "sha256": "8bc07bf419f548dffe99990495906667e748c303626ae6d7d42a15de940880f0"
+      },
+      {
+        "path": "server/src/ragClient.ts",
+        "sha256": "0aad240586705572b0cb35b5152563b070eba533fc76dc528d5f83b18c6539d9"
+      },
+      {
+        "path": "server/src/publicAssistantAgent.ts",
+        "sha256": "13b2412d933723e531ad5db91f4efc33ba09e968be9e45d1da56e66c9421159a"
+      },
+      {
+        "path": "server/src/publicAssistantModel.ts",
+        "sha256": "7a2504e72074936339d4d197796055ef48d505920a9c76cd29ccff26d7b85b56"
+      },
+      {
+        "path": "server/scripts/public-assistant-consultation-check.ts",
+        "sha256": "d2f69bc8d36465c359b91c52d442902dc1843f776c38dbff1a758ad578663d28"
+      },
+      {
+        "path": "scripts/check-assistant-knowledge-v2.ts",
+        "sha256": "03b386c6a4e84278892b3698765d83e75476a0a6b3c913ba50e83c83837a49f9"
+      },
+      {
+        "path": "scripts/check-public-assistant-availability-ui.mjs",
+        "sha256": "45c26e9383e25ea694f6f2f3dd063e60a946a26988eac96113de7749426ebd4e"
+      },
+      {
+        "path": ".trellis/spec/backend/public-research-assistant.md",
+        "sha256": "0e83f074708712e752316f4b0b7232d2cf21559215cadc44a85cdd77de5f3445"
+      },
+      {
+        "path": ".trellis/spec/frontend/quality-guidelines.md",
+        "sha256": "d5796899b573ae966102ccdf54d94a2e90b4479feeca455e3283f90d912d50c7"
+      },
+      {
+        "path": ".trellis/tasks/10-05-public-assistant-usability/design.md",
+        "sha256": "45e7bbd36e04329cbbcd9f0699f40e8b14916546ced7f71e82bb7709e29915d9"
+      },
+      {
+        "path": ".trellis/tasks/10-05-public-assistant-usability/implement.md",
+        "sha256": "2096592e34726caa00f4b7c6b63ef1f970c0c037ab1ce3f93d71c14165a8956b"
+      },
+      {
+        "path": ".trellis/tasks/10-05-public-assistant-usability/task.json",
+        "sha256": "ef3ad2bb64d2fefc0772ea49cf1f256bdeaff3cc444a9c15611e346fbd2bd7ed"
+      }
+    ],
+    "recordFile": ".trellis/tasks/10-05-public-assistant-usability/catalog-restore-verification-2026-11-05.json",
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "preservedUnrelatedFiles": [
+      "scripts/check-public-assistant-pet-ui.mjs",
+      "src/components/PublicAssistantPet.tsx",
+      "src/styles/public-assistant-pet.css"
+    ],
+    "preservedHashesMatched": true
+  },
+  "catalog": {
+    "publicProjects": 16,
+    "evidenceGroups": 3,
+    "groupCharacters": [
+      830,
+      869,
+      867
+    ],
+    "maxGroups": 8,
+    "maxGroupCharacters": 900,
+    "modelInputProjectCoverage": 16,
+    "httpProjectionCitations": 3,
+    "retrievalMode": "public-project-catalog",
+    "source": "local",
+    "accessBoundaries": [
+      "public",
+      "login-gated",
+      "case-only",
+      "entry-not-direct"
+    ],
+    "vectorProjectionBytesUnchanged": true,
+    "vectorKnowledge": {
+      "documents": 32,
+      "chunks": 75,
+      "entities": 176,
+      "relations": 253
+    },
+    "vectorSyncRequired": false,
+    "fallbackStatus": "degraded",
+    "fallbackClaimsExhaustiveCatalog": false,
+    "modelInputFixture": "one in-memory Responses SSE completion; no live model quality claim"
+  },
+  "validation": {
+    "assistant:index": "passed-after-final-label-update",
+    "assistant:kg-check": "passed-after-final-label-update",
+    "assistant:public-model-check": "passed; final consultation extension also passed separately",
+    "consultation": {
+      "status": "passed",
+      "networkCalls": 0,
+      "fixtureModelCalls": 1,
+      "projects": 16,
+      "citations": 3
+    },
+    "assistant:public-agent-check": "passed",
+    "assistant:public-browser-state-check": "passed",
+    "assistant:public-api-check": "passed",
+    "assistant:public-quality-check": "passed",
+    "assistant:hybrid-contract": "passed",
+    "assistant:rag-smoke": "passed",
+    "server:build": "passed-after-final-label-update",
+    "build": "passed-after-final-label-update",
+    "lint": "passed; final consultation extension lint also passed",
+    "status:contract": "passed-after-final-record-update",
+    "docs:deployment-check": "passed-after-final-record-update",
+    "docs:manual-gates-check": "passed-after-final-record-update",
+    "git diff --check": "passed-after-final-record-update",
+    "developmentUi": {
+      "availabilityCases": 40,
+      "receivedAnswerReloadCases": 8,
+      "status": "passed"
+    },
+    "productionBuildUi": {
+      "availabilityCases": 40,
+      "receivedAnswerReloadCases": 8,
+      "status": "passed"
+    },
+    "historyUi": {
+      "cases": 188,
+      "status": "passed"
+    },
+    "reloadWidths": [
+      1440,
+      320,
+      390,
+      430
+    ],
+    "reloadAssertions": [
+      "same-session",
+      "same-revision",
+      "draft-retained",
+      "input-enabled",
+      "no-overflow",
+      "no-generation-replay"
+    ],
+    "uiBuildContext": "Existing three unrelated pet edits were preserved in the tested working tree; they are excluded from the release candidate.",
+    "fullUiSuite": "not rerun; historical 44/45 result remains unchanged"
+  },
+  "tlsReadOnly": {
+    "observedOn": "2026-11-05",
+    "customDomainStatus": "active",
+    "certificateAuthority": "google",
+    "validation": {
+      "status": "active",
+      "method": "http"
+    },
+    "verificationStatus": "active",
+    "dns": "proxied CNAME to Pages default domain",
+    "zoneStatus": "active",
+    "certificatePacksRead": {
+      "status": "unauthorized",
+      "code": 9109
+    },
+    "clientObservations": [
+      {
+        "client": "curl",
+        "target": "custom-domain",
+        "result": "connection-reset"
+      },
+      {
+        "client": "PowerShell",
+        "target": "custom-domain",
+        "result": "RemoteCertificateNameMismatch"
+      },
+      {
+        "client": "curl",
+        "target": "pages-default-domain",
+        "result": "HTTP 200"
+      },
+      {
+        "client": "PowerShell",
+        "target": "pages-default-domain",
+        "result": "timeout"
+      }
+    ],
+    "tlsValidationDisabled": false,
+    "dnsChanges": 0,
+    "certificateChanges": 0,
+    "conclusion": "unresolved; control-plane active status does not prove client TLS success"
+  },
+  "production": {
+    "newModelRequests": 0,
+    "newBusinessSubmissions": 0,
+    "newSessions": 0,
+    "newDeployments": 0,
+    "configurationChanges": 0,
+    "indexWrites": 0,
+    "priorBusinessResult": "partial/model; desktop reload timeout; mobile reload not run",
+    "priorVerification": "generation-verification-2026-11-05.json",
+    "limitations": [
+      "The retrieval gap is confirmed but not proven to be the only cause of the prior partial answer.",
+      "Production reload timeout was not reproduced locally; production recovery remains unverified.",
+      "Custom-domain TLS remains unresolved."
+    ]
+  },
+  "nextReleaseProposal": {
+    "approvalStatus": "approved",
+    "actions": [
+      "Commit/push only the enumerated candidate files and this record; observe any resulting Pages deployment.",
+      "Deploy the approved candidate commit to Public only; verify version and read-only health.",
+      "Use the Pages default origin with normal TLS validation if custom-domain TLS remains unresolved.",
+      "Submit the original approved business question exactly once with max attempts still 1; do not retry or switch channels.",
+      "Verify the answer and citations, then reuse the same persisted session for desktop and 390px reload checks without resubmitting.",
+      "Delete the temporary session and verify subsequent read returns 404, including on acceptance failure."
+    ],
+    "businessQuestion": "现在站点里哪些项目有公开演示入口？每个项目适合看什么？",
+    "maxBusinessSubmissions": 1,
+    "modelConfigurationChanges": false,
+    "embeddingRequests": 0,
+    "ragDeploymentRequired": false,
+    "studioChanges": false,
+    "aiDailyChanges": false,
+    "dnsOrCertificateChanges": false,
+    "approvalBasis": [
+      "docs/manual-gates.md:19-20",
+      "docs/manual-gates.md:75"
+    ],
+    "approvedAt": "2026-11-05T14:40:25.027315+00:00",
+    "approvalSource": "User explicitly approved scoped commit/push, Pages/Public release, and one original-question acceptance request."
+  },
+  "recovery": {
+    "group": "20261004T183744.706Z-public-assistant-usability",
+    "stage": "production-readiness-20261104.catalogRestoreFollowup",
+    "trackedFileBaseline": "dcb0aeb895dbdfcfad21faa6e48a672c58e9b4b7",
+    "localRollback": "Restore only the listed tracked file baselines and review removal of this task's new files; preserve all unrelated edits.",
+    "publicRollbackCommit": "affdd1ea1318d2ba0908a45afa65f2d6b470b5ac",
+    "publicRollbackDeployment": "dep-dblmehhsrm7s73f25efg",
+    "productionRollback": "Redeploy the prior Public release while keeping current model/embedding environment; no index restoration is needed.",
+    "pagesRollbackDeployment": "b9cd0670-f1f0-49eb-8788-8addd4699e23",
+    "pagesRollbackCommit": "dcb0aeb895dbdfcfad21faa6e48a672c58e9b4b7"
+  },
+  "cleanup": {
+    "temporaryFilesCreated": [],
+    "temporaryFilesDeleted": [],
+    "taskDevAndPreviewServersStopped": true,
+    "preExistingUnknownFilesPreserved": true
+  },
+  "localValidationCompletedAt": "2026-11-05T13:32:16.607885+00:00"
+}

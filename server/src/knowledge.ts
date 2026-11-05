@@ -120,6 +120,34 @@ function loadKnowledgeV2(): PublicKnowledgeV2 | null {
 export const publicKnowledge = loadKnowledge()
 export const publicKnowledgeV2 = loadKnowledgeV2()
 
+export function retrieveProjectCatalog(query: string): KnowledgeRetrievalResult | null {
+  const intent = classifyIntent(query)
+  if (!isProjectCatalogQuery(query, intent)) return null
+  try {
+    const citations = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../data/public-project-catalog.json'), 'utf8')) as KnowledgeItem[]
+    if (!Array.isArray(citations) || citations.length === 0 || citations.length > 8 || citations.some(item =>
+      !item || typeof item.id !== 'string' || !item.id.startsWith('site:project-catalog:') ||
+      typeof item.title !== 'string' || typeof item.summary !== 'string' || !item.summary.trim() ||
+      item.summary.length > 900 || item.href !== '/projects' || item.visibility !== 'public' || !Array.isArray(item.tags),
+    )) return null
+    return {
+      citations,
+      chunks: citations.map(item => ({
+        id: `catalog:${item.id}`, documentId: item.id, text: item.summary,
+        section: '项目与访问边界', score: 1, reason: 'public-project-catalog',
+      })),
+      intent, terms: [], expandedEntityIds: [], sufficiency: 'enough', candidateCount: citations.length,
+    }
+  } catch {
+    return null
+  }
+}
+
+function isProjectCatalogQuery(query: string, intent: RetrievalIntent) {
+  return (intent === 'demo-access' || intent === 'project-experience') &&
+    /(?:哪些|所有|每个|各个|推荐|列出).{0,16}项目|项目.{0,16}(?:列表|清单|目录)|which.{0,20}(?:projects|demos)/iu.test(query)
+}
+
 export function searchKnowledge(query: string, limit = publicKnowledgeV2?.fallback_bundle.defaultLimit ?? 4) {
   return retrieveKnowledge(query, limit).citations
 }
@@ -250,8 +278,7 @@ function selectCitationsForIntent(
   intent: RetrievalIntent,
   query: string,
 ) {
-  if ((intent === 'demo-access' || intent === 'project-experience') &&
-    /(?:哪些|所有|每个|各个|推荐|列出).{0,16}项目|项目.{0,16}(?:列表|清单|目录)|which.{0,20}(?:projects|demos)/iu.test(query)) {
+  if (isProjectCatalogQuery(query, intent)) {
     // A catalog question needs distinct projects, not several articles about
     // the highest-scoring project. Keep the same bounded source records.
     const projects = scored.filter((entry) => inferSourceType(entry.item) === 'project')

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "site:project-catalog:1",
+    "title": "公开项目目录 1/3",
+    "summary": "项目目录资料快照；入口开放与实时可用性不同，最新情况请查看项目页和状态页。\n角色剧场 Roleplay｜游客式多角色聊天演示（/projects/roleplay-demo）：面向公开访客的多角色 AI 对话演示：从角色库选择人物，进入独立聊天页，并通过服务端保留模型密钥与会话边界。 访问：面向公开访客；项目页提供打开角色库、江迟野演示，开放范围以该页说明为准。\n律航 LexBeacon｜Legal RAG 与合同审查（/projects/legal-rag）：法律文档 RAG 与合同风险审查工作台，串联材料导入、引用问答、规则优先审查和质量面板；受保护流程仍需独立运行验收。 访问：需登录或邀请；当前入口未开放直达，请先查看 /status/legal-rag。\n泊语 HarborTalk｜Chatus 邀请制私人 AI 工作台（/projects/chatus）：面向受邀成员的 AI 工作台，以会话 Agent、Skills 与工具分配、显式记忆和可恢复流支撑持续工作；访客能力单独收窄。 访问：需登录或邀请；当前入口未开放直达，请先查看 /status/chatus。\n帆灵 SailSprite｜AI 桌宠社区与生成管线（/projects/pet-workspace）：仍在推进中的 AI 桌宠工程工作区，围绕 Android 桌宠社区、Community API、生成服务、人审发布、质量门禁和 App 安全契约组织。 访问：面向公开访客；项目页提供App 展示页，开放范围以该页说明为准。\n商舱 OpsDeck｜Ozon 电商 ERP（/projects/ozon-erp）：面向小团队 Ozon 店铺运营的业务系统案例，覆盖 Vue 管理后台、Express API、Prisma/PostgreSQL、队列任务和 Chrome MV3 采集插件。 访问：需登录或邀请；当前入口未开放直达，请先查看 /status/ozon-erp。",
+    "href": "/projects",
+    "tags": [
+      "项目目录",
+      "演示入口",
+      "访问边界"
+    ],
+    "visibility": "public"
+  },
+  {
+    "id": "site:project-catalog:2",
+    "title": "公开项目目录 2/3",
+    "summary": "项目目录资料快照；入口开放与实时可用性不同，最新情况请查看项目页和状态页。\n游湾 BIAU Playlab｜游戏作品集与系统设计内容站（/projects/biau-playlab）：基于 Astro 的游戏作品集，集中展示六个不同阶段的 Godot 项目、Web 试玩入口、历史截图/录制与开发日志；源码、导出包和设备体验分别核验。 访问：面向公开访客；项目页提供游戏站，开放范围以该页说明为准。\n锚学 Anchor Learning｜来源可溯源的 AI 学习代理（/projects/anchor-learning）：Flutter 本地优先学习助手，以结构化切分、精确 locator、引用核验和答案校验把文档转成可追溯练习；官网提供无后端、无实时 AI 的双语浏览器 Demo。 访问：面向公开访客；项目页提供官网、浏览器 Demo，开放范围以该页说明为准。\n泊岸 BIAU Port｜内容与助手平台（/projects/blog-semi）：React 内容与助手主站，提供三组项目目录、文章搜索与阅读返回、三主题和中英文公共界面；项目正文保留原文，产品验收与本地界面进展分别记录。 访问：仅案例/规划，无独立公开体验入口；当前入口未开放直达，请先查看 /status/blog-semi。\n画帆 BIAU Canvas｜图像托管与分享工具（/projects/canvas）：已确认存在 Cloudflare Pages 技术部署主体的图像托管工具规划项；公开域名、维护边界、隐私规则与验收证据齐备前只展示案例规划。 访问：仅案例/规划，无独立公开体验入口；当前入口未开放直达，请先查看 /projects/canvas。\n俄罗斯方块原型｜Tetris（/projects/game-first-tetris）：Godot 4 俄罗斯方块原型，包含经典计分、软降/硬降得分、combo、back-to-back、肉鸽三选一强化、触屏桥接、响应式布局和截图回归。 访问：项目页提供游戏站详情、Web 试玩；不代表本次已验证可用。",
+    "href": "/projects",
+    "tags": [
+      "项目目录",
+      "演示入口",
+      "访问边界"
+    ],
+    "visibility": "public"
+  },
+  {
+    "id": "site:project-catalog:3",
+    "title": "公开项目目录 3/3",
+    "summary": "项目目录资料快照；入口开放与实时可用性不同，最新情况请查看项目页和状态页。\n太空战机｜展示构建（/projects/game-next-spacewar）：Godot 太空射击展示构建，源码标识 0.17，包含三波短任务、漂移/装甲目标、连击奖励、菜单、帮助、暂停和结果复盘；公开 Web 包版本另行核验。 访问：项目页提供游戏站详情、Web 试玩；不代表本次已验证可用。\n竖屏肉鸽射击｜intespace（/projects/intespace）：竖屏自动射击肉鸽游戏，围绕章节推进、生存挑战、Boss 试炼、武器树、局内升级、局外成长和集成试玩收口。 访问：项目页提供游戏站详情、Web 试玩；不代表本次已验证可用。\n纵版弹幕射击｜垂直切片（/projects/raiden-prototype）：Godot 纵版射击垂直切片，覆盖双关卡章节、火力成长、连锁击破奖励、首领相位、章节过场和试玩验证。 访问：项目页提供游戏站详情、Web 试玩；不代表本次已验证可用。\n复古横版射击｜space-war（/projects/space-war）：复古横向太空射击完整版本，包含五个 Sector、连续击破奖励、首领战、道具、高分、结果页、程序化音效和发布文档。 访问：项目页提供游戏站详情、Web 试玩；不代表本次已验证可用。\n纵向射击原型｜Spacewar II（/projects/spacewar-ii）：Godot 纵向射击续作原型，当前主场景采用键盘移动、空格射击和 X 炸弹，包含三阶段路线、差异化敌群、Boss、连击与结算；触屏体验仍待验证。 访问：项目页提供游戏站详情、Web 试玩；不代表本次已验证可用。\n寻球 BallTrail｜移动端与现代后端重建（/projects/xunqiu）：足球社群迁移案例，分别展示静态站、64 位 Android 客户端和 Spring Boot 现代后端；旧接口兼容、占位能力与正式发布各有边界。 访问：面向公开访客；当前入口未开放直达，请先查看 /status/xunqiu。",
+    "href": "/projects",
+    "tags": [
+      "项目目录",
+      "演示入口",
+      "访问边界"
+    ],
+    "visibility": "public"
+  }
+]

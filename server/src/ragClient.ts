@@ -1,5 +1,5 @@
 import { env } from './env.js'
-import { retrieveKnowledge } from './knowledge.js'
+import { retrieveKnowledge, retrieveProjectCatalog } from './knowledge.js'
 import type {
   AssistantRetrievalMeta,
   Citation,
@@ -20,7 +20,21 @@ interface RagAttempt {
   diagnostic: RagAdapterDiagnostic
 }
 
-export async function retrievePublicAssistantContext(query: string, limit = 4): Promise<PublicAssistantContext> {
+export async function retrievePublicAssistantContext(query: string, limit?: number): Promise<PublicAssistantContext> {
+  const catalog = limit === undefined ? retrieveProjectCatalog(query) : null
+  if (catalog) {
+    return {
+      citations: catalog.citations,
+      chunks: catalog.chunks,
+      retrieval: {
+        source: 'local', retrievalMode: 'public-project-catalog', store: 'local',
+        candidateCount: catalog.candidateCount, citationCount: catalog.citations.length,
+        sufficient: true, sufficiency: 'enough', fallbackReason: null,
+        expandedEntityCount: 0, modelCalls: 0, rerankerMode: 'none',
+      },
+    }
+  }
+  limit ??= 4
   const endpoints = getRagRetrieveEndpoints(env.assistantRagApiBaseUrl)
   if (endpoints.length === 0) return retrieveLocalContext(query, limit, 'not_configured')
 

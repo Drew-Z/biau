@@ -7,13 +7,15 @@
   "assignee": "zhang",
   "releaseCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
   "releaseState": "generation-responding-acceptance-partial",
-  "nextStep": "Investigate partial answer and desktop reload timeout, plus the custom-domain TLS observation. No more generation requests in this cutover window.",
+  "nextStep": "Review the verified local catalog/restore candidate, then obtain approval for its scoped commit/push, Public deployment and one original-question production request. Verify persisted desktop/mobile reloads and remove the temporary session; keep TLS unresolved until independently verified.",
   "businessSubmissions": 3,
   "generationCutoverBusinessSubmissions": 2,
   "generationCandidateSubmissions": 1,
   "generationModel": "gpt-6-luna",
   "generationDeploymentCommit": "affdd1ea1318d2ba0908a45afa65f2d6b470b5ac",
   "verification": "generation-verification-2026-11-05.json",
+  "localVerification": "catalog-restore-verification-2026-11-05.json",
+  "localCandidateState": "verified-awaiting-release-approval",
   "indexCompletedAt": "2026-11-04T15:22:17.081Z",
   "ragDeploymentCommit": "f6a4771afbfce56fef24db9e861311b799306f67"
 }
