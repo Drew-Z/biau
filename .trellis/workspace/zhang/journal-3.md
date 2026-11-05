@@ -1670,3 +1670,41 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - 复核回答证据覆盖、刷新恢复及自定义域 TLS 观察；本次窗口不再增加模型请求。
+
+
+## Session 147: 公开助手验收与本地代理 TLS 修复收口
+
+**Date**: 2026-11-06
+**Task**: 公开助手验收与本地代理 TLS 修复收口
+**Branch**: `main`
+
+### Summary
+
+目录覆盖16项并通过唯一一次生产咨询、桌面与390px刷新；自定义域TLS定位到代理域名目标路径并以UseIPv4修复，严格证书校验通过，零新增模型调用，集中恢复点已校验。仅归档当前任务，7个旧未跟踪附件继续保留。
+
+### Main Changes
+
+- Public 目录证据完整覆盖 16 项；生产单次咨询 returned answered/model，3 条引用与同会话桌面/390px 刷新通过，测试会话删除后 404。
+- v2rayN 代理目标解析改为 UseIPv4，正常证书校验和自定义域页面通过；云端配置未改，既有恢复组包含配置基线与 DNS 最小行快照。
+- 当前助手任务归档至 `.trellis/tasks/archive/2026-11/10-05-public-assistant-usability/`，旧未跟踪附件保持未跟踪。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0d6116a1` | (see git log) |
+| `f4573c0c` | (see git log) |
+| `e579ffd1` | (see git log) |
+
+### Testing
+
+- [OK] 本地目录、模型/Agent/API/浏览器合同、构建、lint，以及生产原问题和刷新恢复验收。
+- [OK] 隔离 Xray 配置、持久配置差异、TLS 1.3/域名证书、独立 SSL Labs A、页面 200、后续 health 200、文档与 diff 检查；保留早先健康接口异常。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
