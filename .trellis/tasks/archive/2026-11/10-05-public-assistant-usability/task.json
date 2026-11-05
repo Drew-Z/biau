@@ -21,5 +21,6 @@
   "indexCompletedAt": "2026-11-04T15:22:17.081Z",
   "ragDeploymentCommit": "f6a4771afbfce56fef24db9e861311b799306f67",
   "tlsVerification": "tls-verification-2026-11-06.json",
-  "tlsResolution": "local-proxy-target-dns-useipv4"
+  "tlsResolution": "local-proxy-target-dns-useipv4",
+  "completedAt": "2026-11-06"
 }
