@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "state": "generation-responding-acceptance-partial",
+  "authorization": "2026-11-05 user supplied a generation channel and authorized model selection and switching.",
+  "model": "gpt-6-luna",
+  "protocol": "responses",
+  "provider": "openai-compatible",
+  "catalog": [
+    "claude-opus-4-6-thinking",
+    "deepseek-v4-pro-0813",
+    "deepseek-v4.1-flash",
+    "gemini-3.8-flash",
+    "gpt-5.6-luna",
+    "gpt-6-luna"
+  ],
+  "candidate": {
+    "submittedUtc": "2026-11-04T17:04:04.294Z",
+    "completedUtc": "2026-11-04T17:04:18.228Z",
+    "model": "gpt-6-luna",
+    "providerRequests": 1,
+    "httpStatus": 200,
+    "durationMs": 13933,
+    "status": "answered",
+    "failure": null,
+    "answerCharacters": 127,
+    "answerSha256": "74063f6b55b910380a74ed85190908c299730addbba34a09cf601702b8a7918d",
+    "claimCount": 4,
+    "referenceIdsValid": true,
+    "distinctCitedDocuments": 2,
+    "attempts": [
+      {
+        "attempt": 1,
+        "durationMs": 13932,
+        "firstActivityMs": 7731
+      }
+    ],
+    "passed": true
+  },
+  "configuredGenerationAttempts": 1,
+  "structuredOutputsMode": "off",
+  "requestTimeoutMs": 45000,
+  "answerIdleTimeoutMs": 20000,
+  "generationConfigurationRecovery": "DPAPI CurrentUser; restricted ACL; roundtrip verified",
+  "embeddingChanged": false,
+  "studioChanged": false,
+  "officialReferences": [
+    "https://developers.openai.com/api/docs/models/gpt-6-luna",
+    "https://developers.openai.com/api/docs/guides/streaming-responses"
+  ],
+  "validation": {
+    "publicModelContract": "passed",
+    "publicAgentContract": "passed",
+    "deploymentContract": "passed",
+    "serverBuild": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "gitDiffCheck": "passed",
+    "temporaryScriptSyntax": "passed",
+    "statusContract": "passed",
+    "manualGatesContract": "passed",
+    "unrelatedFilesPreserved": true
+  },
+  "production": {
+    "state": "acceptance-failed",
+    "domain": "biau.pages.dev",
+    "submissions": 1,
+    "blockedExtraSubmissions": 0,
+    "modelCallsRetried": false,
+    "submittedUtc": "2026-11-05T06:09:50.575Z",
+    "httpStatus": 200,
+    "resultObservedThrough": "rendered-revision-and-persisted-session",
+    "answer": {
+      "status": "partial",
+      "mode": "model",
+      "reason": null,
+      "route": "site",
+      "answerCharacters": 77,
+      "answerSha256": "cf3dad6be1e0e3c1713bf867597be25c4dce2bcdbe197c79be9af33a1e276938",
+      "citationCount": 4,
+      "siteCitationCount": 4,
+      "webCitationCount": 0,
+      "claimCount": 5,
+      "recovery": {
+        "state": "none",
+        "attempts": 1
+      }
+    },
+    "durationMs": 10627,
+    "citations": [
+      {
+        "path": "/projects/legal-rag",
+        "httpStatus": 200,
+        "checkedVia": "biau.pages.dev"
+      },
+      {
+        "path": "/projects/roleplay-demo",
+        "httpStatus": 200,
+        "checkedVia": "biau.pages.dev"
+      },
+      {
+        "path": "/projects/canvas",
+        "httpStatus": 200,
+        "checkedVia": "biau.pages.dev"
+      },
+      {
+        "path": "/projects/ozon-erp",
+        "httpStatus": 200,
+        "checkedVia": "biau.pages.dev"
+      }
+    ],
+    "passed": false,
+    "failurePhase": "desktop-restore",
+    "errorType": "TimeoutError",
+    "cleanup": {
+      "deleteHttpStatus": 200,
+      "subsequentReadHttpStatus": 404,
+      "passed": true
+    },
+    "completedUtc": "2026-11-05T06:10:36.558Z",
+    "wallTimeMs": 48472,
+    "generationSucceeded": true,
+    "fullAcceptancePassed": false
+  },
+  "deployment": {
+    "id": "dep-dblmehhsrm7s73f25efg",
+    "commit": "affdd1ea1318d2ba0908a45afa65f2d6b470b5ac",
+    "status": "live"
+  },
+  "configurationVerified": true,
+  "nonTargetConfigurationPreserved": true,
+  "preSubmissionObservations": [
+    {
+      "state": "failed-before-submission",
+      "submissions": 0,
+      "blockedExtraSubmissions": 0,
+      "modelCallsRetried": false,
+      "healthHttpStatus": 200,
+      "passed": false,
+      "failurePhase": "browser-readiness",
+      "errorType": "TimeoutError",
+      "cleanup": {
+        "passed": true,
+        "noSubmittedSession": true
+      },
+      "completedUtc": "2026-11-04T17:18:48.702Z",
+      "wallTimeMs": 32247
+    },
+    {
+      "checkedUtc": "2026-11-05T05:51:18.702225+00:00",
+      "domain": "custom-domain",
+      "phase": "tls",
+      "nodeError": "ERR_TLS_CERT_ALTNAME_INVALID",
+      "browserError": "ERR_CERT_COMMON_NAME_INVALID",
+      "submissions": 0,
+      "tlsVerificationRelaxed": false
+    }
+  ],
+  "productionBusinessSubmissions": 2,
+  "candidateBusinessSubmissions": 1,
+  "priorProductionObservations": [
+    {
+      "state": "acceptance-failed",
+      "domain": "biau.pages.dev",
+      "submissions": 1,
+      "blockedExtraSubmissions": 0,
+      "modelCallsRetried": false,
+      "submittedUtc": "2026-11-05T06:04:54.664Z",
+      "httpStatus": 200,
+      "passed": false,
+      "failurePhase": "single-consultation",
+      "errorType": "Error",
+      "cleanup": {
+        "deleteHttpStatus": 200,
+        "subsequentReadHttpStatus": 404,
+        "passed": true
+      },
+      "completedUtc": "2026-11-05T06:05:11.322Z",
+      "wallTimeMs": 20469
+    }
+  ],
+  "remainingWork": [
+    "Answer status partial; complete original consultation not accepted.",
+    "Desktop reload timed out; mobile reload was not reached in this generation cutover.",
+    "Custom domain TLS name mismatch observed from this client; Pages default domain was used with verification enabled."
+  ],
+  "cleanup": {
+    "temporaryScriptPendingDeletion": false,
+    "anonymousSessionsDeleted": 2,
+    "subsequentReadsHttpStatus": 404,
+    "temporaryScriptDeleted": true
+  },
+  "externalStatusObservation": {
+    "checkedAt": "2026-11-05T06:18:13.978Z",
+    "summary": {
+      "total": 8,
+      "online": 2,
+      "degraded": 0,
+      "offline": 6,
+      "unchecked": 0
+    },
+    "targets": [
+      {
+        "id": "legal-rag-entry",
+        "status": "online",
+        "httpStatus": 200,
+        "issueKind": "none"
+      },
+      {
+        "id": "chatus-entry",
+        "status": "online",
+        "httpStatus": 200,
+        "issueKind": "none"
+      },
+      {
+        "id": "roleplay-demo-entry",
+        "status": "offline",
+        "httpStatus": 0,
+        "issueKind": "tls_error"
+      },
+      {
+        "id": "anchor-learning-entry",
+        "status": "offline",
+        "httpStatus": 0,
+        "issueKind": "tls_error"
+      },
+      {
+        "id": "pet-workspace-entry",
+        "status": "offline",
+        "httpStatus": 0,
+        "issueKind": "tls_error"
+      },
+      {
+        "id": "ozon-erp-entry",
+        "status": "offline",
+        "httpStatus": 0,
+        "issueKind": "connection_error"
+      },
+      {
+        "id": "biau-playlab-entry",
+        "status": "offline",
+        "httpStatus": 0,
+        "issueKind": "tls_error"
+      },
+      {
+        "id": "xunqiu-entry",
+        "status": "offline",
+        "httpStatus": 0,
+        "issueKind": "tls_error"
+      }
+    ],
+    "interpretation": "Client network observations, not proof that model generation or all services are unavailable."
+  }
+}

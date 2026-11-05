@@ -180,7 +180,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     id: 'blog-semi',
     title: formatProductTitle('biau-port', '主站'),
     category: 'main-site',
-    summary: '2026-11-04 项目资料、公开助手修复与最新检索资料已上线，7/7 核心公开路由检查通过。一次真实咨询返回站内资料与可访问引用，完整模型回答仍降级；会话恢复和移动端观察通过，潮讯仍待真实 Edition/Feed 验收。',
+    summary: '项目资料与最新检索资料已上线。2026-11-05 切换文本生成渠道后已收到模型回答和 4 条可访问站内引用；回答仍为部分完成，本轮刷新恢复尚未通过。潮讯仍待真实 Edition/Feed 验收。',
     checks: [
       {
         id: 'blog-semi-public-routes',
@@ -208,8 +208,8 @@ export const reliabilityProjects: ReliabilityProject[] = [
         layer: 'synthetic',
         label: '公开助手 health / live chat gate',
         status: 'degraded',
-        description: '2026-11-04 同域 health 正常；一次获批咨询正确走站内检索并返回 4 条可访问引用，生成回答仍降级。',
-        evidence: '本次只提交 1 个问题，结果为 degraded/fallback，生成错误为 provider_error；未自动重试。4 条站内引用访问、桌面刷新恢复、390px 无横向溢出和输入可用均通过；临时会话删除后读取为 404。2026-08-16 的 answered/model 是历史证据，不能替代本轮结果。',
+        description: '2026-11-05 默认域名收到站内模型回答和 4 条可访问引用，当前回答为部分完成；刷新恢复待复核。',
+        evidence: '文本渠道切换后，本轮最后一次咨询为 partial/model，约 10.6 秒，route=site，4 条站内引用为 200，无生成重试。桌面刷新检查超时，未进入移动端恢复检查；两次生产验证的临时会话均删除并确认读取 404。首次验证因流读取失败无回答结论；自定义域从本客户端观察到 TLS 名称不匹配，默认域保持证书校验完成咨询。11 月 4 日的恢复/390px 成功仅为前轮证据。',
         cadence: 'health 发布前或每日；live chat 仅在模型配置变更且获得批准后',
         ownerHint: 'assistant API',
       },
@@ -235,11 +235,11 @@ export const reliabilityProjects: ReliabilityProject[] = [
         ownerHint: 'RAG Orchestrator',
       },
     ],
-    gates: ['知航本轮单次咨询批准已消费，完整模型回答仍因生成上游错误待验收；先处理故障，后续真实咨询须重新单独批准。潮讯 2026-08-18 v7 Edition 被限流且未公开发布，后续真实 Edition/Feed 仍需独立验收。开启生产 metrics scrape 或第三方告警前需要人工确认。'],
+    gates: ['知航新文本渠道已返回模型回答，本轮完整回答和刷新恢复验收未通过；本次切换验证窗口已结束。潮讯 2026-08-18 v7 Edition 被限流且未公开发布，后续真实 Edition/Feed 仍需独立验收。开启生产 metrics scrape 或第三方告警前需要人工确认。'],
     nextActions: [
       '把 `main-site:synthetic` 接入定时任务或内部监控。',
       '把 `public-links:check` 纳入发布前和外链更新后的可靠性巡检，避免首页按钮或项目详情来源链接再次指向访客不可见页面。',
-      '公开知识同步已完成；继续处理生成回答的 public_api 5xx，保持失败降级与本站证据可用，不自动重放已验收问题。',
+      '复核部分回答的证据覆盖、桌面刷新恢复超时和自定义域 TLS 观察；保留本轮已收到模型回答的事实，不自动重放咨询。',
       '把生产 RAG Orchestrator `/health`、pgvector readiness 与公开知识 sync 的低敏摘要纳入定时 synthetic 或内部监控。',
     ],
   },

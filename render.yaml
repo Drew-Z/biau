@@ -22,9 +22,9 @@ services:
       - key: ASSISTANT_MODEL_API_KEY
         sync: false
       - key: ASSISTANT_MODEL_NAME
-        value: free5/DeepSeek-V4-Flash
+        value: gpt-6-luna
       - key: ASSISTANT_MODEL_PROVIDER
-        value: cpa-channel-gateway
+        value: openai-compatible
       - key: ASSISTANT_MODEL_PROTOCOL
         value: responses
       - key: ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE

@@ -1627,3 +1627,46 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - 定位生成渠道故障；后续真实咨询须重新单独批准，不重复消费已用完的一次验收。
+
+
+## Session 146: 切换公开助手文本模型并记录部分验收结果
+
+**Date**: 2026-11-05
+**Task**: 切换公开助手文本模型并记录部分验收结果
+**Branch**: `main`
+
+### Summary
+
+新渠道 gpt-6-luna 已返回模型回答；引用及清理通过，完整回答和刷新恢复仍待复核。
+
+### Main Changes
+
+本轮用户提供文本渠道并授权选择可用模型，Public 已切换 gpt-6-luna；原问题最终返回真实模型回答，完整验收仍有边界。
+
+- 候选公开资料验证 1 次：answered、HTTP 200、4 条有效引用，约 13.9 秒。
+- 仅更新 Public 的 base/key/model/provider；旧配置和候选凭据使用 DPAPI CurrentUser 加密、访问受限、恢复往返已核验。非目标变量摘要一致，协议 Responses、schema off、1 次生成与原超时保持；Embedding、Studio 和 AI 日报未改。
+- 环境更新自动部署 dep-dblmehhsrm7s73f25efg / affdd1ea，live；不重复部署。
+- 生产共 2 个咨询：首次 HTTP 200 后 Playwright 流正文读取失败，未取得回答结论；修正为渲染结果及持久化 Revision 后，最后一次约 10.6 秒返回 partial/model，route=site，5 条 claims、4 条引用均 200，recovery=none、attempts=1。无自动模型重试。
+- 桌面刷新恢复超时，移动恢复未执行；两个测试会话均删除且读取 404。自定义域从客户端出现 TLS 名称不匹配，默认域咨询保持证书校验；不得把网络观察归因于模型，也不标记完整验收成功。
+- 模型/Agent 合同、server build、build、lint、状态与文档合同通过。公开状态保留 partial 与恢复待复核；入口新观测为 2 可达、5 TLS 错误、1连接错误，含采样时间及范围。
+- 删除唯一临时验收脚本，保留恢复组、桌宠/青珑及原有未知文件与 worktree。任务继续保持 in_progress；不开始旧父路线图或 AI 日报。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `affdd1ea` | (see git log) |
+
+### Testing
+
+- [OK] 模型/Agent 合同、server build、build、lint、状态/文档合同；引用与两次会话删除确认通过。
+- [未通过] 完整原问题验收：partial 模型回答、桌面刷新恢复超时；移动恢复未执行。
+
+### Status
+
+文本渠道切换完成，公共助手完整验收仍为 in_progress。
+
+### Next Steps
+
+- 复核回答证据覆盖、刷新恢复及自定义域 TLS 观察；本次窗口不再增加模型请求。

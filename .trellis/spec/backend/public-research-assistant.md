@@ -18,7 +18,7 @@
 - `auto` is the default product mode. The compact scope selector exposes `site` and `web` only as explicit user overrides when automatic tool selection is unsuitable; they must not return as equal-weight primary navigation. Combined site/web research runs concurrently.
 - Evidence/query rewrite recovery is bounded to one retry. `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS` bounds final-answer generation to 1-3 attempts across the whole configured channel chain. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; an independent fallback chain reserves minimum future-attempt windows without extending that deadline. Production fixes this value at 1 so a failed CPA task is not replayed automatically. Cancellation stops active work and all future attempts.
 - Generation channel order is passively adaptive per service process: the configured quality order is the cold-start baseline, while real answer attempts build bounded, time-decayed success/failure reputation and first-activity latency. A recently stable channel stays preferred instead of yielding immediately to a repeatedly failing higher-priority channel. Failures still open a bounded in-memory circuit; cooldown expiry grants one real request a half-open lease while concurrent requests continue through known healthy channels. The request freezes its channel order at start so concurrent outcomes cannot reshuffle an active attempt chain. Opening the assistant, `/health`, and ranking functions never call a model or enumerate a provider catalog. Process restarts clear this ephemeral health state, and stale reputation decays back toward configured quality order.
-- The pending production cutover enables only the exact `free5/DeepSeek-V4-Flash` Responses route through the single-tenant CPA gateway. Movable aliases and `free7-glm-5-2/glm-5-2` do not enter the same request chain; any alternative requires a separate approved business task and configuration change.
+- The 2026-11-05 authorized generation cutover selects the exact `gpt-6-luna` ID on the approved Responses-compatible channel. Other catalog models do not enter an automatic fallback chain. The AI Daily CPA runtime is independent and is not changed by this public-assistant cutover.
 - A primary channel configured through `ASSISTANT_MODEL_API_KEY` must also provide an explicit model base URL. Missing base configuration is `not_configured`; it must never silently inherit the public OpenAI endpoint. The standard OpenAI base is retained only for the legacy `OPENAI_API_KEY` contract when no explicit assistant key is present.
 - When every configured channel is open or already leased for recovery, routing returns no provider candidate and the agent emits its bounded degraded response immediately. It does not deliberately call a channel that is still inside its cooldown.
 - Primary configuration/authentication/endpoint, timeout/network, 408/425/429/5xx, empty, or invalid failures may advance to an independent fallback. Permanent request errors, policy refusal, and cancellation never switch channels. Multiple fallback models share one failure domain: authentication or network failure stops that provider, while model-specific endpoint/rate-limit/upstream/empty/invalid failure may advance to the next configured fallback model.
@@ -281,7 +281,7 @@ Correct: intersect bounded browser-held capabilities in a JSON body, require cry
 ### 3. Contracts
 
 - An explicit `ASSISTANT_MODEL_BASE_URL` wins and is normalized without a trailing slash.
-- Production Render receives the CPA Responses base through the server-only `ASSISTANT_MODEL_BASE_URL` variable. The tracked Blueprint and documentation never contain the real gateway URL or client key.
+- Production Render receives the approved Responses base through the server-only `ASSISTANT_MODEL_BASE_URL` variable. The tracked Blueprint and documentation never contain the real gateway URL or client key.
 - An explicit `OPENAI_BASE_URL` remains a supported compatibility alias.
 - `https://api.openai.com/v1` is inferred only when `OPENAI_API_KEY` is present and `ASSISTANT_MODEL_API_KEY` is absent.
 - An explicit assistant key with no assistant/legacy base resolves to an empty string, so the channel is not configured.
@@ -496,29 +496,30 @@ Correct: one secret-authenticated route, one fixed HTTPS Responses upstream, a b
 
 These checks use local fixtures only. They must not probe a live model, search, embedding, Qdrant, or reranker provider. External acceptance uses one user-approved business question after deployment.
 
-## Scenario: Single-tenant CPA Production Cutover
+## Scenario: Explicit Generation Channel Production Cutover
 
 ### 1. Scope / Trigger
 
-- Applies when Public API consumes the single-tenant CPA Responses gateway directly and production must prevent an automatic replay of a failed final-answer task.
+- Applies when Public API changes its server-only Responses channel and production must prevent an automatic replay of a failed final-answer task.
 
 ### 2. Signatures
 
-- `resolveAssistantModelBaseUrl({ assistantApiKey?, assistantBaseUrl?, openaiApiKey?, openaiBaseUrl? }) -> string` keeps explicit CPA base selection fail closed.
+- `resolveAssistantModelBaseUrl({ assistantApiKey?, assistantBaseUrl?, openaiApiKey?, openaiBaseUrl? }) -> string` keeps explicit channel base selection fail closed.
 - `env.publicAssistantModelMaxAttempts: number` is decoded from `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS` and clamped to `1..3`.
 - `generateNode(state) -> Promise<Partial<PublicAssistantState>>` stops its answer loop at that configured bound.
 
 ### 3. Contracts
 
-- Production configures `ASSISTANT_MODEL_PROTOCOL=responses`, `ASSISTANT_MODEL_PROVIDER=cpa-channel-gateway`, the exact channel-qualified model ID, an explicit server-only `/v1` base, and a server-only client key.
+- Production configures `ASSISTANT_MODEL_PROTOCOL=responses`, `ASSISTANT_MODEL_PROVIDER=openai-compatible`, the exact `gpt-6-luna` model ID, an explicit server-only `/v1` base, and a server-only client key.
 - The base and key remain `sync: false` in `render.yaml`; no real gateway URL or key is committed or exposed through `VITE_*`, `/health`, recovery metadata, or acceptance records.
-- Production configures `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1`. A failed final-answer generation therefore reaches CPA once and returns a truthful degraded result without backoff or replay.
+- Production configures `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1`. A failed final-answer generation therefore reaches the channel once and returns a truthful degraded result without backoff or replay.
 - The default remains `3` for compatibility, but any deployment that enables more than one attempt must do so explicitly and must still obey the shared absolute deadline.
-- A channel-qualified model such as `free5/DeepSeek-V4-Flash` is passed unchanged in the Responses body. Movable aliases and separately reviewed alternatives do not enter the same request chain.
+- Model IDs are passed unchanged in the Responses body, including channel-qualified historical IDs. Catalog availability alone does not prove endpoint compatibility; validate an authorized public-evidence task with the existing adapter before switching, and persist request counters before each external POST.
+- Save the previous configuration with restricted encrypted recovery, verify non-target configuration hashes, observe any deployment already started by the environment update, and run one bounded production consultation. User authorization to select any listed model does not enable automatic retries or alter embedding/Studio configuration.
 
 ### 4. Validation & Error Matrix
 
-- Missing CPA key or explicit base -> channel `configured=false`, zero provider requests, bounded degraded result.
+- Missing channel key or explicit base -> channel `configured=false`, zero provider requests, bounded degraded result.
 - `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS` below 1 -> clamp to 1; above 3 -> clamp to 3; missing/non-integer -> compatibility default 3.
 - Attempt 1 provider failure with production bound 1 -> one timing record, `recovery.state=degraded`, zero retry sleeps.
 - Exact model ID containing `/` -> accepted and preserved; it must not be normalized to an alias.
@@ -526,16 +527,16 @@ These checks use local fixtures only. They must not probe a live model, search, 
 
 ### 5. Good / Base / Bad Cases
 
-- Good: Render injects a CPA `/v1` base/key, sends the exact approved model once, and either returns a verified answer or one truthful degraded result.
-- Base: local development omits CPA configuration and continues through deterministic knowledge/fallback behavior without a provider call.
-- Bad: production retries a busy/rate-limited CPA channel three times or silently replaces the exact model with a movable alias.
+- Good: Render injects an approved `/v1` base/key, sends the exact selected model once, and either returns a verified answer or one truthful degraded result.
+- Base: local development omits channel configuration and continues through deterministic knowledge/fallback behavior without a provider call.
+- Bad: production retries a busy/rate-limited channel three times or silently replaces the exact model with a movable alias.
 
 ### 6. Tests Required
 
 - `npm.cmd run assistant:public-model-check` asserts channel-qualified model preservation and uses only the loopback Responses fixture.
 - `npm.cmd run assistant:public-agent-check` asserts the production bound makes exactly one answer call, records one degraded attempt, and performs no retry sleep.
-- `npm.cmd run docs:deployment-check` asserts Blueprint/env/docs agree on CPA provider, exact model, Responses protocol, and `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` while the real base/key remain untracked.
-- Run `npm.cmd run server:build`, `npm.cmd run lint`, and `npm.cmd run build`; no deterministic check may resolve or call the live CPA endpoint.
+- `npm.cmd run docs:deployment-check` asserts Blueprint/env/docs agree on provider, exact model, Responses protocol, and `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` while the real base/key remain untracked.
+- Run `npm.cmd run server:build`, `npm.cmd run lint`, and `npm.cmd run build`; no deterministic check may resolve or call the live endpoint.
 
 ### 7. Wrong vs Correct
 
@@ -549,6 +550,6 @@ PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=3
 Correct:
 
 ```text
-ASSISTANT_MODEL_NAME=free5/DeepSeek-V4-Flash
+ASSISTANT_MODEL_NAME=gpt-6-luna
 PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1
 ```

@@ -51,6 +51,10 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 2026-11-04 16:32—16:38 UTC 只读刷新：主站路由 7/7、外部入口 8/8 可达。助手 health 首次在 12 秒截止后失败，后续一次 30 秒上限复核在约 1.3 秒内返回 200 JSON；两次观测均保留。公共状态保留 15:51 UTC 的真实咨询 degraded 及其独立采样时间，后续健康检查没有覆盖生成失败，额外业务提交为 0。
 
+2026-11-05 文本生成渠道切换：用户提供新渠道并允许选择其中模型，现已使用 `gpt-6-luna`。现有 Responses 适配器的 1 次公开资料候选验证为 answered、HTTP 200、约 13.9 秒；Public 环境更新触发 `dep-dblmehhsrm7s73f25efg` / `affdd1ea` 并已 live。旧配置以 DPAPI 加密保存并验证恢复，除 base/key/model/provider 外环境摘要一致；embedding、Studio 与 AI 日报未改。
+
+该切换窗口共执行 2 个生产咨询：首次 HTTP 200 后验收脚本读取流正文失败，不能推断回答成功或失败；修改验收为读取已渲染及持久化 Revision 后，最后一次约 10.6 秒返回 `partial/model`、route=site、5 条 claims、4 条站内引用均 200，recovery=none、attempts=1。生成接口已响应，未再次观察到 5xx；但桌面刷新恢复超时，移动恢复未执行，完整原问题验收仍未通过。两次临时 Session 均删除并确认读取 404，不再增加本窗口模型请求。自定义域从本客户端出现 TLS 名称不匹配，保留校验并通过 Pages 默认域完成咨询；该网络观察不能归因于模型，也不能宣称自定义域已恢复。最新低敏证据见 `.trellis/tasks/10-05-public-assistant-usability/generation-verification-2026-11-05.json`，前轮结果继续保留历史时间。
+
 ## Roleplay 角色剧场公开演示
 
 Roleplay 角色剧场是独立部署的游客式多角色 AI 对话演示，角色库入口为 `https://roleplay.playlab.eu.cc/`。主站只记录公开入口、角色库规模和低敏技术边界；API Key、上游地址、管理员令牌、服务器 IP、访客消息和完整角色卡提示词必须继续留在独立服务端。

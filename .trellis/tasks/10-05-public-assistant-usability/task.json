@@ -6,10 +6,14 @@
   "created_date": "2026-10-05",
   "assignee": "zhang",
   "releaseCommit": "83a859b65764ea57addc2b72cb6a54ed3876f1cb",
-  "releaseState": "deployed-index-synced-generation-degraded",
-  "nextStep": "Investigate the generation channel public_api 5xx. The approved consultation was consumed once; further live acceptance needs a new explicit approval.",
-  "businessSubmissions": 1,
-  "verification": "emrank-verification-2026-11-04.json",
+  "releaseState": "generation-responding-acceptance-partial",
+  "nextStep": "Investigate partial answer and desktop reload timeout, plus the custom-domain TLS observation. No more generation requests in this cutover window.",
+  "businessSubmissions": 3,
+  "generationCutoverBusinessSubmissions": 2,
+  "generationCandidateSubmissions": 1,
+  "generationModel": "gpt-6-luna",
+  "generationDeploymentCommit": "affdd1ea1318d2ba0908a45afa65f2d6b470b5ac",
+  "verification": "generation-verification-2026-11-05.json",
   "indexCompletedAt": "2026-11-04T15:22:17.081Z",
   "ragDeploymentCommit": "f6a4771afbfce56fef24db9e861311b799306f67"
 }

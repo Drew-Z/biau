@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-11-04T16:32:08.313Z",
+  "checkedAt": "2026-11-05T06:10:36.558Z",
   "baseConfigured": true,
   "ok": true,
   "checks": [
@@ -16,36 +16,26 @@
       "id": "blog-semi-public-assistant",
       "status": "degraded",
       "httpStatus": 200,
-      "durationMs": 28340,
-      "checkedAt": "2026-11-04T15:51:53.512Z",
-      "summary": "单次获批咨询返回站内降级回答与 4 条可访问引用；桌面/390px 恢复及会话删除通过",
+      "durationMs": 10627,
+      "checkedAt": "2026-11-05T06:09:50.575Z",
+      "summary": "文本渠道切换后收到站内模型回答与 4 条可访问引用；回答为 partial，刷新恢复未通过",
       "issues": [
-        "生成渠道 public_api 返回 5xx（provider_error，attempts=1）；完整模型回答未通过"
+        "桌面刷新恢复检查超时；本轮未执行移动端恢复检查"
       ],
       "observationKind": "authorized-browser-acceptance",
-      "submissions": 1,
+      "checkedDomain": "biau.pages.dev",
+      "modelResponse": true,
+      "answerStatus": "partial",
+      "submissionsInWindow": 2,
+      "successfulCandidateRequests": 1,
+      "automaticModelRetries": 0,
       "siteCitationCount": 4,
       "sessionCleanupPassed": true,
-      "healthObservation": {
-        "id": "blog-semi-public-assistant",
-        "status": "offline",
-        "httpStatus": 0,
-        "durationMs": 12014,
-        "checkedAt": "2026-11-04T16:32:08.313Z",
-        "summary": "Public assistant API did not return valid health/chat JSON",
-        "issues": [
-          "assistant health returned HTTP request failed",
-          "assistant health request failed"
-        ]
-      },
-      "healthFollowup": {
-        "checkedAt": "2026-11-04T16:38:05.392Z",
-        "timeoutMs": 30000,
-        "businessSubmissions": 0,
-        "httpStatus": 200,
-        "durationMs": 1267,
-        "validJson": true,
-        "ok": true
+      "customDomainObservation": "TLS name mismatch from this client; verification kept enabled",
+      "previousBusinessObservation": {
+        "checkedAt": "2026-11-04T15:51:53.512Z",
+        "status": "degraded",
+        "summary": "单次获批咨询返回站内降级回答与 4 条可访问引用；桌面/390px 恢复及会话删除通过"
       }
     }
   ]

@@ -88,10 +88,10 @@ CORS_ORIGIN=https://biau.playlab.eu.cc
 TRUST_PROXY=true
 DATABASE_URL=<公开助手匿名 session、turn、feedback 和 aggregate 数据库 URL>
 
-ASSISTANT_MODEL_BASE_URL=<CPA Responses base URL ending in /v1>
-ASSISTANT_MODEL_API_KEY=<CPA server-only client key>
-ASSISTANT_MODEL_NAME=free5/DeepSeek-V4-Flash
-ASSISTANT_MODEL_PROVIDER=cpa-channel-gateway
+ASSISTANT_MODEL_BASE_URL=<approved Responses base URL ending in /v1>
+ASSISTANT_MODEL_API_KEY=<server-only channel key>
+ASSISTANT_MODEL_NAME=gpt-6-luna
+ASSISTANT_MODEL_PROVIDER=openai-compatible
 ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
 
@@ -118,15 +118,15 @@ PUBLIC_WEB_FETCH_MAX_PAGES=3
 METRICS_ENABLED=false
 ```
 
-生产模型配置改为由 Render 服务端直接消费单租户 CPA Responses 网关。真实 base URL 和 client key 只写入 Render 环境变量，不进入仓库、浏览器变量、健康响应或验收记录；访客域名仍只承担站点与公开 API 入口。旧 Cloudflare model relay 代码和变量暂时保留为历史回滚边界，但不再是当前模型路径。
+生产公开助手由 Render 服务端直接消费获批的 Responses 兼容渠道。2026-11-05 用户提供新渠道并授权选择其模型，文本生成候选通过现有流式适配器的公开资料问答验证后替换原 CPA 通道。真实 base URL 和 client key 只写入 Render 环境变量及本地加密恢复点，不进入仓库、浏览器变量、健康响应或公开验收记录；访客域名仍只承担站点与公开 API 入口。旧 Cloudflare model relay 代码和变量继续作为历史回滚边界。AI Daily 的 CPA runtime、批准包及功能开关不随公开助手切换。
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 
-`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用一条获批的真实业务问题确认当前 CPA Responses 路径支持 JSON Schema 后，才可改为 `json-schema`；不做 endpoint、protocol 或模型目录探测。
+`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用获批的真实业务问题确认当前渠道支持 JSON Schema 后，才可改为 `json-schema`。本次验证的是现有提示词约束的 JSON 和 Responses 流式解码，不扩大为 strict schema 或其他协议；健康检查与确定性测试不探测模型目录或调用模型。
 
-当前已交付配置只启用精确模型 `free5/DeepSeek-V4-Flash`，不使用可能随 CPA 配置移动的别名。`PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` 保证一次真实问题的失败生成不会被自动重放；Planner 只使用主通道，Planner 失败后使用确定性 Planner。运行时保留的 `ASSISTANT_MODEL_FALLBACK_*` 能力在生产保持未配置，`free7-glm-5-2/glm-5-2` 仅作为未来需要重新批准的替代方案，不在同一次请求中自动切换。配置交付和健康边界已验证，非降级真实回答仍是独立产品门禁。
+当前已交付配置只启用精确模型 `gpt-6-luna`，模型 ID 按渠道目录原样传递。`PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` 保证一次真实问题的失败生成不会被自动重放；Planner 只使用主通道，Planner 失败后使用确定性 Planner。`ASSISTANT_MODEL_FALLBACK_*` 的生产模型列表仍为空，不将目录中其他模型自动加入同一次请求。候选验证、配置交付和部署后的真实业务验收分别留证；模型目录或 health 成功不能代替完整回答验收。
 
-未来若启用备用链，必须先为新的精确模型和 failure domain 完成单独业务批准，再在 Render 填写完整的 `ASSISTANT_MODEL_FALLBACK_*`；这些值默认留空，不属于当前生产必填项。CPA 自己负责渠道互斥与忙碌隐藏，本站不通过自动重放绕过该约束。
+未来若启用备用链，先确认用户授权覆盖新的模型、failure domain 及验证范围，再填写完整的 `ASSISTANT_MODEL_FALLBACK_*`；这些值默认留空，不属于当前生产必填项。用户允许选择渠道中的所有模型，不等于需要把全部模型配置为自动重试链。
 
 图片问题最多携带一张浏览器端压缩后的 JPEG、PNG 或 WebP。Cloudflare 只对 `/chat/public`、`/chat/public/stream` 和固定模型 relay 放宽到 512 KB；历史、反馈和分支接口仍保持 32 KB。Render 校验 data URL、Base64、文件魔数和 256 KB 解码后上限，只用 SHA-256 digest 参与请求幂等，不保存原图。当前没有经过业务任务验证的视觉模型，因此 `ASSISTANT_VISION_MODEL` 留空：图片问题会准确提示图片理解暂不可用，不会让文本模型猜测图片内容。未来只有在一个已配置备用渠道中的视觉模型通过获批图片任务后才启用该变量。
 

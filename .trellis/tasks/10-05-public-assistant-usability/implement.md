@@ -70,3 +70,14 @@
 - 原问题真实咨询已消费 1 次，HTTP 200、route=site，4 条站内引用均返回 200；桌面刷新恢复、390px 无横向溢出/输入可用、删除会话后读取 404 均通过。
 - 完整模型回答未通过：degraded/fallback，`provider_error`；精确时间窗日志为 `provider_unavailable / public_api / 5xx / attempts=1`。不把生成失败归因于 embedding，不重放问题，助手任务仍为 `in_progress`。
 - 本轮合同通过：`assistant:public-sync-check`、`assistant:rag-pgvector-schema-check`、`assistant:hybrid-contract`；状态/文档最终检查与部署收口记录见 `emrank-verification-2026-11-04.json`。
+
+## 2026-11-05 文本生成渠道切换
+
+- 用户提供新渠道并允许选择其中模型；目录返回 6 个模型，选定精确 ID `gpt-6-luna`。官方文档用于确认 Responses/流式能力，渠道实际兼容性由现有 `generatePublicAssistantDraft` 验证。
+- 用两份公开项目资料执行 1 次候选业务请求：HTTP 200，约 13.9 秒，answered、4 条有效引用、覆盖 2 个文档；未调用 Planner、数据库或其他模型，未保存原始回答。
+- 旧 Public 配置和新凭据在既有恢复组使用 DPAPI CurrentUser 加密，恢复往返与访问权限核验通过；修改前 Git 恢复点为 `affdd1ea`。
+- Blueprint、环境示例、部署合同和当前规范同步到新的文本模型；AI 日报历史配置保留。生产部署与业务结果继续记录在 `generation-verification-2026-11-05.json`。
+- Public 环境更新自动触发 `dep-dblmehhsrm7s73f25efg`，部署 `affdd1ea` live；仅改 base/key/model/provider，非目标环境摘要一致。协议 Responses、schema off、1 次生成及原超时保持。
+- 发送前的浏览器准备曾用展开态选择器，修正为初始 launcher 后可打开助手；其后自定义域从本客户端出现证书名称不匹配，保留 TLS 校验并通过 Pages 默认域继续。上述准备观察没有业务请求。
+- 共执行 2 个生产咨询：第一个 HTTP 200，但 Playwright 读取流正文失败，未取得回答结论；改为页面渲染和持久化 Revision 后执行最后 1 次验证，约 10.6 秒返回 `partial/model`、route=site、5 条 claims 和 4 条 200 站内引用，recovery=none、attempts=1，未再观察到生成 5xx。
+- 第二次的桌面刷新恢复超时，未进入移动恢复检查；两次临时 Session 均已删除且读取 404。生成渠道已响应，完整原问题/本轮恢复验收仍未通过，任务保持进行中，不再追加模型请求。上一轮恢复/390px 成功保留原日期，不能替代本轮观察。

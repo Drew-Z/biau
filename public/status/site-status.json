@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-11-04T16:38:18.657Z",
+  "checkedAt": "2026-11-05T06:18:13.978Z",
   "base": "https://biau.playlab.eu.cc",
-  "ok": true,
+  "ok": false,
   "summary": {
     "total": 8,
-    "online": 8,
+    "online": 2,
     "degraded": 0,
-    "offline": 0,
+    "offline": 6,
     "unchecked": 0
   },
   "targets": [
@@ -22,8 +22,8 @@
       "note": "工作台已对齐 BIAU Port / 泊岸入口品牌；入口可达不代表已开放公开 demo 凭据，未显示凭据时仍是受控演示。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 1205,
-      "checkedAt": "2026-11-04T16:38:18.663Z",
+      "durationMs": 795,
+      "checkedAt": "2026-11-05T06:18:14.028Z",
       "finalUrl": "https://legal-rag-web.onrender.com/",
       "issueKind": "none",
       "issues": []
@@ -40,8 +40,8 @@
       "note": "入口可达只代表工作台登录面可访问，不代表成员账号、访问材料或完整 Agent 能力已向公众开放。",
       "status": "online",
       "httpStatus": 200,
-      "durationMs": 9149,
-      "checkedAt": "2026-11-04T16:38:19.869Z",
+      "durationMs": 3616,
+      "checkedAt": "2026-11-05T06:18:14.823Z",
       "finalUrl": "https://chatus.ciallobill.qzz.io/react-chat/",
       "issueKind": "none",
       "issues": []
@@ -56,13 +56,15 @@
       "expectation": "public-entry",
       "description": "游客式多角色 AI 对话演示的角色库和聊天入口。",
       "note": "入口可达只代表角色库与游客前端可访问；模型延迟、上游并发和角色内容边界仍按演示服务策略处理。",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 2567,
-      "checkedAt": "2026-11-04T16:38:29.018Z",
-      "finalUrl": "https://roleplay.playlab.eu.cc/",
-      "issueKind": "none",
-      "issues": []
+      "status": "offline",
+      "httpStatus": 0,
+      "durationMs": 506,
+      "checkedAt": "2026-11-05T06:18:18.439Z",
+      "finalUrl": "https://roleplay.playlab.eu.cc",
+      "issueKind": "tls_error",
+      "issues": [
+        "request failed: tls_error"
+      ]
     },
     {
       "id": "anchor-learning-entry",
@@ -74,13 +76,15 @@
       "expectation": "static-site",
       "description": "来源可溯源学习助手的双语官网与内置数据浏览器 Demo。",
       "note": "L0 状态只代表浏览器 Demo 入口可达；3 套内置数据的答题与来源交互由独立 Playwright 验收记录支持，不代表 Flutter 导入、云同步或实时 AI 已在网页端开放。",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 936,
-      "checkedAt": "2026-11-04T16:38:31.585Z",
+      "status": "offline",
+      "httpStatus": 0,
+      "durationMs": 483,
+      "checkedAt": "2026-11-05T06:18:18.945Z",
       "finalUrl": "https://anchor.playlab.eu.cc/app/",
-      "issueKind": "none",
-      "issues": []
+      "issueKind": "tls_error",
+      "issues": [
+        "request failed: tls_error"
+      ]
     },
     {
       "id": "pet-workspace-entry",
@@ -92,13 +96,15 @@
       "expectation": "static-site",
       "description": "AI 桌宠社区 App 截图、下载状态和 APK 发布门禁说明。",
       "note": "展示页已接入 BIAU Port / 泊岸标题与 favicon；入口可达代表展示页和截图可访问，正式 APK 下载仍需签名包、校验摘要和人工确认。",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 1461,
-      "checkedAt": "2026-11-04T16:38:32.521Z",
+      "status": "offline",
+      "httpStatus": 0,
+      "durationMs": 554,
+      "checkedAt": "2026-11-05T06:18:19.428Z",
       "finalUrl": "https://biau.playlab.eu.cc/pet-app-showcase/",
-      "issueKind": "none",
-      "issues": []
+      "issueKind": "tls_error",
+      "issues": [
+        "request failed: tls_error"
+      ]
     },
     {
       "id": "ozon-erp-entry",
@@ -110,13 +116,15 @@
       "expectation": "login-gated",
       "description": "电商业务系统登录与演示入口。",
       "note": "代码侧支持普通注册；2026-08-18 的停机页是历史观察，旧 bootstrap synthetic 不代表当前状态，入口与角色策略需重新验收。",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 8786,
-      "checkedAt": "2026-11-04T16:38:33.983Z",
-      "finalUrl": "https://www.hidencloud.com/",
-      "issueKind": "none",
-      "issues": []
+      "status": "offline",
+      "httpStatus": 0,
+      "durationMs": 3671,
+      "checkedAt": "2026-11-05T06:18:19.982Z",
+      "finalUrl": "https://erp.ciallobill.qzz.io/#/login?from=biau-port",
+      "issueKind": "connection_error",
+      "issues": [
+        "request failed: connection_error"
+      ]
     },
     {
       "id": "biau-playlab-entry",
@@ -128,13 +136,15 @@
       "expectation": "static-site",
       "description": "Godot 游戏项目展示、详情与 Web 试玩入口。",
       "note": "游戏站已统一 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属；静态站可用不代表每个 Web 试玩资源都已完成运行检查。",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 1137,
-      "checkedAt": "2026-11-04T16:38:43.573Z",
+      "status": "offline",
+      "httpStatus": 0,
+      "durationMs": 553,
+      "checkedAt": "2026-11-05T06:18:24.459Z",
       "finalUrl": "https://games.playlab.eu.cc/",
-      "issueKind": "none",
-      "issues": []
+      "issueKind": "tls_error",
+      "issues": [
+        "request failed: tls_error"
+      ]
     },
     {
       "id": "xunqiu-entry",
@@ -146,13 +156,15 @@
       "expectation": "static-site",
       "description": "寻球 Android 64 位迁移展示页、技术文档和 APK 发布状态。",
       "note": "展示站标题和 favicon 已纳入 BIAU Port / 泊岸体系；未批准阶段 APK 已撤下，公开下载等待正式 release 证据。",
-      "status": "online",
-      "httpStatus": 200,
-      "durationMs": 860,
-      "checkedAt": "2026-11-04T16:38:44.710Z",
+      "status": "offline",
+      "httpStatus": 0,
+      "durationMs": 501,
+      "checkedAt": "2026-11-05T06:18:25.012Z",
       "finalUrl": "https://xunqiu.playlab.eu.cc/",
-      "issueKind": "none",
-      "issues": []
+      "issueKind": "tls_error",
+      "issues": [
+        "request failed: tls_error"
+      ]
     }
   ],
   "reliabilityProjects": [
@@ -166,9 +178,9 @@
           "id": "roleplay-demo-entry",
           "layer": "entry",
           "label": "角色库入口",
-          "status": "online",
+          "status": "offline",
           "description": "检查 Roleplay 角色库首页是否返回公开页面。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2567 ms。2026-09-15 已验证 `https://roleplay.playlab.eu.cc/` 返回 HTTP 200。",
+          "evidence": "最近一次入口检测：request failed: tls_error。2026-09-15 已验证 `https://roleplay.playlab.eu.cc/` 返回 HTTP 200。",
           "cadence": "每次生成状态页",
           "ownerHint": "Roleplay 公开入口",
           "relatedTargetId": "roleplay-demo-entry"
@@ -177,9 +189,9 @@
           "id": "roleplay-demo-chat",
           "layer": "synthetic",
           "label": "角色分享页",
-          "status": "online",
+          "status": "offline",
           "description": "检查独立角色入口能否初始化指定角色并返回聊天页。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2567 ms。2026-09-15 已验证 `/r/jiangchiye` 返回 HTTP 200，并在页面状态中包含指定角色。",
+          "evidence": "最近一次入口检测：request failed: tls_error。2026-09-15 已验证 `/r/jiangchiye` 返回 HTTP 200，并在页面状态中包含指定角色。",
           "cadence": "角色路由或前端发布后",
           "ownerHint": "Roleplay 前端",
           "relatedTargetId": "roleplay-demo-entry"
@@ -188,9 +200,9 @@
           "id": "roleplay-demo-health",
           "layer": "synthetic",
           "label": "游客服务健康接口",
-          "status": "online",
+          "status": "offline",
           "description": "检查游客后端 health 是否返回配置标签和角色数量等低敏状态；此接口不执行模型生成。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 2567 ms。2026-09-15 health 返回 `ok=true`、模型配置标签和 13 张角色卡；该响应不证明上游模型健康、回复质量或 SLA。",
+          "evidence": "最近一次入口检测：request failed: tls_error。2026-09-15 health 返回 `ok=true`、模型配置标签和 13 张角色卡；该响应不证明上游模型健康、回复质量或 SLA。",
           "cadence": "模型或角色配置变更后",
           "ownerHint": "Roleplay 游客后端",
           "relatedTargetId": "roleplay-demo-entry"
@@ -209,7 +221,7 @@
       "id": "blog-semi",
       "title": "泊岸 BIAU Port｜主站",
       "category": "main-site",
-      "summary": "2026-11-04 项目资料、公开助手修复与最新检索资料已上线，7/7 核心公开路由检查通过。一次真实咨询返回站内资料与可访问引用，完整模型回答仍降级；会话恢复和移动端观察通过，潮讯仍待真实 Edition/Feed 验收。",
+      "summary": "项目资料与最新检索资料已上线。2026-11-05 切换文本生成渠道后已收到模型回答和 4 条可访问站内引用；回答仍为部分完成，本轮刷新恢复尚未通过。潮讯仍待真实 Edition/Feed 验收。",
       "checks": [
         {
           "id": "blog-semi-public-routes",
@@ -217,7 +229,7 @@
           "label": "核心公开路由",
           "status": "online",
           "description": "首页、项目集、博客、公开助手、站点地图和 robots 的 HTML/SEO 检查。",
-          "evidence": "最近一次 synthetic 检查：7/7 public routes returned expected responses；证据时间：2026-11-04T16:32:08.313Z；证据新鲜度：新鲜（6 分钟前）。`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。",
+          "evidence": "最近一次 synthetic 检查：7/7 public routes returned expected responses；证据时间：2026-11-04T16:32:08.313Z；证据新鲜度：新鲜（14 小时前）。`npm.cmd run main-site:synthetic` 会生成公开状态 JSON；`site:monitor` 可用于更细的页面与链接巡检。",
           "cadence": "发布前或每日定时",
           "ownerHint": "主站脚本"
         },
@@ -236,8 +248,8 @@
           "layer": "synthetic",
           "label": "公开助手 health / live chat gate",
           "status": "degraded",
-          "description": "2026-11-04 同域 health 正常；一次获批咨询正确走站内检索并返回 4 条可访问引用，生成回答仍降级。",
-          "evidence": "最近一次 synthetic 检查：单次获批咨询返回站内降级回答与 4 条可访问引用；桌面/390px 恢复及会话删除通过；证据时间：2026-11-04T15:51:53.512Z；证据新鲜度：新鲜（46 分钟前）；生成渠道 public_api 返回 5xx（provider_error，attempts=1）；完整模型回答未通过。本次只提交 1 个问题，结果为 degraded/fallback，生成错误为 provider_error；未自动重试。4 条站内引用访问、桌面刷新恢复、390px 无横向溢出和输入可用均通过；临时会话删除后读取为 404。2026-08-16 的 answered/model 是历史证据，不能替代本轮结果。",
+          "description": "2026-11-05 默认域名收到站内模型回答和 4 条可访问引用，当前回答为部分完成；刷新恢复待复核。",
+          "evidence": "最近一次 synthetic 检查：文本渠道切换后收到站内模型回答与 4 条可访问引用；回答为 partial，刷新恢复未通过；证据时间：2026-11-05T06:09:50.575Z；证据新鲜度：新鲜（8 分钟前）；桌面刷新恢复检查超时；本轮未执行移动端恢复检查。文本渠道切换后，本轮最后一次咨询为 partial/model，约 10.6 秒，route=site，4 条站内引用为 200，无生成重试。桌面刷新检查超时，未进入移动端恢复检查；两次生产验证的临时会话均删除并确认读取 404。首次验证因流读取失败无回答结论；自定义域从本客户端观察到 TLS 名称不匹配，默认域保持证书校验完成咨询。11 月 4 日的恢复/390px 成功仅为前轮证据。",
           "cadence": "health 发布前或每日；live chat 仅在模型配置变更且获得批准后",
           "ownerHint": "assistant API"
         },
@@ -263,12 +275,12 @@
         }
       ],
       "gates": [
-        "知航本轮单次咨询批准已消费，完整模型回答仍因生成上游错误待验收；先处理故障，后续真实咨询须重新单独批准。潮讯 2026-08-18 v7 Edition 被限流且未公开发布，后续真实 Edition/Feed 仍需独立验收。开启生产 metrics scrape 或第三方告警前需要人工确认。"
+        "知航新文本渠道已返回模型回答，本轮完整回答和刷新恢复验收未通过；本次切换验证窗口已结束。潮讯 2026-08-18 v7 Edition 被限流且未公开发布，后续真实 Edition/Feed 仍需独立验收。开启生产 metrics scrape 或第三方告警前需要人工确认。"
       ],
       "nextActions": [
         "把 `main-site:synthetic` 接入定时任务或内部监控。",
         "把 `public-links:check` 纳入发布前和外链更新后的可靠性巡检，避免首页按钮或项目详情来源链接再次指向访客不可见页面。",
-        "公开知识同步已完成；继续处理生成回答的 public_api 5xx，保持失败降级与本站证据可用，不自动重放已验收问题。",
+        "复核部分回答的证据覆盖、桌面刷新恢复超时和自定义域 TLS 观察；保留本轮已收到模型回答的事实，不自动重放咨询。",
         "把生产 RAG Orchestrator `/health`、pgvector readiness 与公开知识 sync 的低敏摘要纳入定时 synthetic 或内部监控。"
       ]
     },
@@ -284,7 +296,7 @@
           "label": "在线工作台入口",
           "status": "online",
           "description": "检查公开 Legal RAG 工作台入口是否响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1205 ms。由 L0 入口检测自动合并。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 795 ms。由 L0 入口检测自动合并。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "legal-rag-entry"
@@ -353,7 +365,7 @@
           "label": "邀请制工作台入口",
           "status": "online",
           "description": "检查 Chatus 根入口是否响应并进入登录或受限访客工作区。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 9149 ms。由 L0 入口检测自动合并；入口可达不代表成员账号或完整能力公开。",
+          "evidence": "最近一次入口检测通过：HTTP 200，耗时 3616 ms。由 L0 入口检测自动合并；入口可达不代表成员账号或完整能力公开。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "chatus-entry"
@@ -409,9 +421,9 @@
           "id": "anchor-learning-entry",
           "layer": "entry",
           "label": "浏览器 Demo HTTP 入口",
-          "status": "online",
+          "status": "offline",
           "description": "检查公开 `/app/` URL 是否返回可接受的 HTTP 响应。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 936 ms。由 L0 入口检测自动合并；它不验证官网内容、规范化重定向、答题交互或完整 Flutter 产品。",
+          "evidence": "最近一次入口检测：request failed: tls_error。由 L0 入口检测自动合并；它不验证官网内容、规范化重定向、答题交互或完整 Flutter 产品。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "anchor-learning-entry"
@@ -467,9 +479,9 @@
           "id": "ozon-erp-entry",
           "layer": "entry",
           "label": "演示入口",
-          "status": "online",
+          "status": "offline",
           "description": "检查 ERP 登录/演示入口是否响应，并确认入口以 BIAU Port / 泊岸品牌外壳承载 Ozon ERP 产品名。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 8786 ms。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
+          "evidence": "最近一次入口检测：request failed: connection_error。由 L0 入口检测自动合并；登录页主视觉和登录后侧栏已改为泊岸统一图标与归属说明。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "ozon-erp-entry"
@@ -480,7 +492,7 @@
           "label": "API health",
           "status": "degraded",
           "description": "请求 `/api/health` 并确认运行版本、数据库 readiness 和部署状态。",
-          "evidence": "最近一次 synthetic 检查：API health returned status=ok；证据时间：2026-07-06T18:42:23.557Z；证据新鲜度：已过期（121 天前）。ERP 文档包含 `/api/health` 部署检查路径。",
+          "evidence": "最近一次 synthetic 检查：API health returned status=ok；证据时间：2026-07-06T18:42:23.557Z；证据新鲜度：已过期（122 天前）。ERP 文档包含 `/api/health` 部署检查路径。",
           "cadence": "部署后 + 每日",
           "ownerHint": "ERP API"
         },
@@ -490,7 +502,7 @@
           "label": "登录 / 注册策略",
           "status": "degraded",
           "description": "验证登录可用、当前线上注册策略、显式关闭开关效果和新用户默认角色安全。",
-          "evidence": "最近一次 synthetic 检查：Auth bootstrap returned registrationEnabled=true; registrationStatus=open；证据时间：2026-07-06T18:42:24.106Z；证据新鲜度：已过期（121 天前）。ERP 源码支持未设置开关时开放普通注册，显式关闭值仍会关闭；已有 Owner 后新账号为 operator，没有 Owner 时走初始化边界。源码不证明当前线上注册策略。",
+          "evidence": "最近一次 synthetic 检查：Auth bootstrap returned registrationEnabled=true; registrationStatus=open；证据时间：2026-07-06T18:42:24.106Z；证据新鲜度：已过期（122 天前）。ERP 源码支持未设置开关时开放普通注册，显式关闭值仍会关闭；已有 Owner 后新账号为 operator，没有 Owner 时走初始化边界。源码不证明当前线上注册策略。",
           "cadence": "鉴权改动后",
           "ownerHint": "Auth synthetic check"
         },
@@ -500,7 +512,7 @@
           "label": "插件与商品同步",
           "status": "unchecked",
           "description": "后续用脱敏 fixture 验证插件登录状态、商品导入和同步任务路径。",
-          "evidence": "最近一次 synthetic 检查：Credentials are required before plugin or sync smoke checks；证据时间：2026-07-06T18:42:24.106Z；证据新鲜度：已过期（121 天前）。仓库包含 extension、shops、products、market metrics 和 smoke 脚本痕迹。",
+          "evidence": "最近一次 synthetic 检查：Credentials are required before plugin or sync smoke checks；证据时间：2026-07-06T18:42:24.106Z；证据新鲜度：已过期（122 天前）。仓库包含 extension、shops、products、market metrics 和 smoke 脚本痕迹。",
           "cadence": "插件发布前",
           "ownerHint": "ERP extension/API"
         },
@@ -535,9 +547,9 @@
           "id": "xunqiu-entry",
           "layer": "entry",
           "label": "产品展示页",
-          "status": "online",
+          "status": "offline",
           "description": "检查寻球展示页、文档和发布状态说明是否响应，并确认标题/favicon 归属泊岸展示体系；不要求开放阶段包下载。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 860 ms。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
+          "evidence": "最近一次入口检测：request failed: tls_error。由 L0 入口检测自动合并；展示站首页、文档页和 404 页已补 BIAU Port / 泊岸标题与 favicon。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "xunqiu-entry"
@@ -548,7 +560,7 @@
           "label": "后端 health",
           "status": "unchecked",
           "description": "请求 Spring Actuator health，确认后端返回 `UP`。",
-          "evidence": "最近一次 synthetic 检查：XUNQIU_SYNTHETIC_API_BASE_URL is not configured；证据时间：2026-07-14T14:02:11.230Z；证据新鲜度：已过期（113 天前）。后端仓库包含 `/free_kicker/actuator/health`、Render healthCheckPath 和 smoke-test 脚本。",
+          "evidence": "最近一次 synthetic 检查：XUNQIU_SYNTHETIC_API_BASE_URL is not configured；证据时间：2026-07-14T14:02:11.230Z；证据新鲜度：已过期（114 天前）。后端仓库包含 `/free_kicker/actuator/health`、Render healthCheckPath 和 smoke-test 脚本。",
           "cadence": "部署后 + 每日",
           "ownerHint": "xunqiu-backend-modern"
         },
@@ -558,7 +570,7 @@
           "label": "兼容 API smoke",
           "status": "unchecked",
           "description": "检查动态、视频、球队和球场等兼容 API 的实际字段与业务结果；stub 或安全空结果不能计为完整能力通过。",
-          "evidence": "最近一次 synthetic 检查：XUNQIU_SYNTHETIC_API_BASE_URL is not configured；证据时间：2026-07-14T14:02:11.230Z；证据新鲜度：已过期（113 天前）。后端 smoke-test 和 MockMvc compatibility tests 已覆盖这些接口类型。",
+          "evidence": "最近一次 synthetic 检查：XUNQIU_SYNTHETIC_API_BASE_URL is not configured；证据时间：2026-07-14T14:02:11.230Z；证据新鲜度：已过期（114 天前）。后端 smoke-test 和 MockMvc compatibility tests 已覆盖这些接口类型。",
           "cadence": "API 变更后",
           "ownerHint": "Compatibility API"
         },
@@ -568,7 +580,7 @@
           "label": "APK 发布 gate",
           "status": "unchecked",
           "description": "公开下载前检查签名包、版本说明、病毒扫描和回滚说明。",
-          "evidence": "最近一次 synthetic 检查：A stage APK was found in the local archive; public download remains gated until formal release approval.；证据时间：2026-07-14T14:02:11.230Z；证据新鲜度：已过期（113 天前）；formal public APK release is not approved。当前状态页只展示 gate，不公开未经批准的下载链接。",
+          "evidence": "最近一次 synthetic 检查：A stage APK was found in the local archive; public download remains gated until formal release approval.；证据时间：2026-07-14T14:02:11.230Z；证据新鲜度：已过期（114 天前）；formal public APK release is not approved。当前状态页只展示 gate，不公开未经批准的下载链接。",
           "cadence": "发布候选生成后",
           "ownerHint": "Release checklist"
         }
@@ -641,9 +653,9 @@
           "id": "biau-playlab-entry",
           "layer": "entry",
           "label": "游戏站入口",
-          "status": "online",
+          "status": "offline",
           "description": "检查 Playlab 静态站入口是否响应，并确认 BIAU Playlab 命名、泊岸 favicon、导航副标题和页脚归属已同步。",
-          "evidence": "最近一次入口检测通过：HTTP 200，耗时 1137 ms。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
+          "evidence": "最近一次入口检测：request failed: tls_error。由 L0 入口检测自动合并；游戏站已统一 BIAU Playlab 命名并换用 BIAU Port / 泊岸 favicon，导航和页脚也显示泊岸归属。",
           "cadence": "每次生成状态页",
           "ownerHint": "公开入口",
           "relatedTargetId": "biau-playlab-entry"

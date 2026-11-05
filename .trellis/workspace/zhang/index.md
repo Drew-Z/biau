@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-3.md`
-- **Total Sessions**: 145
+- **Total Sessions**: 146
 - **Last Active**: 2026-11-05
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-3.md` | ~1629 | Active |
+| `journal-3.md` | ~1672 | Active |
 | `journal-2.md` | ~1978 | Archived |
 | `journal-1.md` | ~1981 | Archived |
 <!-- @@@/auto:active-documents -->
@@ -31,6 +31,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 146 | 2026-11-05 | 切换公开助手文本模型并记录部分验收结果 | `affdd1ea` | `main` |
 | 145 | 2026-11-05 | EmRank 切换与公开索引完成，生成回答保留降级 | `83a859b6`, `f6a4771a` | `main` |
 | 144 | 2026-11-04 | 发布助手修复并记录知识同步上游阻塞 | `83a859b65764ea57addc2b72cb6a54ed3876f1cb` | `main` |
 | 143 | 2026-09-21 | Stellar 光效补漏与推送后核验 | `0131aa78552744aa31afd69fd7b18e0612f22c1f` | `main` |
