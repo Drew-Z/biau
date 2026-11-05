@@ -1,5 +1,14 @@
 # 执行记录
 
+## 2026-11-06 自定义域 TLS 修复
+
+- 用户要求解决剩余 TLS 问题。Cloudflare custom domain、validation 和 verification 均 active；DNS 为正确的 proxied CNAME，CAA 无限制记录。SSL Labs 对 2 个 IPv4 与 2 个 IPv6 入口均给出 A，云端证书本身有效。
+- 当前 v2rayN/Xray 将域名目标交给远端处理时返回 `*.intel.com` 证书，正常校验拒绝；关闭诊断入站的 sniffing 覆写后，用可信 DNS 解析地址连接同一域名/SNI，得到 `biau.playlab.eu.cc` 证书和 200。进一步在内存配置中启用 `targetStrategy=UseIPv4` 后，原域名请求也通过。临时配置仅在进程内存，隔离代理全部停止。
+- 在既有集中恢复组增加 `tlsResolutionFollowup`：逐字节备份 GUI/两份运行配置，以及 DNSItem 两行的最小快照；校验 SHA-256 与仅用户/SYSTEM/管理员可访问的 ACL。未复制代理节点或订阅数据库。
+- 通过应用 DNS 设置将 `SimpleDNSItem.Strategy4Proxy` 从 Default/AsIs 改为 `UseIPv4` 并保存重载。运行配置仅增加代理 outbound 的 targetStrategy，节点与路由不变；GUI 的 4 项和 DNSItem 的 8 项额外差异均为 null/空串规范化，前置代理配置完全未变。
+- 实际系统代理下首页、项目页、Pages 默认域及 GitHub 控制请求均 200。浏览器自定义域 `/blog` 为 200、正确域名证书、WE1、TLS 1.3，390px 无溢出、无页面错误。健康接口初始 502/403/30 秒超时后，后续同源请求为 200，database/modelConfigured=true；早先响应保留，不能当成证书错误或永久可用保证。
+- 本轮生产模型请求和云端配置修改均为 0。低敏证据见 `tls-verification-2026-11-06.json`；原始配置与恢复清单仅留本地。公开助手原问题、恢复和当前本机代理路径 TLS 均已验证，可完成本任务；直连网络的不稳定观察保留，不扩大为所有网络均已修复。
+
 ## 2026-11-05 目录与恢复续作计划
 
 - 恢复点复用既有 manifest 的 `production-readiness-20261104.catalogRestoreFollowup`；干净文件基线 `dcb0aeb8`，保留其他任务改动。

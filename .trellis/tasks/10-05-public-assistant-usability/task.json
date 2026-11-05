@@ -1,13 +1,13 @@
 {
   "name": "public-assistant-usability",
   "title": "修复公开助手基本咨询与发送恢复",
-  "status": "in_progress",
+  "status": "completed",
   "parent": null,
   "created_date": "2026-10-05",
   "assignee": "zhang",
   "releaseCommit": "0d6116a11c8e62c16af08f9921eb1967c5c7a82e",
-  "releaseState": "catalog-and-reload-production-acceptance-passed-tls-unresolved",
-  "nextStep": "Original-question acceptance passed on the Pages default origin; the single approved request is consumed and its session was deleted. Resolve the separate custom-domain TLS observation before declaring full domain recovery; do not replay generation or change DNS/certificates under this release approval.",
+  "releaseState": "production-acceptance-passed-and-local-tls-fixed",
+  "nextStep": "No further work in this assistant usability task. Preserve historical failures and the local proxy rollback point; new model requests require their own approval.",
   "businessSubmissions": 4,
   "catalogAcceptanceBusinessSubmissions": 1,
   "generationCutoverBusinessSubmissions": 2,
@@ -19,5 +19,7 @@
   "localVerification": "catalog-restore-verification-2026-11-05.json",
   "localCandidateState": "released-and-business-verified",
   "indexCompletedAt": "2026-11-04T15:22:17.081Z",
-  "ragDeploymentCommit": "f6a4771afbfce56fef24db9e861311b799306f67"
+  "ragDeploymentCommit": "f6a4771afbfce56fef24db9e861311b799306f67",
+  "tlsVerification": "tls-verification-2026-11-06.json",
+  "tlsResolution": "local-proxy-target-dns-useipv4"
 }

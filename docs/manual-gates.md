@@ -57,6 +57,8 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 2026-11-05 后续获批目录修复已发布为 `0d6116a1`：Pages `d56fc0ee-646d-4180-b445-60009abf89aa` success，Public `dep-dbm9cc8u01pc738p18kg` live。完整 16 项目录使用 3 组有界本地证据，不触发 embedding/索引同步。原问题只提交 1 次，约 33.0 秒返回 `answered/model`、route=site、6 条 claims、3 条站内引用均 200、recovery=none/attempts=1；用途与公开/登录/案例边界人工核对通过。同一会话桌面和 390px 刷新均恢复原 Revision、保留草稿、输入可用且无横向溢出，未自动重发。临时会话删除后读取 404，批准次数已消费。该验收通过 Pages 默认域且保持 TLS 校验；自定义域 TLS 仍未解决，不覆盖上轮历史失败。模型配置、RAG、Studio、AI 日报、DNS/证书未改，低敏证据见 `.trellis/tasks/10-05-public-assistant-usability/catalog-restore-verification-2026-11-05.json`。
 
+2026-11-06 TLS 后续已定位并修复当前本机代理路径：云端域名配置 active，独立 SSL Labs 的四个 IPv4/IPv6 入口均为 A；当前代理传递域名目标时返回 `*.intel.com` 证书，而经可信 DNS 本地解析再连接时返回正确站点证书。集中备份后，从 v2rayN DNS 设置启用代理目标 `UseIPv4`，未改云端 DNS/证书或模型。系统代理下首页/项目页为 200，浏览器确认正确域名证书和 TLS 1.3；健康接口早先异常与超时保留，后续同源请求返回 200/database/modelConfigured=true。本轮模型调用为 0，诊断进程和浏览器已关闭，低敏证据见 `.trellis/tasks/10-05-public-assistant-usability/tls-verification-2026-11-06.json`。
+
 ## Roleplay 角色剧场公开演示
 
 Roleplay 角色剧场是独立部署的游客式多角色 AI 对话演示，角色库入口为 `https://roleplay.playlab.eu.cc/`。主站只记录公开入口、角色库规模和低敏技术边界；API Key、上游地址、管理员令牌、服务器 IP、访客消息和完整角色卡提示词必须继续留在独立服务端。

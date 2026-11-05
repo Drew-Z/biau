@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-05T16:19:08.111337+00:00",
+  "status": "fixed-in-current-system-proxy-path",
+  "scope": "custom-domain TLS diagnosis and local proxy repair",
+  "authorization": "User requested resolution of the remaining custom-domain TLS issue after assistant release acceptance.",
+  "finding": {
+    "cloudCertificateValid": true,
+    "domainTargetThroughProxy": "RemoteCertificateNameMismatch; received *.intel.com certificate",
+    "ipTargetThroughSameProxy": "Correct biau.playlab.eu.cc certificate with normal hostname verification and HTTP 200",
+    "rootCauseBoundary": "The current proxy upstream handles hostname targets incorrectly. Resolving the target locally before forwarding fixes the observed path; the remote resolver or forwarding implementation was not directly inspected.",
+    "directConnection": "Intermittent reset, timeout or trust failure in local direct-path probes; this repair validates the configured system-proxy path."
+  },
+  "cloudReadOnly": {
+    "pagesCustomDomain": "active",
+    "certificateAuthority": "google",
+    "validation": "active/http",
+    "verification": "active",
+    "dns": "proxied CNAME to Pages default domain",
+    "caaRecords": 0,
+    "sslLabs": {
+      "status": "READY",
+      "ipv4Grades": [
+        "A",
+        "A"
+      ],
+      "ipv6Grades": [
+        "A",
+        "A"
+      ],
+      "warnings": false
+    },
+    "changes": 0
+  },
+  "repair": {
+    "application": "v2rayN 7.25.6 / Xray 26.3.27",
+    "setting": "SimpleDNSItem.Strategy4Proxy",
+    "before": "Default/AsIs",
+    "after": "UseIPv4",
+    "effect": "Proxy-target domains are resolved through the already configured DNS service to IPv4 before forwarding. Applies to proxied traffic, not only this website.",
+    "savedThrough": "Existing application DNS settings UI; normal service reload",
+    "runtimeChange": "proxy outbound targetStrategy=UseIPv4",
+    "otherGuiChanges": "Four null-to-empty normalizations made by the application",
+    "dnsTableChanges": "Eight null-to-empty normalizations in two existing DNSItem rows; semantically unchanged",
+    "preProxyConfigChanged": false,
+    "selectedProfileChanged": false,
+    "routingRulesChanged": false,
+    "pinnedCdnAddresses": false,
+    "tlsValidationDisabled": false
+  },
+  "validation": {
+    "temporaryProxyConfiguration": "Xray -test passed; credentials stayed in process memory; helper stopped in finally",
+    "isolatedHostnameTlsWithUseIPv4": "passed",
+    "persistentGuiSetting": "passed",
+    "generatedRuntimeSetting": "passed",
+    "runtimeSemanticDiff": "only targetStrategy",
+    "backupHashesAndRestrictedAcl": "passed",
+    "homeHttp": 200,
+    "projectsHttp": 200,
+    "pagesDefaultHttp": 200,
+    "githubControlHttp": 200,
+    "browser": {
+      "route": "/blog",
+      "status": 200,
+      "title": "知识库 | BIAU Port",
+      "certificate": {
+        "subjectName": "biau.playlab.eu.cc",
+        "issuer": "WE1",
+        "protocol": "TLS 1.3",
+        "validFrom": 1791427716,
+        "validTo": 1799207312
+      },
+      "mobileWidth": 390,
+      "overflow": false,
+      "pageErrors": 0,
+      "generationRequests": 0,
+      "closed": true
+    },
+    "healthObservations": [
+      {
+        "client": "initial Python request",
+        "status": 502
+      },
+      {
+        "client": "Python default agent, both origins",
+        "status": 403
+      },
+      {
+        "client": "browser same-origin",
+        "result": "timeout",
+        "timeoutMs": 30000
+      },
+      {
+        "client": "same-origin HTTP request after the browser check",
+        "status": 200,
+        "ok": true,
+        "database": true,
+        "modelConfigured": true
+      }
+    ],
+    "healthConclusion": "A later request succeeded; earlier transient responses remain recorded and are not certificate errors."
+  },
+  "productionModelRequests": 0,
+  "productionBusinessSubmissions": 0,
+  "siteCodeChanges": 0,
+  "cloudConfigurationChanges": 0,
+  "recovery": {
+    "group": "20261004T183744.706Z-public-assistant-usability",
+    "stage": "production-readiness-20261104.tlsResolutionFollowup",
+    "baselineCommit": "f4573c0cedc2323ed1dfed14384b3a17b565786f",
+    "localSnapshots": "guiNConfig.json, runtime config.json/configPre.json and DNSItem rows only; restricted local backup, no node/subscription database copy",
+    "rollback": "In v2rayN DNS settings restore proxy-target strategy to Default/AsIs and save. Exact prior local files and DNS rows are available in the managed manifest. The previous faulty path would return if the upstream remains unchanged."
+  },
+  "sources": [
+    {
+      "url": "https://developers.cloudflare.com/pages/configuration/custom-domains/",
+      "retrievedVia": "smart-search fetch",
+      "use": "Pages domain binding and CAA behavior"
+    },
+    {
+      "url": "https://xtls.github.io/config/outbound.html",
+      "retrievedVia": "smart-search fetch",
+      "use": "targetStrategy resolves proxied destination domains locally; distinct from proxy-server dial DNS"
+    },
+    {
+      "url": "https://github.com/2dust/v2rayN/blob/1883178b5f1e222b6c6db2782e7a3d989b7cc18f/v2rayN/ServiceLib/Services/CoreConfig/V2ray/V2rayDnsService.cs",
+      "use": "Installed version maps Strategy4Proxy to outbound.targetStrategy"
+    },
+    {
+      "url": "https://www.ssllabs.com/ssltest/analyze.html?d=biau.playlab.eu.cc",
+      "use": "Independent IPv4 and IPv6 certificate validation"
+    }
+  ],
+  "cleanup": {
+    "temporaryFilesCreated": 0,
+    "temporaryFilesDeleted": 0,
+    "diagnosticProxyProcessesStopped": true,
+    "browserClosed": true,
+    "applicationAtomicSaveTempAbsent": true,
+    "preExistingUnrelatedFilesPreserved": true
+  }
+}
