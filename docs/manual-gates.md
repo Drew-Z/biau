@@ -55,6 +55,8 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 该切换窗口共执行 2 个生产咨询：首次 HTTP 200 后验收脚本读取流正文失败，不能推断回答成功或失败；修改验收为读取已渲染及持久化 Revision 后，最后一次约 10.6 秒返回 `partial/model`、route=site、5 条 claims、4 条站内引用均 200，recovery=none、attempts=1。生成接口已响应，未再次观察到 5xx；但桌面刷新恢复超时，移动恢复未执行，完整原问题验收仍未通过。两次临时 Session 均删除并确认读取 404，不再增加本窗口模型请求。自定义域从本客户端出现 TLS 名称不匹配，保留校验并通过 Pages 默认域完成咨询；该网络观察不能归因于模型，也不能宣称自定义域已恢复。最新低敏证据见 `.trellis/tasks/10-05-public-assistant-usability/generation-verification-2026-11-05.json`，前轮结果继续保留历史时间。
 
+2026-11-05 后续获批目录修复已发布为 `0d6116a1`：Pages `d56fc0ee-646d-4180-b445-60009abf89aa` success，Public `dep-dbm9cc8u01pc738p18kg` live。完整 16 项目录使用 3 组有界本地证据，不触发 embedding/索引同步。原问题只提交 1 次，约 33.0 秒返回 `answered/model`、route=site、6 条 claims、3 条站内引用均 200、recovery=none/attempts=1；用途与公开/登录/案例边界人工核对通过。同一会话桌面和 390px 刷新均恢复原 Revision、保留草稿、输入可用且无横向溢出，未自动重发。临时会话删除后读取 404，批准次数已消费。该验收通过 Pages 默认域且保持 TLS 校验；自定义域 TLS 仍未解决，不覆盖上轮历史失败。模型配置、RAG、Studio、AI 日报、DNS/证书未改，低敏证据见 `.trellis/tasks/10-05-public-assistant-usability/catalog-restore-verification-2026-11-05.json`。
+
 ## Roleplay 角色剧场公开演示
 
 Roleplay 角色剧场是独立部署的游客式多角色 AI 对话演示，角色库入口为 `https://roleplay.playlab.eu.cc/`。主站只记录公开入口、角色库规模和低敏技术边界；API Key、上游地址、管理员令牌、服务器 IP、访客消息和完整角色卡提示词必须继续留在独立服务端。

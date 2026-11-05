@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "recordedAt": "2026-11-05T13:23:19.011138+00:00",
   "scope": "local-catalog-evidence-and-received-answer-reload",
-  "status": "local-candidate-verified-production-acceptance-pending",
+  "status": "production-catalog-acceptance-passed-custom-domain-tls-unresolved",
   "baseCommit": "dcb0aeb895dbdfcfad21faa6e48a672c58e9b4b7",
   "candidate": {
     "files": [
@@ -68,15 +68,17 @@
       }
     ],
     "recordFile": ".trellis/tasks/10-05-public-assistant-usability/catalog-restore-verification-2026-11-05.json",
-    "committed": false,
-    "pushed": false,
-    "deployed": false,
+    "committed": true,
+    "pushed": true,
+    "deployed": true,
     "preservedUnrelatedFiles": [
       "scripts/check-public-assistant-pet-ui.mjs",
       "src/components/PublicAssistantPet.tsx",
       "src/styles/public-assistant-pet.css"
     ],
-    "preservedHashesMatched": true
+    "preservedHashesMatched": true,
+    "releaseCommit": "0d6116a11c8e62c16af08f9921eb1967c5c7a82e",
+    "hashScope": "Reviewed local candidate before release-evidence updates; original hashes retained for audit."
   },
   "catalog": {
     "publicProjects": 16,
@@ -208,22 +210,142 @@
     "conclusion": "unresolved; control-plane active status does not prove client TLS success"
   },
   "production": {
-    "newModelRequests": 0,
-    "newBusinessSubmissions": 0,
-    "newSessions": 0,
-    "newDeployments": 0,
+    "newModelRequests": 1,
+    "newBusinessSubmissions": 1,
+    "newSessions": 1,
+    "newDeployments": 2,
     "configurationChanges": 0,
     "indexWrites": 0,
     "priorBusinessResult": "partial/model; desktop reload timeout; mobile reload not run",
     "priorVerification": "generation-verification-2026-11-05.json",
     "limitations": [
-      "The retrieval gap is confirmed but not proven to be the only cause of the prior partial answer.",
-      "Production reload timeout was not reproduced locally; production recovery remains unverified.",
-      "Custom-domain TLS remains unresolved."
-    ]
+      "Acceptance passed on the Pages default origin; the custom-domain TLS observation is still unresolved.",
+      "The prior partial result and reload timeout remain historical evidence; the new successful run does not prove their sole cause.",
+      "This is one bounded business acceptance, not a claim of future provider availability."
+    ],
+    "deployments": {
+      "public": {
+        "id": "dep-dbm9cc8u01pc738p18kg",
+        "status": "live",
+        "commit": "0d6116a11c8e62c16af08f9921eb1967c5c7a82e",
+        "finishedAt": "2026-11-05T14:46:29.938092Z"
+      },
+      "pages": {
+        "id": "d56fc0ee-646d-4180-b445-60009abf89aa",
+        "status": "success",
+        "commit": "0d6116a11c8e62c16af08f9921eb1967c5c7a82e"
+      }
+    },
+    "acceptance": {
+      "startedAt": "2026-11-05T14:56:08.007Z",
+      "submittedAt": "2026-11-05T14:58:57.653Z",
+      "completedAt": "2026-11-05T15:12:56.745Z",
+      "submissions": 1,
+      "blockedSubmissions": 0,
+      "historyReads": 2,
+      "durationMs": 33032,
+      "result": {
+        "httpStatus": 200,
+        "status": "answered",
+        "mode": "model",
+        "route": "site",
+        "claims": 6,
+        "citations": 3,
+        "recovery": {
+          "state": "none",
+          "attempts": 1
+        },
+        "answerCharacters": 70
+      },
+      "desktopReload": {
+        "status": "passed",
+        "httpStatus": 200,
+        "durationMs": 15238,
+        "sameSession": true,
+        "sameRevision": true,
+        "draftRetained": true,
+        "inputEnabled": true,
+        "sendEnabled": true,
+        "overflow": false,
+        "submissions": 1
+      },
+      "mobileReload": {
+        "status": "passed",
+        "width": 390,
+        "httpStatus": 200,
+        "durationMs": 14747,
+        "sameSession": true,
+        "sameRevision": true,
+        "draftRetained": true,
+        "inputEnabled": true,
+        "sendEnabled": true,
+        "overflow": false,
+        "submissions": 1
+      },
+      "citationChecks": [
+        {
+          "id": "site:catalog:site:project-catalog:1",
+          "href": "/projects",
+          "status": 200
+        },
+        {
+          "id": "site:catalog:site:project-catalog:2",
+          "href": "/projects",
+          "status": 200
+        },
+        {
+          "id": "site:catalog:site:project-catalog:3",
+          "href": "/projects",
+          "status": 200
+        }
+      ],
+      "cleanup": {
+        "deleteStatus": 200,
+        "readAfterDeleteStatus": 404,
+        "passed": true
+      },
+      "pageErrors": [],
+      "apiEvents": [
+        {
+          "path": "/api/health",
+          "status": 200,
+          "method": "GET",
+          "phase": "open"
+        },
+        {
+          "path": "/api/chat/public/stream",
+          "status": 200,
+          "method": "POST",
+          "phase": "submit"
+        },
+        {
+          "path": "/api/chat/public/session",
+          "status": 200,
+          "method": "POST",
+          "phase": "desktop-reload"
+        },
+        {
+          "path": "/api/chat/public/session",
+          "status": 200,
+          "method": "POST",
+          "phase": "mobile-reload"
+        }
+      ],
+      "browserClosed": true,
+      "origin": "pages-default",
+      "tlsValidationEnabled": true,
+      "contentReview": {
+        "result": "passed",
+        "allCatalogProjectsRepresented": true,
+        "accessBoundariesPreserved": true,
+        "unrelatedWebEvidence": false,
+        "liveAvailabilityClaimed": false,
+        "note": "The six game entries are grouped in one cited claim; entry reachability does not verify gameplay or protected business flows."
+      }
+    }
   },
   "nextReleaseProposal": {
-    "approvalStatus": "approved",
+    "approvalStatus": "consumed",
     "actions": [
       "Commit/push only the enumerated candidate files and this record; observe any resulting Pages deployment.",
       "Deploy the approved candidate commit to Public only; verify version and read-only health.",
@@ -245,7 +367,9 @@
       "docs/manual-gates.md:75"
     ],
     "approvedAt": "2026-11-05T14:40:25.027315+00:00",
-    "approvalSource": "User explicitly approved scoped commit/push, Pages/Public release, and one original-question acceptance request."
+    "approvalSource": "User explicitly approved scoped commit/push, Pages/Public release, and one original-question acceptance request.",
+    "executedBusinessSubmissions": 1,
+    "remainingBusinessSubmissions": 0
   },
   "recovery": {
     "group": "20261004T183744.706Z-public-assistant-usability",
@@ -262,7 +386,11 @@
     "temporaryFilesCreated": [],
     "temporaryFilesDeleted": [],
     "taskDevAndPreviewServersStopped": true,
-    "preExistingUnknownFilesPreserved": true
+    "preExistingUnknownFilesPreserved": true,
+    "productionSessionDeleted": true,
+    "productionReadAfterDeleteStatus": 404,
+    "productionBrowserClosed": true
   },
-  "localValidationCompletedAt": "2026-11-05T13:32:16.607885+00:00"
+  "localValidationCompletedAt": "2026-11-05T13:32:16.607885+00:00",
+  "productionEvidenceRecordedAt": "2026-11-05T15:16:56.687Z"
 }
