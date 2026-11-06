@@ -1,0 +1,8 @@
+{
+  "repository": "Thysrael/Horizon",
+  "revision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+  "python": "3.12",
+  "uvVersion": "0.11.3",
+  "uvLockSha256": "c89fe239b155c27ba75c5c780efc00846d7dc6624a9c4e01c48428735574c9bb",
+  "sourceSha256": "b5f980dd9b02bcd2ae175aecf210862c8accf5c8bd3cfa3dec5ebce4307802d2"
+}

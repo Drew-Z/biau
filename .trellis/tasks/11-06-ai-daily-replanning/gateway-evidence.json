@@ -1,0 +1,686 @@
+{
+  "schemaVersion": 1,
+  "createdAtUtc": "2026-11-06T18:23:47.977094+00:00",
+  "reviewDate": "2026-11-07",
+  "timezone": "Asia/Shanghai",
+  "scope": "public-document research and offline SDK capability checks only",
+  "newLiveModelHttpRequests": 0,
+  "productionCodeChanged": false,
+  "privateConfigurationChanged": false,
+  "gatewayDeployed": false,
+  "recommendation": {
+    "current": "Horizon with existing OpenAI SDK streaming aggregation and application-specific validation",
+    "sharedGatewayCandidate": "LiteLLM Proxy when shared governance is required",
+    "alternatives": [
+      "Bifrost",
+      "New API"
+    ],
+    "largeForkRecommended": false,
+    "implementationStatus": "proposed-not-implemented"
+  },
+  "sources": [
+    {
+      "id": "cloudflare-524",
+      "url": "https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/",
+      "provider": "tavily",
+      "responseSha256": "5a478a0306e49122833cabf4952c457e842cc92159a756423b305a132e82af89",
+      "contentSha256": "027a2eb5bc6bdd07ce90bd4de9201af95684f15630c2a3b4ab16ea395751d70b",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:38:38.998570+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "524 的官方语义；读/写超时不是同一个限制。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 16,
+          "text": "n HTTP response before the default 125 seconds [Proxy Read Timeout](/fundamentals/reference/connection-limits/).",
+          "truncated": true
+        },
+        {
+          "extractedContentLine": 22,
+          "text": " write did not complete before the 30 seconds [Proxy Write Timeout](/fundamentals/reference/connection-limits/) (or 6.5 seconds in the case of [Cloudflare Images](/images/)). This timeout cannot be adjusted.",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "cf-limits",
+      "url": "https://developers.cloudflare.com/fundamentals/reference/connection-limits/",
+      "provider": "tavily",
+      "responseSha256": "7b7ebf620421bf8f35d37a778b4a25d8b480b4fe2b678a7f43dae7a1af1dc4ef",
+      "contentSha256": "211ab84efe5536f64f8d7416de1c3be4175fc11dd776c8838bf850329f1ebe1e",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:50:18.000975+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "交叉核对 Cloudflare 当前连接限制表。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 31,
+          "text": "| Proxy Read Timeout | 125 | [524](/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/) | [Yes, for Enterprise zones](/api/resources/zones/subresources/settings/methods/edit/) |",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 32,
+          "text": "| Proxy Write Timeout | 30 | [524](/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-524/) | No |",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "horizon-client",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/src/ai/client.py",
+      "provider": "tavily",
+      "responseSha256": "40bad48d829e31bad6ba45166a4cb0ecb04c9a1823c4c99edd13a8266b6944f0",
+      "contentSha256": "fe40fb277c8566f76635cf7350151dd40753b5e58b200a0d6c9239a7c5d8e312",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:52:40.451464+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "固定版本 OpenAIClient 使用完整 Chat Completions 响应。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 319,
+          "text": "return await self.client.chat.completions.create(\\*\\*request_kwargs)",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 291,
+          "text": "return response.choices[0].message.content",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "horizon-client-latest",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/main/src/ai/client.py",
+      "provider": "tavily",
+      "responseSha256": "bec639168970dc3f4a3aedaeb7012b9d67ed205ece340f70cea5030bb7799f10",
+      "contentSha256": "fe40fb277c8566f76635cf7350151dd40753b5e58b200a0d6c9239a7c5d8e312",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:52:40.005659+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "抓取时 main 中相应 client 未显示可直接配置的流式调用。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 319,
+          "text": "return await self.client.chat.completions.create(\\*\\*request_kwargs)",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "crewai-llm",
+      "url": "https://docs.crewai.com/en/concepts/llms",
+      "provider": "tavily",
+      "responseSha256": "fd9cbe05213b58e2e348a08902115a483aedad78511660d8a6cf11f2f8ca0695",
+      "contentSha256": "26e3ca2cd2244e9b78dab946bb15ac63a1df5a7757a7f3709836de7856932de9",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:50:18.583565+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "主要 provider 使用原生 SDK，其他 provider 可通过 LiteLLM 库。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 90,
+          "text": "CrewAI provides native SDK integrations for OpenAI, Anthropic, Google (Gemini API), Azure, AWS Bedrock, and Snowflake Cortex — no extra install needed beyond the provider-specific extras (e.g. `uv add \"crewai[openai]\"`).All other providers are powered by **LiteLLM**. If you plan ",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "langchain-models",
+      "url": "https://docs.langchain.com/oss/python/langchain/models",
+      "provider": "tavily",
+      "responseSha256": "20b72f8aef81c1ec5c95ed5ff36e6db0ef83c417155ebd82adc4b99909bb028f",
+      "contentSha256": "1f6188c56f72243b145d36509e116960808abb23057cf7ae476182dee7ed61e8",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:50:17.929632+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "provider integration packages 统一模型接口。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 181,
+          "text": "LangChain supports all major model providers through dedicated integration packages. Each provider package implements the same standard interface, so you can swap providers without rewriting application logic. New model names work immediately — no LangChain update required — beca",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "litellm-proxy",
+      "url": "https://docs.litellm.ai/docs/simple_proxy",
+      "provider": "tavily",
+      "responseSha256": "37dc6cd8ab39d6ad020a1075d3b6cc949cfd615b078b4f9702856f54048a5b23",
+      "contentSha256": "d79db164642bc3d19ae6a985c77236f43854d4bb5cdf3937be3e9778e94237d1",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:38:38.929405+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "区分独立网关与单应用 SDK，按治理需求选择。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 6,
+          "text": "The LiteLLM AI Gateway is a self-hosted server. It gives your applications one OpenAI-compatible endpoint for 100+ LLM providers, MCP tools, and A2A agents.",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 90,
+          "text": "Use the gateway if more than one application or person sends requests to LLMs. Also use the gateway if virtual keys, spend tracking, logs in one location, or guardrails are necessary. Use the [Python SDK](/docs/python_sdk) if you send requests from one Python application and thes",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "litellm-sdk",
+      "url": "https://docs.litellm.ai/docs/python_sdk",
+      "provider": "tavily",
+      "responseSha256": "2610502f3adf31fee780bbdf30adcd343502a581f771d443ef49084c98a2d146",
+      "contentSha256": "a5586782bd96fae9e3e15a7c7652397babbf70b019dd5c9112558481aa204a70",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:57:05.366647+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "库导入应用进程，不需要运营一个服务。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 8,
+          "text": "You import the SDK into your application code. You do not operate a server.",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "litellm-timeout",
+      "url": "https://docs.litellm.ai/docs/proxy/timeout",
+      "provider": "tavily",
+      "responseSha256": "6d43775895b3de0151ad3d42a028d1e8f10a548a6d37bef8a8d15d685d4f2b6f",
+      "contentSha256": "d2db759d3739d805584eca385d1b31a44eb0e8bd2b1960046acc68162241e5a7",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:50:17.532781+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "超时与 SSE 心跳；等待上游响应头期间可提前打开下游流。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 30,
+          "text": "* **`timeout`** → maximum time for the *complete response*.  ",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 102,
+          "text": "l_seconds` covers that window too: when the upstream call has not come back within one interval, the proxy opens the SSE response and starts sending `: ping` comments, then replays the real response onto the same connection once it arrives.",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "litellm-reliability",
+      "url": "https://docs.litellm.ai/docs/proxy/reliability",
+      "provider": "tavily",
+      "responseSha256": "50fb65e757ec00697010b5abb0b939368e503a51afb80aac5f016dc51608cf30",
+      "contentSha256": "a7ff3317ccdcc4d952345e0429e7c9e0d97d743a31b12c881fed1a5b5cadbf25",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:50:17.889430+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "重试结束后还可能进入 fallback，需控制总尝试数。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 89,
+          "text": "Fallbacks are how LiteLLM does automatic **failover**. If a call fails after num_retries, LiteLLM falls back to another model group, so a failing model or provider automatically fails over to a healthy backup. If you are looking for \"provider failover\" or \"model failover\", this i",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "litellm-license",
+      "url": "https://raw.githubusercontent.com/BerriAI/litellm/main/LICENSE",
+      "provider": "tavily",
+      "responseSha256": "1bd9090ec2e1632daa346b641d3fed2b31cd4a7f29f99fedb30fb3c256d50e1b",
+      "contentSha256": "32e1b9a29eefa8f2db456ee648f903da24c8322ce4ac4b2e3ce04713fe92b675",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:52:39.822920+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "enterprise 单独许可，其余 MIT。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 2,
+          "text": "ll content that resides under the \"enterprise/\" directory of this repository, if that directory exists, is licensed under the license defined in \"enterprise/LICENSE\".",
+          "truncated": true
+        },
+        {
+          "extractedContentLine": 3,
+          "text": "tions above is available under the MIT license as defined below.",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "bifrost-readme",
+      "url": "https://github.com/maximhq/bifrost",
+      "provider": "tavily",
+      "responseSha256": "9c08d114bc4999650dded9a67a7f65494c7971ecfd3893e679bfa7951a74c976",
+      "contentSha256": "f9f7fd87fc42a32f62d3cd1663f296449107234cf7b3577dcd60304ae8cf380d",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:38:39.977823+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "Go 网关/SDK 候选；不采用宣传性能作为实测。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 171,
+          "text": "* [Go SDK Setup](https://docs.getbifrost.ai/quickstart/go-sdk/setting-up) - Direct integration",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 35,
+          "text": "Open-source, high-performance AI gateway that works as your LLM gateway, MCP gateway and agent gateway. One OpenAI-compatible API for 10,000+ models, with failover, load balancing, semantic caching, virtual keys, budgets and MCP Code Mode. Works with any SDK or agent and adds und",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "bifrost-streaming",
+      "url": "https://docs.getbifrost.ai/quickstart/gateway/streaming",
+      "provider": "tavily",
+      "responseSha256": "53130c921067d3cdcb1834aa72b9fafe7fc96e8fa0351c8549f15671945c6562",
+      "contentSha256": "1c8cdcbb1e117025a7668e9967ed7d126d66a8cc7deba1244ceaf7482d59dc84",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:50:17.406180+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "流式支持及 provider 默认 30 秒超时。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 48,
+          "text": "d in provider configuration, which defaults to **30 seconds**.",
+          "truncated": true
+        },
+        {
+          "extractedContentLine": 50,
+          "text": "stream responses to send usage and finish reason only in the last chunk, and content in the previous chunks.",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "bifrost-retries",
+      "url": "https://docs.getbifrost.ai/features/retries-and-fallbacks",
+      "provider": "tavily",
+      "responseSha256": "c36669db13c81c2a7e15bd5628a85d206577d6083a58b0de3a8fe3206fad1f15",
+      "contentSha256": "36dde626605d3b0b5420df794939f5360827e76ad9e8e24f88dae55159f112c2",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:50:18.203874+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "关闭重试不必然禁止永久性 key 错误后的轮换。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 176,
+          "text": "figured for the provider. Rotation past a permanent per-key failure applies whenever more than one key is configured, whatever `max_retries` is. With a single key, all retries reuse that key, and a permanent per-key failure ends the request with the provider’s error (or `502` whe",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "bifrost-provider-config",
+      "url": "https://docs.getbifrost.ai/quickstart/gateway/provider-configuration",
+      "provider": "tavily",
+      "responseSha256": "75f2e3a5cef06fa149e17cb84a3dff5509dc0252157badf5f723fd7b9568a846",
+      "contentSha256": "4211dbc95ba45ba973e591787426a11f83e30ee98552d33d36dd7cbcb814fd4b",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:52:41.340708+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "支持 custom base_url；具体配置需按版本核对。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 32,
+          "text": "rk_config\": { \"network_config\": { \"base_url\": \"http://vllm-endpoint:8000\", \"base_url\": \"http://vllm-endpoint:8000\", \"default_request_timeout_in_seconds\": 60 \"default_request_timeout_in_seconds\": 60 }, }, \"custom_provider_config\": { \"custom_provider_config\": { \"base_provider_type\"",
+          "truncated": true
+        },
+        {
+          "extractedContentLine": 165,
+          "text": "rk_config\": { \"network_config\": { \"max_retries\": 5, \"max_retries\": 5, \"retry_backoff_initial\": 1, \"retry_backoff_initial\": 1, \"retry_backoff_max\": 10000 \"retry_backoff_max\": 10000 } }}'}'",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "bifrost-license",
+      "url": "https://raw.githubusercontent.com/maximhq/bifrost/dev/LICENSE",
+      "provider": "tavily",
+      "responseSha256": "f554fc499264d037cdeeeb25c14701f91e4ad2878773ec4edd36d00dc3f8b48d",
+      "contentSha256": "0738be33db7201ce011d841ad249e2979df0a6af27a805233d002dead7c81d81",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:52:39.960314+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "Apache-2.0。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 1,
+          "text": "Apache License",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 2,
+          "text": "Version 2.0, January 2004",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "newapi-readme",
+      "url": "https://github.com/QuantumNous/new-api",
+      "provider": "tavily",
+      "responseSha256": "d89ffcfa3db3a3bbfb86e1115379496fb50d984fc4dfef790add1d0ae2e15ea0",
+      "contentSha256": "4742e94be3c48fd956160f41a57ff6b0de16795049b510d7a67f79efeed55303",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:38:39.093282+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "渠道管理平台候选；README 指定 AGPLv3 及署名条款。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 380,
+          "text": "Additional terms under AGPLv3 Section 7 apply. Modified versions must preserve the author attribution notice `Frontend design and development by New API contributors.` in the appropriate legal notices and in any prominent about, legal, footer, or attribution location presented by",
+          "truncated": true
+        }
+      ]
+    },
+    {
+      "id": "newapi-env",
+      "url": "https://raw.githubusercontent.com/QuantumNous/new-api/main/.env.example",
+      "provider": "tavily",
+      "responseSha256": "56772ca75bb15f828d4fde742760dba1b23fa439852fcc85580581a1ffccefe2",
+      "contentSha256": "76130158cdf8d8b6ee5c1b89ae7b7ada3b2b909eca215ff37c9ae70b00d2fbcb",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:52:40.123668+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "当前源码示例的超时值，不代表用户渠道实际配置。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 59,
+          "text": "# RELAY_TIMEOUT=0",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 65,
+          "text": "# RELAY_RESPONSE_HEADER_TIMEOUT=1800",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 67,
+          "text": "# STREAMING_TIMEOUT=300",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "newapi-license",
+      "url": "https://raw.githubusercontent.com/QuantumNous/new-api/main/LICENSE",
+      "provider": "tavily",
+      "responseSha256": "ae318e5f85400847e1a29116bdef18adf42a9e00dda88f715725a9e44d8eb754",
+      "contentSha256": "9ef5a5b1d3071f7a2059ccbb0b0e9a803d7cac7d8dfe216ee2b7787f8df4f9c2",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:52:40.904643+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "GNU Affero General Public License version 3。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 1,
+          "text": "GNU AFFERO GENERAL PUBLIC LICENSE",
+          "truncated": false
+        },
+        {
+          "extractedContentLine": 2,
+          "text": "Version 3, 19 November 2007",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "openai-streaming",
+      "url": "https://developers.openai.com/api/docs/guides/streaming-responses",
+      "provider": "tavily",
+      "responseSha256": "28003eb4bc8262a04bd6ec5a461b4f4f7f2e2a42e052a414a90f7fab92e6a2ec",
+      "contentSha256": "4c8955bc385ac383d9dfaf726f3c3ae52c6deacd9bf51f5c1e7cb3b32aa0817c",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:57:05.871161+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "Chat Completions 支持 stream=True 和 SSE。",
+      "usable": true,
+      "evidenceType": "official-doc-or-project-repository",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 887,
+          "text": "To stream completions, set `stream=True` when calling the Chat Completions or legacy Completions endpoints. This returns an object that streams back the response as data-only server-sent events.",
+          "truncated": false
+        }
+      ]
+    },
+    {
+      "id": "newapi-env-doc",
+      "url": "https://docs.newapi.pro/en/installation/environment-variables/",
+      "provider": "firecrawl",
+      "responseSha256": "95b2af15b36a1ae33e7c95be0926e5740857997794409bb717cd0f498f833651",
+      "contentSha256": "328d28b337af3310418071d8bb161a4881e731408fd4b2153fc407e859fb05eb",
+      "capturedFileModifiedAtUtc": "2026-11-06T17:57:12.247935+00:00",
+      "reviewedOn": "2026-11-07",
+      "claim": "旧文档地址返回 404 内容，不用作参数证据。",
+      "usable": false,
+      "evidenceType": "404-document-excluded",
+      "excerptNormalization": "Markdown escaped underscores restored; excerpts shortened; rendered code is not executable evidence",
+      "excerpts": [
+        {
+          "extractedContentLine": 3,
+          "text": "## This page could not be found.",
+          "truncated": false
+        }
+      ]
+    }
+  ],
+  "localCode": [
+    {
+      "pathOrPackageFile": "scripts/horizon/run.py",
+      "sha256": "eea3efa84077a7c71163907be32c2eaa95af36d342db75fc8ff3b04a9ceb9ef9",
+      "lines": [
+        139,
+        171,
+        184,
+        213
+      ],
+      "note": "SDK 注入、无重试、当前请求 deadline 的包围范围"
+    },
+    {
+      "pathOrPackageFile": "scripts/horizon/budget.json",
+      "sha256": "cfee8920fd09066adf2b8a5c42276f087c5e92dd601c9a0f09e91a567b9e5b5f",
+      "lines": [
+        6,
+        9,
+        11
+      ],
+      "note": "真实业务 HTTP、60 秒和重试预算不变"
+    },
+    {
+      "pathOrPackageFile": "scripts/horizon/config.json",
+      "sha256": "599e820adc3213ed30a8379cf0bd75046fb7b222dd2b3761f136ab5651227240",
+      "lines": [],
+      "note": "当前非敏感配置 hash；不收录配置内容"
+    },
+    {
+      "pathOrPackageFile": "scripts/horizon/publication.json",
+      "sha256": "3f8431757d687529b0f84a88d37f0b9b220b62ac035c336d83088d2cdcb966b8",
+      "lines": [],
+      "note": "发布 gate 保持关闭"
+    },
+    {
+      "pathOrPackageFile": "functions/_shared/modelRelay.ts",
+      "sha256": "d10fbbed9931a4d2f6003fa927adef73753fa1e22a4642c61b44be84e2ed9f9c",
+      "lines": [
+        55,
+        92,
+        112,
+        132,
+        154
+      ],
+      "note": "本站 Responses relay 与日报不同链路，默认 50 秒、上限 55 秒"
+    },
+    {
+      "pathOrPackageFile": "Horizon@d7406f738c711df82b8f060fa1d5e9999d36cca0/src/ai/client.py",
+      "sha256": "dc0a46e1f0834374d06c9e41bfa3d818b9f3b1ad50e1bae44156c1cfd3446213",
+      "lines": [
+        291,
+        319,
+        345
+      ],
+      "note": "固定 Horizon 非流式 client"
+    },
+    {
+      "pathOrPackageFile": "Horizon@d7406f738c711df82b8f060fa1d5e9999d36cca0/.venv/Lib/site-packages/openai/lib/streaming/chat/_completions.py",
+      "sha256": "df1c194a233bb80dfb1aac694a04cd5906defe29c279c2641d846de2aa8d2aa4",
+      "lines": [
+        216,
+        227,
+        326
+      ],
+      "note": "SDK 聚合辅助类；静默 EOF 需额外终态校验"
+    },
+    {
+      "pathOrPackageFile": "Horizon@d7406f738c711df82b8f060fa1d5e9999d36cca0/.venv/Lib/site-packages/openai/resources/chat/completions/completions.py",
+      "sha256": "6e7e35120884cfd92786e687051ebbc7ef3b7d41603c27cc35537f5289bf36fd",
+      "lines": [
+        2908,
+        2952,
+        2985
+      ],
+      "note": "SDK AsyncCompletions.stream 开启流并使用上下文管理器"
+    }
+  ],
+  "offlineSdkCheck": {
+    "kind": "offline-sdk-capability-research",
+    "openaiVersion": "2.21.0",
+    "httpxVersion": "0.28.1",
+    "networkBlocked": true,
+    "liveModelHttpRequests": 0,
+    "cases": [
+      {
+        "case": "split-utf8-heartbeat-complete",
+        "outcome": "sdk-returned",
+        "contentMatches": true,
+        "finishReason": "stop",
+        "usagePresent": true,
+        "mockHttpRequests": 1,
+        "streamClosed": true
+      },
+      {
+        "case": "complete-usage-absent",
+        "outcome": "sdk-returned",
+        "contentMatches": true,
+        "finishReason": "stop",
+        "usagePresent": false,
+        "mockHttpRequests": 1,
+        "streamClosed": true
+      },
+      {
+        "case": "silent-eof-no-finish",
+        "outcome": "sdk-returned",
+        "contentMatches": true,
+        "finishReason": null,
+        "usagePresent": false,
+        "mockHttpRequests": 1,
+        "streamClosed": true
+      },
+      {
+        "case": "http-524-no-retry",
+        "outcome": "raised",
+        "errorType": "InternalServerError",
+        "mockHttpRequests": 1,
+        "streamClosed": true
+      },
+      {
+        "case": "http-200-sse-error",
+        "outcome": "raised",
+        "errorType": "APIError",
+        "mockHttpRequests": 1,
+        "streamClosed": true
+      },
+      {
+        "case": "midstream-error",
+        "outcome": "raised",
+        "errorType": "APIError",
+        "mockHttpRequests": 1,
+        "streamClosed": true
+      },
+      {
+        "case": "total-timeout-covers-consumption",
+        "outcome": "raised",
+        "errorType": "TimeoutError",
+        "mockHttpRequests": 1,
+        "streamClosed": true
+      }
+    ],
+    "initialHarnessIssue": "Socket guard initially blocked Windows event-loop self-pipe; moved after loop creation. No model request occurred."
+  },
+  "limits": [
+    "No exact request-ID correlation for earlier billing screenshot.",
+    "No raw failure response headers from the news 524 requests.",
+    "Public defaults do not identify private provider deployment settings.",
+    "No deployed gateway compatibility/performance benchmark.",
+    "No live streaming validation against the configured channel.",
+    "Mock SDK behavior does not prove the Horizon production adapter works.",
+    "New API old environment-variable documentation returned a 404 page despite fetch ok=true."
+  ],
+  "cleanup": {
+    "status": "complete",
+    "filesRemovedByRoot": [42, 9550],
+    "reparsePoints": 0,
+    "activeExecutablesInTargets": 0,
+    "method": "PowerShell deletion of exact verified temporary paths; no forced deletion",
+    "temporaryRoots": [
+      "C:\\Users\\zhang\\AppData\\Local\\Temp\\biau-gateway-research-20261106T173214824Z",
+      "C:\\Users\\zhang\\AppData\\Local\\Temp\\biau-horizon-resume-20261106T155852643Z"
+    ],
+    "protected": [
+      "User screenshot",
+      "pre-existing unknown directories",
+      "centralized recovery group",
+      "formal trial evidence"
+    ]
+  },
+  "validation": {
+    "checkedAtUtc": "2026-11-06T18:26:44.080777+00:00",
+    "jsonAndLocalLinks": "pass",
+    "whitespace": "pass",
+    "taskContextValidate": "pass",
+    "gitDiffCheck": "pass with existing LF/CRLF conversion notices",
+    "productionCodeHashes": "unchanged",
+    "applicationBuildLint": "not rerun; this research changes task documents only",
+    "initialDocumentCheckIssue": "One-off validation script initially read recordedModelHttpRequests at wrong JSON nesting; corrected to meta and passed. Task data was unchanged."
+  }
+}

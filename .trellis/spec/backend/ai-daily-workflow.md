@@ -1,5 +1,59 @@
 # AI Daily Workflow Guidelines
 
+## Scenario: Horizon whole-edition publication (2026-11)
+
+### 1. Scope / Trigger
+
+New morning/evening editions run independently through pinned Horizon. The older Studio/Flash contracts below still own legacy records. Their Responses/approval workflow must not be imposed on the accepted Horizon configuration.
+
+### 2. Signatures
+
+- `scripts/horizon/run.py validate|collect|generate --horizon-path ... --edition-id YYYY-MM-DD-morning|evening` uses the native `HorizonPipelineService` also used by its skill helper.
+- `packageEdition(bundle, publishedAt)` projects a completed native run into the shared public `DailyEditionDetail` contract.
+- `planPublication(index, detail, correction=false)` is pure; `publish` writes an isolated Git index and one non-force content-branch commit.
+- `GET /api/ai-daily` and `/api/ai-daily/editions/:editionId` are same-origin Pages reads with fixed repository/branch targets.
+
+### 3. Contracts
+
+- `src/data/aiDailyEditions.ts` owns decoders shared by publisher, Functions, and browser. Only allowlisted public fields survive. Stable Shanghai edition id + slot, real generated/published/updated times, source links, revision and immutable Markdown hash/path are required. No `approvedAt` fabrication.
+- Require successful full collection, nonzero bounded input, numeric scores on every raw item, complete enrichment, `source_stage=enriched`, matching item counts and Chinese content. Never trust `ok:true`, exit 0, scored list length, or a fallback filtered summary alone.
+- RSS input can be an excerpt; analysis summary/reason is model output, not independent evidence. Both profile prompts must distinguish unavailable input from absent information in the original article. A brief may contain one supported sentence; do not invent claims that results/methods were not disclosed to fill a length requirement. Source review remains required for first-issue acceptance.
+- `budget.json` bounds the entire run to 60 actual HTTP attempts, 24,000 prompt characters, 2,048 output tokens per request, 60-second requests and a 20-minute deadline. SDK retries=0; the transport counter includes native repair/compatibility retries. Restore `AIProviderUnavailableError` after SDK wrapping, so budget/401/429/5xx stop the native batch. Tools, automatic classification, cross-channel fallback and AI topic dedupe are disabled for this first configuration.
+- The SDK factory wraps only `chat.completions.create` with the installed SDK's `stream()` / `get_final_completion()` helpers; pinned Horizon source remains unchanged. The 60-second deadline covers headers, stream consumption and aggregation; the transport bounds response bytes to 1 MiB. Require exactly one choice, `finish_reason=stop`, no refusal/tool calls, and nonempty JSON object content before returning to native score/enrichment validation. Never accept an SDK result merely because it returned: silent EOF may lack a terminal chunk.
+- Failed model stages return `StageRejected` with a fixed stage/category, actual attempt count, duration, optional HTTP status, `attempts`, recorded usage and `usageCoverage={reportedRequests, unknownRequests}`. Attempts retain only bounded times, fixed outcome/finish enums, numeric token usage and recognizable opaque request/edge IDs (strictly filtered `x-request-id` / `cf-ray`, never arbitrary header text). These are private runtime diagnostics, never public edition fields. HTTP 524 is `provider-edge-timeout` and may mean upstream processing continued; never automatically retry it, interrupted streams or invalid JSON. No returned usage is not proof of zero billing. Never return raw exceptions, endpoints, credentials, complete headers or bodies. `--request-limit` may reduce the configured cap for an authorized continuation, never raise it. A readable catalog alone does not establish generation compatibility.
+- Model settings resolve as a group: if any `HORIZON_BASE_URL/API_KEY/MODEL` exists, use only that group, including explicit blanks. Missing/blank fields fail before collection/network; never mix a Horizon URL with a blog credential. Only when all three keys are absent may the complete `BLOG_DRAFT_FAST_*` group be used. Explicit env values survive `load_dotenv(override=False)`. `.env.local` is the private editable input; `.env.example` is documentation, not runtime fallback.
+- `publication.json` starts disabled. Bind first accepted id/hash and config hash before automation. Config hashing normalizes CRLF to LF. Generation has read permission; only publication has content write permission, without model credentials. Public content branch has no workflow files or raw runs.
+- Same-content retry is no-op; correction is explicit and increments revision while preserving first publishedAt and old files. Backfills never move latest backwards. Non-fast-forward conflicts fail; rerun publication with the same bundle, not generation.
+- Index <=2 MiB / 2048 editions; Markdown <=256 KiB. Full index stops publication, never deletes history implicitly. ETags follow revision/index changes. Browser retains loaded validated payload on refresh failure; cold loads show a real error.
+
+### 4. Validation & Error Matrix
+
+| State | Result |
+| --- | --- |
+| Unknown edition / disabled / upstream invalid | 404 / 503 / 502 with stable public errors |
+| Partial RSS failure, null score, partial enrichment, filtered summary, limit exceeded | No publish; last index unchanged |
+| Late schedule crosses next slot | Stop; require explicit manual edition |
+| Incomplete upload or branch conflict | Atomic Git ref remains unchanged |
+| HTML/JS/unsafe URL | Publication rejection or safe renderer allowlist; never raw injection |
+| SSE EOF without stop / length or filtered completion | `incomplete-model-stream`; one attempt, no repair or draft |
+| HTTP 200 followed by SSE error / malformed JSON | `provider-stream-error` / `invalid-model-json`; stop native retries |
+| Header/first-chunk/midstream deadline / oversized response | `request-timeout` / `model-response-too-large`; close stream |
+| Successful result without usage | Accept complete content; count request in `unknownRequests`, no zero-cost claim |
+
+### 5. Good / Base / Bad Cases
+
+Good: evening appends alongside morning. Base: no successful content yields honest empty/unavailable UI. Bad: treating an enrichment-failure filtered Markdown as the latest successful edition.
+
+### 6. Tests Required
+
+`ai-daily:editions-check` covers publication/reader/hash/HTML failures. `scripts/horizon/check.py` runs the pinned native stages under blocked networking and asserts actual request budgets, UTF-8/SSE fragmentation, heartbeat, finish-state and JSON validation, unknown usage, 524/stream errors, cancellation, response size, deadline across headers/reading, safe ID filtering, closure and bounded 400 parameter compatibility. `ai-daily:editions-ui` covers four widths, three themes, two languages, failure retention and reading links/details. Keep old `ai-daily:public-payload-check` and `ai-daily:public-feed-check` for compatibility. Fixtures cannot prove provider/content/production acceptance.
+
+### 7. Wrong vs Correct
+
+Wrong: publish a dated Horizon file on exit 0, or copy main into the content branch. Correct: use the run-specific summary, validate all stages, create content-only immutable files and move the public index in one non-force Git commit. Runtime/pause/correction instructions: `docs/ai-daily-horizon.md`.
+
+Wrong: add `extra_body.stream=true` and read `choices[0]` immediately, or time out only the call that opens the stream. Correct: consume the SDK stream within the total deadline, require terminal success and valid JSON, then return the aggregate response; stream failures must escape as `AIProviderUnavailableError` so native repair loops cannot duplicate a possibly billed request.
+
 ## Scenario: Versioned source and discovery curation
 
 ### Contract

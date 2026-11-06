@@ -11,10 +11,16 @@ import { formatProductName } from '../data/productRegistry'
 import { aiDailyInterfaceCopy, classifyAiDailyFeedError, formatAiDailyDate, formatAiDailyTime, type AiDailyFeedError } from '../data/aiDailyInterfaceCopy'
 import { useSiteLanguage } from '../hooks/useSiteLanguage'
 import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
+import { dailyEditionsEnabled } from '../utils/aiDailyEditionsApi'
+import { AiDailyEditionsPage } from './AiDailyEditionsPage'
 
 const REFRESH_INTERVAL_MS = 60_000
 
 export function AiDailyPublicPage() {
+  return dailyEditionsEnabled ? <AiDailyEditionsPage /> : <LegacyAiDailyPublicPage />
+}
+
+function LegacyAiDailyPublicPage() {
   const language = useSiteLanguage()
   const copy = aiDailyInterfaceCopy[language]
   const [payload, setPayload] = useState<AiDailyPublicFeedPayload | null>(null)

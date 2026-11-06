@@ -1,0 +1,127 @@
+name: AI Daily Horizon
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        default: validate
+        options: [validate, generate]
+      edition_id:
+        description: 'Manual generation requires YYYY-MM-DD-morning or YYYY-MM-DD-evening'
+        type: string
+  schedule:
+    - cron: '0 0 * * *'
+    - cron: '0 12 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-daily-horizon
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    if: github.event_name == 'workflow_dispatch' || vars.AI_DAILY_AUTOMATION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      publish: ${{ steps.generate.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.11.3'
+          python-version: '3.12'
+          enable-cache: false
+      - name: Install site dependencies
+        run: npm ci
+      - name: Read pinned engine
+        id: engine
+        run: node -e 'const fs=require("fs"); const lock=JSON.parse(fs.readFileSync("scripts/horizon/upstream.json")); fs.appendFileSync(process.env.GITHUB_OUTPUT, `revision=${lock.revision}\n`);'
+      - uses: actions/checkout@v5
+        with:
+          repository: Thysrael/Horizon
+          ref: ${{ steps.engine.outputs.revision }}
+          path: .horizon-runtime
+          persist-credentials: false
+      - name: Install locked Horizon dependencies
+        run: uv sync --project .horizon-runtime --frozen --no-dev --python 3.12
+      - name: Offline contracts
+        run: |
+          .horizon-runtime/.venv/bin/python scripts/horizon/run.py validate --horizon-path .horizon-runtime
+          .horizon-runtime/.venv/bin/python scripts/horizon/check.py --horizon-path .horizon-runtime
+          npm run ai-daily:editions-check
+      - name: Resolve publication slot and skip existing editions
+        id: slot
+        if: github.event_name == 'schedule' || inputs.operation == 'generate'
+        env:
+          AUTOMATION_ENABLED: ${{ vars.AI_DAILY_AUTOMATION_ENABLED }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_EDITION: ${{ inputs.edition_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, subprocess, sys
+          sys.path.insert(0, 'scripts/horizon')
+          from run import configuration_hash, resolve_edition
+          gate = json.load(open('scripts/horizon/publication.json'))
+          if os.environ.get('AUTOMATION_ENABLED') != 'true' or not gate['enabled'] or gate['configurationHash'] != configuration_hash():
+              raise SystemExit('First-issue acceptance and automation enablement are required. Run the first trial locally.')
+          created = subprocess.check_output(['gh', 'api', f'repos/{os.environ["GITHUB_REPOSITORY"]}/actions/runs/{os.environ["GITHUB_RUN_ID"]}', '--jq', '.created_at'], text=True).strip()
+          edition = resolve_edition(os.environ.get('MANUAL_EDITION'), os.environ.get('EVENT_SCHEDULE'), created)
+          result = subprocess.check_output(['npm', 'exec', '--', 'tsx', 'scripts/horizon/editions.ts', 'exists', '--edition-id', edition['editionId']], text=True)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'edition={edition["editionId"]}\nexists={str(json.loads(result)["exists"]).lower()}\n')
+          PY
+      - name: Generate one bounded edition
+        id: generate
+        if: steps.slot.outputs.edition != '' && steps.slot.outputs.exists == 'false'
+        env:
+          HORIZON_GENERATION_APPROVED: 'true'
+          HORIZON_API_KEY: ${{ secrets.HORIZON_API_KEY }}
+          HORIZON_BASE_URL: ${{ secrets.HORIZON_BASE_URL }}
+          HORIZON_MODEL: ${{ vars.HORIZON_MODEL }}
+          EDITION_ID: ${{ steps.slot.outputs.edition }}
+        run: |
+          .horizon-runtime/.venv/bin/python scripts/horizon/run.py generate --horizon-path .horizon-runtime --edition-id "$EDITION_ID" --output "$RUNNER_TEMP/edition-bundle.json"
+          npm exec -- tsx scripts/horizon/editions.ts preview --bundle "$RUNNER_TEMP/edition-bundle.json" --output "$RUNNER_TEMP/edition-preview"
+          echo 'publish=true' >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.generate.outputs.publish == 'true'
+        with:
+          name: ai-daily-publication
+          path: ${{ runner.temp }}/edition-bundle.json
+          retention-days: 3
+          if-no-files-found: error
+
+  publish:
+    needs: generate
+    if: needs.generate.outputs.publish == 'true' && vars.AI_DAILY_AUTOMATION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: ai-daily-publication
+          path: ${{ runner.temp }}/ai-daily-publication
+      - name: Publish complete immutable files in one non-force push
+        run: npm exec -- tsx scripts/horizon/editions.ts publish --bundle "$RUNNER_TEMP/ai-daily-publication/edition-bundle.json" --index-file "$RUNNER_TEMP/ai-daily-git-index"

@@ -1,0 +1,180 @@
+{
+  "id": "ai-daily-replanning",
+  "name": "ai-daily-replanning",
+  "title": "AI 日报重新规划",
+  "description": "首期样稿已获用户继续授权，正在发布已验收期刊并接通 Cloudflare 入口和 GitHub Actions 早晚自动更新。",
+  "status": "in_progress",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-11-06",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "docs/studio-ai-daily-production-readiness.md",
+    "docs/ai-daily-pipeline.md",
+    ".trellis/tasks/07-17-ai-daily-production-pipeline/prd.md",
+    ".trellis/tasks/07-17-ai-daily-production-operations/task.json"
+  ],
+  "notes": "既往 524/后台计费及两次越界短诊断记录继续保留。此次按授权续作 10 次真实新闻请求，失败无自动重试；两版内容缺失推断被拒绝，profile 调整后最终样稿事实核对通过。仍需用户首期验收；未提交/推送/发布。 2026-11-07：用户针对首期样稿验收提示回复“继续”；按既定策略接受该首期并进入发布。保持 3 来源/20 输入/5 成稿及原请求预算，不扩大覆盖范围。",
+  "meta": {
+    "planningConsent": "2026-11-06: create task and enter planning",
+    "writingMode": "model-assisted real-news generation followed by Codex source review",
+    "modelChannel": "User-populated HORIZON_*; exact URL/key remain private; no agent edit to new private values.",
+    "relatedTasks": [
+      "07-17-ai-daily-production-pipeline",
+      "07-17-ai-daily-production-operations"
+    ],
+    "readerValue": "Industry news for AI followers; breadth and freshness first",
+    "reusePreference": "Adopt existing open-source projects or skills; avoid rebuilding an equivalent production pipeline",
+    "selectedEngine": "Thysrael/Horizon",
+    "engineDecision": "2026-11-06: user selected standalone Horizon with minimal site read/display integration",
+    "publicationPolicy": "Automatically update after the first issue passes user acceptance; show original sources and update time",
+    "publicationDecision": "2026-11-06: user explicitly selected automatic updates after first-issue acceptance",
+    "cadence": "Twice daily: morning and evening, selected by user on 2026-11-06",
+    "proposedLocalSchedule": [
+      "08:00 Asia/Shanghai",
+      "20:00 Asia/Shanghai"
+    ],
+    "runner": "GitHub Actions; selected by user on 2026-11-06 with possible scheduling delays acknowledged",
+    "modelSelection": "deepseek-v4.1-flash, matching user local input; user also authorized other catalog models.",
+    "modelVerification": "SDK streaming completed 10 real-news calls with stop and usage; source-reviewed final one-story sample accepted by user; production enablement in progress.",
+    "pendingDecision": null,
+    "aiDailyGenerationModelCalls": null,
+    "researchSearchModelRequests": 2,
+    "planningState": "approved",
+    "convergenceCompletedAt": "2026-11-06",
+    "upstreamRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+    "proposedDefaults": {
+      "localSchedule": [
+        "08:00 Asia/Shanghai",
+        "20:00 Asia/Shanghai"
+      ],
+      "hours": 24,
+      "maxItems": 15,
+      "languages": [
+        "zh"
+      ],
+      "storage": "codex/ai-daily-content",
+      "presentation": "whole-issue Markdown"
+    },
+    "firstRunProposal": {
+      "maxSources": 3,
+      "maxFetchedItems": 20,
+      "maxPublishedItems": 5,
+      "requestBudget": {
+        "maxModelHttpRequests": 60,
+        "maxPromptCharacters": 24000,
+        "maxOutputTokensPerRequest": 2048,
+        "requestTimeoutSeconds": 60,
+        "deadlineSeconds": 1200,
+        "sdkRetries": 0
+      }
+    },
+    "artifacts": [
+      "prd.md",
+      "design.md",
+      "implement.md",
+      "research.md",
+      "evidence.json",
+      "recovery.md",
+      "validation.md",
+      "ai-daily-morning-1440.png",
+      "ai-daily-stellar-390.png",
+      "first-live-trial.md",
+      "gateway-research.md",
+      "gateway-evidence.json"
+    ],
+    "recovery": {
+      "repository": "D:\\workspace4Cursor\\blog-semi",
+      "baselineCommit": "0e7547482daac76a53f8cb81ad2b3cd221b6435d",
+      "taskDirectoryPreviouslyExisted": false,
+      "scope": "Original tracked baseline in recovery.md; uncommitted adapter/config and private env baseline preserved in the same centralized recovery group. Private backup ACL and SHA-256 verified.",
+      "recoveryGroup": "D:/Agent/codex/backups/tasks/20261106T133109757Z-ai-daily-replanning"
+    },
+    "validation": {
+      "date": "2026-11-06",
+      "planningDocuments": "pass",
+      "jsonAndJsonl": "pass",
+      "taskValidate": "pass",
+      "localLinksChecked": 7,
+      "evidenceSources": 43,
+      "temporaryResponsesRemoved": 48,
+      "applicationTests": "Task-specific checks, lint/build, native fixture pipeline and 24 UI groups passed; full verify and global UI limitations in validation.md.",
+      "liveCollection": {
+        "sources": 3,
+        "items": 4,
+        "modelCalls": 0,
+        "firstAttempt": "incomplete-fetch; stopped",
+        "secondAttempt": "success"
+      },
+      "latest": "Final native offline stream regressions, lint/build, editions/atomic publication and local preview passed; 10 authorized real-news calls completed. Final source review passed; no public release."
+    },
+    "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
+    "implementationState": "production-enablement-in-progress",
+    "configurationHash": "0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea",
+    "recordedModelHttpRequests": 17,
+    "firstTrialRequestCount": "not recorded by the original failure diagnostic; exact aggregate unknown",
+    "liveGenerationConsent": "Prior bounded real-news trial remains authorized; user refilled HORIZON settings and allowed all models in their channels. This did not authorize the two short diagnostic prompts.",
+    "localConfigCleanupConsent": "User requested clearing historical .env.local channel information and an organized template to fill other channels.",
+    "newChannelRequests": {
+      "newsAttempts": 3,
+      "additionalShortDiagnostics": 2,
+      "scopeDeviationDisclosed": true
+    },
+    "gatewayResearch": {
+      "date": "2026-11-07",
+      "report": "gateway-research.md",
+      "evidence": "gateway-evidence.json",
+      "usablePublicSources": 20,
+      "excluded404Sources": 1,
+      "offlineSdkCases": 7,
+      "newLiveModelHttpRequests": 0,
+      "recommendation": "Existing SDK streaming adaptation first; LiteLLM Proxy for future shared governance; no general-purpose gateway rewrite or large fork.",
+      "implementationStatus": "implemented-and-live-validated"
+    },
+    "modelBillingEvidence": {
+      "source": "user screenshot 2026-11-07",
+      "deepseekInputTokens": 418,
+      "deepseekOutputTokens": 304,
+      "deepseekCostUsd": 0.00049,
+      "glmInputTokens": 372,
+      "glmOutputTokens": 799,
+      "glmCostUsd": 0.000456,
+      "correlation": "model and time strongly match; request IDs unavailable",
+      "includesLaterShortDiagnostics": false
+    },
+    "streamingImplementation": {
+      "date": "2026-11-07",
+      "consent": "User replied 可以，继续 after the gateway research recommendation",
+      "sdk": "OpenAI Python 2.21.0 stream/aggregate; pinned Horizon unchanged",
+      "liveRequests": 10,
+      "reportedInputTokens": 5619,
+      "reportedOutputTokens": 3831,
+      "cost": "unknown",
+      "firstIssueAcceptance": "accepted: user replied 继续 to first-issue review on 2026-11-07",
+      "sampleItems": 1,
+      "generatedAt": "2026-11-06T20:53:01.693Z",
+      "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8",
+      "sampleReviewFile": "D:\\Agent\\codex\\artifacts\\ai-daily\\20261106T125615747Z-first-live-trial\\first-issue-review.md"
+    },
+    "firstIssueAcceptance": {
+      "date": "2026-11-07",
+      "userResponse": "继续",
+      "editionId": "2026-11-06-evening",
+      "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8",
+      "configurationHash": "0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea",
+      "scope": "Publish accepted first issue, configure GitHub/Cloudflare, enable twice-daily automatic updates within the verified 3-source/20-input/5-item budget."
+    }
+  }
+}

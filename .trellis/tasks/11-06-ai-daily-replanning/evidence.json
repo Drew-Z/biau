@@ -1,0 +1,390 @@
+{
+  "schemaVersion": 1,
+  "scope": "AI Daily planning research; no runtime acceptance",
+  "researchDate": "2026-11-06",
+  "upstream": {
+    "repository": "Thysrael/Horizon",
+    "revision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+    "tree": "45a2c356363a74da43ec8d43638f29982157dc7e",
+    "commitDate": "2026-11-03T17:20:10Z",
+    "license": "MIT"
+  },
+  "aiDailyGenerationModelCalls": 0,
+  "researchSearchModelRequests": 2,
+  "rawResponsesRetained": false,
+  "hashMeaning": "Hashes identify fetched research responses, not executable source bytes; raw responses are temporary and removed after convergence.",
+  "limitations": [
+    "No real Horizon generation, source-health acceptance, GitHub Secrets setup or production deployment.",
+    "Unpinned candidate references may change; recheck before adopting.",
+    "Fetch extraction alters source formatting; obtain pinned raw code before implementation.",
+    "No source/output RSS contract assumed."
+  ],
+  "reproduction": [
+    "smart-search fetch <source-url> --format json",
+    "gh api repos/Thysrael/Horizon/branches/main",
+    "python .trellis/scripts/task.py validate .trellis/tasks/11-06-ai-daily-replanning"
+  ],
+  "sources": [
+    {
+      "id": "02-hotdaily",
+      "url": "https://github.com/Done-0/hotdaily-skill",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "961157886bb2436a27bdbf0bbfbcaf122dc5d40cb62cf296f81cc36c63dc424d"
+    },
+    {
+      "id": "03-newsprism",
+      "url": "https://github.com/moguiyu/NewsPrism",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "0d226461908b5b9f1c9735f248659cf05249f71ce10947400e7eef8e2ce79632"
+    },
+    {
+      "id": "04-horizon",
+      "url": "https://github.com/Thysrael/Horizon",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "330b22c6c7251c8f302969022b24581d2799deb9872c52e154a7bac19c4c5cf1"
+    },
+    {
+      "id": "05-trendradar",
+      "url": "https://github.com/sansan0/TrendRadar",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "c0fce0f72b326b5be68285f8c05fff08606b2efb674ba75bc9afb2df7e37985d"
+    },
+    {
+      "id": "06-ai-daily-digest",
+      "url": "https://github.com/vigorX777/ai-daily-digest",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "f03f51cc671a028dd0bff789c38b01032362a56771a4ab6d983b243bee87d4bb"
+    },
+    {
+      "id": "07-hotdaily-skill",
+      "url": "https://raw.githubusercontent.com/Done-0/hotdaily-skill/main/hotdaily/SKILL.md",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "0d3416ae7a34163236eddf49bdc572ac3860e1641bbb04ab20d5fc7d9f49b470"
+    },
+    {
+      "id": "08-trendradar-config",
+      "url": "https://raw.githubusercontent.com/sansan0/TrendRadar/master/config/config.yaml",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "4f2fc07519b2261069741f70f58a2adfb1fd315fbf04e5fbfdfb2115ba1688ee"
+    },
+    {
+      "id": "09-trendradar-compose",
+      "url": "https://raw.githubusercontent.com/sansan0/TrendRadar/master/docker/docker-compose.yml",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "9b743d6577df4dc99b085205db0351fdd73dabb5adf726fc989b286909bcd9cc"
+    },
+    {
+      "id": "10-trendradar-workflow",
+      "url": "https://raw.githubusercontent.com/sansan0/TrendRadar/master/.github/workflows/crawler.yml",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "979f8297360fda16888e14839855a3ef94e54e603a8f1e3e9cbddba6b7ab59f4"
+    },
+    {
+      "id": "12-trendradar-metadata",
+      "url": "https://api.github.com/repos/sansan0/TrendRadar",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "df6a0839ad9ebec99a2147282f1f307afb524a42c8b6baf3921765354b092984"
+    },
+    {
+      "id": "13-horizon-metadata",
+      "url": "https://api.github.com/repos/Thysrael/Horizon",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "6cce5d33ff4a2c9f425f1f29b8551e2f342a9d02c6131f83d1d9cc8291afb54e"
+    },
+    {
+      "id": "14-newsprism-metadata",
+      "url": "https://api.github.com/repos/moguiyu/NewsPrism",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "d20692bff5408973a5787b29fa9536f6e16b2fc384a9772bd50f33ad1aa30e01"
+    },
+    {
+      "id": "15-hotdaily-metadata",
+      "url": "https://api.github.com/repos/Done-0/hotdaily-skill",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "08e554ea07bf25b50bf5ae155f36b65675239685315fb9bab87b5b6c55d54322"
+    },
+    {
+      "id": "16-digest-metadata",
+      "url": "https://api.github.com/repos/vigorX777/ai-daily-digest",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "f539e523bf65c821765d93c37d4f58a25189a94d1010478c69693ca5f87a30b9"
+    },
+    {
+      "id": "19-cloudflare-ai-daily",
+      "url": "https://github.com/justlovemaki/CloudFlare-AI-Insight-Daily",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "c045f96439f14c44f48d26c53ea42773a876cb790b4c465c0b8a4a101e650e72"
+    },
+    {
+      "id": "20-cloudflare-metadata",
+      "url": "https://api.github.com/repos/justlovemaki/CloudFlare-AI-Insight-Daily",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "bcac8e3a0727af2dd9057791409e46aa54f7193b66d23b31b4c5f3c677748733"
+    },
+    {
+      "id": "21-prismflow-metadata",
+      "url": "https://api.github.com/repos/justlovemaki/PrismFlowAgent",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "e30b547347150513dec6d6ac4e4f32c0b1c6638dd226deb0628b19300d86b798"
+    },
+    {
+      "id": "22-prismflow-readme",
+      "url": "https://github.com/justlovemaki/PrismFlowAgent",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "2d3a859185d2ce463214ebd72f85a8b95d3e5119e5a9411d4f881902555a9fed"
+    },
+    {
+      "id": "23-hextra-metadata",
+      "url": "https://api.github.com/repos/justlovemaki/Hextra-AI-Insight-Daily",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "5408d51cf1a12d3347314ec0255e2f563a9e58bdf3c5c8db677bcba0c3246d41"
+    },
+    {
+      "id": "24-hextra-readme",
+      "url": "https://github.com/justlovemaki/Hextra-AI-Insight-Daily",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "98e3a48ea80695b3d8f7a2fce311770cfd688a9a4259d55872330a41a97d71af"
+    },
+    {
+      "id": "25-prismflow-tree",
+      "url": "https://api.github.com/repos/justlovemaki/PrismFlowAgent/git/trees/main?recursive=1",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "fc73e08b5aacf27eeffbe9b1ebcf91f78acc817fcc45b838257fb5237957fd68"
+    },
+    {
+      "id": "27-horizon-config",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/main/docs/configuration.md",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "5f382955308a970f0dec76789e9862de5aa8b862345dd73f2f01253f011329f2"
+    },
+    {
+      "id": "28-horizon-tree",
+      "url": "https://api.github.com/repos/Thysrael/Horizon/git/trees/main?recursive=1",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "fd3c755bfece84901cf0bbaa97041aa121a0a4105376f0f68a51411aa6f7f63f"
+    },
+    {
+      "id": "29-horizon-compose",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/main/docker-compose.yml",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "740c164e99983ce769b37d91a86a70f951ed937c3fa6893edae9bb53de493a9f"
+    },
+    {
+      "id": "30-horizon-schedule",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/main/.github/workflows/daily-summary.yml.disabled",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "abe7e0e02ea269b205914a6567b250cae3a733964e1eb5cd5d751bd8ead7a82d"
+    },
+    {
+      "id": "31-horizon-storage",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/main/src/storage/manager.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "f00c4f7e3ee88cd73f263e36cadaa86878e6718e894a11fb015aa86659a8dce4"
+    },
+    {
+      "id": "32-horizon-orchestrator",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/main/src/orchestrator.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "1abcd88c5cd06879986a7b447cc16e8ef959c415e0d99f40adfeb72a5c948e57"
+    },
+    {
+      "id": "33-horizon-history",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/main/src/processing/history.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "48eb8e5b276580eba39ec89d9dc159941cee7e4ef5765ee83d6435cf36e2445b"
+    },
+    {
+      "id": "34-horizon-branch",
+      "url": "https://api.github.com/repos/Thysrael/Horizon/branches/main",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "c94040909a66b302e836c22e777635c30f0d65239b07d4f46c9700de61fa628f"
+    },
+    {
+      "id": "35-horizon-summarizer",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/src/ai/summarizer.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "2aed02fdcd1f1282ec21c1f19cdd0821c6739d5cb1d44dce29c5e7b9fe45ea83"
+    },
+    {
+      "id": "36-horizon-profile",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/profiles/tech-news/profile.json",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "ea2faff2d571d2bb421cf61c03346b70f4ae6d889047e32339684004e43ad401"
+    },
+    {
+      "id": "37-horizon-cli",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/src/main.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "163545186f56319faa63883529408f84fdbbe24e0f081a39a147539d3b516af2"
+    },
+    {
+      "id": "38-github-schedule",
+      "url": "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "7be8321b4fc0fb4c1170e294dc0b5cc7ea073927a53493d403f5b1ed63c3ce07"
+    },
+    {
+      "id": "39-cloudflare-pages",
+      "url": "https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": null,
+      "responseSha256": "19f29d94115c22409dacf6ac294d0e3ca8b4b0320270243b521118ef90d11098"
+    },
+    {
+      "id": "40-horizon-orchestrator-pinned",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/src/orchestrator.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "4d2bc9e81bb24b39786557f14f9e9df07e0f8fbbaca91b5f6c2e102dc8b0f044"
+    },
+    {
+      "id": "41-horizon-storage-pinned",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/src/storage/manager.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "82a77837f7b20fce3b53156f8aab9fade77560d87237a275b7370f6fc31ddf7e",
+      "verifiedExcerpts": [
+        "filename = f\"horizon-{date}-{language}.md\""
+      ]
+    },
+    {
+      "id": "42-horizon-models",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/src/models.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "15985eed495e83ea3a394c38dc7e4f97a9a1227d15f8b697fe7c1eb7b283d2fb",
+      "verifiedExcerpts": [
+        "analysis_concurrency: int = 1",
+        "enrichment_concurrency: int = 1",
+        "max_items: Optional[int] = Field(default=None, gt=0)"
+      ]
+    },
+    {
+      "id": "43-horizon-gh-config",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/data/config.github.json",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "b5b56602b504c7c8693c76c8ff88a3ef850e2aef2532d97b13d18f4a989074e4"
+    },
+    {
+      "id": "44-horizon-skill",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/skills/horizon/SKILL.md",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "d689898d22d7352a0167c630b8d25e17fda54b666fc10c3d63bb7d279f57c4b9"
+    },
+    {
+      "id": "45-horizon-skill-pipeline",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/skills/horizon/references/pipeline.md",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "b9a419642ea3b553ddcddc6bd43b149cb9856ef726d7bb865260a21cb49415ff"
+    },
+    {
+      "id": "46-horizon-skill-automation",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/skills/horizon/references/automation.md",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "88506e2e67ee0388b268cd401b241e157f54209f761e60c5afd3bc859809f980"
+    },
+    {
+      "id": "47-horizon-service",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/src/mcp/service.py",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "90623a3f68df15a56d9542b6517c3b7d3d922a6a54bcab69a7f3b554482311fa",
+      "verifiedExcerpts": [
+        "stage_for_summary = \"filtered\"",
+        "if enrich_result[\"status\"] != \"failure\":",
+        "date_str = datetime.now(timezone.utc).strftime(\"%Y-%m-%d\")"
+      ]
+    },
+    {
+      "id": "48-horizon-license",
+      "url": "https://raw.githubusercontent.com/Thysrael/Horizon/d7406f738c711df82b8f060fa1d5e9999d36cca0/LICENSE",
+      "fetchedSuccessfully": true,
+      "researchDate": "2026-11-06",
+      "pinnedRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "responseSha256": "59162354c771a1369193ba111b380633b0712351c1a4a57417133d9ea8be3831",
+      "verifiedExcerpts": [
+        "MIT License",
+        "Copyright (c) 2026 Thysrael"
+      ]
+    }
+  ]
+}

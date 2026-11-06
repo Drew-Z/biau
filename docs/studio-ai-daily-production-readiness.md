@@ -1,8 +1,10 @@
 # Studio / AI Daily 生产就绪记录
 
+2026-11-07：AI 日报采用 [Horizon 早晚刊](./ai-daily-horizon.md)。当前渠道以 SDK 流式调用完成真实新闻生成，最终首期经原文核对后获用户验收，已进入公开发布与早晚自动更新启用阶段；生产实证见 [上线记录](../.trellis/tasks/11-06-ai-daily-replanning/release.md)。旧 Studio 数据、Feed/Cron/生成开关和 attempt 16 失败记录继续保留。新链路使用独立 HORIZON 配置、Chat Completions 与内容分支，不复用下文旧三角色 Responses 审批链。
+
 这份记录用于收口 Content Studio 与 AI Daily 的生产边界。真实 token、数据库 URL、模型渠道和后台地址只保存在平台环境变量中；当前人工步骤以 [`docs/manual-gates.md`](./manual-gates.md) 为准。
 
-## 当前结论
+## 旧 Studio 链路结论
 
 - Studio-first 流程已建立：来源池 -> AI Daily issue -> `hidden + review-needed` 草稿 -> 人工审核 -> Publish Export -> 本地/CI 静态导出。
 - Studio 使用独立 `STUDIO_DATABASE_URL`，与公开助手匿名会话数据库分离。

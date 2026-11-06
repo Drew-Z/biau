@@ -1,0 +1,36 @@
+{
+  "ai": {
+    "provider": "openai",
+    "model": "deepseek-v4.1-flash",
+    "api_key_env": "HORIZON_API_KEY",
+    "temperature": 0.35,
+    "max_tokens": 2048,
+    "throttle_sec": 1,
+    "languages": ["zh"],
+    "analysis_concurrency": 1,
+    "enrichment_concurrency": 1
+  },
+  "processing": {
+    "profiles_dir": "profiles",
+    "default_profile": "ai-news",
+    "profile_settings": { "ai-news": { "threshold": 6, "topic_dedup": false } }
+  },
+  "sources": {
+    "github": [],
+    "hackernews": { "enabled": false },
+    "reddit": { "enabled": false },
+    "telegram": { "enabled": false },
+    "ossinsight": { "enabled": false },
+    "rss": [
+      { "name": "OpenAI News", "url": "https://openai.com/news/rss.xml", "enabled": true, "profile": "ai-news" },
+      { "name": "Google AI Blog", "url": "https://blog.google/technology/ai/rss/", "enabled": true, "profile": "ai-news" },
+      { "name": "Google DeepMind Blog", "url": "https://deepmind.google/blog/rss.xml", "enabled": true, "profile": "ai-news" }
+    ]
+  },
+  "collection": { "time_window_hours": 24 },
+  "digest": { "max_items": 5, "profile_order": ["ai-news"] },
+  "display": { "icon_style": "ascii" },
+  "webhook": { "enabled": false },
+  "email": null,
+  "wechat": { "enabled": false }
+}

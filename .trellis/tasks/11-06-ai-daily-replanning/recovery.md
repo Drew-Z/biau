@@ -1,0 +1,37 @@
+# 离线实施恢复点
+
+仓库：`D:/workspace4Cursor/blog-semi`；基线提交：`0e7547482daac76a53f8cb81ad2b3cd221b6435d`。
+
+实施前以下文件均无本地改动，可从该提交恢复本任务修改前状态，不另复制备份：
+
+- `package.json`
+- `src/pages/AiDailyPublicPage.tsx`
+- `src/pages/AiDailyPublicDetailPage.tsx`
+- `.env.example`
+- `docs/deployment.md`
+- `docs/manual-gates.md`
+- `docs/ai-daily-pipeline.md`
+- `docs/studio-ai-daily-production-readiness.md`
+- `.trellis/spec/backend/ai-daily-workflow.md`
+- `.trellis/tasks/07-17-ai-daily-production-pipeline/prd.md`
+- `.trellis/tasks/07-17-ai-daily-production-operations/task.json`
+
+本任务新增源码/配置/检查文件在基线不存在，具体清单见实施记录和 Git 状态。不修改私有配置；既有桌宠改动、未知未跟踪文件、旧 worktree 保留。规划材料是本任务创建的交付物，继续迭代。
+
+本轮临时运行目录：`C:/Users/zhang/AppData/Local/Temp/biau-horizon-impl-wqw6qp5x`，包含本轮下载的固定上游源码及隔离依赖/测试材料。验证结束后已按精确路径删除；同样删除本轮生成的 `scripts/horizon/__pycache__/run.cpython-312.pyc` 及其空目录，已停止本轮 5193 端口预览。没有扫描删除旧缓存。
+
+2026-11-06 收尾：日报新增文件、两张 UI 样例截图和验证说明是交付物；修改前已跟踪文件的完整恢复点为上述提交，本任务无需实体备份。临时 Git 仓库与原生 fixture run 已由各检查的 finally 清理。`.env.local` 未修改，未创建旁置备份，也未改生产配置。
+
+其他工作保留：桌宠源码/CSS/UI 脚本、`11-04-qinglong-eight-state`、`09-04-continuous-ui-quality-loop`、`public/pets/qinglong`、`public/biau-port-icon.svg`、`vendor/lingban-pet-runtime-0.1.0.tgz`，以及开始前已存在的 `D:/workspace4Cursor/blog-semi/ .trellis`、`D:/workspace4Cursor/blog-semi/undefined` 和历史 worktree。后两项用途不明，不删除。
+
+## 真实试跑与本地配置整理的恢复组
+
+沿用本任务恢复组：`D:/Agent/codex/backups/tasks/20261106T133109757Z-ai-daily-replanning/manifest.json`。
+
+- `scripts/horizon/run.py`、`check.py`、`config.json`：保留本轮诊断/预算/配置读取修改前的未提交版本。
+- `docs/ai-daily-horizon.md`、`.trellis/spec/backend/ai-daily-workflow.md`、`.env.example`：保留本轮续作修改前的版本。
+- `.env.local`：用户明确要求清理后，先将原 26 个渠道配置键的完整文件保存至恢复组，再改为空白填写模板。备份 SHA-256 与字节数记录在清单，使用受保护 ACL，权限不宽于源文件；不把密钥写清单/日志，不提交或上传备份。
+
+每个路径只保存本轮初次修改前基线，没有按调试次数重复建组。旧管理清单中 `.env.example` 的历史 SHA 不同，不是本轮相同内容的可复用备份。规划/验证/恢复记录为任务交付管理材料，不递归备份。
+
+本轮生成证据保留于 `D:/Agent/codex/artifacts/ai-daily/20261106T125615747Z-first-live-trial`；只含脱敏运行结果与模型目录，没有新闻样稿或凭据。临时源码/依赖目录 `C:/Users/zhang/AppData/Local/Temp/biau-horizon-trial-20261106T125615747Z` 及证据目录的一次性 `trial-state.json` 已在验证后按精确路径删除。没有删除旧目录、构建缓存、历史备份或其他任务文件。

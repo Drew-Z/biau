@@ -12,8 +12,15 @@ import { applySeo } from '../utils/seo'
 import { aiDailyInterfaceCopy, classifyAiDailyDetailError, formatAiDailyDate, type AiDailyDetailError } from '../data/aiDailyInterfaceCopy'
 import { useSiteLanguage } from '../hooks/useSiteLanguage'
 import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
+import { isDailyEditionId } from '../data/aiDailyEditions'
+import { AiDailyEditionPage } from './AiDailyEditionPage'
 
 export function AiDailyPublicDetailPage() {
+  const { publicId } = useParams<{ publicId: string }>()
+  return publicId && isDailyEditionId(publicId) ? <AiDailyEditionPage key={publicId} editionId={publicId} /> : <LegacyAiDailyPublicDetailPage />
+}
+
+function LegacyAiDailyPublicDetailPage() {
   const language = useSiteLanguage()
   const copy = aiDailyInterfaceCopy[language]
   const { publicId } = useParams<{ publicId: string }>()

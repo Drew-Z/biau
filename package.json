@@ -48,6 +48,8 @@
     "blog:plan": "node scripts/generate-blog-draft.mjs --list",
     "blog:draft": "node scripts/generate-blog-draft.mjs",
     "ai-daily:draft": "node scripts/generate-ai-daily-draft.mjs",
+    "ai-daily:editions-check": "tsx --tsconfig tsconfig.app.json scripts/check-ai-daily-editions.tsx && tsx scripts/check-ai-daily-publication.ts",
+    "ai-daily:editions-ui": "tsx scripts/check-ai-daily-editions-ui.ts",
     "blog:model": "node scripts/configure-blog-model.mjs",
     "blog:model:wizard": "node scripts/configure-blog-model.mjs setup",
     "blog:model:check": "node scripts/configure-blog-model.mjs doctor",

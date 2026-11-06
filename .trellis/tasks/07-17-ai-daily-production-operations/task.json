@@ -27,5 +27,7 @@
     "package.json"
   ],
   "notes": "Repository slice complete: sources are approved, Responses-only runtime and zero-call manual static selection are implemented, deterministic contracts pass, AI Daily migrations are deployed, and the approved runtime/Secret File/hash bundle has been delivered to Studio. The first live edition, Studio review/export, deployment observations, Cron/public-feed activation, observability routing, retention mutation, and sealed rollback/acceptance evidence remain manual gates.",
-  "meta": {}
+  "meta": {
+    "continuation": "2026-11-06: New morning/evening whole-edition workflow continues in 11-06-ai-daily-replanning using standalone Horizon. Legacy production acceptance failures and disabled generation/Cron/feed remain historical evidence, not a prerequisite for the new adapter."
+  }
 }
