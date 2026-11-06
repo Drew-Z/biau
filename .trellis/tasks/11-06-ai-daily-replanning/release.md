@@ -2,6 +2,12 @@
 
 日期：2026-11-07（Asia/Shanghai）。状态：发布进行中；生产检查完成后补充结果，不提前标记成功。
 
+## 首次部署与发现的运行时差异
+
+应用提交 `0bb99014` 已推送，Cloudflare 生产部署 `7aa4a7d9-0d1b-4ef9-ac2b-3d290e3de163` 成功，Site Quality 和 Actions 离线 validate（run `42302207548`）均通过。公开 API 首读为 502，自动开关仍关闭。Wrangler/workerd 重现 `Invalid redirect value`：Workers 不支持 Node 支持的 `redirect: error`，在访问内容源前就抛错。修复为 `manual` 并保留非 2xx 拒绝，新增重定向拒绝检查。实际公网验收仍须通过，编译/Node fixture 不替代运行时检查。
+
+本机 Python 访问 Pages 出现 403/browser_signature_banned；浏览器的默认域请求到达 Function 并得到固定 502 JSON，自定义域一次得到边缘 502 HTML。GitHub 原始内容为 200，哈希正确；这些路径差异分别记录，未关闭 TLS 或改网络设置。
+
 ## 授权与固定范围
 
 用户针对首期样稿验收提示回复“继续”，按此前确认的“首期验收后自动更新”执行首期发布、网站入口切换和 GitHub Actions 早晚任务。无需逐期审批。使用当前已验收 3 来源、20 输入、5 成稿、60 HTTP/60 秒请求/20 分钟整期预算，单并发、SDK retries=0，不扩大来源或模型范围。

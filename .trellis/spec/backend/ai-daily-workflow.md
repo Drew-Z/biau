@@ -25,6 +25,7 @@ New morning/evening editions run independently through pinned Horizon. The older
 - `publication.json` starts disabled. Bind first accepted id/hash and config hash before automation. Config hashing normalizes CRLF to LF. Generation has read permission; only publication has content write permission, without model credentials. Public content branch has no workflow files or raw runs.
 - Same-content retry is no-op; correction is explicit and increments revision while preserving first publishedAt and old files. Backfills never move latest backwards. Non-fast-forward conflicts fail; rerun publication with the same bundle, not generation.
 - Index <=2 MiB / 2048 editions; Markdown <=256 KiB. Full index stops publication, never deletes history implicitly. ETags follow revision/index changes. Browser retains loaded validated payload on refresh failure; cold loads show a real error.
+- Pages/Workers fixed-source reads use `redirect: 'manual'` and reject non-2xx responses. Workers rejects `redirect: 'error'` before network I/O, even though Node accepts it; Node fixtures and successful compilation alone cannot prove edge-runtime behavior. Never use `follow` to bypass this restriction for the fixed content reader.
 
 ### 4. Validation & Error Matrix
 

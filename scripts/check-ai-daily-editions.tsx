@@ -46,8 +46,9 @@ await assert.rejects(requirePublicationGate(evening, emptyIndex, gate))
 const env = { AI_DAILY_EDITIONS_ENABLED: 'true', AI_DAILY_CONTENT_REPOSITORY: 'fixture/example' }
 const req = new Request('https://site.example/api/ai-daily')
 let networkRequests = 0
-const fetcher: typeof fetch = async (input) => {
+const fetcher: typeof fetch = async (input, init) => {
   networkRequests += 1
+  assert.ok(init?.redirect === 'follow' || init?.redirect === 'manual', 'Workers rejects redirect:error before sending the request')
   const url = String(input)
   assert.ok(url.startsWith('https://raw.githubusercontent.com/fixture/example/refs/heads/codex/ai-daily-content/'))
   return url.endsWith('index.json') ? Response.json(second.index) : new Response(morning.markdown)
@@ -66,6 +67,15 @@ for (const body of ['{', JSON.stringify({ ...second.index, latestEditionId: 'bad
 }
 assert.equal((await readDailyEditions(req, env, morning.edition.editionId, { fetcher: async (url) => String(url).endsWith('index.json') ? Response.json(first.index) : new Response('wrong hash') })).status, 502)
 assert.equal((await readDailyEditions(req, env, undefined, { fetcher: async () => { throw new Error('private upstream error') } })).status, 502)
+let redirectRequests = 0
+const redirected = await readDailyEditions(req, env, undefined, { fetcher: async (_url, init) => {
+  redirectRequests += 1
+  assert.equal(init?.redirect, 'manual', 'A fixed content reader must not follow an upstream redirect')
+  return new Response(null, { status: 302, headers: { Location: 'https://untrusted.example/content' } })
+} })
+assert.equal(redirected.status, 502)
+assert.equal(redirectRequests, 1)
+assert.deepEqual(await redirected.json(), { error: 'daily-editions-unavailable' })
 
 const html = renderToStaticMarkup(createElement(AiDailyMarkdown, { markdown: morning.markdown + '\n<script>alert(1)</script><iframe src="https://evil.example"></iframe><svg onload="alert(1)"></svg>\n<img src="x" onerror="alert(1)"/>\n<a href="javascript:alert(1)" onclick="bad()" style="position:fixed">bad</a>\n[private](http://127.0.0.1/admin)\n' }))
 const $ = load(html)

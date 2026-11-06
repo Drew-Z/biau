@@ -16,7 +16,8 @@ export async function readDailyEditions(request: Request, env: DailyEditionsEnv,
   // This is a fixed public repository and branch, never a caller-supplied proxy URL.
   const base = `https://raw.githubusercontent.com/${repository}/refs/heads/codex/ai-daily-content/`
   async function read(path: string, max: number) {
-    const response = await fetcher(`${base}${path}`, { signal: controller.signal, redirect: 'error', headers: { Accept: 'text/plain' } })
+    // Workers supports manual/follow only. Reject 3xx via ok below, without following it.
+    const response = await fetcher(`${base}${path}`, { signal: controller.signal, redirect: 'manual', headers: { Accept: 'text/plain' } })
     if (!response.ok) throw new Error('daily-upstream-unavailable')
     const body = await readBoundedTextBody(response.body, max)
     if (!body.ok) throw new Error('daily-upstream-too-large')
