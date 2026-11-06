@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "editionId": "2026-11-06-evening",
+  "editionDate": "2026-11-06",
+  "slot": "evening",
+  "timezone": "Asia/Shanghai",
+  "language": "zh",
+  "title": "2026-11-06 AI 日报 · 晚报",
+  "itemCount": 1,
+  "revision": 1,
+  "sourceLinks": [
+    {
+      "title": "OpenAI 推出 BioBasicsBench 湿实验室 AI agent 基准",
+      "publisher": "OpenAI News",
+      "url": "https://openai.com/index/measuring-how-ai-agents-handle-wet-lab-science"
+    }
+  ],
+  "scheduledFor": "2026-11-06T12:00:00.000Z",
+  "generatedAt": "2026-11-06T20:53:01.693Z",
+  "publishedAt": "2026-11-06T21:48:52.212Z",
+  "updatedAt": "2026-11-06T21:48:52.212Z",
+  "windowStart": "2026-11-05T20:52:40.694Z",
+  "windowEnd": "2026-11-06T20:52:40.694Z",
+  "markdownPath": "editions/2026-11-06-evening/d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8.md",
+  "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8"
+}
