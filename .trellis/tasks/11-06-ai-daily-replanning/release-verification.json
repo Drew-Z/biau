@@ -1,0 +1,81 @@
+{
+  "checkedAt": "2026-11-06T23:23:57.717Z",
+  "modelCalls": 0,
+  "tlsValidationDisabled": false,
+  "api": [
+    {
+      "base": "https://biau.pages.dev",
+      "index": 200,
+      "detail": 200,
+      "conditional": 304,
+      "missing": 404,
+      "editionId": "2026-11-06-evening",
+      "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8",
+      "generatedAt": "2026-11-06T20:53:01.693Z",
+      "publishedAt": "2026-11-06T21:48:52.212Z",
+      "sources": 1
+    },
+    {
+      "base": "https://biau.playlab.eu.cc",
+      "index": 200,
+      "detail": 200,
+      "conditional": 304,
+      "missing": 404,
+      "editionId": "2026-11-06-evening",
+      "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8",
+      "generatedAt": "2026-11-06T20:53:01.693Z",
+      "publishedAt": "2026-11-06T21:48:52.212Z",
+      "sources": 1
+    }
+  ],
+  "ui": [
+    {
+      "width": 1440,
+      "language": "zh",
+      "theme": "morning",
+      "list": 200,
+      "detail": 200,
+      "reload": true,
+      "overflow": false,
+      "pageErrors": 0,
+      "security": {
+        "issuer": "WE1",
+        "protocol": "TLS 1.3",
+        "subjectName": "biau.playlab.eu.cc",
+        "validFrom": 1791427716,
+        "validTo": 1799207312
+      }
+    },
+    {
+      "width": 390,
+      "language": "en",
+      "theme": "stellar",
+      "list": 200,
+      "detail": 200,
+      "reload": true,
+      "overflow": false,
+      "pageErrors": 0,
+      "security": {
+        "issuer": "WE1",
+        "protocol": "TLS 1.3",
+        "subjectName": "biau.playlab.eu.cc",
+        "validFrom": 1791427716,
+        "validTo": 1799207312
+      }
+    }
+  ],
+  "release": {
+    "applicationCommit": "e6e16c8bfb0d22ce328e1a85bfedbd2cc4286dd1",
+    "contentCommit": "72c19e2e304a35938ae814d4acce0bcc472a4153",
+    "cloudflareDeployment": "6eaa1506-581a-465b-97e4-21f4900a4b57",
+    "validateRun": 42302207548,
+    "skipExistingRun": 42311723782,
+    "automationEnabled": true,
+    "cron": [
+      "0 0 * * *",
+      "0 12 * * *"
+    ],
+    "contentBranchBuildSkipped": true,
+    "newEditionRun": null
+  }
+}

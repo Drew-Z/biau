@@ -2,7 +2,7 @@
   "id": "ai-daily-replanning",
   "name": "ai-daily-replanning",
   "title": "AI 日报重新规划",
-  "description": "首期样稿已获用户继续授权，正在发布已验收期刊并接通 Cloudflare 入口和 GitHub Actions 早晚自动更新。",
+  "description": "首期与网站已上线，Cloudflare 读取兼容问题已修复，早晚自动开关已启用；云端 validate/重复期次跳过通过，等待首个新期次运行。",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -93,7 +93,8 @@
       "ai-daily-stellar-390.png",
       "first-live-trial.md",
       "gateway-research.md",
-      "gateway-evidence.json"
+      "gateway-evidence.json",
+      "release.md"
     ],
     "recovery": {
       "repository": "D:\\workspace4Cursor\\blog-semi",
@@ -121,7 +122,7 @@
       "latest": "Final native offline stream regressions, lint/build, editions/atomic publication and local preview passed; 10 authorized real-news calls completed. Final source review passed; no public release."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
-    "implementationState": "production-enablement-in-progress",
+    "implementationState": "live-awaiting-first-automated-edition",
     "configurationHash": "0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea",
     "recordedModelHttpRequests": 17,
     "firstTrialRequestCount": "not recorded by the original failure diagnostic; exact aggregate unknown",
@@ -175,6 +176,21 @@
       "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8",
       "configurationHash": "0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea",
       "scope": "Publish accepted first issue, configure GitHub/Cloudflare, enable twice-daily automatic updates within the verified 3-source/20-input/5-item budget."
+    },
+    "release": {
+      "applicationCommits": [
+        "0bb99014",
+        "e6e16c8b"
+      ],
+      "contentCommit": "72c19e2e304a35938ae814d4acce0bcc472a4153",
+      "cloudflareDeployment": "6eaa1506-581a-465b-97e4-21f4900a4b57",
+      "automationEnabled": true,
+      "workflowState": "active",
+      "offlineValidationRun": 42302207548,
+      "skipExistingRun": 42311723782,
+      "newEditionRun": null,
+      "productionReading": "both domains index/detail 200, ETag 304, unknown 404; 1440 zh and 390 en reload/overflow/pageerror passed",
+      "newModelCallsThisRelease": 0
     }
   }
 }

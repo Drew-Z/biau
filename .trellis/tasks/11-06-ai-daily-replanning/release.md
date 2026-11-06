@@ -1,6 +1,6 @@
 # Horizon 首期发布与自动更新
 
-日期：2026-11-07（Asia/Shanghai）。状态：发布进行中；生产检查完成后补充结果，不提前标记成功。
+日期：2026-11-07（Asia/Shanghai）。状态：首期与网站已发布，早晚自动开关已开启；等待首个新期次的云端运行结果。
 
 ## 首次部署与发现的运行时差异
 
@@ -33,3 +33,24 @@
 复用现有集中恢复组，增加 `publication.json` 的修改前基线，并保存仅含分支规则、3 项新公开变量的原状态和前一部署 ID 的 `cloudflare-horizon-settings-before.json`；不读取/备份无关 Secret 值。清单已校验 10 个实体基线。
 
 精确日报发布快照（HEAD + 本任务暂存文件）通过 lint、启用入口后的 build、Wrangler Functions 编译、期刊合同/原子发布/幂等/冲突保护、部署文档/门禁检查和 24 组阅读 UI。内容分支仅含 index、期刊元数据与 Markdown 三个文件，正文哈希核对通过，不包含 runtime/模型诊断。Cloudflare 该内容提交记录 is_skipped=true、skip_reason=branch_config，证明排除规则实际生效。公网与 Actions 验证待后续记录。桌宠、历史 UI 任务、未知目录和旧 worktree 不纳入本次提交。完整站点的历史 verify/UI 限制仍见 validation.md。
+
+## 网站与自动开关验证
+
+- 修复提交 `e6e16c8b`，Cloudflare 生产部署 `6eaa1506-581a-465b-97e4-21f4900a4b57` 成功；Site Quality run `42311479713` 成功。
+- 自定义域与 Pages 默认域的列表/首期详情均 200，ETag 条件请求 304，未知期次 404。公开正文 SHA-256 与已验收稿一致，保留原 generatedAt 与首次 publishedAt；未包含运行配置哈希/凭据。
+- 1440px 中文晨曦、390px 英文星空：列表、整期、原文入口、刷新恢复通过，无横向溢出或 pageerror。正文仍标注 zh-CN；自定义域 TLS 1.3 与正确域名证书通过，未关闭证书校验。
+- `AI_DAILY_AUTOMATION_ENABLED=true`，workflow state=active，cron 对应北京时间 08:00 / 20:00。
+- Actions `42311723782` 指定已发布首期：离线检查与 slot 判断成功，generation/artifact/publish 均 skipped，内容分支仍为 `72c19e2e`，新增模型调用 0。此结果证明云端读取、配置哈希与跳过规则；不冒充新一期真实生成证据。
+- 完整低敏公网证据与两张截图保存在正式本地 artifacts 的 `production-verification.json`、`production-1440-zh.png`、`production-390-en.png`。
+- 本地 workerd 在修复 redirect 后遇到自己的 remote internal error，未据此修改生产网络或放宽断言；实际两个生产域的成功请求才作为生产读取证据。
+
+## 暂停与恢复
+
+```powershell
+# 暂停后续生成；网站继续显示最后成功期刊。
+gh variable set AI_DAILY_AUTOMATION_ENABLED --repo Drew-Z/biau --body false
+# 恢复同一已验收配置下的定时。
+gh variable set AI_DAILY_AUTOMATION_ENABLED --repo Drew-Z/biau --body true
+```
+
+生成失败不自动重试整期，最后成功索引保持；待故障解除后使用 workflow_dispatch 指定已到期的 edition_id 补跑。若只发生发布失败，下载同一 bundle 重放 publish，避免再次调用模型。应用回滚可恢复先前 Cloudflare 部署并关闭前端入口；内容历史不删除、不强推。

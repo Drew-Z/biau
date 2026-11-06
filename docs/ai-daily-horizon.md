@@ -2,7 +2,7 @@
 
 本链路复用 [Thysrael/Horizon](https://github.com/Thysrael/Horizon/tree/d7406f738c711df82b8f060fa1d5e9999d36cca0)。源码不入本站，运行目录使用固定提交与其 `uv.lock`；Python 3.12、uv 0.11.3。`scripts/horizon/upstream.json` 保存版本和源码/依赖哈希，启动时拒绝版本漂移。许可见 [Horizon attribution](./horizon-license.txt)。
 
-2026-11-07 用户接受最终首期样稿，现按既定策略接通发布和早晚自动更新；执行状态见 [上线记录](../.trellis/tasks/11-06-ai-daily-replanning/release.md)。接入 SDK 流式聚合后，当前 DeepSeek 渠道的 10 次真实新闻调用均完成，单次 3.719–7.860 秒；最终从 2 条输入筛选出 1 条中文快讯。原文核对发现前两版把 RSS 信息缺失误写成原文未披露，已调整评分/摘要 profile，最终稿消除了此推断。此结果证明本次链路成功，不证明长期可靠性或广泛覆盖。此前 524 的具体故障层仍未确认；记录见 [首期试跑记录](../.trellis/tasks/11-06-ai-daily-replanning/first-live-trial.md)。
+2026-11-07 用户接受最终首期样稿，首期与网站已上线，早晚自动更新已启用；执行状态见 [上线记录](../.trellis/tasks/11-06-ai-daily-replanning/release.md)。接入 SDK 流式聚合后，当前 DeepSeek 渠道的 10 次真实新闻调用均完成，单次 3.719–7.860 秒；最终从 2 条输入筛选出 1 条中文快讯。原文核对发现前两版把 RSS 信息缺失误写成原文未披露，已调整评分/摘要 profile，最终稿消除了此推断。此结果证明本次链路成功，不证明长期可靠性或广泛覆盖。此前 524 的具体故障层仍未确认；记录见 [首期试跑记录](../.trellis/tasks/11-06-ai-daily-replanning/first-live-trial.md)。
 
 ## 首版自动运行配置和预算
 
@@ -82,4 +82,4 @@ npm.cmd exec -- tsx scripts/horizon/editions.ts preview --bundle "$taskTemp/edit
 
 ## 离线验收与上线限制
 
-检查覆盖早晚隔离、旧期补发、同内容幂等、修正版本、日期歧义、阶段失败、输入/请求/时间预算、首期 gate、API 超大/损坏/哈希、Markdown 安全，以及 320/390/430/1440 × 三主题 × 中英阅读矩阵。旧 payload/feed 检查继续用于兼容回归。真实来源、渠道内容、GitHub Secrets、分支权限、Cloudflare 分支排除和自动周期须在首期业务验收阶段确认。
+上线已验证两个生产域的列表/详情/ETag/未知期次、桌面与移动阅读，以及云端离线校验和重复期次跳过；首个新期次运行以 release.md 的实证为准。检查覆盖早晚隔离、旧期补发、同内容幂等、修正版本、日期歧义、阶段失败、输入/请求/时间预算、首期 gate、API 超大/损坏/哈希、Markdown 安全，以及 320/390/430/1440 × 三主题 × 中英阅读矩阵。旧 payload/feed 检查继续用于兼容回归。真实来源、渠道内容、GitHub Secrets、分支权限、Cloudflare 分支排除和自动周期须在首期业务验收阶段确认。
