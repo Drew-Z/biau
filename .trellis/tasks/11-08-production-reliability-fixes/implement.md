@@ -48,3 +48,19 @@
 - 健康修复后的 Reliability `42419035774` 中主站/助手已通过；本次仅 public-links 中一个外部入口超时，不能宣称整套巡检全绿。
 - Studio 部署 `dep-dbnq18m7bikc73d7qpeg` 在启动迁移失败。平台日志与 Supabase 项目状态共同确认原 Studio 数据库 INACTIVE，错误为 tenant/user not found；不是新依赖的兼容失败。已确认所属组织为 free 并恢复现有项目，未创建资源或启用旧 AI 日报生成开关；恢复和重部署结果待验证。
 - Studio 数据库现已 ACTIVE_HEALTHY；只读 SQL 确认可连接、19 个完成迁移、0 个失败迁移。恢复后部署 `dep-dbnqijrrjlhs739j79o0` 正在进行。
+
+### 最终验收（2026-11-08）
+
+- 四个工作提交已推送 main：`49d0747e`、`af391f20`、`f67975b2`、`f2bc34bc`。
+- Site Quality `42422003737` 成功；Reliability `42422027905` 为 8 passed / 0 failed / 1 skipped，报告 checkedAt 为 `2026-11-07T22:45:08.131Z`。主站助手第 2 次健康请求恢复，仍按 degraded 保留首次超时；跳过的是缺少 LEGAL_RAG_API_BASE_URL 的专项检查，不能当作该后端业务已验收。
+- RAG 由 push 自动触发 `dep-dbnqjgtg1s2s73fsc7g0` / `f2bc34bc`，已 live。Public RAG sync `42422003701` 成功且 skipped=true，checksum `746218d677fbad02a85be2deb2e29bf5cc277ffe4c190ac7877646af360f3cc3`、32 documents / 75 chunks；本次没有 POST 或 embedding。只读维护变量随后删除并确认，正常自动同步恢复。
+- Studio 恢复后的部署 `dep-dbnqijrrjlhs739j79o0` 已 live；GET health 为 200 / database=true，未授权 drafts 为 401 missing-studio-token。generation、business evaluation、public Feed、stage diagnostics 四个开关均 false。
+- 公开链接本地复检 46/46，云端最新 public-links 也通过。更早的外部链接超时保留为历史失败，不删除或改写。
+- Render 仍为原免费实例。助手恢复说明存在暂时不可用窗口，未通过购买实例或持续保活消除此延迟；本机后续一次代理 GET 仍超时，云端实际复检能恢复。没有进行生成质量或对话模型测活。
+
+### 后续独立范围
+
+- 数据库防护：三个较新 PublicAssistant 表的 RLS 与两个 trigger function 的 search_path；当前 anon/authenticated 权限已撤销，未发现此次公开泄漏证据，仍需独立迁移与本地数据库回归。
+- Horizon：保留既有自动早晚任务，等待修复后实际 schedule 运行验收；新旧日报 readiness/文档口径另在日报任务统一，本任务不触发真实模型。
+- 青珑发布候选已有另一会话的 `11-08-qinglong-release-candidate` 正在推进；原桌宠代码、资产、未跟踪目录全部保留，不合并其交付或代为发布。
+- Legal RAG 专项检查仍缺少仓库环境配置；公开链接可达不等于鉴权问答验收。APK 人工发布门禁继续保留。
