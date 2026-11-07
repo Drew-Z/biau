@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-07T08:54:42.230407+00:00",
+  "status": "cloud-collection-passed-model-trial-stopped",
+  "candidateCommit": "f03c970c8d83f951cbe9a90be5aaa15404cac103",
+  "engineRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+  "configurationHash": "ce9e1b6e8ecb94fffa99a5662c12b3a6fbbcf92a0c441911a72a1c8381f6517f",
+  "writingMode": "model-assisted bounded news trial; Codex review pending complete sample",
+  "model": "deepseek-v4.1-flash",
+  "sourceCount": 7,
+  "budget": {
+    "schemaVersion": 1,
+    "maxSources": 7,
+    "maxFetchedItems": 20,
+    "maxPublishedItems": 5,
+    "maxModelRequests": 60,
+    "maxPromptCharacters": 24000,
+    "maxOutputTokensPerRequest": 2048,
+    "requestTimeoutSeconds": 60,
+    "deadlineSeconds": 1200,
+    "sdkRetries": 0
+  },
+  "localCollection": {
+    "ok": true,
+    "operation": "collect",
+    "editionId": "2026-11-07-morning",
+    "scheduledFor": "2026-11-07T00:00:00.000Z",
+    "configurationHash": "ce9e1b6e8ecb94fffa99a5662c12b3a6fbbcf92a0c441911a72a1c8381f6517f",
+    "windowStart": "2026-11-06T08:48:27.928Z",
+    "windowEnd": "2026-11-07T08:48:27.928Z",
+    "fetched": 7,
+    "modelCalls": 0,
+    "sourceCounts": [
+      {
+        "publisher": "OpenAI News",
+        "items": 0
+      },
+      {
+        "publisher": "Google AI Blog",
+        "items": 0
+      },
+      {
+        "publisher": "Google DeepMind Blog",
+        "items": 0
+      },
+      {
+        "publisher": "Microsoft Research Blog",
+        "items": 0
+      },
+      {
+        "publisher": "NVIDIA Developer Blog",
+        "items": 2
+      },
+      {
+        "publisher": "GitHub Copilot Changelog",
+        "items": 4
+      },
+      {
+        "publisher": "MIT Technology Review AI",
+        "items": 1
+      }
+    ],
+    "sources": [
+      {
+        "title": "Speed Up Image Generation with FLUX 3 Image Klein on NVIDIA Blackwell GPUs",
+        "url": "https://developer.nvidia.com/blog/speed-up-image-generation-with-flux-3-image-klein-on-nvidia-blackwell-gpus/",
+        "publisher": "NVIDIA Developer Blog",
+        "publishedAt": "2026-11-06T22:20:20Z",
+        "contentChars": 1519
+      },
+      {
+        "title": "Accelerating Reinforcement Learning Weight Refit with the Reshard Collective",
+        "url": "https://developer.nvidia.com/blog/accelerating-reinforcement-learning-weight-refit-with-the-reshard-collective/",
+        "publisher": "NVIDIA Developer Blog",
+        "publishedAt": "2026-11-06T18:03:26Z",
+        "contentChars": 1221
+      },
+      {
+        "title": "Copilot code review: API management and review overview updates",
+        "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+        "publisher": "GitHub Copilot Changelog",
+        "publishedAt": "2026-11-07T00:27:19Z",
+        "contentChars": 5978
+      },
+      {
+        "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+        "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+        "publisher": "GitHub Copilot Changelog",
+        "publishedAt": "2026-11-06T22:17:28Z",
+        "contentChars": 3666
+      },
+      {
+        "title": "GitHub Copilot weekly releases — November 2",
+        "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+        "publisher": "GitHub Copilot Changelog",
+        "publishedAt": "2026-11-06T21:00:26Z",
+        "contentChars": 5389
+      },
+      {
+        "title": "@GitHub in Slack and Teams is generally available and more",
+        "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+        "publisher": "GitHub Copilot Changelog",
+        "publishedAt": "2026-11-06T20:31:08Z",
+        "contentChars": 2664
+      },
+      {
+        "title": "I watched a humanoid robot clean my apartment. It felt like a taste of the future.",
+        "url": "https://www.technologyreview.com/2026/11/06/1148090/i-watched-a-humanoid-robot-clean-my-apartment-it-felt-like-a-taste-of-the-future/",
+        "publisher": "MIT Technology Review AI",
+        "publishedAt": "2026-11-06T10:00:00Z",
+        "contentChars": 8177
+      }
+    ]
+  },
+  "cloudCollection": {
+    "runId": 42357229391,
+    "conclusion": "success",
+    "publish": "skipped",
+    "artifactCount": 0,
+    "result": {
+      "ok": true,
+      "operation": "collect",
+      "editionId": "2026-11-07-morning",
+      "scheduledFor": "2026-11-07T00:00:00.000Z",
+      "configurationHash": "ce9e1b6e8ecb94fffa99a5662c12b3a6fbbcf92a0c441911a72a1c8381f6517f",
+      "windowStart": "2026-11-06T08:52:22.064Z",
+      "windowEnd": "2026-11-07T08:52:22.064Z",
+      "fetched": 7,
+      "modelCalls": 0,
+      "sourceCounts": [
+        {
+          "publisher": "OpenAI News",
+          "items": 0
+        },
+        {
+          "publisher": "Google AI Blog",
+          "items": 0
+        },
+        {
+          "publisher": "Google DeepMind Blog",
+          "items": 0
+        },
+        {
+          "publisher": "Microsoft Research Blog",
+          "items": 0
+        },
+        {
+          "publisher": "NVIDIA Developer Blog",
+          "items": 2
+        },
+        {
+          "publisher": "GitHub Copilot Changelog",
+          "items": 4
+        },
+        {
+          "publisher": "MIT Technology Review AI",
+          "items": 1
+        }
+      ],
+      "sources": [
+        {
+          "title": "Speed Up Image Generation with FLUX 3 Image Klein on NVIDIA Blackwell GPUs",
+          "url": "https://developer.nvidia.com/blog/speed-up-image-generation-with-flux-3-image-klein-on-nvidia-blackwell-gpus/",
+          "publisher": "NVIDIA Developer Blog",
+          "publishedAt": "2026-11-06T22:20:20Z",
+          "contentChars": 1519
+        },
+        {
+          "title": "Accelerating Reinforcement Learning Weight Refit with the Reshard Collective",
+          "url": "https://developer.nvidia.com/blog/accelerating-reinforcement-learning-weight-refit-with-the-reshard-collective/",
+          "publisher": "NVIDIA Developer Blog",
+          "publishedAt": "2026-11-06T18:03:26Z",
+          "contentChars": 1221
+        },
+        {
+          "title": "Copilot code review: API management and review overview updates",
+          "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+          "publisher": "GitHub Copilot Changelog",
+          "publishedAt": "2026-11-07T00:27:19Z",
+          "contentChars": 5978
+        },
+        {
+          "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+          "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+          "publisher": "GitHub Copilot Changelog",
+          "publishedAt": "2026-11-06T22:17:28Z",
+          "contentChars": 3666
+        },
+        {
+          "title": "GitHub Copilot weekly releases — November 2",
+          "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+          "publisher": "GitHub Copilot Changelog",
+          "publishedAt": "2026-11-06T21:00:26Z",
+          "contentChars": 5389
+        },
+        {
+          "title": "@GitHub in Slack and Teams is generally available and more",
+          "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+          "publisher": "GitHub Copilot Changelog",
+          "publishedAt": "2026-11-06T20:31:08Z",
+          "contentChars": 2664
+        },
+        {
+          "title": "I watched a humanoid robot clean my apartment. It felt like a taste of the future.",
+          "url": "https://www.technologyreview.com/2026/11/06/1148090/i-watched-a-humanoid-robot-clean-my-apartment-it-felt-like-a-taste-of-the-future/",
+          "publisher": "MIT Technology Review AI",
+          "publishedAt": "2026-11-06T10:00:00Z",
+          "contentChars": 8177
+        }
+      ]
+    }
+  },
+  "generation": {
+    "ok": false,
+    "outcome": "failed",
+    "error": "model-stage-failed",
+    "diagnostics": {
+      "stage": "score",
+      "modelCalls": 2,
+      "elapsedSeconds": 65.41,
+      "failure": {
+        "category": "provider-edge-timeout",
+        "httpStatus": 524
+      },
+      "usage": {
+        "total_input_tokens": 953,
+        "total_output_tokens": 1178,
+        "per_provider": {
+          "openai": {
+            "input_tokens": 953,
+            "output_tokens": 1178
+          }
+        }
+      },
+      "usageCoverage": {
+        "reportedRequests": 1,
+        "unknownRequests": 1
+      },
+      "attempts": [
+        {
+          "number": 1,
+          "stage": "score",
+          "httpStatus": 200,
+          "requestId": null,
+          "edgeTraceId": null,
+          "headersSeconds": 22.922,
+          "firstChunkSeconds": 22.937,
+          "elapsedSeconds": 32.266,
+          "finishReason": "stop",
+          "usage": {
+            "prompt_tokens": 953,
+            "completion_tokens": 1178,
+            "total_tokens": 2131
+          },
+          "outcome": "complete"
+        },
+        {
+          "number": 2,
+          "stage": "score",
+          "httpStatus": 524,
+          "requestId": null,
+          "edgeTraceId": null,
+          "headersSeconds": 31.796,
+          "firstChunkSeconds": null,
+          "elapsedSeconds": 31.796,
+          "finishReason": null,
+          "usage": null,
+          "outcome": "provider-edge-timeout"
+        }
+      ]
+    }
+  },
+  "trialInputMetadata": [
+    {
+      "title": "Speed Up Image Generation with FLUX 3 Image Klein on NVIDIA Blackwell GPUs",
+      "url": "https://developer.nvidia.com/blog/speed-up-image-generation-with-flux-3-image-klein-on-nvidia-blackwell-gpus/",
+      "publisher": "NVIDIA Developer Blog",
+      "publishedAt": "2026-11-06T22:20:20Z",
+      "contentChars": 1519,
+      "contentSha256": "3a47a14033c15b3b53b14a2cfe081d8fbd193023c4c1807735d32959df9ad6f9"
+    },
+    {
+      "title": "Accelerating Reinforcement Learning Weight Refit with the Reshard Collective",
+      "url": "https://developer.nvidia.com/blog/accelerating-reinforcement-learning-weight-refit-with-the-reshard-collective/",
+      "publisher": "NVIDIA Developer Blog",
+      "publishedAt": "2026-11-06T18:03:26Z",
+      "contentChars": 1221,
+      "contentSha256": "c7a12d8830a650e20a3702bab320d365fd14833f83effea7b87f7a12e41d4116"
+    },
+    {
+      "title": "Copilot code review: API management and review overview updates",
+      "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-07T00:27:19Z",
+      "contentChars": 5978,
+      "contentSha256": "b6a56217809487fe6ffc50897458977f3fa62dcbc210f25f92c0a7f3dcec8b82"
+    },
+    {
+      "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+      "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-06T22:17:28Z",
+      "contentChars": 3666,
+      "contentSha256": "a9bd783994e52a24808f935ba2247e4cd6e707b385365782e273d684a7dc62e6"
+    },
+    {
+      "title": "GitHub Copilot weekly releases — November 2",
+      "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-06T21:00:26Z",
+      "contentChars": 5389,
+      "contentSha256": "b7fe432af258406544aa4cf8e6be3d7a0e6e80377ab850ebcdab8aa8b3733953"
+    },
+    {
+      "title": "@GitHub in Slack and Teams is generally available and more",
+      "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-06T20:31:08Z",
+      "contentChars": 2664,
+      "contentSha256": "628488c23c271e7cac7e8f9fd5db2f514465055689e2a4cca92bdaaf33988489"
+    },
+    {
+      "title": "I watched a humanoid robot clean my apartment. It felt like a taste of the future.",
+      "url": "https://www.technologyreview.com/2026/11/06/1148090/i-watched-a-humanoid-robot-clean-my-apartment-it-felt-like-a-taste-of-the-future/",
+      "publisher": "MIT Technology Review AI",
+      "publishedAt": "2026-11-06T10:00:00Z",
+      "contentChars": 8177,
+      "contentSha256": "2a0eb42f8eacfe2e1f509469b06b631d86505a805138254614b3543f1d5d6e7b"
+    }
+  ],
+  "outputCreated": false,
+  "productionChanged": false,
+  "validation": {
+    "nativeOffline": "passed",
+    "editionAndAtomicPublication": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "deploymentDocs": "passed",
+    "manualGatesDocs": "passed",
+    "trellisContext": "passed",
+    "diffCheck": "passed"
+  },
+  "limits": [
+    "No completed sample: media attribution and factual content not accepted",
+    "Second model request returned HTTP 524 before local 60-second deadline; exact upstream failure layer is unconfirmed",
+    "One completed usage report, one unknown request; do not infer zero billing for failed request",
+    "No generation retry or alternate model/channel was attempted",
+    "Seven-source configuration and updated profile have not been activated on main"
+  ]
+}

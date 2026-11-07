@@ -99,7 +99,8 @@
       "source-coverage-evidence.json",
       "source-expansion.candidate.json",
       "source-expansion-chinese.candidate.json",
-      "source-expansion.md"
+      "source-expansion.md",
+      "source-expansion-evidence.json"
     ],
     "recovery": {
       "repository": "D:\\workspace4Cursor\\blog-semi",
@@ -253,7 +254,7 @@
     },
     "sourceExpansion": {
       "consent": "User agreed to seven-source bounded sample and cloud collection validation, followed by activation on success",
-      "state": "candidate-validation",
+      "state": "cloud-collection-passed-model-trial-stopped",
       "branch": "codex/ai-daily-seven-sources",
       "configurationHash": "ce9e1b6e8ecb94fffa99a5662c12b3a6fbbcf92a0c441911a72a1c8381f6517f",
       "sources": 7,
@@ -261,9 +262,16 @@
       "maxPublishedItems": 5,
       "maxModelRequests": 60,
       "localCollected": 7,
-      "modelCalls": 0,
+      "modelCalls": 2,
       "productionChanged": false,
-      "plan": "source-expansion.md"
+      "plan": "source-expansion.md",
+      "candidateCommit": "f03c970c8d83f951cbe9a90be5aaa15404cac103",
+      "cloudCollectionRun": 42357229391,
+      "cloudCollected": 7,
+      "sampleCreated": false,
+      "error": "provider-edge-timeout",
+      "httpStatus": 524,
+      "evidence": "source-expansion-evidence.json"
     }
   }
 }

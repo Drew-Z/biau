@@ -53,3 +53,9 @@
 修改前任务记录、规范与 journal 均干净，恢复提交 `42e9e46fd3ca6ef066cf67229a94f90917e5d5e3`、仓库 `D:/workspace4Cursor/blog-semi` 与精确路径已记录到原集中 manifest。4 份 source-coverage / source-expansion 新交付物原不存在。当前生产源码、私有渠道、预算与验收 gate 未修改。
 
 本轮系统临时目录 `C:/Users/zhang/AppData/Local/Temp/biau-horizon-coverage-45f91030b9ae493597021db204885dee` 已清理：核验路径、无 reparse point、无引用进程后，按精确路径删除 8,148 个文件及 715 个子目录，包含上游隔离环境、一次性评估脚本与 RSS/网页/正文响应。另删除本轮收尾导入产生的 `scripts/horizon/__pycache__/run.cpython-313.pyc`。正式交付物仅保留配置候选、标题/来源/时间/计数和响应哈希；原有未知目录 ` .trellis/`、`undefined/`、桌宠工作及历史 worktree 保留。原集中恢复组 10 个实体基线重新校验通过。
+
+## 2026-11-07 七源受限验证恢复点
+
+复用同一集中恢复组，新增 `df5fc929b4e97e24ba3fb4d5fd52b709eaa3d7bc` 的 16 个干净已跟踪文件路径作为完整基线。候选代码提交 `f03c970c` 保留在 `codex/ai-daily-seven-sources`；本次样稿 2 请求后返回 524，无 bundle，无生产配置切换。主分支仅同步任务证据。
+
+本轮创建的 `C:/Users/zhang/AppData/Local/Temp/biau-horizon-seven-lja74emp` 经绝对路径、无 reparse point、无运行引用检查后已按精确路径删除，含 8,547 个文件和 714 个子目录：上游源码/锁定依赖、一次性 trial helper 与全文输入。正式记录只保留公开输入元数据、哈希、脱敏结果和云端 run ID。10 个原始实体恢复基线重新校验通过；任务未完成，恢复组继续保留。其他既有未知目录、桌宠改动及历史 worktree 保留。
