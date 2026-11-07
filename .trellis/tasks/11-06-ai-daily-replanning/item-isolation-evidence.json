@@ -226,5 +226,14 @@
     "build",
     "deployment docs",
     "manual gates docs"
-  ]
+  ],
+  "candidateCommit": "7358b317daad95ec894649327f417c094f300851",
+  "cloudValidation": {
+    "runId": 42371575318,
+    "url": "https://github.com/Drew-Z/biau/actions/runs/42371575318",
+    "operation": "validate",
+    "conclusion": "success",
+    "publish": "skipped",
+    "realModelCalls": 0
+  }
 }

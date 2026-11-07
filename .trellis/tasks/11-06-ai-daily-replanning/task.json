@@ -290,7 +290,9 @@
       "remainingAuthorizedRequests": 53,
       "scoreSucceeded": 2,
       "scoreFailed": 3,
-      "productionSwitched": false
+      "productionSwitched": false,
+      "cloudValidationRun": 42371575318,
+      "cloudValidation": "success"
     }
   }
 }

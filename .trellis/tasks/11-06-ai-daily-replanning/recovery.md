@@ -6,7 +6,7 @@
 
 本次真实试跑原生产物保存在 `D:/Agent/codex/artifacts/ai-daily/20261107-item-isolation/`：包含 2 个成功评分、3 个失败记录、冻结输入和脱敏请求账本，`artifacts.json` 记录文件哈希。这是生成过程的正式本地产物，不是源码/凭据备份；未上传到公开仓库或 Actions artifact。累计失败达到阈值，检查点保持停止，不能用恢复选项重置预算。原候选轮累计 7 请求，剩余授权额度 53。
 
-临时源码/依赖目录 `C:/Users/zhang/AppData/Local/Temp/horizon-item-isolation-77d3fa9416d9407a92de4a2982da86d3` 在云端验证及收尾后清理；运行产物已移出该目录保留。旧桌宠/未知目录/worktree 均不处理。
+临时源码/依赖目录 `C:/Users/zhang/AppData/Local/Temp/horizon-item-isolation-77d3fa9416d9407a92de4a2982da86d3` 已在云端检查通过后清理：核对无 reparse point/运行引用后按精确路径移除 8,542 个临时文件。运行产物已移出该目录保留。旧桌宠/未知目录/worktree 均保留。
 
 仓库：`D:/workspace4Cursor/blog-semi`；基线提交：`0e7547482daac76a53f8cb81ad2b3cd221b6435d`。
 

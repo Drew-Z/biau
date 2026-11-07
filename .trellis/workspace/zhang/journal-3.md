@@ -1849,3 +1849,40 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - 先解决或确认模型渠道的 524，再继续受限样稿核对；通过后才更新配置验收 hash 并合并候选。既有已验收三源周期按原授权运行。
+
+
+## Session 152: Horizon 条目失败隔离与原生检查点恢复
+
+**Date**: 2026-11-07
+**Task**: Horizon 条目失败隔离与原生检查点恢复
+**Branch**: `codex/ai-daily-seven-sources`
+
+### Summary
+
+保留思考和渠道，按单项调用原生 Horizon，增加明确遗漏账本、连续2/累计3失败中止及累计预算恢复。断网原生、期刊/原子发布、lint/build及文档检查通过，Actions 42371575318 validate成功且零模型/零artifact/publish skipped。真实5请求为524/成功/524/成功/524，保存2个成功结果并按累计阈值停止，原候选轮累计7次、剩余53；七源未上线，AC12继续in_progress。本轮临时源码已清理，正式运行产物集中保留。
+
+### Main Changes
+
+- 单条原生调用与失败隔离；成功产物及冻结输入落盘。
+- 发布端核对遗漏与完整条目；部分成功附真实数量说明。
+- 鉴权/额度/限流、连续或累计失败与预算中止保持可验证。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7358b317` | fix(ai-daily): isolate failed items and preserve bounded progress |
+
+### Testing
+
+- [OK] 原生断网、期刊/原子发布、lint/build、部署/门禁文档。
+- [OK] Actions 42371575318 Linux 离线检查；零模型/零 artifact。
+- [LIMIT] 真实 5 请求累计 3 次 524，阈值中止，无完整刊物。
+
+### Status
+
+[IN PROGRESS] **候选修复完成；七源内容验收及 AC12 未完成**
+
+### Next Steps
+
+- 渠道具备稳定交付条件后，用剩余授权额度继续真实样稿；不重发本次失败项、不清除停止状态。合格样稿核对后再更新验收 hash/合并生产。

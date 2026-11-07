@@ -25,3 +25,5 @@
 原生断网回归涵盖评分/摘要首中末失败、原生 schema repair 拦截、硬错误/连续/累计中止、全部失败、进程中断恢复、冻结输入/成功产物/配置/窗口漂移和累计额度。期刊与原子发布检查、lint/build、部署/人工门禁文档检查通过。七源样稿及自动发布验收尚未完成；生产继续使用原三源配置。
 
 结构化证据见 [item-isolation-evidence.json](item-isolation-evidence.json)。原生成功结果和脱敏诊断保存为本地运行交付物，公开仓库只保留数量、公开来源、哈希及结论。
+
+候选修复提交 `7358b317` 已推送。[Actions 42371575318](https://github.com/Drew-Z/biau/actions/runs/42371575318) 的 Linux 原生断网及期刊/原子发布检查通过，operation=validate，真实模型请求 0，publish skipped。主分支验收 hash 未更新；自动周期与完整七源样稿仍待验收，总任务保持 in_progress。

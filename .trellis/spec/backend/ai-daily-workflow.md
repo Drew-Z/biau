@@ -9,6 +9,7 @@ New morning/evening editions run independently through pinned Horizon. The older
 ### 2. Signatures
 
 - `scripts/horizon/run.py validate|collect|generate --horizon-path ... --edition-id YYYY-MM-DD-morning|evening` uses the native `HorizonPipelineService` also used by its skill helper.
+- `generate --output <new-file> --checkpoint <local-directory> --resume` resumes frozen source items and cumulative budget, never refreshes collection or retries attempted items. Checkpoints must be outside the repository.
 - `packageEdition(bundle, publishedAt)` projects a completed native run into the shared public `DailyEditionDetail` contract.
 - `planPublication(index, detail, correction=false)` is pure; `publish` writes an isolated Git index and one non-force content-branch commit.
 - `GET /api/ai-daily` and `/api/ai-daily/editions/:editionId` are same-origin Pages reads with fixed repository/branch targets.
@@ -38,6 +39,8 @@ New morning/evening editions run independently through pinned Horizon. The older
 | Partial RSS failure, unaccounted null score, inconsistent counts, filtered summary, limit exceeded | No publish; last index unchanged |
 | Isolated model item failure, >=50% successful per stage, >=1 complete qualified item | Publish complete subset with accurate omission notice |
 | No complete model items | Successful skip/no-complete-items, no bundle or publish |
+| HTTP 200 SSE with known auth/quota/rate-limit error code | Hard stop, even though HTTP status is 200 |
+| Checkpoint input/config/adapter/output drift, expiry, or saved stop | Reject resume before any new model request |
 | Fully successful empty input / fully scored but zero selected | Successful skip, no bundle/enrichment/publish; explicit reason and actual usage |
 | Late schedule crosses next slot | Stop; require explicit manual edition |
 | Incomplete upload or branch conflict | Atomic Git ref remains unchanged |
@@ -57,7 +60,7 @@ Good: evening appends alongside morning. Base: no successful content yields hone
 
 ### 7. Wrong vs Correct
 
-Native checks also distinguish successful empty input from empty partial failure, verify no-qualified-input stops after scoring, preserve input limit rejection, and trace CLI outcome through the actual workflow's preview/upload/publish conditions. Success summaries use this run's HTTP attempt usage; do not sum process-global native usage across invocations or turn unknown usage into a zero-cost claim.
+Native checks also distinguish successful empty input from empty partial failure, verify no-qualified-input stops after scoring, preserve input limit rejection, and trace CLI outcome through the actual workflow's preview/upload/publish conditions. Isolation checks cover first/middle/last scoring and enrichment failure, hard failures including auth/quota inside HTTP 200 streams, native schema-repair interception, consecutive/total stop, abrupt process loss, drift/expiry rejection and request-cap inheritance. Success summaries use this run's HTTP attempt usage; do not sum process-global native usage across invocations or turn unknown usage into a zero-cost claim.
 
 Wrong: publish a dated Horizon file on exit 0, or copy main into the content branch. Correct: use the run-specific summary, validate all stages, create content-only immutable files and move the public index in one non-force Git commit. Runtime/pause/correction instructions: `docs/ai-daily-horizon.md`.
 
