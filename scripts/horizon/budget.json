@@ -8,5 +8,9 @@
   "maxOutputTokensPerRequest": 2048,
   "requestTimeoutSeconds": 60,
   "deadlineSeconds": 1200,
-  "sdkRetries": 0
+  "sdkRetries": 0,
+  "maxConsecutiveItemFailures": 2,
+  "maxItemFailures": 3,
+  "minStageCompletionRatio": 0.5,
+  "checkpointMaxAgeHours": 12
 }

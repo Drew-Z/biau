@@ -24,21 +24,34 @@ export async function packageEdition(raw: unknown, publishedAt: string): Promise
   requireCondition(isDailyRecord(raw) && isDailyRecord(raw.checks) && isDailyRecord(raw.runtime), 'invalid-bundle')
   const budget = JSON.parse(await readFile(join(here, 'budget.json'), 'utf8'))
   const upstream = JSON.parse(await readFile(join(here, 'upstream.json'), 'utf8'))
+  const config = JSON.parse(await readFile(join(here, 'config.json'), 'utf8'))
   const c = raw.checks
   requireCondition(raw.schemaVersion === 1 && typeof raw.editionId === 'string' && isDailyEditionId(raw.editionId), 'invalid-edition')
   requireCondition(Array.isArray(raw.sourceLinks) && raw.sourceLinks.length > 0 && raw.sourceLinks.length <= budget.maxPublishedItems, 'invalid-source-count')
-  requireCondition(c.fetchStatus === 'success' && c.failedSources === 0 && Number.isSafeInteger(c.raw) && Number(c.raw) > 0 && Number(c.raw) <= budget.maxFetchedItems && c.scored === c.raw, 'incomplete-fetch-or-score')
-  requireCondition(c.enrichmentStatus === 'success' && c.failed === 0 && c.summaryStage === 'enriched' && c.language === 'zh', 'incomplete-enrichment-or-summary')
-  requireCondition(c.selected === raw.sourceLinks.length && Number(c.selected) <= Number(c.scored) && c.enriched === c.selected && c.itemsUsed === c.selected, 'incomplete-items')
+  requireCondition(['raw', 'scored', 'scoreFailed', 'selected', 'enriched', 'failed', 'itemsUsed'].every((key) => Number.isSafeInteger(c[key]) && Number(c[key]) >= 0), 'invalid-stage-counts')
+  requireCondition(c.fetchStatus === 'success' && c.failedSources === 0 && Number(c.raw) > 0 && Number(c.raw) <= budget.maxFetchedItems && Number(c.scored) + Number(c.scoreFailed) === c.raw, 'incomplete-fetch-or-score')
+  requireCondition(c.enrichmentStatus === (Number(c.failed) > 0 ? 'partial' : 'success') && c.summaryStage === 'enriched' && c.language === 'zh', 'incomplete-enrichment-or-summary')
+  requireCondition(c.enriched === raw.sourceLinks.length && Number(c.selected) <= Number(c.scored) && Number(c.selected) <= budget.maxPublishedItems && Number(c.enriched) + Number(c.failed) === c.selected && c.itemsUsed === c.enriched, 'incomplete-items')
+  requireCondition(Number(c.scored) / Number(c.raw) >= budget.minStageCompletionRatio && Number(c.enriched) / Number(c.selected) >= budget.minStageCompletionRatio, 'insufficient-stage-coverage')
+  const omissions = raw.runtime.omissions
+  const items = raw.runtime.items
+  requireCondition(raw.runtime.stopped === false && Array.isArray(omissions) && omissions.length === Number(c.scoreFailed) + Number(c.failed) && omissions.length < budget.maxItemFailures, 'invalid-omissions')
+  requireCondition(omissions.every((item) => isDailyRecord(item) && typeof item.id === 'string' && item.id && (item.stage === 'score' || item.stage === 'enrich')), 'invalid-omissions')
+  requireCondition(new Set(omissions.map((item) => item.id)).size === omissions.length && omissions.filter((item) => item.stage === 'score').length === c.scoreFailed && omissions.filter((item) => item.stage === 'enrich').length === c.failed, 'invalid-omissions')
+  const omittedIds = new Set(omissions.map((item) => item.id))
+  const sourceUrls = raw.sourceLinks.map((item) => isDailyRecord(item) ? item.url : null)
+  requireCondition(Array.isArray(items) && items.length === c.enriched && items.every((item, index) => isDailyRecord(item) && typeof item.id === 'string' && item.id && !omittedIds.has(item.id) && item.url === sourceUrls[index] && typeof item.score === 'number' && Number.isFinite(item.score) && item.score >= config.processing.profile_settings['ai-news'].threshold && item.score <= 10) && new Set(items.map((item) => item.id)).size === items.length, 'incomplete-published-items')
   requireCondition(raw.runtime.engineRevision === upstream.revision && raw.runtime.configurationHash === await configurationHash(), 'runtime-drift')
   requireCondition(Number.isSafeInteger(raw.runtime.requests) && Number(raw.runtime.requests) > 0 && Number(raw.runtime.requests) <= budget.maxModelRequests, 'request-budget-invalid')
   requireCondition(typeof raw.markdown === 'string' && raw.markdown.trim() && Buffer.byteLength(raw.markdown) <= DAILY_MARKDOWN_MAX_BYTES, 'invalid-markdown')
   // This is a publication check, independent of the browser's element/URL allowlist.
   requireCondition(!/(?:\bsk-[\w-]{12,}|Bearer\s+[\w.-]{12,}|-----BEGIN .*PRIVATE KEY|[A-Za-z]:[\\/](?:Users|workspace)|\b(?:API_KEY|BASE_URL)\s*[=:])/iu.test(JSON.stringify(raw.sourceLinks) + raw.markdown), 'private-content-rejected')
   requireCondition(!/<\s*\/?\s*(?:script|iframe|object|embed|svg|img|style|form)\b|(?:javascript|vbscript|data):/iu.test(raw.markdown), 'unsafe-markdown-rejected')
+  const markdown = omissions.length ? `${raw.markdown.trimEnd()}\n\n> 本期采集 ${c.raw} 条，完成评分 ${c.scored} 条，收录 ${c.enriched} 条。另有 ${c.scoreFailed} 条未完成评分、${c.failed} 条未完成摘要，均未收录。\n` : raw.markdown
+  requireCondition(Buffer.byteLength(markdown) <= DAILY_MARKDOWN_MAX_BYTES, 'invalid-markdown')
   const date = raw.editionId.slice(0, 10)
   const slot = raw.editionId.slice(11)
-  const contentSha256 = await dailySha256(raw.markdown)
+  const contentSha256 = await dailySha256(markdown)
   const edition = {
     schemaVersion: 1, editionId: raw.editionId, editionDate: date, slot, timezone: 'Asia/Shanghai', language: 'zh',
     title: `${date} AI 日报 · ${slot === 'morning' ? '早报' : '晚报'}`, itemCount: raw.sourceLinks.length,
@@ -46,7 +59,7 @@ export async function packageEdition(raw: unknown, publishedAt: string): Promise
     windowStart: raw.windowStart, windowEnd: raw.windowEnd, revision: 1, sourceLinks: raw.sourceLinks,
     markdownPath: `editions/${raw.editionId}/${contentSha256}.md`, contentSha256,
   }
-  const detail = await decodeDailyDetail({ edition, markdown: raw.markdown })
+  const detail = await decodeDailyDetail({ edition, markdown })
   requireCondition(detail, 'edition-contract-invalid')
   return detail
 }

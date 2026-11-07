@@ -100,7 +100,10 @@
       "source-expansion.candidate.json",
       "source-expansion-chinese.candidate.json",
       "source-expansion.md",
-      "source-expansion-evidence.json"
+      "source-expansion-evidence.json",
+      "nonthinking-validation.md",
+      "item-isolation.md",
+      "item-isolation-evidence.json"
     ],
     "recovery": {
       "repository": "D:\\workspace4Cursor\\blog-semi",
@@ -272,6 +275,22 @@
       "error": "provider-edge-timeout",
       "httpStatus": 524,
       "evidence": "source-expansion-evidence.json"
+    },
+    "itemIsolation": {
+      "consent": "2026-11-07: user approved isolated item failures while retaining thinking",
+      "status": "isolation-verified-cumulative-provider-failure-stopped",
+      "candidateConfigurationHash": "a1007572f36c1b5badfe66ce76ca15091de62ad97cd85238fccd078996fb3cc2",
+      "maxConsecutiveItemFailures": 2,
+      "maxItemFailures": 3,
+      "minStageCompletionRatio": 0.5,
+      "liveRequestCap": 58,
+      "modelOrThinkingChanged": false,
+      "liveRequests": 5,
+      "previousTrialRequests": 2,
+      "remainingAuthorizedRequests": 53,
+      "scoreSucceeded": 2,
+      "scoreFailed": 3,
+      "productionSwitched": false
     }
   }
 }

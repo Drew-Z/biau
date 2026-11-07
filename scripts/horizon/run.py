@@ -3,7 +3,6 @@ import argparse
 import asyncio
 import contextlib
 from contextvars import ContextVar
-from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 import hashlib
 import io
@@ -96,6 +95,8 @@ def require_fetch(result, raw, budget):
         raise ValueError("incomplete-fetch")
     if len(raw) > budget["maxFetchedItems"]:
         raise ValueError("over-budget-input")
+    if len({i["id"] for i in raw}) != len(raw):
+        raise ValueError("duplicate-input")
 
 
 def require_scored(raw, scored):
@@ -117,6 +118,10 @@ class RequestBudget:
         self.stage = "score"
         self.failure = None
         self.attempts = []
+        self.item = None
+        self.item_failure = None
+        self.persist = lambda: None
+        self.omissions = lambda: []
 
     def usage_coverage(self):
         known = sum(attempt["usage"] is not None for attempt in self.attempts)
@@ -132,6 +137,18 @@ class RequestBudget:
         if self.failure is None:
             self.failure = {"category": code, "httpStatus": http_status}
 
+    def fail(self, code, http_status=None):
+        recoverable = code in {"provider-edge-timeout", "request-timeout", "transport-error", "connection-error",
+                              "incomplete-model-stream", "invalid-model-result", "invalid-model-json",
+                              "provider-stream-error", "invalid-model-stream", "unexpected-model-content-type",
+                              "model-response-too-large", "invalid-item-output"}
+        recoverable |= code == "provider-http-error" and http_status is not None and 500 <= http_status <= 599
+        if self.item is not None and recoverable and not self.stopped:
+            if self.item_failure is None:
+                self.item_failure = {"category": code, "httpStatus": http_status}
+        else:
+            self.stop(code, http_status)
+
     def reserve(self, body):
         if (self.stopped or self.requests >= self.budget["maxModelRequests"]
                 or time.monotonic() - self.started >= self.budget["deadlineSeconds"]):
@@ -140,7 +157,17 @@ class RequestBudget:
         tokens = body.get("max_tokens", body.get("max_completion_tokens", 0))
         if not 0 < tokens <= self.budget["maxOutputTokensPerRequest"] or prompt_chars > self.budget["maxPromptCharacters"]:
             raise ValueError("model-request-over-budget")
+        previous = [a for a in self.attempts if self.item is not None and a.get("item") == self.item and a["stage"] == self.stage]
+        signature = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
+        if self.item_failure or any(a["outcome"] == "complete" for a in previous):
+            # Native schema-repair/tenacity may call again; never resend a possibly billed item.
+            self.fail("invalid-item-output")
+            raise ValueError("item-request-stopped")
+        if previous and (len(previous) >= 3 or any(a.get("requestHash") == signature for a in previous)):
+            self.stop("provider-http-error", previous[-1]["httpStatus"])
+            raise ValueError("item-request-stopped")
         self.requests += 1
+        return signature
 
 
 @contextlib.asynccontextmanager
@@ -149,7 +176,6 @@ async def guarded_client(budget, base_url):
     from openai import APIConnectionError, APIError, APIStatusError
     from src.ai import client as native
     from src.ai.errors import AIProviderUnavailableError
-    from src.ai.tokens import get_usage_snapshot
     original = native.AsyncOpenAI
     meter = RequestBudget(budget)
     clients = []
@@ -162,8 +188,9 @@ async def guarded_client(budget, base_url):
             return value
         return None
 
-    def reject(code):
-        meter.stop(code)
+    def reject(code, http_status=None):
+        if not meter.item_failure and not meter.failure:
+            meter.fail(code, http_status)
         raise AIProviderUnavailableError("bounded-model-request-stopped")
 
     class BoundedResponseStream(httpx.AsyncByteStream):
@@ -192,10 +219,13 @@ async def guarded_client(budget, base_url):
                 body = json.loads(request.content)
                 if body.get("stream") is not True or body.get("tools") or body.get("n", 1) != 1:
                     reject("unsupported-model-request")
-                meter.reserve(body)
+                signature = meter.reserve(body)
                 attempt, started = current_attempt.get()
                 attempt["number"] = meter.requests
+                attempt["requestHash"] = signature
                 meter.attempts.append(attempt)
+                # Persist the reservation BEFORE sending; a crash cannot reset paid/unknown usage.
+                meter.persist()
                 response = await self.inner.handle_async_request(request)
                 attempt["httpStatus"] = response.status_code
                 attempt["headersSeconds"] = round(time.monotonic() - started, 3)
@@ -203,9 +233,8 @@ async def guarded_client(budget, base_url):
                 ray = response.headers.get("cf-ray", "")
                 attempt["edgeTraceId"] = ray if re.fullmatch(r"[a-fA-F0-9]{16,32}-[A-Z]{3}", ray) else None
                 if response.status_code >= 300 and response.status_code not in (400, 422):
-                    meter.stop("provider-edge-timeout" if response.status_code == 524 else "provider-http-error", response.status_code)
                     await response.aclose()
-                    raise ValueError("provider-request-failed")
+                    reject("provider-edge-timeout" if response.status_code == 524 else "provider-http-error", response.status_code)
                 if response.status_code == 200 and response.headers.get("content-type", "").split(";", 1)[0].strip().lower() != "text/event-stream":
                     await response.aclose()
                     reject("unexpected-model-content-type")
@@ -220,8 +249,7 @@ async def guarded_client(budget, base_url):
                     code = str(error)
                 else:
                     code = "transport-failed"
-                meter.stop(code)
-                raise AIProviderUnavailableError("bounded-model-request-stopped") from None
+                reject(code)
 
         async def aclose(self):
             await self.inner.aclose()
@@ -233,9 +261,8 @@ async def guarded_client(budget, base_url):
                     return await super().request(*args, **kwargs)
             except Exception as error:
                 # OpenAI wraps transport errors; restore Horizon's stop-without-retry signal.
-                if meter.stopped or isinstance(error, (APIConnectionError, TimeoutError)):
-                    meter.stop("request-timeout" if isinstance(error, TimeoutError) else "connection-error")
-                    raise AIProviderUnavailableError("bounded-model-request-stopped") from None
+                if meter.stopped or meter.item_failure or isinstance(error, (APIConnectionError, TimeoutError)):
+                    reject("request-timeout" if isinstance(error, TimeoutError) else "connection-error")
                 raise
 
     class StreamingCompletions:
@@ -245,7 +272,7 @@ async def guarded_client(budget, base_url):
 
         async def create(self, **kwargs):
             started = time.monotonic()
-            attempt = {"number": None, "stage": meter.stage, "httpStatus": None, "requestId": None,
+            attempt = {"number": None, "stage": meter.stage, "item": meter.item, "httpStatus": None, "requestId": None,
                        "edgeTraceId": None, "headersSeconds": None, "firstChunkSeconds": None,
                        "elapsedSeconds": None, "finishReason": None, "usage": None, "outcome": "pending"}
             token = current_attempt.set((attempt, started))
@@ -298,6 +325,14 @@ async def guarded_client(budget, base_url):
                 elif isinstance(error, httpx.TransportError):
                     code = "transport-error"
                 elif isinstance(error, APIError):
+                    # Some compatible gateways put quota/auth failures inside HTTP 200 SSE.
+                    markers = {v for v in (error.code, error.type) if isinstance(v, str)}
+                    for status, known in ((402, {"insufficient_quota", "quota_exceeded"}),
+                                          (429, {"rate_limit_exceeded", "rate_limit_error"}),
+                                          (401, {"invalid_api_key", "authentication_error"}),
+                                          (403, {"permission_denied", "permission_error"})):
+                        if markers & known:
+                            reject("provider-http-error", status)
                     code = "provider-stream-error"
                 else:
                     code = "invalid-model-stream"
@@ -305,9 +340,11 @@ async def guarded_client(budget, base_url):
                 reject(code)
             finally:
                 attempt["elapsedSeconds"] = round(time.monotonic() - started, 3)
-                if meter.failure:
-                    attempt["outcome"] = meter.failure["category"]
+                failure = meter.failure or meter.item_failure
+                if failure:
+                    attempt["outcome"] = failure["category"]
                 current_attempt.reset(token)
+                meter.persist()
 
     def factory(**kwargs):
         client = BoundedSDK(**kwargs, max_retries=0, timeout=budget["requestTimeoutSeconds"], http_client=httpx.AsyncClient(transport=Transport(), timeout=budget["requestTimeoutSeconds"], follow_redirects=False))
@@ -322,10 +359,11 @@ async def guarded_client(budget, base_url):
     except (Exception, asyncio.CancelledError) as error:
         if meter.failure is None:
             code = "run-cancelled-or-deadline" if isinstance(error, asyncio.CancelledError) else "model-stage-error"
-            if isinstance(error, ValueError) and str(error) in ("incomplete-score", "incomplete-selection", "over-budget-selection", "incomplete-enrichment", "incomplete-summary", "chinese-content-required"):
+            if isinstance(error, ValueError) and str(error) in ("incomplete-score", "incomplete-selection", "over-budget-selection", "incomplete-enrichment", "incomplete-summary", "chinese-content-required", "insufficient-stage-coverage", "checkpoint-artifact-drift", "checkpoint-input-drift", "checkpoint-record-invalid"):
                 code = str(error)
             meter.stop(code)
-        raise StageRejected("model-stage-failed", {"stage": meter.stage, "modelCalls": meter.requests, "elapsedSeconds": round(time.monotonic() - meter.started, 2), "failure": meter.failure, "usage": asdict(get_usage_snapshot()), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts}) from None
+        meter.persist()
+        raise StageRejected("model-stage-failed", {"stage": meter.stage, "modelCalls": meter.requests, "elapsedSeconds": round(time.monotonic() - meter.started, 2), "failure": meter.failure, "usage": meter.reported_usage(), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts, "omissions": meter.omissions()}) from None
     finally:
         native.AsyncOpenAI = original
         for client in clients:
@@ -347,7 +385,7 @@ async def execute(args):
     sys.path.insert(0, str(root))
     from rich.console import Console
     from src.mcp.service import HorizonPipelineService
-    from src.ai.tokens import get_usage_snapshot
+    from item_runs import ItemRuns
     config = read_json(HERE / "config.json")
     budget = read_json(HERE / "budget.json")
     request_limit = getattr(args, "request_limit", None)
@@ -378,7 +416,8 @@ async def execute(args):
             raise ValueError("model-channel-unconfigured-or-drifted")
         os.environ["HORIZON_API_KEY"] = key
         config["ai"]["base_url"] = base_url
-    with tempfile.TemporaryDirectory(prefix="biau-horizon-run-") as temporary:
+    with contextlib.ExitStack() as resources:
+        temporary = resources.enter_context(tempfile.TemporaryDirectory(prefix="biau-horizon-run-"))
         work = Path(temporary)
         private_config = work / "config.json"
         private_config.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
@@ -390,9 +429,24 @@ async def execute(args):
         if args.operation == "validate":
             return {"ok": True, "operation": "validate", "configurationHash": configuration_hash(), "modelCalls": 0}
         edition = resolve_edition(args.edition_id, args.schedule, args.created_at)
-        fetched = await service.fetch_items(hours=24, **common)
-        run_id = fetched["run_id"]
-        raw = read_json(fetched["artifact"])
+        state = None
+        if live:
+            from filelock import FileLock
+            checkpoint = Path(getattr(args, "checkpoint", None) or str(output) + ".checkpoint").resolve()
+            if checkpoint.is_relative_to(HERE.parents[1]) or not checkpoint.parent.is_dir():
+                raise ValueError("checkpoint-must-be-outside-repository")
+            resources.enter_context(FileLock(str(checkpoint) + ".lock", timeout=0))
+            resume = getattr(args, "resume", False)
+            if checkpoint.exists() != resume:
+                raise ValueError("checkpoint-exists-use-resume" if checkpoint.exists() else "checkpoint-missing")
+            if resume:
+                service = HorizonPipelineService(runs_root=checkpoint, console=Console(file=io.StringIO()))
+                state = ItemRuns(service, edition, configuration_hash(), budget)
+                raw = state.raw
+                fetched = {**state.state["fetched"], "meta": {"since": state.state["windowStart"]}}
+        if state is None:
+            fetched = await service.fetch_items(hours=24, **common)
+            raw = read_json(fetched["artifact"])
         try:
             require_fetch(fetched, raw, budget)
         except ValueError as error:
@@ -420,44 +474,91 @@ async def execute(args):
                     "sources": [{"title": i["title"], "url": str(i["url"]), "publisher": i.get("metadata", {}).get("feed_name"),
                                  "publishedAt": i.get("published_at"), "contentChars": len(i.get("content") or "")} for i in raw]}
         result = {"ok": True, **edition, "outcome": "skipped", "stage": "fetch", "fetched": len(raw),
-                  "scored": 0, "selected": 0, "items": 0, "modelCalls": 0, "published": False,
+                  "scored": 0, "scoreFailed": 0, "selected": 0, "enrichmentFailed": 0, "items": 0, "modelCalls": 0, "published": False,
                   "reportedUsage": None, "usageCoverage": {"reportedRequests": 0, "unknownRequests": 0}}
         if not raw:
             return {**result, "reason": "no-input"}
-        async with guarded_client(budget, base_url) as meter:
-            scored = await service.score_items(run_id, **common)
-            require_scored(raw, read_json(scored["artifact"]))
+        if state is None:
+            service = HorizonPipelineService(runs_root=checkpoint, console=Console(file=io.StringIO()))
+            state = ItemRuns(service, edition, configuration_hash(), budget, fetched=fetched, raw=raw)
+        run_id = state.run_id
+
+        def valid_score(item, native_result, items):
+            if len(items) != 1 or items[0]["id"] != item["id"] or items[0]["url"] != item["url"] or native_result["scored"] != 1:
+                raise ValueError("incomplete-score")
+            try:
+                require_scored([item], items)
+                return True
+            except ValueError:
+                return False
+
+        def valid_enrichment(item, native_result, items):
+            if native_result["status"] == "failure" and native_result["failed"] == 1 and native_result["enriched"] == 0:
+                return False
+            if (native_result["status"] != "success" or native_result["failed"] != 0 or native_result["enriched"] != 1
+                    or len(items) != 1 or items[0]["id"] != item["id"] or items[0]["url"] != item["url"]):
+                raise ValueError("incomplete-enrichment")
+            try:
+                public_source(items[0])
+                return True
+            except (ValueError, KeyError, TypeError):
+                return False
+
+        async with contextlib.AsyncExitStack() as stack:
+            meter = await stack.enter_async_context(guarded_client(budget, base_url))
+            state.attach(meter)
+            await stack.enter_async_context(asyncio.timeout(budget["deadlineSeconds"] - (time.monotonic() - meter.started)))
+
+            def stats():
+                return {**result, "modelCalls": meter.requests, "reportedUsage": meter.reported_usage(),
+                        "usageCoverage": meter.usage_coverage(), "omissions": state.omissions()}
+
+            scored_items = await state.process("score", raw, common, valid_score, config["ai"].get("throttle_sec", 0))
+            score_failed = len(raw) - len(scored_items)
+            result.update(scored=len(scored_items), scoreFailed=score_failed, stage="score")
+            if not scored_items:
+                return {**stats(), "reason": "no-complete-items"}
+            if len(scored_items) / len(raw) < budget["minStageCompletionRatio"]:
+                raise ValueError("insufficient-stage-coverage")
+            service.run_store.save_items(run_id, "scored", scored_items)
             meter.stage = "filter"
             filtered = await service.filter_items(run_id, topic_dedup=False, **common)
             selected = filtered.get("kept")
             selected_items = read_json(filtered["artifact"])
-            if not isinstance(selected_items, list) or type(selected) is not int or selected < 0 or selected != len(selected_items) or selected > len(raw):
+            scored_ids = {i["id"] for i in scored_items}
+            threshold = config["processing"]["profile_settings"]["ai-news"]["threshold"]
+            if (not isinstance(selected_items, list) or type(selected) is not int or selected < 0 or selected != len(selected_items)
+                    or len({i["id"] for i in selected_items}) != selected
+                    or any(i["id"] not in scored_ids or i["processing"]["analysis"]["score"] < threshold for i in selected_items)):
                 raise ValueError("incomplete-selection")
             if selected > budget["maxPublishedItems"]:
                 raise ValueError("over-budget-selection")
             if selected == 0:
-                return {**result, "reason": "no-qualified-items", "stage": "filter", "scored": len(raw),
-                        "modelCalls": meter.requests, "reportedUsage": meter.reported_usage(), "usageCoverage": meter.usage_coverage()}
-            meter.stage = "enrich"
-            enriched = await service.enrich_items(run_id, **common)
-            if enriched["status"] != "success" or enriched["failed"] != 0 or enriched["enriched"] != filtered["kept"]:
-                raise ValueError("incomplete-enrichment")
+                return {**stats(), "reason": "no-qualified-items", "stage": "filter"}
+            result.update(selected=selected, stage="enrich")
+            items = await state.process("enrich", selected_items, common, valid_enrichment)
+            enrichment_failed = selected - len(items)
+            result.update(enrichmentFailed=enrichment_failed, items=len(items))
+            if not items:
+                return {**stats(), "reason": "no-complete-items"}
+            if len(items) / selected < budget["minStageCompletionRatio"]:
+                raise ValueError("insufficient-stage-coverage")
+            service.run_store.save_items(run_id, "enriched", items)
             meter.stage = "summary"
             summary = await service.generate_summary(run_id, language="zh", source_stage="enriched", save_to_horizon_data=False, **common)
-            if summary["source_stage"] != "enriched" or summary["items_used"] != filtered["kept"]:
+            if summary["source_stage"] != "enriched" or summary["items_used"] != len(items):
                 raise ValueError("incomplete-summary")
-            items = read_json(enriched["artifact"])
             bundle = {"schemaVersion": 1, **edition, "generatedAt": stamp(datetime.fromisoformat(summary["meta"]["summary_generated_at"])),
                       "windowStart": stamp(window_start), "windowEnd": stamp(window_start + timedelta(hours=24)),
                       "markdown": Path(summary["summary_path"]).read_text(encoding="utf-8"), "sourceLinks": [public_source(i) for i in items],
-                      "checks": {"fetchStatus": fetched["fetch_status"], "failedSources": fetched["fetch_report"]["failed"], "raw": len(raw), "scored": scored["scored"],
-                                 "selected": filtered["kept"], "enrichmentStatus": enriched["status"], "enriched": enriched["enriched"], "failed": enriched["failed"],
+                      "checks": {"fetchStatus": fetched["fetch_status"], "failedSources": fetched["fetch_report"]["failed"], "raw": len(raw), "scored": len(scored_items), "scoreFailed": score_failed,
+                                 "selected": selected, "enrichmentStatus": "partial" if enrichment_failed else "success", "enriched": len(items), "failed": enrichment_failed,
                                  "summaryStage": summary["source_stage"], "language": summary["language"], "itemsUsed": summary["items_used"]},
-                      "runtime": {"engineRevision": read_json(HERE / "upstream.json")["revision"], "configurationHash": configuration_hash(), "requests": meter.requests, "usage": asdict(get_usage_snapshot()), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts}}
+                      "runtime": {"engineRevision": read_json(HERE / "upstream.json")["revision"], "configurationHash": configuration_hash(), "requests": meter.requests, "usage": meter.reported_usage(), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts, "omissions": state.omissions(), "stopped": meter.stopped,
+                                  "items": [{"id": i["id"], "url": i["url"], "score": i["processing"]["analysis"]["score"]} for i in items]}}
         with output.open("x", encoding="utf-8", newline="\n") as target:
             target.write(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n")
-        return {**result, "outcome": "generated", "stage": "summary", "scored": len(raw), "selected": selected,
-                "items": len(items), "modelCalls": meter.requests, "reportedUsage": meter.reported_usage(), "usageCoverage": meter.usage_coverage()}
+        return {**stats(), "outcome": "generated", "stage": "summary"}
 
 
 def write_actions_result(result):
@@ -481,6 +582,8 @@ def main():
     parser.add_argument("--env-file")
     parser.add_argument("--output")
     parser.add_argument("--request-limit", type=int, help="Lower the configured request cap for an authorized continuation")
+    parser.add_argument("--checkpoint", help="Local checkpoint directory outside the repository; defaults to OUTPUT.checkpoint")
+    parser.add_argument("--resume", action="store_true", help="Resume the frozen inputs and cumulative budget, without repeating attempted items")
     parser.add_argument("--github-actions", action="store_true", help="Write generation outcome and sanitized job summary")
     args = parser.parse_args()
     if args.operation == "generate" and not args.output:

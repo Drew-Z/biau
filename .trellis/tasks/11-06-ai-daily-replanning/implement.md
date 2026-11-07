@@ -2,6 +2,10 @@
 
 状态：in_progress / live, awaiting qualified automatic publication。Horizon SDK 流式适配、失败停止与诊断已实现并验证，10 次真实新闻调用均成功；最终 1 条中文样稿已核对原文并获用户验收。首期、网站和早晚开关已上线；首个云端早报模型成功但筛选为空，未更新索引。待合格新一期验证 Actions 发布；执行证据见 [release.md](release.md)。
 
+## 当前续作：条目隔离
+
+已按用户批准的 [item-isolation.md](item-isolation.md) 实施运行边界、原生产物恢复和 Python/TypeScript 发布合同，断网回归、lint/build 通过。本次在剩余 58 请求上限内使用 5 次：524/成功/524/成功/524，累计失败阈值中止，2 项成功产物保存。生产切换仍待完整七源样稿通过；原轮累计 7 次、剩余 53。思考设置未改，不额外测活。
+
 ## 0. 规划审阅（本次）
 
 - [x] 将用户已确认决定与建议默认值集中到 PRD。

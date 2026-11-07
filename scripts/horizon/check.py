@@ -12,8 +12,14 @@ import sys
 import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
+from uuid import uuid4
 
-from run import HERE, MAX_MODEL_RESPONSE_BYTES, SCHEDULES, RequestBudget, StageRejected, configuration_hash, execute, guarded_client, main, read_json, require_fetch, require_scored, resolve_edition, verify_upstream
+from run import HERE, MAX_MODEL_RESPONSE_BYTES, SCHEDULES, RequestBudget, StageRejected, configuration_hash, execute as execute_run, guarded_client, main, read_json, require_fetch, require_scored, resolve_edition, verify_upstream
+
+
+async def execute(args):
+    # Every independent fixture is a new run; recovery fixtures call execute_run explicitly.
+    return await execute_run(SimpleNamespace(**{**vars(args), "checkpoint": str(Path(args.output).parent / uuid4().hex)}))
 
 
 def rejected(call):
@@ -82,7 +88,9 @@ async def check(root):
     model_requests = []
     response_streams = []
     failing = None
+    failure_plan = []
     score = 8
+    fetch_count = 1
 
     class FixtureStream(httpx.AsyncByteStream):
         def __init__(self, frames, failure):
@@ -113,56 +121,58 @@ async def check(root):
         return ("data: " + json.dumps(value, ensure_ascii=False) + "\n\n").encode("utf-8")
 
     async def response(request):
-        nonlocal failing
+        fault = failure_plan.pop(0) if failure_plan else failing
         model_requests.append(request)
         headers = {"x-request-id": "req_fixture0123456789", "cf-ray": "0123456789abcdef-SJC", "x-private-header": "private secret"}
-        if isinstance(failing, int):
-            return httpx.Response(failing, json={"error": "private response must not escape"}, headers=headers)
-        if failing == "timeout":
+        if isinstance(fault, int):
+            return httpx.Response(fault, json={"error": "private response must not escape"}, headers=headers)
+        if fault == "timeout":
             raise httpx.ReadTimeout("private endpoint must not escape")
-        if failing == "connection":
+        if fault == "connection":
             raise httpx.ConnectError("private endpoint must not escape")
-        if failing == "slow-headers":
+        if fault == "slow-headers":
             await asyncio.sleep(0.3)
         body = json.loads(request.content)
         assert body["stream"] is True and body["stream_options"] == {"include_usage": True}
-        if failing == "temperature-once" and "temperature" in body:
+        if fault == "temperature-once" and "temperature" in body:
             return httpx.Response(400, json={"error": {"message": "temperature is not supported"}}, headers=headers)
         prompt = body["messages"][0]["content"]
         if 'score' in prompt and 'reason' in prompt:
             result = {"score": score, "reason": "离线评分测试样例。", "summary": "离线模型测试样例。", "tags": ["AI"]}
         else:
             result = {"title": "离线样例：模型更新", "blocks": [{"id": "summary", "type": "section", "title": "摘要", "content": "这是一条离线测试资讯，不是真实新闻。模型能力与上线情况应以原文为准。", "source_refs": []}]}
-        if failing == "non-stream-response":
+        if fault == "invalid-schema":
+            result = {"unexpected": "valid JSON without required fields"}
+        if fault == "non-stream-response":
             return httpx.Response(200, json={"private": "not an SSE response"}, headers=headers)
         base = {"id": "fixture", "object": "chat.completion.chunk", "created": 1, "model": "fixture"}
         content = json.dumps(result, ensure_ascii=False)
-        if failing == "bad-json":
+        if fault == "bad-json":
             content = '{"summary":"unfinished'
-        if failing == "non-object-json":
+        if fault == "non-object-json":
             content = '[]'
-        if failing == "empty-result":
+        if fault == "empty-result":
             content = ''
         chunk = {**base, "choices": [{"index": 0, "delta": {"role": "assistant", "content": content}, "finish_reason": None}]}
-        reason = failing if failing in ("length", "content_filter", "tool_calls") else "stop"
+        reason = fault if fault in ("length", "content_filter", "tool_calls") else "stop"
         finish = {**base, "choices": [{"index": 0, "delta": {}, "finish_reason": reason}]}
         frames = [b": ping\n\n", sse(chunk), sse(finish)]
-        if failing != "no-usage":
+        if fault != "no-usage":
             frames.append(sse({**base, "choices": [], "usage": {"prompt_tokens": 100, "completion_tokens": 50, "total_tokens": 150}}))
         frames.append(b"data: [DONE]\n\n")
-        if failing == "no-finish":
+        if fault == "no-finish":
             frames = frames[:2]
-        if failing in ("sse-error", "midstream-error"):
-            error_frame = sse({"error": {"message": "private upstream body", "type": "server_error", "code": "fixture"}})
-            frames = [error_frame] if failing == "sse-error" else frames[:2] + [error_frame]
-        if failing == "unsafe-ids":
+        if fault in ("sse-error", "midstream-error", "insufficient_quota", "rate_limit_exceeded", "invalid_api_key", "permission_denied"):
+            error_frame = sse({"error": {"message": "private upstream body", "type": "server_error", "code": fault}})
+            frames = frames[:2] + [error_frame] if fault == "midstream-error" else [error_frame]
+        if fault == "unsafe-ids":
             headers.update({"x-request-id": "sk-private-credential", "cf-ray": "https://private.example/secret"})
-        stream = FixtureStream(frames, failing)
+        stream = FixtureStream(frames, fault)
         response_streams.append(stream)
         return httpx.Response(200, headers={**headers, "content-type": "text/event-stream"}, stream=stream)
 
     async def fetched(_self, _since):
-        return FetchResult(items=[ContentItem(id="rss-fixture", source_type="rss", title="离线样例", url="https://example.com/ai", content="离线模型新闻样例。", published_at=datetime.now(timezone.utc), profile="ai-news", metadata={"feed_name": "MIT Technology Review AI"})], successful=7)
+        return FetchResult(items=[ContentItem(id=f"rss-fixture-{i}", source_type="rss", title=f"离线样例 {i}", url=f"https://example.com/ai/{i}", content="离线模型新闻样例。", published_at=datetime.now(timezone.utc), profile="ai-news", metadata={"feed_name": "MIT Technology Review AI"}) for i in range(fetch_count)], successful=7)
 
     def no_network(*_args, **_kwargs):
         raise AssertionError("unexpected real network")
@@ -186,7 +196,7 @@ async def check(root):
             output, summary = Path(tmp) / 'actions-output', Path(tmp) / 'actions-summary'
             output.write_text('', encoding='utf-8')
             summary.write_text('', encoding='utf-8')
-            argv = ['run.py', 'generate', '--horizon-path', str(root), '--edition-id', args.edition_id, '--output', args.output, '--github-actions']
+            argv = ['run.py', 'generate', '--horizon-path', str(root), '--edition-id', args.edition_id, '--output', args.output, '--checkpoint', str(Path(tmp) / uuid4().hex), '--github-actions']
             loop = asyncio.get_running_loop()
             with patch.dict('os.environ', {'GITHUB_OUTPUT': str(output), 'GITHUB_STEP_SUMMARY': str(summary)}), patch.object(sys, 'argv', argv), contextlib.redirect_stdout(io.StringIO()) as captured:
                 # Reuse the loop created before network blocking; Windows loop setup uses socketpair.
@@ -332,10 +342,12 @@ async def check(root):
             assert meter.requests == 1
 
         # Native retry loops must preserve exact safe diagnostics without a draft.
-        for failing in (401, 429, 503, 524, "connection", "timeout"):
+        for failing in (401, 402, 403, 404, 429, 503, 524, "connection", "timeout"):
             requests_before_failure = len(model_requests)
             try:
-                await execute(args)
+                async with guarded_client(budget, "https://fixture.example/v1"):
+                    client = OpenAIClient(AIConfig(provider="openai", model="fixture", api_key_env="HORIZON_API_KEY", base_url="https://fixture.example/v1", max_tokens=2048))
+                    await client.complete(system="fixture", user="fixture")
             except StageRejected as error:
                 assert error.diagnostics["stage"] == "score"
                 assert error.diagnostics["modelCalls"] == 1
@@ -359,7 +371,9 @@ async def check(root):
                                   ("cancelled", "run-cancelled-or-deadline")]:
             before = len(model_requests)
             try:
-                await execute(args)
+                async with guarded_client(budget, "https://fixture.example/v1"):
+                    client = OpenAIClient(AIConfig(provider="openai", model="fixture", api_key_env="HORIZON_API_KEY", base_url="https://fixture.example/v1", max_tokens=2048))
+                    await client.complete(system="fixture", user="fixture")
             except StageRejected as error:
                 assert error.diagnostics["failure"]["category"] == expected, (failing, error.diagnostics)
                 assert error.diagnostics["modelCalls"] == 1
@@ -403,6 +417,210 @@ async def check(root):
                 assert runtime["attempts"][0]["outcome"] == "parameter-rejected"
             assert 'private' not in json.dumps(runtime)
             assert all(stream.closed for stream in response_streams)
+
+        # Exercise the actual native pipeline with a failure at each scoring position.
+        failing = None
+        fetch_count = 3
+        for position in range(3):
+            args.output = str(Path(tmp) / f'isolate-score-{position}.json')
+            failure_plan[:] = [None] * position + [524] + [None] * (2 - position)
+            before = len(model_requests)
+            value = await execute(args)
+            bundle = read_json(args.output)
+            assert value['outcome'] == 'generated' and value['scored'] == value['items'] == 2
+            assert value['scoreFailed'] == 1 and value['modelCalls'] == 5
+            assert len(model_requests) == before + 5 and not failure_plan
+            assert bundle['checks']['raw'] == 3 and bundle['checks']['scored'] == 2
+            assert bundle['runtime']['omissions'] == [{'stage': 'score', 'id': f'rss-fixture-{position}', 'category': 'provider-edge-timeout', 'httpStatus': 524}]
+            assert f'https://example.com/ai/{position}' not in bundle['markdown']
+            assert all(item['id'] != f'rss-fixture-{position}' for item in bundle['runtime']['items'])
+
+        # Enrichment errors also exclude the item, without borrowing its filtered summary.
+        for position in range(3):
+            args.output = str(Path(tmp) / f'isolate-enrich-{position}.json')
+            failure_plan[:] = [None] * (3 + position) + [524] + [None] * (2 - position)
+            before = len(model_requests)
+            value = await execute(args)
+            bundle = read_json(args.output)
+            omitted = bundle['runtime']['omissions'][0]
+            assert value['items'] == 2 and value['enrichmentFailed'] == 1 and value['modelCalls'] == 6
+            assert len(model_requests) == before + 6 and omitted['stage'] == 'enrich'
+            assert omitted['id'] not in {item['id'] for item in bundle['runtime']['items']}
+            assert bundle['checks']['enrichmentStatus'] == 'partial'
+            omitted_url = 'https://example.com/ai/' + omitted['id'].rsplit('-', 1)[1]
+            assert omitted_url not in bundle['markdown']
+
+        # Schema repair is intercepted before another potentially billed request.
+        args.output = str(Path(tmp) / 'invalid-schema-isolated.json')
+        failure_plan[:] = ['invalid-schema', None, None]
+        before = len(model_requests)
+        value = await execute(args)
+        assert value['items'] == 2 and value['modelCalls'] == 5 and len(model_requests) == before + 5
+        assert value['omissions'][0]['category'] == 'invalid-item-output'
+
+        # Hard errors and consecutive/cumulative failure thresholds stop later items.
+        for failures, count, category in [([None, code], 2, 'provider-http-error') for code in (401, 402, 403, 404, 429, 'insufficient_quota', 'rate_limit_exceeded', 'invalid_api_key', 'permission_denied')] + [
+            ([524, 524], 2, 'item-failure-threshold'),
+            ([524, None, 524, None, 524], 5, 'item-failure-threshold'),
+        ]:
+            fetch_count = 5
+            args.output = str(Path(tmp) / f'stopped-{uuid4().hex}.json')
+            args.checkpoint = str(Path(tmp) / uuid4().hex)
+            failure_plan[:] = failures
+            before = len(model_requests)
+            try:
+                await execute_run(args)
+            except StageRejected as error:
+                assert error.diagnostics['failure']['category'] == category, error.diagnostics
+                assert error.diagnostics['modelCalls'] == count
+            else:
+                raise AssertionError('run-wide failure did not stop')
+            assert len(model_requests) == before + count and not Path(args.output).exists()
+            assert read_json(Path(args.checkpoint) / 'edition/adapter.json')['meter']['stopped'] is True
+            args.resume = True
+            try:
+                await execute_run(args)
+            except StageRejected:
+                pass
+            else:
+                raise AssertionError('stopped checkpoint resumed requests')
+            assert len(model_requests) == before + count
+            args.resume = False
+
+        # All failures / no completed summary keep the previous public edition.
+        fetch_count = 1
+        for failures in ([524], [None, 524]):
+            args.output = str(Path(tmp) / f'empty-completion-{uuid4().hex}.json')
+            failure_plan[:] = failures
+            before = len(model_requests)
+            value = await execute(args)
+            assert value['outcome'] == 'skipped' and value['reason'] == 'no-complete-items'
+            assert len(model_requests) == before + len(failures) and not Path(args.output).exists()
+
+        # Simulate abrupt process loss after the second paid response but before recording
+        # its item result. Resume must use frozen sources and never repeat either request.
+        class ProcessLost(BaseException):
+            pass
+
+        original_score = HorizonPipelineService.score_items
+        scored_calls = 0
+        async def process_lost(self, *params, **kwargs):
+            nonlocal scored_calls
+            result = await original_score(self, *params, **kwargs)
+            scored_calls += 1
+            if scored_calls == 2:
+                raise ProcessLost()
+            return result
+
+        fetch_count = 3
+        args.output = str(Path(tmp) / 'resumed.json')
+        args.checkpoint = str(Path(tmp) / 'recoverable')
+        args.request_limit = 5
+        before = len(model_requests)
+        with patch.object(HorizonPipelineService, 'score_items', process_lost):
+            try:
+                await execute_run(args)
+            except ProcessLost:
+                pass
+            else:
+                raise AssertionError('fixture did not interrupt')
+        assert len(model_requests) == before + 2
+        args.resume = True
+        args.request_limit = None  # Must inherit the five-request cap, not the default sixty.
+        with patch.object(RSSScraper, 'fetch', no_network):
+            value = await execute_run(args)
+        assert value['outcome'] == 'generated' and value['modelCalls'] == 5 and value['items'] == 2
+        assert len(model_requests) == before + 5 and value['omissions'][0]['category'] == 'interrupted-item'
+        checkpoint = Path(args.checkpoint) / 'edition'
+        saved = read_json(checkpoint / 'adapter.json')
+        assert saved['requestLimit'] == 5 and saved['meter']['requests'] == 5
+
+        # Repackaging a complete checkpoint does not call a model or re-fetch sources.
+        args.output = str(Path(tmp) / 'repackaged.json')
+        with patch.object(RSSScraper, 'fetch', no_network):
+            value = await execute_run(args)
+        assert value['modelCalls'] == 5 and len(model_requests) == before + 5
+        args.output = str(Path(tmp) / 'drift-must-not-exist.json')
+        raw_path = checkpoint / 'raw_items.json'
+        saved_raw = raw_path.read_text(encoding='utf-8')
+        raw = json.loads(saved_raw)
+        raw[0]['content'] = 'Changed frozen source'
+        raw_path.write_text(json.dumps(raw), encoding='utf-8')
+        try:
+            await execute_run(args)
+        except ValueError as error:
+            assert str(error) == 'checkpoint-drift-or-expired'
+        else:
+            raise AssertionError('changed inputs accepted')
+        raw_path.write_text(saved_raw, encoding='utf-8')
+        saved['configurationHash'] = '0' * 64
+        (checkpoint / 'adapter.json').write_text(json.dumps(saved), encoding='utf-8')
+        try:
+            await execute_run(args)
+        except ValueError as error:
+            assert str(error) == 'checkpoint-drift-or-expired'
+        else:
+            raise AssertionError('changed configuration accepted')
+        assert len(model_requests) == before + 5 and not Path(args.output).exists()
+        args.resume = False
+
+        # Recovery rejects changed successful artifacts and expired frozen windows.
+        from item_runs import ItemRuns
+        saved['configurationHash'] = configuration_hash()
+        (checkpoint / 'adapter.json').write_text(json.dumps(saved), encoding='utf-8')
+        args.resume = True
+        success = next(entry for entry in saved['records']['score'].values() if entry['status'] == 'success')
+        artifact_path = Path(args.checkpoint) / success['runId'] / 'scored_items.json'
+        original_artifact = artifact_path.read_text(encoding='utf-8')
+        broken = json.loads(original_artifact)
+        broken[0]['processing']['analysis']['score'] = 0
+        artifact_path.write_text(json.dumps(broken), encoding='utf-8')
+        try:
+            await execute_run(args)
+        except ValueError as error:
+            assert str(error) == 'checkpoint-artifact-drift'
+        else:
+            raise AssertionError('changed successful artifact accepted')
+        artifact_path.write_text(original_artifact, encoding='utf-8')
+        saved['windowStart'] = (datetime.now(timezone.utc) - timedelta(hours=37)).isoformat()
+        (checkpoint / 'adapter.json').write_text(json.dumps(saved), encoding='utf-8')
+        try:
+            await execute_run(args)
+        except ValueError as error:
+            assert str(error) == 'checkpoint-drift-or-expired'
+        else:
+            raise AssertionError('expired checkpoint accepted')
+        assert len(model_requests) == before + 5
+        args.resume = False
+
+        # A saved success cannot reset a reduced request cap on continuation.
+        async def lost_after_success(self, stage, *params, **kwargs):
+            value = await original_process(self, stage, *params, **kwargs)
+            if stage == 'score':
+                raise ProcessLost()
+            return value
+
+        original_process = ItemRuns.process
+        fetch_count = 1
+        args.output = str(Path(tmp) / 'resume-budget.json')
+        args.checkpoint = str(Path(tmp) / 'resume-budget')
+        args.request_limit = 1
+        before = len(model_requests)
+        with patch.object(ItemRuns, 'process', lost_after_success):
+            try:
+                await execute_run(args)
+            except ProcessLost:
+                pass
+        assert len(model_requests) == before + 1
+        args.resume, args.request_limit = True, None
+        try:
+            await execute_run(args)
+        except StageRejected as error:
+            assert error.diagnostics['failure']['category'] == 'model-budget-exhausted'
+            assert error.diagnostics['modelCalls'] == 1
+        else:
+            raise AssertionError('resume reset budget')
+        assert len(model_requests) == before + 1 and not Path(args.output).exists()
 
     print(json.dumps({"ok": True, "nativePipeline": "passed", "realNetworkRequests": 0, "modelCalls": 0, "configurationHash": configuration_hash()}))
 

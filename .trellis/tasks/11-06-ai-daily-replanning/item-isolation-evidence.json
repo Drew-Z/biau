@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "checkedAtUtc": "2026-11-07T12:07:51.601891+00:00",
+  "status": "isolation-verified-cumulative-provider-failure-stopped",
+  "writingMode": "model-assisted bounded news trial; no complete sample",
+  "configurationHash": "a1007572f36c1b5badfe66ce76ca15091de62ad97cd85238fccd078996fb3cc2",
+  "adapterHash": "1b5e6db7c66cd5043566062fd9ab597fc5fd8876296d1802af1fe946b9e3e178",
+  "engineRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+  "model": "deepseek-v4.1-flash",
+  "thinkingChanged": false,
+  "budget": {
+    "schemaVersion": 1,
+    "maxSources": 7,
+    "maxFetchedItems": 20,
+    "maxPublishedItems": 5,
+    "maxModelRequests": 60,
+    "maxPromptCharacters": 24000,
+    "maxOutputTokensPerRequest": 2048,
+    "requestTimeoutSeconds": 60,
+    "deadlineSeconds": 1200,
+    "sdkRetries": 0,
+    "maxConsecutiveItemFailures": 2,
+    "maxItemFailures": 3,
+    "minStageCompletionRatio": 0.5,
+    "checkpointMaxAgeHours": 12
+  },
+  "requestLimit": 58,
+  "previousTrialRequests": 2,
+  "thisTrialRequests": 5,
+  "remainingAuthorizedRequests": 53,
+  "rawInputCount": 6,
+  "scoreSucceeded": 2,
+  "scoreFailed": 3,
+  "scoreNotAttempted": 1,
+  "bundleCreated": false,
+  "productionSwitched": false,
+  "result": {
+    "ok": false,
+    "outcome": "failed",
+    "error": "model-stage-failed",
+    "diagnostics": {
+      "stage": "score",
+      "modelCalls": 5,
+      "elapsedSeconds": 141.22,
+      "failure": {
+        "category": "item-failure-threshold",
+        "httpStatus": null
+      },
+      "usage": {
+        "prompt_tokens": 2323,
+        "completion_tokens": 1206,
+        "total_tokens": 3529
+      },
+      "usageCoverage": {
+        "reportedRequests": 2,
+        "unknownRequests": 3
+      },
+      "attempts": [
+        {
+          "number": 1,
+          "stage": "score",
+          "item": "rss:developer.nvidia.com_blog_feed_:c9ed833d50d62d6c",
+          "httpStatus": 524,
+          "requestId": null,
+          "edgeTraceId": null,
+          "headersSeconds": 32.015,
+          "firstChunkSeconds": null,
+          "elapsedSeconds": 32.015,
+          "finishReason": null,
+          "usage": null,
+          "outcome": "provider-edge-timeout",
+          "requestHash": "c29c8ee9a4b93f668decbddfbe34f70f0021346c698e80443141de1a073ddcb8"
+        },
+        {
+          "number": 2,
+          "stage": "score",
+          "item": "rss:developer.nvidia.com_blog_feed_:c675380112492605",
+          "httpStatus": 200,
+          "requestId": null,
+          "edgeTraceId": null,
+          "headersSeconds": 14.954,
+          "firstChunkSeconds": 14.969,
+          "elapsedSeconds": 21.266,
+          "finishReason": "stop",
+          "usage": {
+            "prompt_tokens": 855,
+            "completion_tokens": 832,
+            "total_tokens": 1687
+          },
+          "outcome": "complete",
+          "requestHash": "70e6ee3bfc419600aaff92678390ebb1868bcb54544f63bae35b6ac6f8a59247"
+        },
+        {
+          "number": 3,
+          "stage": "score",
+          "item": "rss:github.blog_changelog_label_copilot_feed_:cc9249299f5d778e",
+          "httpStatus": 524,
+          "requestId": null,
+          "edgeTraceId": null,
+          "headersSeconds": 33.281,
+          "firstChunkSeconds": null,
+          "elapsedSeconds": 33.281,
+          "finishReason": null,
+          "usage": null,
+          "outcome": "provider-edge-timeout",
+          "requestHash": "92057a7477afbc0f384688ed3d422d026e4b0c69485c3bd14566936fd53a88e7"
+        },
+        {
+          "number": 4,
+          "stage": "score",
+          "item": "rss:github.blog_changelog_label_copilot_feed_:a5fcc1255202f357",
+          "httpStatus": 200,
+          "requestId": null,
+          "edgeTraceId": null,
+          "headersSeconds": 15.75,
+          "firstChunkSeconds": 15.75,
+          "elapsedSeconds": 18.547,
+          "finishReason": "stop",
+          "usage": {
+            "prompt_tokens": 1468,
+            "completion_tokens": 374,
+            "total_tokens": 1842
+          },
+          "outcome": "complete",
+          "requestHash": "ae2762fdac08f1d3cc876da7863ac97139de6dc3d9171a21eb8e86f844a67b75"
+        },
+        {
+          "number": 5,
+          "stage": "score",
+          "item": "rss:github.blog_changelog_label_copilot_feed_:353c4d26111c8c91",
+          "httpStatus": 524,
+          "requestId": null,
+          "edgeTraceId": null,
+          "headersSeconds": 31.219,
+          "firstChunkSeconds": null,
+          "elapsedSeconds": 31.219,
+          "finishReason": null,
+          "usage": null,
+          "outcome": "provider-edge-timeout",
+          "requestHash": "8e2274f789e6d66929a3a0aa64d83bba01b0441c0e011f7802417920848473b5"
+        }
+      ],
+      "omissions": [
+        {
+          "stage": "score",
+          "id": "rss:developer.nvidia.com_blog_feed_:c9ed833d50d62d6c",
+          "category": "provider-edge-timeout",
+          "httpStatus": 524
+        },
+        {
+          "stage": "score",
+          "id": "rss:github.blog_changelog_label_copilot_feed_:cc9249299f5d778e",
+          "category": "provider-edge-timeout",
+          "httpStatus": 524
+        },
+        {
+          "stage": "score",
+          "id": "rss:github.blog_changelog_label_copilot_feed_:353c4d26111c8c91",
+          "category": "provider-edge-timeout",
+          "httpStatus": 524
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "id": "rss:developer.nvidia.com_blog_feed_:c9ed833d50d62d6c",
+      "title": "Speed Up Image Generation with FLUX 3 Image Klein on NVIDIA Blackwell GPUs",
+      "url": "https://developer.nvidia.com/blog/speed-up-image-generation-with-flux-3-image-klein-on-nvidia-blackwell-gpus/",
+      "publisher": "NVIDIA Developer Blog",
+      "publishedAt": "2026-11-06T22:20:20Z",
+      "inputSha256": "1d69f166ef1ae8398eef560230a531d7d7cb3560b34322949e130333891e4d7e",
+      "status": "failed"
+    },
+    {
+      "id": "rss:developer.nvidia.com_blog_feed_:c675380112492605",
+      "title": "Accelerating Reinforcement Learning Weight Refit with the Reshard Collective",
+      "url": "https://developer.nvidia.com/blog/accelerating-reinforcement-learning-weight-refit-with-the-reshard-collective/",
+      "publisher": "NVIDIA Developer Blog",
+      "publishedAt": "2026-11-06T18:03:26Z",
+      "inputSha256": "1eee2280c8d6ddd7dc80aa88e0039773c2d96abff8c9f336f0ee9a7b56e77a6e",
+      "status": "success"
+    },
+    {
+      "id": "rss:github.blog_changelog_label_copilot_feed_:cc9249299f5d778e",
+      "title": "Copilot code review: API management and review overview updates",
+      "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-07T00:27:19Z",
+      "inputSha256": "07b51abf7856b65de24ea7e004220cb170e7a30ce2cabe4b1390a5d5e8fcb797",
+      "status": "failed"
+    },
+    {
+      "id": "rss:github.blog_changelog_label_copilot_feed_:a5fcc1255202f357",
+      "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+      "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-06T22:17:28Z",
+      "inputSha256": "0ee331d8c300e715e2eba0536d490de11a4e065142126d3af054e6c554354606",
+      "status": "success"
+    },
+    {
+      "id": "rss:github.blog_changelog_label_copilot_feed_:353c4d26111c8c91",
+      "title": "GitHub Copilot weekly releases — November 2",
+      "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-06T21:00:26Z",
+      "inputSha256": "6e706183beb7d88c112f4b6d395017680a81603070f636ffe05ab85ffa6aa79e",
+      "status": "failed"
+    },
+    {
+      "id": "rss:github.blog_changelog_label_copilot_feed_:2b1caf305a698efd",
+      "title": "@GitHub in Slack and Teams is generally available and more",
+      "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+      "publisher": "GitHub Copilot Changelog",
+      "publishedAt": "2026-11-06T20:31:08Z",
+      "inputSha256": "75eaad920085d9552d331b0089c252412b2704e4e9ed3f74d8df6b29b3060662",
+      "status": "not-attempted"
+    }
+  ],
+  "offlineChecks": [
+    "native pinned pipeline and transport",
+    "publication/reader/safe markdown",
+    "atomic publication",
+    "lint",
+    "build",
+    "deployment docs",
+    "manual gates docs"
+  ]
+}

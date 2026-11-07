@@ -8,17 +8,19 @@
 
 - 来源：已在旧 manifest 启用的 OpenAI News、Google AI Blog、Google DeepMind Blog RSS；读取实际采集开始前 24 小时。上线前检查可达性和摘要使用边界。
 - 采集后最多 20 条去重输入，超过则停止，不自动截取或扩大预算；全部源成功且输入非空才能评分。
-- 完整采集但没有输入时返回 `outcome=skipped / reason=no-input`；所有输入评分完成但无达标项时返回 `skipped / no-qualified-items`。两者退出码为 0、不写 bundle、不调用后续模型、不更新公开索引；部分源失败、计数不一致、超预算和模型错误仍退出码 1。正常空结果不能诊断为渠道故障。
+- 完整采集但没有输入时返回 `outcome=skipped / reason=no-input`；成功评分中无达标项为 `no-qualified-items`，没有完整评分/摘要为 `no-complete-items`。均退出 0、不写 bundle、不更新公开索引。部分源失败、合同损坏、预算或整期中止仍退出 1；正常空结果不能诊断为渠道故障。
 - 明确指定 `ai-news` profile，避免额外分类调用；复用 Horizon URL 去重和评分筛选，关闭 AI 主题去重及搜索/history 工具。
 - RSS 可能只包含导语；评分 summary/reason 也只是模型判断。不能据此断言原文未公布方法、结果或价格。快讯允许 1–3 句，只写来源支持的事实，不为凑句数添加“尚未明确”。首期需核对原文，prompt 约束不等于事实正确的自动保证。
 - 最多 5 条中文成稿，单评分并发、单摘要并发。`digest.max_items` 不是请求预算。首版自动运行沿用通过验收的 3 个来源和该上限；15 条及更广来源属于后续覆盖扩展，须验证后调整配置。
 - 当前模型与用户本地填写一致，为 `deepseek-v4.1-flash`，OpenAI-compatible Chat Completions。用户已授权新填渠道的所有模型；短请求能返回不代表完整新闻生成链路已通过。当前不配置自动跨渠道 fallback，业务验证使用真实新闻，不使用 ping、空 prompt 或测活替代内容任务。
 - 整个运行最多 **60 次实际模型 HTTP 请求**（评分、格式修复、兼容重试合计）；单请求输入最多 24,000 个字符，输出参数最多 2,048 tokens；60 秒单请求、20 分钟总时限、SDK retries=0。达到请求/时间预算立即停止。输入字符上限不等于精确 token 计费，模型实际计费与思考 token 规则未知，不承诺金额上限。
-- 无重试正常路径最多 20 次评分 + 5 次中文摘要 = 25 次。上游评分每项最多 3 次尝试，每次最多一次修复；摘要最多一次格式修复且每次调用有内部重试。适配层在实际 HTTP 发送前计数，60 次总预算覆盖这些路径。400/422 仅保留上游有限兼容行为；401/403/429/5xx/传输失败立即停止，无整期自动重跑。
+- 无重试正常路径最多 20 次评分 + 5 次中文摘要 = 25 次。适配按单项调用原生 score/enrich，阻止上游 repair/tenacity 重发已完成或已失败项；明确 400/422 参数兼容最多 3 次且不得重复相同请求，全部实际 HTTP 都计入总预算。
+- 保留现有思考设置。单条 524/5xx、传输/请求超时、流和内容错误隔离后继续其他条目；连续 2 条或累计 3 次失败中止整期。401/402/403/429、其他非兼容 4xx、预算、取消、合同损坏立即停止。单次失败不等于渠道整体不可用。
+- 评分与摘要分别至少完成 50%，且至少有 1 条满足原评分线并完成摘要才能发布。`raw=scored+scoreFailed`、`selected=enriched+failed`，失败不伪装成低分；仅完整成功项进入原生 summary，发布端核对失败清单、条目 ID/分数/来源。部分成功时正文自动附上数量及遗漏说明。
 - HTTP SDK 会把 transport 的异常包装成连接异常；适配层恢复 Horizon 的 `AIProviderUnavailableError`，避免上游将预算/限流停止信号当作普通项错误继续重试。
 - 模型请求使用已有 SDK 的 `chat.completions.stream()` 聚合，保留 Horizon 完整响应接口和原生业务校验；不改上游源码或自写 SSE parser。每请求 60 秒覆盖响应头、完整流读取与最终聚合，响应字节最多 1 MiB；要求单 choice、`finish_reason=stop`、非空且可解析的 JSON object，拒绝 refusal/tool call、无终态 EOF、截断输出和流内错误。原生评分/摘要仍校验具体业务字段。
 - 失败输出含阶段、实际发送尝试数、经过秒数、固定类别、可得 HTTP 状态和请求级 `attempts`。每个 attempt 仅含安全的关联 ID、响应头/首片段/完成耗时、结束原因、已返回 token 和结果类别；只保留特定格式的 `x-request-id` / `cf-ray` 值，不输出任意响应头、地址、凭据或正文。这些诊断只留在本地运行记录，不投影到公开期刊。
-- `usageCoverage` 明确区分 `reportedRequests` 与 `unknownRequests`；未返回 usage 就是未知用量，不能将原生累计零值解释为零费用。HTTP 524 单独标记为 `provider-edge-timeout`，网关可能已经转发并继续计费，禁止自动重试；流内错误、无终态、无效 JSON 和超时同样停止。400/422 的原生有限参数兼容尝试继续计入预算。`--request-limit` 只允许调低本次请求上限，不能增加配置预算。
+- `usageCoverage` 明确区分 `reportedRequests` 与 `unknownRequests`；未返回 usage 就是未知用量，不能解释为零费用。HTTP 524 标记为 `provider-edge-timeout`，可能已转发计费，禁止重发该项；流内错误、无终态、无效 JSON 和请求超时同样隔离该项。`--request-limit` 只允许调低请求上限，恢复继承已消耗请求和原上限。
 
 配置为 `scripts/horizon/config.json`、`budget.json`、`profiles/ai-news/`；`publication.json` 初始 `enabled=false`。配置哈希由这组文件的相对路径和内容计算（UTF-8/LF），Python 与 TypeScript 共用相同算法。
 
@@ -58,7 +60,15 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 }
 ```
 
-显式存在任意 `HORIZON_BASE_URL/API_KEY/MODEL` 时，脚本整组只读 `HORIZON_*`；留空或缺字段就拒绝，不与博客凭据混搭。仅当三项都不存在时，才兼容整组 `BLOG_DRAFT_FAST_*`，不读默认、legacy 或 review。临时配置不含 API key，路径/上游错误不写公开日志。原始 run 与配置随 `TemporaryDirectory` 清理；仅显式样稿包含正文、原文链接、脱敏完整性检查、用量和配置哈希，供本地验收。公开发布仅投影白名单字段。
+显式存在任意 `HORIZON_BASE_URL/API_KEY/MODEL` 时，脚本整组只读 `HORIZON_*`；留空或缺字段就拒绝，不与博客凭据混搭。仅当三项都不存在时，才兼容整组 `BLOG_DRAFT_FAST_*`。私有运行配置仍随临时目录清理，公开发布仅投影白名单字段。
+
+每次生成在输出文件对应的 `.checkpoint` 目录保存冻结输入、原生单项结果与脱敏账本；也可通过 `--checkpoint` 显式指定仓库外本地目录。此目录不是备份，也不包含渠道 URL/key 或运行配置。请求发送前原子保存预算预留，完成后保存成功产物；文件锁防止同时续作。再次使用该目录必须显式 `--resume`，且使用新的输出文件路径。恢复校验期次、配置与适配版本、输入/成功产物哈希、12 小时窗口有效期，并保留整期原始 20 分钟截止与请求限额；过期、中止或漂移不能通过恢复扩大额度。中断时尚未确认的项保守排除，不重发可能已计费的请求。
+
+```powershell
+& "$horizonRoot/.venv/Scripts/python.exe" scripts/horizon/run.py generate --horizon-path $horizonRoot --edition-id YYYY-MM-DD-morning --env-file .env.local --output "$taskTemp/resumed-bundle.json" --checkpoint "$taskTemp/edition-bundle.json.checkpoint" --resume
+```
+
+检查点仅供当前本地/runner 运行恢复，不上传到公开分支或 Actions artifact；CI 跨 runner 重跑没有自动恢复承诺。运行结束后按任务临时文件规则清理，需继续恢复的目录保留并明确记录。
 
 ### 本地渠道填写入口
 

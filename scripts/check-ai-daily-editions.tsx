@@ -37,6 +37,25 @@ for (const mutation of [
 for (const markdown of ['', '<script>alert(1)</script>', '[link](javascript:alert(1))', 'API_KEY=fixture-private']) {
   await assert.rejects(packageEdition({ ...await editionFixture(), markdown }, '2026-11-05T01:00:00Z'))
 }
+// Partial output is publishable only with a complete, consistent exclusion ledger.
+const base = await editionFixture()
+const partial = {
+  ...base,
+  checks: { ...base.checks, raw: 4, scored: 3, scoreFailed: 1, selected: 2, enriched: 1, failed: 1, enrichmentStatus: 'partial' },
+  runtime: { ...base.runtime, omissions: [{ stage: 'score', id: 'omitted-score' }, { stage: 'enrich', id: 'omitted-enrich' }] },
+}
+const completeSubset = await packageEdition(partial, '2026-11-05T01:00:00Z')
+assert.equal(completeSubset.edition.itemCount, 1)
+assert.match(completeSubset.markdown, /采集 4 条，完成评分 3 条，收录 1 条/u)
+assert.match(completeSubset.markdown, /1 条未完成评分、1 条未完成摘要，均未收录/u)
+for (const mutation of [{ raw: 8, scoreFailed: 5 }, { selected: 3, failed: 2 }, { scoreFailed: -1 }, { scored: 2.5 }, { scoreFailed: 0 }, { enrichmentStatus: 'success' }]) {
+  await assert.rejects(packageEdition({ ...partial, checks: { ...partial.checks, ...mutation } }, '2026-11-05T01:00:00Z'))
+}
+for (const runtime of [
+  { ...partial.runtime, stopped: true }, { ...partial.runtime, omissions: [] },
+  { ...partial.runtime, omissions: [{ stage: 'score', id: 'fixture-1' }, { stage: 'enrich', id: 'omitted-enrich' }] },
+  { ...partial.runtime, items: [{ id: 'fixture-1', url: 'https://example.com/ai', score: 5 }] },
+]) await assert.rejects(packageEdition({ ...partial, runtime }, '2026-11-05T01:00:00Z'))
 await assert.rejects(requirePublicationGate(morning, emptyIndex, { enabled: false }))
 const gate = { enabled: true, configurationHash: await configurationHash(), firstEditionId: morning.edition.editionId, firstContentSha256: morning.edition.contentSha256 }
 await requirePublicationGate(morning, emptyIndex, gate)
