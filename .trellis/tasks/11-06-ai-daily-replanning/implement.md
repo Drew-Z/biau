@@ -1,6 +1,6 @@
 # AI 日报：实施与验收计划
 
-状态：in_progress / live, awaiting qualified automatic publication。Horizon SDK 流式适配、失败停止与诊断已实现并验证，10 次真实新闻调用均成功；最终 1 条中文样稿已核对原文并获用户验收。首期、网站和早晚开关已上线；首个云端早报模型成功但筛选为空，未更新索引。待合格新一期验证 Actions 发布；执行证据见 [release.md](release.md)。
+状态：in_progress / live, awaiting actual schedule event。七源与渠道 2 Gemini Lite 已通过本地和云端完整业务；合格新晚刊已由 Actions 自动发布，两个域名的桌面/移动阅读验证通过。当前剩余运营实证为实际 schedule 事件；最新记录见 [channel-2-paced-validation.md](channel-2-paced-validation.md)，初始上线历史见 [release.md](release.md)。
 
 ## 当前续作：条目隔离
 

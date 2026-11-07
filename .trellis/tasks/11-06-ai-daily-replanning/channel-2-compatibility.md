@@ -1,5 +1,7 @@
 # 渠道 2：JSON 兼容修复与 429 停止记录
 
+后续进展：用户再次要求继续后，10 秒节奏下本地与云端完整业务均成功，新刊已自动发布并切换主分支；见 [channel-2-paced-validation.md](channel-2-paced-validation.md)。本页保留上一轮 429 现场及当时剩余额度，旧停止账本未清除。
+
 2026-11-08：确认本站适配器误拒绝了完整 Markdown JSON 代码块。修复后渠道 2 的 `gemini-3.5-flash-lite` 连续完成 6 次评分和 1 次摘要，第 8 次请求返回 HTTP 429，整期停止。它现在是本地候选模型，尚未完成整期验收或切换生产；原渠道 DeepSeek 保留为显式备用。
 
 写作模式：真实新闻诊断与原生 Horizon 生成，Codex 对照来源审阅。沿用用户已授权的渠道模型和候选轮预算，不重置额度，不改思考参数。结构化记录见 [channel-2-compatibility-evidence.json](channel-2-compatibility-evidence.json)，前轮比较见 [channel-2-selection.md](channel-2-selection.md)。

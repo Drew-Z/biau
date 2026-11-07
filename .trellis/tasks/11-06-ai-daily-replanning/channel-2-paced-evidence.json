@@ -67,14 +67,90 @@
     "authorizedTotal": 60,
     "previousCandidateRequests": 39,
     "localRequests": 6,
-    "used": 45,
-    "remaining": 15,
-    "cloudRunCap": 15
+    "used": 51,
+    "remaining": 9,
+    "cloudRunCap": 15,
+    "cloudRequests": 6
   },
   "cloud": {
-    "status": "pending",
+    "status": "generated-and-published",
+    "runId": 42400137685,
+    "commit": "aef4a793617661446fba81b8bdfa28de3996c4bc",
+    "requestLimit": 15,
+    "requests": 6,
+    "checks": {
+      "fetchStatus": "success",
+      "failedSources": 0,
+      "raw": 5,
+      "scored": 5,
+      "scoreFailed": 0,
+      "selected": 1,
+      "enrichmentStatus": "success",
+      "enriched": 1,
+      "failed": 0,
+      "summaryStage": "enriched",
+      "language": "zh",
+      "itemsUsed": 1
+    },
+    "usage": {
+      "prompt_tokens": 8521,
+      "completion_tokens": 819,
+      "total_tokens": 9340
+    },
+    "usageCoverage": {
+      "reportedRequests": 6,
+      "unknownRequests": 0
+    },
+    "elapsedSeconds": [
+      1.672,
+      1.777,
+      1.727,
+      1.781,
+      1.863,
+      1.628
+    ],
+    "generatedAt": "2026-11-07T18:14:43.729Z",
+    "contentSha256": "212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab",
+    "contentCommit": "d97ad034152cbf246c7e895dc8b21be4a386eb25",
+    "sourceReview": "same official source; GA, Slack/Teams, Teams-only Canvas and improvement claims verified",
     "channel2SecretsAndVariables": "configured",
     "originalChannel": "retained"
   },
-  "productionSwitched": false
+  "productionSwitched": true,
+  "productionReading": [
+    {
+      "origin": "https://biau.pages.dev",
+      "indexStatus": 200,
+      "detailStatus": 200,
+      "latest": "2026-11-07-evening",
+      "editionId": "2026-11-07-evening",
+      "contentSha256": "212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab",
+      "sourceCount": 1,
+      "desktopOverflow": false,
+      "mobileOverflow": false,
+      "pageErrors": []
+    },
+    {
+      "origin": "https://biau.playlab.eu.cc",
+      "indexStatus": 200,
+      "detailStatus": 200,
+      "latest": "2026-11-07-evening",
+      "editionId": "2026-11-07-evening",
+      "contentSha256": "212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab",
+      "sourceCount": 1,
+      "desktopOverflow": false,
+      "mobileOverflow": false,
+      "pageErrors": []
+    }
+  ],
+  "releaseValidation": {
+    "mainCommit": "aef4a793617661446fba81b8bdfa28de3996c4bc",
+    "siteQualityRun": 42400698742,
+    "siteQuality": "success",
+    "cloudflarePages": "success",
+    "actualScheduleEvent": "pending"
+  },
+  "artifactDirectory": "D:\\Agent\\codex\\artifacts\\ai-daily\\20261108-channel2-paced-validation",
+  "artifactFiles": 38,
+  "artifactManifestSha256": "8b590fc0a020e094a1d66156c34a86979d0d62201dbfdad1d880dd3f7b4a5da1"
 }

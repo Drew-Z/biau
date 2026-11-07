@@ -2,7 +2,7 @@
   "id": "ai-daily-replanning",
   "name": "ai-daily-replanning",
   "title": "AI 日报重新规划",
-  "description": "首期与网站已上线；七源/渠道 2 候选已修复 JSON 代码块误判，Gemini Lite 连续 7 请求成功后遇到 429。累计 39/60、剩余 21；待后台原因与合格整期验证，生产未切换。",
+  "description": "七源与渠道 2 Gemini Lite 已上线；本地和云端各 6 请求完整，新晚刊由 Actions 自动发布，两个域名阅读验证通过。候选累计 51/60、剩余 9；仅待实际 schedule 事件。",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -30,7 +30,7 @@
   "meta": {
     "planningConsent": "2026-11-06: create task and enter planning",
     "writingMode": "model-assisted real-news generation followed by Codex source review",
-    "modelChannel": "User-populated HORIZON_* groups; URL/key unchanged and private. Local channel 2 selected; only MODEL2 updated to Gemini Lite after format diagnosis. Production still uses original channel.",
+    "modelChannel": "Production and local channel 2 selected; user URL/key remain private and unchanged. Original channel retained as explicit backup.",
     "relatedTasks": [
       "07-17-ai-daily-production-pipeline",
       "07-17-ai-daily-production-operations"
@@ -47,8 +47,8 @@
       "20:00 Asia/Shanghai"
     ],
     "runner": "GitHub Actions; selected by user on 2026-11-06 with possible scheduling delays acknowledged",
-    "modelSelection": "Candidate channel 2: gemini-3.5-flash-lite; explicit channel 1 backup and current production: deepseek-v4.1-flash. Candidate full-issue acceptance pending.",
-    "modelVerification": "Strict fenced JSON repair confirmed; candidate completed six scores and one summary, then HTTP 429 hard-stopped the issue. No candidate bundle/publication; 10-second pacing has offline evidence only.",
+    "modelSelection": "Primary channel 2 gemini-3.5-flash-lite; explicit channel 1 backup deepseek-v4.1-flash.",
+    "modelVerification": "Local and GitHub runner each completed five scores and one summary with 10-second inter-item pacing; source review passed; new qualified issue automatically published and read on both production domains. Small sample does not prove long-term stability or exact provider 429 limits.",
     "pendingDecision": null,
     "aiDailyGenerationModelCalls": null,
     "researchSearchModelRequests": 2,
@@ -133,11 +133,11 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "2026-11-08: native offline, editions/atomic publication, lint/build and document checks passed; Linux Actions validate 42398050641 at 5d971e8a passed with zero model requests/artifacts and skipped publication. Candidate 429 reason and live 10-second pacing remain unverified; production unchanged."
+      "latest": "2026-11-08: local and cloud complete seven-source Gemini Lite generation passed (6 requests each), source review and publication passed. Actions 42400137685 published new issue; both production domains index/detail/hash and desktop/mobile checks passed. Main aef4a793, Site Quality 42400698742 and Cloudflare Pages success; actual schedule event remains pending."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
-    "implementationState": "live-awaiting-first-qualified-automated-publication",
-    "configurationHash": "0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea",
+    "implementationState": "live-channel2-seven-sources-awaiting-actual-schedule",
+    "configurationHash": "20e997ac47866b7be4a082b62fdd373f6557fd2c36977f7c6e127d4c190c8ebb",
     "recordedModelHttpRequests": 18,
     "firstTrialRequestCount": "not recorded by the original failure diagnostic; exact aggregate unknown",
     "liveGenerationConsent": "Prior bounded real-news trial remains authorized; user refilled HORIZON settings and allowed all models in their channels. This did not authorize the two short diagnostic prompts.",
@@ -208,8 +208,7 @@
       "newEditionResult": "Empty selection; no enrichment or publish; previous content branch unchanged."
     },
     "pendingOperationalEvidence": [
-      "First schedule event observed",
-      "First qualified newly generated bundle published by Actions contents:write job"
+      "First actual schedule event observed; workflow_dispatch is not a schedule event"
     ],
     "outcomeRepair": {
       "date": "2026-11-07",
@@ -337,12 +336,12 @@
       "implementationCommit": "5d971e8a6a3a83c45ee889834b04fb26e42311b1"
     },
     "channel2Pacing": {
-      "status": "local-full-content-accepted-cloud-pending",
+      "status": "live-local-and-cloud-published",
       "userContinuation": "User replied continue after the format-repair and bounded-budget report",
       "previousCandidateRequests": 39,
       "localRequests": 6,
-      "totalCandidateRequests": 45,
-      "remainingAuthorizedRequests": 15,
+      "totalCandidateRequests": 51,
+      "remainingAuthorizedRequests": 9,
       "localSources": 7,
       "localInputs": 5,
       "localItems": 1,
@@ -350,8 +349,17 @@
       "candidateConfigurationHash": "20e997ac47866b7be4a082b62fdd373f6557fd2c36977f7c6e127d4c190c8ebb",
       "pacingLiveValidated": true,
       "cloudRequestCap": 15,
-      "productionSwitched": false,
-      "report": "channel-2-paced-validation.md"
+      "productionSwitched": true,
+      "report": "channel-2-paced-validation.md",
+      "cloudRequests": 6,
+      "cloudRun": 42400137685,
+      "contentCommit": "d97ad034152cbf246c7e895dc8b21be4a386eb25",
+      "cloudContentSha256": "212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab",
+      "mainReleaseCommit": "aef4a793617661446fba81b8bdfa28de3996c4bc",
+      "siteQualityRun": 42400698742,
+      "siteQuality": "success",
+      "cloudflarePages": "success",
+      "actualScheduleEvent": "pending"
     }
   }
 }

@@ -20,4 +20,24 @@
 
 原样稿为 `2026-11-07-evening`，正文 SHA-256 `a643a7b7263314c9a483a04f86d758c7dafddafb707dc808dc8f7c95f5675e54`。已对照 [GitHub 官方公告](https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available) 核实 GA、对话内 Issue/代码/PR 能力、仅在 Teams 的 Canvas，以及上手/可靠性/归因改进。摘要没有扩大平台范围或虚构性能；“正式一般可用”略显直译，保留原生产物，不手改正文凑验收。`editions.ts preview` 通过。
 
-七源与候选模型的完整真实内容验证已满足本次配置更新条件。沿用用户已批准的首期验收后自动发布策略，更新配置验收 hash，保留原首期期次与正文验收锚点。接下来安全配置渠道 2 的 Secrets/Variables，以剩余 **15** 作为云端手动生成硬上限；仅生成并校验完整合格期刊时发布。云端生成及发布尚待结果，未提前报告生产切换完成。
+七源与候选模型的完整真实内容验证满足本次配置更新条件后，沿用用户已批准的首期验收后自动发布策略，更新配置验收 hash，保留原首期期次与正文验收锚点。随后安全配置渠道 2 的 Secrets/Variables，以当时剩余 **15** 作为云端手动生成硬上限；仅生成并校验完整合格期刊时发布，结果如下。
+
+## 云端与生产结果
+
+Actions [42400137685](https://github.com/Drew-Z/biau/actions/runs/42400137685) 在提交 `aef4a793` 上，以请求上限 15 完整通过生成与发布。七源成功，5 输入/5 评分/1 入选/1 摘要，6 请求均完整、无遗漏，单次 1.628–1.863 秒；usage 9,340 tokens，无未知用量。云端使用 runner 自身网络，未依赖本机代理。
+
+期次 `2026-11-07-evening` 的实际生成时间为北京时间 11 月 8 日 02:14，明确为手动补跑。云端原样正文 SHA-256 为 `212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab`，内容提交 `d97ad034152cbf246c7e895dc8b21be4a386eb25`。再次对照同一 GitHub 原文，摘要的平台、GA 和 Teams Canvas 范围正确，保留轻微直译表达。没有用本地稿替换云端稿或重新调用润色模型。
+
+`biau.pages.dev` 与 `biau.playlab.eu.cc` 的列表和详情均返回 200，最新期次及正文哈希相符；1440/390 宽度无溢出、无 pageerror。新期次可由网站直接阅读，既有首期历史仍保留。
+
+主分支已快进到已验证的 `aef4a793`，GitHub 主用组 2 的 Secrets/Variables 生效，原组保留。Site Quality [42400698742](https://github.com/Drew-Z/biau/actions/runs/42400698742) 和 Cloudflare Pages 均通过。后续早晚运行使用七源/Gemini Lite/10 秒节奏；仍无自动跨渠道重发。
+
+本轮本地 6 + 云端 6 = **12 请求**，候选轮累计 **51/60，剩余 9**；本轮全部已报告 usage，合计 18,629 tokens，金额仍未知。没有继续测活或消耗剩余额度。前次 429 的具体来源仍未知；两次小规模成功不等于长期成功率或确定限额。
+
+AC12 的“合格新刊由 Actions 自动发布”已具备证据，剩余仅为实际 schedule 事件，任务仍 `in_progress`。不把此次 `workflow_dispatch` 写成定时触发成功，不等待数小时制造完成状态。
+
+## 恢复与收尾
+
+正式证据位于 `D:/Agent/codex/artifacts/ai-daily/20261108-channel2-paced-validation/`，38 份文件及清单 SHA-256、私有值扫描通过。只保留本轮所需的脱敏用量日志，未保存无关历史使用记录。复用原集中恢复组，12 份实体恢复点核验通过；新云端组的修改前状态（不存在）与创建结果已记录，原 Secrets 保留。代码配置恢复使用 `0dbabd5a` / `aef4a793` 阶段 Git 记录，不覆盖原基线。
+
+已删除本轮临时目录 `C:/Users/zhang/AppData/Local/Temp/horizon-channel-rate-rkw_i_ms`（10,972 文件、948 子目录），删除前确认绝对范围、无重解析点和关联进程。既存桌宠/UI 修改、` .trellis/`、`undefined/`、vendor 包及 4 个旧 worktree 保留。

@@ -2,21 +2,21 @@
 
 本链路复用 [Thysrael/Horizon](https://github.com/Thysrael/Horizon/tree/d7406f738c711df82b8f060fa1d5e9999d36cca0)。源码不入本站，运行目录使用固定提交与其 `uv.lock`；Python 3.12、uv 0.11.3。`scripts/horizon/upstream.json` 保存版本和源码/依赖哈希，启动时拒绝版本漂移。许可见 [Horizon attribution](./horizon-license.txt)。
 
-2026-11-07 用户接受最终首期样稿，首期与网站已上线，早晚自动更新已启用；执行状态见 [上线记录](../.trellis/tasks/11-06-ai-daily-replanning/release.md)。接入 SDK 流式聚合后，当前 DeepSeek 渠道的 10 次真实新闻调用均完成，单次 3.719–7.860 秒；最终从 2 条输入筛选出 1 条中文快讯。原文核对发现前两版把 RSS 信息缺失误写成原文未披露，已调整评分/摘要 profile，最终稿消除了此推断。此结果证明本次链路成功，不证明长期可靠性或广泛覆盖。此前 524 的具体故障层仍未确认；记录见 [首期试跑记录](../.trellis/tasks/11-06-ai-daily-replanning/first-live-trial.md)。
+2026-11-07 用户接受最终首期样稿，首期与网站上线，早晚自动更新已启用；初始 DeepSeek 试跑和发布历史见 [上线记录](../.trellis/tasks/11-06-ai-daily-replanning/release.md)。2026-11-08 已启用七来源和渠道 2 的 Gemini Lite：修复完整 JSON 代码块误判、两阶段使用 10 秒间隔后，本地和 GitHub Actions 各完成 6 次真实请求，均从 5 条输入生成 1 条合格快讯；云端新一期已自动发布，两个生产域名阅读核验通过。该样本不证明长期稳定，也未确定前次 429 的具体服务商限额，详见 [节奏验证与切换记录](../.trellis/tasks/11-06-ai-daily-replanning/channel-2-paced-validation.md)。此前 524 与 RSS 事实边界修复历史继续保留于 [首期试跑记录](../.trellis/tasks/11-06-ai-daily-replanning/first-live-trial.md)。
 
 ## 首版自动运行配置和预算
 
-- 来源：已在旧 manifest 启用的 OpenAI News、Google AI Blog、Google DeepMind Blog RSS；读取实际采集开始前 24 小时。上线前检查可达性和摘要使用边界。
+- 来源：OpenAI News、Google AI Blog、Google DeepMind Blog、Microsoft Research、NVIDIA Developer、GitHub Copilot Changelog、MIT Technology Review AI 共 7 个 RSS；读取实际采集开始前 24 小时。来源采集成功不代表该窗口内一定有新条目。
 - 采集后最多 20 条去重输入，超过则停止，不自动截取或扩大预算；全部源成功且输入非空才能评分。
 - 完整采集但没有输入时返回 `outcome=skipped / reason=no-input`；成功评分中无达标项为 `no-qualified-items`，没有完整评分/摘要为 `no-complete-items`。均退出 0、不写 bundle、不更新公开索引。部分源失败、合同损坏、预算或整期中止仍退出 1；正常空结果不能诊断为渠道故障。
 - 明确指定 `ai-news` profile，避免额外分类调用；复用 Horizon URL 去重和评分筛选，关闭 AI 主题去重及搜索/history 工具。
 - RSS 可能只包含导语；评分 summary/reason 也只是模型判断。不能据此断言原文未公布方法、结果或价格。快讯允许 1–3 句，只写来源支持的事实，不为凑句数添加“尚未明确”。首期需核对原文，prompt 约束不等于事实正确的自动保证。
-- 最多 5 条中文成稿，单评分并发、单摘要并发。`digest.max_items` 不是请求预算。首版自动运行沿用通过验收的 3 个来源和该上限；15 条及更广来源属于后续覆盖扩展，须验证后调整配置。
-- 生产仍使用原渠道 `deepseek-v4.1-flash`；候选渠道 2 使用 `gemini-3.5-flash-lite`，原渠道保留 DeepSeek 作为显式备用。候选修复了完整 Markdown JSON 代码块的兼容问题，真实整期仍因 HTTP 429 中止，尚未切换生产。用户已授权新填渠道的所有模型；短请求能返回不代表完整新闻生成链路已通过。不配置自动跨渠道 fallback，业务验证使用真实新闻，不使用 ping、空 prompt 或测活替代内容任务。
+- 最多 5 条中文成稿，单评分并发、单摘要并发。`digest.max_items` 不是请求预算。自动运行使用已验证的 7 个来源和该上限；15 条及更广来源属于后续覆盖扩展，须验证后调整配置。
+- 生产主用渠道 2 的 `gemini-3.5-flash-lite`，原渠道 `deepseek-v4.1-flash` 保留为显式备用。完整本地及云端生成与发布已验证；不配置自动跨渠道 fallback，不自动重发失败项。用户已授权所填渠道的模型，但更换模型仍需内容验证，不能用 ping、空 prompt 或测活替代完整业务任务。
 - 整个运行最多 **60 次实际模型 HTTP 请求**（评分、格式修复、兼容重试合计）；单请求输入最多 24,000 个字符，输出参数最多 2,048 tokens；60 秒单请求、20 分钟总时限、SDK retries=0。达到请求/时间预算立即停止。输入字符上限不等于精确 token 计费，模型实际计费与思考 token 规则未知，不承诺金额上限。
 - 无重试正常路径最多 20 次评分 + 5 次中文摘要 = 25 次。适配按单项调用原生 score/enrich，阻止上游 repair/tenacity 重发已完成或已失败项；明确 400/422 参数兼容最多 3 次且不得重复相同请求，全部实际 HTTP 都计入总预算。
 - 保留现有思考设置。单条 524/5xx、传输/请求超时、流和内容错误隔离后继续其他条目；连续 2 条或累计 3 次失败中止整期。401/402/403/429、其他非兼容 4xx、预算、取消、合同损坏立即停止。单次失败不等于渠道整体不可用。
-- 候选 `ai.throttle_sec=10` 同时用于评分和摘要，在上一项之后等待再开始下一项，保持并发 1 和原总 deadline。这是降低突发频率的保守配置，不代表已知服务商 RPM/TPM。429 先停止账本，再最多读取 16 KiB / 1 秒的错误 JSON，只保留明确机器码对应的 `limitKind=rate-limit|quota|unknown` 和合法数字 `Retry-After`（0–86400 秒）；不保存原文、不自动等待重试。未知或迟迟返回的错误正文不能把 429 降级为可继续的普通超时。
+- `ai.throttle_sec=10` 同时用于评分和摘要，在上一项之后等待再开始下一项，保持并发 1 和原总 deadline。这是降低突发频率的保守配置，不代表已知服务商 RPM/TPM。429 先停止账本，再最多读取 16 KiB / 1 秒的错误 JSON，只保留明确机器码对应的 `limitKind=rate-limit|quota|unknown` 和合法数字 `Retry-After`（0–86400 秒）；不保存原文、不自动等待重试。未知或迟迟返回的错误正文不能把 429 降级为可继续的普通超时。
 - 评分与摘要分别至少完成 50%，且至少有 1 条满足原评分线并完成摘要才能发布。`raw=scored+scoreFailed`、`selected=enriched+failed`，失败不伪装成低分；仅完整成功项进入原生 summary，发布端核对失败清单、条目 ID/分数/来源。部分成功时正文自动附上数量及遗漏说明。
 - HTTP SDK 会把 transport 的异常包装成连接异常；适配层恢复 Horizon 的 `AIProviderUnavailableError`，避免上游将预算/限流停止信号当作普通项错误继续重试。
 - 模型请求使用已有 SDK 的 `chat.completions.stream()` 聚合，保留 Horizon 完整响应接口和原生业务校验；不改上游源码或自写 SSE parser。每请求 60 秒覆盖响应头、完整流读取与最终聚合，响应字节最多 1 MiB；要求单 choice、`finish_reason=stop`、非空且可解析的 JSON object，拒绝 refusal/tool call、无终态 EOF、截断输出和流内错误。原生评分/摘要仍校验具体业务字段。
@@ -26,7 +26,7 @@
 
 配置为 `scripts/horizon/config.json`、`budget.json`、`profiles/ai-news/`；`publication.json` 初始 `enabled=false`。配置哈希由这组文件的相对路径和内容计算（UTF-8/LF），Python 与 TypeScript 共用相同算法。
 
-七来源扩展正在候选分支验证：增加 Microsoft Research、NVIDIA Developer、GitHub Copilot Changelog、MIT Technology Review AI，并将来源额度设为 7，其他输入/成稿/请求预算不变。profile 加强媒体、赞助内容和厂商主张的归因。生产主分支在新来源样稿和云端采集通过前继续使用已验收三源；见 [扩展记录](../.trellis/tasks/11-06-ai-daily-replanning/source-expansion.md)。
+七来源扩展已通过本地与云端完整采集、生成、内容核对和发布验证，来源额度为 7，输入/成稿/请求预算保持原值。profile 保留媒体、赞助内容和厂商主张的归因要求。历史过程见 [扩展记录](../.trellis/tasks/11-06-ai-daily-replanning/source-expansion.md)，最新结果见节奏验证记录。
 
 ## 本地操作
 
@@ -110,4 +110,4 @@ Actions 手动生成可传 `request_limit`（1–60）下调本次模型 HTTP �
 
 ## 离线验收与上线限制
 
-上线已验证两个生产域的列表/详情/ETag/未知期次、桌面与移动阅读，以及云端离线校验和重复期次跳过；首个云端早报已成功取得模型完整响应，但筛选为空而停止，旧期刊保留；新的合格一期由 Actions 自动发布仍待实证，详见 release.md。检查覆盖早晚隔离、旧期补发、同内容幂等、修正版本、日期歧义、阶段失败、输入/请求/时间预算、首期 gate、API 超大/损坏/哈希、Markdown 安全，以及 320/390/430/1440 × 三主题 × 中英阅读矩阵。旧 payload/feed 检查继续用于兼容回归。真实来源、渠道内容、GitHub Secrets、分支权限、Cloudflare 分支排除和自动周期须在首期业务验收阶段确认。
+上线已验证两个生产域的列表/详情/ETag/未知期次、桌面与移动阅读、云端离线校验和重复期次跳过；历史早报空筛选正确保留旧刊，随后 Actions `42400137685` 已生成并自动发布新的合格晚刊，两个域名读到相同正文哈希。尚待实际 schedule 事件，不能把手动 workflow_dispatch 写成定时触发成功。检查覆盖早晚隔离、旧期补发、同内容幂等、修正版本、日期歧义、阶段失败、输入/请求/时间预算、首期 gate、API 超大/损坏/哈希、Markdown 安全，以及 320/390/430/1440 × 三主题 × 中英阅读矩阵。旧 payload/feed 检查继续用于兼容回归。

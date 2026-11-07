@@ -1,6 +1,6 @@
 # AI 日报：Horizon 接入设计
 
-状态：已批准，SDK 流式适配与离线验证完成；当前渠道 10 次真实新闻请求成功，最终 1 条样稿已核对原文并获用户验收。首期已发布到内容分支，网站与定时已启用，首个云端早报筛选为空；待合格新一期验证自动发布，见 [release.md](release.md)。产品决定以 [prd.md](prd.md) 为准，依据见 [research.md](research.md) 和 [gateway-research.md](gateway-research.md)。当前运行合同见 [运行说明](../../../docs/ai-daily-horizon.md)。
+状态：已上线。2026-11-08 七源与渠道 2 Gemini Lite 完成本地/云端完整生成及来源核对，新晚刊已由 Actions 自动发布并在两个域名验证；原渠道 DeepSeek 显式备用。实际 schedule 事件仍待观察，详见 [channel-2-paced-validation.md](channel-2-paced-validation.md)；初始发布历史见 [release.md](release.md)。产品决定以 [prd.md](prd.md) 为准，依据见 [research.md](research.md) 和 [gateway-research.md](gateway-research.md)。当前运行合同见 [运行说明](../../../docs/ai-daily-horizon.md)。
 
 ## 渠道选择修订（2026-11-07）
 

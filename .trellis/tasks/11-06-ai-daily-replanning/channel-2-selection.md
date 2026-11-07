@@ -1,5 +1,7 @@
 # 渠道 2 主用与模型选择
 
+最新状态：后续 10 秒节奏验证通过，本地和云端各 6 次请求完整，新晚刊已发布，七源/Gemini Lite 已切换主分支；见 [channel-2-paced-validation.md](channel-2-paced-validation.md)。本文保留早期选型的失败证据与当时判断。
+
 用户新增 `HORIZON_BASE_URL2/HORIZON_API_KEY2`，明确授权优先使用渠道 2、选择稳定且质量较高的模型，原渠道作为备用。分组修正后目录 HTTP 200，列出 8 个模型。读取目录不等于生成成功；不同域名也不能证明底层供应链完全独立。
 
 2026-11-08 更新：后续诊断确认本站误拒绝完整 JSON 代码块，修复后本地候选改为 Gemini Lite，完整七源运行在 7 次成功后遇到 429；累计 39/60，剩余 21 次，生产未切换。最新证据见 [channel-2-compatibility.md](channel-2-compatibility.md)。下文保留 11 月 7 日各轮实际观察，不追改未保留正文的历史结论。
