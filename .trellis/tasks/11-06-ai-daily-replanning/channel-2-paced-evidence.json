@@ -148,9 +148,36 @@
     "siteQualityRun": 42400698742,
     "siteQuality": "success",
     "cloudflarePages": "success",
-    "actualScheduleEvent": "pending"
+    "actualScheduleEvent": "observed failure before model generation; midnight repair in progress"
   },
   "artifactDirectory": "D:\\Agent\\codex\\artifacts\\ai-daily\\20261108-channel2-paced-validation",
   "artifactFiles": 38,
-  "artifactManifestSha256": "8b590fc0a020e094a1d66156c34a86979d0d62201dbfdad1d880dd3f7b4a5da1"
+  "artifactManifestSha256": "8b590fc0a020e094a1d66156c34a86979d0d62201dbfdad1d880dd3f7b4a5da1",
+  "scheduleObservation": {
+    "databaseId": 42397899601,
+    "event": "schedule",
+    "headSha": "62abaf50d1f08a6a3ca3ce29dfa2622da6881e81",
+    "createdAt": "2026-11-07T17:45:48Z",
+    "updatedAt": "2026-11-07T17:46:36Z",
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/Drew-Z/biau/actions/runs/42397899601",
+    "cron": "17 12 * * *",
+    "failure": "delayed-schedule-use-manual-edition",
+    "modelRequests": 0,
+    "published": false,
+    "expectedEdition": "2026-11-07-evening",
+    "replay": "passed",
+    "repairCloudValidation": "pending",
+    "jobs": [
+      {
+        "name": "generate",
+        "conclusion": "failure"
+      },
+      {
+        "name": "publish",
+        "conclusion": "skipped"
+      }
+    ]
+  }
 }

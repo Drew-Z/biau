@@ -30,6 +30,31 @@ def rejected(call):
     raise AssertionError("expected rejection")
 
 
+def check_schedule():
+    now = datetime(2026, 11, 6, 0, 30, tzinfo=timezone.utc)
+    assert resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:17:00Z", now=now) == {"editionId": "2026-11-06-morning", "scheduledFor": "2026-11-06T00:00:00.000Z"}
+    assert resolve_edition("2026-11-05-evening", now=now)["scheduledFor"] == "2026-11-05T12:00:00.000Z"
+    evening_now = datetime(2026, 11, 6, 16, 1, tzinfo=timezone.utc)
+    assert resolve_edition(schedule="17 12 * * *", created_at="2026-11-06T12:17:00Z", now=evening_now)["editionId"] == "2026-11-06-evening"
+    # Actual delayed schedule 42397899601: created 01:45 Shanghai on the next day.
+    for created, started, expected in [
+        ("2026-11-07T17:45:48Z", "2026-11-07T17:46:33Z", "2026-11-07"),
+        ("2026-11-06T16:00:00Z", "2026-11-06T16:00:01Z", "2026-11-06"),
+        ("2026-12-31T23:59:58Z", "2026-12-31T23:59:59Z", "2026-12-31"),
+        ("2028-02-29T17:45:00Z", "2028-02-29T17:46:00Z", "2028-02-29"),
+    ]:
+        assert resolve_edition(schedule="17 12 * * *", created_at=created, now=datetime.fromisoformat(started.replace("Z", "+00:00"))) == {"editionId": expected + "-evening", "scheduledFor": expected + "T12:00:00.000Z"}
+    rejected(lambda: resolve_edition(schedule="17 12 * * *", created_at="2026-11-05T23:55:00Z", now=now))
+    rejected(lambda: resolve_edition(schedule="17 12 * * *", created_at="2026-11-07T17:45:48Z", now=datetime(2026, 11, 8, 0, 0, tzinfo=timezone.utc)))
+    rejected(lambda: resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:17:00Z", now=now + timedelta(hours=12)))
+    for schedule, created in [("17 0 * * *", "2026-11-06T00:16:59Z"), ("17 12 * * *", "2026-11-06T12:16:59Z")]:
+        rejected(lambda: resolve_edition(schedule=schedule, created_at=created, now=datetime.fromisoformat(created.replace("Z", "+00:00")) + timedelta(minutes=1)))
+    rejected(lambda: resolve_edition(schedule="0 0 * * *", created_at="2026-11-06T00:17:00Z", now=now))
+    rejected(lambda: resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:17:00", now=now))
+    rejected(lambda: resolve_edition("2026-02-30-morning", now=now))
+    rejected(lambda: resolve_edition("2027-01-01-morning", now=now))
+
+
 async def check(root):
     verify_upstream(root)
     sys.path.insert(0, str(root))
@@ -61,17 +86,7 @@ async def check(root):
     assert next(step for step in job['steps'] if step.get('uses') == 'actions/upload-artifact@v4')['if'] == "steps.preview.outputs.publish == 'true'"
     assert workflow['jobs']['publish']['if'] == "needs.generate.outputs.publish == 'true' && vars.AI_DAILY_AUTOMATION_ENABLED == 'true'"
 
-    now = datetime(2026, 11, 6, 0, 30, tzinfo=timezone.utc)
-    assert resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:17:00Z", now=now) == {"editionId": "2026-11-06-morning", "scheduledFor": "2026-11-06T00:00:00.000Z"}
-    assert resolve_edition("2026-11-05-evening", now=now)["scheduledFor"] == "2026-11-05T12:00:00.000Z"
-    evening_now = datetime(2026, 11, 6, 16, 1, tzinfo=timezone.utc)
-    assert resolve_edition(schedule="17 12 * * *", created_at="2026-11-06T12:17:00Z", now=evening_now)["editionId"] == "2026-11-06-evening"
-    rejected(lambda: resolve_edition(schedule="17 12 * * *", created_at="2026-11-05T23:55:00Z", now=now))
-    rejected(lambda: resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:17:00Z", now=now + timedelta(hours=12)))
-    rejected(lambda: resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:16:59Z", now=now))
-    rejected(lambda: resolve_edition(schedule="0 0 * * *", created_at="2026-11-06T00:17:00Z", now=now))
-    rejected(lambda: resolve_edition("2026-02-30-morning", now=now))
-    rejected(lambda: resolve_edition("2027-01-01-morning", now=now))
+    check_schedule()
 
     budget = read_json(HERE / "budget.json")
     meter = RequestBudget(budget)

@@ -84,7 +84,7 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 
 ## 期次与发布
 
-早晚期次是上海日期的 `YYYY-MM-DD-morning|evening`，`scheduledFor` 仍为期次锚点 08:00/20:00；实际 cron 为 `17 0 * * *` / `17 12 * * *`，北京时间 08:17/20:17 触发。保存 `scheduledFor/generatedAt/publishedAt/updatedAt/windowStart/windowEnd`，页面刷新不改变内容时间。自动任务以 cron 和 GitHub run 创建时间定槽，创建时间不得早于触发分钟；跨过下一期次锚点停止，手动补跑必须指定期次。采集窗口重叠，允许早晚重复报道。
+早晚期次是上海日期的 `YYYY-MM-DD-morning|evening`，`scheduledFor` 仍为期次锚点 08:00/20:00；实际 cron 为 `17 0 * * *` / `17 12 * * *`，北京时间 08:17/20:17 触发。保存 `scheduledFor/generatedAt/publishedAt/updatedAt/windowStart/windowEnd`，页面刷新不改变内容时间。自动任务以 cron 和 GitHub run 创建时间定位最近一次对应锚点：晚报延迟到次日午夜后、但执行仍早于 08:00 时归前一天晚报；日历换日不等于跨期。创建不得早于该次 :17 触发分钟，执行跨过下一期次锚点仍停止，手动补跑必须指定期次。采集窗口重叠，允许早晚重复报道。
 
 [GitHub schedule 文档](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)说明整点可能因负载高而延迟甚至丢弃排队任务，并建议错开分钟。此次偏移用于降低该风险，不证明此前缺少 schedule 事件的具体原因，也不保证准点启动。
 
@@ -110,4 +110,4 @@ Actions 手动生成可传 `request_limit`（1–60）下调本次模型 HTTP �
 
 ## 离线验收与上线限制
 
-上线已验证两个生产域的列表/详情/ETag/未知期次、桌面与移动阅读、云端离线校验和重复期次跳过；历史早报空筛选正确保留旧刊，随后 Actions `42400137685` 已生成并自动发布新的合格晚刊，两个域名读到相同正文哈希。尚待实际 schedule 事件，不能把手动 workflow_dispatch 写成定时触发成功。检查覆盖早晚隔离、旧期补发、同内容幂等、修正版本、日期歧义、阶段失败、输入/请求/时间预算、首期 gate、API 超大/损坏/哈希、Markdown 安全，以及 320/390/430/1440 × 三主题 × 中英阅读矩阵。旧 payload/feed 检查继续用于兼容回归。
+上线已验证两个生产域的列表/详情/ETag/未知期次、桌面与移动阅读、云端离线校验和重复期次跳过；历史早报空筛选正确保留旧刊，随后 Actions `42400137685` 已生成并自动发布新的合格晚刊，两个域名读到相同正文哈希。实际 schedule `42397899601` 已触发，但旧版在跨午夜归期时停止，0 模型/0 发布；已补真实事件与日期边界回归，仍待修复后的定时成功实证，不能把手动 workflow_dispatch 写成定时触发成功。检查覆盖早晚隔离、旧期补发、同内容幂等、修正版本、日期歧义、阶段失败、输入/请求/时间预算、首期 gate、API 超大/损坏/哈希、Markdown 安全，以及 320/390/430/1440 × 三主题 × 中英阅读矩阵。旧 payload/feed 检查继续用于兼容回归。

@@ -107,9 +107,13 @@ def resolve_edition(edition_id=None, schedule=None, created_at=None, now=None):
         created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
         if created.tzinfo is None:
             raise ValueError("ambiguous-schedule")
-        date = created.astimezone(SHANGHAI).date().isoformat()
         slot = SCHEDULES[schedule]
-        scheduled = datetime.fromisoformat(f"{date}T{'08' if slot == 'morning' else '20'}:00:00+08:00")
+        scheduled = created.astimezone(SHANGHAI).replace(hour=8 if slot == "morning" else 20, minute=0, second=0, microsecond=0)
+        # A delayed evening event may be created after Shanghai midnight while
+        # still inside the previous evening's slot. Calendar midnight is not expiry.
+        if created < scheduled:
+            scheduled -= timedelta(days=1)
+        date = scheduled.date().isoformat()
         # The edition anchor stays 08:00/20:00; the trigger avoids the busy hour boundary.
         trigger = scheduled + timedelta(minutes=int(schedule.split()[0]))
         if not trigger <= created <= now < scheduled + timedelta(hours=12):

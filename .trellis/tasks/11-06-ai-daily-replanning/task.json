@@ -2,7 +2,7 @@
   "id": "ai-daily-replanning",
   "name": "ai-daily-replanning",
   "title": "AI 日报重新规划",
-  "description": "七源与渠道 2 Gemini Lite 已上线；本地和云端各 6 请求完整，新晚刊由 Actions 自动发布，两个域名阅读验证通过。候选累计 51/60、剩余 9；仅待实际 schedule 事件。",
+  "description": "七源/Gemini Lite 已上线，新晚刊由 Actions 自动发布且两域阅读通过；实际 schedule 已触发，补修跨午夜归期后待观察定时成功。候选累计 51/60、剩余 9。",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -133,10 +133,10 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "2026-11-08: local and cloud complete seven-source Gemini Lite generation passed (6 requests each), source review and publication passed. Actions 42400137685 published new issue; both production domains index/detail/hash and desktop/mobile checks passed. Main aef4a793, Site Quality 42400698742 and Cloudflare Pages success; actual schedule event remains pending."
+      "latest": "Local and cloud seven-source Gemini Lite generation/publication and two-domain reading passed. Observed schedule 42397899601 failed before models because old code used the post-midnight calendar date. Real-event and boundary regressions now pass; cloud schedule-repair validation pending. Candidate remains 51/60 used, 9 remaining."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
-    "implementationState": "live-channel2-seven-sources-awaiting-actual-schedule",
+    "implementationState": "live-awaiting-successful-schedule-after-midnight-repair",
     "configurationHash": "20e997ac47866b7be4a082b62fdd373f6557fd2c36977f7c6e127d4c190c8ebb",
     "recordedModelHttpRequests": 18,
     "firstTrialRequestCount": "not recorded by the original failure diagnostic; exact aggregate unknown",
@@ -208,7 +208,7 @@
       "newEditionResult": "Empty selection; no enrichment or publish; previous content branch unchanged."
     },
     "pendingOperationalEvidence": [
-      "First actual schedule event observed; workflow_dispatch is not a schedule event"
+      "Successful actual schedule after midnight-date repair; real prior schedule was observed but failed before generation"
     ],
     "outcomeRepair": {
       "date": "2026-11-07",
@@ -359,7 +359,34 @@
       "siteQualityRun": 42400698742,
       "siteQuality": "success",
       "cloudflarePages": "success",
-      "actualScheduleEvent": "pending"
+      "actualScheduleEvent": "observed-failure-before-model-calls",
+      "scheduleRepair": {
+        "databaseId": 42397899601,
+        "event": "schedule",
+        "headSha": "62abaf50d1f08a6a3ca3ce29dfa2622da6881e81",
+        "createdAt": "2026-11-07T17:45:48Z",
+        "updatedAt": "2026-11-07T17:46:36Z",
+        "status": "completed",
+        "conclusion": "failure",
+        "url": "https://github.com/Drew-Z/biau/actions/runs/42397899601",
+        "cron": "17 12 * * *",
+        "failure": "delayed-schedule-use-manual-edition",
+        "modelRequests": 0,
+        "published": false,
+        "expectedEdition": "2026-11-07-evening",
+        "replay": "passed",
+        "repairCloudValidation": "pending",
+        "jobs": [
+          {
+            "name": "generate",
+            "conclusion": "failure"
+          },
+          {
+            "name": "publish",
+            "conclusion": "skipped"
+          }
+        ]
+      }
     }
   }
 }

@@ -11,6 +11,7 @@ New morning/evening editions run independently through pinned Horizon. The older
 - `scripts/horizon/run.py validate|collect|generate --horizon-path ... --edition-id YYYY-MM-DD-morning|evening` uses the native `HorizonPipelineService` also used by its skill helper.
 - `generate --output <new-file> --checkpoint <local-directory> --resume` resumes frozen source items and cumulative budget, never refreshes collection or retries attempted items. Checkpoints must be outside the repository.
 - Manual Actions generation accepts `request_limit` and forwards it to the same bounded CLI flag; schedule/default uses 60. Cross-trial authorization remains cumulative in task records.
+- Resolve scheduled editions from the matched cron and the most recent corresponding Shanghai 08:00/20:00 anchor before run creation. Delayed evening creation after midnight still belongs to the previous date if execution is before 08:00. Require creation at/after the :17 trigger and execution before the next 12-hour slot; never treat calendar midnight as expiry or use the current clock alone. Regression replays actual schedule 42397899601 plus midnight/year/leap-day and cutoff boundaries.
 - `packageEdition(bundle, publishedAt)` projects a completed native run into the shared public `DailyEditionDetail` contract.
 - `planPublication(index, detail, correction=false)` is pure; `publish` writes an isolated Git index and one non-force content-branch commit.
 - `GET /api/ai-daily` and `/api/ai-daily/editions/:editionId` are same-origin Pages reads with fixed repository/branch targets.
