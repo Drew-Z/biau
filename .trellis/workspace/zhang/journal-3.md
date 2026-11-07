@@ -1708,3 +1708,39 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - None - task complete
+
+
+## Session 148: Horizon 首期发布与早晚自动更新启用
+
+**Date**: 2026-11-07
+**Task**: Horizon 首期发布与早晚自动更新启用
+**Branch**: `main`
+
+### Summary
+
+首期验收后发布内容分支和 Cloudflare 网站，配置 GitHub Secrets 与北京时间 08:00/20:00；修复 Workers redirect:error 不兼容。精确发布快照 lint/build、Functions 编译、24 UI 与公网 API/阅读通过。云端 validate、重复期次跳过成功；新早刊 1 次模型 HTTP 200/stop，488/247 tokens，筛选为空未发布，保留旧刊。任务不归档，待合格新一期 Actions 发布实证；集中恢复点保留，其他任务未提交。
+
+### Main Changes
+
+日报源码与文档已提交，桌宠/旧 UI/未知目录保留。首期内容提交 72c19e2e；云端新早刊 run 42316220748 未发布。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0bb99014` | (see git log) |
+| `e6e16c8b` | (see git log) |
+| `6bbc8d07` | (see git log) |
+
+### Testing
+
+- 精确发布快照 lint/build、Wrangler 编译、24 组 UI、两个域名 API/阅读通过；Site Quality 与 Horizon validate/已存在期次跳过通过。
+- 新早刊 1 次模型响应成功，筛选为空，发布 job skipped，旧索引保持。
+
+### Status
+
+**In progress**：已上线并启用，待合格新一期 Actions 自动发布与实际 schedule 实证。
+
+### Next Steps
+
+- 保持已验收 3 来源与预算；观察后续正常早晚刊。不得将空筛选归因为模型不可用或为凑数降低标准。
