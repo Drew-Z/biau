@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "editionId": "2026-11-07-evening",
+  "editionDate": "2026-11-07",
+  "slot": "evening",
+  "timezone": "Asia/Shanghai",
+  "language": "zh",
+  "title": "2026-11-07 AI 日报 · 晚报",
+  "itemCount": 1,
+  "revision": 1,
+  "sourceLinks": [
+    {
+      "title": "@GitHub 在 Slack 和 Teams 中正式可用",
+      "publisher": "GitHub Copilot Changelog",
+      "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available"
+    }
+  ],
+  "scheduledFor": "2026-11-07T12:00:00.000Z",
+  "generatedAt": "2026-11-07T18:14:43.729Z",
+  "publishedAt": "2026-11-07T18:15:46.536Z",
+  "updatedAt": "2026-11-07T18:15:46.536Z",
+  "windowStart": "2026-11-06T18:13:40.473Z",
+  "windowEnd": "2026-11-07T18:13:40.473Z",
+  "markdownPath": "editions/2026-11-07-evening/212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab.md",
+  "contentSha256": "212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab"
+}
