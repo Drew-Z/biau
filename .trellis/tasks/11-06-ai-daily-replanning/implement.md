@@ -158,3 +158,11 @@ UI 在本地预览验证桌面、320/390/430 宽度、三主题与两种界面�
 - [x] 本地原生断网、期刊/原子发布、lint/build、部署与门禁文档检查通过；来源/模型/profile/预算配置哈希保持不变。
 - [x] 修复提交 `48ec2022` 已推送；云端 `42328087232` 离线检查与已发布期次跳过通过，Site Quality `42328070968` 通过，Cloudflare 部署成功。该验证没有重跑早报模型。
 - [ ] 观察后续真实 schedule 与合格新一期，保留 AC12；不制造可发布新闻。
+
+## 2026-11-07 来源覆盖评估
+
+- [x] 用户同意推进来源覆盖评估；复用固定 Horizon，检查旧清单全部 18 RSS、7 个附加 RSS 地址、Google News/GDELT 与 3 个 GitHub Releases 仓库，无模型调用。
+- [x] 完成内容/时间/出处与数量分析，评估见 [source-coverage.md](source-coverage.md)，结构化证据见 [source-coverage-evidence.json](source-coverage-evidence.json)。候选先扩至 7 源，再处理中文正文和开源项目边界。
+- [x] 两份候选 JSON 通过原生 validate_config 与 fetch_items：7 源 8 输入；8 源含量子位正文 16 输入。HTTP 限定 GET，模型方法禁止，未评分/生成/发布。
+- [ ] 依候选准备小范围实施：同步 source cap、媒体归因和内容验证；中文源要求正文提取成功，GitHub 类型同步完整性与发布者映射。不能仅更新验收 hash 绕过这些验证。
+- [ ] 新来源在既定预算内完成真实样稿核对及云端采集验证后，再切换已验收配置。当前生产仍为原 3 源，profile/20输入/5成稿/60请求和定时保持现行值。

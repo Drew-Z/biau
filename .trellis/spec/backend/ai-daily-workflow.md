@@ -60,6 +60,14 @@ Wrong: publish a dated Horizon file on exit 0, or copy main into the content bra
 
 Wrong: add `extra_body.stream=true` and read `choices[0]` immediately, or time out only the call that opens the stream. Correct: consume the SDK stream within the total deadline, require terminal success and valid JSON, then return the aggregate response; stream failures must escape as `AIProviderUnavailableError` so native repair loops cannot duplicate a possibly billed request.
 
+### Source-expansion findings (assessment only, 2026-11-07)
+
+The pinned engine already supports RSS `content_extractor`, Trafilatura and GitHub `repo_releases`. Reuse them before creating collectors. RSS has no per-feed input cap; `digest.max_items` applies after scoring and cannot bound scoring costs. A retained RSS snapshot is not a complete historical archive. Check actual returned counts, source dates, content and attribution before changing the accepted configuration/hash.
+
+Native RSS treats a None extractor result as fallback to the original RSS excerpt; full fetch success does not prove article extraction. For sources requiring body evidence, any future implementation must explicitly verify extraction rather than accept headline-only fallback. Google News preserves aggregator URLs and may include entries outside the exact local cutoff; GDELT uses seendate and no content. These discovery fields cannot be presented as original article URL/publication/body without additional validation. GitHub release metadata may label an rc tag as prerelease=false; preserve the actual tag and do not infer stable release from that boolean alone.
+
+The current adapter deliberately validates a single RSS source-type report and counts only RSS source definitions. Enabling GitHub or discovery types requires updating source-count budgets, completeness checks and publisher projection together. Candidate configs under the active task are not production-ready overrides. Keep assessment/collection evidence distinct from model/content/cloud acceptance; see the task's source-coverage.md for the measured source shortlist.
+
 ## Scenario: Versioned source and discovery curation
 
 ### Contract

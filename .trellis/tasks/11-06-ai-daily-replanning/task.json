@@ -94,7 +94,11 @@
       "first-live-trial.md",
       "gateway-research.md",
       "gateway-evidence.json",
-      "release.md"
+      "release.md",
+      "source-coverage.md",
+      "source-coverage-evidence.json",
+      "source-expansion.candidate.json",
+      "source-expansion-chinese.candidate.json"
     ],
     "recovery": {
       "repository": "D:\\workspace4Cursor\\blog-semi",
@@ -214,6 +218,37 @@
       "horizonRun": 42328087232,
       "siteQualityRun": 42328070968,
       "deployment": "7c9bc4ad-a68b-4f9e-826b-93e3063cc8f6"
+    },
+    "sourceCoverageAssessment": {
+      "date": "2026-11-07",
+      "consent": "User agreed to assess sources before expanding the automatic news configuration",
+      "report": "source-coverage.md",
+      "evidence": "source-coverage-evidence.json",
+      "legacyRssChecked": 18,
+      "legacyRssSuccessful": 17,
+      "additionalRssAddressesChecked": 7,
+      "discoveryCollectorsChecked": 2,
+      "githubRepositoriesChecked": 3,
+      "candidateCollection": {
+        "coreSources": 7,
+        "coreInputs": 8,
+        "withChineseSources": 8,
+        "withChineseInputs": 16
+      },
+      "modelChannel": "none",
+      "modelCalls": 0,
+      "liveConfigChanged": false,
+      "recommendation": "Validate core seven-source expansion, then explicit Chinese article extraction checks and native GitHub releases; keep current production until accepted configuration verification.",
+      "verification": {
+        "jsonAndLocalLinks": "passed",
+        "candidateDeltas": "sources only; Chinese variant additionally defines native extractor",
+        "snapshotConsistency": "five captured results match; counts and rolling windows recomputed",
+        "sensitiveValueScan": "passed",
+        "trellisContext": "passed",
+        "productionConfigurationHash": "0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea",
+        "temporaryMaterialsRemoved": true,
+        "cloudCandidateValidation": false
+      }
     }
   }
 }

@@ -74,3 +74,13 @@ GitHub Site Quality、Horizon 原生断网验证与重复期次跳过均成功�
 - `npm run lint`、`npm run build`、`npm run ai-daily:editions-check`、`npm run docs:deployment-check`、`npm run docs:manual-gates-check` 通过。构建/lint 在现有工作树执行；本次不提交桌宠等既有改动，未重复无变化的 UI 检查或宣称历史全量检查全绿。
 - 本轮真实模型请求 0，配置哈希仍为 `0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea`。云端复验结果另附 release.md。
 - 精确提交 `48ec2022` 的 Horizon 云端原生回归/重复期次跳过和 Site Quality 均成功，Cloudflare deploy success；浏览器验证两域 index/detail 200 与原正文 SHA-256 一致。独立 HTTP 客户端遇到 403/1010 或连接重置，未将其当作模型故障，也未关闭 TLS 校验。真实 schedule/新合格刊发布待后续实证。
+
+## 2026-11-07 来源覆盖评估
+
+- 固定上游源码/锁哈希通过。18 个旧 RSS 中 17 个成功（含正常空结果），Alizila 403；单次网络结果仅代表本地快照。
+- 量子位 RSS 可读但摘要 7–40 字；5 篇原生 Trafilatura 抽取成功。整组合试采中 8 篇也取得正文，未把采集成功视为未来提取失败可放行。
+- 7 源与 8 源候选以原生 validate_config/fetch_items 验证，完整采集分别 8/16 输入，无 URL 合并减少；模型调用被禁止，HTTP 仅 GET，0 评分/摘要/发布。
+- Google News 10 条中只有 9 条满足严格 24h，保留聚合链接/标题式内容；GDELT 429。机器之心返回非 RSS 页面、雷锋网超时、Qwen 旧 index.xml 404，均如实保留。
+- 3 个开源仓库的原生 GitHub Releases 可读，vLLM rc3 的 API prerelease=false，证明不能只信布尔字段或通用 RSS 标题识别稳定版。
+- 本轮只有任务候选/研究/spec 资料变更，没有运行代码变化；执行 JSON、链接、候选差异、原生配置/采集、Trellis 和 diff 检查，不重复 UI/build，也不宣称新来源模型生成或云端已通过。现行配置 hash 保持首期验收值。
+- 收尾核验通过：五份结构化快照与原始结果相同；24h 合计、近7d可见条数与滚动峰值重算一致；7/8 源候选只改来源，中文另加 extractor。现行 config/budget/profiles/publication/run.py/workflow 与基线无差异；任务 JSON、文档链接、敏感值扫描、Trellis 上下文与 git diff 检查通过。重新校验集中恢复组的 10 个实体基线，无损坏。

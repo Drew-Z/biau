@@ -47,3 +47,9 @@
 修改前的相关 13 个已跟踪文件均干净，完整恢复提交为 `c12bce4b12d3b297bda3b23877d2b83f1f77bd72`，仓库 `D:/workspace4Cursor/blog-semi`。路径清单已加入原集中组 manifest 的 gitRecoveryPoints；10 个原始实体基线重新校验通过，未覆盖或重复复制。恢复本次适配/调度代码不改变已验收模型配置、线上凭据或已发布内容分支。
 
 本轮临时上游源码、锁定依赖及验证日志位于系统临时目录 `biau-horizon-outcomes-213d627a16834313aad26720ea697ad6`，核验无 reparse point、无运行进程后，已按精确路径删除全部 8,543 个本轮临时文件及目录；正式运行证据保留在原 artifacts 目录。既有未知目录、桌宠工作及历史 worktree 保留。
+
+## 2026-11-07 来源覆盖评估恢复点
+
+修改前任务记录、规范与 journal 均干净，恢复提交 `42e9e46fd3ca6ef066cf67229a94f90917e5d5e3`、仓库 `D:/workspace4Cursor/blog-semi` 与精确路径已记录到原集中 manifest。4 份 source-coverage / source-expansion 新交付物原不存在。当前生产源码、私有渠道、预算与验收 gate 未修改。
+
+本轮系统临时目录 `C:/Users/zhang/AppData/Local/Temp/biau-horizon-coverage-45f91030b9ae493597021db204885dee` 已清理：核验路径、无 reparse point、无引用进程后，按精确路径删除 8,148 个文件及 715 个子目录，包含上游隔离环境、一次性评估脚本与 RSS/网页/正文响应。另删除本轮收尾导入产生的 `scripts/horizon/__pycache__/run.cpython-313.pyc`。正式交付物仅保留配置候选、标题/来源/时间/计数和响应哈希；原有未知目录 ` .trellis/`、`undefined/`、桌宠工作及历史 worktree 保留。原集中恢复组 10 个实体基线重新校验通过。

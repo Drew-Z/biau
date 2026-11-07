@@ -1,0 +1,3413 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-07",
+  "modelChannel": "none",
+  "modelCalls": 0,
+  "engineRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+  "scope": "Authorized source assessment; candidate configs only, live generation/publication/configuration untouched",
+  "environment": "Windows local source requests; not GitHub Actions",
+  "snapshots": {
+    "rss-assessment": {
+      "checkedAt": "2026-11-07T03:14:12.917785+00:00",
+      "engineRevision": "d7406f738c711df82b8f060fa1d5e9999d36cca0",
+      "environment": "Windows local HTTP; not GitHub Actions",
+      "modelChannel": "none",
+      "modelCalls": 0,
+      "method": "Pinned RSSScraper.fetch, 7d window, 24h subset from returned dates, one feed fetch, no article extractor, concurrency 3, timeout 20s",
+      "sources": [
+        {
+          "id": "openai-news",
+          "name": "OpenAI News",
+          "url": "https://openai.com/news/rss.xml",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 1.77,
+          "responses": [
+            {
+              "url": "https://openai.com/news/rss.xml",
+              "status": 200,
+              "bytes": 832876,
+              "sha256": "5127c7d4002fa03ea8501ee0e6ddf3980451b33ccd30a7a772c0b5f88b450d0c",
+              "contentType": "text/xml; charset=utf-8"
+            }
+          ],
+          "native7d": 25,
+          "native24h": 1,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Partnering with Hacktron to find vulnerabilities in OpenAI’s systems",
+              "url": "https://openai.com/index/partnering-with-hacktron",
+              "publishedAt": "2026-11-06T08:00:00+00:00",
+              "rawContentChars": 145,
+              "textChars": 145,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Security"
+                ]
+              }
+            },
+            {
+              "title": "Measuring how AI agents handle everyday wet-lab science",
+              "url": "https://openai.com/index/measuring-how-ai-agents-handle-wet-lab-science",
+              "publishedAt": "2026-11-06T00:00:00+00:00",
+              "rawContentChars": 152,
+              "textChars": 152,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Publication"
+                ]
+              }
+            },
+            {
+              "title": "Australian universities are creating AI-native graduates",
+              "url": "https://openai.com/index/australian-universities-ai-native-graduates",
+              "publishedAt": "2026-11-05T17:00:00+00:00",
+              "rawContentChars": 147,
+              "textChars": 147,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Company"
+                ]
+              }
+            },
+            {
+              "title": "Cult.fit builds operational muscle with Codex",
+              "url": "https://openai.com/index/cultfit-builds-with-codex",
+              "publishedAt": "2026-11-05T20:00:00+00:00",
+              "rawContentChars": 111,
+              "textChars": 111,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "GPT‑6 Cyber: Advancing the frontier of aligned cybersecurity agents",
+              "url": "https://openai.com/index/introducing-gpt-6-cyber",
+              "publishedAt": "2026-11-05T09:00:00+00:00",
+              "rawContentChars": 156,
+              "textChars": 156,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Product"
+                ]
+              }
+            },
+            {
+              "title": "Merge builds product and business tools with OpenAI technology",
+              "url": "https://openai.com/index/merge-builds-with-openai",
+              "publishedAt": "2026-11-05T08:00:00+00:00",
+              "rawContentChars": 163,
+              "textChars": 163,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Setting a new standard for responsible AI infrastructure",
+              "url": "https://openai.com/index/setting-new-standard-responsible-ai-infrastructure",
+              "publishedAt": "2026-11-05T02:00:00+00:00",
+              "rawContentChars": 178,
+              "textChars": 178,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Global Affairs"
+                ]
+              }
+            },
+            {
+              "title": "Flipsnack grows product signups with conversion optimization",
+              "url": "https://openai.com/ads/customers/flipsnack",
+              "publishedAt": "2026-11-05T00:45:15+00:00",
+              "rawContentChars": 139,
+              "textChars": 139,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Franklin Templeton uses OpenAI to support investment research",
+              "url": "https://openai.com/index/franklin-templeton",
+              "publishedAt": "2026-11-05T00:00:00+00:00",
+              "rawContentChars": 156,
+              "textChars": 156,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "OpenAI to acquire Pierre Computer Company, Inc.",
+              "url": "https://openai.com/index/openai-to-acquire-pierre",
+              "publishedAt": "2026-11-04T14:30:00+00:00",
+              "rawContentChars": 117,
+              "textChars": 117,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Company"
+                ]
+              }
+            },
+            {
+              "title": "Daybreak Red is now available in AWS GovCloud (US-East)",
+              "url": "https://openai.com/index/daybreak-red-aws-govcloud",
+              "publishedAt": "2026-11-04T07:00:00+00:00",
+              "rawContentChars": 139,
+              "textChars": 139,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Product"
+                ]
+              }
+            },
+            {
+              "title": "A thousand fewer paths to root",
+              "url": "https://openai.com/index/a-thousand-fewer-paths-to-root",
+              "publishedAt": "2026-11-04T08:00:00+00:00",
+              "rawContentChars": 152,
+              "textChars": 152,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Security"
+                ]
+              }
+            },
+            {
+              "title": "Introducing Images 2.6",
+              "url": "https://openai.com/index/introducing-images-2-6",
+              "publishedAt": "2026-11-04T00:00:00+00:00",
+              "rawContentChars": 135,
+              "textChars": 135,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Product"
+                ]
+              }
+            },
+            {
+              "title": "DevRev delivers autonomous self-service with GPT-6.1 Sol",
+              "url": "https://openai.com/index/devrev-enterprise-self-service",
+              "publishedAt": "2026-11-04T00:00:00+00:00",
+              "rawContentChars": 116,
+              "textChars": 116,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Startup"
+                ]
+              }
+            },
+            {
+              "title": "Accelerating engineering for the physical world",
+              "url": "https://openai.com/index/accelerating-engineering-for-the-physical-world",
+              "publishedAt": "2026-11-03T12:00:00+00:00",
+              "rawContentChars": 139,
+              "textChars": 139,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Research"
+                ]
+              }
+            },
+            {
+              "title": "How Cisco defends at machine speed with OpenAI",
+              "url": "https://openai.com/index/cisco-cyber",
+              "publishedAt": "2026-11-03T08:00:00+00:00",
+              "rawContentChars": 138,
+              "textChars": 138,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Heimstaden is changing residential real estate management with AI",
+              "url": "https://openai.com/index/heimstaden",
+              "publishedAt": "2026-11-03T08:00:00+00:00",
+              "rawContentChars": 148,
+              "textChars": 148,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "OpenAI appoints Jill Hazelbaker as Chief Corporate Affairs Officer",
+              "url": "https://openai.com/index/jill-hazelbaker-chief-corporate-affairs-officer",
+              "publishedAt": "2026-11-03T00:00:00+00:00",
+              "rawContentChars": 139,
+              "textChars": 139,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Company"
+                ]
+              }
+            },
+            {
+              "title": "Scaling Git at OpenAI",
+              "url": "https://openai.com/index/scaling-git-at-openai",
+              "publishedAt": "2026-11-02T15:30:00+00:00",
+              "rawContentChars": 113,
+              "textChars": 113,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Engineering"
+                ]
+              }
+            },
+            {
+              "title": "Introducing the Grid Protectors Program",
+              "url": "https://openai.com/index/grid-protectors-program",
+              "publishedAt": "2026-11-02T15:00:00+00:00",
+              "rawContentChars": 154,
+              "textChars": 154,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Global Affairs"
+                ]
+              }
+            },
+            {
+              "title": "Preparing our next security sprint to harden OpenAI",
+              "url": "https://openai.com/index/preparing-our-next-security-sprint-to-harden-openai",
+              "publishedAt": "2026-11-02T18:00:00+00:00",
+              "rawContentChars": 122,
+              "textChars": 122,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Security"
+                ]
+              }
+            },
+            {
+              "title": "Rewarding defenders with bigger bug bounties",
+              "url": "https://openai.com/index/rewarding-defenders-with-bigger-bug-bounties",
+              "publishedAt": "2026-11-02T18:00:00+00:00",
+              "rawContentChars": 154,
+              "textChars": 154,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Security"
+                ]
+              }
+            },
+            {
+              "title": "LifeVal",
+              "url": "https://openai.com/index/lifeval",
+              "publishedAt": "2026-11-02T09:00:00+00:00",
+              "rawContentChars": 162,
+              "textChars": 162,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Research"
+                ]
+              }
+            },
+            {
+              "title": "OpenAI appoints Dan Driscoll as Senior Counselor for National Security Modernization",
+              "url": "https://openai.com/index/dan-driscoll-joins-openai",
+              "publishedAt": "2026-11-02T00:00:00+00:00",
+              "rawContentChars": 147,
+              "textChars": 147,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Company"
+                ]
+              }
+            },
+            {
+              "title": "Qodo builds context into AI code review with Codex",
+              "url": "https://openai.com/index/qodo-codex-plugin",
+              "publishedAt": "2026-11-02T00:00:00+00:00",
+              "rawContentChars": 148,
+              "textChars": 148,
+              "author": "OpenAI News",
+              "metadata": {
+                "feed_name": "OpenAI News",
+                "category": null,
+                "tags": [
+                  "Startup"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 1368,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T08:00:00+00:00",
+          "feedTitle": "OpenAI News"
+        },
+        {
+          "id": "google-ai-blog",
+          "name": "Google AI Blog",
+          "url": "https://blog.google/technology/ai/rss/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 2.34,
+          "responses": [
+            {
+              "url": "https://blog.google/technology/ai/rss/",
+              "status": 301,
+              "bytes": 299,
+              "sha256": "66d256d617d5cf6642478b9cd2a0e5faefb929786b6e46e1e012a08b9c027a1d",
+              "contentType": "text/html; charset=utf-8"
+            },
+            {
+              "url": "https://blog.google/innovation-and-ai/technology/ai/rss/",
+              "status": 200,
+              "bytes": 30823,
+              "sha256": "a34823670eb325f336c8dc5c46393003de27057d19c9a9f0f4ad1bd7073a54c2",
+              "contentType": "application/xml; charset=utf-8"
+            }
+          ],
+          "native7d": 2,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Gemini Omni 1.2 Flash: Fast and cost-effective with longer clips",
+              "url": "https://blog.google/innovation-and-ai/technology/developers-tools/introducing-gemini-omni-1-2-flash/",
+              "publishedAt": "2026-11-05T17:00:00+00:00",
+              "rawContentChars": 248,
+              "textChars": 120,
+              "author": "Anish Nangia",
+              "metadata": {
+                "feed_name": "Google AI Blog",
+                "category": null,
+                "tags": [
+                  "Gemini models",
+                  "Developer tools",
+                  "AI"
+                ]
+              }
+            },
+            {
+              "title": "The latest AI news we announced in October 2026",
+              "url": "https://blog.google/innovation-and-ai/technology/ai/google-ai-updates-october-2026/",
+              "publishedAt": "2026-11-02T17:45:00+00:00",
+              "rawContentChars": 177,
+              "textChars": 53,
+              "author": "Blog Team",
+              "metadata": {
+                "feed_name": "Google AI Blog",
+                "category": null,
+                "tags": [
+                  "Google DeepMind",
+                  "Quantum computing",
+                  "AI",
+                  "Gemini App",
+                  "Gemini models",
+                  "Fitbit",
+                  "Google Research"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 20,
+          "missingDates": 0,
+          "latestEntry": "2026-11-05T17:00:00+00:00",
+          "feedTitle": "AI"
+        },
+        {
+          "id": "deepmind-blog",
+          "name": "Google DeepMind Blog",
+          "url": "https://deepmind.google/blog/rss.xml",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 1.09,
+          "responses": [
+            {
+              "url": "https://deepmind.google/blog/rss.xml",
+              "status": 200,
+              "bytes": 70178,
+              "sha256": "d04e4f295a10562ac4cb3933c27b1001c8dc6b694c181231ce25a5a66f244f00",
+              "contentType": "application/xml"
+            }
+          ],
+          "native7d": 2,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Gemini Omni 1.2 Flash: Fast and cost-effective with longer clips",
+              "url": "https://deepmind.google/blog/gemini-omni-12-flash-fast-and-cost-effective-with-longer-clips/",
+              "publishedAt": "2026-11-05T17:05:16+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Google DeepMind Blog",
+              "metadata": {
+                "feed_name": "Google DeepMind Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Agentic cheminformatics with Google Antigravity",
+              "url": "https://deepmind.google/blog/agentic-cheminformatics-with-google-antigravity/",
+              "publishedAt": "2026-11-03T17:01:49+00:00",
+              "rawContentChars": 156,
+              "textChars": 156,
+              "author": "Google DeepMind Blog",
+              "metadata": {
+                "feed_name": "Google DeepMind Blog",
+                "category": null,
+                "tags": []
+              }
+            }
+          ],
+          "feedEntries": 100,
+          "missingDates": 0,
+          "latestEntry": "2026-11-05T17:05:16+00:00",
+          "feedTitle": "Google DeepMind News"
+        },
+        {
+          "id": "aws-machine-learning-blog",
+          "name": "AWS Machine Learning Blog",
+          "url": "https://aws.amazon.com/blogs/machine-learning/feed/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 3.84,
+          "responses": [
+            {
+              "url": "https://aws.amazon.com/blogs/machine-learning/feed/",
+              "status": 200,
+              "bytes": 685133,
+              "sha256": "21200f3b93de976944a140914fe374704a632e44e70a2cbe55025c87b9a71d5c",
+              "contentType": "application/rss+xml;charset=UTF-8"
+            }
+          ],
+          "native7d": 20,
+          "native24h": 8,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "SageMaker Inference now supports Multi-Instance GPU to maximize GPU utilization for model endpoints",
+              "url": "https://aws.amazon.com/blogs/machine-learning/sagemaker-inference-now-supports-multi-instance-gpu-to-maximize-gpu-utilization-for-model-endpoints/",
+              "publishedAt": "2026-11-06T18:01:00+00:00",
+              "rawContentChars": 28803,
+              "textChars": 22539,
+              "author": "Shantanu Tripathi",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon SageMaker AI",
+                  "Announcements",
+                  "Intermediate (200)"
+                ]
+              }
+            },
+            {
+              "title": "Taxonomy of agentic primitives in Amazon Quick",
+              "url": "https://aws.amazon.com/blogs/machine-learning/taxonomy-of-agentic-primitives-in-amazon-quick/",
+              "publishedAt": "2026-11-06T17:34:45+00:00",
+              "rawContentChars": 12650,
+              "textChars": 9180,
+              "author": "Thomas Delteil",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Quick Suite",
+                  "Intermediate (200)",
+                  "Thought Leadership"
+                ]
+              }
+            },
+            {
+              "title": "Serverless MCP server for AI agent data lake access on Amazon ECS Fargate",
+              "url": "https://aws.amazon.com/blogs/machine-learning/serverless-mcp-server-for-ai-agent-data-lake-access-on-amazon-ecs-fargate/",
+              "publishedAt": "2026-11-06T17:13:13+00:00",
+              "rawContentChars": 24381,
+              "textChars": 19205,
+              "author": "Aishwarya Pawar",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Elastic Container Service",
+                  "AWS Fargate",
+                  "Intermediate (200)",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "Govern AI agent access with Okta Cross App Access and Amazon Bedrock AgentCore – Part 2",
+              "url": "https://aws.amazon.com/blogs/machine-learning/govern-ai-agent-access-with-okta-cross-app-access-and-amazon-bedrock-agentcore-part-2/",
+              "publishedAt": "2026-11-06T17:09:23+00:00",
+              "rawContentChars": 36107,
+              "textChars": 23003,
+              "author": "Hammad Ausaf",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Bedrock AgentCore",
+                  "Expert (400)",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "Govern AI agent access with Okta Cross App Access and Amazon Bedrock AgentCore – Part 1",
+              "url": "https://aws.amazon.com/blogs/machine-learning/govern-ai-agent-access-with-okta-cross-app-access-and-amazon-bedrock-agentcore-part-1/",
+              "publishedAt": "2026-11-06T17:09:18+00:00",
+              "rawContentChars": 38220,
+              "textChars": 25940,
+              "author": "Hammad Ausaf",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Bedrock AgentCore",
+                  "Expert (400)",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "How Greenlight Financial built an autonomous SOC solution on Amazon Bedrock AgentCore",
+              "url": "https://aws.amazon.com/blogs/machine-learning/how-greenlight-financial-built-an-autonomous-soc-solution-on-amazon-bedrock-agentcore/",
+              "publishedAt": "2026-11-06T16:55:05+00:00",
+              "rawContentChars": 24724,
+              "textChars": 17697,
+              "author": "Adam Maksimuk",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Bedrock AgentCore",
+                  "Customer Solutions"
+                ]
+              }
+            },
+            {
+              "title": "Taxbit Assist: A grounded, role-aware AI agent on Amazon Bedrock AgentCore",
+              "url": "https://aws.amazon.com/blogs/machine-learning/taxbit-assist-a-grounded-role-aware-ai-agent-on-amazon-bedrock-agentcore/",
+              "publishedAt": "2026-11-06T16:49:42+00:00",
+              "rawContentChars": 27281,
+              "textChars": 20417,
+              "author": "Karan Nayak",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Bedrock AgentCore",
+                  "Customer Solutions"
+                ]
+              }
+            },
+            {
+              "title": "Extend Claude Code to remote sessions on Amazon Bedrock AgentCore with security controls",
+              "url": "https://aws.amazon.com/blogs/machine-learning/extend-claude-code-to-remote-sessions-on-amazon-bedrock-agentcore-with-security-controls/",
+              "publishedAt": "2026-11-06T16:45:58+00:00",
+              "rawContentChars": 32638,
+              "textChars": 22235,
+              "author": "Andrew (Qingjie) Ren",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Bedrock",
+                  "Amazon Bedrock AgentCore",
+                  "Expert (400)",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "Getting started with Web Answer on Amazon Bedrock AgentCore",
+              "url": "https://aws.amazon.com/blogs/machine-learning/getting-started-with-web-answer-on-amazon-bedrock-agentcore/",
+              "publishedAt": "2026-11-05T21:04:24+00:00",
+              "rawContentChars": 22235,
+              "textChars": 15936,
+              "author": "Adrianna Chudy",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Bedrock",
+                  "Amazon Bedrock AgentCore",
+                  "Intermediate (200)",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "How Amazon Marketplace evaluates content quality with Amazon SageMaker AI",
+              "url": "https://aws.amazon.com/blogs/machine-learning/how-amazon-marketplace-evaluates-content-quality-with-amazon-sagemaker-ai/",
+              "publishedAt": "2026-11-05T18:06:43+00:00",
+              "rawContentChars": 32971,
+              "textChars": 24086,
+              "author": "James Kim",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon SageMaker AI",
+                  "Best Practices",
+                  "Expert (400)"
+                ]
+              }
+            },
+            {
+              "title": "Use decision models with Amazon Bedrock AgentCore Evaluations",
+              "url": "https://aws.amazon.com/blogs/machine-learning/use-decision-models-with-amazon-bedrock-agentcore-evaluations/",
+              "publishedAt": "2026-11-04T18:46:36+00:00",
+              "rawContentChars": 26841,
+              "textChars": 19007,
+              "author": "Sungyeon Kim",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Bedrock AgentCore",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "Smart Approvals in Amazon Quick: Human oversight where it matters",
+              "url": "https://aws.amazon.com/blogs/machine-learning/smart-approvals-in-amazon-quick-human-oversight-where-it-matters/",
+              "publishedAt": "2026-11-04T16:33:03+00:00",
+              "rawContentChars": 10724,
+              "textChars": 8495,
+              "author": "Steve Vinsik",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Quick Suite",
+                  "Intermediate (200)",
+                  "Thought Leadership"
+                ]
+              }
+            },
+            {
+              "title": "Four layers of context engineering for production AI agents: How Deep Insight applies them in working code",
+              "url": "https://aws.amazon.com/blogs/machine-learning/four-layers-of-context-engineering-for-production-ai-agents-how-deep-insight-applies-them-in-working-code/",
+              "publishedAt": "2026-11-04T16:30:40+00:00",
+              "rawContentChars": 37887,
+              "textChars": 27579,
+              "author": "Yoonseo Kim",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Bedrock AgentCore",
+                  "Strands Agents",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "How Indegene is modernizing and scaling enterprise data quality in life sciences",
+              "url": "https://aws.amazon.com/blogs/machine-learning/how-indegene-is-modernizing-and-scaling-enterprise-data-quality-in-life-sciences/",
+              "publishedAt": "2026-11-04T16:25:57+00:00",
+              "rawContentChars": 55058,
+              "textChars": 30430,
+              "author": "Bhagyashree Chandak",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Customer Solutions"
+                ]
+              }
+            },
+            {
+              "title": "How U Mobile built agentic telco operations with Amazon Bedrock AgentCore",
+              "url": "https://aws.amazon.com/blogs/machine-learning/how-u-mobile-built-agentic-telco-operations-with-amazon-bedrock-agentcore/",
+              "publishedAt": "2026-11-04T16:23:33+00:00",
+              "rawContentChars": 29619,
+              "textChars": 24264,
+              "author": "Jin Tiong Lim",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Bedrock",
+                  "Amazon Bedrock AgentCore",
+                  "Customer Solutions"
+                ]
+              }
+            },
+            {
+              "title": "Bring structured and unstructured data together with Amazon Quick",
+              "url": "https://aws.amazon.com/blogs/machine-learning/bring-structured-and-unstructured-data-together-with-amazon-quick/",
+              "publishedAt": "2026-11-03T16:49:29+00:00",
+              "rawContentChars": 38966,
+              "textChars": 22475,
+              "author": "Puneeth Komaragiri",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Quick Suite",
+                  "Intermediate (200)",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "ServiceNow on-behalf-of token exchange with Bedrock AgentCore Gateway",
+              "url": "https://aws.amazon.com/blogs/machine-learning/servicenow-on-behalf-of-token-exchange-with-bedrock-agentcore-gateway/",
+              "publishedAt": "2026-11-03T16:47:40+00:00",
+              "rawContentChars": 29951,
+              "textChars": 17870,
+              "author": "Greg Biegel",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Bedrock AgentCore",
+                  "Technical How-to"
+                ]
+              }
+            },
+            {
+              "title": "How Gen Digital built Norton Revamp’s AI-curated News Engine with Amazon Bedrock AgentCore Web Search",
+              "url": "https://aws.amazon.com/blogs/machine-learning/how-gen-digital-built-norton-revamps-ai-curated-news-engine-with-amazon-bedrock-agentcore-web-search/",
+              "publishedAt": "2026-11-03T16:43:20+00:00",
+              "rawContentChars": 16467,
+              "textChars": 12532,
+              "author": "Iskander Sanchez-Rola",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Amazon Bedrock",
+                  "Amazon Bedrock AgentCore",
+                  "Customer Solutions",
+                  "Expert (400)"
+                ]
+              }
+            },
+            {
+              "title": "Build a semantic layer for agentic AI with EDB Postgres AI and Amazon Bedrock AgentCore",
+              "url": "https://aws.amazon.com/blogs/machine-learning/build-a-semantic-layer-for-agentic-ai-with-edb-postgres-ai-and-amazon-bedrock-agentcore/",
+              "publishedAt": "2026-11-03T16:41:13+00:00",
+              "rawContentChars": 45484,
+              "textChars": 28987,
+              "author": "Rajesh Nagpal",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Bedrock AgentCore",
+                  "Customer Solutions"
+                ]
+              }
+            },
+            {
+              "title": "Building ultra-low-latency voice AI applications on AWS",
+              "url": "https://aws.amazon.com/blogs/machine-learning/building-ultra-low-latency-voice-ai-applications-on-aws/",
+              "publishedAt": "2026-11-03T16:40:54+00:00",
+              "rawContentChars": 27713,
+              "textChars": 18469,
+              "author": "Nolan Chen",
+              "metadata": {
+                "feed_name": "AWS Machine Learning Blog",
+                "category": null,
+                "tags": [
+                  "Advanced (300)",
+                  "Amazon Connect",
+                  "Amazon SageMaker AI",
+                  "Technical How-to"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 20,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T18:01:00+00:00",
+          "feedTitle": "Artificial Intelligence"
+        },
+        {
+          "id": "google-cloud-ai-blog",
+          "name": "Google Cloud AI and ML Blog",
+          "url": "https://cloudblog.withgoogle.com/products/ai-machine-learning/rss/",
+          "legacyEnabled": false,
+          "status": "success",
+          "failures": [],
+          "seconds": 4.16,
+          "responses": [
+            {
+              "url": "https://cloudblog.withgoogle.com/products/ai-machine-learning/rss/",
+              "status": 200,
+              "bytes": 476527,
+              "sha256": "cc462a1af00eb5eb4c713fbc101763fbffd575ce792cc244d42cf1bad47599fd",
+              "contentType": "application/xml; charset=utf-8"
+            }
+          ],
+          "native7d": 6,
+          "native24h": 1,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "The Blueprint: Orchestrating 5,000+ AI assets for a World Cup TV spot",
+              "url": "https://cloud.google.com/blog/products/media-entertainment/how-mito-orchestrated-5000-plus-ai-assets-for-a-world-cup-tv-spot/",
+              "publishedAt": "2026-11-06T17:00:00+00:00",
+              "rawContentChars": 10072,
+              "textChars": 6562,
+              "author": "Keyvan Akbary",
+              "metadata": {
+                "feed_name": "Google Cloud AI and ML Blog",
+                "category": null,
+                "tags": [
+                  "AI & Machine Learning",
+                  "Customers",
+                  "Media & Entertainment"
+                ]
+              }
+            },
+            {
+              "title": "Bringing conversational analytics to Gemini with Agentic Data Cloud connectors",
+              "url": "https://cloud.google.com/blog/products/data-analytics/query-enterprise-data-in-gemini-with-data-cloud-connectors/",
+              "publishedAt": "2026-11-05T23:00:00+00:00",
+              "rawContentChars": 18366,
+              "textChars": 7769,
+              "author": "Mohsin Imam",
+              "metadata": {
+                "feed_name": "Google Cloud AI and ML Blog",
+                "category": null,
+                "tags": [
+                  "BigQuery",
+                  "Databases",
+                  "AI & Machine Learning",
+                  "Data Analytics"
+                ]
+              }
+            },
+            {
+              "title": "Gemini Omni 1.2 Flash: Fast, cost-effective, and reliable video generation and editing now generally available",
+              "url": "https://cloud.google.com/blog/products/ai-machine-learning/gemini-omni-1-2-flash-generally-available/",
+              "publishedAt": "2026-11-05T17:00:00+00:00",
+              "rawContentChars": 21770,
+              "textChars": 6740,
+              "author": "John Nack",
+              "metadata": {
+                "feed_name": "Google Cloud AI and ML Blog",
+                "category": null,
+                "tags": [
+                  "AI & Machine Learning"
+                ]
+              }
+            },
+            {
+              "title": "How Nammu21 automates syndicated loans on Google Cloud Universal Ledger",
+              "url": "https://cloud.google.com/blog/topics/financial-services/how-nammu21-automates-syndicated-loans-on-google-cloud-universal-ledger/",
+              "publishedAt": "2026-11-03T18:00:00+00:00",
+              "rawContentChars": 12073,
+              "textChars": 7888,
+              "author": "Moritz Platt",
+              "metadata": {
+                "feed_name": "Google Cloud AI and ML Blog",
+                "category": null,
+                "tags": [
+                  "AI & Machine Learning",
+                  "Customers",
+                  "Web3",
+                  "Financial Services"
+                ]
+              }
+            },
+            {
+              "title": "Introducing Physical-Engineering’s Last Exam for agents",
+              "url": "https://cloud.google.com/blog/products/ai-machine-learning/introducing-physical-engineerings-last-exam-for-agents/",
+              "publishedAt": "2026-11-03T08:00:00+00:00",
+              "rawContentChars": 10214,
+              "textChars": 4914,
+              "author": "Google AI & Infrastructure",
+              "metadata": {
+                "feed_name": "Google Cloud AI and ML Blog",
+                "category": null,
+                "tags": [
+                  "AI & Machine Learning"
+                ]
+              }
+            },
+            {
+              "title": "What Google Cloud announced in AI this month",
+              "url": "https://cloud.google.com/blog/products/ai-machine-learning/what-google-cloud-announced-in-ai-this-month/",
+              "publishedAt": "2026-11-02T16:00:00+00:00",
+              "rawContentChars": 92922,
+              "textChars": 42063,
+              "author": "Andrea Morange",
+              "metadata": {
+                "feed_name": "Google Cloud AI and ML Blog",
+                "category": null,
+                "tags": [
+                  "Google Cloud",
+                  "AI & Machine Learning"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 20,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T17:00:00+00:00",
+          "feedTitle": "AI & Machine Learning"
+        },
+        {
+          "id": "microsoft-research-blog",
+          "name": "Microsoft Research Blog",
+          "url": "https://www.microsoft.com/en-us/research/feed/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 4.88,
+          "responses": [
+            {
+              "url": "https://www.microsoft.com/en-us/research/feed/",
+              "status": 200,
+              "bytes": 396380,
+              "sha256": "4993e14e239bbb87cd745b680e345ea309c5516e4f94e9002b49b8ec67fe050f",
+              "contentType": "application/rss+xml; charset=UTF-8"
+            }
+          ],
+          "native7d": 2,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Formally verifying agent-written full-stack web apps with PDD Kit",
+              "url": "https://www.microsoft.com/en-us/research/blog/formally-verifying-agent-written-full-stack-web-apps-with-pdd-kit/",
+              "publishedAt": "2026-11-05T16:00:00+00:00",
+              "rawContentChars": 69685,
+              "textChars": 38960,
+              "author": "Alex Lavaee, Matthai Philipose",
+              "metadata": {
+                "feed_name": "Microsoft Research Blog",
+                "category": null,
+                "tags": [
+                  "Research Blog"
+                ]
+              }
+            },
+            {
+              "title": "Learn the rules: The hacker mindset",
+              "url": "https://www.microsoft.com/en-us/research/podcast/learn-the-rules-the-hacker-mindset/",
+              "publishedAt": "2026-11-03T17:14:38+00:00",
+              "rawContentChars": 69519,
+              "textChars": 42158,
+              "author": "Weishung Liu, Mike Walker",
+              "metadata": {
+                "feed_name": "Microsoft Research Blog",
+                "category": null,
+                "tags": [
+                  "Microsoft Research Podcast"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 10,
+          "missingDates": 0,
+          "latestEntry": "2026-11-05T16:00:00+00:00",
+          "feedTitle": "Microsoft Research"
+        },
+        {
+          "id": "ibm-research-blog",
+          "name": "IBM Research Blog",
+          "url": "https://research.ibm.com/rss",
+          "legacyEnabled": false,
+          "status": "success",
+          "failures": [],
+          "seconds": 4.89,
+          "responses": [
+            {
+              "url": "https://research.ibm.com/rss",
+              "status": 200,
+              "bytes": 15565,
+              "sha256": "60eb5996ba02b278ec9f82c2b6d6156da27ca58c991b698cb9fccca6039644b4",
+              "contentType": "application/rss+xml"
+            }
+          ],
+          "native7d": 4,
+          "native24h": 1,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Chicago’s bid to lead the country in quantum computing",
+              "url": "https://research.ibm.com/blog/chicago-quantum-computer?utm_medium=rss&utm_source=rss",
+              "publishedAt": "2026-11-06T05:00:00+00:00",
+              "rawContentChars": 109,
+              "textChars": 109,
+              "author": "IBM Research Blog",
+              "metadata": {
+                "feed_name": "IBM Research Blog",
+                "category": null,
+                "tags": [
+                  "News",
+                  "Quantum Community",
+                  "Quantum Network",
+                  "Quantum Systems"
+                ]
+              }
+            },
+            {
+              "title": "How MEMS inertial sensors can rival GPS",
+              "url": "https://research.ibm.com/blog/how-mems-inertial-sensors-can-rival-gps?utm_medium=rss&utm_source=rss",
+              "publishedAt": "2026-11-05T13:00:00+00:00",
+              "rawContentChars": 88,
+              "textChars": 88,
+              "author": "IBM Research Blog",
+              "metadata": {
+                "feed_name": "IBM Research Blog",
+                "category": null,
+                "tags": [
+                  "Aerospace",
+                  "Explainer",
+                  "Hardware Technology",
+                  "MEMS Inertial Sensing",
+                  "Sensing"
+                ]
+              }
+            },
+            {
+              "title": "ORNL, IBM, AMD launch co-design platform for QEC",
+              "url": "https://research.ibm.com/blog/ornl-amd-error-correction-co-design-platform?utm_medium=rss&utm_source=rss",
+              "publishedAt": "2026-11-05T13:00:00+00:00",
+              "rawContentChars": 154,
+              "textChars": 154,
+              "author": "IBM Research Blog",
+              "metadata": {
+                "feed_name": "IBM Research Blog",
+                "category": null,
+                "tags": [
+                  "News",
+                  "Quantum Community",
+                  "Quantum Network"
+                ]
+              }
+            },
+            {
+              "title": "Ponder This Challenge - November 2026 - The SumSum",
+              "url": "https://research.ibm.com/blog/ponder-this-november-2026?utm_medium=rss&utm_source=rss",
+              "publishedAt": "2026-10-31T23:00:00+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "IBM Research Blog",
+              "metadata": {
+                "feed_name": "IBM Research Blog",
+                "category": null,
+                "tags": [
+                  "Ponder This",
+                  "Puzzle"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 20,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T05:00:00+00:00",
+          "feedTitle": "IBM Research"
+        },
+        {
+          "id": "hugging-face-blog",
+          "name": "Hugging Face Blog",
+          "url": "https://huggingface.co/blog/feed.xml",
+          "legacyEnabled": false,
+          "status": "success",
+          "failures": [],
+          "seconds": 2.34,
+          "responses": [
+            {
+              "url": "https://huggingface.co/blog/feed.xml",
+              "status": 200,
+              "bytes": 265651,
+              "sha256": "64f9808eaf79b9920405768fb93ee99d1f9c8a06ed29b66e723d8579486f4d9d",
+              "contentType": "application/rss+xml; charset=utf-8"
+            }
+          ],
+          "native7d": 8,
+          "native24h": 1,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "ToyBlocks: A controlled world for robot learning and evaluation",
+              "url": "https://huggingface.co/blog/allenai/toyblocks",
+              "publishedAt": "2026-11-06T14:00:48+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Egyptian and Nigerian English join the Open ASR Leaderboard",
+              "url": "https://huggingface.co/blog/open-asr-leaderboard-liva",
+              "publishedAt": "2026-11-06T00:00:00+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "New NVIDIA Cosmos 3 Open Models for Interactive World Simulation",
+              "url": "https://huggingface.co/blog/nvidia/cosmos-interactive-world-simulation",
+              "publishedAt": "2026-11-05T19:35:16+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "A Closer Look at Phonon TTS. Launching High-Quality On-Device Speech That Tops the Benchmarks.",
+              "url": "https://huggingface.co/blog/phonon-tts",
+              "publishedAt": "2026-11-05T00:00:00+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Dharma Field Extractor: Any Document In, Structured Fields in JSON Out",
+              "url": "https://huggingface.co/blog/Dharma-AI/dharma-field-extractor",
+              "publishedAt": "2026-11-04T17:50:10+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Palette: teaching a small model to build decks in your design language",
+              "url": "https://huggingface.co/blog/ibm-research/palette-deck-building",
+              "publishedAt": "2026-11-03T16:35:36+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "CWE-bench v2: More coverage, quality, and transparency",
+              "url": "https://huggingface.co/blog/cwe-bench",
+              "publishedAt": "2026-11-03T00:00:00+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Transformers Model Integration Contracts",
+              "url": "https://huggingface.co/blog/transformers-mic",
+              "publishedAt": "2026-11-03T00:00:00+00:00",
+              "rawContentChars": 0,
+              "textChars": 0,
+              "author": "Hugging Face Blog",
+              "metadata": {
+                "feed_name": "Hugging Face Blog",
+                "category": null,
+                "tags": []
+              }
+            }
+          ],
+          "feedEntries": 899,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T14:00:48+00:00",
+          "feedTitle": "Hugging Face - Blog"
+        },
+        {
+          "id": "nvidia-developer-blog",
+          "name": "NVIDIA Developer Blog",
+          "url": "https://developer.nvidia.com/blog/feed/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 2.47,
+          "responses": [
+            {
+              "url": "https://developer.nvidia.com/blog/feed/",
+              "status": 200,
+              "bytes": 779721,
+              "sha256": "fcb5aff9c3c22ca35e02445cee6e2a21c78531b16229e02f0d1f437e35156866",
+              "contentType": "application/atom+xml; charset=UTF-8"
+            }
+          ],
+          "native7d": 13,
+          "native24h": 2,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Speed Up Image Generation with FLUX 3 Image Klein on NVIDIA Blackwell GPUs",
+              "url": "https://developer.nvidia.com/blog/speed-up-image-generation-with-flux-3-image-klein-on-nvidia-blackwell-gpus/",
+              "publishedAt": "2026-11-06T22:20:20+00:00",
+              "rawContentChars": 1519,
+              "textChars": 562,
+              "author": "Olivia Stoner",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Content Creation / Rendering",
+                  "Diffusion models",
+                  "Image Generation",
+                  "NVFP4"
+                ]
+              }
+            },
+            {
+              "title": "Accelerating Reinforcement Learning Weight Refit with the Reshard Collective",
+              "url": "https://developer.nvidia.com/blog/accelerating-reinforcement-learning-weight-refit-with-the-reshard-collective/",
+              "publishedAt": "2026-11-06T18:03:26+00:00",
+              "rawContentChars": 1221,
+              "textChars": 564,
+              "author": "Tanya Lenz",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "MLOps",
+                  "Networking / Communications",
+                  "Low-Latency Inference",
+                  "PyTorch",
+                  "Reinforcement Learning",
+                  "Training AI Models"
+                ]
+              }
+            },
+            {
+              "title": "Configure, Certify, and Operate Kubernetes GPU Clusters with NVIDIA DSX OS",
+              "url": "https://developer.nvidia.com/blog/configure-certify-and-operate-kubernetes-gpu-clusters-with-nvidia-dsx-os/",
+              "publishedAt": "2026-11-05T17:00:00+00:00",
+              "rawContentChars": 1473,
+              "textChars": 550,
+              "author": "Sowmyan Soman",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Data Center / Cloud",
+                  "Developer Tools & Techniques",
+                  "Cloud Services",
+                  "DSX",
+                  "Kubernetes",
+                  "Open Source"
+                ]
+              }
+            },
+            {
+              "title": "Five Ways NVIDIA Co-Design Maximizes the Value of Every Byte in the AI Factory",
+              "url": "https://developer.nvidia.com/blog/five-ways-nvidia-co-design-maximizes-the-value-of-every-byte-in-the-ai-factory/",
+              "publishedAt": "2026-11-05T16:00:00+00:00",
+              "rawContentChars": 1223,
+              "textChars": 562,
+              "author": "Shara Tibken",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Data Center / Cloud",
+                  "BlueField DPU",
+                  "DOCA",
+                  "Dynamo",
+                  "Ethernet",
+                  "featured",
+                  "GB200",
+                  "GB300",
+                  "GB300 NVL72",
+                  "GPUDirect",
+                  "H100",
+                  "NVLink",
+                  "Rubin GPU",
+                  "Spectrum-X",
+                  "TensorRT-LLM",
+                  "Vera CPU",
+                  "Vera Rubin",
+                  "Vera Rubin NVL72"
+                ]
+              }
+            },
+            {
+              "title": "How NVIDIA Uses AI Agents to Streamline AI Factory Operations",
+              "url": "https://developer.nvidia.com/blog/how-nvidia-uses-ai-agents-to-streamline-ai-factory-operations/",
+              "publishedAt": "2026-11-04T22:00:17+00:00",
+              "rawContentChars": 1207,
+              "textChars": 563,
+              "author": "Shara Tibken",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Data Center / Cloud",
+                  "MLOps",
+                  "AI Agent",
+                  "AI Factory",
+                  "Build AI Agents",
+                  "DGX",
+                  "GB200",
+                  "GB300",
+                  "HGX",
+                  "HPC / Scientific Computing",
+                  "Machine Learning & Artificial Intelligence",
+                  "NemoClaw",
+                  "Nemotron",
+                  "OpenShell"
+                ]
+              }
+            },
+            {
+              "title": "NVIDIA CUDA 13.5 Brings NVIDIA Vera Rubin GA Support",
+              "url": "https://developer.nvidia.com/blog/nvidia-cuda-13-5-brings-nvidia-vera-rubin-ga-support/",
+              "publishedAt": "2026-11-04T18:46:07+00:00",
+              "rawContentChars": 1194,
+              "textChars": 557,
+              "author": "Shara Tibken",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Developer Tools & Techniques",
+                  "CUDA",
+                  "CUDA Tile",
+                  "cuTile",
+                  "featured",
+                  "Machine Learning & Artificial Intelligence",
+                  "Nsight Tools - Compute",
+                  "Python"
+                ]
+              }
+            },
+            {
+              "title": "How NVIDIA Factory Operations Blueprint Coordinates AI Agents to Investigate Production Issues",
+              "url": "https://developer.nvidia.com/blog/how-nvidia-factory-operations-blueprint-coordinates-ai-agents-to-investigate-production-issues/",
+              "publishedAt": "2026-11-04T17:00:00+00:00",
+              "rawContentChars": 1582,
+              "textChars": 565,
+              "author": "Samuel Ochoa",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Computer Vision / Video Analytics",
+                  "Edge Computing",
+                  "Robotics",
+                  "Agent toolkit",
+                  "Build AI Agents",
+                  "featured",
+                  "LLMs",
+                  "NeMo",
+                  "NemoClaw"
+                ]
+              }
+            },
+            {
+              "title": "Use NVIDIA NeMo to Turn Agent Failures into Tests and Harness Fixes",
+              "url": "https://developer.nvidia.com/blog/use-nvidia-nemo-to-turn-agent-failures-into-tests-and-harness-fixes/",
+              "publishedAt": "2026-11-04T16:00:00+00:00",
+              "rawContentChars": 1465,
+              "textChars": 551,
+              "author": "Patrick Moorhead",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Developer Tools & Techniques",
+                  "Build AI Agents",
+                  "LLMs",
+                  "NeMo",
+                  "NemoClaw"
+                ]
+              }
+            },
+            {
+              "title": "Diagnose Distributed AI Workload Failures with NVIDIA Attribution",
+              "url": "https://developer.nvidia.com/blog/diagnose-distributed-ai-workload-failures-with-nvidia-attribution/",
+              "publishedAt": "2026-11-02T23:39:34+00:00",
+              "rawContentChars": 1196,
+              "textChars": 548,
+              "author": "Elizabeth Goodman",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Data Center / Cloud",
+                  "Developer Tools & Techniques",
+                  "MLOps",
+                  "Accelerated Computing Libraries",
+                  "NVL72"
+                ]
+              }
+            },
+            {
+              "title": "Keep Distributed Training Running with Automated Workload Recovery",
+              "url": "https://developer.nvidia.com/blog/keep-distributed-training-running-with-automated-workload-recovery/",
+              "publishedAt": "2026-11-02T22:43:05+00:00",
+              "rawContentChars": 1206,
+              "textChars": 561,
+              "author": "Elizabeth Goodman",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Data Center / Cloud",
+                  "DSX",
+                  "DSX AI Factory Platform",
+                  "Infrastructure"
+                ]
+              }
+            },
+            {
+              "title": "Making Kubernetes AI-Ready for NVIDIA Vera Rubin on Day One",
+              "url": "https://developer.nvidia.com/blog/making-kubernetes-ai-ready-for-nvidia-vera-rubin-on-day-one/",
+              "publishedAt": "2026-11-02T18:00:00+00:00",
+              "rawContentChars": 1421,
+              "textChars": 557,
+              "author": "Shara Tibken",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Data Center / Cloud",
+                  "AI Factory",
+                  "BlueField DPU",
+                  "Cloud Services",
+                  "ConnectX",
+                  "DSX",
+                  "DSX AI Factory Platform",
+                  "GB200",
+                  "Infrastructure",
+                  "Kubernetes",
+                  "Machine Learning & Artificial Intelligence",
+                  "NVLink",
+                  "Rubin GPU",
+                  "Vera Rubin",
+                  "Vera Rubin NVL72"
+                ]
+              }
+            },
+            {
+              "title": "Build World Models for Interactive Simulation with NVIDIA Cosmos",
+              "url": "https://developer.nvidia.com/blog/build-world-models-for-interactive-simulation-with-nvidia-cosmos/",
+              "publishedAt": "2026-11-02T17:00:00+00:00",
+              "rawContentChars": 1319,
+              "textChars": 546,
+              "author": "Elizabeth Goodman",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Agentic AI / Generative AI",
+                  "Robotics",
+                  "Simulation / Modeling / Design",
+                  "autonomous vehicles",
+                  "Cosmos",
+                  "Metropolis",
+                  "Physical AI",
+                  "Robotics Simulation",
+                  "VLMs"
+                ]
+              }
+            },
+            {
+              "title": "Support New AI Frameworks Faster Using NVIDIA Workload Map",
+              "url": "https://developer.nvidia.com/blog/support-new-ai-frameworks-faster-using-nvidia-workload-map/",
+              "publishedAt": "2026-11-02T16:00:00+00:00",
+              "rawContentChars": 1389,
+              "textChars": 556,
+              "author": "Alon Lavian",
+              "metadata": {
+                "feed_name": "NVIDIA Developer Blog",
+                "category": null,
+                "tags": [
+                  "Data Center / Cloud",
+                  "Developer Tools & Techniques",
+                  "MLOps",
+                  "DSX AI Factory Platform",
+                  "Kubernetes"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 100,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T22:20:20+00:00",
+          "feedTitle": "NVIDIA Technical Blog"
+        },
+        {
+          "id": "apple-machine-learning-research",
+          "name": "Apple Machine Learning Research",
+          "url": "https://machinelearning.apple.com/rss.xml",
+          "legacyEnabled": false,
+          "status": "success",
+          "failures": [],
+          "seconds": 1.53,
+          "responses": [
+            {
+              "url": "https://machinelearning.apple.com/rss.xml",
+              "status": 200,
+              "bytes": 9993,
+              "sha256": "1f6bc8f134b810b9f96b11bde33860e136c3bec91dacf93bb883ccc359a8dc8f",
+              "contentType": "text/xml"
+            }
+          ],
+          "native7d": 1,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Faster Retrieval for Better, More Efficient RAG",
+              "url": "https://machinelearning.apple.com/research/faster-retrieval",
+              "publishedAt": "2026-11-05T00:00:00+00:00",
+              "rawContentChars": 592,
+              "textChars": 592,
+              "author": "Apple Machine Learning Research",
+              "metadata": {
+                "feed_name": "Apple Machine Learning Research",
+                "category": null,
+                "tags": []
+              }
+            }
+          ],
+          "feedEntries": 10,
+          "missingDates": 0,
+          "latestEntry": "2026-11-05T00:00:00+00:00",
+          "feedTitle": "Apple Machine Learning Research"
+        },
+        {
+          "id": "github-changelog",
+          "name": "GitHub Changelog",
+          "url": "https://github.blog/changelog/feed/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 0.88,
+          "responses": [
+            {
+              "url": "https://github.blog/changelog/feed/",
+              "status": 200,
+              "bytes": 59540,
+              "sha256": "9d1e5a00220169671e2a7551b72a766ba33c9f0132a966a36e22cd04be985b5f",
+              "contentType": "application/rss+xml; charset=UTF-8"
+            }
+          ],
+          "native7d": 10,
+          "native24h": 4,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Copilot code review: API management and review overview updates",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+              "publishedAt": "2026-11-07T00:27:19+00:00",
+              "rawContentChars": 5978,
+              "textChars": 4005,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "copilot"
+                ]
+              }
+            },
+            {
+              "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+              "publishedAt": "2026-11-06T22:17:28+00:00",
+              "rawContentChars": 3666,
+              "textChars": 2454,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "account management",
+                  "copilot",
+                  "enterprise management tools"
+                ]
+              }
+            },
+            {
+              "title": "GitHub Copilot weekly releases — November 2",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+              "publishedAt": "2026-11-06T21:00:26+00:00",
+              "rawContentChars": 5389,
+              "textChars": 3093,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "copilot"
+                ]
+              }
+            },
+            {
+              "title": "@GitHub in Slack and Teams is generally available and more",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+              "publishedAt": "2026-11-06T20:31:08+00:00",
+              "rawContentChars": 2664,
+              "textChars": 1338,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "client apps",
+                  "copilot"
+                ]
+              }
+            },
+            {
+              "title": "Usage metrics API adds code review details and addressed rate",
+              "url": "https://github.blog/changelog/2026-11-05-usage-metrics-api-adds-code-review-details-and-addressed-rate",
+              "publishedAt": "2026-11-06T00:19:07+00:00",
+              "rawContentChars": 4505,
+              "textChars": 3122,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "account management",
+                  "copilot",
+                  "enterprise management tools"
+                ]
+              }
+            },
+            {
+              "title": "Usage metrics API flags telemetry and version gaps",
+              "url": "https://github.blog/changelog/2026-11-05-usage-metrics-api-flags-telemetry-and-version-gaps",
+              "publishedAt": "2026-11-06T00:08:31+00:00",
+              "rawContentChars": 3718,
+              "textChars": 2454,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "account management",
+                  "copilot",
+                  "enterprise management tools"
+                ]
+              }
+            },
+            {
+              "title": "Secret scanning upgrades detectors, adds SpaceX as partner",
+              "url": "https://github.blog/changelog/2026-11-05-secret-scanning-upgrades-detectors-adds-spacex-as-partner",
+              "publishedAt": "2026-11-05T15:48:50+00:00",
+              "rawContentChars": 5044,
+              "textChars": 2798,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "application security"
+                ]
+              }
+            },
+            {
+              "title": "New pull request overview page in public preview",
+              "url": "https://github.blog/changelog/2026-11-05-new-pull-request-overview-page-in-public-preview",
+              "publishedAt": "2026-11-05T08:00:00+00:00",
+              "rawContentChars": 4843,
+              "textChars": 2967,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "collaboration tools"
+                ]
+              }
+            },
+            {
+              "title": "CodeQL 2.27.4 improves accuracy and query metadata",
+              "url": "https://github.blog/changelog/2026-11-04-codeql-2-27-4-improves-accuracy-and-query-metadata",
+              "publishedAt": "2026-11-04T20:04:52+00:00",
+              "rawContentChars": 4206,
+              "textChars": 2509,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "application security"
+                ]
+              }
+            },
+            {
+              "title": "GitHub Copilot is now available in Xcode’s coding assistant",
+              "url": "https://github.blog/changelog/2026-11-04-github-copilot-is-now-available-in-xcodes-coding-assistant",
+              "publishedAt": "2026-11-04T19:10:40+00:00",
+              "rawContentChars": 1927,
+              "textChars": 1012,
+              "author": "Allison",
+              "metadata": {
+                "feed_name": "GitHub Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "copilot"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 10,
+          "missingDates": 0,
+          "latestEntry": "2026-11-07T00:27:19+00:00",
+          "feedTitle": "Archive: 2026 - GitHub Changelog"
+        },
+        {
+          "id": "meta-engineering",
+          "name": "Meta Engineering",
+          "url": "https://engineering.fb.com/feed/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 1.25,
+          "responses": [
+            {
+              "url": "https://engineering.fb.com/feed/",
+              "status": 200,
+              "bytes": 259546,
+              "sha256": "8d47019f6fe92aba90d92a906f5446204c5b0eef9f647bdf6416b39f419be2a8",
+              "contentType": "application/rss+xml; charset=UTF-8"
+            }
+          ],
+          "native7d": 1,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "F3 Lightning: How Meta Accelerates Ads ML Features to Production at Scale",
+              "url": "https://engineering.fb.com/2026/11/03/ml-applications/f3-lightning-how-meta-accelerates-ads-ml-features-to-production/",
+              "publishedAt": "2026-11-03T17:00:35+00:00",
+              "rawContentChars": 20382,
+              "textChars": 14272,
+              "author": "",
+              "metadata": {
+                "feed_name": "Meta Engineering",
+                "category": null,
+                "tags": [
+                  "ML Applications",
+                  "Production Engineering"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 9,
+          "missingDates": 0,
+          "latestEntry": "2026-11-03T17:00:35+00:00",
+          "feedTitle": "Engineering at Meta"
+        },
+        {
+          "id": "alibaba-group-news",
+          "name": "Alibaba Group News",
+          "url": "https://www.alizila.com/feed/",
+          "legacyEnabled": true,
+          "status": "failure",
+          "failures": [
+            {
+              "category": "HTTPStatusError",
+              "httpStatus": 403
+            }
+          ],
+          "seconds": 1.47,
+          "responses": [
+            {
+              "url": "https://www.alizila.com/feed/",
+              "status": 403,
+              "bytes": 5452,
+              "sha256": "2565add2da1c1f032a18514e7f3ce6e6365b32ac9c6cde0cb4511f65d471e689",
+              "contentType": "text/html; charset=UTF-8"
+            }
+          ],
+          "native7d": 0,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": []
+        },
+        {
+          "id": "red-hat-ai-blog",
+          "name": "Red Hat AI Blog Channel",
+          "url": "https://www.redhat.com/en/rss/blog/channel/artificial-intelligence",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 0.94,
+          "responses": [
+            {
+              "url": "https://www.redhat.com/en/rss/blog/channel/artificial-intelligence",
+              "status": 200,
+              "bytes": 8151,
+              "sha256": "1043dafa4b4204e6440c774565ae85fe57a24742b1f5e3d08e61ef9b2d6e3812",
+              "contentType": "application/rss+xml; charset=utf-8"
+            }
+          ],
+          "native7d": 3,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Trustworthy AI starts with community governance",
+              "url": "https://www.redhat.com/en/blog/trustworthy-ai-starts-community-governance",
+              "publishedAt": "2026-11-03T00:00:00+00:00",
+              "rawContentChars": 598,
+              "textChars": 598,
+              "author": "Red Hat AI Blog Channel",
+              "metadata": {
+                "feed_name": "Red Hat AI Blog Channel",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Future-proofing enterprise AI: The impact of post-quantum cryptography on Red Hat AI Enterprise",
+              "url": "https://www.redhat.com/en/blog/future-proofing-enterprise-ai-impact-post-quantum-cryptography-red-hat-ai-enterprise",
+              "publishedAt": "2026-11-03T00:00:00+00:00",
+              "rawContentChars": 600,
+              "textChars": 600,
+              "author": "Red Hat AI Blog Channel",
+              "metadata": {
+                "feed_name": "Red Hat AI Blog Channel",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "Sovereignty in the AI era: Choice, control, and autonomy",
+              "url": "https://www.redhat.com/en/blog/sovereignty-ai-era-choice-control-and-autonomy",
+              "publishedAt": "2026-11-02T00:00:00+00:00",
+              "rawContentChars": 600,
+              "textChars": 600,
+              "author": "Red Hat AI Blog Channel",
+              "metadata": {
+                "feed_name": "Red Hat AI Blog Channel",
+                "category": null,
+                "tags": []
+              }
+            }
+          ],
+          "feedEntries": 6,
+          "missingDates": 0,
+          "latestEntry": "2026-11-03T00:00:00+00:00",
+          "feedTitle": "Artificial intelligence (AI)"
+        },
+        {
+          "id": "cncf-blog",
+          "name": "CNCF Blog",
+          "url": "https://www.cncf.io/blog/feed/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 1.0,
+          "responses": [
+            {
+              "url": "https://www.cncf.io/blog/feed/",
+              "status": 200,
+              "bytes": 154907,
+              "sha256": "05a21979f080c1380886bd01fdd501efc45eb5c917c65c1924c1d326e8a1649e",
+              "contentType": "application/rss+xml; charset=UTF-8"
+            }
+          ],
+          "native7d": 4,
+          "native24h": 1,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "Faster LLM inference startup: What you need to know",
+              "url": "https://www.cncf.io/blog/2026/11/06/faster-llm-inference-startup-what-you-need-to-know/",
+              "publishedAt": "2026-11-06T12:00:00+00:00",
+              "rawContentChars": 20367,
+              "textChars": 14604,
+              "author": "Baofa Fan, DaoCloud",
+              "metadata": {
+                "feed_name": "CNCF Blog",
+                "category": null,
+                "tags": [
+                  "Blog"
+                ]
+              }
+            },
+            {
+              "title": "kpt v1.0.0 is released",
+              "url": "https://www.cncf.io/blog/2026/11/05/kpt-v1-0-0-is-released/",
+              "publishedAt": "2026-11-05T12:00:00+00:00",
+              "rawContentChars": 2684,
+              "textChars": 2163,
+              "author": "epower",
+              "metadata": {
+                "feed_name": "CNCF Blog",
+                "category": null,
+                "tags": [
+                  "Blog"
+                ]
+              }
+            },
+            {
+              "title": "OpenKruise Agents v0.6.0: Leaping ahead in agent Sandbox security and automation",
+              "url": "https://www.cncf.io/blog/2026/11/03/openkruise-agents-v0-6-0-leaping-ahead-in-agent-sandbox-security-and-automation/",
+              "publishedAt": "2026-11-03T12:00:00+00:00",
+              "rawContentChars": 25039,
+              "textChars": 19104,
+              "author": "Zhen Zhang, OpenKruise Maintainer",
+              "metadata": {
+                "feed_name": "CNCF Blog",
+                "category": null,
+                "tags": [
+                  "Blog"
+                ]
+              }
+            },
+            {
+              "title": "The Linkerd Story: The People Behind The Service Mesh — A new documentary premieres at KubeCon + CloudNativeCon North America 2026",
+              "url": "https://www.cncf.io/blog/2026/11/02/the-linkerd-story-the-people-behind-the-service-mesh-a-new-documentary-premieres-at-kubecon-cloudnativecon-north-america-2026/",
+              "publishedAt": "2026-11-02T12:00:00+00:00",
+              "rawContentChars": 5948,
+              "textChars": 4435,
+              "author": "epower",
+              "metadata": {
+                "feed_name": "CNCF Blog",
+                "category": null,
+                "tags": [
+                  "Blog"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 10,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T12:00:00+00:00",
+          "feedTitle": "Blog – Cloud Native Computing Foundation"
+        },
+        {
+          "id": "kubernetes-blog",
+          "name": "Kubernetes Blog",
+          "url": "https://kubernetes.io/feed.xml",
+          "legacyEnabled": true,
+          "status": "empty",
+          "failures": [],
+          "seconds": 2.53,
+          "responses": [
+            {
+              "url": "https://kubernetes.io/feed.xml",
+              "status": 200,
+              "bytes": 1127257,
+              "sha256": "2b07222202833e7fb8c23bb96686fc58bbce3017387ad8337b13805412c8641c",
+              "contentType": "application/xml"
+            }
+          ],
+          "native7d": 0,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [],
+          "feedEntries": 50,
+          "missingDates": 0,
+          "latestEntry": "2026-10-29T05:00:00+00:00",
+          "feedTitle": "Kubernetes Blog"
+        },
+        {
+          "id": "cmu-machine-learning-blog",
+          "name": "CMU Machine Learning Blog",
+          "url": "https://blog.ml.cmu.edu/feed/",
+          "legacyEnabled": true,
+          "status": "empty",
+          "failures": [],
+          "seconds": 4.91,
+          "responses": [
+            {
+              "url": "https://blog.ml.cmu.edu/feed/",
+              "status": 200,
+              "bytes": 46499,
+              "sha256": "7d1c9362c797afef2ae22a4d0ec40f11d8a6090a9ebbc31ef2e5abee38a5baec",
+              "contentType": "application/rss+xml; charset=UTF-8"
+            }
+          ],
+          "native7d": 0,
+          "native24h": 0,
+          "futureItems": 0,
+          "items": [],
+          "feedEntries": 1,
+          "missingDates": 0,
+          "latestEntry": "2026-08-10T21:52:23+00:00",
+          "feedTitle": "Machine Learning Blog | ML@CMU | Carnegie Mellon University"
+        },
+        {
+          "id": "mit-technology-review-ai",
+          "name": "MIT Technology Review AI",
+          "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed/",
+          "legacyEnabled": true,
+          "status": "success",
+          "failures": [],
+          "seconds": 3.17,
+          "responses": [
+            {
+              "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed/",
+              "status": 200,
+              "bytes": 114456,
+              "sha256": "ca4a1fbee0bd2bbd0c2584252c7a2de97532f8ad6b84b8bb5b75a38c3a066ab3",
+              "contentType": "application/rss+xml; charset=UTF-8"
+            }
+          ],
+          "native7d": 8,
+          "native24h": 1,
+          "futureItems": 0,
+          "items": [
+            {
+              "title": "I watched a humanoid robot clean my apartment. It felt like a taste of the future.",
+              "url": "https://www.technologyreview.com/2026/11/06/1148090/i-watched-a-humanoid-robot-clean-my-apartment-it-felt-like-a-taste-of-the-future/",
+              "publishedAt": "2026-11-06T10:00:00+00:00",
+              "rawContentChars": 8177,
+              "textChars": 7486,
+              "author": "Grace Huckins",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "App",
+                  "artificial intelligence",
+                  "Summary"
+                ]
+              }
+            },
+            {
+              "title": "Texas was the new epicenter of the AI data center buildout. That might be kaput.",
+              "url": "https://www.technologyreview.com/2026/11/04/1148043/texas-was-the-new-epicenter-of-the-ai-data-center-buildout-that-might-be-kaput/",
+              "publishedAt": "2026-11-04T18:50:55+00:00",
+              "rawContentChars": 5693,
+              "textChars": 4439,
+              "author": "James O'Donnell",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "App",
+                  "artificial intelligence",
+                  "Summary"
+                ]
+              }
+            },
+            {
+              "title": "Securing the agentic enterprise with data lineage",
+              "url": "https://www.technologyreview.com/2026/11/04/1147596/securing-the-agentic-enterprise-with-data-lineage/",
+              "publishedAt": "2026-11-04T13:00:00+00:00",
+              "rawContentChars": 3375,
+              "textChars": 1639,
+              "author": "MIT Technology Review Insights",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "sponsored"
+                ]
+              }
+            },
+            {
+              "title": "How “reverse game theory” could keep AI agents in check",
+              "url": "https://www.technologyreview.com/2026/11/03/1147934/reverse-game-theory-mechanism-design-ai-alignment/",
+              "publishedAt": "2026-11-03T10:43:41+00:00",
+              "rawContentChars": 9179,
+              "textChars": 7622,
+              "author": "Amit Katwala",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "App",
+                  "artificial intelligence",
+                  "Summary"
+                ]
+              }
+            },
+            {
+              "title": "Here’s who is falling in line for Trump’s “Super Intelligence” loyalty test",
+              "url": "https://www.technologyreview.com/2026/11/02/1147932/heres-who-is-falling-in-line-for-trumps-super-intelligence-loyalty-test/",
+              "publishedAt": "2026-11-03T04:18:47+00:00",
+              "rawContentChars": 10818,
+              "textChars": 7419,
+              "author": "James O'Donnell",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "App",
+                  "artificial intelligence",
+                  "The Algorithm"
+                ]
+              }
+            },
+            {
+              "title": "Raising the quality of insights in agentic analytics",
+              "url": "https://www.technologyreview.com/2026/11/02/1147660/raising-the-quality-of-insights-in-agentic-analytics/",
+              "publishedAt": "2026-11-02T17:00:00+00:00",
+              "rawContentChars": 5643,
+              "textChars": 3418,
+              "author": "MIT Technology Review Insights",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "sponsored"
+                ]
+              }
+            },
+            {
+              "title": "Stop counting tokens, start counting what ships",
+              "url": "https://www.technologyreview.com/2026/11/02/1147702/stop-counting-tokens-start-counting-what-ships/",
+              "publishedAt": "2026-11-02T13:10:32+00:00",
+              "rawContentChars": 8077,
+              "textChars": 6080,
+              "author": "Affan Syed",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "sponsored"
+                ]
+              }
+            },
+            {
+              "title": "The agentic web is here",
+              "url": "https://www.technologyreview.com/2026/11/02/1147846/the-agentic-web-is-here/",
+              "publishedAt": "2026-11-02T09:35:19+00:00",
+              "rawContentChars": 25987,
+              "textChars": 22530,
+              "author": "Grace Huckins",
+              "metadata": {
+                "feed_name": "MIT Technology Review AI",
+                "category": null,
+                "tags": [
+                  "Artificial intelligence",
+                  "App",
+                  "artificial intelligence"
+                ]
+              }
+            }
+          ],
+          "feedEntries": 10,
+          "missingDates": 0,
+          "latestEntry": "2026-11-06T10:00:00+00:00",
+          "feedTitle": "Artificial intelligence – MIT Technology Review"
+        }
+      ]
+    },
+    "additional-assessment": {
+      "checkedAt": "2026-11-07T03:35:21.057724+00:00",
+      "modelCalls": 0,
+      "sources": [
+        {
+          "id": "qbitai",
+          "name": "QbitAI",
+          "url": "https://www.qbitai.com/feed",
+          "windowStart": "2026-10-31T03:35:21.057724+00:00",
+          "status": "success",
+          "failureCategories": [],
+          "responses": [
+            {
+              "url": "https://www.qbitai.com/feed",
+              "status": 200,
+              "bytes": 6609,
+              "sha256": "f1da2ac3accdce647210b10d2a239207412ddad4590b942a5a3db6288eab5a63"
+            }
+          ],
+          "nativeCount": 10,
+          "native24h": 5,
+          "items": [
+            {
+              "title": "DeepSeek带火稀疏计算，国产芯片公司加速突围：这家公司又融近10亿",
+              "url": "https://www.qbitai.com/2026/11/508155.html",
+              "publishedAt": "2026-11-06T07:00:29+00:00",
+              "textChars": 10,
+              "rawChars": 10,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯"
+                ]
+              }
+            },
+            {
+              "title": "一边赛博修仙，一边卖家电！AI短剧开始冲双11业绩了？",
+              "url": "https://www.qbitai.com/2026/11/508118.html",
+              "publishedAt": "2026-11-06T06:54:17+00:00",
+              "textChars": 12,
+              "rawChars": 12,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "AI视频"
+                ]
+              }
+            },
+            {
+              "title": "从RSI、Agent、Physical AI到整个系统栈，2026 奇点智能技术大会最新日程公布！",
+              "url": "https://www.qbitai.com/2026/11/508143.html",
+              "publishedAt": "2026-11-06T06:43:14+00:00",
+              "textChars": 39,
+              "rawChars": 39,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "csdn"
+                ]
+              }
+            },
+            {
+              "title": "99.4%登顶全球第一！这个中国AI师承世界冠军",
+              "url": "https://www.qbitai.com/2026/11/508107.html",
+              "publishedAt": "2026-11-06T05:01:47+00:00",
+              "textChars": 25,
+              "rawChars": 25,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "首页轮播",
+                  "360"
+                ]
+              }
+            },
+            {
+              "title": "香港金融科技周 x StartmeupHK 2026主论坛：以「金融+」、「AI+」及全球拓展开拓新机遇",
+              "url": "https://www.qbitai.com/2026/11/507988.html",
+              "publishedAt": "2026-11-06T03:36:34+00:00",
+              "textChars": 32,
+              "rawChars": 32,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "香港金融周"
+                ]
+              }
+            },
+            {
+              "title": "AI短剧门槛降降降！实测即梦短剧工作室：剧本分镜预演一条龙，伙伴计划长期护航",
+              "url": "https://www.qbitai.com/2026/11/507972.html",
+              "publishedAt": "2026-11-06T03:20:05+00:00",
+              "textChars": 22,
+              "rawChars": 22,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "首页轮播",
+                  "AI",
+                  "AIGC"
+                ]
+              }
+            },
+            {
+              "title": "腾讯 Hy4 调用激增已十倍扩容，Agent 能力开源模型第一",
+              "url": "https://www.qbitai.com/2026/11/507967.html",
+              "publishedAt": "2026-11-06T02:00:11+00:00",
+              "textChars": 40,
+              "rawChars": 40,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "腾讯"
+                ]
+              }
+            },
+            {
+              "title": "孩子的人生大事，你要怎样的AI？海亮科服把AI生涯规划带给更多家庭",
+              "url": "https://www.qbitai.com/2026/11/507919.html",
+              "publishedAt": "2026-11-05T13:17:00+00:00",
+              "textChars": 7,
+              "rawChars": 7,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "首页轮播",
+                  "AI"
+                ]
+              }
+            },
+            {
+              "title": "三条AI技术路线终将合流？智象创始人梅涛提出智能体化的世界模型",
+              "url": "https://www.qbitai.com/2026/11/507834.html",
+              "publishedAt": "2026-11-05T09:37:40+00:00",
+              "textChars": 13,
+              "rawChars": 13,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "世界模型",
+                  "智象元一",
+                  "梅涛"
+                ]
+              }
+            },
+            {
+              "title": "拼多多让年轻人造草莓工厂，170天后“答案”熟了",
+              "url": "https://www.qbitai.com/2026/11/507823.html",
+              "publishedAt": "2026-11-05T09:00:18+00:00",
+              "textChars": 14,
+              "rawChars": 14,
+              "metadata": {
+                "feed_name": "QbitAI",
+                "category": null,
+                "tags": [
+                  "资讯",
+                  "多多农研科技大赛",
+                  "拼多多"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "jiqizhixin",
+          "name": "Jiqizhixin",
+          "url": "https://www.jiqizhixin.com/rss",
+          "windowStart": "2026-10-31T03:35:21.057724+00:00",
+          "status": "failure",
+          "failureCategories": [
+            "ValueError"
+          ],
+          "responses": [
+            {
+              "url": "https://www.jiqizhixin.com/rss",
+              "status": 302,
+              "bytes": 105,
+              "sha256": "79817eb60c7dc55031024f3b09dddde968b410d067be4f8168a622cf966ed65a"
+            },
+            {
+              "url": "https://www.jiqizhixin.com/data-service",
+              "status": 200,
+              "bytes": 3375,
+              "sha256": "1d7df405df48849fa58e82bb66991e0784b16857a256410fd972b8bd19abff85"
+            }
+          ],
+          "nativeCount": 0,
+          "native24h": 0,
+          "items": []
+        },
+        {
+          "id": "jiqizhixin-feed",
+          "name": "Jiqizhixin feed",
+          "url": "https://www.jiqizhixin.com/feed",
+          "windowStart": "2026-10-31T03:35:21.057724+00:00",
+          "status": "failure",
+          "failureCategories": [
+            "ValueError"
+          ],
+          "responses": [
+            {
+              "url": "https://www.jiqizhixin.com/feed",
+              "status": 200,
+              "bytes": 3375,
+              "sha256": "441f4fb57a1ee38b354f8522836f3142c41033ce34dd2845cad3f50c5bc09695"
+            }
+          ],
+          "nativeCount": 0,
+          "native24h": 0,
+          "items": []
+        },
+        {
+          "id": "leiphone",
+          "name": "Leiphone",
+          "url": "https://www.leiphone.com/feed",
+          "windowStart": "2026-10-31T03:35:21.057724+00:00",
+          "status": "failure",
+          "failureCategories": [
+            "ReadTimeout"
+          ],
+          "responses": [],
+          "nativeCount": 0,
+          "native24h": 0,
+          "items": []
+        },
+        {
+          "id": "qwen-blog",
+          "name": "Qwen Blog",
+          "url": "https://qwenlm.github.io/index.xml",
+          "windowStart": "2026-10-31T03:35:21.057724+00:00",
+          "status": "failure",
+          "failureCategories": [
+            "HTTPStatusError"
+          ],
+          "responses": [
+            {
+              "url": "https://qwenlm.github.io/index.xml",
+              "status": 404,
+              "bytes": 7582,
+              "sha256": "f04f5c0cd2a04c9b4fbe07c37d30c52cd0c396d2a3751736904747091b157b56"
+            }
+          ],
+          "nativeCount": 0,
+          "native24h": 0,
+          "items": []
+        },
+        {
+          "id": "vllm-releases",
+          "name": "vLLM releases",
+          "url": "https://github.com/vllm-project/vllm/releases.atom",
+          "windowStart": "2026-10-31T03:35:21.057724+00:00",
+          "status": "success",
+          "failureCategories": [],
+          "responses": [
+            {
+              "url": "https://github.com/vllm-project/vllm/releases.atom",
+              "status": 200,
+              "bytes": 732990,
+              "sha256": "61987c42006dfaa5e651827d9fb0786eba6eff0ea407eec6d1ca95644bc71bfb"
+            }
+          ],
+          "nativeCount": 2,
+          "native24h": 0,
+          "items": [
+            {
+              "title": "v0.33.0",
+              "url": "https://github.com/vllm-project/vllm/releases/tag/v0.33.0",
+              "publishedAt": "2026-11-01T09:21:10+00:00",
+              "textChars": 12,
+              "rawChars": 19,
+              "metadata": {
+                "feed_name": "vLLM releases",
+                "category": null,
+                "tags": []
+              }
+            },
+            {
+              "title": "v0.33.0",
+              "url": "https://github.com/vllm-project/vllm/releases/tag/v0.33.0rc3",
+              "publishedAt": "2026-11-02T10:11:34+00:00",
+              "textChars": 32511,
+              "rawChars": 108353,
+              "metadata": {
+                "feed_name": "vLLM releases",
+                "category": null,
+                "tags": []
+              }
+            }
+          ]
+        },
+        {
+          "id": "github-copilot",
+          "name": "GitHub Copilot Changelog",
+          "url": "https://github.blog/changelog/label/copilot/feed/",
+          "windowStart": "2026-10-31T03:35:21.057724+00:00",
+          "status": "success",
+          "failureCategories": [],
+          "responses": [
+            {
+              "url": "https://github.blog/changelog/label/copilot/feed/",
+              "status": 200,
+              "bytes": 62868,
+              "sha256": "dd73afee075db9a2ac7740d775580699981693b8f2e058fcf18873530305d979"
+            }
+          ],
+          "nativeCount": 9,
+          "native24h": 4,
+          "items": [
+            {
+              "title": "Copilot code review: API management and review overview updates",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+              "publishedAt": "2026-11-07T00:27:19+00:00",
+              "textChars": 4005,
+              "rawChars": 5978,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "copilot"
+                ]
+              }
+            },
+            {
+              "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+              "publishedAt": "2026-11-06T22:17:28+00:00",
+              "textChars": 2454,
+              "rawChars": 3666,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "account management",
+                  "copilot",
+                  "enterprise management tools"
+                ]
+              }
+            },
+            {
+              "title": "GitHub Copilot weekly releases — November 2",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+              "publishedAt": "2026-11-06T21:00:26+00:00",
+              "textChars": 3093,
+              "rawChars": 5389,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "copilot"
+                ]
+              }
+            },
+            {
+              "title": "@GitHub in Slack and Teams is generally available and more",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+              "publishedAt": "2026-11-06T20:31:08+00:00",
+              "textChars": 1338,
+              "rawChars": 2664,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "client apps",
+                  "copilot"
+                ]
+              }
+            },
+            {
+              "title": "Usage metrics API adds code review details and addressed rate",
+              "url": "https://github.blog/changelog/2026-11-05-usage-metrics-api-adds-code-review-details-and-addressed-rate",
+              "publishedAt": "2026-11-06T00:19:07+00:00",
+              "textChars": 3122,
+              "rawChars": 4505,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "account management",
+                  "copilot",
+                  "enterprise management tools"
+                ]
+              }
+            },
+            {
+              "title": "Usage metrics API flags telemetry and version gaps",
+              "url": "https://github.blog/changelog/2026-11-05-usage-metrics-api-flags-telemetry-and-version-gaps",
+              "publishedAt": "2026-11-06T00:08:31+00:00",
+              "textChars": 2454,
+              "rawChars": 3718,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "account management",
+                  "copilot",
+                  "enterprise management tools"
+                ]
+              }
+            },
+            {
+              "title": "GitHub Copilot is now available in Xcode’s coding assistant",
+              "url": "https://github.blog/changelog/2026-11-04-github-copilot-is-now-available-in-xcodes-coding-assistant",
+              "publishedAt": "2026-11-04T19:10:40+00:00",
+              "textChars": 1012,
+              "rawChars": 1927,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "copilot"
+                ]
+              }
+            },
+            {
+              "title": "BYOK and enterprise custom models in the Copilot usage API",
+              "url": "https://github.blog/changelog/2026-11-03-byok-and-enterprise-custom-models-in-the-copilot-usage-api",
+              "publishedAt": "2026-11-04T00:32:19+00:00",
+              "textChars": 3918,
+              "rawChars": 5563,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Improvement",
+                  "account management",
+                  "copilot",
+                  "enterprise management tools"
+                ]
+              }
+            },
+            {
+              "title": "GitHub Copilot is now available in JetBrains Air",
+              "url": "https://github.blog/changelog/2026-11-03-github-copilot-is-now-available-in-jetbrains-air",
+              "publishedAt": "2026-11-03T15:11:46+00:00",
+              "textChars": 2778,
+              "rawChars": 4800,
+              "metadata": {
+                "feed_name": "GitHub Copilot Changelog",
+                "category": null,
+                "tags": [
+                  "Release",
+                  "copilot"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "google-news-zh",
+          "name": "Google News Chinese",
+          "url": "https://news.google.com/rss/search",
+          "windowStart": "2026-11-06T03:35:21.057724+00:00",
+          "status": "success",
+          "failureCategories": [],
+          "responses": [
+            {
+              "url": "https://news.google.com/rss/search?q=%28%E5%A4%A7%E6%A8%A1%E5%9E%8B+OR+%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD+OR+DeepSeek+OR+Qwen%29+%28%E5%8F%91%E5%B8%83+OR+%E5%BC%80%E6%BA%90%29+when%3A25h&hl=zh-CN&gl=CN&ceid=CN%3Azh-Hans",
+              "status": 200,
+              "bytes": 19508,
+              "sha256": "d1b7637f535f020ec42e3cba366dcc8149d422415a61314c5cc18317fead9e80"
+            }
+          ],
+          "nativeCount": 10,
+          "native24h": 9,
+          "items": [
+            {
+              "title": "海报丨“‘人工智能＋媒体’蓝皮书（2026）”发布-思客 - 新华网",
+              "url": "https://news.google.com/rss/articles/CBMigAFBVV95cUxPWlVQUEFmQXZWRGctMC1jSlpwZTg3eW5ESnd3bmdVWFM5WFlSTTNxZDRWbXctQzlYekp0c2toVzM4Z3RDdE9KQWdQOE5tZjl1ZHNuNHJ6VHFPMUEyR2lkV0lSSXd4QnAtT2dVSER0SjJtMHFSbGJCbU83T2UtV0xwWQ?oc=5",
+              "publishedAt": "2026-11-07T01:13:00+00:00",
+              "textChars": 32,
+              "rawChars": 323,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "新华网"
+              }
+            },
+            {
+              "title": "发布“地球最强”模型仅几天后 OpenAI首席科学家发长文呼吁放慢AI开发 - 财联社",
+              "url": "https://news.google.com/rss/articles/CBMiSEFVX3lxTFBtOWJ1NTJ1WnRiUW5vbE82MzVDMVJoY2l4NjdtS0VTQWh3d0E0TmpRSENCYllLemw3NFprbUdyRzF1QmRmaF9ReA?oc=5",
+              "publishedAt": "2026-11-06T23:45:02+00:00",
+              "textChars": 41,
+              "rawChars": 256,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "财联社"
+              }
+            },
+            {
+              "title": "外媒：乌镇峰会聚焦人工智能开源开放 - 中青在线",
+              "url": "https://news.google.com/rss/articles/CBMifEFVX3lxTE5mNmFrQTJrTXNaMW5EajBmOVhBRlhSVmFZWGRWVXpzZmV6Vm9nMW5ycGltYldUMFRMX0ZvcEd2LWZlNUdQeTNfbm9VTGE4UUZ3ZHpuZXV1aTI5S1RIUklQYy01ZmFmNnFUd255Z3JBZEpGaFViRVpBRTFsS08?oc=5",
+              "publishedAt": "2026-11-06T09:38:00+00:00",
+              "textChars": 22,
+              "rawChars": 306,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "中青在线"
+              }
+            },
+            {
+              "title": "美企开源模型账单，89%付给中国AI - 观察者网",
+              "url": "https://news.google.com/rss/articles/CBMiZEFVX3lxTE9EWk9WbXYwS3FXYl9JRXF0OTFKbEF1VkNQZFR1VHBFTUxrTE1fdXVZdWZvaklsN01PSUFkdGxZUHlRaFR5T3ptck95UzhKM2FtNXViSGNKSXZmZDJvbkoyQVhzRHo?oc=5",
+              "publishedAt": "2026-11-06T10:29:00+00:00",
+              "textChars": 23,
+              "rawChars": 275,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "观察者网"
+              }
+            },
+            {
+              "title": "青岛市属企业发布第三批应用场景 人工智能“占大头” - 信网",
+              "url": "https://news.google.com/rss/articles/CBMiTEFVX3lxTE1oMnlBZ3hzTTh0RHExUjhiNEVvdzk1b3hMeG1VOWdXUERaQ2dzcDhiUmU3LUFUZE9HV0lNVElST0h2bk1UUFQ3SzRmdWg?oc=5",
+              "publishedAt": "2026-11-07T00:12:16+00:00",
+              "textChars": 28,
+              "rawChars": 248,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "信网"
+              }
+            },
+            {
+              "title": "世界互联网大会乌镇峰会闭幕 - 第一财经",
+              "url": "https://news.google.com/rss/articles/CBMiVEFVX3lxTE0xREZWbmhmYVc1UmNiTnRBMWNZTEpmNUlFeVl5WnhvZ1NWc01zd0E4U2NBdGZ1NzNuOEJBSDFPU3dKdjBoMndfSVd6X1ZncGRPWkVnWA?oc=5",
+              "publishedAt": "2026-11-06T10:44:41+00:00",
+              "textChars": 18,
+              "rawChars": 249,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "第一财经"
+              }
+            },
+            {
+              "title": "开源，如何站上AI时代的C位？ - 温州新闻",
+              "url": "https://news.google.com/rss/articles/CBMibEFVX3lxTE53SjU0ZF9kLWJFNnQ2Ym9rQW1neDZtdFl0RkllRFplako1RWVnazVsYktKc3V2MTVXelA1Z1ZmaDNHTVVaeHRVOEdlcl91Y1ROSDNjQzF1Zy1YTmJuN1JtSTlJMXlKVW5jaWZubw?oc=5",
+              "publishedAt": "2026-11-06T12:31:47+00:00",
+              "textChars": 20,
+              "rawChars": 283,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "温州新闻"
+              }
+            },
+            {
+              "title": "乌镇新声：开源之上，共建数字未来 - 浙江新闻",
+              "url": "https://news.google.com/rss/articles/CBMic0FVX3lxTFBoY1dTNFNRbWk2MFh3M2ttVGtkZjZRT1hPLW9wV3ZKVl9oa2dsTDFTZFVYTnhSRjNETnVjWVByZHJqNGRmazV5MVBtdmNzMDdCQ1hYSzY0blh1czdBZ09jSW10MXpwdi1jZEFhSFZsREtsVFE?oc=5",
+              "publishedAt": "2026-11-06T03:16:14+00:00",
+              "textChars": 21,
+              "rawChars": 293,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "浙江新闻"
+              }
+            },
+            {
+              "title": "一门四豪杰 阿里千问Qwen4系列大模型即将发布：还得是你鲲哥 - 驱动之家",
+              "url": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE41V2lwbEFvaGpuanRDaWlVTFN0Zmk3YnRlX1JOc1EyQkZ1RVBWNFoyLXJ0WGNIT24wYllWZjdCNndQM0F6bklpemxXSTRsNGh4QTN5cndOSHo?oc=5",
+              "publishedAt": "2026-11-06T13:35:00+00:00",
+              "textChars": 36,
+              "rawChars": 272,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "驱动之家"
+              }
+            },
+            {
+              "title": "海亮科服发布首个生涯大模型，开始操心你这辈子 - 甲子光年",
+              "url": "https://news.google.com/rss/articles/CBMiX0FVX3lxTE1UUnNpZ1FGX2d4TV9jSXRpTnYxZkVROFhCd1EtTEx4NDBOdjJVYWFkNmJ6WC11S1BmTWFURll6NlFKbUxqTllwOUV2b2JVUUI3dXd0V0RVTXVNeDV0VXVj?oc=5",
+              "publishedAt": "2026-11-06T11:40:44+00:00",
+              "textChars": 27,
+              "rawChars": 272,
+              "metadata": {
+                "gn_query": "(大模型 OR 人工智能 OR DeepSeek OR Qwen) (发布 OR 开源)",
+                "source_name": "甲子光年"
+              }
+            }
+          ]
+        },
+        {
+          "id": "gdelt-zh",
+          "name": "GDELT Chinese",
+          "url": "https://api.gdeltproject.org/api/v2/doc/doc",
+          "windowStart": "2026-11-06T03:35:21.057724+00:00",
+          "status": "failure",
+          "failureCategories": [
+            "HTTPStatusError"
+          ],
+          "responses": [
+            {
+              "url": "https://api.gdeltproject.org/api/v2/doc/doc?query=%28%22DeepSeek%22+OR+%22Qwen%22+OR+%22%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%22%29+sourcelang%3Achinese&mode=ArtList&format=json&maxrecords=10&sort=datedesc&startdatetime=20261106033521&enddatetime=20261107033527",
+              "status": 429,
+              "bytes": 444,
+              "sha256": "44c03f8dd984184218c90dc7e64aed9e6e2d8b17426feb5aa7933b3c44df64c6"
+            }
+          ],
+          "nativeCount": 0,
+          "native24h": 0,
+          "items": []
+        }
+      ]
+    },
+    "extraction-assessment": {
+      "method": "Pinned Horizon TrafilaturaExtractor; favor_precision=true; no model",
+      "modelCalls": 0,
+      "results": [
+        {
+          "url": "https://www.qbitai.com/2026/11/508155.html",
+          "title": "DeepSeek带火稀疏计算，国产芯片公司加速突围：这家公司又融近10亿",
+          "rssTextChars": 10,
+          "extractedChars": 2128,
+          "sha256": "3f271e585ca112120f9db027789dbb7ee53716945a68485de68e27af29fc6fd8",
+          "success": true
+        },
+        {
+          "url": "https://www.qbitai.com/2026/11/508118.html",
+          "title": "一边赛博修仙，一边卖家电！AI短剧开始冲双11业绩了？",
+          "rssTextChars": 12,
+          "extractedChars": 5112,
+          "sha256": "4769400b9647fef31cb83f75e4379aeb009c032dfa7d586d1422d40ca2ee462f",
+          "success": true
+        },
+        {
+          "url": "https://www.qbitai.com/2026/11/508143.html",
+          "title": "从RSI、Agent、Physical AI到整个系统栈，2026 奇点智能技术大会最新日程公布！",
+          "rssTextChars": 39,
+          "extractedChars": 2984,
+          "sha256": "650d2e192fb367bb3897ac7840171a897998808a618b997037941a7f740031e9",
+          "success": true
+        },
+        {
+          "url": "https://www.qbitai.com/2026/11/508107.html",
+          "title": "99.4%登顶全球第一！这个中国AI师承世界冠军",
+          "rssTextChars": 25,
+          "extractedChars": 4668,
+          "sha256": "cef13449407d5702a30dddc8281701b3ed23bda2c1b32b1554a968045510190e",
+          "success": true
+        },
+        {
+          "url": "https://www.qbitai.com/2026/11/507988.html",
+          "title": "香港金融科技周 x StartmeupHK 2026主论坛：以「金融+」、「AI+」及全球拓展开拓新机遇",
+          "rssTextChars": 32,
+          "extractedChars": 4553,
+          "sha256": "6c73a6482a70cfba479fea107cc239e42df40ad69f8967f1488d66f6b3363b6e",
+          "success": true
+        }
+      ]
+    },
+    "candidate-collection": {
+      "method": "Pinned validate_config and fetch_items; model client denied, all HTTP GET-only; publication not invoked",
+      "results": [
+        {
+          "phase": "core7",
+          "validated": true,
+          "sources": 7,
+          "fetchStatus": "success",
+          "fetched": 8,
+          "rawBeforeMerge": 8,
+          "sourceCounts": {
+            "rss": 8
+          },
+          "windowStart": "2026-11-06T03:39:41.559440+00:00",
+          "http": [
+            {
+              "host": "openai.com",
+              "status": 200
+            },
+            {
+              "host": "blog.google",
+              "status": 200
+            },
+            {
+              "host": "deepmind.google",
+              "status": 200
+            },
+            {
+              "host": "www.microsoft.com",
+              "status": 200
+            },
+            {
+              "host": "developer.nvidia.com",
+              "status": 200
+            },
+            {
+              "host": "github.blog",
+              "status": 200
+            },
+            {
+              "host": "www.technologyreview.com",
+              "status": 200
+            }
+          ],
+          "modelCalls": 0,
+          "items": [
+            {
+              "title": "Partnering with Hacktron to find vulnerabilities in OpenAI’s systems",
+              "url": "https://openai.com/index/partnering-with-hacktron",
+              "contentChars": 145,
+              "publisher": "OpenAI News"
+            },
+            {
+              "title": "Speed Up Image Generation with FLUX 3 Image Klein on NVIDIA Blackwell GPUs",
+              "url": "https://developer.nvidia.com/blog/speed-up-image-generation-with-flux-3-image-klein-on-nvidia-blackwell-gpus/",
+              "contentChars": 1519,
+              "publisher": "NVIDIA Developer Blog"
+            },
+            {
+              "title": "Accelerating Reinforcement Learning Weight Refit with the Reshard Collective",
+              "url": "https://developer.nvidia.com/blog/accelerating-reinforcement-learning-weight-refit-with-the-reshard-collective/",
+              "contentChars": 1221,
+              "publisher": "NVIDIA Developer Blog"
+            },
+            {
+              "title": "Copilot code review: API management and review overview updates",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+              "contentChars": 5978,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+              "contentChars": 3666,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "GitHub Copilot weekly releases — November 2",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+              "contentChars": 5389,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "@GitHub in Slack and Teams is generally available and more",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+              "contentChars": 2664,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "I watched a humanoid robot clean my apartment. It felt like a taste of the future.",
+              "url": "https://www.technologyreview.com/2026/11/06/1148090/i-watched-a-humanoid-robot-clean-my-apartment-it-felt-like-a-taste-of-the-future/",
+              "contentChars": 8177,
+              "publisher": "MIT Technology Review AI"
+            }
+          ]
+        },
+        {
+          "phase": "withChinese8",
+          "validated": true,
+          "sources": 8,
+          "fetchStatus": "success",
+          "fetched": 16,
+          "rawBeforeMerge": 16,
+          "sourceCounts": {
+            "rss": 16
+          },
+          "windowStart": "2026-11-06T03:39:54.460490+00:00",
+          "http": [
+            {
+              "host": "openai.com",
+              "status": 200
+            },
+            {
+              "host": "blog.google",
+              "status": 200
+            },
+            {
+              "host": "deepmind.google",
+              "status": 200
+            },
+            {
+              "host": "www.microsoft.com",
+              "status": 200
+            },
+            {
+              "host": "developer.nvidia.com",
+              "status": 200
+            },
+            {
+              "host": "github.blog",
+              "status": 200
+            },
+            {
+              "host": "www.technologyreview.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            },
+            {
+              "host": "www.qbitai.com",
+              "status": 200
+            }
+          ],
+          "modelCalls": 0,
+          "items": [
+            {
+              "title": "Partnering with Hacktron to find vulnerabilities in OpenAI’s systems",
+              "url": "https://openai.com/index/partnering-with-hacktron",
+              "contentChars": 145,
+              "publisher": "OpenAI News"
+            },
+            {
+              "title": "Speed Up Image Generation with FLUX 3 Image Klein on NVIDIA Blackwell GPUs",
+              "url": "https://developer.nvidia.com/blog/speed-up-image-generation-with-flux-3-image-klein-on-nvidia-blackwell-gpus/",
+              "contentChars": 1519,
+              "publisher": "NVIDIA Developer Blog"
+            },
+            {
+              "title": "Accelerating Reinforcement Learning Weight Refit with the Reshard Collective",
+              "url": "https://developer.nvidia.com/blog/accelerating-reinforcement-learning-weight-refit-with-the-reshard-collective/",
+              "contentChars": 1221,
+              "publisher": "NVIDIA Developer Blog"
+            },
+            {
+              "title": "Copilot code review: API management and review overview updates",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-code-review-api-management-and-review-overview-updates",
+              "contentChars": 5978,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "Copilot impact dashboard adds chat and VS Code agent usage",
+              "url": "https://github.blog/changelog/2026-11-06-copilot-impact-dashboard-adds-chat-and-vs-code-agent-usage",
+              "contentChars": 3666,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "GitHub Copilot weekly releases — November 2",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-weekly-releases-november-2",
+              "contentChars": 5389,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "@GitHub in Slack and Teams is generally available and more",
+              "url": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+              "contentChars": 2664,
+              "publisher": "GitHub Copilot Changelog"
+            },
+            {
+              "title": "I watched a humanoid robot clean my apartment. It felt like a taste of the future.",
+              "url": "https://www.technologyreview.com/2026/11/06/1148090/i-watched-a-humanoid-robot-clean-my-apartment-it-felt-like-a-taste-of-the-future/",
+              "contentChars": 8177,
+              "publisher": "MIT Technology Review AI"
+            },
+            {
+              "title": "A\\三大内部模型曝光！领先Opus5.5三个月，RSI缩短80%实验时间",
+              "url": "https://www.qbitai.com/2026/11/508184.html",
+              "contentChars": 2469,
+              "publisher": "QbitAI"
+            },
+            {
+              "title": "为什么每个 Personal Agent 背后，都必须配备一台“云电脑”？",
+              "url": "https://www.qbitai.com/2026/11/508174.html",
+              "contentChars": 4129,
+              "publisher": "QbitAI"
+            },
+            {
+              "title": "阶跃终端 STEPX Neo 智能体手机亮相进博会高通展台，软硬模一体打造智能体新体验",
+              "url": "https://www.qbitai.com/2026/11/508170.html",
+              "contentChars": 473,
+              "publisher": "QbitAI"
+            },
+            {
+              "title": "阿里巴巴发布《2026 AI向善行动报告》 AI数据中心可持续发展成年度亮点",
+              "url": "https://www.qbitai.com/2026/11/508165.html",
+              "contentChars": 2853,
+              "publisher": "QbitAI"
+            },
+            {
+              "title": "DeepSeek带火稀疏计算，国产芯片公司加速突围：这家公司又融近10亿",
+              "url": "https://www.qbitai.com/2026/11/508155.html",
+              "contentChars": 2128,
+              "publisher": "QbitAI"
+            },
+            {
+              "title": "一边赛博修仙，一边卖家电！AI短剧开始冲双11业绩了？",
+              "url": "https://www.qbitai.com/2026/11/508118.html",
+              "contentChars": 5112,
+              "publisher": "QbitAI"
+            },
+            {
+              "title": "从RSI、Agent、Physical AI到整个系统栈，2026 奇点智能技术大会最新日程公布！",
+              "url": "https://www.qbitai.com/2026/11/508143.html",
+              "contentChars": 2984,
+              "publisher": "QbitAI"
+            },
+            {
+              "title": "99.4%登顶全球第一！这个中国AI师承世界冠军",
+              "url": "https://www.qbitai.com/2026/11/508107.html",
+              "contentChars": 4668,
+              "publisher": "QbitAI"
+            }
+          ]
+        }
+      ]
+    },
+    "releases-assessment": {
+      "checkedAt": "2026-11-07T07:13:59.423270+00:00",
+      "method": "Pinned GitHubScraper; public GET without token, one call per repository; no model",
+      "modelCalls": 0,
+      "sources": [
+        {
+          "repository": "vllm-project/vllm",
+          "status": "success",
+          "failureCategories": [],
+          "retained7d": 1,
+          "native24h": 0,
+          "items": [
+            {
+              "title": "vllm-project/vllm released v0.33.0rc3",
+              "url": "https://github.com/vllm-project/vllm/releases/tag/v0.33.0rc3",
+              "publishedAt": "2026-11-02T10:10:05+00:00",
+              "contentChars": 37794,
+              "prerelease": false
+            }
+          ]
+        },
+        {
+          "repository": "huggingface/transformers",
+          "status": "success",
+          "failureCategories": [],
+          "retained7d": 1,
+          "native24h": 1,
+          "items": [
+            {
+              "title": "huggingface/transformers released v5.22.2",
+              "url": "https://github.com/huggingface/transformers/releases/tag/v5.22.2",
+              "publishedAt": "2026-11-06T15:43:27+00:00",
+              "contentChars": 361,
+              "prerelease": false
+            }
+          ]
+        },
+        {
+          "repository": "sgl-project/sglang",
+          "status": "success",
+          "failureCategories": [],
+          "retained7d": 1,
+          "native24h": 0,
+          "items": [
+            {
+              "title": "sgl-project/sglang released v0.5.23",
+              "url": "https://github.com/sgl-project/sglang/releases/tag/v0.5.23",
+              "publishedAt": "2026-11-02T22:14:10+00:00",
+              "contentChars": 103649,
+              "prerelease": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "documentation": [
+    {
+      "url": "https://huggingface.co/blog",
+      "fetchedTextSha256": "e22e6fc7d8791998077ef85986354bc43a67ab9540ae5a80a910028230340f6e",
+      "bytes": 12767,
+      "method": "smart-search fetch"
+    },
+    {
+      "url": "https://www.qbitai.com/",
+      "fetchedTextSha256": "9acb742662e38a9ee55b9330e345eb3257b13d678a3c168c7afce752daae71b9",
+      "bytes": 10331,
+      "method": "smart-search fetch"
+    },
+    {
+      "url": "https://github.blog/changelog/label/copilot/",
+      "fetchedTextSha256": "578a0a92ce5bd07ea9bef1aba624b3ebbf9f41b40b121a41569972b775fb1b26",
+      "bytes": 18369,
+      "method": "smart-search fetch"
+    },
+    {
+      "url": "https://www.qbitai.com/2026/11/508155.html",
+      "fetchedTextSha256": "981f061edf0f9051460eb181ba2dc07f7a4b5a35ef03645588cfe05b668f8b1d",
+      "bytes": 9204,
+      "method": "smart-search fetch"
+    },
+    {
+      "url": "https://github.com/vllm-project/vllm/releases/tag/v0.33.0",
+      "fetchedTextSha256": "e4260d0406f861478f7ad8d4272648a5b5429e081ac97809df442fb725ca2cf6",
+      "bytes": 8838,
+      "method": "smart-search fetch"
+    },
+    {
+      "url": "https://huggingface.co/blog/allenai/toyblocks",
+      "fetchedTextSha256": "7f5e9b5fbad055130f5441593312454b5be2060f973683aab7fb2ee3c03db45d",
+      "bytes": 31931,
+      "method": "smart-search fetch"
+    }
+  ],
+  "toolLimits": [
+    "smart-search zhipu-search unavailable: ZHIPU_API_KEY unconfigured",
+    "smart-search exa-search unavailable: EXA_API_KEY unconfigured",
+    "Continued with known publisher URLs, smart-search fetch and pinned native source collectors; no credentials altered"
+  ],
+  "snapshotLimits": [
+    "Each feed exposes only its retained entries, not a complete seven-day archive",
+    "24h input counts are snapshots, not eligible/news counts; no scoring",
+    "Local success does not prove GitHub runner accessibility or future reliability",
+    "QbitAI changed from 5 recent entries to 8 between checks; daily volume is not fixed",
+    "RSS extraction success alone does not prove independent factual accuracy or content permission"
+  ],
+  "snapshotComparisons": [
+    {
+      "group": "current3",
+      "ids": [
+        "openai-news",
+        "google-ai-blog",
+        "deepmind-blog"
+      ],
+      "snapshot24hSum": 1,
+      "retained7dItems": 29,
+      "maxObservedRolling24h": 9
+    },
+    {
+      "group": "candidate7",
+      "ids": [
+        "openai-news",
+        "google-ai-blog",
+        "deepmind-blog",
+        "microsoft-research-blog",
+        "nvidia-developer-blog",
+        "github-copilot",
+        "mit-technology-review-ai"
+      ],
+      "snapshot24hSum": 8,
+      "retained7dItems": 61,
+      "maxObservedRolling24h": 18
+    },
+    {
+      "group": "candidate8",
+      "ids": [
+        "openai-news",
+        "google-ai-blog",
+        "deepmind-blog",
+        "microsoft-research-blog",
+        "nvidia-developer-blog",
+        "github-copilot",
+        "mit-technology-review-ai",
+        "qbitai"
+      ],
+      "snapshot24hSum": 13,
+      "retained7dItems": 71,
+      "maxObservedRolling24h": 22
+    }
+  ]
+}
