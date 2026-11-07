@@ -76,6 +76,57 @@
       "0 12 * * *"
     ],
     "contentBranchBuildSkipped": true,
-    "newEditionRun": null
+    "newEditionRun": 42316220748,
+    "newEditionResult": "stopped-at-empty-filter; no publication; previous index preserved"
+  },
+  "firstCloudRun": {
+    "runId": 42316220748,
+    "editionId": "2026-11-07-morning",
+    "result": {
+      "ok": false,
+      "error": "model-stage-failed",
+      "diagnostics": {
+        "stage": "filter",
+        "modelCalls": 1,
+        "elapsedSeconds": 3.77,
+        "failure": {
+          "category": "empty-or-over-budget-selection",
+          "httpStatus": null
+        },
+        "usage": {
+          "total_input_tokens": 488,
+          "total_output_tokens": 247,
+          "per_provider": {
+            "openai": {
+              "input_tokens": 488,
+              "output_tokens": 247
+            }
+          }
+        },
+        "usageCoverage": {
+          "reportedRequests": 1,
+          "unknownRequests": 0
+        },
+        "attempts": [
+          {
+            "number": 1,
+            "stage": "score",
+            "httpStatus": 200,
+            "requestId": null,
+            "edgeTraceId": null,
+            "headersSeconds": 1.898,
+            "firstChunkSeconds": 1.904,
+            "elapsedSeconds": 3.558,
+            "finishReason": "stop",
+            "usage": {
+              "prompt_tokens": 488,
+              "completion_tokens": 247,
+              "total_tokens": 735
+            },
+            "outcome": "complete"
+          }
+        ]
+      }
+    }
   }
 }

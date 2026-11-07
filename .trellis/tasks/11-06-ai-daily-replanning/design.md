@@ -1,6 +1,6 @@
 # AI 日报：Horizon 接入设计
 
-状态：已批准，SDK 流式适配与离线验证完成；当前渠道 10 次真实新闻请求成功，最终 1 条样稿已核对原文并获用户验收。首期已发布到内容分支，网站与定时正在启用，见 [release.md](release.md)。产品决定以 [prd.md](prd.md) 为准，依据见 [research.md](research.md) 和 [gateway-research.md](gateway-research.md)。当前运行合同见 [运行说明](../../../docs/ai-daily-horizon.md)。
+状态：已批准，SDK 流式适配与离线验证完成；当前渠道 10 次真实新闻请求成功，最终 1 条样稿已核对原文并获用户验收。首期已发布到内容分支，网站与定时已启用，首个云端早报筛选为空；待合格新一期验证自动发布，见 [release.md](release.md)。产品决定以 [prd.md](prd.md) 为准，依据见 [research.md](research.md) 和 [gateway-research.md](gateway-research.md)。当前运行合同见 [运行说明](../../../docs/ai-daily-horizon.md)。
 
 ## 架构与职责
 

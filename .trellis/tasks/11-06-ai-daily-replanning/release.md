@@ -1,6 +1,6 @@
 # Horizon 首期发布与自动更新
 
-日期：2026-11-07（Asia/Shanghai）。状态：首期与网站已发布，早晚自动开关已开启；等待首个新期次的云端运行结果。
+日期：2026-11-07（Asia/Shanghai）。状态：首期与网站已发布，早晚自动更新已启用；首个云端早报因无达标内容停止，仍保留已验收晚刊。Actions 自动发布新一期尚无成功实证。
 
 ## 首次部署与发现的运行时差异
 
@@ -54,3 +54,16 @@ gh variable set AI_DAILY_AUTOMATION_ENABLED --repo Drew-Z/biau --body true
 ```
 
 生成失败不自动重试整期，最后成功索引保持；待故障解除后使用 workflow_dispatch 指定已到期的 edition_id 补跑。若只发生发布失败，下载同一 bundle 重放 publish，避免再次调用模型。应用回滚可恢复先前 Cloudflare 部署并关闭前端入口；内容历史不删除、不强推。
+
+## 首个云端早报（2026-11-07）
+
+北京时间 08:05 尚未观察到 schedule 事件，因此按已授权自动运行范围手动触发同一早刊 `2026-11-07-morning`，run `42316220748`。没有更改已验收配置、模型或预算；同一期后续 schedule 仍会先检查已发布索引。
+
+- 云端离线合同、配置哈希和 slot 检查成功，三路 RSS 完整性检查通过后进入评分。
+- 仅 1 次实际模型请求，HTTP 200、finishReason=stop、约 3.558 秒；488 输入 / 247 输出 tokens，usage 已返回，费用金额未知。由此证明 GitHub Secrets 可供真实模型调用，不能把失败 workflow 归为渠道不可用。
+- 流程在 filter 阶段以 `empty-or-over-budget-selection` 停止。固定上游逐条评分与本轮仅 1 个已完成请求、max_items=5 结合表明本次为空筛选；没有原始 scored artifact，不能断言具体评分值或理由。
+- 未进入 enrichment，artifact/publish job 均 skipped；内容分支仍为 `72c19e2e304a35938ae814d4acce0bcc472a4153`，没有覆盖晚刊或伪造早刊。
+- 未降低 threshold、扩充来源或重跑该手动任务。后续定时仍使用已验收配置。首个 schedule 的实际触发和合格新一期的 Actions 发布写权限仍待后续实证；不能把本地首期发布或云端跳过记录当作该环节成功。
+- 此次上线阶段新增模型请求 1；累计历史有精确计数的请求 18，最早缺计数的限制保留。脱敏结果保存在 `actions-morning-attempt.json` 与 release-verification.json。
+
+后续工作应优先根据正常期刊覆盖调整来源，而不是继续轮换模型或部署新的通用网关；来源扩展另行验证采集数量、相关性与预算，不为验收制造新新闻。

@@ -35,3 +35,9 @@
 每个路径只保存本轮初次修改前基线，没有按调试次数重复建组。旧管理清单中 `.env.example` 的历史 SHA 不同，不是本轮相同内容的可复用备份。规划/验证/恢复记录为任务交付管理材料，不递归备份。
 
 本轮生成证据保留于 `D:/Agent/codex/artifacts/ai-daily/20261106T125615747Z-first-live-trial`；只含脱敏运行结果与模型目录，没有新闻样稿或凭据。临时源码/依赖目录 `C:/Users/zhang/AppData/Local/Temp/biau-horizon-trial-20261106T125615747Z` 及证据目录的一次性 `trial-state.json` 已在验证后按精确路径删除。没有删除旧目录、构建缓存、历史备份或其他任务文件。
+
+## 2026-11-07 发布恢复与清理
+
+复用集中恢复组，publication.json 修改前快照和 Cloudflare 分支规则/新增公开变量前状态已保存，10 个实体基线 SHA-256 核验通过。未复制无关线上 Secret。Workers 兼容修正前的源码完整恢复点是 0bb99014；生产前一部署与当前部署见 release.md。
+
+本轮精确发布快照、编译产物、隔离 Git index、归档包位于系统临时目录 biau-horizon-release-s2ie2dt7；验证后已停止临时服务并清理快照/产物。node_modules 仅为链接，先移除链接后删除快照，项目依赖未删除。正式样稿、截图和调用记录留在 artifacts。原有空格前缀目录、undefined、其他任务及历史 worktree 继续保留。

@@ -2,7 +2,7 @@
   "id": "ai-daily-replanning",
   "name": "ai-daily-replanning",
   "title": "AI 日报重新规划",
-  "description": "首期与网站已上线，Cloudflare 读取兼容问题已修复，早晚自动开关已启用；云端 validate/重复期次跳过通过，等待首个新期次运行。",
+  "description": "首期与网站已上线，早晚自动更新已开启；云端模型调用成功，首个早报因无达标内容停止且保留旧刊。待合格新一期验证 Actions 发布。",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -26,7 +26,7 @@
     ".trellis/tasks/07-17-ai-daily-production-pipeline/prd.md",
     ".trellis/tasks/07-17-ai-daily-production-operations/task.json"
   ],
-  "notes": "既往 524/后台计费及两次越界短诊断记录继续保留。此次按授权续作 10 次真实新闻请求，失败无自动重试；两版内容缺失推断被拒绝，profile 调整后最终样稿事实核对通过。仍需用户首期验收；未提交/推送/发布。 2026-11-07：用户针对首期样稿验收提示回复“继续”；按既定策略接受该首期并进入发布。保持 3 来源/20 输入/5 成稿及原请求预算，不扩大覆盖范围。",
+  "notes": "既往 524/后台计费及两次越界短诊断记录继续保留。此次按授权续作 10 次真实新闻请求，失败无自动重试；两版内容缺失推断被拒绝，profile 调整后最终样稿事实核对通过。仍需用户首期验收；未提交/推送/发布。 2026-11-07：用户针对首期样稿验收提示回复“继续”；按既定策略接受该首期并进入发布。保持 3 来源/20 输入/5 成稿及原请求预算，不扩大覆盖范围。 2026-11-07：首期内容与 Cloudflare 阅读发布完成；原子内容分支、Secrets、早晚定时已启用。云端早刊 1 次模型调用成功，筛选为空未发布，最后晚刊保持；未降低标准或重跑。",
   "meta": {
     "planningConsent": "2026-11-06: create task and enter planning",
     "writingMode": "model-assisted real-news generation followed by Codex source review",
@@ -119,12 +119,12 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "Final native offline stream regressions, lint/build, editions/atomic publication and local preview passed; 10 authorized real-news calls completed. Final source review passed; no public release."
+      "latest": "Production read APIs and browser views pass; GitHub offline/duplicate-skip pass; cloud model response complete but first morning filter empty. Automatic publish of a new qualified edition not yet verified."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
-    "implementationState": "live-awaiting-first-automated-edition",
+    "implementationState": "live-awaiting-first-qualified-automated-publication",
     "configurationHash": "0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea",
-    "recordedModelHttpRequests": 17,
+    "recordedModelHttpRequests": 18,
     "firstTrialRequestCount": "not recorded by the original failure diagnostic; exact aggregate unknown",
     "liveGenerationConsent": "Prior bounded real-news trial remains authorized; user refilled HORIZON settings and allowed all models in their channels. This did not authorize the two short diagnostic prompts.",
     "localConfigCleanupConsent": "User requested clearing historical .env.local channel information and an organized template to fill other channels.",
@@ -188,9 +188,14 @@
       "workflowState": "active",
       "offlineValidationRun": 42302207548,
       "skipExistingRun": 42311723782,
-      "newEditionRun": null,
+      "newEditionRun": 42316220748,
       "productionReading": "both domains index/detail 200, ETag 304, unknown 404; 1440 zh and 390 en reload/overflow/pageerror passed",
-      "newModelCallsThisRelease": 0
-    }
+      "newModelCallsThisRelease": 1,
+      "newEditionResult": "Empty selection; no enrichment or publish; previous content branch unchanged."
+    },
+    "pendingOperationalEvidence": [
+      "First schedule event observed",
+      "First qualified newly generated bundle published by Actions contents:write job"
+    ]
   }
 }

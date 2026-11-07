@@ -1,6 +1,6 @@
 # AI 日报：实施与验收计划
 
-状态：in_progress / production enablement。Horizon SDK 流式适配、失败停止与诊断已实现并验证，10 次真实新闻调用均成功；最终 1 条中文样稿已核对原文并获用户验收。首期已进入内容分支，继续完成网站部署和早晚定时；执行证据见 [release.md](release.md)。
+状态：in_progress / live, awaiting qualified automatic publication。Horizon SDK 流式适配、失败停止与诊断已实现并验证，10 次真实新闻调用均成功；最终 1 条中文样稿已核对原文并获用户验收。首期、网站和早晚开关已上线；首个云端早报模型成功但筛选为空，未更新索引。待合格新一期验证 Actions 发布；执行证据见 [release.md](release.md)。
 
 ## 0. 规划审阅（本次）
 
@@ -143,3 +143,9 @@ UI 在本地预览验证桌面、320/390/430 宽度、三主题与两种界面�
 - [ ] 用户首期内容验收、常规来源覆盖与预算、Secrets/内容分支/发布/定时；发布 gate 未开启。任务不归档，不把一次成功当作长期稳定性证明。
 
 恢复点复用集中组，原基线不覆盖；新增两个 profile 的修改前快照。没有更改用户私有渠道或提高预算，没有提交/推送。
+
+## 2026-11-07 上线与云端早报
+
+已完成首期验收、Secrets、内容分支、Cloudflare 分支排除、网站部署和早晚开关。修复 Workers redirect:error 兼容问题，Node/边缘差异已写 spec。两个域名 API 和桌面/移动阅读验证通过；Actions validate、已存在期次跳过成功。首个云端早报 1 次模型调用成功后因无达标内容停止，保留旧刊。细节见 release.md。
+
+仍待合格新一期的 Actions 自动发布实证与实际 schedule 触发，任务保持 in_progress，不执行完成归档。无需重新请求首期验收或逐期发布批准。
