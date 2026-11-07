@@ -131,7 +131,7 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "2026-11-08 format repair: native offline, editions/atomic publication, lint/build, deployment/manual-gate docs passed. Candidate cloud validation pending; production unchanged. Actual schedule and first qualified new automatic publication remain pending."
+      "latest": "2026-11-08: native offline, editions/atomic publication, lint/build and document checks passed; Linux Actions validate 42398050641 at 5d971e8a passed with zero model requests/artifacts and skipped publication. Candidate 429 reason and live 10-second pacing remain unverified; production unchanged."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
     "implementationState": "live-awaiting-first-qualified-automated-publication",
@@ -330,7 +330,9 @@
       "productionSwitched": false,
       "report": "channel-2-compatibility.md",
       "evidence": "channel-2-compatibility-evidence.json",
-      "cloudValidation": "pending"
+      "cloudValidation": "success",
+      "cloudValidationRun": 42398050641,
+      "implementationCommit": "5d971e8a6a3a83c45ee889834b04fb26e42311b1"
     }
   }
 }

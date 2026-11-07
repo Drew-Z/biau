@@ -40,10 +40,14 @@ NVIDIA 摘要保留来源归因和 weight refit 场景，未虚构性能、价�
 
 此前 29 次 + 本轮诊断 2 次 + 整期 8 次 = **39/60，剩余 21 次**。本轮 9 次返回 usage，共 14,321 tokens；429 用量未知，不推算费用，也不把错误请求视为免费。
 
-原生断网测试覆盖严格代码块兼容、原生评分/摘要、两阶段节奏传参、429 机器码/迟缓正文/不重试和主备模型隔离；期刊/原子发布、lint、build、部署与门禁文档检查通过。云端仅运行 `validate`，结果另行补记；已有 `42389094702` 属于上轮提交，不能作为本轮修复验证。
+原生断网测试覆盖严格代码块兼容、原生评分/摘要、两阶段节奏传参、429 机器码/迟缓正文/不重试和主备模型隔离；期刊/原子发布、lint、build、部署与门禁文档检查通过。
 
-正式私有证据保存在 `D:/Agent/codex/artifacts/ai-daily/20261108-channel2-compatibility/`：38 份 JSON 包括诊断、原生阶段产物、冻结输入和停止账本；`artifacts.json` 记录 SHA-256。复制前扫描私有地址/凭据、复制后哈希核验通过，原始运行目录不进 Git。
+提交 `5d971e8a` 已推送候选分支，Actions [42398050641](https://github.com/Drew-Z/biau/actions/runs/42398050641) 于北京时间 11 月 8 日 01:48 完成 `validate`：Linux 原生断网与发布合同通过，0 模型请求、0 上传 artifact，采集/生成/发布均跳过。该结果证明修复在 runner 上通过离线合同，不证明真实云端模型生成或 429 已修复。
+
+正式私有证据保存在 `D:/Agent/codex/artifacts/ai-daily/20261108-channel2-compatibility/`：38 份诊断/原生阶段/冻结输入/停止账本 JSON，加 1 份云端验证记录；`artifacts.json` 记录 SHA-256。复制前扫描私有地址/凭据、复制后哈希核验通过，原始运行目录不进 Git。
 
 恢复点继续使用 `D:/Agent/codex/backups/tasks/20261106T133109757Z-ai-daily-replanning/manifest.json`。干净代码/任务/日志以 `f250dbba` 为阶段恢复点；私有环境已保存独立阶段实体、核验哈希与 ACL，未覆盖原始基线。
+
+收尾重新核验全部 12 份实体恢复点和 39 份证据；私有环境相较阶段快照仅 `HORIZON_MODEL2` 变化。已删除本轮临时目录 `C:/Users/zhang/AppData/Local/Temp/horizon-channel-repair-ddzb8d4c`（8,587 文件、732 子目录）：删除前确认范围、无重解析点、无关联运行进程。既存桌宠/UI 改动、` .trellis/`、`undefined/`、vendor 包和 4 个旧 worktree 保留。
 
 下一步需要渠道后台的 429 原因或已修复证据。明确 RPM/TPM 后据实际限额调整节奏，额度/余额不足则先处理渠道配置；随后在剩余 21 次内做新的有界整期及云端生成验证。完整成稿与原文核对通过后才更新验收配置、配置渠道 2 Secrets 并合并上线。AC12 仍未完成，任务保持 `in_progress`。

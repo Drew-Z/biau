@@ -1919,3 +1919,42 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - None - task complete
+
+
+## Session 154: Horizon JSON 兼容修复与渠道 2 限流证据
+
+**Date**: 2026-11-08
+**Task**: Horizon JSON 兼容修复与渠道 2 限流证据
+**Branch**: `codex/ai-daily-seven-sources`
+
+### Summary
+
+修复本站完整 JSON 代码块误判并完成本地和 Linux 离线验证；真实整期被 HTTP 429 中止，剩余 21 次，待后台原因。
+
+### Main Changes
+
+- 确认完整 JSON 代码块被本站误拒绝，完成严格兼容与原生字段验证；主备分别映射 Gemini Lite / DeepSeek。
+- 真实诊断 2 请求，整期 8 请求中前 7 次完整、第 8 次 429 硬停；累计 39/60，剩余 21，无 bundle/发布，思考设置不变。
+- 评分和摘要统一 10 秒节奏，429 有界安全分类、手动 Actions 请求上限已补；新节奏尚未真实验证。
+- 本地原生断网、期刊/原子发布、lint/build、文档门禁通过；Linux Actions 42398050641 在 5d971e8a 通过 validate，0 模型请求/上传 artifact，发布跳过。
+- 39 份证据哈希与私有值扫描通过；复用集中恢复组并核验 12 份实体备份与私有 ACL，清理本轮 8,587 文件的临时环境。
+- 生产、未知旧文件及 4 个旧 worktree 保留；待渠道后台 429 原因或修复证据，再用剩余额度验证整期与云端生成。任务及 AC12 仍未完成。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `5d971e8a` | (see git log) |
+
+### Testing
+
+- [OK] 本地原生断网、期刊/原子发布、lint/build、部署/门禁文档、Linux Actions validate 42398050641；真实新节奏和完整成稿未通过验收。
+
+### Status
+
+[OK] 本轮修复与离线核验完成；日报任务 **in_progress**，AC12 未完成，生产未切换。
+
+### Next Steps
+
+- 确认后台 429 原因/修复证据后，在剩余 21 次内完成新的受限整期与云端生成验证；不得清除停止账本或用部分稿绕过 gate。

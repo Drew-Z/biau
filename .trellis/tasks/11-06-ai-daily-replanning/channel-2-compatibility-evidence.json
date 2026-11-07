@@ -89,9 +89,15 @@
     "deploymentDocs": "passed",
     "manualGateDocs": "passed",
     "diffCheck": "passed",
-    "cloud": "pending"
+    "cloud": "passed",
+    "cloudRun": 42398050641,
+    "cloudCommit": "5d971e8a6a3a83c45ee889834b04fb26e42311b1",
+    "cloudOperation": "validate",
+    "cloudModelRequests": 0,
+    "cloudUploadedArtifacts": 0,
+    "cloudPublication": "skipped"
   },
   "artifactDirectory": "D:\\Agent\\codex\\artifacts\\ai-daily\\20261108-channel2-compatibility",
-  "artifactManifestSha256": "2ad781275c173eb3f9b35bffa10a1b8791355537be0bc77af74b5e12e9190521",
+  "artifactManifestSha256": "3bf1c58b2082b30cc60609d46b2eb34c4aa3d91db3bc6147fdad1156fc6aa6f7",
   "nextCondition": "Provider-side 429 reason/limit or quota repair evidence before another bounded real trial; keep stopped checkpoint intact"
 }
