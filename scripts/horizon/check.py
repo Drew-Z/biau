@@ -1,16 +1,19 @@
 """Offline native-pipeline and bounded-transport regression checks. No network."""
 import argparse
 import asyncio
+import contextlib
 from datetime import datetime, timedelta, timezone
+import io
 import json
 from pathlib import Path
 import socket
+import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from run import HERE, MAX_MODEL_RESPONSE_BYTES, RequestBudget, StageRejected, configuration_hash, execute, guarded_client, read_json, require_fetch, require_scored, resolve_edition, verify_upstream
+from run import HERE, MAX_MODEL_RESPONSE_BYTES, SCHEDULES, RequestBudget, StageRejected, configuration_hash, execute, guarded_client, main, read_json, require_fetch, require_scored, resolve_edition, verify_upstream
 
 
 def rejected(call):
@@ -28,14 +31,29 @@ async def check(root):
     from src.ai.client import OpenAIClient
     from src.ai.errors import AIProviderUnavailableError
     from src.models import AIConfig, ContentItem
+    from src.mcp.service import HorizonPipelineService
     from src.scrapers.base import FetchResult
     from src.scrapers.rss import RSSScraper
+    # Follow the actual Actions handoff: only a generated, previewed bundle can publish.
+    workflow = json.loads(subprocess.check_output(['node', '--input-type=module', '-e', "import { readFileSync } from 'node:fs'; import { parse } from 'yaml'; console.log(JSON.stringify(parse(readFileSync('.github/workflows/ai-daily-horizon.yml', 'utf8'))));"], cwd=HERE.parents[1], text=True))
+    assert {entry['cron'] for entry in workflow['on']['schedule']} == set(SCHEDULES)
+    job = workflow['jobs']['generate']
+    steps = {step['id']: step for step in job['steps'] if 'id' in step}
+    assert '--github-actions' in steps['generate']['run']
+    assert steps['preview']['if'] == "steps.generate.outputs.outcome == 'generated'"
+    assert job['outputs']['publish'] == '${{ steps.preview.outputs.publish }}'
+    assert next(step for step in job['steps'] if step.get('uses') == 'actions/upload-artifact@v4')['if'] == "steps.preview.outputs.publish == 'true'"
+    assert workflow['jobs']['publish']['if'] == "needs.generate.outputs.publish == 'true' && vars.AI_DAILY_AUTOMATION_ENABLED == 'true'"
 
     now = datetime(2026, 11, 6, 0, 30, tzinfo=timezone.utc)
-    assert resolve_edition(schedule="0 0 * * *", created_at="2026-11-06T00:05:00Z", now=now)["editionId"] == "2026-11-06-morning"
+    assert resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:17:00Z", now=now) == {"editionId": "2026-11-06-morning", "scheduledFor": "2026-11-06T00:00:00.000Z"}
     assert resolve_edition("2026-11-05-evening", now=now)["scheduledFor"] == "2026-11-05T12:00:00.000Z"
-    rejected(lambda: resolve_edition(schedule="0 12 * * *", created_at="2026-11-05T23:55:00Z", now=now))
-    rejected(lambda: resolve_edition(schedule="0 0 * * *", created_at="2026-11-06T00:05:00Z", now=now + timedelta(hours=12)))
+    evening_now = datetime(2026, 11, 6, 16, 1, tzinfo=timezone.utc)
+    assert resolve_edition(schedule="17 12 * * *", created_at="2026-11-06T12:17:00Z", now=evening_now)["editionId"] == "2026-11-06-evening"
+    rejected(lambda: resolve_edition(schedule="17 12 * * *", created_at="2026-11-05T23:55:00Z", now=now))
+    rejected(lambda: resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:17:00Z", now=now + timedelta(hours=12)))
+    rejected(lambda: resolve_edition(schedule="17 0 * * *", created_at="2026-11-06T00:16:59Z", now=now))
+    rejected(lambda: resolve_edition(schedule="0 0 * * *", created_at="2026-11-06T00:17:00Z", now=now))
     rejected(lambda: resolve_edition("2026-02-30-morning", now=now))
     rejected(lambda: resolve_edition("2027-01-01-morning", now=now))
 
@@ -53,12 +71,14 @@ async def check(root):
     for status in ("failure", "partial_failure", "not_attempted"):
         rejected(lambda: require_fetch({"fetch_status": status}, [{"id": "1"}], budget))
     good_fetch = {"fetch_status": "success", "fetched": 1, "fetch_report": {"status": "success", "attempted": 1, "failed": 0, "partial_failure": 0, "sources": [{"source": "RSS Feeds", "status": "success"}]}}
-    rejected(lambda: require_fetch({**good_fetch, "fetched": 0}, [], budget))
+    require_fetch({**good_fetch, "fetched": 0}, [], budget)
+    rejected(lambda: require_fetch(good_fetch, [], budget))
     rejected(lambda: require_fetch({**good_fetch, "fetched": 21}, [{"id": str(i)} for i in range(21)], budget))
 
     model_requests = []
     response_streams = []
     failing = None
+    score = 8
 
     class FixtureStream(httpx.AsyncByteStream):
         def __init__(self, frames, failure):
@@ -106,7 +126,7 @@ async def check(root):
             return httpx.Response(400, json={"error": {"message": "temperature is not supported"}}, headers=headers)
         prompt = body["messages"][0]["content"]
         if 'score' in prompt and 'reason' in prompt:
-            result = {"score": 8, "reason": "官方来源说明了模型更新。", "summary": "离线模型测试样例。", "tags": ["AI"]}
+            result = {"score": score, "reason": "离线评分测试样例。", "summary": "离线模型测试样例。", "tags": ["AI"]}
         else:
             result = {"title": "离线样例：模型更新", "blocks": [{"id": "summary", "type": "section", "title": "摘要", "content": "这是一条离线测试资讯，不是真实新闻。模型能力与上线情况应以原文为准。", "source_refs": []}]}
         if failing == "non-stream-response":
@@ -145,8 +165,27 @@ async def check(root):
 
     with tempfile.TemporaryDirectory(prefix="biau-horizon-check-") as tmp, patch.object(socket, "getaddrinfo", no_network), patch.object(socket.socket, "connect", no_network), patch.object(RSSScraper, "fetch", fetched), patch.object(httpx, "AsyncHTTPTransport", lambda **_kwargs: httpx.MockTransport(response)), patch.dict('os.environ', {"HORIZON_GENERATION_APPROVED": "true", "HORIZON_API_KEY": "fixture-only", "HORIZON_BASE_URL": "https://fixture.example/v1", "HORIZON_MODEL": read_json(HERE / "config.json")["ai"]["model"]}):
         args = SimpleNamespace(horizon_path=str(root), operation="generate", edition_id="2026-11-05-morning", schedule=None, created_at=None, env_file=None, output=str(Path(tmp) / "bundle.json"))
-        result = await execute(args)
+        async def cli_result(expected):
+            output, summary = Path(tmp) / 'actions-output', Path(tmp) / 'actions-summary'
+            output.write_text('', encoding='utf-8')
+            summary.write_text('', encoding='utf-8')
+            argv = ['run.py', 'generate', '--horizon-path', str(root), '--edition-id', args.edition_id, '--output', args.output, '--github-actions']
+            loop = asyncio.get_running_loop()
+            with patch.dict('os.environ', {'GITHUB_OUTPUT': str(output), 'GITHUB_STEP_SUMMARY': str(summary)}), patch.object(sys, 'argv', argv), contextlib.redirect_stdout(io.StringIO()) as captured:
+                # Reuse the loop created before network blocking; Windows loop setup uses socketpair.
+                with patch.object(asyncio, 'run', lambda coro: asyncio.run_coroutine_threadsafe(coro, loop).result()):
+                    code = await asyncio.to_thread(main)
+            value = json.loads(captured.getvalue())
+            assert code == (1 if expected == 'failed' else 0), value
+            assert value['outcome'] == expected
+            assert output.read_text(encoding='utf-8') == f'outcome={expected}\n'
+            assert json.loads(summary.read_text(encoding='utf-8').split('```json\n')[1].split('\n```')[0]) == value
+            assert 'fixture-only' not in summary.read_text(encoding='utf-8')
+            return value
+
+        result = await cli_result('generated')
         assert result["ok"] and result["published"] is False and result["items"] == 1
+        assert result["reportedUsage"] == {"prompt_tokens": 200, "completion_tokens": 100, "total_tokens": 300}
         bundle = read_json(args.output)
         assert bundle["runtime"]["requests"] == 2 and len(model_requests) == 2
         assert bundle["runtime"]["configurationHash"] == configuration_hash()
@@ -157,6 +196,62 @@ async def check(root):
         assert all(a["requestId"] == "req_fixture0123456789" and a["edgeTraceId"] == "0123456789abcdef-SJC" for a in bundle["runtime"]["attempts"])
         assert all(a["headersSeconds"] <= a["firstChunkSeconds"] <= a["elapsedSeconds"] for a in bundle["runtime"]["attempts"])
         assert all(stream.closed for stream in response_streams)
+
+        # Complete collection with no items is a normal skip; no scoring or bundle.
+        async def empty_fetch(_self, _since):
+            return FetchResult(items=[], successful=3)
+
+        args.output = str(Path(tmp) / 'empty-must-not-exist.json')
+        before = len(model_requests)
+        with patch.object(RSSScraper, 'fetch', empty_fetch):
+            result = await cli_result('skipped')
+        assert result['ok'] and result['outcome'] == 'skipped' and result['reason'] == 'no-input'
+        assert result['stage'] == 'fetch' and result['fetched'] == result['modelCalls'] == 0
+        assert len(model_requests) == before and not Path(args.output).exists()
+
+        # A valid below-threshold score uses one request, never enriches or publishes.
+        score = 2
+        result = await cli_result('skipped')
+        assert result['ok'] and result['outcome'] == 'skipped' and result['reason'] == 'no-qualified-items'
+        assert result['stage'] == 'filter' and result['scored'] == result['fetched'] == 1 and result['selected'] == 0
+        assert result['modelCalls'] == 1 and result['reportedUsage'] == {'prompt_tokens': 100, 'completion_tokens': 50, 'total_tokens': 150}
+        assert result['usageCoverage'] == {'reportedRequests': 1, 'unknownRequests': 0}
+        assert len(model_requests) == before + 1 and not Path(args.output).exists()
+        score = 8
+
+        # A malformed/contradictory native result is not a legitimate empty selection.
+        original_filter = HorizonPipelineService.filter_items
+        async def invalid_filter(self, *params, **kwargs):
+            value = await original_filter(self, *params, **kwargs)
+            value['kept'] = 0
+            if malformed_artifact:
+                Path(value['artifact']).write_text('{}', encoding='utf-8')
+            return value
+
+        for malformed_artifact in (False, True):
+            before = len(model_requests)
+            with patch.object(HorizonPipelineService, 'filter_items', invalid_filter):
+                try:
+                    await execute(args)
+                except StageRejected as error:
+                    assert error.diagnostics['failure']['category'] == 'incomplete-selection'
+                else:
+                    raise AssertionError('invalid selection was treated as a normal skip')
+            assert len(model_requests) == before + 1 and not Path(args.output).exists()
+
+        async def failed_empty_fetch(_self, _since):
+            return FetchResult(items=[], successful=2, failures={'OpenAI News': 'HTTPStatusError: 503 private response'})
+
+        async def oversized_fetch(self, since):
+            item = (await fetched(self, since)).items[0]
+            return FetchResult(items=[ContentItem.model_validate({**item.model_dump(), 'id': f'fixture-{i}', 'url': f'https://example.com/{i}'}) for i in range(21)], successful=3)
+
+        for fetcher, code in ((failed_empty_fetch, 'incomplete-fetch'), (oversized_fetch, 'over-budget-input')):
+            before = len(model_requests)
+            with patch.object(RSSScraper, 'fetch', fetcher):
+                result = await cli_result('failed')
+                assert result['error'] == code and result['diagnostics']['modelCalls'] == 0
+            assert len(model_requests) == before and not Path(args.output).exists()
 
         args.output = str(Path(tmp) / "budget-must-not-exist.json")
         args.request_limit = 1
@@ -274,12 +369,14 @@ async def check(root):
         for failing in ("no-usage", "unsafe-ids", "temperature-once"):
             args.output = str(Path(tmp) / f"{failing}.json")
             before = len(model_requests)
-            assert (await execute(args))["ok"]
+            result = await execute(args)
+            assert result["ok"] and result["outcome"] == 'generated'
             runtime = read_json(args.output)["runtime"]
             # Scoring and enrichment each construct their own native provider client.
             expected_requests = 4 if failing == "temperature-once" else 2
             assert len(model_requests) == before + expected_requests == before + runtime["requests"]
             if failing == "no-usage":
+                assert result['reportedUsage'] is None and result['usageCoverage']['unknownRequests'] == 2
                 assert runtime["usageCoverage"] == {"reportedRequests": 0, "unknownRequests": 2}
                 assert all(a["usage"] is None for a in runtime["attempts"])
             if failing == "unsafe-ids":

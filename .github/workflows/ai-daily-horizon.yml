@@ -11,8 +11,8 @@ on:
         description: 'Manual generation requires YYYY-MM-DD-morning or YYYY-MM-DD-evening'
         type: string
   schedule:
-    - cron: '0 0 * * *'
-    - cron: '0 12 * * *'
+    - cron: '17 0 * * *'
+    - cron: '17 12 * * *'
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
       contents: read
       actions: read
     outputs:
-      publish: ${{ steps.generate.outputs.publish }}
+      publish: ${{ steps.preview.outputs.publish }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -83,6 +83,9 @@ jobs:
           result = subprocess.check_output(['npm', 'exec', '--', 'tsx', 'scripts/horizon/editions.ts', 'exists', '--edition-id', edition['editionId']], text=True)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write(f'edition={edition["editionId"]}\nexists={str(json.loads(result)["exists"]).lower()}\n')
+          if json.loads(result)['exists']:
+              with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                  summary.write(f'### Horizon generation\n\nSkipped: `{edition["editionId"]}` is already published. Model calls: 0.\n')
           PY
       - name: Generate one bounded edition
         id: generate
@@ -94,11 +97,15 @@ jobs:
           HORIZON_MODEL: ${{ vars.HORIZON_MODEL }}
           EDITION_ID: ${{ steps.slot.outputs.edition }}
         run: |
-          .horizon-runtime/.venv/bin/python scripts/horizon/run.py generate --horizon-path .horizon-runtime --edition-id "$EDITION_ID" --output "$RUNNER_TEMP/edition-bundle.json"
+          .horizon-runtime/.venv/bin/python scripts/horizon/run.py generate --horizon-path .horizon-runtime --edition-id "$EDITION_ID" --output "$RUNNER_TEMP/edition-bundle.json" --github-actions
+      - name: Validate generated publication bundle
+        id: preview
+        if: steps.generate.outputs.outcome == 'generated'
+        run: |
           npm exec -- tsx scripts/horizon/editions.ts preview --bundle "$RUNNER_TEMP/edition-bundle.json" --output "$RUNNER_TEMP/edition-preview"
           echo 'publish=true' >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
-        if: steps.generate.outputs.publish == 'true'
+        if: steps.preview.outputs.publish == 'true'
         with:
           name: ai-daily-publication
           path: ${{ runner.temp }}/edition-bundle.json

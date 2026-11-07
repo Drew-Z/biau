@@ -48,9 +48,11 @@ Horizon 固定为 `d7406f738c711df82b8f060fa1d5e9999d36cca0`，保留 MIT 声明
 
 上游 `run_pipeline` 在 enrichment 全失败时仍可能返回 filtered 摘要；exit 0、`ok:true` 或“有 Markdown”均不代表可发布。失败产物不能更新 public index。
 
+完整采集的空输入、完整评分后的空筛选为正常 `skipped`，附 `no-input` / `no-qualified-items` 原因；没有 bundle，也不调用后续模型。采集缺口、损坏产物与超预算仍报错。Actions 只对 `generated` 执行 preview，只有 preview 成功才上传和发布；运行摘要保存数量、实际请求与用量覆盖，不将空结果归为模型渠道失败。
+
 ## 期次、时间与历史
 
-- 建议分别设置 cron `0 0 * * *` 与 `0 12 * * *`，对应上海 08:00 / 20:00，以事件中的 schedule 区分早晚。Actions 可能延迟/跳过，公开仓库长时间无活动可能暂停 schedule；界面不承诺准点完成。
+- cron 为 `17 0 * * *` 与 `17 12 * * *`，对应上海 08:17 / 20:17，以事件中的 schedule 区分早晚，期次 `scheduledFor` 保留 08:00 / 20:00。错开整点降低 GitHub 高负载风险；创建时间不得早于触发分钟，跨槽截止仍为下一期次锚点。Actions 可能延迟/跳过，公开仓库长时间无活动可能暂停 schedule；界面不承诺准点完成。
 - `editionId=YYYY-MM-DD-morning|evening` 的日期以 Asia/Shanghai 为准。计划时段、实际开始、生成完成、首次发布分别记录；手动补跑需显式指定期次。
 - 使用定时事件的 cron、workflow run 创建时间与实际开始时间识别计划槽位；如果延迟导致无法可靠确定期次或已经跨过下一槽位，则停止并使用显式手动补跑，不能仅按进程当前小时猜早晚刊。同一期已存在时自动运行跳过生成。
 - 单一 concurrency group 串行运行，`cancel-in-progress=false`；发布前再次检查最新内容分支，禁止旧任务把最新指针倒退。

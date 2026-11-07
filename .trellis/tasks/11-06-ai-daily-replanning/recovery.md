@@ -41,3 +41,9 @@
 复用集中恢复组，publication.json 修改前快照和 Cloudflare 分支规则/新增公开变量前状态已保存，10 个实体基线 SHA-256 核验通过。未复制无关线上 Secret。Workers 兼容修正前的源码完整恢复点是 0bb99014；生产前一部署与当前部署见 release.md。
 
 本轮精确发布快照、编译产物、隔离 Git index、归档包位于系统临时目录 biau-horizon-release-s2ie2dt7；验证后已停止临时服务并清理快照/产物。node_modules 仅为链接，先移除链接后删除快照，项目依赖未删除。正式样稿、截图和调用记录留在 artifacts。原有空格前缀目录、undefined、其他任务及历史 worktree 继续保留。
+
+## 2026-11-07 空结果与调度修复恢复点
+
+修改前的相关 13 个已跟踪文件均干净，完整恢复提交为 `c12bce4b12d3b297bda3b23877d2b83f1f77bd72`，仓库 `D:/workspace4Cursor/blog-semi`。路径清单已加入原集中组 manifest 的 gitRecoveryPoints；10 个原始实体基线重新校验通过，未覆盖或重复复制。恢复本次适配/调度代码不改变已验收模型配置、线上凭据或已发布内容分支。
+
+本轮临时上游源码、锁定依赖及验证日志位于系统临时目录 `biau-horizon-outcomes-213d627a16834313aad26720ea697ad6`，结束验证后按精确路径清理，正式运行证据保留在原 artifacts 目录。既有未知目录、桌宠工作及历史 worktree 保留。

@@ -67,3 +67,11 @@ gh variable set AI_DAILY_AUTOMATION_ENABLED --repo Drew-Z/biau --body true
 - 此次上线阶段新增模型请求 1；累计历史有精确计数的请求 18，最早缺计数的限制保留。脱敏结果保存在 `actions-morning-attempt.json` 与 release-verification.json。
 
 后续工作应优先根据正常期刊覆盖调整来源，而不是继续轮换模型或部署新的通用网关；来源扩展另行验证采集数量、相关性与预算，不为验收制造新新闻。
+
+## 2026-11-07 空结果分类与调度修复
+
+首个云端早报暴露的是结果分类问题：完整模型响应后没有达标项，却被异常包装成模型阶段失败。当前将完整空采集和完整评分后的空筛选改为正常跳过，记录原因与用量；源失败、损坏产物和超预算仍失败。Actions 只有明确成稿并通过 preview 才发布，跳过保留最后一期。
+
+cron 更新为 `17 0 * * *` / `17 12 * * *`，北京时间 08:17/20:17，期次 scheduledFor 仍为 08:00/20:00。依据 [GitHub 官方文档](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)避开整点高负载；此前缺少 schedule 事件的具体原因仍未证实。早晚频率、3 来源/20 输入/5 成稿、threshold=6、模型及配置哈希不变。
+
+本地断网原生回归、期刊/原子发布、lint/build 和文档契约均通过。本轮真实模型调用 0，不重复生成 `2026-11-07-morning`；提交后复验现有已发布期次的云端跳过。真实 schedule 和新合格一期自动发布继续作为待观察项。

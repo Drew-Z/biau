@@ -119,7 +119,7 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "Production read APIs and browser views pass; GitHub offline/duplicate-skip pass; cloud model response complete but first morning filter empty. Automatic publish of a new qualified edition not yet verified."
+      "latest": "Empty-input/no-qualified-item skips, failure preservation, off-peak schedule and Actions handoff passed native offline checks; lint/build and edition/publication/document contracts passed. Cloud duplicate skip verification pending, no new live model requests."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
     "implementationState": "live-awaiting-first-qualified-automated-publication",
@@ -196,6 +196,20 @@
     "pendingOperationalEvidence": [
       "First schedule event observed",
       "First qualified newly generated bundle published by Actions contents:write job"
-    ]
+    ],
+    "outcomeRepair": {
+      "date": "2026-11-07",
+      "cron": [
+        "17 0 * * *",
+        "17 12 * * *"
+      ],
+      "editionAnchorsShanghai": [
+        "08:00",
+        "20:00"
+      ],
+      "realModelRequests": 0,
+      "localValidation": "passed",
+      "cloudVerification": "pending"
+    }
   }
 }

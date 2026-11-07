@@ -8,6 +8,7 @@
 
 - 来源：已在旧 manifest 启用的 OpenAI News、Google AI Blog、Google DeepMind Blog RSS；读取实际采集开始前 24 小时。上线前检查可达性和摘要使用边界。
 - 采集后最多 20 条去重输入，超过则停止，不自动截取或扩大预算；全部源成功且输入非空才能评分。
+- 完整采集但没有输入时返回 `outcome=skipped / reason=no-input`；所有输入评分完成但无达标项时返回 `skipped / no-qualified-items`。两者退出码为 0、不写 bundle、不调用后续模型、不更新公开索引；部分源失败、计数不一致、超预算和模型错误仍退出码 1。正常空结果不能诊断为渠道故障。
 - 明确指定 `ai-news` profile，避免额外分类调用；复用 Horizon URL 去重和评分筛选，关闭 AI 主题去重及搜索/history 工具。
 - RSS 可能只包含导语；评分 summary/reason 也只是模型判断。不能据此断言原文未公布方法、结果或价格。快讯允许 1–3 句，只写来源支持的事实，不为凑句数添加“尚未明确”。首期需核对原文，prompt 约束不等于事实正确的自动保证。
 - 最多 5 条中文成稿，单评分并发、单摘要并发。`digest.max_items` 不是请求预算。首版自动运行沿用通过验收的 3 个来源和该上限；15 条及更广来源属于后续覆盖扩展，须验证后调整配置。
@@ -43,11 +44,14 @@ npm.cmd run ai-daily:editions-ui
 # 以下环境授权仅用于获批的本次生成；完成后移除本进程变量。
 $env:HORIZON_GENERATION_APPROVED = 'true'
 try {
-  & "$horizonRoot/.venv/Scripts/python.exe" scripts/horizon/run.py generate --horizon-path $horizonRoot --edition-id YYYY-MM-DD-morning --env-file .env.local --output "$taskTemp/edition-bundle.json"
+  $generationResult = & "$horizonRoot/.venv/Scripts/python.exe" scripts/horizon/run.py generate --horizon-path $horizonRoot --edition-id YYYY-MM-DD-morning --env-file .env.local --output "$taskTemp/edition-bundle.json" | ConvertFrom-Json
+  $generationResult | ConvertTo-Json -Depth 8
 } finally {
   Remove-Item Env:HORIZON_GENERATION_APPROVED
 }
-npm.cmd exec -- tsx scripts/horizon/editions.ts preview --bundle "$taskTemp/edition-bundle.json" --output "$taskTemp/preview"
+if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
+  npm.cmd exec -- tsx scripts/horizon/editions.ts preview --bundle "$taskTemp/edition-bundle.json" --output "$taskTemp/preview"
+}
 ```
 
 显式存在任意 `HORIZON_BASE_URL/API_KEY/MODEL` 时，脚本整组只读 `HORIZON_*`；留空或缺字段就拒绝，不与博客凭据混搭。仅当三项都不存在时，才兼容整组 `BLOG_DRAFT_FAST_*`，不读默认、legacy 或 review。临时配置不含 API key，路径/上游错误不写公开日志。原始 run 与配置随 `TemporaryDirectory` 清理；仅显式样稿包含正文、原文链接、脱敏完整性检查、用量和配置哈希，供本地验收。公开发布仅投影白名单字段。
@@ -62,7 +66,11 @@ npm.cmd exec -- tsx scripts/horizon/editions.ts preview --bundle "$taskTemp/edit
 
 ## 期次与发布
 
-早晚期次是上海日期的 `YYYY-MM-DD-morning|evening`，计划时刻 08:00/20:00。保存 `scheduledFor/generatedAt/publishedAt/updatedAt/windowStart/windowEnd`，页面刷新不改变内容时间。自动任务以 cron 和 GitHub run 创建时间定槽；跨过下一时段停止，手动补跑必须指定期次。采集窗口重叠，允许早晚重复报道。
+早晚期次是上海日期的 `YYYY-MM-DD-morning|evening`，`scheduledFor` 仍为期次锚点 08:00/20:00；实际 cron 为 `17 0 * * *` / `17 12 * * *`，北京时间 08:17/20:17 触发。保存 `scheduledFor/generatedAt/publishedAt/updatedAt/windowStart/windowEnd`，页面刷新不改变内容时间。自动任务以 cron 和 GitHub run 创建时间定槽，创建时间不得早于触发分钟；跨过下一期次锚点停止，手动补跑必须指定期次。采集窗口重叠，允许早晚重复报道。
+
+[GitHub schedule 文档](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)说明整点可能因负载高而延迟甚至丢弃排队任务，并建议错开分钟。此次偏移用于降低该风险，不证明此前缺少 schedule 事件的具体原因，也不保证准点启动。
+
+生成步骤通过 `--github-actions` 输出明确的 `generated/skipped/failed` 结果与脱敏 job summary，含阶段、输入/评分/入选数量、真实请求数、已报告 token 和未知用量请求数；失败保留原诊断。只有 `generated` 才执行 bundle preview，preview 通过后才上传 artifact、进入发布 job。`generated` 仅代表成稿，`published=false`，不能当作发布成功；空结果即使退出码 0 也不进入发布。摘要不含新闻正文、私有渠道、凭据或原始上游响应。已发布期次在采集前跳过，并明确记录 0 次模型调用。
 
 不使用上游按 UTC 日期写入的可覆盖摘要；读取本次 run 的 `summary_path`。正文路径包含期次和 SHA-256；JSON 元数据和索引与正文在一个 commit 中更新，使用独立 Git index 和 non-force push，不切换主站工作树。发布冲突停止，重试发布同一个 bundle；不要重新运行模型。同内容同期重试无操作，不同内容必须显式 `--correction`，保留首次 publishedAt、旧文件并增加 revision。晚报与早报独立保存，补发旧期不倒退最新指针。
 

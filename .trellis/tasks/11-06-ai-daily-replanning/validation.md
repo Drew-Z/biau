@@ -65,3 +65,11 @@
 本轮准确发布范围使用 HEAD + 日报暂存文件导出的临时快照验证：lint/build、Functions 编译、期刊/原子发布、文档门禁和 24 组 UI 全部通过，桌宠改动未进入发布。首次线上读取暴露 Workers 不支持 redirect:error；修复为 manual 并拒绝重定向，补充合同检查。最终两个生产域 API 的 200/304/404、真实正文 SHA-256、原文入口、1440/390 阅读及刷新恢复、正确 TLS 证书通过。
 
 GitHub Site Quality、Horizon 原生断网验证与重复期次跳过均成功；早晚开关已启用。新期次真实云端结果以 release.md 追加实证为准。历史全量 verify 和全站 UI 失败记录不因本轮专项通过而删除。
+
+## 2026-11-07 空结果与调度修复
+
+- 原生断网回归通过：完整空输入零请求、无达标项仅评分后跳过、空输入伴部分源失败仍拒绝、超输入预算仍停止；损坏/计数不一致筛选产物不冒充正常空结果。跳过均不写 bundle、不调用 enrichment。
+- 断网检查读取真实 workflow（复用本站现有 yaml 依赖），验证 cron 白名单及 generated -> preview -> upload -> publish 条件；Actions 输出与摘要覆盖成稿/跳过/失败、已知与未知 usage。第一次尝试发现上游未安装 PyYAML，已改为复用已有 Node yaml；未新增依赖或改上游锁。
+- 北京 08:17/20:17、提前创建拒绝、上海跨日执行、跨槽拒绝及手动补跑通过。历史 scheduledFor 08:00/20:00 契约保持。
+- `npm run lint`、`npm run build`、`npm run ai-daily:editions-check`、`npm run docs:deployment-check`、`npm run docs:manual-gates-check` 通过。构建/lint 在现有工作树执行；本次不提交桌宠等既有改动，未重复无变化的 UI 检查或宣称历史全量检查全绿。
+- 本轮真实模型请求 0，配置哈希仍为 `0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea`。云端复验结果另附 release.md。

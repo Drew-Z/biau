@@ -19,6 +19,7 @@ import time
 HERE = Path(__file__).resolve().parent
 SHANGHAI = timezone(timedelta(hours=8))
 MAX_MODEL_RESPONSE_BYTES = 1024 * 1024
+SCHEDULES = {"17 0 * * *": "morning", "17 12 * * *": "evening"}
 
 
 class StageRejected(ValueError):
@@ -64,15 +65,17 @@ def resolve_edition(edition_id=None, schedule=None, created_at=None, now=None):
             raise ValueError("invalid-edition")
         date, slot = edition_id[:10], edition_id[11:]
     else:
-        if schedule not in ("0 0 * * *", "0 12 * * *") or not created_at:
+        if schedule not in SCHEDULES or not created_at:
             raise ValueError("explicit-edition-required")
         created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
         if created.tzinfo is None:
             raise ValueError("ambiguous-schedule")
         date = created.astimezone(SHANGHAI).date().isoformat()
-        slot = "morning" if schedule == "0 0 * * *" else "evening"
+        slot = SCHEDULES[schedule]
         scheduled = datetime.fromisoformat(f"{date}T{'08' if slot == 'morning' else '20'}:00:00+08:00")
-        if not scheduled <= created <= now < scheduled + timedelta(hours=12):
+        # The edition anchor stays 08:00/20:00; the trigger avoids the busy hour boundary.
+        trigger = scheduled + timedelta(minutes=int(schedule.split()[0]))
+        if not trigger <= created <= now < scheduled + timedelta(hours=12):
             raise ValueError("delayed-schedule-use-manual-edition")
     scheduled = datetime.fromisoformat(f"{date}T{'08' if slot == 'morning' else '20'}:00:00+08:00")
     if scheduled > now:
@@ -89,8 +92,10 @@ def require_fetch(result, raw, budget):
             or sources[0].get("source") != "RSS Feeds"
             or sources[0].get("status") not in ("success", "empty") or sources[0].get("failures")):
         raise ValueError("incomplete-fetch")
-    if not 0 < len(raw) <= budget["maxFetchedItems"] or result.get("fetched") != len(raw):
-        raise ValueError("empty-or-over-budget-input")
+    if not isinstance(raw, list) or type(result.get("fetched")) is not int or result["fetched"] != len(raw):
+        raise ValueError("incomplete-fetch")
+    if len(raw) > budget["maxFetchedItems"]:
+        raise ValueError("over-budget-input")
 
 
 def require_scored(raw, scored):
@@ -116,6 +121,11 @@ class RequestBudget:
     def usage_coverage(self):
         known = sum(attempt["usage"] is not None for attempt in self.attempts)
         return {"reportedRequests": known, "unknownRequests": self.requests - known}
+
+    def reported_usage(self):
+        # Only this run's HTTP attempts; native global counters may span invocations.
+        usages = [attempt["usage"] for attempt in self.attempts if attempt["usage"] is not None]
+        return {key: sum(usage[key] for usage in usages) for key in ("prompt_tokens", "completion_tokens", "total_tokens")} if usages else None
 
     def stop(self, code, http_status=None):
         self.stopped = True
@@ -312,7 +322,7 @@ async def guarded_client(budget, base_url):
     except (Exception, asyncio.CancelledError) as error:
         if meter.failure is None:
             code = "run-cancelled-or-deadline" if isinstance(error, asyncio.CancelledError) else "model-stage-error"
-            if isinstance(error, ValueError) and str(error) in ("incomplete-score", "empty-or-over-budget-selection", "incomplete-enrichment", "incomplete-summary", "chinese-content-required"):
+            if isinstance(error, ValueError) and str(error) in ("incomplete-score", "incomplete-selection", "over-budget-selection", "incomplete-enrichment", "incomplete-summary", "chinese-content-required"):
                 code = str(error)
             meter.stop(code)
         raise StageRejected("model-stage-failed", {"stage": meter.stage, "modelCalls": meter.requests, "elapsedSeconds": round(time.monotonic() - meter.started, 2), "failure": meter.failure, "usage": asdict(get_usage_snapshot()), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts}) from None
@@ -403,13 +413,25 @@ async def execute(args):
         window_start = datetime.fromisoformat(fetched["meta"]["since"])
         if args.operation == "collect":
             return {"ok": True, **edition, "fetched": len(raw), "modelCalls": 0, "sources": [{"title": i["title"], "url": str(i["url"])} for i in raw]}
+        result = {"ok": True, **edition, "outcome": "skipped", "stage": "fetch", "fetched": len(raw),
+                  "scored": 0, "selected": 0, "items": 0, "modelCalls": 0, "published": False,
+                  "reportedUsage": None, "usageCoverage": {"reportedRequests": 0, "unknownRequests": 0}}
+        if not raw:
+            return {**result, "reason": "no-input"}
         async with guarded_client(budget, base_url) as meter:
             scored = await service.score_items(run_id, **common)
             require_scored(raw, read_json(scored["artifact"]))
             meter.stage = "filter"
             filtered = await service.filter_items(run_id, topic_dedup=False, **common)
-            if not 0 < filtered["kept"] <= budget["maxPublishedItems"]:
-                raise ValueError("empty-or-over-budget-selection")
+            selected = filtered.get("kept")
+            selected_items = read_json(filtered["artifact"])
+            if not isinstance(selected_items, list) or type(selected) is not int or selected < 0 or selected != len(selected_items) or selected > len(raw):
+                raise ValueError("incomplete-selection")
+            if selected > budget["maxPublishedItems"]:
+                raise ValueError("over-budget-selection")
+            if selected == 0:
+                return {**result, "reason": "no-qualified-items", "stage": "filter", "scored": len(raw),
+                        "modelCalls": meter.requests, "reportedUsage": meter.reported_usage(), "usageCoverage": meter.usage_coverage()}
             meter.stage = "enrich"
             enriched = await service.enrich_items(run_id, **common)
             if enriched["status"] != "success" or enriched["failed"] != 0 or enriched["enriched"] != filtered["kept"]:
@@ -428,7 +450,19 @@ async def execute(args):
                       "runtime": {"engineRevision": read_json(HERE / "upstream.json")["revision"], "configurationHash": configuration_hash(), "requests": meter.requests, "usage": asdict(get_usage_snapshot()), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts}}
         with output.open("x", encoding="utf-8", newline="\n") as target:
             target.write(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n")
-        return {"ok": True, "editionId": edition["editionId"], "items": len(items), "modelCalls": meter.requests, "published": False}
+        return {**result, "outcome": "generated", "stage": "summary", "scored": len(raw), "selected": selected,
+                "items": len(items), "modelCalls": meter.requests, "reportedUsage": meter.reported_usage(), "usageCoverage": meter.usage_coverage()}
+
+
+def write_actions_result(result):
+    """Export only the completed CLI result, never native logs or provider bodies."""
+    outcome = result.get("outcome") if result.get("ok") else "failed"
+    if outcome not in ("generated", "skipped", "failed"):
+        raise ValueError("invalid-generation-outcome")
+    with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8", newline="\n") as output:
+        output.write(f"outcome={outcome}\n")
+    with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8", newline="\n") as summary:
+        summary.write("### Horizon generation\n\n```json\n" + json.dumps(result, ensure_ascii=False, indent=2) + "\n```\n\n")
 
 
 def main():
@@ -441,21 +475,25 @@ def main():
     parser.add_argument("--env-file")
     parser.add_argument("--output")
     parser.add_argument("--request-limit", type=int, help="Lower the configured request cap for an authorized continuation")
+    parser.add_argument("--github-actions", action="store_true", help="Write generation outcome and sanitized job summary")
     args = parser.parse_args()
     if args.operation == "generate" and not args.output:
         parser.error("generate requires --output")
+    if args.github_actions and (args.operation != "generate" or not os.getenv("GITHUB_OUTPUT") or not os.getenv("GITHUB_STEP_SUMMARY")):
+        parser.error("--github-actions requires generation and Actions output paths")
     logging.disable(logging.CRITICAL)
     try:
         # Third-party logs may contain upstream response bodies; never forward them.
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             result = asyncio.run(asyncio.wait_for(execute(args), timeout=read_json(HERE / "budget.json")["deadlineSeconds"]))
-        print(json.dumps(result, ensure_ascii=False))
-        return 0
     except Exception as error:
         # Fixed diagnostic only; no URL, config, raw provider text or credentials.
         code = str(error) if isinstance(error, ValueError) and re.fullmatch(r"[a-z0-9.-]+", str(error)) else type(error).__name__
-        print(json.dumps({"ok": False, "error": code, **({"diagnostics": error.diagnostics} if isinstance(error, StageRejected) else {})}))
-        return 1
+        result = {"ok": False, "outcome": "failed", "error": code, **({"diagnostics": error.diagnostics} if isinstance(error, StageRejected) else {})}
+    print(json.dumps(result, ensure_ascii=False))
+    if args.github_actions:
+        write_actions_result(result)
+    return 0 if result["ok"] else 1
 
 
 if __name__ == "__main__":
