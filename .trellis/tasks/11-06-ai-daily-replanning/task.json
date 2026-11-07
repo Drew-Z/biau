@@ -98,7 +98,8 @@
       "source-coverage.md",
       "source-coverage-evidence.json",
       "source-expansion.candidate.json",
-      "source-expansion-chinese.candidate.json"
+      "source-expansion-chinese.candidate.json",
+      "source-expansion.md"
     ],
     "recovery": {
       "repository": "D:\\workspace4Cursor\\blog-semi",
@@ -249,6 +250,20 @@
         "temporaryMaterialsRemoved": true,
         "cloudCandidateValidation": false
       }
+    },
+    "sourceExpansion": {
+      "consent": "User agreed to seven-source bounded sample and cloud collection validation, followed by activation on success",
+      "state": "candidate-validation",
+      "branch": "codex/ai-daily-seven-sources",
+      "configurationHash": "ce9e1b6e8ecb94fffa99a5662c12b3a6fbbcf92a0c441911a72a1c8381f6517f",
+      "sources": 7,
+      "maxFetchedItems": 20,
+      "maxPublishedItems": 5,
+      "maxModelRequests": 60,
+      "localCollected": 7,
+      "modelCalls": 0,
+      "productionChanged": false,
+      "plan": "source-expansion.md"
     }
   }
 }

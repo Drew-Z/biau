@@ -412,7 +412,13 @@ async def execute(args):
             raise StageRejected(str(error), {"stage": "fetch", "fetched": len(raw), "fetchStatus": fetched.get("fetch_status"), "failures": known_failures, "modelCalls": 0}) from None
         window_start = datetime.fromisoformat(fetched["meta"]["since"])
         if args.operation == "collect":
-            return {"ok": True, **edition, "fetched": len(raw), "modelCalls": 0, "sources": [{"title": i["title"], "url": str(i["url"])} for i in raw]}
+            # Public metadata only; collection never loads a model channel or emits a bundle.
+            return {"ok": True, "operation": "collect", **edition, "configurationHash": configuration_hash(),
+                    "windowStart": stamp(window_start), "windowEnd": stamp(window_start + timedelta(hours=24)),
+                    "fetched": len(raw), "modelCalls": 0,
+                    "sourceCounts": [{"publisher": source["name"], "items": sum(item.get("metadata", {}).get("feed_name") == source["name"] for item in raw)} for source in config["sources"]["rss"] if source.get("enabled", True)],
+                    "sources": [{"title": i["title"], "url": str(i["url"]), "publisher": i.get("metadata", {}).get("feed_name"),
+                                 "publishedAt": i.get("published_at"), "contentChars": len(i.get("content") or "")} for i in raw]}
         result = {"ok": True, **edition, "outcome": "skipped", "stage": "fetch", "fetched": len(raw),
                   "scored": 0, "selected": 0, "items": 0, "modelCalls": 0, "published": False,
                   "reportedUsage": None, "usageCoverage": {"reportedRequests": 0, "unknownRequests": 0}}

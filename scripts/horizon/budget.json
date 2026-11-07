@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "maxSources": 3,
+  "maxSources": 7,
   "maxFetchedItems": 20,
   "maxPublishedItems": 5,
   "maxModelRequests": 60,

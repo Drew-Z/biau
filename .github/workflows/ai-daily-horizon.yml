@@ -6,9 +6,9 @@ on:
       operation:
         type: choice
         default: validate
-        options: [validate, generate]
+        options: [validate, collect, generate]
       edition_id:
-        description: 'Manual generation requires YYYY-MM-DD-morning or YYYY-MM-DD-evening'
+        description: 'Collection/generation requires YYYY-MM-DD-morning or YYYY-MM-DD-evening'
         type: string
   schedule:
     - cron: '17 0 * * *'
@@ -62,6 +62,12 @@ jobs:
           .horizon-runtime/.venv/bin/python scripts/horizon/run.py validate --horizon-path .horizon-runtime
           .horizon-runtime/.venv/bin/python scripts/horizon/check.py --horizon-path .horizon-runtime
           npm run ai-daily:editions-check
+      - name: Collect sources without models or publication
+        id: collect
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'collect'
+        env:
+          EDITION_ID: ${{ inputs.edition_id }}
+        run: .horizon-runtime/.venv/bin/python scripts/horizon/run.py collect --horizon-path .horizon-runtime --edition-id "$EDITION_ID"
       - name: Resolve publication slot and skip existing editions
         id: slot
         if: github.event_name == 'schedule' || inputs.operation == 'generate'

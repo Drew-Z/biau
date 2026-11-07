@@ -39,6 +39,10 @@ async def check(root):
     assert {entry['cron'] for entry in workflow['on']['schedule']} == set(SCHEDULES)
     job = workflow['jobs']['generate']
     steps = {step['id']: step for step in job['steps'] if 'id' in step}
+    assert 'collect' in workflow['on']['workflow_dispatch']['inputs']['operation']['options']
+    assert steps['collect']['if'] == "github.event_name == 'workflow_dispatch' && inputs.operation == 'collect'"
+    assert set(steps['collect']['env']) == {'EDITION_ID'} and 'run.py collect' in steps['collect']['run']
+    assert steps['slot']['if'] == "github.event_name == 'schedule' || inputs.operation == 'generate'"
     assert '--github-actions' in steps['generate']['run']
     assert steps['preview']['if'] == "steps.generate.outputs.outcome == 'generated'"
     assert job['outputs']['publish'] == '${{ steps.preview.outputs.publish }}'
@@ -158,13 +162,26 @@ async def check(root):
         return httpx.Response(200, headers={**headers, "content-type": "text/event-stream"}, stream=stream)
 
     async def fetched(_self, _since):
-        return FetchResult(items=[ContentItem(id="rss-fixture", source_type="rss", title="离线样例", url="https://example.com/ai", content="离线模型新闻样例。", published_at=datetime.now(timezone.utc), profile="ai-news", metadata={"feed_name": "Fixture"})], successful=3)
+        return FetchResult(items=[ContentItem(id="rss-fixture", source_type="rss", title="离线样例", url="https://example.com/ai", content="离线模型新闻样例。", published_at=datetime.now(timezone.utc), profile="ai-news", metadata={"feed_name": "MIT Technology Review AI"})], successful=7)
 
     def no_network(*_args, **_kwargs):
         raise AssertionError("unexpected real network")
 
     with tempfile.TemporaryDirectory(prefix="biau-horizon-check-") as tmp, patch.object(socket, "getaddrinfo", no_network), patch.object(socket.socket, "connect", no_network), patch.object(RSSScraper, "fetch", fetched), patch.object(httpx, "AsyncHTTPTransport", lambda **_kwargs: httpx.MockTransport(response)), patch.dict('os.environ', {"HORIZON_GENERATION_APPROVED": "true", "HORIZON_API_KEY": "fixture-only", "HORIZON_BASE_URL": "https://fixture.example/v1", "HORIZON_MODEL": read_json(HERE / "config.json")["ai"]["model"]}):
         args = SimpleNamespace(horizon_path=str(root), operation="generate", edition_id="2026-11-05-morning", schedule=None, created_at=None, env_file=None, output=str(Path(tmp) / "bundle.json"))
+        # Collect works with no model credentials, preserves media attribution and never publishes.
+        args.operation = 'collect'
+        with patch.dict('os.environ', {'HORIZON_GENERATION_APPROVED': '', 'HORIZON_API_KEY': '', 'HORIZON_BASE_URL': '', 'HORIZON_MODEL': ''}), patch.object(OpenAIClient, 'complete', no_network):
+            collected = await execute(args)
+        assert collected['ok'] and collected['operation'] == 'collect' and collected['fetched'] == 1
+        assert collected['modelCalls'] == 0 and not model_requests and not Path(args.output).exists()
+        assert len(collected['sourceCounts']) == 7
+        assert next(row for row in collected['sourceCounts'] if row['publisher'] == 'MIT Technology Review AI')['items'] == 1
+        assert collected['sources'][0]['publisher'] == 'MIT Technology Review AI'
+        assert collected['sources'][0]['contentChars'] == len('离线模型新闻样例。') and collected['sources'][0]['publishedAt']
+        assert all(key not in collected['sources'][0] for key in ('content', 'body', 'processing'))
+        assert collected['configurationHash'] == configuration_hash()
+        args.operation = 'generate'
         async def cli_result(expected):
             output, summary = Path(tmp) / 'actions-output', Path(tmp) / 'actions-summary'
             output.write_text('', encoding='utf-8')
@@ -191,6 +208,7 @@ async def check(root):
         assert bundle["runtime"]["configurationHash"] == configuration_hash()
         assert bundle["checks"]["summaryStage"] == "enriched"
         assert bundle["checks"]["failed"] == 0 and "example.com/ai" in bundle["markdown"]
+        assert bundle["sourceLinks"][0]["publisher"] == 'MIT Technology Review AI'
         assert bundle["runtime"]["usageCoverage"] == {"reportedRequests": 2, "unknownRequests": 0}
         assert all(a["finishReason"] == "stop" and a["outcome"] == "complete" for a in bundle["runtime"]["attempts"])
         assert all(a["requestId"] == "req_fixture0123456789" and a["edgeTraceId"] == "0123456789abcdef-SJC" for a in bundle["runtime"]["attempts"])
@@ -199,7 +217,7 @@ async def check(root):
 
         # Complete collection with no items is a normal skip; no scoring or bundle.
         async def empty_fetch(_self, _since):
-            return FetchResult(items=[], successful=3)
+            return FetchResult(items=[], successful=7)
 
         args.output = str(Path(tmp) / 'empty-must-not-exist.json')
         before = len(model_requests)
@@ -240,11 +258,11 @@ async def check(root):
             assert len(model_requests) == before + 1 and not Path(args.output).exists()
 
         async def failed_empty_fetch(_self, _since):
-            return FetchResult(items=[], successful=2, failures={'OpenAI News': 'HTTPStatusError: 503 private response'})
+            return FetchResult(items=[], successful=6, failures={'OpenAI News': 'HTTPStatusError: 503 private response'})
 
         async def oversized_fetch(self, since):
             item = (await fetched(self, since)).items[0]
-            return FetchResult(items=[ContentItem.model_validate({**item.model_dump(), 'id': f'fixture-{i}', 'url': f'https://example.com/{i}'}) for i in range(21)], successful=3)
+            return FetchResult(items=[ContentItem.model_validate({**item.model_dump(), 'id': f'fixture-{i}', 'url': f'https://example.com/{i}'}) for i in range(21)], successful=7)
 
         for fetcher, code in ((failed_empty_fetch, 'incomplete-fetch'), (oversized_fetch, 'over-budget-input')):
             before = len(model_requests)

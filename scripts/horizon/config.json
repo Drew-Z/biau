@@ -24,7 +24,11 @@
     "rss": [
       { "name": "OpenAI News", "url": "https://openai.com/news/rss.xml", "enabled": true, "profile": "ai-news" },
       { "name": "Google AI Blog", "url": "https://blog.google/technology/ai/rss/", "enabled": true, "profile": "ai-news" },
-      { "name": "Google DeepMind Blog", "url": "https://deepmind.google/blog/rss.xml", "enabled": true, "profile": "ai-news" }
+      { "name": "Google DeepMind Blog", "url": "https://deepmind.google/blog/rss.xml", "enabled": true, "profile": "ai-news" },
+      { "name": "Microsoft Research Blog", "url": "https://www.microsoft.com/en-us/research/feed/", "enabled": true, "profile": "ai-news" },
+      { "name": "NVIDIA Developer Blog", "url": "https://developer.nvidia.com/blog/feed/", "enabled": true, "profile": "ai-news" },
+      { "name": "GitHub Copilot Changelog", "url": "https://github.blog/changelog/label/copilot/feed/", "enabled": true, "profile": "ai-news" },
+      { "name": "MIT Technology Review AI", "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed/", "enabled": true, "profile": "ai-news" }
     ]
   },
   "collection": { "time_window_hours": 24 },

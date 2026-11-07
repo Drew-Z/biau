@@ -68,6 +68,8 @@ Native RSS treats a None extractor result as fallback to the original RSS excerp
 
 The current adapter deliberately validates a single RSS source-type report and counts only RSS source definitions. Enabling GitHub or discovery types requires updating source-count budgets, completeness checks and publisher projection together. Candidate configs under the active task are not production-ready overrides. Keep assessment/collection evidence distinct from model/content/cloud acceptance; see the task's source-coverage.md for the measured source shortlist.
 
+The explicit Actions `collect` operation reuses `run.py collect`, requires a manual edition id and never enters slot/generate/preview/upload/publish. No model credential is injected. Its bounded public metadata includes configured feed counts, item publisher/date/content length and configuration hash; it excludes article bodies. Fixtures must exercise it with blank model credentials and forbid model calls, and verify that a media feed keeps its publisher label through both collection and the publication bundle. Media and vendor attribution belongs in the native profile and must be verified against a real sample before a new configuration hash is accepted.
+
 ## Scenario: Versioned source and discovery curation
 
 ### Contract

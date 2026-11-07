@@ -22,6 +22,8 @@
 
 配置为 `scripts/horizon/config.json`、`budget.json`、`profiles/ai-news/`；`publication.json` 初始 `enabled=false`。配置哈希由这组文件的相对路径和内容计算（UTF-8/LF），Python 与 TypeScript 共用相同算法。
 
+七来源扩展正在候选分支验证：增加 Microsoft Research、NVIDIA Developer、GitHub Copilot Changelog、MIT Technology Review AI，并将来源额度设为 7，其他输入/成稿/请求预算不变。profile 加强媒体、赞助内容和厂商主张的归因。生产主分支在新来源样稿和云端采集通过前继续使用已验收三源；见 [扩展记录](../.trellis/tasks/11-06-ai-daily-replanning/source-expansion.md)。
+
 ## 本地操作
 
 先在受控临时目录取得固定源码并安装锁定依赖。不要在工作区另建 Horizon clone。以下 `$horizonRoot` 是该临时源码路径，`$taskTemp` 是本轮明确创建的临时目录，输出不能位于 Git 跟踪的公开目录。
@@ -35,6 +37,8 @@ npm.cmd run ai-daily:editions-ui
 ```
 
 `validate` 仅检查原生配置，不测活；`check.py` 在网络阻断下，用 fixture RSS 和模型响应执行原生 fetch/score/filter/enrich/summary 全程。适配直接调用原生 skill helper 使用的 `HorizonPipelineService`，避免另建新闻算法；不调用会生成旁置备份的 `save_config`。
+
+Actions 的手动 `collect` 操作要求显式期次，可在候选分支验证 runner 的来源可达性。它复用同一预算与完整性检查，返回按来源的条数、公开标题/链接、发布时间和内容长度；不注入模型 Secret，不生成或上传期刊，不进入发布 job。零条来源计数不表示源失败，整体成功以原生完整采集报告为准。
 
 经批准的小型真实业务任务才执行：
 
