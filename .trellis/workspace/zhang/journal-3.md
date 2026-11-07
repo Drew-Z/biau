@@ -1812,3 +1812,40 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - 先按 7 源候选准备来源额度、媒体归因及受限样稿验证，再处理中文正文和开源 Releases；现有已验收周期继续运行。主站 synthetic 失败另按对应运行日志定位。
+
+
+## Session 151: Horizon 七源云端采集通过，样稿遇渠道 524
+
+**Date**: 2026-11-07
+**Task**: Horizon 七源云端采集通过，样稿遇渠道 524
+**Branch**: `main`
+
+### Summary
+
+七源候选完成并保留分支；本地/云端采集与离线检查通过，真实样稿第 2 请求返回 524，未启用新配置。
+
+### Main Changes
+
+七源候选 f03c970c 及验证记录 8e7d3634 保留在 codex/ai-daily-seven-sources。复用原生 RSS/profile，增加安全的 Actions collect；模型输入/请求额度不变。原生断网回归、期刊/原子发布、lint/build 和文档检查通过。Actions 42357229391 完整采集 7 条，0 模型、0 artifact、publish skipped。
+
+本地一次受限样稿共 2 请求，第 1 次 200/stop，第 2 次约 32 秒返回 524，无完整稿。仅第一请求报告 953/1178 tokens，失败请求用量未知；未重试、换渠道或更新发布 gate。已回到 main，仅同步任务证据，生产仍为原三源和原配置 hash。临时源码/依赖/全文输入已清理，10 个原始实体恢复点校验通过。其他桌宠、未知目录、历史 worktree 保留。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f03c970c` | (see git log) |
+| `8e7d3634` | (see git log) |
+
+### Testing
+
+- 七源本地与云端采集各 7 条，原生断网回归、期刊/原子发布、lint/build、相关文档和任务检查通过。真实样稿未通过：2 请求后 524，无 bundle，内容与归因未验收。
+
+### Status
+
+**In progress**：候选完成，生产未切换；七源样稿和 AC12 真实定时发布仍待实证。
+
+### Next Steps
+
+- 先解决或确认模型渠道的 524，再继续受限样稿核对；通过后才更新配置验收 hash 并合并候选。既有已验收三源周期按原授权运行。
