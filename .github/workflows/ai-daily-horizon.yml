@@ -10,6 +10,10 @@ on:
       edition_id:
         description: 'Collection/generation requires YYYY-MM-DD-morning or YYYY-MM-DD-evening'
         type: string
+      request_limit:
+        description: 'Optional lower request cap for an authorized continuation (1-60)'
+        type: number
+        default: 60
   schedule:
     - cron: '17 0 * * *'
     - cron: '17 12 * * *'
@@ -106,8 +110,9 @@ jobs:
           HORIZON_MODEL2: ${{ vars.HORIZON_MODEL2 }}
           HORIZON_CHANNEL: ${{ vars.HORIZON_CHANNEL || '2' }}
           EDITION_ID: ${{ steps.slot.outputs.edition }}
+          REQUEST_LIMIT: ${{ inputs.request_limit }}
         run: |
-          .horizon-runtime/.venv/bin/python scripts/horizon/run.py generate --horizon-path .horizon-runtime --edition-id "$EDITION_ID" --output "$RUNNER_TEMP/edition-bundle.json" --github-actions
+          .horizon-runtime/.venv/bin/python scripts/horizon/run.py generate --horizon-path .horizon-runtime --edition-id "$EDITION_ID" --output "$RUNNER_TEMP/edition-bundle.json" --request-limit "${REQUEST_LIMIT:-60}" --github-actions
       - name: Validate generated publication bundle
         id: preview
         if: steps.generate.outputs.outcome == 'generated'

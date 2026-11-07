@@ -52,6 +52,8 @@ for (const mutation of [{ raw: 8, scoreFailed: 5 }, { selected: 3, failed: 2 }, 
   await assert.rejects(packageEdition({ ...partial, checks: { ...partial.checks, ...mutation } }, '2026-11-05T01:00:00Z'))
 }
 for (const runtime of [
+  { ...partial.runtime, channel: '3' }, { ...partial.runtime, model: 'unapproved' },
+  { ...partial.runtime, channel: '1' },
   { ...partial.runtime, stopped: true }, { ...partial.runtime, omissions: [] },
   { ...partial.runtime, omissions: [{ stage: 'score', id: 'fixture-1' }, { stage: 'enrich', id: 'omitted-enrich' }] },
   { ...partial.runtime, items: [{ id: 'fixture-1', url: 'https://example.com/ai', score: 5 }] },

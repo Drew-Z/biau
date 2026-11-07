@@ -2,7 +2,7 @@
   "id": "ai-daily-replanning",
   "name": "ai-daily-replanning",
   "title": "AI 日报重新规划",
-  "description": "首期与网站已上线，早晚自动更新已开启；云端模型调用成功，首个早报因无达标内容停止且保留旧刊。待合格新一期验证 Actions 发布。",
+  "description": "首期与网站已上线；七源/渠道 2 候选已修复 JSON 代码块误判，Gemini Lite 连续 7 请求成功后遇到 429。累计 39/60、剩余 21；待后台原因与合格整期验证，生产未切换。",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -30,7 +30,7 @@
   "meta": {
     "planningConsent": "2026-11-06: create task and enter planning",
     "writingMode": "model-assisted real-news generation followed by Codex source review",
-    "modelChannel": "User-populated HORIZON_*; exact URL/key remain private; no agent edit to new private values.",
+    "modelChannel": "User-populated HORIZON_* groups; URL/key unchanged and private. Local channel 2 selected; only MODEL2 updated to Gemini Lite after format diagnosis. Production still uses original channel.",
     "relatedTasks": [
       "07-17-ai-daily-production-pipeline",
       "07-17-ai-daily-production-operations"
@@ -47,9 +47,9 @@
       "20:00 Asia/Shanghai"
     ],
     "runner": "GitHub Actions; selected by user on 2026-11-06 with possible scheduling delays acknowledged",
-    "modelSelection": "deepseek-v4.1-flash, matching user local input; user also authorized other catalog models.",
-    "modelVerification": "SDK streaming completed 10 real-news calls with stop and usage; source-reviewed final one-story sample accepted by user; production enablement in progress.",
-    "pendingDecision": null,
+    "modelSelection": "Candidate channel 2: gemini-3.5-flash-lite; explicit channel 1 backup and current production: deepseek-v4.1-flash. Candidate full-issue acceptance pending.",
+    "modelVerification": "Strict fenced JSON repair confirmed; candidate completed six scores and one summary, then HTTP 429 hard-stopped the issue. No candidate bundle/publication; 10-second pacing has offline evidence only.",
+    "pendingDecision": "Provider-side reason for channel 2 HTTP 429: RPM/TPM rate limit versus model/daily quota or balance; no further model requests until clarified.",
     "aiDailyGenerationModelCalls": null,
     "researchSearchModelRequests": 2,
     "planningState": "approved",
@@ -104,7 +104,9 @@
       "nonthinking-validation.md",
       "item-isolation.md",
       "item-isolation-evidence.json",
-      "channel-2-selection.md"
+      "channel-2-selection.md",
+      "channel-2-compatibility.md",
+      "channel-2-compatibility-evidence.json"
     ],
     "recovery": {
       "repository": "D:\\workspace4Cursor\\blog-semi",
@@ -129,7 +131,7 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "Repair 48ec2022: local and Linux native offline CLI outcome checks passed, Site Quality passed, duplicate edition skipped without model/artifact/publication, Cloudflare deploy succeeded and browser API hashes preserved. Actual schedule and first new qualified auto-publication remain pending."
+      "latest": "2026-11-08 format repair: native offline, editions/atomic publication, lint/build, deployment/manual-gate docs passed. Candidate cloud validation pending; production unchanged. Actual schedule and first qualified new automatic publication remain pending."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
     "implementationState": "live-awaiting-first-qualified-automated-publication",
@@ -306,7 +308,29 @@
       "evidence": "channel-2-selection.md",
       "cloudValidationRun": 42389094702,
       "cloudValidation": "success",
-      "implementationCommit": "8453ff14"
+      "implementationCommit": "8453ff14",
+      "supersededBy": "channel2Compatibility; preserve this prior comparison and request subtotal as historical evidence"
+    },
+    "channel2Compatibility": {
+      "date": "2026-11-08",
+      "status": "format-repaired-429-reason-pending",
+      "model": "gemini-3.5-flash-lite",
+      "backupModel": "deepseek-v4.1-flash",
+      "diagnosisRequests": 2,
+      "fullTrialRequests": 8,
+      "fullTrialCompletedRequests": 7,
+      "fullTrialFailure": "HTTP 429; no bundle or publication",
+      "previousCandidateRequests": 29,
+      "totalCandidateRequests": 39,
+      "remainingAuthorizedRequests": 21,
+      "candidateConfigurationHash": "20e997ac47866b7be4a082b62fdd373f6557fd2c36977f7c6e127d4c190c8ebb",
+      "throttleSeconds": 10,
+      "pacingLiveValidated": false,
+      "thinkingChanged": false,
+      "productionSwitched": false,
+      "report": "channel-2-compatibility.md",
+      "evidence": "channel-2-compatibility-evidence.json",
+      "cloudValidation": "pending"
     }
   }
 }

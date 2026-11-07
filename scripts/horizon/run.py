@@ -57,7 +57,8 @@ def resolve_channel(config, selected=None):
     names = [f"BLOG_DRAFT_FAST_{field}" if selected == "fast" else f"HORIZON_{field}{'2' if selected == '2' else ''}" for field in fields]
     key, base_url, model = (os.getenv(name, "").strip() for name in names)
     parsed = urlsplit(base_url)
-    if not key or not parsed.hostname or parsed.scheme != "https" or parsed.username or parsed.password or parsed.query or parsed.fragment or model != config["ai"]["model"]:
+    expected_model = config["adapter"]["channelModels"].get(selected, config["ai"]["model"])
+    if not key or not parsed.hostname or parsed.scheme != "https" or parsed.username or parsed.password or parsed.query or parsed.fragment or model != expected_model:
         raise ValueError("model-channel-unconfigured-or-drifted")
     identity = {"id": selected, "endpointHash": hashlib.sha256(base_url.rstrip("/").encode()).hexdigest(), "model": model}
     return identity, base_url, names[0]
@@ -269,6 +270,31 @@ async def guarded_client(budget, base_url, proxy=None):
                 attempt["requestId"] = safe_request_id(response.headers.get("x-request-id"))
                 ray = response.headers.get("cf-ray", "")
                 attempt["edgeTraceId"] = ray if re.fullmatch(r"[a-fA-F0-9]{16,32}-[A-Z]{3}", ray) else None
+                if response.status_code == 429:
+                    meter.stop("provider-http-error", 429)
+                    retry_after = response.headers.get("retry-after", "")
+                    if re.fullmatch(r"[0-9]{1,5}", retry_after) and int(retry_after) <= 86400:
+                        attempt["retryAfterSeconds"] = int(retry_after)
+                    attempt["limitKind"] = "unknown"
+                    # Keep only known machine codes, never error messages or raw bodies.
+                    try:
+                        async with asyncio.timeout(1):
+                            data = bytearray()
+                            async for part in response.aiter_bytes():
+                                if len(data) + len(part) > 16384:
+                                    break
+                                data.extend(part)
+                            else:
+                                error_body = json.loads(data)
+                                error_body = error_body.get("error", {}) if isinstance(error_body, dict) else {}
+                                if isinstance(error_body, dict):
+                                    markers = [error_body.get("code"), error_body.get("type")]
+                                    if any(value in ("insufficient_quota", "quota_exceeded") for value in markers):
+                                        attempt["limitKind"] = "quota"
+                                    elif any(value in ("rate_limit_exceeded", "rate_limit_error") for value in markers):
+                                        attempt["limitKind"] = "rate-limit"
+                    except (ValueError, TimeoutError, httpx.HTTPError):
+                        pass
                 if response.status_code >= 300 and response.status_code not in (400, 422):
                     await response.aclose()
                     reject("provider-edge-timeout" if response.status_code == 524 else "provider-http-error", response.status_code)
@@ -311,7 +337,8 @@ async def guarded_client(budget, base_url, proxy=None):
             started = time.monotonic()
             attempt = {"number": None, "stage": meter.stage, "item": meter.item, "httpStatus": None, "requestId": None,
                        "edgeTraceId": None, "headersSeconds": None, "firstChunkSeconds": None,
-                       "elapsedSeconds": None, "finishReason": None, "usage": None, "outcome": "pending"}
+                       "elapsedSeconds": None, "finishReason": None, "usage": None, "jsonFormat": None,
+                       "retryAfterSeconds": None, "limitKind": None, "outcome": "pending"}
             token = current_attempt.set((attempt, started))
             try:
                 # Includes response headers, every chunk, final aggregation and validation.
@@ -339,12 +366,22 @@ async def guarded_client(budget, base_url, proxy=None):
                     message = completion.choices[0].message
                     if message.refusal or message.tool_calls or not isinstance(message.content, str) or not message.content.strip():
                         reject("invalid-model-result")
+                    # Some compatible providers wrap a complete JSON object in Markdown.
+                    # Accept only the entire fence, never search prose for a JSON substring.
+                    content = message.content.strip()
+                    fenced = re.fullmatch(r"```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```", content, re.IGNORECASE)
+                    if fenced:
+                        content = fenced[1]
                     try:
-                        parsed = json.loads(message.content)
+                        parsed = json.loads(content)
                     except (ValueError, TypeError):
+                        attempt["jsonFormat"] = "invalid"
                         reject("invalid-model-json")
                     if not isinstance(parsed, dict):
+                        attempt["jsonFormat"] = "non-object"
                         reject("invalid-model-json")
+                    message.content = content
+                    attempt["jsonFormat"] = "fenced-object" if fenced else "object"
                     attempt["outcome"] = "complete"
                     return completion
             except APIStatusError as error:
@@ -424,6 +461,9 @@ async def execute(args):
     from src.mcp.service import HorizonPipelineService
     from item_runs import ItemRuns
     config = read_json(HERE / "config.json")
+    models = config.get("adapter", {}).get("channelModels")
+    if not isinstance(models, dict) or set(models) != {"1", "2"} or not all(isinstance(m, str) and m.strip() == m and m for m in models.values()) or models["2"] != config["ai"]["model"]:
+        raise ValueError("invalid-channel-model-config")
     budget = read_json(HERE / "budget.json")
     request_limit = getattr(args, "request_limit", None)
     if request_limit is not None:
@@ -447,6 +487,8 @@ async def execute(args):
         proxy = system_proxy(base_url) if getattr(args, "use_system_proxy", False) else None
         config["ai"]["api_key_env"] = key_env
         config["ai"]["base_url"] = base_url
+        config["ai"]["model"] = channel["model"]
+    config.pop("adapter")  # Local policy is not a native provider chain.
     with contextlib.ExitStack() as resources:
         temporary = resources.enter_context(tempfile.TemporaryDirectory(prefix="biau-horizon-run-"))
         work = Path(temporary)
@@ -567,7 +609,7 @@ async def execute(args):
             if selected == 0:
                 return {**stats(), "reason": "no-qualified-items", "stage": "filter"}
             result.update(selected=selected, stage="enrich")
-            items = await state.process("enrich", selected_items, common, valid_enrichment)
+            items = await state.process("enrich", selected_items, common, valid_enrichment, config["ai"].get("throttle_sec", 0))
             enrichment_failed = selected - len(items)
             result.update(enrichmentFailed=enrichment_failed, items=len(items))
             if not items:
@@ -585,7 +627,7 @@ async def execute(args):
                       "checks": {"fetchStatus": fetched["fetch_status"], "failedSources": fetched["fetch_report"]["failed"], "raw": len(raw), "scored": len(scored_items), "scoreFailed": score_failed,
                                  "selected": selected, "enrichmentStatus": "partial" if enrichment_failed else "success", "enriched": len(items), "failed": enrichment_failed,
                                  "summaryStage": summary["source_stage"], "language": summary["language"], "itemsUsed": summary["items_used"]},
-                      "runtime": {"engineRevision": read_json(HERE / "upstream.json")["revision"], "configurationHash": configuration_hash(), "requests": meter.requests, "usage": meter.reported_usage(), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts, "omissions": state.omissions(), "stopped": meter.stopped,
+                      "runtime": {"engineRevision": read_json(HERE / "upstream.json")["revision"], "configurationHash": configuration_hash(), "channel": channel["id"], "model": channel["model"], "requests": meter.requests, "usage": meter.reported_usage(), "usageCoverage": meter.usage_coverage(), "attempts": meter.attempts, "omissions": state.omissions(), "stopped": meter.stopped,
                                   "items": [{"id": i["id"], "url": i["url"], "score": i["processing"]["analysis"]["score"]} for i in items]}}
         with output.open("x", encoding="utf-8", newline="\n") as target:
             target.write(json.dumps(bundle, ensure_ascii=False, indent=2) + "\n")

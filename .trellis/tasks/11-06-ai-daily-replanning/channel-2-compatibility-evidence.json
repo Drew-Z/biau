@@ -1,0 +1,97 @@
+{
+  "date": "2026-11-08",
+  "channel": "2",
+  "model": "gemini-3.5-flash-lite",
+  "networkPath": "Explicit existing local system proxy; not proof of direct or cloud generation",
+  "formatDiagnosis": {
+    "requests": 2,
+    "observations": [
+      {
+        "shape": "json-object",
+        "nativeObject": true
+      },
+      {
+        "shape": "fenced-json-object",
+        "nativeObject": true
+      }
+    ],
+    "elapsedSeconds": [
+      4.062,
+      4.875
+    ],
+    "reportedTokens": 4397,
+    "outcome": "Complete fenced JSON summary rejected by old adapter; not a publishable issue"
+  },
+  "fullTrial": {
+    "editionId": "2026-11-07-evening",
+    "configurationHash": "a7b4f2100c2b036ad01856e77de9b605853a14b607fd39fcfe0e518db66a5cd6",
+    "requestLimit": 12,
+    "requests": 8,
+    "completedRequests": 7,
+    "fencedObjectResponses": 6,
+    "failure": {
+      "category": "provider-http-error",
+      "httpStatus": 429
+    },
+    "usage": {
+      "prompt_tokens": 9001,
+      "completion_tokens": 923,
+      "total_tokens": 9924
+    },
+    "usageCoverage": {
+      "reportedRequests": 7,
+      "unknownRequests": 1
+    },
+    "raw": 6,
+    "scored": 6,
+    "selected": 2,
+    "enriched": 1,
+    "bundleCreated": false,
+    "published": false,
+    "throttleSeconds": 1,
+    "limitKind": "unknown",
+    "retryAfterSeconds": null,
+    "pacedStages": [
+      "score"
+    ]
+  },
+  "requestAccounting": {
+    "authorizedTotal": 60,
+    "previousRequests": 29,
+    "formatDiagnosisRequests": 2,
+    "fullTrialRequests": 8,
+    "used": 39,
+    "remaining": 21,
+    "newRequestsWithUsage": 9,
+    "newRequestsWithUnknownUsage": 1,
+    "reportedTokensThisRepair": 14321
+  },
+  "candidate": {
+    "configurationHash": "20e997ac47866b7be4a082b62fdd373f6557fd2c36977f7c6e127d4c190c8ebb",
+    "throttleSeconds": 10,
+    "stages": [
+      "score",
+      "enrich"
+    ],
+    "paceLiveValidated": false,
+    "channelModels": {
+      "1": "deepseek-v4.1-flash",
+      "2": "gemini-3.5-flash-lite"
+    },
+    "thinkingChanged": false,
+    "productionSwitched": false
+  },
+  "validation": {
+    "nativeOffline": "passed",
+    "editionsAndAtomicPublication": "passed",
+    "lint": "passed",
+    "build": "passed",
+    "deploymentDocs": "passed",
+    "manualGateDocs": "passed",
+    "diffCheck": "passed",
+    "cloud": "pending"
+  },
+  "artifactDirectory": "D:\\Agent\\codex\\artifacts\\ai-daily\\20261108-channel2-compatibility",
+  "artifactManifestSha256": "2ad781275c173eb3f9b35bffa10a1b8791355537be0bc77af74b5e12e9190521",
+  "nextCondition": "Provider-side 429 reason/limit or quota repair evidence before another bounded real trial; keep stopped checkpoint intact"
+}

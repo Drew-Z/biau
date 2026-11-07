@@ -12,13 +12,15 @@
 - 明确指定 `ai-news` profile，避免额外分类调用；复用 Horizon URL 去重和评分筛选，关闭 AI 主题去重及搜索/history 工具。
 - RSS 可能只包含导语；评分 summary/reason 也只是模型判断。不能据此断言原文未公布方法、结果或价格。快讯允许 1–3 句，只写来源支持的事实，不为凑句数添加“尚未明确”。首期需核对原文，prompt 约束不等于事实正确的自动保证。
 - 最多 5 条中文成稿，单评分并发、单摘要并发。`digest.max_items` 不是请求预算。首版自动运行沿用通过验收的 3 个来源和该上限；15 条及更广来源属于后续覆盖扩展，须验证后调整配置。
-- 当前模型与用户本地填写一致，为 `deepseek-v4.1-flash`，OpenAI-compatible Chat Completions。用户已授权新填渠道的所有模型；短请求能返回不代表完整新闻生成链路已通过。当前不配置自动跨渠道 fallback，业务验证使用真实新闻，不使用 ping、空 prompt 或测活替代内容任务。
+- 生产仍使用原渠道 `deepseek-v4.1-flash`；候选渠道 2 使用 `gemini-3.5-flash-lite`，原渠道保留 DeepSeek 作为显式备用。候选修复了完整 Markdown JSON 代码块的兼容问题，真实整期仍因 HTTP 429 中止，尚未切换生产。用户已授权新填渠道的所有模型；短请求能返回不代表完整新闻生成链路已通过。不配置自动跨渠道 fallback，业务验证使用真实新闻，不使用 ping、空 prompt 或测活替代内容任务。
 - 整个运行最多 **60 次实际模型 HTTP 请求**（评分、格式修复、兼容重试合计）；单请求输入最多 24,000 个字符，输出参数最多 2,048 tokens；60 秒单请求、20 分钟总时限、SDK retries=0。达到请求/时间预算立即停止。输入字符上限不等于精确 token 计费，模型实际计费与思考 token 规则未知，不承诺金额上限。
 - 无重试正常路径最多 20 次评分 + 5 次中文摘要 = 25 次。适配按单项调用原生 score/enrich，阻止上游 repair/tenacity 重发已完成或已失败项；明确 400/422 参数兼容最多 3 次且不得重复相同请求，全部实际 HTTP 都计入总预算。
 - 保留现有思考设置。单条 524/5xx、传输/请求超时、流和内容错误隔离后继续其他条目；连续 2 条或累计 3 次失败中止整期。401/402/403/429、其他非兼容 4xx、预算、取消、合同损坏立即停止。单次失败不等于渠道整体不可用。
+- 候选 `ai.throttle_sec=10` 同时用于评分和摘要，在上一项之后等待再开始下一项，保持并发 1 和原总 deadline。这是降低突发频率的保守配置，不代表已知服务商 RPM/TPM。429 先停止账本，再最多读取 16 KiB / 1 秒的错误 JSON，只保留明确机器码对应的 `limitKind=rate-limit|quota|unknown` 和合法数字 `Retry-After`（0–86400 秒）；不保存原文、不自动等待重试。未知或迟迟返回的错误正文不能把 429 降级为可继续的普通超时。
 - 评分与摘要分别至少完成 50%，且至少有 1 条满足原评分线并完成摘要才能发布。`raw=scored+scoreFailed`、`selected=enriched+failed`，失败不伪装成低分；仅完整成功项进入原生 summary，发布端核对失败清单、条目 ID/分数/来源。部分成功时正文自动附上数量及遗漏说明。
 - HTTP SDK 会把 transport 的异常包装成连接异常；适配层恢复 Horizon 的 `AIProviderUnavailableError`，避免上游将预算/限流停止信号当作普通项错误继续重试。
 - 模型请求使用已有 SDK 的 `chat.completions.stream()` 聚合，保留 Horizon 完整响应接口和原生业务校验；不改上游源码或自写 SSE parser。每请求 60 秒覆盖响应头、完整流读取与最终聚合，响应字节最多 1 MiB；要求单 choice、`finish_reason=stop`、非空且可解析的 JSON object，拒绝 refusal/tool call、无终态 EOF、截断输出和流内错误。原生评分/摘要仍校验具体业务字段。
+- 正常结束的完整 JSON 若仅包在一个 `json` 或无语言标签的 Markdown 代码块中，先去除这一层再做严格 JSON object 校验。正文必须完全匹配代码块；混杂前后说明、多段输出、不闭合代码块、数组和坏 JSON 仍拒绝。`jsonFormat` 只记录 object/fenced-object/non-object/invalid，不保存正文，不靠重发请求修格式。
 - 失败输出含阶段、实际发送尝试数、经过秒数、固定类别、可得 HTTP 状态和请求级 `attempts`。每个 attempt 仅含安全的关联 ID、响应头/首片段/完成耗时、结束原因、已返回 token 和结果类别；只保留特定格式的 `x-request-id` / `cf-ray` 值，不输出任意响应头、地址、凭据或正文。这些诊断只留在本地运行记录，不投影到公开期刊。
 - `usageCoverage` 明确区分 `reportedRequests` 与 `unknownRequests`；未返回 usage 就是未知用量，不能解释为零费用。HTTP 524 标记为 `provider-edge-timeout`，可能已转发计费，禁止重发该项；流内错误、无终态、无效 JSON 和请求超时同样隔离该项。`--request-limit` 只允许调低请求上限，恢复继承已消耗请求和原上限。
 
@@ -60,7 +62,7 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 }
 ```
 
-渠道选择顺序为 `--channel 1|2`、`HORIZON_CHANNEL`、检测到渠道 2 任意字段时优先 2，否则 1。渠道 2 使用 `HORIZON_BASE_URL2/API_KEY2/MODEL2`，渠道 1 使用无数字后缀的原三项。选定组留空或缺字段即拒绝，不能借用其他组的地址、凭据或模型；模型必须与 `config.json` 一致。仅未显式选渠道且两组都不存在时兼容完整 `BLOG_DRAFT_FAST_*`。两渠道不自动互相重发失败项，`--channel 1` 供运维明确切换备用，不能用来重置旧请求账本。
+渠道选择顺序为 `--channel 1|2`、`HORIZON_CHANNEL`、检测到渠道 2 任意字段时优先 2，否则 1。渠道 2 使用 `HORIZON_BASE_URL2/API_KEY2/MODEL2`，渠道 1 使用无数字后缀的原三项。选定组留空或缺字段即拒绝，不能借用其他组的地址、凭据或模型；模型必须匹配 `config.json` 的 `adapter.channelModels` 对应编号，主用 2 同时匹配 `ai.model`。映射纳入配置哈希，运行时剥离本地 adapter 字段再交给原生 Horizon；bundle 记录非敏感编号/模型，发布端复核，公开期刊不包含这些字段。仅未显式选渠道且两组都不存在时兼容完整 `BLOG_DRAFT_FAST_*`，其模型必须匹配主用模型。两渠道不自动互相重发失败项，`--channel 1` 供运维明确切换备用，不能用来重置旧请求账本。
 
 本机直连可能与已配置的系统代理表现不同。需要复用本机代理时显式添加 `--use-system-proxy`：读取系统 HTTPS/HTTP 代理并尊重 bypass；未配置代理时拒绝，TLS 验证保持开启，不修改机器代理设置。GitHub Actions 使用 runner 默认直连，不依赖本机代理。目录可达性与模型完整交付需分别验证；代理路径的成功不能证明直连同样稳定。
 
@@ -75,7 +77,7 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 ### 本地渠道填写入口
 
 - 根目录 `.env.local` 是本地私有填写文件，已被 Git 忽略。2026-11-06 用户要求清理旧渠道后，旧模型值、凭据、`GEMINI_*` 和备用渠道已移至集中恢复点；随后用户已填写新的 Horizon 三项。代理没有改写用户新填的地址或凭据。
-- 日报当前主用填写 `HORIZON_BASE_URL2`、`HORIZON_API_KEY2`、`HORIZON_MODEL2`，`HORIZON_CHANNEL=2`；原无后缀三项作为显式备用保留。地址为 HTTPS API 根地址（通常含 `/v1`），模型为该渠道准确 ID，主备模型都必须匹配已验收 `config.json`；不同模型需先做内容验证。用户新填的地址/凭据不改写。
+- 日报当前主用填写 `HORIZON_BASE_URL2`、`HORIZON_API_KEY2`、`HORIZON_MODEL2=gemini-3.5-flash-lite`，`HORIZON_CHANNEL=2`；原无后缀三项和 `HORIZON_MODEL=deepseek-v4.1-flash` 作为显式备用保留。地址为 HTTPS API 根地址（通常含 `/v1`），主备模型分别匹配已验收 `adapter.channelModels`；变更模型需内容验证。用户新填的地址/凭据不改写。
 - 下方 `BLOG_DRAFT_STRONG_*`、`BLOG_DRAFT_REVIEW_*`、`BLOG_DRAFT_FAST_*` 分别供博客长文、润色、提纲使用，可留空；它们不是日报必填项。
 - `.env.example` 是可提交的变量模板，不是实际凭据来源；`scripts/horizon/config.json` 保存模型/来源/摘要策略，`budget.json` 保存运行上限，均不放渠道 URL 或 key。
 - Horizon 仅在显式传入 `--env-file .env.local` 时加载该文件；进程已有环境变量优先，包括显式空值。GitHub Actions 使用自己的 Secrets/Variables，清理本地文件不会修改线上配置。
@@ -95,6 +97,8 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 首期验收后在 `publication.json` 记录实际 `configurationHash/firstEditionId/firstContentSha256` 并启用；GitHub Secrets 中主用为 `HORIZON_BASE_URL2/HORIZON_API_KEY2`，原无后缀两项保留备用，Variables 为 `HORIZON_MODEL2/HORIZON_MODEL/HORIZON_CHANNEL=2/AI_DAILY_AUTOMATION_ENABLED=true`。显式切换备用时把 `HORIZON_CHANNEL` 改为 `1`，下一期使用该组，不自动重发失败请求。未验收样稿不得上传 Actions artifact 或内容分支；首次试跑在本地进行。生成 job 只有 contents:read，发布 job 有 contents:write 且不持有模型 Secret。Actions 每日北京时间早晚启动，可能延迟。
 
 配置变更导致哈希变化会停止自动任务，必须按变更风险验证后更新验收记录。首期接受后的普通合格期刊自动发布，不要求逐期人工批准。
+
+Actions 手动生成可传 `request_limit`（1–60）下调本次模型 HTTP 上限；省略/定时运行使用配置上限。它复用 CLI 的 `--request-limit` 校验，不能提高额度；跨轮选型的剩余额度由任务账本累计，不能把一次新 dispatch 当作预算重置。
 
 ## 阅读与恢复
 

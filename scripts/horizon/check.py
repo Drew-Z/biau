@@ -50,6 +50,8 @@ async def check(root):
     assert set(steps['collect']['env']) == {'EDITION_ID'} and 'run.py collect' in steps['collect']['run']
     assert steps['slot']['if'] == "github.event_name == 'schedule' || inputs.operation == 'generate'"
     assert '--github-actions' in steps['generate']['run']
+    assert '--request-limit' in steps['generate']['run']
+    assert steps['generate']['env']['REQUEST_LIMIT'] == '${{ inputs.request_limit }}'
     assert steps['generate']['env']['HORIZON_CHANNEL'] == "${{ vars.HORIZON_CHANNEL || '2' }}"
     assert steps['generate']['env']['HORIZON_API_KEY2'] == '${{ secrets.HORIZON_API_KEY2 }}'
     assert steps['generate']['env']['HORIZON_BASE_URL2'] == '${{ secrets.HORIZON_BASE_URL2 }}'
@@ -90,7 +92,7 @@ async def check(root):
     rejected(lambda: require_fetch({**good_fetch, "fetched": 21}, [{"id": str(i)} for i in range(21)], budget))
 
     config = read_json(HERE / 'config.json')
-    channels = {'HORIZON_BASE_URL': 'https://old.example/v1', 'HORIZON_API_KEY': 'old-only', 'HORIZON_MODEL': config['ai']['model'],
+    channels = {'HORIZON_BASE_URL': 'https://old.example/v1', 'HORIZON_API_KEY': 'old-only', 'HORIZON_MODEL': config['adapter']['channelModels']['1'],
                 'HORIZON_BASE_URL2': 'https://new.example/v1', 'HORIZON_API_KEY2': 'new-only', 'HORIZON_MODEL2': config['ai']['model']}
     with patch.dict('os.environ', channels, clear=True):
         identity, endpoint, key_env = resolve_channel(config)
@@ -108,6 +110,7 @@ async def check(root):
             with patch.dict('os.environ', {'HORIZON_CHANNEL': invalid}):
                 rejected(lambda: resolve_channel(config))
     fast = {key.replace('HORIZON_', 'BLOG_DRAFT_FAST_'): value for key, value in channels.items() if not key.endswith('2')}
+    fast['BLOG_DRAFT_FAST_MODEL'] = config['ai']['model']
     with patch.dict('os.environ', fast, clear=True):
         assert resolve_channel(config)[0]['id'] == 'fast'
         rejected(lambda: resolve_channel(config, '1'))
@@ -122,6 +125,7 @@ async def check(root):
     response_streams = []
     failing = None
     failure_plan = []
+    rate_fault = 'unknown'
     score = 8
     fetch_count = 1
 
@@ -132,6 +136,8 @@ async def check(root):
             self.closed = False
 
         async def __aiter__(self):
+            if self.failure == "slow-rate-body":
+                await asyncio.sleep(1.1)
             if self.failure == "oversized-stream":
                 yield b":" + b"x" * MAX_MODEL_RESPONSE_BYTES + b"\n\n"
             if self.failure == "slow-first-chunk":
@@ -157,6 +163,12 @@ async def check(root):
         fault = failure_plan.pop(0) if failure_plan else failing
         model_requests.append(request)
         headers = {"x-request-id": "req_fixture0123456789", "cf-ray": "0123456789abcdef-SJC", "x-private-header": "private secret"}
+        if fault == 429 and rate_fault != 'unknown':
+            if rate_fault == 'slow-rate-body':
+                stream = FixtureStream([b'{}'], rate_fault)
+                response_streams.append(stream)
+                return httpx.Response(429, stream=stream, headers=headers)
+            return httpx.Response(429, json={'error': {'code': rate_fault, 'message': 'private response must not escape'}}, headers={**headers, 'retry-after': '30' if rate_fault != 'private-value' else 'private-value'})
         if isinstance(fault, int):
             return httpx.Response(fault, json={"error": "private response must not escape"}, headers=headers)
         if fault == "timeout":
@@ -186,6 +198,16 @@ async def check(root):
             content = '[]'
         if fault == "empty-result":
             content = ''
+        if fault in ("fenced-json", "fenced-no-language"):
+            content = '```' + ('json' if fault == 'fenced-json' else '') + '\n' + content + '\n```'
+        if fault == "fenced-bad-json":
+            content = '```json\n{"summary":"unfinished\n```'
+        if fault == "fenced-array":
+            content = '```json\n[]\n```'
+        if fault == "prose-json":
+            content = 'Here is the result:\n```json\n' + content + '\n```'
+        if fault == "unclosed-fence":
+            content = '```json\n' + content
         chunk = {**base, "choices": [{"index": 0, "delta": {"role": "assistant", "content": content}, "finish_reason": None}]}
         reason = fault if fault in ("length", "content_filter", "tool_calls") else "stop"
         finish = {**base, "choices": [{"index": 0, "delta": {}, "finish_reason": reason}]}
@@ -210,7 +232,16 @@ async def check(root):
     def no_network(*_args, **_kwargs):
         raise AssertionError("unexpected real network")
 
-    with tempfile.TemporaryDirectory(prefix="biau-horizon-check-") as tmp, patch.object(socket, "getaddrinfo", no_network), patch.object(socket.socket, "connect", no_network), patch.object(RSSScraper, "fetch", fetched), patch.object(httpx, "AsyncHTTPTransport", lambda **_kwargs: httpx.MockTransport(response)), patch.dict('os.environ', {"HORIZON_GENERATION_APPROVED": "true", "HORIZON_API_KEY": "fixture-only", "HORIZON_BASE_URL": "https://fixture.example/v1", "HORIZON_MODEL": read_json(HERE / "config.json")["ai"]["model"]}):
+    # Observe item-stage pacing without sleeping in this offline suite. Transport
+    # timeout fixtures retain real asyncio.sleep calls.
+    from item_runs import ItemRuns
+    original_process = ItemRuns.process
+    throttle_calls = []
+    async def process_without_wait(self, stage, items, common, validate, throttle=0):
+        throttle_calls.append((stage, throttle))
+        return await original_process(self, stage, items, common, validate, 0)
+
+    with tempfile.TemporaryDirectory(prefix="biau-horizon-check-") as tmp, patch.object(socket, "getaddrinfo", no_network), patch.object(socket.socket, "connect", no_network), patch.object(RSSScraper, "fetch", fetched), patch.object(httpx, "AsyncHTTPTransport", lambda **_kwargs: httpx.MockTransport(response)), patch.object(ItemRuns, 'process', process_without_wait), patch.dict('os.environ', {"HORIZON_GENERATION_APPROVED": "true", "HORIZON_API_KEY": "fixture-only", "HORIZON_BASE_URL": "https://fixture.example/v1", "HORIZON_MODEL": read_json(HERE / "config.json")["adapter"]["channelModels"]["1"]}):
         args = SimpleNamespace(horizon_path=str(root), operation="generate", edition_id="2026-11-05-morning", schedule=None, created_at=None, env_file=None, output=str(Path(tmp) / "bundle.json"))
         # Collect works with no model credentials, preserves media attribution and never publishes.
         args.operation = 'collect'
@@ -258,6 +289,7 @@ async def check(root):
         assert result["reportedUsage"] == {"prompt_tokens": 200, "completion_tokens": 100, "total_tokens": 300}
         bundle = read_json(args.output)
         assert bundle["runtime"]["requests"] == 2 and len(model_requests) == 2
+        assert throttle_calls[-2:] == [('score', config['ai']['throttle_sec']), ('enrich', config['ai']['throttle_sec'])]
         assert bundle["runtime"]["configurationHash"] == configuration_hash()
         assert bundle["checks"]["summaryStage"] == "enriched"
         assert bundle["checks"]["failed"] == 0 and "example.com/ai" in bundle["markdown"]
@@ -385,6 +417,21 @@ async def check(root):
             assert meter.requests == 1
 
         # Native retry loops must preserve exact safe diagnostics without a draft.
+        for rate_fault, expected in [('rate_limit_exceeded', 'rate-limit'), ('insufficient_quota', 'quota'), ('private-value', 'unknown'), ('slow-rate-body', 'unknown')]:
+            failing = 429
+            try:
+                async with guarded_client(budget, 'https://fixture.example/v1'):
+                    client = OpenAIClient(AIConfig(provider='openai', model='fixture', api_key_env='HORIZON_API_KEY', base_url='https://fixture.example/v1', max_tokens=2048))
+                    await client.complete(system='fixture', user='fixture')
+            except StageRejected as error:
+                attempt = error.diagnostics['attempts'][0]
+                assert attempt['limitKind'] == expected and error.diagnostics['modelCalls'] == 1
+                assert attempt['retryAfterSeconds'] == (None if rate_fault in ('private-value', 'slow-rate-body') else 30)
+                assert error.diagnostics['failure'] == {'category': 'provider-http-error', 'httpStatus': 429}
+                assert 'private' not in json.dumps(error.diagnostics)
+            else:
+                raise AssertionError('429 did not stop')
+        rate_fault = 'unknown'
         for failing in (401, 402, 403, 404, 429, 503, 524, "connection", "timeout"):
             requests_before_failure = len(model_requests)
             try:
@@ -408,6 +455,8 @@ async def check(root):
                                   ("content_filter", "incomplete-model-stream"), ("tool_calls", "incomplete-model-stream"),
                                   ("sse-error", "provider-stream-error"), ("midstream-error", "provider-stream-error"),
                                   ("bad-json", "invalid-model-json"), ("non-object-json", "invalid-model-json"),
+                                  ("fenced-bad-json", "invalid-model-json"), ("fenced-array", "invalid-model-json"),
+                                  ("prose-json", "invalid-model-json"), ("unclosed-fence", "invalid-model-json"),
                                   ("empty-result", "invalid-model-result"), ("read-error", "transport-error"),
                                   ("non-stream-response", "unexpected-model-content-type"),
                                   ("oversized-stream", "model-response-too-large"),
@@ -441,7 +490,7 @@ async def check(root):
                 raise AssertionError(f"{failing} escaped total deadline")
             assert len(model_requests) == before + 1 and all(stream.closed for stream in response_streams)
 
-        for failing in ("no-usage", "unsafe-ids", "temperature-once"):
+        for failing in ("no-usage", "unsafe-ids", "temperature-once", "fenced-json", "fenced-no-language"):
             args.output = str(Path(tmp) / f"{failing}.json")
             before = len(model_requests)
             result = await execute(args)
@@ -458,6 +507,8 @@ async def check(root):
                 assert all(a["requestId"] is None and a["edgeTraceId"] is None for a in runtime["attempts"])
             if failing == "temperature-once":
                 assert runtime["attempts"][0]["outcome"] == "parameter-rejected"
+            if failing in ("fenced-json", "fenced-no-language"):
+                assert all(a['jsonFormat'] == 'fenced-object' for a in runtime['attempts'])
             assert 'private' not in json.dumps(runtime)
             assert all(stream.closed for stream in response_streams)
 
@@ -654,7 +705,6 @@ async def check(root):
                 raise ProcessLost()
             return value
 
-        original_process = ItemRuns.process
         fetch_count = 1
         args.output = str(Path(tmp) / 'resume-budget.json')
         args.checkpoint = str(Path(tmp) / 'resume-budget')

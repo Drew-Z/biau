@@ -42,6 +42,7 @@ export async function packageEdition(raw: unknown, publishedAt: string): Promise
   const sourceUrls = raw.sourceLinks.map((item) => isDailyRecord(item) ? item.url : null)
   requireCondition(Array.isArray(items) && items.length === c.enriched && items.every((item, index) => isDailyRecord(item) && typeof item.id === 'string' && item.id && !omittedIds.has(item.id) && item.url === sourceUrls[index] && typeof item.score === 'number' && Number.isFinite(item.score) && item.score >= config.processing.profile_settings['ai-news'].threshold && item.score <= 10) && new Set(items.map((item) => item.id)).size === items.length, 'incomplete-published-items')
   requireCondition(raw.runtime.engineRevision === upstream.revision && raw.runtime.configurationHash === await configurationHash(), 'runtime-drift')
+  requireCondition(typeof raw.runtime.channel === 'string' && ['1', '2', 'fast'].includes(raw.runtime.channel) && raw.runtime.model === (raw.runtime.channel === 'fast' ? config.ai.model : config.adapter.channelModels[raw.runtime.channel]), 'runtime-model-drift')
   requireCondition(Number.isSafeInteger(raw.runtime.requests) && Number(raw.runtime.requests) > 0 && Number(raw.runtime.requests) <= budget.maxModelRequests, 'request-budget-invalid')
   requireCondition(typeof raw.markdown === 'string' && raw.markdown.trim() && Buffer.byteLength(raw.markdown) <= DAILY_MARKDOWN_MAX_BYTES, 'invalid-markdown')
   // This is a publication check, independent of the browser's element/URL allowlist.

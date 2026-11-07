@@ -1,11 +1,14 @@
 {
+  "adapter": {
+    "channelModels": { "1": "deepseek-v4.1-flash", "2": "gemini-3.5-flash-lite" }
+  },
   "ai": {
     "provider": "openai",
-    "model": "deepseek-v4.1-flash",
+    "model": "gemini-3.5-flash-lite",
     "api_key_env": "HORIZON_API_KEY",
     "temperature": 0.35,
     "max_tokens": 2048,
-    "throttle_sec": 1,
+    "throttle_sec": 10,
     "languages": ["zh"],
     "analysis_concurrency": 1,
     "enrichment_concurrency": 1
