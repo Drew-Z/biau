@@ -1968,15 +1968,15 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 
 ### Summary
 
-本地与云端完整试跑通过，七源/Gemini Lite 已上线，新晚刊由 Actions 自动发布；仅待实际 schedule 事件。
+本地与云端完整试跑通过，七源/Gemini Lite 已上线，新晚刊由 Actions 自动发布；补查实际 schedule 后修复跨午夜归期，待修复后的定时成功。
 
 ### Main Changes
 
 - 七源、Gemini Lite、两阶段 10 秒节奏通过完整真实业务；本地和云端各 6 请求，无失败，合计 18,629 tokens，思考参数不变。
 - Actions 42400137685 生成并发布 2026-11-07-evening；内容提交 d97ad034，云端正文哈希 212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab，原文范围核对通过。
 - 两个域名列表/详情/正文哈希及 1440/390 阅读通过；main aef4a793 上线，Site Quality 42400698742 和 Cloudflare Pages 成功。原渠道 DeepSeek 显式备用。
-- 原候选轮累计 51/60，剩余 9，未继续测活；429 具体限额和长期稳定仍未知，实际 schedule 事件待观察，任务不归档。
-- 集中保存 38 份证据并验证哈希/私有值，12 份实体恢复点校验通过；删除本轮临时环境，保留桌宠/UI、未知旧文件和 4 个历史 worktree。
+- 原候选轮累计 51/60，剩余 9，未继续测活；429 具体限额和长期稳定仍未知。实际 schedule 42397899601 暴露跨午夜误判，修复 a6c86ad4 通过本地边界回放与云端 validate 42402680119，0 新模型请求。
+- 集中保存 40 份证据并验证哈希/私有值，12 份实体恢复点校验通过；删除本轮临时环境，保留桌宠/UI、未知旧文件和 4 个历史 worktree。
 
 
 ### Git Commits
@@ -1984,7 +1984,7 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 | Hash | Message |
 |------|---------|
 | `aef4a793` | (see git log) |
-| `01cdfd55` | (see git log) |
+| `01cdfd55`, `a6c86ad4` | (see git log) |
 
 ### Testing
 
@@ -1992,7 +1992,7 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 
 ### Status
 
-[OK] 渠道 2 上线和新刊发布完成；任务 **in_progress**，AC12 剩余实际 schedule 事件实证。
+[OK] 渠道 2 上线和新刊发布完成；任务 **in_progress**，AC12 剩余跨午夜修复后的实际 schedule 成功实证。
 
 ### Next Steps
 

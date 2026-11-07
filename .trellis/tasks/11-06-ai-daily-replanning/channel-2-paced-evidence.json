@@ -148,11 +148,11 @@
     "siteQualityRun": 42400698742,
     "siteQuality": "success",
     "cloudflarePages": "success",
-    "actualScheduleEvent": "observed failure before model generation; midnight repair in progress"
+    "actualScheduleEvent": "observed old-code failure; fix replay and cloud native validation passed; next successful schedule remains pending"
   },
   "artifactDirectory": "D:\\Agent\\codex\\artifacts\\ai-daily\\20261108-channel2-paced-validation",
-  "artifactFiles": 38,
-  "artifactManifestSha256": "8b590fc0a020e094a1d66156c34a86979d0d62201dbfdad1d880dd3f7b4a5da1",
+  "artifactFiles": 40,
+  "artifactManifestSha256": "75700b7e78826686e10e6f643526c914f6b634d30f040bd51ab16c3d8c78c662",
   "scheduleObservation": {
     "databaseId": 42397899601,
     "event": "schedule",
@@ -168,7 +168,7 @@
     "published": false,
     "expectedEdition": "2026-11-07-evening",
     "replay": "passed",
-    "repairCloudValidation": "pending",
+    "repairCloudValidation": "passed",
     "jobs": [
       {
         "name": "generate",
@@ -178,6 +178,11 @@
         "name": "publish",
         "conclusion": "skipped"
       }
-    ]
+    ],
+    "repairValidationRun": 42402680119,
+    "repairCommit": "a6c86ad4a183b4e89d3ebd31846da96fe4c9fcfc",
+    "siteQualityRun": 42402679701,
+    "siteQuality": "success",
+    "cloudflarePages": "success"
   }
 }

@@ -38,7 +38,7 @@ AC12 的“合格新刊由 Actions 自动发布”已具备证据，剩余仅为
 
 ## 恢复与收尾
 
-正式证据位于 `D:/Agent/codex/artifacts/ai-daily/20261108-channel2-paced-validation/`，38 份文件及清单 SHA-256、私有值扫描通过。只保留本轮所需的脱敏用量日志，未保存无关历史使用记录。复用原集中恢复组，12 份实体恢复点核验通过；新云端组的修改前状态（不存在）与创建结果已记录，原 Secrets 保留。代码配置恢复使用 `0dbabd5a` / `aef4a793` 阶段 Git 记录，不覆盖原基线。
+正式证据位于 `D:/Agent/codex/artifacts/ai-daily/20261108-channel2-paced-validation/`，40 份文件（含收尾新增的实际 schedule 与修复验证记录）及清单 SHA-256、私有值扫描通过。只保留本轮所需的脱敏用量日志，未保存无关历史使用记录。复用原集中恢复组，12 份实体恢复点核验通过；新云端组的修改前状态（不存在）与创建结果已记录，原 Secrets 保留。代码配置恢复使用 `0dbabd5a` / `aef4a793` 阶段 Git 记录，不覆盖原基线。
 
 已删除本轮临时目录 `C:/Users/zhang/AppData/Local/Temp/horizon-channel-rate-rkw_i_ms`（10,972 文件、948 子目录），删除前确认绝对范围、无重解析点和关联进程。既存桌宠/UI 修改、` .trellis/`、`undefined/`、vendor 包及 4 个旧 worktree 保留。
 
@@ -49,3 +49,5 @@ AC12 的“合格新刊由 Actions 自动发布”已具备证据，剩余仅为
 修复只调整锚点日期：cron 决定早/晚，选择创建时间之前最近的对应锚点，再验证 :17 触发下界和下一锚点截止。真实事件应归为 `2026-11-07-evening`；午夜、跨年及闰日通过，触发前、晚报次日 08:00 及早报当日 20:00 后仍拒绝。原事件离线回放正确；当前该期已发布，`exists` 返回 true，因此不会通过重放消耗模型。
 
 源码修复不改变配置哈希、模型、思考参数或请求额度。最后待观察项改为“修复后的实际 schedule 成功”，并非“是否存在 schedule 事件”。云端零模型 validate 的结果补记于结构化证据，不能用离线回放代替新的定时事件。
+
+修复提交 `a6c86ad4` 的 [云端 validate 42402680119](https://github.com/Drew-Z/biau/actions/runs/42402680119) 已通过完整原生离线与期刊合同，0 模型/0 artifact/发布跳过；Cloudflare Pages 部署成功。模型预算仍为累计 51/60，剩余 9 次。

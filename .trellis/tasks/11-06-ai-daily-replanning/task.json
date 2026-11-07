@@ -133,7 +133,7 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "Local and cloud seven-source Gemini Lite generation/publication and two-domain reading passed. Observed schedule 42397899601 failed before models because old code used the post-midnight calendar date. Real-event and boundary regressions now pass; cloud schedule-repair validation pending. Candidate remains 51/60 used, 9 remaining."
+      "latest": "Seven-source channel 2 full generation and publication passed locally and in Actions, production reading verified. Actual schedule 42397899601 revealed midnight-date bug before models; fix a6c86ad4 passed real-event/date-boundary replay and Linux native validate 42402680119 with zero model calls/artifacts. Await successful repaired schedule; candidate 51/60 used, 9 remain."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
     "implementationState": "live-awaiting-successful-schedule-after-midnight-repair",
@@ -375,7 +375,7 @@
         "published": false,
         "expectedEdition": "2026-11-07-evening",
         "replay": "passed",
-        "repairCloudValidation": "pending",
+        "repairCloudValidation": "passed",
         "jobs": [
           {
             "name": "generate",
@@ -385,7 +385,12 @@
             "name": "publish",
             "conclusion": "skipped"
           }
-        ]
+        ],
+        "repairValidationRun": 42402680119,
+        "repairCommit": "a6c86ad4a183b4e89d3ebd31846da96fe4c9fcfc",
+        "siteQualityRun": 42402679701,
+        "siteQuality": "success",
+        "cloudflarePages": "success"
       }
     }
   }
