@@ -1886,3 +1886,36 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - 渠道具备稳定交付条件后，用剩余授权额度继续真实样稿；不重发本次失败项、不清除停止状态。合格样稿核对后再更新验收 hash/合并生产。
+
+
+## Session 153: 渠道2主备配置与受限选型
+
+**Date**: 2026-11-08
+**Task**: 渠道2主备配置与受限选型
+**Branch**: `codex/ai-daily-seven-sources`
+
+### Summary
+
+渠道2目录修正后可读；18次候选对照暂选DeepSeek，4次整期验证因连续超时/连接失败停止。本轮22次，候选累计29/60剩31。主备整组选择、系统代理选项、检查点渠道绑定已通过本地和Linux断网回归及lint/build。生产未切换，AC12未完成。正式产物与集中备份已核验，本轮临时环境已清理。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8453ff14` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

@@ -1,5 +1,13 @@
 # 离线实施恢复点
 
+## 渠道 2 选型收尾（2026-11-08）
+
+代码恢复提交 `4805aa811ba691090677e0ff85ee56d2ce95a9ac` 与 7 个精确路径记录在原集中 manifest。用户新增渠道 2 后的 `.env.local` 阶段恢复点为 `files/channel-2-selection/.env.local`，保存前核验有效 ACL 不宽于源文件，复制后 SHA-256 一致。原文件只增加主用选择和模型两项，所有原配置字段值核验不变。11 个实体基线重新校验通过。
+
+正式运行证据保存在 `D:/Agent/codex/artifacts/ai-daily/20261107-channel2-selection/`，96 项文件哈希已核验；仅本地保存冻结输入、原生结果与诊断，未上传原始运行目录。候选代码 `8453ff14` 云端 `42389094702` 的 validate 成功，0 模型/0 artifact/publish skipped。真实整期触发连续失败阈值，生产未切换，原候选轮剩余 31 请求。
+
+本轮临时目录 `C:/Users/zhang/AppData/Local/Temp/horizon-channel2-569499f976aa4caa9b1701eec752aa97` 核验无 reparse point 与运行引用后，按精确路径删除，包含 8,885 文件和 795 子目录：固定上游源码、隔离依赖、下载包与一次性对照脚本。已确认目录不存在。原有桌宠改动、未知 ` .trellis/`、`undefined/` 和历史 worktree 保留；不归档尚未满足 AC12 的总任务。
+
 ## 2026-11-07 条目隔离续作
 
 复用原集中恢复组。修改前干净代码基线 `f52138ab7d1d93254c64a78c0fc9382e362a4183` 与精确路径记录在 manifest；原有 10 个实体基线哈希复核通过。新增 `item_runs.py`、条目隔离设计及证据原不存在，不覆盖原恢复点。用户私有渠道和思考参数未修改。

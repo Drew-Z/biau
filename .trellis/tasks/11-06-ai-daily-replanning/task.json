@@ -303,7 +303,10 @@
       "totalCandidateRequests": 29,
       "remainingAuthorizedRequests": 31,
       "productionSwitched": false,
-      "evidence": "channel-2-selection.md"
+      "evidence": "channel-2-selection.md",
+      "cloudValidationRun": 42389094702,
+      "cloudValidation": "success",
+      "implementationCommit": "8453ff14"
     }
   }
 }
