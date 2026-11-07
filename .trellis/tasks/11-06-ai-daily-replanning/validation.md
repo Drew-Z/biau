@@ -84,3 +84,10 @@ GitHub Site Quality、Horizon 原生断网验证与重复期次跳过均成功�
 - 3 个开源仓库的原生 GitHub Releases 可读，vLLM rc3 的 API prerelease=false，证明不能只信布尔字段或通用 RSS 标题识别稳定版。
 - 本轮只有任务候选/研究/spec 资料变更，没有运行代码变化；执行 JSON、链接、候选差异、原生配置/采集、Trellis 和 diff 检查，不重复 UI/build，也不宣称新来源模型生成或云端已通过。现行配置 hash 保持首期验收值。
 - 收尾核验通过：五份结构化快照与原始结果相同；24h 合计、近7d可见条数与滚动峰值重算一致；7/8 源候选只改来源，中文另加 extractor。现行 config/budget/profiles/publication/run.py/workflow 与基线无差异；任务 JSON、文档链接、敏感值扫描、Trellis 上下文与 git diff 检查通过。重新校验集中恢复组的 10 个实体基线，无损坏。
+
+## 2026-11-07 七源候选受限验证
+
+- 候选 `f03c970c`：原生断网采集/评分/摘要/SDK 回归通过，新增 collect 在空模型凭据下零模型、无 bundle，保留媒体出处；Actions collect 不进入 slot/generate/preview/upload/publish。
+- 本地完整采集 7 条；候选 Actions `42357229391` 成功，同样 7 条公开 URL，0 模型、0 artifact、publish skipped。此次是手动 collect，不满足 AC12 的真实定时发布实证。
+- 本地一次获批样稿发出 2 请求：200/stop 后第二次 524；953/1,178 tokens 为唯一有 usage 的请求，失败请求未知。未超过本地单请求限制就收到 524，未自动重试或换渠道，无完整稿、无发布，不能声称新来源内容验收成功。
+- lint/build、期刊/原子发布、部署与人工门禁文档、任务及差异检查通过；七源代码只保留候选分支，主分支仍使用原三源。证据见 [source-expansion-evidence.json](source-expansion-evidence.json)。
