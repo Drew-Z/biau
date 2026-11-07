@@ -43,6 +43,43 @@ def configuration_hash():
     return digest.hexdigest()
 
 
+def resolve_channel(config, selected=None):
+    """Select one complete credential group; never fall back after a request."""
+    from urllib.parse import urlsplit
+    fields = ("API_KEY", "BASE_URL", "MODEL")
+    selected = selected if selected is not None else os.getenv("HORIZON_CHANNEL")
+    if selected is None:
+        selected = "2" if any(f"HORIZON_{field}2" in os.environ for field in fields) else "1"
+        if selected == "1" and not any(f"HORIZON_{field}" in os.environ for field in fields):
+            selected = "fast"
+    elif selected not in ("1", "2"):
+        raise ValueError("invalid-model-channel")
+    names = [f"BLOG_DRAFT_FAST_{field}" if selected == "fast" else f"HORIZON_{field}{'2' if selected == '2' else ''}" for field in fields]
+    key, base_url, model = (os.getenv(name, "").strip() for name in names)
+    parsed = urlsplit(base_url)
+    if not key or not parsed.hostname or parsed.scheme != "https" or parsed.username or parsed.password or parsed.query or parsed.fragment or model != config["ai"]["model"]:
+        raise ValueError("model-channel-unconfigured-or-drifted")
+    identity = {"id": selected, "endpointHash": hashlib.sha256(base_url.rstrip("/").encode()).hexdigest(), "model": model}
+    return identity, base_url, names[0]
+
+
+def system_proxy(base_url):
+    """Opt-in local proxy selection; do not change the machine or TLS settings."""
+    from urllib.parse import urlsplit
+    from urllib.request import getproxies, proxy_bypass
+    if proxy_bypass(urlsplit(base_url).hostname):
+        return None
+    proxy = getproxies().get("https") or getproxies().get("http")
+    if not proxy:
+        raise ValueError("system-proxy-unconfigured")
+    if "://" not in proxy:
+        proxy = "http://" + proxy
+    parsed = urlsplit(proxy)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError("unsupported-system-proxy")
+    return proxy
+
+
 def verify_upstream(root):
     lock = read_json(HERE / "upstream.json")
     paths = sorted([*root.glob("src/**/*.py"), *root.glob("skills/horizon/scripts/*.py"), root / "pyproject.toml", root / "uv.lock"], key=lambda p: p.relative_to(root).as_posix())
@@ -171,7 +208,7 @@ class RequestBudget:
 
 
 @contextlib.asynccontextmanager
-async def guarded_client(budget, base_url):
+async def guarded_client(budget, base_url, proxy=None):
     import httpx
     from openai import APIConnectionError, APIError, APIStatusError
     from src.ai import client as native
@@ -210,7 +247,7 @@ async def guarded_client(budget, base_url):
 
     class Transport(httpx.AsyncBaseTransport):
         def __init__(self):
-            self.inner = httpx.AsyncHTTPTransport(retries=0)
+            self.inner = httpx.AsyncHTTPTransport(retries=0, proxy=proxy)
 
         async def handle_async_request(self, request):
             try:
@@ -406,15 +443,9 @@ async def execute(args):
         from dotenv import load_dotenv
         if args.env_file:
             load_dotenv(args.env_file, override=False)
-        # An explicit Horizon group, including blank fields, never borrows credentials.
-        fields = ("API_KEY", "BASE_URL", "MODEL")
-        prefix = "HORIZON" if any(f"HORIZON_{field}" in os.environ for field in fields) else "BLOG_DRAFT_FAST"
-        key, base_url, model = (os.getenv(f"{prefix}_{field}", "").strip() for field in fields)
-        from urllib.parse import urlsplit
-        parsed = urlsplit(base_url or "")
-        if not key or not parsed.hostname or parsed.scheme != "https" or parsed.username or parsed.password or parsed.query or parsed.fragment or model != config["ai"]["model"]:
-            raise ValueError("model-channel-unconfigured-or-drifted")
-        os.environ["HORIZON_API_KEY"] = key
+        channel, base_url, key_env = resolve_channel(config, getattr(args, "channel", None))
+        proxy = system_proxy(base_url) if getattr(args, "use_system_proxy", False) else None
+        config["ai"]["api_key_env"] = key_env
         config["ai"]["base_url"] = base_url
     with contextlib.ExitStack() as resources:
         temporary = resources.enter_context(tempfile.TemporaryDirectory(prefix="biau-horizon-run-"))
@@ -441,7 +472,7 @@ async def execute(args):
                 raise ValueError("checkpoint-exists-use-resume" if checkpoint.exists() else "checkpoint-missing")
             if resume:
                 service = HorizonPipelineService(runs_root=checkpoint, console=Console(file=io.StringIO()))
-                state = ItemRuns(service, edition, configuration_hash(), budget)
+                state = ItemRuns(service, edition, configuration_hash(), budget, channel=channel)
                 raw = state.raw
                 fetched = {**state.state["fetched"], "meta": {"since": state.state["windowStart"]}}
         if state is None:
@@ -480,7 +511,7 @@ async def execute(args):
             return {**result, "reason": "no-input"}
         if state is None:
             service = HorizonPipelineService(runs_root=checkpoint, console=Console(file=io.StringIO()))
-            state = ItemRuns(service, edition, configuration_hash(), budget, fetched=fetched, raw=raw)
+            state = ItemRuns(service, edition, configuration_hash(), budget, channel=channel, fetched=fetched, raw=raw)
         run_id = state.run_id
 
         def valid_score(item, native_result, items):
@@ -505,7 +536,7 @@ async def execute(args):
                 return False
 
         async with contextlib.AsyncExitStack() as stack:
-            meter = await stack.enter_async_context(guarded_client(budget, base_url))
+            meter = await stack.enter_async_context(guarded_client(budget, base_url, proxy))
             state.attach(meter)
             await stack.enter_async_context(asyncio.timeout(budget["deadlineSeconds"] - (time.monotonic() - meter.started)))
 
@@ -580,6 +611,8 @@ def main():
     parser.add_argument("--schedule")
     parser.add_argument("--created-at")
     parser.add_argument("--env-file")
+    parser.add_argument("--channel", choices=["1", "2"], help="Select one complete channel group; defaults to channel 2 when configured")
+    parser.add_argument("--use-system-proxy", action="store_true", help="Use the existing system HTTPS proxy for local model requests")
     parser.add_argument("--output")
     parser.add_argument("--request-limit", type=int, help="Lower the configured request cap for an authorized continuation")
     parser.add_argument("--checkpoint", help="Local checkpoint directory outside the repository; defaults to OUTPUT.checkpoint")

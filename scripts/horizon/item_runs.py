@@ -21,7 +21,7 @@ class ItemRuns:
     The caller holds an exclusive filesystem lock for the whole execution. Native
     atomic writes own persistence; per-item runs survive aggregate stage invalidation.
     """
-    def __init__(self, service, edition, configuration_hash, budget, *, fetched=None, raw=None):
+    def __init__(self, service, edition, configuration_hash, budget, *, channel, fetched=None, raw=None):
         self.service = service
         self.store = service.run_store
         self.run_id = "edition"
@@ -31,7 +31,7 @@ class ItemRuns:
         if fetched is not None:
             self.raw = raw
             self.store.save_items(self.run_id, "raw", raw)
-            self.state = {"version": 1, "adapterHash": adapter_hash(), "configurationHash": configuration_hash,
+            self.state = {"version": 2, "adapterHash": adapter_hash(), "configurationHash": configuration_hash, "channel": channel,
                           "edition": edition, "inputHash": fingerprint(raw), "startedAt": datetime.now(timezone.utc).isoformat(),
                           "requestLimit": budget["maxModelRequests"], "records": {"score": {}, "enrich": {}},
                           "consecutiveFailures": 0, "itemFailures": 0, "meter": None,
@@ -44,7 +44,7 @@ class ItemRuns:
             state = self.state
             now = datetime.now(timezone.utc)
             window_end = datetime.fromisoformat(state["windowStart"]) + timedelta(hours=24)
-            if (state["version"] != 1 or state["adapterHash"] != adapter_hash()
+            if (state["version"] != 2 or state.get("channel") != channel or state["adapterHash"] != adapter_hash()
                     or state["configurationHash"] != configuration_hash or state["edition"] != edition
                     or state["inputHash"] != fingerprint(self.raw)
                     or not timedelta(0) <= now - window_end <= timedelta(hours=budget["checkpointMaxAgeHours"])):

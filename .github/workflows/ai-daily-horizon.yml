@@ -101,6 +101,10 @@ jobs:
           HORIZON_API_KEY: ${{ secrets.HORIZON_API_KEY }}
           HORIZON_BASE_URL: ${{ secrets.HORIZON_BASE_URL }}
           HORIZON_MODEL: ${{ vars.HORIZON_MODEL }}
+          HORIZON_API_KEY2: ${{ secrets.HORIZON_API_KEY2 }}
+          HORIZON_BASE_URL2: ${{ secrets.HORIZON_BASE_URL2 }}
+          HORIZON_MODEL2: ${{ vars.HORIZON_MODEL2 }}
+          HORIZON_CHANNEL: ${{ vars.HORIZON_CHANNEL || '2' }}
           EDITION_ID: ${{ steps.slot.outputs.edition }}
         run: |
           .horizon-runtime/.venv/bin/python scripts/horizon/run.py generate --horizon-path .horizon-runtime --edition-id "$EDITION_ID" --output "$RUNNER_TEMP/edition-bundle.json" --github-actions

@@ -14,7 +14,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
 
-from run import HERE, MAX_MODEL_RESPONSE_BYTES, SCHEDULES, RequestBudget, StageRejected, configuration_hash, execute as execute_run, guarded_client, main, read_json, require_fetch, require_scored, resolve_edition, verify_upstream
+from run import HERE, MAX_MODEL_RESPONSE_BYTES, SCHEDULES, RequestBudget, StageRejected, configuration_hash, execute as execute_run, guarded_client, main, read_json, require_fetch, require_scored, resolve_channel, resolve_edition, system_proxy, verify_upstream
 
 
 async def execute(args):
@@ -50,6 +50,10 @@ async def check(root):
     assert set(steps['collect']['env']) == {'EDITION_ID'} and 'run.py collect' in steps['collect']['run']
     assert steps['slot']['if'] == "github.event_name == 'schedule' || inputs.operation == 'generate'"
     assert '--github-actions' in steps['generate']['run']
+    assert steps['generate']['env']['HORIZON_CHANNEL'] == "${{ vars.HORIZON_CHANNEL || '2' }}"
+    assert steps['generate']['env']['HORIZON_API_KEY2'] == '${{ secrets.HORIZON_API_KEY2 }}'
+    assert steps['generate']['env']['HORIZON_BASE_URL2'] == '${{ secrets.HORIZON_BASE_URL2 }}'
+    assert steps['generate']['env']['HORIZON_MODEL2'] == '${{ vars.HORIZON_MODEL2 }}'
     assert steps['preview']['if'] == "steps.generate.outputs.outcome == 'generated'"
     assert job['outputs']['publish'] == '${{ steps.preview.outputs.publish }}'
     assert next(step for step in job['steps'] if step.get('uses') == 'actions/upload-artifact@v4')['if'] == "steps.preview.outputs.publish == 'true'"
@@ -84,6 +88,35 @@ async def check(root):
     require_fetch({**good_fetch, "fetched": 0}, [], budget)
     rejected(lambda: require_fetch(good_fetch, [], budget))
     rejected(lambda: require_fetch({**good_fetch, "fetched": 21}, [{"id": str(i)} for i in range(21)], budget))
+
+    config = read_json(HERE / 'config.json')
+    channels = {'HORIZON_BASE_URL': 'https://old.example/v1', 'HORIZON_API_KEY': 'old-only', 'HORIZON_MODEL': config['ai']['model'],
+                'HORIZON_BASE_URL2': 'https://new.example/v1', 'HORIZON_API_KEY2': 'new-only', 'HORIZON_MODEL2': config['ai']['model']}
+    with patch.dict('os.environ', channels, clear=True):
+        identity, endpoint, key_env = resolve_channel(config)
+        assert identity['id'] == '2' and endpoint == channels['HORIZON_BASE_URL2'] and key_env == 'HORIZON_API_KEY2'
+        assert 'new.example' not in json.dumps(identity) and 'new-only' not in json.dumps(identity)
+        assert resolve_channel(config, '1')[1:] == (channels['HORIZON_BASE_URL'], 'HORIZON_API_KEY')
+        for field in ('HORIZON_API_KEY2', 'HORIZON_BASE_URL2', 'HORIZON_MODEL2'):
+            with patch.dict('os.environ', {field: ''}):
+                rejected(lambda: resolve_channel(config))
+                assert resolve_channel(config, '1')[0]['id'] == '1'
+        with patch.dict('os.environ', {'HORIZON_CHANNEL': '1'}):
+            assert resolve_channel(config)[0]['id'] == '1'
+            assert resolve_channel(config, '2')[0]['id'] == '2'
+        for invalid in ('', '3', 'fast'):
+            with patch.dict('os.environ', {'HORIZON_CHANNEL': invalid}):
+                rejected(lambda: resolve_channel(config))
+    fast = {key.replace('HORIZON_', 'BLOG_DRAFT_FAST_'): value for key, value in channels.items() if not key.endswith('2')}
+    with patch.dict('os.environ', fast, clear=True):
+        assert resolve_channel(config)[0]['id'] == 'fast'
+        rejected(lambda: resolve_channel(config, '1'))
+    with patch('urllib.request.getproxies', return_value={'https': '127.0.0.1:9876'}), patch('urllib.request.proxy_bypass', return_value=False):
+        assert system_proxy('https://fixture.example/v1') == 'http://127.0.0.1:9876'
+    with patch('urllib.request.getproxies', return_value={}), patch('urllib.request.proxy_bypass', return_value=False):
+        rejected(lambda: system_proxy('https://fixture.example/v1'))
+    with patch('urllib.request.proxy_bypass', return_value=True):
+        assert system_proxy('https://fixture.example/v1') is None
 
     model_requests = []
     response_streams = []
@@ -192,6 +225,16 @@ async def check(root):
         assert all(key not in collected['sources'][0] for key in ('content', 'body', 'processing'))
         assert collected['configurationHash'] == configuration_hash()
         args.operation = 'generate'
+        # The native SDK must receive the selected group's key without overwriting channel 1.
+        import os
+        with patch.dict('os.environ', {'HORIZON_API_KEY2': 'fixture-channel-two', 'HORIZON_BASE_URL2': 'https://second.example/v1', 'HORIZON_MODEL2': config['ai']['model']}):
+            args.output = str(Path(tmp) / 'channel-two.json')
+            value = await execute(args)
+            assert value['outcome'] == 'generated'
+            assert all(request.url.host == 'second.example' and request.headers['authorization'] == 'Bearer fixture-channel-two' for request in model_requests[-2:])
+            assert os.environ['HORIZON_API_KEY'] == 'fixture-only'
+        model_requests.clear()
+        args.output = str(Path(tmp) / 'bundle.json')
         async def cli_result(expected):
             output, summary = Path(tmp) / 'actions-output', Path(tmp) / 'actions-summary'
             output.write_text('', encoding='utf-8')
@@ -541,6 +584,17 @@ async def check(root):
             value = await execute_run(args)
         assert value['modelCalls'] == 5 and len(model_requests) == before + 5
         args.output = str(Path(tmp) / 'drift-must-not-exist.json')
+        # Same model and inputs cannot resume through a different endpoint or channel group.
+        for changes in ({'HORIZON_BASE_URL': 'https://changed.example/v1'},
+                        {'HORIZON_BASE_URL2': 'https://fixture.example/v1', 'HORIZON_API_KEY2': 'fixture-only', 'HORIZON_MODEL2': config['ai']['model']}):
+            with patch.dict('os.environ', changes), patch.object(RSSScraper, 'fetch', no_network):
+                try:
+                    await execute_run(args)
+                except ValueError as error:
+                    assert str(error) == 'checkpoint-drift-or-expired'
+                else:
+                    raise AssertionError('checkpoint channel drift accepted')
+            assert len(model_requests) == before + 5 and not Path(args.output).exists()
         raw_path = checkpoint / 'raw_items.json'
         saved_raw = raw_path.read_text(encoding='utf-8')
         raw = json.loads(saved_raw)

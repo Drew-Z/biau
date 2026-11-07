@@ -60,9 +60,11 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 }
 ```
 
-显式存在任意 `HORIZON_BASE_URL/API_KEY/MODEL` 时，脚本整组只读 `HORIZON_*`；留空或缺字段就拒绝，不与博客凭据混搭。仅当三项都不存在时，才兼容整组 `BLOG_DRAFT_FAST_*`。私有运行配置仍随临时目录清理，公开发布仅投影白名单字段。
+渠道选择顺序为 `--channel 1|2`、`HORIZON_CHANNEL`、检测到渠道 2 任意字段时优先 2，否则 1。渠道 2 使用 `HORIZON_BASE_URL2/API_KEY2/MODEL2`，渠道 1 使用无数字后缀的原三项。选定组留空或缺字段即拒绝，不能借用其他组的地址、凭据或模型；模型必须与 `config.json` 一致。仅未显式选渠道且两组都不存在时兼容完整 `BLOG_DRAFT_FAST_*`。两渠道不自动互相重发失败项，`--channel 1` 供运维明确切换备用，不能用来重置旧请求账本。
 
-每次生成在输出文件对应的 `.checkpoint` 目录保存冻结输入、原生单项结果与脱敏账本；也可通过 `--checkpoint` 显式指定仓库外本地目录。此目录不是备份，也不包含渠道 URL/key 或运行配置。请求发送前原子保存预算预留，完成后保存成功产物；文件锁防止同时续作。再次使用该目录必须显式 `--resume`，且使用新的输出文件路径。恢复校验期次、配置与适配版本、输入/成功产物哈希、12 小时窗口有效期，并保留整期原始 20 分钟截止与请求限额；过期、中止或漂移不能通过恢复扩大额度。中断时尚未确认的项保守排除，不重发可能已计费的请求。
+本机直连可能与已配置的系统代理表现不同。需要复用本机代理时显式添加 `--use-system-proxy`：读取系统 HTTPS/HTTP 代理并尊重 bypass；未配置代理时拒绝，TLS 验证保持开启，不修改机器代理设置。GitHub Actions 使用 runner 默认直连，不依赖本机代理。目录可达性与模型完整交付需分别验证；代理路径的成功不能证明直连同样稳定。
+
+每次生成在输出文件对应的 `.checkpoint` 目录保存冻结输入、原生单项结果与脱敏账本；也可通过 `--checkpoint` 显式指定仓库外本地目录。此目录不是备份，也不包含渠道 URL/key 或运行配置。请求发送前原子保存预算预留，完成后保存成功产物；文件锁防止同时续作。再次使用该目录必须显式 `--resume`，且使用新的输出文件路径。恢复校验期次、配置与适配版本、渠道编号/端点哈希/模型、输入/成功产物哈希、12 小时窗口有效期，并保留整期原始 20 分钟截止与请求限额；过期、中止或漂移不能通过恢复扩大额度。密钥不进入指纹。中断时尚未确认的项保守排除，不重发可能已计费的请求。
 
 ```powershell
 & "$horizonRoot/.venv/Scripts/python.exe" scripts/horizon/run.py generate --horizon-path $horizonRoot --edition-id YYYY-MM-DD-morning --env-file .env.local --output "$taskTemp/resumed-bundle.json" --checkpoint "$taskTemp/edition-bundle.json.checkpoint" --resume
@@ -73,7 +75,7 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 ### 本地渠道填写入口
 
 - 根目录 `.env.local` 是本地私有填写文件，已被 Git 忽略。2026-11-06 用户要求清理旧渠道后，旧模型值、凭据、`GEMINI_*` 和备用渠道已移至集中恢复点；随后用户已填写新的 Horizon 三项。代理没有改写用户新填的地址或凭据。
-- 日报只需填写顶部 `HORIZON_BASE_URL`、`HORIZON_API_KEY`、`HORIZON_MODEL`；地址为 HTTPS API 根地址（通常含 `/v1`），模型为该渠道准确 ID。模型未选时可先填地址/凭据，再读取目录选型；真实生成前同步 `config.json` 的模型与配置哈希。
+- 日报当前主用填写 `HORIZON_BASE_URL2`、`HORIZON_API_KEY2`、`HORIZON_MODEL2`，`HORIZON_CHANNEL=2`；原无后缀三项作为显式备用保留。地址为 HTTPS API 根地址（通常含 `/v1`），模型为该渠道准确 ID，主备模型都必须匹配已验收 `config.json`；不同模型需先做内容验证。用户新填的地址/凭据不改写。
 - 下方 `BLOG_DRAFT_STRONG_*`、`BLOG_DRAFT_REVIEW_*`、`BLOG_DRAFT_FAST_*` 分别供博客长文、润色、提纲使用，可留空；它们不是日报必填项。
 - `.env.example` 是可提交的变量模板，不是实际凭据来源；`scripts/horizon/config.json` 保存模型/来源/摘要策略，`budget.json` 保存运行上限，均不放渠道 URL 或 key。
 - Horizon 仅在显式传入 `--env-file .env.local` 时加载该文件；进程已有环境变量优先，包括显式空值。GitHub Actions 使用自己的 Secrets/Variables，清理本地文件不会修改线上配置。
@@ -90,7 +92,7 @@ if ($generationResult.ok -and $generationResult.outcome -eq 'generated') {
 
 公开索引最多 2048 期 / 2 MiB，Markdown 最多 256 KiB；满额时停止发布，不隐式删除历史，需另行规划归档分页。大约两年多的早晚刊会触及数量上限。
 
-首期验收后在 `publication.json` 记录实际 `configurationHash/firstEditionId/firstContentSha256` 并启用；再配置 GitHub Secrets `HORIZON_BASE_URL/HORIZON_API_KEY`、Variables `HORIZON_MODEL/AI_DAILY_AUTOMATION_ENABLED=true`。未验收样稿不得上传 Actions artifact 或内容分支；首次试跑在本地进行。生成 job 只有 contents:read，发布 job 有 contents:write 且不持有模型 Secret。Actions 每日北京时间早晚启动，可能延迟。
+首期验收后在 `publication.json` 记录实际 `configurationHash/firstEditionId/firstContentSha256` 并启用；GitHub Secrets 中主用为 `HORIZON_BASE_URL2/HORIZON_API_KEY2`，原无后缀两项保留备用，Variables 为 `HORIZON_MODEL2/HORIZON_MODEL/HORIZON_CHANNEL=2/AI_DAILY_AUTOMATION_ENABLED=true`。显式切换备用时把 `HORIZON_CHANNEL` 改为 `1`，下一期使用该组，不自动重发失败请求。未验收样稿不得上传 Actions artifact 或内容分支；首次试跑在本地进行。生成 job 只有 contents:read，发布 job 有 contents:write 且不持有模型 Secret。Actions 每日北京时间早晚启动，可能延迟。
 
 配置变更导致哈希变化会停止自动任务，必须按变更风险验证后更新验收记录。首期接受后的普通合格期刊自动发布，不要求逐期人工批准。
 

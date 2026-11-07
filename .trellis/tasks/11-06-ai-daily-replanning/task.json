@@ -103,7 +103,8 @@
       "source-expansion-evidence.json",
       "nonthinking-validation.md",
       "item-isolation.md",
-      "item-isolation-evidence.json"
+      "item-isolation-evidence.json",
+      "channel-2-selection.md"
     ],
     "recovery": {
       "repository": "D:\\workspace4Cursor\\blog-semi",
@@ -293,6 +294,16 @@
       "productionSwitched": false,
       "cloudValidationRun": 42371575318,
       "cloudValidation": "success"
+    },
+    "channel2Selection": {
+      "status": "local-candidate-configured-full-trial-stopped",
+      "model": "deepseek-v4.1-flash",
+      "comparisonRequests": 18,
+      "fullTrialRequests": 4,
+      "totalCandidateRequests": 29,
+      "remainingAuthorizedRequests": 31,
+      "productionSwitched": false,
+      "evidence": "channel-2-selection.md"
     }
   }
 }
