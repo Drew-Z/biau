@@ -1958,3 +1958,42 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - 确认后台 429 原因/修复证据后，在剩余 21 次内完成新的受限整期与云端生成验证；不得清除停止账本或用部分稿绕过 gate。
+
+
+## Session 155: 渠道 2 Gemini Lite 上线与云端新刊发布
+
+**Date**: 2026-11-08
+**Task**: 渠道 2 Gemini Lite 上线与云端新刊发布
+**Branch**: `main`
+
+### Summary
+
+本地与云端完整试跑通过，七源/Gemini Lite 已上线，新晚刊由 Actions 自动发布；仅待实际 schedule 事件。
+
+### Main Changes
+
+- 七源、Gemini Lite、两阶段 10 秒节奏通过完整真实业务；本地和云端各 6 请求，无失败，合计 18,629 tokens，思考参数不变。
+- Actions 42400137685 生成并发布 2026-11-07-evening；内容提交 d97ad034，云端正文哈希 212000c60e8e66d3c4f68231f6c5816606358ef959ef4d85afcb4feda391eaab，原文范围核对通过。
+- 两个域名列表/详情/正文哈希及 1440/390 阅读通过；main aef4a793 上线，Site Quality 42400698742 和 Cloudflare Pages 成功。原渠道 DeepSeek 显式备用。
+- 原候选轮累计 51/60，剩余 9，未继续测活；429 具体限额和长期稳定仍未知，实际 schedule 事件待观察，任务不归档。
+- 集中保存 38 份证据并验证哈希/私有值，12 份实体恢复点校验通过；删除本轮临时环境，保留桌宠/UI、未知旧文件和 4 个历史 worktree。
+
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `aef4a793` | (see git log) |
+| `01cdfd55` | (see git log) |
+
+### Testing
+
+- [OK] 本地与 Linux 原生合同、期刊/原子发布、文档门禁、真实生成/发布、两个域名桌面移动阅读；Site Quality 和 Cloudflare Pages 成功。
+
+### Status
+
+[OK] 渠道 2 上线和新刊发布完成；任务 **in_progress**，AC12 剩余实际 schedule 事件实证。
+
+### Next Steps
+
+- 观察北京时间 08:17 / 20:17 的实际 schedule；保持已发布内容，候选验证剩余 9 次不用于无必要测活。
