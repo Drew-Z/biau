@@ -73,3 +73,4 @@ GitHub Site Quality、Horizon 原生断网验证与重复期次跳过均成功�
 - 北京 08:17/20:17、提前创建拒绝、上海跨日执行、跨槽拒绝及手动补跑通过。历史 scheduledFor 08:00/20:00 契约保持。
 - `npm run lint`、`npm run build`、`npm run ai-daily:editions-check`、`npm run docs:deployment-check`、`npm run docs:manual-gates-check` 通过。构建/lint 在现有工作树执行；本次不提交桌宠等既有改动，未重复无变化的 UI 检查或宣称历史全量检查全绿。
 - 本轮真实模型请求 0，配置哈希仍为 `0f9231b71a223c0277067ab772a997e879ea397220a9ecf7cb4e12f5f07f88ea`。云端复验结果另附 release.md。
+- 精确提交 `48ec2022` 的 Horizon 云端原生回归/重复期次跳过和 Site Quality 均成功，Cloudflare deploy success；浏览器验证两域 index/detail 200 与原正文 SHA-256 一致。独立 HTTP 客户端遇到 403/1010 或连接重置，未将其当作模型故障，也未关闭 TLS 校验。真实 schedule/新合格刊发布待后续实证。

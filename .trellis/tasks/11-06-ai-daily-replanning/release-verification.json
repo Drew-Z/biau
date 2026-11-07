@@ -128,5 +128,60 @@
         ]
       }
     }
+  },
+  "outcomeRepair": {
+    "checkedAt": "2026-11-07T02:22:38.981886+00:00",
+    "repairCommit": "48ec20229754b172a0a159e55827bf601cedd055",
+    "cron": [
+      "17 0 * * *",
+      "17 12 * * *"
+    ],
+    "editionAnchorsShanghai": [
+      "08:00",
+      "20:00"
+    ],
+    "localChecks": "native offline including CLI outcomes; lint/build; editions/atomic publication; deployment/manual gates; Trellis validation",
+    "cloudRun": {
+      "id": 42328087232,
+      "conclusion": "success",
+      "event": "workflow_dispatch",
+      "editionId": "2026-11-06-evening",
+      "nativeOffline": "passed",
+      "generation": "skipped",
+      "preview": "skipped",
+      "upload": "skipped",
+      "publish": "skipped",
+      "artifacts": 0
+    },
+    "siteQuality": {
+      "id": 42328070968,
+      "conclusion": "success"
+    },
+    "deployment": {
+      "id": "7c9bc4ad-a68b-4f9e-826b-93e3063cc8f6",
+      "status": "success",
+      "endedAt": "2026-11-07T02:13:33.800356Z"
+    },
+    "realModelRequests": 0,
+    "contentBranchCommit": "72c19e2e304a35938ae814d4acce0bcc472a4153",
+    "browserChecks": [
+      {
+        "host": "biau.pages.dev",
+        "index": 200,
+        "detail": 200,
+        "editionId": "2026-11-06-evening",
+        "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8"
+      },
+      {
+        "host": "biau.playlab.eu.cc",
+        "index": 200,
+        "detail": 200,
+        "editionId": "2026-11-06-evening",
+        "contentSha256": "d1716687d66e953d178f56c5d1e5658a11c58c2b6fd6e1d5a96aa772eeba32f8"
+      }
+    ],
+    "tlsValidationDisabled": false,
+    "scheduleEventObserved": false,
+    "qualifiedNewEditionPublishedByActions": false
   }
 }

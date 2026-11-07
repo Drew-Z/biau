@@ -46,4 +46,4 @@
 
 修改前的相关 13 个已跟踪文件均干净，完整恢复提交为 `c12bce4b12d3b297bda3b23877d2b83f1f77bd72`，仓库 `D:/workspace4Cursor/blog-semi`。路径清单已加入原集中组 manifest 的 gitRecoveryPoints；10 个原始实体基线重新校验通过，未覆盖或重复复制。恢复本次适配/调度代码不改变已验收模型配置、线上凭据或已发布内容分支。
 
-本轮临时上游源码、锁定依赖及验证日志位于系统临时目录 `biau-horizon-outcomes-213d627a16834313aad26720ea697ad6`，结束验证后按精确路径清理，正式运行证据保留在原 artifacts 目录。既有未知目录、桌宠工作及历史 worktree 保留。
+本轮临时上游源码、锁定依赖及验证日志位于系统临时目录 `biau-horizon-outcomes-213d627a16834313aad26720ea697ad6`，核验无 reparse point、无运行进程后，已按精确路径删除全部 8,543 个本轮临时文件及目录；正式运行证据保留在原 artifacts 目录。既有未知目录、桌宠工作及历史 worktree 保留。

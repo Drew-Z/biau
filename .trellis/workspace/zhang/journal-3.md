@@ -1744,3 +1744,36 @@ Embedding 切换与索引发布完成；公共助手任务继续保持 in_progre
 ### Next Steps
 
 - 保持已验收 3 来源与预算；观察后续正常早晚刊。不得将空筛选归因为模型不可用或为凑数降低标准。
+
+
+## Session 149: Horizon 空结果分类和早晚错峰调度
+
+**Date**: 2026-11-07
+**Task**: Horizon 空结果分类和早晚错峰调度
+**Branch**: `main`
+
+### Summary
+
+完整空输入与无达标项正常跳过，保留错误与预算拒绝；Actions 明确 generated 才 preview/upload/publish，新增脱敏摘要。改为北京 08:17/20:17，原期次锚点不变。原生断网 CLI 回归、lint/build、期刊与原子发布、云端重复期次跳过和 Site Quality 均通过；Cloudflare 成功，两域浏览器 200 与正文哈希一致。本轮真实模型请求 0；任务仍待真实 schedule 与新合格一期自动发布，不归档。
+
+### Main Changes
+
+修复分类与 Actions 交接，原已验收配置不变。运行 42328087232，Site Quality 42328070968，部署 7c9bc4ad。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `48ec2022` | (see git log) |
+
+### Testing
+
+- 本地与 Linux 原生断网检查、构建/lint、期刊原子发布和云端跳过通过；两个生产域浏览器 API 200 且正文哈希一致。
+
+### Status
+
+**In progress**：修复已上线；AC12 仍待真实 schedule 与新合格一期的自动发布实证。
+
+### Next Steps
+
+- 已启用 08:17/20:17 正常周期，无需再次批准；不重跑空结果，不为验收降低评分线。

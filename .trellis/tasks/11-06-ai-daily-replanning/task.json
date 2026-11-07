@@ -119,7 +119,7 @@
         "firstAttempt": "incomplete-fetch; stopped",
         "secondAttempt": "success"
       },
-      "latest": "Empty-input/no-qualified-item skips, failure preservation, off-peak schedule and Actions handoff passed native offline checks; lint/build and edition/publication/document contracts passed. Cloud duplicate skip verification pending, no new live model requests."
+      "latest": "Repair 48ec2022: local and Linux native offline CLI outcome checks passed, Site Quality passed, duplicate edition skipped without model/artifact/publication, Cloudflare deploy succeeded and browser API hashes preserved. Actual schedule and first new qualified auto-publication remain pending."
     },
     "implementationConsent": "2026-11-06: user replied 继续 to the concrete offline implementation proposal",
     "implementationState": "live-awaiting-first-qualified-automated-publication",
@@ -209,7 +209,11 @@
       ],
       "realModelRequests": 0,
       "localValidation": "passed",
-      "cloudVerification": "pending"
+      "cloudVerification": "passed",
+      "commit": "48ec20229754b172a0a159e55827bf601cedd055",
+      "horizonRun": 42328087232,
+      "siteQualityRun": 42328070968,
+      "deployment": "7c9bc4ad-a68b-4f9e-826b-93e3063cc8f6"
     }
   }
 }

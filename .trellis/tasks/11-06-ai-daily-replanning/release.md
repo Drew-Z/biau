@@ -75,3 +75,9 @@ gh variable set AI_DAILY_AUTOMATION_ENABLED --repo Drew-Z/biau --body true
 cron 更新为 `17 0 * * *` / `17 12 * * *`，北京时间 08:17/20:17，期次 scheduledFor 仍为 08:00/20:00。依据 [GitHub 官方文档](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)避开整点高负载；此前缺少 schedule 事件的具体原因仍未证实。早晚频率、3 来源/20 输入/5 成稿、threshold=6、模型及配置哈希不变。
 
 本地断网原生回归、期刊/原子发布、lint/build 和文档契约均通过。本轮真实模型调用 0，不重复生成 `2026-11-07-morning`；提交后复验现有已发布期次的云端跳过。真实 schedule 和新合格一期自动发布继续作为待观察项。
+
+修复已提交并推送 `48ec20229754b172a0a159e55827bf601cedd055`。云端 [run 42328087232](https://github.com/Drew-Z/biau/actions/runs/42328087232) 成功：Linux 原生断网/期刊/原子发布检查通过；已发布晚刊在 slot 阶段跳过，generation/preview/upload/publish 均 skipped，artifact 数量 0、模型调用 0。Site Quality [42328070968](https://github.com/Drew-Z/biau/actions/runs/42328070968) success。
+
+Cloudflare production `7c9bc4ad-a68b-4f9e-826b-93e3063cc8f6` 于 `2026-11-07T02:13:33.800356Z` 成功。浏览器正常校验证书后，两个正式域名 index/detail 200、最新期次及正文哈希保持首期值；内容分支仍是 `72c19e2e`。本地 urllib 被 Cloudflare 返回 1010/403、Node fetch 遇到 ECONNRESET，浏览器核验成功，未据此改渠道、网络或安全策略。
+
+截至本次核验只有 workflow_dispatch 实证，不能宣称真实 schedule 已触发或新一期自动发布完成。下一正常计划是北京时间 2026-11-07 20:17；GitHub 可能延迟。用户已授权正常自动更新，不需要为下一期再次批准。
