@@ -1,0 +1,80 @@
+{
+  "date": "2026-11-08",
+  "mode": "real-news-generation-and-source-review",
+  "candidateConfigurationHash": "20e997ac47866b7be4a082b62fdd373f6557fd2c36977f7c6e127d4c190c8ebb",
+  "readOnlyEvidence": {
+    "catalogStatus": 200,
+    "candidatePresent": true,
+    "tokenUsageStatus": 200,
+    "tokenUnlimitedQuota": true,
+    "tokenExpired": false,
+    "modelLimitsEnabled": false,
+    "accountQuotaDisclosed": false,
+    "provider429Reason": "unknown",
+    "defaultUrllibStatus": 403,
+    "explicitUserAgentStatus": 200,
+    "modelRequests": 0
+  },
+  "localTrial": {
+    "editionId": "2026-11-07-evening",
+    "generatedAt": "2026-11-07T18:08:16.064Z",
+    "checks": {
+      "fetchStatus": "success",
+      "failedSources": 0,
+      "raw": 5,
+      "scored": 5,
+      "scoreFailed": 0,
+      "selected": 1,
+      "enrichmentStatus": "success",
+      "enriched": 1,
+      "failed": 0,
+      "summaryStage": "enriched",
+      "language": "zh",
+      "itemsUsed": 1
+    },
+    "requests": 6,
+    "usage": {
+      "prompt_tokens": 8520,
+      "completion_tokens": 769,
+      "total_tokens": 9289
+    },
+    "usageCoverage": {
+      "reportedRequests": 6,
+      "unknownRequests": 0
+    },
+    "elapsedSeconds": [
+      3.453,
+      3.531,
+      3.516,
+      3.406,
+      3.406,
+      3.766
+    ],
+    "thinkingChanged": false,
+    "throttleSeconds": 10,
+    "channel": "2",
+    "model": "gemini-3.5-flash-lite",
+    "contentSha256": "a643a7b7263314c9a483a04f86d758c7dafddafb707dc808dc8f7c95f5675e54",
+    "preview": "passed",
+    "sourceReview": {
+      "source": "https://github.blog/changelog/2026-11-06-github-copilot-in-slack-and-teams-is-generally-available",
+      "httpStatus": 200,
+      "responseSha256": "c0bee5d6a0562b65c7e04cb3759b4515e5a1616a8826ab9fb2c1b7127a27ce32",
+      "result": "factual scope accepted; GA, Slack/Teams, Teams-only Canvas and improvements match official source; minor literal phrasing retained"
+    }
+  },
+  "requestAccounting": {
+    "authorizedTotal": 60,
+    "previousCandidateRequests": 39,
+    "localRequests": 6,
+    "used": 45,
+    "remaining": 15,
+    "cloudRunCap": 15
+  },
+  "cloud": {
+    "status": "pending",
+    "channel2SecretsAndVariables": "configured",
+    "originalChannel": "retained"
+  },
+  "productionSwitched": false
+}
