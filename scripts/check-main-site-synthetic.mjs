@@ -28,6 +28,8 @@ function parseArgs(argv) {
     strict: process.env.MAIN_SITE_SYNTHETIC_STRICT === '1',
     assistantChat: isTruthy(process.env.MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT),
     skipAssistantApi: isTruthy(process.env.MAIN_SITE_SYNTHETIC_SKIP_ASSISTANT_API),
+    healthMaxAttempts: boundedInteger(process.env.MAIN_SITE_SYNTHETIC_HEALTH_MAX_ATTEMPTS, 5, 1, 5),
+    healthRetryDelayMs: boundedInteger(process.env.MAIN_SITE_SYNTHETIC_HEALTH_RETRY_DELAY_MS, 15_000, 0, 15_000),
   }
 
   const readValue = (index) => argv[index + 1] ?? ''
@@ -75,6 +77,11 @@ function parseArgs(argv) {
 
 function isTruthy(value) {
   return ['1', 'true', 'yes', 'on'].includes(String(value || '').trim().toLowerCase())
+}
+
+function boundedInteger(value, fallback, minimum, maximum) {
+  const number = value === undefined || value === '' ? fallback : Number(value)
+  return Number.isFinite(number) ? Math.min(maximum, Math.max(minimum, Math.trunc(number))) : fallback
 }
 
 function normalizeBaseUrl(value) {
@@ -339,7 +346,26 @@ function summarizeAssistantFailure(issues) {
   return 'Public assistant API did not return valid health/chat JSON'
 }
 
-async function validateAssistantApi(baseUrl, timeoutMs, checkedAt, allowChat, skipAssistantApi) {
+export async function probeAssistantHealth(url, timeoutMs, options = {}) {
+  const request = options.request ?? requestJsonWithTimeout
+  const sleep = options.sleep ?? ((delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)))
+  const maxAttempts = boundedInteger(options.maxAttempts, 5, 1, 5)
+  const retryDelayMs = boundedInteger(options.retryDelayMs, 15_000, 0, 15_000)
+  const observations = []
+  const startedAt = Date.now()
+  let response
+  let issues
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    response = await request(url, timeoutMs)
+    issues = validateHealthResponse(response)
+    observations.push({ attempt, httpStatus: response.status, durationMs: response.durationMs, issues })
+    if (issues.length === 0 || (response.status >= 400 && response.status < 500 && response.status !== 429)) break
+    if (attempt < maxAttempts) await sleep(retryDelayMs)
+  }
+  return { response, issues, observations, durationMs: Date.now() - startedAt }
+}
+
+async function validateAssistantApi(baseUrl, timeoutMs, checkedAt, allowChat, skipAssistantApi, healthOptions) {
   if (skipAssistantApi) {
     return {
       id: ASSISTANT_CHECK_ID,
@@ -352,21 +378,27 @@ async function validateAssistantApi(baseUrl, timeoutMs, checkedAt, allowChat, sk
     }
   }
 
-  const health = await requestJsonWithTimeout(absoluteUrl(baseUrl, '/api/health'), timeoutMs)
-  const healthIssues = validateHealthResponse(health)
+  const healthProbe = await probeAssistantHealth(absoluteUrl(baseUrl, '/api/health'), timeoutMs, healthOptions)
+  const health = healthProbe.response
+  const healthIssues = healthProbe.issues
+  const recovered = healthIssues.length === 0 && healthProbe.observations.length > 1
+  const recoveryIssues = recovered
+    ? [`assistant health recovered after ${healthProbe.observations.length} attempts; first attempt: ${healthProbe.observations[0].issues.join('; ')}`]
+    : []
 
   if (!allowChat) {
     return {
       id: ASSISTANT_CHECK_ID,
-      status: healthIssues.length === 0 ? 'unchecked' : 'offline',
+      status: recovered ? 'degraded' : healthIssues.length === 0 ? 'unchecked' : 'offline',
       httpStatus: health.status,
-      durationMs: health.durationMs,
+      durationMs: healthProbe.durationMs,
+      healthAttempts: healthProbe.observations,
       checkedAt,
       summary:
         healthIssues.length === 0
-          ? 'Assistant health returned valid JSON; live chat validation skipped by policy'
+          ? `${recovered ? 'Assistant health recovered within the bounded retry window' : 'Assistant health returned valid JSON'}; live chat validation skipped by policy`
           : summarizeAssistantFailure(healthIssues),
-      issues: healthIssues,
+      issues: [...healthIssues, ...recoveryIssues],
     }
   }
 
@@ -397,10 +429,11 @@ async function validateAssistantApi(baseUrl, timeoutMs, checkedAt, allowChat, sk
     id: ASSISTANT_CHECK_ID,
     status,
     httpStatus: firstProblemStatus(health, chat),
-    durationMs: health.durationMs + chat.durationMs,
+    durationMs: healthProbe.durationMs + chat.durationMs,
+    healthAttempts: healthProbe.observations,
     checkedAt,
     summary,
-    issues,
+    issues: [...issues, ...recoveryIssues],
   }
 }
 
@@ -442,6 +475,7 @@ async function main() {
     checkedAt,
     args.assistantChat,
     args.skipAssistantApi,
+    { maxAttempts: args.healthMaxAttempts, retryDelayMs: args.healthRetryDelayMs },
   )
   const payload = {
     checkedAt,
@@ -458,7 +492,9 @@ async function main() {
   if (args.strict && payload.checks.some((check) => check.status === 'offline')) process.exitCode = 1
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error))
-  process.exitCode = 1
-})
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : String(error))
+    process.exitCode = 1
+  })
+}

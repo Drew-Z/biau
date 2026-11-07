@@ -27,3 +27,9 @@
 - Prisma client/adapter/CLI 统一至 7.10.1，Express 至 5.3.0；按原依赖范围更新 body-parser、proxy-addr、qs、undici、zod、fast-uri 等受影响树，未使用 force/overrides，也未新增直接依赖。
 - `npm ci --ignore-scripts` 重装成功；Prisma validate/generate、server build/smoke、公开助手 agent/image/model/metrics/quality/API/persistence/rate-limit/web、RAG sync/hybrid/service-modes/smoke、Cloudflare assistant/relay、部署合同、lint、build 通过。生产 npm audit 为 0 critical / 0 high / 0 moderate。
 - UI smoke 首次因本地 preview 未启动而连接被拒绝；启动本轮 preview 后 21/21 通过。该环境失败已定位，不涉及产品修改。所有模型调用为 fixture，真实模型调用为 0。
+
+### 助手健康有界复检
+
+- 健康 GET 最多 5 次、间隔 15 秒；认证和路径 4xx 不重试。恢复时保留首次失败摘要，并标记 degraded，持续失败保持 offline / strict exit 1；未进行对话生成验收。
+- suite 默认单步预算调整为 240 秒，以容纳七条页面检查和至多两分钟的健康窗口。没有通过付费升级或高频保活改变 Render 的休眠策略。
+- 离线健康回归与真实 loopback suite 已覆盖立即成功、超时/503 后恢复、持续失败、HTML 误路由、401/403/404；fixture 延迟为 0，公开快照字节不变，诊断检查通过。

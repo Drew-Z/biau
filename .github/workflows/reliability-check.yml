@@ -28,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Check report contract
-        run: npm run reliability:report-check
+        run: npm run main-site:health-check && npm run reliability:report-check
 
       - name: Run reliability suite
         run: npm --silent run reliability:check -- --strict --json > "$RUNNER_TEMP/reliability-report.json"

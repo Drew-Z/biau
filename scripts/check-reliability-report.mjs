@@ -10,6 +10,7 @@ const statusRoot = new URL('../public/status/', import.meta.url)
 const sitemap = await readFile(new URL('../public/sitemap.xml', import.meta.url), 'utf8')
 const skip = 'public-links,legal-rag,erp,xunqiu,pet,playlab,site-status,site-monitor'
 let healthStatus = 200
+let healthStatuses = []
 let nonGetRequests = 0
 let healthRequests = 0
 const server = createServer((request, response) => {
@@ -20,8 +21,9 @@ const server = createServer((request, response) => {
   }
   if (request.url === '/api/health') {
     healthRequests += 1
-    response.writeHead(healthStatus, { 'Content-Type': 'application/json' })
-    response.end(JSON.stringify({ ok: healthStatus === 200 }))
+    const status = healthStatuses.shift() ?? healthStatus
+    response.writeHead(status, { 'Content-Type': 'application/json' })
+    response.end(JSON.stringify({ ok: status === 200 }))
   } else if (request.url === '/sitemap.xml') {
     response.writeHead(200, { 'Content-Type': 'application/xml' }).end(sitemap)
   } else if (request.url === '/robots.txt') {
@@ -46,6 +48,8 @@ async function runSuite(base) {
         MAIN_SITE_SYNTHETIC_BASE_URL: base,
         MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT: 'false',
         MAIN_SITE_SYNTHETIC_SKIP_ASSISTANT_API: 'false',
+        MAIN_SITE_SYNTHETIC_HEALTH_MAX_ATTEMPTS: '5',
+        MAIN_SITE_SYNTHETIC_HEALTH_RETRY_DELAY_MS: '0',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -79,6 +83,14 @@ try {
     assert.ok(!result.stdout.includes(repoRoot))
     assert.deepEqual(await snapshotHashes(), before)
   }
+  healthStatuses = [503, 200]
+  const recovered = await runSuite(base)
+  assert.equal(recovered.code, 0, recovered.stderr)
+  const recoveredMain = JSON.parse(recovered.stdout).steps.find((step) => step.id === 'main-site')
+  assert.equal(recoveredMain.status, 'passed')
+  assert.match(recoveredMain.summary, /degraded=1/)
+  assert.ok(recoveredMain.issues.some((issue) => issue.includes('recovered after 2 attempts') && issue.includes('503')))
+  assert.deepEqual(await snapshotHashes(), before)
   const crashed = await runSuite('http://[')
   assert.equal(crashed.code, 1)
   const crashedReport = JSON.parse(crashed.stdout)
@@ -86,7 +98,7 @@ try {
   assert.equal(crashedMain.status, 'failed')
   assert.ok(crashedMain.issues.includes('expected report was not readable'))
   assert.deepEqual(await snapshotHashes(), before)
-  assert.equal(healthRequests, 2)
+  assert.equal(healthRequests, 8)
   assert.equal(nonGetRequests, 0)
   console.log('Reliability report checks passed: current success/failure JSON, strict exit codes, unchanged public snapshots, zero model calls.')
 } finally {

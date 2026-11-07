@@ -128,6 +128,7 @@
     "legal-rag:synthetic": "node scripts/check-legal-rag-synthetic.mjs",
     "legal-rag:synthetic:publish": "npm run legal-rag:synthetic -- --write-status",
     "main-site:synthetic": "node scripts/check-main-site-synthetic.mjs",
+    "main-site:health-check": "node scripts/check-main-site-health.mjs",
     "main-site:synthetic:publish": "npm run main-site:synthetic -- --write-status",
     "pet:synthetic": "node scripts/check-pet-showcase-synthetic.mjs",
     "pet:synthetic:publish": "npm run pet:synthetic -- --write-status",

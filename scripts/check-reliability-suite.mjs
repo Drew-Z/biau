@@ -9,7 +9,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_STATUS_PATH = 'public/status/reliability-suite.json'
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm'
 const DEFAULT_TIMEOUT_MS = 12_000
-const DEFAULT_STEP_TIMEOUT_MS = 90_000
+const DEFAULT_STEP_TIMEOUT_MS = 240_000
 const CAPTURE_LIMIT = 300_000
 
 const steps = [
