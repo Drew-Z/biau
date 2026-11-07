@@ -91,6 +91,7 @@ const steps = [
 function parseArgs(argv) {
   const args = {
     strict: false,
+    json: false,
     timeoutMs: DEFAULT_TIMEOUT_MS,
     stepTimeoutMs: DEFAULT_STEP_TIMEOUT_MS,
     skips: new Set(),
@@ -99,6 +100,10 @@ function parseArgs(argv) {
   const readValue = (index) => argv[index + 1] ?? ''
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index]
+    if (item === '--json') {
+      args.json = true
+      continue
+    }
     if (item === '--strict') {
       args.strict = true
       continue
@@ -415,7 +420,10 @@ async function runStep(step, args, temporaryRoot) {
   }
 
   const command = commandForStep(step, args, temporaryOutputPath, temporaryRoot)
-  console.log(`→ ${step.label}`)
+  // Seeded snapshots are only fallback evidence for skipped steps. A running
+  // step must produce its own report, including when its process fails.
+  if (temporaryOutputPath) await rm(temporaryOutputPath, { force: true })
+  if (!args.json) console.log(`→ ${step.label}`)
   const result = await runCommand(command.spawnArgs, args.stepTimeoutMs)
   const parsed =
     step.reportKind === 'site-monitor'
@@ -431,7 +439,7 @@ async function runStep(step, args, temporaryRoot) {
   if (result.exitCode !== 0 && !result.timedOut) issues.push(`command exited with code ${result.exitCode}`)
   if (parsed?.issues?.length) issues.push(...parsed.issues)
 
-  console.log(`  ${status.toUpperCase()} ${result.durationMs} ms`)
+  if (!args.json) console.log(`  ${status.toUpperCase()} ${result.durationMs} ms`)
   return {
     id: step.id,
     label: step.label,
@@ -508,12 +516,16 @@ async function main() {
       await writeJsonAtomically(statusOutput.filePath, report)
     }
 
-    console.log(
-      statusOutput.enabled
-        ? `Reliability suite published: ${statusOutput.displayPath}`
-        : 'Reliability suite completed with temporary projections only; public/status was not modified.',
-    )
-    console.log(`passed=${report.summary.passed} failed=${report.summary.failed} skipped=${report.summary.skipped}`)
+    if (args.json) {
+      console.log(JSON.stringify(report, null, 2))
+    } else {
+      console.log(
+        statusOutput.enabled
+          ? `Reliability suite published: ${statusOutput.displayPath}`
+          : 'Reliability suite completed with temporary projections only; public/status was not modified.',
+      )
+      console.log(`passed=${report.summary.passed} failed=${report.summary.failed} skipped=${report.summary.skipped}`)
+    }
 
     if (args.strict && !report.ok) process.exitCode = 1
   } finally {

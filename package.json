@@ -134,6 +134,7 @@
     "playlab:synthetic": "node scripts/check-playlab-synthetic.mjs",
     "playlab:synthetic:publish": "npm run playlab:synthetic -- --write-status",
     "reliability:check": "node scripts/check-reliability-suite.mjs",
+    "reliability:report-check": "node scripts/check-reliability-report.mjs",
     "reliability:publish": "npm run reliability:check -- --write-status",
     "status:contract": "tsx scripts/check-status-contract.ts",
     "site:monitor": "tsx scripts/check-site-monitor.ts",

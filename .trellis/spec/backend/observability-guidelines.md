@@ -104,6 +104,7 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
   This reduces false negatives from cold-start demo hosts while still surfacing
   persistent outages as low-sensitive status evidence.
 - Cross-project suite: `npm.cmd run reliability:check` runs safe synthetic/status/monitor steps sequentially in a controlled OS temporary directory. `npm.cmd run reliability:publish` publishes complete readable projections and `public/status/reliability-suite.json`.
+- `npm --silent run reliability:check -- --strict --json` writes only the current low-sensitive suite JSON to stdout and preserves the strict exit code. CI redirects it to `RUNNER_TEMP/reliability-report.json` and uploads that exact file even on failure; never upload committed `public/status/*.json` as evidence of the current run.
 - Static showcase example: `npm.cmd run pet:synthetic` writes `public/status/pet-gamer-synthetic.json` and updates the `pet-showcase` check only; release gates such as `pet-apk-gate` remain static `planned` until human approval.
 - Public synthetic reports may include low-sensitive gate metadata such as `apkGate` when it helps the status page explain why a capability is not open yet. Gate metadata must be public-safe and must not include absolute local paths, signing paths, private bucket URLs, release tokens, unapproved APK URLs, or hidden deployment endpoints.
 
@@ -124,6 +125,7 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
   evidence in the temporary `site:status` projection. The temp directory is
   removed in `finally`, and persisted command fields use `[temporary]` instead
   of an absolute local path.
+- Before a non-skipped step starts, remove its seeded temporary projection. If the process crashes before writing, report an unreadable current projection rather than reusing a historical success. Skipped steps may retain clearly identified historical evidence.
 - Public report shape:
   - `checkedAt: string`
   - API synthetic checks: `apiBaseConfigured: boolean`
@@ -180,6 +182,7 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
   request URLs, response bodies, or provider diagnostics.
 - `reliability:check` default mode -> continue after failed steps, keep every projection in the controlled temporary directory, clean it, and leave `public/status/*` unchanged.
 - `reliability:check -- --strict` -> continue through all steps, keep default no-write behavior, then exit non-zero if any step failed.
+- `--strict --json` with a health 503 -> parseable current JSON, the safe HTTP failure in `steps[].issues`, exit 1, and unchanged public snapshots. A crash without a report -> unreadable-projection failure, never a seeded success.
 - `reliability:publish` -> validate that every non-skipped report step produced readable JSON, atomically publish child projections, then publish the suite report. An unreadable projection rejects publication before any copy begins.
 - Nested `error.cause.code` values classify as fixed `timeout`, `dns_error`, `tls_error`, `connection_error`, or `network_error`; non-2xx/3xx responses classify as `http_status`. HTTP 403/404 are failures and are not transient retries.
 - Well-formed bootstrap payload with `registrationEnabled=false` -> auth or
@@ -201,6 +204,7 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
 ### 5. Good/Base/Bad Cases
 
 - Good: health endpoint returns a wrapped low-sensitive payload; script records status, HTTP status, duration, and a short summary.
+- Good: a failed Actions run uploads its own `reliability-report.json`; its checkedAt and failure category identify this observation. Bad: the same run uploads an older successful suite from the repository.
 - Good: ERP bootstrap returns `{ needsSetup: false, registrationEnabled: false }`,
   so the synthetic report records API health as `online` and auth/registration
   policy as `degraded`.
@@ -226,6 +230,7 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
 - Use an ephemeral local API to verify configured-base paths when adding protected smoke logic.
 - Run `npm.cmd run site:status:publish` only when the merged evidence is intentionally ready to update `/status`; plain `site:status` must leave the snapshot hash unchanged.
 - Run `npm.cmd run verification:diagnostics-check` and assert nested error-code classification, HTTP 403/404/500 behavior, safe public summaries, path rejection, atomic temp output, and the local UI network guard without network access.
+- Run `npm.cmd run reliability:report-check`: a loopback HTTP fixture must prove success, HTTP failure, crash-before-report, strict exit codes, parseable current JSON, zero model calls, and byte-identical public snapshots.
 - Hash `public/status/*` before and after default synthetic/reliability commands and assert no file changes. Test one explicit write in a `biau-reliability-*` temp directory and confirm cleanup.
 - Run `npm.cmd run status:contract` after changing `src/data/statusTargets.ts`
   or any `public/status/*-synthetic.json` / `public/status/site-status.json`
@@ -254,6 +259,8 @@ git add public/status
 npm.cmd run reliability:check
 npm.cmd run reliability:publish
 ```
+
+For CI diagnostics, wrong: upload committed `public/status/*.json` after a default check. Correct: redirect `npm --silent run reliability:check -- --strict --json` to a runner temporary file and upload only that file with `if: always()`.
 
 #### Wrong
 
