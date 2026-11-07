@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto'
+import assert from 'node:assert/strict'
+import { parse } from 'yaml'
 import { readFile } from 'node:fs/promises'
 import { PublicRagSyncError, readPublicKnowledgeChecksum, syncPublicRagAfterDeployment } from './sync-public-rag.mjs'
 
@@ -105,5 +107,60 @@ for (const forbidden of ['private.example.com', 'must-not-escape', 'endpoint', '
 const raw = await readFile(new URL('../server/data/public-knowledge-v2.json', import.meta.url), 'utf8')
 const expectedFileChecksum = createHash('sha256').update(JSON.stringify(JSON.parse(raw))).digest('hex')
 if (await readPublicKnowledgeChecksum() !== expectedFileChecksum) throw new Error('knowledge checksum calculation drifted')
+
+const indexedHealth = {
+  ok: true, store: 'supabase-pgvector', buildCommit: 'older-identical-content', publicSourceChecksum: checksum,
+  indexedSourceChecksum: checksum, vectorReady: true, keywordReady: true, documentCount: 32, chunkCount: 75,
+}
+async function checkIndexedCase({ health = indexedHealth, force = false, checkOnly = true, expectedError = null } = {}) {
+  let posts = 0
+  let result
+  let error
+  try {
+    result = await syncPublicRagAfterDeployment({
+      baseUrl: 'https://rag.example.com', token: 'fixture-sync-token', expectedCommit: commit, expectedChecksum: checksum,
+      maxAttempts: 1, force, checkOnly,
+      fetcher: async (_url, init = {}) => {
+        if (init.method === 'POST') {
+          posts += 1
+          return Response.json({ accepted: true, scope: 'public', diagnostics: { sourceChecksum: checksum } })
+        }
+        return Response.json(health)
+      },
+    })
+  } catch (caught) { error = caught }
+  if (expectedError) {
+    if (error?.message !== expectedError) throw new Error(`expected ${expectedError}; got ${error?.message}`)
+  } else if (error) throw error
+  return { posts, result }
+}
+const unchanged = await checkIndexedCase()
+if (unchanged.posts !== 0 || unchanged.result.skipped !== true) throw new Error('same indexed content must skip all embedding writes')
+for (const health of [
+  { ...indexedHealth, indexedSourceChecksum: null },
+  { ...indexedHealth, indexedSourceChecksum: 'd'.repeat(64) },
+  { ...indexedHealth, publicSourceChecksum: 'd'.repeat(64) },
+  { ...indexedHealth, vectorReady: false },
+  { ...indexedHealth, store: 'local' },
+]) {
+  const failed = await checkIndexedCase({ health, expectedError: 'public-rag-deployment-not-ready' })
+  if (failed.posts !== 0) throw new Error('unproven or stale index must not bypass the deployment gate')
+}
+const required = await checkIndexedCase({
+  health: { ...indexedHealth, buildCommit: commit, indexedSourceChecksum: null }, expectedError: 'public-rag-sync-required',
+})
+if (required.posts !== 0) throw new Error('read-only mode must not embed a missing index')
+const forcedStale = await checkIndexedCase({ force: true, expectedError: 'public-rag-deployment-not-ready' })
+if (forcedStale.posts !== 0) throw new Error('forced sync must still reject a stale deployment')
+const forced = await checkIndexedCase({ health: { ...indexedHealth, buildCommit: commit }, force: true, checkOnly: false })
+if (forced.posts !== 1 || forced.result.skipped) throw new Error('approved force must rebuild even unchanged source')
+
+const workflow = parse(await readFile(new URL('../.github/workflows/public-rag-sync.yml', import.meta.url), 'utf8'))
+const blueprint = parse(await readFile(new URL('../render.yaml', import.meta.url), 'utf8'))
+const ragService = blueprint.services.find((service) => service.name === 'biau-rag-orchestrator')
+assert.equal(ragService.autoDeployTrigger, 'commit', 'checksPass would deadlock the sync workflow waiting for deployment')
+assert.deepEqual([...ragService.buildFilter.paths].sort(), [...workflow.on.push.paths].sort(), 'deployment and sync trigger paths must match')
+assert.equal(workflow.on.workflow_dispatch.inputs.check_only.default, true)
+assert.equal(workflow.concurrency['cancel-in-progress'], false, 'an accepted sync must not be cancelled mid-transaction by another workflow')
 
 console.log('Public RAG deployment-gated sync contracts passed.')

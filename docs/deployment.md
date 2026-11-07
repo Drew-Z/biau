@@ -233,8 +233,14 @@ RAG 只接受 public scope。读取入口是 `/v1/retrieve`，版本化公开同
 
 ```text
 PUBLIC_RAG_API_BASE_URL=<RAG Render URL>
-PUBLIC_RAG_SYNC_TOKEN=<与 RAG_SYNC_TOKEN 相同>
+RAG_SYNC_TOKEN=<与 RAG 服务的 RAG_SYNC_TOKEN 相同>
 ```
+
+RAG 使用 `autoDeployTrigger: commit`，构建路径与 workflow 的 push 路径保持一致；不要设置 `checksPass`，否则部署等待 CI、同步 CI 又等待部署，会互相阻塞。现有手工创建的 Render 服务也必须同步此设置，单独修改 Blueprint 文件不会更新它。
+
+同步分三种情况：运行时源 checksum 和数据库完整索引的 `indexedSourceChecksum` 都匹配时直接返回 `skipped=true`；需要写入时继续要求部署 commit 与本次 GitHub SHA 精确一致；证据缺失或内容不同不冒充成功。数据库证据来自最近 completed sync、四表计数及全部向量的模型/维度完整性，单独的 `publicSourceChecksum` 不能证明索引成功。
+
+手动 workflow 默认 `check_only=true`，只读验证不调用 embedding；若需要同步则明确返回 `public-rag-sync-required`。维护期间可设置仓库变量 `PUBLIC_RAG_SYNC_CHECK_ONLY=true`，让 push 也保持只读，完成验证后删除该临时变量恢复正常同步。embedding 渠道或模型切换后，即使源内容不变也必须按批准范围使用 `force_sync=true`、`check_only=false` 全量重建；相同模型名称不能证明不同渠道的向量空间兼容。
 
 本地 dry-run：
 

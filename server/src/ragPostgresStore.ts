@@ -51,30 +51,58 @@ export async function closeRagPostgresPool() {
   ragPool = null
 }
 
-export async function getPostgresRagHealth(): Promise<RagHealthResponse> {
-  const pool = getRagPool()
-  if (!pool) return emptyPostgresHealth()
+interface PostgresRagHealthRow {
+  document_count: string
+  chunk_count: string
+  entity_count: string
+  relation_count: string
+  embedded_chunk_count: string
+  compatible_chunk_count: string
+  last_sync_at: string | null
+  indexed_source_checksum: string | null
+  synced_document_count: string | null
+  synced_chunk_count: string | null
+  synced_entity_count: string | null
+  synced_relation_count: string | null
+}
+
+type QueryRagHealth = (sql: string, values: string[]) => Promise<{ rows: PostgresRagHealthRow[] }>
+
+export async function getPostgresRagHealth(queryHealth?: QueryRagHealth): Promise<RagHealthResponse> {
+  const pool = queryHealth ? null : getRagPool()
+  const query = queryHealth ?? (pool ? (sql: string, values: string[]) => pool.query<PostgresRagHealthRow>(sql, values) : null)
+  if (!query) return emptyPostgresHealth()
 
   try {
-    const result = await pool.query<{
-      document_count: string
-      chunk_count: string
-      entity_count: string
-      relation_count: string
-      embedded_chunk_count: string
-      last_sync_at: string | null
-    }>(`
+    const result = await query(`
+      with latest_sync as (
+        select * from rag_sync_runs
+        where status = 'completed' and source_name = 'server/data/public-knowledge-v2.json'
+        order by finished_at desc nulls last, id desc limit 1
+      )
       select
         (select count(*) from rag_documents) as document_count,
         (select count(*) from rag_chunks) as chunk_count,
         (select count(*) from rag_entities) as entity_count,
         (select count(*) from rag_relations) as relation_count,
         (select count(*) from rag_chunks where embedding is not null) as embedded_chunk_count,
-        (select max(finished_at) from rag_sync_runs where status = 'completed') as last_sync_at
-    `)
+        (select count(*) from rag_chunks where embedding is not null and embedding_dimension = 4096 and embedding_model = $1) as compatible_chunk_count,
+        (select finished_at from latest_sync) as last_sync_at,
+        (select source_checksum from latest_sync) as indexed_source_checksum,
+        (select document_count from latest_sync) as synced_document_count,
+        (select chunk_count from latest_sync) as synced_chunk_count,
+        (select entity_count from latest_sync) as synced_entity_count,
+        (select relation_count from latest_sync) as synced_relation_count
+    `, [env.embeddingModel])
     const row = result.rows[0]
     const chunkCount = readCount(row?.chunk_count)
     const embeddedChunkCount = readCount(row?.embedded_chunk_count)
+    const countsMatch = row && (['document', 'chunk', 'entity', 'relation'] as const).every((kind) =>
+      row[`synced_${kind}_count`] !== null && Number(row[`synced_${kind}_count`]) === readCount(row[`${kind}_count`]))
+    const indexComplete = countsMatch && readCount(row?.document_count) > 0 && chunkCount > 0
+      && embeddedChunkCount === chunkCount && readCount(row?.compatible_chunk_count) === chunkCount && row?.last_sync_at
+    const indexedSourceChecksum = indexComplete && /^[a-f0-9]{64}$/u.test(row.indexed_source_checksum ?? '')
+      ? row.indexed_source_checksum : null
     return {
       ok: true,
       service: SERVICE_NAME,
@@ -84,6 +112,7 @@ export async function getPostgresRagHealth(): Promise<RagHealthResponse> {
       rerankerReady: true,
       rerankerMode: isExternalRerankerConfigured() ? 'provider' : 'deterministic',
       lastSyncAt: row?.last_sync_at ?? null,
+      indexedSourceChecksum,
       documentCount: readCount(row?.document_count),
       chunkCount,
       entityCount: readCount(row?.entity_count),
@@ -607,6 +636,7 @@ function emptyPostgresHealth(): RagHealthResponse {
     keywordReady: false,
     rerankerReady: false,
     lastSyncAt: null,
+    indexedSourceChecksum: null,
     documentCount: 0,
     chunkCount: 0,
     entityCount: 0,

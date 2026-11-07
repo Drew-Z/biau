@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 const DEFAULT_POLL_INTERVAL_MS = 15_000
-const DEFAULT_MAX_ATTEMPTS = 60
+const DEFAULT_MAX_ATTEMPTS = 36
 
 export class PublicRagSyncError extends Error {
   constructor(diagnostics) {
@@ -26,6 +26,8 @@ export async function syncPublicRagAfterDeployment(input) {
   const sleep = input.sleep ?? ((durationMs) => new Promise((resolve) => setTimeout(resolve, durationMs)))
   const maxAttempts = boundedInteger(input.maxAttempts, DEFAULT_MAX_ATTEMPTS, 1, 120)
   const pollIntervalMs = boundedInteger(input.pollIntervalMs, DEFAULT_POLL_INTERVAL_MS, 100, 60_000)
+  const force = input.force === true
+  const checkOnly = input.checkOnly === true
 
   let matchedHealth = null
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -39,11 +41,19 @@ export async function syncPublicRagAfterDeployment(input) {
         response.ok &&
         isRecord(payload) &&
         payload.ok === true &&
-        payload.buildCommit === expectedCommit &&
         payload.publicSourceChecksum === expectedChecksum
       ) {
-        matchedHealth = payload
-        break
+        if (!force && payload.store === 'supabase-pgvector' && payload.indexedSourceChecksum === expectedChecksum
+          && payload.vectorReady === true && payload.keywordReady === true && payload.documentCount > 0 && payload.chunkCount > 0) {
+          return {
+            ok: true, accepted: true, skipped: true, scope: 'public',
+            diagnostics: { reason: 'already-indexed', sourceChecksum: expectedChecksum, documentCount: payload.documentCount, chunkCount: payload.chunkCount },
+          }
+        }
+        if (payload.buildCommit === expectedCommit) {
+          matchedHealth = payload
+          break
+        }
       }
     } catch {
       // Render may still be deploying or waking; retry within the bounded window.
@@ -52,6 +62,7 @@ export async function syncPublicRagAfterDeployment(input) {
   }
 
   if (!matchedHealth) throw new Error('public-rag-deployment-not-ready')
+  if (checkOnly) throw new Error('public-rag-sync-required')
 
   const response = await fetcher(`${baseUrl}/v1/sync/public`, {
     method: 'POST',
@@ -136,11 +147,14 @@ async function main() {
     token: process.env.RAG_SYNC_TOKEN,
     expectedCommit: process.env.EXPECTED_GIT_COMMIT || process.env.GITHUB_SHA,
     expectedChecksum,
+    checkOnly: process.env.PUBLIC_RAG_SYNC_CHECK_ONLY === 'true',
+    force: process.env.PUBLIC_RAG_SYNC_FORCE === 'true',
   })
   const diagnostics = isRecord(result.diagnostics) ? result.diagnostics : {}
   console.log(JSON.stringify({
     ok: true,
     accepted: true,
+    skipped: result.skipped === true,
     scope: 'public',
     sourceChecksum: diagnostics.sourceChecksum,
     documentCount: diagnostics.documentCount,

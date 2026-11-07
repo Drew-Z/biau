@@ -19,6 +19,7 @@ npm.cmd run assistant:public-persistence-check
 npm.cmd run assistant:public-rate-limit-check
 npm.cmd run assistant:public-web-check
 npm.cmd run assistant:public-sync-check
+npm.cmd run assistant:rag-health-check
 npm.cmd run assistant:hybrid-contract
 npm.cmd run assistant:service-modes-smoke
 npm.cmd run assistant:rag-smoke

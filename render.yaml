@@ -131,6 +131,20 @@ services:
     name: biau-rag-orchestrator
     runtime: node
     plan: free
+    autoDeployTrigger: commit
+    buildFilter:
+      paths:
+        - 'src/data/**'
+        - 'scripts/generate-assistant-knowledge.ts'
+        - 'scripts/sync-public-rag.mjs'
+        - 'server/**'
+        - 'prisma/**'
+        - 'prisma.config.ts'
+        - 'tsconfig*.json'
+        - 'package.json'
+        - 'package-lock.json'
+        - 'render.yaml'
+        - '.github/workflows/public-rag-sync.yml'
     buildCommand: npm ci && npm run assistant:index && npm run prisma:generate && npm run server:build
     startCommand: npm run server:start
     healthCheckPath: /health

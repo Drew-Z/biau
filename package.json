@@ -23,6 +23,7 @@
     "assistant:public-web-check": "tsx server/scripts/public-web-research-check.ts",
     "assistant:public-sync": "node scripts/sync-public-rag.mjs",
     "assistant:public-sync-check": "node scripts/check-public-rag-sync.mjs",
+    "assistant:rag-health-check": "tsx server/scripts/rag-postgres-health-check.ts",
     "assistant:eval": "tsx scripts/evaluate-assistant-rag.ts",
     "assistant:rag-smoke": "tsx server/scripts/rag-smoke.ts",
     "assistant:rag-pgvector-schema-check": "node scripts/check-rag-pgvector-schema.mjs",

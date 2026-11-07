@@ -4,26 +4,34 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/data/assistant.ts'
-      - 'src/data/assistantKnowledge.ts'
-      - 'src/data/blog.ts'
-      - 'src/data/blogContent.ts'
-      - 'src/data/blogCuration.ts'
-      - 'src/data/blog-posts/**'
-      - 'src/data/portfolio.ts'
-      - 'src/data/statusTargets.ts'
+      - 'src/data/**'
       - 'scripts/generate-assistant-knowledge.ts'
-      - 'server/data/public-knowledge.json'
-      - 'server/data/public-knowledge-v2.json'
-      - 'server/src/ragQdrantStore.ts'
+      - 'scripts/sync-public-rag.mjs'
+      - 'server/**'
+      - 'prisma/**'
+      - 'prisma.config.ts'
+      - 'tsconfig*.json'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'render.yaml'
+      - '.github/workflows/public-rag-sync.yml'
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: 'Read deployment/index evidence without embedding or writing'
+        type: boolean
+        default: true
+      force_sync:
+        description: 'Rebuild an unchanged index after an approved embedding channel/model cutover'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 concurrency:
   group: public-rag-sync-main
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -33,13 +41,18 @@ jobs:
       PUBLIC_RAG_API_BASE_URL: ${{ secrets.PUBLIC_RAG_API_BASE_URL }}
       RAG_SYNC_TOKEN: ${{ secrets.RAG_SYNC_TOKEN }}
       EXPECTED_GIT_COMMIT: ${{ github.sha }}
+      PUBLIC_RAG_SYNC_CHECK_ONLY: ${{ vars.PUBLIC_RAG_SYNC_CHECK_ONLY == 'true' || (github.event_name == 'workflow_dispatch' && inputs.check_only) }}
+      PUBLIC_RAG_SYNC_FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force_sync }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run assistant:public-sync-check && npm run assistant:rag-health-check
       - run: npm run assistant:index
       - run: npm run assistant:kg-check
       - run: npm run assistant:public-sync

@@ -33,3 +33,18 @@
 - 健康 GET 最多 5 次、间隔 15 秒；认证和路径 4xx 不重试。恢复时保留首次失败摘要，并标记 degraded，持续失败保持 offline / strict exit 1；未进行对话生成验收。
 - suite 默认单步预算调整为 240 秒，以容纳七条页面检查和至多两分钟的健康窗口。没有通过付费升级或高频保活改变 Render 的休眠策略。
 - 离线健康回归与真实 loopback suite 已覆盖立即成功、超时/503 后恢复、持续失败、HTML 误路由、401/403/404；fixture 延迟为 0，公开快照字节不变，诊断检查通过。
+
+### RAG 部署与索引一致性
+
+- 重新生成知识索引与 Git 无差异，仍是 32/75/176/253；未调用 embedding。
+- 新增仅在 completed sync、四表计数、全部向量模型/维度完整时才提供的 indexedSourceChecksum；数据库错误、缺失或损坏证据返回 null。
+- 同内容完整索引可直接跳过；差异内容与强制重建仍要求精确部署 commit / checksum。只读模式禁止 POST，实际需要同步会明确失败。
+- Blueprint 与 workflow 的触发路径一致，并通过合同测试防止再次漂移；Render 现有手工服务通过官方 API 同步设置，仍使用 free 计划。禁止 checksPass 死锁，workflow 不取消进行中的同步。
+- 同步、健康证据、RAG smoke/hybrid、服务模式、server build、部署/人工门禁文档、lint、build 检查通过；生产只读 SQL 复核 completed checksum、四表计数和 75 个完整向量仍与本地匹配。部署与云端只读验收尚待完成。
+
+### 部署中发现的外部依赖
+
+- Public 依赖升级部署 `dep-dbnq168u01pc73de6bh0` / `af391f20` 已 live。
+- 健康修复后的 Reliability `42419035774` 中主站/助手已通过；本次仅 public-links 中一个外部入口超时，不能宣称整套巡检全绿。
+- Studio 部署 `dep-dbnq18m7bikc73d7qpeg` 在启动迁移失败。平台日志与 Supabase 项目状态共同确认原 Studio 数据库 INACTIVE，错误为 tenant/user not found；不是新依赖的兼容失败。已确认所属组织为 free 并恢复现有项目，未创建资源或启用旧 AI 日报生成开关；恢复和重部署结果待验证。
+- Studio 数据库现已 ACTIVE_HEALTHY；只读 SQL 确认可连接、19 个完成迁移、0 个失败迁移。恢复后部署 `dep-dbnqijrrjlhs739j79o0` 正在进行。

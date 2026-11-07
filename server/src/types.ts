@@ -229,6 +229,7 @@ export interface RagHealthResponse {
   relationCount: number
   buildCommit?: string | null
   publicSourceChecksum?: string
+  indexedSourceChecksum?: string | null
   collections?: {
     public?: RagCollectionHealth
   }

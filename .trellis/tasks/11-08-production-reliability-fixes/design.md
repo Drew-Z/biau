@@ -16,7 +16,11 @@
 
 ## 公开知识同步
 
-保留内容 checksum 与部署就绪边界。根据实际部署能力选择最小修复，避免内容未变却因主站提交变化长期等待；内容变化仍须部署对应索引后同步。数据库已同步 checksum 与运行时源 checksum 属于不同事实，不能互换作为成功证明。方案随证据补充。
+保留内容 checksum 与部署就绪边界。RAG Render 改为 commit 自动部署，构建过滤路径与 sync workflow 完全一致，避免 checksPass 与等待部署的 CI 互相阻塞。workflow 串行且不取消正在进行的同步。
+
+Postgres health 从同一查询快照读取最后 completed source sync、四张数据表计数、非空 embedding 与匹配当前模型/4096 维的计数。只有证据完整时才返回 indexedSourceChecksum，否则为 null。运行时源与数据库索引同时匹配预期内容时，客户端返回 skipped=true，零 POST/embedding；真正写入仍需精确 commit 与源 checksum。渠道切换即使名称相同也必须显式 force 全量重建。
+
+手动 workflow 默认只读；维护变量 PUBLIC_RAG_SYNC_CHECK_ONLY 可临时把 push 也锁为只读。需要写入时只读模式返回 public-rag-sync-required，不能伪报成功。本轮先打开维护变量、完成部署和真实已索引证据验收，再恢复正常自动同步；没有重新嵌入预算。
 
 ## 恢复与边界
 
