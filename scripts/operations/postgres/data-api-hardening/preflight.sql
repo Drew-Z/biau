@@ -3,13 +3,13 @@
 \if :{?expected_database}
 \else
   \echo 'Missing required psql variable: expected_database'
-  \quit 3
+  DO $$ BEGIN RAISE EXCEPTION 'Missing expected_database'; END $$;
 \endif
 
 \if :{?expected_user}
 \else
   \echo 'Missing required psql variable: expected_user'
-  \quit 3
+  DO $$ BEGIN RAISE EXCEPTION 'Missing expected_user'; END $$;
 \endif
 
 SELECT current_database() = :'expected_database' AS database_matches,
@@ -19,13 +19,13 @@ SELECT current_database() = :'expected_database' AS database_matches,
 \if :database_matches
 \else
   \echo 'Database fingerprint mismatch; no hardening action is allowed.'
-  \quit 4
+  DO $$ BEGIN RAISE EXCEPTION 'Database fingerprint mismatch'; END $$;
 \endif
 
 \if :user_matches
 \else
   \echo 'Database user fingerprint mismatch; no hardening action is allowed.'
-  \quit 4
+  DO $$ BEGIN RAISE EXCEPTION 'Database user fingerprint mismatch'; END $$;
 \endif
 
 DO $$
@@ -44,17 +44,37 @@ DECLARE
     'PublicAssistantFeedback', 'PublicAssistantDailyAggregate'
   ];
   actual_tables text[];
+  legacy_tables text[] := ARRAY[
+    'AgentMemory', 'ChatMessage', 'ChatSession', 'InternalKnowledgeDocument',
+    'InternalKnowledgeSyncRun', 'Invite', 'Member', 'OperatorMemory',
+    'OperatorMessage', 'OperatorSession', 'OperatorUsageLog', 'UsageLog'
+  ];
+  rag_tables text[] := ARRAY[
+    'rag_documents', 'rag_chunks', 'rag_entities', 'rag_relations', 'rag_sync_runs', 'rag_eval_runs'
+  ];
   missing_tables text[];
   unexpected_tables text[];
   non_owner_tables text[];
   invalid_public_assistant_triggers text[];
 BEGIN
+  IF current_schema() <> 'public' THEN
+    RAISE EXCEPTION 'Operational hardening only accepts the public schema';
+  END IF;
   SELECT array_agg(c.relname ORDER BY c.relname)
   INTO actual_tables
   FROM pg_class c
   JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname = current_schema()
     AND c.relkind IN ('r', 'p');
+
+  -- Some deployments colocate the public RAG store. Accept that complete,
+  -- reviewed group only; partial groups and unrelated tables still fail closed.
+  IF actual_tables && rag_tables THEN
+    expected_tables := expected_tables || rag_tables;
+  END IF;
+  IF actual_tables && legacy_tables THEN
+    expected_tables := expected_tables || legacy_tables;
+  END IF;
 
   SELECT array_agg(name ORDER BY name)
   INTO missing_tables
@@ -108,6 +128,8 @@ BEGIN
       AND tbl.relname = expected.table_name
       AND trg.tgname = expected.trigger_name
       AND proc.proname = expected.function_name
+      AND proc.pronamespace = tbl.relnamespace
+      AND proc.pronargs = 0
       AND NOT trg.tgisinternal
       AND trg.tgenabled <> 'D'
   );

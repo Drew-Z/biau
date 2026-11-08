@@ -3,13 +3,13 @@
 \if :{?expected_database}
 \else
   \echo 'Missing required psql variable: expected_database'
-  \quit 3
+  DO $$ BEGIN RAISE EXCEPTION 'Missing expected_database'; END $$;
 \endif
 
 \if :{?expected_user}
 \else
   \echo 'Missing required psql variable: expected_user'
-  \quit 3
+  DO $$ BEGIN RAISE EXCEPTION 'Missing expected_user'; END $$;
 \endif
 
 SELECT current_database() = :'expected_database' AS database_matches,
@@ -19,14 +19,17 @@ SELECT current_database() = :'expected_database' AS database_matches,
 \if :database_matches
 \else
   \echo 'Database fingerprint mismatch; verification stopped.'
-  \quit 4
+  DO $$ BEGIN RAISE EXCEPTION 'Database fingerprint mismatch'; END $$;
 \endif
 
 \if :user_matches
 \else
   \echo 'Database user fingerprint mismatch; verification stopped.'
-  \quit 4
+  DO $$ BEGIN RAISE EXCEPTION 'Database user fingerprint mismatch'; END $$;
 \endif
+
+-- Verification must also reject missing/unreviewed tables and wrong owners.
+\ir preflight.sql
 
 DO $$
 DECLARE
@@ -41,7 +44,11 @@ DECLARE
     'AiDailyEditorialOverride',
     'PublicAssistantSession', 'PublicAssistantRequest', 'PublicAssistantTurn',
     'PublicAssistantAnswerRevision', 'PublicAssistantBranch',
-    'PublicAssistantFeedback', 'PublicAssistantDailyAggregate'
+    'PublicAssistantFeedback', 'PublicAssistantDailyAggregate',
+    'rag_documents', 'rag_chunks', 'rag_entities', 'rag_relations', 'rag_sync_runs', 'rag_eval_runs',
+    'AgentMemory', 'ChatMessage', 'ChatSession', 'InternalKnowledgeDocument',
+    'InternalKnowledgeSyncRun', 'Invite', 'Member', 'OperatorMemory',
+    'OperatorMessage', 'OperatorSession', 'OperatorUsageLog', 'UsageLog'
   ];
   insecure_tables text[];
   privileged_tables text[];
@@ -49,6 +56,7 @@ DECLARE
   mutable_search_path_functions text[];
   invalid_public_assistant_triggers text[];
   unsafe_defaults integer;
+  privileged_sequences text[];
 BEGIN
   SELECT array_agg(c.relname ORDER BY c.relname)
   INTO insecure_tables
@@ -97,11 +105,11 @@ BEGIN
   INTO unsafe_defaults
   FROM pg_default_acl d
   JOIN pg_roles owner ON owner.oid = d.defaclrole
-  JOIN pg_namespace ns ON ns.oid = d.defaclnamespace
+  LEFT JOIN pg_namespace ns ON ns.oid = d.defaclnamespace
   CROSS JOIN LATERAL aclexplode(d.defaclacl) x
   LEFT JOIN pg_roles grantee ON grantee.oid = x.grantee
   WHERE owner.rolname = current_user
-    AND ns.nspname = current_schema()
+    AND (ns.nspname = current_schema() OR d.defaclnamespace = 0)
     AND coalesce(grantee.rolname, 'PUBLIC') IN ('PUBLIC', 'anon', 'authenticated');
 
   SELECT array_agg(p.oid::regprocedure::text ORDER BY p.oid::regprocedure::text)
@@ -115,7 +123,13 @@ BEGIN
       'public_assistant_reject_revision_update',
       'public_assistant_validate_graph_ownership'
     )
-    AND NOT coalesce(p.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=pg_catalog, public'];
+    AND (p.prosecdef OR NOT coalesce(p.proconfig, ARRAY[]::text[]) @> ARRAY['search_path=pg_catalog, public, pg_temp']);
+
+  SELECT array_agg(c.relname ORDER BY c.relname) INTO privileged_sequences
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = current_schema() AND c.relkind = 'S'
+    AND (has_sequence_privilege('anon', c.oid, 'USAGE,SELECT,UPDATE')
+      OR has_sequence_privilege('authenticated', c.oid, 'USAGE,SELECT,UPDATE'));
 
   WITH expected(table_name, trigger_name, function_name) AS (
     VALUES
@@ -140,6 +154,8 @@ BEGIN
       AND tbl.relname = expected.table_name
       AND trg.tgname = expected.trigger_name
       AND proc.proname = expected.function_name
+      AND proc.pronamespace = tbl.relnamespace
+      AND proc.pronargs = 0
       AND NOT trg.tgisinternal
       AND trg.tgenabled <> 'D'
   );
@@ -150,6 +166,9 @@ BEGIN
 
   IF privileged_tables IS NOT NULL THEN
     RAISE EXCEPTION 'Data API roles retain table privileges: %', privileged_tables;
+  END IF;
+  IF privileged_sequences IS NOT NULL THEN
+    RAISE EXCEPTION 'Data API roles retain sequence privileges: %', privileged_sequences;
   END IF;
 
   IF executable_functions IS NOT NULL THEN
@@ -165,7 +184,9 @@ BEGIN
   END IF;
 
   IF has_schema_privilege('anon', current_schema(), 'USAGE')
-     OR has_schema_privilege('authenticated', current_schema(), 'USAGE') THEN
+     OR has_schema_privilege('authenticated', current_schema(), 'USAGE')
+     OR has_schema_privilege('anon', current_schema(), 'CREATE')
+     OR has_schema_privilege('authenticated', current_schema(), 'CREATE') THEN
     RAISE EXCEPTION 'Data API roles retain public schema usage';
   END IF;
 
@@ -175,6 +196,13 @@ BEGIN
 
   IF unsafe_defaults > 0 THEN
     RAISE EXCEPTION 'Current owner retains unsafe Data API default ACL entries: %', unsafe_defaults;
+  END IF;
+  -- No explicit global ACL means PostgreSQL's built-in PUBLIC EXECUTE default.
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_default_acl d JOIN pg_roles r ON r.oid = d.defaclrole
+    WHERE r.rolname = current_user AND d.defaclnamespace = 0 AND d.defaclobjtype = 'f'
+  ) THEN
+    RAISE EXCEPTION 'Current owner retains implicit PUBLIC function execution default';
   END IF;
 END $$;
 

@@ -1,0 +1,61 @@
+name: Public Assistant Database
+
+on:
+  pull_request:
+    paths:
+      - 'prisma/**'
+      - 'scripts/check-public-assistant-revision-migration.mjs'
+      - 'scripts/check-database-hardening.mjs'
+      - 'scripts/operations/postgres/data-api-hardening/**'
+      - '.github/workflows/public-assistant-database.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  push:
+    branches: [main]
+    paths:
+      - 'prisma/**'
+      - 'scripts/check-public-assistant-revision-migration.mjs'
+      - 'scripts/check-database-hardening.mjs'
+      - 'scripts/operations/postgres/data-api-hardening/**'
+      - '.github/workflows/public-assistant-database.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Provision local Data API roles
+        run: psql "$PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL" --set ON_ERROR_STOP=1 --command 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;'
+      - name: Verify migration and persistence contracts
+        run: |
+          npm run assistant:public-migration-check
+          node scripts/check-database-hardening.mjs
+          npm run assistant:public-persistence-check

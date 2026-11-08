@@ -40,6 +40,19 @@ The current Supabase `public` schema is not a browser Data API. All application 
 - The `postgres` default ACL must not grant future public tables, sequences, or functions to Data API roles or `PUBLIC` function execution.
 - Reintroducing REST, GraphQL, Realtime, Edge Function, browser, or mobile access requires a separate access design with explicit object grants and least-privilege policies.
 - Production checks use the reviewed scripts under `scripts/operations/postgres/data-api-hardening/`; do not mix access-policy changes into data-retirement SQL.
+- Every later table/function migration must preserve this boundary itself. One-time operational hardening does not cover future objects: use a forward migration, never edit applied migration checksums.
+- Public-assistant trigger functions remain SECURITY INVOKER and pin `search_path` to `pg_catalog, <installation schema>, pg_temp`. Explicit `pg_temp` last prevents same-named temporary tables from shadowing ownership lookups. Never inherit the caller's path.
+- The operational allowlist accepts 28 application tables, optionally the complete six-table RAG group and/or the complete twelve-table legacy group retained by Studio; missing/unknown tables, incorrect owners and broken trigger bindings fail preflight, apply and verify. Hardening never deletes retained history.
+
+### Scenario: Server-only database deployment
+
+1. **Scope / Trigger**: Every production Prisma migration in either Public or Studio must preserve the server-only boundary, including retained historical objects.
+2. **Signatures**: `prisma migrate deploy`; operational `preflight.sql`, `apply.sql`, `verify.sql` require `expected_database` and `expected_user`. Apply additionally requires `confirm_data_api_hardening=HARDEN_SERVER_ONLY_DATA_API`.
+3. **Contracts**: Enable RLS without FORCE or permissive policies; retain owner access. Four reviewed trigger functions use `pg_catalog, <installation schema>, pg_temp` with SECURITY INVOKER. Revoke API schema CREATE/USAGE and table/sequence/function privileges. Revoke both owner-global and schema-scoped default grants; schema-only REVOKE cannot remove PostgreSQL's default PUBLIC function EXECUTE.
+4. **Validation & Error Matrix**: Unknown/missing tables, incomplete optional table groups, wrong owners, missing/disabled/misbound triggers, unsafe grants, or mutable paths fail closed. Fingerprint/confirmation mismatches raise SQL exceptions under `ON_ERROR_STOP`; do not use `\\quit <code>` as a PostgreSQL 17 exit-status guarantee.
+5. **Good / Base / Bad Cases**: Good: restore-test each database backup, migrate, compare all business row counts and verify permissions/health. Base: a plain local PostgreSQL installation without Supabase roles still migrates. Bad: test only RLS flags, assume a readable dump TOC is a complete backup, or infer a successful exit from an echoed warning.
+6. **Tests Required**: `node scripts/check-database-hardening.mjs` uses `PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL` and refuses non-loopback hosts; it creates/removes its own disposable database, tests the full migration chain and 40/28/34-table layouts, effective privileges on newly created objects and all rejection cases. Optional local `PUBLIC_ASSISTANT_DATABASE_TEST_PSQL_DOCKER_CONTAINER` selects a dedicated test container; CI uses `psql`. Also run the existing revision/persistence lifecycle contracts.
+7. **Wrong vs Correct**: Wrong: only `ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ... FROM PUBLIC`. Correct: also revoke the owner's global function EXECUTE default, then create a temporary test function and assert `has_function_privilege('anon', ..., 'EXECUTE') = false`.
 
 ## Studio Boundary
 
@@ -111,7 +124,8 @@ Catalog guards that detect enum use outside a retirement allowlist must filter `
 #### 6. Tests Required
 
 - `assistant:public-persistence-check` must assert request hashing, leases, first-turn atomicity, regeneration lineage, concurrent forks, branch-selection fencing, revision-scoped feedback, replay independence, retention, deletion, and cross-session rejection.
-- `assistant:public-migration-check` must run only against loopback PostgreSQL and prove empty-schema migration, legacy parity, Revision UPDATE rejection, graph-ownership triggers, and whole-session deletion.
+- `assistant:public-migration-check` must run only against loopback PostgreSQL and prove empty-schema migration, legacy parity, Revision UPDATE rejection, graph-ownership triggers, and whole-session deletion. Also exercise RLS default-deny after accidental table grants, Data API permission revocation, fixed function paths and temporary-table shadowing. Keep legacy backfill and later hardening migrations separate so adding a migration cannot move the legacy fixture boundary.
+- The `Public Assistant Database` workflow runs these PostgreSQL 17 contracts for migration/operation-script changes without a production database or model calls.
 - Operational SQL fixtures must prove the exact table allowlist, RLS, function `search_path`, and all public-assistant trigger bindings without connecting to production.
 
 #### 7. Wrong vs Correct

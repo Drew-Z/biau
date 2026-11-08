@@ -19,6 +19,8 @@ const client = new Client({ connectionString: databaseUrl })
 const suffix = `${process.pid}_${Date.now()}`
 const emptySchema = `pa_revision_empty_${suffix}`
 const legacySchema = `pa_revision_legacy_${suffix}`
+const readerRole = `pa_revision_reader_${suffix}`
+const hardeningMigration = '20261108010000_public_assistant_database_hardening'
 const migrationsRoot = path.resolve('prisma/migrations')
 const publicAssistantMigrations = [
   '20260726010000_public_assistant_product',
@@ -44,10 +46,102 @@ async function expectCheckViolation(run, message) {
   await assert.rejects(run, (error) => error?.code === '23514' && String(error.message).includes(message))
 }
 
+async function applyHardening() {
+  // Simulate a permissive pre-existing grant, including PUBLIC inheritance.
+  const roles = await client.query(`SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated')`)
+  for (const role of ['PUBLIC', ...roles.rows.map((row) => quoteIdentifier(row.rolname))]) {
+    await client.query(`GRANT ALL ON "PublicAssistantRequest", "PublicAssistantAnswerRevision", "PublicAssistantBranch" TO ${role}`)
+    await client.query(`GRANT EXECUTE ON FUNCTION public_assistant_reject_revision_update(), public_assistant_validate_graph_ownership() TO ${role}`)
+  }
+  await applyMigration(hardeningMigration)
+  await applyMigration(hardeningMigration) // Recovery reapplication must be safe.
+}
+
+async function checkHardening(schema) {
+  const tables = await client.query(`
+    SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity,
+      (SELECT count(*)::int FROM pg_policy WHERE polrelid = c.oid) AS policies
+    FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = $1 AND c.relname = ANY($2::text[]) ORDER BY c.relname
+  `, [schema, ['PublicAssistantRequest', 'PublicAssistantAnswerRevision', 'PublicAssistantBranch']])
+  assert.equal(tables.rowCount, 3)
+  for (const table of tables.rows) {
+    assert.equal(table.relrowsecurity, true, `${table.relname} must enable RLS`)
+    assert.equal(table.relforcerowsecurity, false, 'the owner must retain access')
+    assert.equal(table.policies, 0, 'server-only tables must remain default-deny')
+  }
+  const functions = await client.query(`
+    SELECT p.proname, p.prosecdef, p.proconfig FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = $1 AND p.proname = ANY($2::text[])
+  `, [schema, ['public_assistant_reject_revision_update', 'public_assistant_validate_graph_ownership']])
+  assert.equal(functions.rowCount, 2)
+  for (const fn of functions.rows) {
+    assert.equal(fn.prosecdef, false)
+    assert.ok(fn.proconfig.includes(`search_path=pg_catalog, ${schema}, pg_temp`))
+  }
+  const roles = await client.query(`SELECT rolname FROM pg_roles WHERE rolname IN ('anon', 'authenticated', $1)`, [readerRole])
+  for (const { rolname } of roles.rows) {
+    for (const { relname } of tables.rows) {
+      const relation = `${quoteIdentifier(schema)}.${quoteIdentifier(relname)}`
+      const grant = await client.query(`SELECT has_table_privilege($1, $2, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') AS allowed`, [rolname, relation])
+      assert.equal(grant.rows[0].allowed, false, `${rolname} must have no access to ${relname}`)
+    }
+    for (const fn of functions.rows) {
+      const grant = await client.query(`SELECT has_function_privilege($1, $2, 'EXECUTE') AS allowed`, [rolname, `${quoteIdentifier(schema)}.${fn.proname}()`])
+      assert.equal(grant.rows[0].allowed, false)
+    }
+  }
+  await client.query(`GRANT USAGE ON SCHEMA ${quoteIdentifier(schema)} TO ${quoteIdentifier(readerRole)}`)
+  await client.query(`SET ROLE ${quoteIdentifier(readerRole)}`)
+  try {
+    await assert.rejects(() => client.query(`SELECT * FROM "PublicAssistantRequest"`), { code: '42501' })
+  } finally {
+    await client.query('RESET ROLE')
+  }
+}
+
+async function checkDefaultDenyWithAccidentalGrant() {
+  await client.query('BEGIN')
+  try {
+    await client.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON "PublicAssistantRequest", "PublicAssistantAnswerRevision", "PublicAssistantBranch" TO ${quoteIdentifier(readerRole)}`)
+    await client.query(`SET LOCAL ROLE ${quoteIdentifier(readerRole)}`)
+    for (const table of ['PublicAssistantRequest', 'PublicAssistantAnswerRevision', 'PublicAssistantBranch']) {
+      const visible = await client.query(`SELECT count(*)::int AS count FROM ${quoteIdentifier(table)}`)
+      assert.equal(visible.rows[0].count, 0, 'RLS must hide existing rows even after accidental grants')
+    }
+    assert.equal((await client.query(`UPDATE "PublicAssistantBranch" SET "ordinal" = 99`)).rowCount, 0)
+    assert.equal((await client.query(`DELETE FROM "PublicAssistantRequest"`)).rowCount, 0)
+    await assert.rejects(() => client.query(`
+      INSERT INTO "PublicAssistantRequest" ("requestId", "sessionId", "requestHash", "status", "updatedAt", "expiresAt")
+      VALUES ('denied-request', 'session-a', 'hash', 'processing', now(), now())
+    `), { code: '42501' })
+  } finally {
+    await client.query('ROLLBACK')
+  }
+}
+
+async function checkTemporaryTableShadowing() {
+  await client.query(`CREATE TEMP TABLE "PublicAssistantBranch" ("id" text, "sessionId" text)`)
+  try {
+    await client.query(`INSERT INTO pg_temp."PublicAssistantBranch" VALUES ('legacy-branch-session-b', 'session-a')`)
+    await client.query('SET search_path TO pg_temp')
+    await expectCheckViolation(
+      () => client.query(`UPDATE ${quoteIdentifier(legacySchema)}."PublicAssistantSession" SET "activeBranchId" = 'legacy-branch-session-b' WHERE "id" = 'session-a'`),
+      'Public assistant active branch crosses session ownership',
+    )
+  } finally {
+    await client.query(`DROP TABLE pg_temp."PublicAssistantBranch"`)
+    await setSchema(legacySchema)
+  }
+}
+
 async function checkEmptySchema() {
   await client.query(`CREATE SCHEMA ${quoteIdentifier(emptySchema)}`)
   await setSchema(emptySchema)
   for (const migration of publicAssistantMigrations) await applyMigration(migration)
+  await applyHardening()
+  await checkHardening(emptySchema)
 
   const tables = await client.query(`
     SELECT tablename
@@ -133,6 +227,8 @@ async function checkLegacyUpgrade() {
   `)
 
   await applyMigration(publicAssistantMigrations.at(-1))
+  await applyHardening()
+  await checkHardening(legacySchema)
 
   const counts = await client.query(`
     SELECT
@@ -255,6 +351,10 @@ async function checkLegacyUpgrade() {
   `, [legacySchema])
   assert.equal(removedColumns.rowCount, 0, 'legacy answer columns must be removed after backfill')
 
+  await checkDefaultDenyWithAccidentalGrant()
+  await checkTemporaryTableShadowing()
+  await client.query(`UPDATE "PublicAssistantBranch" SET "lastActiveAt" = now() WHERE "id" = 'legacy-branch-session-a'`)
+
   await expectCheckViolation(
     () => client.query(`UPDATE "PublicAssistantAnswerRevision" SET "answer" = 'mutated' WHERE "id" = 'legacy-revision-turn-a1'`),
     'PublicAssistantAnswerRevision rows are immutable',
@@ -306,13 +406,19 @@ async function checkLegacyUpgrade() {
 }
 
 await client.connect()
+let readerRoleCreated = false
 try {
+  await client.query(`CREATE ROLE ${quoteIdentifier(readerRole)} NOLOGIN`)
+  readerRoleCreated = true
   await checkEmptySchema()
   await checkLegacyUpgrade()
-  console.log('Public assistant PostgreSQL revision migration contracts passed.')
+  console.log('Public assistant PostgreSQL revision, RLS, grants, search_path and lifecycle contracts passed.')
 } finally {
+  await client.query('ROLLBACK').catch(() => undefined)
+  await client.query('RESET ROLE').catch(() => undefined)
   await client.query('SET search_path TO public').catch(() => undefined)
   await client.query(`DROP SCHEMA IF EXISTS ${quoteIdentifier(emptySchema)} CASCADE`).catch(() => undefined)
   await client.query(`DROP SCHEMA IF EXISTS ${quoteIdentifier(legacySchema)} CASCADE`).catch(() => undefined)
+  if (readerRoleCreated) await client.query(`DROP ROLE ${quoteIdentifier(readerRole)}`)
   await client.end()
 }
