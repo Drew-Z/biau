@@ -16,10 +16,14 @@
 
 ## 线上验证与边界
 
-- 两库 `verify.sql` 均通过；本地访问三个 Render 服务的健康地址持续超时，已启动独立 GitHub Reliability Check，待结果补记。
-- 新数据库 CI 待代码推送后验收。RAG 同步临时设为只检查，结束后恢复原有仓库变量状态。
+- 两库 `verify.sql` 均通过。Public 与 Studio 于北京时间 18:24 前后完成部署，均为 `live`，启动日志确认无待执行迁移并正常监听；Studio 的 Render 健康门禁为 `/health`。本地直连 Render 仍超时，未将其描述为本地 HTTP 验收通过。
+- 数据库 [CI 42471013199](https://github.com/Drew-Z/biau/actions/runs/42471013199) 全部通过；首轮数据库 SQL 测试已通过，但 CI 漏生成 Prisma Client 导致后续持久化测试失败，补齐生成步骤后复验通过。
+- [Site Quality 42471013112](https://github.com/Drew-Z/biau/actions/runs/42471013112) 通过。[RAG 检查 42470824244](https://github.com/Drew-Z/biau/actions/runs/42470824244) 通过，32 documents / 75 chunks，不调用 embedding；RAG 已自动部署。临时 `PUBLIC_RAG_SYNC_CHECK_ONLY` 仓库变量已删除，恢复原状态。
+- 部署后的 [Reliability 42471492707](https://github.com/Drew-Z/biau/actions/runs/42471492707)：7 passed / 1 failed / 1 skipped。主站路由及助手 health 已通过；`unchecked` 指按预算未调用真实聊天，不是跳过 health。剩余失败是 4 个外部项目链接 HTTP/超时，Legal RAG 因缺少该巡检环境配置跳过。这些属于后续可用性工作，不能声称整套巡检全绿。
 - Horizon 真正 schedule 运行 [42453568590](https://github.com/Drew-Z/biau/actions/runs/42453568590) 成功，但结果为 `no-input`：采集 0、模型 0、未发布，保留旧期刊。它证明调度与空输入保护生效，不能代替新一期自动生成/发布验收；AI 日报 AC12 保持未完成。
 
 ## 恢复
 
 Git 基线为 `796e9d5e07fde26ed1bb5397c226f4132269e23c`。敏感数据库备份及 SHA-256 清单仅保存于本地集中恢复组；保留此前 Render 部署标识。恢复备份必须由单独恢复决策控制，不自动覆盖线上后续数据。
+
+本次工作提交：`d035a307`（迁移/防护/测试）、`8d8d3d7e`（CI 初始化修正），均已推送。专用 PostgreSQL 容器、它的匿名数据卷和本轮临时运维脚本已清理；完整备份、无效备份标记和验证记录保留。既有 UI、青珑及不明来源未跟踪目录保留。
