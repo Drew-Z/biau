@@ -71,6 +71,8 @@ async function checkCase(browser, base, configuration, path, action) {
   const apiRequests = []
   let page
   let targetId = ''
+  let before = null
+  let after = null
   try {
     await installLocalNetworkGuard(context, base, () => errors.push('external-request'), { allowLoopback: false })
     context.on('page', opened => opened.on('pageerror', error => errors.push(error.message)))
@@ -90,7 +92,14 @@ async function checkCase(browser, base, configuration, path, action) {
     const guide = page.locator('.detail-reading-guide')
     await guide.waitFor({ state: 'visible' })
     await page.waitForFunction(() => [...document.querySelectorAll('img[loading="eager"]')].every(image => image.complete))
-    await guide.locator('.detail-reading-guide__toggle').click()
+    const toggle = guide.locator('.detail-reading-guide__toggle')
+    // Scrolling the mobile guide into view can activate its intentional auto-hide.
+    // Native focus reveals it through :focus-within before the real pointer click.
+    await toggle.focus()
+    await toggle.click()
+    // Opening aligns the guide on the next animation frame. Finish that scroll
+    // before positioning the link so its baseline cannot race the alignment.
+    await settleScroll(page)
     const link = guide.locator('.detail-reading-guide__outline a').last()
     await link.scrollIntoViewIfNeeded()
     if (action.endsWith('enter')) await link.focus()
@@ -98,7 +107,7 @@ async function checkCase(browser, base, configuration, path, action) {
     const destination = await link.evaluate(element => ({ href: element.href, id: element.hash.slice(1) }))
     targetId = destination.id
     assert.ok(targetId && await page.locator(`[id="${targetId}"]`).count(), 'a genuine chapter target must exist')
-    const before = await snapshot(page, targetId)
+    before = await snapshot(page, targetId)
     assert.equal(before.expanded, 'true')
 
     const observedOnly = ['meta-click', 'alt-click', 'cancelled-click'].includes(action)
@@ -137,7 +146,7 @@ async function checkCase(browser, base, configuration, path, action) {
     }
 
     await settleScroll(page)
-    const after = await snapshot(page, targetId)
+    after = await snapshot(page, targetId)
     assert.deepEqual(after.stable, before.stable, 'chapter activation must preserve source identity, content and preferences')
     assert.equal(after.overflow, false)
     if (nativeActions.includes(action) || observedOnly) {
@@ -158,7 +167,7 @@ async function checkCase(browser, base, configuration, path, action) {
   } catch (error) {
     if (process.env.UI_CHECK_ARTIFACT_DIR && page) {
       await page.screenshot({ path: resolve(process.env.UI_CHECK_ARTIFACT_DIR, `reading-links-failure-${name}.png`) }).catch(() => {})
-      await writeFile(resolve(process.env.UI_CHECK_ARTIFACT_DIR, `reading-links-failure-${name}.json`), JSON.stringify({ name, error: error.message, current: await snapshot(page, targetId).catch(() => null), pages: context.pages().map(opened => opened.url()), apiRequests, errors }, null, 2) + '\n', { flag: 'wx' })
+      await writeFile(resolve(process.env.UI_CHECK_ARTIFACT_DIR, `reading-links-failure-${name}.json`), JSON.stringify({ name, error: error.message, before, after, current: await snapshot(page, targetId).catch(() => null), pages: context.pages().map(opened => opened.url()), apiRequests, errors }, null, 2) + '\n', { flag: 'wx' })
     }
     throw new Error(`${name}: ${error.message}`, { cause: error })
   } finally {

@@ -24,7 +24,7 @@
 
 .public-assistant-pet__fallback {
   inset: 5%;
-  background: url('/pets/leaf/idle.png') left center / 600% 100% no-repeat;
+  background: url('/pets/qinglong/idle.png') left center / 400% 100% no-repeat;
 }
 
 .public-assistant-pet:has([data-pet-state='ready']) .public-assistant-pet__fallback { visibility: hidden; }

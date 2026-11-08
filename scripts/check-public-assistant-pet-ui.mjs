@@ -209,6 +209,10 @@ async function state(page, expected) {
   }, Object.fromEntries(Object.entries(expected).map(([key, value]) => ['pet' + key[0].toUpperCase() + key.slice(1), value])))
 }
 
+async function displayedAction(page, action) {
+  await page.waitForFunction(value => document.querySelector('.public-assistant-pet__canvas')?.dataset.action === value, action)
+}
+
 async function open(fixture, waitForAssets = true) {
   const { page } = fixture
   await page.goto(base + '/blog')
@@ -229,6 +233,9 @@ async function submit(fixture, question = '这是本地模拟测试') {
   await fixture.page.locator('.public-assistant__composer button[type="submit"]').click()
   const stream = await streamAt(fixture, index)
   await state(fixture.page, { activity: 'thinking' })
+  if (await fixture.page.locator('.public-assistant-pet__canvas[data-pet-state="ready"]').count()) {
+    await displayedAction(fixture.page, 'thinking')
+  }
   return stream
 }
 
@@ -297,6 +304,7 @@ try {
         ]) {
           stream.progress(stage)
           await state(page, { activity, unreadCount: 0, feedbackCount: 0 })
+          await displayedAction(page, activity)
           assert.equal(await page.locator('.public-assistant__trigger').getAttribute('aria-description'), publicAssistantPetCopy.zh.activities[activity])
         }
       }
@@ -306,7 +314,7 @@ try {
       if (outcome === 'answered') {
         await page.waitForFunction(() => document.querySelector('.public-assistant-pet__canvas')?.dataset.action === 'happy')
         await page.waitForFunction(() => document.querySelector('.public-assistant-pet__canvas')?.dataset.action === 'idle')
-      } else assert.equal(await page.locator('.public-assistant-pet__canvas').getAttribute('data-action'), 'idle')
+      } else await displayedAction(page, outcome === 'blocked' ? 'waiting' : 'idle')
       await passed(fixture, outcome === 'answered' ? 'nine-progress-stages-and-one-success' : outcome + '-neutral')
     } finally { await fixture.close() }
   }
@@ -390,6 +398,7 @@ try {
       else original.error('public-assistant-service-unavailable')
       await page.locator('.public-assistant__notice').waitFor()
       await state(page, { activity: kind === 'cancel' ? 'idle' : 'blocked', unreadCount: 0, feedbackCount: 0 })
+      await displayedAction(page, kind === 'cancel' ? 'idle' : 'failed')
       await page.locator('.public-assistant__notice button').first().click()
       const retry = await streamAt(fixture, 1)
       await state(page, { activity: 'thinking', unreadCount: 0, feedbackCount: 0 })
@@ -465,6 +474,7 @@ try {
       stream.result(answerFixture(stream, 'answered', { replayed: true }))
       await page.locator('.public-assistant__notice--restore').waitFor()
       await state(page, { activity: 'needsInput', unreadCount: 0, feedbackCount: 0 })
+      await displayedAction(page, 'waiting')
       assert.equal(await page.getByText('本地测试回答', { exact: true }).count(), 0)
       await passed(fixture, 'authoritative-history-failure-needs-input')
     } finally { await fixture.close() }
@@ -492,7 +502,7 @@ try {
     let release
     const manifestGate = new Promise(done => { release = done })
     fixture.releases.push(release)
-    await page.route('**/pets/leaf/pet.json', async route => {
+    await page.route('**/pets/qinglong/pet.json', async route => {
       await manifestGate
       await route.fulfill({ response: await route.fetch() }).catch(() => undefined)
     })
@@ -515,11 +525,18 @@ try {
     const fixture = await setup(320, 'stellar', 'en')
     const { page, requests } = fixture
     try {
-      await page.route('**/pets/leaf/pet.json', route => route.fulfill({ status: 404, body: 'unavailable' }))
+      await page.route('**/pets/qinglong/pet.json', route => route.fulfill({ status: 404, body: 'unavailable' }))
       await page.goto(base + '/blog')
       await page.locator('.public-assistant-pet__canvas[data-pet-state="error"]').waitFor({ state: 'attached' })
       assert.equal(await page.locator('.public-assistant-pet canvas').count(), 0)
       assert.equal(await page.locator('.public-assistant-pet__fallback').evaluate(e => getComputedStyle(e).visibility), 'visible')
+      assert.ok(await page.locator('.public-assistant-pet__fallback').evaluate(async element => {
+        const css = getComputedStyle(element)
+        const image = new Image()
+        image.src = '/pets/qinglong/idle.png'
+        await image.decode()
+        return css.backgroundImage.includes('/pets/qinglong/idle.png') && css.backgroundSize === '400% 100%' && image.naturalWidth === 1024 && image.naturalHeight === 256
+      }), 'fallback must load the accepted Qinglong idle atlas and show exactly its first frame')
       await page.locator('.public-assistant__trigger').click()
       await page.locator('.public-assistant__panel').waitFor()
       await contained(page, '.public-assistant__panel')

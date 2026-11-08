@@ -1,0 +1,644 @@
+{
+  "schemaVersion": 2,
+  "representation": "sprite2d",
+  "name": "青珑",
+  "license": {
+    "status": "not-specified"
+  },
+  "actions": {
+    "idle": {
+      "file": "idle.png",
+      "sha256": "6a6539afff09ae8b71d569c6126f4b77c2a71ef723ec18a01c824a748d605599",
+      "meta": {
+        "frameCount": 4,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 1.666667,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 4,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 1100.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 240.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 100.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 960.0
+            }
+          ],
+          "root": [],
+          "contacts": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "thinking": {
+      "file": "thinking.png",
+      "sha256": "90160866db9b738a556ee35059b5d280162e3a8c4d5d8eda4045b0096301a87f",
+      "meta": {
+        "frameCount": 6,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 2.5,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 6,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 5,
+              "durationMs": 400.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "working": {
+      "file": "working.png",
+      "sha256": "09a92b89739dde676002ed6d86ecaefe564c3a16a198f042ea5a46b7c277bf5d",
+      "meta": {
+        "frameCount": 8,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 5.0,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 8,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 200.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 200.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 200.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 200.0
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 200.0
+            },
+            {
+              "sourceFrame": 5,
+              "durationMs": 200.0
+            },
+            {
+              "sourceFrame": 6,
+              "durationMs": 200.0
+            },
+            {
+              "sourceFrame": 7,
+              "durationMs": 200.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "waiting": {
+      "file": "waiting.png",
+      "sha256": "18112636080fdfdb9706e121d5022d5950c231133b6607a18cc8a501e2d25f50",
+      "meta": {
+        "frameCount": 4,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 1.666667,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 4,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 600.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "review": {
+      "file": "review.png",
+      "sha256": "9b80e380e1b6bc35001f89024679a5b9bcd1ac7c930b15ec97b5cdba44bd6afb",
+      "meta": {
+        "frameCount": 6,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 2.5,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 6,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 400.0
+            },
+            {
+              "sourceFrame": 5,
+              "durationMs": 400.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "happy": {
+      "file": "happy.png",
+      "sha256": "8ea287a3e7041890966ecf74717173ab485354d6cece49d0acacf6ecc6a8c777",
+      "meta": {
+        "frameCount": 5,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 4.166667,
+        "loop": false,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 5,
+          "loop": false,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 239.99999999999997
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 239.99999999999997
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 239.99999999999997
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 239.99999999999997
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 239.99999999999997
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "failed": {
+      "file": "failed.png",
+      "sha256": "433924281f8f7007d021c0e48ecb0954f94c430090bd328231ab84fbac2508b8",
+      "meta": {
+        "frameCount": 5,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 3.125,
+        "loop": false,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 5,
+          "loop": false,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 320.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 320.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 320.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 320.0
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 320.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    },
+    "sleepy": {
+      "file": "sleepy.png",
+      "sha256": "376089193471f8b7ffafde75189ea08d9e6c50e53c00fdc3c195f3391ec042dd",
+      "meta": {
+        "frameCount": 6,
+        "frameWidth": 256,
+        "frameHeight": 256,
+        "fps": 1.666667,
+        "loop": true,
+        "motion": {
+          "version": 1,
+          "sourceFrameCount": 6,
+          "loop": true,
+          "registration": "preserve",
+          "entries": [
+            {
+              "sourceFrame": 0,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 1,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 2,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 3,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 4,
+              "durationMs": 600.0
+            },
+            {
+              "sourceFrame": 5,
+              "durationMs": 600.0
+            }
+          ],
+          "root": [],
+          "contacts": [],
+          "anchors": []
+        },
+        "motionReview": {
+          "anchors": "needs_human_review"
+        },
+        "processing": {
+          "transforms": [
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            },
+            {
+              "scale": 1,
+              "x": 0,
+              "y": 0
+            }
+          ]
+        }
+      }
+    }
+  },
+  "actionSet": "assistant-v1"
+}

@@ -32,7 +32,7 @@ export function PublicAssistantPet({ activity = 'idle', compact = false, complet
     if (!element) return
     void import('@lingban/pet-runtime/widget').then(async ({ mountPet }) => {
       if (abort.signal.aborted) return
-      pet = await mountPet(element, '/pets/leaf/pet.json', { signal: abort.signal })
+      pet = await mountPet(element, '/pets/qinglong/pet.json', { signal: abort.signal })
       if (abort.signal.aborted) { pet.destroy(); return }
       instance.current = pet
       applyActivity(pet, currentActivity.current)

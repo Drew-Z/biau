@@ -10,9 +10,15 @@ import { selectSiteLanguage } from './lib/ui-language.mjs'
 const morning = await packageEdition(await editionFixture(), '2026-11-05T00:11:00.000Z')
 const evening = await packageEdition(await editionFixture('evening'), '2026-11-05T12:11:00.000Z')
 const index = planPublication(planPublication(emptyIndex, morning).index, evening).index
-const server = await createServer({ server: { host: '127.0.0.1', port: 5187, strictPort: false }, define: { 'import.meta.env.VITE_AI_DAILY_EDITIONS_ENABLED': '"true"' } })
-await server.listen()
-const base = server.resolvedUrls!.local[0].replace(/\/$/u, '')
+const configuredBase = process.env.UI_CHECK_BASE
+if (configuredBase) {
+  const url = new URL(configuredBase)
+  assert.equal(url.protocol, 'http:', 'UI checks require an isolated HTTP preview')
+  assert.ok(['127.0.0.1', 'localhost'].includes(url.hostname), 'UI checks require a loopback preview')
+}
+const server = configuredBase ? null : await createServer({ server: { host: '127.0.0.1', port: 5187, strictPort: false }, define: { 'import.meta.env.VITE_AI_DAILY_EDITIONS_ENABLED': '"true"' } })
+await server?.listen()
+const base = (configuredBase ?? server!.resolvedUrls!.local[0]).replace(/\/$/u, '')
 const browser = await chromium.launch({ headless: true })
 let groups = 0
 try {
@@ -38,7 +44,8 @@ try {
       const path = new URL(request.url()).pathname
       let body: unknown = { error: 'offline-fixture' }
       let status = 503
-      if (path === '/api/ai-daily' && !failed) { body = empty ? emptyIndex : index; status = 200 }
+      if (path === '/api/health') { body = { ok: true, database: true, modelConfigured: true, webSearchConfigured: true }; status = 200 }
+      else if (path === '/api/ai-daily' && !failed) { body = empty ? emptyIndex : index; status = 200 }
       else if (path.startsWith('/api/ai-daily/editions/') && !failed) {
         const detail = path.endsWith(morning.edition.editionId) ? morning : evening
         body = badHash ? { ...detail, markdown: 'corrupt' } : detail
@@ -76,10 +83,11 @@ try {
     assert.deepEqual(errors, [])
     assert.ok(requests.every((request) => request.startsWith('GET ')))
     if (width === 390 && theme === 'stellar' && language === 'zh') {
-      const count = requests.length
+      const editionRequests = () => requests.filter(request => request.startsWith('GET /api/ai-daily'))
+      const beforeLanguageSwitch = editionRequests()
       await selectSiteLanguage(page, 'en')
       assert.equal(await page.locator('.daily-edition-markdown').textContent(), content)
-      assert.equal(requests.length, count)
+      assert.deepEqual(editionRequests(), beforeLanguageSwitch, `language switch request trace: ${requests.join(', ')}`)
       await page.reload()
       await page.locator('.daily-edition-markdown').waitFor()
       assert.equal(await page.locator('.daily-edition-detail').getAttribute('lang'), 'en')
@@ -99,11 +107,12 @@ try {
       await page.locator('.daily-edition-markdown').waitFor()
       await page.screenshot({ path: join(process.env.UI_CHECK_ARTIFACT_DIR, `ai-daily-${theme}-${width}.png`), fullPage: true })
     }
+    assert.ok(requests.every(request => request === 'GET /api/health' || request.startsWith('GET /api/ai-daily')), `unexpected request trace: ${requests.join(', ')}`)
     await context.close()
     groups += 1
   }
   console.log(JSON.stringify({ ok: true, matrixGroups: groups, modelCalls: 0, externalRequests: 0 }))
 } finally {
   await browser.close()
-  await server.close()
+  await server?.close()
 }

@@ -1,0 +1,21 @@
+{
+  "id": "qinglong-release-candidate",
+  "name": "qinglong-release-candidate",
+  "title": "青珑博客发布候选与当前版本验证",
+  "status": "in_progress",
+  "priority": "P2",
+  "createdAt": "2026-11-08",
+  "assignee": "zhang",
+  "description": "承接 Pet Studio R5-2，冻结既有青珑接入并在独立构建验证，不混入并行任务修改。",
+  "meta": {
+    "sourceHead": "f67975b2edb9cb16093b9d8b935f35348c8049fa",
+    "recoveryStage": "multi-route-r5-blog-20261108",
+    "published": false,
+    "candidateVerified": true,
+    "distinctUiGroupsPassed": 46,
+    "singleUninterruptedUiRun": false,
+    "verifiedMainHead": "8d8d3d7e3625dd937ea1e6b29e13110842eb8c0c",
+    "realModelCalls": 0,
+    "r4IndependentVisualReview": "blocked_before_observation"
+  }
+}
