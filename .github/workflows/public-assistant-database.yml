@@ -52,6 +52,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: npm run prisma:generate
       - name: Provision local Data API roles
         run: psql "$PUBLIC_ASSISTANT_REVISION_TEST_DATABASE_URL" --set ON_ERROR_STOP=1 --command 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;'
       - name: Verify migration and persistence contracts
