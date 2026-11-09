@@ -7,6 +7,29 @@ import { generatePublicAssistantDraft, planPublicAssistantRequest } from '../src
 import { toPublicAssistantHttpResponse } from '../src/publicAssistantProjection.js'
 
 const question = '现在站点里哪些项目有公开演示入口？每个项目适合看什么？'
+const comparisonQuestion = '请比较本站《合同审查 RAG 项目复盘：引用、诊断、评测与受控演示》和《Legal RAG 生产化路线：项目空间、pgvector、评测与受控演示》两篇文章，区分已实现能力与规划，并引用来源。'
+const siteComparisons = [
+  comparisonQuestion,
+  '请对比本站的两篇文章，说明实现与规划的差别。',
+  '对比站内这两个项目。',
+  '本站两篇文章相比有哪些区别？',
+  '比较本站两篇文章中 RAG 和 Agent 的实现边界。',
+  '比较本站《比较方案》和《项目规划》两篇文章。',
+  'Compare the two articles on this site.',
+  'Compare these two blog posts on our website, and cite sources.',
+]
+const externalComparisons = [
+  '比较本站与外部同类产品的最新能力',
+  '比较本站与 ChatGPT 的能力',
+  'Compare BIAU with ChatGPT.',
+  '比较本站两篇文章与 ChatGPT 的回答',
+  '把 ChatGPT 的回答与本站两篇文章相比。',
+  '比较本站两篇文章，并与 OpenAI 文档对照。',
+  'Compare two articles on this site with the OpenAI documentation.',
+  'Compare ChatGPT with two articles on this site.',
+  '比较本站两篇文章，再搜索站外资料验证结论。',
+  'Compare two articles on this site using external sources.',
+]
 const channel = {
   id: 'unavailable', label: 'Local fixture', provider: 'local', model: '', baseUrl: '', apiKey: '',
   configured: false, isDefault: false, isActive: false,
@@ -26,7 +49,7 @@ env.publicAssistantModelMaxAttempts = 1
 env.assistantRagApiBaseUrl = 'http://127.0.0.1:1'
 
 try {
-  for (const text of [question, '本站现在有哪些可试玩的游戏？', '这个网站的项目怎么体验？', 'What demos are on this site now?']) {
+  for (const text of [question, '本站现在有哪些可试玩的游戏？', '这个网站的项目怎么体验？', 'What demos are on this site now?', ...siteComparisons]) {
     const plan = await planPublicAssistantRequest({ ...input, question: text }, channel)
     assert.equal(plan.route, 'site', 'Explicit site consultation must stay within site evidence: ' + text)
     assert.equal(plan.requiresFreshness, false)
@@ -35,8 +58,13 @@ try {
     })
     assert.equal(configuredPlan.route, 'site', 'Site scope must not depend on planner availability')
   }
+  assert.equal(networkCalls, 0, 'Explicit site comparisons must bypass model planning')
   assert.equal((await planPublicAssistantRequest({ ...input, mode: 'web' }, channel)).route, 'web')
-  assert.equal((await planPublicAssistantRequest({ ...input, question: '比较本站与外部同类产品的最新能力' }, channel)).route, 'combined')
+  assert.equal((await planPublicAssistantRequest({ ...input, question: comparisonQuestion, mode: 'web' }, channel)).route, 'web')
+  for (const text of externalComparisons) {
+    assert.equal((await planPublicAssistantRequest({ ...input, question: text }, channel)).route, 'combined', 'External comparisons must keep both evidence scopes: ' + text)
+    assert.equal((await planPublicAssistantRequest({ ...input, question: text, mode: 'site' }, channel)).route, 'site')
+  }
   assert.equal((await planPublicAssistantRequest({ ...input, question: 'Google Antigravity 最新版本有什么变化？' }, channel)).route, 'web')
   assert.equal((await planPublicAssistantRequest({ ...input, question: '你好' }, channel)).route, 'direct')
 
@@ -87,7 +115,9 @@ try {
   assert.ok(response.answer.includes(response.citations[0]!.title))
   assert.equal(response.answer.includes('Google Antigravity'), false)
 
-  const modelInputs: Array<{ question: string; evidence: Array<{ id: string; excerpt: string }> }> = []
+  const modelInputs: Array<{ question: string; route: string; evidence: Array<{ id: string; source: string; excerpt: string; url: string }> }> = []
+  let fixtureModelCalls = 0
+  let plannerCalls = 0
   const fixtureChannel = {
     ...channel, model: 'fixture', apiKey: 'fixture-key', baseUrl: 'http://127.0.0.1:1/v1', configured: true,
   }
@@ -96,7 +126,10 @@ try {
       networkCalls += 1
       throw new Error('Live network forbidden')
     }
-    const body = JSON.parse(String(options?.body)) as { input: Array<{ role: string; content: Array<{ text: string }> }> }
+    fixtureModelCalls += 1
+    const body = JSON.parse(String(options?.body)) as { stream: boolean; input: Array<{ role: string; content: Array<{ text: string }> }> }
+    if (body.stream !== true) plannerCalls += 1
+    assert.equal(body.stream, true, 'Explicit site consultation must call only the answer model, never the planner')
     const user = body.input.find(message => message.role === 'user')
     assert.ok(user?.content[0]?.text)
     const payload: (typeof modelInputs)[number] = JSON.parse(user.content[0].text)
@@ -122,6 +155,8 @@ try {
     async researchWeb() { webCalls += 1; return { evidence: [], available: true } },
   }))
   assert.equal(modelInputs.length, 1, 'One in-memory Responses fixture must complete the default agent path')
+  assert.equal(fixtureModelCalls, 1)
+  assert.equal(plannerCalls, 0)
   assert.equal(modelInputs[0]!.question, question)
   const modelText = modelInputs[0]!.evidence.map(item => item.excerpt).join('\n')
   for (const project of projects) assert.ok(modelText.includes(project.href), 'Model input lost project: ' + project.id)
@@ -132,7 +167,34 @@ try {
   assert.equal(modeled.claims.length, modelInputs[0]!.evidence.length)
   assert.equal(webCalls, 0)
   assert.equal(networkCalls, 0)
-  console.log(JSON.stringify({ result: 'passed', siteCalls, webCalls, answerCalls, networkCalls, fixtureModelCalls: modelInputs.length, catalogProjects: projects.length, citations: modeled.citations.length }))
+
+  // Use the real site retrieval and Agent path with local knowledge. Only the
+  // answer response is simulated; fetch cannot reach a provider or remote RAG.
+  env.assistantRagApiBaseUrl = ''
+  const comparison = toPublicAssistantHttpResponse(await runPublicAssistantAgent({ ...input, question: comparisonQuestion }, {
+    model: {
+      plan: request => planPublicAssistantRequest(request, fixtureChannel),
+      answer: request => generatePublicAssistantDraft(request, fixtureChannel),
+    },
+    retrieveSite: retrieveSiteEvidence,
+    async researchWeb() { webCalls += 1; return { evidence: [], available: true } },
+  }))
+  assert.equal(modelInputs.length, 2, 'Article comparison must spend one answer fixture call and no planner call')
+  assert.equal(fixtureModelCalls, 2)
+  assert.equal(plannerCalls, 0)
+  assert.equal(modelInputs[1]!.question, comparisonQuestion)
+  assert.equal(modelInputs[1]!.route, 'site')
+  assert.ok(modelInputs[1]!.evidence.every(item => item.source === 'site'))
+  for (const href of ['/blog/legal-rag-review', '/blog/legal-rag-production-upgrade-plan']) {
+    assert.ok(modelInputs[1]!.evidence.some(item => item.url === href), 'Comparison model input lost article: ' + href)
+    assert.ok(comparison.citations.some(item => item.href === href), 'Comparison output lost article citation: ' + href)
+  }
+  assert.equal(comparison.status, 'answered')
+  assert.equal(comparison.meta.mode, 'model')
+  assert.ok(comparison.citations.every(item => item.source === 'site'))
+  assert.equal(webCalls, 0)
+  assert.equal(networkCalls, 0)
+  console.log(JSON.stringify({ result: 'passed', siteCalls, webCalls, answerCalls, networkCalls, fixtureModelCalls, plannerCalls, siteComparisons: siteComparisons.length, externalComparisons: externalComparisons.length, catalogProjects: projects.length, citations: modeled.citations.length, comparisonCitations: comparison.citations.length }))
 } finally {
   globalThis.fetch = originalFetch
   env.publicAssistantModelMaxAttempts = originalAttempts

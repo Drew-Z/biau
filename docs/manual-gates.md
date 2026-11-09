@@ -57,13 +57,19 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 2026-11-04 16:32—16:38 UTC 只读刷新：主站路由 7/7、外部入口 8/8 可达。助手 health 首次在 12 秒截止后失败，后续一次 30 秒上限复核在约 1.3 秒内返回 200 JSON；两次观测均保留。公共状态保留 15:51 UTC 的真实咨询 degraded 及其独立采样时间，后续健康检查没有覆盖生成失败，额外业务提交为 0。
 
-2026-11-05 文本生成渠道切换：用户提供新渠道并允许选择其中模型，现已使用 `gpt-6-luna`。现有 Responses 适配器的 1 次公开资料候选验证为 answered、HTTP 200、约 13.9 秒；Public 环境更新触发 `dep-dblmehhsrm7s73f25efg` / `affdd1ea` 并已 live。旧配置以 DPAPI 加密保存并验证恢复，除 base/key/model/provider 外环境摘要一致；embedding、Studio 与 AI 日报未改。
+2026-11-05 文本生成渠道切换（历史记录）：用户提供新渠道并允许选择其中模型，当时使用 `gpt-6-luna`。现有 Responses 适配器的 1 次公开资料候选验证为 answered、HTTP 200、约 13.9 秒；Public 环境更新触发 `dep-dblmehhsrm7s73f25efg` / `affdd1ea` 并已 live。旧配置以 DPAPI 加密保存并验证恢复，除 base/key/model/provider 外环境摘要一致；embedding、Studio 与 AI 日报未改。
 
 该切换窗口共执行 2 个生产咨询：首次 HTTP 200 后验收脚本读取流正文失败，不能推断回答成功或失败；修改验收为读取已渲染及持久化 Revision 后，最后一次约 10.6 秒返回 `partial/model`、route=site、5 条 claims、4 条站内引用均 200，recovery=none、attempts=1。生成接口已响应，未再次观察到 5xx；但桌面刷新恢复超时，移动恢复未执行，完整原问题验收仍未通过。两次临时 Session 均删除并确认读取 404，不再增加本窗口模型请求。自定义域从本客户端出现 TLS 名称不匹配，保留校验并通过 Pages 默认域完成咨询；该网络观察不能归因于模型，也不能宣称自定义域已恢复。最新低敏证据见 `.trellis/tasks/archive/2026-11/10-05-public-assistant-usability/generation-verification-2026-11-05.json`，前轮结果继续保留历史时间。
 
 2026-11-05 后续获批目录修复已发布为 `0d6116a1`：Pages `d56fc0ee-646d-4180-b445-60009abf89aa` success，Public `dep-dbm9cc8u01pc738p18kg` live。完整 16 项目录使用 3 组有界本地证据，不触发 embedding/索引同步。原问题只提交 1 次，约 33.0 秒返回 `answered/model`、route=site、6 条 claims、3 条站内引用均 200、recovery=none/attempts=1；用途与公开/登录/案例边界人工核对通过。同一会话桌面和 390px 刷新均恢复原 Revision、保留草稿、输入可用且无横向溢出，未自动重发。临时会话删除后读取 404，批准次数已消费。该验收通过 Pages 默认域且保持 TLS 校验；自定义域 TLS 仍未解决，不覆盖上轮历史失败。模型配置、RAG、Studio、AI 日报、DNS/证书未改，低敏证据见 `.trellis/tasks/archive/2026-11/10-05-public-assistant-usability/catalog-restore-verification-2026-11-05.json`。
 
 2026-11-06 TLS 后续已定位并修复当前本机代理路径：云端域名配置 active，独立 SSL Labs 的四个 IPv4/IPv6 入口均为 A；当前代理传递域名目标时返回 `*.intel.com` 证书，而经可信 DNS 本地解析再连接时返回正确站点证书。集中备份后，从 v2rayN DNS 设置启用代理目标 `UseIPv4`，未改云端 DNS/证书或模型。系统代理下首页/项目页为 200，浏览器确认正确域名证书和 TLS 1.3；健康接口早先异常与超时保留，后续同源请求返回 200/database/modelConfigured=true。本轮模型调用为 0，诊断进程和浏览器已关闭，低敏证据见 `.trellis/tasks/archive/2026-11/10-05-public-assistant-usability/tls-verification-2026-11-06.json`。
+
+2026-11-09 新文本渠道切换：用户指定 `grok-4.7` 为默认，并授权选择该渠道所有模型。仅原子更新 Public 的 base/key/model，旧三项以 CurrentUser DPAPI 加密并验证解密；其余 26 项环境变量摘要一致。环境更新触发 `dep-dbomdarm8hqs73ecknqg` 后，又触发同提交手动部署 `dep-dbomeg49v7es73fo3glg`；后者 live，提交 `67b9d94a` 与前一生产版本的后端、Prisma、锁文件和 Blueprint 一致。环境更新也可能触发部署，不能仅凭分支 autoDeploy=off 判断需要手动部署。
+
+本次单独获批的两篇 Legal RAG 文章比较只提交一次，使用文章现行标题。前两次浏览器准备分别停在健康等待和页面加载，业务请求均为 0；沿用本机代理后提交成功，HTTP 200、完整 SSE，约 33.6 秒返回 `degraded/fallback`、`provider_error/timeout`、最终生成尝试 1 次、重试 0。四条站内引用均 200、390px 无横向溢出、刷新恢复和临时 Session 删除 200/再读 404 通过；模型没有完成比较，不能宣称渠道回答验收通过。单次授权已消费，不自动重发。用户允许该渠道其他模型的选型授权仍有效，访客模型选择器和全目录能力验证未交付；不执行 catalog probe 或测活 prompt。配置变更不会修复独立 Codex 子代理的 `unknown provider`。
+
+2026-11-10 零供应商调用的路由修复已在工作区完成：明确站内文章/项目比较不再仅因“比较”进入 combined，外部及混合范围保留。回归先复现原文章问题的错误路由，再验证中英文边界及两篇来源贯穿本地 Agent 链；这只证明离线路由/证据契约，真实回答超时仍未验收。修复发布及新的单次真实问题尚未执行；不得重用上一条已消耗的授权。用户已要求后续不使用子代理，R4 独立盲测继续保留未完成。
 
 ## Roleplay 角色剧场公开演示
 

@@ -26,8 +26,7 @@ Cloudflare Pages 承载静态站和同源 Functions。浏览器只访问同源 `
 Browser
   -> Cloudflare Pages / Functions
        -> biau-public-assistant-api
-            -> bounded primary + fallback Responses generation chain
-                 -> authenticated fixed-upstream Cloudflare model relay
+            -> approved direct Responses channel (one final-answer attempt)
             -> Tavily discovery + safe original-page fetch
             -> biau-rag-orchestrator -> Supabase pgvector
             -> public assistant PostgreSQL
@@ -96,7 +95,7 @@ DATABASE_URL=<公开助手匿名 session、turn、feedback 和 aggregate 数据�
 
 ASSISTANT_MODEL_BASE_URL=<approved Responses base URL ending in /v1>
 ASSISTANT_MODEL_API_KEY=<server-only channel key>
-ASSISTANT_MODEL_NAME=gpt-6-luna
+ASSISTANT_MODEL_NAME=grok-4.7
 ASSISTANT_MODEL_PROVIDER=openai-compatible
 ASSISTANT_MODEL_PROTOCOL=responses
 ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE=off
@@ -124,15 +123,17 @@ PUBLIC_WEB_FETCH_MAX_PAGES=3
 METRICS_ENABLED=false
 ```
 
-生产公开助手由 Render 服务端直接消费获批的 Responses 兼容渠道。2026-11-05 用户提供新渠道并授权选择其模型，文本生成候选通过现有流式适配器的公开资料问答验证后替换原 CPA 通道。真实 base URL 和 client key 只写入 Render 环境变量及本地加密恢复点，不进入仓库、浏览器变量、健康响应或公开验收记录；访客域名仍只承担站点与公开 API 入口。旧 Cloudflare model relay 代码和变量继续作为历史回滚边界。AI Daily 的 CPA runtime、批准包及功能开关不随公开助手切换。
+生产公开助手由 Render 服务端直接消费获批渠道。2026-11-09 用户指定新渠道及默认模型 `grok-4.7`，本次只更新服务端 base/key/model，保留 Responses 协议；部署和配置核对通过。一次单独获批的真实文章比较在约 33.6 秒后返回 `degraded/fallback`，最终生成尝试 1 次、失败类别 `timeout`，没有自动重试，因此新渠道的完整回答验收尚未通过。真实 base URL 和 client key 只写入 Render 环境变量及本地加密恢复点，不进入仓库、浏览器变量、健康响应或公开验收记录；访客域名仍只承担站点与公开 API 入口。旧 Cloudflare model relay 代码和变量继续作为历史回滚边界。AI Daily 的 CPA runtime、批准包及功能开关不随公开助手切换。
+
+2026-11-10 的离线排查确认：旧规则把“比较”直接当作外部检索需求，导致明确比较本站两篇文章也进入 combined。当前工作区修复让明确站内多文章/项目比较直接走 site，同时保留外部对照、混合范围及显式模式覆盖；两篇文章的本地端到端夹具保留来源、只模拟一次回答、无 Planner/网页搜索/供应商调用。该修复尚未发布，也不能证明上游超时已解决；默认模型、Responses 协议、20 秒回答空闲时限、45 秒总预算和一次最终生成尝试保持原配置。下一次真实请求仍需单独批准。
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 
-`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用获批的真实业务问题确认当前渠道支持 JSON Schema 后，才可改为 `json-schema`。本次验证的是现有提示词约束的 JSON 和 Responses 流式解码，不扩大为 strict schema 或其他协议；健康检查与确定性测试不探测模型目录或调用模型。
+`ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用获批的真实业务问题确认当前渠道支持 JSON Schema 后，才可改为 `json-schema`。旧渠道的提示词 JSON 和流式验证不能转移为新渠道的兼容性证明；本次超时也不能证明渠道不支持 Responses。健康检查与确定性测试不探测模型目录或调用模型。
 
-当前已交付配置只启用精确模型 `gpt-6-luna`，模型 ID 按渠道目录原样传递。`PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` 保证一次真实问题的失败生成不会被自动重放；Planner 只使用主通道，Planner 失败后使用确定性 Planner。`ASSISTANT_MODEL_FALLBACK_*` 的生产模型列表仍为空，不将目录中其他模型自动加入同一次请求。候选验证、配置交付和部署后的真实业务验收分别留证；模型目录或 health 成功不能代替完整回答验收。
+当前已交付配置只启用精确模型 `grok-4.7`，模型 ID 按用户指定值原样传递。`PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1` 保证一次真实问题的失败生成不会被自动重放；Planner 只使用主通道，Planner 失败后使用确定性 Planner。`ASSISTANT_MODEL_FALLBACK_*` 的生产模型列表仍为空，不将目录中其他模型自动加入同一次请求。候选验证、配置交付和部署后的真实业务验收分别留证；模型目录或 health 成功不能代替完整回答验收。
 
-未来若启用备用链，先确认用户授权覆盖新的模型、failure domain 及验证范围，再填写完整的 `ASSISTANT_MODEL_FALLBACK_*`；这些值默认留空，不属于当前生产必填项。用户允许选择渠道中的所有模型，不等于需要把全部模型配置为自动重试链。
+用户已允许选择新渠道中的所有模型；这一授权持续有效，无需逐个重新取得选型许可。当前应用由服务端配置精确模型，没有访客模型选择字段或选择器；其他模型可按用途配置，但仍需核对接口、流式、结构化输出和视觉能力，不能宣称全目录已经可用。未来若启用备用链，检查现有授权是否覆盖 failure domain、重试预算及真实验证范围，再填写完整的 `ASSISTANT_MODEL_FALLBACK_*`；这些值默认留空，不属于当前生产必填项。用户允许选择渠道中的所有模型，不等于需要把全部模型配置为自动重试链。
 
 图片问题最多携带一张浏览器端压缩后的 JPEG、PNG 或 WebP。Cloudflare 只对 `/chat/public`、`/chat/public/stream` 和固定模型 relay 放宽到 512 KB；历史、反馈和分支接口仍保持 32 KB。Render 校验 data URL、Base64、文件魔数和 256 KB 解码后上限，只用 SHA-256 digest 参与请求幂等，不保存原图。当前没有经过业务任务验证的视觉模型，因此 `ASSISTANT_VISION_MODEL` 留空：图片问题会准确提示图片理解暂不可用，不会让文本模型猜测图片内容。未来只有在一个已配置备用渠道中的视觉模型通过获批图片任务后才启用该变量。
 
@@ -297,7 +298,7 @@ npm run build
 
 上述 deterministic checks 不得访问真实模型、搜索、embedding、reranker 或向量数据库供应商。
 
-公开助手可靠性版本发布时只部署 `biau-public-assistant-api` 与匹配提交的 Cloudflare 静态站，不重启 Content Studio 或 RAG Orchestrator。先在 Render 原子更新 CPA base/key/model/provider，再手动部署 Public API；自动部署保持关闭，避免代码先于服务端凭据切换。部署后先请求 `/health`，这一动作不得调用模型；随后最多执行一条用户明确批准的真实业务问题，检查公开安全元数据并删除该临时匿名会话。结构化输出与生产 Prometheus scrape 仍分别受上述人工 gate 约束。
+公开助手可靠性版本发布时只部署 `biau-public-assistant-api` 与匹配提交的 Cloudflare 静态站，不重启 Content Studio 或 RAG Orchestrator。纯渠道切换先在 Render 原子更新 base/key/model，观察环境更新是否已经触发部署，仅在未触发时手动部署；分支自动部署关闭不代表环境更新不会部署。2026-11-09 环境更新已触发一次部署，随后误触发一次同提交手动部署，两次均完成，最终版本为 `67b9d94a`，其后端、Prisma、锁文件和 Blueprint 与前一生产提交一致；该重复操作不应复现。部署后先请求 `/health`，这一动作不得调用模型；随后最多执行一条用户明确批准的真实业务问题，检查公开安全元数据并删除该临时匿名会话。结构化输出与生产 Prometheus scrape 仍分别受上述人工 gate 约束。
 
 ## 回滚
 

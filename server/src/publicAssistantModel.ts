@@ -309,7 +309,23 @@ function isExplicitSiteQuestion(question: string) {
 }
 
 function needsExternalComparison(question: string) {
-  return /外部|站外|全网|公开网页|external|public web|比较|对比|相比|compare|versus|\bvs\b/iu.test(question)
+  if (/外部|站外|全网|公开网页|external|public web/iu.test(question)) return true
+  if (!/比较|对比|相比|compare|versus|\bvs\b/iu.test(question)) return false
+
+  // A comparison of several site documents does not itself request web research.
+  // Remove paired titles so their wording cannot become a comparison operator.
+  const scope = question.replace(/《[^》]+》\s*(?:和|与|及|、)\s*《[^》]+》/gu, '').replace(/\s+/gu, ' ').trim()
+  const content = scope.match(/(?:本站|站内|本网站|这个网站|当前网站|(?:这个|当前|本)站点|站点(?:里|内|中))(?:的)?\s*(?:这|那)?[两二三四五六七八九十\d]+(?:篇|个|份|项)(?:文章|博客|项目|案例)/u)
+    ?? scope.match(/\b(?:(?:the|these|those)\s+)?(?:two|three|four|multiple|\d+)\s+(?:articles|blog posts|posts|projects|case studies)\s+(?:on|from)\s+(?:this|the|our)\s+(?:site|website)\b/iu)
+  if (!content) return true
+
+  const before = scope.slice(0, content.index).trimEnd()
+  const after = scope.slice((content.index ?? 0) + content[0].length).trimStart()
+    .replace(/^[,.]?\s*and\s+(?:cite|explain|summarize|distinguish|list)\b/iu, '')
+  // Keep mixed or ambiguous comparisons with a separate counterpart on the
+  // existing planner path, e.g. "本站两篇文章与 ChatGPT" / "ChatGPT versus ...".
+  return /(?:和|与|跟|及|、|相比|\b(?:and|with|to|versus|vs))\s*$/iu.test(before)
+    || /^(?:[，,]\s*)?(?:并|再|也)?\s*(?:和|与|跟|及|、|\b(?:and|with|to|versus|vs)\b)/iu.test(after)
 }
 
 export function shouldUseDirectPublicAssistantRoute(request: Pick<PublicAssistantRequest, 'mode' | 'question'>) {

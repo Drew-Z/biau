@@ -18,12 +18,12 @@
 - `auto` is the default product mode. The compact scope selector exposes `site` and `web` only as explicit user overrides when automatic tool selection is unsuitable; they must not return as equal-weight primary navigation. Combined site/web research runs concurrently.
 - Evidence/query rewrite recovery is bounded to one retry. `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS` bounds final-answer generation to 1-3 attempts across the whole configured channel chain. Attempts, abortable 200/400 ms backoff, and per-attempt allowance share one absolute request deadline; an independent fallback chain reserves minimum future-attempt windows without extending that deadline. Production fixes this value at 1 so a failed CPA task is not replayed automatically. Cancellation stops active work and all future attempts.
 - Generation channel order is passively adaptive per service process: the configured quality order is the cold-start baseline, while real answer attempts build bounded, time-decayed success/failure reputation and first-activity latency. A recently stable channel stays preferred instead of yielding immediately to a repeatedly failing higher-priority channel. Failures still open a bounded in-memory circuit; cooldown expiry grants one real request a half-open lease while concurrent requests continue through known healthy channels. The request freezes its channel order at start so concurrent outcomes cannot reshuffle an active attempt chain. Opening the assistant, `/health`, and ranking functions never call a model or enumerate a provider catalog. Process restarts clear this ephemeral health state, and stale reputation decays back toward configured quality order.
-- The 2026-11-05 authorized generation cutover selects the exact `gpt-6-luna` ID on the approved Responses-compatible channel. Other catalog models do not enter an automatic fallback chain. The AI Daily CPA runtime is independent and is not changed by this public-assistant cutover.
+- The 2026-11-09 authorized generation cutover selects the exact `grok-4.7` ID with the existing Responses adapter. Deployment/configuration passed, but the one approved comparison returned `degraded/fallback` with `timeout`; compatibility and complete-answer acceptance remain unproven. The owner allows selecting any model on this channel; the current public UI has no model selector. Other catalog models do not enter an automatic fallback chain. The AI Daily CPA runtime is independent and is not changed by this public-assistant cutover.
 - A primary channel configured through `ASSISTANT_MODEL_API_KEY` must also provide an explicit model base URL. Missing base configuration is `not_configured`; it must never silently inherit the public OpenAI endpoint. The standard OpenAI base is retained only for the legacy `OPENAI_API_KEY` contract when no explicit assistant key is present.
 - When every configured channel is open or already leased for recovery, routing returns no provider candidate and the agent emits its bounded degraded response immediately. It does not deliberately call a channel that is still inside its cooldown.
 - Primary configuration/authentication/endpoint, timeout/network, 408/425/429/5xx, empty, or invalid failures may advance to an independent fallback. Permanent request errors, policy refusal, and cancellation never switch channels. Multiple fallback models share one failure domain: authentication or network failure stops that provider, while model-specific endpoint/rate-limit/upstream/empty/invalid failure may advance to the next configured fallback model.
 - `PUBLIC_ASSISTANT_ANSWER_TIMEOUT_MS` is the answer-stream idle timeout and resets on provider activity. It must not exceed the absolute `PUBLIC_ASSISTANT_REQUEST_TIMEOUT_MS` run budget.
-- A deterministic plan is allowed only when structured planning fails. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.
+- Deterministic plans cover explicit mode overrides and high-confidence direct/site scope before inference, plus structured-planner failure. Weak or unverifiable evidence must end as a truthful partial, uncertain, unavailable, or blocked result.
 
 ## Evidence And Web Research
 
@@ -413,6 +413,12 @@ Correct: preserve one authenticated relay-boundary marker, one low-cardinality o
   model planner unless the visitor requests outside research/comparison. Mode
   overrides remain authoritative. “现在” alone does not turn site facts into web
   research. Keep greeting/creative tasks on their existing direct path.
+- Comparing explicitly scoped multiple site articles/projects remains `site`;
+  comparison words alone do not request outside evidence. Paired article titles
+  are ignored only for scope detection, while the original question still enters
+  retrieval and generation. An outside-research request or separate comparison
+  counterpart keeps the planner/combined fallback path. Ambiguous wording keeps
+  existing planning behavior rather than assuming all comparisons are site-only.
 - Catalog queries prioritize distinct project records over multiple related blog
   posts. Local chunk selection reserves one slot per selected document so a long
   document cannot silently displace the other project citations.
@@ -430,8 +436,11 @@ Correct: preserve one authenticated relay-boundary marker, one low-cardinality o
 - `node --import tsx server/scripts/public-assistant-consultation-check.ts` uses
   the actual public knowledge files and a disabled model fixture. It covers the
   reported website-demo question, configured/unconfigured planner isolation,
-  external comparisons, explicit modes, project/chunk diversity, one answer
-  attempt, source retention and zero external calls.
+  Chinese/English site comparisons, external and mixed comparisons, explicit
+  modes, project/chunk diversity, one answer attempt and zero external calls.
+  Its in-memory Responses comparison fixture must retain both requested article
+  sources through real local retrieval, generation input and public projection;
+  no planner or web-research call is allowed for that site comparison.
 - `assistant:public-model-check` runs this regression after the model contract
   check in a separate process, keeping fixture fetch/env changes isolated. Both
   checks must succeed; do not leave the reported-question regression manual-only.
@@ -521,7 +530,7 @@ These checks use local fixtures only. They must not probe a live model, search, 
 
 ### 3. Contracts
 
-- Production configures `ASSISTANT_MODEL_PROTOCOL=responses`, `ASSISTANT_MODEL_PROVIDER=openai-compatible`, the exact `gpt-6-luna` model ID, an explicit server-only `/v1` base, and a server-only client key.
+- Production configures `ASSISTANT_MODEL_PROTOCOL=responses`, `ASSISTANT_MODEL_PROVIDER=openai-compatible`, the exact `grok-4.7` model ID, an explicit server-only `/v1` base, and a server-only client key.
 - The base and key remain `sync: false` in `render.yaml`; no real gateway URL or key is committed or exposed through `VITE_*`, `/health`, recovery metadata, or acceptance records.
 - Production configures `PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1`. A failed final-answer generation therefore reaches the channel once and returns a truthful degraded result without backoff or replay.
 - The default remains `3` for compatibility, but any deployment that enables more than one attempt must do so explicitly and must still obey the shared absolute deadline.
@@ -561,6 +570,6 @@ PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=3
 Correct:
 
 ```text
-ASSISTANT_MODEL_NAME=gpt-6-luna
+ASSISTANT_MODEL_NAME=grok-4.7
 PUBLIC_ASSISTANT_MODEL_MAX_ATTEMPTS=1
 ```

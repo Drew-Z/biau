@@ -22,7 +22,7 @@ services:
       - key: ASSISTANT_MODEL_API_KEY
         sync: false
       - key: ASSISTANT_MODEL_NAME
-        value: gpt-6-luna
+        value: grok-4.7
       - key: ASSISTANT_MODEL_PROVIDER
         value: openai-compatible
       - key: ASSISTANT_MODEL_PROTOCOL
