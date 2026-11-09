@@ -198,6 +198,12 @@ npm.cmd run reliability:check -- --strict
 
 套件默认在临时目录生成各项状态投影并在退出时清理，不写 `public/status/`。只有显式 `--write-status` 的发布流程才会更新公开快照。
 
+报告同时给出执行结果、`coverage` 检查计数、`coverageStatus` 和 `evidenceSource`。全部 `unchecked/planned` 的步骤是 `skipped`，历史快照不算本次覆盖；缺失、损坏或空报告继续失败。`summary.coverage` 统计完整、部分、无覆盖及未知的步骤数。顶层成功只表示没有失败，不代表所有业务已验收。
+
+Legal RAG 默认只读，套件固定传入 `--read-only`，仅 GET health，保护业务保持 `unchecked`；`not-checked` 不代表需要凭据或业务已开放。CI 只绑定 repository variable `LEGAL_RAG_API_BASE_URL`，不注入登录凭据或业务开关。独立 `--business-checks` 才进入原业务流程，且不能与只读选项同时使用。模式与回滚说明见 [站点监察](./site-monitoring.md)。
+
+复验应保留原失败、恢复过程和观测时间。一次云端复验仍有 504/超时，应如实记录外部可达性问题，不通过反复重跑或发布旧快照把结果变绿。
+
 现有 Reliability Check 工作流把本次汇总 JSON 和逐链接低敏诊断上传至 `reliability-status` artifact，成功或失败均上传，保留 7 天；不自动提交回 `main`。本地需要保留相同诊断时，显式传入系统临时目录：
 
 ```powershell

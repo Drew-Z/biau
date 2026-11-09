@@ -140,10 +140,16 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
   - `strict: boolean`
   - `timeoutMs: number`
   - `stepTimeoutMs: number`
-  - `summary: { total, passed, failed, skipped, durationMs }`
-  - `steps: Array<{ id, label, command, status, durationMs, exitCode, outputPath?, summary, issues }>`
+  - `summary: { total, passed, failed, skipped, durationMs, coverage: { complete, partial, none, unknown } }`; coverage totals count steps.
+  - `steps: Array<{ id, label, command, status, durationMs, exitCode, outputPath?, summary, issues, coverage, coverageStatus, evidenceSource, skipReason? }>`
+  - `coverage: null | { total, online, degraded, offline, unchecked, planned }`; counts current report checks, or current `targets` for site-status (never merged historical projects).
+  - `coverageStatus: complete | partial | none | unknown`; `evidenceSource: current | previous | none`.
+  - `skipReason: requested | missing-env | no-checks-run`. Requested/missing-env skips have null current coverage; readable previous evidence is labeled preserved, never counted as current.
 - Allowed statuses are `online`, `degraded`, `offline`, and `unchecked`. Static data may still use `planned`.
 - Reliability suite step statuses are `passed`, `failed`, and `skipped`.
+- Nonempty valid reports with only unchecked/planned checks are skipped/no-checks-run. Some checked items produce partial coverage; all checked items produce complete coverage. Coverage measures observation, not success: offline counts as checked but fails the step.
+- Process failure/timeout, report ok=false or offline takes precedence over no coverage. Missing/empty/malformed reports, unknown statuses, non-boolean top-level ok or monitor checks[].ok fail with unknown coverage. Never substitute seeded historical success for a failed current check.
+- Top-level ok remains no failed steps; an all-skipped suite can exit 0 but must show zero passed and no coverage.
 - A synthetic script must update only the check ids it can actually verify. Do not promote adjacent human gates such as APK release, production registration, or credential publication from `planned` to `online`.
 - Evidence freshness is about evidence quality, not a production SLA. If a
   merged synthetic check was previously `online` but its checked time is stale
@@ -155,6 +161,10 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
   scheduled checks may verify low-sensitive health endpoints, but must not post
   prompt-like payloads to chat/model endpoints unless an explicit task approval,
   CLI flag, or environment gate is present.
+- Legal RAG specifically defaults to read-only and the suite always passes `--read-only`: only GET `/api/health`, no redirects, auth status, login, seed, query, review or quality. Credentials/auth-disabled/already-authenticated state never upgrades this mode. Only independent CLI `--business-checks` opts into the old business flow; both flags together fail before network access.
+- Legal reports add `checkMode: read-only | business`. Read-only health success uses `demoAccessStatus=not-checked`; health failure retains offline/degraded. All three protected checks must be present and unchecked, never open-demo. Legacy snapshots without checkMode stay compatible.
+- Legal health JSON is bounded to 16 KiB; headers and full body share the existing deadline, body is cancelled on rejection, and invalid JSON/oversize/timeout use fixed low-sensitive categories. No additional retry or timeout extension.
+- Reliability CI binds only the repository variable `LEGAL_RAG_API_BASE_URL`, with no business credentials. Remove the new variable/binding before rolling back to an older script whose default allowed business calls.
 - If a live payload contains a business gate such as `registrationEnabled`,
   `demoEnabled`, `modelConfigured`, or `downloadApproved`, distinguish payload
   shape from gate state. HTTP 200 plus a well-formed boolean proves the endpoint
@@ -231,6 +241,7 @@ The public-assistant metrics fixture must assert metric names, extended buckets,
 - Run `npm.cmd run site:status:publish` only when the merged evidence is intentionally ready to update `/status`; plain `site:status` must leave the snapshot hash unchanged.
 - Run `npm.cmd run verification:diagnostics-check` and assert nested error-code classification, HTTP 403/404/500 behavior, safe public summaries, path rejection, atomic temp output, and the local UI network guard without network access.
 - Run `npm.cmd run reliability:report-check`: a loopback HTTP fixture must prove success, HTTP failure, crash-before-report, strict exit codes, parseable current JSON, zero model calls, and byte-identical public snapshots.
+- That fixture also proves zero/partial/full coverage, planned checks, current vs preserved evidence, missing/invalid reports, boolean validation and failure precedence over no checks. Run `npm.cmd run legal-rag:read-only-check` for real CLI request recording, credentials/auth-state isolation, bounded health responses, conflicting modes and explicit business success/failure against loopback only.
 - Public assistant health GET allows at most 5 attempts with 15-second gaps. Preserve the original HTTP/timeout observation on recovery; mark recovered health `degraded`, and retain the statement that live chat was not tested. Persistent failure remains `offline` / strict exit 1. Never retry 401/403/404 as a warm-up, send prompts, or classify a recovered request as proof of a cold start. The suite defaults to a 240-second per-step budget to include 7 route checks plus the bounded health window; fixture-only delay overrides must stay bounded. `main-site:health-check` covers immediate success, timeout/503 recovery, malformed JSON, persistent failure and authorization rejection, and the real suite fixture covers recovered evidence without publishing snapshots.
 - Hash `public/status/*` before and after default synthetic/reliability commands and assert no file changes. Test one explicit write in a `biau-reliability-*` temp directory and confirm cleanup.
 - Run `npm.cmd run status:contract` after changing `src/data/statusTargets.ts`

@@ -308,7 +308,7 @@ export const reliabilityProjects: ReliabilityProject[] = [
     ],
     nextActions: [
       '线上工作台标题、favicon、登录面板和侧边栏已对齐 BIAU Port / 泊岸；后续状态检查继续只验证公开安全能力。',
-      '准备可回收低权限 demo 凭据后，通过 `LEGAL_RAG_SYNTHETIC_EMAIL` / `LEGAL_RAG_SYNTHETIC_PASSWORD` 重新运行 credentialed `legal-rag:synthetic`，确认问答、合同审查和质量面板是否为 online。',
+      '业务验收单独批准且低权限 demo 凭据就绪后，通过 `LEGAL_RAG_SYNTHETIC_EMAIL` / `LEGAL_RAG_SYNTHETIC_PASSWORD` 运行 `legal-rag:synthetic -- --business-checks`；默认命令只检查 health，问答、合同审查和质量面板仍为未检查。',
       '如后续接入 Prometheus、Grafana 或 LLM tracing，只公开低敏聚合状态，不公开模型渠道、后台链接或真实用户数据。',
     ],
   },

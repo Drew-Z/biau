@@ -127,6 +127,7 @@
     "erp:synthetic": "node scripts/check-erp-synthetic.mjs",
     "erp:synthetic:publish": "npm run erp:synthetic -- --write-status",
     "legal-rag:synthetic": "node scripts/check-legal-rag-synthetic.mjs",
+    "legal-rag:read-only-check": "node scripts/check-legal-rag-read-only.mjs",
     "legal-rag:synthetic:publish": "npm run legal-rag:synthetic -- --write-status",
     "main-site:synthetic": "node scripts/check-main-site-synthetic.mjs",
     "main-site:health-check": "node scripts/check-main-site-health.mjs",

@@ -93,6 +93,34 @@ npm.cmd run reliability:check -- --skip site-monitor
 - 临时汇总会先复制已有公开快照；缺少环境变量而跳过的项目继续使用已有证据参与 `site:status` 聚合。
 - 临时目录始终在结束时清理，套件报告不保存环境变量、API base URL、token、原始 stdout/stderr、临时绝对路径或外部平台后台链接。
 
+套件把执行结果与检查覆盖分别记录：
+
+| 字段 | 含义 |
+|---|---|
+| `status` | `passed`、`failed` 或 `skipped`；全 `unchecked/planned` 为 `skipped` |
+| `coverage` | 本次检查项的 `total/online/degraded/offline/unchecked/planned`；没有合法当前报告时为 `null` |
+| `coverageStatus` | `complete` 全部已检查、`partial` 部分已检查、`none` 未检查、`unknown` 当前报告缺失或损坏 |
+| `evidenceSource` | `current` 当前报告、`previous` 保留的历史报告、`none` 无可用报告 |
+| `skipReason` | `requested` 手动跳过、`missing-env` 缺配置、`no-checks-run` 当前报告全部未检查 |
+
+`summary.coverage` 按步骤统计四种覆盖程度。历史报告可以参与临时页面投影，但不计入本次覆盖。`site-status` 只统计本次 `targets`，不重复统计合并的历史项目。子进程失败、超时、`ok=false`、`offline` 或空/损坏报告仍计为失败；顶层 `ok=true` 仅表示没有失败，全跳过也可以返回 0，不能据此宣称全部业务通过。
+
+### Legal RAG 只读与业务验收
+
+```powershell
+npm.cmd run legal-rag:synthetic
+npm.cmd run legal-rag:synthetic -- --read-only
+npm.cmd run legal-rag:read-only-check
+```
+
+前两条默认只 GET `/api/health`，不跟随跳转、不请求 auth status，也不登录、导入、问答、审查或获取质量报告。已有凭据、关闭鉴权和已登录均不会改变该边界。健康 JSON 正文上限 16 KiB，响应头与正文共用请求截止时间，没有新增重试。
+
+新报告包含 `checkMode=read-only`；健康通过时 `demoAccessStatus=not-checked`，另外三个保护检查保持 `unchecked`。健康失败仍如实报告 `offline/degraded`，不提升业务状态。专项命令只访问本地夹具，包含显式业务模式的成功/失败回归，不调用真实模型。
+
+独立业务验收在确认目标、凭据和真实调用范围后，显式使用 `npm.cmd run legal-rag:synthetic -- --business-checks`，报告为 `checkMode=business`。它沿用原鉴权、seed、query、review、quality 流程；不能与 `--read-only` 同用。`reliability:check` 始终向 Legal RAG 传递 `--read-only`，没有环境变量可以升级该模式。
+
+Reliability Check 仅给套件步骤绑定 repository variable `LEGAL_RAG_API_BASE_URL`，不注入业务凭据。变量应使用既有公开 health 地址的 API origin，未配置时 Legal 步骤明确跳过。回滚到旧业务默认脚本前，先移除本次变量/绑定，避免新配置触发旧行为。
+
 只有确认本次证据需要成为公开状态时，才显式发布：
 
 ```powershell

@@ -7,6 +7,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_STATUS_PATH = 'public/status/legal-rag-synthetic.json'
 const existingOutputPath = resolve(repoRoot, DEFAULT_STATUS_PATH)
 const DEFAULT_TIMEOUT_MS = 15_000
+const HEALTH_MAX_BYTES = 16 * 1024
 const DEFAULT_PROJECT_ID = 'project_default'
 const CHECK_IDS = [
   'legal-rag-health',
@@ -15,6 +16,7 @@ const CHECK_IDS = [
   'legal-rag-observability',
 ]
 const DEMO_ACCESS_STATUS = {
+  NOT_CHECKED: 'not-checked',
   OPEN_DEMO: 'open-demo',
   CREDENTIAL_REQUIRED: 'credential-required',
   BLOCKED_BY_LOGIN: 'blocked-by-login',
@@ -36,11 +38,16 @@ function parseArgs(argv) {
     forceUnconfigured: process.env.LEGAL_RAG_SYNTHETIC_FORCE_UNCONFIGURED === '1',
     strict: process.env.LEGAL_RAG_SYNTHETIC_STRICT === '1',
     timeoutMs: Number(process.env.LEGAL_RAG_SYNTHETIC_TIMEOUT_MS || DEFAULT_TIMEOUT_MS),
+    checkMode: 'read-only',
   }
 
   const readValue = (index) => argv[index + 1] ?? ''
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index]
+    if (item === '--business-checks') {
+      args.checkMode = 'business'
+      continue
+    }
     if (item === '--strict') {
       args.strict = true
       continue
@@ -59,6 +66,7 @@ function parseArgs(argv) {
     }
   }
 
+  if (argv.includes('--read-only') && argv.includes('--business-checks')) throw new Error('conflicting Legal RAG check modes')
   if (!Number.isFinite(args.timeoutMs) || args.timeoutMs <= 0) args.timeoutMs = DEFAULT_TIMEOUT_MS
   return args
 }
@@ -110,7 +118,9 @@ function classifyFetchError(error) {
         ? (error.cause.code ?? '')
         : ''
 
-  if (error.name === 'AbortError' || code === 'ETIMEDOUT') return 'timeout'
+  if (error.name === 'AbortError' || error.name === 'TimeoutError' || code === 'ETIMEDOUT') return 'timeout'
+  if (code === 'HEALTH_BODY_TOO_LARGE') return 'response_too_large'
+  if (error instanceof SyntaxError) return 'invalid_json'
   if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'dns_error'
   if (
     code === 'CERT_HAS_EXPIRED' ||
@@ -124,7 +134,28 @@ function classifyFetchError(error) {
   return 'network_error'
 }
 
-async function requestJson(baseUrl, path, options, timeoutMs, cookieJar) {
+async function readHealthJson(response) {
+  const reader = response.body?.getReader()
+  if (!reader) throw new SyntaxError('empty health response')
+  try {
+    if (Number(response.headers.get('content-length')) > HEALTH_MAX_BYTES) throw Object.assign(new Error('health response too large'), { code: 'HEALTH_BODY_TOO_LARGE' })
+    let length = 0
+    const chunks = []
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      length += value.byteLength
+      if (length > HEALTH_MAX_BYTES) throw Object.assign(new Error('health response too large'), { code: 'HEALTH_BODY_TOO_LARGE' })
+      chunks.push(Buffer.from(value))
+    }
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  } finally {
+    await reader.cancel().catch(() => {})
+    reader.releaseLock()
+  }
+}
+
+async function requestJson(baseUrl, path, options, timeoutMs, cookieJar, healthOnly = false) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   const startedAt = Date.now()
@@ -136,14 +167,17 @@ async function requestJson(baseUrl, path, options, timeoutMs, cookieJar) {
     ...(options?.headers ?? {}),
   }
 
+  let status = 0
   try {
     const response = await fetch(`${baseUrl}${path}`, {
       ...options,
       headers,
       signal: controller.signal,
+      ...(healthOnly ? { redirect: 'manual' } : {}),
     })
+    status = response.status
     storeCookies(response, cookieJar)
-    const json = await response.json().catch(() => null)
+    const json = healthOnly ? await readHealthJson(response) : await response.json().catch(() => null)
     return {
       ok: response.ok,
       status: response.status,
@@ -155,11 +189,11 @@ async function requestJson(baseUrl, path, options, timeoutMs, cookieJar) {
   } catch (error) {
     return {
       ok: false,
-      status: 0,
+      status,
       durationMs: Date.now() - startedAt,
       json: null,
-      error: error instanceof Error ? error.message : String(error),
-      errorKind: classifyFetchError(error),
+      error: controller.signal.aborted ? 'timeout' : classifyFetchError(error),
+      errorKind: controller.signal.aborted ? 'timeout' : classifyFetchError(error),
     }
   } finally {
     clearTimeout(timeout)
@@ -194,6 +228,8 @@ function checkFromResponse(id, response, ok, summary, fallbackIssue = '') {
 
 function demoAccessSummary(status) {
   switch (status) {
+    case DEMO_ACCESS_STATUS.NOT_CHECKED:
+      return 'Protected demo flows were not checked; this mode only permits public API health.'
     case DEMO_ACCESS_STATUS.OPEN_DEMO:
       return 'Protected demo flow is reachable and the latest synthetic checks confirmed the public-safe flow.'
     case DEMO_ACCESS_STATUS.CREDENTIAL_REQUIRED:
@@ -264,6 +300,7 @@ async function main() {
   const projectId = String(process.env.LEGAL_RAG_SYNTHETIC_PROJECT_ID || DEFAULT_PROJECT_ID).trim() || DEFAULT_PROJECT_ID
   const hasCredentials = Boolean(email && password)
   const checkedAt = new Date().toISOString()
+  const reportBase = { checkedAt, hasCredentials, checkMode: args.checkMode }
   const checks = []
   const cookieJar = new Map()
 
@@ -278,17 +315,16 @@ async function main() {
 
     checks.push(...CHECK_IDS.map((id) => emptyCheck(id, 'LEGAL_RAG_API_BASE_URL is not configured')))
     await writeReport(statusOutput, {
-      checkedAt,
+      ...reportBase,
       apiBaseConfigured: false,
-      hasCredentials,
-      demoAccessStatus: DEMO_ACCESS_STATUS.OFFLINE,
+      demoAccessStatus: args.checkMode === 'read-only' ? DEMO_ACCESS_STATUS.NOT_CHECKED : DEMO_ACCESS_STATUS.OFFLINE,
       checks,
     })
     console.log('Legal RAG synthetic report generated without API base URL; all live checks are unchecked.')
     return
   }
 
-  const health = await requestJson(baseUrl, '/api/health', {}, args.timeoutMs, cookieJar)
+  const health = await requestJson(baseUrl, '/api/health', {}, args.timeoutMs, cookieJar, true)
   const healthOk = health.ok && health.json?.ok === true
   checks.push(
     checkFromResponse(
@@ -305,14 +341,25 @@ async function main() {
       emptyCheck('legal-rag-observability', 'API health did not pass; quality report checks were skipped'),
     )
     await writeReport(statusOutput, {
-      checkedAt,
+      ...reportBase,
       apiBaseConfigured: true,
-      hasCredentials,
       demoAccessStatus: statusFromResponse(health, false) === 'offline' ? DEMO_ACCESS_STATUS.OFFLINE : DEMO_ACCESS_STATUS.DEGRADED,
       checks,
     })
     console.log('Legal RAG API health did not pass; protected checks skipped.')
     if (args.strict && checks.some((check) => check.status === 'offline')) process.exitCode = 1
+    return
+  }
+
+  if (args.checkMode === 'read-only') {
+    checks.push(...CHECK_IDS.slice(1).map((id) => emptyCheck(id, 'Read-only mode; protected demo flow was not checked')))
+    await writeReport(statusOutput, {
+      ...reportBase,
+      apiBaseConfigured: true,
+      demoAccessStatus: DEMO_ACCESS_STATUS.NOT_CHECKED,
+      checks,
+    })
+    console.log('Legal RAG public health checked in read-only mode; protected checks were not run.')
     return
   }
 
@@ -327,9 +374,8 @@ async function main() {
       emptyCheck('legal-rag-observability', 'Auth status did not confirm the demo gate; quality report checks were skipped'),
     )
     await writeReport(statusOutput, {
-      checkedAt,
+      ...reportBase,
       apiBaseConfigured: true,
-      hasCredentials,
       demoAccessStatus: DEMO_ACCESS_STATUS.DEGRADED,
       checks,
     })
@@ -347,9 +393,8 @@ async function main() {
       emptyCheck('legal-rag-observability', 'Auth is enabled; credentials are required for quality report checks'),
     )
     await writeReport(statusOutput, {
-      checkedAt,
+      ...reportBase,
       apiBaseConfigured: true,
-      hasCredentials,
       demoAccessStatus: DEMO_ACCESS_STATUS.CREDENTIAL_REQUIRED,
       checks,
     })
@@ -378,9 +423,8 @@ async function main() {
         { ...failed, id: 'legal-rag-observability' },
       )
       await writeReport(statusOutput, {
-        checkedAt,
+        ...reportBase,
         apiBaseConfigured: true,
-        hasCredentials,
         demoAccessStatus: DEMO_ACCESS_STATUS.BLOCKED_BY_LOGIN,
         checks,
       })
@@ -472,7 +516,7 @@ async function main() {
   const demoAccessStatus = checks.every((check) => check.status === 'online')
     ? DEMO_ACCESS_STATUS.OPEN_DEMO
     : DEMO_ACCESS_STATUS.DEGRADED
-  await writeReport(statusOutput, { checkedAt, apiBaseConfigured: true, hasCredentials, demoAccessStatus, checks })
+  await writeReport(statusOutput, { ...reportBase, apiBaseConfigured: true, demoAccessStatus, checks })
   console.log(
     `Legal RAG synthetic report generated: online=${checks.filter((check) => check.status === 'online').length} unchecked=${checks.filter((check) => check.status === 'unchecked').length} offline=${checks.filter((check) => check.status === 'offline').length}`,
   )
@@ -485,6 +529,7 @@ async function writeReport(statusOutput, report) {
     checkedAt: report.checkedAt,
     apiBaseConfigured: report.apiBaseConfigured,
     hasCredentials: report.hasCredentials,
+    checkMode: report.checkMode,
     demoAccessStatus: report.demoAccessStatus,
     demoAccessSummary: demoAccessSummary(report.demoAccessStatus),
     ok: report.checks.every((check) => check.status !== 'offline'),
@@ -494,6 +539,6 @@ async function writeReport(statusOutput, report) {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : String(error))
+  console.error(error instanceof Error && error.message === 'conflicting Legal RAG check modes' ? error.message : 'Legal RAG synthetic could not complete')
   process.exitCode = 1
 })

@@ -33,6 +33,7 @@ const steps = [
     id: 'legal-rag',
     label: 'Legal RAG synthetic',
     script: 'legal-rag:synthetic',
+    extraArgs: ['--read-only'],
     supportsStrict: true,
     requiredEnv: ['LEGAL_RAG_API_BASE_URL'],
     outputPath: 'public/status/legal-rag-synthetic.json',
@@ -270,7 +271,7 @@ function runCommand(spawnArgs, timeoutMs) {
 }
 
 function isRecord(value) {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function sanitizeIssue(value) {
@@ -283,14 +284,38 @@ function sanitizeIssue(value) {
 }
 
 function countStatuses(checks) {
-  const summary = { total: 0, online: 0, degraded: 0, offline: 0, unchecked: 0, other: 0 }
+  if (!Array.isArray(checks) || checks.length === 0) return null
+  const summary = { total: checks.length, online: 0, degraded: 0, offline: 0, unchecked: 0, planned: 0 }
   for (const check of checks) {
-    summary.total += 1
-    const status = isRecord(check) && typeof check.status === 'string' ? check.status : 'other'
-    if (status in summary) summary[status] += 1
-    else summary.other += 1
+    if (!isRecord(check) || !['online', 'degraded', 'offline', 'unchecked', 'planned'].includes(check.status)) return null
+    summary[check.status] += 1
   }
   return summary
+}
+
+function invalidReport(issue, evidenceSource = 'current') {
+  return { readable: false, ok: false, coverage: null, coverageStatus: 'unknown', evidenceSource, summary: issue, issues: [issue] }
+}
+
+function summarizeReport(payload, reportKind) {
+  if (!isRecord(payload) || typeof payload.ok !== 'boolean') return invalidReport('expected report had an invalid structure')
+  const checks = reportKind === 'site-status' ? payload.targets : payload.checks
+  if (reportKind === 'site-monitor' && (!Array.isArray(checks) || checks.some((check) => !isRecord(check) || typeof check.ok !== 'boolean'))) {
+    return invalidReport('expected report had invalid monitor checks')
+  }
+  const coverage = countStatuses(reportKind === 'site-monitor' ? checks.map((check) => ({ status: check.ok ? 'online' : 'offline' })) : checks)
+  if (!coverage) return invalidReport('expected report had empty or invalid checks')
+  const checked = coverage.online + coverage.degraded + coverage.offline
+  const label = reportKind === 'site-status' ? 'site status targets' : reportKind === 'site-monitor' ? 'site monitor checks' : 'synthetic checks'
+  return {
+    readable: true,
+    ok: payload.ok && coverage.offline === 0,
+    coverage,
+    coverageStatus: checked === 0 ? 'none' : checked === coverage.total ? 'complete' : 'partial',
+    evidenceSource: 'current',
+    summary: `${label}: online=${coverage.online} degraded=${coverage.degraded} offline=${coverage.offline} unchecked=${coverage.unchecked} planned=${coverage.planned}`,
+    issues: collectCheckIssues(checks),
+  }
 }
 
 function collectCheckIssues(checks) {
@@ -326,55 +351,17 @@ async function summarizeOutputFile(step, pathValue = step.outputPath) {
 
   try {
     const payload = await readJsonFile(pathValue)
-    if (!isRecord(payload)) return null
-
-    if (step.reportKind === 'site-status') {
-      const targets = Array.isArray(payload.targets) ? payload.targets : []
-      const targetSummary = isRecord(payload.summary) ? payload.summary : countStatuses(targets)
-      return {
-        readable: true,
-        ok: payload.ok !== false,
-        summary: `site status targets: online=${targetSummary.online ?? 0} degraded=${targetSummary.degraded ?? 0} offline=${targetSummary.offline ?? 0} unchecked=${targetSummary.unchecked ?? 0}`,
-        issues: collectCheckIssues(targets),
-      }
-    }
-
-    const checks = Array.isArray(payload.checks) ? payload.checks : []
-    const statusSummary = countStatuses(checks)
-    return {
-      readable: true,
-      ok: payload.ok !== false && statusSummary.offline === 0,
-      summary: `synthetic checks: online=${statusSummary.online} degraded=${statusSummary.degraded} offline=${statusSummary.offline} unchecked=${statusSummary.unchecked}`,
-      issues: collectCheckIssues(checks),
-    }
-  } catch {
-    return {
-      readable: false,
-      ok: false,
-      summary: `expected report was not readable at ${step.outputPath}`,
-      issues: ['expected report was not readable'],
-    }
+    return summarizeReport(payload, step.reportKind)
+  } catch (error) {
+    return invalidReport('expected report was not readable', error instanceof SyntaxError ? 'current' : 'none')
   }
 }
 
 function summarizeSiteMonitor(stdout) {
   try {
-    const payload = parseJsonFromMixedOutput(stdout)
-    if (!isRecord(payload) || !Array.isArray(payload.checks)) return null
-    const failed = payload.checks.filter((check) => isRecord(check) && check.ok === false)
-    const issues = failed
-      .flatMap((check) => (Array.isArray(check.issues) ? check.issues : []))
-      .filter((issue) => typeof issue === 'string' && issue.trim())
-      .map(sanitizeIssue)
-      .slice(0, 8)
-
-    return {
-      ok: payload.ok !== false,
-      summary: `site monitor checks: passed=${payload.checks.length - failed.length} failed=${failed.length}`,
-      issues,
-    }
+    return summarizeReport(parseJsonFromMixedOutput(stdout), 'site-monitor')
   } catch {
-    return null
+    return invalidReport('expected monitor report was not readable', stdout.trim() ? 'current' : 'none')
   }
 }
 
@@ -387,36 +374,27 @@ function parseJsonFromMixedOutput(text) {
 
 async function runStep(step, args, temporaryRoot) {
   const temporaryOutputPath = step.outputPath ? join(temporaryRoot, basename(step.outputPath)) : ''
-  if (args.skips.has(step.id)) {
-    return {
-      id: step.id,
-      label: step.label,
-      command: '',
-      status: 'skipped',
-      durationMs: 0,
-      exitCode: 0,
-      outputPath: step.outputPath,
-      summary: 'Skipped by --skip',
-      issues: [],
-      temporaryOutputPath: '',
-      projectionReady: true,
-    }
-  }
-
+  const requestedSkip = args.skips.has(step.id)
   const missingEnv = (step.requiredEnv ?? []).filter((key) => !String(process.env[key] ?? '').trim())
-  if (missingEnv.length > 0) {
-    const preservedReport = await summarizeOutputFile(step)
+  if (requestedSkip || missingEnv.length > 0) {
+    const previous = await summarizeOutputFile(step)
+    const preservedReport = previous?.readable ? previous : null
+    const reason = requestedSkip ? 'Skipped by --skip' : `Skipped because required environment is not configured: ${missingEnv.join(', ')}`
     return {
       id: step.id,
       label: step.label,
       command: '',
       status: 'skipped',
+      skipReason: requestedSkip ? 'requested' : 'missing-env',
+      coverage: null,
+      coverageStatus: 'none',
+      evidenceSource: preservedReport ? 'previous' : 'none',
       durationMs: 0,
       exitCode: 0,
       outputPath: step.outputPath,
       summary: preservedReport
-        ? `Skipped because required environment is not configured: ${missingEnv.join(', ')}. Existing report is preserved: ${preservedReport.summary}.`
-        : `Skipped because required environment is not configured: ${missingEnv.join(', ')}. No existing report was readable.`,
+        ? `${reason}. Existing report is preserved: ${preservedReport.summary}.`
+        : `${reason}. No existing report was readable.`,
       issues: preservedReport?.issues ?? [],
       temporaryOutputPath: '',
       projectionReady: true,
@@ -435,8 +413,8 @@ async function runStep(step, args, temporaryRoot) {
       : await summarizeOutputFile(step, temporaryOutputPath)
 
   const processFailed = result.exitCode !== 0 || result.timedOut || Boolean(result.spawnError)
-  const reportFailed = parsed?.ok === false
-  const status = processFailed || reportFailed ? 'failed' : 'passed'
+  const reportFailed = parsed?.ok !== true
+  const status = processFailed || reportFailed ? 'failed' : parsed.coverageStatus === 'none' ? 'skipped' : 'passed'
   const issues = []
   if (result.timedOut) issues.push(`step timed out after ${args.stepTimeoutMs} ms`)
   if (result.spawnError) issues.push(sanitizeIssue(result.spawnError.message))
@@ -449,6 +427,10 @@ async function runStep(step, args, temporaryRoot) {
     label: step.label,
     command: command.display,
     status,
+    ...(status === 'skipped' ? { skipReason: 'no-checks-run' } : {}),
+    coverage: parsed?.coverage ?? null,
+    coverageStatus: parsed?.coverageStatus ?? 'unknown',
+    evidenceSource: parsed?.evidenceSource ?? 'none',
     durationMs: result.durationMs,
     exitCode: result.exitCode,
     outputPath: step.outputPath,
@@ -466,10 +448,11 @@ function summarizeSuite(stepResults, durationMs) {
       if (step.status === 'passed') summary.passed += 1
       else if (step.status === 'failed') summary.failed += 1
       else if (step.status === 'skipped') summary.skipped += 1
+      summary.coverage[step.coverageStatus] += 1
       summary.durationMs = durationMs
       return summary
     },
-    { total: 0, passed: 0, failed: 0, skipped: 0, durationMs },
+    { total: 0, passed: 0, failed: 0, skipped: 0, durationMs, coverage: { complete: 0, partial: 0, none: 0, unknown: 0 } },
   )
 }
 
@@ -532,6 +515,7 @@ async function main() {
           : 'Reliability suite completed with temporary projections only; public/status was not modified.',
       )
       console.log(`passed=${report.summary.passed} failed=${report.summary.failed} skipped=${report.summary.skipped}`)
+      console.log(`coverage: complete=${report.summary.coverage.complete} partial=${report.summary.coverage.partial} none=${report.summary.coverage.none} unknown=${report.summary.coverage.unknown}`)
     }
 
     if (args.strict && !report.ok) process.exitCode = 1

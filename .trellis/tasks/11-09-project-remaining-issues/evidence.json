@@ -1,0 +1,1557 @@
+{
+  "schemaVersion": 1,
+  "assessedAtUtc": "2026-11-09T15:15:03.505086+00:00",
+  "sourceRevision": "98ea0b489187ebaccbea52a11cb791e3921ae24f",
+  "modelCalls": 0,
+  "productionWrites": 0,
+  "cloudReliability": {
+    "runId": 42582679567,
+    "url": "https://github.com/Drew-Z/biau/actions/runs/42582679567",
+    "artifactId": 13657469192,
+    "artifactName": "reliability-status",
+    "conclusion": "failure",
+    "report": {
+      "checkedAt": "2026-11-09T07:58:57.666Z",
+      "ok": false,
+      "strict": true,
+      "timeoutMs": 12000,
+      "stepTimeoutMs": 240000,
+      "summary": {
+        "total": 9,
+        "passed": 7,
+        "failed": 1,
+        "skipped": 1,
+        "durationMs": 159326
+      },
+      "steps": [
+        {
+          "id": "main-site",
+          "label": "BIAU Port main site synthetic",
+          "command": "npm run main-site:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+          "status": "passed",
+          "durationMs": 63288,
+          "exitCode": 0,
+          "outputPath": "public/status/blog-semi-synthetic.json",
+          "summary": "synthetic checks: online=1 degraded=1 offline=0 unchecked=0",
+          "issues": [
+            "assistant health recovered after 3 attempts; first attempt: assistant health returned HTTP request failed; assistant health request failed"
+          ]
+        },
+        {
+          "id": "public-links",
+          "label": "Public project link manifest",
+          "command": "npm run public-links:check -- --timeout 12000 --strict --write-status [temporary] --diagnostics-file [temporary]",
+          "status": "failed",
+          "durationMs": 77302,
+          "exitCode": 1,
+          "outputPath": "public/status/public-links-synthetic.json",
+          "summary": "synthetic checks: online=0 degraded=1 offline=0 unchecked=0",
+          "issues": [
+            "command exited with code 1",
+            "2 public project links failed; issue classes: http_status. Run npm.cmd run public-links:check for details.",
+            "2 public project links recovered after a transient retry; initial failures are retained in diagnostics."
+          ]
+        },
+        {
+          "id": "legal-rag",
+          "label": "Legal RAG synthetic",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "outputPath": "public/status/legal-rag-synthetic.json",
+          "summary": "Skipped because required environment is not configured: LEGAL_RAG_API_BASE_URL. Existing report is preserved: synthetic checks: online=1 degraded=0 offline=0 unchecked=3.",
+          "issues": []
+        },
+        {
+          "id": "erp",
+          "label": "ERP synthetic",
+          "command": "npm run erp:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+          "status": "passed",
+          "durationMs": 140,
+          "exitCode": 0,
+          "outputPath": "public/status/erp-synthetic.json",
+          "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
+          "issues": []
+        },
+        {
+          "id": "xunqiu",
+          "label": "Xunqiu synthetic",
+          "command": "npm run xunqiu:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+          "status": "passed",
+          "durationMs": 139,
+          "exitCode": 0,
+          "outputPath": "public/status/xunqiu-synthetic.json",
+          "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
+          "issues": [
+            "formal public APK release is not approved"
+          ]
+        },
+        {
+          "id": "pet",
+          "label": "Pet showcase synthetic",
+          "command": "npm run pet:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+          "status": "passed",
+          "durationMs": 483,
+          "exitCode": 0,
+          "outputPath": "public/status/pet-gamer-synthetic.json",
+          "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=1",
+          "issues": [
+            "formal public APK release is not approved; signing, checksum, scan/regression evidence, rollback note, and human approval are required"
+          ]
+        },
+        {
+          "id": "playlab",
+          "label": "BIAU Playlab synthetic",
+          "command": "npm run playlab:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+          "status": "passed",
+          "durationMs": 11336,
+          "exitCode": 0,
+          "outputPath": "public/status/biau-playlab-synthetic.json",
+          "summary": "synthetic checks: online=2 degraded=0 offline=0 unchecked=0",
+          "issues": []
+        },
+        {
+          "id": "site-status",
+          "label": "Public status aggregation",
+          "command": "npm run site:status -- --timeout 12000 --strict --write-status [temporary] --status-input-dir [temporary]",
+          "status": "passed",
+          "durationMs": 3802,
+          "exitCode": 0,
+          "outputPath": "public/status/site-status.json",
+          "summary": "site status targets: online=8 degraded=0 offline=0 unchecked=0",
+          "issues": []
+        },
+        {
+          "id": "site-monitor",
+          "label": "Core route monitor",
+          "command": "npm run site:monitor -- --json --timeout 12000",
+          "status": "passed",
+          "durationMs": 2829,
+          "exitCode": 0,
+          "summary": "site monitor checks: passed=43 failed=0",
+          "issues": []
+        }
+      ]
+    },
+    "linkDiagnostics": {
+      "schemaVersion": 1,
+      "checkedAt": "2026-11-09T08:00:01.313Z",
+      "sourceRevision": "67b9d94a93ec9c646f834bf96bb4794c37acf0a9",
+      "complete": true,
+      "targetCount": 46,
+      "checkedCount": 46,
+      "failedCount": 2,
+      "recoveredCount": 2,
+      "results": [
+        {
+          "targetId": "7c926f4aef65a13369fa7e9d71ab4c645128fc9668f4089bf2e7279362637435",
+          "projectIds": [
+            "anchor-learning"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 495,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 494,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "b856aa8a6c2df746da437c04daba2c575a27b40b55c66cf36963d16b2bb1008e",
+          "projectIds": [
+            "anchor-learning"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 92,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 92,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "1284ee75a1d0331d572f1d5341e0230a353e6867b5338ff20ccac4d060649152",
+          "projectIds": [
+            "blog-semi"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 96,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 96,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "47dd0288f3df267b47117222ec5391f4395f0ee83ec2793fc99cec3560a0c1ee",
+          "projectIds": [
+            "blog-semi"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 94,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 94,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "c7539dc6ae1b85dfaeacf3e5f7b57cf2a8ffc2f6496b098656e7ba002ceb6f39",
+          "projectIds": [
+            "blog-semi"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 98,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 98,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "6df011a422e91a03da17a3d6da95310c65a29aa87e54ed38db369d84aa62b9bc",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 83,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 83,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "eae6fa2fe265f47f4d1e3c04724f647f5814193a536767095839af7e570762bf",
+          "projectIds": [
+            "legal-rag"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 86,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 86,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "13135f67646106a16476d3992fe0a56684237ad2cddfd7ef0542fc34f5ab5cfc",
+          "projectIds": [
+            "legal-rag"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 114,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 114,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "28003c71605e5dfd22e6cd6ea8b306728150594f4b851aa4a60056e183d1956a",
+          "projectIds": [
+            "ozon-erp"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 93,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 93,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "d53adcc2441e554131d1154e317c73294e163cd2860fd10c3ee42b765b231b24",
+          "projectIds": [
+            "pet-workspace"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 80,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 80,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "dec61655bc7cd15b750adfe34d1ae04a86713fb29f70bc72c98fc7dd2ffc2f40",
+          "projectIds": [
+            "blog-semi"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 115,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 115,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "8d1054f13ec520c76507debb3b258c292e145b7721dedc30c0220af339c1974f",
+          "projectIds": [
+            "blog-semi"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 85,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 85,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "a32ef5c297fbc18c323eb8c37988bb484fdf7bfdbc78b131e3f54fb1197d96d4",
+          "projectIds": [
+            "xunqiu"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 82,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 82,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "37fdee8b99a9e2675aec286175155d03f9cfcfa998f182af767b70c9c785e5d6",
+          "projectIds": [
+            "pet-workspace"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 108,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 108,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "2a9a4db0e7187e96abfea7e6090846ddb69f9da1beebe228ae1118d9f7858fbc",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 91,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 91,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "dcbfeaf40326e6258a974083df64533d5a2bc678c7634f45636b24aba3bdc0f7",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 83,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 83,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "4ae34d5886dc72c8af4bef54a31b44522e2269a915fdbfc511004ed4ce13322f",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 87,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 87,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "b6afe2bae5eeea7a3222ef7750f6263819cb49a0e5e8cc4435ff4b470c711253",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 83,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 83,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "b28750e3f37576f6edcb4e9eed8a72c285a20f9fba7c8819f82a0efc59de3dd2",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 83,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 83,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "9421e9c04976a9ad076faa6e00b0775614e9578cd1785ba1fdf44af8d942cc8b",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 85,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 84,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "4d2034feeb69a8a4dc758134745aa76e4556362d9edafd59c494b44259a7bc4f",
+          "projectIds": [
+            "blog-semi"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 82,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 82,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "5fa94ee7a10a5816e17748820a2fe5e4e8c61f11a21148e852463fcb64bd5d9c",
+          "projectIds": [
+            "chatus"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 79,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 79,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "5c75878064bc468f1b263035d44f622cac1505eeac1389790e3e59cf4e6dd585",
+          "projectIds": [
+            "legal-rag"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 94,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 94,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "87dec37bc3f1bd92ca21501ab874c5aac796f896d1e83252a1bb27235484ae65",
+          "projectIds": [
+            "ozon-erp"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 72,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 72,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "a87a18221e225c356db3683f61d38feeb7dc4da015a37203d59dba8cfe0425ed",
+          "projectIds": [
+            "xunqiu"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 64,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 64,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "2951f5d6a018044361df3a89b92dc1e9163a49d67f9e68ffa27da18aa314ce9b",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 461,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 461,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "ef33c2fab79fc43e1eaf6122b1825b6df622f5c4502cd135293deb52ae693eb1",
+          "projectIds": [
+            "game-first-tetris"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 104,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 104,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "2023a208fea70d5f742df66fde5f9ffb0db00ad2b5bc6f98f748542963425a0e",
+          "projectIds": [
+            "intespace"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 86,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 86,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "81d05bc19f1837ad5bd37f66ea41304a12866971421ba9225fbd468c1d1a82cd",
+          "projectIds": [
+            "game-next-spacewar"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 119,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 119,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "13c03fe468a1b98524ba4f0488ad92404e3a55b50d33939f8e0593df73dd1fb2",
+          "projectIds": [
+            "biau-playlab",
+            "raiden-prototype"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 88,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 88,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "6ee2d0f3d96c0068fb7b9af4c5c27653bd1eada443833e82bce0cf575a4e4811",
+          "projectIds": [
+            "space-war"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 74,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 74,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "5f918aa8a6d8be1c0487cff53ff35354e1ca60beb1a04f5a7ff7e2fd977b6afc",
+          "projectIds": [
+            "spacewar-ii"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 99,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 99,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "2838d06505f9bb91b005d8b2d2f60ddcdecbe1d3913ab3c5154295f299d012ca",
+          "projectIds": [
+            "biau-playlab"
+          ],
+          "ok": false,
+          "status": 504,
+          "method": "HEAD",
+          "issueKind": "http_status",
+          "durationMs": 11880,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 504,
+              "durationMs": 11072,
+              "issueKind": "http_status"
+            },
+            {
+              "method": "HEAD",
+              "reason": "transient-retry",
+              "status": 504,
+              "durationMs": 59,
+              "issueKind": "http_status"
+            }
+          ]
+        },
+        {
+          "targetId": "d119ec2c2cf254ef2bbb4a730038a852ffbad571286973d6839dcead6cc661f4",
+          "projectIds": [
+            "anchor-learning"
+          ],
+          "ok": false,
+          "status": 504,
+          "method": "HEAD",
+          "issueKind": "http_status",
+          "durationMs": 11938,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 504,
+              "durationMs": 11131,
+              "issueKind": "http_status"
+            },
+            {
+              "method": "HEAD",
+              "reason": "transient-retry",
+              "status": 504,
+              "durationMs": 57,
+              "issueKind": "http_status"
+            }
+          ]
+        },
+        {
+          "targetId": "ade0b4e010657edb1bfb796759a88eb7af3c63fc39c9807cf5640b40c1fd0bd6",
+          "projectIds": [
+            "pet-workspace"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 22685,
+          "fallbackUsed": false,
+          "recovered": true,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 504,
+              "durationMs": 11059,
+              "issueKind": "http_status"
+            },
+            {
+              "method": "HEAD",
+              "reason": "transient-retry",
+              "status": 200,
+              "durationMs": 10875,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "e25308b3f33c8190834039e46978992daaa7363c82dccc7c4d7f151c5ddeda9e",
+          "projectIds": [
+            "legal-rag"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 21988,
+          "fallbackUsed": false,
+          "recovered": true,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 0,
+              "durationMs": 12000,
+              "issueKind": "timeout"
+            },
+            {
+              "method": "HEAD",
+              "reason": "transient-retry",
+              "status": 200,
+              "durationMs": 9239,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "c4c6708887c4408dd88fef0c7bdbf303d19e632f8991e0571302346781205c44",
+          "projectIds": [
+            "biau-playlab",
+            "game-first-tetris"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 514,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 514,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "b1c92c4c4cfcfa369341a9eeceea62328903cfd16b21f7de48a2b281d4ce0abe",
+          "projectIds": [
+            "biau-playlab",
+            "intespace"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 284,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 284,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "6142a64c073c7e41544baecab6b1a0ec1c7eb4e9d179ccb549ac368b8e0fe9d6",
+          "projectIds": [
+            "biau-playlab",
+            "game-next-spacewar"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 304,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 304,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "ebeae679bd33721460b15a0b25b7ea1776267d4ae1dd0acc79c6aa1874dbfbc0",
+          "projectIds": [
+            "biau-playlab",
+            "raiden-prototype"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 249,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 249,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "c5835a793ef519d430e180297babe797e850ffa69d48ed968d836aafdf686d40",
+          "projectIds": [
+            "biau-playlab",
+            "space-war"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 251,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 251,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "6e32e1cc265ee242c9478f59044793c26713ce3079d868ecc06c6b8f9519bc1a",
+          "projectIds": [
+            "biau-playlab",
+            "spacewar-ii"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 254,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 254,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "4c11e1401c973ef26da61aabe122ecf6f08f74190b7ae46ab6a59aab86b88db3",
+          "projectIds": [
+            "roleplay-demo"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "GET",
+          "issueKind": "",
+          "durationMs": 1144,
+          "fallbackUsed": true,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 405,
+              "durationMs": 719,
+              "issueKind": "http_status"
+            },
+            {
+              "method": "GET",
+              "reason": "method-fallback",
+              "status": 200,
+              "durationMs": 424,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "4ad407657ebada59475cdb4191981cebb8589b1cef20b55d73ea460f6da854aa",
+          "projectIds": [
+            "roleplay-demo"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "GET",
+          "issueKind": "",
+          "durationMs": 1111,
+          "fallbackUsed": true,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 405,
+              "durationMs": 661,
+              "issueKind": "http_status"
+            },
+            {
+              "method": "GET",
+              "reason": "method-fallback",
+              "status": 200,
+              "durationMs": 450,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "4a925649ce7326718aeb3af6e07d0f5bf26c6ed44d7717f636ccb06f80510648",
+          "projectIds": [
+            "xunqiu"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 521,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 521,
+              "issueKind": ""
+            }
+          ]
+        },
+        {
+          "targetId": "04ef5eb3d7668b7fd8dd08c97698fe2a4c918e8e6d59dacfcb8998ee7dc39adb",
+          "projectIds": [
+            "xunqiu"
+          ],
+          "ok": true,
+          "status": 200,
+          "method": "HEAD",
+          "issueKind": "",
+          "durationMs": 82,
+          "fallbackUsed": false,
+          "recovered": false,
+          "attempts": [
+            {
+              "method": "HEAD",
+              "reason": "initial",
+              "status": 200,
+              "durationMs": 82,
+              "issueKind": ""
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "localEmptyCoverageReproduction": {
+    "command": [
+      "node",
+      "scripts/check-reliability-suite.mjs",
+      "--strict",
+      "--json",
+      "--skip",
+      "main-site,public-links,legal-rag,pet,playlab,site-status,site-monitor"
+    ],
+    "returnCode": 0,
+    "publicSnapshotsUnchanged": true,
+    "networkInputsUnset": true,
+    "report": {
+      "checkedAt": "2026-11-09T13:13:38.054Z",
+      "ok": true,
+      "strict": true,
+      "timeoutMs": 12000,
+      "stepTimeoutMs": 240000,
+      "summary": {
+        "total": 9,
+        "passed": 2,
+        "failed": 0,
+        "skipped": 7,
+        "durationMs": 583
+      },
+      "steps": [
+        {
+          "id": "main-site",
+          "label": "BIAU Port main site synthetic",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "outputPath": "public/status/blog-semi-synthetic.json",
+          "summary": "Skipped by --skip",
+          "issues": []
+        },
+        {
+          "id": "public-links",
+          "label": "Public project link manifest",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "outputPath": "public/status/public-links-synthetic.json",
+          "summary": "Skipped by --skip",
+          "issues": []
+        },
+        {
+          "id": "legal-rag",
+          "label": "Legal RAG synthetic",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "outputPath": "public/status/legal-rag-synthetic.json",
+          "summary": "Skipped by --skip",
+          "issues": []
+        },
+        {
+          "id": "erp",
+          "label": "ERP synthetic",
+          "command": "npm run erp:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+          "status": "passed",
+          "durationMs": 312,
+          "exitCode": 0,
+          "outputPath": "public/status/erp-synthetic.json",
+          "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
+          "issues": []
+        },
+        {
+          "id": "xunqiu",
+          "label": "Xunqiu synthetic",
+          "command": "npm run xunqiu:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+          "status": "passed",
+          "durationMs": 267,
+          "exitCode": 0,
+          "outputPath": "public/status/xunqiu-synthetic.json",
+          "summary": "synthetic checks: online=0 degraded=0 offline=0 unchecked=3",
+          "issues": [
+            "formal public APK release is not approved"
+          ]
+        },
+        {
+          "id": "pet",
+          "label": "Pet showcase synthetic",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "outputPath": "public/status/pet-gamer-synthetic.json",
+          "summary": "Skipped by --skip",
+          "issues": []
+        },
+        {
+          "id": "playlab",
+          "label": "BIAU Playlab synthetic",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "outputPath": "public/status/biau-playlab-synthetic.json",
+          "summary": "Skipped by --skip",
+          "issues": []
+        },
+        {
+          "id": "site-status",
+          "label": "Public status aggregation",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "outputPath": "public/status/site-status.json",
+          "summary": "Skipped by --skip",
+          "issues": []
+        },
+        {
+          "id": "site-monitor",
+          "label": "Core route monitor",
+          "command": "",
+          "status": "skipped",
+          "durationMs": 0,
+          "exitCode": 0,
+          "summary": "Skipped by --skip",
+          "issues": []
+        }
+      ]
+    }
+  },
+  "boundedLinkRecheck": {
+    "checkedAtUtc": "2026-11-09T13:06:53.477Z",
+    "purpose": "One HEAD and one GET to each failed public repository link; response body canceled",
+    "requests": 4,
+    "results": [
+      {
+        "targetId": "2838d06505f9bb91b005d8b2d2f60ddcdecbe1d3913ab3c5154295f299d012ca",
+        "projectId": "biau-playlab",
+        "method": "HEAD",
+        "httpStatus": 200,
+        "durationMs": 1021
+      },
+      {
+        "targetId": "2838d06505f9bb91b005d8b2d2f60ddcdecbe1d3913ab3c5154295f299d012ca",
+        "projectId": "biau-playlab",
+        "method": "GET",
+        "httpStatus": 200,
+        "durationMs": 307
+      },
+      {
+        "targetId": "d119ec2c2cf254ef2bbb4a730038a852ffbad571286973d6839dcead6cc661f4",
+        "projectId": "anchor-learning",
+        "method": "HEAD",
+        "httpStatus": 200,
+        "durationMs": 1131
+      },
+      {
+        "targetId": "d119ec2c2cf254ef2bbb4a730038a852ffbad571286973d6839dcead6cc661f4",
+        "projectId": "anchor-learning",
+        "method": "GET",
+        "httpStatus": 200,
+        "durationMs": 305
+      }
+    ]
+  },
+  "targetMapping": {
+    "checkedCount": 46,
+    "mappedCount": 46,
+    "mappingSourceUnchangedFromArtifact": true,
+    "failed": [
+      {
+        "targetId": "2838d06505f9bb91b005d8b2d2f60ddcdecbe1d3913ab3c5154295f299d012ca",
+        "projectId": "biau-playlab",
+        "repository": "ciallo-bill/blog"
+      },
+      {
+        "targetId": "d119ec2c2cf254ef2bbb4a730038a852ffbad571286973d6839dcead6cc661f4",
+        "projectId": "anchor-learning",
+        "repository": "Drew-Z/anchor"
+      }
+    ]
+  },
+  "githubRepositoryMetadata": [
+    {
+      "repository": "ciallo-bill/blog",
+      "private": false,
+      "archived": false,
+      "defaultBranch": "main"
+    },
+    {
+      "repository": "Drew-Z/anchor",
+      "private": false,
+      "archived": false,
+      "defaultBranch": "main"
+    }
+  ],
+  "latestHorizon": {
+    "runId": 42574794545,
+    "url": "https://github.com/Drew-Z/biau/actions/runs/42574794545",
+    "event": "schedule",
+    "createdAtUtc": "2026-11-09T06:43:22Z",
+    "sourceRevision": "67b9d94a93ec9c646f834bf96bb4794c37acf0a9",
+    "conclusion": "success",
+    "editionId": "2026-11-09-morning",
+    "outcome": "skipped",
+    "reason": "no-input",
+    "fetched": 0,
+    "modelCalls": 0,
+    "publishJob": "skipped"
+  },
+  "siteQuality": {
+    "runId": 42589835840,
+    "sourceRevision": "98ea0b489187ebaccbea52a11cb791e3921ae24f",
+    "conclusion": "success"
+  },
+  "githubConfiguration": {
+    "legalRagBaseVariablePresent": false,
+    "legalRagBaseSecretPresent": false,
+    "valuesRead": false
+  },
+  "fileEvidence": [
+    {
+      "file": "reliability-report.json",
+      "sha256": "83aa2e19e006393799e60353a382654c873c3cd5ed56e19e765afe47265160fb",
+      "bytes": 4568
+    },
+    {
+      "file": "reliability-diagnostics/public-links.json",
+      "sha256": "4eca9232727126facefa7d676f1b106f2a01db2c80c7345caf7246d67f7e8eb1",
+      "bytes": 24736
+    },
+    {
+      "file": "unchecked-reproduction.json",
+      "sha256": "02295efd6fd3957c1e48db1a51f3e68318425cb6cb592d6925298c2f1442ee72",
+      "bytes": 3731
+    },
+    {
+      "file": "legal-health-read.json",
+      "sha256": "b2444a6026afe445fb4287dbd6b83a2a3b00d12be9a0ff9df86319301b891886",
+      "bytes": 234
+    }
+  ],
+  "publicSnapshotHashes": {
+    "public/status/biau-playlab-synthetic.json": "89443dc7aae3843b9b96805f0c55e374f82e50ff78329816d2baece131528530",
+    "public/status/blog-semi-synthetic.json": "99c12a31fb0252b4268753bc06ab12b42a8dfb12af9764bb71b62dd9beadc51f",
+    "public/status/erp-synthetic.json": "6d4f60425426277442d3ad05dc4d8e95f84fbb60c22c7779d7947125488a958c",
+    "public/status/legal-rag-synthetic.json": "5a3bfa79ae11c0de25a1404ba0591cbc064248a13cb1df252046b989aefa57b2",
+    "public/status/pet-gamer-synthetic.json": "aa11ef5b9fb90506f0fe31020f1f85c9e1b795fce4ea4d33f3b8d7718d79d64a",
+    "public/status/public-links-synthetic.json": "9ff1747924cfba75da76012cbd347f8aab4be388ee2f79c1312d605c5007b4dc",
+    "public/status/reliability-suite.json": "10a2cc7a98227b4854c6cf414727b8760043e4ac248af69680969ae5425c658c",
+    "public/status/site-status.json": "98d227e8a2d01f6716d5991c6061824b0e95c93272021aac3ad867314c793d8c",
+    "public/status/xunqiu-synthetic.json": "d2bf7d6cc64542f4279255b4ea9220dff9a9244fbca4b016a1eadb0cec2e4bd2"
+  },
+  "limits": [
+    "GitHub 504 origin or intermediary root cause is not established.",
+    "Current HEAD/GET success does not erase the cloud failure or prove continuous availability.",
+    "Zero configured checks are not product outages.",
+    "Legal RAG business side effects were identified from source only; no live business request was executed."
+  ],
+  "legalHealthRead": {
+    "checkedAt": "2026-11-09T13:45:16.403Z",
+    "targetId": "e25308b3f33c8190834039e46978992daaa7363c82dccc7c4d7f151c5ddeda9e",
+    "method": "GET",
+    "httpStatus": 0,
+    "ok": false,
+    "errorName": "TimeoutError",
+    "durationMs": 20009,
+    "requests": 1,
+    "businessRequests": 0,
+    "automaticRetries": 0
+  },
+  "selectedScope": {
+    "confirmedByUser": true,
+    "dateShanghai": "2026-11-09",
+    "choice": "先修复巡检口径和只读模式",
+    "implementationState": "planning-review-pending"
+  },
+  "implementation": {
+    "verifiedAtUtc": "2026-11-09T16:24:56.430056+00:00",
+    "checks": [
+      {
+        "command": "npm.cmd run legal-rag:read-only-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run reliability:report-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run status:contract",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run verification:diagnostics-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run public-links:diagnostics-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run docs:observability-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run docs:manual-gates-check",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run lint",
+        "exitCode": 0
+      },
+      {
+        "command": "npm.cmd run build",
+        "exitCode": 0
+      },
+      {
+        "command": "git diff --check",
+        "exitCode": 0
+      },
+      {
+        "command": "Workflow YAML variable-binding validation",
+        "exitCode": 0
+      }
+    ],
+    "regressionBeforeFix": {
+      "command": "npm.cmd run reliability:report-check",
+      "exitCode": 1,
+      "assertion": "unchecked checks must not count as passed steps",
+      "actualPassed": 2,
+      "expectedPassed": 0
+    },
+    "fixedUnconfiguredResult": {
+      "passed": 0,
+      "failed": 0,
+      "skipped": 9,
+      "erpUnchecked": 3,
+      "xunqiuUnchecked": 3
+    },
+    "publicSnapshotsUnchanged": 9,
+    "externalBusinessRequests": 0,
+    "modelCalls": 0,
+    "sourceRecoveryCommit": "98ea0b489187ebaccbea52a11cb791e3921ae24f",
+    "scopeAdjustment": "Update the existing Legal RAG operational nextAction to require --business-checks; historical public snapshot left byte-identical.",
+    "review": "Current evidence parsed at the suite boundary; invalid data fails; step timeout/process failure wins over no checks; health bounded before any auth/business branch.",
+    "cloudVerification": "pending"
+  }
+}

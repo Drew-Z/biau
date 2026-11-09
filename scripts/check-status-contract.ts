@@ -36,7 +36,7 @@ const issueKinds = new Set([
   'not_checked',
 ])
 const erpRegistrationStatuses = new Set(['open', 'closed-by-env', 'deploy-stale', 'blocked', 'unchecked'])
-const legalDemoAccessStatuses = new Set(['open-demo', 'credential-required', 'blocked-by-login', 'degraded', 'offline'])
+const legalDemoAccessStatuses = new Set(['not-checked', 'open-demo', 'credential-required', 'blocked-by-login', 'degraded', 'offline'])
 const legalProtectedCheckIds = new Set(['legal-rag-qa', 'legal-rag-contract-review', 'legal-rag-observability'])
 const xunqiuApkGateStatuses = new Set([
   'not-configured',
@@ -307,6 +307,18 @@ function checkLegalRagDemoGate(fileName: string, payload: Record<string, unknown
     if (!protectedChecks.some((check) => check.id === id)) fail(`${fileName}: protected check "${id}" is missing`)
   }
 
+  if (payload.checkMode !== undefined && (typeof payload.checkMode !== 'string' || !['read-only', 'business'].includes(payload.checkMode))) {
+    fail(`${fileName}: checkMode must be read-only or business`)
+  }
+  if (payload.checkMode === 'read-only' || demoAccessStatus === 'not-checked') {
+    if (!['not-checked', 'degraded', 'offline'].includes(String(demoAccessStatus))) {
+      fail(`${fileName}: read-only mode cannot claim a protected demo access result`)
+    }
+    for (const check of protectedChecks) {
+      if (check.status !== 'unchecked') fail(`${fileName}:${String(check.id)} must be unchecked in read-only mode`)
+    }
+  }
+
   const credentialGateActive = demoAccessStatus === 'credential-required' || (hasCredentials === false && demoAccessStatus !== 'open-demo')
   if (credentialGateActive) {
     for (const check of protectedChecks) {
@@ -319,6 +331,29 @@ function checkLegalRagDemoGate(fileName: string, payload: Record<string, unknown
     for (const check of protectedChecks) {
       if (check.status !== 'online') fail(`${fileName}:${String(check.id)} must be online when demoAccessStatus=open-demo`)
     }
+  }
+}
+
+function checkLegalRagReadOnlyContract() {
+  const legacy: Record<string, unknown> = { hasCredentials: true, demoAccessStatus: 'open-demo', demoAccessSummary: 'fixture' }
+  legacy.checks = [...legalProtectedCheckIds].map((id) => ({ id, status: 'online' }))
+  const readOnly = { ...legacy, checkMode: 'read-only', demoAccessStatus: 'not-checked', checks: [...legalProtectedCheckIds].map((id) => ({ id, status: 'unchecked' })) }
+  for (const [payload, valid] of [
+    [legacy, true],
+    [readOnly, true],
+    [{ ...readOnly, demoAccessStatus: 'offline' }, true],
+    [{ ...legacy, checkMode: 'business' }, true],
+    [{ ...legacy, checkMode: 'read-only' }, false],
+    [{ ...readOnly, checks: legacy.checks }, false],
+    [{ ...readOnly, checks: readOnly.checks.slice(1) }, false],
+    [{ ...readOnly, checkMode: 'unknown' }, false],
+    [{ ...readOnly, checkMode: ['read-only'] }, false],
+    [{ ...readOnly, checkMode: undefined, checks: legacy.checks }, false],
+  ] as const) {
+    const start = issues.length
+    checkLegalRagDemoGate('legal-rag-synthetic.json', payload)
+    const found = issues.splice(start)
+    assert.equal(found.length === 0, valid, 'Legal RAG read-only/legacy report contract')
   }
 }
 
@@ -627,6 +662,7 @@ async function main() {
   await checkSyntheticSnapshots(knownCheckIds)
   await checkMergedSiteStatusEvidence()
   checkStatusInterfaceFormatting()
+  checkLegalRagReadOnlyContract()
 
   if (issues.length > 0) {
     console.error(`Status contract check failed with ${issues.length} issue(s):`)

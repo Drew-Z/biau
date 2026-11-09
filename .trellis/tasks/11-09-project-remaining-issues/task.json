@@ -1,0 +1,58 @@
+{
+  "id": "project-remaining-issues",
+  "name": "project-remaining-issues",
+  "title": "项目剩余问题收口",
+  "description": "用户已选择修复 Reliability 全 unchecked 误计 passed、补充覆盖统计，及 Legal RAG 默认只读与显式业务模式；完整规划待审阅，保留外部 504 和并行成果。",
+  "status": "review",
+  "dev_type": "backend",
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-11-09",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "scripts/check-reliability-suite.mjs",
+    "scripts/check-reliability-report.mjs",
+    "scripts/check-legal-rag-synthetic.mjs",
+    "scripts/check-legal-rag-read-only.mjs",
+    "scripts/check-status-contract.ts",
+    "package.json",
+    ".github/workflows/reliability-check.yml",
+    "docs/site-monitoring.md",
+    "docs/observability-strategy.md",
+    ".trellis/spec/backend/observability-guidelines.md",
+    "src/data/statusTargets.ts"
+  ],
+  "notes": "用户审阅方案后回复继续，已批准实施、公开 CI 变量绑定和一次只读复验。零真实业务 POST、零模型调用，不发布公开状态快照。",
+  "meta": {
+    "planningBaseline": "98ea0b489187ebaccbea52a11cb791e3921ae24f",
+    "selectedScope": "reliability-coverage-and-legal-rag-read-only",
+    "evidenceFile": "evidence.json",
+    "reliabilityFailureRun": 42582679567,
+    "realModelCalls": 0,
+    "implementationApproved": true,
+    "planningValidation": {
+      "status": "passed",
+      "localLinks": 12,
+      "publicSnapshotsUnchanged": 9,
+      "temporaryFilesRemoved": 4,
+      "temporaryDirectoriesRemoved": 2
+    },
+    "localValidation": {
+      "status": "passed",
+      "publicSnapshotsUnchanged": 9,
+      "realModelCalls": 0,
+      "externalBusinessRequests": 0
+    }
+  }
+}

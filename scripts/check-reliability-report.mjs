@@ -52,6 +52,10 @@ async function runSuite(base, options = {}) {
       cwd: repoRoot,
       env: {
         ...process.env,
+        NODE_OPTIONS: '',
+        ERP_SYNTHETIC_API_BASE_URL: '',
+        XUNQIU_SYNTHETIC_API_BASE_URL: '',
+        LEGAL_RAG_API_BASE_URL: '',
         MAIN_SITE_SYNTHETIC_BASE_URL: base,
         MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT: 'false',
         MAIN_SITE_SYNTHETIC_SKIP_ASSISTANT_API: 'false',
@@ -67,7 +71,43 @@ async function runSuite(base, options = {}) {
     child.stderr.on('data', (chunk) => { stderr += chunk })
     child.once('error', reject)
     child.once('close', (code) => resolve({ code, stdout, stderr }))
+  }).then((result) => {
+    const report = JSON.parse(result.stdout)
+    assert.equal(report.summary.total, 9)
+    assert.equal(report.summary.passed + report.summary.failed + report.summary.skipped, 9)
+    assert.equal(Object.values(report.summary.coverage).reduce((sum, value) => sum + value, 0), 9)
+    for (const step of report.steps) {
+      assert.ok(['current', 'previous', 'none'].includes(step.evidenceSource))
+      if (step.coverage) {
+        assert.equal(Object.entries(step.coverage).filter(([key]) => key !== 'total').reduce((sum, [, value]) => sum + value, 0), step.coverage.total)
+        assert.equal(step.evidenceSource, 'current')
+      }
+    }
+    return result
   })
+}
+
+// Inject only the child report boundary; the real suite still spawns commands,
+// removes seeded history, parses the output and computes strict exit codes.
+async function runProjectionFixture(base, id, payload, { raw, exitCode = 0, timeout = false } = {}) {
+  const script = { erp: 'check-erp-synthetic.mjs', 'site-status': 'generate-site-status.ts', 'site-monitor': 'check-site-monitor.ts' }[id]
+  const source = `
+    import { writeFileSync } from 'node:fs';
+    globalThis.fetch = () => { throw new Error('fixture network blocked'); };
+    if (process.argv.some(arg => arg.replaceAll('\\\\', '/').endsWith('/${script}'))) {
+      const content = ${JSON.stringify(raw ?? JSON.stringify(payload))};
+      const index = process.argv.indexOf('--write-status');
+      if (index >= 0) writeFileSync(process.argv[index + 1], content);
+      else console.log(content);
+      ${timeout ? 'setTimeout(() => process.exit(1), 5000);' : `process.exit(${exitCode});`}
+    }
+  `
+  const result = await runSuite(base, {
+    skip: ['main-site', 'public-links', 'legal-rag', 'erp', 'xunqiu', 'pet', 'playlab', 'site-status', 'site-monitor'].filter((item) => item !== id).join(','),
+    env: { NODE_OPTIONS: `--import=data:text/javascript,${encodeURIComponent(source)}` },
+    args: timeout ? ['--timeout', '200', '--step-timeout', '1600'] : [],
+  })
+  return { ...result, step: JSON.parse(result.stdout).steps.find((step) => step.id === id) }
 }
 
 const before = await snapshotHashes()
@@ -75,6 +115,97 @@ const diagnosticsRoot = await mkdtemp(join(tmpdir(), 'biau-reliability-contract-
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 try {
   const base = `http://127.0.0.1:${server.address().port}`
+  const unconfigured = await runSuite(base, {
+    skip: 'main-site,public-links,legal-rag,pet,playlab,site-status,site-monitor',
+  })
+  assert.equal(unconfigured.code, 0, unconfigured.stderr)
+  const unconfiguredReport = JSON.parse(unconfigured.stdout)
+  assert.equal(unconfiguredReport.summary.passed, 0, 'unchecked checks must not count as passed steps')
+  assert.equal(unconfiguredReport.summary.skipped, 9)
+  for (const id of ['erp', 'xunqiu']) {
+    const step = unconfiguredReport.steps.find((item) => item.id === id)
+    assert.equal(step.status, 'skipped')
+    assert.equal(step.skipReason, 'no-checks-run')
+    assert.equal(step.coverageStatus, 'none')
+    assert.equal(step.evidenceSource, 'current')
+    assert.deepEqual(step.coverage, { total: 3, online: 0, degraded: 0, offline: 0, unchecked: 3, planned: 0 })
+  }
+  assert.deepEqual(await snapshotHashes(), before)
+  for (const [statuses, expectedStatus, coverageStatus] of [
+    [['online', 'degraded'], 'passed', 'complete'],
+    [['online', 'unchecked', 'planned'], 'passed', 'partial'],
+    [['unchecked', 'planned'], 'skipped', 'none'],
+    [['offline', 'unchecked'], 'failed', 'partial'],
+  ]) {
+    const result = await runProjectionFixture(base, 'erp', { ok: true, checks: statuses.map((status) => ({ status })) })
+    assert.equal(result.code, expectedStatus === 'failed' ? 1 : 0, result.stderr)
+    assert.equal(result.step.status, expectedStatus)
+    assert.equal(result.step.coverageStatus, coverageStatus)
+    assert.equal(result.step.evidenceSource, 'current')
+  }
+  for (const payload of [null, {}, { ok: true }, { ok: true, checks: [] }, { ok: 'true', checks: [{ status: 'online' }] }, { checks: [{ status: 'online' }] }, { ok: true, checks: [{ status: 'mystery' }] }, { ok: true, checks: [{ status: 'total' }] }]) {
+    const result = await runProjectionFixture(base, 'erp', payload)
+    assert.equal(result.code, 1)
+    assert.equal(result.step.status, 'failed')
+    assert.equal(result.step.coverageStatus, 'unknown')
+    assert.equal(result.step.coverage, null)
+  }
+  const malformed = await runProjectionFixture(base, 'erp', null, { raw: '{broken' })
+  assert.equal(malformed.code, 1)
+  assert.equal(malformed.step.coverageStatus, 'unknown')
+  for (const [ok, exitCode] of [[false, 0], [true, 7]]) {
+    const result = await runProjectionFixture(base, 'erp', { ok, checks: [{ status: 'unchecked' }] }, { exitCode })
+    assert.equal(result.code, 1)
+    assert.equal(result.step.status, 'failed', 'process/report failure must win over zero coverage')
+    assert.equal(result.step.coverageStatus, 'none')
+  }
+  const timedOut = await runProjectionFixture(base, 'erp', { ok: true, checks: [{ status: 'unchecked' }] }, { timeout: true })
+  assert.equal(timedOut.code, 1)
+  assert.equal(timedOut.step.status, 'failed')
+  assert.ok(timedOut.step.issues.some((issue) => issue.includes('timed out')))
+  const targets = await runProjectionFixture(base, 'site-status', {
+    ok: true,
+    targets: [{ status: 'online' }],
+    summary: { online: 200, offline: 100 },
+    reliabilityProjects: [{ checks: [{ status: 'offline' }] }],
+  })
+  assert.equal(targets.code, 0)
+  assert.equal(targets.step.coverage.total, 1, 'only current targets count, not historic merged projects or supplied totals')
+  assert.equal(targets.step.coverage.offline, 0)
+  for (const [checks, code, coverageStatus] of [
+    [[{ ok: true }], 0, 'complete'],
+    [[{ ok: false }], 1, 'complete'],
+    [[{ ok: 'true' }], 1, 'unknown'],
+    [[{}], 1, 'unknown'],
+    [[], 1, 'unknown'],
+  ]) {
+    const result = await runProjectionFixture(base, 'site-monitor', { ok: true, checks })
+    assert.equal(result.code, code)
+    assert.equal(result.step.coverageStatus, coverageStatus)
+  }
+  const missingEnv = await runSuite(base, { skip: 'main-site,public-links,erp,xunqiu,pet,playlab,site-status,site-monitor' })
+  const legalSkip = JSON.parse(missingEnv.stdout).steps.find((step) => step.id === 'legal-rag')
+  assert.equal(legalSkip.skipReason, 'missing-env')
+  assert.equal(legalSkip.evidenceSource, 'previous')
+  assert.equal(legalSkip.coverage, null)
+  assert.equal(legalSkip.coverageStatus, 'none')
+  assert.match(legalSkip.summary, /preserved/)
+  const noHistorySource = `
+    import fs from 'node:fs/promises';
+    import { syncBuiltinESMExports } from 'node:module';
+    const readFile = fs.readFile;
+    fs.readFile = (path, ...args) => String(path).replaceAll('\\\\', '/').endsWith('/legal-rag-synthetic.json')
+      ? Promise.reject(Object.assign(new Error('fixture missing'), { code: 'ENOENT' })) : readFile(path, ...args);
+    syncBuiltinESMExports();
+  `
+  const noHistory = await runSuite(base, {
+    skip: 'main-site,public-links,erp,xunqiu,pet,playlab,site-status,site-monitor',
+    env: { NODE_OPTIONS: `--import=data:text/javascript,${encodeURIComponent(noHistorySource)}` },
+  })
+  const noHistoryLegal = JSON.parse(noHistory.stdout).steps.find((step) => step.id === 'legal-rag')
+  assert.equal(noHistoryLegal.evidenceSource, 'none')
+  assert.equal(noHistoryLegal.skipReason, 'missing-env')
+  assert.equal(noHistoryLegal.coverage, null)
   for (const status of [200, 503]) {
     healthStatus = status
     const startedAt = Date.now()
@@ -137,8 +268,17 @@ try {
   await writeFile(join(diagnosticsRoot, 'public-links.json'), '{"stale":true}')
   const skipped = await runSuite(base, { skip: `main-site,${skip}`, args: ['--diagnostics-dir', diagnosticsRoot] })
   assert.equal(skipped.code, 0)
+  const skippedReport = JSON.parse(skipped.stdout)
+  assert.deepEqual(skippedReport.summary.coverage, { complete: 0, partial: 0, none: 9, unknown: 0 })
+  for (const step of skippedReport.steps) {
+    assert.equal(step.skipReason, 'requested')
+    assert.equal(step.coverage, null)
+  }
+  assert.equal(skippedReport.steps.find((step) => step.id === 'main-site').evidenceSource, 'previous')
+  assert.equal(skippedReport.steps.find((step) => step.id === 'site-monitor').evidenceSource, 'none')
   assert.deepEqual(await readdir(diagnosticsRoot), [], 'skipped link checks must not upload a stale artifact')
-  console.log('Reliability report checks passed: current success/failure JSON, strict exit codes, unchanged public snapshots, zero model calls.')
+  assert.deepEqual(await snapshotHashes(), before)
+  console.log('Reliability report checks passed: coverage, skipped/history semantics, corrupt reports, strict failure precedence, unchanged public snapshots, zero model calls.')
 } finally {
   server.closeAllConnections()
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
