@@ -2,7 +2,7 @@
   "id": "public-link-reliability",
   "name": "public-link-reliability",
   "title": "修复公开项目链接与巡检证据",
-  "description": "Preserve bounded link attempt and recovery evidence in safe Actions diagnostics; local contracts and lint/build passed, awaiting cloud artifact verification.",
+  "description": "外链有序 attempts、首次失败/恢复和低敏 CI 诊断已上线；本地及云端 46/46 通过，合同、类型、lint/build 与生产部署通过。",
   "status": "in_progress",
   "dev_type": "backend",
   "scope": null,
@@ -15,7 +15,7 @@
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "27db69bc89bf9fdd73b1e26fe729cc77d4d305b2",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -23,6 +23,17 @@
   "relatedFiles": [],
   "notes": "",
   "meta": {
-    "implementationApproved": "2026-11-09: user selected proceed with reviewed design"
+    "implementationApproved": "2026-11-09: user selected proceed with reviewed design",
+    "verification": {
+      "status": "passed",
+      "runId": 42561442476,
+      "artifactId": 13649347813,
+      "sourceRevision": "85ee2b6da7152278e938ecd53411eac6c3ffbcb8",
+      "links": 46,
+      "failed": 0,
+      "recovered": 1,
+      "modelCalls": 0,
+      "publicSnapshotsChanged": false
+    }
   }
 }
