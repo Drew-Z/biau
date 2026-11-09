@@ -1,0 +1,258 @@
+{
+  "baselineCommit": "cd09dce93ca433cf6990bebb60fccac926daa2bd",
+  "historicalFailure": {
+    "runId": "42654767766",
+    "artifactId": "13691268041",
+    "headSha": "92fafb3af72310d2fe1db43cca025d9069e1f4cc",
+    "mainSite": "assistant health returned HTTP 502",
+    "durationMsApproximate": 62200,
+    "cause": "unconfirmed"
+  },
+  "investigation": {
+    "subsequentBrowserHealth": {
+      "customDomainStatus": 200,
+      "pagesDomainStatus": 200,
+      "ok": true
+    },
+    "alternateLocalNetworkPath": {
+      "customDomainStatus": 502,
+      "directHealth": "timeout"
+    },
+    "renderEvidence": "No contemporaneous request/metric evidence; later deployment succeeded after the failed check.",
+    "conclusion": "Different observed access paths; neither persistent production failure nor cold start established."
+  },
+  "liveModelCalls": 0,
+  "businessPostRequests": 0,
+  "validation": [
+    {
+      "command": "npm.cmd run main-site:health-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run reliability:report-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run legal-rag:read-only-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run verification:diagnostics-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run status:contract",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run docs:observability-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run lint",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run build",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "cloudVerification": {
+    "runId": "42666349021",
+    "artifactId": "13696253185",
+    "headSha": "de11413c91a5868a073c636886f58f1ac6cf467c",
+    "conclusion": "failure",
+    "contractCheck": "success",
+    "checkedAt": "2026-11-09T17:38:14.145Z",
+    "summary": {
+      "total": 9,
+      "passed": 6,
+      "failed": 1,
+      "skipped": 2,
+      "durationMs": 117713,
+      "coverage": {
+        "complete": 5,
+        "partial": 2,
+        "none": 2,
+        "unknown": 0
+      }
+    },
+    "mainSite": {
+      "id": "main-site",
+      "label": "BIAU Port main site synthetic",
+      "command": "npm run main-site:synthetic -- --timeout 12000 --strict --write-status [temporary]",
+      "status": "failed",
+      "coverage": {
+        "total": 2,
+        "online": 1,
+        "degraded": 0,
+        "offline": 1,
+        "unchecked": 0,
+        "planned": 0
+      },
+      "coverageStatus": "complete",
+      "evidenceSource": "current",
+      "healthAttempts": [
+        {
+          "attempt": 1,
+          "httpStatus": 502,
+          "durationMs": 325,
+          "failureKind": "http_status",
+          "responseType": "json",
+          "proxyError": null
+        },
+        {
+          "attempt": 2,
+          "httpStatus": 502,
+          "durationMs": 122,
+          "failureKind": "http_status",
+          "responseType": "json",
+          "proxyError": null
+        },
+        {
+          "attempt": 3,
+          "httpStatus": 502,
+          "durationMs": 102,
+          "failureKind": "http_status",
+          "responseType": "json",
+          "proxyError": null
+        },
+        {
+          "attempt": 4,
+          "httpStatus": 502,
+          "durationMs": 88,
+          "failureKind": "http_status",
+          "responseType": "json",
+          "proxyError": null
+        },
+        {
+          "attempt": 5,
+          "httpStatus": 502,
+          "durationMs": 94,
+          "failureKind": "http_status",
+          "responseType": "json",
+          "proxyError": null
+        }
+      ],
+      "durationMs": 61935,
+      "exitCode": 1,
+      "outputPath": "public/status/blog-semi-synthetic.json",
+      "summary": "synthetic checks: online=1 degraded=0 offline=1 unchecked=0 planned=0",
+      "issues": [
+        "command exited with code 1",
+        "assistant health returned HTTP 502"
+      ]
+    },
+    "publicLinks": {
+      "checkedCount": 46,
+      "failedCount": 0,
+      "recoveredCount": 1,
+      "complete": true
+    },
+    "legal": {
+      "id": "legal-rag",
+      "label": "Legal RAG synthetic",
+      "command": "npm run legal-rag:synthetic -- --read-only --timeout 12000 --strict --write-status [temporary]",
+      "status": "passed",
+      "coverage": {
+        "total": 4,
+        "online": 1,
+        "degraded": 0,
+        "offline": 0,
+        "unchecked": 3,
+        "planned": 0
+      },
+      "coverageStatus": "partial",
+      "evidenceSource": "current",
+      "durationMs": 529,
+      "exitCode": 0,
+      "outputPath": "public/status/legal-rag-synthetic.json",
+      "summary": "synthetic checks: online=1 degraded=0 offline=0 unchecked=3 planned=0",
+      "issues": []
+    },
+    "artifactHashes": {
+      "reliability-report.json": "1ea51af3600d7a53ffc625f405dfb6c917b5c2a7ece280eb32a2a74f6265a97c",
+      "public-links.json": "c74a7686adce1c3436feb72ead6864f02de9790ae994b43fea3e857adfba411f"
+    }
+  },
+  "regressionBeforeFix": [
+    "main-site:health-check failed because proxyError was undefined",
+    "reliability:report-check failed because current healthAttempts were absent"
+  ],
+  "publicSnapshotsUnchanged": 9,
+  "temporaryCleanup": "Loopback fixture directories cleaned in finally; both downloaded CI JSON files and their two temporary directories removed after evidence extraction.",
+  "followupHealthObservations": {
+    "checkedAt": "2026-11-09T17:47:52.494Z",
+    "observations": [
+      {
+        "transport": "node-fetch",
+        "target": "custom-domain",
+        "httpStatus": 502,
+        "durationMs": 1356,
+        "failureKind": "http_status",
+        "responseType": "json",
+        "proxyError": null,
+        "okField": false,
+        "errorFieldType": "undefined"
+      },
+      {
+        "transport": "chromium-navigation",
+        "target": "custom-domain",
+        "httpStatus": 502,
+        "durationMs": 2009,
+        "failureKind": "http_status",
+        "responseType": "html",
+        "proxyError": null,
+        "okField": false,
+        "errorFieldType": "undefined"
+      },
+      {
+        "transport": "node-fetch",
+        "target": "pages-domain",
+        "httpStatus": 502,
+        "durationMs": 2505,
+        "failureKind": "http_status",
+        "responseType": "json",
+        "proxyError": "public-assistant-upstream-invalid-response",
+        "okField": false,
+        "errorFieldType": "string"
+      },
+      {
+        "transport": "chromium-navigation",
+        "target": "pages-domain",
+        "httpStatus": 502,
+        "durationMs": 1643,
+        "failureKind": "http_status",
+        "responseType": "json",
+        "proxyError": "public-assistant-upstream-invalid-response",
+        "okField": false,
+        "errorFieldType": "string"
+      },
+      {
+        "target": "render-direct-health",
+        "httpStatus": 0,
+        "durationMs": 15008,
+        "failureKind": "timeout",
+        "responseType": "none",
+        "proxyError": null,
+        "okField": false
+      }
+    ],
+    "renderReadOnlyInspection": {
+      "suspended": false,
+      "eventsSince1730Utc": 0,
+      "appLogsSince1730Utc": 0,
+      "healthRequestLogsSince1730Utc": 0
+    }
+  },
+  "siteQuality": {
+    "runId": "42666327759",
+    "headSha": "de11413c91a5868a073c636886f58f1ac6cf467c",
+    "conclusion": "success"
+  },
+  "remainingIssue": "Current health 502 persists. Pages reports upstream-invalid-response, direct Render health timed out. No contemporaneous platform events/logs establish a root cause; health does not call a model. Diagnose hosting and proxy reachability next, without inferring model failure or increasing retry budgets."
+}

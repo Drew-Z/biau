@@ -3,7 +3,7 @@
   "name": "assistant-health-diagnostics",
   "title": "助手健康接口故障诊断",
   "description": "保留固定代理错误码、响应类型与逐次健康检查证据，定位历史 502 的观测边界。用户已回复继续同意创建任务和推进修复。",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": "backend",
   "scope": "scripts",
   "package": null,
@@ -11,11 +11,11 @@
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-11-10",
-  "completedAt": null,
+  "completedAt": "2026-11-10",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "de11413c91a5868a073c636886f58f1ac6cf467c",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -30,5 +30,13 @@
     ".trellis/spec/backend/observability-guidelines.md"
   ],
   "notes": "User authorized continuing the remaining fixes; inline implementation. Historical HTTP 502 root cause remains unconfirmed.",
-  "meta": {}
+  "meta": {
+    "verification": {
+      "local": "passed",
+      "siteQuality": "success",
+      "reliability": "failure",
+      "diagnosticEvidence": "verified",
+      "externalHealth502": "unresolved"
+    }
+  }
 }
