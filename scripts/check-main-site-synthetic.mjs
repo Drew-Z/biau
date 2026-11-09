@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
+import { ASSISTANT_HEALTH_MAX_ATTEMPTS, describeAssistantHealth, requestAssistantHealth } from './lib/assistant-health-diagnostics.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_STATUS_PATH = 'public/status/blog-semi-synthetic.json'
@@ -28,7 +29,7 @@ function parseArgs(argv) {
     strict: process.env.MAIN_SITE_SYNTHETIC_STRICT === '1',
     assistantChat: isTruthy(process.env.MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT),
     skipAssistantApi: isTruthy(process.env.MAIN_SITE_SYNTHETIC_SKIP_ASSISTANT_API),
-    healthMaxAttempts: boundedInteger(process.env.MAIN_SITE_SYNTHETIC_HEALTH_MAX_ATTEMPTS, 5, 1, 5),
+    healthMaxAttempts: boundedInteger(process.env.MAIN_SITE_SYNTHETIC_HEALTH_MAX_ATTEMPTS, ASSISTANT_HEALTH_MAX_ATTEMPTS, 1, ASSISTANT_HEALTH_MAX_ATTEMPTS),
     healthRetryDelayMs: boundedInteger(process.env.MAIN_SITE_SYNTHETIC_HEALTH_RETRY_DELAY_MS, 15_000, 0, 15_000),
   }
 
@@ -258,30 +259,6 @@ function httpStatusFromResults(results) {
   return results[0]?.response.status ?? 0
 }
 
-function validateHealthResponse(response) {
-  const issues = []
-  if (!response.ok) {
-    issues.push(`assistant health returned HTTP ${response.status || 'request failed'}`)
-    if (response.error) issues.push('assistant health request failed')
-    return issues
-  }
-
-  if (response.parseError) {
-    if (response.contentType.includes('text/html')) {
-      issues.push('assistant health returned HTML instead of JSON; check upstream readiness and edge routing')
-    } else {
-      issues.push('assistant health returned non-JSON response')
-    }
-    return issues
-  }
-
-  if (!isRecord(response.json) || response.json.ok !== true) {
-    issues.push('assistant health payload missing ok=true')
-  }
-
-  return issues
-}
-
 function validateChatResponse(response) {
   const issues = []
   let mode = ''
@@ -347,9 +324,9 @@ function summarizeAssistantFailure(issues) {
 }
 
 export async function probeAssistantHealth(url, timeoutMs, options = {}) {
-  const request = options.request ?? requestJsonWithTimeout
+  const request = options.request ?? requestAssistantHealth
   const sleep = options.sleep ?? ((delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)))
-  const maxAttempts = boundedInteger(options.maxAttempts, 5, 1, 5)
+  const maxAttempts = boundedInteger(options.maxAttempts, ASSISTANT_HEALTH_MAX_ATTEMPTS, 1, ASSISTANT_HEALTH_MAX_ATTEMPTS)
   const retryDelayMs = boundedInteger(options.retryDelayMs, 15_000, 0, 15_000)
   const observations = []
   const startedAt = Date.now()
@@ -357,8 +334,9 @@ export async function probeAssistantHealth(url, timeoutMs, options = {}) {
   let issues
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     response = await request(url, timeoutMs)
-    issues = validateHealthResponse(response)
-    observations.push({ attempt, httpStatus: response.status, durationMs: response.durationMs, issues })
+    const diagnostics = describeAssistantHealth(response)
+    issues = diagnostics.issues
+    observations.push({ attempt, httpStatus: response.status, durationMs: response.durationMs, ...diagnostics })
     if (issues.length === 0 || (response.status >= 400 && response.status < 500 && response.status !== 429)) break
     if (attempt < maxAttempts) await sleep(retryDelayMs)
   }

@@ -143,6 +143,27 @@ $env:MAIN_SITE_SYNTHETIC_ASSISTANT_CHAT='1'; npm.cmd run main-site:synthetic; Re
 没有这个显式 opt-in 时，公开助手检查会记录为 `unchecked`，表示 health
 可读但 live chat/citation/model 状态未检查。
 
+### 助手健康故障诊断
+
+健康 GET 最多尝试 5 次，间隔 15 秒；401/403/404 等非 429 的 4xx 不重试。恢复后保留首次失败和完整尝试过程，状态为 `degraded`，并继续注明未验证 live chat。持续失败为 `offline`，严格模式退出 1。恢复不证明发生过冷启动。
+
+健康 JSON 正文上限 16 KiB，响应头与完整正文共用原请求截止时间；超限取消读取。这个限制只用于 health，不改变显式聊天验收的响应范围。
+
+主站报告 `checks[].healthAttempts` 保留每次检查的状态、耗时和固定诊断。Reliability 的当前 `main-site` 步骤会将最多 5 次安全记录放入 `steps[].healthAttempts`，随本次 CI artifact 上传：
+
+| 字段 | 含义 |
+|---|---|
+| `attempt` / `httpStatus` / `durationMs` | 次序、已收到的 HTTP 状态（未收到为 0）、单次耗时；正文读取失败也保留已收到的状态 |
+| `failureKind` | `none`、网络固定类别、`http_status`、`invalid_json`、`empty_response`、`response_too_large` 或 `invalid_health` |
+| `responseType` | `json`、`html`、`other`、`none`；按媒体类型分类，未标注时可识别已解析 JSON；不证明正文合法 |
+| `proxyError` | 只接受下列五个完整错误码，否则为 `null` |
+
+五个固定码均以 `public-assistant-upstream-` 开头：`not-configured`、`invalid-response`、`response-too-large`、`timeout`、`unreachable`。例如 HTTP 502 + `http_status` + `json` + `public-assistant-upstream-unreachable` 表示响应报告代理连接失败；HTTP 502 + `html` + `proxyError=null` 只证明收到 HTML 错误响应。两者都不能单独确定故障发生在 Cloudflare、Render 或其他网络层。
+
+旧报告缺少新字段时诊断为 `null`，不补造成功；手动跳过、缺少当前报告或崩溃时不导出历史尝试为当前证据。suite 逐字段重建记录，不复制原始正文、任意错误文本、请求头、地址或附加字段。健康成功也不会提升 live chat 覆盖。
+
+本地回归命令为 `npm.cmd run main-site:health-check` 与 `npm.cmd run reliability:report-check`，仅使用本地夹具，覆盖固定码、敏感原文丢弃、有界响应、共享截止时间、恢复过程和当前/历史证据。
+
 本地 `vite preview` 只验证静态页面、sitemap 和 robots 时，可以显式跳过同域
 assistant Function 检查，避免把本地没有 `/api/health` 误记成线上故障：
 

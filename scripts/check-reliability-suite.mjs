@@ -4,6 +4,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:pat
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { reliabilityTempPrefix, resolveDiagnosticsOutput, resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
+import { projectAssistantHealthAttempts } from './lib/assistant-health-diagnostics.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_STATUS_PATH = 'public/status/reliability-suite.json'
@@ -351,7 +352,13 @@ async function summarizeOutputFile(step, pathValue = step.outputPath) {
 
   try {
     const payload = await readJsonFile(pathValue)
-    return summarizeReport(payload, step.reportKind)
+    const summary = summarizeReport(payload, step.reportKind)
+    if (summary.readable && step.id === 'main-site') {
+      const assistant = payload.checks.find((check) => check.id === 'blog-semi-public-assistant')
+      const healthAttempts = projectAssistantHealthAttempts(assistant?.healthAttempts)
+      if (healthAttempts.length > 0) summary.healthAttempts = healthAttempts
+    }
+    return summary
   } catch (error) {
     return invalidReport('expected report was not readable', error instanceof SyntaxError ? 'current' : 'none')
   }
@@ -431,6 +438,7 @@ async function runStep(step, args, temporaryRoot) {
     coverage: parsed?.coverage ?? null,
     coverageStatus: parsed?.coverageStatus ?? 'unknown',
     evidenceSource: parsed?.evidenceSource ?? 'none',
+    ...(parsed?.healthAttempts ? { healthAttempts: parsed.healthAttempts } : {}),
     durationMs: result.durationMs,
     exitCode: result.exitCode,
     outputPath: step.outputPath,

@@ -1,0 +1,71 @@
+{
+  "baselineCommit": "cd09dce93ca433cf6990bebb60fccac926daa2bd",
+  "historicalFailure": {
+    "runId": "42654767766",
+    "artifactId": "13691268041",
+    "headSha": "92fafb3af72310d2fe1db43cca025d9069e1f4cc",
+    "mainSite": "assistant health returned HTTP 502",
+    "durationMsApproximate": 62200,
+    "cause": "unconfirmed"
+  },
+  "investigation": {
+    "subsequentBrowserHealth": {
+      "customDomainStatus": 200,
+      "pagesDomainStatus": 200,
+      "ok": true
+    },
+    "alternateLocalNetworkPath": {
+      "customDomainStatus": 502,
+      "directHealth": "timeout"
+    },
+    "renderEvidence": "No contemporaneous request/metric evidence; later deployment succeeded after the failed check.",
+    "conclusion": "Different observed access paths; neither persistent production failure nor cold start established."
+  },
+  "liveModelCalls": 0,
+  "businessPostRequests": 0,
+  "validation": [
+    {
+      "command": "npm.cmd run main-site:health-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run reliability:report-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run legal-rag:read-only-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run verification:diagnostics-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run status:contract",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run docs:observability-check",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run lint",
+      "status": "passed"
+    },
+    {
+      "command": "npm.cmd run build",
+      "status": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    }
+  ],
+  "cloudVerification": null,
+  "regressionBeforeFix": [
+    "main-site:health-check failed because proxyError was undefined",
+    "reliability:report-check failed because current healthAttempts were absent"
+  ],
+  "publicSnapshotsUnchanged": 9,
+  "temporaryCleanup": "Fixture temporary directories removed in finally; no manual temporary artifacts created yet."
+}

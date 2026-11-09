@@ -13,6 +13,7 @@ const sitemap = await readFile(new URL('../public/sitemap.xml', import.meta.url)
 const skip = 'public-links,legal-rag,erp,xunqiu,pet,playlab,site-status,site-monitor'
 let healthStatus = 200
 let healthStatuses = []
+let healthHtml = false
 let nonGetRequests = 0
 let healthRequests = 0
 let linkStatus = 200
@@ -29,8 +30,11 @@ const server = createServer((request, response) => {
   if (request.url === '/api/health') {
     healthRequests += 1
     const status = healthStatuses.shift() ?? healthStatus
-    response.writeHead(status, { 'Content-Type': 'application/json' })
-    response.end(JSON.stringify({ ok: status === 200 }))
+    response.writeHead(status, { 'Content-Type': healthHtml ? 'text/html' : 'application/json' })
+    response.end(healthHtml ? '<html>fixture-private-response-detail</html>' : JSON.stringify({
+      ok: status === 200,
+      ...(status === 502 ? { error: 'public-assistant-upstream-unreachable', detail: 'fixture-private-response-detail' } : {}),
+    }))
   } else if (request.url === '/sitemap.xml') {
     response.writeHead(200, { 'Content-Type': 'application/xml' }).end(sitemap)
   } else if (request.url === '/robots.txt') {
@@ -90,7 +94,7 @@ async function runSuite(base, options = {}) {
 // Inject only the child report boundary; the real suite still spawns commands,
 // removes seeded history, parses the output and computes strict exit codes.
 async function runProjectionFixture(base, id, payload, { raw, exitCode = 0, timeout = false } = {}) {
-  const script = { erp: 'check-erp-synthetic.mjs', 'site-status': 'generate-site-status.ts', 'site-monitor': 'check-site-monitor.ts' }[id]
+  const script = { 'main-site': 'check-main-site-synthetic.mjs', erp: 'check-erp-synthetic.mjs', 'site-status': 'generate-site-status.ts', 'site-monitor': 'check-site-monitor.ts' }[id]
   const source = `
     import { writeFileSync } from 'node:fs';
     globalThis.fetch = () => { throw new Error('fixture network blocked'); };
@@ -217,19 +221,42 @@ try {
     assert.equal(report.summary.failed, status === 200 ? 0 : 1)
     const main = report.steps.find((step) => step.id === 'main-site')
     assert.equal(main.status, status === 200 ? 'passed' : 'failed')
+    assert.equal(main.healthAttempts?.length, status === 200 ? 1 : 5, 'current health attempts must survive suite aggregation')
+    for (const [index, attempt] of main.healthAttempts.entries()) {
+      assert.equal(attempt.attempt, index + 1)
+      assert.equal(attempt.httpStatus, status)
+      assert.equal(attempt.failureKind, status === 200 ? 'none' : 'http_status')
+      assert.equal(attempt.responseType, 'json')
+      assert.equal(attempt.proxyError, null)
+      assert.equal(Number.isSafeInteger(attempt.durationMs), true)
+      assert.deepEqual(Object.keys(attempt).sort(), ['attempt', 'durationMs', 'failureKind', 'httpStatus', 'proxyError', 'responseType'])
+    }
     if (status === 503) assert.ok(main.issues.includes('assistant health returned HTTP 503'))
     assert.equal(report.summary.skipped, 8)
     assert.ok(!result.stdout.includes(base))
     assert.ok(!result.stdout.includes(repoRoot))
     assert.deepEqual(await snapshotHashes(), before)
   }
-  healthStatuses = [503, 200]
+  healthStatuses = [503, 502, 200]
   const recovered = await runSuite(base)
   assert.equal(recovered.code, 0, recovered.stderr)
   const recoveredMain = JSON.parse(recovered.stdout).steps.find((step) => step.id === 'main-site')
   assert.equal(recoveredMain.status, 'passed')
   assert.match(recoveredMain.summary, /degraded=1/)
-  assert.ok(recoveredMain.issues.some((issue) => issue.includes('recovered after 2 attempts') && issue.includes('503')))
+  assert.ok(recoveredMain.issues.some((issue) => issue.includes('recovered after 3 attempts') && issue.includes('503')))
+  assert.deepEqual(recoveredMain.healthAttempts.map((attempt) => attempt.httpStatus), [503, 502, 200])
+  assert.deepEqual(recoveredMain.healthAttempts.map((attempt) => attempt.proxyError), [null, 'public-assistant-upstream-unreachable', null])
+  assert.deepEqual(recoveredMain.healthAttempts.map((attempt) => attempt.failureKind), ['http_status', 'http_status', 'none'])
+  assert.doesNotMatch(recovered.stdout, /fixture-private-response-detail/)
+  healthStatus = 502
+  healthHtml = true
+  const htmlFailure = await runSuite(base)
+  assert.equal(htmlFailure.code, 1)
+  const htmlAttempts = JSON.parse(htmlFailure.stdout).steps.find((step) => step.id === 'main-site').healthAttempts
+  assert.equal(htmlAttempts.length, 5)
+  assert.ok(htmlAttempts.every((attempt) => attempt.httpStatus === 502 && attempt.responseType === 'html' && attempt.failureKind === 'http_status' && attempt.proxyError === null))
+  assert.doesNotMatch(htmlFailure.stdout, /fixture-private-response-detail/)
+  healthHtml = false
   assert.deepEqual(await snapshotHashes(), before)
   const crashed = await runSuite('http://[')
   assert.equal(crashed.code, 1)
@@ -237,9 +264,38 @@ try {
   const crashedMain = crashedReport.steps.find((step) => step.id === 'main-site')
   assert.equal(crashedMain.status, 'failed')
   assert.ok(crashedMain.issues.includes('expected report was not readable'))
+  assert.equal(Object.hasOwn(crashedMain, 'healthAttempts'), false)
   assert.deepEqual(await snapshotHashes(), before)
-  assert.equal(healthRequests, 8)
+  assert.equal(healthRequests, 14)
   assert.equal(nonGetRequests, 0)
+  for (const attempts of [undefined, [{ attempt: 1, httpStatus: 200, durationMs: 1, issues: ['legacy-private-detail'] }]]) {
+    const legacy = await runProjectionFixture(base, 'main-site', { ok: true, checks: [{ id: 'blog-semi-public-assistant', status: 'unchecked', healthAttempts: attempts }] })
+    assert.equal(legacy.code, 0)
+    assert.equal(legacy.step.coverageStatus, 'none', 'diagnostics must not upgrade chat coverage')
+    if (attempts) {
+      assert.deepEqual(legacy.step.healthAttempts, [{ attempt: 1, httpStatus: 200, durationMs: 1, failureKind: null, responseType: null, proxyError: null }])
+    } else assert.equal(Object.hasOwn(legacy.step, 'healthAttempts'), false)
+    assert.doesNotMatch(legacy.stdout, /legacy-private-detail/)
+  }
+  const unsafeAttempts = Array.from({ length: 6 }, (_, index) => ({
+    attempt: index + 1, httpStatus: 502, durationMs: 1,
+    failureKind: 'fixture-private-category', responseType: 'fixture-private-header', proxyError: 'fixture-private-error',
+    issues: ['fixture-private-issue'], body: 'fixture-private-body', url: 'https://fixture-private.invalid',
+  }))
+  const unsafe = await runProjectionFixture(base, 'main-site', {
+    ok: false,
+    checks: [{ id: 'blog-semi-public-assistant', status: 'offline', healthAttempts: unsafeAttempts }],
+  })
+  assert.equal(unsafe.code, 1)
+  assert.equal(unsafe.step.healthAttempts.length, 5)
+  assert.ok(unsafe.step.healthAttempts.every((attempt) => attempt.failureKind === null && attempt.responseType === null && attempt.proxyError === null))
+  assert.doesNotMatch(unsafe.stdout, /fixture-private/)
+  const malformedAttempts = await runProjectionFixture(base, 'main-site', {
+    ok: false,
+    checks: [{ id: 'blog-semi-public-assistant', status: 'offline', healthAttempts: [null, {}, { attempt: 1, httpStatus: '502', durationMs: 1 }, { attempt: 2, httpStatus: 502, durationMs: -1 }, { attempt: 6, httpStatus: 502, durationMs: 1 }] }],
+  })
+  assert.equal(malformedAttempts.code, 1)
+  assert.equal(Object.hasOwn(malformedAttempts.step, 'healthAttempts'), false)
   // Run the real suite and link CLI against a loopback server. No public target
   // is contacted; the import is inherited by the npm/tsx child processes.
   const fixtureImport = `const originalFetch = globalThis.fetch; globalThis.fetch = (_url, init) => originalFetch(${JSON.stringify(`${base}/link-fixture`)}, init);`
@@ -273,12 +329,13 @@ try {
   for (const step of skippedReport.steps) {
     assert.equal(step.skipReason, 'requested')
     assert.equal(step.coverage, null)
+    assert.equal(Object.hasOwn(step, 'healthAttempts'), false, 'skipped steps cannot project historic attempts as current evidence')
   }
   assert.equal(skippedReport.steps.find((step) => step.id === 'main-site').evidenceSource, 'previous')
   assert.equal(skippedReport.steps.find((step) => step.id === 'site-monitor').evidenceSource, 'none')
   assert.deepEqual(await readdir(diagnosticsRoot), [], 'skipped link checks must not upload a stale artifact')
   assert.deepEqual(await snapshotHashes(), before)
-  console.log('Reliability report checks passed: coverage, skipped/history semantics, corrupt reports, strict failure precedence, unchanged public snapshots, zero model calls.')
+  console.log('Reliability report checks passed: safe health attempts/recovery, coverage, skipped/history semantics, corrupt reports, strict failure precedence, unchanged public snapshots, zero model calls.')
 } finally {
   server.closeAllConnections()
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
