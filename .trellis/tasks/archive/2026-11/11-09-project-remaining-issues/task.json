@@ -3,7 +3,7 @@
   "name": "project-remaining-issues",
   "title": "项目剩余问题收口",
   "description": "用户已选择修复 Reliability 全 unchecked 误计 passed、补充覆盖统计，及 Legal RAG 默认只读与显式业务模式；完整规划待审阅，保留外部 504 和并行成果。",
-  "status": "review",
+  "status": "completed",
   "dev_type": "backend",
   "scope": null,
   "package": null,
@@ -11,11 +11,11 @@
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-11-09",
-  "completedAt": null,
+  "completedAt": "2026-11-10",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "92fafb3af72310d2fe1db43cca025d9069e1f4cc",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -53,6 +53,16 @@
       "publicSnapshotsUnchanged": 9,
       "realModelCalls": 0,
       "externalBusinessRequests": 0
+    },
+    "cloudValidation": {
+      "runId": 42654767766,
+      "conclusion": "failure",
+      "taskContractAccepted": true,
+      "passed": 6,
+      "failed": 1,
+      "skipped": 2,
+      "remainingFailure": "assistant-health-http-502",
+      "workflowDispatches": 1
     }
   }
 }

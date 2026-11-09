@@ -1,6 +1,6 @@
 # 实施计划
 
-状态：in_progress。用户已审阅 [PRD](prd.md) 和 [设计](design.md)，并回复“继续”批准实施。inline 主会话负责实现、最终验证，不派实现/检查子代理。
+状态：completed。用户已审阅 [PRD](prd.md) 和 [设计](design.md)，并回复“继续”批准实施。inline 主会话负责实现、最终验证，不派实现/检查子代理。
 
 ## 准备进度
 
@@ -66,4 +66,14 @@ git diff --check
 - 回归测试先复现旧版 2 passed 误报，再验证为 0 passed / 0 failed / 9 skipped。
 - 七项合同检查、lint、build、YAML 绑定校验及 diff 检查通过；9 份公开快照不变。
 - 只同步既有状态页操作提示；布局和交互未改，不重复全量浏览器回归，Site Quality 继续执行既有 smoke。
-- 等待精确提交、推送与一次云端只读复验。
+- 实现提交 92fafb3a 已推送；Site Quality 42654619665 success。
+
+## 云端验收与剩余问题
+
+- 已配置并读回验证 repository variable LEGAL_RAG_API_BASE_URL，值来自既有公开 health 地址的 origin；没有配置业务凭据。
+- 仅触发一次 [Reliability 42654767766](https://github.com/Drew-Z/biau/actions/runs/42654767766)，artifact 13691268041 内容及 SHA-256 已保存到 [evidence.json](evidence.json)。
+- 执行统计：6 passed / 1 failed / 2 skipped；覆盖统计：complete 5 / partial 2 / none 2 / unknown 0。
+- Legal RAG 明确携带 --read-only，health online，三个保护检查 unchecked；ERP/Xunqiu 为 skipped/no-checks-run，各 0/3 覆盖。
+- 46/46 公开链接最终通过；1 个 Legal RAG 链接 timeout 后恢复，首次失败保留。历史两个 GitHub 504 仍保留在旧证据中。
+- 唯一失败：主站助手 health 返回 HTTP 502。根因未确定；没有重新触发 workflow 或以成功快照覆盖失败。下一步排查该入口与后端部署/日志，避免与并行助手代码修改冲突。
+- 本次巡检没有模型业务请求；本地业务模式测试仅访问 loopback。9 份公开快照保持原字节。

@@ -22,6 +22,10 @@
 ## 证据索引
 
 - [evidence.json](evidence.json)：云端报告、46 目标诊断、映射、后续 HEAD/GET、单次 health GET、无配置复现、公开快照哈希。
-- [外链归档记录](../archive/2026-11/11-08-public-link-reliability/implement.md)。
-- [Horizon 定时验收](../archive/2026-11/11-06-ai-daily-replanning/schedule-validation.md)。
-- [现行人工门禁](../../../docs/manual-gates.md) 与 [可观测性规范](../../spec/backend/observability-guidelines.md)。
+- [外链归档记录](../11-08-public-link-reliability/implement.md)。
+- [Horizon 定时验收](../11-06-ai-daily-replanning/schedule-validation.md)。
+- [现行人工门禁](../../../../../docs/manual-gates.md) 与 [可观测性规范](../../../../spec/backend/observability-guidelines.md)。
+
+## 本任务验收后的更新
+
+巡检覆盖与 Legal 只读模式已实施并验收。2026-11-10 00:26（上海）的单次云端巡检发现主站助手 health HTTP 502，根因未确定；Legal health 通过，46 个外链最终通过。该观测属于提交 92fafb3a，不能用后续并行助手提交 d17de0a2 直接证明已恢复。下一步优先核对助手健康请求路径、部署与平台日志，保留本次失败；不重用模型调用授权。
