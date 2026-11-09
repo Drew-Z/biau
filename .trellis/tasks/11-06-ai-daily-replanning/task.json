@@ -2,7 +2,7 @@
   "id": "ai-daily-replanning",
   "name": "ai-daily-replanning",
   "title": "AI 日报重新规划",
-  "description": "七源/Gemini Lite 已上线，新晚刊由 Actions 自动发布且两域阅读通过；实际 schedule 已触发，补修跨午夜归期后待观察定时成功。候选累计 51/60、剩余 9。",
+  "description": "七源/Gemini Lite 已上线；合格新刊云端自动发布、两域阅读及修复后实际早晚 schedule 成功已验证。空输入正常跳过并保留旧刊，首版验收完成，待归档。",
   "status": "in_progress",
   "dev_type": null,
   "scope": null,
@@ -207,9 +207,7 @@
       "newModelCallsThisRelease": 1,
       "newEditionResult": "Empty selection; no enrichment or publish; previous content branch unchanged."
     },
-    "pendingOperationalEvidence": [
-      "Successful actual schedule after midnight-date repair; real prior schedule was observed but failed before generation"
-    ],
+    "pendingOperationalEvidence": [],
     "outcomeRepair": {
       "date": "2026-11-07",
       "cron": [
@@ -392,6 +390,19 @@
         "siteQuality": "success",
         "cloudflarePages": "success"
       }
+    },
+    "scheduleValidation": {
+      "date": "2026-11-09",
+      "status": "passed",
+      "runs": [
+        42453568590,
+        42507493986
+      ],
+      "collectionRun": 42550631725,
+      "modelCalls": 0,
+      "report": "schedule-validation.md",
+      "evidence": "schedule-evidence.json",
+      "limits": "Scheduled runs had no input, so no new scheduled edition was generated; existing manual-triggered cloud publication remains separate evidence. Pause gate was not toggled live."
     }
   }
 }
