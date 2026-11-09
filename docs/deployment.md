@@ -70,6 +70,10 @@ npm run cf-assistant:smoke
 
 ## Render: Public assistant
 
+计算档位：`starter`（现名 `0.5c-512mb`，0.5 CPU / 512 MB），基础费用约 7 美元/月，按使用时长计费，流量超额另计。该档位移除免费实例的空闲休眠限制；2026-11-10 用户批准只升级公开助手，Studio 和 RAG 的档位独立管理。仓库 `render.yaml` 与平台配置应同时维护，不因后续 Blueprint 同步回退到 `free`。
+
+只改计算档位时，保留已部署应用提交和环境配置。Render API 的服务 PATCH 不会自动部署，更新后确认没有正在运行的部署，再对原 live 提交发起一次部署并验证 `/health`；Dashboard 修改档位会自动触发部署，不能再重复手动部署。健康检查成功不等于真实模型回答验收。参考 [Render 计算档位](https://render.com/docs/compute-plans) 与 [免费实例限制](https://render.com/docs/free)。
+
 Build Command：
 
 ```text
@@ -129,7 +133,9 @@ METRICS_ENABLED=false
 
 随后新获批的同一文章比较只提交 1 次：HTTP 200、完整 SSE、route=site、4 条站内证据、0 条网页证据，两篇指定文章均保留引用。模型仍在约 23.6 秒后返回 `degraded/fallback`、`timeout`，最终生成尝试 1 次、重试 0；回答阶段等待约 20 秒，日志仅能定位为 network/timeout，不能据此断言密钥、协议或模型不受支持。四条站内引用 200、390px 无横向溢出、刷新恢复、会话删除 200/再读 404 通过。默认模型、Responses 协议、20 秒回答空闲时限、45 秒总预算和一次最终生成尝试保持原配置。路由问题已修复，真实模型回答仍未验收；本次单次授权已消耗。
 
-2026-11-10 后续离线修复已复现并处理一项适配器缺陷：收到完整 `response.completed` 或兼容 `[DONE]` 后，立即结束读取并取消剩余流，不再等待 HTTP EOF；`response.output_text.done` 仍允许后续文本片段。真正的超时增加固定 `timeout_phase`，区分等待响应头、SSE 首字节、SSE 中途停顿和非 SSE 正文读取；不记录原文、端点或模型。该变更仍待发布及新的单次真实业务验收，不能证明此前线上超时的原因或模型已经恢复；默认渠道、模型、预算及重试配置未变。实现与验证见 [任务记录](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
+2026-11-10 后续适配器修复已按用户批准发布为 `534beb96`：收到完整 `response.completed` 或兼容 `[DONE]` 后结束读取并取消剩余流，单个 `response.output_text.done` 仍允许后续文本片段；完成期间的用户取消继续传播。Public 部署 `dep-dbp19qetlv9c73f62cvg` live，Pages `adabdc9b-a7cf-421c-87e3-2818ce8eb37c` success；CI、health 和全部 29 项环境变量一致性核对通过，RAG 同步只读跳过并恢复临时变量。
+
+这次新获批比较只提交 1 次、最终生成尝试 1 次、重试 0；HTTP 200 和完整 SSE，route=site、4 条站内证据、0 条网页证据，两篇指定文章引用均保留，但约 21.3 秒仍返回 degraded/fallback。新 recovery 日志明确为 `timeout_phase=awaiting_headers`：约 20 秒的回答等待期间尚未收到渠道 HTTP 响应头，因此本次失败发生在 SSE 开始前，不是已修复的终止事件等 EOF 分支；不能据此判断供应商是否收到或处理了请求，也不能断言密钥、模型或协议错误。四条引用 200、390px 无横向溢出、刷新恢复、会话删除 200/再读 404 通过。默认模型与预算未变，单次授权已消费，完整回答仍未验收。详情见 [任务记录](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 

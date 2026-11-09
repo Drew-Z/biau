@@ -6,7 +6,7 @@
 4. 运行 public model/agent/image/quality/API/persistence/metrics、共享 AI Daily Responses runtime fixture、部署文档检查、server/frontend build、lint 和 diff 检查。均使用本地 fixture，不调用真实模型。
 5. 复核工作区差异、敏感字段、恢复点和本轮临时文件，记录结果；生产发布和新的真实问题待单独授权。
 
-当前状态：离线完成；用户于 2026-11-10 回复“继续”，批准发布本次修复并使用当前 grok-4.7 执行一次指定的两篇 Legal RAG 文章比较，失败不自动重试。其他会话的可靠性脚本和既有未跟踪文件不属于本任务。
+当前状态：修复已发布并完成一次获批验证；渠道仍在响应头到达前超时，完整回答验收未通过。本次单次授权已消费。其他会话的可靠性脚本和既有未跟踪文件不属于本任务。
 
 ## 结果（2026-11-10）
 
@@ -23,3 +23,16 @@
 恢复使用本轮开始前的干净 Git 源码/文档提交 `de11413c91a5868a073c636886f58f1ac6cf467c`；具体路径、SHA-256、字节数和新文件不存在记录保存在既有恢复组 manifest 的 `streamTimeoutRepair`。生产回滚点为 Public 部署 `dep-dbovambbc2fs73db5bc0` / 提交 `d17de0a2`。本轮授权与提交计数独立登记为 `terminalRelease`，不复用上次已消费的请求。
 
 线上原有 network/timeout 日志无法证明停在何阶段。本地修复真实缺陷，但不能据此宣布线上根因已确认或完整回答恢复；发布后应只执行新批准的那一次文章比较，保留结果且失败不自动重试。
+
+## 发布与真实结果
+
+- 用户明确“继续”后，14 个核验文件提交为 `534beb9681fa36813095967172e9bd0dd4644ae4` 并推送；保留另一会话已合入的可靠性提交及未提交工作。
+- `[skip render]` 阻止无关自动部署；Public auto-deploy=off，仅手动触发一次 `dep-dbp19qetlv9c73f62cvg`，精确提交 live。Pages `adabdc9b-a7cf-421c-87e3-2818ce8eb37c` success。
+- Site Quality `42676754027` 通过。RAG sync `42676754547` 在临时只读变量下 skipped，零 embedding/索引写入；变量原先不存在，完成后删除恢复。
+- Public 与同源 health 均 200、database/modelConfigured=true，核对全部 29 项环境变量摘要一致，没有模型测活。
+- 唯一业务提交在 UTC `2026-11-09T19:02:24.466Z` 发出：HTTP 200、ready/progress/result/done 完整，route=site、4 条站内证据、0 条网页证据，两篇指定文章引用均保留；约 21.3 秒返回 degraded/fallback/timeout，最终生成尝试 1 次、自动重试 0。
+- UTC `19:02:50.144689347Z` 的单条 recovery 为 network/timeout、`timeout_phase=awaiting_headers`、attempts=1。首个日志查询 503，缩小同一时间窗后只读查询成功。阶段表示未观察到响应头，不证明供应商收到/处理情况、认证错误或协议不支持。
+- 桌面/390px 截图已目视检查；四条引用 200、无横向溢出、刷新恢复通过。青珑观察到 thinking/working/review/idle；不扩展为其他真实状态已通过。临时会话 DELETE 200、再读 404，浏览器关闭。
+- 原模型、协议、一次生成限制、20 秒 idle 与 45 秒总预算保持。没有自动重发或自动选择其他模型。
+
+本次修复与发布范围已完成，线上生成可用性仍未解决。后续先依据首响应等待证据核对渠道支持与首响应延迟；若设计单独的首响应等待预算，必须保持绝对总截止时间，先做本地回归，再对具体发布和新增真实问题核对授权。不能仅延长所有等待或从 health 推断模型恢复。
