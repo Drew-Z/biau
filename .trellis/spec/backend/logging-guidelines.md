@@ -33,6 +33,7 @@ If a public-assistant recovery event must be logged, allow only a fixed event na
 - `state` is only `recovered` or `degraded`.
 - `attempts` is bounded to `1`, `2`, or `3`.
 - `duration_bucket` is one of `under_1s`, `1s_to_5s`, `5s_to_15s`, `15s_to_30s`, or `30s_or_more`; exact latency is forbidden.
+- `timeout_phase` is optional and only accompanies an internal transport timeout. Allow exactly `awaiting_headers`, `awaiting_stream`, `streaming`, or `reading_body`; omit missing/unknown values. SSE heartbeat bytes count as streaming activity, so this does not prove model-token progress. Non-SSE body reads do not distinguish empty from partial bodies. This field remains server-only and never changes failure attribution, retry policy, public responses, or display snapshots.
 - `failure_class` may use the public recovery classes plus `access_denied`, `rate_limited`, `model_unavailable`, `request_rejected`, `provider_unavailable`, `relay_unreachable`, `relay_invalid_response`, and `relay_response_too_large`.
 - `access_denied` means the upstream rejected the configured credential or deployment origin. Check the server-side credential pairing and provider egress policy without logging either value.
 - `rate_limited` means the provider rejected the real request because of quota or rate policy. The application may continue only according to the bounded retry contract.

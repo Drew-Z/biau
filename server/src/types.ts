@@ -135,6 +135,7 @@ export type ChatFallbackReason =
   | 'tool_error'
   | 'policy_blocked'
 export type ProviderDiagnosticKind = 'timeout' | 'network_error' | 'http_status' | 'empty_response'
+export type ProviderTimeoutPhase = 'awaiting_headers' | 'awaiting_stream' | 'streaming' | 'reading_body'
 export type ProviderRelayFailureKind =
   | 'provider_rejected'
   | 'upstream_unreachable'
@@ -146,6 +147,7 @@ export type RagAdapterDiagnosticKind = 'not_configured' | 'timeout' | 'network_e
 
 export interface ProviderDiagnostic {
   kind: ProviderDiagnosticKind
+  timeoutPhase?: ProviderTimeoutPhase
   httpStatus?: number
   relayFailure?: ProviderRelayFailureKind
   relayOrigin?: ProviderRelayOriginKind

@@ -129,6 +129,8 @@ METRICS_ENABLED=false
 
 随后新获批的同一文章比较只提交 1 次：HTTP 200、完整 SSE、route=site、4 条站内证据、0 条网页证据，两篇指定文章均保留引用。模型仍在约 23.6 秒后返回 `degraded/fallback`、`timeout`，最终生成尝试 1 次、重试 0；回答阶段等待约 20 秒，日志仅能定位为 network/timeout，不能据此断言密钥、协议或模型不受支持。四条站内引用 200、390px 无横向溢出、刷新恢复、会话删除 200/再读 404 通过。默认模型、Responses 协议、20 秒回答空闲时限、45 秒总预算和一次最终生成尝试保持原配置。路由问题已修复，真实模型回答仍未验收；本次单次授权已消耗。
 
+2026-11-10 后续离线修复已复现并处理一项适配器缺陷：收到完整 `response.completed` 或兼容 `[DONE]` 后，立即结束读取并取消剩余流，不再等待 HTTP EOF；`response.output_text.done` 仍允许后续文本片段。真正的超时增加固定 `timeout_phase`，区分等待响应头、SSE 首字节、SSE 中途停顿和非 SSE 正文读取；不记录原文、端点或模型。该变更仍待发布及新的单次真实业务验收，不能证明此前线上超时的原因或模型已经恢复；默认渠道、模型、预算及重试配置未变。实现与验证见 [任务记录](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
+
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 
 `ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用获批的真实业务问题确认当前渠道支持 JSON Schema 后，才可改为 `json-schema`。旧渠道的提示词 JSON 和流式验证不能转移为新渠道的兼容性证明；本次超时也不能证明渠道不支持 Responses。健康检查与确定性测试不探测模型目录或调用模型。

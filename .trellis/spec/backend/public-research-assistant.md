@@ -7,6 +7,7 @@
 - One primary Responses API channel owns planning. Final answer generation may use one bounded server-only fallback provider with at most two ordered model names. Retrieval, embedding, search, and reranking are tools rather than generation-model routes.
 - Planner requests use the bounded non-streaming Responses contract. Answer generation uses `stream: true` and accumulates standard `response.output_text.delta` / `response.output_text.done` / `response.completed` events; the shared decoder also accepts a relay's chat-shaped JSON or SSE `choices` compatibility form without changing protocol or endpoint selection. Raw model deltas remain server-only because the structured answer must pass claim/citation verification before publication.
 - The shared Responses adapter owns output limits, total and first-activity timing, response-size limits, JSON/SSE/chat-relay decoding, and the optional `off | json-schema` structured-output capability. Schema mode defaults to `off`; rejection never triggers endpoint or protocol guessing.
+- A complete SSE `response.completed` or compatible `[DONE]` frame ends reading immediately and cancels the remaining body; HTTP EOF is not required. Ignore frames after that terminal boundary. `response.output_text.done` ends only one text part and must allow later parts or the final response to replace it. Preserve existing EOF-only compatibility and completion-shape reporting; do not infer an upstream completion event from EOF.
 - Public responses never expose provider names, model IDs, endpoints, prompts, graph traces, internal diagnostics, or private/internal citations.
 - Public `/health` checks generation-channel configuration only. It must never enumerate, probe, ping, or send a liveness prompt to primary or fallback models, and it must not expose channel count or order.
 
@@ -375,6 +376,7 @@ Correct: carry the generated knowledge prior into remote fusion, execute one sha
 - Relay failures are identified only from the trusted fixed-enum `X-BIAU-Relay-Failure` header; raw upstream bodies never enter logs.
 - `relay_function` means the Pages Function handled the response but no upstream-failure enum applied. `relay_edge` means the configured BIAU relay returned an HTTP response without the Function origin marker; neither label identifies a provider or exposes an endpoint.
 - Model/provider identity, endpoints, credentials, question text, request IDs, and session IDs remain forbidden.
+- Only an internal transport timeout may add `timeout_phase`: `awaiting_headers` (no headers), `awaiting_stream` (SSE headers but no bytes), `streaming` (SSE bytes received, including heartbeat/partial frames), or `reading_body` (non-SSE body consumption). This phase describes local observation, not root cause or whether a model token arrived. Missing/unknown phases are omitted, and public HTTP/display snapshots must discard the entire internal diagnostic.
 
 ### 4. Validation & Error Matrix
 
@@ -395,6 +397,7 @@ Correct: carry the generated knowledge prior into remote fusion, execute one sha
 ### 6. Tests Required
 
 - `npm.cmd run assistant:public-model-check` asserts Function/edge/upstream origin classification and scans the serialized record for forbidden fields.
+- Its loopback lifecycle fixtures cover terminal events on open connections, ignored trailing frames, fragmented UTF-8/CRLF SSE, continued text parts, idle resets, all timeout phases, cancellation, size/error boundaries, and existing EOF compatibility. Timeout/failed streams never expose partial content; the quality matrix verifies phase redaction in HTTP and persisted display snapshots.
 - `npm.cmd run cf-model-relay:check` asserts the fixed Function origin marker on fail-closed, success, streaming, and upstream-rejection responses.
 - `npm.cmd run server:build` is required because the root Vite build does not compile the independent `server/tsconfig.json` project.
 - Production verification uses one user-approved business request; scheduled probes and provider catalog calls remain forbidden.

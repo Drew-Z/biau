@@ -3,6 +3,7 @@ import type {
   ProviderDiagnosticKind,
   ProviderRelayFailureKind,
   ProviderRelayOriginKind,
+  ProviderTimeoutPhase,
   PublicAssistantRecoveryFailureClass,
 } from './types.js'
 
@@ -241,6 +242,7 @@ async function requestEndpoint(input: {
   let firstActivityMs: number | undefined
   const abort = new AbortController()
   let diagnosticKind: ProviderDiagnosticKind = 'network_error'
+  let timeoutPhase: ProviderTimeoutPhase = 'awaiting_headers'
   let responseStatus: number | undefined
   let relayOrigin: ProviderRelayOriginKind | undefined
   let responseShape: ResponsesResponseShape | undefined
@@ -289,6 +291,7 @@ async function requestEndpoint(input: {
     })
     firstActivityMs = Math.max(0, Date.now() - startedAt)
     responseStatus = response.status
+    timeoutPhase = 'reading_body'
     relayOrigin = readRelayOrigin(response.headers, input.channel)
     if (input.stream) armTimeout()
     if (!response.ok) {
@@ -314,8 +317,11 @@ async function requestEndpoint(input: {
       }
     }
     const contentType = response.headers.get('Content-Type')?.toLowerCase() ?? ''
-    const streamed = input.stream && contentType.includes('text/event-stream')
+    const isEventStream = input.stream && contentType.includes('text/event-stream')
+    if (isEventStream) timeoutPhase = 'awaiting_stream'
+    const streamed = isEventStream
       ? await readResponsesStreamResult(response.body, () => {
+        timeoutPhase = 'streaming'
         firstActivityMs ??= Math.max(0, Date.now() - startedAt)
         armTimeout()
       })
@@ -393,6 +399,7 @@ async function requestEndpoint(input: {
         }
       }
     }
+    input.signal?.throwIfAborted()
     return {
       ok: true,
       content,
@@ -431,6 +438,7 @@ async function requestEndpoint(input: {
       httpStatus: responseStatus ?? null,
       diagnostic: {
         kind,
+        ...(kind === 'timeout' ? { timeoutPhase } : {}),
         ...(kind === 'http_status' ? { httpStatus: responseStatus } : {}),
         ...(kind === 'http_status' && relayOrigin ? { relayOrigin } : {}),
         attemptedEndpoints: 0,
@@ -590,7 +598,7 @@ export async function readResponsesStreamResult(
   }
 
   try {
-    while (true) {
+    while (!sawCompleted && !sawDoneMarker) {
       const { done, value } = await reader.read()
       if (done) break
       bytesRead += value.byteLength
@@ -599,10 +607,20 @@ export async function readResponsesStreamResult(
       buffer += decoder.decode(value, { stream: true })
       const frames = buffer.split(/\r?\n\r?\n/u)
       buffer = frames.pop() ?? ''
-      frames.forEach(consumeFrame)
+      for (const frame of frames) {
+        consumeFrame(frame)
+        if (sawCompleted || sawDoneMarker) break
+      }
     }
-    buffer += decoder.decode()
-    if (buffer.trim()) consumeFrame(buffer)
+    if (!sawCompleted && !sawDoneMarker) {
+      buffer += decoder.decode()
+      if (buffer.trim()) consumeFrame(buffer)
+    }
+    // A completed Responses event (or relay DONE marker) ends the response even
+    // when its HTTP connection stays open. output_text.done ends only one part.
+    if (sawCompleted || sawDoneMarker) {
+      await reader.cancel('responses-stream-completed').catch(() => undefined)
+    }
   } catch (error) {
     await reader.cancel('responses-stream-decoder-stopped').catch(() => undefined)
     throw error

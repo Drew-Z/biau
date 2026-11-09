@@ -7,7 +7,7 @@ import type {
   PublicAssistantPlan,
   PublicAssistantRequest,
 } from '../src/publicAssistantRuntime.js'
-import { toPublicAssistantHttpResponse } from '../src/publicAssistantProjection.js'
+import { buildPublicAssistantDisplaySnapshot, toPublicAssistantHttpResponse } from '../src/publicAssistantProjection.js'
 import type { PublicAssistantMode, PublicAssistantRecoveryFailureClass, PublicAssistantRoute } from '../src/types.js'
 import { formatPublicAssistantRecoveryLabel } from '../../src/utils/publicAssistantPresentation.js'
 
@@ -141,7 +141,7 @@ const failureCases: Array<{
     name: 'timeout',
     failure: 'provider_error',
     failureClass: 'timeout',
-    diagnostic: { kind: 'timeout', attemptedEndpoints: 1, timeoutMs: 100 },
+    diagnostic: { kind: 'timeout', timeoutPhase: 'streaming', attemptedEndpoints: 1, timeoutMs: 100 },
     expectedAttempts: 3,
   },
   {
@@ -198,6 +198,8 @@ for (const fixture of failureCases) {
   assert(!serialized.includes('private-fixture-provider'))
   assert(!serialized.includes('httpStatus'))
   assert(!serialized.includes('timeoutMs'))
+  assert.doesNotMatch(serialized, /timeoutPhase|timeout_phase/u)
+  assert.doesNotMatch(JSON.stringify(buildPublicAssistantDisplaySnapshot(response)), /timeoutPhase|timeout_phase/u)
 }
 
 const recoveryLabelCases = [

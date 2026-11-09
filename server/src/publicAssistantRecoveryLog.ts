@@ -1,5 +1,6 @@
 import type {
   ProviderDiagnostic,
+  ProviderTimeoutPhase,
   PublicAssistantRecoveryFailureClass,
   PublicAssistantRecoveryMeta,
 } from './types.js'
@@ -28,6 +29,7 @@ export interface PublicAssistantRecoveryLogRecord {
   failure_class: PublicAssistantOperationalFailureClass
   failure_origin: 'configuration' | 'public_api' | 'relay_function' | 'relay_edge' | 'relay_upstream' | 'network' | 'response'
   http_status_class?: `${number}xx`
+  timeout_phase?: ProviderTimeoutPhase
   attempts: 1 | 2 | 3
   duration_bucket: PublicAssistantRecoveryDurationBucket
 }
@@ -45,8 +47,22 @@ export function buildPublicAssistantRecoveryLogRecord(input: {
     failure_class: classifyOperationalFailure(input.diagnostic, input.failureClass),
     failure_origin: classifyFailureOrigin(input.diagnostic, input.failureClass),
     ...httpStatusClass(input.diagnostic?.httpStatus),
+    ...timeoutPhaseFields(input.diagnostic),
     attempts: normalizeAttempts(input.recovery.attempts),
     duration_bucket: recoveryDurationBucket(input.durationMs),
+  }
+}
+
+function timeoutPhaseFields(diagnostic?: ProviderDiagnostic): { timeout_phase?: ProviderTimeoutPhase } {
+  if (diagnostic?.kind !== 'timeout') return {}
+  switch (diagnostic.timeoutPhase) {
+    case 'awaiting_headers':
+    case 'awaiting_stream':
+    case 'streaming':
+    case 'reading_body':
+      return { timeout_phase: diagnostic.timeoutPhase }
+    default:
+      return {}
   }
 }
 

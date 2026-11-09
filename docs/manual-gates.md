@@ -73,6 +73,8 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 这次业务请求只提交 1 次：HTTP 200、完整 SSE、route=site、4 条站内证据、0 条网页证据，两篇文章的引用都保留，证明路由修复在线生效。最终仍在约 23.6 秒返回 `degraded/fallback`、`timeout`，生成尝试 1 次、重试 0；Render 日志为 network/timeout，回答阶段约 20 秒。四条站内引用 200、390px 无横向溢出、刷新恢复、临时 Session 删除 200/再读 404 均通过。青珑实际观察到 thinking、working、review、idle，不能扩展为其他状态已验收。默认模型、协议和预算未变，模型完整回答仍未通过，本次单次授权已消耗。用户要求后续不使用子代理，R4 独立盲测继续保留未完成。
 
+2026-11-10 继续零模型调用排查，loopback 复现并修复“完成事件已到但 HTTP 连接不关闭导致误超时”。补充固定超时阶段日志，公开结果和快照继续剔除内部诊断。变更仍待发布及新的单次真实文章比较批准；上一单次授权不复用，也不据离线成功宣称生产恢复。详情见 [修复任务](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
+
 ## Roleplay 角色剧场公开演示
 
 Roleplay 角色剧场是独立部署的游客式多角色 AI 对话演示，角色库入口为 `https://roleplay.playlab.eu.cc/`。主站只记录公开入口、角色库规模和低敏技术边界；API Key、上游地址、管理员令牌、服务器 IP、访客消息和完整角色卡提示词必须继续留在独立服务端。
