@@ -125,7 +125,9 @@ METRICS_ENABLED=false
 
 生产公开助手由 Render 服务端直接消费获批渠道。2026-11-09 用户指定新渠道及默认模型 `grok-4.7`，本次只更新服务端 base/key/model，保留 Responses 协议；部署和配置核对通过。一次单独获批的真实文章比较在约 33.6 秒后返回 `degraded/fallback`，最终生成尝试 1 次、失败类别 `timeout`，没有自动重试，因此新渠道的完整回答验收尚未通过。真实 base URL 和 client key 只写入 Render 环境变量及本地加密恢复点，不进入仓库、浏览器变量、健康响应或公开验收记录；访客域名仍只承担站点与公开 API 入口。旧 Cloudflare model relay 代码和变量继续作为历史回滚边界。AI Daily 的 CPA runtime、批准包及功能开关不随公开助手切换。
 
-2026-11-10 的离线排查确认：旧规则把“比较”直接当作外部检索需求，导致明确比较本站两篇文章也进入 combined。当前工作区修复让明确站内多文章/项目比较直接走 site，同时保留外部对照、混合范围及显式模式覆盖；两篇文章的本地端到端夹具保留来源、只模拟一次回答、无 Planner/网页搜索/供应商调用。该修复尚未发布，也不能证明上游超时已解决；默认模型、Responses 协议、20 秒回答空闲时限、45 秒总预算和一次最终生成尝试保持原配置。下一次真实请求仍需单独批准。
+2026-11-10 站内比较路由修复已发布为 `d17de0a2`：明确站内多文章/项目比较直接走 site，保留外部对照、混合范围及显式模式覆盖。Render Public 部署 `dep-dbovambbc2fs73db5bc0` live，Pages 部署 `63c08d01-fecc-4eab-9cda-b81972de0a26` success，Site Quality 与 RAG 同步检查通过。提交使用 `[skip render]`，只手动部署 Public；RAG 同步临时只读并以 already-indexed 跳过，变量随后恢复原先不存在的状态。RAG 保持其他任务先前发布的 `92fafb3a`，Studio 未重启。
+
+随后新获批的同一文章比较只提交 1 次：HTTP 200、完整 SSE、route=site、4 条站内证据、0 条网页证据，两篇指定文章均保留引用。模型仍在约 23.6 秒后返回 `degraded/fallback`、`timeout`，最终生成尝试 1 次、重试 0；回答阶段等待约 20 秒，日志仅能定位为 network/timeout，不能据此断言密钥、协议或模型不受支持。四条站内引用 200、390px 无横向溢出、刷新恢复、会话删除 200/再读 404 通过。默认模型、Responses 协议、20 秒回答空闲时限、45 秒总预算和一次最终生成尝试保持原配置。路由问题已修复，真实模型回答仍未验收；本次单次授权已消耗。
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 
