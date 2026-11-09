@@ -19,7 +19,7 @@
 本站另有：/api/model-relay/.../responses → modelRelay.ts → Responses 上游
 ```
 
-两条链路需要分别判断。日报没有调用本站 `relayResponsesRequest`。本地依据是 [run.py](../../../scripts/horizon/run.py) 的 SDK 注入及直接配置、固定版本 [Horizon client][horizon] 的 `OpenAIClient._do_request`，以及 [modelRelay.ts](../../../functions/_shared/modelRelay.ts) 的 Responses 契约。
+两条链路需要分别判断。日报没有调用本站 `relayResponsesRequest`。本地依据是 [run.py](../../../../../scripts/horizon/run.py) 的 SDK 注入及直接配置、固定版本 [Horizon client][horizon] 的 `OpenAIClient._do_request`，以及 [modelRelay.ts](../../../../../functions/_shared/modelRelay.ts) 的 Responses 契约。
 
 | 证据 | 可以确定 | 不能据此确定 |
 | --- | --- | --- |

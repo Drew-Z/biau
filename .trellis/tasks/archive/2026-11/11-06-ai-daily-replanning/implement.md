@@ -1,6 +1,6 @@
 # AI 日报：实施与验收计划
 
-状态：in_progress / 首版验收证据已齐备，待任务收尾归档。2026-11-09 已确认修复后的实际早晚 schedule 成功；七来源空输入正常跳过、两个生产域仍提供哈希正确的旧刊。本轮只采集验证 0 模型、0 发布，AC12 已补齐。最新记录见 [schedule-validation.md](schedule-validation.md)；下文分阶段未勾选项保留为历史过程，不能覆盖最新验收。合格新刊自动发布见 [channel-2-paced-validation.md](channel-2-paced-validation.md)，初始上线历史见 [release.md](release.md)。
+状态：completed / 首版验收完成，已于 2026-11-09 归档。已确认修复后的实际早晚 schedule 成功；七来源空输入正常跳过、两个生产域仍提供哈希正确的旧刊。本轮只采集验证 0 模型、0 发布，AC12 已补齐。最新记录见 [schedule-validation.md](schedule-validation.md)；下文分阶段未勾选项保留为历史过程，不能覆盖最新验收。合格新刊自动发布见 [channel-2-paced-validation.md](channel-2-paced-validation.md)，初始上线历史见 [release.md](release.md)。
 
 ## 当前续作：条目隔离
 

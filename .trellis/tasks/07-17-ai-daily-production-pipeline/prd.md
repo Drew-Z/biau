@@ -1,6 +1,6 @@
 # AI Daily production pipeline
 
-> 2026-11-06 接续：新 AI 行业早晚刊转到 `../11-06-ai-daily-replanning/`，采用独立 Horizon 与本站最小读取。下文作为旧 Studio/Flash/深读方案及未完成生产验收的历史依据保留，不再作为新早晚刊的实现前置。新链路不会自动开启旧生成、Cron 或 Feed。
+> 2026-11-06 接续：新 AI 行业早晚刊转到 `../archive/2026-11/11-06-ai-daily-replanning/`，采用独立 Horizon 与本站最小读取。下文作为旧 Studio/Flash/深读方案及未完成生产验收的历史依据保留，不再作为新早晚刊的实现前置。新链路不会自动开启旧生成、Cron 或 Feed。
 
 ## Goal
 

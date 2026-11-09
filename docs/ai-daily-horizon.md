@@ -2,7 +2,7 @@
 
 本链路复用 [Thysrael/Horizon](https://github.com/Thysrael/Horizon/tree/d7406f738c711df82b8f060fa1d5e9999d36cca0)。源码不入本站，运行目录使用固定提交与其 `uv.lock`；Python 3.12、uv 0.11.3。`scripts/horizon/upstream.json` 保存版本和源码/依赖哈希，启动时拒绝版本漂移。许可见 [Horizon attribution](./horizon-license.txt)。
 
-2026-11-07 用户接受最终首期样稿，首期与网站上线，早晚自动更新已启用；初始 DeepSeek 试跑和发布历史见 [上线记录](../.trellis/tasks/11-06-ai-daily-replanning/release.md)。2026-11-08 已启用七来源和渠道 2 的 Gemini Lite：修复完整 JSON 代码块误判、两阶段使用 10 秒间隔后，本地和 GitHub Actions 各完成 6 次真实请求，均从 5 条输入生成 1 条合格快讯；云端新一期已自动发布，两个生产域名阅读核验通过。该样本不证明长期稳定，也未确定前次 429 的具体服务商限额，详见 [节奏验证与切换记录](../.trellis/tasks/11-06-ai-daily-replanning/channel-2-paced-validation.md)。此前 524 与 RSS 事实边界修复历史继续保留于 [首期试跑记录](../.trellis/tasks/11-06-ai-daily-replanning/first-live-trial.md)。
+2026-11-07 用户接受最终首期样稿，首期与网站上线，早晚自动更新已启用；初始 DeepSeek 试跑和发布历史见 [上线记录](../.trellis/tasks/archive/2026-11/11-06-ai-daily-replanning/release.md)。2026-11-08 已启用七来源和渠道 2 的 Gemini Lite：修复完整 JSON 代码块误判、两阶段使用 10 秒间隔后，本地和 GitHub Actions 各完成 6 次真实请求，均从 5 条输入生成 1 条合格快讯；云端新一期已自动发布，两个生产域名阅读核验通过。该样本不证明长期稳定，也未确定前次 429 的具体服务商限额，详见 [节奏验证与切换记录](../.trellis/tasks/archive/2026-11/11-06-ai-daily-replanning/channel-2-paced-validation.md)。此前 524 与 RSS 事实边界修复历史继续保留于 [首期试跑记录](../.trellis/tasks/archive/2026-11/11-06-ai-daily-replanning/first-live-trial.md)。
 
 ## 首版自动运行配置和预算
 
@@ -26,7 +26,7 @@
 
 配置为 `scripts/horizon/config.json`、`budget.json`、`profiles/ai-news/`；`publication.json` 初始 `enabled=false`。配置哈希由这组文件的相对路径和内容计算（UTF-8/LF），Python 与 TypeScript 共用相同算法。
 
-七来源扩展已通过本地与云端完整采集、生成、内容核对和发布验证，来源额度为 7，输入/成稿/请求预算保持原值。profile 保留媒体、赞助内容和厂商主张的归因要求。历史过程见 [扩展记录](../.trellis/tasks/11-06-ai-daily-replanning/source-expansion.md)，最新结果见节奏验证记录。
+七来源扩展已通过本地与云端完整采集、生成、内容核对和发布验证，来源额度为 7，输入/成稿/请求预算保持原值。profile 保留媒体、赞助内容和厂商主张的归因要求。历史过程见 [扩展记录](../.trellis/tasks/archive/2026-11/11-06-ai-daily-replanning/source-expansion.md)，最新结果见节奏验证记录。
 
 ## 本地操作
 

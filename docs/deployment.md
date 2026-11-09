@@ -4,7 +4,7 @@
 
 新链路见 [Horizon 运行说明](./ai-daily-horizon.md)。GitHub Actions 独立运行固定版本 Horizon；公开期刊原子保存到 `codex/ai-daily-content`。Cloudflare Pages Functions 通过 `GET /api/ai-daily` 与 `GET /api/ai-daily/editions/:editionId` 只读该分支。开启时设置 `VITE_AI_DAILY_EDITIONS_ENABLED=true`、`AI_DAILY_EDITIONS_ENABLED=true` 和 `AI_DAILY_CONTENT_REPOSITORY=<public owner/repo>`；运行模型 Secrets 仅放 GitHub，不放浏览器或内容分支。默认三个开关（前端、Functions、Actions）均关闭。
 
-2026-11-07 用户接受首期，已绑定 `publication.json` 的期次、正文和配置哈希；内容分支已从 Cloudflare preview 构建中排除。Secrets 已配置，网站与 Actions 检查通过后定时变量已开启。首版沿用 3 来源、20 输入、5 成稿及原调用预算，具体证据见 [上线记录](../.trellis/tasks/11-06-ai-daily-replanning/release.md)。主站 CI 的 push 仍只针对 main，正常期刊更新无需重建主站；回滚应用关闭新入口，暂停生成关闭 Actions 变量，保留最后成功期刊。下文 Studio 相关配置继续适用于旧链路。
+2026-11-07 用户接受首期，已绑定 `publication.json` 的期次、正文和配置哈希；内容分支已从 Cloudflare preview 构建中排除。Secrets 已配置，网站与 Actions 检查通过后定时变量已开启。首版沿用 3 来源、20 输入、5 成稿及原调用预算，具体证据见 [上线记录](../.trellis/tasks/archive/2026-11/11-06-ai-daily-replanning/release.md)。主站 CI 的 push 仍只针对 main，正常期刊更新无需重建主站；回滚应用关闭新入口，暂停生成关闭 Actions 变量，保留最后成功期刊。下文 Studio 相关配置继续适用于旧链路。
 
 本文描述当前生产拓扑、环境变量边界、迁移顺序和回滚点。所有真实 URL、数据库连接串、Token 与模型密钥只保存在 Cloudflare、Render 或本地私有环境中。
 
