@@ -142,6 +142,7 @@
     "site:monitor": "tsx scripts/check-site-monitor.ts",
     "public-links:check": "tsx scripts/check-public-links.ts",
     "public-links:projection-check": "tsx scripts/check-public-link-projection.ts",
+    "public-links:diagnostics-check": "tsx scripts/check-public-link-diagnostics.ts",
     "public-links:publish": "npm run public-links:check -- --write-status",
     "site:status": "tsx scripts/generate-site-status.ts",
     "site:status:publish": "npm run site:status -- --write-status",

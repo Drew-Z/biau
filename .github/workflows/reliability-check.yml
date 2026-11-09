@@ -28,16 +28,18 @@ jobs:
         run: npm ci
 
       - name: Check report contract
-        run: npm run main-site:health-check && npm run reliability:report-check
+        run: npm run main-site:health-check && npm run public-links:diagnostics-check && npm run reliability:report-check
 
       - name: Run reliability suite
-        run: npm --silent run reliability:check -- --strict --json > "$RUNNER_TEMP/reliability-report.json"
+        run: npm --silent run reliability:check -- --strict --json --diagnostics-dir "$RUNNER_TEMP/reliability-diagnostics" > "$RUNNER_TEMP/reliability-report.json"
 
       - name: Upload status reports
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: reliability-status
-          path: ${{ runner.temp }}/reliability-report.json
+          path: |
+            ${{ runner.temp }}/reliability-report.json
+            ${{ runner.temp }}/reliability-diagnostics/*.json
           if-no-files-found: warn
           retention-days: 7

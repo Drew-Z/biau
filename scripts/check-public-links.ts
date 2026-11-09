@@ -1,4 +1,5 @@
 import { dirname, resolve } from 'node:path'
+import { createHash } from 'node:crypto'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { heroContent } from '../src/data/hero'
@@ -17,7 +18,7 @@ import {
   normalizePublicIssueKinds,
   shouldRetryNetworkResult,
 } from './lib/network-diagnostics.mjs'
-import { resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
+import { resolveDiagnosticsOutput, resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 type LinkIssueKind = '' | 'timeout' | 'dns_error' | 'tls_error' | 'connection_error' | 'network_error' | 'http_status'
 
@@ -33,6 +34,17 @@ interface CheckResult extends LinkTarget {
   durationMs: number
   finalUrl: string
   issue: string
+  issueKind: LinkIssueKind
+  attempts: LinkAttempt[]
+  fallbackUsed: boolean
+  recovered: boolean
+}
+
+interface LinkAttempt {
+  method: 'HEAD' | 'GET'
+  reason: 'initial' | 'method-fallback' | 'transient-retry'
+  status: number
+  durationMs: number
   issueKind: LinkIssueKind
 }
 
@@ -84,10 +96,12 @@ function classifyIssueKind(result: CheckResult) {
 
 function buildStatusIssues(results: CheckResult[]) {
   const failed = results.filter((result) => !result.ok)
-  if (failed.length === 0) return []
+  const recovered = results.filter((result) => result.recovered).length
+  const issues = recovered ? [`${recovered} public project links recovered after a transient retry; initial failures are retained in diagnostics.`] : []
+  if (failed.length === 0) return issues
 
   const issueKinds = normalizePublicIssueKinds(failed.map(classifyIssueKind).filter(Boolean))
-  return [buildPublicFailureSummary(failed.length, issueKinds, 'npm.cmd run public-links:check')]
+  return [buildPublicFailureSummary(failed.length, issueKinds, 'npm.cmd run public-links:check'), ...issues]
 }
 
 function buildStatusPayload(checkedAt: string, results: CheckResult[]) {
@@ -208,13 +222,13 @@ function shouldFallbackToGet(status: number) {
   return status === 405 || status === 501
 }
 
-async function fetchOnce(url: string, method: 'HEAD' | 'GET', timeoutMs: number) {
+async function fetchOnce(url: string, method: 'HEAD' | 'GET', timeoutMs: number, fetcher: typeof fetch) {
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   const startedAt = Date.now()
 
   try {
-    const response = await fetch(url, {
+    const response = await fetcher(url, {
       method,
       redirect: 'follow',
       signal: controller.signal,
@@ -223,7 +237,8 @@ async function fetchOnce(url: string, method: 'HEAD' | 'GET', timeoutMs: number)
         Accept: method === 'HEAD' ? '*/*' : 'text/html,application/xhtml+xml,application/xml,text/plain;q=0.9,*/*;q=0.8',
       },
     })
-    if (method === 'GET') await response.arrayBuffer().catch(() => null)
+    // This probe checks HTTP reachability. Do not download an unbounded body.
+    void response.body?.cancel().catch(() => {})
     return {
       status: response.status,
       finalUrl: response.url,
@@ -250,22 +265,28 @@ async function fetchOnce(url: string, method: 'HEAD' | 'GET', timeoutMs: number)
   }
 }
 
-async function checkTarget(target: LinkTarget, timeoutMs: number): Promise<CheckResult> {
+export async function checkTarget(target: LinkTarget, timeoutMs: number, fetcher: typeof fetch = fetch): Promise<CheckResult> {
+  const startedAt = Date.now()
+  const attempts: LinkAttempt[] = []
+  const attempt = async (method: 'HEAD' | 'GET', reason: LinkAttempt['reason']) => {
+    const response = await fetchOnce(target.url, method, timeoutMs, fetcher)
+    attempts.push({ method, reason, status: response.status, durationMs: response.durationMs,
+      issueKind: response.issueKind || classifyHttpResult(response.status).issueKind as LinkIssueKind })
+    return response
+  }
   let method: 'HEAD' | 'GET' = 'HEAD'
-  let result = await fetchOnce(target.url, method, timeoutMs)
+  let result = await attempt(method, 'initial')
+  const fallbackUsed = shouldFallbackToGet(result.status)
 
-  if (shouldFallbackToGet(result.status)) {
+  if (fallbackUsed) {
     method = 'GET'
-    result = await fetchOnce(target.url, method, timeoutMs)
+    result = await attempt(method, 'method-fallback')
   }
 
-  if (shouldRetryNetworkResult(result.status, result.issueKind)) {
+  const retried = shouldRetryNetworkResult(result.status, result.issueKind)
+  if (retried) {
     await delay(750)
-    const retry = await fetchOnce(target.url, method, timeoutMs)
-    result = {
-      ...retry,
-      durationMs: result.durationMs + retry.durationMs,
-    }
+    result = await attempt(method, 'transient-retry')
   }
 
   const httpResult = classifyHttpResult(result.status)
@@ -276,11 +297,62 @@ async function checkTarget(target: LinkTarget, timeoutMs: number): Promise<Check
     ok,
     status: result.status,
     method,
-    durationMs: result.durationMs,
+    durationMs: Date.now() - startedAt,
     finalUrl: result.finalUrl,
     issue,
     issueKind: result.issueKind || (httpResult.issueKind as 'http_status'),
+    attempts,
+    fallbackUsed,
+    recovered: ok && retried,
   }
+}
+
+const knownProjectIds = new Set(projects.map((project) => project.id))
+
+export function buildLinkDiagnostics(checkedAt: string, targetCount: number, results: CheckResult[]) {
+  return {
+    schemaVersion: 1,
+    checkedAt,
+    sourceRevision: /^[a-f0-9]{40}$/u.test(process.env.GITHUB_SHA ?? '') ? process.env.GITHUB_SHA : null,
+    complete: results.length === targetCount,
+    targetCount,
+    checkedCount: results.length,
+    failedCount: results.filter((result) => !result.ok).length,
+    recoveredCount: results.filter((result) => result.recovered).length,
+    results: results.map((result) => ({
+      targetId: createHash('sha256').update(result.url).digest('hex'),
+      projectIds: [...new Set(result.contexts.map((context) => context.startsWith('home hero: ')
+        ? context.slice(11).split(' / ')[0] : context.split(': ')[0]).filter((id) => knownProjectIds.has(id)))],
+      ok: result.ok,
+      status: result.status,
+      method: result.method,
+      issueKind: result.issueKind,
+      durationMs: result.durationMs,
+      fallbackUsed: result.fallbackUsed,
+      recovered: result.recovered,
+      attempts: result.attempts.map(({ method, reason, status, durationMs, issueKind }) => ({ method, reason, status, durationMs, issueKind })),
+    })),
+  }
+}
+
+export async function checkTargets(targets: LinkTarget[], timeoutMs: number, options: {
+  checkedAt?: string
+  diagnosticsFile?: string
+  fetcher?: typeof fetch
+} = {}) {
+  const checkedAt = options.checkedAt ?? new Date().toISOString()
+  const results: CheckResult[] = []
+  const persist = async () => {
+    if (options.diagnosticsFile) {
+      await writeJsonAtomically(options.diagnosticsFile, buildLinkDiagnostics(checkedAt, targets.length, results))
+    }
+  }
+  await persist()
+  for (const target of targets) {
+    results.push(await checkTarget(target, timeoutMs, options.fetcher))
+    await persist()
+  }
+  return results
 }
 
 function printMarkdown(checkedAt: string, results: CheckResult[]) {
@@ -291,11 +363,11 @@ function printMarkdown(checkedAt: string, results: CheckResult[]) {
   console.log(`- links: ${results.length}`)
   console.log(`- failed: ${failed.length}`)
   console.log('')
-  console.log('| status | method | target | contexts | ms | issue |')
+  console.log('| status | method | target | contexts | ms | issue / attempts |')
   console.log('|---|---|---|---:|---:|---|')
   for (const result of results) {
     console.log(
-      `| ${result.ok ? 'PASS' : 'FAIL'} | ${result.method} | ${result.url} | ${result.contexts.length} | ${result.durationMs} | ${result.issue} |`,
+      `| ${result.ok ? result.recovered ? 'RECOVERED' : 'PASS' : 'FAIL'} | ${result.method} | ${result.url} | ${result.contexts.length} | ${result.durationMs} | ${result.issue} ${result.attempts.map((attempt) => `${attempt.method}:${attempt.status || attempt.issueKind}`).join(' → ')} |`,
     )
   }
 }
@@ -303,6 +375,7 @@ function printMarkdown(checkedAt: string, results: CheckResult[]) {
 async function main() {
   const argv = process.argv.slice(2)
   const args = parseArgs(argv)
+  const diagnosticsFile = resolveDiagnosticsOutput(argv, { repoRoot })
   const statusOutput = resolveStatusOutput(argv, {
     repoRoot,
     defaultRelativePath: 'public/status/public-links-synthetic.json',
@@ -310,17 +383,14 @@ async function main() {
   })
   const checkedAt = new Date().toISOString()
   const targets = collectTargets().slice(0, args.maxLinks)
-  const results: CheckResult[] = []
-
-  for (const target of targets) {
-    results.push(await checkTarget(target, args.timeoutMs))
-  }
+  const results = await checkTargets(targets, args.timeoutMs, { checkedAt, diagnosticsFile })
 
   const payload = {
     ok: results.every((result) => result.ok),
     checkedAt,
     linkCount: results.length,
     failedCount: results.filter((result) => !result.ok).length,
+    recoveredCount: results.filter((result) => result.recovered).length,
     results,
   }
 

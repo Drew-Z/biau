@@ -1,0 +1,28 @@
+{
+  "id": "public-link-reliability",
+  "name": "public-link-reliability",
+  "title": "修复公开项目链接与巡检证据",
+  "description": "Preserve bounded link attempt and recovery evidence in safe Actions diagnostics; local contracts and lint/build passed, awaiting cloud artifact verification.",
+  "status": "in_progress",
+  "dev_type": "backend",
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-11-08",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {
+    "implementationApproved": "2026-11-09: user selected proceed with reviewed design"
+  }
+}

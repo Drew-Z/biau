@@ -1,4 +1,5 @@
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises'
+import { existsSync, realpathSync } from 'node:fs'
 import { dirname, isAbsolute, relative, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 
@@ -67,6 +68,33 @@ export function resolveStatusInputDirectory(value, options) {
     throw new Error('--status-input-dir must be a controlled reliability temp directory')
   }
   return directoryPath
+}
+
+// Diagnostics are explicitly requested operational artifacts, never public snapshots.
+export function resolveDiagnosticsOutput(argv, { repoRoot, directory = false }) {
+  const flag = directory ? '--diagnostics-dir' : '--diagnostics-file'
+  let value
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]
+    if (arg !== flag && !arg.startsWith(`${flag}=`)) continue
+    if (value !== undefined) throw new Error(`duplicate ${flag} option`)
+    value = arg === flag ? argv[++index] : arg.slice(flag.length + 1)
+    if (!value || value.startsWith('--')) throw new Error(`${flag} requires an explicit temporary path`)
+  }
+  if (value === undefined) return ''
+  if (!isAbsolute(value) || (!directory && !value.endsWith('.json'))) {
+    throw new Error(`${flag} requires an absolute temporary ${directory ? 'directory' : 'JSON path'}`)
+  }
+  const filePath = resolve(value)
+  let ancestor = filePath
+  while (!existsSync(ancestor) && dirname(ancestor) !== ancestor) ancestor = dirname(ancestor)
+  const physicalPath = resolve(realpathSync(ancestor), relative(ancestor, filePath))
+  const roots = [tmpdir(), process.env.RUNNER_TEMP].filter((root) => root && existsSync(root)).map((root) => realpathSync(root))
+  if (isInside(realpathSync(repoRoot), physicalPath)
+    || !roots.some((root) => physicalPath !== root && isInside(root, physicalPath))) {
+    throw new Error(`${flag} must stay in a temporary directory outside the repository`)
+  }
+  return filePath
 }
 
 export async function writeJsonAtomically(filePath, payload) {

@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
-import { reliabilityTempPrefix, resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
+import { reliabilityTempPrefix, resolveDiagnosticsOutput, resolveStatusOutput, writeJsonAtomically } from './lib/status-output.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const DEFAULT_STATUS_PATH = 'public/status/reliability-suite.json'
@@ -179,6 +179,10 @@ function commandForStep(step, args, temporaryOutputPath, temporaryRoot) {
   if (step.id === 'site-status') {
     forwardedArgs.push('--status-input-dir', temporaryRoot)
     displayArgs.push('--status-input-dir', '[temporary]')
+  }
+  if (step.id === 'public-links' && args.diagnosticsDir) {
+    forwardedArgs.push('--diagnostics-file', join(args.diagnosticsDir, 'public-links.json'))
+    displayArgs.push('--diagnostics-file', '[temporary]')
   }
   return {
     display: `npm run ${step.script}${displayArgs.length > 0 ? ` -- ${displayArgs.join(' ')}` : ''}`,
@@ -472,6 +476,9 @@ function summarizeSuite(stepResults, durationMs) {
 async function main() {
   const argv = process.argv.slice(2)
   const args = parseArgs(argv)
+  args.diagnosticsDir = resolveDiagnosticsOutput(argv, { repoRoot, directory: true })
+  // A reused explicit directory must not upload a previous run's link evidence.
+  if (args.diagnosticsDir) await rm(join(args.diagnosticsDir, 'public-links.json'), { force: true })
   const statusOutput = resolveStatusOutput(argv, {
     repoRoot,
     defaultRelativePath: DEFAULT_STATUS_PATH,

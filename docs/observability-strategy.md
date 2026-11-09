@@ -196,17 +196,22 @@ AI Daily failure signal 是当前状态与最近 24 小时持久化信号的低�
 npm.cmd run reliability:check -- --strict
 ```
 
-套件会写出：
+套件默认在临时目录生成各项状态投影并在退出时清理，不写 `public/status/`。只有显式 `--write-status` 的发布流程才会更新公开快照。
 
-- `public/status/blog-semi-synthetic.json`
-- `public/status/legal-rag-synthetic.json`
-- `public/status/erp-synthetic.json`
-- `public/status/xunqiu-synthetic.json`
-- `public/status/pet-gamer-synthetic.json`
-- `public/status/site-status.json`
-- `public/status/reliability-suite.json`
+现有 Reliability Check 工作流把本次汇总 JSON 和逐链接低敏诊断上传至 `reliability-status` artifact，成功或失败均上传，保留 7 天；不自动提交回 `main`。本地需要保留相同诊断时，显式传入系统临时目录：
 
-CI 第一版只把这些 JSON 作为 artifact 上传，不自动提交回 `main`。这样可以做到“定时可查”和“失败可见”，同时避免定时任务不断改动仓库。需要把最新状态公开到站点时，再由人工或部署流程决定是否发布这些生成文件。
+```powershell
+# $diagnosticsDir 为本次创建、位于系统临时目录的绝对路径。
+npm.cmd --silent run reliability:check -- --strict --json --diagnostics-dir $diagnosticsDir
+# 仅检查公开链接时：
+npm.cmd --silent run public-links:check -- --json --diagnostics-file "$diagnosticsDir/public-links.json"
+```
+
+`public-links.json` 保存 `sourceRevision`（CI 提交）、目标计数、完成计数、失败/恢复计数和逐目标 attempts。`complete=false` 表示运行中断或尚未完成，即使当前失败数为 0 也不能当成整次通过。HEAD 405/501 的 GET 回退与临时故障后的重试分开标记；最多一次临时故障重试，恢复后保留首次失败，耗时含回退及等待。GET 只验证 HTTP 入口，释放正文而不检查完整页面功能。
+
+诊断没有完整 URL、重定向地址、任意异常原文、响应头/正文或私有路径；`targetId` 是规范化公开 URL 的 SHA-256，`projectIds` 只取本站已知项目。维护者在 artifact 对应的 `sourceRevision` 上，从 `collectTargets()` 重算 ID 定位链接；这些 ID 不是隐私匿名化承诺。显式运行 `public-links:check -- --json` 仍可查看公开 URL 和上下文。
+
+诊断路径只允许仓库外的系统/runner 临时目录。重复使用目录时，套件清除旧的 `public-links.json`，跳过或启动失败不能把旧记录上传成新结果。本地调用者使用后按本轮临时文件规则清理；公开快照仍需单独授权发布。
 
 ## 参考资料
 

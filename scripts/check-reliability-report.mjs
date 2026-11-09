@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { readFile, readdir } from 'node:fs/promises'
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { fileURLToPath } from 'node:url'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const repoRoot = fileURLToPath(new URL('../', import.meta.url))
 const statusRoot = new URL('../public/status/', import.meta.url)
@@ -13,7 +15,12 @@ let healthStatus = 200
 let healthStatuses = []
 let nonGetRequests = 0
 let healthRequests = 0
+let linkStatus = 200
 const server = createServer((request, response) => {
+  if (request.url === '/link-fixture') {
+    response.writeHead(linkStatus).end()
+    return
+  }
   if (request.method !== 'GET') {
     nonGetRequests += 1
     response.writeHead(405).end()
@@ -39,9 +46,9 @@ async function snapshotHashes() {
   ])))
 }
 
-async function runSuite(base) {
+async function runSuite(base, options = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ['scripts/check-reliability-suite.mjs', '--strict', '--json', '--skip', skip], {
+    const child = spawn(process.execPath, ['scripts/check-reliability-suite.mjs', '--strict', '--json', '--skip', options.skip ?? skip, ...(options.args ?? [])], {
       cwd: repoRoot,
       env: {
         ...process.env,
@@ -50,6 +57,7 @@ async function runSuite(base) {
         MAIN_SITE_SYNTHETIC_SKIP_ASSISTANT_API: 'false',
         MAIN_SITE_SYNTHETIC_HEALTH_MAX_ATTEMPTS: '5',
         MAIN_SITE_SYNTHETIC_HEALTH_RETRY_DELAY_MS: '0',
+        ...options.env,
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
@@ -63,6 +71,7 @@ async function runSuite(base) {
 }
 
 const before = await snapshotHashes()
+const diagnosticsRoot = await mkdtemp(join(tmpdir(), 'biau-reliability-contract-'))
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
 try {
   const base = `http://127.0.0.1:${server.address().port}`
@@ -100,8 +109,38 @@ try {
   assert.deepEqual(await snapshotHashes(), before)
   assert.equal(healthRequests, 8)
   assert.equal(nonGetRequests, 0)
+  // Run the real suite and link CLI against a loopback server. No public target
+  // is contacted; the import is inherited by the npm/tsx child processes.
+  const fixtureImport = `const originalFetch = globalThis.fetch; globalThis.fetch = (_url, init) => originalFetch(${JSON.stringify(`${base}/link-fixture`)}, init);`
+  const nodeOptions = `--import=data:text/javascript,${encodeURIComponent(fixtureImport)}`
+  for (const status of [200, 404]) {
+    linkStatus = status
+    const checked = await runSuite(base, {
+      skip: 'main-site,legal-rag,erp,xunqiu,pet,playlab,site-status,site-monitor',
+      args: ['--diagnostics-dir', diagnosticsRoot],
+      env: { NODE_OPTIONS: nodeOptions, PUBLIC_LINKS_MAX: '2' },
+    })
+    assert.equal(checked.code, status === 200 ? 0 : 1, checked.stderr)
+    const report = JSON.parse(checked.stdout)
+    assert.equal(report.steps.find((step) => step.id === 'public-links').status, status === 200 ? 'passed' : 'failed')
+    const diagnostics = JSON.parse(await readFile(join(diagnosticsRoot, 'public-links.json'), 'utf8'))
+    assert.equal(diagnostics.complete, true)
+    assert.equal(diagnostics.checkedCount, 2)
+    assert.equal(diagnostics.failedCount, status === 200 ? 0 : 2)
+    for (const raw of [checked.stdout, JSON.stringify(diagnostics)]) {
+      assert.equal(raw.includes(base), false)
+      assert.equal(raw.includes(diagnosticsRoot), false)
+      assert.equal(raw.includes('https://'), false)
+    }
+    assert.deepEqual(await snapshotHashes(), before)
+  }
+  await writeFile(join(diagnosticsRoot, 'public-links.json'), '{"stale":true}')
+  const skipped = await runSuite(base, { skip: `main-site,${skip}`, args: ['--diagnostics-dir', diagnosticsRoot] })
+  assert.equal(skipped.code, 0)
+  assert.deepEqual(await readdir(diagnosticsRoot), [], 'skipped link checks must not upload a stale artifact')
   console.log('Reliability report checks passed: current success/failure JSON, strict exit codes, unchanged public snapshots, zero model calls.')
 } finally {
   server.closeAllConnections()
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+  await rm(diagnosticsRoot, { recursive: true })
 }
