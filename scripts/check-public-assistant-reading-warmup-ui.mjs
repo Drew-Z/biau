@@ -55,7 +55,17 @@ async function setup(browser, base, configuration, scenario) {
 }
 
 const calls = page => page.evaluate(() => window.__readingWarmupFixture.calls.length)
-const intent = page => page.locator('.public-assistant__trigger').focus()
+const intent = async page => {
+  // The paused clock can hold a lazy detail in its short loading shell, where
+  // the footer suppresses/inerts the pet. Real keyboard intent requires the
+  // committed, visible control; never focus the hidden loading placeholder.
+  const trigger = page.locator('.public-assistant__trigger')
+  for (let elapsed = 0; elapsed < 2_000 && !await trigger.isVisible(); elapsed += 100) await page.clock.runFor(100)
+  await trigger.waitFor({ state: 'visible' })
+  assert.equal(await calls(page), 0, 'Rendering the control must precede the five-second automatic warmup')
+  await trigger.focus()
+  assert.ok(await trigger.evaluate(element => element === document.activeElement))
+}
 const navigate = async (page, path) => {
   await page.evaluate(next => {
     history.pushState({}, '', next)

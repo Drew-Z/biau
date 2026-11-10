@@ -1111,12 +1111,12 @@ export async function checkPublicAssistantInterfaceLanguage(browser, base) {
         await page.goto(`${base}/blog`, { waitUntil: 'load' })
         const trigger = page.locator('.public-assistant__trigger')
         await trigger.waitFor({ state: 'visible' })
-        assert.equal(await trigger.getAttribute('aria-label'), '泊岸研究助手')
+        assert.equal(await trigger.getAttribute('aria-label'), '打开研究助手')
         await trigger.click()
         const root = page.locator('.public-assistant')
         const panel = page.locator('.public-assistant__panel')
         await panel.waitFor({ state: 'visible' })
-        assert.equal(await trigger.getAttribute('aria-label'), '助手已就绪')
+        assert.equal(await trigger.getAttribute('aria-label'), '收起对话')
         await page.locator('.public-assistant__message').nth(1).waitFor({ state: 'visible' })
         assert.ok(await root.evaluate((node) => node.matches(':lang(zh-CN)')))
         assert.equal(await page.locator('.public-assistant__status').innerText(), '可检索本站与公开网页')
@@ -1170,7 +1170,7 @@ export async function checkPublicAssistantInterfaceLanguage(browser, base) {
           text: node.querySelector('.public-assistant-markdown, p')?.textContent,
           citations: [...node.querySelectorAll('.public-assistant__citation strong, .public-assistant__citation-meta span:not([class])')].map((item) => item.textContent),
         }))), payloadBefore)
-        assert.equal(await trigger.getAttribute('aria-label'), 'Assistant ready')
+        assert.equal(await trigger.getAttribute('aria-label'), 'Collapse conversation')
         assert.equal(await page.locator('.public-assistant__status').innerText(), 'Search this site and public webpages')
         assert.equal(await page.locator('.public-assistant__modes > summary small').innerText(), 'Automatic')
         assert.deepEqual(await page.locator('.public-assistant__modes option').allTextContents(), ['Automatic', 'This site only', 'Public webpages only'])

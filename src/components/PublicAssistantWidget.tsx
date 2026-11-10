@@ -1,4 +1,4 @@
-import { type ChangeEvent, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { type ChangeEvent, type Dispatch, type RefObject, type SetStateAction, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import '../styles/route-pages.css'
 import {
   ArrowDown,
@@ -31,11 +31,9 @@ import {
   searchPublicKnowledge,
   type AssistantKnowledgeItem,
 } from '../data/assistant'
-import { formatProductName } from '../data/productRegistry'
 import { PUBLIC_ASSISTANT_API_BASE, SAME_ORIGIN_ASSISTANT_API_BASE } from '../utils/assistantApi'
 import { trackAnalyticsEvent } from '../utils/analytics'
 import {
-  announceMobileSurfaceOpen,
   isMobileSurfaceViewport,
   MOBILE_SURFACE_OPEN_EVENT,
   type MobileSurfaceOpenDetail,
@@ -79,12 +77,9 @@ import {
   type PublicAssistantConversationState,
 } from '../utils/publicAssistantConversation'
 import { formatPublicAssistantRecoveryLabel } from '../utils/publicAssistantPresentation'
-import { usePublicAssistantCollision } from '../hooks/usePublicAssistantCollision'
 import { PublicAssistantMessageContent } from './PublicAssistantMessageContent'
-import { PublicAssistantPet } from './PublicAssistantPet'
 import { useSiteLanguage } from '../hooks/useSiteLanguage'
 import { publicAssistantInterfaceCopy } from '../data/publicAssistantInterfaceCopy'
-import { SITE_LANGUAGE_TAGS } from '../utils/siteLanguage'
 import {
   createPublicAssistantRequestId,
   createPublicAssistantSessionId,
@@ -111,7 +106,7 @@ import {
   subscribePublicAssistantWarmup,
 } from '../utils/publicAssistantWarmup'
 import { preparePublicAssistantImage, PublicAssistantImageError } from '../utils/publicAssistantImage'
-import { createPublicAssistantPetActivity, type PublicAssistantPetRun } from '../utils/publicAssistantPetActivity'
+import type { createPublicAssistantPetActivity, PublicAssistantPetRun } from '../utils/publicAssistantPetActivity'
 import { publicAssistantPetCopy } from '../data/publicAssistantPetCopy'
 
 interface WidgetMessage {
@@ -137,7 +132,6 @@ interface WidgetMessage {
   requestId?: string
 }
 
-const PUBLIC_ASSISTANT_NAME = formatProductName('public-assistant')
 
 type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
 type PublicAssistantBranchAction =
@@ -475,11 +469,16 @@ function citationElementId(messageId: string, index: number) {
 }
 
 interface PublicAssistantWidgetProps {
-  initiallyOpen?: boolean
-  onInitialOpenHandled?: () => void
+  isOpen: boolean
+  setIsOpen: Dispatch<SetStateAction<boolean>>
+  onClose: () => void
+  isFullscreen: boolean
+  setIsFullscreen: Dispatch<SetStateAction<boolean>>
+  petTasks: ReturnType<typeof createPublicAssistantPetActivity>
+  rootRef: RefObject<HTMLDivElement | null>
 }
 
-export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHandled }: PublicAssistantWidgetProps) {
+export function PublicAssistantWidget({ isOpen, setIsOpen, onClose, isFullscreen, setIsFullscreen, petTasks, rootRef }: PublicAssistantWidgetProps) {
   const { pathname } = useLocation()
   const language = useSiteLanguage()
   const copy = publicAssistantInterfaceCopy[language]
@@ -489,10 +488,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const initialSnapshot = shouldRestoreInitialSession
     ? readPublicAssistantHistorySnapshot(sessionRegistry.currentSessionId)
     : null
-  const [isOpen, setIsOpen] = useState(initiallyOpen)
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
-  const [footerVisible, setFooterVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [waitingSeconds, setWaitingSeconds] = useState(0)
   const [historyState, setHistoryState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
@@ -513,7 +509,6 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const [branchActionPending, setBranchActionPending] = useState(false)
   const [apiBase, setApiBase] = useState<string | null>(CONFIGURED_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE)
   const [serviceState, setServiceState] = useState<AssistantServiceState>('ready')
-  const [petTasks] = useState(createPublicAssistantPetActivity)
   const petSnapshot = useSyncExternalStore(petTasks.subscribe, petTasks.getSnapshot, petTasks.getServerSnapshot)
   const warmup = useSyncExternalStore(
     subscribePublicAssistantWarmup,
@@ -534,10 +529,20 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const [historyTruncated, setHistoryTruncated] = useState(false)
   const [highlightedCitationKey, setHighlightedCitationKey] = useState<string | null>(null)
   const [expandedEvidenceIds, setExpandedEvidenceIds] = useState<Set<string>>(() => new Set())
+  const [previousOpen, setPreviousOpen] = useState(isOpen)
+  // A companion click can close the panel too. Reset panel-only controls in
+  // that same render without moving or remounting the conversation owner.
+  if (previousOpen !== isOpen) {
+    setPreviousOpen(isOpen)
+    if (!isOpen) {
+      setEditingTurnId(null)
+      setEditingQuestion('')
+      setFeedbackMenuMessageId(null)
+      setIsHistoryOpen(false)
+    }
+  }
   const sessionId = sessionRegistry.currentSessionId
   const messages = projectConversationMessages(conversation, sessionId)
-  const rootRef = useRef<HTMLDivElement | null>(null)
-  const triggerRef = useRef<HTMLButtonElement | null>(null)
   const panelRef = useRef<HTMLElement | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const historyTriggerRef = useRef<HTMLButtonElement | null>(null)
@@ -579,7 +584,6 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const citationRefs = useRef(new Map<string, HTMLAnchorElement>())
   const feedbackTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
   const editTriggerRefs = useRef(new Map<string, HTMLButtonElement>())
-  const clearAssistantCollision = usePublicAssistantCollision(rootRef, isOpen)
   const serviceStatus = warmup.state === 'warming'
     ? { className: 'is-warming', label: copy.service.warming }
     : warmup.state === 'error'
@@ -601,23 +605,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const isConversationReady = initialRestoreState === 'ready'
   const isWarmupReady = warmup.state === 'ready'
   const isAssistantBusy = isLoading || isRestoringSession || branchActionPending || historyLoadingId !== null || isImageProcessing || !isWarmupReady
-  const petActivity = petSnapshot.summary.activity === 'needsInput'
-    ? 'needsInput'
-    : (issue && issue.code !== 'public-assistant-request-cancelled') || initialRestoreIssue || warmup.state === 'error'
-      ? 'blocked'
-      : petSnapshot.summary.activity !== 'idle' ? petSnapshot.summary.activity
-        : isAssistantBusy ? 'working' : 'idle'
-  const petCopy = publicAssistantPetCopy[language]
-  const petDescription = [petCopy.activities[petActivity], petSnapshot.unreadCount ? petCopy.unread(petSnapshot.unreadCount) : ''].filter(Boolean).join(' · ')
-  const petCompletionKey = petActivity === 'idle' || petActivity === 'ready' ? petSnapshot.feedbackKey : null
   const isQuestionEditing = editingTurnId !== null
-  const launcherLabel = warmup.state === 'warming'
-    ? copy.launcher.warming
-    : warmup.state === 'ready'
-      ? copy.launcher.ready
-      : warmup.state === 'error'
-        ? copy.launcher.error
-        : copy.launcher.idle
 
   const resetImageAttachment = useCallback(() => {
     imagePreparationRef.current = null
@@ -679,7 +667,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }
 
   const focusComposer = () => {
-    if (isMobileSurfaceViewport()) return
+    if (window.matchMedia('(max-width: 768px)').matches) return
     window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
   }
 
@@ -780,10 +768,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }, [petTasks])
 
   useEffect(() => {
-    if (!initiallyOpen) return
-    void startPublicAssistantWarmup()
-    onInitialOpenHandled?.()
-  }, [initiallyOpen, onInitialOpenHandled])
+    if (isOpen) void startPublicAssistantWarmup()
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -856,7 +842,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     syncFullscreen()
     media.addEventListener('change', syncFullscreen)
     return () => media.removeEventListener('change', syncFullscreen)
-  }, [isOpen])
+  }, [isOpen, setIsFullscreen])
 
   useEffect(() => {
     if (!isOpen || !isConversationReady) return
@@ -864,7 +850,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   }, [isConversationReady, isOpen])
 
   useEffect(() => {
-    if (!isOpen || !isFullscreen || !isMobileSurfaceViewport()) return
+    if (!isOpen || !isFullscreen || !window.matchMedia('(max-width: 768px)').matches) return
     const frame = window.requestAnimationFrame(() => closeButtonRef.current?.focus({ preventScroll: true }))
     return () => window.cancelAnimationFrame(frame)
   }, [isFullscreen, isOpen])
@@ -957,12 +943,11 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         window.requestAnimationFrame(() => historyTriggerRef.current?.focus({ preventScroll: true }))
         return
       }
-      setIsOpen(false)
-      window.requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
+      onClose()
     }
     document.addEventListener('keydown', handleEscape)
     return () => document.removeEventListener('keydown', handleEscape)
-  }, [closeQuestionEditor, editingTurnId, feedbackMenuMessageId, isHistoryOpen, isOpen])
+  }, [closeQuestionEditor, editingTurnId, feedbackMenuMessageId, isHistoryOpen, isOpen, onClose])
 
   useEffect(() => {
     if (!isOpen || !isHistoryOpen) return
@@ -1003,7 +988,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
       root?.style.removeProperty('--public-assistant-viewport-height')
       root?.style.removeProperty('--public-assistant-viewport-offset-top')
     }
-  }, [isFullscreen, isOpen])
+  }, [isFullscreen, isOpen, rootRef])
 
   useEffect(() => {
     const handleSurfaceOpen = (event: Event) => {
@@ -1017,35 +1002,13 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
     }
     window.addEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
     return () => window.removeEventListener(MOBILE_SURFACE_OPEN_EVENT, handleSurfaceOpen)
-  }, [])
-
-  useEffect(() => {
-    const footer = document.querySelector('.site-footer')
-    if (!footer || typeof IntersectionObserver === 'undefined') return
-    const observer = new IntersectionObserver(([entry]) => setFooterVisible(entry.isIntersecting), { threshold: 0.08 })
-    observer.observe(footer)
-    return () => observer.disconnect()
-  }, [])
+  }, [setIsOpen])
 
   const closeWidget = () => {
     closeQuestionEditor()
     setFeedbackMenuMessageId(null)
     setIsHistoryOpen(false)
-    setIsOpen(false)
-    window.requestAnimationFrame(() => triggerRef.current?.focus({ preventScroll: true }))
-  }
-
-  const toggleWidget = () => {
-    if (isOpen) {
-      closeWidget()
-      return
-    }
-    announceMobileSurfaceOpen('public-assistant')
-    clearAssistantCollision()
-    setIsFullscreen(isMobileSurfaceViewport())
-    void startPublicAssistantWarmup()
-    setIsOpen(true)
-    trackAnalyticsEvent('public_assistant_open', { source: 'floating-widget' })
+    onClose()
   }
 
   const retryWarmup = () => {
@@ -1737,29 +1700,7 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
   const routeSuggestions = getPublicAssistantSuggestions(pathname)
 
   return (
-    <div
-      ref={rootRef}
-      lang={SITE_LANGUAGE_TAGS[language]}
-      className={`public-assistant ${isOpen ? 'is-open' : ''} ${isOpen && isFullscreen ? 'is-fullscreen' : ''} ${footerVisible ? 'is-footer-visible' : ''}`}
-      data-pet-activity={petActivity}
-      data-pet-unread-count={petSnapshot.unreadCount}
-      data-pet-feedback-count={petSnapshot.feedbackCount}
-    >
-      <button
-        ref={triggerRef}
-        type="button"
-        className={`public-assistant__trigger has-pet is-${warmup.state}`}
-        aria-expanded={isOpen}
-        aria-controls="public-assistant-panel"
-        aria-label={launcherLabel}
-        aria-description={petDescription}
-        title={petDescription}
-        onClick={toggleWidget}
-      >
-        {!isOpen && <PublicAssistantPet activity={petActivity} completionKey={petCompletionKey} claimFeedback={petTasks.claimFeedback} unreadCount={petSnapshot.unreadCount} />}
-        <span className="public-assistant__trigger-text">{petSnapshot.unreadCount ? petCopy.unread(petSnapshot.unreadCount) : launcherLabel}</span>
-      </button>
-
+    <>
       {isOpen && (
         <section
           ref={panelRef}
@@ -1772,9 +1713,8 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
         >
           <header className="public-assistant__header">
             <div className="public-assistant__title">
-              <PublicAssistantPet activity={petActivity} completionKey={petCompletionKey} claimFeedback={petTasks.claimFeedback} unreadCount={petSnapshot.unreadCount} compact />
               <p className="public-assistant__eyebrow">{copy.eyebrow.publicResearch}</p>
-              <h2 id="public-assistant-title" lang="">{PUBLIC_ASSISTANT_NAME}</h2>
+              <h2 id="public-assistant-title">{publicAssistantPetCopy[language].title}</h2>
               <span className={`public-assistant__status ${serviceStatus.className}`}>{serviceStatus.label}</span>
             </div>
             <div className="public-assistant__header-actions" aria-label={copy.history.actions}>
@@ -2480,6 +2420,6 @@ export function PublicAssistantWidget({ initiallyOpen = false, onInitialOpenHand
           </form>
         </section>
       )}
-    </div>
+    </>
   )
 }

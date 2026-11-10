@@ -5,7 +5,6 @@ import '../styles/public-assistant-pet.css'
 
 interface PublicAssistantPetProps {
   activity?: Activity
-  compact?: boolean
   completionKey?: string | null
   claimFeedback?: (key: string) => boolean
   unreadCount?: number
@@ -20,7 +19,7 @@ function applyActivity(pet: PetInstance, value: PetActivity) {
   if (value.completionKey && value.claimFeedback?.(value.completionKey)) pet.greet()
 }
 
-export function PublicAssistantPet({ activity = 'idle', compact = false, completionKey = null, claimFeedback, unreadCount = 0 }: PublicAssistantPetProps) {
+export function PublicAssistantPet({ activity = 'idle', completionKey = null, claimFeedback, unreadCount = 0 }: PublicAssistantPetProps) {
   const host = useRef<HTMLSpanElement>(null)
   const instance = useRef<Awaited<ReturnType<typeof mountPet>> | null>(null)
   const currentActivity = useRef<PetActivity>({ activity, completionKey, claimFeedback })
@@ -45,7 +44,7 @@ export function PublicAssistantPet({ activity = 'idle', compact = false, complet
     if (instance.current) applyActivity(instance.current, currentActivity.current)
   }, [activity, completionKey, claimFeedback])
 
-  return <span className={`public-assistant-pet${compact ? ' is-compact' : ''}`} data-activity={activity} aria-hidden="true">
+  return <span className="public-assistant-pet" data-activity={activity} aria-hidden="true">
     <span className="public-assistant-pet__fallback" />
     <span ref={host} className="public-assistant-pet__canvas" data-activity={activity} />
     {unreadCount > 0 && <span className="public-assistant-pet__unread">{unreadCount}</span>}

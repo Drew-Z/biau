@@ -154,7 +154,7 @@ async function setup(width, theme, language, reducedMotion = 'reduce', options =
     const path = url.pathname
     requests.push(path)
     const reply = (json, status = 200) => route.fulfill({ status, json })
-    if (path === '/api/health') return reply({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true })
+    if (path === '/api/health') return reply({ ok: true, database: true, modelConfigured: true, webSearchConfigured: true }, options.healthStatus ?? 200)
     if (path === '/api/chat/public/sessions') return reply({ sessions: [...fixture.histories.values()].map(history => history.session) })
     if (path === '/api/chat/public/session') {
       if (request.method() === 'DELETE') return reply({ ok: true })
@@ -186,11 +186,17 @@ async function setup(width, theme, language, reducedMotion = 'reduce', options =
 }
 
 async function ready(page) {
-  await page.locator('.public-assistant-pet__canvas[data-pet-state="ready"]').waitFor()
+  await page.locator('.public-assistant-pet__canvas[data-pet-state="ready"]').waitFor({ state: 'attached' })
   assert.equal(await page.locator('.public-assistant-pet').count(), 1)
   assert.equal(await page.locator('.public-assistant-pet canvas').count(), 1)
 }
 async function contained(page, selector) {
+  await page.waitForFunction(value => {
+    const element = document.querySelector(value)
+    if (!element) return false
+    const r = element.getBoundingClientRect()
+    return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1 && element.scrollWidth <= element.clientWidth + 1
+  }, selector, { timeout: 5_000 })
   assert.ok(await page.locator(selector).evaluate(element => {
     const r = element.getBoundingClientRect()
     return r.left >= 0 && r.right <= innerWidth + 1 && r.top >= 0 && r.bottom <= innerHeight + 1 && element.scrollWidth <= element.clientWidth + 1
@@ -262,6 +268,11 @@ try {
     try {
       await page.goto(base + '/blog')
       await ready(page)
+      const originalCanvas = await page.locator('.public-assistant-pet canvas').elementHandle()
+      assert.deepEqual(await page.locator('.public-assistant__trigger').evaluate(e => {
+        const css = getComputedStyle(e)
+        return [css.backgroundColor, css.borderWidth, css.boxShadow, css.backdropFilter]
+      }), ['rgba(0, 0, 0, 0)', '0px', 'none', 'none'])
       await contained(page, '.public-assistant__trigger')
       const box = await page.locator('.public-assistant__trigger').boundingBox()
       assert.ok(box.width >= 44 && box.height >= 44)
@@ -272,6 +283,28 @@ try {
       await ready(page)
       await contained(page, '.public-assistant__panel')
       await contained(page, '.public-assistant__header')
+      assert.equal(await page.locator('.public-assistant__header .public-assistant-pet').count(), 0)
+      assert.ok(await originalCanvas.evaluate(e => e.isConnected && e === document.querySelector('.public-assistant-pet canvas')), 'lazy opening preserves the original canvas')
+      if (width > 768) {
+        assert.ok(await page.locator('.public-assistant__trigger').isVisible())
+        assert.ok(await page.evaluate(() => {
+          const pet = document.querySelector('.public-assistant__trigger').getBoundingClientRect()
+          const panel = document.querySelector('.public-assistant__panel').getBoundingClientRect()
+          return pet.left - panel.right >= 12 || panel.left - pet.right >= 12
+        }), 'desktop pet stays outside the conversation')
+        await page.locator('.public-assistant__fullscreen-toggle').click()
+        await page.waitForFunction(() => {
+          const pet = document.querySelector('.public-assistant__trigger').getBoundingClientRect()
+          const panel = document.querySelector('.public-assistant__panel').getBoundingClientRect()
+          return document.querySelector('.public-assistant')?.classList.contains('is-fullscreen') && panel.width > 800 && pet.left - panel.right >= 12
+        })
+        await page.locator('.public-assistant__fullscreen-toggle').click()
+        await page.waitForFunction(() => !document.querySelector('.public-assistant')?.classList.contains('is-fullscreen'))
+      } else {
+        assert.equal(await page.locator('.public-assistant__trigger').isVisible(), false)
+        assert.equal(await page.locator('.public-assistant__character').evaluate(e => e.inert), true)
+      }
+      if (artifacts && language === 'zh' && (theme === 'morning' || width === 390)) await page.screenshot({ path: resolve(artifacts, `blog-pet-open-${name}.png`) })
       await page.waitForFunction(() => document.querySelector('.public-assistant-pet__canvas')?.dataset.activity === 'idle')
       const frame = await page.locator('.public-assistant-pet__canvas').getAttribute('data-entry')
       await page.waitForTimeout(120)
@@ -279,7 +312,8 @@ try {
       await page.keyboard.press('Escape')
       await page.locator('.public-assistant__panel').waitFor({ state: 'detached' })
       await ready(page)
-      assert.ok(await page.locator('.public-assistant__trigger').evaluate(e => e === document.activeElement))
+      assert.ok(await originalCanvas.evaluate(e => e.isConnected), 'closing preserves the same pet')
+      await page.waitForFunction(() => document.querySelector('.public-assistant__trigger') === document.activeElement)
       if (artifacts && language === 'zh' && (theme === 'morning' || width === 390)) {
         await page.screenshot({ path: resolve(artifacts, `blog-pet-${name}.png`) })
       }
@@ -287,6 +321,214 @@ try {
       await state(page, { activity: 'idle', unreadCount: 0, feedbackCount: 0 })
       assert.equal(await page.locator('.public-assistant__trigger').getAttribute('aria-description'), publicAssistantPetCopy[language].activities.idle)
       await passed(fixture, name)
+    } finally { await fixture.close() }
+  }
+
+  {
+    const fixture = await setup(1440, 'nature', 'zh')
+    const { page } = fixture
+    try {
+      await page.goto(base + '/blog')
+      await ready(page)
+      const trigger = page.locator('.public-assistant__trigger')
+      const canvas = await page.locator('.public-assistant-pet canvas').elementHandle()
+      const box = await trigger.boundingBox()
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(box.x - 40, box.y - 50, { steps: 5 })
+      await page.keyboard.press('Escape')
+      await page.mouse.up()
+      await afterPaint(page)
+      assert.equal(await page.locator('.public-assistant__panel').count(), 0, 'cancelling a drag must consume its release click')
+      assert.equal(await page.locator('.public-assistant').getAttribute('data-pet-side'), 'right')
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(90, 280, { steps: 12 })
+      await page.mouse.up()
+      await afterPaint(page)
+      assert.equal(await page.locator('.public-assistant__panel').count(), 0, 'drag release must not open chat')
+      assert.equal(await page.locator('.public-assistant').getAttribute('data-pet-side'), 'left')
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('biau-public-assistant-presence-v1')))
+      assert.ok(stored.height > 0 && stored.height < 1, 'position uses a bounded normalized height')
+      assert.ok(await canvas.evaluate(e => e.isConnected))
+      await page.reload()
+      await ready(page)
+      assert.equal(await page.locator('.public-assistant').getAttribute('data-pet-side'), 'left')
+      const savedY = (await trigger.boundingBox()).y
+      assert.ok(savedY > 96 && savedY < 400)
+      await page.setViewportSize({ width: 850, height: 420 })
+      await contained(page, '.public-assistant__trigger')
+      await trigger.focus()
+      await page.keyboard.press('Tab')
+      await page.keyboard.press('Tab')
+      assert.equal(await page.locator('.public-assistant__pet-actions button').last().evaluate(e => e === document.activeElement), true)
+      await page.keyboard.press('Enter')
+      await contained(page, '.public-assistant__pet-options')
+      await page.getByRole('button', { name: publicAssistantPetCopy.zh.dockRight, exact: true }).click()
+      assert.equal(await page.locator('.public-assistant').getAttribute('data-pet-side'), 'right')
+      await page.waitForFunction(() => document.querySelector('.public-assistant__trigger') === document.activeElement)
+      await page.setViewportSize({ width: 1440, height: 900 })
+      await trigger.click()
+      await page.locator('#public-assistant-input').fill('开关面板后保留的草稿')
+      await trigger.click()
+      await trigger.click()
+      assert.equal(await page.locator('#public-assistant-input').inputValue(), '开关面板后保留的草稿')
+      await page.getByRole('button', { name: fixture.copy.closeAssistant, exact: true }).click()
+      await page.getByRole('button', { name: publicAssistantPetCopy.zh.options, exact: true }).click()
+      await page.getByRole('button', { name: publicAssistantPetCopy.zh.hide, exact: true }).click()
+      assert.equal(await trigger.isVisible(), false)
+      assert.ok(await page.locator('.navigation-top .public-assistant__restore').isVisible())
+      await page.waitForFunction(() => document.querySelector('.public-assistant__restore') === document.activeElement)
+      await page.reload()
+      await ready(page)
+      assert.equal(await trigger.isVisible(), false, 'hidden preference survives reload')
+      await page.getByRole('button', { name: publicAssistantPetCopy.zh.show, exact: true }).click()
+      assert.ok(await trigger.isVisible())
+      await page.waitForFunction(() => document.querySelector('.public-assistant__trigger') === document.activeElement)
+      assert.equal(fixture.streams.length, 0, 'movement and settings never generate')
+      await passed(fixture, 'drag-keyboard-persistence-draft-hide-restore')
+    } finally { await fixture.close() }
+  }
+
+  for (const width of [320, 390, 430, 721, 768]) {
+    const fixture = await setup(width, 'stellar', 'en')
+    const { page } = fixture
+    try {
+      await page.goto(base + '/blog')
+      await ready(page)
+      const canvas = await page.locator('.public-assistant-pet canvas').elementHandle()
+      const trigger = page.locator('.public-assistant__trigger')
+      assert.equal(await trigger.evaluate(e => getComputedStyle(e).touchAction), 'pan-y')
+      await trigger.focus()
+      await page.getByRole('button', { name: publicAssistantPetCopy.en.options, exact: true }).click()
+      await page.getByRole('button', { name: publicAssistantPetCopy.en.dockLeft, exact: true }).click()
+      assert.equal(await page.locator('.public-assistant').getAttribute('data-pet-side'), 'left')
+      await contained(page, '.public-assistant__trigger')
+      await trigger.click()
+      await page.locator('.public-assistant__panel').waitFor()
+      await page.setViewportSize({ width, height: 500 })
+      await page.waitForFunction(() => document.querySelector('.public-assistant')?.clientHeight === innerHeight)
+      await contained(page, '.public-assistant__panel')
+      assert.equal(await trigger.isVisible(), false)
+      assert.ok(await canvas.evaluate(e => e.isConnected), 'soft-keyboard resize cannot destroy the runtime')
+      await page.keyboard.press('Escape')
+      await trigger.waitFor({ state: 'visible' })
+      await contained(page, '.public-assistant__trigger')
+      assert.ok(await canvas.evaluate(e => e.isConnected))
+      await passed(fixture, `mobile-dock-resize-runtime-${width}`)
+    } finally { await fixture.close() }
+  }
+
+  {
+    const fixture = await setup(1440, 'morning', 'zh', 'reduce', { healthStatus: 503 })
+    const { page } = fixture
+    try {
+      await page.goto(base + '/blog')
+      await ready(page)
+      await page.locator('.public-assistant__trigger').focus()
+      await page.waitForFunction(() => document.querySelector('.public-assistant')?.dataset.assistantWarmup === 'error')
+      await state(page, { activity: 'idle', unreadCount: 0, feedbackCount: 0 })
+      await displayedAction(page, 'idle')
+      assert.equal(await page.locator('.public-assistant__bubble').count(), 0)
+      await page.locator('.public-assistant__trigger').click()
+      await page.locator('.public-assistant__notice--warmup').waitFor()
+      assert.equal(fixture.streams.length, 0)
+      await passed(fixture, 'passive-health-failure-is-quiet-with-honest-panel')
+    } finally { await fixture.close() }
+  }
+
+  {
+    const fixture = await setup(1440, 'nature', 'zh')
+    const { page } = fixture
+    try {
+      await page.clock.install()
+      await open(fixture)
+      const stream = await submit(fixture)
+      await page.getByRole('button', { name: fixture.copy.closeAssistant, exact: true }).click()
+      stream.result(answerFixture(stream))
+      await state(page, { activity: 'ready', unreadCount: 1, feedbackCount: 1 })
+      const bubble = page.locator('.public-assistant__bubble')
+      await bubble.waitFor()
+      await contained(page, '.public-assistant__bubble')
+      await bubble.hover()
+      await page.clock.fastForward(7_000)
+      assert.ok(await bubble.isVisible(), 'hover pauses the lifetime')
+      await bubble.focus()
+      await page.mouse.move(500, 100)
+      await page.clock.fastForward(7_000)
+      assert.ok(await bubble.isVisible(), 'keyboard focus pauses the lifetime')
+      await page.locator('.nav-lang-toggle').focus()
+      await page.clock.fastForward(6_100)
+      assert.equal(await bubble.count(), 0)
+      await state(page, { unreadCount: 1, feedbackCount: 1 })
+      assert.equal(fixture.streams.length, 1, 'hint expiry never retries')
+      await passed(fixture, 'bubble-hover-focus-expiry-keeps-unread')
+    } finally { await fixture.close() }
+  }
+
+  for (const storage of ['invalid', 'unavailable']) {
+    const fixture = await setup(1440, 'morning', 'en')
+    const { page } = fixture
+    try {
+      await page.addInitScript(mode => {
+        if (mode === 'invalid') localStorage.setItem('biau-public-assistant-presence-v1', '{"side":"bad","height":-100,"hidden":"true"}')
+        else {
+          Storage.prototype.getItem = () => { throw new DOMException('blocked', 'SecurityError') }
+          Storage.prototype.setItem = () => { throw new DOMException('blocked', 'SecurityError') }
+        }
+      }, storage)
+      await page.goto(base + '/blog')
+      await ready(page)
+      await contained(page, '.public-assistant__trigger')
+      await page.locator('.public-assistant__trigger').click()
+      await page.locator('.public-assistant__panel').waitFor()
+      assert.equal(fixture.streams.length, 0)
+      await passed(fixture, `presence-storage-${storage}`)
+    } finally { await fixture.close() }
+  }
+
+  {
+    const fixture = await setup(1440, 'morning', 'en')
+    const { page } = fixture
+    try {
+      await open(fixture)
+      const stream = await submit(fixture)
+      stream.progress('verifying')
+      await state(page, { activity: 'review' })
+      await page.getByRole('button', { name: fixture.copy.closeAssistant, exact: true }).click()
+      stream.result(answerFixture(stream, 'partial'))
+      await state(page, { activity: 'review', unreadCount: 1, feedbackCount: 0 })
+      await page.getByText(publicAssistantPetCopy.en.reviewResult, { exact: true }).waitFor()
+      assert.equal(fixture.streams.length, 1)
+      await passed(fixture, 'partial-result-hint-distinguishes-completed-review')
+    } finally { await fixture.close() }
+  }
+
+  {
+    const fixture = await setup(1440, 'morning', 'zh')
+    const { page } = fixture
+    let release
+    const gate = new Promise(done => { release = done })
+    fixture.releases.push(release)
+    await page.route('**/assets/PublicAssistantWidget-*.js', async route => {
+      await gate
+      await route.continue().catch(() => undefined)
+    })
+    try {
+      await page.goto(base + '/blog')
+      await ready(page)
+      const canvas = await page.locator('.public-assistant-pet canvas').elementHandle()
+      await page.locator('.public-assistant__trigger').click()
+      await page.locator('.public-assistant__opening').waitFor()
+      assert.ok(await canvas.evaluate(e => e.isConnected))
+      await page.keyboard.press('Escape')
+      await page.locator('.public-assistant__opening').waitFor({ state: 'detached' })
+      release()
+      await page.locator('.public-assistant__trigger').click()
+      await page.locator('#public-assistant-input').waitFor()
+      assert.ok(await canvas.evaluate(e => e.isConnected && e === document.querySelector('.public-assistant-pet canvas')))
+      assert.equal(fixture.streams.length, 0)
+      await passed(fixture, 'slow-workspace-can-close-without-remounting-pet')
     } finally { await fixture.close() }
   }
 
@@ -399,6 +641,13 @@ try {
       await page.locator('.public-assistant__notice').waitFor()
       await state(page, { activity: kind === 'cancel' ? 'idle' : 'blocked', unreadCount: 0, feedbackCount: 0 })
       await displayedAction(page, kind === 'cancel' ? 'idle' : 'failed')
+      if (kind === 'failure') {
+        await page.getByRole('button', { name: fixture.copy.closeAssistant, exact: true }).click()
+        await page.locator('.public-assistant__bubble').waitFor()
+        assert.equal(fixture.streams.length, 1, 'closing a failed task cannot retry it')
+        await page.locator('.public-assistant__bubble').click()
+        await page.locator('.public-assistant__notice').waitFor()
+      }
       await page.locator('.public-assistant__notice button').first().click()
       const retry = await streamAt(fixture, 1)
       await state(page, { activity: 'thinking', unreadCount: 0, feedbackCount: 0 })

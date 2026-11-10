@@ -633,7 +633,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
       }, null, { timeout: 2_000 })
       .catch(() => {})
 
-    const assistant = page.locator('.public-assistant')
+    const assistant = page.locator('.public-assistant__character')
     const assistantTrigger = page.locator('.public-assistant__trigger')
     const guideToggle = page.locator('.detail-reading-guide__toggle')
     const initialMetrics = await page.evaluate(() => {
@@ -690,7 +690,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
   const blog = await createUiPage(browser, { viewport: { width: 390, height: 900 } })
   await gotoApp(blog, '/blog/legal-rag-review')
   await blog.waitForTimeout(400)
-  if (Number(await blog.locator('.public-assistant').getAttribute('data-collision-offset')) !== 0) {
+  if (Number(await blog.locator('.public-assistant__character').getAttribute('data-collision-offset')) !== 0) {
     failures.push('mobile blog detail: non-colliding controls should keep the normal assistant position')
   }
   await blog.close()
@@ -710,7 +710,7 @@ async function checkMobileDetailSurfaceCoordination(browser, failures) {
   await desktopAssistant.click()
   await desktop.waitForTimeout(100)
   if (
-    Number(await desktop.locator('.public-assistant').getAttribute('data-collision-offset')) !== 0 ||
+    Number(await desktop.locator('.public-assistant__character').getAttribute('data-collision-offset')) !== 0 ||
     (await desktopAssistant.getAttribute('aria-expanded')) !== 'true'
   ) {
     failures.push('desktop project detail: mobile collision rules must not affect the assistant')
@@ -3371,13 +3371,13 @@ for (const width of [1440, 320, 390, 430]) {
 
   await gotoApp(warmupPage, '/blog')
   await warmupPage.locator('.public-assistant__trigger').click()
-  const warmupNotice = warmupPage.locator('[data-assistant-warmup="warming"]')
+  const warmupNotice = warmupPage.locator('.public-assistant__notice--warmup[data-assistant-warmup="warming"]')
   await warmupNotice.waitFor({ state: 'visible' })
   const warmupInput = warmupPage.locator('#public-assistant-input')
   await warmupInput.fill(warmupDraft)
   const warmupLayout = await warmupPage.evaluate(() => {
     const panel = document.querySelector('.public-assistant__panel')
-    const notice = document.querySelector('[data-assistant-warmup="warming"]')
+    const notice = document.querySelector('.public-assistant__notice--warmup[data-assistant-warmup="warming"]')
     const composer = document.querySelector('.public-assistant__composer')
     const input = document.querySelector('#public-assistant-input')
     const send = document.querySelector('.public-assistant__composer button[type="submit"]')
@@ -6074,25 +6074,32 @@ for (const viewport of readingGuideViewports) {
       await readingPage.evaluate(() => window.scrollTo(0, 0))
     }
     await toggle.click()
-    await readingPage
-      .waitForFunction(() => {
-        const element = document.querySelector('.detail-reading-guide__outline')
-        if (!element || element.hasAttribute('hidden')) return false
+    const openState = await outline.evaluate(async (element) => {
+      const deadline = performance.now() + 5_000
+      const readBounds = () => {
         const rect = element.getBoundingClientRect()
-        return rect.top >= -1 && rect.bottom <= window.innerHeight + 1
-      })
-      .catch(() => {})
-    const openState = await outline.evaluate((element) => {
-      const rect = element.getBoundingClientRect()
-      return {
-        hidden: element.hasAttribute('hidden'),
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        viewportWidth: document.documentElement.clientWidth,
-        viewportHeight: window.innerHeight,
+        return {
+          hidden: element.hasAttribute('hidden'),
+          left: rect.left,
+          right: rect.right,
+          top: rect.top,
+          bottom: rect.bottom,
+          viewportWidth: document.documentElement.clientWidth,
+          viewportHeight: window.innerHeight,
+        }
       }
+      let current = readBounds()
+      let stableFrames = 0
+      // Opening aligns the sticky guide and animates its shell. Validate the
+      // same complete sample after it settles, not a second moving snapshot.
+      while (performance.now() < deadline) {
+        await new Promise(resolve => requestAnimationFrame(resolve))
+        const next = readBounds()
+        stableFrames = JSON.stringify(next) === JSON.stringify(current) ? stableFrames + 1 : 0
+        current = next
+        if (stableFrames >= 2 && !current.hidden && current.left >= -1 && current.right <= current.viewportWidth + 1 && current.top >= -1 && current.bottom <= current.viewportHeight + 1) break
+      }
+      return current
     })
     if (
       openState.hidden ||
@@ -6101,7 +6108,7 @@ for (const viewport of readingGuideViewports) {
       openState.top < -1 ||
       openState.bottom > openState.viewportHeight + 1
     ) {
-      failures.push(`${path} ${viewport.name}: open reading outline should remain fully operable inside the viewport`)
+      failures.push(`${path} ${viewport.name}: open reading outline should remain fully operable inside the viewport; ${JSON.stringify(openState)}`)
     }
 
     if (viewport.width <= 720) {

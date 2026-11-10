@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
+import { useLocation } from 'react-router-dom'
 import { MOBILE_SURFACE_LAYOUT_EVENT } from '../utils/mobileSurface'
 
 export function usePublicAssistantCollision(
   rootRef: RefObject<HTMLElement | null>,
   isOpen: boolean,
+  positionKey = '',
 ) {
+  const { pathname } = useLocation()
   const frameRef = useRef(0)
 
   const applyOffset = useCallback((nextOffset: number) => {
@@ -55,8 +58,9 @@ export function usePublicAssistantCollision(
       window.removeEventListener('load', scheduleMeasure)
       window.removeEventListener(MOBILE_SURFACE_LAYOUT_EVENT, scheduleMeasure)
       if (frameRef.current !== 0) window.cancelAnimationFrame(frameRef.current)
+      frameRef.current = 0
     }
-  }, [applyOffset, isOpen, rootRef])
+  }, [applyOffset, isOpen, rootRef, positionKey, pathname])
 
   return clearOffset
 }

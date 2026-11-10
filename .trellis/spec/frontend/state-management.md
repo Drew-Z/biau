@@ -238,6 +238,22 @@ Pages consume typed projections. If two consumers derive the same summary/tags/s
 
 ## Scenario: Public Assistant State
 
+- `PublicAssistantCompanion` creates exactly one `createPublicAssistantPetActivity()`
+  instance and passes it to the lazy Widget. Companion owns open/fullscreen and
+  visual presence; Widget keeps Sessions, Turns, Branches, drafts, requests and
+  authoritative restore. Closing/hiding is not request cancellation or unmount.
+- The pet consumes the activity aggregator directly. Health warming/error,
+  image preparation and initial restore do not become fictional model tasks.
+  Warmup and restore notices remain truthful inside the conversation. Completion
+  feedback is claimed once on the shared instance, independently of read state.
+- `biau-public-assistant-presence-v1` stores only `{ side: 'left' | 'right',
+  height: number, hidden: boolean }`. Clamp finite height to `[0,1]`; invalid or
+  unavailable storage falls back safely. No conversation content enters this
+  preference. Only explicit commands persist it; render-time reads are pure.
+- Companion uses `setIsOpen` for navigation/surface coordination and `onClose`
+  for explicit close with focus restoration. Widget resets only transient
+  editor/feedback/history controls on the controlled open transition, retaining
+  draft, conversation and active request ownership.
 - The public widget is available on public routes and hidden on `/studio*`.
 - Initial open state contains no default transcript/citation dump.
 - Public suggestions and messages use sanitized public knowledge.

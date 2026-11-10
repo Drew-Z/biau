@@ -908,6 +908,34 @@ Correct: run `check:ui` locally for fixture coverage, then run `check:ui:product
 
 ## Public Research Assistant
 
+- `npm.cmd run assistant:public-pet-ui-check` verifies the production presence
+  with local fixtures only: transparent computed trigger styles, no header pet,
+  the exact connected canvas across lazy loading/open/close/hide/resize, 12px
+  desktop separation, keyboard focus, dragging without click, docking and
+  preference restoration, two-line timed hints, passive-health silence and
+  retained actionable errors. Preserve its cancellation, late-response,
+  exact-Revision read and once-only feedback assertions.
+- The matrix includes 1440/320/390/430, three themes, two languages, reduced
+  motion, asset failures, blocked/invalid storage and a held workspace chunk;
+  721/768 additionally verify the assistant modal breakpoint. Resize assertions
+  wait for actual visualViewport projection rather than assuming resize events
+  have settled when Playwright's viewport command returns.
+- Collision diagnostics now belong to `.public-assistant__character`, while
+  task/warmup diagnostics remain on the single `.public-assistant` root.
+  Panel readiness/error assertions must scope the warmup attribute to
+  `.public-assistant__notice--warmup`; the root's diagnostic is not the notice.
+  Mobile hidden runtime readiness is `attached`, not `visible`; separately
+  assert hidden/inert presentation and connected canvas identity.
+- Reading warmup's paused-clock fixture must wait for a visible keyboard target:
+  the lazy detail's loading shell can temporarily expose the footer and inert
+  the pet. Advance the clock in bounded 100ms steps below 2 seconds, assert zero
+  calls before actual focus and exactly one after it. Do not weaken the five-
+  second dwell, cancellation or no-keepalive assertions by focusing hidden DOM.
+- Reading-outline containment checks wait for complete, stable geometry and
+  assert that same sample. Opening aligns the sticky guide and can animate its
+  shell; a vertical-only wait followed by another geometry read can sample a
+  moving frame. Preserve all four viewport boundaries and report measured bounds
+  on failure; an unreproduced failure is not proof of a repaired product defect.
 - The floating widget offers `auto`, `site`, and `web` modes, bounded multi-turn context, current-page context, progress, claim-linked citations, suggestions, retry/copy, and thumbs feedback.
 - Initial copy describes capability without claiming a provider is connected before a request runs.
 - Each turn selects one API base. A `429` response is terminal for that attempt and must not be replayed against another candidate URL.

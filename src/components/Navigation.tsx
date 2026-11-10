@@ -10,6 +10,7 @@ interface NavigationProps {
   theme: SiteTheme
   onSelectTheme: (theme: SiteTheme) => void
   onToggleLanguage: () => void
+  onPresenceSettingsReady?: (element: HTMLDivElement | null) => void
 }
 
 const themeIcons: Record<SiteTheme, LucideIcon> = {
@@ -46,6 +47,7 @@ export function Navigation({
   theme,
   onSelectTheme,
   onToggleLanguage,
+  onPresenceSettingsReady,
 }: NavigationProps) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -132,6 +134,7 @@ export function Navigation({
             </button>
           </div>
         </div>
+        <div id="public-assistant-presence-settings" ref={onPresenceSettingsReady} />
       </nav>
 
       <nav className="mobile-tabbar" aria-label={language === 'zh' ? '移动端主导航' : 'Mobile navigation'} lang={SITE_LANGUAGE_TAGS[language]}>

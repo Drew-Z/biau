@@ -215,12 +215,12 @@ export async function checkPublicAssistantAvailability(browser, base) {
           await page.clock.fastForward(801)
           await page.waitForFunction(() => window.__assistantFixture.calls.filter(call => call.path === '/api/health').length === 2)
           await page.clock.fastForward(30_001)
-          await page.locator('[data-assistant-warmup=error]').waitFor()
+          await page.locator('.public-assistant__notice--warmup[data-assistant-warmup=error]').waitFor()
           assert.equal(await composer(page).inputValue(), draft)
           assert.equal(await chatCount(page), 0)
           assert.equal(await page.evaluate(() => window.__assistantFixture.aborts), 2)
           await page.evaluate(() => { window.__assistantFixture.health = 'ok' })
-          await page.locator('[data-assistant-warmup=error] button').click()
+          await page.locator('.public-assistant__notice--warmup[data-assistant-warmup=error] button').click()
         }
         await ready(page)
         if (scenario === 'expiry') {

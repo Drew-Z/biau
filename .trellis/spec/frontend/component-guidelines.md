@@ -279,14 +279,45 @@ for changes. A storage write inside a state initializer can survive an abandoned
 concurrent render, trigger false initial-history restoration and discard a fresh
 draft after a 404. Verify this in both development and production builds.
 
-The synchronous launcher remains mounted as a stable placeholder while the
-lazy workspace chunk is opening. This prevents a trigger/read-guide collision
-window on mobile and preserves the measured collision offset. Initial session
-restore should be scheduled after the current effect turn and should consume
+`PublicAssistantCompanion` owns the stable pet and transparent hit target while
+the lazy workspace chunk opens. The panel is a sibling surface; its title must
+not mount another pet. Mobile/fullscreen presentation must not destroy the
+outside runtime. Initial session restore should be scheduled after the current effect turn and should consume
 its target only after success or a handled non-abort failure; an effect cleanup
 that only cancels an in-flight request must not discard the target. This keeps
 React Strict Mode effect replay from leaving the workspace stuck in a restore
 loading state or issuing duplicate restore requests.
+
+### Independent Qinglong Presence
+
+The character is 96px on desktop and 72px through 768px. Its trigger has no
+background, border, shadow, blur or persistent service label. Keep the root
+transparent and `pointer-events:none`; only real controls and the panel opt
+into hit testing. The panel stays outside the desktop character. At narrow
+widths, hide the external character and its controls with visibility plus
+`inert`, preserving the same canvas through open/close and viewport changes.
+
+`PublicAssistantPetBubble` renders a short task-event hint with at most two
+lines and 6000ms total active lifetime. Pointer hover and keyboard focus pause
+its remaining time; Escape dismisses it and restores the character focus.
+Expired hints never clear unread state, retry a request, or remove panel errors.
+Do not turn health preparation/failure into an external work/error animation.
+
+Desktop movement starts only after more than 6px of pointer travel and consumes
+the resulting click. Snap to the nearest edge and clamp height against the
+navigation and viewport. Mobile uses `touch-action:pan-y` and explicit left/right
+commands. Settings provide equivalent keyboard docking, reset and hide commands;
+hidden preferences expose `Show Qinglong` in the navigation settings host.
+
+On explicit close, the companion restores focus after committing removal of
+`inert`. Its character/trigger disable the global `transition:all` rule: even a
+reduced-motion visibility transition can leave focus targeting a hidden node.
+Programmatic focus restoration must not initiate another health attempt. Route
+navigation and another mobile surface closing the panel retain their own focus.
+
+Place prefixed `-webkit-backdrop-filter` before standard `backdrop-filter` when
+resetting it. Verify computed styles in a production build; reversed declaration
+order was compressed to only the unsupported prefix and retained the old blur.
 
 ### Mobile Primary Navigation
 

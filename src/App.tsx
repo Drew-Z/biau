@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import './App.css'
 import './styles/site-footer.css'
@@ -12,7 +12,7 @@ import { Navigation } from './components/Navigation'
 import { SeoManager } from './components/SeoManager'
 import { HarborIntro } from './components/HarborIntro'
 import { SiteFooter } from './components/SiteFooter'
-import { PublicAssistantLauncher } from './components/PublicAssistantLauncher'
+import { PublicAssistantCompanion } from './components/PublicAssistantCompanion'
 import { BlogPage } from './pages/BlogPage'
 import { HomePage } from './pages/HomePage'
 import { ProjectsPage } from './pages/ProjectsPage'
@@ -20,11 +20,8 @@ import { trackRouteView } from './utils/analytics'
 import { loadPublicAssistantWidget } from './utils/publicAssistantLoader'
 import {
   abortPublicAssistantWarmup,
-  getPublicAssistantWarmupServerSnapshot,
-  getPublicAssistantWarmupSnapshot,
   schedulePublicAssistantReadingWarmup,
   startPublicAssistantWarmup,
-  subscribePublicAssistantWarmup,
 } from './utils/publicAssistantWarmup'
 
 const ProjectDetailPage = lazy(() =>
@@ -50,7 +47,6 @@ const AiDailyPublicDetailPage = lazy(() =>
   import('./pages/AiDailyPublicDetailPage').then((module) => ({ default: module.AiDailyPublicDetailPage })),
 )
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
-const PublicAssistantWidget = lazy(loadPublicAssistantWidget)
 
 function getPageClass(pathname: string) {
   if (pathname === '/') return 'page-home'
@@ -70,15 +66,9 @@ function getPageClass(pathname: string) {
 function AppContent({ onToggleLanguage }: { onToggleLanguage: () => void }) {
   const language = useSiteLanguage()
   const { theme, selectTheme } = useSiteTheme()
-  const [assistantMounted, setAssistantMounted] = useState(false)
-  const [assistantInitiallyOpen, setAssistantInitiallyOpen] = useState(false)
   const [assistantFooterVisible, setAssistantFooterVisible] = useState(false)
+  const [assistantSettingsHost, setAssistantSettingsHost] = useState<HTMLDivElement | null>(null)
   const { pathname } = useLocation()
-  const assistantWarmup = useSyncExternalStore(
-    subscribePublicAssistantWarmup,
-    getPublicAssistantWarmupSnapshot,
-    getPublicAssistantWarmupServerSnapshot,
-  )
 
   useEffect(() => {
     trackRouteView(pathname)
@@ -124,42 +114,9 @@ function AppContent({ onToggleLanguage }: { onToggleLanguage: () => void }) {
         theme={theme}
         onSelectTheme={selectTheme}
         onToggleLanguage={onToggleLanguage}
+        onPresenceSettingsReady={setAssistantSettingsHost}
       />
-      {showPublicAssistant && !assistantMounted && (
-        <PublicAssistantLauncher
-          warmup={assistantWarmup}
-          footerVisible={assistantFooterVisible}
-          onIntent={() => {
-            void loadPublicAssistantWidget()
-            void startPublicAssistantWarmup()
-          }}
-          onOpen={() => {
-            setAssistantInitiallyOpen(true)
-            setAssistantMounted(true)
-          }}
-        />
-      )}
-      {showPublicAssistant && assistantMounted && (
-        <Suspense
-          fallback={(
-            <PublicAssistantLauncher
-              warmup={assistantWarmup}
-              footerVisible={assistantFooterVisible}
-              onIntent={() => {
-                void loadPublicAssistantWidget()
-                void startPublicAssistantWarmup()
-              }}
-              onOpen={() => undefined}
-              opening
-            />
-          )}
-        >
-          <PublicAssistantWidget
-            initiallyOpen={assistantInitiallyOpen}
-            onInitialOpenHandled={() => setAssistantInitiallyOpen(false)}
-          />
-        </Suspense>
-      )}
+      {showPublicAssistant && <PublicAssistantCompanion footerVisible={assistantFooterVisible} restoreHost={assistantSettingsHost} />}
 
       <Suspense
         fallback={
