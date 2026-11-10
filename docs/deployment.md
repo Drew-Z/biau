@@ -137,7 +137,9 @@ METRICS_ENABLED=false
 
 这次新获批比较只提交 1 次、最终生成尝试 1 次、重试 0；HTTP 200 和完整 SSE，route=site、4 条站内证据、0 条网页证据，两篇指定文章引用均保留，但约 21.3 秒仍返回 degraded/fallback。新 recovery 日志明确为 `timeout_phase=awaiting_headers`：约 20 秒的回答等待期间尚未收到渠道 HTTP 响应头，因此本次失败发生在 SSE 开始前，不是已修复的终止事件等 EOF 分支；不能据此判断供应商是否收到或处理了请求，也不能断言密钥、模型或协议错误。四条引用 200、390px 无横向溢出、刷新恢复、会话删除 200/再读 404 通过。默认模型与预算未变，单次授权已消费，完整回答仍未验收。详情见 [任务记录](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
 
-2026-11-10 首响应预算修复已在本地实现，尚未发布：JSON/SSE 从接收并验证请求后创建绝对截止时间，覆盖认领、规划和检索耗时；回答生成预留最多 5 秒用于校验和保存。等待供应商响应头可使用剩余生成预算，收到头或流活动后继续使用 20 秒 idle，每次等待都受绝对截止限制。生产 45 秒总预算最多留下 40 秒生成时间，还需扣除前置耗时；持续心跳和 404/405 兼容路径不能重新获得预算。原模型、渠道、一次生成上限与环境变量均未变；离线验证不能证明供应商恢复，新发布和真实业务请求仍待明确授权。详情见 [首响应预算任务](../.trellis/tasks/11-10-public-assistant-first-response-budget/implement.md)。
+2026-11-10 首响应预算修复已按用户批准发布为 `26b0eea8`，Public `dep-dbpbklrbc2fs739oh19g` live、Pages `47f67894-5856-4bcf-aa86-f064b8ac3d28` success，Site Quality 与只读 RAG sync 均通过，临时变量已恢复。JSON/SSE 从接收并验证请求后创建绝对截止时间，覆盖认领、规划和检索耗时；回答生成预留最多 5 秒用于校验和保存。等待供应商响应头可使用剩余生成预算，收到头或流活动后继续使用 20 秒 idle，每次等待均受绝对截止限制。生产 45 秒总预算最多留下 40 秒生成时间，还需扣除前置耗时；持续心跳和 404/405 兼容路径不能重新获得预算。全部 29 项环境变量指纹保持一致。
+
+本次新授权的文章比较只提交 1 次、最终生成尝试 1 次、自动重试 0；HTTP 200、完整 SSE、route=site、4 条站内证据和 0 条网页证据，两篇目标文章引用保留。提交约 40.5 秒后记录 `awaiting_headers` 超时（Agent 运行约 35.5 秒，含前置认领耗时的 HTTP 窗口更长），最终仍为 degraded/fallback。扩大首响应窗口已在线生效，但本次仍未观察到上游 HTTP 响应头，不能据此断言供应商处理、认证、模型或协议状态。四条引用 200、390px 无溢出、刷新恢复、临时 Session 删除 200/再读 404 通过。完整回答尚未验收，本次单次授权已消费，不自动重发。详情见 [首响应预算任务](../.trellis/tasks/11-10-public-assistant-first-response-budget/implement.md)。
 
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 

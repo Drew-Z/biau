@@ -75,7 +75,7 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 2026-11-10 用户再次批准发布完成事件修复和一次新文章比较。`534beb96` 已推送，Public `dep-dbp19qetlv9c73f62cvg` live、Pages `adabdc9b-a7cf-421c-87e3-2818ce8eb37c` success，Site Quality `42676754027` 与只读 RAG sync `42676754547` 通过；临时变量已恢复，29 项生产环境变量摘要一致。业务请求只提交 1 次，最终生成尝试 1 次、重试 0，约 21.3 秒仍 degraded/timeout。新日志为 `awaiting_headers`，本次没有进入供应商响应流；不能把 SSE 完成处理修复等同于生产恢复。站内路由、两篇文章引用、四条引用 200、390px 无溢出、刷新恢复和会话删除 200/再读 404 均通过。Render 首次日志读取返回 503，缩小同一时间窗后只读查询成功，未重发业务请求。此次单次授权已消费，完整回答仍待后续处理。详情见 [修复任务](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
 
-2026-11-10 后续首响应预算修复仅在本地完成：首响应等待与流式 idle 分开，从 HTTP 截止时间扣除认领等前置耗时，并预留最多 5 秒收尾；总预算、模型和一次生成上限不变。使用本地 HTTP fixture 和注入依赖核对延迟响应头、停顿、连续心跳、兼容路径、取消、持久化与过期零生成，未新增真实模型请求。发布及一次新业务问题仍待授权；完整回答验收继续保持未通过，常驻档位升级也不能替代渠道回答验收。详情见 [首响应预算任务](../.trellis/tasks/11-10-public-assistant-first-response-budget/implement.md)。
+2026-11-10 用户批准发布首响应预算修复及一次新文章比较。源码 `26b0eea8` 已推送，Public `dep-dbpbklrbc2fs739oh19g` live、Pages `47f67894-5856-4bcf-aa86-f064b8ac3d28` success；Site Quality `42769104855`、只读 RAG sync `42769105010` 与 health 通过，临时变量恢复，29 项环境变量摘要一致。业务只提交 1 次、最终生成尝试 1 次、自动重试 0，HTTP 200、完整 SSE、site 路由和两篇引用保留，提交约 40.5 秒后仍在 `awaiting_headers` 超时（Agent 运行约 35.5 秒）。这证明首响应等待窗口扩大，不能证明供应商恢复。四条引用 200、390px 无溢出、刷新恢复和会话删除 200/再读 404 均通过，桌面/手机截图已目视；实际青珑仍覆盖 thinking、working、review、idle。完整回答继续未通过，本次单次授权已消费，不自动重试；无需重做已通过的资源与宿主交互验收。详情见 [首响应预算任务](../.trellis/tasks/11-10-public-assistant-first-response-budget/implement.md)。
 
 ## Roleplay 角色剧场公开演示
 
