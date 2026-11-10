@@ -31,6 +31,7 @@ import {
   searchPublicKnowledge,
   type AssistantKnowledgeItem,
 } from '../data/assistant'
+import { formatProductName } from '../data/productRegistry'
 import { PUBLIC_ASSISTANT_API_BASE, SAME_ORIGIN_ASSISTANT_API_BASE } from '../utils/assistantApi'
 import { trackAnalyticsEvent } from '../utils/analytics'
 import {
@@ -132,6 +133,7 @@ interface WidgetMessage {
   requestId?: string
 }
 
+const PUBLIC_ASSISTANT_NAME = formatProductName('public-assistant')
 
 type AssistantServiceState = 'ready' | 'online' | 'degraded' | 'error'
 type PublicAssistantBranchAction =
@@ -1713,7 +1715,7 @@ export function PublicAssistantWidget({ isOpen, setIsOpen, onClose, isFullscreen
         >
           <header className="public-assistant__header">
             <div className="public-assistant__title">
-              <p className="public-assistant__eyebrow">{copy.eyebrow.publicResearch}</p>
+              <p className="public-assistant__eyebrow" lang="">{PUBLIC_ASSISTANT_NAME}</p>
               <h2 id="public-assistant-title">{publicAssistantPetCopy[language].title}</h2>
               <span className={`public-assistant__status ${serviceStatus.className}`}>{serviceStatus.label}</span>
             </div>

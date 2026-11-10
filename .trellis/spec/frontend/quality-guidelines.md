@@ -908,6 +908,9 @@ Correct: run `check:ui` locally for fixture coverage, then run `check:ui:product
 
 ## Public Research Assistant
 
+- Title/branding changes also run `npm.cmd run project-registry:check`. The pet
+  UI matrix asserts the visible registered bilingual service name and localized
+  Qinglong heading separately, including eyebrow containment and language marker.
 - `npm.cmd run assistant:public-pet-ui-check` verifies the production presence
   with local fixtures only: transparent computed trigger styles, no header pet,
   the exact connected canvas across lazy loading/open/close/hide/resize, 12px

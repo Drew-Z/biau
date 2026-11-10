@@ -13,6 +13,7 @@ if (artifacts) await mkdir(artifacts, { recursive: true })
 const { normalizePublicAssistantAnswer, normalizePublicAssistantSessionHistory } = await tsImport('../src/utils/publicAssistantApi.ts', import.meta.url)
 const { publicAssistantInterfaceCopy } = await tsImport('../src/data/publicAssistantInterfaceCopy.ts', import.meta.url)
 const { publicAssistantPetCopy } = await tsImport('../src/data/publicAssistantPetCopy.ts', import.meta.url)
+const { formatProductName } = await tsImport('../src/data/productRegistry.ts', import.meta.url)
 const registryKey = 'biau-public-assistant-sessions-v2'
 const configurations = [
   { width: 1440, theme: 'morning', language: 'zh' },
@@ -283,6 +284,12 @@ try {
       await ready(page)
       await contained(page, '.public-assistant__panel')
       await contained(page, '.public-assistant__header')
+      const productIdentity = page.locator('.public-assistant__eyebrow')
+      assert.ok(await productIdentity.isVisible())
+      assert.equal(await productIdentity.innerText(), formatProductName('public-assistant'))
+      assert.equal(await productIdentity.getAttribute('lang'), '')
+      await contained(page, '.public-assistant__eyebrow')
+      assert.equal(await page.locator('#public-assistant-title').innerText(), publicAssistantPetCopy[language].title)
       assert.equal(await page.locator('.public-assistant__header .public-assistant-pet').count(), 0)
       assert.ok(await originalCanvas.evaluate(e => e.isConnected && e === document.querySelector('.public-assistant-pet canvas')), 'lazy opening preserves the original canvas')
       if (width > 768) {

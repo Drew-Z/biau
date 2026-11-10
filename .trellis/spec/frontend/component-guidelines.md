@@ -290,6 +290,12 @@ loading state or issuing duplicate restore requests.
 
 ### Independent Qinglong Presence
 
+Qinglong is the character identity; the research service retains its registered
+product identity. Keep the localized Qinglong title and visibly project
+`formatProductName('public-assistant')` in the panel eyebrow. Its bilingual
+brand uses `lang=""`, independent of the selected interface language. Do not
+replace the product registry identity when changing the character's title.
+
 The character is 96px on desktop and 72px through 768px. Its trigger has no
 background, border, shadow, blur or persistent service label. Keep the root
 transparent and `pointer-events:none`; only real controls and the panel opt
