@@ -22,6 +22,7 @@ import {
   abortPublicAssistantWarmup,
   getPublicAssistantWarmupServerSnapshot,
   getPublicAssistantWarmupSnapshot,
+  schedulePublicAssistantReadingWarmup,
   startPublicAssistantWarmup,
   subscribePublicAssistantWarmup,
 } from './utils/publicAssistantWarmup'
@@ -82,6 +83,8 @@ function AppContent({ onToggleLanguage }: { onToggleLanguage: () => void }) {
   useEffect(() => {
     trackRouteView(pathname)
   }, [pathname])
+
+  useEffect(() => schedulePublicAssistantReadingWarmup(pathname), [pathname])
 
   useEffect(() => {
     if (pathname.startsWith('/studio')) return

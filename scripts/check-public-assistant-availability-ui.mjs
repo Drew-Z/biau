@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { tsImport } from 'tsx/esm/api'
 import { installLocalNetworkGuard } from './lib/ui-network-guard.mjs'
+import { checkPublicAssistantReadingWarmup } from './check-public-assistant-reading-warmup-ui.mjs'
 
 const { normalizePublicAssistantAnswer, normalizePublicAssistantSessionHistory } = await tsImport('../src/utils/publicAssistantApi.ts', import.meta.url)
 
@@ -186,6 +187,7 @@ async function checkReceivedAnswerReload(browser, base, configuration) {
 
 export async function checkPublicAssistantAvailability(browser, base) {
   assert.ok(['127.0.0.1', 'localhost', '[::1]'].includes(new URL(base).hostname), 'Availability fixtures require a local preview')
+  const readingWarmup = await checkPublicAssistantReadingWarmup(browser, base)
   let cases = 0
   for (const configuration of configurations) {
     for (const scenario of ['expiry', 'health-header', 'health-body', 'restore', 'chat-header', 'chat-body', 'result-open', 'error-open', 'json', 'no-database']) {
@@ -275,7 +277,7 @@ export async function checkPublicAssistantAvailability(browser, base) {
     }
   }
   for (const configuration of configurations) await checkReceivedAnswerReload(browser, base, configuration)
-  return { cases, reloadCases: configurations.length * 2, modelCalls: 0 }
+  return { cases, readingWarmupCases: readingWarmup.cases, reloadCases: configurations.length * 2, modelCalls: 0 }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -13,12 +13,14 @@ const WARMUP_STORAGE_KEY = 'biau-public-assistant-warmup-v1'
 const WARMUP_READY_TTL_MS = 12 * 60 * 1_000
 const WARMUP_RETRY_DELAY_MS = 800
 const WARMUP_ATTEMPT_TIMEOUT_MS = 30_000
+const READING_WARMUP_DELAY_MS = 5_000
 const API_BASE = PUBLIC_ASSISTANT_API_BASE || SAME_ORIGIN_ASSISTANT_API_BASE
 const SERVER_SNAPSHOT: PublicAssistantWarmupSnapshot = { state: 'idle', issueCode: null, readyUntil: null }
 
 let snapshot = readStoredSnapshot()
 let activeController: AbortController | null = null
 let activePromise: Promise<PublicAssistantWarmupSnapshot> | null = null
+let readingWarmupAttempted = false
 const listeners = new Set<() => void>()
 
 export function getPublicAssistantWarmupSnapshot() {
@@ -32,6 +34,46 @@ export function getPublicAssistantWarmupServerSnapshot() {
 export function subscribePublicAssistantWarmup(listener: () => void) {
   listeners.add(listener)
   return () => listeners.delete(listener)
+}
+
+export function schedulePublicAssistantReadingWarmup(pathname: string) {
+  if (typeof window === 'undefined' || typeof document === 'undefined' ||
+    !/^\/(?:blog|projects)\/[^/]+\/?$/u.test(pathname) || readingWarmupAttempted) return
+
+  let timer: number | undefined
+  let disposed = false
+  const canPrepare = () => document.visibilityState === 'visible' && navigator.onLine !== false
+  const clearTimer = () => {
+    if (timer !== undefined) window.clearTimeout(timer)
+    timer = undefined
+  }
+  const schedule = () => {
+    clearTimer()
+    if (disposed || readingWarmupAttempted || !canPrepare()) return
+    timer = window.setTimeout(() => {
+      timer = undefined
+      if (disposed || readingWarmupAttempted || !canPrepare()) return
+      readingWarmupAttempted = true
+      // Explicit intent owns expired readiness and failed-health retries.
+      if (snapshot.state === 'idle') void startPublicAssistantWarmup()
+    }, READING_WARMUP_DELAY_MS)
+  }
+
+  document.addEventListener('visibilitychange', schedule)
+  window.addEventListener('online', schedule)
+  window.addEventListener('offline', clearTimer)
+  window.addEventListener('pagehide', clearTimer)
+  window.addEventListener('pageshow', schedule)
+  schedule()
+  return () => {
+    disposed = true
+    clearTimer()
+    document.removeEventListener('visibilitychange', schedule)
+    window.removeEventListener('online', schedule)
+    window.removeEventListener('offline', clearTimer)
+    window.removeEventListener('pagehide', clearTimer)
+    window.removeEventListener('pageshow', schedule)
+  }
 }
 
 export function startPublicAssistantWarmup() {

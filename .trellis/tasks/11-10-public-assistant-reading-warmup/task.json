@@ -1,0 +1,32 @@
+{
+  "id": "public-assistant-reading-warmup",
+  "name": "public-assistant-reading-warmup",
+  "title": "免费助手阅读页提前预热",
+  "description": "用户批准创建任务并继续：文章或项目详情页连续可见5秒后最多一次自动health预热，复用现有去重和尝试上限，保留免费实例，不调用模型。",
+  "status": "review",
+  "dev_type": "frontend",
+  "scope": "assistant-warmup",
+  "package": null,
+  "priority": "P2",
+  "creator": "zhang",
+  "assignee": "zhang",
+  "createdAt": "2026-11-10",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "src/App.tsx",
+    "src/utils/publicAssistantWarmup.ts",
+    "scripts/check-public-assistant-availability-ui.mjs",
+    "scripts/check-public-assistant-reading-warmup-ui.mjs",
+    ".trellis/spec/frontend/component-guidelines.md"
+  ],
+  "notes": "Local implementation and all required checks passed: 46 UI groups, 17 routes, zero failures. User approved commit/push/frontend publication on 2026-11-10. Free compute and existing model budget remain; no production model calls were made.",
+  "meta": {}
+}

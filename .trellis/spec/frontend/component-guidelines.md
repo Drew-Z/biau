@@ -256,6 +256,8 @@ conversation: the next explicit open/intent rechecks the expired cache. A
 `pageshow` event resumes preparation for an open widget after pagehide cancelled
 it. Do not add periodic health requests or automatically resubmit a question.
 
+文章和项目详情路由可在连续可见且在线 5 秒后提前准备 health。每个文档最多消费一次自动机会，复用原 warmup；已有 warming/ready/error 都由显式意图或人工重试接续。隐藏、离线、pagehide、路由切换和 Strict Mode cleanup 必须清理尚未触发的计时器，恢复可见/在线后重新等待完整窗口。不得因缓存过期或 SPA 切页形成保活，不自动打开工作区或发送问题。`check-public-assistant-reading-warmup-ui.mjs` 接入 availability，以本地 fixture 验证时序、请求边界与导航清理。
+
 All public-assistant transports share an abortable absolute deadline: 65 seconds
 for generation, 30 for explicit health, and 20 for history/branch/feedback/cancel.
 The deadline covers response consumption, not only `fetch`. Timeout becomes a

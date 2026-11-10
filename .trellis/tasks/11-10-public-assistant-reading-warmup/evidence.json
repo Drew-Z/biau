@@ -1,0 +1,60 @@
+{
+  "scope": "one passive health preparation on visible online reading routes",
+  "cloudChanges": false,
+  "siteModelCalls": 0,
+  "gitBaseline": "8ab14e4088efa6b01a0bb3cb7ce6d5b493c0a7f5",
+  "validation": [
+    {
+      "command": "npm.cmd run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run build -- --outDir <task-temp>/dist",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-browser-state-check",
+      "result": "passed"
+    },
+    {
+      "command": "node scripts/check-public-assistant-reading-warmup-ui.mjs",
+      "environment": "local dev / StrictMode",
+      "result": "passed",
+      "cases": 32,
+      "modelCalls": 0
+    },
+    {
+      "command": "node scripts/check-public-assistant-availability-ui.mjs",
+      "environment": "isolated production preview",
+      "result": "passed",
+      "availabilityCases": 40,
+      "readingWarmupCases": 32,
+      "reloadCases": 8,
+      "modelCalls": 0
+    },
+    {
+      "command": "npm.cmd run check:ui",
+      "environment": "isolated production preview / local network fixtures",
+      "result": "passed",
+      "exitCode": 0,
+      "groups": 46,
+      "failedGroups": 0,
+      "routes": 17,
+      "baseViewports": 2,
+      "durationMs": 3235557,
+      "log": "recovery-group/evidence/full-ui.log"
+    },
+    {
+      "command": "git diff --check (task-owned paths)",
+      "result": "passed"
+    },
+    {
+      "command": "parse task JSON and JSONL",
+      "result": "passed"
+    }
+  ],
+  "priorProviderResult": "Independent released first-response-budget task still observed awaiting_headers after about 40.5 seconds; this task does not change model routing or budget.",
+  "publication": "approved by user on 2026-11-10; awaiting commit and frontend deployment",
+  "recoveryGroup": "20261110T065252276Z-public-assistant-reading-warmup",
+  "temporaryArtifacts": "Task preview stopped and task-owned temporary build/screenshots/logs removed. Verified full UI log retained in the existing recovery group; exact local paths recorded only in recovery manifest."
+}
