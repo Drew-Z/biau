@@ -23,7 +23,9 @@ import {
 } from '../src/publicAssistantRecoveryLog.js'
 import { readResponsesContent, readResponsesStreamContent, requestResponsesText } from '../src/responsesApi.js'
 import { checkResponsesStreamLifecycle } from './responses-stream-lifecycle-check.js'
+import { checkPublicAssistantBudgets } from './public-assistant-budget-check.js'
 
+await checkPublicAssistantBudgets()
 await checkResponsesStreamLifecycle()
 
 const original = {

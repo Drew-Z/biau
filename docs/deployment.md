@@ -137,6 +137,8 @@ METRICS_ENABLED=false
 
 这次新获批比较只提交 1 次、最终生成尝试 1 次、重试 0；HTTP 200 和完整 SSE，route=site、4 条站内证据、0 条网页证据，两篇指定文章引用均保留，但约 21.3 秒仍返回 degraded/fallback。新 recovery 日志明确为 `timeout_phase=awaiting_headers`：约 20 秒的回答等待期间尚未收到渠道 HTTP 响应头，因此本次失败发生在 SSE 开始前，不是已修复的终止事件等 EOF 分支；不能据此判断供应商是否收到或处理了请求，也不能断言密钥、模型或协议错误。四条引用 200、390px 无横向溢出、刷新恢复、会话删除 200/再读 404 通过。默认模型与预算未变，单次授权已消费，完整回答仍未验收。详情见 [任务记录](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
 
+2026-11-10 首响应预算修复已在本地实现，尚未发布：JSON/SSE 从接收并验证请求后创建绝对截止时间，覆盖认领、规划和检索耗时；回答生成预留最多 5 秒用于校验和保存。等待供应商响应头可使用剩余生成预算，收到头或流活动后继续使用 20 秒 idle，每次等待都受绝对截止限制。生产 45 秒总预算最多留下 40 秒生成时间，还需扣除前置耗时；持续心跳和 404/405 兼容路径不能重新获得预算。原模型、渠道、一次生成上限与环境变量均未变；离线验证不能证明供应商恢复，新发布和真实业务请求仍待明确授权。详情见 [首响应预算任务](../.trellis/tasks/11-10-public-assistant-first-response-budget/implement.md)。
+
 `DATABASE_URL` 不存 IP、账号、Cookie、hidden prompt、provider payload 或完整网页正文。原始 turn 最长保留 30 天，长期统计只保留 topic fingerprint 与计数。
 
 `ASSISTANT_MODEL_STRUCTURED_OUTPUTS_MODE` 是服务端能力开关，生产默认保持 `off`。只有用获批的真实业务问题确认当前渠道支持 JSON Schema 后，才可改为 `json-schema`。旧渠道的提示词 JSON 和流式验证不能转移为新渠道的兼容性证明；本次超时也不能证明渠道不支持 Responses。健康检查与确定性测试不探测模型目录或调用模型。

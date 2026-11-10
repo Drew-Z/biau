@@ -287,7 +287,7 @@ async function independentFallbackRecoveryCheck() {
     const response = await runPublicAssistantAgent({ ...request(), question: '你好' }, dependencies)
     assert.deepEqual(attempts, [1, 2])
     assert.deepEqual(delays, [200])
-    assert.deepEqual(timeouts, [14_400, 19_400], 'fallback attempts receive reserved time inside the 25s deadline')
+    assert.deepEqual(timeouts, [9_400, 14_400], 'fallback attempts and finalization share the 25s deadline')
     assert.deepEqual(response.meta?.recovery, { state: 'recovered', attempts: 2 })
   } finally {
     env.publicAssistantRequestTimeoutMs = originalRequestTimeoutMs

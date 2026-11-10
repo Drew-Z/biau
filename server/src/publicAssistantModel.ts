@@ -146,13 +146,10 @@ export async function planPublicAssistantRequest(
   return plan ?? buildFallbackPlan(request)
 }
 
-export async function generatePublicAssistantDraft(input: {
-  request: PublicAssistantRequest
-  plan: PublicAssistantPlan
-  evidence: PublicAssistantEvidence[]
-  attempt: 1 | 2 | 3
-  timeoutMs?: number
-}, channel = resolveModelChannelForAttempt(input.attempt)): Promise<PublicAssistantDraft> {
+export async function generatePublicAssistantDraft(
+  input: Parameters<PublicAssistantModel['answer']>[0],
+  channel = resolveModelChannelForAttempt(input.attempt),
+): Promise<PublicAssistantDraft> {
   const safeChannel = toSafeChannel(channel)
   if (!isResponsesChannelConfigured(channel)) {
     return buildEvidenceFallback(input, 'not_configured', safeChannel, input.attempt, undefined, {
@@ -166,6 +163,8 @@ export async function generatePublicAssistantDraft(input: {
   const result = await requestResponsesText({
     channel,
     timeoutMs: Math.min(input.timeoutMs ?? env.publicAssistantAnswerTimeoutMs, env.publicAssistantRequestTimeoutMs),
+    firstResponseTimeoutMs: input.firstResponseTimeoutMs,
+    deadlineAt: input.deadlineAt,
     signal: input.request.signal,
     stream: true,
     ...requestProfile,

@@ -93,6 +93,8 @@ export async function requestResponsesText(input: {
   system: string
   user: string
   timeoutMs: number
+  firstResponseTimeoutMs?: number
+  deadlineAt?: number
   signal?: AbortSignal
   stream?: boolean
   maxOutputTokens?: number
@@ -111,6 +113,11 @@ export async function requestResponsesText(input: {
   let streamCompletion: ResponsesStreamCompletion | undefined
   let lengthBucket: ResponsesLengthBucket | undefined
   for (const [index, endpoint] of endpoints.entries()) {
+    input.signal?.throwIfAborted()
+    if (input.deadlineAt !== undefined && Date.now() >= input.deadlineAt) {
+      diagnostic = { kind: 'timeout', timeoutPhase: 'awaiting_headers', attemptedEndpoints: index, timeoutMs: 0 }
+      break
+    }
     const attempt = await requestEndpoint({ ...input, endpoint })
     firstActivityMs ??= attempt.firstActivityMs === undefined
       ? undefined
@@ -226,18 +233,9 @@ export function responsesEndpoints(baseUrl: string) {
   return [...new Set([`${normalized}/responses`, `${normalized}/v1/responses`])]
 }
 
-async function requestEndpoint(input: {
-  channel: ResponsesApiChannel
-  endpoint: string
-  system: string
-  user: string
-  timeoutMs: number
-  signal?: AbortSignal
-  stream?: boolean
-  maxOutputTokens?: number
-  jsonSchema?: ResponsesJsonSchema
-  userContent?: ResponsesUserContentPart[]
-}): Promise<ResponsesEndpointResult> {
+async function requestEndpoint(
+  input: Parameters<typeof requestResponsesText>[0] & { endpoint: string },
+): Promise<ResponsesEndpointResult> {
   const startedAt = Date.now()
   let firstActivityMs: number | undefined
   const abort = new AbortController()
@@ -252,15 +250,22 @@ async function requestEndpoint(input: {
   input.signal?.addEventListener('abort', onAbort, { once: true })
   if (input.signal?.aborted) abort.abort()
   let timeout: ReturnType<typeof setTimeout> | undefined
-  const armTimeout = () => {
-    if (timeout) clearTimeout(timeout)
-    timeout = setTimeout(() => {
-      diagnosticKind = 'timeout'
-      abort.abort()
-    }, input.timeoutMs)
+  let activeTimeoutMs = input.timeoutMs
+  const expireTimeout = () => {
+    diagnosticKind = 'timeout'
+    abort.abort()
   }
-  armTimeout()
+  const armTimeout = (durationMs = input.timeoutMs) => {
+    if (timeout) clearTimeout(timeout)
+    activeTimeoutMs = input.deadlineAt === undefined
+      ? durationMs
+      : Math.max(0, Math.min(durationMs, input.deadlineAt - Date.now()))
+    if (activeTimeoutMs <= 0) expireTimeout()
+    else timeout = setTimeout(expireTimeout, activeTimeoutMs)
+  }
+  armTimeout(input.firstResponseTimeoutMs ?? input.timeoutMs)
   try {
+    abort.signal.throwIfAborted()
     const response = await fetch(input.endpoint, {
       method: 'POST',
       headers: {
@@ -399,7 +404,9 @@ async function requestEndpoint(input: {
         }
       }
     }
+    if (input.deadlineAt !== undefined && Date.now() >= input.deadlineAt) expireTimeout()
     input.signal?.throwIfAborted()
+    abort.signal.throwIfAborted()
     return {
       ok: true,
       content,
@@ -442,7 +449,7 @@ async function requestEndpoint(input: {
         ...(kind === 'http_status' ? { httpStatus: responseStatus } : {}),
         ...(kind === 'http_status' && relayOrigin ? { relayOrigin } : {}),
         attemptedEndpoints: 0,
-        timeoutMs: input.timeoutMs,
+        timeoutMs: kind === 'timeout' ? activeTimeoutMs : input.timeoutMs,
       },
       durationMs: Math.max(0, Date.now() - startedAt),
       ...(firstActivityMs === undefined ? {} : { firstActivityMs }),

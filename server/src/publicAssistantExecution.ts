@@ -32,6 +32,7 @@ export interface PublicAssistantExecutionDependencies {
 
 export interface PublicAssistantExecutionOptions {
   signal: AbortSignal
+  deadlineAt?: number
   onProgress?: (progress: PublicAssistantProgress) => void
   onExecutionStart?: () => void
 }
@@ -100,7 +101,12 @@ export async function executePublicAssistantRequest(
 
   options.onExecutionStart?.()
   const authoritativeRequest = claim.status === 'acquired' ? claim.request : request
-  const agentRequest = { ...authoritativeRequest, signal: options.signal, onProgress: options.onProgress }
+  const agentRequest = {
+    ...authoritativeRequest,
+    signal: options.signal,
+    deadlineAt: options.deadlineAt,
+    onProgress: options.onProgress,
+  }
 
   if (claim.status === 'database-not-configured') {
     const response = await dependencies.runAgent(agentRequest)

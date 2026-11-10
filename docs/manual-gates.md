@@ -75,6 +75,8 @@ Render 三服务边界（public/studio/rag）已经进入代码和部署契约�
 
 2026-11-10 用户再次批准发布完成事件修复和一次新文章比较。`534beb96` 已推送，Public `dep-dbp19qetlv9c73f62cvg` live、Pages `adabdc9b-a7cf-421c-87e3-2818ce8eb37c` success，Site Quality `42676754027` 与只读 RAG sync `42676754547` 通过；临时变量已恢复，29 项生产环境变量摘要一致。业务请求只提交 1 次，最终生成尝试 1 次、重试 0，约 21.3 秒仍 degraded/timeout。新日志为 `awaiting_headers`，本次没有进入供应商响应流；不能把 SSE 完成处理修复等同于生产恢复。站内路由、两篇文章引用、四条引用 200、390px 无溢出、刷新恢复和会话删除 200/再读 404 均通过。Render 首次日志读取返回 503，缩小同一时间窗后只读查询成功，未重发业务请求。此次单次授权已消费，完整回答仍待后续处理。详情见 [修复任务](../.trellis/tasks/11-10-responses-terminal-timeout/implement.md)。
 
+2026-11-10 后续首响应预算修复仅在本地完成：首响应等待与流式 idle 分开，从 HTTP 截止时间扣除认领等前置耗时，并预留最多 5 秒收尾；总预算、模型和一次生成上限不变。使用本地 HTTP fixture 和注入依赖核对延迟响应头、停顿、连续心跳、兼容路径、取消、持久化与过期零生成，未新增真实模型请求。发布及一次新业务问题仍待授权；完整回答验收继续保持未通过，常驻档位升级也不能替代渠道回答验收。详情见 [首响应预算任务](../.trellis/tasks/11-10-public-assistant-first-response-budget/implement.md)。
+
 ## Roleplay 角色剧场公开演示
 
 Roleplay 角色剧场是独立部署的游客式多角色 AI 对话演示，角色库入口为 `https://roleplay.playlab.eu.cc/`。主站只记录公开入口、角色库规模和低敏技术边界；API Key、上游地址、管理员令牌、服务器 IP、访客消息和完整角色卡提示词必须继续留在独立服务端。

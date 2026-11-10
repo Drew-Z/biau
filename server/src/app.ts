@@ -149,17 +149,18 @@ function registerPublicAssistantRoutes(app: express.Express) {
       const request = acceptPublicAssistantRequest(req, res)
       if (!request) return
       const abort = new AbortController()
+      const deadlineAt = Date.now() + env.publicAssistantRequestTimeoutMs
       let deadlineExceeded = false
       const timeout = setTimeout(() => {
         deadlineExceeded = true
         abort.abort()
-      }, env.publicAssistantRequestTimeoutMs)
+      }, Math.max(0, deadlineAt - Date.now()))
       const onClose = () => {
         if (!res.writableEnded) abort.abort()
       }
       res.once('close', onClose)
       try {
-        const response = await executePublicAssistantRequest(request, { signal: abort.signal })
+        const response = await executePublicAssistantRequest(request, { signal: abort.signal, deadlineAt })
         res.json(response)
       } catch (error) {
         if (!res.writableEnded && !res.destroyed) {
@@ -179,11 +180,12 @@ function registerPublicAssistantRoutes(app: express.Express) {
     if (!request) return
 
     const abort = new AbortController()
+    const deadlineAt = Date.now() + env.publicAssistantRequestTimeoutMs
     let deadlineExceeded = false
     const timeout = setTimeout(() => {
       deadlineExceeded = true
       abort.abort()
-    }, env.publicAssistantRequestTimeoutMs)
+    }, Math.max(0, deadlineAt - Date.now()))
     const onDisconnect = () => {
       if (!res.writableEnded) abort.abort()
     }
@@ -210,6 +212,7 @@ function registerPublicAssistantRoutes(app: express.Express) {
     try {
       const response = await executePublicAssistantRequest(request, {
         signal: abort.signal,
+        deadlineAt,
         onExecutionStart: startStream,
         onProgress: (progress) => {
           writePublicAssistantSse(res, 'progress', progress)

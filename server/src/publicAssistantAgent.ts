@@ -49,6 +49,7 @@ const PublicAssistantAnnotation = Annotation.Root({
   request: Annotation<PublicAssistantRequest>,
   dependencies: Annotation<PublicAssistantAgentDependencies>,
   startedAt: Annotation<number>,
+  deadlineAt: Annotation<number>,
   inputBlocked: Annotation<boolean>,
   imageFailed: Annotation<boolean>,
   agentPlan: Annotation<PublicAssistantPlan | undefined>,
@@ -75,10 +76,13 @@ export async function runPublicAssistantAgent(
   request: PublicAssistantRequest,
   dependencies: PublicAssistantAgentDependencies = defaultDependencies,
 ): Promise<ChatResponse> {
+  const startedAt = dependencies.now?.() ?? Date.now()
+  const configuredDeadline = startedAt + env.publicAssistantRequestTimeoutMs
   const finalState = await compiledPublicAssistantGraph.invoke({
     request,
     dependencies,
-    startedAt: dependencies.now?.() ?? Date.now(),
+    startedAt,
+    deadlineAt: Math.min(configuredDeadline, request.deadlineAt ?? configuredDeadline),
     inputBlocked: false,
     imageFailed: false,
     agentPlan: undefined,
@@ -256,6 +260,8 @@ async function generateNode(state: PublicAssistantState) {
       await sleepBeforeRetry(state, attempt as 2 | 3)
       if (!hasAttemptBudget(state)) break
     }
+    const budget = remainingAttemptBudget(state, attempt)
+    if (budget.firstResponseTimeoutMs <= 0) break
     const attemptStartedAt = now(state)
     let nextDraft: PublicAssistantDraft
     try {
@@ -264,7 +270,7 @@ async function generateNode(state: PublicAssistantState) {
         plan,
         evidence: state.evidence,
         attempt,
-        timeoutMs: remainingAttemptTimeoutMs(state, attempt),
+        ...budget,
       })
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -343,20 +349,23 @@ function hasAttemptBudget(state: PublicAssistantState) {
   return remainingBudgetMs(state) >= minimumAttemptBudgetMs()
 }
 
-function remainingAttemptTimeoutMs(state: PublicAssistantState, attempt: 1 | 2 | 3) {
-  const remainingMs = remainingBudgetMs(state)
-  if (!state.dependencies.model.hasIndependentFallback?.(state.request)) {
-    return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs))
-  }
-  const futureAttempts = Math.max(0, env.publicAssistantModelMaxAttempts - attempt)
+function remainingAttemptBudget(state: PublicAssistantState, attempt: 1 | 2 | 3) {
+  const independentFallback = state.dependencies.model.hasIndependentFallback?.(state.request)
+  const futureAttempts = independentFallback ? Math.max(0, env.publicAssistantModelMaxAttempts - attempt) : 0
   const futureAttemptBudgetMs = futureAttempts * minimumAttemptBudgetMs()
-  const futureBackoffMs = attempt === 1
+  const futureBackoffMs = !independentFallback ? 0 : attempt === 1
     ? (env.publicAssistantModelMaxAttempts >= 2 ? retryDelayMs(2) : 0)
       + (env.publicAssistantModelMaxAttempts >= 3 ? retryDelayMs(3) : 0)
     : attempt === 2 && env.publicAssistantModelMaxAttempts >= 3
       ? retryDelayMs(3)
       : 0
-  return Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs - futureAttemptBudgetMs - futureBackoffMs))
+  const deadlineAt = generationDeadlineAt(state) - futureAttemptBudgetMs - futureBackoffMs
+  const remainingMs = Math.max(0, deadlineAt - now(state))
+  return {
+    timeoutMs: Math.max(1, Math.min(env.publicAssistantAnswerTimeoutMs, remainingMs)),
+    firstResponseTimeoutMs: remainingMs,
+    deadlineAt,
+  }
 }
 
 function minimumAttemptBudgetMs() {
@@ -364,7 +373,13 @@ function minimumAttemptBudgetMs() {
 }
 
 function remainingBudgetMs(state: PublicAssistantState) {
-  return Math.max(0, state.startedAt + env.publicAssistantRequestTimeoutMs - now(state))
+  return Math.max(0, generationDeadlineAt(state) - now(state))
+}
+
+function generationDeadlineAt(state: PublicAssistantState) {
+  // Leave time for claim verification and persistence after the model stops.
+  const finalizationReserveMs = Math.min(5_000, Math.floor(env.publicAssistantRequestTimeoutMs * 0.2))
+  return state.deadlineAt - finalizationReserveMs
 }
 
 function now(state: PublicAssistantState) {

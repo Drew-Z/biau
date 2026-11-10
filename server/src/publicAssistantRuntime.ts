@@ -27,6 +27,8 @@ export interface PublicAssistantRequest {
   attachment?: PublicAssistantImageAttachment
   imageObservation?: string
   signal?: AbortSignal
+  // Server-owned absolute HTTP deadline; never accepted from a visitor payload.
+  deadlineAt?: number
   onProgress?: (progress: PublicAssistantProgress) => void
 }
 
@@ -98,6 +100,8 @@ export interface PublicAssistantModel {
     evidence: PublicAssistantEvidence[]
     attempt: 1 | 2 | 3
     timeoutMs?: number
+    firstResponseTimeoutMs?: number
+    deadlineAt?: number
   }): Promise<PublicAssistantDraft>
   nextAttemptRelation?(attempt: 1 | 2 | 3, request?: PublicAssistantRequest): PublicAssistantModelRetryRelation | null
   hasIndependentFallback?(request?: PublicAssistantRequest): boolean
