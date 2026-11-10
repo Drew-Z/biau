@@ -3,7 +3,7 @@
   "name": "public-assistant-reading-warmup",
   "title": "免费助手阅读页提前预热",
   "description": "用户批准创建任务并继续：文章或项目详情页连续可见5秒后最多一次自动health预热，复用现有去重和尝试上限，保留免费实例，不调用模型。",
-  "status": "review",
+  "status": "completed",
   "dev_type": "frontend",
   "scope": "assistant-warmup",
   "package": null,
@@ -11,11 +11,11 @@
   "creator": "zhang",
   "assignee": "zhang",
   "createdAt": "2026-11-10",
-  "completedAt": null,
+  "completedAt": "2026-11-10",
   "branch": null,
   "base_branch": "main",
   "worktree_path": null,
-  "commit": null,
+  "commit": "0da31816da08b0c3145bbb6be31b1a68f24c6239",
   "pr_url": null,
   "subtasks": [],
   "children": [],
@@ -27,6 +27,6 @@
     "scripts/check-public-assistant-reading-warmup-ui.mjs",
     ".trellis/spec/frontend/component-guidelines.md"
   ],
-  "notes": "Local implementation and all required checks passed: 46 UI groups, 17 routes, zero failures. User approved commit/push/frontend publication on 2026-11-10. Free compute and existing model budget remain; no production model calls were made.",
+  "notes": "Published frontend on 2026-11-10. Pages and Site Quality passed. Initial health 502 evidence retained; later live browser observed one GET exactly 5 seconds after page readiness, HTTP 200 and ready. No model calls; backend plan/deployment unchanged. Completion journal must preserve prior dirty workspace history.",
   "meta": {}
 }

@@ -1,0 +1,127 @@
+{
+  "scope": "one passive health preparation on visible online reading routes",
+  "cloudChanges": false,
+  "siteModelCalls": 0,
+  "gitBaseline": "8ab14e4088efa6b01a0bb3cb7ce6d5b493c0a7f5",
+  "validation": [
+    {
+      "command": "npm.cmd run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run build -- --outDir <task-temp>/dist",
+      "result": "passed"
+    },
+    {
+      "command": "npm.cmd run assistant:public-browser-state-check",
+      "result": "passed"
+    },
+    {
+      "command": "node scripts/check-public-assistant-reading-warmup-ui.mjs",
+      "environment": "local dev / StrictMode",
+      "result": "passed",
+      "cases": 32,
+      "modelCalls": 0
+    },
+    {
+      "command": "node scripts/check-public-assistant-availability-ui.mjs",
+      "environment": "isolated production preview",
+      "result": "passed",
+      "availabilityCases": 40,
+      "readingWarmupCases": 32,
+      "reloadCases": 8,
+      "modelCalls": 0
+    },
+    {
+      "command": "npm.cmd run check:ui",
+      "environment": "isolated production preview / local network fixtures",
+      "result": "passed",
+      "exitCode": 0,
+      "groups": 46,
+      "failedGroups": 0,
+      "routes": 17,
+      "baseViewports": 2,
+      "durationMs": 3235557,
+      "log": "recovery-group/evidence/full-ui.log"
+    },
+    {
+      "command": "git diff --check (task-owned paths)",
+      "result": "passed"
+    },
+    {
+      "command": "parse task JSON and JSONL",
+      "result": "passed"
+    }
+  ],
+  "priorProviderResult": "Independent released first-response-budget task still observed awaiting_headers after about 40.5 seconds; this task does not change model routing or budget.",
+  "publication": {
+    "status": "published",
+    "date": "2026-11-10",
+    "commit": "0da31816da08b0c3145bbb6be31b1a68f24c6239",
+    "pagesDeploymentId": "7ec4b8d0-d993-46f6-b3b4-67889c7aeeb2",
+    "pagesCheck": "success",
+    "siteQuality": {
+      "runId": 42782948829,
+      "conclusion": "success"
+    },
+    "backendChanged": false,
+    "backendPlan": "free",
+    "modelCalls": 0
+  },
+  "recoveryGroup": "20261110T065252276Z-public-assistant-reading-warmup",
+  "temporaryArtifacts": "Task preview stopped and task-owned temporary build/screenshots/logs removed. Verified full UI log retained in the existing recovery group; exact local paths recorded only in recovery manifest.",
+  "productionHealthEvidence": [
+    {
+      "stage": "initial reading-page browser verification",
+      "documentStatus": 200,
+      "healthStatuses": [
+        502,
+        502
+      ],
+      "warmup": "error",
+      "widgetMounted": false,
+      "pageErrors": 0,
+      "modelCalls": 0
+    },
+    {
+      "stage": "same-origin diagnostic GET",
+      "status": 502,
+      "elapsedMs": 1867,
+      "responseFormat": "non-json"
+    },
+    {
+      "stage": "same-origin follow-up diagnostic GET",
+      "result": "timeout",
+      "timeoutMs": 30000
+    },
+    {
+      "stage": "independent Pages-origin health GET",
+      "status": 502,
+      "elapsedMs": 1710,
+      "error": "public-assistant-upstream-invalid-response"
+    },
+    {
+      "stage": "direct backend health GET",
+      "status": 200,
+      "elapsedMs": 43566,
+      "ok": true
+    },
+    {
+      "stage": "recovered reading-page browser verification",
+      "documentStatus": 200,
+      "health": [
+        {
+          "method": "GET",
+          "requestedAfterPageReadyMs": 5000,
+          "status": 200
+        }
+      ],
+      "warmup": "ready",
+      "widgetMounted": false,
+      "blockedBusinessRequests": 0,
+      "pageErrors": 0,
+      "modelCalls": 0
+    }
+  ],
+  "productionLimit": "First attempts failed and were retained. Successful recovery confirms deployed scheduling and a healthy later request, not elimination of free-instance cold starts, transport failures, or model-provider first-response timeout."
+}
